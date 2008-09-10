@@ -60,6 +60,29 @@ gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
 }
 
 gfarm_error_t
+gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
+{
+	gfarm_error_t e;
+	char *self;
+	int port, need_free = 0;
+
+	if (srchost == NULL) {
+		e = gfarm_schedule_file(gf, &srchost, &srcport);
+		if (e != GFARM_ERR_NO_ERROR)
+			goto error;
+		need_free = 1;
+	}
+	e = gfarm_host_get_canonical_self_name(&self, &port);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto error;
+	e = gfs_replicate_from_to_internal(gf, srchost, srcport, self, port);
+ error:
+	if (need_free)
+		free(srchost);
+	return (e);
+}
+
+gfarm_error_t
 gfs_replicate_to(char *file, char *dsthost, int dstport)
 {
 	return (gfs_replicate_to_internal(file, dsthost, dstport, 0));

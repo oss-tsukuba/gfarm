@@ -309,9 +309,10 @@ search_idle_network_list_init(void)
 	char *self_name;
 	struct search_idle_network *net;
 	struct sockaddr peer_addr;
+	int port;
 
 	assert(search_idle_network_list == NULL);
-	e = gfarm_host_get_canonical_self_name(&self_name);
+	e = gfarm_host_get_canonical_self_name(&self_name, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
 	/* XXX FIXME this port number (0) is dummy */

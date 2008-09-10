@@ -57,10 +57,12 @@ gfarm_host_info_get_by_if_hostname(const char *if_hostname,
  * The value returned to `*canonical_hostnamep' should be freed.
  */
 gfarm_error_t
-gfarm_host_get_canonical_name(const char *hostname, char **canonical_hostnamep)
+gfarm_host_get_canonical_name(const char *hostname,
+	char **canonical_hostnamep, int *portp)
 {
 	gfarm_error_t e;
 	struct gfarm_host_info info;
+	int port;
 	char *n;
 
 	e = gfarm_host_info_get_by_if_hostname(hostname, &info);
@@ -68,36 +70,45 @@ gfarm_host_get_canonical_name(const char *hostname, char **canonical_hostnamep)
 		return (e);
 
 	n = strdup(info.hostname);
+	port = info.port;
 	gfarm_host_info_free(&info);
 	if (n == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	*canonical_hostnamep = n;
+	*portp = port;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfarm_host_get_canonical_names(int nhosts, char **hosts,
-	char ***canonical_hostnamesp)
+	char ***canonical_hostnamesp, int **portsp)
 {
 	gfarm_error_t e;
 	int i;
 	char **canonical_hostnames;
+	int *ports;
 
 	GFARM_MALLOC_ARRAY(canonical_hostnames, nhosts);
 	if (canonical_hostnames == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-
+	GFARM_MALLOC_ARRAY(ports, nhosts);
+	if (ports == NULL) {
+		free(canonical_hostnames);
+		return (GFARM_ERR_NO_MEMORY);
+	}
 	for (i = 0; i < nhosts; i++) {
 		e = gfarm_host_get_canonical_name(hosts[i],
-		    &canonical_hostnames[i]);
+		    &canonical_hostnames[i], &ports[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			while (--i >= 0)
 				free(canonical_hostnames[i]);
 			free(canonical_hostnames);
+			free(ports);
 			return (e);
 		}
 	}
 	*canonical_hostnamesp = canonical_hostnames;
+	*portsp = ports;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -126,23 +137,25 @@ gfarm_host_get_self_name(void)
  *	should be called before this function.
  */
 gfarm_error_t
-gfarm_host_get_canonical_self_name(char **canonical_hostnamep)
+gfarm_host_get_canonical_self_name(char **canonical_hostnamep, int *portp)
 {
 	gfarm_error_t e;
 	static char *canonical_self_name = NULL;
+	static int port;
 	static gfarm_error_t error_save = GFARM_ERR_NO_ERROR;
 
 	if (canonical_self_name == NULL) {
 		if (error_save != GFARM_ERR_NO_ERROR)
 			return (error_save);
 		e = gfarm_host_get_canonical_name(gfarm_host_get_self_name(),
-		    &canonical_self_name);
+		    &canonical_self_name, &port);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error_save = e;
 			return (e);
 		}
 	}
 	*canonical_hostnamep = canonical_self_name;
+	*portp = port;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -285,8 +298,9 @@ gfarm_canonical_hostname_is_local(const char *canonical_hostname)
 {
 	gfarm_error_t e;
 	char *self_name;
+	int port;
 
-	e = gfarm_host_get_canonical_self_name(&self_name);
+	e = gfarm_host_get_canonical_self_name(&self_name, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
 	return (strcasecmp(canonical_hostname, self_name) == 0);
@@ -297,9 +311,10 @@ gfarm_host_is_local(const char *hostname)
 {
 	gfarm_error_t e;
 	char *canonical_hostname;
-	int is_local;
+	int is_local, port;
 
-	e = gfarm_host_get_canonical_name(hostname, &canonical_hostname);
+	e = gfarm_host_get_canonical_name(hostname,
+		&canonical_hostname, &port);
 	is_local = gfarm_canonical_hostname_is_local(canonical_hostname);
 	if (e == GFARM_ERR_NO_ERROR)
 		free(canonical_hostname);

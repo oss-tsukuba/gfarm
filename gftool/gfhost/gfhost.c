@@ -101,8 +101,9 @@ check_hostname(char *hostname)
 {
 	gfarm_error_t e;
 	char *n;
+	int p;
 
-	e = gfarm_host_get_canonical_name(hostname, &n);
+	e = gfarm_host_get_canonical_name(hostname, &n, &p);
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(n);
 		return (APP_ERR_HOSTNAME_IS_ALREADY_REGISERED);

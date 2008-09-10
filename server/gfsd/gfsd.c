@@ -2869,6 +2869,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 
 	if (client_name == NULL) { /* i.e. not UNIX domain socket case */
 		char *s;
+		int port;
 
 		e = gfarm_sockaddr_to_name(client_addr, &client_name);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -2880,7 +2881,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			if (client_name == NULL)
 				fatal("%s: no memory", addr_string);
 		}
-		e = gfarm_host_get_canonical_name(client_name, &s);
+		e = gfarm_host_get_canonical_name(client_name, &s, &port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(client_name);
 			client_name = s;
@@ -3352,7 +3353,7 @@ main(int argc, char **argv)
 	int syslog_level = -1;
 	struct accepting_sockets accepting;
 	struct in_addr *self_addresses, listen_address;
-	int table_size, self_addresses_count, ch, i, nfound, max_fd;
+	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
 	struct sigaction sa;
 	fd_set requests;
 	struct stat sb;
@@ -3483,7 +3484,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	if (canonical_self_name == NULL &&
-	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name))
+	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name, &p))
 	    != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
 		    "cannot get canonical hostname of this node (%s): %s\n",

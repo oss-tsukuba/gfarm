@@ -477,6 +477,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 	struct gfs_file_section_context *vc;
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
+	int host_need_free = 0;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -493,13 +494,24 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 
 	if (host == NULL) {
 		e = gfarm_schedule_file(gf, &host, &port);
+		if (e == GFARM_ERR_NO_ERROR)
+			host_need_free = 1;
+	}
+	/* on-demand replication */
+	if (e == GFARM_ERR_NO_ERROR && !gfarm_host_is_local(host) &&
+	    gf_on_demand_replication) {
+		e = gfs_replicate_to_local(gf, NULL, 0);
 		if (e == GFARM_ERR_NO_ERROR) {
-			e = connect_and_open_with_reconnection(gf, host, port);
-			free(host);
+			if (host_need_free)
+				free(host);
+			e = gfarm_host_get_canonical_self_name(&host, &port);
+			host_need_free = 0;
 		}
 	}
-	else
+	if (e == GFARM_ERR_NO_ERROR)
 		e = connect_and_open_with_reconnection(gf, host, port);
+	if (host_need_free)
+		free(host);
 	/* XXX FIXME: if failed, try to reschedule another host */
 	if (e == GFARM_ERR_NO_ERROR) {
 		gf->ops = &gfs_pio_view_section_ops;

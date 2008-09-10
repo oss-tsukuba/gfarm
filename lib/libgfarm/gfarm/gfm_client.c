@@ -1871,14 +1871,14 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 			int *job_idp)
 {
 	gfarm_error_t e;
-	int i;
+	int i, p;
 	struct gfarm_job_info job_info;
 
 	gfarm_job_info_clear(&job_info, 1);
 	job_info.total_nodes = nusers;
 	job_info.user = gfarm_get_global_username();
 	job_info.job_type = job_type;
-	e = gfarm_host_get_canonical_self_name(&job_info.originate_host);
+	e = gfarm_host_get_canonical_self_name(&job_info.originate_host, &p);
 	if (e == GFARM_ERR_UNKNOWN_HOST) {
 		/*
 		 * gfarm client doesn't have to be a compute user,
@@ -1895,7 +1895,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < nusers; i++) {
 		e = gfarm_host_get_canonical_name(users[i],
-		    &job_info.nodes[i].hostname);
+		    &job_info.nodes[i].hostname, &p);
 		if (e != GFARM_ERR_NO_ERROR) {
 			while (--i >= 0)
 				free(job_info.nodes[i].hostname);

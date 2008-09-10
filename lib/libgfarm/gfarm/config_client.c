@@ -140,6 +140,22 @@ gfarm_config_read(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+int gf_on_demand_replication;
+
+static void
+gfarm_parse_env_client(void)
+{
+	char *env;
+
+	if ((env = getenv("GFARM_FLAGS")) != NULL) {
+		for (; *env; env++) {
+			switch (*env) {
+			case 'r': gf_on_demand_replication = 1; break;
+			}
+		}
+	}
+}
+
 #if 0 /* not yet in gfarm v2 */
 
 /*
@@ -188,7 +204,6 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gf)
  */
 
 static GFS_File gf_stdout, gf_stderr;
-int gf_on_demand_replication;
 
 gfarm_error_t
 gfarm_parse_argv(int *argcp, char ***argvp)
@@ -411,6 +426,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
+
+	gfarm_parse_env_client();
 	if (argvp != NULL) {
 #if 0 /* not yet in gfarm v2 */
 		if (getenv("DISPLAY") != NULL)
