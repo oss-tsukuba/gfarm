@@ -442,6 +442,23 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		e = gfarm_schedule_select_host(nhosts, infos,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	gfarm_host_sched_info_free(nhosts, infos);
+
+	/* on-demand replication */
+	if (e == GFARM_ERR_NO_ERROR && !gfarm_host_is_local(host) &&
+	    gf_on_demand_replication) {
+		e = gfs_replicate_to_local(gf, host, port);
+		if (e == GFARM_ERR_NO_ERROR) {
+			free(host);
+			e = gfarm_host_get_canonical_self_name(&host, &port);
+			host = strdup(host);
+			if (host == NULL)
+				e = GFARM_ERR_NO_MEMORY;
+		}
+		else if (e == GFARM_ERR_ALREADY_EXISTS) {
+			/* local host is too busy to select */
+			e = GFARM_ERR_NO_ERROR;
+		}
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gflog_info("host -> %s", host));
@@ -496,17 +513,6 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 		e = gfarm_schedule_file(gf, &host, &port);
 		if (e == GFARM_ERR_NO_ERROR)
 			host_need_free = 1;
-	}
-	/* on-demand replication */
-	if (e == GFARM_ERR_NO_ERROR && !gfarm_host_is_local(host) &&
-	    gf_on_demand_replication) {
-		e = gfs_replicate_to_local(gf, NULL, 0);
-		if (e == GFARM_ERR_NO_ERROR) {
-			if (host_need_free)
-				free(host);
-			e = gfarm_host_get_canonical_self_name(&host, &port);
-			host_need_free = 0;
-		}
 	}
 	if (e == GFARM_ERR_NO_ERROR)
 		e = connect_and_open_with_reconnection(gf, host, port);
