@@ -454,13 +454,20 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 			if (host == NULL)
 				e = GFARM_ERR_NO_MEMORY;
 		}
-		else if (e == GFARM_ERR_ALREADY_EXISTS) {
-			/* local host is too busy to select */
+		else if (e == GFARM_ERR_ALREADY_EXISTS ||
+			 e == GFARM_ERR_UNKNOWN_HOST) {
+			/*
+			 * local host is too busy to select or unknown
+			 * host
+			 */
 			e = GFARM_ERR_NO_ERROR;
 		}
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (host != NULL)
+			free(host);
 		return (e);
+	}
 	gfs_profile(gflog_info("host -> %s", host));
 	gfs_profile(gfarm_gettimerval(&t3));
 

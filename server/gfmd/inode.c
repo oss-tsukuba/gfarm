@@ -669,6 +669,9 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 {
 	gfarm_error_t e;
 
+	if (atime == NULL)
+		return;
+
 	inode->i_atimespec = *atime;
 
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);

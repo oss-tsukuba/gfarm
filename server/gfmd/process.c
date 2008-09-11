@@ -736,7 +736,7 @@ process_replica_added(struct process *process,
 {
 	struct file_opening *fo;
 	struct gfarm_timespec *mtime;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo), e2;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -752,10 +752,13 @@ process_replica_added(struct process *process,
 	mtime = inode_get_mtime(fo->inode);
 	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec) {
 		e = inode_remove_replica(fo->inode, spool_host, 0);
-		return (e == GFARM_ERR_NO_ERROR ?
-			GFARM_ERR_INVALID_FILE_REPLICA : e);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
-	return (inode_add_replica(fo->inode, spool_host, 1));
+	else
+		e = inode_add_replica(fo->inode, spool_host, 1);
+	e2 = process_close_file_read(process, peer, fd, NULL);
+	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
 /*
