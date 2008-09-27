@@ -1,3 +1,33 @@
+Release note for Gfarm 2.1.1
+============================
+
+[2008.9.27]
+
+New Feature
+* on-demand replication
+
+New Command
+* gfdump.postgresql - gfdump for postgresql backend
+
+New API
+* gfs_link - hardlink support
+  [contribution from Rainer Rohmfeld]
+
+Documentation
+* manual pages - gfrep(1)
+
+Updated feature
+* gfgroup - group membership modification support
+* C++ support
+* support Globus 4.2.0
+
+Bug fix
+* segfault when listing a directory that includes a removed user
+  [sf.net tracker bugs #2009543]
+* race condition during authentication
+* LP64 portability problem when using GSI authentication
+* "too many open files" problem when replicating many files
+
 Release note for Gfarm 2.1.0
 ============================
 
