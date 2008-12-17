@@ -363,6 +363,30 @@ statement on the configuration of this statement.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_stack_size</token> <parameter>bytes</parameter></term>
+<listitem>
+<para>This directive specifies the size of each thread in the gfmd 
+metadata server process.  If not specified, the default size of the OS
+is used.
+This parameter is used to cut down the size of virtual memory space
+used by gfmd.
+</para>
+<para>
+For example, the default stack size on CentOS 5/i386 is 10MB, thus,
+you can decrease the size of the virtual memory space of gfmd to 1/40,
+by specifying 256KB as this parameter.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+        metadb_server_stack_size 262144
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>ldap_server_host</token> <parameter>hostname</parameter></term>
 <listitem>
 <para>The <token>ldap_server_host</token> statement specifies the host
@@ -915,6 +939,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
@@ -959,6 +984,8 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_stack_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
 	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
 	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;

@@ -13,6 +13,7 @@
 #include "gfutil.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "config.h"
 
 #include "subr.h"
 #include "peer.h"
@@ -69,6 +70,22 @@ create_detached_thread(void *(*thread_main)(void *), void *arg)
 		if (err != 0)
 			gflog_fatal("PTHREAD_CREATE_DETACHED: %s",
 			    strerror(err));
+		if (gfarm_metadb_stack_size != GFARM_METADB_STACK_SIZE_DEFAULT){
+#ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+			err = pthread_attr_setstacksize(&attr,
+			    gfarm_metadb_stack_size);
+			if (err != 0)
+				gflog_warning("gfmd.conf: "
+				    "metadb_server_stack_size %d: %s",
+				    gfarm_metadb_stack_size, strerror(err));
+#else
+			gflog_warning("gfmd.conf: "
+			    "metadb_server_stack_size %d: "
+			    "configuration ignored due to lack of "
+			    "pthread_attr_setstacksize()",
+			    gfarm_metadb_stack_size);
+#endif
+		}
 		initialized = 1;
 	}
 

@@ -579,6 +579,34 @@ AC_CHECK_LIB(rt, fdatasync)	# Solaris
 AC_CHECK_LIB(cext, seteuid)	# HP-UX
 AC_CHECK_LIB(perfstat, perfstat_cpu_total) # AIX, to implement getloadavg()
 
+# have pthread_attr_setstacksize(3)?
+case ${ax_cv_have_pthread} in
+yes)
+  AC_MSG_CHECKING([for pthread_attr_setstacksize])
+  CPPFLAGS_SAVE="$CPPFLAGS"
+  LIBS_SAVE="$LIBS"
+  CPPFLAGS="${pthread_includes} $CPPFLAGS"
+  LIBS="$LIBS ${pthread_libs}"
+
+  AC_TRY_LINK([
+#   include <pthread.h>
+
+    void test(void){}],[
+      pthread_attr_t at;
+      if (pthread_attr_init(&at) == 0)
+        pthread_attr_setstacksize(&at, 64 * 1024);
+    ], [
+      AC_MSG_RESULT([yes])
+      AC_DEFINE(HAVE_PTHREAD_ATTR_SETSTACKSIZE, 1, [pthread_attr_setstacksize()  exists])
+    ], [
+      AC_MSG_RESULT([no])
+    ])
+
+  CPPFLAGS="$CPPFLAGS_SAVE"
+  LIBS="$LIBS_SAVE"
+  ;;
+esac
+
 # Since gfarm-1.3, libgfarm calls pthread functions internally,
 # thus, we need to link ${pthread_libs}, unless libc supplies weak symbols.
 # e.g. using 3rd party pthread library, FreeBSD-4.x, or NetBSD-2.x

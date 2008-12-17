@@ -20,6 +20,8 @@ extern int gfarm_metadb_server_port;
 
 extern char *gfarm_metadb_admin_user;
 extern char *gfarm_metadb_admin_user_gsi_dn;
+extern int gfarm_metadb_stack_size;
+#define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */
 
 /* LDAP dependent */
 extern char *gfarm_ldap_server_name;
