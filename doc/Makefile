@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SUBDIRS = #html
+SUBDIRS = html
 
 DOC =	../LICENSE ../RELNOTES \
 	../README.en ../README.ja ../OVERVIEW.en ../OVERVIEW.ja \
