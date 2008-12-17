@@ -119,6 +119,9 @@
 /* pthread library exists */
 #undef HAVE_PTHREAD
 
+/* pthread_attr_setstacksize() exists */
+#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
@@ -211,9 +214,25 @@
    `char[]'. */
 #undef YYTEXT_POINTER
 
-/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define
+   */
 #undef socklen_t
 
+
+/* Grid Security Infrastructure exists */
+#undef HAVE_GSI
+
+/* 5 arguments getpwnam_r() which is compatible with SUSv2 exists */
+#undef HAVE_GETPWNAM_R
+
+/* 5 arguments getspnam_r() exists */
+#undef HAVE_GETSPNAM_R
+
+/* sys_nerr is defined */
+#undef HAVE_SYS_NERR
+
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
+#undef socklen_t
 
 #if SIZEOF_LONG == 8
 	typedef long gfarm_int64_t;

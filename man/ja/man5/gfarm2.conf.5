@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "01 April 2008" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "18 December 2008" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -235,6 +235,24 @@ GSI認証において、metadb_server_cred_typeで指定した値に
 sharedsecret利用時には、この指定は単に無視されます。
 設定の意味についてはspool_server_cred_typeの項を
 参照してください。
+.TP
+\fBmetadb_server_stack_size \fIバイト数\fB\fR
+メタデータサーバ gfmd 内の各スレッドが利用するスタックのサイズを
+指定します。省略された場合 OS のデフォルト値が使われます。
+このパラメータは、gfmd の消費する仮想メモリ空間のサイズを節約するために
+用います。
+
+たとえば、CentOS 5/i386 の場合、デフォルトのスタックサイズは 10MB です
+ので、このパラメータでスタックサイズを 256KB に抑えると、gfmd のスタック
+が消費する仮想メモリ空間のサイズを、1/40 に減らすことができます。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+        metadb_server_stack_size 262144
+.fi
 .TP
 \fBldap_server_host \fILDAPサーバー・ホスト名\fB\fR
 gfmdのバックエンド・データベースとして
@@ -541,6 +559,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<metadb_server_stack_size_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
@@ -555,6 +574,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<auth_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<admin_user_statement> |
+		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement> |
@@ -577,6 +597,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<metadb_server_stack_size_statement> ::=
+		\~\~"metadb_server_stack_size" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
 	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
@@ -596,8 +618,9 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
 	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
-	<admin_user_statement> ::=  <string>
-	<local_user_map_statement> ::=  "local_user_map" <pathname>
+	<admin_user_statement> ::= "admin_user" <string>
+	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
+	<local_user_map_statement> ::= "local_user_map" <pathname>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
