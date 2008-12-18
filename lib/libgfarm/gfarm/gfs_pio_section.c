@@ -415,7 +415,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	gfarm_error_t e;
 	int nhosts;
 	struct gfarm_host_sched_info *infos;
-	char *host;
+	char *host = NULL;
 	gfarm_int32_t port;
 	gfarm_timerval_t t1, t2, t3;
 	int i;
