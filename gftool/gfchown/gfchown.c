@@ -10,7 +10,7 @@
 
 #include <gfarm/gfarm.h>
 
-char *program_name = "gfchmod";
+char *program_name = "gfchown";
 int opt_chgrp = 0;
 
 static void
