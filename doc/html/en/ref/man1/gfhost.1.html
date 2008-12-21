@@ -67,6 +67,11 @@ CLASS="REPLACEABLE"
 ><I
 >architecture</I
 ></TT
+>   -p <TT
+CLASS="REPLACEABLE"
+><I
+>port-number</I
+></TT
 >  [-n <TT
 CLASS="REPLACEABLE"
 ><I
@@ -91,6 +96,11 @@ CLASS="COMMAND"
 CLASS="REPLACEABLE"
 ><I
 >architecture</I
+></TT
+>] [-p <TT
+CLASS="REPLACEABLE"
+><I
+>port-number</I
 ></TT
 >] [-n <TT
 CLASS="REPLACEABLE"
@@ -158,8 +168,8 @@ NAME="FUNCTIONS"
 ><H2
 >FUNCTIONS</H2
 ><P
->  
-  Metadata in LDAP server will be accessed by function -c, -d, -M, -m or
+>  Metadata in the metadata server will be accessed by function -c, -d,
+  -M, -m or
   -R. These functions add/delete/display/modify/restore host information
   in the metadata.</P
 ><P
@@ -227,6 +237,11 @@ CLASS="OPTION"
 	in the argument.
 	Option -a is mandatory for this function, this option specifies
 	the architecture of the host.
+	Option -p is mandatory in this function too, this option specifies
+	the port number of <B
+CLASS="COMMAND"
+>gfsd</B
+> on the host.
 	Option -n may be used to specify the number of CPUs of the host,
 	and 1 CPU is assumed, if -n is omitted.
       </P
@@ -292,9 +307,7 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfsd</B
 > on the host
-	cannot be accessed by the port number configured in
-	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-	displayed.
+	cannot be accessed, -.--/-.--/-.-- will be displayed.
       </P
 ><P
 >	The next field is the authentication method used with the host.
@@ -340,9 +353,7 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfsd</B
 > on the host
-	cannot be accessed by the port number configured in
-	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-	displayed.
+	cannot be accessed , -.--/-.--/-.-- will be displayed.
       </P
 ><P
 >	The next field is the authentication method used with the host.
@@ -477,8 +488,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
-	$HOME/.gfarmrc to give priorities of network addresses
+>	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2.conf and
+	$HOME/.gfarm2rc to give priorities of network addresses
 	for gfarm access.
 	This directive works with the <B
 CLASS="COMMAND"
@@ -542,6 +553,35 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>port-number</I
+></TT
+></DT
+><DD
+><P
+>	This option is used with -c or -m function, and specifies
+	the port number of <B
+CLASS="COMMAND"
+>gfsd</B
+> on the host.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+></DT
+><DD
+><P
+>	Reverses the order of sort.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u</CODE
 ></DT
 ><DD
 ><P
@@ -556,16 +596,6 @@ CLASS="OPTION"
 CLASS="COMMAND"
 >gfsd</B
 > answers.
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-r</CODE
-></DT
-><DD
-><P
->	Reverses the order of sort.
       </P
 ></DD
 ><DT
@@ -614,7 +644,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 >,
   <SPAN

@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfdf</TITLE
+>gfchown</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFDF.1"
+NAME="GFCHOWN.1"
 ></A
->gfdf</H1
+>gfchown</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfdf&nbsp;--&nbsp;display disk free space of Gfarm file system</DIV
+>gfchown&nbsp;--&nbsp;change Gfarm file owner and group</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,13 +36,33 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfdf</B
-> [-a] [-D <TT
+>gfchown</B
+> [<TT
 CLASS="REPLACEABLE"
 ><I
->domainname</I
+>options</I
 ></TT
->]</P
+>]  owner[:group]  [<TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfchown</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  :group  [<TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>...]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -54,9 +74,8 @@ NAME="DESCRIPTION"
 ><P
 ><B
 CLASS="COMMAND"
->gfdf</B
-> displays disk usage and free space of
-Gfarm file system.</P
+>gfchown</B
+> changes an owner and a group of Gfarm files.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -73,30 +92,6 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-a</CODE
-></DT
-><DD
-><P
->Displays only summary information of the Gfarm file system.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-D</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->domainname</I
-></TT
-></DT
-><DD
-><P
->Specifies a domain name of filesystem nodes to list the status
-of disk free space. </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
 >-?</CODE
 ></DT
 ><DD
@@ -105,29 +100,6 @@ CLASS="OPTION"
 ></DD
 ></DL
 ></DIV
-></DIV
-><DIV
-CLASS="REFSECT1"
-><A
-NAME="SEE-ALSO"
-></A
-><H2
->SEE ALSO</H2
-><P
->  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfhost</SPAN
->(1)</SPAN
->,
-  <SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm2.conf</SPAN
->(5)</SPAN
-></P
 ></DIV
 ></BODY
 ></HTML

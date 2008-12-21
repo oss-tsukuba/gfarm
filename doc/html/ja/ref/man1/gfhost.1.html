@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfhost</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -68,6 +67,11 @@ CLASS="REPLACEABLE"
 ><I
 >アーキテクチャ</I
 ></TT
+>   -p<TT
+CLASS="REPLACEABLE"
+><I
+>ポート番号</I
+></TT
 >  [-n<TT
 CLASS="REPLACEABLE"
 ><I
@@ -92,6 +96,11 @@ CLASS="COMMAND"
 CLASS="REPLACEABLE"
 ><I
 >アーキテクチャ</I
+></TT
+>] [-p<TT
+CLASS="REPLACEABLE"
+><I
+>ポート番号</I
 ></TT
 >] [-n<TT
 CLASS="REPLACEABLE"
@@ -154,12 +163,12 @@ NAME="FUNCTIONS"
 ><H2
 >FUNCTIONS</H2
 ><P
->  機能指定のうち、-c, -d, -M, -m, -R は LDAP メタデータサーバーのみを
+>  機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
   アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。</P
 ><P
 >  機能指定のうち、-H, -l, -M, および特に機能を指定しなかった場合は、
   ファイルシステムノードに関する情報を表示します。
-  このうち -M は LDAP メタデータサーバーのみをアクセスしますが、
+  このうち -M はメタデータサーバーのみをアクセスしますが、
   それ以外の機能はファイルシステムノードで動作している
   <B
 CLASS="COMMAND"
@@ -175,7 +184,7 @@ CLASS="COMMAND"
   メタデータに登録されている全てのホストに関する表示を試みます。
   また、-a および -D オプションで表示するホストの種類を限定
   することもできます。
-  表示の順序は、ホスト名のアルファベット順ですが、-L, -p, -r オプションで
+  表示の順序は、ホスト名のアルファベット順ですが、-L, -r, -u オプションで
   順序を変更することができます。ただし、-M 機能
    と、機能を指定しなかった場合 
   に関しては -L オプションは無効です。</P
@@ -200,14 +209,15 @@ CLASS="COMMAND"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-c</TT
+>-c</CODE
 ></DT
 ><DD
 ><P
 >	引数で指定したホストをメタデータへ登録します。
 	オプション -a で、そのホストのアーキテクチャを指定する必要があります。
+	同様にオプション -p で、そのホストのポート番号を指定する必要があります。
 	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
 	1 CPU だとみなします。
       </P
@@ -234,9 +244,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-d</TT
+>-d</CODE
 ></DT
 ><DD
 ><P
@@ -249,9 +259,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-H</TT
+>-H</CODE
 ></DT
 ><DD
 ><P
@@ -269,8 +279,7 @@ CLASS="COMMAND"
 ><P
 >	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc で
-	指定されたポートで、そのホストの <B
+	ホストが動作しているが、そのホストの <B
 CLASS="COMMAND"
 >gfsd</B
 > へ
@@ -288,9 +297,9 @@ CLASS="COMMAND"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-l</TT
+>-l</CODE
 ></DT
 ><DD
 ><P
@@ -307,8 +316,7 @@ CLASS="COMMAND"
 ><P
 >	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc で
-	指定されたポートで、そのホストの <B
+	ホストが動作しているが、そのホストの <B
 CLASS="COMMAND"
 >gfsd</B
 > へ
@@ -326,9 +334,9 @@ CLASS="COMMAND"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-M</TT
+>-M</CODE
 ></DT
 ><DD
 ><P
@@ -337,9 +345,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-m</TT
+>-m</CODE
 ></DT
 ><DD
 ><P
@@ -354,9 +362,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-R</TT
+>-R</CODE
 ></DT
 ><DD
 ><P
@@ -365,9 +373,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -389,9 +397,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-A</TT
+>-A</CODE
 ></DT
 ><DD
 ><P
@@ -400,9 +408,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-a</TT
+>-a</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -421,9 +429,9 @@ CLASS="PARAMETER"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-D</TT
+>-D</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -438,13 +446,13 @@ CLASS="PARAMETER"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-i</TT
+>-i</CODE
 ></DT
 ><DD
 ><P
->	%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc 中で「address_use」を指定すると、
+>	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
 	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
 	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
 	つけると、この指定を無視して <B
@@ -455,9 +463,9 @@ CLASS="COMMAND"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-j</TT
+>-j</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -474,9 +482,9 @@ CLASS="COMMAND"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-L</TT
+>-L</CODE
 ></DT
 ><DD
 ><P
@@ -486,9 +494,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-n</TT
+>-n</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -502,9 +510,38 @@ CLASS="PARAMETER"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ポート番号</I
+></TT
+></DT
+><DD
+><P
+>	-c および -m 機能で、ホスト情報を追加・変更する際に、
+	そのホストの <B
+CLASS="COMMAND"
+>gfsd</B
+> が用いるポート番号を指定します。
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+></DT
+><DD
+><P
+>	表示を整列している場合、表示の順序を逆にします。
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u</CODE
 ></DT
 ><DD
 ><P
@@ -519,19 +556,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-r</TT
-></DT
-><DD
-><P
->	表示を整列している場合、表示の順序を逆にします。
-      </P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-U</TT
+>-U</CODE
 ></DT
 ><DD
 ><P
@@ -545,9 +572,9 @@ CLASS="OPTION"
       </P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-v</TT
+>-v</CODE
 ></DT
 ><DD
 ><P
@@ -572,7 +599,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 >,
   <SPAN

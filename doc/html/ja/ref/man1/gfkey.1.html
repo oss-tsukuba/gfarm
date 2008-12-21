@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfkey</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfkey&nbsp;--&nbsp;gfsd のセッション・キー管理コマンド</DIV
+>gfkey&nbsp;--&nbsp;Gfarm セッション・キー管理コマンド</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -53,11 +52,11 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->信頼された環境で gfsd、gfmd をアクセスするのに必要なセッション・
-キー・ファイル 
-<TT
+>信頼された環境で gfsd、gfmd を共有秘密鍵認証でアクセスするのに
+必要なセッション・キー・ファイル 
+<CODE
 CLASS="OPTION"
->$HOME/.gfarm_shared_key</TT
+>$HOME/.gfarm_shared_key</CODE
 >
 を扱うコマンドです。</P
 ><P
@@ -78,9 +77,9 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-c</TT
+>-c</CODE
 ></DT
 ><DD
 ><P
@@ -89,9 +88,9 @@ CLASS="OPTION"
 在する場合には何もしません。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-f</CODE
 ></DT
 ><DD
 ><P
@@ -100,9 +99,9 @@ CLASS="OPTION"
 にキーを作成します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-p</TT
+>-p</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -116,27 +115,27 @@ CLASS="PARAMETER"
 オプションと同時に指定する必要があります。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-l</TT
+>-l</CODE
 ></DT
 ><DD
 ><P
 >現在のキーを表示します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-e</TT
+>-e</CODE
 ></DT
 ><DD
 ><P
 >現在のキーの期限が切れる時刻を表示します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P

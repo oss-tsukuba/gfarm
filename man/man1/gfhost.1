@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "12 November 2006" "Gfarm" ""
+.TH "GFHOST" "1" "21 December 2008" "Gfarm" ""
 
 .SH NAME
 gfhost \- Gfarm host maintenance command
@@ -12,10 +12,10 @@ gfhost \- Gfarm host maintenance command
 \fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-c\fR \fB-a \fIarchitecture\fB\fR [ \fB-n \fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-c\fR \fB-a \fIarchitecture\fB\fR \fB-p \fIport-number\fB\fR [ \fB-n \fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-m\fR [ \fB-a \fIarchitecture\fB\fR ] [ \fB-n \fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-m\fR [ \fB-a \fIarchitecture\fB\fR ] [ \fB-p \fIport-number\fB\fR ] [ \fB-n \fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
 \fBgfhost\fR \fB-d\fR \fB\fIhostname\fB\fR\fI ...\fR
@@ -35,7 +35,8 @@ If none of them is specified, host name will be displayed as
 the default function of \fBgfhost\fR\&.
 .SH "FUNCTIONS"
 .PP
-Metadata in LDAP server will be accessed by function -c, -d, -M, -m or
+Metadata in the metadata server will be accessed by function -c, -d,
+-M, -m or
 -R. These functions add/delete/display/modify/restore host information
 in the metadata.
 .PP
@@ -71,6 +72,8 @@ Creates the metadata information for the host that is specified
 in the argument.
 Option -a is mandatory for this function, this option specifies
 the architecture of the host.
+Option -p is mandatory in this function too, this option specifies
+the port number of \fBgfsd\fR on the host.
 Option -n may be used to specify the number of CPUs of the host,
 and 1 CPU is assumed, if -n is omitted.
 
@@ -110,9 +113,7 @@ If the host cannot be accessed due to a machine down or
 network problem, etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
-cannot be accessed by the port number configured in
-%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-displayed.
+cannot be accessed, -.--/-.--/-.-- will be displayed.
 
 The next field is the authentication method used with the host.
 `G' in this field means GSI authentication and encryption,
@@ -142,9 +143,7 @@ If the host cannot be accessed due to a machine down or
 network problem, etc., x.xx/x.xx/x.xx will be displayed in
 the load average field.
 If the host is up, but \fBgfsd\fR on the host
-cannot be accessed by the port number configured in
-%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-displayed.
+cannot be accessed , -.--/-.--/-.-- will be displayed.
 
 The next field is the authentication method used with the host.
 `G' in this field means GSI authentication and encryption,
@@ -197,8 +196,8 @@ This option is used with the -H, -l, -M function or the default
 function to limit hosts to the specified domain.
 .TP
 \fB-i\fR
-There is an "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
-$HOME/.gfarmrc to give priorities of network addresses
+There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2.conf and
+$HOME/.gfarm2rc to give priorities of network addresses
 for gfarm access.
 This directive works with the \fBgfhost\fR command,
 but will be ignored, if you specified the -i option with
@@ -217,16 +216,20 @@ Sorts by load average order. This option is effective only with the
 This option is used with the -c or -m function, and specifies the
 number of CPUs of the host.
 .TP
-\fB-p\fR
+\fB-p \fIport-number\fB\fR
+This option is used with -c or -m function, and specifies
+the port number of \fBgfsd\fR on the host.
+.TP
+\fB-r\fR
+Reverses the order of sort.
+.TP
+\fB-u\fR
 Plain order. This option stops sorting on the -H, -l, -M function
 or the default function.
 With the -M function, command argument order (if any), or
 the order that the metadata server answers is used for display.
 With the -H, -l function or the default function, the result
 is displayed in the order that each \fBgfsd\fR answers.
-.TP
-\fB-r\fR
-Reverses the order of sort.
 .TP
 \fB-U\fR
 Suppresses authentication attempts by TCP, and only queries
@@ -243,5 +246,5 @@ reports on \fBgfsd\fR accesses;
 these error reports will be produced by this option.
 .SH "SEE ALSO"
 .PP
-\fBgfarm.conf\fR(5),
+\fBgfarm2.conf\fR(5),
 \fBgfsd\fR(8)

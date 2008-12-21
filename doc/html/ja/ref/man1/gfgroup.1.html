@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfls</TITLE
+>gfgroup</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFLS.1"
+NAME="GFGROUP.1"
 ></A
->gfls</H1
+>gfgroup</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfls&nbsp;--&nbsp;Gfarm ディレクトリの内容を表示する。</DIV
+>gfgroup&nbsp;--&nbsp;Gfarm グループ管理コマンド</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,18 +36,33 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfls</B
-> [<TT
+>gfgroup</B
+> [-l]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+>  -c   groupname  [<TT
 CLASS="REPLACEABLE"
 ><I
->オプション</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->path</I
+>user</I
 ></TT
 >...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+>  -m   groupname  [<TT
+CLASS="REPLACEABLE"
+><I
+>user</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+>  -d   groupname </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -57,8 +72,11 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->path に指定したファイルないしディレクトリの名前と
-関連する情報を表示します。</P
+>Gfarm ファイルシステムにおけるグループ管理を行います．
+デフォルトでは登録グループを表示します．
+Gfarmファイルシステムの管理者は，-c，-m，-d
+オプションを指定することにより，それぞれグループ作成，
+グループメンバ変更，グループ削除を行うことができます．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -75,20 +93,11 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-a</CODE
+>-l</CODE
 ></DT
 ><DD
 ><P
->``.''で始まるパス名も表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-A</CODE
-></DT
-><DD
-><P
->``.''と``..''は表示しません。</P
+>グループとグループメンバの情報を表示します．</P
 ></DD
 ><DT
 ><CODE
@@ -97,8 +106,20 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->-l オプションと同時に指定した場合、更新時刻ではなく、ファイルの属
-性情報の変化した時刻を表示します。</P
+>グループの作成を行います．
+登録には初期グループメンバも指定することができます．
+Gfarmの管理者が実行可能です．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>グループメンバの変更を行います．
+変更したいグループ名とメンバのリスト指定します．
+Gfarmの管理者が実行可能です．</P
 ></DD
 ><DT
 ><CODE
@@ -107,36 +128,8 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->そのディレクトリに属する内容ではなく、ディレクトリ自身を表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-i</CODE
-></DT
-><DD
-><P
->inode 番号も表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-l</CODE
-></DT
-><DD
-><P
->ファイルのサイズ、所有者、グループ、更新時刻などの属性情報も
-表示します。</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-u</CODE
-></DT
-><DD
-><P
->-l オプションと同時に指定した場合、更新時刻ではなくアクセス時刻を
-表示します。</P
+>グループを消去します．
+Gfarmの管理者が実行可能です．</P
 ></DD
 ><DT
 ><CODE
@@ -145,7 +138,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->引数オプションを表示します。</P
+>引数オプションを表示します．</P
 ></DD
 ></DL
 ></DIV

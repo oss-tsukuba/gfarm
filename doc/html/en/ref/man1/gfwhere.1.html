@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfwhere&nbsp;--&nbsp;print a replica catalog of each Gfarm fragment</DIV
+>gfwhere&nbsp;--&nbsp;print replica locations</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,15 +37,10 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfwhere</B
-> [-I <TT
+> [-r, -R]  <TT
 CLASS="REPLACEABLE"
 ><I
->fragment-index</I
-></TT
->] [-s]  <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
+>path</I
 ></TT
 >... </P
 ></DIV
@@ -60,29 +55,9 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfwhere</B
-> prints a replica catalog of a Gfarm file specified by
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.  When the Gfarm file is a regular fragmented file,
-<B
-CLASS="COMMAND"
->gfwhere</B
-> prints in the following format.</P
-><P
-CLASS="LITERALLAYOUT"
->fragment&nbsp;index:&nbsp;filesystem&nbsp;node&nbsp;...</P
-><P
->When the Gfarm file is an executable file, <B
-CLASS="COMMAND"
->gfwhere</B
-> prints in the
-following format.</P
-><P
-CLASS="LITERALLAYOUT"
->architecture:&nbsp;filesystem&nbsp;node&nbsp;...</P
+> prints replica locations of specified
+files.  When -r or -R option is specified, prints replica locations of
+subentries in specified directories recursively.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -99,33 +74,11 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-I</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->fragment-index</I
-></TT
+>-r, -R</CODE
 ></DT
 ><DD
 ><P
->Specifies the fragment index to be displayed.  If the <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->
-is an executable file, an architecture name, for example,
-sparc-sun-solaris8, can be used to specify the executable architecture
-to be displayed.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-s</CODE
-></DT
-><DD
-><P
->Displays the size of each file fragment.</P
+>Displays subdirectories recursively.</P
 ></DD
 ><DT
 ><CODE

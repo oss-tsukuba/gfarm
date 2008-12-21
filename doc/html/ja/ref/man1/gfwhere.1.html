@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfwhere</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,15 +37,10 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfwhere</B
-> [-I <TT
+> [-r, -R]  <TT
 CLASS="REPLACEABLE"
 ><I
->フラグメント番号</I
-></TT
->] [-s]  <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
+>path</I
 ></TT
 >... </P
 ></DIV
@@ -58,18 +52,10 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->指定した Gfarm-URL を構成するファイルについて、レプリカの所在を表示
-します。</P
-><P
->フラグメント化されたファイルの場合、各行は、下記の形式になります。</P
-><P
-CLASS="LITERALLAYOUT"
->フラグメント番号:&nbsp;レプリカのあるホスト名....</P
-><P
->また、実行ファイルの場合、各行は、下記の形式になります。</P
-><P
-CLASS="LITERALLAYOUT"
->アーキテクチャ:&nbsp;レプリカのあるホスト名....</P
+>指定したファイルについて、レプリカの所在を表示します。
+-r あるいは -R オプションを付けると、
+指定されたディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -84,35 +70,19 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
-> <TT
-CLASS="PARAMETER"
-><I
->フラグメント番号</I
-></TT
+>-r, -R</CODE
 ></DT
 ><DD
 ><P
->レプリカの所在を表示するフラグメントを指定します。
-実行形式のファイルの場合には、このオプションで実行アーキ
-テクチャ(例 「sparc-sun-solaris8」) を指定することによっ
-て、指定したアーキテクチャのレプリカの所在を表示できます。</P
+>ディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-s</TT
-></DT
-><DD
-><P
->ファイル・フラグメントのサイズも表示します。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P

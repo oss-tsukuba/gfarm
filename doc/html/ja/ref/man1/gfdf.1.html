@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfdf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfdf&nbsp;--&nbsp;gfarm ディスク空き容量取得</DIV
+>gfdf&nbsp;--&nbsp;ディスク空き容量取得</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,18 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfdf</B
->  -H <VAR
+> [-a] [-D <TT
 CLASS="REPLACEABLE"
->ホスト指定ファイル</VAR
->  [-i]</P
-><P
-><B
-CLASS="COMMAND"
->gfdf</B
->  -h <VAR
-CLASS="REPLACEABLE"
->ホスト</VAR
->...  [-i]</P
+><I
+>ドメイン名</I
+></TT
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -61,7 +55,7 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfdf</B
-> は、指定した gfarm のファイルシステムノードの
+> は、Gfarmファイルシステムの
 ディスク空き容量を表示します。</P
 ></DIV
 ><DIV
@@ -77,51 +71,32 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-H</VAR
+>-a</CODE
+></DT
+><DD
+><P
+>Gfarmファイルシステム全体のディスク空き容量を表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-D</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
->ホスト指定ファイル</I
+>ドメイン名</I
 ></TT
 ></DT
 ><DD
 ><P
->ファイルシステムノードのホスト名のリストを記載したファイル名を指定します。
-ホスト名は、各行に一ホストずつ記述します。</P
-><P
->ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。</P
+>指定したドメイン名に含まれるファイルシステムノードの状態を表示します。</P
 ></DD
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-h</VAR
-> <TT
-CLASS="PARAMETER"
-><I
->ホスト名</I
-></TT
-></DT
-><DD
-><P
->指定したファイルシステムノードの表示を行います。
-このオプションは、複数回指定することができます。</P
-></DD
-><DT
-><VAR
-CLASS="OPTION"
->-i</VAR
-></DT
-><DD
-><P
->ディスク容量の代わりに、i-node の使用状況を表示します。</P
-></DD
-><DT
-><VAR
-CLASS="OPTION"
->-?</VAR
+>-?</CODE
 ></DT
 ><DD
 ><P
@@ -149,7 +124,7 @@ CLASS="REFENTRYTITLE"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
 ></DIV
