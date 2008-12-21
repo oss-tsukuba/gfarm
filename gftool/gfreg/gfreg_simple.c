@@ -12,6 +12,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "timer.h"
 #include "gfs_profile.h"
 #include "metadb_server.h" /* gfarm_host_info_get_by_name_alias */
@@ -127,6 +128,7 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t%s\n", "-h <hostname>");
 	fprintf(stderr, "\t%s\t%s\n", "-p", "turn on profiling");
+	fprintf(stderr, "\t%s\t%s\n", "-v", "verbose output");
 	exit(1);
 }
 
@@ -148,13 +150,16 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "h:p?")) != -1) {
+	while ((c = getopt(argc, argv, "h:pv?")) != -1) {
 		switch (c) {
 		case 'p':
 			gfs_profile_set();
 			break;
 		case 'h':
 			host = optarg;
+			break;
+		case 'v':
+			gflog_auth_set_verbose(1);
 			break;
 		case '?':
 		default:
