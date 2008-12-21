@@ -20,7 +20,7 @@
 <cmdsynopsis>
   <command>gfls</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -28,7 +28,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>List information of files or contents of directories specified by
-<parameter>Gfarm-URL</parameter>.</para>
+<parameter>path</parameter>.</para>
 
 </refsect1>
 

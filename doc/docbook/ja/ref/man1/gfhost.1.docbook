@@ -115,14 +115,13 @@
 
 <refsect1 id='functions'><title>FUNCTIONS</title>
 <para>
-<!-- XXX gfmd にメタデータサーバー機能を移したら、"LDAP" を除くこと -->
-  機能指定のうち、-c, -d, -M, -m, -R は LDAP メタデータサーバーのみを
+  機能指定のうち、-c, -d, -M, -m, -R はメタデータサーバーのみを
   アクセスし、登録されているホスト情報の追加、削除、表示、変更を行ないます。
 </para>
 <para>
   機能指定のうち、-H, -l, -M, および特に機能を指定しなかった場合は、
   ファイルシステムノードに関する情報を表示します。
-  このうち -M は LDAP メタデータサーバーのみをアクセスしますが、
+  このうち -M はメタデータサーバーのみをアクセスしますが、
   それ以外の機能はファイルシステムノードで動作している
   <command>gfsd</command> にもアクセスします。
   <command>gfsd</command> にアクセスする機能に関しては、そのアクセスに
@@ -222,8 +221,7 @@
       <para>
 	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc で
-	指定されたポートで、そのホストの <command>gfsd</command> へ
+	ホストが動作しているが、そのホストの <command>gfsd</command> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
@@ -253,8 +251,7 @@
       <para>
 	ホストが停止やネットワーク障害のためにアクセスできなかった場合、
 	ロードアベレージの部分に x.xx/x.xx/x.xx と表示します。
-	ホストが動作しているが、%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc で
-	指定されたポートで、そのホストの <command>gfsd</command> へ
+	ホストが動作しているが、そのホストの <command>gfsd</command> へ
 	アクセスできなかった場合には -.--/-.--/-.-- と表示します。
       </para>
       <para>
@@ -359,7 +356,7 @@
     <term><option>-i</option></term>
     <listitem>
       <para>
-	%%SYSCONFDIR%%/gfarm.conf ないし $HOME/.gfarmrc 中で「address_use」を指定すると、
+	%%SYSCONFDIR%%/gfarm2.conf ないし $HOME/.gfarm2rc 中で「address_use」を指定すると、
 	アクセスに用いるネットワークアドレスに優先順位をつけることができます。
 	gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
 	つけると、この指定を無視して <command>gfsd</command> にアクセス
@@ -467,7 +464,7 @@
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
   <citerefentry>
-  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>,
   <citerefentry>
   <refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum>

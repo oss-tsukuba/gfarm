@@ -117,9 +117,8 @@ the default function of <command>gfhost</command>.
 
 <refsect1 id='functions'><title>FUNCTIONS</title>
 <para>
-<!-- XXX "LDAP" should be removed, when metadata features are moved to gfmd -->
-  
-  Metadata in LDAP server will be accessed by function -c, -d, -M, -m or
+  Metadata in the metadata server will be accessed by function -c, -d,
+  -M, -m or
   -R. These functions add/delete/display/modify/restore host information
   in the metadata.
 </para>
@@ -232,9 +231,7 @@ the default function of <command>gfhost</command>.
 	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
-	cannot be accessed by the port number configured in
-	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-	displayed.
+	cannot be accessed, -.--/-.--/-.-- will be displayed.
       </para>
       <para>
 	The next field is the authentication method used with the host.
@@ -273,9 +270,7 @@ the default function of <command>gfhost</command>.
 	network problem, etc., x.xx/x.xx/x.xx will be displayed in
 	the load average field.
 	If the host is up, but <command>gfsd</command> on the host
-	cannot be accessed by the port number configured in
-	%%SYSCONFDIR%%/gfarm.conf or $HOME/.gfarmrc, -.--/-.--/-.-- will be
-	displayed.
+	cannot be accessed , -.--/-.--/-.-- will be displayed.
       </para>
       <para>
 	The next field is the authentication method used with the host.
@@ -382,8 +377,8 @@ the default function of <command>gfhost</command>.
     <term><option>-i</option></term>
     <listitem>
       <para>
-	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm.conf and
-	$HOME/.gfarmrc to give priorities of network addresses
+	There is an "address_use" directive in %%SYSCONFDIR%%/gfarm2.conf and
+	$HOME/.gfarm2rc to give priorities of network addresses
 	for gfarm access.
 	This directive works with the <command>gfhost</command> command,
 	but will be ignored, if you specified the -i option with
@@ -490,7 +485,7 @@ the default function of <command>gfhost</command>.
 <refsect1 id='see-also'><title>SEE ALSO</title>
 <para>
   <citerefentry>
-  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>,
   <citerefentry>
   <refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum>

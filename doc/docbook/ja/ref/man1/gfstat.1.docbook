@@ -18,7 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstat</command>
-	<arg choice='opt' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -26,8 +26,7 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 
-<para>gfarm-URL に指定したファイルあるいはディレクトリの情報を表示しま
-す．</para>
+<para>指定したファイルあるいはディレクトリの情報を表示します．</para>
 
 </refsect1>
 </refentry>

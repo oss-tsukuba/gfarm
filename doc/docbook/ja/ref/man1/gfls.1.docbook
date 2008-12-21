@@ -19,12 +19,12 @@
 <cmdsynopsis>
   <command>gfls</command>
     <arg choice='opt'><replaceable>オプション</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>Gfarm-URL に指定したファイルないしディレクトリの名前と
+<para>path に指定したファイルないしディレクトリの名前と
 関連する情報を表示します。</para>
 
 </refsect1>
