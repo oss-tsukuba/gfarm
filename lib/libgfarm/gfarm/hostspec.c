@@ -11,8 +11,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h> /* gfarm_host_is_in_domain() */
+
+#include "gfnetdb.h"
+
 #include "liberror.h"
 #include "hostspec.h"
 
@@ -274,7 +278,7 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 	if (gfarm_getaddrinfo(name, NULL, &hints, &res0) != 0)
 		return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_IS_NOT_RESOLVABLE);
 	for (res = res0; res; res = res->ai_next) {
-		if (res->ai_family =! addr->sa_family)
+		if (res->ai_family != addr->sa_family)
 			continue;
 		switch (res->ai_family) {
 		case AF_INET:
