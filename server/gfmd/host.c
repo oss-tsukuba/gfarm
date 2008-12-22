@@ -126,22 +126,23 @@ struct host *
 host_addr_lookup(const char *hostname, struct sockaddr *addr)
 {
 	struct host *h = host_lookup(hostname);
+#if 0
 	struct gfarm_hash_iterator it;
 	struct sockaddr_in *addr_in;
 	struct hostent *hp;
 	int i;
+#endif
 
 	if (h != NULL)
 		return (h);
 	if (addr->sa_family != AF_INET)
 		return (NULL);
 
-	return (NULL); 
+#if 0
 	/*
 	 * skip the following case since it is extraordinarily slow
 	 * when there are some nodes that cannot be resolved.
 	 */
-
 	addr_in = (struct sockaddr_in *)addr;
 
 	/* XXX FIXME - this is too damn slow */
@@ -157,6 +158,7 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 				return (h);
 		}
 	}
+#endif
 	return (NULL);
 }
 
