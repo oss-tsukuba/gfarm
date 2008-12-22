@@ -35,9 +35,6 @@
 /* Define to 1 if you have the `getdents' function. */
 #undef HAVE_GETDENTS
 
-/* Define to 1 if you have the `gethostbyname2' function. */
-#undef HAVE_GETHOSTBYNAME2
-
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
 
@@ -103,6 +100,9 @@
 
 /* Define to 1 if you have the `mkdtemp' function. */
 #undef HAVE_MKDTEMP
+
+/* getaddrinfo(3) and getnameinfo(3) are MT-Safe */
+#undef HAVE_MTSAFE_NETDB
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
