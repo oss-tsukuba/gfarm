@@ -448,10 +448,9 @@ compound_loop(struct peer *peer, int from_client, int skip_base, int level)
 	}
 }
 
-void *
-protocol_service(void *arg)
+void
+protocol_service(struct peer *peer)
 {
-	struct peer *peer = arg;
 	gfarm_error_t e, current_block = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t request;
 	int from_client;
@@ -470,9 +469,6 @@ protocol_service(void *arg)
 				break; /* finish */
 		}
 	}
-	peer_free(peer);
-	/* this return value won't be used, because this thread is detached */
-	return (NULL);
 }
 
 gfarm_error_t
@@ -546,6 +542,23 @@ peer_authorize(struct peer *peer)
 	return (e);
 }
 
+void *
+protocol_main(void *arg)
+{
+	struct peer *peer = arg;
+	gfarm_error_t e;
+
+	if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
+		gflog_warning("peer_authorize: %s", gfarm_error_string(e));
+	} else {
+		protocol_service(peer);
+	}
+	peer_free(peer);
+
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
 void
 main_loop(int accepting_socket)
 {
@@ -567,12 +580,8 @@ main_loop(int accepting_socket)
 		    GFARM_ERR_NO_ERROR) {
 			gflog_warning("peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
-		} else if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
-			gflog_warning("peer_authorize: %s",
-			    gfarm_error_string(e));
-			peer_free(peer);
-		} else if ((e = create_detached_thread(protocol_service, peer))
-		    != GFARM_ERR_NO_ERROR) {
+		} else if ((e = create_detached_thread(protocol_main, peer)) !=
+		    GFARM_ERR_NO_ERROR) {
 			gflog_warning("create_detached_thread: %s",
 			    gfarm_error_string(e));
 			peer_free(peer);

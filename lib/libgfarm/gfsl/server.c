@@ -17,6 +17,7 @@
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 
+#include "gfnetdb.h"
 #include "gfutil.h"
 
 #include "tcputil.h"
@@ -137,7 +138,7 @@ main(argc, argv)
      */
     while (1) {
 	pid_t pid;
-	struct hostent *hptr;
+	char hbuf[NI_MAXHOST];
 
 	fd = accept(bindFd, (struct sockaddr *)&remote, &remLen);
 	if (fd < 0) {
@@ -145,10 +146,9 @@ main(argc, argv)
 	    (void)close(bindFd);
 	    return 1;
 	}
-	hptr = gethostbyaddr(
-		&remote.sin_addr, sizeof(remote.sin_addr), AF_INET);
-	if (hptr != NULL)
-	    fprintf(stderr, "Connected from %s\n", hptr->h_name);
+	if (gfarm_getnameinfo((struct sockaddr *)&remote, remLen,
+			      hbuf, sizeof(hbuf), NULL, 0, 0) == 0)
+	    fprintf(stderr, "Connected from %s\n", hbuf);
 	pid = fork();
 	if (pid < 0) {
 	    (void)close(fd);

@@ -548,6 +548,20 @@ AC_ARG_WITH(gfarmd_username,
 [gfarmd_username="${withval}"], [gfarmd_username='nobody'])
 AC_SUBST(gfarmd_username)
 
+###
+### --without-mtsafe-netdb ... are getaddrinfo(3) and getnameinfo(3) MT-Safe?
+###
+
+AC_ARG_WITH(mtsafe_netdb,
+[  --without-mtsafe-netdb	getaddrinfo(3) and getnameinfo(3) are MT-Safe?
+				[[default=yes]]],
+[mtsafe_netdb="${withval}"], [mtsafe_netdb="yes"])
+
+case ${mtsafe_netdb} in
+no) :;;
+*)  AC_DEFINE(HAVE_MTSAFE_NETDB, 1, [getaddrinfo(3) and getnameinfo(3) are MT-Safe]);;
+esac
+
 ######
 ###### Checks for libraries.
 ######
@@ -597,7 +611,7 @@ yes)
         pthread_attr_setstacksize(&at, 64 * 1024);
     ], [
       AC_MSG_RESULT([yes])
-      AC_DEFINE(HAVE_PTHREAD_ATTR_SETSTACKSIZE, 1, [pthread_attr_setstacksize()  exists])
+      AC_DEFINE(HAVE_PTHREAD_ATTR_SETSTACKSIZE, 1, [pthread_attr_setstacksize() exists])
     ], [
       AC_MSG_RESULT([no])
     ])
@@ -1089,7 +1103,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf gethostbyname2 getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
+AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 

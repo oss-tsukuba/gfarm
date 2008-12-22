@@ -53,6 +53,11 @@ configure コマンドには，下記のオプションがあります．
   が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
   ともできます．
 
+・--without-mtsafe-netdb
+
+  ライブラリ関数 getaddrinfo(3) あるいは getnameinfo(3) が，マルチスレッド・
+  セーフではない場合に，指定が必要です．
+
 ・--prefix=ディレクトリ
 
   インストール先のディレクトリを指定します．このオプションを省略した場

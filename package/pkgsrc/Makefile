@@ -16,9 +16,10 @@ USE_PKGINSTALL=	yes
 USE_TOOLS+=	gmake # NetBSD-make works too, but pkgsrc supports non-NetBSD.
 USE_LIBTOOL=	yes
 GNU_CONFIGURE=	yes
-CONFIGURE_ARGS+=--sysconfdir=${PKG_SYSCONFDIR}
+# XXX what was version that getaddrinfo(3) and getnameinfo(3) became MT-Safe?
+CONFIGURE_ARGS+=--sysconfdir=${PKG_SYSCONFDIR} --without-mtsafe-netdb
 
-PGSQL_VERSIONS_ACCEPTED?=	81 80 # 74 # 7.4 has some minor problems
+PGSQL_VERSIONS_ACCEPTED?=	83 82 81 80 # 74 # 7.4 has some minor problems
 
 default_htmldir=${PREFIX}/share/doc/html/gfarm
 ja_mandir=	${PREFIX}/man/ja_JP.eucJP

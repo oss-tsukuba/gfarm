@@ -53,6 +53,12 @@ Options for configure:
   --with-globus-flavor=flavor option.
 
 
+  --without-mtsafe-netdb
+
+  Specifies if either getaddrinfo(3) or getnameinfo(3) library function
+  is not multi-thread safe.
+
+
   --prefix=directory
 
   Specifies a destination directory for installation.  The default is

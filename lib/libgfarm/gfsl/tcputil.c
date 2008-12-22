@@ -20,6 +20,7 @@
 
 #include <gfarm/error.h>
 
+#include "gfnetdb.h"
 #include "gfutil.h"
 
 #include "tcputil.h"
@@ -29,80 +30,52 @@
 #define	GFARM_OCTETS_PER_32BIT	4	/* 32/8 */
 #define	GFARM_OCTETS_PER_16BIT	2	/* 16/8 */
 
-static int	isNonBlock(int fd);
-
-static int
-isNonBlock(fd)
-     int fd;
-{
-    int stat = fcntl(fd, F_GETFL, 0);
-    if (stat < 0) {
-	gflog_error("fcntl: %s", strerror(errno));
-	return 0;
-    } else {
-	if (stat & O_NONBLOCK) {
-	    return 1;
-	} else {
-	    return 0;
-	}
-    }
-}
-
-
 int
 gfarmTCPConnectPortByHost(host, port)
      char *host;
      int port;
 {
-    struct hostent *h;
-    struct sockaddr_in sin;
-    int sock;
+    struct addrinfo hints, *res, *res0;
+    int sock, error, rv;
+    char sbuf[NI_MAXSERV];
 
-    /* XXX - thread unsafe */
-    h = gethostbyname(host);
-    if (h == NULL) {
-	gflog_warning("gethostbyname: %s: %s", host, hstrerror(h_errno));
+    snprintf(sbuf, sizeof(sbuf), "%u", port);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    error = gfarm_getaddrinfo(host, sbuf, &hints, &res0);
+    if (error != 0) {
+	gflog_warning("getaddrinfo: %s: %s", host, gai_strerror(error));
 	return (-1);
     }
-    if (h->h_addrtype != AF_INET) {
-	gflog_warning("gethostbyname: %s: unsupported address family", host);
-	return (-1);
-    }
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = h->h_addrtype;
-    memcpy(&sin.sin_addr, h->h_addr, sizeof(sin.sin_addr));
-    sin.sin_port = htons(port);
-
-    if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	gflog_error("socket: %s", strerror(errno));
-	return (-1);
-    }
-    fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
-
-    /* XXX - set socket options */
-
-    ReConnect:
-    errno = 0;
-    if (connect(sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
-	int saved_errno = errno;
-
-	if (saved_errno == EINTR) {
-	    goto ReConnect;
-	} else if (saved_errno == EINPROGRESS) {
-	    if (isNonBlock(sock) == 0) {
-		goto Error;
-	    } else {
-		/* XXX - should wait explicitly instead of sleep blindly */
-		sleep(1);
-		return (sock);
-	    }
-	} else {
-	    Error:
-	    close(sock);
-	    gflog_error("connect: %s", strerror(saved_errno));
-	    return (-1);
+    sock = -1;
+    for (res = res0; res != NULL; res = res->ai_next) {
+	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (sock < 0) {
+	    gflog_error("socket(%d, %d, %d): %s\n", (int)res->ai_family,
+		(int)res->ai_socktype, (int)res->ai_protocol, strerror(errno));
+	    continue;
 	}
+
+	while ((rv = connect(sock, res->ai_addr, res->ai_addrlen)) < 0 &&
+	       errno == EINTR)
+		;
+	if (rv < 0) {
+	    gflog_error("connect: %s\n", strerror(errno));
+	    close(sock);
+	    sock = -1;
+	    continue;
+	}
+
+	/* connected */
+
+	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
+
+	/* XXX - set socket options */
+
+	break;
     }
+    gfarm_freeaddrinfo(res0);
     return (sock);
 }
 
@@ -110,38 +83,41 @@ int
 gfarmTCPBindPort(port)
      int port;
 {
-    struct sockaddr_in sin;
-    int sock;
+    struct addrinfo hints, *res;
+    int sock, e;
     int one = 1;
+    char sbuf[NI_MAXSERV];
 
-    memset((void *)&sin, 0, sizeof(struct sockaddr_in));
-
-    if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-	gflog_error("socket: %s", strerror(errno));
+    snprintf(sbuf, sizeof(sbuf), "%u", port);
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+    e = gfarm_getaddrinfo(NULL, sbuf, &hints, &res);
+    if (e) {
+	glog_error("getaddrinfo(port = %u): %s\n", port, gai_strerror(e));
 	return -1;
     }
+    if (res == NULL)
+	return -1;
 
-    sin.sin_family = AF_INET;
-    sin.sin_port = htons((unsigned short)port);
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) != 0) {
+    sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sock < 0) {
+	gflog_error("socket: %s", strerror(errno));
+    } else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) != 0) {
 	gflog_error("setsockopt: %s", strerror(errno));
 	close(sock);
-	return -1;
-    }
-    
-    if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) != 0) {
+	sock = -1;
+    } else if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
 	gflog_error("bind: %s", strerror(errno));
 	close(sock);
-	return -1;
-    }
-
-    if (listen(sock, MAX_BACKLOG) != 0) {
+	sock = -1;
+    } else if (listen(sock, MAX_BACKLOG) != 0) {
 	gflog_error("listen: %s", strerror(errno));
 	close(sock);
-	return -1;
+	sock = -1;
     }
+    gfarm_freeaddrinfo(res);
 
     return sock;
 }
@@ -153,20 +129,22 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
      int *portPtr;
      char **hostPtr;
 {
-    struct sockaddr_in sin;
+    struct sockaddr sin;
     socklen_t slen = sizeof(sin);
-    struct hostent *hptr;
+    char hbuf[NI_MAXHOST];
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
 	gflog_error("getpeername: %s", strerror(errno));
 	return (-1);
     }
+    if (hostPtr != NULL) {
+	if (gfarm_getnameinfo((struct sockaddr *)&sin, sin.sin_len,
+			      hbuf, sizeof(hbuf), NULL, 0, 0) != 0)
+	    rerturn (-1);
+	*hostPtr = strdup(hbuf);
+    }
     if (portPtr != NULL)
 	*portPtr = (int)ntohs(sin.sin_port);
-    if (hostPtr != NULL &&
-	(hptr = gethostbyaddr(&sin.sin_addr, sizeof(sin.sin_addr), AF_INET))
-	!= NULL)
-	*hostPtr = strdup(hptr->h_name);
     return (0);
 }
 

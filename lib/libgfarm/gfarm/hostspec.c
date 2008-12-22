@@ -261,44 +261,37 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 gfarm_error_t
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {
-	int i, addrlen, addrfamily = addr->sa_family;
-	char *addrp, *name;
-	struct hostent *hp;
+	struct addrinfo hints, *res, *res0;
+	struct sockaddr_in *sin1, *sin2;
+	char *s, name[NI_MAXHOST];
 
-	switch (addrfamily) {
-	case AF_INET:
-		addrp = (char *)&((struct sockaddr_in *)addr)->sin_addr;
-		addrlen = sizeof(struct in_addr);
-		break;
-	default:
-		return (gfarm_errno_to_error(EAFNOSUPPORT));
-	}
-	hp = gethostbyaddr(addrp, addrlen, addrfamily);
-	if (hp == NULL)
+	if (gfarm_getnameinfo(addr, sizeof(*addr), name, sizeof(name),
+	    NULL, 0, NI_NAMEREQD) != 0)
 		return(GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME);
-	name = strdup(hp->h_name);
-	if (name == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-#ifdef HAVE_GETHOSTBYNAME2
-	hp = gethostbyname2(name, addrfamily);
-#else
-	hp = gethostbyname(name);
-#endif
-	if (hp == NULL) {
-		free(name);
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = addr->sa_family;
+	if (gfarm_getaddrinfo(name, NULL, &hints, &res0) != 0)
 		return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_IS_NOT_RESOLVABLE);
-	}
-	if (hp->h_addrtype != addrfamily || hp->h_length != addrlen) {
-		free(name);
-		return (GFARM_ERRMSG_INVALID_NAME_RECORD);
-	}
-	for (i = 0; hp->h_addr_list[i] != NULL; i++) {
-		if (memcmp(hp->h_addr_list[i], addrp, addrlen) == 0) {
-			*namep = name;
-			return (GFARM_ERR_NO_ERROR); /* success */
+	for (res = res0; res; res = res->ai_next) {
+		if (res->ai_family =! addr->sa_family)
+			continue;
+		switch (res->ai_family) {
+		case AF_INET:
+			sin1 = (struct sockaddr_in *)res->ai_addr;
+			sin2 = (struct sockaddr_in *)addr;
+			if (sin1->sin_addr.s_addr == sin2->sin_addr.s_addr) {
+				s = strdup(name);
+				gfarm_freeaddrinfo(res0);
+				if (s == NULL)
+					return (GFARM_ERR_NO_MEMORY);
+				*namep = s;
+				return (GFARM_ERR_NO_ERROR); /* success */
+			}
+			break;
 		}
 	}
-	free(name);
+	gfarm_freeaddrinfo(res0);
 	return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_DOES_NOT_MATCH);
 }
 

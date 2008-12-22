@@ -11,7 +11,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <time.h>
-#include "hash.h"
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -19,6 +19,10 @@
 #include <gfarm/host_info.h>
 #include <gfarm/user_info.h>
 #include <gfarm/group_info.h>
+
+#include "hash.h"
+#include "gfnetdb.h"
+
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
@@ -62,57 +66,45 @@ gfm_client_connection0(const char *hostname, int port,
 	struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
-	char *host_fqdn;
 	int sock;
-	struct hostent *hp;
-	struct sockaddr_in peer_addr;
+	struct addrinfo hints, *res;
+	char sbuf[NI_MAXSERV];
 
-	hp = gethostbyname(hostname);
-	if (hp == NULL || hp->h_addrtype != AF_INET)
+	snprintf(sbuf, sizeof(sbuf), "%u", port);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_CANONNAME;
+	if (gfarm_getaddrinfo(hostname, sbuf, &hints, &res) != 0)
 		return (GFARM_ERR_UNKNOWN_HOST);
-	memset(&peer_addr, 0, sizeof(peer_addr));
-	memcpy(&peer_addr.sin_addr, hp->h_addr,
-	       sizeof(peer_addr.sin_addr));
-	peer_addr.sin_family = hp->h_addrtype;
-	peer_addr.sin_port = htons(port);
 
-	sock = socket(PF_INET, SOCK_STREAM, 0);
+	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (sock == -1)
 		return (gfarm_errno_to_error(errno));
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	/* XXX - how to report setsockopt(2) failure ? */
-	gfarm_sockopt_apply_by_name_addr(sock, hp->h_name,
-	    (struct sockaddr *)&peer_addr);
+	gfarm_sockopt_apply_by_name_addr(sock,
+	    res->ai_canonname, res->ai_addr);
 
-	if (connect(sock, (struct sockaddr *)&peer_addr, sizeof(peer_addr))
-	    < 0) {
+	if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
 		close(sock);
+		gfarm_freeaddrinfo(res);
 		return (gfarm_errno_to_error(errno));
 	}
 	e = gfp_xdr_new_socket(sock, &gfm_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		close(sock);
+		gfarm_freeaddrinfo(res);
 		return (e);
-	}
-	/*
-	 * the reason why we call strdup() is because
-	 * gfarm_auth_request() may break static work area of `*hp'
-	 */
-	host_fqdn = strdup(hp->h_name);
-	if (host_fqdn == NULL) {
-		gfp_xdr_free(gfm_server->conn);
-		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = gfarm_auth_request(gfm_server->conn,
-	    GFM_SERVICE_TAG, host_fqdn,
-	    (struct sockaddr *)&peer_addr, gfarm_get_auth_id_type(),
+	    GFM_SERVICE_TAG, res->ai_canonname,
+	    res->ai_addr, gfarm_get_auth_id_type(),
 	    &gfm_server->auth_method);
-	free(host_fqdn);
-	if (e != GFARM_ERR_NO_ERROR) {
+	gfarm_freeaddrinfo(res);
+	if (e != GFARM_ERR_NO_ERROR)
 		gfp_xdr_free(gfm_server->conn);
-		return (e);
-	}
 	return (GFARM_ERR_NO_ERROR);
 }
 

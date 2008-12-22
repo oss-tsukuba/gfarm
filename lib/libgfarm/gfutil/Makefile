@@ -12,6 +12,7 @@ LIBRARY_RESULT = # do not install
 SRCS =	alloc.c \
 	daemon.c \
 	gfevent.c \
+	gfnetdb.c \
 	hash.c \
 	limit.c \
 	logutil.c \
@@ -21,6 +22,7 @@ SRCS =	alloc.c \
 OBJS =	alloc.lo \
 	daemon.lo \
 	gfevent.lo \
+	gfnetdb.lo \
 	hash.lo \
 	limit.lo \
 	logutil.lo \
@@ -39,6 +41,7 @@ include $(top_srcdir)/makes/lib.mk
 $(OBJS): $(DEPGFARMINC)
 daemon.lo: gfutil.h
 gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h
+gfnetdb.lo: gfnetdb.h
 hash.lo: gfutil.h hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h
