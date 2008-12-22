@@ -24,7 +24,7 @@
 #include "gfarm_auth.h"
 #endif
 
-pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 

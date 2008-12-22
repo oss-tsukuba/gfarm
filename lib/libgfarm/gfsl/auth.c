@@ -28,10 +28,10 @@ static struct gfarm_hash_table *authTable = NULL;
 static struct gfarm_hash_table *userToDNTable = NULL;
 #endif
 
-pthread_mutex_t authTable_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t authTable_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static struct stat last_map_st;	/* keep last modified time of mapfile */
-pthread_mutex_t map_mtime_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t map_mtime_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #if 0
 static void

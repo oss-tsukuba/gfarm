@@ -41,8 +41,8 @@ static gss_cred_id_t acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 static int initiatorInitialized = 0;
 static int acceptorInitialized = 0;
 
-pthread_mutex_t initiator_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t acceptor_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t initiator_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t acceptor_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Communication option read from configuration file.
