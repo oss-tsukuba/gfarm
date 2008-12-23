@@ -595,6 +595,7 @@ fi
 %endif
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man3/gfarm.3.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_strings_free_deeply.3.html
@@ -645,6 +646,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_unlink.3.html
 %{html_prefix}/en/ref/man3/gfs_unlink_section.3.html
 %{html_prefix}/en/ref/man3/gfs_utimes.3.html
+%endif
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
@@ -706,6 +708,7 @@ fi
 %endif
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man3/gfarm.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
 %{html_prefix}/ja/ref/man3/gfarm_import_fragment_config_read.3.html
@@ -767,6 +770,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_unlink.3.html
 %{html_prefix}/ja/ref/man3/gfs_unlink_section.3.html
 %{html_prefix}/ja/ref/man3/gfs_utimes.3.html
+%endif
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
