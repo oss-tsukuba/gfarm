@@ -355,6 +355,7 @@ fi
 %{man_prefix}/man1/gfssh.1.gz
 %endif
 %{man_prefix}/man1/gfstat.1.gz
+%{man_prefix}/man1/gfstatus.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfusage.1.gz
 %endif
@@ -465,6 +466,7 @@ fi
 %{man_prefix}/ja/man1/gfssh.1.gz
 %endif
 %{man_prefix}/ja/man1/gfstat.1.gz
+%{man_prefix}/ja/man1/gfstatus.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfusage.1.gz
 %endif
@@ -586,6 +588,7 @@ fi
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfstat.1.html
+%{html_prefix}/en/ref/man1/gfstatus.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfusage.1.html
 %endif
@@ -699,6 +702,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %endif
 %{html_prefix}/ja/ref/man1/gfstat.1.html
+%{html_prefix}/ja/ref/man1/gfstatus.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfusage.1.html
 %endif
@@ -880,8 +884,8 @@ fi
 %{prefix}/bin/gfsshl
 %endif
 %{prefix}/bin/gfstat
-%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfstatus
+%if %{gfarm_v2_not_yet}
 %{prefix}/bin/gftest
 %endif
 %{prefix}/bin/gfwhere
