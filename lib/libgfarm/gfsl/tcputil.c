@@ -95,7 +95,7 @@ gfarmTCPBindPort(port)
     hints.ai_flags = AI_PASSIVE;
     e = gfarm_getaddrinfo(NULL, sbuf, &hints, &res);
     if (e) {
-	glog_error("getaddrinfo(port = %u): %s\n", port, gai_strerror(e));
+	gflog_error("getaddrinfo(port = %u): %s\n", port, gai_strerror(e));
 	return -1;
     }
     if (res == NULL)
@@ -129,7 +129,7 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
      int *portPtr;
      char **hostPtr;
 {
-    struct sockaddr sin;
+    struct sockaddr_in sin;
     socklen_t slen = sizeof(sin);
     char hbuf[NI_MAXHOST];
 
@@ -138,9 +138,9 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
 	return (-1);
     }
     if (hostPtr != NULL) {
-	if (gfarm_getnameinfo((struct sockaddr *)&sin, sin.sin_len,
+	if (gfarm_getnameinfo((struct sockaddr *)&sin, slen,
 			      hbuf, sizeof(hbuf), NULL, 0, 0) != 0)
-	    rerturn (-1);
+	    return (-1);
 	*hostPtr = strdup(hbuf);
     }
     if (portPtr != NULL)
