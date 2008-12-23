@@ -313,22 +313,29 @@ fi
 %{man_prefix}/man1/gfarm_agent.1.gz
 %{man_prefix}/man1/gfcd.1.gz
 %endif
+%{man_prefix}/man1/gfchgrp.1.gz
+%{man_prefix}/man1/gfchmod.1.gz
+%{man_prefix}/man1/gfchown.1.gz
 %{man_prefix}/man1/gfdf.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfexec.1.gz
 %{man_prefix}/man1/gfexport.1.gz
 %{man_prefix}/man1/gfgrep.1.gz
+%endif
+%{man_prefix}/man1/gfgroup.1.gz
 %{man_prefix}/man1/gfhost.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfimport_fixed.1.gz
 %{man_prefix}/man1/gfimport_text.1.gz
 %endif
 %{man_prefix}/man1/gfkey.1.gz
-%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfls.1.gz
-%endif
 %{man_prefix}/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfmpirun_p4.1.gz
+%endif
+%{man_prefix}/man1/gfmv.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfps.1.gz
 %{man_prefix}/man1/gfpwd.1.gz
 %{man_prefix}/man1/gfrcmd.1.gz
@@ -346,8 +353,13 @@ fi
 %{man_prefix}/man1/gfsched.1.gz
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
+%endif
 %{man_prefix}/man1/gfstat.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfusage.1.gz
+%endif
+%{man_prefix}/man1/gfuser.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfwc.1.gz
 %endif
 %{man_prefix}/man1/gfwhere.1.gz
@@ -411,22 +423,29 @@ fi
 %{man_prefix}/ja/man1/gfarm_agent.1.gz
 %{man_prefix}/ja/man1/gfcd.1.gz
 %endif
+%{man_prefix}/ja/man1/gfchgrp.1.gz
+%{man_prefix}/ja/man1/gfchmod.1.gz
+%{man_prefix}/ja/man1/gfchown.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfexec.1.gz
 %{man_prefix}/ja/man1/gfexport.1.gz
 %{man_prefix}/ja/man1/gfgrep.1.gz
+%endif
+%{man_prefix}/ja/man1/gfgroup.1.gz
 %{man_prefix}/ja/man1/gfhost.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfimport_fixed.1.gz
 %{man_prefix}/ja/man1/gfimport_text.1.gz
 %endif
 %{man_prefix}/ja/man1/gfkey.1.gz
-%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfls.1.gz
-%endif
 %{man_prefix}/ja/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfmpirun_p4.1.gz
+%endif
+%{man_prefix}/ja/man1/gfmv.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfps.1.gz
 %{man_prefix}/ja/man1/gfpwd.1.gz
 %{man_prefix}/ja/man1/gfrcmd.1.gz
@@ -444,8 +463,13 @@ fi
 %{man_prefix}/ja/man1/gfsched.1.gz
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
+%endif
 %{man_prefix}/ja/man1/gfstat.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfusage.1.gz
+%endif
+%{man_prefix}/ja/man1/gfuser.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfwc.1.gz
 %endif
 %{man_prefix}/ja/man1/gfwhere.1.gz
@@ -516,36 +540,59 @@ fi
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
-%if %{gfarm_v2_not_yet}
 %{html_prefix}/index.html
 %{html_prefix}/en/ref/index.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfarm_agent.1.html
 %{html_prefix}/en/ref/man1/gfcd.1.html
+%endif
+%{html_prefix}/en/ref/man1/gfchgrp.1.html
+%{html_prefix}/en/ref/man1/gfchmod.1.html
+%{html_prefix}/en/ref/man1/gfchown.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfexec.1.html
 %{html_prefix}/en/ref/man1/gfexport.1.html
 %{html_prefix}/en/ref/man1/gfgrep.1.html
+%endif
+%{html_prefix}/en/ref/man1/gfgroup.1.html
 %{html_prefix}/en/ref/man1/gfhost.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/en/ref/man1/gfimport_text.1.html
+%endif
 %{html_prefix}/en/ref/man1/gfkey.1.html
 %{html_prefix}/en/ref/man1/gfls.1.html
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfmpirun_p4.1.html
+%endif
+%{html_prefix}/en/ref/man1/gfmv.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfps.1.html
 %{html_prefix}/en/ref/man1/gfpwd.1.html
 %{html_prefix}/en/ref/man1/gfrcmd.1.html
 %{html_prefix}/en/ref/man1/gfreg.1.html
+%endif
 %{html_prefix}/en/ref/man1/gfrep.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfrm.1.html
+%endif
 %{html_prefix}/en/ref/man1/gfrmdir.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfront.1.html
 %{html_prefix}/en/ref/man1/gfrun.1.html
 %{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
+%endif
 %{html_prefix}/en/ref/man1/gfstat.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfusage.1.html
+%endif
+%{html_prefix}/en/ref/man1/gfuser.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfwc.1.html
+%endif
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
 %{html_prefix}/en/ref/man3/gfarm.3.html
@@ -598,7 +645,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_unlink.3.html
 %{html_prefix}/en/ref/man3/gfs_unlink_section.3.html
 %{html_prefix}/en/ref/man3/gfs_utimes.3.html
-%{html_prefix}/en/ref/man5/gfarm.conf.5.html
+%{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
@@ -606,33 +653,57 @@ fi
 %{html_prefix}/en/user/samba-gfarmfs.html
 # XXX NOTYET %{html_prefix}/en/user/samba-hook.html
 %{html_prefix}/ja/ref/index.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
 %{html_prefix}/ja/ref/man1/gfcd.1.html
+%endif
+%{html_prefix}/ja/ref/man1/gfchgrp.1.html
+%{html_prefix}/ja/ref/man1/gfchmod.1.html
+%{html_prefix}/ja/ref/man1/gfchown.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfexec.1.html
 %{html_prefix}/ja/ref/man1/gfexport.1.html
 %{html_prefix}/ja/ref/man1/gfgrep.1.html
+%endif
+%{html_prefix}/ja/ref/man1/gfgroup.1.html
 %{html_prefix}/ja/ref/man1/gfhost.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/ja/ref/man1/gfimport_text.1.html
+%endif
 %{html_prefix}/ja/ref/man1/gfkey.1.html
 %{html_prefix}/ja/ref/man1/gfls.1.html
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfmpirun_p4.1.html
+%endif
+%{html_prefix}/ja/ref/man1/gfmv.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfps.1.html
 %{html_prefix}/ja/ref/man1/gfpwd.1.html
 %{html_prefix}/ja/ref/man1/gfrcmd.1.html
 %{html_prefix}/ja/ref/man1/gfreg.1.html
+%endif
 %{html_prefix}/ja/ref/man1/gfrep.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfrm.1.html
+%endif
 %{html_prefix}/ja/ref/man1/gfrmdir.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfront.1.html
 %{html_prefix}/ja/ref/man1/gfrun.1.html
 %{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
+%endif
 %{html_prefix}/ja/ref/man1/gfstat.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfusage.1.html
+%endif
+%{html_prefix}/ja/ref/man1/gfuser.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfwc.1.html
+%endif
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
 %{html_prefix}/ja/ref/man3/gfarm.3.html
@@ -696,7 +767,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_unlink.3.html
 %{html_prefix}/ja/ref/man3/gfs_unlink_section.3.html
 %{html_prefix}/ja/ref/man3/gfs_utimes.3.html
-%{html_prefix}/ja/ref/man5/gfarm.conf.5.html
+%{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/export-gfarm.html
@@ -706,7 +777,6 @@ fi
 %{html_prefix}/ja/user/samba-hook.html
 %{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/pic/gfarm-logo.gif
-%endif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
