@@ -1,0 +1,33 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfstatus.1'>
+
+<refentryinfo><date>19 Dec 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfstatus</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfstatus</refname>
+<refpurpose>display Gfarm configuration status</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfstatus</command>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><command>gfstatus</command> displays information about the
+Gfarm file system.</para>
+
+</refsect1>
+</refentry>
+

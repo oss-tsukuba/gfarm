@@ -12,6 +12,7 @@ DOCBOOK = \
 	gfrep.1 \
 	gfrmdir.1 \
 	gfstat.1 \
+	gfstatus.1 \
 	gfuser.1 \
 	gfwhere.1 \
 	gfwhoami.1

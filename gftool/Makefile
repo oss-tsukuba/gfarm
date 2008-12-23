@@ -21,6 +21,7 @@ SUBDIRS = \
 	gfrm \
 	gfrmdir \
 	gfstat \
+	gfstatus \
 	gfuser \
 	gfwhere \
 	gfwhoami \
@@ -37,7 +38,6 @@ SUBDIRS = \
 #	gfps \
 #	gfq \
 #	gfrun \
-#	gfstatus \
 #	gftest \
 #	gfusage \
 #	example \

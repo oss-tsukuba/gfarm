@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/auth.h $(GFARMLIB_SRCDIR)/agent_wrap.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/auth.h
