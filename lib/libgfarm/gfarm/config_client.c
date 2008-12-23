@@ -413,7 +413,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfarm_metadb_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "connecting gfmd: %s\n",
+		fprintf(stderr, "connecting gfmd at %s:%d: %s\n",
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
 		    gfarm_error_string(e));
 		exit(1);
 	}
