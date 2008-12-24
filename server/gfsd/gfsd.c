@@ -2844,6 +2844,43 @@ rpc_reply:
 }
 #endif /* not yet in gfarm v2 */
 
+static void
+gfm_client_connect_with_reconnection()
+{
+	gfarm_error_t e;
+	unsigned int sleep_interval = 10;	/* 10 sec */
+	unsigned int sleep_max_interval = 640;	/* about 10 min */
+
+	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+	    gfarm_metadb_server_port, &gfm_server);
+	while (e != GFARM_ERR_NO_ERROR) {
+		/* suppress excessive log */
+		if (sleep_interval < sleep_max_interval)
+			gflog_error("connecting to gfmd at %s:%d failed, "
+			    "sleep %d sec: %s", gfarm_metadb_server_name,
+			    gfarm_metadb_server_port, sleep_interval,
+			    gfarm_error_string(e));
+		sleep(sleep_interval);
+		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+			gfarm_metadb_server_port, &gfm_server);
+		if (sleep_interval < sleep_max_interval)
+			sleep_interval *= 2;
+	}
+	gfarm_metadb_set_server(gfm_server);
+	/*
+	 * If canonical_self_name is specified (by the command-line
+	 * argument), send the hostname to identify myself.  If not
+	 * sending the hostname, the canonical name will be decided by
+	 * the gfmd using the reverse lookup of the connected IP
+	 * address.
+	 */
+	if (canonical_self_name != NULL &&
+	    (e = gfm_client_hostname_set(gfm_server, canonical_self_name))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error("cannot set canonical hostname of this node "
+		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
+}
+
 void
 server(int client_fd, char *client_name, struct sockaddr *client_addr)
 {
@@ -2856,16 +2893,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	enum gfarm_auth_method auth_method;
 	struct gfarm_user_info user;
 
-	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfm_server);
-	if (e != GFARM_ERR_NO_ERROR)
-		fatal("connecting to gfmd: %s", gfarm_error_string(e));
-	gfarm_metadb_set_server(gfm_server);
-	/* set the hostname just in case */
-	e = gfm_client_hostname_set(gfm_server, canonical_self_name);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("cannot set canonical hostname of this node "
-		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
+	gfm_client_connect_with_reconnection();
 
 	if (client_name == NULL) { /* i.e. not UNIX domain socket case */
 		char *s;
@@ -3067,34 +3095,6 @@ datagram_server(int sock)
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
-static void
-try_to_reconnect()
-{
-	gfarm_error_t e;
-	unsigned int sleep_interval = 10;	/* 10 sec */
-	unsigned int sleep_max_interval = 640;	/* about 10 min */
-
-	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfm_server);
-	while (e != GFARM_ERR_NO_ERROR) {
-		/* suppress excessive log */
-		if (sleep_interval < sleep_max_interval)
-			gflog_error("reconnection failed, sleep %d sec: %s",
-				    sleep_interval, gfarm_error_string(e));
-		sleep(sleep_interval);
-		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
-			gfarm_metadb_server_port, &gfm_server);
-		if (sleep_interval < sleep_max_interval)
-			sleep_interval *= 2;
-	}
-	gfarm_metadb_set_server(gfm_server);
-	/* set the hostname just in case */
-	e = gfm_client_hostname_set(gfm_server, canonical_self_name);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("cannot set canonical hostname of this node "
-		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
-}
-
 void
 back_channel_server(void)
 {
@@ -3116,7 +3116,7 @@ retry:
 			gflog_error("back channel disconnected");
 			gfm_client_connection_free(gfm_server);
 			gfm_server = NULL;
-			try_to_reconnect();
+			gfm_client_connect_with_reconnection();
 			goto retry;
 		}
 		else if (e != GFARM_ERR_NO_ERROR)
@@ -3342,18 +3342,17 @@ main(int argc, char **argv)
 {
 	struct sockaddr_in client_addr, *self_sockaddr_array;
 	struct sockaddr_un client_local_addr;
-	gfarm_error_t e, e2;
-	char *config_file = NULL;
+	gfarm_error_t e;
+	char *config_file = NULL, *self_hostname;
 	char *listen_addrname = NULL, *pid_file = NULL;
 	char *local_gfsd_user;
-	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int syslog_level = -1;
 	struct accepting_sockets accepting;
 	struct in_addr *self_addresses, listen_address;
-	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
+	int table_size, self_addresses_count, ch, i, nfound, max_fd, self_port;
 	struct sigaction sa;
 	fd_set requests;
 	struct stat sb;
@@ -3460,59 +3459,56 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
-	/* XXX FIXME - if failed, should report it to syslog, and retry */
-	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfm_server);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "connecting gfmd: %s\n",
-		    gfarm_error_string(e));
-		exit(1);
-	}
-	gfarm_metadb_set_server(gfm_server);
-	/*
-	 * if canonical_self_name is specified by the command-line
-	 * argument, send the hostname to gfmd for gfmd to accept a
-	 * connection from a gfsd in private networks.
-	 */
-	if (canonical_self_name != NULL &&
-	    (e = gfm_client_hostname_set(gfm_server, canonical_self_name))
-	    != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr,
-		    "cannot set canonical hostname of this node (%s): %s\n",
-		    canonical_self_name, gfarm_error_string(e));
-		exit(1);
-	}
-	if (canonical_self_name == NULL &&
-	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name, &p))
-	    != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr,
-		    "cannot get canonical hostname of this node (%s): %s\n",
-		    gfarm_host_get_self_name(), gfarm_error_string(e));
-		exit(1);
-	}
-	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
-	{	
-		const char *n = canonical_self_name;
-
-		e = gfm_client_host_info_get_by_names(gfm_server,
-		    1, &n, &e2, &self_info);
-	}
-	if (e != GFARM_ERR_NO_ERROR)
-		e = e2;
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr,
-		    "can't find canonical hostname \"%s\" in metadata: %s\n",
-		    canonical_self_name, gfarm_error_string(e));
-		exit(1);
-	}
-
 	/* sanity check on a spool directory */
 	if (stat(gfarm_spool_root, &sb) == -1)
 		gflog_fatal_errno("%s", gfarm_spool_root);
 	else if (!S_ISDIR(sb.st_mode))
 		gflog_fatal("%s: %s", gfarm_spool_root,
 		    gfarm_error_string(GFARM_ERR_NOT_A_DIRECTORY));
+
+	if (pid_file != NULL) {
+		/*
+		 * We do this before calling gfarm_daemon()
+		 * to print the error message to stderr.
+		 */
+		seteuid(0);
+		pid_fp = fopen(pid_file, "w");
+		seteuid(gfsd_uid);
+		if (pid_fp == NULL)
+			accepting_fatal_errno(pid_file);
+	}
+
+	if (!debug_mode) {
+		gflog_syslog_open(LOG_PID, syslog_facility);
+		gfarm_daemon(0, 0);
+	}
+
+	/* We do this after calling gfarm_daemon(), because it changes pid. */
+	master_gfsd_pid = getpid();
+	sa.sa_handler = cleanup_handler;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGHUP, &sa, NULL); /* XXX - need to restart gfsd */
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
+	if (pid_file != NULL) {
+		fprintf(pid_fp, "%ld\n", (long)master_gfsd_pid);
+		fclose(pid_fp);
+	}
+
+	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
+	gfm_client_connect_with_reconnection();
+	e = gfarm_host_get_canonical_self_name(&self_hostname, &self_port);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr,
+		    "cannot get canonical hostname of %s, ask admin to "
+		    "register this node in Gfarm metadata server: %s\n",
+		    gfarm_host_get_self_name(), gfarm_error_string(e));
+		exit(1);
+	}
+	if (canonical_self_name == NULL)
+		canonical_self_name = self_hostname;
 
 	seteuid(0);
 
@@ -3547,17 +3543,17 @@ main(int argc, char **argv)
 		    sizeof(self_sockaddr_array[i]));
 		self_sockaddr_array[i].sin_family = AF_INET;
 		self_sockaddr_array[i].sin_addr = self_addresses[i];
-		self_sockaddr_array[i].sin_port = htons(self_info.port);
+		self_sockaddr_array[i].sin_port = htons(self_port);
 	}
 
 	accepting.tcp_sock = open_accepting_tcp_socket(
-	    listen_address, self_info.port);
+	    listen_address, self_port);
 	/* sets accepting.local_socks_count and accepting.local_socks */
 	open_accepting_local_sockets(
-	    self_addresses_count, self_addresses, self_info.port,
+	    self_addresses_count, self_addresses, self_port,
 	    &accepting);
 	accepting.udp_socks = open_datagram_service_sockets(
-	    self_addresses_count, self_addresses, self_info.port);
+	    self_addresses_count, self_addresses, self_port);
 	accepting.udp_socks_count = self_addresses_count;
 
 	max_fd = accepting.tcp_sock;
@@ -3572,38 +3568,7 @@ main(int argc, char **argv)
 	if (max_fd > FD_SETSIZE)
 		accepting_fatal("too big socket file descriptor: %d", max_fd);
 
-	if (pid_file != NULL) {
-		/*
-		 * We do this before calling gfarm_daemon()
-		 * to print the error message to stderr.
-		 */
-		seteuid(0);
-		pid_fp = fopen(pid_file, "w");
-		seteuid(gfsd_uid);
-		if (pid_fp == NULL)
-			accepting_fatal_errno(pid_file);
-	}
-
 	seteuid(gfsd_uid);
-
-	if (!debug_mode) {
-		gflog_syslog_open(LOG_PID, syslog_facility);
-		gfarm_daemon(0, 0);
-	}
-
-	/* We do this after calling gfarm_daemon(), because it changes pid. */
-	master_gfsd_pid = getpid();
-	sa.sa_handler = cleanup_handler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sigaction(SIGHUP, &sa, NULL); /* XXX - need to restart gfsd */
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
-
-	if (pid_file != NULL) {
-		fprintf(pid_fp, "%ld\n", (long)master_gfsd_pid);
-		fclose(pid_fp);
-	}
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
 	/* XXX - kluge for GFS_PROTO_STATFS for now */
