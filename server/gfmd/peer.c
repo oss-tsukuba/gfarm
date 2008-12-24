@@ -66,7 +66,7 @@ peer_table_unlock(void)
 	int err = pthread_mutex_unlock(&peer_table_mutex);
 
 	if (err != 0)
-		gflog_warning("peer_table_lock: %s", strerror(err));
+		gflog_warning("peer_table_unlock: %s", strerror(err));
 }
 
 void
