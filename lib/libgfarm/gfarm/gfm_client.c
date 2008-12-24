@@ -105,7 +105,7 @@ gfm_client_connection0(const char *hostname, int port,
 	gfarm_freeaddrinfo(res);
 	if (e != GFARM_ERR_NO_ERROR)
 		gfp_xdr_free(gfm_server->conn);
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
