@@ -72,7 +72,6 @@ gfarmAuthInitialize(usermapFile)
         if (stat(GRID_MAPFILE, &last_map_st) < 0) {
 	    gflog_auth_error("stat failed %s.", GRID_MAPFILE);
         }
-	    gflog_auth_error("stat  %ld", last_map_st.st_mtime);
     }
     pthread_mutex_unlock(&map_mtime_mutex);
 

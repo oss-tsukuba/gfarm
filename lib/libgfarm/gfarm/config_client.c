@@ -388,15 +388,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 #ifdef HAVE_GSI
-	/*
-	 * Suppress verbose error messages.  The message will be
-	 * displayed later in gfarm_auth_request_gsi().
-	 */
-	saved_auth_verb = gflog_auth_set_verbose(0);
-
+	/* Force to display verbose error messages. */
+	saved_auth_verb = gflog_auth_set_verbose(1);
 	(void)gfarm_gsi_client_initialize();
-
-	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	/*
 	 * In sharedsecret authentication, a global user name is
@@ -412,6 +406,9 @@ gfarm_initialize(int *argcp, char ***argvp)
 	 */
 	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfarm_metadb_server);
+#ifdef HAVE_GSI
+	(void)gflog_auth_set_verbose(saved_auth_verb);
+#endif
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "connecting gfmd at %s:%d: %s\n",
 		    gfarm_metadb_server_name, gfarm_metadb_server_port,
