@@ -3342,17 +3342,18 @@ main(int argc, char **argv)
 {
 	struct sockaddr_in client_addr, *self_sockaddr_array;
 	struct sockaddr_un client_local_addr;
-	gfarm_error_t e;
-	char *config_file = NULL, *self_hostname;
+	gfarm_error_t e, e2;
+	char *config_file = NULL;
 	char *listen_addrname = NULL, *pid_file = NULL;
 	char *local_gfsd_user;
+	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int syslog_level = -1;
 	struct accepting_sockets accepting;
 	struct in_addr *self_addresses, listen_address;
-	int table_size, self_addresses_count, ch, i, nfound, max_fd, self_port;
+	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
 	struct sigaction sa;
 	fd_set requests;
 	struct stat sb;
@@ -3499,16 +3500,35 @@ main(int argc, char **argv)
 
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
 	gfm_client_connect_with_reconnection();
-	e = gfarm_host_get_canonical_self_name(&self_hostname, &self_port);
-	if (e != GFARM_ERR_NO_ERROR) {
+	/*
+	 * in case of canonical_self_name != NULL, get_canonical_self_name()
+	 * cannot be used because host_get_self_name() may not be registered.
+	 */
+	if (canonical_self_name == NULL &&
+	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name, &p))
+	    != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
 		    "cannot get canonical hostname of %s, ask admin to "
 		    "register this node in Gfarm metadata server: %s\n",
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
 		exit(1);
 	}
-	if (canonical_self_name == NULL)
-		canonical_self_name = self_hostname;
+	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
+	{	
+		const char *n = canonical_self_name;
+
+		e = gfm_client_host_info_get_by_names(gfm_server,
+		    1, &n, &e2, &self_info);
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		e = e2;
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr,
+		    "cannot get canonical hostname of %s, ask admin to "
+		    "register this node in Gfarm metadata server: %s\n",
+		    canonical_self_name, gfarm_error_string(e));
+		exit(1);
+	}
 
 	seteuid(0);
 
@@ -3543,17 +3563,17 @@ main(int argc, char **argv)
 		    sizeof(self_sockaddr_array[i]));
 		self_sockaddr_array[i].sin_family = AF_INET;
 		self_sockaddr_array[i].sin_addr = self_addresses[i];
-		self_sockaddr_array[i].sin_port = htons(self_port);
+		self_sockaddr_array[i].sin_port = htons(self_info.port);
 	}
 
 	accepting.tcp_sock = open_accepting_tcp_socket(
-	    listen_address, self_port);
+	    listen_address, self_info.port);
 	/* sets accepting.local_socks_count and accepting.local_socks */
 	open_accepting_local_sockets(
-	    self_addresses_count, self_addresses, self_port,
+	    self_addresses_count, self_addresses, self_info.port,
 	    &accepting);
 	accepting.udp_socks = open_datagram_service_sockets(
-	    self_addresses_count, self_addresses, self_port);
+	    self_addresses_count, self_addresses, self_info.port);
 	accepting.udp_socks_count = self_addresses_count;
 
 	max_fd = accepting.tcp_sock;
