@@ -13,8 +13,8 @@
 #include "gfutil.h"
 #include "gfp_xdr.h"
 #include "auth.h"
-#include "config.h"
 
+#include "thrsubr.h"
 #include "subr.h"
 #include "peer.h"
 
@@ -25,28 +25,49 @@ static pthread_mutex_t giant_mutex;
 void
 giant_init(void)
 {
-	int err = pthread_mutex_init(&giant_mutex, NULL);
-
-	if (err != 0)
-		gflog_fatal("giant mutex init: %s", strerror(err));
+	mutex_init(&giant_mutex, "giant_init", "giant");
 }
 
 void
 giant_lock(void)
 {
-	int err = pthread_mutex_lock(&giant_mutex);
-
-	if (err != 0)
-		gflog_fatal("giant mutex lock: %s", strerror(err));
+	mutex_lock(&giant_mutex, "giant_lock", "giant");
 }
 
 void
 giant_unlock(void)
 {
-	int err = pthread_mutex_unlock(&giant_mutex);
+	mutex_unlock(&giant_mutex, "giant_unlock", "giant");
+}
 
+pthread_attr_t gfarm_pthread_attr;
+
+void
+gfarm_pthread_attr_init(void)
+{
+	int err;
+
+	err = pthread_attr_init(&gfarm_pthread_attr);
 	if (err != 0)
-		gflog_fatal("giant mutex unlock: %s", strerror(err));
+		gflog_fatal("pthread_attr_init(): %s", strerror(err));
+	err = pthread_attr_setdetachstate(&gfarm_pthread_attr,
+	    PTHREAD_CREATE_DETACHED);
+	if (err != 0)
+		gflog_fatal("PTHREAD_CREATE_DETACHED: %s", strerror(err));
+	gfarm_pthread_attr_setstacksize(&gfarm_pthread_attr);
+}
+
+
+pthread_attr_t *
+gfarm_pthread_attr_get(void)
+{
+	static pthread_once_t gfarm_pthread_attr_initialized =
+	    PTHREAD_ONCE_INIT;
+
+	pthread_once(&gfarm_pthread_attr_initialized,
+	    gfarm_pthread_attr_init);
+
+	return (&gfarm_pthread_attr);
 }
 
 gfarm_error_t
@@ -54,42 +75,9 @@ create_detached_thread(void *(*thread_main)(void *), void *arg)
 {
 	int err;
 	pthread_t thread_id;
-	static int initialized = 0;
-	static pthread_attr_t attr;
 
-	/*
-	 * currently, this function is only called from the main thread,
-	 * so, it's safe to use mere static variable instead of pthread_once().
-	 */
-	if (!initialized) {
-		err = pthread_attr_init(&attr);
-		if (err != 0)
-			gflog_fatal("pthread_attr_init(): %s", strerror(err));
-		err = pthread_attr_setdetachstate(&attr,
-		    PTHREAD_CREATE_DETACHED);
-		if (err != 0)
-			gflog_fatal("PTHREAD_CREATE_DETACHED: %s",
-			    strerror(err));
-		if (gfarm_metadb_stack_size != GFARM_METADB_STACK_SIZE_DEFAULT){
-#ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
-			err = pthread_attr_setstacksize(&attr,
-			    gfarm_metadb_stack_size);
-			if (err != 0)
-				gflog_warning("gfmd.conf: "
-				    "metadb_server_stack_size %d: %s",
-				    gfarm_metadb_stack_size, strerror(err));
-#else
-			gflog_warning("gfmd.conf: "
-			    "metadb_server_stack_size %d: "
-			    "configuration ignored due to lack of "
-			    "pthread_attr_setstacksize()",
-			    gfarm_metadb_stack_size);
-#endif
-		}
-		initialized = 1;
-	}
-
-	err = pthread_create(&thread_id, &attr, thread_main, arg);
+	err = pthread_create(&thread_id, gfarm_pthread_attr_get(),
+	    thread_main, arg);
 	return (err == 0 ? GFARM_ERR_NO_ERROR : gfarm_errno_to_error(err));
 }
 

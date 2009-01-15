@@ -33,7 +33,7 @@ gfm_server_compound_begin(struct peer *peer, int from_client, int skip,
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	if (level > 1) /* We don't allow nesting */
+	if (level > 0) /* We don't allow nesting */
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	return (gfm_server_put_reply(peer, "compound_begin", e, ""));
 }

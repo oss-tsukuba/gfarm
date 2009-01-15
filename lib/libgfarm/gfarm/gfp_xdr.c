@@ -141,6 +141,13 @@ gfarm_iobuffer_set_nonblocking_write_xxx(struct gfarm_iobuffer *b,
 	    conn->cookie, conn->fd);
 }
 
+int
+gfp_xdr_recv_is_ready(struct gfp_xdr *conn)
+{
+	return (!gfarm_iobuffer_empty(conn->recvbuffer) ||
+		gfarm_iobuffer_is_eof(conn->recvbuffer));
+}
+
 gfarm_error_t
 gfp_xdr_flush(struct gfp_xdr *conn)
 {

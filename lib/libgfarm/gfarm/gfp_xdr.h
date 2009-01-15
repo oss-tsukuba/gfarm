@@ -51,6 +51,7 @@ void gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *,
 void gfarm_iobuffer_set_nonblocking_write_xxx(struct gfarm_iobuffer *,
 	struct gfp_xdr *);
 
+int gfp_xdr_recv_is_ready(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_flush(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_purge(struct gfp_xdr *, int, int);
 gfarm_error_t gfp_xdr_vsend(struct gfp_xdr *,

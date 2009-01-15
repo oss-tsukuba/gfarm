@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <signal.h> /* for sig_atomic_t */
+#include <poll.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -17,12 +19,16 @@
 #include "io_fd.h"
 #include "auth.h"
 
+#include "thrpool.h"
+#include "subr.h"
 #include "user.h"
 #include "host.h"
 #include "peer.h"
 #include "inode.h"
 #include "process.h"
 #include "job.h"
+
+#include "protocol_state.h"
 
 struct peer {
 	struct gfp_xdr *conn;
@@ -31,8 +37,15 @@ struct peer {
 	char *username, *hostname;
 	struct user *user;
 	struct host *host;
+
 	struct process *process;
 	int protocol_error;
+
+	volatile sig_atomic_t control;
+#define PEER_AUTHORIZED 1
+#define PEER_WATCHING	2
+
+	struct protocol_state pstate;
 
 	gfarm_int32_t fd_current, fd_saved;
 	int flags;
@@ -50,6 +63,9 @@ struct peer {
 static struct peer *peer_table;
 static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static struct pollfd *peer_poll_fds;
+static void *(*peer_protocol_handler)(void *);
 
 static void
 peer_table_lock(void)
@@ -69,11 +85,73 @@ peer_table_unlock(void)
 		gflog_warning("peer_table_unlock: %s", strerror(err));
 }
 
+#define PEER_WATCH_INTERVAL 10 /* 10ms: XXX FIXME */
+
+void *
+peer_watcher(void *arg)
+{
+	struct peer *peer;
+	struct pollfd *fd;
+	int i, rv, skip, nfds;
+
+	for (;;) {
+		nfds = 0;
+		peer_table_lock();
+		for (i = 0; i < peer_table_size; i++) {
+			peer = &peer_table[i];
+			if (peer->conn == NULL ||
+			    peer->control != (PEER_AUTHORIZED|PEER_WATCHING))
+				continue;
+			fd = &peer_poll_fds[nfds++];
+			fd->fd = i;
+			fd->events = POLLIN;
+			fd->revents = 0;
+		}
+		peer_table_unlock();
+
+		rv = poll(peer_poll_fds, nfds, PEER_WATCH_INTERVAL);
+		if (rv == -1 && errno == EINTR)
+			continue;
+		if (rv == -1)
+			gflog_fatal("peer_watcher: poll: %s\n",
+			    strerror(errno));
+
+		for (i = 0; i < nfds; i++) {
+			if (rv == 0)
+				break; /* all processed */
+			fd = &peer_poll_fds[i];
+			peer = &peer_table[fd->fd];
+			giant_lock();
+			peer_table_lock();
+			skip = peer->conn == NULL ||
+			    peer->control != (PEER_AUTHORIZED|PEER_WATCHING);
+			peer_table_unlock();
+			giant_unlock();
+			if (skip)
+				continue;
+			if (fd->revents & POLLIN) {
+				/*
+				 * This peer is not running at this point,
+				 * so it's ok to modify peer->control.
+				 */
+				peer->control &= ~PEER_WATCHING;
+				/*
+				 * We shouldn't have giant_lock or
+				 * peer_table_lock here.
+				 */
+				thrpool_add_job(peer_protocol_handler, peer);
+				rv--;
+			}
+		}
+	}
+}
+
 void
-peer_init(int max_peers)
+peer_init(int max_peers, void *(*protocol_handler)(void *))
 {
 	int i;
 	struct peer *peer;
+	gfarm_error_t e;
 
 	GFARM_MALLOC_ARRAY(peer_table, max_peers);
 	if (peer_table == NULL)
@@ -89,11 +167,21 @@ peer_init(int max_peers)
 		peer->host = NULL;
 		peer->process = NULL;
 		peer->protocol_error = 0;
+		peer->control = 0;
 		peer->fd_current = -1;
 		peer->fd_saved = -1;
 		peer->flags = 0;
 		peer->u.client.jobs = NULL;
 	}
+
+	GFARM_MALLOC_ARRAY(peer_poll_fds, max_peers);
+	if (peer_poll_fds == NULL)
+		gflog_fatal("peer pollfd table: %s", strerror(ENOMEM));
+	peer_protocol_handler = protocol_handler;
+	e = create_detached_thread(peer_watcher, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal("create_detached_thread(peer_watcher): %s",
+			    gfarm_error_string(e));
 }
 
 gfarm_error_t
@@ -125,6 +213,7 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->host = NULL;
 	peer->process = NULL;
 	peer->protocol_error = 0;
+	peer->control = 0;
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
 	peer->flags = 0;
@@ -175,8 +264,15 @@ peer_authorized(struct peer *peer,
 				    host_name(peer->host));
 	}
 	/* We don't record auth_method for now */
+
+	peer->control = PEER_AUTHORIZED;
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+		thrpool_add_job(peer_protocol_handler, peer);
+	else
+		peer_watch_access(peer);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_free(struct peer *peer)
 {
@@ -194,6 +290,8 @@ peer_free(struct peer *peer)
 	peer->u.client.jobs = NULL;
 
 	gflog_notice("(%s@%s) disconnected", username, hostname);
+
+	peer->control = 0;
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
@@ -236,6 +334,12 @@ peer_shutdown_all(void)
 	}
 }
 
+void
+peer_watch_access(struct peer *peer)
+{
+	peer->control |= PEER_WATCHING;
+}
+
 #if 0
 
 struct peer *
@@ -248,6 +352,7 @@ peer_by_fd(int fd)
 	return (&peer_table[fd]);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 gfarm_error_t
 peer_free_by_fd(int fd)
 {
@@ -267,7 +372,6 @@ peer_get_conn(struct peer *peer)
 	return (peer->conn);
 }
 
-#if 0
 int
 peer_get_fd(struct peer *peer)
 {
@@ -277,7 +381,6 @@ peer_get_fd(struct peer *peer)
 		gflog_fatal("peer_get_fd: invalid peer pointer");
 	return (fd);
 }
-#endif
 
 /*
  * This funciton is experimentally introduced to accept a host in
@@ -356,6 +459,7 @@ peer_set_process(struct peer *peer, struct process *process)
 	process_attach_peer(process, peer);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_unset_process(struct peer *peer)
 {
@@ -380,12 +484,19 @@ peer_had_protocol_error(struct peer *peer)
 	return (peer->protocol_error);
 }
 
+struct protocol_state *
+peer_get_protocol_state(struct peer *peer)
+{
+	return (&peer->pstate); /* we only provide storage space here */
+}
+
 struct job_table_entry **
 peer_get_jobs_ref(struct peer *peer)
 {
 	return (&peer->u.client.jobs);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_fdpair_clear(struct peer *peer)
 {

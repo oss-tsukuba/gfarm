@@ -1,6 +1,6 @@
 struct peer;
 
-void peer_init(int);
+void peer_init(int, void *(*)(void *));
 
 gfarm_error_t peer_alloc(int, struct peer **);
 void peer_authorized(struct peer *,
@@ -8,6 +8,7 @@ void peer_authorized(struct peer *,
 	enum gfarm_auth_method);
 void peer_free(struct peer *);
 void peer_shutdown_all(void);
+void peer_watch_access(struct peer *);
 
 struct peer *peer_by_fd(int);
 gfarm_error_t peer_free_by_fd(int);
@@ -31,6 +32,9 @@ void peer_unset_process(struct peer *);
 
 void peer_record_protocol_error(struct peer *);
 int peer_had_protocol_error(struct peer *);
+
+struct protocol_state;
+struct protocol_state *peer_get_protocol_state(struct peer *);
 
 /* XXX */
 struct job_table_entry;

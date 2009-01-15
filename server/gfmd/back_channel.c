@@ -73,9 +73,11 @@ gfs_client_status(struct peer *peer,
 			disk_used, disk_avail));
 }
 
-gfarm_error_t
-remover(struct peer *peer, struct host *host)
+void *
+remover(void *arg)
 {
+	struct peer *peer = arg;
+	struct host *host = peer_get_host(peer);
 	gfarm_error_t e;
 	struct timeval now;
 	struct timespec timeout;
@@ -103,7 +105,12 @@ remover(struct peer *peer, struct host *host)
 	gflog_warning("remover: %s", peer_had_protocol_error(peer) ?
 		"protocol error" : gfarm_error_string(e));
 	host_peer_unset(host);
-	return (e);
+	giant_lock();
+	peer_free(peer);
+	giant_unlock();
+
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
 }
 
 gfarm_error_t
@@ -145,6 +152,6 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME - make sure there is at most one running remover thread */
 	if (e == GFARM_ERR_NO_ERROR && e2 == GFARM_ERR_NO_ERROR)
-		e2 = remover(peer, h);
+		e2 = create_detached_thread(remover, peer);
 	return (e2);
 }

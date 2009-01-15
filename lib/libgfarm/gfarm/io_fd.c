@@ -134,6 +134,7 @@ gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *b,
 
 				fds[0].fd = fd;
 				fds[0].events = POLLOUT;
+				fds[0].revents = 0;
 				poll(fds, 1, -1);
 #else
 				fd_set writable;
