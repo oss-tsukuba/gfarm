@@ -99,12 +99,10 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		 * So, we this shouldn't cause inconsistent metadata.
 		 */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		if (q->n <= 0) {
-			err = pthread_cond_signal(&q->nonempty);
-			if (err != 0)
-				gflog_fatal("%s: nonempty signal: %s",
-				    msg, strerror(err));
-		}
+		err = pthread_cond_signal(&q->nonempty);
+		if (err != 0)
+			gflog_fatal("%s: nonempty signal: %s",
+			    msg, strerror(err));
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 		while (q->n >= DBQ_SIZE) {
@@ -118,12 +116,11 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		q->in++;
 		if (q->in >= DBQ_SIZE)
 			q->in = 0;
-		if (q->n++ == 0) {
-			err = pthread_cond_signal(&q->nonempty);
-			if (err != 0)
-				gflog_fatal("%s: nonempty signal: %s",
-				    msg, strerror(err));
-		}
+		q->n++;
+		err = pthread_cond_signal(&q->nonempty);
+		if (err != 0)
+			gflog_fatal("%s: nonempty signal: %s",
+			    msg, strerror(err));
 	}
 	err = pthread_mutex_unlock(&q->mutex);
 	if (err != 0)

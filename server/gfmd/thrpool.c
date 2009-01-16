@@ -54,9 +54,8 @@ thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
 	q->in++;
 	if (q->in >= q->size)
 		q->in = 0;
-	if (q->n++ <= 0) {
-		cond_signal(&q->nonempty, msg, "nonempty");
-	}
+	q->n++;
+	cond_signal(&q->nonempty, msg, "nonempty");
 
 	mutex_unlock(&q->mutex, msg, "thrjobq");
 }
@@ -74,9 +73,8 @@ thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 	*job = q->entries[q->out++];
 	if (q->out >= q->size)
 		q->out = 0;
-	if (q->n-- >= q->size) {
-		cond_signal(&q->nonfull, msg, "nonfull");
-	}
+	q->n--;
+	cond_signal(&q->nonfull, msg, "nonfull");
 
 	mutex_unlock(&q->mutex, msg, "thrjobq");
 }
