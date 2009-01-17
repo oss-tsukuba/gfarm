@@ -22,6 +22,7 @@
 #include "gfp_xdr.h"
 #include "auth.h"
 #include "gfm_proto.h" /* GFM_PROTO_SCHED_FLAG_* */
+#include "config.h"
 
 #include "subr.h"
 #include "db_access.h"
@@ -974,8 +975,9 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 	gfarm_error_t e, e_save;
 	struct host *h = peer_get_host(peer);
 
-	/* give the top priority to the local host */
-	if (h != NULL && host_is_up(h)) {
+	/* give the top priority to the local host if it has enough space */
+	if (h != NULL && host_is_up(h) &&
+	    h->disk_avail > gfarm_get_minimum_free_disk_space()) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
