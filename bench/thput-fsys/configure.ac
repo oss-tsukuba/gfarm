@@ -1,4 +1,4 @@
-AC_INIT([thput-fsys], [0.9.2])
+AC_INIT([thput-fsys], [0.9.3])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_PROG_CC
