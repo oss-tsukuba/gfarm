@@ -474,7 +474,7 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_fstat(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_int32_t fd;
 	struct host *spool_host = NULL;
 	struct process *process;
@@ -501,27 +501,35 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 		st.st_gen = inode_get_gen(inode);
 		st.st_mode = inode_get_mode(inode);
 		st.st_nlink = inode_get_nlink(inode);
-		st.st_user = user_name(inode_get_user(inode));
-		st.st_group = group_name(inode_get_group(inode));
+		st.st_user = strdup(user_name(inode_get_user(inode)));
+		st.st_group = strdup(group_name(inode_get_group(inode)));
 		st.st_size = inode_get_size(inode);
 		if (inode_is_file(inode))
 			st.st_ncopy = inode_get_ncopy(inode);
 		st.st_atimespec = *inode_get_atime(inode);
 		st.st_mtimespec = *inode_get_mtime(inode);
 		st.st_ctimespec = *inode_get_ctime(inode);
+		if (st.st_user == NULL || st.st_group == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			if (st.st_user != NULL)
+				free(st.st_user);
+			if (st.st_group != NULL)
+				free(st.st_group);
+		}
 	}
 
 	giant_unlock();
-	/*
-	 * XXX assumes that user_name() and group_name() are not broken
-	 * even without giant_lock.
-	 */
-	return (gfm_server_put_reply(peer, "fstat", e, "llilsslllilili",
+	e2 = gfm_server_put_reply(peer, "fstat", e, "llilsslllilili",
 	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
 	    st.st_user, st.st_group, st.st_size, st.st_ncopy,
 	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec, 
 	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec, 
-	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec));
+	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec);
+	if (e == GFARM_ERR_NO_ERROR) {
+		free(st.st_user);
+		free(st.st_group);
+	}
+	return (e2);
 }
 
 gfarm_error_t
