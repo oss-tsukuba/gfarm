@@ -58,7 +58,7 @@ gfarm_gsi_client_initialize(void)
 char *
 gfarm_gsi_client_cred_name(void)
 {
-	gss_cred_id_t cred;
+	gss_cred_id_t cred = gfarm_gsi_get_delegated_cred();
 	gss_name_t name;
 	OM_uint32 e_major, e_minor;
 	static pthread_mutex_t client_cred_initialize_mutex =
@@ -71,8 +71,9 @@ gfarm_gsi_client_cred_name(void)
 		pthread_mutex_unlock(&client_cred_initialize_mutex);
 		return (dn);
 	}
-	
-	if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
+
+	if (cred == GSS_C_NO_CREDENTIAL &&
+	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
 		dn = NULL;
 		gflog_auth_error("gfarm_gsi_client_cred_name(): "
 		    "not initialized as an initiator");
