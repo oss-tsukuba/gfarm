@@ -3,12 +3,12 @@
 
 #define USE_GLOBUS
 
-#if defined(USE_GLOBUS) && GLOBUS_BUG
+#if defined(USE_GLOBUS) && GLOBUS_FAKE_GSS_C_NT_USER
 /* currently Globus doesn't actually support GSS_C_NT_USER_NAME */
 #define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 1
 #else
 #define GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS 0
-#endif /*  defined(USE_GLOBUS) && GLOBUS_BUG */
+#endif /*  defined(USE_GLOBUS) && GLOBUS_FAKE_GSS_C_NT_USER */
 
 #ifdef USE_GLOBUS
 /* draft-engert-ggf-gss-extensions @ IETF & draft-ggf-gss-extensions @ GGF */

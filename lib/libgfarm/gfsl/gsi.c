@@ -192,7 +192,9 @@ gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStat
 	ret = 1; /* OK */
     }
 
+#if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
     Done:
+#endif /* GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS */
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
     }

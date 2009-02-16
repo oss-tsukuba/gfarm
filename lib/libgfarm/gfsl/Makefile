@@ -13,7 +13,7 @@ include $(top_srcdir)/makes/var.mk
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFSL_SRCDIR) \
 	$(globus_includes) \
 	-DGFARM_INSTALL_ETC_DIR='"$(sysconfdir)"' \
-	-DGLOBUS_BUG=1 # see gsi.c
+	-DGLOBUS_FAKE_GSS_C_NT_USER=0 # see gsi.c
 
 ### for library
 
