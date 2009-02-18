@@ -44,8 +44,13 @@
 #endif
 
 #ifdef USE_GLOBUS
-/* enable to accept level N limited proxy certificate */
-#define GFARM_GSS_C_GLOBUS_INIT_FLAG GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
+/* GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG is deprecated since GT 4.0 */
+#ifndef GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
+#define GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG 0
+#endif
+/* allow to delegate a limited proxy */
+#define GFARM_GSS_C_GLOBUS_INIT_FLAG GSS_C_GLOBUS_LIMITED_DELEG_PROXY_FLAG
+/* accept level N limited proxy certificate */
 #define GFARM_GSS_C_GLOBUS_ACCEPT_FLAG GSS_C_GLOBUS_LIMITED_PROXY_MANY_FLAG
 #else
 #define GFARM_GSS_C_GLOBUS_INIT_FLAG 0
