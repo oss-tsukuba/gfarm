@@ -77,6 +77,7 @@ list_all(int op)
 		}
 		puts("");
 	}
+	gfarm_group_info_free_all(n, groups);
 	return (e);
 }
 
