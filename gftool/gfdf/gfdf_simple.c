@@ -76,6 +76,8 @@ display_statfs_nodes(const char *domain)
 	else
 		puts("No file system node");
 
+	gfarm_host_sched_info_free(nhosts, hosts);
+ 
 	return (GFARM_ERR_NO_ERROR);
 }
 
