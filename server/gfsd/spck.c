@@ -195,8 +195,12 @@ fixfrag(char *path)
 		e = GFARM_ERR_NO_ERROR;
 	else if (e == GFARM_ERR_NO_ERROR)
 		gflog_notice("%s: fixed", path);
-	else if (e == GFARM_ERR_INVALID_FILE_REPLICA)
-		return (delete_invalid_file_or_directory(path));
+	else switch (e) {
+	case GFARM_ERR_NO_SUCH_OBJECT:
+	case GFARM_ERR_INVALID_FILE_REPLICA:
+		e = delete_invalid_file_or_directory(path);
+		break;
+	}
 	return (e);
 }
 
