@@ -270,6 +270,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_SEEK:
 		e = gfm_server_seek(peer, from_client, skip);
 		break;
+	case GFM_PROTO_GETDIRENTSPLUS:
+		e = gfm_server_getdirentsplus(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REOPEN:
 		e = gfm_server_reopen(peer, from_client, skip);
 		break;

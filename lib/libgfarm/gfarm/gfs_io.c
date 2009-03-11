@@ -13,18 +13,7 @@
 #include "gfs_io.h"
 
 static gfarm_error_t
-gfs_desc_open_common(gfarm_int32_t fd, int flags, int is_dir,
-	struct gfs_desc **gdp)
-{
-	if (is_dir) {
-		return (gfs_dir_alloc(fd, flags, gdp));
-	} else {
-		return (gfs_file_alloc(fd, flags, gdp));
-	}
-}
-
-static gfarm_error_t
-gfs_desc_flag_check(int flag)
+gfm_open_flag_check(int flag)
 {
 	if (flag & ~GFARM_FILE_USER_MODE)
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -56,11 +45,11 @@ gfm_create_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_create_result(struct gfm_connection *gfm_server,
-	const char *path, gfarm_int32_t *fdp, int *is_dirp)
+	const char *path, gfarm_int32_t *fdp, int *typep)
 {
 	gfarm_error_t e;
 	const char *base;
-	int is_dir;
+	int type;
 
 	e = gfm_lookup_dir_result(gfm_server, path, &base);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -78,25 +67,23 @@ gfm_create_result(struct gfm_connection *gfm_server,
 		    &inum, &gen, &mode);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		is_dir = GFARM_S_ISDIR(mode);
+		type = GFARM_S_ISDIR(mode) ? GFS_DT_DIR : GFS_DT_REG;
 	}
 	e = gfm_client_get_fd_result(gfm_server, fdp);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (is_dirp != NULL)
-		*is_dirp = is_dir;
+	if (typep != NULL)
+		*typep = type;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfs_desc_create(const char *url, int flags, gfarm_mode_t mode,
-	struct gfs_desc **gdp)
+gfm_create_fd(const char *url, int flags, gfarm_mode_t mode,
+	int *fdp, int *typep)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd;
-	int is_dir = 0;
 
-	if ((e = gfs_desc_flag_check(flags)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -116,7 +103,7 @@ gfs_desc_create(const char *url, int flags, gfarm_mode_t mode,
 		gflog_warning("compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_create_result(gfarm_metadb_server, url,
-	    &fd, &is_dir)) != GFARM_ERR_NO_ERROR)
+	    fdp, typep)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("create_base request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
@@ -124,26 +111,21 @@ gfs_desc_create(const char *url, int flags, gfarm_mode_t mode,
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));
 
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfs_desc_open_common(fd, flags, is_dir, gdp);
-	
 	return (e);
 }
 
 gfarm_error_t
-gfs_desc_open(const char *url, int flags,
-	struct gfs_desc **gdp)
+gfm_open_fd(const char *url, int flags,
+	int *fdp, int *typep)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd;
-	int is_dir = 0;
 
 #if 0 /* not yet in gfarm v2 */
-	/* GFARM_FILE_EXCLUSIVE is a NOP with gfs_desc_open(). */
+	/* GFARM_FILE_EXCLUSIVE is a NOP with gfm_open_fd(). */
 	flags &= ~GFARM_FILE_EXCLUSIVE;
 #endif /* not yet in gfarm v2 */
 
-	if ((e = gfs_desc_flag_check(flags)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -163,7 +145,7 @@ gfs_desc_open(const char *url, int flags,
 		gflog_warning("compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_open_result(gfarm_metadb_server, url,
-	    &fd, &is_dir)) != GFARM_ERR_NO_ERROR)
+	    fdp, typep)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("open path result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
@@ -171,16 +153,7 @@ gfs_desc_open(const char *url, int flags,
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));
 
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfs_desc_open_common(fd, flags, is_dir, gdp);
-	
 	return (e);
-}
-
-gfarm_error_t
-gfs_desc_close(struct gfs_desc *gd)
-{
-	return ((*gd->ops->close)(gd));
 }
 
 gfarm_error_t

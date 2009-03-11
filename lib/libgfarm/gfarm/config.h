@@ -47,9 +47,8 @@ extern char *gfarm_localfs_datadir;
 
 /* miscellaneous configurations */
 extern int gfarm_log_level; /* syslog priority level to log */
-#define GFARM_DIR_CACHE_TIMEOUT_DEFAULT	86400 /* 1 day */
-extern int gfarm_dir_cache_timeout;
-extern int gfarm_host_cache_timeout;
+extern int gfarm_attr_cache_limit;
+extern int gfarm_attr_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;

@@ -252,3 +252,26 @@ gfarm_base_gfs_stat_validate(void *vinfo)
 	    info->st_group != NULL
 	);
 }
+
+/* extra utility function to do deep copy */
+gfarm_error_t
+gfs_stat_copy(struct gfs_stat *d, const struct gfs_stat *s)
+{
+	char *user, *group;
+
+	GFARM_MALLOC_ARRAY(user, strlen(s->st_user) + 1);
+	GFARM_MALLOC_ARRAY(group, strlen(s->st_group) + 1);
+	if (user == NULL || group == NULL) {
+		if (user != NULL)
+			free(user);
+		if (group != NULL)
+			free(group);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*d = *s;
+	strcpy(user, s->st_user);
+	strcpy(group, s->st_group);
+	d->st_user = user;
+	d->st_group = group;
+	return (GFARM_ERR_NO_ERROR);
+}

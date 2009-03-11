@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <math.h>
 #include <time.h>
 #include <gfarm/gfarm.h>
 
@@ -40,6 +42,9 @@ int option_complete_time = 0;		/* -T */
 int option_directory_itself = 0;	/* -d */
 int option_inumber = 0;			/* -i */
 int option_reverse_sort = 0;		/* -r */
+
+#define CACHE_EXPIRATION_NOT_SPECIFIED	-1.0
+double option_cache_expiration = CACHE_EXPIRATION_NOT_SPECIFIED; /* -E */
 
 int screen_width = 80; /* default */
 
@@ -164,7 +169,7 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			memcpy(namep, files[i], space);
 			namep[space] = '\0';
 		}
-		e = gfs_stat(buffer, &stats[i]);
+		e = gfs_stat_cached(buffer, &stats[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", buffer,
 			    gfarm_error_string(e));
@@ -363,7 +368,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	char *s, *path;
 	gfarm_stringlist names;
 	gfs_glob_t types;
-	GFS_Dir dir;
+	GFS_DirCaching dir;
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
 
@@ -386,7 +391,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		free(path);
 		return (e);
 	}
-	e = gfs_opendir(path, &dir);
+	e = gfs_opendir_caching(path, &dir);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", path, gfarm_error_string(e));
 		gfs_glob_free(&types);
@@ -394,8 +399,8 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		free(path);
 		return (e);
 	}
-	while ((e = gfs_readdir(dir, &entry)) == GFARM_ERR_NO_ERROR &&
-	    entry != NULL) {
+	while ((e = gfs_readdir_caching(dir, &entry))
+	    == GFARM_ERR_NO_ERROR && entry != NULL) {
 		if (!option_all && entry->d_name[0] == '.')
 			continue;
 		if (is_option_almost_all && is_dot_or_dot_dot(entry->d_name))
@@ -413,7 +418,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		    gfarm_error_string(e));
 		e_save = e;
 	}
-	gfs_closedir(dir);
+	gfs_closedir_caching(dir);
 	if (*gfarm_path_dir_skip(path) != '\0') {
 		path[len] = '/';
 		path[len + 1] = '\0';
@@ -543,7 +548,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1ACFRSTadilrt] <path>...\n",
+	fprintf(stderr, "Usage: %s [-1ACFRSTadilrt] [-E <sec>] <path>...\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
@@ -555,6 +560,7 @@ main(int argc, char **argv)
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
+	char *ep;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -582,11 +588,24 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1ACFRSTadilrt?")) != -1) {
+	while ((c = getopt(argc, argv, "1ACE:FRSTadilrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
 		case 'A': option_all = OA_ALMOST_ALL; break;
 		case 'C': option_output_format = OF_MULTI_COLUMN; break;
+		case 'E':
+			errno = 0;
+			option_cache_expiration = strtod(optarg, &ep);
+			if (ep == optarg || *ep != '\0') {
+				fprintf(stderr, "%s: -E %s: invalid argument\n",
+				    program_name, optarg);
+				usage();
+			} else if (errno != 0) {
+				fprintf(stderr, "%s: -E %s: %s\n",
+				    program_name, optarg, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case 'F': option_type_suffix = 1; break;
 		case 'R': option_recursive = 1; break;
 		case 'S': option_sort_order = SO_SIZE; break;
@@ -604,6 +623,11 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (option_cache_expiration == 0.0)
+		gfs_stat_cache_enable(0);
+	else if (option_cache_expiration != CACHE_EXPIRATION_NOT_SPECIFIED)
+		gfs_stat_cache_expiration_set(option_cache_expiration*1000.0);
 
 	e = gfarm_stringlist_init(&paths);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -642,7 +666,7 @@ main(int argc, char **argv)
 				char *path = gfarm_stringlist_elem(&paths,
 				    last);
 
-				e = gfs_stat(path, &s);
+				e = gfs_stat_cached(path, &s);
 				if (e != GFARM_ERR_NO_ERROR) {
 					fprintf(stderr, "%s: %s\n", path,
 					    gfarm_error_string(e));

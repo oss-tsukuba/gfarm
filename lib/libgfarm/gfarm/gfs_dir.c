@@ -173,55 +173,28 @@ finish:
  * gfs_opendir()/readdir()/closedir()
  */
 
-#define DIRENT_BUFCOUNT	256
+#define DIRENTS_BUFCOUNT	256
 
 struct gfs_dir {
-	struct gfs_desc desc;
-
 	int fd;
-	struct gfs_dirent buffer[DIRENT_BUFCOUNT];
+	struct gfs_dirent buffer[DIRENTS_BUFCOUNT];
 	int n, index;
 };
 
 static gfarm_error_t
-gfs_dir_close(struct gfs_desc *gd)
+gfs_dir_alloc(gfarm_int32_t fd, GFS_Dir *dirp)
 {
-	return (gfs_closedir((GFS_Dir)gd));
-}
-
-static gfarm_error_t
-gfs_dir_desc_to_file(struct gfs_desc *gd, struct gfs_file **gfp)
-{
-	return (GFARM_ERR_IS_A_DIRECTORY);
-}
-
-static gfarm_error_t
-gfs_dir_desc_to_dir(struct gfs_desc *gd, struct gfs_dir **gdp)
-{
-	*gdp = (GFS_Dir)gd;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfs_dir_alloc(gfarm_int32_t fd, int flags, struct gfs_desc **gdp)
-{
-	static struct gfs_desc_ops gfs_dir_desc_ops = {
-		gfs_dir_close,
-		gfs_dir_desc_to_file,
-		gfs_dir_desc_to_dir,
-	};
 	GFS_Dir dir;
 
 	GFARM_MALLOC(dir);
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	dir->desc.ops = &gfs_dir_desc_ops;
 	dir->fd = fd;
 	dir->n = 0;
 	dir->index = 0;
 
-	*gdp = &dir->desc;
+	*dirp = dir;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -229,13 +202,16 @@ gfarm_error_t
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
 	gfarm_error_t e;
-	struct gfs_desc *gd;
+	int fd, type;
 
-	if ((e = gfs_desc_open(path, GFARM_FILE_RDONLY, &gd))
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &fd, &type))
 	    != GFARM_ERR_NO_ERROR)
  		;
-	else if ((e = (*gd->ops->desc_to_dir)(gd, dirp)) != GFARM_ERR_NO_ERROR)
-		gfs_desc_close(gd);
+	else if (type != GFS_DT_DIR) {
+		(void)gfm_close_fd(fd); /* ignore this result */
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+	} else if ((e = gfs_dir_alloc(fd, dirp)) != GFARM_ERR_NO_ERROR)
+		(void)gfm_close_fd(fd); /* ignore this result */
 
 	return (e);
 }
@@ -255,7 +231,7 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 			gflog_warning("put_fd request: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_getdirents_request(
-		    gfarm_metadb_server, DIRENT_BUFCOUNT))
+		    gfarm_metadb_server, DIRENTS_BUFCOUNT))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("get_dirents request: %s",
 			    gfarm_error_string(e));

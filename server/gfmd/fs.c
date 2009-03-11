@@ -471,6 +471,34 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
+
+static gfarm_error_t
+inode_get_stat(struct inode *inode, struct gfs_stat *st)
+{
+	st->st_ino = inode_get_number(inode);
+	st->st_gen = inode_get_gen(inode);
+	st->st_mode = inode_get_mode(inode);
+	st->st_nlink = inode_get_nlink(inode);
+	st->st_user = strdup(user_name(inode_get_user(inode)));
+	st->st_group = strdup(group_name(inode_get_group(inode)));
+	st->st_size = inode_get_size(inode);
+	if (inode_is_file(inode))
+		st->st_ncopy = inode_get_ncopy(inode);
+	else
+		st->st_ncopy = 1;
+	st->st_atimespec = *inode_get_atime(inode);
+	st->st_mtimespec = *inode_get_mtime(inode);
+	st->st_ctimespec = *inode_get_ctime(inode);
+	if (st->st_user == NULL || st->st_group == NULL) {
+		if (st->st_user != NULL)
+			free(st->st_user);
+		if (st->st_group != NULL)
+			free(st->st_group);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_server_fstat(struct peer *peer, int from_client, int skip)
 {
@@ -496,32 +524,14 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = process_get_file_inode(process, fd, &inode)) ==
-	    GFARM_ERR_NO_ERROR) {
-		st.st_ino = inode_get_number(inode);
-		st.st_gen = inode_get_gen(inode);
-		st.st_mode = inode_get_mode(inode);
-		st.st_nlink = inode_get_nlink(inode);
-		st.st_user = strdup(user_name(inode_get_user(inode)));
-		st.st_group = strdup(group_name(inode_get_group(inode)));
-		st.st_size = inode_get_size(inode);
-		if (inode_is_file(inode))
-			st.st_ncopy = inode_get_ncopy(inode);
-		st.st_atimespec = *inode_get_atime(inode);
-		st.st_mtimespec = *inode_get_mtime(inode);
-		st.st_ctimespec = *inode_get_ctime(inode);
-		if (st.st_user == NULL || st.st_group == NULL) {
-			e = GFARM_ERR_NO_MEMORY;
-			if (st.st_user != NULL)
-				free(st.st_user);
-			if (st.st_group != NULL)
-				free(st.st_group);
-		}
-	}
+	    GFARM_ERR_NO_ERROR)
+		e = inode_get_stat(inode, &st);
 
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, "fstat", e, "llilsslllilili",
 	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
-	    st.st_user, st.st_group, st.st_size, st.st_ncopy,
+	    st.st_user, st.st_group, st.st_size,
+	    st.st_ncopy,
 	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec, 
 	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec, 
 	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec);
@@ -1068,26 +1078,101 @@ gfm_server_getdirpath(struct peer *peer, int from_client, int skip)
 	return (e_rpc);
 }
 
+static gfarm_error_t
+fs_dir_get(struct peer *peer, int from_client,
+	gfarm_int32_t *np, struct process **processp, gfarm_int32_t *fdp,
+	struct inode **inodep, Dir *dirp, DirCursor *cursorp)
+{
+	gfarm_error_t e;
+	gfarm_int32_t n = *np;
+	struct host *spool_host = NULL;
+	struct process *process;
+	gfarm_int32_t fd;
+	struct inode *inode;
+	Dir dir;
+	char *key;
+	int keylen, ok;
+	gfarm_off_t dir_offset = 0;
+
+	if (n > GFM_PROTO_MAX_DIRENT)
+		n = GFM_PROTO_MAX_DIRENT;
+
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	else if ((process = peer_get_process(peer)) == NULL)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+	else if ((e = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	else if ((dir = inode_get_dir(inode)) == NULL)
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	else if ((e = process_get_dir_key(process, peer, fd,
+		    &key, &keylen)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	else if (key == NULL &&
+		 (e = process_get_dir_offset(process, peer, fd,
+		    &dir_offset)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	else if (n <= 0)
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	else {
+		if (key != NULL)
+			ok = dir_cursor_lookup(dir, key, strlen(key), cursorp);
+		else
+			ok = 0;
+		if (!ok)
+			ok = dir_cursor_set_pos(dir, dir_offset, cursorp);
+		if (!ok)
+			n = 0; /* end of directory? */
+		*np = n;
+		*processp = process;
+		*fdp = fd;
+		*inodep = inode;
+		*dirp = dir;
+		/* *cursorp = *cursorp; */
+		return (GFARM_ERR_NO_ERROR);
+	}
+}
+
+/* remember current position */
+static void
+fs_dir_remember_cursor(struct peer *peer, struct process *process,
+	gfarm_int32_t fd, Dir dir, DirCursor *cursor, int eof)
+{
+	DirEntry entry;
+	gfarm_off_t dir_offset;
+
+	if (eof || (entry = dir_cursor_get_entry(dir, cursor)) == NULL) {
+		process_clear_dir_key(process, peer, fd);
+		dir_offset = dir_get_entry_count(dir);
+	} else {
+		int namelen;
+		char *name = dir_entry_get_name(entry, &namelen);
+
+		process_set_dir_key(process, peer, fd, name, namelen);
+		dir_offset = dir_cursor_get_pos(dir, cursor);
+	}
+	process_set_dir_offset(process, peer, fd, dir_offset);
+}
+
 gfarm_error_t
 gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e, e2;
 	gfarm_int32_t fd, n, i;
-	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode, *entry_inode;
 	Dir dir;
-	DirEntry entry;
 	DirCursor cursor;
 	struct dir_result_rec {
-		char *s;
+		char *name;
 		gfarm_ino_t inum;
 		gfarm_int32_t type;
 	} *p = NULL;
-	gfarm_off_t dir_offset = 0;
-	char *key, *name;
-	int keylen, namelen, ok;
 
 	e = gfm_server_get_request(peer, "getdirents", "i", &n);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1096,52 +1181,17 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	if (n > GFM_PROTO_MAX_DIRENT)
-		n = GFM_PROTO_MAX_DIRENT;
-
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((process = peer_get_process(peer)) == NULL)
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
+	if ((e = fs_dir_get(peer, from_client, &n, &process, &fd,
+	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_get_file_inode(process, fd, &inode))
-	    != GFARM_ERR_NO_ERROR)
-		;
-	else if ((dir = inode_get_dir(inode)) == NULL)
-		e = GFARM_ERR_NOT_A_DIRECTORY;
-	else if ((e = process_get_dir_key(process, peer, fd,
-		    &key, &keylen)) != GFARM_ERR_NO_ERROR)
-		;
-	else if (key == NULL &&
-		 (e = process_get_dir_offset(process, peer, fd,
-		    &dir_offset)) != GFARM_ERR_NO_ERROR)
-		;
-	else if (n <= 0)
-		e = GFARM_ERR_INVALID_ARGUMENT;
-	else if (GFARM_MALLOC_ARRAY(p,  n) == NULL)
+	else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL)
 		e = GFARM_ERR_NO_MEMORY;
-	else {
-		if (key != NULL)
-			ok = dir_cursor_lookup(dir, key, strlen(key), &cursor);
-		else
-			ok = 0;
-		if (!ok)
-			ok = dir_cursor_set_pos(dir, dir_offset, &cursor);
-		if (!ok)
-			n = 0; /* end of directory? */
+	else { /* note: (n == 0) means the end of the directory */
 		for (i = 0; i < n; ) {
-			entry = dir_cursor_get_entry(dir, &cursor);
-			if (entry == NULL)
+			if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL)
 				break;
-			name = dir_entry_get_name(entry, &namelen);
-			GFARM_MALLOC_ARRAY(p[i].s, namelen + 1);
-			if (p[i].s == NULL)
-				break;
-			memcpy(p[i].s, name, namelen);
-			p[i].s[namelen] = '\0';
-			entry_inode = dir_entry_get_inode(entry);
 			p[i].inum = inode_get_number(entry_inode);
 			p[i].type = inode_is_dir(entry_inode) ?
 			    GFS_DT_DIR : GFS_DT_REG;
@@ -1150,22 +1200,13 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			if (!dir_cursor_next(dir, &cursor))
 				break;
 		}
-		n = i;
-		if (n > 0)
-			inode_accessed(inode);
-
-		/* remember current position */
-		if (!ok ||
-		    (entry = dir_cursor_get_entry(dir, &cursor)) == NULL) {
-			process_clear_dir_key(process, peer, fd);
-			dir_offset = dir_get_entry_count(dir);
-		} else {
-			name = dir_entry_get_name(entry, &namelen);
-			process_set_dir_key(process, peer, fd,
-			    name, namelen);
-			dir_offset = dir_cursor_get_pos(dir, &cursor);
+		if (e == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			n = i;
+			if (n > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
 		}
-		process_set_dir_offset(process, peer, fd, dir_offset);
 	}
 	
 	giant_unlock();
@@ -1173,9 +1214,9 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	if (e2 == GFARM_ERR_NO_ERROR && e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; i++) {
 			e2 = gfp_xdr_send(client, "sil",
-			    p[i].s, p[i].type, p[i].inum);
+			    p[i].name, p[i].type, p[i].inum);
 			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_warning("%s@%s: getdirent: %s",
+				gflog_warning("%s@%s: getdirents: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
 				    gfarm_error_string(e2));
@@ -1185,11 +1226,97 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 	}
 	if (p != NULL) {
 		for (i = 0; i < n; i++)
-			free(p[i].s);
+			free(p[i].name);
 		free(p);
 	}
 	return (e);
 }
+
+gfarm_error_t
+gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e, e2;
+	gfarm_int32_t fd, n, i;
+	struct process *process;
+	struct inode *inode, *entry_inode;
+	Dir dir;
+	DirCursor cursor;
+	struct dir_result_rec {
+		char *name;
+		struct gfs_stat st;
+	} *p = NULL;
+
+	e = gfm_server_get_request(peer, "getdirentsplus", "i", &n);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if ((e = fs_dir_get(peer, from_client, &n, &process, &fd,
+	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR)
+		;
+	else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+	else { /* note: (n == 0) means the end of the directory */
+		for (i = 0; i < n; ) {
+			if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL)
+				break;
+			if ((e = inode_get_stat(entry_inode, &p[i].st)) !=
+			    GFARM_ERR_NO_ERROR) {
+				free(p[i].name);
+				break;
+			}
+
+			i++;
+			if (!dir_cursor_next(dir, &cursor))
+				break;
+		}
+		if (e == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			n = i;
+			if (n > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
+		}
+	}
+	
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, "getdirentsplus", e, "i", n);
+	if (e2 == GFARM_ERR_NO_ERROR && e == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			struct gfs_stat *st = &p[i].st;
+
+			e2 = gfp_xdr_send(client, "sllilsslllilili",
+			    p[i].name,
+			    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
+			    st->st_user, st->st_group, st->st_size,
+			    st->st_ncopy,
+			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec, 
+			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec, 
+			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
+			if (e2 != GFARM_ERR_NO_ERROR) {
+				gflog_warning("%s@%s: getdirentsplus: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    gfarm_error_string(e2));
+				break;
+			}
+		}
+	}
+	if (p != NULL) {
+		for (i = 0; i < n; i++) {
+			free(p[i].name);
+			gfs_stat_free(&p[i].st);
+		}
+		free(p);
+	}
+	return (e);
+}
+
 
 gfarm_error_t
 gfm_server_seek(struct peer *peer, int from_client, int skip)

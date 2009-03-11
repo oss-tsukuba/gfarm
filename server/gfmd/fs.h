@@ -38,6 +38,7 @@ gfarm_error_t gfm_server_readlink(struct peer *, int, int);
 gfarm_error_t gfm_server_getdirpath(struct peer *, int, int);
 gfarm_error_t gfm_server_getdirents(struct peer *, int, int);
 gfarm_error_t gfm_server_seek(struct peer *, int, int);
+gfarm_error_t gfm_server_getdirentsplus(struct peer *, int, int);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_server_reopen(struct peer *, int, int);

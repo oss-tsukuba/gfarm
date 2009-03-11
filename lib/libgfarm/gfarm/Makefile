@@ -41,6 +41,8 @@ SRCS = \
 	lookup.c \
 	gfs_io.c \
 	gfs_dir.c \
+	gfs_dirplus.c \
+	gfs_dircache.c \
 	gfs_pio.c \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
@@ -50,6 +52,7 @@ SRCS = \
 	gfs_link.c \
 	gfs_stat.c \
 	gfs_statfs.c \
+	gfs_statsw.c \
 	gfs_mkdir.c \
 	gfs_rmdir.c \
 	gfs_remove.c \
@@ -99,6 +102,8 @@ OBJS = \
 	lookup.lo \
 	gfs_io.lo \
 	gfs_dir.lo \
+	gfs_dirplus.lo \
+	gfs_dircache.lo \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
@@ -108,6 +113,7 @@ OBJS = \
 	gfs_link.lo \
 	gfs_stat.lo \
 	gfs_statfs.lo \
+	gfs_statsw.lo \
 	gfs_mkdir.lo \
 	gfs_rmdir.lo \
 	gfs_remove.lo \
@@ -154,7 +160,9 @@ config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h gfs_pio.h $(GFUTIL_SRCDIR)/gfutil.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h gfs_pio.h
+gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h
+gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_dircache.h
 gfs_exec.lo: gfs_pio.h
 gfs_io.lo: gfs_io.h
 gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
@@ -167,6 +175,8 @@ gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.
 gfs_proto.lo: gfs_proto.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
+gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h
+gfs_statsw.lo: gfs_dircache.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h 
 gfarm_foreach.lo: gfarm_foreach.h

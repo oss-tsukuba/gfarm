@@ -146,11 +146,11 @@ gfm_tmp_open_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_tmp_open_result(struct gfm_connection *gfm_server,
-	const char *path, int *is_dirp)
+	const char *path, int *typep)
 {
 	gfarm_error_t e;
 	const char *base;
-	int is_dir;
+	int type;
 
 	e = gfm_lookup_dir_result(gfm_server, path, &base);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -159,7 +159,7 @@ gfm_tmp_open_result(struct gfm_connection *gfm_server,
 		e = gfm_client_open_root_result(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		is_dir = 1;
+		type = GFS_DT_DIR;
 	} else {
 		gfarm_ino_t inum;
 		gfarm_uint64_t gen;
@@ -169,10 +169,10 @@ gfm_tmp_open_result(struct gfm_connection *gfm_server,
 		    &inum, &gen, &mode);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		is_dir = GFARM_S_ISDIR(mode);
+		type = GFARM_S_ISDIR(mode) ? GFS_DT_DIR : GFS_DT_REG;
 	}
-	if (is_dirp != NULL)
-		*is_dirp = is_dir;
+	if (typep != NULL)
+		*typep = type;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -190,13 +190,13 @@ gfm_open_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_open_result(struct gfm_connection *gfm_server,
-	const char *path, gfarm_int32_t *fdp, int *is_dirp)
+	const char *path, gfarm_int32_t *fdp, int *typep)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
-	int is_dir;
+	int type;
 
-	e = gfm_tmp_open_result(gfm_server, path, &is_dir);
+	e = gfm_tmp_open_result(gfm_server, path, &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfm_client_get_fd_result(gfm_server, &fd);
@@ -204,7 +204,7 @@ gfm_open_result(struct gfm_connection *gfm_server,
 		return (e);
 	if (fdp != NULL)
 		*fdp = fd;
-	if (is_dirp != NULL)
-		*is_dirp = is_dir;
+	if (typep != NULL)
+		*typep = type;
 	return (GFARM_ERR_NO_ERROR);
 }

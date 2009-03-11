@@ -193,6 +193,10 @@ gfarm_error_t gfm_client_getdirents_request(struct gfm_connection *,
 	gfarm_int32_t);
 gfarm_error_t gfm_client_getdirents_result(struct gfm_connection *,
 	int *, struct gfs_dirent *);
+gfarm_error_t gfm_client_getdirentsplus_request(struct gfm_connection *,
+	gfarm_int32_t);
+gfarm_error_t gfm_client_getdirentsplus_result(struct gfm_connection *,
+	int *, struct gfs_dirent *, struct gfs_stat *);
 gfarm_error_t gfm_client_seek_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_int32_t);
 gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);

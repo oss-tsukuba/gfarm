@@ -1972,13 +1972,12 @@ dir_is_empty(Dir dir)
 void
 dir_dump(gfarm_ino_t i_number)
 {
+	gfarm_error_t e;
 	struct inode *inode = inode_lookup(i_number), *entry_inode;
 	Dir dir;
-	DirEntry entry;
 	DirCursor cursor;
 	int ok;
-	char *s, *name;
-	int namelen;
+	char *name;
 
 	if (inode == NULL) {
 		gflog_info("inode_lookup %" GFARM_PRId64 " failed", i_number);
@@ -1998,17 +1997,13 @@ dir_dump(gfarm_ino_t i_number)
 	}
 	gflog_info("dir inode %" GFARM_PRId64 " dump start:", i_number);
 	for (;;) {
-		entry = dir_cursor_get_entry(dir, &cursor);
-		if (entry == NULL)
+		if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
+		    &name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+		    name == NULL)
 			break;
-		name = dir_entry_get_name(entry, &namelen);
-		GFARM_MALLOC_ARRAY(s, namelen + 1);
-		memcpy(s, name, namelen);
-		s[namelen] = '\0';
-		entry_inode = dir_entry_get_inode(entry);
 		gflog_info("entry %s (len=%d) inum %" GFARM_PRId64,
-		    name, namelen, inode_get_number(entry_inode));
-		free(s);
+		    name, strlen(name), inode_get_number(entry_inode));
+		free(name);
 		if (!dir_cursor_next(dir, &cursor))
 			break;
 	}

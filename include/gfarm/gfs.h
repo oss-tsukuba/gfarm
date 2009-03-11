@@ -112,6 +112,7 @@ gfarm_error_t gfs_desc_stat(GFS_Desc, struct gfs_stat *);
 #endif /* not yet on Gfarm v2 */
 
 void gfs_stat_free(struct gfs_stat *);
+gfarm_error_t gfs_stat_copy(struct gfs_stat *, const struct gfs_stat *);
 
 void gfs_client_connection_gc(void);
 
@@ -195,6 +196,13 @@ gfarm_error_t gfs_seekdir(GFS_Dir, gfarm_off_t);
 gfarm_error_t gfs_telldir(GFS_Dir, gfarm_off_t *);
 gfarm_error_t gfs_readdir(GFS_Dir, struct gfs_dirent **);
 
+typedef struct gfs_dirplus *GFS_DirPlus;
+
+gfarm_error_t gfs_opendirplus(const char *, GFS_DirPlus *);
+gfarm_error_t gfs_closedirplus(GFS_DirPlus);
+gfarm_error_t gfs_readdirplus(GFS_DirPlus,
+	struct gfs_dirent **, struct gfs_stat **);
+
 gfarm_error_t gfs_realpath(const char *, char **);
 
 /*
@@ -243,3 +251,21 @@ gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
 gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
 #endif
 gfarm_error_t gfs_statfs(gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+
+/*
+ * Client-side Metadata cache (preliminary version)
+ */
+
+void gfs_stat_cache_enable(int); /* enabled by default */
+gfarm_error_t gfs_stat_cache_init(void);
+void gfs_stat_cache_clear(void);
+void gfs_stat_cache_expire(void);
+void gfs_stat_cache_expiration_set(long); /* per milli-second */
+gfarm_error_t gfs_stat_cache_purge(const char *);
+gfarm_error_t gfs_stat_cached(const char *, struct gfs_stat *);
+gfarm_error_t gfs_stat_caching(const char *, struct gfs_stat *);
+
+typedef struct gfs_dir_caching *GFS_DirCaching;
+gfarm_error_t gfs_opendir_caching(const char *, GFS_DirCaching *);
+gfarm_error_t gfs_readdir_caching(GFS_DirCaching, struct gfs_dirent **);
+gfarm_error_t gfs_closedir_caching(GFS_DirCaching);

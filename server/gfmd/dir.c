@@ -486,3 +486,35 @@ dir_cursor_get_entry(Dir dir, DirCursor *cursor)
 }
 
 #endif /* ! USE_HASH */
+
+/* utility routine */
+
+/*
+ * RETURN VALUE:
+ *   (*namep): entry name, must be freed by the caller.
+ *   (*inodep): entry inode
+ * NOTE: both (*namep) and (*inodep) becomes NULL at the end of directory.
+ */
+gfarm_error_t
+dir_cursor_get_name_and_inode(Dir dir, DirCursor *cursorp,
+	char **namep, struct inode **inodep)
+{
+	DirEntry entry = dir_cursor_get_entry(dir, cursorp);
+	char *name, *newname;
+	int namelen;
+
+	if (entry == NULL) {
+		*namep = NULL;
+		*inodep = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	name = dir_entry_get_name(entry, &namelen);
+	GFARM_MALLOC_ARRAY(newname, namelen + 1);
+	if (newname == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	memcpy(newname, name, namelen);
+	newname[namelen] = '\0';
+	*namep = newname;
+	*inodep  = dir_entry_get_inode(entry);
+	return (GFARM_ERR_NO_ERROR);
+}

@@ -106,32 +106,8 @@ int gfs_pio_fileno(GFS_File gf)
 }
 
 static gfarm_error_t
-gfs_file_close(struct gfs_desc *gd)
+gfs_file_alloc(gfarm_int32_t fd, int flags, GFS_File *gfp)
 {
-	return (gfs_pio_close((GFS_File)gd));
-}
-
-static gfarm_error_t
-gfs_file_desc_to_file(struct gfs_desc *gd, struct gfs_file **gfp)
-{
-	*gfp = (GFS_File)gd;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfs_file_desc_to_dir(struct gfs_desc *gd, struct gfs_dir **gdp)
-{
-	return (GFARM_ERR_NOT_A_DIRECTORY);
-}
-
-gfarm_error_t
-gfs_file_alloc(gfarm_int32_t fd, int flags, struct gfs_desc **gdp)
-{
-	static struct gfs_desc_ops gfs_file_desc_ops = {
-		gfs_file_close,
-		gfs_file_desc_to_file,
-		gfs_file_desc_to_dir,
-	};
 	GFS_File gf;
 	char *buffer;
 
@@ -145,8 +121,6 @@ gfs_file_alloc(gfarm_int32_t fd, int flags, struct gfs_desc **gdp)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memset(gf, 0, sizeof(*gf));
-	gf->desc.ops = &gfs_file_desc_ops;
-
 	gf->fd = fd;
 	gf->mode = 0;
 	switch (flags & GFARM_FILE_ACCMODE) {
@@ -173,7 +147,7 @@ gfs_file_alloc(gfarm_int32_t fd, int flags, struct gfs_desc **gdp)
 	gf->view_context = NULL;
 	gfs_pio_set_view_default(gf);
 
-	*gdp = &gf->desc;
+	*gfp = gf;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -202,16 +176,20 @@ gfarm_error_t
 gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {
 	gfarm_error_t e;
-	struct gfs_desc *gd;
+	int fd, type;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfs_desc_create(url, flags, mode, &gd)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_create_fd(url, flags, mode, &fd, &type))
+	    != GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = (*gd->ops->desc_to_file)(gd, gfp)) != GFARM_ERR_NO_ERROR)
-		gfs_desc_close(gd);
+	else if (type != GFS_DT_REG) {
+		(void)gfm_close_fd(fd); /* ignore this result */
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	} else if ((e = gfs_file_alloc(fd, flags, gfp)) != GFARM_ERR_NO_ERROR)
+		(void)gfm_close_fd(fd); /* ignore this result */
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
@@ -222,16 +200,19 @@ gfarm_error_t
 gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 {
 	gfarm_error_t e;
-	struct gfs_desc *gd;
+	int fd, type;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfs_desc_open(url, flags, &gd)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_open_fd(url, flags, &fd, &type)) != GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = (*gd->ops->desc_to_file)(gd, gfp)) != GFARM_ERR_NO_ERROR)
-		gfs_desc_close(gd);
+	else if (type != GFS_DT_REG) {
+		(void)gfm_close_fd(fd); /* ignore this result */
+		e = GFARM_ERR_IS_A_DIRECTORY;
+	} else if ((e = gfs_file_alloc(fd, flags, gfp)) != GFARM_ERR_NO_ERROR)
+		(void)gfm_close_fd(fd); /* ignore this result */
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));

@@ -909,7 +909,8 @@ gfm_client_fstat_result(struct gfm_connection *gfm_server, struct gfs_stat *st)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, "llilsslllilili",
 	    &st->st_ino, &st->st_gen, &st->st_mode, &st->st_nlink,
-	    &st->st_user, &st->st_group, &st->st_size, &st->st_ncopy,
+	    &st->st_user, &st->st_group, &st->st_size,
+	    &st->st_ncopy,
 	    &st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec,
 	    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec,
 	    &st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec));
@@ -1208,6 +1209,7 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
+			/* XXX memory leak */
 			return (e);
 		}
 		if (sz >= sizeof(dirents[i].d_name) - 1)
@@ -1218,6 +1220,59 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 		/* XXX */
 		dirents[i].d_reclen =
 		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;
+	}
+	*n_entriesp = n;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_getdirentsplus_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t n_entries)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GETDIRENTSPLUS, "i", n_entries));
+}
+
+gfarm_error_t
+gfm_client_getdirentsplus_result(struct gfm_connection *gfm_server,
+	int *n_entriesp, struct gfs_dirent *dirents, struct gfs_stat *stv)
+{
+	gfarm_error_t e;
+	int eof, i;
+	gfarm_int32_t n;
+	size_t sz;
+
+	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	for (i = 0; i < n; i++) {
+		struct gfs_stat *st = &stv[i];
+
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "bllilsslllilili",
+		    sizeof(dirents[i].d_name) - 1, &sz, dirents[i].d_name,
+		    &st->st_ino, &st->st_gen, &st->st_mode, &st->st_nlink,
+		    &st->st_user, &st->st_group, &st->st_size,
+		    &st->st_ncopy,
+		    &st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec,
+		    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec,
+		    &st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec);
+		/* XXX st_user or st_group may be NULL */
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			if (e == GFARM_ERR_NO_ERROR)
+				e = GFARM_ERR_PROTOCOL;
+			/* XXX memory leak */
+			return (e);
+		}
+		if (sz >= sizeof(dirents[i].d_name) - 1)
+			sz = sizeof(dirents[i].d_name) - 1;
+		dirents[i].d_name[sz] = '\0';
+		dirents[i].d_namlen = sz;
+		dirents[i].d_type = GFARM_S_ISDIR(st->st_mode) ?
+		    GFS_DT_DIR : GFS_DT_REG;
+		/* XXX */
+		dirents[i].d_reclen =
+		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;
+		dirents[i].d_fileno = st->st_ino;
 	}
 	*n_entriesp = n;
 	return (GFARM_ERR_NO_ERROR);

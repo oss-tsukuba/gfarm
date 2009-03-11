@@ -26,8 +26,6 @@ struct gfs_pio_ops {
 };
 
 struct gfs_file {
-	struct gfs_desc desc;
-
 	struct gfs_pio_ops *ops;
 	void *view_context;
 

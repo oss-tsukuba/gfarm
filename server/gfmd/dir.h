@@ -37,6 +37,8 @@ int dir_cursor_next(Dir, DirCursor *);
 int dir_cursor_set_pos(Dir, gfarm_off_t, DirCursor *);
 gfarm_off_t dir_cursor_get_pos(Dir, DirCursor *);
 DirEntry dir_cursor_get_entry(Dir, DirCursor *);
+gfarm_error_t dir_cursor_get_name_and_inode(Dir, DirCursor *,
+	char **, struct inode **);
 
 /*
  * the following should belong to inode.h, really.
