@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFLS" "1" "21 December 2008" "Gfarm" ""
+.TH "GFLS" "1" "11 March 2009" "Gfarm" ""
 
 .SH NAME
 gfls \- list contents of Gfarm directory
@@ -28,6 +28,10 @@ Multi-column output.  This is the default output format.
 .TP
 \fB-d\fR
 List directory entries instead of the contents.
+.TP
+\fB-E \fIseconds\fB\fR
+Specifies seconds to hold attribute cache.
+If 0 is specified, attributes won't be cached.
 .TP
 \fB-F\fR
 Append indicator (one of */=@|) to entries.

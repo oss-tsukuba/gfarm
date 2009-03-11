@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFLS" "1" "21 December 2008" "Gfarm" ""
+.TH "GFLS" "1" "11 March 2009" "Gfarm" ""
 
 .SH NAME
 gfls \- Gfarm ディレクトリの内容を表示する。
@@ -22,6 +22,10 @@ path に指定したファイルないしディレクトリの名前と
 .TP
 \fB-A\fR
 ``.''と``..''は表示しません。
+.TP
+\fB-E \fI秒数\fB\fR
+属性キャッシュを保持する秒数を指定します。
+0 を指定した場合、属性をキャッシュしません。
 .TP
 \fB-c\fR
 -l オプションと同時に指定した場合、更新時刻ではなく、ファイルの属

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 December 2008" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "11 March 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -573,6 +573,28 @@ For example,
 
 .nf
 	gfsd_connection_cache 32
+.fi
+.TP
+\fBattr_cache_limit \fInumber\fB\fR
+This directive specifies maximum number of cached attributes in
+gfarm library.
+The default is 40000.
+
+For example,
+
+.nf
+	attr_cache_limit 100000
+.fi
+.TP
+\fBattr_cache_timeout \fImilliseconds\fB\fR
+This directive specifies maximum time until cached attributes expire
+in milliseconds.
+The default is 1000, i.e. 1 second.
+
+For example,
+
+.nf
+	attr_cache_timeout 3600000
 .fi
 .TP
 \fBlog_level \fIpriority_level\fB\fR

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 December 2008" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "11 March 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -527,6 +527,26 @@ gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
 
 .nf
 	gfsd_connection_cache 32
+.fi
+.TP
+\fBattr_cache_limit \fI個数\fB\fR
+gfarmライブラリがキャッシュする属性の最大数を指定します。
+デフォルトは40000個です。
+
+例:
+
+.nf
+	attr_cache_limit 100000
+.fi
+.TP
+\fBattr_cache_timeout \fIミリ秒数\fB\fR
+gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
+
+例:
+
+.nf
+	attr_cache_timeout 3600000
 .fi
 .TP
 \fBlog_level \fI優先度レベル\fB\fR
