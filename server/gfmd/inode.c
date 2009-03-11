@@ -2002,7 +2002,7 @@ dir_dump(gfarm_ino_t i_number)
 		    name == NULL)
 			break;
 		gflog_info("entry %s (len=%d) inum %" GFARM_PRId64,
-		    name, strlen(name), inode_get_number(entry_inode));
+		    name, (int)strlen(name), inode_get_number(entry_inode));
 		free(name);
 		if (!dir_cursor_next(dir, &cursor))
 			break;
