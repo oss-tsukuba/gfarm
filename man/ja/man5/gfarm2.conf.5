@@ -599,6 +599,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
+		\~\~<attr_cache_limit_statement> |
+		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
@@ -645,6 +647,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
+	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
