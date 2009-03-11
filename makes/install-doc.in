@@ -26,6 +26,8 @@ trap 'rm -f $tmpfile; exit $status' 0 1 2 15
 
 if grep '%%' "$src" >/dev/null; then
 	sed	-e "s|%%PREFIX%%|$prefix|g" \
+		-e "s|%%EXEC_PREFIX%%|$exec_prefix|g" \
+		-e "s|%%SYSCONFDIR%%|$sysconfdir|g" \
 		-e "s|%%LIBDIR%%|$libdir|g" \
 		-e "s|%%GLOBUS_FLAVOR%%|$globus_flavor|g" \
 		$src >$tmpfile
