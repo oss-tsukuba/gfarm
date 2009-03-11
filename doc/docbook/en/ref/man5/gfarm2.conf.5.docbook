@@ -885,6 +885,34 @@ The default is 16.
 </varlistentry>
 
 <varlistentry>
+<term><token>attr_cache_limit</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive specifies maximum number of cached attributes in
+gfarm library.
+The default is 40000.
+</para>
+<para>For example,</para>
+<literallayout>
+	attr_cache_limit 100000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>attr_cache_timeout</token> <parameter>milliseconds</parameter></term>
+<listitem>
+<para>This directive specifies maximum time until cached attributes expire
+in milliseconds.
+The default is 1000, i.e. 1 second.
+</para>
+<para>For example,</para>
+<literallayout>
+	attr_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter>priority_level</parameter></term>
 <listitem>
 <para>This directive specifies a level of log priority.

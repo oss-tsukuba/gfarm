@@ -74,6 +74,16 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-E</option> <parameter>seconds</parameter></term>
+<listitem>
+<para>
+Specifies seconds to hold attribute cache.
+If 0 is specified, attributes won't be cached.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-F</option></term>
 <listitem>
 <para>Append indicator (one of */=@|) to entries.</para>

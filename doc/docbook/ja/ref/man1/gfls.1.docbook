@@ -31,18 +31,31 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+
 <varlistentry>
 <term><option>-a</option></term>
 <listitem>
 <para>``.''で始まるパス名も表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-A</option></term>
 <listitem>
 <para>``.''と``..''は表示しません。</para>
 </listitem>
 </varlistentry>
+
+<varlistentry>
+<term><option>-E</option> <parameter>秒数</parameter></term>
+<listitem>
+<para>
+属性キャッシュを保持する秒数を指定します。
+0 を指定した場合、属性をキャッシュしません。
+</para>
+</listitem>
+</varlistentry>
+
 <varlistentry>
 <term><option>-c</option></term>
 <listitem>
@@ -50,18 +63,21 @@
 性情報の変化した時刻を表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-d</option></term>
 <listitem>
 <para>そのディレクトリに属する内容ではなく、ディレクトリ自身を表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-i</option></term>
 <listitem>
 <para>inode 番号も表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
@@ -69,6 +85,7 @@
 表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-u</option></term>
 <listitem>
@@ -76,12 +93,14 @@
 表示します。</para>
 </listitem>
 </varlistentry>
+
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+
 </variablelist>
 </refsect1>
 </refentry>

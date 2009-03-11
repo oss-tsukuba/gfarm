@@ -848,6 +848,32 @@ sharedsecret認証において、
 </varlistentry>
 
 <varlistentry>
+<term><token>attr_cache_limit</token> <parameter>個数</parameter></term>
+<listitem>
+<para>gfarmライブラリがキャッシュする属性の最大数を指定します。
+デフォルトは40000個です。
+</para>
+<para>例:</para>
+<literallayout>
+	attr_cache_limit 100000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>attr_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
+<listitem>
+<para>gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	attr_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter>優先度レベル</parameter></term>
 <listitem>
 <para>
