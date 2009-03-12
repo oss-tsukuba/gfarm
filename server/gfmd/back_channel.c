@@ -10,6 +10,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include "gfutil.h"
+#include "config.h"
 #include "gfp_xdr.h"
 #include "gfs_proto.h"
 #include "auth.h"
@@ -82,6 +83,8 @@ remover(void *arg)
 	struct timeval now;
 	struct timespec timeout;
 
+	gflog_notice("heartbeat interval: %d sec",
+	    gfarm_metadb_heartbeat_interval);
 	while (1) {
 		e = host_update_status(host);
 		if (peer_had_protocol_error(peer) ||
@@ -90,7 +93,7 @@ remover(void *arg)
 
 		/* timeout: 3 min */
 		gettimeofday(&now, NULL);
-		timeout.tv_sec = now.tv_sec + 180;
+		timeout.tv_sec = now.tv_sec + gfarm_metadb_heartbeat_interval;
 		timeout.tv_nsec = now.tv_usec * 1000;
 
 		e = host_remove_replica(host, &timeout);
