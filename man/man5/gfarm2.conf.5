@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "11 March 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "13 March 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -274,6 +274,18 @@ For example,
 
 .nf
         metadb_server_stack_size 262144
+.fi
+.TP
+\fBmetadb_server_heartbeat_interval \fIseconds\fB\fR
+This directive specifies the interval of heartbeat in seconds
+for gfmd to check availability of each gfsd.  Default is 180 seconds.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+        metadb_server_heartbeat_interval 180
 .fi
 .TP
 \fBldap_server_host \fIhostname\fB\fR
@@ -629,6 +641,7 @@ notation.
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
 		\~\~<metadb_server_stack_size_statement> |
+		\~\~<metadb_server_heartbeat_interval_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
@@ -670,6 +683,8 @@ notation.
 		\~\~"metadb_server_cred_name" <cred_name>
 	<metadb_server_stack_size_statement> ::=
 		\~\~"metadb_server_stack_size" <number>
+	<metadb_server_heartbeat_interval_statement> ::=
+		\~\~"metadb_server_heartbeat_interval" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
 	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>

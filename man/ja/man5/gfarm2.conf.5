@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "11 March 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "13 March 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -252,6 +252,19 @@ sharedsecret利用時には、この指定は単に無視されます。
 
 .nf
         metadb_server_stack_size 262144
+.fi
+.TP
+\fBmetadb_server_heartbeat_interval \fI秒数\fB\fR
+メタデータサーバ gfmd が各ファイルシステムサーバ gfsd
+に対し動作確認を行うハートビートの間隔を秒数で指定します。
+デフォルト値は180秒です。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+        metadb_server_heartbeat_interval 180
 .fi
 .TP
 \fBldap_server_host \fILDAPサーバー・ホスト名\fB\fR
@@ -580,6 +593,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
 		\~\~<metadb_server_stack_size_statement> |
+		\~\~<metadb_server_heartbeat_interval_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
@@ -621,6 +635,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_name" <cred_name>
 	<metadb_server_stack_size_statement> ::=
 		\~\~"metadb_server_stack_size" <number>
+	<metadb_server_heartbeat_interval_statement> ::=
+		\~\~"metadb_server_heartbeat_interval" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
 	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>

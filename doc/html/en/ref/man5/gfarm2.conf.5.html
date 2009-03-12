@@ -646,6 +646,28 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>metadb_server_heartbeat_interval</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the interval of heartbeat in seconds
+for gfmd to check availability of each gfsd.  Default is 180 seconds.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;metadb_server_heartbeat_interval&nbsp;180</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >ldap_server_host</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1445,6 +1467,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;|<br>
 		  &#60;ldap_server_host_statement&#62;&nbsp;|<br>
 		  &#60;ldap_server_port_statement&#62;&nbsp;|<br>
 		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
@@ -1486,6 +1509,8 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
 	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
 		  "metadb_server_stack_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;::=<br>
+		  "metadb_server_heartbeat_interval"&nbsp;&#60;number&#62;<br>
 	&#60;ldap_server_host_statement&#62;&nbsp;::=&nbsp;"ldap_server_host"&nbsp;&#60;hostname&#62;<br>
 	&#60;ldap_server_port_statement&#62;&nbsp;::=&nbsp;"ldap_server_port"&nbsp;&#60;portnumber&#62;<br>
 	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
