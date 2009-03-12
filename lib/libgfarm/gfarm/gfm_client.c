@@ -1267,8 +1267,7 @@ gfm_client_getdirentsplus_result(struct gfm_connection *gfm_server,
 			sz = sizeof(dirents[i].d_name) - 1;
 		dirents[i].d_name[sz] = '\0';
 		dirents[i].d_namlen = sz;
-		dirents[i].d_type = GFARM_S_ISDIR(st->st_mode) ?
-		    GFS_DT_DIR : GFS_DT_REG;
+		dirents[i].d_type = gfs_mode_to_type(st->st_mode);
 		/* XXX */
 		dirents[i].d_reclen =
 		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;

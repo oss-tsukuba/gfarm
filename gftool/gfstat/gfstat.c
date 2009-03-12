@@ -28,6 +28,9 @@ display_stat(char *fn, struct gfs_stat *st)
 	case GFARM_S_IFDIR:
 		puts("directory");
 		break;
+	case GFARM_S_IFLNK:
+		puts("symbolic link");
+		break;
 	default:
 		printf("unknown\n");
 	}

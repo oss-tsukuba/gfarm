@@ -84,3 +84,8 @@ CREATE TABLE DirEntry (
 );
 
 CREATE INDEX dirEntryByINode ON DirEntry (dirINumber);
+
+CREATE TABLE Symlink (
+	inumber		INT8		PRIMARY KEY,
+	sourcePath	VARCHAR(1024)	NOT NULL
+);

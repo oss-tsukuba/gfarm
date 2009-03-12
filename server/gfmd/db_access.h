@@ -79,6 +79,10 @@ gfarm_error_t db_direntry_remove(gfarm_ino_t, const char *, int);
 gfarm_error_t db_direntry_load(void *,
 	void (*)(void *, gfarm_ino_t, char *, int, gfarm_ino_t));
 
+gfarm_error_t db_symlink_add(gfarm_ino_t, const char *);
+gfarm_error_t db_symlink_remove(gfarm_ino_t);
+gfarm_error_t db_symlink_load(void *, void (*)(void *, gfarm_ino_t, char *));
+
 
 /* external interface to select metadb backend type */
 

@@ -2,7 +2,7 @@
 #include <stdio.h>	/* config.h needs FILE */
 #include <unistd.h>
 
-#define GFARM_INTERNAL_USE
+#define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP */
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
@@ -67,7 +67,7 @@ gfm_create_result(struct gfm_connection *gfm_server,
 		    &inum, &gen, &mode);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		type = GFARM_S_ISDIR(mode) ? GFS_DT_DIR : GFS_DT_REG;
+		type = gfs_mode_to_type(mode);
 	}
 	e = gfm_client_get_fd_result(gfm_server, fdp);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -145,10 +145,12 @@ gfm_open_fd(const char *url, int flags,
 		gflog_warning("compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_open_result(gfarm_metadb_server, url,
-	    fdp, typep)) != GFARM_ERR_NO_ERROR)
+	    fdp, typep)) != GFARM_ERR_NO_ERROR) {
+#if 0
 		gflog_warning("open path result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+#endif
+	} else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define GFARM_INTERNAL_USE
+#define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP, gfs_mode_to_type(), etc. */
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
@@ -169,7 +169,7 @@ gfm_tmp_open_result(struct gfm_connection *gfm_server,
 		    &inum, &gen, &mode);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		type = GFARM_S_ISDIR(mode) ? GFS_DT_DIR : GFS_DT_REG;
+		type = gfs_mode_to_type(mode);
 	}
 	if (typep != NULL)
 		*typep = type;

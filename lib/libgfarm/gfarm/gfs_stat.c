@@ -1,5 +1,5 @@
-#include <stdio.h>	/* config.h needs FILE */
-#include <stdlib.h>
+#include <stddef.h>
+#include <unistd.h>
 #include <sys/time.h>
 
 #define GFARM_INTERNAL_USE
@@ -73,6 +73,12 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
+}
+
+gfarm_error_t
+gfs_lstat(const char *path, struct gfs_stat *s)
+{
+	return (gfs_stat(path, s)); /* XXX FIXME */
 }
 
 gfarm_error_t

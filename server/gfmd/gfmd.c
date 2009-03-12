@@ -920,6 +920,7 @@ main(int argc, char **argv)
 	dir_entry_init();
 	file_copy_init();
 	dead_file_copy_init();
+	symlink_init();
 
 	peer_init(table_size, protocol_main);
 	job_table_init(table_size);

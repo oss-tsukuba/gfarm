@@ -160,13 +160,13 @@ gfarm_none_inode_load(
 /**********************************************************************/
 
 static void
-gfarm_none_inode_cksum_arg_free(struct db_inode_cksum_arg *arg)
+gfarm_none_inode_cksum_free(struct db_inode_cksum_arg *arg)
 {
 	free(arg);
 }
 
 static void
-gfarm_none_inode_cksum_remove(struct db_inode_inum_arg *arg)
+gfarm_none_inode_inum_free(struct db_inode_inum_arg *arg)
 {
 	free(arg);
 }
@@ -235,6 +235,22 @@ gfarm_none_direntry_load(
 
 /**********************************************************************/
 
+static void
+gfarm_none_symlink_free(struct db_symlink_arg *arg)
+{
+	free(arg);
+}
+
+static gfarm_error_t
+gfarm_none_symlink_load(
+	void *closure,
+	void (*callback)(void *, gfarm_ino_t, char *))
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
@@ -268,9 +284,9 @@ const struct db_ops db_none_ops = {
 	gfarm_none_inode_load,
 
 	/* cksum */
-	gfarm_none_inode_cksum_arg_free,
-	gfarm_none_inode_cksum_arg_free,
-	gfarm_none_inode_cksum_remove,
+	gfarm_none_inode_cksum_free,
+	gfarm_none_inode_cksum_free,
+	gfarm_none_inode_inum_free,
 	gfarm_none_inode_cksum_load,
 
 	gfarm_none_filecopy_free,
@@ -284,4 +300,8 @@ const struct db_ops db_none_ops = {
 	gfarm_none_direntry_add,
 	gfarm_none_direntry_remove,
 	gfarm_none_direntry_load,
+
+	gfarm_none_symlink_free,
+	gfarm_none_inode_inum_free,
+	gfarm_none_symlink_load,
 };

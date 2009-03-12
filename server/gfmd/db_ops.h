@@ -85,6 +85,11 @@ struct db_direntry_arg {
 	int entry_len;
 };
 
+struct db_symlink_arg {
+	gfarm_ino_t inum;
+	char *source_path;
+};
+
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -141,4 +146,10 @@ struct db_ops {
 	void (*direntry_remove)(struct db_direntry_arg *);
 	gfarm_error_t (*direntry_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *, int, gfarm_ino_t));
+
+	void (*symlink_add)(struct db_symlink_arg *);
+	void (*symlink_remove)(struct db_inode_inum_arg *);
+	gfarm_error_t (*symlink_load)(void *,
+		void (*)(void *, gfarm_ino_t, char *));
+
 };

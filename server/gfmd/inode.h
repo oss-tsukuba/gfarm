@@ -2,6 +2,7 @@ void inode_init(void);
 void dir_entry_init(void);
 void file_copy_init(void);
 void dead_file_copy_init(void);
+void symlink_init(void);
 
 gfarm_uint64_t inode_total_num(void);
 
@@ -14,6 +15,7 @@ struct process;
 
 int inode_is_dir(struct inode *);
 int inode_is_file(struct inode *);
+int inode_is_symlink(struct inode *);
 gfarm_ino_t inode_get_number(struct inode *);
 gfarm_int64_t inode_get_gen(struct inode *);
 gfarm_int64_t inode_get_nlink(struct inode *);
@@ -35,6 +37,7 @@ void inode_set_mtime(struct inode *, struct gfarm_timespec *);
 void inode_accessed(struct inode *);
 void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);
+char *inode_get_symlink(struct inode *);
 
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
@@ -50,6 +53,8 @@ gfarm_error_t inode_create_file(struct inode *, char *,
 	struct inode **, int *);
 gfarm_error_t inode_create_dir(struct inode *, char *,
 	struct process *, gfarm_mode_t);
+gfarm_error_t inode_create_symlink(struct inode *, char *,
+	struct process *, char *);
 gfarm_error_t inode_create_link(struct inode *, char *,
 	struct process *, struct inode *);
 gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,

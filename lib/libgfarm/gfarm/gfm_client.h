@@ -185,7 +185,7 @@ gfarm_error_t gfm_client_mkdir_result(struct gfm_connection *);
 gfarm_error_t gfm_client_symlink_request(struct gfm_connection *,
 	const char *, const char *);
 gfarm_error_t gfm_client_symlink_result(struct gfm_connection *);
-gfarm_error_t gfm_client_readlink(struct gfm_connection *);
+gfarm_error_t gfm_client_readlink_request(struct gfm_connection *);
 gfarm_error_t gfm_client_readlink_result(struct gfm_connection *, char **);
 gfarm_error_t gfm_client_getdirpath_request(struct gfm_connection *);
 gfarm_error_t gfm_client_getdirpath_result(struct gfm_connection *, char **);

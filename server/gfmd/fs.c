@@ -929,6 +929,7 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	char *name;
+	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t sfd, dfd;
 	struct inode *src, *base;
@@ -942,7 +943,9 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	}
 	giant_lock();
 
-	if ((process = peer_get_process(peer)) == NULL)
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if (process_get_user(process) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -951,8 +954,8 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, sfd, &src))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else if (inode_is_dir(src))
-		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (!inode_is_file(src))
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((e = peer_fdpair_get_current(peer, &dfd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
@@ -1010,40 +1013,77 @@ gfarm_error_t
 gfm_server_symlink(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	char *target, *name;
+	char *source_path, *name;
+	struct host *spool_host = NULL;
+	struct process *process;
+	gfarm_int32_t cfd;
+	struct inode *base;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("symlink: not implemented");
-
-	e = gfm_server_get_request(peer, "symlink", "ss", &target, &name);
+	e = gfm_server_get_request(peer, "symlink", "ss", &source_path, &name);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
-		free(target);
+		free(source_path);
 		free(name);
 		return (GFARM_ERR_NO_ERROR);
 	}
+	giant_lock();
 
-	free(target);
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if (process_get_user(process) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, cfd, &base))
+	    != GFARM_ERR_NO_ERROR)
+		;
+	else
+		e = inode_create_symlink(base, name, process, source_path);
+
+	free(source_path);
 	free(name);
-	e = gfm_server_put_reply(peer, "symlink",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, "symlink", e, ""));
 }
 
 gfarm_error_t
 gfm_server_readlink(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
+	gfarm_int32_t fd;
+	struct host *spool_host = NULL;
+	struct process *process;
+	struct inode *inode;
+	char *source_path = NULL;
 
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error("readlink: not implemented");
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
 
-	e = gfm_server_put_reply(peer, "readlink",
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((source_path = inode_get_symlink(inode)) == NULL)
+		e = GFARM_ERR_INVALID_ARGUMENT; /* not a symlink */
+	else if ((source_path = strdup(source_path)) == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, "readlink", e, "s", source_path);
+	if (e == GFARM_ERR_NO_ERROR)
+		free(source_path);
+	return (e2);
 }
 
 gfarm_error_t
@@ -1193,8 +1233,8 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			    p[i].name == NULL)
 				break;
 			p[i].inum = inode_get_number(entry_inode);
-			p[i].type = inode_is_dir(entry_inode) ?
-			    GFS_DT_DIR : GFS_DT_REG;
+			p[i].type =
+			    gfs_mode_to_type(inode_get_mode(entry_inode));
 
 			i++;
 			if (!dir_cursor_next(dir, &cursor))

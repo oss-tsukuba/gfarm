@@ -21,14 +21,10 @@ typedef gfarm_uint32_t gfarm_mode_t;
 #define	GFARM_S_IFMT	0170000		/* type of file mask */
 #define	GFARM_S_IFDIR	0040000		/* directory */
 #define	GFARM_S_IFREG	0100000		/* regular file */
-#if 0
 #define	GFARM_S_IFLNK	0120000		/* symbolic link */
-#endif
 #define	GFARM_S_ISDIR(m) (((m) & GFARM_S_IFMT) == GFARM_S_IFDIR)
 #define	GFARM_S_ISREG(m) (((m) & GFARM_S_IFMT) == GFARM_S_IFREG)
-#if 0
 #define	GFARM_S_ISLNK(m) (((m) & GFARM_S_IFMT) == GFARM_S_IFLNK)
-#endif
 
 #define	GFARM_S_IS_PROGRAM(m) \
 	(GFARM_S_ISREG(m) && ((m) & 0111) != 0)
@@ -187,6 +183,8 @@ struct gfs_dirent {
 #define	GFS_DT_UNKNOWN	 0 /* gfs_hook.c depends on it that this is 0 */
 #define	GFS_DT_DIR	 4
 #define	GFS_DT_REG	 8
+#define GFS_DT_LNK	10
+int gfs_mode_to_type(gfarm_mode_t);
 
 typedef struct gfs_dir *GFS_Dir;
 
@@ -204,6 +202,12 @@ gfarm_error_t gfs_readdirplus(GFS_DirPlus,
 	struct gfs_dirent **, struct gfs_stat **);
 
 gfarm_error_t gfs_realpath(const char *, char **);
+
+/*
+ * Symbolic link operations
+ */
+gfarm_error_t gfs_symlink(const char *, const char *);
+gfarm_error_t gfs_readlink(const char *, char **);
 
 /*
  * Meta operations
@@ -228,6 +232,7 @@ gfarm_error_t gfs_utimes(const char *, const struct gfarm_timespec *);
 gfarm_error_t gfs_rename(const char *, const char *);
 
 gfarm_error_t gfs_stat(const char *, struct gfs_stat *);
+gfarm_error_t gfs_lstat(const char *, struct gfs_stat *);
 gfarm_error_t gfs_fstat(GFS_File, struct gfs_stat *);
 #if 0
 gfarm_error_t gfs_stat_section(const char *, const char *, struct gfs_stat *);
@@ -264,6 +269,8 @@ void gfs_stat_cache_expiration_set(long); /* per milli-second */
 gfarm_error_t gfs_stat_cache_purge(const char *);
 gfarm_error_t gfs_stat_cached(const char *, struct gfs_stat *);
 gfarm_error_t gfs_stat_caching(const char *, struct gfs_stat *);
+gfarm_error_t gfs_lstat_cached(const char *, struct gfs_stat *);
+gfarm_error_t gfs_lstat_caching(const char *, struct gfs_stat *);
 
 typedef struct gfs_dir_caching *GFS_DirCaching;
 gfarm_error_t gfs_opendir_caching(const char *, GFS_DirCaching *);

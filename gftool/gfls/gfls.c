@@ -53,7 +53,7 @@ int screen_width = 80; /* default */
  */
 
 struct ls_entry {
-	char *path;
+	char *path, *symlink;
 	struct gfs_stat *st;
 };
 
@@ -169,7 +169,7 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 			memcpy(namep, files[i], space);
 			namep[space] = '\0';
 		}
-		e = gfs_stat_cached(buffer, &stats[i]);
+		e = gfs_lstat_cached(buffer, &stats[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", buffer,
 			    gfarm_error_string(e));
@@ -182,6 +182,10 @@ do_stats(char *prefix, int *np, char **files, struct gfs_stat *stats,
 		}
 		ls[m].path = files[i];
 		ls[m].st = &stats[i];
+		if (!GFARM_S_ISLNK(ls[m].st->st_mode) ||
+		    gfs_readlink(buffer, &ls[m].symlink) != GFARM_ERR_NO_ERROR)
+			ls[m].symlink = NULL;
+			
 		m++;
 	}
 	*np = m;
@@ -196,8 +200,10 @@ put_suffix(struct ls_entry *ls)
 	if (GFARM_S_ISDIR(st->st_mode)) {
 		putchar('/');
 		return 1;
-	}
-	else if (GFARM_S_IS_PROGRAM(st->st_mode)) {
+	} else if (GFARM_S_ISLNK(st->st_mode)) {
+		putchar('@');
+		return 1;
+	} else if (GFARM_S_IS_PROGRAM(st->st_mode)) {
 		putchar('*');
 		return 1;
 	}
@@ -254,13 +260,14 @@ put_stat(struct gfs_stat *st)
 {
 	if (GFARM_S_ISDIR(st->st_mode))
 		putchar('d');
+	else if (GFARM_S_ISLNK(st->st_mode))
+		putchar('l');
 	else
 		putchar('-');
 	put_perm(st->st_mode >> 6);
 	put_perm(st->st_mode >> 3);
 	put_perm(st->st_mode);
-	putchar(' ');
-	printf("%-8s %-8s ", st->st_user, st->st_group);
+	printf(" %d %-8s %-8s ", (int)st->st_nlink, st->st_user, st->st_group);
 	printf("%10" GFARM_PRId64 " ", st->st_size);
 	put_time(&st->st_mtimespec);
 	putchar(' ');
@@ -290,6 +297,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		for (i = 0; i < n; i++) {
 			ls[i].path = files[i];
 			ls[i].st = NULL;
+			ls[i].symlink = NULL;
 		}
 	}
 	ls_sort(n, ls);
@@ -339,6 +347,9 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 			fputs(ls[i].path, stdout);
 			if (option_type_suffix)
 				(void)put_suffix(&ls[i]);
+			if (option_output_format == OF_LONG &&
+			    ls[i].symlink != NULL)
+				printf(" -> %s", ls[i].symlink);
 			putchar('\n');
 		}
 	}
@@ -666,7 +677,7 @@ main(int argc, char **argv)
 				char *path = gfarm_stringlist_elem(&paths,
 				    last);
 
-				e = gfs_stat_cached(path, &s);
+				e = gfs_lstat_cached(path, &s);
 				if (e != GFARM_ERR_NO_ERROR) {
 					fprintf(stderr, "%s: %s\n", path,
 					    gfarm_error_string(e));
@@ -678,8 +689,7 @@ main(int argc, char **argv)
 					types.length--;
 				} else {
 					GFS_GLOB_ELEM(types, last) =
-					    GFARM_S_ISDIR(s.st_mode) ?
-					    GFS_DT_DIR : GFS_DT_REG;
+					    gfs_mode_to_type(s.st_mode);
 					gfs_stat_free(&s);
 				}
 			}

@@ -54,12 +54,15 @@ SRCS = \
 	gfs_statfs.c \
 	gfs_statsw.c \
 	gfs_mkdir.c \
-	gfs_rmdir.c \
+	gfs_readlink.c \
 	gfs_remove.c \
 	gfs_rename.c \
 	gfs_replica.c \
 	gfs_replicate.c \
+	gfs_rmdir.c \
+	gfs_symlink.c \
 	gfs_unlink.c \
+	gfs_util.c \
 	gfs_utimes.c \
 	gfarm_foreach.c \
 	glob.c \
@@ -115,12 +118,15 @@ OBJS = \
 	gfs_statfs.lo \
 	gfs_statsw.lo \
 	gfs_mkdir.lo \
-	gfs_rmdir.lo \
+	gfs_readlink.lo \
 	gfs_remove.lo \
 	gfs_rename.lo \
 	gfs_replica.lo \
 	gfs_replicate.lo \
+	gfs_rmdir.lo \
+	gfs_symlink.lo \
 	gfs_unlink.lo \
+	gfs_util.lo \
 	gfs_utimes.lo \
 	gfarm_foreach.lo \
 	glob.lo \
@@ -173,10 +179,12 @@ gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $
 gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h
 gfs_proto.lo: gfs_proto.h
+gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
 gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h
 gfs_statsw.lo: gfs_dircache.h
+gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h 
 gfarm_foreach.lo: gfarm_foreach.h

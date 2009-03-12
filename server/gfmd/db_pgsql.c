@@ -1569,6 +1569,31 @@ pgsql_inode_cksum_call(struct db_inode_cksum_arg *arg, const char *sql,
 }
 
 static void
+pgsql_inode_inum_call(struct db_inode_inum_arg *arg, const char *sql,
+	gfarm_error_t (*op)(const char *, int, const Oid *,
+		const char *const *, const int *, const int *, int,
+		const char *),
+	const char *diag)
+{
+	const char *paramValues[1];
+	char inumber[GFARM_INT64STRLEN + 1];
+
+	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
+	paramValues[0] = inumber;
+	(*op)(
+		sql,
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		diag);
+
+	free(arg);
+}
+
+static void
 gfarm_pgsql_file_info_add(struct db_inode_cksum_arg *arg)
 {
 	pgsql_inode_cksum_call(arg,
@@ -1589,22 +1614,10 @@ gfarm_pgsql_file_info_modify(struct db_inode_cksum_arg *arg)
 static void
 gfarm_pgsql_file_info_remove(struct db_inode_inum_arg *arg)
 {
-	const char *paramValues[1];
-	char inumber[GFARM_INT64STRLEN + 1];
-
-	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
-	paramValues[0] = inumber;
-	gfarm_pgsql_update_or_delete_with_retry(
+	pgsql_inode_inum_call(arg,
 		"DELETE FROM FileInfo WHERE inumber = $1",
-		1, /* number of params */
-		NULL, /* param types */
-		paramValues,
-		NULL, /* param lengths */
-		NULL, /* param formats */
-		0, /* ask for text results */
+		gfarm_pgsql_update_or_delete_with_retry,
 		"pgsql_cksum_remove");
-
-	free(arg);
 }
 
 static void
@@ -1908,6 +1921,87 @@ gfarm_pgsql_direntry_load(
 
 /**********************************************************************/
 
+static void
+pgsql_symlink_call(struct db_symlink_arg *arg, const char *sql,
+	gfarm_error_t (*op)(const char *, int, const Oid *,
+		const char *const *, const int *, const int *, int,
+		const char *),
+	const char *diag)
+{
+	const char *paramValues[2];
+	char inumber[GFARM_INT64STRLEN + 1];
+
+	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
+	paramValues[0] = inumber;
+	paramValues[1] = arg->source_path;
+	(*op)(
+		sql,
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		diag);
+
+	free(arg);
+}
+
+static void
+gfarm_pgsql_symlink_add(struct db_symlink_arg *arg)
+{
+	pgsql_symlink_call(arg,
+		"INSERT INTO Symlink (inumber, sourcePath) VALUES ($1, $2)",
+		gfarm_pgsql_insert_with_retry,
+		"pgsql_symlink_add");
+}
+
+static void
+gfarm_pgsql_symlink_remove(struct db_inode_inum_arg *arg)
+{
+	pgsql_inode_inum_call(arg,
+		"DELETE FROM Symlink WHERE inumber = $1",
+		gfarm_pgsql_update_or_delete_with_retry,
+		"pgsql_symlink_remove");
+}
+
+static void
+symlink_set_fields_from_copy_binary(
+	const char *buf, int residual, void *vinfo)
+{
+	struct db_symlink_arg *info = vinfo;
+	uint16_t num_fields;
+
+	COPY_BINARY(num_fields, buf, residual,
+	    "pgsql_symlink_load: field number");
+	num_fields = ntohs(num_fields);
+	if (num_fields < 2) /* allow fields addition in future */
+		gflog_fatal("pgsql_symlink_load: fields = %d", num_fields);
+
+	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
+	info->source_path = get_value_from_varchar_copy_binary(&buf, &residual);
+}
+
+static gfarm_error_t
+gfarm_pgsql_symlink_load(
+	void *closure,
+	void (*callback)(void *, gfarm_ino_t, char *))
+{
+	struct db_symlink_arg tmp_info;
+	struct db_symlink_trampoline_closure c;
+
+	c.closure = closure;
+	c.callback = callback;
+
+	return (gfarm_pgsql_generic_load(
+		"COPY Symlink TO STDOUT BINARY",
+		&tmp_info, db_symlink_callback_trampoline, &c,
+		&db_base_symlink_arg_ops,
+		symlink_set_fields_from_copy_binary,
+		"pgsql_symlink_load"));
+}
+/**********************************************************************/
+
 const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_initialize,
 	gfarm_pgsql_terminate,
@@ -1957,4 +2051,8 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_direntry_add,
 	gfarm_pgsql_direntry_remove,
 	gfarm_pgsql_direntry_load,
+
+	gfarm_pgsql_symlink_add,
+	gfarm_pgsql_symlink_remove,
+	gfarm_pgsql_symlink_load,
 };

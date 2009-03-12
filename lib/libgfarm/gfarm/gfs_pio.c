@@ -187,7 +187,9 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 		;
 	else if (type != GFS_DT_REG) {
 		(void)gfm_close_fd(fd); /* ignore this result */
-		e = GFARM_ERR_IS_A_DIRECTORY;
+		e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
+		    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :	
+		    GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = gfs_file_alloc(fd, flags, gfp)) != GFARM_ERR_NO_ERROR)
 		(void)gfm_close_fd(fd); /* ignore this result */
 
@@ -210,7 +212,9 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 		;
 	else if (type != GFS_DT_REG) {
 		(void)gfm_close_fd(fd); /* ignore this result */
-		e = GFARM_ERR_IS_A_DIRECTORY;
+		e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
+		    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :	
+		    GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = gfs_file_alloc(fd, flags, gfp)) != GFARM_ERR_NO_ERROR)
 		(void)gfm_close_fd(fd); /* ignore this result */
 

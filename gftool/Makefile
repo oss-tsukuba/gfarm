@@ -13,6 +13,7 @@ SUBDIRS = \
 	gfgroup \
 	gfhost \
 	gfkey \
+	gfln \
 	gfls \
 	gfmkdir \
 	gfmv \

@@ -64,6 +64,12 @@ gfs_stat_cached(const char *path, struct gfs_stat *st)
 	return ((*gfs_statsw->stat)(path, st));
 }
 
+gfarm_error_t
+gfs_lstat_cached(const char *path, struct gfs_stat *st)
+{
+	return ((*gfs_statsw->stat)(path, st)); /* XXX FIXME */
+}
+
 void
 gfs_stat_cache_enable(int enable)
 {

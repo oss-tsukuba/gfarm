@@ -66,6 +66,9 @@ struct inode {
 				struct inode_dir {
 					Dir entries;
 				} d;
+				struct inode_symlink {
+					char *source_path;
+				} l;
 			} s;
 			struct inode_open_state *state;
 		} c;
@@ -438,6 +441,8 @@ inode_remove(struct inode *inode)
 		inode_cksum_remove(inode);
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
+	} else if (inode_is_symlink(inode)) {
+		free(inode->u.c.s.l.source_path);
 	} else {
 		gflog_fatal("inode_unlink: unknown inode type");
 		/*NOTREACHED*/
@@ -500,6 +505,20 @@ inode_init_file(struct inode *inode)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+inode_init_symlink(struct inode *inode, char *source_path)
+{
+	if (source_path != NULL) {
+		source_path = strdup(source_path);
+		if (source_path == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
+	inode->i_nlink = 1;
+	inode->i_mode = GFARM_S_IFLNK;
+	inode->u.c.s.l.source_path = source_path;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 struct inode *
 inode_lookup(gfarm_ino_t inum)
 {
@@ -525,6 +544,12 @@ int
 inode_is_file(struct inode *inode)
 {
 	return (GFARM_S_ISREG(inode->i_mode));
+}
+
+int
+inode_is_symlink(struct inode *inode)
+{
+	return (GFARM_S_ISLNK(inode->i_mode));
 }
 
 gfarm_ino_t
@@ -763,6 +788,14 @@ inode_get_dir(struct inode *inode)
 	return (inode->u.c.s.d.entries);
 }
 
+char *
+inode_get_symlink(struct inode *inode)
+{
+	if (!inode_is_symlink(inode))
+		return (NULL);
+	return (inode->u.c.s.l.source_path);
+}
+
 gfarm_error_t
 inode_access(struct inode *inode, struct user *user, int op)
 {
@@ -797,14 +830,28 @@ inode_access(struct inode *inode, struct user *user, int op)
 enum gfarm_inode_lookup_op {
 	INODE_LOOKUP,
 	INODE_CREATE,
+	INODE_CREATE_EXCLUSIVE,
 	INODE_REMOVE,
 	INODE_LINK,
 };
 
-/* if (op != INODE_CREATE), (is_dir) may be -1, and that means "don't care". */
+/*
+ * if (op == INODE_LINK)
+ *	(*inp) is an input parameter instead of output.
+ * if (op == INODE_CREATE)
+ *	createdp must be passed, otherwise it's ignored.
+ * if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE)
+ *	expcted_type may be GFS_DT_UNKNOWN, and that means "don't care".
+ * if (op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE)
+ *	new_mode must be passed, otherwise it's ignored.
+ * if ((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
+ *     expected_type == GFS_DT_LNK)
+ *	symlink_src must be passed, otherwise it's ignored.
+ */
 static gfarm_error_t
 inode_lookup_basename(struct inode *parent, const char *name, int len,
-	int is_dir, enum gfarm_inode_lookup_op op, struct user *user,
+	int expected_type, enum gfarm_inode_lookup_op op, struct user *user,
+	gfarm_mode_t new_mode, char *symlink_src,
 	struct inode **inp, int *createdp)
 {
 	gfarm_error_t e;
@@ -813,46 +860,46 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	struct inode *n;
 
 	if (len == 0) {
-		if (op == INODE_REMOVE)
+		if (op != INODE_LOOKUP)
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		*inp = parent;
-		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	} else if (len == 1 && name[0] == '.') {
-		if (op == INODE_REMOVE)
+		if (op != INODE_LOOKUP)
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		*inp = parent;
-		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
-	}
+	} else if (memchr(name, '/', len) != NULL)
+		return (GFARM_ERR_INVALID_ARGUMENT);
 	if (len > GFS_MAXNAMLEN)
 		len = GFS_MAXNAMLEN;
-	if (op != INODE_CREATE && op != INODE_LINK) {
+	if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE &&
+	    op != INODE_LINK) {
 		entry = dir_lookup(parent->u.c.s.d.entries, name, len);
 		if (entry == NULL)
 			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
-		if (op == INODE_REMOVE) {
-			if ((e = inode_access(parent, user, GFS_W_OK)) !=
-			    GFARM_ERR_NO_ERROR) {
-				return (e);
-			}
+		if (op == INODE_LOOKUP) {
 			*inp = dir_entry_get_inode(entry);
-			*createdp = 0;
-			(*inp)->i_nlink--;
-			dir_remove_entry(parent->u.c.s.d.entries, name, len);
-			inode_modified(parent);
-
-			e = db_direntry_remove(parent->i_number, name, len);
-			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error("db_direntry_remove(%" GFARM_PRId64
-				    ", %.*s): %s",
-				    parent->i_number, len, name,
-				    gfarm_error_string(e));
-
 			return (GFARM_ERR_NO_ERROR);
 		}
+
+		assert(op == INODE_REMOVE);
+		if ((e = inode_access(parent, user, GFS_W_OK)) !=
+		    GFARM_ERR_NO_ERROR) {
+			return (e);
+		}
 		*inp = dir_entry_get_inode(entry);
-		*createdp = 0;
+		(*inp)->i_nlink--;
+		dir_remove_entry(parent->u.c.s.d.entries, name, len);
+		inode_modified(parent);
+
+		e = db_direntry_remove(parent->i_number, name, len);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_direntry_remove(%" GFARM_PRId64
+			    ", %.*s): %s",
+			    parent->i_number, len, name,
+			    gfarm_error_string(e));
+
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -860,6 +907,9 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (entry == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if (!created) {
+		if (op == INODE_CREATE_EXCLUSIVE || op == INODE_LINK)
+			return (GFARM_ERR_ALREADY_EXISTS);
+		assert(op == INODE_CREATE);
 		*inp = dir_entry_get_inode(entry);
 		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
@@ -887,20 +937,27 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			    parent->i_number, n->i_number,
 			    gfarm_error_string(e));
 
-		*createdp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	assert((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
+	    expected_type != GFS_DT_UNKNOWN);
 	n = inode_alloc();
 	if (n == NULL) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = is_dir ? inode_init_dir(n, parent) : inode_init_file(n);
+	switch (expected_type) {
+	case GFS_DT_DIR: e = inode_init_dir(n, parent); break;
+	case GFS_DT_REG: e = inode_init_file(n); break;
+	case GFS_DT_LNK: e = inode_init_symlink(n, symlink_src); break;
+	default: assert(0); e = GFARM_ERR_UNKNOWN; break;
+	}	
 	if (e != GFARM_ERR_NO_ERROR) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		inode_free(n);
 		return (e);
 	}
+	n->i_mode |= new_mode;
 	n->i_user = user;
 	n->i_group = parent->i_group;
 	n->i_size = 0;
@@ -938,7 +995,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	 * due to LDAP DN hierarchy.
 	 * See the comment in inode_init_dir() too.
 	 */
-	if (is_dir) {
+	if (expected_type == GFS_DT_DIR) {
 		e = db_direntry_add(n->i_number, dot, DOT_LEN, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error("db_direntry_add(%" GFARM_PRId64
@@ -952,6 +1009,13 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			    ", \"..\", %" GFARM_PRId64 "): %s",
 			    parent->i_number, n->i_number,
 			    gfarm_error_string(e));
+	} else if (expected_type == GFS_DT_LNK) {
+		e = db_symlink_add(n->i_number, symlink_src);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_symlink_add(%" GFARM_PRId64
+			    ", \"%s\"): %s",
+			    n->i_number, symlink_src,
+			    gfarm_error_string(e));
 	}
 	e = db_direntry_add(parent->i_number, name, len, n->i_number);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -961,17 +1025,30 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		    gfarm_error_string(e));
 
 	*inp = n;
-	*createdp = 1;
+	if (op == INODE_CREATE)
+		*createdp = 1;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 /* XXX TODO: namei cache */
-/* if (op == INODE_LINK) *inp is an input parameter instead of output */
-/* if (op != INODE_CREATE), (is_dir) may be -1, and that means "don't care". */
+/*
+ * if (op == INODE_LINK)
+ *	(*inp) is an input parameter instead of output.
+ * if (op == INODE_CREATE)
+ *	createdp must be passed, otherwise it's ignored.
+ * if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE)
+ *	expcted_type may be GFS_DT_UNKNOWN, and that means "don't care".
+ * if (op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE)
+ *	new_mode must be passed, otherwise it's ignored.
+ * if ((op == INODE_CREATE || op == INODE_CREATE_EXCLUSIVE) &&
+ *     expected_type == GFS_DT_LNK)
+ *	symlink_src must be passed, otherwise it's ignored.
+ */
 gfarm_error_t
 inode_lookup_relative(struct inode *n, char *name,
-	int is_dir, enum gfarm_inode_lookup_op op,
-	struct user *user, struct inode **inp, int *createdp)
+	int expected_type, enum gfarm_inode_lookup_op op, struct user *user,
+	gfarm_mode_t new_mode, char *symlink_src,
+	struct inode **inp, int *createdp)
 {
 	gfarm_error_t e;
 	int len = strlen(name);
@@ -987,13 +1064,18 @@ inode_lookup_relative(struct inode *n, char *name,
 	if (op == INODE_LINK)
 		nn = *inp;
 	e = inode_lookup_basename(n, name, len,
-	    is_dir, op, user, &nn, createdp);
+	    expected_type, op, user, new_mode, symlink_src, &nn, createdp);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (is_dir != -1 && inode_is_dir(nn) != is_dir)
-		return (is_dir ?
-		    GFARM_ERR_NOT_A_DIRECTORY :
-		    GFARM_ERR_IS_A_DIRECTORY);
+	if (expected_type != GFS_DT_UNKNOWN &&
+	    gfs_mode_to_type(nn->i_mode) != expected_type) {
+		assert(op != INODE_CREATE_EXCLUSIVE &&
+		       (op != INODE_CREATE || !*createdp));
+		return (
+		    expected_type == GFS_DT_DIR ? GFARM_ERR_NOT_A_DIRECTORY :
+		    GFARM_S_ISDIR(nn->i_mode) ?  GFARM_ERR_IS_A_DIRECTORY :
+		    GFARM_ERR_OPERATION_NOT_SUPPORTED);
+	}
 	*inp = nn;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1017,10 +1099,9 @@ inode_lookup_parent(struct inode *base, struct process *process, int op,
 	struct inode **inp)
 {
 	struct inode *inode;
-	int created;
 	struct user *user = process_get_user(process);
-	gfarm_error_t e = inode_lookup_relative(base, dotdot, 1,
-	    INODE_LOOKUP, user, &inode, &created);
+	gfarm_error_t e = inode_lookup_relative(base, dotdot, GFS_DT_DIR,
+	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
 
 	if (e == GFARM_ERR_NO_ERROR &&
 	    (e = inode_access(inode, user, op)) == GFARM_ERR_NO_ERROR) {
@@ -1035,10 +1116,9 @@ inode_lookup_by_name(struct inode *base, char *name,
 	struct inode **inp)
 {
 	struct inode *inode;
-	int created;
 	struct user *user = process_get_user(process);
-	gfarm_error_t e = inode_lookup_relative(base, name, -1,
-	    INODE_LOOKUP, user, &inode, &created);
+	gfarm_error_t e = inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
+	    INODE_LOOKUP, user, 0, NULL, &inode, NULL);
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
@@ -1061,29 +1141,12 @@ inode_create_file(struct inode *base, char *name,
 	struct inode *inode;
 	int created;
 	struct user *user = process_get_user(process);
-	gfarm_error_t e = inode_lookup_relative(base, name, 0,
-	    INODE_CREATE, user, &inode, &created);
+	gfarm_error_t e = inode_lookup_relative(base, name, GFS_DT_REG,
+	    INODE_CREATE, user, mode, NULL, &inode, &created);
 
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (created) {
-			inode->i_mode |= mode;
-			/*
-			 * XXX FIXME
-			 * This is just after db_inode_add/modify(), and
-			 * it's wastful to write the mode to the DB again.
-			 */
-			e = db_inode_mode_modify(inode->i_number,
-			    inode->i_mode);
-			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error("db_inode_mode_modify(%"
-				    GFARM_PRId64 "): %s",
-				    inode->i_number,
-				    gfarm_error_string(e));
-		} else if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
-			e = GFARM_ERR_IS_A_DIRECTORY;
-		} else {
+		if (!created)
 			e = inode_access(inode, user, op);
-		}
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
 			*createdp = created;
@@ -1097,46 +1160,29 @@ inode_create_dir(struct inode *base, char *name,
 	struct process *process, gfarm_mode_t mode)
 {
 	struct inode *inode;
-	int created;
-	struct user *user = process_get_user(process);
-	gfarm_error_t e = inode_lookup_relative(base, name, 1,
-	    INODE_CREATE, user, &inode, &created);
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		if (created) {
-			inode->i_mode |= mode;
-			/*
-			 * XXX FIXME
-			 * This is just after db_inode_add/modify(), and
-			 * it's wastful to write the mode to the DB again.
-			 */
-			e = db_inode_mode_modify(inode->i_number,
-			    inode->i_mode);
-			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error("db_inode_mode_modify(%"
-				    GFARM_PRId64 "): %s",
-				    inode->i_number, gfarm_error_string(e));
-		} else {
-			e = GFARM_ERR_ALREADY_EXISTS;
-		}
-	}
-	return (e);
+	return (inode_lookup_relative(base, name, GFS_DT_DIR,
+	    INODE_CREATE_EXCLUSIVE, process_get_user(process), mode, NULL,
+	    &inode, NULL));
+}
+
+gfarm_error_t
+inode_create_symlink(struct inode *base, char *name,
+	struct process *process, char *source_path)
+{
+	struct inode *inode;
+
+	return (inode_lookup_relative(base, name, GFS_DT_LNK,
+	    INODE_CREATE_EXCLUSIVE, process_get_user(process),
+	    0777, source_path, &inode, NULL));
 }
 
 gfarm_error_t
 inode_create_link(struct inode *base, char *name,
 	struct process *process, struct inode *inode)
 {
-	int created;
-	struct user *user = process_get_user(process);
-	gfarm_error_t e = inode_lookup_relative(base, name, -1,
-	    INODE_LINK, user, &inode, &created);
-
-	if (e == GFARM_ERR_NO_ERROR) {
-		if (!created)
-			e = GFARM_ERR_ALREADY_EXISTS;
-	}
-	return (e);
+	return (inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
+	    INODE_LINK, process_get_user(process), 0, NULL, &inode, NULL));
 }
 
 gfarm_error_t
@@ -1148,7 +1194,6 @@ inode_rename(
 	gfarm_error_t e;
 	struct user *user = process_get_user(process);
 	struct inode *src, *dst;
-	int tmp;
 
 	if (user == NULL)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -1186,8 +1231,8 @@ inode_rename(
 		    sname, dname, gfarm_error_string(e));
 		return (e);
 	}
-	e = inode_lookup_relative(sdir, sname, -1, INODE_REMOVE, user,
-	    &src, &tmp);
+	e = inode_lookup_relative(sdir, sname, GFS_DT_UNKNOWN, INODE_REMOVE,
+	    user, 0, NULL, &src, NULL);
 	if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
 		gflog_error("rename(%s, %s): failed to unlink: %s",
 		    sname, dname, gfarm_error_string(e));
@@ -1197,15 +1242,14 @@ inode_rename(
 gfarm_error_t
 inode_unlink(struct inode *base, char *name, struct process *process)
 {
-	int tmp;
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (inode_is_file(inode)) {
-		e = inode_lookup_relative(base, name, 0,
-		    INODE_REMOVE, process_get_user(process), &inode, &tmp);
+		e = inode_lookup_relative(base, name, GFS_DT_REG, INODE_REMOVE,
+		    process_get_user(process), 0, NULL, &inode, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (inode->i_nlink > 0) {
@@ -1223,8 +1267,8 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
 		else if (strcmp(name, dot) == 0 || strcmp(name, dotdot) == 0)
 			return (GFARM_ERR_INVALID_ARGUMENT);
-		e = inode_lookup_relative(base, name, 1,
-		    INODE_REMOVE, process_get_user(process), &inode, &tmp);
+		e = inode_lookup_relative(base, name, GFS_DT_DIR, INODE_REMOVE,
+		    process_get_user(process), 0, NULL, &inode, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = db_direntry_remove(inode->i_number, dot, DOT_LEN);
@@ -1232,11 +1276,21 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			gflog_error("db_direntry_remove(%" GFARM_PRId64
 			    ", %s): %s",
 			    inode->i_number, dot, gfarm_error_string(e));
-		e = db_direntry_remove(inode->i_number, dotdot,DOTDOT_LEN);
+		e = db_direntry_remove(inode->i_number, dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error("db_direntry_remove(%" GFARM_PRId64
 			    ", %s): %s",
 			    inode->i_number, dotdot, gfarm_error_string(e));
+	} else if (inode_is_symlink(inode)) {
+		e = inode_lookup_relative(base, name, GFS_DT_LNK, INODE_REMOVE,
+		    process_get_user(process), 0, NULL, &inode, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		assert(inode->i_nlink == 0);
+		e = db_symlink_remove(inode->i_number);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error("db_symlink_remove(%" GFARM_PRId64 "): %s",
+			    inode->i_number, gfarm_error_string(e));
 	} else {
 		gflog_fatal("inode_unlink: unknown inode type");
 		/*NOTREACHED*/
@@ -1467,7 +1521,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 {
 	gfarm_error_t e;
 	struct inode *parent, *dei;
-	int created, ok;
+	int ok;
 	struct user *user = process_get_user(process);
 	struct inode *root = inode_lookup(ROOT_INUMBER);
 	Dir dir;
@@ -1479,8 +1533,8 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	int overflow = 0;
 
 	for (; inode != root; inode = parent) {
-		e = inode_lookup_relative(inode, dotdot, 1, INODE_LOOKUP,
-		    user, &parent, &created);
+		e = inode_lookup_relative(inode, dotdot, GFS_DT_DIR,
+		    INODE_LOOKUP, user, 0, NULL, &parent, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		e = inode_access(parent, user, GFS_R_OK|GFS_X_OK);
@@ -1725,6 +1779,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 		e = inode_init_dir_internal(inode);
 	} else if (GFARM_S_ISREG(st->st_mode)) {
 		e = inode_init_file(inode);
+	} else if (GFARM_S_ISLNK(st->st_mode)) {
+		e = inode_init_symlink(inode, NULL);
 	} else if (st->st_mode == INODE_MODE_FREE) {
 		inode_clear(inode);
 		e = GFARM_ERR_NO_ERROR;
@@ -1776,6 +1832,27 @@ inode_cksum_add_one(void *closure,
 	}
 	free(type);
 	free(sum);
+}
+
+/* The memory owner of `source_path' is changed to inode.c */
+void
+symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
+{
+	struct inode *inode = inode_lookup(inum);
+
+	if (inode == NULL) {
+		gflog_error("symlink_add_one: no inode %" GFARM_PRId64, inum);
+	} else if (!inode_is_symlink(inode)) {
+		gflog_error("symlink_add_one: not symlink %" GFARM_PRId64,
+		    inum);
+	} else if (inode->u.c.s.l.source_path != NULL) {
+		gflog_error("symlink_add_one: dup symlink %" GFARM_PRId64,
+		    inum);
+	} else {
+		inode->u.c.s.l.source_path = source_path;
+		return; /* to skip free(source_path); */
+	}
+	free(source_path);
 }
 
 /* The memory owner of `hostname' is changed to inode.c */
@@ -1940,6 +2017,16 @@ dir_entry_init(void)
 	e = db_direntry_load(NULL, dir_entry_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("loading direntry: %s", gfarm_error_string(e));
+}
+
+void
+symlink_init(void)
+{
+	gfarm_error_t e;
+
+	e = db_symlink_load(NULL, symlink_add_one);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("loading symlink: %s", gfarm_error_string(e));
 }
 
 /* implemented here to refer dot and dotdot */

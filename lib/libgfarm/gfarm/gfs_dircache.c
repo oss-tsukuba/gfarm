@@ -235,6 +235,13 @@ gfs_stat_caching(const char *path, struct gfs_stat *st)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* this returns uncached result, but enter the result to the cache */
+gfarm_error_t
+gfs_lstat_caching(const char *path, struct gfs_stat *st)
+{
+	return (gfs_stat_caching(path, st)); /* XXX FIXME */
+}
+
 /* this returns cached result */
 gfarm_error_t
 gfs_stat_cached_internal(const char *path, struct gfs_stat *st)

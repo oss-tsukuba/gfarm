@@ -1380,13 +1380,9 @@ gfarm_ldap_group_load(void *closure,
 
 /**********************************************************************/
 
-static char *gfarm_ldap_inode_make_dn(void *vkey);
+static char *gfarm_ldap_db_inode_inum_make_dn(void *vkey);
 static void gfarm_ldap_gfs_stat_set_field(void *info, char *attribute,
 	char **vals);
-
-struct gfarm_ldap_inode_key {
-	gfarm_ino_t inumber;
-};
 
 static char INODE_QUERY_TYPE[] = "(objectclass=GFarmINode)";
 static char INODE_DN_TEMPLATE[] = "inumber=%" GFARM_PRId64 ", %s";
@@ -1395,14 +1391,14 @@ static const struct gfarm_ldap_generic_info_ops gfarm_ldap_gfs_stat_ops = {
 	&gfarm_base_gfs_stat_ops,
 	INODE_QUERY_TYPE,
 	INODE_DN_TEMPLATE,
-	gfarm_ldap_inode_make_dn,
+	gfarm_ldap_db_inode_inum_make_dn,
 	gfarm_ldap_gfs_stat_set_field,
 };
 
 static char *
-gfarm_ldap_inode_make_dn(void *vkey)
+gfarm_ldap_db_inode_inum_make_dn(void *vkey)
 {
-	struct gfarm_ldap_inode_key *key = vkey;
+	struct db_inode_inum_arg *key = vkey;
 	char *dn;
 
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_gfs_stat_ops.dn_template) +
@@ -1410,7 +1406,7 @@ gfarm_ldap_inode_make_dn(void *vkey)
 	if (dn == NULL)
 		return (NULL);
 	sprintf(dn, gfarm_ldap_gfs_stat_ops.dn_template,
-	    key->inumber, gfarm_ldap_base_dn);
+	    key->inum, gfarm_ldap_base_dn);
 	return (dn);
 }
 
@@ -1475,9 +1471,9 @@ gfarm_ldap_gfs_stat_update(
 	char ctime_sec_string[INT64STRLEN + 1];
 	char ctime_nsec_string[INT32STRLEN + 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = info->st_ino;
+	key.inum = info->st_ino;
 
 	sprintf(ino_string, "%" GFARM_PRId64, info->st_ino);
 	sprintf(igen_string, "%" GFARM_PRId64, info->st_gen);
@@ -1568,9 +1564,9 @@ ldap_inode_uint64_modify(struct db_inode_uint64_modify_arg *arg, char *type)
 	char ino_string[INT64STRLEN + 1];
 	char uint64_string[INT64STRLEN + 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = arg->inum;
+	key.inum = arg->inum;
 
 	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
 	sprintf(uint64_string, "%" GFARM_PRId64, arg->uint64);
@@ -1600,9 +1596,9 @@ ldap_inode_string_modify(struct db_inode_string_modify_arg *arg, char *type)
 
 	char ino_string[INT64STRLEN + 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = arg->inum;
+	key.inum = arg->inum;
 
 	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
 
@@ -1634,9 +1630,9 @@ ldap_inode_timespec_modify(struct db_inode_timespec_modify_arg *arg,
 	char sec_string[INT64STRLEN + 1];
 	char nsec_string[INT32STRLEN + 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = arg->inum;
+	key.inum = arg->inum;
 
 	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
 	sprintf(sec_string, "%" GFARM_PRId64, arg->time.tv_sec);
@@ -1683,9 +1679,9 @@ gfarm_ldap_inode_mode_modify(struct db_inode_uint32_modify_arg *arg)
 	char ino_string[INT64STRLEN + 1];
 	char mode_string[INT32STRLEN + 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = arg->inum;
+	key.inum = arg->inum;
 
 	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
 	sprintf(mode_string, "%07o", arg->uint32);
@@ -1757,7 +1753,7 @@ static const struct gfarm_ldap_generic_info_ops gfarm_ldap_inode_cksum_ops = {
 	&db_base_inode_cksum_arg_ops,
 	INODE_QUERY_TYPE,
 	INODE_DN_TEMPLATE,
-	gfarm_ldap_inode_make_dn,
+	gfarm_ldap_db_inode_inum_make_dn,
 	gfarm_ldap_inode_cksum_set_field,
 };
 
@@ -1790,9 +1786,9 @@ gfarm_ldap_inode_cksum_update(
 	LDAPMod *modv[3];
 	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
 
-	struct gfarm_ldap_inode_key key;
+	struct db_inode_inum_arg key;
 
-	key.inumber = info->inum;
+	key.inum = info->inum;
 
 	i = 0;
 	set_string_mod(&modv[i], mod_op,
@@ -1832,10 +1828,6 @@ gfarm_ldap_inode_cksum_remove(struct db_inode_inum_arg *arg)
 	LDAPMod *modv[3];
 	LDAPMod storage[ARRAY_LENGTH(modv) - 1];
 
-	struct gfarm_ldap_inode_key key;
-
-	key.inumber = arg->inum;
-
 	i = 0;
 	set_delete_mod(&modv[i], "checksumType", &storage[i]);
 	i++;
@@ -1844,7 +1836,7 @@ gfarm_ldap_inode_cksum_remove(struct db_inode_inum_arg *arg)
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	e = gfarm_ldap_generic_info_modify(&key, modv,
+	e = gfarm_ldap_generic_info_modify(arg, modv,
 	    &gfarm_ldap_inode_cksum_ops);
 
 	free(arg);
@@ -1985,6 +1977,7 @@ static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_deadfilecopy_ops = {
 	&db_base_deadfilecopy_arg_ops,
 	"(objectclass=GFarmDeadFileCopy)",
+	/* XXX FIXME - the following assumption is wrong: delay of removal */
 	/* There should not be two entries for the same inumber */
 	"hostname=%s, inumber=%" GFARM_PRId64 ", %s",
 	gfarm_ldap_db_deadfilecopy_make_dn,
@@ -2271,6 +2264,102 @@ gfarm_ldap_direntry_load(
 
 /**********************************************************************/
 
+static void gfarm_ldap_db_symlink_set_field(void *info, char *attribute,
+	char **vals);
+
+static const struct gfarm_ldap_generic_info_ops
+    gfarm_ldap_db_symlink_ops = {
+	&db_base_symlink_arg_ops,
+	"(objectclass=GFarmSymlink)",
+	"inumber=%" GFARM_PRId64 ", %s",
+	gfarm_ldap_db_inode_inum_make_dn,
+	gfarm_ldap_db_symlink_set_field,
+};
+
+static void
+gfarm_ldap_db_symlink_set_field(
+	void *vinfo,
+	char *attribute,
+	char **vals)
+{
+	struct db_symlink_arg *info = vinfo;
+
+	if (strcasecmp(attribute, "inumber") == 0) {
+		info->inum = gfarm_strtoi64(vals[0], NULL);
+	} else if (strcasecmp(attribute, "sourcePath") == 0) {
+		info->source_path = strdup(vals[0]);
+	}
+}
+
+static gfarm_error_t
+gfarm_ldap_db_symlink_update(
+	struct db_symlink_arg *info,
+	int mod_op,
+	gfarm_error_t (*update_op)(void *, LDAPMod **,
+	    const struct gfarm_ldap_generic_info_ops *))
+{
+	int i;
+	LDAPMod *modv[4];
+	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
+
+	char ino_string[INT64STRLEN + 1];
+
+	struct db_inode_inum_arg key;
+
+	key.inum = info->inum;
+
+	sprintf(ino_string, "%" GFARM_PRId64, info->inum);
+
+	i = 0;
+	set_string_mod(&modv[i], mod_op,
+	    "objectclass", "GFarmSymlink", &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "inumber", ino_string, &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "sourcePath", info->source_path, &storage[i]);
+	i++;
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	return ((*update_op)(&key, modv, &gfarm_ldap_db_symlink_ops));
+}
+
+static void
+gfarm_ldap_symlink_add(struct db_symlink_arg *info)
+{
+	gfarm_ldap_db_symlink_update(info,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
+	free(info);
+}
+
+static void
+gfarm_ldap_symlink_remove(struct db_inode_inum_arg *arg)
+{
+	gfarm_ldap_generic_info_remove(arg, &gfarm_ldap_db_symlink_ops);
+	free(arg);
+}
+
+static gfarm_error_t
+gfarm_ldap_symlink_load(
+	void *closure,
+	void (*callback)(void *, gfarm_ino_t, char *))
+{
+	struct db_symlink_arg tmp_info;
+	struct db_symlink_trampoline_closure c;
+
+	c.closure = closure;
+	c.callback = callback;
+
+	return (gfarm_ldap_generic_info_get_foreach(gfarm_ldap_base_dn,
+	    LDAP_SCOPE_ONELEVEL, gfarm_ldap_db_symlink_ops.query_type,
+	    &tmp_info, db_symlink_callback_trampoline, &c,
+	    &gfarm_ldap_db_symlink_ops));
+}
+
+/**********************************************************************/
+
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
@@ -2320,4 +2409,8 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_direntry_add,
 	gfarm_ldap_direntry_remove,
 	gfarm_ldap_direntry_load,
+
+	gfarm_ldap_symlink_add,
+	gfarm_ldap_symlink_remove,
+	gfarm_ldap_symlink_load,
 };

@@ -13,7 +13,7 @@ trap 'gfrm $gftmp; exit $exit_trap' $trap_sigs
 datasize=`ls -l $datafile | awk '{print $5}'`
 
 if gfreg $datafile $gftmp && [ x"`gfls $gftmp`" = x"$gftmp" ] &&
-   [ x"`gfls -l $gftmp | awk '{print $4}'`" = x"$datasize" ]; then
+   [ x"`gfls -l $gftmp | awk '{print $5}'`" = x"$datasize" ]; then
 	exit_code=$exit_pass
 fi
 

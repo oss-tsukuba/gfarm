@@ -901,3 +901,48 @@ db_direntry_load(void *closure,
 {
 	return ((*ops->direntry_load)(closure, callback));
 }
+
+struct db_symlink_arg *
+db_symlink_arg_alloc(gfarm_ino_t inum, const char *source_path)
+{
+	struct db_symlink_arg *arg =
+	    malloc(sizeof(*arg) + strlen(source_path) + 1);
+
+	if (arg == NULL)
+		return (NULL);
+	arg->source_path = (char *)arg + sizeof(*arg);
+
+	arg->inum = inum;
+	strcpy(arg->source_path, source_path);
+	return (arg);
+}
+
+gfarm_error_t
+db_symlink_add(gfarm_ino_t inum, const char *source_path)
+{
+	struct db_symlink_arg *arg =
+	    db_symlink_arg_alloc(inum, source_path);
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->symlink_add, arg));
+}
+
+gfarm_error_t
+db_symlink_remove(gfarm_ino_t inum)
+{
+	struct db_inode_inum_arg *arg;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	arg->inum = inum;
+	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->symlink_remove, arg));
+}
+
+gfarm_error_t
+db_symlink_load(void *closure, void (*callback)(void *, gfarm_ino_t, char *))
+{
+	return ((*ops->symlink_load)(closure, callback));
+}
+

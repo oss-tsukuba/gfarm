@@ -197,3 +197,48 @@ const struct gfarm_base_generic_info_ops db_base_direntry_arg_ops = {
 	db_direntry_arg_clear,
 	db_direntry_arg_validate,
 };
+
+/**********************************************************************/
+
+static void
+db_symlink_arg_free(void *vinfo)
+{
+	struct db_symlink_arg *info = vinfo;
+
+	if (info->source_path != NULL)
+		free(info->source_path);
+}
+
+static void
+db_symlink_arg_clear(void *vinfo)
+{
+	struct db_symlink_arg *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+db_symlink_arg_validate(void *vinfo)
+{
+	struct db_symlink_arg *info = vinfo;
+
+	return (
+	    info->source_path != NULL
+	);
+}
+
+void
+db_symlink_callback_trampoline(void *closure, void *vinfo)
+{
+	struct db_symlink_trampoline_closure *c = closure;
+	struct db_symlink_arg *info = vinfo;
+
+	(*c->callback)(c->closure, info->inum, info->source_path);
+}
+
+const struct gfarm_base_generic_info_ops db_base_symlink_arg_ops = {
+	sizeof(struct db_symlink_arg),
+	db_symlink_arg_free,
+	db_symlink_arg_clear,
+	db_symlink_arg_validate,
+};
