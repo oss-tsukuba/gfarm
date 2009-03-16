@@ -489,6 +489,21 @@ get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
 	return (e);
 }
 
+static gfarm_error_t
+group_user_check(struct gfarm_group_info *gi, const char *msg)
+{
+	int i;
+
+	for (i = 0; i < gi->nusers; i++) {
+		if (user_lookup(gi->usernames[i]) == NULL) {
+			gflog_warning("%s: unknown user %s", msg,
+				    gi->usernames[i]);
+			return (GFARM_ERR_NO_SUCH_USER);
+		}
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 {
@@ -512,7 +527,9 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (group_lookup(gi.groupname) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-	} else {
+	} else if ((e = group_user_check(&gi, msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		/*
 		 * We have to call this before group_add_one(),
 		 * because group_add_one() frees the memory of gi
@@ -538,20 +555,6 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
-static gfarm_error_t
-group_user_check(struct gfarm_group_info *gi, const char *msg)
-{
-	int i;
-
-	for (i = 0; i < gi->nusers; i++) {
-		if (user_lookup(gi->usernames[i]) == NULL) {
-			gflog_warning("%s: unknown user %s", msg,
-				    gi->usernames[i]);
-			return (GFARM_ERR_NO_SUCH_USER);
-		}
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
 gfarm_error_t
 gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 {
