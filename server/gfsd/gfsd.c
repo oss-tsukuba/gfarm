@@ -135,7 +135,7 @@ long rate_limit;
 #endif
 
 /* this routine should be called before calling exit(). */
-void
+static void
 cleanup(int sighandler)
 {
 	if (getpid() == master_gfsd_pid) {
@@ -161,15 +161,15 @@ parent_cleanup(void)
 {
 }
 
-void
+static void
 cleanup_handler(int signo)
 {
 	cleanup(1);
 	_exit(2);
 }
 
-void vfatal(const char *, va_list) GFLOG_PRINTF_ARG(1, 0);
-void
+static void vfatal(const char *, va_list) GFLOG_PRINTF_ARG(1, 0);
+static void
 vfatal(const char *format, va_list ap)
 {
 	cleanup(0);
@@ -177,20 +177,24 @@ vfatal(const char *format, va_list ap)
 	gflog_vmessage(LOG_ERR, format, ap);
 }
 
-void fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void
+static void fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+static void
 fatal(const char *format, ...)
 {
 	va_list ap;
 
+	if (getpid() == back_channel_gfsd_pid) {
+		/* send terminate signal to the master process */
+		kill(master_gfsd_pid, SIGTERM);
+	}
 	va_start(ap, format);
 	vfatal(format, ap);
 	va_end(ap);
 	exit(2);
 }
 
-void fatal_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void
+static void fatal_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+static void
 fatal_errno(const char *format, ...)
 {
 	char buffer[2048];
@@ -2877,8 +2881,8 @@ gfm_client_connect_with_reconnection()
 	if (canonical_self_name != NULL &&
 	    (e = gfm_client_hostname_set(gfm_server, canonical_self_name))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error("cannot set canonical hostname of this node "
-		    "(%s): %s\n", canonical_self_name, gfarm_error_string(e));
+		fatal("cannot set canonical hostname of this node (%s), "
+		    "died: %s\n", canonical_self_name, gfarm_error_string(e));
 }
 
 void
@@ -3095,7 +3099,15 @@ datagram_server(int sock)
 	    (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
-void
+static void
+reconnect_back_channel(void)
+{
+	gfm_client_connection_free(gfm_server);
+	gfm_server = NULL;
+	gfm_client_connect_with_reconnection();
+}
+
+static void
 back_channel_server(void)
 {
 	gfarm_error_t e;
@@ -3114,14 +3126,15 @@ retry:
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
 		if (IS_CONNECTION_ERROR(e) || eof) {
 			gflog_error("back channel disconnected");
-			gfm_client_connection_free(gfm_server);
-			gfm_server = NULL;
-			gfm_client_connect_with_reconnection();
+			reconnect_back_channel();
 			goto retry;
 		}
-		else if (e != GFARM_ERR_NO_ERROR)
-			fatal("(back channel) request error, died: %s",
+		else if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error("(back channel) request error, reset: %s",
 			      gfarm_error_string(e));
+			reconnect_back_channel();
+			goto retry;
+		}
 		switch (request) {
 		case GFS_PROTO_FHSTAT:
 			gfs_server_fhstat(conn); break;
@@ -3130,15 +3143,15 @@ retry:
 		case GFS_PROTO_STATUS:
 			gfs_server_status(conn); break;
 		default:
-			gflog_warning("(back channel) unknown request %d",
-				      (int)request);
-			cleanup(0);
-			exit(1);
+			gflog_error("(back channel) unknown request %d, "
+			    "reset", (int)request);
+			reconnect_back_channel();
+			goto retry;
 		}
 	}
 }
 
-void
+static void
 start_back_channel_server(void)
 {
 	pid_t pid;
@@ -3146,6 +3159,7 @@ start_back_channel_server(void)
 	pid = fork();
 	switch (pid) {
 	case 0:
+		back_channel_gfsd_pid = getpid();
 		back_channel_server();
 		/*NOTREACHED*/
 	case -1:
@@ -3507,11 +3521,10 @@ main(int argc, char **argv)
 	if (canonical_self_name == NULL &&
 	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name, &p))
 	    != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr,
+		gflog_fatal(
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server: %s\n",
+		    "register this node in Gfarm metadata server, died: %s\n",
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
-		exit(1);
 	}
 	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
 	{	
@@ -3523,11 +3536,10 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR)
 		e = e2;
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr,
+		gflog_fatal(
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server: %s\n",
+		    "register this node in Gfarm metadata server, died: %s\n",
 		    canonical_self_name, gfarm_error_string(e));
-		exit(1);
 	}
 
 	seteuid(0);
@@ -3597,7 +3609,7 @@ main(int argc, char **argv)
 
 	/* spool check */
 	if (spool_check_level > 0)
-		gfsd_spool_check(spool_check_level);
+		(void)gfsd_spool_check(spool_check_level);
 
 	/* start back channel server */
 	start_back_channel_server();
