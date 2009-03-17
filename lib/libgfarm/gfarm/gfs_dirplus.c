@@ -31,11 +31,20 @@ gfs_dirplus_alloc(gfarm_int32_t fd, GFS_DirPlus *dirp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	dir->fd = fd;
-	dir->n = 0;
-	dir->index = 0;
+	dir->n = dir->index = 0;
 
 	*dirp = dir;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfs_dirplus_clear(GFS_DirPlus dir)
+{
+	int i, n = dir->n;
+
+	for (i = 0; i < n; i++)
+		gfs_stat_free(&dir->stbuf[i]);
+	dir->n = dir->index = 0;
 }
 
 gfarm_error_t
@@ -56,6 +65,9 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 	return (e);
 }
 
+/*
+ * both (*entryp) and (*status) shouldn't be freed.
+ */
 gfarm_error_t
 gfs_readdirplus(GFS_DirPlus dir,
 	struct gfs_dirent **entry, struct gfs_stat **status)
@@ -63,6 +75,7 @@ gfs_readdirplus(GFS_DirPlus dir,
 	gfarm_error_t e;
 
 	if (dir->index >= dir->n) {
+		gfs_dirplus_clear(dir);
 		if ((e = gfm_client_compound_begin_request(
 		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin request: %s",
@@ -119,6 +132,7 @@ gfs_closedirplus(GFS_DirPlus dir)
 {
 	gfarm_error_t e = gfm_close_fd(dir->fd);
 
+	gfs_dirplus_clear(dir);
 	free(dir);
 	return (e);
 }
