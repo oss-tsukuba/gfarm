@@ -57,11 +57,12 @@ Gfarm-FAQ.en.
 
 You can modify any default parameter with the option shown in [ ].
 
-When you have confirmed the parameter, run 'config-gfarm' without the
--t option.
+When you have confirmed the parameter, run 'config-gfarm' by the root
+user without the -t option.
 
-config-gfarm creates a Gfarm configuration file, /etc/gfarm2.conf and
-/etc/gfmd.conf.
+config-gfarm sets up the backend database, creates a Gfarm
+configuration file, /etc/gfarm2.conf and /etc/gfmd.conf, and executes
+the Gfarm metadata server gfmd.
 
   'prefix' is used to configure several Gfarm filesystems. It
   generates all configuration files under the specified directory.
@@ -73,14 +74,38 @@ is necessary to create a '_gfarmfs' user and a shared secret key.
 
   We recommend to create a home directory in NFS if available.
 
-Create a shared secret key in the home directory.
+Create a shared secret key '~/.gfarm_shared_key' for the _gfarmfs user
+in the home directory.
 
 	# su _gfarmfs
-	$ gfkey -c -p 31536000
-	$ ls -l ~/.gfarm_shared_key 
+	$ gfkey -f -p 31536000
 
   This example sets up an expiration date of about one year (31536000
   seconds).
+
+You can check whether the metadata server gfmd is running or not by
+the following command execution;
+
+	# /etc/init.d/gfmd status
+
+For the automatic startup during the boot process, chkconfig command
+is useful in Linux.
+
+	# chkconfig --add gfmd
+
+If you would like to remove all files created by config-gfarm, first
+stop gfmd and backend database server;
+
+	# /etc/init.d/gfmd stop
+	(or # killall gfmd)
+	# /etc/init.d/gfarm-pgsql stop
+	(or # /etc/init.d/gfarm-slapd stop)
+
+Then, remove files and directories as follows;
+
+	# rm -f /etc/gfarm2.conf /etc/gfmd.conf
+	# rm -f /etc/init.d/gfarm-* /etc/init.d/gfmd
+	# rm -rf /var/gfarm-*
 
 o Firewall configuration
 
@@ -129,8 +154,8 @@ configuration.
   physical files in Gfarm file system.  Note that the spool directory
   should be a non-shared area among filesystem nodes.
 
-When you have confirmed the parameter, run 'config-gfsd' without the -t
-option.
+When you have confirmed the parameter, run 'config-gfsd' by the root
+user without the -t option.
 
 	# config-gfsd /var/gfarm
 
@@ -157,6 +182,26 @@ Ask the administrator to execute the displayed text.
 Switch back to the root user, and execute gfsd.
 
 	# /etc/init.d/gfsd start
+
+You can check whether the gfsd is running or not by the following
+command execution;
+
+	# /etc/init.d/gfmd status
+
+For the automatic startup during the boot process, chkconfig command
+is useful in Linux.
+
+	# chkconfig --add gfsd
+
+If you would like to remove all files created by config-gfsd, first
+stop gfsd;
+
+	# /etc/init.d/gfsd stop
+
+Then, remove files and directories as follows;
+
+	# rm -f /etc/gfarm2.conf /etc/init.d/gfsd
+	# rm -rf <<spool_directory>>
 
 o Firewall configuration
 
@@ -251,7 +296,7 @@ capacity.
 	  1824815008      213068  1824601940     0%   linux-1.example.com
 	  6835798016    71836400  6763961616     1%   linux-2.example.com
 	  1669232308    44224088  1625008220     3%   solaris-1.example.com
-	
+	---------------------------------------------
 	 10329845332   116273556 10213571776     1%
 
 For details of the above Gfarm commands, refer to the respective man page.
