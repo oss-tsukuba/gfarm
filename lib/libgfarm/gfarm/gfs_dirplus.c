@@ -37,7 +37,7 @@ gfs_dirplus_alloc(gfarm_int32_t fd, GFS_DirPlus *dirp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
+static void
 gfs_dirplus_clear(GFS_DirPlus dir)
 {
 	int i, n = dir->n;
