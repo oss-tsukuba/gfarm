@@ -260,6 +260,18 @@ host_peer_unset(struct host *h)
 	pthread_mutex_unlock(&h->remover_mutex);
 }
 
+void
+host_peer_disconnect(struct host *h)
+{
+	struct peer *peer;
+
+	/* disconnect the back channel */
+	if ((peer = host_peer(h)) != NULL) {
+		peer_record_protocol_error(peer);
+		host_peer_unset(h);
+	}
+}
+
 struct peer *
 host_peer(struct host *h)
 {
@@ -813,6 +825,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e, e2;
 	struct user *user = peer_get_user(peer);
 	char *hostname;
+	struct host *host;
 
 	e = gfm_server_get_request(peer, "host_info_remove", "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -823,16 +836,23 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	}
 	/*
 	 * XXX should we remove all file copy entries stored on the
-	 * specified host?  should we disconnect a back channel to the host?
+	 * specified host?
 	 */
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
-		e2 = db_host_remove(hostname);
-		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_error("protocol db_host_remove db: %s",
-			    gfarm_error_string(e2));
+	} else if ((host = host_lookup(hostname)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else {
+		/* disconnect the back channel */
+		host_peer_disconnect(host);
+
+		if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
+			e2 = db_host_remove(hostname);
+			if (e2 != GFARM_ERR_NO_ERROR)
+				gflog_error("protocol db_host_remove db: %s",
+				    gfarm_error_string(e2));
+		}
 	}
 	free(hostname);
 	giant_unlock();

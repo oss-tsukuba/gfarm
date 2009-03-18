@@ -12,6 +12,7 @@ struct host *host_lookup(const char *);
 struct host *host_addr_lookup(const char *, struct sockaddr *);
 void host_peer_set(struct host *, struct peer *);
 void host_peer_unset(struct host *);
+void host_peer_disconnect(struct host *);
 struct peer *host_peer(struct host *);
 char *host_name(struct host *);
 int host_port(struct host *);

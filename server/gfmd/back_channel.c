@@ -121,7 +121,6 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e, e2;
 	struct host *h;
-	struct peer *p;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	h = NULL;
@@ -135,10 +134,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 	else if ((h = peer_get_host(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else {
-		if ((p = host_peer(h)) != NULL) {
-			peer_record_protocol_error(p);
-			host_peer_unset(h);
-		}
+		host_peer_disconnect(h);
 		host_peer_set(h, peer);
 		e = GFARM_ERR_NO_ERROR;
 	}
