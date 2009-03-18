@@ -441,7 +441,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 			if (g == NULL) {
 				e = gfm_server_put_reply(peer,
 				    "group_info_get_by_name",
-				    GFARM_ERR_NO_SUCH_OBJECT, "");
+				    GFARM_ERR_NO_SUCH_GROUP, "");
 			} else {
 				e = gfm_server_put_reply(peer,
 				    "group_info_get_by_name",
@@ -577,7 +577,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((group = group_lookup(gi.groupname)) == NULL) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
+		e = GFARM_ERR_NO_SUCH_GROUP;
 	} else if ((e = group_user_check(&gi, msg)) != GFARM_ERR_NO_ERROR)
 		;
 	else {

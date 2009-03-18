@@ -127,6 +127,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"invalid file replica",
 	"no such user",
 	"cannot remove the last replica",
+	"no such group",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

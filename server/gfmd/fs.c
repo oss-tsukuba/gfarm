@@ -662,10 +662,10 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		;
 	else if (*username != '\0' &&
 	    (new_user = user_lookup(username)) == NULL)
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_SUCH_USER;
 	else if (*groupname != '\0' &&
 	    (new_group = group_lookup(groupname)) == NULL)
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_SUCH_GROUP;
 	else if (new_user != NULL && !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if (new_group != NULL && !user_is_admin(user) &&

@@ -75,10 +75,22 @@ main(int argc, char **argv)
 
 	for (i = 1; i < argc; i++) {
 		e = gfs_chown(argv[i], user, group);
-		if (e != GFARM_ERR_NO_ERROR) {
+		switch (e) {
+		case GFARM_ERR_NO_ERROR:
+			break;
+		case GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY:
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));
 			status = 1;
+			break;
+		default:
+			fprintf(stderr, "%s: %s%s%s: %s\n", program_name,
+			    user != NULL ? user : "",
+			    user != NULL && group != NULL ? ":" : "",
+			    group != NULL ? group : "",
+			    gfarm_error_string(e));
+			status = 1;
+			break;
 		}
 	}
 	e = gfarm_terminate();
