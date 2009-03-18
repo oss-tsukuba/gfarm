@@ -27,6 +27,7 @@
 #include "config.h"
 #include "lookup.h"
 #include "gfs_io.h"
+#include "gfs_dir.h"
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -175,50 +176,18 @@ finish:
 
 #define DIRENTS_BUFCOUNT	256
 
-struct gfs_dir {
+struct gfs_dir_internal {
+	struct gfs_dir super;
+
 	int fd;
 	struct gfs_dirent buffer[DIRENTS_BUFCOUNT];
 	int n, index;
 };
 
 static gfarm_error_t
-gfs_dir_alloc(gfarm_int32_t fd, GFS_Dir *dirp)
+gfs_readdir_internal(GFS_Dir super, struct gfs_dirent **entry)
 {
-	GFS_Dir dir;
-
-	GFARM_MALLOC(dir);
-	if (dir == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	dir->fd = fd;
-	dir->n = 0;
-	dir->index = 0;
-
-	*dirp = dir;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfs_opendir(const char *path, GFS_Dir *dirp)
-{
-	gfarm_error_t e;
-	int fd, type;
-
-	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &fd, &type))
-	    != GFARM_ERR_NO_ERROR)
- 		;
-	else if (type != GFS_DT_DIR) {
-		(void)gfm_close_fd(fd); /* ignore this result */
-		e = GFARM_ERR_NOT_A_DIRECTORY;
-	} else if ((e = gfs_dir_alloc(fd, dirp)) != GFARM_ERR_NO_ERROR)
-		(void)gfm_close_fd(fd); /* ignore this result */
-
-	return (e);
-}
-
-gfarm_error_t
-gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
-{
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 	gfarm_error_t e;
 
 	if (dir->index >= dir->n) {
@@ -270,9 +239,10 @@ gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfs_closedir(GFS_Dir dir)
+static gfarm_error_t
+gfs_closedir_internal(GFS_Dir super)
 {
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 	gfarm_error_t e = gfm_close_fd(dir->fd);
 
 	free(dir);
@@ -280,13 +250,80 @@ gfs_closedir(GFS_Dir dir)
 }
 
 gfarm_error_t
-gfs_seekdir(GFS_Dir dir, gfarm_off_t off)
+gfs_seekdir_unimpl(GFS_Dir dir, gfarm_off_t off)
 {
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX FIXME */
 }
 
 gfarm_error_t
-gfs_telldir(GFS_Dir dir, gfarm_off_t *offp)
+gfs_telldir_unimpl(GFS_Dir dir, gfarm_off_t *offp)
 {
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX FIXME */
 }
+
+static gfarm_error_t
+gfs_dir_alloc(gfarm_int32_t fd, GFS_Dir *dirp)
+{
+	struct gfs_dir_internal *dir;
+	static struct gfs_dir_ops ops = {
+		gfs_closedir_internal,
+		gfs_readdir_internal,
+		gfs_seekdir_unimpl,
+		gfs_telldir_unimpl
+	};
+
+	GFARM_MALLOC(dir);
+	if (dir == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	dir->super.ops = &ops;
+	dir->fd = fd;
+	dir->n = 0;
+	dir->index = 0;
+
+	*dirp = &dir->super;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_opendir(const char *path, GFS_Dir *dirp)
+{
+	gfarm_error_t e;
+	int fd, type;
+
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &fd, &type))
+	    != GFARM_ERR_NO_ERROR)
+ 		;
+	else if (type != GFS_DT_DIR) {
+		(void)gfm_close_fd(fd); /* ignore this result */
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+	} else if ((e = gfs_dir_alloc(fd, dirp)) != GFARM_ERR_NO_ERROR)
+		(void)gfm_close_fd(fd); /* ignore this result */
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_closedir(GFS_Dir dir)
+{
+	return ((*dir->ops->closedir)(dir));
+}
+
+gfarm_error_t
+gfs_readdir(GFS_Dir dir, struct gfs_dirent **entry)
+{
+	return ((*dir->ops->readdir)(dir, entry));
+}
+
+gfarm_error_t
+gfs_seekdir(GFS_Dir dir, gfarm_off_t off)
+{
+	return ((*dir->ops->seekdir)(dir, off));
+}
+
+gfarm_error_t
+gfs_telldir(GFS_Dir dir, gfarm_off_t *offp)
+{
+	return ((*dir->ops->telldir)(dir, offp));
+}
+

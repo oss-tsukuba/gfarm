@@ -10,6 +10,7 @@
 #include "hash.h"
 
 #include "config.h"
+#include "gfs_dir.h"
 #include "gfs_dircache.h"
 
 /* #define DIRCACHE_DEBUG */
@@ -281,50 +282,16 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 #define DIRENTSPLUS_BUFCOUNT	256
 
 struct gfs_dir_caching {
+	struct gfs_dir super;
+
 	GFS_DirPlus dp;
 	char *path;
 };
 
-gfarm_error_t
-gfs_opendir_caching_internal(const char *path, GFS_DirCaching *dirp)
+static gfarm_error_t
+gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 {
-	gfarm_error_t e;
-	GFS_DirPlus dp;
-	GFS_DirCaching dir;
-	char *p;
-
-	if ((e = gfs_opendirplus(path, &dp)) != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	GFARM_MALLOC(dir);
-	if (*gfarm_path_dir_skip(path) != '\0') {
-		GFARM_MALLOC_ARRAY(p, strlen(path) + 1 + 1);
-		if (p != NULL)
-			sprintf(p, "%s/", path);
-	} else {
-		GFARM_MALLOC_ARRAY(p, strlen(path) + 1);
-		if (p != NULL)
-			strcpy(p, path);
-	}
-
-	if (dir == NULL || p == NULL) {
-		gfs_closedirplus(dp);
-		if (dir != NULL)
-			free(dir);
-		if (p != NULL)
-			free(p);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	dir->dp = dp;
-	dir->path = p;
-	*dirp = dir;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfs_readdir_caching_internal(GFS_DirCaching dir, struct gfs_dirent **entryp)
-{
+	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
 	struct gfs_dirent *ep;
 	struct gfs_stat *stp;
 	char *path;
@@ -360,9 +327,10 @@ gfs_readdir_caching_internal(GFS_DirCaching dir, struct gfs_dirent **entryp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfs_closedir_caching_internal(GFS_DirCaching dir)
+static gfarm_error_t
+gfs_closedir_caching_internal(GFS_Dir super)
 {
+	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
 	gfarm_error_t e = gfs_closedirplus(dir->dp);
 
 	free(dir->path);
@@ -370,3 +338,46 @@ gfs_closedir_caching_internal(GFS_DirCaching dir)
 	return (e);
 }
 
+gfarm_error_t
+gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
+{
+	gfarm_error_t e;
+	GFS_DirPlus dp;
+	struct gfs_dir_caching *dir;
+	char *p;
+	static struct gfs_dir_ops ops = {
+		gfs_closedir_caching_internal,
+		gfs_readdir_caching_internal,
+		gfs_seekdir_unimpl,
+		gfs_telldir_unimpl
+	};
+
+	if ((e = gfs_opendirplus(path, &dp)) != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	GFARM_MALLOC(dir);
+	if (*gfarm_path_dir_skip(path) != '\0') {
+		GFARM_MALLOC_ARRAY(p, strlen(path) + 1 + 1);
+		if (p != NULL)
+			sprintf(p, "%s/", path);
+	} else {
+		GFARM_MALLOC_ARRAY(p, strlen(path) + 1);
+		if (p != NULL)
+			strcpy(p, path);
+	}
+
+	if (dir == NULL || p == NULL) {
+		gfs_closedirplus(dp);
+		if (dir != NULL)
+			free(dir);
+		if (p != NULL)
+			free(p);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	dir->super.ops = &ops;
+	dir->dp = dp;
+	dir->path = p;
+	*dirp = &dir->super;
+	return (GFARM_ERR_NO_ERROR);
+}

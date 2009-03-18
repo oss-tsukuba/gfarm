@@ -272,7 +272,4 @@ gfarm_error_t gfs_stat_caching(const char *, struct gfs_stat *);
 gfarm_error_t gfs_lstat_cached(const char *, struct gfs_stat *);
 gfarm_error_t gfs_lstat_caching(const char *, struct gfs_stat *);
 
-typedef struct gfs_dir_caching *GFS_DirCaching;
-gfarm_error_t gfs_opendir_caching(const char *, GFS_DirCaching *);
-gfarm_error_t gfs_readdir_caching(GFS_DirCaching, struct gfs_dirent **);
-gfarm_error_t gfs_closedir_caching(GFS_DirCaching);
+gfarm_error_t gfs_opendir_caching(const char *, GFS_Dir *);

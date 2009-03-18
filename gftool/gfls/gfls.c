@@ -379,7 +379,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 	char *s, *path;
 	gfarm_stringlist names;
 	gfs_glob_t types;
-	GFS_DirCaching dir;
+	GFS_Dir dir;
 	struct gfs_dirent *entry;
 	int len = strlen(prefix) + strlen(dirname);
 
@@ -410,7 +410,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		free(path);
 		return (e);
 	}
-	while ((e = gfs_readdir_caching(dir, &entry))
+	while ((e = gfs_readdir(dir, &entry))
 	    == GFARM_ERR_NO_ERROR && entry != NULL) {
 		if (!option_all && entry->d_name[0] == '.')
 			continue;
@@ -429,7 +429,7 @@ list_dir(char *prefix, char *dirname, int *need_newline)
 		    gfarm_error_string(e));
 		e_save = e;
 	}
-	gfs_closedir_caching(dir);
+	gfs_closedir(dir);
 	if (*gfarm_path_dir_skip(path) != '\0') {
 		path[len] = '/';
 		path[len + 1] = '\0';

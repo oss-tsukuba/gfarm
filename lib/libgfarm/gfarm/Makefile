@@ -166,9 +166,9 @@ config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h io_fd.h sockopt.h auth.h config.h gfm_proto.h gfj_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h iobuffer.h io_fd.h host.h param.h sockopt.h auth.h config.h gfs_proto.h gfs_client.h
-gfs_dir.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h gfs_pio.h
+gfs_dir.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfs_profile.h gfm_client.h config.h lookup.h gfs_io.h gfs_dir.h
 gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h
-gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_dircache.h
+gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_dir.h gfs_dircache.h
 gfs_exec.lo: gfs_pio.h
 gfs_io.lo: gfs_io.h
 gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
