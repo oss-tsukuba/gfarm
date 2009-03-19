@@ -19,6 +19,10 @@ New API
 New configuration in gfmd.conf
 * metadb_server_stack_size directive to specify a stack size of
   threads
+* metadb_server_thread_pool_size directive to specify the maximum
+  number of threads in a thread pool
+* metadb_server_job_queue_length directive to specify the length of a
+  job request queue
 * metadb_server_heartbeat_interval directive to specify the interval
   of heartbeat to each gfsd
 
