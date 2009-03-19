@@ -7,6 +7,8 @@
 
 #include "gfutil.h"
 
+#include "config.h"
+
 #include "thrsubr.h"
 #include "subr.h"
 #include "thrpool.h"
@@ -79,8 +81,6 @@ thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 	mutex_unlock(&q->mutex, msg, "thrjobq");
 }
 
-#define THREAD_POOL_SIZE 4
-
 struct thread_pool {
 	pthread_mutex_t mutex;
 	int threads;
@@ -94,11 +94,7 @@ thrpool_init(void)
 	const char msg[] = "thrpool_init";
 	struct thread_pool *p = &thrpool;
 
-	/*
-	 * use THREAD_POOL_SIZE as jobq size
-	 * to make threads in the pool be able to add jobs by themselves.
-	 */
-	thrjobq_init(&p->jobq, THREAD_POOL_SIZE * 2); /* XXX FIXME */
+	thrjobq_init(&p->jobq, gfarm_metadb_job_queue_length);
 
 	mutex_init(&p->mutex, msg, "thrpool");
 	p->threads = 0;
@@ -140,7 +136,7 @@ thrpool_add_job(void *(*thread_main)(void *), void *arg)
 	gfarm_error_t e;
 
 	mutex_lock(&p->mutex, msg, "thrpool");
-	if (p->threads < THREAD_POOL_SIZE && p->idles <= 0) {
+	if (p->threads < gfarm_metadb_thread_pool_size && p->idles <= 0) {
 		e = create_detached_thread(thrpool_worker, p);
 		if (e == GFARM_ERR_NO_ERROR) {
 			p->threads++;

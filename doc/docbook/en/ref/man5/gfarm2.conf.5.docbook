@@ -387,6 +387,40 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_thread_pool_size</token> <parameter>size</parameter></term>
+<listitem>
+<para>This directive specifies the maximum number of threads in a
+thread pool in the gfmd.   It is effective to specify around the
+number of CPU cores of the metadata server node.  Default is 16.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+        metadb_server_thread_pool_size 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_job_queue_length</token> <parameter>length</parameter></term>
+<listitem>
+<para>This directive specifies the length of job queue in the gfmd.
+It is effective to specify around the maximum number of clients that
+access the Gfarm file system at the same time.  Default is 160.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+        metadb_server_job_queue_length 160
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_heartbeat_interval</token> <parameter>seconds</parameter></term>
 <listitem>
 <para>This directive specifies the interval of heartbeat in seconds
@@ -984,6 +1018,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
@@ -1033,6 +1069,10 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
+	&lt;metadb_server_thread_pool_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_thread_pool_size" &lt;number&gt;
+	&lt;metadb_server_job_queue_length_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_job_queue_length" &lt;number&gt;
 	&lt;metadb_server_heartbeat_interval_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_heartbeat_interval" &lt;number&gt;
 	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
