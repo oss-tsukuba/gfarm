@@ -72,6 +72,23 @@ Options for configure:
   specified in the above --prefix option.  This document assumes
   that --sysconfdir=/etc is specified.  This is optional.
 
+  --enable-voms
+
+  Specifies if you want to use gfarm with VOMS.  This is optional.
+  See doc/voms-{install, man, dev}.ja. 
+
+
+  --enable-xmlattr
+
+  Specifies if you want to use gfarm with XML entended attributes.
+  This is optional. See doc/xattr-{install, man, dev}.ja. 
+  If you want to use XML xattr and XPath search,
+    1. build postgresql-8.3.x or later after "configure --with-libxml"
+       see http://www.postgresql.org/docs/8.3/static/install-procedure.html
+    2. build gfarm_v2 after "configure --enable-xmlattr"
+    3. run config-gfarm with "-b postgresql -X yes" option
+
+
 When you need to specify a compiler program explicitly, use the
 environment variable, CC.  This is an example using gcc.
 

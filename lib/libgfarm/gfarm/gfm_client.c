@@ -31,6 +31,7 @@
 #include "conn_hash.h"
 #include "gfm_proto.h"
 #include "gfj_client.h"
+#include "xattr_info.h"
 #include "gfm_client.h"
 
 struct gfm_connection {
@@ -1292,6 +1293,119 @@ gfm_client_seek_result(struct gfm_connection *gfm_server, gfarm_off_t *offsetp)
 }
 
 /*
+ * extended attributes
+ */
+gfarm_error_t
+gfm_client_setxattr_request(struct gfm_connection *gfm_server,
+		int xmlMode, const char *name, const void *value, size_t size, int flags)
+{
+	int command = xmlMode ? GFM_PROTO_XMLATTR_SET : GFM_PROTO_XATTR_SET;
+	return (gfm_client_rpc_request(gfm_server, command, "sbi",
+	    name, size, value, flags));
+}
+
+gfarm_error_t
+gfm_client_setxattr_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_getxattr_request(struct gfm_connection *gfm_server,
+		int xmlMode, const char *name)
+{
+	int command = xmlMode ? GFM_PROTO_XMLATTR_GET : GFM_PROTO_XATTR_GET;
+	return (gfm_client_rpc_request(gfm_server, command, "s", name));
+}
+
+gfarm_error_t
+gfm_client_getxattr_result(struct gfm_connection *gfm_server,
+		void **valuep, size_t *size)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "B", size, valuep));
+}
+
+gfarm_error_t
+gfm_client_listxattr_request(struct gfm_connection *gfm_server, int xmlMode)
+{
+	int command = xmlMode ? GFM_PROTO_XMLATTR_LIST : GFM_PROTO_XATTR_LIST;
+	return (gfm_client_rpc_request(gfm_server, command, ""));
+}
+
+gfarm_error_t
+gfm_client_listxattr_result(struct gfm_connection *gfm_server,
+		char **listp, size_t *size)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "B", size, listp));
+}
+
+gfarm_error_t
+gfm_client_removexattr_request(struct gfm_connection *gfm_server,
+		int xmlMode, const char *name)
+{
+	int command = xmlMode ? GFM_PROTO_XMLATTR_REMOVE : GFM_PROTO_XATTR_REMOVE;
+	return (gfm_client_rpc_request(gfm_server, command, "s", name));
+}
+
+gfarm_error_t
+gfm_client_removexattr_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_findxmlattr_request(struct gfm_connection *gfm_server,
+		struct gfs_xmlattr_ctx *ctxp)
+{
+	char *path, *attrname;
+
+	if (ctxp->cookie_path != NULL) {
+		path = ctxp->cookie_path;
+		attrname = ctxp->cookie_attrname;
+	} else {
+		path = attrname = "";
+	}
+
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_XMLATTR_FIND,
+			"siiss", ctxp->expr, ctxp->depth, ctxp->nalloc,
+			path, attrname));
+}
+
+gfarm_error_t
+gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
+		struct gfs_xmlattr_ctx *ctxp)
+{
+	gfarm_error_t e;
+	int i, eof;
+
+	e = gfm_client_rpc_result(gfm_server, 0, "ii",
+			&ctxp->eof, &ctxp->nvalid);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (ctxp->nvalid > ctxp->nalloc)
+		return GFARM_ERR_UNKNOWN;
+
+	for (i = 0; i < ctxp->nvalid; i++) {
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ss",
+			&ctxp->entries[i].path, &ctxp->entries[i].attrname);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			if (e == GFARM_ERR_NO_ERROR)
+				e = GFARM_ERR_PROTOCOL;
+			return (e);
+		}
+	}
+
+	if ((ctxp->eof == 0) && (ctxp->nvalid > 0)) {
+		free(ctxp->cookie_path);
+		free(ctxp->cookie_attrname);
+		ctxp->cookie_path = strdup(ctxp->entries[ctxp->nvalid-1].path);
+		ctxp->cookie_attrname = strdup(ctxp->entries[ctxp->nvalid-1].attrname);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
  * gfs from gfsd
  */
 
@@ -1777,7 +1891,7 @@ gfj_client_info_entry(struct gfp_xdr *conn,
 	gfarm_error_t e;
 	int eof, i;
 	gfarm_int32_t total_nodes, argc, node_pid, node_state;
-	
+
 	e = gfp_xdr_recv(conn, 0, &eof, "issssi",
 			   &total_nodes,
 			   &info->user,

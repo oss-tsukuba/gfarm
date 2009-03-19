@@ -49,6 +49,7 @@ index	groupname	pres,eq
 index	groupusers	pres,eq
 index	inumber		pres,eq
 index	entryName	pres,eq
+index	attrname	pres,eq
 
 # dangerous, but faster
 dbnosync

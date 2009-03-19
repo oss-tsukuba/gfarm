@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2009 National Institute of Informatics in Japan.
+# All rights reserved.
+
+import sys
+
+tmp = """#!/bin/sh
+
+# Copyright (c) 2009 National Institute of Informatics in Japan.
+# All rights reserved.
+
+pythonpath="%s:$PYTHONPATH"
+export PYTHONPATH=$pythonpath
+
+gfvoms-sync.py $@
+"""
+
+ret_str = tmp%(sys.argv[1])
+
+f = open("gfvoms-sync", "w")
+f.write(ret_str)
+f.close()

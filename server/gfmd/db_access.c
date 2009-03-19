@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/time.h>
 
 #include <gfarm/gfarm.h>
 
@@ -18,10 +20,19 @@
 #define ALIGN(offset)	(((offset) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
 typedef void (*dbq_entry_func_t)(void *);
+typedef gfarm_error_t (*dbq_entry_sync_func_t)(void *);
 
 struct dbq_entry {
 	dbq_entry_func_t func;
 	void *data;
+};
+
+struct dbq_entry_sync {
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	dbq_entry_sync_func_t func;
+	void *data;
+	gfarm_error_t e; // return value of func(data)
 };
 
 #define DBQ_SIZE	1000
@@ -126,6 +137,63 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 	if (err != 0)
 		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
 	return (e);
+}
+
+void
+call_func_and_wait(void *d)
+{
+	struct dbq_entry_sync *entry = (struct dbq_entry_sync *)d;
+	dbq_entry_sync_func_t func;
+	void *data;
+	gfarm_error_t e;
+
+	pthread_mutex_lock(&entry->lock);
+	func = entry->func;
+	data = entry->data;
+	pthread_mutex_unlock(&entry->lock);
+
+	e = func(data);
+
+	pthread_mutex_lock(&entry->lock);
+	entry->e = e;
+	pthread_cond_signal(&entry->cond);
+	pthread_mutex_unlock(&entry->lock);
+}
+
+gfarm_error_t
+dbq_enter_sync(struct dbq *q, dbq_entry_sync_func_t func, void *data)
+{
+	int err;
+	gfarm_error_t e;
+	const char msg[] = "dbq_enter_sync";
+	struct dbq_entry_sync *entry;
+
+	entry = malloc(sizeof(*entry));
+	if (entry == NULL)
+		return GFARM_ERR_NO_MEMORY;
+
+	err = pthread_mutex_init(&entry->lock, NULL);
+	if (err != 0)
+		gflog_fatal("%s: mutex: %s", msg, strerror(err));
+	err = pthread_cond_init(&entry->cond, NULL);
+	if (err != 0)
+		gflog_fatal("%s: cond: %s", msg, strerror(err));
+	entry->func = func;
+	entry->data = data;
+	entry->e = GFARM_ERR_UNKNOWN;
+
+	pthread_mutex_lock(&entry->lock);
+	if ((e = dbq_enter(q, call_func_and_wait, entry)) == GFARM_ERR_NO_ERROR) {
+		err = pthread_cond_wait(&entry->cond, &entry->lock);
+		e = (err == 0) ? entry->e : gfarm_errno_to_error(err);
+	}
+	pthread_mutex_unlock(&entry->lock);
+
+	pthread_cond_destroy(&entry->cond);
+	pthread_mutex_destroy(&entry->lock);
+	free(entry);
+
+	return e;
 }
 
 gfarm_error_t
@@ -394,7 +462,7 @@ db_group_dup(const struct gfarm_group_info *gi, size_t size)
 	/* LDAP needs this extra NULL at the end of r->usernames[] */
 	sz = gfarm_size_add(&overflow, size,
 	    gfarm_size_add(&overflow,
-		gfarm_size_mul(&overflow, sizeof(*r->usernames), 
+		gfarm_size_mul(&overflow, sizeof(*r->usernames),
 		    gfarm_size_add(&overflow, gi->nusers, 1)),
 		gfarm_size_add(&overflow, gsize, users_size)));
 	if (!overflow)
@@ -946,3 +1014,126 @@ db_symlink_load(void *closure, void (*callback)(void *, gfarm_ino_t, char *))
 	return ((*ops->symlink_load)(closure, callback));
 }
 
+gfarm_error_t
+db_xattr_add(int xmlMode, gfarm_ino_t inum, const char *attrname,
+		const void *value, size_t size)
+{
+	gfarm_error_t e;
+	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->xmlMode = xmlMode;
+	arg->inum = inum;
+	arg->attrname = attrname;
+	arg->value = value;
+	arg->size = size;
+
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xattr_add, arg);
+	free(arg);
+	return e;
+}
+
+gfarm_error_t
+db_xattr_modify(int xmlMode, gfarm_ino_t inum, const char *attrname,
+		const void *value, size_t size)
+{
+	gfarm_error_t e;
+	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->xmlMode = xmlMode;
+	arg->inum = inum;
+	arg->attrname = attrname;
+	arg->value = value;
+	arg->size = size;
+
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xattr_modify, arg);
+	free(arg);
+	return e;
+}
+
+gfarm_error_t
+db_xattr_remove(int xmlMode, gfarm_ino_t inum, const char *attrname)
+{
+	gfarm_error_t e;
+	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->xmlMode = xmlMode;
+	arg->inum = inum;
+	arg->attrname = attrname;
+
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xattr_remove, arg);
+	free(arg);
+	return e;
+}
+
+gfarm_error_t
+db_xattr_load(int xmlMode, gfarm_ino_t inum, const char *attrname, void **valuep, size_t *sizep)
+{
+	gfarm_error_t e;
+	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->xmlMode = xmlMode;
+	arg->inum = inum;
+	arg->attrname = attrname;
+	arg->valuep = valuep;
+	arg->sizep = sizep;
+
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xattr_load, arg);
+	free(arg);
+	return e;
+}
+
+gfarm_error_t
+db_xattr_list(int xmlMode, gfarm_ino_t inum, void **valuep, size_t *sizep)
+{
+	gfarm_error_t e;
+	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->xmlMode = xmlMode;
+	arg->inum = inum;
+	arg->valuep = valuep;
+	arg->sizep = sizep;
+
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xattr_list, arg);
+	free(arg);
+	return e;
+}
+
+gfarm_error_t
+db_xattr_find(gfarm_ino_t inum, const char *expr,
+		int *nfound, struct xattr_list_info **entries)
+{
+	gfarm_error_t e;
+	struct db_xmlattr_find_arg *arg = malloc(sizeof(*arg));
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	arg->inum = inum;
+	arg->expr = expr;
+	arg->nfound = nfound;
+	arg->entries = entries;
+	e = dbq_enter_sync(&dbq,
+			(dbq_entry_sync_func_t)ops->xmlattr_find, arg);
+	free(arg);
+	return e;
+}

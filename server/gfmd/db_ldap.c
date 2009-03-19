@@ -61,6 +61,7 @@
 
 #include "config.h"
 #include "metadb_common.h"
+#include "xattr_info.h"
 
 #include "db_access.h"
 #include "db_ops.h"
@@ -280,7 +281,7 @@ gfarm_ldap_set_ssl_context(void)
 {
 	gfarm_error_t e;
 	int rv;
-	
+
 	if (ldap_ssl_context == NULL) {
 		e = gfarm_ldap_new_default_ctx(&ldap_ssl_context);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -541,6 +542,73 @@ set_string_mod(
 	storage->mod.mod_type = type;
 	storage->mod.mod_vals.modv_strvals = storage->str;
 	*modp = &storage->mod;
+}
+
+static char *
+binary2hextext(const void *data, int size)
+{
+	char *chdata;
+	int chlen;
+	char *src, *dst, *last;
+
+	chlen = (size > 0) ?  2 * size + 1 : 2;
+	if ((chdata = malloc(chlen)) == NULL)
+		return NULL;
+
+	if (size > 0) {
+		src = (char *)data;
+		dst = chdata;
+		last = (src + size);
+		while (src < last) {
+			sprintf(dst, "%02hhx", *src);
+			src += sizeof(*src);
+			dst += 2 * sizeof(*dst);
+		}
+		*dst = '\0';
+	} else {
+		/*
+		 * NOTE: OpenLDAP denies zero length text.
+		 * Use "0" as empty text.
+		 */
+		chdata[0] = '0';
+		chdata[1] = '\0';
+	}
+
+	return chdata;
+}
+
+static void *
+hextext2binary(char *chdata, int *size)
+{
+	void *data;
+	int chlen = strlen(chdata);
+	int allocsize;
+	char *src, *dst, *last, v[3];
+
+	if (chlen >= 2)
+		allocsize = *size = chlen / 2;
+	else {
+		// empty data
+		*size = 0;
+		chlen = 0;
+		allocsize = 1; // malloc(0) may returns NULL or !NULL
+	}
+	if ((data = malloc(allocsize)) == NULL)
+		return NULL;
+
+	src = chdata;
+	dst = data;
+	last = (src + chlen);
+	v[2] = '\0';
+	while (src < last) {
+		v[0] = *src;
+		v[1] = *(src + 1);
+		*dst = strtol(v, NULL, 16);
+		src += 2 * sizeof(*src);
+		dst += sizeof(*dst);
+	}
+
+	return data;
 }
 
 static void
@@ -926,8 +994,9 @@ gfarm_ldap_generic_info_get_foreach(
 				ops->gen_ops->free(tmp_info);
 				continue;
 			}
-			(*callback)(closure, tmp_info);
-#if 0			/* the (*callback)() routine frees this memory */
+			if (callback != NULL)
+				(*callback)(closure, tmp_info);
+#if 0		/* the (*callback)() routine frees this memory */
 			ops->gen_ops->free(tmp_info);
 #endif
 			i++;
@@ -2360,6 +2429,267 @@ gfarm_ldap_symlink_load(
 
 /**********************************************************************/
 
+static char *gfarm_ldap_xattr_load_info_make_dn(void *vkey);
+
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_load_ops = {
+	&gfarm_base_xattr_load_ops,
+	NULL,
+	"attrname=%s, inumber=%" GFARM_PRId64 ", %s",
+	gfarm_ldap_xattr_load_info_make_dn,
+	NULL,
+};
+
+struct gfarm_ldap_xattr_load_info_key {
+	gfarm_ino_t inumber;
+	int xmlMode;
+	const char *attrname;
+};
+
+static char *
+gfarm_ldap_xattr_load_info_make_dn(void *vkey)
+{
+	struct gfarm_ldap_xattr_load_info_key *key = vkey;
+	char *dn;
+
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_xattr_load_ops.dn_template) +
+			strlen(key->attrname) + INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
+	if (dn == NULL)
+		return (NULL);
+	sprintf(dn, gfarm_ldap_xattr_load_ops.dn_template,
+	    key->attrname, key->inumber, gfarm_ldap_base_dn);
+	return (dn);
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_update(
+	struct db_xattr_arg *arg,
+	int mod_op,
+	gfarm_error_t (*update_op)(void *, LDAPMod **,
+	    const struct gfarm_ldap_generic_info_ops *))
+{
+	gfarm_error_t e;
+	int i;
+	LDAPMod *modv[5];
+	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
+	char ino_string[INT64STRLEN + 1];
+	struct gfarm_ldap_xattr_load_info_key key;
+	char *hextext;
+
+	if (arg->xmlMode)
+		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+
+	hextext = binary2hextext(arg->value, arg->size);
+	if (hextext == NULL)
+		return GFARM_ERR_NO_MEMORY;
+
+	key.inumber = arg->inum;
+	key.xmlMode = arg->xmlMode;
+	key.attrname = arg->attrname;
+
+	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
+
+	i = 0;
+	set_string_mod(&modv[i], mod_op,
+		"objectclass", "XAttr", &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "inumber", ino_string, &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+	    "attrname", (char *)arg->attrname, &storage[i]);
+	i++;
+	set_string_mod(&modv[i], mod_op,
+		"attrvalue", hextext, &storage[i]);
+	i++;
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	e = ((*update_op)(&key, modv, &gfarm_ldap_xattr_load_ops));
+	free(hextext);
+	return e;
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_add(struct db_xattr_arg *arg)
+{
+	return gfarm_ldap_xattr_update(arg,
+	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_modify(struct db_xattr_arg *arg)
+{
+	return gfarm_ldap_xattr_update(arg,
+		LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify);
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_remove(struct db_xattr_arg *arg)
+{
+	struct gfarm_ldap_xattr_load_info_key key;
+
+	if (arg->attrname == NULL) {
+		// NOTE: gfarm_pgsql_xattr_remove() deletes
+		// all xattrs if attrname==NULL.
+		// see gfm_remove_all_xattrs().
+		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	}
+
+	if (arg->xmlMode)
+		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+
+	key.inumber = arg->inum;
+	key.xmlMode = arg->xmlMode;
+	key.attrname = arg->attrname;
+
+	return gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_xattr_load_ops);
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_load(struct db_xattr_arg *arg)
+{
+	gfarm_error_t e;
+	int rv, cnt, sz;
+	char *query_type;
+	char *attrs[2] = { "attrvalue", NULL };
+	struct timeval tout = { 10, 0 };
+	LDAPMessage  *res = NULL, *m;
+	struct berval **vals;
+	void *bindata;
+
+	if (arg->xmlMode)
+		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+
+	query_type = malloc(64 + strlen(arg->attrname));
+	if (query_type == NULL)
+		return GFARM_ERR_NO_MEMORY;
+
+	sprintf(query_type,
+			"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 ")(attrname=%s))",
+			arg->inum, arg->attrname);
+	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
+			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
+	free(query_type);
+	if (rv == LDAP_NO_SUCH_OBJECT)
+		return GFARM_ERR_NO_SUCH_OBJECT;
+	else if ((rv != LDAP_SUCCESS) || (res == NULL))
+		return GFARM_ERR_UNKNOWN;
+
+	cnt = ldap_count_messages(gfarm_ldap_server, res);
+	if (cnt <= 1) {
+		// NOTE: cnt==1 means res have a NULL message only.
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (cnt != 2) {
+		// NOTE: res must have a valid message and a NULL message.
+		e =  GFARM_ERR_UNKNOWN;
+	} else {
+		m = ldap_first_message(gfarm_ldap_server, res);
+		vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]);
+		if ((vals[0] != NULL) && (vals[1] == NULL)) {
+			bindata = hextext2binary(vals[0]->bv_val, &sz);
+			if (bindata != NULL) {
+				*arg->valuep = bindata;
+				*arg->sizep = sz;
+				e = GFARM_ERR_NO_ERROR;
+			} else {
+				e = GFARM_ERR_NO_MEMORY;
+			}
+		} else {
+			e = GFARM_ERR_UNKNOWN;
+		}
+		ldap_value_free_len(vals);
+	}
+	ldap_msgfree(res);
+
+	return e;
+}
+
+static gfarm_error_t
+gfarm_ldap_xattr_list(struct db_xattr_arg *arg)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int rv;
+	char query_type[64];
+	char *attrs[2] = { "attrname", NULL };
+	struct timeval tout = { 10, 0 };
+	LDAPMessage  *res = NULL, *m;
+	struct berval **vals;
+	int i;
+	char *value, *p;
+	int size = 0;
+
+	*arg->sizep = 0;
+	*arg->valuep = NULL;
+
+	if (arg->xmlMode)
+		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+
+	snprintf(query_type, sizeof(query_type),
+			"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 "))",
+			arg->inum);
+	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
+			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
+	if (rv == LDAP_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else if (rv != LDAP_SUCCESS)
+		e = GFARM_ERR_UNKNOWN;
+	else if (ldap_count_messages(gfarm_ldap_server, res) <= 1)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	if (e != GFARM_ERR_NO_ERROR) {
+		ldap_msgfree(res);
+		return e;
+	}
+
+	m = ldap_first_message(gfarm_ldap_server, res);
+	while (m != NULL) {
+		vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]);
+		i = 0;
+		while (vals[i] != NULL) {
+			size += vals[i]->bv_len + 1; // +1 for '\0'
+			i++;
+		}
+		ldap_value_free_len(vals);
+		m = ldap_next_entry(gfarm_ldap_server, m);
+	}
+
+	value = malloc(size);
+	if (value == NULL) {
+		ldap_msgfree(res);
+		return GFARM_ERR_NO_MEMORY;
+	}
+
+	p = value;
+	m = ldap_first_message(gfarm_ldap_server, res);
+	while (m != NULL) {
+		vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]);
+		i = 0;
+		while (vals[i] != NULL) {
+			memcpy(p, vals[i]->bv_val, vals[i]->bv_len);
+			p += vals[i]->bv_len;
+			*p = '\0';
+			p++;
+			i++;
+		}
+		ldap_value_free_len(vals);
+		m = ldap_next_entry(gfarm_ldap_server, m);
+	}
+
+	ldap_msgfree(res);
+
+	*arg->sizep = size;
+	*arg->valuep = value;
+
+	return GFARM_ERR_NO_ERROR;
+}
+
+static gfarm_error_t
+gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
+{
+	return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+}
+
+/**********************************************************************/
+
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
@@ -2413,4 +2743,11 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_symlink_add,
 	gfarm_ldap_symlink_remove,
 	gfarm_ldap_symlink_load,
+
+	gfarm_ldap_xattr_add,
+	gfarm_ldap_xattr_modify,
+	gfarm_ldap_xattr_remove,
+	gfarm_ldap_xattr_load,
+	gfarm_ldap_xattr_list,
+	gfarm_ldap_xmlattr_find,
 };

@@ -90,6 +90,27 @@ struct db_symlink_arg {
 	char *source_path;
 };
 
+struct db_xattr_arg {
+	int xmlMode;
+	gfarm_ino_t inum;
+	const char *attrname;
+	// to set
+	const void *value;
+	size_t size;
+	// to get
+	void **valuep;
+	size_t *sizep;
+};
+
+struct db_xmlattr_find_arg {
+	gfarm_ino_t inum;
+	const char *expr;
+	int *nfound;
+	struct xattr_list_info **entries;
+};
+
+struct xattr_list_info;
+
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -152,4 +173,10 @@ struct db_ops {
 	gfarm_error_t (*symlink_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *));
 
+	gfarm_error_t (*xattr_add)(struct db_xattr_arg *);
+	gfarm_error_t (*xattr_modify)(struct db_xattr_arg *);
+	gfarm_error_t (*xattr_remove)(struct db_xattr_arg *);
+	gfarm_error_t (*xattr_load)(struct db_xattr_arg *);
+	gfarm_error_t (*xattr_list)(struct db_xattr_arg *);
+	gfarm_error_t (*xmlattr_find)(struct db_xmlattr_find_arg *);
 };

@@ -203,6 +203,32 @@ gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);
 gfarm_error_t gfm_client_statfs(struct gfm_connection *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 
+gfarm_error_t gfm_client_setxattr_request(struct gfm_connection *,
+		int, const char *, const void *, size_t, int);
+gfarm_error_t gfm_client_setxmlattr_request(struct gfm_connection *,
+		const char *, const void *, size_t, int);
+gfarm_error_t gfm_client_setxattr_result(struct gfm_connection *);
+gfarm_error_t gfm_client_setxmlattr_result(struct gfm_connection *);
+gfarm_error_t gfm_client_getxattr_request(struct gfm_connection *,
+		int, const char *);
+gfarm_error_t gfm_client_getxmlattr_request(struct gfm_connection *,
+		const char *);
+gfarm_error_t gfm_client_getxattr_result(struct gfm_connection *, void **, size_t *);
+gfarm_error_t gfm_client_getxmlattr_result(struct gfm_connection *, void **, size_t *);
+gfarm_error_t gfm_client_listxattr_request(struct gfm_connection *, int);
+gfarm_error_t gfm_client_listxmlattr_request(struct gfm_connection *);
+gfarm_error_t gfm_client_listxattr_result(struct gfm_connection *, char **, size_t *);
+gfarm_error_t gfm_client_listxmlattr_result(struct gfm_connection *, char **, size_t *);
+gfarm_error_t gfm_client_removexattr_request(struct gfm_connection *,
+		int, const char *);
+gfarm_error_t gfm_client_removexmlattr_request(struct gfm_connection *,
+		const char *);
+gfarm_error_t gfm_client_removexattr_result(struct gfm_connection *);
+gfarm_error_t gfm_client_removexmlattr_result(struct gfm_connection *);
+gfarm_error_t gfm_client_findxmlattr_request(struct gfm_connection *gfm_server,
+		struct gfs_xmlattr_ctx *ctxp);
+gfarm_error_t gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
+		struct gfs_xmlattr_ctx *ctxp);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);

@@ -64,6 +64,7 @@ SRCS = \
 	gfs_unlink.c \
 	gfs_util.c \
 	gfs_utimes.c \
+	gfs_xattr.c \
 	gfarm_foreach.c \
 	glob.c \
 	schedule.c \
@@ -128,6 +129,7 @@ OBJS = \
 	gfs_unlink.lo \
 	gfs_util.lo \
 	gfs_utimes.lo \
+	gfs_xattr.lo \
 	gfarm_foreach.lo \
 	glob.lo \
 	schedule.lo \
@@ -187,6 +189,7 @@ gfs_statsw.lo: gfs_dircache.h
 gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_unlink.lo: config.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
 gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h 
+gfs_xattr.lo: config.h gfm_client.h xattr_info.h
 gfarm_foreach.lo: gfarm_foreach.h
 glob.lo:
 host.lo: hostspec.h host.h

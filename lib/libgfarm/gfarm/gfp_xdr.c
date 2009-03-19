@@ -126,7 +126,7 @@ gfp_xdr_env_for_credential(struct gfp_xdr *conn)
 
 
 void
-gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *b, 
+gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *b,
 	struct gfp_xdr *conn)
 {
 	gfarm_iobuffer_set_read(b, conn->iob_ops->nonblocking_read,
@@ -398,6 +398,23 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 				/* abandon (i - sz) bytes */
 				if (gfarm_iobuffer_purge_read_x(
 				    conn->recvbuffer, i - sz, just) != i - sz)
+					return (GFARM_ERR_NO_ERROR);
+			}
+			break;
+		case 'B':
+			szp = va_arg(*app, size_t *);
+			sp = va_arg(*app, char **);
+			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
+			    &i, sizeof(i), just) != sizeof(i))
+				return (GFARM_ERR_NO_ERROR);
+			i = ntohl(i);
+			*szp = i;
+			size = gfarm_size_add(&overflow, i, 1);
+			if (!overflow)
+				GFARM_MALLOC_ARRAY(*sp, size);
+			if (!overflow && *sp != NULL) {
+				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
+				    *sp, i, just) != i)
 					return (GFARM_ERR_NO_ERROR);
 			}
 			break;

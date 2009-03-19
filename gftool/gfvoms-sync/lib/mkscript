@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2009 National Institute of Informatics in Japan.
+# All rights reserved.
+
+import sys,os,socket
+
+imp_str = """#!/usr/bin/env python
+
+# Copyright (c) 2009 National Institute of Informatics in Japan.
+# All rights reserved.
+
+hostids="%s"
+"""
+
+vomsids_str = """# vomsIDs-hostname correlation file
+
+# In voms-collaboration commands, you need to set vomsID by '-V' option.
+# The vomsID is defined in this file.
+#
+# Definition format is "<vomsID> <host> <port>", and use one row for one host.
+# 
+# vomsID:
+#    You can use [a-zA-Z0-9_-] for vomsID.
+#
+# host:
+#    You can use IPv4, IPv6 or hostname for host.
+#
+# port:
+#    Port number which is used for connection to VOMS-Admin server.
+#    VOMS-Admin server uses 8443 for default. If you don't write
+#    port number, 8443 is used for default.
+#
+# The row which has '#' at it's top is Comment.
+# You can use the comments add to from the end of the line.
+# ex.)
+#	|#valid comment
+#	|1	foo.bar.co.jp	8443	#valid comment
+#	|
+#	|...
+
+#Example
+#
+#1	%s
+#2	foo.bar.co.jp	443
+"""
+
+
+imp_file = imp_str%(os.path.join(sys.argv[2], sys.argv[3]))
+imp_path = os.path.join(os.path.dirname(sys.argv[0]), sys.argv[1])
+f = open(imp_path, "w")
+f.write(imp_file)
+f.close()
+
+vomsids_file = vomsids_str%(socket.getfqdn())
+vomsids_path = os.path.join(os.path.dirname(sys.argv[0]), sys.argv[3])
+f = open(vomsids_path, "w")
+f.write(vomsids_file)
+f.close()

@@ -44,6 +44,7 @@ display_backend_params_postgresql()
 	echo "postgresql password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
 	echo "postgresql prefix   [-P]: $BACKEND_PREFIX"
 	echo "postgresql version  [-V]: $BACKEND_VERSION"
+	echo "postgresql XML supported  [-X]: $SUPPORT_XML_TYPE"
 }
 
 display_backend_port_params_postgresql()
@@ -64,6 +65,10 @@ parse_argument_postgresql()
 #		SCHEMA_VERSION=$2
 #		argshift=1
 #		true;;
+	  -X) [ $# -ge 2 ] || usage
+		SUPPORT_XML_TYPE=$2
+		argshift=1
+		true;;
 	  *)	false;;
 	esac
 }
@@ -99,12 +104,14 @@ set_first_defaults_postgresql()
 {
 	: ${RC_BACKEND_BASENAME=gfarm-pgsql}
 	: ${PGSQL_BINDIR:="$BACKEND_PREFIX/bin"}
+	: ${SUPPORT_XML_TYPE:="no"}
 }
 
 set_last_defaults_postgresql()
 {
 #	: ${SCHEMA_VERSION:=2}
 	: ${DB_NAME:="gfarm"}
+	: ${SUPPORT_XML_TYPE:="no"}
 
 	if [ -w / ]; then # is root?
 		case `uname` in
@@ -418,12 +425,20 @@ _EOF_
 #		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$PGSQL_BINDIR/psql -q \
 		-f "$config_dir/gfarm.sql" $DB_NAME
+	if [ "$SUPPORT_XML_TYPE"="yes" ]; then
+		$PGSQL_BINDIR/psql -q \
+			-f "$config_dir/gfarm-xmlattr.sql" $DB_NAME
+		: ${XMLATTR_TABLENAME:=", XmlAttr "}
+	else
+		: ${XMLATTR_TABLENAME:=""}
+	fi
 	$awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
 		print "	ON Host, HostAliases, "
 		print "    GfarmUser, GfarmGroup, GfarmGroupAssignment, "
 		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry, "
 		print "    Symlink"
+		print "    , XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
 #		if ($SCHEMA_VERSION > 1) {
 #			print "GRANT SELECT, UPDATE"

@@ -73,6 +73,23 @@ configure コマンドには，下記のオプションがあります．
   このオプションは省略可能です．
   
 
+  --enable-voms
+
+  VOMSと連携してgfarmを利用したい時に指定します．このオプションは省略可能です．
+  詳しくはdoc/voms-{install, man, dev}.jaを参照．
+
+
+  --enable-xmlattr
+
+  XML拡張属性を利用したいときに指定します．このオプションは省略可能です．
+  詳しくはdoc/xattr-{install, man, dev}.jaを参照．
+  XML拡張属性とXPathによる検索を利用したい場合は
+    1. postgresql-8.3.xかそれ以降を"configure --with-libxml"でビルド
+       http://www.postgresql.org/docs/8.3/static/install-procedure.html 参照
+    2. gfarm_v2を"configure --enable-xmlattr"でビルド
+    3. config-gfarmを"-b postgresql -X yes"指定で実行
+
+
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
 マンド名を指定して configure を実行してください．以下は gcc を指定する
 例です．

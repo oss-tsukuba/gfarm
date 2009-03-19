@@ -1,0 +1,43 @@
+拡張属性インストールマニュアル
+
+(1) 通常の拡張属性だけを利用する場合
+デフォルトのGfarmインストール手順に従ってビルド・セットアップすればよい。
+バックエンドがPostgreSQLでもOpenLDAPでも利用可能である。
+
+本バージョンのGfarmにおいては、通常の拡張属性は必ず利用可能となる。
+
+(2) XMLの拡張属性も利用する場合
+(2.1) libxmlのセットアップ
+PostgreSQLでXMLを利用する場合は、libxml(libxml2)が必要である。
+一般には、/usr/lib/libxml2.soがあるはずである。無ければ
+	http://www.xmlsoft.org/
+などからダウンロードし、セットアップする。
+
+(2.2) XMLをサポートしたPostgreSQLの準備
+XML拡張属性を利用するには、XMLデータ形式をサポートしたPostgreSQLが
+必要となる。このため、gfmd稼働ホストに
+	o PostgreSQL 8.3.x以降を
+	o ./configure --with-libxml指定でビルド
+したPostgreSQL一式をセットアップしておくこと。
+--with-libxmlは必ず明示的に指定しなければならない。
+
+PostgreSQLのXML型の利用については、以下を参照。
+http://www.postgresql.jp/document/pg836doc/html/datatype-xml.html
+
+(2.3) XML拡張属性をサポートしたGfarmのビルド
+./configureで --enable-xmlattr を指定する。
+その後のビルド手順はデフォルトと同じ。
+Gfarm自体はlibxmlなどの外部ライブラリを利用しない。
+
+(2.4) XML拡張属性をサポートしたgfmdのセットアップ
+初期設定を行う config-gfarm において、通常のオプションに加え、
+-X yes オプションを指定する（デフォルトは-X no）。
+config-gfarm -t -X yesの結果として
+	postgresql XML supported  [-X]: yes
+が表示されたことを確認の上、通常通り、-tなしでconfig-gfarmを行い、
+postmaster, gfmdの起動を確認する。
+
+なお、当該環境のPostgreSQLがXMLをサポートしていない場合、初期
+テーブル作成でエラーとなる。
+バックエンドがOpenLDAPの場合は、gfarmを--enable-xmlattr指定でビルド
+しても、XML拡張属性は利用できない（常にENOTSUPエラーとなる）。

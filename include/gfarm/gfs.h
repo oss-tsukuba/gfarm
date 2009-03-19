@@ -245,6 +245,33 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFS_W_OK	2
 #define GFS_R_OK	4
 
+gfarm_error_t gfs_setxattr(const char *path, const char *name,
+	const void *value, size_t size, int flags);
+gfarm_error_t gfs_getxattr(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_listxattr(const char *path, char *list, size_t *size);
+gfarm_error_t gfs_removexattr(const char *path, const char *name);
+
+gfarm_error_t gfs_fsetxattr(GFS_File gf, const char *name,
+	const void *value, size_t size, int flags);
+gfarm_error_t gfs_fgetxattr(GFS_File gf, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_fremovexattr(GFS_File gf, const char *name);
+
+gfarm_error_t gfs_setxmlattr(const char *path, const char *name,
+		const void *value, size_t size, int flags);
+gfarm_error_t gfs_getxmlattr(const char *path, const char *name,
+		void *value, size_t *size);
+gfarm_error_t gfs_listxmlattr(const char *path, char *list, size_t *size);
+gfarm_error_t gfs_removexmlattr(const char *path, const char *name);
+
+struct gfs_xmlattr_ctx;
+gfarm_error_t gfs_findxmlattr(const char *path, const char *expr,
+	int depth, struct gfs_xmlattr_ctx **ctxpp);
+gfarm_error_t gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp,
+	char **fpathp, char **namep);
+gfarm_error_t gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp);
+
 gfarm_error_t gfs_replicate_to(char *, char *, int);
 gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
 gfarm_error_t gfs_migrate_to(char *, char *, int);

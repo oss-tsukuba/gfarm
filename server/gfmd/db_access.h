@@ -83,6 +83,13 @@ gfarm_error_t db_symlink_add(gfarm_ino_t, const char *);
 gfarm_error_t db_symlink_remove(gfarm_ino_t);
 gfarm_error_t db_symlink_load(void *, void (*)(void *, gfarm_ino_t, char *));
 
+struct xattr_list_info;
+gfarm_error_t db_xattr_add(int, gfarm_ino_t, const char *, const void *, size_t);
+gfarm_error_t db_xattr_modify(int, gfarm_ino_t, const char *, const void *, size_t);
+gfarm_error_t db_xattr_remove(int, gfarm_ino_t, const char *);
+gfarm_error_t db_xattr_load(int, gfarm_ino_t, const char *, void **, size_t *);
+gfarm_error_t db_xattr_list(int, gfarm_ino_t, void **, size_t *);
+gfarm_error_t db_xattr_find(gfarm_ino_t, const char *, int *, struct xattr_list_info **);
 
 /* external interface to select metadb backend type */
 

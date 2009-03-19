@@ -10,6 +10,7 @@ SUBDIRS = \
 	gfdf \
 	gfdump \
 	gfexport \
+	gffindxmlattr \
 	gfgroup \
 	gfhost \
 	gfkey \
@@ -24,8 +25,10 @@ SUBDIRS = \
 	gfstat \
 	gfstatus \
 	gfuser \
+	gfvoms-sync \
 	gfwhere \
 	gfwhoami \
+	gfxattr \
 	config-gfarm
 
 #	gfexec \

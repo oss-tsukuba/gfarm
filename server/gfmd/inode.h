@@ -92,6 +92,12 @@ gfarm_error_t inode_schedule_file_reply(struct inode *, struct peer *,
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
 
+gfarm_error_t inode_xattrname_add(struct inode *, int, char *);
+int inode_xattrname_isexists(struct inode *, int, char *);
+gfarm_error_t inode_xattrname_remove(struct inode *, int, char *);
+gfarm_error_t inode_xattrname_list(struct inode *, int, char **, size_t *);
+int inode_xattr_exists(struct inode *, int);
+
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);

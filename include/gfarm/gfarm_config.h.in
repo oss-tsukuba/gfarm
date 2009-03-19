@@ -5,6 +5,9 @@
 #define GFARM_CONFIG_H
 
 
+/* support XML extended attributs and searching by XPath */
+#undef ENABLE_XMLATTR
+
 /* Define to 1 if you have the <attr/xattr.h> header file. */
 #undef HAVE_ATTR_XATTR_H
 
@@ -178,6 +181,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
