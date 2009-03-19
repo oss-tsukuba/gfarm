@@ -6,6 +6,7 @@ DOCBOOK = \
 	gfgroup.1 \
 	gfhost.1 \
 	gfkey.1 \
+	gfln.1 \
 	gfls.1 \
 	gfmkdir.1 \
 	gfmv.1 \
