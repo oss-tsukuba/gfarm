@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets gfshook_srcs gfshook_objs gfshook_cflags gfshook_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir PYTHON_SPECIFIED gfvoms_sync_subdir_available LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT MKDIR_P YACC INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL pthread_includes pthread_libs pthread_srcs pthread_objs pthread_cflags pthread_targets openssl_includes openssl_libs globus_flavor globus_location globus_includes globus_gssapi_libs globus_srcs globus_objs globus_cflags globus_targets gfshook_srcs gfshook_objs gfshook_cflags gfshook_targets mpicc mpi_srcs mpi_objs mpi_cflags mpi_targets readline_includes readline_libs default_ns_server default_ns_port default_ns_exec_root default_ns_exec_bindir gfarm_rsh gfarmd_username largefile_cflags largefile_ldflags largefile64_srcs largefile64_objs largefile64_cflags largefile64_targets ldap_includes ldap_libs ldap_srcs ldap_objs ldap_cflags ldap_targets postgresql_includes postgresql_libs postgresql_srcs postgresql_objs postgresql_cflags postgresql_targets gfs_hook_sysdep_subdir config_gfarm_sysdep_subdir PYTHON_SPECIFIED gfvoms_sync_targets LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -24447,7 +24447,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-  gfvoms_sync_subdir_available=0
+  gfvoms_sync_targets=''
   echo "$as_me:$LINENO: checking voms-collaboration available" >&5
 echo $ECHO_N "checking voms-collaboration available... $ECHO_C" >&6
   voms_available="no"
@@ -24480,7 +24480,7 @@ echo $ECHO_N "checking voms-collaboration available... $ECHO_C" >&6
         fi
         imp_test=`python -c "import ZSI" 2>&1`
         if test ${#imp_test} == 0; then
-          gfvoms_sync_subdir_available=1
+          gfvoms_sync_targets='${GFVOMS_SYNC_TARGETS}'
           voms_available="yes"
         fi
         ;;
@@ -24489,11 +24489,11 @@ echo $ECHO_N "checking voms-collaboration available... $ECHO_C" >&6
   echo "$as_me:$LINENO: result: ${voms_available}" >&5
 echo "${ECHO_T}${voms_available}" >&6
 else
-  gfvoms_sync_subdir_available=0
+  gfvoms_sync_targets=''
 fi
 
 else
-  gfvoms_sync_subdir_available=0
+  gfvoms_sync_targets=''
 
 fi;
 
@@ -25254,7 +25254,7 @@ s,@postgresql_targets@,$postgresql_targets,;t t
 s,@gfs_hook_sysdep_subdir@,$gfs_hook_sysdep_subdir,;t t
 s,@config_gfarm_sysdep_subdir@,$config_gfarm_sysdep_subdir,;t t
 s,@PYTHON_SPECIFIED@,$PYTHON_SPECIFIED,;t t
-s,@gfvoms_sync_subdir_available@,$gfvoms_sync_subdir_available,;t t
+s,@gfvoms_sync_targets@,$gfvoms_sync_targets,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
