@@ -329,6 +329,7 @@ fi
 %{man_prefix}/man1/gfimport_text.1.gz
 %endif
 %{man_prefix}/man1/gfkey.1.gz
+%{man_prefix}/man1/gfln.1.gz
 %{man_prefix}/man1/gfls.1.gz
 %{man_prefix}/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
@@ -440,6 +441,7 @@ fi
 %{man_prefix}/ja/man1/gfimport_text.1.gz
 %endif
 %{man_prefix}/ja/man1/gfkey.1.gz
+%{man_prefix}/ja/man1/gfln.1.gz
 %{man_prefix}/ja/man1/gfls.1.gz
 %{man_prefix}/ja/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
@@ -564,6 +566,7 @@ fi
 %{html_prefix}/en/ref/man1/gfimport_text.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfkey.1.html
+%{html_prefix}/en/ref/man1/gfln.1.html
 %{html_prefix}/en/ref/man1/gfls.1.html
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
 %if %{gfarm_v2_not_yet}
@@ -678,6 +681,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfimport_text.1.html
 %endif
 %{html_prefix}/ja/ref/man1/gfkey.1.html
+%{html_prefix}/ja/ref/man1/gfln.1.html
 %{html_prefix}/ja/ref/man1/gfls.1.html
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
 %if %{gfarm_v2_not_yet}
@@ -856,6 +860,7 @@ fi
 %{prefix}/bin/gfimport_text
 %endif
 %{prefix}/bin/gfkey
+%{prefix}/bin/gfln
 %{prefix}/bin/gfls
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
