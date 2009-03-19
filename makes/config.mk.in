@@ -116,4 +116,4 @@ gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@
 config_gfarm_sysdep_subdir = @config_gfarm_sysdep_subdir@
 
 # build gftool/gfvoms-sync
-gfvoms_sync_subdir_available = @gfvoms_sync_subdir_available@
+gfvoms_sync_targets = @gfvoms_sync_targets@

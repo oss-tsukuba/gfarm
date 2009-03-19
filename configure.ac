@@ -1240,7 +1240,7 @@ AC_ARG_ENABLE(voms,
 AS_HELP_STRING([--enable-voms],[Enable voms collaboration.[[default=yes]]]),
 [if test "${enable_voms}" = "yes"; then
   AC_CHECK_PROG(PYTHON_SPECIFIED, python, yes, no)
-  gfvoms_sync_subdir_available=0
+  gfvoms_sync_targets=''
   AC_MSG_CHECKING(voms-collaboration available)
   voms_available="no"
   if test "${PYTHON_SPECIFIED}" = "yes" ;then
@@ -1272,7 +1272,7 @@ AS_HELP_STRING([--enable-voms],[Enable voms collaboration.[[default=yes]]]),
         fi
         imp_test=`python -c "import ZSI" 2>&1`
         if test ${#imp_test} == 0; then
-          gfvoms_sync_subdir_available=1
+          gfvoms_sync_targets='${GFVOMS_SYNC_TARGETS}'
           voms_available="yes"
         fi
         ;;
@@ -1280,12 +1280,12 @@ AS_HELP_STRING([--enable-voms],[Enable voms collaboration.[[default=yes]]]),
   fi
   AC_MSG_RESULT(${voms_available})
 else
-  gfvoms_sync_subdir_available=0
+  gfvoms_sync_targets=''
 fi
 ],
-[gfvoms_sync_subdir_available=0
+[gfvoms_sync_targets=''
 ])
-AC_SUBST(gfvoms_sync_subdir_available)
+AC_SUBST(gfvoms_sync_targets)
 
 ###
 ###  --enable-xmlattr		support XML extended attributs and searching by XPath

@@ -2,6 +2,8 @@ top_builddir = ..
 top_srcdir = $(top_builddir)
 srcdir = .
 
+GFVOMS_SYNC_TARGETS = gfvoms-sync
+
 include $(top_srcdir)/makes/var.mk
 
 SUBDIRS = \
@@ -25,7 +27,7 @@ SUBDIRS = \
 	gfstat \
 	gfstatus \
 	gfuser \
-	gfvoms-sync \
+	$(gfvoms_sync_targets) \
 	gfwhere \
 	gfwhoami \
 	gfxattr \
