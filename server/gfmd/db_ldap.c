@@ -2291,53 +2291,67 @@ gfarm_ldap_db_symlink_set_field(
 	}
 }
 
-static gfarm_error_t
-gfarm_ldap_db_symlink_update(
-	struct db_symlink_arg *info,
-	int mod_op,
-	gfarm_error_t (*update_op)(void *, LDAPMod **,
-	    const struct gfarm_ldap_generic_info_ops *))
+static void
+gfarm_ldap_symlink_add(struct db_symlink_arg *info)
 {
 	int i;
-	LDAPMod *modv[4];
-	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
-
-	char ino_string[INT64STRLEN + 1];
+	LDAPMod *modv[3];
+	LDAPMod objectclass_modify;
+	static char *objectclass_value[] = {
+		"GFarmINode", "GFarmSymlink", NULL
+	};
+	struct ldap_string_modify path_storage;
 
 	struct db_inode_inum_arg key;
 
 	key.inum = info->inum;
 
-	sprintf(ino_string, "%" GFARM_PRId64, info->inum);
-
 	i = 0;
-	set_string_mod(&modv[i], mod_op,
-	    "objectclass", "GFarmSymlink", &storage[i]);
+
+	objectclass_modify.mod_op = LDAP_MOD_REPLACE;
+	objectclass_modify.mod_type = "objectclass";
+	objectclass_modify.mod_vals.modv_strvals = objectclass_value;
+	modv[i] = &objectclass_modify;
 	i++;
-	set_string_mod(&modv[i], mod_op,
-	    "inumber", ino_string, &storage[i]);
-	i++;
-	set_string_mod(&modv[i], mod_op,
-	    "sourcePath", info->source_path, &storage[i]);
+
+	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
+	    "sourcePath", info->source_path, &path_storage);
 	i++;
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	return ((*update_op)(&key, modv, &gfarm_ldap_db_symlink_ops));
-}
+	/* use "modify" instead of "add", since this is an AUXILIARY object */
+	gfarm_ldap_generic_info_modify(&key, modv,
+	    &gfarm_ldap_db_symlink_ops);
 
-static void
-gfarm_ldap_symlink_add(struct db_symlink_arg *info)
-{
-	gfarm_ldap_db_symlink_update(info,
-	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
 	free(info);
 }
 
 static void
 gfarm_ldap_symlink_remove(struct db_inode_inum_arg *arg)
 {
-	gfarm_ldap_generic_info_remove(arg, &gfarm_ldap_db_symlink_ops);
+	int i;
+	LDAPMod *modv[3];
+	struct ldap_string_modify objectclass_storage;
+	LDAPMod source_path_storage;
+
+	struct db_inode_inum_arg key;
+
+	key.inum = arg->inum;
+
+	i = 0;
+	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
+	    "objectclass", "GFarmINode", &objectclass_storage);
+	i++;
+	set_delete_mod(&modv[i], "sourcePath", &source_path_storage);
+	i++;
+	modv[i++] = NULL;
+	assert(i == ARRAY_LENGTH(modv));
+
+	/* use "modify" instead of "add", since this is an AUXILIARY object */
+	gfarm_ldap_generic_info_modify(&key, modv,
+	    &gfarm_ldap_db_symlink_ops);
+
 	free(arg);
 }
 
