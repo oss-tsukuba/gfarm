@@ -12,9 +12,9 @@ usage() {
 #	CONFIG_DIR	configuration directory	[$PREFIX/etc]
 #	DATA_DIR	data directory of pgsql	[$PREFIX/var/gfarm-pgsql]
 
-PREFIX=@prefix@
-: ${CONFIG_DIR:="$PREFIX/etc"}
-: ${DATA_DIR:="$PREFIX/var/gfarm-pgsql"}
+prefix=@prefix@
+: ${CONFIG_DIR:="@sysconfdir@"}
+: ${DATA_DIR:="@localstatedir@/gfarm-pgsql"}
 GFMDCONF=$CONFIG_DIR/gfmd.conf
 DUMPF=db.out
 MODE=UNKNOWN
