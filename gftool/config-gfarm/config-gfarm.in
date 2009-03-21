@@ -135,13 +135,15 @@ gen_passwd()
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f] [-W] [-w]"
-	echo >&2 "	[-b metadata_backend] [-V metadata_backend_version]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
+	echo >&2 "	[-S] [-N] [-W] [-w]"
+	echo >&2 "	[-h hostname] [-d domain_name] [-m gfmd_port]"
+	echo >&2 "	[-A metadata_admin_user] [-D metadata_admin_gsi_dn]"
+	echo >&2 "	[-a auth_type]"
+	echo >&2 "	[-b metadata_backend] [-P backend_prefix]"
+	echo >&2 "	[-V metadata_backend_version] [-p metadata_backend_port]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
-	echo >&2 "	[-d domain_name] [-h hostname]"
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
-	echo >&2 "	[-p metadata_backend_port]"
-	echo >&2 "	[-A metadata_admin_user] [-m gfmd_port] [-a auth_type]"
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
 		echo >&2 "	no such option with backend=$BACKEND_TYPE"
