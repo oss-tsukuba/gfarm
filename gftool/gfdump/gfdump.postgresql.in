@@ -77,14 +77,29 @@ if [ X$MODE = XRESTORE ]; then
 		err "$DUMPF: database dump file not exist"
 fi
 
-# XXX - always overwrite ~/.pgpass
-PGPASS=~/.pgpass
-touch $PGPASS || err "$PGPASS: cannot create"
-chmod 0600 $PGPASS || err "$PGPASS: cannot change mode"
-cat > $PGPASS <<EOF
-$HOST:$PORT:$DBNAME:$USER:$PASSWD
-*:$PORT:$DBNAME:$ADMIN_USER:$ADMIN_PASSWD
-EOF
+# $LINE is appended to $FILE only if $LINE is not included in $FILE
+update_file()
+{
+	FILE="$1"
+	LINE="$2"
+
+	if [ ! -f $FILE ]; then
+		echo $LINE > $FILE
+	elif ! grep $LINE $FILE > /dev/null; then
+		echo $LINE >> $FILE
+	fi
+}
+
+# update $HOME/.pgpass
+PGPASS=$HOME/.pgpass
+if [ ! -f $PGPASS ]; then
+	touch $PGPASS || err "$PGPASS: cannot create"
+	chmod 0600 $PGPASS || err "$PGPASS: cannot change mode"
+fi
+# disable path expansion
+set -f
+update_file $PGPASS "$HOST:$PORT:$DBNAME:$USER:$PASSWD"
+update_file $PGPASS "localhost:$PORT:$DBNAME:$ADMIN_USER:$ADMIN_PASSWD"
 
 case $MODE in
     DUMP)
