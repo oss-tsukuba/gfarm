@@ -117,7 +117,7 @@ def usage(e):
         
         User DN should be the format of certification info like
 
-          '/O=Grid/OU=GlobusTest/OU=simpleCA-gfdev.suri.co.jp/CN=GfarmDevelop'
+          '/O=Grid/OU=GlobusTest/OU=simpleCA-example.co.jp/CN=GfarmDevelop'
 
         The row started with '#' will be treated as a commentation row."""
 	print usage_str
