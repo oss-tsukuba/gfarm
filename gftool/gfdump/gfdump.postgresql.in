@@ -85,7 +85,7 @@ update_file()
 
 	if [ ! -f $FILE ]; then
 		echo $LINE > $FILE
-	elif ! grep $LINE $FILE > /dev/null; then
+	elif ! grep "^$LINE$" $FILE > /dev/null; then
 		echo $LINE >> $FILE
 	fi
 }
