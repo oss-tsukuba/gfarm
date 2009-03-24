@@ -32,7 +32,7 @@ script-clean:
 	-test -e "gfvoms-sync" && $(RM) -f "gfvoms-sync"
 
 script-veryclean: clean
-	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
+	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f "$(EXTRA_VERYCLEAN_TARGETS)"
 
 script-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile

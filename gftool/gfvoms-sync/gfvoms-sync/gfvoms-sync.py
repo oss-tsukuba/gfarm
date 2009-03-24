@@ -5,7 +5,8 @@
 # gfvoms-sync
 #
 # Sync voms infos and gfarm
-# Using gfvoms-list and gfvoms-update, synchronize voms's membership infos and that of gfarm.
+# Using gfvoms-list and gfvoms-update,
+# synchronize voms's membership infos and that of gfarm.
 #
 # Copyright (c) 2009 National Institute of Informatics in Japan.
 # All rights reserved.
@@ -23,15 +24,16 @@ def usage(e):
 		print e
 		e = ""
 	usage_str ="""Usage:
-    gfvoms-sync (-s|-d) -V vomsID -v vo [-g voms-membership-path] [-a hostids] [-h]
+    gfvoms-sync -s -V vomsID -v vo [-g voms-membership-path] [-a hostids] [-h]
+    gfvoms-sync -d -V vomsID -v vo [-g voms-membership-path] [-a hostids] [-h]
 
     options:
         -s                  : Synchronization mode.
         -d                  : Deletion mode.
         -V voms             : ID of VOMS Admin Server
-        -v vo               : Name of VO, which you want to get membership infos.[no default]
+        -v vo               : Name of VO to get membership infos.[no default]
         -g membership-path  : Path of voms membership info file.[no default]
-        -a vomsids          : Path of definition file of id and host.[default: '%s']
+        -a vomsids          : Path of file of id and host.[default: '%s']
         -h                  : Show this Usage.\n"""
 	print usage_str%(hostids)
 	sys.exit(e)
@@ -40,7 +42,8 @@ def check_options():
 	if (not options.has_key("sync")) and (not options.has_key("del")):
 		usage("No Operation is found. You must set '-s' or '-d' option.")
 	if (options.has_key("sync")) and options.has_key("del"):
-		usage("Duplicate Operations. Option '-s' and '-d' cannot set in same time.")
+		usage("Duplicate Operations. " +
+		      "Option '-s' and '-d' cannot set in same time.")
 
 	if not options.has_key("vomsid"):
 		usage("No vomsID Specified!")
@@ -84,7 +87,8 @@ def parse_options():
 		sys.exit("Error parsing command line arguments:%s"%(e))
 
 def getGfvomsListOptions():
-	ret= "-a %s -V %s -v %s -m %s"%(options["hostids"], options["vomsid"], options["vo"], vomslist_tmpfile)
+	ret= "-a %s -V %s -v %s -m %s"%(
+	  options["hostids"], options["vomsid"], options["vo"], vomslist_tmpfile)
 	return ret
 
 def getGfvomsUpdOptions():
@@ -110,7 +114,8 @@ def main():
 			gfvoms_list = "./gfvoms-list"
 		if not os.path.isfile(gfvoms_list):
 			sys.exit("Cannot find command 'gfvoms-list'")
-		status, gfvoms_update = commands.getstatusoutput("which gfvoms-update")
+		status, gfvoms_update = commands.getstatusoutput(
+		                              "which gfvoms-update")
 		if status != 0:
 			gfvoms_update = "./gfvoms-update"
 		if not os.path.isfile(gfvoms_update):
@@ -124,7 +129,8 @@ def main():
 				if not os.path.exists(tmpdir):
 					os.makedirs(tmpdir)
 				print "gfvoms-list started..."
-				status = os.system("%s %s"%(gfvoms_list, getGfvomsListOptions()))
+				status = os.system("%s %s"%(
+				            gfvoms_list, getGfvomsListOptions()))
 				if status != 0:
 					raise Exception("gfvoms-list failed!")
 				options["vomslist"] = vomslist_tmpfile

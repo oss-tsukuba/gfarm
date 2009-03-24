@@ -8,7 +8,8 @@
 # Apache 2.0 Licensed Products:
 #  This product includes software listed below that were licensed under
 #  the Apache License, Version 2.0 (the "License"); you may not use this file
-#  except in compliance with the License. You may obtain a copy of the License at
+#  except in compliance with the License.
+#  You may obtain a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -24,19 +25,24 @@
 """modules to use ZSI.
 """
 
+nspace = "http://glite.org/wsdl/services/org.glite.security.voms"
+encstyle = "http://schemas.xmlsoap.org/soap/encoding/"
+
 import string, getopt, sys, os, os.path, types, re, urlparse
 import ZSI
 from ZSI import client
 
 class ns0:
-	targetNamespace = "http://glite.org/wsdl/services/org.glite.security.voms"
+	targetNamespace = nspace
 	
 	class User_Def(ZSI.TCcompound.ComplexType, ZSI.schema.TypeDefinition):
-		schema = "http://glite.org/wsdl/services/org.glite.security.voms"
+		schema = nspace
 		type = (schema, "User")
-		def __init__(self, pname, ofwhat=(), attributes=None, extend=False, restrict=False, **kw):
+		def __init__(self, pname, ofwhat=(), attributes=None,
+		             extend=False, restrict=False, **kw):
 			ns = self.__class__.schema
-			option = {"minOccurs":1, "maxOccurs":1, "nillable":True, "typed":False, "encoded":kw.get("encoded")}
+			option = {"minOccurs":1, "maxOccurs":1, "nillable":True,
+			          "typed":False, "encoded":kw.get("encoded")}
 			TClist = [
 				ZSI.TC.String(pname="CA", aname="_CA", **option),
 				ZSI.TC.String(pname="CN", aname="_CN", **option),
@@ -46,7 +52,8 @@ class ns0:
 			self.attribute_typecode_dict = attributes or {}
 			if extend: TClist += ofwhat
 			if restrict: TClist = ofwhat
-			ZSI.TCcompound.ComplexType.__init__(self, None, TClist, pname=pname, inorder=0, **kw)
+			ZSI.TCcompound.ComplexType.__init__(
+			            self, None, TClist, pname=pname, inorder=0, **kw)
 			class Holder:
 				typecode = self
 				def __init__(self):
@@ -62,16 +69,19 @@ class ns0:
 			Holder.__name__ = "User_Holder"
 			self.pyclass = Holder
 	
-	class VOMSException_Def(ZSI.TCcompound.ComplexType, ZSI.schema.TypeDefinition):
-		schema = "http://glite.org/wsdl/services/org.glite.security.voms"
+	class VOMSException_Def(ZSI.TCcompound.ComplexType,
+	                               ZSI.schema.TypeDefinition):
+		schema = nspace
 		type = (schema, "VOMSException")
-		def __init__(self, pname, ofwhat=(), attributes=None, extend=False, restrict=False, **kw):
+		def __init__(self, pname, ofwhat=(),
+		             attributes=None, extend=False, restrict=False, **kw):
 			ns = self.__class__.schema
 			TClist = []
 			self.attribute_typecode_dict = attributes or {}
 			if extend: TClist += ofwhat
 			if restrict: TClist = ofwhat
-			ZSI.TCcompound.ComplexType.__init__(self, None, TClist, pname=pname, inorder=0, **kw)
+			ZSI.TCcompound.ComplexType.__init__(self, None, TClist,
+			                                    pname=pname, inorder=0, **kw)
 			class Holder:
 				typecode = self
 				def __init__(self):
@@ -81,25 +91,29 @@ class ns0:
 			self.pyclass = Holder
 
 class ns1:
-	targetNamespace = "http://glite.org/wsdl/services/org.glite.security.voms.service.admin"
+	targetNamespace = "%s.service.admin"%(nspace)
 	
 	class ArrayOf_tns2_User_Def(ZSI.TC.Array, ZSI.schema.TypeDefinition):
 		#complexType/complexContent base="SOAP-ENC:Array"
-		schema = "http://glite.org/wsdl/services/org.glite.security.voms.service.admin"
+		schema = "%s.service.admin"%(nspace)
 		type = (schema, "ArrayOf_tns2_User")
-		def __init__(self, pname, ofwhat=(), extend=False, restrict=False, attributes=None, **kw):
+		def __init__(self, pname, ofwhat=(), extend=False,
+		             restrict=False, attributes=None, **kw):
 			ofwhat = ns0.User_Def(None, typed=False)
-			atype = (u'http://glite.org/wsdl/services/org.glite.security.voms', u'User[]')
-			ZSI.TCcompound.Array.__init__(self, atype, ofwhat, pname=pname, childnames='item', **kw)
+			atype = (nspace, u'User[]')
+			ZSI.TCcompound.Array.__init__(self, atype, ofwhat, pname=pname,
+			                              childnames='item', **kw)
 
 	class ArrayOf_soapenc_string_Def(ZSI.TC.Array, ZSI.schema.TypeDefinition):
 		#complexType/complexContent base="SOAP-ENC:Array"
-		schema = "http://glite.org/wsdl/services/org.glite.security.voms.service.admin"
+		schema = "%s.service.admin"%(nspace)
 		type = (schema, "ArrayOf_soapenc_string")
-		def __init__(self, pname, ofwhat=(), extend=False, restrict=False, attributes=None, **kw):
+		def __init__(self, pname, ofwhat=(), extend=False,
+		             restrict=False, attributes=None, **kw):
 			ofwhat = ZSI.TC.String(None, typed=False)
-			atype = (u'http://schemas.xmlsoap.org/soap/encoding/', u'string[]')
-			ZSI.TCcompound.Array.__init__(self, atype, ofwhat, pname=pname, childnames='item', **kw)
+			atype = (encstyle, u'string[]')
+			ZSI.TCcompound.Array.__init__(self, atype, ofwhat, pname=pname,
+			                              childnames='item', **kw)
 
 class listUsersWithRoleRequest:
 	def __init__(self):
@@ -107,47 +121,56 @@ class listUsersWithRoleRequest:
 		self._in1 = None
 		return
 listUsersWithRoleRequest.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listUsersWithRole"),
+	pname=("%s.service.admin"%(nspace),"listUsersWithRole"),
 	ofwhat=[
-		ZSI.TC.String(pname="in0", aname="_in0", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True),
-		ZSI.TC.String(pname="in1", aname="_in1", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
+		ZSI.TC.String(pname="in0", aname="_in0", typed=False, encoded=None,
+		              minOccurs=1, maxOccurs=1, nillable=True),
+		ZSI.TC.String(pname="in1", aname="_in1", typed=False, encoded=None,
+		              minOccurs=1, maxOccurs=1, nillable=True)],
 	pyclass=listUsersWithRoleRequest,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 class listUsersWithRoleResponse:
 	def __init__(self):
 		self._listUsersWithRoleReturn = None
 		return
 listUsersWithRoleResponse.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listUsersWithRoleResponse"),
+	pname=("%s.service.admin"%(nspace),"listUsersWithRoleResponse"),
 	ofwhat=[
 		ns1.ArrayOf_tns2_User_Def(
-			pname="listUsersWithRoleReturn", aname="_listUsersWithRoleReturn", typed=False,
-			encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
+			pname="listUsersWithRoleReturn",
+			aname="_listUsersWithRoleReturn",
+			typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
 	pyclass=listUsersWithRoleResponse,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 class listMembersRequest:
 	def __init__(self):
 		self._in0 = None
 		return
 listMembersRequest.typecode = ZSI.TCcompound.Struct(
-		pyclass=listMembersRequest,
-		pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listMembers"),
-		ofwhat=[ZSI.TC.String(
-			pname="in0", aname="_in0", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
-		encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
-		
+	pname=("%s.service.admin"%(nspace),"listMembers"),
+	ofwhat=[
+		ZSI.TC.String(
+			pname="in0", aname="_in0", typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
+	pyclass=listMembersRequest,
+	encoded="%s.service.admin"%(nspace))
+
 class listMembersResponse:
 	def __init__(self):
 		self._listMembersReturn = None
 		return
 listMembersResponse.typecode = ZSI.TCcompound.Struct(
-		pyclass=listMembersResponse,
-		pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listMembersResponse"),
-		ofwhat=[ns1.ArrayOf_tns2_User_Def(
-			pname="listMembersReturn", aname="_listMembersReturn", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
-		encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	pname=("%s.service.admin"%(nspace),"listMembersResponse"),
+	ofwhat=[
+		ns1.ArrayOf_tns2_User_Def(
+			pname="listMembersReturn", aname="_listMembersReturn",
+			typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
+	pyclass=listMembersResponse,
+	encoded="%s.service.admin"%(nspace))
 
 class listRolesRequest:
 	def __init__(self):
@@ -155,21 +178,24 @@ class listRolesRequest:
 		self._in1 = None
 		return
 listRolesRequest.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listRoles"),
+	pname=("%s.service.admin"%(nspace),"listRoles"),
 	ofwhat=[],
 	pyclass=listRolesRequest,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 class listRolesResponse:
 	def __init__(self):
 		self._listRolesReturn = None
 		return
 listRolesResponse.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listRolesResponse"),
-	ofwhat=[ns1.ArrayOf_soapenc_string_Def(
-		pname="listRolesReturn", aname="_listRolesReturn", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
+	pname=("%s.service.admin"%(nspace),"listRolesResponse"),
+	ofwhat=[
+		ns1.ArrayOf_soapenc_string_Def(
+			pname="listRolesReturn", aname="_listRolesReturn",
+			typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
 	pyclass=listRolesResponse,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 
 class listSubGroupsRequest:
@@ -177,22 +203,27 @@ class listSubGroupsRequest:
 		self._in0 = None
 		return
 listSubGroupsRequest.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listSubGroups"),
+	pname=("%s.service.admin"%(nspace),"listSubGroups"),
 	ofwhat=[
-		ZSI.TC.String(pname="in0", aname="_in0", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
+		ZSI.TC.String(pname="in0", aname="_in0",
+			typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
 	pyclass=listSubGroupsRequest,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 class listSubGroupsResponse:
 	def __init__(self):
 		self._listSubGroupsReturn = None
 		return
 listSubGroupsResponse.typecode = ZSI.TCcompound.Struct(
-	pname=("http://glite.org/wsdl/services/org.glite.security.voms.service.admin","listSubGroupsResponse"),
-	ofwhat=[ns1.ArrayOf_soapenc_string_Def(
-		pname="listSubGroupsReturn", aname="_listSubGroupsReturn", typed=False, encoded=None, minOccurs=1, maxOccurs=1, nillable=True)],
+	pname=("%s.service.admin"%(nspace),"listSubGroupsResponse"),
+	ofwhat=[
+		ns1.ArrayOf_soapenc_string_Def(
+			pname="listSubGroupsReturn", aname="_listSubGroupsReturn",
+			typed=False, encoded=None,
+			minOccurs=1, maxOccurs=1, nillable=True)],
 	pyclass=listSubGroupsResponse,
-	encoded="http://glite.org/wsdl/services/org.glite.security.voms.service.admin")
+	encoded="%s.service.admin"%(nspace))
 
 
 class SOAPBinding:
@@ -201,15 +232,20 @@ class SOAPBinding:
 		transdict = {"cert_file":kw['user_cert'], "key_file":kw['user_key']}
 		kw.setdefault("readerclass", None)
 		kw.setdefault("writerclass", None)
-		admin_url = "https://%s:%d/voms/%s/services/VOMSAdmin" % (kw['host'],kw['port'],kw['vo'])
-		self.binding = client.Binding(url=admin_url, transdict = transdict, **kw)
+		admin_url = "https://%s:%d/voms/%s/services/VOMSAdmin" % (
+		                                  kw['host'],kw['port'],kw['vo'])
+		self.binding = client.Binding(
+			url=admin_url, transdict = transdict, **kw)
 
 	# op "list-members"
 	def listMembers(self, **kw):
 		request = listMembersRequest()
 		request._in0 = "%s"%(kw["group"])
-		self.binding.Send(None, None, request, soapaction="", encodingStyle="http://schemas.xmlsoap.org/soap/encoding/", **kw)
-		typecode = ZSI.TCcompound.Struct(pname=None, ofwhat=listMembersResponse.typecode.ofwhat, pyclass=listMembersResponse.typecode.pyclass)
+		self.binding.Send(None, None, request,
+			soapaction="", encodingStyle=encstyle, **kw)
+		typecode = ZSI.TCcompound.Struct(
+			pname=None, ofwhat=listMembersResponse.typecode.ofwhat,
+			pyclass=listMembersResponse.typecode.pyclass)
 		if self.binding.Receive(typecode)._listMembersReturn == None:
 			return []
 		return self.binding.Receive(typecode)._listMembersReturn
@@ -218,8 +254,11 @@ class SOAPBinding:
 	def listSubGroups(self, **kw):
 		request = listSubGroupsRequest()
 		request._in0 = "%s"%(kw["group"])
-		self.binding.Send(None, None, request, soapaction="", encodingStyle="http://schemas.xmlsoap.org/soap/encoding/", **kw)
-		typecode = ZSI.TCcompound.Struct(pname=None, ofwhat=listSubGroupsResponse.typecode.ofwhat, pyclass=listSubGroupsResponse.typecode.pyclass)
+		self.binding.Send(None, None, request,
+			soapaction="", encodingStyle=encstyle, **kw)
+		typecode = ZSI.TCcompound.Struct(
+			pname=None, ofwhat=listSubGroupsResponse.typecode.ofwhat,
+			pyclass=listSubGroupsResponse.typecode.pyclass)
 		response = self.binding.Receive(typecode)
 		if self.binding.Receive(typecode)._listSubGroupsReturn == None:
 			return []
@@ -228,8 +267,11 @@ class SOAPBinding:
 	# op "list-roles"
 	def listRoles(self, **kw):
 		request = listRolesRequest()
-		self.binding.Send(None, None, request, soapaction="", encodingStyle="http://schemas.xmlsoap.org/soap/encoding/")
-		typecode = ZSI.TCcompound.Struct(pname=None, ofwhat=listRolesResponse.typecode.ofwhat, pyclass=listRolesResponse.typecode.pyclass)
+		self.binding.Send(None, None, request,
+			soapaction="", encodingStyle=encstyle)
+		typecode = ZSI.TCcompound.Struct(
+			pname=None, ofwhat=listRolesResponse.typecode.ofwhat,
+			pyclass=listRolesResponse.typecode.pyclass)
 		if self.binding.Receive(typecode)._listRolesReturn == None:
 			return []
 		return self.binding.Receive(typecode)._listRolesReturn
@@ -239,8 +281,11 @@ class SOAPBinding:
 		request = listUsersWithRoleRequest()
 		request._in0 = "%s"%(kw["group"])
 		request._in1 = "%s"%(kw["role"])
-		self.binding.Send(None, None, request, soapaction="", encodingStyle="http://schemas.xmlsoap.org/soap/encoding/")
-		typecode = ZSI.TCcompound.Struct(pname=None, ofwhat=listUsersWithRoleResponse.typecode.ofwhat, pyclass=listUsersWithRoleResponse.typecode.pyclass)
+		self.binding.Send(None, None, request,
+			soapaction="", encodingStyle=encstyle)
+		typecode = ZSI.TCcompound.Struct(
+			pname=None, ofwhat=listUsersWithRoleResponse.typecode.ofwhat,
+			pyclass=listUsersWithRoleResponse.typecode.pyclass)
 		response = self.binding.Receive(typecode)
 		if self.binding.Receive(typecode)._listUsersWithRoleReturn == None:
 			return []
@@ -248,7 +293,8 @@ class SOAPBinding:
 
 			
 	def execute(self, cmd, **arg):
-		cmds = {"listUsersWithRole":"","listRoles":"","listSubGroups":"","listMembers":""}
+		cmds = {"listUsersWithRole":"","listRoles":"",
+			"listSubGroups":"","listMembers":""}
 		if cmd in cmds:
 			try:
 				response = self.__class__.__dict__[cmd](self, **arg)

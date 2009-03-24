@@ -14,7 +14,8 @@
 # Apache 2.0 Licensed Products:
 #  This product includes software listed below that were licensed under
 #  the Apache License, Version 2.0 (the "License"); you may not use this file
-#  except in compliance with the License. You may obtain a copy of the License at
+#  except in compliance with the License. You may obtain a copy of
+#  the License at
 #      http://www.apache.org/licenses/LICENSE-2.0
 #  Unless required by applicable law or agreed to in writing,
 #  software distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,7 +50,8 @@ class ProgressBar:
 		self.cur += delta
 		cursize = int(float(self.cur) / self.max * self.size)
 		leftsize = self.size - cursize
-		self.out.write(self.format % ('*'*cursize, '-'*leftsize, self.cur, self.max))
+		self.out.write(self.format
+			% ('*'*cursize, '-'*leftsize, self.cur, self.max))
 		if self.cur >= self.max:
 		    print "\nComplete"
 
@@ -94,24 +96,28 @@ def usage(e):
 		print e
 		e = ""
 	usage_str ="""Usage:
-    gfvoms-list -V vomsID -v vo [-f user-list-path] [-m membership-path] [-a hostids] [-h]
+    gfvoms-list -V vomsID -v vo [-f user-list-path] [-m membership-path]
+                                                           [-a hostids] [-h]
 
     options:
-        -V voms             : ID of VOMS Admin Server
-        -v vo               : Name of VO, which you want to get membership infos.[no default]
-        -f user-list-path   : List of users whom you want to get infos.[no default]
-                                 If you don't set this option, all users in the voms:vo will be set.
-        -m membership-path  : Path for file to save membership info.[no default]
-                                 If you don't set this option, membership info will write in stdout.
-        -a hostids          : Path of definition file of id and host.[default: '/var/gfarm/hostids']
-        -h                  : Show this Usage.
+        -V voms            : ID of VOMS Admin Server
+        -v vo              : Name of VO.[no default]
+        -f user-list-path  : List of users to get infos.[no default]
+                             If you don't set this option,
+                             all member of voms:vo will get.
+        -m membership-path : Path to save membership info.[no default]
+                             If you don't set this option,
+                             membership info will write in stdout.
+        -a hostids         : Path of definition file of id and host.
+                             [default: '/var/gfarm/hostids']
+        -h                 : Show this Usage.
 
     membership-path format:
         One user for one row, and the format is 'user=<User DN>'.
         
         User DN should be the format of certification info like
 
-            '/O=Grid/OU=GlobusTest/OU=simpleCA-gfdev.suri.co.jp/OU=suri.co.jp/CN=GfarmDevelop'
+          '/O=Grid/OU=GlobusTest/OU=simpleCA-gfdev.suri.co.jp/CN=GfarmDevelop'
 
         The row started with '#' will be treated as a commentation row."""
 	print usage_str
@@ -135,7 +141,8 @@ def getHostByVomsId(**options):
 		lines = f.readlines()
 		f.close()
 	except:
-		raise Exception("Error: Failed to read vomsID file['%s']."%(options["hostids"]))
+		raise Exception(
+		 "Error: Failed to read vomsID file['%s']."%(options["hostids"]))
 
 	index = 0
 	for line in lines:
@@ -150,7 +157,8 @@ def getHostByVomsId(**options):
 				break
 		if len(list) < 2 or len(list) > 3:
 			print "Broken vomsid file. Cannot parse line(%d): %s"%(index, buf)
-			raise Exception("Error:Failed to parse vomsID file['%s']."%(options["hostids"]))
+			raise Exception(
+			  "Error:Failed to parse vomsID file['%s']."%(options["hostids"]))
 		if list[0] != options["vomsid"]:
 			continue
 		if len(list) == 2:
@@ -161,7 +169,8 @@ def getHostByVomsId(**options):
 			break
 	if host == "":
 		print "No definition for vomsID(%s) found."%(options["vomsid"])
-		raise Exception("Error: Cannot find host in vomsID file['%s']."%(options["hostids"]))
+		raise Exception(
+		 "Error: Cannot find host in vomsID file['%s']."%(options["hostids"]))
 	return host, port
 
 def check_options():
@@ -236,13 +245,17 @@ def getCheckUsers(infile):
 			info = tmp_line.split("=", 1)
 			if len(info) != 2:
 				print "invalid line(%d):%s"%(index, tmp_line)
-				raise Exception("Error: Failed to parse user list['%s'])."%(infile))
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
 			if info[0].strip() != "user":
 				print "invalid line(%d):%s"%(index, tmp_line)
-				raise Exception("Error: Failed to parse user list['%s'])."%(infile))
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
 			if info[1].strip() in users:
-				print "duplicate definition for dn (in line %d):%s"%(index, info[1].strip())
-				raise Exception("Error: Failed to parse user list['%s'])."%(infile))
+				print "duplicate definition for dn ",
+				print "(in line %d):%s"%(index, info[1].strip())
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
 			users[info[1].strip()]=""
 		return users
 	except IOError, e:
@@ -252,7 +265,7 @@ def getCheckUsers(infile):
 		raise e
 
 def export(group_infos):
-	"""Print out the result to 'outfile' which is registered in global 'options'.
+	"""Print the result to 'outfile' which is registered in global 'options'.
 	"""
 	groups = group_infos.keys()
 	f = sys.stdout
@@ -287,12 +300,16 @@ def getGroupList(group, counter):
 	except socket.error, e:
 		errtuple = tuple(e)
 		if len(errtuple) == 2:
-			raise Exception("SocketError(%d):%s [hostname=%s, post=%d]"%(errtuple[0], errtuple[1], options["host"], options["port"]))
+			raise Exception(
+			 "SocketError(%d):%s [hostname=%s, post=%d]"%(
+			   errtuple[0], errtuple[1], options["host"], options["port"]))
 		else:
 			raise e
 	except Exception, e:
 		if str(e).find("Insufficient privileges") != -1:
-			counter.out.write("Ignored: Insufficient privileges to perform 'listSubGroups' to %s\n"%(group))
+			counter.out.write(
+			 "Ignored: Insufficient privileges to perform '%s' to %s\n"%(
+			                                      "listSubGroups", group))
 		else:
 			raise e
 	ret_list = glist[:]
@@ -330,7 +347,8 @@ def main():
 			rlist = admin.execute("listRoles", **options)
 		except Exception, e:
 			if str(e).find("Insufficient privileges") != -1:
-				print "Ignored: Insufficient privileges to perform 'listRoles'"
+				print "Ignored: ",
+				print "Insufficient privileges to perform 'listRoles'"
 			else:
 				raise e
 		print "%d roles found..."%(len(rlist))
@@ -349,21 +367,31 @@ def main():
 				group_infos[grp_novo] = members
 			except Exception, e:
 				if str(e).find("Insufficient privileges") != -1:
-					bar.out.write("Ignored: Insufficient privileges to perform 'listMembers' to %s\n"%(group))
+					bar.out.write(
+						"Ignored: " +
+						"Insufficient privileges to perform '%s' to %s\n"%(
+							"listMembers",group))
 				else:
 					raise e
 			for role in rlist:
 				try:
-					r_members = admin.execute("listUsersWithRole", group=group, role=role)
+					r_members = admin.execute("listUsersWithRole",
+					                          group=group, role=role)
 					if dns != None:
 						r_members = [u for u in r_members if u._DN in dns]
 					group_infos["%s/%s"%(grp_novo, role)] = r_members
 				except Exception, e:
 					if str(e).find("containerName.length()") != -1:
-						bar.out.write("Ignored: Too long groupname '%s/%s'\n"%(grp_novo, role))
+						bar.out.write(
+							"Ignored: " +
+							"Too long groupname '%s/%s'\n"%(grp_novo, role))
 						continue
 					elif str(e).find("Insufficient privileges") != -1:
-						bar.out.write("Ignored: Insufficient privileges to perform 'listUsersWithRole' to %s/Role=%s\n"%(group, role))
+						bar.out.write(
+							"Ignored:" +
+							"Insufficient privileges to perform " +
+							"'%s' to %s/Role=%s\n"%(
+								"listUsersWithRole", group, role))
 						continue
 					else:
 						raise e
