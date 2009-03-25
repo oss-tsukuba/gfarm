@@ -1,7 +1,7 @@
-Release note for Gfarm 2.1.2
+Release note for Gfarm 2.2.0
 ============================
 
-[2009.3.21]
+[2009.3.26]
 
 New Feature
 * symbolic link support
@@ -11,6 +11,12 @@ New Feature
 New Command
 * gfstatus - display Gfarm configuration status
 * gfln - create a hard link or a symbolic link
+
+New Admin Command
+* config-gfarm-update - update the backend database.
+  'config-gfarm-update --update-symlink' updates the backend database
+  to manage symbolic links.  Note that the postgresql backend is only
+  supported for now.
 
 New API
 * gfs_symlink, gfs_readlink - symbolic link support

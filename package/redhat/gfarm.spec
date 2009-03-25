@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.1.1
+%define ver	2.2.0
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -954,6 +954,7 @@ fi
 %defattr(-,root,root)
 %{prefix}/sbin/gfmd
 %{prefix}/bin/config-gfarm
+%{prefix}/bin/config-gfarm-update
 %{prefix}/bin/gfdump.postgresql
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfusage
@@ -963,6 +964,7 @@ fi
 %{share_prefix}/config/bdb.DB_CONFIG.in
 %{share_prefix}/config/config-gfarm.ldap
 %{share_prefix}/config/config-gfarm.postgresql
+%{share_prefix}/config/config-gfarm-update.postgresql
 %{share_prefix}/config/gfarm.conf-ldap.in
 %{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.conf.in
