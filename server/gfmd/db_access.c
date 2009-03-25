@@ -20,19 +20,15 @@
 #define ALIGN(offset)	(((offset) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
 typedef void (*dbq_entry_func_t)(void *);
-typedef gfarm_error_t (*dbq_entry_sync_func_t)(void *);
+typedef gfarm_error_t (*dbq_entry_func_witherr_t)(void *);
+typedef void (*dbq_entry_func_callback_t)(gfarm_error_t, void *);
 
 struct dbq_entry {
 	dbq_entry_func_t func;
 	void *data;
-};
-
-struct dbq_entry_sync {
-	pthread_mutex_t lock;
-	pthread_cond_t cond;
-	dbq_entry_sync_func_t func;
-	void *data;
-	gfarm_error_t e; // return value of func(data)
+	dbq_entry_func_witherr_t funcwitherr;
+	dbq_entry_func_callback_t callback;
+	void *cbdata;
 };
 
 #define DBQ_SIZE	1000
@@ -93,8 +89,10 @@ dbq_wait_to_finish(struct dbq *q)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
+static gfarm_error_t
+dbq_enter_common(struct dbq *q, dbq_entry_func_t func,
+		void *data, dbq_entry_func_witherr_t func_witherr,
+		dbq_entry_func_callback_t func_callback, void *callbackdata)
 {
 	int err;
 	gfarm_error_t e;
@@ -124,6 +122,9 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		}
 		q->entries[q->in].func = func;
 		q->entries[q->in].data = data;
+		q->entries[q->in].funcwitherr = func_witherr;
+		q->entries[q->in].callback = func_callback;
+		q->entries[q->in].cbdata = callbackdata;
 		q->in++;
 		if (q->in >= DBQ_SIZE)
 			q->in = 0;
@@ -139,61 +140,88 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 	return (e);
 }
 
-void
-call_func_and_wait(void *d)
+gfarm_error_t
+dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 {
-	struct dbq_entry_sync *entry = (struct dbq_entry_sync *)d;
-	dbq_entry_sync_func_t func;
-	void *data;
-	gfarm_error_t e;
+	return dbq_enter_common(q, func, data, NULL, NULL, NULL);
+}
 
-	pthread_mutex_lock(&entry->lock);
-	func = entry->func;
-	data = entry->data;
-	pthread_mutex_unlock(&entry->lock);
+static gfarm_error_t
+dbq_enter_withcallback(struct dbq *q,
+		dbq_entry_func_witherr_t func_witherr, void *data,
+		dbq_entry_func_callback_t func_callback, void *callbackdata)
+{
+	return dbq_enter_common(q, NULL, data,
+			func_witherr, func_callback, callbackdata);
+}
 
-	e = func(data);
+#define UNINITIALIZED_GFARM_ERROR	(-1)
 
-	pthread_mutex_lock(&entry->lock);
-	entry->e = e;
-	pthread_cond_signal(&entry->cond);
-	pthread_mutex_unlock(&entry->lock);
+void
+db_waitctx_init(struct db_waitctx *ctx)
+{
+	int err;
+	char *msg = "db_waitctx_init";
+
+	if (ctx != NULL) {
+		if ((err = pthread_mutex_init(&ctx->lock, NULL)) != 0)
+			gflog_fatal("%s: mutex: %s", msg, strerror(err));
+		if ((err = pthread_cond_init(&ctx->cond, NULL)) != 0)
+			gflog_fatal("%s: cond: %s", msg, strerror(err));
+		ctx->e = UNINITIALIZED_GFARM_ERROR;
+	}
+}
+
+void
+db_waitctx_fini(struct db_waitctx *ctx)
+{
+	if (ctx != NULL) {
+		pthread_cond_destroy(&ctx->cond);
+		pthread_mutex_destroy(&ctx->lock);
+	}
+}
+
+static void
+dbq_done_callback(gfarm_error_t e, void *c)
+{
+	struct db_waitctx *ctx = (struct db_waitctx *)c;
+
+	if (ctx != NULL) {
+		pthread_mutex_lock(&ctx->lock);
+		ctx->e = e;
+		pthread_cond_signal(&ctx->cond);
+		pthread_mutex_unlock(&ctx->lock);
+	}
 }
 
 gfarm_error_t
-dbq_enter_sync(struct dbq *q, dbq_entry_sync_func_t func, void *data)
+dbq_waitret(struct db_waitctx *ctx)
 {
 	int err;
 	gfarm_error_t e;
-	const char msg[] = "dbq_enter_sync";
-	struct dbq_entry_sync *entry;
 
-	entry = malloc(sizeof(*entry));
-	if (entry == NULL)
-		return GFARM_ERR_NO_MEMORY;
+	if (ctx == NULL)
+		return GFARM_ERR_NO_ERROR;
 
-	err = pthread_mutex_init(&entry->lock, NULL);
-	if (err != 0)
-		gflog_fatal("%s: mutex: %s", msg, strerror(err));
-	err = pthread_cond_init(&entry->cond, NULL);
-	if (err != 0)
-		gflog_fatal("%s: cond: %s", msg, strerror(err));
-	entry->func = func;
-	entry->data = data;
-	entry->e = GFARM_ERR_UNKNOWN;
-
-	pthread_mutex_lock(&entry->lock);
-	if ((e = dbq_enter(q, call_func_and_wait, entry)) == GFARM_ERR_NO_ERROR) {
-		err = pthread_cond_wait(&entry->cond, &entry->lock);
-		e = (err == 0) ? entry->e : gfarm_errno_to_error(err);
+	pthread_mutex_lock(&ctx->lock);
+	while (ctx->e == UNINITIALIZED_GFARM_ERROR) {
+		err = pthread_cond_wait(&ctx->cond, &ctx->lock);
+		if (err != 0)
+			gflog_fatal("db_xattr_call_op: condwait finished: %s",
+			    strerror(err));
 	}
-	pthread_mutex_unlock(&entry->lock);
-
-	pthread_cond_destroy(&entry->cond);
-	pthread_mutex_destroy(&entry->lock);
-	free(entry);
-
+	e = ctx->e;
+	pthread_mutex_unlock(&ctx->lock);
 	return e;
+}
+
+static gfarm_error_t
+dbq_enter_for_waitret(struct dbq *q,
+	dbq_entry_func_witherr_t func_witherr, void *data,
+	struct db_waitctx *ctx)
+{
+	return dbq_enter_withcallback(q, func_witherr, data,
+			dbq_done_callback, ctx);
 }
 
 gfarm_error_t
@@ -238,6 +266,21 @@ dbq_delete(struct dbq *q, struct dbq_entry *entp)
 	return (e);
 }
 
+int
+db_getfreenum(void)
+{
+	struct dbq *q = &dbq;
+	int freenum;
+
+	/*
+	 * This function is made only for gfm_server_findxmlattr().
+	 */
+	pthread_mutex_lock(&q->mutex);
+	freenum = (DBQ_SIZE - q->n);
+	pthread_mutex_unlock(&q->mutex);
+	return freenum;
+}
+
 static const struct db_ops *ops = &db_none_ops;
 
 gfarm_error_t
@@ -273,7 +316,12 @@ db_thread(void *arg)
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
 		if (e == GFARM_ERR_NO_ERROR)
-			(*ent.func)(ent.data);
+			if (ent.func != NULL)
+				(*ent.func)(ent.data);
+			else {
+				e = (*ent.funcwitherr)(ent.data);
+				(*ent.callback)(e, ent.cbdata);
+			}
 		else if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			break;
 	}
@@ -1014,126 +1062,146 @@ db_symlink_load(void *closure, void (*callback)(void *, gfarm_ino_t, char *))
 	return ((*ops->symlink_load)(closure, callback));
 }
 
+static struct db_xattr_arg *
+db_xattr_arg_alloc(char *attrname, size_t valsize)
+{
+	struct db_xattr_arg *arg;
+	size_t size = sizeof(*arg) + valsize;
+
+	if (attrname != NULL) {
+		size += strlen(attrname) + 1;
+	}
+
+	arg = malloc(size);
+	if (arg == NULL)
+		return NULL;
+
+	memset(arg, 0, sizeof(*arg));
+	// NOTE: we allow valsize== 0 as valid xattr_add/modify
+	arg->value = (void *)(arg + 1);
+	if (attrname != NULL) {
+		arg->attrname = (((char *)(arg + 1)) + valsize);
+		strcpy(arg->attrname, attrname);
+	}
+	return arg;
+}
+
 gfarm_error_t
-db_xattr_add(int xmlMode, gfarm_ino_t inum, const char *attrname,
-		const void *value, size_t size)
+db_xattr_add(int xmlMode, gfarm_ino_t inum, char *attrname,
+	void *value, size_t size, struct db_waitctx *waitctx)
 {
 	gfarm_error_t e;
-	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, size);
 
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
+		return GFARM_ERR_NO_ERROR;
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
-	arg->attrname = attrname;
-	arg->value = value;
+	memcpy(arg->value, value, size);
 	arg->size = size;
-
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xattr_add, arg);
-	free(arg);
+	if (waitctx != NULL) {
+		/*
+		 * NOTE: EINVAL returns from PostgreSQL if value is
+		 * invalid XML data. We must wait to check it.
+		 * Same as db_xattr_modify().
+		 */
+		e = dbq_enter_for_waitret(&dbq,
+			(dbq_entry_func_witherr_t)ops->xattr_add, arg, waitctx);
+	} else
+		e = dbq_enter(&dbq,
+			(dbq_entry_func_t)ops->xattr_add, arg);
 	return e;
 }
 
 gfarm_error_t
-db_xattr_modify(int xmlMode, gfarm_ino_t inum, const char *attrname,
-		const void *value, size_t size)
+db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
+	void *value, size_t size, struct db_waitctx *waitctx)
 {
 	gfarm_error_t e;
-	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, size);
 
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
+		return GFARM_ERR_NO_ERROR;
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
-	arg->attrname = attrname;
-	arg->value = value;
+	memcpy(arg->value, value, size);
 	arg->size = size;
-
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xattr_modify, arg);
-	free(arg);
+	if (waitctx != NULL)
+		e = dbq_enter_for_waitret(&dbq,
+			(dbq_entry_func_witherr_t)ops->xattr_modify, arg, waitctx);
+	else
+		e = dbq_enter(&dbq,
+			(dbq_entry_func_t)ops->xattr_modify, arg);
 	return e;
 }
 
 gfarm_error_t
-db_xattr_remove(int xmlMode, gfarm_ino_t inum, const char *attrname)
+db_xattr_remove(int xmlMode, gfarm_ino_t inum, char *attrname)
 {
-	gfarm_error_t e;
-	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, 0);
 
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
+		return GFARM_ERR_NO_ERROR;
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
-	arg->attrname = attrname;
-
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xattr_remove, arg);
-	free(arg);
-	return e;
+	return dbq_enter(&dbq,
+		(dbq_entry_func_t)ops->xattr_remove, arg);
 }
 
 gfarm_error_t
-db_xattr_load(int xmlMode, gfarm_ino_t inum, const char *attrname, void **valuep, size_t *sizep)
+db_xattr_get(int xmlMode, gfarm_ino_t inum, char *attrname,
+	void **valuep, size_t *sizep, struct db_waitctx *waitctx)
 {
-	gfarm_error_t e;
-	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
-
+	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, 0);
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
+		return GFARM_ERR_NO_ERROR;
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
-	arg->attrname = attrname;
 	arg->valuep = valuep;
 	arg->sizep = sizep;
-
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xattr_load, arg);
-	free(arg);
-	return e;
+	return dbq_enter_for_waitret(&dbq,
+		(dbq_entry_func_witherr_t)ops->xattr_get, arg, waitctx);
 }
 
 gfarm_error_t
-db_xattr_list(int xmlMode, gfarm_ino_t inum, void **valuep, size_t *sizep)
+db_xattr_list(int xmlMode, gfarm_ino_t inum, void **valuep, size_t *sizep,
+		struct db_waitctx *waitctx)
 {
-	gfarm_error_t e;
-	struct db_xattr_arg *arg = calloc(1, sizeof(*arg));
+	struct db_xattr_arg *arg = db_xattr_arg_alloc(NULL, 0);
 
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
+		return GFARM_ERR_NO_ERROR;
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
 	arg->valuep = valuep;
 	arg->sizep = sizep;
-
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xattr_list, arg);
-	free(arg);
-	return e;
+	return dbq_enter_for_waitret(&dbq,
+		(dbq_entry_func_witherr_t)ops->xattr_list, arg, waitctx);
 }
 
 gfarm_error_t
-db_xattr_find(gfarm_ino_t inum, const char *expr,
-		int *nfound, struct xattr_list_info **entries)
+db_xattr_load(void *closure,
+		void (*callback)(void *, struct xattr_info *))
 {
-	gfarm_error_t e;
-	struct db_xmlattr_find_arg *arg = malloc(sizeof(*arg));
+	return ((*ops->xattr_load)(closure, callback));
+}
 
+gfarm_error_t
+db_xmlattr_find(gfarm_ino_t inum, const char *expr,
+	gfarm_error_t (*foundcallback)(void *, int, void *), void *foundcbdata,
+	void (*callback)(gfarm_error_t, void *), void *cbdata)
+{
+	struct db_xmlattr_find_arg *arg;
+
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+		return GFARM_ERR_NO_ERROR;
 
 	arg->inum = inum;
 	arg->expr = expr;
-	arg->nfound = nfound;
-	arg->entries = entries;
-	e = dbq_enter_sync(&dbq,
-			(dbq_entry_sync_func_t)ops->xmlattr_find, arg);
-	free(arg);
-	return e;
+	arg->foundcallback = foundcallback;
+	arg->foundcbdata = foundcbdata;
+	return dbq_enter_withcallback(&dbq,
+		(dbq_entry_func_witherr_t)ops->xmlattr_find, arg,
+		(dbq_entry_func_callback_t)callback, cbdata);
 }

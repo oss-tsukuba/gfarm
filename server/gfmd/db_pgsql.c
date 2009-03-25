@@ -213,7 +213,8 @@ static void *
 pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 {
 	int col;
-	void *src, *dst;
+	void *src;
+	char *dst;
 
 	col = PQfnumber(res, field_name);
 	if ((*size = PQgetlength(res, row, col)) <= 0) {
@@ -222,9 +223,9 @@ pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 	if ((src = PQgetvalue(res, row, col)) == NULL) {
 		return NULL;
 	}
-	if ((dst = malloc(*size)) != NULL) {
+	GFARM_MALLOC_ARRAY(dst, *size);
+	if (dst != NULL)
 		memcpy(dst, src, *size);
-	}
 	return dst;
 }
 
@@ -2054,11 +2055,13 @@ gfarm_pgsql_xattr_add(struct db_xattr_arg *arg)
 	paramFormats[1] = 0;
 
 	if (arg->xmlMode) {
-		command = "INSERT INTO XmlAttr (inumber, attrname, attrvalue) VALUES ($1, $2, $3)";
+		command = "INSERT INTO XmlAttr (inumber, attrname, attrvalue) "
+			"VALUES ($1, $2, $3)";
 		diag = "pgsql_xmlattr_set";
 		paramFormats[2] = 0; // as text
 	} else {
-		command = "INSERT INTO XAttr (inumber, attrname, attrvalue) VALUES ($1, $2, $3)";
+		command = "INSERT INTO XAttr (inumber, attrname, attrvalue) "
+			"VALUES ($1, $2, $3)";
 		diag = "pgsql_xattr_set";
 		paramFormats[2] = 1; // as binary
 	}
@@ -2072,6 +2075,7 @@ gfarm_pgsql_xattr_add(struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	free(arg);
 	return e;
 }
 
@@ -2097,11 +2101,13 @@ gfarm_pgsql_xattr_modify(struct db_xattr_arg *arg)
 	paramFormats[1] = 0;
 
 	if (arg->xmlMode) {
-		command = "UPDATE XmlAttr SET attrvalue = $3 WHERE inumber = $1 and attrname=$2";
+		command = "UPDATE XmlAttr SET attrvalue = $3 "
+			"WHERE inumber = $1 and attrname=$2";
 		diag = "pgsql_xmlattr_modify";
 		paramFormats[2] = 0; // as text
 	} else {
-		command = "UPDATE XAttr SET attrvalue = $3 WHERE inumber = $1 and attrname=$2";
+		command = "UPDATE XAttr SET attrvalue = $3 "
+			"WHERE inumber = $1 and attrname=$2";
 		diag = "pgsql_xattr_modify";
 		paramFormats[2] = 1; // as binary
 	}
@@ -2115,6 +2121,7 @@ gfarm_pgsql_xattr_modify(struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	free(arg);
 	return e;
 }
 
@@ -2130,27 +2137,16 @@ gfarm_pgsql_xattr_remove(struct db_xattr_arg *arg)
 
 	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
 	paramValues[0] = inumber;
-
-	if (arg->attrname != NULL) {
-		paramValues[1] = arg->attrname;
-		paramNum = 2;
-		if (arg->xmlMode) {
-			command = "DELETE FROM XmlAttr WHERE inumber = $1 AND attrname = $2";
-			diag = "pgsql_xmlattr_remove";
-		} else {
-			command = "DELETE FROM XAttr WHERE inumber = $1 AND attrname = $2";
-			diag = "pgsql_xattr_remove";
-		}
+	paramValues[1] = arg->attrname;
+	paramNum = 2;
+	if (arg->xmlMode) {
+		command = "DELETE FROM XmlAttr "
+			"WHERE inumber = $1 AND attrname = $2";
+		diag = "pgsql_xmlattr_remove";
 	} else {
-		paramValues[1] = NULL;
-		paramNum = 1;
-		if (arg->xmlMode) {
-			command = "DELETE FROM XmlAttr WHERE inumber = $1";
-			diag = "pgsql_xmlattr_remove_all";
-		} else {
-			command = "DELETE FROM XAttr WHERE inumber = $1";
-			diag = "pgsql_xattr_remove_all";
-		}
+		command = "DELETE FROM XAttr "
+			"WHERE inumber = $1 AND attrname = $2";
+		diag = "pgsql_xattr_remove";
 	}
 	e = gfarm_pgsql_update_or_delete_with_retry(
 		command,
@@ -2162,20 +2158,42 @@ gfarm_pgsql_xattr_remove(struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	free(arg);
 	return e;
 }
 
 static gfarm_error_t
-pgsql_xattr_load(PGresult *res, int row, void *vinfo)
+pgsql_xattr_set_attrvalue_string(PGresult *res, int row, void *vinfo)
 {
-	struct xattr_load_info *info = vinfo;
+	struct xattr_info *info = vinfo;
 
-	info->value = pgsql_get_binary(res, row, "attrvalue", &info->size);
-	return (GFARM_ERR_NO_ERROR);
+	info->attrvalue = pgsql_get_string(res, row, "attrvalue");
+	if (info->attrvalue != NULL) {
+		// include '\0' in attrsize
+		info->attrsize = strlen(info->attrvalue) + 1;
+		return (GFARM_ERR_NO_ERROR);
+	} else {
+		info->attrsize = 0;
+		return (GFARM_ERR_NO_MEMORY);
+	}
 }
 
 static gfarm_error_t
-gfarm_pgsql_xattr_load(struct db_xattr_arg *arg)
+pgsql_xattr_set_attrvalue_binary(PGresult *res, int row, void *vinfo)
+{
+	struct xattr_info *info = vinfo;
+
+	info->attrvalue = pgsql_get_binary(res, row,
+			"attrvalue", &info->attrsize);
+	// NOTE: we allow attrsize==0, attrvalue==NULL
+	if ((info->attrsize > 0) && (info->attrvalue == NULL))
+		return (GFARM_ERR_NO_MEMORY);
+	else
+		return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_pgsql_xattr_get(struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	const char *paramValues[2];
@@ -2183,46 +2201,45 @@ gfarm_pgsql_xattr_load(struct db_xattr_arg *arg)
 	char *diag;
 	char *command;
 	int n;
-	struct xattr_load_info *vinfo;
+	struct xattr_info *vinfo;
+	gfarm_error_t (*set_fields)(PGresult *, int, void *);
 
 	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
 	paramValues[0] = inumber;
 	paramValues[1] = arg->attrname;
 
 	if (arg->xmlMode) {
-		command = "SELECT attrvalue FROM XmlAttr WHERE inumber = $1 AND attrname = $2";
+		command = "SELECT attrvalue FROM XmlAttr "
+			"WHERE inumber = $1 AND attrname = $2";
 		diag = "pgsql_xmlattr_load";
+		set_fields = pgsql_xattr_set_attrvalue_string;
 	} else {
-		command = "SELECT attrvalue FROM XAttr WHERE inumber = $1 AND attrname = $2";
+		command = "SELECT attrvalue FROM XAttr "
+			"WHERE inumber = $1 AND attrname = $2";
 		diag = "pgsql_xattr_load";
+		set_fields = pgsql_xattr_set_attrvalue_binary;
 	}
 
 	e = gfarm_pgsql_generic_get_all(
 		command,
 		2, paramValues,
 		&n, &vinfo,
-		&gfarm_base_xattr_load_ops, pgsql_xattr_load,
+		&gfarm_base_xattr_info_ops, set_fields,
 		diag);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (n != 1) {
-		for (n--; n>= 0; n--) {
-			gfarm_base_xattr_load_ops.free(&vinfo[n]);
-		}
+	if (e == GFARM_ERR_NO_ERROR) {
+		*arg->sizep = vinfo->attrsize;
+		*arg->valuep = vinfo->attrvalue;
 		free(vinfo);
-		return GFARM_ERR_UNKNOWN;
 	}
 
-	*arg->sizep = vinfo->size;
-	*arg->valuep = vinfo->value;
-	free(vinfo);
-	return (GFARM_ERR_NO_ERROR);
+	free(arg);
+	return e;
 }
 
 static gfarm_error_t
-pgsql_xattr_list(PGresult *res, int row, void *vinfo)
+pgsql_xattr_set_attrname(PGresult *res, int row, void *vinfo)
 {
-	struct xattr_list_info *info = vinfo;
+	struct xattr_info *info = vinfo;
 
 	info->attrname = pgsql_get_string(res, row, "attrname");
 	info->namelen = strlen(info->attrname) + 1; // include '\0'
@@ -2237,8 +2254,8 @@ gfarm_pgsql_xattr_list(struct db_xattr_arg *arg)
 	char inumber[GFARM_INT64STRLEN + 1];
 	char *diag;
 	char *command;
-	int i, n, len;
-	struct xattr_list_info *vinfo;
+	int i, n = 0, len;
+	struct xattr_info *vinfo = NULL;
 	char *buffer, *p;
 
 	*arg->sizep = 0;
@@ -2259,21 +2276,26 @@ gfarm_pgsql_xattr_list(struct db_xattr_arg *arg)
 		command,
 		1, paramValues,
 		&n, &vinfo,
-		&gfarm_base_xattr_list_ops, pgsql_xattr_list,
+		&gfarm_base_xattr_info_ops, pgsql_xattr_set_attrname,
 		diag);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
-		return GFARM_ERR_NO_ERROR;
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		e = GFARM_ERR_NO_ERROR;
+		goto quit;
+	}
 	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+		goto quit;
 
 	len = 0;
 	for (i = 0; i < n; i++) {
 		// NOTE: namelen including '\0'
 		len += vinfo[i].namelen;
 	}
-	if ((buffer = malloc(len)) == NULL) {
-		gfarm_base_xattr_list_free_array(n, vinfo);
-		return GFARM_ERR_NO_MEMORY;
+	GFARM_MALLOC_ARRAY(buffer, len);
+	if (buffer == NULL) {
+		gfarm_base_generic_info_free_all(n, vinfo,
+				&gfarm_base_xattr_info_ops);
+		e = GFARM_ERR_NO_MEMORY;
+		goto quit;
 	}
 
 	p = buffer;
@@ -2283,8 +2305,71 @@ gfarm_pgsql_xattr_list(struct db_xattr_arg *arg)
 	}
 	*arg->sizep = len;
 	*arg->valuep = buffer;
-	gfarm_base_xattr_list_free_array(n, vinfo);
+	gfarm_base_generic_info_free_all(n, vinfo,
+			&gfarm_base_xattr_info_ops);
+quit:
+	free(arg);
+	return e;
+}
+
+static gfarm_error_t
+pgsql_xattr_set_inum_and_attrname(PGresult *res, int row, void *vinfo)
+{
+	struct xattr_info *info = vinfo;
+
+	info->inum = pgsql_get_int64(res, row, "inumber");
+	info->attrname = pgsql_get_string(res, row, "attrname");
+	info->namelen = strlen(info->attrname) + 1; // include '\0'
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_pgsql_xattr_load0(int xmlMode,
+		void (*callback)(void *, struct xattr_info *))
+{
+	gfarm_error_t e;
+	char *command, *diag;
+	struct xattr_info *vinfo;
+	int i, n;
+
+	if (xmlMode) {
+		command = "SELECT inumber,attrname FROM XmlAttr";
+		diag = "pgsql_xattr_load_xml";
+	} else {
+		command = "SELECT inumber,attrname FROM XAttr";
+		diag = "pgsql_xattr_load_norm";
+	}
+
+	e = gfarm_pgsql_generic_get_all(
+		command,
+		0, NULL,
+		&n, &vinfo,
+		&gfarm_base_xattr_info_ops, pgsql_xattr_set_inum_and_attrname,
+		diag);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		return GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR)
+		return e;
+
+	for (i = 0; i < n; i++) {
+		(*callback)(&xmlMode, &vinfo[i]);
+	}
+	gfarm_base_generic_info_free_all(n, vinfo,
+			&gfarm_base_xattr_info_ops);
+	return e;
+}
+
+static gfarm_error_t
+gfarm_pgsql_xattr_load(void *closure,
+		void (*callback)(void *, struct xattr_info *))
+{
+	gfarm_error_t e;
+
+	// ignore closure to distinguish xmlMode
+	if ((e = gfarm_pgsql_xattr_load0(0, callback))
+			== GFARM_ERR_NO_ERROR)
+		e = gfarm_pgsql_xattr_load0(1, callback);
+	return e;
 }
 
 static gfarm_error_t
@@ -2295,8 +2380,8 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 	char inumber[GFARM_INT64STRLEN + 1];
 	char *diag;
 	char *command;
-	int n;
-	struct xattr_list_info *vinfo;
+	int n = 0;
+	struct xattr_info *vinfo = NULL;
 
 	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
 	paramValues[0] = inumber;
@@ -2306,21 +2391,27 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 	 * xpath($2, attrvalue) returns xml[].
 	 * Array size > 0 if some attrvalue matched XPath expr, 0 if not.
 	 */
-	command = "SELECT attrname FROM XmlAttr WHERE inumber = $1 AND array_upper(xpath($2, attrvalue), 1) > 0";
+	command = "SELECT attrname FROM XmlAttr "
+		"WHERE inumber = $1 AND array_upper(xpath($2, attrvalue), 1) > 0"
+		"ORDER BY attrname";
 	diag = "pgsql_xmlattr_find";
 
 	e = gfarm_pgsql_generic_get_all(
 		command,
 		2, paramValues,
 		&n, &vinfo,
-		&gfarm_base_xattr_list_ops, pgsql_xattr_list,
+		&gfarm_base_xattr_info_ops, pgsql_xattr_set_attrname,
 		diag);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 
-	*arg->nfound = n;
-	*arg->entries = vinfo;
-	return (GFARM_ERR_NO_ERROR);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = (*(arg->foundcallback))(arg->foundcbdata, n, vinfo);
+	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_ERROR;
+	if (n > 0)
+		gfarm_base_generic_info_free_all(n, vinfo,
+			&gfarm_base_xattr_info_ops);
+	free(arg);
+	return e;
 }
 
 /**********************************************************************/
@@ -2382,7 +2473,8 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_xattr_add,
 	gfarm_pgsql_xattr_modify,
 	gfarm_pgsql_xattr_remove,
-	gfarm_pgsql_xattr_load,
+	gfarm_pgsql_xattr_get,
 	gfarm_pgsql_xattr_list,
+	gfarm_pgsql_xattr_load,
 	gfarm_pgsql_xmlattr_find,
 };

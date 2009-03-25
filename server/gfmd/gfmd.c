@@ -274,33 +274,6 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_GETDIRENTSPLUS:
 		e = gfm_server_getdirentsplus(peer, from_client, skip);
 		break;
-	case GFM_PROTO_XATTR_SET:
-		e = gfm_server_setxattr(peer, from_client, skip, 0);
-		break;
-	case GFM_PROTO_XMLATTR_SET:
-		e = gfm_server_setxattr(peer, from_client, skip, 1);
-		break;
-	case GFM_PROTO_XATTR_GET:
-		e = gfm_server_getxattr(peer, from_client, skip, 0);
-		break;
-	case GFM_PROTO_XMLATTR_GET:
-		e = gfm_server_getxattr(peer, from_client, skip, 1);
-		break;
-	case GFM_PROTO_XATTR_REMOVE:
-		e = gfm_server_removexattr(peer, from_client, skip, 0);
-		break;
-	case GFM_PROTO_XMLATTR_REMOVE:
-		e = gfm_server_removexattr(peer, from_client, skip, 1);
-		break;
-	case GFM_PROTO_XATTR_LIST:
-		e = gfm_server_listxattr(peer, from_client, skip, 0);
-		break;
-	case GFM_PROTO_XMLATTR_LIST:
-		e = gfm_server_listxattr(peer, from_client, skip, 1);
-		break;
-	case GFM_PROTO_XMLATTR_FIND:
-		e = gfm_server_findxmlattr(peer, from_client, skip);
-		break;
 	case GFM_PROTO_REOPEN:
 		e = gfm_server_reopen(peer, from_client, skip);
 		break;
@@ -408,6 +381,33 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfj_server_info(peer, from_client, skip); break;
 	case GFJ_PROTO_HOSTINFO:
 		e = gfj_server_hostinfo(peer, from_client, skip); break;
+	case GFM_PROTO_XATTR_SET:
+		e = gfm_server_setxattr(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_SET:
+		e = gfm_server_setxattr(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XATTR_GET:
+		e = gfm_server_getxattr(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_GET:
+		e = gfm_server_getxattr(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XATTR_REMOVE:
+		e = gfm_server_removexattr(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_REMOVE:
+		e = gfm_server_removexattr(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XATTR_LIST:
+		e = gfm_server_listxattr(peer, from_client, skip, 0);
+		break;
+	case GFM_PROTO_XMLATTR_LIST:
+		e = gfm_server_listxattr(peer, from_client, skip, 1);
+		break;
+	case GFM_PROTO_XMLATTR_FIND:
+		e = gfm_server_findxmlattr(peer, from_client, skip);
+		break;
 	default:
 		gflog_warning("unknown request: %d", request);
 		e = GFARM_ERR_PROTOCOL;
@@ -949,6 +949,7 @@ main(int argc, char **argv)
 	file_copy_init();
 	dead_file_copy_init();
 	symlink_init();
+	xattr_init();
 
 	peer_init(table_size, protocol_main);
 	job_table_init(table_size);

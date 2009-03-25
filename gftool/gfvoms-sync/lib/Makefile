@@ -31,9 +31,11 @@ script-install:
 		$(INSTALL_DATA) $$i $(vomslib)/`basename $$i`; \
 		$(INSTALL_DATA) $$i $(vomslib)/`basename $$i`; \
 	done
-	@echo $(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`
-	@$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`
-	
+	@if ! test -e "$(confpath)/`basename $(vomsids_name)`"; then \
+	echo \
+	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
+	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
+	fi
 
 script-clean:
 	@for i in -- ${vomsids_name} ${hostidpy_name}; do \

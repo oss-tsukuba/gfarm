@@ -20,6 +20,7 @@
 #include <limits.h>
 
 #include <gfarm/gfarm.h>
+#include "../gfutil/gfutil.h"
 
 static gfarm_error_t
 read_file(char *filename, char **bufp)
@@ -29,6 +30,8 @@ read_file(char *filename, char **bufp)
 	struct stat st;
 	ssize_t sz, msg_sz = 0;
 	char *buf = NULL;
+	size_t allocsz;
+	int overflow;
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1)
@@ -36,18 +39,24 @@ read_file(char *filename, char **bufp)
 
 	if (fstat(fd, &st) != 0)
 		e = gfarm_errno_to_error(errno);
-	else if ((buf = malloc(st.st_size + 1)) != NULL) {
-		while ((sz = read(fd, buf + msg_sz, st.st_size - msg_sz)) > 0) {
-			msg_sz += sz;
-		}
-		if (sz == 0) {
-			buf[msg_sz] = '\0';
-			*bufp = buf;
-			e = GFARM_ERR_NO_ERROR;
+	else {
+		overflow = 0;
+		allocsz = gfarm_size_add(&overflow, st.st_size, 1);
+		if (!overflow)
+			buf = malloc(allocsz);
+		if (buf != NULL) {
+			while ((sz = read(fd, buf + msg_sz, st.st_size - msg_sz)) > 0) {
+				msg_sz += sz;
+			}
+			if (sz == 0) {
+				buf[msg_sz] = '\0';
+				*bufp = buf;
+				e = GFARM_ERR_NO_ERROR;
+			} else
+				e = gfarm_errno_to_error(errno);
 		} else
-			e = gfarm_errno_to_error(errno);
-	} else
-		e = GFARM_ERR_NO_MEMORY;
+			e = GFARM_ERR_NO_MEMORY;
+	}
 
 	close(fd);
 
@@ -57,7 +66,8 @@ read_file(char *filename, char **bufp)
 void
 usage(char *prog_name)
 {
-	fprintf(stderr, "Usage: %s [ -d depth ] [ -F delim ] {expr | -f expr-file-path} path\n",
+	fprintf(stderr, "Usage: %s [ -d depth ] [ -F delim ] "
+			"{expr | -f expr-file-path} path\n",
 		prog_name);
 	fprintf(stderr, "\t-d\tsearch directory depth (>= 0)\n");
 	fprintf(stderr, "\t-F\tdelimter of path and attrname (default is TAB)\n");
@@ -112,7 +122,8 @@ main(int argc, char *argv[])
 	} else {
 		e = read_file(filename, &expr);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s: %s\n", prog_name, gfarm_error_string(e), filename);
+			fprintf(stderr, "%s: %s: %s\n", prog_name,
+					gfarm_error_string(e), filename);
 			exit(1);
 		}
 		path = argv[0];
@@ -132,7 +143,8 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((e = gfs_getxmlent(ctxp, &fpath, &attrname)) == GFARM_ERR_NO_ERROR) {
+	while ((e = gfs_getxmlent(ctxp, &fpath, &attrname))
+			== GFARM_ERR_NO_ERROR) {
 		if (fpath == NULL)
 			break;
 		printf("%s%s%s\n", fpath, delim, attrname);

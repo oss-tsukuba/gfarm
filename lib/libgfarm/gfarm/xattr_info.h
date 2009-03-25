@@ -27,14 +27,12 @@ struct gfs_xmlattr_ctx {
 };
 
 struct gfs_xmlattr_ctx *gfs_xmlattr_ctx_alloc(int nentry);
-void gfs_xmlattr_ctx_free(struct gfs_xmlattr_ctx *);
+void gfs_xmlattr_ctx_free(struct gfs_xmlattr_ctx *, int);
 
-struct xattr_load_info {
-	int size;
-	void *value;
-};
-
-struct xattr_list_info {
+struct xattr_info {
+	gfarm_ino_t inum;
 	char *attrname;
 	int namelen;
+	void *attrvalue;
+	int attrsize;
 };

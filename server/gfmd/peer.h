@@ -48,3 +48,6 @@ gfarm_error_t peer_fdpair_get_current(struct peer *, gfarm_int32_t *);
 gfarm_error_t peer_fdpair_get_saved(struct peer *, gfarm_int32_t *);
 gfarm_error_t peer_fdpair_save(struct peer *);
 gfarm_error_t peer_fdpair_restore(struct peer *);
+
+void peer_findxmlattrctx_set(struct peer *, void *);
+void *peer_findxmlattrctx_get(struct peer *);

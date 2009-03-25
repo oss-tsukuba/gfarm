@@ -161,8 +161,8 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("tmp_open(%s) request: %s", path,
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_request(gfarm_metadb_server, xmlMode, name))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_getxattr_request(gfarm_metadb_server,
+			xmlMode, name)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("getxattr request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
@@ -178,8 +178,8 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("tmp_open(%s) result: %s", path,
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server, valuep, size))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server,
+			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("getxattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
@@ -196,7 +196,8 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 }
 
 static gfarm_error_t
-gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name, void **valuep, size_t *size)
+gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
+		void **valuep, size_t *size)
 {
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
@@ -231,8 +232,8 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name, void **valuep
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("put_fd result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server, valuep, size))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server,
+			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("getxattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
@@ -290,7 +291,8 @@ gfs_fgetxattr(GFS_File gf, const char *name, void *value, size_t *size)
 }
 
 static gfarm_error_t
-gfs_listxattr_proccall(int xmlMode, const char *path, char **listp, size_t *size)
+gfs_listxattr_proccall(int xmlMode, const char *path, char **listp,
+		size_t *size)
 {
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
@@ -323,8 +325,8 @@ gfs_listxattr_proccall(int xmlMode, const char *path, char **listp, size_t *size
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("tmp_open(%s) result: %s", path,
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_listxattr_result(gfarm_metadb_server, listp, size))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_listxattr_result(gfarm_metadb_server,
+			listp, size)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("listxattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
@@ -389,8 +391,8 @@ gfs_removexattr0(int xmlMode, const char *path, const char *name)
 	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("tmp_open(%s) request: %s", path,
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_request(gfarm_metadb_server, xmlMode, name))
-	    != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_client_removexattr_request(gfarm_metadb_server,
+			xmlMode, name)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("removexattr request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
@@ -493,25 +495,34 @@ struct gfs_xmlattr_ctx *
 gfs_xmlattr_ctx_alloc(int nentry)
 {
 	struct gfs_xmlattr_ctx *ctxp;
-	int ctxsize = sizeof(*ctxp) + nentry * sizeof(*ctxp->entries);
+	size_t ctxsize;
+	int overflow;
+	char *p = NULL;
 
-	if ((ctxp = calloc(1, ctxsize)) == NULL)
+	overflow = 0;
+	ctxsize = gfarm_size_add(&overflow, sizeof(*ctxp),
+			gfarm_size_mul(&overflow, nentry, sizeof(*ctxp->entries)));
+	if (!overflow)
+		p = calloc(1, ctxsize);
+	if (p != NULL) {
+		ctxp = (struct gfs_xmlattr_ctx *)p;
+		ctxp->nalloc = nentry;
+		ctxp->entries = (struct gfs_foundxattr_entry *)(ctxp + 1);
+		return ctxp;
+	} else
 		return NULL;
-
-	ctxp->nalloc = nentry;
-	ctxp->entries = (struct gfs_foundxattr_entry *)(ctxp + 1);
-
-	return ctxp;
 }
 
 static void
-gfs_xmlattr_ctx_free_entries(struct gfs_xmlattr_ctx *ctxp)
+gfs_xmlattr_ctx_free_entries(struct gfs_xmlattr_ctx *ctxp, int freepath)
 {
 	int i;
 
 	for (i = 0; i < ctxp->nvalid; i++) {
-		free(ctxp->entries[i].path);
-		free(ctxp->entries[i].attrname);
+		if (freepath) {
+			free(ctxp->entries[i].path);
+			free(ctxp->entries[i].attrname);
+		}
 		ctxp->entries[i].path = NULL;
 		ctxp->entries[i].attrname = NULL;
 	}
@@ -520,10 +531,10 @@ gfs_xmlattr_ctx_free_entries(struct gfs_xmlattr_ctx *ctxp)
 }
 
 void
-gfs_xmlattr_ctx_free(struct gfs_xmlattr_ctx *ctxp)
+gfs_xmlattr_ctx_free(struct gfs_xmlattr_ctx *ctxp, int freepath)
 {
 	if (ctxp != NULL) {
-		gfs_xmlattr_ctx_free_entries(ctxp);
+		gfs_xmlattr_ctx_free_entries(ctxp, freepath);
 		free(ctxp->path);
 		free(ctxp->expr);
 		free(ctxp->cookie_path);
@@ -584,10 +595,11 @@ gfs_findxmlattr(const char *path, const char *expr,
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((ctxp = gfs_xmlattr_ctx_alloc(GFARM_DEFAULT_FINDXMLATTR_NENRTY)) == NULL)
+	if ((ctxp = gfs_xmlattr_ctx_alloc(GFARM_DEFAULT_FINDXMLATTR_NENRTY))
+			== NULL)
 		e = GFARM_ERR_NO_MEMORY;
 	else if ((e = gfs_findxmlattr_open(path, ctxp)) != GFARM_ERR_NO_ERROR)
-		gfs_xmlattr_ctx_free(ctxp);
+		gfs_xmlattr_ctx_free(ctxp, 1);
 	else {
 		ctxp->path = strdup(path);
 		ctxp->expr = strdup(expr);
@@ -649,7 +661,8 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	gfarm_timerval_t t1, t2;
 	char *fpath, *p;
-	int pathlen, len;
+	int pathlen, overflow;
+	size_t allocsz;
 
 	*fpathp = NULL;
 	*namep = NULL;
@@ -658,23 +671,27 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((ctxp->eof == 0) && (ctxp->index >= ctxp->nvalid)) {
-		gfs_xmlattr_ctx_free_entries(ctxp);
+		gfs_xmlattr_ctx_free_entries(ctxp, 1);
 		e = gfs_findxmlattr_get(ctxp);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (ctxp->index < ctxp->nvalid) {
 			fpath = ctxp->entries[ctxp->index].path;
 			pathlen = strlen(ctxp->path);
-			len = pathlen + 1 + strlen(fpath) + 1;
-			p = realloc(ctxp->workpath, len);
-			if (p != NULL) {
+			overflow = 0;
+			allocsz = gfarm_size_add(&overflow,
+				gfarm_size_add(&overflow, pathlen, strlen(fpath)), 2);
+			if (!overflow)
+				p = realloc(ctxp->workpath, allocsz);
+			if (!overflow && (p != NULL)) {
 				ctxp->workpath = p;
-				if (fpath[0] == '.')
-					strcpy(ctxp->workpath, ctxp->path);
-				else if (ctxp->path[pathlen-1] == '/')
+				if (ctxp->path[pathlen-1] == '/')
 					sprintf(ctxp->workpath, "%s%s", ctxp->path, fpath);
 				else
 					sprintf(ctxp->workpath, "%s/%s", ctxp->path, fpath);
+				pathlen = strlen(ctxp->workpath);
+				if ((pathlen > 1) && (ctxp->workpath[pathlen-1] == '/'))
+					ctxp->workpath[pathlen-1] = '\0';
 				*fpathp = ctxp->workpath;
 				*namep = ctxp->entries[ctxp->index].attrname;
 				ctxp->index++;
@@ -700,7 +717,7 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 
 	if (ctxp != NULL) {
 		e = gfm_close_fd(ctxp->fd);
-		gfs_xmlattr_ctx_free(ctxp);
+		gfs_xmlattr_ctx_free(ctxp, 1);
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 	}

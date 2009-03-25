@@ -317,6 +317,7 @@ echo '<b>bbb</b>' > $attrfile2
 		exit $exit_fail
 	fi
 	echo "/	$attrname" > $nameslist
+	echo "/$subsubdir	$attrname" >> $nameslist
 	echo "/$fileX	$attrname" >> $nameslist
 	cmp $nameslist $getfile
 	if [ $? != 0 ]; then

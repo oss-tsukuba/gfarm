@@ -280,75 +280,47 @@ gfs_stat_copy(struct gfs_stat *d, const struct gfs_stat *s)
 /**********************************************************************/
 
 static void
-xattr_load_free(void *vinfo)
+xattr_info_free(void *vinfo)
 {
-	struct xattr_load_info *info = vinfo;
-	free(info->value);
-}
-
-static void
-xattr_load_clear(void *vinfo)
-{
-	struct xattr_load_info *info = vinfo;
-
-	info->size = 0;
-	info->value = NULL;
-}
-
-static int
-xattr_load_validate(void *vinfo)
-{
-	struct xattr_load_info *info = vinfo;
-
-	return ((info->size == 0 && info->value == NULL)
-			|| (info->size > 0 && info->value != NULL));
-}
-
-const struct gfarm_base_generic_info_ops gfarm_base_xattr_load_ops = {
-		sizeof(struct xattr_load_info),
-		xattr_load_free,
-		xattr_load_clear,
-		xattr_load_validate
-};
-
-static void
-xattr_list_free(void *vinfo)
-{
-	struct xattr_list_info *info = vinfo;
+	struct xattr_info *info = vinfo;
 
 	free(info->attrname);
+	free(info->attrvalue);
 }
 
 void
-gfarm_base_xattr_list_free_array(int n, void *vinfo)
+gfarm_base_xattr_info_free_array(int n, void *vinfo)
 {
 	int i;
-	struct xattr_list_info *info = vinfo;
+	struct xattr_info *info = vinfo;
 
 	for (i = 0; i < n; i++) {
-		xattr_list_free(&info[i]);
+		xattr_info_free(&info[i]);
 	}
 	free(info);
 }
 
 static void
-xattr_list_clear(void *vinfo)
+xattr_info_clear(void *vinfo)
 {
-	struct xattr_list_info *info = vinfo;
+	struct xattr_info *info = vinfo;
 
+	info->inum = 0;
 	info->attrname = NULL;
 	info->namelen = 0;
+	info->attrvalue = NULL;
+	info->attrsize = 0;
 }
 
 static int
-xattr_list_validate(void *vinfo)
+xattr_info_validate(void *vinfo)
 {
 	return 1;
 }
 
-const struct gfarm_base_generic_info_ops gfarm_base_xattr_list_ops = {
-	sizeof(struct xattr_list_info),
-	xattr_list_free,
-	xattr_list_clear,
-	xattr_list_validate
+const struct gfarm_base_generic_info_ops gfarm_base_xattr_info_ops = {
+	sizeof(struct xattr_info),
+	xattr_info_free,
+	xattr_info_clear,
+	xattr_info_validate
 };

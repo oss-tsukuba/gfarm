@@ -3,11 +3,9 @@
  * All rights reserved.
  */
 
-gfarm_error_t gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode);
-gfarm_error_t gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode);
-gfarm_error_t gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode);
-gfarm_error_t gfm_server_removexattr(struct peer *peer, int from_client, int skip, int xmlMode);
+gfarm_error_t gfm_server_setxattr(struct peer *, int, int, int);
+gfarm_error_t gfm_server_getxattr(struct peer *, int, int, int);
+gfarm_error_t gfm_server_listxattr(struct peer *, int, int, int);
+gfarm_error_t gfm_server_removexattr(struct peer *, int, int, int);
 
-gfarm_error_t gfm_server_findxmlattr(struct peer *peer, int from_client, int skip);
-
-void gfm_remove_all_xattrs(struct inode *inode);
+gfarm_error_t gfm_server_findxmlattr(struct peer *, int, int);

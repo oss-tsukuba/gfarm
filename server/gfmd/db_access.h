@@ -7,6 +7,7 @@
 gfarm_error_t db_initialize(void);
 gfarm_error_t db_terminate(void);
 void *db_thread(void *);
+int db_getfreenum(void);
 
 #if 0 /* XXX for now */
 gfarm_error_t db_begin(void);
@@ -83,13 +84,22 @@ gfarm_error_t db_symlink_add(gfarm_ino_t, const char *);
 gfarm_error_t db_symlink_remove(gfarm_ino_t);
 gfarm_error_t db_symlink_load(void *, void (*)(void *, gfarm_ino_t, char *));
 
-struct xattr_list_info;
-gfarm_error_t db_xattr_add(int, gfarm_ino_t, const char *, const void *, size_t);
-gfarm_error_t db_xattr_modify(int, gfarm_ino_t, const char *, const void *, size_t);
-gfarm_error_t db_xattr_remove(int, gfarm_ino_t, const char *);
-gfarm_error_t db_xattr_load(int, gfarm_ino_t, const char *, void **, size_t *);
-gfarm_error_t db_xattr_list(int, gfarm_ino_t, void **, size_t *);
-gfarm_error_t db_xattr_find(gfarm_ino_t, const char *, int *, struct xattr_list_info **);
+struct db_waitctx;
+struct xattr_info;
+gfarm_error_t db_xattr_add(int, gfarm_ino_t, char *, void *, size_t,
+	struct db_waitctx *);
+gfarm_error_t db_xattr_modify(int, gfarm_ino_t, char *, void *, size_t,
+	struct db_waitctx *);
+gfarm_error_t db_xattr_remove(int, gfarm_ino_t, char *);
+gfarm_error_t db_xattr_get(int, gfarm_ino_t, char *, void **, size_t *,
+	struct db_waitctx *);
+gfarm_error_t db_xattr_list(int, gfarm_ino_t, void **, size_t *,
+	struct db_waitctx *);
+gfarm_error_t db_xattr_load(void *closure,
+	void (*callback)(void *, struct xattr_info *));
+gfarm_error_t db_xmlattr_find(gfarm_ino_t, const char *,
+	gfarm_error_t (*foundcallback)(void *, int, void *), void *,
+	void (*callback)(gfarm_error_t, void *), void *);
 
 /* external interface to select metadb backend type */
 
@@ -97,3 +107,14 @@ struct db_ops;
 gfarm_error_t db_use(const struct db_ops *);
 
 extern const struct db_ops db_none_ops, db_ldap_ops, db_pgsql_ops;
+
+
+struct db_waitctx {
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	gfarm_error_t e;
+};
+
+void db_waitctx_init(struct db_waitctx *);
+void db_waitctx_fini(struct db_waitctx *);
+gfarm_error_t dbq_waitret(struct db_waitctx *);

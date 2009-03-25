@@ -1297,7 +1297,8 @@ gfm_client_seek_result(struct gfm_connection *gfm_server, gfarm_off_t *offsetp)
  */
 gfarm_error_t
 gfm_client_setxattr_request(struct gfm_connection *gfm_server,
-		int xmlMode, const char *name, const void *value, size_t size, int flags)
+		int xmlMode, const char *name, const void *value, size_t size,
+		int flags)
 {
 	int command = xmlMode ? GFM_PROTO_XMLATTR_SET : GFM_PROTO_XATTR_SET;
 	return (gfm_client_rpc_request(gfm_server, command, "sbi",
@@ -1320,9 +1321,16 @@ gfm_client_getxattr_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_getxattr_result(struct gfm_connection *gfm_server,
-		void **valuep, size_t *size)
+		int xmlMode, void **valuep, size_t *size)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "B", size, valuep));
+	gfarm_error_t e;
+
+	e = gfm_client_rpc_result(gfm_server, 0, "B", size, valuep);
+	if ((e == GFARM_ERR_NO_ERROR) && xmlMode) {
+		// value is text with '\0', drop it
+		(*size)--;
+	}
+	return e;
 }
 
 gfarm_error_t
@@ -1399,7 +1407,10 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 		free(ctxp->cookie_path);
 		free(ctxp->cookie_attrname);
 		ctxp->cookie_path = strdup(ctxp->entries[ctxp->nvalid-1].path);
-		ctxp->cookie_attrname = strdup(ctxp->entries[ctxp->nvalid-1].attrname);
+		ctxp->cookie_attrname =
+			strdup(ctxp->entries[ctxp->nvalid-1].attrname);
+		if ((ctxp->cookie_path == NULL) || (ctxp->cookie_attrname == NULL))
+			return GFARM_ERR_NO_MEMORY;
 	}
 
 	return (GFARM_ERR_NO_ERROR);

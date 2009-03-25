@@ -52,6 +52,8 @@ struct peer {
 #define PEER_FLAGS_FD_CURRENT_EXTERNALIZED	1
 #define PEER_FLAGS_FD_SAVED_EXTERNALIZED	2
 
+	void *findxmlattrctx;
+
 	union {
 		struct {
 			/* only used by "gfrun" client */
@@ -171,6 +173,7 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 		peer->fd_current = -1;
 		peer->fd_saved = -1;
 		peer->flags = 0;
+		peer->findxmlattrctx = NULL;
 		peer->u.client.jobs = NULL;
 	}
 
@@ -217,6 +220,7 @@ peer_alloc(int fd, struct peer **peerp)
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
 	peer->flags = 0;
+	peer->findxmlattrctx = NULL;
 	peer->u.client.jobs = NULL;
 
 	/* deal with reboots or network problems */
@@ -307,6 +311,7 @@ peer_free(struct peer *peer)
 	if (peer->hostname != NULL) {
 		free(peer->hostname); peer->hostname = NULL;
 	}
+	peer->findxmlattrctx = NULL;
 
 	gfp_xdr_free(peer->conn); peer->conn = NULL;
 
@@ -609,4 +614,16 @@ peer_fdpair_restore(struct peer *peer)
 	    ((peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) ?
 	     PEER_FLAGS_FD_CURRENT_EXTERNALIZED : 0);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+peer_findxmlattrctx_set(struct peer *peer, void *ctx)
+{
+	peer->findxmlattrctx = ctx;
+}
+
+void *
+peer_findxmlattrctx_get(struct peer *peer)
+{
+	return peer->findxmlattrctx;
 }

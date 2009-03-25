@@ -32,7 +32,7 @@ fi
 
 # xml xattr perm test - 3
 {
-	gfxattr -lx $target $attrname 
+	gfxattr -lx $target 
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -74,7 +74,7 @@ fi
 
 # xml xattr perm test - 7
 {
-	gfxattr -lx $target $attrname 
+	gfxattr -lx $target 
 	if [ $? == 0 ]; then
 		# msut fail
 		exit $exit_fail

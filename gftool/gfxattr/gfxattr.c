@@ -19,6 +19,7 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
+#include "../gfutil/gfutil.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
@@ -30,10 +31,12 @@ static gfarm_error_t
 set_xattr(int xmlMode, char *path, char *xattrname, char *filename, int flags)
 {
 	const size_t count = 65536;
-	ssize_t sz, buf_sz, msg_sz = 0;
-	char *buf, *tbuf;
+	ssize_t sz;
+	size_t buf_sz, msg_sz = 0;
+	char *buf = NULL, *tbuf;
 	gfarm_error_t e;
 	int fd, need_close = 0;
+	int overflow;
 
 	if (filename != NULL) {
 		fd = open(filename, O_RDONLY);
@@ -48,15 +51,19 @@ set_xattr(int xmlMode, char *path, char *xattrname, char *filename, int flags)
 	}
 
 	buf_sz = count;
-	buf = malloc(buf_sz + 1 /* for the last '\0' */);
+	overflow = 0;
+	buf_sz = gfarm_size_add(&overflow, buf_sz, 1);
+	if (!overflow)
+		buf = malloc(buf_sz);
 	if (buf == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
 	while ((sz = read(fd, buf + msg_sz, count)) > 0) {
 		msg_sz += sz;
-		buf_sz += count;
-		tbuf = realloc(buf, buf_sz);
-		if (tbuf == NULL) {
+		buf_sz = gfarm_size_add(&overflow, buf_sz, count);
+		if (!overflow)
+			tbuf = realloc(buf, buf_sz);
+		if (overflow || (tbuf == NULL)) {
 			e = GFARM_ERR_NO_MEMORY;
 			goto free_buf;
 		}
@@ -77,7 +84,8 @@ free_buf:
 }
 
 static gfarm_error_t
-get_xattr_alloc(int xmlMode, char *path, char *xattrname, void **valuep, size_t *size)
+get_xattr_alloc(int xmlMode, char *path, char *xattrname,
+		void **valuep, size_t *size)
 {
 	gfarm_error_t e;
 	void *value;
@@ -302,21 +310,23 @@ main(int argc, char *argv[])
 
 	switch (mode) {
 	case SET_MODE:
-		if (xattrname == NULL)
+		if (argc != 2)
 			usage(prog_name);
 		e = set_xattr(xmlMode, c_path, xattrname, filename, flags);
 		break;
 	case GET_MODE:
-		if (xattrname == NULL)
+		if (argc != 2)
 			usage(prog_name);
 		e = get_xattr(xmlMode, c_path, xattrname, filename);
 		break;
 	case REMOVE_MODE:
-		if (xattrname == NULL)
+		if (argc != 2)
 			usage(prog_name);
 		e = remove_xattr(xmlMode, c_path, xattrname);
 		break;
 	case LIST_MODE:
+		if (argc != 1)
+			usage(prog_name);
 		e = list_xattr(xmlMode, c_path);
 		break;
 	default:

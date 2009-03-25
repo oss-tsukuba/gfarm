@@ -552,7 +552,8 @@ binary2hextext(const void *data, int size)
 	char *src, *dst, *last;
 
 	chlen = (size > 0) ?  2 * size + 1 : 2;
-	if ((chdata = malloc(chlen)) == NULL)
+	GFARM_MALLOC_ARRAY(chdata, chlen);
+	if (chdata == NULL)
 		return NULL;
 
 	if (size > 0) {
@@ -580,7 +581,7 @@ binary2hextext(const void *data, int size)
 static void *
 hextext2binary(char *chdata, int *size)
 {
-	void *data;
+	char *data;
 	int chlen = strlen(chdata);
 	int allocsize;
 	char *src, *dst, *last, v[3];
@@ -593,7 +594,8 @@ hextext2binary(char *chdata, int *size)
 		chlen = 0;
 		allocsize = 1; // malloc(0) may returns NULL or !NULL
 	}
-	if ((data = malloc(allocsize)) == NULL)
+	GFARM_MALLOC_ARRAY(data, allocsize);
+	if (data == NULL)
 		return NULL;
 
 	src = chdata;
@@ -940,14 +942,15 @@ msgfree:
 #endif /* not used */
 
 static gfarm_error_t
-gfarm_ldap_generic_info_get_foreach(
+gfarm_ldap_generic_info_get_foreach_withattrs(
 	char *dn,
 	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
 	char *query,
 	void *tmp_info, /* just used as a work area */
 	void (*callback)(void *, void *),
 	void *closure,
-	const struct gfarm_ldap_generic_info_ops *ops)
+	const struct gfarm_ldap_generic_info_ops *ops,
+	char *attrs[])
 {
 	LDAPMessage *res, *e;
 	int i, msgid, rv;
@@ -956,7 +959,7 @@ gfarm_ldap_generic_info_get_foreach(
 	char **vals;
 
 	/* search for entries asynchronously */
-	msgid = ldap_search(gfarm_ldap_server, dn, scope, query, NULL, 0);
+	msgid = ldap_search(gfarm_ldap_server, dn, scope, query, attrs, 0);
 	if (msgid == -1) {
 		gflog_error("ldap_search(%s) - for each", dn);
 		return (GFARM_ERR_UNKNOWN);
@@ -1015,6 +1018,21 @@ gfarm_ldap_generic_info_get_foreach(
 	if (i == 0)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_ldap_generic_info_get_foreach(
+	char *dn,
+	int scope, /* LDAP_SCOPE_ONELEVEL or LDAP_SCOPE_SUBTREE */
+	char *query,
+	void *tmp_info, /* just used as a work area */
+	void (*callback)(void *, void *),
+	void *closure,
+	const struct gfarm_ldap_generic_info_ops *ops)
+{
+	return gfarm_ldap_generic_info_get_foreach_withattrs(
+		dn, scope, query, tmp_info,
+		callback, closure, ops, NULL);
 }
 
 /**********************************************************************/
@@ -2429,35 +2447,50 @@ gfarm_ldap_symlink_load(
 
 /**********************************************************************/
 
-static char *gfarm_ldap_xattr_load_info_make_dn(void *vkey);
+static char *gfarm_ldap_xattr_info_make_dn(void *vkey);
+static void gfarm_ldap_db_xattr_set_field(void *vinfo,
+	char *attribute, char **vals);
 
-static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_load_ops = {
-	&gfarm_base_xattr_load_ops,
-	NULL,
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_info_ops = {
+	&gfarm_base_xattr_info_ops,
+	"(objectclass=XAttr)",
 	"attrname=%s, inumber=%" GFARM_PRId64 ", %s",
-	gfarm_ldap_xattr_load_info_make_dn,
-	NULL,
+	gfarm_ldap_xattr_info_make_dn,
+	gfarm_ldap_db_xattr_set_field,
 };
 
-struct gfarm_ldap_xattr_load_info_key {
+struct gfarm_ldap_xattr_get_info_key {
 	gfarm_ino_t inumber;
-	int xmlMode;
 	const char *attrname;
 };
 
 static char *
-gfarm_ldap_xattr_load_info_make_dn(void *vkey)
+gfarm_ldap_xattr_info_make_dn(void *vkey)
 {
-	struct gfarm_ldap_xattr_load_info_key *key = vkey;
+	struct gfarm_ldap_xattr_get_info_key *key = vkey;
 	char *dn;
 
-	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_xattr_load_ops.dn_template) +
-			strlen(key->attrname) + INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
+	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_xattr_info_ops.dn_template) +
+			strlen(key->attrname) + INT64STRLEN
+			+ strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL)
 		return (NULL);
-	sprintf(dn, gfarm_ldap_xattr_load_ops.dn_template,
+	sprintf(dn, gfarm_ldap_xattr_info_ops.dn_template,
 	    key->attrname, key->inumber, gfarm_ldap_base_dn);
 	return (dn);
+}
+
+static void
+gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
+{
+	struct xattr_info *info = vinfo;
+
+	if (strcasecmp(attribute, "inumber") == 0) {
+		info->inum = gfarm_strtoi64(vals[0], NULL);
+	} else if (strcasecmp(attribute, "attrname") == 0) {
+		info->attrname = strdup(vals[0]);
+		info->namelen = strlen(info->attrname) + 1; // include '\0'
+	}
 }
 
 static gfarm_error_t
@@ -2472,7 +2505,7 @@ gfarm_ldap_xattr_update(
 	LDAPMod *modv[5];
 	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
 	char ino_string[INT64STRLEN + 1];
-	struct gfarm_ldap_xattr_load_info_key key;
+	struct gfarm_ldap_xattr_get_info_key key;
 	char *hextext;
 
 	if (arg->xmlMode)
@@ -2483,7 +2516,6 @@ gfarm_ldap_xattr_update(
 		return GFARM_ERR_NO_MEMORY;
 
 	key.inumber = arg->inum;
-	key.xmlMode = arg->xmlMode;
 	key.attrname = arg->attrname;
 
 	sprintf(ino_string, "%" GFARM_PRId64, arg->inum);
@@ -2504,7 +2536,7 @@ gfarm_ldap_xattr_update(
 	modv[i++] = NULL;
 	assert(i == ARRAY_LENGTH(modv));
 
-	e = ((*update_op)(&key, modv, &gfarm_ldap_xattr_load_ops));
+	e = ((*update_op)(&key, modv, &gfarm_ldap_xattr_info_ops));
 	free(hextext);
 	return e;
 }
@@ -2512,41 +2544,42 @@ gfarm_ldap_xattr_update(
 static gfarm_error_t
 gfarm_ldap_xattr_add(struct db_xattr_arg *arg)
 {
-	return gfarm_ldap_xattr_update(arg,
+	gfarm_error_t e;
+	e = gfarm_ldap_xattr_update(arg,
 	    LDAP_MOD_ADD, gfarm_ldap_generic_info_add);
+	free(arg);
+	return e;
 }
 
 static gfarm_error_t
 gfarm_ldap_xattr_modify(struct db_xattr_arg *arg)
 {
-	return gfarm_ldap_xattr_update(arg,
+	gfarm_error_t e;
+	e = gfarm_ldap_xattr_update(arg,
 		LDAP_MOD_REPLACE, gfarm_ldap_generic_info_modify);
+	free(arg);
+	return e;
 }
 
 static gfarm_error_t
 gfarm_ldap_xattr_remove(struct db_xattr_arg *arg)
 {
-	struct gfarm_ldap_xattr_load_info_key key;
-
-	if (arg->attrname == NULL) {
-		// NOTE: gfarm_pgsql_xattr_remove() deletes
-		// all xattrs if attrname==NULL.
-		// see gfm_remove_all_xattrs().
-		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
-	}
+	gfarm_error_t e;
+	struct gfarm_ldap_xattr_get_info_key key;
 
 	if (arg->xmlMode)
 		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
 
 	key.inumber = arg->inum;
-	key.xmlMode = arg->xmlMode;
 	key.attrname = arg->attrname;
 
-	return gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_xattr_load_ops);
+	e = gfarm_ldap_generic_info_remove(&key, &gfarm_ldap_xattr_info_ops);
+	free(arg);
+	return e;
 }
 
 static gfarm_error_t
-gfarm_ldap_xattr_load(struct db_xattr_arg *arg)
+gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	int rv, cnt, sz;
@@ -2557,12 +2590,16 @@ gfarm_ldap_xattr_load(struct db_xattr_arg *arg)
 	struct berval **vals;
 	void *bindata;
 
-	if (arg->xmlMode)
-		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	if (arg->xmlMode) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		goto quit;
+	}
 
-	query_type = malloc(64 + strlen(arg->attrname));
-	if (query_type == NULL)
-		return GFARM_ERR_NO_MEMORY;
+	GFARM_MALLOC_ARRAY(query_type, 64 + INT64STRLEN + strlen(arg->attrname));
+	if (query_type == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto quit;
+	}
 
 	sprintf(query_type,
 			"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 ")(attrname=%s))",
@@ -2570,10 +2607,13 @@ gfarm_ldap_xattr_load(struct db_xattr_arg *arg)
 	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
 			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
 	free(query_type);
-	if (rv == LDAP_NO_SUCH_OBJECT)
-		return GFARM_ERR_NO_SUCH_OBJECT;
-	else if ((rv != LDAP_SUCCESS) || (res == NULL))
-		return GFARM_ERR_UNKNOWN;
+	if (rv == LDAP_NO_SUCH_OBJECT) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		goto quit;
+	} else if ((rv != LDAP_SUCCESS) || (res == NULL)) {
+		e = GFARM_ERR_UNKNOWN;
+		goto quit;
+	}
 
 	cnt = ldap_count_messages(gfarm_ldap_server, res);
 	if (cnt <= 1) {
@@ -2600,8 +2640,27 @@ gfarm_ldap_xattr_load(struct db_xattr_arg *arg)
 		ldap_value_free_len(vals);
 	}
 	ldap_msgfree(res);
-
+quit:
+	free(arg);
 	return e;
+}
+
+gfarm_error_t
+gfarm_ldap_xattr_load(void *closure,
+		void (*callback)(void *, struct xattr_info *))
+{
+	struct xattr_info tmp_info;
+	char *attrs[] = { "inumber", "attrname", NULL };
+
+	/*
+	 * NOTE: Without attrs, attrvalue will be loaded also.
+	 * It's needless for initial loading.
+	 */
+	return (gfarm_ldap_generic_info_get_foreach_withattrs(
+		gfarm_ldap_base_dn,
+		LDAP_SCOPE_SUBTREE, gfarm_ldap_xattr_info_ops.query_type,
+		&tmp_info, (void (*)(void *, void *))callback, closure,
+		&gfarm_ldap_xattr_info_ops, attrs));
 }
 
 static gfarm_error_t
@@ -2621,12 +2680,14 @@ gfarm_ldap_xattr_list(struct db_xattr_arg *arg)
 	*arg->sizep = 0;
 	*arg->valuep = NULL;
 
-	if (arg->xmlMode)
-		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	if (arg->xmlMode) {
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		goto quit;
+	}
 
 	snprintf(query_type, sizeof(query_type),
-			"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 "))",
-			arg->inum);
+		"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 "))",
+		arg->inum);
 	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
 			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
 	if (rv == LDAP_NO_SUCH_OBJECT)
@@ -2637,7 +2698,7 @@ gfarm_ldap_xattr_list(struct db_xattr_arg *arg)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	if (e != GFARM_ERR_NO_ERROR) {
 		ldap_msgfree(res);
-		return e;
+		goto quit;
 	}
 
 	m = ldap_first_message(gfarm_ldap_server, res);
@@ -2652,10 +2713,11 @@ gfarm_ldap_xattr_list(struct db_xattr_arg *arg)
 		m = ldap_next_entry(gfarm_ldap_server, m);
 	}
 
-	value = malloc(size);
+	GFARM_MALLOC_ARRAY(value, size);
 	if (value == NULL) {
 		ldap_msgfree(res);
-		return GFARM_ERR_NO_MEMORY;
+		e = GFARM_ERR_NO_MEMORY;
+		goto quit;
 	}
 
 	p = value;
@@ -2678,13 +2740,15 @@ gfarm_ldap_xattr_list(struct db_xattr_arg *arg)
 
 	*arg->sizep = size;
 	*arg->valuep = value;
-
+quit:
+	free(arg);
 	return GFARM_ERR_NO_ERROR;
 }
 
 static gfarm_error_t
 gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
 {
+	free(arg);
 	return GFARM_ERR_OPERATION_NOT_SUPPORTED;
 }
 
@@ -2747,7 +2811,8 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_xattr_add,
 	gfarm_ldap_xattr_modify,
 	gfarm_ldap_xattr_remove,
-	gfarm_ldap_xattr_load,
+	gfarm_ldap_xattr_get,
 	gfarm_ldap_xattr_list,
+	gfarm_ldap_xattr_load,
 	gfarm_ldap_xmlattr_find,
 };

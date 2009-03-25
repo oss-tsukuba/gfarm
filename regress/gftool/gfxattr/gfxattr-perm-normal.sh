@@ -32,7 +32,7 @@ fi
 
 # normal xattr perm test - 3
 {
-	gfxattr -l $target $attrname 
+	gfxattr -l $target 
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
@@ -74,7 +74,7 @@ fi
 
 # normal xattr perm test - 7
 {
-	gfxattr -l $target $attrname 
+	gfxattr -l $target 
 	if [ $? == 0 ]; then
 		# msut fail
 		exit $exit_fail

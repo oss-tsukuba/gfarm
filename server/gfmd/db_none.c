@@ -254,29 +254,41 @@ gfarm_none_symlink_load(
 static gfarm_error_t
 gfarm_none_xattr_add(struct db_xattr_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
 gfarm_none_xattr_modify(struct db_xattr_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
 gfarm_none_xattr_remove(struct db_xattr_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_xattr_load(struct db_xattr_arg *arg)
+gfarm_none_xattr_get(struct db_xattr_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
 gfarm_none_xattr_list(struct db_xattr_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+gfarm_error_t
+gfarm_none_xattr_load(void *closure,
+		void (*callback)(void *, struct xattr_info *))
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
@@ -284,6 +296,7 @@ gfarm_none_xattr_list(struct db_xattr_arg *arg)
 static gfarm_error_t
 gfarm_none_xmlattr_find(struct db_xmlattr_find_arg *arg)
 {
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
@@ -346,7 +359,8 @@ const struct db_ops db_none_ops = {
 	gfarm_none_xattr_add,
 	gfarm_none_xattr_modify,
 	gfarm_none_xattr_remove,
-	gfarm_none_xattr_load,
+	gfarm_none_xattr_get,
 	gfarm_none_xattr_list,
+	gfarm_none_xattr_load,
 	gfarm_none_xmlattr_find,
 };

@@ -400,6 +400,12 @@ _EOF_
 		createuser_option=--no-createrole;;
 	esac
 
+	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
+		XMLATTR_TABLENAME=", XmlAttr "
+	else
+		XMLATTR_TABLENAME=""
+	fi
+
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "createdb failed"
 	PGHOST="$BACKEND_DATA_DIR"; export PGHOST
 	PGPORT="$BACKEND_PORT"; export PGPORT
@@ -425,12 +431,9 @@ _EOF_
 #		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$PGSQL_BINDIR/psql -q \
 		-f "$config_dir/gfarm.sql" $DB_NAME
-	if [ "$SUPPORT_XML_TYPE"="yes" ]; then
+	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
 		$PGSQL_BINDIR/psql -q \
 			-f "$config_dir/gfarm-xmlattr.sql" $DB_NAME
-		: ${XMLATTR_TABLENAME:=", XmlAttr "}
-	else
-		: ${XMLATTR_TABLENAME:=""}
 	fi
 	$awk 'BEGIN {
 		print "GRANT SELECT, INSERT, UPDATE, DELETE"
