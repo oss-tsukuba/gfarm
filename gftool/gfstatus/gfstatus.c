@@ -7,6 +7,7 @@
 #include <gfarm/gfarm.h>
 #include "config.h"
 #include "auth.h"
+#include "gfpath.h"
 
 void
 error_check(char *msg, gfarm_error_t e)
@@ -25,6 +26,21 @@ print_msg(char *msg, char *status)
 		printf("%s: %s\n", msg, status);
 }
 
+void
+print_user_config_file(char *msg)
+{
+	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
+	char *rc;
+
+	/* copied from gfarm_config_read() in config_client.c */
+	printf("%s: ", msg);
+	rc = getenv("GFARM_CONFIG_FILE");
+	if (rc == NULL)
+		printf("%s/%s\n", gfarm_get_local_homedir(), gfarm_client_rc);
+	else
+		printf("%s\n", rc);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -41,7 +57,8 @@ main(int argc, char *argv[])
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
 
-	print_msg("config file", gfarm_config_file);
+	print_user_config_file("user config file  ");
+	print_msg("system config file", gfarm_config_file);
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());
