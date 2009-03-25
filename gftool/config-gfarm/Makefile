@@ -10,9 +10,11 @@ SUBDIRS= sysdep/$(config_gfarm_sysdep_subdir)
 
 datadir=$(default_datadir)/gfarm/config
 
-SCRIPTS = config-gfarm config-gfsd $(srcdir)/gfarm.arch.guess
+SCRIPTS = config-gfarm config-gfarm-update config-gfsd \
+	$(srcdir)/gfarm.arch.guess
 DATA =	$(srcdir)/config-gfarm.postgresql \
 	$(srcdir)/config-gfarm.ldap \
+	$(srcdir)/config-gfarm-update.postgresql \
 	$(srcdir)/gfarm.conf-postgresql.in \
 	$(srcdir)/gfarm.conf-ldap.in \
 	$(srcdir)/gfarm.conf.in \

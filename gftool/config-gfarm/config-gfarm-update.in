@@ -1,0 +1,161 @@
+#!/bin/sh
+#
+# $Id$
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+config_dir="@datadir@/gfarm/config"
+
+# backend initialization
+BACKEND_TYPE=postgresql
+backend_all="postgresql"
+backend_candidates="postgresql"
+
+# load backend-dependent functions.
+for i in $backend_all
+do
+  . $config_dir/config-gfarm.$i
+  . $config_dir/config-gfarm-update.$i
+done
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t]"
+	echo >&2 "	[--update_symlink] [-P backend_prefix]"
+	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
+	echo >&2 "	[-f backend_file]"
+	exit 1
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+update_sanity()
+{
+	if [ ! -f $GFMD_CONF ]
+	then
+		echo "$GFMD_CONF: no such file" >&2
+		return 1
+	fi
+
+	update_sanity_$BACKEND_TYPE
+}
+
+# most $BACKEND_TYPE calls the followings
+# from display_backend_params_$BACKEND_TYPE, but some may not.
+display_backend_data_dir_param()
+{
+    echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
+}
+display_backend_log_dir_param()
+{
+    echo     "metadata log directory    [-L]: $BACKEND_LOG_DIR"
+}
+
+display_params()
+{
+    echo     "prefix [--prefix]: $CONFIG_PREFIX"
+    echo     "metadata backend    [-b]: $BACKEND_TYPE"
+    echo     "(available backend: $backend_candidates)"
+
+    display_backend_params_$BACKEND_TYPE
+    display_backend_port_params_$BACKEND_TYPE
+    display_backend_optional_params_$BACKEND_TYPE
+
+    update_sanity
+    exit 0
+}
+
+#
+# parse arguments
+#
+
+: ${BACKEND_OPTIONS:=}
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -U) shift; [ $# -ge 1 ] || usage
+		BACKEND_ADMIN_USER=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		BACKEND_PREFIX=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		BACKEND_DATA_DIR=$1
+		;;
+	  -p) shift; [ $# -ge 1 ] || usage
+		BACKEND_PORT=$1
+		;;
+	  -f) shift; [ $# -ge 1 ] || usage
+		BACKEND_OPTIONS="$BACKEND_OPTIONS -f $1"
+		;;
+
+	# control options
+	  --help)
+		usage
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
+		;;
+	  --update-symlink) 
+		UPDATE_SYMLINK=true
+		;;
+	  *)
+		usage
+		;;
+	esac
+	shift
+done
+
+#
+# default values
+#
+
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+search_path="$PATH"
+
+set_default_backend_perfix_$BACKEND_TYPE
+: ${CONFIG_PREFIX:=}
+set_first_defaults_$BACKEND_TYPE
+
+: ${DISPLAY_PARAMS:=false}
+: ${UPDATE_SYMLINK:=false}
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+: ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+
+update_first_set_param_$BACKEND_TYPE
+set_last_defaults_$BACKEND_TYPE
+update_last_set_param_$BACKEND_TYPE
+
+update_sanity || ABORT "aborted"
+
+# -t option; display parameters
+$DISPLAY_PARAMS && display_params
+
+update_postprocess_$BACKEND_TYPE || ABORT "aborted"
+
+#
+if $UPDATE_SYMLINK; then
+	update_symlink_$BACKEND_TYPE
+else
+	access_db_postgresql $BACKEND_OPTIONS
+fi

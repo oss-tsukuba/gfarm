@@ -28,6 +28,7 @@ post-distclean-hook:
 		$(INC_BUILDDIR)/gfarm_config.h \
 		Makefile makes/config.mk makes/install-doc \
 		gftool/config-gfarm/config-gfarm \
+		gftool/config-gfarm/config-gfarm-update \
 		gftool/config-gfarm/config-gfsd \
 		gftool/gfdump/gfdump.postgresql \
 		package/solaris/gfmd package/solaris/gfsd
