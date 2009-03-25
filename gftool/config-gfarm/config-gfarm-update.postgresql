@@ -1,4 +1,4 @@
-getvalue() {
+getvalue_postgresql() {
 	KEY=$1
 	if [ X"$KEY" != X ]; then
 		value=`egrep "^$KEY " $GFMD_CONF | awk '{ print $2 }'`
@@ -9,7 +9,7 @@ getvalue() {
 }
 
 # $LINE is appended to $FILE only if $LINE is not included in $FILE
-update_file()
+update_file_postgresql()
 {
 	FILE="$1"
 	LINE="$2"
@@ -37,18 +37,18 @@ update_postprocess_postgresql()
 	[ $rv = 0 ] || return $rv
 	# disable path expansion
 	set -f
-	update_file $PGPASS "$BACKEND_HOSTNAME:$BACKEND_PORT:$DB_NAME:$BACKEND_USER:$password"
-	update_file $PGPASS "localhost:$BACKEND_PORT:$DB_NAME:$BACKEND_ADMIN_USER:$admin_password"
+	update_file_postgresql $PGPASS "$BACKEND_HOSTNAME:$BACKEND_PORT:$DB_NAME:$BACKEND_USER:$password"
+	update_file_postgresql $PGPASS "localhost:$BACKEND_PORT:$DB_NAME:$BACKEND_ADMIN_USER:$admin_password"
 	return $rv
 }
 
 update_first_set_param_postgresql()
 {
-	: ${BACKEND_HOSTNAME:=`getvalue postgresql_server_host`}
-	: ${BACKEND_PORT=`getvalue postgresql_server_port`}
-	: ${DB_NAME:=`getvalue postgresql_dbname`}
-	: ${BACKEND_USER:=`getvalue postgresql_user`}
-	: ${password:=`getvalue postgresql_password | awk -F\" '{ print $2 }'`}
+	: ${BACKEND_HOSTNAME:=`getvalue_postgresql postgresql_server_host`}
+	: ${BACKEND_PORT=`getvalue_postgresql postgresql_server_port`}
+	: ${DB_NAME:=`getvalue_postgresql postgresql_dbname`}
+	: ${BACKEND_USER:=`getvalue_postgresql postgresql_user`}
+	: ${password:=`getvalue_postgresql postgresql_password | awk -F\" '{ print $2 }'`}
 }
 
 update_last_set_param_postgresql()
