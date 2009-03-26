@@ -24,7 +24,7 @@ struct dbq_entry {
 	void *data;
 };
 
-#define DBQ_SIZE	1000
+#define DBQ_SIZE	10000
 
 struct dbq {
 	pthread_mutex_t mutex;
