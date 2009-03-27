@@ -108,8 +108,7 @@ attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.29 NAME 'attrname'
 	EQUALITY caseExactMatch
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
 attributetype ( 1.3.6.1.4.1.13122.2.1.2924.101.2.30 NAME 'attrvalue'
-	EQUALITY caseExactMatch
-	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.5 SINGLE-VALUE )
 
 # Object Class Definitions
 # 1.3.6.1.4.1.13122.2.1.2924.101.3.x

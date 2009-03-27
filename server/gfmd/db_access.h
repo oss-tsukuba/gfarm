@@ -91,9 +91,8 @@ gfarm_error_t db_xattr_add(int, gfarm_ino_t, char *, void *, size_t,
 gfarm_error_t db_xattr_modify(int, gfarm_ino_t, char *, void *, size_t,
 	struct db_waitctx *);
 gfarm_error_t db_xattr_remove(int, gfarm_ino_t, char *);
+gfarm_error_t db_xattr_removeall(int, gfarm_ino_t);
 gfarm_error_t db_xattr_get(int, gfarm_ino_t, char *, void **, size_t *,
-	struct db_waitctx *);
-gfarm_error_t db_xattr_list(int, gfarm_ino_t, void **, size_t *,
 	struct db_waitctx *);
 gfarm_error_t db_xattr_load(void *closure,
 	void (*callback)(void *, struct xattr_info *));

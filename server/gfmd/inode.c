@@ -340,6 +340,13 @@ remove_all_xattrs(struct inode *inode, int xmlMode)
 		&inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry = NULL;
 
+	if (xattrs->head == NULL)
+		return;
+
+	e = db_xattr_removeall(xmlMode, inode->i_number);
+	if (e != GFARM_ERR_OPERATION_NOT_SUPPORTED)
+		return;
+
 	entry = xattrs->head;
 	while (entry != NULL) {
 		e = db_xattr_remove(xmlMode, inode->i_number, entry->name);
@@ -2181,14 +2188,13 @@ void
 xattr_add_one(void *closure, struct xattr_info *info)
 {
 	struct inode *inode = inode_lookup(info->inum);
-	int xmlMode;
 	struct xattrs *xattrs;
 
 	if (inode == NULL)
 		gflog_error("xattr_add_one: no file %" GFARM_PRId64,
 			info->inum);
 	else {
-		xmlMode = (closure != NULL) ? *(int*)closure : 0;
+		int xmlMode = (closure != NULL) ? *(int*)closure : 0;
 		xattrs = (xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs);
 		if (xattr_add(xattrs, info->attrname) == NULL)
 			gflog_error("xattr_add_one: "
@@ -2201,10 +2207,18 @@ void
 xattr_init(void)
 {
 	gfarm_error_t e;
+	int xmlMode;
 
-	e = db_xattr_load(NULL, xattr_add_one);
+	xmlMode = 0;
+	e = db_xattr_load(&xmlMode, xattr_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("loading xattr: %s", gfarm_error_string(e));
+#ifdef ENABLE_XMLATTR
+	xmlMode = 1;
+	e = db_xattr_load(&xmlMode, xattr_add_one);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("loading xmlattr: %s", gfarm_error_string(e));
+#endif
 }
 
 static struct xattr_entry *
@@ -2247,6 +2261,16 @@ inode_xattr_isexists(struct inode *inode, int xmlMode,
 
 	entry = xattr_find(xattrs, attrname);
 	return (entry != NULL);
+}
+
+int
+inode_xattr_has_xmlattrs(struct inode *inode)
+{
+#ifdef ENABLE_XMLATTR
+	return (inode->i_xmlattrs.head != NULL);
+#else
+	return 0;
+#endif
 }
 
 gfarm_error_t

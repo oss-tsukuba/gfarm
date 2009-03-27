@@ -95,6 +95,7 @@ gfarm_error_t inode_replica_list_by_name(struct inode *,
 
 gfarm_error_t inode_xattr_add(struct inode *, int, const char *);
 int inode_xattr_isexists(struct inode *, int, const char *);
+int inode_xattr_has_xmlattrs(struct inode *);
 gfarm_error_t inode_xattr_remove(struct inode *, int, const char *);
 gfarm_error_t inode_xattr_list(struct inode *, int, char **, size_t *);
 

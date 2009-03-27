@@ -615,7 +615,8 @@ findxmlattr_make_patharray(struct inode *inode, struct process *process,
 	size_t allocsz;
 	int overflow;
 
-	if (inode_access(inode, user, GFS_R_OK) != GFARM_ERR_NO_ERROR) {
+	if (!inode_xattr_has_xmlattrs(inode)
+		|| (inode_access(inode, user, GFS_R_OK) != GFARM_ERR_NO_ERROR)){
 		add_parent = 0;
 		e = GFARM_ERR_NO_ERROR;
 	}
@@ -672,6 +673,13 @@ findxmlattr_make_patharray(struct inode *inode, struct process *process,
 			continue;
 		entry_inode = dir_entry_get_inode(entry);
 		is_dir = inode_is_dir(entry_inode);
+		if (!is_dir) {
+			if ((inode_access(entry_inode, user, GFS_R_OK)
+					!= GFARM_ERR_NO_ERROR)
+				|| !inode_xattr_has_xmlattrs(entry_inode)) {
+				continue;
+			}
+		}
 		overflow = 0;
 		allocsz = gfarm_size_add(&overflow, pathlen, namelen);
 		allocsz = gfarm_size_add(&overflow, allocsz, 1);
@@ -688,12 +696,9 @@ findxmlattr_make_patharray(struct inode *inode, struct process *process,
 		if (is_dir) {
 			e = findxmlattr_make_patharray(entry_inode, process,
 				curdepth + 1, dir_path, array, ctxp);
-		} else if ((e = inode_access(entry_inode, user, GFS_R_OK))
-			== GFARM_ERR_NO_ERROR) {
+		} else {
 			e = inum_path_array_add(array,
 				inode_get_number(entry_inode), dir_path, ctxp);
-		} else {
-			free(dir_path);
 		}
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
@@ -847,6 +852,16 @@ findxmlxattr_restart(struct peer *peer, struct inode *inode,
 	return e;
 }
 
+static int
+ctx_has_cookie(struct gfs_xmlattr_ctx *ctxp)
+{
+	/*
+	 * cookie_pathname maybe "" if restart from top directory.
+	 * cookie_attrname is always not empty if set.
+	 */
+	return (ctxp->cookie_attrname[0] != '\0');
+}
+
 static gfarm_error_t
 findxmlattr(struct peer *peer, struct inode *inode,
 	struct gfs_xmlattr_ctx *ctxp, struct inum_path_array **ap)
@@ -858,18 +873,26 @@ findxmlattr(struct peer *peer, struct inode *inode,
 
 	array = peer_findxmlattrctx_get(peer);
 	if (array == NULL) {
-		if (((array = inum_path_array_alloc()) != NULL) &&
-			((p = strdup("")) != NULL)) {
+		if (ctx_has_cookie(ctxp)) {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		} else if ((array = inum_path_array_alloc()) == NULL)
+			e = GFARM_ERR_NO_MEMORY;
+		else if ((p = strdup("")) == NULL) {
+			inum_path_array_free(array);
+			e = GFARM_ERR_NO_MEMORY;
+		} else {
 			e = findxmlattr_make_patharray(inode, process, 0,
 				p, array, ctxp);
-		} else
-			e = GFARM_ERR_NO_MEMORY;
+		}
 		giant_unlock();
 		// We must wait always even if above function was failed.
 		findxmlattr_dbq_wait_all(array, ctxp);
 	} else {
 		giant_unlock();
-		e = GFARM_ERR_NO_ERROR;
+		if (!ctx_has_cookie(ctxp))
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		else
+			e = GFARM_ERR_NO_ERROR;
 	}
 
 	*ap = array;

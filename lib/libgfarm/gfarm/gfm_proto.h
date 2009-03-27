@@ -289,7 +289,7 @@ enum gfm_proto_command {
 	GFJ_PROTO_RESERVE14,
 	GFJ_PROTO_RESERVE15,
 
-	/* extended attribude management */
+	/* extended attribute management */
 	GFM_PROTO_XATTR_SET,
 	GFM_PROTO_XMLATTR_SET,
 	GFM_PROTO_XATTR_GET,

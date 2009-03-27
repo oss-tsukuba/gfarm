@@ -115,70 +115,70 @@ struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
 
-	void (*host_add)(struct gfarm_host_info *);
-	void (*host_modify)(struct db_host_modify_arg *);
-	void (*host_remove)(char *);
+	gfarm_error_t (*host_add)(struct gfarm_host_info *);
+	gfarm_error_t (*host_modify)(struct db_host_modify_arg *);
+	gfarm_error_t (*host_remove)(char *);
 	gfarm_error_t (*host_load)(void *,
 		void (*)(void *, struct gfarm_host_info *));
 
-	void (*user_add)(struct gfarm_user_info *);
-	void (*user_modify)(struct db_user_modify_arg *);
-	void (*user_remove)(char *);
+	gfarm_error_t (*user_add)(struct gfarm_user_info *);
+	gfarm_error_t (*user_modify)(struct db_user_modify_arg *);
+	gfarm_error_t (*user_remove)(char *);
 	gfarm_error_t (*user_load)(void *,
 		void (*)(void *, struct gfarm_user_info *));
 
-	void (*group_add)(struct gfarm_group_info *);
-	void (*group_modify)(struct db_group_modify_arg *);
-	void (*group_remove)(char *);
+	gfarm_error_t (*group_add)(struct gfarm_group_info *);
+	gfarm_error_t (*group_modify)(struct db_group_modify_arg *);
+	gfarm_error_t (*group_remove)(char *);
 	gfarm_error_t (*group_load)(void *,
 		void (*)(void *, struct gfarm_group_info *));
 
-	void (*inode_add)(struct gfs_stat *);
-	void (*inode_modify)(struct gfs_stat *);
-	void (*inode_nlink_modify)(struct db_inode_uint64_modify_arg *);
-	void (*inode_size_modify)(struct db_inode_uint64_modify_arg *);
-	void (*inode_mode_modify)(struct db_inode_uint32_modify_arg *);
-	void (*inode_user_modify)(struct db_inode_string_modify_arg *);
-	void (*inode_group_modify)(struct db_inode_string_modify_arg *);
-	void (*inode_atime_modify)(struct db_inode_timespec_modify_arg *);
-	void (*inode_mtime_modify)(struct db_inode_timespec_modify_arg *);
-	void (*inode_ctime_modify)(struct db_inode_timespec_modify_arg *);
+	gfarm_error_t (*inode_add)(struct gfs_stat *);
+	gfarm_error_t (*inode_modify)(struct gfs_stat *);
+	gfarm_error_t (*inode_nlink_modify)(struct db_inode_uint64_modify_arg *);
+	gfarm_error_t (*inode_size_modify)(struct db_inode_uint64_modify_arg *);
+	gfarm_error_t (*inode_mode_modify)(struct db_inode_uint32_modify_arg *);
+	gfarm_error_t (*inode_user_modify)(struct db_inode_string_modify_arg *);
+	gfarm_error_t (*inode_group_modify)(struct db_inode_string_modify_arg *);
+	gfarm_error_t (*inode_atime_modify)(struct db_inode_timespec_modify_arg *);
+	gfarm_error_t (*inode_mtime_modify)(struct db_inode_timespec_modify_arg *);
+	gfarm_error_t (*inode_ctime_modify)(struct db_inode_timespec_modify_arg *);
 	/* inode_remove: never remove any inode to keep inode->i_gen */
 	gfarm_error_t (*inode_load)(void *,
 		void (*)(void *, struct gfs_stat *));
 
-	void (*inode_cksum_add)(struct db_inode_cksum_arg *);
-	void (*inode_cksum_modify)(struct db_inode_cksum_arg *);
-	void (*inode_cksum_remove)(struct db_inode_inum_arg *);
+	gfarm_error_t (*inode_cksum_add)(struct db_inode_cksum_arg *);
+	gfarm_error_t (*inode_cksum_modify)(struct db_inode_cksum_arg *);
+	gfarm_error_t (*inode_cksum_remove)(struct db_inode_inum_arg *);
 	gfarm_error_t (*inode_cksum_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *, size_t, char *));
 
-	void (*filecopy_add)(struct db_filecopy_arg *);
-	void (*filecopy_remove)(struct db_filecopy_arg *);
+	gfarm_error_t (*filecopy_add)(struct db_filecopy_arg *);
+	gfarm_error_t (*filecopy_remove)(struct db_filecopy_arg *);
 	gfarm_error_t (*filecopy_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *));
 
-	void (*deadfilecopy_add)(struct db_deadfilecopy_arg *);
-	void (*deadfilecopy_remove)(struct db_deadfilecopy_arg *);
+	gfarm_error_t (*deadfilecopy_add)(struct db_deadfilecopy_arg *);
+	gfarm_error_t (*deadfilecopy_remove)(struct db_deadfilecopy_arg *);
 	gfarm_error_t (*deadfilecopy_load)(void *,
 		void (*)(void *, gfarm_ino_t, gfarm_uint64_t, char *));
 
-	void (*direntry_add)(struct db_direntry_arg *);
-	void (*direntry_remove)(struct db_direntry_arg *);
+	gfarm_error_t (*direntry_add)(struct db_direntry_arg *);
+	gfarm_error_t (*direntry_remove)(struct db_direntry_arg *);
 	gfarm_error_t (*direntry_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *, int, gfarm_ino_t));
 
-	void (*symlink_add)(struct db_symlink_arg *);
-	void (*symlink_remove)(struct db_inode_inum_arg *);
+	gfarm_error_t (*symlink_add)(struct db_symlink_arg *);
+	gfarm_error_t (*symlink_remove)(struct db_inode_inum_arg *);
 	gfarm_error_t (*symlink_load)(void *,
 		void (*)(void *, gfarm_ino_t, char *));
 
 	gfarm_error_t (*xattr_add)(struct db_xattr_arg *);
 	gfarm_error_t (*xattr_modify)(struct db_xattr_arg *);
 	gfarm_error_t (*xattr_remove)(struct db_xattr_arg *);
+	gfarm_error_t (*xattr_removeall)(struct db_xattr_arg *);
 	gfarm_error_t (*xattr_get)(struct db_xattr_arg *);
-	gfarm_error_t (*xattr_list)(struct db_xattr_arg *);
 	gfarm_error_t (*xattr_load)(void *,
-			void (*)(void *, struct xattr_info *));
+		void (*)(void *, struct xattr_info *));
 	gfarm_error_t (*xmlattr_find)(struct db_xmlattr_find_arg *);
 };
