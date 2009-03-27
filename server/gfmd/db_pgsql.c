@@ -1175,7 +1175,7 @@ static gfarm_error_t
 gfarm_pgsql_group_add(struct gfarm_group_info *info)
 {
 	const char *paramValues[1];
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if (gfarm_pgsql_begin_with_retry("pgsql_group_add")) {
 
@@ -1206,7 +1206,7 @@ static gfarm_error_t
 gfarm_pgsql_group_modify(struct db_group_modify_arg *arg)
 {
 	struct gfarm_group_info *info = &arg->gi;
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	if (gfarm_pgsql_begin_with_retry("pgsql_group_modify")) {
 
