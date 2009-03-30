@@ -378,6 +378,40 @@ GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_thread_pool_size</token> <parameter>スレッド数</parameter></term>
+<listitem>
+<para>メタデータサーバ gfmd のスレッドプールのスレッド数を指定します。
+メタデータサーバノードのコア数くらいに設定すると効果的です。
+デフォルト値は16です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+        metadb_server_thread_pool_size 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_job_queue_length</token> <parameter>キュー長</parameter></term>
+<listitem>
+<para>メタデータサーバ gfmd のジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数くらいに設定すると効果的です。
+デフォルト値は160です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+        metadb_server_job_queue_length 160
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_heartbeat_interval</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>メタデータサーバ gfmd が各ファイルシステムサーバ gfsd
@@ -946,6 +980,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
@@ -995,6 +1031,10 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
+	&lt;metadb_server_thread_pool_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_thread_pool_size" &lt;number&gt;
+	&lt;metadb_server_job_queue_length_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_job_queue_length" &lt;number&gt;
 	&lt;metadb_server_heartbeat_interval_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_heartbeat_interval" &lt;number&gt;
 	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;

@@ -336,6 +336,8 @@ static int schedule_write_local_priority = MISC_DEFAULT;
 gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 int gfarm_metadb_stack_size = MISC_DEFAULT;
+int gfarm_metadb_thread_pool_size = MISC_DEFAULT;
+int gfarm_metadb_job_queue_length = MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
 
@@ -1135,6 +1137,10 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_stack_size);
+	} else if (strcmp(s, o = "metadb_server_thread_pool_size") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_thread_pool_size);
+	} else if (strcmp(s, o = "metadb_server_job_queue_length") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_job_queue_length);
 	} else if (strcmp(s, o = "metadb_server_heartbeat_interval") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_heartbeat_interval);
 	} else if (strcmp(s, o = "record_atime") == 0) {
@@ -1236,6 +1242,12 @@ gfarm_config_set_default_misc(void)
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
 	if (gfarm_metadb_stack_size == MISC_DEFAULT)
 		gfarm_metadb_stack_size = GFARM_METADB_STACK_SIZE_DEFAULT;
+	if (gfarm_metadb_thread_pool_size == MISC_DEFAULT)
+		gfarm_metadb_thread_pool_size =
+		    GFARM_METADB_THREAD_POOL_SIZE_DEFAULT;
+	if (gfarm_metadb_job_queue_length == MISC_DEFAULT)
+		gfarm_metadb_job_queue_length =
+		    GFARM_METADB_JOB_QUEUE_LENGTH_DEFAULT;
 	if (gfarm_metadb_heartbeat_interval == MISC_DEFAULT)
 		gfarm_metadb_heartbeat_interval =
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;

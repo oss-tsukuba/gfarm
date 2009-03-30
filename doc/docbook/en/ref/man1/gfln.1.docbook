@@ -1,0 +1,61 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfln.1'>
+
+<refentryinfo><date>19 Mar 2009</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfln</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfln</refname>
+<refpurpose>create a hardlink or a symbolic link</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfln</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'>target</arg>
+    <arg choice='plain'>link_name</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfln</command> creates a hardlink
+<parameter>link_name</parameter> linked to
+<parameter>target</parameter>.  When the -s option is specified, it
+creates a symbolic link.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>Creates a symbolic link.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+</refentry>

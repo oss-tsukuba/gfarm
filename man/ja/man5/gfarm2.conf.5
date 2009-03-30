@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "13 March 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 March 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -252,6 +252,32 @@ sharedsecret利用時には、この指定は単に無視されます。
 
 .nf
         metadb_server_stack_size 262144
+.fi
+.TP
+\fBmetadb_server_thread_pool_size \fIスレッド数\fB\fR
+メタデータサーバ gfmd のスレッドプールのスレッド数を指定します。
+メタデータサーバノードのコア数くらいに設定すると効果的です。
+デフォルト値は16です。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+        metadb_server_thread_pool_size 16
+.fi
+.TP
+\fBmetadb_server_job_queue_length \fIキュー長\fB\fR
+メタデータサーバ gfmd のジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数くらいに設定すると効果的です。
+デフォルト値は160です。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+        metadb_server_job_queue_length 160
 .fi
 .TP
 \fBmetadb_server_heartbeat_interval \fI秒数\fB\fR
@@ -593,6 +619,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
 		\~\~<metadb_server_stack_size_statement> |
+		\~\~<metadb_server_thread_pool_size_statement> |
+		\~\~<metadb_server_job_queue_length_statement> |
 		\~\~<metadb_server_heartbeat_interval_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
@@ -635,6 +663,10 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_name" <cred_name>
 	<metadb_server_stack_size_statement> ::=
 		\~\~"metadb_server_stack_size" <number>
+	<metadb_server_thread_pool_size_statement> ::=
+		\~\~"metadb_server_thread_pool_size" <number>
+	<metadb_server_job_queue_length_statement> ::=
+		\~\~"metadb_server_job_queue_length" <number>
 	<metadb_server_heartbeat_interval_statement> ::=
 		\~\~"metadb_server_heartbeat_interval" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>

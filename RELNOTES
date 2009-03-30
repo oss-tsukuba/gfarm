@@ -1,3 +1,63 @@
+Release note for Gfarm 2.2.0
+============================
+
+[2009.3.26]
+
+New Feature
+* symbolic link support
+* hundreds of clients support by thread pool
+* directory listing speedup by attribute cache
+
+New Command
+* gfstatus - display Gfarm configuration status
+* gfln - create a hard link or a symbolic link
+
+New Admin Command
+* config-gfarm-update - update the backend database.
+  'config-gfarm-update --update-symlink' updates the backend database
+  to manage symbolic links.  Note that the postgresql backend is only
+  supported for now.
+
+New API
+* gfs_symlink, gfs_readlink - symbolic link support
+* gfs_lstat
+
+New configuration in gfmd.conf
+* metadb_server_stack_size directive to specify a stack size of
+  threads
+* metadb_server_thread_pool_size directive to specify the maximum
+  number of threads in a thread pool
+* metadb_server_job_queue_length directive to specify the length of a
+  job request queue
+* metadb_server_heartbeat_interval directive to specify the interval
+  of heartbeat to each gfsd
+
+Documentation
+* manual pages -  gfchgrp(1), gfchmod(1), gfchown(1), gfgroup(1),
+  gfhost(1), gfln(1), gfls(1), gfmv(1), gfstatus(1), gfuser(1).
+* manual pages in HTML
+
+Updated feature
+* gfls - accomodate attribute caching and support display regarding
+  symlinks and hardlinks
+* gfchmod - display more user friendly error message
+* gfmd - support hundreds of clients by introducing a thread pool
+* gfmd - authorize peers concurrently by making network related
+  functions MT safe
+* gfmd - schedule the local host only when it has enough disk space
+* gfsd - support gfmd reconnection at the start up
+* (GSI) allow to delegate a limited proxy
+* (GSI) disable GSS_C_NT_USER_NAME (spool_server_cred_type user) by
+  default since it is not supported by Globus GSI
+
+Bug fix
+* libgfarm - fix missing intialization of a pointer
+* gfmd - fix race condition
+* gfsd - fix -c and -cc options to check invalid files not only
+  invalid file replicas
+* gfsd - terminate the master process when the back channel process dies
+* (GSI) use distinguished name of delegated credential
+
 Release note for Gfarm 2.1.1
 ============================
 

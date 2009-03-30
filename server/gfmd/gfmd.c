@@ -577,10 +577,6 @@ peer_authorize(struct peer *peer)
 			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
-	/*
-	 * XXX gfarm_authorize should be called in a detached thread
-	 * for a client not a thread for the main loop.
-	 */
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
 	    hostname, &addr,
 	    &id_type, &username, &auth_method);

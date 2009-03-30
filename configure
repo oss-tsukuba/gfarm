@@ -24538,7 +24538,7 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-                                                                                          ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gftool/gfdump/gfdump.postgresql package/solaris/gfmd package/solaris/gfsd"
+                                                                                                    ac_config_files="$ac_config_files Makefile makes/config.mk makes/install-doc ${ns_makefiles} gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd gftool/config-gfarm/config-gfarm-update gftool/gfdump/gfdump.postgresql package/solaris/gfmd package/solaris/gfsd"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -25071,6 +25071,7 @@ do
   "${ns_makefiles}" ) CONFIG_FILES="$CONFIG_FILES ${ns_makefiles}" ;;
   "gftool/config-gfarm/config-gfarm" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfarm" ;;
   "gftool/config-gfarm/config-gfsd" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfsd" ;;
+  "gftool/config-gfarm/config-gfarm-update" ) CONFIG_FILES="$CONFIG_FILES gftool/config-gfarm/config-gfarm-update" ;;
   "gftool/gfdump/gfdump.postgresql" ) CONFIG_FILES="$CONFIG_FILES gftool/gfdump/gfdump.postgresql" ;;
   "package/solaris/gfmd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfmd" ;;
   "package/solaris/gfsd" ) CONFIG_FILES="$CONFIG_FILES package/solaris/gfsd" ;;

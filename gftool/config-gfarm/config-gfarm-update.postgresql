@@ -1,0 +1,93 @@
+getvalue_postgresql() {
+	KEY=$1
+	if [ X"$KEY" != X ]; then
+		value=`egrep "^$KEY " $GFMD_CONF | awk '{ print $2 }'`
+	else
+		value=
+	fi
+	echo $value
+}
+
+# $LINE is appended to $FILE only if $LINE is not included in $FILE
+update_file_postgresql()
+{
+	FILE="$1"
+	LINE="$2"
+
+	if [ ! -f $FILE ]; then
+		echo $LINE > $FILE
+	elif ! grep "^$LINE$" $FILE > /dev/null; then
+		echo $LINE >> $FILE
+	fi
+}
+
+update_postprocess_postgresql()
+{
+	rv=0
+	PGPASS=$HOME/.pgpass
+	if [ ! -f $PGPASS ]; then
+		if ! touch $PGPASS; then
+			echo "$PGPASS: cannot create" >&2
+			rv=1
+		elif ! chmod 0600 $PGPASS; then
+			echo "$PGPASS: cannot change mode" >&2
+			rv=1
+		fi
+	fi
+	[ $rv = 0 ] || return $rv
+	# disable path expansion
+	set -f
+	update_file_postgresql $PGPASS "$BACKEND_HOSTNAME:$BACKEND_PORT:$DB_NAME:$BACKEND_USER:$password"
+	update_file_postgresql $PGPASS "localhost:$BACKEND_PORT:$DB_NAME:$BACKEND_ADMIN_USER:$admin_password"
+	return $rv
+}
+
+update_first_set_param_postgresql()
+{
+	: ${BACKEND_HOSTNAME:=`getvalue_postgresql postgresql_server_host`}
+	: ${BACKEND_PORT=`getvalue_postgresql postgresql_server_port`}
+	: ${DB_NAME:=`getvalue_postgresql postgresql_dbname`}
+	: ${BACKEND_USER:=`getvalue_postgresql postgresql_user`}
+	: ${password:=`getvalue_postgresql postgresql_password | awk -F\" '{ print $2 }'`}
+}
+
+update_last_set_param_postgresql()
+{
+	: ${admin_password:=`cat $BACKEND_DATA_DIR/admin_password`}
+}
+
+update_sanity_postgresql()
+{
+	rv=0
+	if [ X"$BACKEND_HOSTNAME" = X -o X"$BACKEND_PORT" = X \
+		-o X"$DB_NAME" = X -o X"$BACKEND_USER" = X -o X"$password" = X ]
+	then
+		echo "ERROR: postgresql backend is not configured" >&2
+		rv=1
+	fi
+	if [ X"$admin_password" = X ]
+	then
+		echo "ERROR: password for postgresql administrator cannot be read" >&2
+		rv=1
+	fi
+	return $rv
+}
+
+update_symlink_postgresql()
+{
+	cat <<EOF | $PGSQL_BINDIR/psql -p $BACKEND_PORT $DB_NAME $BACKEND_ADMIN_USER
+CREATE TABLE Symlink (
+	inumber		INT8		PRIMARY KEY,
+	sourcePath	VARCHAR(1024)	NOT NULL
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON Symlink TO $BACKEND_USER;
+EOF
+}
+
+access_db_postgresql()
+{
+	OPTIONS="$*"
+
+	$PGSQL_BINDIR/psql -p $BACKEND_PORT $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
+}
