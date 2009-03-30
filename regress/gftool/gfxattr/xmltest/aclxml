@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ACL>
+	<Readable>
+		<Role>
+			<name>admin</name>
+			<name>root</name>
+			<name>gfdev</name>
+		</Role>
+		<Member>
+			<name>gfdev</name>
+			<name>root</name>
+			<name>admin</name>
+		</Member>
+	</Readable>
+	<Writable>
+		<Role>
+			<name>Admin</name>
+			<name>root</name>
+		</Role>
+		<Member>
+			<name>root</name>
+			<name>admin</name>
+		</Member>
+	</Writable>
+</ACL>

@@ -60,7 +60,7 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 		== (XATTR_CREATE|XATTR_REPLACE))
 		return GFARM_ERR_INVALID_ARGUMENT;
 	if (flags & XATTR_REPLACE) {
-		if (inode_xattr_isexists(inode, xmlMode, attrname) == 0)
+		if (!inode_xattr_isexists(inode, xmlMode, attrname))
 			return GFARM_ERR_NO_SUCH_OBJECT;
 	} else {
 		e = inode_xattr_add(inode, xmlMode, attrname);
@@ -137,12 +137,15 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = dbq_waitret(waitctx);
-		giant_lock();
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
+			giant_lock();
 			inode_status_changed(inode);
-		else if (addattr)
+			giant_unlock();
+		} else if (addattr) {
+			giant_lock();
 			inode_xattr_remove(inode, xmlMode, attrname);
-		giant_unlock();
+			giant_unlock();
+		}
 	}
 	db_waitctx_fini(waitctx);
 quit:
@@ -157,7 +160,8 @@ getxattr(int xmlMode, struct inode *inode, char *attrname,
 {
 	if (!isvalid_attrname(attrname))
 		return GFARM_ERR_INVALID_ARGUMENT;
-
+	if (!inode_xattr_isexists(inode, xmlMode, attrname))
+		return GFARM_ERR_NO_SUCH_OBJECT;
 	return db_xattr_get(xmlMode, inode_get_number(inode),
 			attrname, value, size, waitctx);
 }
@@ -324,8 +328,15 @@ quit:
  * These parameters must be smaller than DBQ_SIZE
  * in db_access.c to avoid dbq_enter() waiting.
  */
-#define DEFAULT_INUM_PATH_ARRAY_SIZE 2
-#define MINIMUM_DBQ_FREE_NUM 10
+#define DEFAULT_INUM_PATH_ARRAY_SIZE 100
+#define MINIMUM_DBQ_FREE_NUM 100
+
+/*
+ * We use -1 as unset errno because gfarm_errno_t>=0,
+ * to distinguish whether db access is completed.
+ */
+#define UNSET_GFARM_ERRNO	(-1)
+#define IS_UNSET_ERRNO(errno)	((errno) < 0)
 
 struct inum_path_array;
 struct inum_path_entry {
@@ -333,7 +344,7 @@ struct inum_path_entry {
 	gfarm_ino_t inum;
 	char *path;
 	gfarm_error_t dberr;
-	int nfound;
+	int nattrs;
 	char **attrnames;
 };
 
@@ -342,18 +353,20 @@ struct inum_path_array {
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 
+	char *expr; // target XPath
+
 	// for cookie_path
 	int check_ckpath;
 	int check_ckname;
-	int nckpathnames;
+	int ckpathdepth;
 	char *restartpath;  // "dir1/dir2" etc
 	char *ckpath;       // "dir1\0dir2" etc
 	char **ckpathnames;
 
 	// for found path and attrnames
-	int nvalid;
-	int nfoundsum;
-	int filled;
+	int nentry;
+	int nattrssum;
+	int isfilled;
 	struct inum_path_entry entries[DEFAULT_INUM_PATH_ARRAY_SIZE];
 
 	// for reply
@@ -367,7 +380,7 @@ inum_path_entry_init(struct inum_path_array *array,
 	struct inum_path_entry *entry)
 {
 	entry->array = array;
-	entry->dberr = -1;
+	entry->dberr = UNSET_GFARM_ERRNO;
 }
 
 static void
@@ -376,13 +389,13 @@ inum_path_entry_fini(struct inum_path_entry *entry)
 	int i;
 
 	free(entry->path);
-	for (i = 0; i < entry->nfound; i++)
+	for (i = 0; i < entry->nattrs; i++)
 		free(entry->attrnames[i]);
 	free(entry->attrnames);
 }
 
 static void
-inum_path_array_init(struct inum_path_array *array)
+inum_path_array_init(struct inum_path_array *array, char *expr)
 {
 	int i, err;
 	char *msg = "inum_path_array_init";
@@ -395,16 +408,15 @@ inum_path_array_init(struct inum_path_array *array)
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(array->entries); i++)
 		inum_path_entry_init(array, &array->entries[i]);
+	array->expr = expr;
 }
 
 static struct inum_path_array *
-inum_path_array_alloc(void)
+inum_path_array_alloc(char *expr)
 {
-	struct inum_path_array *array;
-
-	GFARM_MALLOC(array);
+	struct inum_path_array *array = GFARM_MALLOC(array);
 	if (array != NULL)
-		inum_path_array_init(array);
+		inum_path_array_init(array, expr);
 	return array;
 }
 
@@ -413,7 +425,7 @@ inum_path_array_fini(struct inum_path_array *array)
 {
 	int i;
 
-	for (i = 0; i < array->nvalid; i++) {
+	for (i = 0; i < array->nentry; i++) {
 		inum_path_entry_fini(&array->entries[i]);
 	}
 	free(array->restartpath);
@@ -433,11 +445,11 @@ inum_path_array_free(struct inum_path_array *array)
 }
 
 static void
-inum_path_array_reinit(struct inum_path_array *array)
+inum_path_array_reinit(struct inum_path_array *array, char *expr)
 {
 	if (array != NULL) {
 		inum_path_array_fini(array);
-		inum_path_array_init(array);
+		inum_path_array_init(array, expr);
 	}
 }
 
@@ -446,13 +458,13 @@ inum_path_array_addpath(struct inum_path_array *array, gfarm_ino_t inum,
 	char *path)
 {
 	int n = GFARM_ARRAY_LENGTH(array->entries);
-	if (array->nvalid < n) {
-		array->entries[array->nvalid].inum = inum;
-		array->entries[array->nvalid].path = path;
-		array->nvalid++;
-		if (array->nvalid == n)
-			array->filled = 1;
-		return &array->entries[array->nvalid - 1];
+	if (array->nentry < n) {
+		array->entries[array->nentry].inum = inum;
+		array->entries[array->nentry].path = path;
+		array->nentry++;
+		if (array->nentry == n)
+			array->isfilled = 1;
+		return &array->entries[array->nentry - 1];
 	} else
 		return NULL;
 }
@@ -477,18 +489,21 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 	struct xattr_info *vinfo = (struct xattr_info *)in;
 	int i;
 
+	if (nfound <= 0)
+		return GFARM_ERR_NO_ERROR;
+
 	GFARM_MALLOC_ARRAY(entry->attrnames, nfound);
 	if (entry->attrnames == NULL)
 		return GFARM_ERR_NO_MEMORY;
 
 	pthread_mutex_lock(&array->lock);
-	entry->nfound = nfound;
+	entry->nattrs = nfound;
 	for (i = 0; i < nfound; i++) {
 		entry->attrnames[i] = vinfo[i].attrname;
 		vinfo[i].attrname = NULL; // to avoid free by caller
 		vinfo[i].namelen = 0;
 	}
-	array->nfoundsum += nfound;
+	array->nattrssum += nfound;
 	pthread_mutex_unlock(&array->lock);
 
 	return GFARM_ERR_NO_ERROR;
@@ -496,41 +511,41 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 
 static gfarm_error_t
 findxmlattr_dbq_enter(struct inum_path_array *array,
-	struct inum_path_entry *entry, struct gfs_xmlattr_ctx *ctxp)
+	struct inum_path_entry *entry)
 {
 	gfarm_error_t e;
 	int dbbusy = 0;
 
 	if (db_getfreenum() > MINIMUM_DBQ_FREE_NUM) {
-		e = db_xmlattr_find(entry->inum, ctxp->expr,
+		e = db_xmlattr_find(entry->inum, array->expr,
 			inum_path_array_add_attrnames, entry,
 			db_findxmlattr_done, entry);
 	} else {
-		array->filled = 1;
+		array->isfilled = 1;
 		dbbusy = 1;
-		e = (array->nvalid > 1) ? GFARM_ERR_NO_ERROR
+		e = (array->nentry > 1) ? GFARM_ERR_NO_ERROR
 			: GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE;
 	}
 	if ((e != GFARM_ERR_NO_ERROR) || dbbusy) {
 		free(entry->path);
 		entry->path = NULL;
-		array->nvalid--;
+		array->nentry--;
 	}
 	return e;
 }
 
 static gfarm_error_t
 inum_path_array_add(struct inum_path_array *array, gfarm_ino_t inum,
-	char *path, struct gfs_xmlattr_ctx *ctxp)
+	char *path)
 {
 	struct inum_path_entry *entry;
 
 	entry = inum_path_array_addpath(array, inum, path);
 	if (entry != NULL)
-		return findxmlattr_dbq_enter(array, entry, ctxp);
+		return findxmlattr_dbq_enter(array, entry);
 	else {
 		free(path);
-		// path array is enough filled.
+		// path array is enough isfilled.
 		return GFARM_ERR_NO_SPACE;
 	}
 }
@@ -557,7 +572,7 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 	/*
 	 * if restartpath = "dir1/dir2",
 	 *   array->ckpath = "dir1\0dir2";
-	 *   array->nckpathnames = 2;
+	 *   array->ckpathdepth = 2;
 	 *   array->ckpathnames = { "dir1", "dir2" }
 	 */
 	array->restartpath = path;
@@ -568,22 +583,22 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 
 	array->check_ckpath = array->check_ckname = 1;
 	p = array->ckpath;
-	array->nckpathnames = 1;
+	array->ckpathdepth = 1;
 	while ((q = strchr(p, '/')) != NULL) {
-		array->nckpathnames++;
+		array->ckpathdepth++;
 		do {
 			q++;
 		} while (*q == '/');
 		p = q;
 	}
-	GFARM_MALLOC_ARRAY(array->ckpathnames, array->nckpathnames);
+	GFARM_MALLOC_ARRAY(array->ckpathnames, array->ckpathdepth);
 	if (array->ckpathnames == NULL) {
 		free(array->ckpath);
 		array->ckpath = NULL;
 		return GFARM_ERR_NO_MEMORY;
 	}
 	p = array->ckpath;
-	for (i = 0; i < array->nckpathnames; i++) {
+	for (i = 0; i < array->ckpathdepth; i++) {
 		array->ckpathnames[i] = p;
 		q = strchr(p, '/');
 		if (q == NULL)
@@ -598,71 +613,85 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 	return GFARM_ERR_NO_ERROR;
 }
 
+static int
+is_find_target(struct inode *inode, struct user *user)
+{
+	return inode_xattr_has_xmlattrs(inode)
+		&& (inode_access(inode, user, GFS_R_OK)
+			== GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
-findxmlattr_make_patharray(struct inode *inode, struct process *process,
-	int curdepth, char *parent_path,
-	struct inum_path_array *array, struct gfs_xmlattr_ctx *ctxp)
+findxmlattr_add_selfpath(struct inode *inode, struct user *user,
+	char *path, struct inum_path_array *array)
+{
+	if (!is_find_target(inode, user)){
+		return GFARM_ERR_NO_ERROR;
+	}
+	if (array->check_ckpath) {
+		if (strcmp(array->restartpath, path) != 0) {
+			return GFARM_ERR_NO_ERROR;
+		}
+	}
+	return inum_path_array_add(array, inode_get_number(inode), path);
+}
+
+static char *
+make_subpath(char *parent_path, char *name, int namelen)
+{
+	int pathlen;
+	size_t allocsz;
+	int overflow = 0;
+	char *subpath;
+
+	pathlen = (parent_path[0] == '\0') ? 0 : (strlen(parent_path) + 1);
+	allocsz = gfarm_size_add(&overflow, pathlen, namelen);
+	allocsz = gfarm_size_add(&overflow, allocsz, 1);
+	if (!overflow)
+		GFARM_MALLOC_ARRAY(subpath, allocsz);
+	if (overflow || (subpath == NULL))
+		return NULL;
+	if (pathlen > 0)
+		sprintf(subpath, "%s/", parent_path);
+	memcpy(subpath + pathlen, name, namelen);
+	subpath[pathlen + namelen] = '\0';
+	return subpath;
+}
+
+static gfarm_error_t
+findxmlattr_add_subpaths(struct inode *inode, struct user *user,
+	char *path, int curdepth, const int maxdepth,
+	struct inum_path_array *array)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
-	struct user *user = process_get_user(process);
 	struct inode *entry_inode;
-	char *name, *dir_path = NULL;
-	int add_parent = 1, start_mid = 0;
-	int pathlen, namelen, is_dir;
-	size_t allocsz;
-	int overflow;
+	char *name, *subpath = NULL;
+	int namelen, is_dir, is_tgt, skip = 0;
 
-	if (!inode_xattr_has_xmlattrs(inode)
-		|| (inode_access(inode, user, GFS_R_OK) != GFARM_ERR_NO_ERROR)){
-		add_parent = 0;
-		e = GFARM_ERR_NO_ERROR;
-	}
-	if (array->check_ckpath) {
-		start_mid = (curdepth < array->nckpathnames);
-		if (strcmp(array->restartpath, parent_path) == 0)
-			array->check_ckpath = 0;
-		else
-			add_parent = 0;
-	}
-	if (add_parent) {
-		e = inum_path_array_add(array, inode_get_number(inode),
-				parent_path, ctxp);
-		if (e != GFARM_ERR_NO_ERROR)
-			goto quit;
-	}
-
-	if ((curdepth >= ctxp->depth) || array->filled) {
-		e = GFARM_ERR_NO_ERROR;
-		goto quit;
-	}
-
+	if (curdepth >= maxdepth)
+		return GFARM_ERR_NO_ERROR;
 	dir = inode_get_dir(inode);
-	if (dir == NULL) {
-		e = GFARM_ERR_NO_ERROR;
-		goto quit;
-	}
-	if (inode_access(inode, user, GFS_X_OK) != GFARM_ERR_NO_ERROR) {
-		e = GFARM_ERR_NO_ERROR;
-		goto quit;
-	}
+	if (dir == NULL)
+		return GFARM_ERR_NO_ERROR;
+	if (inode_access(inode, user, GFS_X_OK) != GFARM_ERR_NO_ERROR)
+		return GFARM_ERR_NO_ERROR;
 
-	if (start_mid) {
-		char *path = array->ckpathnames[curdepth];
-		if (dir_cursor_lookup(dir, path, strlen(path), &cursor) == 0) {
-			e = GFARM_ERR_NO_ERROR;
-			goto quit;
-		}
+	if ((array->check_ckpath) && (curdepth < array->ckpathdepth)) {
+		char *subpath = array->ckpathnames[curdepth];
+		if (dir_cursor_lookup(dir, subpath, strlen(subpath), &cursor)
+			== 0)
+			return GFARM_ERR_NO_ERROR;
+		if (curdepth == (array->ckpathdepth -1))
+			array->check_ckpath = 0; // it's restart path now
+		else
+			skip = 1; // doesn't find restart path yet
 	} else {
-		if (dir_cursor_set_pos(dir, 0, &cursor) == 0) {
-			e = GFARM_ERR_NO_ERROR;
-			goto quit;
-		}
+		if (dir_cursor_set_pos(dir, 0, &cursor) == 0)
+			return GFARM_ERR_NO_ERROR;
 	}
-
-	pathlen = (parent_path[0] == '\0') ? 0 : (strlen(parent_path) + 1);
 
 	do {
 		entry = dir_cursor_get_entry(dir, &cursor);
@@ -673,40 +702,49 @@ findxmlattr_make_patharray(struct inode *inode, struct process *process,
 			continue;
 		entry_inode = dir_entry_get_inode(entry);
 		is_dir = inode_is_dir(entry_inode);
-		if (!is_dir) {
-			if ((inode_access(entry_inode, user, GFS_R_OK)
-					!= GFARM_ERR_NO_ERROR)
-				|| !inode_xattr_has_xmlattrs(entry_inode)) {
-				continue;
-			}
-		}
-		overflow = 0;
-		allocsz = gfarm_size_add(&overflow, pathlen, namelen);
-		allocsz = gfarm_size_add(&overflow, allocsz, 1);
-		if (!overflow)
-			GFARM_MALLOC_ARRAY(dir_path, allocsz);
-		if (overflow || (dir_path == NULL)) {
+		is_tgt = (!skip && is_find_target(entry_inode, user));
+		skip = 0;
+		if (!is_dir && !is_tgt)
+			continue;
+
+		subpath = make_subpath(path, name, namelen);
+		if (subpath == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			break;
 		}
-		if (pathlen > 0)
-			sprintf(dir_path, "%s/", parent_path);
-		memcpy(dir_path + pathlen, name, namelen);
-		dir_path[pathlen + namelen] = '\0';
-		if (is_dir) {
-			e = findxmlattr_make_patharray(entry_inode, process,
-				curdepth + 1, dir_path, array, ctxp);
-		} else {
+		if (is_tgt)
 			e = inum_path_array_add(array,
-				inode_get_number(entry_inode), dir_path, ctxp);
+					inode_get_number(entry_inode), subpath);
+		if (is_dir && (e == GFARM_ERR_NO_ERROR)) {
+			e = findxmlattr_add_subpaths(entry_inode, user,
+				subpath, curdepth + 1, maxdepth, array);
 		}
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
-	} while ((dir_cursor_next(dir, &cursor) != 0) && !array->filled);
+		if (!is_tgt)
+			free(subpath);
+	} while ((e == GFARM_ERR_NO_ERROR) &&
+		(dir_cursor_next(dir, &cursor) != 0) && !array->isfilled);
 
-quit:
-	if (!add_parent)
-		free(parent_path);
+	return e;
+}
+
+static gfarm_error_t
+findxmlattr_make_patharray(struct inode *inode, struct user *user,
+	const int maxdepth, struct inum_path_array *array)
+{
+	gfarm_error_t e;
+	char *toppath = strdup("");
+
+	if (toppath == NULL)
+		return GFARM_ERR_NO_MEMORY;
+
+	e = findxmlattr_add_selfpath(inode, user, toppath, array);
+
+	if ((e == GFARM_ERR_NO_ERROR) && inode_is_dir(inode)) {
+		e = findxmlattr_add_subpaths(
+			inode, user, toppath, 0, maxdepth, array);
+	}
+	if (array->entries[0].path != toppath)
+		free(toppath);
 	return e;
 }
 
@@ -720,7 +758,7 @@ db_findxmlattr_wait(struct inum_path_array *array, int idx)
 	 * NOTE: must call with array->lock
 	 */
 	entry = &array->entries[idx];
-	while (entry->dberr < 0) {
+	while (IS_UNSET_ERRNO(entry->dberr)) {
 		err = pthread_cond_wait(&array->cond, &array->lock);
 		if (err != 0)
 			gflog_fatal("db_findxmlattr_wait: "
@@ -736,8 +774,9 @@ findxmlattr_reset_replyidx(struct inum_path_array *array,
 	int j;
 
 	entry = &array->entries[array->replyentidx];
-	if (strcmp(entry->path, ctxp->cookie_path) == 0) {
-		for (j = 0; j < entry->nfound; j++) {
+	if (entry->path != NULL &&
+		(strcmp(entry->path, ctxp->cookie_path) == 0)) {
+		for (j = 0; j < entry->nattrs; j++) {
 			array->nreplied++; // already replied, skip it
 			if (strcmp(entry->attrnames[j],
 				ctxp->cookie_attrname) == 0) {
@@ -757,13 +796,13 @@ findxmlattr_get_nextname(struct inum_path_array *array,
 
 	*fpathp = NULL;
 	*attrnamep = NULL;
-	if (array->nreplied >= array->nfoundsum)
+	if (array->nreplied >= array->nattrssum)
 		return;
 
-	jinit = array->replynameidx;
-	for (i = array->replyentidx; i < array->nvalid; i++) {
+	j = jinit = array->replynameidx;
+	for (i = array->replyentidx; i < array->nentry; i++) {
 		entry = &array->entries[i];
-		for (j = jinit; j < entry->nfound; j++) {
+		for (j = jinit; j < entry->nattrs; j++) {
 			*fpathp = entry->path;
 			*attrnamep = entry->attrnames[j];
 			array->nreplied++;
@@ -786,14 +825,14 @@ findxmlattr_dbq_wait_all(struct inum_path_array *array,
 		return;
 
 	pthread_mutex_lock(&array->lock);
-	for (i = 0; i < array->nvalid; i++) {
+	for (i = 0; i < array->nentry; i++) {
 		db_findxmlattr_wait(array, i);
 	}
 	pthread_mutex_unlock(&array->lock);
 }
 
 static void
-findxmlattr_set_found_entries(struct inum_path_array *array,
+findxmlattr_set_found_attrnames(struct inum_path_array *array,
 	struct gfs_xmlattr_ctx *ctxp)
 {
 	int i, nreply, nremain;
@@ -804,7 +843,7 @@ findxmlattr_set_found_entries(struct inum_path_array *array,
 		array->check_ckname = 0;
 	}
 
-	nremain = array->nfoundsum - array->nreplied;
+	nremain = array->nattrssum - array->nreplied;
 	nreply = (nremain >= ctxp->nalloc)
 		? ctxp->nalloc : nremain;
 	for (i = 0; i < nreply; i++) {
@@ -814,8 +853,8 @@ findxmlattr_set_found_entries(struct inum_path_array *array,
 	}
 
 	ctxp->nvalid = nreply;
-	ctxp->eof = ((array->filled == 0)
-			&& (array->nfoundsum == array->nreplied));
+	ctxp->eof = ((array->isfilled == 0)
+			&& (array->nattrssum == array->nreplied));
 }
 
 static gfarm_error_t
@@ -824,29 +863,28 @@ findxmlxattr_restart(struct peer *peer, struct inode *inode,
 {
 	gfarm_error_t e;
 	struct process *process = peer_get_process(peer);
-	char *restartpath, *p;
+	struct user *user = process_get_user(process);
+	char *restartpath;
 
-	if (array->nvalid == 0)
+	if (array->nentry == 0)
 		return GFARM_ERR_NO_ERROR;
 
-	restartpath = strdup(array->entries[array->nvalid-1].path);
+	restartpath = strdup(array->entries[array->nentry-1].path);
 	if (restartpath == NULL)
 		return GFARM_ERR_NO_MEMORY;
-	inum_path_array_reinit(array);
+	inum_path_array_reinit(array, ctxp->expr);
 	e = findxmlattr_set_restart_path(array, restartpath);
 	if (e != GFARM_ERR_NO_ERROR)
 		return e;
-	if ((p = strdup("")) == NULL)
-		return GFARM_ERR_NO_MEMORY;
 
 	giant_lock();
-	e = findxmlattr_make_patharray(inode, process, 0,
-		p, array, ctxp);
+	e = findxmlattr_make_patharray(inode, user,
+		ctxp->depth, array);
 	giant_unlock();
 
 	findxmlattr_dbq_wait_all(array, ctxp);
 	if (e == GFARM_ERR_NO_ERROR) {
-		findxmlattr_set_found_entries(array, ctxp);
+		findxmlattr_set_found_attrnames(array, ctxp);
 	}
 
 	return e;
@@ -868,21 +906,18 @@ findxmlattr(struct peer *peer, struct inode *inode,
 {
 	gfarm_error_t e;
 	struct process *process = peer_get_process(peer);
+	struct user *user = process_get_user(process);
 	struct inum_path_array *array = NULL;
-	char *p;
 
 	array = peer_findxmlattrctx_get(peer);
 	if (array == NULL) {
 		if (ctx_has_cookie(ctxp)) {
 			e = GFARM_ERR_INVALID_ARGUMENT;
-		} else if ((array = inum_path_array_alloc()) == NULL)
+		} else if ((array = inum_path_array_alloc(ctxp->expr)) == NULL)
 			e = GFARM_ERR_NO_MEMORY;
-		else if ((p = strdup("")) == NULL) {
-			inum_path_array_free(array);
-			e = GFARM_ERR_NO_MEMORY;
-		} else {
-			e = findxmlattr_make_patharray(inode, process, 0,
-				p, array, ctxp);
+		else {
+			e = findxmlattr_make_patharray(inode, user,
+				ctxp->depth, array);
 		}
 		giant_unlock();
 		// We must wait always even if above function was failed.
@@ -897,10 +932,10 @@ findxmlattr(struct peer *peer, struct inode *inode,
 
 	*ap = array;
 	if (e == GFARM_ERR_NO_ERROR)
-		findxmlattr_set_found_entries(array, ctxp);
+		findxmlattr_set_found_attrnames(array, ctxp);
 
 	while ((e == GFARM_ERR_NO_ERROR) &&
-			(array->filled) && (ctxp->nvalid == 0)) {
+			array->isfilled && (ctxp->nvalid == 0)) {
 		e = findxmlxattr_restart(peer, inode, array, ctxp);
 	}
 	if ((e == GFARM_ERR_NO_ERROR) && (ctxp->eof == 0)) {

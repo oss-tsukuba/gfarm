@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<log>
+	<change>
+		<auther>
+			<name>gfdev</name>
+		</auther>
+		<date>
+			<year>2009</year>
+			<month>2</month>
+			<day>5</day>
+			<hour>13</hour>
+			<min>24</min>
+			<sec>23</sec>
+		</date>
+	</change>
+	<diff>None</diff>
+</log>

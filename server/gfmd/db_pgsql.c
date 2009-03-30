@@ -2389,7 +2389,7 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 	 * Array size > 0 if some attrvalue matched XPath expr, 0 if not.
 	 */
 	command = "SELECT attrname FROM XmlAttr "
-		"WHERE inumber = $1 AND array_upper(xpath($2, attrvalue),1) > 0"
+		"WHERE inumber = $1 AND array_upper(xpath($2,attrvalue),1) > 0 "
 		"ORDER BY attrname";
 	diag = "pgsql_xmlattr_find";
 

@@ -24,3 +24,8 @@ If test succeeded, you will see
 If failed, test exits at failed command.
 run ./gftool/gfxattr/gfxattr-fini.sh
 for finalize (remove some files etc). 
+
+
+o gffindxmlattr-large-test.sh
+	cd gfarm/regress/gfxattr
+	sh ./gffindxmlattr-large-test.sh

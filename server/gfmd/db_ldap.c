@@ -2590,14 +2590,14 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 		goto quit;
 	}
 
-	GFARM_MALLOC_ARRAY(query_type, 64 + INT64STRLEN + strlen(arg->attrname));
+	GFARM_MALLOC_ARRAY(query_type, 64+INT64STRLEN+strlen(arg->attrname));
 	if (query_type == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto quit;
 	}
 
 	sprintf(query_type,
-		"(&(objectclass=XAttr)(inumber=%" GFARM_PRId64 ")(attrname=%s))",
+		"(&(objectclass=XAttr)(inumber=%"GFARM_PRId64")(attrname=%s))",
 		arg->inum, arg->attrname);
 	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
 			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
