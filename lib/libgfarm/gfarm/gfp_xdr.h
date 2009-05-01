@@ -66,6 +66,9 @@ gfarm_error_t gfp_xdr_vrpc_request(struct gfp_xdr *, gfarm_int32_t,
 gfarm_error_t gfp_xdr_vrpc_result(struct gfp_xdr *, int,
 	gfarm_int32_t *,
 	const char **, va_list *);
+gfarm_error_t gfp_xdr_vrpc_with_reconnection(struct gfp_xdr *,
+	int, gfarm_int32_t, gfarm_int32_t *, const char **, va_list *,
+	gfarm_error_t (*)(void *), void *);
 gfarm_error_t gfp_xdr_vrpc(struct gfp_xdr *,
 	int, gfarm_int32_t, gfarm_int32_t *, const char **, va_list *);
 

@@ -715,7 +715,7 @@ gfarm_paraccess_connect_finish(void *closure)
 		return;
 	}
 	gfarm_paraccess_callback(a->pa, a, &a->load, gfs_server, e);
-	gfs_client_disconnect(gfs_server);
+	gfs_client_connection_free(gfs_server);
 }
 
 static void

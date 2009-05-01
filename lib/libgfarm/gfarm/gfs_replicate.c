@@ -18,17 +18,26 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 {
 	struct gfs_connection *server;
 	gfarm_error_t e;
+	int retry = 0;
 
 	e = gfs_client_connection_acquire_by_host(dsthost, dstport, &server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (gfs_client_pid(server) == 0)
-		e = gfarm_client_process_set(server);
-	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfs_client_replica_add_from(
-			server, srchost, srcport, gfs_pio_fileno(gf));
-		gfs_client_connection_free(server);
+	for (;;) {
+		if (gfs_client_pid(server) == 0)
+			e = gfarm_client_process_set(server);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = gfs_client_replica_add_from(
+				server, srchost, srcport, gfs_pio_fileno(gf));
+			gfs_client_connection_free(server);
+			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
+			    gfs_client_connection_acquire_by_host(dsthost,
+			    dstport, &server) == GFARM_ERR_NO_ERROR)
+				continue;
+		}
+
+		break;
 	}
 	return (e);
 }

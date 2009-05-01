@@ -354,7 +354,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 {
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
-	int is_local_host;
+	int retry = 0;
 	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -366,20 +366,30 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	gfs_profile(gfarm_gettimerval(&t2));
-	if (gfs_client_pid(gfs_server) == 0)
-		e = gfarm_client_process_set(gfs_server);
+	for (;;) {
+		gfs_profile(gfarm_gettimerval(&t2));
 
-	gfs_profile(gfarm_gettimerval(&t3));
-	if (e == GFARM_ERR_NO_ERROR) {
-		is_local_host = gfs_client_connection_is_local(gfs_server);
-		if (is_local_host)
-			e = gfs_pio_open_local_section(gf, gfs_server);
-		else
-			e = gfs_pio_open_remote_section(gf, gfs_server);
+		e = GFARM_ERR_NO_ERROR;
+		if (gfs_client_pid(gfs_server) == 0)
+			e = gfarm_client_process_set(gfs_server);
+
+		gfs_profile(gfarm_gettimerval(&t3));
+		if (e == GFARM_ERR_NO_ERROR) {
+			if (gfs_client_connection_is_local(gfs_server))
+				e = gfs_pio_open_local_section(gf, gfs_server);
+			else
+				e = gfs_pio_open_remote_section(gf,gfs_server);
+		}
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfs_client_connection_free(gfs_server);
+			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
+			    gfs_client_connection_acquire_by_host(hostname,
+			    port, &gfs_server) == GFARM_ERR_NO_ERROR)
+				continue;
+		}
+
+		break;
 	}
-	if (e != GFARM_ERR_NO_ERROR)
-		gfs_client_connection_free(gfs_server);
 	gfs_profile(gfarm_gettimerval(&t4));
 
 	gfs_profile(

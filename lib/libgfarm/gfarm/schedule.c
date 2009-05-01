@@ -905,6 +905,9 @@ search_idle_connect_callback(void *closure)
 	e = gfs_client_connect_result_multiplexed(c->protocol_state,
 	    &c->gfs_server);
 	if (e == GFARM_ERR_NO_ERROR) {
+		/* The following may fail, if it's already in the cache */
+		gfs_client_connection_enter_cache(c->gfs_server);
+
 		c->h->flags |= HOST_STATE_FLAG_AUTH_SUCCEED;
 #if 0 /* We always see disk free space */
 		if (s->mode == GFARM_SCHEDULE_SEARCH_BY_LOADAVG_AND_AUTH) {
