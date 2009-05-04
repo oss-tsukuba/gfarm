@@ -1,3 +1,9 @@
+/*
+ * $Id$
+ */
+
+#include <gfarm/gfarm_config.h>
+
 #include <pthread.h>
 
 #include <assert.h>
@@ -5,10 +11,15 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
+#ifdef HAVE_EPOLL_WAIT
+#include <sys/epoll.h>
+#else
 #include <poll.h>
+#endif
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -66,7 +77,17 @@ static struct peer *peer_table;
 static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+#ifdef HAVE_EPOLL_WAIT
+#define EPOLL_MAX_BACKING_STORE_HINT	32000
+
+struct {
+	int fd;
+	struct epoll_event *events;
+	int nevents;
+} peer_epoll;
+#else
 static struct pollfd *peer_poll_fds;
+#endif
 static void *(*peer_protocol_handler)(void *);
 
 static void
@@ -87,16 +108,49 @@ peer_table_unlock(void)
 		gflog_warning("peer_table_unlock: %s", strerror(err));
 }
 
+#ifdef HAVE_EPOLL_WAIT
+static void
+peer_epoll_ctl_fd(int op, int fd)
+{
+	struct epoll_event ev;
+
+	ev.data.fd = fd;
+	ev.events = EPOLLIN | EPOLLET;
+	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1)
+		gflog_fatal("epoll_ctl: %s\n", strerror(errno));
+}
+
+static void
+peer_epoll_add_fd(int fd)
+{
+	peer_epoll_ctl_fd(EPOLL_CTL_ADD, fd);
+}
+
+static void
+peer_epoll_del_fd(int fd)
+{
+	peer_epoll_ctl_fd(EPOLL_CTL_DEL, fd);
+}
+#endif
+
 #define PEER_WATCH_INTERVAL 10 /* 10ms: XXX FIXME */
 
 void *
 peer_watcher(void *arg)
 {
 	struct peer *peer;
-	struct pollfd *fd;
 	int i, rv, skip, nfds;
+#ifdef HAVE_EPOLL_WAIT
+	int efd;
+#else
+	struct pollfd *fd;
+#endif
 
 	for (;;) {
+#ifdef HAVE_EPOLL_WAIT
+		rv = nfds = epoll_wait(peer_epoll.fd, peer_epoll.events,
+				peer_epoll.nevents, PEER_WATCH_INTERVAL);
+#else
 		nfds = 0;
 		peer_table_lock();
 		for (i = 0; i < peer_table_size; i++) {
@@ -112,17 +166,28 @@ peer_watcher(void *arg)
 		peer_table_unlock();
 
 		rv = poll(peer_poll_fds, nfds, PEER_WATCH_INTERVAL);
+#endif
 		if (rv == -1 && errno == EINTR)
 			continue;
 		if (rv == -1)
+#ifdef HAVE_EPOLL_WAIT
+			gflog_fatal("peer_watcher: epoll_wait: %s\n",
+			    strerror(errno));
+#else
 			gflog_fatal("peer_watcher: poll: %s\n",
 			    strerror(errno));
+#endif
 
 		for (i = 0; i < nfds; i++) {
+#ifdef HAVE_EPOLL_WAIT
+			efd = peer_epoll.events[i].data.fd;
+			peer = &peer_table[efd];
+#else
 			if (rv == 0)
 				break; /* all processed */
 			fd = &peer_poll_fds[i];
 			peer = &peer_table[fd->fd];
+#endif
 			giant_lock();
 			peer_table_lock();
 			skip = peer->conn == NULL ||
@@ -131,12 +196,19 @@ peer_watcher(void *arg)
 			giant_unlock();
 			if (skip)
 				continue;
+#ifdef HAVE_EPOLL_WAIT
+			if (peer_epoll.events[i].events & EPOLLIN) {
+#else
 			if (fd->revents & POLLIN) {
+#endif
 				/*
 				 * This peer is not running at this point,
 				 * so it's ok to modify peer->control.
 				 */
 				peer->control &= ~PEER_WATCHING;
+#ifdef HAVE_EPOLL_WAIT
+				peer_epoll_del_fd(efd);
+#endif
 				/*
 				 * We shouldn't have giant_lock or
 				 * peer_table_lock here.
@@ -177,9 +249,19 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 		peer->u.client.jobs = NULL;
 	}
 
+#ifdef HAVE_EPOLL_WAIT
+	peer_epoll.fd = epoll_create(EPOLL_MAX_BACKING_STORE_HINT);
+	if (peer_epoll.fd == -1)
+		gflog_fatal("epoll_create: %s\n", strerror(errno));
+	GFARM_MALLOC_ARRAY(peer_epoll.events, EPOLL_MAX_BACKING_STORE_HINT);
+	if (peer_epoll.events == NULL)
+		gflog_fatal("peer epoll event table: %s", strerror(ENOMEM));
+	peer_epoll.nevents = EPOLL_MAX_BACKING_STORE_HINT;
+#else
 	GFARM_MALLOC_ARRAY(peer_poll_fds, max_peers);
 	if (peer_poll_fds == NULL)
 		gflog_fatal("peer pollfd table: %s", strerror(ENOMEM));
+#endif
 	peer_protocol_handler = protocol_handler;
 	e = create_detached_thread(peer_watcher, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -337,12 +419,18 @@ peer_shutdown_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+#ifdef HAVE_EPOLL_WAIT
+	close(peer_epoll.fd);
+#endif
 }
 
 void
 peer_watch_access(struct peer *peer)
 {
 	peer->control |= PEER_WATCHING;
+#ifdef HAVE_EPOLL_WAIT
+	peer_epoll_add_fd(peer_get_fd(peer));
+#endif
 }
 
 #if 0
