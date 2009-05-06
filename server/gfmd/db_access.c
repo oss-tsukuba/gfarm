@@ -15,6 +15,7 @@
 
 #include "db_access.h"
 #include "db_ops.h"
+#include "thrsubr.h"
 
 #define ALIGNMENT 8
 #define ALIGN(offset)	(((offset) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
@@ -47,21 +48,12 @@ struct dbq {
 gfarm_error_t
 dbq_init(struct dbq *q)
 {
-	int err;
 	const char msg[] = "dbq_init";
 
-	err = pthread_mutex_init(&q->mutex, NULL);
-	if (err != 0)
-		gflog_fatal("%s: mutex: %s", msg, strerror(err));
-	err = pthread_cond_init(&q->nonempty, NULL);
-	if (err != 0)
-		gflog_fatal("%s: condvar: %s", msg, strerror(err));
-	err = pthread_cond_init(&q->nonfull, NULL);
-	if (err != 0)
-		gflog_fatal("%s: condvar: %s", msg, strerror(err));
-	err = pthread_cond_init(&q->finished, NULL);
-	if (err != 0)
-		gflog_fatal("%s: condvar: %s", msg, strerror(err));
+	mutex_init(&q->mutex, msg, "mutex");
+	cond_init(&q->nonempty, msg, "nonempty");
+	cond_init(&q->nonfull, msg, "nonfull");
+	cond_init(&q->finished, msg, "finished");
 	q->n = q->in = q->out = q->quitting = q->quited = 0;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -69,39 +61,25 @@ dbq_init(struct dbq *q)
 gfarm_error_t
 dbq_wait_to_finish(struct dbq *q)
 {
-	int err;
 	const char msg[] = "dbq_wait_to_finish";
 
-	err = pthread_mutex_lock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
+	mutex_lock(&q->mutex, msg, "mutex");
 	q->quitting = 1;
 	while (!q->quited) {
-		err = pthread_cond_signal(&q->nonempty);
-		if (err != 0)
-			gflog_fatal("%s: nonempty signal: %s",
-			    msg, strerror(err));
-		err = pthread_cond_wait(&q->finished, &q->mutex);
-		if (err != 0)
-			gflog_fatal("%s: condwait finished: %s",
-			    msg, strerror(err));
+		cond_signal(&q->nonempty, msg, "nonempty");
+		cond_wait(&q->finished, &q->mutex, msg, "finished");
 	}
-	err = pthread_mutex_unlock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
+	mutex_unlock(&q->mutex, msg, "mutex");
 	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
 dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 {
-	int err;
 	gfarm_error_t e;
 	const char msg[] = "dbq_enter";
 
-	err = pthread_mutex_lock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
+	mutex_lock(&q->mutex, msg, "mutex");
 	if (q->quitting) {
 		/*
 		 * Because dbq_wait_to_finish() is only called while
@@ -109,17 +87,11 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		 * So, we this shouldn't cause inconsistent metadata.
 		 */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		err = pthread_cond_signal(&q->nonempty);
-		if (err != 0)
-			gflog_fatal("%s: nonempty signal: %s",
-			    msg, strerror(err));
+		cond_signal(&q->nonempty, msg, "nonempty");
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 		while (q->n >= DBQ_SIZE) {
-			err = pthread_cond_wait(&q->nonfull, &q->mutex);
-			if (err != 0)
-				gflog_fatal("%s: condwait nonfull: %s",
-				    msg, strerror(err));
+			cond_wait(&q->nonfull, &q->mutex, msg, "nonfull");
 		}
 		q->entries[q->in].func = func;
 		q->entries[q->in].data = data;
@@ -127,14 +99,9 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		if (q->in >= DBQ_SIZE)
 			q->in = 0;
 		q->n++;
-		err = pthread_cond_signal(&q->nonempty);
-		if (err != 0)
-			gflog_fatal("%s: nonempty signal: %s",
-			    msg, strerror(err));
+		cond_signal(&q->nonempty, msg, "nonempty");
 	}
-	err = pthread_mutex_unlock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
+	mutex_unlock(&q->mutex, msg, "mutex");
 	return (e);
 }
 
@@ -149,7 +116,7 @@ dbq_call_callback(void *a)
 		(*arg->cbfunc)(e, arg->cbdata);
 	}
 	free(arg);
-	return e;
+	return (e);
 }
 
 static gfarm_error_t
@@ -158,10 +125,11 @@ dbq_enter_withcallback(struct dbq *q,
 		dbq_entry_func_callback_t cbfunc, void *cbdata)
 {
 	gfarm_error_t e;
-	struct dbq_callback_arg *arg = GFARM_MALLOC(arg);
+	struct dbq_callback_arg *arg;
 
+	GFARM_MALLOC(arg);
 	if (arg == NULL)
-		return GFARM_ERR_NO_MEMORY;
+		return (GFARM_ERR_NO_MEMORY);
 	arg->func = func;
 	arg->data = data;
 	arg->cbfunc = cbfunc;
@@ -169,7 +137,7 @@ dbq_enter_withcallback(struct dbq *q,
 	e = dbq_enter(q, dbq_call_callback, arg);
 	if (e != GFARM_ERR_NO_ERROR)
 		free(arg);
-	return e;
+	return (e);
 }
 
 #define UNINITIALIZED_GFARM_ERROR	(-1)
@@ -177,14 +145,11 @@ dbq_enter_withcallback(struct dbq *q,
 void
 db_waitctx_init(struct db_waitctx *ctx)
 {
-	int err;
-	char *msg = "db_waitctx_init";
+	const char msg[] = "db_waitctx_init";
 
 	if (ctx != NULL) {
-		if ((err = pthread_mutex_init(&ctx->lock, NULL)) != 0)
-			gflog_fatal("%s: mutex: %s", msg, strerror(err));
-		if ((err = pthread_cond_init(&ctx->cond, NULL)) != 0)
-			gflog_fatal("%s: cond: %s", msg, strerror(err));
+		mutex_init(&ctx->lock, msg, "lock");
+		cond_init(&ctx->cond, msg, "cond");
 		ctx->e = UNINITIALIZED_GFARM_ERROR;
 	}
 }
@@ -214,55 +179,43 @@ dbq_done_callback(gfarm_error_t e, void *c)
 gfarm_error_t
 dbq_waitret(struct db_waitctx *ctx)
 {
-	int err;
 	gfarm_error_t e;
+	const char msg[] = "dbq_waitret";
 
 	if (ctx == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_ERROR);
 
-	pthread_mutex_lock(&ctx->lock);
+	mutex_lock(&ctx->lock, msg, "lock");
 	while (ctx->e == UNINITIALIZED_GFARM_ERROR) {
-		err = pthread_cond_wait(&ctx->cond, &ctx->lock);
-		if (err != 0)
-			gflog_fatal("db_xattr_call_op: condwait finished: %s",
-			    strerror(err));
+		cond_wait(&ctx->cond, &ctx->lock, msg, "cond");
 	}
 	e = ctx->e;
-	pthread_mutex_unlock(&ctx->lock);
-	return e;
+	mutex_unlock(&ctx->lock, msg, "lock");
+	return (e);
 }
 
 static gfarm_error_t
 dbq_enter_for_waitret(struct dbq *q,
 	dbq_entry_func_t func, void *data, struct db_waitctx *ctx)
 {
-	return dbq_enter_withcallback(q, func, data,
-			dbq_done_callback, ctx);
+	return (dbq_enter_withcallback(q, func, data,
+			dbq_done_callback, ctx));
 }
 
 gfarm_error_t
 dbq_delete(struct dbq *q, struct dbq_entry *entp)
 {
-	int err;
 	gfarm_error_t e;
 	const char msg[] = "dbq_delete";
 
-	err = pthread_mutex_lock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex lock: %s", msg, strerror(err));
+	mutex_lock(&q->mutex, msg, "mutex");
 	while (q->n <= 0 && !q->quitting) {
-		err = pthread_cond_wait(&q->nonempty, &q->mutex);
-		if (err != 0)
-			gflog_fatal("%s: condwait nonempty: %s",
-			    msg, strerror(err));
+		cond_wait(&q->nonempty, &q->mutex, msg, "nonempty");
 	}
 	if (q->n <= 0) {
 		assert(q->quitting);
 		q->quited = 1;
-		err = pthread_cond_signal(&q->finished);
-		if (err != 0)
-			gflog_fatal("%s: finished signal: %s",
-			    msg, strerror(err));
+		cond_signal(&q->finished, msg, "finished");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else { /* (q->n > 0) */
 		e = GFARM_ERR_NO_ERROR;
@@ -270,15 +223,10 @@ dbq_delete(struct dbq *q, struct dbq_entry *entp)
 		if (q->out >= DBQ_SIZE)
 			q->out = 0;
 		if (q->n-- >= DBQ_SIZE) {
-			err = pthread_cond_signal(&q->nonfull);
-			if (err != 0)
-				gflog_fatal("%s: nonfull signal: %s",
-				    msg, strerror(err));
+			cond_signal(&q->nonfull, msg, "nonfull");
 		}
 	}
-	err = pthread_mutex_unlock(&q->mutex);
-	if (err != 0)
-		gflog_fatal("%s: mutex unlock: %s", msg, strerror(err));
+	mutex_unlock(&q->mutex, msg, "mutex");
 	return (e);
 }
 
@@ -294,7 +242,7 @@ db_getfreenum(void)
 	pthread_mutex_lock(&q->mutex);
 	freenum = (DBQ_SIZE - q->n);
 	pthread_mutex_unlock(&q->mutex);
-	return freenum;
+	return (freenum);
 }
 
 static const struct db_ops *ops = &db_none_ops;
@@ -730,10 +678,15 @@ db_inode_mode_modify(gfarm_ino_t inum, gfarm_mode_t mode)
 gfarm_error_t
 db_inode_user_modify(gfarm_ino_t inum, const char *user)
 {
-	struct db_inode_string_modify_arg *arg =
-	    malloc(sizeof(*arg) + strlen(user) + 1);
+	struct db_inode_string_modify_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg),
+		gfarm_size_add(&overflow, strlen(user), 1));
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->string = (char *)arg + sizeof(*arg);
 
@@ -746,10 +699,15 @@ db_inode_user_modify(gfarm_ino_t inum, const char *user)
 gfarm_error_t
 db_inode_group_modify(gfarm_ino_t inum, const char *group)
 {
-	struct db_inode_string_modify_arg *arg =
-	    malloc(sizeof(*arg) + strlen(group) + 1);
+	struct db_inode_string_modify_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg),
+		gfarm_size_add(&overflow, strlen(group), 1));
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	arg->string = (char *)arg + sizeof(*arg);
 
@@ -886,9 +844,14 @@ struct db_filecopy_arg *
 db_filecopy_arg_alloc(gfarm_ino_t inum, const char *hostname)
 {
 	size_t hsize = strlen(hostname) + 1;
-	struct db_filecopy_arg *arg = malloc(sizeof(*arg) + hsize);
+	struct db_filecopy_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg), hsize);
+	if (&overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (NULL);
 	arg->hostname = (char *)arg + sizeof(*arg);
 
@@ -932,9 +895,14 @@ db_deadfilecopy_arg_alloc(gfarm_ino_t inum, gfarm_uint64_t igen,
 	const char *hostname)
 {
 	size_t hsize = strlen(hostname) + 1;
-	struct db_deadfilecopy_arg *arg = malloc(sizeof(*arg) + hsize);
+	struct db_deadfilecopy_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg), hsize);
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (NULL);
 	arg->hostname = (char *)arg + sizeof(*arg);
 
@@ -983,9 +951,14 @@ db_direntry_arg_alloc(
 	gfarm_ino_t dir_inum, const char *entry_name, int entry_len,
 	gfarm_ino_t entry_inum)
 {
-	struct db_direntry_arg *arg = malloc(sizeof(*arg) + entry_len + 1);
+	struct db_direntry_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg), entry_len + 1);
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (NULL);
 	arg->entry_name = (char *)arg + sizeof(*arg);
 
@@ -1032,10 +1005,14 @@ db_direntry_load(void *closure,
 struct db_symlink_arg *
 db_symlink_arg_alloc(gfarm_ino_t inum, const char *source_path)
 {
-	struct db_symlink_arg *arg =
-	    malloc(sizeof(*arg) + strlen(source_path) + 1);
+	struct db_symlink_arg *arg;
+	size_t sz;
+	int overflow = 0;
 
-	if (arg == NULL)
+	sz = gfarm_size_add(&overflow, sizeof(*arg), strlen(source_path) + 1);
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
 		return (NULL);
 	arg->source_path = (char *)arg + sizeof(*arg);
 
@@ -1077,24 +1054,26 @@ static struct db_xattr_arg *
 db_xattr_arg_alloc(char *attrname, size_t valsize)
 {
 	struct db_xattr_arg *arg;
-	size_t size = sizeof(*arg) + valsize;
+	size_t size;
+	int overflow = 0;
 
+	size = gfarm_size_add(&overflow, sizeof(*arg), valsize);
 	if (attrname != NULL) {
-		size += strlen(attrname) + 1;
+		size = gfarm_size_add(&overflow, size, strlen(attrname) + 1);
 	}
-
-	arg = malloc(size);
-	if (arg == NULL)
-		return NULL;
+	if (!overflow)
+		arg = malloc(size);
+	if (overflow || arg == NULL)
+		return (NULL);
 
 	memset(arg, 0, sizeof(*arg));
-	// NOTE: we allow valsize== 0 as valid xattr_add/modify
-	arg->value = (void *)(arg + 1);
+	/* NOTE: we allow valsize == 0 as a valid xattr_add/modify argment */
+	arg->value = arg + 1;
 	if (attrname != NULL) {
-		arg->attrname = (((char *)(arg + 1)) + valsize);
+		arg->attrname = (char *)(arg + 1) + valsize;
 		strcpy(arg->attrname, attrname);
 	}
-	return arg;
+	return (arg);
 }
 
 gfarm_error_t
@@ -1105,7 +1084,7 @@ db_xattr_add(int xmlMode, gfarm_ino_t inum, char *attrname,
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, size);
 
 	if (arg == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_ERROR);
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
 	memcpy(arg->value, value, size);
@@ -1121,7 +1100,7 @@ db_xattr_add(int xmlMode, gfarm_ino_t inum, char *attrname,
 	} else
 		e = dbq_enter(&dbq,
 			(dbq_entry_func_t)ops->xattr_add, arg);
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -1132,7 +1111,7 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, size);
 
 	if (arg == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_ERROR);
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
 	memcpy(arg->value, value, size);
@@ -1143,7 +1122,7 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 	else
 		e = dbq_enter(&dbq,
 			(dbq_entry_func_t)ops->xattr_modify, arg);
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -1152,11 +1131,11 @@ db_xattr_remove(int xmlMode, gfarm_ino_t inum, char *attrname)
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, 0);
 
 	if (arg == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_ERROR);
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
-	return dbq_enter(&dbq,
-		(dbq_entry_func_t)ops->xattr_remove, arg);
+	return (dbq_enter(&dbq,
+		(dbq_entry_func_t)ops->xattr_remove, arg));
 }
 
 gfarm_error_t
@@ -1165,13 +1144,13 @@ db_xattr_removeall(int xmlMode, gfarm_ino_t inum)
 	if (ops->xattr_removeall != NULL) {
 		struct db_xattr_arg *arg = db_xattr_arg_alloc(NULL, 0);
 		if (arg == NULL)
-			return GFARM_ERR_NO_ERROR;
+			return (GFARM_ERR_NO_ERROR);
 		arg->xmlMode = xmlMode;
 		arg->inum = inum;
-		return dbq_enter(&dbq,
-			(dbq_entry_func_t)ops->xattr_removeall, arg);
+		return (dbq_enter(&dbq,
+			(dbq_entry_func_t)ops->xattr_removeall, arg));
 	} else
-		return GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 gfarm_error_t
@@ -1180,13 +1159,13 @@ db_xattr_get(int xmlMode, gfarm_ino_t inum, char *attrname,
 {
 	struct db_xattr_arg *arg = db_xattr_arg_alloc(attrname, 0);
 	if (arg == NULL)
-		return GFARM_ERR_NO_ERROR;
+		return (GFARM_ERR_NO_ERROR);
 	arg->xmlMode = xmlMode;
 	arg->inum = inum;
 	arg->valuep = valuep;
 	arg->sizep = sizep;
-	return dbq_enter_for_waitret(&dbq,
-		(dbq_entry_func_t)ops->xattr_get, arg, waitctx);
+	return (dbq_enter_for_waitret(&dbq,
+		(dbq_entry_func_t)ops->xattr_get, arg, waitctx));
 }
 
 gfarm_error_t
@@ -1205,13 +1184,12 @@ db_xmlattr_find(gfarm_ino_t inum, const char *expr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL)
-		return GFARM_ERR_NO_ERROR;
-
+		return (GFARM_ERR_NO_ERROR);
 	arg->inum = inum;
 	arg->expr = expr;
 	arg->foundcallback = foundcallback;
 	arg->foundcbdata = foundcbdata;
-	return dbq_enter_withcallback(&dbq,
+	return (dbq_enter_withcallback(&dbq,
 		(dbq_entry_func_t)ops->xmlattr_find, arg,
-		(dbq_entry_func_callback_t)callback, cbdata);
+		(dbq_entry_func_callback_t)callback, cbdata));
 }
