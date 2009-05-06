@@ -78,8 +78,6 @@ static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifdef HAVE_EPOLL_WAIT
-#define EPOLL_MAX_BACKING_STORE_HINT	32000
-
 struct {
 	int fd;
 	struct epoll_event *events;
@@ -250,13 +248,13 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 	}
 
 #ifdef HAVE_EPOLL_WAIT
-	peer_epoll.fd = epoll_create(EPOLL_MAX_BACKING_STORE_HINT);
+	peer_epoll.fd = epoll_create(max_peers);
 	if (peer_epoll.fd == -1)
 		gflog_fatal("epoll_create: %s\n", strerror(errno));
-	GFARM_MALLOC_ARRAY(peer_epoll.events, EPOLL_MAX_BACKING_STORE_HINT);
+	GFARM_MALLOC_ARRAY(peer_epoll.events, max_peers);
 	if (peer_epoll.events == NULL)
 		gflog_fatal("peer epoll event table: %s", strerror(ENOMEM));
-	peer_epoll.nevents = EPOLL_MAX_BACKING_STORE_HINT;
+	peer_epoll.nevents = max_peers;
 #else
 	GFARM_MALLOC_ARRAY(peer_poll_fds, max_peers);
 	if (peer_poll_fds == NULL)
