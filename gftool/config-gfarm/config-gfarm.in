@@ -146,7 +146,7 @@ usage()
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
-		echo >&2 "	no such option with backend=$BACKEND_TYPE"
+		echo >&2 "	no option for backend=$BACKEND_TYPE"
 	echo >&2 "  available metadata_backend: $backend_candidates (default is $backend_default)"
 
 	exit 1
