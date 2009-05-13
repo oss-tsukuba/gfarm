@@ -1,6 +1,7 @@
 usage_postgresql()
 {
-	return 1 # backend-specific option doesn't exist
+	echo >&2 "	[-X]"
+	return 0 # backend-specific option(s) exist(s)
 }
 
 sanity_postgresql()
@@ -65,9 +66,9 @@ parse_argument_postgresql()
 #		SCHEMA_VERSION=$2
 #		argshift=1
 #		true;;
-	  -X) [ $# -ge 2 ] || usage
-		SUPPORT_XML_TYPE=$2
-		argshift=1
+	  -X)
+		SUPPORT_XML_TYPE=yes
+		argshift=0
 		true;;
 	  *)	false;;
 	esac
@@ -111,7 +112,6 @@ set_last_defaults_postgresql()
 {
 #	: ${SCHEMA_VERSION:=2}
 	: ${DB_NAME:="gfarm"}
-	: ${SUPPORT_XML_TYPE:="no"}
 
 	if [ -w / ]; then # is root?
 		case `uname` in
@@ -440,8 +440,7 @@ _EOF_
 		print "	ON Host, HostAliases, "
 		print "    GfarmUser, GfarmGroup, GfarmGroupAssignment, "
 		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry, "
-		print "    Symlink"
-		print "    , XAttr $XMLATTR_TABLENAME"
+		print "    Symlink, XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
 #		if ($SCHEMA_VERSION > 1) {
 #			print "GRANT SELECT, UPDATE"

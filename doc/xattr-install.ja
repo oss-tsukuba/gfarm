@@ -31,8 +31,8 @@ Gfarm自体はlibxmlなどの外部ライブラリを利用しない。
 
 (2.4) XML拡張属性をサポートしたgfmdのセットアップ
 初期設定を行う config-gfarm において、通常のオプションに加え、
--X yes オプションを指定する（デフォルトは-X no）。
-config-gfarm -t -X yesの結果として
+-X オプションを指定する。
+config-gfarm -t -X の結果として
 	postgresql XML supported  [-X]: yes
 が表示されたことを確認の上、通常通り、-tなしでconfig-gfarmを行い、
 postmaster, gfmdの起動を確認する。
