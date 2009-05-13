@@ -15,6 +15,7 @@ SCRIPTS = config-gfarm config-gfarm-update config-gfsd \
 DATA =	$(srcdir)/config-gfarm.postgresql \
 	$(srcdir)/config-gfarm.ldap \
 	$(srcdir)/config-gfarm-update.postgresql \
+	$(srcdir)/config-gfarm-update.ldap \
 	$(srcdir)/gfarm.conf-postgresql.in \
 	$(srcdir)/gfarm.conf-ldap.in \
 	$(srcdir)/gfarm.conf.in \

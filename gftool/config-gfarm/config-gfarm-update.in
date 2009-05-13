@@ -10,25 +10,22 @@ prefix="@prefix@"
 sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
 
-# backend initialization
-BACKEND_TYPE=postgresql
-backend_all="postgresql"
-backend_candidates="postgresql"
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+search_path="$PATH"
 
-# load backend-dependent functions.
-for i in $backend_all
-do
-  . $config_dir/config-gfarm.$i
-  . $config_dir/config-gfarm-update.$i
-done
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
 
-usage()
+status=1
+admin_password=/tmp/ap$$
+password=/tmp/up$$
+rm -f $password $admin_password
+trap 'rm -f $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
+
+getvalue()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t]"
-	echo >&2 "	[--update_symlink] [-P backend_prefix]"
-	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
-	echo >&2 "	[-f backend_file]"
-	exit 1
+	$awk '$1 == "'"$1"'" { print $2 }' $GFMD_CONF
 }
 
 ABORT()
@@ -38,14 +35,31 @@ ABORT()
 	exit 1
 }
 
+update_usage_()
+{
+	return 1
+}
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--help] [-t] [--update]"
+	echo >&2 "	[-N]			- do not restart the server processes"
+	echo >&2 "	[--prefix prefix]	- prefix directory specified in config-gfarm"
+	echo >&2 "	[-P backend_prefix]	- installation prefix of the backend program"
+	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
+	echo >&2 "	[-f backend_file]"
+	update_usage_$BACKEND_TYPE ||
+		echo >&2 "	no option for backend=$BACKEND_TYPE"
+	exit 1
+}
+
+update_sanity_()
+{
+	return 0
+}
+
 update_sanity()
 {
-	if [ ! -f $GFMD_CONF ]
-	then
-		echo "$GFMD_CONF: no such file" >&2
-		return 1
-	fi
-
 	update_sanity_$BACKEND_TYPE
 }
 
@@ -55,16 +69,16 @@ display_backend_data_dir_param()
 {
     echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
 }
+
 display_backend_log_dir_param()
 {
-    echo     "metadata log directory    [-L]: $BACKEND_LOG_DIR"
+    return 0
 }
 
 display_params()
 {
     echo     "prefix [--prefix]: $CONFIG_PREFIX"
     echo     "metadata backend    [-b]: $BACKEND_TYPE"
-    echo     "(available backend: $backend_candidates)"
 
     display_backend_params_$BACKEND_TYPE
     display_backend_port_params_$BACKEND_TYPE
@@ -107,11 +121,19 @@ while [ $# -gt 0 ] ; do
 	  --help)
 		usage
 		;;
+	  -N)
+		START_SERVICE=false
+		;;
 	  -t)
 		DISPLAY_PARAMS=true
 		;;
-	  --update-symlink) 
-		UPDATE_SYMLINK=true
+	  --update|--update-symlink) 
+		UPDATE=true
+		;;
+
+	# XXX postgresql backend dependent option
+	  -X)
+		SUPPORT_XML_TYPE=yes
 		;;
 	  *)
 		usage
@@ -120,27 +142,50 @@ while [ $# -gt 0 ] ; do
 	shift
 done
 
-#
-# default values
-#
-
-PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
-export PATH
-search_path="$PATH"
-
-set_default_backend_perfix_$BACKEND_TYPE
 : ${CONFIG_PREFIX:=}
-set_first_defaults_$BACKEND_TYPE
-
-: ${DISPLAY_PARAMS:=false}
-: ${UPDATE_SYMLINK:=false}
 if [ X"$CONFIG_PREFIX" != X ]; then
 	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+
+# sanity check
+if [ ! -f ${GFMD_CONF} ]; then
+	ABORT "${PROGNAME}: cannot find ${GFMD_CONF}, --prefix option required"
+fi
+
+# determine a backend database type
+if grep '^[ 	]*postgresql_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=postgresql
+elif grep '^[ 	]*ldap_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=ldap
+else
+	echo >&2 "${PROGNAME}: cannot determine the backend type"
+	exit 1
+fi
+
+# load backend-dependent functions
+. $config_dir/config-gfarm.$BACKEND_TYPE
+. $config_dir/config-gfarm-update.$BACKEND_TYPE
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_perfix_$BACKEND_TYPE
+
+#
+# default values
+#
+
+set_first_defaults_$BACKEND_TYPE
+
+: ${DISPLAY_PARAMS:=false}
+: ${START_SERVICE:=true}
+: ${UPDATE:=false}
 
 update_first_set_param_$BACKEND_TYPE
 set_last_defaults_$BACKEND_TYPE
@@ -154,8 +199,11 @@ $DISPLAY_PARAMS && display_params
 update_postprocess_$BACKEND_TYPE || ABORT "aborted"
 
 #
-if $UPDATE_SYMLINK; then
-	update_symlink_$BACKEND_TYPE
+if $UPDATE; then
+	update_$BACKEND_TYPE
 else
-	access_db_postgresql $BACKEND_OPTIONS
+	update_access_db_$BACKEND_TYPE $BACKEND_OPTIONS
 fi
+
+status=0
+# trap action automatically returns this $status as exit code
