@@ -5,6 +5,9 @@
 ${DEBUG:="false"} && set -xu
 PROGNAME=`basename $0`
 
+# LANG may cause trouble to access database
+unset LANG
+
 # Gfarm installation directory
 prefix="@prefix@"
 sysconfdir="@sysconfdir@"
@@ -44,9 +47,9 @@ usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [-t] [--update]"
 	echo >&2 "	[-N]			- do not restart the server processes"
-	echo >&2 "	[--prefix prefix]	- prefix directory specified in config-gfarm"
+	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
 	echo >&2 "	[-P backend_prefix]	- installation prefix of the backend program"
-	echo >&2 "	[-l metadata_directory] [-p metadata_backend_port]"
+	echo >&2 "	[-l metadata_directory]	- backend database data directory"
 	echo >&2 "	[-f backend_file]"
 	update_usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
@@ -101,17 +104,11 @@ while [ $# -gt 0 ] ; do
 	  --prefix) shift; [ $# -ge 1 ] || usage
 		CONFIG_PREFIX=$1
 		;;
-	  -U) shift; [ $# -ge 1 ] || usage
-		BACKEND_ADMIN_USER=$1
-		;;
 	  -P) shift; [ $# -ge 1 ] || usage
 		BACKEND_PREFIX=$1
 		;;
 	  -l) shift; [ $# -ge 1 ] || usage
 		BACKEND_DATA_DIR=$1
-		;;
-	  -p) shift; [ $# -ge 1 ] || usage
-		BACKEND_PORT=$1
 		;;
 	  -f) shift; [ $# -ge 1 ] || usage
 		BACKEND_OPTIONS="$BACKEND_OPTIONS -f $1"
@@ -176,12 +173,14 @@ fi
 #
 
 set_default_backend_perfix_$BACKEND_TYPE
+. $config_dir/config-gfarm.sysdep
 
 #
 # default values
 #
 
 set_first_defaults_$BACKEND_TYPE
+sysdep_defaults
 
 : ${DISPLAY_PARAMS:=false}
 : ${START_SERVICE:=true}
