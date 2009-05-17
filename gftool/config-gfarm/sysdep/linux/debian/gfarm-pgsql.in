@@ -29,22 +29,55 @@ export PGDATA
 test -f $CTL || exit 0
 test -d $PGDATA || exit 0
 
+call_pg_ctl()
+{
+	$RUN -c "$CTL $OPTIONS $*"
+}
+
+checkstatus()
+{
+	call_pg_ctl status
+	RETVAL=$?
+	[ $RETVAL -eq 1 ] && RETVAL=3
+	return $RETVAL
+}
+
+RETVAL=0
+
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $FILE"
-	$RUN -c "$CTL $OPTIONS start"
+	checkstatus
+	RETVAL=$?
+	if [ $RETVAL -ne 0 ]; then
+		call_pg_ctl start
+		RETVAL=$?
+	fi
 	echo "."
 	;;
   stop)
 	echo -n "Stopping gfarm server: $FILE"
-	$RUN -c "$CTL $OPTIONS stop"
+	checkstatus
+	RETVAL=$?
+	if [ $RETVAL -eq 3 ]; then
+		RETVAL=0
+	else
+		call_pg_ctl stop
+		RETVAL=$?
+	fi
 	echo "."
 	;;
-  status|restart)
-	$RUN -c "$CTL $OPTIONS $1"
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  restart)
+	call_pg_ctl restart
+	RETVAL=$?
 	;;
   force-reload)
-	$RUN -c "$CTL $OPTIONS reload"
+	call_pg_ctl reload
+	RETVAL=$?
 	;;
   *)
 	echo "Usage: /etc/init.d/$FILE {start|stop|restart}"
@@ -52,4 +85,4 @@ case "$1" in
 	;;
 esac
 
-exit 0
+exit $RETVAL
