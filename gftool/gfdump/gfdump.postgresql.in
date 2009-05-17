@@ -1,115 +1,218 @@
 #!/bin/sh
+#
+# $Id$
 
-PROG=gfdump.postgresql
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
 
-usage() {
-	echo "usage: $PROG -d [ -f filename ]"
-	echo "       $PROG -r [ -f filename ]"
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+config_dir="@datadir@/gfarm/config"
+
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+search_path="$PATH"
+
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
+status=1
+admin_password=/tmp/ap$$
+password=/tmp/up$$
+rm -f $password $admin_password
+trap 'rm -f $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
+
+getvalue()
+{
+	$awk '$1 == "'"$1"'" { print $2 }' $GFMD_CONF
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
 	exit 1
 }
 
-# environment variable
-#	CONFIG_DIR	configuration directory	[$PREFIX/etc]
-#	DATA_DIR	data directory of pgsql	[$PREFIX/var/gfarm-pgsql]
+usage() {
+	echo >&2 "usage: $PROGNAME -d [options]"
+	echo >&2 "       $PROGNAME -r [options]"
+	echo >&2 " options:"
+	echo >&2 "	[-t]			- display configuration, do not execute anything"
+	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
+	echo >&2 "	[-f filename]		- file to dump or to restore"
+	echo >&2 "	[-l metadata_directory]	- backend database data directory"
+	exit 1
+}
 
-prefix=@prefix@
-: ${CONFIG_DIR:="@sysconfdir@"}
-: ${DATA_DIR:="@localstatedir@/gfarm-pgsql"}
-GFMDCONF=$CONFIG_DIR/gfmd.conf
+# most $BACKEND_TYPE calls the followings
+# from display_backend_params_$BACKEND_TYPE, but some may not.
+display_backend_data_dir_param()
+{
+    echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
+}
+
+display_backend_log_dir_param()
+{
+    return 0
+}
+
+display_params()
+{
+    echo     "prefix [--prefix]: $CONFIG_PREFIX"
+    echo     "metadata backend    [-b]: $BACKEND_TYPE"
+
+    display_backend_params_$BACKEND_TYPE
+    display_backend_port_params_$BACKEND_TYPE
+    display_backend_optional_params_$BACKEND_TYPE
+    exit 0
+}
+
+# default value
 DUMPF=db.out
 MODE=UNKNOWN
+
+#
+# parse arguments
+#
 
 while [ $# -gt 0 ]
 do
 	case $1 in
-	    -d) MODE=DUMP ;;
-	    -r) MODE=RESTORE ;;
-	    -f) shift; DUMPF=$1 ;;
-	    -*) echo "unknown option: $1"
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		BACKEND_PREFIX=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		BACKEND_DATA_DIR=$1
+		;;
+	  -f) shift; [ $# -ge 1 ] || usage
+		DUMPF=$1
+		;;
+
+	# control options
+	  --help)
+		usage
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
+		;;
+	  -d)
+		MODE=DUMP
+		;;
+	  -r)
+		MODE=RESTORE
+		;;
+	  -*) echo "unknown option: $1"
 		usage ;;
-	    *) usage ;;
+	  *) usage ;;
 	esac
 	shift
 done
 [ X"$MODE" = XUNKNOWN ] && usage
 
-getvalue() {
-	KEY=$1
-	if [ X"$KEY" != X ]; then
-		value=`egrep "^$KEY " $GFMDCONF | awk '{ print $2 }'`
-	else
-		value=
-	fi
-	echo $value
-}
-
-err() {
-	echo >&2 $*
-	exit 1
-}
-
-HOST=`getvalue postgresql_server_host`
-PORT=`getvalue postgresql_server_port`
-DBNAME=`getvalue postgresql_dbname`
-USER=`getvalue postgresql_user`
-PASSWD=`getvalue postgresql_password | awk -F\" '{ print $2 }'`
-
-[ X"$HOST" = X -o X"$PORT" = X -o X"$DBNAME" = X \
-	-o X"$USER" = X -o X"$PASSWD" = X ] &&
-	err "postgresql backend is not configured"
-
-# XXX - from config-gfarm.postgresql
-if [ -w / ]; then # is root?
-	case `uname` in
-	*BSD|DragonFly)
-		: ${ADMIN_USER:="pgsql"};;
-	*)	: ${ADMIN_USER:="postgres"};;
-	esac
+: ${CONFIG_PREFIX:=}
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
 else
-	: ${ADMIN_USER:="`whoami`"}
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-ADMIN_PASSWD=`cat $DATA_DIR/admin_password`
+: ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
-if [ X$MODE = XRESTORE ]; then
-	[ X"$ADMIN_PASSWD" = X ] &&
-		err "password for postgresql administrator cannot be read"
-	[ ! -f "$DUMPF" ] &&
-		err "$DUMPF: database dump file not exist"
+# sanity check
+if [ ! -f ${GFMD_CONF} ]; then
+	ABORT "${PROGNAME}: cannot find ${GFMD_CONF}, --prefix option required"
 fi
 
-# $LINE is appended to $FILE only if $LINE is not included in $FILE
-update_file()
-{
-	FILE="$1"
-	LINE="$2"
-
-	if [ ! -f $FILE ]; then
-		echo $LINE > $FILE
-	elif ! grep "^$LINE$" $FILE > /dev/null; then
-		echo $LINE >> $FILE
-	fi
-}
-
-# update $HOME/.pgpass
-PGPASS=$HOME/.pgpass
-if [ ! -f $PGPASS ]; then
-	touch $PGPASS || err "$PGPASS: cannot create"
-	chmod 0600 $PGPASS || err "$PGPASS: cannot change mode"
+# determine a backend database type
+if grep '^[ 	]*postgresql_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=postgresql
+elif grep '^[ 	]*ldap_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=ldap
+else
+	echo >&2 "${PROGNAME}: cannot determine the backend type"
+	exit 1
 fi
-# disable path expansion
-set -f
-update_file $PGPASS "$HOST:$PORT:$DBNAME:$USER:$PASSWD"
-update_file $PGPASS "localhost:$PORT:$DBNAME:$ADMIN_USER:$ADMIN_PASSWD"
 
-case $MODE in
-    DUMP)
-	pg_dump -F c -h $HOST -p $PORT -U $USER -f $DUMPF $DBNAME ||
-		err "pg_dump fails" ;;
-    RESTORE)
-	$CONFIG_DIR/init.d/gfmd stop
-	pg_restore -c -p $PORT -U $ADMIN_USER -d $DBNAME $DUMPF > /dev/null ||
-		err "pg_restore fails"
-	$CONFIG_DIR/init.d/gfmd start ;;
-    *)
-	usage ;;
+# load backend-dependent functions
+. $config_dir/config-gfarm.$BACKEND_TYPE
+. $config_dir/config-gfarm-update.$BACKEND_TYPE
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_perfix_$BACKEND_TYPE
+. $config_dir/config-gfarm.sysdep
+
+#
+# default values
+#
+
+set_first_defaults_$BACKEND_TYPE
+sysdep_defaults
+
+: ${DISPLAY_PARAMS:=false}
+
+update_first_set_param_$BACKEND_TYPE
+set_last_defaults_$BACKEND_TYPE
+update_last_set_param_$BACKEND_TYPE
+
+# -t option; display parameters
+$DISPLAY_PARAMS && display_params
+
+case ${BACKEND_TYPE} in
+
+###
+### postgresql
+###
+
+postgresql)
+	BACKEND_HOST="`getvalue postgresql_server_host`"
+	BACKEND_USER_PASSWD="`getvalue postgresql_password | tr -d '"'`"
+	pg_dump=${PGSQL_BINDIR}/pg_dump
+	dropdb=${PGSQL_BINDIR}/dropdb
+	createdb=${PGSQL_BINDIR}/createdb
+
+	case $MODE in
+	    DUMP)
+		update_pgpass_postgresql ${BACKEND_HOST} ${BACKEND_PORT} "${DB_NAME}" "${BACKEND_USER}" "${BACKEND_USER_PASSWD}" || ABORT "aborted"
+		$pg_dump -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER -f $DUMPF $DB_NAME ||
+			ABORT "pg_dump fails"
+		;;
+	    RESTORE)
+		[ ! -f "$DUMPF" ] &&
+			ABORT "$DUMPF: database dump file not exist"
+		update_pgpass_postgresql localhost ${BACKEND_PORT} "*" "${BACKEND_ADMIN_USER}" "${BACKEND_ADMIN_PASSWD}" || ABORT "aborted"
+		service_ctl gfmd stop
+		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
+		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
+		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
+			ABORT "restore fails"
+		service_ctl gfmd start
+		;;
+	    *)
+		usage
+		;;
+	esac
+	;;
+
+###
+### LDAP
+###
+
+ldap)
+	echo >&2 "${PROGNAME}: ldap backend is not supported yet"
+	;;
+
+*)
+	echo >&2 "${PROGNAME}: internal error - backend \"${BACKEND_TYPE}\""
+	exit 1;;
 esac
