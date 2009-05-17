@@ -52,6 +52,8 @@ call_daemon()
 start()
 {
 	echo -n "Starting $FILE: "
+	checkstatus
+	[ $? -eq 0 ] && return 0
 
 	# increase the maximum number of open file descriptors
 	ulimit -n 16384 2> /dev/null
@@ -65,6 +67,9 @@ start()
 stop()
 {
 	echo -n "Stopping $FILE: "
+	checkstatus
+	[ $? -eq 3 ] && return 0
+
 	if [ -f "$PIDFILE" ]; then
 		PID=`cat "$PIDFILE"`
 		kill -TERM $PID && success || failure

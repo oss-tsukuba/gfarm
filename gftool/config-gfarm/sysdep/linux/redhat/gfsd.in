@@ -42,6 +42,9 @@ call_daemon()
 start()
 {
 	echo -n "Starting $FILE:"
+	checkstatus
+	[ $? -eq 0 ] && return 0
+
 	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
@@ -52,6 +55,9 @@ start()
 stop()
 {
 	echo -n "Stopping $FILE:"
+	checkstatus
+	[ $? -eq 3 ] && return 0
+
 	if [ -f "$PIDFILE" ]; then
 		kill -TERM `cat "$PIDFILE"` && success || failure
 		RETVAL=$?
