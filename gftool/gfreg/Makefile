@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/gfptool.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/timer.h $(GFARMLIB_SRCDIR)/gfs_profile.h $(GFARMLIB_SRCDIR)/metadb_server.h
+$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/timer.h $(GFARMLIB_SRCDIR)/gfs_profile.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/config.h

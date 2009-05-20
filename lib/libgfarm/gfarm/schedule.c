@@ -312,11 +312,13 @@ search_idle_network_list_init(void)
 	int port;
 
 	assert(search_idle_network_list == NULL);
-	e = gfarm_host_get_canonical_self_name(&self_name, &port);
+	e = gfarm_host_get_canonical_self_name(gfarm_metadb_server,
+	    &self_name, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
 	/* XXX FIXME this port number (0) is dummy */
-	e = gfarm_host_address_get(self_name, 0, &peer_addr, NULL);
+	e = gfarm_host_address_get(gfarm_metadb_server, self_name, 0,
+	    &peer_addr, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	GFARM_MALLOC(net);
@@ -505,7 +507,8 @@ search_idle_host_state_add_host_sched_info(struct gfarm_host_sched_info *info,
 			h->flags &= ~HOST_STATE_FLAG_ADDR_AVAIL;
 			h->net = NULL;
 		}
-		e = gfarm_host_address_get(hostname, h->port, &h->addr, NULL);
+		e = gfarm_host_address_get(gfarm_metadb_server,
+		    hostname, h->port, &h->addr, NULL);
 		gettimeofday(&h->addr_cache_time, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);

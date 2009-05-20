@@ -25,13 +25,15 @@ POSTGRESQL_OBJS = db_pgsql.lo
 SRCS =	gfmd.c thrsubr.c thrpool.c \
 	subr.c id_table.c user.c group.c host.c peer.c \
 	process.c job.c \
-	dir.c inode.c fs.c back_channel.c metadb_if.c \
-	db_access.c db_common.c db_none.c xattr.c $(ldap_srcs) $(postgresql_srcs)
+	dir.c inode.c fs.c back_channel.c \
+	db_access.c db_common.c db_none.c xattr.c \
+	$(ldap_srcs) $(postgresql_srcs)
 OBJS =	gfmd.o thrsubr.o thrpool.o \
 	subr.o id_table.o user.o group.o host.o peer.o \
 	process.o job.o \
-	dir.o inode.o fs.o back_channel.o metadb_if.o \
-	db_access.o db_common.o db_none.o xattr.o $(ldap_objs) $(postgresql_objs)
+	dir.o inode.o fs.o back_channel.o \
+	db_access.o db_common.o db_none.o xattr.o \
+	$(ldap_objs) $(postgresql_objs)
 
 all: $(PROGRAM)
 

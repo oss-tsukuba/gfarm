@@ -39,6 +39,7 @@
 static gfarm_error_t
 gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname, char *auth_method_name,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	int fd = gfp_xdr_fd(conn);
@@ -271,10 +272,11 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 gfarm_error_t
 gfarm_authorize_gsi(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi",
+	    switch_to, service_tag, hostname, "gsi", verify_user,
 	    peer_typep, global_usernamep));
 }
 
@@ -285,10 +287,11 @@ gfarm_authorize_gsi(struct gfp_xdr *conn,
 gfarm_error_t
 gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi_auth",
+	    switch_to, service_tag, hostname, "gsi_auth", verify_user,
 	    peer_typep, global_usernamep);
 
 	if (e == GFARM_ERR_NO_ERROR)

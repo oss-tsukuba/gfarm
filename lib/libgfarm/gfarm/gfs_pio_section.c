@@ -362,7 +362,8 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = gfs_client_connection_acquire_by_host(hostname, port, &gfs_server);
+	e = gfs_client_connection_acquire_by_host(gfarm_metadb_server,
+	    hostname, port, &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -384,8 +385,9 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfs_client_connection_free(gfs_server);
 			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
-			    gfs_client_connection_acquire_by_host(hostname,
-			    port, &gfs_server) == GFARM_ERR_NO_ERROR)
+			    gfs_client_connection_acquire_by_host(
+			    gfarm_metadb_server, hostname, port,
+			    &gfs_server) == GFARM_ERR_NO_ERROR)
 				continue;
 		}
 
@@ -455,12 +457,14 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	gfarm_host_sched_info_free(nhosts, infos);
 
 	/* on-demand replication */
-	if (e == GFARM_ERR_NO_ERROR && !gfarm_host_is_local(host) &&
+	if (e == GFARM_ERR_NO_ERROR &&
+	    !gfarm_host_is_local(gfarm_metadb_server, host) &&
 	    gf_on_demand_replication) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
-			e = gfarm_host_get_canonical_self_name(&host, &port);
+			e = gfarm_host_get_canonical_self_name(
+			    gfarm_metadb_server, &host, &port);
 			host = strdup(host);
 			if (host == NULL)
 				e = GFARM_ERR_NO_MEMORY;
@@ -677,7 +681,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	}
 
-	is_local_host = gfarm_canonical_hostname_is_local(
+	is_local_host = gfarm_canonical_hostname_is_local(gfarm_metadb_server,
 	    vc->canonical_hostname);
 
 	gf->ops = &gfs_pio_view_section_ops;

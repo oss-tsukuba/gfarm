@@ -12,23 +12,27 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <pwd.h>
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
-#include "liberror.h"
+
 #include "gfutil.h"
-#include "gfp_xdr.h"
+
+#include "liberror.h"
 #include "hostspec.h"
-#include "metadb_server.h"
 #include "auth.h"
+#include "gfp_xdr.h"
 
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
-	char *, char *,	enum gfarm_auth_id_type *, char **);
+	char *, char *,	gfarm_error_t (*)(const char *),
+	enum gfarm_auth_id_type *, char **);
 
 gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
-	char *, char *, enum gfarm_auth_id_type *, char **) = {
+	char *, char *, gfarm_error_t (*)(const char *),
+	enum gfarm_auth_id_type *, char **) = {
 	/*
 	 * This table entry should be ordered by enum gfarm_auth_method.
 	 */
@@ -47,6 +51,7 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 static gfarm_error_t
 gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gflog_fatal("gfarm_authorize: authorization assertion failed");
@@ -238,6 +243,7 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn, struct passwd *pwd)
 gfarm_error_t
 gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
@@ -262,7 +268,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
 	} else {
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
-		e = gfarm_metadb_verify_username(global_username);
+		e = (*verify_user)(global_username);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error("(%s@%s) authorize_sharedsecret: "
 			    "the global username isn't registered in gfmd: %s",
@@ -387,6 +393,7 @@ gfarm_error_t
 gfarm_authorize(struct gfp_xdr *conn,
 	int switch_to, char *service_tag,
 	char *hostname, struct sockaddr *addr,
+	gfarm_error_t (*verify_user)(const char *),
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -479,7 +486,8 @@ gfarm_authorize(struct gfp_xdr *conn,
 		}
 
 		e = (*gfarm_authorization_table[method])(conn, switch_to,
-			service_tag, hostname, peer_typep, global_usernamep);
+		    service_tag, hostname, verify_user,
+		    peer_typep, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
 		    e != GFARM_ERR_AUTHENTICATION) {

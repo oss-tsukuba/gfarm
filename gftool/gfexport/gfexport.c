@@ -5,7 +5,8 @@
 
 #include <gfarm/gfarm.h>
 
-#include "metadb_server.h" /* gfarm_host_info_get_by_name_alias */
+#include "host.h"
+#include "config.h"
 
 /* INTERNAL FUNCTION */
 gfarm_error_t gfs_pio_internal_set_view_section(
@@ -106,7 +107,8 @@ get_port(char *host, gfarm_int32_t *portp)
 	gfarm_error_t e;
 	struct gfarm_host_info hinfo;
 
-	e = gfarm_host_info_get_by_name_alias(host, &hinfo);
+	e = gfarm_host_info_get_by_name_alias(gfarm_metadb_server, host,
+	    &hinfo);
 	if (e == GFARM_ERR_NO_ERROR) {
 		*portp = hinfo.port;
 		gfarm_host_info_free(&hinfo);

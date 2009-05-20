@@ -20,7 +20,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	int retry = 0;
 
-	e = gfs_client_connection_acquire_by_host(dsthost, dstport, &server);
+	e = gfs_client_connection_acquire_by_host(gfarm_metadb_server,
+	    dsthost, dstport, &server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -33,8 +34,9 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 				server, srchost, srcport, gfs_pio_fileno(gf));
 			gfs_client_connection_free(server);
 			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
-			    gfs_client_connection_acquire_by_host(dsthost,
-			    dstport, &server) == GFARM_ERR_NO_ERROR)
+			    gfs_client_connection_acquire_by_host(
+			    gfarm_metadb_server, dsthost, dstport,
+			    &server) == GFARM_ERR_NO_ERROR)
 				continue;
 		}
 
@@ -76,7 +78,8 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 	char *self;
 	int port;
 
-	e = gfarm_host_get_canonical_self_name(&self, &port);
+	e = gfarm_host_get_canonical_self_name(gfarm_metadb_server,
+	    &self, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto error;
 	e = gfs_replicate_from_to_internal(gf, srchost, srcport, self, port);

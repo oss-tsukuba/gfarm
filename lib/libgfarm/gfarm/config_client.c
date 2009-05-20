@@ -20,7 +20,6 @@
 #define GFARM_USE_STDIO
 #include "config.h"
 #include "gfm_client.h"
-#include "metadb_server.h" /* XXX FIXME this shouldn't be needed here */
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
@@ -408,7 +407,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 		    gfarm_metadb_server_name, gfarm_metadb_server_port,
 		    gfarm_error_string(e));
 	}
-	gfarm_metadb_set_server(gfarm_metadb_server);
 
 	/* metadb access is required to obtain a global user name by GSI */
 	auth_method = gfm_client_connection_auth_method(gfarm_metadb_server);

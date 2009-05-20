@@ -62,7 +62,8 @@ main(int argc, char *argv[])
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());
-	e = gfarm_host_get_canonical_self_name(&name, &port);
+	e = gfarm_host_get_canonical_self_name(gfarm_metadb_server,
+	    &name, &port);
 	if (e == GFARM_ERR_NO_ERROR)
 		printf("canonical hostname: %s:%d\n", name, port);
 	else

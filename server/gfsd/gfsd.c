@@ -73,7 +73,6 @@
 #include "gfs_client.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
-#include "metadb_server.h"
 
 #include "gfsd_subr.h"
 
@@ -1273,7 +1272,8 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto adding_cancel;
 	}
 
-	e = gfs_client_connection_acquire_by_host(host, port, &server);
+	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
+	    &server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto close;
@@ -2870,7 +2870,7 @@ gfm_client_connect_with_reconnection()
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
-	gfarm_metadb_set_server(gfm_server);
+
 	/*
 	 * If canonical_self_name is specified (by the command-line
 	 * argument), send the hostname to identify myself.  If not
@@ -2883,6 +2883,22 @@ gfm_client_connect_with_reconnection()
 	    != GFARM_ERR_NO_ERROR)
 		fatal("cannot set canonical hostname of this node (%s), "
 		    "died: %s\n", canonical_self_name, gfarm_error_string(e));
+}
+
+static gfarm_error_t
+verify_username(const char *global_user)
+{
+	gfarm_error_t e, e2;
+	struct gfarm_user_info ui;
+
+	e = gfm_client_user_info_get_by_names(gfm_server,
+	    1, &global_user, &e2, &ui);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (e2 != GFARM_ERR_NO_ERROR)
+		return (e2);
+	gfarm_user_info_free(&ui);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -2913,7 +2929,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			if (client_name == NULL)
 				fatal("%s: no memory", addr_string);
 		}
-		e = gfarm_host_get_canonical_name(client_name, &s, &port);
+		e = gfarm_host_get_canonical_name(gfm_server, client_name,
+		    &s, &port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(client_name);
 			client_name = s;
@@ -2942,7 +2959,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 
 	e = gfarm_authorize(client, 0, GFS_SERVICE_TAG,
-	    client_name, client_addr, &peer_type, &username, &auth_method);
+	    client_name, client_addr, verify_username,
+	    &peer_type, &username, &auth_method);
 	/*
 	 * In GSI, username will be a DN, which needs to be mapped to
 	 * a global user name.
@@ -3519,8 +3537,8 @@ main(int argc, char **argv)
 	 * cannot be used because host_get_self_name() may not be registered.
 	 */
 	if (canonical_self_name == NULL &&
-	    (e = gfarm_host_get_canonical_self_name(&canonical_self_name, &p))
-	    != GFARM_ERR_NO_ERROR) {
+	    (e = gfarm_host_get_canonical_self_name(gfm_server,
+	    &canonical_self_name, &p)) != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(
 		    "cannot get canonical hostname of %s, ask admin to "
 		    "register this node in Gfarm metadata server, died: %s\n",

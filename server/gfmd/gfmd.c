@@ -541,6 +541,19 @@ protocol_main(void *arg)
 	return (NULL);
 }
 
+static gfarm_error_t
+verify_username(const char *global_user)
+{
+	struct user *u;
+
+	giant_lock();
+	u = user_lookup(global_user);
+	giant_unlock();
+	if (u == NULL)
+		return (GFARM_ERR_AUTHENTICATION);
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 peer_authorize(struct peer *peer)
 {
@@ -578,7 +591,7 @@ peer_authorize(struct peer *peer)
 		}
 	}
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
-	    hostname, &addr,
+	    hostname, &addr, verify_username,
 	    &id_type, &username, &auth_method);
 	/*
 	 * In GSI, username will be a DN, which needs to be mapped to

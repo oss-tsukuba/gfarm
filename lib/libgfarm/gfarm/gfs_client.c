@@ -416,13 +416,15 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 }
 
 gfarm_error_t
-gfs_client_connection_acquire_by_host(const char *hostname, int port,
+gfs_client_connection_acquire_by_host(
+	struct gfm_connection *gfm_server, const char *hostname, int port,
 	struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e;
 	struct sockaddr peer_addr;
 
-	e = gfarm_host_address_get(hostname, port, &peer_addr, NULL);
+	e = gfarm_host_address_get(gfm_server, hostname, port,
+	    &peer_addr, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	return (gfs_client_connection_acquire(hostname, &peer_addr,

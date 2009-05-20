@@ -116,16 +116,19 @@ int gfarm_host_is_in_domain(const char *, const char *);
 /*
  * host
  */
+struct gfm_connection;
 struct gfarm_host_info;
-gfarm_error_t gfarm_host_info_get_by_if_hostname(const char *,
-	struct gfarm_host_info *);
 char *gfarm_host_get_self_name(void);
-gfarm_error_t gfarm_host_get_canonical_name(const char *, char **, int *);
-gfarm_error_t gfarm_host_get_canonical_names(int, char **, char ***, int **);
-gfarm_error_t gfarm_host_get_canonical_self_name(char **, int *);
-gfarm_error_t gfarm_host_get_self_architecture(char **);
+gfarm_error_t gfarm_host_get_canonical_name(struct gfm_connection *,
+	const char *, char **, int *);
+gfarm_error_t gfarm_host_get_canonical_self_name(struct gfm_connection *,
+	char **, int *);
+#if 0
+gfarm_error_t gfarm_host_get_self_architecture(struct gfm_connection *,
+	char **);
+#endif
 struct sockaddr;
-gfarm_error_t gfarm_host_address_get(const char *,
+gfarm_error_t gfarm_host_address_get(struct gfm_connection *, const char *,
 	int, struct sockaddr *, char **);
 
 /*

@@ -31,7 +31,6 @@ SRCS = \
 	gfs_proto.c \
 	io_fd.c \
 	metadb_common.c \
-	metadb_server.c \
 	auth_common.c \
 	auth_client.c \
 	auth_server.c \
@@ -98,7 +97,6 @@ OBJS = \
 	gfs_proto.lo \
 	io_fd.lo \
 	metadb_common.lo \
-	metadb_server.lo \
 	auth_common.lo \
 	auth_client.lo \
 	auth_server.lo \
@@ -166,7 +164,7 @@ auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_
 auth_common.lo: auth.h
 auth_common_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $ $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h gfpath.h auth.h auth_gsi.h
 auth_config.lo: hostspec.h auth.h
-auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h hostspec.h auth.h
+auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h
 auth_server_gsi.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h $(GFUTIL_SRCDIR)/gfutil.h io_fd.h io_gfsl.h auth.h auth_gsi.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.h auth.h config.h gfm_proto.h gfs_proto.h gfs_client.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
@@ -198,7 +196,7 @@ gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h
 gfs_xattr.lo: config.h gfm_client.h xattr_info.h
 gfarm_foreach.lo: gfarm_foreach.h
 glob.lo:
-host.lo: hostspec.h host.h
+host.lo: hostspec.h gfm_client.h host.h
 hostspec.lo: hostspec.h
 import_help.lo: liberror.h
 io_fd.lo: iobuffer.h io_fd.h
