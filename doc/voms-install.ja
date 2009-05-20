@@ -1,26 +1,42 @@
-voms連携インストールマニュアル
+			VOMS 連携コマンド
 
-(1)./configureファイルをautoconfで作成する。
+VOMS のグループ，ロールと連携し，Gfarm のグループのメンバを更新す
+るためのコマンド群です．VOMS でグループ管理を行い，そのグループ単
+位で Gfarm のアクセス制御を行いたい場合に利用します．
 
-(2)./configure時に'--enable-voms'オプションを指定する。
+*** 準備
 
-(注)
-    以下がインストール済みであること。
-    ない場合はvoms連携コマンドはインストールされない。
-        python(http://www.python.org/)
-            (2.x系 2.3以上)
-        ZSI(http://pywebsvcs.sourceforge.net/zsi.html)
-            (2.0以上で動作確認)
-        PyXML(http://pyxml.sourceforge.net/topics/)
-            (ZSIの要請による。インストールするバージョンはZSIのページで確認のこと)
+以下のソフトウェアが事前にインストールされている必要があります．
 
-(3)make, make installでコンパイル、インストールされる。
+・Python (2.X 系，2.3 以降)
+  http://www.python.org/
 
-インストールされるのは
-  <gfarm prefix>/bin/gfvoms-list
-  <gfarm prefix>/bin/gfvoms-update
-  <gfarm prefix>/bin/gfvoms-sync.py
-  <gfarm prefix>/bin/gfvoms-sync
-  <gfarm prefix>/etc/gfarm.vomsids
-  <gfarm prefix>/share/gfarm/voms/hostid.py
-  <gfarm prefix>/share/gfarm/voms/zsi_def
+・ZSI (2.0 以降で動作確認済)
+  http://pywebsvcs.sourceforge.net/
+  インストール方法
+  % sudo python setup.py install
+
+*** インストール方法
+
+通常の Gfarm のインストール方法と同じですが，configure コマンドの
+オプションで --enable-voms を指定します．
+
+configure コマンドの出力で，以下のように voms-collaboration
+available が yes となっていることを確認してください．
+
+	checking voms-collaboration available... yes
+
+*** インストールファイル
+
+以下のファイルがインストールされます．
+
+  <prefix>/bin/gfvoms-list
+  <prefix>/bin/gfvoms-update
+  <prefix>/bin/gfvoms-sync.py
+  <prefix>/bin/gfvoms-sync
+  <prefix>/etc/gfarm.vomsids
+  <prefix>/share/gfarm/voms/hostid.py
+  <prefix>/share/gfarm/voms/zsi_def
+
+コマンド，設定ファイルの詳細は voms-man.ja, voms-dev.ja を参照く
+ださい．
