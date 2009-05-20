@@ -528,79 +528,39 @@ gfp_xdr_vrpc_result(struct gfp_xdr *conn,
  * do RPC with "request-args/result-args" format string.
  */
 gfarm_error_t
-gfp_xdr_vrpc_with_reconnection(
-	struct gfp_xdr *conn, int just, gfarm_int32_t command,
-	gfarm_int32_t *errorp, const char **formatp, va_list *app,
-	gfarm_error_t (*reconnect)(void *), void *server)
-{
-	gfarm_error_t e;
-	int retry = 0;
-	const char *format;
-	va_list ap;
-
-	for (;;) {
-		format = *formatp;
-		va_copy(ap, *app);
-
-		/*
-		 * send request
-		 */
-		e = gfp_xdr_vrpc_request(conn, command, &format, &ap);
-		if (e == GFARM_ERR_NO_ERROR)
-			e = gfp_xdr_flush(conn);
-		if (e != GFARM_ERR_NO_ERROR) {
-			if (IS_CONNECTION_ERROR(e) && reconnect != NULL &&
-			    ++retry <= 1 &&
-			    (*reconnect)(server) == GFARM_ERR_NO_ERROR) {
-				va_end(ap);
-				continue;
-			}
-			break;
-		}
-
-		if (*format != '/') {
-#if 1
-			gflog_fatal(gfarm_error_string(GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING));
-			abort();
-#endif
-			e = GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING;
-			break;
-		}
-		format++;
-
-		/*
-		 * receive result
-		 */
-		e = gfp_xdr_vrpc_result(conn, just, errorp, &format, &ap);
-		if (e != GFARM_ERR_NO_ERROR) {
-			if (IS_CONNECTION_ERROR(e) && reconnect != NULL &&
-			    ++retry <= 1 &&
-			    (*reconnect)(server) == GFARM_ERR_NO_ERROR) {
-				va_end(ap);
-				continue;
-			}
-			break;
-		}
-
-		if (*errorp != 0) /* should examine the *errorp in this case */
-			break;
-
-		if (*format != '\0')
-			e = GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER;
-		break;
-	}
-
-	va_end(ap);
-	*formatp = format;
-	return (e);
-}
-
-gfarm_error_t
 gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
-	return (gfp_xdr_vrpc_with_reconnection(conn, just, command,
-	    errorp, formatp, app, NULL, NULL));
+	gfarm_error_t e;
+
+	/*
+	 * send request
+	 */
+	e = gfp_xdr_vrpc_request(conn, command, formatp, app);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(conn);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (**formatp != '/') {
+#if 1
+		gflog_fatal(gfarm_error_string(GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING));
+		abort();
+#endif
+		return (GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING);
+	}
+	(*formatp)++;
+
+	e = gfp_xdr_vrpc_result(conn, just, errorp, formatp, app);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*errorp != 0) /* should examine the *errorp in this case */
+		return (GFARM_ERR_NO_ERROR);
+
+	if (**formatp != '\0')
+		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
