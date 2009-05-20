@@ -2855,7 +2855,7 @@ gfm_client_connect_with_reconnection()
 	unsigned int sleep_interval = 10;	/* 10 sec */
 	unsigned int sleep_max_interval = 640;	/* about 10 min */
 
-	e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+	e = gfm_client_connect(gfarm_metadb_server_name,
 	    gfarm_metadb_server_port, &gfm_server);
 	while (e != GFARM_ERR_NO_ERROR) {
 		/* suppress excessive log */
@@ -2865,7 +2865,7 @@ gfm_client_connect_with_reconnection()
 			    gfarm_metadb_server_port, sleep_interval,
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
-		e = gfm_client_connection_acquire(gfarm_metadb_server_name,
+		e = gfm_client_connect(gfarm_metadb_server_name,
 			gfarm_metadb_server_port, &gfm_server);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;

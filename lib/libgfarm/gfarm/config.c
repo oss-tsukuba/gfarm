@@ -325,6 +325,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
+#define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
@@ -335,6 +336,7 @@ static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
 gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
+int gfarm_gfmd_connection_cache = MISC_DEFAULT;
 int gfarm_metadb_stack_size = MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = MISC_DEFAULT;
@@ -1135,6 +1137,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_offset(p, &gfarm_minimum_free_disk_space);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
+	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
+		e = parse_set_misc_int(p, &gfarm_gfmd_connection_cache);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_stack_size);
 	} else if (strcmp(s, o = "metadb_server_thread_pool_size") == 0) {
@@ -1240,6 +1244,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_gfsd_connection_cache == MISC_DEFAULT)
 		gfarm_gfsd_connection_cache =
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
+	if (gfarm_gfmd_connection_cache == MISC_DEFAULT)
+		gfarm_gfmd_connection_cache =
+		    GFARM_GFMD_CONNECTION_CACHE_DEFAULT;
 	if (gfarm_metadb_stack_size == MISC_DEFAULT)
 		gfarm_metadb_stack_size = GFARM_METADB_STACK_SIZE_DEFAULT;
 	if (gfarm_metadb_thread_pool_size == MISC_DEFAULT)

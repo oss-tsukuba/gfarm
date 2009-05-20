@@ -25,14 +25,21 @@ struct gfarm_host_sched_info {
 };
 void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
+int gfm_client_is_connection_error(gfarm_error_t);
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
 int gfm_client_connection_fd(struct gfm_connection *);
 enum gfarm_auth_method gfm_client_connection_auth_method(
 	struct gfm_connection *);
+gfarm_error_t gfm_client_process_get(struct gfm_connection *,
+	gfarm_int32_t *, const char **, size_t *, gfarm_pid_t *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);
+gfarm_error_t gfm_client_connection_and_process_acquire(const char *, int,
+	struct gfm_connection **);
+gfarm_error_t gfm_client_connect(const char *, int, struct gfm_connection **);
 void gfm_client_connection_free(struct gfm_connection *);
+void gfm_client_terminate(void);
 
 /* host/user/group metadata */
 

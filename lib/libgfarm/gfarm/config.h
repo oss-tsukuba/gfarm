@@ -17,9 +17,11 @@ extern enum gfarm_backend_db_type gfarm_backend_db_type;
 /* GFM dependent */
 extern char *gfarm_metadb_server_name;
 extern int gfarm_metadb_server_port;
+extern int gfarm_gfmd_connection_cache;
 
 extern char *gfarm_metadb_admin_user;
 extern char *gfarm_metadb_admin_user_gsi_dn;
+
 extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
