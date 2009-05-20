@@ -456,7 +456,7 @@ gfarm_client_process_set(struct gfs_connection *gfs_server)
 {
 	return (gfs_client_process_set(gfs_server,
 	    gfarm_client_pid_key_type,
-	    gfarm_client_pid_key_len, gfarm_client_pid_key,
+	    gfarm_client_pid_key, gfarm_client_pid_key_len,
 	    gfarm_client_pid));
 }
 
@@ -492,6 +492,7 @@ gfarm_terminate(void)
 	gfarm_free_user_map();
 	gfs_client_terminate();
 	gfm_client_connection_free(gfarm_metadb_server);
+	gfm_client_terminate();
 
 	return (GFARM_ERR_NO_ERROR);
 }

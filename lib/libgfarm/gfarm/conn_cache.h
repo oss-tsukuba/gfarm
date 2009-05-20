@@ -43,8 +43,7 @@ void gfp_cached_connection_used(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 void gfp_cached_connection_gc_all(struct gfp_conn_cache *);
 gfarm_error_t gfp_cached_connection_acquire(struct gfp_conn_cache *,
-	const char *, struct sockaddr *,
-	struct gfp_cached_connection **, int *);
-void gfp_cached_connection_free(struct gfp_conn_cache *,
+	const char *, int, struct gfp_cached_connection **, int *);
+void gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 void gfp_cached_connection_terminate(struct gfp_conn_cache *);

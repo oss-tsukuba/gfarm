@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <arpa/inet.h>
 
 #include <gfarm/gfarm.h>
 
@@ -84,18 +83,10 @@ gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *cache,
 	gfarm_lru_cache_purge_entry(&connection->lru_entry);
 
 	gfp_conn_hash_purge(cache->hashtab, connection->hash_entry);
-	connection->hash_entry = NULL; /* this is an uncached connection */
+	connection->hash_entry = NULL; /* this is an uncached connection now */
 }
 
 /* convert from uncached connection to cached */
-/*
- * NOTE:
- * The caller of this function should obey the following rule:
- * if this function returns error:
- * 	The caller usually should call gfs_client_disconnect(gfs_server).
- * otherwise (i.e. success case):
- * 	The caller usually should call gfs_client_connection_free(gfs_server).
- */
 gfarm_error_t
 gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection,
@@ -171,7 +162,7 @@ gfp_cached_connection_gc_all(struct gfp_conn_cache *cache)
 
 gfarm_error_t
 gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
-	const char *canonical_hostname, struct sockaddr *peer_addr,
+	const char *canonical_hostname, int port,
 	struct gfp_cached_connection **connectionp, int *createdp)
 {
 	gfarm_error_t e;
@@ -179,8 +170,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection;
 
 	e = gfp_conn_hash_enter(&cache->hashtab, cache->table_size,
-	    sizeof(connection), canonical_hostname,
-	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
+	    sizeof(connection), canonical_hostname, port,
 	    gfarm_get_global_username(),
 	    &entry, createdp);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -211,7 +201,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 }
 
 void
-gfp_cached_connection_free(struct gfp_conn_cache *cache,
+gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection)
 {
 	if (!gfarm_lru_cache_delref_entry(&cache->lru_list,
@@ -229,9 +219,11 @@ gfp_cached_connection_free(struct gfp_conn_cache *cache,
  *
  * potential problems:
  * - connections which are currently in-use are freed too.
- * - connections which have never cached are NOT freed.
- * - connections which had been once cached, but currently uncached
- *   (since their network connections were dead) are NOT freed.
+ * - connections which are uncached are NOT freed.
+ *   i.e. the followings are all NOT freed:
+ *	- connections which have never cached,
+ *      - connections which had been once cached but currently uncached
+ *	  (since their network connections were dead)
  */
 void
 gfp_cached_connection_terminate(struct gfp_conn_cache *cache)

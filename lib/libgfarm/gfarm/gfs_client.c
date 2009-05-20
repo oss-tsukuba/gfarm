@@ -65,7 +65,7 @@ struct gfs_connection {
 	enum gfarm_auth_method auth_method;
 
 	int is_local;
-	gfarm_pid_t pid;
+	gfarm_pid_t pid; /* parallel process ID */
 
 	int opened; /* reference counter */
 
@@ -191,7 +191,7 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
-		gfs_client_connection_gc();
+		gfs_client_connection_gc(); /* XXX FIXME: GC all descriptors */
 		sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	}
 	if (sock == -1)
@@ -230,7 +230,7 @@ gfs_client_connect_inet(const char *canonical_hostname,
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
-		gfs_client_connection_gc();
+		gfs_client_connection_gc(); /* XXX FIXME: GC all descriptors */
 		sock = socket(PF_INET, SOCK_STREAM, 0);
 	}
 	if (sock == -1)
@@ -370,18 +370,10 @@ gfs_client_connection_dispose(void *connection_data)
 void
 gfs_client_connection_free(struct gfs_connection *gfs_server)
 {
-	gfp_cached_connection_free(&gfs_server_cache, gfs_server->cache_entry);
+	gfp_cached_or_uncached_connection_free(&gfs_server_cache,
+	    gfs_server->cache_entry);
 }
 
-/*
- * this function frees all cached connections, including in-use ones.
- *
- * potential problems:
- * - connections which are currently in-use are freed too.
- * - connections which have never cached are NOT freed.
- * - connections which had been once cached, but currently uncached
- *   (since their network connections were dead) are NOT freed.
- */
 void
 gfs_client_terminate(void)
 {
@@ -389,6 +381,8 @@ gfs_client_terminate(void)
 }
 
 /*
+ * gfs_client_connection_acquire - create or lookup a cached connection
+ *
  * XXX FIXME
  * `hostname' to `addr' conversion really should be done in this function,
  * rather than a caller of this function.
@@ -398,11 +392,13 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e;
-	int created;
 	struct gfp_cached_connection *cache_entry;
+	int created;
 
 	e = gfp_cached_connection_acquire(&gfs_server_cache,
-	    canonical_hostname, peer_addr, &cache_entry, &created);
+	    canonical_hostname,
+	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
+	    &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (!created) {
@@ -434,6 +430,8 @@ gfs_client_connection_acquire_by_host(const char *hostname, int port,
 }
 
 /*
+ * gfs_client_connect - create an uncached connection
+ *
  * XXX FIXME
  * `hostname' to `addr' conversion really should be done in this function,
  * rather than a caller of this function.
@@ -450,22 +448,12 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 		return (e);
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
 	    cache_entry, gfs_serverp);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e != GFARM_ERR_NO_ERROR)
 		gfp_uncached_connection_dispose(cache_entry);
-	}
 	return (e);
 }
 
-/*
- * NOTE:
- * The caller of this function should obey the following rule:
- * if this function returns error:
- * 	The caller usually should call gfs_client_disconnect(gfs_server).
- *	Note that the gfs_server connection can be used in this case too,
- *	as an uncached connection.
- * otherwise (i.e. success case):
- * 	The caller must not use the variable `gfs_server' any more.
- */
+/* convert from uncached connection to cached */
 gfarm_error_t
 gfs_client_connection_enter_cache(struct gfs_connection *gfs_server)
 {
@@ -765,6 +753,8 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	gfarm_error_t e;
 	int errcode;
 
+	gfs_client_connection_used(gfs_server);
+
 	e = gfp_xdr_flush(gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -800,6 +790,8 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 	gfarm_error_t e;
 	int errcode;
 
+	gfs_client_connection_used(gfs_server);
+
 	va_start(ap, format);
 	e = gfp_xdr_vrpc(gfs_server->conn, just,
 	    command, &errcode, &format, &ap);
@@ -825,12 +817,12 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 
 gfarm_error_t
 gfs_client_process_set(struct gfs_connection *gfs_server,
-	gfarm_int32_t type, size_t length, const char *key, gfarm_pid_t pid)
+	gfarm_int32_t type, const char *key, size_t size, gfarm_pid_t pid)
 {
 	gfarm_error_t e;
 
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_SET, "ibl/",
-	    type, length, key, pid);
+	    type, size, key, pid);
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
 	return (e);
@@ -840,8 +832,6 @@ gfarm_error_t
 gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 {
 	gfarm_error_t e;
-
-	gfs_client_connection_used(gfs_server);
 
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_OPEN, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
@@ -859,8 +849,6 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 
 	if (!gfs_server->is_local)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
-
-	gfs_client_connection_used(gfs_server);
 
 	/* we have to set `just' flag here */
 	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
@@ -885,8 +873,6 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 {
 	gfarm_error_t e;
 
-	gfs_client_connection_used(gfs_server);
-
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
@@ -899,8 +885,6 @@ gfs_client_pread(struct gfs_connection *gfs_server,
 	gfarm_off_t off, size_t *np)
 {
 	gfarm_error_t e;
-
-	gfs_client_connection_used(gfs_server);
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PREAD, "iil/b",
 	    fd, (int)size, off,
@@ -920,8 +904,6 @@ gfs_client_pwrite(struct gfs_connection *gfs_server,
 	gfarm_error_t e;
 	gfarm_int32_t n; /* size_t may be 64bit */
 
-	gfs_client_connection_used(gfs_server);
-
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PWRITE, "ibl/i",
 	    fd, size, buffer, off, &n)) != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -935,8 +917,6 @@ gfarm_error_t
 gfs_client_ftruncate(struct gfs_connection *gfs_server,
 	gfarm_int32_t fd, gfarm_off_t size)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FTRUNCATE, "il/",
 	    fd, size));
 }
@@ -945,8 +925,6 @@ gfarm_error_t
 gfs_client_fsync(struct gfs_connection *gfs_server,
 	gfarm_int32_t fd, gfarm_int32_t op)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSYNC, "ii/",
 	    fd, op));
 }
@@ -957,8 +935,6 @@ gfs_client_fstat(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_int64_t *atime_sec, gfarm_int32_t *atime_nsec,
 	gfarm_int64_t *mtime_sec, gfarm_int32_t *mtime_nsec)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_FSTAT, "i/llili",
 	    fd, size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
@@ -967,8 +943,6 @@ gfarm_error_t
 gfs_client_cksum_set(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	const char *cksum_type, size_t length, const char *cksum)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_CKSUM_SET, "isb/",
 	    fd, cksum_type, length, cksum));
 }
@@ -978,8 +952,6 @@ gfs_client_lock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_LOCK, "illii/",
 	    fd, start, len, type, whence));
 }
@@ -989,8 +961,6 @@ gfs_client_trylock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_TRYLOCK, "illii/",
 	    fd, start, len, type, whence));
 }
@@ -1000,8 +970,6 @@ gfs_client_unlock(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_off_t start, gfarm_off_t len,
 	gfarm_int32_t type, gfarm_int32_t whence)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_UNLOCK, "illii/",
 	    fd, start, len, type, whence));
 }
@@ -1013,8 +981,6 @@ gfs_client_lock_info(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	gfarm_off_t *start_ret, gfarm_off_t *len_ret,
 	gfarm_int32_t *type_ret, char **host_ret, gfarm_pid_t **pid_ret)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_LOCK_INFO,
 	    "illii/llisl",
 	    fd, start, len, type, whence,
@@ -1025,8 +991,6 @@ gfarm_error_t
 gfs_client_replica_add_from(struct gfs_connection *gfs_server,
 	char *host, gfarm_int32_t port, gfarm_int32_t fd)
 {
-	gfs_client_connection_used(gfs_server);
-
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD_FROM,
 	    "sii/", host, port, fd));
 }
@@ -1202,8 +1166,6 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR, e_rpc;
 	int i, rv, eof;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
-
-	gfs_client_connection_used(gfs_server);
 
 	e = gfs_client_rpc_request(gfs_server, GFS_PROTO_REPLICA_RECV, "ll",
 	    ino, gen);
@@ -1547,8 +1509,6 @@ gfs_client_command_fd_set(struct gfs_connection *gfs_server,
 	struct gfs_client_command_context *cc = gfs_server->context;
 	int conn_fd = gfp_xdr_fd(gfs_server->conn);
 	int i, fd;
-
-	gfs_client_connection_used(gfs_server);
 
 	/*
 	 * The following test condition should just match with

@@ -44,7 +44,7 @@ gfarm_error_t gfs_client_connect_result_multiplexed(
 /* from client */
 
 gfarm_error_t gfs_client_process_set(struct gfs_connection *,
-	gfarm_int32_t, size_t, const char *, gfarm_pid_t);
+	gfarm_int32_t, const char *, size_t, gfarm_pid_t);
 gfarm_error_t gfs_client_open(struct gfs_connection *, gfarm_int32_t);
 gfarm_error_t gfs_client_open_local(struct gfs_connection *, gfarm_int32_t,
 	int *);
