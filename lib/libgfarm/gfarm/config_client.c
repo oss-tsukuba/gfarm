@@ -492,7 +492,6 @@ gfarm_terminate(void)
 	gfarm_free_user_map();
 	gfs_client_terminate();
 	gfm_client_connection_free(gfarm_metadb_server);
-	gfm_client_terminate();
 
 	return (GFARM_ERR_NO_ERROR);
 }
