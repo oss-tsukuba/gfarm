@@ -26,7 +26,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 
 	for (;;) {
 		if (gfs_client_pid(server) == 0)
-			e = gfarm_client_process_set(server);
+			e = gfarm_client_process_set(server,
+			    gfarm_metadb_server);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfs_client_replica_add_from(
 				server, srchost, srcport, gfs_pio_fileno(gf));

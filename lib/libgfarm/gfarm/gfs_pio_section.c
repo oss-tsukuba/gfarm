@@ -371,7 +371,8 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 
 		e = GFARM_ERR_NO_ERROR;
 		if (gfs_client_pid(gfs_server) == 0)
-			e = gfarm_client_process_set(gfs_server);
+			e = gfarm_client_process_set(gfs_server,
+			    gfarm_metadb_server);
 
 		gfs_profile(gfarm_gettimerval(&t3));
 		if (e == GFARM_ERR_NO_ERROR) {
