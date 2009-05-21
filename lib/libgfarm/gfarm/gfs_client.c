@@ -382,10 +382,6 @@ gfs_client_terminate(void)
 
 /*
  * gfs_client_connection_acquire - create or lookup a cached connection
- *
- * XXX FIXME
- * `hostname' to `addr' conversion really should be done in this function,
- * rather than a caller of this function.
  */
 gfarm_error_t
 gfs_client_connection_acquire(const char *canonical_hostname,
@@ -416,19 +412,38 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 }
 
 gfarm_error_t
-gfs_client_connection_acquire_by_host(
-	struct gfm_connection *gfm_server, const char *hostname, int port,
+gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
+	const char *canonical_hostname, int port,
 	struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e;
+	struct gfp_cached_connection *cache_entry;
+	int created;
 	struct sockaddr peer_addr;
 
-	e = gfarm_host_address_get(gfm_server, hostname, port,
-	    &peer_addr, NULL);
+	/*
+	 * lookup gfs_server_cache first,
+	 * to eliminate hostname -> IP-address conversion in a cached case.
+	 */
+	e = gfp_cached_connection_acquire(&gfs_server_cache,
+	    canonical_hostname, port, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfs_client_connection_acquire(hostname, &peer_addr,
-	    gfs_serverp));
+	if (!created) {
+		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	e = gfarm_host_address_get(gfm_server, canonical_hostname, port,
+	    &peer_addr, NULL);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfs_client_connection_alloc_and_auth(canonical_hostname,
+		    &peer_addr, cache_entry, gfs_serverp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
+		    cache_entry);
+		gfp_uncached_connection_dispose(cache_entry);
+	}
+	return (e);
 }
 
 /*
