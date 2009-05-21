@@ -27,11 +27,15 @@
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
-	char *, char *,	gfarm_error_t (*)(const char *),
+	char *, char *,
+	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	    char **), void *,
 	enum gfarm_auth_id_type *, char **);
 
 gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
-	char *, char *, gfarm_error_t (*)(const char *),
+	char *, char *,
+	gfarm_error_t (*)(void *, enum gfarm_auth_method, const char *,
+	    char **), void *,
 	enum gfarm_auth_id_type *, char **) = {
 	/*
 	 * This table entry should be ordered by enum gfarm_auth_method.
@@ -51,7 +55,8 @@ gfarm_error_t (*gfarm_authorization_table[])(struct gfp_xdr *, int,
 static gfarm_error_t
 gfarm_authorize_panic(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gflog_fatal("gfarm_authorize: authorization assertion failed");
@@ -243,7 +248,8 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn, struct passwd *pwd)
 gfarm_error_t
 gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e;
@@ -267,8 +273,15 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	if (strcmp(global_username, GFSD_USERNAME) == 0) {
 		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
 	} else {
+		/*
+		 * actually, a protocol-level uid is a gfarm global username
+		 * in sharedsecret case.
+		 * so, the purpose of (*auth_uid_to_global_user)() is
+		 * to verify whether the user does exist or not in this case.
+		 */
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
-		e = (*verify_user)(global_username);
+		e = (*auth_uid_to_global_user)(closure,
+		    GFARM_AUTH_METHOD_SHAREDSECRET, global_username, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error("(%s@%s) authorize_sharedsecret: "
 			    "the global username isn't registered in gfmd: %s",
@@ -393,7 +406,8 @@ gfarm_error_t
 gfarm_authorize(struct gfp_xdr *conn,
 	int switch_to, char *service_tag,
 	char *hostname, struct sockaddr *addr,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep,
 	enum gfarm_auth_method *auth_methodp)
 {
@@ -453,6 +467,9 @@ gfarm_authorize(struct gfp_xdr *conn,
 		else if (method <= GFARM_AUTH_METHOD_NONE ||
 		    ((1 << method) & methods) == 0)
 			error = GFARM_AUTH_ERROR_DENIED;
+		else if (gfarm_authorization_table[method] ==
+		    gfarm_authorize_panic)
+			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 		else
 			error = GFARM_AUTH_ERROR_NO_ERROR;
 		e = gfp_xdr_send(conn, "i", error);
@@ -486,7 +503,7 @@ gfarm_authorize(struct gfp_xdr *conn,
 		}
 
 		e = (*gfarm_authorization_table[method])(conn, switch_to,
-		    service_tag, hostname, verify_user,
+		    service_tag, hostname, auth_uid_to_global_user, closure,
 		    peer_typep, global_usernamep);
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&

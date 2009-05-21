@@ -9,9 +9,10 @@ include $(top_srcdir)/makes/var.mk
 LIBRARY = libgfarmcore.la
 LIBRARY_RESULT = # do not install
 
-GLOBUS_SRCS = auth_client_gsi.c auth_common_gsi.c auth_server_gsi.c io_gfsl.c
-GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo auth_server_gsi.lo \
-	io_gfsl.lo
+GLOBUS_SRCS = auth_client_gsi.c auth_common_gsi.c \
+	auth_server_gsi.c auth_server_uid_gsi.c io_gfsl.c
+GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
+	auth_server_gsi.lo auth_server_uid_gsi.lo io_gfsl.lo
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 SRCS = \
@@ -34,6 +35,7 @@ SRCS = \
 	auth_common.c \
 	auth_client.c \
 	auth_server.c \
+	auth_server_uid.c \
 	conn_hash.c \
 	conn_cache.c \
 	gfm_client.c \
@@ -100,6 +102,7 @@ OBJS = \
 	auth_common.lo \
 	auth_client.lo \
 	auth_server.lo \
+	auth_server_uid.lo \
 	conn_hash.lo \
 	conn_cache.lo \
 	gfm_client.lo \
@@ -166,6 +169,8 @@ auth_common_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $ $(GFSL_SRCDIR)/gfarm_secure_sess
 auth_config.lo: hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h
 auth_server_gsi.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h $(GFUTIL_SRCDIR)/gfutil.h io_fd.h io_gfsl.h auth.h auth_gsi.h
+auth_server_uid.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
+auth_server_uid_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h auth.h gfm_client.h
 config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.h auth.h config.h gfm_proto.h gfs_proto.h gfs_client.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h $(top_builddir)/makes/config.mk # $(GFARM_CONFIG) -> $(sysconfdir)
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h

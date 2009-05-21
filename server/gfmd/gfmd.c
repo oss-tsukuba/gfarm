@@ -541,16 +541,37 @@ protocol_main(void *arg)
 	return (NULL);
 }
 
-static gfarm_error_t
-verify_username(const char *global_user)
+/* only called in case of gfarm_auth_id_type == GFARM_AUTH_ID_TYPE_USER */
+gfarm_error_t
+auth_uid_to_global_username(void *closure,
+	enum gfarm_auth_method auth_method,
+	const char *auth_user_id,
+	char **global_usernamep)
 {
+	char *global_username;
 	struct user *u;
 
 	giant_lock();
-	u = user_lookup(global_user);
+	if (GFARM_IS_AUTH_GSI(auth_method)) { /* auth_user_id is a DN */
+		u = user_lookup_gsi_dn(auth_user_id);
+	} else { /* auth_user_id is a gfarm global user name */
+		u = user_lookup(auth_user_id);
+	}
 	giant_unlock();
-	if (u == NULL)
+
+	if (u == NULL) {
+		/*
+		 * do not return GFARM_ERR_NO_SUCH_USER
+		 * to prevent information leak
+		 */
 		return (GFARM_ERR_AUTHENTICATION);
+	}
+	if (global_usernamep == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	global_username = strdup(user_name(u));
+	if (global_username == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -565,7 +586,6 @@ peer_authorize(struct peer *peer)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 	char addr_string[GFARM_SOCKADDR_STRLEN];
-	struct user *u;
 
 	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
 	rv = 1;
@@ -591,25 +611,8 @@ peer_authorize(struct peer *peer)
 		}
 	}
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
-	    hostname, &addr, verify_username,
+	    hostname, &addr, auth_uid_to_global_username, NULL,
 	    &id_type, &username, &auth_method);
-	/*
-	 * In GSI, username will be a DN, which needs to be mapped to
-	 * a global user name.
-	 */
-	if (e == GFARM_ERR_NO_ERROR && id_type == GFARM_AUTH_ID_TYPE_USER &&
-	    GFARM_IS_AUTH_GSI(auth_method)) {
-		giant_lock();
-		if ((u = user_lookup_gsi_dn(username)) == NULL)
-			e = GFARM_ERR_NO_SUCH_USER;
-		else {
-			free(username);
-			username = strdup(user_name(u));
-			if (username == NULL)
-				e = GFARM_ERR_NO_MEMORY;
-		}
-		giant_unlock();
-	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		protocol_state_init(peer_get_protocol_state(peer));
 

@@ -55,7 +55,6 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
-#include <gfarm/user_info.h>
 
 #define GFLOG_USE_STDARG
 #include "gfutil.h"
@@ -2885,22 +2884,6 @@ gfm_client_connect_with_reconnection()
 		    "died: %s\n", canonical_self_name, gfarm_error_string(e));
 }
 
-static gfarm_error_t
-verify_username(const char *global_user)
-{
-	gfarm_error_t e, e2;
-	struct gfarm_user_info ui;
-
-	e = gfm_client_user_info_get_by_names(gfm_server,
-	    1, &global_user, &e2, &ui);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (e2 != GFARM_ERR_NO_ERROR)
-		return (e2);
-	gfarm_user_info_free(&ui);
-	return (GFARM_ERR_NO_ERROR);
-}
-
 void
 server(int client_fd, char *client_name, struct sockaddr *client_addr)
 {
@@ -2911,7 +2894,6 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
 	enum gfarm_auth_id_type peer_type;
 	enum gfarm_auth_method auth_method;
-	struct gfarm_user_info user;
 
 	gfm_client_connect_with_reconnection();
 
@@ -2959,24 +2941,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	}
 
 	e = gfarm_authorize(client, 0, GFS_SERVICE_TAG,
-	    client_name, client_addr, verify_username,
+	    client_name, client_addr,
+	    gfarm_auth_uid_to_global_username, gfm_server,
 	    &peer_type, &username, &auth_method);
-	/*
-	 * In GSI, username will be a DN, which needs to be mapped to
-	 * a global user name.
-	 */
-	if (e == GFARM_ERR_NO_ERROR && peer_type == GFARM_AUTH_ID_TYPE_USER &&
-	    GFARM_IS_AUTH_GSI(auth_method)) {
-		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
-			username, &user);
-		if (e == GFARM_ERR_NO_ERROR) {
-			free(username);
-			username = strdup(user.username);
-			if (username == NULL)
-				e = GFARM_ERR_NO_MEMORY;
-			gfarm_user_info_free(&user);
-		}
-	}
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal("%s: gfarm_authorize: %s",
 		    client_name, gfarm_error_string(e));

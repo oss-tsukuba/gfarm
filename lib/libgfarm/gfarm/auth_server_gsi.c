@@ -39,12 +39,13 @@
 static gfarm_error_t
 gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname, char *auth_method_name,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	int fd = gfp_xdr_fd(conn);
 	gfarm_error_t e, e2;
-	char *global_username, *aux = NULL;
+	char *global_username = NULL, *aux = NULL;
 	OM_uint32 e_major, e_minor;
 	gfarmSecSession *session;
 	gfarmAuthEntry *userinfo;
@@ -54,18 +55,19 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	char *cred_service = gfarm_auth_server_cred_service_get(service_tag);
 	char *cred_name = gfarm_auth_server_cred_name_get(service_tag);
 	gss_cred_id_t cred;
+	enum gfarm_auth_id_type peer_type;
 
 	e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: protocol drain: %s",
-		    gfarm_error_string(e));
+		gflog_error("authorize_gsi: %s: protocol drain: %s",
+		    hostname, gfarm_error_string(e));
 		return (e);
 	}
 
 	e = gfarm_gsi_server_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: GSI initialize: %s",
-		    gfarm_error_string(e));
+		gflog_error("authorize_gsi: %s: GSI initialize: %s",
+		    hostname, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -90,8 +92,9 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    gfarm_host_get_self_name(),
 		    &desired_name);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_auth_error(
+			gflog_auth_error("%s: "
 			    "Server credential configuration for %s:%s: %s",
+			    hostname,
 			    service_tag, hostname, gfarm_error_string(e));
 			return (e);
 		}
@@ -103,8 +106,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		if (rv < 0) {
 			if (gflog_auth_get_verbose()) {
 				gflog_error(
-				    "Can't get server credential for %s",
-				    service_tag);
+				    "%s: Can't get server credential for %s",
+				    hostname, service_tag);
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
 				gflog_error("GSI authentication error: %s",
@@ -127,56 +130,37 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	}
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("Can't accept session because of:");
+			gflog_error("%s: Can't accept session because of:",
+			    hostname);
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 			gflog_error("GSI authentication error: %s", hostname);
 		}
 		return (GFARM_ERR_AUTHENTICATION);
 	}
-	/* XXX NOTYET determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
+
 	userinfo = gfarmSecSessionGetInitiatorInfo(session);
-#if 0
-	/*
-	 * We DO need GSI authentication to access user database in this case,
-	 * otherwise GSI authentcation depends on weak protocol.
-	 *
-	 * XXX - local_user_map file is used for mapping from DN to a
-	 *       global user name, instead of accessing to a meta db.
-	 */
-	e = gfarm_local_to_global_username(
-		userinfo->distName, &global_username);
-	if (e == GFARM_ERR_NO_ERROR &&
-	    strcmp(userinfo->distName, global_username) == 0) {
-		free(global_username);
-		e = gfarm_local_to_global_username(
-			userinfo->authData.userAuth.localName,
-			&global_username);
+	switch (gfarmAuthGetAuthEntryType(userinfo)) {
+	case GFARM_AUTH_HOST:
+		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+		if ((global_username = strdup(GFSD_USERNAME)) != NULL)
+			e = GFARM_ERR_NO_ERROR;
+		else
+			e = GFARM_ERR_NO_MEMORY;
+		break;
+	case GFARM_AUTH_USER:
+		peer_type = GFARM_AUTH_ID_TYPE_USER;
+		e = (*auth_uid_to_global_user)(closure, userinfo->distName,
+		    &global_username);
+		break;
+	default:
+		gflog_error("authorize_gsi: \"%s\" @ %s: auth entry type=%d",
+		    userinfo->distName, hostname,
+		    gfarmAuthGetAuthEntryType(userinfo));
+		e = GFARM_ERR_AUTHENTICATION;
+		break;
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
-		global_username = NULL;
-		error = GFARM_AUTH_ERROR_DENIED;
-		gflog_error("authorize_gsi: "
-		    "cannot map DN into global username: %s",
-		    userinfo->distName);
-	}
-#else
-	/*
-	 * DN is used as a global user name for now since a gfmd
-	 * cannot call an RPC to itself.  It should be mapped to the
-	 * global user name by a caller when gfarm_authorize()
-	 * successfully returned.
-	 */
-	global_username = strdup(userinfo->distName);
-	if (global_username == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		error = GFARM_AUTH_ERROR_DENIED;
-		gflog_error("authorize_gsi: DN=\"%s\": no memory",
-		    userinfo->distName);
-	}
-	else
-		e = GFARM_ERR_NO_ERROR;
-#endif
+
 	if (e == GFARM_ERR_NO_ERROR) {
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
@@ -272,11 +256,13 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 gfarm_error_t
 gfarm_authorize_gsi(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi", verify_user,
+	    switch_to, service_tag, hostname, "gsi",
+	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep));
 }
 
@@ -287,11 +273,13 @@ gfarm_authorize_gsi(struct gfp_xdr *conn,
 gfarm_error_t
 gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
 	int switch_to, char *service_tag, char *hostname,
-	gfarm_error_t (*verify_user)(const char *),
+	gfarm_error_t (*auth_uid_to_global_user)(void *,
+	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi_auth", verify_user,
+	    switch_to, service_tag, hostname, "gsi_auth",
+	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep);
 
 	if (e == GFARM_ERR_NO_ERROR)
