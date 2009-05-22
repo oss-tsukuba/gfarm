@@ -38,7 +38,7 @@
 
 static gfarm_error_t
 gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
-	char *service_tag, char *hostname, char *auth_method_name,
+	char *service_tag, char *hostname, enum gfarm_auth_method auth_method,
 	gfarm_error_t (*auth_uid_to_global_user)(void *,
 	    enum gfarm_auth_method, const char *, char **), void *closure,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
@@ -150,8 +150,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		break;
 	case GFARM_AUTH_USER:
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
-		e = (*auth_uid_to_global_user)(closure, userinfo->distName,
-		    &global_username);
+		e = (*auth_uid_to_global_user)(closure, auth_method,
+		    userinfo->distName, &global_username);
 		break;
 	default:
 		gflog_error("authorize_gsi: \"%s\" @ %s: auth entry type=%d",
@@ -168,7 +168,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		gflog_notice(
 		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
 		    global_username, hostname,
-		    auth_method_name,
+		    gfarm_auth_method_name(auth_method),
 		    gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_USER ?
 		    userinfo->authData.userAuth.localName : "@host@",
 		    userinfo->distName);
@@ -261,7 +261,7 @@ gfarm_authorize_gsi(struct gfp_xdr *conn,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	return (gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi",
+	    switch_to, service_tag, hostname, GFARM_AUTH_METHOD_GSI,
 	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep));
 }
@@ -278,7 +278,7 @@ gfarm_authorize_gsi_auth(struct gfp_xdr *conn,
 	enum gfarm_auth_id_type *peer_typep, char **global_usernamep)
 {
 	gfarm_error_t e = gfarm_authorize_gsi_common(conn,
-	    switch_to, service_tag, hostname, "gsi_auth",
+	    switch_to, service_tag, hostname, GFARM_AUTH_METHOD_GSI_AUTH,
 	    auth_uid_to_global_user, closure,
 	    peer_typep, global_usernamep);
 
