@@ -1770,11 +1770,14 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 		}
 		if (n > 0) {
 			e_save = host_schedule_reply_n(peer, n, diag);
-			for (; fo != &ios->openings; fo = fo->opening_next) {
-				e = host_schedule_reply(fo->u.f.spool_host,
-				    peer, diag);
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
+			for (fo = ios->openings.opening_next;
+			     fo != &ios->openings; fo = fo->opening_next) {
+				if (fo->u.f.spool_host != NULL) {
+					e = host_schedule_reply(
+					    fo->u.f.spool_host, peer, diag);
+					if (e_save == GFARM_ERR_NO_ERROR)
+						e_save = e;
+				}
 			}
 			return (e_save);
 		}
