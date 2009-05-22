@@ -413,9 +413,10 @@ gfarm_initialize(int *argcp, char ***argvp)
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("connecting gfmd at %s:%d: %s\n",
+		gflog_error("connecting to gfmd at %s:%d: %s\n",
 		    gfarm_metadb_server_name, gfarm_metadb_server_port,
 		    gfarm_error_string(e));
+		return (e);
 	}
 
 	/* metadb access is required to obtain a global user name by GSI */
