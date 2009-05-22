@@ -113,7 +113,7 @@ get_port(char *host, gfarm_int32_t *portp)
 	gfarm_error_t e;
 	struct gfarm_host_info hinfo;
 
-	e = gfarm_host_info_get_by_name_alias(gfarm_metadb_server, host,
+	e = gfm_host_info_get_by_name_alias(gfarm_metadb_server, host,
 	    &hinfo);
 	if (e == GFARM_ERR_NO_ERROR) {
 		*portp = hinfo.port;

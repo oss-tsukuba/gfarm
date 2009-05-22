@@ -44,7 +44,7 @@ host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
-gfarm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
+gfm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 	const char *if_hostname, struct gfarm_host_info *info)
 {
 	gfarm_error_t e;
@@ -80,7 +80,7 @@ gfarm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
  * The value returned to `*canonical_hostnamep' should be freed.
  */
 gfarm_error_t
-gfarm_host_get_canonical_name(struct gfm_connection *gfm_server,
+gfm_host_get_canonical_name(struct gfm_connection *gfm_server,
 	const char *hostname, char **canonical_hostnamep, int *portp)
 {
 	gfarm_error_t e;
@@ -88,7 +88,7 @@ gfarm_host_get_canonical_name(struct gfm_connection *gfm_server,
 	int port;
 	char *n;
 
-	e = gfarm_host_info_get_by_name_alias(gfm_server, hostname, &info);
+	e = gfm_host_info_get_by_name_alias(gfm_server, hostname, &info);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -127,7 +127,7 @@ gfarm_host_get_self_name(void)
  *	should be called before this function.
  */
 gfarm_error_t
-gfarm_host_get_canonical_self_name(struct gfm_connection *gfm_server,
+gfm_host_get_canonical_self_name(struct gfm_connection *gfm_server,
 	char **canonical_hostnamep, int *portp)
 {
 	gfarm_error_t e;
@@ -138,7 +138,7 @@ gfarm_host_get_canonical_self_name(struct gfm_connection *gfm_server,
 	if (canonical_self_name == NULL) {
 		if (error_save != GFARM_ERR_NO_ERROR)
 			return (error_save);
-		e = gfarm_host_get_canonical_name(gfm_server,
+		e = gfm_host_get_canonical_name(gfm_server,
 		    gfarm_host_get_self_name(), &canonical_self_name, &port);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error_save = e;
@@ -285,29 +285,29 @@ gfarm_host_get_self_architecture(char **architecture)
 #endif /* not yet in gfarm v2 */
 
 static int
-gfarm_canonical_hostname_is_local(struct gfm_connection *gfm_server,
+gfm_canonical_hostname_is_local(struct gfm_connection *gfm_server,
 	const char *canonical_hostname)
 {
 	gfarm_error_t e;
 	char *self_name;
 	int port;
 
-	e = gfarm_host_get_canonical_self_name(gfm_server, &self_name, &port);
+	e = gfm_host_get_canonical_self_name(gfm_server, &self_name, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
 	return (strcasecmp(canonical_hostname, self_name) == 0);
 }
 
 int
-gfarm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
+gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 {
 	gfarm_error_t e;
 	char *canonical_hostname;
 	int is_local, port;
 
-	e = gfarm_host_get_canonical_name(gfm_server, hostname,
+	e = gfm_host_get_canonical_name(gfm_server, hostname,
 	    &canonical_hostname, &port);
-	is_local = gfarm_canonical_hostname_is_local(gfm_server,
+	is_local = gfm_canonical_hostname_is_local(gfm_server,
 	    canonical_hostname);
 	if (e == GFARM_ERR_NO_ERROR)
 		free(canonical_hostname);
@@ -553,7 +553,7 @@ address_get_matched(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_NO_ERROR);
 	if (!hir->tried) {
 		hir->tried = 1;
-		if (gfarm_host_info_get_by_name_alias(gfm_server,
+		if (gfm_host_info_get_by_name_alias(gfm_server,
 		    name, hir->info) == GFARM_ERR_NO_ERROR)
 			hir->got = 1;
 	}
@@ -587,7 +587,7 @@ address_get(struct gfm_connection *gfm_server, const char *name,
 }
 
 gfarm_error_t
-gfarm_host_info_address_get(struct gfm_connection *gfm_server,
+gfm_host_info_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,
 	struct gfarm_host_info *info,
 	struct sockaddr *peer_addr, char **if_hostnamep)
@@ -601,7 +601,7 @@ gfarm_host_info_address_get(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
-gfarm_host_address_get(struct gfm_connection *gfm_server,
+gfm_host_address_get(struct gfm_connection *gfm_server,
 	const char *host, int port,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {

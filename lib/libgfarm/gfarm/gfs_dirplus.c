@@ -15,6 +15,7 @@
 #define DIRENTSPLUS_BUFCOUNT	256
 
 struct gfs_dirplus {
+	struct gfm_connection *gfm_server;
 	int fd;
 	struct gfs_dirent buffer[DIRENTSPLUS_BUFCOUNT];
 	struct gfs_stat stbuf[DIRENTSPLUS_BUFCOUNT];
@@ -22,7 +23,8 @@ struct gfs_dirplus {
 };
 
 static gfarm_error_t
-gfs_dirplus_alloc(gfarm_int32_t fd, GFS_DirPlus *dirp)
+gfs_dirplus_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
+	GFS_DirPlus *dirp)
 {
 	GFS_DirPlus dir;
 
@@ -30,6 +32,7 @@ gfs_dirplus_alloc(gfarm_int32_t fd, GFS_DirPlus *dirp)
 	if (dir == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
+	dir->gfm_server = gfm_server;
 	dir->fd = fd;
 	dir->n = dir->index = 0;
 
@@ -51,17 +54,21 @@ gfarm_error_t
 gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
 	int fd, type;
 
-	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &fd, &type))
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server, &fd, &type))
 	    != GFARM_ERR_NO_ERROR)
- 		;
-	else if (type != GFS_DT_DIR) {
-		(void)gfm_close_fd(fd); /* ignore this result */
-		e = GFARM_ERR_NOT_A_DIRECTORY;
-	} else if ((e = gfs_dirplus_alloc(fd, dirp)) != GFARM_ERR_NO_ERROR)
-		(void)gfm_close_fd(fd); /* ignore this result */
+		return (e);
 
+	if (type != GFS_DT_DIR)
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+	else if ((e = gfs_dirplus_alloc(gfm_server, fd, dirp)) ==
+	    GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR);
+
+	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	gfm_client_connection_free(gfm_server);
 	return (e);
 }
 
@@ -76,39 +83,38 @@ gfs_readdirplus(GFS_DirPlus dir,
 
 	if (dir->index >= dir->n) {
 		gfs_dirplus_clear(dir);
-		if ((e = gfm_client_compound_begin_request(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		if ((e = gfm_client_compound_begin_request(dir->gfm_server))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin request: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_request(gfarm_metadb_server,
+		else if ((e = gfm_client_put_fd_request(dir->gfm_server,
 		    dir->fd)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("put_fd request: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_getdirentsplus_request(
-		    gfarm_metadb_server, DIRENTSPLUS_BUFCOUNT))
+		    dir->gfm_server, DIRENTSPLUS_BUFCOUNT))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("get_dirents request: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_compound_end_request(dir->gfm_server))
+		     != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_end request: %s",
 			    gfarm_error_string(e));
 
 		else if ((e = gfm_client_compound_begin_result(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		    dir->gfm_server)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
+		else if ((e = gfm_client_put_fd_result(dir->gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("put_fd result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_getdirentsplus_result(
-		    gfarm_metadb_server, &dir->n, dir->buffer, dir->stbuf))
-		    != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_getdirentsplus_result(dir->gfm_server,
+		    &dir->n, dir->buffer, dir->stbuf)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("get_dirents result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_compound_end_result(dir->gfm_server))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_end result: %s",
 			    gfarm_error_string(e));
 
@@ -130,10 +136,10 @@ gfs_readdirplus(GFS_DirPlus dir,
 gfarm_error_t
 gfs_closedirplus(GFS_DirPlus dir)
 {
-	gfarm_error_t e = gfm_close_fd(dir->fd);
+	gfarm_error_t e = gfm_close_fd(dir->gfm_server, dir->fd);
 
+	gfm_client_connection_free(dir->gfm_server);
 	gfs_dirplus_clear(dir);
 	free(dir);
 	return (e);
 }
-

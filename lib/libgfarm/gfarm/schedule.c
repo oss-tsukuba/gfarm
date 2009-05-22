@@ -310,17 +310,45 @@ search_idle_network_list_init(void)
 	struct search_idle_network *net;
 	struct sockaddr peer_addr;
 	int port;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 
 	assert(search_idle_network_list == NULL);
-	e = gfarm_host_get_canonical_self_name(gfarm_metadb_server,
-	    &self_name, &port);
-	if (e != GFARM_ERR_NO_ERROR)
-		self_name = gfarm_host_get_self_name();
-	/* XXX FIXME this port number (0) is dummy */
-	e = gfarm_host_address_get(gfarm_metadb_server, self_name, 0,
-	    &peer_addr, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	for (;;) {
+		/* XXX FIXME: gfm_server should be passed from upper layer */
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
+
+		e = gfm_host_get_canonical_self_name(gfm_server,
+		    &self_name, &port);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (gfm_cached_connection_had_connection_error(
+			    gfm_server) && ++retry <= 1) {
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			self_name = gfarm_host_get_self_name();
+		}
+		/* XXX FIXME this port number (0) is dummy */
+		e = gfm_host_address_get(gfm_server, self_name, 0,
+		    &peer_addr, NULL);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (gfm_cached_connection_had_connection_error(
+			    gfm_server) && ++retry <= 1) {
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gfm_client_connection_free(gfm_server);
+			gflog_error("gfarm search_idle_network_list_init: "
+			    "self address_get(%s): %s",
+			    self_name, gfarm_error_string(e));
+			return (e);
+		}
+		break;
+	}
+	gfm_client_connection_free(gfm_server);
+
 	GFARM_MALLOC(net);
 	if (net == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -469,6 +497,8 @@ search_idle_host_state_add_host_sched_info(struct gfarm_host_sched_info *info,
 	int created;
 	struct gfarm_hash_entry *entry;
 	struct search_idle_host_state *h;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 
 	if (search_idle_hosts_state == NULL) {
 		e = search_idle_host_state_initialize();
@@ -507,8 +537,23 @@ search_idle_host_state_add_host_sched_info(struct gfarm_host_sched_info *info,
 			h->flags &= ~HOST_STATE_FLAG_ADDR_AVAIL;
 			h->net = NULL;
 		}
-		e = gfarm_host_address_get(gfarm_metadb_server,
-		    hostname, h->port, &h->addr, NULL);
+		/* XXX FIXME: gfm_server should be passed from upper layer */
+		for (;;) {
+			if ((e= gfarm_metadb_connection_acquire(&gfm_server))!=
+			    GFARM_ERR_NO_ERROR)
+				break;
+
+			e = gfm_host_address_get(gfm_server,
+			    hostname, h->port, &h->addr, NULL);
+			if (e != GFARM_ERR_NO_ERROR &&
+			    gfm_cached_connection_had_connection_error(
+			    gfm_server) && ++retry <= 1) {
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gfm_client_connection_free(gfm_server);
+			break;
+		}
 		gettimeofday(&h->addr_cache_time, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);

@@ -8,12 +8,15 @@ struct gfs_foundxattr_entry {
 	char *attrname;
 };
 
+struct gfm_connection;
+
 struct gfs_xmlattr_ctx {
 	// for request from API
 	char *path;
 	char *expr;
 	int depth;
 	// reply of open
+	struct gfm_connection *gfm_server;
 	int fd;
 	int is_dir;
 	// for request to gfmd

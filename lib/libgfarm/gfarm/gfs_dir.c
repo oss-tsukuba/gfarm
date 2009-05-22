@@ -179,6 +179,7 @@ finish:
 struct gfs_dir_internal {
 	struct gfs_dir super;
 
+	struct gfm_connection *gfm_server;
 	int fd;
 	struct gfs_dirent buffer[DIRENTS_BUFCOUNT];
 	int n, index;
@@ -191,39 +192,37 @@ gfs_readdir_internal(GFS_Dir super, struct gfs_dirent **entry)
 	gfarm_error_t e;
 
 	if (dir->index >= dir->n) {
-		if ((e = gfm_client_compound_begin_request(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		if ((e = gfm_client_compound_begin_request(dir->gfm_server))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin request: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_request(gfarm_metadb_server,
+		else if ((e = gfm_client_put_fd_request(dir->gfm_server,
 		    dir->fd)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("put_fd request: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_getdirents_request(
-		    gfarm_metadb_server, DIRENTS_BUFCOUNT))
-		    != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_getdirents_request(dir->gfm_server,
+		    DIRENTS_BUFCOUNT)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("get_dirents request: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_compound_end_request(dir->gfm_server))
+		     != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_end request: %s",
 			    gfarm_error_string(e));
 
 		else if ((e = gfm_client_compound_begin_result(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		    dir->gfm_server)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
+		else if ((e = gfm_client_put_fd_result(dir->gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("put_fd result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_getdirents_result(
-		    gfarm_metadb_server, &dir->n, dir->buffer))
-		    != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_getdirents_result(dir->gfm_server,
+		    &dir->n, dir->buffer)) != GFARM_ERR_NO_ERROR)
 			gflog_warning("get_dirents result: %s",
 			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(
-		    gfarm_metadb_server)) != GFARM_ERR_NO_ERROR)
+		else if ((e = gfm_client_compound_end_result(dir->gfm_server))
+		     != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_end result: %s",
 			    gfarm_error_string(e));
 
@@ -243,8 +242,9 @@ static gfarm_error_t
 gfs_closedir_internal(GFS_Dir super)
 {
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
-	gfarm_error_t e = gfm_close_fd(dir->fd);
+	gfarm_error_t e = gfm_close_fd(dir->gfm_server, dir->fd);
 
+	gfm_client_connection_free(dir->gfm_server);
 	free(dir);
 	return (e);
 }
@@ -262,7 +262,8 @@ gfs_telldir_unimpl(GFS_Dir dir, gfarm_off_t *offp)
 }
 
 static gfarm_error_t
-gfs_dir_alloc(gfarm_int32_t fd, GFS_Dir *dirp)
+gfs_dir_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
+	GFS_Dir *dirp)
 {
 	struct gfs_dir_internal *dir;
 	static struct gfs_dir_ops ops = {
@@ -277,6 +278,7 @@ gfs_dir_alloc(gfarm_int32_t fd, GFS_Dir *dirp)
 		return (GFARM_ERR_NO_MEMORY);
 
 	dir->super.ops = &ops;
+	dir->gfm_server = gfm_server;
 	dir->fd = fd;
 	dir->n = 0;
 	dir->index = 0;
@@ -289,17 +291,21 @@ gfarm_error_t
 gfs_opendir(const char *path, GFS_Dir *dirp)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
 	int fd, type;
 
-	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &fd, &type))
+	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server, &fd, &type))
 	    != GFARM_ERR_NO_ERROR)
- 		;
-	else if (type != GFS_DT_DIR) {
-		(void)gfm_close_fd(fd); /* ignore this result */
-		e = GFARM_ERR_NOT_A_DIRECTORY;
-	} else if ((e = gfs_dir_alloc(fd, dirp)) != GFARM_ERR_NO_ERROR)
-		(void)gfm_close_fd(fd); /* ignore this result */
+		return (e);
 
+	if (type != GFS_DT_DIR)
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+	else if ((e = gfs_dir_alloc(gfm_server, fd, dirp)) ==
+	    GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR);
+
+	(void)gfm_close_fd(gfm_server, fd); /* ignore result */
+	gfm_client_connection_free(gfm_server);
 	return (e);
 }
 

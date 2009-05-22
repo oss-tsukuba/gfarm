@@ -300,43 +300,43 @@ finish:
 #endif /* not yet in gfarm v2 */
 
 static gfarm_error_t
-gfm_schedule_file(gfarm_int32_t fd,
+gfm_schedule_file(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
 	int nhosts;
 	struct gfarm_host_sched_info *infos;
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
+	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_begin request: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(gfarm_metadb_server, fd))
+	else if ((e = gfm_client_put_fd_request(gfm_server, fd))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("put_fd request: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_schedule_file_request(gfarm_metadb_server, "")
+	else if ((e = gfm_client_schedule_file_request(gfm_server, "")
 	    ) != GFARM_ERR_NO_ERROR)
 		gflog_warning("schedule_file request: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_end request: %s",
 		    gfarm_error_string(e));
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_begin result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
+	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("put_fd result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_schedule_file_result(gfarm_metadb_server,
+	else if ((e = gfm_client_schedule_file_result(gfm_server,
 	    &nhosts, &infos)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("schedule_file result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));
@@ -362,7 +362,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = gfs_client_connection_acquire_by_host(gfarm_metadb_server,
+	e = gfs_client_connection_acquire_by_host(gf->gfm_server,
 	    hostname, port, &gfs_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -373,7 +373,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 		e = GFARM_ERR_NO_ERROR;
 		if (gfs_client_pid(gfs_server) == 0)
 			e = gfarm_client_process_set(gfs_server,
-			    gfarm_metadb_server);
+			    gf->gfm_server);
 
 		gfs_profile(gfarm_gettimerval(&t3));
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -386,7 +386,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			gfs_client_connection_free(gfs_server);
 			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
 			    gfs_client_connection_acquire_by_host(
-			    gfarm_metadb_server, hostname, port,
+			    gf->gfm_server, hostname, port,
 			    &gfs_server) == GFARM_ERR_NO_ERROR)
 				continue;
 		}
@@ -440,7 +440,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = gfm_schedule_file(gf->fd, &nhosts, &infos);
+	e = gfm_schedule_file(gf->gfm_server, gf->fd, &nhosts, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -458,13 +458,13 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 
 	/* on-demand replication */
 	if (e == GFARM_ERR_NO_ERROR &&
-	    !gfarm_host_is_local(gfarm_metadb_server, host) &&
+	    !gfm_host_is_local(gf->gfm_server, host) &&
 	    gf_on_demand_replication) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
-			e = gfarm_host_get_canonical_self_name(
-			    gfarm_metadb_server, &host, &port);
+			e = gfm_host_get_canonical_self_name(
+			    gf->gfm_server, &host, &port);
 			host = strdup(host);
 			if (host == NULL)
 				e = GFARM_ERR_NO_MEMORY;
@@ -681,7 +681,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 			gf->mode |= GFS_FILE_MODE_UPDATE_METADATA;
 	}
 
-	is_local_host = gfarm_canonical_hostname_is_local(gfarm_metadb_server,
+	is_local_host = gfarm_canonical_hostname_is_local(gf->gfm_server,
 	    vc->canonical_hostname);
 
 	gf->ops = &gfs_pio_view_section_ops;

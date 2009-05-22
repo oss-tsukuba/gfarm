@@ -28,46 +28,62 @@ gfs_setxattr0(int xmlMode, const char *path, const char *name,
 	const void *value, size_t size, int flags)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
-	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) request: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_request(gfarm_metadb_server,
-			xmlMode, name, value, size, flags))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) result: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_tmp_open_request(gfm_server, path,
+		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) request: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_setxattr_request(gfm_server,
+				xmlMode, name, value, size, flags))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("setxattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) result: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_setxattr_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("setxattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
+
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -95,47 +111,62 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 		size_t size, int flags)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfarm_metadb_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_request(gfarm_metadb_server,
-			0, name, value, size, flags))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_put_fd_request(
+				  gfm_server, gfs_pio_fileno(gf)))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_setxattr_request(gfm_server,
+				0, name, value, size, flags))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("setxattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_client_put_fd_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_setxattr_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("setxattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -148,45 +179,61 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 		void **valuep, size_t *size)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
-	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) request: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_request(gfarm_metadb_server,
-			xmlMode, name)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) result: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server,
-			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_tmp_open_request(gfm_server, path,
+		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) request: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_getxattr_request(gfm_server,
+				xmlMode, name)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("getxattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) result: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_getxattr_result(gfm_server,
+				xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("getxattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
+
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -200,47 +247,62 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 		void **valuep, size_t *size)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfarm_metadb_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_request(
-			gfarm_metadb_server, xmlMode, name))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_result(gfarm_metadb_server,
-			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_put_fd_request(
+				  gfm_server, gfs_pio_fileno(gf)))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_getxattr_request(
+				gfm_server, xmlMode, name))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("getxattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_client_put_fd_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_getxattr_result(gfm_server,
+				xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("getxattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -295,45 +357,61 @@ gfs_listxattr_proccall(int xmlMode, const char *path, char **listp,
 		size_t *size)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
-	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) request: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_listxattr_request(gfarm_metadb_server, xmlMode))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("listxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) result: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_listxattr_result(gfarm_metadb_server,
-			listp, size)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("listxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_tmp_open_request(gfm_server, path,
+		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) request: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_listxattr_request(gfm_server,
+		    xmlMode)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("listxattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) result: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_listxattr_result(gfm_server,
+				listp, size)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("listxattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
+
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -378,45 +456,61 @@ static gfarm_error_t
 gfs_removexattr0(int xmlMode, const char *path, const char *name)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_request(gfarm_metadb_server, path,
-	    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) request: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_request(gfarm_metadb_server,
-			xmlMode, name)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_tmp_open_result(gfarm_metadb_server, path, NULL))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("tmp_open(%s) result: %s", path,
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_tmp_open_request(gfm_server, path,
+		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) request: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_removexattr_request(gfm_server,
+				xmlMode, name)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("removexattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("tmp_open(%s) result: %s", path,
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_removexattr_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("removexattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
+
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -439,47 +533,62 @@ gfarm_error_t
 gfs_fremovexattr(GFS_File gf, const char *name)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int retry = 0;
 	gfarm_timerval_t t1, t2;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfarm_metadb_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_request(
-			gfarm_metadb_server, 0, name))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_put_fd_request(
+				  gfm_server, gfs_pio_fileno(gf)))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_removexattr_request(
+				gfm_server, 0, name))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("removexattr request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
+
+		else if ((e = gfm_client_compound_begin_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_client_put_fd_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("put_fd result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_removexattr_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("removexattr result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		}
+
+		break;
 	}
+	gfm_client_connection_free(gfm_server);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -548,40 +657,53 @@ static gfarm_error_t
 gfs_findxmlattr_open(const char *path, struct gfs_xmlattr_ctx *ctxp)
 {
 	gfarm_error_t e;
-	int flags = GFARM_FILE_RDONLY;
+	int retry = 0;
 
 	/*
 	 * NOTE: I copied this function from gfs_desc_open()
 	 * to known fd, is_dir and not to allocate some buffers
 	 * by gfs_desc_open_common().
 	 */
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_open_request(gfarm_metadb_server, path, flags))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("open path request; %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
+	for (;;) {
+		if ((e = gfarm_metadb_connection_acquire(&ctxp->gfm_server)) !=
+		    GFARM_ERR_NO_ERROR)
+			return (e);
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_open_result(gfarm_metadb_server, path,
-	    &ctxp->fd, &ctxp->is_dir)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("open path result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
+		if ((e = gfm_client_compound_begin_request(ctxp->gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_begin request: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_open_request(ctxp->gfm_server, path,
+		    GFARM_FILE_RDONLY)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("open path request; %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_request(
+		    ctxp->gfm_server)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end request: %s",
+			    gfarm_error_string(e));
 
-	return (e);
+		else if ((e = gfm_client_compound_begin_result(
+		    ctxp->gfm_server)) != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(ctxp->gfm_server);
+				continue;
+			}
+			gflog_warning("compound_begin result: %s",
+			    gfarm_error_string(e));
+		} else if ((e = gfm_open_result(ctxp->gfm_server, path,
+		    &ctxp->fd, &ctxp->is_dir)) != GFARM_ERR_NO_ERROR)
+			gflog_warning("open path result: %s",
+			    gfarm_error_string(e));
+		else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
+		else
+			return (GFARM_ERR_NO_ERROR);
+
+		gfm_client_connection_free(ctxp->gfm_server);
+		return (e);
+	}
 }
 
 gfarm_error_t
@@ -618,36 +740,36 @@ gfs_findxmlattr_get(struct gfs_xmlattr_ctx *ctxp)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_client_compound_begin_request(gfarm_metadb_server))
+	if ((e = gfm_client_compound_begin_request(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_begin request: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(gfarm_metadb_server, ctxp->fd))
+	else if ((e = gfm_client_put_fd_request(ctxp->gfm_server, ctxp->fd))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("put_fd request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_findxmlattr_request(
-		gfarm_metadb_server, ctxp)) != GFARM_ERR_NO_ERROR)
+		ctxp->gfm_server, ctxp)) != GFARM_ERR_NO_ERROR)
 		gflog_warning("find_xml_attr request: %s",
 				gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_end_request(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_end request: %s",
 		    gfarm_error_string(e));
 
-	else if ((e = gfm_client_compound_begin_result(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_begin_result(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_begin result: %s",
 		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfarm_metadb_server))
+	else if ((e = gfm_client_put_fd_result(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("put_fd result: %s",
 		    gfarm_error_string(e));
 	 else if ((e = gfm_client_findxmlattr_result(
-			 gfarm_metadb_server, ctxp)) != GFARM_ERR_NO_ERROR)
+			 ctxp->gfm_server, ctxp)) != GFARM_ERR_NO_ERROR)
 		 gflog_warning("find_xml_attr result: %s",
 			gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfarm_metadb_server))
+	else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_warning("compound_end result: %s",
 		    gfarm_error_string(e));
@@ -716,7 +838,8 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if (ctxp != NULL) {
-		e = gfm_close_fd(ctxp->fd);
+		e = gfm_close_fd(ctxp->gfm_server, ctxp->fd);
+		gfm_client_connection_free(ctxp->gfm_server);
 		gfs_xmlattr_ctx_free(ctxp, 1);
 	} else {
 		e = GFARM_ERR_NO_ERROR;

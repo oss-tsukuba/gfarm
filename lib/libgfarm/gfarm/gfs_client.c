@@ -433,7 +433,7 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = gfarm_host_address_get(gfm_server, canonical_hostname, port,
+	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
 	    &peer_addr, NULL);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfs_client_connection_alloc_and_auth(canonical_hostname,

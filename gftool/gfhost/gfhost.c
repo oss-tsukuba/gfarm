@@ -23,7 +23,7 @@
 
 #include "liberror.h"
 
-#include "host.h" /* gfarm_host_info_address_get() */
+#include "host.h" /* gfm_host_info_address_get() */
 #include "auth.h"
 #include "config.h"
 #include "gfm_client.h"
@@ -103,7 +103,7 @@ check_hostname(char *hostname)
 	char *n;
 	int p;
 
-	e = gfarm_host_get_canonical_name(gfarm_metadb_server, hostname,
+	e = gfm_host_get_canonical_name(gfarm_metadb_server, hostname,
 	    &n, &p);
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(n);
@@ -1075,7 +1075,7 @@ list(int nhosts, char **hosts,
 	struct gfarm_host_info hi;
 
 	for (i = 0; i < nhosts; i++) {
-		e = gfarm_host_info_get_by_name_alias(gfarm_metadb_server,
+		e = gfm_host_info_get_by_name_alias(gfarm_metadb_server,
 		    hosts[i], &hi);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", hosts[i],

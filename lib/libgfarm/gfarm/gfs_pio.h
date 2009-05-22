@@ -25,10 +25,12 @@ struct gfs_pio_ops {
 	gfarm_error_t (*view_fstat)(GFS_File, struct gfs_stat *);
 };
 
+struct gfm_connection;
 struct gfs_file {
 	struct gfs_pio_ops *ops;
 	void *view_context;
 
+	struct gfm_connection *gfm_server;
 	int fd;
 
 	int mode;

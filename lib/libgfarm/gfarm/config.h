@@ -78,6 +78,7 @@ extern gfarm_int64_t gfarm_minimum_free_disk_space;
 /* XXX FIXME this should disappear to support multiple metadata server */
 struct gfm_connection;
 extern struct gfm_connection *gfarm_metadb_server;
+gfarm_error_t gfarm_metadb_connection_acquire(struct gfm_connection **);
 
 void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO

@@ -28,6 +28,7 @@
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
+#include "host.h"
 #include "auth.h"
 #include "config.h"
 #include "conn_cache.h"
@@ -104,6 +105,13 @@ gfm_client_process_get(struct gfm_connection *gfm_server,
 #define gfm_client_connection_used(gfm_server) \
 	gfp_cached_connection_used(&gfm_server_cache, \
 	    (gfm_server)->cache_entry)
+
+int
+gfm_cached_connection_had_connection_error(struct gfm_connection *gfm_server)
+{
+	/* i.e. gfm_client_purge_from_cache() was called due to an error */
+	return (!gfp_is_cached_connection(gfm_server->cache_entry));
+}
 
 void
 gfm_client_connection_gc(void)
@@ -2222,7 +2230,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	job_info.total_nodes = nusers;
 	job_info.user = gfarm_get_global_username();
 	job_info.job_type = job_type;
-	e = gfarm_host_get_canonical_self_name(gfm_server,
+	e = gfm_host_get_canonical_self_name(gfm_server,
 	    &job_info.originate_host, &p);
 	if (e == GFARM_ERR_UNKNOWN_HOST) {
 		/*
@@ -2239,7 +2247,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 	if (job_info.nodes == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	for (i = 0; i < nusers; i++) {
-		e = gfarm_host_get_canonical_name(gfm_server, users[i],
+		e = gfm_host_get_canonical_name(gfm_server, users[i],
 		    &job_info.nodes[i].hostname, &p);
 		if (e != GFARM_ERR_NO_ERROR) {
 			while (--i >= 0)

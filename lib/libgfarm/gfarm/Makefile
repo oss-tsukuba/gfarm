@@ -175,7 +175,7 @@ config.lo: $(GFUTIL_SRCDIR)/gfutil.h gfpath.h hostspec.h host.h param.h sockopt.
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h conn_hash.h conn_cache.h
-gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h gfp_xdr.h io_fd.h sockopt.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h
+gfm_client.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h gfp_xdr.h io_fd.h sockopt.h auth.h config.h conn_cache.h gfm_proto.h gfm_client.h gfj_client.h xattr_info.h gfm_client.h
 gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h liberror.h sockutil.h iobuffer.h gfp_xdr.h io_fd.h host.h param.h sockopt.h auth.h config.h conn_cache.h gfs_proto.h gfs_client.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfs_profile.h gfm_client.h config.h lookup.h gfs_io.h gfs_dir.h
 gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h
@@ -183,7 +183,7 @@ gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_
 gfs_exec.lo: gfs_pio.h
 gfs_io.lo: gfs_io.h
 gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
-gfs_pio.lo: gfs_proto.h gfs_pio.h $(GFUTIL_SRCDIR)/timer.h
+gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h liberror.h gfs_proto.h gfm_client.h gfs_proto.h gfs_io.h gfs_pio.h config.h
 gfs_pio_global.lo: gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: gfs_proto.h gfs_pio.h
 gfs_pio_misc.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h gfs_misc.h $(GFUTIL_SRCDIR)/timer.h
@@ -191,8 +191,8 @@ gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h
 gfs_proto.lo: gfs_proto.h
 gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
-gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
-gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfs_client.h
+gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h host.h config.h lookup.h
+gfs_replicate.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_client.h
 gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h
 gfs_statsw.lo: gfs_dircache.h
 gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h

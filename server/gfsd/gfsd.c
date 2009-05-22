@@ -2911,7 +2911,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			if (client_name == NULL)
 				fatal("%s: no memory", addr_string);
 		}
-		e = gfarm_host_get_canonical_name(gfm_server, client_name,
+		e = gfm_host_get_canonical_name(gfm_server, client_name,
 		    &s, &port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(client_name);
@@ -3504,7 +3504,7 @@ main(int argc, char **argv)
 	 * cannot be used because host_get_self_name() may not be registered.
 	 */
 	if (canonical_self_name == NULL &&
-	    (e = gfarm_host_get_canonical_self_name(gfm_server,
+	    (e = gfm_host_get_canonical_self_name(gfm_server,
 	    &canonical_self_name, &p)) != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(
 		    "cannot get canonical hostname of %s, ask admin to "

@@ -32,6 +32,7 @@ enum gfarm_auth_method gfm_client_connection_auth_method(
 	struct gfm_connection *);
 gfarm_error_t gfm_client_process_get(struct gfm_connection *,
 	gfarm_int32_t *, const char **, size_t *, gfarm_pid_t *);
+int gfm_cached_connection_had_connection_error(struct gfm_connection *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);

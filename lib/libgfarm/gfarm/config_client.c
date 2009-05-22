@@ -24,10 +24,21 @@
 #include "gfs_client.h"
 
 /*
- * XXX FIXME this shouldn't be necessary here
- * to support multiple metadata server.
+ * XXX FIXME this shouldn't be necessary,
+ * if multiple metadata servers are supported.
  */
 struct gfm_connection *gfarm_metadb_server;
+
+/*
+ * XXX FIXME this shouldn't be necessary,
+ * if multiple metadata servers are supported.
+ */
+gfarm_error_t
+gfarm_metadb_connection_acquire(struct gfm_connection **gfm_serverp)
+{
+	return (gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port, gfm_serverp));
+}
 
 static gfarm_error_t
 gfarm_set_global_user_for_sharedsecret(void)
@@ -397,8 +408,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 	 * XXX FIXME this shouldn't be necessary here
 	 * to support multiple metadata server
 	 */
-	e = gfm_client_connection_and_process_acquire(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfarm_metadb_server);
+	e = gfarm_metadb_connection_acquire(&gfarm_metadb_server);
 #ifdef HAVE_GSI
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
