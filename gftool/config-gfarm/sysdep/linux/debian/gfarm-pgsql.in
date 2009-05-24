@@ -47,7 +47,7 @@ RETVAL=0
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $FILE"
-	checkstatus
+	checkstatus > /dev/null
 	RETVAL=$?
 	if [ $RETVAL -ne 0 ]; then
 		call_pg_ctl start
@@ -57,7 +57,7 @@ case "$1" in
 	;;
   stop)
 	echo -n "Stopping gfarm server: $FILE"
-	checkstatus
+	checkstatus > /dev/null
 	RETVAL=$?
 	if [ $RETVAL -eq 3 ]; then
 		RETVAL=0

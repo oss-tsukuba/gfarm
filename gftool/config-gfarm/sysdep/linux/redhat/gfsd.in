@@ -42,8 +42,12 @@ call_daemon()
 start()
 {
 	echo -n "Starting $FILE:"
-	checkstatus
-	[ $? -eq 0 ] && return 0
+	checkstatus > /dev/null
+	if [ $? -eq 0 ]; then
+		success
+		echo
+		return 0
+	fi
 
 	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
 	RETVAL=$?
@@ -55,8 +59,12 @@ start()
 stop()
 {
 	echo -n "Stopping $FILE:"
-	checkstatus
-	[ $? -eq 3 ] && return 0
+	checkstatus > /dev/null
+	if [ $? -eq 3 ]; then
+		success
+		echo
+		return 0
+	fi
 
 	if [ -f "$PIDFILE" ]; then
 		kill -TERM `cat "$PIDFILE"` && success || failure
