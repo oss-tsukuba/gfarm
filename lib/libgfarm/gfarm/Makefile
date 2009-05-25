@@ -78,7 +78,6 @@ SRCS = \
 #	gfs_pio_global.c \
 #	gfs_pio_misc.c \
 #	gfs_exec.c \
-#	import_help.c \
 
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
@@ -145,7 +144,6 @@ OBJS = \
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo \
 #	gfs_exec.lo \
-#	import_help.lo \
 
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
