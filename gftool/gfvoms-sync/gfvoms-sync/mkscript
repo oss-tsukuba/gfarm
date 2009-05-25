@@ -10,10 +10,11 @@ tmp = """#!/bin/sh
 # Copyright (c) 2009 National Institute of Informatics in Japan.
 # All rights reserved.
 
-pythonpath="%s:$PYTHONPATH"
+vomsdir="%s"
+pythonpath="$vomsdir:$PYTHONPATH"
 export PYTHONPATH=$pythonpath
 
-gfvoms-sync.py $@
+python $vomsdir/gfvoms-sync.py $@
 """
 
 ret_str = tmp%(sys.argv[1])

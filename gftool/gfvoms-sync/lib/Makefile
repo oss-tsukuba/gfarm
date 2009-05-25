@@ -1,53 +1,32 @@
 top_builddir = ../../..
 top_srcdir = $(top_builddir)
 srcdir = .
-vomslib = $(prefix)/share/gfarm/voms
-confpath = $(sysconfdir)
-
-vomsids_name = "gfarm.vomsids"
-hostidpy_name = "hostid.py"
 
 include $(top_srcdir)/makes/var.mk
 
-all: script-all
-install: all script-install
-clean: script-clean
-veryclean: script-veryclean
-distclean: script-distclean
-gfregister: script-gfregister
-man: script-man
-html: script-html
+datadir = $(default_datadir)/gfarm/voms
+confpath = $(sysconfdir)
 
-SCRIPTS = zsi_def.py $(hostidpy_name)
+vomsids_name = gfarm.vomsids
+hostidpy_name = hostid.py
 
-script-all:
-	@./mkscript $(hostidpy_name) $(confpath) $(vomsids_name);
+DATA = $(srcdir)/zsi_def.py $(hostidpy_name)
 
-script-install:
-	@$(MKDIR_P) $(vomslib)
-	@for i in -- $(SCRIPTS); do \
-		case $$i in --) continue;; esac; \
-		echo \
-		$(INSTALL_DATA) $$i $(vomslib)/`basename $$i`; \
-		$(INSTALL_DATA) $$i $(vomslib)/`basename $$i`; \
-	done
+all: $(vomsids_name)
+
+$(vomsids_name):
+	./mkscript $(hostidpy_name) $(confpath) $(vomsids_name)
+
+post-install-hook:
 	@if ! test -e "$(confpath)/`basename $(vomsids_name)`"; then \
 	echo \
 	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
 	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
 	fi
 
-script-clean:
-	@for i in -- ${vomsids_name} ${hostidpy_name}; do \
-		 test -e $$i && $(RM) -f $$i; \
+post-clean-hook:
+	@for i in -- $(vomsids_name) $(hostidpy_name); do \
+		test ! -e $$i || $(RM) -f $$i; \
 	done
 
-script-veryclean: clean
-	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f "$(EXTRA_VERYCLEAN_TARGETS)"
-
-script-distclean: veryclean
-	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
-
-script-gfregister:
-script-man:
-script-html:
+include $(top_srcdir)/makes/data.mk

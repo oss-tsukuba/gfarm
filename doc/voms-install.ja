@@ -32,9 +32,9 @@ available が yes となっていることを確認してください．
 
   <prefix>/bin/gfvoms-list
   <prefix>/bin/gfvoms-update
-  <prefix>/bin/gfvoms-sync.py
   <prefix>/bin/gfvoms-sync
   <prefix>/etc/gfarm.vomsids
+  <prefix>/share/gfarm/voms/gfvoms-sync.py
   <prefix>/share/gfarm/voms/hostid.py
   <prefix>/share/gfarm/voms/zsi_def
 
