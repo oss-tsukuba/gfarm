@@ -269,7 +269,7 @@ def export(group_infos):
 	"""
 	groups = group_infos.keys()
 	f = sys.stdout
-	print "Writeing Infos..."
+	print "Writing Infos..."
 
 	if options.has_key("outfile"):
 		try:
