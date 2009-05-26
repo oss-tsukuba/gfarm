@@ -78,7 +78,7 @@ parse_argument_postgresql()
 # search default $BACKEND_PREFIX
 #
 
-set_default_backend_perfix_postgresql()
+set_default_backend_prefix_postgresql()
 {
 	if [ -z "${BACKEND_PREFIX-}" ]; then
 		OIFS=$IFS

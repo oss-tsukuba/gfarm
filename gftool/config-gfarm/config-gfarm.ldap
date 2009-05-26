@@ -68,7 +68,7 @@ parse_argument_ldap()
 # search default $BACKEND_PREFIX
 #
 
-set_default_backend_perfix_ldap()
+set_default_backend_prefix_ldap()
 {
 	if [ -z "${BACKEND_PREFIX-}" ]; then
 		OIFS=$IFS
