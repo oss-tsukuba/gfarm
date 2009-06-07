@@ -366,6 +366,7 @@ fi
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
 : ${METADATA_ADMIN_USER:=`who am i | awk '{print $1}'`}
+: ${METADATA_ADMIN_USER_GSI_DN:=}
 
 : ${AUTH_TYPE:="sharedsecret"}
 
