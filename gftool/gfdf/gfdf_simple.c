@@ -15,7 +15,7 @@ char *program_name = "gfdf";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-a] [-D domain]\n", program_name);
+	fprintf(stderr, "Usage: %s [-a] [-n] [-D domain]\n", program_name);
 	exit(1);
 }
 
@@ -81,6 +81,25 @@ display_statfs_nodes(const char *domain)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+display_nodes(const char *domain)
+{
+	gfarm_error_t e;
+	int nhosts, i;
+	struct gfarm_host_sched_info *hosts;
+
+	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
+		&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	for (i = 0; i < nhosts; ++i)
+		printf("%s\n", hosts[i].host);
+
+	gfarm_host_sched_info_free(nhosts, hosts);
+	return (e);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -98,10 +117,13 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "aD:?")) != -1) {
+	while ((c = getopt(argc, argv, "anD:?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
+			break;
+		case 'n':
+			statfs = display_nodes;
 			break;
 		case 'D':
 			domain = optarg;
