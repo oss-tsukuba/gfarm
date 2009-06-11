@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfdf</command>
     <arg choice='opt'>-a</arg>
+    <arg choice='opt'>-n</arg>
     <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -36,6 +37,13 @@ Gfarm file system.
 <term><option>-a</option></term>
 <listitem>
 <para>Displays only summary information of the Gfarm file system.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>Displays hostnames of available Gfarm file system nodes.</para>
 </listitem>
 </varlistentry>
 

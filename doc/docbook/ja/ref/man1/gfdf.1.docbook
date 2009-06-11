@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfdf</command>
     <arg choice='opt'>-a</arg>
+    <arg choice='opt'>-n</arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -35,6 +36,13 @@
 <term><option>-a</option></term>
 <listitem>
 <para>Gfarmファイルシステム全体のディスク空き容量を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>利用可能なファイルシステムノードのホスト名を表示します。</para>
 </listitem>
 </varlistentry>
 
