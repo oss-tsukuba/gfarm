@@ -284,7 +284,7 @@ gfm_client_connection_dispose(void *connection_data)
 }
 
 /*
- * gfs_client_connection_free() can be used for both 
+ * gfm_client_connection_free() can be used for both 
  * an uncached connection which was created by gfm_client_connect(), and
  * a cached connection which was created by gfm_client_connection_acquire().
  * The connection will be immediately closed in the former uncached case.
@@ -329,6 +329,8 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	gfm_client_connection_used(gfm_server);
 
 	e = gfp_xdr_flush(gfm_server->conn);
+	if (IS_CONNECTION_ERROR(e))
+		gfm_client_purge_from_cache(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
