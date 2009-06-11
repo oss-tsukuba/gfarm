@@ -201,6 +201,8 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
 	int created;
+	unsigned int sleep_interval = 1;	/* 1 sec */
+	unsigned int sleep_max_interval = 512;	/* about 8.5 min */
 
 	e = gfp_cached_connection_acquire(&gfm_server_cache,
 	    hostname, port, &cache_entry, &created);
@@ -211,7 +213,21 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp);
+	while (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning("connecting to gfmd at %s:%d failed, "
+		    "sleep %d sec: %s", hostname, port, sleep_interval,
+		    gfarm_error_string(e));
+		sleep(sleep_interval);
+		e = gfm_client_connection0(hostname, port, cache_entry,
+			gfm_serverp);
+		if (sleep_interval < sleep_max_interval)
+			sleep_interval *= 2;
+		else
+			break; /* give up */
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error("cannot connect to gfmd at %s:%d, give up: %s",
+		    hostname, port, gfarm_error_string(e));
 		gfp_cached_connection_purge_from_cache(&gfm_server_cache,
 		    cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
