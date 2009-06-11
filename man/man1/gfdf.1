@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "14 May 2008" "Gfarm" ""
+.TH "GFDF" "1" "11 June 2009" "Gfarm" ""
 
 .SH NAME
 gfdf \- display disk free space of Gfarm file system
 .SH SYNOPSIS
 
-\fBgfdf\fR [ \fB-a\fR ] [ \fB-D \fIdomainname\fB\fR ]
+\fBgfdf\fR [ \fB-a\fR ] [ \fB-n\fR ] [ \fB-D \fIdomainname\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -19,6 +19,9 @@ Gfarm file system.
 .TP
 \fB-a\fR
 Displays only summary information of the Gfarm file system.
+.TP
+\fB-n\fR
+Displays hostnames of available Gfarm file system nodes.
 .TP
 \fB-D \fIdomainname\fB\fR
 Specifies a domain name of filesystem nodes to list the status
