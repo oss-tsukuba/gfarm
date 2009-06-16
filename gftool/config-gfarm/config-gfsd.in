@@ -52,7 +52,8 @@ fi
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
-	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] spool_directory"
+	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] "
+	echo >&2 "	[-l listen_address] [-S] [-N] spool_directory"
 	exit 1
 }
 
