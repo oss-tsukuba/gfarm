@@ -1,3 +1,37 @@
+Release note for Gfarm 2.2.1
+============================
+
+[2009.6.XX]
+
+New Feature
+* automatic reconnection to gfmd 
+* extended attribute
+* XML extended attribute that is searchable by XPath
+* group management by the Virtual Organization Membership Service
+  (VOMS)
+
+New Command
+* gfvoms-sync - synchronizes the gorup information with the VOMS
+* gfxattr - set, get, remove, and list extended attributes
+* gffindxmlattr - search XML extended attributes by XPath
+
+Updated feature
+* gfdf - add the -n option to display hostnames of available file
+  system nodes
+* config-gfarm-update - the --update-symlink option is replaced with
+  the --update option, which updates the metadata schema of backend
+  database for not only symbolic links but also extended attributes
+* config-gfarm-update - support ldap backend
+* config-gfarm - add -X option to enable XML extended attribute.
+* gfmd - use epoll if available that improves the response time in
+  Linux
+
+Bug fix
+* gfmd - fix a problem such that an application hangs when opening a
+  file in write mode that is opened by another application.
+* config-gfarm - fix unbound variable error when setting the DEBUG
+  environment variable.
+
 Release note for Gfarm 2.2.0
 ============================
 
