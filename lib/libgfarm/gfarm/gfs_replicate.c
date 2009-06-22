@@ -76,32 +76,16 @@ gfarm_error_t
 gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
+	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	char *self;
 	int port;
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		e = gfm_host_get_canonical_self_name(gfm_server,
-		    &self, &port);
-		if (e != GFARM_ERR_NO_ERROR) {
-			if (gfm_cached_connection_had_connection_error(
-			    gfm_server) && ++retry <= 1) {
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			break;
-		}
+	e = gfm_host_get_canonical_self_name(gfm_server, &self, &port);
+	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		    self, port);
-
-		break;
 	}
-	gfm_client_connection_free(gfm_server);
+
 	return (e);
 }
 
