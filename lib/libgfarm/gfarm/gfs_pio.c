@@ -100,8 +100,15 @@ gfs_pio_check_view_default(GFS_File gf)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct gfm_connection *
+gfs_pio_metadb(GFS_File gf)
+{
+	return (gf->gfm_server);
+}
+
 /* gfs_pio_fileno returns a network-wide file descriptor in Gfarm v2 */
-int gfs_pio_fileno(GFS_File gf)
+int
+gfs_pio_fileno(GFS_File gf)
 {
 	return (gf == NULL ? -1 : gf->fd);
 }

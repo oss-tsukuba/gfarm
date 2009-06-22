@@ -12,6 +12,7 @@
 #include "gfm_client.h"
 #include "config.h"
 #include "lookup.h"
+#include "gfs_misc.h"
 
 static double gfs_stat_time;
 
@@ -101,14 +102,9 @@ gfarm_error_t
 gfs_fstat(GFS_File gf, struct gfs_stat *s)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
+	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 
 	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
 		if ((e = gfm_client_compound_begin_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin request: %s",
@@ -128,14 +124,10 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 			    gfarm_error_string(e));
 
 		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
+		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("compound_begin result: %s",
 			    gfarm_error_string(e));
-		} else if ((e = gfm_client_put_fd_result(gfm_server))
+		else if ((e = gfm_client_put_fd_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning("put_fd result: %s",
 			    gfarm_error_string(e));
@@ -150,7 +142,6 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 
 		break;
 	}
-	gfm_client_connection_free(gfm_server);
 
 	return (e);
 }

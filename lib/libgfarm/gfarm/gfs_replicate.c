@@ -13,40 +13,28 @@
 #include "gfm_client.h"
 #include "gfs_client.h"
 #include "schedule.h"
+#include "gfs_misc.h"
 
 static gfarm_error_t
 gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	char *dsthost, int dstport)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
+	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int gfmtry = 0, gfstry = 0;
+	int retry = 0;
 
-	if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-	    GFARM_ERR_NO_ERROR)
-		return (e);
 	for (;;) {
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    dsthost, dstport, &gfs_server)) != GFARM_ERR_NO_ERROR) {
-			if (gfm_cached_connection_had_connection_error(
-			    gfm_server) && ++gfmtry <= 1) {
-				gfm_client_connection_free(gfm_server);
-				if ((e = gfarm_metadb_connection_acquire(
-				    &gfm_server)) != GFARM_ERR_NO_ERROR)
-					return (e);
-				continue;
-			}
-			gfm_client_connection_free(gfm_server);
+		    dsthost, dstport, &gfs_server)) != GFARM_ERR_NO_ERROR)
 			return (e);
-		}
 
 		if (gfs_client_pid(gfs_server) == 0)
 			e = gfarm_client_process_set(gfs_server, gfm_server);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfs_client_replica_add_from(gfs_server,
 			    srchost, srcport, gfs_pio_fileno(gf));
-			if (gfs_client_is_connection_error(e) && ++gfstry<=1) {
+			if (gfs_client_is_connection_error(e) && ++retry<=1) {
 				gfs_client_connection_free(gfs_server);
 				continue;
 			}
@@ -55,7 +43,6 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 		break;
 	}
 	gfs_client_connection_free(gfs_server);
-	gfm_client_connection_free(gfm_server);
 	return (e);
 }
 

@@ -140,7 +140,6 @@ gfarm_error_t gfs_pio_close(GFS_File);
 int gfs_pio_eof(GFS_File);
 gfarm_error_t gfs_pio_error(GFS_File);
 void gfs_pio_clearerr(GFS_File);
-int gfs_pio_fileno(GFS_File);
 #if 0 /* not yet on Gfarm v2 */
 gfarm_error_t gfs_pio_get_nfragment(GFS_File, int *);
 #endif
