@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 
 #include <gfarm/gfarm.h>
@@ -46,6 +47,28 @@ gfp_cached_connection_set_data(struct gfp_cached_connection *connection,
 {
 	connection->connection_data = p;
 }
+
+const char *
+gfp_cached_connection_hostname(struct gfp_cached_connection *connection)
+{
+	assert(GFP_IS_CACHED_CONNECTION(connection));
+	return (gfp_conn_hash_hostname(connection->hash_entry));
+}
+
+const char *
+gfp_cached_connection_username(struct gfp_cached_connection *connection)
+{
+	assert(GFP_IS_CACHED_CONNECTION(connection));
+	return (gfp_conn_hash_username(connection->hash_entry));
+}
+
+int
+gfp_cached_connection_port(struct gfp_cached_connection *connection)
+{
+	assert(GFP_IS_CACHED_CONNECTION(connection));
+	return (gfp_conn_hash_port(connection->hash_entry));
+}
+
 
 gfarm_error_t
 gfp_uncached_connection_new(struct gfp_cached_connection **connectionp)

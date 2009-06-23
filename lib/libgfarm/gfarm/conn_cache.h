@@ -32,6 +32,10 @@ struct gfp_conn_cache {
 int gfp_is_cached_connection(struct gfp_cached_connection *);
 void *gfp_cached_connection_get_data(struct gfp_cached_connection *);
 void gfp_cached_connection_set_data(struct gfp_cached_connection *, void *);
+const char *gfp_cached_connection_hostname(struct gfp_cached_connection *);
+const char *gfp_cached_connection_username(struct gfp_cached_connection *);
+int gfp_cached_connection_port(struct gfp_cached_connection *);
+
 
 gfarm_error_t gfp_uncached_connection_new(struct gfp_cached_connection **);
 void gfp_uncached_connection_dispose(struct gfp_cached_connection *);

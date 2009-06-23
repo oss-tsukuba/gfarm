@@ -452,7 +452,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	if (nhosts == 1)
 		e = choose_trivial_one(&infos[0], &host, &port);
 	else
-		e = gfarm_schedule_select_host(nhosts, infos,
+		e = gfarm_schedule_select_host(gf->gfm_server, nhosts, infos,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	gfarm_host_sched_info_free(nhosts, infos);
 

@@ -12,12 +12,13 @@
  * must include this notice in the file.
  */
 
+struct gfm_connection;
 struct gfarm_host_sched_info;
 struct gfs_file; /* GFS_File */
 
-gfarm_error_t gfarm_schedule_select_host(int, struct gfarm_host_sched_info *,
-	int, char **, int *);
-/* XXX - defined in gfs_pio_section.h */
+gfarm_error_t gfarm_schedule_select_host(struct gfm_connection *,
+	int, struct gfarm_host_sched_info *, int, char **, int *);
+/* XXX - defined in gfs_pio_section.c */
 gfarm_error_t gfarm_schedule_file(struct gfs_file *, char **, gfarm_int32_t *);
 
 #if 0 /* not yet in gfarm v2 */

@@ -83,15 +83,17 @@ static struct gfp_conn_cache gfs_server_cache =
 		SERVER_HASHTAB_SIZE,
 		&gfarm_gfsd_connection_cache);
 
-static gfarm_error_t (*gfs_client_hook_for_connection_error)(const char *) =
-	NULL;
+static gfarm_error_t
+	(*gfs_client_hook_for_connection_error)(struct gfs_connection *) =
+		NULL;
 
 /*
  * Currently this supports only one hook function.
  * And the function is always gfarm_schedule_host_cache_clear_auth() (or NULL).
  */
 void
-gfs_client_add_hook_for_connection_error(gfarm_error_t (*hook)(const char *))
+gfs_client_add_hook_for_connection_error(
+	gfarm_error_t (*hook)(struct gfs_connection *))
 {
 	gfs_client_hook_for_connection_error = hook;
 }
@@ -118,6 +120,18 @@ const char *
 gfs_client_hostname(struct gfs_connection *gfs_server)
 {
 	return (gfs_server->hostname);
+}
+
+const char *
+gfs_client_username(struct gfs_connection *gfs_server)
+{
+	return (gfarm_get_global_username()); /* XXX FIXME */
+}
+
+int
+gfs_client_port(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->port);
 }
 
 int
@@ -755,8 +769,7 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 	va_end(ap);
 	if (IS_CONNECTION_ERROR(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(
-			    gfs_client_hostname(gfs_server));
+			(*gfs_client_hook_for_connection_error)(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	return (e);
@@ -783,8 +796,7 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 
 	if (IS_CONNECTION_ERROR(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(
-			    gfs_client_hostname(gfs_server));
+			(*gfs_client_hook_for_connection_error)(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
@@ -816,8 +828,7 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 
 	if (IS_CONNECTION_ERROR(e)) {
 		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(
-			    gfs_client_hostname(gfs_server));
+			(*gfs_client_hook_for_connection_error)(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR)

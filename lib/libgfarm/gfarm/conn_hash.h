@@ -1,3 +1,4 @@
+gfarm_error_t gfp_conn_hash_table_init(struct gfarm_hash_table **, int);
 gfarm_error_t gfp_conn_hash_enter(struct gfarm_hash_table **, int, size_t,
 	const char *, int, const char *,
 	struct gfarm_hash_entry **, int *);

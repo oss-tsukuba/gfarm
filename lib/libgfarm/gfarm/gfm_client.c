@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h> /* for config.h */
 #include <stddef.h>
 #include <stdarg.h>
@@ -48,7 +49,7 @@ struct gfm_connection {
 	char pid_key[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 };
 
-#define SERVER_HASHTAB_SIZE	3079	/* prime number */
+#define SERVER_HASHTAB_SIZE	31	/* prime number */
 
 static gfarm_error_t gfm_client_connection_dispose(void *);
 
@@ -82,6 +83,35 @@ gfm_client_connection_auth_method(struct gfm_connection *gfm_server)
 {
 	return (gfm_server->auth_method);
 }
+
+int
+gfm_client_is_connection_valid(struct gfm_connection *gfm_server)
+{
+	return (gfp_is_cached_connection(gfm_server->cache_entry));
+}
+
+const char *
+gfm_client_hostname(struct gfm_connection *gfm_server)
+{
+	assert(gfm_client_is_connection_valid(gfm_server));
+	return (gfp_cached_connection_hostname(gfm_server->cache_entry));
+}
+
+const char *
+gfm_client_username(struct gfm_connection *gfm_server)
+{
+	assert(gfm_client_is_connection_valid(gfm_server));
+	return (gfp_cached_connection_username(gfm_server->cache_entry));
+}
+
+int
+gfm_client_port(struct gfm_connection *gfm_server)
+{
+	assert(gfm_client_is_connection_valid(gfm_server));
+	return (gfp_cached_connection_port(gfm_server->cache_entry));
+}
+
+
 
 gfarm_error_t
 gfm_client_process_get(struct gfm_connection *gfm_server,
