@@ -149,7 +149,7 @@ fi
 # search default $BACKEND_PREFIX
 #
 
-set_default_backend_perfix_$BACKEND_TYPE
+set_default_backend_prefix_$BACKEND_TYPE
 . $config_dir/config-gfarm.sysdep
 
 #
