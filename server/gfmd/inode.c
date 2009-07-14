@@ -884,6 +884,9 @@ inode_access(struct inode *inode, struct user *user, int op)
 {
 	gfarm_mode_t mask = 0;
 
+	if (user_is_root(user))
+		return (GFARM_ERR_NO_ERROR);
+
 	if (inode->i_user == user) {
 		if (op & GFS_X_OK)
 			mask |= 0100;

@@ -14,7 +14,8 @@ struct group_assignment {
 	struct group *g;
 };
 
-extern char ADMIN_GROUP_NAME[];
+extern char ADMIN_GROUP_NAME[]; /* can modify host/user/group info of gfarm */
+extern char ROOT_GROUP_NAME[]; /* can modify any data/metadata in gfarmfs */
 
 struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);

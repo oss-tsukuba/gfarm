@@ -573,7 +573,7 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 		;
 	else if ((user = process_get_user(process)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (user != inode_get_user(inode) && !user_is_admin(user) &&
+	else if (user != inode_get_user(inode) && !user_is_root(user) &&
 	    (e = process_get_file_writable(process, peer, fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		e = GFARM_ERR_PERMISSION_DENIED;
@@ -616,7 +616,7 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else if (user != inode_get_user(inode) && !user_is_admin(user))
+	else if (user != inode_get_user(inode) && !user_is_root(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else
 		e = inode_set_mode(inode, mode);
@@ -668,7 +668,7 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_GROUP;
 	else if (new_user != NULL && !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (new_group != NULL && !user_is_admin(user) &&
+	else if (new_group != NULL && !user_is_root(user) &&
 	    (user != inode_get_user(inode) || !user_in_group(user, new_group)))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else

@@ -11,6 +11,7 @@ extern char ADMIN_USER_NAME[];
 struct group;
 int user_in_group(struct user *, struct group *);
 int user_is_admin(struct user *);
+int user_is_root(struct user *);
 
 struct peer;
 gfarm_error_t gfm_server_user_info_get_all(struct peer *, int, int);

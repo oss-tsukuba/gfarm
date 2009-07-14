@@ -208,6 +208,16 @@ user_is_admin(struct user *user)
 	return (user_in_group(user, admin));
 }
 
+int
+user_is_root(struct user *user)
+{
+	static struct group *root = NULL;
+
+	if (root == NULL)
+		root = group_lookup(ROOT_GROUP_NAME);
+	return (user_in_group(user, root));
+}
+
 /* The memory owner of `*ui' is changed to user.c */
 void
 user_add_one(void *closure, struct gfarm_user_info *ui)

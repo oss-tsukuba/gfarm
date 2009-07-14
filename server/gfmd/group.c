@@ -27,7 +27,8 @@ struct group {
 	struct group_assignment users;
 };
 
-char ADMIN_GROUP_NAME[] = "gfarmadm";
+char ADMIN_GROUP_NAME[] = "gfarmadm"; 
+char ROOT_GROUP_NAME[] = "gfarmroot";
 char REMOVED_GROUP_NAME[] = "gfarm-removed-group";
 
 static struct gfarm_hash_table *group_hashtab = NULL;
@@ -306,6 +307,27 @@ group_init(void)
 		if (gfarm_metadb_admin_user != NULL)
 			group_add_user_and_record(admin,
 			    gfarm_metadb_admin_user);
+	}
+
+	if ((admin = group_lookup(ROOT_GROUP_NAME)) == NULL) {
+		gflog_info("group %s not found, creating it",
+		    ROOT_GROUP_NAME);
+
+		gi.groupname = strdup(ROOT_GROUP_NAME);
+		gi.nusers = 0;
+
+		/*
+		 * We have to call this before group_add_one(),
+		 * because group_add_one() frees the memory of gi
+		 */
+		e = db_group_add(&gi);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(
+			    "failed to store group '%s' to storage: %s",
+			    gi.groupname, gfarm_error_string(e));
+
+		group_add_one(NULL, &gi);
+		
 	}
 }
 
