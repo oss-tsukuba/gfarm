@@ -12,6 +12,7 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
+#include "config.h"
 
 #include "db_access.h"
 #include "db_ops.h"
@@ -35,14 +36,12 @@ struct dbq_entry {
 	void *data;
 };
 
-#define DBQ_SIZE	10000
-
 struct dbq {
 	pthread_mutex_t mutex;
 	pthread_cond_t nonempty, nonfull, finished;
 
 	int n, in, out, quitting, quited;
-	struct dbq_entry entries[DBQ_SIZE];
+	struct dbq_entry *entries;
 } dbq;
 
 gfarm_error_t
@@ -50,6 +49,9 @@ dbq_init(struct dbq *q)
 {
 	const char msg[] = "dbq_init";
 
+	GFARM_MALLOC_ARRAY(q->entries, gfarm_metadb_dbq_size);
+	if (q->entries == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	mutex_init(&q->mutex, msg, "mutex");
 	cond_init(&q->nonempty, msg, "nonempty");
 	cond_init(&q->nonfull, msg, "nonfull");
@@ -90,13 +92,13 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		cond_signal(&q->nonempty, msg, "nonempty");
 	} else {
 		e = GFARM_ERR_NO_ERROR;
-		while (q->n >= DBQ_SIZE) {
+		while (q->n >= gfarm_metadb_dbq_size) {
 			cond_wait(&q->nonfull, &q->mutex, msg, "nonfull");
 		}
 		q->entries[q->in].func = func;
 		q->entries[q->in].data = data;
 		q->in++;
-		if (q->in >= DBQ_SIZE)
+		if (q->in >= gfarm_metadb_dbq_size)
 			q->in = 0;
 		q->n++;
 		cond_signal(&q->nonempty, msg, "nonempty");
@@ -220,9 +222,9 @@ dbq_delete(struct dbq *q, struct dbq_entry *entp)
 	} else { /* (q->n > 0) */
 		e = GFARM_ERR_NO_ERROR;
 		*entp = q->entries[q->out++];
-		if (q->out >= DBQ_SIZE)
+		if (q->out >= gfarm_metadb_dbq_size)
 			q->out = 0;
-		if (q->n-- >= DBQ_SIZE) {
+		if (q->n-- >= gfarm_metadb_dbq_size) {
 			cond_signal(&q->nonfull, msg, "nonfull");
 		}
 	}
@@ -240,7 +242,7 @@ db_getfreenum(void)
 	 * This function is made only for gfm_server_findxmlattr().
 	 */
 	pthread_mutex_lock(&q->mutex);
-	freenum = (DBQ_SIZE - q->n);
+	freenum = (gfarm_metadb_dbq_size - q->n);
 	pthread_mutex_unlock(&q->mutex);
 	return (freenum);
 }

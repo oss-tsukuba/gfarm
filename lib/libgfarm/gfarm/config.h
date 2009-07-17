@@ -26,10 +26,12 @@ extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
 extern int gfarm_metadb_heartbeat_interval;
+extern int gfarm_metadb_dbq_size;
 #define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */
 #define GFARM_METADB_THREAD_POOL_SIZE_DEFAULT	16  /* quadcore, quadsocket */
 #define GFARM_METADB_JOB_QUEUE_LENGTH_DEFAULT	160 /* THREAD_POOL * 10 */
 #define GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT 180 /* 3 min */
+#define GFARM_METADB_DBQ_SIZE_DEFAULT	65536
 
 /* LDAP dependent */
 extern char *gfarm_ldap_server_name;

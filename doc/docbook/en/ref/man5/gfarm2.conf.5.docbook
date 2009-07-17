@@ -381,7 +381,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout>
-        metadb_server_stack_size 262144
+	metadb_server_stack_size 262144
 </literallayout>
 </listitem>
 </varlistentry>
@@ -390,7 +390,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <term><token>metadb_server_thread_pool_size</token> <parameter>size</parameter></term>
 <listitem>
 <para>This directive specifies the maximum number of threads in a
-thread pool in the gfmd.   It is effective to specify around the
+thread pool in the gfmd.  It is effective to specify around the
 number of CPU cores of the metadata server node.  Default is 16.
 </para>
 <para>
@@ -398,7 +398,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout>
-        metadb_server_thread_pool_size 16
+	metadb_server_thread_pool_size 16
 </literallayout>
 </listitem>
 </varlistentry>
@@ -415,7 +415,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout>
-        metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 160
 </literallayout>
 </listitem>
 </varlistentry>
@@ -431,7 +431,26 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout>
-        metadb_server_heartbeat_interval 180
+	metadb_server_heartbeat_interval 180
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_dbq_size</token> <parameter>size</parameter></term>
+<listitem>
+<para>This directive specifies the queue length of metadata updates
+for a backend database in gfmd.  Longer queue length may avoid slow
+down due to waiting backend database updates in case of frequent
+metadata operations.
+Default is 65536.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	metadb_server_dbq_size 65536
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1021,6 +1040,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_dbq_size_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
@@ -1075,6 +1095,8 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_job_queue_length" &lt;number&gt;
 	&lt;metadb_server_heartbeat_interval_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_heartbeat_interval" &lt;number&gt;
+	&lt;metadb_server_dbq_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_dbq_size" &lt;number&gt;
 	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
 	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
 	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
