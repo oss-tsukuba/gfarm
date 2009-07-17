@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 March 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "17 July 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -237,25 +237,25 @@ sharedsecret利用時には、この指定は単に無視されます。
 参照してください。
 .TP
 \fBmetadb_server_stack_size \fIバイト数\fB\fR
-メタデータサーバ gfmd 内の各スレッドが利用するスタックのサイズを
-指定します。省略された場合 OS のデフォルト値が使われます。
-このパラメータは、gfmd の消費する仮想メモリ空間のサイズを節約するために
+メタデータサーバgfmd内の各スレッドが利用するスタックのサイズを
+指定します。省略された場合OSのデフォルト値が使われます。
+このパラメータは、gfmdの消費する仮想メモリ空間のサイズを節約するために
 用います。
 
-たとえば、CentOS 5/i386 の場合、デフォルトのスタックサイズは 10MB です
-ので、このパラメータでスタックサイズを 256KB に抑えると、gfmd のスタック
-が消費する仮想メモリ空間のサイズを、1/40 に減らすことができます。
+たとえば、CentOS 5/i386の場合、デフォルトのスタックサイズは10MBです
+ので、このパラメータでスタックサイズを256KBに抑えると、gfmdのスタック
+が消費する仮想メモリ空間のサイズを、1/40に減らすことができます。
 
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 
 例:
 
 .nf
-        metadb_server_stack_size 262144
+	metadb_server_stack_size 262144
 .fi
 .TP
 \fBmetadb_server_thread_pool_size \fIスレッド数\fB\fR
-メタデータサーバ gfmd のスレッドプールのスレッド数を指定します。
+メタデータサーバgfmdのスレッドプールのスレッド数を指定します。
 メタデータサーバノードのコア数くらいに設定すると効果的です。
 デフォルト値は16です。
 
@@ -264,11 +264,11 @@ sharedsecret利用時には、この指定は単に無視されます。
 例:
 
 .nf
-        metadb_server_thread_pool_size 16
+	metadb_server_thread_pool_size 16
 .fi
 .TP
 \fBmetadb_server_job_queue_length \fIキュー長\fB\fR
-メタデータサーバ gfmd のジョブキューのキュー長を指定します。
+メタデータサーバgfmdのジョブキューのキュー長を指定します。
 一度に接続する最大クライアントの数くらいに設定すると効果的です。
 デフォルト値は160です。
 
@@ -277,11 +277,11 @@ sharedsecret利用時には、この指定は単に無視されます。
 例:
 
 .nf
-        metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 160
 .fi
 .TP
 \fBmetadb_server_heartbeat_interval \fI秒数\fB\fR
-メタデータサーバ gfmd が各ファイルシステムサーバ gfsd
+メタデータサーバgfmdが各ファイルシステムサーバgfsd
 に対し動作確認を行うハートビートの間隔を秒数で指定します。
 デフォルト値は180秒です。
 
@@ -290,7 +290,21 @@ sharedsecret利用時には、この指定は単に無視されます。
 例:
 
 .nf
-        metadb_server_heartbeat_interval 180
+	metadb_server_heartbeat_interval 180
+.fi
+.TP
+\fBmetadb_server_dbq_size \fIキュー長\fB\fR
+メタデータサーバgfmdではメタデータの変更をバックエンドDBに
+非同期的に反映しますが，そのキューの長さを指定します。
+キュー長を長くすると，バックエンドDBの更新速度に律速されにくくなります。
+デフォルト値は65536です。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+	metadb_server_dbq_size 65536
 .fi
 .TP
 \fBldap_server_host \fILDAPサーバー・ホスト名\fB\fR
@@ -622,6 +636,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_thread_pool_size_statement> |
 		\~\~<metadb_server_job_queue_length_statement> |
 		\~\~<metadb_server_heartbeat_interval_statement> |
+		\~\~<metadb_server_dbq_size_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
@@ -669,6 +684,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_job_queue_length" <number>
 	<metadb_server_heartbeat_interval_statement> ::=
 		\~\~"metadb_server_heartbeat_interval" <number>
+	<metadb_server_dbq_size_statement> ::=
+		\~\~"metadb_server_dbq_size" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
 	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>

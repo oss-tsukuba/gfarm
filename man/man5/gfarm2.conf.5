@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 March 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "17 July 2009" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -273,12 +273,12 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 For example,
 
 .nf
-        metadb_server_stack_size 262144
+	metadb_server_stack_size 262144
 .fi
 .TP
 \fBmetadb_server_thread_pool_size \fIsize\fB\fR
 This directive specifies the maximum number of threads in a
-thread pool in the gfmd.   It is effective to specify around the
+thread pool in the gfmd.  It is effective to specify around the
 number of CPU cores of the metadata server node.  Default is 16.
 
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
@@ -286,7 +286,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 For example,
 
 .nf
-        metadb_server_thread_pool_size 16
+	metadb_server_thread_pool_size 16
 .fi
 .TP
 \fBmetadb_server_job_queue_length \fIlength\fB\fR
@@ -299,7 +299,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 For example,
 
 .nf
-        metadb_server_job_queue_length 160
+	metadb_server_job_queue_length 160
 .fi
 .TP
 \fBmetadb_server_heartbeat_interval \fIseconds\fB\fR
@@ -311,7 +311,22 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 For example,
 
 .nf
-        metadb_server_heartbeat_interval 180
+	metadb_server_heartbeat_interval 180
+.fi
+.TP
+\fBmetadb_server_dbq_size \fIsize\fB\fR
+This directive specifies the queue length of metadata updates
+for a backend database in gfmd.  Longer queue length may avoid slow
+down due to waiting backend database updates in case of frequent
+metadata operations.
+Default is 65536.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+	metadb_server_dbq_size 65536
 .fi
 .TP
 \fBldap_server_host \fIhostname\fB\fR
@@ -670,6 +685,7 @@ notation.
 		\~\~<metadb_server_thread_pool_size_statement> |
 		\~\~<metadb_server_job_queue_length_statement> |
 		\~\~<metadb_server_heartbeat_interval_statement> |
+		\~\~<metadb_server_dbq_size_statement> |
 		\~\~<ldap_server_host_statement> |
 		\~\~<ldap_server_port_statement> |
 		\~\~<ldap_base_dn_statement> |
@@ -717,6 +733,8 @@ notation.
 		\~\~"metadb_server_job_queue_length" <number>
 	<metadb_server_heartbeat_interval_statement> ::=
 		\~\~"metadb_server_heartbeat_interval" <number>
+	<metadb_server_dbq_size_statement> ::=
+		\~\~"metadb_server_dbq_size" <number>
 	<ldap_server_host_statement> ::= "ldap_server_host" <hostname>
 	<ldap_server_port_statement> ::= "ldap_server_port" <portnumber>
 	<ldap_base_dn_statement> ::= "ldap_base_dn" <string>
