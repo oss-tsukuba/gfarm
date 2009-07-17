@@ -27,7 +27,7 @@ struct group {
 	struct group_assignment users;
 };
 
-char ADMIN_GROUP_NAME[] = "gfarmadm"; 
+char ADMIN_GROUP_NAME[] = "gfarmadm";
 char ROOT_GROUP_NAME[] = "gfarmroot";
 char REMOVED_GROUP_NAME[] = "gfarm-removed-group";
 
@@ -210,7 +210,8 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	}
 	for (i = 0; i < gi->nusers; i++)
 		free(gi->usernames[i]);
-	free(gi->usernames);
+	if (gi->usernames != NULL)
+		free(gi->usernames);
 }
 
 gfarm_error_t
@@ -315,6 +316,7 @@ group_init(void)
 
 		gi.groupname = strdup(ROOT_GROUP_NAME);
 		gi.nusers = 0;
+		gi.usernames = NULL;
 
 		/*
 		 * We have to call this before group_add_one(),
@@ -492,10 +494,14 @@ get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
 		&gp->groupname, &gp->nusers);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	GFARM_MALLOC_ARRAY(gp->usernames, gp->nusers);
-	if (gp->usernames == NULL) {
-		free(gp->groupname);
-		return (GFARM_ERR_NO_MEMORY);
+	if (gp->nusers <= 0) {
+		gp->usernames = NULL;
+	} else {
+		GFARM_MALLOC_ARRAY(gp->usernames, gp->nusers);
+		if (gp->usernames == NULL) {
+			free(gp->groupname);
+			return (GFARM_ERR_NO_MEMORY);
+		}
 	}
 	for (i = 0; i < gp->nusers; ++i) {
 		e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "s",
