@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <netinet/in.h>
 #include <time.h>
 
 #include <gfarm/gfarm.h>
@@ -1472,6 +1473,156 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 
 	return (GFARM_ERR_NO_ERROR);
 }
+
+/* the following dump functions are for debuging purpose. */
+void
+gfarm_schedule_network_cache_dump(void)
+{
+	struct search_idle_network *n;
+	unsigned char *ip_min, *ip_max;
+
+	for (n = search_idle_network_list; n != NULL; n = n->next) {
+		ip_min = (unsigned char *)
+		    &((struct sockaddr_in *)&n->min)->sin_addr.s_addr;
+		ip_max = (unsigned char *)
+		    &((struct sockaddr_in *)&n->max)->sin_addr.s_addr;
+		/*
+		 * the reason why we don't use inet_ntoa() here is
+		 * because inet_ntoa() uses static work area, so it cannot be
+		 * called for two instances (ip_min and ip_max) at once.
+		 */
+		if (n->flags & NET_FLAG_RTT_AVAIL)
+			gflog_info(
+			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT %d usec",
+			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
+			    ip_max[0], ip_max[1], ip_max[2], ip_max[3],
+			    n->rtt_usec);
+		else
+			gflog_info(
+			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT unavailable",
+			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
+			    ip_max[0], ip_max[1], ip_max[2], ip_max[3]);
+	}
+	
+}
+
+#define GFARM_HUMANIZE_NUMBER_LEN (GFARM_INT64STRLEN + 1 + 1)
+
+char *
+gfarm_humanize_number(char *buf, gfarm_off_t sz)
+{
+	if (sz >= 1024LL*1024*1024*1024*1024)
+		sprintf(buf, "%dP", (int)(sz/(1024LL*1024*1024*1024*1024)));
+	else if (sz >= 1024LL*1024*1024*1024)
+		sprintf(buf, "%dT", (int)(sz/(1024LL*1024*1024*1024)));
+	else if (sz >= 1024LL*1024*1024)
+		sprintf(buf, "%dG", (int)(sz/(1024LL*1024*1024)));
+	else if (sz >= 1024LL*1024)
+		sprintf(buf, "%dM", (int)(sz/(1024LL*1024)));
+	else if (sz >= 1024)
+		sprintf(buf, "%dK", (int)(sz/(1024)));
+	else
+		sprintf(buf, "%d" , (int)(sz));
+	return (buf);
+}
+
+void
+gfarm_schedule_host_cache_dump(void)
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *entry;
+	struct search_idle_host_state *h;
+	char hostbuf[80];
+	char rttbuf[80];
+	char loadbuf[80];
+	char diskbuf[80];
+	char diskusedbuf[GFARM_HUMANIZE_NUMBER_LEN];
+	char disktotalbuf[GFARM_HUMANIZE_NUMBER_LEN];
+	struct timeval period;
+
+	if (search_idle_hosts_state == NULL) {
+		gflog_info("<empty>");
+		return;
+	}
+
+	gettimeofday(&period, NULL);
+	period.tv_sec -= gfarm_schedule_cache_timeout;
+	
+	for (gfarm_hash_iterator_begin(search_idle_hosts_state, &it);
+	    !gfarm_hash_iterator_is_end(&it); gfarm_hash_iterator_next(&it)) {
+		entry = gfarm_hash_iterator_access(&it);
+		h = gfarm_hash_entry_data(entry);
+
+		if (h->flags & HOST_STATE_FLAG_ADDR_AVAIL) {
+			unsigned char *ip = (unsigned char *)
+			    &((struct sockaddr_in *)&h->addr)->sin_addr.s_addr;
+			snprintf(hostbuf, sizeof hostbuf,
+			    "%s(%d.%d.%d.%d):%d %s",
+			    gfp_conn_hash_hostname(entry),
+			    ip[0], ip[1], ip[2], ip[3],
+			    h->port, gfp_conn_hash_username(entry));
+		} else {
+			snprintf(hostbuf, sizeof hostbuf, "%s:%d %s",
+			    gfp_conn_hash_hostname(entry),
+			    h->port, gfp_conn_hash_username(entry));
+		}
+
+		if ((h->flags & HOST_STATE_FLAG_RTT_TRIED) == 0) {
+			snprintf(rttbuf, sizeof rttbuf, "RTT:no-try");
+		} else if ((h->flags & HOST_STATE_FLAG_RTT_AVAIL) == 0) {
+			snprintf(rttbuf, sizeof rttbuf, "RTT(%d.%d%s):unavail",
+			    (int)h->rtt_cache_time.tv_sec,
+			    (int)h->rtt_cache_time.tv_usec,
+			    gfarm_timeval_cmp(&h->rtt_cache_time, &period) < 0
+			    ? "*" : "");
+		} else {
+			snprintf(rttbuf, sizeof rttbuf, "RTT(%d.%d%s):%du",
+			    (int)h->rtt_cache_time.tv_sec,
+			    (int)h->rtt_cache_time.tv_usec,
+			    gfarm_timeval_cmp(&h->rtt_cache_time, &period) < 0
+			    ? "*" : "",
+			    h->rtt_usec);
+		}
+
+		if ((h->flags & (HOST_STATE_FLAG_RTT_AVAIL|
+		    HOST_STATE_FLAG_STATFS_AVAIL)) == 0) {
+			snprintf(loadbuf, sizeof loadbuf, "load:unavail");
+		} else {
+			snprintf(loadbuf, sizeof loadbuf, "load(%d.%d%s):%.2f",
+			    (int)h->loadavg_cache_time.tv_sec,
+			    (int)h->loadavg_cache_time.tv_usec,
+			    gfarm_timeval_cmp(&h->loadavg_cache_time, &period)
+			    < 0 ? "*" : "",
+			    h->loadavg);
+		}
+
+		if ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0) {
+			snprintf(diskbuf, sizeof diskbuf, "disk:unavail");
+		} else {
+			snprintf(diskbuf, sizeof diskbuf,
+			    "disk(%d.%d%s):%sB/%sB",
+			    (int)h->statfs_cache_time.tv_sec,
+			    (int)h->statfs_cache_time.tv_usec,
+			    gfarm_timeval_cmp(&h->statfs_cache_time, &period)
+			    < 0 ? "*" : "",
+			    gfarm_humanize_number(diskusedbuf, h->diskused),
+			    gfarm_humanize_number(disktotalbuf,
+			    h->diskused + h->diskavail));
+		}
+
+		gflog_info("%s %s %s %s", hostbuf, rttbuf, loadbuf, diskbuf);
+	}
+}
+
+void
+gfarm_schedule_cache_dump(void)
+{
+	gflog_info("== network ==");
+	gfarm_schedule_network_cache_dump();
+	gflog_info("== host ==");
+	gfarm_schedule_host_cache_dump();
+}
+
 
 #if 0 /* not yet in gfarm v2 */
 

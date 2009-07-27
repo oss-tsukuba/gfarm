@@ -93,6 +93,9 @@ gfarm_error_t gfarm_file_section_host_schedule_by_program(
 gfarm_error_t gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
 	char **);
 
+/* for debugging */
+void gfarm_schedule_cache_dump(void);
+
 /*
  * MetaDB utility
  */
