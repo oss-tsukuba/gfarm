@@ -23,6 +23,7 @@
 #include <openssl/evp.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>

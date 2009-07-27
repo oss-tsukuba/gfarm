@@ -28,6 +28,7 @@
 #include <grp.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 

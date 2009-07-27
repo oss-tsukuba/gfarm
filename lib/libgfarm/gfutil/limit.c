@@ -4,6 +4,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
+
+#include <gfarm/gflog.h>
 #include "gfutil.h"
 
 /*

@@ -993,6 +993,7 @@ fi
 %{prefix}/include/gfarm/error.h
 %{prefix}/include/gfarm/gfarm_misc.h
 %{prefix}/include/gfarm/gfarm_stringlist.h
+%{prefix}/include/gfarm/gflog.h
 %{prefix}/include/gfarm/host_info.h
 %{prefix}/include/gfarm/user_info.h
 %{prefix}/include/gfarm/group_info.h

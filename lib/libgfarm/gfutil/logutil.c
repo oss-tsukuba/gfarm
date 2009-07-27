@@ -9,7 +9,7 @@
 #include <gfarm/gfarm_misc.h>
 
 #define GFLOG_USE_STDARG
-#include "gfutil.h"
+#include <gfarm/gflog.h>
 
 static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;

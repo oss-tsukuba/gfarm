@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <gfarm/gflog.h>
+
 #include "gfutil.h"
 #include "lru_cache.h"
 

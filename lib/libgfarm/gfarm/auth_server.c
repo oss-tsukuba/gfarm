@@ -14,6 +14,7 @@
 #include <pwd.h>
 
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 

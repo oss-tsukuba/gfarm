@@ -10,9 +10,12 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+
 #include "gfutil.h"
 #include "gfm_client.h"
 

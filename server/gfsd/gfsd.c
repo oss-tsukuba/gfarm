@@ -51,12 +51,13 @@
 #include <sys/loadavg.h>	/* getloadavg() on Solaris */
 #endif
 
+#define GFLOG_USE_STDARG
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
 
-#define GFLOG_USE_STDARG
 #include "gfutil.h"
 
 #include "iobuffer.h"
