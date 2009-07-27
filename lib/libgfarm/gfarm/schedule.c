@@ -1474,7 +1474,35 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* the following dump functions are for debuging purpose. */
+/* this function shouldn't belong to this file, but... */
+int
+gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
+{
+	gfarm_error_t e;
+	struct sockaddr addr;
+	int widened;
+
+	/* XXX it's desirable to use struct sockaddr in the scheduling cache */
+
+	/* XXX FIXME this port number (0) is dummy */
+	e = gfm_host_address_get(gfm_server, host, 0, &addr, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (0);
+
+	if (search_idle_local_net == NULL &&
+	    search_idle_network_list_init(gfm_server) != GFARM_ERR_NO_ERROR)
+		return (0);
+
+	return (gfarm_addr_is_same_net(&addr,
+	    &search_idle_local_net->min,
+	    &search_idle_local_net->max,
+	    (search_idle_local_net->flags & NET_FLAG_NETMASK_KNOWN) == 0,
+	    &widened));
+}
+
+/*
+ * the following dump functions are for debuging purpose.
+ */
 void
 gfarm_schedule_network_cache_dump(void)
 {
