@@ -36,8 +36,8 @@
 /* ERROR:  duplicate key violates unique constraint */
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION	"23505"
 
-/* ERROR:invalid XML content */
-#define GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT "2200N"
+/* ERROR:  invalid XML content */
+#define GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT	"2200N"
 
 /* FATAL:  terminating connection due to administrator command */
 #define GFARM_PGSQL_ERRCODE_ADMIN_SHUTDOWN	"57P01"
