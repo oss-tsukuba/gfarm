@@ -855,13 +855,8 @@ inode_status_changed(struct inode *inode)
 void
 inode_created(struct inode *inode)
 {
-	inode_status_changed(inode);
-	inode->i_atimespec.tv_sec =
-	inode->i_mtimespec.tv_sec =
-	inode->i_ctimespec.tv_sec;
-	inode->i_atimespec.tv_nsec =
-	inode->i_mtimespec.tv_nsec =
-	inode->i_ctimespec.tv_nsec;
+	touch(&inode->i_ctimespec);
+	inode->i_atimespec = inode->i_mtimespec = inode->i_ctimespec;
 }
 
 Dir
