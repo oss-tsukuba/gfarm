@@ -35,6 +35,7 @@ struct gfarm_timespec *inode_get_mtime(struct inode *);
 struct gfarm_timespec *inode_get_ctime(struct inode *);
 void inode_set_atime(struct inode *, struct gfarm_timespec *);
 void inode_set_mtime(struct inode *, struct gfarm_timespec *);
+void inode_set_ctime(struct inode *, struct gfarm_timespec *);
 void inode_accessed(struct inode *);
 void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);

@@ -617,6 +617,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		inode_set_size(fo->inode, size);
 		inode_set_atime(fo->inode, atime);
 		inode_set_mtime(fo->inode, mtime);
+		inode_set_ctime(fo->inode, mtime);
 		return (GFARM_ERR_NO_ERROR);
 	}
 

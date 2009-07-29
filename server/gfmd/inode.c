@@ -802,7 +802,7 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 		    inode->i_number, gfarm_error_string(e));
 }
 
-static void
+void
 inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 {
 	gfarm_error_t e;
@@ -1555,7 +1555,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 		--ios->u.f.writers;
 
 	if (atime != NULL)
-		inode->i_atimespec = *atime;
+		inode_set_atime(inode, atime);
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL)
 		inode_remove(inode); /* clears `ios->u.f.cksum_owner' too. */
 }
@@ -1579,8 +1579,10 @@ inode_close_write(struct file_opening *fo, gfarm_off_t size,
 		gflog_error("db_inode_size_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 
-	if (mtime != NULL)
-		inode->i_mtimespec = *mtime;
+	if (mtime != NULL) {
+		inode_set_mtime(inode, mtime);
+		inode_set_ctime(inode, mtime);
+	}
 	inode_close_read(fo, atime);
 }
 
