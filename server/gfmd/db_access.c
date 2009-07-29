@@ -47,7 +47,7 @@ struct dbq {
 gfarm_error_t
 dbq_init(struct dbq *q)
 {
-	const char msg[] = "dbq_init";
+	static const char msg[] = "dbq_init";
 
 	GFARM_MALLOC_ARRAY(q->entries, gfarm_metadb_dbq_size);
 	if (q->entries == NULL)
@@ -63,7 +63,7 @@ dbq_init(struct dbq *q)
 gfarm_error_t
 dbq_wait_to_finish(struct dbq *q)
 {
-	const char msg[] = "dbq_wait_to_finish";
+	static const char msg[] = "dbq_wait_to_finish";
 
 	mutex_lock(&q->mutex, msg, "mutex");
 	q->quitting = 1;
@@ -79,7 +79,7 @@ static gfarm_error_t
 dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 {
 	gfarm_error_t e;
-	const char msg[] = "dbq_enter";
+	static const char msg[] = "dbq_enter";
 
 	mutex_lock(&q->mutex, msg, "mutex");
 	if (q->quitting) {
@@ -147,7 +147,7 @@ dbq_enter_withcallback(struct dbq *q,
 void
 db_waitctx_init(struct db_waitctx *ctx)
 {
-	const char msg[] = "db_waitctx_init";
+	static const char msg[] = "db_waitctx_init";
 
 	if (ctx != NULL) {
 		mutex_init(&ctx->lock, msg, "lock");
@@ -182,7 +182,7 @@ gfarm_error_t
 dbq_waitret(struct db_waitctx *ctx)
 {
 	gfarm_error_t e;
-	const char msg[] = "dbq_waitret";
+	static const char msg[] = "dbq_waitret";
 
 	if (ctx == NULL)
 		return (GFARM_ERR_NO_ERROR);
@@ -208,7 +208,7 @@ gfarm_error_t
 dbq_delete(struct dbq *q, struct dbq_entry *entp)
 {
 	gfarm_error_t e;
-	const char msg[] = "dbq_delete";
+	static const char msg[] = "dbq_delete";
 
 	mutex_lock(&q->mutex, msg, "mutex");
 	while (q->n <= 0 && !q->quitting) {

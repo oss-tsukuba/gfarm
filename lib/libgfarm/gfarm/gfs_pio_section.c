@@ -65,8 +65,8 @@ gfs_pio_view_section_close(GFS_File gf)
 		     (gf->mode & GFS_FILE_MODE_UPDATE_METADATA) != 0)) {
 			/* we have to read rest of the file in this case */
 #if 0
-			char message[] = "gfarm: writing without truncation"
-			    " isn't supported yet\n";
+			static char message[] = "gfarm: writing without"
+			    " truncation isn't supported yet\n";
 			write(2, message, sizeof(message) - 1);
 			abort(); /* XXX - not supported for now */
 #endif

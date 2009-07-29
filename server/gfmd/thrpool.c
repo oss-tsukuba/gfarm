@@ -28,7 +28,7 @@ struct thread_jobq {
 void
 thrjobq_init(struct thread_jobq *q, int size)
 {
-	const char msg[] = "thrjobq_init";
+	static const char msg[] = "thrjobq_init";
 
 	mutex_init(&q->mutex, msg, "thrjobq");
 	cond_init(&q->nonempty, msg, "nonempty");
@@ -44,7 +44,7 @@ thrjobq_init(struct thread_jobq *q, int size)
 void
 thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
 {
-	const char msg[] = "thrjobq_add_job";
+	static const char msg[] = "thrjobq_add_job";
 
 	mutex_lock(&q->mutex, msg, "thrjobq");
 
@@ -65,7 +65,7 @@ thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
 void
 thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 {
-	const char msg[] = "thrjobq_get_job";
+	static const char msg[] = "thrjobq_get_job";
 
 	mutex_lock(&q->mutex, msg, "thrjobq");
 
@@ -91,7 +91,7 @@ struct thread_pool {
 void
 thrpool_init(void)
 {
-	const char msg[] = "thrpool_init";
+	static const char msg[] = "thrpool_init";
 	struct thread_pool *p = &thrpool;
 
 	thrjobq_init(&p->jobq, gfarm_metadb_job_queue_length);
@@ -104,7 +104,7 @@ thrpool_init(void)
 void *
 thrpool_worker(void *arg)
 {
-	const char msg[] = "thrpool_worker";
+	static const char msg[] = "thrpool_worker";
 	struct thread_pool *p = arg;
 	struct thread_job job;
 
@@ -131,7 +131,7 @@ thrpool_worker(void *arg)
 void
 thrpool_add_job(void *(*thread_main)(void *), void *arg)
 {
-	const char msg[] = "thrpool_add_job";
+	static const char msg[] = "thrpool_add_job";
 	struct thread_pool *p = &thrpool;
 	gfarm_error_t e;
 
@@ -153,7 +153,7 @@ thrpool_add_job(void *(*thread_main)(void *), void *arg)
 void
 thrpool_info(void)
 {
-	const char msg[] = "thrpool_info";
+	static const char msg[] = "thrpool_info";
 	struct thread_pool *p = &thrpool;
 	int n, i;
 

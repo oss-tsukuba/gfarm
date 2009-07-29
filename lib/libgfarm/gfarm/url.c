@@ -533,7 +533,7 @@ char *
 gfarm_path_dir(const char *pathname)
 {
 	char *dir, *p;
-	const char dot[] = ".";
+	static const char dot[] = ".";
 
 	if (pathname[0] == '\0')
 		return (strdup(dot));
