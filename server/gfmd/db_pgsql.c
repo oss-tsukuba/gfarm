@@ -291,11 +291,11 @@ gfarm_pgsql_check_update_or_delete(PGresult *res,
 	char *pge;
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		if (((pge = PQresultErrorField(res, PG_DIAG_SQLSTATE)) != NULL)
-				&& (strcmp(pge, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT) == 0))
-				e = GFARM_ERR_INVALID_ARGUMENT;
-			else
-				e = GFARM_ERR_UNKNOWN;
+		if ((pge = PQresultErrorField(res, PG_DIAG_SQLSTATE))!= NULL &&
+		    strcmp(pge, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT) == 0)
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		else
+			e = GFARM_ERR_UNKNOWN;
 		gflog_error("%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
