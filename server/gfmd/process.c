@@ -583,7 +583,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	struct host *spool_host;
+	int do_not_change_status = 0;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -594,34 +594,40 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0)
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
+	/*
+	 * GFARM_FILE_CREATE_REPLICA flag means to create and add a
+	 * file replica by gfs_pio_write if this file already has file
+	 * replicas.  GFARM_ERR_ALREADY_EXISTS error means this is the
+	 * first one and this file has only one replica.  If it is
+	 * not, do not change the status.
+	 */
+	if (((fo->flag & GFARM_FILE_CREATE_REPLICA) != 0) &&
+	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
+	     != GFARM_ERR_ALREADY_EXISTS))
+		do_not_change_status = 1;
+	else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
+		/* invalidate file replicas if updated */
+		inode_remove_every_other_replicas(
+			fo->inode, fo->u.f.spool_host);
+
 	if (fo->opener != peer && fo->opener != NULL) {
-		spool_host = fo->u.f.spool_host;
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-		/*
-		 * GFARM_FILE_CREATE_REPLICA means just to create a
-		 * file replica.
-		 */
-		if ((fo->flag & GFARM_FILE_CREATE_REPLICA) != 0) {
-			e = inode_add_replica(fo->inode, spool_host, 1);
-			/* if this is not the first replica, return */
-			if (e != GFARM_ERR_ALREADY_EXISTS)
-				return (e);
-		}
-		else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
-			/* invalidate file replicas if updated */
-			inode_remove_every_other_replicas(
-				fo->inode, spool_host);
 
-		inode_set_size(fo->inode, size);
-		inode_set_atime(fo->inode, atime);
-		inode_set_mtime(fo->inode, mtime);
-		inode_set_ctime(fo->inode, mtime);
+		if (!do_not_change_status) {
+			inode_set_size(fo->inode, size);
+			inode_set_atime(fo->inode, atime);
+			inode_set_mtime(fo->inode, mtime);
+			inode_set_ctime(fo->inode, mtime);
+		}
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	inode_close_write(fo, size, atime, mtime);
+	if (!do_not_change_status)
+		inode_close_write(fo, size, atime, mtime);
+	else
+		inode_close(fo);
 	file_opening_free(fo, 1);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
