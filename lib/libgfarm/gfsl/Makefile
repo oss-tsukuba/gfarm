@@ -48,23 +48,19 @@ program: $(PROGRAMS)
 
 ### for library
 
-$(OBJS): $(DEPGFSLINC) $(INC_BUILDDIR)/gfarm_config.h
+$(OBJS): $(DEPGFSLINC) $(DEPGFARMINC)
 
 include $(top_srcdir)/makes/lib.mk
 
 # dependencies
-auth.lo: $(INC_SRCDIR)/gfarm_misc.h
 auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h
-auth.lo: gfsl_config.h gfarm_auth.h misc.h
+auth.lo: gfsl_config.h misc.h
 gsi.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
-gsi.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
-gsi.lo: gfsl_config.h gfarm_gsi.h gfarm_auth.h
-misc.lo: gfsl_config.h gfarm_auth.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
+gsi.lo: gfsl_config.h tcputil.h
+misc.lo: gfsl_config.h $(top_builddir)/makes/config.mk # $(GFARM_INSTALL_ETC_DIR) -> $(sysconfdir)
 session.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/gfutil.h
-session.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
-session.lo: gfarm_secure_session.h misc.h
-tcputil.lo: $(GFUTIL_SRCDIR)/gfutil.h
-tcputil.lo: $(INC_SRCDIR)/gfarm_misc.h tcputil.h
+session.lo: tcputil.h misc.h
+tcputil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/gfutil.h tcputil.h
 
 server.o server2.o client.o client2.o: $(GFUTIL_SRCDIR)/gfutil.h \
     $(INC_SRCDIR)/gfarm_misc.h tcputil.h \
