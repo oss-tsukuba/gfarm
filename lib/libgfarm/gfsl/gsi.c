@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <pwd.h>
 
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 
 #include "gssapi.h"

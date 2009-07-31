@@ -17,7 +17,7 @@
 #endif /* USE_GLOBUS_LIBC_HOOK */
 
 #include <gfarm/gfarm_config.h>
-
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 
 #include "gfnetdb.h"
