@@ -115,6 +115,9 @@ struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
 
+	gfarm_error_t (*begin)(void *);
+	gfarm_error_t (*end)(void *);
+
 	gfarm_error_t (*host_add)(struct gfarm_host_info *);
 	gfarm_error_t (*host_modify)(struct db_host_modify_arg *);
 	gfarm_error_t (*host_remove)(char *);

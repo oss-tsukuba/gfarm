@@ -16,6 +16,7 @@
 #include "timespec.h"
 
 #include "subr.h"
+#include "db_access.h"
 #include "peer.h"
 #include "inode.h"
 #include "process.h"
@@ -152,6 +153,7 @@ process_add_ref(struct process *process)
 	++process->refcount;
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 static int
 process_del_ref(struct process *process)
 {
@@ -188,6 +190,7 @@ process_del_ref(struct process *process)
 	return (0); /* process freed */
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 process_attach_peer(struct process *process, struct peer *peer)
 {
@@ -195,6 +198,7 @@ process_attach_peer(struct process *process, struct peer *peer)
 	/* We are currently not using peer here */
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 process_detach_peer(struct process *process, struct peer *peer)
 {
@@ -886,6 +890,8 @@ gfarm_error_t
 gfm_server_process_free(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
+	int transaction = 0;
+	const char msg[] = "gfm_server_process_free";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -894,8 +900,17 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 	if (peer_get_process(peer) == NULL)
 		e = GFARM_ERR_NO_SUCH_PROCESS;
 	else {
+		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * the following internally calls inode_close*() and
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
 		peer_unset_process(peer);
 		e = GFARM_ERR_NO_ERROR;
+		if (transaction)
+			db_end(msg);
 	}
 
 	giant_unlock();

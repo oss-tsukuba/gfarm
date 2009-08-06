@@ -399,6 +399,7 @@ peer_free(struct peer *peer)
 	peer_table_unlock();
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_shutdown_all(void)
 {
@@ -542,6 +543,7 @@ peer_get_process(struct peer *peer)
 	return (peer->process);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_set_process(struct peer *peer, struct process *process)
 {
@@ -589,6 +591,10 @@ peer_get_jobs_ref(struct peer *peer)
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
+ * because only externalized descriptor needs the calls.
+ */
 void
 peer_fdpair_clear(struct peer *peer)
 {
@@ -637,6 +643,11 @@ peer_fdpair_close_current(struct peer *peer)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
+ * because only externalized descriptor needs the calls.
+ */
 void
 peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 {
@@ -667,6 +678,11 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
+ * because only externalized descriptor needs the calls.
+ */
 gfarm_error_t
 peer_fdpair_save(struct peer *peer)
 {
@@ -685,6 +701,11 @@ peer_fdpair_save(struct peer *peer)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* NOTE: caller of this function should acquire giant_lock as well */
+/*
+ * NOTE: this shouldn't need db_begin()/db_end() calls at least for now,
+ * because only externalized descriptor needs the calls.
+ */
 gfarm_error_t
 peer_fdpair_restore(struct peer *peer)
 {

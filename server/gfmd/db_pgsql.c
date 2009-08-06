@@ -45,6 +45,8 @@
 /**********************************************************************/
 
 static PGconn *conn = NULL;
+static int transaction_nesting = 0;
+static int transaction_ok;
 
 static char *
 gfarm_pgsql_make_conninfo(const char **varnames, char **varvalues, int n,
@@ -401,24 +403,48 @@ gfarm_pgsql_exec_params_with_retry(const char *command,
 	return (res);
 }
 
-static int
-gfarm_pgsql_begin_with_retry(const char *diag)
+static gfarm_error_t
+gfarm_pgsql_start_with_retry(const char *diag)
 {
 	PGresult *res;
 	int retry_count = 0;
 
+	if (transaction_nesting++ > 0)
+		return (GFARM_ERR_NO_ERROR);
+
+	transaction_ok = 1;
 	do {
-		res = PQexec(conn, "BEGIN");
+		res = PQexec(conn, "START TRANSACTION");
 	} while (PQresultStatus(res) != PGRES_COMMAND_OK &&
 	    pgsql_should_retry(res, &retry_count));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		gflog_error("%s transaction BEGIN: %s",
 		    diag, PQresultErrorMessage(res));
 		PQclear(res);
-		return (0);
+		return (GFARM_ERR_UNKNOWN);
 	}
 	PQclear(res);
-	return (1);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfarm_pgsql_commit(const char *diag)
+{
+	if (--transaction_nesting > 0)
+		return (GFARM_ERR_NO_ERROR);
+
+	assert(transaction_nesting == 0);
+	
+	return (gfarm_pgsql_exec_and_log(transaction_ok ? "COMMIT" : "ROLLBACK",
+	    diag));
+}
+
+static gfarm_error_t
+gfarm_pgsql_rollback(const char *diag)
+{
+	transaction_ok = 0;
+
+	return (gfarm_pgsql_commit(diag));
 }
 
 static gfarm_error_t
@@ -522,8 +548,8 @@ gfarm_pgsql_generic_grouping_get_all(
 	int ngroups;
 	char *results;
 
-	if (!gfarm_pgsql_begin_with_retry(diag))
-		return (GFARM_ERR_UNKNOWN);
+	if ((e = gfarm_pgsql_start_with_retry(diag)) != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	cres = PQexecParams(conn,
 		count_sql,
@@ -582,7 +608,10 @@ gfarm_pgsql_generic_grouping_get_all(
 	}
 	PQclear(cres);
 
-	gfarm_pgsql_exec_and_log("END", diag);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfarm_pgsql_commit(diag);
+	else
+		gfarm_pgsql_rollback(diag);
 
 	return (e);
 }
@@ -788,6 +817,25 @@ gfarm_pgsql_generic_load(
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_pgsql_begin(void *arg)
+{
+	assert(transaction_nesting == 0);
+	return (gfarm_pgsql_start_with_retry("pgsql_begin"));
+}
+
+static gfarm_error_t
+gfarm_pgsql_end(void *arg)
+{
+	gfarm_error_t e = gfarm_pgsql_commit(
+	    transaction_ok ? "gfarm_pgsql_end(OK)" : "gfarm_pgsql_end(NG)");
+
+	assert(transaction_nesting == 0);
+	return (e);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 host_info_set_fields_with_grouping(
 	PGresult *res, int startrow, int nhostaliases, void *vinfo)
 {
@@ -871,8 +919,8 @@ pgsql_host_update(struct gfarm_host_info *info, const char *sql,
 	char ncpu[GFARM_INT32STRLEN + 1];
 	char flags[GFARM_INT32STRLEN + 1];
 
-	if (!gfarm_pgsql_begin_with_retry("pgsql_host_add"))
-		return GFARM_ERR_UNKNOWN;
+	if ((e = gfarm_pgsql_start_with_retry(diag)) != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	paramValues[0] = info->hostname;
 	sprintf(port, "%d", info->port);
@@ -899,8 +947,11 @@ pgsql_host_update(struct gfarm_host_info *info, const char *sql,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = hostaliases_set(info);
 
-	return gfarm_pgsql_exec_and_log(
-	    e == GFARM_ERR_NO_ERROR ? "COMMIT" : "ROLLBACK", diag);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfarm_pgsql_commit(diag);
+	else
+		gfarm_pgsql_rollback(diag);
+	return (e);
 }
 
 static gfarm_error_t
@@ -1175,9 +1226,11 @@ static gfarm_error_t
 gfarm_pgsql_group_add(struct gfarm_group_info *info)
 {
 	const char *paramValues[1];
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
+	static const char msg[] = "pgsql_group_add";
 
-	if (gfarm_pgsql_begin_with_retry("pgsql_group_add")) {
+	if ((e = gfarm_pgsql_start_with_retry(msg))
+	    == GFARM_ERR_NO_ERROR) {
 
 		paramValues[0] = info->groupname;
 		e = gfarm_pgsql_insert_and_log(
@@ -1188,39 +1241,43 @@ gfarm_pgsql_group_add(struct gfarm_group_info *info)
 			NULL, /* param lengths */
 			NULL, /* param formats */
 			0, /* ask for text results */
-			"pgsql_group_add");
+			msg);
 
 		if (e == GFARM_ERR_NO_ERROR)
 			e = grpassign_set(info);
 
-		e = gfarm_pgsql_exec_and_log(
-		    e == GFARM_ERR_NO_ERROR ? "COMMIT" : "ROLLBACK",
-		    "pgsql_group_add");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfarm_pgsql_commit(msg);
+		else
+			gfarm_pgsql_rollback(msg);
 	}
 
 	free(info);
-	return e;
+	return (e);
 }
 
 static gfarm_error_t
 gfarm_pgsql_group_modify(struct db_group_modify_arg *arg)
 {
 	struct gfarm_group_info *info = &arg->gi;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
+	static const char msg[] = "gfarm_pgsql_group_modify";
 
-	if (gfarm_pgsql_begin_with_retry("pgsql_group_modify")) {
+	if ((e = gfarm_pgsql_start_with_retry("pgsql_group_modify"))
+	    == GFARM_ERR_NO_ERROR) {
 
 		e = grpassign_remove(info->groupname);
 
 		if (e == GFARM_ERR_NO_ERROR)
 			e = grpassign_set(info);
 
-		e = gfarm_pgsql_exec_and_log(
-		    e == GFARM_ERR_NO_ERROR ? "COMMIT" : "ROLLBACK",
-		    "pgsql_group_modify");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfarm_pgsql_commit(msg);
+		else
+			gfarm_pgsql_rollback(msg);
 	}
 	free(arg);
-	return e;
+	return (e);
 }
 
 static gfarm_error_t
@@ -2416,6 +2473,9 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_initialize,
 	gfarm_pgsql_terminate,
+
+	gfarm_pgsql_begin,
+	gfarm_pgsql_end,
 
 	gfarm_pgsql_host_add,
 	gfarm_pgsql_host_modify,

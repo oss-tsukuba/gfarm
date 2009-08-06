@@ -9,10 +9,8 @@ gfarm_error_t db_terminate(void);
 void *db_thread(void *);
 int db_getfreenum(void);
 
-#if 0 /* XXX for now */
-gfarm_error_t db_begin(void);
-gfarm_error_t db_end(void);
-#endif
+gfarm_error_t db_begin(const char *);
+gfarm_error_t db_end(const char *);
 
 struct gfarm_host_info;
 gfarm_error_t db_host_add(const struct gfarm_host_info *);

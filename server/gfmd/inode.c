@@ -18,6 +18,7 @@
 
 #include "gfutil.h"
 
+#include "timespec.h"
 #include "gfm_proto.h"
 
 #include "subr.h"
@@ -781,6 +782,9 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 	if (atime == NULL)
 		return;
 
+	if (gfarm_timespec_cmp(&inode->i_atimespec, atime) == 0)
+		return; /* not necessary to change */
+
 	inode->i_atimespec = *atime;
 
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);
@@ -794,6 +798,9 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 {
 	gfarm_error_t e;
 
+	if (gfarm_timespec_cmp(&inode->i_mtimespec, mtime) == 0)
+		return; /* not necessary to change */
+
 	inode->i_mtimespec = *mtime;
 
 	e = db_inode_mtime_modify(inode->i_number, inode_get_mtime(inode));
@@ -806,6 +813,9 @@ void
 inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 {
 	gfarm_error_t e;
+
+	if (gfarm_timespec_cmp(&inode->i_ctimespec, ctime) == 0)
+		return; /* not necessary to change */
 
 	inode->i_ctimespec = *ctime;
 

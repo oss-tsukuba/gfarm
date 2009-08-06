@@ -290,17 +290,25 @@ db_thread(void *arg)
 	return (NULL);
 }
 
-#if 0 /* XXX for now */
 gfarm_error_t
-db_begin(void)
+db_begin(const char *diag)
 {
+	gfarm_error_t e = dbq_enter(&dbq, (dbq_entry_func_t)ops->begin, NULL);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("%s: db_begin(): %s", diag, gfarm_error_string(e));
+	return (e);
 }
 
 gfarm_error_t
-db_end(void)
+db_end(const char *diag)
 {
+	gfarm_error_t e = dbq_enter(&dbq, (dbq_entry_func_t)ops->end, NULL);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error("%s: db_end(): %s", diag, gfarm_error_string(e));
+	return (e);
 }
-#endif /* XXX for now */
 
 void *
 db_host_dup(const struct gfarm_host_info *hi, size_t size)

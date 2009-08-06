@@ -113,6 +113,10 @@ remover(void *arg)
 		"protocol error" : gfarm_error_string(e));
 	host_peer_unset(host);
 	giant_lock();
+	/*
+	 * NOTE: this shouldn't need db_begin()/db_end() at least for now,
+	 * because only externalized descriptor needs the calls.
+	 */
 	peer_free(peer);
 	giant_unlock();
 

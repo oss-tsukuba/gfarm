@@ -453,6 +453,8 @@ protocol_service(struct peer *peer)
 	gfarm_error_t e, dummy;
 	gfarm_int32_t request;
 	int from_client;
+	int transaction = 0;
+	const char msg[] = "protocol_service";
 
 	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
 	if (ps->nesting_level == 0) { /* top level */
@@ -461,7 +463,17 @@ protocol_service(struct peer *peer)
 		giant_lock();
 		peer_fdpair_clear(peer);
 		if (peer_had_protocol_error(peer)) {
+			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+				transaction = 1;
+			/*
+			 * the following internally calls inode_close*() and
+			 * closing must be done regardless of the result of
+			 * db_begin().  because not closing may cause
+			 * descriptor leak.
+			 */
 			peer_free(peer);
+			if (transaction)
+				db_end(msg);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -472,7 +484,17 @@ protocol_service(struct peer *peer)
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
 			peer_fdpair_clear(peer);
+			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+				transaction = 1;
+			/*
+			 * the following internally calls inode_close*() and
+			 * closing must be done regardless of the result of
+			 * db_begin().  because not closing may cause
+			 * descriptor leak.
+			 */
 			peer_free(peer);
+			if (transaction)
+				db_end(msg);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -496,7 +518,17 @@ protocol_service(struct peer *peer)
 	if (request == GFM_PROTO_SWITCH_BACK_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_lock();
+			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+				transaction = 1;
+			/*
+			 * the following internally calls inode_close*() and
+			 * closing must be done regardless of the result of
+			 * db_begin().  because not closing may cause
+			 * descriptor leak.
+			 */
 			peer_free(peer);
+			if (transaction)
+				db_end(msg);
 			giant_unlock();
 		}
 		return (1); /* finish */
@@ -636,6 +668,7 @@ try_auth(void *arg)
 	if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning("peer_authorize: %s", gfarm_error_string(e));
 		giant_lock();
+		/* db_begin()/db_end() is not necessary in this case */
 		peer_free(peer);
 		giant_unlock();
 	}
@@ -734,6 +767,8 @@ sigs_handler(void *p)
 {
 	sigset_t *sigs = p;
 	int sig;
+	int transaction = 0;
+	const char msg[] = "sigs_handler";
 
 #ifdef __linux__
 	/* A Linux Thread is a process having its own process id. */
@@ -795,7 +830,16 @@ sigs_handler(void *p)
 	host_remove_replica_dump_all();
 
 	gflog_info("shutting down peers");
+	if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+		transaction = 1;
+	/*
+	 * the following internally calls inode_close*() and
+	 * closing must be done regardless of the result of db_begin().
+	 * because not closing may cause descriptor leak.
+	 */
 	peer_shutdown_all();
+	if (transaction)
+		db_end(msg);
 
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */

@@ -17,6 +17,7 @@
 #include "gfm_proto.h"
 
 #include "subr.h"
+#include "db_access.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
@@ -179,8 +180,9 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	struct process *process;
 	int op;
 	struct inode *base, *inode;
-	int created;
+	int created, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
+	const char msg[] = "gfm_server_open_common";
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -201,26 +203,36 @@ gfm_server_open_common(struct peer *peer, int from_client,
 	if (to_create) {
 		if (mode & ~GFARM_S_ALLPERM)
 			return (GFARM_ERR_INVALID_ARGUMENT);
+		e = db_begin(msg);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		transaction = 1;
 		e = inode_create_file(base, name, process, op, mode, &inode,
 		    &created);
 	} else {
 		e = inode_lookup_by_name(base, name, process, op, &inode);
 		created = 0;
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR)
+		e = process_open_file(process, inode, flag, created, peer,
+		    spool_host, &fd);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (transaction)
+			db_end(msg);
 		return (e);
-	e = process_open_file(process, inode, flag, created, peer, spool_host,
-	    &fd);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	}
 	if (created && !from_client) {
 		e = inode_add_replica(inode, spool_host, 1);
 		if (e != GFARM_ERR_NO_ERROR) {
 			process_close_file(process, peer, fd);
 			inode_unlink(base, name, process);
+			if (transaction)
+				db_end(msg);
 			return (e);
 		}
 	}
+	if (transaction)
+		db_end(msg);
 	peer_fdpair_set_current(peer, fd);
 	*inump = inode_get_number(inode);
 	*genp = inode_get_gen(inode);
@@ -408,6 +420,8 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t fd = -1;
+	int transaction = 0;
+	const char msg[] = "gfm_server_close";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -420,11 +434,19 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_close_file(process, peer, fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else
-		e = peer_fdpair_close_current(peer);
+	else {
+		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = process_close_file(process, peer, fd);
+		if (transaction)
+			db_end(msg);
+		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
+			e = peer_fdpair_close_current(peer);
+	}
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "close", e, ""));
@@ -553,6 +575,7 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	struct user *user;
 	struct inode *inode;
+	static const char msg[] = "gfm_server_futimes";
 
 	e = gfm_server_get_request(peer, "futimes", "lili",
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
@@ -578,9 +601,12 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	    (e = process_get_file_writable(process, peer, fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		e = GFARM_ERR_PERMISSION_DENIED;
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
 	else {
 		inode_set_atime(inode, &atime);
 		inode_set_mtime(inode, &mtime);
+		db_end(msg);
 	}
 
 	giant_unlock();
@@ -637,6 +663,7 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	struct user *user, *new_user = NULL;
 	struct group *new_group = NULL;
 	struct inode *inode;
+	static const char msg[] = "gfm_server_fchown";
 
 	e = gfm_server_get_request(peer, "fchown", "ss",
 	    &username, &groupname);
@@ -672,8 +699,12 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	else if (new_group != NULL && !user_is_root(user) &&
 	    (user != inode_get_user(inode) || !user_in_group(user, new_group)))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = inode_set_owner(inode, new_user, new_group);
+		db_end(msg);
+	}
 
 	free(username);
 	free(groupname);
@@ -739,6 +770,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	char *cksum_type;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	struct gfarm_timespec mtime;
+	static const char msg[] = "gfm_server_cksum_set";
 
 	e = gfm_server_get_request(peer, "cksum_set", "sbili",
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags,
@@ -760,9 +792,13 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = process_cksum_set(process, peer, fd,
 		    cksum_type, cksum_len, cksum, flags, &mtime);
+		db_end(msg);
+	}
 
 	free(cksum_type);
 	giant_unlock();
@@ -854,6 +890,7 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *base;
+	static const char msg[] = "gfm_server_remove";
 
 	e = gfm_server_get_request(peer, "remove", "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -874,8 +911,12 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, cfd, &base))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = inode_unlink(base, name, process);
+		db_end(msg);
+	}
 
 	free(name);
 	giant_unlock();
@@ -890,6 +931,7 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t sfd, dfd;
 	struct inode *sdir, *ddir;
+	static const char msg[] = "gfm_server_rename";
 
 	e = gfm_server_get_request(peer, "rename", "ss", &sname, &dname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -916,8 +958,12 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, dfd, &ddir))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = inode_rename(sdir, sname, ddir, dname, process);
+		db_end(msg);
+	}
 
 	free(sname);
 	free(dname);
@@ -934,6 +980,7 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t sfd, dfd;
 	struct inode *src, *base;
+	static const char msg[] = "gfm_server_flink";
 
 	e = gfm_server_get_request(peer, "flink", "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -963,8 +1010,12 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, dfd, &base))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
                 e = inode_create_link(base, name, process, src);
+		db_end(msg);
+	}
 
 	free(name);
 	giant_unlock();
@@ -980,6 +1031,7 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *base;
+	static const char msg[] = "gfm_server_mkdir";
 
 	e = gfm_server_get_request(peer, "mkdir", "si", &name, &mode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1002,8 +1054,12 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 		;
 	else if (mode & ~GFARM_S_ALLPERM)
 		e = GFARM_ERR_INVALID_ARGUMENT;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = inode_create_dir(base, name, process, mode);
+		db_end(msg);
+	}
 
 	free(name);
 	giant_unlock();
@@ -1019,6 +1075,7 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *base;
+	static const char msg[] = "gfm_server_symlink";
 
 	e = gfm_server_get_request(peer, "symlink", "ss", &source_path, &name);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1042,8 +1099,12 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, cfd, &base))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else
+	else if ((e = db_begin(msg)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
 		e = inode_create_symlink(base, name, process, source_path);
+		db_end(msg);
+	}
 
 	free(source_path);
 	free(name);
@@ -1456,6 +1517,8 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	struct gfarm_timespec atime;
 	struct host *spool_host;
 	struct process *process;
+	int transaction = 0;
+	const char msg[] = "gfm_server_close_read";
 
 	e = gfm_server_get_request(peer, "close_read", "li",
 	    &atime.tv_sec, &atime.tv_nsec);
@@ -1474,11 +1537,19 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_close_file_read(process, peer, fd,
-	    &atime)) != GFARM_ERR_NO_ERROR)
-		;
-	else
-		e = peer_fdpair_close_current(peer);
+	else {
+		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = process_close_file_read(process, peer, fd, &atime);
+		if (transaction)
+			db_end(msg);
+		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
+			e = peer_fdpair_close_current(peer);
+	}
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "close_read", e, ""));
@@ -1493,6 +1564,8 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	struct gfarm_timespec atime, mtime;
 	struct host *spool_host;
 	struct process *process;
+	int transaction = 0;
+	const char msg[] = "gfm_server_close_write";
 
 	e = gfm_server_get_request(peer, "close_write", "llili",
 	    &size,
@@ -1512,11 +1585,20 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else if ((e = process_close_file_write(process, peer,
-	    fd, size, &atime, &mtime)) != GFARM_ERR_NO_ERROR)
-		;
-	else
-		e = peer_fdpair_close_current(peer);
+	else {
+		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = process_close_file_write(process, peer, fd, size,
+		    &atime, &mtime);
+		if (transaction)
+			db_end(msg);
+		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
+			e = peer_fdpair_close_current(peer);
+	}
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "close_write", e, ""));
@@ -1884,6 +1966,8 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 	gfarm_int64_t mtime_sec;
 	struct host *spool_host;
 	struct process *process;
+	int transaction = 0;
+	const char msg[] = "gfm_server_replica_added";
 
 	e = gfm_server_get_request(peer, "replica_added", "ili",
 	    &flags, &mtime_sec, &mtime_nsec);
@@ -1902,9 +1986,19 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else
+	else {
+		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * the following internally calls process_close_file_read() and
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
 		e = process_replica_added(process, peer, spool_host, fd,
 		    flags, mtime_sec, mtime_nsec);
+		if (transaction)
+			db_end(msg);
+	}
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "replica_added", e, ""));

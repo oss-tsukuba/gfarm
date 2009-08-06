@@ -993,6 +993,14 @@ gfarm_ldap_generic_info_get_foreach(
 
 /**********************************************************************/
 
+static gfarm_error_t
+gfarm_ldap_nop(void *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/**********************************************************************/
+
 static char *gfarm_ldap_host_info_make_dn(void *vkey);
 static void gfarm_ldap_host_info_set_field(void *info, char *attribute,
 	char **vals);
@@ -2693,6 +2701,9 @@ gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
+
+	gfarm_ldap_nop,
+	gfarm_ldap_nop,
 
 	gfarm_ldap_host_add,
 	gfarm_ldap_host_modify,

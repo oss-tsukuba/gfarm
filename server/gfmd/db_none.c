@@ -45,6 +45,14 @@ gfarm_none_terminate(void)
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_nop(void *arg)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 gfarm_none_host_add(struct gfarm_host_info *info)
 {
 	free(info);
@@ -325,6 +333,9 @@ gfarm_none_xmlattr_find(struct db_xmlattr_find_arg *arg)
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
+
+	gfarm_none_nop,
+	gfarm_none_nop,
 
 	gfarm_none_host_add,
 	gfarm_none_host_modify,
