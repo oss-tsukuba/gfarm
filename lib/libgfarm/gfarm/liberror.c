@@ -187,7 +187,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"missing <user map file> argument",
 	"missing 1st(architecture) argument",
 	"missing 2nd(host-spec) argument",
-	"cannot open " GFARM_CONFIG,
+	"cannot open gfarm2.conf",
 
 	/* refered only from gfarm/gfp_xdr.c */
 	"gfp_xdr_send: invalid format character",
