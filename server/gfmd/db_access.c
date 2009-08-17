@@ -859,7 +859,7 @@ db_filecopy_arg_alloc(gfarm_ino_t inum, const char *hostname)
 	int overflow = 0;
 
 	sz = gfarm_size_add(&overflow, sizeof(*arg), hsize);
-	if (&overflow)
+	if (!overflow)
 		arg = malloc(sz);
 	if (overflow || arg == NULL)
 		return (NULL);
