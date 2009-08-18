@@ -72,11 +72,11 @@ gfs_setxattr0(int xmlMode, const char *path, const char *name,
 			    gfarm_error_string(e));
 		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
+			gflog_debug("tmp_open(%s) result: %s", path,
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_setxattr_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("setxattr result: %s",
+			gflog_debug("setxattr result: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
@@ -146,11 +146,11 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
+		gflog_debug("put_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_setxattr_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr result: %s",
+		gflog_debug("setxattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -208,11 +208,11 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 			    gfarm_error_string(e));
 		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
+			gflog_debug("tmp_open(%s) result: %s", path,
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_getxattr_result(gfm_server,
 				xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("getxattr result: %s",
+			gflog_debug("getxattr result: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
@@ -268,11 +268,11 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
+		gflog_debug("put_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_getxattr_result(gfm_server,
 			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr result: %s",
+		gflog_debug("getxattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -372,11 +372,11 @@ gfs_listxattr_proccall(int xmlMode, const char *path, char **listp,
 			    gfarm_error_string(e));
 		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
+			gflog_debug("tmp_open(%s) result: %s", path,
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_listxattr_result(gfm_server,
 				listp, size)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("listxattr result: %s",
+			gflog_debug("listxattr result: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
@@ -471,11 +471,11 @@ gfs_removexattr0(int xmlMode, const char *path, const char *name)
 			    gfarm_error_string(e));
 		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
+			gflog_debug("tmp_open(%s) result: %s", path,
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_removexattr_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("removexattr result: %s",
+			gflog_debug("removexattr result: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
@@ -540,11 +540,11 @@ gfs_fremovexattr(GFS_File gf, const char *name)
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
+		gflog_debug("put_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_removexattr_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr result: %s",
+		gflog_debug("removexattr result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -654,7 +654,7 @@ gfs_findxmlattr_open(const char *path, struct gfs_xmlattr_ctx *ctxp)
 			    gfarm_error_string(e));
 		} else if ((e = gfm_open_result(ctxp->gfm_server, path,
 		    &ctxp->fd, &ctxp->is_dir)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("open path result: %s",
+			gflog_debug("open path result: %s",
 			    gfarm_error_string(e));
 		else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
 		    != GFARM_ERR_NO_ERROR)
@@ -725,11 +725,11 @@ gfs_findxmlattr_get(struct gfs_xmlattr_ctx *ctxp)
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
+		gflog_debug("put_fd result: %s",
 		    gfarm_error_string(e));
 	 else if ((e = gfm_client_findxmlattr_result(
 			 ctxp->gfm_server, ctxp)) != GFARM_ERR_NO_ERROR)
-		 gflog_warning("find_xml_attr result: %s",
+		 gflog_debug("find_xml_attr result: %s",
 			gfarm_error_string(e));
 	else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
 	    != GFARM_ERR_NO_ERROR)
