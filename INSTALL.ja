@@ -82,12 +82,12 @@ configure コマンドには，下記のオプションがあります．
 ・--enable-xmlattr
 
   XPath による検索が可能な XML 拡張属性を利用するときに指定します．詳
-  しくは doc/xattr-{install,man,dev}.ja を参照してください．
+  しくは doc/xattr-install.ja および gfxattr，gffindxmlattr のマニュア
+  ルページを参照してください．
   本機能を利用するためには，configure に --with-libxml オプションをつ
-  けてビルドされた postgresql-8.3.x 以降が必要となります．
+  けて構築された postgresql-8.3.x 以降が必要となります．
   （http://www.postgresql.org/docs/8.3/static/install-procedure.html）
-  また，config-gfarm 時に -b postgresql -X yes オプションの指定が必要
-  になります．
+  また，config-gfarm 時に -X オプションの指定が必要になります．
   このオプションは省略可能です．
 
 利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ

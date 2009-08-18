@@ -75,19 +75,22 @@ Options for configure:
 
   --enable-voms
 
-  Enables to compile several commands to synchronize Gfarm group
-  membership with VOMS (Virtual Organization Membership Service)
-  servers.  This is optional.
+  Enables to compile the gfvoms-sync command to synchronize Gfarm
+  group membership with VOMS (Virtual Organization Membership Service)
+  servers.  This option requires Python and ZSI (Zolera SOAP
+  Infrastructure).
+  This is optional.
 
 
   --enable-xmlattr
 
   Enables XML extended attribute feature that can be queried by the
-  XML Path Language (XPath).  This option requires postgresql-8.3 or
+  XML Path Language (XPath).  For details, see manual pages of gfxattr
+  and gffindxmlattr.  This option requires postgresql-8.3 or
   later that configures with the --with-libxml option.  See
   http://www.postgresql.org/docs/8.3/static/install-procedure.html for
-  details.  The "-b postgresql -X yes" option is also required to
-  config-gfarm when setting up the Gfarm file system.
+  details.  The -X option is also required to config-gfarm when
+  setting up the Gfarm file system.
   This is optional.
 
 When you need to specify a compiler program explicitly, use the
