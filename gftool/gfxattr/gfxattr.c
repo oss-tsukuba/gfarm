@@ -212,7 +212,7 @@ usage(char *prog_name)
 {
 	fprintf(stderr, "Usage: %s [ -s | -g | -r | -l ]"
 #ifdef ENABLE_XMLATTR
-		" [-x]"
+		" [ -x ]"
 #endif
 #ifdef HAVE_SYS_XATTR_H
 		" [ -c | -m ]"
@@ -245,7 +245,9 @@ main(int argc, char *argv[])
 	int xmlMode = 0, flags = 0;
 	gfarm_error_t e;
 	const char *opts = "f:ghsrl?"
+#ifdef ENABLE_XMLATTR
 		"x"
+#endif
 #ifdef HAVE_SYS_XATTR_H
 		"cm"
 #endif
@@ -256,9 +258,11 @@ main(int argc, char *argv[])
 		case 'f':
 			filename = optarg;
 			break;
+#ifdef ENABLE_XMLATTR
 		case 'x':
 			xmlMode = 1;
 			break;
+#endif
 		case 'g':
 			mode = GET_MODE;
 			break;

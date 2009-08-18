@@ -3,6 +3,7 @@ DOCBOOK = \
 	gfchmod.1 \
 	gfchown.1 \
 	gfdf.1 \
+	gffindxmlattr.1 \
 	gfgroup.1 \
 	gfhost.1 \
 	gfkey.1 \
@@ -16,7 +17,8 @@ DOCBOOK = \
 	gfstatus.1 \
 	gfuser.1 \
 	gfwhere.1 \
-	gfwhoami.1
+	gfwhoami.1 \
+	gfxattr.1
 
 #	gfarm_agent.1 \
 #	gfcd.1 \
