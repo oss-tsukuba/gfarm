@@ -1,7 +1,7 @@
-Release note for Gfarm 2.2.1
+Release note for Gfarm 2.3.0
 ============================
 
-[2009.6.XX]
+[2009.8.XX]
 
 New Feature
 * automatic reconnection to gfmd 
@@ -9,11 +9,16 @@ New Feature
 * XML extended attribute that is searchable by XPath
 * group management by the Virtual Organization Membership Service
   (VOMS)
+* gfarmroot group - super users' group in Gfarm
 
 New Command
-* gfvoms-sync - synchronizes the gorup information with the VOMS
+* gfvoms-sync - synchronizes the group information with the VOMS
 * gfxattr - set, get, remove, and list extended attributes
 * gffindxmlattr - search XML extended attributes by XPath
+
+New configuration in gfmd.conf
+* metadb_server_dbq_size directive to specify a queue length for
+  backend database
 
 Updated feature
 * gfdf - add the -n option to display hostnames of available file
@@ -27,6 +32,8 @@ Updated feature
   Linux
 
 Bug fix
+* gfmd - fix a critical problem such that there is a case to remain
+  invalid old replicas even when it is updated.
 * gfmd - fix a problem such that an application hangs when opening a
   file in write mode that is opened by another application.
 * config-gfarm - fix unbound variable error when setting the DEBUG

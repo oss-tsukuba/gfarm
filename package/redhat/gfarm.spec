@@ -320,6 +320,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfexec.1.gz
 %{man_prefix}/man1/gfexport.1.gz
+%endif
+%{man_prefix}/man1/gffindxmlattr.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfgrep.1.gz
 %endif
 %{man_prefix}/man1/gfgroup.1.gz
@@ -366,6 +369,7 @@ fi
 %endif
 %{man_prefix}/man1/gfwhere.1.gz
 %{man_prefix}/man1/gfwhoami.1.gz
+%{man_prefix}/man1/gfxattr.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man3/gfarm.3.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
@@ -432,6 +436,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfexec.1.gz
 %{man_prefix}/ja/man1/gfexport.1.gz
+%endif
+%{man_prefix}/ja/man1/gffindxmlattr.1.gz
+%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfgrep.1.gz
 %endif
 %{man_prefix}/ja/man1/gfgroup.1.gz
@@ -478,6 +485,7 @@ fi
 %endif
 %{man_prefix}/ja/man1/gfwhere.1.gz
 %{man_prefix}/ja/man1/gfwhoami.1.gz
+%{man_prefix}/ja/man1/gfxattr.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man3/gfarm.3.gz
 %{man_prefix}/ja/man3/gfarm_hostlist_read.3.gz
@@ -557,6 +565,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfexec.1.html
 %{html_prefix}/en/ref/man1/gfexport.1.html
+%endif
+%{html_prefix}/en/ref/man1/gffindxmlattr.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfgrep.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfgroup.1.html
@@ -601,6 +612,7 @@ fi
 %endif
 %{html_prefix}/en/ref/man1/gfwhere.1.html
 %{html_prefix}/en/ref/man1/gfwhoami.1.html
+%{html_prefix}/en/ref/man1/gfxattr.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man3/gfarm.3.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
@@ -672,6 +684,9 @@ fi
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfexec.1.html
 %{html_prefix}/ja/ref/man1/gfexport.1.html
+%endif
+%{html_prefix}/ja/ref/man1/gffindxmlattr.1.html
+%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfgrep.1.html
 %endif
 %{html_prefix}/ja/ref/man1/gfgroup.1.html
@@ -716,6 +731,7 @@ fi
 %endif
 %{html_prefix}/ja/ref/man1/gfwhere.1.html
 %{html_prefix}/ja/ref/man1/gfwhoami.1.html
+%{html_prefix}/ja/ref/man1/gfxattr.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man3/gfarm.3.html
 %{html_prefix}/ja/ref/man3/gfarm_hostlist_read.3.html
