@@ -363,7 +363,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfs_client_connection_acquire_by_host(gf->gfm_server,
-	    hostname, port, &gfs_server);
+	    hostname, port, &gfs_server, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -387,7 +387,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
 			    gfs_client_connection_acquire_by_host(
 			    gf->gfm_server, hostname, port,
-			    &gfs_server) == GFARM_ERR_NO_ERROR)
+			    &gfs_server, NULL) == GFARM_ERR_NO_ERROR)
 				continue;
 		}
 

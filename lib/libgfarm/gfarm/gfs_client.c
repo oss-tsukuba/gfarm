@@ -37,6 +37,7 @@
 #include "gfevent.h"
 #include "hash.h"
 #include "lru_cache.h"
+#include "gfnetdb.h"
 
 #include "liberror.h"
 #include "sockutil.h"
@@ -239,7 +240,7 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 static gfarm_error_t
 gfs_client_connect_inet(const char *canonical_hostname,
 	struct sockaddr *peer_addr,
-	int *connection_in_progress_p, int *sockp)
+	int *connection_in_progress_p, int *sockp, const char *source_ip)
 {
 	int rv, sock;
 
@@ -259,6 +260,26 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	 * because its only effect is that TCP timeout becomes longer.
 	 */
 	fcntl(sock, F_SETFL, O_NONBLOCK);
+
+	if (source_ip != NULL) {
+		struct addrinfo shints, *sres;
+
+		memset(&shints, 0, sizeof(shints));
+		shints.ai_family = AF_INET;
+		shints.ai_socktype = SOCK_STREAM;
+		shints.ai_flags = AI_PASSIVE;
+		if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
+			close(sock);
+			return (GFARM_ERR_UNKNOWN_HOST);
+		}
+		if (bind(sock, sres->ai_addr, sres->ai_addrlen) == -1) {
+			close(sock);
+			gfarm_freeaddrinfo(sres);
+			return (gfarm_errno_to_error(errno));
+		}
+		gfarm_freeaddrinfo(sres);
+	}
+
 	rv = connect(sock, peer_addr, sizeof(*peer_addr));
 	if (rv < 0) {
 		if (errno != EINPROGRESS) {
@@ -277,7 +298,8 @@ gfs_client_connect_inet(const char *canonical_hostname,
 static gfarm_error_t
 gfs_client_connection_alloc(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfp_cached_connection *cache_entry,
-	int *connection_in_progress_p, struct gfs_connection **gfs_serverp)
+	int *connection_in_progress_p, struct gfs_connection **gfs_serverp,
+	const char *source_ip)
 {
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
@@ -295,7 +317,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	}
 	if (sock == -1) {
 		e = gfs_client_connect_inet(canonical_hostname,
-		    peer_addr, &connection_in_progress, &sock);
+		    peer_addr, &connection_in_progress, &sock, source_ip);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -335,14 +357,14 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 static gfarm_error_t
 gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfp_cached_connection *cache_entry,
-	struct gfs_connection **gfs_serverp)
+	struct gfs_connection **gfs_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
 	int connection_in_progress;
 	struct gfs_connection *gfs_server;
 
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
-	    cache_entry, &connection_in_progress, &gfs_server);
+	    cache_entry, &connection_in_progress, &gfs_server, source_ip);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (connection_in_progress)
@@ -417,7 +439,7 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
-	    cache_entry, gfs_serverp);
+	    cache_entry, gfs_serverp, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
@@ -429,7 +451,7 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 gfarm_error_t
 gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	const char *canonical_hostname, int port,
-	struct gfs_connection **gfs_serverp)
+	struct gfs_connection **gfs_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
@@ -452,7 +474,7 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	    &peer_addr, NULL);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfs_client_connection_alloc_and_auth(canonical_hostname,
-		    &peer_addr, cache_entry, gfs_serverp);
+		    &peer_addr, cache_entry, gfs_serverp, source_ip);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
@@ -479,7 +501,7 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
-	    cache_entry, gfs_serverp);
+	    cache_entry, gfs_serverp, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gfp_uncached_connection_dispose(cache_entry);
 	return (e);
@@ -587,7 +609,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		return (e);
 	}
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
-	    cache_entry, &connection_in_progress, &gfs_server);
+	    cache_entry, &connection_in_progress, &gfs_server, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);

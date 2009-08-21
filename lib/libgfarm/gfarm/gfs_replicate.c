@@ -26,7 +26,7 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 
 	for (;;) {
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    dsthost, dstport, &gfs_server)) != GFARM_ERR_NO_ERROR)
+		    dsthost, dstport, &gfs_server, NULL))!= GFARM_ERR_NO_ERROR)
 			return (e);
 
 		if (gfs_client_pid(gfs_server) == 0)

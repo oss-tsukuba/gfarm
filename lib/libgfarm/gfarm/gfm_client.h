@@ -44,7 +44,8 @@ gfarm_error_t gfm_client_connection_acquire(const char *, int,
 	struct gfm_connection **);
 gfarm_error_t gfm_client_connection_and_process_acquire(const char *, int,
 	struct gfm_connection **);
-gfarm_error_t gfm_client_connect(const char *, int, struct gfm_connection **);
+gfarm_error_t gfm_client_connect(const char *, int, struct gfm_connection **,
+	const char *);
 void gfm_client_connection_free(struct gfm_connection *);
 void gfm_client_terminate(void);
 

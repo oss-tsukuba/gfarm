@@ -153,7 +153,7 @@ gfm_client_connection_gc(void)
 static gfarm_error_t
 gfm_client_connection0(const char *hostname, int port,
 	struct gfp_cached_connection *cache_entry,
-	struct gfm_connection **gfm_serverp)
+	struct gfm_connection **gfm_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
@@ -182,6 +182,27 @@ gfm_client_connection0(const char *hostname, int port,
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock,
 	    res->ai_canonname, res->ai_addr);
+
+	if (source_ip != NULL) {
+		struct addrinfo shints, *sres;
+
+		memset(&shints, 0, sizeof(shints));
+		shints.ai_family = AF_INET;
+		shints.ai_socktype = SOCK_STREAM;
+		shints.ai_flags = AI_PASSIVE;
+		if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
+			close(sock);
+			gfarm_freeaddrinfo(res);
+			return (GFARM_ERR_UNKNOWN_HOST);
+		}
+		if (bind(sock, sres->ai_addr, sres->ai_addrlen) == -1) {
+			close(sock);
+			gfarm_freeaddrinfo(res);
+			gfarm_freeaddrinfo(sres);
+			return (gfarm_errno_to_error(errno));
+		}
+		gfarm_freeaddrinfo(sres);
+	}
 
 	if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
 		close(sock);
@@ -243,14 +264,15 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp);
+	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
+	    NULL);
 	while (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning("connecting to gfmd at %s:%d failed, "
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
 		    gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connection0(hostname, port, cache_entry,
-			gfm_serverp);
+			gfm_serverp, NULL);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 		else
@@ -305,7 +327,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
  */
 gfarm_error_t
 gfm_client_connect(const char *hostname, int port,
-	struct gfm_connection **gfm_serverp)
+	struct gfm_connection **gfm_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
@@ -313,7 +335,8 @@ gfm_client_connect(const char *hostname, int port,
 	e = gfp_uncached_connection_new(&cache_entry);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp);
+	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
+	    source_ip);
 	if (e != GFARM_ERR_NO_ERROR)
 		gfp_uncached_connection_dispose(cache_entry);
 	return (e);

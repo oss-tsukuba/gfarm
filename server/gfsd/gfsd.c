@@ -133,6 +133,8 @@ long file_read_size;
 long rate_limit;
 #endif
 
+static char *listen_addrname = NULL;
+
 /* this routine should be called before calling exit(). */
 static void
 cleanup(int sighandler)
@@ -1273,7 +1275,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	}
 
 	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
-	    &server);
+	    &server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR) {
 		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto close;
@@ -2856,7 +2858,7 @@ gfm_client_connect_with_reconnection()
 	unsigned int sleep_max_interval = 640;	/* about 10 min */
 
 	e = gfm_client_connect(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfm_server);
+	    gfarm_metadb_server_port, &gfm_server, listen_addrname);
 	while (e != GFARM_ERR_NO_ERROR) {
 		/* suppress excessive log */
 		if (sleep_interval < sleep_max_interval)
@@ -2866,7 +2868,7 @@ gfm_client_connect_with_reconnection()
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connect(gfarm_metadb_server_name,
-			gfarm_metadb_server_port, &gfm_server);
+		    gfarm_metadb_server_port, &gfm_server, listen_addrname);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
@@ -3343,8 +3345,7 @@ main(int argc, char **argv)
 	struct sockaddr_in client_addr, *self_sockaddr_array;
 	struct sockaddr_un client_local_addr;
 	gfarm_error_t e, e2;
-	char *config_file = NULL;
-	char *listen_addrname = NULL, *pid_file = NULL;
+	char *config_file = NULL, *pid_file = NULL;
 	char *local_gfsd_user;
 	struct gfarm_host_info self_info;
 	struct passwd *gfsd_pw;
