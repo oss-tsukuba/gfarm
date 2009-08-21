@@ -3,9 +3,13 @@
 #include <sys/time.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
+
+#include "gfnetdb.h"
 
 #include "sockutil.h"
 
@@ -35,5 +39,26 @@ gfarm_connect_wait(int s, int timeout_seconds)
 		return (gfarm_errno_to_error(errno));
 	if (error != 0)
 		return (gfarm_errno_to_error(errno));
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_bind_source_ip(int sock, const char *source_ip)
+{
+	struct addrinfo shints, *sres;
+	int rv, save_errno;
+
+	memset(&shints, 0, sizeof(shints));
+	shints.ai_family = AF_INET;
+	shints.ai_socktype = SOCK_STREAM;
+	shints.ai_flags = AI_PASSIVE;
+	if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0)
+		return (GFARM_ERR_UNKNOWN_HOST);
+
+	rv = bind(sock, sres->ai_addr, sres->ai_addrlen);
+	save_errno = errno;
+	gfarm_freeaddrinfo(sres);
+	if (rv == -1)
+		return (gfarm_errno_to_error(save_errno));
 	return (GFARM_ERR_NO_ERROR);
 }

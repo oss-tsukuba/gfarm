@@ -30,6 +30,7 @@
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
+#include "sockutil.h"
 #include "host.h"
 #include "auth.h"
 #include "config.h"
@@ -184,24 +185,12 @@ gfm_client_connection0(const char *hostname, int port,
 	    res->ai_canonname, res->ai_addr);
 
 	if (source_ip != NULL) {
-		struct addrinfo shints, *sres;
-
-		memset(&shints, 0, sizeof(shints));
-		shints.ai_family = AF_INET;
-		shints.ai_socktype = SOCK_STREAM;
-		shints.ai_flags = AI_PASSIVE;
-		if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
+		e = gfarm_bind_source_ip(sock, source_ip);
+		if (e != GFARM_ERR_NO_ERROR) {
 			close(sock);
 			gfarm_freeaddrinfo(res);
-			return (GFARM_ERR_UNKNOWN_HOST);
+			return (e);
 		}
-		if (bind(sock, sres->ai_addr, sres->ai_addrlen) == -1) {
-			close(sock);
-			gfarm_freeaddrinfo(res);
-			gfarm_freeaddrinfo(sres);
-			return (gfarm_errno_to_error(errno));
-		}
-		gfarm_freeaddrinfo(sres);
 	}
 
 	if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {

@@ -37,7 +37,6 @@
 #include "gfevent.h"
 #include "hash.h"
 #include "lru_cache.h"
-#include "gfnetdb.h"
 
 #include "liberror.h"
 #include "sockutil.h"
@@ -243,6 +242,7 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	int *connection_in_progress_p, int *sockp, const char *source_ip)
 {
 	int rv, sock;
+	gfarm_error_t e;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock == -1 && (errno == ENFILE || errno == EMFILE)) {
@@ -262,22 +262,11 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 
 	if (source_ip != NULL) {
-		struct addrinfo shints, *sres;
-
-		memset(&shints, 0, sizeof(shints));
-		shints.ai_family = AF_INET;
-		shints.ai_socktype = SOCK_STREAM;
-		shints.ai_flags = AI_PASSIVE;
-		if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
+		e = gfarm_bind_source_ip(sock, source_ip);
+		if (e != GFARM_ERR_NO_ERROR) {
 			close(sock);
-			return (GFARM_ERR_UNKNOWN_HOST);
+			return (e);
 		}
-		if (bind(sock, sres->ai_addr, sres->ai_addrlen) == -1) {
-			close(sock);
-			gfarm_freeaddrinfo(sres);
-			return (gfarm_errno_to_error(errno));
-		}
-		gfarm_freeaddrinfo(sres);
 	}
 
 	rv = connect(sock, peer_addr, sizeof(*peer_addr));
