@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.2.0
+%define ver	2.3.0
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -868,6 +868,7 @@ fi
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
 %{prefix}/bin/gfexport
+%{prefix}/bin/gffindxmlattr
 %{prefix}/bin/gfgroup
 %{prefix}/bin/gfhost
 %if %{gfarm_v2_not_yet}
@@ -911,6 +912,7 @@ fi
 %endif
 %{prefix}/bin/gfwhere
 %{prefix}/bin/gfwhoami
+%{prefix}/bin/gfxattr
 %if %{gfarm_v2_not_yet}
 %{profile_prefix}/gfarm.sh
 %{profile_prefix}/gfarm.csh
@@ -981,10 +983,12 @@ fi
 %{share_prefix}/config/config-gfarm.ldap
 %{share_prefix}/config/config-gfarm.postgresql
 %{share_prefix}/config/config-gfarm-update.postgresql
+%{share_prefix}/config/config-gfarm-update.ldap
 %{share_prefix}/config/gfarm.conf-ldap.in
 %{share_prefix}/config/gfarm.conf-postgresql.in
 %{share_prefix}/config/gfarm.conf.in
 %{share_prefix}/config/gfarm.sql
+%{share_prefix}/config/gfarm-xmlattr.sql
 %{share_prefix}/config/gfarm.schema
 %{share_prefix}/config/initial.ldif.in
 %{share_prefix}/config/linux/debian/gfarm-pgsql.in

@@ -1,7 +1,7 @@
 Release note for Gfarm 2.3.0
 ============================
 
-[2009.8.XX]
+[2009.8.23]
 
 New Feature
 * automatic reconnection to gfmd 
@@ -10,11 +10,20 @@ New Feature
 * group management by the Virtual Organization Membership Service
   (VOMS)
 * gfarmroot group - super users' group in Gfarm
+* multiple spools support in GSI
+  [contribution from Nikola Garafolic]
 
 New Command
 * gfvoms-sync - synchronizes the group information with the VOMS
 * gfxattr - set, get, remove, and list extended attributes
 * gffindxmlattr - search XML extended attributes by XPath
+
+New API
+* gfs_{set,get,list,remove}xattr, gfs_f{set,get,remove}xattr -
+  extended attribute support
+* gfs_{set,get,list,remove}xmlattr - XML extended attribute support
+* gfs_findxmlattr, gfs_getxmlent, gfs_closexmlattr - XML extended
+  attribute search
 
 New configuration in gfmd.conf
 * metadb_server_dbq_size directive to specify a queue length for
@@ -38,6 +47,7 @@ Bug fix
   file in write mode that is opened by another application.
 * config-gfarm - fix unbound variable error when setting the DEBUG
   environment variable.
+* update st_atime and st_mtime in backend database
 
 Release note for Gfarm 2.2.0
 ============================
