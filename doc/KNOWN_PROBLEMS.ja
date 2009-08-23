@@ -17,12 +17,6 @@
   対処予定:
 	現在のところ、有効な対策が不明なため対処の予定はありません。
 
-- グループ権限は実装されていますが，グループを管理するコマンドがありま
-  せん。
-
-  対処予定:
-	未定です。
-
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 
   対処予定:
@@ -144,7 +138,7 @@
 
 - 下記のコマンドが存在しません。
 
-  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage
+  gfdump, gfpwd, gfsched, gfsck, gftest, gfusage
 
   対処予定:
 	未定です。
@@ -153,8 +147,7 @@
   ん。
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
-  gfchmod, gfchown, gfexport, gfmv, gfreg, gfrep, gfrm,
-  gfuser, gfarm-pcp, gfarm-prun
+  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun
 
   対処予定:
 	未定です。

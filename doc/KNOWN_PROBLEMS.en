@@ -19,12 +19,6 @@
 	There is no plan to fix this problem, because we haven't yet found
 	any valid countermeasure.
 
-- Group permission is implemented, but there is no command for group
-  management.
-
-  Plans for fixes:
-	Not determined yet.
-
 - gfs_pio_sync() doesn't really update the metadata now.
 
   Plans for fixes:
@@ -153,8 +147,7 @@ command.
 - There is no reference manual for the following commands:
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
-  gfchmod, gfchown, gfexport, gfmv, gfreg, gfrep, gfrm,
-  gfuser, gfarm-pcp, gfarm-prun
+  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun
 
   Plans for fixes:
 	Not determined yet.
