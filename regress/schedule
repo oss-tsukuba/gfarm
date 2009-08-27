@@ -12,8 +12,11 @@ gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfmv/file.sh
 gftool/gfmv/dir.sh
+gftool/gfchmod/gfchmod_644_file.sh
+gftool/gfchmod/gfchmod_755_file.sh
+gftool/gfchmod/gfchmod_700_dir.sh
+gftool/gfchmod/gfchmod_755_dir.sh
 
-# gftool/gfchmod
 # gftool/gfchown
 # gftool/gfuser
 # gftool/gfhost
