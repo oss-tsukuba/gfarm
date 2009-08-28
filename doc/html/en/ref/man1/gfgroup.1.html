@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfgroup</B
-> [-l]</P
+> [-l] [<TT
+CLASS="REPLACEABLE"
+><I
+>group</I
+></TT
+>...]</P
 ><P
 ><B
 CLASS="COMMAND"
@@ -76,7 +81,8 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfgroup</B
 > manages Gfarm groups in Gfarm file
-system.  Default action displays registered groups.  Gfarm
+system.  Default action displays all registered groups.  When group
+names are specified, specified groups are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm group by -c,
 -m, and -d options, respectively.</P
 ></DIV
@@ -99,7 +105,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Displays gruops and group members.</P
+>Displays group names and the group members.</P
 ></DD
 ><DT
 ><CODE
@@ -129,7 +135,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Deletes a gruop.
+>Deletes a group.
 This option can be used by Gfarm administrators.</P
 ></DD
 ><DT

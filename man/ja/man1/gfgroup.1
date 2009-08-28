@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFGROUP" "1" "21 December 2008" "Gfarm" ""
+.TH "GFGROUP" "1" "28 August 2009" "Gfarm" ""
 
 .SH NAME
 gfgroup \- Gfarm グループ管理コマンド
 .SH SYNOPSIS
 
-\fBgfgroup\fR [ \fB-l\fR ]
+\fBgfgroup\fR [ \fB-l\fR ] [ \fB\fIgroup\fB\fR\fI ...\fR ]
 
 
 \fBgfgroup\fR \fB-c\fR \fBgroupname\fR [ \fB\fIuser\fB\fR\fI ...\fR ]
@@ -23,14 +23,15 @@ gfgroup \- Gfarm グループ管理コマンド
 .SH "DESCRIPTION"
 .PP
 Gfarm ファイルシステムにおけるグループ管理を行います．
-デフォルトでは登録グループを表示します．
+デフォルトでは全登録グループを表示します．
+グループ名が指定されたら，指定されたグループを表示します．
 Gfarmファイルシステムの管理者は，-c，-m，-d
 オプションを指定することにより，それぞれグループ作成，
 グループメンバ変更，グループ削除を行うことができます．
 .SH "OPTIONS"
 .TP
 \fB-l\fR
-グループとグループメンバの情報を表示します．
+グループ名とグループメンバの情報を表示します．
 .TP
 \fB-c\fR
 グループの作成を行います．
