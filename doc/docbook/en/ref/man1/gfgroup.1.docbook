@@ -2,7 +2,7 @@
 
 <refentry id='gfgroup.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>28 Aug 2009</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfgroup</refentrytitle>
@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfgroup</command>
     <arg choice='opt'>-l</arg>
+    <arg choice='opt' rep='repeat'><replaceable>group</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfgroup</command>
@@ -45,7 +46,8 @@
 
 <para>
 <command>gfgroup</command> manages Gfarm groups in Gfarm file
-system.  Default action displays registered groups.  Gfarm
+system.  Default action displays all registered groups.  When group
+names are specified, specified groups are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm group by -c,
 -m, and -d options, respectively.
 </para>
@@ -59,7 +61,7 @@ administrator can creates, modifies, and deletes a Gfarm group by -c,
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>Displays gruops and group members.</para>
+<para>Displays group names and the group members.</para>
 </listitem>
 </varlistentry>
 
@@ -88,7 +90,7 @@ This option can be used by Gfarm administrators.
 <term><option>-d</option></term>
 <listitem>
 <para>
-Deletes a gruop.
+Deletes a group.
 This option can be used by Gfarm administrators.
 </para>
 </listitem>

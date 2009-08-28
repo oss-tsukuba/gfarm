@@ -473,7 +473,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 				if (e == GFARM_ERR_NO_ERROR)
 					e = group_info_send(client, g);
 			}
-			if (e != GFARM_ERR_NO_ERROR)
+			if (peer_had_protocol_error(peer))
 				break;
 		}
 		giant_unlock();

@@ -22,7 +22,7 @@ usage(void)
 {
 	char *program = "gfgroup";
 
-	fprintf(stderr, "Usage:\t%s [-l]\n", program);
+	fprintf(stderr, "Usage:\t%s [-l] [groupname ...]\n", program);
 	fprintf(stderr, "\t%s -c groupname user1 user2 ...\n", program);
 	fprintf(stderr, "\t%s -m groupname user1 user2 ...\n", program);
 	fprintf(stderr, "\t%s -d groupname\n", program);
@@ -81,6 +81,48 @@ list_all(int op)
 	return (e);
 }
 
+gfarm_error_t
+list(int op, int n, char *names[])
+{
+	struct gfarm_group_info *groups;
+	gfarm_error_t e, *errs;
+	int i, j;
+
+	GFARM_MALLOC_ARRAY(groups, n);
+	GFARM_MALLOC_ARRAY(errs, n);
+	if (groups == NULL || errs == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_groups;
+	}
+
+	e = gfm_client_group_info_get_by_names(
+		gfarm_metadb_server, n, (const char **)names, errs, groups);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto free_groups;
+
+	for (i = 0; i < n; ++i) {
+		if (errs[i] != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: %s\n", names[i],
+				gfarm_error_string(errs[i]));
+			continue;
+		}
+		printf("%s", groups[i].groupname);
+		if (op == OP_LIST_LONG) {
+			printf(":");
+			for (j = 0; j < groups[i].nusers; ++j)
+				printf(" %s", groups[i].usernames[j]);
+		}
+		puts("");
+		gfarm_group_info_free(&groups[i]);
+	}
+free_groups:
+	if (groups != NULL)
+		free(groups);
+	if (errs != NULL)
+		free(errs);
+	return (e);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -114,7 +156,10 @@ main(int argc, char *argv[])
 	switch (op) {
 	case OP_GROUPNAME:
 	case OP_LIST_LONG:
-		e = list_all(op);
+		if (argc == 0)
+			e = list_all(op);
+		else
+			e = list(op, argc, argv);
 		break;
 	case OP_CREATE_GROUP:
 	case OP_MODIFY_GROUP:

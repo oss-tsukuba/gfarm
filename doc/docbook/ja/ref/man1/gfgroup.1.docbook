@@ -2,7 +2,7 @@
 
 <refentry id='gfgroup.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>28 Aug 2009</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfgroup</refentrytitle>
@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfgroup</command>
     <arg choice='opt'>-l</arg>
+    <arg choice='opt' rep='repeat'><replaceable>group</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfgroup</command>
@@ -44,7 +45,8 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>Gfarm ファイルシステムにおけるグループ管理を行います．
-デフォルトでは登録グループを表示します．
+デフォルトでは全登録グループを表示します．
+グループ名が指定されたら，指定されたグループを表示します．
 Gfarmファイルシステムの管理者は，-c，-m，-d
 オプションを指定することにより，それぞれグループ作成，
 グループメンバ変更，グループ削除を行うことができます．
@@ -59,7 +61,7 @@ Gfarmファイルシステムの管理者は，-c，-m，-d
 <varlistentry>
 <term><option>-l</option></term>
 <listitem>
-<para>グループとグループメンバの情報を表示します．</para>
+<para>グループ名とグループメンバの情報を表示します．</para>
 </listitem>
 </varlistentry>
 
