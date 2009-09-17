@@ -392,7 +392,7 @@ replicate(int nfinfo, struct file_info **finfo,
 		pid_t pid;
 		int s, rv;
 #endif
-		if (!arg->quiet)
+		if (arg->noexecute || !arg->quiet)
 			printf("%s\n", fi->pathname);
 		if (arg->verbose)
 			print_file_info(fi);
