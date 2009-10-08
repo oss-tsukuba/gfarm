@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFUSER" "1" "21 December 2008" "Gfarm" ""
+.TH "GFUSER" "1" "08 October 2009" "Gfarm" ""
 
 .SH NAME
 gfuser \- Gfarm ユーザ管理コマンド
 .SH SYNOPSIS
 
-\fBgfuser\fR [ \fB-l\fR ]
+\fBgfuser\fR [ \fB-l\fR ] [ \fB\fIuser\fB\fR\fI ...\fR ]
 
 
 \fBgfuser\fR \fB-c\fR \fBusername\fR \fBrealname\fR \fBhomedir\fR \fBgsi_dn\fR
@@ -24,6 +24,7 @@ gfuser \- Gfarm ユーザ管理コマンド
 .PP
 Gfarm ファイルシステムにおける利用ユーザの管理を行います．
 デフォルトでは登録ユーザを表示します．
+ユーザ名が指定されたら，指定されたユーザを表示します．
 Gfarmファイルシステムの管理者は，-c，-m，-d
 オプションを指定することにより，それぞれユーザの登録，
 登録情報変更，登録削除を行うことができます．
@@ -55,3 +56,6 @@ Gfarmの管理者が実行可能です．
 .TP
 \fB-?\fR
 引数オプションを表示します．
+.SH "SEE ALSO"
+.PP
+\fBgfgroup\fR(1)
