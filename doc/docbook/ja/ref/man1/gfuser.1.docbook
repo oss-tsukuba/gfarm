@@ -2,7 +2,7 @@
 
 <refentry id='gfuser.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>8 Oct 2009</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfuser</refentrytitle>
@@ -19,6 +19,7 @@
 <cmdsynopsis>
   <command>gfuser</command>
     <arg choice='opt'>-l</arg>
+    <arg choice='opt' rep='repeat'><replaceable>user</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfuser</command>
@@ -49,6 +50,7 @@
 
 <para>Gfarm ファイルシステムにおける利用ユーザの管理を行います．
 デフォルトでは登録ユーザを表示します．
+ユーザ名が指定されたら，指定されたユーザを表示します．
 Gfarmファイルシステムの管理者は，-c，-m，-d
 オプションを指定することにより，それぞれユーザの登録，
 登録情報変更，登録削除を行うことができます．
@@ -116,4 +118,13 @@ Gfarmの管理者が実行可能です．
 </variablelist>
 
 </refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
 </refentry>

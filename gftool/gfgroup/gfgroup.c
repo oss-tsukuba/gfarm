@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <assert.h>
 #include <gfarm/gfarm.h>
 #include "gfm_client.h"
 #include "config.h"
@@ -58,50 +59,15 @@ delete_group(char *groupname)
 	return (gfm_client_group_info_remove(gfarm_metadb_server, groupname));
 }
 
-gfarm_error_t
-list_all(int op)
+static void
+display_group(int op, int n, char *names[],
+	gfarm_error_t *errs, struct gfarm_group_info *groups)
 {
-	struct gfarm_group_info *groups;
-	gfarm_error_t e;
-	int i, j, n;
-
-	e = gfm_client_group_info_get_all(gfarm_metadb_server, &n, &groups);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	for (i = 0; i < n; ++i) {
-		printf("%s", groups[i].groupname);
-		if (op == OP_LIST_LONG) {
-			printf(":");
-			for (j = 0; j < groups[i].nusers; ++j)
-				printf(" %s", groups[i].usernames[j]);
-		}
-		puts("");
-	}
-	gfarm_group_info_free_all(n, groups);
-	return (e);
-}
-
-gfarm_error_t
-list(int op, int n, char *names[])
-{
-	struct gfarm_group_info *groups;
-	gfarm_error_t e, *errs;
 	int i, j;
 
-	GFARM_MALLOC_ARRAY(groups, n);
-	GFARM_MALLOC_ARRAY(errs, n);
-	if (groups == NULL || errs == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		goto free_groups;
-	}
-
-	e = gfm_client_group_info_get_by_names(
-		gfarm_metadb_server, n, (const char **)names, errs, groups);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto free_groups;
-
 	for (i = 0; i < n; ++i) {
-		if (errs[i] != GFARM_ERR_NO_ERROR) {
+		if (errs != NULL && errs[i] != GFARM_ERR_NO_ERROR) {
+			assert(names != NULL);
 			fprintf(stderr, "%s: %s\n", names[i],
 				gfarm_error_string(errs[i]));
 			continue;
@@ -115,6 +81,43 @@ list(int op, int n, char *names[])
 		puts("");
 		gfarm_group_info_free(&groups[i]);
 	}
+}
+
+gfarm_error_t
+list_all(int op)
+{
+	struct gfarm_group_info *groups;
+	gfarm_error_t e;
+	int n;
+
+	e = gfm_client_group_info_get_all(gfarm_metadb_server, &n, &groups);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	display_group(op, n, NULL, NULL, groups);
+
+	free(groups);
+	return (e);
+}
+
+gfarm_error_t
+list(int op, int n, char *names[])
+{
+	struct gfarm_group_info *groups;
+	gfarm_error_t e, *errs;
+
+	GFARM_MALLOC_ARRAY(groups, n);
+	GFARM_MALLOC_ARRAY(errs, n);
+	if (groups == NULL || errs == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_groups;
+	}
+
+	e = gfm_client_group_info_get_by_names(
+		gfarm_metadb_server, n, (const char **)names, errs, groups);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto free_groups;
+
+	display_group(op, n, names, errs, groups);
 free_groups:
 	if (groups != NULL)
 		free(groups);

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <gfarm/gfarm.h>
 
@@ -23,7 +24,7 @@ char *program_name = "gfuser";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-l]\n", program_name);
+	fprintf(stderr, "Usage:\t%s [-l] [username ...]\n", program_name);
 	fprintf(stderr, "\t%s -c username realname homedir gsi_dn\n",
 	    program_name);
 	fprintf(stderr, "\t%s -m username realname homedir gsi_dn\n",
@@ -33,15 +34,84 @@ usage(void)
 	exit(1);
 }
 
+static void
+display_user(int op, int nusers, char *names[],
+	gfarm_error_t *errs, struct gfarm_user_info *users)
+{
+	int i;
+
+	for (i = 0; i < nusers; i++) {
+		if (errs != NULL && errs[i] != GFARM_ERR_NO_ERROR) {
+			assert(names != NULL);
+			fprintf(stderr, "%s: %s\n", names[i],
+				gfarm_error_string(errs[i]));
+			continue;
+		}
+		switch (op) {
+		case OP_USERNAME:
+			puts(users[i].username);
+			break;
+		case OP_LIST_LONG:
+			printf("%s:%s:%s:%s\n",
+			       users[i].username, users[i].realname,
+			       users[i].homedir, users[i].gsi_dn);
+			break;
+		}
+		gfarm_user_info_free(&users[i]);
+	}
+}
+
+gfarm_error_t
+list_all(int op)
+{
+	struct gfarm_user_info *users;
+	gfarm_error_t e;
+	int nusers;
+
+	e = gfm_client_user_info_get_all(gfarm_metadb_server, &nusers, &users);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	display_user(op, nusers, NULL, NULL, users);
+
+	free(users);
+	return (e);
+}
+
+gfarm_error_t
+list(int op, int n, char *names[])
+{
+	struct gfarm_user_info *users;
+	gfarm_error_t e, *errs;
+
+	GFARM_MALLOC_ARRAY(users, n);
+	GFARM_MALLOC_ARRAY(errs, n);
+	if (users == NULL || errs == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto free_users;
+	}
+
+	e = gfm_client_user_info_get_by_names(
+		gfarm_metadb_server, n, (const char **)names, errs, users);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto free_users;
+
+	display_user(op, n, names, errs, users);
+free_users:
+	if (users != NULL)
+		free(users);
+	if (errs != NULL)
+		free(errs);
+	return (e);
+}
+
 int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	int i, c, status = 0;
+	int c, status = 0;
 	char opt_operation = '\0'; /* default operation */
 	extern int optind;
-	int nusers;
-	struct gfarm_user_info *users, ui;
+	struct gfarm_user_info ui;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -72,25 +142,10 @@ main(int argc, char **argv)
 	switch (opt_operation) {
 	case OP_USERNAME:
 	case OP_LIST_LONG:
-		if (argc != 0)
-			usage();
-		e = gfm_client_user_info_get_all(gfarm_metadb_server,
-		    &nusers, &users);
-		if (e != GFARM_ERR_NO_ERROR)
-			break;
-		for (i = 0; i < nusers; i++) {
-			switch (opt_operation) {
-			case OP_USERNAME:
-				puts(users[i].username);
-				break;
-			case OP_LIST_LONG:
-				printf("%s:%s:%s:%s\n",
-				    users[i].username, users[i].realname,
-				    users[i].homedir, users[i].gsi_dn);
-				break;
-			}
-		}
-		gfarm_user_info_free_all(nusers, users);
+		if (argc == 0)
+			e = list_all(opt_operation);
+		else
+			e = list(opt_operation, argc, argv);
 		break;
 	case OP_CREATE_ENTRY:
 	case OP_MODIFY_ENTRY:

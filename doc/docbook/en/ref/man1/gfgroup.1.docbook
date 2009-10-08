@@ -2,7 +2,7 @@
 
 <refentry id='gfgroup.1'>
 
-<refentryinfo><date>28 Aug 2009</date></refentryinfo>
+<refentryinfo><date>8 Oct 2009</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfgroup</refentrytitle>
@@ -106,4 +106,13 @@ This option can be used by Gfarm administrators.
 </variablelist>
 
 </refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfuser</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
 </refentry>
