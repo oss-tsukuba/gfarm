@@ -148,7 +148,7 @@ group_remove(const char *groupname)
 	entry = gfarm_hash_lookup(group_hashtab,
 	    &groupname, sizeof(groupname));
 	if (entry == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+		return (GFARM_ERR_NO_SUCH_GROUP);
 	g = *(struct group **)gfarm_hash_entry_data(entry);
 	gfarm_hash_purge(group_hashtab, &groupname, sizeof(groupname));
 
@@ -406,10 +406,9 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
 	gfarm_int32_t ngroups;
-	char **groups;
+	char *groupname, **groups;
 	int i, j, eof, no_memory = 0;
 	struct group *g;
-	char *groupname;
 
 	e = gfm_server_get_request(peer, "group_info_get_by_names",
 	    "i", &ngroups);
@@ -440,48 +439,45 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 			groups[i] = groupname;
 		}
 	}
-	if (no_memory) {
-		e = gfm_server_put_reply(peer, "group_info_get_by_names",
-		    GFARM_ERR_NO_MEMORY, "");
-	} else {
-		e = gfm_server_put_reply(peer, "group_info_get_by_names",
-		    GFARM_ERR_NO_ERROR, "");
+	if (skip) {
+		e = GFARM_ERR_NO_ERROR;
+		goto free_group;
 	}
-	if (no_memory || e != GFARM_ERR_NO_ERROR) {
-		if (groups != NULL) {
-			for (i = 0; i < ngroups; i++) {
-				if (groups[i] != NULL)
-					free(groups[i]);
-			}
-			free(groups);
+
+	e = gfm_server_put_reply(peer, "group_info_get_by_names",
+		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
+	if (no_memory || e != GFARM_ERR_NO_ERROR)
+		goto free_group;
+
+	/* XXX FIXME too long giant lock */
+	giant_lock();
+	for (i = 0; i < ngroups; i++) {
+		g = group_lookup(groups[i]);
+		if (g == NULL) {
+			e = gfm_server_put_reply(peer,
+			    "group_info_get_by_name",
+			    GFARM_ERR_NO_SUCH_GROUP, "");
+		} else {
+			e = gfm_server_put_reply(peer,
+			    "group_info_get_by_name",
+			    GFARM_ERR_NO_ERROR, "");
+			if (e == GFARM_ERR_NO_ERROR)
+				e = group_info_send(client, g);
 		}
-		return (e);
+		if (peer_had_protocol_error(peer))
+			break;
 	}
-	if (!skip) {
-		/* XXX FIXME too long giant lock */
-		giant_lock();
+	giant_unlock();
+
+free_group:
+	if (groups != NULL) {
 		for (i = 0; i < ngroups; i++) {
-			g = group_lookup(groups[i]);
-			if (g == NULL) {
-				e = gfm_server_put_reply(peer,
-				    "group_info_get_by_name",
-				    GFARM_ERR_NO_SUCH_GROUP, "");
-			} else {
-				e = gfm_server_put_reply(peer,
-				    "group_info_get_by_name",
-				    GFARM_ERR_NO_ERROR, "");
-				if (e == GFARM_ERR_NO_ERROR)
-					e = group_info_send(client, g);
-			}
-			if (peer_had_protocol_error(peer))
-				break;
+			if (groups[i] != NULL)
+				free(groups[i]);
 		}
-		giant_unlock();
+		free(groups);
 	}
-	for (i = 0; i < ngroups; i++)
-		free(groups[i]);
-	free(groups);
-	return (GFARM_ERR_NO_ERROR);
+	return (no_memory ? GFARM_ERR_NO_MEMORY : e);
 }
 
 static gfarm_error_t
