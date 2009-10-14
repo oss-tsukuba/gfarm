@@ -240,9 +240,9 @@ int
 main(int argc, char *argv[])
 {
 	char *prog_name = basename(argv[0]);
-	char c, *filename = NULL, *c_path = NULL, *xattrname = NULL;
+	char *filename = NULL, *c_path = NULL, *xattrname = NULL;
 	enum { NONE, SET_MODE, GET_MODE, REMOVE_MODE, LIST_MODE } mode = NONE;
-	int xmlMode = 0, flags = 0;
+	int c, xmlMode = 0, flags = 0;
 	gfarm_error_t e;
 	const char *opts = "f:ghsrl?"
 #ifdef ENABLE_XMLATTR

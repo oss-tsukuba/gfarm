@@ -104,8 +104,9 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char c, *domain = "";
+	char *domain = "";
 	gfarm_error_t (*statfs)(const char *) = display_statfs_nodes;
+	int c;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);

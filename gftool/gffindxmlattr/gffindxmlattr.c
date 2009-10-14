@@ -83,8 +83,8 @@ int
 main(int argc, char *argv[])
 {
 	char *prog_name = basename(argv[0]);
-	int depth = INT_MAX;
-	char c, *filename = NULL, *path = NULL, *expr = NULL, *delim = "\t";
+	int c, depth = INT_MAX;
+	char *filename = NULL, *path = NULL, *expr = NULL, *delim = "\t";
 	struct gfs_xmlattr_ctx *ctxp = NULL;
 	char *fpath, *attrname;
 	gfarm_error_t e;

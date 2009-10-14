@@ -600,8 +600,8 @@ main(int argc, char *argv[])
 	gfs_glob_t types;
 	int mode_src_ch = 0, mode_dst_ch = 0, num_replicas = 1, parallel = -1;
 	int noexecute = 0, quiet = 0, verbose = 0;
-	int i, src_nhosts, dst_nhosts, nfinfo, *dst_ports;
-	char **src_hosts, **dst_hosts, ch;
+	int i, ch, src_nhosts, dst_nhosts, nfinfo, *dst_ports;
+	char **src_hosts, **dst_hosts;
 	gfarm_error_t e;
 	const char *errmsg;
 	struct gfrep_arg gfrep_arg;

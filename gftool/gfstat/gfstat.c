@@ -62,10 +62,10 @@ usage(char *prog_name)
 int
 main(int argc, char *argv[])
 {
-	char *prog_name = basename(argv[0]), c;
+	char *prog_name = basename(argv[0]);
 	gfarm_error_t e;
 	extern int optind;
-	int r = 0;
+	int c, r = 0;
 
 	while ((c = getopt(argc, argv, "h?")) != -1) {
 		switch (c) {
