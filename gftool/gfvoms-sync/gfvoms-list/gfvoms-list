@@ -122,12 +122,34 @@ def usage(e):
         The row started with '#' will be treated as a commentation row."""
 	print usage_str
 	sys.exit(e)
+	
+def listup_identity():
+	"""List possible identity files.
+	"""
+	id_list = []
+	
+	home = os.getenv("HOME")
+	tmppem = "/tmp/x509up_u" + str(os.getuid())
+	x509_user_cert = os.getenv("X509_USER_CERT", home+"/.globus/usercert.pem")
+	x509_user_key = os.getenv("X509_USER_KEY", home+"/.globus/userkey.pem")
+	
+	checklist = [
+		("/etc/grid-security/hostcert.pem", "/etc/grid-security/hostkey.pem"),
+		(tmppem, tmppem),
+		(x509_user_cert, x509_user_key)
+	]
+	
+	for c,k in checklist:
+		if os.access(c, os.F_OK | os.R_OK) and os.access(k, os.F_OK | os.R_OK):
+			id_list.append((c,k))
+			
+	return id_list
 
-def setup_identity():
+def setup_identity(usercert, userkey):
 	"""Set files used for certification.
 	"""
-	options["user_cert"] = "/etc/grid-security/hostcert.pem"
-	options["user_key"] = "/etc/grid-security/hostkey.pem"
+	options["user_cert"] = usercert
+	options["user_key"] = userkey
 
 def getHostByVomsId(**options):
 	"""Get corresponding hostname by VomsID.
@@ -290,7 +312,7 @@ def export(group_infos):
 	print "Finished"
 	f.close()
 
-def getGroupList(group, counter):
+def getGroupList(group, counter, root):
 	"""Get group list.
 	"""
 	global admin
@@ -307,16 +329,31 @@ def getGroupList(group, counter):
 			raise e
 	except Exception, e:
 		if str(e).find("Insufficient privileges") != -1:
-			counter.out.write(
-			 "Ignored: Insufficient privileges to perform '%s' to %s\n"%(
-			                                      "listSubGroups", group))
+			if not root:
+				counter.out.write(
+				 "Ignored: Insufficient privileges to perform '%s' to %s\n"%(
+				                                      "listSubGroups", group))
+			else:
+				raise Exception("Authorization Failure")
 		else:
 			raise e
 	ret_list = glist[:]
 	counter.progress(1)
 	for g in glist:
-		ret_list.extend(getGroupList(g, counter))
+		ret_list.extend(getGroupList(g, counter, False))
 	return ret_list
+	
+def getRoleList():
+	rlist = []
+	try:
+		rlist = admin.execute("listRoles", **options)
+	except Exception, e:
+		if str(e).find("Insufficient privileges") != -1:
+			print "Ignored: ",
+			print "Insufficient privileges to perform 'listRoles'"
+		else:
+			raise e
+	return rlist
 
 def main():
 	global admin
@@ -328,32 +365,31 @@ def main():
 		group_infos = {}
 		dns = None
 		parse_command_line()
-		setup_identity()
 		if options.has_key("infile"):
 			dns = getCheckUsers(options["infile"])
-		admin = SOAPBinding(**options)
+			
+		checkidlist = listup_identity()
+		if len(checkidlist) == 0: raise Exception("No Certification file found")
+		usercert, userkey = checkidlist[0]
+		
+		print "trying usercert:%s, userkey:%s"%(usercert, userkey)
+		setup_identity(usercert, userkey)
 
+		admin = SOAPBinding(**options)
+	
 		# Get Gropus and Roles
 		print "Start to get Group Info..."
 		counter = GroupCounter()
 		counter.start()
-		glist = getGroupList("/%s"%(options["vo"]), counter)
+		glist = getGroupList("/%s"%(options["vo"]), counter, True)
 		glist.insert(0, "/%s"%(options["vo"]))
 		counter.end()
 		counter = None
 		print "Start to get Role Info..."
-		rlist = []
-		try:
-			rlist = admin.execute("listRoles", **options)
-		except Exception, e:
-			if str(e).find("Insufficient privileges") != -1:
-				print "Ignored: ",
-				print "Insufficient privileges to perform 'listRoles'"
-			else:
-				raise e
+		rlist = getRoleList()
 		print "%d roles found..."%(len(rlist))
 		print "Complete"
-
+	
 		# Get Info. user by user
 		print "Getting Group Member Infos..."
 		bar = ProgressBar(len(glist))
