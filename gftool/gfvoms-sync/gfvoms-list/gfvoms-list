@@ -376,8 +376,8 @@ def main():
 		setup_identity(usercert, userkey)
 
 		admin = SOAPBinding(**options)
-	
-		# Get Gropus and Roles
+
+		# Get Groups and Roles
 		print "Start to get Group Info..."
 		counter = GroupCounter()
 		counter.start()
