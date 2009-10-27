@@ -5,7 +5,7 @@
 # gfvoms-list
 #
 # Get voms infos using SOAP interface.
-# Make shure that ZSI(The Zolera Soap Infrastructure) is installed.
+# Make sure that ZSI (The Zolera Soap Infrastructure) is installed.
 #
 # Copyright (c) 2009 National Institute of Informatics in Japan.
 # All rights reserved.
@@ -113,13 +113,13 @@ def usage(e):
         -h                 : Show this Usage.
 
     membership-path format:
-        One user for one row, and the format is 'user=<User DN>'.
-        
+        One user per one line, and the format is 'user=<User DN>'.
+
         User DN should be the format of certification info like
 
           '/O=Grid/OU=GlobusTest/OU=simpleCA-example.co.jp/CN=GfarmDevelop'
 
-        The row started with '#' will be treated as a commentation row."""
+        The line started with '#' will be treated as a comment line."""
 	print usage_str
 	sys.exit(e)
 	
@@ -242,8 +242,8 @@ def parse_command_line():
 		check_options()
 
 		if len(args) != 0:
-			usage("Invalid Argument is setted!")
-			
+			usage("Invalid Argument is set!")
+
 	except getopt.GetoptError, e:
 		sys.exit("Error parsing command line arguments:%s"%(e))
 
@@ -303,7 +303,7 @@ def export(group_infos):
 	print >>f, "void=%s\nvo=/%s"%(options["vomsid"], options["vo"])
 	for group in groups:
 		if len(group_infos[group]) == 0:
-			continue 
+			continue
 		print >>f, "voms=%s"%(group)
 		for member in group_infos[group]:
 			print >>f, "user=%s"%(member._DN)

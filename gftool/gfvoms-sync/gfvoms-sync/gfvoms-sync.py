@@ -100,7 +100,6 @@ def getGfvomsUpdOptions():
 	if options.has_key("noupd"):
 		ret += " -n"
 	return ret
-	
 
 def main():
 	istmpfile = True

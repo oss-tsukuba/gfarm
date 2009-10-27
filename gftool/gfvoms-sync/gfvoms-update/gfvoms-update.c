@@ -129,7 +129,7 @@ trim(char *str, int len)
 		  (str[strlen(str) - 1] == '\n' || str[strlen(str) - 1] == '\r')) {
 		str[strlen(str) - 1] = '\0';
 	}
-	
+
 	return 0;
 }
 
@@ -249,13 +249,13 @@ remove_list(struct group_info_list *target)
 	struct group_info_list *tmp = NULL;
 	if (target == NULL) return target;
 	tmp = target->pre;
-	
+
 	target->pre->next = target->next;
 	target->next->pre = target->pre;
 	target->next = target;
 	target->pre = target;
 	free_group_info(target);
-	
+
 	return tmp;
 }
 
@@ -264,9 +264,9 @@ static struct group_info_list *
 add_list(struct group_info_list *target, struct group_info_list *add)
 {
 	struct group_info_list *tmp = NULL;
-	
+
 	if (target == NULL || add == NULL) return add;
-	
+
 	tmp = add->pre;
 	add->next->pre = add->pre;
 	add->pre->next = add->next;
@@ -274,7 +274,7 @@ add_list(struct group_info_list *target, struct group_info_list *add)
 	add->next = target->next;
 	add->pre = target;
 	target->next = add;
-	
+
 	return tmp;
 }
 
@@ -345,7 +345,7 @@ make_gfarm_membership_list(struct group_info_list **gfarm_list)
 		if (*p != '\0' && *p != '/') {
 			continue;
 		}
-		
+
 		e = set_new_list(tmp1, &tmp2, groups[i].nusers);
 		if (e != GFARM_ERR_NO_ERROR) {
 			goto err;
@@ -383,14 +383,14 @@ make_groupname(char *group)
 {
 	char *ret = NULL;
 	int len = strlen(vomsid) + 1 + strlen(vo) + strlen(group) + 1;
-	
+
 	GFARM_CALLOC_ARRAY(ret, len);
 	if (ret == NULL) {
 		goto err;
 	}
 	memset(ret, '\0', len);
 	sprintf(ret, "%s:%s%s", vomsid, vo, group);
-	
+
 	return ret;
 err:
 	if (ret) free(ret);
@@ -407,7 +407,7 @@ make_voms_membership_list(FILE *vomsfp, struct group_info_list **voms_list)
 	char *idx = NULL;
 	int isHead = 2, flag = 0, allocated_size = 0, i;
 	int	line = 0;
-	
+
 	char *p = NULL;
 
 	struct gfarm_user_info **user_tmp = NULL;
@@ -571,11 +571,11 @@ do_update(int op, struct group_info_list *list)
 	struct group_info_list *tmp = NULL;
 	struct gfarm_group_info ret;
 	int i;
-	
+
 	if (list == NULL) {
 		return(e);
 	}
-	
+
 	ret.usernames = NULL;
 	tmp = list->next;
 	switch(op) {
@@ -697,11 +697,11 @@ print_group_list(struct group_info_list *list)
 {
 	int i;
 	struct group_info_list *tmp = NULL;
-	
+
 	if (list == NULL) {
 		return;
 	}
-	
+
 	tmp = list->next;
 	while(tmp != list) {
 		if (tmp->nusers == 0) {
@@ -728,7 +728,7 @@ isSameMembers(struct group_info_list *g, struct group_info_list *v)
 	struct gfarm_user_info **v_members = v->user_infos;
 	int v_nusers = v->nusers;
 	int i, j, is_same = 1, found = 0;
-	
+
 	if (g_nusers != v_nusers) {
 		is_same = 0;
 	}
@@ -744,7 +744,7 @@ isSameMembers(struct group_info_list *g, struct group_info_list *v)
 			if (found == 0) {
 				is_same = 0;
 				goto end;
-			}			
+			}
 		}
 	}
 end:
@@ -881,17 +881,17 @@ static gfarm_error_t
 init(char del)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	
+
 	if ((!del) && vomsfile == NULL) {
 		fprintf(stderr, "NO VOMS membership file path is specified!\n");
 		goto err;
 	}
-	
+
 	if (vo == NULL) {
 		fprintf(stderr, "NO vo is specified!\n");
 		goto err;
 	}
-	
+
 	if (vomsid == NULL) {
 		fprintf(stderr, "NO vomsid is specified!\n");
 		goto err;
@@ -901,7 +901,7 @@ init(char del)
 			"The chars which can use for vomsID are [a-zA-Z0-9_-].\n");
 		goto err;
 	}
-	
+
 	e = list_groups();
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != -1) {
@@ -909,7 +909,7 @@ init(char del)
 		}
 		goto err;
 	}
-	
+
 	e = list_users();
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != -1) {
@@ -941,7 +941,7 @@ main(int argc, char *argv[])
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct group_info_list *gfarm_list = NULL;
 	char noupd = 0, del = 0, c;
-	
+
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_initialize: %s\n",gfarm_error_string(e));
@@ -991,9 +991,9 @@ main(int argc, char *argv[])
 			goto err;
 		}
 	}
-	
+
 	fprintf(stdout, "Start updating...\n");
-	
+
 	e = init(del);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != -1) {
@@ -1026,9 +1026,9 @@ main(int argc, char *argv[])
 		}
 		goto err;
 	}
-	
+
 	fprintf(stdout, "Finished\n");
-	
+
 end:
 	if (gfarm_list) free_group_info_list(gfarm_list);
 	term();
