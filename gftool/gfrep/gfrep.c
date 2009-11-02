@@ -31,6 +31,12 @@ static int omp_get_thread_num(void){ return (0); }
 
 static char *program_name = "gfrep";
 
+/* options */
+static int opt_quiet;		/* -q */
+static int opt_noexec;		/* -n */
+static int opt_verbose;		/* -v */
+static int opt_nrep = 1;	/* -N */
+
 struct action {
 	char *action;
 	gfarm_error_t (*transfer_to)(char *, char *, int);
@@ -52,8 +58,6 @@ struct gfrep_arg {
 	int ndst, nsrc;
 	char **dst, **src;
 	int *dst_port;
-	int num_replicas;
-	int noexecute, verbose, quiet;
 };
 
 struct file_info {
@@ -63,17 +67,14 @@ struct file_info {
 	char **copy;
 };
 
-struct flist_arg {
+/* for create_filelist */
+struct flist {
+	/* domain name */
 	char *src_domain, *dst_domain;
-
 	/* hash table from the input host file */
 	struct gfarm_hash_table *src_hosthash, *dst_hosthash;
-
 	/* hash table to count the num of source nodes */
 	struct gfarm_hash_table *srchash;
-
-	int num_replicas;
-
 	/* file_info list */
 	gfarm_list *slist;
 };
@@ -144,7 +145,7 @@ gfarm_list_add_file_info(char *pathname, gfarm_off_t filesize,
 static gfarm_error_t
 create_filelist(char *file, struct gfs_stat *st, void *arg)
 {
-	struct flist_arg *a = arg;
+	struct flist *a = arg;
 	int i, j, ncopy, src_ncopy = 0, dst_ncopy = 0;
 	char **copy;
 	gfarm_error_t e;
@@ -168,7 +169,7 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	 * if there is no replica in a set of source nodes or enough
 	 * number of replicas in a set of destination nodes, do not add.
 	 */
-	if (src_ncopy == 0 || dst_ncopy >= a->num_replicas) {
+	if (src_ncopy == 0 || dst_ncopy >= opt_nrep) {
 		e = GFARM_ERR_NO_ERROR;
 		goto free_copy;
 	}
@@ -184,7 +185,7 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	}
 
 	/* add a file info to slist */
-	for (j = 0; j < a->num_replicas - dst_ncopy; ++j) {
+	for (j = 0; j < opt_nrep - dst_ncopy; ++j) {
 		e = gfarm_list_add_file_info(file, st->st_size, ncopy, copy,
 			a->slist);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -273,7 +274,7 @@ print_gfrep_arg(struct gfrep_arg *arg)
 	printf("ndst = %d\n", arg->ndst);
 	for (i = 0; i < arg->ndst; ++i)
 		printf("%s:%d\n", arg->dst[i], arg->dst_port[i]);
-	printf("num_replicas = %d\n", arg->num_replicas);
+	printf("num_replicas = %d\n", opt_nrep);
 }
 
 static void
@@ -353,7 +354,7 @@ replicate(int nfinfo, struct file_info **finfo,
 		return ("no destination node");
 	if (nsrc <= 0)
 		return ("no source node");
-	if (ndst < arg->num_replicas)
+	if (ndst < opt_nrep)
 		return ("not enough number of destination nodes");
 	if (nfinfo <= 0)
 		return (NULL); /* no file */
@@ -367,7 +368,7 @@ replicate(int nfinfo, struct file_info **finfo,
 		if (nsrc < nthreads)
 			nthreads = nsrc;
 	}
-	if (arg->verbose) {
+	if (opt_verbose) {
 		print_gfrep_arg(arg);
 		printf("files: %d\n", nfinfo);
 #ifdef _OPENMP
@@ -392,9 +393,9 @@ replicate(int nfinfo, struct file_info **finfo,
 		pid_t pid;
 		int s, rv;
 #endif
-		if (arg->noexecute || !arg->quiet)
+		if (opt_noexec || !opt_quiet)
 			printf("%s\n", fi->pathname);
-		if (arg->verbose)
+		if (opt_verbose)
 			print_file_info(fi);
 		if (tnum + pi * nth >= ndst)
 			pi = 0;
@@ -421,7 +422,7 @@ replicate(int nfinfo, struct file_info **finfo,
 			max_niter = ndst;
 			while (file_copy_does_exist(fi, dst[di])
 			       || ! is_enough_space(dst[di], fi->filesize)) {
-				if (arg->verbose)
+				if (opt_verbose)
 					printf("%02d: warning: the destination"
 					       " may conflict: %s -> %s\n",
 					       tnum, dst[di],
@@ -435,13 +436,13 @@ replicate(int nfinfo, struct file_info **finfo,
 				errmsg = "not enough free disk space";
 				goto skip_replication;
 			}
-			if (arg->verbose) {
+			if (opt_verbose) {
 				printf("%02d(%03d): %s --> %s\n",
 				       tnum, pi, fi->pathname, dst[di]);
 				fflush(stdout);
 				gettimeofday(&t1, NULL);
 			}
-			if (!arg->noexecute) {
+			if (!opt_noexec) {
 				e = act->transfer_to(fi->pathname,
 					dst[di], dst_port[di]);
 				errmsg = gfarm_error_string(e);
@@ -450,7 +451,7 @@ replicate(int nfinfo, struct file_info **finfo,
 				e = GFARM_ERR_NO_ERROR;
 				errmsg = gfarm_error_string(e);
 			}
-			if (arg->verbose && e == GFARM_ERR_NO_ERROR) {
+			if (opt_verbose && e == GFARM_ERR_NO_ERROR) {
 				gettimeofday(&t2, NULL);
 				t = gfarm_timerval_sub(&t2, &t1);
 				printf("%s: %f sec  %f MB/sec\n",
@@ -593,28 +594,16 @@ create_hostlist_by_domain_and_hash(char *domain,
 int
 main(int argc, char *argv[])
 {
-	char *src_domain = "", *dst_domain = "";
 	char *src_hostfile = NULL, *dst_hostfile = NULL;
-	struct gfarm_hash_table *src_hosthash = NULL, *dst_hosthash = NULL;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
-	int mode_src_ch = 0, mode_dst_ch = 0, num_replicas = 1, parallel = -1;
-	int noexecute = 0, quiet = 0, verbose = 0;
-	int i, ch, src_nhosts, dst_nhosts, nfinfo, *dst_ports;
-	char **src_hosts, **dst_hosts;
+	int mode_src_ch = 0, mode_dst_ch = 0, parallel = -1;
+	int i, ch, nfinfo;
 	gfarm_error_t e;
 	const char *errmsg;
 	struct gfrep_arg gfrep_arg;
-	struct flist_arg flist_arg;
+	struct flist flist;
 	struct file_info **finfo;
-	gfarm_list slist;
-	struct gfarm_hash_table *srchash;
-
-#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-	src_nhosts = dst_nhosts = 0;
-	src_hosts = dst_hosts = NULL;
-	dst_ports = NULL;
-#endif
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -641,20 +630,20 @@ main(int argc, char *argv[])
 			act = &migrate_mode;
 			break;
 		case 'n':
-			noexecute = 1;
+			opt_noexec = 1;
 			break;
 		case 'q':
-			quiet = 1;
+			opt_quiet = 1;
 			break;
 		case 'v':
-			verbose = 1;
+			opt_verbose = 1;
 			break;
 		case 'S':
-			src_domain = optarg;
+			flist.src_domain = optarg;
 			conflict_check(&mode_src_ch, ch);
 			break;
 		case 'D':
-			dst_domain = optarg;
+			flist.dst_domain = optarg;
 			conflict_check(&mode_dst_ch, ch);
 			break;
 		case 'H':
@@ -662,7 +651,7 @@ main(int argc, char *argv[])
 			conflict_check(&mode_dst_ch, ch);
 			break;
 		case 'N':
-			num_replicas = strtol(optarg, NULL, 0);
+			opt_nrep = strtol(optarg, NULL, 0);
 			break;
 		case '?':
 		default:
@@ -675,7 +664,7 @@ main(int argc, char *argv[])
 	/* make writing-to-stderr atomic, for GfarmFS-FUSE log output */
 	setvbuf(stderr, NULL, _IOLBF, 0);
 
-	if (!quiet) {
+	if (!opt_quiet) {
 		printf("constructing file list...");
 		fflush(stdout);
 	}
@@ -691,72 +680,56 @@ main(int argc, char *argv[])
 	}
 	error_check(e);
 
-	e = gfarm_list_init(&slist);
+	e = gfarm_list_init(flist.slist);
 	error_check(e);
-	srchash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
+	flist.srchash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
 		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
-	if (srchash == NULL)
+	if (flist.srchash == NULL)
 		error_check(GFARM_ERR_NO_MEMORY);
 
 	e = create_hosthash_from_file(src_hostfile,
-		HOSTHASH_SIZE, &src_hosthash);
+		HOSTHASH_SIZE, &flist.src_hosthash);
 	error_check(e);
 	e = create_hosthash_from_file(dst_hostfile,
-		HOSTHASH_SIZE, &dst_hosthash);
+		HOSTHASH_SIZE, &flist.dst_hosthash);
 	error_check(e);
-	flist_arg.src_domain = src_domain;
-	flist_arg.src_hosthash = src_hosthash;
-	flist_arg.dst_domain = dst_domain;
-	flist_arg.dst_hosthash = dst_hosthash;
-	flist_arg.num_replicas = num_replicas;
-	flist_arg.slist = &slist;
-	flist_arg.srchash = srchash;
 
 	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
 		char *file = gfarm_stringlist_elem(&paths, i);
 
 		e = gfarm_foreach_directory_hierarchy(
-			create_filelist, NULL, NULL, file, &flist_arg);
+			create_filelist, NULL, NULL, file, &flist);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
 	gfarm_stringlist_free_deeply(&paths);
 	error_check(e);
 
-	if (!quiet)
+	if (!opt_quiet)
 		printf(" done\n");
-	if (verbose)
-		print_file_list(flist_arg.slist);
-	if (gfarm_list_length(flist_arg.slist) <= 0)
+	if (opt_verbose)
+		print_file_list(flist.slist);
+	if (gfarm_list_length(flist.slist) <= 0)
 		exit(0); /* no file */
 
-	finfo = gfarm_array_alloc_from_list(flist_arg.slist);
-	nfinfo = gfarm_list_length(flist_arg.slist);
-	gfarm_list_free(flist_arg.slist);
+	finfo = gfarm_array_alloc_from_list(flist.slist);
+	nfinfo = gfarm_list_length(flist.slist);
+	gfarm_list_free(flist.slist);
 	e = gfarm_hash_to_string_array(
-		flist_arg.srchash, &src_nhosts, &src_hosts);
+		flist.srchash, &gfrep_arg.nsrc, &gfrep_arg.src);
 	error_check(e);
-	gfarm_hash_table_free(flist_arg.srchash);
+	gfarm_hash_table_free(flist.srchash);
 
-	if (!quiet) {
+	if (!opt_quiet) {
 		printf("investigating hosts...");
 		fflush(stdout);
 	}
-	e = create_hostlist_by_domain_and_hash(dst_domain, dst_hosthash,
-		&dst_nhosts, &dst_hosts, &dst_ports);
+	e = create_hostlist_by_domain_and_hash(
+		flist.dst_domain, flist.dst_hosthash,
+		&gfrep_arg.ndst, &gfrep_arg.dst, &gfrep_arg.dst_port);
 	error_check(e);
-	if (!quiet)
+	if (!opt_quiet)
 		printf(" done\n");
-
-	gfrep_arg.nsrc = src_nhosts;
-	gfrep_arg.src = src_hosts;
-	gfrep_arg.ndst = dst_nhosts;
-	gfrep_arg.dst = dst_hosts;
-	gfrep_arg.dst_port = dst_ports;
-	gfrep_arg.num_replicas = num_replicas;
-	gfrep_arg.noexecute = noexecute;
-	gfrep_arg.verbose = verbose;
-	gfrep_arg.quiet = quiet;
 
 	errmsg = replicate(nfinfo, finfo, parallel, &gfrep_arg);
 	if (errmsg != NULL)
@@ -764,9 +737,9 @@ main(int argc, char *argv[])
 
 	gfarm_array_free_deeply(nfinfo, finfo,
 		(void (*)(void *))file_info_free);
-	gfarm_strings_free_deeply(src_nhosts, src_hosts);
-	gfarm_strings_free_deeply(dst_nhosts, dst_hosts);
-	free(dst_ports);
+	gfarm_strings_free_deeply(gfrep_arg.nsrc, gfrep_arg.src);
+	gfarm_strings_free_deeply(gfrep_arg.ndst, gfrep_arg.dst);
+	free(gfrep_arg.dst_port);
 	e = gfarm_terminate();
 	error_check(e);
 
