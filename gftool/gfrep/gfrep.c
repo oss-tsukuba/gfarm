@@ -76,7 +76,7 @@ struct flist {
 	/* hash table to count the num of source nodes */
 	struct gfarm_hash_table *srchash;
 	/* file_info list */
-	gfarm_list *slist;
+	gfarm_list slist;
 };
 
 static void
@@ -187,7 +187,7 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	/* add a file info to slist */
 	for (j = 0; j < opt_nrep - dst_ncopy; ++j) {
 		e = gfarm_list_add_file_info(file, st->st_size, ncopy, copy,
-			a->slist);
+			&a->slist);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
@@ -680,7 +680,7 @@ main(int argc, char *argv[])
 	}
 	error_check(e);
 
-	e = gfarm_list_init(flist.slist);
+	e = gfarm_list_init(&flist.slist);
 	error_check(e);
 	flist.srchash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
 		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
@@ -708,13 +708,13 @@ main(int argc, char *argv[])
 	if (!opt_quiet)
 		printf(" done\n");
 	if (opt_verbose)
-		print_file_list(flist.slist);
-	if (gfarm_list_length(flist.slist) <= 0)
+		print_file_list(&flist.slist);
+	if (gfarm_list_length(&flist.slist) <= 0)
 		exit(0); /* no file */
 
-	finfo = gfarm_array_alloc_from_list(flist.slist);
-	nfinfo = gfarm_list_length(flist.slist);
-	gfarm_list_free(flist.slist);
+	finfo = gfarm_array_alloc_from_list(&flist.slist);
+	nfinfo = gfarm_list_length(&flist.slist);
+	gfarm_list_free(&flist.slist);
 	e = gfarm_hash_to_string_array(
 		flist.srchash, &gfrep_arg.nsrc, &gfrep_arg.src);
 	error_check(e);
