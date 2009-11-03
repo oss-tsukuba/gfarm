@@ -607,6 +607,10 @@ main(int argc, char *argv[])
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
+        memset(&gfrep_arg, 0, sizeof(gfrep_arg));
+        memset(&flist, 0, sizeof(flist));
+        flist.src_domain = "";
+        flist.dst_domain = "";
 
 	e = gfarm_initialize(&argc, &argv);
 	error_check(e);
