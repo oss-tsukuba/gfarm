@@ -1145,10 +1145,13 @@ gfs_server_statfs(struct gfp_xdr *client)
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 
-	/* XXX FIXME: is it OK to pass `dir'? */
+	/*
+	 * do not use dir since there is no way to know gfarm_spool_root.
+	 * this code is kept for backward compatibility reason.
+	 */
 	gfs_server_get_request(client, "statfs", "s", &dir);
 
-	save_errno = gfsd_statfs(dir, &bsize,
+	save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
 	free(dir);

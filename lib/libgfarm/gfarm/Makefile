@@ -54,6 +54,7 @@ SRCS = \
 	gfs_link.c \
 	gfs_stat.c \
 	gfs_statfs.c \
+	gfs_statfsnode.c \
 	gfs_statsw.c \
 	gfs_mkdir.c \
 	gfs_readlink.c \
@@ -120,6 +121,7 @@ OBJS = \
 	gfs_link.lo \
 	gfs_stat.lo \
 	gfs_statfs.lo \
+	gfs_statfsnode.lo \
 	gfs_statsw.lo \
 	gfs_mkdir.lo \
 	gfs_readlink.lo \

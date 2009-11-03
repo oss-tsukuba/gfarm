@@ -313,18 +313,15 @@ filesizecmp_inv(const void *a, const void *b)
 }
 
 static int
-is_enough_space(char *host, gfarm_off_t size)
+is_enough_space(char *host, int port, gfarm_off_t size)
 {
-#if 0 /* not yet in gfarm v2 */
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_error_t e;
 
-	e = gfs_statfsnode(host, &bsize,
+	e = gfs_statfsnode(host, port, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	return (e == GFARM_ERR_NO_ERROR && bavail * bsize >= size);
-#endif
-	return (1);
 }
 
 static int
@@ -421,7 +418,8 @@ replicate(int nfinfo, struct file_info **finfo,
 			 */
 			max_niter = ndst;
 			while (file_copy_does_exist(fi, dst[di])
-			       || ! is_enough_space(dst[di], fi->filesize)) {
+			       || ! is_enough_space(dst[di], dst_port[di],
+					fi->filesize)) {
 				if (opt_verbose)
 					printf("%02d: warning: the destination"
 					       " may conflict: %s -> %s\n",
@@ -548,15 +546,22 @@ create_hostlist_by_domain_and_hash(char *domain,
 	struct gfarm_hash_table *hosthash,
 	int *nhostsp, char ***hostsp, int **portsp)
 {
+	struct gfm_connection *gfm_server;
 	int ninfo, i, j, *ports;
 	struct gfarm_host_sched_info *infos;
 	char **hosts;
 	gfarm_error_t e;
 
-	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
+	if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfm_client_schedule_host_domain(gfm_server, domain,
 		&ninfo, &infos);
+	gfm_client_connection_free(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
 	/* XXX - abandon CPU load and available capacity */
 	GFARM_MALLOC_ARRAY(hosts, ninfo);
 	if (hosts == NULL) {
@@ -607,10 +612,10 @@ main(int argc, char *argv[])
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
-        memset(&gfrep_arg, 0, sizeof(gfrep_arg));
-        memset(&flist, 0, sizeof(flist));
-        flist.src_domain = "";
-        flist.dst_domain = "";
+	memset(&gfrep_arg, 0, sizeof(gfrep_arg));
+	memset(&flist, 0, sizeof(flist));
+	flist.src_domain = "";
+	flist.dst_domain = "";
 
 	e = gfarm_initialize(&argc, &argv);
 	error_check(e);
