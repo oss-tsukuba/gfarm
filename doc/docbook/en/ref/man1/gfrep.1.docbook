@@ -186,8 +186,6 @@ Suppresses non-error messages.
 <refsect1 id='bugs'><title>BUGS</title>
 <para>
 A source host is not always selected within a set of source hosts.
-This means deleted replica when migrating files is not always a
-replica within the set of specified source hosts.
 </para>
 </refsect1>
 </refentry>
