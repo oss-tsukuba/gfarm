@@ -36,23 +36,7 @@ static int opt_quiet;		/* -q */
 static int opt_noexec;		/* -n */
 static int opt_verbose;		/* -v */
 static int opt_nrep = 1;	/* -N */
-
-struct action {
-	char *action;
-	gfarm_error_t (*transfer_to)(char *, char *, int);
-};
-
-struct action replicate_mode = {
-	"replicate",
-	gfs_replicate_to
-};
-
-struct action migrate_mode = {
-	"migrate",
-	gfs_migrate_to
-};
-
-struct action *act = &replicate_mode;
+static int opt_remove;		/* -x */
 
 struct gfrep_arg {
 	int ndst, nsrc;
@@ -65,6 +49,7 @@ struct file_info {
 	gfarm_off_t filesize;
 	int ncopy;
 	char **copy;
+	int surplus_ncopy;
 };
 
 /* for create_filelist */
@@ -76,8 +61,55 @@ struct flist {
 	/* hash table to count the num of source nodes */
 	struct gfarm_hash_table *srchash;
 	/* file_info list */
-	gfarm_list slist;
+	gfarm_list slist, dlist;
 };
+
+static gfarm_error_t
+gfrep_replicate_to(struct file_info *fi, int di, struct gfrep_arg *a)
+{
+	return (gfs_replicate_to(fi->pathname, a->dst[di], a->dst_port[di]));
+}
+
+static int remove_replicas(struct file_info *, int, int, char **);
+
+static gfarm_error_t
+gfrep_migrate_to(struct file_info *fi, int di, struct gfrep_arg *a)
+{
+	gfarm_error_t e;
+
+	e = gfs_replicate_to(fi->pathname, a->dst[di], a->dst_port[di]);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = remove_replicas(fi, 1, a->nsrc, a->src);
+	return (e);
+}
+
+static gfarm_error_t
+gfrep_remove_replica(struct file_info *fi, int di, struct gfrep_arg *a)
+{
+	return (remove_replicas(fi, fi->surplus_ncopy, a->ndst, a->dst));
+}
+
+struct action {
+	char *msg;
+	gfarm_error_t (*action)(struct file_info *, int, struct gfrep_arg *);
+};
+
+struct action replicate_mode = {
+	"replicate",
+	gfrep_replicate_to
+};
+
+struct action migrate_mode = {
+	"migrate",
+	gfrep_migrate_to
+};
+
+struct action remove_mode = {
+	"remove",
+	gfrep_remove_replica
+};
+
+struct action *act = &replicate_mode;
 
 static void
 file_info_free(struct file_info *info)
@@ -105,7 +137,7 @@ file_info_alloc(void)
 
 static gfarm_error_t
 gfarm_list_add_file_info(char *pathname, gfarm_off_t filesize,
-	int ncopy, char **copy, gfarm_list *list)
+	int ncopy, char **copy, int surplus, gfarm_list *list)
 {
 	struct file_info *info;
 	gfarm_error_t e;
@@ -136,6 +168,7 @@ gfarm_list_add_file_info(char *pathname, gfarm_off_t filesize,
 	}
 	info->ncopy = ncopy;
 	info->filesize = filesize;
+	info->surplus_ncopy = surplus;
 	e = gfarm_list_add(list, info);
 	if (e != GFARM_ERR_NO_ERROR)
 		file_info_free(info);
@@ -166,10 +199,11 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 		}
 	}
 	/*
-	 * if there is no replica in a set of source nodes or enough
-	 * number of replicas in a set of destination nodes, do not add.
+	 * if there is no replica in a set of source nodes or there
+	 * are already specified number of replicas in a set of
+	 * destination nodes, do not add.
 	 */
-	if (src_ncopy == 0 || dst_ncopy >= opt_nrep) {
+	if (src_ncopy == 0 || dst_ncopy == opt_nrep) {
 		e = GFARM_ERR_NO_ERROR;
 		goto free_copy;
 	}
@@ -187,9 +221,15 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	/* add a file info to slist */
 	for (j = 0; j < opt_nrep - dst_ncopy; ++j) {
 		e = gfarm_list_add_file_info(file, st->st_size, ncopy, copy,
-			&a->slist);
+			0, &a->slist);
 		if (e != GFARM_ERR_NO_ERROR)
-			break;
+			goto free_copy;
+	}
+
+	/* add a file info to dlist if too many file replicas exist */
+	if (dst_ncopy > opt_nrep) {
+		e = gfarm_list_add_file_info(file, st->st_size, ncopy, copy,
+			dst_ncopy - opt_nrep, &a->dlist);
 	}
  free_copy:
 	gfarm_strings_free_deeply(ncopy, copy);
@@ -335,17 +375,87 @@ file_copy_does_exist(struct file_info *info, char *host)
 	return (0);
 }
 
+static int
+remove_replicas(struct file_info *fi, int ncopy, int nhost, char **host)
+{
+	int i, j, k;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+
+	i = 0;
+	/* XXX - linear search */
+	for (j = 0; j < fi->ncopy && i < ncopy; ++j)
+		for (k = 0; k < nhost && i < ncopy; ++k) {
+			if (strcmp(fi->copy[j], host[k]) == 0) {
+				if (opt_verbose) {
+					printf("remove %s on %s\n",
+					       fi->pathname, host[k]);
+					fflush(stdout);
+				}
+				e = gfs_replica_remove_by_file(
+					fi->pathname, host[k]);
+				if (e == GFARM_ERR_NO_ERROR)
+					++i;
+				else {
+					/* error is always overwritten */
+					e_save = e;
+					fprintf(stderr, "%s: %s\n",
+						fi->pathname,
+						gfarm_error_string(e));
+				}
+			}
+		}
+
+	return (i >= ncopy ? GFARM_ERR_NO_ERROR : e_save);
+}
+
+static gfarm_error_t
+action(struct action *act, int tnum, int nth, int pi, struct file_info *fi,
+	struct gfrep_arg *arg)
+{
+	int di, max_niter;
+	int ndst = arg->ndst;
+	char **dst = arg->dst;
+	int *dst_port = arg->dst_port;
+
+	di = (tnum + pi * nth) % ndst;
+	/*
+	 * check whether the destination node already
+	 * has the file replica, or whether the
+	 * destination node has enough disk space.
+	 *
+	 * XXX - the destination may conflict
+	 *
+	 * fi->surplus_ncopy == 0 means to create file replicas.
+	 */
+	max_niter = ndst;
+	while (fi->surplus_ncopy == 0 && (file_copy_does_exist(fi, dst[di])
+		|| ! is_enough_space(dst[di], dst_port[di], fi->filesize))) {
+		if (opt_verbose)
+			printf("%02d: warning: the destination may conflict: "
+			    "%s -> %s\n", tnum, dst[di], dst[(di + 1) % ndst]);
+		di = (di + 1) % ndst;
+		if (--max_niter == 0)
+			break;
+	}
+	if (max_niter == 0)
+		return (GFARM_ERR_NO_SPACE);
+
+	if (fi->surplus_ncopy == 0 && opt_verbose) {
+		printf("%02d(%03d): %s --> %s\n",
+		       tnum, pi, fi->pathname, dst[di]);
+		fflush(stdout);
+	}
+	return (act->action(fi, di, arg));
+}
+
 static const char *
-replicate(int nfinfo, struct file_info **finfo,
+pfor(struct action *act, int nfinfo, struct file_info **finfo,
 	  int nthreads, struct gfrep_arg *arg)
 {
 	int i, pi, tnum, nth, nerr = 0;
-	int max_niter;
 	gfarm_error_t e;
 	int ndst = arg->ndst, nsrc = arg->nsrc;
-	char **dst = arg->dst;
 	const char *errmsg;
-	int *dst_port = arg->dst_port;
 
 	if (ndst <= 0)
 		return ("no destination node");
@@ -369,7 +479,7 @@ replicate(int nfinfo, struct file_info **finfo,
 		print_gfrep_arg(arg);
 		printf("files: %d\n", nfinfo);
 #ifdef _OPENMP
-		printf("parallel replication using %d streams\n", nthreads);
+		printf("parallel %s in %d threads\n", act->msg, nthreads);
 #endif
 	}
 	omp_set_num_threads(nthreads);
@@ -382,7 +492,6 @@ replicate(int nfinfo, struct file_info **finfo,
 
 #pragma omp for schedule(dynamic)
 	for (i = 0; i < nfinfo; ++i) {
-		int di;
 		struct timeval t1, t2;
 		double t;
 		struct file_info *fi = finfo[i];
@@ -408,41 +517,10 @@ replicate(int nfinfo, struct file_info **finfo,
 				goto skip_replication;
 			}
 #endif
-			di = (tnum + pi * nth) % ndst;
-			/*
-			 * check whether the destination node already
-			 * has the file replica, or whether the
-			 * destination node has enough disk space.
-			 *
-			 * XXX - the destination may conflict
-			 */
-			max_niter = ndst;
-			while (file_copy_does_exist(fi, dst[di])
-			       || ! is_enough_space(dst[di], dst_port[di],
-					fi->filesize)) {
-				if (opt_verbose)
-					printf("%02d: warning: the destination"
-					       " may conflict: %s -> %s\n",
-					       tnum, dst[di],
-					       dst[(di + 1) % ndst]);
-				di = (di + 1) % ndst;
-				if (--max_niter == 0)
-					break;
-			}
-			if (max_niter == 0) {
-				e = GFARM_ERR_NO_SPACE;
-				errmsg = "not enough free disk space";
-				goto skip_replication;
-			}
-			if (opt_verbose) {
-				printf("%02d(%03d): %s --> %s\n",
-				       tnum, pi, fi->pathname, dst[di]);
-				fflush(stdout);
+			if (opt_verbose)
 				gettimeofday(&t1, NULL);
-			}
 			if (!opt_noexec) {
-				e = act->transfer_to(fi->pathname,
-					dst[di], dst_port[di]);
+				e = action(act, tnum, nth, pi, fi, arg);
 				errmsg = gfarm_error_string(e);
 			}
 			else {
@@ -456,7 +534,9 @@ replicate(int nfinfo, struct file_info **finfo,
 				       fi->pathname, t,
 				       fi->filesize / t / 1024 / 1024);
 			}
+#ifdef LIBGFARM_NOT_MT_SAFE
 		skip_replication:
+#endif
 			if (e != GFARM_ERR_NO_ERROR) {
 #ifndef LIBGFARM_NOT_MT_SAFE
 				++nerr;
@@ -476,13 +556,13 @@ replicate(int nfinfo, struct file_info **finfo,
 		++pi;
 	}
 	}
-	return (nerr == 0 ? NULL : "error happens during replication");
+	return (nerr == 0 ? NULL : "error happens during operations");
 }
 
 static int
 usage()
 {
-	fprintf(stderr, "Usage: %s [-mnqv] [-S <src_domain>]"
+	fprintf(stderr, "Usage: %s [-mnqvx] [-S <src_domain>]"
 		" [-D <dst_domain>]\n", program_name);
 	fprintf(stderr, "\t[-h <src_hostlist>] [-H <dst_hostlist>]"
 		" [-N <#replica>]");
@@ -596,6 +676,25 @@ create_hostlist_by_domain_and_hash(char *domain,
 	return (e);
 }
 
+static const char *
+pfor_list(struct action *act, gfarm_list *list, int parallel,
+	  struct gfrep_arg *gfrep_arg)
+{
+	struct file_info **finfo;
+	int nfinfo;
+	const char *errmsg;
+
+	finfo = gfarm_array_alloc_from_list(list);
+	nfinfo = gfarm_list_length(list);
+
+	errmsg = pfor(act, nfinfo, finfo, parallel, gfrep_arg);
+
+	gfarm_array_free_deeply(nfinfo, finfo,
+		(void (*)(void *))file_info_free);
+
+	return (errmsg);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -603,12 +702,11 @@ main(int argc, char *argv[])
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int mode_src_ch = 0, mode_dst_ch = 0, parallel = -1;
-	int i, ch, nfinfo;
+	int i, ch;
 	gfarm_error_t e;
 	const char *errmsg;
 	struct gfrep_arg gfrep_arg;
 	struct flist flist;
-	struct file_info **finfo;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -621,9 +719,9 @@ main(int argc, char *argv[])
 	error_check(e);
 
 #ifdef _OPENMP
-	while ((ch = getopt(argc, argv, "h:j:mnqvS:D:H:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "h:j:mnqvxS:D:H:N:?")) != -1) {
 #else
-	while ((ch = getopt(argc, argv, "h:mnqvS:D:H:N:?")) != -1) {
+	while ((ch = getopt(argc, argv, "h:mnqvxS:D:H:N:?")) != -1) {
 #endif
 		switch (ch) {
 		case 'h':
@@ -646,6 +744,9 @@ main(int argc, char *argv[])
 			break;
 		case 'v':
 			opt_verbose = 1;
+			break;
+		case 'x':
+			opt_remove = 1;
 			break;
 		case 'S':
 			flist.src_domain = optarg;
@@ -691,6 +792,8 @@ main(int argc, char *argv[])
 
 	e = gfarm_list_init(&flist.slist);
 	error_check(e);
+	e = gfarm_list_init(&flist.dlist);
+	error_check(e);
 	flist.srchash = gfarm_hash_table_alloc(HOSTHASH_SIZE,
 		gfarm_hash_casefold, gfarm_hash_key_equal_casefold);
 	if (flist.srchash == NULL)
@@ -716,14 +819,19 @@ main(int argc, char *argv[])
 
 	if (!opt_quiet)
 		printf(" done\n");
-	if (opt_verbose)
+	if (opt_verbose) {
+		printf("files to be replicated\n");
 		print_file_list(&flist.slist);
-	if (gfarm_list_length(&flist.slist) <= 0)
+	}
+	if (opt_verbose && opt_remove) {
+		printf("files having too many replicas\n");
+		print_file_list(&flist.dlist);
+	}
+	if (gfarm_list_length(&flist.slist) <= 0
+	    && (!opt_remove || gfarm_list_length(&flist.dlist) <= 0))
 		exit(0); /* no file */
 
-	finfo = gfarm_array_alloc_from_list(&flist.slist);
-	nfinfo = gfarm_list_length(&flist.slist);
-	gfarm_list_free(&flist.slist);
+	/* replicate files */
 	e = gfarm_hash_to_string_array(
 		flist.srchash, &gfrep_arg.nsrc, &gfrep_arg.src);
 	error_check(e);
@@ -740,12 +848,19 @@ main(int argc, char *argv[])
 	if (!opt_quiet)
 		printf(" done\n");
 
-	errmsg = replicate(nfinfo, finfo, parallel, &gfrep_arg);
+	errmsg = pfor_list(act, &flist.slist, parallel, &gfrep_arg);
+	gfarm_list_free(&flist.slist);
 	if (errmsg != NULL)
 		fprintf(stderr, "%s\n", errmsg), exit(EXIT_FAILURE);
 
-	gfarm_array_free_deeply(nfinfo, finfo,
-		(void (*)(void *))file_info_free);
+	/* remove file replicas */
+	if (opt_remove)
+		errmsg = pfor_list(
+			&remove_mode, &flist.dlist, parallel, &gfrep_arg);
+	gfarm_list_free(&flist.dlist);
+	if (errmsg != NULL)
+		fprintf(stderr, "%s\n", errmsg), exit(EXIT_FAILURE);
+
 	gfarm_strings_free_deeply(gfrep_arg.nsrc, gfrep_arg.src);
 	gfarm_strings_free_deeply(gfrep_arg.ndst, gfrep_arg.dst);
 	free(gfrep_arg.dst_port);
