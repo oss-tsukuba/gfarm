@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "01 June 2008" "Gfarm" ""
+.TH "GFREP" "1" "09 November 2009" "Gfarm" ""
 
 .SH NAME
 gfrep \- replicate Gfarm files
 .SH SYNOPSIS
 
-\fBgfrep\fR [ \fB-mnqv\fR ] [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-h \fIsource-hostfile\fB\fR ] [ \fB-H \fIdestination-hostfile\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] [ \fB-j \fInum-of-threads\fB\fR ] \fB\fIpath\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-mnqvx\fR ] [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-h \fIsource-hostfile\fB\fR ] [ \fB-H \fIdestination-hostfile\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] [ \fB-j \fInum-of-threads\fB\fR ] \fB\fIpath\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -70,6 +70,10 @@ number of destination hosts.
 \fB-m\fR
 Lets gfrep command do a migrate/move, instead of doing replication.
 .TP
+\fB-x\fR
+Removes file replicas when a set of destination nodes has more file
+replicas than specified.
+.TP
 \fB-n\fR
 Displays files to be replicated, but does nothing.
 .TP
@@ -84,5 +88,3 @@ Displays a list of command options.
 .SH "BUGS"
 .PP
 A source host is not always selected within a set of source hosts.
-This means deleted replica when migrating files is not always a
-replica within the set of specified source hosts.

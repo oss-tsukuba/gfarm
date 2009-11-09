@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-mnqv] [-S <TT
+> [-mnqvx] [-S <TT
 CLASS="REPLACEABLE"
 ><I
 >source-domainname</I
@@ -254,6 +254,16 @@ CLASS="OPTION"
 ><DT
 ><CODE
 CLASS="OPTION"
+>-x</CODE
+></DT
+><DD
+><P
+>Removes file replicas when a set of destination nodes has more file
+replicas than specified.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
 >-n</CODE
 ></DT
 ><DD
@@ -298,9 +308,7 @@ NAME="BUGS"
 ><H2
 >BUGS</H2
 ><P
->A source host is not always selected within a set of source hosts.
-This means deleted replica when migrating files is not always a
-replica within the set of specified source hosts.</P
+>A source host is not always selected within a set of source hosts.</P
 ></DIV
 ></BODY
 ></HTML

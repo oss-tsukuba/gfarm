@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFREP" "1" "31 May 2008" "Gfarm" ""
+.TH "GFREP" "1" "09 November 2009" "Gfarm" ""
 
 .SH NAME
 gfrep \- Gfarm ファイルの複製を作成する．
 .SH SYNOPSIS
 
-\fBgfrep\fR [ \fB-mnqv\fR ] [ \fB-S \fI複製元ドメイン名\fB\fR ] [ \fB-D \fI複製先ドメイン名\fB\fR ] [ \fB-h \fI複製元ホスト指定ファイル\fB\fR ] [ \fB-H \fI複製先ホスト指定ファイル\fB\fR ] [ \fB-N \fI複製数\fB\fR ] [ \fB-j \fI並列数\fB\fR ] \fB\fIpath\fB\fR\fI ...\fR
+\fBgfrep\fR [ \fB-mnqvx\fR ] [ \fB-S \fI複製元ドメイン名\fB\fR ] [ \fB-D \fI複製先ドメイン名\fB\fR ] [ \fB-h \fI複製元ホスト指定ファイル\fB\fR ] [ \fB-H \fI複製先ホスト指定ファイル\fB\fR ] [ \fB-N \fI複製数\fB\fR ] [ \fB-j \fI並列数\fB\fR ] \fB\fIpath\fB\fR\fI ...\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -67,6 +67,10 @@ gfrep \- Gfarm ファイルの複製を作成する．
 \fB-m\fR
 複製ではなく移動を行います．
 .TP
+\fB-x\fR
+複製先に，指定された数以上の複製が存在する場合は，
+複製を消去し，指定された数にします．
+.TP
 \fB-n\fR
 ファイル複製が作成されるファイルを表示します．
 実際には何も実行されません．
@@ -83,5 +87,3 @@ gfrep \- Gfarm ファイルの複製を作成する．
 .PP
 複製作成元となるホストは，
 実際には複製作成元として指定されたホスト群から選ばれるとは限りません．
-従って，移動により消去されるファイル複製は複製作成元として
-指定されたホスト群の複製とは限りません．

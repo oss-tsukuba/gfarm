@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfrep</B
-> [-mnqv] [-S <TT
+> [-mnqvx] [-S <TT
 CLASS="REPLACEABLE"
 ><I
 >複製元ドメイン名</I
@@ -238,6 +238,16 @@ CLASS="OPTION"
 ><DT
 ><CODE
 CLASS="OPTION"
+>-x</CODE
+></DT
+><DD
+><P
+>複製先に，指定された数以上の複製が存在する場合は，
+複製を消去し，指定された数にします．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
 >-n</CODE
 ></DT
 ><DD
@@ -284,9 +294,7 @@ NAME="BUGS"
 >BUGS</H2
 ><P
 >複製作成元となるホストは，
-実際には複製作成元として指定されたホスト群から選ばれるとは限りません．
-従って，移動により消去されるファイル複製は複製作成元として
-指定されたホスト群の複製とは限りません．</P
+実際には複製作成元として指定されたホスト群から選ばれるとは限りません．</P
 ></DIV
 ></BODY
 ></HTML
