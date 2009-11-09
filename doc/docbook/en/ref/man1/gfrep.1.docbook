@@ -19,7 +19,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='opt'>-mnqv</arg>
+    <arg choice='opt'>-mnqvx</arg>
     <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
     <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
     <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
@@ -133,6 +133,16 @@ number of destination hosts.
 <listitem>
 <para>
 Lets gfrep command do a migrate/move, instead of doing replication.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+Removes file replicas when a set of destination nodes has more file
+replicas than specified.
 </para>
 </listitem>
 </varlistentry>

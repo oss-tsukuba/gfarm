@@ -17,7 +17,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfrep</command>
-    <arg choice='opt'>-mnqv</arg>
+    <arg choice='opt'>-mnqvx</arg>
     <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
     <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
     <arg choice='opt'>-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
@@ -126,6 +126,16 @@
 <listitem>
 <para>
 複製ではなく移動を行います．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+複製先に，指定された数以上の複製が存在する場合は，
+複製を消去し，指定された数にします．
 </para>
 </listitem>
 </varlistentry>
