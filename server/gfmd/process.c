@@ -757,8 +757,10 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != peer)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if (inode_is_creating_file(fo->inode)) /* no file copy */
-		return (GFARM_ERR_NO_SUCH_OBJECT);
+	/*
+	 * if this file is updating now, there is no file replica.
+	 * No need to check the number of file repilcas.
+	 */
 	if (inode_has_replica(fo->inode, spool_host))
 		return (GFARM_ERR_ALREADY_EXISTS);
 
