@@ -40,7 +40,6 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
-	int failed = 0;
 	gfarm_timerval_t t1, t2, t3, t4, t5;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
@@ -59,26 +58,21 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 	gfs_profile(gfarm_gettimerval(&t2));
 	e = gfs_pio_internal_set_view_section(gf, host, port);
 	if (e != GFARM_ERR_NO_ERROR) {
-		failed = 1;
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
 		goto close;
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 
 	e = gfimport(ifp, gf);
-	if (e != GFARM_ERR_NO_ERROR) {
-		failed = 1;
+	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "writing to %s: %s\n", gfarm_url,
 		    gfarm_error_string(e));
-	}
 	gfs_profile(gfarm_gettimerval(&t4));
  close:
 	e2 = gfs_pio_close(gf);
 	if (e2 != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "closing %s: %s\n", gfarm_url,
 		    gfarm_error_string(e2));
-	if (failed)
-		(void)gfs_unlink(gfarm_url);
 	gfs_profile(gfarm_gettimerval(&t5));
 	gfs_profile(fprintf(stderr,
 			    "create %g, view %g, import %g, close %g\n",
