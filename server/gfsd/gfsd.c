@@ -705,7 +705,8 @@ open_data(char *path, int flags)
 }
 
 static gfarm_error_t
-gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp)
+gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
+	gfarm_ino_t *inop, gfarm_uint64_t *genp)
 {
 	gfarm_error_t e;
 	gfarm_ino_t ino;
@@ -753,7 +754,26 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp)
 			local_flags |= O_CREAT;
 		*pathp = path;
 		*flagsp = local_flags;
+		*inop = ino;
+		*genp = gen;
 	}
+	return (e);
+}
+
+gfarm_error_t
+replica_remove(gfarm_ino_t ino, gfarm_uint64_t gen)
+{
+	gfarm_error_t e;
+	char *diag = "replica_remove";
+
+	if ((e = gfm_client_replica_remove_request(gfm_server, ino, gen))
+	     != GFARM_ERR_NO_ERROR)
+		fatal_metadb_proto("replica_remove request", diag, e);
+	else if ((e = gfm_client_replica_remove_result(gfm_server))
+	     != GFARM_ERR_NO_ERROR)
+		if (debug_mode)
+			gflog_info("replica_remove(%s) result: %s", diag,
+			    gfarm_error_string(e));
 	return (e);
 }
 
@@ -761,20 +781,33 @@ gfarm_error_t
 gfs_server_open_common(struct gfp_xdr *client, char *diag,
 	gfarm_int32_t *net_fdp, int *local_fdp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	char *path;
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
 	int net_fd, local_fd, local_flags;
 
 	gfs_server_get_request(client, diag, "i", &net_fd);
 
 	if (!file_table_is_available(net_fd))
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else if ((e = gfs_server_reopen(diag, net_fd, &path, &local_flags))
+	else if ((e = gfs_server_reopen(diag, net_fd, &path, &local_flags,
+			&ino, &gen))
 		 != GFARM_ERR_NO_ERROR)
 		;
 	else {
 		if ((local_fd = open_data(path, local_flags)) < 0) {
 			e = gfarm_errno_to_error(errno);
+			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+				if ((e2 = replica_remove(ino, gen))
+				    == GFARM_ERR_NO_ERROR)
+					gflog_info("invalid metadata deleted: "
+					    "ino %lld, gen %lld", ino, gen);
+				else
+					gflog_warning("fails to delete invalid"
+					   " metadata: ino %lld, gen %lld: %s",
+					    ino, gen, gfarm_error_string(e2));
+			}
 		} else {
 			file_table_add(net_fd, local_fd, local_flags);
 			*net_fdp = net_fd;
