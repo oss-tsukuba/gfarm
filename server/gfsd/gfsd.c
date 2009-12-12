@@ -802,11 +802,13 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 				if ((e2 = replica_remove(ino, gen))
 				    == GFARM_ERR_NO_ERROR)
 					gflog_info("invalid metadata deleted: "
-					    "ino %lld, gen %lld", ino, gen);
+					    "ino %lld, gen %lld",
+					    (long long)ino, (long long)gen);
 				else
 					gflog_warning("fails to delete invalid"
 					   " metadata: ino %lld, gen %lld: %s",
-					    ino, gen, gfarm_error_string(e2));
+					    (long long)ino, (long long)gen,
+					    gfarm_error_string(e2));
 			}
 		} else {
 			file_table_add(net_fd, local_fd, local_flags);
