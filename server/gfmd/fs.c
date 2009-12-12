@@ -1958,24 +1958,18 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	    inum, gen, mtime_sec, mtime_nsec));
 }
 
+/* assume giant lock is obtained */
 gfarm_error_t
-gfm_server_replica_added(struct peer *peer, int from_client, int skip)
+gfm_server_replica_added_common(const char *msg,
+	struct peer *peer, int from_client,
+	gfarm_int32_t flags, gfarm_int64_t mtime_sec,
+	gfarm_int32_t mtime_nsec, gfarm_off_t size)
 {
 	gfarm_error_t e;
-	gfarm_int32_t fd, flags, mtime_nsec;
-	gfarm_int64_t mtime_sec;
+	gfarm_int32_t fd;
 	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
-	const char msg[] = "gfm_server_replica_added";
-
-	e = gfm_server_get_request(peer, "replica_added", "ili",
-	    &flags, &mtime_sec, &mtime_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
 	if (from_client) /* from gfsd only */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -1995,13 +1989,59 @@ gfm_server_replica_added(struct peer *peer, int from_client, int skip)
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_replica_added(process, peer, spool_host, fd,
-		    flags, mtime_sec, mtime_nsec);
+		    flags, mtime_sec, mtime_nsec, size);
 		if (transaction)
 			db_end(msg);
 	}
+	return (e);
+}
+
+/* obsolete protocol */
+gfarm_error_t
+gfm_server_replica_added(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t flags, mtime_nsec;
+	gfarm_int64_t mtime_sec;
+	const char msg[] = "gfm_server_replica_added";
+
+	e = gfm_server_get_request(peer, msg, "ili",
+	    &flags, &mtime_sec, &mtime_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e = gfm_server_replica_added_common(msg, peer, from_client,
+		flags, mtime_sec, mtime_nsec, -1);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "replica_added", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
+}
+
+gfarm_error_t
+gfm_server_replica_added2(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t flags, mtime_nsec;
+	gfarm_int64_t mtime_sec;
+	gfarm_off_t size;
+	const char msg[] = "gfm_server_replica_added2";
+
+	e = gfm_server_get_request(peer, msg, "ilil",
+	    &flags, &mtime_sec, &mtime_nsec, &size);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e = gfm_server_replica_added_common(msg, peer, from_client,
+		flags, mtime_sec, mtime_nsec, size);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 gfarm_error_t

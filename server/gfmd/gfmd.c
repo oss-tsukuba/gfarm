@@ -343,8 +343,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_ADDING:
 		e = gfm_server_replica_adding(peer, from_client, skip);
 		break;
-	case GFM_PROTO_REPLICA_ADDED:
+	case GFM_PROTO_REPLICA_ADDED: /* obsolete protocol */
 		e = gfm_server_replica_added(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_ADDED2:
+		e = gfm_server_replica_added2(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_REMOVE:
 		e = gfm_server_replica_remove(peer, from_client, skip);

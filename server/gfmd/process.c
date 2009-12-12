@@ -609,7 +609,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	     != GFARM_ERR_ALREADY_EXISTS))
 		do_not_change_status = 1;
-	else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime))
+	else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime) ||
+		 inode_get_size(fo->inode) != size)
 		/* invalidate file replicas if updated */
 		inode_remove_every_other_replicas(
 			fo->inode, fo->u.f.spool_host);
@@ -745,7 +746,8 @@ process_replica_adding(struct process *process,
 gfarm_error_t
 process_replica_added(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
-	int flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+	int flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
+	gfarm_off_t size)
 {
 	struct file_opening *fo;
 	struct gfarm_timespec *mtime;
@@ -765,9 +767,10 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_ALREADY_EXISTS);
 
 	mtime = inode_get_mtime(fo->inode);
-	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec) {
+	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec ||
+	    (size != -1 && size != inode_get_size(fo->inode))) {
 		e = inode_remove_replica(fo->inode, spool_host, 0);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
 	else
@@ -973,4 +976,3 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "inherit_fd", e, ""));
 }
-

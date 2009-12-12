@@ -1963,6 +1963,16 @@ gfm_client_replica_added_request(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_replica_added2_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
+	gfarm_off_t size)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_REPLICA_ADDED2, "ilil",
+	    flags, mtime_sec, mtime_nsec, size));
+}
+
+gfarm_error_t
 gfm_client_replica_added_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));

@@ -98,4 +98,4 @@ gfarm_error_t process_replica_adding(struct process *, struct peer *,
 	struct host *, char *, int, gfarm_ino_t *, gfarm_uint64_t *,
 	gfarm_int64_t *, gfarm_int32_t *);
 gfarm_error_t process_replica_added(struct process *, struct peer *,
-	struct host *, int, int, gfarm_int64_t, gfarm_int32_t);
+	struct host *, int, int, gfarm_int64_t, gfarm_int32_t, gfarm_off_t);

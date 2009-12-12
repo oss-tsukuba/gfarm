@@ -1212,7 +1212,8 @@ replica_adding(gfarm_int32_t net_fd, char *src_host,
 
 static gfarm_error_t
 replica_added(gfarm_int32_t net_fd,
-	gfarm_int32_t flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+    gfarm_int32_t flags, gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec,
+    gfarm_off_t size)
 {
 	gfarm_error_t e;
 	char *diag = "replica_added";
@@ -1223,8 +1224,8 @@ replica_added(gfarm_int32_t net_fd,
 	else if ((e = gfm_client_put_fd_request(gfm_server, net_fd))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto("put_fd request", diag, e);
-	else if ((e = gfm_client_replica_added_request(gfm_server,
-	    flags, mtime_sec, mtime_nsec))
+	else if ((e = gfm_client_replica_added2_request(gfm_server,
+	    flags, mtime_sec, mtime_nsec, size))
 	    != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto("replica_added request", diag, e);
 	else if ((e = gfm_client_compound_end_request(gfm_server))
@@ -1260,7 +1261,9 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	char *host, *path, *diag = "replica_add_from";
 	struct gfs_connection *server;
 	int flags = 0; /* XXX - for now */
+	struct stat sb;
 
+	sb.st_size = -1;
 	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
 
 	e = replica_adding(net_fd, host, &ino, &gen, &mtime_sec, &mtime_nsec);
@@ -1284,13 +1287,20 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto close;
 	}
 	e = gfs_client_replica_recv(server, ino, gen, local_fd);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
 		mtime_sec = mtime_nsec = 0; /* invalidate */
+		goto free_server;
+	}
+	if (fstat(local_fd, &sb) == -1) {
+		e = gfarm_errno_to_error(errno);
+		mtime_sec = mtime_nsec = 0; /* invalidate */
+	}
+ free_server:
 	gfs_client_connection_free(server);
  close:
 	close(local_fd);
  adding_cancel:
-	e2 = replica_added(net_fd, flags, mtime_sec, mtime_nsec);
+	e2 = replica_added(net_fd, flags, mtime_sec, mtime_nsec, sb.st_size);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = e2;
  free_host:
