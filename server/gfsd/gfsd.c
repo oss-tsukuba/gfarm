@@ -107,6 +107,8 @@
 #define FILE_TABLE_LIMIT	2048
 #endif
 
+static const char READONLY_CONFIG_FILE[] = ".readonly";
+
 char *program_name = "gfsd";
 
 int debug_mode = 0;
@@ -1172,6 +1174,26 @@ gfs_server_cksum_set(struct gfp_xdr *client)
 	gfs_server_put_reply(client, diag, e, "");
 }
 
+static int
+is_readonly_mode(void)
+{
+	struct stat st;
+	int length;
+	static char *p = NULL;
+	char *diag = "is_readonly_mode";
+
+	if (p == NULL) {
+		length = strlen(gfarm_spool_root) + 1 +
+			sizeof(READONLY_CONFIG_FILE);
+		GFARM_MALLOC_ARRAY(p, length);
+		if (p == NULL)
+			fatal("%s: no memory for %d bytes", diag, length);
+		snprintf(p, length, "%s/%s", gfarm_spool_root,
+			 READONLY_CONFIG_FILE);
+	}		
+	return (stat(p, &st) == 0);
+}
+
 void
 gfs_server_statfs(struct gfp_xdr *client)
 {
@@ -1190,6 +1212,12 @@ gfs_server_statfs(struct gfp_xdr *client)
 	    &blocks, &bfree, &bavail,
 	    &files, &ffree, &favail);
 	free(dir);
+
+	if (save_errno == 0 && is_readonly_mode()) {
+		/* pretend to be disk full, to make this gfsd read-only */
+		bavail -= bfree;
+		bfree = 0;
+	}
 
 	gfs_server_put_reply_with_errno(client, "statfs", save_errno,
 	    "illllll", bsize, blocks, bfree, bavail, files, ffree, favail);
@@ -1492,6 +1520,12 @@ gfs_server_status(struct gfp_xdr *conn)
 	else {
 		save_errno = gfsd_statfs(gfarm_spool_root, &bsize,
 			&blocks, &bfree, &bavail, &files, &ffree, &favail);
+
+		/* pretend to be disk full, to make this gfsd read-only */
+		if (save_errno == 0 && is_readonly_mode()) {
+			bavail -= bfree;
+			bfree = 0;
+		}
 		if (save_errno == 0) {
 			used = (blocks - bfree) * bsize / 1024;
 			avail = bavail * bsize / 1024;
