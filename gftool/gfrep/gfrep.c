@@ -361,6 +361,8 @@ is_enough_space(char *host, int port, gfarm_off_t size)
 
 	e = gfs_statfsnode(host, port, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
+	if (e != GFARM_ERR_NO_ERROR)
+		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
 	return (e == GFARM_ERR_NO_ERROR && bavail * bsize >= size);
 }
 
