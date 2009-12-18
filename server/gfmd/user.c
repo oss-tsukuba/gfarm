@@ -143,6 +143,8 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 		if (user_is_invalidated(u)) {
 			gfarm_user_info_free(&u->ui);
 			u->ui = *ui;
+			if (upp != NULL)
+				*upp = u;
 			user_activate(u);
 			return (GFARM_ERR_NO_ERROR);
 		}
