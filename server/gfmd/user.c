@@ -183,11 +183,13 @@ user_remove(const char *username)
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
+	u = *(struct user **)gfarm_hash_entry_data(entry);
+	if (user_is_invalidated(u))
+		return (GFARM_ERR_NO_SUCH_USER);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
 	 */
-	u = *(struct user **)gfarm_hash_entry_data(entry);
 	user_invalidate(u);
 
 	return (GFARM_ERR_NO_ERROR);
