@@ -189,7 +189,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	}
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
-		if (u == NULL) {
+		if (u == NULL || user_is_invalidated(u)) {
 			group_remove(gi->groupname);
 			gi->groupname = NULL; /* prevent double free */
 			gflog_warning("group_add_one: unknown user %s",
@@ -219,7 +219,7 @@ group_add_user(struct group *g, const char *username)
 {
 	struct user *u = user_lookup(username);
 
-	if (u == NULL)
+	if (u == NULL || user_is_invalidated(u))
 		return (GFARM_ERR_NO_SUCH_USER);
 	if (user_in_group(u, g))
 		return (GFARM_ERR_ALREADY_EXISTS);
@@ -517,9 +517,11 @@ static gfarm_error_t
 group_user_check(struct gfarm_group_info *gi, const char *msg)
 {
 	int i;
+	struct user *u;
 
 	for (i = 0; i < gi->nusers; i++) {
-		if (user_lookup(gi->usernames[i]) == NULL) {
+		u = user_lookup(gi->usernames[i]);
+		if (u == NULL || user_is_invalidated(u)) {
 			gflog_warning("%s: unknown user %s", msg,
 				    gi->usernames[i]);
 			return (GFARM_ERR_NO_SUCH_USER);
@@ -612,7 +614,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		for (i = 0; i < gi.nusers; i++) {
 			struct user *u = user_lookup(gi.usernames[i]);
 
-			if (u == NULL) {
+			if (u == NULL || user_is_invalidated(u)) {
 				gflog_warning("%s: unknown user %s", msg,
 				    gi.usernames[i]);
 				continue;

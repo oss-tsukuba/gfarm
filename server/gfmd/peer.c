@@ -324,7 +324,7 @@ peer_authorized(struct peer *peer,
 	peer->id_type = id_type;
 	if (id_type == GFARM_AUTH_ID_TYPE_USER) {
 		peer->user = user_lookup(username);
-		if (peer->user != NULL) {
+		if (user_is_active(peer->user)) {
 			free(username);
 			peer->username = NULL;
 		} else {

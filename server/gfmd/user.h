@@ -5,6 +5,8 @@ struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
 char *user_gsi_dn(struct user *);
+int user_is_invalidated(struct user *);
+int user_is_active(struct user *);
 
 extern char ADMIN_USER_NAME[];
 

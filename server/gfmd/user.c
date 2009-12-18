@@ -27,6 +27,7 @@
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
+	int invalid;	/* set when deleted */
 };
 
 char ADMIN_USER_NAME[] = "gfarmadm";
@@ -75,6 +76,30 @@ hash_key_equal_user(
 	return (gfarm_hash_key_equal_default(k1, l1, k2, l2));
 }
 
+static void
+user_invalidate(struct user *u)
+{
+	u->invalid = 1;
+}
+
+static void
+user_activate(struct user *u)
+{
+	u->invalid = 0;
+}
+
+int
+user_is_invalidated(struct user *u)
+{
+	return (u->invalid == 1);
+}
+
+int
+user_is_active(struct user *u)
+{
+	return (u != NULL && !user_is_invalidated(u));
+}
+
 struct user *
 user_lookup(const char *username)
 {
@@ -113,6 +138,18 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	int created;
 	struct user *u;
 
+	u = user_lookup(ui->username);
+	if (u != NULL) {
+		if (user_is_invalidated(u)) {
+			gfarm_user_info_free(&u->ui);
+			u->ui = *ui;
+			user_activate(u);
+			return (GFARM_ERR_NO_ERROR);
+		}
+		else
+			return (GFARM_ERR_ALREADY_EXISTS);
+	}
+
 	GFARM_MALLOC(u);
 	if (u == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -133,6 +170,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
 	if (upp != NULL)
 		*upp = u;
+	user_activate(u);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -141,28 +179,16 @@ user_remove(const char *username)
 {
 	struct gfarm_hash_entry *entry;
 	struct user *u;
-	struct group_assignment *ga;
 
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
+	/*
+	 * do not purge the hash entry.  Instead, invalidate it so
+	 * that it can be activated later.
+	 */
 	u = *(struct user **)gfarm_hash_entry_data(entry);
-	gfarm_hash_purge(user_hashtab, &username, sizeof(username));
-
-	/* free gfarm_user_info */
-	gfarm_user_info_free(&u->ui);
-
-	/* free group_assignment */
-	while ((ga = u->groups.group_next) != &u->groups)
-		grpassign_remove(ga);
-
-	/* This entry can be referred to by struct peer, process and inode */
-	/* mark this as removed */
-	u->ui.username = REMOVED_USER_NAME;
-	u->ui.realname = NULL;
-	u->ui.homedir = NULL;
-	u->ui.gsi_dn = NULL;
-	/* XXX We should have a list which points all removed users */
+	user_invalidate(u);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -170,25 +196,22 @@ user_remove(const char *username)
 char *
 user_name(struct user *u)
 {
-	return (u != NULL ? u->ui.username : REMOVED_USER_NAME);
+	return (user_is_active(u) ? u->ui.username : REMOVED_USER_NAME);
 }
 
 char *
 user_gsi_dn(struct user *u)
 {
-	return (u != NULL ? u->ui.gsi_dn : REMOVED_USER_NAME);
-}
-
-int
-user_is_removed(struct user *u)
-{
-	return (u == NULL || u->ui.username == REMOVED_USER_NAME);
+	return (user_is_active(u) ? u->ui.gsi_dn : REMOVED_USER_NAME);
 }
 
 int
 user_in_group(struct user *user, struct group *group)
 {
 	struct group_assignment *ga;
+
+	if (user_is_invalidated(user))
+		return (0);
 
 	for (ga = user->groups.group_next; ga != &user->groups;
 	    ga = ga->group_next) {
@@ -262,6 +285,10 @@ user_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error("loading users: %s", gfarm_error_string(e));
 
+	/*
+	 * there is no removed (invalidated) user since the hash is
+	 * just created.
+	 */
 	if (user_lookup(ADMIN_USER_NAME) == NULL)
 		create_user(ADMIN_USER_NAME, NULL);
 	if (gfarm_metadb_admin_user != NULL &&
@@ -301,7 +328,9 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	for (gfarm_hash_iterator_begin(user_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
-		++nusers;
+		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
+		if (user_is_active(*u))
+			++nusers;
 	}
 	e = gfm_server_put_reply(peer, "user_info_get_all",
 	    GFARM_ERR_NO_ERROR, "i", nusers);
@@ -313,10 +342,12 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		e = user_info_send(client, &(*u)->ui);
-		if (e != GFARM_ERR_NO_ERROR) {
-			giant_unlock();
-			return (e);
+		if (user_is_active(*u)) {
+			e = user_info_send(client, &(*u)->ui);
+			if (e != GFARM_ERR_NO_ERROR) {
+				giant_unlock();
+				return (e);
+			}
 		}
 	}
 
@@ -381,7 +412,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	for (i = 0; i < nusers; i++) {
 		u = user_lookup(users[i]);
-		if (u == NULL) {
+		if (u == NULL || user_is_invalidated(u)) {
 			if (debug_mode)
 				gflog_info("user lookup <%s>: failed",
 				    users[i]);
@@ -434,7 +465,7 @@ gfm_server_user_info_get_by_gsi_dn(
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	u = user_lookup_gsi_dn(gsi_dn);
-	if (u == NULL)
+	if (u == NULL || user_is_invalidated(u))
 		e = gfm_server_put_reply(peer, "user_info_get_by_gsi_dn",
 			GFARM_ERR_NO_SUCH_USER, "");
 	else {
@@ -466,7 +497,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (user_lookup(ui.username) != NULL) {
+	} else if (user_is_active(user_lookup(ui.username))) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else {
 		e = user_enter(&ui, NULL);
@@ -505,7 +536,8 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		needs_free = 1;
-	} else if ((u = user_lookup(ui.username)) == NULL) {
+	} else if ((u = user_lookup(ui.username)) == NULL ||
+		   user_is_invalidated(u)) {
 		e = GFARM_ERR_NO_SUCH_USER;
 		needs_free = 1;
 	} else if ((e = db_user_modify(&ui,

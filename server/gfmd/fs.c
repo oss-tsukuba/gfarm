@@ -689,7 +689,8 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR)
 		;
 	else if (*username != '\0' &&
-	    (new_user = user_lookup(username)) == NULL)
+	    ((new_user = user_lookup(username)) == NULL ||
+	     user_is_invalidated(new_user)))
 		e = GFARM_ERR_NO_SUCH_USER;
 	else if (*groupname != '\0' &&
 	    (new_group = group_lookup(groupname)) == NULL)
