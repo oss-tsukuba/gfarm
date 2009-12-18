@@ -693,7 +693,8 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	     user_is_invalidated(new_user)))
 		e = GFARM_ERR_NO_SUCH_USER;
 	else if (*groupname != '\0' &&
-	    (new_group = group_lookup(groupname)) == NULL)
+	    ((new_group = group_lookup(groupname)) == NULL ||
+	     group_is_invalidated(new_group)))
 		e = GFARM_ERR_NO_SUCH_GROUP;
 	else if (new_user != NULL && !user_is_root(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

@@ -21,6 +21,7 @@ struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
+int group_is_invalidated(struct group *);
 
 
 struct peer;

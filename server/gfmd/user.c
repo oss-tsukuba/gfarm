@@ -216,6 +216,8 @@ user_in_group(struct user *user, struct group *group)
 
 	if (user_is_invalidated(user))
 		return (0);
+	if (group_is_invalidated(group))
+		return (0);
 
 	for (ga = user->groups.group_next; ga != &user->groups;
 	    ga = ga->group_next) {
