@@ -246,12 +246,14 @@ group_add_user_and_record(struct group *g, const char *username)
 	gi.groupname = group_name(g);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		n++;
+		if (user_is_active(ga->u))
+			n++;
 	gi.nusers = n;
 	GFARM_MALLOC_ARRAY(gi.usernames, n);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		gi.usernames[n++] = user_name(ga->u);
+		if (user_is_active(ga->u))
+			gi.usernames[n++] = user_name(ga->u);
 
 	e = db_group_modify(&gi, 0, 1, &username, 0, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -347,14 +349,16 @@ group_info_send(struct gfp_xdr *client, struct group *g)
 
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		n++;
+		if (user_is_active(ga->u))
+			n++;
 	e = gfp_xdr_send(client, "si", g->groupname, n);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next) {
-		if ((e = gfp_xdr_send(client, "s", user_name(ga->u))) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
+		if (user_is_active(ga->u))
+			if ((e = gfp_xdr_send(client, "s", user_name(ga->u)))
+			    != GFARM_ERR_NO_ERROR)
+				return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
