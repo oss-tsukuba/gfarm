@@ -143,12 +143,10 @@ group_enter(char *groupname, struct group **gpp)
 	g = group_lookup(groupname);
 	if (g != NULL) {
 		if (group_is_invalidated(g)) {
-			free(g->groupname);
-			g->groupname = groupname;
-			g->users.user_prev = g->users.user_next = &g->users;
+			group_activate(g);
 			if (gpp != NULL)
 				*gpp = g;
-			group_activate(g);
+			free(groupname);
 			return (GFARM_ERR_NO_ERROR);
 		}
 		else
@@ -173,9 +171,9 @@ group_enter(char *groupname, struct group **gpp)
 	}
 	g->users.user_prev = g->users.user_next = &g->users;
 	*(struct group **)gfarm_hash_entry_data(entry) = g;
+	group_activate(g);
 	if (gpp != NULL)
 		*gpp = g;
-	group_activate(g);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -202,6 +200,7 @@ group_remove(const char *groupname)
 	/* free group_assignment */
 	while ((ga = g->users.user_next) != &g->users)
 		grpassign_remove(ga);
+	g->users.user_prev = g->users.user_next = &g->users;
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -230,20 +229,18 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL || user_is_invalidated(u)) {
-			group_remove(gi->groupname);
-			gi->groupname = NULL; /* prevent double free */
 			gflog_warning("group_add_one: unknown user %s",
 			    gi->usernames[i]);
+			(void)group_remove(gi->groupname);
 			gfarm_group_info_free(gi);
 			return;
 		}
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
-			group_remove(gi->groupname);
-			gi->groupname = NULL; /* prevent double free */
 			gflog_warning("group_add_one: grpassign(%s, %s): %s",
 			    gi->usernames[i], gi->groupname,
 			    gfarm_error_string(e));
+			(void)group_remove(gi->groupname);
 			gfarm_group_info_free(gi);
 			return;
 		}
@@ -252,6 +249,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		free(gi->usernames[i]);
 	if (gi->usernames != NULL)
 		free(gi->usernames);
+	/* do not free gi->groupname */
 }
 
 gfarm_error_t

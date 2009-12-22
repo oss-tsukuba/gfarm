@@ -141,11 +141,15 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	u = user_lookup(ui->username);
 	if (u != NULL) {
 		if (user_is_invalidated(u)) {
-			gfarm_user_info_free(&u->ui);
-			u->ui = *ui;
+			user_activate(u);
 			if (upp != NULL)
 				*upp = u;
-			user_activate(u);
+			/* copy user info but keeping address of username */
+			free(ui->username);
+			ui->username = u->ui.username;
+			u->ui.username = NULL; /* prevent to free this area */
+			gfarm_user_info_free(&u->ui);
+			u->ui = *ui;
 			return (GFARM_ERR_NO_ERROR);
 		}
 		else
@@ -170,9 +174,9 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	}
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
+	user_activate(u);
 	if (upp != NULL)
 		*upp = u;
-	user_activate(u);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -491,6 +495,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	struct gfarm_user_info ui;
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
+	int do_not_free = 0;
 
 	e = gfm_server_get_request(peer, "USER_INFO_SET",
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
@@ -511,12 +516,12 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 			e = db_user_add(&ui);
 			if (e != GFARM_ERR_NO_ERROR) {
 				user_remove(ui.username);
-				ui.username = ui.realname = ui.homedir =
-				    ui.gsi_dn = NULL;
+				/* do not free since ui still used in hash */
+				do_not_free = 1;
 			}
 		}
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR && !do_not_free)
 		gfarm_user_info_free(&ui);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, "USER_INFO_SET", e, ""));
