@@ -74,7 +74,8 @@ SRCS = \
 	sockutil.c \
 	timespec.c \
 	url.c \
-	$(globus_srcs)
+	$(globus_srcs) \
+	$(gfhostgroup_srcs)
 
 #	gfs_pio_global.c \
 #	gfs_pio_misc.c \
@@ -141,7 +142,8 @@ OBJS = \
 	sockutil.lo \
 	timespec.lo \
 	url.lo \
-	$(globus_objs)
+	$(globus_objs) \
+	$(gfhostgroup_objs) 
 
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo \
@@ -154,11 +156,20 @@ CFLAGS = $(pthread_includes) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
 
-all: $(LIBRARY)
+all: prop-link $(LIBRARY)
 
 include $(top_srcdir)/makes/lib.mk
+include $(top_srcdir)/makes/proprietary.mk
 
-###
+post-distclean-hook:	prop-unlink
+	$(RM) -f gfhostgroup_subr.c
+
+post-veryclean-hook:	prop-unlink
+	$(RM) -f gfhostgroup_subr.c
+
+gfhostgroup_subr.c: proprietary/gfhostgroup_subr.c
+	$(RM) -f $@
+	ln -s $< $@
 
 $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)

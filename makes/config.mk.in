@@ -117,3 +117,8 @@ config_gfarm_sysdep_subdir = @config_gfarm_sysdep_subdir@
 
 # build gftool/gfvoms-sync
 gfvoms_sync_targets = @gfvoms_sync_targets@
+
+# proprietary functions
+PROPROOTDIR = @PROPROOTDIR@
+gfhostgroup_srcs = @GFHOSTGROUP_SRCS@
+gfhostgroup_objs = @GFHOSTGROUP_OBJS@

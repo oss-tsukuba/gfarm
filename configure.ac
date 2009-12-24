@@ -1313,6 +1313,45 @@ if test -d ${srcdir}/ns; then
 	test -d ns/nstool || mkdir ns/nstool
 fi
 
+###
+### --with-proprietaryfuncs
+###
+
+withPropFuncs=''
+AC_MSG_CHECKING([use of proprietary functions])
+AC_ARG_WITH(proprietaryfuncs,
+[  --with-proprietaryfuncs=DIR	proprietary source directory
+],
+[withPropFuncs="${withval}"
+],
+[withPropFuncs=""
+])
+
+PROPROOTDIR=''
+if test "x${withPropFuncs}" = "x"; then
+  AC_MSG_RESULT([not use.])
+else
+  if test -d "${withPropFuncs}"; then
+    PROPROOTDIR="${withPropFuncs}"
+    AC_MSG_RESULT([use ${PROPROOTDIR}])
+  else
+    AC_MSG_RESULT([${withPropFuncs} is not a directory.])
+    exit 1
+  fi
+fi
+
+AC_SUBST(PROPROOTDIR)
+
+if test "x${PROPROOTDIR}" != "x"; then
+  GFHOSTGROUP_SRCS=gfhostgroup_subr.c
+  GFHOSTGROUP_OBJS=gfhostgroup_subr.lo
+else
+  GFHOSTGROUP_SRCS=gfhostgroup_subr_stub.c
+  GFHOSTGROUP_OBJS=gfhostgroup_subr_stub.lo
+fi
+
+AC_SUBST(GFHOSTGROUP_SRCS)
+AC_SUBST(GFHOSTGROUP_OBJS)
 
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists

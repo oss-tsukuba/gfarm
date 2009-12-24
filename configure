@@ -899,6 +899,9 @@ gfs_hook_sysdep_subdir
 config_gfarm_sysdep_subdir
 PYTHON_SPECIFIED
 gfvoms_sync_targets
+PROPROOTDIR
+GFHOSTGROUP_SRCS
+GFHOSTGROUP_OBJS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1543,6 +1546,8 @@ Optional Packages:
   --with-postgresql=PostgreSQL_ROOT	PostgreSQL root directory
 				[default=guessed]
   --without-postgresql			disable PostgreSQL
+  --with-proprietaryfuncs=DIR	proprietary source directory
+
 
 Some influential environment variables:
   CC          C compiler command
@@ -3954,7 +3959,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3957 "configure"' > conftest.$ac_ext
+  echo '#line 3962 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6591,11 +6596,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6594: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6599: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6598: \$? = $ac_status" >&5
+   echo "$as_me:6603: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6853,11 +6858,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6856: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6861: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6860: \$? = $ac_status" >&5
+   echo "$as_me:6865: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6915,11 +6920,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6918: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6923: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6922: \$? = $ac_status" >&5
+   echo "$as_me:6927: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9118,7 +9123,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9121 "configure"
+#line 9126 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9216,7 +9221,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9219 "configure"
+#line 9224 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11464,11 +11469,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11467: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11472: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11471: \$? = $ac_status" >&5
+   echo "$as_me:11476: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11526,11 +11531,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11529: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11534: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11533: \$? = $ac_status" >&5
+   echo "$as_me:11538: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12862,7 +12867,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12865 "configure"
+#line 12870 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12960,7 +12965,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12963 "configure"
+#line 12968 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13845,11 +13850,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13848: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13853: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13852: \$? = $ac_status" >&5
+   echo "$as_me:13857: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13907,11 +13912,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13910: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13915: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13914: \$? = $ac_status" >&5
+   echo "$as_me:13919: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16028,11 +16033,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16031: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16036: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16035: \$? = $ac_status" >&5
+   echo "$as_me:16040: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16290,11 +16295,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16293: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16298: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16297: \$? = $ac_status" >&5
+   echo "$as_me:16302: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16352,11 +16357,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16355: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16360: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16359: \$? = $ac_status" >&5
+   echo "$as_me:16364: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18555,7 +18560,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18558 "configure"
+#line 18563 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18653,7 +18658,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18656 "configure"
+#line 18661 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -24907,6 +24912,52 @@ if test -d ${srcdir}/ns; then
 	test -d ns/nstool || mkdir ns/nstool
 fi
 
+###
+### --with-proprietaryfuncs
+###
+
+withPropFuncs=''
+{ echo "$as_me:$LINENO: checking use of proprietary functions" >&5
+echo $ECHO_N "checking use of proprietary functions... $ECHO_C" >&6; }
+
+# Check whether --with-proprietaryfuncs was given.
+if test "${with_proprietaryfuncs+set}" = set; then
+  withval=$with_proprietaryfuncs; withPropFuncs="${withval}"
+
+else
+  withPropFuncs=""
+
+fi
+
+
+PROPROOTDIR=''
+if test "x${withPropFuncs}" = "x"; then
+  { echo "$as_me:$LINENO: result: not use." >&5
+echo "${ECHO_T}not use." >&6; }
+else
+  if test -d "${withPropFuncs}"; then
+    PROPROOTDIR="${withPropFuncs}"
+    { echo "$as_me:$LINENO: result: use ${PROPROOTDIR}" >&5
+echo "${ECHO_T}use ${PROPROOTDIR}" >&6; }
+  else
+    { echo "$as_me:$LINENO: result: ${withPropFuncs} is not a directory." >&5
+echo "${ECHO_T}${withPropFuncs} is not a directory." >&6; }
+    exit 1
+  fi
+fi
+
+
+
+if test "x${PROPROOTDIR}" != "x"; then
+  GFHOSTGROUP_SRCS=gfhostgroup_subr.c
+  GFHOSTGROUP_OBJS=gfhostgroup_subr.lo
+else
+  GFHOSTGROUP_SRCS=gfhostgroup_subr_stub.c
+  GFHOSTGROUP_OBJS=gfhostgroup_subr_stub.lo
+fi
+
+
+
 
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
@@ -25715,11 +25766,14 @@ gfs_hook_sysdep_subdir!$gfs_hook_sysdep_subdir$ac_delim
 config_gfarm_sysdep_subdir!$config_gfarm_sysdep_subdir$ac_delim
 PYTHON_SPECIFIED!$PYTHON_SPECIFIED$ac_delim
 gfvoms_sync_targets!$gfvoms_sync_targets$ac_delim
+PROPROOTDIR!$PROPROOTDIR$ac_delim
+GFHOSTGROUP_SRCS!$GFHOSTGROUP_SRCS$ac_delim
+GFHOSTGROUP_OBJS!$GFHOSTGROUP_OBJS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
