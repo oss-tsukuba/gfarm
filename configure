@@ -900,8 +900,8 @@ config_gfarm_sysdep_subdir
 PYTHON_SPECIFIED
 gfvoms_sync_targets
 PROPROOTDIR
-GFHOSTGROUP_SRCS
-GFHOSTGROUP_OBJS
+LIBGFARM_PROP_SRCS
+LIBGFARM_PROP_OBJS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -24948,16 +24948,24 @@ fi
 
 
 
+##
+## Add macros for proprietary sources from here.
+##
+
 if test "x${PROPROOTDIR}" != "x"; then
-  GFHOSTGROUP_SRCS=gfhostgroup_subr.c
-  GFHOSTGROUP_OBJS=gfhostgroup_subr.lo
+  LIBGFARM_PROP_SRCS="gfhostgroup_subr.c gfhostgroup_subr2.c"
+  LIBGFARM_PROP_OBJS="gfhostgroup_subr.lo gfhostgroup_subr2.lo"
 else
-  GFHOSTGROUP_SRCS=gfhostgroup_subr_stub.c
-  GFHOSTGROUP_OBJS=gfhostgroup_subr_stub.lo
+  LIBGFARM_PROP_SRCS=gfhostgroup_subr_stub.c
+  LIBGFARM_PROP_OBJS=gfhostgroup_subr_stub.lo
 fi
 
 
 
+
+##
+## Proprietary sources macros end here.
+##
 
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
@@ -25767,8 +25775,8 @@ config_gfarm_sysdep_subdir!$config_gfarm_sysdep_subdir$ac_delim
 PYTHON_SPECIFIED!$PYTHON_SPECIFIED$ac_delim
 gfvoms_sync_targets!$gfvoms_sync_targets$ac_delim
 PROPROOTDIR!$PROPROOTDIR$ac_delim
-GFHOSTGROUP_SRCS!$GFHOSTGROUP_SRCS$ac_delim
-GFHOSTGROUP_OBJS!$GFHOSTGROUP_OBJS$ac_delim
+LIBGFARM_PROP_SRCS!$LIBGFARM_PROP_SRCS$ac_delim
+LIBGFARM_PROP_OBJS!$LIBGFARM_PROP_OBJS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
