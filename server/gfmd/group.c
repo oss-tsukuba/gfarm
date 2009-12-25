@@ -133,7 +133,8 @@ group_lookup(const char *groupname)
 	return (*(struct group **)gfarm_hash_entry_data(entry));
 }
 
-gfarm_error_t
+/* note that groupname may be free'ed */
+static gfarm_error_t
 group_enter(char *groupname, struct group **gpp)
 {
 	struct gfarm_hash_entry *entry;
@@ -231,16 +232,18 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		if (u == NULL || user_is_invalidated(u)) {
 			gflog_warning("group_add_one: unknown user %s",
 			    gi->usernames[i]);
-			(void)group_remove(gi->groupname);
+			(void)group_remove(g->groupname);
+			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
 			return;
 		}
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning("group_add_one: grpassign(%s, %s): %s",
-			    gi->usernames[i], gi->groupname,
+			    gi->usernames[i], g->groupname,
 			    gfarm_error_string(e));
-			(void)group_remove(gi->groupname);
+			(void)group_remove(g->groupname);
+			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
 			return;
 		}
