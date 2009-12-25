@@ -1342,16 +1342,24 @@ fi
 
 AC_SUBST(PROPROOTDIR)
 
+##
+## Add macros for proprietary sources from here.
+##
+
 if test "x${PROPROOTDIR}" != "x"; then
-  GFHOSTGROUP_SRCS=gfhostgroup_subr.c
-  GFHOSTGROUP_OBJS=gfhostgroup_subr.lo
+  LIBGFARM_PROP_SRCS="gfhostgroup_subr.c gfhostgroup_subr2.c"
+  LIBGFARM_PROP_OBJS="gfhostgroup_subr.lo gfhostgroup_subr2.lo"
 else
-  GFHOSTGROUP_SRCS=gfhostgroup_subr_stub.c
-  GFHOSTGROUP_OBJS=gfhostgroup_subr_stub.lo
+  LIBGFARM_PROP_SRCS=gfhostgroup_subr_stub.c
+  LIBGFARM_PROP_OBJS=gfhostgroup_subr_stub.lo
 fi
 
-AC_SUBST(GFHOSTGROUP_SRCS)
-AC_SUBST(GFHOSTGROUP_OBJS)
+AC_SUBST(LIBGFARM_PROP_SRCS)
+AC_SUBST(LIBGFARM_PROP_OBJS)
+
+##
+## Proprietary sources macros end here.
+##
 
 # The following is for --srcdir option.
 # AC_OUTPUT() assumes that parent directory of the Makefile exists
