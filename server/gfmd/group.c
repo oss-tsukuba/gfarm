@@ -233,6 +233,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 			gflog_warning("group_add_one: unknown user %s",
 			    gi->usernames[i]);
 			(void)group_remove(g->groupname);
+			/* do not free gi->groupname */
 			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
 			return;
@@ -243,6 +244,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 			    gi->usernames[i], g->groupname,
 			    gfarm_error_string(e));
 			(void)group_remove(g->groupname);
+			/* do not free gi->groupname */
 			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
 			return;
