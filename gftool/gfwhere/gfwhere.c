@@ -11,8 +11,8 @@
 
 char *program_name = "gfwhere";
 
-static gfarm_error_t
-display_name(char *name, struct gfs_stat *st, void *arg)
+static void
+display_name(char *name)
 {
 	static int print_ln;
 
@@ -22,52 +22,56 @@ display_name(char *name, struct gfs_stat *st, void *arg)
 		print_ln = 1;
 
 	printf("%s:\n", name);
-	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
-display_copy(char *path)
+display_copy(char *path, int do_not_display_name)
 {
 	int n, i;
 	char **hosts;
 	gfarm_error_t e;
 
 	e = gfs_replica_list_by_name(path, &n, &hosts);
-	if (e == GFARM_ERR_NO_ERROR) {
-		i = 0;
-		if (i < n)
-			printf("%s", hosts[i++]);
-		for (; i < n; ++i)
-			printf(" %s", hosts[i]);
-		for (i = 0; i < n; ++i)
-			free(hosts[i]);
-		free(hosts);
-	}
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (!do_not_display_name)
+		display_name(path);
+
+	i = 0;
+	if (i < n)
+		printf("%s", hosts[i++]);
+	for (; i < n; ++i)
+		printf(" %s", hosts[i]);
 	printf("\n");
+
+	for (i = 0; i < n; ++i)
+		free(hosts[i]);
+	free(hosts);
+
 	return (e);
 }
 
 static gfarm_error_t
 display_replica_catalog(char *path, struct gfs_stat *st, void *arg)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
 	gfarm_mode_t mode;
 	int do_not_display_name = *(int *)arg;
-
-	if (!do_not_display_name)
-		display_name(path, st, arg);
 
 	mode = st->st_mode;
 	if (GFARM_S_ISDIR(mode))
 		e = GFARM_ERR_IS_A_DIRECTORY;
 	else if (!GFARM_S_ISREG(mode))
 		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-
-	if (e == GFARM_ERR_NO_ERROR)
-		e = display_copy(path);
+	else if (st->st_ncopy == 0)
+		/* XXX - GFARM_ERR_NO_REPLICA */
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	else
+		e = display_copy(path, do_not_display_name);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		fprintf(stderr, "%s\n", gfarm_error_string(e));
+		fprintf(stderr, "%s: %s\n", path, gfarm_error_string(e));
 	return (e);
 }
 
