@@ -2,7 +2,7 @@
 
 <refentry id='gfstat.1'>
 
-<refentryinfo><date>12 Nov 2003</date></refentryinfo>
+<refentryinfo><date>4 Jan 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstat</refentrytitle>
@@ -18,6 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstat</command>
+	<arg choice='opt'><replaceable>options</replaceable></arg>
 	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -28,5 +29,26 @@
 
 <para>指定したファイルあるいはディレクトリの情報を表示します．</para>
 
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>ファイル複製の数を表示します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します．</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 </refentry>

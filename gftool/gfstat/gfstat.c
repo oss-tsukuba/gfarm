@@ -48,10 +48,18 @@ display_stat(char *fn, struct gfs_stat *st)
 }
 
 void
+display_ncopy(char *fn, struct gfs_stat *st)
+{
+	printf("%" GFARM_PRId64 "\n", st->st_ncopy);
+}
+
+void
 usage(char *prog_name)
 {
-	fprintf(stderr, "Usage: %s file1 [file2 ...]\n",
+	fprintf(stderr, "Usage: %s [option] file1 [file2 ...]\n",
 		prog_name);
+	fprintf(stderr, "option:\n");
+	fprintf(stderr, "\t-c\t\tdisplay number of file replicas\n");
 	exit(2);
 }
 
@@ -66,9 +74,13 @@ main(int argc, char *argv[])
 	gfarm_error_t e;
 	extern int optind;
 	int c, r = 0;
+	void (*display)(char *, struct gfs_stat *) = display_stat;
 
-	while ((c = getopt(argc, argv, "h?")) != -1) {
+	while ((c = getopt(argc, argv, "ch?")) != -1) {
 		switch (c) {
+		case 'c':
+			display = display_ncopy;
+			break;
 		case 'h':
 		case '?':
 		default:
@@ -97,7 +109,7 @@ main(int argc, char *argv[])
 			r = 1;
 			continue;
 		}
-		display_stat(*argv, &st);
+		display(*argv, &st);
 
 		gfs_stat_free(&st);
 	}
