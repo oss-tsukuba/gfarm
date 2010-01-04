@@ -3,15 +3,22 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSTAT" "1" "13 November 2006" "Gfarm" ""
+.TH "GFSTAT" "1" "04 January 2010" "Gfarm" ""
 
 .SH NAME
 gfstat \- display file or directory status
 .SH SYNOPSIS
 
-\fBgfstat\fR [ \fB\fIpath\fB\fR\fI ...\fR ]
+\fBgfstat\fR [ \fB\fIoptions\fB\fR ] [ \fB\fIpath\fB\fR\fI ...\fR ]
 
 .SH "DESCRIPTION"
 .PP
 \fBgfstat\fR displays information about the
 specified files or directories in the Gfarm filesystem.
+.SH "OPTIONS"
+.TP
+\fB-c\fR
+displays only the number of file replicas.
+.TP
+\fB-?\fR
+displays a list of command options.
