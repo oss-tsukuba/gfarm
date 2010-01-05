@@ -13,111 +13,121 @@
 gfarm_error_t
 gfs_rename(const char *src, const char *dst)
 {
-	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
-	struct gfm_connection *gfm_server;
+	gfarm_error_t e, e_save;
 	int retry = 0;
-	const char *sbase, *dbase;
+	struct gfm_connection *sgfmd, *dgfmd;
+	const char *spath, *dpath, *sbase, *dbase;
 
 	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
+		e_save = GFARM_ERR_NO_ERROR;
+		spath = src;
+		dpath = dst;
 
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
+		if ((e = gfarm_url_parse_metadb(&spath, &sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("url_parse_metadb(%s): %s", src,
 			    gfarm_error_string(e));
-		else if ((e = gfm_lookup_dir_request(gfm_server, src, &sbase))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("lookup_dir(%s) request: %s", src,
+			return (e);
+		} else if ((e = gfarm_url_parse_metadb(&dpath, &dgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("url_parse_metadb(%s): %s", dst,
 			    gfarm_error_string(e));
-		else {
-			if (sbase[0] == '/' && sbase[1] == '\0') /* "/" is special */
-				e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			else if ((e = gfm_client_save_fd_request(gfm_server))
-			    != GFARM_ERR_NO_ERROR)
-				gflog_warning("save_fd request: %s",
-				    gfarm_error_string(e));
-			else if ((e = gfm_lookup_dir_request(gfm_server,
-			    dst, &dbase)) != GFARM_ERR_NO_ERROR)
-				gflog_warning("lookup_dir(%s) request: %s",
-				    dst, gfarm_error_string(e));
-			else {
-				/* "/" is special */
-				if (dbase[0] == '/' && dbase[1] == '\0')
-					e_save =
-					    GFARM_ERR_OPERATION_NOT_PERMITTED;
-				else if ((e = gfm_client_rename_request(
-				    gfm_server, sbase, dbase))
-				    != GFARM_ERR_NO_ERROR)
-					gflog_warning("rename request: %s",
-					    gfarm_error_string(e));
-			}
+			gfm_client_connection_free(sgfmd);
+			return (e);
+		} else if (sgfmd != dgfmd) {
+			gfm_client_connection_free(dgfmd);
+			gfm_client_connection_free(sgfmd);
+			return (GFARM_ERR_CROSS_DEVICE_LINK);
+		}
+
+		if ((e = gfm_tmp_lookup_parent_request(sgfmd, spath, &sbase))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("tmp_lookup_parent(%s) request: %s", src,
+			    gfarm_error_string(e));
+		} else if (sbase[0] == '/' && sbase[1] == '\0') {
+			/* "/" is special */
+			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = gfm_client_save_fd_request(sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("save_fd request: %s",
+			    gfarm_error_string(e));
 		}
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 
-		if ((e = gfm_client_compound_end_request(gfm_server))
+		if ((e = gfm_lookup_dir_request(dgfmd, dpath, &dbase))
 		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
+			gflog_warning("lookup_dir(%s) request: %s", dst,
+			    gfarm_error_string(e));
+		} else if (dbase[0] == '/' && dbase[1] == '\0') {
+			/* "/" is special */
+			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (e_save == GFARM_ERR_NO_ERROR &&
+		    (e = gfm_client_rename_request(sgfmd, sbase, dbase))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("rename request: %s",
+			    gfarm_error_string(e));
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+
+		if ((e = gfm_client_compound_end_request(sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning("compound_end request: %s",
 			    gfarm_error_string(e));
 
-		} else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_lookup_dir_result(gfm_server, src, &sbase))
-		    != GFARM_ERR_NO_ERROR)
-#if 0 /* DEBUG */
-			gflog_warning("lookup_dir(%s) result: %s", src,
-			    gfarm_error_string(e));
-#else
-			;
-#endif
-		else {
-			if (sbase[0] == '/' && sbase[1] == '\0') /* "/" is special */
-				e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			else if ((e = gfm_client_save_fd_result(gfm_server))
-			    != GFARM_ERR_NO_ERROR)
-				gflog_warning("mkdir result: %s",
-				    gfarm_error_string(e));
-			else if ((e = gfm_lookup_dir_result(gfm_server,
-			    dst, &dbase)) != GFARM_ERR_NO_ERROR)
-#if 0 /* DEBUG */
-				gflog_warning("lookup_dir(%s) result: %s", dst,
-				    gfarm_error_string(e));
-#else
-				;
-#endif
-			else {
-				/* "/" is special */
-				if (dbase[0] == '/' && dbase[1] == '\0')
-					e_save =
-					    GFARM_ERR_OPERATION_NOT_PERMITTED;
-				else if ((e = gfm_client_rename_result(
-				    gfm_server)) != GFARM_ERR_NO_ERROR)
-#if 0 /* DEBUG */
-					gflog_warning("rename result: %s",
-					    gfarm_error_string(e));
-#else
-				;
-#endif
+		} else if ((e = gfm_tmp_lookup_parent_result(sgfmd, spath,
+		    &sbase)) != GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) && ++retry <= 1){
+				gfm_client_connection_free(dgfmd);
+				gfm_client_connection_free(sgfmd);
+				continue;
 			}
+#if 0 /* DEBUG */
+			gflog_debug("tmp_lookup_parent(%s) result: %s", src,
+			    gfarm_error_string(e));
+#endif
+		} else if (sbase[0] == '/' && sbase[1] == '\0') {
+			/* "/" is special */
+			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = gfm_client_save_fd_result(sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("save_fd result: %s",
+			    gfarm_error_string(e));
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+
+		if ((e = gfm_lookup_dir_result(dgfmd, dpath, &dbase))
+		    != GFARM_ERR_NO_ERROR) {
+#if 0 /* DEBUG */
+			gflog_debug("lookup_dir(%s) result: %s", dst,
+			    gfarm_error_string(e));
+#endif
+		} else if (dbase[0] == '/' && dbase[1] == '\0') {
+			/* "/" is special */
+			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (e_save == GFARM_ERR_NO_ERROR &&
+		    (e = gfm_client_rename_result(sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+#if 0 /* DEBUG */
+			gflog_debug("rename(%s, %s) result: %s", src, dst,
+			    gfarm_error_string(e));
+#endif
+		}
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+
+		if ((e = gfm_client_compound_end_result(sgfmd))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_warning("compound_end result: %s",
+			    gfarm_error_string(e));
 		}
 
 		break;
 	}
-	if (e == GFARM_ERR_NO_ERROR &&
-	    (e = gfm_client_compound_end_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-
-	gfm_client_connection_free(gfm_server);
+	gfm_client_connection_free(dgfmd);
+	gfm_client_connection_free(sgfmd);
 
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 

@@ -9,6 +9,7 @@
 #include "auth.h"
 #include "host.h"
 #include "gfpath.h"
+#include "gfm_client.h"
 
 void
 error_check(char *msg, gfarm_error_t e)
@@ -48,6 +49,10 @@ main(int argc, char *argv[])
 	int port;
 	char *name;
 	gfarm_error_t e;
+
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	struct gfm_connection *gfarm_metadb_server;
+
 #ifdef HAVE_GSI
 	char *cred;
 #endif
@@ -57,6 +62,15 @@ main(int argc, char *argv[])
 #endif
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
+
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "metadata server `%s', port %d: %s\n",
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    gfarm_error_string(e));
+		exit (1);
+	}
 
 	print_user_config_file("user config file  ");
 	print_msg("system config file", gfarm_config_file);
@@ -90,6 +104,9 @@ main(int argc, char *argv[])
 	printf("gfmd server port: %d\n", gfarm_metadb_server_port);
 	print_msg("gfmd admin user", gfarm_metadb_admin_user);
 	print_msg("gfmd admin dn  ", gfarm_metadb_admin_user_gsi_dn);
+
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	gfm_client_connection_free(gfarm_metadb_server);
 
 	e = gfarm_terminate();
 	error_check("gfarm_terminate", e);

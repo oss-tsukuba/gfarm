@@ -319,3 +319,10 @@ gfarm_error_t gfm_client_process_alloc_child(struct gfm_connection *,
 gfarm_error_t gfm_client_process_free(struct gfm_connection *);
 gfarm_error_t gfm_client_process_set(struct gfm_connection *,
 	gfarm_int32_t, const char *, size_t, gfarm_pid_t);
+
+/* compound request - convenience function */
+gfarm_error_t gfm_client_compound_fd_op(struct gfm_connection *, gfarm_int32_t,
+	gfarm_error_t (*)(struct gfm_connection *, void *),
+	gfarm_error_t (*)(struct gfm_connection *, void *),
+	void (*)(struct gfm_connection *, void *),
+	void *);

@@ -299,52 +299,60 @@ finish:
 
 #endif /* not yet in gfarm v2 */
 
+struct gfm_schedule_file_closure {
+	int nhosts;
+	struct gfarm_host_sched_info *infos;
+};
+
+static gfarm_error_t
+gfm_schedule_file_request(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_schedule_file_request(gfm_server, "");
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("schedule_file request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_schedule_file_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_schedule_file_closure *c = closure;
+	gfarm_error_t e = gfm_client_schedule_file_result(gfm_server,
+	    &c->nhosts, &c->infos);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("schedule_file result: %s",
+		    gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+static void
+gfm_schedule_file_cleanup(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_schedule_file_closure *c = closure;
+
+	gfarm_host_sched_info_free(c->nhosts, c->infos);
+}
+
 static gfarm_error_t
 gfm_schedule_file(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
-	int nhosts;
-	struct gfarm_host_sched_info *infos;
+	struct gfm_schedule_file_closure closure;
 
-	if ((e = gfm_client_compound_begin_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(gfm_server, fd))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_schedule_file_request(gfm_server, "")
-	    ) != GFARM_ERR_NO_ERROR)
-		gflog_warning("schedule_file request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
-
-	else if ((e = gfm_client_compound_begin_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_schedule_file_result(gfm_server,
-	    &nhosts, &infos)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("schedule_file result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-		gfarm_host_sched_info_free(nhosts, infos);
-
-	} else {
-		*nhostsp = nhosts;
-		*infosp = infos;
+	e = gfm_client_compound_fd_op(gfm_server, fd,
+	    gfm_schedule_file_request,
+	    gfm_schedule_file_result,
+	    gfm_schedule_file_cleanup,
+	    &closure);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*nhostsp = closure.nhosts;
+		*infosp = closure.infos;
 	}
 	return (e);
 }
@@ -511,12 +519,13 @@ connect_and_open_with_reconnection(GFS_File gf, char *host, gfarm_int32_t port)
 static double gfs_pio_set_view_section_time;
 
 gfarm_error_t
-gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
+gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 {
 	struct gfs_file_section_context *vc;
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 	int host_need_free = 0;
+	gfarm_int32_t port;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -524,6 +533,18 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host, gfarm_int32_t port)
 	e = gfs_pio_set_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto finish;
+
+	if (host != NULL) { /* this is slow, but not usually used */
+		struct gfarm_host_info hinfo;
+
+		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
+		    &hinfo);
+		if (e != GFARM_ERR_NO_ERROR)
+			goto finish;
+		port = hinfo.port;
+		gfarm_host_info_free(&hinfo);
+	}
+
 	GFARM_MALLOC(vc);
 	if (vc == NULL) {
 		e = GFARM_ERR_NO_MEMORY;

@@ -27,68 +27,60 @@
 
 static double gfs_xattr_time = 0.0;
 
+struct gfm_setxattr0_closure {
+	int xmlMode;
+	const char *name;
+	const void *value;
+	size_t size;
+	int flags;
+};
+
+static gfarm_error_t
+gfm_setxattr0_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_setxattr0_closure *c = closure;
+	gfarm_error_t e = gfm_client_setxattr_request(gfm_server,
+	    c->xmlMode, c->name, c->value, c->size, c->flags);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("setxattr request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_setxattr0_result(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_setxattr_result(gfm_server);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("setxattr result: %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
 static gfarm_error_t
 gfs_setxattr0(int xmlMode, const char *path, const char *name,
 	const void *value, size_t size, int flags)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
 	gfarm_timerval_t t1, t2;
+	struct gfm_setxattr0_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_setxattr_request(gfm_server,
-				xmlMode, name, value, size, flags))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("setxattr request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_setxattr_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("setxattr result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
+	closure.xmlMode = xmlMode;
+	closure.name = name;
+	closure.value = value;
+	closure.size = size;
+	closure.flags = flags;
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_setxattr0_request,
+	    gfm_setxattr0_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -112,51 +104,25 @@ gfs_setxmlattr(const char *path, const char *name,
 
 gfarm_error_t
 gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
-		size_t size, int flags)
+	size_t size, int flags)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	gfarm_timerval_t t1, t2;
+	struct gfm_setxattr0_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfm_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_request(gfm_server,
-			0, name, value, size, flags))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("setxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
-
-	else if ((e = gfm_client_compound_begin_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_setxattr_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("setxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-	}
+	closure.xmlMode = 0;
+	closure.name = name;
+	closure.value = value;
+	closure.size = size;
+	closure.flags = flags;
+	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	    gfm_setxattr0_request,
+	    gfm_setxattr0_result,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -164,67 +130,61 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 	return (e);
 }
 
+struct gfm_getxattr_proccall_closure {
+	int xmlMode;
+	const char *name;
+	void **valuep;
+	size_t *sizep;
+};
+
+static gfarm_error_t
+gfm_getxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_getxattr_proccall_closure *c = closure;
+	gfarm_error_t e = gfm_client_getxattr_request(gfm_server,
+	    c->xmlMode, c->name);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("getxattr request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_getxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_getxattr_proccall_closure *c = closure;
+	gfarm_error_t e = gfm_client_getxattr_result(gfm_server,
+	    c->xmlMode, c->valuep, c->sizep);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("getxattr result: %s", gfarm_error_string(e));
+
+#endif
+	return (e);
+}
+
 static gfarm_error_t
 gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
-		void **valuep, size_t *size)
+	void **valuep, size_t *sizep)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
 	gfarm_timerval_t t1, t2;
+	struct gfm_getxattr_proccall_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_getxattr_request(gfm_server,
-				xmlMode, name)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("getxattr request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_getxattr_result(gfm_server,
-				xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-			gflog_debug("getxattr result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
+	closure.xmlMode = xmlMode;
+	closure.name = name;
+	closure.valuep = valuep;
+	closure.sizep = sizep;
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_getxattr_proccall_request,
+	    gfm_getxattr_proccall_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -234,51 +194,24 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 
 static gfarm_error_t
 gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
-		void **valuep, size_t *size)
+	void **valuep, size_t *sizep)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	gfarm_timerval_t t1, t2;
+	struct gfm_getxattr_proccall_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfm_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_request(
-			gfm_server, xmlMode, name))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("getxattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
-
-	else if ((e = gfm_client_compound_begin_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_getxattr_result(gfm_server,
-			xmlMode, valuep, size)) != GFARM_ERR_NO_ERROR)
-		gflog_debug("getxattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-	}
+	closure.xmlMode = xmlMode;
+	closure.name = name;
+	closure.valuep = valuep;
+	closure.sizep = sizep;
+	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	    gfm_getxattr_proccall_request,
+	    gfm_getxattr_proccall_result,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -328,67 +261,58 @@ gfs_fgetxattr(GFS_File gf, const char *name, void *value, size_t *size)
 	return gfs_getxattr0(0, NULL, gf, name, value, size);
 }
 
+
+struct gfm_listxattr_proccall_closure {
+	int xmlMode;
+	char **listp;
+	size_t *sizep;
+};
+
 static gfarm_error_t
-gfs_listxattr_proccall(int xmlMode, const char *path, char **listp,
-		size_t *size)
+gfm_listxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
+	struct gfm_listxattr_proccall_closure *c = closure;
+	gfarm_error_t e = gfm_client_listxattr_request(gfm_server, c->xmlMode);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("listxattr request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_listxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_listxattr_proccall_closure *c = closure;
+	gfarm_error_t e = gfm_client_listxattr_result(gfm_server,
+	    c->listp, c->sizep);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("listxattr result: %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+static gfarm_error_t
+gfs_listxattr_proccall(int xmlMode, const char *path,
+	char **listp, size_t *sizep)
+{
 	gfarm_timerval_t t1, t2;
+	struct gfm_listxattr_proccall_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_listxattr_request(gfm_server,
-		    xmlMode)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("listxattr request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_listxattr_result(gfm_server,
-				listp, size)) != GFARM_ERR_NO_ERROR)
-			gflog_debug("listxattr result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
+	closure.xmlMode = xmlMode;
+	closure.listp = listp;
+	closure.sizep = sizep;
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_listxattr_proccall_request,
+	    gfm_listxattr_proccall_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -428,66 +352,55 @@ gfs_listxmlattr(const char *path, char *list, size_t *size)
 	return gfs_listxattr0(1, path, list, size);
 }
 
+
+struct gfm_removexattr0_closure {
+	int xmlMode;
+	const char *name;
+};
+
+static gfarm_error_t
+gfm_removexattr0_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_removexattr0_closure *c = closure;
+	gfarm_error_t e = gfm_client_removexattr_request(gfm_server,
+	    c->xmlMode, c->name);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("removexattr request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_removexattr0_result(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_removexattr_result(gfm_server);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("removexattr result: %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
 static gfarm_error_t
 gfs_removexattr0(int xmlMode, const char *path, const char *name)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
 	gfarm_timerval_t t1, t2;
+	struct gfm_removexattr0_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_removexattr_request(gfm_server,
-				xmlMode, name)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("removexattr request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_removexattr_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug("removexattr result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
+	closure.xmlMode = xmlMode;
+	closure.name = name;
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_removexattr0_request,
+	    gfm_removexattr0_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -508,49 +421,20 @@ gfarm_error_t gfs_removexmlattr(const char *path, const char *name)
 gfarm_error_t
 gfs_fremovexattr(GFS_File gf, const char *name)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	gfarm_timerval_t t1, t2;
+	struct gfm_removexattr0_closure closure;
+	gfarm_error_t e;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_client_compound_begin_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(
-			  gfm_server, gfs_pio_fileno(gf)))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_request(
-			gfm_server, 0, name))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("removexattr request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
-
-	else if ((e = gfm_client_compound_begin_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("put_fd result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_removexattr_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("removexattr result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-	}
+	closure.xmlMode = 0;
+	closure.name = name;
+	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	    gfm_removexattr0_request,
+	    gfm_removexattr0_result,
+	    NULL,
+	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_xattr_time += gfarm_timerval_sub(&t2, &t1));
@@ -615,59 +499,6 @@ gfs_xmlattr_ctx_free(struct gfs_xmlattr_ctx *ctxp, int freepath)
 	}
 }
 
-static gfarm_error_t
-gfs_findxmlattr_open(const char *path, struct gfs_xmlattr_ctx *ctxp)
-{
-	gfarm_error_t e;
-	int retry = 0;
-
-	/*
-	 * NOTE: I copied this function from gfs_desc_open()
-	 * to known fd, is_dir and not to allocate some buffers
-	 * by gfs_desc_open_common().
-	 */
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&ctxp->gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(ctxp->gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_open_request(ctxp->gfm_server, path,
-		    GFARM_FILE_RDONLY)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("open path request; %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(
-		    ctxp->gfm_server)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(
-		    ctxp->gfm_server)) != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(ctxp->gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_open_result(ctxp->gfm_server, path,
-		    &ctxp->fd, &ctxp->is_dir)) != GFARM_ERR_NO_ERROR)
-			gflog_debug("open path result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		else
-			return (GFARM_ERR_NO_ERROR);
-
-		gfm_client_connection_free(ctxp->gfm_server);
-		return (e);
-	}
-}
-
 gfarm_error_t
 gfs_findxmlattr(const char *path, const char *expr,
 	int depth, struct gfs_xmlattr_ctx **ctxpp)
@@ -682,7 +513,8 @@ gfs_findxmlattr(const char *path, const char *expr,
 	if ((ctxp = gfs_xmlattr_ctx_alloc(GFARM_DEFAULT_FINDXMLATTR_NENRTY))
 			== NULL)
 		e = GFARM_ERR_NO_MEMORY;
-	else if ((e = gfs_findxmlattr_open(path, ctxp)) != GFARM_ERR_NO_ERROR)
+	else if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY,
+	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type)) != GFARM_ERR_NO_ERROR)
 		gfs_xmlattr_ctx_free(ctxp, 1);
 	else {
 		ctxp->path = strdup(path);
@@ -698,45 +530,38 @@ gfs_findxmlattr(const char *path, const char *expr,
 }
 
 static gfarm_error_t
+gfm_findxmlattr_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfs_xmlattr_ctx *ctxp = closure;
+	gfarm_error_t e = gfm_client_findxmlattr_request(gfm_server, ctxp);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("find_xml_attr request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_findxmlattr_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfs_xmlattr_ctx *ctxp = closure;
+	gfarm_error_t e = gfm_client_findxmlattr_result(gfm_server, ctxp);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("find_xml_attr result: %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+static gfarm_error_t
 gfs_findxmlattr_get(struct gfs_xmlattr_ctx *ctxp)
 {
-	gfarm_error_t e;
-
-	if ((e = gfm_client_compound_begin_request(ctxp->gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_request(ctxp->gfm_server, ctxp->fd))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_findxmlattr_request(
-		ctxp->gfm_server, ctxp)) != GFARM_ERR_NO_ERROR)
-		gflog_warning("find_xml_attr request: %s",
-				gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_request(ctxp->gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
-		    gfarm_error_string(e));
-
-	else if ((e = gfm_client_compound_begin_result(ctxp->gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
-		    gfarm_error_string(e));
-	else if ((e = gfm_client_put_fd_result(ctxp->gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug("put_fd result: %s",
-		    gfarm_error_string(e));
-	 else if ((e = gfm_client_findxmlattr_result(
-			 ctxp->gfm_server, ctxp)) != GFARM_ERR_NO_ERROR)
-		 gflog_debug("find_xml_attr result: %s",
-			gfarm_error_string(e));
-	else if ((e = gfm_client_compound_end_result(ctxp->gfm_server))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end result: %s",
-		    gfarm_error_string(e));
-
-	return (e);
+	return (gfm_client_compound_fd_op(ctxp->gfm_server, ctxp->fd,
+	    gfm_findxmlattr_request,
+	    gfm_findxmlattr_result,
+	    NULL,
+	    ctxp));
 }
 
 gfarm_error_t

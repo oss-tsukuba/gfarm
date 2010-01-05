@@ -15,9 +15,10 @@ enum gfarm_backend_db_type {
 extern enum gfarm_backend_db_type gfarm_backend_db_type;
 
 /* GFM dependent */
+extern int gfarm_gfmd_connection_cache;
+/* XXX FIXME these should disappear to support multiple metadata server */
 extern char *gfarm_metadb_server_name;
 extern int gfarm_metadb_server_port;
-extern int gfarm_gfmd_connection_cache;
 
 extern char *gfarm_metadb_admin_user;
 extern char *gfarm_metadb_admin_user_gsi_dn;
@@ -77,11 +78,6 @@ extern struct gfs_file *gf_stdout, *gf_stderr;
 extern int gfarm_schedule_cache_timeout;
 extern gfarm_int64_t gfarm_minimum_free_disk_space;
 
-/* XXX FIXME this should disappear to support multiple metadata server */
-struct gfm_connection;
-extern struct gfm_connection *gfarm_metadb_server;
-gfarm_error_t gfarm_metadb_connection_acquire(struct gfm_connection **);
-
 void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO
 gfarm_error_t gfarm_config_read_file(FILE *, int *);
@@ -94,5 +90,6 @@ void gfarm_config_set_default_misc(void);
 /* for client */
 struct gfs_connection;
 
+struct gfm_connection;
 gfarm_error_t gfarm_client_process_set(struct gfs_connection *,
 	struct gfm_connection *);

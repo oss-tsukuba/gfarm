@@ -23,23 +23,6 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 
-/*
- * XXX FIXME this shouldn't be necessary,
- * if multiple metadata servers are supported.
- */
-struct gfm_connection *gfarm_metadb_server;
-
-/*
- * XXX FIXME this shouldn't be necessary,
- * if multiple metadata servers are supported.
- */
-gfarm_error_t
-gfarm_metadb_connection_acquire(struct gfm_connection **gfm_serverp)
-{
-	return (gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port, gfm_serverp));
-}
-
 static gfarm_error_t
 gfarm_set_global_user_for_sharedsecret(void)
 {
@@ -61,8 +44,12 @@ gfarm_set_global_user_for_sharedsecret(void)
 	return (e);
 }
 
+/*
+ * XXX FIXME
+ * the global username should not be global, but per metadata server basis.
+ */
 static gfarm_error_t
-gfarm_set_global_user_by_gsi(void)
+gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 #ifdef HAVE_GSI
@@ -72,7 +59,7 @@ gfarm_set_global_user_by_gsi(void)
 	/* Global user name determined by the distinguished name. */
 	gsi_dn = gfarm_gsi_client_cred_name();
 	if (gsi_dn != NULL) {
-		e = gfm_client_user_info_get_by_gsi_dn(gfarm_metadb_server,
+		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
 			gsi_dn, &user);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfarm_set_global_username(user.username);
@@ -380,6 +367,7 @@ gfarm_error_t
 gfarm_initialize(int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
 	enum gfarm_auth_method auth_method;
 #ifdef HAVE_GSI
 	int saved_auth_verb;
@@ -408,7 +396,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	 * XXX FIXME this shouldn't be necessary here
 	 * to support multiple metadata server
 	 */
-	e = gfarm_metadb_connection_acquire(&gfarm_metadb_server);
+	e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port, &gfm_server);
 #ifdef HAVE_GSI
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
@@ -420,12 +409,13 @@ gfarm_initialize(int *argcp, char ***argvp)
 	}
 
 	/* metadb access is required to obtain a global user name by GSI */
-	auth_method = gfm_client_connection_auth_method(gfarm_metadb_server);
+	auth_method = gfm_client_connection_auth_method(gfm_server);
 	if (GFARM_IS_AUTH_GSI(auth_method)) {
-		e = gfarm_set_global_user_by_gsi();
+		e = gfarm_set_global_user_by_gsi(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
+	gfm_client_connection_free(gfm_server);
 
 	gfarm_parse_env_client();
 	if (argvp != NULL) {
@@ -493,7 +483,6 @@ gfarm_terminate(void)
 #endif /* not yet in gfarm v2 */
 	gfarm_free_user_map();
 	gfs_client_terminate();
-	gfm_client_connection_free(gfarm_metadb_server);
 	gfm_client_terminate();
 
 	return (GFARM_ERR_NO_ERROR);

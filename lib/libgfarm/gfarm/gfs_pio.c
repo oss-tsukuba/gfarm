@@ -95,7 +95,7 @@ gfs_pio_check_view_default(GFS_File gf)
 #if 0 /* not yet in gfarm v2 */
 		return (gfs_pio_set_view_global(gf, 0));
 #else /* not yet in gfarm v2 */
-		return (gfs_pio_internal_set_view_section(gf, NULL, 0));
+		return (gfs_pio_internal_set_view_section(gf, NULL));
 #endif /* not yet in gfarm v2 */
 	return (GFARM_ERR_NO_ERROR);
 }

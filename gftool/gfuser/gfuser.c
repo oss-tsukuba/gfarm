@@ -21,6 +21,9 @@ char *program_name = "gfuser";
 #define OP_MODIFY_ENTRY	'm'
 #define OP_DELETE_ENTRY	'd'
 
+/* XXX FIXME: this doesn't support multiple metadata server. */
+struct gfm_connection *gfarm_metadb_server;
+
 static void
 usage(void)
 {
@@ -122,6 +125,16 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "metadata server `%s', port %d: %s\n",
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    gfarm_error_string(e));
+		exit (1);
+	}
+
 	while ((c = getopt(argc, argv, "cdhlm?")) != -1) {
 		switch (c) {
 		case 'c':
@@ -176,6 +189,9 @@ main(int argc, char **argv)
 		    program_name, gfarm_error_string(e));
 		status = 1;
 	}
+
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	gfm_client_connection_free(gfarm_metadb_server);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

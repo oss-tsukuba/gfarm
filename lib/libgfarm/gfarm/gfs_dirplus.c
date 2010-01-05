@@ -72,6 +72,31 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 	return (e);
 }
 
+static gfarm_error_t
+gfm_getdirentsplus_request(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_getdirentsplus_request(
+	    gfm_server, DIRENTSPLUS_BUFCOUNT);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("getdirentsplus request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_getdirentsplus_result(struct gfm_connection *gfm_server, void *closure)
+{
+	GFS_DirPlus dir = closure;
+	gfarm_error_t e = gfm_client_getdirentsplus_result(gfm_server,
+	    &dir->n, dir->buffer, dir->stbuf);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("getdirentsplus result: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
 /*
  * both (*entryp) and (*status) shouldn't be freed.
  */
@@ -83,41 +108,11 @@ gfs_readdirplus(GFS_DirPlus dir,
 
 	if (dir->index >= dir->n) {
 		gfs_dirplus_clear(dir);
-		if ((e = gfm_client_compound_begin_request(dir->gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_request(dir->gfm_server,
-		    dir->fd)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("put_fd request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_getdirentsplus_request(
-		    dir->gfm_server, DIRENTSPLUS_BUFCOUNT))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("get_dirents request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(dir->gfm_server))
-		     != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(
-		    dir->gfm_server)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_put_fd_result(dir->gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("put_fd result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_getdirentsplus_result(dir->gfm_server,
-		    &dir->n, dir->buffer, dir->stbuf)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("get_dirents result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(dir->gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-
+		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
+		    gfm_getdirentsplus_request,
+		    gfm_getdirentsplus_result,
+		    NULL, 
+		    dir);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (dir->n == 0) {

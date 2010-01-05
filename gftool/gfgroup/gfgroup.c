@@ -18,6 +18,9 @@
 #define OP_ADD_ENTRY	'a'
 #define OP_REMOVE_ENTRY	'r'
 
+/* XXX FIXME: this doesn't support multiple metadata server. */
+struct gfm_connection *gfarm_metadb_server;
+
 void
 usage(void)
 {
@@ -140,6 +143,16 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "metadata server `%s', port %d: %s\n",
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    gfarm_error_string(e));
+		exit (1);
+	}
+
 	while ((c = getopt(argc, argv, "cdlm?")) != -1) {
 		switch (c) {
 		case OP_CREATE_GROUP:
@@ -182,6 +195,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s\n", gfarm_error_string(e));
 		exit(1);
 	}
+
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	gfm_client_connection_free(gfarm_metadb_server);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

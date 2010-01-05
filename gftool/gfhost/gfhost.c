@@ -31,6 +31,9 @@
 
 char *program_name = "gfhost";
 
+/* XXX FIXME: this doesn't support multiple metadata server. */
+struct gfm_connection *gfarm_metadb_server;
+
 /**********************************************************************/
 
 /* register application specific error number */
@@ -1405,6 +1408,16 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "metadata server `%s', port %d: %s\n",
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    gfarm_error_string(e));
+		exit (1);
+	}
+
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
 		if (argc > 0) {
@@ -1480,6 +1493,10 @@ main(int argc, char **argv)
 		}
 		break;
 	}
+
+	/* XXX FIXME: this doesn't support multiple metadata server. */
+	gfm_client_connection_free(gfarm_metadb_server);
+
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,

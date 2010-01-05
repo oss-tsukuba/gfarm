@@ -18,9 +18,9 @@
 #include "host.h"
 #include "config.h"
 
-/* INTERNAL FUNCTION */
-gfarm_error_t gfs_pio_internal_set_view_section(
-	GFS_File, char *, gfarm_int32_t);
+/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+#include <openssl/evp.h>
+#include "gfs_pio.h"
 
 char *program_name = "gfreg";
 
@@ -36,7 +36,7 @@ gfimport(FILE *ifp, GFS_File ogf)
 
 gfarm_error_t
 gfimport_to(FILE *ifp, char *gfarm_url, int mode,
-	char *host, gfarm_int32_t port)
+	char *host)
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
@@ -56,7 +56,8 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));
-	e = gfs_pio_internal_set_view_section(gf, host, port);
+	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+	e = gfs_pio_internal_set_view_section(gf, host);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", gfarm_url, gfarm_error_string(e));
 		goto close;
@@ -86,7 +87,7 @@ gfimport_to(FILE *ifp, char *gfarm_url, int mode,
 
 gfarm_error_t
 gfimport_from_to(const char *ifile, char *gfarm_url,
-	char *host, gfarm_int32_t port)
+	char *host)
 {
 	gfarm_error_t e;
 	FILE *ifp = fopen(ifile, "r");
@@ -102,23 +103,8 @@ gfimport_from_to(const char *ifile, char *gfarm_url,
 		perror("stat");
 		return (gfarm_errno_to_error(errno));
 	}
-	e = gfimport_to(ifp, gfarm_url, st.st_mode & 0777, host, port);
+	e = gfimport_to(ifp, gfarm_url, st.st_mode & 0777, host);
 	fclose(ifp);
-	return (e);
-}
-
-static gfarm_error_t
-get_port(char *host, gfarm_int32_t *portp)
-{
-	gfarm_error_t e;
-	struct gfarm_host_info hinfo;
-
-	e = gfm_host_info_get_by_name_alias(gfarm_metadb_server, host,
-	    &hinfo);
-	if (e == GFARM_ERR_NO_ERROR) {
-		*portp = hinfo.port;
-		gfarm_host_info_free(&hinfo);
-	}
 	return (e);
 }
 
@@ -140,7 +126,6 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	char *host = NULL;
-	gfarm_int32_t port = 0;
 	extern int optind;
 
 	if (argc > 0)
@@ -173,15 +158,7 @@ main(int argc, char **argv)
 	if (argc != 2)
 		usage();
 
-	if (host != NULL) {
-		e = get_port(host, &port);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s\n", host,
-				gfarm_error_string(e));
-			exit(EXIT_FAILURE);
-		}
-	}
-	e = gfimport_from_to(argv[0], argv[1], host, port);
+	e = gfimport_from_to(argv[0], argv[1], host);
 	if (e != GFARM_ERR_NO_ERROR)
 		status = 1;
 

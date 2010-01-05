@@ -129,6 +129,10 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"no such user",
 	"cannot remove the last replica",
 	"no such group",
+	"username is missing in a Gfarm URL",
+	"hostname is missing in a Gfarm URL",
+	"port number is missing in a Gfarm URL",
+	"port number is invalid in a Gfarm URL",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

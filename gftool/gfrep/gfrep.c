@@ -623,24 +623,36 @@ create_hosthash_from_file(char *hostfile,
 	return (e);
 }
 
+/* XXX FIXME: should traverse all mounted metadata servers */
+gfarm_error_t
+schedule_host_domain(const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **hostsp)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfm_client_schedule_host_domain(gfm_server, domain,
+	    nhostsp, hostsp);
+	gfm_client_connection_free(gfm_server);
+	return (e);
+}
+
 static gfarm_error_t
 create_hostlist_by_domain_and_hash(char *domain,
 	struct gfarm_hash_table *hosthash,
 	int *nhostsp, char ***hostsp, int **portsp)
 {
-	struct gfm_connection *gfm_server;
 	int ninfo, i, j, *ports;
 	struct gfarm_host_sched_info *infos;
 	char **hosts;
 	gfarm_error_t e;
 
-	if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-	    GFARM_ERR_NO_ERROR)
-		return (e);
-
-	e = gfm_client_schedule_host_domain(gfm_server, domain,
-		&ninfo, &infos);
-	gfm_client_connection_free(gfm_server);
+	e = schedule_host_domain(domain, &ninfo, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 

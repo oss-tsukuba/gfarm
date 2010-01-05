@@ -8,9 +8,9 @@
 #include "host.h"
 #include "config.h"
 
-/* INTERNAL FUNCTION */
-gfarm_error_t gfs_pio_internal_set_view_section(
-	GFS_File, char *, gfarm_int32_t);
+/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+#include <openssl/evp.h>
+#include "gfs_pio.h"
 
 char *program_name = "gfexport";
 
@@ -52,7 +52,7 @@ gfexport(char *gfarm_url, char *section, char *host, FILE *ofp, int explicit)
 }
 #else
 gfarm_error_t
-gfexport(char *gfarm_url, char *host, gfarm_int32_t port, FILE *ofp)
+gfexport(char *gfarm_url, char *host, FILE *ofp)
 {
 	gfarm_error_t e, e2;
 	GFS_File gf;
@@ -60,7 +60,8 @@ gfexport(char *gfarm_url, char *host, gfarm_int32_t port, FILE *ofp)
 	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfs_pio_internal_set_view_section(gf, host, port);
+	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+	e = gfs_pio_internal_set_view_section(gf, host);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto close;
 
@@ -101,27 +102,11 @@ error_check(char *file, char* section, char *e)
 }
 #endif
 
-static gfarm_error_t
-get_port(char *host, gfarm_int32_t *portp)
-{
-	gfarm_error_t e;
-	struct gfarm_host_info hinfo;
-
-	e = gfm_host_info_get_by_name_alias(gfarm_metadb_server, host,
-	    &hinfo);
-	if (e == GFARM_ERR_NO_ERROR) {
-		*portp = hinfo.port;
-		gfarm_host_info_free(&hinfo);
-	}
-	return (e);
-}
-
 int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
 	char *url, *hostname = NULL;
-	gfarm_int32_t port = 0;
 #if 0 /* not yet in gfarm v2 */
 	char *section = NULL;
 	int global_view = 0;
@@ -168,20 +153,12 @@ main(int argc, char *argv[])
 		    "error: only one input file name expected");
 		usage();
 	}
-	if (hostname != NULL) {
-		e = get_port(hostname, &port);
-		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s\n", hostname,
-				gfarm_error_string(e));
-			exit(EXIT_FAILURE);
-		}
-	}
 	url = argv[0];
 
 #if 0 /* not yet in gfarm v2 */
 	e = gfexport(url, section, hostname, stdout, global_view);
 #else
-	e = gfexport(url, hostname, port, stdout);
+	e = gfexport(url, hostname, stdout);
 #endif
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, url,

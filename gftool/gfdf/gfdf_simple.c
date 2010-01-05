@@ -25,7 +25,8 @@ display_statfs(const char *dummy)
 	gfarm_error_t e;
 	gfarm_off_t used, avail, files;
 
-	e = gfm_client_statfs(gfarm_metadb_server, &used, &avail, &files);
+	/* XXX FIXME: should implement and use gfs_statvfs */
+	e = gfs_statfs(&used, &avail, &files);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -39,6 +40,25 @@ display_statfs(const char *dummy)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* XXX FIXME: should traverse all mounted metadata servers */
+gfarm_error_t
+schedule_host_domain(const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **hostsp)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+
+	if ((e = gfm_client_connection_and_process_acquire(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfm_client_schedule_host_domain(gfm_server, domain,
+	    nhostsp, hostsp);
+	gfm_client_connection_free(gfm_server);
+	return (e);
+}
+
 gfarm_error_t
 display_statfs_nodes(const char *domain)
 {
@@ -48,8 +68,7 @@ display_statfs_nodes(const char *domain)
 	gfarm_uint64_t used, avail;
 	gfarm_uint64_t total_used = 0, total_avail = 0;
 
-	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
-		&nhosts, &hosts);
+	e = schedule_host_domain(domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -88,8 +107,7 @@ display_nodes(const char *domain)
 	int nhosts, i;
 	struct gfarm_host_sched_info *hosts;
 
-	e = gfm_client_schedule_host_domain(gfarm_metadb_server, domain,
-		&nhosts, &hosts);
+	e = schedule_host_domain(domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 

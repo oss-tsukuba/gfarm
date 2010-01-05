@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -10,6 +11,12 @@
 #include "config.h"
 #include "gfm_client.h"
 #include "gfs_client.h"
+
+/*
+ * XXX FIXME
+ * a pathname argument is necessary to determine the gfm_server
+ * (from multiple metadata servers).
+ */
 
 gfarm_error_t
 gfs_statfsnode(char *host, int port,
@@ -23,8 +30,9 @@ gfs_statfsnode(char *host, int port,
 	int retry = 0;
 
 	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
+		if ((e = gfm_client_connection_and_process_acquire(
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    &gfm_server)) != GFARM_ERR_NO_ERROR)
 			return (e);
 
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,

@@ -233,7 +233,6 @@ struct search_idle_host_state {
 #else
 	gfarm_off_t diskused, diskavail;
 #endif
-	int gfmd_flags;
 
 	int scheduled;
 
@@ -250,6 +249,10 @@ struct search_idle_host_state {
 #define HOST_STATE_FLAG_AVAILABLE		0x100
 #define HOST_STATE_FLAG_CACHE_WAS_USED		0x200
 
+	/*
+	 * The followings are working area during scheduling
+	 */
+
 	/* linked in search_idle_candidate_list */
 	struct search_idle_host_state *next;
 
@@ -260,8 +263,16 @@ struct search_idle_host_state {
 	char *return_value; /* hostname */
 };
 
+/*
+ * The following hash is shared among all metadata servers,
+ * but it should be OK, because the key is a (host, port, username) tuple,
+ * unless there is inconsistency in a metadata server.
+ */
 static struct gfarm_hash_table *search_idle_hosts_state = NULL;
 
+/*
+ * The followings are working area during scheduling
+ */
 static int search_idle_candidate_host_number;
 static struct search_idle_host_state *search_idle_candidate_list;
 static struct search_idle_host_state **search_idle_candidate_last;
@@ -270,6 +281,7 @@ static const char *search_idle_domain_filter;
 #if 0 /* not yet in gfarm v2 */
 static struct gfarm_hash_table *search_idle_arch_filter;
 #endif
+
 
 struct search_idle_network {
 	struct search_idle_network *next;
@@ -283,15 +295,23 @@ struct search_idle_network {
 /* The followings are working area during scheduling */
 #define NET_FLAG_SCHEDULING	0x04
 
+	/*
+	 * The followings are working area during scheduling
+	 */
 	struct search_idle_host_state *candidate_list;
 	struct search_idle_host_state **candidate_last;
 	struct search_idle_host_state *cursor;
 	int ongoing;
 };
 
+/*
+ * The followings are is shared among all metadata servers,
+ * but it must be OK, since these are a global things.
+ */
 static struct search_idle_network *search_idle_network_list = NULL;
 static struct search_idle_network *search_idle_local_net = NULL;
 
+/* The followings are working area during scheduling */
 static struct timeval search_idle_now;
 
 static int
@@ -320,6 +340,14 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
 
+	/*
+	 * XXX FIXME
+	 * This is a suspicious part.
+	 * Maybe the peer_addr is not same among different metadata servers.
+	 *
+	 * Probably it's better to create the `net' variable by using
+	 * the results of gfarm_get_ip_addresses().
+	 */
 	/* XXX FIXME this port number (0) is dummy */
 	e = gfm_host_address_get(gfm_server, self_name, 0,
 	    &peer_addr, NULL);

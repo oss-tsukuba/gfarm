@@ -14,135 +14,114 @@
 #include "config.h"
 #include "lookup.h"
 
+struct gfm_replica_list_by_name_closure {
+	gfarm_int32_t n;
+	char **hosts;
+};
+
+static gfarm_error_t
+gfm_replica_list_by_name_request(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	gfarm_error_t e = gfm_client_replica_list_by_name_request(gfm_server);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("replica_list_by_name request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_replica_list_by_name_result(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	struct gfm_replica_list_by_name_closure *c = closure;
+	gfarm_error_t e = gfm_client_replica_list_by_name_result(
+		gfm_server, &c->n, &c->hosts);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("replica_list_by_name result: %s",
+		    gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+static void
+gfm_replica_list_by_name_cleanup(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	struct gfm_replica_list_by_name_closure *c = closure;
+	int i;
+
+	for (i = 0; i < c->n; i++)
+		free(c->hosts[i]);
+	free(c->hosts);
+}
+
 gfarm_error_t
 gfs_replica_list_by_name(const char *path, int *np, char ***hostsp)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
-	gfarm_int32_t n;
-	char **hosts;
+	struct gfm_replica_list_by_name_closure closure;
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_replica_list_by_name_request(
-				  gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("replica_list_by_name request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_replica_list_by_name_result(
-				  gfm_server, &n, &hosts))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("replica_list_by_name result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-			while (--n >= 0)
-				free(hosts[n]);
-			free(hosts);
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
-
+	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_replica_list_by_name_request,
+	    gfm_replica_list_by_name_result,
+	    gfm_inode_success_op_connection_free,
+	    gfm_replica_list_by_name_cleanup,
+	    &closure);
 	if (e == GFARM_ERR_NO_ERROR) {
-		*np = n;
-		*hostsp = hosts;
+		*np = closure.n;
+		*hostsp = closure.hosts;
 	}
+	return (e);
+}
+
+
+
+struct gfm_replica_remove_by_file_closure {
+	const char *host;
+};
+
+static gfarm_error_t
+gfm_replica_remove_by_file_request(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	struct gfm_replica_remove_by_file_closure *c = closure;
+	gfarm_error_t e = gfm_client_replica_remove_by_file_request(gfm_server,
+	    c->host);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("replica_remove_by_file request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_replica_remove_by_file_result(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	gfarm_error_t e = gfm_client_replica_remove_by_file_result(gfm_server);
+
+#if 1 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("replica_remove_by_file result: %s",
+		    gfarm_error_string(e));
+#endif
 	return (e);
 }
 
 gfarm_error_t
 gfs_replica_remove_by_file(const char *path, const char *host)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
+	struct gfm_replica_remove_by_file_closure closure;
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_replica_remove_by_file_request(
-				  gfm_server, host))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("replica_remove_by_file request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_replica_remove_by_file_result(
-				  gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("replica_remove_by_file result: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
-
-	return (e);
+	closure.host = host;
+	return (gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_replica_remove_by_file_request,
+	    gfm_replica_remove_by_file_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure));
 }

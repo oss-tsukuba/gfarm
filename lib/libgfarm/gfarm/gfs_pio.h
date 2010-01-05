@@ -69,8 +69,7 @@ gfarm_error_t gfs_pio_set_view_global(GFS_File, int);
 struct gfs_connection;
 gfarm_error_t gfs_pio_open_local_section(GFS_File, struct gfs_connection *);
 gfarm_error_t gfs_pio_open_remote_section(GFS_File, struct gfs_connection *);
-gfarm_error_t gfs_pio_internal_set_view_section(
-	GFS_File, char *, gfarm_int32_t);
+gfarm_error_t gfs_pio_internal_set_view_section(GFS_File, char *);
 
 struct gfs_connection;
 

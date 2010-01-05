@@ -12,70 +12,43 @@
 #include "config.h"
 #include "lookup.h"
 
+struct gfm_chmod_closure {
+	gfarm_mode_t mode;
+};
+
+static gfarm_error_t
+gfm_chmod_request(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfm_chmod_closure *c = closure;
+	gfarm_error_t e = gfm_client_fchmod_request(gfm_server, c->mode);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning("fchmod request; %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_chmod_result(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_fchmod_result(gfm_server);
+
+#if 0 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug("fchmod result; %s", gfarm_error_string(e));
+#endif
+	return (e);
+}
+
 gfarm_error_t
 gfs_chmod(const char *path, gfarm_mode_t mode)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int retry = 0;
+	struct gfm_chmod_closure closure;
 
-	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
-			return (e);
-
-		if ((e = gfm_client_compound_begin_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_begin request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_tmp_open_request(gfm_server, path,
-		    GFARM_FILE_LOOKUP)) != GFARM_ERR_NO_ERROR)
-			gflog_warning("tmp_open(%s) request: %s", path,
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_fchmod_request(gfm_server, mode))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("fchmod request: %s",
-			    gfarm_error_string(e));
-		else if ((e = gfm_client_compound_end_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_warning("compound_end request: %s",
-			    gfarm_error_string(e));
-
-		else if ((e = gfm_client_compound_begin_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e) && ++retry <= 1){
-				gfm_client_connection_free(gfm_server);
-				continue;
-			}
-			gflog_warning("compound_begin result: %s",
-			    gfarm_error_string(e));
-		} else if ((e = gfm_tmp_open_result(gfm_server, path, NULL))
-		    != GFARM_ERR_NO_ERROR)
-#if 0
-			gflog_warning("tmp_open(%s) result: %s", path,
-			    gfarm_error_string(e));
-#else
-			;
-#endif
-		else if ((e = gfm_client_fchmod_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR)
-#if 0
-			gflog_warning("fchmod result: %s", gfarm_error_string(e));
-#else
-			;
-#endif
-		else if ((e = gfm_client_compound_end_result(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
-			    gfarm_error_string(e));
-		}
-
-		break;
-	}
-
-	gfm_client_connection_free(gfm_server);
-
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
-
-	return (e);
+	closure.mode = mode;
+	return (gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	    gfm_chmod_request,
+	    gfm_chmod_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure));
 }

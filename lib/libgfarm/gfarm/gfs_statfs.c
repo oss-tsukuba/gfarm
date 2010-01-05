@@ -9,6 +9,8 @@
 #include "gfm_client.h"
 #include "config.h"
 
+/* XXX FIXME: implement gfs_statvfs() which takes a path as an argument */
+
 gfarm_error_t
 gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 {
@@ -17,8 +19,9 @@ gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 	int retry = 0;
 
 	for (;;) {
-		if ((e = gfarm_metadb_connection_acquire(&gfm_server)) !=
-		    GFARM_ERR_NO_ERROR)
+		if ((e = gfm_client_connection_and_process_acquire(
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    &gfm_server)) != GFARM_ERR_NO_ERROR)
 			return (e);
 
 		e = gfm_client_statfs(gfm_server, used, avail, files);
