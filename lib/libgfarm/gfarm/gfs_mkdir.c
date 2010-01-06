@@ -24,7 +24,7 @@ gfm_mkdir_request(struct gfm_connection *gfm_server, void *closure,
 
 	if ((e = gfm_client_mkdir_request(gfm_server, base, c->mode))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("mkdir(%s) request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "mkdir(%s) request: %s",
 		    base, gfarm_error_string(e));
 	}
 	return (e);
@@ -37,7 +37,8 @@ gfm_mkdir_result(struct gfm_connection *gfm_server, void *closure)
 
 	if ((e = gfm_client_mkdir_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-		gflog_debug("mkdir() result: %s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "mkdir() result: %s", gfarm_error_string(e));
 #endif
 	}
 	return (e);

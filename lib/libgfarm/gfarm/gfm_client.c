@@ -256,7 +256,8 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
 	    NULL);
 	while (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("connecting to gfmd at %s:%d failed, "
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "connecting to gfmd at %s:%d failed, "
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
 		    gfarm_error_string(e));
 		sleep(sleep_interval);
@@ -268,7 +269,8 @@ gfm_client_connection_acquire(const char *hostname, int port,
 			break; /* give up */
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("cannot connect to gfmd at %s:%d, give up: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "cannot connect to gfmd at %s:%d, give up: %s",
 		    hostname, port, gfarm_error_string(e));
 		gfp_cached_connection_purge_from_cache(&gfm_server_cache,
 		    cache_entry);
@@ -301,7 +303,8 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 		    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET,
 		    &gfm_server->pid);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error("failed to allocate gfarm PID: %s",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "failed to allocate gfarm PID: %s",
 			    gfarm_error_string(e));
 			gfm_client_connection_free(gfm_server);
 		}
@@ -2048,7 +2051,8 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
 	    sharedkey_size != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_error("gfm_client_process_set: type=%d, size=%d: "
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfm_client_process_set: type=%d, size=%d: "
 		    "programming error", (int)keytype, (int)sharedkey_size);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
@@ -2077,34 +2081,34 @@ gfm_client_compound_fd_op(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin request: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_request(gfm_server, fd))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "put_fd request: %s",
 		    gfarm_error_string(e));
 	else if ((e = (*request_op)(gfm_server, closure))
 	    != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_end request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end request: %s",
 		    gfarm_error_string(e));
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("compound_begin result: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_begin result: %s",
 		    gfarm_error_string(e));
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_warning("put_fd result: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "put_fd result: %s",
 		    gfarm_error_string(e));
 	else if ((e = (*result_op)(gfm_server, closure))
 	    != GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_end result: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "compound_end result: %s",
 		    gfarm_error_string(e));
 		if (cleanup_op != NULL)
 			(*cleanup_op)(gfm_server, closure);

@@ -156,7 +156,7 @@ inode_cksum_remove(struct inode *inode)
 	if (inode->u.c.s.f.cksum != NULL) {
 		e = db_inode_cksum_remove(inode->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "db_inode_cksum_remove(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 	}
@@ -239,7 +239,8 @@ inode_cksum_set(struct file_opening *fo,
 	}
 	/* XXX FIXME: shouldn't happen, but */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_cksum_%s(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_cksum_%s(%" GFARM_PRId64 "): %s",
 		    cs == NULL ? "add" : "modify",
 		    inode->i_number, gfarm_error_string(e));
 
@@ -353,7 +354,7 @@ remove_all_xattrs(struct inode *inode, int xmlMode)
 	while (entry != NULL) {
 		e = db_xattr_remove(xmlMode, inode->i_number, entry->name);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning("remove xattr: %s",
+			gflog_warning(GFARM_MSG_UNFIXED, "remove xattr: %s",
 				gfarm_error_string(e));
 		entry = entry->next;
 	}
@@ -498,11 +499,13 @@ inode_free(struct inode *inode)
 
 	e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_mode_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_mode_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 }
 
@@ -513,7 +516,7 @@ void
 inode_remove(struct inode *inode)
 {
 	if (inode->u.c.state != NULL)
-		gflog_fatal("inode_remove: still opened");
+		gflog_fatal(GFARM_MSG_UNFIXED, "inode_remove: still opened");
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
 		gfarm_error_t e;
@@ -529,7 +532,8 @@ inode_remove(struct inode *inode)
 	} else if (inode_is_symlink(inode)) {
 		free(inode->u.c.s.l.source_path);
 	} else {
-		gflog_fatal("inode_unlink: unknown inode type");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_unlink: unknown inode type");
 		/*NOTREACHED*/
 	}
 	inode_free(inode);
@@ -705,7 +709,8 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_mode_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_mode_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 
 	return (GFARM_ERR_NO_ERROR);
@@ -726,7 +731,8 @@ inode_set_size(struct inode *inode, gfarm_off_t size)
 
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_size_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_size_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 }
 
@@ -740,7 +746,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 
 		e = db_inode_user_modify(inode->i_number, user_name(user));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "db_inode_user_modify(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 	}
@@ -749,7 +755,7 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 
 		e = db_inode_group_modify(inode->i_number, group_name(group));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "db_inode_group_modify(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 	}
@@ -789,7 +795,8 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_atime_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_atime_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 }
 
@@ -805,7 +812,8 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 
 	e = db_inode_mtime_modify(inode->i_number, inode_get_mtime(inode));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_mtime_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_mtime_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 }
 
@@ -821,7 +829,8 @@ inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 
 	e = db_inode_ctime_modify(inode->i_number, &inode->i_ctimespec);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_ctime_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_ctime_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 }
 
@@ -987,7 +996,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 
 		e = db_direntry_remove(parent->i_number, name, len);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_remove(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_remove(%" GFARM_PRId64
 			    ", %.*s): %s",
 			    parent->i_number, len, name,
 			    gfarm_error_string(e));
@@ -1019,12 +1029,13 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 
 		e = db_inode_nlink_modify(n->i_number, n->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
 			    n->i_number, gfarm_error_string(e));
 		e = db_direntry_add(parent->i_number, name, len, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_add(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_add(%" GFARM_PRId64
 			    ", %" GFARM_PRId64 "): %s",
 			    parent->i_number, n->i_number,
 			    gfarm_error_string(e));
@@ -1077,7 +1088,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			e = db_inode_modify(&st);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_%s(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_%s(%" GFARM_PRId64 "): %s",
 		    n->i_gen == 0 ? "add" : "modify",
 		    n->i_number, gfarm_error_string(e));
 
@@ -1090,28 +1102,31 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (expected_type == GFS_DT_DIR) {
 		e = db_direntry_add(n->i_number, dot, DOT_LEN, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_add(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_add(%" GFARM_PRId64
 			    ", \".\", %" GFARM_PRId64 "): %s",
 			    parent->i_number, n->i_number,
 			    gfarm_error_string(e));
 		e = db_direntry_add(
 			n->i_number, dotdot, DOTDOT_LEN, parent->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_add(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_add(%" GFARM_PRId64
 			    ", \"..\", %" GFARM_PRId64 "): %s",
 			    parent->i_number, n->i_number,
 			    gfarm_error_string(e));
 	} else if (expected_type == GFS_DT_LNK) {
 		e = db_symlink_add(n->i_number, symlink_src);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_symlink_add(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_symlink_add(%" GFARM_PRId64
 			    ", \"%s\"): %s",
 			    n->i_number, symlink_src,
 			    gfarm_error_string(e));
 	}
 	e = db_direntry_add(parent->i_number, name, len, n->i_number);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_direntry_add(%" GFARM_PRId64
+		gflog_error(GFARM_MSG_UNFIXED, "db_direntry_add(%" GFARM_PRId64
 		    ", %" GFARM_PRId64 "): %s",
 		    parent->i_number, n->i_number,
 		    gfarm_error_string(e));
@@ -1319,14 +1334,16 @@ inode_rename(
 
 	e = inode_create_link(ddir, dname, process, src);
 	if (e != GFARM_ERR_NO_ERROR) { /* shouldn't happen */
-		gflog_error("rename(%s, %s): failed to link: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "rename(%s, %s): failed to link: %s",
 		    sname, dname, gfarm_error_string(e));
 		return (e);
 	}
 	e = inode_lookup_relative(sdir, sname, GFS_DT_UNKNOWN, INODE_REMOVE,
 	    user, 0, NULL, &src, NULL);
 	if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
-		gflog_error("rename(%s, %s): failed to unlink: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "rename(%s, %s): failed to unlink: %s",
 		    sname, dname, gfarm_error_string(e));
 	return (e);
 }
@@ -1348,7 +1365,8 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			e = db_inode_nlink_modify(inode->i_number,
 			    inode->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error("db_inode_nlink_modify(%"
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "db_inode_nlink_modify(%"
 				    GFARM_PRId64 "): %s",
 				    inode->i_number, gfarm_error_string(e));
 			return (GFARM_ERR_NO_ERROR);
@@ -1365,12 +1383,14 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			return (e);
 		e = db_direntry_remove(inode->i_number, dot, DOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_remove(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_remove(%" GFARM_PRId64
 			    ", %s): %s",
 			    inode->i_number, dot, gfarm_error_string(e));
 		e = db_direntry_remove(inode->i_number, dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_direntry_remove(%" GFARM_PRId64
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_direntry_remove(%" GFARM_PRId64
 			    ", %s): %s",
 			    inode->i_number, dotdot, gfarm_error_string(e));
 	} else if (inode_is_symlink(inode)) {
@@ -1381,10 +1401,12 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		assert(inode->i_nlink == 0);
 		e = db_symlink_remove(inode->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("db_symlink_remove(%" GFARM_PRId64 "): %s",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_symlink_remove(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 	} else {
-		gflog_fatal("inode_unlink: unknown inode type");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_unlink: unknown inode type");
 		/*NOTREACHED*/
 		return (GFARM_ERR_UNKNOWN);
 	}
@@ -1399,7 +1421,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 
 		e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 
@@ -1450,7 +1472,8 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_filecopy_add(%" GFARM_PRId64 ", %s): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_filecopy_add(%" GFARM_PRId64 ", %s): %s",
 		    inode->i_number, host_name(spool_host),
 		    gfarm_error_string(e));
 	return (GFARM_ERR_NO_ERROR);
@@ -1463,13 +1486,15 @@ remove_replica_internal(struct inode *inode, struct file_copy *copy)
 
 	e = host_remove_replica_enq(copy->host, inode->i_number, inode->i_gen);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("host_remove_replica_enq(%" GFARM_PRId64
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "host_remove_replica_enq(%" GFARM_PRId64
 		    ", %s): %s", inode->i_number, host_name(copy->host),
 		    gfarm_error_string(e));
 
 	if (copy->valid && (e2 = db_filecopy_remove(inode->i_number,
 	    host_name(copy->host))) != GFARM_ERR_NO_ERROR)
-		gflog_error("db_filecopy_remove(%" GFARM_PRId64 ", %s): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_filecopy_remove(%" GFARM_PRId64 ", %s): %s",
 		    inode->i_number, host_name(copy->host),
 		    gfarm_error_string(e2));
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
@@ -1586,7 +1611,8 @@ inode_close_write(struct file_opening *fo, gfarm_off_t size,
 
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("db_inode_size_modify(%" GFARM_PRId64 "): %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_size_modify(%" GFARM_PRId64 "): %s",
 		    inode->i_number, gfarm_error_string(e));
 
 	if (mtime != NULL) {
@@ -1602,7 +1628,8 @@ inode_has_replica(struct inode *inode, struct host *spool_host)
 	struct file_copy *copy;
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_has_replica: not a file");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_has_replica: not a file");
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (copy->host == spool_host)
@@ -1725,7 +1752,8 @@ inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
 	int already_opened, host_match;
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_schedule_confirm_for_write: not a file");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_schedule_confirm_for_write: not a file");
 	if (ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 		already_opened = host_match = 0;
@@ -1761,7 +1789,8 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	/* XXX FIXME too long giant lock */
 
 	if (!inode_is_file(inode))
-		gflog_fatal("inode_schedule_file_reply: not a file");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_schedule_file_reply: not a file");
 
 	if (creating)
 		return (host_schedule_reply_one_or_all(peer, diag));
@@ -1796,7 +1825,8 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	/* read access, or write access && no process is opening the file */
 
 	if (inode_is_creating_file(inode))
-		gflog_fatal("inode_schedule_file_reply: should be creating");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "inode_schedule_file_reply: should be creating");
 	n = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
@@ -1871,7 +1901,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 
 	inode = inode_alloc_num(st->st_ino);
 	if (inode == NULL) {
-		gflog_error("cannot allocate inode %" GFARM_PRId64,st->st_ino);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "cannot allocate inode %" GFARM_PRId64, st->st_ino);
 		e = GFARM_ERR_UNKNOWN;
 	} else if (GFARM_S_ISDIR(st->st_mode)) {
 		e = inode_init_dir_internal(inode);
@@ -1883,14 +1914,16 @@ inode_add_one(void *closure, struct gfs_stat *st)
 		inode_clear(inode);
 		e = GFARM_ERR_NO_ERROR;
 	} else {
-		gflog_error("unknown inode type %" GFARM_PRId64 ", mode 0%o",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "unknown inode type %" GFARM_PRId64 ", mode 0%o",
 		    st->st_ino, st->st_mode);
 		e = GFARM_ERR_UNKNOWN;
 		assert(0);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != GFARM_ERR_UNKNOWN) {
-			gflog_error("inode %" GFARM_PRId64 ": %s", st->st_ino,
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode %" GFARM_PRId64 ": %s", st->st_ino,
 			    gfarm_error_string(e));
 		}
 		gfs_stat_free(st);
@@ -1917,13 +1950,16 @@ inode_cksum_add_one(void *closure,
 	struct inode *inode = inode_lookup(inum);
 
 	if (inode == NULL) {
-		gflog_error("inode_cksum_add_one: no inode %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode_cksum_add_one: no inode %" GFARM_PRId64,
 		    inum);
 	} else if (!inode_is_file(inode)) {
-		gflog_error("inode_cksum_add_one: not file %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode_cksum_add_one: not file %" GFARM_PRId64,
 		    inum);
 	} else if (inode->u.c.s.f.cksum != NULL) {
-		gflog_error("inode_cksum_add_one: dup cksum %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "inode_cksum_add_one: dup cksum %" GFARM_PRId64,
 		    inum);
 	} else {
 		inode_cksum_set_internal(inode, type, len, sum);
@@ -1939,12 +1975,15 @@ symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
 	struct inode *inode = inode_lookup(inum);
 
 	if (inode == NULL) {
-		gflog_error("symlink_add_one: no inode %" GFARM_PRId64, inum);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "symlink_add_one: no inode %" GFARM_PRId64, inum);
 	} else if (!inode_is_symlink(inode)) {
-		gflog_error("symlink_add_one: not symlink %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "symlink_add_one: not symlink %" GFARM_PRId64,
 		    inum);
 	} else if (inode->u.c.s.l.source_path != NULL) {
-		gflog_error("symlink_add_one: dup symlink %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "symlink_add_one: dup symlink %" GFARM_PRId64,
 		    inum);
 	} else {
 		inode->u.c.s.l.source_path = source_path;
@@ -1962,14 +2001,18 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 	struct host *host = host_lookup(hostname);
 
 	if (inode == NULL) {
-		gflog_error("file_copy_add_one: no inode %" GFARM_PRId64,inum);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file_copy_add_one: no inode %" GFARM_PRId64, inum);
 	} else if (!inode_is_file(inode)) {
-		gflog_error("file_copy_add_one: not file %" GFARM_PRId64,inum);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file_copy_add_one: not file %" GFARM_PRId64, inum);
 	} else if (host == NULL) {
-		gflog_error("file_copy_add_one: no host %s", hostname);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file_copy_add_one: no host %s", hostname);
 	} else if ((e = inode_add_replica_internal(inode, host, 1)) !=
 	    GFARM_ERR_NO_ERROR){
-		gflog_error("file_copy_add_one: add_replica: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "file_copy_add_one: add_replica: %s",
 		    gfarm_error_string(e));
 	}
 	free(hostname);
@@ -1985,15 +2028,18 @@ dead_file_copy_add_one(void *closure,
 	char *funcname = "dead_file_copy_add_one";
 
 	if (host == NULL) {
-		gflog_error("%s: no host %s", funcname, hostname);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: no host %s", funcname, hostname);
 	} else if ((e = host_remove_replica_enq(host,
 	    inum, igen)) != GFARM_ERR_NO_ERROR) {
-		gflog_error("%s: record dead replica: %s", funcname,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: record dead replica: %s", funcname,
 		    gfarm_error_string(e));
 	} else {
 		e = db_deadfilecopy_remove(inum, igen, hostname);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error("%s: db_deadfilecopy_remove: %s", funcname,
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: db_deadfilecopy_remove: %s", funcname,
 			    gfarm_error_string(e));
 	}
 	free(hostname);
@@ -2011,19 +2057,23 @@ dir_entry_add_one(void *closure,
 	int created;
 
 	if (dir_inode == NULL) {
-		gflog_error("dir_entry_add_one: no dir %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dir_entry_add_one: no dir %" GFARM_PRId64,
 		    dir_inum);
 	} else if (!inode_is_dir(dir_inode)) {
-		gflog_error("dir_entry_add_one: not dir %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dir_entry_add_one: not dir %" GFARM_PRId64,
 		    dir_inum);
 	} else if (entry_inode == NULL) {
-		gflog_error("dir_entry_add_one: no %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dir_entry_add_one: no %" GFARM_PRId64,
 		    entry_inum);
 	} else if ((entry = dir_enter(dir_inode->u.c.s.d.entries,
 	    entry_name, entry_len, &created)) == NULL) {
-		gflog_error("dir_entry_add_one: no memory");
+		gflog_error(GFARM_MSG_UNFIXED, "dir_entry_add_one: no memory");
 	} else if (!created) {
-		gflog_error("dir_entry_add_one: already exists ");
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dir_entry_add_one: already exists ");
 	} else {
 		dir_entry_set_inode(entry, entry_inode);
 	}
@@ -2042,16 +2092,19 @@ inode_init(void)
 
 	e = db_inode_load(NULL, inode_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading inode: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading inode: %s", gfarm_error_string(e));
 	e = db_inode_cksum_load(NULL, inode_cksum_add_one);
 	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT /* XXX */)
-		gflog_error("loading inode cksum: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading inode cksum: %s", gfarm_error_string(e));
 
 	root = inode_lookup(ROOT_INUMBER);
 	if (root != NULL)
 		return;
 
-	gflog_info("root inode not found, creating filesystem");
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "root inode not found, creating filesystem");
 
 	/* root inode */
 	st.st_ino = ROOT_INUMBER;
@@ -2067,7 +2120,8 @@ inode_init(void)
 	e = db_inode_add(&st);
 	inode_add_one(NULL, &st);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("failed to store root inode to storage: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to store root inode to storage: %s",
 		    gfarm_error_string(e));
 
 	/* root directory */
@@ -2077,12 +2131,12 @@ inode_init(void)
 	    ROOT_INUMBER);
 	e = db_direntry_add(ROOT_INUMBER, dot, DOT_LEN, ROOT_INUMBER);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "failed to store '.' in root directory to storage: %s",
 		    gfarm_error_string(e));
 	e = db_direntry_add(ROOT_INUMBER, dotdot, DOTDOT_LEN, ROOT_INUMBER);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "failed to store '..' in root directory to storage: %s",
 		    gfarm_error_string(e));
 }
@@ -2094,7 +2148,8 @@ file_copy_init(void)
 
 	e = db_filecopy_load(NULL, file_copy_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading filecopy: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading filecopy: %s", gfarm_error_string(e));
 }
 
 void
@@ -2104,7 +2159,8 @@ dead_file_copy_init(void)
 
 	e = db_deadfilecopy_load(NULL, dead_file_copy_add_one);
 	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT)
-		gflog_error("loading deadfilecopy: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading deadfilecopy: %s", gfarm_error_string(e));
 }
 
 void
@@ -2114,7 +2170,8 @@ dir_entry_init(void)
 
 	e = db_direntry_load(NULL, dir_entry_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading direntry: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading direntry: %s", gfarm_error_string(e));
 }
 
 void
@@ -2124,7 +2181,8 @@ symlink_init(void)
 
 	e = db_symlink_load(NULL, symlink_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading symlink: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading symlink: %s", gfarm_error_string(e));
 }
 
 /* implemented here to refer dot and dotdot */
@@ -2137,7 +2195,8 @@ dir_is_empty(Dir dir)
 	int namelen;
 
 	if (!dir_cursor_set_pos(dir, 0, &cursor)) {
-		gflog_error("dir_emptry: cannot get cursor");
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "dir_emptry: cannot get cursor");
 		abort();
 	}
 	for (;;) {
@@ -2205,13 +2264,14 @@ xattr_add_one(void *closure, struct xattr_info *info)
 	struct xattrs *xattrs;
 
 	if (inode == NULL)
-		gflog_error("xattr_add_one: no file %" GFARM_PRId64,
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "xattr_add_one: no file %" GFARM_PRId64,
 			info->inum);
 	else {
 		int xmlMode = (closure != NULL) ? *(int*)closure : 0;
 		xattrs = (xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs);
 		if (xattr_add(xattrs, info->attrname) == NULL)
-			gflog_error("xattr_add_one: "
+			gflog_error(GFARM_MSG_UNFIXED, "xattr_add_one: "
 				"cannot add attrname %s to %"
 				GFARM_PRId64, info->attrname, info->inum);
 	}
@@ -2226,12 +2286,14 @@ xattr_init(void)
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading xattr: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading xattr: %s", gfarm_error_string(e));
 #ifdef ENABLE_XMLATTR
 	xmlMode = 1;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("loading xmlattr: %s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "loading xmlattr: %s", gfarm_error_string(e));
 #endif
 }
 
@@ -2356,34 +2418,40 @@ dir_dump(gfarm_ino_t i_number)
 	char *name;
 
 	if (inode == NULL) {
-		gflog_info("inode_lookup %" GFARM_PRId64 " failed", i_number);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "inode_lookup %" GFARM_PRId64 " failed", i_number);
 		return;
 	}
 	dir = inode_get_dir(inode);
 	if (dir == NULL) {
-		gflog_info("inode %" GFARM_PRId64 " is not a directory",
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "inode %" GFARM_PRId64 " is not a directory",
 		    i_number);
 		return;
 	}
 	ok = dir_cursor_set_pos(dir, 0, &cursor);
 	if (!ok) {
-		gflog_info("dir inode %" GFARM_PRId64 " cannot seek to 0",
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "dir inode %" GFARM_PRId64 " cannot seek to 0",
 		    i_number);
 		return;
 	}
-	gflog_info("dir inode %" GFARM_PRId64 " dump start:", i_number);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "dir inode %" GFARM_PRId64 " dump start:", i_number);
 	for (;;) {
 		if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
 		    &name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
 		    name == NULL)
 			break;
-		gflog_info("entry %s (len=%d) inum %" GFARM_PRId64,
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "entry %s (len=%d) inum %" GFARM_PRId64,
 		    name, (int)strlen(name), inode_get_number(entry_inode));
 		free(name);
 		if (!dir_cursor_next(dir, &cursor))
 			break;
 	}
-	gflog_info("dir inode %" GFARM_PRId64 " dump end", i_number);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "dir inode %" GFARM_PRId64 " dump end", i_number);
 }
 
 void

@@ -62,7 +62,7 @@ gfs_hook_not_initialized(void)
 
 	if (!printed) {
 		printed = 1;
-		gflog_info(
+		gflog_info(GFARM_MSG_UNFIXED,
 			"fatal error: gfarm_initialize() isn't called");
 	}
 }
@@ -193,7 +193,8 @@ gfs_hook_insert_gfs_file(GFS_File gf)
 	int fd, save_errno;
 	struct stat st;
 
-	_gfs_hook_debug(gflog_info("GFS: insert_gfs_file: %p", gf));
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: insert_gfs_file: %p", gf));
 
 	/*
 	 * A new file descriptor is needed to identify a hooked file
@@ -236,7 +237,8 @@ error_close_fd:
 error_close_gf:
 	gfs_pio_close(gf);
 
-	_gfs_hook_debug(gflog_info("GFS: insert_gfs_file: %s",
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: insert_gfs_file: %s",
 		gfarm_errno_to_error(save_errno)));
 
 	errno = save_errno;
@@ -249,7 +251,8 @@ gfs_hook_insert_gfs_dir(GFS_Dir dir, char *url)
 	int fd, save_errno;
 	char *e, *abs_url;
 
-	_gfs_hook_debug(gflog_info("GFS: insert_gfs_dir: %p", dir));
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: insert_gfs_dir: %p", dir));
 
 	/*
 	 * A new file descriptor is needed to identify a hooked file
@@ -308,7 +311,8 @@ error_close_fd:
 error_closedir:
 	gfs_closedir(dir);
 
-	_gfs_hook_debug(gflog_info("GFS: insert_gfs_dir: %s",
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: insert_gfs_dir: %s",
 		gfarm_errno_to_error(save_errno)));
 
 	errno = save_errno;
@@ -327,18 +331,19 @@ gfs_hook_clear_gfs_file(int fd)
 	GFS_File gf;
 	char *e = NULL;
 
-	_gfs_hook_debug(gflog_info("GFS: clear_gfs_file: %d", fd));
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: clear_gfs_file: %d", fd));
 
 	gf = gfs_hook_is_open(fd);
 	if (gf == NULL) {
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: ERROR: not a Gfarm file: %d", fd));
 		return ("not a Gfarm file");
 	}
 
 	if (--_gfs_file_buf[fd]->refcount > 0) {
 	  	/* fd is duplicated, skip closing the file. */
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 					"GFS: clear_gfs_file: skipped"));
 	} else {
 		if (gfs_hook_gfs_file_type(fd) == GFS_DT_REG) {
@@ -360,7 +365,8 @@ gfs_hook_clear_gfs_file(int fd)
 
 	if (e != NULL)
 		_gfs_hook_debug(
-			gflog_info("GFS: clear_gfs_file: %s", e));
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "GFS: clear_gfs_file: %s", e));
 
 	return (e);
 }
@@ -398,7 +404,8 @@ gfs_hook_flush_all(void)
 	}
 	if (e_save != NULL)
 		_gfs_hook_debug(
-			gflog_info("GFS: hook_flush_all: %s", e_save));
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "GFS: hook_flush_all: %s", e_save));
 
 	return (e_save);
 }
@@ -425,7 +432,8 @@ gfs_hook_close_all(void)
 	}
 	if (e_save != NULL)
 		_gfs_hook_debug(
-			gflog_info("GFS: hook_close_all: %s", e_save));
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "GFS: hook_close_all: %s", e_save));
 
 	return (e_save);
 }
@@ -440,7 +448,8 @@ gfs_hook_terminate(void)
 	e = gfarm_terminate();
 	if (e != NULL)
 		_gfs_hook_debug(
-		    gflog_info("GFS: gfarm_terminate: %s", e));
+		    gflog_info(GFARM_MSG_UNFIXED,
+			"GFS: gfarm_terminate: %s", e));
 }
 
 struct _gfs_file_descriptor *gfs_hook_dup_descriptor(int fd)
@@ -463,7 +472,8 @@ int
 gfs_hook_dup_filedes(int oldfd, int newfd)
 {
 	_gfs_hook_debug(
-	   gflog_info("GFS: dpu_filedes: %d, %d", oldfd, newfd));
+	   gflog_info(GFARM_MSG_UNFIXED,
+	       "GFS: dpu_filedes: %d, %d", oldfd, newfd));
 
 #if 0
 	if (_gfs_file_buf[oldfd] == _gfs_file_buf[newfd])
@@ -1104,7 +1114,7 @@ gfs_hook_set_view_local(int filedes, int flag)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_local(gf, flag)) != NULL) {
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: set_view_local: %s", e));
 		return e;
 	}
@@ -1123,7 +1133,7 @@ gfs_hook_set_view_index(int filedes, int nfrags, int index,
 
 	if ((e = gfs_pio_set_view_index(gf, nfrags, index, host, flags))
 	    != NULL) {
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: set_view_index: %s", e));
 		return e;
 	}
@@ -1140,7 +1150,7 @@ gfs_hook_set_view_global(int filedes, int flags)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_global(gf, flags)) != NULL) {
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: set_view_global: %s", e));
 		return e;
 	}
@@ -1157,7 +1167,7 @@ gfs_hook_set_view_section(int filedes, char *section, char *host, int flags)
 		return "not a Gfarm file";
 
 	if ((e = gfs_pio_set_view_section(gf, section, host, flags)) != NULL) {
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: set_view_section: %s", e));
 		return (e);
 	}

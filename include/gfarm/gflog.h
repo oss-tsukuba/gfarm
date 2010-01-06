@@ -1,3 +1,7 @@
+#include <syslog.h>
+
+#include <gfarm/gfarm_msg_enums.h>
+
 #ifndef GFARM_DEFAULT_FACILITY
 #define GFARM_DEFAULT_FACILITY	LOG_LOCAL0
 #endif
@@ -12,19 +16,54 @@
 #define GFLOG_PRINTF_ARG(M, N)
 #endif
 
-#ifdef GFLOG_USE_STDARG /* to make <stdarg.h> optional to use <gfutil.h> */
-void gflog_vmessage(int, const char *, va_list) GFLOG_PRINTF_ARG(2, 0);
+#if __STDC_VERSION__ < 199901L
+#if __GNUC__ >= 2
+#define __func__ __FUNCTION__
+#else
+#define __func__ "<unknown>"
 #endif
-void gflog_message(int, const char *, ...) GFLOG_PRINTF_ARG(2, 3);
-void gflog_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_notice(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_info(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_debug(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_warning_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+#endif
 
-void gflog_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_fatal_errno(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+#ifdef GFLOG_USE_STDARG /* to make <stdarg.h> optional to use <gfutil.h> */
+void gflog_vmessage(int, int, const char *, int, const char *,
+		const char *, va_list) GFLOG_PRINTF_ARG(6, 0);
+#endif
+void gflog_message(int, int, const char *, int, const char*,
+		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+void gflog_message_errno(int, int, const char *, int, const char*,
+		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+
+#define gflog_error(msg_no, ...) \
+	gflog_message(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_warning(msg_no, ...) \
+	gflog_message(msg_no, LOG_WARNING,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_notice(msg_no, ...) \
+	gflog_message(msg_no, LOG_NOTICE,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_info(msg_no, ...) \
+	gflog_message(msg_no, LOG_INFO,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_debug(msg_no, ...) \
+	gflog_message(msg_no, LOG_DEBUG,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+
+#define gflog_fatal(msg_no, ...) \
+	gflog_message(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_auth_error(msg_no, ...)\
+	gflog_message(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_auth_warning(msg_no, ...)\
+	gflog_message(msg_no, LOG_WARNING,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_fatal_errno(msg_no, ...) \
+	gflog_message_errno(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_warning_errno(msg_no, ...) \
+	gflog_message_errno(msg_no, LOG_WARNING,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 void gflog_set_priority_level(int);
 void gflog_set_identifier(const char *);
@@ -32,6 +71,8 @@ void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int);
 int gflog_syslog_enabled(void);
+void gflog_catopen(const char *);
+void gflog_catclose(void);
 
 int gflog_syslog_name_to_facility(const char *);
 int gflog_syslog_name_to_priority(const char *);
@@ -40,5 +81,3 @@ int gflog_syslog_name_to_priority(const char *);
 
 int gflog_auth_set_verbose(int);
 int gflog_auth_get_verbose(void);
-void gflog_auth_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
-void gflog_auth_warning(const char *, ...) GFLOG_PRINTF_ARG(1, 2);

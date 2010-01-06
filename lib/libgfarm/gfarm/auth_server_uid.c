@@ -33,7 +33,8 @@ gfarm_error_t
 gfarm_auth_uid_to_global_username_panic(void *closure,
 	const char *auth_user_id, char **global_usernamep)
 {
-	gflog_fatal("gfarm_auth_uid_to_global_username_panic: "
+	gflog_fatal(GFARM_MSG_UNFIXED,
+	    "gfarm_auth_uid_to_global_username_panic: "
 	    "authorization assertion failed");
 	return (GFARM_ERR_PROTOCOL);
 }
@@ -78,7 +79,8 @@ gfarm_auth_uid_to_global_username(void *closure,
 	if (auth_method < GFARM_AUTH_METHOD_NONE ||
 	    auth_method >=
 	    GFARM_ARRAY_LENGTH(gfarm_auth_uid_to_global_username_table)) {
-		gflog_error("gfarm_auth_uid_to_global_username: method=%d/%d",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_uid_to_global_username: method=%d/%d",
 		    auth_method,
 		    (int)GFARM_ARRAY_LENGTH(
 		    gfarm_auth_uid_to_global_username_table));

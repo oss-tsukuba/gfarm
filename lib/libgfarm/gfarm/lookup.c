@@ -219,11 +219,13 @@ gfm_tmp_lookup_parent_request(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_begin(%s) request: %s", path,
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "compound_begin(%s) request: %s", path,
 		    gfarm_error_string(e));
 	} else if ((e = gfm_lookup_dir_request(gfm_server, path, &base))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("lookup_dir(%s) request: %s", path,
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "lookup_dir(%s) request: %s", path,
 		    gfarm_error_string(e));
 	} else {
 		*basep = base;
@@ -240,7 +242,8 @@ gfm_tmp_lookup_parent_result(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning("compound_begin(%s) result: %s", path,
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "compound_begin(%s) result: %s", path,
 		    gfarm_error_string(e));
 	} else if ((e = gfm_lookup_dir_result(gfm_server, path, &base))
 	    != GFARM_ERR_NO_ERROR) {
@@ -332,7 +335,8 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 
 		if ((e = gfm_tmp_lookup_parent_request(gfm_server, path,
 		    &base)) != GFARM_ERR_NO_ERROR) {
-			gflog_warning("tmp_lookup_parent(%s) request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "tmp_lookup_parent(%s) request: %s",
 			    path, gfarm_error_string(e));
 		} else if (base[0] == '/' && base[1] == '\0') {
 			/* "/" is special */
@@ -345,7 +349,8 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 
 		if ((e = gfm_client_compound_end_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end request: %s",
 			    gfarm_error_string(e));
 
 		} else if ((e = gfm_tmp_lookup_parent_result(gfm_server, path,
@@ -355,7 +360,8 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 				continue;
 			}
 #if 0 /* DEBUG */
-			gflog_debug("tmp_lookup_parent(%s) result: %s", path,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "tmp_lookup_parent(%s) result: %s", path,
 			    gfarm_error_string(e));
 #endif
 		} else if (base[0] == '/' && base[1] == '\0') {
@@ -369,7 +375,8 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 
 		if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end result: %s",
 			    gfarm_error_string(e));
 			break;
 		}
@@ -418,14 +425,16 @@ gfm_inode_op(const char *url, int flags,
 
 		if ((e = gfm_tmp_open_request(gfm_server, path, flags))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("tmp_open(%s) request: %s", path,
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "tmp_open(%s) request: %s", path,
 			    gfarm_error_string(e));
 		} else if ((e = (*request_op)(gfm_server, closure))
 		    != GFARM_ERR_NO_ERROR) {
 			;
 		} else if ((e = gfm_client_compound_end_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end request: %s",
 			    gfarm_error_string(e));
 
 		} else if ((e = gfm_tmp_open_result(gfm_server, path, &type))
@@ -435,7 +444,8 @@ gfm_inode_op(const char *url, int flags,
 				continue;
 			}
 #if 0 /* DEBUG */
-			gflog_debug("tmp_open(%s) result: %s", path,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "tmp_open(%s) result: %s", path,
 			    gfarm_error_string(e));
 #endif
 		} else if ((e = (*result_op)(gfm_server, closure))
@@ -443,7 +453,8 @@ gfm_inode_op(const char *url, int flags,
 			;
 		} else if ((e = gfm_client_compound_end_result(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end result: %s",
 			    gfarm_error_string(e));
 			if (cleanup_op != NULL)
 				(*cleanup_op)(gfm_server, closure);

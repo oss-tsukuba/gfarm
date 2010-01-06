@@ -23,7 +23,8 @@ gfm_chmod_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_fchmod_request(gfm_server, c->mode);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("fchmod request; %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "fchmod request; %s", gfarm_error_string(e));
 	return (e);
 }
 
@@ -34,7 +35,8 @@ gfm_chmod_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug("fchmod result; %s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "fchmod result; %s", gfarm_error_string(e));
 #endif
 	return (e);
 }

@@ -352,7 +352,8 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	e = gfm_host_address_get(gfm_server, self_name, 0,
 	    &peer_addr, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("gfarm search_idle_network_list_init: "
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfarm search_idle_network_list_init: "
 		    "self address_get(%s): %s",
 		    self_name, gfarm_error_string(e));
 		return (e);
@@ -1378,7 +1379,8 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 	gfs_profile(gfarm_gettimerval(&t4));
 
 	gfs_profile(
-		gflog_info("(search_idle) init %f, local %f, all %f",
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(search_idle) init %f, local %f, all %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
 			   gfarm_timerval_sub(&t4, &t3)));
@@ -1492,7 +1494,8 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	gfs_profile(gfarm_gettimerval(&t5));
 
 	gfs_profile(
-		gflog_info("(select_host) init %f, add %f, schedule %f, "
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(select_host) init %f, add %f, schedule %f, "
 			   "lookup %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
@@ -1548,13 +1551,13 @@ gfarm_schedule_network_cache_dump(void)
 		 * called for two instances (ip_min and ip_max) at once.
 		 */
 		if (n->flags & NET_FLAG_RTT_AVAIL)
-			gflog_info(
+			gflog_info(GFARM_MSG_UNFIXED,
 			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT %d usec",
 			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
 			    ip_max[0], ip_max[1], ip_max[2], ip_max[3],
 			    n->rtt_usec);
 		else
-			gflog_info(
+			gflog_info(GFARM_MSG_UNFIXED,
 			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT unavailable",
 			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
 			    ip_max[0], ip_max[1], ip_max[2], ip_max[3]);
@@ -1597,7 +1600,7 @@ gfarm_schedule_host_cache_dump(void)
 	struct timeval period;
 
 	if (search_idle_hosts_state == NULL) {
-		gflog_info("<empty>");
+		gflog_info(GFARM_MSG_UNFIXED, "<empty>");
 		return;
 	}
 
@@ -1666,16 +1669,17 @@ gfarm_schedule_host_cache_dump(void)
 			    h->diskused + h->diskavail));
 		}
 
-		gflog_info("%s %s %s %s", hostbuf, rttbuf, loadbuf, diskbuf);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s %s %s %s", hostbuf, rttbuf, loadbuf, diskbuf);
 	}
 }
 
 void
 gfarm_schedule_cache_dump(void)
 {
-	gflog_info("== network ==");
+	gflog_info(GFARM_MSG_UNFIXED, "== network ==");
 	gfarm_schedule_network_cache_dump();
-	gflog_info("== host ==");
+	gflog_info(GFARM_MSG_UNFIXED, "== host ==");
 	gfarm_schedule_host_cache_dump();
 }
 

@@ -95,7 +95,8 @@ peer_table_lock(void)
 	int err = pthread_mutex_lock(&peer_table_mutex);
 
 	if (err != 0)
-		gflog_warning("peer_table_lock: %s", strerror(err));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "peer_table_lock: %s", strerror(err));
 }
 
 static void
@@ -104,7 +105,8 @@ peer_table_unlock(void)
 	int err = pthread_mutex_unlock(&peer_table_mutex);
 
 	if (err != 0)
-		gflog_warning("peer_table_unlock: %s", strerror(err));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "peer_table_unlock: %s", strerror(err));
 }
 
 #ifdef HAVE_EPOLL_WAIT
@@ -116,7 +118,8 @@ peer_epoll_ctl_fd(int op, int fd)
 	ev.data.fd = fd;
 	ev.events = EPOLLIN | EPOLLET;
 	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1)
-		gflog_fatal("epoll_ctl: %s\n", strerror(errno));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "epoll_ctl: %s\n", strerror(errno));
 }
 
 static void
@@ -170,10 +173,12 @@ peer_watcher(void *arg)
 			continue;
 		if (rv == -1)
 #ifdef HAVE_EPOLL_WAIT
-			gflog_fatal("peer_watcher: epoll_wait: %s\n",
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "peer_watcher: epoll_wait: %s\n",
 			    strerror(errno));
 #else
-			gflog_fatal("peer_watcher: poll: %s\n",
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "peer_watcher: poll: %s\n",
 			    strerror(errno));
 #endif
 
@@ -228,7 +233,8 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 
 	GFARM_MALLOC_ARRAY(peer_table, max_peers);
 	if (peer_table == NULL)
-		gflog_fatal("peer table: %s", strerror(ENOMEM));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer table: %s", strerror(ENOMEM));
 	peer_table_size = max_peers;
 
 	for (i = 0; i < peer_table_size; i++) {
@@ -251,20 +257,24 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 #ifdef HAVE_EPOLL_WAIT
 	peer_epoll.fd = epoll_create(max_peers);
 	if (peer_epoll.fd == -1)
-		gflog_fatal("epoll_create: %s\n", strerror(errno));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "epoll_create: %s\n", strerror(errno));
 	GFARM_MALLOC_ARRAY(peer_epoll.events, max_peers);
 	if (peer_epoll.events == NULL)
-		gflog_fatal("peer epoll event table: %s", strerror(ENOMEM));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer epoll event table: %s", strerror(ENOMEM));
 	peer_epoll.nevents = max_peers;
 #else
 	GFARM_MALLOC_ARRAY(peer_poll_fds, max_peers);
 	if (peer_poll_fds == NULL)
-		gflog_fatal("peer pollfd table: %s", strerror(ENOMEM));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer pollfd table: %s", strerror(ENOMEM));
 #endif
 	peer_protocol_handler = protocol_handler;
 	e = create_detached_thread(peer_watcher, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal("create_detached_thread(peer_watcher): %s",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(peer_watcher): %s",
 			    gfarm_error_string(e));
 }
 
@@ -308,7 +318,7 @@ peer_alloc(int fd, struct peer **peerp)
 	sockopt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &sockopt, sizeof(sockopt))
 	    == -1)
-		gflog_warning_errno("SO_KEEPALIVE");
+		gflog_warning_errno(GFARM_MSG_UNFIXED, "SO_KEEPALIVE");
 
 	*peerp = peer;
 	peer_table_unlock();
@@ -343,9 +353,11 @@ peer_authorized(struct peer *peer,
 	}
 	if (id_type == GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
 		if (peer->host == NULL)
-			gflog_warning("unknown host: %s", hostname);
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "unknown host: %s", hostname);
 		else
-			gflog_debug("gfsd connected from %s",
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfsd connected from %s",
 				    host_name(peer->host));
 	}
 	/* We don't record auth_method for now */
@@ -374,7 +386,8 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
-	gflog_notice("(%s@%s) disconnected", username, hostname);
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "(%s@%s) disconnected", username, hostname);
 
 	peer->control = 0;
 
@@ -414,7 +427,7 @@ peer_shutdown_all(void)
 		if (peer->process == NULL)
 			continue;
 
-		gflog_notice("(%s@%s) shutting down",
+		gflog_notice(GFARM_MSG_UNFIXED, "(%s@%s) shutting down",
 		    peer->username, peer->hostname);
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
@@ -471,7 +484,8 @@ peer_get_fd(struct peer *peer)
 	int fd = peer - peer_table;
 
 	if (fd < 0 || fd >= peer_table_size)
-		gflog_fatal("peer_get_fd: invalid peer pointer");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer_get_fd: invalid peer pointer");
 	return (fd);
 }
 
@@ -495,7 +509,8 @@ peer_set_host(struct peer *peer, char *hostname)
 		free(peer->hostname);
 		peer->hostname = NULL;
 	}
-	gflog_debug("gfsd connected from %s", host_name(peer->host));
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "gfsd connected from %s", host_name(peer->host));
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -527,7 +542,8 @@ void
 peer_set_user(struct peer *peer, struct user *user)
 {
 	if (peer->user != NULL)
-		gflog_fatal("peer_set_user: overriding user");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer_set_user: overriding user");
 	peer->user = user;
 }
 
@@ -548,7 +564,8 @@ void
 peer_set_process(struct peer *peer, struct process *process)
 {
 	if (peer->process != NULL)
-		gflog_fatal("peer_set_process: overriding process");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer_set_process: overriding process");
 	peer->process = process;
 	process_attach_peer(process, peer);
 }
@@ -558,7 +575,8 @@ void
 peer_unset_process(struct peer *peer)
 {
 	if (peer->process == NULL)
-		gflog_fatal("peer_unset_process: already unset");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "peer_unset_process: already unset");
 
 	peer_fdpair_clear(peer);
 

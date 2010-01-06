@@ -122,7 +122,8 @@ gfarm_pgsql_initialize(void)
 		port = strtol(gfarm_postgresql_server_port, &e, 0);
 		if (e == gfarm_postgresql_server_port ||
 		    port <= 0 || port >= 65536) {
-			gflog_error("gfmd.conf: illegal value in "
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfmd.conf: illegal value in "
 			    "postgresql_serverport (%s)",
 			    gfarm_postgresql_server_port);
 			return (GFARM_ERR_INVALID_ARGUMENT);
@@ -150,7 +151,8 @@ gfarm_pgsql_initialize(void)
 
 	if (PQstatus(conn) != CONNECTION_OK) {
 		/* PQerrorMessage's return value will be freed in PQfinish() */
-		gflog_error("connecting PostgreSQL: %s", PQerrorMessage(conn));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "connecting PostgreSQL: %s", PQerrorMessage(conn));
 		return (GFARM_ERR_CONNECTION_REFUSED);
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -242,7 +244,7 @@ gfarm_pgsql_check_misc(PGresult *res, const char *command, const char *diag)
 		e = GFARM_ERR_NO_ERROR;
 	} else {
 		e = GFARM_ERR_UNKNOWN;
-		gflog_error("%s: %s: %s", diag, command,
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	}
 	return (e);
@@ -257,7 +259,7 @@ gfarm_pgsql_check_select(PGresult *res, const char *command, const char *diag)
 		e = GFARM_ERR_NO_ERROR;
 	} else {
 		e = GFARM_ERR_UNKNOWN;
-		gflog_error("%s: %s: %s", diag, command,
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	}
 	return (e);
@@ -279,7 +281,7 @@ gfarm_pgsql_check_insert(PGresult *res, const char *command, const char *diag)
 		} else {
 			e = GFARM_ERR_UNKNOWN;
 		}
-		gflog_error("%s: %s: %s", diag, command,
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	}
 	return (e);
@@ -298,11 +300,12 @@ gfarm_pgsql_check_update_or_delete(PGresult *res,
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		else
 			e = GFARM_ERR_UNKNOWN;
-		gflog_error("%s: %s: %s", diag, command,
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	} else if (strtol(PQcmdTuples(res), NULL, 0) == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error("%s: %s: %s", diag, command, "no such object");
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s: %s", diag, command, "no such object");
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 	}
@@ -418,7 +421,7 @@ gfarm_pgsql_start_with_retry(const char *diag)
 	} while (PQresultStatus(res) != PGRES_COMMAND_OK &&
 	    pgsql_should_retry(res, &retry_count));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		gflog_error("%s transaction BEGIN: %s",
+		gflog_error(GFARM_MSG_UNFIXED, "%s transaction BEGIN: %s",
 		    diag, PQresultErrorMessage(res));
 		PQclear(res);
 		return (GFARM_ERR_UNKNOWN);
@@ -620,7 +623,8 @@ gfarm_pgsql_generic_grouping_get_all(
 
 #define COPY_BINARY(data, buf, residual, msg) { \
 	if (sizeof(data) > residual) \
-		gflog_fatal(msg ": %d bytes needed, but only %d bytes", \
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    msg ": %d bytes needed, but only %d bytes", \
 		    (int)sizeof(data), residual); \
 	memcpy(&(data), buf, sizeof(data)); \
 	buf += sizeof(data); \
@@ -643,10 +647,12 @@ get_value_from_varchar_copy_binary(const char **bufp, int *residualp)
 	if (len == -1) /* NULL field */
 		return (NULL);
 	if (len < 0) /* We don't allow that long varchar */
-		gflog_fatal("metadb_pgsql: copy varchar length=%d", len);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy varchar length=%d", len);
 
 	if (len > *residualp)
-		gflog_fatal("metadb_pgsql: copy varchar %d > %d",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy varchar %d > %d",
 		    len, *residualp);
 	GFARM_MALLOC_ARRAY(p, len + 1);
 	memcpy(p, *bufp, len);
@@ -666,7 +672,8 @@ get_value_from_integer_copy_binary(const char **bufp, int *residualp)
 	if (len == -1)
 		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
-		gflog_fatal("metadb_pgsql: copy int32 length=%d", len);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy int32 length=%d", len);
 
 	COPY_INT32(val, *bufp, *residualp, "metadb_pgsql: copy int32");
 	return (val);
@@ -682,7 +689,8 @@ get_value_from_int8_copy_binary(const char **bufp, int *residualp)
 	if (len == -1)
 		return (0); /* stopgap for NULL field */
 	if (len != sizeof(val))
-		gflog_fatal("metadb_pgsql: copy int64 length=%d", len);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy int64 length=%d", len);
 
 	COPY_BINARY(val, *bufp, *residualp, "metadb_pgsql: copy int64");
 	val = gfarm_ntoh64(val);
@@ -726,7 +734,7 @@ gfarm_pgsql_generic_load(
 	} while (PQresultStatus(res) != PGRES_COPY_OUT &&
 	    pgsql_should_retry(res, &retry_count));
 	if (PQresultStatus(res) != PGRES_COPY_OUT) {
-		gflog_error("%s: %s: %s", diag, command,
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 		PQclear(res);
 		return (GFARM_ERR_UNKNOWN);
@@ -736,7 +744,7 @@ gfarm_pgsql_generic_load(
 	ret = PQgetCopyData(conn, &buf,	0);
 	if (ret < COPY_BINARY_HEADER_LEN + COPY_BINARY_TRAILER_LEN ||
 	    memcmp(buf, binary_signature, COPY_BINARY_SIGNATURE_LEN) != 0) {
-		gflog_fatal("%s: "
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: "
 		    "Fatal Error, COPY file signature not recognized: %d",
 		    diag, ret);
 	}
@@ -746,14 +754,14 @@ gfarm_pgsql_generic_load(
 
 	COPY_INT32(header_flags, bp, ret, "db_pgsql: COPY header flag");
 	if (header_flags & COPY_BINARY_FLAGS_CRITICAL)
-		gflog_fatal("%s: "
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: "
 		    "Fatal Error, COPY file protocol incompatible: 0x%08x",
 		    diag, header_flags);
 
 	COPY_INT32(extension_area_len, bp, ret,
 	    "db_pgsql: COPY extension area length");
 	if (ret < extension_area_len)
-		gflog_fatal("%s: "
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: "
 		    "Fatal Error, COPY file extension_area too short: %d < %d",
 		    diag, ret, extension_area_len);
 	bp  += extension_area_len;
@@ -761,7 +769,7 @@ gfarm_pgsql_generic_load(
 
 	for (;;) {
 		if (ret < COPY_BINARY_TRAILER_LEN)
-			gflog_fatal("%s: "
+			gflog_fatal(GFARM_MSG_UNFIXED, "%s: "
 			    "Fatal error, COPY file trailer too short: %d",
 			    diag, ret);
 		/* don't use COPY_BINARY() here to not proceed the pointer */
@@ -773,7 +781,7 @@ gfarm_pgsql_generic_load(
 			/* make sure that the COPY is done */
 			ret = PQgetCopyData(conn, &buf, 0);
 			if (ret >= 0)
-				gflog_fatal("%s: "
+				gflog_fatal(GFARM_MSG_UNFIXED, "%s: "
 				    "Fatal error, COPY file data after trailer"
 				    ": %d", diag, ret);
 			break;
@@ -790,23 +798,25 @@ gfarm_pgsql_generic_load(
 		ret = PQgetCopyData(conn, &buf, 0);
 		bp = buf;
 		if (ret < 0) {
-			gflog_warning(
+			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s: warning: COPY file expected end of data",
 			    diag);
 			break;
 		}
 	}
 	if (buf != NULL)
-		gflog_warning(
+		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: warning: COPY file NULL expected, possibly leak?",
 		    diag);
 	if (ret == PQ_GET_COPY_DATA_ERROR) {
-		gflog_error("%s: data error: %s", diag, PQerrorMessage(conn));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: data error: %s", diag, PQerrorMessage(conn));
 		return (GFARM_ERR_UNKNOWN);
 	}
 	res = PQgetResult(conn);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		gflog_error("%s: failed: %s", diag, PQresultErrorMessage(res));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failed: %s", diag, PQresultErrorMessage(res));
 		PQclear(res);
 		return (GFARM_ERR_UNKNOWN);
 	}
@@ -1615,7 +1625,8 @@ inode_info_set_fields_from_copy_binary(
 	    "pgsql_inode_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 13) /* allow fields addition in future */
-		gflog_fatal("pgsql_inode_load: fields = %d", num_fields);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_inode_load: fields = %d", num_fields);
 
 	info->st_ino = get_value_from_int8_copy_binary(&buf, &residual);
 	info->st_gen = get_value_from_int8_copy_binary(&buf, &residual);
@@ -1750,7 +1761,8 @@ file_info_set_fields_from_copy_binary(
 	    "pgsql_file_info_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal("pgsql_file_info_load: fields = %d", num_fields);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_file_info_load: fields = %d", num_fields);
 
 	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
 	info->type = get_value_from_varchar_copy_binary(&buf, &residual);
@@ -1836,7 +1848,8 @@ filecopy_set_fields_from_copy_binary(
 	    "pgsql_filecopy_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 2) /* allow fields addition in future */
-		gflog_fatal("pgsql_filecopy_load: fields = %d", num_fields);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_filecopy_load: fields = %d", num_fields);
 
 	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
 	info->hostname = get_value_from_varchar_copy_binary(&buf, &residual);
@@ -1925,7 +1938,8 @@ deadfilecopy_set_fields_from_copy_binary(
 	    "pgsql_deadfilecopy_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal("pgsql_deadfilecopy_load: fields = %d",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_deadfilecopy_load: fields = %d",
 		    num_fields);
 
 	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
@@ -2019,7 +2033,8 @@ direntry_set_fields_from_copy_binary(
 	    "pgsql_direntry_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 3) /* allow fields addition in future */
-		gflog_fatal("pgsql_direntry_load: fields = %d", num_fields);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_direntry_load: fields = %d", num_fields);
 
 	info->dir_inum = get_value_from_int8_copy_binary(&buf, &residual);
 	info->entry_name = get_value_from_varchar_copy_binary(&buf, &residual);
@@ -2105,7 +2120,8 @@ symlink_set_fields_from_copy_binary(
 	    "pgsql_symlink_load: field number");
 	num_fields = ntohs(num_fields);
 	if (num_fields < 2) /* allow fields addition in future */
-		gflog_fatal("pgsql_symlink_load: fields = %d", num_fields);
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_symlink_load: fields = %d", num_fields);
 
 	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
 	info->source_path = get_value_from_varchar_copy_binary(&buf, &residual);

@@ -336,7 +336,8 @@ gfs_hook_syscall_fxstat64(int ver, int filedes, struct stat64 *buf)
 OFF_T
 __llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(gflog_info("Hooking " "__llseek" ": %d",
+	_gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	    "Hooking " "__llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -344,7 +345,8 @@ __llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 _llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(gflog_info("Hooking " "_llseek" ": %d",
+	_gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	    "Hooking " "_llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }
@@ -352,7 +354,8 @@ _llseek(int filedes, OFF_T offset, int whence)
 OFF_T
 llseek(int filedes, OFF_T offset, int whence)
 {
-	_gfs_hook_debug_v(gflog_info("Hooking " "llseek" ": %d",
+	_gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	    "Hooking " "llseek" ": %d",
 	    filedes));
 	return (FUNC___LSEEK(filedes, offset, whence));
 }

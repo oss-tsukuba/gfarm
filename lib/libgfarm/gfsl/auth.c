@@ -72,7 +72,7 @@ setAuthFile(char *usermap)
 	err = "no memory";
     pthread_mutex_unlock(&authFile_mutex);
     if (err != NULL) {
-	gflog_auth_warning("%s: %s", msg, err);
+	gflog_auth_warning(GFARM_MSG_UNFIXED, "%s: %s", msg, err);
 	return (-1);
     }
     return (0);
@@ -112,11 +112,12 @@ getAuthFileStat(struct stat *sb)
     char *file = getAuthFile(), *msg = "getAuthFileStat()";
 
     if (file == NULL) {
-	gflog_auth_warning("%s: AuthFile not set or no memory", msg);
+	gflog_auth_warning(GFARM_MSG_UNFIXED,
+	    "%s: AuthFile not set or no memory", msg);
 	return (-1);
     }
     if (stat(file, sb) < 0) {
-	gflog_auth_warning("%s: not found: %s", msg, file);
+	gflog_auth_warning(GFARM_MSG_UNFIXED, "%s: not found: %s", msg, file);
     	free(file);
 	return (-1);
     }
@@ -179,7 +180,7 @@ gfarmAuthInitialize(usermapFile)
 	if (usermapFile == NULL || usermapFile[0] == '\0') {
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
-		gflog_auth_error("%s: no memory", msg);
+		gflog_auth_error(GFARM_MSG_UNFIXED, "%s: no memory", msg);
 		ret = -1;
 		goto done;
 	    }
@@ -193,7 +194,7 @@ gfarmAuthInitialize(usermapFile)
 	    (void)free(confDir);
 	}
 	if ((mFd = fopen(usermapFile, "r")) == NULL) {
-	    gflog_auth_error("%s: cannot open: %s",
+	    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: cannot open: %s",
 		usermapFile, strerror(errno));
 	    ret = -1;
 	    goto done;
@@ -203,7 +204,7 @@ gfarmAuthInitialize(usermapFile)
 					   gfarm_hash_default,
 					   gfarm_hash_key_equal_default);
 	if (authTable == NULL) { /* no memory */
-	    gflog_auth_error("%s: no memory", msg);
+	    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: no memory", msg);
 	    ret = -1;
 	    goto done;
 	}
@@ -212,7 +213,7 @@ gfarmAuthInitialize(usermapFile)
 					      gfarm_hash_default,
 					      gfarm_hash_key_equal_default);
 	if (userToDNTable == NULL) { /* no memory */
-	    gflog_auth_error("%s: no memory", msg);
+	    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: no memory", msg);
 	    gfarm_hash_table_free(authTable);
 	    ret = -1;
 	    goto done;
@@ -244,7 +245,8 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (nToken == 0) {
 		continue;
 	    } else {
-		gflog_warning("%s: WARNING: missing local username for DN."
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: WARNING: missing local username for DN."
 			      " Ignored.", distName);
 		continue;
 	    }
@@ -265,18 +267,20 @@ gfarmAuthInitialize(usermapFile)
 	    if (strcmp(mode, "@user@") == 0) {
 		pPtr = getpwnam(localName);
 		if (pPtr == NULL) {
-		    gflog_auth_warning("%s: WARNING: Account doesn't exist."
+		    gflog_auth_warning(GFARM_MSG_UNFIXED,
+			"%s: WARNING: Account doesn't exist."
 				       " Ignored.", localName);
 		    continue;
 		}
 		if (pPtr->pw_uid == 0) {
-		    gflog_warning("%s: WARNING: This user is a super user."
+		    gflog_warning(GFARM_MSG_UNFIXED,
+			"%s: WARNING: This user is a super user."
 				  " Ignored.", localName);
 		    continue;
 		}
 		GFARM_MALLOC(aePtr);
 		if (aePtr == NULL) {
-		    gflog_auth_error("%s: no memory", msg);
+		    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: no memory", msg);
 		    ret = -1;
 		    goto initDone;
 		}
@@ -296,10 +300,11 @@ gfarmAuthInitialize(usermapFile)
 					strlen(localName) + 1,
 					sizeof(aePtr), &isNew);
 		if (ePtr == NULL) { /* no memory */
-		    gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+		    gflog_warning(GFARM_MSG_UNFIXED,
+			"%s: WARNING: no memory for DN. Ignored.",
 				  localName);
 		} else if (!isNew) {
-		    gflog_auth_warning(
+		    gflog_auth_warning(GFARM_MSG_UNFIXED,
 			"%s: WARNING: multiple X.509 Distinguish name "
 			"for a UNIX user account. Ignored.", localName);
 		} else {
@@ -309,7 +314,7 @@ gfarmAuthInitialize(usermapFile)
 	    } else if (strcmp(mode, "@host@") == 0) {
 		GFARM_MALLOC(aePtr);
 		if (aePtr == NULL) {
-		    gflog_auth_error("%s: no memory", msg);
+		    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: no memory", msg);
 		    ret = -1;
 		    goto initDone;
 		}
@@ -321,7 +326,8 @@ gfarmAuthInitialize(usermapFile)
 		aePtr->distName = strdup(distName);
 		aePtr->authData.hostAuth.FQDN = strdup(localName);
 	    } else {
-		gflog_warning("%s: WARNING: Unknown keyword at second field."
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: WARNING: Unknown keyword at second field."
 			      " Ignored.", localName);
 		continue;
 	    }
@@ -330,7 +336,8 @@ gfarmAuthInitialize(usermapFile)
 				    strlen(aePtr->distName) + 1,
 				    sizeof(aePtr), &isNew);
 	    if (ePtr == NULL) { /* no memory */
-		gflog_warning("%s: WARNING: no memory for DN. Ignored.",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: WARNING: no memory for DN. Ignored.",
 			      distName);
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 		if (aePtr->authType == GFARM_AUTH_USER)
@@ -342,7 +349,8 @@ gfarmAuthInitialize(usermapFile)
 		goto initDone;
 	    }
 	    if (!isNew) {
-		gflog_warning("%s: WARNING: duplicate DN. Ignored.", distName);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: WARNING: duplicate DN. Ignored.", distName);
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 		if (aePtr->authType == GFARM_AUTH_USER)
 		    gfarm_hash_purge(userToDNTable,

@@ -402,9 +402,11 @@ inum_path_array_init(struct inum_path_array *array, char *expr)
 
 	memset(array, 0, sizeof(*array));
 	if ((err = pthread_mutex_init(&array->lock, NULL)) != 0)
-		gflog_fatal("%s: mutex: %s", msg, strerror(err));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: mutex: %s", msg, strerror(err));
 	if ((err = pthread_cond_init(&array->cond, NULL)) != 0)
-		gflog_fatal("%s: cond: %s", msg, strerror(err));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: cond: %s", msg, strerror(err));
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(array->entries); i++)
 		inum_path_entry_init(array, &array->entries[i]);
@@ -761,7 +763,7 @@ db_findxmlattr_wait(struct inum_path_array *array, int idx)
 	while (IS_UNSET_ERRNO(entry->dberr)) {
 		err = pthread_cond_wait(&array->cond, &array->lock);
 		if (err != 0)
-			gflog_fatal("db_findxmlattr_wait: "
+			gflog_fatal(GFARM_MSG_UNFIXED, "db_findxmlattr_wait: "
 				"condwait finished: %s", strerror(err));
 	}
 }
@@ -1008,7 +1010,8 @@ quit:
 				    ctxp->entries[i].path,
 				    ctxp->entries[i].attrname);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning("%s@%s: findxmlattr: %s",
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%s@%s: findxmlattr: %s",
 					peer_get_username(peer),
 					peer_get_hostname(peer),
 					gfarm_error_string(e));

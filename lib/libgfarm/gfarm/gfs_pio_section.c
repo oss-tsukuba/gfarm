@@ -310,7 +310,7 @@ gfm_schedule_file_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_schedule_file_request(gfm_server, "");
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("schedule_file request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED, "schedule_file request: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -324,7 +324,7 @@ gfm_schedule_file_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug("schedule_file result: %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "schedule_file result: %s",
 		    gfarm_error_string(e));
 #endif
 	return (e);
@@ -404,7 +404,8 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	gfs_profile(gfarm_gettimerval(&t4));
 
 	gfs_profile(
-		gflog_info("(connect_and_open) connection_acquire %f, "
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(connect_and_open) connection_acquire %f, "
 			   "process_set %f, open %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
@@ -452,10 +453,11 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gflog_info("schedule_file -> %d hosts", nhosts));
+	gfs_profile(gflog_info(GFARM_MSG_UNFIXED,
+	    "schedule_file -> %d hosts", nhosts));
 	gfs_profile(
 		for (i = 0; i < nhosts; ++i)
-			gflog_info("<%s>", infos[i].host));
+			gflog_info(GFARM_MSG_UNFIXED, "<%s>", infos[i].host));
 
 	if (nhosts == 1)
 		e = choose_trivial_one(&infos[0], &host, &port);
@@ -491,11 +493,12 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 			free(host);
 		return (e);
 	}
-	gfs_profile(gflog_info("host -> %s", host));
+	gfs_profile(gflog_info(GFARM_MSG_UNFIXED, "host -> %s", host));
 	gfs_profile(gfarm_gettimerval(&t3));
 
 	gfs_profile(
-		gflog_info("(gfarm_schedule_file) schedule %f, select %f",
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(gfarm_schedule_file) schedule %f, select %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2)));
 	*hostp = host;
@@ -915,7 +918,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 void
 gfs_pio_section_display_timers(void)
 {
-	gflog_info("gfs_pio_set_view_section : %f sec",
+	gflog_info(GFARM_MSG_UNFIXED, "gfs_pio_set_view_section : %f sec",
 		gfs_pio_set_view_section_time);
 }
 

@@ -193,7 +193,8 @@ gfm_getdirents_request(struct gfm_connection *gfm_server, void *closure)
 	    DIRENTS_BUFCOUNT);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("getdirents request: %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "getdirents request: %s", gfarm_error_string(e));
 	return (e);
 }
 
@@ -205,7 +206,8 @@ gfm_getdirents_result(struct gfm_connection *gfm_server, void *closure)
 	    &dir->n, dir->buffer);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("getdirents result: %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "getdirents result: %s", gfarm_error_string(e));
 	return (e);
 }
 

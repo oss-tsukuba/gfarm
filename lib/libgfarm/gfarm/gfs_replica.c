@@ -26,7 +26,8 @@ gfm_replica_list_by_name_request(struct gfm_connection *gfm_server,
 	gfarm_error_t e = gfm_client_replica_list_by_name_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("replica_list_by_name request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "replica_list_by_name request: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -41,7 +42,8 @@ gfm_replica_list_by_name_result(struct gfm_connection *gfm_server,
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug("replica_list_by_name result: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_list_by_name result: %s",
 		    gfarm_error_string(e));
 #endif
 	return (e);
@@ -93,7 +95,8 @@ gfm_replica_remove_by_file_request(struct gfm_connection *gfm_server,
 	    c->host);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("replica_remove_by_file request: %s",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "replica_remove_by_file request: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -106,7 +109,8 @@ gfm_replica_remove_by_file_result(struct gfm_connection *gfm_server,
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug("replica_remove_by_file result: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_remove_by_file result: %s",
 		    gfarm_error_string(e));
 #endif
 	return (e);

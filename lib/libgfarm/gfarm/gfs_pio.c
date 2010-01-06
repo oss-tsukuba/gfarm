@@ -1117,16 +1117,27 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 void
 gfs_pio_display_timers(void)
 {
-	gflog_info("gfs_pio_create  : %g sec", gfs_pio_create_time);
-	gflog_info("gfs_pio_open    : %g sec", gfs_pio_open_time);
-	gflog_info("gfs_pio_close   : %g sec", gfs_pio_close_time);
-	gflog_info("gfs_pio_seek    : %g sec", gfs_pio_seek_time);
-	gflog_info("gfs_pio_truncate : %g sec", gfs_pio_truncate_time);
-	gflog_info("gfs_pio_read    : %g sec", gfs_pio_read_time);
-	gflog_info("gfs_pio_write   : %g sec", gfs_pio_write_time);
-	gflog_info("gfs_pio_sync    : %g sec", gfs_pio_sync_time);
-	gflog_info("gfs_pio_getline : %g sec (this calls getc)",
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_create  : %g sec", gfs_pio_create_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_open    : %g sec", gfs_pio_open_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_close   : %g sec", gfs_pio_close_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_seek    : %g sec", gfs_pio_seek_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_truncate : %g sec", gfs_pio_truncate_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_read    : %g sec", gfs_pio_read_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_write   : %g sec", gfs_pio_write_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_sync    : %g sec", gfs_pio_sync_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_getline : %g sec (this calls getc)",
 			gfs_pio_getline_time);
-	gflog_info("gfs_pio_getc : %g sec", gfs_pio_getc_time);
-	gflog_info("gfs_pio_putc : %g sec", gfs_pio_putc_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_getc : %g sec", gfs_pio_getc_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_pio_putc : %g sec", gfs_pio_putc_time);
 }

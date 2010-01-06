@@ -24,7 +24,8 @@ gfm_chown_request(struct gfm_connection *gfm_server, void *closure)
 	    c->username, c->groupname);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("fchown_fd request; %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "fchown_fd request; %s", gfarm_error_string(e));
 	return (e);
 }
 
@@ -35,7 +36,8 @@ gfm_chown_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug("fchown result; %s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "fchown result; %s", gfarm_error_string(e));
 #endif
 	return (e);
 }

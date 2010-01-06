@@ -96,7 +96,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("receiving request number: %s",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "receiving request number: %s",
 		    gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e); /* finish on error */
@@ -413,17 +414,18 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_findxmlattr(peer, from_client, skip);
 		break;
 	default:
-		gflog_warning("unknown request: %d", request);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "unknown request: %d", request);
 		e = GFARM_ERR_PROTOCOL;
 	}
 	if ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
 	    || request == GFM_PROTO_COMPOUND_END) {
 		/* flush only when a COMPOUND loop is done */
 		if (debug_mode)
-			gflog_debug("gfp_xdr_flush");
+			gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_flush");
 		e2 = gfp_xdr_flush(peer_get_conn(peer));
 		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_warning("protocol flush: %s",
+			gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
 			    gfarm_error_string(e2));
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
@@ -631,17 +633,19 @@ peer_authorize(struct peer *peer)
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
 		saved_errno = errno;
-		gflog_error("authorize: getpeername: %s", strerror(errno));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "authorize: getpeername: %s", strerror(errno));
 		return (gfarm_errno_to_error(saved_errno));
 	}
 	e = gfarm_sockaddr_to_name(&addr, &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_sockaddr_to_string(&addr,
 		    addr_string, GFARM_SOCKADDR_STRLEN);
-		gflog_warning("%s: %s", gfarm_error_string(e), addr_string);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s", gfarm_error_string(e), addr_string);
 		hostname = strdup(addr_string);
 		if (hostname == NULL) {
-			gflog_warning("%s: %s", addr_string,
+			gflog_warning(GFARM_MSG_UNFIXED, "%s: %s", addr_string,
 			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -657,7 +661,8 @@ peer_authorize(struct peer *peer)
 		    id_type, username, hostname, &addr, auth_method);
 		giant_unlock();
 	} else {
-		gflog_warning("authorize: %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "authorize: %s", gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -669,7 +674,8 @@ try_auth(void *arg)
 	gfarm_error_t e;
 
 	if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning("peer_authorize: %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "peer_authorize: %s", gfarm_error_string(e));
 		giant_lock();
 		/* db_begin()/db_end() is not necessary in this case */
 		peer_free(peer);
@@ -695,10 +701,12 @@ accepting_loop(int accepting_socket)
 		   (struct sockaddr *)&client_addr, &client_addr_size);
 		if (client_socket < 0) {
 			if (errno != EINTR)
-				gflog_warning_errno("accept");
+				gflog_warning_errno(GFARM_MSG_UNFIXED,
+				    "accept");
 		} else if ((e = peer_alloc(client_socket, &peer)) !=
 		    GFARM_ERR_NO_ERROR) {
-			gflog_warning("peer_alloc: %s", gfarm_error_string(e));
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
 		} else {
 			thrpool_add_job(try_auth, peer);
@@ -721,18 +729,19 @@ open_accepting_socket(int port)
 	self_addr_size = sizeof(self_addr);
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
-		gflog_fatal_errno("accepting socket");
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "accepting socket");
 	sockopt = 1;
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 	    &sockopt, sizeof(sockopt)) == -1)
-		gflog_warning_errno("SO_REUSEADDR");
+		gflog_warning_errno(GFARM_MSG_UNFIXED, "SO_REUSEADDR");
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) < 0)
-		gflog_fatal_errno("bind accepting socket");
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "bind accepting socket");
 	e = gfarm_sockopt_apply_listener(sock);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning("setsockopt: %s", gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "setsockopt: %s", gfarm_error_string(e));
 	if (listen(sock, LISTEN_BACKLOG) < 0)
-		gflog_fatal_errno("listen");
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "listen");
 	return (sock);
 }
 
@@ -746,7 +755,7 @@ write_pid()
 
 	pid_fp = fopen(pid_file, "w");
 	if (pid_fp == NULL)
-		gflog_fatal_errno(pid_file);
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, pid_file);
 
 	fprintf(pid_fp, "%ld\n", (long)getpid());
 	fclose(pid_fp);
@@ -781,7 +790,8 @@ sigs_handler(void *p)
 
 	for (;;) {
 		if (sigwait(sigs, &sig) == -1)
-			gflog_warning("sigs_handler: %s", strerror(errno));
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "sigs_handler: %s", strerror(errno));
 #ifdef __linux__
 		/*
 		 * On linux-2.6.11 on Fedora Core 4,
@@ -794,7 +804,8 @@ sigs_handler(void *p)
 		     && sig != SIGINFO
 #endif
 		     && sig != SIGUSR2)) {
-			gflog_info("spurious signal %d received: ignoring...",
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "spurious signal %d received: ignoring...",
 			    sig);
 			continue;
 		}
@@ -823,16 +834,17 @@ sigs_handler(void *p)
 		break;
 	}
 
-	gflog_info("signal %d received: terminating...", sig);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "signal %d received: terminating...", sig);
 
 	/* we never release the giant lock until exit */
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
 
-	gflog_info("dumping dead file copies");
+	gflog_info(GFARM_MSG_UNFIXED, "dumping dead file copies");
 	host_remove_replica_dump_all();
 
-	gflog_info("shutting down peers");
+	gflog_info(GFARM_MSG_UNFIXED, "shutting down peers");
 	if (db_begin(msg) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	/*
@@ -848,7 +860,7 @@ sigs_handler(void *p)
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
 
-	gflog_info("bye");
+	gflog_info(GFARM_MSG_UNFIXED, "bye");
 	exit(0);
 
 	/*NOTREACHED*/
@@ -891,7 +903,8 @@ main(int argc, char **argv)
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
 			if (syslog_level == -1)
-				gflog_fatal("-L %s: invalid syslog priority",
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "-L %s: invalid syslog priority",
 				    optarg);
 			break;
 		case 'P':
@@ -912,7 +925,8 @@ main(int argc, char **argv)
 			syslog_facility =
 			    gflog_syslog_name_to_facility(optarg);
 			if (syslog_facility == -1)
-				gflog_fatal("%s: unknown syslog facility",
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "%s: unknown syslog facility",
 				    optarg);
 			break;
 		case 'v':
@@ -928,7 +942,8 @@ main(int argc, char **argv)
 
 	tcp_proto = getprotobyname("tcp");
 	if (tcp_proto == NULL)
-		gflog_fatal("getprotobyname(\"tcp\") failed");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "getprotobyname(\"tcp\") failed");
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
@@ -969,25 +984,29 @@ main(int argc, char **argv)
 #ifdef HAVE_LDAP
 		db_use(&db_ldap_ops);
 #else
-		gflog_fatal("LDAP DB is specified, but it's not built in");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "LDAP DB is specified, but it's not built in");
 #endif
 		break;
 	case GFARM_BACKEND_DB_TYPE_POSTGRESQL:
 #ifdef HAVE_POSTGRESQL
 		db_use(&db_pgsql_ops);
 #else
-		gflog_fatal("PostgreSQL is specified, but it's not built in");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "PostgreSQL is specified, but it's not built in");
 #endif
 		break;
 	default:
-		gflog_fatal("neither LDAP or PostgreSQL is specified "
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "neither LDAP or PostgreSQL is specified "
 		    "in configuration");
 		break;
 	}
 	e = db_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* XXX FIXME need to wait and try to reconnect */
-		gflog_fatal("database initialization failed: %s",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "database initialization failed: %s",
 		    gfarm_error_string(e));
 	}
 
@@ -1023,12 +1042,14 @@ main(int argc, char **argv)
 	pthread_sigmask(SIG_BLOCK, &sigs, NULL);
 	e = create_detached_thread(sigs_handler, &sigs);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal("create_detached_thread(sigs_handler): %s",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(sigs_handler): %s",
 			    gfarm_error_string(e));
 
 	e = create_detached_thread(db_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal("create_detached_thread(db_thread): %s",
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(db_thread): %s",
 			    gfarm_error_string(e));
 
 	accepting_loop(sock);

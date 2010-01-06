@@ -266,10 +266,10 @@ db_initialize(void)
 gfarm_error_t
 db_terminate(void)
 {
-	gflog_info("try to stop database syncer");
+	gflog_info(GFARM_MSG_UNFIXED, "try to stop database syncer");
 	dbq_wait_to_finish(&dbq);
 
-	gflog_info("terminating the database");
+	gflog_info(GFARM_MSG_UNFIXED, "terminating the database");
 	return ((*ops->terminate)());
 }
 
@@ -296,7 +296,8 @@ db_begin(const char *diag)
 	gfarm_error_t e = dbq_enter(&dbq, (dbq_entry_func_t)ops->begin, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("%s: db_begin(): %s", diag, gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: db_begin(): %s", diag, gfarm_error_string(e));
 	return (e);
 }
 
@@ -306,7 +307,8 @@ db_end(const char *diag)
 	gfarm_error_t e = dbq_enter(&dbq, (dbq_entry_func_t)ops->end, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error("%s: db_end(): %s", diag, gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: db_end(): %s", diag, gfarm_error_string(e));
 	return (e);
 }
 

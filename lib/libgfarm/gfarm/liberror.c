@@ -519,7 +519,8 @@ gfarm_errno_to_error_initialize(void)
 	    gfarm_errno_to_string, NULL,
 	    &gfarm_errno_domain);
 	if (e != GFARM_ERR_NO_ERROR) /* really fatal problem */
-		gflog_fatal("libgfarm: cannot allocate error map for errno");
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "libgfarm: cannot allocate error map for errno");
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];

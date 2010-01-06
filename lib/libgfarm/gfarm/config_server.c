@@ -36,7 +36,7 @@ gfarm_server_config_read(void)
 	}
 	e = gfarm_config_read_file(config, &lineno);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("%s: %d: %s",
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %d: %s",
 		    gfarm_config_file, lineno, gfarm_error_string(e));
 		return (e);
 	}

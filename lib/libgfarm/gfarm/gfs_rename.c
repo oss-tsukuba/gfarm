@@ -25,12 +25,14 @@ gfs_rename(const char *src, const char *dst)
 
 		if ((e = gfarm_url_parse_metadb(&spath, &sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("url_parse_metadb(%s): %s", src,
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "url_parse_metadb(%s): %s", src,
 			    gfarm_error_string(e));
 			return (e);
 		} else if ((e = gfarm_url_parse_metadb(&dpath, &dgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("url_parse_metadb(%s): %s", dst,
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "url_parse_metadb(%s): %s", dst,
 			    gfarm_error_string(e));
 			gfm_client_connection_free(sgfmd);
 			return (e);
@@ -42,14 +44,15 @@ gfs_rename(const char *src, const char *dst)
 
 		if ((e = gfm_tmp_lookup_parent_request(sgfmd, spath, &sbase))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("tmp_lookup_parent(%s) request: %s", src,
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "tmp_lookup_parent(%s) request: %s", src,
 			    gfarm_error_string(e));
 		} else if (sbase[0] == '/' && sbase[1] == '\0') {
 			/* "/" is special */
 			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((e = gfm_client_save_fd_request(sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("save_fd request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED, "save_fd request: %s",
 			    gfarm_error_string(e));
 		}
 		if (e != GFARM_ERR_NO_ERROR)
@@ -57,7 +60,8 @@ gfs_rename(const char *src, const char *dst)
 
 		if ((e = gfm_lookup_dir_request(dgfmd, dpath, &dbase))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("lookup_dir(%s) request: %s", dst,
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "lookup_dir(%s) request: %s", dst,
 			    gfarm_error_string(e));
 		} else if (dbase[0] == '/' && dbase[1] == '\0') {
 			/* "/" is special */
@@ -65,7 +69,7 @@ gfs_rename(const char *src, const char *dst)
 		} else if (e_save == GFARM_ERR_NO_ERROR &&
 		    (e = gfm_client_rename_request(sgfmd, sbase, dbase))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("rename request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED, "rename request: %s",
 			    gfarm_error_string(e));
 		}
 		if (e != GFARM_ERR_NO_ERROR)
@@ -73,7 +77,8 @@ gfs_rename(const char *src, const char *dst)
 
 		if ((e = gfm_client_compound_end_request(sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end request: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end request: %s",
 			    gfarm_error_string(e));
 
 		} else if ((e = gfm_tmp_lookup_parent_result(sgfmd, spath,
@@ -84,7 +89,8 @@ gfs_rename(const char *src, const char *dst)
 				continue;
 			}
 #if 0 /* DEBUG */
-			gflog_debug("tmp_lookup_parent(%s) result: %s", src,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "tmp_lookup_parent(%s) result: %s", src,
 			    gfarm_error_string(e));
 #endif
 		} else if (sbase[0] == '/' && sbase[1] == '\0') {
@@ -92,7 +98,7 @@ gfs_rename(const char *src, const char *dst)
 			e_save = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((e = gfm_client_save_fd_result(sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("save_fd result: %s",
+			gflog_warning(GFARM_MSG_UNFIXED, "save_fd result: %s",
 			    gfarm_error_string(e));
 		}
 		if (e != GFARM_ERR_NO_ERROR)
@@ -101,7 +107,8 @@ gfs_rename(const char *src, const char *dst)
 		if ((e = gfm_lookup_dir_result(dgfmd, dpath, &dbase))
 		    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-			gflog_debug("lookup_dir(%s) result: %s", dst,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "lookup_dir(%s) result: %s", dst,
 			    gfarm_error_string(e));
 #endif
 		} else if (dbase[0] == '/' && dbase[1] == '\0') {
@@ -111,7 +118,8 @@ gfs_rename(const char *src, const char *dst)
 		    (e = gfm_client_rename_result(sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-			gflog_debug("rename(%s, %s) result: %s", src, dst,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "rename(%s, %s) result: %s", src, dst,
 			    gfarm_error_string(e));
 #endif
 		}
@@ -120,7 +128,8 @@ gfs_rename(const char *src, const char *dst)
 
 		if ((e = gfm_client_compound_end_result(sgfmd))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_warning("compound_end result: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "compound_end result: %s",
 			    gfarm_error_string(e));
 		}
 

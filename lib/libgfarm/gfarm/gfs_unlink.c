@@ -45,5 +45,6 @@ gfs_unlink(const char *path)
 void
 gfs_unlink_display_timers(void)
 {
-	gflog_info("gfs_unlink      : %g sec", gfs_unlink_time);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "gfs_unlink      : %g sec", gfs_unlink_time);
 }

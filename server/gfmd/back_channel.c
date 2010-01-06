@@ -40,12 +40,14 @@ gfs_client_rpc_back_channel(struct peer *peer, const char *diag, int command,
 	va_end(ap);
 	if (IS_CONNECTION_ERROR(e)) {
 		/* back channel is disconnected */
-		gflog_warning("back channel disconnected: %s",
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "back channel disconnected: %s",
 			      gfarm_error_string(e));
 		host_peer_unset(peer_get_host(peer));
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning("%s: %s", diag, gfarm_error_string(e));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
@@ -87,7 +89,7 @@ remover(void *arg)
 	struct timeval now;
 	struct timespec timeout;
 
-	gflog_notice("heartbeat interval: %d sec",
+	gflog_notice(GFARM_MSG_UNFIXED, "heartbeat interval: %d sec",
 	    gfarm_metadb_heartbeat_interval);
 	while (1) {
 		e = host_update_status(host);
@@ -109,7 +111,8 @@ remover(void *arg)
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
-	gflog_warning("remover: %s", peer_had_protocol_error(peer) ?
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "remover: %s", peer_had_protocol_error(peer) ?
 		"protocol error" : gfarm_error_string(e));
 	host_peer_unset(host);
 	giant_lock();
@@ -150,10 +153,11 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, "switch_back_channel", e, "");
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
-			gflog_debug("gfp_xdr_flush");
+			gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_flush");
 		e = gfp_xdr_flush(peer_get_conn(peer));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning("back channel protocol flush: %s",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "back channel protocol flush: %s",
 			    gfarm_error_string(e));
 	}
 

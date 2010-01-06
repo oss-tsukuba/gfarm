@@ -106,7 +106,8 @@ process_alloc(struct user *user,
 	if (process_id_table == NULL) {
 		process_id_table = gfarm_id_table_alloc(&process_id_table_ops);
 		if (process_id_table == NULL)
-			gflog_fatal("allocating pid table: no memory");
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "allocating pid table: no memory");
 	}
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||

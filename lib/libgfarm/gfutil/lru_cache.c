@@ -82,7 +82,8 @@ gfarm_lru_cache_delref_entry(struct gfarm_lru_cache *cache,
 {
 	if (--entry->acquired <= 0) {
 		if (entry->acquired < 0) {
-			gflog_error("gfarm_lru_cache_delref_entry: %d\n",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfarm_lru_cache_delref_entry: %d\n",
 			    entry->acquired);
 			abort();
 		}
@@ -106,10 +107,13 @@ gfarm_lru_cache_gc(struct gfarm_lru_cache *cache, int free_target,
 		prev = entry->prev;
 
 		if (entry == &cache->list_head) {
-			gflog_error("free %s/target = %d/%d", entry_name,
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "free %s/target = %d/%d", entry_name,
 			    cache->free_cached_entries, free_target);
-			gflog_error("But no free %s is found.", entry_name);
-			gflog_error("This shouldn't happen");
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "But no free %s is found.", entry_name);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "This shouldn't happen");
 			abort();
 		}
 

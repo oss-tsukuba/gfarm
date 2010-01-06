@@ -37,7 +37,8 @@ thrjobq_init(struct thread_jobq *q, int size)
 	q->n = q->in = q->out = 0;
 	GFARM_MALLOC_ARRAY(q->entries, size);
 	if (q->entries == NULL)
-		gflog_fatal("%s: jobq size: %s", msg, strerror(ENOMEM));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: jobq size: %s", msg, strerror(ENOMEM));
 }
 
 
@@ -141,7 +142,8 @@ thrpool_add_job(void *(*thread_main)(void *), void *arg)
 		if (e == GFARM_ERR_NO_ERROR) {
 			p->threads++;
 		} else {
-			gflog_warning("%s: create thread: %s\n",
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: create thread: %s\n",
 			    msg, gfarm_error_string(e));
 		}
 	}
@@ -162,5 +164,6 @@ thrpool_info(void)
 	i = p->idles;
 	mutex_unlock(&p->mutex, msg, "thrpool");
 
-	gflog_info("number of worker threads: %d, idle threads: %d", n, i);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "number of worker threads: %d, idle threads: %d", n, i);
 }

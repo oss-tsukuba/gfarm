@@ -60,14 +60,16 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 
 	e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: %s: protocol drain: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "authorize_gsi: %s: protocol drain: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
 
 	e = gfarm_gsi_server_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("authorize_gsi: %s: GSI initialize: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "authorize_gsi: %s: GSI initialize: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
@@ -93,7 +95,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    gfarm_host_get_self_name(),
 		    &desired_name);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_auth_error("%s: "
+			gflog_auth_error(GFARM_MSG_UNFIXED, "%s: "
 			    "Server credential configuration for %s:%s: %s",
 			    hostname,
 			    service_tag, hostname, gfarm_error_string(e));
@@ -106,12 +108,13 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			gfarmGssDeleteName(&desired_name, NULL, NULL);
 		if (rv < 0) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(
+				gflog_error(GFARM_MSG_UNFIXED,
 				    "%s: Can't get server credential for %s",
 				    hostname, service_tag);
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
-				gflog_error("GSI authentication error: %s",
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "GSI authentication error: %s",
 				    hostname);
 			}
 			return (GFARM_ERR_AUTHENTICATION);
@@ -124,18 +127,21 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		
 		if (gfarmGssDeleteCredential(&cred, &e_major2, &e_minor2) < 0
 		    && gflog_auth_get_verbose()) {
-			gflog_warning("Can't release credential because of:");
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "Can't release credential because of:");
 			gfarmGssPrintMajorStatus(e_major2);
 			gfarmGssPrintMinorStatus(e_minor2);
 		}
 	}
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error("%s: Can't accept session because of:",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: Can't accept session because of:",
 			    hostname);
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
-			gflog_error("GSI authentication error: %s", hostname);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "GSI authentication error: %s", hostname);
 		}
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -155,7 +161,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    userinfo->distName, &global_username);
 		break;
 	default:
-		gflog_error("authorize_gsi: \"%s\" @ %s: auth entry type=%d",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "authorize_gsi: \"%s\" @ %s: auth entry type=%d",
 		    userinfo->distName, hostname,
 		    gfarmAuthGetAuthEntryType(userinfo));
 		e = GFARM_ERR_AUTHENTICATION;
@@ -166,7 +173,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		/* assert(error == GFARM_AUTH_ERROR_NO_ERROR); */
 
 		/* succeed, do logging */
-		gflog_notice(
+		gflog_notice(GFARM_MSG_UNFIXED,
 		    "(%s@%s) authenticated: auth=%s local_user=%s DN=\"%s\"",
 		    global_username, hostname,
 		    gfarm_auth_method_name(auth_method),
@@ -180,7 +187,8 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			if (aux == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
-				gflog_error("(%s@%s) authorize_gsi: %s",
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "(%s@%s) authorize_gsi: %s",
 				    global_username, hostname,
 				    gfarm_error_string(e));
 			}
@@ -190,10 +198,12 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	gfp_xdr_set_secsession(conn, session, GSS_C_NO_CREDENTIAL);
 	e2 = gfp_xdr_send(conn, "i", error);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error("(%s@%s) authorize_gsi: send reply: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%s@%s) authorize_gsi: send reply: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	} else if ((e2 = gfp_xdr_flush(conn)) != GFARM_ERR_NO_ERROR) {
-		gflog_error("(%s@%s) authorize_gsi: completion: %s",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%s@%s) authorize_gsi: completion: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	}
 

@@ -16,24 +16,25 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 	struct gfs_stat gs;
 	int nf = -1, np, errno_save = errno;
 
-	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___STAT) "(%s)",
+	_gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	    "Hooking " S(FUNC___STAT) "(%s)",
 	    path));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_STAT(path, buf));
 
-	_gfs_hook_debug(gflog_info(
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 	    "GFS: Hooking " S(FUNC___STAT) "(%s)", path));
 
 	switch (gfs_hook_get_current_view()) {
 	case section_view:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)",
 			url, gfs_hook_get_current_section()));
 		e = GFS_STAT_SECTION(url, gfs_hook_get_current_section(), &gs);
 		break;
 	case index_view:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)",
 			url, gfs_hook_get_current_index()));
 		e = GFS_STAT_INDEX(url, gfs_hook_get_current_index(), &gs);
@@ -46,25 +47,25 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		 */
 		if (gfarm_url_fragment_number(url, &nf) == NULL) {
 			if (gfs_pio_get_node_size(&np) == NULL && nf == np) {
-				_gfs_hook_debug(gflog_info(
+				_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 					"GFS: " S(GFS_STAT_INDEX) "(%s, %d)",
 					url, gfarm_node));
 				e = GFS_STAT_INDEX(url, gfarm_node, &gs);
 			}
 			else {
-				_gfs_hook_debug(gflog_info(
+				_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 					"GFS: " S(GFS_STAT) "(%s)", url));
 				e = GFS_STAT(url, &gs);
 			}
 		}
 		else {
-			_gfs_hook_debug(gflog_info(
+			_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 				"GFS: " S(GFS_STAT) "(%s)", url));
 			e = GFS_STAT(url, &gs);
 		}
 		break;
 	default:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT) "(%s)", url));
 		e = GFS_STAT(url, &gs);
 	}
@@ -99,7 +100,8 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 		return (0);
 	}
 
-	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___STAT) ": %s", e));
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: " S(FUNC___STAT) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -107,14 +109,16 @@ FUNC___STAT(const char *path, STRUCT_STAT *buf)
 int
 FUNC__STAT(const char *path, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC__STAT) ": %s", path));
+    _gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	"Hooking " S(FUNC__STAT) ": %s", path));
     return (FUNC___STAT(path, buf));
 }
 
 int
 FUNC_STAT(const char *path, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_STAT) ": %s", path));
+    _gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	"Hooking " S(FUNC_STAT) ": %s", path));
     return (FUNC___STAT(path, buf));
 }
 
@@ -134,14 +138,15 @@ int
 FUNC___STAT(const char *path, STRUCT_STAT *buf)
 {
     _gfs_hook_debug_v(
-	gflog_info("Hooking " S(FUNC___STAT) ": %s", path));
+	gflog_info(GFARM_MSG_UNFIXED, "Hooking " S(FUNC___STAT) ": %s", path));
     return (FUNC___XSTAT(_STAT_VER, path, buf));
 }
 
 int
 FUNC_STAT(const char *path, STRUCT_STAT *buf)
 {
-    _gfs_hook_debug_v(gflog_info("Hooking " S(FUNC_STAT) ": %s", path));
+    _gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	"Hooking " S(FUNC_STAT) ": %s", path));
     return (FUNC___XSTAT(_STAT_VER, path, buf));
 }
 
@@ -161,24 +166,25 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 	struct gfs_stat gs;
 	int nf = -1, np, errno_save = errno;
 
-	_gfs_hook_debug_v(gflog_info("Hooking " S(FUNC___XSTAT) "(%s)",
+	_gfs_hook_debug_v(gflog_info(GFARM_MSG_UNFIXED,
+	    "Hooking " S(FUNC___XSTAT) "(%s)",
 	    path));
 
 	if (!gfs_hook_is_url(path, &url))
 		return (SYSCALL_XSTAT(ver, path, buf));
 
-	_gfs_hook_debug(gflog_info(
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 	    "GFS: Hooking " S(FUNC___XSTAT) "(%s)", path));
 
 	switch (gfs_hook_get_current_view()) {
 	case section_view:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT_SECTION) "(%s, %s)",
 			url, gfs_hook_get_current_section()));
 		e = GFS_STAT_SECTION(url, gfs_hook_get_current_section(), &gs);
 		break;
 	case index_view:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT_INDEX) "(%s, %d)",
 			url, gfs_hook_get_current_index()));
 		e = GFS_STAT_INDEX(url, gfs_hook_get_current_index(), &gs);
@@ -191,25 +197,25 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		 */
 		if (gfarm_url_fragment_number(url, &nf) == NULL) {
 			if (gfs_pio_get_node_size(&np) == NULL && nf == np) {
-				_gfs_hook_debug(gflog_info(
+				_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 					"GFS: " S(GFS_STAT_INDEX) "(%s, %d)",
 					url, gfarm_node));
 				e = GFS_STAT_INDEX(url, gfarm_node, &gs);
 			}
 			else {
-				_gfs_hook_debug(gflog_info(
+				_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 					"GFS: " S(GFS_STAT) "(%s)", url));
 				e = GFS_STAT(url, &gs);
 			}
 		}
 		else {
-			_gfs_hook_debug(gflog_info(
+			_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 				"GFS: " S(GFS_STAT) "(%s)", url));
 			e = GFS_STAT(url, &gs);
 		}
 		break;
 	default:
-		_gfs_hook_debug(gflog_info(
+		_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
 			"GFS: " S(GFS_STAT) "(%s)", url));
 		e = GFS_STAT(url, &gs);
 	}
@@ -244,7 +250,8 @@ FUNC___XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 		return (0);
 	}
 
-	_gfs_hook_debug(gflog_info("GFS: " S(FUNC___XSTAT) ": %s", e));
+	_gfs_hook_debug(gflog_info(GFARM_MSG_UNFIXED,
+	    "GFS: " S(FUNC___XSTAT) ": %s", e));
 	errno = gfarm_error_to_errno(e);
 	return (-1);
 }
@@ -253,7 +260,7 @@ int
 FUNC__XSTAT(int ver, const char *path, STRUCT_STAT *buf)
 {
     _gfs_hook_debug_v(
-	gflog_info("Hooking " S(FUNC__XSTAT) ": %s", path));
+	gflog_info(GFARM_MSG_UNFIXED, "Hooking " S(FUNC__XSTAT) ": %s", path));
     return (FUNC___XSTAT(ver, path, buf));
 }
 

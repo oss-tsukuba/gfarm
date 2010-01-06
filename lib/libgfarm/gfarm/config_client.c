@@ -109,7 +109,7 @@ gfarm_config_read(void)
 		user_config_errno = 0;
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error("%s: %d: %s",
+			gflog_error(GFARM_MSG_UNFIXED, "%s: %d: %s",
 			    rc, lineno, gfarm_error_string(e));
 			if (rc_need_free)
 				free(rc);
@@ -125,7 +125,7 @@ gfarm_config_read(void)
 	} else {
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error("%s: %d: %s",
+			gflog_error(GFARM_MSG_UNFIXED, "%s: %d: %s",
 			    gfarm_config_file, lineno, gfarm_error_string(e));
 			return (e);
 		}
@@ -402,7 +402,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error("connecting to gfmd at %s:%d: %s\n",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "connecting to gfmd at %s:%d: %s\n",
 		    gfarm_metadb_server_name, gfarm_metadb_server_port,
 		    gfarm_error_string(e));
 		return (e);

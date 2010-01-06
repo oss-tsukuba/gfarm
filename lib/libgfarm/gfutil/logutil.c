@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+#include <nl_types.h>
+#include <pthread.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -11,10 +13,15 @@
 #define GFLOG_USE_STDARG
 #include <gfarm/gflog.h>
 
+#define GFARM_CATALOG_SET_NO 1
+
 static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+static nl_catd catd = (nl_catd)-1;
+static const char *catalog_file = "gfarm.cat";
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int
 gflog_syslog_enabled(void)
@@ -23,93 +30,74 @@ gflog_syslog_enabled(void)
 }
 
 void
-gflog_vmessage(int priority, const char *format, va_list ap)
+gflog_catopen(const char *file)
+{
+	if (file == NULL)
+		catd = catopen(catalog_file, 0);
+	else
+		catd = catopen(file, 0);
+}
+
+void
+gflog_catclose()
+{
+	catclose(catd);
+}
+
+void
+gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, va_list ap)
 {
 	char buffer[2048];
+	char *catmsg = NULL;
 
 	if (priority > log_level) /* not worth reporting */
 		return;
+
+	pthread_mutex_lock(&mutex);
+
+	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
+	catmsg = catmsg == NULL ? "" : catmsg;
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 
 	if (log_auxiliary_info != NULL) {
 		if (log_use_syslog)
-			syslog(priority, "(%s) %s",
+			syslog(priority, "[%06d] (%s L%d %s()) %s / (%s) %s",
+			    msg_no, file, line_no, func, catmsg,
 			    log_auxiliary_info, buffer);
 		else
-			fprintf(stderr, "%s: (%s) %s\n",
-			    log_identifier,
+			fprintf(stderr,
+			    "%s: [%06d] (%s L%d %s()) %s / (%s) %s\n",
+			    log_identifier, msg_no, file, line_no, func, catmsg,
 			    log_auxiliary_info, buffer);
 	} else {
 		if (log_use_syslog)
-			syslog(priority, "%s", buffer);
+			syslog(priority, "[%06d] (%s L%d %s()) %s / %s",
+			    msg_no, file, line_no, func, catmsg, buffer);
 		else
-			fprintf(stderr, "%s: %s\n", log_identifier, buffer);
+			fprintf(stderr, "%s: [%06d] (%s L%d %s()) %s / %s\n",
+			    log_identifier, msg_no, file, line_no, func, catmsg,
+			    buffer);
 	}
+
+	pthread_mutex_unlock(&mutex);
 }
 
 void
-gflog_message(int priority, const char *format, ...)
+gflog_message(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, ...)
 {
 	va_list ap;
 
 	va_start(ap, format);
-	gflog_vmessage(priority, format, ap);
+	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 }
 
 void
-gflog_error(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_ERR, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_warning(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_WARNING, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_notice(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_NOTICE, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_info(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_INFO, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_debug(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_DEBUG, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_warning_errno(const char *format, ...)
+gflog_message_errno(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, ...)
 {
 	int save_errno = errno;
 	char buffer[2048];
@@ -119,35 +107,8 @@ gflog_warning_errno(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end(ap);
-	gflog_warning("%s: %s", buffer, strerror(save_errno));
-}
-
-void
-gflog_fatal(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	gflog_vmessage(LOG_ERR, format, ap);
-	va_end(ap);
-#if 0
-	abort();
-#endif
-	exit(2);
-}
-
-void
-gflog_fatal_errno(const char *format, ...)
-{
-	int save_errno = errno;
-	char buffer[2048];
-
-	va_list ap;
-
-	va_start(ap, format);
-	vsnprintf(buffer, sizeof buffer, format, ap);
-	va_end(ap);
-	gflog_fatal("%s: %s", buffer, strerror(save_errno));
+	gflog_message(msg_no, priority, file, line_no, func,
+			"%s, %s", buffer, strerror(save_errno));
 }
 
 void
@@ -267,26 +228,3 @@ gflog_auth_get_verbose(void)
 {
 	return (authentication_verbose);
 }
-
-void
-gflog_auth_error(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	if (authentication_verbose)
-		gflog_vmessage(LOG_ERR, format, ap);
-	va_end(ap);
-}
-
-void
-gflog_auth_warning(const char *format, ...)
-{
-	va_list ap;
-
-	va_start(ap, format);
-	if (authentication_verbose)
-		gflog_vmessage(LOG_WARNING, format, ap);
-	va_end(ap);
-}
-
