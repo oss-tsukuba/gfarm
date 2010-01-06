@@ -623,7 +623,7 @@ gfarm_pgsql_generic_grouping_get_all(
 
 #define COPY_BINARY(data, buf, residual, msg) { \
 	if (sizeof(data) > residual) \
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_UNFIXED, \
 		    msg ": %d bytes needed, but only %d bytes", \
 		    (int)sizeof(data), residual); \
 	memcpy(&(data), buf, sizeof(data)); \
