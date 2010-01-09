@@ -57,6 +57,7 @@ SRCS = \
 	gfs_statfsnode.c \
 	gfs_statsw.c \
 	gfs_mkdir.c \
+	gfs_quota.c \
 	gfs_readlink.c \
 	gfs_remove.c \
 	gfs_rename.c \
@@ -125,6 +126,7 @@ OBJS = \
 	gfs_statfsnode.lo \
 	gfs_statsw.lo \
 	gfs_mkdir.lo \
+	gfs_quota.lo \
 	gfs_readlink.lo \
 	gfs_remove.lo \
 	gfs_rename.lo \
@@ -198,6 +200,7 @@ gfs_pio_misc.lo: gfs_proto.h gfs_misc.h
 gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h
 gfs_proto.lo: gfs_proto.h
+gfs_quota.lo: config.h quota_info.h
 gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h host.h config.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h schedule.h gfs_misc.h
@@ -216,7 +219,7 @@ io_fd.lo: iobuffer.h io_fd.h
 io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
 lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h
-metadb_common.lo: metadb_common.h
+metadb_common.lo: metadb_common.h xattr_info.h quota_info.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h gfs_profile.h
 sockutil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h sockutil.h

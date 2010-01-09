@@ -19,12 +19,14 @@
 #include "user.h"
 #include "group.h"
 #include "peer.h"
+#include "quota.h"
 
 #define GROUP_HASHTAB_SIZE	3079	/* prime number */
 
 struct group {
 	char *groupname;
 	struct group_assignment users;
+	struct quota q;
 	int invalid;	/* set when deleted */
 };
 
@@ -115,7 +117,7 @@ group_is_invalidated(struct group *g)
 	return (g->invalid == 1);
 }
 
-static int
+int
 group_is_active(struct group *g)
 {
 	return (g != NULL && !group_is_invalidated(g));
@@ -170,6 +172,7 @@ group_enter(char *groupname, struct group **gpp)
 		free(g);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+	quota_data_init(&g->q);
 	g->users.user_prev = g->users.user_next = &g->users;
 	*(struct group **)gfarm_hash_entry_data(entry) = g;
 	group_activate(g);
@@ -192,6 +195,7 @@ group_remove(const char *groupname)
 	g = *(struct group **)gfarm_hash_entry_data(entry);
 	if (group_is_invalidated(g))
 		return (GFARM_ERR_NO_SUCH_GROUP);
+	quota_group_remove(g);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -210,6 +214,28 @@ char *
 group_name(struct group *g)
 {
 	return (group_is_active(g) ? g->groupname : REMOVED_GROUP_NAME);
+}
+
+struct quota *
+group_quota(struct group *g)
+{
+	return (&g->q);
+}
+
+void
+group_all(void *closure, void (*callback)(void *, struct group *),
+	  int active_only)
+{
+	struct gfarm_hash_iterator it;
+	struct group **g;
+
+	for (gfarm_hash_iterator_begin(group_hashtab, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		g = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
+		if (!active_only || group_is_active(*g))
+			callback(closure, *g);
+	}
 }
 
 /* The memory owner of `*gi' is changed to group.c */

@@ -5,6 +5,8 @@ struct gfarm_host_info;
 struct gfarm_user_info;
 struct gfarm_group_info;
 struct gfarm_group_names;
+struct gfarm_quota_get_info;
+struct gfarm_quota_set_info;
 
 struct gfarm_host_sched_info {
 	char *host;
@@ -248,6 +250,16 @@ gfarm_error_t gfm_client_findxmlattr_request(struct gfm_connection *,
 		struct gfs_xmlattr_ctx *ctxp);
 gfarm_error_t gfm_client_findxmlattr_result(struct gfm_connection *,
 		struct gfs_xmlattr_ctx *ctxp);
+
+gfarm_error_t gfm_client_quota_user_get(struct gfm_connection *, const char *,
+					struct gfarm_quota_get_info *);
+gfarm_error_t gfm_client_quota_user_set(struct gfm_connection *,
+					struct gfarm_quota_set_info *);
+gfarm_error_t gfm_client_quota_group_get(struct gfm_connection *, const char *,
+					 struct gfarm_quota_get_info *);
+gfarm_error_t gfm_client_quota_group_set(struct gfm_connection *,
+					struct gfarm_quota_set_info *);
+gfarm_error_t gfm_client_quota_check(struct gfm_connection *);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_client_reopen_request(struct gfm_connection *);

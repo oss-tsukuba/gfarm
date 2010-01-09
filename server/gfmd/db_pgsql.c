@@ -28,6 +28,8 @@
 #include "config.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
+#include "quota_info.h"
+#include "quota.h"
 
 #include "db_common.h"
 #include "db_access.h"
@@ -2486,6 +2488,227 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 
 /**********************************************************************/
 
+/* quota */
+static gfarm_error_t
+pgsql_quota_call(struct db_quota_arg *info, const char *sql,
+	gfarm_error_t (*op)(const char *, int, const Oid *,
+		const char *const *, const int *, const int *, int,
+		const char *),
+	const char *diag)
+{
+	gfarm_error_t e;
+	const char *paramValues[18];
+	struct quota *q = &info->quota;
+
+	char grace_period[GFARM_INT64STRLEN + 1];
+	char space[GFARM_INT64STRLEN + 1];
+	char space_exceed[GFARM_INT64STRLEN + 1];
+	char space_soft[GFARM_INT64STRLEN + 1];
+	char space_hard[GFARM_INT64STRLEN + 1];
+	char num[GFARM_INT64STRLEN + 1];
+	char num_exceed[GFARM_INT64STRLEN + 1];
+	char num_soft[GFARM_INT64STRLEN + 1];
+	char num_hard[GFARM_INT64STRLEN + 1];
+	char phy_space[GFARM_INT64STRLEN + 1];
+	char phy_space_exceed[GFARM_INT64STRLEN + 1];
+	char phy_space_soft[GFARM_INT64STRLEN + 1];
+	char phy_space_hard[GFARM_INT64STRLEN + 1];
+	char phy_num[GFARM_INT64STRLEN + 1];
+	char phy_num_exceed[GFARM_INT64STRLEN + 1];
+	char phy_num_soft[GFARM_INT64STRLEN + 1];
+	char phy_num_hard[GFARM_INT64STRLEN + 1];
+
+	sprintf(grace_period, "%" GFARM_PRId64, q->grace_period);
+	sprintf(space, "%" GFARM_PRId64, q->space);
+	sprintf(space_exceed, "%" GFARM_PRId64, q->space_exceed);
+	sprintf(space_soft, "%" GFARM_PRId64, q->space_soft);
+	sprintf(space_hard, "%" GFARM_PRId64, q->space_hard);
+	sprintf(num, "%" GFARM_PRId64, q->num);
+	sprintf(num_exceed, "%" GFARM_PRId64, q->num_exceed);
+	sprintf(num_soft, "%" GFARM_PRId64, q->num_soft);
+	sprintf(num_hard, "%" GFARM_PRId64, q->num_hard);
+	sprintf(phy_space, "%" GFARM_PRId64, q->phy_space);
+	sprintf(phy_space_exceed, "%" GFARM_PRId64, q->phy_space_exceed);
+	sprintf(phy_space_soft, "%" GFARM_PRId64, q->phy_space_soft);
+	sprintf(phy_space_hard, "%" GFARM_PRId64, q->phy_space_hard);
+	sprintf(phy_num, "%" GFARM_PRId64, q->phy_num);
+	sprintf(phy_num_exceed, "%" GFARM_PRId64, q->phy_num_exceed);
+	sprintf(phy_num_soft, "%" GFARM_PRId64, q->phy_num_soft);
+	sprintf(phy_num_hard, "%" GFARM_PRId64, q->phy_num_hard);
+
+	paramValues[0] = info->name;
+	paramValues[1] = grace_period;
+	paramValues[2] = space;
+	paramValues[3] = space_exceed;
+	paramValues[4] = space_soft;
+	paramValues[5] = space_hard;
+	paramValues[6] = num;
+	paramValues[7] = num_exceed;
+	paramValues[8] = num_soft;
+	paramValues[9] = num_hard;
+	paramValues[10] = phy_space;
+	paramValues[11] = phy_space_exceed;
+	paramValues[12] = phy_space_soft;
+	paramValues[13] = phy_space_hard;
+	paramValues[14] = phy_num;
+	paramValues[15] = phy_num_exceed;
+	paramValues[16] = phy_num_soft;
+	paramValues[17] = phy_num_hard;
+
+	e = (*op)(
+		sql,
+		18, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		diag);
+
+	free(info);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_add(struct db_quota_arg *arg)
+{
+	static char *sql_user =
+		"INSERT INTO QuotaUser"
+		" (username, gracePeriod, "
+		"fileSpace, fileSpaceExceed, fileSpaceSoft, fileSpaceHard, "
+		"fileNum, fileNumExceed, fileNumSoft, fileNumHard, "
+		"phySpace, phySpaceExceed, phySpaceSoft, phySpaceHard, "
+		"phyNum, phyNumExceed, phyNumSoft, phyNumHard) "
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10, "
+		"$11, $12, $13, $14, $15, $16, $17, $18)";
+	static char *sql_group =
+		"INSERT INTO QuotaGroup"
+		" (groupname, gracePeriod, "
+		"fileSpace, fileSpaceExceed, fileSpaceSoft, fileSpaceHard, "
+		"fileNum, fileNumExceed, fileNumSoft, fileNumHard, "
+		"phySpace, phySpaceExceed, phySpaceSoft, phySpaceHard, "
+		"phyNum, phyNumExceed, phyNumSoft, phyNumHard) "
+		"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10, "
+		"$11, $12, $13, $14, $15, $16, $17, $18)";
+	char *sql = arg->is_group ? sql_group : sql_user;
+
+	return (pgsql_quota_call(arg, sql,
+				 gfarm_pgsql_insert_with_retry,
+				 "pgsql_quota_add"));
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_modify(struct db_quota_arg *arg)
+{
+	static char *sql_user =
+		"UPDATE QuotaUser SET gracePeriod = $2, "
+		"fileSpace = $3, fileSpaceExceed = $4, "
+		"fileSpaceSoft = $5, fileSpaceHard = $6, "
+		"fileNum = $7, fileNumExceed = $8, "
+		"fileNumSoft = $9, fileNumHard = $10, "
+		"phySpace = $11, phySpaceExceed = $12, "
+		"phySpaceSoft = $13, phySpaceHard = $14, "
+		"phyNum = $15, phyNumExceed = $16, "
+		"phyNumSoft = $17, phyNumHard = $18 WHERE username = $1";
+	static char *sql_group =
+		"UPDATE QuotaGroup SET gracePeriod = $2, "
+		"fileSpace = $3, fileSpaceExceed = $4, "
+		"fileSpaceSoft = $5, fileSpaceHard = $6, "
+		"fileNum = $7, fileNumExceed = $8, "
+		"fileNumSoft = $9, fileNumHard = $10, "
+		"phySpace = $11, phySpaceExceed = $12, "
+		"phySpaceSoft = $13, phySpaceHard = $14, "
+		"phyNum = $15, phyNumExceed = $16, "
+		"phyNumSoft = $17, phyNumHard = $18 WHERE groupname = $1";
+	char *sql = arg->is_group ? sql_group : sql_user;
+
+	return (pgsql_quota_call(arg, sql,
+				 gfarm_pgsql_update_or_delete_with_retry,
+				 "pgsql_quota_modify"));
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_remove(struct db_quota_remove_arg *arg)
+{
+	gfarm_error_t e;
+	const char *paramValues[1];
+	static char *sql_user = "DELETE FROM QuotaUser WHERE username = $1";
+	static char *sql_group = "DELETE FROM QuotaGroup WHERE groupname = $1";
+	char *sql = arg->is_group ? sql_group : sql_user;
+
+	paramValues[0] = arg->name;
+	e = gfarm_pgsql_update_or_delete_with_retry(
+		sql,
+		1, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		"pgsql_quota_remove");
+
+	free(arg);
+	return (e);
+}
+
+static void
+quota_info_set_fields_from_copy_binary(
+	const char *buf, int residual, void *vinfo)
+{
+	struct gfarm_quota_info *info = vinfo;
+	uint16_t num_fields;
+
+	COPY_BINARY(num_fields, buf, residual,
+	    "pgsql_quota_load: field number");
+	num_fields = ntohs(num_fields);
+	if (num_fields < 18) /* allow fields addition in future */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+			    "pgsql_quota_load: fields = %d", num_fields);
+
+	info->name = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->grace_period = get_value_from_int8_copy_binary(&buf, &residual);
+	info->space = get_value_from_int8_copy_binary(&buf, &residual);
+	info->space_exceed = get_value_from_int8_copy_binary(&buf, &residual);
+	info->space_soft = get_value_from_int8_copy_binary(&buf, &residual);
+	info->space_hard = get_value_from_int8_copy_binary(&buf, &residual);
+	info->num = get_value_from_int8_copy_binary(&buf, &residual);
+	info->num_exceed = get_value_from_int8_copy_binary(&buf, &residual);
+	info->num_soft = get_value_from_int8_copy_binary(&buf, &residual);
+	info->num_hard = get_value_from_int8_copy_binary(&buf, &residual);
+	info->phy_space = get_value_from_int8_copy_binary(&buf, &residual);
+	info->phy_space_exceed = get_value_from_int8_copy_binary(
+		&buf, &residual);
+	info->phy_space_soft = get_value_from_int8_copy_binary(
+		&buf, &residual);
+	info->phy_space_hard = get_value_from_int8_copy_binary(
+		&buf, &residual);
+	info->phy_num = get_value_from_int8_copy_binary(&buf, &residual);
+	info->phy_num_exceed = get_value_from_int8_copy_binary(
+		&buf, &residual);
+	info->phy_num_soft = get_value_from_int8_copy_binary(&buf, &residual);
+	info->phy_num_hard = get_value_from_int8_copy_binary(&buf, &residual);
+}
+
+static gfarm_error_t
+gfarm_pgsql_quota_load(void *closure, int is_group,
+	void (*callback)(void *, struct gfarm_quota_info *))
+{
+	struct gfarm_quota_info tmp_info;
+
+	const char *command = (is_group ?
+			       "COPY QuotaGroup TO STDOUT BINARY" :
+			       "COPY QuotaUser TO STDOUT BINARY");
+
+	return (gfarm_pgsql_generic_load(
+		command,
+		&tmp_info, (void (*)(void *, void *))callback, closure,
+		&gfarm_base_quota_info_ops,
+		quota_info_set_fields_from_copy_binary,
+		"pgsql_quota_load"));
+}
+
+/**********************************************************************/
+
 const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_initialize,
 	gfarm_pgsql_terminate,
@@ -2550,4 +2773,9 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_xattr_get,
 	gfarm_pgsql_xattr_load,
 	gfarm_pgsql_xmlattr_find,
+
+	gfarm_pgsql_quota_add,
+	gfarm_pgsql_quota_modify,
+	gfarm_pgsql_quota_remove,
+	gfarm_pgsql_quota_load,
 };

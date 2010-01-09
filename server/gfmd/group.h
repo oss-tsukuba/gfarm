@@ -22,7 +22,12 @@ gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);
 char *group_name(struct group *);
 int group_is_invalidated(struct group *);
+int group_is_active(struct group *);
 
+void group_all(void *, void (*)(void *, struct group *), int);
+
+struct quota;
+struct quota *group_quota(struct group *);
 
 struct peer;
 gfarm_error_t gfm_server_group_info_get_all(struct peer *, int, int);

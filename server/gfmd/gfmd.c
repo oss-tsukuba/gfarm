@@ -59,6 +59,7 @@
 #include "job.h"
 #include "back_channel.h"
 #include "xattr.h"
+#include "quota.h"
 
 #include "protocol_state.h"
 
@@ -412,6 +413,21 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_XMLATTR_FIND:
 		e = gfm_server_findxmlattr(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_USER_GET:
+		e = gfm_server_quota_user_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_USER_SET:
+		e = gfm_server_quota_user_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_GROUP_GET:
+		e = gfm_server_quota_group_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_GROUP_SET:
+		e = gfm_server_quota_group_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_QUOTA_CHECK:
+		e = gfm_server_quota_check(peer, from_client, skip);
 		break;
 	default:
 		gflog_warning(GFARM_MSG_UNFIXED,
@@ -1029,6 +1045,7 @@ main(int argc, char **argv)
 	dead_file_copy_init();
 	symlink_init();
 	xattr_init();
+	quota_init();
 
 	peer_init(table_size, protocol_main);
 	job_table_init(table_size);

@@ -1,12 +1,10 @@
-# $Id$
-
-top_builddir = ../..
+top_builddir = ../../..
 top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = gfusage
+PROGRAM = gfquota
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR)

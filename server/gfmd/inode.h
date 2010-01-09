@@ -24,6 +24,7 @@ struct user *inode_get_user(struct inode *);
 struct group *inode_get_group(struct inode *);
 int inode_is_creating_file(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
+gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
@@ -44,6 +45,8 @@ char *inode_get_symlink(struct inode *);
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
 struct inode *inode_lookup(gfarm_ino_t);
+void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
+
 gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
 gfarm_error_t inode_lookup_parent(struct inode *, struct process *, int,
 	struct inode **);

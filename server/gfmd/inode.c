@@ -21,6 +21,7 @@
 #include "timespec.h"
 #include "gfm_proto.h"
 
+#include "quota.h"
 #include "subr.h"
 #include "db_access.h"
 #include "host.h"
@@ -526,7 +527,9 @@ inode_remove(struct inode *inode)
 			cn = copy->host_next;
 			free(copy);
 		}
+		inode->u.c.s.f.copies = NULL; /* ncopy == 0 */
 		inode_cksum_remove(inode);
+		quota_update_file_remove(inode);
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
 	} else if (inode_is_symlink(inode)) {
@@ -623,6 +626,18 @@ inode_lookup(gfarm_ino_t inum)
 	return (inode);
 }
 
+void
+inode_lookup_all(void *closure, void (*callback)(void *, struct inode *))
+{
+	int i;
+
+	for (i = ROOT_INUMBER; i < inode_table_size; i++) {
+		if (inode_table[i] != NULL &&
+		    inode_table[i]->i_mode != INODE_MODE_FREE)
+			callback(closure, inode_table[i]);
+	}
+}
+
 int
 inode_is_dir(struct inode *inode)
 {
@@ -677,18 +692,31 @@ inode_is_creating_file(struct inode *inode)
 	return (inode->u.c.s.f.copies == NULL);
 }
 
-gfarm_int64_t
-inode_get_ncopy(struct inode *inode)
+static gfarm_int64_t
+inode_get_ncopy_common(struct inode *inode, int is_valid, int is_up)
 {
 	struct file_copy *copy;
-	int n = 0;
+	gfarm_int64_t n = 0;
 
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-		if (copy->valid && host_is_up(copy->host))
+		if ((is_valid ? copy->valid : 1) &&
+		    (is_up ? host_is_up(copy->host) : 1))
 			n++;
 	}
 	return (n);
+}
+
+gfarm_int64_t
+inode_get_ncopy(struct inode *inode)
+{
+	return (inode_get_ncopy_common(inode, 1, 1));
+}
+
+gfarm_int64_t
+inode_get_ncopy_with_dead_host(struct inode *inode)
+{
+	return (inode_get_ncopy_common(inode, 1, 0));
 }
 
 gfarm_mode_t
@@ -727,6 +755,8 @@ inode_set_size(struct inode *inode, gfarm_off_t size)
 {
 	gfarm_error_t e;
 
+	/* inode is file */
+	quota_update_file_resize(inode, size);
 	inode->i_size = size;
 
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
@@ -741,6 +771,11 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 {
 	gfarm_error_t e;
 
+	if (user == NULL && group == NULL)
+		return (GFARM_ERR_NO_ERROR);
+
+	if (inode_is_file(inode))
+		quota_update_file_remove(inode);
 	if (user != NULL) {
 		inode->i_user = user;
 
@@ -759,6 +794,9 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 			    "db_inode_group_modify(%" GFARM_PRId64 "): %s",
 			    inode->i_number, gfarm_error_string(e));
 	}
+	if (inode_is_file(inode))
+		quota_update_file_add(inode);
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1051,7 +1089,11 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 	switch (expected_type) {
 	case GFS_DT_DIR: e = inode_init_dir(n, parent); break;
-	case GFS_DT_REG: e = inode_init_file(n); break;
+	case GFS_DT_REG:
+		e = quota_check_limits(user, parent->i_group, 1, 0);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = inode_init_file(n);
+		break;
 	case GFS_DT_LNK: e = inode_init_symlink(n, symlink_src); break;
 	default: assert(0); e = GFARM_ERR_UNKNOWN; break;
 	}
@@ -1067,6 +1109,9 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	inode_created(n);
 	dir_entry_set_inode(entry, n);
 	inode_modified(parent);
+
+	if (inode_is_file(n))  /* after setting i_user and i_group */
+		quota_update_file_add(n);
 
 	{
 		struct gfs_stat st;
@@ -1233,6 +1278,10 @@ inode_lookup_by_name(struct inode *base, char *name,
 		} else {
 			e = inode_access(inode, user, op);
 		}
+		if (e == GFARM_ERR_NO_ERROR && inode_is_file(inode) &&
+		    (op & GFS_W_OK) != 0)
+			e = quota_check_limits(inode_get_user(inode),
+					       inode_get_group(inode), 0, 0);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*inp = inode;
 		}
@@ -1431,7 +1480,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 
 gfarm_error_t
 inode_add_replica_internal(struct inode *inode, struct host *spool_host,
-	int valid)
+			   int valid, int update_quota)
 {
 	struct file_copy *copy;
 
@@ -1442,15 +1491,31 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 				return (GFARM_ERR_ALREADY_EXISTS);
 			else if (valid == 0)
 				return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
-			else {
+			else { /* valid == 1 */
 				copy->valid = valid;
+				if (update_quota)
+					quota_update_replica_add(inode);
 				return (GFARM_ERR_NO_ERROR);
 			}
 		}
 	}
+	/* not exist in u.c.s.f.copies : add new replica */
+	if (update_quota) {
+		gfarm_error_t e;
+		/* check limits of space and number of the replica */
+		e = quota_check_limits(inode_get_user(inode),
+			       inode_get_group(inode), 0, 1);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+
 	GFARM_MALLOC(copy);
 	if (copy == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+
+	if (update_quota && valid)
+		quota_update_replica_add(inode);
+
 	copy->host = spool_host;
 	copy->valid = valid;
 	copy->host_next = inode->u.c.s.f.copies;
@@ -1465,7 +1530,8 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 gfarm_error_t
 inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 {
-	gfarm_error_t e = inode_add_replica_internal(inode, spool_host, valid);
+	gfarm_error_t e = inode_add_replica_internal(
+		inode, spool_host, valid, 1);
 
 	if (e != GFARM_ERR_NO_ERROR || !valid)
 		return (e);
@@ -1483,6 +1549,9 @@ static gfarm_error_t
 remove_replica_internal(struct inode *inode, struct file_copy *copy)
 {
 	gfarm_error_t e, e2 = GFARM_ERR_NO_ERROR;
+
+	/* this copy was already removed from u.c.s.f.copies */
+	quota_update_replica_remove(inode);
 
 	e = host_remove_replica_enq(copy->host, inode->i_number, inode->i_gen);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1599,7 +1668,6 @@ void
 inode_close_write(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
 {
-	gfarm_error_t e;
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 
@@ -1607,13 +1675,7 @@ inode_close_write(struct file_opening *fo, gfarm_off_t size,
 	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
 		inode_cksum_remove(inode);
 
-	inode->i_size = size;
-
-	e = db_inode_size_modify(inode->i_number, inode->i_size);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "db_inode_size_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+	inode_set_size(inode, size);
 
 	if (mtime != NULL) {
 		inode_set_mtime(inode, mtime);
@@ -2009,7 +2071,7 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 	} else if (host == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "file_copy_add_one: no host %s", hostname);
-	} else if ((e = inode_add_replica_internal(inode, host, 1)) !=
+	} else if ((e = inode_add_replica_internal(inode, host, 1, 0)) !=
 	    GFARM_ERR_NO_ERROR){
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "file_copy_add_one: add_replica: %s",

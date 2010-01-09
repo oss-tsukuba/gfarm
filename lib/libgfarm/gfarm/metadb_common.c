@@ -11,6 +11,7 @@
 
 #include "metadb_common.h"
 #include "xattr_info.h"
+#include "quota_info.h"
 
 /**********************************************************************/
 
@@ -324,3 +325,40 @@ const struct gfarm_base_generic_info_ops gfarm_base_xattr_info_ops = {
 	xattr_info_clear,
 	xattr_info_validate
 };
+
+/**********************************************************************/
+
+static void gfarm_base_quota_info_clear(void *info);
+static int gfarm_base_quota_info_validate(void *info);
+
+const struct gfarm_base_generic_info_ops gfarm_base_quota_info_ops = {
+	sizeof(struct gfarm_quota_info),
+	(void (*)(void *))gfarm_quota_info_free,
+	gfarm_base_quota_info_clear,
+	gfarm_base_quota_info_validate,
+};
+
+static void
+gfarm_base_quota_info_clear(void *vinfo)
+{
+	struct gfarm_quota_info *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+gfarm_base_quota_info_validate(void *vinfo)
+{
+	struct gfarm_quota_info *info = vinfo;
+
+	return (info->name != NULL);
+}
+
+void
+gfarm_quota_info_free_all(
+	int n,
+	struct gfarm_quota_info *infos)
+{
+	gfarm_base_generic_info_free_all(n, infos,
+	    &gfarm_base_quota_info_ops);
+}

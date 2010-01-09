@@ -98,6 +98,17 @@ gfarm_error_t db_xmlattr_find(gfarm_ino_t, const char *,
 	gfarm_error_t (*foundcallback)(void *, int, void *), void *,
 	void (*callback)(gfarm_error_t, void *), void *);
 
+struct quota;
+gfarm_error_t db_quota_user_set(struct quota *, const char *);
+gfarm_error_t db_quota_group_set(struct quota *, const char *);
+gfarm_error_t db_quota_user_remove(const char *);
+gfarm_error_t db_quota_group_remove(const char *);
+struct gfarm_quota_info;
+gfarm_error_t db_quota_user_load(void *,
+	void (*)(void *, struct gfarm_quota_info *));
+gfarm_error_t db_quota_group_load(void *,
+	void (*)(void *, struct gfarm_quota_info *));
+
 /* external interface to select metadb backend type */
 
 struct db_ops;

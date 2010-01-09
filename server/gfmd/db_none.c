@@ -25,6 +25,7 @@
 #include "gfutil.h"
 
 #include "config.h"
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -330,6 +331,36 @@ gfarm_none_xmlattr_find(struct db_xmlattr_find_arg *arg)
 
 /**********************************************************************/
 
+static gfarm_error_t
+gfarm_none_quota_add(struct db_quota_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_modify(struct db_quota_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_remove(struct db_quota_remove_arg *arg)
+{
+	free(arg);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_quota_load(void *closure, int is_group,
+		void (*callback)(void *, struct gfarm_quota_info *))
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
@@ -394,4 +425,9 @@ const struct db_ops db_none_ops = {
 	gfarm_none_xattr_get,
 	gfarm_none_xattr_load,
 	gfarm_none_xmlattr_find,
+
+	gfarm_none_quota_add,
+	gfarm_none_quota_modify,
+	gfarm_none_quota_remove,
+	gfarm_none_quota_load,
 };

@@ -14,6 +14,8 @@
 #include "gfutil.h"
 #include "config.h"
 
+#include "quota_info.h"
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 #include "thrsubr.h"
@@ -1204,4 +1206,113 @@ db_xmlattr_find(gfarm_ino_t inum, const char *expr,
 	return (dbq_enter_withcallback(&dbq,
 		(dbq_entry_func_t)ops->xmlattr_find, arg,
 		(dbq_entry_func_callback_t)callback, cbdata));
+}
+
+/* quota */
+static struct db_quota_arg *
+db_quota_arg_alloc(const struct quota *q, const char *name, int is_group)
+{
+	struct db_quota_arg *arg;
+	size_t sz;
+	int overflow = 0;
+	int name_len = strlen(name);
+
+	sz = gfarm_size_add(&overflow, sizeof(*arg), name_len + 1);
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
+		return (NULL);
+	arg->name = (char *)arg + sizeof(*arg);
+
+	arg->quota = *q;
+	arg->is_group = is_group;
+	strcpy(arg->name, name);
+
+	return (arg);
+}
+
+static gfarm_error_t
+db_quota_set_common(struct quota *q, const char *name, int is_group)
+{
+	struct db_quota_arg *arg = db_quota_arg_alloc(q, name, is_group);
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if (q->enabled)
+		return (dbq_enter(&dbq, (dbq_entry_func_t)ops->quota_modify,
+				  arg));
+	else
+		return (dbq_enter(&dbq, (dbq_entry_func_t)ops->quota_add,
+				  arg));
+}
+
+gfarm_error_t
+db_quota_user_set(struct quota *q, const char *username)
+{
+	return (db_quota_set_common(q, username, 0));
+}
+
+gfarm_error_t
+db_quota_group_set(struct quota *q, const char *groupname)
+{
+	return (db_quota_set_common(q, groupname, 1));
+}
+
+static struct db_quota_remove_arg *
+db_quota_remove_arg_alloc(const char *name, int is_group)
+{
+	struct db_quota_remove_arg *arg;
+	size_t sz;
+	int overflow = 0;
+	int name_len = strlen(name);
+
+	sz = gfarm_size_add(&overflow, sizeof(*arg), name_len + 1);
+	if (!overflow)
+		arg = malloc(sz);
+	if (overflow || arg == NULL)
+		return (NULL);
+	arg->name = (char *)arg + sizeof(*arg);
+
+	arg->is_group = is_group;
+	strcpy(arg->name, name);
+
+	return (arg);
+}
+
+static gfarm_error_t
+db_quota_remove_common(const char *name, int is_group)
+{
+	struct db_quota_remove_arg *arg
+		= db_quota_remove_arg_alloc(name, is_group);
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->quota_remove, arg));
+}
+
+gfarm_error_t
+db_quota_user_remove(const char *username)
+{
+	return (db_quota_remove_common(username, 0));
+}
+
+gfarm_error_t
+db_quota_group_remove(const char *groupname)
+{
+	return (db_quota_remove_common(groupname, 1));
+}
+
+gfarm_error_t
+db_quota_user_load(void *closure,
+	      void (*callback)(void *, struct gfarm_quota_info *))
+{
+	return ((*ops->quota_load)(closure, 0, callback));
+}
+
+gfarm_error_t
+db_quota_group_load(void *closure,
+	      void (*callback)(void *, struct gfarm_quota_info *))
+{
+	return ((*ops->quota_load)(closure, 1, callback));
 }

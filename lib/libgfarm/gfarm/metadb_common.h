@@ -10,7 +10,8 @@ extern const struct gfarm_base_generic_info_ops
 	gfarm_base_user_info_ops,
 	gfarm_base_group_info_ops,
 	gfarm_base_gfs_stat_ops,
-	gfarm_base_xattr_info_ops;
+	gfarm_base_xattr_info_ops,
+	gfarm_base_quota_info_ops;
 
 void gfarm_base_generic_info_free_all(int, void *,
 	const struct gfarm_base_generic_info_ops *);

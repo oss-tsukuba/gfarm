@@ -8,6 +8,7 @@
 #include <gfarm/gfarm.h>
 
 #include "metadb_common.h"
+#include "quota.h"
 
 #include "db_access.h"
 #include "db_ops.h"

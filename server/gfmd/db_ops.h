@@ -111,6 +111,19 @@ struct db_xmlattr_find_arg {
 
 struct xattr_info;
 
+struct db_quota_arg {
+	int is_group;
+	char *name;
+	struct quota quota;
+};
+
+struct db_quota_remove_arg {
+	int is_group;
+	char *name;
+};
+
+struct gfarm_quota_info;
+
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -184,4 +197,10 @@ struct db_ops {
 	gfarm_error_t (*xattr_load)(void *,
 		void (*)(void *, struct xattr_info *));
 	gfarm_error_t (*xmlattr_find)(struct db_xmlattr_find_arg *);
+
+	gfarm_error_t (*quota_add)(struct db_quota_arg *);
+	gfarm_error_t (*quota_modify)(struct db_quota_arg *);
+	gfarm_error_t (*quota_remove)(struct db_quota_remove_arg *);
+	gfarm_error_t (*quota_load)(void *, int,
+		void (*)(void *, struct gfarm_quota_info *));
 };

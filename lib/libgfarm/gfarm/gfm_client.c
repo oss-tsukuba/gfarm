@@ -39,6 +39,7 @@
 #include "gfj_client.h"
 #include "xattr_info.h"
 #include "gfm_client.h"
+#include "quota_info.h"
 
 struct gfm_connection {
 	struct gfp_cached_connection *cache_entry;
@@ -1523,6 +1524,92 @@ gfarm_error_t
 gfm_client_seek_result(struct gfm_connection *gfm_server, gfarm_off_t *offsetp)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, "l", offsetp));
+}
+
+/*
+ * quota
+ */
+static gfarm_error_t
+gfm_client_quota_get_common(struct gfm_connection *gfm_server, int proto,
+			    const char *name, struct gfarm_quota_get_info *qi)
+{
+	return (gfm_client_rpc(
+			gfm_server, 0, proto,
+			"s/slllllllllllllllll",
+			name,
+			&qi->name,
+			&qi->grace_period,
+			&qi->space,
+			&qi->space_grace,
+			&qi->space_soft,
+			&qi->space_hard,
+			&qi->num,
+			&qi->num_grace,
+			&qi->num_soft,
+			&qi->num_hard,
+			&qi->phy_space,
+			&qi->phy_space_grace,
+			&qi->phy_space_soft,
+			&qi->phy_space_hard,
+			&qi->phy_num,
+			&qi->phy_num_grace,
+			&qi->phy_num_soft,
+			&qi->phy_num_hard));
+}
+
+static gfarm_error_t
+gfm_client_quota_set_common(struct gfm_connection *gfm_server, int proto,
+			    struct gfarm_quota_set_info *qi) {
+	return (gfm_client_rpc(
+			gfm_server, 0, proto,
+			"slllllllll/",
+			qi->name,
+			qi->grace_period,
+			qi->space_soft,
+			qi->space_hard,
+			qi->num_soft,
+			qi->num_hard,
+			qi->phy_space_soft,
+			qi->phy_space_hard,
+			qi->phy_num_soft,
+			qi->phy_num_hard));
+}
+
+gfarm_error_t
+gfm_client_quota_user_get(struct gfm_connection *gfm_server,
+			  const char *name, struct gfarm_quota_get_info *qi)
+{
+	return (gfm_client_quota_get_common(
+			gfm_server, GFM_PROTO_QUOTA_USER_GET, name, qi));
+}
+
+gfarm_error_t
+gfm_client_quota_user_set(struct gfm_connection *gfm_server,
+			  struct gfarm_quota_set_info *qi) {
+	return (gfm_client_quota_set_common(
+			gfm_server, GFM_PROTO_QUOTA_USER_SET, qi));
+}
+
+gfarm_error_t
+gfm_client_quota_group_get(struct gfm_connection *gfm_server,
+			   const char *name, struct gfarm_quota_get_info *qi)
+{
+	return (gfm_client_quota_get_common(
+			gfm_server, GFM_PROTO_QUOTA_GROUP_GET, name, qi));
+}
+
+gfarm_error_t
+gfm_client_quota_group_set(struct gfm_connection *gfm_server,
+			   struct gfarm_quota_set_info *qi)
+{
+	return (gfm_client_quota_set_common(
+			gfm_server, GFM_PROTO_QUOTA_GROUP_SET, qi));
+}
+
+gfarm_error_t
+gfm_client_quota_check(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_QUOTA_CHECK, "/"));
 }
 
 /*

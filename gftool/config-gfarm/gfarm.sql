@@ -97,3 +97,47 @@ CREATE TABLE XAttr (
 	attrvalue	BYTEA	NOT NULL,
 	PRIMARY KEY(inumber, attrname)
 );
+
+CREATE TABLE QuotaUser (
+	username	VARCHAR(64)	PRIMARY KEY
+		REFERENCES GfarmUser(username) ON DELETE CASCADE,
+	gracePeriod	INT8	NOT NULL,
+	fileSpace	INT8	NOT NULL,
+	fileSpaceExceed	INT8	NOT NULL,
+	fileSpaceSoft	INT8	NOT NULL,
+	fileSpaceHard	INT8	NOT NULL,
+	fileNum		INT8	NOT NULL,
+	fileNumExceed	INT8	NOT NULL,
+	fileNumSoft	INT8	NOT NULL,
+	fileNumHard	INT8	NOT NULL,
+	phySpace	INT8	NOT NULL,
+	phySpaceExceed	INT8	NOT NULL,
+	phySpaceSoft	INT8	NOT NULL,
+	phySpaceHard	INT8	NOT NULL,
+	phyNum		INT8	NOT NULL,
+	phyNumExceed	INT8	NOT NULL,
+	phyNumSoft	INT8	NOT NULL,
+	phyNumHard	INT8	NOT NULL
+);
+
+CREATE TABLE QuotaGroup (
+	groupname	TEXT	PRIMARY KEY
+		 REFERENCES GfarmGroup(groupname) ON DELETE CASCADE,
+	gracePeriod	INT8	NOT NULL,
+	fileSpace	INT8	NOT NULL,
+	fileSpaceExceed	INT8	NOT NULL,
+	fileSpaceSoft	INT8	NOT NULL,
+	fileSpaceHard	INT8	NOT NULL,
+	fileNum		INT8	NOT NULL,
+	fileNumExceed	INT8	NOT NULL,
+	fileNumSoft	INT8	NOT NULL,
+	fileNumHard	INT8	NOT NULL,
+	phySpace	INT8	NOT NULL,
+	phySpaceExceed	INT8	NOT NULL,
+	phySpaceSoft	INT8	NOT NULL,
+	phySpaceHard	INT8	NOT NULL,
+	phyNum		INT8	NOT NULL,
+	phyNumExceed	INT8	NOT NULL,
+	phyNumSoft	INT8	NOT NULL,
+	phyNumHard	INT8	NOT NULL
+);

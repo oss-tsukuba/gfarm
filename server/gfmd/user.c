@@ -20,6 +20,7 @@
 #include "user.h"
 #include "group.h"
 #include "peer.h"
+#include "quota.h"
 
 #define USER_HASHTAB_SIZE	3079	/* prime number */
 
@@ -27,6 +28,7 @@
 struct user {
 	struct gfarm_user_info ui;
 	struct group_assignment groups;
+	struct quota q;
 	int invalid;	/* set when deleted */
 };
 
@@ -172,6 +174,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 		free(u);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+	quota_data_init(&u->q);
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
 	user_activate(u);
@@ -192,6 +195,7 @@ user_remove(const char *username)
 	u = *(struct user **)gfarm_hash_entry_data(entry);
 	if (user_is_invalidated(u))
 		return (GFARM_ERR_NO_SUCH_USER);
+	quota_user_remove(u);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -211,6 +215,28 @@ char *
 user_gsi_dn(struct user *u)
 {
 	return (user_is_active(u) ? u->ui.gsi_dn : REMOVED_USER_NAME);
+}
+
+struct quota *
+user_quota(struct user *u)
+{
+	return (&u->q);
+}
+
+void
+user_all(void *closure, void (*callback)(void *, struct user *),
+	 int active_only)
+{
+	struct gfarm_hash_iterator it;
+	struct user **u;
+
+	for (gfarm_hash_iterator_begin(user_hashtab, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
+		if (!active_only || user_is_active(*u))
+			callback(closure, *u);
+	}
 }
 
 int

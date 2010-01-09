@@ -64,6 +64,7 @@
 #include "xattr_info.h"
 
 #include "db_access.h"
+#include "quota.h"
 #include "db_ops.h"
 #include "db_common.h"
 
@@ -2726,6 +2727,39 @@ gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
 
 /**********************************************************************/
 
+static gfarm_error_t
+gfarm_ldap_quota_add(struct db_quota_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_modify(struct db_quota_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_remove(struct db_quota_remove_arg *arg)
+{
+	/* XXX not implemented yet */
+	free(arg);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+static gfarm_error_t
+gfarm_ldap_quota_load(void *closure, int is_group,
+		void (*callback)(void *, struct gfarm_quota_info *))
+{
+	/* XXX not implemented yet */
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+}
+
+/**********************************************************************/
 const struct db_ops db_ldap_ops = {
 	gfarm_ldap_initialize,
 	gfarm_ldap_terminate,
@@ -2790,4 +2824,9 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_xattr_get,
 	gfarm_ldap_xattr_load,
 	gfarm_ldap_xmlattr_find,
+
+	gfarm_ldap_quota_add,
+	gfarm_ldap_quota_modify,
+	gfarm_ldap_quota_remove,
+	gfarm_ldap_quota_load,
 };

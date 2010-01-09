@@ -8,6 +8,11 @@ char *user_gsi_dn(struct user *);
 int user_is_invalidated(struct user *);
 int user_is_active(struct user *);
 
+void user_all(void *, void (*)(void *, struct user *), int);
+
+struct quota;
+struct quota *user_quota(struct user *);
+
 extern char ADMIN_USER_NAME[];
 
 struct group;

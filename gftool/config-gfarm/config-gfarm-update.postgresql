@@ -123,6 +123,30 @@ __EOF__
 		) |
 			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
 	fi
+
+	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt QuotaUser' | wc -l`" -eq 0 ]; then
+		echo "${PROGNAME}: adding QuotaUser table"
+
+		(
+		sed -n '/CREATE TABLE QuotaUser/,/^)/p' $config_dir/gfarm.sql 
+		cat <<__EOF__
+GRANT SELECT, INSERT, UPDATE, DELETE ON QuotaUser TO $BACKEND_USER;
+__EOF__
+		) |
+			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
+
+	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt QuotaGroup' | wc -l`" -eq 0 ]; then
+		echo "${PROGNAME}: adding QuotaGroup table"
+
+		(
+		sed -n '/CREATE TABLE QuotaGroup/,/^)/p' $config_dir/gfarm.sql 
+		cat <<__EOF__
+GRANT SELECT, INSERT, UPDATE, DELETE ON QuotaGroup TO $BACKEND_USER;
+__EOF__
+		) |
+			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
 }
 
 update_access_db_postgresql()

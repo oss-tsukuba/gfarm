@@ -20,6 +20,7 @@ SUBDIRS = \
 	gfls \
 	gfmkdir \
 	gfmv \
+	gfquota \
 	gfreg \
 	gfrep \
 	gfrm \
@@ -27,6 +28,7 @@ SUBDIRS = \
 	gfstat \
 	gfstatus \
 	gfuser \
+	gfusage \
 	$(gfvoms_sync_targets) \
 	gfwhere \
 	gfwhoami \
@@ -45,7 +47,6 @@ SUBDIRS = \
 #	gfq \
 #	gfrun \
 #	gftest \
-#	gfusage \
 #	example \
 
 include $(top_srcdir)/makes/subdir.mk
