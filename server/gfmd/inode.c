@@ -1655,7 +1655,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 		inode_open_state_free(inode->u.c.state);
 		inode->u.c.state = NULL;
 	}
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+	else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ios->u.f.writers;
 
 	if (atime != NULL)
