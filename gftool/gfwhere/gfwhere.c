@@ -64,7 +64,7 @@ display_replica_catalog(char *path, struct gfs_stat *st, void *arg)
 		e = GFARM_ERR_IS_A_DIRECTORY;
 	else if (!GFARM_S_ISREG(mode))
 		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	else if (st->st_ncopy == 0)
+	else if (st->st_ncopy == 0 && st->st_size > 0)
 		/* XXX - GFARM_ERR_NO_REPLICA */
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	else
