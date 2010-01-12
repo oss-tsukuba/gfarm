@@ -24,7 +24,7 @@ gfm_symlink_request(struct gfm_connection *gfm_server, void *closure,
 
 	if ((e = gfm_client_symlink_request(gfm_server, c->src, base))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000155,
 		    "symlink(%s, %s) request: %s", c->src, base,
 		    gfarm_error_string(e));
 	}
@@ -38,7 +38,7 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 
 	if ((e = gfm_client_symlink_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000156,
 		    "symlink result: %s", gfarm_error_string(e));
 #endif
 	}

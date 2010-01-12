@@ -262,7 +262,7 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 	entry = gfarm_hash_lookup(stat_cache, path, strlen(path) + 1);
 	if (entry != NULL) {
 #ifdef DIRCACHE_DEBUG
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000092,
 		    "%ld.%06ld: gfs_stat_cached(%s): hit (%d)",
 		    (long)now.tv_sec,(long)now.tv_usec, path,stat_cache_count);
 #endif
@@ -270,7 +270,7 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 		return (gfs_stat_copy(st, &data->st));
 	}
 #ifdef DIRCACHE_DEBUG
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000093,
 	    "%ld.%06ld: gfs_stat_cached(%s): miss (%d)",
 	    (long)now.tv_sec, (long)now.tv_usec, path, stat_cache_count);
 #endif
@@ -311,7 +311,7 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			gettimeofday(&now, NULL);
 			sprintf(path, "%s%s", dir->path, ep->d_name);
 #ifdef DIRCACHE_DEBUG
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000094,
 			    "%ld.%06ld: gfs_readdir_caching()->"
 			    "\"%s\" (%d)",
 			    (long)now.tv_sec, (long)now.tv_usec,

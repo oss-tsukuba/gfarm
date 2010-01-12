@@ -264,13 +264,13 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 
 	if (debug_mode) {
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000376,
 			    "create(%s) -> error: %s",
 			    name, gfarm_error_string(e));
 		} else {
 			gfarm_int32_t fd;
 			peer_fdpair_get_current(peer, &fd);
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000377,
 			    "create(%s) -> %d, %" GFARM_PRId64
 			    ":%" GFARM_PRId64 ", %3o",
 			    name, fd, inum, gen, mode);
@@ -307,12 +307,12 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 
 	if (debug_mode) {
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED, "open(%s) -> error: %s",
+			gflog_info(GFARM_MSG_1000378, "open(%s) -> error: %s",
 			    name, gfarm_error_string(e));
 		} else {
 			gfarm_int32_t fd;
 			peer_fdpair_get_current(peer, &fd);
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000379,
 			    "open(%s) -> %d, %" GFARM_PRId64
 			    ":%" GFARM_PRId64 ", %3o",
 			    name, fd, inum, gen, mode);
@@ -348,20 +348,20 @@ gfm_server_open_root(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_IS_A_DIRECTORY;
 	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
 		if (debug_mode)
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000380,
 			    "open_root: from_client=%d, spool?:%d\n",
 			    from_client, spool_host != NULL);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		if (debug_mode)
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000381,
 			    "get_process?:%d\n", process != NULL);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 
 	} else if ((e = inode_lookup_root(process, op, &inode)) !=
 	    GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1000382,
 			    "inode_lookup_root?:%s\n",
 			    gfarm_error_string(e));
 	} else if ((e = process_open_file(process, inode, flag, 0,
@@ -465,7 +465,7 @@ gfm_server_verify_type(struct peer *peer, int from_client, int skip)
 	gfarm_uint32_t type;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "verify_type: not implemented");
+	gflog_error(GFARM_MSG_1000383, "verify_type: not implemented");
 
 	e = gfm_server_get_request(peer, "verify_type", "i", &type);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -486,7 +486,7 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 	gfarm_uint32_t type;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "verify_type_not: not implemented");
+	gflog_error(GFARM_MSG_1000384, "verify_type_not: not implemented");
 
 	e = gfm_server_get_request(peer, "verify_type_not", "i", &type);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -872,7 +872,7 @@ gfm_server_schedule_file_with_program(struct peer *peer, int from_client,
 	char *domain;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000385,
 	    "schedule_file_with_program: not implemented");
 
 	e = gfm_server_get_request(
@@ -1327,7 +1327,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 			e2 = gfp_xdr_send(client, "sil",
 			    p[i].name, p[i].type, p[i].inum);
 			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1000386,
 				    "%s@%s: getdirents: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
@@ -1411,7 +1411,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec, 
 			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
 			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1000387,
 				    "%s@%s: getdirentsplus: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
@@ -1623,7 +1623,7 @@ gfm_server_lock(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t type, whence;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "lock: not implemented");
+	gflog_error(GFARM_MSG_1000388, "lock: not implemented");
 
 	e = gfm_server_get_request(peer, "lock", "llii",
 	    &start, &len, &type, &whence);
@@ -1646,7 +1646,7 @@ gfm_server_trylock(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t type, whence;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "trylock: not implemented");
+	gflog_error(GFARM_MSG_1000389, "trylock: not implemented");
 
 	e = gfm_server_get_request(peer, "trylock", "llii",
 	    &start, &len, &type, &whence);
@@ -1669,7 +1669,7 @@ gfm_server_unlock(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t type, whence;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "unlock: not implemented");
+	gflog_error(GFARM_MSG_1000390, "unlock: not implemented");
 
 	e = gfm_server_get_request(peer, "unlock", "llii",
 	    &start, &len, &type, &whence);
@@ -1692,7 +1692,7 @@ gfm_server_lock_info(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t type, whence;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "lock_info: not implemented");
+	gflog_error(GFARM_MSG_1000391, "lock_info: not implemented");
 
 	e = gfm_server_get_request(peer, "lock_info", "llii",
 	    &start, &len, &type, &whence);
@@ -1713,7 +1713,7 @@ gfm_server_glob(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "glob: not implemented");
+	gflog_error(GFARM_MSG_1000392, "glob: not implemented");
 
 	e = gfm_server_put_reply(peer, "glob",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1727,7 +1727,7 @@ gfm_server_schedule(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "schedule: not implemented");
+	gflog_error(GFARM_MSG_1000393, "schedule: not implemented");
 
 	e = gfm_server_put_reply(peer, "schedule",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1741,7 +1741,7 @@ gfm_server_pio_open(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "pio_open: not implemented");
+	gflog_error(GFARM_MSG_1000394, "pio_open: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_open",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1755,7 +1755,7 @@ gfm_server_pio_set_paths(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "pio_set_paths: not implemented");
+	gflog_error(GFARM_MSG_1000395, "pio_set_paths: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_set_paths",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1769,7 +1769,7 @@ gfm_server_pio_close(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "pio_close: not implemented");
+	gflog_error(GFARM_MSG_1000396, "pio_close: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_close",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1783,7 +1783,7 @@ gfm_server_pio_visit(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED, "pio_visit: not implemented");
+	gflog_error(GFARM_MSG_1000397, "pio_visit: not implemented");
 
 	e = gfm_server_put_reply(peer, "pio_visit",
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
@@ -1842,7 +1842,7 @@ gfm_server_replica_list_by_host(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t port;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000398,
 	    "replica_list_by_host: not implemented");
 
 	e = gfm_server_get_request(peer, "replica_list_by_host", "si",
@@ -1869,7 +1869,7 @@ gfm_server_replica_remove_by_host(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t port;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000399,
 	    "replica_remove_by_host: not implemented");
 
 	e = gfm_server_get_request(peer, "replica_remove_by_host", "si",

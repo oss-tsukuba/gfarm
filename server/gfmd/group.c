@@ -248,7 +248,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	struct user *u;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000241,
 		    "group_add_one: adding group %s: %s",
 		    gi->groupname, gfarm_error_string(e));
 		gfarm_group_info_free(gi);
@@ -257,7 +257,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL || user_is_invalidated(u)) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000242,
 			    "group_add_one: unknown user %s",
 			    gi->usernames[i]);
 			(void)group_remove(g->groupname);
@@ -268,7 +268,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		}
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000243,
 			    "group_add_one: grpassign(%s, %s): %s",
 			    gi->usernames[i], g->groupname,
 			    gfarm_error_string(e));
@@ -311,13 +311,13 @@ group_add_user_and_record(struct group *g, const char *username)
 	if (e == GFARM_ERR_ALREADY_EXISTS)
 		return;
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1000244,
 		    "failed to add user %s to group %s: %s",
 		    username, group_name(g), gfarm_error_string(e));
 		return;
 	}
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1000245,
 	    "added user %s to group %s", username, group_name(g));
 	gi.groupname = group_name(g);
 	n = 0;
@@ -333,7 +333,7 @@ group_add_user_and_record(struct group *g, const char *username)
 
 	e = db_group_modify(&gi, 0, 1, &username, 0, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000246,
 		    "failed to record user '%s' as group '%s' to storage: %s",
 		    username, gi.groupname, gfarm_error_string(e));
 	}
@@ -352,15 +352,15 @@ group_init(void)
 	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
 		hash_group, hash_key_equal_group);
 	if (group_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no memory for group hashtab");
+		gflog_fatal(GFARM_MSG_1000247, "no memory for group hashtab");
 
 	e = db_group_load(NULL, group_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000248,
 		    "loading groups: %s", gfarm_error_string(e));
 
 	if ((admin = group_lookup(ADMIN_GROUP_NAME)) == NULL) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1000249,
 		    "group %s not found, creating it",
 		    ADMIN_GROUP_NAME);
 
@@ -377,7 +377,7 @@ group_init(void)
 		 */
 		e = db_group_add(&gi);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000250,
 			    "failed to store group '%s' to storage: %s",
 			    gi.groupname, gfarm_error_string(e));
 
@@ -391,7 +391,7 @@ group_init(void)
 	}
 
 	if ((admin = group_lookup(ROOT_GROUP_NAME)) == NULL) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1000251,
 		    "group %s not found, creating it",
 		    ROOT_GROUP_NAME);
 
@@ -405,7 +405,7 @@ group_init(void)
 		 */
 		e = db_group_add(&gi);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000252,
 			    "failed to store group '%s' to storage: %s",
 			    gi.groupname, gfarm_error_string(e));
 
@@ -609,7 +609,7 @@ group_user_check(struct gfarm_group_info *gi, const char *msg)
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL || user_is_invalidated(u)) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000253,
 			    "%s: unknown user %s", msg,
 				    gi->usernames[i]);
 			return (GFARM_ERR_NO_SUCH_USER);
@@ -650,7 +650,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		 */
 		e = db_group_add(&gi);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000254,
 			    "failed to store group '%s' to storage: %s",
 			    gi.groupname, gfarm_error_string(e));
 
@@ -704,14 +704,14 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 			struct user *u = user_lookup(gi.usernames[i]);
 
 			if (u == NULL || user_is_invalidated(u)) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1000255,
 				    "%s: unknown user %s", msg,
 				    gi.usernames[i]);
 				continue;
 			}
 			e = grpassign_add(u, group);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1000256,
 				    "%s: grpassign(%s, %s): %s", msg,
 				    gi.usernames[i], gi.groupname,
 				    gfarm_error_string(e));
@@ -722,7 +722,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		/* change all entries */
 		e = db_group_modify(&gi, 0, 0, NULL, 0, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000257,
 			    "failed to modify group '%s' in db: %s",
 			    gi.groupname, gfarm_error_string(e));
 	}
@@ -752,7 +752,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 	} else if ((e = group_remove(groupname)) == GFARM_ERR_NO_ERROR) {
 		e2 = db_group_remove(groupname);
 		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000258,
 			    "protocol %s db: %s", msg,
 			    gfarm_error_string(e2));
 	}
@@ -767,7 +767,7 @@ gfm_server_group_info_add_users(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000259,
 	    "group_info_add_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_add_users",
@@ -783,7 +783,7 @@ gfm_server_group_info_remove_users(struct peer *peer,
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000260,
 	    "group_info_remove_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_info_remove_users",
@@ -799,7 +799,7 @@ gfm_server_group_names_get_by_users(struct peer *peer,
 	gfarm_error_t e;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000261,
 	    "group_names_get_by_users: not implemented");
 
 	e = gfm_server_put_reply(peer, "group_names_get_by_users",

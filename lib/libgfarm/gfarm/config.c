@@ -73,7 +73,7 @@ map_user(char *from, char **to_p,
 	for (i = 0; i < list_len; i++) {
 		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000009,
 			    mapfile, strerror(errno));
 			return (GFARM_ERR_CANT_OPEN);
 		}
@@ -133,7 +133,7 @@ finish:
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (*to_p != NULL)	 
 			free(*to_p);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000010,
 		    "%s line %d: %s", mapfile, lineno,
 		    gfarm_error_string(e));
 	}
@@ -259,12 +259,12 @@ gfarm_set_local_user_for_this_local_account(void)
 	buf = malloc(bufsize);
 	if (buf == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED, "gfarm_set_local_user: %s",
+		gflog_error(GFARM_MSG_1000011, "gfarm_set_local_user: %s",
 			gfarm_error_string(error));
 		return (error);
 	}
 	if (getpwuid_r(geteuid(), &pwbuf, buf, bufsize, &pwd) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED, "local account doesn't exist");
+		gflog_error(GFARM_MSG_1000012, "local account doesn't exist");
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		goto error;
 	}
@@ -1211,7 +1211,7 @@ void
 gfarm_config_set_default_ports(void)
 {
 	if (gfarm_metadb_server_name == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1000013,
 		    "metadb_serverhost isn't specified in "
 		    GFARM_CONFIG " file");
 

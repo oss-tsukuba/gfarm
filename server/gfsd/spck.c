@@ -36,12 +36,12 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 
 	if ((e = gfm_client_replica_add_request(gfm_server, inum, gen, size))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED, "replica_add request",
+		fatal_metadb_proto(GFARM_MSG_1000601, "replica_add request",
 		    diag, e);
 	else if ((e = gfm_client_replica_add_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode && e != GFARM_ERR_ALREADY_EXISTS)
-			gflog_info(GFARM_MSG_UNFIXED, "replica_add result: %s",
+			gflog_info(GFARM_MSG_1000602, "replica_add result: %s",
 			    gfarm_error_string(e));
 	}
 	return (e);
@@ -172,15 +172,15 @@ delete_invalid_file_or_directory(char *pathname)
 	gfarm_error_t e;
 
 	if (!delete_invalid_file) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: invalid file", pathname);
+		gflog_notice(GFARM_MSG_1000603, "%s: invalid file", pathname);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	e = unlink_dir(pathname);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: cannot delete", pathname);
+		gflog_warning(GFARM_MSG_1000604, "%s: cannot delete", pathname);
 	else
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: deleted", pathname);
+		gflog_notice(GFARM_MSG_1000605, "%s: deleted", pathname);
 	return (e);
 }
 
@@ -203,7 +203,7 @@ fixfrag(char *path)
 		/* correct entry */
 		e = GFARM_ERR_NO_ERROR;
 	else if (e == GFARM_ERR_NO_ERROR)
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: fixed", path);
+		gflog_notice(GFARM_MSG_1000606, "%s: fixed", path);
 	else switch (e) {
 	case GFARM_ERR_NO_SUCH_OBJECT:
 	case GFARM_ERR_INVALID_FILE_REPLICA:

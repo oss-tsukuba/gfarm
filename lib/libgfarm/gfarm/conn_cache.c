@@ -120,7 +120,7 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 	int created;
 
 	if (GFP_IS_CACHED_CONNECTION(connection)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000057,
 		    "gfp_uncached_connection_enter_cache(%s): "
 		    "programming error", cache->type_name);
 		abort();

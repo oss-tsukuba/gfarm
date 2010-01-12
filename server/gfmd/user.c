@@ -284,7 +284,7 @@ user_add_one(void *closure, struct gfarm_user_info *ui)
 	gfarm_error_t e = user_enter(ui, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000233,
 		    "user_add_one: %s", gfarm_error_string(e));
 }
 
@@ -294,7 +294,7 @@ create_user(const char *username, const char *gsi_dn)
 	gfarm_error_t e;
 	struct gfarm_user_info ui;
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1000234,
 	    "user '%s' not found, creating...", username);
 
 	ui.username = strdup(username);
@@ -304,7 +304,7 @@ create_user(const char *username, const char *gsi_dn)
 	user_add_one(NULL, &ui);
 	e = db_user_add(&ui);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000235,
 		    "failed to store user '%s' to storage: %s",
 		    username, gfarm_error_string(e));
 }
@@ -318,11 +318,11 @@ user_init(void)
 	    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
 		hash_user, hash_key_equal_user);
 	if (user_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no memory for user hashtab");
+		gflog_fatal(GFARM_MSG_1000236, "no memory for user hashtab");
 
 	e = db_user_load(NULL, user_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000237,
 		    "loading users: %s", gfarm_error_string(e));
 
 	/*
@@ -454,7 +454,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 		u = user_lookup(users[i]);
 		if (u == NULL || user_is_invalidated(u)) {
 			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1000238,
 				    "user lookup <%s>: failed",
 				    users[i]);
 			e = gfm_server_put_reply(peer,
@@ -462,7 +462,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 			    GFARM_ERR_NO_SUCH_USER, "");
 		} else {
 			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1000239,
 				    "user lookup <%s>: ok", users[i]);
 			e = gfm_server_put_reply(peer,
 			    "USER_INFO_GET_BY_NAMES/send-reply",
@@ -623,7 +623,7 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 	} else if ((e = user_remove(username)) == GFARM_ERR_NO_ERROR) {
 		e2 = db_user_remove(username);
 		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000240,
 			    "protocol USER_INFO_REMOVE db: %s",
 			    gfarm_error_string(e2));
 	}

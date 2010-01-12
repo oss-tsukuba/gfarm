@@ -26,7 +26,7 @@ gfm_stat_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_fstat_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000130,
 		    "fstat request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -39,7 +39,7 @@ gfm_stat_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000131,
 		    "fstat result; %s", gfarm_error_string(e));
 #endif
 	return (e);
@@ -101,6 +101,6 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 void
 gfs_stat_display_timers(void)
 {
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1000132,
 	    "gfs_stat        : %g sec", gfs_stat_time);
 }

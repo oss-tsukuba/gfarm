@@ -24,7 +24,7 @@ gfm_utimes_request(struct gfm_connection *gfm_server, void *closure)
 	    c->mtime.tv_sec, c->mtime.tv_nsec);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000158,
 		    "futimes request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -36,7 +36,7 @@ gfm_utimes_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000159,
 		    "futimes result: %s", gfarm_error_string(e));
 #endif
 	return (e);

@@ -67,7 +67,7 @@ sockopt_initialize(void)
 		if (info->proto != NULL) {
 			proto = getprotobyname(info->proto);
 			if (proto == NULL)
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1000008,
 				    "getprotobyname(%s) failed",
 				    info->proto);
 			info->level = proto->p_proto;

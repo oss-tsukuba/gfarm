@@ -86,7 +86,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		key_create = GFARM_AUTH_SHARED_KEY_CREATE_FORCE;
 		if (e != GFARM_ERR_NO_ERROR) {
 			e_save = e;
-			gflog_auth_error(GFARM_MSG_UNFIXED,
+			gflog_auth_error(GFARM_MSG_1000019,
 			    "while accessing %s: %s",
 			    GFARM_AUTH_SHARED_KEY_PRINTNAME,
 			    gfarm_error_string(e));
@@ -480,7 +480,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	    GFARM_AUTH_SHARED_KEY_CREATE :
 	    GFARM_AUTH_SHARED_KEY_CREATE_FORCE, 0);
 	if (state->error_save != GFARM_ERR_NO_ERROR) {
-		gflog_auth_error(GFARM_MSG_UNFIXED, "while accessing %s: %s",
+		gflog_auth_error(GFARM_MSG_1000020, "while accessing %s: %s",
 		    GFARM_AUTH_SHARED_KEY_PRINTNAME,
 		    gfarm_error_string(state->error_save));
 		gfarm_auth_request_sharedsecret_send_giveup(events, fd,

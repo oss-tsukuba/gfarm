@@ -50,12 +50,12 @@ gfarm_pthread_attr_init(void)
 
 	err = pthread_attr_init(&gfarm_pthread_attr);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1000223,
 		    "pthread_attr_init(): %s", strerror(err));
 	err = pthread_attr_setdetachstate(&gfarm_pthread_attr,
 	    PTHREAD_CREATE_DETACHED);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1000224,
 		    "PTHREAD_CREATE_DETACHED: %s", strerror(err));
 	gfarm_pthread_attr_setstacksize(&gfarm_pthread_attr);
 }
@@ -111,26 +111,26 @@ gfm_server_get_request(struct peer *peer, const char *diag,
 	struct gfp_xdr *client = peer_get_conn(peer);
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED, "<%s> start receiving", diag);
+		gflog_info(GFARM_MSG_1000225, "<%s> start receiving", diag);
 
 	va_start(ap, format);
 	e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000226,
 		    "%s: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (eof) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000227,
 		    "%s: missing RPC argument", diag);
 		peer_record_protocol_error(peer);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1000228,
 		    "%s: invalid format character to get request",
 		    diag);
 	return (GFARM_ERR_NO_ERROR);
@@ -145,14 +145,14 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	struct gfp_xdr *client = peer_get_conn(peer);
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1000229,
 		    "<%s> sending reply: %d", diag, (int)ecode);
 
 	va_start(ap, format);
 	e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		va_end(ap);
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000230,
 		    "%s: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
@@ -161,13 +161,13 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 		e = gfp_xdr_vsend(client, &format, &ap);
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000231,
 			    "%s: %s", diag, gfarm_error_string(e));
 			peer_record_protocol_error(peer);
 			return (e);
 		}
 		if (*format != '\0')
-			gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s", diag,
+			gflog_fatal(GFARM_MSG_1000232, "%s: %s", diag,
 			    "invalid format character to put reply");
 	}
 	va_end(ap);

@@ -50,11 +50,11 @@ gfm_create_fd_request(struct gfm_connection *gfm_server, void *closure,
 
 	if ((e = gfm_client_create_request(gfm_server, base,
 	    c->flags, c->mode_to_create)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "create(%s) request: %s",
+		gflog_warning(GFARM_MSG_1000080, "create(%s) request: %s",
 		    base, gfarm_error_string(e));
 	} else if ((e = gfm_client_get_fd_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "get_fd(%s) request: %s",
+		gflog_warning(GFARM_MSG_1000081, "get_fd(%s) request: %s",
 		    base, gfarm_error_string(e));
 	}
 	return (e);
@@ -71,12 +71,12 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 	if ((e = gfm_client_create_result(gfm_server,
 	    &inum, &gen, &c->mode_created)) != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000082,
 		    "create() result: %s", gfarm_error_string(e));
 #endif
 	} else if ((e = gfm_client_get_fd_result(gfm_server, &c->fd))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000083,
 		    "get_fd() result: %s", gfarm_error_string(e));
 	}
 	return (e);
@@ -138,7 +138,7 @@ gfm_open_fd_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_get_fd_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000084,
 		    "get_fd request; %s", gfarm_error_string(e));
 	return (e);
 }
@@ -151,7 +151,7 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000085,
 		    "get_fd result; %s", gfarm_error_string(e));
 #endif
 	return (e);
@@ -201,7 +201,7 @@ gfm_close_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_close_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000086,
 		    "close request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -213,7 +213,7 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000087,
 		    "close result: %s", gfarm_error_string(e));
 #endif
 	return (e);

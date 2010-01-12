@@ -100,7 +100,7 @@ quota_active_user_set_db(struct quota *q, struct user *u)
 		if (e == GFARM_ERR_NO_ERROR)
 			q->enabled = 1;
 		else
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000410,
 				    "db_quota_user_set(%s) %s",
 				    user_name(u), gfarm_error_string(e));
 	}
@@ -114,7 +114,7 @@ quota_active_group_set_db(struct quota *q, struct group *g)
 		if (e == GFARM_ERR_NO_ERROR)
 			q->enabled = 1;
 		else
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000411,
 				    "db_quota_user_set(%s) %s",
 				    group_name(g), gfarm_error_string(e));
 	}
@@ -223,7 +223,7 @@ quota_user_remove_db(const char *name)
 	gfarm_error_t e = db_quota_user_remove(name);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000412,
 			    "db_quota_user_remove(%s) %s",
 			    name, gfarm_error_string(e));
 }
@@ -234,7 +234,7 @@ quota_group_remove_db(const char *name)
 	gfarm_error_t e = db_quota_group_remove(name);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000413,
 			    "db_quota_group_remove(%s) %s",
 			    name, gfarm_error_string(e));
 }
@@ -284,13 +284,13 @@ quota_init()
 
 	e = db_quota_user_load(NULL, quota_user_set_one_from_db);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000414,
 			    "db_quota_user_load() %s", gfarm_error_string(e));
 		db_state = e;
 	}
 	e = db_quota_group_load(NULL, quota_group_set_one_from_db);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000415,
 			    "db_quota_group_load() %s", gfarm_error_string(e));
 		db_state = e;
 	}
@@ -384,7 +384,7 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 		gen = inode_get_gen(inode);
 		username = user_name(u);
 		groupname = group_name(g);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000416,
 			    "<quota_add> "
 			    "ino=%"GFARM_PRId64"(gen=%"GFARM_PRId64"): "
 			    "size=%"GFARM_PRId64",ncopy=%"GFARM_PRId64","

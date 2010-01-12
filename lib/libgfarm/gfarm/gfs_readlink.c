@@ -20,7 +20,7 @@ gfm_readlink_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_readlink_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000135,
 		    "readlink request; %s", gfarm_error_string(e));
 	return (e);
 }
@@ -33,7 +33,7 @@ gfm_readlink_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000136,
 		    "readlink result; %s", gfarm_error_string(e));
 #endif
 	return (e);

@@ -353,7 +353,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 
 	e = gfs_client_fhremove(host_peer(host), r->inum, r->igen);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000262,
 		    "host_remove_replica(%" GFARM_PRId64
 			    "): %s", r->inum, gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
@@ -378,12 +378,12 @@ host_remove_replica_dump(struct host *host)
 	while (r != NULL) {
 		e = db_deadfilecopy_add(r->inum, r->igen, host_name(host));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000263,
 			    "db_deadfilecopy_add(%" GFARM_PRId64
 				    ", %s): %s", r->inum, host_name(host),
 				    gfarm_error_string(e));
 		else if (debug_mode)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000264,
 			    "db_deadfilecopy_add(%" GFARM_PRId64
 				    ", %s): added", r->inum, host_name(host));
 		nr = r->next;
@@ -404,7 +404,7 @@ host_remove_replica_dump_all(void)
 	FOR_ALL_HOSTS(&it) {
 		e = host_remove_replica_dump(host_iterator_access(&it));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000265,
 			    "host_remove_replica_dump_all: %s",
 				      gfarm_error_string(e));
 	}
@@ -486,7 +486,7 @@ host_add_one(void *closure, struct gfarm_host_info *hi)
 	gfarm_error_t e = host_enter(hi, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000266,
 		    "host_add_one: %s", gfarm_error_string(e));
 }
 
@@ -499,19 +499,19 @@ host_init(void)
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
 		hash_host, hash_key_equal_host);
 	if (host_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "no memory for host hashtab");
+		gflog_fatal(GFARM_MSG_1000267, "no memory for host hashtab");
 	hostalias_hashtab =
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
 		hash_host, hash_key_equal_host);
 	if (hostalias_hashtab == NULL) {
 		gfarm_hash_table_free(host_hashtab);
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1000268,
 		    "no memory for hostalias hashtab");
 	}
 
 	e = db_host_load(NULL, host_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000269,
 		    "loading hosts: %s", gfarm_error_string(e));
 }
 
@@ -687,14 +687,14 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 		h = (*lookup)(hosts[i]);
 		if (h == NULL) {
 			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1000270,
 				    "host lookup <%s>: failed",
 				    hosts[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_UNKNOWN_HOST, "");
 		} else {
 			if (debug_mode)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1000271,
 				    "host lookup <%s>: ok", hosts[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
@@ -859,7 +859,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 		if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
 			e2 = db_host_remove(hostname);
 			if (e2 != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1000272,
 				    "protocol db_host_remove db: %s",
 				    gfarm_error_string(e2));
 		}

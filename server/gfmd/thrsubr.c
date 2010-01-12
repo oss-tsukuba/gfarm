@@ -15,7 +15,7 @@ mutex_init(pthread_mutex_t *mutex, const char *where, const char *what)
 	int err = pthread_mutex_init(mutex, NULL);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex init: %s",
+		gflog_fatal(GFARM_MSG_1000212, "%s: %s mutex init: %s",
 		    where, what, strerror(err));
 }
 
@@ -25,7 +25,7 @@ mutex_lock(pthread_mutex_t *mutex, const char *where, const char *what)
 	int err = pthread_mutex_lock(mutex);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex lock: %s",
+		gflog_fatal(GFARM_MSG_1000213, "%s: %s mutex lock: %s",
 		    where, what, strerror(err));
 }
 
@@ -35,7 +35,7 @@ mutex_unlock(pthread_mutex_t *mutex, const char *where, const char *what)
 	int err = pthread_mutex_unlock(mutex);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex unlock: %s",
+		gflog_fatal(GFARM_MSG_1000214, "%s: %s mutex unlock: %s",
 		    where, what, strerror(err));
 }
 
@@ -45,7 +45,7 @@ cond_init(pthread_cond_t *cond, const char *where, const char *what)
 	int err = pthread_cond_init(cond, NULL);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond init: %s",
+		gflog_fatal(GFARM_MSG_1000215, "%s: %s cond init: %s",
 		    where, what, strerror(err));
 }
 
@@ -56,7 +56,7 @@ cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	int err = pthread_cond_wait(cond, mutex);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond wait: %s",
+		gflog_fatal(GFARM_MSG_1000216, "%s: %s cond wait: %s",
 		    where, what, strerror(err));
 }
 
@@ -66,7 +66,7 @@ cond_signal(pthread_cond_t *cond, const char *where, const char *what)
 	int err = pthread_cond_signal(cond);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond signal: %s",
+		gflog_fatal(GFARM_MSG_1000217, "%s: %s cond signal: %s",
 		    where, what, strerror(err));
 }
 
@@ -80,11 +80,11 @@ gfarm_pthread_attr_setstacksize(pthread_attr_t *attr)
 		err = pthread_attr_setstacksize(attr,
 		    gfarm_metadb_stack_size);
 		if (err != 0)
-			gflog_warning(GFARM_MSG_UNFIXED, "gfmd.conf: "
+			gflog_warning(GFARM_MSG_1000218, "gfmd.conf: "
 			    "metadb_server_stack_size %d: %s",
 			    gfarm_metadb_stack_size, strerror(err));
 #else
-		gflog_warning(GFARM_MSG_UNFIXED, "gfmd.conf: "
+		gflog_warning(GFARM_MSG_1000219, "gfmd.conf: "
 		    "metadb_server_stack_size %d: "
 		    "configuration ignored due to lack of "
 		    "pthread_attr_setstacksize()",

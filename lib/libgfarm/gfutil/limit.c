@@ -20,7 +20,7 @@ gfarm_unlimit_nofiles(int *file_table_size_p)
 	struct rlimit limit;
 
 	if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
-		gflog_warning_errno(GFARM_MSG_UNFIXED, "getrlimit");
+		gflog_warning_errno(GFARM_MSG_1000001, "getrlimit");
 		return;
 	}
 	if (limit.rlim_cur != limit.rlim_max) {
@@ -30,7 +30,7 @@ gfarm_unlimit_nofiles(int *file_table_size_p)
 		limit.rlim_cur = limit.rlim_max;
 		if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
 			limit = save_current;
-			gflog_warning_errno(GFARM_MSG_UNFIXED, "setrlimit");
+			gflog_warning_errno(GFARM_MSG_1000002, "setrlimit");
 		}
 	}
 	if (limit.rlim_cur != RLIM_INFINITY)
