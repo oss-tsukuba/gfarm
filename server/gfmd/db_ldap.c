@@ -659,7 +659,7 @@ retry:
 			error = GFARM_ERR_NO_SUCH_OBJECT;
 			break;
 		default:
-			gflog_error(GFARM_MSG_UNFIXED, "ldap_search_s(%s): %s",
+			gflog_error(GFARM_MSG_UNUSED, "ldap_search_s(%s): %s",
 			    dn, ldap_err2string(rv));
 			error = GFARM_ERR_UNKNOWN;
 			break;
@@ -853,7 +853,7 @@ retry:
 			error = GFARM_ERR_NO_SUCH_OBJECT;
 			break;
 		default:
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_UNUSED,
 			    "ldap_search_s(%s) - get all; %s",
 			    dn, ldap_err2string(rv));
 			error = GFARM_ERR_UNKNOWN;

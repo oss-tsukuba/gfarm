@@ -2331,7 +2331,7 @@ gfs_server_command_io_fd_set(struct gfp_xdr *client,
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* just purge the content */
 			gfarm_iobuffer_purge(cc->iobuffer[FDESC_STDIN], NULL);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_UNUSED,
 			    "command: abandon stdin: %s",
 			    gfarm_error_string(e));
 			gfarm_iobuffer_set_error(cc->iobuffer[FDESC_STDIN],
@@ -2361,7 +2361,7 @@ gfs_server_command_io_fd_set(struct gfp_xdr *client,
 			continue;
 		/* treat this as eof */
 		gfarm_iobuffer_set_read_eof(cc->iobuffer[i]);
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: %s", i == FDESC_STDOUT ?
+		gflog_warning(GFARM_MSG_UNUSED, "%s: %s", i == FDESC_STDOUT ?
 		    "command: reading stdout" :
 		    "command: reading stderr",
 		     gfarm_error_string(e));
@@ -2437,7 +2437,7 @@ gfs_server_command_io_fd_set(struct gfp_xdr *client,
 				/* treat this as eof */
 				gfarm_iobuffer_set_read_eof(
 				    cc->iobuffer[FDESC_STDIN]);
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_UNUSED,
 				    "command: receiving stdin: %s",
 				    gfarm_error_string(e));
 				gfarm_iobuffer_set_error(
@@ -3183,7 +3183,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 				if (e == GFARM_ERR_NO_ERROR)
 					credential_exported = client;
 				else
-					gflog_warning(GFARM_MSG_UNFIXED,
+					gflog_warning(GFARM_MSG_UNUSED,
 					    "export delegated credential: %s",
 					    gfarm_error_string(e));
 			}
