@@ -38,6 +38,7 @@ OBJS =	gfmd.o thrsubr.o thrpool.o \
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/gflog.mk
 
 ###
 

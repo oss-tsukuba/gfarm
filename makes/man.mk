@@ -6,6 +6,7 @@ distclean: man-distclean post-distclean-hook
 gfregister: man-gfregister post-gfregister-hook
 man: man-man
 html: man-html
+msgno: man-msgno
 
 post-all-hook:
 post-install-hook:
@@ -49,3 +50,4 @@ man-man:
 	done
 
 man-html:
+man-msgno:

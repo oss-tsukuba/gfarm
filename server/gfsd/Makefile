@@ -20,6 +20,7 @@ OBJS =	gfsd.o loadavg.o statfs.o spck.o
 all: $(PROGRAM)
 
 include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/gflog.mk
 
 ###
 

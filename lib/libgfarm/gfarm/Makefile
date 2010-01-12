@@ -164,6 +164,7 @@ all: prop-initialize $(LIBRARY)
 
 include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/proprietary.mk
+include $(top_srcdir)/makes/gflog.mk
 
 post-distclean-hook:	prop-finalize
 post-veryclean-hook:	prop-finalize

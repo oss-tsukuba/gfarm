@@ -5,6 +5,7 @@ distclean: lib-distclean post-distclean-hook
 gfregister: lib-gfregister post-gfregister-hook
 man: lib-man post-man-hook
 html: lib-html post-html-hook
+msgno: lib-msgno
 
 
 post-install-hook:
@@ -41,3 +42,4 @@ lib-distclean: veryclean
 lib-gfregister:
 lib-man:
 lib-html:
+lib-msgno:

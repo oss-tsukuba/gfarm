@@ -6,6 +6,7 @@ distclean: include-distclean post-distclean-hook
 gfregister: include-gfregister post-gfregister-hook
 man: include-man post-man-hook
 html: include-html post-html-hook
+msgno: include-msgno
 
 
 post-all-hook:
@@ -46,3 +47,4 @@ include-distclean: veryclean
 include-gfregister:
 include-man:
 include-html:
+include-msgno:

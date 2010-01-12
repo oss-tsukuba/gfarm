@@ -6,6 +6,7 @@ distclean: subdir-distclean subdir-distclean-here post-distclean-hook
 gfregister: subdir-gfregister post-gfregister-hook
 man: subdir-man
 html: subdir-html
+msgno: subdir-msgno
 
 post-all-hook:
 post-install-hook:
@@ -18,7 +19,7 @@ post-gfregister-hook:
 # for Makefile.in case too is to prevent variable-inheritance caused by
 # non Makefile.in case.
 
-subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html:
+subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html subdir-msgno:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
 	for dir in -- $(SUBDIRS); do \
 		case $${dir} in --) continue;; esac; \

@@ -37,6 +37,7 @@ CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR)
 all: $(LIBRARY)
 
 include $(top_srcdir)/makes/lib.mk
+include $(top_srcdir)/makes/gflog.mk
 
 ###
 

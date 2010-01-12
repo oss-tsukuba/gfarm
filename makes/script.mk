@@ -6,6 +6,7 @@ distclean: script-distclean post-distclean-hook
 gfregister: script-gfregister post-gfregister-hook
 man: script-man post-man-hook
 html: script-html post-html-hook
+msgno: script-msgno
 
 post-all-hook:
 post-install-hook:
@@ -39,3 +40,4 @@ script-distclean: veryclean
 script-gfregister:
 script-man:
 script-html:
+script-msgno:

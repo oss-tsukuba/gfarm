@@ -5,6 +5,7 @@ distclean: prog-distclean post-distclean-hook
 gfregister: prog-gfregister post-gfregister-hook
 man: prog-man post-man-hook
 html: prog-html post-html-hook
+msgno: prog-msgno
 
 
 post-install-hook:
@@ -34,3 +35,4 @@ prog-distclean: veryclean
 prog-gfregister:
 prog-man:
 prog-html:
+prog-msgno:

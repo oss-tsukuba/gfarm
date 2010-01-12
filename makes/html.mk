@@ -6,6 +6,7 @@ distclean: html-distclean post-distclean-hook
 gfregister: html-gfregister post-gfregister-hook
 man: html-man
 html: html-html
+msgno: html-msgno
 
 post-all-hook:
 post-install-hook:
@@ -54,3 +55,5 @@ html-html:
 		$(MAKE) srcsubst=$(DOCBOOK_DIR)/$${i}.docbook \
 			dstsubst=$${i}.html $${i}.html; \
 	done
+
+html-msgno:
