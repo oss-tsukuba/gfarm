@@ -18,6 +18,9 @@
 #include "quota_info.h"
 #include "db_access.h"
 
+#define QUOTA_NOT_CHECK_YET -1
+#define is_checked(q) (q->space != QUOTA_NOT_CHECK_YET ? 1 : 0)
+
 static gfarm_error_t db_state = GFARM_ERR_NO_ERROR;
 
 /* private functions */
@@ -68,7 +71,10 @@ quota_clear_value_user(void *closure, struct user *u)
 {
 	struct quota *q = user_quota(u);
 
-	q->space = 0;
+	if (!q->on_db) /* disabled: not gfedquota yet */
+		return;
+
+	q->space = 0; /* is_checked is true */
 	q->num = 0;
 	q->phy_space = 0;
 	q->phy_num = 0;
@@ -79,7 +85,10 @@ quota_clear_value_group(void *closure, struct group *g)
 {
 	struct quota *q = group_quota(g);
 
-	q->space = 0;
+	if (!q->on_db) /* disabled: not gfedquota yet */
+		return;
+
+	q->space = 0; /* is_checked is true */
 	q->num = 0;
 	q->phy_space = 0;
 	q->phy_num = 0;
@@ -98,7 +107,7 @@ quota_active_user_set_db(struct quota *q, struct user *u)
 	if (user_is_active(u)) {
 		gfarm_error_t e = db_quota_user_set(q, user_name(u));
 		if (e == GFARM_ERR_NO_ERROR)
-			q->enabled = 1;
+			q->on_db = 1;
 		else
 			gflog_error(GFARM_MSG_1000410,
 				    "db_quota_user_set(%s) %s",
@@ -112,7 +121,7 @@ quota_active_group_set_db(struct quota *q, struct group *g)
 	if (group_is_active(g)) {
 		gfarm_error_t e = db_quota_group_set(q, group_name(g));
 		if (e == GFARM_ERR_NO_ERROR)
-			q->enabled = 1;
+			q->on_db = 1;
 		else
 			gflog_error(GFARM_MSG_1000411,
 				    "db_quota_user_set(%s) %s",
@@ -125,6 +134,9 @@ quota_set_value_user(void *closure, struct user *u)
 {
 	struct quota *q = user_quota(u);
 
+	if (!is_checked(q))
+		return;
+
 	quota_check_softlimit_exceed(q);
 	quota_active_user_set_db(q, u);
 }
@@ -133,6 +145,9 @@ static void
 quota_set_value_group(void *closure, struct group *g)
 {
 	struct quota *q = group_quota(g);
+
+	if (!is_checked(q))
+		return;
 
 	quota_check_softlimit_exceed(q);
 	quota_active_group_set_db(q, g);
@@ -240,7 +255,6 @@ quota_group_remove_db(const char *name)
 }
 
 /* public functions */
-
 static void
 quota_user_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 {
@@ -254,7 +268,7 @@ quota_user_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 	} else {
 		struct quota *q = user_quota(u);
 		quota_convert_2(qi, q);
-		q->enabled = 1; /* load from db */
+		q->on_db = 1; /* load from db */
 	}
 	gfarm_quota_info_free(qi);
 }
@@ -272,7 +286,7 @@ quota_group_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 	} else {
 		struct quota *q = group_quota(g);
 		quota_convert_2(qi, q);
-		q->enabled = 1; /* load from db */
+		q->on_db = 1; /* load from db */
 	}
 	gfarm_quota_info_free(qi);
 }
@@ -299,9 +313,12 @@ quota_init()
 void
 quota_data_init(struct quota *q)
 {
-	q->enabled = 0;
-	q->grace_period = GFARM_QUOTA_INVALID; /* disable all softlimit */
-	q->space = 0;
+	/* gfarmadm do not execute gfedquota yet */
+	q->on_db = 0;
+	/* disable all softlimit */
+	q->grace_period = GFARM_QUOTA_INVALID;
+	/* gfarmadm do not execute gfquotacheck yet */
+	q->space = QUOTA_NOT_CHECK_YET;
 	q->space_exceed = GFARM_QUOTA_INVALID;
 	q->space_soft = GFARM_QUOTA_INVALID;
 	q->space_hard = GFARM_QUOTA_INVALID;
@@ -328,9 +345,7 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 		return (orig);
 	else if (diff > 0) {
 		val = orig + diff;
-		if (val < orig) /* overflow */
-			val = GFARM_INT64_MAX;
-		else if (val > GFARM_INT64_MAX)
+		if (val < orig || val > GFARM_INT64_MAX) /* overflow */
 			val = GFARM_INT64_MAX;
 		return (val);
 	} else { /* diff < 0 */
@@ -359,7 +374,7 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 
 	if (u) {
 		struct quota *uq = user_quota(u);
-		if (uq->enabled || quotacheck) {
+		if (is_checked(uq)) {
 			update_file_add(uq, size, ncopy);
 			quota_check_softlimit_exceed(uq);
 			if (!quotacheck)
@@ -368,7 +383,7 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
-		if (gq->enabled || quotacheck) {
+		if (is_checked(gq)) {
 			update_file_add(gq, size, ncopy);
 			quota_check_softlimit_exceed(gq);
 			if (!quotacheck)
@@ -423,7 +438,7 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 
 	if (u) {
 		struct quota *uq = user_quota(u);
-		if (uq->enabled) {
+		if (is_checked(uq)) {
 			update_file_resize(uq, old_size, new_size, ncopy);
 			quota_check_softlimit_exceed(uq);
 			quota_active_user_set_db(uq, u);
@@ -431,7 +446,7 @@ quota_update_file_resize(struct inode *inode, gfarm_off_t new_size)
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
-		if (gq->enabled) {
+		if (is_checked(gq)) {
 			update_file_resize(gq, old_size, new_size, ncopy);
 			quota_check_softlimit_exceed(gq);
 			quota_active_group_set_db(gq, g);
@@ -454,7 +469,7 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 
 	if (u) {
 		struct quota *uq = user_quota(u);
-		if (uq->enabled) {
+		if (is_checked(uq)) {
 			update_replica_num(uq, size, n);
 			quota_check_softlimit_exceed(uq);
 			quota_active_user_set_db(uq, u);
@@ -462,7 +477,7 @@ quota_update_replica_num(struct inode *inode, gfarm_int64_t n)
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
-		if (gq->enabled) {
+		if (is_checked(gq)) {
 			update_replica_num(gq, size, n);
 			quota_check_softlimit_exceed(gq);
 			quota_active_group_set_db(gq, g);
@@ -500,7 +515,7 @@ quota_update_file_remove(struct inode *inode)
 
 	if (u) {
 		struct quota *uq = user_quota(u);
-		if (uq->enabled) {
+		if (is_checked(uq)) {
 			update_file_remove(uq, size, ncopy);
 			quota_check_softlimit_exceed(uq);
 			quota_active_user_set_db(uq, u);
@@ -508,7 +523,7 @@ quota_update_file_remove(struct inode *inode)
 	}
 	if (g) {
 		struct quota *gq = group_quota(g);
-		if (gq->enabled) {
+		if (is_checked(gq)) {
 			update_file_remove(gq, size, ncopy);
 			quota_check_softlimit_exceed(gq);
 			quota_active_group_set_db(gq, g);
@@ -532,7 +547,7 @@ static int
 is_exceeded(struct timeval *nowp, struct quota *q,
 	    int is_file_creating, int is_replica_adding)
 {
-	if (!q->enabled)
+	if (!is_checked(q))  /* quota is disabled */
 		return (QUOTA_NOT_EXCEEDED);
 
 	/* softlimit */
@@ -594,10 +609,11 @@ quota_user_remove(struct user *u)
 {
 	struct quota *q = user_quota(u);
 
-	if (q->enabled) {
+	if (q->on_db) {
 		quota_user_remove_db(user_name(u));
-		q->enabled = 0;
+		q->on_db = 0;
 	}
+	q->space = QUOTA_NOT_CHECK_YET;
 }
 
 void
@@ -605,10 +621,11 @@ quota_group_remove(struct group *g)
 {
 	struct quota *q = group_quota(g);
 
-	if (q->enabled) {
+	if (q->on_db) {
 		quota_group_remove_db(group_name(g));
-		q->enabled = 0;
+		q->on_db = 0;
 	}
+	q->space = QUOTA_NOT_CHECK_YET;
 }
 
 /* server operations */
@@ -684,7 +701,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 		q = group_quota(group);
 	else
 		q = user_quota(user);
-	if (!q->enabled) {
+	if (!is_checked(q)) {
 		giant_unlock();
 		free(name);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -777,10 +794,6 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		}
 		q = user_quota(user);
 	}
-	if (!q->enabled) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-		goto end;
-	}
 
 	/* set limits */
 	set_limit(q->grace_period, qi.grace_period);
@@ -801,7 +814,7 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	else
 		e = db_quota_user_set(q, qi.name);
 	if (e == GFARM_ERR_NO_ERROR)
-		q->enabled = 1;
+		q->on_db = 1;
 end:
 	giant_unlock();
 	free(qi.name);
@@ -854,9 +867,9 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
-	/* zero clear */
+	/* zero clear and set true in is_checked */
 	quota_clear_value_all_user_and_group();
-	/* load all inodes from memory and count values of files */
+	/* load all inodes from memory and count usage values of files */
 	inode_lookup_all(NULL, quota_update_file_add_for_quotacheck);
 	/* update memory and db */
 	quota_set_value_all_user_and_group();

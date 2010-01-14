@@ -41,7 +41,7 @@ usage(void)
 	OPT("h", "hardspc=BYTE", "HardLimit of total used file space");
 	OPT("m", "softnum=NUM", "SoftLimit of total used file number");
 	OPT("n", "hardnum=NUM", "HardLimit of total used file number");
-	OPT("S", "physoftspcr=BYTE", "SoftLimit of total used physical space");
+	OPT("S", "physoftspc=BYTE", "SoftLimit of total used physical space");
 	OPT("H", "phyhardspc=BYTE", "HardLimit of total used physical space");
 	OPT("M", "physoftnum=NUM", "SoftLimit of total used physical number");
 	OPT("N", "phyhardnum=NUM", "HardLimit of total used physical number");
@@ -186,14 +186,10 @@ main(int argc, char **argv)
 		e = gfm_client_quota_group_set(gfarm_metadb_server, &qi);
 	} else
 		usage();
-	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		fprintf(stderr, "%s's quota is not enabled.", qi.name);
-		fprintf(stderr, " Please run gfquotacheck command.\n");
-		status = -2;
-	} else if (e != GFARM_ERR_NO_ERROR) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",
 		    program_name, gfarm_error_string(e));
-		status = -3;
+		status = -2;
 	}
 	gfarm_quota_set_info_free(&qi);
 terminate:
@@ -201,7 +197,7 @@ terminate:
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		status = -4;
+		status = -3;
 	}
 	return (status);
 }

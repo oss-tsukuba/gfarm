@@ -202,8 +202,13 @@ main(int argc, char **argv)
 			fprintf(stderr, "Your");
 		else
 			fprintf(stderr, "%s's", name);
-		fprintf(stderr, " quota is not enabled.");
-		fprintf(stderr, " Please run gfquotacheck command.\n");
+		fprintf(stderr, " quota is not enabled.\n");
+		fprintf(stderr, "gfarmadm need to execute "
+			"gfedquota and gfquotacheck for ");
+		if (strcmp(name, "") == 0)
+			fprintf(stderr, "you.\n");
+		else
+			fprintf(stderr, "%s.\n", name);
 		status = -2;
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",

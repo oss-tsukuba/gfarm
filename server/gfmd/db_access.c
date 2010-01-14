@@ -1239,7 +1239,7 @@ db_quota_set_common(struct quota *q, const char *name, int is_group)
 	if (arg == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	if (q->enabled)
+	if (q->on_db)
 		return (dbq_enter(&dbq, (dbq_entry_func_t)ops->quota_modify,
 				  arg));
 	else

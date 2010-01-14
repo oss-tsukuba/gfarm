@@ -25,8 +25,8 @@ usage(void)
 	exit(1);
 }
 
-static char head_user[]  = " username";
-static char head_group[] = "groupname";
+static char head_user[]  = " UserName";
+static char head_group[] = "GroupName";
 static char head_space[] = "FileSpace";
 static char head_num[] = "FileNum";
 static char head_phy_space[] = "PhysicalSpace";
@@ -49,9 +49,7 @@ print_usage_common(const char *name, int mode_group)
 	if (e == GFARM_ERR_OPERATION_NOT_PERMITTED)
 		return (0);
 	else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		fprintf(stderr,
-			"%s : quota is not enabled."
-			" (Please run gfquotacheck)\n", name);
+		fprintf(stderr, "%s : quota is not enabled.\n", name);
 		return (1);
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s : %s\n", name, gfarm_error_string(e));

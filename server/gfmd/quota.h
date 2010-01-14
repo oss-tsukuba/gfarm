@@ -4,9 +4,9 @@
 
 /* related to struct user and struct group */
 struct quota {
-	int enabled;  /* 0: disable quota and not exist on database */
+	int on_db;  /* 0: not exist on database and disable quota */
 	gfarm_time_t    grace_period;
-	gfarm_off_t     space;
+	gfarm_off_t     space; /* -1: not gfquotacheck yet: disable quota */
 	gfarm_time_t    space_exceed;
 	gfarm_off_t     space_soft;
 	gfarm_off_t     space_hard;
