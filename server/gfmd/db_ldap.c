@@ -95,7 +95,7 @@ reconnect_to_ldap_server()
 	gfarm_error_t error;
 	int i;
 
-	gflog_warning(GFARM_MSG_UNFIXED, "reconnect");
+	gflog_warning(GFARM_MSG_1000726, "reconnect");
 	error = gfarm_ldap_terminate();
 	if (error != GFARM_ERR_NO_ERROR)
 		return (error);
@@ -112,7 +112,7 @@ reconnect_to_ldap_server()
 		error = gfarm_ldap_initialize();
 		if (error == GFARM_ERR_NO_ERROR)
 			return (error);
-		gflog_warning(GFARM_MSG_UNFIXED, "reconnect [%d] failed", i);
+		gflog_warning(GFARM_MSG_1000727, "reconnect [%d] failed", i);
 		/* try again and again */
 	}
 }
@@ -130,16 +130,16 @@ retry:
 		switch (rv) {
 		case LDAP_SERVER_DOWN:
 			if (reconnect_to_ldap_server() != GFARM_ERR_NO_ERROR)
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1000728,
 				    "can't contact LDAP server for gfarm");
 			goto retry;
 		case LDAP_NO_SUCH_OBJECT:
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1000729,
 			    "gfarm LDAP base dn (%s) not found",
 			    gfarm_ldap_base_dn);
 			break;
 		default:
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1000730,
 			    "gfarm LDAP base dn (%s) access failed",
 			    gfarm_ldap_base_dn);
 			break;
@@ -188,7 +188,7 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
 
 	if (ctx == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000731,
 		    "LDAP: cannot allocate SSL/TLS context");
 		return (GFARM_ERR_CANT_OPEN);
 	}
@@ -200,7 +200,7 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	 */
 	if (gfarm_ldap_tls_cipher_suite != NULL &&
 	    !SSL_CTX_set_cipher_list(ctx, gfarm_ldap_tls_cipher_suite)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000732,
 		    "cannot set ldap_tls_cipher_suite");
 		e = GFARM_ERR_CANT_OPEN;
 		goto error;
@@ -211,12 +211,12 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	 * rv = ldap_set_option(NULL,LDAP_OPT_X_TLS_CACERTDIR,GRID_CACERT_DIR);
 	 */
 	if (!SSL_CTX_load_verify_locations(ctx, NULL, GRID_CACERT_DIR)) {
-		gflog_warning(GFARM_MSG_UNFIXED, "cannot use " GRID_CACERT_DIR
+		gflog_warning(GFARM_MSG_1000733, "cannot use " GRID_CACERT_DIR
 		    " for LDAP TLS certificates directory");
 		e = GFARM_ERR_CANT_OPEN;
 		goto error;
 	} else if (!SSL_CTX_set_default_verify_paths(ctx)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000734,
 		    "failed to verify " GRID_CACERT_DIR
 		    " for LDAP TLS certificates directory");
 		e = GFARM_ERR_CANT_OPEN;
@@ -231,7 +231,7 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	if (gfarm_ldap_tls_certificate_key_file != NULL &&
 	    !SSL_CTX_use_PrivateKey_file(ctx,
 	    gfarm_ldap_tls_certificate_key_file, SSL_FILETYPE_PEM)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000735,
 		    "failed to use ldap_tls_certificate_key_file");
 		e = GFARM_ERR_CANT_OPEN;
 		goto error;
@@ -245,7 +245,7 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	if (gfarm_ldap_tls_certificate_file != NULL &&
 	    !SSL_CTX_use_certificate_file(ctx,
 	    gfarm_ldap_tls_certificate_file, SSL_FILETYPE_PEM)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000736,
 		    "failed to use ldap_tls_certificate_file");
 		e = GFARM_ERR_CANT_OPEN;
 		goto error;
@@ -254,7 +254,7 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 	if ((gfarm_ldap_tls_certificate_key_file != NULL ||
 	     gfarm_ldap_tls_certificate_file != NULL) &&
 	    !SSL_CTX_check_private_key(ctx)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1000737,
 		    "ldap_tls_certificate_file/key_file "
 		    "check failure");
 		e = GFARM_ERR_CANT_OPEN;
@@ -274,9 +274,9 @@ gfarm_ldap_new_default_ctx(SSL_CTX **ctxp)
 error:
 	SSL_CTX_free(ctx);
 	if (ERR_peek_error()) {
-		gflog_error(GFARM_MSG_UNFIXED, "because:", e);
+		gflog_error(GFARM_MSG_1000738, "because:", e);
 		do {
-			gflog_error(GFARM_MSG_UNFIXED, "%s", ERR_error_string(
+			gflog_error(GFARM_MSG_1000739, "%s", ERR_error_string(
 			    ERR_get_error(), NULL));
 		} while (ERR_peek_error());
 	}
@@ -301,7 +301,7 @@ gfarm_ldap_set_ssl_context(void)
 	rv = ldap_get_option(NULL, LDAP_OPT_X_TLS_CTX,
 	    &ldap_ssl_default_context);
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000740,
 		    "LDAP get default SSL/TLS context: %s",
 		    ldap_err2string(rv));
 		return (GFARM_ERR_CANT_OPEN);
@@ -309,7 +309,7 @@ gfarm_ldap_set_ssl_context(void)
 
 	rv = ldap_set_option(NULL, LDAP_OPT_X_TLS_CTX, ldap_ssl_context);
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000741,
 		    "LDAP set default SSL/TLS context: %s",
 		    ldap_err2string(rv));
 		return (GFARM_ERR_CANT_OPEN);
@@ -324,7 +324,7 @@ gfarm_ldap_restore_ssl_context(void)
 	    ldap_ssl_default_context);
 
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000742,
 		    "LDAP restore default SSL/TLS context: %s",
 		    ldap_err2string(rv));
 		return (GFARM_ERR_CANT_OPEN);
@@ -342,7 +342,7 @@ gfarm_ldap_switch_ssl_context(LDAP *ld)
 	rv = ldap_set_option(ld, LDAP_OPT_X_TLS_CTX, ldap_ssl_context);
 
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED, "LDAP set SSL/TLS context: %s",
+		gflog_error(GFARM_MSG_1000743, "LDAP set SSL/TLS context: %s",
 		    ldap_err2string(rv));
 		return (GFARM_ERR_CANT_OPEN);
 	}
@@ -380,7 +380,7 @@ gfarm_ldap_initialize(void)
 		} else if (strcasecmp(gfarm_ldap_tls, "start_tls") == 0) {
 			tls_mode = LDAP_WITH_START_TLS;
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000744,
 			    "ldap_tls: unknown keyword %s",
 			    gfarm_ldap_tls);
 			return (GFARM_ERR_INVALID_ARGUMENT);
@@ -388,7 +388,7 @@ gfarm_ldap_initialize(void)
 	}
 	/* sanity check */
 	if (gfarm_ldap_server_name == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000745,
 		    "ldap_server_host is not specified");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
@@ -400,14 +400,14 @@ gfarm_ldap_initialize(void)
 	} else {
 		port = strtol(gfarm_ldap_server_port, &s, 0);
 		if (s == gfarm_ldap_server_port || port <= 0 || port >= 65536){
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000746,
 			    "ldap_server_port: illegal value `%s'",
 			    gfarm_ldap_server_port);
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		}
 	}
 	if (gfarm_ldap_base_dn == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000747,
 		    "ldap_base_dn is not specified");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
@@ -420,7 +420,7 @@ gfarm_ldap_initialize(void)
 	gfarm_ldap_server = ldap_init(gfarm_ldap_server_name, port);
 	if (gfarm_ldap_server == NULL) {
 		/* ldap_init() defers actual connect(2) operation later */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000748,
 		    "ldap_init: %s", strerror(errno));
 		return (GFARM_ERR_CANT_OPEN);
 	}
@@ -434,7 +434,7 @@ gfarm_ldap_initialize(void)
 		}
 #else
 		gfarm_ldap_terminate();
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000749,
 		    "\"ldap_tls\" is specified, but "
 		    "the LDAP library linked with gfarm doesn't support it");
 		return (GFARM_ERR_CANT_OPEN);
@@ -459,7 +459,7 @@ gfarm_ldap_initialize(void)
 		tls = LDAP_OPT_X_TLS_HARD;
 		rv = ldap_set_option(gfarm_ldap_server, LDAP_OPT_X_TLS, &tls);
 		if (rv != LDAP_SUCCESS) {
-			gflog_error(GFARM_MSG_UNFIXED, "LDAP use SSL/TLS: %s",
+			gflog_error(GFARM_MSG_1000750, "LDAP use SSL/TLS: %s",
 			    ldap_err2string(rv));
 #ifdef HAVE_LDAP_PERROR
 			/* XXX this can only output to stderr */
@@ -472,7 +472,7 @@ gfarm_ldap_initialize(void)
 #else
 		gfarm_ldap_restore_ssl_context();
 		gfarm_ldap_terminate();
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000751,
 		    "gfarm.conf: \"ldap_tls true\" is specified, but "
 		    "the LDAP library linked with gfarm doesn't support it");
 		return (GFARM_ERR_CANT_OPEN);
@@ -483,7 +483,7 @@ gfarm_ldap_initialize(void)
 #if defined(HAVE_LDAP_START_TLS_S) && defined(HAVE_LDAP_SET_OPTION)
 		rv = ldap_start_tls_s(gfarm_ldap_server, NULL, NULL);
 		if (rv != LDAP_SUCCESS) {
-			gflog_error(GFARM_MSG_UNFIXED, "LDAP start TLS: %s",
+			gflog_error(GFARM_MSG_1000752, "LDAP start TLS: %s",
 			    ldap_err2string(rv));
 #ifdef HAVE_LDAP_PERROR
 			/* XXX this cannot output to syslog */
@@ -496,7 +496,7 @@ gfarm_ldap_initialize(void)
 #else
 		gfarm_ldap_restore_ssl_context();
 		gfarm_ldap_terminate();
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000753,
 		    "gfarm.conf: \"ldap_tls start_tls\" is specified, "
 		  "but the LDAP library linked with gfarm doesn't support it");
 		return (GFARM_ERR_CANT_OPEN);
@@ -507,7 +507,7 @@ gfarm_ldap_initialize(void)
 	rv = ldap_simple_bind_s(gfarm_ldap_server,
 	    gfarm_ldap_bind_dn, gfarm_ldap_bind_password);
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000754,
 		    "LDAP simple bind: %s", ldap_err2string(rv));
 		if (tls_mode != LDAP_WITHOUT_TLS)
 			gfarm_ldap_restore_ssl_context();
@@ -535,7 +535,7 @@ gfarm_ldap_terminate(void)
 
 	rv = ldap_unbind(gfarm_ldap_server);
 	if (rv != LDAP_SUCCESS) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000755,
 		    "ldap_unbind: %s", ldap_err2string(rv));
 		e = GFARM_ERR_UNKNOWN;
 	}
@@ -731,7 +731,7 @@ retry:
 		error = GFARM_ERR_ALREADY_EXISTS;
 		break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000756,
 		    "ldap_add_s(%s): %s", dn, ldap_err2string(rv));
 		error = GFARM_ERR_UNKNOWN;
 	}
@@ -771,7 +771,7 @@ retry:
 		error = GFARM_ERR_ALREADY_EXISTS;
 		break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000757,
 		    "ldap_modify_s(%s): %s", dn, ldap_err2string(rv));
 		error = GFARM_ERR_UNKNOWN;
 	}
@@ -807,7 +807,7 @@ retry:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000758,
 		    "ldap_delete_s(%s): %s", dn, ldap_err2string(rv));
 		error = GFARM_ERR_UNKNOWN;
 	}
@@ -944,7 +944,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	/* search for entries asynchronously */
 	msgid = ldap_search(gfarm_ldap_server, dn, scope, query, attrs, 0);
 	if (msgid == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000759,
 		    "ldap_search(%s) - for each", dn);
 		return (GFARM_ERR_UNKNOWN);
 	}
@@ -995,7 +995,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	if (res != NULL)
 		ldap_msgfree(res);
 	if (rv == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000760,
 		    "ldap_search(%s) - for each - failed", dn);
 		return (GFARM_ERR_UNKNOWN);
 	}

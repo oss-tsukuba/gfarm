@@ -124,7 +124,7 @@ free_secsession(struct io_gfsl *io)
 	    gfarmGssDeleteCredential(&io->cred_to_be_freed,
 	    &e_major, &e_minor) < 0 &&
 	    gflog_auth_get_verbose()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000725,
 		    "Can't free my credential because of:");
 		gfarmGssPrintMajorStatus(e_major);
 		gfarmGssPrintMinorStatus(e_minor);

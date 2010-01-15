@@ -199,7 +199,7 @@ secSessionReadConfigFile(configFile, ssOptPtr)
     int i;
 
     if (configFile == NULL || configFile[0] == '\0') {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000659,
 	    "gfarm:secSessionReadConfigFile(): "
 			 "GFSL configuration file isn't specified");
 	return -1;
@@ -289,7 +289,7 @@ canonicSecSessionOpt(which, reqPtr, canPtr)
     	&initiatorSsOpt : &acceptorSsOpt;
 
     if (canPtr == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000660,
 	    "gfarmSecSession:canonicSecSessionOpt(): "
 			 "invalid argument");
 	return -1;
@@ -385,7 +385,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 #define NUM_NEGO_PARAM			6
   
     if (sCtx == GSS_C_NO_CONTEXT) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000661,
 	    "gfarmSecSession:negotiateConfigParam(): "
 			 "no context");
 	goto Done;
@@ -401,7 +401,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    int iConf, iConfF;
 	   
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000662,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "negotiation failure with the initiator");
 		goto Done;
@@ -474,7 +474,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
 
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000663,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "initiator disappered");
 		goto Done;
@@ -493,14 +493,14 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 	    param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000664,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "acceptor disappered");
 		goto Done;
 	    }
 
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000665,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "negotiation failure with the acceptor");
 		goto Done;
@@ -706,7 +706,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	if (configFile == NULL || configFile[0] == '\0') {
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000666,
 		    "gfarmSecSessionInitializeAcceptor(): "
 				 "cannot access configuration directory");
 		goto SkipReadConfFile;
@@ -809,7 +809,7 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	if (configFile == NULL || configFile[0] == '\0') {
 	    char *confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000667,
 		    "gfarmSecSessionInitializeInitiator(): "
 				 "cannot access configuration directory");
 		goto SkipReadConfFile;
@@ -919,7 +919,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    (iConfigFile == NULL || iConfigFile[0] == '\0')) {
 	    confDir = gfarmGetEtcDir();
 	    if (confDir == NULL) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000668,
 		    "gfarmSecSessionInitializeBoth(): "
 				 "cannot access configuration directory");
 		goto SkipReadConfFile;
@@ -1083,7 +1083,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     pthread_mutex_lock(&acceptor_mutex);
     if (acceptorInitialized == 0) {
 	pthread_mutex_unlock(&acceptor_mutex);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000669,
 	    "gfarmSecSessionAccept(): not initialized");
 	goto Fail;
     }
@@ -1091,7 +1091,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     ret = allocSecSession(GFARM_SS_ACCEPTOR);
     if (ret == NULL) {
 	pthread_mutex_unlock(&acceptor_mutex);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000670,
 	    "gfarmSecSessionAccept(): no memory");
 	goto Fail;
     }
@@ -1131,7 +1131,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 				&initiatorNameType)) == NULL ||
 	initiatorDistName[0] == '\0' ||
 	initiatorNameType == GSS_C_NT_ANONYMOUS) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000671,
 	    "gfarmSecSessionAccept(): no DN from initiator");
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
@@ -1142,7 +1142,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      */
     entry = gfarmAuthGetUserEntry(initiatorDistName);
     if (entry == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000672,
 	    "%s: not registered in mapfile", initiatorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
 	/* Send NACK. */
@@ -1162,7 +1162,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 		acknack = GFARM_SS_AUTH_ACK;
 		(void)gfarmWriteInt32(fd, &acknack, 1);
 	    } else {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000673,
 		    "%s: hostname doesn't match: "
 		    "peer %s, expected %s", initiatorDistName, peerName,
 		    entry->authData.hostAuth.FQDN);
@@ -1272,7 +1272,7 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     pthread_mutex_lock(&initiator_mutex);
     if (initiatorInitialized == 0) {
 	pthread_mutex_unlock(&initiator_mutex);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000674,
 	    "gfarm:secSessionInitiate(): not initialized");
 	goto Fail;
     }
@@ -1280,7 +1280,7 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     ret = allocSecSession(GFARM_SS_INITIATOR);
     if (ret == NULL) {
 	pthread_mutex_unlock(&initiator_mutex);
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000675,
 	    "gfarm:secSessionInitiate(): no memory");
 	goto Fail;
     }
@@ -1320,7 +1320,7 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
 				&acceptorNameType)) == NULL ||
 	acceptorDistName[0] == '\0' ||
 	acceptorNameType == GSS_C_NT_ANONYMOUS) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000676,
 	    "gfarm:secSessionInitiate(): no DN from acceptor");
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
@@ -1330,14 +1330,14 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
      * Phase 2: Receive authorization acknowledgement.
      */
     if (gfarmReadInt32(fd, &acknack, 1) != 1) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000677,
 	    "%s: acceptor does not answer authentication result",
 	    acceptorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
     }
     if (acknack == GFARM_SS_AUTH_NACK) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000678,
 	    "%s: session refused by acceptor", acceptorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
 	goto Fail;
@@ -1829,13 +1829,13 @@ negotiateConfigParamInitiatorReceive(events, fd, closure, t)
 
     if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 	assert(events == GFARM_EVENT_TIMEOUT);
-	gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+	gflog_auth_error(GFARM_MSG_1000679, "gfarmSecSession: "
 			 "negotiateConfigParamInitiatorReceive(): timed out");
 	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
     } else {
 	assert(events == GFARM_EVENT_READ);
 	if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+	    gflog_auth_error(GFARM_MSG_1000680, "gfarmSecSession: "
 			     "negotiateConfigParamInitiatorReceive(): "
 			     "negotiation failure with the acceptor");
 	    state->majStat = GSS_S_FAILURE;
@@ -1873,7 +1873,7 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
     param[NEGO_PARAM_OTHER_CONFIG_FORCE] = canPtr->configForce;
 
     if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000681,
 	    "gfarmSecSession:negotiateConfigParamInitiatorSend(): "
 	    "acceptor disappered");
     } else {
@@ -1883,7 +1883,7 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
 	    /* go to negotiateConfigParamInitiatorReceive() */
 	    return;
 	}
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000682,
 	    "gfarmSecSession:negotiateConfigParamInitiatorSend(): %s",
 	    strerror(rv));
 	/* XXX convert rv to state->{majStat,minStat} */
@@ -1912,11 +1912,11 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
     int rv;
 
     if (sCtx == GSS_C_NO_CONTEXT) {
-	gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+	gflog_auth_error(GFARM_MSG_1000683, "gfarmSecSession: "
 			 "negotiateConfigParamInitiatorRequest(): "
 			 "no context");
     } else if (GFARM_MALLOC(state) == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+	gflog_auth_error(GFARM_MSG_1000684, "gfarmSecSession: "
 			 "negotiateConfigParamInitiatorRequest(): "
 			 "no memory");
     } else {
@@ -1924,7 +1924,7 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
 	    GFARM_EVENT_WRITE, fd,
 	    negotiateConfigParamInitiatorSend, state);
 	if (state->writable == NULL) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+	    gflog_auth_error(GFARM_MSG_1000685, "gfarmSecSession: "
 			     "negotiateConfigParamInitiatorRequest: "
 			     "no memory");
 	} else {
@@ -1937,14 +1937,14 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
 		GFARM_EVENT_READ|GFARM_EVENT_TIMEOUT, fd,
 		negotiateConfigParamInitiatorReceive, state);
 	    if (state->readable == NULL) {
-		gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+		gflog_auth_error(GFARM_MSG_1000686, "gfarmSecSession: "
 				 "negotiateConfigParamInitiatorRequest: "
 				 "no memory");
 	    } else {
 		/* go to negotiateConfigParamInitiatorSend() */
 		rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 		if (rv != 0) {
-		    gflog_auth_error(GFARM_MSG_UNFIXED, "gfarmSecSession: "
+		    gflog_auth_error(GFARM_MSG_1000687, "gfarmSecSession: "
 		        "negotiateConfigParamInitiatorRequest: %s",
 			strerror(rv));
 		} else {
@@ -2100,7 +2100,7 @@ secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
 
     if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 	assert(events == GFARM_EVENT_TIMEOUT);
-	gflog_auth_error(GFARM_MSG_UNFIXED, "%s: gfarm:"
+	gflog_auth_error(GFARM_MSG_1000688, "%s: gfarm:"
 	    "secSessionInitiateReceiveAuthorizationAck(): timed out",
 	    state->acceptorDistName);
 	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
@@ -2110,13 +2110,13 @@ secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
 	 * Phase 2: Receive authorization acknowledgement.
 	 */
 	if (gfarmReadInt32(fd, &acknack, 1) != 1) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000689,
 	        "%s: acceptor does not answer authentication result",
 		state->acceptorDistName);
 	    state->majStat = GSS_S_UNAUTHORIZED;
 	} else if (acknack == GFARM_SS_AUTH_NACK) {
 	    state->majStat = GSS_S_UNAUTHORIZED;
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000690,
 		    "%s: session refused by acceptor",
 		    state->acceptorDistName);
 	} else {
@@ -2161,7 +2161,7 @@ secSessionInitiateWaitAuthorizationAck(closure)
 				    &state->acceptorNameType)) == NULL ||
 	    state->acceptorDistName[0] == '\0' ||
 	    state->acceptorNameType == GSS_C_NT_ANONYMOUS) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000691,
 		"gfarm:secSessionInitiateWaitAuthorizationAck(): "
 			     "no DN from acceptor");
 	    state->majStat = GSS_S_UNAUTHORIZED; /* failure */
@@ -2173,7 +2173,7 @@ secSessionInitiateWaitAuthorizationAck(closure)
 		/* go to secSessionInitiateReceiveAuthorizationAck() */
 		return;
 	    }
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000692,
 		"gfarm:secSessionInitiateWaitAuthorizationAck(): %s",
 		strerror(rv));
 	    /* XXX convert rv to state->{majStat,minStat} */
@@ -2206,14 +2206,14 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
     OM_uint32 minStat = GFSL_DEFAULT_MINOR_ERROR;
 
     if (initiatorInitialized == 0) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000693,
 	    "gfarm:secSessionInitiateRequest(): "
 			 "not initialized");
     } else if (GFARM_MALLOC(state) == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000694,
 	    "gfarm:secSessionInitiateRequest(): no memory");
     } else if ((ret = allocSecSession(GFARM_SS_INITIATOR)) == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000695,
 	    "gfarm:secSessionInitiateRequest(): no memory");
     } else if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt)< 0){
 	/* failure */;
@@ -2271,7 +2271,7 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 		}
 		return (state); /* success */
 	    }
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000696,
 		"gfarm:secSessionInitiateRequest(): no memory");
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;

@@ -117,10 +117,10 @@ gfarmGssPrintMajorStatus(majStat)
     char **lP = list;
     if (*lP != NULL) {
 	while (*lP != NULL) {
-	    gflog_error(GFARM_MSG_UNFIXED, "\t : %s", *lP++);
+	    gflog_error(GFARM_MSG_1000607, "\t : %s", *lP++);
 	}
     } else {
-	gflog_error(GFARM_MSG_UNFIXED, "GSS Major Status Error: UNKNOWN");
+	gflog_error(GFARM_MSG_1000608, "GSS Major Status Error: UNKNOWN");
     }
     gfarmGssFreeCrackedStatus(list);
 }
@@ -134,9 +134,9 @@ gfarmGssPrintMinorStatus(minStat)
     char **lP = list;
     if (*lP != NULL) {
 	while (*lP != NULL)
-	    gflog_error(GFARM_MSG_UNFIXED, "\t : %s", *lP++);
+	    gflog_error(GFARM_MSG_1000609, "\t : %s", *lP++);
     } else {
-	gflog_error(GFARM_MSG_UNFIXED, "GSS Minor Status Error: UNKNOWN\n");
+	gflog_error(GFARM_MSG_1000610, "GSS Minor Status Error: UNKNOWN\n");
     }
     gfarmGssFreeCrackedStatus(list);
 }
@@ -163,7 +163,7 @@ gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStat
 
 	GFARM_MALLOC_ARRAY(user, nameLength + 1);
 	if (user == NULL) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000611,
 		"gfarmGssImportName(): no memory");
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -173,7 +173,7 @@ gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStat
 	user[nameLength] = '\0';
 	aePtr = gfarmAuthGetLocalUserEntry(user);
 	if (aePtr == NULL) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED, "%s: ERROR: cannot convert "
+	    gflog_auth_error(GFARM_MSG_1000612, "%s: ERROR: cannot convert "
 			     "this user name to X.509 Distinguish name", user);
 	    free(user);
 	    majStat = GSS_S_FAILURE;
@@ -223,7 +223,7 @@ gfarmGssImportNameOfHostBasedService(namePtr, service, hostname, majStatPtr, min
 
     GFARM_MALLOC_ARRAY(nameString, nameLength + 1);
     if (nameString == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000613,
 	    "gfarmGssImportNameOfHostBasedService(): "
 			 "no memory");
 	majStat = GSS_S_FAILURE;
@@ -342,7 +342,7 @@ gfarmGssNewDisplayName(inputName, majStatPtr, minStatPtr, outputNameTypePtr)
     gss_OID outputNameType;
 
     if (inputName == GSS_C_NO_NAME) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000614,
 	    "gfarmGssNewDisplayName(): GSS_C_NO_NAME is passed");
 	majStat = GSS_S_FAILURE;
 	minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -351,7 +351,7 @@ gfarmGssNewDisplayName(inputName, majStatPtr, minStatPtr, outputNameTypePtr)
 	       == GSS_S_COMPLETE) {
 	GFARM_MALLOC_ARRAY(ret, buf.length + 1);
 	if (ret == NULL) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000615,
 		"gfarmGssNewDisplayName(): no memory");
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
@@ -581,7 +581,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
     do {
 	tknStat = gfarmGssReceiveToken(fd, itPtr);
 	if (tknStat <= 0) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000616,
 		"gfarmGssAcceptSecurityContext(): "
 			     "failed to receive response");
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
@@ -611,7 +611,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 	    tknStat = gfarmGssSendToken(fd, otPtr);
 	    (void)gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000617,
 		    "gfarmGssAcceptSecurityContext(): "
 				 "failed to send response");
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
@@ -693,7 +693,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
      */
     if ((reqFlag & GSS_C_ANON_FLAG) == GSS_C_ANON_FLAG) {
 	/* It is a bit safer to deny the request than to silently ignore it */
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000618,
 	    "gfarmGssInitiateSecurityContext(): "
 	    "GSS_C_ANON_FLAG is not allowed");
 	majStat = GSS_S_UNAVAILABLE;
@@ -726,7 +726,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 	    tknStat = gfarmGssSendToken(fd, otPtr);
 	    (void)gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000619,
 		    "gfarmGssInitiateSecurityContext(): "
 				 "failed to send response");
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
@@ -741,7 +741,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
 	    tknStat = gfarmGssReceiveToken(fd, itPtr);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000620,
 		    "gfarmGssInitiateSecurityContext(): "
 				 "failed to receive response");
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
@@ -1171,7 +1171,7 @@ gssInitiateSecurityContextSwitch(state)
 	    /* go to gfarmGssInitiateSecurityContextReceiveToken() */
 	    return 1;
 	}
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000621,
 	    "gfarm:gssInitiateSecurityContextSwitch(): %s",
 			 strerror(rv));
 	state->majStat = GSS_S_FAILURE;
@@ -1216,7 +1216,7 @@ gssInitiateSecurityContextNext(state)
 	    /* go to gfarmGssInitiateSecurityContextSendToken() */
 	    return 1;
 	}
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000622,
 	    "gfarm:gssInitiateSecurityContextNext(): %s",
 			 strerror(rv));
 	state->majStat = GSS_S_FAILURE;
@@ -1240,7 +1240,7 @@ gfarmGssInitiateSecurityContextSendToken(events, fd, closure, t)
     tknStat = gfarmGssSendToken(fd, state->otPtr);
     (void)gss_release_buffer(&minStat2, state->otPtr);
     if (tknStat <= 0) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000623,
 	    "gfarmGssInitiateSecurityContextSendToken(): "
 			 "failed to send response");
 	state->majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
@@ -1272,7 +1272,7 @@ gfarmGssInitiateSecurityContextReceiveToken(events, fd, closure, t)
 	assert(events == GFARM_EVENT_READ);
 	tknStat = gfarmGssReceiveToken(fd, state->itPtr);
 	if (tknStat <= 0) {
-	    gflog_auth_error(GFARM_MSG_UNFIXED,
+	    gflog_auth_error(GFARM_MSG_1000624,
 		"gfarmGssInitiateSecurityContextReceiveToken(): "
 			     "failed to receive response");
 	    state->majStat= GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
@@ -1308,7 +1308,7 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
      */
     if ((reqFlag & GSS_C_ANON_FLAG) == GSS_C_ANON_FLAG) {
 	/* It is a bit safer to deny the request than to silently ignore it */
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000625,
 	    "gfarmGssInitiateSecurityContextRequest(): "
 	    "GSS_C_ANON_FLAG is not allowed");
 	majStat = GSS_S_UNAVAILABLE;
@@ -1318,7 +1318,7 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
 
     GFARM_MALLOC(state);
     if (state == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000626,
 	    "gfarmGssInitiateSecurityContextRequest(): "
 			 "no memory");
 	majStat = GSS_S_FAILURE;
@@ -1335,7 +1335,7 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
 			     gfarmGssInitiateSecurityContextSendToken,
 			     state);
     if (state->writable == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000627,
 	    "gfarmGssInitiateSecurityContextRequest(): "
 			 "no memory");
 	state->majStat = GSS_S_FAILURE;
@@ -1351,7 +1351,7 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
 			     gfarmGssInitiateSecurityContextReceiveToken,
 			     state);
     if (state->readable == NULL) {
-	gflog_auth_error(GFARM_MSG_UNFIXED,
+	gflog_auth_error(GFARM_MSG_1000628,
 	    "gfarmGssInitiateSecurityContextRequest(): "
 			 "no memory");
 	state->majStat = GSS_S_FAILURE;

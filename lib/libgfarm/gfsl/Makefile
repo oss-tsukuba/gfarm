@@ -51,6 +51,7 @@ program: $(PROGRAMS)
 $(OBJS): $(DEPGFSLINC) $(DEPGFARMINC)
 
 include $(top_srcdir)/makes/lib.mk
+include $(top_srcdir)/makes/gflog.mk
 
 # dependencies
 auth.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfutil.h

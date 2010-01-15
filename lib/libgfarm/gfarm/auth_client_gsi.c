@@ -64,7 +64,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	    (char *)hostname,
 	    &acceptor_name);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000697,
 		    "Server credential configuration for %s:%s: %s",
 		    service_tag, hostname, gfarm_error_string(e));
 		return (e);
@@ -89,7 +89,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 			    (char *)hostname,
 			    &initiator_name);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_auth_error(GFARM_MSG_UNFIXED,
+				gflog_auth_error(GFARM_MSG_1000698,
 				    "Service credential configuration for %s: %s",
 				    spool_servicename, gfarm_error_string(e));
 				return (e);
@@ -109,7 +109,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		    initiator_name, GSS_C_INITIATE,
 		    &e_major, &e_minor, NULL) < 0) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1000699,
 				    "Can't acquire my credentail "
 				    "because of:");
 				gfarmGssPrintMajorStatus(e_major);
@@ -145,7 +145,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		gfarmGssDeleteName(&acceptor_name, NULL, NULL);
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000700,
 			    "Can't initiate session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
@@ -153,7 +153,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		if (cred_acquired &&
 		    gfarmGssDeleteCredential(&cred, &e_major, &e_minor) < 0 &&
 		    gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000701,
 			    "Can't free my credential because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
@@ -249,7 +249,7 @@ gfarm_auth_request_gsi_wait_result(void *closure)
 	    &e_major, &e_minor);
 	if (state->session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1000702,
 			    "Can't initiate session because of:");
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
@@ -328,7 +328,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 	    (char *)hostname,
 	    &state->acceptor_name);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_auth_error(GFARM_MSG_UNFIXED,
+		gflog_auth_error(GFARM_MSG_1000703,
 		    "Server credential configuration for %s:%s: %s",
 		    service_tag, hostname, gfarm_error_string(e));
 		goto error_free_readable;
@@ -345,7 +345,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		    GSS_C_NO_NAME, GSS_C_INITIATE,
 		    &e_major, &e_minor, NULL) < 0) {
 			if (gflog_auth_get_verbose()) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1000704,
 				    "Can't acquire my credentail "
 				    "because of:");
 				gfarmGssPrintMajorStatus(e_major);
@@ -394,7 +394,7 @@ error_free_cred:
 	if (state->cred_acquired &&
 	    gfarmGssDeleteCredential(&state->cred, &e_major, &e_minor) < 0 &&
 	    gflog_auth_get_verbose()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1000705,
 		    "Can't free my credential because of:");
 		gfarmGssPrintMajorStatus(e_major);
 		gfarmGssPrintMinorStatus(e_minor);

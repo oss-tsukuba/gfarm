@@ -45,7 +45,7 @@ gfarmTCPConnectPortByHost(host, port)
     hints.ai_socktype = SOCK_STREAM;
     error = gfarm_getaddrinfo(host, sbuf, &hints, &res0);
     if (error != 0) {
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1000629,
 	    "getaddrinfo: %s: %s", host, gai_strerror(error));
 	return (-1);
     }
@@ -53,7 +53,7 @@ gfarmTCPConnectPortByHost(host, port)
     for (res = res0; res != NULL; res = res->ai_next) {
 	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (sock < 0) {
-	    gflog_error(GFARM_MSG_UNFIXED,
+	    gflog_error(GFARM_MSG_1000630,
 		"socket(%d, %d, %d): %s\n", (int)res->ai_family,
 		(int)res->ai_socktype, (int)res->ai_protocol, strerror(errno));
 	    continue;
@@ -63,7 +63,7 @@ gfarmTCPConnectPortByHost(host, port)
 	       errno == EINTR)
 		;
 	if (rv < 0) {
-	    gflog_error(GFARM_MSG_UNFIXED, "connect: %s\n", strerror(errno));
+	    gflog_error(GFARM_MSG_1000631, "connect: %s\n", strerror(errno));
 	    close(sock);
 	    sock = -1;
 	    continue;
@@ -97,7 +97,7 @@ gfarmTCPBindPort(port)
     hints.ai_flags = AI_PASSIVE;
     e = gfarm_getaddrinfo(NULL, sbuf, &hints, &res);
     if (e) {
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1000632,
 	    "getaddrinfo(port = %u): %s\n", port, gai_strerror(e));
 	return -1;
     }
@@ -106,17 +106,17 @@ gfarmTCPBindPort(port)
 
     sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (sock < 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "socket: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000633, "socket: %s", strerror(errno));
     } else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) != 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "setsockopt: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000634, "setsockopt: %s", strerror(errno));
 	close(sock);
 	sock = -1;
     } else if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "bind: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000635, "bind: %s", strerror(errno));
 	close(sock);
 	sock = -1;
     } else if (listen(sock, MAX_BACKLOG) != 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "listen: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000636, "listen: %s", strerror(errno));
 	close(sock);
 	sock = -1;
     }
@@ -137,7 +137,7 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
     char hbuf[NI_MAXHOST];
 
     if (getpeername(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "getpeername: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000637, "getpeername: %s", strerror(errno));
 	return (-1);
     }
     if (hostPtr != NULL) {
@@ -161,7 +161,7 @@ gfarmGetNameOfSocket(sock, portPtr)
     socklen_t slen = sizeof(sin);
     
     if (getsockname(sock, (struct sockaddr *)&sin, &slen) != 0) {
-	gflog_error(GFARM_MSG_UNFIXED, "getsockname: %s", strerror(errno));
+	gflog_error(GFARM_MSG_1000638, "getsockname: %s", strerror(errno));
 	return (-1);
     }
     if (portPtr != NULL)
@@ -187,7 +187,7 @@ gfarmWaitReadable(fd)
 	if (errno == EINTR) {
 	    goto SelectAgain;
 	} else {
-	    gflog_error(GFARM_MSG_UNFIXED, "select: %s", strerror(errno));
+	    gflog_error(GFARM_MSG_1000639, "select: %s", strerror(errno));
 	    return sel;
 	}
     }
@@ -212,7 +212,7 @@ gfarmReadInt8(fd, buf, len)
 	}
 	cur = read(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error(GFARM_MSG_UNFIXED, "read: %s", strerror(errno));
+	    gflog_error(GFARM_MSG_1000640, "read: %s", strerror(errno));
 	    return sum;
 	} else if (cur == 0) {
 	    break;
@@ -279,7 +279,7 @@ gfarmWriteInt8(fd, buf, len)
     do {
 	cur = gfarm_send_no_sigpipe(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error(GFARM_MSG_UNFIXED, "write: %s", strerror(errno));
+	    gflog_error(GFARM_MSG_1000641, "write: %s", strerror(errno));
 	    return sum;
 	}
 	sum += cur;
