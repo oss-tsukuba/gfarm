@@ -113,7 +113,7 @@ peer_table_unlock(void)
 static void
 peer_epoll_ctl_fd(int op, int fd)
 {
-	struct epoll_event ev;
+	struct epoll_event ev = { 0, { 0 }};
 
 	ev.data.fd = fd;
 	ev.events = EPOLLIN | EPOLLET;
