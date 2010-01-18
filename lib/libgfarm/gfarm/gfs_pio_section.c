@@ -20,6 +20,7 @@
 #include "timer.h"
 #include "gfutil.h"
 
+#include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
@@ -465,6 +466,9 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		e = gfarm_schedule_select_host(gf->gfm_server, nhosts, infos,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
 	gfarm_host_sched_info_free(nhosts, infos);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED, "schedule_select_host: %s",
+		    gfarm_error_string(e));
 
 	/* on-demand replication */
 	if (e == GFARM_ERR_NO_ERROR &&
@@ -527,8 +531,11 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	struct gfs_file_section_context *vc;
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
-	int host_need_free = 0;
+	int host_assigned = 0;
 	gfarm_int32_t port;
+	int retry = 0, sleep_interval = 5;
+	/* wait at least 10 min = maximum reconnection interval of gfsd */
+	int max_retry = 7;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -555,16 +562,46 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	}
 	gf->view_context = vc;
 
-	if (host == NULL) {
-		e = gfarm_schedule_file(gf, &host, &port);
+	for (;;) {
+		if (host == NULL) {
+			e = gfarm_schedule_file(gf, &host, &port);
+			/* reschedule another host */
+			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
+			    ++retry <= max_retry) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "sleep %d sec: %s", sleep_interval,
+				    gfarm_error_string(e));
+				sleep(sleep_interval);
+				sleep_interval *= 2;
+				continue;
+			}
+			if (e == GFARM_ERR_NO_ERROR)
+				host_assigned = 1;
+		}
 		if (e == GFARM_ERR_NO_ERROR)
-			host_need_free = 1;
+			e = connect_and_open_with_reconnection(gf, host, port);
+
+		if (host_assigned) {
+			free(host);
+			/*
+			 * reschedule another host unless host is
+			 * explicitly specified
+			 */
+			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
+			    gfs_client_is_connection_error(e)) &&
+			    ++retry <= max_retry) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "sleep %d sec: %s", sleep_interval,
+				    gfarm_error_string(e));
+				host = NULL;
+				sleep(sleep_interval);
+				sleep_interval *= 2;
+				continue;
+			}
+		}
+		break;
 	}
-	if (e == GFARM_ERR_NO_ERROR)
-		e = connect_and_open_with_reconnection(gf, host, port);
-	if (host_need_free)
-		free(host);
-	/* XXX FIXME: if failed, try to reschedule another host */
+
 	if (e == GFARM_ERR_NO_ERROR) {
 		gf->ops = &gfs_pio_view_section_ops;
 		gf->p = gf->length = 0;
