@@ -67,13 +67,6 @@ Gfarmファイルシステムの管理者は，-c，-m，-d
 <variablelist>
 
 <varlistentry>
-<term><option>-l</option></term>
-<listitem>
-<para>登録ユーザの情報を詳細に表示します．</para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
   <term><option>-P</option> <parameter>パス名</parameter></term>
   <listitem>
     <para>
@@ -82,6 +75,13 @@ Gfarmファイルシステムの管理者は，-c，-m，-d
 	省略した場合は、「/」を指定したのと同じ意味になります。
     </para>
   </listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>登録ユーザの情報を詳細に表示します．</para>
+</listitem>
 </varlistentry>
 
 <varlistentry>
