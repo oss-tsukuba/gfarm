@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <libgen.h>
 #include <assert.h>
+
 #include <gfarm/gfarm.h>
 #include "gfm_client.h"
+#include "lookup.h"
 #include "config.h"
 
 #define OP_GROUPNAME	'\0'
@@ -18,18 +21,20 @@
 #define OP_ADD_ENTRY	'a'
 #define OP_REMOVE_ENTRY	'r'
 
-/* XXX FIXME: this doesn't support multiple metadata server. */
-struct gfm_connection *gfarm_metadb_server;
+char *program_name = "gfgroup";
+
+struct gfm_connection *gfm_server;
 
 void
 usage(void)
 {
-	char *program = "gfgroup";
-
-	fprintf(stderr, "Usage:\t%s [-l] [groupname ...]\n", program);
-	fprintf(stderr, "\t%s -c groupname user1 user2 ...\n", program);
-	fprintf(stderr, "\t%s -m groupname user1 user2 ...\n", program);
-	fprintf(stderr, "\t%s -d groupname\n", program);
+	fprintf(stderr, "Usage:\t%s [-P <path>] [-l] [groupname ...]\n",
+	    program_name);
+	fprintf(stderr, "\t%s [-P <path>] -c groupname user1 user2 ...\n",
+	    program_name);
+	fprintf(stderr, "\t%s [-P <path>] -m groupname user1 user2 ...\n",
+	    program_name);
+	fprintf(stderr, "\t%s [-P <path>] -d groupname\n", program_name);
 	exit(1);
 }
 
@@ -45,10 +50,10 @@ create_group(int op, char *groupname, int nusers, char **users)
 
 	switch (op) {
 	case OP_CREATE_GROUP:
-		e = gfm_client_group_info_set(gfarm_metadb_server, &group);
+		e = gfm_client_group_info_set(gfm_server, &group);
 		break;
 	case OP_MODIFY_GROUP:
-		e = gfm_client_group_info_modify(gfarm_metadb_server, &group);
+		e = gfm_client_group_info_modify(gfm_server, &group);
 		break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -59,7 +64,7 @@ create_group(int op, char *groupname, int nusers, char **users)
 gfarm_error_t
 delete_group(char *groupname)
 {
-	return (gfm_client_group_info_remove(gfarm_metadb_server, groupname));
+	return (gfm_client_group_info_remove(gfm_server, groupname));
 }
 
 static void
@@ -93,7 +98,7 @@ list_all(int op)
 	gfarm_error_t e;
 	int n;
 
-	e = gfm_client_group_info_get_all(gfarm_metadb_server, &n, &groups);
+	e = gfm_client_group_info_get_all(gfm_server, &n, &groups);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	display_group(op, n, NULL, NULL, groups);
@@ -116,7 +121,7 @@ list(int op, int n, char *names[])
 	}
 
 	e = gfm_client_group_info_get_by_names(
-		gfarm_metadb_server, n, (const char **)names, errs, groups);
+		gfm_server, n, (const char **)names, errs, groups);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_groups;
 
@@ -135,26 +140,20 @@ main(int argc, char *argv[])
 	gfarm_error_t e;
 	char op = OP_GROUPNAME, *groupname;
 	int c;
+	const char *path = GFARM_PATH_ROOT;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "gfarm_initialize: %s\n",
-			gfarm_error_string(e));
+		fprintf(stderr, "%s: gfarm_initialize: %s\n",
+		    program_name, gfarm_error_string(e));
 		exit(1);
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	if ((e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
-	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "metadata server `%s', port %d: %s\n",
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    gfarm_error_string(e));
-		exit (1);
-	}
-
-	while ((c = getopt(argc, argv, "cdlm?")) != -1) {
+	while ((c = getopt(argc, argv, "P:cdlm?")) != -1) {
 		switch (c) {
+		case 'P':
+			path = optarg;
+			break;
 		case OP_CREATE_GROUP:
 		case OP_DELETE_GROUP:
 		case OP_MODIFY_GROUP:
@@ -168,6 +167,13 @@ main(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+		    program_name, path, gfarm_error_string(e));
+		exit(1);
+	}
 
 	switch (op) {
 	case OP_GROUPNAME:
@@ -192,17 +198,17 @@ main(int argc, char *argv[])
 		break;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s\n", gfarm_error_string(e));
+		fprintf(stderr, "%s: %s\n",
+		    program_name, gfarm_error_string(e));
 		exit(1);
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	gfm_client_connection_free(gfarm_metadb_server);
+	gfm_client_connection_free(gfm_server);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "gfarm_terminate: %s\n",
-			gfarm_error_string(e));
+		fprintf(stderr, "%s: gfarm_terminate: %s\n",
+		    program_name, gfarm_error_string(e));
 		exit(1);
 	}
 	exit(0);
