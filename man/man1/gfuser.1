@@ -3,22 +3,22 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFUSER" "1" "08 October 2009" "Gfarm" ""
+.TH "GFUSER" "1" "20 January 2010" "Gfarm" ""
 
 .SH NAME
 gfuser \- Gfarm user maintenance command
 .SH SYNOPSIS
 
-\fBgfuser\fR [ \fB-l\fR ] [ \fB\fIuser\fB\fR\fI ...\fR ]
+\fBgfuser\fR [ \fB-P \fIpath\fB\fR ] [ \fB-l\fR ] [ \fB\fIuser\fB\fR\fI ...\fR ]
 
 
-\fBgfuser\fR \fB-c\fR \fBusername\fR \fBrealname\fR \fBhomedir\fR \fBgsi_dn\fR
+\fBgfuser\fR [ \fB-P \fIpath\fB\fR ] \fB-c\fR \fBusername\fR \fBrealname\fR \fBhomedir\fR \fBgsi_dn\fR
 
 
-\fBgfuser\fR \fB-m\fR \fBusername\fR \fBrealname\fR \fBhomedir\fR \fBgsi_dn\fR
+\fBgfuser\fR [ \fB-P \fIpath\fB\fR ] \fB-m\fR \fBusername\fR \fBrealname\fR \fBhomedir\fR \fBgsi_dn\fR
 
 
-\fBgfuser\fR \fB-d\fR \fBusername\fR
+\fBgfuser\fR [ \fB-P \fIpath\fB\fR ] \fB-d\fR \fBusername\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -28,6 +28,11 @@ names are specified, specified users are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm user by -c,
 -m, and -d options, respectively.
 .SH "OPTIONS"
+.TP
+\fB-P \fIpath\fB\fR
+This option specifies a pathname or a Gfarm URL to identify
+a metadata server which will be accessed by this command.
+If not specified, "/" is used as the default value.
 .TP
 \fB-l\fR
 Displays verbose information of registered users.

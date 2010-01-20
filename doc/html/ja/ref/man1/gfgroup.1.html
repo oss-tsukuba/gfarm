@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfgroup</B
-> [-l] [<TT
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-l] [<TT
 CLASS="REPLACEABLE"
 ><I
 >group</I
@@ -47,7 +52,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfgroup</B
->  -c   groupname  [<TT
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -c   groupname  [<TT
 CLASS="REPLACEABLE"
 ><I
 >user</I
@@ -57,7 +67,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfgroup</B
->  -m   groupname  [<TT
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -m   groupname  [<TT
 CLASS="REPLACEABLE"
 ><I
 >user</I
@@ -67,7 +82,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfgroup</B
->  -d   groupname </P
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -d   groupname </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -96,6 +116,23 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>パス名</I
+></TT
+></DT
+><DD
+><P
+>	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
+    </P
+></DD
 ><DT
 ><CODE
 CLASS="OPTION"

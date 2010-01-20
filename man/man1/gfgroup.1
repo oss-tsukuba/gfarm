@@ -3,22 +3,22 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFGROUP" "1" "08 October 2009" "Gfarm" ""
+.TH "GFGROUP" "1" "20 January 2010" "Gfarm" ""
 
 .SH NAME
 gfgroup \- Gfarm group maintenance command
 .SH SYNOPSIS
 
-\fBgfgroup\fR [ \fB-l\fR ] [ \fB\fIgroup\fB\fR\fI ...\fR ]
+\fBgfgroup\fR [ \fB-P \fIpath\fB\fR ] [ \fB-l\fR ] [ \fB\fIgroup\fB\fR\fI ...\fR ]
 
 
-\fBgfgroup\fR \fB-c\fR \fBgroupname\fR [ \fB\fIuser\fB\fR\fI ...\fR ]
+\fBgfgroup\fR [ \fB-P \fIpath\fB\fR ] \fB-c\fR \fBgroupname\fR [ \fB\fIuser\fB\fR\fI ...\fR ]
 
 
-\fBgfgroup\fR \fB-m\fR \fBgroupname\fR [ \fB\fIuser\fB\fR\fI ...\fR ]
+\fBgfgroup\fR [ \fB-P \fIpath\fB\fR ] \fB-m\fR \fBgroupname\fR [ \fB\fIuser\fB\fR\fI ...\fR ]
 
 
-\fBgfgroup\fR \fB-d\fR \fBgroupname\fR
+\fBgfgroup\fR [ \fB-P \fIpath\fB\fR ] \fB-d\fR \fBgroupname\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -28,6 +28,11 @@ names are specified, specified groups are displayed.  Gfarm
 administrator can creates, modifies, and deletes a Gfarm group by -c,
 -m, and -d options, respectively.
 .SH "OPTIONS"
+.TP
+\fB-P \fIpath\fB\fR
+This option specifies a pathname or a Gfarm URL to identify
+a metadata server which will be accessed by this command.
+If not specified, "/" is used as the default value.
 .TP
 \fB-l\fR
 Displays group names and the group members.

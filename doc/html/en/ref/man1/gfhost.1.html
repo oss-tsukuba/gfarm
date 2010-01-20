@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfhost</B
-> [-H | -l | -M] [-iLprUv] [-a <TT
+> [-H | -l | -M] [-iLprUv] [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-a <TT
 CLASS="REPLACEABLE"
 ><I
 >architecture</I
@@ -62,7 +67,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -c   -a <TT
+>  -c  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -a <TT
 CLASS="REPLACEABLE"
 ><I
 >architecture</I
@@ -92,7 +102,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -m  [-a <TT
+>  -m  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-a <TT
 CLASS="REPLACEABLE"
 ><I
 >architecture</I
@@ -122,7 +137,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -d   <TT
+>  -d  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  <TT
 CLASS="REPLACEABLE"
 ><I
 >hostname</I
@@ -132,7 +152,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -R </P
+>  -R  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -566,6 +591,23 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfsd</B
 > on the host.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>path</I
+></TT
+></DT
+><DD
+><P
+>	This option specifies a pathname or a Gfarm URL to identify
+	a metadata server which will be accessed by this command.
+	If not specified, "/" is used as the default value.
       </P
 ></DD
 ><DT

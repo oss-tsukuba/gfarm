@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfuser</B
-> [-l] [<TT
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-l] [<TT
 CLASS="REPLACEABLE"
 ><I
 >user</I
@@ -47,17 +52,32 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfuser</B
->  -c   username   realname   homedir   gsi_dn </P
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -c   username   realname   homedir   gsi_dn </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfuser</B
->  -m   username   realname   homedir   gsi_dn </P
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -m   username   realname   homedir   gsi_dn </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfuser</B
->  -d   username </P
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -d   username </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -88,6 +108,23 @@ NAME="OPTIONS"
 ><DIV
 CLASS="VARIABLELIST"
 ><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>path</I
+></TT
+></DT
+><DD
+><P
+>	This option specifies a pathname or a Gfarm URL to identify
+	a metadata server which will be accessed by this command.
+	If not specified, "/" is used as the default value.
+    </P
+></DD
 ><DT
 ><CODE
 CLASS="OPTION"

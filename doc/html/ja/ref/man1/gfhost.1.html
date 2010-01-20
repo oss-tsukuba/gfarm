@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfhost</B
-> [-H | -l | -M] [-iLprUv] [-a <TT
+> [-H | -l | -M] [-iLprUv] [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-a <TT
 CLASS="REPLACEABLE"
 ><I
 >アーキテクチャ</I
@@ -62,7 +67,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -c   -a<TT
+>  -c  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -a<TT
 CLASS="REPLACEABLE"
 ><I
 >アーキテクチャ</I
@@ -92,7 +102,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -m  [-a<TT
+>  -m  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-a<TT
 CLASS="REPLACEABLE"
 ><I
 >アーキテクチャ</I
@@ -122,7 +137,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -d   <TT
+>  -d  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  <TT
 CLASS="REPLACEABLE"
 ><I
 >ホスト名</I
@@ -132,7 +152,12 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -R </P
+>  -R  [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -526,6 +551,23 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfsd</B
 > が用いるポート番号を指定します。
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>パス名</I
+></TT
+></DT
+><DD
+><P
+>	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
       </P
 ></DD
 ><DT

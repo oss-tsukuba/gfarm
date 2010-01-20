@@ -3,25 +3,25 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "21 December 2008" "Gfarm" ""
+.TH "GFHOST" "1" "20 January 2010" "Gfarm" ""
 
 .SH NAME
 gfhost \- Gfarm host maintenance command
 .SH SYNOPSIS
 
-\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
+\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-P \fIpath\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-j \fIconcurrency\fB\fR ] [ \fB\fIhostname\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-c\fR \fB-a \fIarchitecture\fB\fR \fB-p \fIport-number\fB\fR [ \fB-n \fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-c\fR [ \fB-P \fIpath\fB\fR ] \fB-a \fIarchitecture\fB\fR \fB-p \fIport-number\fB\fR [ \fB-n \fInumber-of-CPUs\fB\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-m\fR [ \fB-a \fIarchitecture\fB\fR ] [ \fB-p \fIport-number\fB\fR ] [ \fB-n \fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-m\fR [ \fB-P \fIpath\fB\fR ] [ \fB-a \fIarchitecture\fB\fR ] [ \fB-p \fIport-number\fB\fR ] [ \fB-n \fInumber-of-CPUs\fB\fR ] [ \fB-A\fR ] \fB\fIhostname\fB\fR [ \fB\fIhost-alias\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-d\fR \fB\fIhostname\fB\fR\fI ...\fR
+\fBgfhost\fR \fB-d\fR [ \fB-P \fIpath\fB\fR ] \fB\fIhostname\fB\fR\fI ...\fR
 
 
-\fBgfhost\fR \fB-R\fR
+\fBgfhost\fR \fB-R\fR [ \fB-P \fIpath\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -219,6 +219,11 @@ number of CPUs of the host.
 \fB-p \fIport-number\fB\fR
 This option is used with -c or -m function, and specifies
 the port number of \fBgfsd\fR on the host.
+.TP
+\fB-P \fIpath\fB\fR
+This option specifies a pathname or a Gfarm URL to identify
+a metadata server which will be accessed by this command.
+If not specified, "/" is used as the default value.
 .TP
 \fB-r\fR
 Reverses the order of sort.

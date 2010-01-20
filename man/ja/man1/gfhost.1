@@ -3,25 +3,25 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFHOST" "1" "21 December 2008" "Gfarm" ""
+.TH "GFHOST" "1" "20 January 2010" "Gfarm" ""
 
 .SH NAME
 gfhost \- gfarm ホスト管理コマンド
 .SH SYNOPSIS
 
-\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-a \fIアーキテクチャ\fB\fR ] [ \fB-D \fIドメイン名\fB\fR ] [ \fB-j \fI並列度\fB\fR ] [ \fB\fIホスト名\fB\fR\fI ...\fR ]
+\fBgfhost\fR [ \fB-H\fR | \fB-l\fR | \fB-M\fR ] [ \fB-iLprUv\fR ] [ \fB-P \fIpath\fB\fR ] [ \fB-a \fIアーキテクチャ\fB\fR ] [ \fB-D \fIドメイン名\fB\fR ] [ \fB-j \fI並列度\fB\fR ] [ \fB\fIホスト名\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-c\fR \fB-a\fIアーキテクチャ\fB\fR \fB-p\fIポート番号\fB\fR [ \fB-n\fICPU数\fB\fR ] \fB\fIホスト名\fB\fR [ \fB\fIホスト別名\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-c\fR [ \fB-P \fIpath\fB\fR ] \fB-a\fIアーキテクチャ\fB\fR \fB-p\fIポート番号\fB\fR [ \fB-n\fICPU数\fB\fR ] \fB\fIホスト名\fB\fR [ \fB\fIホスト別名\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-m\fR [ \fB-a\fIアーキテクチャ\fB\fR ] [ \fB-p\fIポート番号\fB\fR ] [ \fB-n\fICPU数\fB\fR ] [ \fB-A\fR ] \fB\fIホスト名\fB\fR [ \fB\fIホスト別名\fB\fR\fI ...\fR ]
+\fBgfhost\fR \fB-m\fR [ \fB-P \fIpath\fB\fR ] [ \fB-a\fIアーキテクチャ\fB\fR ] [ \fB-p\fIポート番号\fB\fR ] [ \fB-n\fICPU数\fB\fR ] [ \fB-A\fR ] \fB\fIホスト名\fB\fR [ \fB\fIホスト別名\fB\fR\fI ...\fR ]
 
 
-\fBgfhost\fR \fB-d\fR \fB\fIホスト名\fB\fR\fI ...\fR
+\fBgfhost\fR \fB-d\fR [ \fB-P \fIpath\fB\fR ] \fB\fIホスト名\fB\fR\fI ...\fR
 
 
-\fBgfhost\fR \fB-R\fR
+\fBgfhost\fR \fB-R\fR [ \fB-P \fIpath\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -197,6 +197,11 @@ gfhost コマンドに対しても、この優先順位は影響しますが、-i オプションを
 \fB-p \fIポート番号\fB\fR
 -c および -m 機能で、ホスト情報を追加・変更する際に、
 そのホストの \fBgfsd\fR が用いるポート番号を指定します。
+.TP
+\fB-P \fIパス名\fB\fR
+このコマンドがアクセスするメタデータサーバを特定するための
+パス名または Gfarm URL を指定します。
+省略した場合は、「/」を指定したのと同じ意味になります。
 .TP
 \fB-r\fR
 表示を整列している場合、表示の順序を逆にします。
