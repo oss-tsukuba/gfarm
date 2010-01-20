@@ -1263,7 +1263,7 @@ main(int argc, char **argv)
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMPUa:cdf:ij:lmn:p:ruv?")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMRUa:cdf:ij:lmn:p:ruv?")) != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
