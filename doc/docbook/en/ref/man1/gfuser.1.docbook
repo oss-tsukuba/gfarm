@@ -72,6 +72,7 @@ administrator can creates, modifies, and deletes a Gfarm user by -c,
     <para>
 	This option specifies a pathname or a Gfarm URL to identify
 	a metadata server which will be accessed by this command.
+	If not specified, "/" is used as the default value.
     </para>
   </listitem>
 </varlistentry>
