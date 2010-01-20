@@ -2,6 +2,8 @@ struct gfm_connection;
 
 gfarm_error_t gfarm_url_parse_metadb(const char **,
 	struct gfm_connection **);
+gfarm_error_t gfm_client_connection_and_process_acquire_by_path(const char *,
+	struct gfm_connection **);
 gfarm_error_t gfm_lookup_dir_request(struct gfm_connection *,
 	const char *, const char **);
 gfarm_error_t gfm_lookup_dir_result(struct gfm_connection *,

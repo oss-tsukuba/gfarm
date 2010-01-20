@@ -71,6 +71,7 @@ const char *gfarm_path_dir_skip(const char *);
 
 extern char GFARM_URL_PREFIX[];
 #define GFARM_URL_PREFIX_LENGTH 6
+extern const char GFARM_PATH_ROOT[];
 
 /*
  * Pool Host Scheduling

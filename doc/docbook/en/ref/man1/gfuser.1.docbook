@@ -18,11 +18,13 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfuser</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='opt'>-l</arg>
     <arg choice='opt' rep='repeat'><replaceable>user</replaceable></arg>
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfuser</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='plain'>-c</arg>
     <arg choice='plain'>username</arg>
     <arg choice='plain'>realname</arg>
@@ -31,6 +33,7 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfuser</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='plain'>-m</arg>
     <arg choice='plain'>username</arg>
     <arg choice='plain'>realname</arg>
@@ -39,6 +42,7 @@
 </cmdsynopsis>
 <cmdsynopsis>
   <command>gfuser</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='plain'>-d</arg>
     <arg choice='plain'>username</arg>
 </cmdsynopsis>
@@ -61,6 +65,16 @@ administrator can creates, modifies, and deletes a Gfarm user by -c,
 <refsect1 id='options'><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+  <term><option>-P</option> <parameter>path</parameter></term>
+  <listitem>
+    <para>
+	This option specifies a pathname or a Gfarm URL to identify
+	a metadata server which will be accessed by this command.
+    </para>
+  </listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-l</option></term>

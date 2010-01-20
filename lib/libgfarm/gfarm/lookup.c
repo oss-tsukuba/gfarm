@@ -88,6 +88,15 @@ gfarm_url_parse_metadb(const char **pathp,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+const char GFARM_PATH_ROOT[] = "/";
+
+gfarm_error_t
+gfm_client_connection_and_process_acquire_by_path(const char *path,
+	struct gfm_connection **gfm_serverp)
+{
+	return (gfarm_url_parse_metadb(&path, gfm_serverp));
+}
+
 gfarm_error_t
 gfm_lookup_dir_request(struct gfm_connection *gfm_server, const char *path,
 	const char **basep)

@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "gfm_client.h"
+#include "lookup.h"
 
 char *program_name = "gfuser";
 
@@ -21,18 +22,21 @@ char *program_name = "gfuser";
 #define OP_MODIFY_ENTRY	'm'
 #define OP_DELETE_ENTRY	'd'
 
-/* XXX FIXME: this doesn't support multiple metadata server. */
-struct gfm_connection *gfarm_metadb_server;
+struct gfm_connection *gfm_server;
 
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-l] [username ...]\n", program_name);
-	fprintf(stderr, "\t%s -c username realname homedir gsi_dn\n",
+	fprintf(stderr, "Usage:\t%s [-P <path>] [-l] [username ...]\n",
 	    program_name);
-	fprintf(stderr, "\t%s -m username realname homedir gsi_dn\n",
+	fprintf(stderr,
+	    "\t%s [-P <path>] -c username realname homedir gsi_dn\n",
 	    program_name);
-	fprintf(stderr, "\t%s -d username\n",
+	fprintf(stderr,
+	    "\t%s [-P <path>] -m username realname homedir gsi_dn\n",
+	    program_name);
+	fprintf(stderr,
+	    "\t%s [-P <path>] -d username\n",
 	    program_name);
 	exit(1);
 }
@@ -71,7 +75,7 @@ list_all(int op)
 	gfarm_error_t e;
 	int nusers;
 
-	e = gfm_client_user_info_get_all(gfarm_metadb_server, &nusers, &users);
+	e = gfm_client_user_info_get_all(gfm_server, &nusers, &users);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	display_user(op, nusers, NULL, NULL, users);
@@ -94,7 +98,7 @@ list(int op, int n, char *names[])
 	}
 
 	e = gfm_client_user_info_get_by_names(
-		gfarm_metadb_server, n, (const char **)names, errs, users);
+		gfm_server, n, (const char **)names, errs, users);
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_users;
 
@@ -115,6 +119,7 @@ main(int argc, char **argv)
 	char opt_operation = '\0'; /* default operation */
 	extern int optind;
 	struct gfarm_user_info ui;
+	const char *path = GFARM_PATH_ROOT;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -125,18 +130,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	if ((e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
-	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "metadata server `%s', port %d: %s\n",
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    gfarm_error_string(e));
-		exit (1);
-	}
-
-	while ((c = getopt(argc, argv, "cdhlm?")) != -1) {
+	while ((c = getopt(argc, argv, "P:cdhlm?")) != -1) {
 		switch (c) {
+		case 'P':
+			path = optarg;
+			break;
 		case 'c':
 		case 'd':
 		case 'l':
@@ -151,6 +149,13 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+		    program_name, path, gfarm_error_string(e));
+		exit(1);
+	}
 
 	switch (opt_operation) {
 	case OP_USERNAME:
@@ -170,18 +175,18 @@ main(int argc, char **argv)
 		ui.gsi_dn = argv[3];
 		switch (opt_operation) {
 		case OP_CREATE_ENTRY:
-			e = gfm_client_user_info_set(gfarm_metadb_server, &ui);
+			e = gfm_client_user_info_set(gfm_server, &ui);
 			break;
 		case OP_MODIFY_ENTRY:
 			e = gfm_client_user_info_modify(
-				gfarm_metadb_server, &ui);
+				gfm_server, &ui);
 			break;
 		}
 		break;
 	case OP_DELETE_ENTRY:
 		if (argc != 1)
 			usage();
-		e = gfm_client_user_info_remove(gfarm_metadb_server, argv[0]);
+		e = gfm_client_user_info_remove(gfm_server, argv[0]);
 		break;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -190,8 +195,7 @@ main(int argc, char **argv)
 		status = 1;
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	gfm_client_connection_free(gfarm_metadb_server);
+	gfm_client_connection_free(gfm_server);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
