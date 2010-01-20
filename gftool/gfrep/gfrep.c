@@ -623,7 +623,11 @@ create_hosthash_from_file(char *hostfile,
 	return (e);
 }
 
-/* XXX FIXME: should traverse all mounted metadata servers */
+/*
+ * XXX FIXME
+ * - should use appropriate metadata server for the file,
+ * - maybe(?) should use gfm_client_schedule_file instead.
+ */
 gfarm_error_t
 schedule_host_domain(const char *domain,
 	int *nhostsp, struct gfarm_host_sched_info **hostsp)
