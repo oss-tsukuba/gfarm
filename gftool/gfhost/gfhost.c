@@ -25,14 +25,14 @@
 
 #include "host.h" /* gfm_host_info_address_get() */
 #include "auth.h"
-#include "config.h"
 #include "gfm_client.h"
 #include "gfs_client.h"
+#include "lookup.h"
+#include "config.h"
 
 char *program_name = "gfhost";
 
-/* XXX FIXME: this doesn't support multiple metadata server. */
-struct gfm_connection *gfarm_metadb_server;
+struct gfm_connection *gfm_server = NULL;
 
 /**********************************************************************/
 
@@ -96,7 +96,7 @@ update_host(const char *hostname, int port,
 	hi.architecture = architecture;
 	hi.ncpu = ncpu;
 	hi.flags = flags;
-	return ((*update_op)(gfarm_metadb_server, &hi));
+	return ((*update_op)(gfm_server, &hi));
 }
 
 static gfarm_error_t
@@ -106,7 +106,7 @@ check_hostname(char *hostname)
 	char *n;
 	int p;
 
-	e = gfm_host_get_canonical_name(gfarm_metadb_server, hostname,
+	e = gfm_host_get_canonical_name(gfm_server, hostname,
 	    &n, &p);
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(n);
@@ -158,7 +158,7 @@ gfarm_modify_host(const char *hostname, int port,
 
 	if (port == 0 || *hostaliases == NULL || architecture == NULL ||
 	    ncpu < 1 || flags == -1 || add_aliases) {
-		e = gfm_client_host_info_get_by_names(gfarm_metadb_server,
+		e = gfm_client_host_info_get_by_names(gfm_server,
 		    1, &hostname, &e2, &hi);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
@@ -1046,10 +1046,10 @@ list_all(const char *architecture, const char *domainname,
 
 	if (architecture != NULL)
 		e = gfm_client_host_info_get_by_architecture(
-		    gfarm_metadb_server, architecture, &nhosts, &hosts);
+		    gfm_server, architecture, &nhosts, &hosts);
 	else
 		e = gfm_client_host_info_get_all(
-		    gfarm_metadb_server, &nhosts, &hosts);
+		    gfm_server, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
@@ -1078,7 +1078,7 @@ list(int nhosts, char **hosts,
 	struct gfarm_host_info hi;
 
 	for (i = 0; i < nhosts; i++) {
-		e = gfm_host_info_get_by_name_alias(gfarm_metadb_server,
+		e = gfm_host_info_get_by_name_alias(gfm_server,
 		    hosts[i], &hi);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", hosts[i],
@@ -1181,13 +1181,13 @@ usage(void)
 	fprintf(stderr, "Usage:" 
 	    "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n" "\t%s %s\n",
 	    program_name,
-	    "[-lMH] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iruv]",
+	    "[-lMH] [-P <path>] [-a <architecture>] [-D <domainname>] [-j <concurrency>] [-iruv]",
 	    program_name,
-	    "-c  -a <architecture>  [-n <ncpu>] [-p <port>] [-f <flags>] <hostname> [<hostalias>...]",
+	    "-c  -a <architecture>  [-P <path>] [-n <ncpu>] [-p <port>] [-f <flags>] <hostname> [<hostalias>...]",
 	    program_name,
-	    "-m [-a <architecture>] [-n <ncpu>] [-p <port>] [-f <flags>] [-A] <hostname> [<hostalias>...]",
-	    program_name, "-d <hostname>...",
-	    program_name, "-R");
+	    "-m [-a <architecture>] [-P <path>] [-n <ncpu>] [-p <port>] [-f <flags>] [-A] <hostname> [<hostalias>...]",
+	    program_name, "-d [-P <path>] <hostname>...",
+	    program_name, "-R [-P <path>]");
 	exit(EXIT_FAILURE);
 }
 
@@ -1252,6 +1252,7 @@ main(int argc, char **argv)
 	char opt_operation = '\0'; /* default operation */
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
+	const char *opt_path = GFARM_PATH_ROOT;
 	char *opt_architecture = NULL;
 	char *opt_domainname = NULL;
 	long opt_ncpu = 0;
@@ -1263,13 +1264,17 @@ main(int argc, char **argv)
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
-	while ((c = getopt(argc, argv, "AD:HLMRUa:cdf:ij:lmn:p:ruv?")) != -1) {
+	while ((c = getopt(argc, argv, "AD:HLMP:RUa:cdf:ij:lmn:p:ruv?"))
+	    != -1) {
 		switch (c) {
 		case 'A':
 			opt_alter_aliases = 1;
 			break;
 		case 'L':
 			opt_sort_by_loadavg = 1;
+			break;
+		case 'P':
+			opt_path = optarg;
 			break;
 		case 'M':
 		case 'H':
@@ -1408,14 +1413,12 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	if ((e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
-	    &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "metadata server `%s', port %d: %s\n",
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    gfarm_error_string(e));
-		exit (1);
+	if (opt_use_metadb &&
+	    (e = gfm_client_connection_and_process_acquire_by_path(opt_path,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+		    program_name, opt_path, gfarm_error_string(e));
+		exit(1);
 	}
 
 	switch (opt_operation) {
@@ -1445,7 +1448,7 @@ main(int argc, char **argv)
 		break;
 	case OP_DELETE_ENTRY:
 		for (i = 0; i < argc; i++) {
-			e = gfm_client_host_info_remove(gfarm_metadb_server,
+			e = gfm_client_host_info_remove(gfm_server,
 			    argv[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "%s: %s\n", argv[i],
@@ -1494,8 +1497,8 @@ main(int argc, char **argv)
 		break;
 	}
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	gfm_client_connection_free(gfarm_metadb_server);
+	if (opt_use_metadb)
+		gfm_client_connection_free(gfm_server);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

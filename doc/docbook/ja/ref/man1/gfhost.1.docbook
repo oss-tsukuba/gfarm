@@ -24,6 +24,7 @@
       <arg choice='plain'>-M</arg>
     </group>
     <arg choice='opt'>-iLprUv</arg>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='opt'>-a <replaceable>アーキテクチャ</replaceable></arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice='opt'>-j <replaceable>並列度</replaceable></arg>
@@ -33,6 +34,7 @@
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-c</arg>
+    <arg choice='opt'  >-P <replaceable>path</replaceable></arg>
     <arg choice='plain'>-a<replaceable>アーキテクチャ</replaceable></arg>
     <arg choice='plain'>-p<replaceable>ポート番号</replaceable></arg>
     <arg choice='opt'  >-n<replaceable>CPU数</replaceable></arg>
@@ -43,6 +45,7 @@
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-m</arg>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
     <arg choice='opt'>-a<replaceable>アーキテクチャ</replaceable></arg>
     <arg choice='opt'>-p<replaceable>ポート番号</replaceable></arg>
     <arg choice='opt'>-n<replaceable>CPU数</replaceable></arg>
@@ -54,12 +57,14 @@
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-d</arg>
+    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>ホスト名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
   <command>gfhost</command>
     <arg choice='plain'>-R</arg>
+    <arg choice='opt  '>-P <replaceable>path</replaceable></arg>
 </cmdsynopsis>
 
 <!-- Options sorted by alphabetical order
@@ -79,6 +84,7 @@
     -m		<function> modify a host in MetaDB
     -n <number>	number of CPUs, for -c/-m
     -p <port>	gfsd port number, for -c
+    -P <path>   pathname or Gfarm URL to identify MetaDB
     -R		<function> restore hosts to MetaDB
     -r		display by reverse order, for (default)/-H/-l/-M
     -U		UDP only, do not try authentication, for (default)/-H/-l
@@ -402,6 +408,17 @@
       <para>
 	-c および -m 機能で、ホスト情報を追加・変更する際に、
 	そのホストの <command>gfsd</command> が用いるポート番号を指定します。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-P</option> <parameter>パス名</parameter></term>
+    <listitem>
+      <para>
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
       </para>
     </listitem>
   </varlistentry>
