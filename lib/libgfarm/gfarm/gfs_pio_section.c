@@ -465,6 +465,9 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	else
 		e = gfarm_schedule_select_host(gf->gfm_server, nhosts, infos,
 		    (gf->mode & GFS_FILE_MODE_WRITE) != 0, &host, &port);
+	/* in case of no file system node, clear status of connection cache */
+	if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+		gfarm_schedule_host_cache_reset(gf->gfm_server, nhosts, infos);
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_UNFIXED, "schedule_select_host: %s",

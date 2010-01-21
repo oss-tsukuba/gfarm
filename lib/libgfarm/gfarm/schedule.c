@@ -593,6 +593,38 @@ gfarm_schedule_host_cache_clear_auth(struct gfs_connection *gfs_server)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_schedule_host_cache_reset(struct gfm_connection *gfm_server, int nhosts,
+	struct gfarm_host_sched_info *infos)
+{
+	gfarm_error_t e;
+	struct gfarm_hash_entry *entry;
+	struct search_idle_host_state *h;
+	int i, host_flags;
+
+	host_flags =
+	    HOST_STATE_FLAG_JUST_CACHED|
+	    HOST_STATE_FLAG_RTT_TRIED|
+	    HOST_STATE_FLAG_SCHEDULING|
+	    HOST_STATE_FLAG_AVAILABLE|
+	    HOST_STATE_FLAG_CACHE_WAS_USED;
+
+	if (search_idle_hosts_state == NULL)
+		return;
+
+	for (i = 0; i < nhosts; ++i) {
+		e = gfp_conn_hash_lookup(&search_idle_hosts_state,
+		    HOSTS_HASHTAB_SIZE, infos[i].host, infos[i].port,
+		    gfm_client_username(gfm_server), &entry);
+		if (e != GFARM_ERR_NO_ERROR)
+			continue;
+
+		h = gfarm_hash_entry_data(entry);
+		h->flags &= ~host_flags;
+	}
+	return;
+}
+
 static gfarm_error_t
 search_idle_candidate_list_reset(struct gfm_connection *gfm_server,
 	int host_flags)

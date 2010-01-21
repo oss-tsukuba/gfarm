@@ -18,6 +18,8 @@ struct gfs_file; /* GFS_File */
 
 gfarm_error_t gfarm_schedule_select_host(struct gfm_connection *,
 	int, struct gfarm_host_sched_info *, int, char **, int *);
+void gfarm_schedule_host_cache_reset(struct gfm_connection *, int,
+	struct gfarm_host_sched_info *);
 /* XXX - defined in gfs_pio_section.c */
 gfarm_error_t gfarm_schedule_file(struct gfs_file *, char **, gfarm_int32_t *);
 
