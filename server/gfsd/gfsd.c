@@ -3076,6 +3076,14 @@ gfm_client_connect_with_reconnection()
 		    "died: %s\n", canonical_self_name, gfarm_error_string(e));
 }
 
+static void
+gfm_client_reconnect(void)
+{
+	gfm_client_connection_free(gfm_server);
+	gfm_server = NULL;
+	gfm_client_connect_with_reconnection();
+}
+
 void
 server(int client_fd, char *client_name, struct sockaddr *client_addr)
 {
@@ -3202,6 +3210,9 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 			cleanup(0);
 			exit(1);
 		}
+		if (gfm_client_is_connection_error(
+		    gfp_xdr_flush(gfm_client_connection_conn(gfm_server))))
+			gfm_client_reconnect();
 	}
 }
 
@@ -3281,14 +3292,6 @@ datagram_server(int sock)
 }
 
 static void
-reconnect_back_channel(void)
-{
-	gfm_client_connection_free(gfm_server);
-	gfm_server = NULL;
-	gfm_client_connect_with_reconnection();
-}
-
-static void
 back_channel_server(void)
 {
 	gfarm_error_t e;
@@ -3309,14 +3312,14 @@ retry:
 		if (IS_CONNECTION_ERROR(e) || eof) {
 			gflog_error(GFARM_MSG_1000564,
 			    "back channel disconnected");
-			reconnect_back_channel();
+			gfm_client_reconnect();
 			goto retry;
 		}
 		else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000565,
 			    "(back channel) request error, reset: %s",
 			    gfarm_error_string(e));
-			reconnect_back_channel();
+			gfm_client_reconnect();
 			goto retry;
 		}
 		switch (request) {
@@ -3330,7 +3333,7 @@ retry:
 			gflog_error(GFARM_MSG_1000566,
 			    "(back channel) unknown request %d, "
 			    "reset", (int)request);
-			reconnect_back_channel();
+			gfm_client_reconnect();
 			goto retry;
 		}
 	}
