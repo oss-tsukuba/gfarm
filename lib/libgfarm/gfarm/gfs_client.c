@@ -99,6 +99,13 @@ gfs_client_add_hook_for_connection_error(
 	gfs_client_hook_for_connection_error = hook;
 }
 
+static void
+gfs_client_execute_hook_for_connection_error(struct gfs_connection *gfs_server)
+{
+	if (gfs_client_hook_for_connection_error != NULL)
+		(*gfs_client_hook_for_connection_error)(gfs_server);
+}
+
 int
 gfs_client_is_connection_error(gfarm_error_t e)
 {
@@ -781,8 +788,7 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 	e = gfp_xdr_vrpc_request(gfs_server->conn, command, &format, &ap);
 	va_end(ap);
 	if (IS_CONNECTION_ERROR(e)) {
-		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(gfs_server);
+		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	return (e);
@@ -799,6 +805,10 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	gfs_client_connection_used(gfs_server);
 
 	e = gfp_xdr_flush(gfs_server->conn);
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -808,8 +818,7 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	va_end(ap);
 
 	if (IS_CONNECTION_ERROR(e)) {
-		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(gfs_server);
+		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
@@ -840,8 +849,7 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 	va_end(ap);
 
 	if (IS_CONNECTION_ERROR(e)) {
-		if (gfs_client_hook_for_connection_error != NULL)
-			(*gfs_client_hook_for_connection_error)(gfs_server);
+		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1074,17 +1082,23 @@ gfs_client_statfs_send_request(int events, int fd, void *closure,
 
 	state->error = gfs_client_rpc_request(state->gfs_server,
 	    GFS_PROTO_STATFS, "s", state->path);
-	if (state->error == GFARM_ERR_NO_ERROR &&
-	    (state->error = gfp_xdr_flush(state->gfs_server->conn)) ==
-	    GFARM_ERR_NO_ERROR) {
-		timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
-		timeout.tv_usec = 0;
-		if ((rv = gfarm_eventqueue_add_event(state->q, state->readable,
-		    &timeout)) == 0) {
-			/* go to gfs_client_statfs_recv_result() */
-			return;
+	if (state->error == GFARM_ERR_NO_ERROR) {
+		state->error = gfp_xdr_flush(state->gfs_server->conn);
+		if (IS_CONNECTION_ERROR(state->error)) {
+			gfs_client_execute_hook_for_connection_error(
+			    state->gfs_server);
+			gfs_client_purge_from_cache(state->gfs_server);
 		}
-		state->error = gfarm_errno_to_error(rv);
+		if (state->error == GFARM_ERR_NO_ERROR) {
+			timeout.tv_sec = GFS_CLIENT_COMMAND_TIMEOUT;
+			timeout.tv_usec = 0;
+			if ((rv = gfarm_eventqueue_add_event(state->q,
+			    state->readable, &timeout)) == 0) {
+				/* go to gfs_client_statfs_recv_result() */
+				return;
+			}
+			state->error = gfarm_errno_to_error(rv);
+		}
 	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
@@ -1212,6 +1226,10 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	    ino, gen);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(gfs_server->conn);
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -1221,6 +1239,11 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 
 		/* XXX - FIXME layering violation */
 		e = gfp_xdr_recv(gfs_server->conn, 0, &eof, "i", &size);
+		if (IS_CONNECTION_ERROR(e)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
+		}
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 		if (eof) {
@@ -1234,8 +1257,18 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 			int partial = gfp_xdr_recv_partial(gfs_server->conn, 0,
 				buffer, size);
 
-			if (partial <= 0)
-				return (GFARM_ERR_PROTOCOL);
+			e = gfp_xdr_recv_get_error(gfs_server->conn);
+			if (IS_CONNECTION_ERROR(e)) {
+				gfs_client_execute_hook_for_connection_error(
+				    gfs_server);
+				gfs_client_purge_from_cache(gfs_server);
+			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+			if (partial <= 0) {
+				e = GFARM_ERR_PROTOCOL;
+				break;
+			}
 			size -= partial;
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 			rv = 0;
@@ -1263,6 +1296,8 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 				skip = 1;
 			}
 		} while (size > 0);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
 	}
 	e_rpc = gfs_client_rpc_result(gfs_server, 0, "");
 	if (e == GFARM_ERR_NO_ERROR)

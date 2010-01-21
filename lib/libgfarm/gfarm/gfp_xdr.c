@@ -575,6 +575,12 @@ gfp_xdr_recv_partial(struct gfp_xdr *conn, int just, void *data, int length)
 	    conn->recvbuffer, data, length, just));
 }
 
+gfarm_error_t
+gfp_xdr_recv_get_error(struct gfp_xdr *conn)
+{
+	return (gfarm_iobuffer_get_error(conn->recvbuffer));
+}
+
 /*
  * lowest level interface,
  * this does not wait to receive desired length, and
