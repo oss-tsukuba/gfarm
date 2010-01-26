@@ -124,7 +124,7 @@ quota_active_group_set_db(struct quota *q, struct group *g)
 			q->on_db = 1;
 		else
 			gflog_error(GFARM_MSG_1000411,
-				    "db_quota_user_set(%s) %s",
+				    "db_quota_group_set(%s) %s",
 				    group_name(g), gfarm_error_string(e));
 	}
 }
