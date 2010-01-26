@@ -465,6 +465,8 @@ gfarm_error_string(gfarm_error_t error)
 	struct gfarm_error_domain *domain;
 	int i;
 
+	if (error < 0)
+		return (errcode_string[GFARM_ERR_UNKNOWN]);
 	if (error < GFARM_ERR_NUMBER)
 		return (errcode_string[error]);
 
