@@ -53,10 +53,11 @@ static gfarm_error_t gfarm_strtoken(char **, char **);
  */
 
 static gfarm_stringlist local_user_map_file_list;
+static gfarm_stringlist local_group_map_file_list;
 
 /* the return value of the following function should be free(3)ed */
 static gfarm_error_t
-map_user(char *from, char **to_p,
+map_user(gfarm_stringlist map_file_list, char *from, char **to_p,
 	char *(*mapping)(char *, char *, char *),
 	gfarm_error_t error_redefined)
 {
@@ -68,10 +69,10 @@ map_user(char *from, char **to_p,
 	int lineno = 0;
 
 	*to_p = NULL;
-	list_len = gfarm_stringlist_length(&local_user_map_file_list);
+	list_len = gfarm_stringlist_length(&map_file_list);
 	mapfile_mapped_index = list_len;
 	for (i = 0; i < list_len; i++) {
-		mapfile = gfarm_stringlist_elem(&local_user_map_file_list, i);
+		mapfile = gfarm_stringlist_elem(&map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
 			gflog_error(GFARM_MSG_1000009,
 			    mapfile, strerror(errno));
@@ -158,7 +159,7 @@ map_global_to_local(char *from, char *global_user, char *local_user)
 gfarm_error_t
 gfarm_global_to_local_username(char *global_user, char **local_user_p)
 {
-	return (map_user(global_user, local_user_p,
+	return (map_user(local_user_map_file_list, global_user, local_user_p,
 	    map_global_to_local, GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
 }
 
@@ -180,8 +181,36 @@ map_local_to_global(char *from, char *global_user, char *local_user)
 gfarm_error_t
 gfarm_local_to_global_username(char *local_user, char **global_user_p)
 {
-	return (map_user(local_user, global_user_p,
+	return (map_user(local_user_map_file_list, local_user, global_user_p,
 	    map_local_to_global, GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
+}
+
+/*
+ * XXX FIXME This function should not be used by gfarm clients,
+ * because this doesn't cope with multiple metadata server.
+ * Thus, this function only should be called from gfmd and gfsd,
+ * and should move to config_server.c.
+ */
+/* the return value of the following function should be free(3)ed */
+gfarm_error_t
+gfarm_global_to_local_groupname(char *global_user, char **local_user_p)
+{
+	return (map_user(local_group_map_file_list, global_user, local_user_p,
+	    map_global_to_local, GFARM_ERRMSG_GLOBAL_GROUP_REDEFIEND));
+}
+
+/*
+ * XXX FIXME This function should not be used by gfarm clients,
+ * because this doesn't cope with multiple metadata server.
+ * Thus, this function only should be called from gfmd and gfsd,
+ * and should move to config_server.c.
+ */
+/* the return value of the following function should be free(3)ed */
+gfarm_error_t
+gfarm_local_to_global_groupname(char *local_user, char **global_user_p)
+{
+	return (map_user(local_group_map_file_list, local_user, global_user_p,
+	    map_local_to_global, GFARM_ERRMSG_LOCAL_GROUP_REDEFIEND));
 }
 
 static gfarm_error_t
@@ -808,6 +837,29 @@ parse_local_user_map(char *p, char **op)
 	return (e);
 }
 
+static gfarm_error_t
+parse_local_group_map(char *p, char **op)
+{
+	gfarm_error_t e;
+	char *tmp, *mapfile;
+
+	e = gfarm_strtoken(&p, &mapfile);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (mapfile == NULL)
+		return (GFARM_ERRMSG_MISSING_GROUP_MAP_FILE_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+	mapfile = strdup(mapfile);
+	if (mapfile == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = gfarm_stringlist_add(&local_group_map_file_list, mapfile);
+	return (e);
+}
+
 #if 0 /* XXX NOTYET */
 static gfarm_error_t
 parse_client_architecture(char *p, char **op)
@@ -1119,6 +1171,8 @@ parse_one_line(char *s, char *p, char **op)
 #endif
 	} else if (strcmp(s, o = "local_user_map") == 0) {
 		e = parse_local_user_map(p, &o);
+	} else if (strcmp(s, o = "local_group_map") == 0) {
+		e = parse_local_group_map(p, &o);
 #if 0 /* XXX NOTYET */
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
@@ -1171,9 +1225,23 @@ gfarm_init_user_map(void)
 }
 
 gfarm_error_t
+gfarm_init_group_map(void)
+{
+	gfarm_stringlist_init(&local_group_map_file_list);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfarm_free_user_map(void)
 {
 	gfarm_stringlist_free_deeply(&local_user_map_file_list);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_free_group_map(void)
+{
+	gfarm_stringlist_free_deeply(&local_group_map_file_list);
 	return (GFARM_ERR_NO_ERROR);
 }
 

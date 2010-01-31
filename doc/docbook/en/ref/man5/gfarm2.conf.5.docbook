@@ -862,6 +862,28 @@ name, "foobar", is mapped to a local user name,  "foo", on this node.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>local_group_map</token> <parameter>group-map-file</parameter></term>
+<listitem>
+<para>This directive specifies a file name
+<parameter>group-map-file</parameter> for mapping global group names to
+local group names.  This map file is used by legacy clients that use
+local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
+display mapped local groups.  When this file is not specified, a
+local group name is assumed to be same as the global group
+name.</para>
+
+<para>Example:</para>
+<literallayout>
+	local_group_map /etc/gfarm/gfarm-groupmap
+</literallayout>
+
+<para>Each line of the <parameter>group-map-file</parameter> consists
+of two fields separated by spaces; the first field is a global group
+name, and the second field is a local group name.</para>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
@@ -1061,6 +1083,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
@@ -1128,6 +1151,7 @@ notation.</para>
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;
+	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;pathname&gt;
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;

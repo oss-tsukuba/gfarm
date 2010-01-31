@@ -103,6 +103,7 @@ gfarm_config_read(void)
 		rc_need_free = 1;
 	}
 	gfarm_init_user_map();
+	gfarm_init_group_map();
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
@@ -483,6 +484,7 @@ gfarm_terminate(void)
 	}
 #endif /* not yet in gfarm v2 */
 	gfarm_free_user_map();
+	gfarm_free_group_map();
 	gfs_client_terminate();
 	gfm_client_terminate();
 

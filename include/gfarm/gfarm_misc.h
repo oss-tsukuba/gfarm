@@ -18,11 +18,16 @@ typedef gfarm_int64_t gfarm_pid_t; /* XXX - need better place */
 
 /*
  * username handling
+ *
+ * XXX these functions do not care about a metadata server.
+ * do not use.
  */
 
 /* the return value of the following functions should be free(3)ed */
 gfarm_error_t gfarm_global_to_local_username(char *, char **);
 gfarm_error_t gfarm_local_to_global_username(char *, char **);
+gfarm_error_t gfarm_global_to_local_groupame(char *, char **);
+gfarm_error_t gfarm_local_to_global_groupname(char *, char **);
 
 /*
  * the return value of the following gfarm_get_*() funtions should not be

@@ -31,6 +31,7 @@ gfarm_server_config_read(void)
 	FILE *config;
 
 	gfarm_init_user_map();
+	gfarm_init_group_map();
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
 		return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	}

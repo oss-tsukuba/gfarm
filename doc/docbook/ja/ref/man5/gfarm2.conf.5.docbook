@@ -827,6 +827,27 @@ sharedsecret認証において、
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter></term>
+<listitem>
+<para>
+グローバルグループ名とローカルグループ名の対応関係を記述した
+グループマップファイルパス名を指定します。
+このマップファイルは，ローカルシステムのグループIDを利用するgfarm2fsや
+Globus GridFTPのGfarm DSIなどで利用されます。
+この設定は必須ではありませんが、
+その場合ローカルグループ名はグローバルグループ名と等しいと仮定されます。
+</para>
+<para>例:</para>
+<literallayout>
+	local_group_map /etc/gfarm/gfarm-groupmap
+</literallayout>
+
+<para>グループマップファイルは、グローバルグループ名と
+ローカルグループ名を、空白で区切って各行に記述します。</para>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
@@ -1022,6 +1043,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
@@ -1089,6 +1111,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;
+	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;pathname&gt;
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
