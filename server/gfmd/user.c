@@ -23,6 +23,7 @@
 #include "quota.h"
 
 #define USER_HASHTAB_SIZE	3079	/* prime number */
+#define USER_DN_HASHTAB_SIZE	3079	/* prime number */
 
 /* in-core gfarm_user_info */
 struct user {
@@ -36,6 +37,7 @@ char ADMIN_USER_NAME[] = "gfarmadm";
 char REMOVED_USER_NAME[] = "gfarm-removed-user";
 
 static struct gfarm_hash_table *user_hashtab = NULL;
+static struct gfarm_hash_table *user_dn_hashtab = NULL;
 
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */
 void
@@ -113,24 +115,37 @@ user_lookup(const char *username)
 	return (*(struct user **)gfarm_hash_entry_data(entry));
 }
 
-/* XXX linear search */
 struct user *
 user_lookup_gsi_dn(const char *gsi_dn)
 {
-	struct gfarm_hash_iterator it;
-	struct user **u;
+	struct gfarm_hash_entry *entry;
 
-	if (gsi_dn == NULL)
+	if (gsi_dn == NULL || gsi_dn[0] == '\0')
 		return (NULL);
 
-	for (gfarm_hash_iterator_begin(user_hashtab, &it);
-	     !gfarm_hash_iterator_is_end(&it);
-	     gfarm_hash_iterator_next(&it)) {
-		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (strcmp(gsi_dn, user_gsi_dn(*u)) == 0)
-			return (*u);
-	}
-	return (NULL);
+	entry = gfarm_hash_lookup(user_dn_hashtab, &gsi_dn, sizeof(gsi_dn));
+	if (entry == NULL)
+		return (NULL);
+	return (*(struct user **)gfarm_hash_entry_data(entry));
+}
+
+gfarm_error_t
+user_enter_gsi_dn(const char *gsi_dn, struct user *u)
+{
+	struct gfarm_hash_entry *entry;
+	int created;
+
+	if (gsi_dn == NULL || gsi_dn[0] == '\0')
+		return (GFARM_ERR_NO_ERROR);
+
+	entry = gfarm_hash_enter(user_dn_hashtab,
+	    &gsi_dn, sizeof(gsi_dn), sizeof(struct user *), &created);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	if (!created)
+		return (GFARM_ERR_ALREADY_EXISTS);
+	*(struct user **)gfarm_hash_entry_data(entry) = u;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -139,10 +154,14 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	struct gfarm_hash_entry *entry;
 	int created;
 	struct user *u;
+	gfarm_error_t e;
 
 	u = user_lookup(ui->username);
 	if (u != NULL) {
 		if (user_is_invalidated(u)) {
+			e = user_enter_gsi_dn(ui->gsi_dn, u);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
 			user_activate(u);
 			if (upp != NULL)
 				*upp = u;
@@ -174,6 +193,14 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 		free(u);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
+	e = user_enter_gsi_dn(u->ui.gsi_dn, u);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfarm_hash_purge(user_hashtab,
+		    &u->ui.username, sizeof(u->ui.username));
+		free(u);
+		return (e);
+	}
+
 	quota_data_init(&u->q);
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
@@ -195,6 +222,10 @@ user_remove(const char *username)
 	u = *(struct user **)gfarm_hash_entry_data(entry);
 	if (user_is_invalidated(u))
 		return (GFARM_ERR_NO_SUCH_USER);
+
+	if (u->ui.gsi_dn != NULL && u->ui.gsi_dn[0] != '\0')
+		gfarm_hash_purge(user_dn_hashtab,
+		    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
 	quota_user_remove(u);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
@@ -317,7 +348,10 @@ user_init(void)
 	user_hashtab =
 	    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
 		hash_user, hash_key_equal_user);
-	if (user_hashtab == NULL)
+	user_dn_hashtab =
+	    gfarm_hash_table_alloc(USER_DN_HASHTAB_SIZE,
+		hash_user, hash_key_equal_user);
+	if (user_hashtab == NULL || user_dn_hashtab == NULL)
 		gflog_fatal(GFARM_MSG_1000236, "no memory for user hashtab");
 
 	e = db_user_load(NULL, user_add_one);
