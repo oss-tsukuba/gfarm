@@ -1402,6 +1402,45 @@ name, "foobar", is mapped to a local user name,  "foo", on this node.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>local_group_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies a file name
+<TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+> for mapping global group names to
+local group names.  This map file is used by legacy clients that use
+local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
+display mapped local groups.  When this file is not specified, a
+local group name is assumed to be same as the global group
+name.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_group_map&nbsp;/etc/gfarm/gfarm-groupmap</P
+><P
+>Each line of the <TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+> consists
+of two fields separated by spaces; the first field is a global group
+name, and the second field is a local group name.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >minimum_free_disk_space</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1558,6 +1597,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;admin_user_statement&#62;&nbsp;|<br>
 		  &#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;&nbsp;|<br>
+		  &#60;local_group_map_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
@@ -1613,6 +1653,7 @@ CLASS="LITERALLAYOUT"
 	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
 	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>

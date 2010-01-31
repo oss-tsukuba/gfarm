@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "17 July 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "01 2·î 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -603,6 +603,25 @@ Example of the user mapping file:
 According to the first line of this mapping file, a global user
 name, "foobar", is mapped to a local user name,  "foo", on this node.
 .TP
+\fBlocal_group_map \fIgroup-map-file\fB\fR
+This directive specifies a file name
+\fIgroup-map-file\fR for mapping global group names to
+local group names.  This map file is used by legacy clients that use
+local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
+display mapped local groups.  When this file is not specified, a
+local group name is assumed to be same as the global group
+name.
+
+Example:
+
+.nf
+	local_group_map /etc/gfarm/gfarm-groupmap
+.fi
+
+Each line of the \fIgroup-map-file\fR consists
+of two fields separated by spaces; the first field is a global group
+name, and the second field is a local group name.
+.TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
 This directive specifies free disk space (in bytes) which is
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
@@ -702,6 +721,7 @@ notation.
 		\~\~<admin_user_statement> |
 		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
+		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
@@ -757,6 +777,7 @@ notation.
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
 	<local_user_map_statement> ::= "local_user_map" <pathname>
+	<local_group_map_statement> ::= "local_group_map" <pathname>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>

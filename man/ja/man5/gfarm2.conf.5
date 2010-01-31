@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "17 July 2009" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "01 2月 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -556,6 +556,23 @@ sharedsecret認証において、
 この例の1行目の指定では、このノードのローカルユーザ名fooに
 対してグローバルユーザ名foobarが定義されています。
 .TP
+\fBlocal_group_map \fIグループマップファイルパス名\fB\fR
+グローバルグループ名とローカルグループ名の対応関係を記述した
+グループマップファイルパス名を指定します。
+このマップファイルは，ローカルシステムのグループIDを利用するgfarm2fsや
+Globus GridFTPのGfarm DSIなどで利用されます。
+この設定は必須ではありませんが、
+その場合ローカルグループ名はグローバルグループ名と等しいと仮定されます。
+
+例:
+
+.nf
+	local_group_map /etc/gfarm/gfarm-groupmap
+.fi
+
+グループマップファイルは、グローバルグループ名と
+ローカルグループ名を、空白で区切って各行に記述します。
+.TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
 ファイルシステムノードで必要な最小限度のディスク空き容量を指定
 します。このサイズ以下の空き容量しかないファイルシステムノードは、
@@ -653,6 +670,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<admin_user_statement> |
 		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
+		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
@@ -708,6 +726,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
 	<local_user_map_statement> ::= "local_user_map" <pathname>
+	<local_group_map_statement> ::= "local_group_map" <pathname>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>

@@ -1258,6 +1258,33 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>local_group_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥°¥ë¡¼¥×¥Þ¥Ã¥×¥Õ¥¡¥¤¥ë¥Ñ¥¹Ì¾</I
+></TT
+></DT
+><DD
+><P
+>¥°¥í¡¼¥Ð¥ë¥°¥ë¡¼¥×Ì¾¤È¥í¡¼¥«¥ë¥°¥ë¡¼¥×Ì¾¤ÎÂÐ±þ´Ø·¸¤òµ­½Ò¤·¤¿
+¥°¥ë¡¼¥×¥Þ¥Ã¥×¥Õ¥¡¥¤¥ë¥Ñ¥¹Ì¾¤ò»ØÄê¤·¤Þ¤¹¡£
+¤³¤Î¥Þ¥Ã¥×¥Õ¥¡¥¤¥ë¤Ï¡¤¥í¡¼¥«¥ë¥·¥¹¥Æ¥à¤Î¥°¥ë¡¼¥×ID¤òÍøÍÑ¤¹¤ëgfarm2fs¤ä
+Globus GridFTP¤ÎGfarm DSI¤Ê¤É¤ÇÍøÍÑ¤µ¤ì¤Þ¤¹¡£
+¤³¤ÎÀßÄê¤ÏÉ¬¿Ü¤Ç¤Ï¤¢¤ê¤Þ¤»¤ó¤¬¡¢
+¤½¤Î¾ì¹ç¥í¡¼¥«¥ë¥°¥ë¡¼¥×Ì¾¤Ï¥°¥í¡¼¥Ð¥ë¥°¥ë¡¼¥×Ì¾¤ÈÅù¤·¤¤¤È²¾Äê¤µ¤ì¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_group_map&nbsp;/etc/gfarm/gfarm-groupmap</P
+><P
+>¥°¥ë¡¼¥×¥Þ¥Ã¥×¥Õ¥¡¥¤¥ë¤Ï¡¢¥°¥í¡¼¥Ð¥ë¥°¥ë¡¼¥×Ì¾¤È
+¥í¡¼¥«¥ë¥°¥ë¡¼¥×Ì¾¤ò¡¢¶õÇò¤Ç¶èÀÚ¤Ã¤Æ³Æ¹Ô¤Ëµ­½Ò¤·¤Þ¤¹¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >minimum_free_disk_space</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1412,6 +1439,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;admin_user_statement&#62;&nbsp;|<br>
 		  &#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;&nbsp;|<br>
+		  &#60;local_group_map_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
@@ -1467,6 +1495,7 @@ CLASS="LITERALLAYOUT"
 	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
 	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
+	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
