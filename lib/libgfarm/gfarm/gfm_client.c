@@ -256,7 +256,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	}
 	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
 	    NULL);
-	while (e != GFARM_ERR_NO_ERROR) {
+	while (IS_CONNECTION_ERROR(e)) {
 		gflog_warning(GFARM_MSG_1000058,
 		    "connecting to gfmd at %s:%d failed, "
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
