@@ -26,7 +26,7 @@ typedef gfarm_int64_t gfarm_pid_t; /* XXX - need better place */
 /* the return value of the following functions should be free(3)ed */
 gfarm_error_t gfarm_global_to_local_username(char *, char **);
 gfarm_error_t gfarm_local_to_global_username(char *, char **);
-gfarm_error_t gfarm_global_to_local_groupame(char *, char **);
+gfarm_error_t gfarm_global_to_local_groupname(char *, char **);
 gfarm_error_t gfarm_local_to_global_groupname(char *, char **);
 
 /*
