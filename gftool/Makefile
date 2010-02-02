@@ -5,6 +5,8 @@ srcdir = .
 GFVOMS_SYNC_TARGETS = gfvoms-sync
 
 include $(top_srcdir)/makes/var.mk
+PRIVATE_TARGETS = $(PRIVATE_GFTOOL_SUBDIRS)
+PUBLIC_TARGETS =
 
 SUBDIRS = \
 	gfchmod \
@@ -33,7 +35,8 @@ SUBDIRS = \
 	gfwhere \
 	gfwhoami \
 	gfxattr \
-	config-gfarm
+	config-gfarm \
+	$(optional_targets)
 
 #	gfexec \
 #	gfifo \

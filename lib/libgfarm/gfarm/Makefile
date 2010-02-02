@@ -5,6 +5,13 @@ top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
+PRIVATE_RULE = $(PRIVATE_LIB_LIBGFARM_GFARM_RULE)
+PRIVATE_SRCS = $(PRIVATE_LIB_LIBGFARM_GFARM_SRCS)
+PRIVATE_FILES = $(PRIVATE_LIB_LIBGFARM_GFARM_FILES)
+PRIVATE_OBJS = $(PRIVATE_LIB_LIBGFARM_GFARM_OBJS)
+PUBLIC_RULE  = /dev/null
+PUBLIC_SRCS  =
+PUBLIC_OBJS  =
 
 LIBRARY = libgfarmcore.la
 LIBRARY_RESULT = # do not install
@@ -76,7 +83,7 @@ SRCS = \
 	timespec.c \
 	url.c \
 	$(globus_srcs) \
-	$(libgfarm_prop_srcs)
+	$(optional_srcs)
 
 #	gfs_pio_global.c \
 #	gfs_pio_misc.c \
@@ -145,7 +152,7 @@ OBJS = \
 	timespec.lo \
 	url.lo \
 	$(globus_objs) \
-	$(libgfarm_prop_objs) 
+	$(optional_objs)
 
 #	gfs_pio_global.lo \
 #	gfs_pio_misc.lo \
@@ -154,22 +161,15 @@ OBJS = \
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
 CFLAGS = $(pthread_includes) \
-	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) -I$(srcdir) \
 	$(globus_cflags) $(metadb_client_includes) $(openssl_includes) \
+	$(optional_cflags) \
 	-DGFARM_CONFIG='"$(sysconfdir)/gfarm2.conf"'
 
-PROPRIETARY_SRCS = $(libgfarm_prop_srcs)
-
-all: prop-initialize $(LIBRARY)
+all: $(LIBRARY)
 
 include $(top_srcdir)/makes/lib.mk
-include $(top_srcdir)/makes/proprietary.mk
 include $(top_srcdir)/makes/gflog.mk
-
-post-distclean-hook:	prop-finalize
-post-veryclean-hook:	prop-finalize
-
-$(libgfarm_prop_srcs):
 
 $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
@@ -228,3 +228,5 @@ sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:
 timespec.lo: timespec.h
 url.lo: config.h gfs_pio.h
+
+include $(optional_rule)

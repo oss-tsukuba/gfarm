@@ -118,8 +118,18 @@ config_gfarm_sysdep_subdir = @config_gfarm_sysdep_subdir@
 # build gftool/gfvoms-sync
 gfvoms_sync_targets = @gfvoms_sync_targets@
 
-# proprietary functions
-PROPROOTDIR = @PROPROOTDIR@
-libgfarm_prop_srcs = @LIBGFARM_PROP_SRCS@
-libgfarm_prop_objs = @LIBGFARM_PROP_OBJS@
+# private functions
+top_private_dir = @top_private_dir@
+  
+# optional function configuration
+optional_config = @optional_config@
+ 
+# optional functions
+optional_rule = @optional_rule@
+optional_srcs = @optional_srcs@
+optional_objs = @optional_objs@
+optional_cflags = @optional_cflags@
+optional_targets = @optional_targets@
+ 
+include $(optional_config)
 

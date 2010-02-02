@@ -7,6 +7,7 @@ man: lib-man post-man-hook
 html: lib-html post-html-hook
 msgno: lib-msgno
 
+include $(top_builddir)/makes/private.mk
 
 post-install-hook:
 post-clean-hook:
@@ -31,10 +32,11 @@ lib-install:
 lib-clean:
 	-$(LTCLEAN) $(OBJS) $(EXTRA_CLEAN_TARGETS)
 
-lib-veryclean: clean
+lib-veryclean: clean private-finalize
 	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(LTCLEAN) $(EXTRA_VERYCLEAN_TARGETS)
 	-test -z "$(LIBRARY)" || $(LTCLEAN) $(LIBRARY)
 	-test -z "$(LIBRARY_RESULT)" || $(LTCLEAN) $(LIBRARY_RESULT)
+
 
 lib-distclean: veryclean
 	-test ! -f $(srcdir)/Makefile.in || $(RM) -f Makefile
@@ -43,3 +45,5 @@ lib-gfregister:
 lib-man:
 lib-html:
 lib-msgno:
+
+$(PRIVATE_FILES): private-initialize

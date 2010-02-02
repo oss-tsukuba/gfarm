@@ -1314,51 +1314,61 @@ if test -d ${srcdir}/ns; then
 fi
 
 ###
-### --with-proprietaryfuncs
+### --with-private-srcdir
 ###
 
-withPropFuncs=''
-AC_MSG_CHECKING([use of proprietary functions])
-AC_ARG_WITH(proprietaryfuncs,
-[  --with-proprietaryfuncs=DIR	proprietary source directory
+private_srcdir=''
+AC_MSG_CHECKING([use of private source directory])
+AC_ARG_WITH(private_srcdir,
+[  --with-private-srcdir=DIR	private source directory
 ],
-[withPropFuncs="${withval}"
+[private_srcdir="${withval}"
 ],
-[withPropFuncs=""
+[private_srcdir=""
 ])
 
-PROPROOTDIR=''
-if test "x${withPropFuncs}" = "x"; then
+top_private_dir=''
+if test "x${private_srcdir}" = "x"; then
   AC_MSG_RESULT([not use.])
 else
-  if test -d "${withPropFuncs}"; then
-    PROPROOTDIR="${withPropFuncs}"
-    AC_MSG_RESULT([use ${PROPROOTDIR}])
+  if test -d "${private_srcdir}"; then
+    top_private_dir="`(cd ${private_srcdir}; /bin/pwd)`"
+    AC_MSG_RESULT([use ${top_private_dir}])
   else
-    AC_MSG_RESULT([${withPropFuncs} is not a directory.])
+    AC_MSG_RESULT([${private_srcdir} is not a directory.])
     exit 1
   fi
 fi
 
-AC_SUBST(PROPROOTDIR)
+AC_SUBST(top_private_dir)
 
-##
-## Add macros for proprietary sources from here.
-##
-
-if test "x${PROPROOTDIR}" != "x"; then
-  LIBGFARM_PROP_SRCS="gfhostgroup_subr.c gfhostgroup_subr2.c"
-  LIBGFARM_PROP_OBJS="gfhostgroup_subr.lo gfhostgroup_subr2.lo"
+if test "x${top_private_dir}" = "x"; then
+    # use public source directory.
+    optional_config=/dev/null
+    optional_rule='${PUBLIC_RULE}'
+    optional_srcs='${PUBLIC_SRCS}'
+    optional_objs='${PUBLIC_OBJS}'
+    optional_cflags='${PUBLIC_CFLAGS}'
+    optional_targets='${PUBLIC_TARGETS}'
 else
-  LIBGFARM_PROP_SRCS=gfhostgroup_subr_stub.c
-  LIBGFARM_PROP_OBJS=gfhostgroup_subr_stub.lo
+    # use private source directory.
+    optional_config='${top_private_dir}/private_config.mk'
+    optional_rule='${PRIVATE_RULE}'
+    optional_srcs='${PRIVATE_SRCS}'
+    optional_objs='${PRIVATE_OBJS}'
+    optional_cflags='${PRIVATE_CFLAGS}'
+    optional_targets='${PRIVATE_TARGETS}'
 fi
 
-AC_SUBST(LIBGFARM_PROP_SRCS)
-AC_SUBST(LIBGFARM_PROP_OBJS)
+AC_SUBST(optional_config)
+AC_SUBST(optional_rule)
+AC_SUBST(optional_srcs)
+AC_SUBST(optional_objs)
+AC_SUBST(optional_cflags)
+AC_SUBST(optional_targets)
 
 ##
-## Proprietary sources macros end here.
+## private sources macros end here.
 ##
 
 # The following is for --srcdir option.

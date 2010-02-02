@@ -1,4 +1,4 @@
-all: subdir-all post-all-hook
+all: private-dir-tree-link subdir-all post-all-hook
 install: subdir-install post-install-hook
 clean: subdir-clean post-clean-hook
 veryclean: subdir-veryclean post-very-clean-hook
@@ -8,11 +8,13 @@ man: subdir-man
 html: subdir-html
 msgno: subdir-msgno
 
+include $(top_builddir)/makes/private.mk
+
 post-all-hook:
 post-install-hook:
 post-clean-hook:
 post-very-clean-hook:
-post-distclean-hook:
+post-distclean-hook: private-dir-tree-remove
 post-gfregister-hook:
 
 # The reason why assignments of $(top_srcdir) and $(srcdir) are needed

@@ -7,6 +7,7 @@ man: prog-man post-man-hook
 html: prog-html post-html-hook
 msgno: prog-msgno
 
+include $(top_builddir)/makes/private.mk
 
 post-install-hook:
 post-clean-hook:
@@ -26,7 +27,7 @@ prog-install:
 prog-clean:
 	-$(LTCLEAN) $(OBJS) $(EXTRA_CLEAN_TARGETS)
 
-prog-veryclean: clean
+prog-veryclean: clean private-finalize
 	-$(LTCLEAN) $(PROGRAM) $(EXTRA_VERYCLEAN_TARGETS)
 
 prog-distclean: veryclean
@@ -36,3 +37,5 @@ prog-gfregister:
 prog-man:
 prog-html:
 prog-msgno:
+
+$(PRIVATE_FILES): private-initialize
