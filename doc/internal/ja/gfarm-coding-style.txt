@@ -1,41 +1,40 @@
-コーディング・スタイルは、おおよそ NetBSD KNF (kernel normal form) に
-従っています。
-NetBSD KNF:
-http://cvsweb.netbsd.org/bsdweb.cgi/sharesrc/share/misc/style?rev=HEAD&content-type=text/x-cvsweb-markup
+■ コーディング・スタイル概要
 
-命名規約について
+2001年当時の NetBSD KNF (kernel normal form) に、おおよそ従っています。
+
+NetBSD KNF:
+http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=text/x-cvsweb-markup
+
+ただし、以下のような、NetBSD 固有の習慣には従っていません。
+・#ifndef _lint
+・__COPYRIGHT
+・__RCSID(
+・setprogname()/getprogname()
+
+また、以下のような点が大きく違います。
+
+・関数の定義は、呼ばれる側が先、呼ぶ側が後、このため、相互再帰するよう
+  な場合を除き、static な関数の関数プロトタイプ宣言は行なわない。
+
+・ヘッダの二重インクルードからの保護はしない。
+  ヘッダのネストは基本的は行なわないため。(<gfarm/gfarm.h> 等は例外)
+
+・構造体や enum に対する typedef は行なわず、struct XXX や enum YYYY と書く。
+  これはヘッダのネストを避けるため。
+  利用例は gfs_client.h の先頭の struct や enum の宣言を参照。
+
+■ 命名規約について
 	ライブラリ中の公開されているシンボルは、必ず gfarm_ のような
 	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
 	重ならないようにしています。
 
-エラーコードについて
+■ エラーコードについて
 
-	ほぼ全ての関数は、戻り値としてエラーコードを返します。
-	エラーコードは、すべて表示可能な文字列 (char *) です。
-	(本当は const char * へ変更すべきですが...)
+	将来に渡って、決してエラーを返さないことが確定している
+	一部の例外を除き、ほぼ全ての関数は、戻り値としてエラー
+	コードを返すものとします。
 
-	エラーコードとして数字ではなく文字列を返している理由は、
-	ある種の手抜きです。
-	gfarm 内部で定義しているエラーコードはともかく、他の
-	サブシステム (UNIX, OpenLDAP, Globus, OpenSSL, ...) を
-	呼び出している場合、そのサブシステムの返す可能性のある
-	エラーコード全てについて、gfarm 自身のエラーコードを
-	unique に定義する必要があります。(さもないと、サブ
-	システムの定義する複数のエラーコードが、gfarm の
-	単一つのエラーコードに変換されてしまって、エラー原因が
-	わからなくなる)
-	これをいちいち変換するのが面倒だったので、エラー文字列
-	自身をエラーコードとして利用することにしました。
-	(この結果、サブシステムのエラー文字列が、変換されずに
-	 そのまま返ります。)
-
-	なお、gfarm 内部で、正式に扱うエラーコードには、
-	固定アドレスが割り当ててあり、
-		e == GFARM_ERR_NO_SUCH_OBJECT
-	のように、アドレス比較だけで、エラーの種類が判別できる
-	ようにしてあります。	
-
-ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
+■ ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
 
 - OS付属のヘッダファイル群
 
@@ -90,11 +89,11 @@ http://cvsweb.netbsd.org/bsdweb.cgi/sharesrc/share/misc/style?rev=HEAD&content-t
 		#include "auth.h"
 		#include "auth_gsi.h"
 
-		#include "config.h"
-
 		#include "gfm_proto.h"
 		#include "gfs_proto.h"
 		#include "gfs_client.h"
 		#include "gfj_client.h"
 
 		#include "gfs_pio.h"
+
+		#include "config.h"

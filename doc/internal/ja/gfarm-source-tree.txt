@@ -3,15 +3,9 @@
 	makes/
 		make に利用している仕組み
 
-	ns/
-		ninf service 関係のライブラリ、サーバー、クライアント。
-		gfarm-1.0 では、このディレクトリ以下はリリース内容に
-		含めず。
-
-	include/gfarm および ns/include/gfarm/
+	include/gfarm および
 	 → 生成物 ${prefix}/include/gfarm/*.h
-		gfarm ライブラリのユーザー (例えば 森田さん) への
-		公開ヘッダ
+		gfarm ライブラリのユーザー への公開ヘッダ
 
 	lib/libgfarm/ → 生成物 ${prefix}/lib/libgfarm.a
 		gfarm ライブラリ
@@ -45,23 +39,14 @@
 		する仕組み。
 		
 	server/gfmd/ → 生成物 ${prefix}/sbin/gfmd
-		メタデータ・サーバー (になる予定のプログラム)
-		現在のところ、job 管理しかしていない。
-		現在のところ、gfarmlib は、gfmd を経由せず直接
-		LDAP サーバー (slapd) にメタデータを問い合わせている。
+		メタデータ・サーバー
 
 	server/gfsd/ → 生成物 ${prefix}/sbin/gfsd
-		各ノードで動作し、遠隔ファイルアクセスを提供する
-		サーバー。
-		現在のところ、メタデータへのアクセスはできない。
-		(将来、できるようにする予定)
+		各ファイルシステムノードで動作し、ファイル内容へのアクセスを
+		提供するサーバー。
 
 	gftools/ → ${prefix}/bin/*
 		gfarm 関係の各種コマンド
-		詳しくは man1, man8 参照
-
-	gftools/example/ → ${prefix}/bin/* (かつては ${prefix}/bin/example/*)
-		gfarm 関係のサンプル・ソース
 		詳しくは man1, man8 参照
 
 	gfptools/ → ${prefix}/bin/*
@@ -77,11 +62,6 @@
 			ある DocBook 形式の SGML ファイルから自動生成
 			されている。
 			変更手順は、下記の通り。
-			このうち 2〜4 は、Redhat-8.0 のマシン
-			(例えば cvs.apgrid.org) 上で行うこと。
-			必要なツールが揃っていれば Redhat-8.0 以外の
-			OS でも 2〜3 を実行可能だが、動作確認してある
-			のが Redhat-8.0 だけなので。
 			1. doc/docbook/{en,ja}/ref/ の下を修正、コミット
 			2. "make man" を実行し、man page を再生成する。
 			3. "make html" を実行し、html ファイルを再生成する。
@@ -95,12 +75,19 @@
 			必要がある。
 			doc/docbook/{en,ja}/ref/ を参照。
 
+			ただし、以下のファイルは例外で、別途手で保守する。
+			doc/html/index.html
+			doc/html/pic/*
+			doc/html/en/ref/index.html
+			doc/html/ja/ref/index.html
+			doc/html/en/user/*
+			doc/html/ja/user/*
+
 	man/ → 生成物 ${prefix}/man/
-		ここにあるファイルは、ほとんど全て
+		ここにあるファイルは、全て
 		doc/docbook/{en,ja}/ref/ から生成されている。
-		従って、マニュアルの更新は、直接ここを変更する
-		のではなく、doc/docbook/{en,ja}/ref/ を変更する
-		必要がある。
+		従って、マニュアルの更新は、直接ここを変更するのではなく、
+		doc/docbook/{en,ja}/ref/ を変更する必要がある。
 		doc/docbook/{en,ja}/ref/ を参照。
 
 各ソース・ファイルは、下記のような機能分担になっています。
@@ -113,19 +100,13 @@ INSTALL.ja	インストール・ドキュメント 日本語版
 Makefile.in		Makefile のテンプレート
 			configure コマンドを実行すると、これを元に
 			Makefile を作成する。
-acconfig.h		include/gfarm/gfarm_config.h.in のテンプレート
-config.guess		autoconf パッケージの一部。
-			configure が呼び出すサブ・コマンド。
-config.sub		autoconf パッケージの一部。
-			configure が呼び出すサブ・コマンド。
-configure.in		configure スクリプトのソースコード
+configure.ac		configure スクリプトのソースコード
 configure		autoconf コマンドを実行すると、
 			configure.in を元に自動生成される。
 include/gfarm/gfarm_config.h.in
 			gfarm_config.h のテンプレート
 			autoheader コマンドを実行すると、
-			acconfig.h と configure.in を元に自動生成される。
-install-sh		インストールコマンド
+			configure.ac を元に自動生成される。
 
 makes/
 	config.mk.in	config.mk のテンプレート
@@ -140,13 +121,17 @@ makes/
 	var.mk		各 Makefile に共通する make 変数設定
 			各 Makefile は下記の行を含む。
 				include $(top_srcdir)/makes/var.mk
+	install-sh	インストールコマンド
+	config.guess	autoconf パッケージの一部。
+			configure が呼び出すサブ・コマンド。
+	config.sub	autoconf パッケージの一部。
+			configure が呼び出すサブ・コマンド。
 
 include/gfarm/
 	ここの Makefile は、下記の形式で読み込む。
 		#include <gfarm/なんとか.h>
 
-	gfarm_error.h	エラーコード定義
-	gfarm_metadb.h	meta databae アクセス
+	error.h		エラーコード定義
 	gfs.h		gfarm ファイルアクセス
 	gfarm_misc.h	その他もろもろ
 	gfarm.h		上記すべてのヘッダおよび <gfarm/gfarm_config.h> を
@@ -170,17 +155,17 @@ lib/libgfarm/gfarm/
 
 	Makefile.in
 
-	error.c		<gfarm/gfarm_error.h> のエラーコード定義
+	liberror.c	<gfarm/gfarm_error.h> のエラーコード定義
 
-	iobuffer.h	入出力用 fifo バッファ。xxx_proto の下請けだが、
-			xxx_proto の利用者から直接呼びだされることもある。
+	iobuffer.h	入出力用 fifo バッファ。gfp_xdr の下請けだが、
+			gfp_xdr の利用者から直接呼びだされることもある。
 	iobuffer.c
 			
-	xxx_proto.h	通信、RPC において XDR に相当する処理
-	xxx_proto.c
-	io_fd.h		xxx_proto の下請け。file descriptor 経由の I/O を提供
+	gfp_xdr.h	通信、RPC において XDR に相当する処理
+	gfp_xdr.c
+	io_fd.h		gfp_xdr の下請け。file descriptor 経由の I/O を提供
 	io_fd.c
-	io_gfsl.c	xxx_proto の下請け。GFSL 経由の I/O を提供
+	io_gfsl.c	gfp_xdr の下請け。GFSL 経由の I/O を提供
 	io_gfsl.h
 
 	hostspec.h	設定ファイル中のホスト・ネットワーク・アドレス処理
@@ -207,15 +192,12 @@ lib/libgfarm/gfarm/
 	auth_config.c		認証に関する設定ファイルの処理
 
 	gfm_proto.h	gfmd プロトコル定義
-	gfj_client.h	gfmd のジョブ管理関係 RPC 関数定義
 	gfm_client.c	gfmd クライアント側 RPC stub
 
 	gfs_proto.h	gfsd プロトコル定義
 	gfs_proto.c	gfs プロトコル共通関数
 	gfs_client.h	gfs クライアント側 RPC 関数定義
 	gfs_client.c	gfs クライアント側 RPC stub
-	gfs_client は、gfsd から呼ばれるため、現在のところ、
-			メタデータアクセスを行なうことができない。
 
 	gfs_pio.h	<gfarm/gfs.h> で定義された gfarm ファイルアクセス
 	gfs_pio.c	主ルーチン
@@ -249,7 +231,7 @@ server/gfsd/
 
 server/gfmd/
 	Makefile
-	gfmd.c		gfmd のメイン・プログラム。現在はジョブ管理のみ。
+	gfmd.c		gfmd のメイン・プログラム。
 
 bench/
 	Makefile
@@ -266,10 +248,3 @@ package/
 	solaris/
 
 debian/
-
-TODO
-	- lib/libgfarm/gfarm/xxx_proto.{h,c}
-		Ninf RPC 用 XDR (ns/nslib/soc-lxdr.c, ns/nslib/com.c) 
-		との統合をすべき。
-		名前が現在 xxx_ なのは、本来は ns_ (ninf) に変更すべきだから。
-
