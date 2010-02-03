@@ -7,7 +7,7 @@ man: prog-man post-man-hook
 html: prog-html post-html-hook
 msgno: prog-msgno
 
-include $(top_builddir)/makes/private-file.mk
+include $(top_srcdir)/makes/private-file.mk
 
 post-install-hook:
 post-clean-hook:

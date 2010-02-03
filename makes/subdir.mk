@@ -8,7 +8,7 @@ man: subdir-man
 html: subdir-html
 msgno: subdir-msgno
 
-include $(top_builddir)/makes/private-subdir.mk
+include $(top_srcdir)/makes/private-subdir.mk
 
 post-all-hook:
 post-install-hook:

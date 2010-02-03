@@ -7,7 +7,7 @@ man: lib-man post-man-hook
 html: lib-html post-html-hook
 msgno: lib-msgno
 
-include $(top_builddir)/makes/private-file.mk
+include $(top_srcdir)/makes/private-file.mk
 
 post-install-hook:
 post-clean-hook:
