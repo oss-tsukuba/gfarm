@@ -120,16 +120,16 @@ gfvoms_sync_targets = @gfvoms_sync_targets@
 
 # private functions
 top_private_dir = @top_private_dir@
-  
+
 # optional function configuration
 optional_config = @optional_config@
- 
+
 # optional functions
 optional_rule = @optional_rule@
 optional_srcs = @optional_srcs@
 optional_objs = @optional_objs@
 optional_cflags = @optional_cflags@
 optional_targets = @optional_targets@
- 
+
 include $(optional_config)
 
