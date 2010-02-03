@@ -38,7 +38,7 @@ gfarm_connect_wait(int s, int timeout_seconds)
 	if (rv == -1)
 		return (gfarm_errno_to_error(errno));
 	if (error != 0)
-		return (gfarm_errno_to_error(errno));
+		return (gfarm_errno_to_error(error));
 	return (GFARM_ERR_NO_ERROR);
 }
 
