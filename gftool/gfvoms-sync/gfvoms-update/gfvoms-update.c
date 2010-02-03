@@ -14,8 +14,9 @@
 
 #include <gfarm/gfarm.h>
 
-#include "config.h"
 #include "gfm_client.h"
+#include "lookup.h"
+#include "config.h"
 
 #define MAX_LINE_LEN	4096
 #define USER_ALLOC_SIZE	20
@@ -35,6 +36,7 @@
 #define OP_MOD			3
 
 char *program_name = "gfvoms-update";
+struct gfm_connection *gfm_server = NULL;
 
 struct gfarm_user_info *users = NULL;
 int ngroups = 0;
@@ -141,7 +143,7 @@ list_groups(void)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int n;
 
-	e = gfm_client_group_info_get_all(gfarm_metadb_server, &n, &g);
+	e = gfm_client_group_info_get_all(gfm_server, &n, &g);
 	if (e == GFARM_ERR_NO_ERROR) {
 		groups = g;
 		ngroups = n;
@@ -157,7 +159,7 @@ list_users(void)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int n;
 
-	e = gfm_client_user_info_get_all(gfarm_metadb_server, &n, &u);
+	e = gfm_client_user_info_get_all(gfm_server, &n, &u);
 	if (e == GFARM_ERR_NO_ERROR) {
 		users = u;
 		nusers = n;
@@ -595,7 +597,7 @@ do_update(int op, struct group_info_list *list)
 			for (i = 0; i < ret.nusers; i++) {
 				ret.usernames[i] = tmp->user_infos[i]->username;
 			}
-			e = gfm_client_group_info_set(gfarm_metadb_server, &ret);
+			e = gfm_client_group_info_set(gfm_server, &ret);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "Error: Failed to add group.\n");
 				if (e == GFARM_ERR_ALREADY_EXISTS) {
@@ -623,7 +625,7 @@ do_update(int op, struct group_info_list *list)
 		break;
 	case OP_DEL:
 		while(tmp != list) {
-			e = gfm_client_group_info_remove(gfarm_metadb_server, tmp->group_name);
+			e = gfm_client_group_info_remove(gfm_server, tmp->group_name);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "Error: Failed to delete group.\n");
 				if (e == GFARM_ERR_NO_SUCH_OBJECT ||
@@ -655,7 +657,7 @@ do_update(int op, struct group_info_list *list)
 			for (i = 0; i < ret.nusers; i++) {
 				ret.usernames[i] = tmp->user_infos[i]->username;
 			}
-			e = gfm_client_group_info_modify(gfarm_metadb_server, &ret);
+			e = gfm_client_group_info_modify(gfm_server, &ret);
 			if (e != GFARM_ERR_NO_ERROR) {
 				fprintf(stderr, "Error: Failed to modify group.\n");
 				if (e == GFARM_ERR_NO_SUCH_OBJECT ||
@@ -941,6 +943,7 @@ main(int argc, char *argv[])
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct group_info_list *gfarm_list = NULL;
 	char noupd = 0, del = 0, c;
+	const char *opt_path = GFARM_PATH_ROOT;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -992,6 +995,13 @@ main(int argc, char *argv[])
 		}
 	}
 
+	if ((e = gfm_client_connection_and_process_acquire_by_path(opt_path,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+		    program_name, opt_path, gfarm_error_string(e));
+		goto err;
+	}
+
 	fprintf(stdout, "Start updating...\n");
 
 	e = init(del);
@@ -1019,6 +1029,7 @@ main(int argc, char *argv[])
 		goto err;
 	}
 
+	gfm_client_connection_free(gfm_server);
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != -1) {
