@@ -1,4 +1,4 @@
-SRA の関与しているソースコードの構成は、下記のようになっています。
+ソースコードの構成は、下記のようになっています。
 
 	makes/
 		make に利用している仕組み
@@ -30,7 +30,7 @@ SRA の関与しているソースコードの構成は、下記のようになっています。
 		gfsl/
 			GFSL - GFarm Security Layer。
 			globus の security layer である GSI との glue。
-			m-hirano@sra.co.jp 作成。
+			devtty@SourceForge 作成。
 			/usr/prj/etl/doc/GFSL/ 参照。
 			かつては、${prefix}/lib/libgfsl.a という独立した
 			ライブラリだった。
@@ -102,38 +102,6 @@ SRA の関与しているソースコードの構成は、下記のようになっています。
 		のではなく、doc/docbook/{en,ja}/ref/ を変更する
 		必要がある。
 		doc/docbook/{en,ja}/ref/ を参照。
-
-命名規約について
-	ライブラリ中の公開されているシンボルは、必ず gfarm_ のような
-	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
-	重ならないようにしています。
-
-エラーコードについて
-
-	ほぼ全ての関数は、戻り値としてエラーコードを返します。
-	エラーコードは、すべて表示可能な文字列 (char *) です。
-	(本当は const char * へ変更すべきですが...)
-
-	エラーコードとして数字ではなく文字列を返している理由は、
-	ある種の手抜きです。
-	gfarm 内部で定義しているエラーコードはともかく、他の
-	サブシステム (UNIX, OpenLDAP, Globus, OpenSSL, ...) を
-	呼び出している場合、そのサブシステムの返す可能性のある
-	エラーコード全てについて、gfarm 自身のエラーコードを
-	unique に定義する必要があります。(さもないと、サブ
-	システムの定義する複数のエラーコードが、gfarm の
-	単一つのエラーコードに変換されてしまって、エラー原因が
-	わからなくなる)
-	これをいちいち変換するのが面倒だったので、エラー文字列
-	自身をエラーコードとして利用することにしました。
-	(この結果、サブシステムのエラー文字列が、変換されずに
-	 そのまま返ります。)
-
-	なお、gfarm 内部で、正式に扱うエラーコードには、
-	固定アドレスが割り当ててあり、
-		e == GFARM_ERR_NO_SUCH_OBJECT
-	のように、アドレス比較だけで、エラーの種類が判別できる
-	ようにしてあります。	
 
 各ソース・ファイルは、下記のような機能分担になっています。
 
@@ -305,71 +273,3 @@ TODO
 		との統合をすべき。
 		名前が現在 xxx_ なのは、本来は ns_ (ninf) に変更すべきだから。
 
-コーディング・スタイルは、おおよそ NetBSD KNF (kernel normal form) に
-従っています。
-NetBSD KNF:
-http://cvsweb.netbsd.org/bsdweb.cgi/sharesrc/share/misc/style?rev=HEAD&content-type=text/x-cvsweb-markup
-
-ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
-
-- OS付属のヘッダファイル群
-
-- サードパーティー製のソフトウェアのヘッダファイル群
-	複数のサードパーティー製ソフトウェアを利用している場合、
-	・サードパーティー製ソフトウェア間に参照関係がある場合には、
-	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
-	  先に書く。
-	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
-	  後に書く。
-	・同一のソフトウェアに付属するヘッダは、まとめて書く。
-
-- gfarm の公開ヘッダ (<gfarm/××.h>)
-
-- gfarm の非公開ヘッダ ("××.h")
-	・ヘッダ間の順序は、
-	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
-	  先に書く。
-	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
-	  後に書く。
-	・libgfarm/gfutil, libgfarm/gfsl, libgfarm/gfarm の三者については、
-	  同一のディレクトリに所属するヘッダはまとめて書く。
-	  #include する順序は、
-		1. libgfarm/gfutil
-		2. libgfarm/gfsl
-		3. libgfarm/gfarm
-	  の順番とする。(ソフトウェア階層が、この順で下→上となっているため)
-	・具体的には下記の通り。
-	  /* gfutil */
-		#include "hash.h"
-		#include "gfevent.h"
-		#include "gfutil.h"
-	  /* gfsl public */
-		#include "gfsl_config.h"
-		#include "gfarm_gsi.h"
-		#include "gfarm_auth.h"
-		#include "gfarm_secure_session.h"
-	  /* gfsl private */
-		#include "tcputil.h"
-		#include "misc.h"
-	  /* gfarm */
-		#include "iobuffer.h"
-		#include "xxx_proto.h"
-		#include "io_fd.h"
-		#include "io_gfsl.h"
-
-		#include "hostspec.h"
-		#include "host.h"
-		#include "param.h"
-		#include "sockopt.h"
-
-		#include "auth.h"
-		#include "auth_gsi.h"
-
-		#include "config.h"
-
-		#include "gfm_proto.h"
-		#include "gfs_proto.h"
-		#include "gfs_client.h"
-		#include "gfj_client.h"
-
-		#include "gfs_pio.h"
