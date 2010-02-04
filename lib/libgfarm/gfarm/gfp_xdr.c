@@ -545,7 +545,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 
 	if (**formatp != '/') {
 #if 1
-		gflog_fatal(GFARM_MSG_1000018,
+		gflog_fatal(GFARM_MSG_1000018, "%s",
 		    gfarm_error_string(GFARM_ERRMSG_GFP_XDR_VRPC_MISSING_RESULT_IN_FORMAT_STRING));
 		abort();
 #endif

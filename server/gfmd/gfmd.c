@@ -771,7 +771,7 @@ write_pid()
 
 	pid_fp = fopen(pid_file, "w");
 	if (pid_fp == NULL)
-		gflog_fatal_errno(GFARM_MSG_1000196, pid_file);
+		gflog_fatal_errno(GFARM_MSG_1000196, "open: %s", pid_file);
 
 	fprintf(pid_fp, "%ld\n", (long)getpid());
 	fclose(pid_fp);
@@ -1028,7 +1028,8 @@ main(int argc, char **argv)
 
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
-		gfarm_daemon(0, 0);
+		if (gfarm_daemon(0, 0) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
 	}
 	/*
 	 * We do this after calling gfarm_daemon(),

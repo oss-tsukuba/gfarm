@@ -321,13 +321,14 @@ gfarm_attach_debugger(void)
 void
 gfarm_sig_debug(int sig)
 {
-	int pid, status;
+	int rv, pid, status;
 	static int already_called = 0;
 	static char message[] = "signal 00 caught\n";
 
 	message[7] = sig / 10 + '0';
 	message[8] = sig % 10 + '0';
-	write(2, message, sizeof(message) - 1);
+	/* ignore return value, since there is no other way here */
+	rv = write(2, message, sizeof(message) - 1);
 
 	if (already_called)
 		abort();

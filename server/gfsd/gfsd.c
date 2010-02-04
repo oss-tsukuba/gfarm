@@ -3438,7 +3438,9 @@ open_accepting_local_socket(struct in_addr address, int port,
 			    sock_dir, LOCAL_SOCKDIR_MODE);
 		}
 	}
-	chown(sock_dir, gfsd_uid, -1);
+	if (chown(sock_dir, gfsd_uid, -1) == -1)
+		gflog_warning_errno(GFARM_MSG_UNFIXED, "chown(%s, %d)",
+		    sock_dir, (int)gfsd_uid);
 
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -3455,7 +3457,9 @@ open_accepting_local_socket(struct in_addr address, int port,
 		    "%s: cannot bind UNIX domain socket: %s",
 		    sock_name, strerror(save_errno));
 	}
-	chown(sock_name, gfsd_uid, -1);
+	if (chown(sock_name, gfsd_uid, -1) == -1)
+		gflog_warning_errno(GFARM_MSG_UNFIXED, "chown(%s, %d)",
+		    sock_name, gfsd_uid);
 	/* ensure access from all user, Linux at least since 2.4 needs this. */
 	chmod(sock_name, LOCAL_SOCKET_MODE);
 
@@ -3692,7 +3696,8 @@ main(int argc, char **argv)
 
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
-		gfarm_daemon(0, 0);
+		if (gfarm_daemon(0, 0) == -1)
+			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
 	}
 
 	/* We do this after calling gfarm_daemon(), because it changes pid. */
@@ -3805,7 +3810,8 @@ main(int argc, char **argv)
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
 	/* XXX - kluge for GFS_PROTO_STATFS for now */
 	if (chdir(gfarm_spool_root) == -1)
-		gflog_fatal_errno(GFARM_MSG_1000598, gfarm_spool_root);
+		gflog_fatal_errno(GFARM_MSG_1000598, "chdir(%s)",
+		    gfarm_spool_root);
 
 	/* spool check */
 	if (spool_check_level > 0)
