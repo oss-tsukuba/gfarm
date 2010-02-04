@@ -345,7 +345,12 @@ int64_add(gfarm_int64_t orig, gfarm_int64_t diff)
 		return (orig);
 	else if (diff > 0) {
 		val = orig + diff;
-		if (val < orig || val > GFARM_INT64_MAX) /* overflow */
+		/*
+		 * signed overflow causes undefined behavior in the C language
+		 * standard, thus we have to use unsigned here.
+		 */
+		if ((gfarm_uint64_t)val < orig ||
+		    (gfarm_uint64_t)val > GFARM_INT64_MAX) /* overflow */
 			val = GFARM_INT64_MAX;
 		return (val);
 	} else { /* diff < 0 */
