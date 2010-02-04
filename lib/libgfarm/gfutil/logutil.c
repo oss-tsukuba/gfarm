@@ -96,19 +96,52 @@ gflog_message(int msg_no, int priority, const char *file, int line_no,
 }
 
 void
-gflog_message_errno(int msg_no, int priority, const char *file, int line_no,
+gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 		const char *func, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
+	va_end(ap);
+
+	exit(2);
+}
+
+void
+gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, va_list ap)
 {
 	int save_errno = errno;
 	char buffer[2048];
 
+	vsnprintf(buffer, sizeof buffer, format, ap);
+	gflog_message(msg_no, priority, file, line_no, func,
+			"%s, %s", buffer, strerror(save_errno));
+}
+
+void
+gflog_message_errno(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, ...)
+{
 	va_list ap;
 
 	va_start(ap, format);
-	vsnprintf(buffer, sizeof buffer, format, ap);
+	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
-	gflog_message(msg_no, priority, file, line_no, func,
-			"%s, %s", buffer, strerror(save_errno));
+}
+
+void
+gflog_fatal_message_errno(int msg_no, int priority, const char *file, int line_no,
+		const char *func, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
+	va_end(ap);
+
+	exit(2);
 }
 
 void

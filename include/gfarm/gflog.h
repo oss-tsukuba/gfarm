@@ -27,10 +27,16 @@
 #ifdef GFLOG_USE_STDARG /* to make <stdarg.h> optional to use <gfutil.h> */
 void gflog_vmessage(int, int, const char *, int, const char *,
 		const char *, va_list) GFLOG_PRINTF_ARG(6, 0);
+void gflog_vmessage_errno(int, int, const char *, int, const char*,
+		const char *, va_list) GFLOG_PRINTF_ARG(6, 0);
 #endif
 void gflog_message(int, int, const char *, int, const char*,
 		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
 void gflog_message_errno(int, int, const char *, int, const char*,
+		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+void gflog_fatal_message(int, int, const char *, int, const char*,
+		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+void gflog_fatal_message_errno(int, int, const char *, int, const char*,
 		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
 
 #define gflog_error(msg_no, ...) \
@@ -50,9 +56,8 @@ void gflog_message_errno(int, int, const char *, int, const char*,
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #define gflog_fatal(msg_no, ...) \
-	do { gflog_message(msg_no, LOG_ERR,\
-			__FILE__, __LINE__, __func__, __VA_ARGS__); \
-	  exit(2); } while (0)
+	gflog_fatal_message(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_auth_error(msg_no, ...)\
 	gflog_message(msg_no, LOG_ERR,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
@@ -60,9 +65,8 @@ void gflog_message_errno(int, int, const char *, int, const char*,
 	gflog_message(msg_no, LOG_WARNING,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_fatal_errno(msg_no, ...) \
-	do { gflog_message_errno(msg_no, LOG_ERR,\
-			__FILE__, __LINE__, __func__, __VA_ARGS__); \
-	  exit(2); } while (0)
+	gflog_fatal_message_errno(msg_no, LOG_ERR,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_warning_errno(msg_no, ...) \
 	gflog_message_errno(msg_no, LOG_WARNING,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
