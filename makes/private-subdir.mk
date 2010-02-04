@@ -1,5 +1,5 @@
 private-dir-tree-link:
-	if test "x${top_private_dir}" != "x"; then \
+	@if test "x${top_private_dir}" != "x"; then \
 		tsDir=`(cd $(top_srcdir); /bin/pwd)` ; \
 		crDir=`/bin/pwd` ; \
 		tDir=`echo $${crDir} | sed "s:$${tsDir}::"` ; \
@@ -14,7 +14,7 @@ private-dir-tree-link:
 	fi
 
 private-dir-tree-remove:
-	if test "x${top_private_dir}" != "x"; then \
+	@if test "x${top_private_dir}" != "x"; then \
 		if test "x${PRIVATE_TARGETS}" != "x"; then \
 			for i in ${PRIVATE_TARGETS}; do \
 				if test -d ./$${i}; then \

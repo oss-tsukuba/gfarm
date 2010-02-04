@@ -1,7 +1,7 @@
 private_dir = ./private
 
 private-dir-link:
-	if test "x$(top_private_dir)" != "x"; then \
+	@if test "x$(top_private_dir)" != "x"; then \
 		tsDir=`(cd $(top_srcdir); /bin/pwd)` ; \
 		crDir=`/bin/pwd` ; \
 		tDir=`echo $${crDir} | sed "s:$${tsDir}::"` ; \
@@ -10,12 +10,12 @@ private-dir-link:
 	fi
 
 private-dir-unlink: private-src-unlink
-	if test -L $(private_dir); then \
+	@if test -L $(private_dir); then \
 		$(RM) -f $(private_dir) ; \
 	fi
 
 private-src-link: private-dir-link
-	if test "x$(PRIVATE_FILES)" != "x"; then \
+	@if test "x$(PRIVATE_FILES)" != "x"; then \
 		for i in $(PRIVATE_FILES); do \
 			if test ! -r ./$${i}; then \
 				if test -r $(private_dir)/$${i}; then \
@@ -26,7 +26,7 @@ private-src-link: private-dir-link
 	fi
 
 private-src-unlink:
-	if test "x$(PRIVATE_FILES)" != "x"; then \
+	@if test "x$(PRIVATE_FILES)" != "x"; then \
 		for i in $(PRIVATE_FILES); do \
 			if test -L ./$${i}; then \
 				$(RM) ./$${i} ; \
