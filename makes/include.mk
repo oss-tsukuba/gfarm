@@ -7,6 +7,7 @@ gfregister: include-gfregister post-gfregister-hook
 man: include-man post-man-hook
 html: include-html post-html-hook
 msgno: include-msgno
+catalog: include-catalog
 
 
 post-all-hook:
@@ -48,3 +49,4 @@ include-gfregister:
 include-man:
 include-html:
 include-msgno:
+include-catalog:

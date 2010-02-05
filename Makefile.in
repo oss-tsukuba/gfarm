@@ -11,7 +11,8 @@ SUBDIRS = \
 	lib \
 	server \
 	gftool \
-	util/ptool
+	util/ptool \
+	nls 
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \

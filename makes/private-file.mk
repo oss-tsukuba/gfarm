@@ -1,5 +1,3 @@
-private_dir = ./private
-
 private-dir-link:
 	@if test "x$(top_private_dir)" != "x"; then \
 		tsDir=`(cd $(top_srcdir); /bin/pwd)` ; \

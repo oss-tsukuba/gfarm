@@ -71,6 +71,8 @@ void gflog_fatal_message_errno(int, int, const char *, int, const char*,
 	gflog_message_errno(msg_no, LOG_WARNING,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
+void gflog_initialize(void);
+void gflog_terminate(void);
 void gflog_set_priority_level(int);
 void gflog_set_identifier(const char *);
 void gflog_set_auxiliary_info(char *);

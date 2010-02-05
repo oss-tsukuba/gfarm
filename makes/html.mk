@@ -7,6 +7,7 @@ gfregister: html-gfregister post-gfregister-hook
 man: html-man
 html: html-html
 msgno: html-msgno
+catalog: html-catalog
 
 post-all-hook:
 post-install-hook:
@@ -57,3 +58,4 @@ html-html:
 	done
 
 html-msgno:
+html-catalog:

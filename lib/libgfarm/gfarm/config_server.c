@@ -54,6 +54,8 @@ gfarm_server_initialize(void)
 {
 	gfarm_error_t e;
 
+	gflog_initialize();
+
 	e = gfarm_server_config_read();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -68,5 +70,7 @@ gfarm_error_t
 gfarm_server_terminate(void)
 {
 	/* nothing to do (and also may never be called) */
+	gflog_terminate();
+
 	return (GFARM_ERR_NO_ERROR);
 }

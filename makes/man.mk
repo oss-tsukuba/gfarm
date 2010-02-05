@@ -7,6 +7,7 @@ gfregister: man-gfregister post-gfregister-hook
 man: man-man
 html: man-html
 msgno: man-msgno
+catalog: man-catalog
 
 post-all-hook:
 post-install-hook:
@@ -51,3 +52,4 @@ man-man:
 
 man-html:
 man-msgno:
+man-catalog:

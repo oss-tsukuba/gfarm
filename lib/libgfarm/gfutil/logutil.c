@@ -39,9 +39,21 @@ gflog_catopen(const char *file)
 }
 
 void
-gflog_catclose()
+gflog_catclose(void)
 {
 	catclose(catd);
+}
+
+void
+gflog_initialize(void)
+{
+	gflog_catopen(NULL);
+}
+
+void
+gflog_terminate(void)
+{
+	gflog_catclose();
 }
 
 void
@@ -57,27 +69,26 @@ gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
 	pthread_mutex_lock(&mutex);
 
 	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
-	catmsg = catmsg == NULL ? "" : catmsg;
 
-	vsnprintf(buffer, sizeof buffer, format, ap);
+	vsnprintf(buffer, sizeof buffer, catmsg != NULL ? catmsg : format, ap);
 
 	if (log_auxiliary_info != NULL) {
 		if (log_use_syslog)
-			syslog(priority, "[%06d] (%s L%d %s()) %s / (%s) %s",
-			    msg_no, file, line_no, func, catmsg,
+			syslog(priority, "[%06d] (%s L%d %s()) (%s) %s",
+			    msg_no, file, line_no, func,
 			    log_auxiliary_info, buffer);
 		else
 			fprintf(stderr,
-			    "%s: [%06d] (%s L%d %s()) %s / (%s) %s\n",
-			    log_identifier, msg_no, file, line_no, func, catmsg,
+			    "%s: [%06d] (%s L%d %s()) (%s) %s\n",
+			    log_identifier, msg_no, file, line_no, func,
 			    log_auxiliary_info, buffer);
 	} else {
 		if (log_use_syslog)
-			syslog(priority, "[%06d] (%s L%d %s()) %s / %s",
-			    msg_no, file, line_no, func, catmsg, buffer);
+			syslog(priority, "[%06d] (%s L%d %s()) %s",
+			    msg_no, file, line_no, func, buffer);
 		else
-			fprintf(stderr, "%s: [%06d] (%s L%d %s()) %s / %s\n",
-			    log_identifier, msg_no, file, line_no, func, catmsg,
+			fprintf(stderr, "%s: [%06d] (%s L%d %s()) %s\n",
+			    log_identifier, msg_no, file, line_no, func,
 			    buffer);
 	}
 

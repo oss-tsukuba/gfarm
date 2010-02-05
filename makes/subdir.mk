@@ -7,7 +7,7 @@ gfregister: subdir-gfregister post-gfregister-hook
 man: subdir-man
 html: subdir-html
 msgno: subdir-msgno
-
+catalog: subdir-catalog
 include $(top_srcdir)/makes/private-subdir.mk
 
 post-all-hook:
@@ -21,7 +21,7 @@ post-gfregister-hook:
 # for Makefile.in case too is to prevent variable-inheritance caused by
 # non Makefile.in case.
 
-subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html subdir-msgno:
+subdir-all subdir-install subdir-clean subdir-veryclean subdir-distclean subdir-gfregister subdir-man subdir-html subdir-msgno subdir-catalog:
 	@target=`expr $@ : 'subdir-\(.*\)'`; \
 	for dir in -- $(SUBDIRS); do \
 		case $${dir} in --) continue;; esac; \

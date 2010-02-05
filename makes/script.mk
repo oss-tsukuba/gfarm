@@ -7,6 +7,7 @@ gfregister: script-gfregister post-gfregister-hook
 man: script-man post-man-hook
 html: script-html post-html-hook
 msgno: script-msgno
+catalog: script-catalog
 
 post-all-hook:
 post-install-hook:
@@ -41,3 +42,4 @@ script-gfregister:
 script-man:
 script-html:
 script-msgno:
+script-catalog:

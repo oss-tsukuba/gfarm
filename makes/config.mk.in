@@ -13,6 +13,7 @@ default_mandir = @mandir@
 default_docdir = $(default_datadir)/doc/gfarm
 default_htmldir = $(default_docdir)/html
 default_sysconfdir= @sysconfdir@
+default_localedir = @localedir@
 
 sbindir = $(default_sbindir)
 bindir = $(default_bindir)
@@ -25,6 +26,7 @@ mandir = $(default_mandir)
 docdir = $(default_docdir)
 htmldir = $(default_htmldir)
 sysconfdir = $(default_sysconfdir)
+localedir = $(default_localedir)
 
 CC = @CC@
 OPTFLAGS = @CFLAGS@

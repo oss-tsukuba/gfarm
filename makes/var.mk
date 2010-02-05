@@ -12,6 +12,10 @@ metadb_client_libs = $(ldap_libs) $(postgresql_libs)
 
 SHELL = /bin/sh
 RM = rm
+GENCAT = gencat
+
+# gflog
+ASSIGNMSGNO=$(top_srcdir)/makes/assign_msgno.pl
 
 # library to be installed, see lib.mk
 LIBRARY_RESULT = $(LIBRARY)
@@ -72,8 +76,11 @@ LTCLEAN = $(LIBTOOL) --mode=clean $(RM) -f
 LTINSTALL_PROGRAM = $(LIBTOOL) --mode=install $(INSTALL_PROGRAM)
 LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
 
+# private src
 
-.SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l
+private_dir = ./private
+
+.SUFFIXES: .a .la .ln .o .lo .s .S .c .cc .f .y .l .msg .cat
 
 .c.lo:
 	$(LTCOMPILE) -c $(srcdir)/$*.c
@@ -83,3 +90,6 @@ LTINSTALL_LIBRARY = $(LIBTOOL) --mode=install $(INSTALL_DATA)
 
 .S.lo:
 	$(LTCOMPILE) -c $(srcdir)/$*.S
+
+.msg.cat:
+	cat $< | $(CPP) $(CFLAGS) - 2>/dev/null | grep -v "^#" | $(GENCAT) $@ -

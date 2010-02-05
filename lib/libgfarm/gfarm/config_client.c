@@ -375,6 +375,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	int saved_auth_verb;
 #endif
 
+	gflog_initialize();
+
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -488,6 +490,7 @@ gfarm_terminate(void)
 	gfarm_free_group_map();
 	gfs_client_terminate();
 	gfm_client_terminate();
+	gflog_terminate();
 
 	return (GFARM_ERR_NO_ERROR);
 }

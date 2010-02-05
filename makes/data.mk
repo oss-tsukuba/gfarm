@@ -7,6 +7,7 @@ gfregister: data-gfregister post-gfregister-hook
 man: data-man post-man-hook
 html: data-html post-html-hook
 msgno: data-msgno
+catalog: data-catalog
 
 post-all-hook:
 post-install-hook:
@@ -41,3 +42,4 @@ data-gfregister:
 data-man:
 data-html:
 data-msgno:
+data-catalog:

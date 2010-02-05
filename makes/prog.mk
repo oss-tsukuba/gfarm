@@ -6,6 +6,7 @@ gfregister: prog-gfregister post-gfregister-hook
 man: prog-man post-man-hook
 html: prog-html post-html-hook
 msgno: prog-msgno
+catalog: prog-catalog
 
 include $(top_srcdir)/makes/private-file.mk
 
@@ -37,5 +38,5 @@ prog-gfregister:
 prog-man:
 prog-html:
 prog-msgno:
-
+prog-catalog:
 $(PRIVATE_FILES): private-initialize
