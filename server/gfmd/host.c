@@ -51,6 +51,7 @@ struct host {
 	pthread_mutex_t remover_mutex;
 	pthread_cond_t remover_cond;
 	volatile int is_active;
+	int invalid;	/* set when deleted */
 
 	gfarm_time_t last_report;
 	double loadavg_1min, loadavg_5min, loadavg_15min;
@@ -117,6 +118,30 @@ host_iterator_access(struct gfarm_hash_iterator *it)
 	return (*hp);
 }
 
+static void
+host_invalidate(struct host *h)
+{
+	h->invalid = 1;
+}
+
+static void
+host_activate(struct host *h)
+{
+	h->invalid = 0;
+}
+
+int
+host_is_invalidated(struct host *h)
+{
+	return (h->invalid == 1);
+}
+
+int
+host_is_active(struct host *h)
+{
+	return (h != NULL && !host_is_invalidated(h));
+}
+
 struct host *
 host_lookup(const char *hostname)
 {
@@ -150,6 +175,8 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
+		if (!host_is_active(h))
+			continue;
 		hp = gethostbyname(h->hi.hostname);
 		if (hp == NULL || hp->h_addrtype != AF_INET)
 			continue;
@@ -181,6 +208,23 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	int created;
 	struct host *h;
 
+	h = host_lookup(hi->hostname);
+	if (h != NULL) {
+		if (host_is_invalidated(h)) {
+			host_activate(h);
+			if (hpp != NULL)
+				*hpp = h;
+			/* copy host info but keeping address of hostname */
+			free(hi->hostname);
+			hi->hostname = h->hi.hostname;
+			h->hi.hostname = NULL; /* prevent to free this area */
+			gfarm_host_info_free(&h->hi);
+			h->hi = *hi;
+			return (GFARM_ERR_NO_ERROR);
+		} else
+			return (GFARM_ERR_ALREADY_EXISTS);
+	}
+
 	GFARM_MALLOC(h);
 	if (h == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -210,6 +254,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	pthread_mutex_init(&h->remover_mutex, NULL);
 	pthread_cond_init(&h->remover_cond, NULL);
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
+	host_activate(h);
 	if (hpp != NULL)
 		*hpp = h;
 	return (GFARM_ERR_NO_ERROR);
@@ -226,16 +271,13 @@ host_remove(const char *hostname)
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	h = *(struct host **)gfarm_hash_entry_data(entry);
-	gfarm_hash_purge(host_hashtab, &hostname, sizeof(hostname));
-
-	/* free gfarm_host_info */
-	gfarm_host_info_free(&h->hi);
-
-	/* This entry can be referred to by struct peer */
-	/* mark this as removed */
-	h->hi.hostname = REMOVED_HOST_NAME;
-	h->hi.architecture = NULL;
-	/* XXX We should have a list which points all removed hosts */
+	if (host_is_invalidated(h))
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	/*
+	 * do not purge the hash entry.  Instead, invalidate it so
+	 * that it can be activated later.
+	 */
+	host_invalidate(h);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -281,7 +323,7 @@ host_peer(struct host *h)
 char *
 host_name(struct host *h)
 {
-	return (h->hi.hostname);
+	return (host_is_active(h) ? h->hi.hostname : REMOVED_HOST_NAME);
 }
 
 int
@@ -297,7 +339,7 @@ host_is_up(struct host *h)
 	 * XXX - should be called with mutex h->remover_mutex,
 	 * but it is not always satisfied.
 	 */
-	return (h->is_active);
+	return (host_is_active(h) && h->is_active);
 }
 
 void
@@ -361,8 +403,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 			free(r);
 		else
 			host_remove_replica_enq_copy(host, r);
-	}
-	else
+	} else
 		free(r);
 	return (e);
 }
@@ -399,14 +440,18 @@ void
 host_remove_replica_dump_all(void)
 {
 	struct gfarm_hash_iterator it;
+	struct host *h;
 	gfarm_error_t e;
 
 	FOR_ALL_HOSTS(&it) {
-		e = host_remove_replica_dump(host_iterator_access(&it));
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_1000265,
-			    "host_remove_replica_dump_all: %s",
-				      gfarm_error_string(e));
+		h = host_iterator_access(&it);
+		if (host_is_active(h)) {
+			e = host_remove_replica_dump(h);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_warning(GFARM_MSG_1000265,
+				    "host_remove_replica_dump_all: %s",
+				    gfarm_error_string(e));
+		}
 	}
 }
 
@@ -433,8 +478,7 @@ host_update_status(struct host *host)
 		total_disk_used += host->disk_used - saved_used;
 		total_disk_avail += host->disk_avail - saved_avail;
 		pthread_mutex_unlock(&total_disk_mutex);
-	}
-	else {
+	} else {
 		host->report_flags = 0;
 		pthread_mutex_lock(&total_disk_mutex);
 		total_disk_used -= saved_used;
@@ -542,6 +586,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
 	struct gfarm_hash_iterator it;
+	struct host *h;
 	gfarm_int32_t nhosts;
 
 	if (skip)
@@ -551,8 +596,11 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	nhosts = 0;
-	FOR_ALL_HOSTS(&it)
-		++nhosts;
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		if (host_is_active(h))
+			++nhosts;
+	}
 	e = gfm_server_put_reply(peer, "host_info_get_all",
 	    GFARM_ERR_NO_ERROR, "i", nhosts);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -560,10 +608,13 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 		return (e);
 	}
 	FOR_ALL_HOSTS(&it) {
-		e = host_info_send(client, &host_iterator_access(&it)->hi);
-		if (e != GFARM_ERR_NO_ERROR) {
-			giant_unlock();
-			return (e);
+		h = host_iterator_access(&it);
+		if (host_is_active(h)) {
+			e = host_info_send(client, &h->hi);
+			if (e != GFARM_ERR_NO_ERROR) {
+				giant_unlock();
+				return (e);
+			}
 		}
 	}
 	giant_unlock();
@@ -596,7 +647,8 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (strcmp(h->hi.architecture, architecture) == 0)
+		if (host_is_active(h) &&
+		    strcmp(h->hi.architecture, architecture) == 0)
 			++nhosts;
 	}
 	if (nhosts == 0) {
@@ -613,7 +665,8 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	}
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (strcmp(h->hi.architecture, architecture) == 0) {
+		if (host_is_active(h) &&
+		    strcmp(h->hi.architecture, architecture) == 0) {
 			e = host_info_send(client, &h->hi);
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
@@ -666,11 +719,10 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 			hosts[i] = host;
 		}
 	}
-	if (no_memory) {
-		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_MEMORY,"");
-	} else {
+	if (no_memory)
+		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_MEMORY, "");
+	else
 		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "");
-	}
 	if (no_memory || e != GFARM_ERR_NO_ERROR) {
 		if (hosts != NULL) {
 			for (i = 0; i < nhosts; i++) {
@@ -685,7 +737,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	giant_lock();
 	for (i = 0; i < nhosts; i++) {
 		h = (*lookup)(hosts[i]);
-		if (h == NULL) {
+		if (h == NULL || host_is_invalidated(h)) {
 			if (debug_mode)
 				gflog_info(GFARM_MSG_1000270,
 				    "host lookup <%s>: failed",
@@ -698,9 +750,8 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 				    "host lookup <%s>: ok", hosts[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
-			if (e == GFARM_ERR_NO_ERROR) {
+			if (e == GFARM_ERR_NO_ERROR)
 				e = host_info_send(client, &h->hi);
-			}
 		}
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
@@ -715,7 +766,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 gfarm_error_t
 gfm_server_host_info_get_by_names(struct peer *peer, int from_client, int skip)
 {
-	return(gfm_server_host_info_get_by_names_common(
+	return (gfm_server_host_info_get_by_names_common(
 	    peer, from_client, skip, host_lookup, "host_info_get_by_names"));
 }
 
@@ -723,7 +774,7 @@ gfarm_error_t
 gfm_server_host_info_get_by_namealiases(struct peer *peer,
 	int from_client, int skip)
 {
-	return(gfm_server_host_info_get_by_names_common(
+	return (gfm_server_host_info_get_by_names_common(
 	    peer, from_client, skip, host_namealiases_lookup,
 	    "host_info_get_by_namealiases"));
 }
@@ -750,7 +801,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (host_lookup(hostname) != NULL) {
+	} else if (host_is_active(host_lookup(hostname))) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else {
 		hi.hostname = hostname;
@@ -804,7 +855,8 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		needs_free = 1;
-	} else if ((h = host_lookup(hi.hostname)) == NULL) {
+	} else if ((h = host_lookup(hi.hostname)) == NULL ||
+		   host_is_invalidated(h)) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		needs_free = 1;
 	} else if ((e = db_host_modify(&hi,
@@ -850,7 +902,8 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((host = host_lookup(hostname)) == NULL) {
+	} else if ((host = host_lookup(hostname)) == NULL ||
+		   host_is_invalidated(host)) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else {
 		/* disconnect the back channel */
@@ -891,7 +944,8 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	    h->report_flags));
 }
 
-gfarm_error_t
+/* XXX does not care about hostaliases and architecture */
+static gfarm_error_t
 host_copy(struct host **dstp, const struct host *src)
 {
 	struct host *dst;
@@ -909,7 +963,7 @@ host_copy(struct host **dstp, const struct host *src)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-void
+static void
 host_free(struct host *h)
 {
 	if (h == NULL)
@@ -920,7 +974,7 @@ host_free(struct host *h)
 	return;
 }
 
-void
+static void
 host_free_all(int n, struct host **h)
 {
 	int i;
@@ -967,7 +1021,7 @@ host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 	if (i == n) {
 		*nhostsp = n;
 		*hostsp = hosts;
-	}		
+	}
 	return (e);
 }
 
@@ -1006,13 +1060,12 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 	struct host *h = peer_get_host(peer);
 
 	/* give the top priority to the local host if it has enough space */
-	if (h != NULL && host_is_up(h) &&
+	if (host_is_up(h) &&
 	    h->disk_avail > gfarm_get_minimum_free_disk_space()) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
-	}
-	else
+	} else
 		return (host_schedule_reply_all(
 				peer, diag, null_filter, NULL));
 }
@@ -1032,11 +1085,10 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	}
 
 	giant_lock();
-	if (from_client) {
+	if (from_client)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else {
+	else
 		e = peer_set_host(peer, hostname);
-	}
 	giant_unlock();
 	free(hostname);
 
