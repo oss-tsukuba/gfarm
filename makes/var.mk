@@ -92,4 +92,4 @@ private_dir = ./private
 	$(LTCOMPILE) -c $(srcdir)/$*.S
 
 .msg.cat:
-	cat $< | $(CPP) $(CFLAGS) - 2>/dev/null | grep -v "^#" | $(GENCAT) $@ -
+	cat $< | $(CPP) $(CFLAGS) - 2>/dev/null | grep -v "^#" | LC_ALL=$(LOCALE) $(GENCAT) $@ -
