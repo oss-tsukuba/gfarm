@@ -1021,6 +1021,21 @@ It's not recommended to specify a level higher or equal to "crit".
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>log_message_verbose_level</token> <parameter>level</parameter></term>
+<listitem>
+<para>This directive specifies how verbose the log message is.
+The default value is 0, which outputs the log message id.  The level 1
+additionally outputs the file name and the line of source code.  The
+level 2 additionally outputs the function name.
+</para>
+<para>For example,</para>
+<literallayout>
+	log_message_verbose_level 1
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>record_atime </token><parameter>validity</parameter></term>
@@ -1092,6 +1107,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
+		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt;
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; -->
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
@@ -1163,6 +1179,7 @@ notation.</para>
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
+	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"

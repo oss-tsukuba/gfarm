@@ -82,8 +82,7 @@ void gflog_set_auxiliary_info(char *);
 char *gflog_get_auxiliary_info(void);
 void gflog_syslog_open(int, int);
 int gflog_syslog_enabled(void);
-void gflog_catopen(const char *);
-void gflog_catclose(void);
+int gflog_set_message_verbose(int);
 
 int gflog_syslog_name_to_facility(const char *);
 int gflog_syslog_name_to_priority(const char *);

@@ -350,6 +350,7 @@ char *gfarm_postgresql_conninfo = NULL;
 char *gfarm_localfs_datadir = NULL;
 
 /* miscellaneous */
+#define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
@@ -360,6 +361,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
+int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_attr_cache_limit = MISC_DEFAULT;
 int gfarm_attr_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
@@ -1180,6 +1182,9 @@ parse_one_line(char *s, char *p, char **op)
 
 	} else if (strcmp(s, o = "log_level") == 0) {
 		e = parse_log_level(p, &gfarm_log_level);
+	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {
+		e = parse_set_misc_int(p, &gfarm_log_message_verbose);
+		gflog_set_message_verbose(gfarm_log_message_verbose);
 	} else if (strcmp(s, o = "attr_cache_limit") == 0) {
 		e = parse_set_misc_int(p, &gfarm_attr_cache_limit);
 	} else if (strcmp(s, o = "attr_cache_timeout") == 0) {
@@ -1301,6 +1306,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_log_level == MISC_DEFAULT)
 		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_log_level);
+	if (gfarm_log_message_verbose == MISC_DEFAULT)
+		gfarm_log_message_verbose = GFARM_LOG_MESSAGE_VERBOSE_DEFAULT;
+	gflog_set_message_verbose(gfarm_log_message_verbose);
 
 	if (gfarm_attr_cache_limit == MISC_DEFAULT)
 		gfarm_attr_cache_limit = GFARM_ATTR_CACHE_LIMIT_DEFAULT;

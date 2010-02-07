@@ -982,6 +982,22 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>log_message_verbose_level</token> <parameter>レベル</parameter></term>
+<listitem>
+<para>
+ログメッセージの冗長度を指定します。
+デフォルトは0です。レベル0では、ログIDが出力されます。
+レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
+レベル2では、レベル1に加え関数名が出力されます。
+</para>
+<para>例:</para>
+<literallayout>
+	log_message_verbose_level 1
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>record_atime</token> <parameter>有効性</parameter></term>
@@ -1052,6 +1068,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
+		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt;
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; -->
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
@@ -1123,6 +1140,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
+	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
