@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "01 2·î 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "06 February 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -683,6 +683,18 @@ For example,
 .nf
 	log_level debug
 .fi
+.TP
+\fBlog_message_verbose_level \fIlevel\fB\fR
+This directive specifies how verbose the log message is.
+The default value is 0, which outputs the log message id.  The level 1
+additionally outputs the file name and the line of source code.  The
+level 2 additionally outputs the function name.
+
+For example,
+
+.nf
+	log_message_verbose_level 1
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -728,6 +740,7 @@ notation.
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
+		\~\~<log_message_verbose_level_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -785,6 +798,7 @@ notation.
 	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
+	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

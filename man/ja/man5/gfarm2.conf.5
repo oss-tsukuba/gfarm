@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "01 2月 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "06 February 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -633,6 +633,18 @@ gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
 .nf
 	log_level debug
 .fi
+.TP
+\fBlog_message_verbose_level \fIレベル\fB\fR
+ログメッセージの冗長度を指定します。
+デフォルトは0です。レベル0では、ログIDが出力されます。
+レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
+レベル2では、レベル1に加え関数名が出力されます。
+
+例:
+
+.nf
+	log_message_verbose_level 1
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm2.confの文法をBNFで記述すると、下記のようになります。
@@ -677,6 +689,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
+		\~\~<log_message_verbose_level_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -734,6 +747,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
+	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

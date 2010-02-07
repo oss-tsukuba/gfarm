@@ -1393,6 +1393,28 @@ CLASS="PARAMETER"
 CLASS="LITERALLAYOUT"
 >	log_level&nbsp;debug</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_message_verbose_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥ì¥Ù¥ë</I
+></TT
+></DT
+><DD
+><P
+>¥í¥°¥á¥Ã¥»¡¼¥¸¤Î¾éÄ¹ÅÙ¤ò»ØÄê¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï0¤Ç¤¹¡£¥ì¥Ù¥ë0¤Ç¤Ï¡¢¥í¥°ID¤¬½ÐÎÏ¤µ¤ì¤Þ¤¹¡£
+¥ì¥Ù¥ë1¤Ç¤Ï¡¢¥ì¥Ù¥ë0¤Ë²Ã¤¨¥½¡¼¥¹¥³¡¼¥É¤Î¥Õ¥¡¥¤¥ëÌ¾¤È¹ÔÈÖ¹æ¤¬½ÐÎÏ¤µ¤ì¤Þ¤¹¡£
+¥ì¥Ù¥ë2¤Ç¤Ï¡¢¥ì¥Ù¥ë1¤Ë²Ã¤¨´Ø¿ôÌ¾¤¬½ÐÎÏ¤µ¤ì¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_message_verbose_level&nbsp;1</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1446,6 +1468,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;log_level_statement&#62;&nbsp;|<br>
+		  &#60;log_message_verbose_level_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1503,6 +1526,7 @@ CLASS="LITERALLAYOUT"
 	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
