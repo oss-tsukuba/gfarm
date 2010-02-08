@@ -214,7 +214,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			free(aux);
 		gfp_xdr_reset_secsession(conn);
 		gfp_xdr_set_socket(conn, fd);
-		return (e);
+		return (e != GFARM_ERR_NO_ERROR ? e : e2);
 	}
 
 	if (switch_to &&
