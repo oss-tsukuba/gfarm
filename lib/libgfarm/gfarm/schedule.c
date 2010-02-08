@@ -465,7 +465,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 	/* first host in the network */
 	GFARM_MALLOC(net); 
 	if (net == NULL)
-		return (GFARM_ERR_NO_ERROR);
+		return (GFARM_ERR_NO_MEMORY);
 	net->min = min;
 	net->max = max;
 	net->flags = 0;
