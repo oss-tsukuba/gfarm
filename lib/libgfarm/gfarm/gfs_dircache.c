@@ -231,8 +231,16 @@ gfs_stat_caching(const char *path, struct gfs_stat *st)
 		return (e);
 
 	gettimeofday(&now, NULL);
-	/* It's ok to fail in entering the cache, since it's merely cache. */
-	(void)gfs_stat_cache_enter_internal(path, st, &now);
+	if ((e = gfs_stat_cache_enter_internal(path, st, &now)) !=
+	    GFARM_ERR_NO_ERROR) {
+		/*
+		 * It's ok to fail in entering the cache,
+		 * since it's merely cache.
+		 */
+		gflog_warning(GFARM_MSG_UNUSED,
+		    "gfs_stat_caching: failed to cache %s: %s",
+		    path, gfarm_error_string(e));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -305,7 +313,15 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 	if (ep != NULL) { /* i.e. not EOF */
 		GFARM_MALLOC_ARRAY(path,
 		    strlen(dir->path) + strlen(ep->d_name) + 1);
-		if (path != NULL) {
+		if (path == NULL) {
+			/*
+			 * It's ok to fail in entering the cache,
+			 * since it's merely cache.
+			 */
+			gflog_warning(GFARM_MSG_UNUSED,
+			    "dircache: failed to cache %s%s due to no memory",
+			    dir->path, ep->d_name);
+		} else {
 			struct timeval now;
 
 			gettimeofday(&now, NULL);
@@ -321,7 +337,12 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			 * It's ok to fail in entering the cache,
 			 * since it's merely cache.
 			 */
-			(void)gfs_stat_cache_enter_internal(path, stp, &now);
+			if ((e = gfs_stat_cache_enter_internal(path, stp, &now))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNUSED,
+				    "dircache: failed to cache %s: %s",
+				    path, gfarm_error_string(e));
+			}
 			free(path);
 		}
 	}
