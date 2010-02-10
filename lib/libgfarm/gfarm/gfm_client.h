@@ -338,3 +338,17 @@ gfarm_error_t gfm_client_compound_fd_op(struct gfm_connection *, gfarm_int32_t,
 	gfarm_error_t (*)(struct gfm_connection *, void *),
 	void (*)(struct gfm_connection *, void *),
 	void *);
+
+
+/* exported for a use from a private extension */
+gfarm_error_t gfm_client_rpc_request(struct gfm_connection *,
+	int, const char *, ...);
+gfarm_error_t gfm_client_rpc_result(struct gfm_connection *,
+	int, const char *, ...);
+gfarm_error_t gfm_client_rpc(struct gfm_connection *, int,
+	int, const char *, ...);
+gfarm_error_t gfm_client_get_schedule_result(struct gfm_connection *,
+	int *, struct gfarm_host_sched_info **);
+void gfm_client_purge_from_cache(struct gfm_connection *);
+gfarm_error_t gfm_client_get_nhosts(struct gfm_connection *,
+	int, struct gfarm_host_info *);

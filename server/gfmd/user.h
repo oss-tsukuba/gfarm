@@ -31,3 +31,8 @@ gfarm_error_t gfm_server_user_info_remove(struct peer *, int, int);
 struct group_assignment;
 /* subroutine of grpassign_add(), shouldn't be called from elsewhere */
 void grpassign_add_group(struct group_assignment *);
+
+
+/* exported for a use from a private extension */
+gfarm_error_t user_info_remove_default(const char *, const char *);
+extern gfarm_error_t (*user_info_remove)(const char *, const char *);

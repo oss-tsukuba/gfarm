@@ -1838,8 +1838,9 @@ inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
 	return (to_create);
 }
 
+/* this interface is exported for a use from a private extension */
 gfarm_error_t
-inode_schedule_file_reply(struct inode *inode, struct peer *peer,
+inode_schedule_file_reply_default(struct inode *inode, struct peer *peer,
 	int writable, int creating, const char *diag)
 {
 	gfarm_error_t e, e_save;
@@ -1851,8 +1852,7 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	/* XXX FIXME too long giant lock */
 
 	if (!inode_is_file(inode))
-		gflog_fatal(GFARM_MSG_1000332,
-		    "inode_schedule_file_reply: not a file");
+		gflog_fatal(GFARM_MSG_1000332, "%s: not a file", diag);
 
 	if (creating)
 		return (host_schedule_reply_one_or_all(peer, diag));
@@ -1887,8 +1887,7 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	/* read access, or write access && no process is opening the file */
 
 	if (inode_is_creating_file(inode))
-		gflog_fatal(GFARM_MSG_1000333,
-		    "inode_schedule_file_reply: should be creating");
+		gflog_fatal(GFARM_MSG_1000333, "%s: should be creating", diag);
 	n = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
@@ -1906,6 +1905,11 @@ inode_schedule_file_reply(struct inode *inode, struct peer *peer,
 	}
 	return (e_save);
 }
+
+/* this interface is made as a hook for a private extension */
+gfarm_error_t (*inode_schedule_file_reply)(struct inode *, struct peer *,
+	int, int, const char *) =
+	inode_schedule_file_reply_default;
 
 gfarm_error_t
 inode_replica_list_by_name(struct inode *inode,

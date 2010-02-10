@@ -126,3 +126,12 @@ struct db_waitctx {
 void db_waitctx_init(struct db_waitctx *);
 void db_waitctx_fini(struct db_waitctx *);
 gfarm_error_t dbq_waitret(struct db_waitctx *);
+
+
+/* exported for a use from a private extension */
+/* The official gfmd source code shouldn't use these interface */
+typedef gfarm_error_t (*dbq_entry_func_t)(void *);
+gfarm_error_t gfarm_dbq_enter(dbq_entry_func_t, void *);
+gfarm_error_t gfarm_dbq_enter_for_waitret(
+	dbq_entry_func_t, void *, struct db_waitctx *);
+const struct db_ops *db_get_ops(void);

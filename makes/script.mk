@@ -9,6 +9,8 @@ html: script-html post-html-hook
 msgno: script-msgno
 catalog: script-catalog
 
+include $(top_builddir)/makes/private-file.mk
+
 post-all-hook:
 post-install-hook:
 post-clean-hook:
@@ -32,7 +34,7 @@ script-install:
 script-clean:
 	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
 
-script-veryclean: clean
+script-veryclean: clean private-finalize
 	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
 
 script-distclean: veryclean
@@ -43,3 +45,5 @@ script-man:
 script-html:
 script-msgno:
 script-catalog:
+
+$(PRIVATE_FILES): private-initialize

@@ -91,8 +91,10 @@ struct host *inode_schedule_host_for_write(struct inode *, struct host *);
 struct host *inode_writing_spool_host(struct inode *);
 int inode_schedule_confirm_for_write(struct inode *, struct host *, int);
 struct peer;
-gfarm_error_t inode_schedule_file_reply(struct inode *, struct peer *,
-	int, int, const char *);
+
+/* this interface is made as a hook for a private extension */
+extern gfarm_error_t (*inode_schedule_file_reply)(struct inode *,
+	struct peer *, int, int, const char *);
 
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
@@ -106,3 +108,8 @@ gfarm_error_t inode_xattr_list(struct inode *, int, char **, size_t *);
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);
+
+
+/* exported for a use from a private extension */
+gfarm_error_t inode_schedule_file_reply_default(struct inode *,
+	struct peer *, int, int, const char *);

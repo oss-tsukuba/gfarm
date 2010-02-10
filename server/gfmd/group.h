@@ -38,3 +38,8 @@ gfarm_error_t gfm_server_group_info_remove(struct peer *, int, int);
 gfarm_error_t gfm_server_group_info_add_users(struct peer *, int, int);
 gfarm_error_t gfm_server_group_info_remove_users(struct peer *, int, int);
 gfarm_error_t gfm_server_group_names_get_by_users(struct peer *, int, int);
+
+
+/* exported for a use from a private extension */
+gfarm_error_t group_info_remove_default(const char *, const char *);
+extern gfarm_error_t (*group_info_remove)(const char *, const char *);

@@ -199,7 +199,8 @@ pgsql_get_int64(PGresult *res, int row, const char *field_name)
 	return (gfarm_ntoh64(val));
 }
 
-static int32_t
+/* this interface is exported for a use from a private extension */
+int32_t
 pgsql_get_int32(PGresult *res, int row, const char *field_name)
 {
 	uint32_t val;
@@ -209,7 +210,8 @@ pgsql_get_int32(PGresult *res, int row, const char *field_name)
 	return (ntohl(val));
 }
 
-static char *
+/* this interface is exported for a use from a private extension */
+char *
 pgsql_get_string(PGresult *res, int row, const char *field_name)
 {
 	return (strdup(PQgetvalue(res, row, PQfnumber(res, field_name))));
@@ -289,7 +291,8 @@ gfarm_pgsql_check_insert(PGresult *res, const char *command, const char *diag)
 	return (e);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_check_update_or_delete(PGresult *res,
 	const char *command, const char *diag)
 {
@@ -408,7 +411,8 @@ gfarm_pgsql_exec_params_with_retry(const char *command,
 	return (res);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_start_with_retry(const char *diag)
 {
 	PGresult *res;
@@ -432,7 +436,8 @@ gfarm_pgsql_start_with_retry(const char *diag)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_commit(const char *diag)
 {
 	if (--transaction_nesting > 0)
@@ -444,7 +449,8 @@ gfarm_pgsql_commit(const char *diag)
 	    diag));
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_rollback(const char *diag)
 {
 	transaction_ok = 0;
@@ -452,7 +458,8 @@ gfarm_pgsql_rollback(const char *diag)
 	return (gfarm_pgsql_commit(diag));
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_insert_with_retry(const char *command,
 	int nParams,
 	const Oid *paramTypes,
@@ -470,7 +477,8 @@ gfarm_pgsql_insert_with_retry(const char *command,
 	return (e);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_update_or_delete_with_retry(const char *command,
 	int nParams,
 	const Oid *paramTypes,
@@ -489,7 +497,8 @@ gfarm_pgsql_update_or_delete_with_retry(const char *command,
 	return (e);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_generic_get_all(
 	const char *sql,
 	int nparams,
@@ -536,7 +545,8 @@ gfarm_pgsql_generic_get_all(
 	return (e);
 }
 
-static gfarm_error_t
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
 gfarm_pgsql_generic_grouping_get_all(
 	const char *count_sql,
 	const char *results_sql,
@@ -2705,6 +2715,13 @@ gfarm_pgsql_quota_load(void *closure, int is_group,
 		&gfarm_base_quota_info_ops,
 		quota_info_set_fields_from_copy_binary,
 		"pgsql_quota_load"));
+}
+
+/* DO NOT REMOVE: this interfaces is provided for a private extension */
+PGconn *
+gfarm_pgsql_get_conn(void)
+{
+	return (conn);
 }
 
 /**********************************************************************/

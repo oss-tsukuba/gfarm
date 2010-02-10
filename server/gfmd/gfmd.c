@@ -60,8 +60,10 @@
 #include "back_channel.h"
 #include "xattr.h"
 #include "quota.h"
+#include "gfmd.h"
 
 #include "protocol_state.h"
+
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -81,6 +83,21 @@
 char *program_name = "gfmd";
 static struct protoent *tcp_proto;
 static char *pid_file;
+
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+gfm_server_protocol_extension_default(struct peer *peer,
+	int from_client, int skip, int level, gfarm_int32_t request,
+	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
+{
+	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
+	return (GFARM_ERR_PROTOCOL);
+}
+
+/* this interface is made as a hook for a private extension */
+gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
+	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *) = 
+		gfm_server_protocol_extension_default;
 
 gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
@@ -430,9 +447,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_quota_check(peer, from_client, skip);
 		break;
 	default:
-		gflog_warning(GFARM_MSG_1000181,
-		    "unknown request: %d", request);
-		e = GFARM_ERR_PROTOCOL;
+		e = gfm_server_protocol_extension(peer,
+		    from_client, skip, level, request, requestp, on_errorp);
+		break;
 	}
 	if ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
 	    || request == GFM_PROTO_COMPOUND_END) {
@@ -466,6 +483,7 @@ protocol_state_init(struct protocol_state *ps)
 	ps->nesting_level = 0;
 }
 
+/* this interface is exported for a use from a private extension */
 int
 protocol_service(struct peer *peer)
 {
@@ -562,6 +580,7 @@ protocol_service(struct peer *peer)
 	return (0); /* still doing */
 }
 
+/* this interface is exported for a use from a private extension */
 void *
 protocol_main(void *arg)
 {
@@ -898,6 +917,28 @@ usage(void)
 	exit(1);
 }
 
+/* this interface is exported for a use from a private extension */
+void
+gfmd_modules_init_default(int table_size)
+{
+	host_init();
+	user_init();
+	group_init();
+	inode_init();
+	dir_entry_init();
+	file_copy_init();
+	dead_file_copy_init();
+	symlink_init();
+	xattr_init();
+	quota_init();
+
+	peer_init(table_size, protocol_main);
+	job_table_init(table_size);
+}
+
+/* this interface is made as a hook for a private extension */
+void (*gfmd_modules_init)(int); /* intentionally remains uninitialized */
+
 int
 main(int argc, char **argv)
 {
@@ -1037,19 +1078,9 @@ main(int argc, char **argv)
 	 */
 	write_pid(pid_file);
 
-	host_init();
-	user_init();
-	group_init();
-	inode_init();
-	dir_entry_init();
-	file_copy_init();
-	dead_file_copy_init();
-	symlink_init();
-	xattr_init();
-	quota_init();
-
-	peer_init(table_size, protocol_main);
-	job_table_init(table_size);
+	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
+		gfmd_modules_init = gfmd_modules_init_default;
+	gfmd_modules_init(table_size);
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).

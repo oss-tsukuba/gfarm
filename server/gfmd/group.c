@@ -496,8 +496,9 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	char *groupname, **groups;
 	int i, j, eof, no_memory = 0;
 	struct group *g;
+	const char msg[] = "protocol GROUP_INFO_GET_BY_NAMES";
 
-	e = gfm_server_get_request(peer, "group_info_get_by_names",
+	e = gfm_server_get_request(peer, msg,
 	    "i", &ngroups);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -531,7 +532,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 		goto free_group;
 	}
 
-	e = gfm_server_put_reply(peer, "group_info_get_by_names",
+	e = gfm_server_put_reply(peer, msg,
 		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
 	if (no_memory || e != GFARM_ERR_NO_ERROR)
 		goto free_group;
@@ -541,12 +542,10 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	for (i = 0; i < ngroups; i++) {
 		g = group_lookup(groups[i]);
 		if (g == NULL || group_is_invalidated(g)) {
-			e = gfm_server_put_reply(peer,
-			    "group_info_get_by_name",
+			e = gfm_server_put_reply(peer, msg,
 			    GFARM_ERR_NO_SUCH_GROUP, "");
 		} else {
-			e = gfm_server_put_reply(peer,
-			    "group_info_get_by_name",
+			e = gfm_server_put_reply(peer, msg,
 			    GFARM_ERR_NO_ERROR, "");
 			if (e == GFARM_ERR_NO_ERROR)
 				e = group_info_send(client, g);
@@ -622,11 +621,11 @@ gfarm_error_t
 gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	const char *msg = "group_info_set";
 	struct gfarm_group_info gi;
 	struct user *user = peer_get_user(peer);
 	int need_free;
 	char *saved_groupname;
+	const char msg[] = "protocol GROUP_INFO_SET";
 
 	e = get_group(peer, msg, &gi);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -673,12 +672,12 @@ gfarm_error_t
 gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	const char *msg = "group_info_modify";
 	struct gfarm_group_info gi;
 	struct user *user = peer_get_user(peer);
 	struct group *group;
 	struct group_assignment *ga;
 	int i;
+	const char msg[] = "protocol GROUP_INFO_MODIFY";
 
 	e = get_group(peer, msg, &gi);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -731,13 +730,33 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+group_info_remove_default(const char *groupname, const char *diag)
+{
+	gfarm_error_t e, e2;
+
+	if ((e = group_remove(groupname)) == GFARM_ERR_NO_ERROR) {
+		e2 = db_group_remove(groupname);
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1000258,
+			    "%s: db_group_remove: %s",
+			    diag, gfarm_error_string(e2));
+	}
+	return (e);
+}
+
+/* this interface is made as a hook for a private extension */
+gfarm_error_t (*group_info_remove)(const char *, const char *) =
+	group_info_remove_default;
+
 gfarm_error_t
 gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 {
 	char *groupname;
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
-	const char *msg = "group_info_remove";
+	const char msg[] = "protocol GROUP_INFO_REMOVE";
 
 	e = gfm_server_get_request(peer, msg, "s", &groupname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -749,13 +768,8 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = group_remove(groupname)) == GFARM_ERR_NO_ERROR) {
-		e2 = db_group_remove(groupname);
-		if (e2 != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1000258,
-			    "protocol %s db: %s", msg,
-			    gfarm_error_string(e2));
-	}
+	} else
+		e = group_info_remove(groupname, msg);
 	free(groupname);
 	giant_unlock();
 	return (gfm_server_put_reply(peer, msg, e, ""));

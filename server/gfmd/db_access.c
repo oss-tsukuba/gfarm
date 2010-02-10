@@ -23,7 +23,6 @@
 #define ALIGNMENT 8
 #define ALIGN(offset)	(((offset) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
-typedef gfarm_error_t (*dbq_entry_func_t)(void *);
 typedef void (*dbq_entry_func_callback_t)(gfarm_error_t, void *);
 
 struct dbq_callback_arg {
@@ -107,6 +106,14 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 	}
 	mutex_unlock(&q->mutex, msg, "mutex");
 	return (e);
+}
+
+/* DO NOT REMOVE: this interfaces is provided for a private extension */
+/* The official gfmd source code shouldn't use these interface */
+gfarm_error_t
+gfarm_dbq_enter(dbq_entry_func_t func, void *data)
+{
+	return (dbq_enter(&dbq, func, data));
 }
 
 static gfarm_error_t
@@ -206,6 +213,15 @@ dbq_enter_for_waitret(struct dbq *q,
 			dbq_done_callback, ctx));
 }
 
+/* DO NOT REMOVE: this interfaces is provided for a private extension */
+/* The official gfmd source code shouldn't use these interface */
+gfarm_error_t
+gfarm_dbq_enter_for_waitret(
+	dbq_entry_func_t func, void *data, struct db_waitctx *ctx)
+{
+	return (dbq_enter_for_waitret(&dbq, func, data, ctx));
+}
+
 gfarm_error_t
 dbq_delete(struct dbq *q, struct dbq_entry *entp)
 {
@@ -250,6 +266,14 @@ db_getfreenum(void)
 }
 
 static const struct db_ops *ops = &db_none_ops;
+
+/* DO NOT REMOVE: this interfaces is provided for a private extension */
+/* The official gfmd source code shouldn't use these interface */
+const struct db_ops *
+db_get_ops(void)
+{
+	return (ops);
+}
 
 gfarm_error_t
 db_use(const struct db_ops *o)

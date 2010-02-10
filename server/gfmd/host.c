@@ -564,20 +564,15 @@ host_init(void)
  * protocol handler
  */
 
+/* this interface is exported for a use from a private extension */
 gfarm_error_t
-host_info_send(struct gfp_xdr *client, struct gfarm_host_info *host)
+host_info_send(struct gfp_xdr *client, struct host *h)
 {
-	return (gfp_xdr_send(client, "ssiiii",
-	    host->hostname, host->architecture,
-	    host->ncpu, host->port, host->flags, host->nhostaliases));
-}
+	struct gfarm_host_info *hi = &h->hi;
 
-gfarm_error_t
-host_info_recv(struct gfp_xdr *client, struct gfarm_host_info *host)
-{
-	return (gfp_xdr_send(client, "ssiii",
-	    host->hostname, host->architecture,
-	    host->ncpu, host->port, host->flags));
+	return (gfp_xdr_send(client, "ssiiii",
+	    hi->hostname, hi->architecture,
+	    hi->ncpu, hi->port, hi->flags, hi->nhostaliases));
 }
 
 gfarm_error_t
@@ -588,6 +583,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	struct gfarm_hash_iterator it;
 	struct host *h;
 	gfarm_int32_t nhosts;
+	const char msg[] = "protocol HOST_INFO_GET_ALL";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -601,7 +597,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 		if (host_is_active(h))
 			++nhosts;
 	}
-	e = gfm_server_put_reply(peer, "host_info_get_all",
+	e = gfm_server_put_reply(peer, msg,
 	    GFARM_ERR_NO_ERROR, "i", nhosts);
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_unlock();
@@ -610,7 +606,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
 		if (host_is_active(h)) {
-			e = host_info_send(client, &h->hi);
+			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR) {
 				giant_unlock();
 				return (e);
@@ -631,8 +627,9 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	gfarm_int32_t nhosts;
 	struct gfarm_hash_iterator it;
 	struct host *h;
+	const char msg[] = "protocol HOST_INFO_GET_BY_ARCHITECTURE";
 
-	e = gfm_server_get_request(peer, "host_info_get_by_architecture",
+	e = gfm_server_get_request(peer, msg,
 	    "s", &architecture);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -652,10 +649,10 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 			++nhosts;
 	}
 	if (nhosts == 0) {
-		e = gfm_server_put_reply(peer, "host_info_get_all",
+		e = gfm_server_put_reply(peer, msg,
 		    GFARM_ERR_NO_SUCH_OBJECT, "");
 	} else {
-		e = gfm_server_put_reply(peer, "host_info_get_all",
+		e = gfm_server_put_reply(peer, msg,
 		    GFARM_ERR_NO_ERROR, "i", nhosts);
 	}
 	if (e != GFARM_ERR_NO_ERROR || nhosts == 0) {
@@ -667,7 +664,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 		h = host_iterator_access(&it);
 		if (host_is_active(h) &&
 		    strcmp(h->hi.architecture, architecture) == 0) {
-			e = host_info_send(client, &h->hi);
+			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 		}
@@ -751,7 +748,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
 			if (e == GFARM_ERR_NO_ERROR)
-				e = host_info_send(client, &h->hi);
+				e = host_info_send(client, h);
 		}
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
@@ -787,8 +784,9 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	char *hostname, *architecture;
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
+	const char msg[] = "protocol HOST_INFO_SET";
 
-	e = gfm_server_get_request(peer, "host_info_set", "ssiii",
+	e = gfm_server_get_request(peer, msg, "ssiii",
 	    &hostname, &architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -828,7 +826,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 			free(architecture);
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "host_info_set", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 gfarm_error_t
@@ -839,8 +837,9 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	struct gfarm_host_info hi;
 	struct host *h;
 	int needs_free = 0;
+	const char msg[] = "protocol HOST_INFO_MODIFY";
 
-	e = gfm_server_get_request(peer, "host_info_modify", "ssiii",
+	e = gfm_server_get_request(peer, msg, "ssiii",
 	    &hi.hostname, &hi.architecture, &hi.ncpu, &hi.port, &hi.flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -877,18 +876,46 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 
-	return (gfm_server_put_reply(peer, "host_info_modify", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
+
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+host_info_remove_default(const char *hostname, const char *diag)
+{
+	gfarm_error_t e, e2;
+	struct host *host;
+
+	if ((host = host_lookup(hostname)) == NULL ||
+	    host_is_invalidated(host))
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	/* disconnect the back channel */
+	host_peer_disconnect(host);
+
+	if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
+		e2 = db_host_remove(hostname);
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_1000272,
+			    "%s: db_host_remove: %s",
+			    diag, gfarm_error_string(e2));
+	}
+	return (e);
+}
+
+/* this interface is made as a hook for a private extension */
+gfarm_error_t (*host_info_remove)(const char *, const char *) =
+	host_info_remove_default;
 
 gfarm_error_t
 gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
 	char *hostname;
-	struct host *host;
+	const char msg[] = "protocol HOST_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, "host_info_remove", "s", &hostname);
+	e = gfm_server_get_request(peer, msg, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
@@ -902,25 +929,12 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((host = host_lookup(hostname)) == NULL ||
-		   host_is_invalidated(host)) {
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-	} else {
-		/* disconnect the back channel */
-		host_peer_disconnect(host);
-
-		if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
-			e2 = db_host_remove(hostname);
-			if (e2 != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_1000272,
-				    "protocol db_host_remove db: %s",
-				    gfarm_error_string(e2));
-		}
-	}
+	} else
+		e = host_info_remove(hostname, msg);
 	free(hostname);
 	giant_unlock();
 
-	return (gfm_server_put_reply(peer, "host_info_remove", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 /* called from inode.c:inode_schedule_file_reply() */
@@ -1075,8 +1089,9 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	char *hostname;
+	const char msg[] = "protocol HOSTNAME_SET";
 
-	e = gfm_server_get_request(peer, "hostname_set", "s", &hostname);
+	e = gfm_server_get_request(peer, msg, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip) {
@@ -1092,7 +1107,7 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	free(hostname);
 
-	return (gfm_server_put_reply(peer, "hostname_set", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
 static int
@@ -1107,7 +1122,8 @@ gfarm_error_t
 gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
-	char *domain, *msg = "schedule_host_domain";
+	char *domain;
+	const char msg[] = "protocol SCHEDULE_HOST_DOMAIN";
 
 	e = gfm_server_get_request(peer, msg, "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1129,8 +1145,8 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_statfs(struct peer *peer, int from_client, int skip)
 {
-	char *msg = "statfs";
 	gfarm_uint64_t used, avail, files;
+	const char msg[] = "protocol STATFS";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);

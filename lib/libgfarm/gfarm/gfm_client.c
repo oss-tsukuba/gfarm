@@ -131,9 +131,13 @@ gfm_client_process_get(struct gfm_connection *gfm_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-#define gfm_client_purge_from_cache(gfm_server)	\
-	gfp_cached_connection_purge_from_cache(&gfm_server_cache, \
-	    (gfm_server)->cache_entry)
+/* this interface is exported for a use from a private extension */
+void
+gfm_client_purge_from_cache(struct gfm_connection *gfm_server)
+{
+	gfp_cached_connection_purge_from_cache(&gfm_server_cache,
+	    gfm_server->cache_entry);
+}
 
 #define gfm_client_connection_used(gfm_server) \
 	gfp_cached_connection_used(&gfm_server_cache, \
@@ -449,8 +453,9 @@ gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
  * host/user/group metadata
  */
 
-static gfarm_error_t
-get_nhosts(struct gfm_connection *gfm_server,
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+gfm_client_get_nhosts(struct gfm_connection *gfm_server,
 	int nhosts, struct gfarm_host_info *hosts)
 {
 	gfarm_error_t e;
@@ -499,7 +504,8 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) /* XXX this breaks gfm protocol */
 		return (GFARM_ERR_NO_MEMORY);
-	if ((e = get_nhosts(gfm_server, nhosts, hosts)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_client_get_nhosts(gfm_server, nhosts, hosts))
+	    != GFARM_ERR_NO_ERROR)
 		return (e);
 	*nhostsp = nhosts;
 	*hostsp = hosts;
@@ -546,7 +552,7 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 	for (i = 0; i < nhosts; i++) {
 		e = gfm_client_rpc_result(gfm_server, 0, "");
 		errors[i] = e != GFARM_ERR_NO_ERROR ?
-		    e : get_nhosts(gfm_server, 1, &hosts[i]);
+		    e : gfm_client_get_nhosts(gfm_server, 1, &hosts[i]);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1262,8 +1268,9 @@ gfarm_host_sched_info_free(int nhosts, struct gfarm_host_sched_info *infos)
 	free(infos);
 }
 
-static gfarm_error_t
-get_schedule_result(struct gfm_connection *gfm_server,
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+gfm_client_get_schedule_result(struct gfm_connection *gfm_server,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
@@ -1311,7 +1318,7 @@ gfarm_error_t
 gfm_client_schedule_file_result(struct gfm_connection *gfm_server,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
-	return (get_schedule_result(gfm_server, nhostsp, infosp));
+	return (gfm_client_get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
 gfarm_error_t
@@ -1326,7 +1333,7 @@ gfarm_error_t
 gfm_client_schedule_file_with_program_result(struct gfm_connection *gfm_server,
 	int *nhostsp, struct gfarm_host_sched_info **infosp)
 {
-	return (get_schedule_result(gfm_server, nhostsp, infosp));
+	return (gfm_client_get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
 gfarm_error_t
@@ -1340,7 +1347,7 @@ gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", domain);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (get_schedule_result(gfm_server, nhostsp, infosp));
+	return (gfm_client_get_schedule_result(gfm_server, nhostsp, infosp));
 }
 
 gfarm_error_t

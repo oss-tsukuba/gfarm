@@ -41,3 +41,10 @@ gfarm_error_t host_schedule_reply_one_or_all(struct peer *, const char *);
 gfarm_error_t gfm_server_hostname_set(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_host_domain(struct peer *, int, int);
 gfarm_error_t gfm_server_statfs(struct peer *, int, int);
+
+
+/* exported for a use from a private extension */
+struct gfp_xdr;
+gfarm_error_t host_info_send(struct gfp_xdr *, struct host *);
+gfarm_error_t host_info_remove_default(const char *, const char *);
+extern gfarm_error_t (*host_info_remove)(const char *, const char *);
