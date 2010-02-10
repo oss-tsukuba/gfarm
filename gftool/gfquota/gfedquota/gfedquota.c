@@ -16,6 +16,7 @@
 #include <gfarm/gfarm.h>
 #include "config.h"
 #include "gfm_client.h"
+#include "lookup.h"
 #include "quota_info.h"
 
 char *program_name = "gfedquota";
@@ -30,10 +31,12 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage:\t%s -u username (or -g groupname) [options]\n"
+		"Usage:\t%s "
+		"[-P <path>] -u username (or -g groupname) [options]\n"
 		"Options:\n"
 		"(If the value is 'disable' or -1, the limit is disabled):\n",
 		program_name);
+	OPT("P", "path=NAME", "pathname (for multiple metadata servers)");
 	OPT("u", "user=NAME", "username");
 	OPT("g", "group=NAME", "groupname");
 	OPT("G", "grace=SEC", "grace period for all SoftLimits");
@@ -78,9 +81,10 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	char *username = NULL, *groupname = NULL;
-	char *optstring = "u:g:G:s:h:m:n:S:H:M:N:?";
+	char *optstring = "P:u:g:G:s:h:m:n:S:H:M:N:?";
 #ifdef HAVE_GETOPT_LONG
 	struct option long_options[] = {
+		{"path", 1, NULL, 'P'},
 		{"user", 1, NULL, 'u'},
 		{"group", 1, NULL, 'g'},
 		{"grace", 1, NULL, 'G'},
@@ -108,8 +112,8 @@ main(int argc, char **argv)
 		GFARM_QUOTA_NOT_UPDATE,
 		GFARM_QUOTA_NOT_UPDATE,
 	};
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	struct gfm_connection *gfarm_metadb_server;
+	struct gfm_connection *gfm_server;
+        const char *path = GFARM_PATH_ROOT;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -131,6 +135,9 @@ main(int argc, char **argv)
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'P':
+			path = optarg;
+			break;
 		case 'u':
 			username = strdup(optarg);
 			break;
@@ -172,23 +179,20 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	if ((e = gfm_client_connection_and_process_acquire(
-		     gfarm_metadb_server_name, gfarm_metadb_server_port,
-		     &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "metadata server `%s', port %d: %s\n",
-			gfarm_metadb_server_name, gfarm_metadb_server_port,
-			gfarm_error_string(e));
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+		     path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+			program_name, path, gfarm_error_string(e));
 		status = -1;
 		goto terminate;
 	}
 
 	if (username != NULL && groupname == NULL) {
 		qi.name = username;
-		e = gfm_client_quota_user_set(gfarm_metadb_server, &qi);
+		e = gfm_client_quota_user_set(gfm_server, &qi);
 	} else if (username == NULL && groupname != NULL) {
 		qi.name = groupname;
-		e = gfm_client_quota_group_set(gfarm_metadb_server, &qi);
+		e = gfm_client_quota_group_set(gfm_server, &qi);
 	} else
 		usage();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -197,6 +201,7 @@ main(int argc, char **argv)
 		status = -2;
 	}
 	gfarm_quota_set_info_free(&qi);
+	gfm_client_connection_free(gfm_server);
 terminate:
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
