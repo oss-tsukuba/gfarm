@@ -9,7 +9,7 @@ html: script-html post-html-hook
 msgno: script-msgno
 catalog: script-catalog
 
-include $(top_builddir)/makes/private-file.mk
+include $(top_srcdir)/makes/private-file.mk
 
 post-all-hook:
 post-install-hook:
