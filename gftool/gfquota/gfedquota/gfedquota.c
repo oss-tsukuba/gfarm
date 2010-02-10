@@ -51,14 +51,19 @@ usage(void)
 }
 
 static gfarm_int64_t
-convert_value(char *value)
+convert_value(const char *str)
 {
 	gfarm_int64_t val;
+	char *endptr;
 
-	if (strcmp(value, "disable") == 0)
+	if (strcmp(str, "disable") == 0)
 		return (GFARM_QUOTA_INVALID);
 
-	val = atoll(value);
+	val = strtoll(str, &endptr, 10);
+	if (*endptr != '\0') {
+		fprintf(stderr, "ignore invalid parameter: %s\n", str);
+		return (GFARM_QUOTA_NOT_UPDATE);
+	}
 	if (val == -1)
 		return (GFARM_QUOTA_INVALID);
 	else if (val < -1)
