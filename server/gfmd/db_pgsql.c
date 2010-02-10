@@ -2718,6 +2718,7 @@ gfarm_pgsql_quota_load(void *closure, int is_group,
 }
 
 /* DO NOT REMOVE: this interfaces is provided for a private extension */
+/* The official gfmd source code shouldn't use these interface */
 PGconn *
 gfarm_pgsql_get_conn(void)
 {
