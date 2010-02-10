@@ -11,6 +11,7 @@
 #include <gfarm/gfarm.h>
 #include "config.h"
 #include "gfm_client.h"
+#include "lookup.h"
 #include "quota_info.h"
 
 char *program_name = "gfquota";
@@ -18,7 +19,8 @@ char *program_name = "gfquota";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage:\t%s [-u username | -g groupname]\n",
+	fprintf(stderr,
+		"Usage:\t%s [-P <path>] [-u username | -g groupname]\n",
 		program_name);
 	exit(1);
 }
@@ -142,8 +144,8 @@ main(int argc, char **argv)
 	int mode = MODE_USER;
 	char *name = "";  /* default: my username */
 	struct gfarm_quota_get_info qi;
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	struct gfm_connection *gfarm_metadb_server;
+	struct gfm_connection *gfm_server;
+	const char *path = GFARM_PATH_ROOT;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -154,8 +156,11 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "u:g:h?")) != -1) {
+	while ((c = getopt(argc, argv, "P:u:g:h?")) != -1) {
 		switch (c) {
+		case 'P':
+			path = optarg;
+			break;
 		case 'u':
 			name = optarg;
 			mode = MODE_USER;
@@ -173,13 +178,10 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	if ((e = gfm_client_connection_and_process_acquire(
-		     gfarm_metadb_server_name, gfarm_metadb_server_port,
-		     &gfarm_metadb_server)) != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "metadata server `%s', port %d: %s\n",
-			gfarm_metadb_server_name, gfarm_metadb_server_port,
-			gfarm_error_string(e));
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+		     path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
+			program_name, path, gfarm_error_string(e));
 		status = -1;
 		goto terminate;
 	}
@@ -187,11 +189,11 @@ main(int argc, char **argv)
 	switch (mode) {
 	case MODE_USER:
 		e = gfm_client_quota_user_get(
-			gfarm_metadb_server, name, &qi);
+			gfm_server, name, &qi);
 		break;
 	case MODE_GROUP:
 		e = gfm_client_quota_group_get(
-			gfarm_metadb_server, name, &qi);
+			gfm_server, name, &qi);
 		break;
 	default:
 		usage();
@@ -222,9 +224,7 @@ main(int argc, char **argv)
 			quota_get_info_print(stdout, &qi, 0);
 		gfarm_quota_get_info_free(&qi);
 	}
-
-	/* XXX FIXME: this doesn't support multiple metadata server. */
-	gfm_client_connection_free(gfarm_metadb_server);
+	gfm_client_connection_free(gfm_server);
 terminate:
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
