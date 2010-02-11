@@ -151,8 +151,7 @@ group_enter(char *groupname, struct group **gpp)
 				*gpp = g;
 			free(groupname);
 			return (GFARM_ERR_NO_ERROR);
-		}
-		else
+		} else
 			return (GFARM_ERR_ALREADY_EXISTS);
 	}
 
@@ -382,7 +381,6 @@ group_init(void)
 			    gi.groupname, gfarm_error_string(e));
 
 		group_add_one(NULL, &gi);
-		
 	} else {
 		group_add_user_and_record(admin, ADMIN_USER_NAME);
 		if (gfarm_metadb_admin_user != NULL)
@@ -410,7 +408,6 @@ group_init(void)
 			    gi.groupname, gfarm_error_string(e));
 
 		group_add_one(NULL, &gi);
-		
 	}
 }
 
@@ -766,9 +763,11 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
+	else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else
 		e = group_info_remove(groupname, msg);
 	free(groupname);
 	giant_unlock();
