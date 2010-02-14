@@ -19,4 +19,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/config.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfs_profile.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/gfs_pio.h

@@ -5,6 +5,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
 
@@ -14,43 +15,28 @@
 
 char *program_name = "gfexport";
 
+/* from GFS_FILE_BUFSIZE in lib/libgfarm/gfarm/gfs_pio.h */
+#define BUFFER_SIZE (1048576 - 8)
+static char buffer[BUFFER_SIZE];
+
 gfarm_error_t
 gfprint(GFS_File gf, FILE *ofp)
 {
-	int c;
+	gfarm_error_t e;
+	int n;
 
-	while ((c = gfs_pio_getc(gf)) != EOF)
-		putc(c, ofp);
-	return (gfs_pio_error(gf));
+	while ((e = gfs_pio_read(gf, buffer, sizeof buffer, &n)) ==
+	       GFARM_ERR_NO_ERROR) {
+		if (n == 0) /* EOF */
+			break;
+		if (fwrite(buffer, 1, n, ofp) != n) {
+			e = GFARM_ERR_INPUT_OUTPUT;
+			break;
+		}
+	}
+	return (e);
 }
 
-#if 0 /* not yet in gfarm v2 */
-gfarm_error_t
-gfexport(char *gfarm_url, char *section, char *host, FILE *ofp, int explicit)
-{
-	char *e, *e2;
-	GFS_File gf;
-
-	e = gfs_pio_open(gfarm_url, GFARM_FILE_RDONLY, &gf);
-	if (e != NULL)
-		return (e);
-
-	if (section)
-		/* section view */
-		e = gfs_pio_set_view_section(
-			gf, section, host, GFARM_FILE_SEQUENTIAL);
-	else if (explicit)
-		/* global mode is default, but call explicitly */
-		e = gfs_pio_set_view_global(gf, GFARM_FILE_SEQUENTIAL);
-	if (e != NULL)
-		goto gfs_pio_close;
-
-	e = gfprint(gf, ofp);
- gfs_pio_close:
-	e2 = gfs_pio_close(gf);
-	return (e != NULL ? e : e2);
-}
-#else
 gfarm_error_t
 gfexport(char *gfarm_url, char *host, FILE *ofp)
 {
@@ -70,7 +56,6 @@ gfexport(char *gfarm_url, char *host, FILE *ofp)
 	e2 = gfs_pio_close(gf);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
-#endif
 
 void
 usage()
@@ -78,39 +63,15 @@ usage()
 	fprintf(stderr, "Usage: %s [option] <input_file>\n", program_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-h <hostname>\n");
-#if 0 /* not yet in gfarm v2 */
-	fprintf(stderr, "\t-I <fragment>\n");
-#endif
+	fprintf(stderr, "\t%s\t%s\n", "-p", "turn on profiling");
 	exit(1);
 }
-
-#if 0 /* not yet in gfarm v2 */
-static void
-error_check(char *file, char* section, char *e)
-{
-	if (e == NULL)
-		return;
-
-	fprintf(stderr, "%s", program_name);
-	if (file != NULL) {
-		fprintf(stderr, ": %s", file);
-		if (section != NULL)
-			fprintf(stderr, " (%s)", section);
-	}
-	fprintf(stderr, ": %s\n", e);
-	exit(1);
-}
-#endif
 
 int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
 	char *url, *hostname = NULL;
-#if 0 /* not yet in gfarm v2 */
-	char *section = NULL;
-	int global_view = 0;
-#endif
 	int ch;
 
 	if (argc > 0)
@@ -122,24 +83,13 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-#if 0 /* not yet in gfarm v2 */
-	while ((ch = getopt(argc, argv, "a:gh:I:?")) != -1)
-#else
-	while ((ch = getopt(argc, argv, "h:?")) != -1)
-#endif
-	{
+	while ((ch = getopt(argc, argv, "h:p?")) != -1) {
 		switch (ch) {
-#if 0
-		case 'a':
-		case 'I':
-			section = optarg;
-			break;
-		case 'g':
-			global_view = 1;
-			break;
-#endif
 		case 'h':
 			hostname = optarg;
+			break;
+		case 'p':
+			gfs_profile_set();
 			break;
 		case '?':
 		default:
@@ -155,11 +105,7 @@ main(int argc, char *argv[])
 	}
 	url = argv[0];
 
-#if 0 /* not yet in gfarm v2 */
-	e = gfexport(url, section, hostname, stdout, global_view);
-#else
 	e = gfexport(url, hostname, stdout);
-#endif
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s: %s\n", program_name, url,
 		    gfarm_error_string(e));
