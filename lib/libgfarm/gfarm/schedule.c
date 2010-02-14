@@ -806,9 +806,9 @@ gfarm_schedule_search_mode_use_loadavg(void)
 	default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
 }
 
-#define IDLE_LOAD_AVERAGE		0.1F
-#define SEMI_IDLE_LOAD_AVERAGE		0.5F
-#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	0.3F
+#define IDLE_LOAD_AVERAGE		gfarm_schedule_idle_load /* 0.1F */
+#define SEMI_IDLE_LOAD_AVERAGE		gfarm_schedule_busy_load /* 0.5F */
+#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	gfarm_schedule_virtual_load /* 0.3F */
 
 struct search_idle_state {
 	struct gfarm_eventqueue *q;

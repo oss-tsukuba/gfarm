@@ -169,6 +169,7 @@ static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
 	"missing argument",
 	"too many arguments",
 	"integer expected",
+	"floating point number expected",
 	"invalid character",
 	"\"enable\" or \"disable\" is expected",
 	"invalid syslog priority level",

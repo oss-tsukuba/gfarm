@@ -354,6 +354,9 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_IDLE_LOAD_DEFAULT	0.1F
+#define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	0.5F
+#define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
@@ -365,6 +368,9 @@ int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_attr_cache_limit = MISC_DEFAULT;
 int gfarm_attr_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
+float gfarm_schedule_idle_load = MISC_DEFAULT;
+float gfarm_schedule_busy_load = MISC_DEFAULT;
+float gfarm_schedule_virtual_load = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
 gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
@@ -967,6 +973,31 @@ parse_set_misc_int(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_set_misc_float(char *p, float *vp)
+{
+	gfarm_error_t e;
+	char *ep, *s;
+	double v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	errno = 0;
+	v = strtod(s, &ep);	/* strtof is not ANSI C standard */
+	if (errno != 0)
+		return (gfarm_errno_to_error(errno));
+	if (ep == s)
+		return (GFARM_ERRMSG_FLOATING_POINT_NUMBER_EXPECTED);
+	if (*ep != '\0')
+		return (GFARM_ERRMSG_INVALID_CHARACTER);
+	*vp = (float)v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_set_misc_offset(char *p, gfarm_off_t *vp)
 {
 	gfarm_error_t e;
@@ -1191,6 +1222,12 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_attr_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
+	} else if (strcmp(s, o = "schedule_idle_load_thresh") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_idle_load);
+	} else if (strcmp(s, o = "schedule_busy_load_thresh") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_busy_load);
+	} else if (strcmp(s, o = "schedule_virtual_load") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_virtual_load);
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
@@ -1317,6 +1354,13 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
 		gfarm_schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_schedule_idle_load == MISC_DEFAULT)
+		gfarm_schedule_idle_load = GFARM_SCHEDULE_IDLE_LOAD_DEFAULT;
+	if (gfarm_schedule_busy_load == MISC_DEFAULT)
+		gfarm_schedule_busy_load = GFARM_SCHEDULE_BUSY_LOAD_DEFAULT;
+	if (gfarm_schedule_virtual_load == MISC_DEFAULT)
+		gfarm_schedule_virtual_load =
+		    GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT;
 	if (schedule_write_local_priority == MISC_DEFAULT)
 		schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;

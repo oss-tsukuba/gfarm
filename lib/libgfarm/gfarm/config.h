@@ -61,6 +61,9 @@ extern int gfarm_log_level; /* syslog priority level to log */
 extern int gfarm_attr_cache_limit;
 extern int gfarm_attr_cache_timeout;
 extern int gfarm_schedule_cache_timeout;
+extern float gfarm_schedule_idle_load;
+extern float gfarm_schedule_busy_load;
+extern float gfarm_schedule_virtual_load;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;
 
