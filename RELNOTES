@@ -1,3 +1,60 @@
+Release note for Gfarm 2.4.0
+============================
+
+[2010.2.15]
+
+New Feature
+* quota (see doc/quota.en for details)
+* Gfarm URL, gfarm://metaserver:port/path/name
+* partial support of distributed metadata servers
+* message catalog framework for I18N
+* group map file
+
+New Command
+* gfquota, gfedquota, gfquotacheck - manipulate disk quota
+* gfusage - show file system usage
+
+New configuration in gfmd.conf
+* local_group_map directive to specify a group map file that maps
+  global group names to local group names for legacy clients
+* log_message_verbose_level directive to specify how verbose the log
+  message is
+* schedule_idle_load_thresh and schedule_busy_load_thresh directives
+  to specify threshold of CPU load average for client scheduling
+* schedule_virtual_load directive to specify virtual load to add when
+  a host is scheduled
+
+Updated feature
+* gfrep - -x option to remove excess file replicas
+* gfrep - enable capacity check
+* gfexport - improve performance
+* gfhost, gfgroup, gfuser - support multiple metadata servers by the
+  -P option 
+* gfstat - -c option to display the number of file replicas
+* gfwhere - display error if there is no file replica
+* gfuser, gfgroup - display specified users or groups if any
+* gfvoms-sync - search certificates in the same order as Globus
+* read only mode for gfsd
+* support re-registration of users, groups and hosts without gfmd
+  restart
+* fix inconsistency if the corresponding file data is missing
+* gfmd reconnection process only starts if the connection error
+  happens
+* wait for a target gfsd to reconnect to the gfmd if there is no file
+  system node
+* do not allow to remove gfarmadm group
+* change log format
+
+Bug fix
+* fix missing automatic reconnection to gfmd
+* fix file replication error during the file update
+* fix file update problem during replication
+* fix GSI authentication error handling
+* fix duplicate registration of the same GSI DN
+* fix file migration issue described in the tracker
+  https://sourceforge.net/tracker/?func=detail&aid=1976260&group_id=172718&atid=862742
+* fix access control for chmod
+
 Release note for Gfarm 2.3.0
 ============================
 
