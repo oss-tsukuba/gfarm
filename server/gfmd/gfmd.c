@@ -46,8 +46,9 @@
 
 #include "../gfsl/gfarm_auth.h"
 
-#include "thrpool.h"
 #include "subr.h"
+#include "thrpool.h"
+#include "callout.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
@@ -80,9 +81,22 @@
 #define GFMD_CONNECTION_LIMIT	65536
 #endif
 
+#ifndef CALLOUT_NTHREADS
+/*
+ * this is number of thread pools which use callouts,
+ * so thrpool_add_job() in callout_main() won't be blocked for long time.
+ *
+ * currently, only gfsd_thread_pool is using callouts.
+ */
+#define CALLOUT_NTHREADS	1
+#endif
+
 char *program_name = "gfmd";
 static struct protoent *tcp_proto;
 static char *pid_file;
+
+/* this interface is exported for a use from a private extension */
+struct thread_pool *client_thread_pool;
 
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
@@ -104,21 +118,22 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gfarm_error_t e, e2;
-	int eof;
 	gfarm_int32_t request;
 
-	e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "i", &request);
-	if (eof) {
-		/* actually, this is not an error, but completion on eof */
-		peer_record_protocol_error(peer);
-		return (GFARM_ERR_NO_ERROR);
-	}
+	peer_io_lock(peer);
+	e = gfp_xdr_recv_request_command(peer_get_conn(peer), 0, NULL,
+	    &request);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1000180,
-		    "receiving request number: %s",
-		    gfarm_error_string(e));
-		peer_record_protocol_error(peer);
-		return (e); /* finish on error */
+		if (e == GFARM_ERR_UNEXPECTED_EOF) {
+			e = GFARM_ERR_NO_ERROR;
+		} else {
+			gflog_warning(GFARM_MSG_1000180,
+			    "receiving request number: %s",
+			    gfarm_error_string(e));
+		}
+		peer_record_protocol_error(peer); /* mark this peer finished */
+		peer_io_unlock(peer);
+		return (e);
 	}
 	switch (request) {
 	case GFM_PROTO_HOST_INFO_GET_ALL:
@@ -300,8 +315,13 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_CLOSE_READ:
 		e = gfm_server_close_read(peer, from_client, skip);
 		break;
+#ifdef COMPAT_GFARM_2_3
 	case GFM_PROTO_CLOSE_WRITE:
 		e = gfm_server_close_write(peer, from_client, skip);
+		break;
+#endif
+	case GFM_PROTO_CLOSE_WRITE_V2_4:
+		e = gfm_server_close_write_v2_4(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
 		e = gfm_server_lock(peer, from_client, skip);
@@ -315,8 +335,18 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_LOCK_INFO:
 		e = gfm_server_lock_info(peer, from_client, skip);
 		break;
+#ifdef COMPAT_GFARM_2_3
 	case GFM_PROTO_SWITCH_BACK_CHANNEL:
+		/* peer_io_unlock() is called in the following function */
 		e = gfm_server_switch_back_channel(peer, from_client, skip);
+		/* should not call gfp_xdr_flush() due to race */
+		*requestp = request;
+		return (e);
+#endif
+	case GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL:
+		/* peer_io_unlock() is called in the following function */
+		e = gfm_server_switch_async_back_channel(peer,
+		    from_client, skip);
 		/* should not call gfp_xdr_flush() due to race */
 		*requestp = request;
 		return (e);
@@ -358,6 +388,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_REPLICA_REMOVE_BY_FILE:
 		e = gfm_server_replica_remove_by_file(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_INFO_GET:
+		e = gfm_server_replica_info_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_REPLICATE_FILE_FROM_TO:
+		e = gfm_server_replicate_file_from_to(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_ADDING:
 		e = gfm_server_replica_adding(peer, from_client, skip);
@@ -451,6 +487,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		    from_client, skip, level, request, requestp, on_errorp);
 		break;
 	}
+	peer_io_unlock(peer);
 	if ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
 	    || request == GFM_PROTO_COMPOUND_END) {
 		/* flush only when a COMPOUND loop is done */
@@ -744,7 +781,7 @@ accepting_loop(int accepting_socket)
 			    "peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
 		} else {
-			thrpool_add_job(try_auth, peer);
+			thrpool_add_job(client_thread_pool, try_auth, peer);
 		}
 	}
 }
@@ -840,8 +877,7 @@ sigs_handler(void *p)
 #endif
 		     && sig != SIGUSR2)) {
 			gflog_info(GFARM_MSG_1000198,
-			    "spurious signal %d received: ignoring...",
-			    sig);
+			    "spurious signal %d received: ignoring...", sig);
 			continue;
 		}
 #endif
@@ -921,6 +957,18 @@ usage(void)
 void
 gfmd_modules_init_default(int table_size)
 {
+	client_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
+	    gfarm_metadb_job_queue_length, "clients");
+	if (client_thread_pool == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "client thread pool size:%d, queue length:%d: no memory",
+		    gfarm_metadb_thread_pool_size,
+		    gfarm_metadb_job_queue_length);
+
+	callout_module_init(CALLOUT_NTHREADS);
+
+	back_channel_init();
+
 	host_init();
 	user_init();
 	group_init();
@@ -932,7 +980,7 @@ gfmd_modules_init_default(int table_size)
 	xattr_init();
 	quota_init();
 
-	peer_init(table_size, protocol_main);
+	peer_init(table_size, client_thread_pool, protocol_main);
 	job_table_init(table_size);
 }
 
@@ -1024,7 +1072,6 @@ main(int argc, char **argv)
 	 */
 	write_pid(pid_file);
 
-	thrpool_init();
 	giant_init();
 
 	table_size = GFMD_CONNECTION_LIMIT;

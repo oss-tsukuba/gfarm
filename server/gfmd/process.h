@@ -27,7 +27,8 @@ gfarm_error_t process_clear_dir_key(struct process *, struct peer *, int);
 struct file_opening {
 	/*
 	 * end marker:
-	 * {fo->opening_prev, fo->opening_next} == &fo->inode->openings
+	 * 	{fo->opening_prev, fo->opening_next}
+	 *	== &fo->inode->u.c.state->openings
 	 */
 	struct file_opening *opening_prev, *opening_next;
 
@@ -77,7 +78,8 @@ gfarm_error_t process_close_file(struct process *, struct peer *, int);
 gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 	struct gfarm_timespec *);
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
-	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *);
+	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
+	gfarm_int64_t *, gfarm_int32_t *);
 
 gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 	const char *, size_t, const char *,
@@ -94,8 +96,9 @@ gfarm_error_t gfm_server_process_set(struct peer *, int, int);
 gfarm_error_t gfm_server_bequeath_fd(struct peer *, int, int);
 gfarm_error_t gfm_server_inherit_fd(struct peer *, int, int);
 
+gfarm_error_t process_prepare_to_replicate(struct process *, struct peer *,
+	struct host *, struct host *, int, gfarm_int32_t, struct inode **);
 gfarm_error_t process_replica_adding(struct process *, struct peer *,
-	struct host *, char *, int, gfarm_ino_t *, gfarm_uint64_t *,
-	gfarm_int64_t *, gfarm_int32_t *);
+	struct host *, struct host *, int, struct inode **);
 gfarm_error_t process_replica_added(struct process *, struct peer *,
 	struct host *, int, int, gfarm_int64_t, gfarm_int32_t, gfarm_off_t);

@@ -13,15 +13,13 @@
 	(((unsigned long)(p) + (alignment) - 1) & ~((alignment) - 1))
 #define ALIGN_CEIL(p)	ALIGN_CEIL_BY(p, ALIGNMENT)
 
-#define INITIAL_DELTA		100
+#define INITIAL_DELTA		10
 #define DELTA_SHIFT		1
 
-#define DEFAULT_ID_BASE		300
+#define DEFAULT_ID_BASE		1
 
 /* smaller than INT_MAX - (INT_MAX >> DELTA_SHIFT) */	
 #define DEFAULT_ID_LIMIT	1000000000
-
-#define FLAG_VALID	1
 
 struct gfarm_id_free_data {
 	struct gfarm_id_free_data *next;
@@ -88,12 +86,22 @@ gfarm_id_table_alloc(struct gfarm_id_table_entry_ops *entry_ops)
 }
 
 void
-gfarm_id_table_free(struct gfarm_id_table *idtab)
+gfarm_id_table_free(struct gfarm_id_table *idtab,
+	void (*id_free)(void *, gfarm_int32_t, void *), void *closure)
 {
+	struct gfarm_id_index *index = idtab->index;
+	int i;
 	struct gfarm_id_data_chunk *p, *q;
 
-	if (idtab->index != NULL)
-		free(idtab->index);
+	if (index != NULL) {
+		if (id_free != NULL) {
+			for (i = 0; i < idtab->hole_start; i++)
+				(*id_free)(closure, index[i].id, index[i].data);
+			for (i = idtab->hole_end; i < idtab->idxsize; i++)
+				(*id_free)(closure, index[i].id, index[i].data);
+		}
+		free(index);
+	}
 	for (p = idtab->chunks; p != NULL; p = q) {
 		q = p->next;
 		free(p);
@@ -111,6 +119,12 @@ void
 gfarm_id_table_set_limit(struct gfarm_id_table *idtab, gfarm_int32_t limit)
 {
 	idtab->id_limit = limit;
+}
+
+void
+gfarm_id_table_set_initial_size(struct gfarm_id_table *idtab, gfarm_int32_t sz)
+{
+	idtab->idx_delta = sz;
 }
 
 #if 0

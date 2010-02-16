@@ -1,6 +1,8 @@
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -157,10 +159,110 @@ gfp_xdr_flush(struct gfp_xdr *conn)
 }
 
 gfarm_error_t
+gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
+{
+	int rv;
+
+	if (*sizep < len) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_purge_sized: "
+		    "%d bytes expected, but only %d bytes remains",
+		    len, (int)*sizep);
+		return (GFARM_ERR_PROTOCOL);
+	}
+	rv = gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just);
+	*sizep -= rv;
+	if (rv != len)
+		return (GFARM_ERR_UNEXPECTED_EOF);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
+{
+	const char *format = *formatp;
+	size_t size = *sizep;
+	gfarm_uint8_t c;
+	gfarm_int16_t h;
+	gfarm_int32_t i, n;
+	gfarm_int64_t o;
+	gfarm_uint32_t lv[2];
+#if INT64T_IS_FLOAT
+	int minus;
+#endif
+	double d;
+#ifndef WORDS_BIGENDIAN
+	struct { char c[8]; } nd;
+#else
+#	define nd d
+#endif
+	const char *s;
+
+	for (; *format; format++) {
+		switch (*format) {
+		case 'c':
+			c = va_arg(*app, int);
+			size += sizeof(c);
+			continue;
+		case 'h':
+			h = va_arg(*app, int);
+			size += sizeof(h);
+			continue;
+		case 'i':
+			i = va_arg(*app, gfarm_int32_t);
+			size += sizeof(i);
+			continue;
+		case 'l':
+			/*
+			 * note that because actual type of gfarm_int64_t
+			 * may be diffenent (int64_t or double), we use lv here
+			 */
+			o = va_arg(*app, gfarm_int64_t);
+			size += sizeof(lv);
+			continue;
+		case 's':
+			s = va_arg(*app, const char *);
+			n = strlen(s);
+			size += sizeof(i);
+			size += n;
+			continue;
+		case 'S':
+			s = va_arg(*app, const char *);
+			n = va_arg(*app, size_t);
+			size += sizeof(i);
+			size += n;
+			continue;
+		case 'b':
+			/*
+			 * note that because actual type of size_t may be
+			 * diffenent ([u]int32_t or [u]int64_t), we must not
+			 * pass this as is via network.
+			 */
+			n = va_arg(*app, size_t);
+			s = va_arg(*app, const char *);
+			size += sizeof(i);
+			size += n;
+			continue;
+		case 'f':
+			d = va_arg(*app, double);
+			size += sizeof(nd);
+			continue;
+
+		default:
+			break;
+		}
+
+		break;
+	}
+	*sizep = size;
+	*formatp = format;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -191,19 +293,19 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			c = va_arg(*app, int);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &c, sizeof(c));
-			break;
+			continue;
 		case 'h':
 			h = va_arg(*app, int);
 			h = htons(h);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &h, sizeof(h));
-			break;
+			continue;
 		case 'i':
 			i = va_arg(*app, gfarm_int32_t);
 			i = htonl(i);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
-			break;
+			continue;
 		case 'l':
 			/*
 			 * note that because actual type of gfarm_int64_t
@@ -231,7 +333,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			lv[1] = htonl(lv[1]);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    lv, sizeof(lv));
-			break;
+			continue;
 		case 's':
 			s = va_arg(*app, const char *);
 			n = strlen(s);
@@ -240,7 +342,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    &i, sizeof(i));
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
-			break;
+			continue;
 		case 'S':
 			s = va_arg(*app, const char *);
 			n = va_arg(*app, size_t);
@@ -249,7 +351,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    &i, sizeof(i));
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
-			break;
+			continue;
 		case 'b':
 			/*
 			 * note that because actual type of size_t may be
@@ -263,7 +365,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    &i, sizeof(i));
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
-			break;
+			continue;
 		case 'f':
 			d = va_arg(*app, double);
 #ifndef WORDS_BIGENDIAN
@@ -271,21 +373,48 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 #endif
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &nd, sizeof(nd));
-			break;
+			continue;
 
 		default:
-			goto finish;
+			break;
 		}
+
+		break;
 	}
- finish:
 	*formatp = format;
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
 
-gfarm_error_t
-gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
-	const char **formatp, va_list *app)
+static gfarm_error_t
+recv_sized(struct gfp_xdr *conn, int just, void *p, size_t sz,
+	size_t *sizep)
 {
+	int rv;
+
+	if (*sizep < sz) {
+		gflog_debug(GFARM_MSG_UNFIXED, "recv_size: "
+		    "%d bytes expected, but only %d bytes remains",
+		    (int)sz, (int)*sizep);
+		return (GFARM_ERR_PROTOCOL);  /* too short message */
+	}
+	rv = gfarm_iobuffer_get_read_x(conn->recvbuffer, p, sz, just);
+	*sizep -= rv;
+	if (rv != sz) {
+		gflog_debug(GFARM_MSG_UNFIXED, "recv_size: "
+		    "%d bytes expected, but only %d bytes read",
+		    (int)sz, rv);
+		if (rv == 0) /* maybe usual EOF */
+			return (GFARM_ERR_UNEXPECTED_EOF);
+		return (GFARM_ERR_PROTOCOL);	/* really unexpected EOF */
+	}
+	return (GFARM_ERR_NO_ERROR); /* rv may be 0, if sz == 0 */
+}
+
+gfarm_error_t
+gfp_xdr_vrecv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
+	int *eofp, const char **formatp, va_list *app)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e_save = GFARM_ERR_NO_ERROR;
 	const char *format = *formatp;
 	gfarm_int8_t *cp;
 	gfarm_int16_t *hp;
@@ -304,6 +433,10 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 	size_t size;
 	int overflow = 0;
 
+	if (sizep != NULL)
+		size = *sizep;
+	else
+		size = SIZE_MAX;
 
 	/* do not call gfp_xdr_flush() here for a compound procedure */
 	*eofp = 1;
@@ -312,34 +445,46 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 		switch (*format) {
 		case 'c':
 			cp = va_arg(*app, gfarm_int8_t *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    cp, sizeof(*cp), just) != sizeof(*cp))
-				return (GFARM_ERR_NO_ERROR);
-			break;
+			if ((e = recv_sized(conn, just, cp, sizeof(*cp),
+			    &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
+			continue;
 		case 'h':
 			hp = va_arg(*app, gfarm_int16_t *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    hp, sizeof(*hp), just) != sizeof(*hp))
-				return (GFARM_ERR_NO_ERROR);
+			if ((e = recv_sized(conn, just, hp, sizeof(*hp),
+			    &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 			*hp = ntohs(*hp);
-			break;
+			continue;
 		case 'i':
 			ip = va_arg(*app, gfarm_int32_t *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    ip, sizeof(*ip), just) != sizeof(*ip))
-				return (GFARM_ERR_NO_ERROR);
+			if ((e = recv_sized(conn, just, ip, sizeof(*ip),
+			    &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 			*ip = ntohl(*ip);
-			break;
+			continue;
 		case 'l':
+			op = va_arg(*app, gfarm_int64_t *);
 			/*
 			 * note that because actual type of gfarm_int64_t
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			op = va_arg(*app, gfarm_int64_t *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    lv, sizeof(lv), just) != sizeof(lv))
-				return (GFARM_ERR_NO_ERROR);
+			if ((e = recv_sized(conn, just, lv, sizeof(lv),
+			    &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 			lv[0] = ntohl(lv[0]);
 			lv[1] = ntohl(lv[1]);
 #if INT64T_IS_FLOAT
@@ -356,87 +501,166 @@ gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int *eofp,
 #else
 			*op = ((gfarm_int64_t)lv[0] << 32) | lv[1];
 #endif
-			break;
+			continue;
 		case 's':
 			sp = va_arg(*app, char **);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    &i, sizeof(i), just) != sizeof(i))
-				return (GFARM_ERR_NO_ERROR);
-			i = ntohl(i);
-			size = gfarm_size_add(&overflow, i, 1);
-			if (!overflow)
-				GFARM_MALLOC_ARRAY(*sp, size);
-			if (!overflow && *sp != NULL) {
-				/* caller should check whether *sp == NULL */
-				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-				    *sp, i, just) != i)
-					return (GFARM_ERR_NO_ERROR);
-				(*sp)[i] = '\0';
+			if ((e = recv_sized(conn, just, &i, sizeof(i),
+			    &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
 			}
-			break;
+			i = ntohl(i);
+			sz = gfarm_size_add(&overflow, i, 1);
+			if (overflow) {
+				e = GFARM_ERR_PROTOCOL;
+				break;
+			}
+			GFARM_MALLOC_ARRAY(*sp, sz);
+			if (*sp == NULL) {
+				if ((e = gfp_xdr_purge_sized(conn, just,
+				    sz, &size)) != GFARM_ERR_NO_ERROR)
+					break;
+				e_save = GFARM_ERR_NO_MEMORY;
+				continue;
+			}
+			if ((e = recv_sized(conn, just, *sp, i, &size))
+			    != GFARM_ERR_NO_ERROR)
+				break;
+			(*sp)[i] = '\0';
+			continue;
 		case 'b':
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
 			/*
 			 * note that because actual type of size_t may be
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			sz = va_arg(*app, size_t);
-			szp = va_arg(*app, size_t *);
-			s = va_arg(*app, char *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    &i, sizeof(i), just) != sizeof(i))
-				return (GFARM_ERR_NO_ERROR);
+			if ((e = recv_sized(conn, just, &i, sizeof(i),
+			     &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 			i = ntohl(i);
 			*szp = i;
 			if (i <= sz) {
-				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-				    s, i, just) != i)
-					return (GFARM_ERR_NO_ERROR);
+				if ((e = recv_sized(conn, just, s, i,
+				     &size)) != GFARM_ERR_NO_ERROR)
+					break;
 			} else {
-				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-				    s, sz, just) != sz)
-					return (GFARM_ERR_NO_ERROR);
+				if (size < i) {
+					e = GFARM_ERR_PROTOCOL;
+					break;
+				}
+				if ((e = recv_sized(conn, just, s, sz,
+				     &size)) != GFARM_ERR_NO_ERROR)
+					break;
 				/* abandon (i - sz) bytes */
-				if (gfarm_iobuffer_purge_read_x(
-				    conn->recvbuffer, i - sz, just) != i - sz)
-					return (GFARM_ERR_NO_ERROR);
+				if ((e = gfp_xdr_purge_sized(conn, just,
+				    i - sz, &size)) != GFARM_ERR_NO_ERROR)
+					break;
 			}
-			break;
+			continue;
 		case 'B':
 			szp = va_arg(*app, size_t *);
 			sp = va_arg(*app, char **);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    &i, sizeof(i), just) != sizeof(i))
-				return (GFARM_ERR_NO_ERROR);
+			/*
+			 * note that because actual type of size_t may be
+			 * diffenent ([u]int32_t or [u]int64_t), we must not
+			 * pass this as is via network.
+			 */
+			if ((e = recv_sized(conn, just, &i, sizeof(i),
+			     &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 			i = ntohl(i);
 			*szp = i;
-			size = gfarm_size_add(&overflow, i, 1);
-			if (!overflow)
-				GFARM_MALLOC_ARRAY(*sp, size);
-			if (!overflow && *sp != NULL) {
-				if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-				    *sp, i, just) != i)
-					return (GFARM_ERR_NO_ERROR);
+			/* XXX is this +1 really necessary? */
+			sz = gfarm_size_add(&overflow, i, 1);
+			if (overflow) {
+				e = GFARM_ERR_PROTOCOL;
+				break;
 			}
-			break;
+			GFARM_MALLOC_ARRAY(*sp, sz);
+			if (*sp == NULL) {
+				if ((e = gfp_xdr_purge_sized(conn, just,
+				    sz, &size)) != GFARM_ERR_NO_ERROR)
+					break;
+				e_save = GFARM_ERR_NO_MEMORY;
+				continue;
+			}
+			if ((e = recv_sized(conn, just, *sp, i, &size))
+			    != GFARM_ERR_NO_ERROR)
+				break;
+			continue;
 		case 'f':
 			dp = va_arg(*app, double *);
-			if (gfarm_iobuffer_get_read_x(conn->recvbuffer,
-			    dp, sizeof(*dp), just) != sizeof(*dp))
-				return (GFARM_ERR_NO_ERROR);
+			assert(sizeof(*dp) == 8);
+			if ((e = recv_sized(conn, just, dp, sizeof(*dp),
+			     &size)) != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF)
+					return (GFARM_ERR_NO_ERROR); /* EOF */
+				break;
+			}
 #ifndef WORDS_BIGENDIAN
 			swab(dp, &nd, sizeof(nd));
 			*dp = *(double *)&nd;
 #endif
-			break;
+			continue;
+
 		default:
-			goto finish;
+			break;
 		}
+
+		break;
 	}
- finish:
+	if (sizep != NULL) 
+		*sizep = size;
 	*formatp = format;
 	*eofp = 0;
-	return (gfarm_iobuffer_get_error(conn->recvbuffer));
+	/* XXX FIXME free memory allocated by this funciton at an error */
+
+	/* connection error has most precedence to avoid protocol confusion */
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/* iobuffer error may be a connection error */
+	if ((e = gfarm_iobuffer_get_error(conn->recvbuffer)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+	return (e_save); /* NO_MEMORY or SUCCESS */
+}
+
+gfarm_error_t
+gfp_xdr_vrecv(struct gfp_xdr *conn, int just,
+	int *eofp, const char **formatp, va_list *app)
+{
+	return (gfp_xdr_vrecv_sized(conn, just, NULL, eofp, formatp, app));
+}
+
+gfarm_error_t
+gfp_xdr_send_size_add(size_t *sizep, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfp_xdr_vsend_size_add(sizep, &format, &ap);
+	va_end(ap);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size_add: "
+		    "invalid format character: %c(%x)", *format, *format);
+		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -451,14 +675,40 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (*format != '\0')
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size: "
+		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfp_xdr_recv(struct gfp_xdr *conn,
-	int just, int *eofp, const char *format, ...)
+gfp_xdr_recv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
+	int *eofp, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfp_xdr_vrecv_sized(conn, just, sizep, eofp, &format, &ap);
+	va_end(ap);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (*eofp)
+		return (GFARM_ERR_NO_ERROR);
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_recv_sized: "
+		    "invalid format character: %c(%x)", *format, *format);
+		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_xdr_recv(struct gfp_xdr *conn, int just,
+	int *eofp, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
@@ -471,8 +721,11 @@ gfp_xdr_recv(struct gfp_xdr *conn,
 		return (e);
 	if (*eofp)
 		return (GFARM_ERR_NO_ERROR);
-	if (*format != '\0')
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_recv: "
+		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -491,9 +744,48 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	e = gfp_xdr_send(conn, "i", command);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfp_xdr_vsend(conn, formatp, app);
+	return (gfp_xdr_vsend(conn, formatp, app));
+}
+
+/*
+ * used by client side of both synchronous and asynchronous protocol.
+ * if sizep == NULL, it's a synchronous protocol, otherwise asynchronous.
+ * Note that this function assumes that async_header is already received.
+ *
+ * Callers of this function should check the followings:
+ *	return value == GFARM_ERR_NOERROR
+ *	*errorp == GFARM_ERR_NOERROR
+ * And if there is no remaining output parameter:
+ *	*sizep == 0
+ */
+gfarm_error_t
+gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
+	gfarm_int32_t *errorp, const char **formatp, va_list *app)
+{
+	gfarm_error_t e;
+	int eof;
+
+	/*
+	 * receive response
+	 */
+	e = gfp_xdr_recv_sized(conn, just, sizep, &eof, "i", errorp);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (eof) /* rpc status missing */
+		return (GFARM_ERR_UNEXPECTED_EOF);
+	if (*errorp != GFARM_ERR_NO_ERROR)
+		return (GFARM_ERR_NO_ERROR);
+
+	e = gfp_xdr_vrecv_sized(conn, just, sizep, &eof, formatp, app);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (eof) /* rpc return value missing */
+		return (GFARM_ERR_UNEXPECTED_EOF);
+	if (**formatp != '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc_result_sized: "
+		    "invalid format character: %c(%x)", **formatp, **formatp);
+		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -504,25 +796,8 @@ gfarm_error_t
 gfp_xdr_vrpc_result(struct gfp_xdr *conn,
 	int just, gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
-	gfarm_error_t e;
-	int eof;
-
-	/*
-	 * receive response
-	 */
-	e = gfp_xdr_recv(conn, just, &eof, "i", errorp);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (eof) /* rpc status missing */
-		return (GFARM_ERR_UNEXPECTED_EOF);
-	if (*errorp != 0) /* should examine the *errorp in this case */
-		return (GFARM_ERR_NO_ERROR);
-	e = gfp_xdr_vrecv(conn, just, &eof, formatp, app);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (eof) /* rpc return value missing */
-		return (GFARM_ERR_UNEXPECTED_EOF);
-	return (GFARM_ERR_NO_ERROR);
+	return (gfp_xdr_vrpc_result_sized(conn, just, NULL,
+	    errorp, formatp, app));
 }
 
 /*
@@ -553,16 +828,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	}
 	(*formatp)++;
 
-	e = gfp_xdr_vrpc_result(conn, just, errorp, formatp, app);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	if (*errorp != 0) /* should examine the *errorp in this case */
-		return (GFARM_ERR_NO_ERROR);
-
-	if (**formatp != '\0')
-		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
-	return (GFARM_ERR_NO_ERROR);
+	return (gfp_xdr_vrpc_result(conn, just, errorp, formatp, app));
 }
 
 /*

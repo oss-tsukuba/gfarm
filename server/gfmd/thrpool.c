@@ -1,13 +1,12 @@
 #include <pthread.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-
-#include "config.h"
 
 #include "thrsubr.h"
 #include "subr.h"
@@ -84,22 +83,42 @@ thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 
 struct thread_pool {
 	pthread_mutex_t mutex;
+	int pool_size;
 	int threads;
 	int idles;
 	struct thread_jobq jobq;
-} thrpool;
 
-void
-thrpool_init(void)
+	const char *name;
+	struct thread_pool *next;
+};
+
+static pthread_mutex_t all_thrpools_mutex = PTHREAD_MUTEX_INITIALIZER;
+static struct thread_pool *all_thrpools = NULL;
+
+struct thread_pool *
+thrpool_new(int pool_size, int queue_length, const char *pool_name)
 {
-	static const char msg[] = "thrpool_init";
-	struct thread_pool *p = &thrpool;
+	struct thread_pool *p;
+	static const char msg[] = "thrpool_new";
 
-	thrjobq_init(&p->jobq, gfarm_metadb_job_queue_length);
+	GFARM_MALLOC(p);
+	if (p == NULL)
+		return (NULL);
+
+	thrjobq_init(&p->jobq, queue_length);
 
 	mutex_init(&p->mutex, msg, "thrpool");
+	p->pool_size = pool_size;
 	p->threads = 0;
 	p->idles = 0;
+	p->name = pool_name;
+
+	mutex_lock(&all_thrpools_mutex, msg, "all_thrpools add");
+	p->next = all_thrpools;
+	all_thrpools = p;
+	mutex_unlock(&all_thrpools_mutex, msg, "all_thrpools add");
+
+	return (p);
 }
 
 void *
@@ -130,14 +149,13 @@ thrpool_worker(void *arg)
 
 
 void
-thrpool_add_job(void *(*thread_main)(void *), void *arg)
+thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 {
 	static const char msg[] = "thrpool_add_job";
-	struct thread_pool *p = &thrpool;
 	gfarm_error_t e;
 
 	mutex_lock(&p->mutex, msg, "thrpool");
-	if (p->threads < gfarm_metadb_thread_pool_size && p->idles <= 0) {
+	if (p->threads < p->pool_size && p->idles <= 0) {
 		e = create_detached_thread(thrpool_worker, p);
 		if (e == GFARM_ERR_NO_ERROR) {
 			p->threads++;
@@ -156,14 +174,24 @@ void
 thrpool_info(void)
 {
 	static const char msg[] = "thrpool_info";
-	struct thread_pool *p = &thrpool;
+	struct thread_pool *p;
 	int n, i;
+	const char *name;
 
-	mutex_lock(&p->mutex, msg, "thrpool");
-	n = p->threads;
-	i = p->idles;
-	mutex_unlock(&p->mutex, msg, "thrpool");
+	mutex_lock(&all_thrpools_mutex, msg, "all_thrpools access");
+	p = all_thrpools;
+	mutex_unlock(&all_thrpools_mutex, msg, "all_thrpools access");
 
-	gflog_info(GFARM_MSG_1000222,
-	    "number of worker threads: %d, idle threads: %d", n, i);
+	/* this implementation depends on that p->next will be never changed */
+	for (; p != NULL; p = p->next) {
+		mutex_lock(&p->mutex, msg, "thrpool");
+		n = p->threads;
+		i = p->idles;
+		name = p->name;
+		mutex_unlock(&p->mutex, msg, "thrpool");
+
+		gflog_info(GFARM_MSG_1000222,
+		    "pool %s: number of worker threads: %d, idle threads: %d",
+		    name, n, i);
+	}
 }

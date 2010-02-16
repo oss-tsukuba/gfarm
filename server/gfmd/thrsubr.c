@@ -40,6 +40,16 @@ mutex_unlock(pthread_mutex_t *mutex, const char *where, const char *what)
 }
 
 void
+mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
+{
+	int err = pthread_mutex_destroy(mutex);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex destroy: %s",
+		    where, what, strerror(err));
+}
+
+void
 cond_init(pthread_cond_t *cond, const char *where, const char *what)
 {
 	int err = pthread_cond_init(cond, NULL);
@@ -67,6 +77,16 @@ cond_signal(pthread_cond_t *cond, const char *where, const char *what)
 
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1000217, "%s: %s cond signal: %s",
+		    where, what, strerror(err));
+}
+
+void
+cond_destroy(pthread_cond_t *cond, const char *where, const char *what)
+{
+	int err = pthread_cond_destroy(cond);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond destroy: %s",
 		    where, what, strerror(err));
 }
 

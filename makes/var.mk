@@ -21,9 +21,11 @@ ASSIGNMSGNO=$(top_srcdir)/makes/assign_msgno.pl
 LIBRARY_RESULT = $(LIBRARY)
 
 # libgfarm
+#	COMPAT_GFARM_2_3 - enable protocols which were deprecated in 2.4.0
 
 COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
-	-I$(top_builddir)/include -I$(top_srcdir)/include
+	-I$(top_builddir)/include -I$(top_srcdir)/include \
+	-DCOMPAT_GFARM_2_3
 COMMON_LDFLAGS = $(largefile_ldflags)
 GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
 	$(globus_gssapi_libs) $(openssl_libs)

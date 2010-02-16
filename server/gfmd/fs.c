@@ -25,6 +25,7 @@
 #include "inode.h"
 #include "process.h"
 #include "peer.h"
+#include "back_channel.h"
 #include "fs.h"
 
 gfarm_error_t
@@ -1567,29 +1568,20 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
-gfm_server_close_write(struct peer *peer, int from_client, int skip)
+gfm_server_close_write_common(const char *msg,
+	struct peer *peer, int from_client,
+	gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	gfarm_int64_t *new_igenp, gfarm_int32_t *flagsp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
-	gfarm_off_t size;
-	struct gfarm_timespec atime, mtime;
-	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
-	const char msg[] = "gfm_server_close_write";
-
-	e = gfm_server_get_request(peer, "close_write", "llili",
-	    &size,
-	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
 	if (from_client) /* from gfsd only */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((spool_host = peer_get_host(peer)) == NULL)
+	else if (peer_get_host(peer) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -1604,15 +1596,63 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, fd, size,
-		    &atime, &mtime);
+		    atime, mtime, new_igenp, flagsp);
 		if (transaction)
 			db_end(msg);
 		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
 			e = peer_fdpair_close_current(peer);
 	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_close_write(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	const char msg[] = "gfm_server_close_write";
+
+	e = gfm_server_get_request(peer, msg, "llili",
+	    &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e = gfm_server_close_write_common(msg, peer, from_client, size,
+	    &atime, &mtime, NULL, NULL);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "close_write", e, ""));
+	return (gfm_server_put_reply(peer, msg, e, ""));
+}
+
+gfarm_error_t
+gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int64_t new_igen;
+	gfarm_int32_t flags;
+	const char msg[] = "gfm_server_close_write_v2_4";
+
+	e = gfm_server_get_request(peer, msg, "llili",
+	    &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	e = gfm_server_close_write_common(msg, peer, from_client, size,
+	    &atime, &mtime, &new_igen, &flags);
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, msg, e, "li", new_igen, flags));
 }
 
 gfarm_error_t
@@ -1794,7 +1834,7 @@ gfm_server_pio_visit(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
@@ -1820,18 +1860,18 @@ gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 		e = inode_replica_list_by_name(inode, &n, &hosts);
 
 	giant_unlock();
-	e = gfm_server_put_reply(peer, "replica_list_by_name", e, "i", n);
+	e2 = gfm_server_put_reply(peer, "replica_list_by_name", e, "i", n);
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; ++i) {
 			e = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 		}
-		while (--i >= 0)
+		for (i = 0; i < n; ++i)
 			free(hosts[i]);
 		free(hosts);
 	}
-	return (e);
+	return (e2);
 }
 
 gfarm_error_t
@@ -1897,7 +1937,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t cfd;
 	struct inode *inode;
 	struct host *host, *spool_host;
-	char *msg = "replica_remove_by_file";
+	const char msg[] = "replica_remove_by_file";
 
 	e = gfm_server_get_request(peer, msg, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1932,16 +1972,150 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
+gfm_server_replica_info_get(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e, e2;
+	struct host *spool_host;
+	struct process *process;
+	int fd, i;
+	gfarm_int32_t iflags, n;
+	struct inode *inode;
+	char **hosts;
+	gfarm_int64_t *gens;
+	gfarm_int32_t *oflags;
+	const char msg[] = "replicate_info_get";
+
+	e = gfm_server_get_request(peer, msg, "i", &iflags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR)
+		;
+	else 
+		e = inode_replica_info_get(inode, iflags,
+		    &n, &hosts, &gens, &oflags);
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, msg, e, "i", n);
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; ++i) {
+			e = gfp_xdr_send(peer_get_conn(peer), "sli",
+			    hosts[i], gens[i], oflags[i]);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+		for (i = 0; i < n; ++i)
+			free(hosts[i]);
+		free(hosts);
+		free(gens);
+		free(oflags);
+	}
+	return (e2);
+}
+
+gfarm_error_t
+gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	char *srchost;
+	char *dsthost;
+	gfarm_int32_t flags;
+	struct process *process;
+	gfarm_int32_t cfd;
+	struct host *src, *dst;
+	struct inode *inode;
+	struct file_replicating *fr;
+	int srcport;
+	gfarm_ino_t ino;
+	gfarm_int64_t gen;
+	const char msg[] = "replicate_file_from_to";
+
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	dst = NULL;
+	fr = NULL;
+	srcport = 0;
+	ino = 0;
+	gen = 0;
+#endif
+
+	e = gfm_server_get_request(peer, msg, "ssi",
+	    &srchost, &dsthost, &flags);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip) {
+		free(srchost);
+		free(dsthost);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	giant_lock();
+
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((src = host_lookup(srchost)) == NULL)
+		e = GFARM_ERR_UNKNOWN_HOST;
+	else if ((dst = host_lookup(dsthost)) == NULL)
+		e = GFARM_ERR_UNKNOWN_HOST;
+	else if ((e = process_prepare_to_replicate(process, peer, src, dst,
+	    cfd, flags, &inode)) != GFARM_ERR_NO_ERROR)
+		;
+	else if ((fr = file_replicating_new(inode, dst)) == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+	else {
+		srcport = host_port(src);
+		ino = inode_get_number(inode);
+		gen = inode_get_gen(inode);
+	}
+
+	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = async_back_channel_replication_request(srchost, srcport,
+		    dst, ino, gen, fr);
+		if (e != GFARM_ERR_NO_ERROR) {
+			giant_lock();
+			file_replicating_free(fr);
+			giant_unlock();
+		}
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		free(srchost);
+	free(dsthost);
+
+	return (gfm_server_put_reply(peer, msg, e, ""));
+}
+
+gfarm_error_t
 gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
+	struct gfarm_timespec *mtime;
 	gfarm_int64_t mtime_sec;
 	gfarm_int32_t fd, mtime_nsec;
-	struct host *spool_host;
+	struct host *src, *spool_host;
 	struct process *process;
 	char *src_host;
+	struct inode *inode;
+
+	inum = 0;
+	gen = 0;
+	mtime_sec = 0;
+	mtime_nsec = 0;
 
 	e = gfm_server_get_request(peer, "replica_adding", "s", &src_host);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1961,9 +2135,20 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
-	else
-		e = process_replica_adding(process, peer, spool_host,
-		    src_host, fd, &inum, &gen, &mtime_sec, &mtime_nsec);
+	else if ((src = host_lookup(src_host)) == NULL)
+		e = GFARM_ERR_UNKNOWN_HOST;
+	else if ((e = process_replica_adding(process, peer,
+	    src, spool_host, fd, &inode)) != GFARM_ERR_NO_ERROR)
+		;
+	else {
+		inum = inode_get_number(inode);
+		gen = inode_get_gen(inode);
+		mtime = inode_get_mtime(inode);
+		mtime_sec = mtime->tv_sec;
+		mtime_nsec = mtime->tv_nsec;
+	}
+
+	/* we don't maintain file_replicating in this case */
 
 	free(src_host);
 	giant_unlock();
@@ -2006,6 +2191,7 @@ gfm_server_replica_added_common(const char *msg,
 		if (transaction)
 			db_end(msg);
 	}
+	/* we don't maintain file_replicating in this case */
 	return (e);
 }
 

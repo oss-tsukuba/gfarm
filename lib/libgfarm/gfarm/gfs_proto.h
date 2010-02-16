@@ -5,6 +5,14 @@
 #define XAUTH_COMMAND "xauth"
 #endif
 
+/*
+ * 1: protocol until gfarm 2.3
+ * 2: protocol since gfarm 2.4
+ */
+#define GFS_PROTOCOL_VERSION_V2_3	1
+#define GFS_PROTOCOL_VERSION_V2_4	2
+#define GFS_PROTOCOL_VERSION		GFS_PROTOCOL_VERSION_V2_4
+
 enum gfs_proto_command {
 	/* from client */
 
@@ -25,8 +33,8 @@ enum gfs_proto_command {
 	GFS_PROTO_UNLOCK,
 	GFS_PROTO_LOCK_INFO,
 
-	GFS_PROTO_REPLICA_ADD,
-	GFS_PROTO_REPLICA_ADD_FROM,
+	GFS_PROTO_REPLICA_ADD,			/* for COMPAT_GFARM_2_3 */
+	GFS_PROTO_REPLICA_ADD_FROM,		/* for COMPAT_GFARM_2_3 */
 	GFS_PROTO_REPLICA_RECV,
 
 	GFS_PROTO_STATFS,
@@ -36,7 +44,9 @@ enum gfs_proto_command {
 
 	GFS_PROTO_FHSTAT,
 	GFS_PROTO_FHREMOVE,
-	GFS_PROTO_STATUS
+	GFS_PROTO_STATUS,
+	GFS_PROTO_REPLICATION_REQUEST,
+	GFS_PROTO_REPLICATION_CANCEL,
 };
 
 /*

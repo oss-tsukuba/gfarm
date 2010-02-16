@@ -6,15 +6,126 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "config.h"
 #include "host.h"
 #include "gfm_client.h"
 #include "gfs_client.h"
+#include "lookup.h"
 #include "schedule.h"
 #include "gfs_misc.h"
 
+/*#define V2_4 1*/
+
+struct gfm_replicate_file_from_to_closure {
+	const char *srchost;
+	const char *dsthost;
+	int flags;
+};
+
+static gfarm_error_t
+gfm_replicate_file_from_to_request(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	struct gfm_replicate_file_from_to_closure *c = closure;
+	gfarm_error_t e = gfm_client_replicate_file_from_to_request(
+	    gfm_server, c->srchost, c->dsthost, c->flags);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "replicate_file_from_to request: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_replicate_file_from_to_result(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	gfarm_error_t e = gfm_client_replicate_file_from_to_result(gfm_server);
+
+#if 0 /* DEBUG */
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replicate_file_from_to result; %s",
+		    gfarm_error_string(e));
+#endif
+	return (e);
+}
+
+gfarm_error_t
+gfs_replicate_file_from_to_request(
+	const char *file, const char *srchost, const char *dsthost, int flags)
+{
+	gfarm_error_t e;
+	struct gfm_replicate_file_from_to_closure closure;
+
+	if ((flags & GFS_REPLICATE_FILE_WAIT) != 0)
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+
+	closure.srchost = srchost;
+	closure.dsthost = dsthost;
+	closure.flags = (flags & ~GFS_REPLICATE_FILE_MIGRATE);
+	e = gfm_inode_op(file, GFARM_FILE_LOOKUP,
+	    gfm_replicate_file_from_to_request,
+	    gfm_replicate_file_from_to_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
+
+	/*
+	 * XXX GFS_REPLICATE_FILE_MIGRATE is not implemented by gfmd for now.
+	 * So, we do it by client side.
+	 */
+	if (e == GFARM_ERR_NO_ERROR &&
+	    (flags & GFS_REPLICATE_FILE_MIGRATE) != 0)
+		e = gfs_replica_remove_by_file(file, srchost);
+	return (e);
+}
+
+gfarm_error_t
+gfs_replicate_file_to_request(
+	const char *file, const char *dsthost, int flags)
+{
+	char *srchost;
+	int srcport;
+	gfarm_error_t e, e2;
+	GFS_File gf;
+
+	e = gfs_pio_open(file, GFARM_FILE_RDONLY, &gf);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfarm_schedule_file(gf, &srchost, &srcport);
+	e2 = gfs_pio_close(gf);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfs_replicate_file_from_to_request(file, srchost,
+		    dsthost, flags);
+		free(srchost);
+	}
+
+	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+}
+
+gfarm_error_t
+gfs_replicate_file_from_to(
+	const char *file, const char *srchost, const char *dsthost, int flags)
+{
+	return (gfs_replicate_file_from_to_request(file, srchost, dsthost,
+	   flags /* | GFS_REPLICATE_FILE_WAIT */));
+}
+
+gfarm_error_t
+gfs_replicate_file_to(const char *file, const char *dsthost, int flags)
+{
+	return (gfs_replicate_file_to_request(file, dsthost,
+	   flags /* | GFS_REPLICATE_FILE_WAIT */));
+}
+
+
+/* XXX FIXME */
 static gfarm_error_t
 gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	char *dsthost, int dstport)
@@ -59,14 +170,20 @@ gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
 		return (e);
 
 	e = gfarm_schedule_file(gf, &srchost, &srcport);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto close;
-	e = gfs_replicate_from_to_internal(gf, srchost, srcport,
-		dsthost, dstport);
-	if (e == GFARM_ERR_NO_ERROR && migrate)
-		e = gfs_replica_remove_by_file(file, srchost);
-	free(srchost);
- close:
+	if (e == GFARM_ERR_NO_ERROR) {
+
+#ifndef V2_4
+		e = gfs_replicate_from_to_internal(gf, srchost, srcport,
+			dsthost, dstport);
+#else
+		e = gfs_replicate_file_from_to(file, srchost, dsthost,
+		    GFS_REPLICATE_FILE_FORCE
+		    /* | GFS_REPLICATE_FILE_WAIT */ /* XXX NOTYET */);
+#endif
+		if (e == GFARM_ERR_NO_ERROR && migrate)
+			e = gfs_replica_remove_by_file(file, srchost);
+		free(srchost);
+	}
 	e2 = gfs_pio_close(gf);
 
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
@@ -105,6 +222,7 @@ gfarm_error_t
 gfs_replicate_from_to(char *file, char *srchost, int srcport,
 	char *dsthost, int dstport)
 {
+#ifndef V2_4
 	gfarm_error_t e, e2;
 	GFS_File gf;
 
@@ -120,6 +238,12 @@ gfs_replicate_from_to(char *file, char *srchost, int srcport,
 	e2 = gfs_pio_close(gf);
 
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+#else
+	return (gfs_replicate_file_from_to(file, srchost, dsthost,
+	    GFS_REPLICATE_FILE_FORCE
+	    /* | GFS_REPLICATE_FILE_WAIT */ /* XXX NOTYET */));
+
+#endif
 }
 
 gfarm_error_t

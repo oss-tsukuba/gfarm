@@ -14,6 +14,7 @@ SRCS =	alloc.c \
 	gfevent.c \
 	gfnetdb.c \
 	hash.c \
+	id_table.c \
 	limit.c \
 	logutil.c \
 	lru_cache.c \
@@ -25,6 +26,7 @@ OBJS =	alloc.lo \
 	gfevent.lo \
 	gfnetdb.lo \
 	hash.lo \
+	id_table.lo \
 	limit.lo \
 	logutil.lo \
 	lru_cache.lo \
@@ -45,6 +47,7 @@ $(OBJS): $(DEPGFARMINC)
 daemon.lo: gfutil.h
 gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h
 gfnetdb.lo: gfnetdb.h
+id_table.lo: id_table.h
 hash.lo: gfutil.h hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h

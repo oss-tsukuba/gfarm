@@ -24,6 +24,8 @@
 #include "gfm_proto.h" /* GFM_PROTO_SCHED_FLAG_* */
 #include "config.h"
 
+#include "thrsubr.h"
+#include "callout.h"
 #include "subr.h"
 #include "db_access.h"
 #include "host.h"
@@ -46,17 +48,26 @@ static gfarm_off_t total_disk_used, total_disk_avail;
 /* in-core gfarm_host_info */
 struct host {
 	struct gfarm_host_info hi;
+
 	struct peer *peer;
+
 	struct dead_file_copy *to_be_removed;
 	pthread_mutex_t remover_mutex;
 	pthread_cond_t remover_cond;
-	volatile int is_active;
+
+	pthread_mutex_t status_mutex;
+
 	int invalid;	/* set when deleted */
 
+	volatile int is_active;
 	gfarm_time_t last_report;
-	double loadavg_1min, loadavg_5min, loadavg_15min;
-	gfarm_off_t disk_used, disk_avail;
+	struct host_status status;
 	gfarm_int32_t report_flags;
+
+	int protocol_version, peer_unset_pending;
+	struct callout *status_callout;
+
+	struct file_replicating replicating_inodes; /* dummy header */
 };
 
 char REMOVED_HOST_NAME[] = "gfarm-removed-host";
@@ -245,14 +256,23 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->to_be_removed = NULL;
 	h->is_active = 0;
 	h->last_report = 0;
-	h->loadavg_1min =
-	h->loadavg_5min =
-	h->loadavg_15min = 0.0;
-	h->disk_used =
-	h->disk_avail = 0;
+	h->status.loadavg_1min =
+	h->status.loadavg_5min =
+	h->status.loadavg_15min = 0.0;
+	h->status.disk_used =
+	h->status.disk_avail = 0;
 	h->report_flags = 0;
-	pthread_mutex_init(&h->remover_mutex, NULL);
-	pthread_cond_init(&h->remover_cond, NULL);
+	h->protocol_version = 0;
+	h->peer_unset_pending = 0;
+	h->status_callout = NULL;
+
+	/* make circular list `replicating_inodes' empty */
+	h->replicating_inodes.prev_inode =
+	h->replicating_inodes.next_inode = &h->replicating_inodes;
+
+	mutex_init(&h->status_mutex, "host", "status");
+	mutex_init(&h->remover_mutex, "host", "remover");
+	cond_init(&h->remover_cond, "host", "remover");
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_activate(h);
 	if (hpp != NULL)
@@ -283,25 +303,45 @@ host_remove(const char *hostname)
 }
 
 void
-host_peer_set(struct host *h, struct peer *p)
+host_peer_set(struct host *h, struct peer *p, int version, struct callout *c)
 {
 	pthread_mutex_lock(&h->remover_mutex);
 	h->peer = p;
 	h->is_active = 1;
+	h->protocol_version = version;
+	h->status_callout = c;
 	pthread_mutex_unlock(&h->remover_mutex);
 }
 
+/* giant_lock should be held before calling this */
 void
 host_peer_unset(struct host *h)
 {
 	pthread_mutex_lock(&h->remover_mutex);
-	h->peer = NULL;
-	h->is_active = 0;
-	/* terminate a remover thread */
-	pthread_cond_broadcast(&h->remover_cond);
-	pthread_mutex_unlock(&h->remover_mutex);
+	if (callout_invoking(h->status_callout)) {
+		/* avoid race condition of callout */
+		h->peer_unset_pending = 1;
+		pthread_mutex_unlock(&h->remover_mutex);
+	} else {
+		h->peer_unset_pending = 0;
+		callout_stop(h->status_callout);
+		callout_free(h->status_callout);
+		h->status_callout = NULL;
+
+		h->peer = NULL;
+		h->is_active = 0;
+		/* terminate a remover thread */
+		pthread_cond_broadcast(&h->remover_cond);
+		pthread_mutex_unlock(&h->remover_mutex);
+
+		/* the following is the reason why giant_lock is necessary */
+		while (h->replicating_inodes.next_inode !=
+		    &h->replicating_inodes)
+			file_replicating_free(h->replicating_inodes.next_inode);
+	}
 }
 
+/* giant_lock should be held before calling this */
 void
 host_peer_disconnect(struct host *h)
 {
@@ -313,6 +353,24 @@ host_peer_disconnect(struct host *h)
 		host_peer_unset(h);
 	}
 }
+
+struct callout *
+host_status_callout(struct host *h)
+{
+	return (h->status_callout);
+}
+
+int
+host_peer_unset_pending(struct host *h)
+{
+	int pending;
+
+	pthread_mutex_lock(&h->remover_mutex);
+	pending = h->peer_unset_pending;
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (pending);
+}
+
 
 struct peer *
 host_peer(struct host *h)
@@ -342,6 +400,67 @@ host_is_up(struct host *h)
 	return (host_is_active(h) && h->is_active);
 }
 
+/* only file_replicating_new() is allowed to call this routine */
+struct file_replicating *
+host_replicating_new(struct host *dst)
+{
+	struct file_replicating *fr;
+
+	GFARM_MALLOC(fr);
+	if (fr == NULL)
+		return (NULL);
+
+	fr->dst = dst;
+	fr->handle = -1;
+
+	fr->next_inode->prev_inode = &dst->replicating_inodes;
+	fr->next_inode = dst->replicating_inodes.next_inode;
+	dst->replicating_inodes.next_inode = fr;
+	fr->next_inode->prev_inode = fr;
+
+	/* the followings should be initialized by inode_replicating() */
+	fr->prev_host = fr;
+	fr->next_host = fr;
+	return (fr);
+}
+
+/* only file_replicating_free() is allowed to call this routine */
+void
+host_replicating_free(struct file_replicating *fr)
+{
+	fr->prev_inode->next_inode = fr->next_inode;
+	fr->next_inode->prev_inode = fr->prev_inode;
+	free(fr);
+}
+
+void
+file_replicating_set_handle(struct file_replicating *fr, gfarm_int64_t handle)
+{
+	fr->handle = handle;
+}
+
+gfarm_int64_t
+file_replicating_get_handle(struct file_replicating *fr)
+{
+	return (fr->handle);
+}
+
+gfarm_error_t
+host_replicated(struct host *host, gfarm_int32_t errcode,
+	gfarm_int64_t handle, gfarm_off_t size)
+{
+	struct file_replicating *fr;
+
+	for (fr = host->replicating_inodes.next_inode;
+	    fr != &host->replicating_inodes; fr = fr->next_inode) {
+		if (fr->handle == handle)
+			break;
+	}
+	if (fr == &host->replicating_inodes)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+	return (inode_replicated(fr, errcode, size));
+}
+
 void
 host_remove_replica_enq_copy(
 	struct host *host, struct dead_file_copy *dfc)
@@ -366,6 +485,89 @@ host_remove_replica_enq(
 	dfc->igen = igen;
 	host_remove_replica_enq_copy(host, dfc);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * XXX
+ * this assumes that the number of dead file copies is small enough,
+ * otherwise this is too slow.
+ */
+int
+host_count_dead_copies_all(gfarm_ino_t inum, int up_only)
+{
+	struct gfarm_hash_iterator it;
+	struct host *h;
+	struct dead_file_copy *r;
+	int i = 0;
+
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		if (!up_only || host_is_active(h)) {
+
+			pthread_mutex_lock(&h->remover_mutex);
+
+			for (r = h->to_be_removed; r != NULL; r = r->next) {
+				if (r->inum == inum)
+					i++;
+			}
+
+			pthread_mutex_unlock(&h->remover_mutex);
+		}
+	}
+	return (i);
+}
+
+gfarm_error_t
+host_dead_copies_info_all(gfarm_ino_t inum, int up_only,
+	int *np, char **hosts, gfarm_int64_t *gens, gfarm_int32_t *flags)
+{
+	struct gfarm_hash_iterator it;
+	struct host *h;
+	struct dead_file_copy *r;
+	int i = 0, n = *np;
+	gfarm_int32_t down;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	FOR_ALL_HOSTS(&it) {
+		if (i >= n)
+			break;
+
+		h = host_iterator_access(&it);
+		if (!up_only || host_is_up(h)) {
+
+			pthread_mutex_lock(&h->remover_mutex);
+
+			if (host_is_up(h))
+				down = 0;
+			else
+				down = GFM_PROTO_REPLICA_FLAG_DEAD_HOST;
+
+			for (r = h->to_be_removed; r != NULL; r = r->next) {
+				if (r->inum == inum) {
+					hosts[i] = strdup(host_name(h));
+					gens[i] = r->igen;
+					flags[i] = down;
+					if (hosts[i] == NULL) {
+						e = GFARM_ERR_NO_MEMORY;
+						break;
+					}
+					i++;
+				}
+			}
+
+			pthread_mutex_unlock(&h->remover_mutex);
+
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		while (--i >= 0)
+			free(hosts[i]);
+	} else {
+		*np = i;
+	}
+	return (e);
 }
 
 gfarm_error_t
@@ -455,36 +657,68 @@ host_remove_replica_dump_all(void)
 	}
 }
 
+void
+host_status_update(struct host *host, struct host_status *status)
+{
+	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+
+	mutex_lock(&host->status_mutex, "host", "status_update");
+
+	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		saved_used = host->status.disk_used;
+		saved_avail = host->status.disk_avail;
+	}
+
+	host->last_report = time(NULL);
+	host->report_flags =
+		GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
+		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
+	host->status = *status;
+
+	mutex_unlock(&host->status_mutex, "host", "status_update");
+
+	pthread_mutex_lock(&total_disk_mutex);
+	total_disk_used += status->disk_used - saved_used;
+	total_disk_avail += status->disk_avail - saved_avail;
+	pthread_mutex_unlock(&total_disk_mutex);
+}
+
+void
+host_status_disable(struct host *host)
+{
+	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+
+	mutex_lock(&host->status_mutex, "host", "status_disable");
+
+	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		saved_used = host->status.disk_used;
+		saved_avail = host->status.disk_avail;
+	}
+
+	host->report_flags = 0;
+
+	mutex_unlock(&host->status_mutex, "host", "status_disable");
+
+	pthread_mutex_lock(&total_disk_mutex);
+	total_disk_used -= saved_used;
+	total_disk_avail -= saved_avail;
+	pthread_mutex_unlock(&total_disk_mutex);
+}
+
 gfarm_error_t
 host_update_status(struct host *host)
 {
 	gfarm_error_t e;
-	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+	struct host_status status;
 
-	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
-		saved_used = host->disk_used;
-		saved_avail = host->disk_avail;
-	}
 	e = gfs_client_status(host_peer(host),
-		&host->loadavg_1min, &host->loadavg_5min,
-		&host->loadavg_15min,
-		&host->disk_used, &host->disk_avail);
-	if (e == GFARM_ERR_NO_ERROR) {
-		host->last_report = time(NULL);
-		host->report_flags =
-			GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
-			GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
-		pthread_mutex_lock(&total_disk_mutex);
-		total_disk_used += host->disk_used - saved_used;
-		total_disk_avail += host->disk_avail - saved_avail;
-		pthread_mutex_unlock(&total_disk_mutex);
-	} else {
-		host->report_flags = 0;
-		pthread_mutex_lock(&total_disk_mutex);
-		total_disk_used -= saved_used;
-		total_disk_avail -= saved_avail;
-		pthread_mutex_unlock(&total_disk_mutex);
-	}
+		&status.loadavg_1min, &status.loadavg_5min,
+		&status.loadavg_15min,
+		&status.disk_used, &status.disk_avail);
+	if (e == GFARM_ERR_NO_ERROR)
+		host_status_update(host, &status);
+	else
+		host_status_disable(host);
 	return (e);
 }
 
@@ -948,14 +1182,23 @@ host_schedule_reply_n(struct peer *peer, gfarm_int32_t n, const char *diag)
 gfarm_error_t
 host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 {
+	struct host_status status;
+	gfarm_time_t last_report;
+	gfarm_int32_t report_flags;
+
+	mutex_lock(&h->status_mutex, "host", "schedule_reply");
+	status = h->status;
+	last_report = h->last_report;
+	report_flags = h->report_flags;
+	mutex_unlock(&h->status_mutex, "host", "schedule_reply");
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
-	    (gfarm_int32_t)(h->loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
-	    h->last_report,
-	    h->disk_used, h->disk_avail,
+	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
+	    last_report,
+	    status.disk_used, status.disk_avail,
 	    (gfarm_int64_t)0 /* rtt_cache_time */,
 	    (gfarm_int32_t)0 /* rtt_usec */,
-	    h->report_flags));
+	    report_flags));
 }
 
 /* XXX does not care about hostaliases and architecture */
@@ -1075,7 +1318,7 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 
 	/* give the top priority to the local host if it has enough space */
 	if (host_is_up(h) &&
-	    h->disk_avail > gfarm_get_minimum_free_disk_space()) {
+	    h->status.disk_avail > gfarm_get_minimum_free_disk_space()) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);

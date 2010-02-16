@@ -96,8 +96,18 @@ struct peer;
 extern gfarm_error_t (*inode_schedule_file_reply)(struct inode *,
 	struct peer *, int, int, const char *);
 
+struct file_replicating;
+struct file_replicating *file_replicating_new(struct inode *, struct host *);
+void file_replicating_free(struct file_replicating *);
+gfarm_error_t inode_replicated(struct file_replicating *, gfarm_int32_t,
+	gfarm_off_t);
+gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
+	struct host *, struct host *, gfarm_int32_t);
+
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
+gfarm_error_t inode_replica_info_get(struct inode *, gfarm_int32_t,
+	gfarm_int32_t *, char ***, gfarm_int64_t **, gfarm_int32_t **);
 
 gfarm_error_t inode_xattr_add(struct inode *, int, const char *);
 int inode_xattr_isexists(struct inode *, int, const char *);

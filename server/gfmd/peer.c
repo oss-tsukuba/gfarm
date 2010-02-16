@@ -32,6 +32,7 @@
 #include "auth.h"
 
 #include "thrpool.h"
+#include "semaphore.h"
 #include "subr.h"
 #include "user.h"
 #include "host.h"
@@ -44,6 +45,8 @@
 
 struct peer {
 	struct gfp_xdr *conn;
+	gfp_xdr_async_peer_t async;
+	struct semaphore io_lock;
 
 	enum gfarm_auth_id_type id_type;
 	char *username, *hostname;
@@ -52,6 +55,8 @@ struct peer {
 
 	struct process *process;
 	int protocol_error;
+	void *(*protocol_handler)(void *);
+	struct thread_pool *handler_thread_pool;
 
 	volatile sig_atomic_t control;
 #define PEER_AUTHORIZED 1
@@ -87,7 +92,9 @@ struct {
 #else
 static struct pollfd *peer_poll_fds;
 #endif
-static void *(*peer_protocol_handler)(void *);
+
+static struct thread_pool *peer_default_thread_pool;
+static void *(*peer_default_protocol_handler)(void *);
 
 static void
 peer_table_lock(void)
@@ -217,7 +224,8 @@ peer_watcher(void *arg)
 				 * We shouldn't have giant_lock or
 				 * peer_table_lock here.
 				 */
-				thrpool_add_job(peer_protocol_handler, peer);
+				thrpool_add_job(peer->handler_thread_pool,
+				    peer->protocol_handler, peer);
 				rv--;
 			}
 		}
@@ -225,7 +233,8 @@ peer_watcher(void *arg)
 }
 
 void
-peer_init(int max_peers, void *(*protocol_handler)(void *))
+peer_init(int max_peers,
+	struct thread_pool *thrpool, void *(*protocol_handler)(void *))
 {
 	int i;
 	struct peer *peer;
@@ -270,7 +279,8 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 		gflog_fatal(GFARM_MSG_1000281,
 		    "peer pollfd table: %s", strerror(ENOMEM));
 #endif
-	peer_protocol_handler = protocol_handler;
+	peer_default_protocol_handler = protocol_handler;
+	peer_default_thread_pool = thrpool;
 	e = create_detached_thread(peer_watcher, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000282,
@@ -295,18 +305,31 @@ peer_alloc(int fd, struct peer **peerp)
 		peer_table_unlock();
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
+
 	/* XXX FIXME gfp_xdr requires too much memory */
 	e = gfp_xdr_new_socket(fd, &peer->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		peer_table_unlock();
 		return (e);
 	}
+
+	peer->async = NULL; /* synchronous protocol by default */
+
+	/*
+	 * use a semaphore, because maybe locking thread != unlocking thread.
+	 * the locking != unlocking case only happens,
+	 * if old gfsd which doesn't support async-protocol is used.
+	 */
+	semaphore_init(&peer->io_lock, 1); /* binary semaphore */
+
 	peer->username = NULL;
 	peer->hostname = NULL;
 	peer->user = NULL;
 	peer->host = NULL;
 	peer->process = NULL;
 	peer->protocol_error = 0;
+	peer->protocol_handler = peer_default_protocol_handler;
+	peer->handler_thread_pool = peer_default_thread_pool;
 	peer->control = 0;
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
@@ -364,7 +387,8 @@ peer_authorized(struct peer *peer,
 
 	peer->control = PEER_AUTHORIZED;
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
-		thrpool_add_job(peer_protocol_handler, peer);
+		thrpool_add_job(peer->handler_thread_pool,
+		    peer->protocol_handler, peer);
 	else
 		peer_watch_access(peer);
 }
@@ -407,6 +431,13 @@ peer_free(struct peer *peer)
 	}
 	peer->findxmlattrctx = NULL;
 
+	semaphore_destroy(&peer->io_lock);
+
+	if (peer->async != NULL) {
+		gfp_xdr_async_peer_free(peer->async, NULL, NULL);
+		peer->async = NULL;
+	}
+
 	gfp_xdr_free(peer->conn); peer->conn = NULL;
 
 	peer_table_unlock();
@@ -445,6 +476,32 @@ peer_watch_access(struct peer *peer)
 	peer_epoll_add_fd(peer_get_fd(peer));
 #endif
 }
+
+
+void
+peer_io_lock(struct peer *peer)
+{
+	semaphore_wait(&peer->io_lock);
+}
+
+void
+peer_io_unlock(struct peer *peer)
+{
+	semaphore_post(&peer->io_lock);
+}
+
+gfarm_error_t
+peer_set_async(struct peer *peer)
+{
+	return (gfp_xdr_async_peer_new(&peer->async));
+}
+
+gfp_xdr_async_peer_t
+peer_get_async(struct peer *peer)
+{
+	return (peer->async);
+}
+
 
 #if 0
 
@@ -594,6 +651,14 @@ int
 peer_had_protocol_error(struct peer *peer)
 {
 	return (peer->protocol_error);
+}
+
+void
+peer_set_protocol_handler(struct peer *peer,
+	struct thread_pool *thrpool, void *(*protocol_handler)(void *))
+{
+	peer->protocol_handler = protocol_handler;
+	peer->handler_thread_pool = thrpool;
 }
 
 struct protocol_state *

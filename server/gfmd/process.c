@@ -27,6 +27,10 @@
 #define FILETAB_MULTIPLY	2
 #define FILETAB_MAX		256
 
+#define PROCESS_ID_MIN			300
+#define PROCESS_TABLE_INITIAL_SIZE	100
+
+
 struct process_link {
 	struct process_link *next, *prev;
 };
@@ -108,6 +112,9 @@ process_alloc(struct user *user,
 		if (process_id_table == NULL)
 			gflog_fatal(GFARM_MSG_1000293,
 			    "allocating pid table: no memory");
+		gfarm_id_table_set_base(process_id_table, PROCESS_ID_MIN);
+		gfarm_id_table_set_initial_size(process_id_table,
+		    PROCESS_TABLE_INITIAL_SIZE);
 	}
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
@@ -584,7 +591,8 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 gfarm_error_t
 process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
-	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	gfarm_int64_t *new_igenp, gfarm_int32_t *is_last_writerp)
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
@@ -610,11 +618,15 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	     != GFARM_ERR_ALREADY_EXISTS))
 		do_not_change_status = 1;
-	else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime) ||
-		 inode_get_size(fo->inode) != size)
-		/* invalidate file replicas if updated */
-		inode_remove_every_other_replicas(
-			fo->inode, fo->u.f.spool_host);
+	else {
+		/*
+		 * gfsd uses CLOSE_FILE_WRITE protocol only if the file is
+		 * really updated, so we don't have to check mtime and size
+		 * here.
+		 */
+		inode_remove_every_other_replicas(fo->inode,
+		    fo->u.f.spool_host); /* invalidate file replicas */
+	}
 
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
@@ -708,40 +720,51 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 }
 
 gfarm_error_t
-process_replica_adding(struct process *process,
-	struct peer *peer, struct host *spool_host, char *src_host, int fd,
-	gfarm_ino_t *inump, gfarm_uint64_t *genp,
-	gfarm_int64_t *mtime_secp, gfarm_int32_t *mtime_nsecp)
+process_prepare_to_replicate(struct process *process, struct peer *peer,
+	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
+	struct inode **inodep)
 {
+	gfarm_error_t e;
 	struct file_opening *fo;
-	struct gfarm_timespec *mtime;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	struct user *user;
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if ((e = process_get_file_opening(process, fd, &fo))
+	    != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (!inode_is_file(fo->inode)) /* i.e. is a directory */
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if (inode_is_creating_file(fo->inode)) /* no file copy */
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	if (!inode_has_replica(fo->inode, host_lookup(src_host)))
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	if (inode_has_replica(fo->inode, spool_host))
-		return (GFARM_ERR_ALREADY_EXISTS);
+	if ((user = process_get_user(process)) == NULL)
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
-	e = inode_add_replica(fo->inode, spool_host, 0);
+	e = inode_prepare_to_replicate(fo->inode, user, src, dst, flags);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	fo->u.f.spool_opener = peer;
-	/* do not set spool_host since replica is now creating to this host */
-	*inump = inode_get_number(fo->inode);
-	*genp = inode_get_gen(fo->inode);
-	mtime = inode_get_mtime(fo->inode);
-	*mtime_secp = mtime->tv_sec;
-	*mtime_nsecp = mtime->tv_nsec;
+	*inodep = fo->inode;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_replica_adding(struct process *process, struct peer *peer,
+	struct host *src, struct host *dst, int fd,
+	struct inode **inodep)
+{
+	gfarm_error_t e;
+	struct file_opening *fo;
+
+	if ((e = process_get_file_opening(process, fd, &fo))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = process_prepare_to_replicate(process, peer, src, dst, fd,
+	    GFS_REPLICATE_FILE_FORCE, inodep);
+	if (e == GFARM_ERR_NO_ERROR) {
+		fo->u.f.spool_opener = peer;
+		/*
+		 * do not set spool_host
+		 * since replica is now creating to this host
+		 */
+	}
+	return (e);
 }
 
 gfarm_error_t

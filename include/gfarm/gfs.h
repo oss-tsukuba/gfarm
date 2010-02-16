@@ -275,6 +275,32 @@ gfarm_error_t gfs_replicate_to(char *, char *, int);
 gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
 gfarm_error_t gfs_migrate_to(char *, char *, int);
 gfarm_error_t gfs_migrate_from_to(char *, char *, int, char *, int);
+
+#define GFS_REPLICATE_FILE_FORCE			1	/* no BUSY */
+#ifdef GFARM_INTERNAL_USE /* internal use only */
+#define GFS_REPLICATE_FILE_WAIT				2
+#define GFS_REPLICATE_FILE_MIGRATE			4
+#endif
+gfarm_error_t gfs_replicate_file_from_to_request(
+	const char *, const char *, const char *, int);
+gfarm_error_t gfs_replicate_file_to_request(const char *, const char *, int);
+gfarm_error_t gfs_replicate_file_from_to(
+	const char *, const char *, const char *, int);
+gfarm_error_t gfs_replicate_file_to(const char *, const char *, int);
+
+#define GFS_REPLICA_INFO_INCLUDING_DEAD_HOST		1
+#define GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY	2
+#define GFS_REPLICA_INFO_INCLUDING_DEAD_COPY		4
+struct gfs_replica_info;
+gfarm_error_t gfs_replica_info_by_name(const char *, int,
+	struct gfs_replica_info **);
+int gfs_replica_info_number(struct gfs_replica_info *);
+const char *gfs_replica_info_nth_host(struct gfs_replica_info *, int);
+gfarm_uint64_t gfs_replica_info_nth_gen(struct gfs_replica_info *, int);
+int gfs_replica_info_nth_is_incomplete(struct gfs_replica_info *, int);
+int gfs_replica_info_nth_is_dead_host(struct gfs_replica_info *, int);
+void gfs_replica_info_free(struct gfs_replica_info *);
+
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
 gfarm_error_t gfs_replica_remove_by_file(const char *, const char *);
 gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
