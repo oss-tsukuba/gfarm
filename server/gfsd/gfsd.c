@@ -4038,7 +4038,6 @@ main(int argc, char **argv)
 	}
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
-gflog_set_priority_level(LOG_DEBUG);
 
 	e = gfarm_global_to_local_username(GFSD_USERNAME, &local_gfsd_user);
 	if (e != GFARM_ERR_NO_ERROR) {
