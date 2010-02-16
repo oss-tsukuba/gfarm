@@ -208,7 +208,7 @@ gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
 	if (sizep != NULL && *sizep != 0) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfp_xdr_vrecv_request_parameters: residual %d bytes",
-		    *sizep);
+		    (int)*sizep);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	return (GFARM_ERR_NO_ERROR);

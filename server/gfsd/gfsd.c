@@ -1779,7 +1779,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 		e = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: cannot open local file for %lld:%lld: %s",
-		    diag, ino, gen, strerror(errno));
+		    diag, (long long)ino, (long long)gen, strerror(errno));
 		free(host);
 
 	/* we cannot use gfmd connection here, since it's now async mode */
@@ -1824,7 +1824,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 			    diag, strerror(errno));
 		else if (rv != sizeof(errcode))
 			gflog_error(GFARM_MSG_UNFIXED, "%s: partial write: "
-			    "%d < %d", diag, rv, sizeof(e));
+			    "%d < %d", diag, rv, (int)sizeof(e));
 		close(fds[1]);
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	} else { /* parent */
