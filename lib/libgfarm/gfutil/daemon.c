@@ -2,7 +2,10 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "gfutil.h"
+
+#include <gfarm/gflog.h>
 
 #ifndef HAVE_DAEMON
 int
@@ -10,6 +13,8 @@ gfarm_daemon(int not_chdir, int not_close)
 {
 	switch (fork()) {
 	case -1:
+		gflog_debug(GFARM_MSG_UNFIXED, "fork() failed: %s",
+			strerror(errno));
 		return (-1);
 	case 0:
 		break;

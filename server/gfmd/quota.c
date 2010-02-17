@@ -600,11 +600,17 @@ quota_check_limits(struct user *u, struct group *g,
 
 	gettimeofday(&now, NULL);
 	if (u && is_exceeded(&now, user_quota(u),
-			    is_file_creating, is_replica_adding))
+			    is_file_creating, is_replica_adding)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"user_quota:disk quota exceeded");
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
+	}
 	if (g && is_exceeded(&now, group_quota(g),
-			     is_file_creating, is_replica_adding))
+			     is_file_creating, is_replica_adding)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"group_quota:disk quota exceeded");
 		return (GFARM_ERR_DISK_QUOTA_EXCEEDED);
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -646,20 +652,26 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 	struct gfarm_quota_get_info qi;
 
 	e = gfm_server_get_request(peer, diag, "s", &name);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s request failed: %s", diag, gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		free(name);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (!from_client || peer_user == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
 		free(name);
 		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
 
 	if (db_state != GFARM_ERR_NO_ERROR) {
 		free(name);
+		gflog_debug(GFARM_MSG_UNFIXED, "db_state is not normal: %s",
+			gfarm_error_string(db_state));
 		return (gfm_server_put_reply(peer, diag, db_state, ""));
 	}
 
@@ -698,6 +710,9 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 			e = GFARM_ERR_NO_SUCH_USER;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process: %s",
+			gfarm_error_string(e));
 		giant_unlock();
 		free(name);
 		return (gfm_server_put_reply(peer, diag, e, ""));
@@ -709,6 +724,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 	if (!is_checked(q)) {
 		giant_unlock();
 		free(name);
+		gflog_debug(GFARM_MSG_UNFIXED, "no such object");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
@@ -768,14 +784,19 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 				   &qi.phy_space_hard,
 				   &qi.phy_num_soft,
 				   &qi.phy_num_hard);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+			diag, gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		free(qi.name);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	if (db_state != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_state is not normal: %s",
+			gfarm_error_string(db_state));
 		free(qi.name);
 		return (gfm_server_put_reply(peer, diag, db_state, ""));
 	}
@@ -783,11 +804,13 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	giant_lock();
 	if (!from_client || peer_user == NULL || !user_is_admin(peer_user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
 		goto end;
 	} else if (is_group) {
 		group = group_lookup(qi.name);
 		if (!group_is_active(group)) {
 			e = GFARM_ERR_NO_SUCH_GROUP;
+			gflog_debug(GFARM_MSG_UNFIXED, "group look up failed");
 			goto end;
 		}
 		q = group_quota(group);
@@ -795,6 +818,7 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 		user = user_lookup(qi.name);
 		if (!user_is_active(user)) {
 			e = GFARM_ERR_NO_SUCH_USER;
+			gflog_debug(GFARM_MSG_UNFIXED, "user look up failed");
 			goto end;
 		}
 		q = user_quota(user);
@@ -858,18 +882,25 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 	struct user *peer_user = peer_get_user(peer);
 
 	e = gfm_server_get_request(peer, diag, "");
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s request failed: %s", diag, gfarm_error_string(e));
 		return (e);
+	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (db_state != GFARM_ERR_NO_ERROR)
+	if (db_state != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_state is not normal: %s",
+			gfarm_error_string(db_state));
 		return (gfm_server_put_reply(peer, diag, db_state, ""));
+	}
 
 	giant_lock();
 	if (!user_is_admin(peer_user)) {
 		giant_unlock();
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
 		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
 	/* zero clear and set true in is_checked */

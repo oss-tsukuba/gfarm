@@ -626,8 +626,11 @@ file_table_close(gfarm_int32_t net_fd)
 	gfarm_error_t e;
 
 	if (net_fd < 0 || net_fd >= file_table_size ||
-	    file_table[net_fd].local_fd == -1)
+	    file_table[net_fd].local_fd == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	if (close(file_table[net_fd].local_fd) < 0)
 		e = gfarm_errno_to_error(errno);
 	else
@@ -877,11 +880,15 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 		fatal_metadb_proto(GFARM_MSG_1000477,
 		    "compound_end result", diag, e);
 
-	else if (!GFARM_S_ISREG(mode))
+	else if (!GFARM_S_ISREG(mode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((local_flags = gfs_open_flags_localize(net_flags)) == -1)
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"mode:operation is not permitted");
+	} else if ((local_flags = gfs_open_flags_localize(net_flags)) == -1) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"local_flags:operation is not permitted");
+	} else {
 		local_path(ino, gen, diag, &path);
 		if (to_create)
 			local_flags |= O_CREAT;
@@ -924,13 +931,17 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 
 	gfs_server_get_request(client, diag, "i", &net_fd);
 
-	if (!file_table_is_available(net_fd))
+	if (!file_table_is_available(net_fd)) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else if ((e = gfs_server_reopen(diag, net_fd, &path, &local_flags,
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
+	} else if ((e = gfs_server_reopen(diag, net_fd, &path, &local_flags,
 			&ino, &gen))
-		 != GFARM_ERR_NO_ERROR)
-		;
-	else {
+		 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_server_reopen() failed: %s",
+			gfarm_error_string(e));
+	} else {
 		if ((local_fd = open_data(path, local_flags)) < 0) {
 			e = gfarm_errno_to_error(errno);
 			if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
@@ -977,8 +988,11 @@ gfs_server_open_local(struct gfp_xdr *client)
 	gfarm_int8_t dummy = 0; /* needs at least 1 byte */
 
 	if (gfs_server_open_common(client, "open_local", &net_fd, &local_fd) !=
-	    GFARM_ERR_NO_ERROR)
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_server_open_common() failed");
 		return;
+	}
 
 	/* need to flush iobuffer before sending data w/o iobuffer */
 	e = gfp_xdr_flush(client);
@@ -1038,9 +1052,11 @@ gfs_server_close(struct gfp_xdr *client)
 
 	gfs_server_get_request(client, diag, "i", &fd);
 
-	if ((fe = file_table_entry(fd)) == NULL)
+	if ((fe = file_table_entry(fd)) == NULL) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
+	} else {
 		if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 			;
 		} else if (fstat(fe->local_fd, &st) == -1) {
@@ -1267,9 +1283,11 @@ gfs_server_cksum_set(struct gfp_xdr *client)
 	gfs_server_get_request(client, diag, "isb", &fd,
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum);
 
-	if ((fe = file_table_entry(fd)) == NULL)
+	if ((fe = file_table_entry(fd)) == NULL) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
+	} else {
 		/* NOTE: local client could use remote operation as well */
 		was_written = (fe->flags & FILE_FLAG_WRITTEN) != 0;
 		mtime = fe->mtime;
@@ -1502,8 +1520,12 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
 
 	e = replica_adding(net_fd, host, &ino, &gen, &mtime_sec, &mtime_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"replica_adding() failed: %s",
+			gfarm_error_string(e));
 		goto free_host;
+	}
 
 	local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
@@ -1518,11 +1540,17 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
 	    &server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_connection_acquire_by_host() failed: %s",
+			gfarm_error_string(e));
 		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto close;
 	}
 	e = gfs_client_replica_recv(server, ino, gen, local_fd);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_replica_recv() failed: %s",
+			gfarm_error_string(e));
 		mtime_sec = mtime_nsec = 0; /* invalidate */
 		goto free_server;
 	}
@@ -1563,6 +1591,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	/* from gfsd only */
 	if (peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted(peer_type)");
 		goto send_eof;
 	}
 
@@ -1595,12 +1625,18 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		e = gfp_xdr_send(client, "b", rv, buffer);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error = e;
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfp_xdr_send() failed: %s",
+				gfarm_error_string(e));
 			break;
 		}
 		if (file_read_size < GFS_PROTO_MAX_IOSIZE) {
 			e = gfp_xdr_flush(client);
 			if (e != GFARM_ERR_NO_ERROR) {
 				error = e;
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"gfp_xdr_send() failed: %s",
+					gfarm_error_string(e));
 				break;
 			}
 		}

@@ -15,6 +15,7 @@
 #include <grp.h>
 #include <openssl/evp.h>
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "liberror.h"
@@ -156,8 +157,12 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #endif
 	GFARM_MALLOC_ARRAY(keyfilename, 
 		strlen(home) + sizeof(keyfile_basename));
-	if (keyfilename == NULL)
+	if (keyfilename == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'keyfilename' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	strcpy(keyfilename, home);
 	strcat(keyfilename, keyfile_basename);
 
@@ -243,6 +248,11 @@ finish:
 		setegid(o_gid);
 		seteuid(o_uid); /* suppress root privilege, if possible */
 		pthread_mutex_unlock(&privilege_mutex);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"getting shared key failed: %s",
+			gfarm_error_string(e));
 	}
 	return (e);
 }

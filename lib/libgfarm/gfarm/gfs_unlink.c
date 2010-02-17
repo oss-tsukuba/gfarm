@@ -27,12 +27,22 @@ gfs_unlink(const char *path)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	e = gfs_stat(path, &st);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_stat(%s) failed: %s",
+			path,
+			gfarm_error_string(e));
 		return (e);
+	}
 	is_dir = GFARM_S_ISDIR(st.st_mode);
 	gfs_stat_free(&st);
-	if (is_dir)
+	if (is_dir) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Not a directory(%s): %s",
+			path,
+			gfarm_error_string(GFARM_ERR_IS_A_DIRECTORY));
 		return (GFARM_ERR_IS_A_DIRECTORY);
+	}
 
 	/* XXX FIXME there is race condition here */
 

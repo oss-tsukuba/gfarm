@@ -93,14 +93,27 @@ gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
 	long value;
 
 	e = gfarm_sockopt_initialize();
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Initialization of socket option failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfarm_param_config_parse_long(NSOCKOPTS, gfarm_sockopt_type_table,
 	    config, &param_type_index, &value);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Unknown socket option (%s)",
+			config);
 		return (GFARM_ERRMSG_UNKNOWN_SOCKET_OPTION);
-	if (e != GFARM_ERR_NO_ERROR)
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_param_config_parse_long(%s) failed: %s",
+			config,
+			gfarm_error_string(e));
 		return (e);
+	}
 	return (gfarm_param_config_add_long(lastp,
 	    param_type_index, value, hsp));
 }
@@ -127,8 +140,13 @@ gfarm_sockopt_set(void *closure, int param_type_index, long value)
 	    &gfarm_sockopt_type_table[param_type_index];
 	struct gfarm_sockopt_info *info = type->extension;
 
-	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1)
+	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"setsocketopt(%d) to (%ld) failed: %s",
+			param_type_index, value,
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 

@@ -55,12 +55,21 @@ gfs_pio_view_global_move_to(GFS_File gf, int fragment_index)
 		    &new_fragment);
 	else
 		e = gfs_pio_open(gc->url, gf->open_flags, &new_fragment);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_create() or gfs_pio_open() for URL(%s) "
+			"failed: %s",
+			gc->url,
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfs_pio_set_view_index(new_fragment, gf->pi.status.st_nsections,
 	    fragment_index, NULL, gf->view_flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfs_pio_close_internal(new_fragment);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_set_view_index() failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 	if (gc->fragment_gf != NULL) {
@@ -82,8 +91,12 @@ gfs_pio_view_global_adjust(GFS_File gf, const char *buffer, size_t *sizep)
 	while (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset >= gc->offsets[gc->fragment_index + 1]) {
 		e = gfs_pio_view_global_move_to(gf, gc->fragment_index + 1);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_pio_view_global_move_to() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	if (gc->fragment_index < gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset + size > gc->offsets[gc->fragment_index + 1])
@@ -101,11 +114,19 @@ gfs_pio_view_global_write(GFS_File gf, const char *buffer, size_t size,
 	gfarm_error_t e = gfs_pio_view_global_adjust(gf, buffer, &size);
 	int length; /* XXX - should be size_t */
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_view_global_adjust() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfs_pio_write(gc->fragment_gf, buffer, size, &length);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_write() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	/* XXX - should notify this change to all of the parallel process. */
 	if (gc->fragment_index == gf->pi.status.st_nsections - 1 &&
 	    gf->io_offset + length > gc->offsets[gf->pi.status.st_nsections])
@@ -123,11 +144,19 @@ gfs_pio_view_global_read(GFS_File gf, char *buffer, size_t size,
 	gfarm_error_t e = gfs_pio_view_global_adjust(gf, buffer, &size);
 	int length; /* XXX - should be size_t */
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_view_global_adjust() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfs_pio_read(gc->fragment_gf, buffer, size, &length);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_read() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	*lengthp = length;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -174,8 +203,14 @@ gfs_pio_view_global_seek(GFS_File gf, gfarm_off_t offset, int whence,
 		if (offset == gf->io_offset)
 			return (GFARM_ERR_NO_ERROR);
 	} else {
-		if (offset < 0)
+		if (offset < 0) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"Invalid offset (%d): %s",
+				offset,
+				gfarm_error_string(
+					GFARM_ERR_INVALID_ARGUMENT));
 			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
 		if (offset >= gc->offsets[gf->pi.status.st_nsections - 1])
 			fragment  = gf->pi.status.st_nsections - 1;
 		else
@@ -183,13 +218,21 @@ gfs_pio_view_global_seek(GFS_File gf, gfarm_off_t offset, int whence,
 			    offset, gc->offsets, gf->pi.status.st_nsections-1);
 
 		e = gfs_pio_view_global_move_to(gf, fragment);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_pio_view_global_move_to() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	offset -= gc->offsets[gc->fragment_index];
 	e = gfs_pio_seek(gc->fragment_gf, offset, SEEK_SET, &offset);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_seek() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (resultp != NULL)
 		*resultp = gc->offsets[gc->fragment_index] + offset;
 	return (GFARM_ERR_NO_ERROR);
@@ -205,8 +248,13 @@ gfs_pio_view_global_ftruncate(GFS_File gf, gfarm_off_t length)
 	struct gfarm_file_section_info *sections;
 	char section_string[GFARM_INT32STRLEN + 1];
 
-	if (length < 0)
+	if (length < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Invalid length (%d): %s",
+			length,
+			gfarm_error_string(e));
 		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 	if (length >= gc->offsets[gf->pi.status.st_nsections - 1])
 		fragment = gf->pi.status.st_nsections - 1;
 	else
@@ -216,11 +264,19 @@ gfs_pio_view_global_ftruncate(GFS_File gf, gfarm_off_t length)
 	section_length = length - gc->offsets[fragment];
 
 	e = gfs_pio_view_global_move_to(gf, fragment);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_view_global_move_to() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfs_pio_truncate(gc->fragment_gf, section_length);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_truncate() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	/*
 	 * Before updating path_info, try to update most recent information,
@@ -236,13 +292,22 @@ gfs_pio_view_global_ftruncate(GFS_File gf, gfarm_off_t length)
 #endif
 	gf->pi.status.st_nsections = fragment + 1;
 	e = gfarm_path_info_replace(gf->pi.pathname, &gf->pi);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_path_info_replace() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	
 	e = gfarm_file_section_info_get_sorted_all_serial_by_file(
 		gf->pi.pathname, &nsections, &sections);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_file_section_info_get_sorted_all_serial_"
+			"by_file() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	sections[fragment].filesize = section_length;
 	sprintf(section_string, "%d", fragment);
 	e = gfarm_file_section_info_replace(gf->pi.pathname, section_string,
@@ -264,8 +329,12 @@ gfs_pio_view_global_fsync(GFS_File gf, int operation)
 
 	for (i = 0; i < gf->pi.status.st_nsections; i++) {
 		e = gfs_pio_view_global_move_to(gf, i);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_pio_view_global_move_to() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 
 		switch (operation) {
 		case GFS_PROTO_FSYNC_WITHOUT_METADATA:
@@ -278,8 +347,12 @@ gfs_pio_view_global_fsync(GFS_File gf, int operation)
 			e = GFARM_ERR_INVALID_ARGUMENT;
 			break;
 		}	
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"operation failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	return (e);
 }
@@ -326,17 +399,30 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 	static char gfarm_url_prefix[] = "gfarm:/";
 
 	e = gfs_pio_set_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_set_view_default() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	if (GFS_FILE_IS_PROGRAM(gf)) {
 		e = gfarm_host_get_self_architecture(&arch);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfarm_host_get_self_architecture() failed: %s",
+				gfarm_error_string(e));
 			return (gf->error = e);
+		}
 		e = gfs_pio_set_view_section(gf, arch, NULL, flags);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = gfs_pio_set_view_section(
 				gf, "noarch", NULL, flags);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_pio_set_view_section() failed: %s",
+				gfarm_error_string(e));
+		}
 		return (e);
 	}
 
@@ -351,8 +437,13 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		/* remove all sections except section "0" */
 		e = gfarm_file_section_info_get_all_by_file(gf->pi.pathname,
 		    &nsections, &sections);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfarm_file_section_info_get_all_by_file() "
+				"failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		for (i = 0; i < nsections; i++) {
 			if (strcmp(sections[i].section, "0") == 0)
 				continue;
@@ -368,12 +459,18 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 	/* XXX - GFARM_FILE_APPEND is not supported */
 	if (gf->open_flags & GFARM_FILE_APPEND) {
 		gf->error = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"GFARM_FILE_APPEND is not supported: %s",
+			gfarm_error_string(gf->error));
 		return (gf->error);
 	}
 
 	GFARM_MALLOC(gc);
 	if (gc == NULL) {
 		gf->error = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of global context failed: %s",
+			gfarm_error_string(gf->error));
 		return (gf->error);
 	}
 
@@ -382,6 +479,10 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gc);
 		gf->error = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_file_section_info_get_sorted_all_serial_"
+			"by_file() failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 
@@ -389,6 +490,8 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		gfarm_file_section_info_free_all(n, infos);
 		free(gc);
 		gf->error = "metainfo inconsitency, fragment number mismatch";
+		gflog_debug(GFARM_MSG_UNFIXED,
+			gf->error);
 		return (gf->error);
 	}
 
@@ -403,6 +506,9 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		gfarm_file_section_info_free_all(n, infos);
 		free(gc);
 		gf->error = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gc->offsets' or 'gc->url' failed: %s",
+			gfarm_error_string(gf->error));
 		return (gf->error);
 	}
 
@@ -424,6 +530,9 @@ gfs_pio_set_view_global(GFS_File gf, int flags)
 		gf->view_context = NULL;
 		gfs_pio_set_view_default(gf);
 		gf->error = e;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_view_global_move_to() failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 

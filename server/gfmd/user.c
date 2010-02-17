@@ -172,14 +172,19 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 			gfarm_user_info_free(&u->ui);
 			u->ui = *ui;
 			return (GFARM_ERR_NO_ERROR);
-		}
-		else
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"User already exists");
 			return (GFARM_ERR_ALREADY_EXISTS);
+		}
 	}
 
 	GFARM_MALLOC(u);
-	if (u == NULL)
+	if (u == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'user' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	u->ui = *ui;
 
 	entry = gfarm_hash_enter(user_hashtab,
@@ -187,10 +192,14 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	    &created);
 	if (entry == NULL) {
 		free(u);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
 		free(u);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Entry already exists");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	e = user_enter_gsi_dn(u->ui.gsi_dn, u);
@@ -217,11 +226,17 @@ user_remove(const char *username)
 	struct user *u;
 
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
-	if (entry == NULL)
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_hash_lookup() failed: %s", username);
 		return (GFARM_ERR_NO_SUCH_USER);
+	}
 	u = *(struct user **)gfarm_hash_entry_data(entry);
-	if (user_is_invalidated(u))
+	if (user_is_invalidated(u)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"user is invalidated");
 		return (GFARM_ERR_NO_SUCH_USER);
+	}
 
 	if (u->ui.gsi_dn != NULL && u->ui.gsi_dn[0] != '\0')
 		gfarm_hash_purge(user_dn_hashtab,
@@ -410,6 +425,9 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	e = gfm_server_put_reply(peer, msg,
 	    GFARM_ERR_NO_ERROR, "i", nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_server_put_reply() failed: %s",
+			gfarm_error_string(e));
 		giant_unlock();
 		return (e);
 	}
@@ -420,6 +438,9 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 		if (user_is_active(*u)) {
 			e = user_info_send(client, &(*u)->ui);
 			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"user_info_send() failed: %s",
+					gfarm_error_string(e));
 				giant_unlock();
 				return (e);
 			}
@@ -446,14 +467,21 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	const char msg[] = "protocol USER_INFO_GET_BY_NAMES";
 
 	e = gfm_server_get_request(peer, msg, "i", &nusers);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"USER_INFO_GET_BY_NAMES request failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	GFARM_MALLOC_ARRAY(users, nusers);
 	if (users == NULL)
 		no_memory = 1;
 	for (i = 0; i < nusers; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &user);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfp_xdr_recv() failed: %s",
+				gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 				e = GFARM_ERR_PROTOCOL;
 			if (users != NULL) {
@@ -480,8 +508,12 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_put_reply(peer, "user_info_get_by_names",
 		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
-	if (no_memory || e != GFARM_ERR_NO_ERROR)
+	if (no_memory || e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_server_put_reply() failed: %s",
+			gfarm_error_string(e));
 		goto free_user;
+	}
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -530,8 +562,12 @@ gfm_server_user_info_get_by_gsi_dn(
 	const char msg[] = "protocol USER_INFO_GET_BY_GSI_DN";
 
 	e = gfm_server_get_request(peer, msg, "s", &gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"USER_INFO_GET_BY_GSI_DN request failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		free(gsi_dn);
 		return (GFARM_ERR_NO_ERROR);
@@ -565,22 +601,33 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, msg,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"USER_INFO_SET request failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (user_is_active(user_lookup(ui.username))) {
 		e = GFARM_ERR_ALREADY_EXISTS;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"User already exists");
 	} else {
 		e = user_enter(&ui, NULL);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = db_user_add(&ui);
 			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"db_user_add(): %s",
+					gfarm_error_string(e));
 				user_remove(ui.username);
 				/* do not free since ui still used in hash */
 				do_not_free = 1;
@@ -604,8 +651,12 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, msg,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"USER_INFO_MODIFY request failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
@@ -613,14 +664,21 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted");
 		needs_free = 1;
 	} else if ((u = user_lookup(ui.username)) == NULL ||
 		   user_is_invalidated(u)) {
 		e = GFARM_ERR_NO_SUCH_USER;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"user_lookup() failed");
 		needs_free = 1;
 	} else if ((e = db_user_modify(&ui,
 	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=
 	    GFARM_ERR_NO_ERROR) {
+	    gflog_debug(GFARM_MSG_UNFIXED,
+			"db_user_modify() failed:%s",
+			gfarm_error_string(e));
 		needs_free = 1;
 	} else {
 		free(u->ui.realname);
@@ -665,14 +723,20 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, msg,
 	    "s", &username);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"USER_INFO_REMOVE request failed:%s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		free(username);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
 		e = user_info_remove(username, msg);

@@ -579,6 +579,9 @@ protocol_service(struct peer *peer)
 			 * set cs->cause, if it's first error at a main part
 			 * of a COMPOUND block
 			 */
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"protocol_switch() failed inside of a "
+				"COMPOUND block: %s", gfarm_error_string(e));
 			if (cs->cause == GFARM_ERR_NO_ERROR && !cs->skip)
 				cs->cause = e;
 			cs->skip = 1;
@@ -593,6 +596,9 @@ protocol_service(struct peer *peer)
 	}
 	if (request == GFM_PROTO_SWITCH_BACK_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"failed to process GFM_PROTO_SWITCH_BACK_"
+				"CHANNEL request: %s", gfarm_error_string(e));
 			giant_lock();
 			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
@@ -674,13 +680,18 @@ auth_uid_to_global_username(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"lookup for user failed");
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
 	global_username = strdup(user_name(u));
-	if (global_username == NULL)
+	if (global_username == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'global_username' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1056,6 +1067,9 @@ main(int argc, char **argv)
 		gfarm_config_set_filename(GFMD_CONFIG);
 	e = gfarm_server_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_server_initialize() failed: %s",
+		    gfarm_error_string(e));
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
 		    gfarm_error_string(e));
 		exit(1);

@@ -39,6 +39,11 @@ gfs_link(const char *src, const char *dst)
 		} else if (sgfmd != dgfmd) {
 			gfm_client_connection_free(dgfmd);
 			gfm_client_connection_free(sgfmd);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"Detected crossed device link (%s)(%s): %s",
+				src, dst,
+				gfarm_error_string(
+					GFARM_ERR_CROSS_DEVICE_LINK));
 			return (GFARM_ERR_CROSS_DEVICE_LINK);
 		}
 
@@ -123,6 +128,14 @@ gfs_link(const char *src, const char *dst)
 	gfm_client_connection_free(sgfmd);
 
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
+
+	if (e_save != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Creation of link (%s)(%s) failed: %s",
+			src, dst,
+			gfarm_error_string(
+				e_save != GFARM_ERR_NO_ERROR ? e_save : e));
+	}
 
 	return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
 }

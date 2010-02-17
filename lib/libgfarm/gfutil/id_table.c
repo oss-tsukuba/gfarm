@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 
 #include "id_table.h"
@@ -56,8 +57,11 @@ gfarm_id_table_alloc(struct gfarm_id_table_entry_ops *entry_ops)
 	struct gfarm_id_table *idtab;
 
 	GFARM_MALLOC(idtab);
-	if (idtab == NULL)
+	if (idtab == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_id_table' failed");
 		return (NULL);
+	}
 
 	idtab->entry_ops = entry_ops;
 
@@ -489,13 +493,18 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 		/* assert(idtab->hole_start == idtab->hole_end); */
 		data = malloc(ALIGN_CEIL(sizeof(struct gfarm_id_data_chunk)) +
 		    idtab->idx_delta * idtab->entry_size);
-		if (data == NULL)
+		if (data == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of 'gfarm_id_data_chunk' failed");
 			return (NULL);
+		}
 		newidx = realloc(idtab->index,
 		    (idtab->idxsize + idtab->idx_delta) *
 		    sizeof(struct gfarm_id_index));
 		if (newidx == NULL) {
 			free(data);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of 'gfarm_id_index' failed");
 			return (NULL); /* no more memory */
 		}
 

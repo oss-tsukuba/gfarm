@@ -216,8 +216,12 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 		gfs_client_connection_gc(); /* XXX FIXME: GC all descriptors */
 		sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	}
-	if (sock == -1)
+	if (sock == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"creation of UNIX socket failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 
 	memset(&peer_un, 0, sizeof(peer_un));
 	/* XXX inet_ntoa() is not MT-safe on some platforms */
@@ -233,8 +237,13 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 	rv = connect(sock, (struct sockaddr *)&peer_un, socklen);
 	if (rv == -1) {
 		close(sock);
-		if (errno != ENOENT)
+		if (errno != ENOENT) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"connect() with UNIX socket failed: %s",
+				gfarm_error_string(
+					gfarm_errno_to_error(errno)));
 			return (gfarm_errno_to_error(errno));
+		}
 
 		/* older gfsd doesn't support UNIX connection, try INET */
 		sock = -1;
@@ -256,8 +265,12 @@ gfs_client_connect_inet(const char *canonical_hostname,
 		gfs_client_connection_gc(); /* XXX FIXME: GC all descriptors */
 		sock = socket(PF_INET, SOCK_STREAM, 0);
 	}
-	if (sock == -1)
+	if (sock == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Creation of inet socket failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 
 	/* XXX - how to report setsockopt(2) failure ? */
 	gfarm_sockopt_apply_by_name_addr(sock, canonical_hostname, peer_addr);
@@ -272,6 +285,10 @@ gfs_client_connect_inet(const char *canonical_hostname,
 		e = gfarm_bind_source_ip(sock, source_ip);
 		if (e != GFARM_ERR_NO_ERROR) {
 			close(sock);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"bind() with inet socket (%s) failed: %s",
+				source_ip,
+				gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -280,6 +297,10 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	if (rv < 0) {
 		if (errno != EINPROGRESS) {
 			close(sock);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"connect() with inet socket failed: %s",
+				gfarm_error_string(
+					gfarm_errno_to_error(errno)));
 			return (gfarm_errno_to_error(errno));
 		}
 		*connection_in_progress_p = 1;
@@ -306,34 +327,51 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 #endif
 	if (sockaddr_is_local(peer_addr)) {
 		e = gfs_client_connect_unix(peer_addr, &sock);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"connect with unix socket failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		connection_in_progress = 0;
 		is_local = 1;
 	}
 	if (sock == -1) {
 		e = gfs_client_connect_inet(canonical_hostname,
 		    peer_addr, &connection_in_progress, &sock, source_ip);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"connect with inet socket failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
 	GFARM_MALLOC(gfs_server);
 	if (gfs_server == NULL) {
 		close(sock);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfs_server' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = gfp_xdr_new_socket(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gfs_server);
 		close(sock);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_new_socket() failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 	gfs_server->hostname = strdup(canonical_hostname);
 	if (gfs_server->hostname == NULL) {
 		e = gfp_xdr_free(gfs_server->conn);
 		free(gfs_server);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfs_server->hostname' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	gfs_server->port = ntohs(((struct sockaddr_in *)peer_addr)->sin_port);
@@ -361,8 +399,12 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
 	    cache_entry, &connection_in_progress, &gfs_server, source_ip);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_connection_alloc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (connection_in_progress)
 		e = gfarm_connect_wait(gfp_xdr_fd(gfs_server->conn),
 		    GFS_CLIENT_CONNECT_TIMEOUT);
@@ -376,6 +418,9 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 		free(gfs_server->hostname);
 		gfp_xdr_free(gfs_server->conn);
 		free(gfs_server);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"connection or authentication failed: %s",
+			gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -428,8 +473,13 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 	    canonical_hostname,
 	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
 	    &cache_entry, &created);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"acquirement of cached connection (%s) failed: %s",
+			canonical_hostname,
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
@@ -440,6 +490,9 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation or authentication failed: %s",
+			gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -460,8 +513,13 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	 */
 	e = gfp_cached_connection_acquire(&gfs_server_cache,
 	    canonical_hostname, port, &cache_entry, &created);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"acquirement of cached connection (%s) failed: %s",
+			canonical_hostname,
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
@@ -475,6 +533,9 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"client authentication failed: %s",
+			gfarm_error_string(e));
 	}
 	return (e);
 }
@@ -494,12 +555,20 @@ gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
 	struct gfp_cached_connection *cache_entry;
 
 	e = gfp_uncached_connection_new(&cache_entry);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"making new uncached connection failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
 	    cache_entry, gfs_serverp, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"client authentication failed: %s",
+			gfarm_error_string(e));
+	}
 	return (e);
 }
 
@@ -577,6 +646,9 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 			return;
 		}
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"starting client connection auth failed: %s",
+		gfarm_error_string(state->error));
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
 }
@@ -597,12 +669,19 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	/* clone of gfs_client_connect() */
 
 	GFARM_MALLOC(state);
-	if (state == NULL)
+	if (state == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client connect state failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	e = gfp_uncached_connection_new(&cache_entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(state);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"making new uncached connection failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
@@ -610,6 +689,9 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client connection failed: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 
@@ -654,6 +736,9 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	}
 	free(state);
 	gfs_client_connection_dispose(gfs_server);
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"request for multiplexed client connect failed: %s",
+		gfarm_error_string(e));
 	return (e);
 }
 
@@ -670,6 +755,9 @@ gfs_client_connect_result_multiplexed(
 	free(state);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfs_client_connection_dispose(gfs_server);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error in result of multiplexed client connect: %s",
+			gfarm_error_string(e));
 		return (e);
 	}
 
@@ -791,6 +879,11 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc_request() failed: %s",
+			gfarm_error_string(e));
+	}
 	return (e);
 }
 
@@ -809,8 +902,12 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_flush() failed : %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	va_start(ap, format);
 	e = gfp_xdr_vrpc_result(gfs_server->conn, just,
@@ -821,13 +918,20 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc_result() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (errcode != 0) {
 		/*
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc_result() failed errcode=%d",
+			errcode);
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -852,13 +956,20 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (errcode != 0) {
 		/*
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc() errcode=%d",
+			errcode);
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -874,6 +985,10 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 	    type, size, key, pid);
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
+	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 	return (e);
 }
 
@@ -885,6 +1000,10 @@ gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_OPEN, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		++gfs_server->opened;
+	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 	return (e);
 }
 
@@ -896,21 +1015,37 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	int rv, local_fd;
 	gfarm_int8_t dummy; /* needs at least 1 byte */
 
-	if (!gfs_server->is_local)
+	if (!gfs_server->is_local) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs server is local: %s",
+			gfarm_error_string(GFARM_ERR_OPERATION_NOT_SUPPORTED));
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+	}
 
 	/* we have to set `just' flag here */
 	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	/* layering violation, but... */
 	rv = gfarm_fd_receive_message(gfp_xdr_fd(gfs_server->conn),
 	    &dummy, sizeof(dummy), 1, &local_fd);
-	if (rv == -1) /* EOF */
+	if (rv == -1) { /* EOF */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Unexpected EOF when receiving message: %s",
+			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
-	if (rv != 0)
+	}
+	if (rv != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"receiving message failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(rv)));
 		return (gfarm_errno_to_error(rv));
+	}
 	/* both `dummy' and `local_fd` are passed by using host byte order. */
 	*fd_ret = local_fd;
 	++gfs_server->opened;
@@ -925,6 +1060,10 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
+	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 	return (e);
 }
 
@@ -937,10 +1076,18 @@ gfs_client_pread(struct gfs_connection *gfs_server,
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PREAD, "iil/b",
 	    fd, (int)size, off,
-	    size, np, buffer)) != GFARM_ERR_NO_ERROR)
+	    size, np, buffer)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-	if (*np > size)
+	}
+	if (*np > size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Protocol error in client pread (%llu)>(%llu)",
+			(unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PREAD_PROTOCOL);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -954,11 +1101,19 @@ gfs_client_pwrite(struct gfs_connection *gfs_server,
 	gfarm_int32_t n; /* size_t may be 64bit */
 
 	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PWRITE, "ibl/i",
-	    fd, size, buffer, off, &n)) != GFARM_ERR_NO_ERROR)
+	    fd, size, buffer, off, &n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	*np = n;
-	if (n > size)
+	if (n > size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Protocol error in client pwrite (%llu)>(%llu)",
+			(unsigned long long)*np, (unsigned long long)size);
 		return (GFARM_ERRMSG_GFS_PROTO_PWRITE_PROTOCOL);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1100,6 +1255,9 @@ gfs_client_statfs_send_request(int events, int fd, void *closure,
 			state->error = gfarm_errno_to_error(rv);
 		}
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"request for client statfs failed: %s",
+		gfarm_error_string(state->error));
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
 }
@@ -1137,6 +1295,9 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	GFARM_MALLOC(state);
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client statfs state failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_return;
 	}
 
@@ -1151,6 +1312,9 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_client_statfs_send_request, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of state->writable failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_free_state;
 	}
 	/*
@@ -1164,12 +1328,18 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_client_statfs_recv_result, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of state->readable failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto error_free_writable;
 	}
 	/* go to gfs_client_statfs_send_request() */
 	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"adding event to event queue failed: %s",
+			gfarm_error_string(e));
 		goto error_free_readable;
 	}
 	*statepp = state;
@@ -1230,8 +1400,12 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_request_client_rpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	for (;;) {
 		gfarm_int32_t size;
@@ -1304,6 +1478,11 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 		e = e_write;
 	if (e == GFARM_ERR_NO_ERROR)
 		e = e_rpc;
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"receiving client replica failed: %s",
+			gfarm_error_string(e));
+	}
 	return (e);
 }
 
@@ -1408,14 +1587,23 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 		}
 		GFARM_MALLOC_ARRAY(xdisplay_name_cache,
 			strlen(prefix) + strlen(dpy) + 1);
-		if (xdisplay_name_cache == NULL)
+		if (xdisplay_name_cache == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of array 'xdisplay_name_cache' "
+				"failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		sprintf(xdisplay_name_cache, "%s%s", prefix, dpy);
 		GFARM_MALLOC_ARRAY(xdisplay_env_cache,
 		    sizeof(xdisplay_env_format) + strlen(xdisplay_name_cache));
 		if (xdisplay_env_cache == NULL) {
 			free(xdisplay_name_cache);
 			xdisplay_name_cache = NULL;
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of array 'xdisplay_env_cache' "
+				"failed : %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		sprintf(xdisplay_env_cache, xdisplay_env_format,
@@ -1438,12 +1626,20 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 			sizeof(xauth_command_format) +
 			strlen(XAUTH_COMMAND) +
 			strlen(xdisplay_name_cache));
-		if (xauth_command == NULL)
+		if (xauth_command == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of array 'xauth_command' "
+				"failed : %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		sprintf(xauth_command, xauth_command_format,
 			XAUTH_COMMAND, xdisplay_name_cache);
 		if ((fp = popen(xauth_command, "r")) == NULL) {
 			free(xauth_command);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"popen() for auth command pipe failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		s = fgets(line, sizeof line, fp);
@@ -1453,6 +1649,11 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 			xauth_cache = strdup(line);
 			if (xauth_cache == NULL) {
 				free(xdisplay_name_cache);
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"allocation of 'xauth_cache' "
+					"failed : %s",
+					gfarm_error_string(
+						GFARM_ERR_NO_MEMORY));
 				return (GFARM_ERR_NO_MEMORY);
 			}
 		}
@@ -1479,45 +1680,75 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 		((flags & GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND) ?
 		GFS_CLIENT_COMMAND_FLAG_SHELL_COMMAND : 0) |
 		(xauth_copy ? GFS_CLIENT_COMMAND_FLAG_XAUTHCOPY : 0));
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_request_client_rpc() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	/*
 	 * argv
 	 */
 	for (i = 0; i < na; i++) {
 		e = gfp_xdr_send(gfs_server->conn, "s", argv[i]);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"sending argv[%d] (%s) failed: %s",
+				i, argv[i],
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	/*
 	 * envp
 	 */
 	for (i = 0; i < ne; i++) {
 		e = gfp_xdr_send(gfs_server->conn, "s", envp[i]);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"sending envp[%d] (%s) failed: %s",
+				i, envp[i],
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	if (xenv_copy) {
 		e = gfp_xdr_send(gfs_server->conn, "s", xdisplay_env_cache);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"sending xdisplay_env_cache failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	if (xauth_copy) {
 		/*
 		 * xauth
 		 */
 		e = gfp_xdr_send(gfs_server->conn, "s", xauth_cache);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"sending xauth_cache failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	/* we have to set `just' flag here */
 	e = gfs_client_rpc_result(gfs_server, 1, "i", &pid);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc_result() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	gfs_server->context = GFARM_MALLOC(cc);
-	if (gfs_server->context == NULL)
+	if (gfs_server->context == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfs_server->context' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	/*
 	 * Now, we set the connection file descriptor non-blocking mode.
@@ -1525,6 +1756,9 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 	if (fcntl(conn_fd, F_SETFL, O_NONBLOCK) == -1) {
 		free(gfs_server->context);
 		gfs_server->context = NULL;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"setting conn_fd to non-blocking mode failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
 	}
 
@@ -1684,6 +1918,9 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 					e = GFARM_ERRMSG_GFSD_ABORTED;
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_ABORTED;
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"gfp_xdr_recv() failed: %s",
+					gfarm_error_string(e));
 				return (e);
 			}
 			switch (cmd) {
@@ -1699,12 +1936,18 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 						e = GFARM_ERRMSG_GFSD_ABORTED;
 					cc->server_state =
 					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"gfp_xdr_recv() failed: "
+						"%s",
+						gfarm_error_string(e));
 					return (e);
 				}
 				if (fd != FDESC_STDOUT && fd != FDESC_STDERR) {
 					/* XXX - something wrong */
 					cc->server_state =
 					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"Illegal file descriptor");
 					return (GFARM_ERRMSG_GFSD_DESCRIPTOR_ILLEGAL);
 				}
 				if (len <= 0) {
@@ -1722,6 +1965,8 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				/* XXX - something wrong */
 				cc->server_state =
 				    GFS_COMMAND_SERVER_STATE_ABORTED;
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"Unknown reply %d", cmd);
 				return (GFARM_ERRMSG_GFSD_REPLY_UNKNOWN);
 			}
 		} else if (cc->server_state==GFS_COMMAND_SERVER_STATE_OUTPUT) {
@@ -1741,12 +1986,17 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				    GFARM_ERR_NO_ERROR);
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_ABORTED;
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"read operation on iobuffer failed: %s",
+					gfarm_error_string(e));
 				return (e);
 			}
 			if (gfarm_iobuffer_is_read_eof(
 					cc->iobuffer[cc->server_output_fd])) {
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_ABORTED;
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"read operation on iobuffer aborted");
 				return (GFARM_ERRMSG_GFSD_ABORTED);
 			}
 		}
@@ -1763,6 +2013,9 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				    != GFARM_ERR_NO_ERROR) {
 					cc->server_state =
 					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"sending signal failed: %s",
+						gfarm_error_string(e));
 					return (e);
 				}
 			} else if (gfarm_iobuffer_is_writable(
@@ -1783,6 +2036,9 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				    != GFARM_ERR_NO_ERROR) {
 					cc->server_state =
 					    GFS_COMMAND_SERVER_STATE_ABORTED;
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"sending fd falied: %s",
+						gfarm_error_string(e));
 					return (e);
 				}
 				cc->client_state =
@@ -1802,6 +2058,10 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				gfarm_iobuffer_set_error(
 				    cc->iobuffer[FDESC_STDIN],
 				    GFARM_ERR_NO_ERROR);
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"write operation on iobuffer "
+					"failed: %s",
+					gfarm_error_string(e));
 				return (e);
 			}
 		}
@@ -1875,8 +2135,12 @@ gfs_client_command_send_signal(struct gfs_connection *gfs_server, int sig)
 	while (gfs_client_command_is_running(gfs_server) &&
 	       cc->pending_signal != 0) {
 		e = gfs_client_command_io(gfs_server, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_client_command_io() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 	}
 	if (!gfs_client_command_is_running(gfs_server))
 		return (gfarm_errno_to_error(ESRCH));
@@ -1962,6 +2226,9 @@ gfs_client_command_result(struct gfs_connection *gfs_server,
 	 * Now, we recover the connection file descriptor blocking mode.
 	 */
 	if (fcntl(gfp_xdr_fd(gfs_server->conn), F_SETFL, 0) == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"setting conn fd to blocking mode failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
 	}
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_COMMAND_EXIT_STATUS,
@@ -1979,12 +2246,25 @@ gfs_client_command(struct gfs_connection *gfs_server,
 
 	e = gfs_client_command_request(gfs_server, path, argv, envp, flags,
 				       &pid);
-	if (e)
+	if (e) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_command_request() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	while (gfs_client_command_is_running(gfs_server))
 		e = gfs_client_command_io(gfs_server, NULL);
 	e2 = gfs_client_command_result(gfs_server,
 				       term_signal, exit_status, exit_flag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_command_io() failed: %s",
+			gfarm_error_string(e));
+	} else if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_command_result() failed: %s",
+			gfarm_error_string(e2));
+	}
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
@@ -2017,8 +2297,12 @@ gfs_client_get_load_request(int sock,
 		rv = sendto(sock, &command, sizeof(command), 0,
 		    server_addr, server_addr_size);
 	}
-	if (rv == -1)
+	if (rv == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"write or send operation on socket failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2048,8 +2332,12 @@ gfs_client_get_load_result(int sock,
 		rv = recvfrom(sock, nloadavg, sizeof(nloadavg), 0,
 		    server_addr, server_addr_sizep);
 	}
-	if (rv == -1)
+	if (rv == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"read or receive operation from socket failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 
 #ifndef WORDS_BIGENDIAN
 	swab(&nloadavg[0], &loadavg[0], sizeof(loadavg[0]));
@@ -2163,6 +2451,9 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	GFARM_MALLOC(state);
 	if (state == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client get load state failed: %s",
+			gfarm_error_string(e));
 		goto error_close_sock;
 	}
 
@@ -2171,6 +2462,10 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_client_get_load_send, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client get load state->writable "
+			"failed: %s",
+			gfarm_error_string(e));
 		goto error_free_state;
 	}
 	/*
@@ -2183,12 +2478,19 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfs_client_get_load_receive, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of client get load state->readable "
+			"failed: %s",
+			gfarm_error_string(e));
 		goto error_free_writable;
 	}
 	/* go to gfs_client_get_load_send() */
 	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"adding event to event queue failed: %s",
+			gfarm_error_string(e));
 		goto error_free_readable;
 	}
 
@@ -2426,8 +2728,12 @@ gfs_client_apply_all_hosts(
 	struct gfarm_host_info *hosts;
 
 	e = gfarm_host_info_get_all(&nhosts, &hosts);
-	if (e != NULL)
+	if (e != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_host_info_get_all() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
         j = 0;
 	*nhosts_succeed = 0;

@@ -44,6 +44,8 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NT_HOSTBASED_SERVICE,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_HOSTBASED_SERVICE)"
+			" failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;
@@ -54,6 +56,7 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NO_OID,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NO_OID) failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;
@@ -68,6 +71,8 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NT_USER_NAME,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_USER_NAME)"
+			" failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;
@@ -78,6 +83,8 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NT_STRING_UID_NAME,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_STRING_UID_NAME)"
+			" failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;
@@ -88,6 +95,8 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NT_EXPORT_NAME,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_EXPORT_NAME)"
+			" failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;
@@ -105,6 +114,8 @@ HandleCommonOptions(option, arg)
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NT_USER_NAME,
 			       &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_USER_NAME)"
+			" failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return -1;

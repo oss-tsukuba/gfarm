@@ -60,17 +60,27 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	struct gfp_xdr *conn;
 
 	GFARM_MALLOC(conn);
-	if (conn == NULL)
+	if (conn == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'conn' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	conn->recvbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
 	if (conn->recvbuffer == NULL) {
 		free(conn);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'conn recvbuffer' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	conn->sendbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
 	if (conn->sendbuffer == NULL) {
 		gfarm_iobuffer_free(conn->recvbuffer);
 		free(conn);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'conn sendbuffer' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	gfp_xdr_set(conn, ops, cookie, fd);
@@ -179,8 +189,12 @@ gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 gfarm_error_t
 gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
-	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len)
+	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_iobuffer_purge_read_x() failed: %s",
+			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -673,8 +687,12 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	e = gfp_xdr_vsend(conn, &format, &ap);
 	va_end(ap);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vsend() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (*format != '\0') {
 		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size: "
 		    "invalid format character: %c(%x)", *format, *format);
@@ -717,8 +735,12 @@ gfp_xdr_recv(struct gfp_xdr *conn, int just,
 	e = gfp_xdr_vrecv(conn, just, eofp, &format, &ap);
 	va_end(ap);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrecv() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (*eofp)
 		return (GFARM_ERR_NO_ERROR);
 	if (*format != '\0') {
@@ -742,8 +764,13 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	 * send request
 	 */
 	e = gfp_xdr_send(conn, "i", command);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"sending command (%d) failed: %s",
+			command,
+			gfarm_error_string(e));
 		return (e);
+	}
 	return (gfp_xdr_vsend(conn, formatp, app));
 }
 
@@ -769,18 +796,35 @@ gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
 	 * receive response
 	 */
 	e = gfp_xdr_recv_sized(conn, just, sizep, &eof, "i", errorp);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"receiving response (%d) failed: %s",
+			just,
+			gfarm_error_string(e));
 		return (e);
-	if (eof) /* rpc status missing */
+	}
+	if (eof) { /* rpc status missing */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Unexpected EOF when receiving response: %s",
+			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	}
 	if (*errorp != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfp_xdr_vrecv_sized(conn, just, sizep, &eof, formatp, app);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrecv_sized() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-	if (eof) /* rpc return value missing */
+	}
+	if (eof) { /* rpc return value missing */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Unexpected EOF when doing xdr vrecv: %s",
+			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	}
 	if (**formatp != '\0') {
 		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc_result_sized: "
 		    "invalid format character: %c(%x)", **formatp, **formatp);
@@ -815,8 +859,12 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	e = gfp_xdr_vrpc_request(conn, command, formatp, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(conn);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_vrpc_request() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	if (**formatp != '/') {
 #if 1

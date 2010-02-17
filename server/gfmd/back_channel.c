@@ -99,9 +99,11 @@ gfs_client_rpc_back_channel(struct peer *peer, const char *diag, int command,
 	int errcode;
 	struct gfp_xdr *conn;
 
-	if (peer == NULL || (conn = peer_get_conn(peer)) == NULL)
+	if (peer == NULL || (conn = peer_get_conn(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"socket is not connected");
 		return (GFARM_ERR_SOCKET_IS_NOT_CONNECTED);
-
+	}
 	va_start(ap, format);
 	e = gfp_xdr_vrpc(conn, 0, command, &errcode, &format, &ap);
 	va_end(ap);
@@ -530,11 +532,15 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 	*okp = 0;
 
 	giant_lock();
-	if (from_client)
+	if (from_client) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Operation not permitted: from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((h = peer_get_host(peer)) == NULL)
+	} else if ((h = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Operation not permitted: peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else {
+	} else {
 		callout = NULL;
 		e = GFARM_ERR_NO_ERROR;
 		if (version >= GFS_PROTOCOL_VERSION_V2_4) { /* async protocol */

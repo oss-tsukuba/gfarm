@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include <gfarm/gflog.h>
+
 #include "gfutil.h"
 #include "hash.h"
 
@@ -104,11 +106,19 @@ gfarm_hash_table_alloc(int size,
 			sizeof(struct gfarm_hash_table),
 			gfarm_size_mul(&overflow, 
 				sizeof(struct gfarm_hash_entry *), size - 1));
-	if (overflow)
+	if (overflow) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Overflow when allocating hash table, size=(%d)",
+			size);
 		return (NULL);
+	}
 	hashtab = malloc(alloc_size); /* size is already checked */
-	if (hashtab == NULL)
+	if (hashtab == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_hash_table' (%zd) failed",
+			alloc_size);
 		return (NULL);
+	}
 	hashtab->table_size = size;
 	hashtab->hash = hash;
 	hashtab->equal = equal;
@@ -188,11 +198,18 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 			ALIGN(offsetof(struct gfarm_hash_entry, key_stub)),
 			ALIGN(keylen)),
 		    datalen);
-	if (overflow)
+	if (overflow) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Overflow when entering hash entry");
 		return (NULL);
+	}
 	p = malloc(hash_entry_size); /* size is already checked */
-	if (p == NULL)
+	if (p == NULL) {
 		return (NULL);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_hash_entry' failed (%zd)",
+			hash_entry_size);
+	}
 	*pp = p;
 
 	p->next = NULL;

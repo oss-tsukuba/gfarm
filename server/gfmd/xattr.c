@@ -54,21 +54,34 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 	gfarm_error_t e;
 
 	*addattr = 0;
-	if (!isvalid_attrname(attrname))
+	if (!isvalid_attrname(attrname)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
+	}
 	if ((flags & (XATTR_CREATE|XATTR_REPLACE))
-		== (XATTR_CREATE|XATTR_REPLACE))
+		== (XATTR_CREATE|XATTR_REPLACE)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'flags' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
+	}
 	if (flags & XATTR_REPLACE) {
-		if (!inode_xattr_isexists(inode, xmlMode, attrname))
+		if (!inode_xattr_isexists(inode, xmlMode, attrname)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"xattr does not exist");
 			return GFARM_ERR_NO_SUCH_OBJECT;
+		}
 	} else {
 		e = inode_xattr_add(inode, xmlMode, attrname);
 		if (e == GFARM_ERR_NO_ERROR)
 			*addattr = 1;
 		else if (e != GFARM_ERR_ALREADY_EXISTS
-			|| (flags & XATTR_CREATE))
+			|| (flags & XATTR_CREATE)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_xattr_add() failed:%s",
+				gfarm_error_string(e));
 			return e;
+		}
 	}
 
 	if (*addattr) {
@@ -98,8 +111,12 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 
 	e = gfm_server_get_request(peer, diag,
 	    "sBi", &attrname, &size, &value, &flags);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_server_get_request() failure:%s",
+			gfarm_error_string(e));
 		goto quit;
+	}
 	if (skip) {
 		goto quit;
 	}
@@ -108,10 +125,14 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 #ifdef ENABLE_XMLATTR
 		if (value[size-1] != '\0') {
 			e = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'xmlMode' is invalid");
 			goto quit;
 		}
 #else
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not supported(xmlMode)");
 		goto quit;
 #endif
 	} else
@@ -119,18 +140,26 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 
 	db_waitctx_init(waitctx);
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL)
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_get_process() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = inode_access(inode, process_get_user(process),
-			GFS_W_OK)) != GFARM_ERR_NO_ERROR)
-		;
-	else
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_inode() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = inode_access(inode, process_get_user(process),
+			GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
+	} else
 		e = setxattr(xmlMode, inode, attrname, value, size,
 				flags, waitctx, &addattr);
 	giant_unlock();
@@ -158,10 +187,16 @@ static gfarm_error_t
 getxattr(int xmlMode, struct inode *inode, char *attrname,
 	void **value, size_t *size, struct db_waitctx *waitctx)
 {
-	if (!isvalid_attrname(attrname))
+	if (!isvalid_attrname(attrname)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
-	if (!inode_xattr_isexists(inode, xmlMode, attrname))
+	}
+	if (!inode_xattr_isexists(inode, xmlMode, attrname)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr does not exist");
 		return GFARM_ERR_NO_SUCH_OBJECT;
+	}
 	return db_xattr_get(xmlMode, inode_get_number(inode),
 			attrname, value, size, waitctx);
 }
@@ -180,13 +215,19 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	struct db_waitctx waitctx;
 
 	e = gfm_server_get_request(peer, diag, "s", &attrname);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s request failed: %s",
+			diag, gfarm_error_string(e));
 		goto quit;
+	}
 	if (skip) {
 		goto quit;
 	}
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not supported(xmlMode)");
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		goto quit;
 	}
@@ -194,18 +235,27 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 
 	db_waitctx_init(&waitctx);
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL)
+	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = inode_access(inode, process_get_user(process),
-			GFS_R_OK)) != GFARM_ERR_NO_ERROR)
-		;
-	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_get_process() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_inode() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = inode_access(inode, process_get_user(process),
+			GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
+	} else
 		e = getxattr(xmlMode, inode, attrname, &value, &size, &waitctx);
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR)
@@ -239,18 +289,27 @@ gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 #endif
 
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL)
+	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = inode_access(inode, process_get_user(process),
-			GFS_R_OK)) != GFARM_ERR_NO_ERROR)
-		;
-	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_get_process() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_inode() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = inode_access(inode, process_get_user(process),
+			GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
+	} else {
 		// NOTE: inode_xattrname_list() doesn't access to DB.
 		e = inode_xattr_list(inode, xmlMode, &value, &size);
 	}
@@ -273,8 +332,11 @@ removexattr(int xmlMode, struct inode *inode, char *attrname)
 				inode_get_number(inode), attrname);
 			inode_status_changed(inode);
 		}
-	} else
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'attrname' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
+	}
 
 	return e;
 }
@@ -291,31 +353,46 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	struct inode *inode;
 
 	e = gfm_server_get_request(peer, diag, "s", &attrname);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s request failure",
+			diag);
 		goto quit;
+	}
 	if (skip) {
 		goto quit;
 	}
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not supported(xmlMode)");
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		goto quit;
 	}
 #endif
 
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL)
+	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = inode_access(inode, process_get_user(process),
-			GFS_W_OK)) != GFARM_ERR_NO_ERROR)
-		;
-	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_get_process() failed :%s",
+			gfarm_error_string(e));
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_inode() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = inode_access(inode, process_get_user(process),
+			GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
+	} else
 		e = removexattr(xmlMode, inode, attrname);
 	giant_unlock();
 quit:
@@ -419,6 +496,10 @@ inum_path_array_alloc(char *expr)
 	struct inum_path_array *array = GFARM_MALLOC(array);
 	if (array != NULL)
 		inum_path_array_init(array, expr);
+	else
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'inum_path_array' failed");
+
 	return array;
 }
 
@@ -495,8 +576,11 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 		return GFARM_ERR_NO_ERROR;
 
 	GFARM_MALLOC_ARRAY(entry->attrnames, nfound);
-	if (entry->attrnames == NULL)
+	if (entry->attrnames == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'attrnames' failed");
 		return GFARM_ERR_NO_MEMORY;
+	}
 
 	pthread_mutex_lock(&array->lock);
 	entry->nattrs = nfound;
@@ -529,6 +613,9 @@ findxmlattr_dbq_enter(struct inum_path_array *array,
 			: GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE;
 	}
 	if ((e != GFARM_ERR_NO_ERROR) || dbbusy) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process:%s",
+			gfarm_error_string(e));
 		free(entry->path);
 		entry->path = NULL;
 		array->nentry--;
@@ -543,8 +630,11 @@ inum_path_array_add(struct inum_path_array *array, gfarm_ino_t inum,
 	struct inum_path_entry *entry;
 
 	entry = inum_path_array_addpath(array, inum, path);
-	if (entry != NULL)
+	if (entry != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inum_path_array_addpath() failed");
 		return findxmlattr_dbq_enter(array, entry);
+	}
 	else {
 		free(path);
 		// path array is enough isfilled.
@@ -580,8 +670,11 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 	array->restartpath = path;
 	free(array->ckpath);
 	array->ckpath = strdup(path);
-	if (array->ckpath == NULL)
+	if (array->ckpath == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'ckpath' failed");
 		return GFARM_ERR_NO_MEMORY;
+	}
 
 	array->check_ckpath = array->check_ckname = 1;
 	p = array->ckpath;
@@ -597,6 +690,8 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 	if (array->ckpathnames == NULL) {
 		free(array->ckpath);
 		array->ckpath = NULL;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'ckpathnames' failed");
 		return GFARM_ERR_NO_MEMORY;
 	}
 	p = array->ckpath;
@@ -651,8 +746,11 @@ make_subpath(char *parent_path, char *name, int namelen)
 	allocsz = gfarm_size_add(&overflow, allocsz, 1);
 	if (!overflow)
 		GFARM_MALLOC_ARRAY(subpath, allocsz);
-	if (overflow || (subpath == NULL))
+	if (overflow || (subpath == NULL)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'subpath' failed or overflow");
 		return NULL;
+	}
 	if (pathlen > 0)
 		sprintf(subpath, "%s/", parent_path);
 	memcpy(subpath + pathlen, name, namelen);
@@ -711,6 +809,8 @@ findxmlattr_add_subpaths(struct inode *inode, struct user *user,
 
 		subpath = make_subpath(path, name, namelen);
 		if (subpath == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"make_subpath() failed");
 			e = GFARM_ERR_NO_MEMORY;
 			break;
 		}
@@ -736,8 +836,11 @@ findxmlattr_make_patharray(struct inode *inode, struct user *user,
 	gfarm_error_t e;
 	char *toppath = strdup("");
 
-	if (toppath == NULL)
+	if (toppath == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'toppath' failed");
 		return GFARM_ERR_NO_MEMORY;
+	}
 
 	e = findxmlattr_add_selfpath(inode, user, toppath, array);
 
@@ -872,12 +975,19 @@ findxmlxattr_restart(struct peer *peer, struct inode *inode,
 		return GFARM_ERR_NO_ERROR;
 
 	restartpath = strdup(array->entries[array->nentry-1].path);
-	if (restartpath == NULL)
+	if (restartpath == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'restartpath' failed");
 		return GFARM_ERR_NO_MEMORY;
+	}
 	inum_path_array_reinit(array, ctxp->expr);
 	e = findxmlattr_set_restart_path(array, restartpath);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"findxmlattr_set_restart_path() failed: %s",
+			gfarm_error_string(e));
 		return e;
+	}
 
 	giant_lock();
 	e = findxmlattr_make_patharray(inode, user,
@@ -914,10 +1024,15 @@ findxmlattr(struct peer *peer, struct inode *inode,
 	array = peer_findxmlattrctx_get(peer);
 	if (array == NULL) {
 		if (ctx_has_cookie(ctxp)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'ctxp' is invalid");
 			e = GFARM_ERR_INVALID_ARGUMENT;
-		} else if ((array = inum_path_array_alloc(ctxp->expr)) == NULL)
+		} else if ((array = inum_path_array_alloc(ctxp->expr))
+			== NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-		else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inum_path_array_alloc() failed");
+		} else {
 			e = findxmlattr_make_patharray(inode, user,
 				ctxp->depth, array);
 		}
@@ -926,9 +1041,11 @@ findxmlattr(struct peer *peer, struct inode *inode,
 		findxmlattr_dbq_wait_all(array, ctxp);
 	} else {
 		giant_unlock();
-		if (!ctx_has_cookie(ctxp))
+		if (!ctx_has_cookie(ctxp)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'ctxp' is invalid");
 			e = GFARM_ERR_INVALID_ARGUMENT;
-		else
+		} else
 			e = GFARM_ERR_NO_ERROR;
 	}
 
@@ -971,14 +1088,20 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag,
 			"siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
 #ifdef ENABLE_XMLATTR
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s request failed: %s",
+			diag, gfarm_error_string(e));
 		goto quit;
+	}
 	if (skip) {
 		goto quit;
 	}
 
 	if ((ctxp = gfs_xmlattr_ctx_alloc(nalloc)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'ctxp' failed");
 		goto quit;
 	}
 	ctxp->expr = expr;
@@ -987,15 +1110,22 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 	ctxp->cookie_attrname = ck_name;
 
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL)
+	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-	else if ((e = process_get_file_inode(process, fd, &inode)) !=
-	    GFARM_ERR_NO_ERROR)
-		;
-
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_get_process() failed :%s",
+			gfarm_error_string(e));
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_inode() failed: %s",
+			gfarm_error_string(e));
+	}
 	if (e == GFARM_ERR_NO_ERROR) {
 		// giant_unlock() is called in findxmlattr()
 		e = findxmlattr(peer, inode, ctxp, &array);

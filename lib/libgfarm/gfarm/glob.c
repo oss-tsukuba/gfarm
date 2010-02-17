@@ -17,8 +17,12 @@ gfs_glob_init(gfs_glob_t *listp)
 	unsigned char *v;
 
 	GFARM_MALLOC_ARRAY(v, GFS_GLOB_INITIAL);
-	if (v == NULL)
+	if (v == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of array failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	listp->size = GFS_GLOB_INITIAL;
 	listp->length = 0;
 	listp->array = v;
@@ -46,8 +50,12 @@ gfs_glob_add(gfs_glob_t *listp, int dtype)
 		unsigned char *t;
 
 		GFARM_REALLOC_ARRAY(t, listp->array, n);
-		if (t == NULL)
+		if (t == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"re-allocation of array failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		listp->size = n;
 		listp->array = t;
 	}
@@ -242,15 +250,28 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	}
 	if (pattern[i] == '\0') { /* no magic */
 		if (path_tail - path_buffer + strlen(pattern) >
-		    GLOB_PATH_BUFFER_SIZE)
+		    GLOB_PATH_BUFFER_SIZE) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"File name is too long: %s",
+				gfarm_error_string(
+					GFARM_ERR_FILE_NAME_TOO_LONG));
 			return (GFARM_ERR_FILE_NAME_TOO_LONG);
+		}
 		glob_pattern_to_name(path_tail, pattern, strlen(pattern));
 		e = gfs_stat(path_buffer, &st);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfs_stat(%s) failed: %s",
+				path_buffer,
+				gfarm_error_string(e));
 			return (e);
+		}
 		s = strdup(path_buffer);
 		if (s == NULL) {
 			gfs_stat_free(&st);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of path string failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		gfarm_stringlist_add(paths, s);
@@ -265,8 +286,13 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	if (dirpos >= 0) {
 		int dirlen = dirpos == 0 ? 1 : dirpos;
 
-		if (path_tail - path_buffer + dirlen > GLOB_PATH_BUFFER_SIZE)
+		if (path_tail - path_buffer + dirlen > GLOB_PATH_BUFFER_SIZE) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"File name is too long: %s",
+				gfarm_error_string(
+					GFARM_ERR_FILE_NAME_TOO_LONG));
 			return (GFARM_ERR_FILE_NAME_TOO_LONG);
+		}
 		glob_pattern_to_name(path_tail, pattern, dirlen);
 		path_tail += strlen(path_tail);
 	}
@@ -284,11 +310,21 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		}
 	}
 	e = gfs_opendir(path_buffer, &dir);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_opendir(%s) failed: %s",
+			path_buffer,
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (path_tail > path_buffer && path_tail[-1] != '/') {
-		if (path_tail - path_buffer + 1 > GLOB_PATH_BUFFER_SIZE)
+		if (path_tail - path_buffer + 1 > GLOB_PATH_BUFFER_SIZE) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"File name is too long: %s",
+				gfarm_error_string(
+					GFARM_ERR_FILE_NAME_TOO_LONG));
 			return (GFARM_ERR_FILE_NAME_TOO_LONG);
+		}
 		*path_tail++ = '/';
 	}
 	while ((e = gfs_readdir(dir, &entry)) == GFARM_ERR_NO_ERROR &&
@@ -307,8 +343,13 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		strcpy(path_tail, entry->d_name);
 		if (pattern[i] == '\0') {
 			s = strdup(path_buffer);
-			if (s == NULL)
+			if (s == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"allocation of path string failed:"
+					" %s",
+					gfarm_error_string(GFARM_ERR_NO_MEMORY));
 				return (GFARM_ERR_NO_MEMORY);
+			}
 			gfarm_stringlist_add(paths, s);
 			gfs_glob_add(types, entry->d_type);
 			continue;
@@ -319,6 +360,14 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			e_save = e;
 	}
 	gfs_closedir(dir);
+
+	if (e_save != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process(%s): %s",
+			path_buffer,
+			gfarm_error_string(e_save));
+	}
+
 	return (e_save);
 }
 
@@ -376,6 +425,13 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 	}
 	if (p != NULL)
 		free(p);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process: %s",
+			gfarm_error_string(e));
+	}
+
 	return (e);
 }
 

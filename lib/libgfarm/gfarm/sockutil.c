@@ -8,6 +8,7 @@
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 
 #include "gfnetdb.h"
 
@@ -30,15 +31,27 @@ gfarm_connect_wait(int s, int timeout_seconds)
 	rv = select(s + 1, NULL, &wset, NULL, &timeout);
 	if (rv == 0)
 		return (gfarm_errno_to_error(ETIMEDOUT));
-	if (rv < 0)
+	if (rv < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"select() failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
+	}
 
 	error_size = sizeof(error);
 	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
-	if (rv == -1)
+	if (rv == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"getsocket() failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(errno)));
 		return (gfarm_errno_to_error(errno));
-	if (error != 0)
+	}
+	if (error != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred at socket: %s",
+			gfarm_error_string(gfarm_errno_to_error(error)));
 		return (gfarm_errno_to_error(error));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -52,13 +65,22 @@ gfarm_bind_source_ip(int sock, const char *source_ip)
 	shints.ai_family = AF_INET;
 	shints.ai_socktype = SOCK_STREAM;
 	shints.ai_flags = AI_PASSIVE;
-	if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0)
+	if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_getaddrinfo(%s) failed: %s",
+			source_ip,
+			gfarm_error_string(GFARM_ERR_UNKNOWN_HOST));
 		return (GFARM_ERR_UNKNOWN_HOST);
+	}
 
 	rv = bind(sock, sres->ai_addr, sres->ai_addrlen);
 	save_errno = errno;
 	gfarm_freeaddrinfo(sres);
-	if (rv == -1)
+	if (rv == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bind() failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(save_errno)));
 		return (gfarm_errno_to_error(save_errno));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }

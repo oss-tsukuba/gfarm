@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "liberror.h"
@@ -94,8 +95,11 @@ gfarm_auth_config_add(
 	struct gfarm_auth_config *acp;
 
 	GFARM_MALLOC(acp);    
-	if (acp == NULL)
+	if (acp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_auth_config' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	acp->next = NULL;
 	acp->command = command;
 	acp->method = method;
@@ -214,6 +218,9 @@ gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"Unknown credential type (%s)",
+		type_name);
 	return (GFARM_ERRMSG_UNKNOWN_CREDENTIAL_TYPE);
 }
 
@@ -253,8 +260,11 @@ gfarm_auth_server_cred_config_enter(char *service_tag,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	GFARM_MALLOC(conf);
-	if (conf == NULL)
+	if (conf == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of credential config failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	conf->next = NULL;
 	conf->service_tag = service_tag;
 	conf->type = GFARM_AUTH_CRED_TYPE_DEFAULT;
@@ -305,8 +315,13 @@ gfarm_auth_server_cred_type_set_by_string(char *service_tag, char *string)
 	enum gfarm_auth_cred_type type;
 
 	e = gfarm_auth_cred_type_parse(string, &type);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_auth_cred_type_parse(%s) failed: %s",
+			string,
+			gfarm_error_string(e));
 		return (e);
+	}
 	return (gfarm_auth_server_cred_type_set(service_tag, type));
 }
 
@@ -319,8 +334,13 @@ gfarm_auth_server_cred_type_set(char *service_tag,
 	gfarm_error_t e =
 	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_auth_server_cred_config_enter(%s) failed: %s",
+			service_tag,
+			gfarm_error_string(e));
 		return (e);
+	}
 	/* first line has precedence */
 	if (conf->type != GFARM_AUTH_CRED_TYPE_DEFAULT)
 		return (GFARM_ERR_NO_ERROR);
@@ -336,12 +356,20 @@ gfarm_auth_server_cred_service_set(char *service_tag, char *service)
 	gfarm_error_t e =
 	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_auth_server_cred_config_enter(%s) failed: %s",
+			service_tag,
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (conf->service != NULL) /* first line has precedence */
 		return (GFARM_ERR_NO_ERROR);
-	if ((conf->service = strdup(service)) == NULL)
+	if ((conf->service = strdup(service)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of string 'service' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -353,11 +381,20 @@ gfarm_auth_server_cred_name_set(char *service_tag, char *name)
 	gfarm_error_t e =
 	    gfarm_auth_server_cred_config_enter(service_tag, &conf);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_auth_server_cred_config_enter(%s): %s",
+			service_tag,
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (conf->name != NULL) /* first line has precedence */
 		return (GFARM_ERR_NO_ERROR);
-	if ((conf->name = strdup(name)) == NULL)
+	if ((conf->name = strdup(name)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of string 'name' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }

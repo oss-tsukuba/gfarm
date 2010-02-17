@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
 
@@ -32,11 +33,19 @@ gfarm_iobuffer_alloc(int bufsize)
 	struct gfarm_iobuffer *b;
 
 	GFARM_MALLOC(b);
-	if (b == NULL)
+	if (b == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of struct gfarm_iobuffer failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);
+	}
 	GFARM_MALLOC_ARRAY(b->buffer, bufsize);
 	if (b->buffer == NULL) {
 		free(b);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of buffer with size(%d) failed: %s",
+			bufsize,
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);
 	}
 	b->bufsize = bufsize;

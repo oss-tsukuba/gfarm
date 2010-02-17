@@ -106,8 +106,13 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	flags &= ~GFARM_FILE_EXCLUSIVE;
 #endif /* not yet in gfarm v2 */
 
-	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_open_flag_check(%d) failed: %s",
+			flags,
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	closure.flags = flags;
 	closure.mode_to_create = mode;
@@ -181,8 +186,13 @@ gfm_open_fd(const char *path, int flags,
 	flags &= ~GFARM_FILE_EXCLUSIVE;
 #endif /* not yet in gfarm v2 */
 
-	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_open_flag_check(%d) failed: %s",
+			flags,
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	closure.gfm_serverp = gfm_serverp;
 	closure.fdp = fdp;

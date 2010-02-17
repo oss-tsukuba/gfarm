@@ -208,8 +208,12 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn,
 	struct io_gfsl *io;
 
 	GFARM_MALLOC(io);
-	if (io == NULL)
+	if (io == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'io_gfsl' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	io->session = secsession;
 	io->cred_to_be_freed = cred_to_be_freed;
 	io->exported_credential = NULL;

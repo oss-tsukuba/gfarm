@@ -209,6 +209,7 @@ secSessionReadConfigFile(configFile, ssOptPtr)
 	/*
 	 * use default option.
 	 */
+	gflog_debug(GFARM_MSG_UNFIXED, "fopen(%s) failed", configFile);
 	goto Done;
     }
 
@@ -556,6 +557,8 @@ allocSecSession(which)
 
     GFARM_MALLOC(ret);
     if (ret == NULL) {
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"allocation of gfarmSecSession failed");
 	return NULL;
     }
     (void)memset((void *)ret, 0, sizeof(gfarmSecSession));
@@ -572,6 +575,7 @@ allocSecSession(which)
 	default: {
 	    (void)free(ret);
 	    ret = NULL;
+	    gflog_debug(GFARM_MSG_UNFIXED, "Invalid session type (%d)", which);
 	    return NULL;
 	}
     }
@@ -723,6 +727,8 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED, "failed to read config file (%s)",
+		configFile);
 	    goto Done;
 	}
 
@@ -734,6 +740,8 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED, "gfarmAuthInitialize(%s) failed",
+		usermapFile);
 	    goto Done;
 	}
 
@@ -826,6 +834,8 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED, "failed to read config file (%s)",
+		configFile);
 	    goto Done;
 	}
 
@@ -941,6 +951,8 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED,
+		"failed to read acceptor's config file (%s)", aConfigFile);
 	    goto Done;
 	}
 
@@ -959,6 +971,8 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED,
+		"failed to read initiator's config file (%s)", iConfigFile);
 	    goto Done;
 	}
 
@@ -970,6 +984,8 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    ret = -1;
+	    gflog_debug(GFARM_MSG_UNFIXED, "gfarmAuthInitialize(%s) failed",
+		usermapFile);
 	    goto Done;
 	}
 
@@ -1098,6 +1114,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 
     if (canonicSecSessionOpt(GFARM_SS_ACCEPTOR, ssOptPtr, &canOpt) < 0) {
 	pthread_mutex_unlock(&acceptor_mutex);
+	gflog_debug(GFARM_MSG_UNFIXED, "canonicSecSessionOpt() failed");
 	goto Fail;
     }
 
@@ -1106,6 +1123,7 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
      */
     if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
 	pthread_mutex_unlock(&acceptor_mutex);
+	gflog_debug(GFARM_MSG_UNFIXED, "gfarmGetPeernameOfSocket() failed");
 	goto Fail;
     }
 
@@ -1123,6 +1141,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     if (gfarmGssAcceptSecurityContext(fd, cred, &sCtx,
 				      &majStat, &minStat,
 				      &initiatorName, &deleCred) < 0) {
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfarmGssAcceptSecurityContext failed(%u)(%u)",
+		majStat, minStat);
 	goto Fail;
     }
     if (initiatorName == GSS_C_NO_NAME ||
@@ -1182,6 +1203,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_ACCEPTOR, &canOpt,
 			     &qOp, &maxTransSize, &config,
 			     &majStat, &minStat) < 0) {
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"negotiateConfigParam() failed (%u)(%u)",
+		majStat, minStat);
 	goto Fail;
     }
 #if 0
@@ -1287,6 +1311,8 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
 
     if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt) < 0) {
 	pthread_mutex_unlock(&initiator_mutex);
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"canonicSecSessionOpt() failed");
 	goto Fail;
     }
 
@@ -1295,6 +1321,8 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
      */
     if (gfarmGetPeernameOfSocket(fd, &rPort, &peerName)) {
 	pthread_mutex_unlock(&initiator_mutex);
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfarmGetPeernameOfSocket() failed");
 	goto Fail;
     }
 
@@ -1312,6 +1340,9 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     if (gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, &sCtx,
 					&majStat, &minStat,
 					&acceptorNameResult) < 0) {
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfarmGssInitiateSecurityContext() failed (%u)(%u)",
+		majStat, minStat);
 	goto Fail;
     }
     if (acceptorNameResult == GSS_C_NO_NAME ||
@@ -1350,6 +1381,9 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
     if (negotiateConfigParam(fd, sCtx, GFARM_SS_INITIATOR, &canOpt,
 			     &qOp, &maxTransSize, &config,
 			     &majStat, &minStat) < 0) {
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"negotiateConfigParam() failed (%u)(%u)",
+		majStat, minStat);
 	goto Fail;
     }
 #if 0
@@ -1439,6 +1473,9 @@ gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOpt
 	if (minStatPtr != NULL) {
 	    *minStatPtr = GFSL_DEFAULT_MINOR_ERROR;
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"gfarmTCPConnectPortByHost(%s:%d) failed",
+		hostname, port);
 	return NULL;
     }
     return secSessionInitiate(fd, acceptorName, cred, reqFlag,
@@ -1508,12 +1545,14 @@ gfarmSecSessionDedicate(ssPtr)
 	    if (aePtr->authData.userAuth.gid != gid) {
 		if ((ret = setgid(aePtr->authData.userAuth.gid)) < 0) {
 		    ssPtr->gssLastStat = GSS_S_FAILURE;
+		    gflog_debug(GFARM_MSG_UNFIXED, "setgid() failed");
 		    goto Done;
 		}
 	    }
 	    if (aePtr->authData.userAuth.uid != uid) {
 		if ((ret = setuid(aePtr->authData.userAuth.uid)) < 0) {
 		    ssPtr->gssLastStat = GSS_S_FAILURE;
+		    gflog_debug(GFARM_MSG_UNFIXED, "setuid() failed");
 		    goto Done;
 		}
 	    }
@@ -1521,6 +1560,7 @@ gfarmSecSessionDedicate(ssPtr)
 	ret = 1;
     } else {
 	ssPtr->gssLastStat = GSS_S_FAILURE;
+	gflog_debug(GFARM_MSG_UNFIXED, "gfarmAuthEntry is NULL");
     }
 
     Done:
@@ -1575,6 +1615,7 @@ gfarmSecSessionSendInt32(ssPtr, buf, n)
     GFARM_MALLOC_ARRAY(lBuf, n);
     if (lBuf == NULL) {
 	ssPtr->gssLastStat = GSS_S_FAILURE;
+	gflog_debug(GFARM_MSG_UNFIXED, "allocation of buffer failed");
 	return ret;
     }
     for (i = 0; i < n; i++) {
@@ -1617,6 +1658,7 @@ gfarmSecSessionReceiveInt32(ssPtr, bufPtr, lenPtr)
 
     GFARM_MALLOC_ARRAY(retBuf, n);
     if (retBuf == NULL) {
+	gflog_debug(GFARM_MSG_UNFIXED, "allocation of 'retBuf' failed");
 	goto Done;
     }
 
@@ -1655,6 +1697,7 @@ gfarmSecSessionSendInt16(ssPtr, buf, n)
     GFARM_MALLOC_ARRAY(lBuf, n);
     if (lBuf == NULL) {
 	ssPtr->gssLastStat = GSS_S_FAILURE;
+	gflog_debug(GFARM_MSG_UNFIXED, "allocation of buffer failed");
 	return ret;
     }
     for (i = 0; i < n; i++) {
@@ -1697,6 +1740,7 @@ gfarmSecSessionReceiveInt16(ssPtr, bufPtr, lenPtr)
 
     GFARM_MALLOC_ARRAY(retBuf, n);
     if (retBuf == NULL) {
+	gflog_debug(GFARM_MSG_UNFIXED, "allocation of 'retBuf' failed");
 	goto Done;
     }
 
@@ -2217,6 +2261,7 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 	    "gfarm:secSessionInitiateRequest(): no memory");
     } else if (canonicSecSessionOpt(GFARM_SS_INITIATOR, ssOptPtr, &canOpt)< 0){
 	/* failure */;
+	gflog_debug(GFARM_MSG_UNFIXED, "canonicSecSessionOpt() failed");
     } else {
 	state->q = q;
 	state->fd = fd;
@@ -2276,6 +2321,8 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 	    majStat = GSS_S_FAILURE;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    gfarm_event_free(state->readable);
+	} else {
+	    gflog_debug(GFARM_MSG_UNFIXED, "gfarm_fd_event_alloc() failed");
 	}
 
 	/* failure */

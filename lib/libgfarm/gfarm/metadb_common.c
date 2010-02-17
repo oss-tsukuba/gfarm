@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 
 #include <gfarm/host_info.h>
@@ -268,6 +269,9 @@ gfs_stat_copy(struct gfs_stat *d, const struct gfs_stat *s)
 			free(user);
 		if (group != NULL)
 			free(group);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of user or group failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	*d = *s;

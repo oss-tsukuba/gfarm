@@ -33,6 +33,9 @@ gfarm_server_config_read(void)
 	gfarm_init_user_map();
 	gfarm_init_group_map();
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"open operation on server config file (%s) failed",
+			gfarm_config_file);
 		return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	}
 	e = gfarm_config_read_file(config, &lineno);
@@ -57,8 +60,12 @@ gfarm_server_initialize(void)
 	gflog_initialize();
 
 	e = gfarm_server_config_read();
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_server_config_read() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	gfarm_config_set_default_spool_on_server();
 

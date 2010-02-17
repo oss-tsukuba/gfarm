@@ -245,9 +245,11 @@ inode_cksum_set_internal(struct inode *inode,
 	    sizeof(*cs) - sizeof(cs->sum) + strlen(cksum_type) + 1, cksum_len);
 	if (!overflow)
 		cs = malloc(size);
-	if (overflow || cs == NULL)
+	if (overflow || cs == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'size' failed or overflow");
 		return (GFARM_ERR_NO_MEMORY);
-
+	}
 	cs->type = cs->sum + cksum_len;
 	cs->len = cksum_len;
 	memcpy(cs->sum, cksum, cksum_len);
@@ -270,18 +272,24 @@ inode_cksum_set(struct file_opening *fo,
 
 	assert(ios != NULL);
 
-	if (!inode_is_file(fo->inode))
+	if (!inode_is_file(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode type is not file");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-
-	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0)
+	}
+	if ((fo->flag & GFARM_FILE_CKSUM_INVALIDATED) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED, "file checksum is invalidated");
 		return (GFARM_ERR_EXPIRED);
-
+	}
 	/* writable descriptor has precedence over read-only one */
 	if (ios->u.f.cksum_owner != NULL &&
 	    (accmode_to_op(ios->u.f.cksum_owner->flag) & GFS_W_OK) != 0 &&
-	    (accmode_to_op(fo->flag) & GFS_W_OK) == 0)
+	    (accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"writable descriptor has precedence over read-only "
+			"one");
 		return (GFARM_ERR_EXPIRED);
-
+	}
 	cs = inode->u.c.s.f.cksum;
 
 	if (cs == NULL) {
@@ -307,8 +315,12 @@ inode_cksum_set(struct file_opening *fo,
 	inode_cksum_clear(inode);
 
 	e = inode_cksum_set_internal(inode, cksum_type, cksum_len, cksum);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_cksum_set_internal() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	ios->u.f.cksum_owner = fo;
 
@@ -329,9 +341,11 @@ inode_cksum_get(struct file_opening *fo,
 	struct checksum *cs;
 	gfarm_int32_t flags = 0;
 
-	if (!inode_is_file(fo->inode))
+	if (!inode_is_file(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode type is not file");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
-
+	}
 	if (ios->u.f.writers > 1 ||
 	    (ios->u.f.writers == 1 &&
 	     (accmode_to_op(fo->flag) & GFS_W_OK) == 0))
@@ -401,9 +415,12 @@ remove_all_xattrs(struct inode *inode, int xmlMode)
 		return;
 
 	e = db_xattr_removeall(xmlMode, inode->i_number);
-	if (e != GFARM_ERR_OPERATION_NOT_SUPPORTED)
+	if (e != GFARM_ERR_OPERATION_NOT_SUPPORTED) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"db_xattr_removeall() failed: %s",
+			gfarm_error_string(e));
 		return;
-
+	}
 	entry = xattrs->head;
 	while (entry != NULL) {
 		e = db_xattr_remove(xmlMode, inode->i_number, entry->name);
@@ -429,8 +446,11 @@ inode_open_state_alloc(void)
 	struct inode_open_state *ios;
 
 	GFARM_MALLOC(ios);
-	if (ios == NULL)
+	if (ios == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'inode_open_state' failed");
 		return (NULL);
+	}
 	/* make circular list `openings' empty */
 	ios->openings.opening_prev =
 	ios->openings.opening_next = &ios->openings;
@@ -474,8 +494,11 @@ inode_alloc_num(gfarm_ino_t inum)
 		else
 			new_table_size = inum * INODE_TABLE_SIZE_MULTIPLY;
 		GFARM_REALLOC_ARRAY(p, inode_table, new_table_size);
-		if (p == NULL)
+		if (p == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"re-allocation of inode array failed");
 			return (NULL); /* no memory */
+		}
 		inode_table = p;
 
 		for (i = inode_table_size; i < new_table_size; i++)
@@ -484,8 +507,11 @@ inode_alloc_num(gfarm_ino_t inum)
 	}
 	if ((inode = inode_table[inum]) == NULL) {
 		GFARM_MALLOC(inode);
-		if (inode == NULL)
+		if (inode == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of 'inode' failed");
 			return (NULL); /* no memory */
+		}
 		inode_xattrs_init(inode);
 
 		inode->i_number = inum;
@@ -601,8 +627,11 @@ static gfarm_error_t
 inode_init_dir_internal(struct inode *inode)
 {
 	inode->u.c.s.d.entries = dir_alloc();
-	if (inode->u.c.s.d.entries == NULL)
+	if (inode->u.c.s.d.entries == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode entries is NULL");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -614,9 +643,12 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 	DirEntry entry;
 
 	e = inode_init_dir_internal(inode);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_init_dir_internal() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-
+	}
 	/*
 	 * We won't do db_direntry_add() here to make LDAP happy.
 	 * See the comment in inode_lookup_basename().
@@ -625,6 +657,8 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 	entry = dir_enter(inode->u.c.s.d.entries, dot, DOT_LEN, NULL);
 	if (entry == NULL) {
 		dir_free(inode->u.c.s.d.entries);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode entries is NULL");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	dir_entry_set_inode(entry, inode);
@@ -633,6 +667,8 @@ inode_init_dir(struct inode *inode, struct inode *parent)
 	    NULL);
 	if (entry == NULL) {
 		dir_free(inode->u.c.s.d.entries);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode entries is NULL");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	dir_entry_set_inode(entry, parent);
@@ -799,8 +835,11 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 {
 	gfarm_error_t e;
 
-	if ((mode & GFARM_S_IFMT) != 0)
+	if ((mode & GFARM_S_IFMT) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'mode' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 	inode->i_mode = (inode->i_mode & GFARM_S_IFMT) |
 	    (mode & GFARM_S_ALLPERM);
 
@@ -1068,24 +1107,36 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	struct inode *n;
 
 	if (len == 0) {
-		if (op != INODE_LOOKUP)
+		if (op != INODE_LOOKUP) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'op' is invalid");
 			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
 		*inp = parent;
 		return (GFARM_ERR_NO_ERROR);
 	} else if (len == 1 && name[0] == '.') {
-		if (op != INODE_LOOKUP)
+		if (op != INODE_LOOKUP) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'op' is invalid");
 			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
 		*inp = parent;
 		return (GFARM_ERR_NO_ERROR);
-	} else if (memchr(name, '/', len) != NULL)
+	} else if (memchr(name, '/', len) != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'name' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 	if (len > GFS_MAXNAMLEN)
 		len = GFS_MAXNAMLEN;
 	if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE &&
 	    op != INODE_LINK) {
 		entry = dir_lookup(parent->u.c.s.d.entries, name, len);
-		if (entry == NULL)
+		if (entry == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"dir_lookup() failed");
 			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+		}
 		if (op == INODE_LOOKUP) {
 			*inp = dir_entry_get_inode(entry);
 			return (GFARM_ERR_NO_ERROR);
@@ -1094,6 +1145,9 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		assert(op == INODE_REMOVE);
 		if ((e = inode_access(parent, user, GFS_W_OK)) !=
 		    GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_access() failed: %s",
+				gfarm_error_string(e));
 			return (e);
 		}
 		*inp = dir_entry_get_inode(entry);
@@ -1113,17 +1167,25 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 
 	entry = dir_enter(parent->u.c.s.d.entries, name, len, &created);
-	if (entry == NULL)
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"dir_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	if (!created) {
-		if (op == INODE_CREATE_EXCLUSIVE || op == INODE_LINK)
+		if (op == INODE_CREATE_EXCLUSIVE || op == INODE_LINK) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode already exists");
 			return (GFARM_ERR_ALREADY_EXISTS);
+		}
 		assert(op == INODE_CREATE);
 		*inp = dir_entry_get_inode(entry);
 		*createdp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if ((e = inode_access(parent, user, GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "inode_access() failed: %s",
+			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		return (e);
 	}
@@ -1154,6 +1216,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	n = inode_alloc();
 	if (n == NULL) {
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	switch (expected_type) {
@@ -1167,6 +1231,9 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	default: assert(0); e = GFARM_ERR_UNKNOWN; break;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process: %s",
+			gfarm_error_string(e));
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		inode_free(n);
 		return (e);
@@ -1278,16 +1345,27 @@ inode_lookup_relative(struct inode *n, char *name,
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	nn = NULL;
 #endif
-	if (!inode_is_dir(n))
+	if (!inode_is_dir(n)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode is not directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
-	if ((e = inode_access(n, user, GFS_X_OK)) != GFARM_ERR_NO_ERROR)
+	}
+	if ((e = inode_access(n, user, GFS_X_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (op == INODE_LINK)
 		nn = *inp;
 	e = inode_lookup_basename(n, name, len,
 	    expected_type, op, user, new_mode, symlink_src, &nn, createdp);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_lookup_basename() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (expected_type != GFS_DT_UNKNOWN &&
 	    gfs_mode_to_type(nn->i_mode) != expected_type) {
 		assert(op != INODE_CREATE_EXCLUSIVE &&
@@ -1307,8 +1385,10 @@ inode_lookup_root(struct process *process, int op, struct inode **inp)
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(ROOT_INUMBER);
 
-	if (inode == NULL)
+	if (inode == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup() failed");
 		return (GFARM_ERR_STALE_FILE_HANDLE); /* XXX never happen */
+	}
 	e = inode_access(inode, process_get_user(process), op);
 	if (e == GFARM_ERR_NO_ERROR)
 		*inp = inode;
@@ -1343,6 +1423,8 @@ inode_lookup_by_name(struct inode *base, char *name,
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		if ((op & GFS_W_OK) != 0 && inode_is_dir(inode)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode is directory");
 			e = GFARM_ERR_IS_A_DIRECTORY;
 		} else {
 			e = inode_access(inode, user, op);
@@ -1420,33 +1502,58 @@ inode_rename(
 	struct user *user = process_get_user(process);
 	struct inode *src, *dst;
 
-	if (user == NULL)
+	if (user == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "process_get_user() failed");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
 
 	/* can remove src? */
 	if ((e = inode_access(sdir, user, GFS_X_OK|GFS_W_OK)) !=
-	    GFARM_ERR_NO_ERROR)
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_access() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-
+	}
 	if ((e = inode_lookup_by_name(sdir, sname, process, 0, &src))
-	    != GFARM_ERR_NO_ERROR)
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_lookup_by_name() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-	if (strchr(sname, '/') != NULL) /* sname should't have '/' */
+	}
+	if (strchr(sname, '/') != NULL) {  /* sname should't have '/' */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'sname' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	if (strchr(dname, '/') != NULL) /* dname should't have '/' */
+	}
+	if (strchr(dname, '/') != NULL) { /* dname should't have '/' */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"argument 'dname' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 
 	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (GFARM_S_ISDIR(inode_get_mode(src)) ==
 		    GFARM_S_ISDIR(inode_get_mode(dst))) {
 			e = inode_unlink(ddir, dname, process);
-			if (e != GFARM_ERR_NO_ERROR)
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"inode_unlink() failed: %s",
+					gfarm_error_string(e));
 				return (e);
-		} else if (GFARM_S_ISDIR(inode_get_mode(src)))
+			}
+		} else if (GFARM_S_ISDIR(inode_get_mode(src))) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode 'inode_get_mode(src)' "
+				"is not a directory");
 			return (GFARM_ERR_NOT_A_DIRECTORY);
-		else
+		} else {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode 'inode_get_mode(src)' is directory");
 			return (GFARM_ERR_IS_A_DIRECTORY);
+		}
 	} else if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 		return (e);
 
@@ -1472,13 +1579,21 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
 
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_lookup_by_name() failed: %s",
+			gfarm_error_string(e));
 		return (e);
+	}
 	if (inode_is_file(inode)) {
 		e = inode_lookup_relative(base, name, GFS_DT_REG, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_lookup_relative() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		if (inode->i_nlink > 0) {
 			e = db_inode_nlink_modify(inode->i_number,
 			    inode->i_nlink);
@@ -1491,14 +1606,24 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		}
 	} else if (inode_is_dir(inode)) {
 		if (inode->i_nlink > 2 ||
-		    !dir_is_empty(inode->u.c.s.d.entries))
+		    !dir_is_empty(inode->u.c.s.d.entries)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"directory is not empty");
 			return (GFARM_ERR_DIRECTORY_NOT_EMPTY);
-		else if (strcmp(name, dot) == 0 || strcmp(name, dotdot) == 0)
+		} else if (strcmp(name, dot) == 0 ||
+			strcmp(name, dotdot) == 0) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"argument 'name' is invalid");
 			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
 		e = inode_lookup_relative(base, name, GFS_DT_DIR, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_lookup_relative() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		e = db_direntry_remove(inode->i_number, dot, DOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000322,
@@ -1514,8 +1639,12 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 	} else if (inode_is_symlink(inode)) {
 		e = inode_lookup_relative(base, name, GFS_DT_LNK, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_lookup_relative() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		assert(inode->i_nlink == 0);
 		e = db_symlink_remove(inode->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -1661,11 +1790,15 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (copy->host == spool_host) {
-			if (copy->valid)
+			if (copy->valid) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"already exists");
 				return (GFARM_ERR_ALREADY_EXISTS);
-			else if (valid == 0)
+			} else if (valid == 0) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"operation is now in progress");
 				return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
-			else { /* valid == 1 */
+			} else { /* valid == 1 */
 				copy->valid = valid;
 				if (update_quota)
 					quota_update_replica_add(inode);
@@ -1679,13 +1812,19 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 		/* check limits of space and number of the replica */
 		e = quota_check_limits(inode_get_user(inode),
 			       inode_get_group(inode), 0, 1);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"checking of limits of the replica failed");
 			return (e);
+		}
 	}
 
 	GFARM_MALLOC(copy);
-	if (copy == NULL)
+	if (copy == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'copy' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	if (update_quota && valid)
 		quota_update_replica_add(inode);
@@ -1707,9 +1846,12 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 	gfarm_error_t e = inode_add_replica_internal(
 		inode, spool_host, valid, 1);
 
-	if (e != GFARM_ERR_NO_ERROR || !valid)
+	if (e != GFARM_ERR_NO_ERROR || !valid) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_add_replica_internal() failed: %s",
+			gfarm_error_string(e));
 		return (e);
-
+	}
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000327,
@@ -1763,8 +1905,11 @@ inode_remove_replica(struct inode *inode, struct host *spool_host,
 		if (copy->valid)
 			++num_replica;
 	}
-	if (copy == NULL)
+	if (copy == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"replica to remove not found");
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
 
 	e = remove_replica_internal(inode, copy);
 	free(copy);
@@ -1825,8 +1970,11 @@ inode_open(struct file_opening *fo)
 
 	if (ios == NULL) {
 		ios = inode_open_state_alloc();
-		if (ios == NULL)
+		if (ios == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_open_state_alloc() failed");
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		inode->u.c.state = ios;
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
@@ -1923,12 +2071,19 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	for (; inode != root; inode = parent) {
 		e = inode_lookup_relative(inode, dotdot, GFS_DT_DIR,
 		    INODE_LOOKUP, user, 0, NULL, &parent, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_lookup_relative() failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 		e = inode_access(parent, user, GFS_R_OK|GFS_X_OK);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"inode_access() failed: %s",
+				gfarm_error_string(e));
 			return (e);
-
+		}
 		/* search the inode in the parent directory. */
 		/* XXX this is slow. should we create a reverse index? */
 		dir = inode_get_dir(parent);
@@ -1953,6 +2108,9 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
 			for (i = 0; i < depth; i++)
 				free(names[i]);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"allocation of string failed or directory "
+				"too deep");
 			return (GFARM_ERR_NO_MEMORY); /* directory too deep */
 		}
 		names[depth++] = s;
@@ -1971,6 +2129,8 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	}
 	if (s == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of string failed");
 	} else if (depth == 0) {
 		strcpy(s, "/");
 		*namep = s;
@@ -1996,8 +2156,11 @@ inode_writing_spool_host(struct inode *inode)
 	struct inode_open_state *ios = inode->u.c.state;
 	struct file_opening *fo;
 
-	if (!inode_is_file(inode))
+	if (!inode_is_file(inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"not a file");
 		return (NULL); /* not a file */
+	}
 	if (ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 		for (; fo != &ios->openings; fo = fo->opening_next) {
@@ -2124,15 +2287,23 @@ inode_replica_list_by_name(struct inode *inode,
 	int n, i;
 	char **hosts;
 
-	if (inode_is_dir(inode))
+	if (inode_is_dir(inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode is a directory");
 		return (GFARM_ERR_IS_A_DIRECTORY);
-	else if (!inode_is_file(inode))
+	} else if (!inode_is_file(inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"node is not a file");
 		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 
 	n = inode_get_ncopy(inode);
 	GFARM_MALLOC_ARRAY(hosts, n);
-	if (hosts == NULL)
+	if (hosts == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'hosts' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
@@ -2140,6 +2311,8 @@ inode_replica_list_by_name(struct inode *inode,
 		if (copy->valid && host_is_up(copy->host)) {
 			hosts[i] = strdup(host_name(copy->host));
 			if (hosts[i] == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"hosts[%d] is null", i);
 				e = GFARM_ERR_NO_MEMORY;
 				break;
 			}
@@ -2147,6 +2320,9 @@ inode_replica_list_by_name(struct inode *inode,
 		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred during process: %s",
+			gfarm_error_string(e));
 		while (--i >= 0)
 			free(hosts[i]);
 		free(hosts);
@@ -2275,6 +2451,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 		assert(0);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"inode_alloc_num() failed");
 		if (e != GFARM_ERR_UNKNOWN) {
 			gflog_error(GFARM_MSG_1000336,
 			    "inode %" GFARM_PRId64 ": %s", st->st_ino,
@@ -2364,7 +2542,7 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 		gflog_error(GFARM_MSG_1000345,
 		    "file_copy_add_one: no host %s", hostname);
 	} else if ((e = inode_add_replica_internal(inode, host, 1, 0)) !=
-	    GFARM_ERR_NO_ERROR){
+	    GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000346,
 		    "file_copy_add_one: add_replica: %s",
 		    gfarm_error_string(e));
@@ -2572,8 +2750,11 @@ xattr_entry_alloc(const char *attrname)
 	struct xattr_entry *entry;
 
 	GFARM_CALLOC_ARRAY(entry, 1);
-	if (entry == NULL)
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'xattr_entry' failed");
 		return NULL;
+	}
 	if ((entry->name = strdup(attrname)) == NULL) {
 		free(entry);
 		return NULL;
@@ -2596,8 +2777,11 @@ xattr_add(struct xattrs *xattrs, const char *attrname)
 	struct xattr_entry *entry, *tail;
 
 	entry = xattr_entry_alloc(attrname);
-	if (entry == NULL)
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'xattr_entry' failure");
 		return NULL;
+	}
 
 	if (xattrs->head == NULL) {
 		xattrs->head = xattrs->tail = entry;
@@ -2672,13 +2856,17 @@ inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname)
 	gfarm_error_t e;
 	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 
-	if (xattr_find(xattrs, attrname) != NULL)
+	if (xattr_find(xattrs, attrname) != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr of inode already exists: %s", attrname);
 		e = GFARM_ERR_ALREADY_EXISTS;
-	else if (xattr_add(xattrs, attrname) != NULL) {
+	} else if (xattr_add(xattrs, attrname) != NULL) {
 		e = GFARM_ERR_NO_ERROR;
-	} else
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr_add() failed : %s", attrname);
 		e = GFARM_ERR_NO_MEMORY;
-
+	}
 	return e;
 }
 
@@ -2723,8 +2911,11 @@ inode_xattr_remove(struct inode *inode, int xmlMode, const char *attrname)
 			next->prev = prev;
 		xattr_entry_free(entry);
 		return GFARM_ERR_NO_ERROR;
-	} else
+	} else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr of inode does not exist");
 		return GFARM_ERR_NO_SUCH_OBJECT;
+	}
 }
 
 gfarm_error_t
@@ -2745,8 +2936,11 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	}
 	if (size == 0)
 		return GFARM_ERR_NO_ERROR;
-	if (GFARM_MALLOC_ARRAY(names, size) == NULL)
+	if (GFARM_MALLOC_ARRAY(names, size) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'names' failed");
 		return GFARM_ERR_NO_MEMORY;
+	}
 
 	entry = xattrs->head;
 	p = names;
@@ -2795,8 +2989,12 @@ dir_dump(gfarm_ino_t i_number)
 	for (;;) {
 		if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
 		    &name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
-		    name == NULL)
+		    name == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"dir_cursor_get_name_and_inode() failed: %s",
+				gfarm_error_string(e));
 			break;
+		}
 		gflog_info(GFARM_MSG_1000374,
 		    "entry %s (len=%d) inum %" GFARM_PRId64,
 		    name, (int)strlen(name), inode_get_number(entry_inode));

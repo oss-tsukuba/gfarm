@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h> /* gfarm_host_is_in_domain() */
 
 #include "gfnetdb.h"
@@ -40,8 +41,12 @@ gfarm_hostspec_any_new(struct gfarm_hostspec **hostspecpp)
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union));
 
-	if (hsp == NULL)
+	if (hsp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_hostspec' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	hsp->type = GFHS_ANY;
 	*hostspecpp = hsp;
 	return (GFARM_ERR_NO_ERROR);
@@ -54,8 +59,12 @@ gfarm_hostspec_name_new(char *name, struct gfarm_hostspec **hostspecpp)
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + strlen(name) + 1);
 
-	if (hsp == NULL)
+	if (hsp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_hostspec' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	hsp->type = GFHS_NAME;
 	strcpy(hsp->u.name, name);
 	*hostspecpp = hsp;
@@ -70,8 +79,12 @@ gfarm_hostspec_af_inet4_new(gfarm_uint32_t addr, gfarm_uint32_t mask,
 	struct gfarm_hostspec *hsp = malloc(sizeof(struct gfarm_hostspec)
 	    - sizeof(union gfhs_union) + sizeof(struct gfhs_in4_addr));
 
-	if (hsp == NULL)
+	if (hsp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_hostspec' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	hsp->type = GFHS_AF_INET4;
 	hsp->u.in4_addr.addr.s_addr = addr;
 	hsp->u.in4_addr.mask.s_addr = mask;
@@ -139,6 +152,9 @@ gfarm_string_to_in4addr(char *s, char **endptr, struct in_addr *addrp)
 bad:
 	if (endptr != NULL)
 		*endptr = ep;
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"conversion from string to in4addr failed: %s",
+		gfarm_error_string(e));
 	return (e);
 }
 
@@ -174,8 +190,11 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 			if (isdigit(((unsigned char *)end1p)[1]) &&
 			    (masklen = strtoul(end1p + 1, &end2p, 10),
 			     *end2p == '\0')) {
-				if (masklen > AF_INET4_BIT)
+				if (masklen > AF_INET4_BIT) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"Netmask is too big");
 					return (GFARM_ERRMSG_TOO_BIG_NETMASK);
+				}
 				if (masklen == 0) {
 					mask.s_addr = INADDR_ANY;
 				} else {
@@ -195,20 +214,32 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 			}
 		}
 		if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) &&
-		    *end1p != '.')
+		    *end1p != '.') {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"Invalid char in IP");
 			return (GFARM_ERRMSG_INVALID_CHAR_IN_IP);
+		}
 	}
-	if (*name == '\0')
+	if (*name == '\0') {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Host name or IP expected");
 		return (GFARM_ERRMSG_HOSTNAME_OR_IP_EXPECTED);
-	if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) && *end1p != '.')
+	}
+	if (!IS_DNS_LABEL_CHAR(*(unsigned char *)end1p) && *end1p != '.') {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Invalid char in host name");
 		return (GFARM_ERRMSG_INVALID_CHAR_IN_HOSTNAME);
+	}
 
 	/*
 	 * We don't allow all capital domain name.
 	 * Such names are reserved for keywords like "*", "LISTENER".
 	 */
-	if (gfarm_is_string_upper_case(name))
+	if (gfarm_is_string_upper_case(name)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"capital name is not permitted(%s)", name);
 		return (GFARM_ERRMSG_UNKNOWN_KEYWORD);
+	}
 
 	return (gfarm_hostspec_name_new(name, hostspecpp));
 }
@@ -270,13 +301,23 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 	char *s, name[NI_MAXHOST];
 
 	if (gfarm_getnameinfo(addr, sizeof(*addr), name, sizeof(name),
-	    NULL, 0, NI_NAMEREQD) != 0)
+	    NULL, 0, NI_NAMEREQD) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Cannot get name info from IP address: %s",
+			gfarm_error_string(
+		GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME));
 		return(GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME);
+	}
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = addr->sa_family;
-	if (gfarm_getaddrinfo(name, NULL, &hints, &res0) != 0)
+	if (gfarm_getaddrinfo(name, NULL, &hints, &res0) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_getaddrinfo() failed: %s",
+			gfarm_error_string(
+			GFARM_ERRMSG_REVERSE_LOOKUP_NAME_IS_NOT_RESOLVABLE));
 		return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_IS_NOT_RESOLVABLE);
+	}
 	for (res = res0; res; res = res->ai_next) {
 		if (res->ai_family != addr->sa_family)
 			continue;
@@ -287,8 +328,14 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 			if (sin1->sin_addr.s_addr == sin2->sin_addr.s_addr) {
 				s = strdup(name);
 				gfarm_freeaddrinfo(res0);
-				if (s == NULL)
+				if (s == NULL) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"allocation of string failed:"
+						" %s",
+						gfarm_error_string(
+						GFARM_ERR_NO_MEMORY));
 					return (GFARM_ERR_NO_MEMORY);
+				}
 				*namep = s;
 				return (GFARM_ERR_NO_ERROR); /* success */
 			}

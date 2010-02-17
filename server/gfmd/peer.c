@@ -295,20 +295,31 @@ peer_alloc(int fd, struct peer **peerp)
 	struct peer *peer;
 	int sockopt;
 
-	if (fd < 0)
+	if (fd < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"invalid argument 'fd'");
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	if (fd >= peer_table_size)
+	}
+	if (fd >= peer_table_size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"too many open files: fd >= peer_table_size");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
+	}
 	peer_table_lock();
 	peer = &peer_table[fd];
 	if (peer->conn != NULL) { /* must be an implementation error */
 		peer_table_unlock();
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor: conn is NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 
 	/* XXX FIXME gfp_xdr requires too much memory */
 	e = gfp_xdr_new_socket(fd, &peer->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfp_xdr_new_socket() failed: %s",
+			gfarm_error_string(e));
 		peer_table_unlock();
 		return (e);
 	}
@@ -553,14 +564,23 @@ peer_get_fd(struct peer *peer)
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
-	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST)
+	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	if (peer->host != NULL) /* already set */
+	}
+	if (peer->host != NULL) { /* already set */
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer host is already set");
 		return (GFARM_ERR_NO_ERROR);
+	}
 
 	peer->host = host_lookup(hostname);
-	if (peer->host == NULL)
+	if (peer->host == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"host does not exist");
 		return (GFARM_ERR_UNKNOWN_HOST);
+	}
 
 	if (peer->hostname != NULL) {
 		free(peer->hostname);
@@ -704,8 +724,11 @@ peer_fdpair_clear(struct peer *peer)
 gfarm_error_t
 peer_fdpair_externalize_current(struct peer *peer)
 {
-	if (peer->fd_current == -1)
+	if (peer->fd_current == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	peer->flags |= PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
 	if (peer->fd_current == peer->fd_saved)
 		peer->flags |= PEER_FLAGS_FD_SAVED_EXTERNALIZED;
@@ -715,8 +738,11 @@ peer_fdpair_externalize_current(struct peer *peer)
 gfarm_error_t
 peer_fdpair_close_current(struct peer *peer)
 {
-	if (peer->fd_current == -1)
+	if (peer->fd_current == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	if (peer->fd_current == peer->fd_saved) {
 		peer->flags &= ~PEER_FLAGS_FD_SAVED_EXTERNALIZED;
 		peer->fd_saved = -1;
@@ -746,8 +772,11 @@ peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 gfarm_error_t
 peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_current == -1)
+	if (peer->fd_current == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	*fdp = peer->fd_current;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -755,8 +784,11 @@ peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 gfarm_error_t
 peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_saved == -1)
+	if (peer->fd_saved == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 	*fdp = peer->fd_saved;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -769,8 +801,11 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 gfarm_error_t
 peer_fdpair_save(struct peer *peer)
 {
-	if (peer->fd_current == -1)
+	if (peer->fd_current == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 
 	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
@@ -792,8 +827,11 @@ peer_fdpair_save(struct peer *peer)
 gfarm_error_t
 peer_fdpair_restore(struct peer *peer)
 {
-	if (peer->fd_saved == -1)
+	if (peer->fd_saved == -1) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
 
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&

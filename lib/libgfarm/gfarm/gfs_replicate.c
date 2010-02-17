@@ -137,8 +137,13 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 
 	for (;;) {
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    dsthost, dstport, &gfs_server, NULL))!= GFARM_ERR_NO_ERROR)
+		    dsthost, dstport, &gfs_server, NULL))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"acquirement of client connection failed: %s",
+				gfarm_error_string(e));
 			return (e);
+		}
 
 		if (gfs_client_pid(gfs_server) == 0)
 			e = gfarm_client_process_set(gfs_server, gfm_server);
@@ -166,8 +171,13 @@ gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
 	GFS_File gf;
 
 	e = gfs_pio_open(file, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_open(%s) failed: %s",
+			file,
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	e = gfarm_schedule_file(gf, &srchost, &srcport);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -186,6 +196,12 @@ gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
 	}
 	e2 = gfs_pio_close(gf);
 
+	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred in gfs_replicate_to_internal(): %s",
+			gfarm_error_string(e != GFARM_ERR_NO_ERROR ? e : e2));
+	}
+
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
@@ -201,6 +217,12 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 	if (e == GFARM_ERR_NO_ERROR) {
 		e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		    self, port);
+	}
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"error occurred in gfs_replicate_to_local(): %s",
+			gfarm_error_string(e));
 	}
 
 	return (e);
@@ -230,12 +252,24 @@ gfs_replicate_from_to(char *file, char *srchost, int srcport,
 		return (gfs_replicate_to(file, dsthost, dstport));
 
 	e = gfs_pio_open(file, GFARM_FILE_RDONLY, &gf);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_pio_open(%s) failed: %s",
+			file,
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	e = gfs_replicate_from_to_internal(gf, srchost, srcport,
 		dsthost, dstport);
 	e2 = gfs_pio_close(gf);
+
+	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"replication failed (%s) from (%s:%d) to (%s:%d): %s",
+			file, srchost, srcport, dsthost, dstport,
+			gfarm_error_string(e != GFARM_ERR_NO_ERROR ? e : e2));
+	}
 
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 #else

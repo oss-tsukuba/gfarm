@@ -415,6 +415,8 @@ gfarm_error_domain_alloc(int min, int max,
 	struct gfarm_error_domain *last, *new;
 
 	if (gfarm_error_domain_number >= MAX_ERROR_DOMAINS) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Error domain number exceeds maximum");
 		return (GFARM_ERRMSG_TOO_MANY_ERROR_DOMAIN);
 	}
 	if (gfarm_error_domain_number == 0) {
@@ -428,8 +430,12 @@ gfarm_error_domain_alloc(int min, int max,
 	new->min = min;
 	new->number = max - min + 1;
 	GFARM_MALLOC_ARRAY(new->errors, new->number);
-	if (new->errors == NULL)
+	if (new->errors == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_error_domain->errors' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	new->code_to_message = c_to_m;
 	new->code_to_message_cookie = cookie;
 	for (i = 0; i < new->number; i++)
@@ -444,8 +450,14 @@ gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
 	int error_code, gfarm_error_t error)
 {
 	if (error_code < domain->min ||
-	    error_code >= domain->min + domain->number)
+	    error_code >= domain->min + domain->number) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Error code (%d) is out of domain range: %s",
+			error_code,
+			gfarm_error_string(
+				GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN));
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+	}
 	domain->errors[error_code - domain->min] = error;
 	return (GFARM_ERR_NO_ERROR);
 }

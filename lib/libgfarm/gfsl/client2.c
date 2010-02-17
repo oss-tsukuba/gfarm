@@ -35,8 +35,10 @@ ParseArgs(argc, argv)
 	    hostname = optarg;
 	    break;
 	default:
-	    if (HandleCommonOptions(c, optarg) != 0)
+	    if (HandleCommonOptions(c, optarg) != 0) {
+		fprintf(stderr, "HandleCommonOptions(%s) failed.\n", optarg);
 		return -1;
+	    }
 	    break;
 	}
     }
@@ -82,12 +84,14 @@ main(argc, argv)
     }
 
     if (ParseArgs(argc, argv) != 0) {
+	fprintf(stderr, "parsing of argument failed.\n");
 	goto Done;
     }
 
     if (!acceptorSpecified) {
 	if (gfarmGssImportNameOfHost(&acceptorName, hostname,
 				     &majStat, &minStat) < 0) {
+	    fprintf(stderr, "gfarmGssImportNameOfHost() failed.\n");
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    goto Done;

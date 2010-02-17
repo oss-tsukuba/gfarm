@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h> /* gfarm_off_t */
 
@@ -288,8 +289,11 @@ dir_alloc(void)
 	Dir dir;
 
 	GFARM_MALLOC(dir);
-	if (dir == NULL)
+	if (dir == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'Dir' failed");
 		return (NULL);
+	}
 	RB_INIT(dir);
 	return (dir);
 }
@@ -330,12 +334,17 @@ dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 	DirEntry prev;
 
 	GFARM_MALLOC(entry);
-	if (entry == NULL)
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'DirEntry' failed");
 		return (NULL); /* no memory */
+	}
 	entry->keylen = namelen;
 	GFARM_MALLOC_ARRAY(entry->key, namelen);
 	if (entry->key == NULL) {
 		free(entry);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'DirEntry.key' failed");
 		return (NULL); /* no memory */
 	}
 	memcpy(entry->key, name, namelen);
@@ -510,8 +519,11 @@ dir_cursor_get_name_and_inode(Dir dir, DirCursor *cursorp,
 	}
 	name = dir_entry_get_name(entry, &namelen);
 	GFARM_MALLOC_ARRAY(newname, namelen + 1);
-	if (newname == NULL)
+	if (newname == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of array 'newname' failed");
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	memcpy(newname, name, namelen);
 	newname[namelen] = '\0';
 	*namep = newname;

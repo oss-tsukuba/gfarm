@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <gfarm/gfarm_config.h>
 #include <gfarm/error.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include "liberror.h"
 #include "hostspec.h"
@@ -41,26 +42,50 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 		    memcmp(config, type->name, namelen) != 0)
 			continue;
 		if (configlen == namelen) { /* no value specified */
-			if (!type->boolean)
+			if (!type->boolean) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"Value is not specified (%s)",
+					config);
 				return (GFARM_ERRMSG_VALUE_IS_NOT_SPECIFIED);
+			}
 			value = 1;
 		} else {
-			if (type->boolean)
+			if (type->boolean) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"Value is not allowed for boolean (%s)",
+					config);
 				return (GFARM_ERRMSG_VALUE_IS_NOT_ALLOWED_FOR_BOOLEAN);
-			if (config[namelen + 1] == '\0')
+			}
+			if (config[namelen + 1] == '\0') {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"Value is empty (%s)",
+					config);
 				return (GFARM_ERRMSG_VALUE_IS_EMPTY);
+			}
 			errno = 0;
 			value = strtol(&config[namelen + 1], &ep, 0);
-			if (errno != 0)
+			if (errno != 0) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"strtol(%s) failed.",
+					config);
 				return (gfarm_errno_to_error(errno));
-			if (*ep != '\0')
+			}
+			if (*ep != '\0') {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"Invalid char in value(%s).",
+					config);
 				return (GFARM_ERRMSG_INVALID_CHAR_IN_VALUE);
+			}
 		}
 
 		*type_indexp = i;
 		*valuep = value;
 		return (GFARM_ERR_NO_ERROR);				
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"failed to find object(%s): %s",
+		config,
+		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
@@ -72,8 +97,12 @@ gfarm_param_config_add_long(
 	struct gfarm_param_config *pcp;
 
 	GFARM_MALLOC(pcp);
-	if (pcp == NULL)
+	if (pcp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfarm_param_config' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
+	}
 	pcp->next = NULL;
 	pcp->param_type_index = param_type_index;
 	pcp->value = value;
@@ -105,6 +134,12 @@ gfarm_param_apply_long_by_name_addr(struct gfarm_param_config *list,
 				e_save = e;
 		}
 	}
+	if (e_save != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Error occurred during process(%s): %s",
+			name,
+			gfarm_error_string(e_save));
+	}
 	return (e_save);
 }
 
@@ -124,6 +159,11 @@ gfarm_param_apply_long(struct gfarm_param_config *list,
 		if (e != GFARM_ERR_NO_ERROR && e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
+	if (e_save != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Error occurred during process(): %s",
+			gfarm_error_string(e_save));
+	}
 	return (e_save);
 }
 
@@ -140,6 +180,10 @@ gfarm_param_get_long_by_name_addr(struct gfarm_param_config *list,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"failed to find long param (%d) by name addr (%s): %s",
+		param_type_index, name,
+		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
@@ -153,6 +197,10 @@ gfarm_param_get_long(struct gfarm_param_config *list,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"failed to find long param (%d): %s",
+		param_type_index,
+		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
@@ -254,13 +302,28 @@ gfarm_netparam_config_add_long(char *config, struct gfarm_hostspec *hsp)
 	e = gfarm_param_config_parse_long(
 	    NNETPARAMS, gfarm_netparam_type_table,
 	    config, &param_type_index, &value);
-	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Unknown parameter(%s).",
+			config);
 		return (GFARM_ERRMSG_UNKNOWN_PARAMETER);
-	if (e != GFARM_ERR_NO_ERROR)
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_param_config_parse_long(%s) failed: %s",
+			config,
+			gfarm_error_string(e));
 		return (e);
+	}
 	info = gfarm_netparam_type_table[param_type_index].extension;
-	if (value < info->minimum || value > info->maximum)
+	if (value < info->minimum || value > info->maximum) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Argument out of domain (%ld): %s",
+			value,
+			gfarm_error_string(
+				GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN));
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+	}
 	return (gfarm_param_config_add_long(&info->last, 0, value, hsp));
 }
 
@@ -277,6 +340,10 @@ gfarm_netparam_config_get_long(struct gfarm_netparam_info *info,
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		*valuep = info->default_value;
 	} else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_param_get_long_by_name_addr(%s) failed: %s",
+			name,
+			gfarm_error_string(e));
 		return (e);
 	} else {
 		*valuep = value;
