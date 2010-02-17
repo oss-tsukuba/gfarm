@@ -128,6 +128,54 @@ static char dotdot[] = "..";
 #define DOT_LEN		(sizeof(dot) - 1)
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
 
+void
+inode_for_each_file_copies(
+	struct inode *inode,
+	void (*func)(struct inode *inode, struct file_copy *copy,
+		void *closure),
+	void *closure)
+{
+	struct file_copy *copy;
+
+	assert(inode_is_file(inode));
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		(*func)(inode, copy, closure);
+	}
+}
+
+void
+inode_for_each_file_opening(
+	struct inode *inode,
+	void (*func)(int openflag, struct host *spool_host, void *closure),
+	void *closure)
+{
+	struct file_opening *fo;
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(inode_is_file(inode));
+	if (ios == NULL)
+		return;
+
+	for (fo = ios->openings.opening_next;
+	     fo != &ios->openings;
+	     fo = fo->opening_next) {
+		(*func)(fo->flag, fo->u.f.spool_host, closure);
+	}
+}
+
+struct host *
+file_copy_host(struct file_copy *file_copy)
+{
+	return (file_copy->host);
+}
+
+int
+file_copy_valid(struct file_copy *file_copy)
+{
+	return (file_copy->valid);
+}
+
 gfarm_uint64_t
 inode_total_num(void)
 {

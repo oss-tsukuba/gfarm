@@ -13,6 +13,19 @@ struct host;
 struct user;
 struct group;
 struct process;
+struct file_copy;
+
+void inode_for_each_file_copies(
+	struct inode *,
+	void (*)(struct inode *, struct file_copy *, void *),
+	void *);
+void inode_for_each_file_opening(
+	struct inode *,
+	void (*)(int, struct host *, void *),
+	void *);
+
+struct host *file_copy_host(struct file_copy *);
+int file_copy_valid(struct file_copy *);
 
 int inode_is_dir(struct inode *);
 int inode_is_file(struct inode *);
