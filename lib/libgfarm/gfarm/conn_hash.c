@@ -162,9 +162,8 @@ gfp_conn_hash_lookup(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	entry = gfarm_hash_lookup(*hashtabp, &id, sizeof(id));
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"lookup in hashtable (%s)(%d)(%s) failed: %s",
-			hostname, port, username,
-			gfarm_error_string(e));
+			"lookup in hashtable (%s)(%d)(%s) failed",
+			hostname, port, username);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 
