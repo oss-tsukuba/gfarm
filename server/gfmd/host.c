@@ -394,7 +394,7 @@ host_replicating_new(struct host *dst)
 	fr->dst = dst;
 	fr->handle = -1;
 
-	fr->next_inode->prev_inode = &dst->replicating_inodes;
+	fr->prev_inode = &dst->replicating_inodes;
 	fr->next_inode = dst->replicating_inodes.next_inode;
 	dst->replicating_inodes.next_inode = fr;
 	fr->next_inode->prev_inode = fr;
