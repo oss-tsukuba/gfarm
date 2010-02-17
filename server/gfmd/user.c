@@ -51,35 +51,6 @@ grpassign_add_group(struct group_assignment *ga)
 	u->groups.group_prev = ga;
 }
 
-int
-hash_user(const void *key, int keylen)
-{
-	const char *const *usernamep = key;
-	const char *k = *usernamep;
-
-	return (gfarm_hash_default(k, strlen(k)));
-}
-
-int
-hash_key_equal_user(
-	const void *key1, int key1len,
-	const void *key2, int key2len)
-{
-	const char *const *u1 = key1, *const *u2 = key2;
-	const char *k1 = *u1, *k2 = *u2;
-	int l1, l2;
-
-	/* short-cut on most case */
-	if (*k1 != *k2)
-		return (0);
-	l1 = strlen(k1);
-	l2 = strlen(k2);
-	if (l1 != l2)
-		return (0);
-
-	return (gfarm_hash_key_equal_default(k1, l1, k2, l2));
-}
-
 static void
 user_invalidate(struct user *u)
 {
@@ -362,10 +333,10 @@ user_init(void)
 
 	user_hashtab =
 	    gfarm_hash_table_alloc(USER_HASHTAB_SIZE,
-		hash_user, hash_key_equal_user);
+		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	user_dn_hashtab =
 	    gfarm_hash_table_alloc(USER_DN_HASHTAB_SIZE,
-		hash_user, hash_key_equal_user);
+		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (user_hashtab == NULL || user_dn_hashtab == NULL)
 		gflog_fatal(GFARM_MSG_1000236, "no memory for user hashtab");
 

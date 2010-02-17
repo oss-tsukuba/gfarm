@@ -80,35 +80,6 @@ static struct gfarm_hash_table *hostalias_hashtab = NULL;
 	    !gfarm_hash_iterator_is_end(it); \
 	     gfarm_hash_iterator_next(it))
 
-int
-hash_host(const void *key, int keylen)
-{
-	const char *const *hostnamep = key;
-	const char *k = *hostnamep;
-
-	return (gfarm_hash_casefold(k, strlen(k)));
-}
-
-int
-hash_key_equal_host(
-	const void *key1, int key1len,
-	const void *key2, int key2len)
-{
-	const char *const *u1 = key1, *const *u2 = key2;
-	const char *k1 = *u1, *k2 = *u2;
-	int l1, l2;
-
-	/* short-cut on most case */
-	if (*k1 != *k2)
-		return (0);
-	l1 = strlen(k1);
-	l2 = strlen(k2);
-	if (l1 != l2)
-		return (0);
-
-	return (gfarm_hash_key_equal_casefold(k1, l1, k2, l2));
-}
-
 struct host *
 host_hashtab_lookup(struct gfarm_hash_table *hashtab, const char *hostname)
 {
@@ -792,12 +763,14 @@ host_init(void)
 
 	host_hashtab =
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
-		hash_host, hash_key_equal_host);
+		gfarm_hash_casefold_strptr,
+		gfarm_hash_key_equal_casefold_strptr);
 	if (host_hashtab == NULL)
 		gflog_fatal(GFARM_MSG_1000267, "no memory for host hashtab");
 	hostalias_hashtab =
 	    gfarm_hash_table_alloc(HOST_HASHTAB_SIZE,
-		hash_host, hash_key_equal_host);
+		gfarm_hash_casefold_strptr,
+		gfarm_hash_key_equal_casefold_strptr);
 	if (hostalias_hashtab == NULL) {
 		gfarm_hash_table_free(host_hashtab);
 		gflog_fatal(GFARM_MSG_1000268,

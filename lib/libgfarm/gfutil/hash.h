@@ -5,6 +5,14 @@ int gfarm_hash_key_equal_default(const void *, int, const void *, int);
 int gfarm_hash_casefold(const void *, int);
 int gfarm_hash_key_equal_casefold(const void *, int, const void *, int);
 
+/* for pointer to null-terminated string.  NOTE: not (char *), but (char **) */
+int gfarm_hash_strptr(const void *, int);
+int gfarm_hash_key_equal_strptr(const void *, int, const void *, int);
+
+/* for pointer to null-terminated string. (casefold)  NOTE: (char **) */
+int gfarm_hash_casefold_strptr(const void *, int);
+int gfarm_hash_key_equal_casefold_strptr(const void *, int, const void *, int);
+
 struct gfarm_hash_table;
 struct gfarm_hash_entry;
 

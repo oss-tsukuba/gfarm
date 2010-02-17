@@ -73,35 +73,6 @@ grpassign_remove(struct group_assignment *ga)
 	free(ga);
 }
 
-int
-hash_group(const void *key, int keylen)
-{
-	const char *const *groupnamep = key;
-	const char *k = *groupnamep;
-
-	return (gfarm_hash_default(k, strlen(k)));
-}
-
-int
-hash_key_equal_group(
-	const void *key1, int key1len,
-	const void *key2, int key2len)
-{
-	const char *const *u1 = key1, *const *u2 = key2;
-	const char *k1 = *u1, *k2 = *u2;
-	int l1, l2;
-
-	/* short-cut on most case */
-	if (*k1 != *k2)
-		return (0);
-	l1 = strlen(k1);
-	l2 = strlen(k2);
-	if (l1 != l2)
-		return (0);
-
-	return (gfarm_hash_key_equal_default(k1, l1, k2, l2));
-}
-
 static void
 group_invalidate(struct group *g)
 {
@@ -377,7 +348,7 @@ group_init(void)
 
 	group_hashtab =
 	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
-		hash_group, hash_key_equal_group);
+		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (group_hashtab == NULL)
 		gflog_fatal(GFARM_MSG_1000247, "no memory for group hashtab");
 
