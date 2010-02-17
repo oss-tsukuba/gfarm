@@ -113,10 +113,10 @@ dir_foreach(
 	}
 	dirp = opendir(dir);
 	if (dirp == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"opendir() failed: %s",
-			gfarm_error_string(e));
-		return (gfarm_errno_to_error(errno));
+		int err = errno;
+		gflog_debug(GFARM_MSG_UNFIXED, "opendir() failed: %s",
+		    strerror(err));
+		return (gfarm_errno_to_error(err));
 	}
 
 	/* if dir is '.', remove it */
