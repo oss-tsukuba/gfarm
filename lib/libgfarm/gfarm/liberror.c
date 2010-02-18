@@ -483,8 +483,15 @@ gfarm_error_string(gfarm_error_t error)
 
 	if (error < 0)
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
-	if (error < GFARM_ERR_NUMBER)
+	if (error < GFARM_ERR_NUMBER) {
+		if (error >= GFARM_ARRAY_LENGTH(errcode_string)) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "gfarm_error_string: missing errcode_string: %d",
+			    error);
+			return (errcode_string[GFARM_ERR_UNKNOWN]);
+		}
 		return (errcode_string[error]);
+	}
 
 	if (error < GFARM_ERRMSG_BEGIN)
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
@@ -502,7 +509,7 @@ gfarm_error_string(gfarm_error_t error)
 			return (errcode_string[domain->map_to_gfarm[error]]);
 		return ((*domain->domerror_to_message)(
 		    domain->domerror_to_message_cookie,
-		    error));
+		    domain->domerror_min + error));
 	}
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
