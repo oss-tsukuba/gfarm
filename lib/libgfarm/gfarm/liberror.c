@@ -396,10 +396,10 @@ static struct gfarm_errno_error_map {
 
 struct gfarm_error_domain {
 	gfarm_error_t offset;
-	int min, number;
-	gfarm_error_t *errors;
-	const char *(*code_to_message)(void *, int);
-	void *code_to_message_cookie;
+	int domerror_min, domerror_number;
+	gfarm_error_t *map_to_gfarm;
+	const char *(*domerror_to_message)(void *, int);
+	void *domerror_to_message_cookie;
 };
 
 #define MAX_ERROR_DOMAINS	10
@@ -408,8 +408,8 @@ static int gfarm_error_domain_number = 0;
 static struct gfarm_error_domain gfarm_error_domains[MAX_ERROR_DOMAINS];
 
 gfarm_error_t
-gfarm_error_domain_alloc(int min, int max,
-	const char *(*c_to_m)(void *, int), void *cookie,
+gfarm_error_domain_alloc(int domerror_min, int domerror_max,
+	const char *(*de_to_m)(void *, int), void *cookie,
 	struct gfarm_error_domain **domainp)
 {
 	int i, next_error;
@@ -424,22 +424,22 @@ gfarm_error_domain_alloc(int min, int max,
 		next_error = GFARM_ERR_FOREIGN_BEGIN;
 	} else {
 		last = &gfarm_error_domains[gfarm_error_domain_number - 1];
-		next_error = last->offset + last->number;
+		next_error = last->offset + last->domerror_number;
 	}
 	new = &gfarm_error_domains[gfarm_error_domain_number];
 	new->offset = next_error;
-	new->min = min;
-	new->number = max - min + 1;
-	GFARM_MALLOC_ARRAY(new->errors, new->number);
-	if (new->errors == NULL) {
+	new->domerror_min = domerror_min;
+	new->domerror_number = domerror_max - domerror_min + 1;
+	GFARM_MALLOC_ARRAY(new->map_to_gfarm, new->domerror_number);
+	if (new->map_to_gfarm == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfarm_error_domain_alloc: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	new->code_to_message = c_to_m;
-	new->code_to_message_cookie = cookie;
-	for (i = 0; i < new->number; i++)
-		new->errors[i] = GFARM_ERR_UNKNOWN;
+	new->domerror_to_message = de_to_m;
+	new->domerror_to_message_cookie = cookie;
+	for (i = 0; i < new->domerror_number; i++)
+		new->map_to_gfarm[i] = GFARM_ERR_UNKNOWN;
 	*domainp = new;
 	gfarm_error_domain_number++;
 	return (GFARM_ERR_NO_ERROR);
@@ -447,31 +447,32 @@ gfarm_error_domain_alloc(int min, int max,
 
 gfarm_error_t
 gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
-	int error_code, gfarm_error_t error)
+	int domerror, gfarm_error_t error)
 {
-	if (error_code < domain->min ||
-	    error_code >= domain->min + domain->number) {
+	if (domerror < domain->domerror_min ||
+	    domerror >= domain->domerror_min + domain->domerror_number) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfarm_error_domain_add_map: "
 		    "error code %d is out of [%d, %d]",
-		    error_code, domain->min, domain->min + domain->number - 1);
+		    domerror, domain->domerror_min,
+		    domain->domerror_min + domain->domerror_number - 1);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
 	}
-	domain->errors[error_code - domain->min] = error;
+	domain->map_to_gfarm[domerror - domain->domerror_min] = error;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfarm_error_domain_map(struct gfarm_error_domain *domain,
-	int error_code)
+	int domerror)
 {
-	if (error_code < domain->min ||
-	    error_code >= domain->min + domain->number)
+	if (domerror < domain->domerror_min ||
+	    domerror >= domain->domerror_min + domain->domerror_number)
 		return (GFARM_ERR_UNKNOWN);
-	error_code -= domain->min;
-	if (domain->errors[error_code] != GFARM_ERR_UNKNOWN)
-		return (domain->errors[error_code]);
-	return (domain->offset + error_code);
+	domerror -= domain->domerror_min;
+	if (domain->map_to_gfarm[domerror] != GFARM_ERR_UNKNOWN)
+		return (domain->map_to_gfarm[domerror]);
+	return (domain->offset + domerror);
 }
 
 const char *
@@ -494,13 +495,14 @@ gfarm_error_string(gfarm_error_t error)
 		domain = &gfarm_error_domains[i];
 		if (error < domain->offset)
 			break;
-		if (error >= domain->offset + domain->number)
+		if (error >= domain->offset + domain->domerror_number)
 			continue;
 		error -= domain->offset;
-		if (domain->errors[error] != GFARM_ERR_UNKNOWN)
-			return (errcode_string[domain->errors[error]]);
-		return ((*domain->code_to_message)(
-		    domain->code_to_message_cookie, error));
+		if (domain->map_to_gfarm[error] != GFARM_ERR_UNKNOWN)
+			return (errcode_string[domain->map_to_gfarm[error]]);
+		return ((*domain->domerror_to_message)(
+		    domain->domerror_to_message_cookie,
+		    error));
 	}
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
@@ -516,9 +518,9 @@ gfarm_error_string(gfarm_error_t error)
 static struct gfarm_error_domain *gfarm_errno_domain = NULL;
 
 const char *
-gfarm_errno_to_string(void *cookie, int err)
+gfarm_errno_to_string(void *cookie, int eno)
 {
-	return (strerror(err));
+	return (strerror(eno));
 }
 
 static void
