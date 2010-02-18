@@ -220,7 +220,7 @@ gfs_pio_set_fragment_info_local(char *filename,
 			if (strcasecmp(fi.checksum, digest_value_string) != 0)
 				e = "check sum mismatch";
 			if (e != NULL)
-				gflog_debug(GFARM_MSG_UNFIXED, e);
+				gflog_debug(GFARM_MSG_UNFIXED, "%s", e);
 		}
 		gfarm_file_section_info_free(&fi);
 	} else {
