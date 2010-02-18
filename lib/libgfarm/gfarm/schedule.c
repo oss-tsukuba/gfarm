@@ -362,8 +362,7 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	GFARM_MALLOC(net);
 	if (net == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of search_idle_network failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "search_idle_network_list_init: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	net->rtt_usec = 0; /* i.e. local network */
@@ -470,8 +469,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 	GFARM_MALLOC(net); 
 	if (net == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"Cannot alloc search_idle_network: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "search_idle_network_list_add: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	net->min = min;
@@ -498,8 +496,8 @@ search_idle_host_state_initialize(struct gfm_connection *gfm_server)
 	    HOSTS_HASHTAB_SIZE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfp_conn_hash_table_init() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle_host_state_initialize: hash_table_init: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -527,9 +525,9 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 		e = search_idle_host_state_initialize(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"search_idle_host_state_initialize() failed: "
-				"%s",
-				gfarm_error_string(e));
+			    "search_idle_host_state_add_host_sched_info: "
+			    "search_idle_host_state_initialize: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -539,8 +537,9 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 	    &entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfp_conn_hash_enter() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle_host_state_add_host_sched_info: "
+		    "gfp_conn_hash_enter: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -567,10 +566,9 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			if (!is_expired(&h->addr_cache_time,
 				ADDR_EXPIRATION)) {
 				gflog_debug(GFARM_MSG_UNFIXED,
-					"Unknown host (%s): %s",
-					hostname,
-					gfarm_error_string(
-						GFARM_ERR_UNKNOWN_HOST));
+				    "search_idle_host_state_"
+				    "add_host_sched_info: %s: unknown host",
+				    hostname);
 				return (GFARM_ERR_UNKNOWN_HOST);
 			}
 		} else { /* cope with address change */
@@ -584,17 +582,19 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 		gettimeofday(&h->addr_cache_time, NULL);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"gfm_host_address_get(%s) failed: %s",
-				hostname,
-				gfarm_error_string(e));
+			    "search_idle_host_state_add_host_sched_info: "
+			    "gfm_host_address_get(%s): %s",
+			    hostname, gfarm_error_string(e));
 			return (e);
 		}
 		h->flags |= HOST_STATE_FLAG_ADDR_AVAIL;
 		e = search_idle_network_list_add(&h->addr, &h->net);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"search_idle_network_list() failed: %s",
-				gfarm_error_string(e));
+			    "search_idle_host_state_add_host_sched_info: "
+			    "search_idle_network_list_add: %s",
+			    gfarm_error_string(e));
+			h->net = NULL;
 			return (e);
 		}
 	} else if (h->net == NULL) {
@@ -602,8 +602,9 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 		e = search_idle_network_list_add(&h->addr, &h->net);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"search_idle_network_list_add() failed: %s",
-				gfarm_error_string(e));
+			    "search_idle_host_state_add_host_sched_info: "
+			    "retrying search_idle_network_list_add: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -630,8 +631,9 @@ gfarm_schedule_host_cache_clear_auth(struct gfs_connection *gfs_server)
 	    &entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfp_conn_hash_lookup() failed: %s",
-			gfarm_error_string(e));
+		    "gfarm_schedule_host_cache_clear_auth: "
+		    "connection is not cached: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -685,9 +687,9 @@ search_idle_candidate_list_reset(struct gfm_connection *gfm_server,
 		gfarm_error_t e = search_idle_host_state_initialize(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"search_idle_host_state_initialize() failed: "
-				"%s",
-				gfarm_error_string(e));
+			    "search_idle_candidate_list_reset: "
+			    "search_idle_host_state_initialize: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -787,9 +789,9 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 		if (e == GFARM_ERR_UNKNOWN_HOST) /* just ignore this host */
 			return (GFARM_ERR_NO_ERROR);
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"search_idle_host_state_add_host_sched_info() failed"
-			": %s",
-			gfarm_error_string(e));
+		    "search_idle_candidate_list_add: "
+		    "search_idle_host_state_add_host_sched_info: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 	if ((h->flags & HOST_STATE_FLAG_SCHEDULING) != 0) {
@@ -902,15 +904,14 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	if (s->enough_number == 0 || s->desired_number == 0 ||
 	    search_idle_candidate_list == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"No filesystem node");
+		    "search_idle_init_state: no answer is requested");
 		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
 	}
 
 	s->q = gfarm_eventqueue_alloc();
 	if (s->q == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of event queue failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "search_idle_init_state: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	s->available_hosts_number = s->usable_hosts_number =
@@ -1035,8 +1036,9 @@ search_idle_statfs_callback(void *closure)
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfs_client_statfs_result_multiplexed() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle_statfs_callback: "
+		    "gfs_client_statfs_result_multiplexed: %s",
+		    gfarm_error_string(e));
 	}
 	gfs_client_connection_free(c->gfs_server);
 	c->state->concurrency--;
@@ -1081,16 +1083,17 @@ search_idle_connect_callback(void *closure)
 			/* failed to request */
 			gfs_client_connection_free(c->gfs_server);
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"gfs_client_statfs_request_multiplexed() "
-				"failed: %s",
-				gfarm_error_string(e));
+			    "search_idle_connect_callback: "
+			    "gfs_client_statfs_request_multiplexed: %s",
+			    gfarm_error_string(e));
 #if 0 /* We always see disk free space */
 		}
 #endif
 	} else {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfs_client_connect_result_multiplexed() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle_connect_callback: "
+		    "gfs_client_connect_result_multiplexed: %s",
+		    gfarm_error_string(e));
 	}
 	c->state->concurrency--;
 	c->state->concurrency--;
@@ -1143,14 +1146,15 @@ search_idle_load_callback(void *closure)
 			}
 			/* failed to connect */
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"gfs_client_connect_request_multiplexed() "
-				"failed: %s",
-				gfarm_error_string(e));
+			    "search_idle_load_callback: "
+			    "gfs_client_connect_request_multiplexed: %s",
+			    gfarm_error_string(e));
 		}
 	} else {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfs_client_get_load_result_multiplexed(): %s",
-			gfarm_error_string(e));
+		    "search_idle_load_callback: "
+		    "gfs_client_get_load_result_multiplexed: %s",
+		    gfarm_error_string(e));
 	}
 	c->state->concurrency--;
 	c->h->net->ongoing--;
@@ -1283,8 +1287,8 @@ search_idle_try_host(struct search_idle_state *s,
 		/* XXX - how to report this error? */
 		if (rv != 0 && rv != EAGAIN && rv != EINTR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"gfarm_eventqueue_turn() failed: %s",
-				gfarm_error_string(gfarm_errno_to_error(rv)));
+			    "search_idle_try_host: gfarm_eventqueue_turn: %s",
+			    strerror(rv));
 			return (gfarm_errno_to_error(rv));
 		}
 	}
@@ -1292,8 +1296,7 @@ search_idle_try_host(struct search_idle_state *s,
 	GFARM_MALLOC(c);
 	if (c == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of search_idle_callback_closure failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "search_idle_try_host: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	c->state = s;
@@ -1307,6 +1310,10 @@ search_idle_try_host(struct search_idle_state *s,
 	    search_idle_load_callback, c,
 	    &gls);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "search_idle_try_host: "
+		    "gfs_client_get_load_request_multiplexed: %s",
+		    gfarm_error_string(e));
 		free(c);
 		return (GFARM_ERR_NO_ERROR); /* We won't report the error */
 	}
@@ -1439,8 +1446,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 	GFARM_MALLOC_ARRAY(netarray, nnets);
 	if (netarray == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of 'netarray' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "search_idle_by_rtt_order: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	i = 0;
@@ -1490,8 +1496,8 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 	    write_mode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"search_idle_init_state() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle: search_idle_init_state: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -1520,22 +1526,20 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 	gfarm_eventqueue_free(s.q);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"search_idle_by_rtt_order() failed: %s",
-			gfarm_error_string(e));
+		    "search_idle: search_idle_by_rtt_order: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 	if (s.usable_hosts_number == 0) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"No filesystem node");
+		    "search_idle: no filesystem node");
 		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
 	}
 
 	assert(s.available_hosts_number >= s.usable_hosts_number);
 	GFARM_MALLOC_ARRAY(results, s.available_hosts_number);
 	if (results == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of search_idle_host_state failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		gflog_debug(GFARM_MSG_UNFIXED, "search_idle: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -1609,8 +1613,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	 */
 	if (!gfm_client_is_connection_valid(gfm_server)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"Invalid client connection: %s",
-			gfarm_error_string(GFARM_ERR_STALE_FILE_HANDLE));
+		    "gfarm_schedule_select_host: connection cache was purged");
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 
@@ -1618,8 +1621,9 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	e = search_idle_candidate_list_init(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"Cannot init search idle candidate list: %s",
-			gfarm_error_string(e));
+		    "gfarm_schedule_select_host: "
+		    "search_idle_candidate_list_init: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -1627,8 +1631,9 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"Cannot add to search idle candidate list: %s",
-				gfarm_error_string(e));
+			    "gfarm_schedule_select_host: "
+			    "search_idle_candidate_list_add: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -1637,20 +1642,19 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	e = search_idle(&n, &host, &port, write_mode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"Cannot search idle: %s",
-			gfarm_error_string(e));
+		    "gfarm_schedule_select_host: search_idle: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 	if (n == 0) { /* although this shouldn't happen */
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"No filesystem node");
+		    "gfarm_schedule_select_host: no filesystem node");
 		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
 	}
 	host = strdup(host);
 	if (host == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"allocation of 'host' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "gfarm_schedule_select_host: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	gfs_profile(gfarm_gettimerval(&t4));
