@@ -185,29 +185,23 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 	    cred_acquired ? cred : GSS_C_NO_CREDENTIAL);
 
 	e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
-	if (e != GFARM_ERR_NO_ERROR || eof ||
-	    error != GFARM_AUTH_ERROR_NO_ERROR) {
-		gfp_xdr_reset_secsession(conn);
-		gfp_xdr_set_socket(conn, fd);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"receiving response failed: %s",
-				gfarm_error_string(e));
-		else
-			if (eof)
-				gflog_debug(GFARM_MSG_UNFIXED,
-					"Unexpected EOF when "
-					"receiving response: %s",
-					gfarm_error_string(GFARM_ERR_PROTOCOL));
-			else
-				gflog_debug(GFARM_MSG_UNFIXED,
-					"Authentication failed: %s",
-					gfarm_error_string(
-						GFARM_ERR_AUTHENTICATION));
-		return (e != GFARM_ERR_NO_ERROR ? e :
-		    eof ? GFARM_ERR_PROTOCOL : GFARM_ERR_AUTHENTICATION);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "receiving response failed: %s", gfarm_error_string(e));
+	} else if (eof) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Unexpected EOF when receiving response");
+		e = GFARM_ERR_PROTOCOL;
+	} else if (error != GFARM_AUTH_ERROR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Authentication failed: %d", error);
+		e = GFARM_ERR_AUTHENTICATION;
+	} else {
+		return (GFARM_ERR_NO_ERROR);
 	}
-	return (GFARM_ERR_NO_ERROR);
+	gfp_xdr_reset_secsession(conn);
+	gfp_xdr_set_socket(conn, fd);
+	return (e);
 }
 
 /*

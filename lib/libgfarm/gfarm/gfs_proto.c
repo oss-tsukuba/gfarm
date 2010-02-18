@@ -44,7 +44,8 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED, "read() failed: %s",
 			strerror(save_errno));
+		return (save_errno);
 	}
 
-	return (size == -1 ? save_errno : 0);
+	return (0);
 }
