@@ -167,7 +167,7 @@ gfm_client_connection0(const char *hostname, int port,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	int sock;
+	int sock, save_errno;
 	struct addrinfo hints, *res;
 	char sbuf[NI_MAXSERV];
 
@@ -191,10 +191,11 @@ gfm_client_connection0(const char *hostname, int port,
 		    res->ai_protocol);
 	}
 	if (sock == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"creation of socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	fcntl(sock, F_SETFD, 1); /* automatically close() on exec(2) */
 
@@ -216,12 +217,12 @@ gfm_client_connection0(const char *hostname, int port,
 	}
 
 	if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
+		save_errno = errno;
 		close(sock);
 		gfarm_freeaddrinfo(res);
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"connect failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+		gflog_debug(GFARM_MSG_UNFIXED, "connect failed: %s",
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	GFARM_MALLOC(gfm_server);

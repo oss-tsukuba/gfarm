@@ -1122,11 +1122,12 @@ parse_set_misc_int(char *p, int *vp)
 	errno = 0;
 	v = strtol(s, &ep, 10);
 	if (errno != 0) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"conversion to integer failed "
 			"when parsing misc integer (%s): %s",
-			p, gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			p, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	if (ep == s) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1191,11 +1192,12 @@ parse_set_misc_offset(char *p, gfarm_off_t *vp)
 	errno = 0;
 	v = gfarm_strtoi64(s, &ep);
 	if (errno != 0) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"conversion to int64 failed "
 			"when parsing misc offset (%s): %s",
-			p, gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			p, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	if (ep == s) {
 		gflog_debug(GFARM_MSG_UNFIXED,

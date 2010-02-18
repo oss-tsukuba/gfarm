@@ -11,10 +11,13 @@
 int
 gfarm_daemon(int not_chdir, int not_close)
 {
+	int save_errno;
 	switch (fork()) {
 	case -1:
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED, "fork() failed: %s",
-			strerror(errno));
+			strerror(save_errno));
+		errno = save_errno;
 		return (-1);
 	case 0:
 		break;

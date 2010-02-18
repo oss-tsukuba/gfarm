@@ -138,23 +138,25 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 #if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	int rv = pwrite(vc->fd, buffer, offset, size);
 #else
-	int rv;
+	int rv, save_errno;
 
 	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"lseek() on view context file descriptor failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	rv = write(vc->fd, buffer, size);
 #endif
 
 	if (rv == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"write() on view context file descriptor failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
 	return (GFARM_ERR_NO_ERROR);
@@ -168,22 +170,24 @@ gfs_pio_local_storage_pread(GFS_File gf,
 #if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
 	int rv = pread(vc->fd, buffer, offset, size);
 #else
-	int rv;
+	int rv, save_errno;
 
 	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"lseek() on view context file descriptor failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	rv = read(vc->fd, buffer, size);
 #endif
 
 	if (rv == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"read() on view context file descriptor failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	*lengthp = rv;
 	return (GFARM_ERR_NO_ERROR);
@@ -197,11 +201,12 @@ gfs_pio_local_storage_ftruncate(GFS_File gf, gfarm_off_t length)
 
 	rv = ftruncate(vc->fd, length);
 	if (rv == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"ftruncate() on view context file descriptor "
 			"failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -232,11 +237,12 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 	}
 
 	if (rv == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"fsync() or fdatasync() on view context "
 			"file descriptor failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -254,10 +260,11 @@ gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
 		st->st_mtimespec.tv_sec = sb.st_mtime;
 		st->st_mtimespec.tv_nsec = 0; /* XXX */
 	} else {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"fstat() on view context file descriptor failed : %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	return (GFARM_ERR_NO_ERROR);

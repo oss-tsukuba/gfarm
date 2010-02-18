@@ -65,10 +65,11 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 			errno = 0;
 			value = strtol(&config[namelen + 1], &ep, 0);
 			if (errno != 0) {
+				int save_errno = errno;
 				gflog_debug(GFARM_MSG_UNFIXED,
-					"strtol(%s) failed.",
-					config);
-				return (gfarm_errno_to_error(errno));
+					"strtol(%s) failed: %s",
+					config, strerror(save_errno));
+				return (gfarm_errno_to_error(save_errno));
 			}
 			if (*ep != '\0') {
 				gflog_debug(GFARM_MSG_UNFIXED,

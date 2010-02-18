@@ -19,7 +19,7 @@ gfarm_connect_wait(int s, int timeout_seconds)
 {
 	fd_set wset;
 	struct timeval timeout;
-	int rv, error;
+	int rv, error, save_errno;
 	socklen_t error_size;
 
 	FD_ZERO(&wset);
@@ -32,19 +32,19 @@ gfarm_connect_wait(int s, int timeout_seconds)
 	if (rv == 0)
 		return (gfarm_errno_to_error(ETIMEDOUT));
 	if (rv < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"select() failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+		save_errno = errno;
+		gflog_debug(GFARM_MSG_UNFIXED, "select() failed: %s",
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	error_size = sizeof(error);
 	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
 	if (rv == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"getsocket() failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+		save_errno = errno;
+		gflog_debug(GFARM_MSG_UNFIXED, "getsocket() failed: %s",
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	if (error != 0) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -79,7 +79,7 @@ gfarm_bind_source_ip(int sock, const char *source_ip)
 	if (rv == -1) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"bind() failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(save_errno)));
+			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);

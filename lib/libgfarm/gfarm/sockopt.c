@@ -9,6 +9,7 @@
 #include <netinet/tcp.h>	/* TCP_NODELAY */
 #include <netdb.h>		/* getprotobyname() */
 #include <errno.h>
+#include <string.h>
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -141,11 +142,11 @@ gfarm_sockopt_set(void *closure, int param_type_index, long value)
 	struct gfarm_sockopt_info *info = type->extension;
 
 	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"setsocketopt(%d) to (%ld) failed: %s",
-			param_type_index, value,
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			param_type_index, value, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
 }

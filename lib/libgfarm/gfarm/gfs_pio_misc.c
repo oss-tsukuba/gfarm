@@ -120,11 +120,12 @@ digest_calculate(char *filename,
 	char buffer[GFS_LOCAL_FILE_BUFSIZE];
 
 	if ((fd = open(filename, O_RDONLY)) == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"open() on file(%s) failed: %s",
 			filename,
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	EVP_DigestInit(&md_ctx, GFS_DEFAULT_DIGEST_MODE);
 	rv = gfs_digest_calculate_local(fd, buffer, sizeof buffer,

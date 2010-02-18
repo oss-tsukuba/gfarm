@@ -356,6 +356,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 #ifdef NEW_SOCKADDR
 	int i;
 #endif
+	int save_errno;
 	struct in_addr *addresses, *p;
 	struct ifreq *ifr; /* pointer to interface address */
 	struct ifconf ifc; /* buffer for interface addresses */
@@ -364,20 +365,20 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 
 	fd = socket(PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"creation of socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+		save_errno = errno;
+		gflog_debug(GFARM_MSG_UNFIXED, "creation of socket failed: %s",
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	ifc.ifc_len = sizeof(ifcbuffer);
 	ifc.ifc_buf = ifcbuffer;
 	if (ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
-		e = gfarm_errno_to_error(errno);
+		save_errno = errno;
 		close(fd);
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"ioctl() on socket failed: %s",
-			gfarm_error_string(e));
-		return (e);
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	count = 0;
@@ -414,10 +415,10 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 			/* if this is first entry of the interface, get flag */
 			ifreq = *ifr;
 			if (ioctl(fd, SIOCGIFFLAGS, &ifreq) < 0) {
-				e = gfarm_errno_to_error(errno);
+				save_errno = errno;
 				gflog_debug(GFARM_MSG_UNFIXED,
 					"ioctl() on socket failed: %s",
-					gfarm_error_string(e));
+					strerror(save_errno));
 				goto err;
 			}
 		}

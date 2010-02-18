@@ -203,7 +203,7 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 static gfarm_error_t
 gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 {
-	int rv, sock;
+	int rv, sock, save_errno;
 	struct sockaddr_un peer_un;
 	struct sockaddr_in *peer_in;
 	socklen_t socklen;
@@ -217,10 +217,11 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 		sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	}
 	if (sock == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"creation of UNIX socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	memset(&peer_un, 0, sizeof(peer_un));
@@ -238,11 +239,11 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 	if (rv == -1) {
 		close(sock);
 		if (errno != ENOENT) {
+			save_errno = errno;
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"connect() with UNIX socket failed: %s",
-				gfarm_error_string(
-					gfarm_errno_to_error(errno)));
-			return (gfarm_errno_to_error(errno));
+				strerror(save_errno));
+			return (gfarm_errno_to_error(save_errno));
 		}
 
 		/* older gfsd doesn't support UNIX connection, try INET */
@@ -257,7 +258,7 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	struct sockaddr *peer_addr,
 	int *connection_in_progress_p, int *sockp, const char *source_ip)
 {
-	int rv, sock;
+	int rv, sock, save_errno;
 	gfarm_error_t e;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -266,10 +267,11 @@ gfs_client_connect_inet(const char *canonical_hostname,
 		sock = socket(PF_INET, SOCK_STREAM, 0);
 	}
 	if (sock == -1) {
+		save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"Creation of inet socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	/* XXX - how to report setsockopt(2) failure ? */
@@ -296,12 +298,12 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	rv = connect(sock, peer_addr, sizeof(*peer_addr));
 	if (rv < 0) {
 		if (errno != EINPROGRESS) {
+			save_errno = errno;
 			close(sock);
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"connect() with inet socket failed: %s",
-				gfarm_error_string(
-					gfarm_errno_to_error(errno)));
-			return (gfarm_errno_to_error(errno));
+				strerror(save_errno));
+			return (gfarm_errno_to_error(save_errno));
 		}
 		*connection_in_progress_p = 1;
 	} else {
@@ -1754,12 +1756,13 @@ gfs_client_command_request(struct gfs_connection *gfs_server,
 	 * Now, we set the connection file descriptor non-blocking mode.
 	 */
 	if (fcntl(conn_fd, F_SETFL, O_NONBLOCK) == -1) {
+		int save_errno = errno;
 		free(gfs_server->context);
 		gfs_server->context = NULL;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"setting conn_fd to non-blocking mode failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	/*
@@ -2226,10 +2229,11 @@ gfs_client_command_result(struct gfs_connection *gfs_server,
 	 * Now, we recover the connection file descriptor blocking mode.
 	 */
 	if (fcntl(gfp_xdr_fd(gfs_server->conn), F_SETFL, 0) == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"setting conn fd to blocking mode failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_COMMAND_EXIT_STATUS,
 			       "/iii",
@@ -2298,10 +2302,11 @@ gfs_client_get_load_request(int sock,
 		    server_addr, server_addr_size);
 	}
 	if (rv == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"write or send operation on socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2333,10 +2338,11 @@ gfs_client_get_load_result(int sock,
 		    server_addr, server_addr_sizep);
 	}
 	if (rv == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"read or receive operation from socket failed: %s",
-			gfarm_error_string(gfarm_errno_to_error(errno)));
-		return (gfarm_errno_to_error(errno));
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 #ifndef WORDS_BIGENDIAN

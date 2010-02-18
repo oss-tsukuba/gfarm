@@ -436,10 +436,11 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	nfound = select(max_fd + 1,
 	    read_fd_set, write_fd_set, exception_fd_set, timeout);
 	if (nfound == -1) {
+		int save_errno = errno;
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"select() failed: %d",
-			errno);
-		return (errno);
+			"select() failed: %s",
+			strerror(save_errno));
+		return (save_errno);
 	}
 	gettimeofday(&end_time, NULL);
 
