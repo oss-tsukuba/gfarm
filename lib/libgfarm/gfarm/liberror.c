@@ -11,10 +11,7 @@
 #include <stdio.h>
 #include <netdb.h>
 
-#include <gfarm/gfarm_config.h>
-#include <gfarm/gflog.h>
-#include <gfarm/error.h>
-#include <gfarm/gfarm_misc.h> /* GFARM_ARRAY_LENGTH */
+#include <gfarm/gfarm.h>
 
 #include "gfutil.h"
 
@@ -400,13 +397,24 @@ struct gfarm_error_domain {
 	gfarm_error_t *map_to_gfarm;
 	const char *(*domerror_to_message)(void *, int);
 	void *domerror_to_message_cookie;
+
+	/* only used by gfarm_error_range_alloc() case */
+	struct gfarm_error_domain *next;
 };
 
 #define MAX_ERROR_DOMAINS	10
 
 static int gfarm_error_domain_number = 0;
 static struct gfarm_error_domain gfarm_error_domains[MAX_ERROR_DOMAINS];
+static struct gfarm_error_domain *gfarm_error_ranges = NULL;
 
+/*
+ * allocate an error_domain
+ * for a domain-specific error range [domerror_min, domerror_max]
+ *
+ * the corresponding gfarm error range will be:
+ *	[domain->offset, domain->offset + domain->domerror_number - 1]
+ */
 gfarm_error_t
 gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	const char *(*de_to_m)(void *, int), void *cookie,
@@ -426,15 +434,77 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 		last = &gfarm_error_domains[gfarm_error_domain_number - 1];
 		next_error = last->offset + last->domerror_number;
 	}
+	if (next_error + domerror_max - domerror_min
+	    >= GFARM_ERR_PRIVATE_BEGIN) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_error_domain_alloc: too large domain [%d, %d]",
+		    domerror_min, domerror_max);
+		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+	}
 	new = &gfarm_error_domains[gfarm_error_domain_number];
 	new->offset = next_error;
+	new->domerror_min = domerror_min;
+	new->domerror_number = domerror_max - domerror_min + 1;
+	new->map_to_gfarm = NULL; /* may be allocated on demand */
+	new->domerror_to_message = de_to_m;
+	new->domerror_to_message_cookie = cookie;
+	new->next = NULL;
+	*domainp = new;
+	gfarm_error_domain_number++;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * allocate an error range [domerror_min, domerror_max]
+ * within the gfarm error number space
+ *
+ * the corresponding gfarm error range will be:
+ *	[domain->offset, domain->offset + domain->domerror_number - 1]
+ *		==
+ *	[domerror_min, domerror_max]
+ */
+gfarm_error_t
+gfarm_error_range_alloc(int domerror_min, int domerror_max,
+	const char *(*de_to_m)(void *, int), void *cookie,
+	struct gfarm_error_domain **domainp)
+{
+	struct gfarm_error_domain *dom, *new;
+
+	/* sanity checks */
+	if (domerror_min < GFARM_ERR_PRIVATE_BEGIN ||
+	    domerror_max < domerror_min) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_error_range_alloc: invalid range [%d, %d]",
+		    domerror_min, domerror_max);
+		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+	}
+	for (dom = gfarm_error_ranges; dom != NULL; dom = dom->next) {
+		if (domerror_max >= dom->offset &&
+		    domerror_min < dom->offset + dom->domerror_number - 1) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_error_range_alloc: [%d, %d] is "
+			    "overlapping with an existing range [%d, %d]",
+			    domerror_min, domerror_max, dom->offset,
+			    dom->offset + dom->domerror_number - 1);
+			return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
+		}
+	}
+
+	GFARM_MALLOC(new);
+	if (new == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_error_range_alloc: no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	new->offset = domerror_min;
 	new->domerror_min = domerror_min;
 	new->domerror_number = domerror_max - domerror_min + 1;
 	new->map_to_gfarm = NULL;
 	new->domerror_to_message = de_to_m;
 	new->domerror_to_message_cookie = cookie;
+	new->next = gfarm_error_ranges;
+	gfarm_error_ranges = new;
 	*domainp = new;
-	gfarm_error_domain_number++;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -482,11 +552,32 @@ gfarm_error_domain_map(struct gfarm_error_domain *domain, int domerror)
 	return (domain->offset + domerror);
 }
 
+static struct gfarm_error_domain *
+gfarm_error_domain_search(gfarm_error_t error)
+{
+	int i;
+	struct gfarm_error_domain *domain;
+
+	for (i = 0; i < gfarm_error_domain_number; i++) {
+		domain = &gfarm_error_domains[i];
+		if (error < domain->offset)
+			return (NULL);
+		if (error < domain->offset + domain->domerror_number)
+			return (domain);
+	}
+	for (domain = gfarm_error_ranges; domain != NULL;
+	     domain = domain->next) {
+		if (domain->offset <= error &&
+		    error < domain->offset + domain->domerror_number)
+			return (domain);
+	}
+	return (NULL);
+}
+
 const char *
 gfarm_error_string(gfarm_error_t error)
 {
 	struct gfarm_error_domain *domain;
-	int i;
 
 	if (error < 0)
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
@@ -505,12 +596,7 @@ gfarm_error_string(gfarm_error_t error)
 	if (error < GFARM_ERRMSG_END)
 		return (errmsg_string[error - GFARM_ERRMSG_BEGIN]);
 
-	for (i = 0; i < gfarm_error_domain_number; i++) {
-		domain = &gfarm_error_domains[i];
-		if (error < domain->offset)
-			break;
-		if (error >= domain->offset + domain->domerror_number)
-			continue;
+	if ((domain = gfarm_error_domain_search(error)) != NULL) {
 		error -= domain->offset;
 #if 0 /* to make this return original error message instead of mapped one */
 		/* this shouldn't happen, usually */

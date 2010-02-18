@@ -6,7 +6,7 @@ log=log
 rm -f $log
 
 case $# in
-0)	schedule=./schedule;;
+0)	schedule=$regress/schedule;;
 *)	schedule=$*;;
 esac
 
@@ -24,10 +24,10 @@ while read line; do
 	tst=$1
 	msg="`echo $tst | awk '{printf "%-50.50s ... ", $1}'`"
 	fin="-------------------------------------------------- --- ----"
-	if [ -x $tst ]; then
+	if [ -x $regress/$tst ]; then
 		echo "$msg BEGIN" >>$log
 
-		sh $tst >>$log 2>&1
+		sh $regress/$tst >>$log 2>&1
 		exit_code=$?
 
 		case $exit_code in
