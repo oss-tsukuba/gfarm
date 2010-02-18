@@ -133,6 +133,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"hostname is missing in a Gfarm URL",
 	"port number is missing in a Gfarm URL",
 	"port number is invalid in a Gfarm URL",
+	"file busy",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
