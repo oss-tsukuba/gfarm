@@ -2013,12 +2013,12 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (ctxp->nvalid > ctxp->nalloc)
+	if (ctxp->nvalid > ctxp->nalloc) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"ctx.nvalid > ctx.nalloc: %s",
 			gfarm_error_string(GFARM_ERR_UNKNOWN));
 		return GFARM_ERR_UNKNOWN;
-
+	}
 	for (i = 0; i < ctxp->nvalid; i++) {
 		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ss",
 			&ctxp->entries[i].path, &ctxp->entries[i].attrname);

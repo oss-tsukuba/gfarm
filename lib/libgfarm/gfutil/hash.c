@@ -205,10 +205,10 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 	}
 	p = malloc(hash_entry_size); /* size is already checked */
 	if (p == NULL) {
-		return (NULL);
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"allocation of 'gfarm_hash_entry' failed (%zd)",
 			hash_entry_size);
+		return (NULL);
 	}
 	*pp = p;
 

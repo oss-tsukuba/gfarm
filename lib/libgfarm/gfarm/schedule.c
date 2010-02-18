@@ -554,8 +554,6 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			if (h->architecture == NULL) {
 				gfp_conn_hash_purge(search_idle_hosts_state,
 				    entry);
-					gfarm_error_string(
-						GFARM_ERR_NO_MEMORY));
 				return (GFARM_ERR_NO_MEMORY);
 			}
 #endif

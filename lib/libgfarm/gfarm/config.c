@@ -1064,9 +1064,9 @@ get_one_argument(char *p, char **rv)
 		return (e);
 	}
 	if (tmp != NULL) {
-		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"Too many arguments passed");
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
 
 	*rv = s;
