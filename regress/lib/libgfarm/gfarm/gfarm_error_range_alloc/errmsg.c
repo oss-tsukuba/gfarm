@@ -9,17 +9,16 @@
 
 
 static const char *private_error_messages[] = {
-
 #define PRIVATE_ERR_HOGE	(PRIVATE_ERR_BEGIN + 0)
 	"hoge",
 #define PRIVATE_ERR_PIYO	(PRIVATE_ERR_BEGIN + 1)
 	"piyo",
 #define PRIVATE_ERR_CHOME	(PRIVATE_ERR_BEGIN + 2)
 	"chome"
+};
 
 #define PRIVATE_ERR_END		(PRIVATE_ERR_BEGIN + \
 				GFARM_ARRAY_LENGTH(private_error_messages) - 1)
-};
 
 const char *
 private_error_string(void *cookie, int e)
