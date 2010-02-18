@@ -7,7 +7,6 @@
 
 #define PRIVATE_ERR_BEGIN	(GFARM_ERR_PRIVATE_BEGIN + 0)
 
-
 static const char *private_error_messages[] = {
 #define PRIVATE_ERR_HOGE	(PRIVATE_ERR_BEGIN + 0)
 	"hoge",
@@ -24,7 +23,7 @@ const char *
 private_error_string(void *cookie, int e)
 {
 	if (e < PRIVATE_ERR_BEGIN || e > PRIVATE_ERR_END)
-		return ("private_error_message: internal error");
+		return ("private_error_string: internal error");
 	else
 		return (private_error_messages[e - PRIVATE_ERR_BEGIN]);
 }
