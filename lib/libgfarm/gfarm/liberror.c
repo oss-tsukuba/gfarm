@@ -412,7 +412,7 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	const char *(*de_to_m)(void *, int), void *cookie,
 	struct gfarm_error_domain **domainp)
 {
-	int i, next_error;
+	int next_error;
 	struct gfarm_error_domain *last, *new;
 
 	if (gfarm_error_domain_number >= MAX_ERROR_DOMAINS) {
@@ -430,16 +430,9 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	new->offset = next_error;
 	new->domerror_min = domerror_min;
 	new->domerror_number = domerror_max - domerror_min + 1;
-	GFARM_MALLOC_ARRAY(new->map_to_gfarm, new->domerror_number);
-	if (new->map_to_gfarm == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "gfarm_error_domain_alloc: no memory");
-		return (GFARM_ERR_NO_MEMORY);
-	}
+	new->map_to_gfarm = NULL;
 	new->domerror_to_message = de_to_m;
 	new->domerror_to_message_cookie = cookie;
-	for (i = 0; i < new->domerror_number; i++)
-		new->map_to_gfarm[i] = GFARM_ERR_UNKNOWN;
 	*domainp = new;
 	gfarm_error_domain_number++;
 	return (GFARM_ERR_NO_ERROR);
@@ -449,6 +442,8 @@ gfarm_error_t
 gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
 	int domerror, gfarm_error_t error)
 {
+	int i;
+
 	if (domerror < domain->domerror_min ||
 	    domerror >= domain->domerror_min + domain->domerror_number) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -458,19 +453,31 @@ gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
 		    domain->domerror_min + domain->domerror_number - 1);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
 	}
+	if (domain->map_to_gfarm == NULL) {
+		GFARM_MALLOC_ARRAY(domain->map_to_gfarm,
+		    domain->domerror_number);
+		if (domain->map_to_gfarm == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_error_domain_add_map: no memory for %d",
+			    domain->domerror_number);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		for (i = 0; i < domain->domerror_number; i++)
+			domain->map_to_gfarm[i] = GFARM_ERR_UNKNOWN;
+	}
 	domain->map_to_gfarm[domerror - domain->domerror_min] = error;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfarm_error_domain_map(struct gfarm_error_domain *domain,
-	int domerror)
+gfarm_error_domain_map(struct gfarm_error_domain *domain, int domerror)
 {
 	if (domerror < domain->domerror_min ||
 	    domerror >= domain->domerror_min + domain->domerror_number)
 		return (GFARM_ERR_UNKNOWN);
 	domerror -= domain->domerror_min;
-	if (domain->map_to_gfarm[domerror] != GFARM_ERR_UNKNOWN)
+	if (domain->map_to_gfarm != NULL &&
+	    domain->map_to_gfarm[domerror] != GFARM_ERR_UNKNOWN)
 		return (domain->map_to_gfarm[domerror]);
 	return (domain->offset + domerror);
 }
@@ -505,8 +512,12 @@ gfarm_error_string(gfarm_error_t error)
 		if (error >= domain->offset + domain->domerror_number)
 			continue;
 		error -= domain->offset;
-		if (domain->map_to_gfarm[error] != GFARM_ERR_UNKNOWN)
+#if 0 /* to make this return original error message instead of mapped one */
+		/* this shouldn't happen, usually */
+		if (domain->map_to_gfarm != NULL &&
+		    domain->map_to_gfarm[error] != GFARM_ERR_UNKNOWN)
 			return (errcode_string[domain->map_to_gfarm[error]]);
+#endif
 		return ((*domain->domerror_to_message)(
 		    domain->domerror_to_message_cookie,
 		    domain->domerror_min + error));
@@ -546,21 +557,27 @@ gfarm_errno_to_error_initialize(void)
 	    &gfarm_errno_domain);
 	if (e != GFARM_ERR_NO_ERROR) /* really fatal problem */
 		gflog_fatal(GFARM_MSG_1000007,
-		    "libgfarm: cannot allocate error map for errno");
+		    "libgfarm: cannot allocate error domain for errno");
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];
 		if (gfarm_error_domain_map(gfarm_errno_domain, map->unix_errno)
 		    < GFARM_ERR_NUMBER)
 			continue; /* a mapping is already registered */
-		/* the following should always success */
-		gfarm_error_domain_add_map(gfarm_errno_domain,
-		    map->unix_errno, map->gfarm_error);
+		if ((e = gfarm_error_domain_add_map(gfarm_errno_domain,
+		    map->unix_errno, map->gfarm_error)) != GFARM_ERR_NO_ERROR){
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "libgfarm: initializing error map "
+			    "(%d -> %d): %s (%d)",
+			    map->unix_errno, map->gfarm_error,
+			    e == GFARM_ERR_NO_MEMORY ?
+			    "no memory" : "unexpected error", e);
+		}
 	}
 }
 
 gfarm_error_t
-gfarm_errno_to_error(int no)
+gfarm_errno_to_error(int eno)
 {
 	static pthread_once_t gfarm_errno_to_error_initialized =
 	    PTHREAD_ONCE_INIT;
@@ -568,7 +585,7 @@ gfarm_errno_to_error(int no)
 	pthread_once(&gfarm_errno_to_error_initialized,
 	    gfarm_errno_to_error_initialize);
 
-	return (gfarm_error_domain_map(gfarm_errno_domain, no));
+	return (gfarm_error_domain_map(gfarm_errno_domain, eno));
 }
 
 static int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
