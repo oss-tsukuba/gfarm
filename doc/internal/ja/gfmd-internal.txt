@@ -1,0 +1,179 @@
+■ 設計指針
+
+○ giant_lock 保持中は休眠してはいけない。XXX 要解説
+当然、I/O も行なってはいけない。
+唯一の例外は、dbq 待ちの休眠。これは仕方ない。
+
+手抜きで、ネットワーク送信を、giant_lock を保持したままやっている
+ところがある。出力は nonblocking モードで行なっている(筈?)なので、
+出力内容がバッファよりも小さければ、休眠しない筈。
+一応、/* XXX FIXME too long giant lock */ というコメントで、
+全ての箇所をマークしてある筈だが…
+
+○ 全メタデータを、メモリにキャッシュする。
+性能優先＋コーディングを簡単にするのが目的。
+データは gfmd起動時に全てメモリに読み込み、更新のたびに dbq 経由で DB に
+書き出す。初期化を除くと、起動中に DB から読み込みを行なうことはない。
+XXX dead_file_copy は例外で、起動時にメモリに読み込むと同時に DB から消去し、
+    更新されても DB には書かず、gfmd 終了時にはじめて書き戻している。
+    これについては、修正を予定。
+    → DBRD などを利用した非同期メタデータレプリケーションなどで問題となる。
+
+ただし、xattr だけは例外。
+理由は、
+・xattr としてかなり大きなデータを想定していた
+・設計者が他の部分とは別
+であるため。
+逆に、データとして小さな xattr へのアクセスが、全くキャッシュされておらず、
+非常に遅いという制限事項がある。
+
+■ mutex 一覧
+
+mutex 間の依存関係にループがあってはいけない。デッドロックする。★重要★
+
+ある mutex を保持したまま、他の mutex の獲得を行なうケースは、
+すべて文書化が必要。
+XXX
+
+mutex 獲得順序は、server/gfmd/README 参照
+XXX 保守されてない。要更新
+
+■ スレッド一覧
+
+スレッド間の依存関係にループがあってはいけない。デッドロックする。★重要★
+
+thrpool_add_job() する場合、
+thrpool_add_job() するスレッドは、
+thrpool_add_job() されるスレッドプールに、
+依存してしまう。
+すなわち、thrpool_add_job() されるスレッドプールが満杯の場合、
+thrpool_add_job() するスレッドは休眠する。
+
+スレッドプールに属するスレッドが、
+自身のスレッドプールに対して thrpool_add_job() するのも駄目。★重要★
+そのスレッドプールの全スレッドが、
+たまたま全て同時に自スレッドプールに対して thrpool_add_job() すると、
+プールに空きがないので、全て休眠し、そのまま寝たきりになる。
+
+スレッドプール間の依存関係にループがあるのも駄目。★重要★
+backchannel_send_thread_pool は、通信を解して暗に, 
+backchannel_recv_thread_pool に依存しているので要注意。★重要★
+
+○ main スレッド: accepting_loop() 
+
+   TCP 接続待ちを行なうのが役割。
+
+○ create_detached_thread() で作成される、独立したスレッド。
+
+　・シグナル監視用 sigs_handler()
+
+　・callout 時刻監視用 callout_main() × CALLOUT_NTHREADS
+
+    callout_main() が thrpool_add_job() するスレッドプールの数だけ
+    callout_main() スレッドを用意した方が良い。さもないと、あるスレッド
+    プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
+    現在は、backchannel_send_thread_pool のみであるため、CALLOUT_NTHREADS == 1
+
+    callout_reset() しているのは、backchannel_recv_thread_pool に属する
+    gfs_async_client_status_result() だが、callout_reset() は
+    cond_signal() しているだけなので、callout_reset() では依存は起きない。
+
+
+　・ネットワーク受信監視用 peer_watcher() × 1
+
+    peer_watcher() が thrpool_add_job() するスレッドプールの数だけ、
+    peer_watcher() スレッドを用意した方が良い。さもないと、あるスレッド
+    プールが満杯となったとき、関係ないスレッドの処理まで遅延してしまう。
+    現在、sync_proto_thread_pool と backchannel_recv_thread_pool の 2つ
+    あるため peer_watcher() スレッドも 2つにしたいが、現行の peer_watcher() の
+    実装がそれを許しているかどうか怪しいため、1つのまま。
+
+    peer_watcher() は同期通信担当であり、backchannel_send_thread_pool の
+    ように、非同期に大量の送信を一度に行なって詰まる心配はないため、
+    1つでもデッドロックは起きない(と思う)。
+
+    backchannel_recv_thread_pool は受信処理担当なので、
+    backchannel_recv_thread_pool が他のなにかに依存しない限りは詰まる心配は
+    ない。
+    backchannel_recv_thread_pool が他のなにかに依存しないよう、十分注意
+    する必要がある。★重要★
+
+  ・旧backend_protocolの場合、各filesystem nodeに対し remover() × 大量
+
+    廃止して、backchannel_recv_thread_pool を使うようにする予定。
+
+○ スレッドプール
+
+プール中の各スレッドの実体は、thrpool_worker()。
+
+　− sync_proto_thread_pool
+
+    このプールを用いて起動されるのは、以下の処理。
+    ・try_auth()
+      accepting_loop() が thrpool_add_job() する。
+    ・protocol_main()
+      peer_authorized() が thrpool_add_job() する。
+	XXX こいつは、try_auth() から起動されている。XXX DEADLOCK
+    ・protocol_main()
+      peer_watcher() が thrpool_add_job() する。
+
+
+    このプールが、thrpool_add_job() するのは、以下のプール。
+    ・backchannel_send_thread_pool
+      - gfm_server_switch_async_back_channel() にて、
+	gfs_async_client_status_request() を
+        thrpool_add_job() する。
+      - async_back_channel_replication_request() にて
+	gfs_async_client_replication_request_request() を
+        thrpool_add_job() する。
+    ・backchannel_recv_thread_pool
+      - gfm_server_switch_async_back_channel() にて、
+        async_back_channel_main() を
+        thrpool_add_job() する。
+    ・sync_proto_thread_pool
+      - peer_authorized() にて
+        protocol_main() を
+        thrpool_add_job() する。
+	XXX 自身のプールに  thrpool_add_job() している。XXX DEADLOCK
+
+　− backchannel_recv_thread_pool
+
+    このプールを用いて起動されるのは、以下の処理。
+    ・async_back_channel_main()
+      protocol_main() が gfm_server_switch_async_back_channel() 経由で
+      thrpool_add_job() する。
+    ・async_back_channel_main()
+      peer_watcher() が thrpool_add_job() する。
+
+    このプールは、thrpool_add_job() しない。してはいけない。★重要★
+    このプールが休眠すると、通信経由でこのプールに依存している
+    backchannel_send_thread_pool も休眠し、deadlock の危険が生じる。
+    が、ここに大問題がある。
+    gfm_async_server_replication_result() は、
+	・結果の処理のため host_replicated() を呼んでいる。
+		XXX いろいろまずそう。
+	・結果の送信のため peer_sender_lock() を待つことがある。
+		→ 送信側を待つことがある。XXX DEADLOCK
+
+　− backchannel_send_thread_pool
+  
+    このプールを用いて起動されるのは、以下の処理。
+      - gfs_async_client_status_request() を
+	protocol_main() が、gfm_server_switch_async_back_channel() 経由で
+        thrpool_add_job() する。
+      - gfs_async_client_status_request() を
+	callout_main() が、
+        thrpool_add_job() する。
+	起こしているのは、backchannel_recv_thread_pool に属する
+	gfs_async_client_status_result() だが、callout_reset() を使っているので
+	依存は起きない。
+      - async_back_channel_replication_request() にて
+	gfs_async_client_replication_request_request() を
+        thrpool_add_job() する。
+
+    このプールが、thrpool_add_job() するのは、以下のプール。
+
+
+
+peer_watcher: sync_proto_thread_pool
+callout_main: backchannel_send_thread_pool
