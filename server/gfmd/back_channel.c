@@ -549,7 +549,8 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 				e = GFARM_ERR_NO_MEMORY;
 		}
 		if (e == GFARM_ERR_NO_ERROR) {
-			host_peer_disconnect(h);
+			if (host_is_up(h)) /* throw away old connetion */
+				host_peer_disconnect(h);
 			host_peer_set(h, peer, version, callout);
 		}
 	}
