@@ -75,7 +75,7 @@ map_user(gfarm_stringlist map_file_list, char *from, char **to_p,
 		mapfile = gfarm_stringlist_elem(&map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
 			gflog_error(GFARM_MSG_1000009,
-			    mapfile, strerror(errno));
+			    "%s: cannot open: %s", mapfile, strerror(errno));
 			return (GFARM_ERR_CANT_OPEN);
 		}
 		lineno = 0;
