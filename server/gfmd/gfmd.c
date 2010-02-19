@@ -530,7 +530,7 @@ protocol_service(struct peer *peer)
 	gfarm_int32_t request;
 	int from_client;
 	int transaction = 0;
-	const char msg[] = "protocol_service";
+	static const char diag[] = "protocol_service";
 
 	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
 	if (ps->nesting_level == 0) { /* top level */
@@ -539,7 +539,7 @@ protocol_service(struct peer *peer)
 		giant_lock();
 		peer_fdpair_clear(peer);
 		if (peer_had_protocol_error(peer)) {
-			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
 			 * the following internally calls inode_close*() and
@@ -549,7 +549,7 @@ protocol_service(struct peer *peer)
 			 */
 			peer_free(peer);
 			if (transaction)
-				db_end(msg);
+				db_end(diag);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -560,7 +560,7 @@ protocol_service(struct peer *peer)
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
 			peer_fdpair_clear(peer);
-			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
 			 * the following internally calls inode_close*() and
@@ -570,7 +570,7 @@ protocol_service(struct peer *peer)
 			 */
 			peer_free(peer);
 			if (transaction)
-				db_end(msg);
+				db_end(diag);
 			giant_unlock();
 			return (1); /* finish */
 		}
@@ -600,7 +600,7 @@ protocol_service(struct peer *peer)
 				"failed to process GFM_PROTO_SWITCH_BACK_"
 				"CHANNEL request: %s", gfarm_error_string(e));
 			giant_lock();
-			if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
 			 * the following internally calls inode_close*() and
@@ -610,7 +610,7 @@ protocol_service(struct peer *peer)
 			 */
 			peer_free(peer);
 			if (transaction)
-				db_end(msg);
+				db_end(diag);
 			giant_unlock();
 		}
 		return (1); /* finish */
@@ -725,7 +725,8 @@ peer_authorize(struct peer *peer)
 		gfarm_sockaddr_to_string(&addr,
 		    addr_string, GFARM_SOCKADDR_STRLEN);
 		gflog_warning(GFARM_MSG_1000185,
-		    "%s: %s", gfarm_error_string(e), addr_string);
+		    "gfarm_sockaddr_to_name(%s): %s",
+		    gfarm_error_string(e), addr_string);
 		hostname = strdup(addr_string);
 		if (hostname == NULL) {
 			gflog_warning(GFARM_MSG_1000186, "%s: %s", addr_string,
@@ -863,7 +864,7 @@ sigs_handler(void *p)
 	sigset_t *sigs = p;
 	int sig;
 	int transaction = 0;
-	const char msg[] = "sigs_handler";
+	static const char diag[] = "sigs_handler";
 
 #ifdef __linux__
 	/* A Linux Thread is a process having its own process id. */
@@ -927,7 +928,7 @@ sigs_handler(void *p)
 	host_remove_replica_dump_all();
 
 	gflog_info(GFARM_MSG_1000201, "shutting down peers");
-	if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	/*
 	 * the following internally calls inode_close*() and
@@ -936,7 +937,7 @@ sigs_handler(void *p)
 	 */
 	peer_shutdown_all();
 	if (transaction)
-		db_end(msg);
+		db_end(diag);
 
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */

@@ -149,6 +149,7 @@ gfarm_error_t
 gfj_server_lock_register(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	static const char diag[] = "GFJ_PROTO_LOCK_REGISTER";
 
 	if (!from_client) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -158,13 +159,14 @@ gfj_server_lock_register(struct peer *peer, int from_client, int skip)
 
 	/* XXX - NOT IMPLEMENTED */
 
-	return (gfj_server_put_reply(peer, "lock_register", e, ""));
+	return (gfj_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
 gfj_server_unlock_register(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	static const char diag[] = "GFJ_PROTO_UNLOCK_REGISTER";
 
 	if (!from_client) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -174,7 +176,7 @@ gfj_server_unlock_register(struct peer *peer, int from_client, int skip)
 
 	/* XXX - NOT IMPLEMENTED */
 
-	return (gfj_server_put_reply(peer, "unlock_register", e, ""));
+	return (gfj_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -186,6 +188,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	int i, eof;
 	gfarm_int32_t flags, total_nodes, argc, error, job_id = 0;
 	struct gfarm_job_info *info;
+	static const char diag[] = "GFJ_PROTO_REGISTER";
 
 	GFARM_MALLOC(info);
 	if (info == NULL) {
@@ -194,7 +197,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	gfarm_job_info_clear(info, 1);
-	e = gfj_server_get_request(peer, "register", "iisssi",
+	e = gfj_server_get_request(peer, diag, "iisssi",
 				   &flags,
 				   &total_nodes,
 				   &info->job_type,
@@ -295,7 +298,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 			error = GFARM_ERR_NO_ERROR;
 		}
 	}
-	return (gfj_server_put_reply(peer, "register",
+	return (gfj_server_put_reply(peer, diag,
 	    error, "i", job_id));
 }
 
@@ -306,8 +309,9 @@ gfj_server_unregister(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	gfarm_int32_t error;
 	gfarm_int32_t job_id;
+	static const char diag[] = "GFJ_PROTO_UNREGISTER";
 
-	e = gfj_server_get_request(peer, "unregister", "i", &job_id);
+	e = gfj_server_get_request(peer, diag, "i", &job_id);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"unregister request failure");
@@ -325,18 +329,18 @@ gfj_server_unregister(struct peer *peer, int from_client, int skip)
 		    peer_get_jobs_ref(peer));
 		giant_unlock();
 	}
-	return (gfj_server_put_reply(peer, "unregister",
-	    error, ""));
+	return (gfj_server_put_reply(peer, diag, error, ""));
 }
 
 gfarm_error_t
 gfj_server_register_node(struct peer *peer, int from_client, int skip)
 {
-	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal(GFARM_MSG_1000295, "register_node: not implemented");
+	static const char diag[] = "GFJ_PROTO_REGISTER_NODE";
 
-	return (gfj_server_put_reply(peer, "register_node",
-	    GFARM_ERR_NO_ERROR, ""));
+	/* XXX - NOT IMPLEMENTED */
+	gflog_fatal(GFARM_MSG_1000295, "%s: not implemented", diag);
+
+	return (gfj_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
 }
 
 gfarm_error_t
@@ -347,8 +351,9 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 	char *user;
 	int i;
 	gfarm_int32_t n;
+	static const char diag[] = "GFJ_PROTO_LIST";
 
-	e = gfj_server_get_request(peer, "list", "s", &user);
+	e = gfj_server_get_request(peer, diag, "s", &user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"list request failure");
@@ -360,7 +365,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 	}
 
 	if (!from_client) {
-		e = gfj_server_put_reply(peer, "list",
+		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -379,7 +384,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 				n++;
 		}
 
-		e = gfj_server_put_reply(peer, "register",
+		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_NO_ERROR, "i", n);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -455,8 +460,9 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 	struct gfp_xdr *client = peer_get_conn(peer);
 	int i, eof;
 	gfarm_int32_t n, *jobs;
+	static const char diag[] = "GFJ_PROTO_INFO";
 
-	e = gfj_server_get_request(peer, "info", "i", &n);
+	e = gfj_server_get_request(peer, diag, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"info request failure");
@@ -486,7 +492,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 		free(jobs);
 		if (skip)
 			return (GFARM_ERR_NO_ERROR);
-		e = gfj_server_put_reply(peer, "info",
+		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"operation is not permitted for from_client");
@@ -498,7 +504,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < n; i++) {
 		if (jobs[i] < 0 || jobs[i] >= job_table_size ||
 		    job_table[jobs[i]] == NULL) {
-			e = gfj_server_put_reply(peer, "info",
+			e = gfj_server_put_reply(peer, diag,
 						 GFARM_ERR_NO_SUCH_OBJECT, "");
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
@@ -508,7 +514,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 				return (e);
 			}
 		} else {
-			e = gfj_server_put_reply(peer, "info",
+			e = gfj_server_put_reply(peer, diag,
 						 GFARM_ERR_NO_ERROR, "");
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
@@ -537,14 +543,14 @@ gfarm_error_t
 gfj_server_hostinfo(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	static const char diag[] = "GFJ_PROTO_HOSTINFO";
 
 	if (!from_client)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 
 	/* XXX - NOT IMPLEMENTED */
-	gflog_fatal(GFARM_MSG_1000296, "host_info: not implemented");
+	gflog_fatal(GFARM_MSG_1000296, "%s: not implemented", diag);
 
-	return (gfj_server_put_reply(peer, "host_info",
-	    GFARM_ERR_NO_ERROR, ""));
+	return (gfj_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
 }
 

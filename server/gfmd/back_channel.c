@@ -118,7 +118,7 @@ gfs_client_rpc_back_channel(struct peer *peer, const char *diag, int command,
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000401,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s rpc: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
@@ -347,7 +347,7 @@ gfm_async_server_replication_result(struct peer *peer,
 	gfarm_int32_t errcode;
 	gfarm_int64_t handle;
 	gfarm_off_t filesize;
-	const char diag[] = "replication_result";
+	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
 	if ((e = gfm_async_server_get_request(peer, size, diag,
 	    "ill", &errcode, &handle, &filesize)) != GFARM_ERR_NO_ERROR)
@@ -520,7 +520,7 @@ remover(void *arg)
 
 gfarm_error_t
 gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
-	int version, int *okp, const char *msg)
+	int version, int *okp, const char *diag)
 {
 	gfarm_error_t e, e2;
 	struct host *h;
@@ -554,7 +554,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		}
 	}
 	giant_unlock();
-	e2 = gfm_server_put_reply(peer, msg, e, "");
+	e2 = gfm_server_put_reply(peer, diag, e, "");
 	peer_io_unlock(peer);
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
@@ -563,7 +563,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		if (e2 != GFARM_ERR_NO_ERROR)
 			gflog_warning(GFARM_MSG_1000405,
 			    "%s: protocol flush: %s",
-			    msg, gfarm_error_string(e));
+			    diag, gfarm_error_string(e));
 		else if (e == GFARM_ERR_NO_ERROR)
 			*okp = 1;
 	}
@@ -578,13 +578,13 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	int ok;
-	const char msg[] = "switch_back_channel";
+	static const char diag[] = "GFM_PROTO_SWITCH_BACK_CHANNEL";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfm_server_switch_back_channel_common(peer, from_client,
-	    GFS_PROTOCOL_VERSION_V2_3, &ok, msg);
+	    GFS_PROTOCOL_VERSION_V2_3, &ok, diag);
 
 	/* XXX FIXME - make sure there is at most one running remover thread */
 	if (e == GFARM_ERR_NO_ERROR && ok)
@@ -602,9 +602,9 @@ gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 	gfarm_error_t e;
 	gfarm_int32_t version;
 	int ok;
-	const char msg[] = "switch_async_back_channel";
+	static const char diag[] = "GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL";
 
-	e = gfm_server_get_request(peer, msg, "i", &version);
+	e = gfm_server_get_request(peer, diag, "i", &version);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -612,7 +612,7 @@ gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfm_server_switch_back_channel_common(peer, from_client,
-	    version, &ok, msg);
+	    version, &ok, diag);
 
 	if (e == GFARM_ERR_NO_ERROR && ok) {
 		if ((e = peer_set_async(peer)) != GFARM_ERR_NO_ERROR) {

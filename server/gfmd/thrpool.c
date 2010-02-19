@@ -27,29 +27,29 @@ struct thread_jobq {
 void
 thrjobq_init(struct thread_jobq *q, int size)
 {
-	static const char msg[] = "thrjobq_init";
+	static const char diag[] = "thrjobq_init";
 
-	mutex_init(&q->mutex, msg, "thrjobq");
-	cond_init(&q->nonempty, msg, "nonempty");
-	cond_init(&q->nonfull, msg, "nonfull");
+	mutex_init(&q->mutex, diag, "thrjobq");
+	cond_init(&q->nonempty, diag, "nonempty");
+	cond_init(&q->nonfull, diag, "nonfull");
 	q->size = size;
 	q->n = q->in = q->out = 0;
 	GFARM_MALLOC_ARRAY(q->entries, size);
 	if (q->entries == NULL)
 		gflog_fatal(GFARM_MSG_1000220,
-		    "%s: jobq size: %s", msg, strerror(ENOMEM));
+		    "%s: jobq size: %s", diag, strerror(ENOMEM));
 }
 
 
 void
 thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
 {
-	static const char msg[] = "thrjobq_add_job";
+	static const char diag[] = "thrjobq_add_job";
 
-	mutex_lock(&q->mutex, msg, "thrjobq");
+	mutex_lock(&q->mutex, diag, "thrjobq");
 
 	while (q->n >= q->size) {
-		cond_wait(&q->nonfull, &q->mutex, msg, "nonfull");
+		cond_wait(&q->nonfull, &q->mutex, diag, "nonfull");
 	}
 	q->entries[q->in].thread_main = thread_main;
 	q->entries[q->in].arg = arg;
@@ -57,28 +57,28 @@ thrjobq_add_job(struct thread_jobq *q, void *(*thread_main)(void *), void *arg)
 	if (q->in >= q->size)
 		q->in = 0;
 	q->n++;
-	cond_signal(&q->nonempty, msg, "nonempty");
+	cond_signal(&q->nonempty, diag, "nonempty");
 
-	mutex_unlock(&q->mutex, msg, "thrjobq");
+	mutex_unlock(&q->mutex, diag, "thrjobq");
 }
 
 void
 thrjobq_get_job(struct thread_jobq *q, struct thread_job *job)
 {
-	static const char msg[] = "thrjobq_get_job";
+	static const char diag[] = "thrjobq_get_job";
 
-	mutex_lock(&q->mutex, msg, "thrjobq");
+	mutex_lock(&q->mutex, diag, "thrjobq");
 
 	while (q->n <= 0) {
-		cond_wait(&q->nonempty, &q->mutex, msg, "nonempty");
+		cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
 	}
 	*job = q->entries[q->out++];
 	if (q->out >= q->size)
 		q->out = 0;
 	q->n--;
-	cond_signal(&q->nonfull, msg, "nonfull");
+	cond_signal(&q->nonfull, diag, "nonfull");
 
-	mutex_unlock(&q->mutex, msg, "thrjobq");
+	mutex_unlock(&q->mutex, diag, "thrjobq");
 }
 
 struct thread_pool {
@@ -99,7 +99,7 @@ struct thread_pool *
 thrpool_new(int pool_size, int queue_length, const char *pool_name)
 {
 	struct thread_pool *p;
-	static const char msg[] = "thrpool_new";
+	static const char diag[] = "thrpool_new";
 
 	GFARM_MALLOC(p);
 	if (p == NULL)
@@ -107,16 +107,16 @@ thrpool_new(int pool_size, int queue_length, const char *pool_name)
 
 	thrjobq_init(&p->jobq, queue_length);
 
-	mutex_init(&p->mutex, msg, "thrpool");
+	mutex_init(&p->mutex, diag, "thrpool");
 	p->pool_size = pool_size;
 	p->threads = 0;
 	p->idles = 0;
 	p->name = pool_name;
 
-	mutex_lock(&all_thrpools_mutex, msg, "all_thrpools add");
+	mutex_lock(&all_thrpools_mutex, diag, "all_thrpools add");
 	p->next = all_thrpools;
 	all_thrpools = p;
-	mutex_unlock(&all_thrpools_mutex, msg, "all_thrpools add");
+	mutex_unlock(&all_thrpools_mutex, diag, "all_thrpools add");
 
 	return (p);
 }
@@ -124,20 +124,20 @@ thrpool_new(int pool_size, int queue_length, const char *pool_name)
 void *
 thrpool_worker(void *arg)
 {
-	static const char msg[] = "thrpool_worker";
+	static const char diag[] = "thrpool_worker";
 	struct thread_pool *p = arg;
 	struct thread_job job;
 
 	for (;;) {
-		mutex_lock(&p->mutex, msg, "to get job");
+		mutex_lock(&p->mutex, diag, "to get job");
 		p->idles++;
-		mutex_unlock(&p->mutex, msg, "to get job");
+		mutex_unlock(&p->mutex, diag, "to get job");
 
 		thrjobq_get_job(&p->jobq, &job);
 
-		mutex_lock(&p->mutex, msg, "after job was gotten");
+		mutex_lock(&p->mutex, diag, "after job was gotten");
 		p->idles--;
-		mutex_unlock(&p->mutex, msg, "after job was gotten");
+		mutex_unlock(&p->mutex, diag, "after job was gotten");
 
 		(*job.thread_main)(job.arg);
 	}
@@ -151,10 +151,10 @@ thrpool_worker(void *arg)
 void
 thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 {
-	static const char msg[] = "thrpool_add_job";
+	static const char diag[] = "thrpool_add_job";
 	gfarm_error_t e;
 
-	mutex_lock(&p->mutex, msg, "thrpool");
+	mutex_lock(&p->mutex, diag, "thrpool");
 	if (p->threads < p->pool_size && p->idles <= 0) {
 		e = create_detached_thread(thrpool_worker, p);
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -162,10 +162,10 @@ thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 		} else {
 			gflog_warning(GFARM_MSG_1000221,
 			    "%s: create thread: %s\n",
-			    msg, gfarm_error_string(e));
+			    diag, gfarm_error_string(e));
 		}
 	}
-	mutex_unlock(&p->mutex, msg, "thrpool");
+	mutex_unlock(&p->mutex, diag, "thrpool");
 
 	thrjobq_add_job(&p->jobq, thread_main, arg);
 }
@@ -173,22 +173,22 @@ thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 void
 thrpool_info(void)
 {
-	static const char msg[] = "thrpool_info";
+	static const char diag[] = "thrpool_info";
 	struct thread_pool *p;
 	int n, i;
 	const char *name;
 
-	mutex_lock(&all_thrpools_mutex, msg, "all_thrpools access");
+	mutex_lock(&all_thrpools_mutex, diag, "all_thrpools access");
 	p = all_thrpools;
-	mutex_unlock(&all_thrpools_mutex, msg, "all_thrpools access");
+	mutex_unlock(&all_thrpools_mutex, diag, "all_thrpools access");
 
 	/* this implementation depends on that p->next will be never changed */
 	for (; p != NULL; p = p->next) {
-		mutex_lock(&p->mutex, msg, "thrpool");
+		mutex_lock(&p->mutex, diag, "thrpool");
 		n = p->threads;
 		i = p->idles;
 		name = p->name;
-		mutex_unlock(&p->mutex, msg, "thrpool");
+		mutex_unlock(&p->mutex, diag, "thrpool");
 
 		gflog_info(GFARM_MSG_1000222,
 		    "pool %s: number of worker threads: %d, idle threads: %d",

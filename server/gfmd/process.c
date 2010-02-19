@@ -1043,8 +1043,9 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *process;
 	gfarm_pid_t pid;
+	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC";
 
-	e = gfm_server_get_request(peer, "process_alloc",
+	e = gfm_server_get_request(peer, diag,
 	    "ib", &keytype, sizeof(sharedkey), &keylen, sharedkey);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1069,7 +1070,7 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 		peer_set_process(peer, process);
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "process_alloc", e, "l", pid));
+	return (gfm_server_put_reply(peer, diag, e, "l", pid));
 }
 
 gfarm_error_t
@@ -1083,8 +1084,9 @@ gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *parent_process, *process;
 	gfarm_pid_t parent_pid, pid;
+	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC_CHILD";
 
-	e = gfm_server_get_request(peer, "process_alloc_child", "iblib",
+	e = gfm_server_get_request(peer, diag, "iblib",
 	    &parent_keytype,
 	    sizeof(parent_sharedkey), &parent_keylen, parent_sharedkey,
 	    &parent_pid,
@@ -1125,8 +1127,7 @@ gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
 		process_add_child(parent_process, process);
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "process_alloc_child", e, "l",
-	    pid));
+	return (gfm_server_put_reply(peer, diag, e, "l", pid));
 }
 
 gfarm_error_t
@@ -1138,8 +1139,9 @@ gfm_server_process_set(struct peer *peer, int from_client, int skip)
 	size_t keylen;
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *process;
+	static const char diag[] = "GFM_PROTO_PROCESS_SET";
 
-	e = gfm_server_get_request(peer, "process_set",
+	e = gfm_server_get_request(peer, diag,
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1167,7 +1169,7 @@ gfm_server_process_set(struct peer *peer, int from_client, int skip)
 			peer_set_user(peer, process_get_user(process));
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "process_set", e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -1175,7 +1177,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	int transaction = 0;
-	const char msg[] = "gfm_server_process_free";
+	static const char diag[] = "GFM_PROTO_PROCESS_FREE";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -1187,7 +1189,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_PROCESS;
 	}
 	else {
-		if (db_begin(msg) == GFARM_ERR_NO_ERROR)
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
 		 * the following internally calls inode_close*() and
@@ -1197,11 +1199,11 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 		peer_unset_process(peer);
 		e = GFARM_ERR_NO_ERROR;
 		if (transaction)
-			db_end(msg);
+			db_end(diag);
 	}
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "process_free", e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -1211,6 +1213,7 @@ gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
 	struct host *spool_host;
 	struct process *process;
 	gfarm_int32_t fd;
+	static const char diag[] = "GFM_PROTO_BEQUEATH_FD";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -1232,7 +1235,7 @@ gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
 		e = process_bequeath_fd(process, fd);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "bequeath_fd", e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -1242,8 +1245,9 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t parent_fd, fd;
 	struct host *spool_host;
 	struct process *process;
+	static const char diag[] = "GFM_PROTO_INHERIT_FD";
 
-	e = gfm_server_get_request(peer, "inherit_fd", "i", &parent_fd);
+	e = gfm_server_get_request(peer, diag, "i", &parent_fd);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"inherit_fd request failed: %s",
@@ -1271,5 +1275,5 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 		peer_fdpair_set_current(peer, fd);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, "inherit_fd", e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }

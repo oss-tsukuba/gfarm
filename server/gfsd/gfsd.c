@@ -1803,7 +1803,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	pid_t pid = -1;
 	gfarm_int32_t errcode;
 	int local_fd, rv;
-	const char diag[] = "replication_request";
+	static const char diag[] = "replication_request";
 
 	gfs_async_server_get_request(conn, size, diag,
 	    "sill", &host, &port, &ino, &gen);
@@ -3588,7 +3588,7 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 	gfarm_int32_t errcode;
 	int rv = read(rep->pipe_fd, &errcode, sizeof(errcode));
 	struct stat st;
-	const char diag[] = "replication_result_notify";
+	static const char diag[] = "replication_result_notify";
 
 	if (rv != sizeof(errcode)) {
 		if (rv == -1) {

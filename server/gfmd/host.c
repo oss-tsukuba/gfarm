@@ -807,7 +807,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	struct gfarm_hash_iterator it;
 	struct host *h;
 	gfarm_int32_t nhosts;
-	const char msg[] = "protocol HOST_INFO_GET_ALL";
+	static const char diag[] = "GFM_PROTO_HOST_INFO_GET_ALL";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -821,7 +821,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 		if (host_is_active(h))
 			++nhosts;
 	}
-	e = gfm_server_put_reply(peer, msg,
+	e = gfm_server_put_reply(peer, diag,
 	    GFARM_ERR_NO_ERROR, "i", nhosts);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -857,9 +857,9 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	gfarm_int32_t nhosts;
 	struct gfarm_hash_iterator it;
 	struct host *h;
-	const char msg[] = "protocol HOST_INFO_GET_BY_ARCHITECTURE";
+	static const char diag[] = "GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE";
 
-	e = gfm_server_get_request(peer, msg,
+	e = gfm_server_get_request(peer, diag,
 	    "s", &architecture);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -883,10 +883,10 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 			++nhosts;
 	}
 	if (nhosts == 0) {
-		e = gfm_server_put_reply(peer, msg,
+		e = gfm_server_put_reply(peer, diag,
 		    GFARM_ERR_NO_SUCH_OBJECT, "");
 	} else {
-		e = gfm_server_put_reply(peer, msg,
+		e = gfm_server_put_reply(peer, diag,
 		    GFARM_ERR_NO_ERROR, "i", nhosts);
 	}
 	if (e != GFARM_ERR_NO_ERROR || nhosts == 0) {
@@ -918,7 +918,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 gfarm_error_t
 gfm_server_host_info_get_by_names_common(struct peer *peer,
 	int from_client, int skip,
-	struct host *(*lookup)(const char *), char *diag)
+	struct host *(*lookup)(const char *), const char *diag)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
@@ -1039,9 +1039,9 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	char *hostname, *architecture;
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
-	const char msg[] = "protocol HOST_INFO_SET";
+	static const char diag[] = "GFM_PROTO_HOST_INFO_SET";
 
-	e = gfm_server_get_request(peer, msg, "ssiii",
+	e = gfm_server_get_request(peer, diag, "ssiii",
 	    &hostname, &architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1095,7 +1095,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 			free(architecture);
 	}
 	giant_unlock();
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -1106,9 +1106,9 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	struct gfarm_host_info hi;
 	struct host *h;
 	int needs_free = 0;
-	const char msg[] = "protocol HOST_INFO_MODIFY";
+	static const char diag[] = "GFM_PROTO_HOST_INFO_MODIFY";
 
-	e = gfm_server_get_request(peer, msg, "ssiii",
+	e = gfm_server_get_request(peer, diag, "ssiii",
 	    &hi.hostname, &hi.architecture, &hi.ncpu, &hi.port, &hi.flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -1155,7 +1155,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -1192,9 +1192,9 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
 	char *hostname;
-	const char msg[] = "protocol HOST_INFO_REMOVE";
+	static const char diag[] = "GFM_PROTO_HOST_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, msg, "s", &hostname);
+	e = gfm_server_get_request(peer, diag, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"host_info_remove request failure: %s",
@@ -1215,11 +1215,11 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
-		e = host_info_remove(hostname, msg);
+		e = host_info_remove(hostname, diag);
 	free(hostname);
 	giant_unlock();
 
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 /* called from inode.c:inode_schedule_file_reply() */
@@ -1394,9 +1394,9 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	char *hostname;
-	const char msg[] = "protocol HOSTNAME_SET";
+	static const char diag[] = "GFM_PROTO_HOSTNAME_SET";
 
-	e = gfm_server_get_request(peer, msg, "s", &hostname);
+	e = gfm_server_get_request(peer, diag, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"gfm_server_get_request() failure");
@@ -1417,7 +1417,7 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	free(hostname);
 
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 static int
@@ -1433,9 +1433,9 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	char *domain;
-	const char msg[] = "protocol SCHEDULE_HOST_DOMAIN";
+	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
-	e = gfm_server_get_request(peer, msg, "s", &domain);
+	e = gfm_server_get_request(peer, diag, "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"schedule_host_domain request failure: %s",
@@ -1449,7 +1449,7 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
-	e = host_schedule_reply_all(peer, msg, domain_filter, domain);
+	e = host_schedule_reply_all(peer, diag, domain_filter, domain);
 	giant_unlock();
 	free(domain);
 
@@ -1460,7 +1460,7 @@ gfarm_error_t
 gfm_server_statfs(struct peer *peer, int from_client, int skip)
 {
 	gfarm_uint64_t used, avail, files;
-	const char msg[] = "protocol STATFS";
+	static const char diag[] = "GFM_PROTO_STATFS";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -1471,7 +1471,7 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 	avail = total_disk_avail;
 	pthread_mutex_unlock(&total_disk_mutex);
 
-	return (gfm_server_put_reply(peer, msg, GFARM_ERR_NO_ERROR, "lll",
+	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "lll",
 		    used, avail, files));
 }
 

@@ -1287,9 +1287,9 @@ gfarm_pgsql_group_add(struct gfarm_group_info *info)
 {
 	const char *paramValues[1];
 	gfarm_error_t e;
-	static const char msg[] = "pgsql_group_add";
+	static const char diag[] = "pgsql_group_add";
 
-	if ((e = gfarm_pgsql_start_with_retry(msg))
+	if ((e = gfarm_pgsql_start_with_retry(diag))
 	    == GFARM_ERR_NO_ERROR) {
 
 		paramValues[0] = info->groupname;
@@ -1301,15 +1301,15 @@ gfarm_pgsql_group_add(struct gfarm_group_info *info)
 			NULL, /* param lengths */
 			NULL, /* param formats */
 			0, /* ask for text results */
-			msg);
+			diag);
 
 		if (e == GFARM_ERR_NO_ERROR)
 			e = grpassign_set(info);
 
 		if (e == GFARM_ERR_NO_ERROR)
-			e = gfarm_pgsql_commit(msg);
+			e = gfarm_pgsql_commit(diag);
 		else
-			gfarm_pgsql_rollback(msg);
+			gfarm_pgsql_rollback(diag);
 	}
 
 	free(info);
@@ -1321,7 +1321,7 @@ gfarm_pgsql_group_modify(struct db_group_modify_arg *arg)
 {
 	struct gfarm_group_info *info = &arg->gi;
 	gfarm_error_t e;
-	static const char msg[] = "gfarm_pgsql_group_modify";
+	static const char diag[] = "gfarm_pgsql_group_modify";
 
 	if ((e = gfarm_pgsql_start_with_retry("pgsql_group_modify"))
 	    == GFARM_ERR_NO_ERROR) {
@@ -1332,9 +1332,9 @@ gfarm_pgsql_group_modify(struct db_group_modify_arg *arg)
 			e = grpassign_set(info);
 
 		if (e == GFARM_ERR_NO_ERROR)
-			e = gfarm_pgsql_commit(msg);
+			e = gfarm_pgsql_commit(diag);
 		else
-			gfarm_pgsql_rollback(msg);
+			gfarm_pgsql_rollback(diag);
 	}
 	free(arg);
 	return (e);

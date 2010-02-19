@@ -643,7 +643,8 @@ quota_group_remove(struct group *g)
 static gfarm_error_t
 quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 {
-	char *diag = is_group ? "quota_group_get" : "quota_user_get";
+	const char *diag = is_group ?
+	    "GFM_PROTO_QUOTA_GROUP_GET" : "GFM_PROTO_QUOTA_USER_GET";
 	gfarm_error_t e;
 	struct user *user = NULL, *peer_user = peer_get_user(peer);
 	struct group *group = NULL;
@@ -766,7 +767,8 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 static gfarm_error_t
 quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 {
-	char *diag = is_group ? "quota_group_set" : "quota_user_set";
+	const char *diag = is_group ?
+	    "GFM_PROTO_QUOTA_GROUP_SET" : "GFM_PROTO_QUOTA_USER_SET";
 	gfarm_error_t e;
 	struct gfarm_quota_set_info qi;
 	struct quota *q;
@@ -877,7 +879,7 @@ gfm_server_quota_group_set(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 {
-	char *diag = "quota_check";
+	static const char diag[] = "GFM_PROTO_QUOTA_CHECK";
 	gfarm_error_t e;
 	struct user *peer_user = peer_get_user(peer);
 

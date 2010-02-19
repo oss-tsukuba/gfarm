@@ -1737,7 +1737,7 @@ inode_replicated(struct file_replicating *fr, gfarm_int32_t errcode,
 	struct inode *inode = fr->inode;
 	int transaction = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	const char diag[] = "inode_replicated";
+	static const char diag[] = "inode_replicated";
 
 	if (errcode != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)

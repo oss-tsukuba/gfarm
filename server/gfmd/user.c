@@ -377,7 +377,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nusers;
 	struct user **u;
-	const char msg[] = "protocol USER_INFO_GET_ALL";
+	static const char diag[] = "GFM_PROTO_USER_INFO_GET_ALL";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -393,7 +393,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 		if (user_is_active(*u))
 			++nusers;
 	}
-	e = gfm_server_put_reply(peer, msg,
+	e = gfm_server_put_reply(peer, diag,
 	    GFARM_ERR_NO_ERROR, "i", nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -435,13 +435,12 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	char *user, **users;
 	int i, j, eof, no_memory = 0;
 	struct user *u;
-	const char msg[] = "protocol USER_INFO_GET_BY_NAMES";
+	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_NAMES";
 
-	e = gfm_server_get_request(peer, msg, "i", &nusers);
+	e = gfm_server_get_request(peer, diag, "i", &nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"USER_INFO_GET_BY_NAMES request failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+			diag, gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(users, nusers);
@@ -477,7 +476,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 		goto free_user;
 	}
 
-	e = gfm_server_put_reply(peer, "user_info_get_by_names",
+	e = gfm_server_put_reply(peer, diag,
 		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
 	if (no_memory || e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -495,13 +494,13 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 				gflog_info(GFARM_MSG_1000238,
 				    "user lookup <%s>: failed",
 				    users[i]);
-			e = gfm_server_put_reply(peer, msg,
+			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_SUCH_USER, "");
 		} else {
 			if (debug_mode)
 				gflog_info(GFARM_MSG_1000239,
 				    "user lookup <%s>: ok", users[i]);
-			e = gfm_server_put_reply(peer, msg,
+			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
 			if (e == GFARM_ERR_NO_ERROR)
 				e = user_info_send(client, &u->ui);
@@ -530,13 +529,12 @@ gfm_server_user_info_get_by_gsi_dn(
 	char *gsi_dn;
 	struct user *u;
 	struct gfarm_user_info *ui;
-	const char msg[] = "protocol USER_INFO_GET_BY_GSI_DN";
+	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_GSI_DN";
 
-	e = gfm_server_get_request(peer, msg, "s", &gsi_dn);
+	e = gfm_server_get_request(peer, diag, "s", &gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			"USER_INFO_GET_BY_GSI_DN request failed: %s",
-			gfarm_error_string(e));
+		    "%s request: %s", diag, gfarm_error_string(e));
 		return (e);
 	}
 	if (skip) {
@@ -548,11 +546,11 @@ gfm_server_user_info_get_by_gsi_dn(
 	giant_lock();
 	u = user_lookup_gsi_dn(gsi_dn);
 	if (u == NULL || user_is_invalidated(u))
-		e = gfm_server_put_reply(peer, msg,
+		e = gfm_server_put_reply(peer, diag,
 			GFARM_ERR_NO_SUCH_USER, "");
 	else {
 		ui = &u->ui;
-		e = gfm_server_put_reply(peer, msg, e,
+		e = gfm_server_put_reply(peer, diag, e,
 			"ssss", ui->username, ui->realname, ui->homedir,
 			ui->gsi_dn);
 	}
@@ -568,9 +566,9 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
 	int do_not_free = 0;
-	const char msg[] = "protocol USER_INFO_SET";
+	static const char diag[] = "GFM_PROTO_USER_INFO_SET";
 
-	e = gfm_server_get_request(peer, msg,
+	e = gfm_server_get_request(peer, diag,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -608,7 +606,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR && !do_not_free)
 		gfarm_user_info_free(&ui);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -618,9 +616,9 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	struct user *u, *user = peer_get_user(peer);
 	gfarm_error_t e;
 	int needs_free = 0;
-	const char msg[] = "protocol USER_INFO_MODIFY";
+	static const char diag[] = "GFM_PROTO_USER_INFO_MODIFY";
 
-	e = gfm_server_get_request(peer, msg,
+	e = gfm_server_get_request(peer, diag,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -663,7 +661,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	if (needs_free)
 		gfarm_user_info_free(&ui);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -690,9 +688,9 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 	char *username;
 	gfarm_int32_t e;
 	struct user *user = peer_get_user(peer);
-	const char msg[] = "protocol USER_INFO_REMOVE";
+	static const char diag[] = "GFM_PROTO_USER_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, msg,
+	e = gfm_server_get_request(peer, diag,
 	    "s", &username);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -710,9 +708,9 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
-		e = user_info_remove(username, msg);
+		e = user_info_remove(username, diag);
 	free(username);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, msg, e, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 #endif /* TEST */

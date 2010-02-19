@@ -119,19 +119,19 @@ gfm_server_get_request(struct peer *peer, const char *diag,
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000226,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s receiving request: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
 	if (eof) {
 		gflog_warning(GFARM_MSG_1000227,
-		    "%s: missing RPC argument", diag);
+		    "%s receiving request: missing RPC argument", diag);
 		peer_record_protocol_error(peer);
 		return (GFARM_ERR_PROTOCOL);
 	}
 	if (*format != '\0')
 		gflog_fatal(GFARM_MSG_1000228,
-		    "%s: invalid format character to get request",
+		    "%s receiving request: invalid format character",
 		    diag);
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -153,7 +153,7 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 	if (e != GFARM_ERR_NO_ERROR) {
 		va_end(ap);
 		gflog_warning(GFARM_MSG_1000230,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s sending reply: %s", diag, gfarm_error_string(e));
 		peer_record_protocol_error(peer);
 		return (e);
 	}
@@ -162,13 +162,15 @@ gfm_server_put_reply(struct peer *peer, const char *diag,
 		if (e != GFARM_ERR_NO_ERROR) {
 			va_end(ap);
 			gflog_warning(GFARM_MSG_1000231,
-			    "%s: %s", diag, gfarm_error_string(e));
+			    "%s sending reply: %s",
+			    diag, gfarm_error_string(e));
 			peer_record_protocol_error(peer);
 			return (e);
 		}
 		if (*format != '\0')
-			gflog_fatal(GFARM_MSG_1000232, "%s: %s", diag,
-			    "invalid format character to put reply");
+			gflog_fatal(GFARM_MSG_1000232,
+			    "%s sending reply: %s", diag,
+			    "invalid format character");
 	}
 	va_end(ap);
 	/* do not call gfp_xdr_flush() here for a compound protocol */

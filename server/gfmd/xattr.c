@@ -98,7 +98,8 @@ gfarm_error_t
 gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 {
 	gfarm_error_t e;
-	char *diag = xmlMode ? "xmlattr_set" : "xattr_set";
+	const char *diag =
+	    xmlMode ? "GFM_PROTO_XMLATTR_SET" : "GFM_PROTO_XATTR_SET";
 	char *attrname = NULL;
 	size_t size;
 	char *value = NULL;
@@ -205,7 +206,8 @@ gfarm_error_t
 gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 {
 	gfarm_error_t e;
-	char *diag = xmlMode ? "xmlattr_get" : "xattr_get";
+	const char *diag =
+	    xmlMode ? "GFM_PROTO_XMLATTR_GET" : "GFM_PROTO_XATTR_GET";
 	char *attrname = NULL;
 	size_t size = 0;
 	void *value = NULL;
@@ -272,7 +274,8 @@ gfarm_error_t
 gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 {
 	gfarm_error_t e;
-	char *diag = xmlMode ? "xmlattr_list" : "xattr_list";
+	const char *diag =
+	    xmlMode ? "GFM_PROTO_XMLATTR_LIST" : "GFM_PROTO_XATTR_LIST";
 	size_t size;
 	char *value = NULL;
 	struct process *process;
@@ -346,7 +349,8 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		int xmlMode)
 {
 	gfarm_error_t e;
-	char *diag = xmlMode ? "xmlattr_remove" : "xattr_remove";
+	const char *diag =
+	     xmlMode ? "GFM_PROTO_XMLATTR_REMOVE" : "GFM_PROTO_XATTR_REMOVE";
 	char *attrname = NULL;
 	struct process *process;
 	gfarm_int32_t fd;
@@ -475,15 +479,15 @@ static void
 inum_path_array_init(struct inum_path_array *array, char *expr)
 {
 	int i, err;
-	char *msg = "inum_path_array_init";
+	static const char diag[] = "inum_path_array_init";
 
 	memset(array, 0, sizeof(*array));
 	if ((err = pthread_mutex_init(&array->lock, NULL)) != 0)
 		gflog_fatal(GFARM_MSG_1000417,
-		    "%s: mutex: %s", msg, strerror(err));
+		    "%s: mutex: %s", diag, strerror(err));
 	if ((err = pthread_cond_init(&array->cond, NULL)) != 0)
 		gflog_fatal(GFARM_MSG_1000418,
-		    "%s: cond: %s", msg, strerror(err));
+		    "%s: cond: %s", diag, strerror(err));
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(array->entries); i++)
 		inum_path_entry_init(array, &array->entries[i]);
@@ -1074,7 +1078,7 @@ gfarm_error_t
 gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
-	char *diag = "find_xml_attr";
+	static const char diag[] = "GFM_PROTO_XMLATTR_FIND";
 	char *expr = NULL, *ck_path = NULL, *ck_name = NULL;
 	int depth, nalloc;
 #ifdef ENABLE_XMLATTR
