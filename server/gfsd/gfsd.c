@@ -112,9 +112,6 @@
 	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define fatal_errno(msg_no, ...) \
 	fatal_errno_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fatal_metadb_proto(msg_no, ...) \
-	fatal_metadb_proto_full(msg_no, __FILE__, __LINE__, __func__,\
-				__VA_ARGS__)
 #define accepting_fatal(msg_no, ...) \
 	accepting_fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define accepting_fatal_errno(msg_no, ...) \
@@ -226,12 +223,13 @@ fatal_errno_full(int msg_no, const char *file, int line_no, const char *func,
 }
 
 void
-fatal_metadb_proto_full(int msg_no, const char *file, int line_no,
-		const char *func, const char *diag,
-		const char *proto, gfarm_error_t e)
+fatal_metadb_proto_full(int msg_no,
+	const char *file, int line_no, const char *func,
+	const char *diag, const char *proto, gfarm_error_t e)
 {
-	fatal(GFARM_MSG_1000452, "gfmd protocol: %s error on %s: %s",
-	      proto, diag, gfarm_error_string(e));
+	fatal_full(msg_no, file, line_no, func,
+	    "gfmd protocol: %s error on %s: %s", proto, diag,
+	    gfarm_error_string(e));
 }
 
 struct local_socket {
