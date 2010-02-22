@@ -586,8 +586,9 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 	e = gfs_client_fhremove(host_peer(host), r->inum, r->igen);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000262,
-		    "host_remove_replica(%" GFARM_PRId64
-			    "): %s", r->inum, gfarm_error_string(e));
+		    "host_remove_replica(%lld): %s",
+			    (unsigned long long)r->inum,
+			    gfarm_error_string(e));
 		if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 			/* already removed by some reason */
 			free(r);
@@ -610,13 +611,15 @@ host_remove_replica_dump(struct host *host)
 		e = db_deadfilecopy_add(r->inum, r->igen, host_name(host));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000263,
-			    "db_deadfilecopy_add(%" GFARM_PRId64
-				    ", %s): %s", r->inum, host_name(host),
+			    "db_deadfilecopy_add(%lld, %s): %s",
+				    (unsigned long long)r->inum,
+				    host_name(host),
 				    gfarm_error_string(e));
 		else if (debug_mode)
 			gflog_debug(GFARM_MSG_1000264,
-			    "db_deadfilecopy_add(%" GFARM_PRId64
-				    ", %s): added", r->inum, host_name(host));
+			    "db_deadfilecopy_add(%lld, %s): added",
+				    (unsigned long long)r->inum,
+				    host_name(host));
 		nr = r->next;
 		free(r);
 		r = nr;

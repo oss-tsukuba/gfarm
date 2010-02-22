@@ -211,8 +211,9 @@ inode_cksum_remove(struct inode *inode)
 		e = db_inode_cksum_remove(inode->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000297,
-			    "db_inode_cksum_remove(%" GFARM_PRId64 "): %s",
-			    inode->i_number, gfarm_error_string(e));
+			    "db_inode_cksum_remove(%lld): %s",
+			    (unsigned long long)inode->i_number,
+			    gfarm_error_string(e));
 	}
 	inode_cksum_clear(inode);
 }
@@ -302,9 +303,10 @@ inode_cksum_set(struct file_opening *fo,
 	/* XXX FIXME: shouldn't happen, but */
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000298,
-		    "db_inode_cksum_%s(%" GFARM_PRId64 "): %s",
+		    "db_inode_cksum_%s(%lld): %s",
 		    cs == NULL ? "add" : "modify",
-		    inode->i_number, gfarm_error_string(e));
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 
 	/* reduce memory reallocation */
 	if (cs != NULL &&
@@ -580,13 +582,15 @@ inode_free(struct inode *inode)
 	e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000300,
-		    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_nlink_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000301,
-		    "db_inode_mode_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_mode_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 }
 
 static gfarm_error_t
@@ -846,8 +850,9 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000304,
-		    "db_inode_mode_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_mode_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -870,8 +875,9 @@ inode_set_size(struct inode *inode, gfarm_off_t size)
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000305,
-		    "db_inode_size_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_size_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 }
 
 gfarm_error_t
@@ -890,8 +896,9 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		e = db_inode_user_modify(inode->i_number, user_name(user));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000306,
-			    "db_inode_user_modify(%" GFARM_PRId64 "): %s",
-			    inode->i_number, gfarm_error_string(e));
+			    "db_inode_user_modify(%lld): %s",
+			    (unsigned long long)inode->i_number,
+			    gfarm_error_string(e));
 	}
 	if (group != NULL) {
 		inode->i_group = group;
@@ -899,8 +906,9 @@ inode_set_owner(struct inode *inode, struct user *user, struct group *group)
 		e = db_inode_group_modify(inode->i_number, group_name(group));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000307,
-			    "db_inode_group_modify(%" GFARM_PRId64 "): %s",
-			    inode->i_number, gfarm_error_string(e));
+			    "db_inode_group_modify(%lld): %s",
+			    (unsigned long long)inode->i_number,
+			    gfarm_error_string(e));
 	}
 	if (inode_is_file(inode))
 		quota_update_file_add(inode);
@@ -942,8 +950,9 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000308,
-		    "db_inode_atime_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_atime_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 }
 
 void
@@ -959,8 +968,9 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 	e = db_inode_mtime_modify(inode->i_number, inode_get_mtime(inode));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000309,
-		    "db_inode_mtime_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_mtime_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 }
 
 void
@@ -976,8 +986,9 @@ inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 	e = db_inode_ctime_modify(inode->i_number, &inode->i_ctimespec);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000310,
-		    "db_inode_ctime_modify(%" GFARM_PRId64 "): %s",
-		    inode->i_number, gfarm_error_string(e));
+		    "db_inode_ctime_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
 }
 
 static void
@@ -1158,9 +1169,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		e = db_direntry_remove(parent->i_number, name, len);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000311,
-			    "db_direntry_remove(%" GFARM_PRId64
-			    ", %.*s): %s",
-			    parent->i_number, len, name,
+			    "db_direntry_remove(%lld, %.*s): %s",
+			    (unsigned long long)parent->i_number, len, name,
 			    gfarm_error_string(e));
 
 		return (GFARM_ERR_NO_ERROR);
@@ -1199,14 +1209,15 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		e = db_inode_nlink_modify(n->i_number, n->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000312,
-			    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
-			    n->i_number, gfarm_error_string(e));
+			    "db_inode_nlink_modify(%lld): %s",
+			    (unsigned long long)n->i_number,
+			    gfarm_error_string(e));
 		e = db_direntry_add(parent->i_number, name, len, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000313,
-			    "db_direntry_add(%" GFARM_PRId64
-			    ", %" GFARM_PRId64 "): %s",
-			    parent->i_number, n->i_number,
+			    "db_direntry_add(%lld, %lld): %s",
+			    (unsigned long long)parent->i_number,
+			    (unsigned long long)n->i_number,
 			    gfarm_error_string(e));
 
 		return (GFARM_ERR_NO_ERROR);
@@ -1270,9 +1281,10 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000314,
-		    "db_inode_%s(%" GFARM_PRId64 "): %s",
+		    "db_inode_%s(%lld): %s",
 		    n->i_gen == 0 ? "add" : "modify",
-		    n->i_number, gfarm_error_string(e));
+		    (unsigned long long)n->i_number,
+		    gfarm_error_string(e));
 
 	/*
 	 * We do db_direntry_add() here to make LDAP happy.
@@ -1284,32 +1296,32 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		e = db_direntry_add(n->i_number, dot, DOT_LEN, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000315,
-			    "db_direntry_add(%" GFARM_PRId64
-			    ", \".\", %" GFARM_PRId64 "): %s",
-			    parent->i_number, n->i_number,
+			    "db_direntry_add(%lld, \".\", %lld): %s",
+			    (unsigned long long)parent->i_number,
+			    (unsigned long long)n->i_number,
 			    gfarm_error_string(e));
 		e = db_direntry_add(
 			n->i_number, dotdot, DOTDOT_LEN, parent->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000316,
-			    "db_direntry_add(%" GFARM_PRId64
-			    ", \"..\", %" GFARM_PRId64 "): %s",
-			    parent->i_number, n->i_number,
+			    "db_direntry_add(%lld, \"..\", %lld): %s",
+			    (unsigned long long)parent->i_number,
+			    (unsigned long long)n->i_number,
 			    gfarm_error_string(e));
 	} else if (expected_type == GFS_DT_LNK) {
 		e = db_symlink_add(n->i_number, symlink_src);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000317,
-			    "db_symlink_add(%" GFARM_PRId64
-			    ", \"%s\"): %s",
-			    n->i_number, symlink_src,
+			    "db_symlink_add(%lld, \"%s\"): %s",
+			    (unsigned long long)n->i_number, symlink_src,
 			    gfarm_error_string(e));
 	}
 	e = db_direntry_add(parent->i_number, name, len, n->i_number);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1000318, "db_direntry_add(%" GFARM_PRId64
-		    ", %" GFARM_PRId64 "): %s",
-		    parent->i_number, n->i_number,
+		gflog_error(GFARM_MSG_1000318,
+		    "db_direntry_add(%lld, %lld): %s",
+		    (unsigned long long)parent->i_number,
+		    (unsigned long long)n->i_number,
 		    gfarm_error_string(e));
 
 	*inp = n;
@@ -1599,9 +1611,9 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			    inode->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_error(GFARM_MSG_1000321,
-				    "db_inode_nlink_modify(%"
-				    GFARM_PRId64 "): %s",
-				    inode->i_number, gfarm_error_string(e));
+				    "db_inode_nlink_modify(%lld): %s",
+				    (unsigned long long)inode->i_number,
+				    gfarm_error_string(e));
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else if (inode_is_dir(inode)) {
@@ -1627,15 +1639,15 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		e = db_direntry_remove(inode->i_number, dot, DOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000322,
-			    "db_direntry_remove(%" GFARM_PRId64
-			    ", %s): %s",
-			    inode->i_number, dot, gfarm_error_string(e));
+			    "db_direntry_remove(%lld, %s): %s",
+			    (unsigned long long)inode->i_number, dot,
+			    gfarm_error_string(e));
 		e = db_direntry_remove(inode->i_number, dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000323,
-			    "db_direntry_remove(%" GFARM_PRId64
-			    ", %s): %s",
-			    inode->i_number, dotdot, gfarm_error_string(e));
+			    "db_direntry_remove(%lld, %s): %s",
+			    (unsigned long long)inode->i_number, dotdot,
+			    gfarm_error_string(e));
 	} else if (inode_is_symlink(inode)) {
 		e = inode_lookup_relative(base, name, GFS_DT_LNK, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
@@ -1649,8 +1661,9 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		e = db_symlink_remove(inode->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000324,
-			    "db_symlink_remove(%" GFARM_PRId64 "): %s",
-			    inode->i_number, gfarm_error_string(e));
+			    "db_symlink_remove(%lld): %s",
+			    (unsigned long long)inode->i_number,
+			    gfarm_error_string(e));
 	} else {
 		gflog_fatal(GFARM_MSG_1000325,
 		    "inode_unlink: unknown inode type");
@@ -1669,8 +1682,9 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000326,
-			    "db_inode_nlink_modify(%" GFARM_PRId64 "): %s",
-			    inode->i_number, gfarm_error_string(e));
+			    "db_inode_nlink_modify(%lld): %s",
+			    (unsigned long long)inode->i_number,
+			    gfarm_error_string(e));
 
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -1855,8 +1869,9 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000327,
-		    "db_filecopy_add(%" GFARM_PRId64 ", %s): %s",
-		    inode->i_number, host_name(spool_host),
+		    "db_filecopy_add(%lld, %s): %s",
+		    (unsigned long long)inode->i_number,
+		    host_name(spool_host),
 		    gfarm_error_string(e));
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1872,15 +1887,15 @@ remove_replica_internal(struct inode *inode, struct file_copy *copy)
 	e = host_remove_replica_enq(copy->host, inode->i_number, inode->i_gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000328,
-		    "host_remove_replica_enq(%" GFARM_PRId64
-		    ", %s): %s", inode->i_number, host_name(copy->host),
+		    "host_remove_replica_enq(%lld, %s): %s",
+		    (unsigned long long)inode->i_number, host_name(copy->host),
 		    gfarm_error_string(e));
 
 	if (copy->valid && (e2 = db_filecopy_remove(inode->i_number,
 	    host_name(copy->host))) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000329,
-		    "db_filecopy_remove(%" GFARM_PRId64 ", %s): %s",
-		    inode->i_number, host_name(copy->host),
+		    "db_filecopy_remove(%lld, %s): %s",
+		    (unsigned long long)inode->i_number, host_name(copy->host),
 		    gfarm_error_string(e2));
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
@@ -2432,7 +2447,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 	inode = inode_alloc_num(st->st_ino);
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000334,
-		    "cannot allocate inode %" GFARM_PRId64, st->st_ino);
+		    "cannot allocate inode %lld",
+		    (unsigned long long)st->st_ino);
 		e = GFARM_ERR_UNKNOWN;
 	} else if (GFARM_S_ISDIR(st->st_mode)) {
 		e = inode_init_dir_internal(inode);
@@ -2445,8 +2461,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 		e = GFARM_ERR_NO_ERROR;
 	} else {
 		gflog_error(GFARM_MSG_1000335,
-		    "unknown inode type %" GFARM_PRId64 ", mode 0%o",
-		    st->st_ino, st->st_mode);
+		    "unknown inode type %lld, mode 0%o",
+		    (unsigned long long)st->st_ino, st->st_mode);
 		e = GFARM_ERR_UNKNOWN;
 		assert(0);
 	}
@@ -2455,7 +2471,8 @@ inode_add_one(void *closure, struct gfs_stat *st)
 			"inode_alloc_num() failed");
 		if (e != GFARM_ERR_UNKNOWN) {
 			gflog_error(GFARM_MSG_1000336,
-			    "inode %" GFARM_PRId64 ": %s", st->st_ino,
+			    "inode %lld: %s",
+			    (unsigned long long)st->st_ino,
 			    gfarm_error_string(e));
 		}
 		gfs_stat_free(st);
@@ -2483,16 +2500,16 @@ inode_cksum_add_one(void *closure,
 
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000337,
-		    "inode_cksum_add_one: no inode %" GFARM_PRId64,
-		    inum);
+		    "inode_cksum_add_one: no inode %lld",
+		    (unsigned long long)inum);
 	} else if (!inode_is_file(inode)) {
 		gflog_error(GFARM_MSG_1000338,
-		    "inode_cksum_add_one: not file %" GFARM_PRId64,
-		    inum);
+		    "inode_cksum_add_one: not file %lld",
+		    (unsigned long long)inum);
 	} else if (inode->u.c.s.f.cksum != NULL) {
 		gflog_error(GFARM_MSG_1000339,
-		    "inode_cksum_add_one: dup cksum %" GFARM_PRId64,
-		    inum);
+		    "inode_cksum_add_one: dup cksum %lld",
+		    (unsigned long long)inum);
 	} else {
 		inode_cksum_set_internal(inode, type, len, sum);
 	}
@@ -2508,15 +2525,16 @@ symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
 
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000340,
-		    "symlink_add_one: no inode %" GFARM_PRId64, inum);
+		    "symlink_add_one: no inode %lld",
+		    (unsigned long long)inum);
 	} else if (!inode_is_symlink(inode)) {
 		gflog_error(GFARM_MSG_1000341,
-		    "symlink_add_one: not symlink %" GFARM_PRId64,
-		    inum);
+		    "symlink_add_one: not symlink %lld",
+		    (unsigned long long)inum);
 	} else if (inode->u.c.s.l.source_path != NULL) {
 		gflog_error(GFARM_MSG_1000342,
-		    "symlink_add_one: dup symlink %" GFARM_PRId64,
-		    inum);
+		    "symlink_add_one: dup symlink %lld",
+		    (unsigned long long)inum);
 	} else {
 		inode->u.c.s.l.source_path = source_path;
 		return; /* to skip free(source_path); */
@@ -2534,10 +2552,12 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000343,
-		    "file_copy_add_one: no inode %" GFARM_PRId64, inum);
+		    "file_copy_add_one: no inode %lld",
+		    (unsigned long long)inum);
 	} else if (!inode_is_file(inode)) {
 		gflog_error(GFARM_MSG_1000344,
-		    "file_copy_add_one: not file %" GFARM_PRId64, inum);
+		    "file_copy_add_one: not file %lld",
+		    (unsigned long long)inum);
 	} else if (host == NULL) {
 		gflog_error(GFARM_MSG_1000345,
 		    "file_copy_add_one: no host %s", hostname);
@@ -2590,16 +2610,16 @@ dir_entry_add_one(void *closure,
 
 	if (dir_inode == NULL) {
 		gflog_error(GFARM_MSG_1000350,
-		    "dir_entry_add_one: no dir %" GFARM_PRId64,
-		    dir_inum);
+		    "dir_entry_add_one: no dir %lld",
+		    (unsigned long long)dir_inum);
 	} else if (!inode_is_dir(dir_inode)) {
 		gflog_error(GFARM_MSG_1000351,
-		    "dir_entry_add_one: not dir %" GFARM_PRId64,
-		    dir_inum);
+		    "dir_entry_add_one: not dir %lld",
+		    (unsigned long long)dir_inum);
 	} else if (entry_inode == NULL) {
 		gflog_error(GFARM_MSG_1000352,
-		    "dir_entry_add_one: no %" GFARM_PRId64,
-		    entry_inum);
+		    "dir_entry_add_one: no %lld",
+		    (unsigned long long)entry_inum);
 	} else if ((entry = dir_enter(dir_inode->u.c.s.d.entries,
 	    entry_name, entry_len, &created)) == NULL) {
 		gflog_error(GFARM_MSG_1000353, "dir_entry_add_one: no memory");
@@ -2803,15 +2823,15 @@ xattr_add_one(void *closure, struct xattr_info *info)
 
 	if (inode == NULL)
 		gflog_error(GFARM_MSG_1000366,
-		    "xattr_add_one: no file %" GFARM_PRId64,
-			info->inum);
+		    "xattr_add_one: no file %lld",
+			(unsigned long long)info->inum);
 	else {
 		int xmlMode = (closure != NULL) ? *(int*)closure : 0;
 		xattrs = (xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs);
 		if (xattr_add(xattrs, info->attrname) == NULL)
 			gflog_error(GFARM_MSG_1000367, "xattr_add_one: "
-				"cannot add attrname %s to %"
-				GFARM_PRId64, info->attrname, info->inum);
+				"cannot add attrname %s to %lld",
+				info->attrname, (unsigned long long)info->inum);
 	}
 }
 
@@ -2967,25 +2987,25 @@ dir_dump(gfarm_ino_t i_number)
 
 	if (inode == NULL) {
 		gflog_info(GFARM_MSG_1000370,
-		    "inode_lookup %" GFARM_PRId64 " failed", i_number);
+		    "inode_lookup %lld failed", (unsigned long long)i_number);
 		return;
 	}
 	dir = inode_get_dir(inode);
 	if (dir == NULL) {
 		gflog_info(GFARM_MSG_1000371,
-		    "inode %" GFARM_PRId64 " is not a directory",
-		    i_number);
+		    "inode %lld is not a directory",
+		    (unsigned long long)i_number);
 		return;
 	}
 	ok = dir_cursor_set_pos(dir, 0, &cursor);
 	if (!ok) {
 		gflog_info(GFARM_MSG_1000372,
-		    "dir inode %" GFARM_PRId64 " cannot seek to 0",
-		    i_number);
+		    "dir inode %lld cannot seek to 0",
+		    (unsigned long long)i_number);
 		return;
 	}
 	gflog_info(GFARM_MSG_1000373,
-	    "dir inode %" GFARM_PRId64 " dump start:", i_number);
+	    "dir inode %lld dump start:", (unsigned long long)i_number);
 	for (;;) {
 		if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
 		    &name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
@@ -2996,14 +3016,15 @@ dir_dump(gfarm_ino_t i_number)
 			break;
 		}
 		gflog_info(GFARM_MSG_1000374,
-		    "entry %s (len=%d) inum %" GFARM_PRId64,
-		    name, (int)strlen(name), inode_get_number(entry_inode));
+		    "entry %s (len=%d) inum %lld",
+		    name, (int)strlen(name),
+		    (unsigned long long)inode_get_number(entry_inode));
 		free(name);
 		if (!dir_cursor_next(dir, &cursor))
 			break;
 	}
 	gflog_info(GFARM_MSG_1000375,
-	    "dir inode %" GFARM_PRId64 " dump end", i_number);
+	    "dir inode %lld dump end", (unsigned long long)i_number);
 }
 
 void

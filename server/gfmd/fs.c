@@ -333,9 +333,9 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 			gfarm_int32_t fd;
 			peer_fdpair_get_current(peer, &fd);
 			gflog_info(GFARM_MSG_1000377,
-			    "create(%s) -> %d, %" GFARM_PRId64
-			    ":%" GFARM_PRId64 ", %3o",
-			    name, fd, inum, gen, mode);
+			    "create(%s) -> %d, %lld:%lld, %3o",
+			    name, fd, (unsigned long long)inum,
+			    (unsigned long long)gen, mode);
 		}
 	}
 
@@ -379,9 +379,9 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 			gfarm_int32_t fd;
 			peer_fdpair_get_current(peer, &fd);
 			gflog_info(GFARM_MSG_1000379,
-			    "open(%s) -> %d, %" GFARM_PRId64
-			    ":%" GFARM_PRId64 ", %3o",
-			    name, fd, inum, gen, mode);
+			    "open(%s) -> %d, %lld:%lld, %3o",
+			    name, fd, (unsigned long long)inum,
+			    (unsigned long long)gen, mode);
 		}
 	}
 

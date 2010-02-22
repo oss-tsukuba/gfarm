@@ -405,11 +405,11 @@ quota_update_file_add_common(struct inode *inode, int quotacheck)
 		username = user_name(u);
 		groupname = group_name(g);
 		gflog_debug(GFARM_MSG_1000416,
-			    "<quota_add> "
-			    "ino=%"GFARM_PRId64"(gen=%"GFARM_PRId64"): "
-			    "size=%"GFARM_PRId64",ncopy=%"GFARM_PRId64","
-			    "user=%s,group=%s",
-			    inum, gen, size, ncopy, username, groupname);
+			    "<quota_add> ino=%lld(gen=%lld): "
+			    "size=%lld,ncopy=%lld,user=%s,group=%s",
+			    (unsigned long long)inum, (unsigned long long)gen,
+			    (unsigned long long)size, (unsigned long long)ncopy,
+			    username, groupname);
 	}
 }
 
