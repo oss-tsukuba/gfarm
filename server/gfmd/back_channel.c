@@ -259,7 +259,7 @@ gfs_async_client_replication_request_result(void *arg, size_t size)
 {
 	struct file_replicating *fr = arg;
 	struct peer *peer = host_peer(fr->dst);
-	gfarm_int32_t handle;
+	gfarm_int64_t handle;
 	gfarm_error_t e;
 
 	e = gfs_async_client_recv_result(peer, size, "l", &handle);
