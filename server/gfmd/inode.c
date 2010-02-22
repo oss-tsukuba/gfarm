@@ -1953,8 +1953,8 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if (inode_has_replica(inode, dst))
 		return (GFARM_ERR_ALREADY_EXISTS);
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
-	    inode_writing_spool_host(inode) != NULL)
-		e = GFARM_ERR_FILE_BUSY;
+	    inode_is_opened_for_writing(inode))
+		return (GFARM_ERR_FILE_BUSY);
 
 	return (inode_add_replica(inode, dst, 0));
 }
@@ -2049,6 +2049,22 @@ inode_close_write(struct file_opening *fo, gfarm_off_t size,
 		inode_set_ctime(inode, mtime);
 	}
 	inode_close_read(fo, atime);
+}
+
+int
+inode_is_opened_for_writing(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+	struct file_opening *fo;
+
+	if (ios != NULL &&
+	    (fo = ios->openings.opening_next) != &ios->openings) {
+		for (; fo != &ios->openings; fo = fo->opening_next) {
+			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+				return (1);
+		}
+	}
+	return (0);
 }
 
 int
