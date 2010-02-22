@@ -20,9 +20,9 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage:\t%s [-P <path>] [-u username | -g groupname]\n",
+		"Usage:\t%s [-q] [-P <path>] [-u username | -g groupname]\n",
 		program_name);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 #define EXCEEDED(f, type) fprintf(f, "warning: %s exceeded\n", type)
@@ -136,12 +136,26 @@ quota_get_info_print(FILE *f, struct gfarm_quota_get_info *q, int is_group)
 #define MODE_USER  0
 #define MODE_GROUP 1
 
+#define OPT_USER	'u'
+#define OPT_GROUP	'g'
+
+static void
+conflict_check(int *mode_ch_p, int ch)
+{
+	if (*mode_ch_p) {
+		fprintf(stderr, "%s: -%c option conflicts with -%c\n",
+			program_name, ch, *mode_ch_p);
+		usage();
+	}
+	*mode_ch_p = ch;
+}
+
 int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	int c, status = 0;
-	int mode = MODE_USER;
+	int c, status = 0, opt_quiet = 0;
+	int mode = 0;
 	char *name = "";  /* default: my username */
 	struct gfarm_quota_get_info qi;
 	struct gfm_connection *gfm_server;
@@ -153,21 +167,24 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
-	while ((c = getopt(argc, argv, "P:u:g:h?")) != -1) {
+	while ((c = getopt(argc, argv, "P:g:hqu:?")) != -1) {
 		switch (c) {
 		case 'P':
 			path = optarg;
 			break;
-		case 'u':
+		case OPT_USER: /* 'u' */
 			name = optarg;
-			mode = MODE_USER;
+			conflict_check(&mode, c);
 			break;
-		case 'g':
+		case OPT_GROUP: /* 'g' */
 			name = optarg;
-			mode = MODE_GROUP;
+			conflict_check(&mode, c);
+			break;
+		case 'q':
+			opt_quiet = 1;
 			break;
 		case 'h':
 		case '?':
@@ -178,59 +195,46 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	/* default mode is user */
+	if (mode == 0)
+		mode = OPT_USER;
+
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
 		     path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
 			program_name, path, gfarm_error_string(e));
-		status = -1;
-		goto terminate;
+		exit(EXIT_FAILURE);
 	}
 
 	switch (mode) {
-	case MODE_USER:
-		e = gfm_client_quota_user_get(
-			gfm_server, name, &qi);
+	case OPT_USER:
+		e = gfm_client_quota_user_get(gfm_server, name, &qi);
 		break;
-	case MODE_GROUP:
-		e = gfm_client_quota_group_get(
-			gfm_server, name, &qi);
+	case OPT_GROUP:
+		e = gfm_client_quota_group_get(gfm_server, name, &qi);
 		break;
 	default:
 		usage();
 	}
 
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		if (strcmp(name, "") == 0)
-			fprintf(stderr, "Your");
-		else
-			fprintf(stderr, "%s's", name);
-		fprintf(stderr, " quota is not enabled.\n");
-		fprintf(stderr, "gfarmadm need to execute "
-			"gfedquota and gfquotacheck for ");
-		if (strcmp(name, "") == 0)
-			fprintf(stderr, "you.\n");
-		else
-			fprintf(stderr, "%s.\n", name);
-		status = -2;
+		/* quota is not enabled */
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n",
 		    program_name, gfarm_error_string(e));
-		status = -3;
+		exit(EXIT_FAILURE);
 	} else {
 		status = quota_check_and_warning(stderr, &qi);
-		if (mode == MODE_GROUP)
-			quota_get_info_print(stdout, &qi, 1);
-		else
-			quota_get_info_print(stdout, &qi, 0);
+		if (!opt_quiet)
+			quota_get_info_print(stdout, &qi, mode == OPT_GROUP);
 		gfarm_quota_get_info_free(&qi);
 	}
 	gfm_client_connection_free(gfm_server);
-terminate:
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		status = -4;
+		exit(EXIT_FAILURE);
 	}
 	return (status);
 }
