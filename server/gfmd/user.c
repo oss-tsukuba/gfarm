@@ -195,6 +195,7 @@ user_remove(const char *username)
 {
 	struct gfarm_hash_entry *entry;
 	struct user *u;
+	struct group_assignment *ga;
 
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
 	if (entry == NULL) {
@@ -213,6 +214,10 @@ user_remove(const char *username)
 		gfarm_hash_purge(user_dn_hashtab,
 		    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
 	quota_user_remove(u);
+
+	/* free group assignment */
+	while ((ga = u->groups.group_next) != &u->groups)
+		grpassign_remove(ga);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -645,7 +650,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	} else if ((e = db_user_modify(&ui,
 	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=
 	    GFARM_ERR_NO_ERROR) {
-	    gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"db_user_modify() failed:%s",
 			gfarm_error_string(e));
 		needs_free = 1;
