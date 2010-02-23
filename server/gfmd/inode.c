@@ -2085,34 +2085,30 @@ inode_replicated(struct file_replicating *fr, gfarm_int32_t errcode,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	static const char diag[] = "inode_replicated";
 
-	if (errcode != GFARM_ERR_NO_ERROR) {
-		if (debug_mode)
-			gflog_debug(GFARM_MSG_1001762,
-			    "ino:%lld gen:%lld replication result: %d",
-			    (long long)inode_get_number(inode),
-			    (long long)fr->igen,
-			    errcode);
-		file_replicating_free(fr);
-		return (GFARM_ERR_NO_ERROR);
-	}
-
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 
-	if (size != inode_get_size(inode) ||
+	if (errcode != GFARM_ERR_NO_ERROR ||
+	    size != inode_get_size(inode) ||
 	    fr->igen != inode_get_gen(inode)) {
 		if (debug_mode)
 			gflog_debug(GFARM_MSG_1001763,
-			    "obsolete replica: (gen:%lld, size:%lld) "
-			    "should be (gen:%lld, size:%lld)",
-			    (long long)fr->igen, (long long)size,
+			    "invalid replica: (err:%d, gen:%lld, size:%lld) "
+			    "should be (err:0, gen:%lld, size:%lld)",
+			    (int)errcode, (long long)fr->igen, (long long)size,
 			    (long long)fr->igen,
 			    (long long)inode_get_size(inode));
+		e = inode_remove_replica(inode, fr->dst, 0);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode_replicated: inode_remove_replica: %s",
+			    gfarm_error_string(e));
+		}
 		e = host_remove_replica_enq(fr->dst, inode_get_number(inode),
 		    fr->igen);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1001764,
-			    "host_remove_replica_enq: %s",
+			    "inode_replicated: host_remove_replica_enq: %s",
 			    gfarm_error_string(e));
 		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
