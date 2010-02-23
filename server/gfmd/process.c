@@ -66,7 +66,7 @@ file_opening_alloc(struct inode *inode,
 
 	GFARM_MALLOC(fo);
 	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001593,
 			"allocation of 'file_opening' failed");
 		return (NULL);
 	}
@@ -122,20 +122,20 @@ process_alloc(struct user *user,
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
 	    keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001594,
 			"'keytype' or 'keylen' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	GFARM_MALLOC_ARRAY(filetab, FILETAB_INITIAL);
 	if (filetab == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001595,
 			"allocation of 'filetab' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	process = gfarm_id_alloc(process_id_table, &pid32);
 	if (process == NULL) {
 		free(filetab);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001596,
 			"gfarm_id_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -247,13 +247,13 @@ process_verify_fd(struct process *process, int fd)
 	struct file_opening *fo;
 
 	if (fd < 0 || fd >= process->nfiles) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001597,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	fo = process->filetab[fd];
 	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001598,
 			"'file_opening' is NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -267,13 +267,13 @@ process_get_file_opening(struct process *process, int fd,
 	struct file_opening *fo;
 
 	if (fd < 0 || fd >= process->nfiles) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001599,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	fo = process->filetab[fd];
 	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001600,
 			"'file_opening' is NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -288,7 +288,7 @@ process_get_file_inode(struct process *process,	int fd, struct inode **inp)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001601,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -304,13 +304,13 @@ process_get_file_writable(struct process *process, struct peer *peer, int fd)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001602,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001603,
 			"permission is denied");
 		return (GFARM_ERR_PERMISSION_DENIED);
 	}
@@ -319,7 +319,7 @@ process_get_file_writable(struct process *process, struct peer *peer, int fd)
 		return (GFARM_ERR_NO_ERROR);
 	if (inode_is_file(fo->inode) && fo->u.f.spool_opener == peer)
 		return (GFARM_ERR_NO_ERROR);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001604,
 		"operation is not permitted");
 	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
@@ -332,18 +332,18 @@ process_get_dir_offset(struct process *process, struct peer *peer,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001605,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001606,
 			"inode is not a directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
 	if (fo->opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001607,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -359,18 +359,18 @@ process_set_dir_offset(struct process *process, struct peer *peer,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001608,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001609,
 			"inode is not a directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
 	if (fo->opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001610,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -391,18 +391,18 @@ process_get_dir_key(struct process *process, struct peer *peer,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001611,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001612,
 			"inode is not a directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
 	if (fo->opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001613,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -425,25 +425,25 @@ process_set_dir_key(struct process *process, struct peer *peer,
 	char *s;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001614,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001615,
 			"inode is not a directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
 	if (fo->opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001616,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
 	s = malloc(keylen + 1);
 	if (s == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001617,
 			"allocation of string failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -463,18 +463,18 @@ process_clear_dir_key(struct process *process, struct peer *peer, int fd)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001618,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001619,
 			"inode is not a directory");
 		return (GFARM_ERR_NOT_A_DIRECTORY);
 	}
 	if (fo->opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001620,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -501,7 +501,7 @@ process_does_match(gfarm_pid_t pid,
 	struct process *process = process_lookup((gfarm_int32_t)pid);
 
 	if (process == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001621,
 			"process_lookup() failed");
 		return (GFARM_ERR_NO_SUCH_PROCESS);
 	}
@@ -509,7 +509,7 @@ process_does_match(gfarm_pid_t pid,
 	    keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET ||
 	    memcmp(sharedkey, process->sharedkey,
 	    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001622,
 			"authentication failed");
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -534,14 +534,14 @@ process_open_file(struct process *process, struct inode *file,
 	}
 	if (fd >= process->nfiles) {
 		if (fd >= FILETAB_MAX) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001623,
 				"too many open files");
 			return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 		}
 		p = realloc(process->filetab,
 		    sizeof(*p) * (process->nfiles * FILETAB_MULTIPLY));
 		if (p == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001624,
 				"re-allocation of 'process' failed");
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -553,13 +553,13 @@ process_open_file(struct process *process, struct inode *file,
 	fo = file_opening_alloc(file, peer, spool_host,
 	    flag | (created ? GFARM_FILE_CREATE : 0));
 	if (fo == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001625,
 			"file_opening_alloc() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	e = inode_open(fo);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001626,
 			"inode_open() failed: %s",
 			gfarm_error_string(e));
 		file_opening_free(fo, inode_is_file(file));
@@ -582,18 +582,18 @@ process_reopen_file(struct process *process,
 	int to_create, is_creating_file_replica;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001627,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001628,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.spool_opener != NULL) { /* already REOPENed */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001629,
 			"file already reopened");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -605,7 +605,7 @@ process_reopen_file(struct process *process,
 		if (is_creating_file_replica) {
 			e = inode_add_replica(fo->inode, spool_host, 0);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001630,
 					"inode_add_replica() failed: %s",
 					gfarm_error_string(e));
 				return (e);
@@ -613,14 +613,14 @@ process_reopen_file(struct process *process,
 		}
 		else if (!inode_schedule_confirm_for_write(fo->inode,
 		    spool_host, to_create)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001631,
 				"file migrated");
 			return (GFARM_ERR_FILE_MIGRATED);
 		}
 		if (to_create) {
 			e = inode_add_replica(fo->inode, spool_host, 1);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001632,
 					"inode_add_replica() failed: %s",
 					gfarm_error_string(e));
 				return (e);
@@ -628,7 +628,7 @@ process_reopen_file(struct process *process,
 		}
 	} else {
 		if (!inode_has_replica(fo->inode, spool_host)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001633,
 				"file migrated");
 			return (GFARM_ERR_FILE_MIGRATED);
 		}
@@ -652,7 +652,7 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001634,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -662,12 +662,12 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 
 	if (fo->opener != peer) {
 		if (!is_file) { /* i.e. is a directory */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001635,
 				"inode is not file");
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
 		if (fo->u.f.spool_opener != peer) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001636,
 				"operation is not permitted");
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
@@ -709,18 +709,18 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001637,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001638,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001639,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -750,23 +750,23 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	int do_not_change_status = 0;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001640,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001641,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001642,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001643,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -824,23 +824,23 @@ process_cksum_set(struct process *process, struct peer *peer, int fd,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001644,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001645,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001646,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001647,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -858,13 +858,13 @@ process_cksum_get(struct process *process, struct peer *peer, int fd,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001648,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001649,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -880,7 +880,7 @@ process_bequeath_fd(struct process *process, gfarm_int32_t fd)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001650,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -897,19 +897,19 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 	gfarm_error_t e;
 
 	if (process->parent == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001651,
 			"process->parent does not exist");
 		return (GFARM_ERR_NO_SUCH_PROCESS);
 	}
 	e = process_get_file_opening(process, parent_fd, &fo);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001652,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if ((fo->flag & GFARM_FILE_BEQUEATHED) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001653,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -928,25 +928,25 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 
 	if ((e = process_get_file_opening(process, fd, &fo))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001654,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (fo->u.f.spool_opener != NULL) { /* already REOPENed */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001655,
 			"operation is not permitted, already reopened");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001656,
 			"process_get_user() failed");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
 	e = inode_prepare_to_replicate(fo->inode, user, src, dst, flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001657,
 			"inode_prepare_to_replicate() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -990,28 +990,28 @@ process_replica_added(struct process *process,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo), e2;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001658,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001659,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001660,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (inode_is_creating_file(fo->inode)) { /* no file copy */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001661,
 			"inode has no file copy");
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	if (inode_has_replica(fo->inode, spool_host)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001662,
 			"spool_host already has replica");
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -1048,7 +1048,7 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag,
 	    "ib", &keytype, sizeof(sharedkey), &keylen, sharedkey);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001663,
 			"process_alloc request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1058,11 +1058,11 @@ gfm_server_process_alloc(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001664,
 			"peer_get_process() failed");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if (!from_client || (user = peer_get_user(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001665,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
@@ -1092,7 +1092,7 @@ gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
 	    &parent_pid,
 	    &keytype, sizeof(sharedkey), &keylen, sharedkey);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001666,
 			"process_alloc_child request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1102,22 +1102,22 @@ gfm_server_process_alloc_child(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001667,
 			"peer_get_process() failed");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if (!from_client || (user = peer_get_user(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001668,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (parent_keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
 	    parent_keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001669,
 			"'parent_keytype' or 'parent_keylen' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = process_does_match(parent_pid,
 	    parent_keytype, parent_keylen, parent_sharedkey,
 	    &parent_process)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001670,
 			"process_does_match() failed: %s",
 			gfarm_error_string(e));
 		/* error */
@@ -1144,7 +1144,7 @@ gfm_server_process_set(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag,
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001671,
 			"process_set request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1154,12 +1154,12 @@ gfm_server_process_set(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001672,
 			"peer_get_process() failed");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
 	    keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001673,
 			"'parent_keytype' or 'parent_keylen' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = process_does_match(pid, keytype, keylen, sharedkey,
@@ -1184,7 +1184,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 	
 	giant_lock();
 	if (peer_get_process(peer) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001674,
 			"peer_get_process() failed");
 		e = GFARM_ERR_NO_SUCH_PROCESS;
 	}
@@ -1220,16 +1220,16 @@ gfm_server_bequeath_fd(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001675,
 			"operation is not permitted ");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001676,
 			"peer_get_process() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001677,
 			"peer_fdpair_get_current() failed");
 	} else
 		e = process_bequeath_fd(process, fd);
@@ -1249,7 +1249,7 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "i", &parent_fd);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001678,
 			"inherit_fd request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1260,15 +1260,15 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001679,
 			"operation is not permitted");
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001680,
 			"peer_get_process() failed");
 	} else if ((e = process_inherit_fd(process, parent_fd, peer, NULL,
 	    &fd)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001681,
 			"process_inherit_fd() failed: %s",
 			gfarm_error_string(e));
 	} else

@@ -22,7 +22,7 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 	e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
 		auth_user_id, &ui);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001478,
 			"getting user info by gsi dn (%s) failed: %s",
 			auth_user_id,
 			gfarm_error_string(e));
@@ -35,7 +35,7 @@ gfarm_auth_uid_to_global_username_gsi(void *closure,
 	global_username = strdup(ui.username);
 	gfarm_user_info_free(&ui);
 	if (global_username == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001479,
 			"allocation of 'global_username' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);

@@ -214,7 +214,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			free(aux);
 		gfp_xdr_reset_secsession(conn);
 		gfp_xdr_set_socket(conn, fd);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001477,
 			"Authorization failed: %s",
 			gfarm_error_string(e != GFARM_ERR_NO_ERROR ? e : e2));
 		return (e != GFARM_ERR_NO_ERROR ? e : e2);

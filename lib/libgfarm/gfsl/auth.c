@@ -131,7 +131,7 @@ setAuthFileStat(void)
     struct stat sb;
 
     if (getAuthFileStat(&sb) < 0) {
-	gflog_debug(GFARM_MSG_UNFIXED, "getAuthFileStat() failed");
+	gflog_debug(GFARM_MSG_1000805, "getAuthFileStat() failed");
 	return (-1);
     }
     pthread_mutex_lock(&authFileStat_mutex);
@@ -147,7 +147,7 @@ checkAuthFileStat(void)
     int update;
 
     if (getAuthFileStat(&sb) < 0) {
-	gflog_debug(GFARM_MSG_UNFIXED, "getAuthFileStat() failed");
+	gflog_debug(GFARM_MSG_1000806, "getAuthFileStat() failed");
 	return (-1);
     }
     pthread_mutex_lock(&authFileStat_mutex);
@@ -165,11 +165,11 @@ gfarmAuthInitialize(usermapFile)
     char *msg = "gfarmAuthInitialize()";
 
     if (setAuthFile(usermapFile) == -1) {
-	gflog_debug(GFARM_MSG_UNFIXED, "setAuthFile() failed");
+	gflog_debug(GFARM_MSG_1000807, "setAuthFile() failed");
 	return (-1);
     }
     if (setAuthFileStat() == -1) {
-	gflog_debug(GFARM_MSG_UNFIXED, "setAuthFileStat() failed");
+	gflog_debug(GFARM_MSG_1000808, "setAuthFileStat() failed");
 	return (-1);
     }
 
@@ -466,11 +466,11 @@ gfarmAuthGetUserEntry(distUserName)
 	    dumpAuthEntry(ret);
 #endif
 	} else {
-	    gflog_debug(GFARM_MSG_UNFIXED, "lookup from authTable (%s) failed",
+	    gflog_debug(GFARM_MSG_1000809, "lookup from authTable (%s) failed",
 		distUserName);
 	}
     } else {
-	gflog_debug(GFARM_MSG_UNFIXED, "authTable is NULL");
+	gflog_debug(GFARM_MSG_1000810, "authTable is NULL");
     }
     pthread_mutex_unlock(&authTable_mutex);
     return ret;
@@ -505,11 +505,11 @@ gfarmAuthGetLocalUserEntry(localUserName)
 	    dumpAuthEntry(ret);
 #endif
 	} else {
-	    gflog_debug(GFARM_MSG_UNFIXED,
+	    gflog_debug(GFARM_MSG_1000811,
 		"look up from userToDNTable (%s) failed", localUserName);
 	}
     } else {
-	gflog_debug(GFARM_MSG_UNFIXED, "userToDNTable is NULL");
+	gflog_debug(GFARM_MSG_1000812, "userToDNTable is NULL");
     }
     pthread_mutex_unlock(&authTable_mutex);
     return ret;
@@ -523,7 +523,7 @@ gfarmAuthGetAuthEntryType(aePtr)
 {
     int authType;
     if (aePtr == NULL) {
-	gflog_debug(GFARM_MSG_UNFIXED, "invalid argument: auth entry is NULL");
+	gflog_debug(GFARM_MSG_1000813, "invalid argument: auth entry is NULL");
 	return GFARM_AUTH_UNKNOWN;
     } else {
 	pthread_mutex_lock(&authTable_mutex);
@@ -533,7 +533,7 @@ gfarmAuthGetAuthEntryType(aePtr)
 	    authType == GFARM_AUTH_HOST) {
 	    return authType;
 	} else {
-	    gflog_debug(GFARM_MSG_UNFIXED, "Unknown auth type (%d)", authType);
+	    gflog_debug(GFARM_MSG_1000814, "Unknown auth type (%d)", authType);
 	    return GFARM_AUTH_UNKNOWN;
 	}
     }

@@ -44,12 +44,12 @@ gfarmGetInt(char *str, int *val)
 
     buf = strdup(str);
     if (buf == NULL) {
-	gflog_debug(GFARM_MSG_UNFIXED, "strdup() failed");
+	gflog_debug(GFARM_MSG_1000842, "strdup() failed");
 	return -1;
     }
     len = strlen(buf);
     if (len == 0) {
-	gflog_debug(GFARM_MSG_UNFIXED, "Buffer length is zero");
+	gflog_debug(GFARM_MSG_1000843, "Buffer length is zero");
 	return -1;
     }
 
@@ -164,7 +164,7 @@ gfarmGetEtcDir()
 	S_ISDIR(st.st_mode)) {
 	return strdup(path);
     } else {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000844,
 		"stat() failed or given path is not directory (%s)", path);
     }
 

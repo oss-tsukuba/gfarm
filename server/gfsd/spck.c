@@ -94,7 +94,7 @@ dir_foreach(
 			return (GFARM_ERR_NO_ERROR);
 	}
 	if (!S_ISDIR(st.st_mode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002204,
 			"Invalid argument st.st_mode");
 		return (GFARM_ERR_INVALID_ARGUMENT); /* XXX */
 	}
@@ -102,7 +102,7 @@ dir_foreach(
 	if (op_dir1 != NULL) {
 		e = op_dir1(dir, &st, arg);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002205,
 				"op_dir1() failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -111,7 +111,7 @@ dir_foreach(
 	dirp = opendir(dir);
 	if (dirp == NULL) {
 		int err = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "opendir() failed: %s",
+		gflog_debug(GFARM_MSG_1002206, "opendir() failed: %s",
 		    strerror(err));
 		return (gfarm_errno_to_error(err));
 	}
@@ -127,7 +127,7 @@ dir_foreach(
 		GFARM_MALLOC_ARRAY(dir1, strlen(dir) + strlen(dp->d_name) + 2);
 		if (dir1 == NULL) {
 			closedir(dirp);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002207,
 				"allocation of array 'dir1' failed");
 			return (GFARM_ERR_NO_MEMORY);
 		}

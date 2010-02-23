@@ -39,7 +39,7 @@ gfs_rename(const char *src, const char *dst)
 		} else if (sgfmd != dgfmd) {
 			gfm_client_connection_free(dgfmd);
 			gfm_client_connection_free(sgfmd);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001381,
 				"Detected crossed device link (%s)(%s): %s",
 				src, dst,
 				gfarm_error_string(
@@ -146,7 +146,7 @@ gfs_rename(const char *src, const char *dst)
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	if (e_save != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001382,
 			"error occurred during gfs_rename(%s)(%s): %s",
 			src, dst,
 			gfarm_error_string(

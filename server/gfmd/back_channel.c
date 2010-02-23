@@ -62,7 +62,7 @@ gfm_async_server_get_request(struct peer *peer, size_t size,
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001980,
 		    "async server %s receiving parameter: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
@@ -83,7 +83,7 @@ gfm_async_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 		e = gfp_xdr_flush(client);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001981,
 		    "async server %s receiving parameter: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
@@ -100,7 +100,7 @@ gfs_client_rpc_back_channel(struct peer *peer, const char *diag, int command,
 	struct gfp_xdr *conn;
 
 	if (peer == NULL || (conn = peer_get_conn(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001982,
 			"socket is not connected");
 		return (GFARM_ERR_SOCKET_IS_NOT_CONNECTED);
 	}
@@ -181,14 +181,14 @@ gfs_async_client_recv_result(struct peer *peer, size_t size,
 	e = gfp_xdr_vrpc_result_sized(conn, 0, &size, &errcode, &format, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001983,
 		    "async gfs_client rpc result: %s", gfarm_error_string(e));
 	} else if (size != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001984,
 		    "async gfs_client rpc result: protocol residual %d",
 		    (int)size);
 		if ((e = gfp_xdr_purge(conn, 0, size)) != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1001985,
 			    "async gfs_client rpc result: skipping: %s",
 			    gfarm_error_string(e));
 		e = GFARM_ERR_PROTOCOL;
@@ -219,7 +219,7 @@ gfs_async_client_status_request(void *arg)
 	e = gfs_async_client_send_request(peer,
 	    gfs_async_client_status_result, peer, GFS_PROTO_STATUS, "");
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001986,
 		    "gfs_async_client_status_request: %s",
 		    gfarm_error_string(e));
 		peer_record_protocol_error(peer);
@@ -297,7 +297,7 @@ gfs_async_client_replication_request_request(void *closure)
 	free(arg);
 
 	if (peer == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1001987,
 		    "replication from %s to %s is canceled since %s is down", 
 		    srchost, host_name(dst), host_name(dst));
 		free(srchost);
@@ -324,7 +324,7 @@ async_back_channel_replication_request(char *srchost, int srcport,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001988,
 		    "async_back_channel_replication_request: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -378,7 +378,7 @@ async_back_channel_protocol_switch(struct peer *peer,
 		e = gfm_async_server_replication_result(peer, xid, size, h);
 		break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001989,
 		    "(back channel) unknown request %d "
 		    "(xid:%d size:%d), reset",
 		    (int)request, (int)xid, (int)size);
@@ -411,12 +411,12 @@ async_back_channel_service(struct peer *peer)
 			e = gfp_xdr_callback_async_result(peer_get_async(peer),
 			    xid, size, &rv);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1001990,
 				    "(back channel) unknown reply "
 				    "xid:%d size:%d", (int)xid, (int)size);
 				e = gfp_xdr_purge(conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR)
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1001991,
 					    "skipping %d bytes: %s",
 					    (int)size, gfarm_error_string(e));
 			} else if (IS_CONNECTION_ERROR(rv)) {
@@ -424,14 +424,14 @@ async_back_channel_service(struct peer *peer)
 			}
 			return (e);
 		} else {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1001992,
 			    "async_back_channel_service: type %d", type);
 		}
 	}
 	if (e == GFARM_ERR_UNEXPECTED_EOF) {
-		gflog_error(GFARM_MSG_UNFIXED, "back channel disconnected");
+		gflog_error(GFARM_MSG_1001993, "back channel disconnected");
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1001994,
 		    "back channel request error, reset: %s",
 		    gfarm_error_string(e));
 	}
@@ -533,11 +533,11 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 
 	giant_lock();
 	if (from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001995,
 			"Operation not permitted: from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((h = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001996,
 			"Operation not permitted: peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
@@ -617,7 +617,7 @@ gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
 
 	if (e == GFARM_ERR_NO_ERROR && ok) {
 		if ((e = peer_set_async(peer)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1001997,
 			    "peer_set_async: %s", gfarm_error_string(e));
 			back_channel_disconnect(peer);
 		} else {
@@ -638,7 +638,7 @@ back_channel_init(void)
 	gfsd_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
 	    gfarm_metadb_job_queue_length, "filesystem nodes");
 	if (gfsd_thread_pool == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1001998,
 		    "filesystem node thread pool size:"
 		    "%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,

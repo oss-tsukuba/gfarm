@@ -110,7 +110,7 @@ gfs_pio_local_storage_close(GFS_File gf)
 	 */
 	if (vc->pid != getpid()) {
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001362,
 				"close operation on view context "
 				"file descriptor failed: %s",
 				gfarm_error_string(e));
@@ -121,7 +121,7 @@ gfs_pio_local_storage_close(GFS_File gf)
 	gfs_client_connection_free(gfs_server);
 
 	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001363,
 			"Close operation on local storage failed: %s",
 			gfarm_error_string(
 				e != GFARM_ERR_NO_ERROR ? e : e2));
@@ -142,7 +142,7 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 
 	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001364,
 			"lseek() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -153,7 +153,7 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001365,
 			"write() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -174,7 +174,7 @@ gfs_pio_local_storage_pread(GFS_File gf,
 
 	if (lseek(vc->fd, offset, SEEK_SET) == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001366,
 			"lseek() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -184,7 +184,7 @@ gfs_pio_local_storage_pread(GFS_File gf,
 
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001367,
 			"read() on view context file descriptor failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -202,7 +202,7 @@ gfs_pio_local_storage_ftruncate(GFS_File gf, gfarm_off_t length)
 	rv = ftruncate(vc->fd, length);
 	if (rv == -1) {
 		int save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001368,
 			"ftruncate() on view context file descriptor "
 			"failed: %s",
 			strerror(save_errno));
@@ -229,7 +229,7 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 		rv = fsync(vc->fd);
 		break;
 	default:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001369,
 			"Invalid operation (%d): %s",
 			operation,
 			gfarm_error_string(GFARM_ERR_INVALID_ARGUMENT));
@@ -238,7 +238,7 @@ gfs_pio_local_storage_fsync(GFS_File gf, int operation)
 
 	if (rv == -1) {
 		int save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001370,
 			"fsync() or fdatasync() on view context "
 			"file descriptor failed: %s",
 			strerror(save_errno));
@@ -261,7 +261,7 @@ gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
 		st->st_mtimespec.tv_nsec = 0; /* XXX */
 	} else {
 		int save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001371,
 			"fstat() on view context file descriptor failed : %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -296,7 +296,7 @@ gfs_pio_open_local_section(GFS_File gf, struct gfs_connection *gfs_server)
 
 	e = gfs_client_open_local(gfs_server, gf->fd, &vc->fd);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001372,
 			"gfs_client_open_local() failed: %s",
 			gfarm_error_string(e));
 		return (e);

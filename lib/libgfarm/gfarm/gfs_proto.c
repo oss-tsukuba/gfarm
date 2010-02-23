@@ -25,7 +25,7 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 
 	if (lseek(fd, (off_t)0, 0) == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "lseek() failed: %s",
+		gflog_debug(GFARM_MSG_1001020, "lseek() failed: %s",
 			strerror(save_errno));
 		return (save_errno);
 	}
@@ -42,7 +42,7 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 
 	if (size == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "read() failed: %s",
+		gflog_debug(GFARM_MSG_1001021, "read() failed: %s",
 			strerror(save_errno));
 		return (save_errno);
 	}

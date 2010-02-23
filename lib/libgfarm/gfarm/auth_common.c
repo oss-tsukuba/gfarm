@@ -158,7 +158,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	GFARM_MALLOC_ARRAY(keyfilename, 
 		strlen(home) + sizeof(keyfile_basename));
 	if (keyfilename == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001023,
 			"allocation of 'keyfilename' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -250,7 +250,7 @@ finish:
 		pthread_mutex_unlock(&privilege_mutex);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001024,
 			"getting shared key failed: %s",
 			gfarm_error_string(e));
 	}

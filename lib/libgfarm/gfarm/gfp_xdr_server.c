@@ -97,7 +97,7 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vsend_async_request: "
+		gflog_debug(GFARM_MSG_1001016, "gfp_xdr_vsend_async_request: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
 	}
@@ -200,13 +200,13 @@ gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
 	if (eof)
 		return (GFARM_ERR_UNEXPECTED_EOF);
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001017,
 		    "gfp_xdr_vrecv_request_parameters: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
 	}
 	if (sizep != NULL && *sizep != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001018,
 		    "gfp_xdr_vrecv_request_parameters: residual %d bytes",
 		    (int)*sizep);
 		return (GFARM_ERR_PROTOCOL);
@@ -229,7 +229,7 @@ gfp_xdr_vsend_result(struct gfp_xdr *client,
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 		if (*format != '\0') {
-			gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vsend_result: "
+			gflog_debug(GFARM_MSG_1001019, "gfp_xdr_vsend_result: "
 			    "invalid format character: %c(%x)",
 			    *format, *format);
 			e = GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER;

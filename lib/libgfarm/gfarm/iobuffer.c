@@ -34,7 +34,7 @@ gfarm_iobuffer_alloc(int bufsize)
 
 	GFARM_MALLOC(b);
 	if (b == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000994,
 			"allocation of struct gfarm_iobuffer failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);
@@ -42,7 +42,7 @@ gfarm_iobuffer_alloc(int bufsize)
 	GFARM_MALLOC_ARRAY(b->buffer, bufsize);
 	if (b->buffer == NULL) {
 		free(b);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000995,
 			"allocation of buffer with size(%d) failed: %s",
 			bufsize,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));

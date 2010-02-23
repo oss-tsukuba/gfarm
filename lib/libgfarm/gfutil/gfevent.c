@@ -80,7 +80,7 @@ gfarm_timer_event_alloc(
 
 	GFARM_MALLOC(ev);
 	if (ev == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000767,
 			"allocation of gfarm_event failed");
 		return (NULL);
 	}
@@ -123,7 +123,7 @@ gfarm_eventqueue_alloc(void)
 
 	GFARM_MALLOC(q);
 	if (q == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000768,
 			"allocation of gfarm_eventqueue failed");
 		return (NULL);
 	}
@@ -168,7 +168,7 @@ gfarm_eventqueue_realloc_fd_set(size_t old_bytes, size_t new_bytes,
 	if (*fd_setpp != NULL) {
 		fsp = realloc(*fd_setpp, new_bytes);
 		if (fsp == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000769,
 				"re-allocation of fd_set failed");
 			return (0); /* failure */
 		}
@@ -210,27 +210,27 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 		fd_set_size = gfarm_size_mul(&overflow,
 		    fds_bytes, CHAR_BIT);
 		if (overflow) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000770,
 				"overflow in multiplication of (%zd) and (%u)",
 				fds_bytes, CHAR_BIT);
 			return (0); /* failure */
 		}
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->read_fd_set)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000771,
 				"re-allocation of 'q->read_fd_set' failed");
 			return (0); /* failure */
 		}
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->write_fd_set)) { /* XXX wastes q->read_fd_set_value */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000772,
 				"re-allocation of 'q->write_fd_set' failed");
 			return (0); /* failure */
 		}
 		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
 		    &q->exception_fd_set)) {
 			/*XXX wastes q->{r,w}*_fd_set_value*/
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000773,
 				"re-allocation of 'q->exception_fd_set' "
 				"failed");
 			return (0); /* failure */
@@ -246,7 +246,7 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 		 */
 		*fd_setpp = malloc(q->fd_set_bytes);
 		if (*fd_setpp == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000774,
 				"allocation of fd_set failed");
 			return (0); /* failure */
 		}
@@ -278,7 +278,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		 * if the event is not allocated with GFARM_EVENT_TIMEOUT,
 		 * it's not allowed to specify a timeout.
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000775,
 			"Event is not allocated with GFARM_EVENT_TIMEOUT");
 		return (EINVAL);
 	}
@@ -287,7 +287,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		if ((ev->filter & GFARM_EVENT_READ) != 0) {
 			if (!gfarm_eventqueue_alloc_fd_set(q, ev->u.fd.fd,
 			    &q->read_fd_set)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000776,
 					"allocation of 'q->read_fd_set' "
 					"failed");
 				return (ENOMEM);
@@ -296,7 +296,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		if ((ev->filter & GFARM_EVENT_WRITE) != 0) {
 			if (!gfarm_eventqueue_alloc_fd_set(q, ev->u.fd.fd,
 			    &q->write_fd_set)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000777,
 					"allocation of 'q->write_fd_set' "
 					"failed");
 				return (ENOMEM);
@@ -305,7 +305,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		if ((ev->filter & GFARM_EVENT_EXCEPTION) != 0) {
 			if (!gfarm_eventqueue_alloc_fd_set(q, ev->u.fd.fd,
 			    &q->exception_fd_set)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000778,
 					"allocation of 'q->exception_fd_set' "
 					"failed");
 				return (ENOMEM);
@@ -314,7 +314,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		break;
 	case GFARM_TIMER_EVENT:
 		if (timeout == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000779,
 				"Event type is GFARM_TIMER_EVENT but "
 				"timeout is NULL");
 			return (EINVAL); /* not allowed */
@@ -335,7 +335,7 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 	struct gfarm_event *ev)
 {
 	if (ev->next == NULL || ev->prev == NULL) { /* shouldn't happen */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000780,
 			"Event queue link broken");
 		return (EINVAL);
 	}
@@ -437,7 +437,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	    read_fd_set, write_fd_set, exception_fd_set, timeout);
 	if (nfound == -1) {
 		int save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000781,
 			"select() failed: %s",
 			strerror(save_errno));
 		return (save_errno);
@@ -530,7 +530,7 @@ gfarm_eventqueue_loop(struct gfarm_eventqueue *q,
 		if (rv == 0)
 			return (0); /* completed */
 		if (rv != EAGAIN && rv != EINTR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000782,
 				"gfarm_eventqueue_turn() failed: %d",
 				rv);
 			return (rv); /* probably program logic is wrong */

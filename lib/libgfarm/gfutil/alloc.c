@@ -12,7 +12,7 @@ gfarm_size_add(int *overflowp, size_t a, size_t b)
 
 	if (sum < a) {
 		*overflowp = 1;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000761,
 			"Overlow when adding size_t (%llu) + (%llu)",
 			(unsigned long long)a, (unsigned long long)b);
 	}
@@ -25,7 +25,7 @@ gfarm_size_mul(int *overflowp, size_t a, size_t b)
 	size_t product = a * b;
 
 	if (b != 0 && product / b != a) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000762,
 			"Overlow when multiplying size_t (%llu) * (%llu)",
 			(unsigned long long)a, (unsigned long long)b);
 		*overflowp = 1;
@@ -40,7 +40,7 @@ gfarm_calloc_array(size_t number, size_t size)
 
 	gfarm_size_mul(&overflow, number, size);
 	if (overflow) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000763,
 			"Overlow when calloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;
@@ -56,7 +56,7 @@ gfarm_malloc_array(size_t number, size_t size)
 	size_t total_size = gfarm_size_mul(&overflow, number, size);
 
 	if (overflow) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000764,
 			"Overlow when malloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;
@@ -72,7 +72,7 @@ gfarm_realloc_array(void *src, size_t number, size_t size)
 	size_t total_size = gfarm_size_mul(&overflow, number, size);
 
 	if (overflow) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000765,
 			"Overlow when realloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;

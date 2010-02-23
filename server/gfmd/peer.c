@@ -296,12 +296,12 @@ peer_alloc(int fd, struct peer **peerp)
 	int sockopt;
 
 	if (fd < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001580,
 			"invalid argument 'fd'");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (fd >= peer_table_size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001581,
 			"too many open files: fd >= peer_table_size");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
@@ -309,7 +309,7 @@ peer_alloc(int fd, struct peer **peerp)
 	peer = &peer_table[fd];
 	if (peer->conn != NULL) { /* must be an implementation error */
 		peer_table_unlock();
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001582,
 			"bad file descriptor: conn is NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -317,7 +317,7 @@ peer_alloc(int fd, struct peer **peerp)
 	/* XXX FIXME gfp_xdr requires too much memory */
 	e = gfp_xdr_new_socket(fd, &peer->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001583,
 			"gfp_xdr_new_socket() failed: %s",
 			gfarm_error_string(e));
 		peer_table_unlock();
@@ -565,19 +565,19 @@ gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
 	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001584,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (peer->host != NULL) { /* already set */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001585,
 			"peer host is already set");
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	peer->host = host_lookup(hostname);
 	if (peer->host == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001586,
 			"host does not exist");
 		return (GFARM_ERR_UNKNOWN_HOST);
 	}
@@ -725,7 +725,7 @@ gfarm_error_t
 peer_fdpair_externalize_current(struct peer *peer)
 {
 	if (peer->fd_current == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001587,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -739,7 +739,7 @@ gfarm_error_t
 peer_fdpair_close_current(struct peer *peer)
 {
 	if (peer->fd_current == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001588,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -773,7 +773,7 @@ gfarm_error_t
 peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 {
 	if (peer->fd_current == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001589,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -785,7 +785,7 @@ gfarm_error_t
 peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 {
 	if (peer->fd_saved == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001590,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -802,7 +802,7 @@ gfarm_error_t
 peer_fdpair_save(struct peer *peer)
 {
 	if (peer->fd_current == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001591,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -828,7 +828,7 @@ gfarm_error_t
 peer_fdpair_restore(struct peer *peer)
 {
 	if (peer->fd_saved == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001592,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}

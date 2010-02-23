@@ -55,14 +55,14 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
 	e = gfm_client_user_info_get_by_names(gfm_server,
 	    1, &auth_user_id, &e2, &ui);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001078,
 			"getting user info by names failed (%s): %s",
 			auth_user_id,
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001079,
 			"getting user info by names failed (%s): %s",
 			auth_user_id,
 			gfarm_error_string(e2));
@@ -74,7 +74,7 @@ gfarm_auth_uid_to_global_username_sharedsecret(void *closure,
 		return (GFARM_ERR_NO_ERROR);
 	global_username = strdup(auth_user_id);
 	if (global_username == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001080,
 			"allocation of string 'global_username' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);

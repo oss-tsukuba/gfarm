@@ -579,7 +579,7 @@ protocol_service(struct peer *peer)
 			 * set cs->cause, if it's first error at a main part
 			 * of a COMPOUND block
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001481,
 				"protocol_switch() failed inside of a "
 				"COMPOUND block: %s", gfarm_error_string(e));
 			if (cs->cause == GFARM_ERR_NO_ERROR && !cs->skip)
@@ -596,7 +596,7 @@ protocol_service(struct peer *peer)
 	}
 	if (request == GFM_PROTO_SWITCH_BACK_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001482,
 				"failed to process GFM_PROTO_SWITCH_BACK_"
 				"CHANNEL request: %s", gfarm_error_string(e));
 			giant_lock();
@@ -680,7 +680,7 @@ auth_uid_to_global_username(void *closure,
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001483,
 			"lookup for user failed");
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -688,7 +688,7 @@ auth_uid_to_global_username(void *closure,
 		return (GFARM_ERR_NO_ERROR);
 	global_username = strdup(user_name(u));
 	if (global_username == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001484,
 			"allocation of 'global_username' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -972,7 +972,7 @@ gfmd_modules_init_default(int table_size)
 	client_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
 	    gfarm_metadb_job_queue_length, "clients");
 	if (client_thread_pool == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1001485,
 		    "client thread pool size:%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,
 		    gfarm_metadb_job_queue_length);
@@ -1068,7 +1068,7 @@ main(int argc, char **argv)
 		gfarm_config_set_filename(GFMD_CONFIG);
 	e = gfarm_server_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001486,
 			"gfarm_server_initialize() failed: %s",
 		    gfarm_error_string(e));
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
@@ -1132,7 +1132,7 @@ main(int argc, char **argv)
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(0, 0) == -1)
-			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
+			gflog_warning_errno(GFARM_MSG_1001487, "daemon");
 	}
 	/*
 	 * We do this after calling gfarm_daemon(),

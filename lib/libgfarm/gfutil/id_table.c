@@ -58,7 +58,7 @@ gfarm_id_table_alloc(struct gfarm_id_table_entry_ops *entry_ops)
 
 	GFARM_MALLOC(idtab);
 	if (idtab == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000787,
 			"allocation of 'gfarm_id_table' failed");
 		return (NULL);
 	}
@@ -494,7 +494,7 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 		data = malloc(ALIGN_CEIL(sizeof(struct gfarm_id_data_chunk)) +
 		    idtab->idx_delta * idtab->entry_size);
 		if (data == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000788,
 				"allocation of 'gfarm_id_data_chunk' failed");
 			return (NULL);
 		}
@@ -503,7 +503,7 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 		    sizeof(struct gfarm_id_index));
 		if (newidx == NULL) {
 			free(data);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000789,
 				"allocation of 'gfarm_id_index' failed");
 			return (NULL); /* no more memory */
 		}

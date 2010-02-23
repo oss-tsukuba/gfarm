@@ -59,7 +59,7 @@ gfs_stat_cache_init(void)
 	stat_cache = gfarm_hash_table_alloc(
 	    STAT_HASH_SIZE, gfarm_hash_default, gfarm_hash_key_equal_default);
 	if (stat_cache == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001282,
 			"allocation of stat_cache failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -149,7 +149,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 
 	if (stat_cache == NULL) {
 		if ((e = gfs_stat_cache_init()) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001283,
 				"initialization of stat_cache failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -172,7 +172,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 	entry = gfarm_hash_enter(stat_cache, path, strlen(path) + 1,
 	    sizeof(*data), &created);
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001284,
 			"allocation of hash entry for stat cache failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -194,7 +194,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
 		--stat_cache_count;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001285,
 			"gfs_stat_copy() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -223,7 +223,7 @@ gfs_stat_cache_purge(const char *path)
 	gfs_stat_cache_expire();
 	if (!gfarm_hash_iterator_lookup(
 		stat_cache, path, strlen(path)+1, &it)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001286,
 			"lookup for path (%s) in stat cache failed: %s",
 			path,
 			gfarm_error_string(
@@ -250,7 +250,7 @@ gfs_stat_caching(const char *path, struct gfs_stat *st)
 
 	e = gfs_stat(path, st);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001287,
 			"gfs_stat(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -290,7 +290,7 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 		gfarm_error_t e = gfs_stat_cache_init();
 
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001288,
 				"initialization of stat cache failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -339,7 +339,7 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 	gfarm_error_t e = gfs_readdirplus(dir->dp, &ep, &stp);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001289,
 			"gfs_readdirplus() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -412,7 +412,7 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 	};
 
 	if ((e = gfs_opendirplus(path, &dp)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001290,
 			"gfs_opendirplus(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -436,7 +436,7 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 			free(dir);
 		if (p != NULL)
 			free(p);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001291,
 			"allocation of dir or path failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);

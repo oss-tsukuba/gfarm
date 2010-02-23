@@ -102,7 +102,7 @@ gfarmTCPBindPort(port)
 	return -1;
     }
     if (res == NULL) {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000803,
 	    "gfarm_getaddinfo() failed for port (%d)", port);
 	return -1;
     }
@@ -146,7 +146,7 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
     if (hostPtr != NULL) {
 	if (gfarm_getnameinfo((struct sockaddr *)&sin, slen,
 			      hbuf, sizeof(hbuf), NULL, 0, 0) != 0) {
-	    gflog_debug(GFARM_MSG_UNFIXED, "gfarm_getnameinfo() failed");
+	    gflog_debug(GFARM_MSG_1000804, "gfarm_getnameinfo() failed");
 	    return (-1);
 	}
 	*hostPtr = strdup(hbuf);

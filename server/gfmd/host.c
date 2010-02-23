@@ -209,7 +209,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 	GFARM_MALLOC(h);
 	if (h == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001546,
 			"allocation of host failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -219,13 +219,13 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	    &h->hi.hostname, sizeof(h->hi.hostname), sizeof(struct host *),
 	    &created);
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001547,
 			"gfarm_hash_enter() failed");
 		free(h);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001548,
 			"create entry failed");
 		free(h);
 		return (GFARM_ERR_ALREADY_EXISTS);
@@ -267,7 +267,7 @@ host_remove(const char *hostname)
 
 	entry = gfarm_hash_lookup(host_hashtab, &hostname, sizeof(hostname));
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001549,
 			"gfarm_hash_lookup() failed");
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
@@ -461,7 +461,7 @@ host_remove_replica_enq(
 
 	GFARM_MALLOC(dfc);
 	if (dfc == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001550,
 			"allocation of dead_file_copy failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -568,13 +568,13 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 			timeout);
 		if (retcode == ETIMEDOUT) {
 			pthread_mutex_unlock(&host->remover_mutex);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001551,
 				"operation timeout");
 			return (GFARM_ERR_OPERATION_TIMED_OUT);
 		}
 		if (!host_is_up(host)) {
 			pthread_mutex_unlock(&host->remover_mutex);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001552,
 				"operation is not permitted");
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
@@ -827,7 +827,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	e = gfm_server_put_reply(peer, diag,
 	    GFARM_ERR_NO_ERROR, "i", nhosts);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001553,
 			"gfm_server_put_reply(host_info_get_all) failed: %s",
 			gfarm_error_string(e));
 		giant_unlock();
@@ -838,7 +838,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 		if (host_is_active(h)) {
 			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001554,
 					"host_info_send() failed: %s",
 					gfarm_error_string(e));
 				giant_unlock();
@@ -865,7 +865,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	e = gfm_server_get_request(peer, diag,
 	    "s", &architecture);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001555,
 			"host_info_get_by_architecture request failure: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -893,7 +893,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 		    GFARM_ERR_NO_ERROR, "i", nhosts);
 	}
 	if (e != GFARM_ERR_NO_ERROR || nhosts == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001556,
 			"gfm_server_put_reply(host_info_get_all) failed: %s",
 			gfarm_error_string(e));
 		free(architecture);
@@ -906,7 +906,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 		    strcmp(h->hi.architecture, architecture) == 0) {
 			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001557,
 					"host_info_send() failed: %s",
 					gfarm_error_string(e));
 				break;
@@ -932,7 +932,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 
 	e = gfm_server_get_request(peer, diag, "i", &nhosts);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001558,
 			"gfm_server_get_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -945,7 +945,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	for (i = 0; i < nhosts; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &host);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001559,
 				"gfp_xdr_recv(host) failed: %s",
 				gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -972,7 +972,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	else
 		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "");
 	if (no_memory || e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001560,
 			"gfp_xdr_recv(host) failed: %s",
 			gfarm_error_string(e));
 		if (hosts != NULL) {
@@ -1005,7 +1005,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 				e = host_info_send(client, h);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001561,
 				"error occurred during process: %s",
 				gfarm_error_string(e));
 			break;
@@ -1047,7 +1047,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag, "ssiii",
 	    &hostname, &architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001562,
 			"host_info_set request failure: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1060,11 +1060,11 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001563,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (host_is_active(host_lookup(hostname))) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001564,
 			"host already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else {
@@ -1080,7 +1080,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = db_host_add(&hi);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001565,
 					"db_host_add() failed: %s",
 					gfarm_error_string(e));
 				host_remove(hostname);
@@ -1089,7 +1089,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001566,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 		if (hostname != NULL)
@@ -1114,7 +1114,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag, "ssiii",
 	    &hi.hostname, &hi.architecture, &hi.ncpu, &hi.port, &hi.flags);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001567,
 			"host_info_modify request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1128,19 +1128,19 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	/* XXX should we disconnect a back channel to the host? */
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001568,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		needs_free = 1;
 	} else if ((h = host_lookup(hi.hostname)) == NULL ||
 		   host_is_invalidated(h)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "host does not exists");
+		gflog_debug(GFARM_MSG_1001569, "host does not exists");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		needs_free = 1;
 	} else if ((e = db_host_modify(&hi,
 	    DB_HOST_MOD_ARCHITECTURE|DB_HOST_MOD_NCPU|DB_HOST_MOD_FLAGS,
 	    /* XXX */ 0, NULL, 0, NULL)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001570,
 			"db_host_modify failed: %s",
 			gfarm_error_string(e));
 		needs_free = 1;
@@ -1199,7 +1199,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001571,
 			"host_info_remove request failure: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1214,7 +1214,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	 */
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001572,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
@@ -1263,14 +1263,14 @@ host_copy(struct host **dstp, const struct host *src)
 
 	GFARM_MALLOC(dst);
 	if (dst == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001573,
 			"allocation of host failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	*dst = *src;
 	if ((dst->hi.hostname = strdup(dst->hi.hostname)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001574,
 			"allocation of hostname failed");
 		free(dst);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1318,7 +1318,7 @@ host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 	}
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001575,
 			"allocation of hosts failed");
 		e = GFARM_ERR_NO_MEMORY;
 	}
@@ -1329,7 +1329,7 @@ host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 		if (hosts != NULL && host_is_up(h) && filter(h, arg)) {
 			e = host_copy(&hosts[i], h);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001576,
 					"host_copy() failed: %s",
 					gfarm_error_string(e));
 				host_free_all(i, hosts);
@@ -1401,7 +1401,7 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001577,
 			"gfm_server_get_request() failure");
 		return (e);
 	}
@@ -1412,7 +1412,7 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001578,
 			"operation is not permitted for from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
@@ -1440,7 +1440,7 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag, "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001579,
 			"schedule_host_domain request failure: %s",
 			gfarm_error_string(e));
 		return (e);

@@ -33,7 +33,7 @@ gfarm_connect_wait(int s, int timeout_seconds)
 		return (gfarm_errno_to_error(ETIMEDOUT));
 	if (rv < 0) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "select() failed: %s",
+		gflog_debug(GFARM_MSG_1001458, "select() failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
@@ -42,12 +42,12 @@ gfarm_connect_wait(int s, int timeout_seconds)
 	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
 	if (rv == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "getsocket() failed: %s",
+		gflog_debug(GFARM_MSG_1001459, "getsocket() failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	if (error != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001460,
 			"error occurred at socket: %s",
 			gfarm_error_string(gfarm_errno_to_error(error)));
 		return (gfarm_errno_to_error(error));
@@ -66,7 +66,7 @@ gfarm_bind_source_ip(int sock, const char *source_ip)
 	shints.ai_socktype = SOCK_STREAM;
 	shints.ai_flags = AI_PASSIVE;
 	if (gfarm_getaddrinfo(source_ip, NULL, &shints, &sres) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001461,
 			"gfarm_getaddrinfo(%s) failed: %s",
 			source_ip,
 			gfarm_error_string(GFARM_ERR_UNKNOWN_HOST));
@@ -77,7 +77,7 @@ gfarm_bind_source_ip(int sock, const char *source_ip)
 	save_errno = errno;
 	gfarm_freeaddrinfo(sres);
 	if (rv == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001462,
 			"bind() failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));

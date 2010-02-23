@@ -11,7 +11,7 @@ gfs_rmdir(const char *path)
 
 	e = gfs_stat(path, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001394,
 			"gfs_stat(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -20,7 +20,7 @@ gfs_rmdir(const char *path)
 	is_dir = GFARM_S_ISDIR(st.st_mode);
 	gfs_stat_free(&st);
 	if (!is_dir) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001395,
 			"Not a directory(%s): %s",
 			path,
 			gfarm_error_string(GFARM_ERR_NOT_A_DIRECTORY));

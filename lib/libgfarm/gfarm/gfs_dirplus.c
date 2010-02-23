@@ -30,7 +30,7 @@ gfs_dirplus_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	GFARM_MALLOC(dir);
 	if (dir == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001277,
 			"allocation of dir failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -63,7 +63,7 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 
 	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server, &fd, &type))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001278,
 			"gfm_open_fd(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -77,12 +77,12 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (e == GFARM_ERR_NOT_A_DIRECTORY)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001279,
 			"Not a directory (%s): %s",
 			path,
 			gfarm_error_string(e));
 	else if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001280,
 			"allocation of dirplus for path (%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -134,7 +134,7 @@ gfs_readdirplus(GFS_DirPlus dir,
 		    NULL, 
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001281,
 				"gfs_client_compound_fd_op() failed: %s",
 				gfarm_error_string(e));
 			return (e);

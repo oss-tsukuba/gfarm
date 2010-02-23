@@ -482,7 +482,7 @@ gfm_async_client_send_request(struct gfp_xdr *gfm_server,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002164,
 		    "gfm_async_client_send_request %s: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
@@ -501,16 +501,16 @@ gfm_async_client_recv_reply(struct gfp_xdr *gfm_server, const char *diag,
 	    &errcode, &format, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002165,
 		    "gfm_async_client_recv_reply %s: %s",
 		    diag, gfarm_error_string(e));
 	} else if (size != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002166,
 		    "gfm_async_client_recv_reply %s: protocol residual %d",
 		    diag, (int)size);
 		if ((e = gfp_xdr_purge(gfm_server, 0, size))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002167,
 			    "gfm_async_client_recv_reply %s: skipping: %s",
 			    diag, gfarm_error_string(e));
 		e = GFARM_ERR_PROTOCOL;
@@ -629,7 +629,7 @@ file_table_close(gfarm_int32_t net_fd)
 
 	if (net_fd < 0 || net_fd >= file_table_size ||
 	    file_table[net_fd].local_fd == -1) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002168,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
@@ -884,11 +884,11 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 
 	else if (!GFARM_S_ISREG(mode)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002169,
 			"mode:operation is not permitted");
 	} else if ((local_flags = gfs_open_flags_localize(net_flags)) == -1) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002170,
 			"local_flags:operation is not permitted");
 	} else {
 		local_path(ino, gen, diag, &path);
@@ -935,12 +935,12 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 
 	if (!file_table_is_available(net_fd)) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002171,
 			"bad file descriptor");
 	} else if ((e = gfs_server_reopen(diag, net_fd, &path, &local_flags,
 			&ino, &gen))
 		 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002172,
 			"gfs_server_reopen() failed: %s",
 			gfarm_error_string(e));
 	} else {
@@ -991,7 +991,7 @@ gfs_server_open_local(struct gfp_xdr *client)
 
 	if (gfs_server_open_common(client, "open_local", &net_fd, &local_fd) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002173,
 			"gfs_server_open_common() failed");
 		return;
 	}
@@ -1056,7 +1056,7 @@ gfs_server_close(struct gfp_xdr *client)
 
 	if ((fe = file_table_entry(fd)) == NULL) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002174,
 			"bad file descriptor");
 	} else {
 		if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
@@ -1287,7 +1287,7 @@ gfs_server_cksum_set(struct gfp_xdr *client)
 
 	if ((fe = file_table_entry(fd)) == NULL) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002175,
 			"bad file descriptor");
 	} else {
 		/* NOTE: local client could use remote operation as well */
@@ -1523,7 +1523,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 
 	e = replica_adding(net_fd, host, &ino, &gen, &mtime_sec, &mtime_nsec);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002176,
 			"replica_adding() failed: %s",
 			gfarm_error_string(e));
 		goto free_host;
@@ -1542,7 +1542,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	e = gfs_client_connection_acquire_by_host(gfm_server, host, port,
 	    &server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002177,
 			"gfs_client_connection_acquire_by_host() failed: %s",
 			gfarm_error_string(e));
 		mtime_sec = mtime_nsec = 0; /* invalidate */
@@ -1550,7 +1550,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	}
 	e = gfs_client_replica_recv(server, ino, gen, local_fd);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002178,
 			"gfs_client_replica_recv() failed: %s",
 			gfarm_error_string(e));
 		mtime_sec = mtime_nsec = 0; /* invalidate */
@@ -1593,7 +1593,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	/* from gfsd only */
 	if (peer_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002179,
 			"operation is not permitted(peer_type)");
 		goto send_eof;
 	}
@@ -1627,7 +1627,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		e = gfp_xdr_send(client, "b", rv, buffer);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error = e;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002180,
 				"gfp_xdr_send() failed: %s",
 				gfarm_error_string(e));
 			break;
@@ -1636,7 +1636,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			e = gfp_xdr_flush(client);
 			if (e != GFARM_ERR_NO_ERROR) {
 				error = e;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002181,
 					"gfp_xdr_send() failed: %s",
 					gfarm_error_string(e));
 				break;
@@ -1815,7 +1815,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	free(path);
 	if (local_fd < 0) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s",
 		    diag, (long long)ino, (long long)gen, strerror(errno));
 		free(host);
@@ -1823,26 +1823,26 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	/* we cannot use gfmd connection here, since it's now async mode */
 	} else if ((e = address_get(host, port, &peer_addr)) != 
 	    GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: cannot resolve %s: %s",
+		gflog_error(GFARM_MSG_1002183, "%s: cannot resolve %s: %s",
 		    diag, host, gfarm_error_string(e));
 		close(local_fd);
 		free(host);
 	} else if ((e = gfs_client_connect(host, &peer_addr, &server)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: connecting to %s:%d: %s",
+		gflog_error(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
 		    diag, host, port, gfarm_error_string(e));
 		close(local_fd);
 		free(host);
 	} else if (pipe(fds) == -1) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED, "%s: cannot create pipe: %s",
+		gflog_error(GFARM_MSG_1002185, "%s: cannot create pipe: %s",
 		    diag, strerror(errno));
 		gfs_client_connection_free(server);
 		close(local_fd);
 		free(host);
 	} else if (fds[0] > FD_SETSIZE) { /* XXX select FD_SETSIZE */
 		e = GFARM_ERR_TOO_MANY_OPEN_FILES;
-		gflog_error(GFARM_MSG_UNFIXED, "%s: cannot select %d: %s",
+		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
 		    diag, fds[0], gfarm_error_string(e));
 		close(fds[0]);
 		close(fds[1]);
@@ -1853,22 +1853,22 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 		close(fds[0]);
 		e = gfs_client_replica_recv(server, ino, gen, local_fd);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED, "%s: replica_recv: %s",
+			gflog_error(GFARM_MSG_1002187, "%s: replica_recv: %s",
 			    diag, gfarm_error_string(e));
 		}
 		errcode = e;
 		if ((rv = write(fds[1], &errcode, sizeof(errcode))) == -1)
-			gflog_error(GFARM_MSG_UNFIXED, "%s: write pipe: %s",
+			gflog_error(GFARM_MSG_1002188, "%s: write pipe: %s",
 			    diag, strerror(errno));
 		else if (rv != sizeof(errcode))
-			gflog_error(GFARM_MSG_UNFIXED, "%s: partial write: "
+			gflog_error(GFARM_MSG_1002189, "%s: partial write: "
 			    "%d < %d", diag, rv, (int)sizeof(e));
 		close(fds[1]);
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	} else { /* parent */
 		if (pid == -1) {
 			e = gfarm_errno_to_error(errno);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002190,
 			    "%s: cannot child process: %s",
 			    diag, strerror(errno));
 			close(fds[0]);
@@ -3594,16 +3594,16 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 
 	if (rv != sizeof(errcode)) {
 		if (rv == -1) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002191,
 			    "%s: cannot read child result: %s",
 			    diag, strerror(errno));
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002192,
 			    "%s: too short child result: %d bytes", diag, rv);
 		}
 		errcode = GFARM_ERR_UNKNOWN;
 	} else if (fstat(rep->file_fd, &st) == -1) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002193,
 		    "%s: cannot stat local fd: %s", diag, strerror(errno));
 		errcode = GFARM_ERR_UNKNOWN;
 	}
@@ -3637,7 +3637,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		if (nfound <= 0) {
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno(GFARM_MSG_UNFIXED, "back channel select");
+			fatal_errno(GFARM_MSG_1002194, "back channel select");
 		}
 
 		for (prev = &ongoing_replications; (rep = *prev) != NULL; ) {
@@ -3681,7 +3681,7 @@ back_channel_server(void)
 		}
 		e = gfp_xdr_async_peer_new(&async);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fatal(GFARM_MSG_UNFIXED,
+			fatal(GFARM_MSG_1002195,
 			    "cannot allocate resource for async protocol: %s",
 			    gfarm_error_string(e));
 		}
@@ -3699,27 +3699,27 @@ back_channel_server(void)
 				e = gfp_xdr_callback_async_result(async,
 				    xid, size, &rv);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_warning(GFARM_MSG_UNFIXED,
+					gflog_warning(GFARM_MSG_1002196,
 					    "(back channel) unknown reply "
 					    "xid:%d size:%d",
 					    (int)xid, (int)size);
 					e = gfp_xdr_purge(conn, 0, size);
 					if (e != GFARM_ERR_NO_ERROR) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1002197,
 						    "skipping %d bytes: %s",
 						    (int)size,
 						    gfarm_error_string(e));
 						break;
 					}
 				} else if (IS_CONNECTION_ERROR(rv)) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002198,
 					    "back channel result: %s",
 					    gfarm_error_string(e));
 					break;
 				}
 				continue;
 			} else if (type != GFP_XDR_TYPE_REQUEST) {
-				fatal(GFARM_MSG_UNFIXED,
+				fatal(GFARM_MSG_1002199,
 				    "async_back_channel_service: type %d",
 				    type);
 			}
@@ -3757,7 +3757,7 @@ back_channel_server(void)
 				    (int)request, (int)xid, (int)size);
 				e = gfp_xdr_purge(conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002200,
 					    "skipping %d bytes: %s",
 					    (int)size, gfarm_error_string(e));
 				}
@@ -3871,7 +3871,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 		}
 	}
 	if (chown(sock_dir, gfsd_uid, -1) == -1)
-		gflog_warning_errno(GFARM_MSG_UNFIXED, "chown(%s, %d)",
+		gflog_warning_errno(GFARM_MSG_1002201, "chown(%s, %d)",
 		    sock_dir, (int)gfsd_uid);
 
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -3890,7 +3890,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 		    sock_name, strerror(save_errno));
 	}
 	if (chown(sock_name, gfsd_uid, -1) == -1)
-		gflog_warning_errno(GFARM_MSG_UNFIXED, "chown(%s, %d)",
+		gflog_warning_errno(GFARM_MSG_1002202, "chown(%s, %d)",
 		    sock_name, gfsd_uid);
 	/* ensure access from all user, Linux at least since 2.4 needs this. */
 	chmod(sock_name, LOCAL_SOCKET_MODE);
@@ -4130,7 +4130,7 @@ main(int argc, char **argv)
 	if (!debug_mode) {
 		gflog_syslog_open(LOG_PID, syslog_facility);
 		if (gfarm_daemon(0, 0) == -1)
-			gflog_warning_errno(GFARM_MSG_UNFIXED, "daemon");
+			gflog_warning_errno(GFARM_MSG_1002203, "daemon");
 	}
 
 	/* We do this after calling gfarm_daemon(), because it changes pid. */

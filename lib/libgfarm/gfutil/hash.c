@@ -107,14 +107,14 @@ gfarm_hash_table_alloc(int size,
 			gfarm_size_mul(&overflow, 
 				sizeof(struct gfarm_hash_entry *), size - 1));
 	if (overflow) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000783,
 			"Overflow when allocating hash table, size=(%d)",
 			size);
 		return (NULL);
 	}
 	hashtab = malloc(alloc_size); /* size is already checked */
 	if (hashtab == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000784,
 			"allocation of 'gfarm_hash_table' (%zd) failed",
 			alloc_size);
 		return (NULL);
@@ -199,13 +199,13 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 			ALIGN(keylen)),
 		    datalen);
 	if (overflow) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000785,
 			"Overflow when entering hash entry");
 		return (NULL);
 	}
 	p = malloc(hash_entry_size); /* size is already checked */
 	if (p == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000786,
 			"allocation of 'gfarm_hash_entry' failed (%zd)",
 			hash_entry_size);
 		return (NULL);

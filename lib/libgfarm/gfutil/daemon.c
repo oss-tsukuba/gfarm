@@ -15,7 +15,7 @@ gfarm_daemon(int not_chdir, int not_close)
 	switch (fork()) {
 	case -1:
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED, "fork() failed: %s",
+		gflog_debug(GFARM_MSG_1000766, "fork() failed: %s",
 			strerror(save_errno));
 		errno = save_errno;
 		return (-1);

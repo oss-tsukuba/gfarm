@@ -25,7 +25,7 @@ gfm_replica_info_get_request(struct gfm_connection *gfm_server,
 	    gfm_server, c->inflags);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1001384,
 		    "replica_info_get request: %s",
 		    gfarm_error_string(e));
 	return (e);
@@ -41,7 +41,7 @@ gfm_replica_info_get_result(struct gfm_connection *gfm_server,
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001385,
 		    "replica_info_get result; %s",
 		    gfarm_error_string(e));
 #endif

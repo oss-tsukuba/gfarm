@@ -191,7 +191,7 @@ gfs_pio_view_section_close(GFS_File gf)
 	gfs_pio_set_view_default(gf);
 
 	if (e_save != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001346,
 			"storage_close() failed: %s",
 			gfarm_error_string(e_save));
 	}
@@ -212,7 +212,7 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001347,
 			"storage_pwrite() failed: %s",
 			gfarm_error_string(e));
 	}
@@ -233,7 +233,7 @@ gfs_pio_view_section_pread(GFS_File gf,
 		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001348,
 			"storage_pread failed: %s",
 			gfarm_error_string(e));
 	}
@@ -376,7 +376,7 @@ gfm_schedule_file(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 		*nhostsp = closure.nhosts;
 		*infosp = closure.infos;
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001349,
 			"gfm_client_compound_fd_op() failed: %s",
 			gfarm_error_string(e));
 	}
@@ -399,7 +399,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 	e = gfs_client_connection_acquire_by_host(gf->gfm_server,
 	    hostname, port, &gfs_server, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001350,
 			"acquirement of client connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -442,7 +442,7 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			   gfarm_timerval_sub(&t4, &t3)));
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001351,
 			"error occurred in connect_and_open(): %s",
 			gfarm_error_string(e));
 	}
@@ -458,7 +458,7 @@ choose_trivial_one(struct gfarm_host_sched_info *info,
 	/* no choice */
 	host = strdup(info->host);
 	if (host == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001352,
 			"allocation of 'host' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return(GFARM_ERR_NO_MEMORY);
@@ -490,7 +490,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = gfm_schedule_file(gf->gfm_server, gf->fd, &nhosts, &infos);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001353,
 			"gfm_schedule_file() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -512,7 +512,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		gfarm_schedule_host_cache_reset(gf->gfm_server, nhosts, infos);
 	gfarm_host_sched_info_free(nhosts, infos);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "schedule_select_host: %s",
+		gflog_warning(GFARM_MSG_1001354, "schedule_select_host: %s",
 		    gfarm_error_string(e));
 
 	/* on-demand replication */
@@ -540,7 +540,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (host != NULL)
 			free(host);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001355,
 			"error occurred in gfarm_schedule_file(): %s",
 			gfarm_error_string(e));
 		return (e);
@@ -590,7 +590,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 
 	e = gfs_pio_set_view_default(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001356,
 			"gfs_pio_set_view_default() failed: %s",
 			gfarm_error_string(e));
 		goto finish;
@@ -602,7 +602,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
 		    &hinfo);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001357,
 				"gfm_host_info_get_by_name_alias() failed: %s",
 				gfarm_error_string(e));
 			goto finish;
@@ -614,7 +614,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	GFARM_MALLOC(vc);
 	if (vc == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001358,
 			"allocation of file section context failed: %s",
 			gfarm_error_string(e));
 		goto finish;
@@ -627,7 +627,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 			/* reschedule another host */
 			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
 			    ++retry <= max_retry) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1001359,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				sleep(sleep_interval);
@@ -649,7 +649,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
 			    gfs_client_is_connection_error(e)) &&
 			    ++retry <= max_retry) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1001360,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				host = NULL;
@@ -680,7 +680,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		}
 #endif /* not yet in gfarm v2 */
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001361,
 			"error occurred in gfs_pio_internal_set_view_"
 			"section(): %s",
 			gfarm_error_string(e));

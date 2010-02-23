@@ -40,7 +40,7 @@ gfarm_url_parse_metadb(const char **pathp,
 	} else {
 		path += GFARM_PREFIX_LEN;
 		if (path[0] != '/' || path[1] != '/') {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001254,
 				"Host missing in url (%s): %s",
 				*pathp,
 				gfarm_error_string(
@@ -54,7 +54,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		    p++)
 			;
 		if (p == path) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001255,
 				"Host missing in url (%s): %s",
 				*pathp,
 				gfarm_error_string(
@@ -62,7 +62,7 @@ gfarm_url_parse_metadb(const char **pathp,
 			return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
 		}
 		if (*p != ':') {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001256,
 				"Port missing in url (%s): %s",
 				*pathp,
 				gfarm_error_string(
@@ -80,7 +80,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		if (*p == '\0' || (*ep != '\0' && *ep != '/')) {
 			if (gfm_serverp != NULL)
 				free(gfm_server_name);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001257,
 				"Port missing in url (%s): %s",
 				*pathp,
 				gfarm_error_string(
@@ -92,7 +92,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		    gfm_server_port <= 0 || gfm_server_port >= 65536) {
 			if (gfm_serverp != NULL)
 				free(gfm_server_name);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001258,
 				"Port invalid in url (%s): %s",
 				*pathp,
 				gfarm_error_string(
@@ -109,7 +109,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		}
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001259,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -187,7 +187,7 @@ gfm_lookup_dir_request(struct gfm_connection *gfm_server, const char *path,
 	if (e == GFARM_ERR_NO_ERROR)
 		*basep = path;
 	else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001260,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 	}
@@ -252,7 +252,7 @@ gfm_lookup_dir_result(struct gfm_connection *gfm_server, const char *path,
 	if (e == GFARM_ERR_NO_ERROR)
 		*basep = path;
 	else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001261,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 	}
@@ -324,7 +324,7 @@ gfm_tmp_open_request(struct gfm_connection *gfm_server,
 		    base, strlen(base), flags);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001262,
 			"gfm_client_open_request(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -357,7 +357,7 @@ gfm_tmp_open_result(struct gfm_connection *gfm_server,
 			*typep = gfs_mode_to_type(mode);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001263,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 	}
@@ -393,7 +393,7 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 
 		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001264,
 				"gfarm_url_parse_metadb(%s) failed: %s",
 				url,
 				gfarm_error_string(e));
@@ -457,7 +457,7 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	if (e != GFARM_ERR_NO_ERROR || e_save != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001265,
 			"error occurred during process: %s",
 			gfarm_error_string(
 				e_save != GFARM_ERR_NO_ERROR ? e_save : e));
@@ -495,7 +495,7 @@ gfm_inode_op(const char *url, int flags,
 
 		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001266,
 				"gfarm_url_parse_metadb(%s) failed: %s",
 				url,
 				gfarm_error_string(e));
@@ -548,7 +548,7 @@ gfm_inode_op(const char *url, int flags,
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001267,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
 	}

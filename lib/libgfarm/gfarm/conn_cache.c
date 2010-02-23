@@ -77,7 +77,7 @@ gfp_uncached_connection_new(struct gfp_cached_connection **connectionp)
 
 	GFARM_MALLOC(connection);
 	if (connection == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001087,
 			"allocation of 'connection' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -134,14 +134,14 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 	    hostname, port, gfarm_get_global_username(),
 	    &entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001088,
 			"insertion to connection hash (%s)(%d) failed: %s",
 			hostname, port,
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!created) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001089,
 			"insertion to connection hash (%s)(%d) failed: %s",
 			hostname, port,
 			gfarm_error_string(GFARM_ERR_ALREADY_EXISTS));
@@ -212,7 +212,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	    gfarm_get_global_username(),
 	    &entry, createdp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001090,
 			"insertion to connection hash (%s)(%d) failed: %s",
 			canonical_hostname, port,
 			gfarm_error_string(e));
@@ -227,7 +227,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 		GFARM_MALLOC(connection);
 		if (connection == NULL) {
 			gfp_conn_hash_purge(cache->hashtab, entry);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001091,
 				"allocation of 'connection' failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);

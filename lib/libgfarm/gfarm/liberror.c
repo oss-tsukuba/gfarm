@@ -424,7 +424,7 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	struct gfarm_error_domain *last, *new;
 
 	if (gfarm_error_domain_number >= MAX_ERROR_DOMAINS) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000845,
 		    "gfarm_error_domain_alloc: too many error domains");
 		return (GFARM_ERRMSG_TOO_MANY_ERROR_DOMAIN);
 	}
@@ -436,7 +436,7 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	}
 	if (next_error + domerror_max - domerror_min
 	    >= GFARM_ERR_PRIVATE_BEGIN) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000846,
 		    "gfarm_error_domain_alloc: too large domain [%d, %d]",
 		    domerror_min, domerror_max);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
@@ -473,7 +473,7 @@ gfarm_error_range_alloc(int domerror_min, int domerror_max,
 	/* sanity checks */
 	if (domerror_min < GFARM_ERR_PRIVATE_BEGIN ||
 	    domerror_max < domerror_min) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000847,
 		    "gfarm_error_range_alloc: invalid range [%d, %d]",
 		    domerror_min, domerror_max);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
@@ -481,7 +481,7 @@ gfarm_error_range_alloc(int domerror_min, int domerror_max,
 	for (dom = gfarm_error_ranges; dom != NULL; dom = dom->next) {
 		if (domerror_max >= dom->offset &&
 		    domerror_min < dom->offset + dom->domerror_number - 1) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000848,
 			    "gfarm_error_range_alloc: [%d, %d] is "
 			    "overlapping with an existing range [%d, %d]",
 			    domerror_min, domerror_max, dom->offset,
@@ -492,7 +492,7 @@ gfarm_error_range_alloc(int domerror_min, int domerror_max,
 
 	GFARM_MALLOC(new);
 	if (new == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000849,
 		    "gfarm_error_range_alloc: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -516,7 +516,7 @@ gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
 
 	if (domerror < domain->domerror_min ||
 	    domerror >= domain->domerror_min + domain->domerror_number) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000850,
 		    "gfarm_error_domain_add_map: "
 		    "error code %d is out of [%d, %d]",
 		    domerror, domain->domerror_min,
@@ -527,7 +527,7 @@ gfarm_error_domain_add_map(struct gfarm_error_domain *domain,
 		GFARM_MALLOC_ARRAY(domain->map_to_gfarm,
 		    domain->domerror_number);
 		if (domain->map_to_gfarm == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1000851,
 			    "gfarm_error_domain_add_map: no memory for %d",
 			    domain->domerror_number);
 			return (GFARM_ERR_NO_MEMORY);
@@ -583,7 +583,7 @@ gfarm_error_string(gfarm_error_t error)
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
 	if (error < GFARM_ERR_NUMBER) {
 		if (error >= GFARM_ARRAY_LENGTH(errcode_string)) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1000852,
 			    "gfarm_error_string: missing errcode_string: %d",
 			    error);
 			return (errcode_string[GFARM_ERR_UNKNOWN]);
@@ -652,7 +652,7 @@ gfarm_errno_to_error_initialize(void)
 			continue; /* a mapping is already registered */
 		if ((e = gfarm_error_domain_add_map(gfarm_errno_domain,
 		    map->unix_errno, map->gfarm_error)) != GFARM_ERR_NO_ERROR){
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1000853,
 			    "libgfarm: initializing error map "
 			    "(%d -> %d): %s (%d)",
 			    map->unix_errno, map->gfarm_error,

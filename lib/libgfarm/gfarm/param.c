@@ -43,7 +43,7 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 			continue;
 		if (configlen == namelen) { /* no value specified */
 			if (!type->boolean) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000884,
 					"Value is not specified (%s)",
 					config);
 				return (GFARM_ERRMSG_VALUE_IS_NOT_SPECIFIED);
@@ -51,13 +51,13 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 			value = 1;
 		} else {
 			if (type->boolean) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000885,
 					"Value is not allowed for boolean (%s)",
 					config);
 				return (GFARM_ERRMSG_VALUE_IS_NOT_ALLOWED_FOR_BOOLEAN);
 			}
 			if (config[namelen + 1] == '\0') {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000886,
 					"Value is empty (%s)",
 					config);
 				return (GFARM_ERRMSG_VALUE_IS_EMPTY);
@@ -66,13 +66,13 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 			value = strtol(&config[namelen + 1], &ep, 0);
 			if (errno != 0) {
 				int save_errno = errno;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000887,
 					"strtol(%s) failed: %s",
 					config, strerror(save_errno));
 				return (gfarm_errno_to_error(save_errno));
 			}
 			if (*ep != '\0') {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1000888,
 					"Invalid char in value(%s).",
 					config);
 				return (GFARM_ERRMSG_INVALID_CHAR_IN_VALUE);
@@ -83,7 +83,7 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 		*valuep = value;
 		return (GFARM_ERR_NO_ERROR);				
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000889,
 		"failed to find object(%s): %s",
 		config,
 		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
@@ -99,7 +99,7 @@ gfarm_param_config_add_long(
 
 	GFARM_MALLOC(pcp);
 	if (pcp == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000890,
 			"allocation of 'gfarm_param_config' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -136,7 +136,7 @@ gfarm_param_apply_long_by_name_addr(struct gfarm_param_config *list,
 		}
 	}
 	if (e_save != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000891,
 			"Error occurred during process(%s): %s",
 			name,
 			gfarm_error_string(e_save));
@@ -161,7 +161,7 @@ gfarm_param_apply_long(struct gfarm_param_config *list,
 			e_save = e;
 	}
 	if (e_save != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000892,
 			"Error occurred during process(): %s",
 			gfarm_error_string(e_save));
 	}
@@ -181,7 +181,7 @@ gfarm_param_get_long_by_name_addr(struct gfarm_param_config *list,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000893,
 		"failed to find long param (%d) by name addr (%s): %s",
 		param_type_index, name,
 		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
@@ -198,7 +198,7 @@ gfarm_param_get_long(struct gfarm_param_config *list,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1000894,
 		"failed to find long param (%d): %s",
 		param_type_index,
 		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
@@ -304,13 +304,13 @@ gfarm_netparam_config_add_long(char *config, struct gfarm_hostspec *hsp)
 	    NNETPARAMS, gfarm_netparam_type_table,
 	    config, &param_type_index, &value);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000895,
 			"Unknown parameter(%s).",
 			config);
 		return (GFARM_ERRMSG_UNKNOWN_PARAMETER);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000896,
 			"gfarm_param_config_parse_long(%s) failed: %s",
 			config,
 			gfarm_error_string(e));
@@ -318,7 +318,7 @@ gfarm_netparam_config_add_long(char *config, struct gfarm_hostspec *hsp)
 	}
 	info = gfarm_netparam_type_table[param_type_index].extension;
 	if (value < info->minimum || value > info->maximum) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000897,
 			"Argument out of domain (%ld): %s",
 			value,
 			gfarm_error_string(
@@ -341,7 +341,7 @@ gfarm_netparam_config_get_long(struct gfarm_netparam_info *info,
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 		*valuep = info->default_value;
 	} else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000898,
 			"gfarm_param_get_long_by_name_addr(%s) failed: %s",
 			name,
 			gfarm_error_string(e));

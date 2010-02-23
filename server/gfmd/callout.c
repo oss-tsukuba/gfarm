@@ -78,7 +78,7 @@ callout_main(void *arg)
 			rv = pthread_cond_timedwait(&cm->have_things_to_run,
 			    &cm->mutex, &c->target_time);
 		if (rv != 0 && rv != ETIMEDOUT) {
-			gflog_fatal(GFARM_MSG_UNFIXED, "s: %s cond wait: %s",
+			gflog_fatal(GFARM_MSG_1001490, "s: %s cond wait: %s",
 			    module_name, strerror(rv));
 		}
 		
@@ -127,7 +127,7 @@ callout_module_init(int nthreads)
 	for (i = 0; i < nthreads; i++) {
 		e = create_detached_thread(callout_main, &callout_module);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1001491,
 			    "callout_module_init: create_detached_thread: %s",
 			    gfarm_error_string(e));
 	}

@@ -104,7 +104,7 @@ job_table_add(struct gfarm_job_info *info,
 	id = job_table_free;
 	GFARM_MALLOC(job_table[id]);
 	if (job_table[id] == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001682,
 			"allocation of job_table failed");
 		return (-1);
 	}
@@ -152,7 +152,7 @@ gfj_server_lock_register(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFJ_PROTO_LOCK_REGISTER";
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001683,
 			"lock operation is not permitted for from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	}
@@ -169,7 +169,7 @@ gfj_server_unlock_register(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFJ_PROTO_UNLOCK_REGISTER";
 
 	if (!from_client) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001684,
 			"unlock operation is not permitted for from_client");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	}
@@ -192,7 +192,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 
 	GFARM_MALLOC(info);
 	if (info == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001685,
 			"allocation of gfarm_job_info failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -205,7 +205,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 				   &info->gfarm_url_for_scheduling,
 				   &argc);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001686,
 			"gfj_server_get_request() failed");
 		return (e);
 	}
@@ -216,7 +216,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	GFARM_MALLOC_ARRAY(info->argv, argc + 1);
 	GFARM_MALLOC_ARRAY(info->nodes, total_nodes);
 	if (info->argv == NULL || info->nodes == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001687,
 			"allocation of 'info->argv' or 'info->nodes' failed ");
 		free(info->job_type);
 		free(info->originate_host);
@@ -231,7 +231,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < argc; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &info->argv[i]);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001688,
 				"gfp_xdr_recv(info->argv[i]) failed");
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
@@ -251,7 +251,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 		e = gfp_xdr_recv(client, 0, &eof, "s",
 				   &info->nodes[i].hostname);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001689,
 				"gfp_xdr_recv(hostname) failed");
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
@@ -283,7 +283,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 		if (skip)
 			return (GFARM_ERR_NO_ERROR);
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001690,
 			"operation is not permitted for from_client");
 	} else {
 		giant_lock();
@@ -292,7 +292,7 @@ gfj_server_register(struct peer *peer, int from_client, int skip)
 		if (job_id < JOB_ID_MIN) {
 			job_id = 0;
 			error = GFARM_ERR_TOO_MANY_JOBS;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001691,
 				"too many jobs");
 		} else {
 			error = GFARM_ERR_NO_ERROR;
@@ -313,7 +313,7 @@ gfj_server_unregister(struct peer *peer, int from_client, int skip)
 
 	e = gfj_server_get_request(peer, diag, "i", &job_id);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001692,
 			"unregister request failure");
 		return (e);
 	}
@@ -321,7 +321,7 @@ gfj_server_unregister(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	if (!from_client) {
 		error = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001693,
 			"operation is not permitted for from_client");
 	} else {
 		giant_lock();
@@ -355,7 +355,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 
 	e = gfj_server_get_request(peer, diag, "s", &user);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001694,
 			"list request failure");
 		return (e);
 	}
@@ -368,7 +368,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001695,
 				"gfj_server_put_reply(list) failed");
 			return (e);
 		}
@@ -387,7 +387,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_NO_ERROR, "i", n);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001696,
 				"gfj_server_put_reply(register) failed");
 			giant_unlock();
 			return (e);
@@ -400,7 +400,7 @@ gfj_server_list(struct peer *peer, int from_client, int skip)
 				e = gfp_xdr_send(client, "i",
 				    (gfarm_int32_t)i);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1001697,
 						"gfp_xdr_send() failed");
 					giant_unlock();
 					return (e);
@@ -428,14 +428,14 @@ gfj_server_put_info_entry(struct gfp_xdr *client,
 			   info->gfarm_url_for_scheduling,
 			   info->argc);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001698,
 			"gfp_xdr_send() failed");
 		return (e);
 	}
 	for (i = 0; i < info->argc; i++) {
 		e = gfp_xdr_send(client, "s", info->argv[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001699,
 				"gfp_xdr_send(info->argv[%d]) failed", i);
 			return (e);
 		}
@@ -445,7 +445,7 @@ gfj_server_put_info_entry(struct gfp_xdr *client,
 				   info->nodes[i].hostname,
 				   info->nodes[i].pid, info->nodes[i].state);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001700,
 				"gfp_xdr_send(info->nodes[%d]) failed", i);
 			return (e);
 		}
@@ -464,14 +464,14 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 
 	e = gfj_server_get_request(peer, diag, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001701,
 			"info request failure");
 		return (e);
 	}
 
 	GFARM_MALLOC_ARRAY(jobs, n);
 	if (jobs == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001702,
 			"allocation of 'jobs' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -479,7 +479,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < n; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "i", &jobs[i]);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001703,
 				"gfp_xdr_recv(jobs[%d]) failed", i);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
@@ -494,7 +494,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 			return (GFARM_ERR_NO_ERROR);
 		e = gfj_server_put_reply(peer, diag,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001704,
 			"operation is not permitted for from_client");
 		return (e);
 	}
@@ -507,7 +507,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 			e = gfj_server_put_reply(peer, diag,
 						 GFARM_ERR_NO_SUCH_OBJECT, "");
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001705,
 					"gfj_server_put_reply(info) failed");
 				giant_unlock();
 				free(jobs);
@@ -517,7 +517,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 			e = gfj_server_put_reply(peer, diag,
 						 GFARM_ERR_NO_ERROR, "");
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001706,
 					"gfj_server_put_reply(info) failed");
 				free(jobs);
 				giant_unlock();
@@ -526,7 +526,7 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 			e = gfj_server_put_info_entry(peer_get_conn(peer),
 			      job_table[jobs[i]]->info);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001707,
 					"gfj_server_put_info_entry() failed");
 				free(jobs);
 				giant_unlock();

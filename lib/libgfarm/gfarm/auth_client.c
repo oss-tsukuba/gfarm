@@ -78,7 +78,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 
 	e = gfp_xdr_send(conn, "s", user);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001025,
 			"sending user (%s) failed"
 			"when requesting sharedsecret: %s",
 			user, gfarm_error_string(e));
@@ -101,21 +101,21 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001026,
 				"sending auth shared secret md5 failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &error);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001027,
 				"receiving auth shared secret md5 "
 				"response failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001028,
 				"Unexpected EOF when receiving "
 				"auth shared secret md5 response: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
@@ -127,13 +127,13 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		e = gfp_xdr_recv(conn, 0, &eof, "b",
 		    sizeof(challenge), &len, challenge);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001029,
 				"receiving challenge response failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001030,
 				"Unexpected EOF when receiving "
 				"challenge response: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
@@ -146,7 +146,7 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001031,
 				"sending expire %u failed: %s",
 				expire,
 				gfarm_error_string(e));
@@ -154,13 +154,13 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 		}
 		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001032,
 				"receiving expire response failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001033,
 			    "Unexpected EOF when receiving expire response: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
 			return (GFARM_ERR_PROTOCOL);
@@ -174,27 +174,27 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001034,
 			"sending giveup failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	e = gfp_xdr_recv(conn, 0, &eof, "i", &error_ignore);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001035,
 			"receiving giveup response failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (eof) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001036,
 			"Unexpected EOF when receiving giveup response: %s",
 			gfarm_error_string(GFARM_ERR_PROTOCOL));
 		return (GFARM_ERR_PROTOCOL);
 	}
 
 	if (e_save != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001037,
 			"access to %s failed: %s",
 			GFARM_AUTH_SHARED_KEY_PRINTNAME,
 			gfarm_error_string(e_save));
@@ -202,15 +202,15 @@ gfarm_auth_request_sharedsecret(struct gfp_xdr *conn,
 	}
 	switch (error) {
 	case GFARM_AUTH_ERROR_NOT_SUPPORTED:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001038,
 			"Protocol not supported");
 		return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 	case GFARM_AUTH_ERROR_EXPIRED:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001039,
 			"Authentication token expired");
 		return (GFARM_ERR_EXPIRED);
 	default:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001040,
 			"Authentication failed");
 		return (GFARM_ERR_AUTHENTICATION);
 	}
@@ -234,14 +234,14 @@ gfarm_auth_request(struct gfp_xdr *conn,
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(name, addr);
 	if (methods == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001041,
 			"Auth method not available for host %s",
 		    name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
 	methods &= gfarm_auth_method_get_available();
 	if (methods == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001042,
 			"No usable auth method configured");
 		return (GFARM_ERRMSG_USABLE_AUTH_METHOD_IS_NOT_CONFIGURED);
 	}
@@ -249,13 +249,13 @@ gfarm_auth_request(struct gfp_xdr *conn,
 	e = gfp_xdr_recv(conn, 0, &eof, "b", sizeof(methods_buffer),
 	    &nmethods, methods_buffer);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001043,
 			"receiving methods response failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (eof) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001044,
 			"Unexpected EOF when receiving methods response: %s",
 			gfarm_error_string(GFARM_ERR_PROTOCOL));
 		return (GFARM_ERR_PROTOCOL);
@@ -278,7 +278,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001045,
 				"sending method (%d) failed: %s",
 				method,
 				gfarm_error_string(e));
@@ -286,14 +286,14 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		}
 		e = gfp_xdr_recv(conn, 1, &eof, "i", &error);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001046,
 				"receiving method (%d) response failed: %s",
 				method,
 				gfarm_error_string(e));
 			return (e);
 		}
 		if (eof || error != GFARM_AUTH_ERROR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001047,
 				"Unexpected EOF when receiving "
 				"method (%d) response (error = %u): %s",
 				method, error,
@@ -303,21 +303,21 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		if (method == GFARM_AUTH_METHOD_NONE) {
 			/* give up */
 			if (server_methods == 0) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001048,
 					"Method permission denied");
 				return (GFARM_ERR_PERMISSION_DENIED);
 			}
 			if ((methods & server_methods) == 0) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001049,
 					"Method protocol not supported");
 				return (GFARM_ERR_PROTOCOL_NOT_SUPPORTED);
 			}
 			if (e_save != GFARM_ERR_NO_ERROR)
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001050,
 					"Method error: %s",
 					gfarm_error_string(e_save));
 			else
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001051,
 					"Auth request implementation error");
 			return (e_save != GFARM_ERR_NO_ERROR ? e_save :
 			    GFARM_ERRMSG_AUTH_REQUEST_IMPLEMENTATION_ERROR);
@@ -332,7 +332,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
 		    e != GFARM_ERR_AUTHENTICATION) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001052,
 				"Method protocol error: %s",
 				gfarm_error_string(e));
 			/* protocol error */
@@ -377,7 +377,7 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001053,
 			"receiving fin failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -389,7 +389,7 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 	    &error_ignore);
 	if (state->error == GFARM_ERR_NO_ERROR && eof) {
 		state->error = GFARM_ERR_PROTOCOL;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001054,
 			"Unexpected EOF when receiving fin %s",
 			gfarm_error_string(GFARM_ERR_PROTOCOL));
 	}
@@ -401,17 +401,17 @@ gfarm_auth_request_sharedsecret_receive_fin(int events, int fd,
 		switch (state->proto_error) {
 		case GFARM_AUTH_ERROR_NOT_SUPPORTED:
 			state->error = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001055,
 				"Protocol not supported");
 			break;
 		case GFARM_AUTH_ERROR_EXPIRED:
 			state->error = GFARM_ERR_EXPIRED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001056,
 				"Authentication token expired");
 			break;
 		default:
 			state->error = GFARM_ERR_AUTHENTICATION;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001057,
 				"Authentication failed");
 			break;
 		}
@@ -460,7 +460,7 @@ gfarm_auth_request_sharedsecret_receive_result(int events, int fd,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001058,
 			"receiving result failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -505,7 +505,7 @@ gfarm_auth_request_sharedsecret_receive_challenge(int events, int fd,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001059,
 			"receiving challenge failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -555,7 +555,7 @@ gfarm_auth_request_sharedsecret_receive_keytype(int events, int fd,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001060,
 			"receiving keytype failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -659,7 +659,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	/* XXX It's better to check writable event here */
 	e = gfp_xdr_send(conn, "s", user);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001061,
 			"sending user %s failed: %s",
 			user,
 			gfarm_error_string(e));
@@ -668,7 +668,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 
 	GFARM_MALLOC(state);
 	if (state == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001062,
 			"allocation of 'state' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -679,7 +679,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_request_sharedsecret_send_keytype, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001063,
 			"allocation of 'writable' failed: %s",
 			gfarm_error_string(e));
 		goto error_free_state;
@@ -694,7 +694,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_request_sharedsecret_receive_keytype, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001064,
 			"allocation of 'readable' failed: %s",
 			gfarm_error_string(e));
 		goto error_free_writable;
@@ -703,7 +703,7 @@ gfarm_auth_request_sharedsecret_multiplexed(struct gfarm_eventqueue *q,
 	rv = gfarm_eventqueue_add_event(q, state->writable, NULL);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001065,
 			"addition of event failed: %s",
 			gfarm_error_string(e));
 		goto error_free_readable;
@@ -810,7 +810,7 @@ gfarm_auth_request_dispatch_method(int events, int fd, void *closure,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001066,
 			"dispatch method failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -903,7 +903,7 @@ gfarm_auth_request_receive_server_methods(int events, int fd, void *closure,
 	if ((events & GFARM_EVENT_TIMEOUT) != 0) {
 		assert(events == GFARM_EVENT_TIMEOUT);
 		state->error = GFARM_ERR_OPERATION_TIMED_OUT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001067,
 			"receiving server methods failed: %s",
 			gfarm_error_string(state->error));
 		if (state->continuation != NULL)
@@ -954,21 +954,21 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 
 	methods = gfarm_auth_method_get_enabled_by_name_addr(name, addr);
 	if (methods == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001068,
 			"Auth method not available for host %s",
 			name);
 		return (GFARM_ERRMSG_AUTH_METHOD_NOT_AVAILABLE_FOR_THE_HOST);
 	}
 	methods &= gfarm_auth_method_get_available();
 	if (methods == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001069,
 			"No usable auth method configured");
 		return (GFARM_ERRMSG_USABLE_AUTH_METHOD_IS_NOT_CONFIGURED);
 	}
 
 	GFARM_MALLOC(state);
 	if (state == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001070,
 			"allocation of 'state' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -979,7 +979,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_request_loop_ask_method, state);
 	if (state->writable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001071,
 			"allocation of 'writable' failed: %s",
 			gfarm_error_string(e));
 		goto error_free_state;
@@ -994,7 +994,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	    gfarm_auth_request_receive_server_methods, state);
 	if (state->readable == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001072,
 			"allocation of 'readable' failed: %s",
 			gfarm_error_string(e));
 		goto error_free_writable;
@@ -1004,7 +1004,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	rv = gfarm_eventqueue_add_event(q, state->readable, &timeout);
 	if (rv != 0) {
 		e = gfarm_errno_to_error(rv);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001073,
 			"addition of event failed: %s",
 			gfarm_error_string(e));
 		goto error_free_readable;

@@ -269,7 +269,7 @@ gfs_stat_copy(struct gfs_stat *d, const struct gfs_stat *s)
 			free(user);
 		if (group != NULL)
 			free(group);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001022,
 			"allocation of user or group failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);

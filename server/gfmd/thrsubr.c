@@ -45,7 +45,7 @@ mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 	int err = pthread_mutex_destroy(mutex);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex destroy: %s",
+		gflog_fatal(GFARM_MSG_1001488, "%s: %s mutex destroy: %s",
 		    where, what, strerror(err));
 }
 
@@ -86,7 +86,7 @@ cond_destroy(pthread_cond_t *cond, const char *where, const char *what)
 	int err = pthread_cond_destroy(cond);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond destroy: %s",
+		gflog_fatal(GFARM_MSG_1001489, "%s: %s cond destroy: %s",
 		    where, what, strerror(err));
 }
 

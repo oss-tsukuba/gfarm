@@ -77,7 +77,7 @@ gfs_replica_list_by_name(const char *path, int *np, char ***hostsp)
 		*np = closure.n;
 		*hostsp = closure.hosts;
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001383,
 			"gfm_inode_op(%s) failed: %s",
 			path,
 			gfarm_error_string(e));

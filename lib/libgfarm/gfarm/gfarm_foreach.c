@@ -76,7 +76,7 @@ gfarm_foreach_directory_hierarchy(
 free_st:
 	gfs_stat_free(&st);
 	if (e_save != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001413,
 			"Error in foreach directory hierarchy: %s",
 			gfarm_error_string(
 				e_save == GFARM_ERR_NO_ERROR ? e : e_save));

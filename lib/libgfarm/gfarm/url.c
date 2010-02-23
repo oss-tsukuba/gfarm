@@ -539,7 +539,7 @@ gfarm_path_dir(const char *pathname)
 		return (strdup(dot));
 	dir = strdup(pathname);
 	if (dir == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001463,
 			"allocation of dir failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);
@@ -571,7 +571,7 @@ gfarm_path_dirname(const char *pathname)
 	char *parent = strdup(pathname), *b;
 
 	if (parent == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001464,
 			"allocation of path failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);

@@ -107,7 +107,7 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 #endif /* not yet in gfarm v2 */
 
 	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001268,
 			"gfm_open_flag_check(%d) failed: %s",
 			flags,
 			gfarm_error_string(e));
@@ -187,7 +187,7 @@ gfm_open_fd(const char *path, int flags,
 #endif /* not yet in gfarm v2 */
 
 	if ((e = gfm_open_flag_check(flags)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001269,
 			"gfm_open_flag_check(%d) failed: %s",
 			flags,
 			gfarm_error_string(e));

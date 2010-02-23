@@ -98,7 +98,7 @@ reconnect_to_ldap_server()
 	gflog_warning(GFARM_MSG_1000726, "reconnect");
 	error = gfarm_ldap_terminate();
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002115,
 			"gfarm_ldap_terminate() failed: %s",
 			gfarm_error_string(error));
 		return (error);
@@ -299,7 +299,7 @@ gfarm_ldap_set_ssl_context(void)
 	if (ldap_ssl_context == NULL) {
 		e = gfarm_ldap_new_default_ctx(&ldap_ssl_context);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002116,
 				"gfarm_ldap_new_default_ctx() failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -437,7 +437,7 @@ gfarm_ldap_initialize(void)
 #ifdef OPENLDAP_TLS_USABLE
 		e = gfarm_ldap_set_ssl_context();
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002117,
 				"gfarm_ldap_set_ssl_context() failed: %s",
 				gfarm_error_string(e));
 			gfarm_ldap_terminate();
@@ -542,7 +542,7 @@ gfarm_ldap_terminate(void)
 	int rv;
 
 	if (gfarm_ldap_server == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "'gfarm_ldap_server' is NULL");
+		gflog_debug(GFARM_MSG_1002118, "'gfarm_ldap_server' is NULL");
 		return (GFARM_ERR_NO_ERROR);
 	}
 	rv = ldap_unbind(gfarm_ldap_server);
@@ -726,7 +726,7 @@ gfarm_ldap_generic_info_add(
 
 	dn = ops->make_dn(key);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "make_dn() failed: %s",
+		gflog_debug(GFARM_MSG_1002119, "make_dn() failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -744,7 +744,7 @@ retry:
 		break;
 	case LDAP_ALREADY_EXISTS:
 		error = GFARM_ERR_ALREADY_EXISTS;
-		gflog_debug(GFARM_MSG_UNFIXED, "entry already exists");
+		gflog_debug(GFARM_MSG_1002120, "entry already exists");
 		break;
 	default:
 		gflog_error(GFARM_MSG_1000756,
@@ -767,7 +767,7 @@ gfarm_ldap_generic_info_modify(
 
 	dn = ops->make_dn(key);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "make_dn() failed: %s",
+		gflog_debug(GFARM_MSG_1002121, "make_dn() failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -784,13 +784,13 @@ retry:
 			goto retry;
 		break;
 	case LDAP_NO_SUCH_OBJECT:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002122,
 			"ldap_modify_s(%s) failed: %s", dn,
 			gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 		error = GFARM_ERR_NO_SUCH_OBJECT;
 		break;
 	case LDAP_ALREADY_EXISTS:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002123,
 			"ldap_modify_s(%s) failed: %s", dn,
 			gfarm_error_string(GFARM_ERR_ALREADY_EXISTS));
 		error = GFARM_ERR_ALREADY_EXISTS;
@@ -815,7 +815,7 @@ gfarm_ldap_generic_info_remove(
 
 	dn = ops->make_dn(key);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "make_dn() failed: %s",
+		gflog_debug(GFARM_MSG_1002124, "make_dn() failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -833,7 +833,7 @@ retry:
 		break;
 	case LDAP_NO_SUCH_OBJECT:
 		error = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002125,
 			"ldap_delete_s(%s) failed: %s", dn,
 			gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 		break;
@@ -1032,7 +1032,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	}
 
 	if (i == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002126,
 			"finding ldap entry failed");
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
@@ -1089,7 +1089,7 @@ gfarm_ldap_host_info_make_dn(void *vkey)
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_host_info_ops.dn_template) +
 	    strlen(key->hostname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002127,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -1256,7 +1256,7 @@ gfarm_ldap_user_info_make_dn(void *vkey)
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_user_info_ops.dn_template) +
 	    strlen(key->username) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002128,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -1408,7 +1408,7 @@ gfarm_ldap_group_info_make_dn(void *vkey)
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_group_info_ops.dn_template) +
 	    strlen(key->groupname) + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002129,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -1545,7 +1545,7 @@ gfarm_ldap_db_inode_inum_make_dn(void *vkey)
 	GFARM_MALLOC_ARRAY(dn, strlen(gfarm_ldap_gfs_stat_ops.dn_template) +
 	    INT64STRLEN + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002130,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -2037,7 +2037,7 @@ gfarm_ldap_db_filecopy_make_dn(void *vkey)
 	    + strlen(key->hostname) + INT64STRLEN +
 	    + strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002131,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -2156,7 +2156,7 @@ gfarm_ldap_db_deadfilecopy_make_dn(void *vkey)
 	    strlen(key->hostname) + INT64STRLEN +
 	    strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002132,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -2326,7 +2326,7 @@ gfarm_ldap_db_direntry_make_dn(void *vkey)
 	    gfarm_ldap_quote_string_length(key->entry_name, key->entry_len);
 	GFARM_MALLOC_ARRAY(quoted, quoted_len);
 	if (quoted == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002133,
 			"allocation of string 'quoted' failed");
 		return (NULL);
 	}
@@ -2338,7 +2338,7 @@ gfarm_ldap_db_direntry_make_dn(void *vkey)
 		sprintf(dn, gfarm_ldap_db_direntry_ops.dn_template,
 		    quoted, key->dir_inum, gfarm_ldap_base_dn);
 	else
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002134,
 			"allocation of string 'dn' failed");
 
 	free(quoted);
@@ -2586,7 +2586,7 @@ gfarm_ldap_xattr_info_make_dn(void *vkey)
 		strlen(key->attrname) + INT64STRLEN
 		+ strlen(gfarm_ldap_base_dn) + 1);
 	if (dn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002135,
 			"allocation of string 'dn' failed");
 		return (NULL);
 	}
@@ -2702,14 +2702,14 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 
 	if (arg->xmlMode) {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002136,
 			"operation not supported(xmlMode is true)");
 		goto quit;
 	}
 
 	GFARM_MALLOC_ARRAY(query_type, 64+INT64STRLEN+strlen(arg->attrname));
 	if (query_type == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002137,
 			"allocation of string 'query_type' failed");
 		e = GFARM_ERR_NO_MEMORY;
 		goto quit;
@@ -2723,13 +2723,13 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 	free(query_type);
 	if (rv == LDAP_NO_SUCH_OBJECT) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002138,
 			"ldap_search_st() failed: %s",
 			gfarm_error_string(e));
 		goto quit;
 	} else if ((rv != LDAP_SUCCESS) || (res == NULL)) {
 		e = GFARM_ERR_UNKNOWN;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002139,
 			"unknown error occurred in ldap_search_st()");
 		goto quit;
 	}
@@ -2738,12 +2738,12 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 	if (cnt <= 1) {
 		// NOTE: cnt==1 means res have a NULL message only.
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002140,
 			"ldap count messages() <= 1");
 	} else if (cnt != 2) {
 		// NOTE: res must have a valid message and a NULL message.
 		e =  GFARM_ERR_UNKNOWN;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002141,
 			"ldap_count_messages() != 2");
 	} else {
 		m = ldap_first_message(gfarm_ldap_server, res);
@@ -2759,14 +2759,14 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 					*arg->valuep = p;
 				} else {
 					e = GFARM_ERR_NO_MEMORY;
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002142,
 						"allocation of 'vals' failed");
 				}
 			} else
 				*arg->valuep = NULL;
 		} else {
 			e = GFARM_ERR_UNKNOWN;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002143,
 				"unknown error occurred when "
 				"getting first ldap message");
 		}

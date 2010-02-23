@@ -142,7 +142,7 @@ gfarm_auth_sharedsecret_md5_response(
 	 */
 	if (pwd == NULL) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001074,
 			"Password is null");
 		/* already logged at gfarm_authorize_sharedsecret() */
 	} else if ((e = gfarm_auth_shared_key_get(&expire_expected,
@@ -517,7 +517,7 @@ gfarm_authorize(struct gfp_xdr *conn,
 		if (method == GFARM_AUTH_METHOD_NONE) {
 			/* client gave up */
 			if (methods == 0) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001075,
 					"Method permission denied: %s",
 					gfarm_error_string(
 						GFARM_ERR_PERMISSION_DENIED));
@@ -532,7 +532,7 @@ gfarm_authorize(struct gfp_xdr *conn,
 				    "doesn't match", hostname);
 				e = GFARM_ERR_PROTOCOL_NOT_SUPPORTED;
 			} else {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001076,
 					"Authentication failed: %s",
 					gfarm_error_string(
 						GFARM_ERR_AUTHENTICATION));
@@ -552,7 +552,7 @@ gfarm_authorize(struct gfp_xdr *conn,
 				if (auth_methodp != NULL)
 					*auth_methodp = method;
 			} else {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001077,
 					"Authentication failed host=(%s): %s",
 					hostname,
 					gfarm_error_string(e));

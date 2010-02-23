@@ -61,7 +61,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 
 	GFARM_MALLOC(conn);
 	if (conn == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000996,
 			"allocation of 'conn' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -69,7 +69,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	conn->recvbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
 	if (conn->recvbuffer == NULL) {
 		free(conn);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000997,
 			"allocation of 'conn recvbuffer' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -78,7 +78,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	if (conn->sendbuffer == NULL) {
 		gfarm_iobuffer_free(conn->recvbuffer);
 		free(conn);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1000998,
 			"allocation of 'conn sendbuffer' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -174,7 +174,7 @@ gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 	int rv;
 
 	if (*sizep < len) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_purge_sized: "
+		gflog_debug(GFARM_MSG_1000999, "gfp_xdr_purge_sized: "
 		    "%d bytes expected, but only %d bytes remains",
 		    len, (int)*sizep);
 		return (GFARM_ERR_PROTOCOL);
@@ -190,7 +190,7 @@ gfarm_error_t
 gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just) != len) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001000,
 			"gfarm_iobuffer_purge_read_x() failed: %s",
 			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
@@ -406,7 +406,7 @@ recv_sized(struct gfp_xdr *conn, int just, void *p, size_t sz,
 	int rv;
 
 	if (*sizep < sz) {
-		gflog_debug(GFARM_MSG_UNFIXED, "recv_size: "
+		gflog_debug(GFARM_MSG_1001001, "recv_size: "
 		    "%d bytes expected, but only %d bytes remains",
 		    (int)sz, (int)*sizep);
 		return (GFARM_ERR_PROTOCOL);  /* too short message */
@@ -414,7 +414,7 @@ recv_sized(struct gfp_xdr *conn, int just, void *p, size_t sz,
 	rv = gfarm_iobuffer_get_read_x(conn->recvbuffer, p, sz, just);
 	*sizep -= rv;
 	if (rv != sz) {
-		gflog_debug(GFARM_MSG_UNFIXED, "recv_size: "
+		gflog_debug(GFARM_MSG_1001002, "recv_size: "
 		    "%d bytes expected, but only %d bytes read",
 		    (int)sz, rv);
 		if (rv == 0) /* maybe usual EOF */
@@ -670,7 +670,7 @@ gfp_xdr_send_size_add(size_t *sizep, const char *format, ...)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size_add: "
+		gflog_debug(GFARM_MSG_1001003, "gfp_xdr_send_size_add: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
 	}
@@ -688,13 +688,13 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001004,
 			"gfp_xdr_vsend() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_send_size: "
+		gflog_debug(GFARM_MSG_1001005, "gfp_xdr_send_size: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_SEND_INVALID_FORMAT_CHARACTER);
 	}
@@ -717,7 +717,7 @@ gfp_xdr_recv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	if (*eofp)
 		return (GFARM_ERR_NO_ERROR);
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_recv_sized: "
+		gflog_debug(GFARM_MSG_1001006, "gfp_xdr_recv_sized: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
 	}
@@ -736,7 +736,7 @@ gfp_xdr_recv(struct gfp_xdr *conn, int just,
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001007,
 			"gfp_xdr_vrecv() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -744,7 +744,7 @@ gfp_xdr_recv(struct gfp_xdr *conn, int just,
 	if (*eofp)
 		return (GFARM_ERR_NO_ERROR);
 	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_recv: "
+		gflog_debug(GFARM_MSG_1001008, "gfp_xdr_recv: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
 	}
@@ -765,7 +765,7 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	 */
 	e = gfp_xdr_send(conn, "i", command);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001009,
 			"sending command (%d) failed: %s",
 			command,
 			gfarm_error_string(e));
@@ -797,14 +797,14 @@ gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
 	 */
 	e = gfp_xdr_recv_sized(conn, just, sizep, &eof, "i", errorp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001010,
 			"receiving response (%d) failed: %s",
 			just,
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (eof) { /* rpc status missing */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001011,
 			"Unexpected EOF when receiving response: %s",
 			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
@@ -814,19 +814,19 @@ gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
 
 	e = gfp_xdr_vrecv_sized(conn, just, sizep, &eof, formatp, app);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001012,
 			"gfp_xdr_vrecv_sized() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (eof) { /* rpc return value missing */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001013,
 			"Unexpected EOF when doing xdr vrecv: %s",
 			gfarm_error_string(GFARM_ERR_UNEXPECTED_EOF));
 		return (GFARM_ERR_UNEXPECTED_EOF);
 	}
 	if (**formatp != '\0') {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc_result_sized: "
+		gflog_debug(GFARM_MSG_1001014, "gfp_xdr_vrpc_result_sized: "
 		    "invalid format character: %c(%x)", **formatp, **formatp);
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
 	}
@@ -860,7 +860,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001015,
 			"gfp_xdr_vrpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);

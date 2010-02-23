@@ -209,7 +209,7 @@ gfp_xdr_set_secsession(struct gfp_xdr *conn,
 
 	GFARM_MALLOC(io);
 	if (io == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001480,
 			"allocation of 'io_gfsl' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);

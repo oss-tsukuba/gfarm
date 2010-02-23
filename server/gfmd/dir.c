@@ -290,7 +290,7 @@ dir_alloc(void)
 
 	GFARM_MALLOC(dir);
 	if (dir == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001708,
 			"allocation of 'Dir' failed");
 		return (NULL);
 	}
@@ -335,7 +335,7 @@ dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 
 	GFARM_MALLOC(entry);
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001709,
 			"allocation of 'DirEntry' failed");
 		return (NULL); /* no memory */
 	}
@@ -343,7 +343,7 @@ dir_enter(Dir dir, const char *name, int namelen, int *createdp)
 	GFARM_MALLOC_ARRAY(entry->key, namelen);
 	if (entry->key == NULL) {
 		free(entry);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001710,
 			"allocation of 'DirEntry.key' failed");
 		return (NULL); /* no memory */
 	}
@@ -520,7 +520,7 @@ dir_cursor_get_name_and_inode(Dir dir, DirCursor *cursorp,
 	name = dir_entry_get_name(entry, &namelen);
 	GFARM_MALLOC_ARRAY(newname, namelen + 1);
 	if (newname == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001711,
 			"allocation of array 'newname' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

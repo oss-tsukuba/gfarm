@@ -122,7 +122,7 @@ gfm_client_process_get(struct gfm_connection *gfm_server,
 	size_t *sharedkey_sizep, gfarm_pid_t *pidp)
 {
 	if (gfm_server->pid == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001092,
 			"server pid is invalid: %s",
 			gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -177,7 +177,7 @@ gfm_client_connection0(const char *hostname, int port,
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_CANONNAME;
 	if (gfarm_getaddrinfo(hostname, sbuf, &hints, &res) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001093,
 			"getaddrinfo(%s) failed: %s",
 			hostname,
 			gfarm_error_string(GFARM_ERR_UNKNOWN_HOST));
@@ -192,7 +192,7 @@ gfm_client_connection0(const char *hostname, int port,
 	}
 	if (sock == -1) {
 		save_errno = errno;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001094,
 			"creation of socket failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
@@ -208,7 +208,7 @@ gfm_client_connection0(const char *hostname, int port,
 		if (e != GFARM_ERR_NO_ERROR) {
 			close(sock);
 			gfarm_freeaddrinfo(res);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001095,
 				"bind(%s) failed: %s",
 				source_ip,
 				gfarm_error_string(e));
@@ -220,7 +220,7 @@ gfm_client_connection0(const char *hostname, int port,
 		save_errno = errno;
 		close(sock);
 		gfarm_freeaddrinfo(res);
-		gflog_debug(GFARM_MSG_UNFIXED, "connect failed: %s",
+		gflog_debug(GFARM_MSG_1001096, "connect failed: %s",
 			strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
@@ -229,7 +229,7 @@ gfm_client_connection0(const char *hostname, int port,
 	if (gfm_server == NULL) {
 		close(sock);
 		gfarm_freeaddrinfo(res);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001097,
 			"allocation of 'gfm_server' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -239,7 +239,7 @@ gfm_client_connection0(const char *hostname, int port,
 		free(gfm_server);
 		close(sock);
 		gfarm_freeaddrinfo(res);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001098,
 			"creation of new socket failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -253,7 +253,7 @@ gfm_client_connection0(const char *hostname, int port,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_free(gfm_server->conn);
 		free(gfm_server);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001099,
 			"auth request failed: %s",
 			gfarm_error_string(e));
 	} else {
@@ -283,7 +283,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	e = gfp_cached_connection_acquire(&gfm_server_cache,
 	    hostname, port, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001100,
 			"acquirement of cached connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -327,7 +327,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 	    &gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001101,
 			"acquirement of client connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -369,7 +369,7 @@ gfm_client_connect(const char *hostname, int port,
 
 	e = gfp_uncached_connection_new(&cache_entry);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001102,
 			"creation of uncached connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -377,7 +377,7 @@ gfm_client_connect(const char *hostname, int port,
 	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
 	    source_ip);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001103,
 			"gfm_client_connection0(%s)(%d) failed: %s",
 			hostname, port,
 			gfarm_error_string(e));
@@ -430,7 +430,7 @@ gfm_client_rpc_request(struct gfm_connection *gfm_server, int command,
 	if (IS_CONNECTION_ERROR(e))
 		gfm_client_purge_from_cache(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001104,
 			"gfp_xdr_vrpc_request(%d) failed: %s",
 			command,
 			gfarm_error_string(e));
@@ -452,7 +452,7 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	if (IS_CONNECTION_ERROR(e))
 		gfm_client_purge_from_cache(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001105,
 			"gfp_xdr_flush() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -466,7 +466,7 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	if (IS_CONNECTION_ERROR(e))
 		gfm_client_purge_from_cache(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001106,
 			"gfp_xdr_vrpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -476,7 +476,7 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001107,
 			"gfp_xdr_vrpc_result() failed: errcode=%d",
 			errcode);
 		return (errcode);
@@ -502,7 +502,7 @@ gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
 	if (IS_CONNECTION_ERROR(e))
 		gfm_client_purge_from_cache(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001108,
 			"gfp_xdr_vrpc(%d) failed: %s",
 		command,
 			gfarm_error_string(e));
@@ -513,7 +513,7 @@ gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001109,
 			"gfp_xdr_vrpc() failed: errcode=%d",
 			errcode);
 		return (errcode);
@@ -542,13 +542,13 @@ gfm_client_get_nhosts(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001110,
 				"gfp_xdr_recv() failed: %s",
 				gfarm_error_string(e));
 			return (e); /* XXX */
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001111,
 				"Unexpected EOF when receiving response: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
 			return (GFARM_ERR_PROTOCOL); /* XXX */
@@ -580,21 +580,21 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
 	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001112,
 			"gfm_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001113,
 			"allocation of array 'hosts' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((e = gfm_client_get_nhosts(gfm_server, nhosts, hosts))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001114,
 			"gfm_client_get_nhosts() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -615,7 +615,7 @@ gfm_client_host_info_get_by_architecture(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE, "s/i", architecture,
 	    &nhosts)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001115,
 			"gfm_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -634,7 +634,7 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc_request(gfm_server, op, "i", nhosts)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001116,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -644,7 +644,7 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001117,
 				"sending hostname (%s) failed: %s",
 				names[i],
 				gfarm_error_string(e));
@@ -653,7 +653,7 @@ gfm_client_host_info_get_by_names_common(struct gfm_connection *gfm_server,
 	}
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "")) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001118,
 			"get_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -724,13 +724,13 @@ get_nusers(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001119,
 				"receiving users failed: %s",
 				gfarm_error_string(e));
 			return (e); /* XXX */
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001120,
 				"Unexpected EOF when receiving users: %s",
 				gfarm_error_string(e));
 			return (GFARM_ERR_PROTOCOL); /* XXX */
@@ -758,21 +758,21 @@ gfm_client_user_info_get_all(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_USER_INFO_GET_ALL,
 	    "/i", &nusers)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001121,
 			"gfm_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(users, nusers);
 	if (users == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001122,
 			"allocation of array 'users' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((e = get_nusers(gfm_server, nusers, users))
 		!= GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001123,
 			"get_nusers() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -793,7 +793,7 @@ gfm_client_user_info_get_by_names(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc_request(gfm_server,
 	    GFM_PROTO_USER_INFO_GET_BY_NAMES, "i", nusers)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001124,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -803,7 +803,7 @@ gfm_client_user_info_get_by_names(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001125,
 				"sending username (%s) failed: %s",
 				names[i],
 				gfarm_error_string(e));
@@ -812,7 +812,7 @@ gfm_client_user_info_get_by_names(struct gfm_connection *gfm_server,
 	}
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "")) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001126,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -871,13 +871,13 @@ get_ngroups(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001127,
 				"receiving groups response failed: %s",
 				gfarm_error_string(e));
 			return (e); /* XXX */
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001128,
 				"Unexpected EOF when receiving groups: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
 			return (GFARM_ERR_PROTOCOL); /* XXX */
@@ -885,7 +885,7 @@ get_ngroups(struct gfm_connection *gfm_server,
 		GFARM_MALLOC_ARRAY(groups[i].usernames, groups[i].nusers);
 		 /* XXX this breaks gfm protocol */
 		if (groups[i].usernames == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001129,
 				"allocation of array 'groups' failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY); /* XXX */
@@ -896,13 +896,13 @@ get_ngroups(struct gfm_connection *gfm_server,
 			if (IS_CONNECTION_ERROR(e))
 				gfm_client_purge_from_cache(gfm_server);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001130,
 					"receiving group response failed: %s",
 					gfarm_error_string(e));
 				return (e); /* XXX */
 			}
 			if (eof) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1001131,
 					"Unexpected EOF when "
 					"receiving group: %s",
 					gfarm_error_string(
@@ -923,7 +923,7 @@ gfm_client_group_info_send_common(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc_request(gfm_server, op, "si",
 	    group->groupname, group->nusers)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001132,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -934,7 +934,7 @@ gfm_client_group_info_send_common(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001133,
 				"sending username (%s) failed: %s",
 				group->usernames[i],
 				gfarm_error_string(e));
@@ -954,21 +954,21 @@ gfm_client_group_info_get_all(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_GROUP_INFO_GET_ALL,
 	    "/i", &ngroups)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001134,
 			"gfm_client_rpc() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(groups, ngroups);
 	if (groups == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001135,
 			"allocation of array 'groups' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((e = get_ngroups(gfm_server, ngroups, groups)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001136,
 			"get_ngroups() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -989,7 +989,7 @@ gfm_client_group_info_get_by_names(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc_request(gfm_server,
 	    GFM_PROTO_GROUP_INFO_GET_BY_NAMES, "i", ngroups)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001137,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -999,7 +999,7 @@ gfm_client_group_info_get_by_names(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001138,
 				"sending groupname (%s) failed: %s",
 				group_names[i],
 				gfarm_error_string(e));
@@ -1008,7 +1008,7 @@ gfm_client_group_info_get_by_names(struct gfm_connection *gfm_server,
 	}
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "")) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001139,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1055,7 +1055,7 @@ gfm_client_group_info_users_op_common(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc_request(gfm_server, op, "si",
 	    groupname, nusers)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001140,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1065,7 +1065,7 @@ gfm_client_group_info_users_op_common(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001141,
 				"sending username (%s) failed: %s",
 				usernames[i],
 				gfarm_error_string(e));
@@ -1074,7 +1074,7 @@ gfm_client_group_info_users_op_common(struct gfm_connection *gfm_server,
 	}
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "")) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001142,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1116,7 +1116,7 @@ gfm_client_group_names_get_by_users(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc_request(gfm_server,
 	    GFM_PROTO_GROUP_NAMES_GET_BY_USERS, "i", nusers)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001143,
 			"gfm_client_rpc_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1126,7 +1126,7 @@ gfm_client_group_names_get_by_users(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001144,
 				"sending username (%s) failed: %s",
 				usernames[i],
 				gfarm_error_string(e));
@@ -1135,7 +1135,7 @@ gfm_client_group_names_get_by_users(struct gfm_connection *gfm_server,
 	}
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "")) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001145,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1505,14 +1505,14 @@ gfm_client_get_schedule_result(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc_result(gfm_server, 0, "i", &nhosts)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001146,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(infos, nhosts);
 	if (infos == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001147,
 			"allocation of array 'gfarm_host_sched_info' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -1528,13 +1528,13 @@ gfm_client_get_schedule_result(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001148,
 				"receiving host schedule response failed: %s",
 				gfarm_error_string(e));
 			return (e); /* XXX */
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001149,
 				"Unexpected EOF when receiving "
 				"host schedule: %s",
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
@@ -1588,7 +1588,7 @@ gfm_client_schedule_host_domain(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_request(gfm_server,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", domain);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001150,
 			"gfm_client_rpc() request failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1716,7 +1716,7 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001151,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1732,7 +1732,7 @@ gfm_client_getdirents_result(struct gfm_connection *gfm_server,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
 			/* XXX memory leak */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001152,
 				"receiving getdireents response failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -1769,7 +1769,7 @@ gfm_client_getdirentsplus_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001153,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1792,7 +1792,7 @@ gfm_client_getdirentsplus_result(struct gfm_connection *gfm_server,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
 			/* XXX memory leak */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001154,
 				"receiving getdirentsplus response failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -2008,13 +2008,13 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 	e = gfm_client_rpc_result(gfm_server, 0, "ii",
 			&ctxp->eof, &ctxp->nvalid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001155,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (ctxp->nvalid > ctxp->nalloc) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001156,
 			"ctx.nvalid > ctx.nalloc: %s",
 			gfarm_error_string(GFARM_ERR_UNKNOWN));
 		return GFARM_ERR_UNKNOWN;
@@ -2027,7 +2027,7 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001157,
 				"receiving ctx.entries response failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -2041,7 +2041,7 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 		ctxp->cookie_attrname =
 			strdup(ctxp->entries[ctxp->nvalid-1].attrname);
 		if ((ctxp->cookie_path == NULL) || (ctxp->cookie_attrname == NULL)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001158,
 				"allocation of 'ctx.cookie_path' or "
 				"'cookie_attrname' failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -2208,7 +2208,7 @@ gfarm_error_t
 gfm_client_glob(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001159,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2218,7 +2218,7 @@ gfarm_error_t
 gfm_client_schedule(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001160,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2228,7 +2228,7 @@ gfarm_error_t
 gfm_client_pio_open(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001161,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2238,7 +2238,7 @@ gfarm_error_t
 gfm_client_pio_set_paths(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001162,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2248,7 +2248,7 @@ gfarm_error_t
 gfm_client_pio_close(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001163,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2258,7 +2258,7 @@ gfarm_error_t
 gfm_client_pio_visit(struct gfm_connection *gfm_server)
 {
 	/* XXX - NOT IMPLEMENTED */
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1001164,
 		"Not implemented: %s",
 		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
 	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2297,14 +2297,14 @@ gfm_client_replica_list_by_name_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001165,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001166,
 			"allocation of array 'hosts' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY); /* XXX not graceful */
@@ -2317,7 +2317,7 @@ gfm_client_replica_list_by_name_result(struct gfm_connection *gfm_server,
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001167,
 				"receiving host response failed: %s",
 				gfarm_error_string(e));
 			break;
@@ -2353,14 +2353,14 @@ gfm_client_replica_list_by_host_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001168,
 			"gfm_client_rpc_result() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(inodes, n);
 	if (inodes == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001169,
 			"allocation of array 'inodes' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY); /* XXX not graceful */
@@ -2373,7 +2373,7 @@ gfm_client_replica_list_by_host_result(struct gfm_connection *gfm_server,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
 			free(inodes);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1001170,
 				"receiving inode response failed: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -2632,7 +2632,7 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 		memcpy(gfm_server->pid_key, sharedkey, sharedkey_size);
 		gfm_server->pid = pid;
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1001171,
 			"gfm_client_rpc() failed: %s",
 			gfarm_error_string(e));
 	}
