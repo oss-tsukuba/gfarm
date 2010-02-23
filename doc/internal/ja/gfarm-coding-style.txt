@@ -55,6 +55,8 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	・同一のソフトウェアに付属するヘッダは、まとめて書く。
 
 - gfarm の公開ヘッダ (<gfarm/××.h>)
+	libgfarm の利用者への公開情報。
+	内部実装に関する情報はここには置かない。
 
 - gfarm の非公開ヘッダ ("××.h")
 	・ヘッダ間の順序は、
@@ -69,6 +71,9 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 		2. libgfarm/gfsl
 		3. libgfarm/gfarm
 	  の順番とする。(ソフトウェア階層が、この順で下→上となっているため)
+	  ソフトウェアの階層関係としては、gfutil が一番低層、gfsl がその上、
+	  libgfarm/gfarm は一番上層となる。gfutil や gfsl では、libgfarm/gfarm/
+	  の機能は利用しない。たとえば gfarm_error_t も使わない。
 	・具体的には下記の通り。
 	  /* gfutil */
 		#include "hash.h"
