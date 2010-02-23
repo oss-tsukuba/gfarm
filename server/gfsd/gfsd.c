@@ -255,7 +255,9 @@ cleanup_accepting(void)
 	}
 }
 
-void
+static void accepting_fatal_full(int, const char *, int, const char *,
+		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+static void
 accepting_fatal_full(int msg_no, const char *file, int line_no,
 		const char *func, const char *format, ...)
 {
@@ -268,7 +270,9 @@ accepting_fatal_full(int msg_no, const char *file, int line_no,
 	exit(2);
 }
 
-void
+static void accepting_fatal_errno_full(int, const char *, int, const char *,
+		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+static void
 accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 		const char *func, const char *format, ...)
 {
@@ -3852,7 +3856,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 	if (mkdir(sock_dir, LOCAL_SOCKDIR_MODE) == -1) {
 		if (errno != EEXIST) {
 			accepting_fatal_errno(GFARM_MSG_1000574,
-			    "%s: cannot mkdir: %s", sock_dir);
+			    "%s: cannot mkdir", sock_dir);
 		} else if (stat(sock_dir, &st) != 0) {
 			accepting_fatal_errno(GFARM_MSG_1000575, "stat(%s)",
 			    sock_dir);
@@ -3862,7 +3866,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 		} else if ((st.st_mode & PERMISSION_MASK) != LOCAL_SOCKDIR_MODE
 		    && chmod(sock_dir, LOCAL_SOCKDIR_MODE) != 0) {
 			accepting_fatal_errno(GFARM_MSG_1000577,
-			    "%s: cannot chmod to 0%o: %s",
+			    "%s: cannot chmod to 0%o",
 			    sock_dir, LOCAL_SOCKDIR_MODE);
 		}
 	}
@@ -4119,7 +4123,8 @@ main(int argc, char **argv)
 		pid_fp = fopen(pid_file, "w");
 		seteuid(gfsd_uid);
 		if (pid_fp == NULL)
-			accepting_fatal_errno(GFARM_MSG_1000590, pid_file);
+			accepting_fatal_errno(GFARM_MSG_1000590,
+				"failed to open file: %s", pid_file);
 	}
 
 	if (!debug_mode) {
