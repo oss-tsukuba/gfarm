@@ -75,6 +75,7 @@ char REMOVED_HOST_NAME[] = "gfarm-removed-host";
 static struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
 
+/* NOTE: each entry should be check by host_is_active(h) too */
 #define FOR_ALL_HOSTS(it) \
 	for (gfarm_hash_iterator_begin(host_hashtab, (it)); \
 	    !gfarm_hash_iterator_is_end(it); \
@@ -112,22 +113,30 @@ host_activate(struct host *h)
 	h->invalid = 0;
 }
 
-int
+static int
 host_is_invalidated(struct host *h)
 {
 	return (h->invalid == 1);
 }
 
-int
+static int
 host_is_active(struct host *h)
 {
 	return (h != NULL && !host_is_invalidated(h));
 }
 
+static struct host *
+host_lookup_internal(const char *hostname)
+{
+	return (host_hashtab_lookup(host_hashtab, hostname));
+}
+
 struct host *
 host_lookup(const char *hostname)
 {
-	return (host_hashtab_lookup(host_hashtab, hostname));
+	struct host *h = host_lookup_internal(hostname);
+
+	return ((h == NULL || host_is_invalidated(h)) ? NULL : h);
 }
 
 struct host *
@@ -179,7 +188,8 @@ host_namealiases_lookup(const char *hostname)
 
 	if (h != NULL)
 		return (h);
-	return (host_hashtab_lookup(hostalias_hashtab, hostname));
+	h = host_hashtab_lookup(hostalias_hashtab, hostname);
+	return ((h == NULL || host_is_invalidated(h)) ? NULL : h);
 }
 
 /* XXX FIXME missing hostaliases */
@@ -190,7 +200,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	int created;
 	struct host *h;
 
-	h = host_lookup(hi->hostname);
+	h = host_lookup_internal(hi->hostname);
 	if (h != NULL) {
 		if (host_is_invalidated(h)) {
 			host_activate(h);
@@ -262,18 +272,13 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 gfarm_error_t
 host_remove(const char *hostname)
 {
-	struct gfarm_hash_entry *entry;
-	struct host *h;
+	struct host *h = host_lookup(hostname);
 
-	entry = gfarm_hash_lookup(host_hashtab, &hostname, sizeof(hostname));
-	if (entry == NULL) {
+	if (h == NULL) {
 		gflog_debug(GFARM_MSG_1001549,
-			"gfarm_hash_lookup() failed");
+		    "host_remove(%s): not exist", hostname);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-	h = *(struct host **)gfarm_hash_entry_data(entry);
-	if (host_is_invalidated(h))
-		return (GFARM_ERR_NO_SUCH_OBJECT);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -988,7 +993,7 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	giant_lock();
 	for (i = 0; i < nhosts; i++) {
 		h = (*lookup)(hosts[i]);
-		if (h == NULL || host_is_invalidated(h)) {
+		if (h == NULL) {
 			if (debug_mode)
 				gflog_info(GFARM_MSG_1000270,
 				    "host lookup <%s>: failed",
@@ -1063,7 +1068,7 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001563,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (host_is_active(host_lookup(hostname))) {
+	} else if (host_lookup(hostname) != NULL) {
 		gflog_debug(GFARM_MSG_1001564,
 			"host already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
@@ -1132,8 +1137,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		needs_free = 1;
-	} else if ((h = host_lookup(hi.hostname)) == NULL ||
-		   host_is_invalidated(h)) {
+	} else if ((h = host_lookup(hi.hostname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001569, "host does not exists");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 		needs_free = 1;
@@ -1168,8 +1172,7 @@ host_info_remove_default(const char *hostname, const char *diag)
 	gfarm_error_t e, e2;
 	struct host *host;
 
-	if ((host = host_lookup(hostname)) == NULL ||
-	    host_is_invalidated(host))
+	if ((host = host_lookup(hostname)) == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
 	/* disconnect the back channel */
