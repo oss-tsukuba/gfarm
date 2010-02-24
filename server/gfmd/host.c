@@ -75,7 +75,7 @@ char REMOVED_HOST_NAME[] = "gfarm-removed-host";
 static struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
 
-/* NOTE: each entry should be check by host_is_active(h) too */
+/* NOTE: each entry should be checked by host_is_active(h) too */
 #define FOR_ALL_HOSTS(it) \
 	for (gfarm_hash_iterator_begin(host_hashtab, (it)); \
 	    !gfarm_hash_iterator_is_end(it); \
