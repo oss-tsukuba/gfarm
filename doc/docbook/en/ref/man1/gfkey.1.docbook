@@ -3,7 +3,7 @@
 
 <refentry id='gfkey.1'>
 
-<refentryinfo><date>15 May 2008</date></refentryinfo>
+<refentryinfo><date>25 Feb 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -84,10 +84,12 @@ used with the -c or -f option.</para>
 <varlistentry>
 <term><option>-L</option> <parameter>message-priority-level</parameter></term>
 <listitem>
-<para>Specifies a message priority level.  The message output, which priority
-is higher or equal to this level, will be sent to standard error.
-Please refer the <token>log_level</token> directive part of gfarm2.conf(5) for
-the priority levels which can be specified by this option.</para>
+<para>Specifies a level of the log priority.  The log messages that
+have higher or the same priority than the specified priority are
+displayed to the standard error.  The default priority is info.  Refer
+to the <token>log_level</token> directive described in the manual page
+of gfarm2.conf(5) for the priority level which can be specified by
+this option.</para>
 </listitem>
 </varlistentry>
 
