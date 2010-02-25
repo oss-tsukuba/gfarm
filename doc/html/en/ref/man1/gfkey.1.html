@@ -146,13 +146,15 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->Specifies a message priority level.  The message output, which priority
-is higher or equal to this level, will be sent to standard error.
-Please refer the <SPAN
+>Specifies a level of the log priority.  The log messages that
+have higher or the same priority than the specified priority are
+displayed to the standard error.  The default priority is info.  Refer
+to the <SPAN
 CLASS="TOKEN"
 >log_level</SPAN
-> directive part of gfarm2.conf(5) for
-the priority levels which can be specified by this option.</P
+> directive described in the manual page
+of gfarm2.conf(5) for the priority level which can be specified by
+this option.</P
 ></DD
 ><DT
 ><CODE
