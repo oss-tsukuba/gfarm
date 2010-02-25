@@ -79,6 +79,15 @@
 <para>引数オプションを表示します。</para>
 </listitem>
 </varlistentry>
+<varlistentry>
+<term><option>-L</option> <parameter>message-priority-level</parameter></term>
+<listitem>
+<para>
+このオプションで指定したレベル以上の優先度のメッセージを出力します。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
+</para>
+</listitem>
+</varlistentry>
 </variablelist>
 </refsect1>
 

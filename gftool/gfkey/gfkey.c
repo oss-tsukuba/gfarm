@@ -27,15 +27,16 @@ write_hex(FILE *fp, void *buffer, size_t length)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-c|-f] [-p <period>]\n", program_name);
-	fprintf(stderr, "       %s [-l|-e]\n", program_name);
+	fprintf(stderr, "Usage: %s [-c|-f] [-p <period>] [-L <message-priority-level>]\n", program_name);
+	fprintf(stderr, "       %s [-l|-e] [-L <message-priority-level>]\n", program_name);
 
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-c\t\tcreate new key, if doesn't exist or expired\n");
-	fprintf(stderr, "\t-f\t\tforce to create new key\n");
-	fprintf(stderr, "\t-p <period>\tspecify term of validity in second\n");
-	fprintf(stderr, "\t-l\t\tlist existing key\n");
-	fprintf(stderr, "\t-e\t\treport expire time\n");
+	fprintf(stderr, "\t-c\t\t\t\tcreate new key, if doesn't exist or expired\n");
+	fprintf(stderr, "\t-f\t\t\t\tforce to create new key\n");
+	fprintf(stderr, "\t-p <period>\t\t\tspecify term of validity in second\n");
+	fprintf(stderr, "\t-l\t\t\t\tlist existing key\n");
+	fprintf(stderr, "\t-e\t\t\t\treport expire time\n");
+	fprintf(stderr, "\t-L <message-priority-level>\tmessage priority level\n");
 	exit(1);
 }
 
@@ -63,11 +64,12 @@ main(argc, argv)
 	char shared_key[GFARM_AUTH_SHARED_KEY_LEN];
 	int mode = GFARM_AUTH_SHARED_KEY_GET;
 	int period = -1;
+	int log_level = -1;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 
-	while ((ch = getopt(argc, argv, "ceflp:?")) != -1) {
+	while ((ch = getopt(argc, argv, "ceflp:L:?")) != -1) {
 		switch (ch) {
 		case 'c':
 			if (mode == GFARM_AUTH_SHARED_KEY_CREATE_FORCE)
@@ -88,6 +90,15 @@ main(argc, argv)
 		case 'p':
 			period = strtol(optarg, NULL, 0);
 			break;
+		case 'L':
+			log_level = gflog_syslog_name_to_priority(optarg);
+			if (log_level == -1) {
+				fprintf(stderr,
+					"-L %s: invalid priority level\n",
+					optarg);
+				exit(1);
+			}
+			break;
 		case '?':
 		default:
 			usage();
@@ -99,6 +110,10 @@ main(argc, argv)
 	    (mode == GFARM_AUTH_SHARED_KEY_GET &&
 	     !do_list && !do_expire_report))
 		usage();
+
+	if (log_level != -1) {
+		gflog_set_priority_level(log_level);
+	}
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
