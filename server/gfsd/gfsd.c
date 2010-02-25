@@ -65,6 +65,7 @@
 #include "io_fd.h"
 #include "param.h"
 #include "sockopt.h"
+#include "sockutil.h"
 #include "hostspec.h"
 #include "host.h"
 #include "auth.h"
@@ -3298,6 +3299,8 @@ back_channel_server(void)
 	struct gfp_xdr *conn;
 	int eof;
 	gfarm_int32_t request;
+	/* XXX 4 min - default heartbeat interval is 3 min */
+	int timeout = 4 * 60; 
 
 retry:
 	e = gfm_client_switch_back_channel(gfm_server);
@@ -3308,6 +3311,15 @@ retry:
 
 	gflog_debug(GFARM_MSG_1000563, "back channel mode");
 	for (;;) {
+		if (!gfp_xdr_recv_is_ready(conn)) {
+			e = gfarm_recv_wait(gfp_xdr_fd(conn), timeout);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "back channel: %s", gfarm_error_string(e));
+				gfm_client_reconnect();
+				goto retry;
+			}
+		}
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
 		if (IS_CONNECTION_ERROR(e) || eof) {
 			gflog_error(GFARM_MSG_1000564,

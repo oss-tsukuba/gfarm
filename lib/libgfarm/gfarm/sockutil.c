@@ -43,6 +43,35 @@ gfarm_connect_wait(int s, int timeout_seconds)
 }
 
 gfarm_error_t
+gfarm_recv_wait(int s, int timeout_seconds)
+{
+	fd_set wset;
+	struct timeval timeout;
+	int rv, error;
+	socklen_t error_size;
+
+	FD_ZERO(&wset);
+	FD_SET(s, &wset);
+	timeout.tv_sec = timeout_seconds;
+	timeout.tv_usec = 0;
+
+	/* XXX shouldn't use select(2), since wset may overflow. */
+	rv = select(s + 1, &wset, NULL, NULL, &timeout);
+	if (rv == 0)
+		return (gfarm_errno_to_error(ETIMEDOUT));
+	if (rv < 0)
+		return (gfarm_errno_to_error(errno));
+
+	error_size = sizeof(error);
+	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
+	if (rv == -1)
+		return (gfarm_errno_to_error(errno));
+	if (error != 0)
+		return (gfarm_errno_to_error(error));
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfarm_bind_source_ip(int sock, const char *source_ip)
 {
 	struct addrinfo shints, *sres;
