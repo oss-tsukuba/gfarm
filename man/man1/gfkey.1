@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFKEY" "1" "15 May 2008" "Gfarm" ""
+.TH "GFKEY" "1" "25 2·î 2010" "Gfarm" ""
 
 .SH NAME
 gfkey \- management of Gfarm session keys
@@ -42,6 +42,12 @@ Displays the current key.
 .TP
 \fB-e\fR
 Displays the expiration date of the current key.
+.TP
+\fB-L \fImessage-priority-level\fB\fR
+Specifies a message priority level.  The message output, which priority
+is higher or equal to this level, will be sent to standard error.
+Please refer the log_level directive part of gfarm2.conf(5) for
+the priority levels which can be specified by this option.
 .TP
 \fB-?\fR
 Displays a list of command options.
