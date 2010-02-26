@@ -133,9 +133,6 @@ quota_get_info_print(FILE *f, struct gfarm_quota_get_info *q, int is_group)
 	PRINT(f, "PhysicalNumHardLimit    ", q->phy_num_hard);
 }
 
-#define MODE_USER  0
-#define MODE_GROUP 1
-
 #define OPT_USER	'u'
 #define OPT_GROUP	'g'
 
