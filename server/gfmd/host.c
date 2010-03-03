@@ -927,9 +927,9 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	 * specified host?
 	 */
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
+	else
 		e = host_info_remove(hostname, msg);
 	free(hostname);
 	giant_unlock();
@@ -1074,8 +1074,9 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 	struct host *h = peer_get_host(peer);
 
 	/* give the top priority to the local host if it has enough space */
+	/* disk_avail is reported in KiByte */
 	if (host_is_up(h) &&
-	    h->disk_avail > gfarm_get_minimum_free_disk_space()) {
+	    h->disk_avail * 1024 > gfarm_get_minimum_free_disk_space()) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
