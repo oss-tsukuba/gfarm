@@ -1,12 +1,34 @@
 digraph threads {
   graph [label = "Inter-Thread dependency of gfmd",
-	labelloc = t, labeljust = l, fontsize = 18];
+	labelloc = t, labeljust = l, fontsize = 18,
+	compound = true];
 
   accepting_loop;
+  removal_finalizer;
   sigs_handler;
   callout_main;
-  db_thread;
   peer_watcher;
+  replication_finalizer;
+  remover;
+  resumer;
+  closer_main;
+
+
+  db_thread;
+
+  protocol_main -> db_thread
+	[label = "dbq_enter\ndbq_waitret\nfindxmlattr_dbq_enter",
+	 fontcolor = cyan, color = cyan ];
+  resuming_thread -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  replication_finalizer -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  removal_finalizer -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  closer_main -> db_thread
+	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
+  sigs_handler -> db_thread
+	[label = "db_terminate", fontcolor = cyan, color = cyan ];
 
 
   subgraph cluster0 {
@@ -15,48 +37,76 @@ digraph threads {
     try_auth;
   }
 
+  accepting_loop -> try_auth
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+
 
   subgraph cluster1 {
     label = "sync_protocol_thread_pool";
 
+    host_busyq_scanner;
     protocol_main;
+    resuming_thread;
   }
 
-  accepting_loop -> try_auth
+  callout_main -> host_busyq_scanner
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   try_auth -> protocol_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
   peer_watcher -> protocol_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+  resumer -> resuming_thread
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+
+  try_auth -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead=cluster1];
+  replication_finalizer -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead=cluster1];
+  removal_finalizer -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead=cluster1];
+  closer_main -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead=cluster1];
+  sigs_handler -> protocol_main
+	[label = "giant_lock", fontcolor = red, color = red,
+	lhead=cluster1];
 
 
   subgraph cluster2 {
     label = "back_channel_send_thread_pool";
 
-    gfs_async_client_status_request;
-    gfs_async_client_replication_request_requestt;
+    gfs_client_status_request;
+    gfs_client_fhremove_request;
+    gfs_client_replication_request_request;
   }
 
-  protocol_main -> gfs_async_client_replication_request_requestt
+  protocol_main -> gfs_client_replication_request_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  protocol_main -> gfs_async_client_status_request
+  protocol_main -> gfs_client_status_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  callout_main -> gfs_async_client_status_request
+  callout_main -> gfs_client_status_request
+	[label = "thrpool_add_job", fontcolor = blue, color = blue];
+  remover -> gfs_client_fhremove_request
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
 
 
   subgraph cluster3 {
     label = "back_channel_recv_thread_pool";
 
-    async_back_channel_main;
+    back_channel_main;
   }
 
-  protocol_main -> async_back_channel_main
+  protocol_main -> back_channel_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  peer_watcher -> async_back_channel_main
+  peer_watcher -> back_channel_main
 	[label = "thrpool_add_job", fontcolor = blue, color = blue];
-  gfs_async_client_status_request -> async_back_channel_main
+  gfs_client_status_request -> back_channel_main
 	[label = "RPC request & reply", fontcolor = green, color = green];
-  gfs_async_client_replication_request_requestt -> async_back_channel_main
+  gfs_client_fhremove_request -> back_channel_main
+	[label = "RPC request & reply", fontcolor = green, color = green];
+  gfs_client_replication_request_request -> back_channel_main
 	[label = "RPC request & reply", fontcolor = green, color = green];
 }

@@ -14,10 +14,6 @@
 性能優先＋コーディングを簡単にするのが目的。
 データは gfmd起動時に全てメモリに読み込み、更新のたびに dbq 経由で DB に
 書き出す。初期化を除くと、起動中に DB から読み込みを行なうことはない。
-XXX dead_file_copy は例外で、起動時にメモリに読み込むと同時に DB から消去し、
-    更新されても DB には書かず、gfmd 終了時にはじめて書き戻している。
-    これについては、修正を予定。
-    → DBRD などを利用した非同期メタデータレプリケーションなどで問題となる。
 
 ただし、xattr だけは例外。
 理由は、
@@ -26,6 +22,19 @@ XXX dead_file_copy は例外で、起動時にメモリに読み込むと同時に DB から消去し、
 であるため。
 逆に、データとして小さな xattr へのアクセスが、全くキャッシュされておらず、
 非常に遅いという制限事項がある。
+
+○ back_channel に必要な資源 (callout, async など) を、
+   (1) peer に帰属させるか
+   (2) host に帰属させるか
+   (3) back_channel 通信のための構造体を作成し、そこに帰属させるか
+  という選択肢がある。
+  back_channel 通信終了時の同期処理を考えると、その生存区間が gfmd 起動中
+  である (1) か (2) の方が、データ構造自体が消えてしまうため同期用に別領域
+  の確保が必要となる (3) よりもプログラムの作りが簡単になる。
+  少なくとも async は conn と同様、通信処理に伴うデータなので、(1) の
+  方が若干自然。しかし、peer の方が、host よりも数が多く
+  (peer の数 == クライアントの数× 2 ＋ host の数)、メモリ消費的には
+  (2) の方が有利なので、host に帰属させることにした。
 
 ■ mutex 一覧
 
@@ -36,21 +45,36 @@ mutex 間の依存関係にループがあってはいけない。デッドロックする。★重要★
 mutex 獲得順序は、server/gfmd/README 参照
 XXX 保守されてない。要更新
 
-・giant_lock -> struct host::remover_mutex -> struct host::replication_mutex
+・giant_lock -> struct host::replication_mutex -> dbq.mutex
 	cf. host_peer_set()
+
+・giant_lock -> dfc_allq.mutex
+・giant_lock -> busyq.mutex -> removeq.mutex
+	以下の条件の複合による。
+	giant_lock -> removeq.mutex
+	busyq.mutex -> removeq.mutex
+
+○ giant_lock を保持したまま、休眠して良いスレッド
+
+  以下のスレッドのみ、giant_lock を保持したまま休眠しては良い。
+  これ以外のスレッドが休眠するのは、依存関係のループを生じる危険があるため
+  禁止。
+
+  ・sync_protocol_thread_pool に属するスレッド
 
 ○ leaf routine のみで獲得している mutex
 
-これらの mutex を保持したまま、他の mutex を獲得することはない/してはいけない。
+   これらの mutex を保持したまま、他の mutex を獲得することはないし、
+   してはいけない。
 
-・callout_module.mutex
+  ・callout_module.mutex
 
 ■ スレッド一覧
 
 スレッド間の依存関係にループがあってはいけない。デッドロックする。★重要★
 
 thrpool_add_job() する場合、
-thrpool_add_job() するスレッドは、
+thrpool_add_job() を呼び出すスレッドは、
 thrpool_add_job() されるスレッドプールに、
 依存してしまう。
 すなわち、thrpool_add_job() されるスレッドプールが満杯の場合、
@@ -192,3 +216,11 @@ doc/internal/png/gfmd-thread-dependency.png
 		・結果の処理のための host_replicated()
 		・結果の送信 peer_sender_lock() を待つことがある。
 				→ 送信側を待つことがある。XXX DEADLOCK
+
+■ XXX 未記載 TO-DO
+
+・peer_sender_trylock() が必要な理由
+
+・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
+  ものがあるが、resume が callback で実現されているため、スレッドプー
+  ル資源待ちのデッドロックにはならない。
