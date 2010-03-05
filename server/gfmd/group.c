@@ -827,9 +827,11 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001544,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0) {
-		gflog_debug(GFARM_MSG_1001545,
-			"administrator group should not be deleted");
+	} else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0 ||
+	    strcmp(groupname, ROOT_GROUP_NAME) == 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: administrator group \"%s\" should not be deleted",
+		    diag, groupname);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else
 		e = group_info_remove(groupname, diag);
