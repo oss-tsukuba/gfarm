@@ -23,7 +23,6 @@ void host_peer_set(struct host *, struct peer *, int);
 void host_disconnect(struct host *);
 void host_disconnect_request(struct host *);
 struct callout *host_status_callout(struct host *);
-int host_peer_unset_pending(struct host *);
 struct peer *host_peer(struct host *);
 gfarm_error_t host_sender_lock(struct host *, struct peer **);
 gfarm_error_t host_sender_trylock(struct host *, struct peer **);
@@ -103,7 +102,6 @@ void host_status_reply_waiting(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
 void host_status_disable(struct host *);
-gfarm_error_t host_update_status(struct host *);
 
 gfarm_error_t gfm_server_host_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_get_by_architecture(struct peer *, int,int);
