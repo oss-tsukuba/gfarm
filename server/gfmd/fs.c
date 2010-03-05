@@ -1821,8 +1821,52 @@ gfm_server_seek(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, "l", offset));
 }
 
+struct reopen_resume_arg {
+	int fd;
+};
+
 gfarm_error_t
-gfm_server_reopen(struct peer *peer, int from_client, int skip)
+reopen_resume(struct peer *peer, void *closure, int *suspendedp)
+{
+	gfarm_error_t e;
+	struct reopen_resume_arg *arg = closure;
+	struct host *spool_host;
+	struct process *process;
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+	gfarm_int32_t mode, flags, to_create;
+	static const char diag[] = "reopen_resume";
+
+	giant_lock();
+
+	if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = process_reopen_file(process, peer, spool_host, arg->fd,
+	    &inum, &gen, &mode, &flags, &to_create)) ==
+	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		if ((e = process_new_generation_wait(peer, arg->fd,
+		    reopen_resume, arg)) == GFARM_ERR_NO_ERROR) {
+			*suspendedp = 1;
+			giant_unlock();
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+
+	free(arg);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, "lliii",
+	    inum, gen, mode, flags, to_create));
+}
+
+gfarm_error_t
+gfm_server_reopen(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
@@ -1831,6 +1875,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip)
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, flags, to_create;
+	struct reopen_resume_arg *arg;
 	static const char diag[] = "GFM_PROTO_REOPEN";
 
 	if (skip)
@@ -1851,9 +1896,21 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001938,
 			"peer_fdpair_get_current() failed: %s",
 			gfarm_error_string(e));
-	} else {
-		e = process_reopen_file(process, peer, spool_host, fd,
-		    &inum, &gen, &mode, &flags, &to_create);
+	} else if ((e = process_reopen_file(process, peer, spool_host, fd,
+	    &inum, &gen, &mode, &flags, &to_create)) ==
+	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		GFARM_MALLOC(arg);
+		if (arg == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else {
+			arg->fd = fd;
+			if ((e = process_new_generation_wait(peer, fd,
+			    reopen_resume, arg)) == GFARM_ERR_NO_ERROR) {
+				*suspendedp = 1;
+				giant_unlock();
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
 	}
 
 	giant_unlock();
@@ -1915,17 +1972,77 @@ gfm_server_close_read(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+struct close_v2_4_resume_arg {
+	int fd;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+};
+
+gfarm_error_t
+close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
+{
+	gfarm_error_t e;
+	struct close_v2_4_resume_arg *arg = closure;
+	struct host *spool_host;
+	struct process *process;
+	int transaction = 0;
+	gfarm_int32_t flags;
+	gfarm_int64_t old_gen = 0, new_gen = 0;
+	static const char diag[] = "close_v2_4_resume";
+
+	giant_lock();
+
+	if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = process_close_file_write(process, peer, arg->fd, arg->size,
+		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen);
+		if (transaction)
+			db_end(diag);
+
+		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
+			e = peer_fdpair_close_current(peer);
+		else if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			if ((e = process_new_generation_wait(peer, arg->fd,
+			    close_write_v2_4_resume, arg)) ==
+			    GFARM_ERR_NO_ERROR) {
+				*suspendedp = 1;
+				giant_unlock();
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
+	}
+	free(arg);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, "ill",
+	    flags, old_gen, new_gen));
+}
+
 gfarm_error_t
 gfm_server_close_write_common(const char *diag,
 	struct peer *peer, int from_client,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	gfarm_int64_t *new_igenp, gfarm_int32_t *flagsp)
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
 	struct process *process;
 	int transaction = 0;
+	struct close_v2_4_resume_arg *arg;
 
 	if (from_client) { /* from gfsd only */
 		gflog_debug(GFARM_MSG_1001944, "operation is not permitted");
@@ -1949,11 +2066,28 @@ gfm_server_close_write_common(const char *diag,
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, fd, size,
-		    atime, mtime, new_igenp, flagsp);
+		    atime, mtime, flagsp, old_genp, new_genp);
 		if (transaction)
 			db_end(diag);
+
 		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
 			e = peer_fdpair_close_current(peer);
+		else if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			GFARM_MALLOC(arg);
+			if (arg == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+			} else {
+				arg->fd = fd;
+				arg->size = size;
+				arg->atime = *atime;
+				arg->mtime = *mtime;
+				if ((e = process_new_generation_wait(peer, fd,
+				    close_write_v2_4_resume, arg)) ==
+				    GFARM_ERR_NO_ERROR) {
+					return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+				}
+			}
+		}
 	}
 	return (e);
 }
@@ -1976,20 +2110,21 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, NULL, NULL);
+	    &atime, &mtime, NULL, NULL, NULL);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
-gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip)
+gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
 {
 	gfarm_error_t e;
 	gfarm_off_t size;
 	struct gfarm_timespec atime, mtime;
-	gfarm_int64_t new_igen;
 	gfarm_int32_t flags;
+	gfarm_int64_t old_gen = 0, new_gen = 0;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_4";
 
 	e = gfm_server_get_request(peer, diag, "llili",
@@ -2002,10 +2137,68 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, &new_igen, &flags);
+	    &atime, &mtime, &flags, &old_gen, &new_gen);
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "li", new_igen, flags));
+
+	if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		*suspendedp = 1;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	return (gfm_server_put_reply(peer, diag, e, "ill",
+	    flags, old_gen, new_gen));
+}
+
+gfarm_error_t
+gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd, result;
+	struct host *spool_host;
+	struct process *process;
+	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED";
+
+	e = gfm_server_get_request(peer, diag, "i", &result);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_fdpair_get_current() failed: %s",
+		    diag, gfarm_error_string(e));
+	} else if ((e = process_new_generation_done(process, peer, fd, result))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: host %s, fd %d: new generation wakeup(%s): %s\n",
+		    diag, host_name(spool_host), fd,
+		    gfarm_error_string(result), gfarm_error_string(e));
+	} else if (result != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: host %s, fd %d: new generation rename: %s\n", diag,
+		    host_name(spool_host), fd, gfarm_error_string(result));
+	}
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -2454,10 +2647,8 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	else if ((dst = host_lookup(dsthost)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
 	else if ((e = process_prepare_to_replicate(process, peer, src, dst,
-	    cfd, flags, &inode)) != GFARM_ERR_NO_ERROR)
+	    cfd, flags, &fr, &inode)) != GFARM_ERR_NO_ERROR)
 		;
-	else if ((fr = file_replicating_new(inode, dst)) == NULL)
-		e = GFARM_ERR_NO_MEMORY;
 	else {
 		srcport = host_port(src);
 		ino = inode_get_number(inode);
@@ -2482,25 +2673,84 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+struct replica_adding_resume_arg {
+	int fd;
+	char *src_host;
+};
+
 gfarm_error_t
-gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
+replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 {
 	gfarm_error_t e;
-	gfarm_ino_t inum;
-	gfarm_uint64_t gen;
+	struct replica_adding_resume_arg *arg = closure;
+	struct host *spool_host;
+	struct process *process;
+	struct host *src;
+	struct inode *inode;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
 	struct gfarm_timespec *mtime;
-	gfarm_int64_t mtime_sec;
-	gfarm_int32_t fd, mtime_nsec;
+	gfarm_int64_t mtime_sec = 0;
+	gfarm_int32_t mtime_nsec = 0;
+	static const char diag[] = "replica_adding_resume";
+
+	giant_lock();
+
+	if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((src = host_lookup(arg->src_host)) == NULL) {
+		e = GFARM_ERR_UNKNOWN_HOST;
+	} else if ((e = process_replica_adding(process, peer,
+	    src, spool_host, arg->fd, &inode)) ==
+	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		if ((e = process_new_generation_wait(peer, arg->fd,
+		    replica_adding_resume, arg)) ==
+		    GFARM_ERR_NO_ERROR) {
+			*suspendedp = 1;
+			giant_unlock();
+			return (GFARM_ERR_NO_ERROR);
+		}
+	} else if (e != GFARM_ERR_NO_ERROR)
+		;
+	else {
+		inum = inode_get_number(inode);
+		gen = inode_get_gen(inode);
+		mtime = inode_get_mtime(inode);
+		mtime_sec = mtime->tv_sec;
+		mtime_nsec = mtime->tv_nsec;
+	}
+
+	/* we don't maintain file_replicating in this case */
+
+	free(arg->src_host);
+	free(arg);
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, "llli",
+	    inum, gen, mtime_sec, mtime_nsec));
+}
+
+gfarm_error_t
+gfm_server_replica_adding(struct peer *peer, int from_client, int skip,
+	int *suspendedp)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum = 0;
+	gfarm_uint64_t gen = 0;
+	struct gfarm_timespec *mtime;
+	gfarm_int64_t mtime_sec = 0;
+	gfarm_int32_t fd, mtime_nsec = 0;
 	struct host *src, *spool_host;
 	struct process *process;
 	char *src_host;
 	struct inode *inode;
+	struct replica_adding_resume_arg *arg;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
-
-	inum = 0;
-	gen = 0;
-	mtime_sec = 0;
-	mtime_nsec = 0;
 
 	e = gfm_server_get_request(peer, diag, "s", &src_host);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -2532,7 +2782,23 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	else if ((src = host_lookup(src_host)) == NULL)
 		e = GFARM_ERR_UNKNOWN_HOST;
 	else if ((e = process_replica_adding(process, peer,
-	    src, spool_host, fd, &inode)) != GFARM_ERR_NO_ERROR)
+	    src, spool_host, fd, &inode)) ==
+	    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		GFARM_MALLOC(arg);
+		if (arg == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else {
+			arg->fd = fd;
+			arg->src_host = src_host;
+			if ((e = process_new_generation_wait(peer, fd,
+			    replica_adding_resume, arg)) ==
+			    GFARM_ERR_NO_ERROR) {
+				*suspendedp = 1;
+				giant_unlock();
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
+	} else if (e != GFARM_ERR_NO_ERROR)
 		;
 	else {
 		inum = inode_get_number(inode);
@@ -2686,8 +2952,11 @@ gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
 	} else if (inode_get_gen(inode) != gen) {
 		gflog_debug(GFARM_MSG_1001973, "inode_get_gen() failed");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (!inode_is_file(inode)) {
+		gflog_debug(GFARM_MSG_1001973, "%s: not a file", diag);
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	} else {
-		e = inode_remove_replica(inode, spool_host, 0);
+		e = inode_remove_replica_gen(inode, spool_host, gen, 0);
 	}
 	giant_unlock();
 

@@ -18,6 +18,8 @@ void callout_free(struct callout *);
 void callout_schedule(struct callout *, int);
 void callout_reset(struct callout *, int,
 	struct thread_pool *, void *(*)(void *), void *);
+void callout_setfunc(struct callout *,
+	struct thread_pool *, void *(*)(void *), void *);
 int callout_stop(struct callout *);
 int callout_invoking(struct callout *);
 void callout_ack(struct callout *);

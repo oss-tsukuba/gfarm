@@ -570,13 +570,38 @@ gfm_client_host_info_send_common(struct gfm_connection *gfm_server,
 	    host->ncpu, host->port, host->flags));
 }
 
+static gfarm_error_t
+gfm_client_host_info_get_n(struct gfm_connection *gfm_server, int nhosts,
+	int *nhostsp, struct gfarm_host_info **hostsp, const char *diag)
+{
+	gfarm_error_t e;
+	struct gfarm_host_info *hosts;
+
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
+	if (hosts == NULL) { /* XXX this breaks gfm protocol */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "host_info allocation for %d hosts: no memory", nhosts);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if ((e = gfm_client_get_nhosts(gfm_server, nhosts, hosts))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001114,
+		    "gfm_client_get_nhosts() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	*nhostsp = nhosts;
+	*hostsp = hosts;
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 	int *nhostsp, struct gfarm_host_info **hostsp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t nhosts;
-	struct gfarm_host_info *hosts;
+	static const char diag[] = "gfm_client_host_info_get_all";
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_HOST_INFO_GET_ALL,
 	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR) {
@@ -585,23 +610,8 @@ gfm_client_host_info_get_all(struct gfm_connection *gfm_server,
 			gfarm_error_string(e));
 		return (e);
 	}
-	GFARM_MALLOC_ARRAY(hosts, nhosts);
-	if (hosts == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_1001113,
-			"allocation of array 'hosts' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	if ((e = gfm_client_get_nhosts(gfm_server, nhosts, hosts))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001114,
-			"gfm_client_get_nhosts() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-	*nhostsp = nhosts;
-	*hostsp = hosts;
-	return (GFARM_ERR_NO_ERROR);
+	return (gfm_client_host_info_get_n(gfm_server, nhosts, nhostsp, hostsp,
+	    diag));
 }
 
 gfarm_error_t
@@ -611,6 +621,7 @@ gfm_client_host_info_get_by_architecture(struct gfm_connection *gfm_server,
 {
 	gfarm_error_t e;
 	int nhosts;
+	static const char diag[] = "gfm_client_host_info_get_by_architecture";
 
 	if ((e = gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE, "s/i", architecture,
@@ -620,8 +631,8 @@ gfm_client_host_info_get_by_architecture(struct gfm_connection *gfm_server,
 			gfarm_error_string(e));
 		return (e);
 	}
-	*nhostsp = nhosts;
-	return (GFARM_ERR_NO_ERROR);
+	return (gfm_client_host_info_get_n(gfm_server, nhosts, nhostsp, hostsp,
+	    diag));
 }
 
 static gfarm_error_t
@@ -2109,15 +2120,31 @@ gfm_client_close_write_v2_4_request(struct gfm_connection *gfm_server,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
 	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
 {
-	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_WRITE,
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_CLOSE_WRITE_V2_4,
 	    "llili", size, atime_sec, atime_nsec, mtime_sec, mtime_nsec));
 }
 
 gfarm_error_t
 gfm_client_close_write_v2_4_result(struct gfm_connection *gfm_server,
-	gfarm_int64_t *new_igenp, gfarm_int32_t *flagsp)
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_igenp, gfarm_int64_t *new_igenp)
 {
-	return (gfm_client_rpc_result(gfm_server, 0, "li", new_igenp, flagsp));
+	return (gfm_client_rpc_result(gfm_server, 0, "ill",
+	    flagsp, old_igenp, new_igenp));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t errcode)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GENERATION_UPDATED, "i", errcode));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
 
 gfarm_error_t
@@ -2194,10 +2221,12 @@ gfm_client_switch_back_channel(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_switch_async_back_channel(struct gfm_connection *gfm_server,
-	gfarm_int32_t version)
+	gfarm_int32_t version, gfarm_int64_t gfsd_cookie,
+	gfarm_int32_t *gfmd_knows_me_p)
 {
 	return (gfm_client_rpc(gfm_server, 0,
-	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "i/", version));
+	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il/i",
+	    version, gfsd_cookie, gfmd_knows_me_p));
 }
 
 /*

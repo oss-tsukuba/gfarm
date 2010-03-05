@@ -153,7 +153,10 @@ gfarm_error_t gfm_client_close_write_v2_4_request(struct gfm_connection *,
 	gfarm_off_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_close_write_v2_4_result(struct gfm_connection *,
-	gfarm_int64_t *, gfarm_int32_t *);
+	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *);
+gfarm_error_t gfm_client_generation_updated_request(struct gfm_connection *,
+	gfarm_int32_t);
+gfarm_error_t gfm_client_generation_updated_result(struct gfm_connection *);
 gfarm_error_t gfm_client_verify_type_request(struct gfm_connection *,
 	gfarm_int32_t);
 gfarm_error_t gfm_client_verify_type_result(struct gfm_connection *);
@@ -288,7 +291,7 @@ gfarm_error_t gfm_client_lock_info_result(struct gfm_connection *,
 gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 #endif
 gfarm_error_t gfm_client_switch_async_back_channel(struct gfm_connection *,
-	gfarm_int32_t);
+	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t *);
 
 /* gfs_pio from client */
 /*XXX*/

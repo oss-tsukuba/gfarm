@@ -82,7 +82,8 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_opener = peer;
 			fo->u.f.spool_host = spool_host;
 		}
-	} else { /* for directory */
+		fo->u.f.replicating = NULL;
+	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
 		fo->u.d.key = NULL;
 	}
@@ -91,9 +92,15 @@ file_opening_alloc(struct inode *inode,
 }
 
 void
-file_opening_free(struct file_opening *fo, int is_file)
+file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 {
-	if (!is_file) { /* i.e. is a directory */
+	if (GFARM_S_ISREG(mode)) {
+		if (fo->u.f.replicating != NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED, "orphan replicating");
+			file_replicating_free(fo->u.f.replicating);
+			fo->u.f.replicating = NULL;
+		}
+	} else if (GFARM_S_ISDIR(mode)) {
 		if (fo->u.d.key != NULL)
 			free(fo->u.d.key);
 	}
@@ -176,7 +183,8 @@ process_add_ref(struct process *process)
 static int
 process_del_ref(struct process *process)
 {
-	int fd, is_file;
+	int fd;
+	gfarm_mode_t mode;
 	struct file_opening *fo;
 	struct process_link *pl, *pln;
 	struct process *child;
@@ -198,9 +206,9 @@ process_del_ref(struct process *process)
 	for (fd = 0; fd < process->nfiles; fd++) {
 		fo = process->filetab[fd];
 		if (fo != NULL) {
-			is_file = inode_is_file(fo->inode);
+			mode = inode_get_mode(fo->inode);
 			inode_close_read(fo, NULL);
-			file_opening_free(fo, is_file);
+			file_opening_free(fo, mode);
 		}
 	}
 	free(process->filetab);
@@ -231,7 +239,8 @@ process_detach_peer(struct process *process, struct peer *peer)
 		 * XXX This shouldn't be done,
 		 * if we'll support gfmd reconnection.
 		 */
-		process_close_file(process, peer, fd);
+		if (process->filetab[fd] != NULL)
+			process_close_file(process, peer, fd);
 	}
 }
 
@@ -518,6 +527,66 @@ process_does_match(gfarm_pid_t pid,
 }
 
 gfarm_error_t
+process_new_generation_wait(struct peer *peer, int fd,
+	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg)
+{
+	struct process *process;
+	struct file_opening *fo;
+	gfarm_error_t e;
+	static const char diag[] = "process_new_generation_wait";
+
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = process_get_file_opening(process, fd, &fo))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: process_get_file_opening(%d) failed", diag, fd);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		e = inode_new_generation_wait(fo->inode, peer, action, arg);
+	}
+	return (e);
+}
+
+gfarm_error_t
+process_new_generation_done(struct process *process, struct peer *peer, int fd,
+	gfarm_int32_t result)
+{
+	struct file_opening *fo;
+	gfarm_mode_t mode;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	static const char diag[] = "process_new_generation_done";
+
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_process() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = inode_new_generation_done(fo->inode, peer,
+	    result)) == GFARM_ERR_NO_ERROR) {
+
+		/* resume deferred operaton: close the file */
+
+		if (fo->opener != peer && fo->opener != NULL) {
+			/*
+			 * closing REOPENed file,
+			 * but the client is still opening
+			 */
+			fo->u.f.spool_opener = NULL;
+			fo->u.f.spool_host = NULL;
+		} else {
+			mode = inode_get_mode(fo->inode);
+			inode_close(fo);
+
+			file_opening_free(fo, mode);
+			process->filetab[fd] = NULL;
+		}
+	}
+	return (e);
+}
+
+gfarm_error_t
 process_open_file(struct process *process, struct inode *file,
 	gfarm_int32_t flag, int created,
 	struct peer *peer, struct host *spool_host,
@@ -562,7 +631,7 @@ process_open_file(struct process *process, struct inode *file,
 		gflog_debug(GFARM_MSG_1001626,
 			"inode_open() failed: %s",
 			gfarm_error_string(e));
-		file_opening_free(fo, inode_is_file(file));
+		file_opening_free(fo, inode_get_mode(file));
 		return (e);
 	}
 	process->filetab[fd] = fo;
@@ -596,6 +665,13 @@ process_reopen_file(struct process *process,
 		gflog_debug(GFARM_MSG_1001629,
 			"file already reopened");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if (inode_new_generation_is_pending(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process_reopen_file: new_generation pending %lld:%lld",
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode));
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
 	to_create = inode_is_creating_file(fo->inode);
@@ -647,8 +723,8 @@ process_reopen_file(struct process *process,
 gfarm_error_t
 process_close_file(struct process *process, struct peer *peer, int fd)
 {
-	int is_file;
 	struct file_opening *fo;
+	gfarm_mode_t mode;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -658,10 +734,10 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 		return (e);
 	}
 
-	is_file = inode_is_file(fo->inode);
+	mode = inode_get_mode(fo->inode);
 
 	if (fo->opener != peer) {
-		if (!is_file) { /* i.e. is a directory */
+		if (!GFARM_S_ISREG(mode)) {
 			gflog_debug(GFARM_MSG_1001635,
 				"inode is not file");
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -682,7 +758,7 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else {
-		if (is_file &&
+		if (GFARM_S_ISREG(mode) &&
 		    fo->u.f.spool_opener != NULL &&
 		    fo->u.f.spool_opener != peer) {
 			/*
@@ -696,7 +772,7 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 	}
 
 	inode_close(fo);
-	file_opening_free(fo, is_file);
+	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -706,6 +782,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 	struct gfarm_timespec *atime)
 {
 	struct file_opening *fo;
+	gfarm_mode_t mode;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -714,7 +791,8 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (!inode_is_file(fo->inode)) {
+	mode = inode_get_mode(fo->inode);
+	if (!GFARM_S_ISREG(mode)) {
 		gflog_debug(GFARM_MSG_1001638,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -734,7 +812,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 	}
 
 	inode_close_read(fo, atime);
-	file_opening_free(fo, 1);
+	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -743,11 +821,20 @@ gfarm_error_t
 process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	gfarm_int64_t *new_igenp, gfarm_int32_t *is_last_writerp)
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
 {
 	struct file_opening *fo;
+	gfarm_mode_t mode;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
-	int do_not_change_status = 0;
+	gfarm_int32_t flags = 0;
+	int is_v2_4 = (flagsp != NULL);
+	static const char diag[] = "process_close_file_write";
+
+	/*
+	 * NOTE: gfsd uses CLOSE_FILE_WRITE protocol only if the file is
+	 * really updated.
+	 */
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001640,
@@ -755,7 +842,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (!inode_is_file(fo->inode)) {
+	mode = inode_get_mode(fo->inode);
+	if (!GFARM_S_ISREG(mode)) {
 		gflog_debug(GFARM_MSG_1001641,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
@@ -770,48 +858,51 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-
-	/*
-	 * GFARM_FILE_CREATE_REPLICA flag means to create and add a
-	 * file replica by gfs_pio_write if this file already has file
-	 * replicas.  GFARM_ERR_ALREADY_EXISTS error means this is the
-	 * first one and this file has only one replica.  If it is
-	 * not, do not change the status.
-	 */
-	if (((fo->flag & GFARM_FILE_CREATE_REPLICA) != 0) &&
-	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
-	     != GFARM_ERR_ALREADY_EXISTS))
-		do_not_change_status = 1;
-	else {
-		/*
-		 * gfsd uses CLOSE_FILE_WRITE protocol only if the file is
-		 * really updated, so we don't have to check mtime and size
-		 * here.
-		 */
-		inode_remove_every_other_replicas(fo->inode,
-		    fo->u.f.spool_host); /* invalidate file replicas */
+	if (is_v2_4 && inode_new_generation_is_pending(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: new_generation pending %lld:%lld", diag,
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode));
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
-	if (fo->opener != peer && fo->opener != NULL) {
+	if (inode_is_updated(fo->inode, mtime) &&
+
+	    /*
+	     * GFARM_FILE_CREATE_REPLICA flag means to create and add a
+	     * file replica by gfs_pio_write if this file already has file
+	     * replicas.  GFARM_ERR_ALREADY_EXISTS error means this is the
+	     * first one and this file has only one replica.  If it is
+	     * not, do not change the status.
+	     */
+	    (((fo->flag & GFARM_FILE_CREATE_REPLICA) == 0) ||
+	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
+	    == GFARM_ERR_ALREADY_EXISTS)) &&
+
+	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp)) {
+
+		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+	}
+
+	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
+		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
+		e = inode_new_generation_wait_start(fo->inode, peer);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e); /* XXX FIXME: it's better to close fd */
+		peer_set_pending_new_generation(peer, fo->inode);
+	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-
-		if (!do_not_change_status) {
-			inode_set_size(fo->inode, size);
-			inode_set_atime(fo->inode, atime);
-			inode_set_mtime(fo->inode, mtime);
-			inode_set_ctime(fo->inode, mtime);
-		}
-		return (GFARM_ERR_NO_ERROR);
-	}
-
-	if (!do_not_change_status)
-		inode_close_write(fo, size, atime, mtime);
-	else
+	} else {
 		inode_close(fo);
-	file_opening_free(fo, 1);
-	process->filetab[fd] = NULL;
+
+		file_opening_free(fo, mode);
+		process->filetab[fd] = NULL;
+	}
+	if (flagsp != NULL)
+		*flagsp = flags;
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -920,7 +1011,7 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 gfarm_error_t
 process_prepare_to_replicate(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
-	struct inode **inodep)
+	struct file_replicating **frp, struct inode **inodep)
 {
 	gfarm_error_t e;
 	struct file_opening *fo;
@@ -944,7 +1035,7 @@ process_prepare_to_replicate(struct process *process, struct peer *peer,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	e = inode_prepare_to_replicate(fo->inode, user, src, dst, flags);
+	e = inode_prepare_to_replicate(fo->inode, user, src, dst, flags, frp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001657,
 			"inode_prepare_to_replicate() failed: %s",
@@ -961,14 +1052,23 @@ process_replica_adding(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd,
 	struct inode **inodep)
 {
-	gfarm_error_t e;
 	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
-	if ((e = process_get_file_opening(process, fd, &fo))
-	    != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (fo->u.f.replicating != NULL)
+		return (GFARM_ERR_FILE_BUSY);
+	if (inode_new_generation_is_pending(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process_replica_adding: new_generation pending %lld:%lld",
+		    (long long)inode_get_number(fo->inode),
+		    (long long)inode_get_gen(fo->inode));
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	}
+
 	e = process_prepare_to_replicate(process, peer, src, dst, fd,
-	    GFS_REPLICATE_FILE_FORCE, inodep);
+	    GFS_REPLICATE_FILE_FORCE, &fo->u.f.replicating, inodep);
 	if (e == GFARM_ERR_NO_ERROR) {
 		fo->u.f.spool_opener = peer;
 		/*
@@ -1005,26 +1105,33 @@ process_replica_added(struct process *process,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
+	if (fo->u.f.replicating == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_added was called witout adding");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
 	if (inode_is_creating_file(fo->inode)) { /* no file copy */
 		gflog_debug(GFARM_MSG_1001661,
 			"inode has no file copy");
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	}
-	if (inode_has_replica(fo->inode, spool_host)) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (inode_has_replica(fo->inode, spool_host)) {
 		gflog_debug(GFARM_MSG_1001662,
 			"spool_host already has replica");
-		return (GFARM_ERR_ALREADY_EXISTS);
-	}
-
-	mtime = inode_get_mtime(fo->inode);
-	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec ||
-	    (size != -1 && size != inode_get_size(fo->inode))) {
-		e = inode_remove_replica(fo->inode, spool_host, 0);
+		e = GFARM_ERR_ALREADY_EXISTS;
+	} else if (mtime_sec != (mtime = inode_get_mtime(fo->inode))->tv_sec ||
+	    mtime_nsec != mtime->tv_nsec ||
+	    (size != -1 && size != inode_get_size(fo->inode)) ||
+	    file_replicating_get_gen(fo->u.f.replicating) !=
+	    inode_get_gen(fo->inode)) {
+		e = inode_remove_replica_gen(fo->inode, spool_host,
+		    file_replicating_get_gen(fo->u.f.replicating), 0);
 		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = GFARM_ERR_INVALID_FILE_REPLICA;
-	}
-	else
+	} else
 		e = inode_add_replica(fo->inode, spool_host, 1);
+	file_replicating_free(fo->u.f.replicating);
+	fo->u.f.replicating = NULL;
 	e2 = process_close_file_read(process, peer, fd, NULL);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }

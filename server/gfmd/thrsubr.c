@@ -81,6 +81,16 @@ cond_signal(pthread_cond_t *cond, const char *where, const char *what)
 }
 
 void
+cond_broadcast(pthread_cond_t *cond, const char *where, const char *what)
+{
+	int err = pthread_cond_broadcast(cond);
+
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond broadcast: %s",
+		    where, what, strerror(err));
+}
+
+void
 cond_destroy(pthread_cond_t *cond, const char *where, const char *what)
 {
 	int err = pthread_cond_destroy(cond);

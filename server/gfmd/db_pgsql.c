@@ -1603,6 +1603,14 @@ pgsql_inode_timespec_call(struct db_inode_timespec_modify_arg *arg,
 }
 
 static gfarm_error_t
+gfarm_pgsql_inode_gen_modify(struct db_inode_uint64_modify_arg *arg)
+{
+	return pgsql_inode_uint64_call(arg,
+	    "UPDATE INode SET igen = $2 WHERE inumber = $1",
+	    "pgsql_inode_gen_modify");
+}
+
+static gfarm_error_t
 gfarm_pgsql_inode_nlink_modify(struct db_inode_uint64_modify_arg *arg)
 {
 	return pgsql_inode_uint64_call(arg,
@@ -2798,6 +2806,7 @@ const struct db_ops db_pgsql_ops = {
 
 	gfarm_pgsql_inode_add,
 	gfarm_pgsql_inode_modify,
+	gfarm_pgsql_inode_gen_modify,
 	gfarm_pgsql_inode_nlink_modify,
 	gfarm_pgsql_inode_size_modify,
 	gfarm_pgsql_inode_mode_modify,

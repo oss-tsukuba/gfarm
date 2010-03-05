@@ -1,6 +1,9 @@
 struct peer;
 struct thread_pool;
 
+void peer_add_ref(struct peer *);
+int peer_del_ref(struct peer *);
+void peer_free_request(struct peer *);
 
 void peer_init(int, struct thread_pool *, void *(*)(void *));
 
@@ -12,18 +15,17 @@ void peer_free(struct peer *);
 void peer_shutdown_all(void);
 void peer_watch_access(struct peer *);
 
-void peer_io_lock(struct peer *);
-void peer_io_unlock(struct peer *);
-gfarm_error_t peer_set_async(struct peer *);
-/* (struct id_table *) == gfp_xdr_async_peer_t XXX  */
-struct gfarm_id_table;
-struct gfarm_id_table *peer_get_async(struct peer *);
-
 struct peer *peer_by_fd(int);
 gfarm_error_t peer_free_by_fd(int);
 
 struct gfp_xdr *peer_get_conn(struct peer *);
 int peer_get_fd(struct peer *);
+
+/* (struct id_table *) == gfp_xdr_async_peer_t XXX  */
+struct gfarm_id_table;
+void peer_set_async(struct peer *, struct gfarm_id_table *);
+struct gfarm_id_table *peer_get_async(struct peer *);
+
 gfarm_error_t peer_set_host(struct peer *, char *);
 enum gfarm_auth_id_type peer_get_auth_id_type(struct peer *);
 char *peer_get_username(struct peer *);
@@ -34,6 +36,12 @@ struct user *peer_get_user(struct peer *);
 void peer_set_user(struct peer *, struct user *);
 struct host;
 struct host *peer_get_host(struct peer *);
+
+struct inode;
+void peer_set_pending_new_generation(struct peer *, struct inode *);
+void peer_reset_pending_new_generation(struct peer *);
+void peer_unset_pending_new_generation(struct peer *);
+
 struct process;
 struct process *peer_get_process(struct peer *);
 void peer_set_process(struct peer *, struct process *);

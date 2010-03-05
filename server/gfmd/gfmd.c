@@ -47,6 +47,7 @@
 #include "../gfsl/gfarm_auth.h"
 
 #include "subr.h"
+#include "thrsubr.h"
 #include "thrpool.h"
 #include "callout.h"
 #include "db_access.h"
@@ -55,6 +56,7 @@
 #include "group.h"
 #include "peer.h"
 #include "inode.h"
+#include "dead_file_copy.h"
 #include "process.h"
 #include "fs.h"
 #include "job.h"
@@ -83,10 +85,10 @@
 
 #ifndef CALLOUT_NTHREADS
 /*
- * this is number of thread pools which use callouts,
+ * this is number of thread pools which are used by callouts,
  * so thrpool_add_job() in callout_main() won't be blocked for long time.
  *
- * currently, only gfsd_thread_pool is using callouts.
+ * currently, only back_channel_send_thread_pool is called from callouts.
  */
 #define CALLOUT_NTHREADS	1
 #endif
@@ -95,8 +97,8 @@ char *program_name = "gfmd";
 static struct protoent *tcp_proto;
 static char *pid_file;
 
-/* this interface is exported for a use from a private extension */
-struct thread_pool *client_thread_pool;
+struct thread_pool *authentication_thread_pool;
+struct thread_pool *sync_protocol_thread_pool;
 
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
@@ -115,12 +117,11 @@ gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
 
 gfarm_error_t
 protocol_switch(struct peer *peer, int from_client, int skip, int level,
-	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
+	gfarm_int32_t *requestp, gfarm_error_t *on_errorp, int *suspendedp)
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t request;
 
-	peer_io_lock(peer);
 	e = gfp_xdr_recv_request_command(peer_get_conn(peer), 0, NULL,
 	    &request);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -132,7 +133,6 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 			    gfarm_error_string(e));
 		}
 		peer_record_protocol_error(peer); /* mark this peer finished */
-		peer_io_unlock(peer);
 		return (e);
 	}
 	switch (request) {
@@ -310,7 +310,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_getdirentsplus(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REOPEN:
-		e = gfm_server_reopen(peer, from_client, skip);
+		e = gfm_server_reopen(peer, from_client, skip,
+		    suspendedp);
 		break;
 	case GFM_PROTO_CLOSE_READ:
 		e = gfm_server_close_read(peer, from_client, skip);
@@ -321,7 +322,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 #endif
 	case GFM_PROTO_CLOSE_WRITE_V2_4:
-		e = gfm_server_close_write_v2_4(peer, from_client, skip);
+		e = gfm_server_close_write_v2_4(peer, from_client, skip,
+		    suspendedp);
+		break;
+	case GFM_PROTO_GENERATION_UPDATED:
+		e = gfm_server_generation_updated(peer, from_client, skip);
 		break;
 	case GFM_PROTO_LOCK:
 		e = gfm_server_lock(peer, from_client, skip);
@@ -337,14 +342,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 #ifdef COMPAT_GFARM_2_3
 	case GFM_PROTO_SWITCH_BACK_CHANNEL:
-		/* peer_io_unlock() is called in the following function */
 		e = gfm_server_switch_back_channel(peer, from_client, skip);
 		/* should not call gfp_xdr_flush() due to race */
 		*requestp = request;
 		return (e);
 #endif
 	case GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL:
-		/* peer_io_unlock() is called in the following function */
 		e = gfm_server_switch_async_back_channel(peer,
 		    from_client, skip);
 		/* should not call gfp_xdr_flush() due to race */
@@ -396,7 +399,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_replicate_file_from_to(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_ADDING:
-		e = gfm_server_replica_adding(peer, from_client, skip);
+		e = gfm_server_replica_adding(peer, from_client, skip,
+		    suspendedp);
 		break;
 	case GFM_PROTO_REPLICA_ADDED: /* obsolete protocol */
 		e = gfm_server_replica_added(peer, from_client, skip);
@@ -487,9 +491,10 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		    from_client, skip, level, request, requestp, on_errorp);
 		break;
 	}
-	peer_io_unlock(peer);
-	if ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
-	    || request == GFM_PROTO_COMPOUND_END) {
+
+	if (!*suspendedp &&
+	    ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
+	    || request == GFM_PROTO_COMPOUND_END)) {
 		/* flush only when a COMPOUND loop is done */
 		if (debug_mode)
 			gflog_debug(GFARM_MSG_1000182, "gfp_xdr_flush");
@@ -529,13 +534,16 @@ protocol_service(struct peer *peer)
 	gfarm_error_t e, dummy;
 	gfarm_int32_t request;
 	int from_client;
+	int suspended = 0;
 	int transaction = 0;
 	static const char diag[] = "protocol_service";
 
 	from_client = peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER;
 	if (ps->nesting_level == 0) { /* top level */
 		e = protocol_switch(peer, from_client, 0, 0,
-		    &request, &dummy);
+		    &request, &dummy, &suspended);
+		if (suspended)
+			return (1); /* finish */
 		giant_lock();
 		peer_fdpair_clear(peer);
 		if (peer_had_protocol_error(peer)) {
@@ -556,7 +564,9 @@ protocol_service(struct peer *peer)
 		giant_unlock();
 	} else { /* inside of a COMPOUND block */
 		e = protocol_switch(peer, from_client, cs->skip, 1,
-		    &request, &cs->current_part);
+		    &request, &cs->current_part, &suspended);
+		if (suspended)
+			return (1); /* finish */
 		if (peer_had_protocol_error(peer)) {
 			giant_lock();
 			peer_fdpair_clear(peer);
@@ -594,7 +604,11 @@ protocol_service(struct peer *peer)
 			cs->skip = cs->current_part != cs->cause;
 		}
 	}
-	if (request == GFM_PROTO_SWITCH_BACK_CHANNEL) {
+	if (
+#ifdef COMPAT_GFARM_2_3
+	    request == GFM_PROTO_SWITCH_BACK_CHANNEL ||
+#endif
+	    request == GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001482,
 				"failed to process GFM_PROTO_SWITCH_BACK_"
@@ -654,6 +668,81 @@ protocol_main(void *arg)
 	peer_watch_access(peer);
 
 	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
+struct resuming_queue {
+	pthread_mutex_t mutex;
+	pthread_cond_t nonempty;
+	struct event_waiter *queue;
+} resuming_pendings = {
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	NULL
+};
+
+void
+resuming_enqueue(struct event_waiter *entry)
+{
+	struct resuming_queue *q = &resuming_pendings;
+	static const char diag[] = "resuming_enqueue";
+
+	mutex_lock(&q->mutex, diag, "mutex");
+	entry->next = q->queue;
+	q->queue = entry;
+	cond_signal(&q->nonempty, diag, "nonempty");
+	mutex_unlock(&q->mutex, diag, "mutex");
+}
+
+struct event_waiter *
+resuming_dequeue(struct resuming_queue *q, const char *diag)
+{
+	struct event_waiter *entry;
+
+	mutex_lock(&q->mutex, diag, "mutex");
+	while  (q->queue == NULL)
+		cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
+	entry = q->queue;
+	q->queue = entry->next;
+	mutex_unlock(&q->mutex, diag, "mutex");
+	return (entry);
+}
+
+void *
+resuming_thread(void *arg)
+{
+	struct event_waiter *entry = arg;
+	struct peer *peer = entry->peer;
+	int suspended = 0;
+
+	(*entry->action)(peer, entry->arg, &suspended);
+	free(entry);
+	if (suspended)
+		return (NULL);
+
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+		protocol_main(peer);
+		
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
+
+void *
+resumer(void *arg)
+{
+	struct event_waiter *entry;
+	static const char diag[] = "resumer";
+
+	for (;;) {
+		entry = resuming_dequeue(&resuming_pendings, diag);
+
+		thrpool_add_job(sync_protocol_thread_pool,
+		    resuming_thread, entry);
+
+	}
+
+	/*NOTREACHED*/
 	return (NULL);
 }
 
@@ -793,7 +882,8 @@ accepting_loop(int accepting_socket)
 			    "peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
 		} else {
-			thrpool_add_job(client_thread_pool, try_auth, peer);
+			thrpool_add_job(authentication_thread_pool,
+			    try_auth, peer);
 		}
 	}
 }
@@ -850,7 +940,8 @@ sigs_set(sigset_t *sigs)
 {
 	sigemptyset(sigs);
 	sigaddset(sigs, SIGHUP);
-	sigaddset(sigs, SIGINT);
+	if (!debug_mode)
+		sigaddset(sigs, SIGINT);
 	sigaddset(sigs, SIGTERM);
 #ifdef SIGINFO
 	sigaddset(sigs, SIGINFO);
@@ -924,9 +1015,6 @@ sigs_handler(void *p)
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
 
-	gflog_info(GFARM_MSG_1000200, "dumping dead file copies");
-	host_remove_replica_dump_all();
-
 	gflog_info(GFARM_MSG_1000201, "shutting down peers");
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
@@ -969,11 +1057,14 @@ usage(void)
 void
 gfmd_modules_init_default(int table_size)
 {
-	client_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "clients");
-	if (client_thread_pool == NULL)
+	authentication_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
+	    gfarm_metadb_job_queue_length, "authentication threads");
+	sync_protocol_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
+	    gfarm_metadb_job_queue_length, "synchronous protocol threads");
+	if (authentication_thread_pool == NULL ||
+	    sync_protocol_thread_pool == NULL)
 		gflog_fatal(GFARM_MSG_1001485,
-		    "client thread pool size:%d, queue length:%d: no memory",
+		    "thread pool size:%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,
 		    gfarm_metadb_job_queue_length);
 
@@ -981,18 +1072,23 @@ gfmd_modules_init_default(int table_size)
 
 	back_channel_init();
 
+	/* directory service */
 	host_init();
 	user_init();
 	group_init();
+
+	/* filesystem */
 	inode_init();
 	dir_entry_init();
 	file_copy_init();
-	dead_file_copy_init();
 	symlink_init();
 	xattr_init();
 	quota_init();
 
-	peer_init(table_size, client_thread_pool, protocol_main);
+	/* must be after hosts and filesystem */
+	dead_file_copy_init();
+
+	peer_init(table_size, sync_protocol_thread_pool, protocol_main);
 	job_table_init(table_size);
 }
 
@@ -1155,13 +1251,19 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
-			    gfarm_error_string(e));
+		    gfarm_error_string(e));
 
 	e = create_detached_thread(db_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000211,
 		    "create_detached_thread(db_thread): %s",
-			    gfarm_error_string(e));
+		    gfarm_error_string(e));
+
+	e = create_detached_thread(resumer, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(resumer): %s",
+		    gfarm_error_string(e));
 
 	accepting_loop(sock);
 

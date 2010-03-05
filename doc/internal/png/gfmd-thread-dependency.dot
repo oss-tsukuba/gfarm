@@ -11,7 +11,7 @@ digraph threads {
   replication_finalizer;
   remover;
   resumer;
-  closer_main;
+  peer_closer;
 
 
   db_thread;
@@ -25,7 +25,7 @@ digraph threads {
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
   removal_finalizer -> db_thread
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
-  closer_main -> db_thread
+  peer_closer -> db_thread
 	[label = "dbq_enter", fontcolor = cyan, color = cyan ];
   sigs_handler -> db_thread
 	[label = "db_terminate", fontcolor = cyan, color = cyan ];
@@ -67,7 +67,7 @@ digraph threads {
   removal_finalizer -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead=cluster1];
-  closer_main -> protocol_main
+  peer_closer -> protocol_main
 	[label = "giant_lock", fontcolor = red, color = red,
 	lhead=cluster1];
   sigs_handler -> protocol_main

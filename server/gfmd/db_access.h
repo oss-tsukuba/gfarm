@@ -44,6 +44,7 @@ gfarm_error_t db_group_load(void *,
 struct gfs_stat;
 gfarm_error_t db_inode_add(const struct gfs_stat *);
 gfarm_error_t db_inode_modify(const struct gfs_stat *);
+gfarm_error_t db_inode_gen_modify(gfarm_ino_t, gfarm_uint64_t);
 gfarm_error_t db_inode_nlink_modify(gfarm_ino_t, gfarm_uint64_t);
 gfarm_error_t db_inode_size_modify(gfarm_ino_t, gfarm_off_t);
 gfarm_error_t db_inode_mode_modify(gfarm_ino_t, gfarm_mode_t);

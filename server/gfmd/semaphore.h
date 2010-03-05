@@ -7,4 +7,5 @@ struct semaphore {
 void semaphore_init(struct semaphore *, int);
 void semaphore_post(struct semaphore *);
 void semaphore_wait(struct semaphore *);
+int semaphore_is_waiting(struct semaphore *);
 void semaphore_destroy(struct semaphore *);

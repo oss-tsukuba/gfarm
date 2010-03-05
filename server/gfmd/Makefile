@@ -31,13 +31,13 @@ PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
 SRCS =	gfmd.c thrsubr.c thrpool.c semaphore.c callout.c \
-	subr.c user.c group.c host.c peer.c \
+	subr.c user.c group.c host.c peer.c dead_file_copy.c \
 	process.c job.c \
 	dir.c inode.c fs.c back_channel.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	gfmd.o thrsubr.o thrpool.o semaphore.o callout.o \
-	subr.o user.o group.o host.o peer.o \
+	subr.o user.o group.o host.o peer.o dead_file_copy.o \
 	process.o job.o \
 	dir.o inode.o fs.o back_channel.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
@@ -64,7 +64,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
 	thrsubr.h thrpool.h subr.h callout.h \
-	user.h group.h host.h peer.h process.h job.h \
+	user.h group.h host.h peer.h dead_file_copy.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h
 
 include $(optional_rule)

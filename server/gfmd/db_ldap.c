@@ -1805,6 +1805,12 @@ ldap_inode_timespec_modify(struct db_inode_timespec_modify_arg *arg,
 }
 
 static gfarm_error_t
+gfarm_ldap_inode_gen_modify(struct db_inode_uint64_modify_arg *arg)
+{
+	return ldap_inode_uint64_modify(arg, "igen");
+}
+
+static gfarm_error_t
 gfarm_ldap_inode_nlink_modify(struct db_inode_uint64_modify_arg *arg)
 {
 	return ldap_inode_uint64_modify(arg, "nlink");
@@ -2866,6 +2872,7 @@ const struct db_ops db_ldap_ops = {
 
 	gfarm_ldap_inode_add,
 	gfarm_ldap_inode_modify,
+	gfarm_ldap_inode_gen_modify,
 	gfarm_ldap_inode_nlink_modify,
 	gfarm_ldap_inode_size_modify,
 	gfarm_ldap_inode_mode_modify,

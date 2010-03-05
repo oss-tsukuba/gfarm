@@ -151,6 +151,7 @@ struct db_ops {
 
 	gfarm_error_t (*inode_add)(struct gfs_stat *);
 	gfarm_error_t (*inode_modify)(struct gfs_stat *);
+	gfarm_error_t (*inode_gen_modify)(struct db_inode_uint64_modify_arg *);
 	gfarm_error_t (*inode_nlink_modify)(struct db_inode_uint64_modify_arg *);
 	gfarm_error_t (*inode_size_modify)(struct db_inode_uint64_modify_arg *);
 	gfarm_error_t (*inode_mode_modify)(struct db_inode_uint32_modify_arg *);

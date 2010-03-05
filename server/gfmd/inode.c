@@ -29,8 +29,14 @@
 #include "group.h"
 #include "dir.h"
 #include "inode.h"
+#include "dead_file_copy.h"
 #include "process.h" /* struct file_opening */
 #include "xattr_info.h"
+#include "back_channel.h"
+
+#include "auth.h" /* for "peer.h" */
+#include "peer.h" /* peer_reset_pending_new_generation() */
+#include "gfmd.h" /* resuming_*() */
 
 #define ROOT_INUMBER			2
 #define INODE_TABLE_SIZE_INITIAL	1000
@@ -43,7 +49,7 @@
 struct file_copy {
 	struct file_copy *host_next;
 	struct host *host;
-	int valid;
+	int valid; /* 0, if there is ongoing replication about lastest gen */
 };
 
 struct xattr_entry {
@@ -102,8 +108,11 @@ struct inode_open_state {
 
 	union inode_state_type_specific {
 		struct inode_state_file {
-			int writers;
 			struct file_opening *cksum_owner;
+			struct event_waiter *event_waiters;
+			struct peer *event_source;
+			struct gfarm_timespec last_update;
+			int writers;
 		} f;
 	} u;
 };
@@ -457,6 +466,10 @@ inode_open_state_alloc(void)
 	ios->openings.opening_prev =
 	ios->openings.opening_next = &ios->openings;
 	ios->u.f.writers = 0;
+	ios->u.f.event_waiters = NULL;
+	ios->u.f.event_source = NULL;
+	ios->u.f.last_update.tv_sec = 0;
+	ios->u.f.last_update.tv_nsec = 0;
 	ios->u.f.cksum_owner = NULL;
 	return (ios);
 }
@@ -594,11 +607,60 @@ inode_free(struct inode *inode)
 }
 
 static gfarm_error_t
-remove_replica_internal(struct inode *, struct file_copy *);
+remove_replica_internal(struct inode *, gfarm_int64_t, struct host *,
+	int, struct dead_file_copy **);
+
+static void
+inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t old_gen, int start_replication)
+{
+	struct file_copy **copyp, *copy;
+	struct dead_file_copy *deferred_cleanup;
+	int do_replication;
+	struct file_replicating *fr;
+	gfarm_error_t e;
+
+	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL; ) {
+		if (copy->host == spool_host) {
+			copyp = &copy->host_next;
+			continue;
+		}
+		*copyp = copy->host_next;
+
+		/* if there is ongoing replication, don't start new one */
+		do_replication = start_replication && copy->valid &&
+		    host_is_up(copy->host) &&
+		    host_supports_async_protocols(copy->host);
+
+		deferred_cleanup = NULL;
+		e = remove_replica_internal(inode, old_gen, copy->host,
+		    copy->valid, do_replication ? &deferred_cleanup : NULL);
+		/* abandon `e' */
+
+		if (do_replication) {
+			fr = file_replicating_new(inode, copy->host,
+			    deferred_cleanup);
+			if (fr == NULL) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "inode_remove_every_other_replicas: "
+				    "no memory");
+			} else if ((e = async_back_channel_replication_request(
+			    host_name(spool_host), host_port(spool_host),
+			    copy->host, inode->i_number, inode->i_gen,
+			    fr))!= GFARM_ERR_NO_ERROR) {
+				file_replicating_free(fr); /* may sleep */
+			}
+		}
+
+		free(copy);
+	}
+}
 
 void
 inode_remove(struct inode *inode)
 {
+	int dfc_needs_free = 0;
+
 	inode_remove_all_xattrs(inode);
 
 	if (inode->u.c.state != NULL)
@@ -608,13 +670,15 @@ inode_remove(struct inode *inode)
 		gfarm_error_t e;
 
 		for (copy = inode->u.c.s.f.copies; copy != NULL; copy = cn) {
-			e = remove_replica_internal(inode, copy);
+			e = remove_replica_internal(inode, inode->i_gen,
+			    copy->host, copy->valid, NULL);
 			cn = copy->host_next;
 			free(copy);
 		}
 		inode->u.c.s.f.copies = NULL; /* ncopy == 0 */
 		inode_cksum_remove(inode);
 		quota_update_file_remove(inode);
+		dfc_needs_free = 1;
 	} else if (inode_is_dir(inode)) {
 		dir_free(inode->u.c.s.d.entries);
 	} else if (inode_is_symlink(inode)) {
@@ -625,6 +689,9 @@ inode_remove(struct inode *inode)
 		/*NOTREACHED*/
 	}
 	inode_free(inode);
+
+	if (dfc_needs_free)
+		dead_file_copy_inode_status_changed(inode->i_number);
 }
 
 static gfarm_error_t
@@ -775,6 +842,22 @@ gfarm_int64_t
 inode_get_gen(struct inode *inode)
 {
 	return (inode->i_gen);
+}
+
+void
+inode_increment_gen(struct inode *inode)
+{
+	gfarm_error_t e;
+
+	++inode->i_gen;
+
+	e = db_inode_gen_modify(inode->i_number, inode->i_gen);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_gen_modify(%lld, %lld): %s",
+		    (unsigned long long)inode->i_number,
+		    (unsigned long long)inode->i_gen,
+		    gfarm_error_string(e));
 }
 
 gfarm_int64_t
@@ -1049,6 +1132,128 @@ inode_get_symlink(struct inode *inode)
 	if (!inode_is_symlink(inode))
 		return (NULL);
 	return (inode->u.c.s.l.source_path);
+}
+
+int
+inode_desired_dead_file_copy(gfarm_ino_t inum)
+{
+	struct inode *inode = inode_lookup(inum);
+
+	if (inode == NULL) /* already removed */
+		return (0);
+	if (!inode_is_file(inode)) /* already removed */
+		return (0);
+	if (inode_get_nlink(inode) == 0) /* waiting for being removed */
+		return (0);
+	if (inode_get_size(inode) == 0) /* can access latest contents? */
+		return (0);
+	if (inode_get_ncopy(inode) > 0) /* can access latest contents? */
+		return (0);
+
+	return (1); /* XXX FIXME: use xattr gfarm:ncopy */
+}
+
+int
+inode_new_generation_is_pending(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+	static const char diag[] = "inode_new_generation_is_pending";
+
+	if (ios == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		return (0);
+	}
+	return (ios->u.f.event_source != NULL);
+}
+
+gfarm_error_t
+inode_new_generation_wait_start(struct inode *inode, struct peer *peer)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+	static const char diag[] = "inode_new_generation_wait_start";
+
+	if (ios == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	ios->u.f.event_source = peer;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_new_generation_done(struct inode *inode, struct peer *peer,
+	gfarm_int32_t result)
+{
+	struct inode_open_state *ios;
+	struct event_waiter *waiter, *next;
+	static const char diag[] = "inode_new_generation_done";
+
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	ios = inode->u.c.state;
+	if (ios == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	if (ios->u.f.event_source == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: not pending", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if (peer != NULL && peer != ios->u.f.event_source) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: different peer", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+
+	peer_reset_pending_new_generation(peer);
+
+	waiter = ios->u.f.event_waiters;
+	for (; waiter != NULL; waiter = next) {
+		next = waiter->next;
+		resuming_enqueue(waiter);
+	}
+	ios->u.f.event_source = NULL;
+	ios->u.f.event_waiters = NULL;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_new_generation_wait(struct inode *inode, struct peer *peer,
+	gfarm_error_t (*action)(struct peer *, void *, int *), void *arg)
+{
+	struct inode_open_state *ios;
+	struct event_waiter *waiter;
+	static const char diag[] = "inode_new_generation_wait";
+
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	ios = inode->u.c.state;
+	if (ios == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	if (ios->u.f.event_source == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: not pending", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+
+	GFARM_MALLOC(waiter);
+	if (waiter == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	waiter->peer = peer;
+	waiter->action = action;
+	waiter->arg = arg;
+
+	waiter->next = ios->u.f.event_waiters;
+	ios->u.f.event_waiters = waiter;
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -1730,10 +1935,12 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
 	if (ios->openings.opening_next == &ios->openings) { /* all closed */
+		if (ios->u.f.event_waiters != NULL)
+			inode_new_generation_done(inode, NULL,
+			    GFARM_ERR_PROTOCOL);
 		inode_open_state_free(inode->u.c.state);
 		inode->u.c.state = NULL;
-	}
-	else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+	} else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ios->u.f.writers;
 
 	if (atime != NULL)
@@ -1744,40 +1951,59 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 	}
 }
 
-void
-inode_close_write(struct file_opening *fo, gfarm_off_t size,
-	struct gfarm_timespec *atime, struct gfarm_timespec *mtime)
+/* returns TRUE, if generation number is updated */
+int
+inode_file_update(struct file_opening *fo, gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
 {
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
+	struct host *spool_host = fo->u.f.spool_host;
+	gfarm_int64_t old_gen;
+	int generation_updated = 0;
+	int start_replication = 0;
 
 	inode_cksum_invalidate(fo);
 	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
 		inode_cksum_remove(inode);
 
 	inode_set_size(inode, size);
+	inode_set_atime(inode, atime);
+	inode_set_mtime(inode, mtime);
+	inode_set_ctime(inode, mtime);
+	ios->u.f.last_update = *mtime;
 
-	if (mtime != NULL) {
-		inode_set_mtime(inode, mtime);
-		inode_set_ctime(inode, mtime);
+	old_gen = inode->i_gen;
+
+	if (host_supports_async_protocols(spool_host)) {
+		/* update generation number */
+		if (old_genp != NULL)
+			*old_genp = inode->i_gen;
+		inode_increment_gen(inode);
+		if (new_genp != NULL)
+			*new_genp = inode->i_gen;
+		generation_updated = 1;
+
+		/* XXX provide an option not to start replication here? */
+
+		/* if there is no other writing process */
+		if (ios->u.f.writers == 1)
+			start_replication = 1;
 	}
-	inode_close_read(fo, atime);
+
+	inode_remove_every_other_replicas(inode, spool_host, old_gen,
+	    start_replication);
+
+	return (generation_updated);
 }
 
 int
 inode_is_opened_for_writing(struct inode *inode)
 {
 	struct inode_open_state *ios = inode->u.c.state;
-	struct file_opening *fo;
 
-	if (ios != NULL &&
-	    (fo = ios->openings.opening_next) != &ios->openings) {
-		for (; fo != &ios->openings; fo = fo->opening_next) {
-			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
-				return (1);
-		}
-	}
-	return (0);
+	return (ios != NULL && ios->u.f.writers > 0);
 }
 
 int
@@ -2023,7 +2249,8 @@ gfarm_error_t (*inode_schedule_file_reply)(struct inode *, struct peer *,
 	inode_schedule_file_reply_default;
 
 struct file_replicating *
-file_replicating_new(struct inode *inode, struct host *dst)
+file_replicating_new(struct inode *inode, struct host *dst,
+	struct dead_file_copy *deferred_cleanup)
 {
 	struct file_replicating *fr;
 	struct inode_replicating_state *irs = inode->u.c.s.f.rstate;
@@ -2050,6 +2277,7 @@ file_replicating_new(struct inode *inode, struct host *dst)
 
 	fr->inode = inode;
 	fr->igen = inode_get_gen(inode);
+	fr->cleanup = deferred_cleanup;
 
 	return (fr);
 }
@@ -2076,44 +2304,80 @@ file_replicating_free(struct file_replicating *fr)
 	}
 }
 
+gfarm_int64_t
+file_replicating_get_gen(struct file_replicating *fr)
+{
+	return (fr->igen);
+}
+
 gfarm_error_t
-inode_replicated(struct file_replicating *fr, gfarm_int32_t errcode,
-	gfarm_off_t size)
+inode_replicated(struct file_replicating *fr,
+	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
 {
 	struct inode *inode = fr->inode;
 	int transaction = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct dead_file_copy *dfc;
 	static const char diag[] = "inode_replicated";
 
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 
-	if (errcode != GFARM_ERR_NO_ERROR ||
-	    size != inode_get_size(inode) ||
-	    fr->igen != inode_get_gen(inode)) {
-		if (debug_mode)
+	if (src_errcode == GFARM_ERR_NO_ERROR &&
+	    dst_errcode == GFARM_ERR_NO_ERROR &&
+	    size == inode_get_size(inode) &&
+	    fr->igen == inode_get_gen(inode)) {
+		e = inode_add_replica(inode, fr->dst, 1);
+	} else {
+		if (src_errcode != GFARM_ERR_NO_ERROR ||
+		    dst_errcode != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "error at %lld:%lld replication to %s: "
+			    "src=%d dst=%d",
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    host_name(fr->dst), src_errcode, dst_errcode);
+		if (debug_mode && (size != inode_get_size(inode) ||
+		    fr->igen != inode_get_gen(inode)))
 			gflog_debug(GFARM_MSG_1001763,
-			    "invalid replica: (err:%d, gen:%lld, size:%lld) "
-			    "should be (err:0, gen:%lld, size:%lld)",
-			    (int)errcode, (long long)fr->igen, (long long)size,
-			    (long long)fr->igen,
+			    "invalid replica: "
+			    "(gen:%lld, size:%lld) "
+			    "should be (gen:%lld, size:%lld)",
+			    (long long)fr->igen, (long long)size,
+			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
-		e = inode_remove_replica(inode, fr->dst, 0);
+		e = inode_remove_replica_gen(inode, fr->dst, fr->igen, 0);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "inode_replicated: inode_remove_replica: %s",
 			    gfarm_error_string(e));
 		}
-		e = host_remove_replica_enq(fr->dst, inode_get_number(inode),
-		    fr->igen);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1001764,
-			    "inode_replicated: host_remove_replica_enq: %s",
-			    gfarm_error_string(e));
+		dfc = dead_file_copy_new(inode_get_number(inode), fr->igen,
+		    fr->dst);
+		if (dfc == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "inode_replicated: dead_file_copy_new: no memory");
+		} else {
+			removal_pendingq_enqueue(dfc);
 		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
-	} else {
-		inode_add_replica(inode, fr->dst, 1);
+	}
+
+	if (fr->cleanup != NULL) {
+		/*
+		 * XXX FIXME
+		 * the following src_errcode check is somewhat adhoc condition
+		 * for a private requirement
+		 */
+		if (src_errcode == GFARM_ERR_NO_ERROR &&
+		    dead_file_copy_is_removable(fr->cleanup))
+			removal_pendingq_enqueue(fr->cleanup);
+		else
+			dead_file_copy_mark_deferred(fr->cleanup);
+	} else if (e == GFARM_ERR_NO_ERROR) {
+		/* try to sweep deferred queue */
+		dead_file_copy_replica_status_changed(inode_get_number(inode),
+		    fr->dst);		    
 	}
 
 	file_replicating_free(fr);
@@ -2205,65 +2469,87 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 }
 
 static gfarm_error_t
-remove_replica_internal(struct inode *inode, struct file_copy *copy)
+remove_replica_internal(struct inode *inode, gfarm_int64_t gen,
+	struct host *spool_host, int valid,
+	struct dead_file_copy **deferred_cleanupp)
 {
-	gfarm_error_t e, e2 = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct dead_file_copy *dfc;
 
-	/* this copy was already removed from u.c.s.f.copies */
-	quota_update_replica_remove(inode);
+	if (valid)
+		quota_update_replica_remove(inode);
 
-	e = host_remove_replica_enq(copy->host, inode->i_number, inode->i_gen);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1000328,
-		    "host_remove_replica_enq(%lld, %s): %s",
-		    (unsigned long long)inode->i_number, host_name(copy->host),
-		    gfarm_error_string(e));
+	dfc = dead_file_copy_new(inode->i_number, gen, spool_host);
+	if (dfc == NULL)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "remove_replica_internal(%lld, %lld, %s): no memory",
+		    (unsigned long long)inode->i_number,
+		    (unsigned long long)gen, host_name(spool_host));
+	else if (deferred_cleanupp == NULL)
+		removal_pendingq_enqueue(dfc);
+	else {
+		dead_file_copy_mark_kept(dfc); /* prevent this from removed */
+		*deferred_cleanupp = dfc;
+	}
 
-	if (copy->valid && (e2 = db_filecopy_remove(inode->i_number,
-	    host_name(copy->host))) != GFARM_ERR_NO_ERROR)
+	if (valid && (e = db_filecopy_remove(inode->i_number,
+	    host_name(spool_host))) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000329,
 		    "db_filecopy_remove(%lld, %s): %s",
-		    (unsigned long long)inode->i_number, host_name(copy->host),
-		    gfarm_error_string(e2));
-	return (e != GFARM_ERR_NO_ERROR ? e : e2);
+		    (unsigned long long)inode->i_number, host_name(spool_host),
+		    gfarm_error_string(e));
+	return (dfc == NULL ? GFARM_ERR_NO_MEMORY : e);
+}
+
+gfarm_error_t
+inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t gen, int do_not_delete_last)
+{
+	struct file_copy **copyp, *copy, **foundp = NULL;
+	gfarm_error_t e;
+	int num_replica = 0;
+
+	if (gen == inode->i_gen) {
+		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
+		    copyp = &copy->host_next) {
+			if (copy->host == spool_host)
+				foundp = copyp;
+			if (copy->valid)
+				++num_replica;
+		}
+		if (foundp == NULL) {
+			gflog_debug(GFARM_MSG_1001770,
+				"replica to remove not found");
+			return (GFARM_ERR_NO_SUCH_OBJECT);
+		}
+		copy = *foundp;
+		if (do_not_delete_last && num_replica == 1 && copy->valid)
+			return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
+		*foundp = copy->host_next;
+		e = remove_replica_internal(inode, gen, copy->host,
+		    copy->valid, NULL);
+		free(copy);
+	} else {
+		e = remove_replica_internal(inode, gen, spool_host, 0, NULL);
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 inode_remove_replica(struct inode *inode, struct host *spool_host,
 	int do_not_delete_last)
 {
-	struct file_copy **copyp, *copy;
-	gfarm_error_t e;
-	int num_replica = 0;
-
-	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
-	    copyp = &copy->host_next) {
-		if (copy->host == spool_host) {
-			if (do_not_delete_last && num_replica == 0 &&
-			    copy->host_next == NULL)
-				return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
-			*copyp = copy->host_next;
-			break;
-		}
-		if (copy->valid)
-			++num_replica;
-	}
-	if (copy == NULL) {
-		gflog_debug(GFARM_MSG_1001770,
-			"replica to remove not found");
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-	}
-
-	e = remove_replica_internal(inode, copy);
-	free(copy);
-	return (GFARM_ERR_NO_ERROR);
+	return (inode_remove_replica_gen(inode, spool_host,
+	    inode_get_gen(inode), do_not_delete_last));
 }
 
 gfarm_error_t
 inode_prepare_to_replicate(struct inode *inode, struct user *user,
-	struct host *src, struct host *dst, gfarm_int32_t flags)
+	struct host *src, struct host *dst, gfarm_int32_t flags,
+	struct file_replicating **frp)
 {
 	gfarm_error_t e;
+	struct file_replicating *fr;
 
 	if ((flags & ~GFS_REPLICATE_FILE_FORCE) != 0)
 		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -2283,26 +2569,26 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY);
+	else if ((fr = file_replicating_new(inode, dst, NULL)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	else if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	return (inode_add_replica(inode, dst, 0));
+	*frp = fr;
+	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host)
+int
+inode_is_updated(struct inode *inode, struct gfarm_timespec *mtime)
 {
-	struct file_copy **copyp, *copy;
-	gfarm_error_t e;
+	struct inode_open_state *ios = inode->u.c.state;
 
-	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;) {
-		if (copy->host != spool_host) {
-			*copyp = copy->host_next;
-			e = remove_replica_internal(inode, copy);
-			free(copy);
-			continue;
-		}
-		copyp = &copy->host_next;
-	}
-	return (GFARM_ERR_NO_ERROR);
+	/*
+	 * ios->u.f.last_update is necessary,
+	 * becasuse i_mtimespec may be modified by GFM_PROTO_FUTIMES.
+	 */
+	return (ios != NULL &&
+	    gfarm_timespec_cmp(mtime, &ios->u.f.last_update) >= 0);
 }
 
 gfarm_error_t
@@ -2387,7 +2673,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	if (latest_only)
 		ndead = 0;
 	else
-		ndead = host_count_dead_copies_all(inode_get_number(inode),
+		ndead = dead_file_copy_count_by_inode(inode_get_number(inode),
 		    up_only);
 
 	n = nlatest + ndead;
@@ -2427,8 +2713,8 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 		}
 	}
 	if (e == GFARM_ERR_NO_ERROR && !latest_only)
-		e = host_dead_copies_info_all(inode_get_number(inode), up_only,
-		    &ndead, &hosts[i], &gens[i], &oflags[i]);
+		e = dead_file_copy_info_by_inode(inode_get_number(inode),
+		     up_only, &ndead, &hosts[i], &gens[i], &oflags[i]);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		while (--i >= 0)
@@ -2582,33 +2868,6 @@ file_copy_add_one(void *closure, gfarm_ino_t inum, char *hostname)
 	free(hostname);
 }
 
-/* The memory owner of `hostname' is changed to inode.c */
-void
-dead_file_copy_add_one(void *closure,
-	gfarm_ino_t inum, gfarm_uint64_t igen, char *hostname)
-{
-	gfarm_error_t e;
-	struct host *host = host_lookup(hostname);
-	char *funcname = "dead_file_copy_add_one";
-
-	if (host == NULL) {
-		gflog_error(GFARM_MSG_1000347,
-		    "%s: no host %s", funcname, hostname);
-	} else if ((e = host_remove_replica_enq(host,
-	    inum, igen)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000348,
-		    "%s: record dead replica: %s", funcname,
-		    gfarm_error_string(e));
-	} else {
-		e = db_deadfilecopy_remove(inum, igen, hostname);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1000349,
-			    "%s: db_deadfilecopy_remove: %s", funcname,
-			    gfarm_error_string(e));
-	}
-	free(hostname);
-}
-
 /* The memory owner of `entry_name' is changed to inode.c */
 void
 dir_entry_add_one(void *closure,
@@ -2714,17 +2973,6 @@ file_copy_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000361,
 		    "loading filecopy: %s", gfarm_error_string(e));
-}
-
-void
-dead_file_copy_init(void)
-{
-	gfarm_error_t e;
-
-	e = db_deadfilecopy_load(NULL, dead_file_copy_add_one);
-	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT)
-		gflog_error(GFARM_MSG_1000362,
-		    "loading deadfilecopy: %s", gfarm_error_string(e));
 }
 
 void

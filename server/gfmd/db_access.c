@@ -90,7 +90,7 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		/*
 		 * Because dbq_wait_to_finish() is only called while
 		 * giant_lock() is held, the dbq shouldn't be partial state.
-		 * So, we this shouldn't cause inconsistent metadata.
+		 * So, this doesn't cause metadata inconsistency .
 		 */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		cond_signal(&q->nonempty, diag, "nonempty");
@@ -713,6 +713,23 @@ db_inode_modify(const struct gfs_stat *st)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->inode_modify, i));
+}
+
+gfarm_error_t
+db_inode_gen_modify(gfarm_ino_t inum, gfarm_uint64_t gen)
+{
+	struct db_inode_uint64_modify_arg *arg;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'db_inode_uint64_modify_arg' failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	arg->inum = inum;
+	arg->uint64 = gen;
+	return (dbq_enter(&dbq,
+	    (dbq_entry_func_t)ops->inode_gen_modify, arg));
 }
 
 gfarm_error_t

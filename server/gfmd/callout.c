@@ -185,7 +185,8 @@ callout_schedule_common(struct callout *n, int microseconds)
 
 	/*
 	 * Since currently all callouts are scheduled with same interval
-	 * (for gfsd heartbeat), searching from the tail is most efficient.
+	 * (i.e. gfarm_metadb_heartbeat_interval), searching from the tail
+	 * is most efficient.
 	 * XXX If we use another interval for something, this implementation
 	 * should be changed to use buckets for efficiency.
 	 */
@@ -229,6 +230,19 @@ callout_reset(struct callout *c, int microseconds,
 	mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
+void
+callout_setfunc(struct callout *c,
+	struct thread_pool *thrpool, void *(*func)(void *), void *closure)
+{
+	struct callout_module *cm = &callout_module;
+
+	mutex_lock(&cm->mutex, module_name, "reset lock");
+	c->thrpool = thrpool;
+	c->func = func;
+	c->closure = closure;
+	mutex_unlock(&cm->mutex, module_name, "reset unlock");
+}
+
 int
 callout_stop(struct callout *c)
 {
@@ -250,6 +264,7 @@ callout_stop(struct callout *c)
 	return (expired);
 }
 
+#ifdef NOT_USED
 int
 callout_invoking(struct callout *c)
 {
@@ -271,3 +286,4 @@ callout_ack(struct callout *c)
 	c->state &= ~CALLOUT_INVOKING;
 	mutex_unlock(&cm->mutex, module_name, "ack unlock");
 }
+#endif /* NOT_USED */

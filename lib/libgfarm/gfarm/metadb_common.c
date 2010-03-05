@@ -44,14 +44,16 @@ const struct gfarm_base_generic_info_ops gfarm_base_host_info_ops = {
 	gfarm_base_host_info_validate,
 };
 
+/*
+ * see the comment in server/gfmd/host.c:host_enter()
+ * to see why this interface is necessary only for gfmd.
+ */
 void
-gfarm_host_info_free(
+gfarm_host_info_free_except_hostname(
 	struct gfarm_host_info *info)
 {
 	int i;
 
-	if (info->hostname != NULL)
-		free(info->hostname);
 	if (info->hostaliases != NULL) {
 		for (i = 0; i < info->nhostaliases; i++)
 			free(info->hostaliases[i]);
@@ -59,6 +61,15 @@ gfarm_host_info_free(
 	}
 	if (info->architecture != NULL)
 		free(info->architecture);
+}
+
+void
+gfarm_host_info_free(
+	struct gfarm_host_info *info)
+{
+	if (info->hostname != NULL)
+		free(info->hostname);
+	gfarm_host_info_free_except_hostname(info);
 }
 
 static void

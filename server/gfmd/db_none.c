@@ -387,6 +387,7 @@ const struct db_ops db_none_ops = {
 	gfarm_none_inode_stat_free,
 	gfarm_none_inode_int64_free,
 	gfarm_none_inode_int64_free,
+	gfarm_none_inode_int64_free,
 	gfarm_none_inode_int32_free,
 	gfarm_none_inode_string_free,
 	gfarm_none_inode_string_free,
