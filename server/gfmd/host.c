@@ -427,15 +427,50 @@ host_is_up(struct host *h)
 	return (up);
 }
 
+/*
+ * PREREQUISITE: host::back_channel_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static int
+host_is_unresponsive(struct host *host, gfarm_int64_t now, const char *diag)
+{
+	int unresponsive = 0;
+
+	if (!host->is_active || host->invalid)
+		;
+	else if (host->can_send)
+		host->busy_time = 0;
+	else if (host->busy_time != 0 &&
+	    now > host->busy_time + gfarm_metadb_heartbeat_interval) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "host %s: too long busy since %lld",
+		    host_name(host), (long long)host->busy_time);
+		host->is_active = 0;
+		unresponsive = 1;
+	}
+
+	return (unresponsive);
+}
+
 void
 host_peer_busy(struct host *host)
 {
+	int unresponsive = 0;
 	static const char diag[] = "host_peer_busy";
 	static const char back_channel_diag[] = "back_channel";
 
 	mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
-	host->busy_time = time(NULL);
+	if (!host->is_active || host->invalid)
+		;
+	else if (host->busy_time == 0)
+		host->busy_time = time(NULL);
+	else
+		unresponsive = host_is_unresponsive(host, time(NULL), diag);
 	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (unresponsive)
+		host_disconnect_request(host);
 }
 
 void
@@ -460,24 +495,15 @@ host_check_busy(struct host *host, gfarm_int64_t now)
 
 	if (!host->is_active || host->invalid)
 		busy = 1;
-	else if (host->can_send)
-		host->busy_time = 0;
-	else if (host->busy_time != 0 &&
-	    now > host->busy_time + gfarm_metadb_heartbeat_interval) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "host %s: too long busy since %lld",
-		    host_name(host), (long long)host->busy_time);
-		host->is_active = 0;
-		busy = 1;
-		unresponsive = 1;
-	}
+	else
+		unresponsive = host_is_unresponsive(host, now, diag);
 
 	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (unresponsive)
 		host_disconnect_request(host);
 
-	return (busy);
+	return (busy || unresponsive);
 }
 
 struct callout *
@@ -504,6 +530,7 @@ host_sender_trylock(struct host *host, struct peer **peerp)
 		e = GFARM_ERR_CONNECTION_ABORTED;
 	} else if (host->can_send) {
 		host->can_send = 0;
+		host->busy_time = 0;
 		peer_add_ref(host->peer);
 		*peerp = host->peer;
 		e = GFARM_ERR_NO_ERROR;
@@ -532,6 +559,7 @@ host_sender_lock(struct host *host, struct peer **peerp)
 		}
 		if (host->can_send) {
 			host->can_send = 0;
+			host->busy_time = 0;
 			peer_add_ref(host->peer);
 			*peerp = host->peer;
 			e = GFARM_ERR_NO_ERROR;
@@ -559,6 +587,7 @@ host_sender_unlock(struct host *host)
 	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	host->can_send = 1;
+	host->busy_time = 0;
 	peer_del_ref(host->peer);
 	cond_signal(&host->ready_to_send, diag, "ready_to_send");
 
