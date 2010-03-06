@@ -940,7 +940,9 @@ sigs_set(sigset_t *sigs)
 {
 	sigemptyset(sigs);
 	sigaddset(sigs, SIGHUP);
+#ifdef __NetBSD__ /* NetBSD 4 delivers SIGINT to gfmd even under gdb */
 	if (!debug_mode)
+#endif
 		sigaddset(sigs, SIGINT);
 	sigaddset(sigs, SIGTERM);
 #ifdef SIGINFO
