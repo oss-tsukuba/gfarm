@@ -313,7 +313,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 }
 
 /* XXX FIXME missing hostaliases */
-gfarm_error_t
+static gfarm_error_t
 host_remove(const char *hostname)
 {
 	struct host *h = host_lookup(hostname);
@@ -446,7 +446,6 @@ host_is_unresponsive(struct host *host, gfarm_int64_t now, const char *diag)
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "host %s: too long busy since %lld",
 		    host_name(host), (long long)host->busy_time);
-		host->is_active = 0;
 		unresponsive = 1;
 	}
 
@@ -746,19 +745,21 @@ host_disconnect(struct host *h)
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	peer_record_protocol_error(h->peer);
+	if (h->is_active) {
+		peer_record_protocol_error(h->peer);
 
-	if (h->can_send && h->can_receive) {
-		/*
-		 * NOTE: this shouldn't need db_begin()/db_end()
-		 * at least for now,
-		 * because only externalized descriptor needs the calls.
-		 */
-		peer_free(h->peer);
-	} else
-		peer_free_request(h->peer);
+		if (h->can_send && h->can_receive) {
+			/*
+			 * NOTE: this shouldn't need db_begin()/db_end()
+			 * at least for now,
+			 * because only externalized descriptor needs the calls.
+			 */
+			peer_free(h->peer);
+		} else
+			peer_free_request(h->peer);
 
-	host_peer_unset(h);
+		host_peer_unset(h);
+	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 #else
@@ -774,11 +775,13 @@ host_disconnect_request(struct host *h)
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	peer_record_protocol_error(h->peer);
+	if (h->is_active) {
+		peer_record_protocol_error(h->peer);
 
-	peer_free_request(h->peer);
+		peer_free_request(h->peer);
 
-	host_peer_unset(h);
+		host_peer_unset(h);
+	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 }

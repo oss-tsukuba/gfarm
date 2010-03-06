@@ -246,8 +246,6 @@ gfs_client_status_result(void *arg, size_t size)
 	} else {
 		host_status_disable(host);
 	}
-	callout_schedule(host_status_callout(host),
-	    gfarm_metadb_heartbeat_interval * 1000000);
 	return (e);
 }
 
@@ -264,7 +262,17 @@ gfs_client_status_request(void *arg)
 		    "back_channel(%s) disconnected: no status",
 		    host_name(host));
 		host_disconnect_request(host);
+		return (NULL);
 	}
+
+	/*
+	 * schedule here instead of the end of gfs_client_status_result(),
+	 * because gfs_client_send_request() may block, and we should
+	 * detect it at next call of gfs_client_status_request().
+	 */
+	callout_schedule(host_status_callout(host),
+	    gfarm_metadb_heartbeat_interval * 1000000);
+
 	e = gfs_client_send_request(host, diag,
 	    gfs_client_status_result, host, GFS_PROTO_STATUS, "");
 	if (e == GFARM_ERR_DEVICE_BUSY) {

@@ -229,3 +229,12 @@ doc/internal/png/gfmd-thread-dependency.png
 ・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
   ものがあるが、resume が callback で実現されているため、スレッドプー
   ル資源待ちのデッドロックにはならない。
+
+・ホスト down 対策
+  - ・gfs_client_status_request() で、前回からまだ答がなかった
+    場合、すなわち host_status_reply_is_waiting() が成り立っていた
+    時には、コネクションを切断する。(down 状態となる)
+  - 送信処理の時に host_sender_try_lock() で送信可能かどうかを
+    確認し、送信が滞留していた場合には、host_peer_busy() で
+    コネクションを切断する
+
