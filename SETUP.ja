@@ -30,7 +30,7 @@ Gfarm ファイルシステムの導入にあたり，まず，メタデータサーバを設定し，
 =========================
 
 メタデータサーバの設定
- # config-gfarm -t -A <global_admin_name>
+ # config-gfarm -A <admin_name>
  # useradd -c "Gfarm gfsd" _gfarmfs
  # su _gfarmfs
  $ gfkey -f -p 31536000
@@ -49,8 +49,10 @@ Gfarm ファイルシステムの導入にあたり，まず，メタデータサーバを設定し，
  メタデータサーバ，全ファイルシステムノード，クライアントに
  共有鍵 ~/.gfarm_shared_key をコピー
 
-ユーザ登録
- $ gfuser -c global_username realname homedir gsi_dn
+ユーザ登録とホームディレクトリ作成
+ $ gfuser -c username realname homedir gsi_dn
+ $ gfmkdir homedir
+ $ gfchown username homedir
 
 管理者権限ユーザ登録
  $ gfgroup -m gfarmadm user1 user2 ...
@@ -454,7 +456,7 @@ Gfarm ファイルシステムでは，ファイルはどこかのファイルシステムノードに
 ファイル複製を作成するためには gfrep コマンドが準備されています．例えば，
 もう一つファイル複製を作成したい場合は，以下のようにします．
 
-	% gfrep -s linux-1.example.com -d linux-2.example.com .bashrc
+	% gfrep -N 2 .bashrc
 	% gfwhere .bashrc
 	linux-1.example.com linux-2.example.com
 
