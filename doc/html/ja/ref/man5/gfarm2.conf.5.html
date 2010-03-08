@@ -652,7 +652,7 @@ CLASS="PARAMETER"
 ><P
 >есе┐е╟б╝е┐е╡б╝е╨gfmdд╬е╕ече╓енехб╝д╬енехб╝─╣дЄ╗╪─ъд╖д▐д╣бг
 ░ь┼┘д╦└▄┬│д╣ды║╟┬чепещедевеєе╚д╬┐Їдпдщддд╦└▀─ъд╣дыд╚╕·▓╠┼кд╟д╣бг
-е╟е╒ейеые╚├═д╧160д╟д╣бг</P
+е╟е╒ейеые╚├═д╧16000д╟д╣бг</P
 ><P
 >д│д╬╩╕д╧gfmd.confд╬д▀д╟═н╕·д╟двдъбвgfarm2.confд╟д╧╠╡╗ыд╡дьд▐д╣бг</P
 ><P
@@ -677,7 +677,9 @@ CLASS="PARAMETER"
 д╦┬╨д╖╞░║ю│╬╟здЄ╣╘дже╧б╝е╚е╙б╝е╚д╬┤╓│╓дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
 е╟е╒ейеые╚├═д╧180╔├д╟д╣бг</P
 ><P
->д│д╬╩╕д╧gfmd.confд╬д▀д╟═н╕·д╟двдъбвgfarm2.confд╟д╧╠╡╗ыд╡дьд▐д╣бг</P
+>Gfarm-2.3.0 д▐д╟д╧д│д╬╩╕д╧gfmd.confд╬д▀д╟═н╕·д╟двдъбвgfarm2.confд╟д╧
+╠╡╗ыд╡дьд╞ддд▐д╖д┐дмбвGfarm-2.4.0 ░╩╣▀д╧ gfsd дтд│д╬е╤ещесб╝е┐дЄ═°═╤д╖бв
+gfmd ─ф╗▀дЄ╕б├╬д╣дыд┐дсбвgfarm2.conf д╟╗╪─ъд╣ды╔м═╫дмдвдъд▐д╣бг</P
 ><P
 >╬у:</P
 ><P
@@ -1285,6 +1287,99 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>╔├┐Ї</I
+></TT
+></DT
+><DD
+><P
+>gfarmещеде╓ещеъдм╞т╔Ї┼кд╦╩▌╗¤д╖д╞дддыбве╒ебедеые╖е╣е╞ере╬б╝е╔
+д╬е╣е▒е╕ехб╝еъеєе░╜ш═¤д╦┤╪дяды╛Ё╩єбвд╣д╩дяд┴еэб╝е╔еве┘еьб╝е╕бв
+е╟еге╣еп╢їдн═╞╬╠бв╟з╛┌дм─╠дыдл╚▌дл┼∙д╬енеуе├е╖ехд╬═н╕·┤№╕┬дЄ╔├┐Їд╟╗╪─ъд╖д▐д╣бг
+─ф╗▀д╖д╞ддд┐е╒ебедеые╖е╣е╞ере╬б╝е╔дм╔№│шд╖д┐дшджд╩╛ь╣чбвд│д╬┤№╕┬дм
+└┌дьдыд▐д╟д╧бвд╜д╬е╬б╝е╔дме╣е▒е╕ехб╝еъеєе░д╡дьд╩ддд│д╚дмдвдъд▐д╣бг
+е╟е╒ейеые╚д╧600╔├д╣д╩дяд┴10╩мд╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_idle_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>CPU╔щ▓┘</I
+></TT
+></DT
+><DD
+><P
+>е╒ебедеые╖е╣е╞ере╬б╝е╔д╬е╣е▒е╕ехб╝еъеєе░╗■д╦бв
+CPU╔щ▓┘дм─уддд╚д▀д╩д╡дьдыCPU╔щ▓┘дЄ╗╪─ъд╖д▐д╣бг
+д│д│д╟╗╪─ъд╡дьдыCPU╔щ▓┘дшдъ─уддCPU╔щ▓┘д╬е╒ебедеые╖е╣е╞ере╬б╝е╔дм
+д▐д║д╧е╣е▒е╕ехб╝еы┬╨╛▌д╚д╩дъд▐д╣бг
+е╟е╒ейеые╚├═д╧0.1д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_idle_load_thresh&nbsp;0.1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_busy_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>CPU╔щ▓┘</I
+></TT
+></DT
+><DD
+><P
+>е╒ебедеые╖е╣е╞ере╬б╝е╔д╬е╣е▒е╕ехб╝еъеєе░╗■д╦бв
+CPU╔щ▓┘дм╣тддд╚д▀д╩д╡дьдыCPU╔щ▓┘дЄ╗╪─ъд╖д▐д╣бг
+д│д│д╟╗╪─ъд╡дьдыCPU╔щ▓┘дшдъ╣тддCPU╔щ▓┘д╬е╒ебедеые╖е╣е╞ере╬б╝е╔д╧
+┼Ў╜ще╣е▒е╕ехб╝еы┬╨╛▌д╚д╩дъд▐д╗дєбг
+е╟е╒ейеые╚├═д╧0.5д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_busy_load_thresh&nbsp;0.5</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_virtual_load</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>CPU╔щ▓┘</I
+></TT
+></DT
+><DD
+><P
+>е╒ебедеые╖е╣е╞ере╬б╝е╔дм┴к┬Єд╡дьд┐д╚днбв
+CPU╔щ▓┘д╬епещедевеєе╚енеуе├е╖ехд╦д│д│д╟╗╪─ъд╡дьдыCPU╔щ▓┘дм▓├дидщдьд▐д╣бг
+д│дьд╦дшдъбв
+░ь┼┘е╣е▒е╕ехб╝еыд╡дьд┐е╒ебедеые╖е╣е╞ере╬б╝е╔дм▓┐┼┘дте╣е▒е╕ехб╝еыд╡дьдыд│д╚дЄ╦╔ддд╟ддд▐д╣бг
+е╟е╒ейеые╚├═д╧0.3д╟д╣бг</P
+><P
+>╬у:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_virtual_load&nbsp;0.3</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >minimum_free_disk_space</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1463,6 +1558,9 @@ CLASS="LITERALLAYOUT"
 		аа&#60;local_user_map_statement&#62;&nbsp;|<br>
 		аа&#60;local_group_map_statement&#62;&nbsp;|<br>
 		аа&#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		аа&#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
+		аа&#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
+		аа&#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
 		аа&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		аа&#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		аа&#60;attr_cache_limit_statement&#62;&nbsp;|<br>
@@ -1520,6 +1618,9 @@ CLASS="LITERALLAYOUT"
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		аа"minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>

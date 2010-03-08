@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "06 February 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "08 March 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -270,7 +270,7 @@ sharedsecret利用時には、この指定は単に無視されます。
 \fBmetadb_server_job_queue_length \fIキュー長\fB\fR
 メタデータサーバgfmdのジョブキューのキュー長を指定します。
 一度に接続する最大クライアントの数くらいに設定すると効果的です。
-デフォルト値は160です。
+デフォルト値は16000です。
 
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
 
@@ -285,7 +285,10 @@ sharedsecret利用時には、この指定は単に無視されます。
 に対し動作確認を行うハートビートの間隔を秒数で指定します。
 デフォルト値は180秒です。
 
-この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+Gfarm-2.3.0まではこの文はgfmd.confのみで有効であり、gfarm2.confでは
+無視されていましたが、Gfarm-2.4.0以降はgfsdもこのパラメータを利用し
+gfmd停止を検知するため、
+gfarm2.confとgfmd.confの両方で指定する必要があります。
 
 例:
 
@@ -573,6 +576,59 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 グループマップファイルは、グローバルグループ名と
 ローカルグループ名を、空白で区切って各行に記述します。
 .TP
+\fBschedule_cache_timeout \fI秒数\fB\fR
+gfarmライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+
+例:
+
+.nf
+	schedule_cache_timeout 60
+.fi
+.TP
+\fBschedule_idle_load_thresh \fICPU負荷\fB\fR
+ファイルシステムノードのスケジューリング時に、
+CPU負荷が低いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より低いCPU負荷のファイルシステムノードが
+まずはスケジュール対象となります。
+デフォルト値は0.1です。
+
+例:
+
+.nf
+	schedule_idle_load_thresh 0.1
+.fi
+.TP
+\fBschedule_busy_load_thresh \fICPU負荷\fB\fR
+ファイルシステムノードのスケジューリング時に、
+CPU負荷が高いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは
+当初スケジュール対象となりません。
+デフォルト値は0.5です。
+
+例:
+
+.nf
+	schedule_busy_load_thresh 0.5
+.fi
+.TP
+\fBschedule_virtual_load \fICPU負荷\fB\fR
+ファイルシステムノードが選択されたとき、
+CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
+これにより、
+一度スケジュールされたファイルシステムノードが何度もスケジュールされることを防いでいます。
+デフォルト値は0.3です。
+
+例:
+
+.nf
+	schedule_virtual_load 0.3
+.fi
+.TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
 ファイルシステムノードで必要な最小限度のディスク空き容量を指定
 します。このサイズ以下の空き容量しかないファイルシステムノードは、
@@ -684,6 +740,9 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<local_user_map_statement> |
 		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
+		\~\~<schedule_idle_load_thresh_statement> |
+		\~\~<schedule_busy_load_thresh_statement> |
+		\~\~<schedule_virtual_load_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<attr_cache_limit_statement> |
@@ -741,6 +800,9 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<local_user_map_statement> ::= "local_user_map" <pathname>
 	<local_group_map_statement> ::= "local_group_map" <pathname>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
+	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
+	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>

@@ -680,7 +680,7 @@ CLASS="PARAMETER"
 ><P
 >This directive specifies the length of job queue in the gfmd.
 It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 160.</P
+access the Gfarm file system at the same time.  Default is 16000.</P
 ><P
 >This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
 ><P
@@ -704,7 +704,10 @@ CLASS="PARAMETER"
 >This directive specifies the interval of heartbeat in seconds
 for gfmd to check availability of each gfsd.  Default is 180 seconds.</P
 ><P
->This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+>Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
+this parameter to detect whether gfmd is down or not, this parameter
+has to be specified in gfarm2.conf.</P
 ><P
 >For example,</P
 ><P
@@ -1441,6 +1444,96 @@ name, and the second field is a local group name.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the time (in seconds) until the cache used for
+filesystem node scheduling expires.
+The cache holds information on each filesystem node, e.g. load average,
+disk free space, and whether authentication succeeds or not.
+The default time is 600 seconds, i.e. ten minutes.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_idle_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the threshold of CPU load average to be
+considered idle.  The file system nodes whose CPU load average
+is equal to or below the specified CPU load average are to be
+scheduled at first.
+The default load average is 0.1.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_idle_load_thresh&nbsp;0.1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_busy_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the threshold of CPU load average to be
+considered busy.  The file system nodes whose CPU load average
+is above the specified CPU load average are to be scheduled lastly.
+The default load average is 0.5.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_busy_load_thresh&nbsp;0.5</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_virtual_load</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the virtual CPU load average.  The
+virtual CPU load is added when the host is scheduled to avoid
+scheduling the same host multiple times.  The default load average is
+0.3.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_virtual_load&nbsp;0.3</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >minimum_free_disk_space</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1621,6 +1714,9 @@ CLASS="LITERALLAYOUT"
 		  &#60;local_user_map_statement&#62;&nbsp;|<br>
 		  &#60;local_group_map_statement&#62;&nbsp;|<br>
 		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
+		  &#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
+		  &#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
@@ -1678,6 +1774,9 @@ CLASS="LITERALLAYOUT"
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;pathname&#62;<br>
 	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>

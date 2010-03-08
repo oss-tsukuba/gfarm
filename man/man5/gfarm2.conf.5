@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "06 February 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "08 March 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -292,7 +292,7 @@ For example,
 \fBmetadb_server_job_queue_length \fIlength\fB\fR
 This directive specifies the length of job queue in the gfmd.
 It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 160.
+access the Gfarm file system at the same time.  Default is 16000.
 
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 
@@ -306,7 +306,10 @@ For example,
 This directive specifies the interval of heartbeat in seconds
 for gfmd to check availability of each gfsd.  Default is 180 seconds.
 
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
+this parameter to detect whether gfmd is down or not, this parameter
+has to be specified in both gfarm2.conf and gfmd.conf.
 
 For example,
 
@@ -622,6 +625,56 @@ Each line of the \fIgroup-map-file\fR consists
 of two fields separated by spaces; the first field is a global group
 name, and the second field is a local group name.
 .TP
+\fBschedule_cache_timeout \fIseconds\fB\fR
+This directive specifies the time (in seconds) until the cache used for
+filesystem node scheduling expires.
+The cache holds information on each filesystem node, e.g. load average,
+disk free space, and whether authentication succeeds or not.
+The default time is 600 seconds, i.e. ten minutes.
+
+For example,
+
+.nf
+	schedule_cache_timeout 60
+.fi
+.TP
+\fBschedule_idle_load_thresh \fIload-average\fB\fR
+This directive specifies the threshold of CPU load average to be
+considered idle.  The file system nodes whose CPU load average
+is equal to or below the specified CPU load average are to be
+scheduled at first.
+The default load average is 0.1.
+
+For example,
+
+.nf
+	schedule_idle_load_thresh 0.1
+.fi
+.TP
+\fBschedule_busy_load_thresh \fIload-average\fB\fR
+This directive specifies the threshold of CPU load average to be
+considered busy.  The file system nodes whose CPU load average
+is above the specified CPU load average are to be scheduled lastly.
+The default load average is 0.5.
+
+For example,
+
+.nf
+	schedule_busy_load_thresh 0.5
+.fi
+.TP
+\fBschedule_virtual_load \fIload-average\fB\fR
+This directive specifies the virtual CPU load average.  The
+virtual CPU load is added when the host is scheduled to avoid
+scheduling the same host multiple times.  The default load average is
+0.3.
+
+For example,
+
+.nf
+	schedule_virtual_load 0.3
+.fi
+.TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
 This directive specifies free disk space (in bytes) which is
 required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
@@ -735,6 +788,9 @@ notation.
 		\~\~<local_user_map_statement> |
 		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
+		\~\~<schedule_idle_load_thresh_statement> |
+		\~\~<schedule_busy_load_thresh_statement> |
+		\~\~<schedule_virtual_load_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<attr_cache_limit_statement> |
@@ -792,6 +848,9 @@ notation.
 	<local_user_map_statement> ::= "local_user_map" <pathname>
 	<local_group_map_statement> ::= "local_group_map" <pathname>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
+	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
+	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
