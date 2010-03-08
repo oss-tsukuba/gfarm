@@ -427,7 +427,10 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 for gfmd to check availability of each gfsd.  Default is 180 seconds.
 </para>
 <para>
-This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
+this parameter to detect whether gfmd is down or not, this parameter
+has to be specified in gfarm2.conf.
 </para>
 <para>For example,</para>
 <literallayout>

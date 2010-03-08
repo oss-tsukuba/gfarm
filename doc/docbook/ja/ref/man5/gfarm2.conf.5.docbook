@@ -419,7 +419,9 @@ GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
 デフォルト値は180秒です。
 </para>
 <para>
-この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+Gfarm-2.3.0 まではこの文はgfmd.confのみで有効であり、gfarm2.confでは
+無視されていましたが、Gfarm-2.4.0 以降は gfsd もこのパラメータを利用し、
+gfmd 停止を検知するため、gfarm2.conf で指定する必要があります。
 </para>
 <para>例:</para>
 <literallayout>
