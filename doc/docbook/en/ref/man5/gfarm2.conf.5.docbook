@@ -887,7 +887,6 @@ name, and the second field is a local group name.</para>
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
@@ -904,6 +903,53 @@ The default time is 600 seconds, i.e. ten minutes.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>schedule_idle_load_thresh</token> <parameter>load-average</parameter></term>
+<listitem>
+<para>This directive specifies the threshold of CPU load average to be
+considered idle.  The file system nodes whose CPU load average
+is equal to or below the specified CPU load average are to be
+scheduled at first.
+The default load average is 0.1.
+</para>
+<para>For example,</para>
+<literallayout>
+	schedule_idle_load_thresh 0.1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_busy_load_thresh</token> <parameter>load-average</parameter></term>
+<listitem>
+<para>This directive specifies the threshold of CPU load average to be
+considered busy.  The file system nodes whose CPU load average
+is above the specified CPU load average are to be scheduled lastly.
+The default load average is 0.5.
+</para>
+<para>For example,</para>
+<literallayout>
+	schedule_busy_load_thresh 0.5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_virtual_load</token> <parameter>load-average</parameter></term>
+<listitem>
+<para>This directive specifies the virtual CPU load average.  The
+virtual CPU load is added when the host is scheduled to avoid
+scheduling the same host multiple times.  The default load average is
+0.3.
+</para>
+<para>For example,</para>
+<literallayout>
+	schedule_virtual_load 0.3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
 <varlistentry>
 <term><token>write_local_priority</token> <parameter>validity</parameter></term>
 <listitem>
@@ -1103,6 +1149,9 @@ notation.</para>
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
@@ -1174,6 +1223,9 @@ notation.</para>
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;schedule_idle_load_thresh_statement&gt; ::= "schedule_idle_load_thresh" &lt;load&gt;
+	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
+	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
 <!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=

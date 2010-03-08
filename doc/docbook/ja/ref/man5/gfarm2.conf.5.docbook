@@ -850,7 +850,6 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
@@ -868,6 +867,55 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>schedule_idle_load_thresh</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が低いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より低いCPU負荷のファイルシステムノードが
+まずはスケジュール対象となります。
+デフォルト値は0.1です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_idle_load_thresh 0.1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_busy_load_thresh</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が高いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは
+当初スケジュール対象となりません。
+デフォルト値は0.5です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_busy_load_thresh 0.5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_virtual_load</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードが選択されたとき、
+CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
+これにより、
+一度スケジュールされたファイルシステムノードが何度もスケジュールされることを防いでいます。
+デフォルト値は0.3です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_virtual_load 0.3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
 <varlistentry>
 <term><token>write_local_priority</token> <parameter>有効性</parameter></term>
 <listitem>
@@ -1063,6 +1111,9 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
@@ -1134,6 +1185,9 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;schedule_idle_load_thresh_statement&gt; ::= "schedule_idle_load_thresh" &lt;load&gt;
+	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
+	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
 <!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
