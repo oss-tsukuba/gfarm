@@ -1639,9 +1639,12 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 	gfarm_error_t e, e_save;
 	struct host *h = peer_get_host(peer);
 
-	/* give the top priority to the local host if it has enough space */
+	/*
+	 * give the top priority to the local host if it has enough space
+	 * Note that disk_avail is reported in KiByte.
+	 */
 	if (h != NULL && host_is_up(h) &&
-	    h->status.disk_avail > gfarm_get_minimum_free_disk_space()) {
+	    h->status.disk_avail * 1024 > gfarm_get_minimum_free_disk_space()) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
