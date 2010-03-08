@@ -310,7 +310,7 @@ user_add_one(void *closure, struct gfarm_user_info *ui)
 		    "user_add_one: %s", gfarm_error_string(e));
 }
 
-void
+static void
 create_user(const char *username, const char *gsi_dn)
 {
 	gfarm_error_t e;
