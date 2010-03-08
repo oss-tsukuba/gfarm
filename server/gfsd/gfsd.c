@@ -3671,12 +3671,13 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 }
 
 
-static void
+static int
 watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
 	fd_set fds; /* XXX select FD_SETSIZE */
 	struct ongoing_replication *rep, **prev;
 	int nfound, max_fd;
+	struct timeval timeout;
 
 	for (;;) {
 		FD_ZERO(&fds);
@@ -3688,9 +3689,14 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 				max_fd = rep->pipe_fd;
 		}
 
+		timeout.tv_sec = gfarm_metadb_heartbeat_interval * 2;
+		timeout.tv_usec = 0;
+
 		nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
-		if (nfound <= 0) {
-			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
+		if (nfound == 0)
+			return (0);
+		if (nfound < 0) {
+			if (errno == EINTR || errno == EAGAIN)
 				continue;
 			fatal_errno(GFARM_MSG_1002194, "back channel select");
 		}
@@ -3705,7 +3711,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			}
 		}
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
-			return;
+			return (1);
 	}
 }
 
@@ -3749,8 +3755,13 @@ back_channel_server(void)
 
 		gflog_debug(GFARM_MSG_1000563, "back channel mode");
 		for (;;) {
-			if (!gfp_xdr_recv_is_ready(conn))
-				watch_fds(conn, async);
+			if (!gfp_xdr_recv_is_ready(conn)) {
+				if (!watch_fds(conn, async)) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "back channel: gfmd is down");
+					break;
+				}
+			}
 
 			e = gfp_xdr_recv_async_header(conn, 0,
 			    &type, &xid, &size);
