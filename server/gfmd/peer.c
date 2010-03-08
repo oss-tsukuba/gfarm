@@ -331,9 +331,20 @@ peer_closer(void *arg)
 void
 peer_free_request(struct peer *peer)
 {
+	int fd = peer_get_fd(peer), rv;
 	static const char diag[] = "peer_free_request";
 
 	mutex_lock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+
+	/*
+	 * wake up threads which may be sleeping at read() or write(), because
+	 * they may be holding host_sender_lock() or host_receiver_lock(), but
+	 * without closing the descriptor, because that leads race condition.
+	 */
+	rv = shutdown(fd, SHUT_RDWR);
+	if (rv == -1)
+		gflog_warning(GFARM_MSG_UNFIXED, 
+		    "back_channel: shutdown(%d): %s", fd, strerror(errno));
 
 	*peer_closing_queue.tail = peer;
 	peer->next_close = NULL;
