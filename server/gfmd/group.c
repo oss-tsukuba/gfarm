@@ -44,7 +44,7 @@ grpassign_add(struct user *u, struct group *g)
 	GFARM_MALLOC(ga);
 	if (ga == NULL) {
 		gflog_debug(GFARM_MSG_1001514,
-			"allocation of group_assignment failed");
+		    "memory allocation of group_assignment failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -127,7 +127,7 @@ group_enter(char *groupname, struct group **gpp)
 			return (GFARM_ERR_NO_ERROR);
 		} else {
 			gflog_debug(GFARM_MSG_1001515,
-				"group already exists");
+			    "\"%s\" group already exists", group_name(g));
 			return (GFARM_ERR_ALREADY_EXISTS);
 		}
 	}
@@ -135,7 +135,7 @@ group_enter(char *groupname, struct group **gpp)
 	GFARM_MALLOC(g);
 	if (g == NULL) {
 		gflog_debug(GFARM_MSG_1001516,
-			"allocation of group failed");
+		    "memory allocation of group failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	g->groupname = groupname;
@@ -146,13 +146,13 @@ group_enter(char *groupname, struct group **gpp)
 	if (entry == NULL) {
 		free(g);
 		gflog_debug(GFARM_MSG_1001517,
-			"gfarm_hash_enter() failed");
+		    "gfarm_hash_enter() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if (!created) {
-		free(g);
 		gflog_debug(GFARM_MSG_1001518,
-			"group entry exists");
+		    "\"%s\" group already exists", group_name(g));
+		free(g);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	quota_data_init(&g->q);
@@ -175,13 +175,13 @@ group_remove(const char *groupname)
 	    &groupname, sizeof(groupname));
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_1001519,
-			"selected entry not exist");
+		    "\"%s\" group does not exist", groupname);
 		return (GFARM_ERR_NO_SUCH_GROUP);
 	}
 	g = *(struct group **)gfarm_hash_entry_data(entry);
 	if (group_is_invalidated(g)) {
 		gflog_debug(GFARM_MSG_1001520,
-			"group is invalidated");
+		    "\"%s\" group is invalidated", groupname);
 		return (GFARM_ERR_NO_SUCH_GROUP);
 	}
 	quota_group_remove(g);
@@ -282,17 +282,18 @@ group_add_user(struct group *g, const char *username)
 
 	if (u == NULL || user_is_invalidated(u)) {
 		gflog_debug(GFARM_MSG_1001521,
-			"user is NULL or not exists");
+		    "\"%s\" does not exist", username);
 		return (GFARM_ERR_NO_SUCH_USER);
 	}
 	if (g == NULL || group_is_invalidated(g)) {
 		gflog_debug(GFARM_MSG_1001522,
-			"group is NULL or not exists");
+		    "group is invalid or does not exist");
 		return (GFARM_ERR_NO_SUCH_GROUP);
 	}
 	if (user_in_group(u, g)) {
 		gflog_debug(GFARM_MSG_1001523,
-			"user is already in group");
+		    "\"%s\" is already a member in \"%s\"",
+		    username, group_name(g));
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	return (grpassign_add(u, g));

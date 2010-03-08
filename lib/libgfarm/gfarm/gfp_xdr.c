@@ -633,7 +633,7 @@ gfp_xdr_vrecv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 
 		break;
 	}
-	if (sizep != NULL) 
+	if (sizep != NULL)
 		*sizep = size;
 	*formatp = format;
 	*eofp = 0;
@@ -786,7 +786,7 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
  *	*sizep == 0
  */
 gfarm_error_t
-gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
+gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
 	gfarm_error_t e;
@@ -799,8 +799,7 @@ gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn,	int just, size_t *sizep,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001010,
 			"receiving response (%d) failed: %s",
-			just,
-			gfarm_error_string(e));
+			just, gfarm_error_string(e));
 		return (e);
 	}
 	if (eof) { /* rpc status missing */
