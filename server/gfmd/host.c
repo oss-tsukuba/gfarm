@@ -1146,6 +1146,8 @@ gfm_server_host_info_get_common(struct peer *peer,
 			i++;
 		}
 	}
+	if (match != NULL)
+		free(match);
 
 	giant_unlock();
 	return (e2);
