@@ -638,12 +638,12 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		/* abandon `e' */
 
 		if (do_replication) {
-			fr = file_replicating_new(inode, copy->host,
-			    deferred_cleanup);
-			if (fr == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "inode_remove_every_other_replicas: "
-				    "no memory");
+			e = file_replicating_new(inode, copy->host,
+			    deferred_cleanup, &fr);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "replication before removal: %s", 
+				    gfarm_error_string(e));
 			} else if ((e = async_back_channel_replication_request(
 			    host_name(spool_host), host_port(spool_host),
 			    copy->host, inode->i_number, inode->i_gen,
@@ -2248,21 +2248,24 @@ gfarm_error_t (*inode_schedule_file_reply)(struct inode *, struct peer *,
 	int, int, const char *) =
 	inode_schedule_file_reply_default;
 
-struct file_replicating *
+gfarm_error_t
 file_replicating_new(struct inode *inode, struct host *dst,
-	struct dead_file_copy *deferred_cleanup)
+	struct dead_file_copy *deferred_cleanup,
+	struct file_replicating **frp)
 {
 	struct file_replicating *fr;
 	struct inode_replicating_state *irs = inode->u.c.s.f.rstate;
 
+	if (!host_is_disk_available(dst))
+		return (GFARM_ERR_NO_SPACE);
 	fr = host_replicating_new(dst);
 	if (fr == NULL)
-		return (NULL);
+		return (GFARM_ERR_NO_MEMORY);
 	if (irs == NULL) {
 		GFARM_MALLOC(irs);
 		if (irs == NULL) {
 			host_replicating_free(fr);
-			return (NULL);
+			return (GFARM_ERR_NO_MEMORY);
 		}
 		/* make circular list `replicating_hosts' empty */
 		irs->replicating_hosts.prev_host =
@@ -2279,7 +2282,8 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	fr->igen = inode_get_gen(inode);
 	fr->cleanup = deferred_cleanup;
 
-	return (fr);
+	*frp = fr;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -2569,8 +2573,9 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY);
-	else if ((fr = file_replicating_new(inode, dst, NULL)) == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+	else if ((e = file_replicating_new(inode, dst, NULL, &fr)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
 	else if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
 

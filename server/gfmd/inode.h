@@ -125,8 +125,9 @@ extern gfarm_error_t (*inode_schedule_file_reply)(struct inode *,
 	struct peer *, int, int, const char *);
 
 struct file_replicating;
-struct file_replicating *file_replicating_new(struct inode *,
-	struct host *, struct dead_file_copy *);
+gfarm_error_t file_replicating_new(
+	struct inode *, struct host *, struct dead_file_copy *,
+	struct file_replicating **);
 void file_replicating_free(struct file_replicating *);
 gfarm_int64_t file_replicating_get_gen(struct file_replicating *);
 gfarm_error_t inode_replicated(struct file_replicating *,
