@@ -15,15 +15,17 @@ static void
 usage(void)
 {
 	fprintf(stderr, "Usage: %s [-h hostname] file...\n", program_name);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	int i, c, status = 0;
+	int i, n, c, status = 0;
 	char *host = NULL;
+	gfarm_stringlist paths;
+	gfs_glob_t types;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -31,7 +33,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	while ((c = getopt(argc, argv, "h:?")) != -1) {
@@ -49,17 +51,37 @@ main(int argc, char **argv)
 	if (argc <= 0)
 		usage();
 
-	for (i = 0; i < argc; i++) {
+	e = gfarm_stringlist_init(&paths);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(EXIT_FAILURE);
+	}
+	e = gfs_glob_init(&types);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", program_name,
+		    gfarm_error_string(e));
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < argc; i++)
+		gfs_glob(argv[i], &paths, &types);
+	gfs_glob_free(&types);
+
+	n = gfarm_stringlist_length(&paths);
+	for (i = 0; i < n; i++) {
+		char *p = gfarm_stringlist_elem(&paths, i);
+
 		if (host == NULL)
-			e = gfs_unlink(argv[i]);
+			e = gfs_unlink(p);
 		else
-			e = gfs_replica_remove_by_file(argv[i], host);
+			e = gfs_replica_remove_by_file(p, host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
-			    program_name, argv[i], gfarm_error_string(e));
+			    program_name, p, gfarm_error_string(e));
 			status = 1;
 		}
 	}
+	gfarm_stringlist_free_deeply(&paths);
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
