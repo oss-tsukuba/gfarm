@@ -408,7 +408,7 @@ This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
 <listitem>
 <para>This directive specifies the length of job queue in the gfmd.
 It is effective to specify around the maximum number of clients that
-access the Gfarm file system at the same time.  Default is 160.
+access the Gfarm file system at the same time.  Default is 16000.
 </para>
 <para>
 This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.

@@ -399,7 +399,7 @@ GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
 <listitem>
 <para>メタデータサーバgfmdのジョブキューのキュー長を指定します。
 一度に接続する最大クライアントの数くらいに設定すると効果的です。
-デフォルト値は160です。
+デフォルト値は16000です。
 </para>
 <para>
 この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
