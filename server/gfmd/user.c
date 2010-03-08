@@ -266,6 +266,9 @@ user_in_group(struct user *user, struct group *group)
 {
 	struct group_assignment *ga;
 
+	if (user == NULL || group == NULL) /* either is already removed */
+		return (0);
+
 	if (user_is_invalidated(user))
 		return (0);
 	if (group_is_invalidated(group))
