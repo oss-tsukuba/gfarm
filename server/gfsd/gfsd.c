@@ -3639,7 +3639,7 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 {
 	gfarm_error_t e;
 	struct replication_errcodes errcodes;
-	int rv = read(rep->pipe_fd, &errcodes, sizeof(errcodes));
+	int rv = read(rep->pipe_fd, &errcodes, sizeof(errcodes)), status;
 	struct stat st;
 	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
@@ -3668,8 +3668,12 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 	    (gfarm_int64_t)st.st_size);
 	close(rep->pipe_fd);
 	close(rep->file_fd);
+	if ((rv = waitpid(rep->pid, &status, 0)) == -1)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "replication(%lld, %lld): child %d: %s",
+		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
+		    strerror(errno));
 }
-
 
 static int
 watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
