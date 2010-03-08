@@ -23,21 +23,6 @@
 逆に、データとして小さな xattr へのアクセスが、全くキャッシュされておらず、
 非常に遅いという制限事項がある。
 
-○ back_channel に必要な資源 (callout など) を、
-   (1) peer に帰属させるか
-   (2) host に帰属させるか
-   (3) back_channel 通信のための構造体を作成し、そこに帰属させるか
-  という選択肢がある。
-  back_channel 通信終了時の同期処理を考えると、その生存区間が gfmd 起動中
-  である (1) か (2) の方が、データ構造自体が消えてしまうため同期用に別領域
-  の確保が必要となる (3) よりもプログラムの作りが簡単になる。
-  また以下のように peer の方が、host よりも数が多く
-	(peer の数 == クライアントの数× 2 ＋ host の数)
-  メモリ消費的には (2) の方が有利なので、host に帰属させることにした。
-  ただし async については、conn と同様な通信処理時に必要なデータであり、
-  back_channel が新しいコネクションに切り替わっているが、
-  古いコネクションもまだ残っている場合に使われる可能性を考慮して (1) とする。
-
 ■ mutex 一覧
 
 mutex 間の依存関係にループがあってはいけない。デッドロックする。★重要★
@@ -222,13 +207,37 @@ doc/internal/png/gfmd-thread-dependency.png
 		・結果の送信 peer_sender_lock() を待つことがある。
 				→ 送信側を待つことがある。XXX DEADLOCK
 
-■ XXX 未記載 TO-DO
+■ back_channel に関する設計
 
-・peer_sender_trylock() が必要な理由
+○ back_channel に必要な資源 (callout など) を、
+   (1) peer に帰属させるか
+   (2) host に帰属させるか
+   (3) back_channel 通信のための構造体を作成し、そこに帰属させるか
+  という選択肢がある。
+  back_channel 通信終了時の同期処理を考えると、その生存区間が gfmd 起動中
+  である (1) か (2) の方が、データ構造自体が消えてしまうため同期用に別領域
+  の確保が必要となる (3) よりもプログラムの作りが簡単になる。
+  また以下のように peer の方が、host よりも数が多く
+	(peer の数 == クライアントの数× 2 ＋ host の数)
+  メモリ消費的には (2) の方が有利なので、host に帰属させることにした。
+  ただし async については、conn と同様な通信処理時に必要なデータであり、
+  back_channel が新しいコネクションに切り替わっているが、
+  古いコネクションもまだ残っている場合に使われる可能性を考慮して (1) とする。
 
-・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
-  ものがあるが、resume が callback で実現されているため、スレッドプー
-  ル資源待ちのデッドロックにはならない。
+・host_receiver_lock() が必要な理由
+  受信は peer_watch() から呼び出され、同一 peer なら同一スレッドで動作
+  するため、peer 間の受信競合は発生しない。
+  host_receiver_lock() している理由は、peer_free_request() との競合回避
+  のため。
+
+・host_sender_lock()/_trylock() が必要な理由
+  - host_receiver_lock() と同様 peer_free_request() との競合回避
+  - 送信の場合は同一 peer でも複数スレッドで競合するのでその回避
+  - 送信側が詰まった場合に、同一 peer 宛のスレッドで、スレッドプールが
+    埋め尽くされるのを防ぐために host_sender_trylock() で事前検査する。
+    gfm_async_server_replication_result() のみは _trylock() ではなく
+    _lock() を使っているので、複数のスレッドプールを占有してしまう
+    可能性があるが、これは返答であるため、実質的な危険性はかなり低い。
 
 ・ホスト down 対策
   - ・gfs_client_status_request() で、前回からまだ答がなかった
@@ -237,4 +246,10 @@ doc/internal/png/gfmd-thread-dependency.png
   - 送信処理の時に host_sender_try_lock() で送信可能かどうかを
     確認し、送信が滞留していた場合には、host_peer_busy() で
     コネクションを切断する
+
+■ XXX 未記載 TO-DO
+
+・protocol_main() で受けた処理は resuming_thread() での返答待ちになる
+  ものがあるが、resume が callback で実現されているため、スレッドプー
+  ル資源待ちのデッドロックにはならない。
 
