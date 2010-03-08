@@ -245,6 +245,7 @@ gfs_client_status_result(void *arg, size_t size)
 		host_status_update(host, &st);
 	} else {
 		host_status_disable(host);
+		host_disconnect_request(host);
 	}
 	return (e);
 }
