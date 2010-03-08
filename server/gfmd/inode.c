@@ -1302,6 +1302,9 @@ enum gfarm_inode_lookup_op {
 /*
  * if (op == INODE_LINK)
  *	(*inp) is an input parameter instead of output.
+ *	db_inode_nlink_modify() should be done by the caller.
+ * if (op == INODE_REMOVE)
+ *	db_inode_nlink_modify() should be done by the caller.
  * if (op == INODE_CREATE)
  *	createdp must be passed, otherwise it's ignored.
  * if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE)
@@ -1412,12 +1415,6 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		inode_status_changed(n);
 		inode_modified(parent);
 
-		e = db_inode_nlink_modify(n->i_number, n->i_nlink);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1000312,
-			    "db_inode_nlink_modify(%lld): %s",
-			    (unsigned long long)n->i_number,
-			    gfarm_error_string(e));
 		e = db_direntry_add(parent->i_number, name, len, n->i_number);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000313,
@@ -1702,12 +1699,33 @@ inode_create_symlink(struct inode *base, char *name,
 	    0777, source_path, &inode, NULL));
 }
 
+static gfarm_error_t
+inode_create_link_internal(struct inode *base, char *name,
+	struct user *user, struct inode *inode)
+{
+	return (inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
+	    INODE_LINK, user, 0, NULL, &inode, NULL));
+}
+
+
 gfarm_error_t
 inode_create_link(struct inode *base, char *name,
 	struct process *process, struct inode *inode)
 {
-	return (inode_lookup_relative(base, name, GFS_DT_UNKNOWN,
-	    INODE_LINK, process_get_user(process), 0, NULL, &inode, NULL));
+	gfarm_error_t e;
+
+	e = inode_create_link_internal(base, name, process_get_user(process), 
+	    inode);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = db_inode_nlink_modify(inode->i_number, inode->i_nlink);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_1000312,
+		    "db_inode_nlink_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -1775,7 +1793,7 @@ inode_rename(
 	} else if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 		return (e);
 
-	e = inode_create_link(ddir, dname, process, src);
+	e = inode_create_link_internal(ddir, dname, user, src);
 	if (e != GFARM_ERR_NO_ERROR) { /* shouldn't happen */
 		gflog_error(GFARM_MSG_1000319,
 		    "rename(%s, %s): failed to link: %s",
@@ -1788,6 +1806,7 @@ inode_rename(
 		gflog_error(GFARM_MSG_1000320,
 		    "rename(%s, %s): failed to unlink: %s",
 		    sname, dname, gfarm_error_string(e));
+	/* db_inode_nlink_modify() is not necessary, because it's unchanged */
 	return (e);
 }
 
