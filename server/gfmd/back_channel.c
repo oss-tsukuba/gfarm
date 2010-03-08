@@ -327,8 +327,8 @@ gfs_client_fhremove_request(void *closure)
 		return (NULL);
 	} else if (e == GFARM_ERR_DEVICE_BUSY) {
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "GFS_PROTO_FHREMOVE(%lld, %lld, %s): "
-		    "busy, waiting for some time",
+		    "%s(%lld, %lld, %s): "
+		    "busy, waiting for some time", diag,
 		    (long long)dead_file_copy_get_ino(dfc),
 		    (long long)dead_file_copy_get_gen(dfc),
 		    host_name(dead_file_copy_get_host(dfc)));
