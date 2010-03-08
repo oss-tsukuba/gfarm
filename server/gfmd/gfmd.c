@@ -963,8 +963,6 @@ sigs_handler(void *p)
 	/* A Linux Thread is a process having its own process id. */
 	write_pid(pid_file);
 #endif
-	sigs_set(sigs);
-
 	for (;;) {
 		if (sigwait(sigs, &sig) == -1)
 			gflog_warning(GFARM_MSG_1000197,
