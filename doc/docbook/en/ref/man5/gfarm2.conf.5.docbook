@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>14 Feb 2008</date></refentryinfo>
+<refentryinfo><date>8 Mar 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -430,7 +430,7 @@ for gfmd to check availability of each gfsd.  Default is 180 seconds.
 Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
 and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
 this parameter to detect whether gfmd is down or not, this parameter
-has to be specified in gfarm2.conf.
+has to be specified in both gfarm2.conf and gfmd.conf.
 </para>
 <para>For example,</para>
 <literallayout>
