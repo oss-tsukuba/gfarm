@@ -642,7 +642,8 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			    deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_UNFIXED,
-				    "replication before removal: %s", 
+				    "replication before removal: host %s: %s", 
+				    host_name(copy->host),
 				    gfarm_error_string(e));
 			} else if ((e = async_back_channel_replication_request(
 			    host_name(spool_host), host_port(spool_host),

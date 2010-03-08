@@ -1124,6 +1124,17 @@ process_replica_added(struct process *process,
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
 	    file_replicating_get_gen(fo->u.f.replicating) !=
 	    inode_get_gen(fo->inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "inode(%lld) updated while replication: "
+		    "mtime %lld.%09lld/%lld.%09lld, "
+		    "size: %lld/%lld, gen:%lld/%lld",
+		    (long long)inode_get_number(fo->inode),
+		    (long long)mtime_sec, (long long)mtime_nsec,
+		    (long long)inode_get_mtime(fo->inode)->tv_sec,
+		    (long long)inode_get_mtime(fo->inode)->tv_nsec,
+		    (long long)size, (long long)inode_get_size(fo->inode),
+		    (long long)file_replicating_get_gen(fo->u.f.replicating),
+		    (long long)inode_get_gen(fo->inode));
 		e = inode_remove_replica_gen(fo->inode, spool_host,
 		    file_replicating_get_gen(fo->u.f.replicating), 0);
 		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
