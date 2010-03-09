@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.3.0
+%define ver	2.3.99
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -84,7 +84,7 @@ Group: System Environment/Libraries
 %if %{globus}
 Provides: %{pkg}-libs = %{ver}-%{rel}
 %endif
-BuildRequires: openssl-devel
+BuildRequires: openssl-devel, postgresql-devel
 
 %package client
 Summary: Clients for Gfarm file system
@@ -130,6 +130,7 @@ Group: Development/Libraries
 %if %{globus}
 Provides: %{pkg}-devel = %{ver}-%{rel}
 %endif
+Requires: %{package_name}-libs = %{ver}
 
 %if %{gfarm_v2_not_yet}
 %package gfront
@@ -867,6 +868,7 @@ fi
 %{prefix}/bin/gfchgrp
 %{prefix}/bin/gfchmod
 %{prefix}/bin/gfchown
+%{prefix}/bin/gfedquota
 %{prefix}/bin/gfexport
 %{prefix}/bin/gffindxmlattr
 %{prefix}/bin/gfgroup
@@ -890,10 +892,13 @@ fi
 %{prefix}/bin/gfq_setup.sh
 %{prefix}/bin/gfrcmd
 %endif
+%{prefix}/bin/gfquota
+%{prefix}/bin/gfquotacheck
 %{prefix}/bin/gfreg
 %{prefix}/bin/gfrep
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
+%{prefix}/bin/gfusage
 %{prefix}/bin/gfuser
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrsh
@@ -974,9 +979,6 @@ fi
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/config-gfarm-update
 %{prefix}/bin/gfdump.postgresql
-%if %{gfarm_v2_not_yet}
-%{prefix}/bin/gfusage
-%endif
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
@@ -1019,6 +1021,8 @@ fi
 %{prefix}/include/gfarm/group_info.h
 %{prefix}/include/gfarm/gfs.h
 %{prefix}/include/gfarm/gfs_glob.h
+# XXX - this should not be here
+%{prefix}/include/gfarm/gfarm_msg_enums.h
 %if %{gfarm_v2_not_yet}
 %{prefix}/include/gfarm/gfs_hook.h
 %{lib_prefix}/gfs_hook.o
