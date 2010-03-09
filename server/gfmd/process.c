@@ -96,7 +96,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 {
 	if (GFARM_S_ISREG(mode)) {
 		if (fo->u.f.replicating != NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED, "orphan replicating");
+			gflog_debug(GFARM_MSG_1002236, "orphan replicating");
 			file_replicating_free(fo->u.f.replicating);
 			fo->u.f.replicating = NULL;
 		}
@@ -536,12 +536,12 @@ process_new_generation_wait(struct peer *peer, int fd,
 	static const char diag[] = "process_new_generation_wait";
 
 	if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002237,
 		    "%s: peer_get_process() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = process_get_file_opening(process, fd, &fo))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002238,
 		    "%s: process_get_file_opening(%d) failed", diag, fd);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
@@ -560,7 +560,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 	static const char diag[] = "process_new_generation_done";
 
 	if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002239,
 		    "%s: peer_get_process() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = inode_new_generation_done(fo->inode, peer,
@@ -667,7 +667,7 @@ process_reopen_file(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (inode_new_generation_is_pending(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002240,
 		    "process_reopen_file: new_generation pending %lld:%lld",
 		    (long long)inode_get_number(fo->inode),
 		    (long long)inode_get_gen(fo->inode));
@@ -859,7 +859,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	if (is_v2_4 && inode_new_generation_is_pending(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002241,
 		    "%s: new_generation pending %lld:%lld", diag,
 		    (long long)inode_get_number(fo->inode),
 		    (long long)inode_get_gen(fo->inode));
@@ -1060,7 +1060,7 @@ process_replica_adding(struct process *process, struct peer *peer,
 	if (fo->u.f.replicating != NULL)
 		return (GFARM_ERR_FILE_BUSY);
 	if (inode_new_generation_is_pending(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002242,
 		    "process_replica_adding: new_generation pending %lld:%lld",
 		    (long long)inode_get_number(fo->inode),
 		    (long long)inode_get_gen(fo->inode));
@@ -1106,7 +1106,7 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.replicating == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002243,
 		    "replica_added was called witout adding");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
@@ -1124,7 +1124,7 @@ process_replica_added(struct process *process,
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
 	    file_replicating_get_gen(fo->u.f.replicating) !=
 	    inode_get_gen(fo->inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002244,
 		    "inode(%lld) updated while replication: "
 		    "mtime %lld.%09lld/%lld.%09lld, "
 		    "size: %lld/%lld, gen:%lld/%lld",

@@ -830,7 +830,7 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0 ||
 	    strcmp(groupname, ROOT_GROUP_NAME) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002211,
 		    "%s: administrator group \"%s\" should not be deleted",
 		    diag, groupname);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;

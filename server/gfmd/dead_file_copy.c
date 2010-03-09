@@ -205,7 +205,7 @@ removal_pendingq_enqueue(struct dead_file_copy *dfc)
 	if (dfc->state != dfcstate_deferred &&
 	    dfc->state != dfcstate_kept &&
 	    dfc->state != dfcstate_busy) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_fatal(GFARM_MSG_1002221, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -232,7 +232,7 @@ removal_finishedq_enqueue(struct dead_file_copy *dfc, gfarm_int32_t result)
 
 	/* sanity check */
 	if (dfc->state != dfcstate_in_flight) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_fatal(GFARM_MSG_1002222, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -275,7 +275,7 @@ handle_removal_result(struct dead_file_copy *dfc)
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
 	} else if (host_is_up(dfc->host)) {
 		/* unexpected error, try again later to avoid busy loop */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002223,
 		    "waiting removal of (%lld, %lld, %s): host busy",
 		    (long long)dfc->inum, (long long)dfc->igen,
 		    host_name(dfc->host));
@@ -345,7 +345,7 @@ host_busyq_enqueue(struct dead_file_copy *dfc)
 	/* sanity check */
 	if (dfc->state != dfcstate_in_flight &&
 	    dfc->state != dfcstate_finalizing) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_fatal(GFARM_MSG_1002224, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -569,7 +569,7 @@ dead_file_copy_host_removed(struct host *host)
 		if (dfc->host != host)
 			continue;
 		if (dfc->state != dfcstate_deferred) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002225,
 			    "%s: defer removal of (%lld, %lld, %s): %d", diag,
 			    (unsigned long long)dfc->inum,
 			    (unsigned long long)dfc->igen,
@@ -655,7 +655,7 @@ dead_file_copy_mark_kept(struct dead_file_copy *dfc)
 
 	/* sanity check */
 	if (dfc->state != dfcstate_deferred) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_fatal(GFARM_MSG_1002226, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -673,7 +673,7 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
 
 	/* sanity check */
 	if (dfc->state != dfcstate_kept) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s(%lld, %lld, %s): "
+		gflog_fatal(GFARM_MSG_1002227, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -809,7 +809,7 @@ dead_file_copy_alloc(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 
 	GFARM_MALLOC(dfc);
 	if (dfc == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002228,
 		    "%s(%lld, %lld, %s): no memory", diag,
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -851,13 +851,13 @@ dead_file_copy_new(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 
 	e = db_deadfilecopy_add(inum, igen, host_name(host));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002229,
 		    "db_deadfilecopy_add(%lld, %lld, %s): %s",
 		    (unsigned long long)inum, (unsigned long long)igen,
 		    host_name(host), gfarm_error_string(e));
 #if 0
 	else if (debug_mode)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002230,
 		    "db_deadfilecopy_add(%lld, %lld, %s): added",
 		    (unsigned long long)inum, (unsigned long long)igen,
 		    host_name(host));
@@ -886,7 +886,7 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	if (dfc->state != dfcstate_deferred &&
 	    dfc->state != dfcstate_finalizing) {
 		mutex_unlock(&dfc_allq.mutex, diag, "allq unlock at error");
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002231,
 		    "dead_file_copy_free(%lld, %lld, %s): "
 		    "state %d is not allowed, this shouldn't happen, ignored",
 		    (unsigned long long)dfc->inum,
@@ -901,7 +901,7 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 
 	e = db_deadfilecopy_remove(dfc->inum, dfc->igen, host_name(dfc->host));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002232,
 		    "db_deadfilecopy_remove(%lld, %lld, %s): %s",
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen,
@@ -922,11 +922,11 @@ dead_file_copy_add_one(void *closure,
 	/* XXX FIXME: do not remove, if latest one is inaccessible */
 
 	if (host == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002233,
 		    "%s: inode %lld:%lld: no host %s",
 		    diag, (long long)inum, (long long)igen, hostname);
 	} else if ((dfc = dead_file_copy_alloc(inum, igen, host)) == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002234,
 		    "%s: dead replica(%lld, %lld, %s): no memory",
 		    diag, (long long)inum, (long long)igen, hostname);
 #if 0 /* this is unnecessary, since all hosts are down in this point */
@@ -952,7 +952,7 @@ dead_file_copy_init(void)
 
 	e = create_detached_thread(removal_finalizer, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002235,
 		    "create_detached_thread(removal_finalizer): %s",
 		    gfarm_error_string(e));
 

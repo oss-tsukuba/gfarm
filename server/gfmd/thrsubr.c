@@ -86,7 +86,7 @@ cond_broadcast(pthread_cond_t *cond, const char *where, const char *what)
 	int err = pthread_cond_broadcast(cond);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond broadcast: %s",
+		gflog_fatal(GFARM_MSG_1002210, "%s: %s cond broadcast: %s",
 		    where, what, strerror(err));
 }
 

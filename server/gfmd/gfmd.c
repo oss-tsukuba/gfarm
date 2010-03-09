@@ -1261,7 +1261,7 @@ main(int argc, char **argv)
 
 	e = create_detached_thread(resumer, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002209,
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 

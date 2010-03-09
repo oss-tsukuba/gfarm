@@ -251,7 +251,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 	callout = callout_new();
 	if (callout == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: no memory for host %s",
+		gflog_debug(GFARM_MSG_1002212, "%s: no memory for host %s",
 		    diag, hi->hostname);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -462,7 +462,7 @@ host_is_unresponsive(struct host *host, gfarm_int64_t now, const char *diag)
 		host->busy_time = 0;
 	else if (host->busy_time != 0 &&
 	    now > host->busy_time + gfarm_metadb_heartbeat_interval) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002213,
 		    "host %s: too long busy since %lld",
 		    host_name(host), (long long)host->busy_time);
 		unresponsive = 1;
@@ -628,7 +628,7 @@ host_receiver_lock(struct host *host, struct peer **peerp)
 		*peerp = host->peer;
 		e = GFARM_ERR_NO_ERROR;
 	} else { /* shound't happen */
-		gflog_fatal(GFARM_MSG_UNFIXED, 
+		gflog_fatal(GFARM_MSG_1002214, 
 		    "%s: host_receiver_lock(%s): assertion failure",
 		    diag, host_name(host));
 		e = GFARM_ERR_DEVICE_BUSY;
@@ -684,7 +684,7 @@ host_status_callout_retry(struct host *host)
 
 	if (ok) {
 		callout_schedule(host->status_callout, interval);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002215,
 		    "%s(%s): retrying in %ld seconds",
 		    diag, host_name(host), interval);
 	}
@@ -1101,7 +1101,7 @@ gfm_server_host_info_get_common(struct peer *peer,
 	nmatch = 0;
 	if (match == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002216,
 		    "%s: no memory for %d hosts", diag, nhosts);
 	} else {
 		i = 0;
@@ -1120,13 +1120,13 @@ gfm_server_host_info_get_common(struct peer *peer,
 			e = GFARM_ERR_NO_ERROR;
 		} else {
 			e = GFARM_ERR_NO_SUCH_OBJECT;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002217,
 			    "%s: no matching host", diag);
 		}
 	}
 	e2 = gfm_server_put_reply(peer, diag, e, "i", nmatch);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002218,
 		    "gfm_server_put_reply(%s) failed: %s",
 		    diag, gfarm_error_string(e2));
 	} else if (e == GFARM_ERR_NO_ERROR) {
@@ -1138,7 +1138,7 @@ gfm_server_host_info_get_common(struct peer *peer,
 			if (match[i]) {
 				e2 = host_info_send(client, h);
 				if (e2 != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002219,
 					    "%s: host_info_send(): %s",
 					    diag, gfarm_error_string(e));
 					break;

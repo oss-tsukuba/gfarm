@@ -843,11 +843,11 @@ gfm_client_compound_put_fd_request(gfarm_int32_t net_fd, const char *diag)
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002291,
 		    "compound_begin request", diag, e);
 	else if ((e = gfm_client_put_fd_request(gfm_server, net_fd))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002292,
 		    "put_fd request", diag, e);
 }
 
@@ -858,16 +858,16 @@ gfm_client_compound_put_fd_result(const char *diag)
 
 	if ((e = gfm_client_compound_end_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002293,
 		    "compound_end request", diag, e);
 
 	else if ((e = gfm_client_compound_begin_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002294,
 		    "compound_begin result", diag, e);
 	else if ((e = gfm_client_put_fd_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002295,
 		    "put_fd result", diag, e);
 }
 
@@ -878,7 +878,7 @@ gfm_client_compound_end(const char *diag)
 
 	if ((e = gfm_client_compound_end_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED,
+		fatal_metadb_proto(GFARM_MSG_1002296,
 		    "compound_end result", diag, e);
 	return (1);
 }
@@ -988,13 +988,13 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 			gfm_client_compound_put_fd_request(net_fd, diag);
 			if ((e = gfm_client_close_request(gfm_server)) !=
 			    GFARM_ERR_NO_ERROR)
-				fatal(GFARM_MSG_UNFIXED,
+				fatal(GFARM_MSG_1002297,
 				    "%s: close(%d) request: %s",
 				    diag, net_fd, gfarm_error_string(e));
 			gfm_client_compound_put_fd_result(diag);
 			if ((e = gfm_client_close_result(gfm_server)) !=
 			    GFARM_ERR_NO_ERROR)
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1002298,
 				    "%s: close(%d): %s",
 				    diag, net_fd, gfarm_error_string(e));
 			else
@@ -1003,7 +1003,7 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 			if (save_errno == ENOENT) {
 				e = replica_remove(ino, gen);
 				if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002299,
 					    "possible race between "
 					    "rename & reopen: "
 					    "ino %lld, gen %lld",
@@ -1108,7 +1108,7 @@ close_result(struct file_entry *fe, gfarm_int32_t *gen_update_result_p)
 			*gen_update_result_p =
 			    rename(old, new) == -1 ? errno : 0;
 			if (*gen_update_result_p != 0) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002300,
 				    "close_write: new generation: "
 				    "%llu -> %llu: %s",
 				    (unsigned long long)old_gen,
@@ -1196,13 +1196,13 @@ gfs_server_close(struct gfp_xdr *client)
 			if ((e2 = gfm_client_generation_updated_request(
 			    gfm_server, gen_update_result))
 			    != GFARM_ERR_NO_ERROR)
-				fatal_metadb_proto(GFARM_MSG_UNFIXED,
+				fatal_metadb_proto(GFARM_MSG_1002301,
 				    "generation_updated request: %s",
 				    diag, e2);
 			gfm_client_compound_put_fd_result(diag);
 			if ((e2 = gfm_client_generation_updated_result(
 			    gfm_server)) != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002302,
 				    "generation_updated result: %s", 
 				    gfarm_error_string(e2));
 			else
@@ -3669,7 +3669,7 @@ replication_result_notify(struct gfp_xdr *gfm_server,
 	close(rep->pipe_fd);
 	close(rep->file_fd);
 	if ((rv = waitpid(rep->pid, &status, 0)) == -1)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002303,
 		    "replication(%lld, %lld): child %d: %s",
 		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
 		    strerror(errno));
@@ -3761,7 +3761,7 @@ back_channel_server(void)
 		for (;;) {
 			if (!gfp_xdr_recv_is_ready(conn)) {
 				if (!watch_fds(conn, async)) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002304,
 					    "back channel: gfmd is down");
 					break;
 				}

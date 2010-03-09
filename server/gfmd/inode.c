@@ -641,7 +641,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			e = file_replicating_new(inode, copy->host,
 			    deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1002245,
 				    "replication before removal: host %s: %s", 
 				    host_name(copy->host),
 				    gfarm_error_string(e));
@@ -854,7 +854,7 @@ inode_increment_gen(struct inode *inode)
 
 	e = db_inode_gen_modify(inode->i_number, inode->i_gen);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002246,
 		    "db_inode_gen_modify(%lld, %lld): %s",
 		    (unsigned long long)inode->i_number,
 		    (unsigned long long)inode->i_gen,
@@ -1161,7 +1161,7 @@ inode_new_generation_is_pending(struct inode *inode)
 	static const char diag[] = "inode_new_generation_is_pending";
 
 	if (ios == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		gflog_error(GFARM_MSG_1002247, "%s: not opened", diag);
 		return (0);
 	}
 	return (ios->u.f.event_source != NULL);
@@ -1174,7 +1174,7 @@ inode_new_generation_wait_start(struct inode *inode, struct peer *peer)
 	static const char diag[] = "inode_new_generation_wait_start";
 
 	if (ios == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		gflog_error(GFARM_MSG_1002248, "%s: not opened", diag);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	ios->u.f.event_source = peer;
@@ -1190,20 +1190,20 @@ inode_new_generation_done(struct inode *inode, struct peer *peer,
 	static const char diag[] = "inode_new_generation_done";
 
 	if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		gflog_error(GFARM_MSG_1002249, "%s: not a file", diag);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	ios = inode->u.c.state;
 	if (ios == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		gflog_error(GFARM_MSG_1002250, "%s: not opened", diag);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	if (ios->u.f.event_source == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: not pending", diag);
+		gflog_warning(GFARM_MSG_1002251, "%s: not pending", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (peer != NULL && peer != ios->u.f.event_source) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: different peer", diag);
+		gflog_warning(GFARM_MSG_1002252, "%s: different peer", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
@@ -1228,22 +1228,22 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 	static const char diag[] = "inode_new_generation_wait";
 
 	if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		gflog_error(GFARM_MSG_1002253, "%s: not a file", diag);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	ios = inode->u.c.state;
 	if (ios == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not opened", diag);
+		gflog_error(GFARM_MSG_1002254, "%s: not opened", diag);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	if (ios->u.f.event_source == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: not pending", diag);
+		gflog_warning(GFARM_MSG_1002255, "%s: not pending", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
 	GFARM_MALLOC(waiter);
 	if (waiter == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		gflog_warning(GFARM_MSG_1002256, "%s: no memory", diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -2355,7 +2355,7 @@ inode_replicated(struct file_replicating *fr,
 	} else {
 		if (src_errcode != GFARM_ERR_NO_ERROR ||
 		    dst_errcode != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002257,
 			    "error at %lld:%lld replication to %s: "
 			    "src=%d dst=%d",
 			    (long long)inode_get_number(inode),
@@ -2372,14 +2372,14 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)inode_get_size(inode));
 		e = inode_remove_replica_gen(inode, fr->dst, fr->igen, 0);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002258,
 			    "inode_replicated: inode_remove_replica: %s",
 			    gfarm_error_string(e));
 		}
 		dfc = dead_file_copy_new(inode_get_number(inode), fr->igen,
 		    fr->dst);
 		if (dfc == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002259,
 			    "inode_replicated: dead_file_copy_new: no memory");
 		} else {
 			removal_pendingq_enqueue(dfc);
@@ -2505,7 +2505,7 @@ remove_replica_internal(struct inode *inode, gfarm_int64_t gen,
 
 	dfc = dead_file_copy_new(inode->i_number, gen, spool_host);
 	if (dfc == NULL)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002260,
 		    "remove_replica_internal(%lld, %lld, %s): no memory",
 		    (unsigned long long)inode->i_number,
 		    (unsigned long long)gen, host_name(spool_host));

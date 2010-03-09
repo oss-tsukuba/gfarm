@@ -722,7 +722,7 @@ db_inode_gen_modify(gfarm_ino_t inum, gfarm_uint64_t gen)
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002290,
 			"allocation of 'db_inode_uint64_modify_arg' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

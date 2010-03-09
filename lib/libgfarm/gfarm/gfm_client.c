@@ -579,7 +579,7 @@ gfm_client_host_info_get_n(struct gfm_connection *gfm_server, int nhosts,
 
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) { /* XXX this breaks gfm protocol */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002208,
 		    "host_info allocation for %d hosts: no memory", nhosts);
 		return (GFARM_ERR_NO_MEMORY);
 	}

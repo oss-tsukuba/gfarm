@@ -343,7 +343,7 @@ peer_free_request(struct peer *peer)
 	 */
 	rv = shutdown(fd, SHUT_RDWR);
 	if (rv == -1)
-		gflog_warning(GFARM_MSG_UNFIXED, 
+		gflog_warning(GFARM_MSG_1002220, 
 		    "back_channel: shutdown(%d): %s", fd, strerror(errno));
 
 	*peer_closing_queue.tail = peer;
