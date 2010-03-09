@@ -1,9 +1,11 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.2.15]
+[2010.3.9]
 
 New Feature
+* update-based replica consistency protocol
+  that keeps number of file replicas at file modification
 * quota (see doc/quota.en for details)
 * Gfarm URL, gfarm://metaserver:port/path/name
 * partial support of distributed metadata servers
@@ -33,7 +35,10 @@ Updated feature
 * gfstat - -c option to display the number of file replicas
 * gfwhere - display error if there is no file replica
 * gfuser, gfgroup - display specified users or groups if any
+* gfwhere - several options to obtain in progress or obsolete replica
+  information
 * gfvoms-sync - search certificates in the same order as Globus
+* change the maximum number of open files from 256 to 1024
 * read only mode for gfsd
 * support re-registration of users, groups and hosts without gfmd
   restart
@@ -46,6 +51,10 @@ Updated feature
 * change log format
 
 Bug fix
+* fix possibility to lost files in a rare case when updating and
+  replicating at the same time
+* fix rename problem such that a directory cannot be deleted or orphan
+  inodes remain after rebooting gfmd
 * fix missing automatic reconnection to gfmd
 * fix file replication error during the file update
 * fix file update problem during replication
