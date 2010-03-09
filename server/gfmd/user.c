@@ -318,6 +318,7 @@ create_user(const char *username, const char *gsi_dn)
 {
 	gfarm_error_t e;
 	struct gfarm_user_info ui;
+	static const char diag[] = "create_user";
 
 	gflog_info(GFARM_MSG_1000234,
 	    "user '%s' not found, creating...", username);
@@ -326,6 +327,10 @@ create_user(const char *username, const char *gsi_dn)
 	ui.realname = strdup("Gfarm administrator");
 	ui.homedir = strdup("/");
 	ui.gsi_dn = strdup(gsi_dn == NULL ? "" : gsi_dn);
+	if (ui.username == NULL || ui.realname || ui.homedir ||
+	    ui.gsi_dn == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s(%s, %s): no memory", diag, username, gsi_dn);
 	user_add_one(NULL, &ui);
 	e = db_user_add(&ui);
 	if (e != GFARM_ERR_NO_ERROR)
