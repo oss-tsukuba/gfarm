@@ -56,6 +56,7 @@ struct dead_file_copy {
  *		-> dfcstate_in_flight
  *
  *	dfcstate_in_flight
+ *		-> dfcstate_deferred
  *		-> dfcstate_busy
  *		-> dfcstate_finished
  *
@@ -276,9 +277,9 @@ handle_removal_result(struct dead_file_copy *dfc)
 	} else if (host_is_up(dfc->host)) {
 		/* unexpected error, try again later to avoid busy loop */
 		gflog_error(GFARM_MSG_1002223,
-		    "waiting removal of (%lld, %lld, %s): host busy",
+		    "waiting removal of (%lld, %lld, %s): %s",
 		    (long long)dfc->inum, (long long)dfc->igen,
-		    host_name(dfc->host));
+		    host_name(dfc->host), gfarm_error_string(dfc->result));
 		host_busyq_enqueue(dfc);
 	} else if (!host_is_active(dfc->host)) {
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */

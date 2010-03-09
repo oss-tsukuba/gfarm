@@ -351,8 +351,9 @@ remover(void *closure)
 		if (host_is_up(dead_file_copy_get_host(dfc)))
 			thrpool_add_job(back_channel_send_thread_pool,
 			    gfs_client_fhremove_request, dfc);
-		else /* hopes it will up shortly */
-			host_busyq_enqueue(dfc);
+		else /* make this dfcstate_deferred */
+			removal_finishedq_enqueue(dfc,
+			    GFARM_ERR_NO_ROUTE_TO_HOST);
 	}
 
 	/*NOTREACHED*/
