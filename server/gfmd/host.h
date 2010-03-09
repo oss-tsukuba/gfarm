@@ -33,7 +33,7 @@ void host_receiver_unlock(struct host *);
 char *host_name(struct host *);
 int host_port(struct host *);
 int host_supports_async_protocols(struct host *);
-int host_is_disk_available(struct host *);
+int host_is_disk_available(struct host *, gfarm_off_t);
 void host_set_callback(struct host *,
 	gfarm_int32_t (*)(void *, size_t), void *);
 int host_get_callback(struct host *,

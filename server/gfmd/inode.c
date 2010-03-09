@@ -2276,7 +2276,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	struct file_replicating *fr;
 	struct inode_replicating_state *irs = inode->u.c.s.f.rstate;
 
-	if (!host_is_disk_available(dst))
+	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
 	fr = host_replicating_new(dst);
 	if (fr == NULL)

@@ -428,7 +428,7 @@ host_is_up(struct host *h)
 }
 
 int
-host_is_disk_available(struct host *h)
+host_is_disk_available(struct host *h, gfarm_off_t size)
 {
 	gfarm_off_t avail;
 	static const char diag[] = "host_get_disk_avail";
@@ -441,7 +441,9 @@ host_is_disk_available(struct host *h)
 		avail = 0;
 	mutex_unlock(&h->back_channel_mutex, diag, "back_channel_mutex");
 
-	return (avail > gfarm_get_minimum_free_disk_space());
+	if (size <= 0)
+		size = gfarm_get_minimum_free_disk_space();
+	return (avail >= size);
 }
 
 /*
@@ -1662,7 +1664,7 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 	 * give the top priority to the local host if it has enough space
 	 * Note that disk_avail is reported in KiByte.
 	 */
-	if (h != NULL && host_is_disk_available(h)) {
+	if (h != NULL && host_is_disk_available(h, 0)) {
 		e_save = host_schedule_reply_n(peer, 1, diag);
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
