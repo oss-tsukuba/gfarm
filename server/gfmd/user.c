@@ -327,7 +327,7 @@ create_user(const char *username, const char *gsi_dn)
 	ui.realname = strdup("Gfarm administrator");
 	ui.homedir = strdup("/");
 	ui.gsi_dn = strdup(gsi_dn == NULL ? "" : gsi_dn);
-	if (ui.username == NULL || ui.realname || ui.homedir ||
+	if (ui.username == NULL || ui.realname == NULL || ui.homedir == NULL ||
 	    ui.gsi_dn == NULL)
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "%s(%s, %s): no memory", diag, username, gsi_dn);
