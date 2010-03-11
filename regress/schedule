@@ -1,5 +1,6 @@
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
-lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy.sh
+lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
+lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 
 # gftool/config-gfarm
 gftool/gfls/root.sh

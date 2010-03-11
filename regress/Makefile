@@ -11,7 +11,8 @@ CHECK_ENV=	LANG=C PATH=$(prefix)/bin:$$PATH
 # subdirectories which have to be built
 SUBDIRS=	\
 	lib/libgfarm/gfarm/gfarm_error_range_alloc \
-	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request
+	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy \
+	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress \
 
 check test: all
 	@echo ""
