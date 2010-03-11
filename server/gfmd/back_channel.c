@@ -411,6 +411,7 @@ gfs_client_replication_request_request(void *closure)
 	    gfs_client_replication_request_result, fr,
 	    GFS_PROTO_REPLICATION_REQUEST, "sill",
 	    srchost, srcport, ino, gen);
+	free(srchost);
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_lock(); /* XXX FIXME: deadlock */
 		e = host_replicated(dst, ino, gen, -1, 0, e, -1);
