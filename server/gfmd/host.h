@@ -102,7 +102,6 @@ void host_replica_removed(struct host *, gfarm_ino_t, gfarm_int64_t,
 void host_status_reply_waiting(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
-void host_status_disable(struct host *);
 
 gfarm_error_t gfm_server_host_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_get_by_architecture(struct peer *, int,int);

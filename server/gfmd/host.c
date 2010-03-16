@@ -691,6 +691,98 @@ host_status_callout_retry(struct host *host)
 	return (ok);
 }
 
+void
+host_status_reply_waiting(struct host *host)
+{
+	static const char diag[] = "host_status_reply_waiting";
+
+	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+
+	host->status_reply_waiting = 1;
+
+	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+}
+
+int
+host_status_reply_is_waiting(struct host *host)
+{
+	int waiting;
+	static const char diag[] = "host_status_reply_waiting";
+
+	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+
+	waiting = host->status_reply_waiting;
+
+	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+
+	return (waiting);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: total_disk_mutex
+ * SLEEPS: no
+ */
+static void
+host_total_disk_update(
+	gfarm_uint64_t old_used, gfarm_uint64_t old_avail,
+	gfarm_uint64_t new_used, gfarm_uint64_t new_avail)
+{
+	pthread_mutex_lock(&total_disk_mutex);
+	total_disk_used += new_used - old_used;
+	total_disk_avail += new_avail - old_avail;
+	pthread_mutex_unlock(&total_disk_mutex);
+}
+
+void
+host_status_update(struct host *host, struct host_status *status)
+{
+	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+
+	mutex_lock(&host->back_channel_mutex, "host back_channel",
+	    "status_update");
+
+	host->status_reply_waiting = 0;
+	host->status_callout_retry = 0;
+
+	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		saved_used = host->status.disk_used;
+		saved_avail = host->status.disk_avail;
+	}
+
+	host->last_report = time(NULL);
+	host->report_flags =
+		GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
+		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
+	host->status = *status;
+
+	mutex_unlock(&host->back_channel_mutex, "host back_channel",
+	    "status_update");
+
+	host_total_disk_update(saved_used, saved_avail,
+	    status->disk_used, status->disk_avail);
+}
+
+/*
+ * PREREQUISITE: host::back_channel_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static void
+host_status_disable_unlocked(struct host *host,
+	gfarm_uint64_t *saved_usedp, gfarm_uint64_t *saved_availp)
+{
+	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		*saved_usedp = host->status.disk_used;
+		*saved_availp = host->status.disk_avail;
+	} else {
+		*saved_usedp = 0;
+		*saved_availp = 0;
+	}
+
+	host->report_flags = 0;
+}
+
 /*
  * PREREQUISITE: giant_lock
  * LOCKS: host::back_channel_mutex, dfc_allq.mutex, removal_pendingq.mutex
@@ -759,6 +851,7 @@ host_disconnect(struct host *h)
 	 * not to sleep while holding host::back_channel_mutex
 	 */
 
+	gfarm_uint64_t saved_used, saved_avail;
 	static const char diag[] = "host_disconnect";
 	static const char back_channel_diag[] = "back_channel";
 
@@ -780,7 +873,11 @@ host_disconnect(struct host *h)
 		host_peer_unset(h);
 	}
 
+	host_status_disable_unlocked(&saved_used, &saved_avail);
+
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	host_total_disk_update(saved_used, saved_avail, 0, 0);
 #else
 	host_disconnect_request(h);
 #endif
@@ -789,6 +886,7 @@ host_disconnect(struct host *h)
 void
 host_disconnect_request(struct host *h)
 {
+	gfarm_uint64_t saved_used, saved_avail;
 	static const char diag[] = "host_disconnect_request";
 	static const char back_channel_diag[] = "back_channel";
 
@@ -802,7 +900,11 @@ host_disconnect_request(struct host *h)
 		host_peer_unset(h);
 	}
 
+	host_status_disable_unlocked(h, &saved_used, &saved_avail);
+
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	host_total_disk_update(saved_used, saved_avail, 0, 0);
 }
 
 /* only file_replicating_new() is allowed to call this routine */
@@ -897,88 +999,6 @@ host_replicated(struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = inode_replicated(fr, src_errcode, dst_errcode, size);
 	return (e);
-}
-
-void
-host_status_reply_waiting(struct host *host)
-{
-	static const char diag[] = "host_status_reply_waiting";
-
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
-
-	host->status_reply_waiting = 1;
-
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
-}
-
-int
-host_status_reply_is_waiting(struct host *host)
-{
-	int waiting;
-	static const char diag[] = "host_status_reply_waiting";
-
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
-
-	waiting = host->status_reply_waiting;
-
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
-
-	return (waiting);
-}
-
-void
-host_status_update(struct host *host, struct host_status *status)
-{
-	gfarm_uint64_t saved_used = 0, saved_avail = 0;
-
-	mutex_lock(&host->back_channel_mutex, "host back_channel",
-	    "status_update");
-
-	host->status_reply_waiting = 0;
-	host->status_callout_retry = 0;
-
-	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
-		saved_used = host->status.disk_used;
-		saved_avail = host->status.disk_avail;
-	}
-
-	host->last_report = time(NULL);
-	host->report_flags =
-		GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
-		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
-	host->status = *status;
-
-	mutex_unlock(&host->back_channel_mutex, "host back_channel",
-	    "status_update");
-
-	pthread_mutex_lock(&total_disk_mutex);
-	total_disk_used += status->disk_used - saved_used;
-	total_disk_avail += status->disk_avail - saved_avail;
-	pthread_mutex_unlock(&total_disk_mutex);
-}
-
-void
-host_status_disable(struct host *host)
-{
-	gfarm_uint64_t saved_used = 0, saved_avail = 0;
-
-	mutex_lock(&host->back_channel_mutex, "host back_channel",
-	    "status_disable");
-
-	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
-		saved_used = host->status.disk_used;
-		saved_avail = host->status.disk_avail;
-	}
-
-	host->report_flags = 0;
-
-	mutex_unlock(&host->back_channel_mutex, "host back_channel",
-	    "status_disable");
-
-	pthread_mutex_lock(&total_disk_mutex);
-	total_disk_used -= saved_used;
-	total_disk_avail -= saved_avail;
-	pthread_mutex_unlock(&total_disk_mutex);
 }
 
 #ifdef NOT_USED
