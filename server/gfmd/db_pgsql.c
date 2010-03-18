@@ -17,10 +17,13 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
-#include <libpq-fe.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <netinet/in.h>
+
+#include <libpq-fe.h>
+
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
@@ -41,8 +44,12 @@
 /* ERROR:  invalid XML content */
 #define GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT	"2200N"
 
-/* FATAL:  terminating connection due to administrator command */
-#define GFARM_PGSQL_ERRCODE_ADMIN_SHUTDOWN	"57P01"
+/*
+ * 57P01: FATAL:  terminating connection due to administrator command
+ * 57P02: CRASH SHUTDOWN
+ * 57P03: CANNOT CONNECT
+ */
+#define GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX	"57P"
 
 /**********************************************************************/
 
@@ -220,7 +227,14 @@ pgsql_get_int32(PGresult *res, int row, const char *field_name)
 char *
 pgsql_get_string(PGresult *res, int row, const char *field_name)
 {
-	return (strdup(PQgetvalue(res, row, PQfnumber(res, field_name))));
+	char *v = PQgetvalue(res, row, PQfnumber(res, field_name));
+	char *s = strdup(v);
+
+	if (s == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "pgsql_get_string(%s): %s: no memory", field_name, v);
+	}
+	return (s);
 }
 
 static void *
@@ -241,8 +255,9 @@ pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 	if (dst != NULL)
 		memcpy(dst, src, *size);
 	else
-		gflog_debug(GFARM_MSG_1002146,
-			"allocation of 'dst' failed");
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "pgsql_get_binary(%s): size=%d: no memory",
+		    field_name, (int)*size);
 
 	return dst;
 }
@@ -373,6 +388,11 @@ gfarm_pgsql_insert_and_log(const char *command,
 	return (e);
 }
 
+#define IS_POWER_OF_2(n)	(((n) & (n - 1)) == 0)
+#define	DAY_PER_SECOND		(24 * 3600)
+#define RETRY_INTERVAL		10
+#define MSG_THRESHOLD		4096
+
 /*
  * Return Value:
  *	1: indicate that caller should retry.
@@ -382,22 +402,46 @@ gfarm_pgsql_insert_and_log(const char *command,
  *	otherwise the caller of this function should call PQclear().
  */
 static int
-pgsql_should_retry(PGresult *res, int *retry_countp)
+pgsql_should_retry(PGresult *res)
 {
-	if (PQstatus(conn) == CONNECTION_BAD && (*retry_countp)++ <= 1) {
-		PQreset(conn);
-		if (PQstatus(conn) == CONNECTION_OK) {
-			PQclear(res);
-			return (1);
+	int retry = 0;
+
+	if (PQstatus(conn) == CONNECTION_BAD) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "PostgreSQL connection is down: %s: %s",
+		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
+		    PQresultErrorMessage(res));
+		PQclear(res);
+		for (;;) {
+			++retry;
+			if ((retry >= MSG_THRESHOLD &&
+			     retry % (DAY_PER_SECOND/RETRY_INTERVAL) == 0) ||
+			    IS_POWER_OF_2(retry)) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "PostgreSQL connection retrying");
+			}
+			PQreset(conn);
+			if (PQstatus(conn) == CONNECTION_OK)
+				break;
+			sleep(RETRY_INTERVAL);
 		}
+		/* XXX FIXME: one transaction may be lost in this case */
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "PostgreSQL connection recovered");
+		return (1);
 	} else if (PQresultStatus(res) == PGRES_FATAL_ERROR &&
-	    strcmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
-	    GFARM_PGSQL_ERRCODE_ADMIN_SHUTDOWN) == 0 &&
-	    (*retry_countp)++ == 0) {
+	    strncmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
+	    GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX,
+	    strlen(GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX)) == 0) {
+		/* does this code path happen? */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "PostgreSQL connection problem: %s: %s",
+		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
+		    PQresultErrorMessage(res));
 		PQclear(res);
 		return (1);
 	}
-	return (0);
+	return (0); /* retry is not necessary */
 }
 
 static PGresult *
@@ -410,14 +454,13 @@ gfarm_pgsql_exec_params_with_retry(const char *command,
 	int resultFormat)
 {
 	PGresult *res;
-	int retry_count = 0;
 
 	do {
 		res = PQexecParams(conn, command, nParams,
 		    paramTypes, paramValues, paramLengths, paramFormats,
 		    resultFormat);
 	} while (PQresultStatus(res) != PGRES_COMMAND_OK &&
-	    pgsql_should_retry(res, &retry_count));
+	    pgsql_should_retry(res));
 	return (res);
 }
 
@@ -426,7 +469,6 @@ gfarm_error_t
 gfarm_pgsql_start_with_retry(const char *diag)
 {
 	PGresult *res;
-	int retry_count = 0;
 
 	if (transaction_nesting++ > 0)
 		return (GFARM_ERR_NO_ERROR);
@@ -435,7 +477,7 @@ gfarm_pgsql_start_with_retry(const char *diag)
 	do {
 		res = PQexec(conn, "START TRANSACTION");
 	} while (PQresultStatus(res) != PGRES_COMMAND_OK &&
-	    pgsql_should_retry(res, &retry_count));
+	    pgsql_should_retry(res));
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
 		gflog_error(GFARM_MSG_1000428, "%s transaction BEGIN: %s",
 		    diag, PQresultErrorMessage(res));
@@ -521,7 +563,7 @@ gfarm_pgsql_generic_get_all(
 {
 	PGresult *res;
 	gfarm_error_t e;
-	int n, i, retry_count = 0;
+	int n, i;
 	char *results;
 
 	do {
@@ -533,7 +575,7 @@ gfarm_pgsql_generic_get_all(
 			NULL, /* param formats */
 			1); /* ask for binary results */
 	} while (PQresultStatus(res) != PGRES_TUPLES_OK &&
-	    pgsql_should_retry(res, &retry_count));
+	    pgsql_should_retry(res));
 	e = gfarm_pgsql_check_select(res, sql, diag);
 	if (e == GFARM_ERR_NO_ERROR) {
 		n = PQntuples(res);
@@ -761,7 +803,6 @@ gfarm_pgsql_generic_load(
 	int ret;
 	uint32_t header_flags, extension_area_len;
 	int16_t trailer;
-	int retry_count = 0;
 
 	static const char binary_signature[COPY_BINARY_SIGNATURE_LEN] =
 		"PGCOPY\n\377\r\n\0";
@@ -769,7 +810,7 @@ gfarm_pgsql_generic_load(
 	do {
 		res = PQexec(conn, command);
 	} while (PQresultStatus(res) != PGRES_COPY_OUT &&
-	    pgsql_should_retry(res, &retry_count));
+	    pgsql_should_retry(res));
 	if (PQresultStatus(res) != PGRES_COPY_OUT) {
 		gflog_error(GFARM_MSG_1000434, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
