@@ -617,6 +617,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 	struct file_copy **copyp, *copy;
 	struct dead_file_copy *deferred_cleanup;
 	int do_replication;
+	char *hn = NULL;
 	struct file_replicating *fr;
 	gfarm_error_t e;
 
@@ -631,6 +632,14 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		do_replication = start_replication && copy->valid &&
 		    host_is_up(copy->host) &&
 		    host_supports_async_protocols(copy->host);
+		if (do_replication) {
+			if ((hn = strdup(host_name(spool_host))) == NULL) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "strdup(%s): no memory",
+				    host_name(spool_host));
+				do_replication = 0;
+			}
+		}
 
 		deferred_cleanup = NULL;
 		e = remove_replica_entity(inode, old_gen, copy->host,
@@ -646,7 +655,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 				    host_name(copy->host),
 				    gfarm_error_string(e));
 			} else if ((e = async_back_channel_replication_request(
-			    host_name(spool_host), host_port(spool_host),
+			    hn, host_port(spool_host),
 			    copy->host, inode->i_number, inode->i_gen,
 			    fr))!= GFARM_ERR_NO_ERROR) {
 				file_replicating_free(fr); /* may sleep */
