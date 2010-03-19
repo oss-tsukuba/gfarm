@@ -2658,16 +2658,19 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = async_back_channel_replication_request(srchost, srcport,
-		    dst, ino, gen, fr);
+		/*
+		 * host_name() is always callable without giant_lock,
+		 * and even accessible after the removal of the host.
+		 */
+		e = async_back_channel_replication_request(
+		    host_name(src), srcport, dst, ino, gen, fr);
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_lock();
 			file_replicating_free(fr);
 			giant_unlock();
 		}
 	}
-	if (e != GFARM_ERR_NO_ERROR)
-		free(srchost);
+	free(srchost);
 	free(dsthost);
 
 	return (gfm_server_put_reply(peer, diag, e, ""));
