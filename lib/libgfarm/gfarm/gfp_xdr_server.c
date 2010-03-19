@@ -17,7 +17,7 @@
 #define XID_TYPE_RESULT		0x80000000
 
 struct gfp_xdr_async_callback {
-	gfarm_int32_t (*callback)(void *, size_t);
+	gfarm_int32_t (*callback)(void *, void *, size_t);
 	void *closure;
 };
 
@@ -52,10 +52,10 @@ gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server,
 
 gfarm_error_t
 gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
-	gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
+	void *peer, gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
 {
 	struct gfp_xdr_async_callback *cb = gfarm_id_lookup(async_server, xid);
-	gfarm_int32_t (*callback)(void *, size_t);
+	gfarm_int32_t (*callback)(void *, void *, size_t);
 	void *closure;
 
 	if (cb == NULL)
@@ -63,14 +63,14 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	callback = cb->callback;
 	closure = cb->closure;
 	gfarm_id_free(async_server, xid);
-	*resultp = (*callback)(closure, size);
+	*resultp = (*callback)(peer, closure, size);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*callback)(void *, size_t), void *closure,
+	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
 	gfarm_error_t e;
@@ -107,7 +107,7 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server, size_t size,
-	gfarm_int32_t (*callback)(void *, size_t), void *closure)
+	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure)
 {
 	gfarm_error_t e;
 	gfarm_int32_t xid, xid_and_type;

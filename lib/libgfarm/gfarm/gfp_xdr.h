@@ -89,15 +89,15 @@ void gfp_xdr_async_peer_free(gfp_xdr_async_peer_t,
 	void (*)(void *, gfp_xdr_xid_t, void *), void *);
 
 gfarm_error_t gfp_xdr_callback_async_result(gfp_xdr_async_peer_t,
-	gfp_xdr_xid_t, size_t, gfarm_int32_t *);
+	void *, gfp_xdr_xid_t, size_t, gfarm_int32_t *);
 gfarm_error_t gfp_xdr_vsend_async_request(struct gfp_xdr *,
 	gfp_xdr_async_peer_t,
-	gfarm_int32_t (*)(void *, size_t), void *,
+	gfarm_int32_t (*)(void *, void *, size_t), void *,
 	gfarm_int32_t, const char *, va_list *);
 
 gfarm_error_t gfp_xdr_send_async_request_header(struct gfp_xdr *,
 	gfp_xdr_async_peer_t, size_t,
-	gfarm_int32_t (*)(void *, size_t), void *);
+	gfarm_int32_t (*)(void *, void *, size_t), void *);
 gfarm_error_t gfp_xdr_recv_async_header(struct gfp_xdr *, int,
 	enum gfp_xdr_msg_type *, gfp_xdr_xid_t *, size_t *);
 gfarm_error_t gfp_xdr_send_async_result_header(struct gfp_xdr *,

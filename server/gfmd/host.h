@@ -20,24 +20,24 @@ struct host *host_addr_lookup(const char *, struct sockaddr *);
 
 int host_status_callout_retry(struct host *);
 void host_peer_set(struct host *, struct peer *, int);
-void host_disconnect(struct host *);
-void host_disconnect_request(struct host *);
+void host_disconnect(struct host *, struct peer *);
+void host_disconnect_request(struct host *, struct peer *);
 struct callout *host_status_callout(struct host *);
 struct peer *host_peer(struct host *);
 gfarm_error_t host_sender_lock(struct host *, struct peer **);
 gfarm_error_t host_sender_trylock(struct host *, struct peer **);
-void host_sender_unlock(struct host *);
+void host_sender_unlock(struct host *, struct peer *);
 gfarm_error_t host_receiver_lock(struct host *, struct peer **);
-void host_receiver_unlock(struct host *);
+void host_receiver_unlock(struct host *, struct peer *);
 
 char *host_name(struct host *);
 int host_port(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
-void host_set_callback(struct host *,
-	gfarm_int32_t (*)(void *, size_t), void *);
-int host_get_callback(struct host *,
-	gfarm_int32_t (**)(void *, size_t), void **);
+void host_set_callback(struct host *, struct peer *,
+	gfarm_int32_t (*)(void *, void *, size_t), void *);
+int host_get_callback(struct host *, struct peer *,
+	gfarm_int32_t (**)(void *, void *, size_t), void **);
 
 int host_is_up(struct host *);
 int host_is_active(struct host *);

@@ -66,7 +66,8 @@ struct host {
 	volatile int is_active;
 
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
-	gfarm_int32_t (*back_channel_result)(void *, size_t);
+	gfarm_int32_t (*back_channel_result)(void *, void *, size_t);
+	struct peer *back_channel_result_peer;
 	void *back_channel_closure;
 
 	int status_reply_waiting;
@@ -285,6 +286,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->can_receive = 1;
 	h->is_active = 0;
 	h->back_channel_result = NULL;
+	h->back_channel_result_peer = NULL;
 	h->back_channel_closure = NULL;
 	h->status_reply_waiting = 0;
 	h->report_flags = 0;
@@ -364,8 +366,8 @@ host_supports_async_protocols(struct host *h)
 }
 
 void
-host_set_callback(struct host *h,
-	gfarm_int32_t (*callback)(void *, size_t), void *closure)
+host_set_callback(struct host *h, struct peer *peer,
+	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure)
 {
 	static const char diag[] = "host_set_callback";
 	static const char back_channel_diag[] = "back_channel";
@@ -373,13 +375,14 @@ host_set_callback(struct host *h,
 	/* XXX FIXME sanity check? */
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 	h->back_channel_result = callback;
+	h->back_channel_result_peer = peer;
 	h->back_channel_closure = closure;
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 }
 
 int
-host_get_callback(struct host *h,
-	gfarm_int32_t (**callbackp)(void *, size_t), void **closurep)
+host_get_callback(struct host *h, struct peer *peer,
+	gfarm_int32_t (**callbackp)(void *, void *, size_t), void **closurep)
 {
 	int ok;
 	static const char diag[] = "host_get_callback";
@@ -387,11 +390,15 @@ host_get_callback(struct host *h,
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (h->back_channel_result == NULL) {
+	if (h->back_channel_result == NULL ||
+	    h->back_channel_result_peer != peer) {
 		ok = 0;
 	} else {
 		*callbackp = h->back_channel_result;
 		*closurep = h->back_channel_closure;
+		h->back_channel_result = NULL;
+		h->back_channel_result_peer = NULL;
+		h->back_channel_closure = NULL;
 		ok = 1;
 	}
 
@@ -474,7 +481,7 @@ host_is_unresponsive(struct host *host, gfarm_int64_t now, const char *diag)
 void
 host_peer_busy(struct host *host)
 {
-	int unresponsive = 0;
+	struct peer *unresponsive_peer = NULL;
 	static const char diag[] = "host_peer_busy";
 	static const char back_channel_diag[] = "back_channel";
 
@@ -483,12 +490,12 @@ host_peer_busy(struct host *host)
 		;
 	else if (host->busy_time == 0)
 		host->busy_time = time(NULL);
-	else
-		unresponsive = host_is_unresponsive(host, time(NULL), diag);
+	else if (host_is_unresponsive(host, time(NULL), diag))
+		unresponsive_peer = host->peer;
 	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
-	if (unresponsive)
-		host_disconnect_request(host);
+	if (unresponsive_peer != NULL)
+		host_disconnect_request(host, unresponsive_peer);
 }
 
 void
@@ -505,7 +512,8 @@ host_peer_unbusy(struct host *host)
 int
 host_check_busy(struct host *host, gfarm_int64_t now)
 {
-	int busy = 0, unresponsive = 0;
+	int busy = 0;
+	struct peer *unresponsive_peer = NULL;
 	static const char diag[] = "host_check_busy";
 	static const char back_channel_diag[] = "back_channel";
 
@@ -513,15 +521,15 @@ host_check_busy(struct host *host, gfarm_int64_t now)
 
 	if (!host->is_active || host->invalid)
 		busy = 1;
-	else
-		unresponsive = host_is_unresponsive(host, now, diag);
+	else if (host_is_unresponsive(host, now, diag))
+		unresponsive_peer = host->peer;
 
 	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
-	if (unresponsive)
-		host_disconnect_request(host);
+	if (unresponsive_peer != NULL)
+		host_disconnect_request(host, unresponsive_peer);
 
-	return (busy || unresponsive);
+	return (busy || unresponsive_peer != NULL);
 }
 
 struct callout *
@@ -533,7 +541,13 @@ host_status_callout(struct host *h)
 struct peer *
 host_peer(struct host *h)
 {
-	return (h->peer);
+	struct peer *peer;
+	static const char diag[] = "host_sender_trylock";
+
+	mutex_lock(&h->back_channel_mutex, diag, "back_channel");
+	peer = h->peer;
+	mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
+	return (peer);
 }
 
 gfarm_error_t
@@ -598,16 +612,18 @@ host_sender_lock(struct host *host, struct peer **peerp)
 }
 
 void
-host_sender_unlock(struct host *host)
+host_sender_unlock(struct host *host, struct peer *peer)
 {
 	static const char diag[] = "host_sender_unlock";
 
 	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
-	host->can_send = 1;
-	host->busy_time = 0;
-	peer_del_ref(host->peer);
-	cond_signal(&host->ready_to_send, diag, "ready_to_send");
+	if (peer == host->peer) {
+		host->can_send = 1;
+		host->busy_time = 0;
+		peer_del_ref(host->peer);
+		cond_signal(&host->ready_to_send, diag, "ready_to_send");
+	}
 
 	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 }
@@ -640,14 +656,16 @@ host_receiver_lock(struct host *host, struct peer **peerp)
 }
 
 void
-host_receiver_unlock(struct host *host)
+host_receiver_unlock(struct host *host, struct peer *peer)
 {
 	static const char diag[] = "host_receiver_unlock";
 
 	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
-	host->can_receive = 1;
-	peer_del_ref(host->peer);
+	if (peer == host->peer) {
+		host->can_receive = 1;
+		peer_del_ref(host->peer);
+	}
 
 	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 }
@@ -804,6 +822,7 @@ host_peer_set(struct host *h, struct peer *p, int version)
 	h->peer = p;
 	h->protocol_version = version;
 	h->back_channel_result = NULL;
+	h->back_channel_result_peer = NULL;
 	h->back_channel_closure = NULL;
 	h->is_active = 1;
 	h->status_reply_waiting = 0;
@@ -843,7 +862,7 @@ host_peer_unset(struct host *h)
 
 /* giant_lock should be held before calling this */
 void
-host_disconnect(struct host *h)
+host_disconnect(struct host *h, struct peer *peer)
 {
 #if 0
 	/*
@@ -851,13 +870,14 @@ host_disconnect(struct host *h)
 	 * not to sleep while holding host::back_channel_mutex
 	 */
 
+	int disabled = 0;
 	gfarm_uint64_t saved_used, saved_avail;
 	static const char diag[] = "host_disconnect";
 	static const char back_channel_diag[] = "back_channel";
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (h->is_active) {
+	if (h->is_active && (peer == h->peer || peer == NULL)) {
 		peer_record_protocol_error(h->peer);
 
 		if (h->can_send && h->can_receive) {
@@ -871,40 +891,45 @@ host_disconnect(struct host *h)
 			peer_free_request(h->peer);
 
 		host_peer_unset(h);
-	}
 
-	host_status_disable_unlocked(&saved_used, &saved_avail);
+		host_status_disable_unlocked(&saved_used, &saved_avail);
+	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	host_total_disk_update(saved_used, saved_avail, 0, 0);
+	if (disabled)
+		host_total_disk_update(saved_used, saved_avail, 0, 0);
 #else
-	host_disconnect_request(h);
+	host_disconnect_request(h, peer);
 #endif
 }
 
 void
-host_disconnect_request(struct host *h)
+host_disconnect_request(struct host *h, struct peer *peer)
 {
+	int disabled = 0;
 	gfarm_uint64_t saved_used, saved_avail;
 	static const char diag[] = "host_disconnect_request";
 	static const char back_channel_diag[] = "back_channel";
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (h->is_active) {
+	if (h->is_active && (peer == h->peer || peer == NULL)) {
 		peer_record_protocol_error(h->peer);
 
 		peer_free_request(h->peer);
 
 		host_peer_unset(h);
-	}
 
-	host_status_disable_unlocked(h, &saved_used, &saved_avail);
+		host_status_disable_unlocked(h, &saved_used, &saved_avail);
+
+		disabled = 1;
+	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	host_total_disk_update(saved_used, saved_avail, 0, 0);
+	if (disabled)
+		host_total_disk_update(saved_used, saved_avail, 0, 0);
 }
 
 /* only file_replicating_new() is allowed to call this routine */
@@ -1474,7 +1499,7 @@ host_info_remove_default(const char *hostname, const char *diag)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
 	/* disconnect the back channel */
-	host_disconnect(host);
+	host_disconnect(host, NULL);
 
 	if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
 		e2 = db_host_remove(hostname);

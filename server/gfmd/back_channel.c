@@ -107,7 +107,7 @@ gfm_async_server_put_reply(struct host *host,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 
-	host_sender_unlock(host);
+	host_sender_unlock(host, peer);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1001981,
@@ -122,7 +122,7 @@ gfm_async_server_put_reply(struct host *host,
  */
 static gfarm_error_t
 gfs_client_send_request(struct host *host, const char *diag,
-	gfarm_int32_t (*callback)(void *, size_t), void *closure,
+	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure,
 	gfarm_int32_t command, const char *format, ...)
 {
 	gfarm_error_t e;
@@ -161,7 +161,7 @@ gfs_client_send_request(struct host *host, const char *diag,
 			    "invalid format character: %c(%x)",
 			    command, *format, *format);
 		}
-		host_set_callback(host, callback, closure);
+		host_set_callback(host, peer, callback, closure);
 	}
 	va_end(ap);
 	if (e == GFARM_ERR_NO_ERROR)
@@ -171,23 +171,22 @@ gfs_client_send_request(struct host *host, const char *diag,
 		gflog_warning(GFARM_MSG_1002278,
 		    "back_channel(%s) command %d: disconnecting: %s",
 		    host_name(host), command, gfarm_error_string(e));
-		host_disconnect_request(host);
-		host_sender_unlock(host);
+		host_disconnect_request(host, peer);
+		host_sender_unlock(host, peer);
 		return (e);
 	}
 
 	if (async != NULL) /* is asynchronous mode? */
-		host_sender_unlock(host);
+		host_sender_unlock(host, peer);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 /* host_receiver_lock() must be already called here by back_channel_main() */
 static gfarm_error_t
-gfs_client_recv_result(struct host *host, size_t size, const char *diag,
-	const char *format, ...)
+gfs_client_recv_result(struct peer *peer, struct host *host,
+	size_t size, const char *diag, const char *format, ...)
 {
 	gfarm_error_t e;
-	struct peer *peer = host_peer(host);
 	gfp_xdr_async_peer_t async = peer_get_async(peer);
 	gfarm_int32_t errcode;
 	struct gfp_xdr *conn = peer_get_conn(peer);
@@ -204,7 +203,7 @@ gfs_client_recv_result(struct host *host, size_t size, const char *diag,
 		    &size, &errcode, &format, &ap);
 	} else { /*  synchronous mode */
 		e = gfp_xdr_vrpc_result(conn, 0, &errcode, &format, &ap);
-		host_sender_unlock(host);
+		host_sender_unlock(host, peer);
 	}
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -231,20 +230,21 @@ gfs_client_recv_result(struct host *host, size_t size, const char *diag,
 }
 
 static gfarm_int32_t
-gfs_client_status_result(void *arg, size_t size)
+gfs_client_status_result(void *p, void *arg, size_t size)
 {
 	gfarm_error_t e;
+	struct peer *peer = p;
 	struct host *host = arg;
 	struct host_status st;
 	static const char diag[] = "GFS_PROTO_STATUS";
 
-	e = gfs_client_recv_result(host, size, diag, "fffll",
+	e = gfs_client_recv_result(peer, host, size, diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
 	if (e == GFARM_ERR_NO_ERROR) {
 		host_status_update(host, &st);
-	} else {
-		host_disconnect_request(host);
+	} else if (peer != NULL) { /* to make the race condition harmless */
+		host_disconnect_request(host, peer);
 	}
 	return (e);
 }
@@ -255,13 +255,16 @@ gfs_client_status_request(void *arg)
 {
 	gfarm_error_t e;
 	struct host *host = arg;
+	struct peer *peer = host_peer(host);
 	static const char diag[] = "GFS_PROTO_STATUS";
 
+	
 	if (host_status_reply_is_waiting(host)) {
 		gflog_warning(GFARM_MSG_1002282,
 		    "back_channel(%s) disconnected: no status",
 		    host_name(host));
-		host_disconnect_request(host);
+		if (peer != NULL) /* to make the race condition harmless */
+			host_disconnect_request(host, peer);
 		return (NULL);
 	}
 
@@ -281,7 +284,8 @@ gfs_client_status_request(void *arg)
 		gflog_error(GFARM_MSG_1002283,
 		    "back_channel(%s) disconnected: status rpc unresponsive",
 		    host_name(host));
-		host_disconnect_request(host);
+		if (peer != NULL) /* to make the race condition harmless */
+			host_disconnect_request(host, peer);
 		return (NULL);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -297,14 +301,15 @@ gfs_client_status_request(void *arg)
 }
 
 static gfarm_int32_t
-gfs_client_fhremove_result(void *arg, size_t size)
+gfs_client_fhremove_result(void *p, void *arg, size_t size)
 {
+	struct peer *peer = p;
 	struct dead_file_copy *dfc = arg;
 	struct host *host = dead_file_copy_get_host(dfc);
 	gfarm_error_t e;
 	static const char diag[] = "GFS_PROTO_FHREMOVE";
 
-	e = gfs_client_recv_result(host, size, diag, "");
+	e = gfs_client_recv_result(peer, host, size, diag, "");
 	removal_finishedq_enqueue(dfc, e);
 	return (e);
 }
@@ -364,14 +369,15 @@ remover(void *closure)
  */
 
 static gfarm_int32_t
-gfs_client_replication_request_result(void *arg, size_t size)
+gfs_client_replication_request_result(void *p, void *arg, size_t size)
 {
+	struct peer *peer = p;
 	struct file_replicating *fr = arg;
 	gfarm_int64_t handle;
 	gfarm_error_t e;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
-	e = gfs_client_recv_result(fr->dst, size, diag, "l", &handle);
+	e = gfs_client_recv_result(peer, fr->dst, size, diag, "l", &handle);
 	/* XXX FIXME: deadlock */
 	giant_lock();
 	if (e == GFARM_ERR_NO_ERROR)
@@ -536,7 +542,7 @@ async_back_channel_service(struct host *host,
 		e = async_back_channel_protocol_switch(host, peer, xid, size);
 		break;
 	case GFP_XDR_TYPE_RESULT:
-		e = gfp_xdr_callback_async_result(async, xid, size, &rv);
+		e = gfp_xdr_callback_async_result(async, peer, xid, size, &rv);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1001990,
 			    "(back channel) unknown reply "
@@ -564,14 +570,15 @@ async_back_channel_service(struct host *host,
 static gfarm_error_t
 sync_back_channel_service(struct host *host, struct peer *peer)
 {
-	gfarm_int32_t (*callback)(void *, size_t);
+	gfarm_int32_t (*callback)(void *, void *, size_t);
 	void *arg;
 
-	if (!host_get_callback(host, &callback, &arg)) {
-		gflog_error(GFARM_MSG_1002285, "extra data from back channel");
+	if (!host_get_callback(host, peer, &callback, &arg)) {
+		gflog_error(GFARM_MSG_1002285,
+		    "extra data from back channel");
 		return (GFARM_ERR_PROTOCOL);
 	}
-	return ((*callback)(arg, -1));
+	return ((*callback)(peer, arg, -1));
 }
 #endif
 
@@ -596,7 +603,7 @@ back_channel_main(void *arg)
 
 	do {
 		if (peer_had_protocol_error(peer)) {
-			host_disconnect_request(host);
+			host_disconnect_request(host, peer);
 			return (NULL);
 		}
 #ifdef COMPAT_GFARM_2_3
@@ -617,7 +624,7 @@ back_channel_main(void *arg)
 			     host_name(host), gfarm_error_string(e));
 		}
 		if (IS_CONNECTION_ERROR(e)) {
-			host_disconnect_request(host);
+			host_disconnect_request(host, peer);
 			return (NULL);
 		}
 	} while (gfp_xdr_recv_is_ready(peer_get_conn(peer)));
@@ -631,7 +638,7 @@ back_channel_main(void *arg)
 
 	peer_watch_access(peer);
 
-	host_receiver_unlock(host);
+	host_receiver_unlock(host, peer);
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
@@ -665,7 +672,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    diag, gfarm_error_string(e));
 	} else {		
 		if (host_is_up(host)) /* throw away old connetion */
-			host_disconnect(host);
+			host_disconnect(host, NULL);
 
 		peer_set_async(peer, async);
 		host_peer_set(host, peer, version);
