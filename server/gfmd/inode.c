@@ -614,9 +614,8 @@ static void
 inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t old_gen, int start_replication)
 {
-	struct file_copy **copyp, *copy;
+	struct file_copy **copyp, *copy, *next, *to_be_replicated = NULL;
 	struct dead_file_copy *deferred_cleanup;
-	int do_replication;
 	struct file_replicating *fr;
 	gfarm_error_t e;
 
@@ -628,31 +627,44 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		*copyp = copy->host_next;
 
 		/* if there is ongoing replication, don't start new one */
-		do_replication = start_replication && copy->valid &&
+		if (start_replication && copy->valid &&
 		    host_is_up(copy->host) &&
-		    host_supports_async_protocols(copy->host);
+		    host_supports_async_protocols(copy->host)) {
+			/*
+			 * since file_replicating_new() changes
+			 * inode->u.c.s.f.copies via inode_add_replica(),
+			 * it has to be called at outside of this loop.
+			 */
+			copy->host_next = to_be_replicated;
+			to_be_replicated = copy;
+		} else {
+			e = remove_replica_entity(inode, old_gen, copy->host,
+			    copy->valid, NULL);
+			/* abandon `e' */
 
-		deferred_cleanup = NULL;
+			free(copy);
+		}
+	}
+	for (copy = to_be_replicated; copy != NULL; copy = next) {
 		e = remove_replica_entity(inode, old_gen, copy->host,
-		    copy->valid, do_replication ? &deferred_cleanup : NULL);
+		    copy->valid, &deferred_cleanup);
 		/* abandon `e' */
 
-		if (do_replication) {
-			e = file_replicating_new(inode, copy->host,
-			    deferred_cleanup, &fr);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_1002245,
-				    "replication before removal: host %s: %s", 
-				    host_name(copy->host),
-				    gfarm_error_string(e));
-			} else if ((e = async_back_channel_replication_request(
-			    host_name(spool_host), host_port(spool_host),
-			    copy->host, inode->i_number, inode->i_gen,
-			    fr))!= GFARM_ERR_NO_ERROR) {
-				file_replicating_free(fr); /* may sleep */
-			}
+		e = file_replicating_new(inode, copy->host,
+		    deferred_cleanup, &fr);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_1002245,
+			    "replication before removal: host %s: %s", 
+			    host_name(copy->host),
+			    gfarm_error_string(e));
+		} else if ((e = async_back_channel_replication_request(
+		    host_name(spool_host), host_port(spool_host),
+		    copy->host, inode->i_number, inode->i_gen, fr))
+		    != GFARM_ERR_NO_ERROR) {
+			file_replicating_free(fr); /* may sleep */
 		}
 
+		next = copy->host_next;
 		free(copy);
 	}
 }
@@ -2026,8 +2038,8 @@ inode_is_opened_for_writing(struct inode *inode)
 	return (ios != NULL && ios->u.f.writers > 0);
 }
 
-int
-inode_has_replica(struct inode *inode, struct host *spool_host)
+static struct file_copy *
+inode_get_file_copy(struct inode *inode, struct host *spool_host)
 {
 	struct file_copy *copy;
 
@@ -2037,9 +2049,20 @@ inode_has_replica(struct inode *inode, struct host *spool_host)
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (copy->host == spool_host)
-			return (copy->valid);
+			return (copy);
 	}
+	return (NULL);
 	return (0);
+}
+
+int
+inode_has_replica(struct inode *inode, struct host *spool_host)
+{
+	struct file_copy *copy = inode_get_file_copy(inode, spool_host);
+
+	if (copy == NULL)
+		return (0);
+	return (copy->valid);
 }
 
 gfarm_error_t
@@ -2457,8 +2480,8 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 				return (GFARM_ERR_ALREADY_EXISTS);
 			} else if (valid == 0) {
 				gflog_debug(GFARM_MSG_1001766,
-					"operation is now in progress");
-				return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
+					"operation is already in progress");
+				return (GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS);
 			} else { /* valid == 1 */
 				copy->valid = valid;
 				if (update_quota)
@@ -2604,6 +2627,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	struct file_replicating **frp)
 {
 	gfarm_error_t e;
+	struct file_copy *copy;
 	struct file_replicating *fr;
 
 	if ((flags & ~GFS_REPLICATE_FILE_FORCE) != 0)
@@ -2619,6 +2643,12 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if (!inode_has_replica(inode, src))
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+	if ((copy = inode_get_file_copy(inode, dst)) != NULL) {
+		if (copy->valid)
+			return (GFARM_ERR_ALREADY_EXISTS);
+		else
+			return (GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS);
+	}
 	if (inode_has_replica(inode, dst))
 		return (GFARM_ERR_ALREADY_EXISTS);
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
