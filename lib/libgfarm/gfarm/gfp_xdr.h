@@ -80,7 +80,8 @@ gfarm_error_t gfp_xdr_write_direct(struct gfp_xdr *, void *, int, int *);
 
 
 /* asynchronous RPC related functions */
-typedef struct gfarm_id_table *gfp_xdr_async_peer_t;
+struct gfp_xdr_async_peer;
+typedef struct gfp_xdr_async_peer *gfp_xdr_async_peer_t;
 enum gfp_xdr_msg_type { GFP_XDR_TYPE_REQUEST, GFP_XDR_TYPE_RESULT };
 typedef gfarm_int32_t gfp_xdr_xid_t; /* transaction ID */
 

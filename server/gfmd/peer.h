@@ -21,10 +21,10 @@ gfarm_error_t peer_free_by_fd(int);
 struct gfp_xdr *peer_get_conn(struct peer *);
 int peer_get_fd(struct peer *);
 
-/* (struct id_table *) == gfp_xdr_async_peer_t XXX  */
-struct gfarm_id_table;
-void peer_set_async(struct peer *, struct gfarm_id_table *);
-struct gfarm_id_table *peer_get_async(struct peer *);
+/* (struct gfp_xdr_aync_peer *) == gfp_xdr_async_peer_t XXX  */
+struct gfp_xdr_async_peer;
+void peer_set_async(struct peer *, struct gfp_xdr_async_peer *);
+struct gfp_xdr_async_peer *peer_get_async(struct peer *);
 
 gfarm_error_t peer_set_host(struct peer *, char *);
 enum gfarm_auth_id_type peer_get_auth_id_type(struct peer *);

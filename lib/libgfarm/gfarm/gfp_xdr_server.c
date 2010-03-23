@@ -1,5 +1,8 @@
+#include <pthread.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <gfarm/gfarm.h>
 
@@ -15,6 +18,11 @@
 #define XID_TYPE_BIT		0x80000000
 #define XID_TYPE_REQUEST	0x00000000
 #define XID_TYPE_RESULT		0x80000000
+
+struct gfp_xdr_async_peer {
+	struct gfarm_id_table *idtab;
+	pthread_mutex_t mutex;
+};
 
 struct gfp_xdr_async_callback {
 	gfarm_int32_t (*callback)(void *, void *, size_t);
@@ -34,12 +42,28 @@ static struct gfarm_id_table_entry_ops gfp_xdr_async_xid_table_ops = {
 gfarm_error_t
 gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *async_serverp)
 {
-	struct gfarm_id_table *idtab =
-		gfarm_id_table_alloc(&gfp_xdr_async_xid_table_ops);
+	struct gfp_xdr_async_peer *async_server;
+	int rv;
 
-	if (idtab == NULL)
+	GFARM_MALLOC(async_server);
+	if (async_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	*async_serverp = idtab;
+	if ((rv = pthread_mutex_init(&async_server->mutex, NULL)) != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "pthread_mutex_init: %s", strerror(rv));
+		free(async_server);
+		return (gfarm_errno_to_error(rv));
+	}
+	async_server->idtab =
+	    gfarm_id_table_alloc(&gfp_xdr_async_xid_table_ops);
+	if (async_server->idtab == NULL) {
+		if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "pthread_mutex_destroy: %s", strerror(rv));
+		free(async_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*async_serverp = async_server;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -47,22 +71,54 @@ void
 gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server,
 	void (*rpc_free)(void *, gfp_xdr_xid_t, void *), void *closure)
 {
-	gfarm_id_table_free(async_server, rpc_free, closure);
+	int rv;
+	
+	gfarm_id_table_free(async_server->idtab, rpc_free, closure);
+	if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "pthread_mutex_destroy: %s", strerror(rv));
+	free(async_server);
+}
+
+static void
+gfp_xdr_async_lock(gfp_xdr_async_peer_t async_server)
+{
+	int rv;
+
+	if ((rv = pthread_mutex_lock(&async_server->mutex)) != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "gfp_xdr_async_lock: %s",
+		    strerror(rv));
+}
+
+static void
+gfp_xdr_async_unlock(gfp_xdr_async_peer_t async_server)
+{
+	int rv;
+
+	if ((rv = pthread_mutex_unlock(&async_server->mutex)) != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "gfp_xdr_async_unlock: %s",
+		    strerror(rv));
 }
 
 gfarm_error_t
 gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	void *peer, gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
 {
-	struct gfp_xdr_async_callback *cb = gfarm_id_lookup(async_server, xid);
+	struct gfp_xdr_async_callback *cb;
 	gfarm_int32_t (*callback)(void *, void *, size_t);
 	void *closure;
 
-	if (cb == NULL)
+	gfp_xdr_async_lock(async_server);
+	cb = gfarm_id_lookup(async_server->idtab, xid);
+	if (cb == NULL) {
+		gfp_xdr_async_unlock(async_server);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+	}
 	callback = cb->callback;
 	closure = cb->closure;
-	gfarm_id_free(async_server, xid);
+	gfarm_id_free(async_server->idtab, xid);
+	gfp_xdr_async_unlock(async_server);
+
 	*resultp = (*callback)(peer, closure, size);
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -111,16 +167,22 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 {
 	gfarm_error_t e;
 	gfarm_int32_t xid, xid_and_type;
-	struct gfp_xdr_async_callback *cb = gfarm_id_alloc(async_server, &xid);
+	struct gfp_xdr_async_callback *cb;
 
+	gfp_xdr_async_lock(async_server);
+	cb = gfarm_id_alloc(async_server->idtab, &xid);
+	gfp_xdr_async_unlock(async_server);
 	if (cb == NULL)
 		return (GFARM_ERR_NO_MEMORY);
+
 	cb->callback = callback;
 	cb->closure = closure;
 	xid_and_type = (xid | XID_TYPE_REQUEST);
 	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfarm_id_free(async_server, xid);
+		gfp_xdr_async_lock(async_server);
+		gfarm_id_free(async_server->idtab, xid);
+		gfp_xdr_async_unlock(async_server);
 		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
