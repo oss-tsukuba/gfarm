@@ -670,12 +670,6 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		gflog_error(GFARM_MSG_1002288,
 		    "%s: gfp_xdr_async_peer_new(): %s",
 		    diag, gfarm_error_string(e));
-	} else {		
-		if (host_is_up(host)) /* throw away old connetion */
-			host_disconnect(host, NULL);
-
-		peer_set_async(peer, async);
-		host_peer_set(host, peer, version);
 	}
 	giant_unlock();
 	if (version < GFS_PROTOCOL_VERSION_V2_4)
@@ -693,11 +687,17 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    "%s: protocol flush: %s",
 		    diag, gfarm_error_string(e));
 	else if (e == GFARM_ERR_NO_ERROR) {
+		peer_set_async(peer, async);
 		peer_set_protocol_handler(peer,
 		    back_channel_recv_thread_pool,
 		    back_channel_main);
-		peer_watch_access(peer);
 
+		if (host_is_up(host)) /* throw away old connetion */
+			host_disconnect(host, NULL);
+
+		host_peer_set(host, peer, version);
+
+		peer_watch_access(peer);
 		callout_setfunc(host_status_callout(host),
 		    back_channel_send_thread_pool,
 		    gfs_client_status_request, host);
