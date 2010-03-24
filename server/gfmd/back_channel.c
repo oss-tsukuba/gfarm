@@ -279,7 +279,7 @@ gfs_client_status_request(void *arg)
 	e = gfs_client_send_request(host, diag,
 	    gfs_client_status_result, host, GFS_PROTO_STATUS, "");
 	if (e == GFARM_ERR_DEVICE_BUSY) {
-		if (!host_status_callout_retry(host))
+		if (host_status_callout_retry(host))
 			return (NULL);
 		gflog_error(GFARM_MSG_1002283,
 		    "back_channel(%s) disconnected: status rpc unresponsive",
