@@ -1945,7 +1945,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 		free(host);
 	}
 
-	gfs_async_server_put_reply(conn, xid, "diag", e,
+	gfs_async_server_put_reply(conn, xid, diag, e,
 	    "l", (gfarm_int64_t)pid);
 }
 
