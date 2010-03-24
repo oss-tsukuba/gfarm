@@ -57,7 +57,7 @@ struct host {
 	 * resources which are protected by the host::back_channel_mutex
 	 */
 	pthread_mutex_t back_channel_mutex;
-	pthread_cond_t ready_to_send;
+	pthread_cond_t ready_to_send, ready_to_receive;
 
 	int can_send, can_receive;
 
@@ -304,7 +304,8 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->replicating_inodes.prev_inode =
 	h->replicating_inodes.next_inode = &h->replicating_inodes;
 
-	cond_init(&h->ready_to_send, diag, "able_to_send");
+	cond_init(&h->ready_to_send, diag, "ready_to_send");
+	cond_init(&h->ready_to_receive, diag, "ready_to_receive");
 	mutex_init(&h->back_channel_mutex, diag, "back_channel");
 	mutex_init(&h->replication_mutex, diag, "replication");
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
@@ -632,22 +633,33 @@ gfarm_error_t
 host_receiver_lock(struct host *host, struct peer **peerp)
 {
 	gfarm_error_t e;
+	struct peer *peer0;
 	static const char diag[] = "host_receiver_lock";
 
 	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
-	if (!host_is_up_unlocked(host)) {
-		e = GFARM_ERR_CONNECTION_ABORTED;
-	} else if (host->can_receive) {
-		host->can_receive = 0;
-		peer_add_ref(host->peer);
-		*peerp = host->peer;
-		e = GFARM_ERR_NO_ERROR;
-	} else { /* shound't happen */
-		gflog_fatal(GFARM_MSG_1002214, 
-		    "%s: host_receiver_lock(%s): assertion failure",
-		    diag, host_name(host));
-		e = GFARM_ERR_DEVICE_BUSY;
+	for (;;) {
+		if (!host_is_up_unlocked(host)) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (host->can_receive) {
+			host->can_receive = 0;
+			peer_add_ref(host->peer);
+			*peerp = host->peer;
+			e = GFARM_ERR_NO_ERROR;
+			break;
+		}
+		/* may happen at gfsd restart? */
+		peer0 = host->peer;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "waiting for host_receiver_lock: maybe gfsd restarted?");
+		cond_wait(&host->ready_to_receive, &host->back_channel_mutex,
+		    diag, "ready_to_receive");
+		if (host->peer != peer0) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
 	}
 
 	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
@@ -665,6 +677,7 @@ host_receiver_unlock(struct host *host, struct peer *peer)
 	if (peer == host->peer) {
 		host->can_receive = 1;
 		peer_del_ref(host->peer);
+		cond_signal(&host->ready_to_receive, diag, "ready_to_receive");
 	}
 
 	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
@@ -678,11 +691,12 @@ host_receiver_unlock(struct host *host, struct peer *peer)
  * should be called after host->is_active = 0;
  */
 static void
-host_sender_break_locks(struct host *host)
+host_break_locks(struct host *host)
 {
-	static const char diag[] = "host_sender_break_locks";
+	static const char diag[] = "host_break_locks";
 
 	cond_broadcast(&host->ready_to_send, diag, "ready_to_send");
+	cond_broadcast(&host->ready_to_receive, diag, "ready_to_receive");
 }
 
 int
@@ -857,7 +871,7 @@ host_peer_unset(struct host *h)
 	 * just continue the replication after next call of host_peer_set().
 	 */
 
-	host_sender_break_locks(h);
+	host_break_locks(h);
 }
 
 /* giant_lock should be held before calling this */

@@ -591,14 +591,22 @@ back_channel_main(void *arg)
 	gfarm_error_t e;
 
 	e = host_receiver_lock(host, &peer);
-	if (e != GFARM_ERR_NO_ERROR) /* already disconnected */
+	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "back_channel(%s): aborted: %s",
+		    host_name(host), gfarm_error_string(e));
 		return (NULL);
+	}
 	/*
 	 * the following ensures that the bach_channel connection is
 	 * not switched to another one.
 	 */
-	if (peer != peer0)
+	if (peer != peer0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "back_channel(%s): aborted: unexpected peer switch",
+		    host_name(host));
 		return (NULL);
+	}
 	async = peer_get_async(peer);
 
 	do {
