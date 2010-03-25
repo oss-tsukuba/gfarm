@@ -143,8 +143,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 			gfarm_user_info_free(&u->ui);
 			u->ui = *ui;
 			return (GFARM_ERR_NO_ERROR);
-		}
-		else
+		} else
 			return (GFARM_ERR_ALREADY_EXISTS);
 	}
 
@@ -186,6 +185,7 @@ user_remove(const char *username)
 {
 	struct gfarm_hash_entry *entry;
 	struct user *u;
+	struct group_assignment *ga;
 
 	entry = gfarm_hash_lookup(user_hashtab, &username, sizeof(username));
 	if (entry == NULL)
@@ -198,6 +198,10 @@ user_remove(const char *username)
 		gfarm_hash_purge(user_dn_hashtab,
 		    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
 	quota_user_remove(u);
+
+	/* free group assignment */
+	while ((ga = u->groups.group_next) != &u->groups)
+		grpassign_remove(ga);
 	/*
 	 * do not purge the hash entry.  Instead, invalidate it so
 	 * that it can be activated later.
@@ -643,9 +647,9 @@ gfm_server_user_info_remove(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
+	if (!from_client || user == NULL || !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
+	else
 		e = user_info_remove(username, msg);
 	free(username);
 	giant_unlock();
