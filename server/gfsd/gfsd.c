@@ -3701,7 +3701,8 @@ main(int argc, char **argv)
 		pid_fp = fopen(pid_file, "w");
 		seteuid(gfsd_uid);
 		if (pid_fp == NULL)
-			accepting_fatal_errno(GFARM_MSG_1000590, pid_file);
+			accepting_fatal_errno(GFARM_MSG_1000590,
+				"failed to open file: %s", pid_file);
 	}
 
 	if (!debug_mode) {
