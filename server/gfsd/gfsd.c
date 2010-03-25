@@ -3297,8 +3297,7 @@ back_channel_server(void)
 	struct gfp_xdr *conn;
 	int eof;
 	gfarm_int32_t request;
-	/* XXX 4 min - default heartbeat interval is 3 min */
-	int timeout = 4 * 60; 
+	int timeout = gfarm_metadb_heartbeat_interval * 2;
 
 retry:
 	e = gfm_client_switch_back_channel(gfm_server);
