@@ -736,7 +736,8 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user))
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0)
+	else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0 ||
+	    strcmp(groupname, ROOT_GROUP_NAME) == 0)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else
 		e = group_info_remove(groupname, msg);
