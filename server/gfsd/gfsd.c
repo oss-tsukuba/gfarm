@@ -3696,7 +3696,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		timeout.tv_sec = gfarm_metadb_heartbeat_interval * 2;
 		timeout.tv_usec = 0;
 
-		nfound = select(max_fd + 1, &fds, NULL, NULL, NULL);
+		nfound = select(max_fd + 1, &fds, NULL, NULL, &timeout);
 		if (nfound == 0)
 			return (0);
 		if (nfound < 0) {
