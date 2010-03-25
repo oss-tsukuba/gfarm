@@ -1120,31 +1120,23 @@ host_init(void)
  * protocol handler
  */
 
-/* this interface is exported for a use from a private extension */
-gfarm_error_t
-host_info_send(struct gfp_xdr *client, struct host *h)
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: host::back_channel_mutex
+ * SLEEPS: maybe
+ *	but host::back_channel_mutex won't be blocked while sleeping.
+ */
+static gfarm_error_t
+gfm_server_host_generic_get(struct peer *peer,
+	gfarm_error_t (*reply)(struct host *, struct peer *, const char *),
+	int (*filter)(struct host *, void *), void *closure,
+	int no_match_is_ok, const char *diag)
 {
-	struct gfarm_host_info *hi;
-
-	hi = &h->hi;
-	return (gfp_xdr_send(client, "ssiiii",
-	    hi->hostname, hi->architecture,
-	    hi->ncpu, hi->port, hi->flags, hi->nhostaliases));
-}
-
-gfarm_error_t
-gfm_server_host_info_get_common(struct peer *peer,
-	int (*filter)(struct host *, void *), void *closure, const char *diag)
-{
-	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e, e2;
 	gfarm_int32_t nhosts, nmatch, i, answered;
 	struct gfarm_hash_iterator it;
 	struct host *h;
 	char *match;
-
-	/* XXX FIXME too long giant lock */
-	giant_lock();
 
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
@@ -1165,6 +1157,8 @@ gfm_server_host_info_get_common(struct peer *peer,
 	} else {
 		i = 0;
 		FOR_ALL_HOSTS(&it) {
+			if (i >= nhosts) /* always false due to giant_lock */
+				break;
 			h = host_iterator_access(&it);
 			if (host_is_active(h) &&
 			    (filter == NULL || (*filter)(h, closure))) {
@@ -1175,7 +1169,7 @@ gfm_server_host_info_get_common(struct peer *peer,
 			}
 			++i;
 		}
-		if (filter == NULL || nmatch > 0) {
+		if (no_match_is_ok || nmatch > 0) {
 			e = GFARM_ERR_NO_ERROR;
 		} else {
 			e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -1195,7 +1189,7 @@ gfm_server_host_info_get_common(struct peer *peer,
 				break;
 			h = host_iterator_access(&it);
 			if (match[i]) {
-				e2 = host_info_send(client, h);
+				e2 = (*reply)(h, peer, diag);
 				if (e2 != GFARM_ERR_NO_ERROR) {
 					gflog_debug(GFARM_MSG_1002219,
 					    "%s: host_info_send(): %s",
@@ -1210,8 +1204,42 @@ gfm_server_host_info_get_common(struct peer *peer,
 	if (match != NULL)
 		free(match);
 
-	giant_unlock();
 	return (e2);
+}
+
+/* this interface is exported for a use from a private extension */
+gfarm_error_t
+host_info_send(struct gfp_xdr *client, struct host *h)
+{
+	struct gfarm_host_info *hi;
+
+	hi = &h->hi;
+	return (gfp_xdr_send(client, "ssiiii",
+	    hi->hostname, hi->architecture,
+	    hi->ncpu, hi->port, hi->flags, hi->nhostaliases));
+}
+
+static gfarm_error_t
+host_info_reply(struct host *h, struct peer *peer, const char *diag)
+{
+	return (host_info_send(peer_get_conn(peer), h));
+}
+
+gfarm_error_t
+gfm_server_host_info_get_common(struct peer *peer,
+	int (*filter)(struct host *, void *), void *closure, const char *diag)
+{
+	gfarm_error_t e;
+
+	/* XXX FIXME too long giant lock */
+	giant_lock();
+
+	e = gfm_server_host_generic_get(peer, host_info_reply, filter, closure,
+	    filter == NULL, diag);
+
+	giant_unlock();
+
+	return (e);
 }
 
 gfarm_error_t
@@ -1580,13 +1608,11 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	gfarm_time_t last_report;
 	gfarm_int32_t report_flags;
 
-	mutex_lock(&h->back_channel_mutex, "host back_channel",
-	    "schedule_reply");
+	mutex_lock(&h->back_channel_mutex, diag, "schedule_reply");
 	status = h->status;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
-	mutex_unlock(&h->back_channel_mutex, "host back_channel",
-	    "schedule_reply");
+	mutex_unlock(&h->back_channel_mutex, diag, "schedule_reply");
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
@@ -1597,120 +1623,12 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	    report_flags));
 }
 
-/* XXX does not care about hostaliases and architecture */
-static gfarm_error_t
-host_copy(struct host **dstp, const struct host *src)
-{
-	struct host *dst;
-
-	GFARM_MALLOC(dst);
-	if (dst == NULL) {
-		gflog_debug(GFARM_MSG_1001573,
-			"allocation of host failed");
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
-	*dst = *src;
-	if ((dst->hi.hostname = strdup(dst->hi.hostname)) == NULL) {
-		gflog_debug(GFARM_MSG_1001574,
-			"allocation of hostname failed");
-		free(dst);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	*dstp = dst;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static void
-host_free(struct host *h)
-{
-	if (h == NULL)
-		return;
-	if (h->hi.hostname != NULL)
-		free(h->hi.hostname);
-	free(h);
-	return;
-}
-
-static void
-host_free_all(int n, struct host **h)
-{
-	int i;
-
-	for (i = 0; i < n; ++i)
-		host_free(h[i]);
-	free(h);
-}
-
-gfarm_error_t
-host_active_hosts(int (*filter)(struct host *, void *), void *arg,
-	int *nhostsp, struct host ***hostsp)
-{
-	struct gfarm_hash_iterator it;
-	struct host **hosts, *h;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	int i, n;
-
-	n = 0;
-	FOR_ALL_HOSTS(&it) {
-		h = host_iterator_access(&it);
-		if (host_is_up(h) && filter(h, arg))
-			++n;
-	}
-	GFARM_MALLOC_ARRAY(hosts, n);
-	if (hosts == NULL) {
-		gflog_debug(GFARM_MSG_1001575,
-			"allocation of hosts failed");
-		e = GFARM_ERR_NO_MEMORY;
-	}
-
-	i = 0;
-	FOR_ALL_HOSTS(&it) {
-		h = host_iterator_access(&it);
-		if (hosts != NULL && host_is_up(h) && filter(h, arg) &&
-		    i < n) {
-			e = host_copy(&hosts[i], h);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001576,
-				    "host_copy() failed: %s",
-				    gfarm_error_string(e));
-				host_free_all(i, hosts);
-				return (e);
-			}
-			++i;
-		}
-	}
-	*nhostsp = i;
-	*hostsp = hosts;
-	return (e);
-}
-
-static int
-null_filter(struct host *host, void *arg)
-{
-	return (1);
-}
-
 gfarm_error_t
 host_schedule_reply_all(struct peer *peer, const char *diag,
-	int (*filter)(struct host *, void *), void *arg)
+	int (*filter)(struct host *, void *), void *closure)
 {
-	gfarm_error_t e, e_save;
-	struct host **hosts;
-	int i, n;
-
-	e = host_active_hosts(filter, arg, &n, &hosts);
-	if (e != GFARM_ERR_NO_ERROR)
-		n = 0;
-
-	e_save = host_schedule_reply_n(peer, n, diag);
-	for (i = 0; i < n; ++i)
-		e = host_schedule_reply(hosts[i], peer, diag); {
-		if (e_save == GFARM_ERR_NO_ERROR)
-			e_save = e;
-	}
-	host_free_all(n, hosts);
-	return (e_save);
+	return (gfm_server_host_generic_get(peer, host_schedule_reply,
+	    filter, closure, 1, diag));
 }
 
 gfarm_error_t
@@ -1728,8 +1646,7 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
 	} else
-		return (host_schedule_reply_all(
-				peer, diag, null_filter, NULL));
+		return (host_schedule_reply_all(peer, diag, NULL, NULL));
 }
 
 gfarm_error_t
