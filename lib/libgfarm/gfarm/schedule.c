@@ -57,9 +57,9 @@
  *	if (it's read-mode)
  *		select hosts by load average order.
  *	if (it's write-mode)
- *		if there isn't enough hosts which have enough free space
+ *		if there are enough hosts which have enough free space
  *			select only the hosts which have enough free space
- *		else if there isn't enough idle hosts
+ *		else if there are not enough idle hosts
  *			select hosts by load average order
  *		else
  *			select hosts by disk free space order.
