@@ -1573,7 +1573,6 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	gfarm_off_t size;
 	struct gfarm_timespec atime, mtime;
-	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
 	const char msg[] = "gfm_server_close_write";
@@ -1589,7 +1588,7 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 
 	if (from_client) /* from gfsd only */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	else if ((spool_host = peer_get_host(peer)) == NULL)
+	else if (peer_get_host(peer) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	else if ((process = peer_get_process(peer)) == NULL)
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -1794,7 +1793,7 @@ gfm_server_pio_visit(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
@@ -1820,18 +1819,18 @@ gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 		e = inode_replica_list_by_name(inode, &n, &hosts);
 
 	giant_unlock();
-	e = gfm_server_put_reply(peer, "replica_list_by_name", e, "i", n);
+	e2 = gfm_server_put_reply(peer, "replica_list_by_name", e, "i", n);
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; ++i) {
-			e = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
-			if (e != GFARM_ERR_NO_ERROR)
+			e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
+			if (e2 != GFARM_ERR_NO_ERROR)
 				break;
 		}
-		while (--i >= 0)
+		for (i = 0; i < n; ++i)
 			free(hosts[i]);
 		free(hosts);
 	}
-	return (e);
+	return (e2);
 }
 
 gfarm_error_t
@@ -1897,7 +1896,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t cfd;
 	struct inode *inode;
 	struct host *host, *spool_host;
-	char *msg = "replica_remove_by_file";
+	const char msg[] = "replica_remove_by_file";
 
 	e = gfm_server_get_request(peer, msg, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)

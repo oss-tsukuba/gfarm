@@ -516,6 +516,8 @@ remove_replica_internal(struct inode *, struct file_copy *);
 void
 inode_remove(struct inode *inode)
 {
+	inode_remove_all_xattrs(inode);
+
 	if (inode->u.c.state != NULL)
 		gflog_fatal(GFARM_MSG_1000302, "inode_remove: still opened");
 	if (inode_is_file(inode)) {
@@ -1461,7 +1463,6 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 	}
 	if (inode->u.c.state == NULL) {
 		/* no process is opening this file, just remove it */
-		inode_remove_all_xattrs(inode);
 		inode_remove(inode);
 		return (GFARM_ERR_NO_ERROR);
 	} else {

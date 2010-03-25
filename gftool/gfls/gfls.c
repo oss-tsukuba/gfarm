@@ -14,6 +14,8 @@
 #include <time.h>
 #include <gfarm/gfarm.h>
 
+#include "timespec.h" /* XXX should export this interface */
+
 char *program_name = "gfls";
 
 #define INUM_LEN	11
@@ -93,25 +95,11 @@ compare_size_r(const void *a, const void *b)
 }
 
 int
-timespec_cmp(struct gfarm_timespec *t1, struct gfarm_timespec *t2)
-{
-	if (t1->tv_sec > t2->tv_sec)
-		return (1);
-	if (t1->tv_sec < t2->tv_sec)
-		return (-1);
-	if (t1->tv_nsec > t2->tv_nsec)
-		return (1);
-	if (t1->tv_nsec < t2->tv_nsec)
-		return (-1);
-	return (0);
-}
-
-int
 compare_mtime(const void *a, const void *b)
 {
 	const struct ls_entry *p = a, *q = b;
 
-	return (timespec_cmp(&q->st->st_mtimespec, &p->st->st_mtimespec));
+	return (gfarm_timespec_cmp(&q->st->st_mtimespec, &p->st->st_mtimespec));
 }
 
 int
@@ -119,7 +107,7 @@ compare_mtime_r(const void *a, const void *b)
 {
 	const struct ls_entry *p = a, *q = b;
 
-	return (timespec_cmp(&p->st->st_mtimespec, &q->st->st_mtimespec));
+	return (gfarm_timespec_cmp(&p->st->st_mtimespec, &q->st->st_mtimespec));
 }
 
 void

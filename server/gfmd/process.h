@@ -27,7 +27,8 @@ gfarm_error_t process_clear_dir_key(struct process *, struct peer *, int);
 struct file_opening {
 	/*
 	 * end marker:
-	 * {fo->opening_prev, fo->opening_next} == &fo->inode->openings
+	 * 	{fo->opening_prev, fo->opening_next}
+	 *	== &fo->inode->u.c.state->openings
 	 */
 	struct file_opening *opening_prev, *opening_next;
 

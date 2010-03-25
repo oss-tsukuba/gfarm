@@ -112,9 +112,6 @@
 	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define fatal_errno(msg_no, ...) \
 	fatal_errno_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define fatal_metadb_proto(msg_no, ...) \
-	fatal_metadb_proto_full(msg_no, __FILE__, __LINE__, __func__,\
-				__VA_ARGS__)
 #define accepting_fatal(msg_no, ...) \
 	accepting_fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define accepting_fatal_errno(msg_no, ...) \
@@ -123,7 +120,7 @@
 
 static const char READONLY_CONFIG_FILE[] = ".readonly";
 
-char *program_name = "gfsd";
+const char *program_name = "gfsd";
 
 int debug_mode = 0;
 pid_t master_gfsd_pid;
@@ -166,11 +163,10 @@ cleanup(int sighandler)
 		gfp_xdr_delete_credential(credential_exported, sighandler);
 	credential_exported = NULL;
 
-	if (sighandler) /* It's not safe to do the following operation */
-		return;
-
-	/* disconnect, do logging */
-	gflog_notice(GFARM_MSG_1000451, "disconnected");
+	if (!sighandler) {
+		/* It's not safe to do the following operation */
+		gflog_notice(GFARM_MSG_1000451, "disconnected");
+	}
 }
 
 void
@@ -185,17 +181,6 @@ cleanup_handler(int signo)
 	_exit(2);
 }
 
-static void vfatal_full(int, const char *, int, const char *, const char *,
-		va_list) GFLOG_PRINTF_ARG(5, 0);
-static void
-vfatal_full(int msg_no, const char *file, int line_no, const char *func,
-		const char *format, va_list ap)
-{
-	cleanup(0);
-
-	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
-}
-
 static void fatal_full(int, const char *, int, const char *,
 		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
 static void
@@ -204,13 +189,20 @@ fatal_full(int msg_no, const char *file, int line_no, const char *func,
 {
 	va_list ap;
 
+	va_start(ap, format);
+	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
+	va_end(ap);
+
+	cleanup(0);
 	if (getpid() == back_channel_gfsd_pid) {
-		/* send terminate signal to the master process */
+		/*
+		 * send terminate signal to the master process.
+		 * this should be done at the end of fatal(),
+		 * because both the master process and the back channel process
+		 * try to kill each other.
+		 */
 		kill(master_gfsd_pid, SIGTERM);
 	}
-	va_start(ap, format);
-	vfatal_full(msg_no, file, line_no, func, format, ap);
-	va_end(ap);
 	exit(2);
 }
 
@@ -231,12 +223,13 @@ fatal_errno_full(int msg_no, const char *file, int line_no, const char *func,
 }
 
 void
-fatal_metadb_proto_full(int msg_no, const char *file, int line_no,
-		const char *func, const char *diag,
-		const char *proto, gfarm_error_t e)
+fatal_metadb_proto_full(int msg_no,
+	const char *file, int line_no, const char *func,
+	const char *diag, const char *proto, gfarm_error_t e)
 {
-	fatal(GFARM_MSG_1000452, "gfmd protocol: %s error on %s: %s",
-	      proto, diag, gfarm_error_string(e));
+	fatal_full(msg_no, file, line_no, func,
+	    "gfmd protocol: %s error on %s: %s", proto, diag,
+	    gfarm_error_string(e));
 }
 
 struct local_socket {
@@ -262,7 +255,9 @@ cleanup_accepting(void)
 	}
 }
 
-void
+static void accepting_fatal_full(int, const char *, int, const char *,
+		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+static void
 accepting_fatal_full(int msg_no, const char *file, int line_no,
 		const char *func, const char *format, ...)
 {
@@ -275,7 +270,9 @@ accepting_fatal_full(int msg_no, const char *file, int line_no,
 	exit(2);
 }
 
-void
+static void accepting_fatal_errno_full(int, const char *, int, const char *,
+		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
+static void
 accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 		const char *func, const char *format, ...)
 {
@@ -641,7 +638,8 @@ gfs_open_flags_localize(int open_flags)
  */
 
 void
-local_path(gfarm_ino_t inum, gfarm_uint64_t gen, char *diag, char **pathp)
+local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
+	char **pathp)
 {
 	char *p;
 	static int length = 0;
@@ -3436,7 +3434,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 	if (mkdir(sock_dir, LOCAL_SOCKDIR_MODE) == -1) {
 		if (errno != EEXIST) {
 			accepting_fatal_errno(GFARM_MSG_1000574,
-			    "%s: cannot mkdir: %s", sock_dir);
+			    "%s: cannot mkdir", sock_dir);
 		} else if (stat(sock_dir, &st) != 0) {
 			accepting_fatal_errno(GFARM_MSG_1000575, "stat(%s)",
 			    sock_dir);
@@ -3446,7 +3444,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 		} else if ((st.st_mode & PERMISSION_MASK) != LOCAL_SOCKDIR_MODE
 		    && chmod(sock_dir, LOCAL_SOCKDIR_MODE) != 0) {
 			accepting_fatal_errno(GFARM_MSG_1000577,
-			    "%s: cannot chmod to 0%o: %s",
+			    "%s: cannot chmod to 0%o",
 			    sock_dir, LOCAL_SOCKDIR_MODE);
 		}
 	}

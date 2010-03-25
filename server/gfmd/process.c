@@ -27,6 +27,9 @@
 #define FILETAB_MULTIPLY	2
 #define FILETAB_MAX		256
 
+#define PROCESS_ID_MIN			300
+#define PROCESS_TABLE_INITIAL_SIZE	100
+
 struct process_link {
 	struct process_link *next, *prev;
 };
@@ -108,6 +111,9 @@ process_alloc(struct user *user,
 		if (process_id_table == NULL)
 			gflog_fatal(GFARM_MSG_1000293,
 			    "allocating pid table: no memory");
+		gfarm_id_table_set_base(process_id_table, PROCESS_ID_MIN);
+		gfarm_id_table_set_initial_size(process_id_table,
+		    PROCESS_TABLE_INITIAL_SIZE);
 	}
 
 	if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
@@ -610,11 +616,15 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	     != GFARM_ERR_ALREADY_EXISTS))
 		do_not_change_status = 1;
-	else if (gfarm_timespec_cmp(inode_get_mtime(fo->inode), mtime) ||
-		 inode_get_size(fo->inode) != size)
-		/* invalidate file replicas if updated */
-		inode_remove_every_other_replicas(
-			fo->inode, fo->u.f.spool_host);
+	else {
+		/*
+		 * gfsd uses CLOSE_FILE_WRITE protocol only in the file is
+		 * really updated, so we don't have to check mtime and size
+		 * here.
+		 */
+		inode_remove_every_other_replicas(fo->inode,
+		    fo->u.f.spool_host); /* invalidate file replicas */
+	}
 
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */

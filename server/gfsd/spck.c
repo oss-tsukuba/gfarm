@@ -17,16 +17,13 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+
 #include "gfm_client.h"
+
+#include "gfsd_subr.h"
 
 extern int debug_mode;
 extern struct gfm_connection *gfm_server;
-
-#define fatal_metadb_proto(msg_no, ...) \
-	fatal_metadb_proto_full(msg_no, __FILE__, __LINE__, __func__,\
-				__VA_ARGS__)
-void fatal_metadb_proto_full(int, const char *, int, const char *, const char *,
-		const char *, gfarm_error_t);
 
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)

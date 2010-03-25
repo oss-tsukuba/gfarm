@@ -154,11 +154,11 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_debug(GFARM_MSG_1000404, "gfp_xdr_flush");
-		e = gfp_xdr_flush(peer_get_conn(peer));
-		if (e != GFARM_ERR_NO_ERROR)
+		e2 = gfp_xdr_flush(peer_get_conn(peer));
+		if (e2 != GFARM_ERR_NO_ERROR)
 			gflog_warning(GFARM_MSG_1000405,
 			    "back channel protocol flush: %s",
-			    gfarm_error_string(e));
+			    gfarm_error_string(e2));
 	}
 
 	/* XXX FIXME - make sure there is at most one running remover thread */

@@ -840,8 +840,7 @@ sigs_handler(void *p)
 #endif
 		     && sig != SIGUSR2)) {
 			gflog_info(GFARM_MSG_1000198,
-			    "spurious signal %d received: ignoring...",
-			    sig);
+			    "spurious signal %d received: ignoring...", sig);
 			continue;
 		}
 #endif
