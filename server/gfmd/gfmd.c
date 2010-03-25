@@ -801,7 +801,10 @@ sigs_set(sigset_t *sigs)
 {
 	sigemptyset(sigs);
 	sigaddset(sigs, SIGHUP);
-	sigaddset(sigs, SIGINT);
+#ifdef __NetBSD__ /* NetBSD 4 delivers SIGINT to gfmd even under gdb */
+	if (!debug_mode)
+#endif
+		sigaddset(sigs, SIGINT);
 	sigaddset(sigs, SIGTERM);
 #ifdef SIGINFO
 	sigaddset(sigs, SIGINFO);
@@ -821,8 +824,6 @@ sigs_handler(void *p)
 	/* A Linux Thread is a process having its own process id. */
 	write_pid(pid_file);
 #endif
-	sigs_set(sigs);
-
 	for (;;) {
 		if (sigwait(sigs, &sig) == -1)
 			gflog_warning(GFARM_MSG_1000197,
