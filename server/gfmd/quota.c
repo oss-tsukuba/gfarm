@@ -706,7 +706,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 		q = group_quota(group);
 	else
 		q = user_quota(user);
-	if (!is_checked(q)) {
+	if (!is_checked(q)) { /* quota is not enabled */
 		giant_unlock();
 		free(name);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -867,7 +867,7 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 		return (gfm_server_put_reply(peer, diag, db_state, ""));
 
 	giant_lock();
-	if (!user_is_admin(peer_user)) {
+	if (!from_client || peer_user == NULL || !user_is_admin(peer_user)) {
 		giant_unlock();
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		return (gfm_server_put_reply(peer, diag, e, ""));
