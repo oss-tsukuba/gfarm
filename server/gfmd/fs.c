@@ -2426,8 +2426,8 @@ gfm_server_replica_list_by_name(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, diag, e, "i", n);
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; ++i) {
-			e = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
-			if (e != GFARM_ERR_NO_ERROR)
+			e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
+			if (e2 != GFARM_ERR_NO_ERROR)
 				break;
 		}
 		for (i = 0; i < n; ++i)

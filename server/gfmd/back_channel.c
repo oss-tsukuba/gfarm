@@ -693,7 +693,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 	if (e2 != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000405,
 		    "%s: protocol flush: %s",
-		    diag, gfarm_error_string(e));
+		    diag, gfarm_error_string(e2));
 	else if (e == GFARM_ERR_NO_ERROR) {
 		peer_set_async(peer, async);
 		peer_set_protocol_handler(peer,
