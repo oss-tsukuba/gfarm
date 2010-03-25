@@ -26,7 +26,7 @@ Quick Start
 ===========
 
 Configuration of a Gfarm metadata server (MDS)
- # config-gfarm -t -A <global_admin_name>
+ # config-gfarm -A <admin_name>
  # useradd -c "Gfarm gfsd" _gfarmfs
  # su _gfarmfs
  $ gfkey -f -p 31536000
@@ -46,7 +46,9 @@ Configuration of a Gfarm client node
  system nodes
 
 Registration of Users
- $ gfuser -c global_username realname homedir gsi_dn
+ $ gfuser -c username realname homedir gsi_dn
+ $ gfmkdir homedir
+ $ gfchown username homedir
 
 Registration of Administrators
  $ gfgroup -m gfarmadm user1 user2 ...
@@ -433,7 +435,7 @@ catalog, of the specified files.
 
 The 'gfrep' command creates file copies.
 
-	% gfrep -s linux-1.example.com -d linux-2.example.com .bashrc
+	% gfrep -N 2 .bashrc
 	% gfwhere .bashrc
 	linux-1.example.com linux-2.example.com
 
