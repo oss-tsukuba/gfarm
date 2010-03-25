@@ -1,4 +1,5 @@
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
+lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
 
 # gftool/config-gfarm
 gftool/gfls/root.sh

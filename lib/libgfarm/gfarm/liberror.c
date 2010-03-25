@@ -338,8 +338,6 @@ static struct gfarm_errno_error_map {
 	/* X/Open */
 	{ EINPROGRESS,	GFARM_ERR_OPERATION_NOW_IN_PROGRESS },
 	{ EALREADY,	GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS },
-	{ EDQUOT,	GFARM_ERR_DISK_QUOTA_EXCEEDED },
-	{ ENOTEMPTY,	GFARM_ERR_DIRECTORY_NOT_EMPTY },
 	/* X/Open - ipc/network software -- argument errors */
 	{ ENOTSOCK,	GFARM_ERR_SOCKET_OPERATION_ON_NON_SOCKET },
 	{ EDESTADDRREQ,	GFARM_ERR_DESTINATION_ADDRESS_REQUIRED },
@@ -387,7 +385,29 @@ static struct gfarm_errno_error_map {
 #endif
 
 	/* gfarm specific errors */
+	/*		GFARM_ERR_UNKNOWN_HOST */
+	/*	      GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME */
+	/*		GFARM_ERR_NO_SUCH_OBJECT */
+	/*		GFARM_ERR_CANT_OPEN */
+#ifdef EPROTO
+        { EPROTO,	GFARM_ERR_UNEXPECTED_EOF },
+#else
+        { ECONNABORTED,	GFARM_ERR_UNEXPECTED_EOF },
+#endif
+	/*		GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING */
+	{ EAGAIN,	GFARM_ERR_TOO_MANY_JOBS },
+	/*		GFARM_ERR_FILE_MIGRATED */
+	{ EOPNOTSUPP,	GFARM_ERR_NOT_A_SYMBOLIC_LINK },
+	{ EOPNOTSUPP,	GFARM_ERR_IS_A_SYMBOLIC_LINK },
+	/*		GFARM_ERR_UNKNOWN */
+	/*		GFARM_ERR_INVALID_FILE_REPLICA */
+	/*		GFARM_ERR_NO_SUCH_USER */
 	{ EPERM,	GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA },
+	/*		GFARM_ERR_NO_SUCH_GROUP */
+	/*		GFARM_ERR_GFARM_URL_USER_IS_MISSING */
+	/*		GFARM_ERR_GFARM_URL_HOST_IS_MISSING */
+	/*		GFARM_ERR_GFARM_URL_PORT_IS_MISSING */
+	/*		GFARM_ERR_GFARM_URL_PORT_IS_INVALID */
 };
 
 struct gfarm_error_domain {
@@ -682,6 +702,10 @@ gfarm_error_to_errno_initialize(void)
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];
 		gfarm_error_to_errno_map[map->gfarm_error] = map->unix_errno;
+	}
+	for (i = 1; i < GFARM_ARRAY_LENGTH(gfarm_error_to_errno_map); i++) {
+		if (gfarm_error_to_errno_map[i] == 0)
+			gfarm_error_to_errno_map[i] = EINVAL;
 	}
 }
 
