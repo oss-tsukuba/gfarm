@@ -171,12 +171,14 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 
 	gfp_xdr_async_lock(async_server);
 	cb = gfarm_id_alloc(async_server->idtab, &xid);
-	gfp_xdr_async_unlock(async_server);
-	if (cb == NULL)
+	if (cb == NULL) {
+		gfp_xdr_async_unlock(async_server);
 		return (GFARM_ERR_NO_MEMORY);
-
+	}
 	cb->callback = callback;
 	cb->closure = closure;
+	gfp_xdr_async_unlock(async_server);
+
 	xid_and_type = (xid | XID_TYPE_REQUEST);
 	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
 	if (e != GFARM_ERR_NO_ERROR) {
