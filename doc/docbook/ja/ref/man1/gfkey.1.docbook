@@ -2,7 +2,7 @@
 
 <refentry id='gfkey.1'>
 
-<refentryinfo><date>15 May 2008</date></refentryinfo>
+<refentryinfo><date>25 Feb 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfkey</refentrytitle>
@@ -71,6 +71,16 @@
 <term><option>-e</option></term>
 <listitem>
 <para>現在のキーの期限が切れる時刻を表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-L</option> <parameter>message-priority-level</parameter></term>
+<listitem>
+<para>
+このオプションで指定したレベル以上の優先度のメッセージを出力します。
+デフォルトはinfoです。
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>
