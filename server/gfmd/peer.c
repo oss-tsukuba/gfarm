@@ -116,7 +116,7 @@ peer_epoll_ctl_fd(int op, int fd)
 	struct epoll_event ev = { 0, { 0 }};
 
 	ev.data.fd = fd;
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN; /* level triggered, since we use blocking mode */
 	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1)
 		gflog_fatal(GFARM_MSG_1000275,
 		    "epoll_ctl: %s\n", strerror(errno));
