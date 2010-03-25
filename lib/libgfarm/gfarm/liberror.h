@@ -144,13 +144,25 @@ enum gfarm_errmsg {
  * Dynamically assigned error code for foreign systems (e.g. UNIX, LDAP, ...).
  * Compatibility shouldn't be assumed,
  * so, these errors shouldn't be used via network protocol.
- * All values must be > GFARM_ERRMSG_END
+ * All values will become > GFARM_ERR_FOREIGN_BEGIN
+ * This range can be allocated by gfarm_error_domain_alloc().
  */
 #define GFARM_ERR_FOREIGN_BEGIN	65536
+
+/*
+ * Statically assigned error code range for private implementations.
+ * Since the range is statically assigned, it can be used via network protocol.
+ * The range must be >= GFARM_ERR_PRIVATE_BEGIN
+ * This range can be allocated by gfarm_error_range_alloc().
+ */
+#define GFARM_ERR_PRIVATE_BEGIN	0x70000000
 
 struct gfarm_error_domain;
 
 gfarm_error_t gfarm_error_domain_alloc(int, int,
+	const char *(*)(void *, int), void *,
+	struct gfarm_error_domain **);
+gfarm_error_t gfarm_error_range_alloc(int, int,
 	const char *(*)(void *, int), void *,
 	struct gfarm_error_domain **);
 gfarm_error_t gfarm_error_domain_add_map(struct gfarm_error_domain *,
