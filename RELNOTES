@@ -1,7 +1,7 @@
-Release note for Gfarm 2.4.0
+Release note for Gfarm 2.3.1
 ============================
 
-[2010.2.15]
+[2010.3.29]
 
 New Feature
 * quota (see doc/quota.en for details)
@@ -34,6 +34,7 @@ Updated feature
 * gfwhere - display error if there is no file replica
 * gfuser, gfgroup - display specified users or groups if any
 * gfvoms-sync - search certificates in the same order as Globus
+* change the maximum number of open files from 256 to 1024
 * read only mode for gfsd
 * support re-registration of users, groups and hosts without gfmd
   restart
@@ -46,6 +47,8 @@ Updated feature
 * change log format
 
 Bug fix
+* fix rename problem such that a directory cannot be deleted or orphan
+  inodes remain after rebooting gfmd
 * fix missing automatic reconnection to gfmd
 * fix file replication error during the file update
 * fix file update problem during replication
@@ -54,6 +57,7 @@ Bug fix
 * fix file migration issue described in the tracker
   https://sourceforge.net/tracker/?func=detail&aid=1976260&group_id=172718&atid=862742
 * fix access control for chmod
+* gfmd - fix segfault when the postgresql database is stopped
 
 Release note for Gfarm 2.3.0
 ============================
