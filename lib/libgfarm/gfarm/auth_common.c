@@ -13,10 +13,14 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <grp.h>
+
 #include <openssl/evp.h>
+
 #include <gfarm/gfarm_config.h>
+#include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include "liberror.h"
 #include "auth.h"
 
@@ -253,11 +257,26 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 {
 	EVP_MD_CTX mdctx;
 	unsigned int md_len;
+	static pthread_mutex_t openssl_mutex = PTHREAD_MUTEX_INITIALIZER;
+	int rv;
 
+	/*
+	 * according to "valgrind --tool=helgrind",
+	 * these OpenSSL functions are not multithread safe,
+	 * at least about openssl-0.9.8e-12.el5_4.1.x86_64 on CentOS 5.4
+	 */
+	if ((rv = pthread_mutex_lock(&openssl_mutex)) != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_sharedsecret_response_data: "
+		    "openssl mutex lock: %s", strerror(rv));
 	EVP_DigestInit(&mdctx, EVP_md5());
 	EVP_DigestUpdate(&mdctx, challenge, GFARM_AUTH_CHALLENGE_LEN);
 	EVP_DigestUpdate(&mdctx, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
 	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
+	if ((rv = pthread_mutex_unlock(&openssl_mutex)) != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "gfarm_auth_sharedsecret_response_data: "
+		    "openssl mutex unlock: %s", strerror(rv));
 
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
 		fprintf(stderr, "gfarm_auth_sharedsecret_response_data:"
