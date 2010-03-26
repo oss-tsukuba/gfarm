@@ -831,8 +831,8 @@ fi
 
 %files libs
 %defattr(-,root,root)
-%{lib_prefix}/libgfarm.so.0
-%{lib_prefix}/libgfarm.so.0.0.0
+%{lib_prefix}/libgfarm.so.1
+%{lib_prefix}/libgfarm.so.1.0.0
 %if %{gfarm_v2_not_yet}
 %{lib_prefix}/libgfs_hook.so.0
 %{lib_prefix}/libgfs_hook.so.0.0.0
