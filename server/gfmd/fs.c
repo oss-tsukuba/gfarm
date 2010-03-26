@@ -2619,6 +2619,7 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFM_PROTO_REPLICATE_FILE_FROM_TO";
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
+	src = NULL;
 	dst = NULL;
 	fr = NULL;
 	srcport = 0;
