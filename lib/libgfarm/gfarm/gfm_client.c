@@ -163,7 +163,7 @@ gfm_client_connection0(const char *hostname, int port,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	int sock;
+	int sock, save_errno;
 	struct addrinfo hints, *res;
 	char sbuf[NI_MAXSERV];
 
@@ -199,9 +199,10 @@ gfm_client_connection0(const char *hostname, int port,
 	}
 
 	if (connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
+		save_errno = errno;
 		close(sock);
 		gfarm_freeaddrinfo(res);
-		return (gfarm_errno_to_error(errno));
+		return (gfarm_errno_to_error(save_errno));
 	}
 
 	GFARM_MALLOC(gfm_server);

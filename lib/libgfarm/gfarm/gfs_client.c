@@ -203,7 +203,7 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 static gfarm_error_t
 gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 {
-	int rv, sock;
+	int rv, sock, save_errno;
 	struct sockaddr_un peer_un;
 	struct sockaddr_in *peer_in;
 	socklen_t socklen;
@@ -232,9 +232,10 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 #endif
 	rv = connect(sock, (struct sockaddr *)&peer_un, socklen);
 	if (rv == -1) {
+		save_errno = errno;
 		close(sock);
-		if (errno != ENOENT)
-			return (gfarm_errno_to_error(errno));
+		if (save_errno != ENOENT)
+			return (gfarm_errno_to_error(save_errno));
 
 		/* older gfsd doesn't support UNIX connection, try INET */
 		sock = -1;
@@ -248,7 +249,7 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	struct sockaddr *peer_addr,
 	int *connection_in_progress_p, int *sockp, const char *source_ip)
 {
-	int rv, sock;
+	int rv, sock, save_errno;
 	gfarm_error_t e;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -279,8 +280,9 @@ gfs_client_connect_inet(const char *canonical_hostname,
 	rv = connect(sock, peer_addr, sizeof(*peer_addr));
 	if (rv < 0) {
 		if (errno != EINPROGRESS) {
+			save_errno = errno;
 			close(sock);
-			return (gfarm_errno_to_error(errno));
+			return (gfarm_errno_to_error(save_errno));
 		}
 		*connection_in_progress_p = 1;
 	} else {
