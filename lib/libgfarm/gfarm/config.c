@@ -74,7 +74,7 @@ map_user(gfarm_stringlist map_file_list, char *from, char **to_p,
 	for (i = 0; i < list_len; i++) {
 		mapfile = gfarm_stringlist_elem(&map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
-			gflog_error(GFARM_MSG_1000009,
+			gflog_error(GFARM_MSG_1000009, "%s: %s",
 			    mapfile, strerror(errno));
 			return (GFARM_ERR_CANT_OPEN);
 		}
