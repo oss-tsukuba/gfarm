@@ -237,9 +237,9 @@ gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 #endif
 	rv = connect(sock, (struct sockaddr *)&peer_un, socklen);
 	if (rv == -1) {
+		save_errno = errno;
 		close(sock);
-		if (errno != ENOENT) {
-			save_errno = errno;
+		if (save_errno != ENOENT) {
 			gflog_debug(GFARM_MSG_1001173,
 				"connect() with UNIX socket failed: %s",
 				strerror(save_errno));
