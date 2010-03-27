@@ -515,13 +515,16 @@ gfp_xdr_vrpc_result(struct gfp_xdr *conn,
 		return (e);
 	if (eof) /* rpc status missing */
 		return (GFARM_ERR_UNEXPECTED_EOF);
-	if (*errorp != 0) /* should examine the *errorp in this case */
+	if (*errorp != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
+
 	e = gfp_xdr_vrecv(conn, just, &eof, formatp, app);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof) /* rpc return value missing */
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	if (**formatp != '\0')
+		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -553,16 +556,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	}
 	(*formatp)++;
 
-	e = gfp_xdr_vrpc_result(conn, just, errorp, formatp, app);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	if (*errorp != 0) /* should examine the *errorp in this case */
-		return (GFARM_ERR_NO_ERROR);
-
-	if (**formatp != '\0')
-		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
-	return (GFARM_ERR_NO_ERROR);
+	return (gfp_xdr_vrpc_result(conn, just, errorp, formatp, app));
 }
 
 /*
