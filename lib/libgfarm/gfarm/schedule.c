@@ -556,8 +556,10 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			return (e);
 		h->flags |= HOST_STATE_FLAG_ADDR_AVAIL;
 		e = search_idle_network_list_add(&h->addr, &h->net);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			h->net = NULL;
 			return (e);
+		}
 	} else if (h->net == NULL) {
 		/* search_idle_network_list_add() failed at the last time */
 		e = search_idle_network_list_add(&h->addr, &h->net);
