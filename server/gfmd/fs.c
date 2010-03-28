@@ -822,6 +822,7 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode;
+	int flag;
 
 	e = gfm_server_get_request(peer, "schedule_file", "s", &domain);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -846,12 +847,20 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 		;
 	else if (!inode_is_file(inode))
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	else if ((e = process_get_file_flag(process, fd, &flag)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
 	else {
 		/* XXX FIXME too long giant lock */
+		/*
+		 * When GFARM_FILE_TRUNC is specified, schedule a file
+		 * regardless of existent file replicas
+		 */
 		e = inode_schedule_file_reply(inode, peer,
 		    process_get_file_writable(process, peer, fd)
 		    == GFARM_ERR_NO_ERROR,
-		    inode_is_creating_file(inode), "schedule_file");
+		    inode_is_creating_file(inode) || (flag & GFARM_FILE_TRUNC),
+		    "schedule_file");
 
 		free(domain);
 		giant_unlock();

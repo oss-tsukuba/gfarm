@@ -263,10 +263,20 @@ process_get_file_inode(struct process *process,	int fd, struct inode **inp)
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	*inp = fo->inode;
-	return (GFARM_ERR_NO_ERROR);
+	if (e == GFARM_ERR_NO_ERROR)
+		*inp = fo->inode;
+	return (e);
+}
+
+gfarm_error_t
+process_get_file_flag(struct process *process, int fd, int *flag)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		*flag = fo->flag;
+	return (e);
 }
 
 gfarm_error_t
@@ -480,7 +490,14 @@ process_reopen_file(struct process *process,
 	if (fo->u.f.spool_opener != NULL) /* already REOPENed */
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 
-	to_create = inode_is_creating_file(fo->inode);
+	/*
+	 * set to_create if there is no file replica or if
+	 * spool_host does not have a replica but GFARM_FILE_TRUNC is
+	 * specified
+	 */
+	to_create = inode_is_creating_file(fo->inode) ||
+	    ((fo->flag & GFARM_FILE_TRUNC) &&
+	     !inode_has_replica(fo->inode, spool_host));
 	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || to_create) {

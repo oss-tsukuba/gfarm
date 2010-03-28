@@ -1854,7 +1854,7 @@ inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
 			return (host_match);
 	}
 	/* not opened */
-	if (!inode_is_creating_file(inode))
+	if (!to_create && !inode_is_creating_file(inode))
 		return (inode_has_replica(inode, spool_host));
 	return (to_create);
 }

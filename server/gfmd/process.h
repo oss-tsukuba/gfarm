@@ -12,6 +12,7 @@ struct user *process_get_user(struct process *);
 gfarm_error_t process_verify_fd(struct process *, int);
 gfarm_error_t process_get_file_inode(struct process *, int,
 	struct inode **);
+gfarm_error_t process_get_file_flag(struct process *, int, int *);
 gfarm_error_t process_get_file_writable(struct process *, struct peer *, int);
 
 gfarm_error_t process_get_dir_offset(struct process *, struct peer *, int,
