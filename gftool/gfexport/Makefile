@@ -9,7 +9,7 @@ include $(top_srcdir)/makes/var.mk
 SRCS = gfexport.c
 OBJS = gfexport.o
 PROGRAM = gfexport
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
