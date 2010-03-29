@@ -1949,6 +1949,7 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, mtime_nsec;
 	struct host *spool_host;
 	struct process *process;
+	struct inode *inode;
 	char *src_host;
 
 	e = gfm_server_get_request(peer, "replica_adding", "s", &src_host);
@@ -1969,6 +1970,11 @@ gfm_server_replica_adding(struct peer *peer, int from_client, int skip)
 	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR)
 		;
+	else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if (inode_writing_spool_host(inode) != NULL)
+		e = GFARM_ERR_TEXT_FILE_BUSY;
 	else
 		e = process_replica_adding(process, peer, spool_host,
 		    src_host, fd, &inum, &gen, &mtime_sec, &mtime_nsec);
