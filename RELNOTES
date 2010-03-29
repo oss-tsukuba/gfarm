@@ -6,7 +6,7 @@ Release note for Gfarm 2.3.1
 New Feature
 * quota (see doc/quota.en for details)
 * Gfarm URL, gfarm://metaserver:port/path/name
-* partial support of distributed metadata servers
+* partial support of multiple metadata servers
 * message catalog framework for I18N
 * group map file
 
@@ -35,6 +35,8 @@ Updated feature
 * gfuser, gfgroup - display specified users or groups if any
 * gfvoms-sync - search certificates in the same order as Globus
 * change the maximum number of open files from 256 to 1024
+* select a file system node having enough capacity regardless of
+  existent file replicas when a file is overwritten
 * read only mode for gfsd
 * support re-registration of users, groups and hosts without gfmd
   restart
