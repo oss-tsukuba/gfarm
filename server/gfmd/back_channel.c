@@ -153,6 +153,7 @@ gfs_client_send_request(struct host *host, const char *diag,
 		    async, callback, closure,
 		    command, format, &ap);
 	} else { /*  synchronous mode */
+		host_set_callback(host, peer, callback, closure);
 		e = gfp_xdr_vrpc_request(server,
 		    command, &format, &ap);
 		if (*format != '\0') {
@@ -161,7 +162,6 @@ gfs_client_send_request(struct host *host, const char *diag,
 			    "invalid format character: %c(%x)",
 			    command, *format, *format);
 		}
-		host_set_callback(host, peer, callback, closure);
 	}
 	va_end(ap);
 	if (e == GFARM_ERR_NO_ERROR)
