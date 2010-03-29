@@ -21,18 +21,23 @@ gfarm_connect_wait(int s, int timeout_seconds)
 	int rv, error;
 	socklen_t error_size;
 
-	FD_ZERO(&wset);
-	FD_SET(s, &wset);
-	timeout.tv_sec = timeout_seconds;
-	timeout.tv_usec = 0;
+	for (;;) {
+		FD_ZERO(&wset);
+		FD_SET(s, &wset);
+		timeout.tv_sec = timeout_seconds;
+		timeout.tv_usec = 0;
 
-	/* XXX shouldn't use select(2), since wset may overflow. */
-	rv = select(s + 1, NULL, &wset, NULL, &timeout);
-	if (rv == 0)
-		return (gfarm_errno_to_error(ETIMEDOUT));
-	if (rv < 0)
-		return (gfarm_errno_to_error(errno));
-
+		/* XXX shouldn't use select(2), since wset may overflow. */
+		rv = select(s + 1, NULL, &wset, NULL, &timeout);
+		if (rv == 0)
+			return (gfarm_errno_to_error(ETIMEDOUT));
+		if (rv < 0) {
+			if (errno == EINTR)
+				continue;
+			return (gfarm_errno_to_error(errno));
+		}
+		break;
+	}
 	error_size = sizeof(error);
 	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
 	if (rv == -1)
@@ -50,18 +55,23 @@ gfarm_recv_wait(int s, int timeout_seconds)
 	int rv, error;
 	socklen_t error_size;
 
-	FD_ZERO(&wset);
-	FD_SET(s, &wset);
-	timeout.tv_sec = timeout_seconds;
-	timeout.tv_usec = 0;
+	for (;;) {
+		FD_ZERO(&wset);
+		FD_SET(s, &wset);
+		timeout.tv_sec = timeout_seconds;
+		timeout.tv_usec = 0;
 
-	/* XXX shouldn't use select(2), since wset may overflow. */
-	rv = select(s + 1, &wset, NULL, NULL, &timeout);
-	if (rv == 0)
-		return (gfarm_errno_to_error(ETIMEDOUT));
-	if (rv < 0)
-		return (gfarm_errno_to_error(errno));
-
+		/* XXX shouldn't use select(2), since wset may overflow. */
+		rv = select(s + 1, &wset, NULL, NULL, &timeout);
+		if (rv == 0)
+			return (gfarm_errno_to_error(ETIMEDOUT));
+		if (rv < 0) {
+			if (errno == EINTR)
+				continue;
+			return (gfarm_errno_to_error(errno));
+		}
+		break;
+	}
 	error_size = sizeof(error);
 	rv = getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &error_size);
 	if (rv == -1)
