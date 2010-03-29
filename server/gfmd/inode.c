@@ -1637,6 +1637,24 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host)
 }
 
 gfarm_error_t
+inode_remove_all_pending_replicas(struct inode *inode)
+{
+	struct file_copy **copyp, *copy;
+	gfarm_error_t e;
+
+	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;) {
+		if (copy->valid == 0) {
+			*copyp = copy->host_next;
+			e = remove_replica_internal(inode, copy);
+			free(copy);
+			continue;
+		}
+		copyp = &copy->host_next;
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 inode_open(struct file_opening *fo)
 {
 	struct inode *inode = fo->inode;

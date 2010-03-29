@@ -514,6 +514,13 @@ process_reopen_file(struct process *process,
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 		}
+		/*
+		 * Cancel ongoing replica creations.  This should be
+		 * done when really updated.   But cancel here since
+		 * gfmd cannot know the timing when the file is really
+		 * updated in local access case.
+		 */
+		(void)inode_remove_all_pending_replicas(fo->inode);
 	} else {
 		if (!inode_has_replica(fo->inode, spool_host))
 			return (GFARM_ERR_FILE_MIGRATED);
@@ -794,12 +801,13 @@ process_replica_added(struct process *process,
 
 	mtime = inode_get_mtime(fo->inode);
 	if (mtime_sec != mtime->tv_sec || mtime_nsec != mtime->tv_nsec ||
-	    (size != -1 && size != inode_get_size(fo->inode))) {
+	    (size != -1 && size != inode_get_size(fo->inode)) ||
+	    inode_add_replica(fo->inode, spool_host, 0) !=
+		GFARM_ERR_OPERATION_NOW_IN_PROGRESS) {
 		e = inode_remove_replica(fo->inode, spool_host, 0);
 		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = GFARM_ERR_INVALID_FILE_REPLICA;
-	}
-	else
+	} else
 		e = inode_add_replica(fo->inode, spool_host, 1);
 	e2 = process_close_file_read(process, peer, fd, NULL);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);

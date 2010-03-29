@@ -69,6 +69,7 @@ gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_remove_every_other_replicas(struct inode *, struct host *);
+gfarm_error_t inode_remove_all_pending_replicas(struct inode *);
 
 struct file_opening;
 
