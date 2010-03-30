@@ -103,7 +103,7 @@ gfarm_uint64_t
 gfs_replica_info_nth_gen(struct gfs_replica_info *ri, int n)
 {
 	if (n < 0 || n >= ri->n)
-		return (-1);
+		return (~(gfarm_uint64_t)0);
 	return (ri->gens[n]);
 }
 
