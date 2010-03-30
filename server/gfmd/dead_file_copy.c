@@ -857,8 +857,7 @@ dead_file_copy_alloc(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 	if (dfc == NULL) {
 		gflog_debug(GFARM_MSG_1002228,
 		    "%s(%lld, %lld, %s): no memory", diag,
-		    (unsigned long long)dfc->inum,
-		    (unsigned long long)dfc->igen,
+		    (unsigned long long)inum, (unsigned long long)igen,
 		    host_name(dfc->host));
 		return (NULL);
 	}
