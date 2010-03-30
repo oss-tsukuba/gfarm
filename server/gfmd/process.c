@@ -559,10 +559,11 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 	static const char diag[] = "process_new_generation_done";
 
-	if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1002239,
-		    "%s: peer_get_process() failed", diag);
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: pid %lld descriptor %d: %s", diag,
+		    (long long)process->pid, fd, gfarm_error_string(e));
+		return (e);
 	} else if ((e = inode_new_generation_done(fo->inode, peer,
 	    result)) == GFARM_ERR_NO_ERROR) {
 
