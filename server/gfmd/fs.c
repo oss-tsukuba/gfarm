@@ -920,6 +920,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001849,
 			"process_cksum_get() failed: %s",
 			gfarm_error_string(e));
+	} else {
 		if (cksum_type == NULL) {
 			cksum_type = "";
 			cksumbuf = "";
@@ -934,7 +935,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "sbi",
 	    cksum_type, cksum_len, cksumbuf,  flags);
-	if (e == GFARM_ERR_NO_ERROR && alloced) {
+	if (alloced) {
 		free(cksum_type);
 		free(cksumbuf);
 	}
