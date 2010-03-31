@@ -858,7 +858,7 @@ dead_file_copy_alloc(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 		gflog_debug(GFARM_MSG_1002228,
 		    "%s(%lld, %lld, %s): no memory", diag,
 		    (unsigned long long)inum, (unsigned long long)igen,
-		    host_name(dfc->host));
+		    host_name(host));
 		return (NULL);
 	}
 	dfc->inum = inum;
