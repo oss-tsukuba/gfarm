@@ -716,8 +716,12 @@ gfarm_pgsql_generic_grouping_get_all(
 	int32 = ntohl(int32); \
 }
 
+/*
+ * struct user::gsi_dn may be loaded by this function,
+ * but currently "COPY User TO STDOUT BINARY" is NOT used for struct user.
+ */
 static char *
-get_value_from_varchar_copy_binary(const char **bufp, int *residualp)
+get_string_or_null_from_copy_binary(const char **bufp, int *residualp)
 {
 	int32_t len;
 	char *p;
@@ -734,6 +738,9 @@ get_value_from_varchar_copy_binary(const char **bufp, int *residualp)
 		    "metadb_pgsql: copy varchar %d > %d",
 		    len, *residualp);
 	GFARM_MALLOC_ARRAY(p, len + 1);
+	if (p == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy varchar length=%d", len);
 	memcpy(p, *bufp, len);
 	p[len] = '\0';
 	*bufp += len;
@@ -741,15 +748,27 @@ get_value_from_varchar_copy_binary(const char **bufp, int *residualp)
 	return (p);
 }
 
+static char *
+get_string_from_copy_binary(const char **bufp, int *residualp)
+{
+	char *p = get_string_or_null_from_copy_binary(bufp, residualp);
+
+	if (p == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy varchar: got NULL");
+	return (p);
+}
+
 static uint32_t
-get_value_from_integer_copy_binary(const char **bufp, int *residualp)
+get_int32_from_copy_binary(const char **bufp, int *residualp)
 {
 	int32_t len;
 	uint32_t val;
 
 	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int32 len");
 	if (len == -1)
-		return (0); /* stopgap for NULL field */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy int32: got NULL");
 	if (len != sizeof(val))
 		gflog_fatal(GFARM_MSG_1000432,
 		    "metadb_pgsql: copy int32 length=%d", len);
@@ -759,14 +778,15 @@ get_value_from_integer_copy_binary(const char **bufp, int *residualp)
 }
 
 static uint64_t
-get_value_from_int8_copy_binary(const char **bufp, int *residualp)
+get_int64_from_copy_binary(const char **bufp, int *residualp)
 {
 	int32_t len;
 	uint64_t val;
 
 	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int64 len");
 	if (len == -1)
-		return (0); /* stopgap for NULL field */
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_pgsql: copy int64: got NULL");
 	if (len != sizeof(val))
 		gflog_fatal(GFARM_MSG_1000433,
 		    "metadb_pgsql: copy int64 length=%d", len);
@@ -1729,26 +1749,26 @@ inode_info_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000444,
 		    "pgsql_inode_load: fields = %d", num_fields);
 
-	info->st_ino = get_value_from_int8_copy_binary(&buf, &residual);
-	info->st_gen = get_value_from_int8_copy_binary(&buf, &residual);
-	info->st_nlink = get_value_from_int8_copy_binary(&buf, &residual);
-	info->st_size = get_value_from_int8_copy_binary(&buf, &residual);
+	info->st_ino = get_int64_from_copy_binary(&buf, &residual);
+	info->st_gen = get_int64_from_copy_binary(&buf, &residual);
+	info->st_nlink = get_int64_from_copy_binary(&buf, &residual);
+	info->st_size = get_int64_from_copy_binary(&buf, &residual);
 	info->st_ncopy = 0;
-	info->st_mode = get_value_from_integer_copy_binary(&buf, &residual);
-	info->st_user = get_value_from_varchar_copy_binary(&buf, &residual);
-	info->st_group = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->st_mode = get_int32_from_copy_binary(&buf, &residual);
+	info->st_user = get_string_from_copy_binary(&buf, &residual);
+	info->st_group = get_string_from_copy_binary(&buf, &residual);
 	info->st_atimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf, &residual);
+		get_int64_from_copy_binary(&buf, &residual);
 	info->st_atimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf, &residual);
+		get_int32_from_copy_binary(&buf, &residual);
 	info->st_mtimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf, &residual);
+		get_int64_from_copy_binary(&buf, &residual);
 	info->st_mtimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf, &residual);
+		get_int32_from_copy_binary(&buf, &residual);
 	info->st_ctimespec.tv_sec =
-		get_value_from_int8_copy_binary(&buf, &residual);
+		get_int64_from_copy_binary(&buf, &residual);
 	info->st_ctimespec.tv_nsec =
-		get_value_from_integer_copy_binary(&buf, &residual);
+		get_int32_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
@@ -1865,9 +1885,9 @@ file_info_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000445,
 		    "pgsql_file_info_load: fields = %d", num_fields);
 
-	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
-	info->type = get_value_from_varchar_copy_binary(&buf, &residual);
-	info->sum = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->inum = get_int64_from_copy_binary(&buf, &residual);
+	info->type = get_string_from_copy_binary(&buf, &residual);
+	info->sum = get_string_from_copy_binary(&buf, &residual);
 	info->len = strlen(info->sum);
 }
 
@@ -1952,8 +1972,8 @@ filecopy_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000446,
 		    "pgsql_filecopy_load: fields = %d", num_fields);
 
-	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
-	info->hostname = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->inum = get_int64_from_copy_binary(&buf, &residual);
+	info->hostname = get_string_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
@@ -2043,9 +2063,9 @@ deadfilecopy_set_fields_from_copy_binary(
 		    "pgsql_deadfilecopy_load: fields = %d",
 		    num_fields);
 
-	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
-	info->igen = get_value_from_int8_copy_binary(&buf, &residual);
-	info->hostname = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->inum = get_int64_from_copy_binary(&buf, &residual);
+	info->igen = get_int64_from_copy_binary(&buf, &residual);
+	info->hostname = get_string_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
@@ -2137,10 +2157,10 @@ direntry_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000448,
 		    "pgsql_direntry_load: fields = %d", num_fields);
 
-	info->dir_inum = get_value_from_int8_copy_binary(&buf, &residual);
-	info->entry_name = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->dir_inum = get_int64_from_copy_binary(&buf, &residual);
+	info->entry_name = get_string_from_copy_binary(&buf, &residual);
 	info->entry_len = strlen(info->entry_name);
-	info->entry_inum = get_value_from_int8_copy_binary(&buf, &residual);
+	info->entry_inum = get_int64_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
@@ -2224,8 +2244,8 @@ symlink_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000449,
 		    "pgsql_symlink_load: fields = %d", num_fields);
 
-	info->inum = get_value_from_int8_copy_binary(&buf, &residual);
-	info->source_path = get_value_from_varchar_copy_binary(&buf, &residual);
+	info->inum = get_int64_from_copy_binary(&buf, &residual);
+	info->source_path = get_string_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
@@ -2771,28 +2791,28 @@ quota_info_set_fields_from_copy_binary(
 		gflog_fatal(GFARM_MSG_1000450,
 			    "pgsql_quota_load: fields = %d", num_fields);
 
-	info->name = get_value_from_varchar_copy_binary(&buf, &residual);
-	info->grace_period = get_value_from_int8_copy_binary(&buf, &residual);
-	info->space = get_value_from_int8_copy_binary(&buf, &residual);
-	info->space_exceed = get_value_from_int8_copy_binary(&buf, &residual);
-	info->space_soft = get_value_from_int8_copy_binary(&buf, &residual);
-	info->space_hard = get_value_from_int8_copy_binary(&buf, &residual);
-	info->num = get_value_from_int8_copy_binary(&buf, &residual);
-	info->num_exceed = get_value_from_int8_copy_binary(&buf, &residual);
-	info->num_soft = get_value_from_int8_copy_binary(&buf, &residual);
-	info->num_hard = get_value_from_int8_copy_binary(&buf, &residual);
-	info->phy_space = get_value_from_int8_copy_binary(&buf, &residual);
-	info->phy_space_exceed = get_value_from_int8_copy_binary(
+	info->name = get_string_from_copy_binary(&buf, &residual);
+	info->grace_period = get_int64_from_copy_binary(&buf, &residual);
+	info->space = get_int64_from_copy_binary(&buf, &residual);
+	info->space_exceed = get_int64_from_copy_binary(&buf, &residual);
+	info->space_soft = get_int64_from_copy_binary(&buf, &residual);
+	info->space_hard = get_int64_from_copy_binary(&buf, &residual);
+	info->num = get_int64_from_copy_binary(&buf, &residual);
+	info->num_exceed = get_int64_from_copy_binary(&buf, &residual);
+	info->num_soft = get_int64_from_copy_binary(&buf, &residual);
+	info->num_hard = get_int64_from_copy_binary(&buf, &residual);
+	info->phy_space = get_int64_from_copy_binary(&buf, &residual);
+	info->phy_space_exceed = get_int64_from_copy_binary(
 		&buf, &residual);
-	info->phy_space_soft = get_value_from_int8_copy_binary(
+	info->phy_space_soft = get_int64_from_copy_binary(
 		&buf, &residual);
-	info->phy_space_hard = get_value_from_int8_copy_binary(
+	info->phy_space_hard = get_int64_from_copy_binary(
 		&buf, &residual);
-	info->phy_num = get_value_from_int8_copy_binary(&buf, &residual);
-	info->phy_num_exceed = get_value_from_int8_copy_binary(
+	info->phy_num = get_int64_from_copy_binary(&buf, &residual);
+	info->phy_num_exceed = get_int64_from_copy_binary(
 		&buf, &residual);
-	info->phy_num_soft = get_value_from_int8_copy_binary(&buf, &residual);
-	info->phy_num_hard = get_value_from_int8_copy_binary(&buf, &residual);
+	info->phy_num_soft = get_int64_from_copy_binary(&buf, &residual);
+	info->phy_num_hard = get_int64_from_copy_binary(&buf, &residual);
 }
 
 static gfarm_error_t
