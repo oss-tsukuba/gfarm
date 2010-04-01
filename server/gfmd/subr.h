@@ -6,6 +6,8 @@ void giant_unlock(void);
 
 gfarm_error_t create_detached_thread(void *(*)(void *), void *);
 
+char *string_dup(const char *, const char *);
+
 int accmode_to_op(gfarm_uint32_t);
 
 struct peer;
