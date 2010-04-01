@@ -228,8 +228,8 @@ group_all(void *closure, void (*callback)(void *, struct group *),
 }
 
 /* The memory owner of `*gi' is changed to group.c */
-void
-group_add_one(void *closure, struct gfarm_group_info *gi)
+static gfarm_error_t
+group_info_add(struct gfarm_group_info *gi)
 {
 	struct group *g;
 	gfarm_error_t e = group_enter(gi->groupname, &g);
@@ -241,7 +241,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 		    "group_add_one: adding group %s: %s",
 		    gi->groupname, gfarm_error_string(e));
 		gfarm_group_info_free(gi);
-		return;
+		return (e);
 	}
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
@@ -253,7 +253,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 			/* do not free gi->groupname */
 			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
-			return;
+			return (GFARM_ERR_NO_SUCH_USER);
 		}
 		e = grpassign_add(u, g);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -265,7 +265,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 			/* do not free gi->groupname */
 			gi->groupname = NULL;
 			gfarm_group_info_free(gi);
-			return;
+			return (e);
 		}
 	}
 	for (i = 0; i < gi->nusers; i++)
@@ -273,6 +273,20 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 	if (gi->usernames != NULL)
 		free(gi->usernames);
 	/* do not free gi->groupname */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* The memory owner of `*gi' is changed to group.c */
+void
+group_add_one(void *closure, struct gfarm_group_info *gi)
+{
+	gfarm_error_t e = group_info_add(gi);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* cannot use gi.groupname, since it's freed here */
+		gflog_warning(GFARM_MSG_UNFIXED, "group_add_one(): %s",
+		    gfarm_error_string(e));
+	}
 }
 
 gfarm_error_t
@@ -325,6 +339,9 @@ group_add_user_and_record(struct group *g, const char *username)
 			n++;
 	gi.nusers = n;
 	GFARM_MALLOC_ARRAY(gi.usernames, n);
+	if (gi.usernames == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "group_add_user_and_record(%s): no memory", username);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
 		if (user_is_active(ga->u))
@@ -346,6 +363,7 @@ group_init(void)
 	gfarm_error_t e;
 	struct group *admin;
 	struct gfarm_group_info gi;
+	static const char diag[] = "group_init";
 
 	group_hashtab =
 	    gfarm_hash_table_alloc(GROUP_HASHTAB_SIZE,
@@ -363,12 +381,16 @@ group_init(void)
 		    "group %s not found, creating it",
 		    ADMIN_GROUP_NAME);
 
-		gi.groupname = strdup(ADMIN_GROUP_NAME);
+		gi.groupname = string_dup(ADMIN_GROUP_NAME, diag);
 		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
 		GFARM_MALLOC_ARRAY(gi.usernames, gi.nusers);
-		gi.usernames[0] = strdup(ADMIN_USER_NAME);
+		if (gi.usernames == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "creating group %s: no memory", gi.groupname);
+		gi.usernames[0] = string_dup(ADMIN_USER_NAME, diag);
 		if (gfarm_metadb_admin_user != NULL)
-			gi.usernames[1] = strdup(gfarm_metadb_admin_user);
+			gi.usernames[1] =
+			    string_dup(gfarm_metadb_admin_user, diag);
 
 		/*
 		 * We have to call this before group_add_one(),
@@ -380,7 +402,7 @@ group_init(void)
 			    "failed to store group '%s' to storage: %s",
 			    gi.groupname, gfarm_error_string(e));
 
-		group_add_one(NULL, &gi);
+		group_add_one(NULL, &gi); /* this should always success */
 	} else {
 		group_add_user_and_record(admin, ADMIN_USER_NAME);
 		if (gfarm_metadb_admin_user != NULL)
@@ -393,7 +415,7 @@ group_init(void)
 		    "group %s not found, creating it",
 		    ROOT_GROUP_NAME);
 
-		gi.groupname = strdup(ROOT_GROUP_NAME);
+		gi.groupname = string_dup(ROOT_GROUP_NAME, diag);
 		gi.nusers = 0;
 		gi.usernames = NULL;
 
@@ -407,7 +429,7 @@ group_init(void)
 			    "failed to store group '%s' to storage: %s",
 			    gi.groupname, gfarm_error_string(e));
 
-		group_add_one(NULL, &gi);
+		group_add_one(NULL, &gi); /* this should always success */
 	}
 }
 
@@ -657,7 +679,6 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	struct gfarm_group_info gi;
 	struct user *user = peer_get_user(peer);
 	int need_free;
-	char *saved_groupname;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_SET";
 
 	e = get_group(peer, diag, &gi);
@@ -680,30 +701,25 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001536,
 			"group already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if ((e = group_user_check(&gi, diag)) != GFARM_ERR_NO_ERROR)
+	} else if ((e = group_user_check(&gi, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001537,
 			"group_user_check() failed: %s",
 			gfarm_error_string(e));
-	else {
-		/*
-		 * We have to call this before group_add_one(),
-		 * because group_add_one() frees the memory of gi
-		 */
-		e = db_group_add(&gi);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1000254,
-			    "failed to store group '%s' to storage: %s",
-			    gi.groupname, gfarm_error_string(e));
-
-		saved_groupname = strdup(gi.groupname);
-		group_add_one(NULL, &gi);
-		if (saved_groupname != NULL) {
-			if (group_lookup(saved_groupname) == NULL) {
-				e = GFARM_ERR_INVALID_ARGUMENT;
-				gflog_debug(GFARM_MSG_1001538,
-					"saved_groupname is invalid");
-			}
-			free(saved_groupname);
+	/*
+	 * We have to call this before group_info_add(),
+	 * because group_info_add() frees the memory of gi
+	 */
+	} else if ((e = db_group_add(&gi)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1000254,
+		    "failed to store group '%s' to storage: %s",
+		    gi.groupname, gfarm_error_string(e));
+	} else {
+		e = group_info_add(&gi);
+		if (e != GFARM_ERR_NO_ERROR) {
+			/* cannot use gi.groupname, since it's freed here */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: group_info_add(): %s",
+			    diag, gfarm_error_string(e));
 		}
 		need_free = 0;
 	}
