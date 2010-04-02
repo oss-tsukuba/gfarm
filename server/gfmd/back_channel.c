@@ -703,7 +703,9 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		if (host_is_up(host)) /* throw away old connetion */
 			host_disconnect(host, NULL);
 
+		giant_lock();
 		host_peer_set(host, peer, version);
+		giant_unlock();
 
 		peer_watch_access(peer);
 		callout_setfunc(host_status_callout(host),
