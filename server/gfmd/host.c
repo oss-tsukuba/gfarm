@@ -862,9 +862,6 @@ host_peer_unset(struct host *h)
 
 	callout_stop(h->status_callout);
 
-	dead_file_copy_host_becomes_down(h);
-	/* we won't remove h->replicating_inodes list at least for now. */
-
 	/*
 	 * NOTE:
 	 * we don't remove of h->replicating_inodes list,
@@ -907,12 +904,16 @@ host_disconnect(struct host *h, struct peer *peer)
 		host_peer_unset(h);
 
 		host_status_disable_unlocked(&saved_used, &saved_avail);
+
+		disabled = 1;
 	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (disabled)
+	if (disabled) {
 		host_total_disk_update(saved_used, saved_avail, 0, 0);
+		dead_file_copy_host_becomes_down(h);
+	}
 #else
 	host_disconnect_request(h, peer);
 #endif
@@ -942,8 +943,10 @@ host_disconnect_request(struct host *h, struct peer *peer)
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (disabled)
+	if (disabled) {
 		host_total_disk_update(saved_used, saved_avail, 0, 0);
+		dead_file_copy_host_becomes_down(h);
+	}
 }
 
 /* only file_replicating_new() is allowed to call this routine */
