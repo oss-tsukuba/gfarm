@@ -1,14 +1,14 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.3.9]
+[2010.4.5]
 
 New Feature
 * update-based replica consistency protocol
   that keeps number of file replicas at file modification
 * quota (see doc/quota.en for details)
 * Gfarm URL, gfarm://metaserver:port/path/name
-* partial support of distributed metadata servers
+* partial support of multiple metadata servers
 * message catalog framework for I18N
 * group map file
 
@@ -63,6 +63,7 @@ Bug fix
 * fix file migration issue described in the tracker
   https://sourceforge.net/tracker/?func=detail&aid=1976260&group_id=172718&atid=862742
 * fix access control for chmod
+* gfmd - fix segfault when the postgresql database is stopped
 
 Release note for Gfarm 2.3.0
 ============================
