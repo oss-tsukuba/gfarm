@@ -91,7 +91,7 @@ string_dup(const char *s, const char *diag)
 	char *d = strdup(s);
 
 	if (d == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002313,
 		    "%s: strdup(%s): no memory", diag, s);
 	return (d);
 }

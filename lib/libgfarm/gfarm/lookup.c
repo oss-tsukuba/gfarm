@@ -72,7 +72,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		if (gfm_serverp != NULL) {
 			GFARM_MALLOC_ARRAY(gfm_server_name, p - path + 1);
 			if (gfm_server_name == NULL) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002312,
 				    "allocating gfm server name for '%s': "
 				    "no memory", *pathp);
 				return (GFARM_ERR_NO_MEMORY);

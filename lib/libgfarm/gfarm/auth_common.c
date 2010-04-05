@@ -275,7 +275,7 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	 * at least about openssl-0.9.8e-12.el5_4.1.x86_64 on CentOS 5.4
 	 */
 	if ((rv = pthread_mutex_lock(&openssl_mutex)) != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002310,
 		    "gfarm_auth_sharedsecret_response_data: "
 		    "openssl mutex lock: %s", strerror(rv));
 	EVP_DigestInit(&mdctx, EVP_md5());
@@ -283,7 +283,7 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	EVP_DigestUpdate(&mdctx, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
 	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
 	if ((rv = pthread_mutex_unlock(&openssl_mutex)) != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002311,
 		    "gfarm_auth_sharedsecret_response_data: "
 		    "openssl mutex unlock: %s", strerror(rv));
 

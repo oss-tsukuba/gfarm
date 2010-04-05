@@ -2302,7 +2302,7 @@ remove_file_copy(struct inode *inode, struct host *spool_host)
 			foundp = copyp;
 	}
 	if (foundp == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002326,
 		    "remove_file_copy(%lld, %lld, %s): not found",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode), host_name(spool_host));

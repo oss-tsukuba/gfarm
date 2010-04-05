@@ -231,7 +231,7 @@ pgsql_get_string(PGresult *res, int row, const char *field_name)
 	char *s = strdup(v);
 
 	if (s == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002329,
 		    "pgsql_get_string(%s): %s: no memory", field_name, v);
 	}
 	return (s);
@@ -255,7 +255,7 @@ pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 	if (dst != NULL)
 		memcpy(dst, src, *size);
 	else
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002330,
 		    "pgsql_get_binary(%s): size=%d: no memory",
 		    field_name, (int)*size);
 
@@ -407,7 +407,7 @@ pgsql_should_retry(PGresult *res)
 	int retry = 0;
 
 	if (PQstatus(conn) == CONNECTION_BAD) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002331,
 		    "PostgreSQL connection is down: %s: %s",
 		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
 		    PQresultErrorMessage(res));
@@ -417,7 +417,7 @@ pgsql_should_retry(PGresult *res)
 			if ((retry >= MSG_THRESHOLD &&
 			     retry % (DAY_PER_SECOND/RETRY_INTERVAL) == 0) ||
 			    IS_POWER_OF_2(retry)) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002332,
 				    "PostgreSQL connection retrying");
 			}
 			PQreset(conn);
@@ -426,7 +426,7 @@ pgsql_should_retry(PGresult *res)
 			sleep(RETRY_INTERVAL);
 		}
 		/* XXX FIXME: one transaction may be lost in this case */
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002333,
 		    "PostgreSQL connection recovered");
 		return (1);
 	} else if (PQresultStatus(res) == PGRES_FATAL_ERROR &&
@@ -434,7 +434,7 @@ pgsql_should_retry(PGresult *res)
 	    GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX,
 	    strlen(GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX)) == 0) {
 		/* does this code path happen? */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002334,
 		    "PostgreSQL connection problem: %s: %s",
 		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
 		    PQresultErrorMessage(res));
@@ -739,7 +739,7 @@ get_string_or_null_from_copy_binary(const char **bufp, int *residualp)
 		    len, *residualp);
 	GFARM_MALLOC_ARRAY(p, len + 1);
 	if (p == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002335,
 		    "metadb_pgsql: copy varchar length=%d", len);
 	memcpy(p, *bufp, len);
 	p[len] = '\0';
@@ -754,7 +754,7 @@ get_string_from_copy_binary(const char **bufp, int *residualp)
 	char *p = get_string_or_null_from_copy_binary(bufp, residualp);
 
 	if (p == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002336,
 		    "metadb_pgsql: copy varchar: got NULL");
 	return (p);
 }
@@ -767,7 +767,7 @@ get_int32_from_copy_binary(const char **bufp, int *residualp)
 
 	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int32 len");
 	if (len == -1)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002337,
 		    "metadb_pgsql: copy int32: got NULL");
 	if (len != sizeof(val))
 		gflog_fatal(GFARM_MSG_1000432,
@@ -785,7 +785,7 @@ get_int64_from_copy_binary(const char **bufp, int *residualp)
 
 	COPY_INT32(len, *bufp, *residualp, "metadb_pgsql: copy int64 len");
 	if (len == -1)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002338,
 		    "metadb_pgsql: copy int64: got NULL");
 	if (len != sizeof(val))
 		gflog_fatal(GFARM_MSG_1000433,

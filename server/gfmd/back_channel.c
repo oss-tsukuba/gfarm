@@ -592,7 +592,7 @@ back_channel_main(void *arg)
 
 	e = host_receiver_lock(host, &peer);
 	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002327,
 		    "back_channel(%s): aborted: %s",
 		    host_name(host), gfarm_error_string(e));
 		return (NULL);
@@ -602,7 +602,7 @@ back_channel_main(void *arg)
 	 * not switched to another one.
 	 */
 	if (peer != peer0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002328,
 		    "back_channel(%s): aborted: unexpected peer switch",
 		    host_name(host));
 		return (NULL);

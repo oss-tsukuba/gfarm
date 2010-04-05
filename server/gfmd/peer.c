@@ -145,11 +145,11 @@ peer_epoll_ctl_fd(int op, int fd)
 	ev.events = EPOLLIN; /* level triggered, since we use blocking mode */
 	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1)
 #if 0 /* until https://sourceforge.net/apps/trac/gfarm/ticket/80 is fixed */
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002319,
 		    "epoll_ctl(%d, %d): %s\n", op, fd, strerror(errno));
 #else
 	{
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002320,
 		    "epoll_ctl(%d, %d): %s\n", op, fd, strerror(errno));
 		abort();
 	}
@@ -178,13 +178,13 @@ peer_control_mutex_lock(struct peer *peer, const char *where)
 	if (err == 0)
 		return;
 	if (err == EBUSY) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002321,
 		    "%s: unexpected collision to access peer:control", where);
 		err = pthread_mutex_lock(&peer->control_mutex);
 		if (err == 0)
 			return;
 	}
-	gflog_fatal(GFARM_MSG_UNFIXED,
+	gflog_fatal(GFARM_MSG_1002322,
 	    "%s: fatel error at unexpected collision "
 	    "to access peer:control: %s", where, strerror(err));
 }
@@ -282,7 +282,7 @@ peer_watcher(void *arg)
 #else
 				if (fd->revents & POLLIN) {
 #endif
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002323,
 					    "peer_watcher: spurious wakeup: "
 					    "0x%x", (int)peer->control);
 				}
@@ -305,7 +305,7 @@ peer_watcher(void *arg)
 				    "peer_watcher invoking");
 				skip = (peer->control & PEER_WATCHED) == 0;
 				if (skip) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002324,
 					    "peer_watcher: unexpected wakeup: "
 					    "0x%x", (int)peer->control);
 #ifdef HAVE_EPOLL_WAIT

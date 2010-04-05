@@ -284,7 +284,7 @@ group_add_one(void *closure, struct gfarm_group_info *gi)
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* cannot use gi.groupname, since it's freed here */
-		gflog_warning(GFARM_MSG_UNFIXED, "group_add_one(): %s",
+		gflog_warning(GFARM_MSG_1002314, "group_add_one(): %s",
 		    gfarm_error_string(e));
 	}
 }
@@ -340,7 +340,7 @@ group_add_user_and_record(struct group *g, const char *username)
 	gi.nusers = n;
 	GFARM_MALLOC_ARRAY(gi.usernames, n);
 	if (gi.usernames == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002315,
 		    "group_add_user_and_record(%s): no memory", username);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
@@ -385,7 +385,7 @@ group_init(void)
 		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
 		GFARM_MALLOC_ARRAY(gi.usernames, gi.nusers);
 		if (gi.usernames == NULL)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002316,
 			    "creating group %s: no memory", gi.groupname);
 		gi.usernames[0] = string_dup(ADMIN_USER_NAME, diag);
 		if (gfarm_metadb_admin_user != NULL)
@@ -717,7 +717,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		e = group_info_add(&gi);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* cannot use gi.groupname, since it's freed here */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002317,
 			    "%s: group_info_add(): %s",
 			    diag, gfarm_error_string(e));
 		}

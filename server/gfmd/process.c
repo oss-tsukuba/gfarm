@@ -560,7 +560,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 	static const char diag[] = "process_new_generation_done";
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002325,
 		    "%s: pid %lld descriptor %d: %s", diag,
 		    (long long)process->pid, fd, gfarm_error_string(e));
 		return (e);

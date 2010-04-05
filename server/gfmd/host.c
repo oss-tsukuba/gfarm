@@ -652,7 +652,7 @@ host_receiver_lock(struct host *host, struct peer **peerp)
 		}
 		/* may happen at gfsd restart? */
 		peer0 = host->peer;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002318,
 		    "waiting for host_receiver_lock: maybe gfsd restarted?");
 		cond_wait(&host->ready_to_receive, &host->back_channel_mutex,
 		    diag, "ready_to_receive");

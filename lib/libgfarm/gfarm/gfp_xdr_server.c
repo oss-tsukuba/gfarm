@@ -49,7 +49,7 @@ gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *async_serverp)
 	if (async_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	if ((rv = pthread_mutex_init(&async_server->mutex, NULL)) != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002305,
 		    "pthread_mutex_init: %s", strerror(rv));
 		free(async_server);
 		return (gfarm_errno_to_error(rv));
@@ -58,7 +58,7 @@ gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *async_serverp)
 	    gfarm_id_table_alloc(&gfp_xdr_async_xid_table_ops);
 	if (async_server->idtab == NULL) {
 		if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002306,
 			    "pthread_mutex_destroy: %s", strerror(rv));
 		free(async_server);
 		return (GFARM_ERR_NO_MEMORY);
@@ -75,7 +75,7 @@ gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server,
 	
 	gfarm_id_table_free(async_server->idtab, rpc_free, closure);
 	if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002307,
 		    "pthread_mutex_destroy: %s", strerror(rv));
 	free(async_server);
 }
@@ -86,7 +86,7 @@ gfp_xdr_async_lock(gfp_xdr_async_peer_t async_server)
 	int rv;
 
 	if ((rv = pthread_mutex_lock(&async_server->mutex)) != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "gfp_xdr_async_lock: %s",
+		gflog_fatal(GFARM_MSG_1002308, "gfp_xdr_async_lock: %s",
 		    strerror(rv));
 }
 
@@ -96,7 +96,7 @@ gfp_xdr_async_unlock(gfp_xdr_async_peer_t async_server)
 	int rv;
 
 	if ((rv = pthread_mutex_unlock(&async_server->mutex)) != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "gfp_xdr_async_unlock: %s",
+		gflog_fatal(GFARM_MSG_1002309, "gfp_xdr_async_unlock: %s",
 		    strerror(rv));
 }
 
