@@ -3019,8 +3019,8 @@ inode_init(void)
 	st.st_nlink = 2;
 	st.st_size = 4;
 	st.st_mode = GFARM_S_IFDIR | 0775;
-	st.st_user = strdup(ADMIN_USER_NAME);
-	st.st_group = strdup(ADMIN_GROUP_NAME);
+	st.st_user = string_dup(ADMIN_USER_NAME, "inode_init");
+	st.st_group = string_dup(ADMIN_GROUP_NAME, "inode_init");
 	touch(&st.st_atimespec);
  	st.st_ctimespec = st.st_mtimespec = st.st_atimespec;
 	/* inode_add_one will free(st). need to call db_inode_add before it */
@@ -3032,9 +3032,11 @@ inode_init(void)
 		    gfarm_error_string(e));
 
 	/* root directory */
-	dir_entry_add_one(NULL, ROOT_INUMBER, strdup(dot), DOT_LEN,
+	dir_entry_add_one(NULL, ROOT_INUMBER,
+	    string_dup(dot, "inode_init: \".\""), DOT_LEN,
 	    ROOT_INUMBER);
-	dir_entry_add_one(NULL, ROOT_INUMBER, strdup(dotdot), DOTDOT_LEN,
+	dir_entry_add_one(NULL, ROOT_INUMBER,
+	    string_dup(dotdot, "inode_init: \"..\""), DOTDOT_LEN,
 	    ROOT_INUMBER);
 	e = db_direntry_add(ROOT_INUMBER, dot, DOT_LEN, ROOT_INUMBER);
 	if (e != GFARM_ERR_NO_ERROR)
