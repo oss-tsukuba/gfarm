@@ -63,6 +63,7 @@
 #include "metadb_common.h"
 #include "xattr_info.h"
 
+#include "subr.h"
 #include "db_access.h"
 #include "quota.h"
 #include "db_ops.h"
@@ -556,6 +557,33 @@ gfarm_ldap_terminate(void)
 	return (e);
 }
 
+#if !defined(LDAP_OPT_RESULT_CODE) && defined(LDAP_OPT_ERROR_NUMBER)
+#define LDAP_OPT_RESULT_CODE LDAP_OPT_ERROR_NUMBER
+#endif
+
+static const char *
+gfarm_ldap_session_error(void)
+{
+	int e;
+	int rv = ldap_get_option(gfarm_ldap_server, LDAP_OPT_RESULT_CODE, &e);
+
+	if (rv != LDAP_OPT_SUCCESS) {
+		gflog_fatal(GFARM_MSG_UNFIXED, "ldap_get_option: %d", rv);
+	}
+	return (ldap_err2string(e));
+}
+
+static char **
+gfarm_strarray_dup_log(char **src, const char *diag)
+{
+	char **dst = gfarm_strarray_dup(src);
+
+	if (dst == NULL)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: gfarm_strarray_dup(): no memory", diag);
+	return (dst);
+}
+
 /**********************************************************************/
 
 struct ldap_string_modify {
@@ -635,7 +663,7 @@ struct gfarm_ldap_generic_info_ops {
 	char *query_type;
 	char *dn_template;
 	char *(*make_dn)(void *key);
-	void (*set_field)(void *info, char *attribute, char **vals);
+	gfarm_error_t (*set_field)(void *info, char *attribute, char **vals);
 };
 
 #if 0 /* not used */
@@ -646,7 +674,7 @@ gfarm_ldap_generic_info_get(
 	void *info,
 	const struct gfarm_ldap_generic_info_ops *ops)
 {
-	gfarm_error_t error = GFARM_ERR_NO_ERROR;
+	gfarm_error_t error = GFARM_ERR_NO_ERROR, err;
 	LDAPMessage *res, *e;
 	int n, rv;
 	char *a, *dn;
@@ -685,21 +713,41 @@ retry:
 	}
 	ops->gen_ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
+	if (e == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "ldap_first_entry: %s",
+		    ldap_err2string(gfarm_ldap_server->ld_errno));
+		error = GFARM_ERR_UNKNOWN;
+		goto msgfree;
+	}
 
 	ber = NULL;
 	for (a = ldap_first_attribute(gfarm_ldap_server, e, &ber); a != NULL;
 	    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 		vals = ldap_get_values(gfarm_ldap_server, e, a);
-		if (vals[0] != NULL)
-			ops->set_field(info, a, vals);
-		ldap_value_free(vals);
+		if (vals == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "ldap_get_values: %s", gfarm_ldap_session_error());
+			error = GFARM_ERR_UNKNOWN;
+		} else {
+			if (vals[0] != NULL) {
+				err = ops->set_field(info, a, vals);
+				if (err != GFARM_ERR_NO_ERROR)
+					error = err;
+			}
+			ldap_value_free(vals);
+		}
 		ldap_memfree(a);
 	}
 	if (ber != NULL)
 		ber_free(ber, 0);
 
+	if (error != GFARM_ERR_NO_ERROR) {
+		ops->gen_ops->free(info);
 	/* should check all fields are filled */
-	if (!ops->gen_ops->validate(info)) {
+	} else if (!ops->gen_ops->validate(info)) { 
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfarm_ldap_generic_info_get: validation error");
 		ops->gen_ops->free(info);
 		/* XXX - different error code is better ? */
 		error = GFARM_ERR_NO_SUCH_OBJECT;
@@ -856,7 +904,7 @@ gfarm_ldap_generic_info_get_all(
 	void *infosp,
 	const struct gfarm_ldap_generic_info_ops *ops)
 {
-	gfarm_error_t error = GFARM_ERR_NO_ERROR;
+	gfarm_error_t error = GFARM_ERR_NO_ERROR, err;
 	LDAPMessage *res, *e;
 	int i, n, rv;
 	char *a;
@@ -918,15 +966,26 @@ retry:
 		    a != NULL;
 		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
-			if (vals[0] != NULL)
-				ops->set_field(tmp_info, a, vals);
-			ldap_value_free(vals);
+			if (vals == NULL) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "ldap_get_values: %s",
+				    gfarm_ldap_session_error());
+				error = GFARM_ERR_UNKNOWN;
+			} else {
+				if (vals[0] != NULL) {
+					err = ops->set_field(tmp_info, a, vals);
+					if (err != GFARM_ERR_NO_ERROR)
+						error = err;
+				}
+				ldap_value_free(vals);
+			}
 			ldap_memfree(a);
 		}
 		if (ber != NULL)
 			ber_free(ber, 0);
 
-		if (!ops->gen_ops->validate(tmp_info)) {
+		if (error != GFARM_ERR_NO_ERROR ||
+		    !ops->gen_ops->validate(tmp_info)) {
 			/* invalid record */
 			ops->gen_ops->free(tmp_info);
 			continue;
@@ -936,6 +995,12 @@ retry:
 			       ops->gen_ops->info_size);
 		}
 		i++;
+	}
+	if (error != GFARM_ERR_NO_ERROR) {
+		while (--i >= 0)
+			ops->gen_ops->free(infos + i * ops->gen_ops->info_size);
+		free(infos);
+		goto msgfree;
 	}
 	if (i == 0) {
 		free(infos);
@@ -966,6 +1031,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	const struct gfarm_ldap_generic_info_ops *ops,
 	char *attrs[])
 {
+	gfarm_error_t error = GFARM_ERR_NO_ERROR, err;
 	LDAPMessage *res, *e;
 	int i, msgid, rv;
 	char *a;
@@ -983,8 +1049,8 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	/* step through each entry returned */
 	i = 0;
 	res = NULL;
-	while ((rv = ldap_result(gfarm_ldap_server,
-			msgid, LDAP_MSG_ONE, NULL, &res)) > 0) {
+	while ((rv = ldap_result(gfarm_ldap_server, msgid, LDAP_MSG_ONE, NULL,
+	    &res)) > 0) {
 		e = ldap_first_entry(gfarm_ldap_server, res);
 		if (e == NULL)
 			break;
@@ -993,21 +1059,34 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 			ops->gen_ops->clear(tmp_info);
 
 			ber = NULL;
-			for (a = ldap_first_attribute(
-				     gfarm_ldap_server, e, &ber);
-			     a != NULL;
-			     a = ldap_next_attribute(
-				     gfarm_ldap_server, e, ber)) {
+			for (a = ldap_first_attribute(gfarm_ldap_server, e,
+			    &ber);
+			    a != NULL;
+			    a = ldap_next_attribute(gfarm_ldap_server, e,
+			    ber)) {
 				vals = ldap_get_values(gfarm_ldap_server, e, a);
-				if (vals[0] != NULL)
-					ops->set_field(tmp_info, a, vals);
-				ldap_value_free(vals);
+				if (vals == NULL) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "ldap_get_values: %s",
+					    gfarm_ldap_session_error());
+					error = GFARM_ERR_UNKNOWN;
+				} else {
+					if (vals[0] != NULL) {
+						err = ops->set_field(tmp_info,
+						    a, vals);
+						if (err != GFARM_ERR_NO_ERROR)
+							error = err;
+					}
+					ldap_value_free(vals);
+				}
 				ldap_memfree(a);
 			}
 			if (ber != NULL)
 				ber_free(ber, 0);
 
-			if (!ops->gen_ops->validate(tmp_info)) {
+			/* should check all fields are filled */
+			if (error != GFARM_ERR_NO_ERROR ||
+			    !ops->gen_ops->validate(tmp_info)) {
 				/* invalid record */
 				ops->gen_ops->free(tmp_info);
 				continue;
@@ -1025,6 +1104,8 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	}
 	if (res != NULL)
 		ldap_msgfree(res);
+	if (error != GFARM_ERR_NO_ERROR)
+		return (error);
 	if (rv == -1) {
 		gflog_error(GFARM_MSG_1000760,
 		    "ldap_search(%s) - for each - failed", dn);
@@ -1065,8 +1146,8 @@ gfarm_ldap_nop(void *arg)
 /**********************************************************************/
 
 static char *gfarm_ldap_host_info_make_dn(void *vkey);
-static void gfarm_ldap_host_info_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_host_info_set_field(void *info,
+	char *attribute, char **vals);
 
 struct gfarm_ldap_host_info_key {
 	const char *hostname;
@@ -1098,29 +1179,41 @@ gfarm_ldap_host_info_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_host_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct gfarm_host_info *info = vinfo;
+	static const char diag[] = "gfarm_ldap_host_info_set_field";
 
 	if (strcasecmp(attribute, "hostname") == 0) {
-		info->hostname = strdup(vals[0]);
+		info->hostname = strdup_log(vals[0], diag);
+		if (info->hostname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "port") == 0) {
 		info->port = strtol(vals[0], NULL, 0);
 	} else if (strcasecmp(attribute, "hostalias") == 0) {
-		info->hostaliases = gfarm_strarray_dup(vals);
-		info->nhostaliases = info->hostaliases == NULL ? 0 :
-		    gfarm_strarray_length(info->hostaliases);
+		info->hostaliases = gfarm_strarray_dup_log(vals, diag);
+		if (info->hostaliases == NULL) {
+			info->nhostaliases = 0;
+			err = GFARM_ERR_NO_MEMORY;
+		} else {
+			info->nhostaliases =
+			    gfarm_strarray_length(info->hostaliases);
+		}
 	} else if (strcasecmp(attribute, "architecture") == 0) {
-		info->architecture = strdup(vals[0]);
+		info->architecture = strdup_log(vals[0], diag);
+		if (info->architecture == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "ncpu") == 0) {
 		info->ncpu = strtol(vals[0], NULL, 0);
 	} else if (strcasecmp(attribute, "flags") == 0) {
 		info->flags = strtol(vals[0], NULL, 0);
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -1232,8 +1325,8 @@ gfarm_ldap_host_load(void *closure,
 /**********************************************************************/
 
 static char *gfarm_ldap_user_info_make_dn(void *vkey);
-static void gfarm_ldap_user_info_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_user_info_set_field(void *info,
+	char *attribute, char **vals);
 
 struct gfarm_ldap_user_info_key {
 	const char *username;
@@ -1265,35 +1358,46 @@ gfarm_ldap_user_info_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_user_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct gfarm_user_info *info = vinfo;
+	static const char diag[] = "gfarm_ldap_user_info_set_field";
 
 	if (strcasecmp(attribute, "username") == 0) {
-		info->username = strdup(vals[0]);
+		info->username = strdup_log(vals[0], diag);
+		if (info->username == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "realname") == 0) {
 		/* XXX FIXME - hack to allow null string */
 		if (strcmp(vals[0], " ") == 0)
-			info->realname = strdup("");
+			info->realname = strdup_log("", diag);
 		else
-			info->realname = strdup(vals[0]);
+			info->realname = strdup_log(vals[0], diag);
+		if (info->realname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "homedir") == 0) {
 		/* XXX FIXME - hack to allow null string */
 		if (strcmp(vals[0], " ") == 0)
-			info->homedir = strdup("");
+			info->homedir = strdup_log("", diag);
 		else
-			info->homedir = strdup(vals[0]);
+			info->homedir = strdup_log(vals[0], diag);
+		if (info->homedir == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "gsiDN") == 0) {
 		/* XXX FIXME - hack to allow null string */
 		if (strcmp(vals[0], " ") == 0)
-			info->gsi_dn = strdup("");
+			info->gsi_dn = strdup_log("", diag);
 		else
-			info->gsi_dn = strdup(vals[0]);
+			info->gsi_dn = strdup_log(vals[0], diag);
+		if (info->gsi_dn == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -1384,8 +1488,8 @@ gfarm_ldap_user_load(void *closure,
 /**********************************************************************/
 
 static char *gfarm_ldap_group_info_make_dn(void *vkey);
-static void gfarm_ldap_group_info_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_group_info_set_field(void *info,
+	char *attribute, char **vals);
 
 struct gfarm_ldap_group_info_key {
 	const char *groupname;
@@ -1417,21 +1521,30 @@ gfarm_ldap_group_info_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_group_info_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct gfarm_group_info *info = vinfo;
+	static const char diag[] = "gfarm_ldap_group_info_set_field";
 
 	if (strcasecmp(attribute, "groupname") == 0) {
-		info->groupname = strdup(vals[0]);
+		info->groupname = strdup_log(vals[0], diag);
+		if (info->groupname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "groupusers") == 0) {
-		info->usernames = gfarm_strarray_dup(vals);
-		info->nusers = info->usernames == NULL ? 0 :
-		    gfarm_strarray_length(info->usernames);
+		info->usernames = gfarm_strarray_dup_log(vals, diag);
+		if (info->usernames == NULL) {
+			info->nusers = 0;
+			err = GFARM_ERR_NO_MEMORY;
+		} else {
+			info->nusers = gfarm_strarray_length(info->usernames);
+		}
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -1522,8 +1635,8 @@ gfarm_ldap_group_load(void *closure,
 /**********************************************************************/
 
 static char *gfarm_ldap_db_inode_inum_make_dn(void *vkey);
-static void gfarm_ldap_gfs_stat_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_gfs_stat_set_field(void *info,
+	char *attribute, char **vals);
 
 static char INODE_QUERY_TYPE[] = "(objectclass=GFarmINode)";
 static char INODE_DN_TEMPLATE[] = "inumber=%" GFARM_PRId64 ", %s";
@@ -1554,13 +1667,15 @@ gfarm_ldap_db_inode_inum_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_gfs_stat_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct gfs_stat *info = vinfo;
+	static const char diag[] = "gfarm_ldap_gfs_stat_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->st_ino = gfarm_strtoi64(vals[0], NULL);
@@ -1573,9 +1688,13 @@ gfarm_ldap_gfs_stat_set_field(
 	} else if (strcasecmp(attribute, "size") == 0) {
 		info->st_size = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "username") == 0) {
-		info->st_user = strdup(vals[0]);
+		info->st_user = strdup_log(vals[0], diag);
+		if (info->st_user == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "groupname") == 0) {
-		info->st_group = strdup(vals[0]);
+		info->st_group = strdup_log(vals[0], diag);
+		if (info->st_group == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "atimesec") == 0) {
 		info->st_atimespec.tv_sec = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "atimensec") == 0) {
@@ -1590,6 +1709,7 @@ gfarm_ldap_gfs_stat_set_field(
 		info->st_ctimespec.tv_nsec = strtol(vals[0], NULL, 0);
 	}
 	info->st_ncopy = 0;
+	return (err);
 }
 
 static gfarm_error_t
@@ -1901,8 +2021,8 @@ gfarm_ldap_inode_load(
 
 /**********************************************************************/
 
-static void gfarm_ldap_inode_cksum_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_inode_cksum_set_field(void *info,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_inode_cksum_ops = {
 	&db_base_inode_cksum_arg_ops,
@@ -1912,22 +2032,32 @@ static const struct gfarm_ldap_generic_info_ops gfarm_ldap_inode_cksum_ops = {
 	gfarm_ldap_inode_cksum_set_field,
 };
 
-static void
+static gfarm_error_t
 gfarm_ldap_inode_cksum_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct db_inode_cksum_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_inode_cksum_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "checksumType") == 0) {
-		info->type = strdup(vals[0]);
+		info->type = strdup_log(vals[0], diag);
+		if (info->type == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "checksum") == 0) {
-		info->sum = strdup(vals[0]);
-		info->len = strlen(info->sum);
+		info->sum = strdup_log(vals[0], diag);
+		if (info->sum == NULL) {
+			info->sum = 0;
+			err = GFARM_ERR_NO_MEMORY;
+		} else {
+			info->len = strlen(info->sum);
+		}
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2022,8 +2152,8 @@ gfarm_ldap_inode_cksum_load(
 /**********************************************************************/
 
 static char *gfarm_ldap_db_filecopy_make_dn(void *vkey);
-static void gfarm_ldap_db_filecopy_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_db_filecopy_set_field(void *info,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_db_filecopy_ops = {
 	&db_base_filecopy_arg_ops,
@@ -2052,19 +2182,24 @@ gfarm_ldap_db_filecopy_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_db_filecopy_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct db_filecopy_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_db_filecopy_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "hostname") == 0) {
-		info->hostname = strdup(vals[0]);
+		info->hostname = strdup_log(vals[0], diag);
+		if (info->hostname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2137,8 +2272,8 @@ gfarm_ldap_filecopy_load(
 /**********************************************************************/
 
 static char *gfarm_ldap_db_deadfilecopy_make_dn(void *vkey);
-static void gfarm_ldap_db_deadfilecopy_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_db_deadfilecopy_set_field(void *info,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_deadfilecopy_ops = {
@@ -2171,21 +2306,26 @@ gfarm_ldap_db_deadfilecopy_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_db_deadfilecopy_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct db_deadfilecopy_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_db_deadfilecopy_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "igen") == 0) {
 		info->igen = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "hostname") == 0) {
-		info->hostname = strdup(vals[0]);
+		info->hostname = strdup_log(vals[0], diag);
+		if (info->hostname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2263,8 +2403,8 @@ gfarm_ldap_deadfilecopy_load(
 /**********************************************************************/
 
 static char *gfarm_ldap_db_direntry_make_dn(void *vkey);
-static void gfarm_ldap_db_direntry_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_db_direntry_set_field(void *info,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_direntry_ops = {
@@ -2351,22 +2491,30 @@ gfarm_ldap_db_direntry_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_db_direntry_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct db_direntry_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_db_direntry_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->dir_inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "entryName") == 0) {
-		info->entry_name = strdup(vals[0]);
-		info->entry_len = strlen(info->entry_name);
+		info->entry_name = strdup_log(vals[0], diag);
+		if (info->entry_name == NULL) {
+			info->entry_len = 0;
+			err = GFARM_ERR_NO_MEMORY;
+		} else {
+			info->entry_len = strlen(info->entry_name);
+		}
 	} else if (strcasecmp(attribute, "entryINumber") == 0) {
 		info->entry_inum = gfarm_strtoi64(vals[0], NULL);
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2449,8 +2597,8 @@ gfarm_ldap_direntry_load(
 
 /**********************************************************************/
 
-static void gfarm_ldap_db_symlink_set_field(void *info, char *attribute,
-	char **vals);
+static gfarm_error_t gfarm_ldap_db_symlink_set_field(void *info,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops
     gfarm_ldap_db_symlink_ops = {
@@ -2461,19 +2609,24 @@ static const struct gfarm_ldap_generic_info_ops
 	gfarm_ldap_db_symlink_set_field,
 };
 
-static void
+static gfarm_error_t
 gfarm_ldap_db_symlink_set_field(
 	void *vinfo,
 	char *attribute,
 	char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct db_symlink_arg *info = vinfo;
+	static const char diag[] = "gfarm_ldap_db_symlink_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "sourcePath") == 0) {
-		info->source_path = strdup(vals[0]);
+		info->source_path = strdup_log(vals[0], diag);
+		if (info->source_path == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2566,7 +2719,7 @@ gfarm_ldap_symlink_load(
 /**********************************************************************/
 
 static char *gfarm_ldap_xattr_info_make_dn(void *vkey);
-static void gfarm_ldap_db_xattr_set_field(void *vinfo,
+static gfarm_error_t gfarm_ldap_db_xattr_set_field(void *vinfo,
 	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_info_ops = {
@@ -2601,17 +2754,25 @@ gfarm_ldap_xattr_info_make_dn(void *vkey)
 	return (dn);
 }
 
-static void
+static gfarm_error_t
 gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
 {
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct xattr_info *info = vinfo;
+	static const char diag[] = "gfarm_ldap_db_xattr_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
 	} else if (strcasecmp(attribute, "attrname") == 0) {
-		info->attrname = strdup(vals[0]);
-		info->namelen = strlen(info->attrname) + 1; // include '\0'
+		info->attrname = strdup_log(vals[0], diag);
+		if (info->attrname == NULL) {
+			info->namelen = 0;
+			err = GFARM_ERR_NO_MEMORY;
+		} else { /* include '\0' */
+			info->namelen = strlen(info->attrname) + 1;
+		}
 	}
+	return (err);
 }
 
 static gfarm_error_t
@@ -2751,9 +2912,14 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 		e =  GFARM_ERR_UNKNOWN;
 		gflog_debug(GFARM_MSG_1002141,
 			"ldap_count_messages() != 2");
+	} else if ((m = ldap_first_message(gfarm_ldap_server, res)) == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "ldap_first_message: %s", gfarm_ldap_session_error());
+	} else if ((vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]))
+	    == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "ldap_get_values_len: %s", gfarm_ldap_session_error());
 	} else {
-		m = ldap_first_message(gfarm_ldap_server, res);
-		vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]);
 		if ((vals[0] != NULL) && (vals[1] == NULL)) {
 			e = GFARM_ERR_NO_ERROR;
 			*arg->sizep = vals[0]->bv_len;
@@ -2781,7 +2947,7 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 	ldap_msgfree(res);
 quit:
 	free(arg);
-	return e;
+	return (e);
 }
 
 gfarm_error_t

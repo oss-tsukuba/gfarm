@@ -604,12 +604,14 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 static gfarm_error_t
 inode_get_stat(struct inode *inode, struct gfs_stat *st)
 {
+	static const char diag[] = "inode_get_stat";
+
 	st->st_ino = inode_get_number(inode);
 	st->st_gen = inode_get_gen(inode);
 	st->st_mode = inode_get_mode(inode);
 	st->st_nlink = inode_get_nlink(inode);
-	st->st_user = strdup(user_name(inode_get_user(inode)));
-	st->st_group = strdup(group_name(inode_get_group(inode)));
+	st->st_user = strdup_log(user_name(inode_get_user(inode)), diag);
+	st->st_group = strdup_log(group_name(inode_get_group(inode)), diag);
 	st->st_size = inode_get_size(inode);
 	if (inode_is_file(inode))
 		st->st_ncopy = inode_get_ncopy(inode);
@@ -920,15 +922,20 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001849,
 			"process_cksum_get() failed: %s",
 			gfarm_error_string(e));
+	} else if (cksum_type == NULL) {
+		cksum_type = "";
+		cksum_len = 0;
+		cksumbuf = "";
+	} else if ((cksum_type = strdup_log(cksum_type, diag)) == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
 	} else {
-		if (cksum_type == NULL) {
-			cksum_type = "";
-			cksumbuf = "";
+		GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
+		if (cksumbuf == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			free(cksum_type);
 		} else {
-			alloced = 1;
-			cksum_type = strdup(cksum_type);
-			GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
 			memcpy(cksumbuf, cksum, cksum_len);
+			alloced = 1;
 		}
 	}
 
@@ -1422,8 +1429,7 @@ gfm_server_readlink(struct peer *peer, int from_client, int skip)
 	} else if ((source_path = inode_get_symlink(inode)) == NULL) {
 		gflog_debug(GFARM_MSG_1001906, "invalid argument");
 		e = GFARM_ERR_INVALID_ARGUMENT; /* not a symlink */
-	} else if ((source_path = strdup(source_path)) == NULL) {
-		gflog_debug(GFARM_MSG_1001907, "allocation of string failed");
+	} else if ((source_path = strdup_log(source_path, diag)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 	}
 

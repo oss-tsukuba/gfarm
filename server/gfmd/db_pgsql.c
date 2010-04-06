@@ -237,6 +237,20 @@ pgsql_get_string(PGresult *res, int row, const char *field_name)
 	return (s);
 }
 
+char *
+pgsql_get_string_ck(PGresult *res, int row, const char *field_name)
+{
+	char *v = PQgetvalue(res, row, PQfnumber(res, field_name));
+	char *s = strdup(v);
+
+	if (s == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "pgsql_get_string_ck(%s): %s: no memory", field_name, v);
+	}
+	return (s);
+}
+
+
 static void *
 pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 {
@@ -259,7 +273,7 @@ pgsql_get_binary(PGresult *res, int row, const char *field_name, int *size)
 		    "pgsql_get_binary(%s): size=%d: no memory",
 		    field_name, (int)*size);
 
-	return dst;
+	return (dst);
 }
 
 /**********************************************************************/
@@ -590,11 +604,26 @@ gfarm_pgsql_generic_get_all(
 		} else {
 			for (i = 0; i < n; i++) {
 				(*ops->clear)(results + i * ops->info_size);
-				(*set_fields)(res, i,
+				e = (*set_fields)(res, i,
 				    results + i * ops->info_size);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfarm_pgsql_generic_get_all: "
+					    "%s: %d/%d: %s",
+					    sql, i, n, gfarm_error_string(e));
+					while (--i >= 0) {
+						(*ops->free)(results +
+						    i * ops->info_size);
+					}
+					free(results);
+					break;
+					
+				}
 			}
-			*np = n;
-			*(char **)resultsp = results;
+			if (e == GFARM_ERR_NO_ERROR) {
+				*np = n;
+				*(char **)resultsp = results;
+			}
 		}
 	}
 	PQclear(res);
@@ -950,15 +979,20 @@ host_info_set_fields_with_grouping(
 	struct gfarm_host_info *info = vinfo;
 	int i;
 
-	info->hostname = pgsql_get_string(res, startrow, "hostname");
+	info->hostname = pgsql_get_string_ck(res, startrow, "hostname");
 	info->port = pgsql_get_int32(res, startrow, "port");
-	info->architecture = pgsql_get_string(res, startrow, "architecture");
+	info->architecture = pgsql_get_string_ck(res, startrow, "architecture");
 	info->ncpu = pgsql_get_int32(res, startrow, "ncpu");
 	info->flags = pgsql_get_int32(res, startrow, "flags");
 	info->nhostaliases = nhostaliases;
 	GFARM_MALLOC_ARRAY(info->hostaliases, nhostaliases + 1);
+	if (info->hostaliases == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "host_info_set_fields_with_grouping(%s, %d): no memory",
+		    info->hostname, nhostaliases + 1);
+	}
 	for (i = 0; i < nhostaliases; i++) {
-		info->hostaliases[i] = pgsql_get_string(res, startrow + i,
+		info->hostaliases[i] = pgsql_get_string_ck(res, startrow + i,
 		    "hostalias");
 	}
 	info->hostaliases[info->nhostaliases] = NULL;
@@ -1163,10 +1197,10 @@ user_info_set_field(PGresult *res, int row, void *vinfo)
 {
 	struct gfarm_user_info *info = vinfo;
 
-	info->username = pgsql_get_string(res, row, "username");
-	info->homedir = pgsql_get_string(res, row, "homedir");
-	info->realname = pgsql_get_string(res, row, "realname");
-	info->gsi_dn = pgsql_get_string(res, row, "gsiDN");
+	info->username = pgsql_get_string_ck(res, row, "username");
+	info->homedir = pgsql_get_string_ck(res, row, "homedir");
+	info->realname = pgsql_get_string_ck(res, row, "realname");
+	info->gsi_dn = pgsql_get_string_ck(res, row, "gsiDN");
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1279,12 +1313,17 @@ group_info_set_fields_with_grouping(
 	struct gfarm_group_info *info = vinfo;
 	int i;
 
-	info->groupname = pgsql_get_string(res, startrow, "groupname");
+	info->groupname = pgsql_get_string_ck(res, startrow, "groupname");
 	info->nusers = nusers;
 	GFARM_MALLOC_ARRAY(info->usernames, nusers + 1);
+	if (info->usernames == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "group_info_set_fields_with_grouping(%s, %d): no memory",
+		    info->groupname, nusers + 1);
+	}
 	for (i = 0; i < nusers; i++) {
 		info->usernames[i] =
-		    pgsql_get_string(res, startrow + i, "username");
+		    pgsql_get_string_ck(res, startrow + i, "username");
 	}
 	info->usernames[info->nusers] = NULL;
 	return (GFARM_ERR_NO_ERROR);
@@ -2472,7 +2511,7 @@ gfarm_pgsql_xattr_get(struct db_xattr_arg *arg)
 	gfarm_error_t e;
 	const char *paramValues[2];
 	char inumber[GFARM_INT64STRLEN + 1];
-	char *diag;
+	const char *diag;
 	char *command;
 	int n;
 	struct xattr_info *vinfo;
@@ -2516,7 +2555,7 @@ pgsql_xattr_set_inum_and_attrname(PGresult *res, int row, void *vinfo)
 	struct xattr_info *info = vinfo;
 
 	info->inum = pgsql_get_int64(res, row, "inumber");
-	info->attrname = pgsql_get_string(res, row, "attrname");
+	info->attrname = pgsql_get_string_ck(res, row, "attrname");
 	info->namelen = strlen(info->attrname) + 1; // include '\0'
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2566,8 +2605,14 @@ pgsql_xattr_set_attrname(PGresult *res, int row, void *vinfo)
 	struct xattr_info *info = vinfo;
 
 	info->attrname = pgsql_get_string(res, row, "attrname");
-	info->namelen = strlen(info->attrname) + 1; // include '\0'
-	return (GFARM_ERR_NO_ERROR);
+	if (info->attrname == NULL) {
+		/* error is logged in pgsql_get_string() */
+		info->namelen = 0;
+		return (GFARM_ERR_NO_MEMORY);
+	} else {
+		info->namelen = strlen(info->attrname) + 1; /* include '\0' */
+		return (GFARM_ERR_NO_ERROR);
+	}
 }
 
 static gfarm_error_t

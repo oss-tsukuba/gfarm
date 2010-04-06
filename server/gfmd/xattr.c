@@ -664,6 +664,7 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 {
 	char *p, *q;
 	int i;
+	static const char diag[] = "findxmlattr_set_restart_path";
 
 	/*
 	 * if restartpath = "dir1/dir2",
@@ -673,12 +674,9 @@ findxmlattr_set_restart_path(struct inum_path_array *array,
 	 */
 	array->restartpath = path;
 	free(array->ckpath);
-	array->ckpath = strdup(path);
-	if (array->ckpath == NULL) {
-		gflog_debug(GFARM_MSG_1002100,
-			"allocation of 'ckpath' failed");
-		return GFARM_ERR_NO_MEMORY;
-	}
+	array->ckpath = strdup_log(path, diag);
+	if (array->ckpath == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
 	array->check_ckpath = array->check_ckname = 1;
 	p = array->ckpath;
@@ -838,13 +836,11 @@ findxmlattr_make_patharray(struct inode *inode, struct user *user,
 	const int maxdepth, struct inum_path_array *array)
 {
 	gfarm_error_t e;
-	char *toppath = strdup("");
+	static const char diag[] = "findxmlattr_make_patharray";
+	char *toppath = strdup_log("", diag);
 
-	if (toppath == NULL) {
-		gflog_debug(GFARM_MSG_1002104,
-			"allocation of 'toppath' failed");
-		return GFARM_ERR_NO_MEMORY;
-	}
+	if (toppath == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
 	e = findxmlattr_add_selfpath(inode, user, toppath, array);
 
@@ -974,16 +970,14 @@ findxmlxattr_restart(struct peer *peer, struct inode *inode,
 	struct process *process = peer_get_process(peer);
 	struct user *user = process_get_user(process);
 	char *restartpath;
+	static const char diag[] = "findxmlxattr_restart";
 
 	if (array->nentry == 0)
 		return GFARM_ERR_NO_ERROR;
 
-	restartpath = strdup(array->entries[array->nentry-1].path);
-	if (restartpath == NULL) {
-		gflog_debug(GFARM_MSG_1002105,
-			"allocation of 'restartpath' failed");
-		return GFARM_ERR_NO_MEMORY;
-	}
+	restartpath = strdup_log(array->entries[array->nentry-1].path, diag);
+	if (restartpath == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 	inum_path_array_reinit(array, ctxp->expr);
 	e = findxmlattr_set_restart_path(array, restartpath);
 	if (e != GFARM_ERR_NO_ERROR) {

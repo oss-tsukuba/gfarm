@@ -755,6 +755,7 @@ auth_uid_to_global_username(void *closure,
 {
 	char *global_username;
 	struct user *u;
+	static const char diag[] = "auth_uid_to_global_username";
 
 	giant_lock();
 	if (GFARM_IS_AUTH_GSI(auth_method)) { /* auth_user_id is a DN */
@@ -775,12 +776,9 @@ auth_uid_to_global_username(void *closure,
 	}
 	if (global_usernamep == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	global_username = strdup(user_name(u));
-	if (global_username == NULL) {
-		gflog_debug(GFARM_MSG_1001484,
-			"allocation of 'global_username' failed");
+	global_username = strdup_log(user_name(u), diag);
+	if (global_username == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 	*global_usernamep = global_username;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -796,6 +794,7 @@ peer_authorize(struct peer *peer)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 	char addr_string[GFARM_SOCKADDR_STRLEN];
+	static const char diag[] = "peer_authorize";
 
 	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
 	rv = 1;
@@ -816,12 +815,9 @@ peer_authorize(struct peer *peer)
 		gflog_warning(GFARM_MSG_1000185,
 		    "gfarm_sockaddr_to_name(%s): %s",
 		    gfarm_error_string(e), addr_string);
-		hostname = strdup(addr_string);
-		if (hostname == NULL) {
-			gflog_warning(GFARM_MSG_1000186, "%s: %s", addr_string,
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		hostname = strdup_log(addr_string, diag);
+		if (hostname == NULL)
 			return (GFARM_ERR_NO_MEMORY);
-		}
 	}
 	e = gfarm_authorize(peer_get_conn(peer), 0, GFM_SERVICE_TAG,
 	    hostname, &addr, auth_uid_to_global_username, NULL,

@@ -802,7 +802,7 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, int up_only,
 				flag = GFM_PROTO_REPLICA_FLAG_DEAD_HOST;
 		}
 
-		name = strdup(host_name(dfc->host));
+		name = strdup_log(host_name(dfc->host), diag);
 		if (name == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			break;

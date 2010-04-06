@@ -14,11 +14,14 @@
 #include "gfutil.h"
 #include "config.h"
 
+
+#include "subr.h"
+#include "thrsubr.h"
+
 #include "quota_info.h"
 #include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
-#include "thrsubr.h"
 
 #define ALIGNMENT 8
 #define ALIGN(offset)	(((offset) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
@@ -416,13 +419,10 @@ db_host_modify(const struct gfarm_host_info *hi,
 gfarm_error_t
 db_host_remove(const char *hostname)
 {
-	char *h = strdup(hostname);
+	char *h = strdup_log(hostname, "db_host_remove");
 
-	if (h == NULL) {
-		gflog_debug(GFARM_MSG_1002004,
-			"allocation of string 'h' failed");
+	if (h == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->host_remove, h));
 }
 
@@ -495,13 +495,10 @@ db_user_modify(const struct gfarm_user_info *ui, int modflags)
 gfarm_error_t
 db_user_remove(const char *username)
 {
-	char *u = strdup(username);
+	char *u = strdup_log(username, "db_user_remove");
 
-	if (u == NULL) {
-		gflog_debug(GFARM_MSG_1002008,
-			"allocation of string 'u' failed");
+	if (u == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->user_remove, u));
 }
 
@@ -636,13 +633,10 @@ db_group_modify(const struct gfarm_group_info *gi, int modflags,
 gfarm_error_t
 db_group_remove(const char *groupname)
 {
-	char *g = strdup(groupname);
+	char *g = strdup_log(groupname, "db_group_remove");
 
-	if (g == NULL) {
-		gflog_debug(GFARM_MSG_1002012,
-			"allocation of string 'g' failed");
+	if (g == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 	return (dbq_enter(&dbq, (dbq_entry_func_t)ops->group_remove, g));
 }
 

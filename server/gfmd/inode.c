@@ -776,8 +776,10 @@ inode_init_file(struct inode *inode)
 gfarm_error_t
 inode_init_symlink(struct inode *inode, char *source_path)
 {
+	static const char diag[] = "inode_init_symlink";
+
 	if (source_path != NULL) {
-		source_path = strdup(source_path);
+		source_path = strdup_log(source_path, diag);
 		if (source_path == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2683,6 +2685,7 @@ inode_replica_list_by_name(struct inode *inode,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int n, i;
 	char **hosts;
+	static const char diag[] = "inode_replica_list_by_name";
 
 	if (inode_is_dir(inode)) {
 		gflog_debug(GFARM_MSG_1001771,
@@ -2706,7 +2709,7 @@ inode_replica_list_by_name(struct inode *inode,
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
 		if (copy->valid && host_is_up(copy->host)) {
-			hosts[i] = strdup(host_name(copy->host));
+			hosts[i] = strdup_log(host_name(copy->host), diag);
 			if (hosts[i] == NULL) {
 				gflog_debug(GFARM_MSG_1001774,
 					"hosts[%d] is null", i);
@@ -2748,6 +2751,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_HOST) != 0 ? 0 : 1;
 	int latest_only =
 	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_COPY) != 0 ? 0 : 1;
+	static const char diag[] = "inode_replica_info_get";
 
 	if ((e = inode_check_file(inode)) != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2782,7 +2786,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	    copy = copy->host_next) {
 		if ((valid_only ? copy->valid : 1) &&
 		    (up_only ? host_is_up(copy->host) : 1)) {
-			hosts[i] = strdup(host_name(copy->host));
+			hosts[i] = strdup_log(host_name(copy->host), diag);
 			gens[i] = latest_gen;
 			oflags[i] =
 			    (!copy->valid ?
@@ -3114,6 +3118,7 @@ static struct xattr_entry *
 xattr_entry_alloc(const char *attrname)
 {
 	struct xattr_entry *entry;
+	static const char diag[] = "xattr_entry_alloc";
 
 	GFARM_CALLOC_ARRAY(entry, 1);
 	if (entry == NULL) {
@@ -3121,7 +3126,7 @@ xattr_entry_alloc(const char *attrname)
 			"allocation of 'xattr_entry' failed");
 		return NULL;
 	}
-	if ((entry->name = strdup(attrname)) == NULL) {
+	if ((entry->name = strdup_log(attrname, diag)) == NULL) {
 		free(entry);
 		return NULL;
 	}

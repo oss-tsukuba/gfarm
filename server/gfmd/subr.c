@@ -96,6 +96,17 @@ string_dup(const char *s, const char *diag)
 	return (d);
 }
 
+char *
+strdup_log(const char *s, const char *diag)
+{
+	char *d = strdup(s);
+
+	if (d == NULL)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: strdup(%s): no memory", diag, s);
+	return (d);
+}
+
 int
 accmode_to_op(gfarm_uint32_t flag)
 {

@@ -699,7 +699,7 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 		if (strcmp(name, "") == 0) {
 			user = peer_user; /* permit not-admin */
 			free(name);
-			name = strdup(user_name(peer_user));
+			name = strdup_log(user_name(peer_user), diag);
 			if (name == NULL)
 				e = GFARM_ERR_NO_MEMORY;
 		} else if (strcmp(name, user_name(peer_user)) == 0)
