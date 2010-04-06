@@ -381,16 +381,16 @@ group_init(void)
 		    "group %s not found, creating it",
 		    ADMIN_GROUP_NAME);
 
-		gi.groupname = string_dup(ADMIN_GROUP_NAME, diag);
+		gi.groupname = strdup_ck(ADMIN_GROUP_NAME, diag);
 		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
 		GFARM_MALLOC_ARRAY(gi.usernames, gi.nusers);
 		if (gi.usernames == NULL)
 			gflog_fatal(GFARM_MSG_1002316,
 			    "creating group %s: no memory", gi.groupname);
-		gi.usernames[0] = string_dup(ADMIN_USER_NAME, diag);
+		gi.usernames[0] = strdup_ck(ADMIN_USER_NAME, diag);
 		if (gfarm_metadb_admin_user != NULL)
 			gi.usernames[1] =
-			    string_dup(gfarm_metadb_admin_user, diag);
+			    strdup_ck(gfarm_metadb_admin_user, diag);
 
 		/*
 		 * We have to call this before group_add_one(),
@@ -415,7 +415,7 @@ group_init(void)
 		    "group %s not found, creating it",
 		    ROOT_GROUP_NAME);
 
-		gi.groupname = string_dup(ROOT_GROUP_NAME, diag);
+		gi.groupname = strdup_ck(ROOT_GROUP_NAME, diag);
 		gi.nusers = 0;
 		gi.usernames = NULL;
 

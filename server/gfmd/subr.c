@@ -86,7 +86,7 @@ create_detached_thread(void *(*thread_main)(void *), void *arg)
 
 /* only initialization routines are allowed to call this function */
 char *
-string_dup(const char *s, const char *diag)
+strdup_ck(const char *s, const char *diag)
 {
 	char *d = strdup(s);
 

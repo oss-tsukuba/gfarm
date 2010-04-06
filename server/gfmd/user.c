@@ -323,10 +323,10 @@ create_user(const char *username, const char *gsi_dn)
 	gflog_info(GFARM_MSG_1000234,
 	    "user '%s' not found, creating...", username);
 
-	ui.username = string_dup(username, diag);
-	ui.realname = string_dup("Gfarm administrator", diag);
-	ui.homedir = string_dup("/", diag);
-	ui.gsi_dn = string_dup(gsi_dn == NULL ? "" : gsi_dn, diag);
+	ui.username = strdup_ck(username, diag);
+	ui.realname = strdup_ck("Gfarm administrator", diag);
+	ui.homedir = strdup_ck("/", diag);
+	ui.gsi_dn = strdup_ck(gsi_dn == NULL ? "" : gsi_dn, diag);
 	user_add_one(NULL, &ui);
 	e = db_user_add(&ui);
 	if (e != GFARM_ERR_NO_ERROR)
