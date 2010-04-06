@@ -2601,15 +2601,15 @@ gfarm_pgsql_xmlattr_find(struct db_xmlattr_find_arg *arg)
 		&gfarm_base_xattr_info_ops, pgsql_xattr_set_attrname,
 		diag);
 
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
 		e = (*(arg->foundcallback))(arg->foundcbdata, n, vinfo);
-	else if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		if (n > 0)
+			gfarm_base_generic_info_free_all(n, vinfo,
+			    &gfarm_base_xattr_info_ops);
+	} else if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		e = GFARM_ERR_NO_ERROR;
-	if (n > 0)
-		gfarm_base_generic_info_free_all(n, vinfo,
-			&gfarm_base_xattr_info_ops);
 	free(arg);
-	return e;
+	return (e);
 }
 
 /**********************************************************************/
