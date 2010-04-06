@@ -6,12 +6,14 @@
 
 #include "gfs_pio.h"
 
+#define TEST_FILE_SIZE 10000000 /* 10MB */
+
 static void
 write_file(char *file, char *src_host)
 {
 	gfarm_error_t e;
 	GFS_File gf;
-	int rv;
+	int rv, i;
 	static const char buf[10];
 
 #if 0
@@ -28,10 +30,13 @@ write_file(char *file, char *src_host)
 		fprintf(stderr, "set_view: %s\n", gfarm_error_string(e));
 		exit(1);
 	}
-	gfs_pio_write(gf, buf, sizeof buf, &rv);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "gfs_pio_write: %s\n", gfarm_error_string(e));
-		exit(1);
+	for (i = 0; i < TEST_FILE_SIZE / sizeof(buf); i++) {
+		gfs_pio_write(gf, buf, sizeof buf, &rv);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "gfs_pio_write: %s\n",
+			    gfarm_error_string(e));
+			exit(1);
+		}
 	}
 	e = gfs_pio_close(gf);
 	if (e != GFARM_ERR_NO_ERROR) {
