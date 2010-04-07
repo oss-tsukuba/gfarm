@@ -60,7 +60,7 @@ gfarm_error_t
 gfm_server_compound_on_error(struct peer *peer, int from_client, int skip,
 	int level, gfarm_error_t *on_errorp)
 {
-	gfarm_error_t e, on_error;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, on_error;
 	static const char diag[] = "GFM_PROTO_COMPOUND_ON_ERROR";
 
 	e = gfm_server_get_request(peer, diag, "i", &on_error);
@@ -76,7 +76,7 @@ gfm_server_compound_on_error(struct peer *peer, int from_client, int skip,
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	else 
 		*on_errorp = on_error;
-	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
+	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
 gfarm_error_t
@@ -946,7 +946,7 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		free(cksum_type);
 		free(cksumbuf);
 	}
-	return (e);
+	return (e2);
 }
 
 gfarm_error_t

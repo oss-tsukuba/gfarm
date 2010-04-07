@@ -1245,7 +1245,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	else
 		file_table_set_read(fd);
 
-	gfs_server_put_reply_with_errno(client, "pread", rv == -1 ? errno : 0,
+	gfs_server_put_reply_with_errno(client, "pread", save_errno,
 	    "b", rv, buffer);
 }
 
@@ -3769,6 +3769,17 @@ back_channel_server(void)
 
 			e = gfp_xdr_recv_async_header(gfmd_conn, 0,
 			    &type, &xid, &size);
+			if (e != GFARM_ERR_NO_ERROR) {
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "back channel disconnected");
+				} else {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "back channel RPC protocol error, "
+					    "reset: %s", gfarm_error_string(e));
+				}
+				break;
+			}
 			if (type == GFP_XDR_TYPE_RESULT) {
 				e = gfp_xdr_callback_async_result(async,
 				    gfmd_conn, xid, size, &rv);
