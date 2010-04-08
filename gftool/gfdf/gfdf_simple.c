@@ -86,7 +86,7 @@ display_statfs_nodes(const char *domain)
 		total_avail += avail;
 	}
 	if (nhosts > 0) {
-		puts("---------------------------------------------");
+		puts("---------------------------------------------------");
 		printf("%14lld%14lld%14lld   %3.0f%%\n",
 		       (unsigned long long)total_used + total_avail,
 		       (unsigned long long)total_used,
