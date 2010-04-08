@@ -30,12 +30,12 @@ display_statfs(const char *dummy)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	printf("%12s%12s%12s%9s%12s\n",
+	printf("%14s%14s%14s%9s%12s\n",
 	       "1K-blocks", "Used", "Avail", "Capacity", "Files");
-	printf("%12" GFARM_PRId64 "%12" GFARM_PRId64
-	       "%12" GFARM_PRId64 "   %3.0f%%  %12" GFARM_PRId64 "\n",
-	       used + avail, used, avail,
-	       (double)used / (used + avail) * 100, files);
+	printf("%14lld%14lld%14lld   %3.0f%%  %12lld\n",
+	       (unsigned long long)used + avail, (unsigned long long)used,
+	       (unsigned long long)avail,
+	       (double)used / (used + avail) * 100, (unsigned long long)files);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -72,14 +72,14 @@ display_statfs_nodes(const char *domain)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	printf("%12s%12s%12s%9s %s\n",
+	printf("%14s%14s%14s%9s %s\n",
 	       "1K-blocks", "Used", "Avail", "Capacity", "Host");
 	for (i = 0; i < nhosts; ++i) {
 		used = hosts[i].disk_used;
 		avail = hosts[i].disk_avail;
-		printf("%12" GFARM_PRId64 "%12" GFARM_PRId64
-		       "%12" GFARM_PRId64 "   %3.0f%%   %s\n",
-		       used + avail, used, avail,
+		printf("%14lld%14lld%14lld   %3.0f%%   %s\n",
+		       (unsigned long long)used + avail,
+		       (unsigned long long)used, (unsigned long long)avail,
 		       (double)used / (used + avail) * 100,
 		       hosts[i].host);
 		total_used += used;
@@ -87,9 +87,10 @@ display_statfs_nodes(const char *domain)
 	}
 	if (nhosts > 0) {
 		puts("---------------------------------------------");
-		printf("%12" GFARM_PRId64 "%12" GFARM_PRId64
-		       "%12" GFARM_PRId64 "   %3.0f%%\n",
-		       total_used + total_avail, total_used, total_avail,
+		printf("%14lld%14lld%14lld   %3.0f%%\n",
+		       (unsigned long long)total_used + total_avail,
+		       (unsigned long long)total_used,
+		       (unsigned long long)total_avail,
 		       (double)total_used / (total_used + total_avail) * 100);
 	}
 	else
