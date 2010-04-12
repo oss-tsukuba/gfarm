@@ -15,7 +15,7 @@
  * asynchronous RPC related functions
  */
 
-#define XID_TYPE_BIT		0x80000000
+#define XID_TYPE_BIT		0xc0000000
 #define XID_TYPE_REQUEST	0x00000000
 #define XID_TYPE_RESULT		0x80000000
 
