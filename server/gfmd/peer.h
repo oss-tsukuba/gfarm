@@ -25,6 +25,7 @@ int peer_get_fd(struct peer *);
 struct gfp_xdr_async_peer;
 void peer_set_async(struct peer *, struct gfp_xdr_async_peer *);
 struct gfp_xdr_async_peer *peer_get_async(struct peer *);
+void peer_set_free_async(void (*)(struct peer *, struct gfp_xdr_async_peer *));
 
 gfarm_error_t peer_set_host(struct peer *, char *);
 enum gfarm_auth_id_type peer_get_auth_id_type(struct peer *);

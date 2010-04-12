@@ -25,7 +25,8 @@ struct gfp_xdr_async_peer {
 };
 
 struct gfp_xdr_async_callback {
-	gfarm_int32_t (*callback)(void *, void *, size_t);
+	gfarm_int32_t (*result_callback)(void *, void *, size_t);
+	void (*disconnect_callback)(void *, void *);
 	void *closure;
 };
 
@@ -67,13 +68,20 @@ gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *async_serverp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+gfp_xdr_async_xid_free(void *peer, gfp_xdr_xid_t xid, void *xdata)
+{
+	struct gfp_xdr_async_callback *cb = xdata;
+
+	(*cb->disconnect_callback)(peer, cb->closure);
+}
+
 void
-gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server,
-	void (*rpc_free)(void *, gfp_xdr_xid_t, void *), void *closure)
+gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server, void *peer)
 {
 	int rv;
 	
-	gfarm_id_table_free(async_server->idtab, rpc_free, closure);
+	gfarm_id_table_free(async_server->idtab, gfp_xdr_async_xid_free, peer);
 	if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
 		gflog_debug(GFARM_MSG_1002307,
 		    "pthread_mutex_destroy: %s", strerror(rv));
@@ -105,7 +113,7 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	void *peer, gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
 {
 	struct gfp_xdr_async_callback *cb;
-	gfarm_int32_t (*callback)(void *, void *, size_t);
+	gfarm_int32_t (*result_callback)(void *, void *, size_t);
 	void *closure;
 
 	gfp_xdr_async_lock(async_server);
@@ -114,19 +122,54 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 		gfp_xdr_async_unlock(async_server);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-	callback = cb->callback;
+	result_callback = cb->result_callback;
 	closure = cb->closure;
 	gfarm_id_free(async_server->idtab, xid);
 	gfp_xdr_async_unlock(async_server);
 
-	*resultp = (*callback)(peer, closure, size);
+	*resultp = (*result_callback)(peer, closure, size);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfp_xdr_send_async_request_header(struct gfp_xdr *server,
+	gfp_xdr_async_peer_t async_server, size_t size,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure)
+{
+	gfarm_error_t e;
+	gfarm_int32_t xid, xid_and_type;
+	struct gfp_xdr_async_callback *cb;
+
+	gfp_xdr_async_lock(async_server);
+	cb = gfarm_id_alloc(async_server->idtab, &xid);
+	if (cb == NULL) {
+		gfp_xdr_async_unlock(async_server);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	cb->result_callback = result_callback;
+	cb->disconnect_callback = disconnect_callback;
+	cb->closure = closure;
+	gfp_xdr_async_unlock(async_server);
+
+	xid_and_type = (xid | XID_TYPE_REQUEST);
+	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_async_lock(async_server);
+		gfarm_id_free(async_server->idtab, xid);
+		gfp_xdr_async_unlock(async_server);
+		return (e);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
 	gfarm_error_t e;
@@ -146,7 +189,7 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 		return (e);
 
 	e = gfp_xdr_send_async_request_header(server, async_server, size,
-	    callback, closure);
+	    result_callback, disconnect_callback, closure);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	e = gfp_xdr_vrpc_request(server, command, &format, app);
@@ -156,36 +199,6 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 		gflog_debug(GFARM_MSG_1001016, "gfp_xdr_vsend_async_request: "
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_VRPC_INVALID_FORMAT_CHARACTER);
-	}
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfp_xdr_send_async_request_header(struct gfp_xdr *server,
-	gfp_xdr_async_peer_t async_server, size_t size,
-	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure)
-{
-	gfarm_error_t e;
-	gfarm_int32_t xid, xid_and_type;
-	struct gfp_xdr_async_callback *cb;
-
-	gfp_xdr_async_lock(async_server);
-	cb = gfarm_id_alloc(async_server->idtab, &xid);
-	if (cb == NULL) {
-		gfp_xdr_async_unlock(async_server);
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	cb->callback = callback;
-	cb->closure = closure;
-	gfp_xdr_async_unlock(async_server);
-
-	xid_and_type = (xid | XID_TYPE_REQUEST);
-	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfp_xdr_async_lock(async_server);
-		gfarm_id_free(async_server->idtab, xid);
-		gfp_xdr_async_unlock(async_server);
-		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -219,7 +232,7 @@ gfp_xdr_recv_async_header(struct gfp_xdr *conn, int just,
  * server side functions
  */
 
-gfarm_error_t
+static gfarm_error_t
 gfp_xdr_send_async_result_header(struct gfp_xdr *server,
 	gfarm_int32_t xid, size_t size)
 {

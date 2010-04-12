@@ -27,6 +27,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "auth.h"
@@ -114,6 +115,7 @@ static struct pollfd *peer_poll_fds;
 
 static struct thread_pool *peer_default_thread_pool;
 static void *(*peer_default_protocol_handler)(void *);
+static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
 
 static void
 peer_table_lock(void)
@@ -133,6 +135,12 @@ peer_table_unlock(void)
 	if (err != 0)
 		gflog_warning(GFARM_MSG_1000274,
 		    "peer_table_unlock: %s", strerror(err));
+}
+
+void
+peer_set_free_async(void (*async_free)(struct peer *, gfp_xdr_async_peer_t))
+{
+	peer_async_free = async_free;
 }
 
 #ifdef HAVE_EPOLL_WAIT
@@ -643,6 +651,11 @@ peer_free(struct peer *peer)
 
 	peer_table_lock();
 
+	if (peer->async != NULL && peer_async_free != NULL) {
+		(*peer_async_free)(peer, peer->async);
+		peer->async = NULL;
+	}
+
 	username = peer_get_username(peer);
 	hostname = peer_get_hostname(peer);
 
@@ -674,11 +687,6 @@ peer_free(struct peer *peer)
 		free(peer->hostname); peer->hostname = NULL;
 	}
 	peer->findxmlattrctx = NULL;
-
-	if (peer->async != NULL) {
-		gfp_xdr_async_peer_free(peer->async, NULL, NULL);
-		peer->async = NULL;
-	}
 
 	gfp_xdr_free(peer->conn); peer->conn = NULL;
 	peer->next_close = NULL;

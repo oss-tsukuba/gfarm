@@ -34,10 +34,16 @@ char *host_name(struct host *);
 int host_port(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
+
+#ifdef COMPAT_GFARM_2_3
 void host_set_callback(struct host *, struct peer *,
-	gfarm_int32_t (*)(void *, void *, size_t), void *);
-int host_get_callback(struct host *, struct peer *,
+	gfarm_int32_t (*)(void *, void *, size_t),
+	void (*)(void *, void *), void *);
+int host_get_result_callback(struct host *, struct peer *,
 	gfarm_int32_t (**)(void *, void *, size_t), void **);
+int host_get_disconnect_callback(struct host *,
+	void (**)(void *, void *), struct peer **, void **);
+#endif
 
 int host_is_up(struct host *);
 int host_is_active(struct host *);

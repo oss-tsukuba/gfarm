@@ -494,7 +494,9 @@ gfs_async_server_put_reply_with_errno(struct gfp_xdr *client,
 gfarm_error_t
 gfm_async_client_send_request(struct gfp_xdr *gfmd_conn,
 	gfp_xdr_async_peer_t async, const char *diag,
-	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
 	gfarm_int32_t command, const char *format, ...)
 {
 	gfarm_error_t e;
@@ -502,7 +504,8 @@ gfm_async_client_send_request(struct gfp_xdr *gfmd_conn,
 
 	va_start(ap, format);
 	e = gfp_xdr_vsend_async_request(gfmd_conn, async,
-	    callback, closure, command, format, &ap);
+	    result_callback, disconnect_callback, closure,
+	    command, format, &ap);
 	va_end(ap);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(gfmd_conn);
@@ -3673,6 +3676,18 @@ gfm_async_client_replication_result(void *peer, void *arg, size_t size)
 	    "gfm_async_client_replication_result", size, ""));
 }
 
+/*
+ * called from gfp_xdr_async_peer_free() via gfp_xdr_async_xid_free(),
+ * when disconnected.
+ */
+void
+gfm_async_client_replication_free(void *peer, void *arg)
+{
+#if 0
+	struct gfp_xdr *gfmd_conn = peer;
+#endif
+}
+
 gfarm_error_t
 replication_result_notify(struct gfp_xdr *gfmd_conn,
 	gfp_xdr_async_peer_t async, struct ongoing_replication *rep)
@@ -3701,7 +3716,9 @@ replication_result_notify(struct gfp_xdr *gfmd_conn,
 			errcodes.dst_errcode = GFARM_ERR_UNKNOWN;
 	}
 	e = gfm_async_client_send_request(gfmd_conn, async, diag,
-	    gfm_async_client_replication_result, /* rep */ NULL,
+	    gfm_async_client_replication_result,
+	    gfm_async_client_replication_free,
+	    /* rep */ NULL,
 	    GFM_PROTO_REPLICATION_RESULT, "llliil",
 	    rep->ino, rep->gen, (gfarm_int64_t)rep->pid,
 	    errcodes.src_errcode, errcodes.dst_errcode,
@@ -3719,7 +3736,7 @@ replication_result_notify(struct gfp_xdr *gfmd_conn,
 static int
 watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
-	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
 	fd_set fds; /* XXX select FD_SETSIZE */
 	struct ongoing_replication *rep, **prev;
 	int nfound, max_fd;
@@ -3753,19 +3770,18 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		for (prev = &ongoing_replications; (rep = *prev) != NULL; ) {
 			if (FD_ISSET(rep->pipe_fd, &fds)) {
 				e = replication_result_notify(conn, async, rep);
-				if (e_save == GFARM_ERR_NO_ERROR)
-					e_save = e;
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "back channel: "
+					    "communication error: %s",
+					    gfarm_error_string(e));
+					return (0);
+				}
 				*prev = rep->next;
 				free(rep);
 			} else {
 				prev = &rep->next;
 			}
-		}
-		if (e_save != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "back channel: communication error: %s",
-			    gfarm_error_string(e_save));
-			return (0);
 		}
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
 			return (1);
@@ -3905,7 +3921,7 @@ back_channel_server(void)
 				break;
 		}
 		gfm_client_reconnect();
-		gfp_xdr_async_peer_free(async, NULL, NULL);
+		gfp_xdr_async_peer_free(async, gfmd_conn);
 	}
 }
 

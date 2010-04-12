@@ -65,10 +65,13 @@ struct host {
 	int protocol_version;
 	volatile int is_active;
 
+#ifdef COMPAT_GFARM_2_3
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
 	gfarm_int32_t (*back_channel_result)(void *, void *, size_t);
-	struct peer *back_channel_result_peer;
-	void *back_channel_closure;
+	void (*back_channel_disconnect)(void *, void *);
+	struct peer *back_channel_callback_peer;
+	void *back_channel_callback_closure;
+#endif
 
 	int status_reply_waiting;
 	gfarm_int32_t report_flags;
@@ -285,9 +288,12 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->can_send = 1;
 	h->can_receive = 1;
 	h->is_active = 0;
+#ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
-	h->back_channel_result_peer = NULL;
-	h->back_channel_closure = NULL;
+	h->back_channel_disconnect = NULL;
+	h->back_channel_callback_peer = NULL;
+	h->back_channel_callback_closure = NULL;
+#endif
 	h->status_reply_waiting = 0;
 	h->report_flags = 0;
 	h->status.loadavg_1min =
@@ -366,46 +372,81 @@ host_supports_async_protocols(struct host *h)
 	return (h->protocol_version >= GFS_PROTOCOL_VERSION_V2_4);
 }
 
+#ifdef COMPAT_GFARM_2_3
 void
 host_set_callback(struct host *h, struct peer *peer,
-	gfarm_int32_t (*callback)(void *, void *, size_t), void *closure)
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure)
 {
 	static const char diag[] = "host_set_callback";
 	static const char back_channel_diag[] = "back_channel";
 
 	/* XXX FIXME sanity check? */
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
-	h->back_channel_result = callback;
-	h->back_channel_result_peer = peer;
-	h->back_channel_closure = closure;
+	h->back_channel_result = result_callback;
+	h->back_channel_disconnect = disconnect_callback;
+	h->back_channel_callback_peer = peer;
+	h->back_channel_callback_closure = closure;
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 }
 
 int
-host_get_callback(struct host *h, struct peer *peer,
+host_get_result_callback(struct host *h, struct peer *peer,
 	gfarm_int32_t (**callbackp)(void *, void *, size_t), void **closurep)
 {
 	int ok;
-	static const char diag[] = "host_get_callback";
+	static const char diag[] = "host_get_result_callback";
 	static const char back_channel_diag[] = "back_channel";
 
 	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (h->back_channel_result == NULL ||
-	    h->back_channel_result_peer != peer) {
+	    h->back_channel_callback_peer != peer) {
 		ok = 0;
 	} else {
 		*callbackp = h->back_channel_result;
-		*closurep = h->back_channel_closure;
+		*closurep = h->back_channel_callback_closure;
 		h->back_channel_result = NULL;
-		h->back_channel_result_peer = NULL;
-		h->back_channel_closure = NULL;
+		h->back_channel_disconnect = NULL;
+		h->back_channel_callback_peer = NULL;
+		h->back_channel_callback_closure = NULL;
 		ok = 1;
 	}
 
 	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 	return (ok);
 }
+
+int
+host_get_disconnect_callback(struct host *h,
+	void (**callbackp)(void *, void *),
+	struct peer **peerp, void **closurep)
+{
+	int ok;
+	static const char diag[] = "host_get_disconnect_callback";
+	static const char back_channel_diag[] = "back_channel";
+
+	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	if (h->back_channel_disconnect == NULL) {
+		ok = 0;
+	} else {
+		*callbackp = h->back_channel_disconnect;
+		*peerp = h->back_channel_callback_peer;
+		*closurep = h->back_channel_callback_closure;
+		h->back_channel_result = NULL;
+		h->back_channel_disconnect = NULL;
+		h->back_channel_callback_peer = NULL;
+		h->back_channel_callback_closure = NULL;
+		ok = 1;
+	}
+
+	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	return (ok);
+}
+
+#endif
 
 /*
  * PREREQUISITE: host::back_channel_mutex
@@ -835,9 +876,12 @@ host_peer_set(struct host *h, struct peer *p, int version)
 
 	h->peer = p;
 	h->protocol_version = version;
+#ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
-	h->back_channel_result_peer = NULL;
-	h->back_channel_closure = NULL;
+	h->back_channel_disconnect = NULL;
+	h->back_channel_callback_peer = NULL;
+	h->back_channel_callback_closure = NULL;
+#endif
 	h->is_active = 1;
 	h->status_reply_waiting = 0;
 	h->status_callout_retry = 0;
