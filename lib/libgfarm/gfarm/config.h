@@ -68,6 +68,7 @@ extern int gfarm_schedule_cache_timeout;
 extern float gfarm_schedule_idle_load;
 extern float gfarm_schedule_busy_load;
 extern float gfarm_schedule_virtual_load;
+extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;
 

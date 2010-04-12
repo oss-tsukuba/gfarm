@@ -95,7 +95,7 @@ struct file_replicating {
 	struct dead_file_copy *cleanup;
 };
 
-struct file_replicating *host_replicating_new(struct host *);
+gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 void host_replicating_free(struct file_replicating *);
 void file_replicating_set_handle(struct file_replicating *, gfarm_int64_t);
 gfarm_int64_t file_replicating_get_handle(struct file_replicating *);

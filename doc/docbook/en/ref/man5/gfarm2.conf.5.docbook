@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>8 Mar 2010</date></refentryinfo>
+<refentryinfo><date>12 Apr 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1012,6 +1012,20 @@ The default size is 128M bytes.
 </varlistentry>
 
 <varlistentry>
+<term><token>simultaneous_replication_receivers</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive specifies maximum number of simultaneous
+gfmd-initiated replications to same host.
+The default is 20.
+</para>
+<para>For example,</para>
+<literallayout>
+	simultaneous_replication_receivers 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfsd_connection_cache</token> <parameter>number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of cached gfsd connections.
@@ -1155,6 +1169,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
@@ -1230,6 +1245,7 @@ notation.</para>
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;simultaneous_replication_receivers&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;

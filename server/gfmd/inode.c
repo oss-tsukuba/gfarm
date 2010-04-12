@@ -2331,10 +2331,9 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	fr = host_replicating_new(dst);
-	if (fr == NULL) {
+	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
 		remove_file_copy(inode, dst);
-		return (GFARM_ERR_NO_MEMORY);
+		return (e);
 	}
 	if (irs == NULL) {
 		GFARM_MALLOC(irs);
@@ -2532,12 +2531,14 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 	gfarm_error_t e = inode_add_replica_internal(
 		inode, spool_host, valid, 1);
 
-	if (e != GFARM_ERR_NO_ERROR || !valid) {
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001769,
 			"inode_add_replica_internal() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
+	if (!valid)
+		return (GFARM_ERR_NO_ERROR);
 	e = db_filecopy_add(inode->i_number, host_name(spool_host));
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000327,
