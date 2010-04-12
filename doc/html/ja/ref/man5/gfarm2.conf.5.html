@@ -677,9 +677,10 @@ CLASS="PARAMETER"
 ¤ËÂĞ¤·Æ°ºî³ÎÇ§¤ò¹Ô¤¦¥Ï¡¼¥È¥Ó¡¼¥È¤Î´Ö³Ö¤òÉÃ¿ô¤Ç»ØÄê¤·¤Ş¤¹¡£
 ¥Ç¥Õ¥©¥ë¥ÈÃÍ¤Ï180ÉÃ¤Ç¤¹¡£</P
 ><P
->Gfarm-2.3.0 ¤Ş¤Ç¤Ï¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¢¤ê¡¢gfarm2.conf¤Ç¤Ï
-Ìµ»ë¤µ¤ì¤Æ¤¤¤Ş¤·¤¿¤¬¡¢Gfarm-2.4.0 °Ê¹ß¤Ï gfsd ¤â¤³¤Î¥Ñ¥é¥á¡¼¥¿¤òÍøÍÑ¤·¡¢
-gfmd Ää»ß¤ò¸¡ÃÎ¤¹¤ë¤¿¤á¡¢gfarm2.conf ¤Ç»ØÄê¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£</P
+>Gfarm-2.3.0¤Ş¤Ç¤Ï¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¢¤ê¡¢gfarm2.conf¤Ç¤Ï
+Ìµ»ë¤µ¤ì¤Æ¤¤¤Ş¤·¤¿¤¬¡¢Gfarm-2.4.0°Ê¹ß¤Ïgfsd¤â¤³¤Î¥Ñ¥é¥á¡¼¥¿¤òÍøÍÑ¤·
+gfmdÄä»ß¤ò¸¡ÃÎ¤¹¤ë¤¿¤á¡¢
+gfarm2.conf¤Ègfmd.conf¤ÎÎ¾Êı¤Ç»ØÄê¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Ş¤¹¡£</P
 ><P
 >Îã:</P
 ><P
@@ -1405,6 +1406,27 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>simultaneous_replication_receivers</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Æ±»ş½èÍı¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfmd ¼çÆ³¤ÎÊ£À½½èÍı¤ò¡¢Ã±°ìÊ£À½ºîÀ®¥Û¥¹¥È¤ËÂĞ¤·¤Æ¡¢
+Æ±»ş¤¤¤¯¤Ä¤Ş¤ÇÊÂ¹Ô¤·¤Æ¹Ô¤Ê¤¦¤³¤È¤òµö¤¹¤«¤òÀßÄê¤·¤Ş¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï 20¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	simultaneous_replication_receivers&nbsp;40</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >gfsd_connection_cache</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1562,6 +1584,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
 		  &#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;simultaneous_replication_receivers&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
@@ -1623,6 +1646,7 @@ CLASS="LITERALLAYOUT"
 	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;simultaneous_replication_receivers&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>

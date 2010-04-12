@@ -707,7 +707,7 @@ for gfmd to check availability of each gfsd.  Default is 180 seconds.</P
 >Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
 and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
 this parameter to detect whether gfmd is down or not, this parameter
-has to be specified in gfarm2.conf.</P
+has to be specified in both gfarm2.conf and gfmd.conf.</P
 ><P
 >For example,</P
 ><P
@@ -1559,6 +1559,27 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>simultaneous_replication_receivers</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of simultaneous
+gfmd-initiated replications to same host.
+The default is 20.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	simultaneous_replication_receivers&nbsp;40</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >gfsd_connection_cache</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1718,6 +1739,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
 		  &#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;simultaneous_replication_receivers&#62;&nbsp;|<br>
 		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
@@ -1779,6 +1801,7 @@ CLASS="LITERALLAYOUT"
 	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;simultaneous_replication_receivers&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "08 March 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "12 April 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -644,6 +644,17 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 	minimum_free_disk_space 1G
 .fi
 .TP
+\fBsimultaneous_replication_receivers \fI同時処理数\fB\fR
+gfmd 主導の複製処理を、単一複製作成ホストに対して、
+同時いくつまで並行して行なうことを許すかを設定します。
+デフォルトは 20です。
+
+例:
+
+.nf
+	simultaneous_replication_receivers 40
+.fi
+.TP
 \fBgfsd_connection_cache \fIコネクション数\fB\fR
 gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
 までキャッシュするかを指定します。
@@ -744,6 +755,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<schedule_busy_load_thresh_statement> |
 		\~\~<schedule_virtual_load_statement> |
 		\~\~<minimum_free_disk_space_statement> |
+		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
@@ -805,6 +817,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
+	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
