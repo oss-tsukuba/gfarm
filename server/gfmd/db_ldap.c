@@ -2913,10 +2913,12 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 		gflog_debug(GFARM_MSG_1002141,
 			"ldap_count_messages() != 2");
 	} else if ((m = ldap_first_message(gfarm_ldap_server, res)) == NULL) {
+		e = GFARM_ERR_UNKNOWN;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "ldap_first_message: %s", gfarm_ldap_session_error());
 	} else if ((vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]))
 	    == NULL) {
+		e = GFARM_ERR_UNKNOWN;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "ldap_get_values_len: %s", gfarm_ldap_session_error());
 	} else {
