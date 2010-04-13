@@ -27,13 +27,13 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "thrsubr.h"
 
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "auth.h"
 
 #include "subr.h"
-#include "thrsubr.h"
 #include "thrpool.h"
 #include "user.h"
 #include "host.h"
@@ -102,6 +102,7 @@ struct peer {
 static struct peer *peer_table;
 static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char peer_table_diag[] = "peer_table";
 
 #ifdef HAVE_EPOLL_WAIT
 struct {
@@ -116,26 +117,6 @@ static struct pollfd *peer_poll_fds;
 static struct thread_pool *peer_default_thread_pool;
 static void *(*peer_default_protocol_handler)(void *);
 static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
-
-static void
-peer_table_lock(void)
-{
-	int err = pthread_mutex_lock(&peer_table_mutex);
-
-	if (err != 0)
-		gflog_warning(GFARM_MSG_1000273,
-		    "peer_table_lock: %s", strerror(err));
-}
-
-static void
-peer_table_unlock(void)
-{
-	int err = pthread_mutex_unlock(&peer_table_mutex);
-
-	if (err != 0)
-		gflog_warning(GFARM_MSG_1000274,
-		    "peer_table_unlock: %s", strerror(err));
-}
 
 void
 peer_set_free_async(void (*async_free)(struct peer *, gfp_xdr_async_peer_t))
@@ -209,6 +190,7 @@ peer_watcher(void *arg)
 #else
 	struct pollfd *fd;
 #endif
+	static const char diag[] = "peer_watcher";
 
 	for (;;) {
 #ifdef HAVE_EPOLL_WAIT
@@ -216,7 +198,7 @@ peer_watcher(void *arg)
 				peer_epoll.nevents, PEER_WATCH_INTERVAL);
 #else
 		nfds = 0;
-		peer_table_lock();
+		gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 		for (i = 0; i < peer_table_size; i++) {
 			peer = &peer_table[i];
 
@@ -227,13 +209,13 @@ peer_watcher(void *arg)
 			 * don't use peer_control_mutex_lock(), because
 			 * collision with peer_watch_access() is expected here.
 			 */
-			mutex_lock(&peer->control_mutex,
+			gfarm_mutex_lock(&peer->control_mutex,
 			    "peer_watcher start", "peer:control_mutex");
 			skip = peer->conn == NULL ||
 			    (peer->control & PEER_WATCHING) == 0;
 			if (!skip)
 				peer->control |= PEER_WATCHED;
-			mutex_unlock(&peer->control_mutex,
+			gfarm_mutex_unlock(&peer->control_mutex,
 			    "peer_watcher start", "peer:control_mutex");
 			if (skip)
 				continue;
@@ -243,7 +225,7 @@ peer_watcher(void *arg)
 			fd->events = POLLIN;
 			fd->revents = 0;
 		}
-		peer_table_unlock();
+		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 
 		rv = poll(peer_poll_fds, nfds, PEER_WATCH_INTERVAL);
 #endif
@@ -271,18 +253,20 @@ peer_watcher(void *arg)
 			peer = &peer_table[fd->fd];
 #endif
 			giant_lock();
-			peer_table_lock();
+			gfarm_mutex_lock(&peer_table_mutex,
+			    diag, peer_table_diag);
 			/*
 			 * don't use peer_control_mutex_lock(), because
 			 * collision with peer_watch_access() is expected here.
 			 */
-			mutex_lock(&peer->control_mutex,
+			gfarm_mutex_lock(&peer->control_mutex,
 			    "peer_watcher checking", "peer:control_mutex");
 			skip = peer->conn == NULL ||
 			    (peer->control & PEER_WATCHING) == 0;
-			mutex_unlock(&peer->control_mutex,
+			gfarm_mutex_unlock(&peer->control_mutex,
 			    "peer_watcher checking", "peer:control_mutex");
-			peer_table_unlock();
+			gfarm_mutex_unlock(&peer_table_mutex,
+			    diag, peer_table_diag);
 			giant_unlock();
 			if (skip) {
 #ifdef HAVE_EPOLL_WAIT
@@ -324,7 +308,7 @@ peer_watcher(void *arg)
 					peer->control &=
 					    ~(PEER_WATCHING|PEER_WATCHED);
 				}
-				mutex_unlock(&peer->control_mutex,
+				gfarm_mutex_unlock(&peer->control_mutex,
 				    "peer_watcher invoking",
 				    "peer:control_mutex");
 				rv--;
@@ -335,7 +319,7 @@ peer_watcher(void *arg)
 #endif
 				/*
 				 * We shouldn't have giant_lock or
-				 * peer_table_lock here.
+				 * peer_table_mutex here.
 				 */
 				thrpool_add_job(peer->handler_thread_pool,
 				    peer->protocol_handler, peer);
@@ -349,9 +333,11 @@ peer_add_ref(struct peer *peer)
 {
 	static const char diag[] = "peer_add_ref";
 
-	mutex_lock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 	++peer->refcount;
-	mutex_unlock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 }
 
 int
@@ -360,17 +346,19 @@ peer_del_ref(struct peer *peer)
 	int referenced;
 	static const char diag[] = "peer_del_ref";
 
-	mutex_lock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 
 	if (--peer->refcount > 0) {
 		referenced = 1;
 	} else {
 		referenced = 0;
-		cond_signal(&peer_closing_queue.ready_to_close, diag,
-		    "ready to close");
+		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+		    diag, "ready to close");
 	}
 
-	mutex_unlock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 
 	return (referenced);
 }
@@ -381,11 +369,12 @@ peer_closer(void *arg)
 	struct peer *peer, **prev;
 	static const char diag[] = "peer_closer";
 
-	mutex_lock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_lock(&peer_closing_queue.mutex, diag,
+	    "peer_closing_queue");
 
 	for (;;) {
 		while (peer_closing_queue.head == NULL)
-			cond_wait(&peer_closing_queue.ready_to_close,
+			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
 			    &peer_closing_queue.mutex,
 			    diag, "queue is not empty");
 
@@ -400,13 +389,14 @@ peer_closer(void *arg)
 			}
 		}
 		if (peer == NULL) {
-			cond_wait(&peer_closing_queue.ready_to_close,
+			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
 			    &peer_closing_queue.mutex,
 			    diag, "ready to close");
 			continue;
 		}
 
-		mutex_unlock(&peer_closing_queue.mutex, diag, "before giant");
+		gfarm_mutex_unlock(&peer_closing_queue.mutex,
+		    diag, "before giant");
 
 		giant_lock();
 		/*
@@ -417,10 +407,12 @@ peer_closer(void *arg)
 		peer_free(peer);
 		giant_unlock();
 
-		mutex_lock(&peer_closing_queue.mutex, diag, "after giant");
+		gfarm_mutex_lock(&peer_closing_queue.mutex,
+		    diag, "after giant");
 	}
 
-	mutex_unlock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 }
 
 void
@@ -429,7 +421,8 @@ peer_free_request(struct peer *peer)
 	int fd = peer_get_fd(peer), rv;
 	static const char diag[] = "peer_free_request";
 
-	mutex_lock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 
 	/*
 	 * wake up threads which may be sleeping at read() or write(), because
@@ -445,7 +438,8 @@ peer_free_request(struct peer *peer)
 	peer->next_close = NULL;
 	peer_closing_queue.tail = &peer->next_close;
 
-	mutex_unlock(&peer_closing_queue.mutex, diag, "peer_closing_queue");
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
 }
 
 void
@@ -480,7 +474,7 @@ peer_init(int max_peers,
 		 * XXX FIXME: #66 -
 		 * unexpected collision to access peer:control
 		 */
-		mutex_init(&peer->control_mutex,
+		gfarm_mutex_init(&peer->control_mutex,
 		    "peer_init", "peer:control_mutex");
 
 		peer->fd_current = -1;
@@ -528,6 +522,7 @@ peer_alloc(int fd, struct peer **peerp)
 	gfarm_error_t e;
 	struct peer *peer;
 	int sockopt;
+	static const char diag[] = "peer_alloc";
 
 	if (fd < 0) {
 		gflog_debug(GFARM_MSG_1001580,
@@ -539,10 +534,10 @@ peer_alloc(int fd, struct peer **peerp)
 			"too many open files: fd >= peer_table_size");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
-	peer_table_lock();
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 	peer = &peer_table[fd];
 	if (peer->conn != NULL) { /* must be an implementation error */
-		peer_table_unlock();
+		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 		gflog_debug(GFARM_MSG_1001582,
 			"bad file descriptor: conn is NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -557,7 +552,7 @@ peer_alloc(int fd, struct peer **peerp)
 		gflog_debug(GFARM_MSG_1001583,
 			"gfp_xdr_new_socket() failed: %s",
 			gfarm_error_string(e));
-		peer_table_unlock();
+		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 		return (e);
 	}
 
@@ -584,7 +579,7 @@ peer_alloc(int fd, struct peer **peerp)
 		gflog_warning_errno(GFARM_MSG_1000283, "SO_KEEPALIVE");
 
 	*peerp = peer;
-	peer_table_unlock();
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -630,10 +625,10 @@ peer_authorized(struct peer *peer,
 	 * don't use peer_control_mutex_lock(), because
 	 * collision with peer_watcher() is expected here.
 	 */
-	mutex_lock(&peer->control_mutex,
+	gfarm_mutex_lock(&peer->control_mutex,
 	    "peer_authorized", "peer:control_mutex");
 	peer->control = 0;
-	mutex_unlock(&peer->control_mutex,
+	gfarm_mutex_unlock(&peer->control_mutex,
 	    "peer_authorized", "peer:control_mutex");
 
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
@@ -648,8 +643,9 @@ void
 peer_free(struct peer *peer)
 {
 	char *username, *hostname;
+	static const char diag[] = "peer_free";
 
-	peer_table_lock();
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
 	if (peer->async != NULL && peer_async_free != NULL) {
 		(*peer_async_free)(peer, peer->async);
@@ -692,7 +688,7 @@ peer_free(struct peer *peer)
 	peer->next_close = NULL;
 	peer->refcount = 0;
 
-	peer_table_unlock();
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
@@ -701,9 +697,10 @@ peer_shutdown_all(void)
 {
 	int i;
 	struct peer *peer;
+	static const char diag[] = "peer_shutdown_all";
 
 	/* We never unlock this mutex any more */
-	peer_table_lock();
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
 	for (i = 0; i < peer_table_size; i++) {
 		peer = &peer_table[i];
@@ -727,14 +724,14 @@ void
 peer_watch_access(struct peer *peer)
 {
 	/* XXX FIXME: #66 - unexpected collision to access peer:control */
-	mutex_lock(&peer->control_mutex,
+	gfarm_mutex_lock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
 #ifdef HAVE_EPOLL_WAIT
 	peer->control |= PEER_WATCHING|PEER_WATCHED;
 #else
 	peer->control |= PEER_WATCHING;
 #endif
-	mutex_unlock(&peer->control_mutex,
+	gfarm_mutex_unlock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
 #ifdef HAVE_EPOLL_WAIT
 	peer_epoll_add_fd(peer_get_fd(peer));
@@ -746,10 +743,12 @@ peer_watch_access(struct peer *peer)
 struct peer *
 peer_by_fd(int fd)
 {
-	peer_table_lock();
+	static const char diag[] = "peer_by_fd";
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 	if (fd < 0 || fd >= peer_table_size || peer_table[fd].conn == NULL)
 		return (NULL);
-	peer_table_unlock();
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 	return (&peer_table[fd]);
 }
 

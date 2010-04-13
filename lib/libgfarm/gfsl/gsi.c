@@ -16,6 +16,7 @@
 
 #include "gfevent.h"
 #include "gfutil.h"
+#include "thrsubr.h"
 
 #include "tcputil.h"
 
@@ -26,6 +27,7 @@
 #endif
 
 static pthread_mutex_t gss_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char gssDiag[] = "gss_mutex";
 
 static char **gssCrackStatus(OM_uint32 statValue, int statType);
 
@@ -595,6 +597,8 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 
     int tknStat;
 
+    static const char diag[] = "gfarmGssAcceptSecurityContext()";
+
     *scPtr = GSS_C_NO_CONTEXT;
 
     do {
@@ -608,7 +612,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 	    break;
 	}
 
-	pthread_mutex_lock(&gss_mutex);
+	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
 	majStat = gss_accept_sec_context(&minStat,
 					 scPtr,
 					 cred,
@@ -621,7 +625,7 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 					 &timeRet,
 					 &remCred);
 
-	pthread_mutex_unlock(&gss_mutex);
+	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	if (itPtr->length > 0) {
 	    (void)gss_release_buffer(&minStat2, itPtr);
 	}
@@ -704,6 +708,8 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 
     int tknStat;
 
+    static const char diag[] = "gfarmGssInitiateSecurityContext()";
+
     *scPtr = GSS_C_NO_CONTEXT;
 
     /*
@@ -721,7 +727,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
     }
 
     while (1) {
-	pthread_mutex_lock(&gss_mutex);
+	gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
 	majStat = gss_init_sec_context(&minStat,
 				       cred,
 				       scPtr,
@@ -735,7 +741,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 				       otPtr,
 				       &retFlag,
 				       &timeRet);
-	pthread_mutex_unlock(&gss_mutex);
+	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	
 	if (itPtr->length > 0) {
 	    (void)gss_release_buffer(&minStat2, itPtr);
@@ -1230,8 +1236,9 @@ gssInitiateSecurityContextNext(state)
 {
     OM_uint32 minStat2;
     int rv;
+    static const char diag[] = "gssInitiateSecurityContextNext()";
 
-    pthread_mutex_lock(&gss_mutex);
+    gfarm_mutex_lock(&gss_mutex, diag, gssDiag);
     state->majStat = gss_init_sec_context(&state->minStat,
 					  state->cred,
 					  &state->sc,
@@ -1245,7 +1252,7 @@ gssInitiateSecurityContextNext(state)
 					  state->otPtr,
 					  &state->retFlag,
 					  &state->timeRet);
-    pthread_mutex_unlock(&gss_mutex);
+    gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 
     if (state->itPtr->length > 0) {
 	(void)gss_release_buffer(&minStat2, state->itPtr);

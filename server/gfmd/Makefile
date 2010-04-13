@@ -30,13 +30,13 @@ PUBLIC_RULE  = /dev/null
 PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
-SRCS =	gfmd.c thrsubr.c thrpool.c callout.c \
+SRCS =	gfmd.c thrpool.c callout.c \
 	subr.c user.c group.c host.c peer.c dead_file_copy.c \
 	process.c job.c \
 	dir.c inode.c fs.c back_channel.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
-OBJS =	gfmd.o thrsubr.o thrpool.o callout.o \
+OBJS =	gfmd.o thrpool.o callout.o \
 	subr.o user.o group.o host.o peer.o dead_file_copy.o \
 	process.o job.o \
 	dir.o inode.o fs.o back_channel.o \
@@ -55,6 +55,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/hash.h \
 	$(GFUTIL_SRCDIR)/id_table.h \
 	$(GFUTIL_SRCDIR)/tree.h \
+	$(GFUTIL_SRCDIR)/thrsubr.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
@@ -63,7 +64,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
-	thrsubr.h thrpool.h subr.h callout.h \
+	thrpool.h subr.h callout.h \
 	user.h group.h host.h peer.h dead_file_copy.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h
 

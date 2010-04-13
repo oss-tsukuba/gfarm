@@ -102,24 +102,38 @@ gflog_vmessage_message(int msg_no, const char *file, int line_no,
 	return (buf);
 }
 
+static void
+gflog_sub(int priority, const char *str1, const char *str2)
+{
+	if (log_use_syslog)
+		syslog(priority, "%s%s", str1, str2);
+	else
+		fprintf(stderr, "%s%s\n", str1, str2);
+}
+
 void
 gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
+	int rv;
 	char *msg;
 
 	if (priority > log_level) /* not worth reporting */
 		return;
 
 	/* gflog_vmessage_message returns statically allocated space */
-	pthread_mutex_lock(&mutex);
-	msg = gflog_vmessage_message(msg_no, file, line_no, func, format, ap);
+	rv = pthread_mutex_lock(&mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_lock: ",
+		    strerror(rv));
 
-	if (log_use_syslog)
-		syslog(priority, "%s", msg);
-	else
-		fprintf(stderr, "%s\n", msg);
-	pthread_mutex_unlock(&mutex);
+	msg = gflog_vmessage_message(msg_no, file, line_no, func, format, ap);
+	gflog_sub(priority, "", msg);
+
+	rv = pthread_mutex_unlock(&mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_unlock: %s",
+		    strerror(rv));
 }
 
 void

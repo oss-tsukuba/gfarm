@@ -12,12 +12,11 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-#include "config.h"
-
-
-#include "subr.h"
 #include "thrsubr.h"
 
+#include "config.h"
+
+#include "subr.h"
 #include "quota_info.h"
 #include "quota.h"
 #include "db_access.h"
@@ -59,10 +58,10 @@ dbq_init(struct dbq *q)
 			"allocation of 'q->entries' failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	mutex_init(&q->mutex, diag, "mutex");
-	cond_init(&q->nonempty, diag, "nonempty");
-	cond_init(&q->nonfull, diag, "nonfull");
-	cond_init(&q->finished, diag, "finished");
+	gfarm_mutex_init(&q->mutex, diag, "mutex");
+	gfarm_cond_init(&q->nonempty, diag, "nonempty");
+	gfarm_cond_init(&q->nonfull, diag, "nonfull");
+	gfarm_cond_init(&q->finished, diag, "finished");
 	q->n = q->in = q->out = q->quitting = q->quited = 0;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -72,13 +71,13 @@ dbq_wait_to_finish(struct dbq *q)
 {
 	static const char diag[] = "dbq_wait_to_finish";
 
-	mutex_lock(&q->mutex, diag, "mutex");
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	q->quitting = 1;
 	while (!q->quited) {
-		cond_signal(&q->nonempty, diag, "nonempty");
-		cond_wait(&q->finished, &q->mutex, diag, "finished");
+		gfarm_cond_signal(&q->nonempty, diag, "nonempty");
+		gfarm_cond_wait(&q->finished, &q->mutex, diag, "finished");
 	}
-	mutex_unlock(&q->mutex, diag, "mutex");
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -88,7 +87,7 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 	gfarm_error_t e;
 	static const char diag[] = "dbq_enter";
 
-	mutex_lock(&q->mutex, diag, "mutex");
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	if (q->quitting) {
 		/*
 		 * Because dbq_wait_to_finish() is only called while
@@ -96,11 +95,12 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		 * So, this doesn't cause metadata inconsistency .
 		 */
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		cond_signal(&q->nonempty, diag, "nonempty");
+		gfarm_cond_signal(&q->nonempty, diag, "nonempty");
 	} else {
 		e = GFARM_ERR_NO_ERROR;
 		while (q->n >= gfarm_metadb_dbq_size) {
-			cond_wait(&q->nonfull, &q->mutex, diag, "nonfull");
+			gfarm_cond_wait(&q->nonfull, &q->mutex,
+			    diag, "nonfull");
 		}
 		q->entries[q->in].func = func;
 		q->entries[q->in].data = data;
@@ -108,9 +108,9 @@ dbq_enter(struct dbq *q, dbq_entry_func_t func, void *data)
 		if (q->in >= gfarm_metadb_dbq_size)
 			q->in = 0;
 		q->n++;
-		cond_signal(&q->nonempty, diag, "nonempty");
+		gfarm_cond_signal(&q->nonempty, diag, "nonempty");
 	}
-	mutex_unlock(&q->mutex, diag, "mutex");
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (e);
 }
 
@@ -168,8 +168,8 @@ db_waitctx_init(struct db_waitctx *ctx)
 	static const char diag[] = "db_waitctx_init";
 
 	if (ctx != NULL) {
-		mutex_init(&ctx->lock, diag, "lock");
-		cond_init(&ctx->cond, diag, "cond");
+		gfarm_mutex_init(&ctx->lock, diag, "lock");
+		gfarm_cond_init(&ctx->cond, diag, "cond");
 		ctx->e = UNINITIALIZED_GFARM_ERROR;
 	}
 }
@@ -177,9 +177,11 @@ db_waitctx_init(struct db_waitctx *ctx)
 void
 db_waitctx_fini(struct db_waitctx *ctx)
 {
+	static const char diag[] = "db_waitctx_fini";
+
 	if (ctx != NULL) {
-		pthread_cond_destroy(&ctx->cond);
-		pthread_mutex_destroy(&ctx->lock);
+		gfarm_cond_destroy(&ctx->cond, diag, "cond");
+		gfarm_mutex_destroy(&ctx->lock, diag, "lock");
 	}
 }
 
@@ -187,12 +189,13 @@ static void
 dbq_done_callback(gfarm_error_t e, void *c)
 {
 	struct db_waitctx *ctx = (struct db_waitctx *)c;
+	static const char diag[] = "dbq_done_callback";
 
 	if (ctx != NULL) {
-		pthread_mutex_lock(&ctx->lock);
+		gfarm_mutex_lock(&ctx->lock, diag, "lock");
 		ctx->e = e;
-		pthread_cond_signal(&ctx->cond);
-		pthread_mutex_unlock(&ctx->lock);
+		gfarm_cond_signal(&ctx->cond, diag, "cond");
+		gfarm_mutex_unlock(&ctx->lock, diag, "lock");
 	}
 }
 
@@ -205,12 +208,12 @@ dbq_waitret(struct db_waitctx *ctx)
 	if (ctx == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
-	mutex_lock(&ctx->lock, diag, "lock");
+	gfarm_mutex_lock(&ctx->lock, diag, "lock");
 	while (ctx->e == UNINITIALIZED_GFARM_ERROR) {
-		cond_wait(&ctx->cond, &ctx->lock, diag, "cond");
+		gfarm_cond_wait(&ctx->cond, &ctx->lock, diag, "cond");
 	}
 	e = ctx->e;
-	mutex_unlock(&ctx->lock, diag, "lock");
+	gfarm_mutex_unlock(&ctx->lock, diag, "lock");
 	return (e);
 }
 
@@ -237,14 +240,14 @@ dbq_delete(struct dbq *q, struct dbq_entry *entp)
 	gfarm_error_t e;
 	static const char diag[] = "dbq_delete";
 
-	mutex_lock(&q->mutex, diag, "mutex");
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	while (q->n <= 0 && !q->quitting) {
-		cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
+		gfarm_cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
 	}
 	if (q->n <= 0) {
 		assert(q->quitting);
 		q->quited = 1;
-		cond_signal(&q->finished, diag, "finished");
+		gfarm_cond_signal(&q->finished, diag, "finished");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else { /* (q->n > 0) */
 		e = GFARM_ERR_NO_ERROR;
@@ -252,10 +255,10 @@ dbq_delete(struct dbq *q, struct dbq_entry *entp)
 		if (q->out >= gfarm_metadb_dbq_size)
 			q->out = 0;
 		if (q->n-- >= gfarm_metadb_dbq_size) {
-			cond_signal(&q->nonfull, diag, "nonfull");
+			gfarm_cond_signal(&q->nonfull, diag, "nonfull");
 		}
 	}
-	mutex_unlock(&q->mutex, diag, "mutex");
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (e);
 }
 
@@ -264,13 +267,14 @@ db_getfreenum(void)
 {
 	struct dbq *q = &dbq;
 	int freenum;
+	static const char diag[] = "db_getfreenum";
 
 	/*
 	 * This function is made only for gfm_server_findxmlattr().
 	 */
-	pthread_mutex_lock(&q->mutex);
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	freenum = (gfarm_metadb_dbq_size - q->n);
-	pthread_mutex_unlock(&q->mutex);
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (freenum);
 }
 

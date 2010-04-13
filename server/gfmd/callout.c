@@ -8,8 +8,8 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
-
 #include "thrsubr.h"
+
 #include "subr.h"
 #include "thrpool.h"
 
@@ -69,7 +69,7 @@ callout_main(void *arg)
 	closure = NULL;
 #endif
 	for (;;) {
-		mutex_lock(&cm->mutex, module_name, "main lock");
+		gfarm_mutex_lock(&cm->mutex, module_name, "main lock");
 		c = cm->pendings.next;
 		if (c == &cm->pendings)
 			rv = pthread_cond_wait(&cm->have_things_to_run,
@@ -104,7 +104,7 @@ callout_main(void *arg)
 				closure = c->closure;
 			}
 		}
-		mutex_unlock(&cm->mutex, module_name, "main lock");
+		gfarm_mutex_unlock(&cm->mutex, module_name, "main lock");
 
 		if (func != NULL)
 			thrpool_add_job(thrpool, func, closure);
@@ -119,8 +119,8 @@ callout_module_init(int nthreads)
 	struct callout_module *cm = &callout_module;
 	int i;
 
-	mutex_init(&cm->mutex, module_name, "init");
-	cond_init(&cm->have_things_to_run, module_name, "init");
+	gfarm_mutex_init(&cm->mutex, module_name, "init");
+	gfarm_cond_init(&cm->have_things_to_run, module_name, "init");
 	cm->pendings.prev = &cm->pendings;
 	cm->pendings.next = &cm->pendings;
 
@@ -202,7 +202,7 @@ callout_schedule_common(struct callout *n, int microseconds)
 	c->next = n;
 	n->state |= CALLOUT_PENDING;
 	if (n->prev == &cm->pendings)
-		cond_signal(&cm->have_things_to_run, module_name,
+		gfarm_cond_signal(&cm->have_things_to_run, module_name,
 		    "scheduling singal");
 }
 
@@ -211,9 +211,9 @@ callout_schedule(struct callout *c, int microseconds)
 {
 	struct callout_module *cm = &callout_module;
 
-	mutex_lock(&cm->mutex, module_name, "schedule lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "schedule lock");
 	callout_schedule_common(c, microseconds);
-	mutex_unlock(&cm->mutex, module_name, "schedule unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "schedule unlock");
 }
 
 void
@@ -222,12 +222,12 @@ callout_reset(struct callout *c, int microseconds,
 {
 	struct callout_module *cm = &callout_module;
 
-	mutex_lock(&cm->mutex, module_name, "reset lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "reset lock");
 	c->thrpool = thrpool;
 	c->func = func;
 	c->closure = closure;
 	callout_schedule_common(c, microseconds);
-	mutex_unlock(&cm->mutex, module_name, "reset unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
 void
@@ -236,11 +236,11 @@ callout_setfunc(struct callout *c,
 {
 	struct callout_module *cm = &callout_module;
 
-	mutex_lock(&cm->mutex, module_name, "reset lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "reset lock");
 	c->thrpool = thrpool;
 	c->func = func;
 	c->closure = closure;
-	mutex_unlock(&cm->mutex, module_name, "reset unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
 int
@@ -249,7 +249,7 @@ callout_stop(struct callout *c)
 	struct callout_module *cm = &callout_module;
 	int expired;
 
-	mutex_lock(&cm->mutex, module_name, "stop lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "stop lock");
 	if ((c->state & CALLOUT_PENDING) != 0) {
 		/* remove the head of the list */
 		c->prev->next = c->next;
@@ -260,7 +260,7 @@ callout_stop(struct callout *c)
 	}
 	expired = (c->state & CALLOUT_FIRED) != 0;
 	c->state &= ~(CALLOUT_PENDING | CALLOUT_FIRED);
-	mutex_unlock(&cm->mutex, module_name, "stop unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "stop unlock");
 	return (expired);
 }
 
@@ -271,9 +271,9 @@ callout_invoking(struct callout *c)
 	struct callout_module *cm = &callout_module;
 	int invoking;
 
-	mutex_lock(&cm->mutex, module_name, "invoking lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "invoking lock");
 	invoking = (c->state & CALLOUT_INVOKING) != 0;
-	mutex_unlock(&cm->mutex, module_name, "invoking unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "invoking unlock");
 	return (invoking);
 }
 
@@ -282,8 +282,8 @@ callout_ack(struct callout *c)
 {
 	struct callout_module *cm = &callout_module;
 
-	mutex_lock(&cm->mutex, module_name, "ack lock");
+	gfarm_mutex_lock(&cm->mutex, module_name, "ack lock");
 	c->state &= ~CALLOUT_INVOKING;
-	mutex_unlock(&cm->mutex, module_name, "ack unlock");
+	gfarm_mutex_unlock(&cm->mutex, module_name, "ack unlock");
 }
 #endif /* NOT_USED */

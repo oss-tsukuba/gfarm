@@ -32,8 +32,10 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 
-#include "liberror.h"
 #include "gfutil.h"
+#include "thrsubr.h"
+
+#include "liberror.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "hostspec.h"
@@ -47,7 +49,6 @@
 #include "../gfsl/gfarm_auth.h"
 
 #include "subr.h"
-#include "thrsubr.h"
 #include "thrpool.h"
 #include "callout.h"
 #include "db_access.h"
@@ -687,11 +688,11 @@ resuming_enqueue(struct event_waiter *entry)
 	struct resuming_queue *q = &resuming_pendings;
 	static const char diag[] = "resuming_enqueue";
 
-	mutex_lock(&q->mutex, diag, "mutex");
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	entry->next = q->queue;
 	q->queue = entry;
-	cond_signal(&q->nonempty, diag, "nonempty");
-	mutex_unlock(&q->mutex, diag, "mutex");
+	gfarm_cond_signal(&q->nonempty, diag, "nonempty");
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 }
 
 struct event_waiter *
@@ -699,12 +700,12 @@ resuming_dequeue(struct resuming_queue *q, const char *diag)
 {
 	struct event_waiter *entry;
 
-	mutex_lock(&q->mutex, diag, "mutex");
+	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	while  (q->queue == NULL)
-		cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
+		gfarm_cond_wait(&q->nonempty, &q->mutex, diag, "nonempty");
 	entry = q->queue;
 	q->queue = entry->next;
-	mutex_unlock(&q->mutex, diag, "mutex");
+	gfarm_mutex_unlock(&q->mutex, diag, "mutex");
 	return (entry);
 }
 

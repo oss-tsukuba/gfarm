@@ -7,6 +7,7 @@
 #include <gfarm/gfarm.h>
 
 #include "id_table.h"
+#include "thrsubr.h"
 
 #include "liberror.h"
 #include "gfp_xdr.h"
@@ -18,6 +19,8 @@
 #define XID_TYPE_BIT		0xc0000000
 #define XID_TYPE_REQUEST	0x00000000
 #define XID_TYPE_RESULT		0x80000000
+
+static const char async_peer_diag[] = "gfp_xdr_async_peer";
 
 struct gfp_xdr_async_peer {
 	struct gfarm_id_table *idtab;
@@ -44,23 +47,17 @@ gfarm_error_t
 gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *async_serverp)
 {
 	struct gfp_xdr_async_peer *async_server;
-	int rv;
+	static const char diag[] = "gfp_xdr_async_peer_new";
 
 	GFARM_MALLOC(async_server);
 	if (async_server == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	if ((rv = pthread_mutex_init(&async_server->mutex, NULL)) != 0) {
-		gflog_debug(GFARM_MSG_1002305,
-		    "pthread_mutex_init: %s", strerror(rv));
-		free(async_server);
-		return (gfarm_errno_to_error(rv));
-	}
+	gfarm_mutex_init(&async_server->mutex, diag, async_peer_diag);
 	async_server->idtab =
 	    gfarm_id_table_alloc(&gfp_xdr_async_xid_table_ops);
 	if (async_server->idtab == NULL) {
-		if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
-			gflog_debug(GFARM_MSG_1002306,
-			    "pthread_mutex_destroy: %s", strerror(rv));
+		gfarm_mutex_destroy(&async_server->mutex,
+		    diag, async_peer_diag);
 		free(async_server);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -79,33 +76,11 @@ gfp_xdr_async_xid_free(void *peer, gfp_xdr_xid_t xid, void *xdata)
 void
 gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server, void *peer)
 {
-	int rv;
+	static const char diag[] = "gfp_xdr_async_peer_free";
 	
 	gfarm_id_table_free(async_server->idtab, gfp_xdr_async_xid_free, peer);
-	if ((rv = pthread_mutex_destroy(&async_server->mutex)) != 0)
-		gflog_debug(GFARM_MSG_1002307,
-		    "pthread_mutex_destroy: %s", strerror(rv));
+	gfarm_mutex_destroy(&async_server->mutex, diag, async_peer_diag);
 	free(async_server);
-}
-
-static void
-gfp_xdr_async_lock(gfp_xdr_async_peer_t async_server)
-{
-	int rv;
-
-	if ((rv = pthread_mutex_lock(&async_server->mutex)) != 0)
-		gflog_fatal(GFARM_MSG_1002308, "gfp_xdr_async_lock: %s",
-		    strerror(rv));
-}
-
-static void
-gfp_xdr_async_unlock(gfp_xdr_async_peer_t async_server)
-{
-	int rv;
-
-	if ((rv = pthread_mutex_unlock(&async_server->mutex)) != 0)
-		gflog_fatal(GFARM_MSG_1002309, "gfp_xdr_async_unlock: %s",
-		    strerror(rv));
 }
 
 gfarm_error_t
@@ -115,17 +90,18 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	struct gfp_xdr_async_callback *cb;
 	gfarm_int32_t (*result_callback)(void *, void *, size_t);
 	void *closure;
+	static const char diag[] = "gfp_xdr_callback_async_result";
 
-	gfp_xdr_async_lock(async_server);
+	gfarm_mutex_lock(&async_server->mutex, diag, async_peer_diag);
 	cb = gfarm_id_lookup(async_server->idtab, xid);
 	if (cb == NULL) {
-		gfp_xdr_async_unlock(async_server);
+		gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	result_callback = cb->result_callback;
 	closure = cb->closure;
 	gfarm_id_free(async_server->idtab, xid);
-	gfp_xdr_async_unlock(async_server);
+	gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 
 	*resultp = (*result_callback)(peer, closure, size);
 	return (GFARM_ERR_NO_ERROR);
@@ -141,24 +117,25 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfarm_error_t e;
 	gfarm_int32_t xid, xid_and_type;
 	struct gfp_xdr_async_callback *cb;
+	static const char diag[] = "gfp_xdr_send_async_request_header";
 
-	gfp_xdr_async_lock(async_server);
+	gfarm_mutex_lock(&async_server->mutex, diag, async_peer_diag);
 	cb = gfarm_id_alloc(async_server->idtab, &xid);
 	if (cb == NULL) {
-		gfp_xdr_async_unlock(async_server);
+		gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	cb->result_callback = result_callback;
 	cb->disconnect_callback = disconnect_callback;
 	cb->closure = closure;
-	gfp_xdr_async_unlock(async_server);
+	gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 
 	xid_and_type = (xid | XID_TYPE_REQUEST);
 	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gfp_xdr_async_lock(async_server);
+		gfarm_mutex_lock(&async_server->mutex, diag, async_peer_diag);
 		gfarm_id_free(async_server->idtab, xid);
-		gfp_xdr_async_unlock(async_server);
+		gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);

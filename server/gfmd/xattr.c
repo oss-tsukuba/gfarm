@@ -456,6 +456,8 @@ struct inum_path_array {
 	int nreplied;
 };
 
+static const char inum_path_array_diag[] = "inum_path_array";
+
 static void
 inum_path_entry_init(struct inum_path_array *array,
 	struct inum_path_entry *entry)
@@ -482,12 +484,8 @@ inum_path_array_init(struct inum_path_array *array, char *expr)
 	static const char diag[] = "inum_path_array_init";
 
 	memset(array, 0, sizeof(*array));
-	if ((err = pthread_mutex_init(&array->lock, NULL)) != 0)
-		gflog_fatal(GFARM_MSG_1000417,
-		    "%s: mutex: %s", diag, strerror(err));
-	if ((err = pthread_cond_init(&array->cond, NULL)) != 0)
-		gflog_fatal(GFARM_MSG_1000418,
-		    "%s: cond: %s", diag, strerror(err));
+	gfarm_mutex_init(&array->lock, diag, inum_path_array_diag);
+	gfarm_cond_init(&array->cond, diag, inum_path_array_diag);
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(array->entries); i++)
 		inum_path_entry_init(array, &array->entries[i]);
@@ -511,6 +509,7 @@ static void
 inum_path_array_fini(struct inum_path_array *array)
 {
 	int i;
+	static const char diag[] = "inum_path_array_fini";
 
 	for (i = 0; i < array->nentry; i++) {
 		inum_path_entry_fini(&array->entries[i]);
@@ -518,8 +517,8 @@ inum_path_array_fini(struct inum_path_array *array)
 	free(array->restartpath);
 	free(array->ckpath);
 	free(array->ckpathnames);
-	pthread_cond_destroy(&array->cond);
-	pthread_mutex_destroy(&array->lock);
+	gfarm_cond_destroy(&array->cond, diag, inum_path_array_diag);
+	gfarm_mutex_destroy(&array->lock, diag, inum_path_array_diag);
 }
 
 static void
@@ -561,11 +560,12 @@ db_findxmlattr_done(gfarm_error_t e, void *en)
 {
 	struct inum_path_entry *entry = (struct inum_path_entry *)en;
 	struct inum_path_array *array = entry->array;
+	static const char diag[] = "db_findxmlattr_done";
 
-	pthread_mutex_lock(&array->lock);
+	gfarm_mutex_lock(&array->lock, diag, inum_path_array_diag);
 	entry->dberr = e;
-	pthread_cond_signal(&array->cond);
-	pthread_mutex_unlock(&array->lock);
+	gfarm_cond_signal(&array->cond, diag, inum_path_array_diag);
+	gfarm_mutex_unlock(&array->lock, diag, inum_path_array_diag);
 }
 
 gfarm_error_t
@@ -575,6 +575,7 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 	struct inum_path_array *array = entry->array;
 	struct xattr_info *vinfo = (struct xattr_info *)in;
 	int i;
+	static const char diag[] = "inum_path_array_add_attrnames";
 
 	if (nfound <= 0)
 		return GFARM_ERR_NO_ERROR;
@@ -586,7 +587,7 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 		return GFARM_ERR_NO_MEMORY;
 	}
 
-	pthread_mutex_lock(&array->lock);
+	gfarm_mutex_lock(&array->lock, diag, inum_path_array_diag);
 	entry->nattrs = nfound;
 	for (i = 0; i < nfound; i++) {
 		entry->attrnames[i] = vinfo[i].attrname;
@@ -594,7 +595,7 @@ inum_path_array_add_attrnames(void *en, int nfound, void *in)
 		vinfo[i].namelen = 0;
 	}
 	array->nattrssum += nfound;
-	pthread_mutex_unlock(&array->lock);
+	gfarm_mutex_unlock(&array->lock, diag, inum_path_array_diag);
 
 	return GFARM_ERR_NO_ERROR;
 }
@@ -856,18 +857,16 @@ findxmlattr_make_patharray(struct inode *inode, struct user *user,
 static void
 db_findxmlattr_wait(struct inum_path_array *array, int idx)
 {
-	int err;
 	struct inum_path_entry *entry;
+	static const char diag[] = "db_findxmlattr_wait";
 
 	/*
 	 * NOTE: must call with array->lock
 	 */
 	entry = &array->entries[idx];
 	while (IS_UNSET_ERRNO(entry->dberr)) {
-		err = pthread_cond_wait(&array->cond, &array->lock);
-		if (err != 0)
-			gflog_fatal(GFARM_MSG_1000419, "db_findxmlattr_wait: "
-				"condwait finished: %s", strerror(err));
+		gfarm_cond_wait(&array->cond, &array->lock,
+		    diag, num_path_array_diag);
 	}
 }
 
@@ -925,15 +924,16 @@ findxmlattr_dbq_wait_all(struct inum_path_array *array,
 	struct gfs_xmlattr_ctx *ctxp)
 {
 	int i;
+	static const char diag[] = "findxmlattr_dbq_wait_all";
 
 	if (array == NULL)
 		return;
 
-	pthread_mutex_lock(&array->lock);
+	gfarm_mutex_lock(&array->lock, diag, inum_path_array_diag);
 	for (i = 0; i < array->nentry; i++) {
 		db_findxmlattr_wait(array, i);
 	}
-	pthread_mutex_unlock(&array->lock);
+	gfarm_mutex_unlock(&array->lock, diag, inum_path_array_diag);
 }
 
 static void

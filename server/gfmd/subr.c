@@ -12,10 +12,12 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "thrsubr.h"
+
 #include "gfp_xdr.h"
+#include "config.h"
 #include "auth.h"
 
-#include "thrsubr.h"
 #include "subr.h"
 #include "peer.h"
 
@@ -26,19 +28,42 @@ static pthread_mutex_t giant_mutex;
 void
 giant_init(void)
 {
-	mutex_init(&giant_mutex, "giant_init", "giant");
+	gfarm_mutex_init(&giant_mutex, "giant_init", "giant");
 }
 
 void
 giant_lock(void)
 {
-	mutex_lock(&giant_mutex, "giant_lock", "giant");
+	gfarm_mutex_lock(&giant_mutex, "giant_lock", "giant");
 }
 
 void
 giant_unlock(void)
 {
-	mutex_unlock(&giant_mutex, "giant_unlock", "giant");
+	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
+}
+
+void
+gfarm_pthread_attr_setstacksize(pthread_attr_t *attr)
+{
+	int err;
+
+	if (gfarm_metadb_stack_size != GFARM_METADB_STACK_SIZE_DEFAULT){
+#ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+		err = pthread_attr_setstacksize(attr,
+		    gfarm_metadb_stack_size);
+		if (err != 0)
+			gflog_warning(GFARM_MSG_1000218, "gfmd.conf: "
+			    "metadb_server_stack_size %d: %s",
+			    gfarm_metadb_stack_size, strerror(err));
+#else
+		gflog_warning(GFARM_MSG_1000219, "gfmd.conf: "
+		    "metadb_server_stack_size %d: "
+		    "configuration ignored due to lack of "
+		    "pthread_attr_setstacksize()",
+		    gfarm_metadb_stack_size);
+#endif
+	}
 }
 
 pthread_attr_t gfarm_pthread_attr;

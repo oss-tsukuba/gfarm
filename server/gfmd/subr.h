@@ -4,6 +4,7 @@ void giant_init(void);
 void giant_lock(void);
 void giant_unlock(void);
 
+void gfarm_pthread_attr_setstacksize(pthread_attr_t *attr);
 gfarm_error_t create_detached_thread(void *(*)(void *), void *);
 
 char *strdup_ck(const char *, const char *);

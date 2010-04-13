@@ -1797,6 +1797,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	e = gfs_async_server_get_request(conn, size, "status", "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+gflog_info(GFARM_MSG_UNFIXED, "status request received");
 
 	if (getloadavg(loadavg, GFARM_ARRAY_LENGTH(loadavg)) == -1) {
 		save_errno = EPERM; /* XXX */
@@ -1816,6 +1817,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 			avail = bavail * bsize / 1024;
 		}
 	}
+gflog_info(GFARM_MSG_UNFIXED, "status result sent");
 	return (gfs_async_server_put_reply_with_errno(conn, xid,
 	    "status", save_errno,
 	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail));

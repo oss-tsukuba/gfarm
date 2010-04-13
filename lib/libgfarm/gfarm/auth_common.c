@@ -21,6 +21,8 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "thrsubr.h"
+
 #include "liberror.h"
 #include "auth.h"
 
@@ -151,9 +153,11 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	char *keyfilename;
 	unsigned int expire;
 
-	static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
 	uid_t o_uid;
 	gid_t o_gid;
+	static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
+	static const char privilege_diag[] = "privilege_mutex";
+	static const char diag[] = "gfarm_auth_shared_key_get";
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
@@ -170,7 +174,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	strcat(keyfilename, keyfile_basename);
 
 	if (pwd != NULL) {
-		pthread_mutex_lock(&privilege_mutex);
+		gfarm_mutex_lock(&privilege_mutex, diag, privilege_diag);
 		o_gid = getegid();
 		o_uid = geteuid();
 		seteuid(0); /* recover root privilege */
@@ -250,7 +254,7 @@ finish:
 		setgroups(1, &o_gid); /* abandon group privileges */
 		setegid(o_gid);
 		seteuid(o_uid); /* suppress root privilege, if possible */
-		pthread_mutex_unlock(&privilege_mutex);
+		gfarm_mutex_unlock(&privilege_mutex, diag, privilege_diag);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001024,
@@ -267,25 +271,21 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	EVP_MD_CTX mdctx;
 	unsigned int md_len;
 	static pthread_mutex_t openssl_mutex = PTHREAD_MUTEX_INITIALIZER;
-	int rv;
+	static const char openssl_diag[] = "openssl_mutex";
+	static const char diag[] = "gfarm_auth_sharedsecret_response_data";
 
 	/*
 	 * according to "valgrind --tool=helgrind",
 	 * these OpenSSL functions are not multithread safe,
 	 * at least about openssl-0.9.8e-12.el5_4.1.x86_64 on CentOS 5.4
 	 */
-	if ((rv = pthread_mutex_lock(&openssl_mutex)) != 0)
-		gflog_fatal(GFARM_MSG_1002310,
-		    "gfarm_auth_sharedsecret_response_data: "
-		    "openssl mutex lock: %s", strerror(rv));
+	
+	gfarm_mutex_lock(&openssl_mutex, diag, openssl_diag);
 	EVP_DigestInit(&mdctx, EVP_md5());
 	EVP_DigestUpdate(&mdctx, challenge, GFARM_AUTH_CHALLENGE_LEN);
 	EVP_DigestUpdate(&mdctx, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
 	EVP_DigestFinal(&mdctx, (unsigned char *)response, &md_len);
-	if ((rv = pthread_mutex_unlock(&openssl_mutex)) != 0)
-		gflog_fatal(GFARM_MSG_1002311,
-		    "gfarm_auth_sharedsecret_response_data: "
-		    "openssl mutex unlock: %s", strerror(rv));
+	gfarm_mutex_unlock(&openssl_mutex, diag, openssl_diag);
 
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
 		fprintf(stderr, "gfarm_auth_sharedsecret_response_data:"

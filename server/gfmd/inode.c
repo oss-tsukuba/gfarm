@@ -17,6 +17,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "thrsubr.h"
 
 #include "timespec.h"
 #include "gfm_proto.h"
@@ -128,8 +129,9 @@ gfarm_ino_t inode_free_index = ROOT_INUMBER;
 struct inode inode_free_list; /* dummy header of doubly linked circular list */
 int inode_free_list_initialized = 0;
 
-static pthread_mutex_t total_num_inodes_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_uint64_t total_num_inodes;
+static pthread_mutex_t total_num_inodes_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char total_num_inodes_diag[] = "total_num_inodes_mutex";
 
 static char dot[] = ".";
 static char dotdot[] = "..";
@@ -189,10 +191,12 @@ gfarm_uint64_t
 inode_total_num(void)
 {
 	gfarm_uint64_t num_inodes;
+	static const char diag[] = "inode_total_num";
 
-	pthread_mutex_lock(&total_num_inodes_mutex);
+	gfarm_mutex_lock(&total_num_inodes_mutex, diag, total_num_inodes_diag);
 	num_inodes = total_num_inodes;
-	pthread_mutex_unlock(&total_num_inodes_mutex);
+	gfarm_mutex_unlock(&total_num_inodes_mutex,
+	    diag, total_num_inodes_diag);
 
 	return (num_inodes);
 }
@@ -494,6 +498,7 @@ inode_alloc_num(gfarm_ino_t inum)
 {
 	gfarm_ino_t i;
 	struct inode *inode;
+	static const char diag[] = "inode_alloc_num";
 
 	if (inum < ROOT_INUMBER)
 		return (NULL); /* we don't use 0 and 1 as i_number */
@@ -551,9 +556,10 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode->i_gen++;
 	}
 	inode->u.c.state = NULL;
-	pthread_mutex_lock(&total_num_inodes_mutex);
+	gfarm_mutex_lock(&total_num_inodes_mutex, diag, total_num_inodes_diag);
 	++total_num_inodes;
-	pthread_mutex_unlock(&total_num_inodes_mutex);
+	gfarm_mutex_unlock(&total_num_inodes_mutex,
+	    diag, total_num_inodes_diag);
 	return (inode);
 }
 
@@ -572,6 +578,8 @@ inode_alloc(void)
 static void
 inode_clear(struct inode *inode)
 {
+	static const char diag[] = "inode_clear";
+
 	inode->i_mode = INODE_MODE_FREE;
 	inode->i_nlink = 0;
 	/* add to the inode_free_list */
@@ -580,9 +588,10 @@ inode_clear(struct inode *inode)
 	inode->u.l.next->u.l.prev = inode;
 	inode_free_list.u.l.next = inode;
 	inode_xattrs_clear(inode);
-	pthread_mutex_lock(&total_num_inodes_mutex);
+	gfarm_mutex_lock(&total_num_inodes_mutex, diag, total_num_inodes_diag);
 	--total_num_inodes;
-	pthread_mutex_unlock(&total_num_inodes_mutex);
+	gfarm_mutex_unlock(&total_num_inodes_mutex,
+	    diag, total_num_inodes_diag);
 }
 
 void

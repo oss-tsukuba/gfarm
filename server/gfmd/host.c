@@ -20,6 +20,7 @@
 
 #include "gfutil.h"
 #include "hash.h"
+#include "thrsubr.h"
 
 #include "metadb_common.h"	/* gfarm_host_info_free_except_hostname() */
 #include "gfp_xdr.h"
@@ -28,7 +29,6 @@
 #include "auth.h"
 #include "config.h"
 
-#include "thrsubr.h"
 #include "callout.h"
 #include "subr.h"
 #include "db_access.h"
@@ -43,6 +43,7 @@
 
 static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_off_t total_disk_used, total_disk_avail;
+static const char total_disk_diag[] = "total_disk";
 
 /* in-core gfarm_host_info */
 struct host {
@@ -150,9 +151,9 @@ host_is_active(struct host *h)
 	int valid;
 	static const char diag[] = "host_is_active";
 
-	mutex_lock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, "back_channel");
 	valid = host_is_valid_unlocked(h);
-	mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
 	return (valid);
 }
 
@@ -313,10 +314,10 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	h->replicating_inodes.next_inode = &h->replicating_inodes;
 	h->simultaneous_replication_receivers = 0;
 
-	cond_init(&h->ready_to_send, diag, "ready_to_send");
-	cond_init(&h->ready_to_receive, diag, "ready_to_receive");
-	mutex_init(&h->back_channel_mutex, diag, "back_channel");
-	mutex_init(&h->replication_mutex, diag, "replication");
+	gfarm_cond_init(&h->ready_to_send, diag, "ready_to_send");
+	gfarm_cond_init(&h->ready_to_receive, diag, "ready_to_receive");
+	gfarm_mutex_init(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_init(&h->replication_mutex, diag, "replication");
 	*(struct host **)gfarm_hash_entry_data(entry) = h;
 	host_activate(h);
 	if (hpp != NULL)
@@ -386,12 +387,12 @@ host_set_callback(struct host *h, struct peer *peer,
 	static const char back_channel_diag[] = "back_channel";
 
 	/* XXX FIXME sanity check? */
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 	h->back_channel_result = result_callback;
 	h->back_channel_disconnect = disconnect_callback;
 	h->back_channel_callback_peer = peer;
 	h->back_channel_callback_closure = closure;
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 }
 
 int
@@ -402,7 +403,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 	static const char diag[] = "host_get_result_callback";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (h->back_channel_result == NULL ||
 	    h->back_channel_callback_peer != peer) {
@@ -417,7 +418,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 		ok = 1;
 	}
 
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 	return (ok);
 }
 
@@ -430,7 +431,7 @@ host_get_disconnect_callback(struct host *h,
 	static const char diag[] = "host_get_disconnect_callback";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (h->back_channel_disconnect == NULL) {
 		ok = 0;
@@ -445,7 +446,7 @@ host_get_disconnect_callback(struct host *h,
 		ok = 1;
 	}
 
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 	return (ok);
 }
 
@@ -473,9 +474,9 @@ host_is_up(struct host *h)
 	int up;
 	static const char diag[] = "host_is_up";
 
-	mutex_lock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, "back_channel");
 	up = host_is_up_unlocked(h);
-	mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
 	return (up);
 }
 
@@ -485,13 +486,13 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	gfarm_off_t avail;
 	static const char diag[] = "host_get_disk_avail";
 
-	mutex_lock(&h->back_channel_mutex, diag, "back_channel_mutex");
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, "back_channel_mutex");
 
 	if (host_is_up_unlocked(h))
 		avail = h->status.disk_avail * 1024;
 	else
 		avail = 0;
-	mutex_unlock(&h->back_channel_mutex, diag, "back_channel_mutex");
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "back_channel_mutex");
 
 	if (size <= 0)
 		size = gfarm_get_minimum_free_disk_space();
@@ -530,14 +531,14 @@ host_peer_busy(struct host *host)
 	static const char diag[] = "host_peer_busy";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
 	if (!host->is_active || host->invalid)
 		;
 	else if (host->busy_time == 0)
 		host->busy_time = time(NULL);
 	else if (host_is_unresponsive(host, time(NULL), diag))
 		unresponsive_peer = host->peer;
-	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (unresponsive_peer != NULL)
 		host_disconnect_request(host, unresponsive_peer);
@@ -549,9 +550,9 @@ host_peer_unbusy(struct host *host)
 	static const char diag[] = "host_peer_unbusy";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
 	host->busy_time = 0;
-	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 }
 
 int
@@ -562,14 +563,14 @@ host_check_busy(struct host *host, gfarm_int64_t now)
 	static const char diag[] = "host_check_busy";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (!host->is_active || host->invalid)
 		busy = 1;
 	else if (host_is_unresponsive(host, now, diag))
 		unresponsive_peer = host->peer;
 
-	mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (unresponsive_peer != NULL)
 		host_disconnect_request(host, unresponsive_peer);
@@ -589,9 +590,9 @@ host_peer(struct host *h)
 	struct peer *peer;
 	static const char diag[] = "host_sender_trylock";
 
-	mutex_lock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, "back_channel");
 	peer = h->peer;
-	mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "back_channel");
 	return (peer);
 }
 
@@ -601,7 +602,7 @@ host_sender_trylock(struct host *host, struct peer **peerp)
 	gfarm_error_t e;
 	static const char diag[] = "host_sender_trylock";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	if (!host_is_up_unlocked(host)) {
 		e = GFARM_ERR_CONNECTION_ABORTED;
@@ -615,7 +616,7 @@ host_sender_trylock(struct host *host, struct peer **peerp)
 		e = GFARM_ERR_DEVICE_BUSY;
 	}
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 
 	return (e);
 }
@@ -627,7 +628,7 @@ host_sender_lock(struct host *host, struct peer **peerp)
 	struct peer *peer0;
 	static const char diag[] = "host_sender_lock";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	for (;;) {
 		if (!host_is_up_unlocked(host)) {
@@ -643,7 +644,7 @@ host_sender_lock(struct host *host, struct peer **peerp)
 			break;
 		}
 		peer0 = host->peer;
-		cond_wait(&host->ready_to_send, &host->back_channel_mutex,
+		gfarm_cond_wait(&host->ready_to_send, &host->back_channel_mutex,
 		    diag, "ready_to_send");
 		if (host->peer != peer0) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
@@ -651,7 +652,7 @@ host_sender_lock(struct host *host, struct peer **peerp)
 		}
 	}
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 
 	return (e);
 }
@@ -661,16 +662,16 @@ host_sender_unlock(struct host *host, struct peer *peer)
 {
 	static const char diag[] = "host_sender_unlock";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	if (peer == host->peer) {
 		host->can_send = 1;
 		host->busy_time = 0;
 		peer_del_ref(host->peer);
-		cond_signal(&host->ready_to_send, diag, "ready_to_send");
+		gfarm_cond_signal(&host->ready_to_send, diag, "ready_to_send");
 	}
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 }
 
 gfarm_error_t
@@ -680,7 +681,7 @@ host_receiver_lock(struct host *host, struct peer **peerp)
 	struct peer *peer0;
 	static const char diag[] = "host_receiver_lock";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	for (;;) {
 		if (!host_is_up_unlocked(host)) {
@@ -698,15 +699,15 @@ host_receiver_lock(struct host *host, struct peer **peerp)
 		peer0 = host->peer;
 		gflog_error(GFARM_MSG_1002318,
 		    "waiting for host_receiver_lock: maybe gfsd restarted?");
-		cond_wait(&host->ready_to_receive, &host->back_channel_mutex,
-		    diag, "ready_to_receive");
+		gfarm_cond_wait(&host->ready_to_receive,
+		    &host->back_channel_mutex, diag, "ready_to_receive");
 		if (host->peer != peer0) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 	}
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 
 	return (e);
 }
@@ -716,15 +717,16 @@ host_receiver_unlock(struct host *host, struct peer *peer)
 {
 	static const char diag[] = "host_receiver_unlock";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	if (peer == host->peer) {
 		host->can_receive = 1;
 		peer_del_ref(host->peer);
-		cond_signal(&host->ready_to_receive, diag, "ready_to_receive");
+		gfarm_cond_signal(&host->ready_to_receive,
+		    diag, "ready_to_receive");
 	}
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 }
 
 /*
@@ -739,8 +741,8 @@ host_break_locks(struct host *host)
 {
 	static const char diag[] = "host_break_locks";
 
-	cond_broadcast(&host->ready_to_send, diag, "ready_to_send");
-	cond_broadcast(&host->ready_to_receive, diag, "ready_to_receive");
+	gfarm_cond_broadcast(&host->ready_to_send, diag, "ready_to_send");
+	gfarm_cond_broadcast(&host->ready_to_receive, diag, "ready_to_receive");
 }
 
 int
@@ -750,13 +752,13 @@ host_status_callout_retry(struct host *host)
 	int ok;
 	static const char diag[] = "host_status_callout_retry";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	++host->status_callout_retry;
 	interval = 1 << host->status_callout_retry;
 	ok = (interval <= gfarm_metadb_heartbeat_interval);
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 
 	if (ok) {
 		callout_schedule(host->status_callout, interval);
@@ -772,11 +774,11 @@ host_status_reply_waiting(struct host *host)
 {
 	static const char diag[] = "host_status_reply_waiting";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	host->status_reply_waiting = 1;
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 }
 
 int
@@ -785,11 +787,11 @@ host_status_reply_is_waiting(struct host *host)
 	int waiting;
 	static const char diag[] = "host_status_reply_waiting";
 
-	mutex_lock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, "back_channel");
 
 	waiting = host->status_reply_waiting;
 
-	mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
 
 	return (waiting);
 }
@@ -804,10 +806,12 @@ host_total_disk_update(
 	gfarm_uint64_t old_used, gfarm_uint64_t old_avail,
 	gfarm_uint64_t new_used, gfarm_uint64_t new_avail)
 {
-	pthread_mutex_lock(&total_disk_mutex);
+	static const char diag[] = "host_total_disk_update";
+
+	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
 	total_disk_used += new_used - old_used;
 	total_disk_avail += new_avail - old_avail;
-	pthread_mutex_unlock(&total_disk_mutex);
+	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 }
 
 void
@@ -815,7 +819,7 @@ host_status_update(struct host *host, struct host_status *status)
 {
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
 
-	mutex_lock(&host->back_channel_mutex, "host back_channel",
+	gfarm_mutex_lock(&host->back_channel_mutex, "host back_channel",
 	    "status_update");
 
 	host->status_reply_waiting = 0;
@@ -832,7 +836,7 @@ host_status_update(struct host *host, struct host_status *status)
 		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
 	host->status = *status;
 
-	mutex_unlock(&host->back_channel_mutex, "host back_channel",
+	gfarm_mutex_unlock(&host->back_channel_mutex, "host back_channel",
 	    "status_update");
 
 	host_total_disk_update(saved_used, saved_avail,
@@ -872,7 +876,7 @@ host_peer_set(struct host *h, struct peer *p, int version)
 	static const char diag[] = "host_peer_set";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	h->can_send = 1;
 	h->can_receive = 1;
@@ -890,7 +894,7 @@ host_peer_set(struct host *h, struct peer *p, int version)
 	h->status_callout_retry = 0;
 	h->busy_time = 0;
 
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	dead_file_copy_host_becomes_up(h);
 }
@@ -933,7 +937,7 @@ host_disconnect(struct host *h, struct peer *peer)
 	static const char diag[] = "host_disconnect";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (h->is_active && (peer == h->peer || peer == NULL)) {
 		peer_record_protocol_error(h->peer);
@@ -955,7 +959,7 @@ host_disconnect(struct host *h, struct peer *peer)
 		disabled = 1;
 	}
 
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (disabled) {
 		host_total_disk_update(saved_used, saved_avail, 0, 0);
@@ -974,7 +978,7 @@ host_disconnect_request(struct host *h, struct peer *peer)
 	static const char diag[] = "host_disconnect_request";
 	static const char back_channel_diag[] = "back_channel";
 
-	mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (h->is_active && (peer == h->peer || peer == NULL)) {
 		peer_record_protocol_error(h->peer);
@@ -988,7 +992,7 @@ host_disconnect_request(struct host *h, struct peer *peer)
 		disabled = 1;
 	}
 
-	mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (disabled) {
 		host_total_disk_update(saved_used, saved_avail, 0, 0);
@@ -1015,7 +1019,7 @@ host_replicating_new(struct host *dst, struct file_replicating **frp)
 	fr->prev_host = fr;
 	fr->next_host = fr;
 
-	mutex_lock(&dst->replication_mutex, diag, replication_diag);
+	gfarm_mutex_lock(&dst->replication_mutex, diag, replication_diag);
 	if (dst->simultaneous_replication_receivers >=
 	    gfarm_simultaneous_replication_receivers) {
 		free(fr);
@@ -1027,7 +1031,7 @@ host_replicating_new(struct host *dst, struct file_replicating **frp)
 		dst->replicating_inodes.next_inode = fr;
 		fr->next_inode->prev_inode = fr;
 	}
-	mutex_unlock(&dst->replication_mutex, diag, replication_diag);
+	gfarm_mutex_unlock(&dst->replication_mutex, diag, replication_diag);
 
 	if (fr == NULL)
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
@@ -1043,11 +1047,11 @@ host_replicating_free(struct file_replicating *fr)
 	static const char diag[] = "host_replicating_free";
 	static const char replication_diag[] = "replication";
 
-	mutex_lock(&dst->replication_mutex, diag, replication_diag);
+	gfarm_mutex_lock(&dst->replication_mutex, diag, replication_diag);
 	--dst->simultaneous_replication_receivers;
 	fr->prev_inode->next_inode = fr->next_inode;
 	fr->next_inode->prev_inode = fr->prev_inode;
-	mutex_unlock(&dst->replication_mutex, diag, replication_diag);
+	gfarm_mutex_unlock(&dst->replication_mutex, diag, replication_diag);
 	free(fr);
 }
 
@@ -1073,7 +1077,7 @@ host_replicated(struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	static const char diag[] = "host_replicated";
 	static const char replication_diag[] = "replication";
 
-	mutex_lock(&host->replication_mutex, diag, replication_diag);
+	gfarm_mutex_lock(&host->replication_mutex, diag, replication_diag);
 
 	if (handle == -1) {
 		for (fr = host->replicating_inodes.next_inode;
@@ -1096,7 +1100,7 @@ host_replicated(struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	else {
 		e = GFARM_ERR_NO_ERROR;
 	}
-	mutex_unlock(&host->replication_mutex, diag, replication_diag);
+	gfarm_mutex_unlock(&host->replication_mutex, diag, replication_diag);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		e = inode_replicated(fr, src_errcode, dst_errcode, size);
@@ -1671,11 +1675,11 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	gfarm_time_t last_report;
 	gfarm_int32_t report_flags;
 
-	mutex_lock(&h->back_channel_mutex, diag, "schedule_reply");
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, "schedule_reply");
 	status = h->status;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
-	mutex_unlock(&h->back_channel_mutex, diag, "schedule_reply");
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "schedule_reply");
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),
@@ -1789,10 +1793,10 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 		return (GFARM_ERR_NO_ERROR);
 
 	files = inode_total_num();
-	pthread_mutex_lock(&total_disk_mutex);
+	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
 	used = total_disk_used;
 	avail = total_disk_avail;
-	pthread_mutex_unlock(&total_disk_mutex);
+	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 
 	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "lll",
 		    used, avail, files));
