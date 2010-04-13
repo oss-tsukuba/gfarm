@@ -153,10 +153,16 @@ static void
 cleanup(int sighandler)
 {
 	if (getpid() == master_gfsd_pid) {
-		unlink(local_sockname.sun_path);
-		rmdir(local_sockdir);
+		if (unlink(local_sockname.sun_path) == -1 && !sighandler)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "unlink(%s)", local_sockname.sun_path);
+		if (rmdir(local_sockdir) == -1 && !sighandler)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", local_sockdir);
 		/* send terminate signal to a back channel process */
-		kill(back_channel_gfsd_pid, SIGTERM);
+		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "kill(%d)", back_channel_gfsd_pid);
 	}
 
 	if (credential_exported != NULL)
@@ -250,8 +256,12 @@ cleanup_accepting(void)
 	int i;
 
 	for (i = 0; i < accepting.local_socks_count; i++) {
-		unlink(accepting.local_socks[i].name);
-		rmdir(accepting.local_socks[i].dir);
+		if (unlink(accepting.local_socks[i].name) == -1)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "unlink(%s)", accepting.local_socks[i].name);
+		if (rmdir(accepting.local_socks[i].dir) == -1)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", accepting.local_socks[i].dir);
 	}
 }
 
@@ -3276,7 +3286,9 @@ gfs_server_command(struct gfp_xdr *client, char *cred_env)
 		for (i = 3; i < stderr_pipe[1]; i++)
 			close(i);
 		/* re-install default signal handler (see main) */
-		signal(SIGPIPE, SIG_DFL);
+		if (signal(SIGPIPE, SIG_DFL) == SIG_ERR)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "signal(SIGPIPE, SIG_DFL)");
 		/*
 		 * create a process group
 		 * to make it possible to send a signal later
@@ -4031,14 +4043,18 @@ open_accepting_local_socket(struct in_addr address, int port,
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
 		save_errno = errno;
-		rmdir(sock_dir);
+		if (rmdir(sock_dir) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", sock_dir);
 		accepting_fatal(GFARM_MSG_1000578,
 		    "creating UNIX domain socket: %s",
 		    strerror(save_errno));
 	}
 	if (bind(sock, (struct sockaddr *)&self_addr, self_addr_size) == -1) {
 		save_errno = errno;
-		rmdir(sock_dir);
+		if (rmdir(sock_dir) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", sock_dir);
 		accepting_fatal(GFARM_MSG_1000579,
 		    "%s: cannot bind UNIX domain socket: %s",
 		    sock_name, strerror(save_errno));
@@ -4047,12 +4063,18 @@ open_accepting_local_socket(struct in_addr address, int port,
 		gflog_warning_errno(GFARM_MSG_1002202, "chown(%s, %d)",
 		    sock_name, gfsd_uid);
 	/* ensure access from all user, Linux at least since 2.4 needs this. */
-	chmod(sock_name, LOCAL_SOCKET_MODE);
+	if (chmod(sock_name, LOCAL_SOCKET_MODE) == -1)
+		gflog_debug_errno(GFARM_MSG_UNFIXED, "chmod(%s, 0%o)",
+		    sock_name, (int)LOCAL_SOCKET_MODE);
 
 	if (listen(sock, LISTEN_BACKLOG) == -1) {
 		save_errno = errno;
-		unlink(sock_name);
-		rmdir(sock_dir);
+		if (unlink(sock_name) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "unlink(%s)", sock_name);
+		if (rmdir(sock_dir) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", sock_dir);
 		accepting_fatal(GFARM_MSG_1000580,
 		    "listen UNIX domain socket: %s", strerror(save_errno));
 	}
@@ -4159,6 +4181,7 @@ main(int argc, char **argv)
 	fd_set requests;
 	struct stat sb;
 	int spool_check_level = 0;
+	int is_root = geteuid() == 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -4245,7 +4268,9 @@ main(int argc, char **argv)
 	}
 	gfsd_uid = gfsd_pw->pw_uid;
 
-	seteuid(gfsd_uid);
+	if (seteuid(gfsd_uid) == -1 && is_root)
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "seteuid(%d)", (int)gfsd_uid);
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -4273,9 +4298,12 @@ main(int argc, char **argv)
 		 * We do this before calling gfarm_daemon()
 		 * to print the error message to stderr.
 		 */
-		seteuid(0);
+		if (seteuid(0) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED, "seteuid(0)");
 		pid_fp = fopen(pid_file, "w");
-		seteuid(gfsd_uid);
+		if (seteuid(gfsd_uid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "seteuid(%d)", (int)gfsd_uid);
 		if (pid_fp == NULL)
 			accepting_fatal_errno(GFARM_MSG_1000590,
 				"failed to open file: %s", pid_file);
@@ -4290,15 +4318,23 @@ main(int argc, char **argv)
 	/* We do this after calling gfarm_daemon(), because it changes pid. */
 	master_gfsd_pid = getpid();
 	sa.sa_handler = cleanup_handler;
-	sigemptyset(&sa.sa_mask);
+	if (sigemptyset(&sa.sa_mask) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigemptyset()");
 	sa.sa_flags = 0;
-	sigaction(SIGHUP, &sa, NULL); /* XXX - need to restart gfsd */
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
+	if (sigaction(SIGHUP, &sa, NULL) == -1) /* XXX - need to restart gfsd */
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaction(SIGHUP)");
+	if (sigaction(SIGINT, &sa, NULL) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaction(SIGINT)");
+	if (sigaction(SIGTERM, &sa, NULL) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaction(SIGTERM)");
 
 	if (pid_file != NULL) {
-		fprintf(pid_fp, "%ld\n", (long)master_gfsd_pid);
-		fclose(pid_fp);
+		if (fprintf(pid_fp, "%ld\n", (long)master_gfsd_pid) == -1)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "writing PID to %s", pid_file);
+		if (fclose(pid_fp) != 0)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "fclose(%s)", pid_file);
 	}
 
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_SPOOL_HOST);
@@ -4331,7 +4367,8 @@ main(int argc, char **argv)
 		    canonical_self_name, gfarm_error_string(e));
 	}
 
-	seteuid(0);
+	if (seteuid(0) == -1 && is_root)
+		gflog_error_errno(GFARM_MSG_UNFIXED, "seteuid(0)");
 
 	if (listen_addrname == NULL)
 		listen_addrname = gfarm_spool_server_listen_address;
@@ -4392,7 +4429,13 @@ main(int argc, char **argv)
 		accepting_fatal(GFARM_MSG_1000597,
 		    "too big socket file descriptor: %d", max_fd);
 
-	seteuid(gfsd_uid);
+	if (seteuid(gfsd_uid) == -1) {
+		int save_errno = errno;
+
+		if (geteuid() == 0)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "seteuid(%d): %s", gfsd_uid, strerror(save_errno));
+	}
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */
 	/* XXX - kluge for GFS_PROTO_STATFS for now */
@@ -4407,7 +4450,9 @@ main(int argc, char **argv)
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
-	signal(SIGPIPE, SIG_IGN);
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED,
+		    "signal(SIGPIPE, SIG_IGN)");
 
 	/* start back channel server */
 	start_back_channel_server();
@@ -4424,9 +4469,11 @@ main(int argc, char **argv)
 	 * we do not rely on the feature.
 	 */
 	sa.sa_handler = sigchld_handler;
-	sigemptyset(&sa.sa_mask);
+	if (sigemptyset(&sa.sa_mask) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigemptyset");
 	sa.sa_flags = SA_NOCLDSTOP;
-	sigaction(SIGCHLD, &sa, NULL);
+	if (sigaction(SIGCHLD, &sa, NULL) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaction(SIGCHLD)");
 
 	/*
 	 * To deal with race condition which may be caused by RST,

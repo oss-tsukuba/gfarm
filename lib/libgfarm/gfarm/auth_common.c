@@ -155,6 +155,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 
 	uid_t o_uid;
 	gid_t o_gid;
+	int is_root = 0;
 	static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
 	static const char privilege_diag[] = "privilege_mutex";
 	static const char diag[] = "gfarm_auth_shared_key_get";
@@ -177,10 +178,18 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		gfarm_mutex_lock(&privilege_mutex, diag, privilege_diag);
 		o_gid = getegid();
 		o_uid = geteuid();
-		seteuid(0); /* recover root privilege */
-		initgroups(pwd->pw_name, pwd->pw_gid);
-		setegid(pwd->pw_gid);
-		seteuid(pwd->pw_uid);
+		if (seteuid(0) == 0) /* recover root privilege */
+			is_root = 1;
+		if (initgroups(pwd->pw_name, pwd->pw_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "inigroups(%s, %d)",
+			    pwd->pw_name, (int)pwd->pw_gid);
+		if (setegid(pwd->pw_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "setegid(%d)", (int)pwd->pw_gid);
+		if (seteuid(pwd->pw_uid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "seteuid(%d)", (int)pwd->pw_uid);
 	}
 
 	if ((fp = fopen(keyfilename, "r+")) != NULL) {
@@ -244,16 +253,28 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 		write_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN);
 		fputc('\n', fp);
 	}
-	fclose(fp);
+	if (fclose(fp) != 0) {
+		e = gfarm_errno_to_error(errno);
+	} else {
+		e = GFARM_ERR_NO_ERROR;
+		*expirep = expire;
+	}
 	free(keyfilename);
-	*expirep = expire;
-	e = GFARM_ERR_NO_ERROR;
 finish:
 	if (pwd != NULL) {
-		seteuid(0); /* recover root privilege */
-		setgroups(1, &o_gid); /* abandon group privileges */
-		setegid(o_gid);
-		seteuid(o_uid); /* suppress root privilege, if possible */
+		if (seteuid(0) == -1 && is_root) /* recover root privilege */
+			gflog_error_errno(GFARM_MSG_UNFIXED, "seteuid(0)");
+		/* abandon group privileges */
+		if (setgroups(1, &o_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "setgroups(%d)", (int)o_gid);
+		if (setegid(o_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "setegid(%d)", (int)o_gid);
+		/* suppress root privilege, if possible */
+		if (seteuid(o_uid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "seteuid(%d)", (int)o_uid);
 		gfarm_mutex_unlock(&privilege_mutex, diag, privilege_diag);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {

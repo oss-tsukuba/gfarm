@@ -288,6 +288,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	int eof;
 	enum gfarm_auth_id_type peer_type;
 	struct passwd pwbuf, *pwd;
+	int is_root = 0;
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -395,14 +396,25 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		 * we should create new session before calling
 		 * setlogin().
 		 */
-		seteuid(0); /* make sure to have root privilege */
-		setsid();
+		if (seteuid(0) == 0) /* make sure to have root privilege */
+			is_root = 1;
+		if (setsid() == -1)
+			gflog_debug_errno(GFARM_MSG_UNFIXED, "setsid()");
 #ifdef HAVE_SETLOGIN
-		setlogin(pwd->pw_name);
+		if (setlogin(pwd->pw_name) == -1 && is_root)
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "setlogin(%s)", pwd->pw_name);
 #endif
-		initgroups(pwd->pw_name, pwd->pw_gid);
-		setgid(pwd->pw_gid);
-		setuid(pwd->pw_uid);
+		if (initgroups(pwd->pw_name, pwd->pw_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "initgroups(%s, %d)",
+			    pwd->pw_name, (int)pwd->pw_gid);
+		if (setgid(pwd->pw_gid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "setgid(%d)", (int)pwd->pw_gid);
+		if (setuid(pwd->pw_uid) == -1 && is_root)
+			gflog_error_errno(GFARM_MSG_UNFIXED,
+			    "setuid(%d)", (int)pwd->pw_uid);
 
 		gfarm_set_global_username(global_username);
 		gfarm_set_local_username(local_username);

@@ -73,6 +73,15 @@ void gflog_fatal_message_errno(int, int, const char *, int, const char*,
 #define gflog_warning_errno(msg_no, ...) \
 	gflog_message_errno(msg_no, LOG_WARNING,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_notice_errno(msg_no, ...) \
+	gflog_message_errno(msg_no, LOG_NOTICE,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_info_errno(msg_no, ...) \
+	gflog_message_errno(msg_no, LOG_INFO,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_debug_errno(msg_no, ...) \
+	gflog_message_errno(msg_no, LOG_DEBUG,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 void gflog_initialize(void);
 void gflog_terminate(void);
