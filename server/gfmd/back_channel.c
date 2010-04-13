@@ -244,7 +244,6 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	e = gfs_client_recv_result(peer, host, size, diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
-gflog_info(GFARM_MSG_UNFIXED, "status result received");
 	if (e == GFARM_ERR_NO_ERROR) {
 		host_status_update(host, &st);
 	} else if (peer != NULL) { /* to make the race condition harmless */
@@ -292,7 +291,6 @@ gfs_client_status_request(void *arg)
 	e = gfs_client_send_request(host, diag,
 	    gfs_client_status_result, gfs_client_status_free, host,
 	    GFS_PROTO_STATUS, "");
-gflog_info(GFARM_MSG_UNFIXED, "status request sent: %s", gfarm_error_string(e));
 	if (e == GFARM_ERR_DEVICE_BUSY) {
 		if (host_status_callout_retry(host))
 			return (NULL);
