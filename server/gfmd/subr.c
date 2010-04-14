@@ -127,7 +127,7 @@ strdup_log(const char *s, const char *diag)
 	char *d = strdup(s);
 
 	if (d == NULL)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002358,
 		    "%s: strdup(%s): no memory", diag, s);
 	return (d);
 }

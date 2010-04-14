@@ -244,7 +244,7 @@ pgsql_get_string_ck(PGresult *res, int row, const char *field_name)
 	char *s = strdup(v);
 
 	if (s == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002371,
 		    "pgsql_get_string_ck(%s): %s: no memory", field_name, v);
 	}
 	return (s);
@@ -607,7 +607,7 @@ gfarm_pgsql_generic_get_all(
 				e = (*set_fields)(res, i,
 				    results + i * ops->info_size);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002372,
 					    "gfarm_pgsql_generic_get_all: "
 					    "%s: %d/%d: %s",
 					    sql, i, n, gfarm_error_string(e));
@@ -987,7 +987,7 @@ host_info_set_fields_with_grouping(
 	info->nhostaliases = nhostaliases;
 	GFARM_MALLOC_ARRAY(info->hostaliases, nhostaliases + 1);
 	if (info->hostaliases == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002373,
 		    "host_info_set_fields_with_grouping(%s, %d): no memory",
 		    info->hostname, nhostaliases + 1);
 	}
@@ -1317,7 +1317,7 @@ group_info_set_fields_with_grouping(
 	info->nusers = nusers;
 	GFARM_MALLOC_ARRAY(info->usernames, nusers + 1);
 	if (info->usernames == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002374,
 		    "group_info_set_fields_with_grouping(%s, %d): no memory",
 		    info->groupname, nusers + 1);
 	}

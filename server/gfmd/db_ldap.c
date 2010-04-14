@@ -568,7 +568,7 @@ gfarm_ldap_session_error(void)
 	int rv = ldap_get_option(gfarm_ldap_server, LDAP_OPT_RESULT_CODE, &e);
 
 	if (rv != LDAP_OPT_SUCCESS) {
-		gflog_fatal(GFARM_MSG_UNFIXED, "ldap_get_option: %d", rv);
+		gflog_fatal(GFARM_MSG_1002362, "ldap_get_option: %d", rv);
 	}
 	return (ldap_err2string(e));
 }
@@ -579,7 +579,7 @@ gfarm_strarray_dup_log(char **src, const char *diag)
 	char **dst = gfarm_strarray_dup(src);
 
 	if (dst == NULL)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002363,
 		    "%s: gfarm_strarray_dup(): no memory", diag);
 	return (dst);
 }
@@ -714,7 +714,7 @@ retry:
 	ops->gen_ops->clear(info);
 	e = ldap_first_entry(gfarm_ldap_server, res);
 	if (e == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002364,
 		    "ldap_first_entry: %s",
 		    ldap_err2string(gfarm_ldap_server->ld_errno));
 		error = GFARM_ERR_UNKNOWN;
@@ -726,7 +726,7 @@ retry:
 	    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 		vals = ldap_get_values(gfarm_ldap_server, e, a);
 		if (vals == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002365,
 			    "ldap_get_values: %s", gfarm_ldap_session_error());
 			error = GFARM_ERR_UNKNOWN;
 		} else {
@@ -746,7 +746,7 @@ retry:
 		ops->gen_ops->free(info);
 	/* should check all fields are filled */
 	} else if (!ops->gen_ops->validate(info)) { 
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002366,
 		    "gfarm_ldap_generic_info_get: validation error");
 		ops->gen_ops->free(info);
 		/* XXX - different error code is better ? */
@@ -967,7 +967,7 @@ retry:
 		    a = ldap_next_attribute(gfarm_ldap_server, e, ber)) {
 			vals = ldap_get_values(gfarm_ldap_server, e, a);
 			if (vals == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002367,
 				    "ldap_get_values: %s",
 				    gfarm_ldap_session_error());
 				error = GFARM_ERR_UNKNOWN;
@@ -1066,7 +1066,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 			    ber)) {
 				vals = ldap_get_values(gfarm_ldap_server, e, a);
 				if (vals == NULL) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002368,
 					    "ldap_get_values: %s",
 					    gfarm_ldap_session_error());
 					error = GFARM_ERR_UNKNOWN;
@@ -2914,12 +2914,12 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 			"ldap_count_messages() != 2");
 	} else if ((m = ldap_first_message(gfarm_ldap_server, res)) == NULL) {
 		e = GFARM_ERR_UNKNOWN;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002369,
 		    "ldap_first_message: %s", gfarm_ldap_session_error());
 	} else if ((vals = ldap_get_values_len(gfarm_ldap_server, m, attrs[0]))
 	    == NULL) {
 		e = GFARM_ERR_UNKNOWN;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002370,
 		    "ldap_get_values_len: %s", gfarm_ldap_session_error());
 	} else {
 		if ((vals[0] != NULL) && (vals[1] == NULL)) {

@@ -415,7 +415,7 @@ gfs_client_replication_request_result(void *p, void *arg, size_t size)
 		ino = inode_get_number(fr->inode);
 		gen = fr->igen;
 		e2 = host_replicated(dst, ino, gen, -1, 0, e, -1);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002359,
 		    "%s: (%s, %lld:%lld): aborted: %s (%s)",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(e), gfarm_error_string(e2));
@@ -440,7 +440,7 @@ gfs_client_replication_request_free(void *p, void *arg)
 
 	e = host_replicated(dst, ino, gen,
 	    -1, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1002360,
 	    "%s: (%s, %lld:%lld): connection aborted: %s",
 	    diag, host_name(dst), (long long)ino, (long long)gen,
 	    gfarm_error_string(e));
@@ -480,7 +480,7 @@ gfs_client_replication_request_request(void *closure)
 		giant_lock(); /* XXX FIXME: deadlock */
 		e2 = host_replicated(dst, ino, gen, -1, 0, e, -1);
 		giant_unlock();
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002361,
 		    "%s: %s->(%s, %lld:%lld): aborted: %s (%s)", diag,
 		    srchost, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(e), gfarm_error_string(e2));

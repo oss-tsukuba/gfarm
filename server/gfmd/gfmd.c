@@ -929,32 +929,32 @@ write_pid()
 		gflog_fatal_errno(GFARM_MSG_1000196, "open: %s", pid_file);
 
 	if (fprintf(pid_fp, "%ld\n", (long)getpid()) == -1)
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1002351,
 		    "writing PID to %s", pid_file);
 	if (fclose(pid_fp) != 0)
-		gflog_error_errno(GFARM_MSG_UNFIXED, "fclose(%s)", pid_file);
+		gflog_error_errno(GFARM_MSG_1002352, "fclose(%s)", pid_file);
 }
 
 void
 sigs_set(sigset_t *sigs)
 {
 	if (sigemptyset(sigs) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigemptyset()");
+		gflog_fatal_errno(GFARM_MSG_1002353, "sigemptyset()");
 	sigaddset(sigs, SIGHUP);
 #ifdef __NetBSD__ /* NetBSD 4 delivers SIGINT to gfmd even under gdb */
 	if (!debug_mode)
 #endif
 		if (sigaddset(sigs, SIGINT) == -1)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED,
+			gflog_fatal_errno(GFARM_MSG_1002354,
 			    "sigaddset(SIGINT)");
 	if (sigaddset(sigs, SIGTERM) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaddset(SIGTERM)");
+		gflog_fatal_errno(GFARM_MSG_1002355, "sigaddset(SIGTERM)");
 #ifdef SIGINFO
 	if (sigaddset(sigs, SIGINFO) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaddset(SIGINFO)");
+		gflog_fatal_errno(GFARM_MSG_1002356, "sigaddset(SIGINFO)");
 #endif
 	if (sigaddset(sigs, SIGUSR2) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaddset(SIGUSR2)");
+		gflog_fatal_errno(GFARM_MSG_1002357, "sigaddset(SIGUSR2)");
 }
 
 void *

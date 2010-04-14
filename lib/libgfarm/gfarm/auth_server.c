@@ -399,21 +399,21 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		if (seteuid(0) == 0) /* make sure to have root privilege */
 			is_root = 1;
 		if (setsid() == -1)
-			gflog_debug_errno(GFARM_MSG_UNFIXED, "setsid()");
+			gflog_debug_errno(GFARM_MSG_1002346, "setsid()");
 #ifdef HAVE_SETLOGIN
 		if (setlogin(pwd->pw_name) == -1 && is_root)
-			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			gflog_warning_errno(GFARM_MSG_1002347,
 			    "setlogin(%s)", pwd->pw_name);
 #endif
 		if (initgroups(pwd->pw_name, pwd->pw_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1002348,
 			    "initgroups(%s, %d)",
 			    pwd->pw_name, (int)pwd->pw_gid);
 		if (setgid(pwd->pw_gid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1002349,
 			    "setgid(%d)", (int)pwd->pw_gid);
 		if (setuid(pwd->pw_uid) == -1 && is_root)
-			gflog_error_errno(GFARM_MSG_UNFIXED,
+			gflog_error_errno(GFARM_MSG_1002350,
 			    "setuid(%d)", (int)pwd->pw_uid);
 
 		gfarm_set_global_username(global_username);
