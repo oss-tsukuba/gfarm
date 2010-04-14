@@ -22,6 +22,7 @@
 
 #include "gfutil.h"
 #include "hash.h"
+#include "thrsubr.h"
 
 #include "config.h"	/* gfarm_metadb_admin_user */
 #include "auth.h"
@@ -480,7 +481,7 @@ inum_path_entry_fini(struct inum_path_entry *entry)
 static void
 inum_path_array_init(struct inum_path_array *array, char *expr)
 {
-	int i, err;
+	int i;
 	static const char diag[] = "inum_path_array_init";
 
 	memset(array, 0, sizeof(*array));
@@ -866,7 +867,7 @@ db_findxmlattr_wait(struct inum_path_array *array, int idx)
 	entry = &array->entries[idx];
 	while (IS_UNSET_ERRNO(entry->dberr)) {
 		gfarm_cond_wait(&array->cond, &array->lock,
-		    diag, num_path_array_diag);
+		    diag, inum_path_array_diag);
 	}
 }
 
