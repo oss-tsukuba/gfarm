@@ -1,7 +1,7 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.4.5]
+[2010.4.14]
 
 New Feature
 * update-based replica consistency protocol
@@ -25,6 +25,8 @@ New configuration in gfmd.conf
   to specify threshold of CPU load average for client scheduling
 * schedule_virtual_load directive to specify virtual load to add when
   a host is scheduled
+* simultaneous_replication_receivers directive to specify the maximum
+  number of pending replication requests to each gfsd
 
 Updated feature
 * gfrep - -x option to remove excess file replicas
@@ -63,7 +65,11 @@ Bug fix
 * fix file migration issue described in the tracker
   https://sourceforge.net/tracker/?func=detail&aid=1976260&group_id=172718&atid=862742
 * fix access control for chmod
+* fix errors found by static analysis including unchecked return value
+  and missing check against null
 * gfmd - fix segfault when the postgresql database is stopped
+* gfsd - fix the back chennel process stop when the connection error
+  happens
 
 Release note for Gfarm 2.3.0
 ============================
