@@ -95,7 +95,7 @@ private_dir = ./private
 
 .msg.cat:
 	cat $(srcdir)/$*.msg | $(CPP) $(CFLAGS) - 2>/dev/null | \
-		grep -v "^#" >tmp$$$$.msg; \
+		grep '^[0-9$$]' > tmp$$$$.msg; \
 	LC_ALL=$(LOCALE) $(GENCAT) $@ tmp$$$$.msg; rv=$$?; \
 	rm tmp$$$$.msg; \
 	exit $${rv}
