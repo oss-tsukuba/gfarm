@@ -1235,7 +1235,7 @@ gfs_server_close(struct gfp_xdr *client)
 			    gfm_server, gen_update_result))
 			    != GFARM_ERR_NO_ERROR)
 				fatal_metadb_proto(GFARM_MSG_1002301,
-				    "generation_updated request: %s",
+				    "generation_updated request",
 				    diag, e2);
 			gfm_client_compound_put_fd_result(diag);
 			if ((e2 = gfm_client_generation_updated_result(
