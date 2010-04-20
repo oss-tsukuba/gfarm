@@ -4358,7 +4358,7 @@ main(int argc, char **argv)
 		e = gfm_client_host_info_get_by_names(gfm_server,
 		    1, &n, &e2, &self_info);
 	}
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR)
 		e = e2;
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1000592,
