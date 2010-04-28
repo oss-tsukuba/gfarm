@@ -7,6 +7,9 @@ gfarm_ino_t dead_file_copy_get_ino(struct dead_file_copy *);
 gfarm_uint64_t dead_file_copy_get_gen(struct dead_file_copy *);
 struct host *dead_file_copy_get_host(struct dead_file_copy *);
 
+gfarm_error_t dead_file_copy_remove(
+	gfarm_ino_t, gfarm_uint64_t, struct host *);
+
 int dead_file_copy_is_removable_default(struct dead_file_copy *);
 extern int (*dead_file_copy_is_removable)(struct dead_file_copy *);
 

@@ -638,7 +638,9 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		/* if there is ongoing replication, don't start new one */
 		if (start_replication && copy->valid &&
 		    host_is_up(copy->host) &&
-		    host_supports_async_protocols(copy->host)) {
+		    host_supports_async_protocols(copy->host) &&
+		    dead_file_copy_remove(inode->i_number, inode->i_gen,
+		    copy->host) == GFARM_ERR_NO_ERROR) {
 			/*
 			 * since file_replicating_new() changes
 			 * inode->u.c.s.f.copies via inode_add_replica(),
