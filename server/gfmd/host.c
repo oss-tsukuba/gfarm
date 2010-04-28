@@ -1097,13 +1097,19 @@ host_replicated(struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	}
 	if (fr == &host->replicating_inodes)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-	else {
+	else
 		e = GFARM_ERR_NO_ERROR;
-	}
+
 	gfarm_mutex_unlock(&host->replication_mutex, diag, replication_diag);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		e = inode_replicated(fr, src_errcode, dst_errcode, size);
+	else
+		gflog_error(GFARM_MSG_UNFIXED, 
+		    "orphan replicatiion (%s, %lld:%lld): s=%d d=%d size:%lld "
+		    "maybe the connection had a problem?",
+		    host_name(host), (long long)ino, (long long)gen,
+		    src_errcode, dst_errcode, (long long)size);
 	return (e);
 }
 
