@@ -534,7 +534,7 @@ gfarm_error_t
 dead_file_copy_remove(
 	gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 {
-	struct dead_file_copy *dfc;
+	struct dead_file_copy *dfc, *next;
 	enum dead_file_copy_state state;
 	static const char diag[] = "dead_file_copy_remove";
 
@@ -542,7 +542,8 @@ dead_file_copy_remove(
 
 	/* giant_lock prevents dfc from being freed */
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
-	     dfc = dfc->allq_next) {
+	     dfc = next) {
+		next = dfc->allq_next;
 
 		if (dfc->inum != inum ||
 		    dfc->igen != igen ||
@@ -598,7 +599,16 @@ dead_file_copy_remove(
 				gfarm_mutex_unlock(&dfc_allq.mutex,
 				    diag, "preparing free");
 				dead_file_copy_free(dfc);
+#if 1
+				/*
+				 * currently, there may be other dead_file_copy
+				 * for the same replica.
+				 * XXX should be corrected.
+				 */
+				goto next_one;
+#else
 				return (GFARM_ERR_NO_ERROR);
+#endif
 			case dfcstate_pending:
 				dfc_workq_try_to_remove(
 				    &removal_pendingq, state, dfc,
@@ -619,6 +629,7 @@ dead_file_copy_remove(
 				break;
 			}
 		}
+next_one:	;
 	}
 
 	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
