@@ -2351,7 +2351,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	if (irs == NULL) {
 		GFARM_MALLOC(irs);
 		if (irs == NULL) {
-			host_replicating_free(fr);
+			peer_replicating_free(fr);
 			remove_file_copy(inode, dst);
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -2388,7 +2388,7 @@ file_replicating_free(struct file_replicating *fr)
 		free(inode->u.c.s.f.rstate);
 		inode->u.c.s.f.rstate = NULL;
 	}
-	host_replicating_free(fr);
+	peer_replicating_free(fr);
 
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    inode->u.c.s.f.rstate == NULL) {
@@ -2401,6 +2401,10 @@ file_replicating_get_gen(struct file_replicating *fr)
 {
 	return (fr->igen);
 }
+
+static gfarm_error_t inode_remove_replica_gen_deferred(
+	struct inode *, struct host *, gfarm_int64_t, int,
+	struct dead_file_copy **);
 
 gfarm_error_t
 inode_replicated(struct file_replicating *fr,
@@ -2438,20 +2442,14 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)fr->igen, (long long)size,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
-		e = inode_remove_replica_gen(inode, fr->dst, fr->igen, 0);
+		e = inode_remove_replica_gen_deferred(inode, fr->dst, fr->igen,
+		    0, &dfc);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002258,
 			    "inode_replicated: inode_remove_replica: %s",
 			    gfarm_error_string(e));
 		}
-		dfc = dead_file_copy_new(inode_get_number(inode), fr->igen,
-		    fr->dst);
-		if (dfc == NULL) {
-			gflog_error(GFARM_MSG_1002259,
-			    "inode_replicated: dead_file_copy_new: no memory");
-		} else {
-			removal_pendingq_enqueue(dfc);
-		}
+		removal_pendingq_enqueue(dfc);
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
 
@@ -2595,9 +2593,10 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	return (dfc == NULL ? GFARM_ERR_NO_MEMORY : e);
 }
 
-gfarm_error_t
-inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t gen, int do_not_delete_last)
+static gfarm_error_t
+inode_remove_replica_gen_deferred(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t gen, int do_not_delete_last,
+	struct dead_file_copy **deferred_cleanupp)
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
@@ -2620,13 +2619,22 @@ inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
 		if (do_not_delete_last && num_replica == 1 && copy->valid)
 			return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 		*foundp = copy->host_next;
-		e = remove_replica_entity(inode, gen, copy->host,
-		    copy->valid, NULL);
+		e = remove_replica_entity(inode, gen, copy->host, copy->valid,
+		    deferred_cleanupp);
 		free(copy);
 	} else {
-		e = remove_replica_entity(inode, gen, spool_host, 0, NULL);
+		e = remove_replica_entity(inode, gen, spool_host, 0,
+		    deferred_cleanupp);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t gen, int do_not_delete_last)
+{
+	return (inode_remove_replica_gen_deferred(inode, spool_host, gen,
+	    do_not_delete_last, NULL));
 }
 
 gfarm_error_t

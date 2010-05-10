@@ -478,8 +478,12 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 	if (idtab->id_next >= idtab->id_limit) {
 		/* previous gfarm_id_rewind(idtab) failed, try again */
 		gfarm_id_rewind(idtab);
-		if (idtab->id_next >= idtab->id_limit)
+		if (idtab->id_next >= idtab->id_limit) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_id_alloc: no more id space %d/%d",
+			    idtab->id_next, idtab->id_limit);
 			return (NULL); /* no more id space */
+		}
 	}
 	if (idtab->hole_start >= idtab->hole_end &&
 	    !gfarm_id_compaction_from_head(idtab) &&
@@ -494,8 +498,9 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 		data = malloc(ALIGN_CEIL(sizeof(struct gfarm_id_data_chunk)) +
 		    idtab->idx_delta * idtab->entry_size);
 		if (data == NULL) {
-			gflog_debug(GFARM_MSG_1000788,
-				"allocation of 'gfarm_id_data_chunk' failed");
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_id_alloc: no memory for %d * %d",
+			    idtab->idx_delta, (int)idtab->entry_size);
 			return (NULL);
 		}
 		newidx = realloc(idtab->index,
@@ -503,8 +508,10 @@ gfarm_id_alloc(struct gfarm_id_table *idtab, gfarm_int32_t *idp)
 		    sizeof(struct gfarm_id_index));
 		if (newidx == NULL) {
 			free(data);
-			gflog_debug(GFARM_MSG_1000789,
-				"allocation of 'gfarm_id_index' failed");
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_id_alloc: no memory for (%d + %d) * %d",
+			    idtab->idxsize, idtab->idx_delta,
+			    (int)sizeof(struct gfarm_id_index));
 			return (NULL); /* no more memory */
 		}
 
