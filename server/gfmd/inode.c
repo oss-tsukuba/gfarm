@@ -668,6 +668,8 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			    "replication before removal: host %s: %s", 
 			    host_name(copy->host),
 			    gfarm_error_string(e));
+			/* give up the replication and remove the old one */
+			removal_pendingq_enqueue(deferred_cleanup);
 		} else if ((e = async_back_channel_replication_request(
 		    host_name(spool_host), host_port(spool_host),
 		    copy->host, inode->i_number, inode->i_gen, fr))
