@@ -1,7 +1,7 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.4.14]
+[2010.5.10]
 
 New Feature
 * update-based replica consistency protocol
@@ -70,6 +70,7 @@ Bug fix
 * gfmd - fix segfault when the postgresql database is stopped
 * gfsd - fix the back chennel process stop when the connection error
   happens
+* gfsd - fix no error report when it is not registered in gfmd
 
 Release note for Gfarm 2.3.0
 ============================
