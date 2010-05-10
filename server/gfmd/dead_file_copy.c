@@ -566,7 +566,7 @@ dead_file_copy_remove(
 				 */
 				gfarm_mutex_unlock(&dfc_allq.mutex,
 				    diag, "file busy");
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002411,
 				    "%s(%lld, %lld, %s): "
 				    "giving up replication due to state %d",
 				    diag,
@@ -584,7 +584,7 @@ dead_file_copy_remove(
 				 */
 				gfarm_mutex_unlock(&dfc_allq.mutex,
 				    diag, "kept");
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1002412,
 				    "%s(%lld, %lld, %s): unexpected state %d",
 				    diag,
 				    (unsigned long long)dfc->inum,
@@ -620,7 +620,7 @@ dead_file_copy_remove(
 				    "removing from host_busyq");
 				break;
 			default:
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1002413,
 				    "%s(%lld, %lld, %s): insane state %d",
 				    diag,
 				    (unsigned long long)dfc->inum,

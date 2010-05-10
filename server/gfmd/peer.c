@@ -244,7 +244,7 @@ peer_replicated(struct peer *peer,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = inode_replicated(fr, src_errcode, dst_errcode, size);
 	else
-		gflog_error(GFARM_MSG_UNFIXED, 
+		gflog_error(GFARM_MSG_1002410, 
 		    "orphan replicatiion (%s, %lld:%lld): s=%d d=%d size:%lld "
 		    "maybe the connection had a problem?",
 		    host_name(host), (long long)ino, (long long)gen,
