@@ -1423,30 +1423,32 @@ main(int argc, char **argv)
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
-		if (argc > 0) {
-			if (opt_port == 0) {
-				fprintf(stderr, "%s: option -p <port> is "
-				    "mandatory with -c\n", program_name);
-				usage();
-			}
-			e_save = add_host(argv[0], opt_port, &argv[1],
-			    opt_architecture, opt_ncpu, opt_flags);
-			if (e_save != GFARM_ERR_NO_ERROR)
-				fprintf(stderr, "%s: %s: %s\n", program_name,
-				    argv[0], gfarm_error_string(e_save));
+		if (argc <= 0)
+			usage();
+		if (opt_port == 0) {
+			fprintf(stderr, "%s: option -p <port> is "
+			    "mandatory with -c\n", program_name);
+			usage();
 		}
+		e_save = add_host(argv[0], opt_port, &argv[1],
+		    opt_architecture, opt_ncpu, opt_flags);
+		if (e_save != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "%s: %s: %s\n", program_name,
+			    argv[0], gfarm_error_string(e_save));
 		break;
 	case OP_MODIFY_ENTRY:
-		if (argc > 0) {
-			e_save = gfarm_modify_host(argv[0], opt_port, &argv[1],
-			    opt_architecture, opt_ncpu, opt_flags,
-			    !opt_alter_aliases);
-			if (e_save != GFARM_ERR_NO_ERROR)
-				fprintf(stderr, "%s: %s: %s\n", program_name,
-				    argv[0], gfarm_error_string(e_save));
-		}
+		if (argc <= 0)
+			usage();
+		e_save = gfarm_modify_host(argv[0], opt_port, &argv[1],
+		    opt_architecture, opt_ncpu, opt_flags,
+		    !opt_alter_aliases);
+		if (e_save != GFARM_ERR_NO_ERROR)
+			fprintf(stderr, "%s: %s: %s\n", program_name,
+			    argv[0], gfarm_error_string(e_save));
 		break;
 	case OP_DELETE_ENTRY:
+		if (argc <= 0)
+			usage();
 		for (i = 0; i < argc; i++) {
 			e = gfm_client_host_info_remove(gfm_server,
 			    argv[i]);
@@ -1462,7 +1464,7 @@ main(int argc, char **argv)
 		if (argc > 0) {
 			fprintf(stderr, "%s: too many argument: %s\n",
 			    program_name, argv[0]);
-			exit(1);
+			usage();
 		}
 		e_save = register_db();
 		break;
