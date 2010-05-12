@@ -221,7 +221,7 @@ gfarm_id_compaction_from_head_force(struct gfarm_id_table *idtab)
 	space = i++;
 	while (i < idtab->hole_start) {
 		for (; i < idtab->hole_start; i++) {	
-		if (index[i].data != NULL)
+			if (index[i].data != NULL)
 				break;
 		}
 		avail = i;
