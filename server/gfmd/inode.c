@@ -2431,7 +2431,7 @@ inode_replicated(struct file_replicating *fr,
 			    "error at %lld:%lld replication to %s: "
 			    "src=%d dst=%d",
 			    (long long)inode_get_number(inode),
-			    (long long)inode_get_gen(inode),
+			    (long long)fr->igen,
 			    host_name(fr->dst), src_errcode, dst_errcode);
 		if (debug_mode && (size != inode_get_size(inode) ||
 		    fr->igen != inode_get_gen(inode)))
@@ -2446,9 +2446,20 @@ inode_replicated(struct file_replicating *fr,
 		    0, &dfc);
 		if (e == GFARM_ERR_NO_ERROR) {
 			removal_pendingq_enqueue(dfc);
+		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "cannot remove an incomplete replica "
+			    "(%s, %lld:%lld): probably already removed",
+			    host_name(fr->dst),
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen);
 		} else {
-			gflog_error(GFARM_MSG_1002258,
-			    "inode_replicated: inode_remove_replica: %s",
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "cannot remove an incomplete replica "
+			    "(%s, %lld:%lld): %s",
+			    host_name(fr->dst),
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen,
 			    gfarm_error_string(e));
 		}
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
