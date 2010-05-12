@@ -2452,13 +2452,13 @@ gfm_client_replica_info_get_request(struct gfm_connection *gfm_server,
 gfarm_error_t
 gfm_client_replica_info_get_result(struct gfm_connection *gfm_server,
 	gfarm_int32_t *np,
-	char ***hostsp, gfarm_int64_t **gensp, gfarm_int32_t **flagsp)
+	char ***hostsp, gfarm_uint64_t **gensp, gfarm_int32_t **flagsp)
 {
 	gfarm_error_t e;
 	int eof, i;
 	gfarm_int32_t n;
 	char **hosts;
-	gfarm_int64_t *gens;
+	gfarm_uint64_t *gens;
 	gfarm_int32_t *flags;
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);

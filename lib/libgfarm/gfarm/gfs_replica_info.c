@@ -12,7 +12,7 @@ struct gfm_replica_info_get_closure {
 
 	gfarm_int32_t n;
 	char **hosts;
-	gfarm_int64_t *gens;
+	gfarm_uint64_t *gens;
 	gfarm_int32_t *outflags;
 };
 
@@ -51,7 +51,7 @@ gfm_replica_info_get_result(struct gfm_connection *gfm_server,
 struct gfs_replica_info {
 	gfarm_int32_t n;
 	char **hosts;
-	gfarm_int64_t *gens;
+	gfarm_uint64_t *gens;
 	gfarm_int32_t *flags;
 };
 

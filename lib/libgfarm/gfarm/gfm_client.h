@@ -318,7 +318,7 @@ gfarm_error_t gfm_client_replica_remove_by_file_result(
 gfarm_error_t gfm_client_replica_info_get_request(struct gfm_connection *,
 	gfarm_int32_t);
 gfarm_error_t gfm_client_replica_info_get_result(struct gfm_connection *,
-	gfarm_int32_t *, char ***, gfarm_int64_t **, gfarm_int32_t **);
+	gfarm_int32_t *, char ***, gfarm_uint64_t **, gfarm_int32_t **);
 gfarm_error_t gfm_client_replicate_file_from_to_request(
 	struct gfm_connection *, const char *, const char *, gfarm_int32_t);
 gfarm_error_t gfm_client_replicate_file_from_to_result(
