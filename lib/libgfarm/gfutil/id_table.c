@@ -99,10 +99,16 @@ gfarm_id_table_free(struct gfarm_id_table *idtab,
 
 	if (index != NULL) {
 		if (id_free != NULL) {
-			for (i = 0; i < idtab->hole_start; i++)
-				(*id_free)(closure, index[i].id, index[i].data);
-			for (i = idtab->hole_end; i < idtab->idxsize; i++)
-				(*id_free)(closure, index[i].id, index[i].data);
+			for (i = 0; i < idtab->hole_start; i++) {
+				if (index[i].data != NULL)
+					(*id_free)(closure,
+					    index[i].id, index[i].data);
+			}
+			for (i = idtab->hole_end; i < idtab->idxsize; i++) {
+				if (index[i].data != NULL)
+					(*id_free)(closure,
+					    index[i].id, index[i].data);
+			}
 		}
 		free(index);
 	}
