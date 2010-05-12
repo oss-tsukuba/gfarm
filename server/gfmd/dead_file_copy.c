@@ -246,7 +246,6 @@ removal_pendingq_enqueue(struct dead_file_copy *dfc)
 	if (state != dfcstate_deferred &&
 	    state != dfcstate_kept &&
 	    state != dfcstate_busy) {
-		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 		gflog_fatal(GFARM_MSG_1002221, "%s(%lld, %lld, %s): "
 		    "insane state %d", diag,
 		    (unsigned long long)dfc->inum,
