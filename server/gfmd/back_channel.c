@@ -843,7 +843,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    back_channel_main);
 
 		if (host_is_up(host)) /* throw away old connetion */ {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_UNFIXED,
 			    "back_channel(%s): switching to new connection",
 			    host_name(host));
 			host_disconnect(host, NULL);

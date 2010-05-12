@@ -526,8 +526,12 @@ host_peer_busy(struct host *host)
 		unresponsive_peer = host->peer;
 	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
-	if (unresponsive_peer != NULL)
+	if (unresponsive_peer != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "back_channel(%s): disconnecting: busy at sending",
+		    host_name(host));
 		host_disconnect_request(host, unresponsive_peer);
+	}
 }
 
 void
@@ -558,8 +562,12 @@ host_check_busy(struct host *host, gfarm_int64_t now)
 
 	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
-	if (unresponsive_peer != NULL)
+	if (unresponsive_peer != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "back_channel(%s): disconnecting: busy during queue scan",
+		    host_name(host));
 		host_disconnect_request(host, unresponsive_peer);
+	}
 
 	return (busy || unresponsive_peer != NULL);
 }
@@ -1489,6 +1497,8 @@ host_info_remove_default(const char *hostname, const char *diag)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
 	/* disconnect the back channel */
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "back_channel(%s): disconnecting: host info removed", hostname);
 	host_disconnect(host, NULL);
 
 	if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
