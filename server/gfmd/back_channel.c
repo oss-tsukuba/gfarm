@@ -49,6 +49,25 @@ struct thread_pool *back_channel_send_thread_pool;
  * it's called by threads in back_channel_recv_thread_pool. XXX FIXME
  */
 
+static void
+back_channel_disconnect_request(struct host *host, struct peer *peer,
+	const char *proto, const char *op, const char *condition)
+{
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "back_channel(%s) %s %s: disconnecting: %s",
+	    host_name(host), proto, op, condition);
+	host_disconnect_request(host, peer);
+}
+
+static void
+back_channel_already_disconnected_message(struct host *host, struct peer *peer,
+	const char *proto, const char *op, const char *condition)
+{
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "back_channel(%s) %s %s: already disconnected: %s",
+	    host_name(host), proto, op, condition);
+}
+
 /* host_receiver_lock() must be already called here by back_channel_main() */
 static gfarm_error_t
 gfm_async_server_get_request(struct peer *peer, size_t size,
@@ -118,7 +137,7 @@ gfm_async_server_put_reply(struct host *host,
 
 
 /*
- * synchronous mode of backchannel is only used before gfarm-2.4.0
+ * synchronous mode of back_channel is only used before gfarm-2.4.0
  */
 static gfarm_error_t
 gfs_client_send_request(struct host *host, struct peer *peer0,
@@ -142,13 +161,22 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 	e = host_sender_trylock(host, &peer);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_DEVICE_BUSY) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "back_channel(%s) %s (command %d) request: "
+			    "sending busy", host_name(host), diag, command);
 			host_peer_busy(host);
-		} /* otherwise host_disconnect_request() is already called */
+		} else /* host_disconnect_request() is already called */
+			back_channel_already_disconnected_message(host, peer,
+			    diag, "request", "sending busy");
 		return (e);
 	}
 	/* if (peer0 == NULL), the caller doesn't care the connection */
 	if (peer0 != NULL && peer != peer0) {
 		host_sender_unlock(host, peer);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "back_channel(%s) %s (command %d) request: "
+		    "gfsd was reconnected",
+		    host_name(host), diag, command);
 		return (GFARM_ERR_CONNECTION_ABORTED);
 	}
 	host_peer_unbusy(host);
@@ -177,10 +205,8 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 		e = gfp_xdr_flush(server);
 
 	if (e != GFARM_ERR_NO_ERROR) { /* must be IS_CONNECTION_ERROR(e) */
-		gflog_warning(GFARM_MSG_1002278,
-		    "back_channel(%s) command %d: disconnecting: %s",
-		    host_name(host), command, gfarm_error_string(e));
-		host_disconnect_request(host, peer);
+		back_channel_disconnect_request(host, peer,
+		    diag, "request", gfarm_error_string(e));
 		host_sender_unlock(host, peer);
 		return (e);
 	}
@@ -238,6 +264,19 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	return (e);
 }
 
+static void
+gfs_client_status_disconnect_or_message(struct host *host, struct peer *peer,
+	const char *proto, const char *op, const char *condition)
+{
+	if (peer != NULL) { /* to make the race condition harmless */
+		back_channel_disconnect_request(host, peer,
+		    proto, op, condition);
+	} else {
+		back_channel_already_disconnected_message(host, peer,
+		    proto, op, condition);
+	}
+}
+
 static gfarm_int32_t
 gfs_client_status_result(void *p, void *arg, size_t size)
 {
@@ -250,11 +289,11 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	e = gfs_client_recv_result(peer, host, size, diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
-	if (e == GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR)
 		host_status_update(host, &st);
-	} else if (peer != NULL) { /* to make the race condition harmless */
-		host_disconnect_request(host, peer);
-	}
+	else
+		gfs_client_status_disconnect_or_message(host, peer,
+		    diag, "result", gfarm_error_string(e));
 	return (e);
 }
 
@@ -278,11 +317,8 @@ gfs_client_status_request(void *arg)
 	static const char diag[] = "GFS_PROTO_STATUS";
 
 	if (host_status_reply_is_waiting(host)) {
-		gflog_warning(GFARM_MSG_1002282,
-		    "back_channel(%s) disconnecting: no status",
-		    host_name(host));
-		if (peer != NULL) /* to make the race condition harmless */
-			host_disconnect_request(host, peer);
+		gfs_client_status_disconnect_or_message(host, peer,
+		    diag, "request", "no status");
 		return (NULL);
 	}
 
@@ -300,11 +336,8 @@ gfs_client_status_request(void *arg)
 	if (e == GFARM_ERR_DEVICE_BUSY) {
 		if (host_status_callout_retry(host))
 			return (NULL);
-		gflog_error(GFARM_MSG_1002283,
-		    "back_channel(%s) disconnecting: status rpc unresponsive",
-		    host_name(host));
-		if (peer != NULL) /* to make the race condition harmless */
-			host_disconnect_request(host, peer);
+		gfs_client_status_disconnect_or_message(host, peer,
+		    diag, "request", "status rpc unresponsive");
 		return (NULL);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -704,9 +737,12 @@ back_channel_main(void *arg)
 
 	do {
 		if (peer_had_protocol_error(peer)) {
+			/* host_disconnect*() must be already called */
 			sync_back_channel_free(host);
-			host_disconnect_request(host, peer);
 			host_receiver_unlock(host, peer);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "back_channel(%s): host_disconnect was called",
+			    host_name(host));
 			return (NULL);
 		}
 #ifdef COMPAT_GFARM_2_3
@@ -718,15 +754,17 @@ back_channel_main(void *arg)
 			e = sync_back_channel_service(host, peer);
 		}
 #endif
-		if (e == GFARM_ERR_UNEXPECTED_EOF) {
-			gflog_error(GFARM_MSG_1002286,
-			    "back_channel(%s): disconnected", host_name(host));
-		} else if (IS_CONNECTION_ERROR(e)) {
-			gflog_error(GFARM_MSG_1002287,
-			    "back_channel(%s): request error, reset: %s",
-			     host_name(host), gfarm_error_string(e));
-		}
 		if (IS_CONNECTION_ERROR(e)) {
+			if (e == GFARM_ERR_UNEXPECTED_EOF) {
+				gflog_error(GFARM_MSG_1002286,
+				    "back_channel(%s): disconnected",
+				    host_name(host));
+			} else {
+				gflog_error(GFARM_MSG_1002287,
+				    "back_channel(%s): "
+				    "request error, reset: %s",
+				     host_name(host), gfarm_error_string(e));
+			}
 			sync_back_channel_free(host);
 			host_disconnect_request(host, peer);
 			host_receiver_unlock(host, peer);
@@ -804,8 +842,12 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    back_channel_recv_thread_pool,
 		    back_channel_main);
 
-		if (host_is_up(host)) /* throw away old connetion */
+		if (host_is_up(host)) /* throw away old connetion */ {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "back_channel(%s): switching to new connection",
+			    host_name(host));
 			host_disconnect(host, NULL);
+		}
 
 		giant_lock();
 		host_peer_set(host, peer, version);
