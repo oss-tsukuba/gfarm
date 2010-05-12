@@ -2444,12 +2444,13 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)inode_get_size(inode));
 		e = inode_remove_replica_gen_deferred(inode, fr->dst, fr->igen,
 		    0, &dfc);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR) {
+			removal_pendingq_enqueue(dfc);
+		} else {
 			gflog_error(GFARM_MSG_1002258,
 			    "inode_replicated: inode_remove_replica: %s",
 			    gfarm_error_string(e));
 		}
-		removal_pendingq_enqueue(dfc);
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	}
 
