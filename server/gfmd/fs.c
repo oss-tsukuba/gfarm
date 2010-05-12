@@ -934,6 +934,9 @@ gfm_server_cksum_get(struct peer *peer, int from_client, int skip)
 		if (cksumbuf == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			free(cksum_type);
+#if 1 /* shut up warning by Fortify */
+			cksum_type = NULL;
+#endif
 		} else {
 			memcpy(cksumbuf, cksum, cksum_len);
 			alloced = 1;
