@@ -701,9 +701,10 @@ dead_file_copy_host_becomes_down(struct host *host)
 }
 
 static int
-host_filter(struct dead_file_copy *dfc, gfarm_ino_t inum, struct host *host)
+transparent_filter(struct dead_file_copy *dfc,
+	gfarm_ino_t inum, struct host *host)
 {
-	return (dfc->host == host);
+	return (1);
 }
 
 /*
@@ -718,7 +719,19 @@ dead_file_copy_host_becomes_up(struct host *host)
 {
 	static const char diag[] = "dead_file_copy_host_becomes_up";
 
-	dead_file_copy_scan_deferred(0, host, host_filter, diag);
+	/*
+	 * in this case, we have to check dead_file_copy data for *all* hosts,
+	 * not only the host which becomes up.
+	 *
+	 * for the host which becomes up:
+	 *	we should start to send pending dead_file_copy entries.
+	 * for hosts except the host which becomes up:
+	 *	the host which becomes up may have some replicas which
+	 *	only exists on the host.  in that case, other hosts may
+	 *	have pending dead_file_copy entries which processing is
+	 *	deferred because only owner of the newest replica is down.
+	 */
+	dead_file_copy_scan_deferred(0, NULL, transparent_filter, diag);
 
 	/* leave the host_busyq as is, because it will be handled shortly. */
 }
