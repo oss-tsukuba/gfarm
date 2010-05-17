@@ -662,7 +662,7 @@ host_sender_unlock(struct host *host, struct peer *peer)
 		host->can_send = 1;
 		host->busy_time = 0;
 	}
-	peer_del_ref(host->peer);
+	peer_del_ref(peer);
 	gfarm_cond_signal(&host->ready_to_send, diag, "ready_to_send");
 
 	gfarm_mutex_unlock(&host->back_channel_mutex, diag, "back_channel");
