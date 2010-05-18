@@ -43,7 +43,7 @@ giant_unlock(void)
 	gfarm_mutex_unlock(&giant_mutex, "giant_unlock", "giant");
 }
 
-void
+static void
 gfarm_pthread_attr_setstacksize(pthread_attr_t *attr)
 {
 	int err;

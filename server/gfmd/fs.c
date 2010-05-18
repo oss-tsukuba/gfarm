@@ -1,3 +1,4 @@
+#include <pthread.h>	/* db_access.h currently needs this */
 #include <assert.h>
 #include <stdarg.h> /* for "gfp_xdr.h" */
 #include <stdlib.h>
