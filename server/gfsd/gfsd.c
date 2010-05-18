@@ -172,11 +172,24 @@ cleanup_accepting(int sighandler)
 	}
 }
 
+static void close_all_fd(void);
+
 /* this routine should be called before calling exit(). */
 static void
 cleanup(int sighandler)
 {
-	if (getpid() == master_gfsd_pid) {
+	static int cleanup_started = 0;
+	pid_t pid = getpid();
+
+	if (!cleanup_started) {
+		cleanup_started = 1;
+
+		if (pid != master_gfsd_pid && pid != back_channel_gfsd_pid &&
+		    !sighandler)
+			close_all_fd(); /* may recursivelly call cleanup() */
+	}
+
+	if (pid == master_gfsd_pid) {
 		cleanup_accepting(sighandler);
 		/* send terminate signal to a back channel process */
 		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
@@ -192,11 +205,6 @@ cleanup(int sighandler)
 		/* It's not safe to do the following operation */
 		gflog_notice(GFARM_MSG_1000451, "disconnected");
 	}
-}
-
-void
-parent_cleanup(void)
-{
 }
 
 static void
@@ -726,6 +734,20 @@ file_table_set_written(gfarm_int32_t net_fd)
 	file_entry_set_mtime(fe, now.tv_sec, 0);
 }
 
+static void
+file_table_for_each(void (*callback)(void *, gfarm_int32_t), void *closure)
+{
+	gfarm_int32_t net_fd;
+
+	if (file_table == NULL)
+		return;
+
+	for (net_fd = 0; net_fd < file_table_size; net_fd++) {
+		if (file_table[net_fd].local_fd != -1)
+			(*callback)(closure, net_fd);
+	}
+}
+
 int
 gfs_open_flags_localize(int open_flags)
 {
@@ -1159,17 +1181,14 @@ close_result(struct file_entry *fe, gfarm_int32_t *gen_update_result_p)
 	}
 }
 
-void
-gfs_server_close(struct gfp_xdr *client)
+gfarm_error_t
+close_fd(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
-	int fd, stat_is_done = 0;
+	int stat_is_done = 0;
 	struct file_entry *fe;
 	struct stat st;
 	gfarm_int32_t gen_update_result = -1;
-	static const char diag[] = "GFS_PROTO_CLOSE";
-
-	gfs_server_get_request(client, diag, "i", &fd);
 
 	if ((fe = file_table_entry(fd)) == NULL) {
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
@@ -1245,7 +1264,30 @@ gfs_server_close(struct gfp_xdr *client)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 	}
+	return (e);
+}
 
+static void
+close_fd_adapter(void *closure, gfarm_int32_t fd)
+{
+	close_fd(fd, closure);
+}
+
+static void
+close_all_fd(void)
+{
+	file_table_for_each(close_fd_adapter, "closing all descriptor");
+}
+
+void
+gfs_server_close(struct gfp_xdr *client)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd;
+	static const char diag[] = "GFS_PROTO_CLOSE";
+
+	gfs_server_get_request(client, diag, "i", &fd);
+	e = close_fd(fd, diag);
 	gfs_server_put_reply(client, diag, e, "");
 }
 
