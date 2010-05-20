@@ -15,13 +15,25 @@
   ていますが、Red Hat 8 では確認されていません。
 
   対処予定:
-	各 Linux ディストリビューション作成側に依存します。
-	Fedore Core Linux に関しては下記のバグデータベースを
-	参照ください。
-		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
-	nss_ldap の開発元に関しては、下記のバグデータベースを参照
+	nss_ldap の開発元に関しては、下記のバグデータベースを参照して
 	ください。
 		http://bugzilla.padl.com/show_bug.cgi?id=271
+		http://bugzilla.padl.com/show_bug.cgi?id=414
+
+	具体的な解決策は、各 Linux ディストリビューション作成側に依存します。
+
+	Fedore Core Linux に関しては下記のバグデータベースを参照して
+	ください。
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+
+	Red Hat Enterprise Linux に関しては下記のバグデータベースを参照して
+	ください。
+		https://bugzilla.redhat.com/show_bug.cgi?id=474181
+	Red Hat Enterprise Linux 5 および CentOS 5 については、
+	nss_ldap-253-17.el5 以降の RPM で症状が緩和する可能性がありますが、
+	未確認です。この RPM に含まれる修正については、以下の RHBA-2009:0241-4
+	を参照してください。
+	    http://www.jp.redhat.com/support/errata/RHBA/RHBA-2009-0241J.html
 
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 

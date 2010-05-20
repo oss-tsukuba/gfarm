@@ -16,13 +16,23 @@
   but haven't been observed in Red Hat 8.
 
   Plans for fixes:
-	This depends on each Linux distributon vendors.
-	For RedHat Enterprise Linux, please refer the following bug
-	database:
-		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
 	For original vendor of the nss_ldap, please refer the following
 	bug database:
 		http://bugzilla.padl.com/show_bug.cgi?id=271
+		http://bugzilla.padl.com/show_bug.cgi?id=414
+
+	The concrete solution depends on each Linux distributon vendors.
+
+	For Fedore Core Linux, please refer the following bug database:
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+
+	For Red Hat Enterprise Linux, please refer the following bug database:
+		https://bugzilla.redhat.com/show_bug.cgi?id=474181
+	For Red Hat Enterprise Linux 5 and CentOS 5, 
+	nss_ldap-253-17.el5 RPM or later version may mitigate this problem,
+	but we haven't tested it yet.  Please refer RHBA-2009:0241-4 below
+	for the changes in the RPM:
+		http://rhn.redhat.com/errata/RHBA-2009-0241.html
 
 - gfs_pio_sync() doesn't really update the metadata now.
 
