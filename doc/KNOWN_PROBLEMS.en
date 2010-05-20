@@ -166,3 +166,28 @@ command.
 
   Plans for fixes:
 	Not determined yet.
+
+
+*** Problems with gfarm2fs commands
+
+- When multiple different open(2) calls are made against same file,
+  the consistency which is usually expected in read(2)/write(2) system
+  calls is not always achieved.
+  This is because gfarm2fs uses distinct gfs_pio_open() call or
+  gfs_pio_create() call for each open(2) call, and as the result,
+  the gfarm library and the kernel network layer use different buffers
+  for the calls.  For example, database files for PostgreSQL cannot be
+  provided by gfarm2fs due to this problem.
+
+  Plans for fixes:
+	Not determined yet.
+
+- After a ftruncate(2) system call, a read(2) system call against same
+  file may return short size than expected.
+  This is because FUSE uses the "getattr" entry point (instead of
+  "fgetattr") in this case, and the read(2) size will be affected by
+  the problem that "the stat API doesn't return the exact file size
+  until the file is closed" which is described above.
+
+  Plans for fixes:
+	We are planning a fix.
