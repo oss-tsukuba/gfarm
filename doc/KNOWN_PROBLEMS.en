@@ -16,8 +16,13 @@
   but haven't been observed in Red Hat 8.
 
   Plans for fixes:
-	There is no plan to fix this problem, because we haven't yet found
-	any valid countermeasure.
+	This depends on each Linux distributon vendors.
+	For RedHat Enterprise Linux, please refer the following bug
+	database:
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+	For original vendor of the nss_ldap, please refer the following
+	bug database:
+		http://bugzilla.padl.com/show_bug.cgi?id=271
 
 - gfs_pio_sync() doesn't really update the metadata now.
 

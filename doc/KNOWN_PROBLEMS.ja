@@ -15,7 +15,13 @@
   ていますが、Red Hat 8 では確認されていません。
 
   対処予定:
-	現在のところ、有効な対策が不明なため対処の予定はありません。
+	各 Linux ディストリビューション作成側に依存します。
+	Fedore Core Linux に関しては下記のバグデータベースを
+	参照ください。
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+	nss_ldap の開発元に関しては、下記のバグデータベースを参照
+	ください。
+		http://bugzilla.padl.com/show_bug.cgi?id=271
 
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 
