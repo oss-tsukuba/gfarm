@@ -111,15 +111,12 @@ struct gfs_file_section_context {
  *         ^        ^                     ^
  *         0        p                   length
  *
+ * the following conditions are valid usually, but not always:
+ *
  * on write:
  *	io_offset == offset
  * on sequential write:
  *	io_offset == offset && p == length
  * on read:
  *	io_offset == offset + length
- *
- * switching from writing to reading:
- *	no problem, flush the buffer if `p' beyonds `length'.
- * switching from reading to writing:
- *	usually, seek is needed.
  */

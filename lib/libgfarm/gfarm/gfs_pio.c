@@ -391,7 +391,10 @@ gfs_pio_fillbuf(GFS_File gf, size_t size)
 	} else
 		gfs_pio_purge(gf);
 
-	assert(gf->io_offset == gf->offset);
+	if (gf->io_offset != gf->offset) {
+		gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
+		gf->io_offset = gf->offset;
+	}
 
 	e = (*gf->ops->view_pread)(gf, gf->buffer, size, gf->io_offset, &len);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -421,7 +424,6 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (gf->io_offset != gf->offset) {
-		/* this happens when switching from reading to writing */
 		gf->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
 		gf->io_offset = gf->offset;
 	}
@@ -503,7 +505,7 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 		where = offset + gf->offset + gf->p;
 		break;
 	case GFARM_SEEK_END:
-		/* XXX FIXME: ask the file size to gfmd. */
+		/* XXX FIXME: ask the file size to gfsd. */
 		e = gf->error = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 		gflog_debug(GFARM_MSG_1001307,
 			"GFARM_SEEK_END option is not supported: %s",
