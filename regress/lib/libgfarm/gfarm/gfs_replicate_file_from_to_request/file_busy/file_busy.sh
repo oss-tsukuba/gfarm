@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-trap 'gfrm $gftmp; rm -f $localtmp exit $exit_trap' $trap_sigs
+trap 'gfrm $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
 GFARM_FILE_RDWR=2	# from <gfarm/gfs.h>
 
