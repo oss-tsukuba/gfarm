@@ -1,7 +1,7 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.5.10]
+[2010.5.24]
 
 New Feature
 * update-based replica consistency protocol
@@ -57,6 +57,8 @@ Bug fix
   replicating at the same time
 * fix rename problem such that a directory cannot be deleted or orphan
   inodes remain after rebooting gfmd
+* fix missing file close operation when a client crashes
+* fix invalid assertion failure in libgfarm in rather rare file operations
 * fix missing automatic reconnection to gfmd
 * fix file replication error during the file update
 * fix file update problem during replication
