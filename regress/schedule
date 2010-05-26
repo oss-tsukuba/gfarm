@@ -1,5 +1,6 @@
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
+lib/libgfarm/gfarm/gfs_pio_create/create/normal.sh
 lib/libgfarm/gfarm/gfs_pio_open/open_read/file_trunc.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
