@@ -2,4 +2,4 @@
 
 . ./regress.conf
 
-sh -x $testbase/gfrm.sh $data/0byte
+sh $testbase/gfrm.sh $data/0byte
