@@ -1,10 +1,10 @@
-top_builddir = ../../../../../..
+top_builddir = ../../../../..
 top_srcdir = $(top_builddir)
 srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = open_read
+PROGRAM = gfs_pio_test
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
 CFLAGS = $(COMMON_CFLAGS)

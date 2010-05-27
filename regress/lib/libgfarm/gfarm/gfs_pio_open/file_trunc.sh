@@ -2,13 +2,12 @@
 
 . ./regress.conf
 
-trap 'gfrm $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
+gfs_pio_test=$testbin/../gfs_pio_test/gfs_pio_test
 
-#FLAGS=0x00000400	# GFARM_FILE_RDONLY|GFARM_FILE_TRUNC
-FLAGS=0x00000402	# GFARM_FILE_RDWR|GFARM_FILE_TRUNC
+trap 'gfrm -f $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
 if gfreg $data/1byte $gftmp &&
-   $testbin/open_read $gftmp $FLAGS >$localtmp &&
+   $gfs_pio_test -r -t -R 1024 $gftmp >$localtmp &&
    [ `LC_ALL=C wc -c <$localtmp` = 0 ] &&
    gfls -l $gftmp |
 	awk '{size=$5; print size; if (size == 0) exit(0); else exit(1) }'
