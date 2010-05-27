@@ -115,4 +115,4 @@ echo "  unsupported        : $n_unsupported"
 fi
 
 case $n_trap in 0) :;; *) exit $exit_trap;; esac
-[ $n_fail -eq 0 ]
+[ $n_fail -eq 0 -a $n_unresolved -eq 0 ]
