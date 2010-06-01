@@ -714,6 +714,7 @@ process_reopen_file(struct process *process,
 
 	fo->u.f.spool_opener = peer;
 	fo->u.f.spool_host = spool_host;
+	fo->flag &= ~GFARM_FILE_TRUNC_PENDING; /*spool_host will truncate it*/
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
 	*modep = inode_get_mode(fo->inode);

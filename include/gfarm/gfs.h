@@ -68,6 +68,11 @@ int gfs_desc_fileno(GFS_Desc);
 #if 0 /* not yet on Gfarm v2 */
 #define GFARM_FILE_APPEND		0x00000800
 #define GFARM_FILE_EXCLUSIVE		0x00001000
+#endif
+#ifdef GFARM_INTERNAL_USE /* internal use only */
+#define GFARM_FILE_TRUNC_PENDING	0x00800000 /* used by gfmd only */
+#endif
+#if 0
 /* the followings are just hints */
 #define GFARM_FILE_SEQUENTIAL		0x01000000
 #define GFARM_FILE_REPLICATE		0x02000000

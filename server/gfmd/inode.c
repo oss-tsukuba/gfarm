@@ -619,6 +619,7 @@ static gfarm_error_t
 remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 	int, struct dead_file_copy **);
 
+/* spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING */
 static void
 inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t old_gen, int start_replication)
@@ -636,7 +637,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		*copyp = copy->host_next;
 
 		/* if there is ongoing replication, don't start new one */
-		if (start_replication && copy->valid &&
+		if (start_replication && copy->valid && spool_host != NULL &&
 		    host_is_up(copy->host) &&
 		    host_supports_async_protocols(copy->host) &&
 		    dead_file_copy_remove(inode->i_number, inode->i_gen,
@@ -1959,6 +1960,12 @@ inode_open(struct file_opening *fo)
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ios->u.f.writers;
+	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
+		inode_status_changed(inode);
+		inode_modified(inode);
+		inode_set_size(inode, 0);
+		fo->flag |= GFARM_FILE_TRUNC_PENDING;
+	}
 
 	fo->opening_prev = &ios->openings;
 	fo->opening_next = ios->openings.opening_next;
@@ -1979,6 +1986,12 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 
+	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
+		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
+		    NULL, NULL);
+	} else if (atime != NULL)
+		inode_set_atime(inode, atime);
+
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
 	if (ios->openings.opening_next == &ios->openings) { /* all closed */
@@ -1990,15 +2003,17 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 	} else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ios->u.f.writers;
 
-	if (atime != NULL)
-		inode_set_atime(inode, atime);
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL)) {
 		inode_remove(inode); /* clears `ios->u.f.cksum_owner' too. */
 	}
 }
 
-/* returns TRUE, if generation number is updated */
+/*
+ * returns TRUE, if generation number is updated.
+ *
+ * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
+ */
 int
 inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
@@ -2023,7 +2038,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 
 	old_gen = inode->i_gen;
 
-	if (host_supports_async_protocols(spool_host)) {
+	if (spool_host == NULL || host_supports_async_protocols(spool_host)) {
 		/* update generation number */
 		if (old_genp != NULL)
 			*old_genp = inode->i_gen;
