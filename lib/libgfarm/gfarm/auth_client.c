@@ -775,6 +775,7 @@ gfarm_auth_request_next_method(struct gfarm_auth_request_state *state)
 	if (state->last_error == GFARM_ERR_NO_ERROR ||
 	    (state->last_error != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 	     state->last_error != GFARM_ERR_EXPIRED &&
+	     state->last_error != GFARM_ERR_PERMISSION_DENIED &&
 	     state->last_error != GFARM_ERR_AUTHENTICATION)) {
 		state->error = state->last_error;
 	} else {
