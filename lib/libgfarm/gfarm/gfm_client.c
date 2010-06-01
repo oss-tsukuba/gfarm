@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <assert.h>
 #include <stdio.h> /* for config.h */
 #include <stddef.h>
@@ -10,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h> /* TCP_NODELAY */
 #include <netdb.h>
 #include <time.h>
 
@@ -2219,14 +2221,38 @@ gfm_client_switch_back_channel(struct gfm_connection *gfm_server)
 }
 #endif
 
+static struct protoent *gfm_tcp_proto = NULL;
+
+static void
+gfm_tcp_proto_initialize(void)
+{
+	gfm_tcp_proto = getprotobyname("tcp");
+}
+
 gfarm_error_t
 gfm_client_switch_async_back_channel(struct gfm_connection *gfm_server,
 	gfarm_int32_t version, gfarm_int64_t gfsd_cookie,
 	gfarm_int32_t *gfmd_knows_me_p)
 {
-	return (gfm_client_rpc(gfm_server, 0,
+	gfarm_error_t e = gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il/i",
-	    version, gfsd_cookie, gfmd_knows_me_p));
+	    version, gfsd_cookie, gfmd_knows_me_p);
+	int v = 1;
+	static pthread_once_t gfm_tcp_proto_initialized = PTHREAD_ONCE_INIT;
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
+	if (gfm_tcp_proto == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "getprotobyname(\"tcp\") failed, slower back channel");
+	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
+	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "setting TCP_NODELAY failed, slower back channel");
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
