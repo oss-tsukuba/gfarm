@@ -331,6 +331,7 @@ gfarm_auth_request(struct gfp_xdr *conn,
 		}
 		if (e != GFARM_ERR_PROTOCOL_NOT_SUPPORTED &&
 		    e != GFARM_ERR_EXPIRED &&
+		    e != GFARM_ERR_PERMISSION_DENIED &&
 		    e != GFARM_ERR_AUTHENTICATION) {
 			gflog_debug(GFARM_MSG_1001052,
 				"Method protocol error: %s",
