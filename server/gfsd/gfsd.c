@@ -502,7 +502,7 @@ gfs_async_server_put_reply_with_errno(struct gfp_xdr *client,
 }
 
 gfarm_error_t
-gfm_async_client_send_request(struct gfp_xdr *gfmd_conn,
+gfm_async_client_send_request(struct gfp_xdr *bc_conn,
 	gfp_xdr_async_peer_t async, const char *diag,
 	gfarm_int32_t (*result_callback)(void *, void *, size_t),
 	void (*disconnect_callback)(void *, void *),
@@ -513,12 +513,12 @@ gfm_async_client_send_request(struct gfp_xdr *gfmd_conn,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfp_xdr_vsend_async_request(gfmd_conn, async,
+	e = gfp_xdr_vsend_async_request(bc_conn, async,
 	    result_callback, disconnect_callback, closure,
 	    command, format, &ap);
 	va_end(ap);
 	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(gfmd_conn);
+		e = gfp_xdr_flush(bc_conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002164,
 		    "gfm_async_client_send_request %s: %s",
@@ -527,7 +527,7 @@ gfm_async_client_send_request(struct gfp_xdr *gfmd_conn,
 }
 
 gfarm_error_t
-gfm_async_client_recv_reply(struct gfp_xdr *gfmd_conn, const char *diag,
+gfm_async_client_recv_reply(struct gfp_xdr *bc_conn, const char *diag,
 	size_t size, const char *format, ...)
 {
 	gfarm_error_t e;
@@ -535,7 +535,7 @@ gfm_async_client_recv_reply(struct gfp_xdr *gfmd_conn, const char *diag,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc_result_sized(gfmd_conn, 0, &size,
+	e = gfp_xdr_vrpc_result_sized(bc_conn, 0, &size,
 	    &errcode, &format, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -546,7 +546,7 @@ gfm_async_client_recv_reply(struct gfp_xdr *gfmd_conn, const char *diag,
 		gflog_error(GFARM_MSG_1002166,
 		    "gfm_async_client_recv_reply %s: protocol residual %d",
 		    diag, (int)size);
-		if ((e = gfp_xdr_purge(gfmd_conn, 0, size))
+		if ((e = gfp_xdr_purge(bc_conn, 0, size))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_warning(GFARM_MSG_1002167,
 			    "gfm_async_client_recv_reply %s: skipping: %s",
@@ -3718,9 +3718,9 @@ datagram_server(int sock)
 gfarm_int32_t
 gfm_async_client_replication_result(void *peer, void *arg, size_t size)
 {
-	struct gfp_xdr *gfmd_conn = peer;
+	struct gfp_xdr *bc_conn = peer;
 
-	return (gfm_async_client_recv_reply(gfmd_conn,
+	return (gfm_async_client_recv_reply(bc_conn,
 	    "gfm_async_client_replication_result", size, ""));
 }
 
@@ -3732,12 +3732,12 @@ void
 gfm_async_client_replication_free(void *peer, void *arg)
 {
 #if 0
-	struct gfp_xdr *gfmd_conn = peer;
+	struct gfp_xdr *bc_conn = peer;
 #endif
 }
 
 gfarm_error_t
-replication_result_notify(struct gfp_xdr *gfmd_conn,
+replication_result_notify(struct gfp_xdr *bc_conn,
 	gfp_xdr_async_peer_t async, struct ongoing_replication *rep)
 {
 	gfarm_error_t e;
@@ -3763,7 +3763,7 @@ replication_result_notify(struct gfp_xdr *gfmd_conn,
 		if (errcodes.dst_errcode == GFARM_ERR_NO_ERROR)
 			errcodes.dst_errcode = GFARM_ERR_UNKNOWN;
 	}
-	e = gfm_async_client_send_request(gfmd_conn, async, diag,
+	e = gfm_async_client_send_request(bc_conn, async, diag,
 	    gfm_async_client_replication_result,
 	    gfm_async_client_replication_free,
 	    /* rep */ NULL,
@@ -3840,7 +3840,7 @@ static void
 back_channel_server(void)
 {
 	gfarm_error_t e;
-	struct gfp_xdr *gfmd_conn;
+	struct gfp_xdr *bc_conn;
 	gfp_xdr_async_peer_t async;
 	enum gfp_xdr_msg_type type;
 	gfp_xdr_xid_t xid;
@@ -3872,16 +3872,16 @@ back_channel_server(void)
 			    gfarm_error_string(e));
 		}
 
-		gfmd_conn = gfm_client_connection_conn(gfm_server);
+		bc_conn = gfm_client_connection_conn(gfm_server);
 
 		gflog_debug(GFARM_MSG_1000563, "back channel mode");
 		for (;;) {
-			if (!gfp_xdr_recv_is_ready(gfmd_conn)) {
-				if (!watch_fds(gfmd_conn, async))
+			if (!gfp_xdr_recv_is_ready(bc_conn)) {
+				if (!watch_fds(bc_conn, async))
 					break;
 			}
 
-			e = gfp_xdr_recv_async_header(gfmd_conn, 0,
+			e = gfp_xdr_recv_async_header(bc_conn, 0,
 			    &type, &xid, &size);
 			if (e != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF) {
@@ -3896,13 +3896,13 @@ back_channel_server(void)
 			}
 			if (type == GFP_XDR_TYPE_RESULT) {
 				e = gfp_xdr_callback_async_result(async,
-				    gfmd_conn, xid, size, &rv);
+				    bc_conn, xid, size, &rv);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_warning(GFARM_MSG_1002196,
 					    "(back channel) unknown reply "
 					    "xid:%d size:%d",
 					    (int)xid, (int)size);
-					e = gfp_xdr_purge(gfmd_conn, 0, size);
+					e = gfp_xdr_purge(bc_conn, 0, size);
 					if (e != GFARM_ERR_NO_ERROR) {
 						gflog_error(GFARM_MSG_1002197,
 						    "skipping %d bytes: %s",
@@ -3922,7 +3922,7 @@ back_channel_server(void)
 				    "async_back_channel_service: type %d",
 				    type);
 			}
-			e = gfp_xdr_recv_request_command(gfmd_conn, 0, &size,
+			e = gfp_xdr_recv_request_command(bc_conn, 0, &size,
 			    &request);
 			if (e != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF) {
@@ -3938,26 +3938,26 @@ back_channel_server(void)
 			switch (request) {
 			case GFS_PROTO_FHSTAT:
 				e = gfs_async_server_fhstat(
-				    gfmd_conn, xid, size);
+				    bc_conn, xid, size);
 				break;
 			case GFS_PROTO_FHREMOVE:
 				e = gfs_async_server_fhremove(
-				    gfmd_conn, xid, size);
+				    bc_conn, xid, size);
 				break;
 			case GFS_PROTO_STATUS:
 				e = gfs_async_server_status(
-				    gfmd_conn, xid, size);
+				    bc_conn, xid, size);
 				break;
 			case GFS_PROTO_REPLICATION_REQUEST:
 				e = gfs_async_server_replication_request(
-				    gfmd_conn, xid, size);
+				    bc_conn, xid, size);
 				break;
 			default:
 				gflog_error(GFARM_MSG_1000566,
 				    "(back channel) unknown request %d "
 				    "(xid:%d size:%d), skip",
 				    (int)request, (int)xid, (int)size);
-				e = gfp_xdr_purge(gfmd_conn, 0, size);
+				e = gfp_xdr_purge(bc_conn, 0, size);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1002200,
 					    "skipping %d bytes: %s",
@@ -3969,7 +3969,7 @@ back_channel_server(void)
 				break;
 		}
 		gfm_client_reconnect();
-		gfp_xdr_async_peer_free(async, gfmd_conn);
+		gfp_xdr_async_peer_free(async, bc_conn);
 	}
 }
 
