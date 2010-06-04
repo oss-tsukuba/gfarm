@@ -199,10 +199,10 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 			    "invalid format character: %c(%x)",
 			    command, *format, *format);
 		}
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(server);
 	}
 	va_end(ap);
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(server);
 
 	if (e != GFARM_ERR_NO_ERROR) { /* must be IS_CONNECTION_ERROR(e) */
 		back_channel_disconnect_request(host, peer,

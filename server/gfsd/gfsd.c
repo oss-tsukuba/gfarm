@@ -517,8 +517,6 @@ gfm_async_client_send_request(struct gfp_xdr *bc_conn,
 	    result_callback, disconnect_callback, closure,
 	    command, format, &ap);
 	va_end(ap);
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(bc_conn);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002164,
 		    "gfm_async_client_send_request %s: %s",
