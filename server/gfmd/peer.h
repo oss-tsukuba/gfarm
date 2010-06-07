@@ -13,6 +13,7 @@ void peer_authorized(struct peer *,
 	enum gfarm_auth_method);
 void peer_free(struct peer *);
 void peer_shutdown_all(void);
+void peer_invoked(struct peer *);
 void peer_watch_access(struct peer *);
 
 struct peer *peer_by_fd(int);

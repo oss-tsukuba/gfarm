@@ -719,6 +719,7 @@ back_channel_main(void *arg)
 		    "back_channel(%s): aborted: %s",
 		    host_name(host), gfarm_error_string(e));
 		sync_back_channel_free(host);
+		peer_invoked(peer0);
 		return (NULL);
 	}
 	/*
@@ -731,8 +732,13 @@ back_channel_main(void *arg)
 		    host_name(host));
 		sync_back_channel_free(host);
 		host_receiver_unlock(host, peer);
+		peer_invoked(peer0);
 		return (NULL);
 	}
+
+	/* now, host_receiver_lock() is protecting this peer */
+	peer_invoked(peer); 
+
 	async = peer_get_async(peer);
 
 	do {

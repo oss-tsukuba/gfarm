@@ -644,6 +644,12 @@ protocol_main(void *arg)
 {
 	struct peer *peer = arg;
 
+	/*
+	 * the reason we call peer_invoked() here is just for consistency,
+	 * because currently this is unnecessary for a foreground channel.
+	 */
+	peer_invoked(peer);
+
 	do {
 		if (protocol_service(peer))
 			return (NULL); /* end of gfmd protocol session */

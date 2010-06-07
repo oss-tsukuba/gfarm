@@ -77,7 +77,8 @@ struct peer {
 	volatile sig_atomic_t control;
 #define PEER_WATCHING	1
 	/* XXX FIXME: #66 - unexpected collision to access peer:control */
-#define PEER_WATCHED	2
+#define PEER_WATCHED	2	/* to see whether there is unexpected wakeup */
+#define PEER_INVOKING	4	/* wait until protocol_handler is invoked */
 	pthread_mutex_t control_mutex;
 
 	struct protocol_state pstate;
@@ -456,6 +457,7 @@ peer_watcher(void *arg)
 				if (!skip) {
 					peer->control &=
 					    ~(PEER_WATCHING|PEER_WATCHED);
+					peer->control |= PEER_INVOKING;
 				}
 				gfarm_mutex_unlock(&peer->control_mutex,
 				    "peer_watcher invoking",
@@ -540,7 +542,13 @@ peer_closer(void *arg)
 		if (peer == NULL) {
 			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
 			    &peer_closing_queue.mutex,
-			    diag, "ready to close");
+			    diag, "waiting for host_sender/receiver_unlock");
+			continue;
+		}
+		if ((peer->control & PEER_INVOKING) != 0) {
+			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
+			    &peer_closing_queue.mutex,
+			    diag, "wait until protocol handler is invoked");
 			continue;
 		}
 
@@ -878,6 +886,20 @@ peer_shutdown_all(void)
 #ifdef HAVE_EPOLL_WAIT
 	close(peer_epoll.fd);
 #endif
+}
+
+void
+peer_invoked(struct peer *peer)
+{
+	/* XXX FIXME: #66 - unexpected collision to access peer:control */
+	gfarm_mutex_lock(&peer->control_mutex,
+	    "peer_watch_access", "peer:control_mutex");
+	peer->control &= ~PEER_INVOKING;
+	gfarm_mutex_unlock(&peer->control_mutex,
+	    "peer_watch_access", "peer:control_mutex");
+
+	gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+	    "peer_invoked", "connection can be freed");
 }
 
 void
