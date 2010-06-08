@@ -64,7 +64,7 @@ char REMOVED_HOST_NAME[] = "gfarm-removed-host";
 static struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
 
-/* NOTE: each entry should be checked by host_is_active(h) too */
+/* NOTE: each entry should be checked by host_is_valid(h) too */
 #define FOR_ALL_HOSTS(it) \
 	for (gfarm_hash_iterator_begin(host_hashtab, (it)); \
 	    !gfarm_hash_iterator_is_end(it); \
@@ -93,25 +93,47 @@ host_iterator_access(struct gfarm_hash_iterator *it)
 static void
 host_invalidate(struct host *h)
 {
+	pthread_mutex_lock(&h->remover_mutex);
 	h->invalid = 1;
+	pthread_mutex_unlock(&h->remover_mutex);
 }
 
 static void
 host_activate(struct host *h)
 {
+	pthread_mutex_lock(&h->remover_mutex);
 	h->invalid = 0;
+	pthread_mutex_unlock(&h->remover_mutex);
 }
 
 static int
 host_is_invalidated(struct host *h)
 {
-	return (h->invalid == 1);
+	int invalid;
+
+	pthread_mutex_lock(&h->remover_mutex);
+	invalid = h->invalid;
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (invalid == 1);
 }
 
 static int
-host_is_active(struct host *h)
+host_is_valid_unlocked(struct host *h)
 {
-	return (h != NULL && !host_is_invalidated(h));
+	return (h != NULL && h->invalid == 0);
+}
+
+static int
+host_is_valid(struct host *h)
+{
+	int r;
+
+	if (h == NULL)
+		return (0);
+	pthread_mutex_lock(&h->remover_mutex);
+	r = host_is_valid_unlocked(h);
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (r);
 }
 
 static struct host *
@@ -155,7 +177,7 @@ host_addr_lookup(const char *hostname, struct sockaddr *addr)
 
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (!host_is_active(h))
+		if (!host_is_valid(h))
 			continue;
 		hp = gethostbyname(h->hi.hostname);
 		if (hp == NULL || hp->h_addrtype != AF_INET)
@@ -268,9 +290,22 @@ host_peer_set(struct host *h, struct peer *p)
 }
 
 void
+host_total_disk_update(gfarm_uint64_t used, gfarm_uint64_t avail)
+{
+	pthread_mutex_lock(&total_disk_mutex);
+	total_disk_used += used;
+	total_disk_avail += avail;
+	pthread_mutex_unlock(&total_disk_mutex);
+}
+
+void
 host_peer_unset(struct host *h)
 {
 	pthread_mutex_lock(&h->remover_mutex);
+	if (h->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL)
+		host_total_disk_update(-h->disk_used, -h->disk_avail);
+	h->report_flags = 0;
+
 	h->peer = NULL;
 	h->is_active = 0;
 	/* terminate a remover thread */
@@ -290,32 +325,71 @@ host_peer_disconnect(struct host *h)
 	}
 }
 
+static struct peer *
+host_peer_unlocked(struct host *h)
+{
+	return(h->peer);
+}
+
 struct peer *
 host_peer(struct host *h)
 {
-	return (h->peer);
+	struct peer *peer;
+
+	pthread_mutex_lock(&h->remover_mutex);
+	peer = host_peer_unlocked(h);
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (peer);
+}
+
+char *
+host_name_unlocked(struct host *h)
+{
+	return (host_is_valid_unlocked(h) ?
+	    h->hi.hostname : REMOVED_HOST_NAME);
 }
 
 char *
 host_name(struct host *h)
 {
-	return (host_is_active(h) ? h->hi.hostname : REMOVED_HOST_NAME);
+	char *hostname;
+
+	if (h == NULL)
+		return (REMOVED_HOST_NAME);
+	pthread_mutex_lock(&h->remover_mutex);
+	hostname = host_name_unlocked(h);
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (hostname);
 }
 
 int
 host_port(struct host *h)
 {
-	return (h->hi.port);
+	int port;
+
+	pthread_mutex_lock(&h->remover_mutex);
+	port = h->hi.port;
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (port);
+}
+
+static int
+host_is_up_unlocked(struct host *h)
+{
+	return (host_is_valid_unlocked(h) && h->is_active);
 }
 
 int
 host_is_up(struct host *h)
 {
-	/*
-	 * XXX - should be called with mutex h->remover_mutex,
-	 * but it is not always satisfied.
-	 */
-	return (host_is_active(h) && h->is_active);
+	int r;
+
+	if (h == NULL)
+		return (0);
+	pthread_mutex_lock(&h->remover_mutex);
+	r = host_is_up_unlocked(h);
+	pthread_mutex_unlock(&h->remover_mutex);
+	return (r);
 }
 
 void
@@ -360,7 +434,7 @@ host_remove_replica(struct host *host, struct timespec *timeout)
 			pthread_mutex_unlock(&host->remover_mutex);
 			return (GFARM_ERR_OPERATION_TIMED_OUT);
 		}
-		if (!host_is_up(host)) {
+		if (!host_is_up_unlocked(host)) {
 			pthread_mutex_unlock(&host->remover_mutex);
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
@@ -393,16 +467,19 @@ host_remove_replica_dump(struct host *host)
 	pthread_mutex_lock(&host->remover_mutex);
 	r = host->to_be_removed;
 	while (r != NULL) {
-		e = db_deadfilecopy_add(r->inum, r->igen, host_name(host));
+		e = db_deadfilecopy_add(
+			r->inum, r->igen, host_name_unlocked(host));
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000263,
 			    "db_deadfilecopy_add(%" GFARM_PRId64
-				    ", %s): %s", r->inum, host_name(host),
+				    ", %s): %s", r->inum,
+				    host_name_unlocked(host),
 				    gfarm_error_string(e));
 		else if (debug_mode)
 			gflog_debug(GFARM_MSG_1000264,
 			    "db_deadfilecopy_add(%" GFARM_PRId64
-				    ", %s): added", r->inum, host_name(host));
+				    ", %s): added", r->inum,
+				    host_name_unlocked(host));
 		nr = r->next;
 		free(r);
 		r = nr;
@@ -421,7 +498,7 @@ host_remove_replica_dump_all(void)
 
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (host_is_active(h)) {
+		if (host_is_valid(h)) {
 			e = host_remove_replica_dump(h);
 			if (e != GFARM_ERR_NO_ERROR)
 				gflog_warning(GFARM_MSG_1000265,
@@ -436,30 +513,32 @@ host_update_status(struct host *host)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
+	double loadavg_1min, loadavg_5min, loadavg_15min;
+	gfarm_off_t disk_used, disk_avail;
 
+	pthread_mutex_lock(&host->remover_mutex);
 	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
 		saved_used = host->disk_used;
 		saved_avail = host->disk_avail;
 	}
-	e = gfs_client_status(host_peer(host),
-		&host->loadavg_1min, &host->loadavg_5min,
-		&host->loadavg_15min,
-		&host->disk_used, &host->disk_avail);
+	pthread_mutex_unlock(&host->remover_mutex);
+	e = gfs_client_status(host_peer(host), &loadavg_1min, &loadavg_5min,
+		&loadavg_15min, &disk_used, &disk_avail);
 	if (e == GFARM_ERR_NO_ERROR) {
+		pthread_mutex_lock(&host->remover_mutex);
+		host->loadavg_1min = loadavg_1min;
+		host->loadavg_5min = loadavg_5min;
+		host->loadavg_15min = loadavg_15min;
+		host->disk_used = disk_used;
+		host->disk_avail = disk_avail;
+
 		host->last_report = time(NULL);
 		host->report_flags =
 			GFM_PROTO_SCHED_FLAG_HOST_AVAIL |
 			GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
-		pthread_mutex_lock(&total_disk_mutex);
-		total_disk_used += host->disk_used - saved_used;
-		total_disk_avail += host->disk_avail - saved_avail;
-		pthread_mutex_unlock(&total_disk_mutex);
-	} else {
-		host->report_flags = 0;
-		pthread_mutex_lock(&total_disk_mutex);
-		total_disk_used -= saved_used;
-		total_disk_avail -= saved_avail;
-		pthread_mutex_unlock(&total_disk_mutex);
+		host_total_disk_update(host->disk_used - saved_used,
+		    host->disk_avail - saved_avail);
+		pthread_mutex_unlock(&host->remover_mutex);
 	}
 	return (e);
 }
@@ -572,7 +651,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (host_is_active(h))
+		if (host_is_valid(h))
 			++nhosts;
 	}
 	e = gfm_server_put_reply(peer, msg,
@@ -583,7 +662,7 @@ gfm_server_host_info_get_all(struct peer *peer, int from_client, int skip)
 	}
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (host_is_active(h)) {
+		if (host_is_valid(h)) {
 			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR) {
 				giant_unlock();
@@ -622,7 +701,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (host_is_active(h) &&
+		if (host_is_valid(h) &&
 		    strcmp(h->hi.architecture, architecture) == 0)
 			++nhosts;
 	}
@@ -640,7 +719,7 @@ gfm_server_host_info_get_by_architecture(struct peer *peer,
 	}
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (host_is_active(h) &&
+		if (host_is_valid(h) &&
 		    strcmp(h->hi.architecture, architecture) == 0) {
 			e = host_info_send(client, h);
 			if (e != GFARM_ERR_NO_ERROR)
@@ -974,6 +1053,7 @@ host_free_all(int n, struct host **h)
 	free(h);
 }
 
+/* filter() should not lock &host->remover_mutex */
 gfarm_error_t
 host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 	int *nhostsp, struct host ***hostsp)
@@ -987,7 +1067,7 @@ host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
 		pthread_mutex_lock(&h->remover_mutex);
-		if (host_is_up(h) && filter(h, arg))
+		if (host_is_up_unlocked(h) && filter(h, arg))
 			++n;
 	}
 	GFARM_MALLOC_ARRAY(hosts, n);
@@ -997,7 +1077,7 @@ host_active_hosts(int (*filter)(struct host *, void *), void *arg,
 	i = 0;
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
-		if (hosts != NULL && host_is_up(h) && filter(h, arg)) {
+		if (hosts != NULL && host_is_up_unlocked(h) && filter(h, arg)) {
 			e = host_copy(&hosts[i], h);
 			if (e != GFARM_ERR_NO_ERROR) {
 				host_free_all(i, hosts);
@@ -1087,12 +1167,13 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, msg, e, ""));
 }
 
+/* do not lock remover_mutex */
 static int
 domain_filter(struct host *h, void *d)
 {
 	const char *domain = d;
 
-	return (gfarm_host_is_in_domain(host_name(h), domain));
+	return (gfarm_host_is_in_domain(host_name_unlocked(h), domain));
 }
 
 gfarm_error_t
