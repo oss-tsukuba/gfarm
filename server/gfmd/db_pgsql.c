@@ -510,7 +510,7 @@ gfarm_pgsql_commit(const char *diag)
 		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 0);
-	
+
 	return (gfarm_pgsql_exec_and_log(transaction_ok ? "COMMIT" : "ROLLBACK",
 	    diag));
 }
@@ -617,7 +617,6 @@ gfarm_pgsql_generic_get_all(
 					}
 					free(results);
 					break;
-					
 				}
 			}
 			if (e == GFARM_ERR_NO_ERROR) {

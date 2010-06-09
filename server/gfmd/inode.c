@@ -666,7 +666,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		    deferred_cleanup, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002245,
-			    "replication before removal: host %s: %s", 
+			    "replication before removal: host %s: %s",
 			    host_name(copy->host),
 			    gfarm_error_string(e));
 			/* give up the replication and remove the old one */
@@ -1742,7 +1742,7 @@ inode_create_link(struct inode *base, char *name,
 {
 	gfarm_error_t e;
 
-	e = inode_create_link_internal(base, name, process_get_user(process), 
+	e = inode_create_link_internal(base, name, process_get_user(process),
 	    inode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2494,7 +2494,7 @@ inode_replicated(struct file_replicating *fr,
 	} else if (e == GFARM_ERR_NO_ERROR) {
 		/* try to sweep deferred queue */
 		dead_file_copy_replica_status_changed(inode_get_number(inode),
-		    fr->dst);		    
+		    fr->dst);
 	}
 
 	file_replicating_free(fr);
@@ -2796,7 +2796,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	gfarm_int32_t *oflags;
 	int valid_only =
 	    (iflags & GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY) != 0 ? 0 : 1;
-	int up_only = 
+	int up_only =
 	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_HOST) != 0 ? 0 : 1;
 	int latest_only =
 	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_COPY) != 0 ? 0 : 1;

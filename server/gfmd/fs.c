@@ -76,7 +76,7 @@ gfm_server_compound_on_error(struct peer *peer, int from_client, int skip,
 		return (GFARM_ERR_NO_ERROR);
 	if (level < 1) /* there isn't COMPOUND_BEGIN ... END block around */
 		e = GFARM_ERR_INVALID_ARGUMENT;
-	else 
+	else
 		*on_errorp = on_error;
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
@@ -108,7 +108,7 @@ gfm_server_get_fd(struct peer *peer, int from_client, int skip)
 	else
 		e = peer_fdpair_externalize_current(peer);
 	giant_unlock();
-	
+
 	return (gfm_server_put_reply(peer, diag, e, "i", fd));
 }
 
@@ -140,7 +140,7 @@ gfm_server_put_fd(struct peer *peer, int from_client, int skip)
 		e = peer_fdpair_externalize_current(peer);
 	}
 	giant_unlock();
-	
+
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
@@ -167,7 +167,7 @@ gfm_server_save_fd(struct peer *peer, int from_client, int skip)
 	else
 		e = peer_fdpair_save(peer);
 	giant_unlock();
-	
+
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
@@ -193,7 +193,7 @@ gfm_server_restore_fd(struct peer *peer, int from_client, int skip)
 	else
 		e = peer_fdpair_restore(peer);
 	giant_unlock();
-	
+
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
@@ -675,8 +675,8 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
 	    st.st_user, st.st_group, st.st_size,
 	    st.st_ncopy,
-	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec, 
-	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec, 
+	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec,
+	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec,
 	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec);
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(st.st_user);
@@ -1633,7 +1633,7 @@ gfm_server_getdirents(struct peer *peer, int from_client, int skip)
 				inode_accessed(inode);
 		}
 	}
-	
+
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "i", n);
 	if (e2 == GFARM_ERR_NO_ERROR && e == GFARM_ERR_NO_ERROR) {
@@ -1724,7 +1724,7 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 				inode_accessed(inode);
 		}
 	}
-	
+
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "i", n);
 	if (e2 == GFARM_ERR_NO_ERROR && e == GFARM_ERR_NO_ERROR) {
@@ -1736,8 +1736,8 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 			    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
 			    st->st_user, st->st_group, st->st_size,
 			    st->st_ncopy,
-			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec, 
-			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec, 
+			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
+			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
 			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
 			if (e2 != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1000387,
@@ -1828,7 +1828,7 @@ gfm_server_seek(struct peer *peer, int from_client, int skip)
 			    offset);
 		}
 	}
-	
+
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, "l", offset));
 }
@@ -2591,7 +2591,7 @@ gfm_server_replica_info_get(struct peer *peer, int from_client, int skip)
 	else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR)
 		;
-	else 
+	else
 		e = inode_replica_info_get(inode, iflags,
 		    &n, &hosts, &gens, &oflags);
 

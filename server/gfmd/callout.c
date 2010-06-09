@@ -81,7 +81,7 @@ callout_main(void *arg)
 			gflog_fatal(GFARM_MSG_1001490, "s: %s cond wait: %s",
 			    module_name, strerror(rv));
 		}
-		
+
 		func = NULL;
 
 		/* cm->pendings may be changed while cond_wait */

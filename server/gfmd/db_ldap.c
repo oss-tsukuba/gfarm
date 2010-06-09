@@ -745,7 +745,7 @@ retry:
 	if (error != GFARM_ERR_NO_ERROR) {
 		ops->gen_ops->free(info);
 	/* should check all fields are filled */
-	} else if (!ops->gen_ops->validate(info)) { 
+	} else if (!ops->gen_ops->validate(info)) {
 		gflog_error(GFARM_MSG_1002366,
 		    "gfarm_ldap_generic_info_get: validation error");
 		ops->gen_ops->free(info);

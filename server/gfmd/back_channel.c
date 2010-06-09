@@ -404,7 +404,7 @@ gfs_client_fhremove_request(void *closure)
 	} else {
 		removal_finishedq_enqueue(dfc, e);
 	}
-		    
+
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
 }
@@ -737,7 +737,7 @@ back_channel_main(void *arg)
 	}
 
 	/* now, host_receiver_lock() is protecting this peer */
-	peer_invoked(peer); 
+	peer_invoked(peer);
 
 	async = peer_get_async(peer);
 

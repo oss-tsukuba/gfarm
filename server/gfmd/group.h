@@ -6,7 +6,7 @@ struct group;
 struct group_assignment {
 	/* end marker: {ga->user_prev, ga->user_next} == &ga->g->users */
 	struct group_assignment *user_prev, *user_next;
-	
+
 	/* end marker: {ga->group_prev, ga->group_next} == &ga->u->groups */
 	struct group_assignment *group_prev, *group_next;
 

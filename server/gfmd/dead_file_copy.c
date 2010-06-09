@@ -361,7 +361,7 @@ removal_finalizer(void *arg)
  * before calling this function.
  * the caller should allow this function to sleep.
  *
- * this interface is exported for a use from a private extension 
+ * this interface is exported for a use from a private extension
  */
 int
 dead_file_copy_is_removable_default(struct dead_file_copy *dfc)
@@ -438,7 +438,7 @@ dead_file_copy_host_busyq_scan(void)
 		busy = host_check_busy(dfc->host, now);
 
 		/* so, the following should be called after host_check_busy */
-		up = host_is_up(dfc->host); 
+		up = host_is_up(dfc->host);
 
 		if (!up) {
 			dfc_workq_remove(dfc);
@@ -447,7 +447,7 @@ dead_file_copy_host_busyq_scan(void)
 			gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
 
 			/* to be sure */
-			dfc->workq_next = dfc->workq_prev = NULL; 
+			dfc->workq_next = dfc->workq_prev = NULL;
 
 		} else if (!busy) {
 			dfc_workq_remove(dfc);
@@ -463,7 +463,7 @@ dead_file_copy_host_busyq_scan(void)
 				    diag, "dfc state");
 
 				/* to be sure */
-				dfc->workq_next = dfc->workq_prev = NULL; 
+				dfc->workq_next = dfc->workq_prev = NULL;
 			}
 		} /* otherwise it's still busy, so, leave it as is. */
 	}
