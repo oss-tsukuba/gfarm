@@ -76,9 +76,8 @@ struct peer {
 
 	volatile sig_atomic_t control;
 #define PEER_WATCHING	1
-	/* XXX FIXME: #66 - unexpected collision to access peer:control */
-#define PEER_WATCHED	2	/* to see whether there is unexpected wakeup */
-#define PEER_INVOKING	4	/* wait until protocol_handler is invoked */
+#define PEER_INVOKING	2 /* block peer_free till protocol_handler is called */
+#define PEER_CLOSING	4 /* prevent protocol_handler from being called */
 	pthread_mutex_t control_mutex;
 
 	struct protocol_state pstate;
@@ -208,7 +207,7 @@ peer_replicating_free(struct file_replicating *fr)
 
 gfarm_error_t
 peer_replicated(struct peer *peer,
-	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen, 
+	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
 	gfarm_int64_t handle,
 	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
 {
@@ -245,8 +244,8 @@ peer_replicated(struct peer *peer,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = inode_replicated(fr, src_errcode, dst_errcode, size);
 	else
-		gflog_error(GFARM_MSG_1002410, 
-		    "orphan replicatiion (%s, %lld:%lld): s=%d d=%d size:%lld "
+		gflog_error(GFARM_MSG_1002410,
+		    "orphan replication (%s, %lld:%lld): s=%d d=%d size:%lld "
 		    "maybe the connection had a problem?",
 		    host_name(host), (long long)ino, (long long)gen,
 		    src_errcode, dst_errcode, (long long)size);
@@ -308,26 +307,6 @@ peer_epoll_del_fd(int fd)
 }
 #endif
 
-/* XXX FIXME: #66 - unexpected collision to access peer:control */
-static void
-peer_control_mutex_lock(struct peer *peer, const char *where)
-{
-	int err = pthread_mutex_trylock(&peer->control_mutex);
-
-	if (err == 0)
-		return;
-	if (err == EBUSY) {
-		gflog_warning(GFARM_MSG_1002321,
-		    "%s: unexpected collision to access peer:control", where);
-		err = pthread_mutex_lock(&peer->control_mutex);
-		if (err == 0)
-			return;
-	}
-	gflog_fatal(GFARM_MSG_1002322,
-	    "%s: fatel error at unexpected collision "
-	    "to access peer:control: %s", where, strerror(err));
-}
-
 #define PEER_WATCH_INTERVAL 10 /* 10ms: XXX FIXME */
 
 void *
@@ -352,19 +331,11 @@ peer_watcher(void *arg)
 		for (i = 0; i < peer_table_size; i++) {
 			peer = &peer_table[i];
 
-			/*
-			 * XXX FIXME: #66 -
-			 * unexpected collision to access peer:control
-			 *
-			 * don't use peer_control_mutex_lock(), because
-			 * collision with peer_watch_access() is expected here.
-			 */
 			gfarm_mutex_lock(&peer->control_mutex,
 			    "peer_watcher start", "peer:control_mutex");
 			skip = peer->conn == NULL ||
-			    (peer->control & PEER_WATCHING) == 0;
-			if (!skip)
-				peer->control |= PEER_WATCHED;
+			    (peer->control & PEER_WATCHING) == 0 ||
+			    (peer->control & PEER_CLOSING);
 			gfarm_mutex_unlock(&peer->control_mutex,
 			    "peer_watcher start", "peer:control_mutex");
 			if (skip)
@@ -411,63 +382,54 @@ peer_watcher(void *arg)
 			 */
 			gfarm_mutex_lock(&peer->control_mutex,
 			    "peer_watcher checking", "peer:control_mutex");
-			skip = peer->conn == NULL ||
-			    (peer->control & PEER_WATCHING) == 0;
+
+#ifdef HAVE_EPOLL_WAIT
+			if ((peer_epoll.events[i].events & EPOLLIN) == 0)
+#else
+			if ((fd->revents & POLLIN) == 0)
+#endif
+			{
+				skip = 1;
+			} else {
+#ifdef HAVE_EPOLL_WAIT
+				/* efd may be closed during epoll */
+				peer_epoll_del_fd(efd);
+#endif
+				rv--;
+				if (peer->conn == NULL ||
+				    (peer->control & PEER_WATCHING) == 0) {
+					skip = 1;
+					gflog_debug(GFARM_MSG_1002323,
+					    "peer_watcher: fd:%d must be "
+					    "closed during (e)poll: %p, 0x%x",
+					    peer_get_fd(peer),
+					    peer->conn, (int)peer->control);
+				} else if (peer->control & PEER_CLOSING) {
+					skip = 1;
+					peer->control &= ~PEER_WATCHING;
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "peer_watcher: fd:%d will be "
+					    "closed and input will be ignored",
+					    peer_get_fd(peer));
+				} else {
+					skip = 0;
+
+					peer->control &= ~PEER_WATCHING;
+					/*
+					 * needs peer_table_mutex here
+					 * to protect this from peer_free()
+					 */
+					peer->control |= PEER_INVOKING;
+				}
+			}
+
 			gfarm_mutex_unlock(&peer->control_mutex,
 			    "peer_watcher checking", "peer:control_mutex");
 			gfarm_mutex_unlock(&peer_table_mutex,
 			    diag, peer_table_diag);
 			giant_unlock();
-			if (skip) {
-#ifdef HAVE_EPOLL_WAIT
-				if (peer_epoll.events[i].events & EPOLLIN) {
-#else
-				if (fd->revents & POLLIN) {
-#endif
-					gflog_error(GFARM_MSG_1002323,
-					    "peer_watcher: spurious wakeup: "
-					    "0x%x", (int)peer->control);
-				}
-				continue;
-			}
-#ifdef HAVE_EPOLL_WAIT
-			if (peer_epoll.events[i].events & EPOLLIN) {
-#else
-			if (fd->revents & POLLIN) {
-#endif
-				/*
-				 * This peer is not running at this point,
-				 * so it should be ok to modify peer->control
-				 * without mutex.
-				 *
-				 * XXX FIXME: #66 -
-				 * unexpected collision to access peer:control
-				 */
-				peer_control_mutex_lock(peer,
-				    "peer_watcher invoking");
-				skip = (peer->control & PEER_WATCHED) == 0;
-				if (skip) {
-					gflog_error(GFARM_MSG_1002324,
-					    "peer_watcher: unexpected wakeup: "
-					    "0x%x", (int)peer->control);
-#ifdef HAVE_EPOLL_WAIT
-					skip = 0; /* really shound't happen */
-#endif
-				}
-				if (!skip) {
-					peer->control &=
-					    ~(PEER_WATCHING|PEER_WATCHED);
-					peer->control |= PEER_INVOKING;
-				}
-				gfarm_mutex_unlock(&peer->control_mutex,
-				    "peer_watcher invoking",
-				    "peer:control_mutex");
-				rv--;
-				if (skip)
-					continue;
-#ifdef HAVE_EPOLL_WAIT
-				peer_epoll_del_fd(efd);
-#endif
+
+			if (!skip) {
 				/*
 				 * We shouldn't have giant_lock or
 				 * peer_table_mutex here.
@@ -518,6 +480,7 @@ void *
 peer_closer(void *arg)
 {
 	struct peer *peer, **prev;
+	int do_close;
 	static const char diag[] = "peer_closer";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex, diag,
@@ -532,23 +495,29 @@ peer_closer(void *arg)
 		for (prev = &peer_closing_queue.head;
 		    (peer = *prev) != NULL; prev = &peer->next_close) {
 			if (peer->refcount == 0) {
-				*prev = peer->next_close;
-				if (peer_closing_queue.tail ==
-				    &peer->next_close)
-					peer_closing_queue.tail = prev;
-				break;
+				gfarm_mutex_lock(&peer->control_mutex,
+				    diag, "peer:control_mutex");
+				if ((peer->control & PEER_INVOKING) == 0) {
+					peer->control |= PEER_CLOSING;
+					do_close = 1;
+				} else {
+					do_close = 0;
+				}
+				gfarm_mutex_unlock(&peer->control_mutex,
+				    diag, "peer:control_mutex");
+				if (do_close) {
+					*prev = peer->next_close;
+					if (peer_closing_queue.tail ==
+					    &peer->next_close)
+						peer_closing_queue.tail = prev;
+					break;
+				}
 			}
 		}
 		if (peer == NULL) {
 			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
 			    &peer_closing_queue.mutex,
 			    diag, "waiting for host_sender/receiver_unlock");
-			continue;
-		}
-		if ((peer->control & PEER_INVOKING) != 0) {
-			gfarm_cond_wait(&peer_closing_queue.ready_to_close,
-			    &peer_closing_queue.mutex,
-			    diag, "wait until protocol handler is invoked");
 			continue;
 		}
 
@@ -588,7 +557,7 @@ peer_free_request(struct peer *peer)
 	 */
 	rv = shutdown(fd, SHUT_RDWR);
 	if (rv == -1)
-		gflog_warning(GFARM_MSG_1002220, 
+		gflog_warning(GFARM_MSG_1002220,
 		    "back_channel: shutdown(%d): %s", fd, strerror(errno));
 
 	*peer_closing_queue.tail = peer;
@@ -627,10 +596,6 @@ peer_init(int max_peers,
 		peer->protocol_error = 0;
 
 		peer->control = 0;
-		/*
-		 * XXX FIXME: #66 -
-		 * unexpected collision to access peer:control
-		 */
 		gfarm_mutex_init(&peer->control_mutex,
 		    "peer_init", "peer:control_mutex");
 
@@ -785,11 +750,6 @@ peer_authorized(struct peer *peer,
 	}
 	/* We don't record auth_method for now */
 
-	/*
-	 * XXX FIXME: #66 - unexpected collision to access peer:control
-	 * don't use peer_control_mutex_lock(), because
-	 * collision with peer_watcher() is expected here.
-	 */
 	gfarm_mutex_lock(&peer->control_mutex,
 	    "peer_authorized", "peer:control_mutex");
 	peer->control = 0;
@@ -891,7 +851,6 @@ peer_shutdown_all(void)
 void
 peer_invoked(struct peer *peer)
 {
-	/* XXX FIXME: #66 - unexpected collision to access peer:control */
 	gfarm_mutex_lock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
 	peer->control &= ~PEER_INVOKING;
@@ -905,14 +864,9 @@ peer_invoked(struct peer *peer)
 void
 peer_watch_access(struct peer *peer)
 {
-	/* XXX FIXME: #66 - unexpected collision to access peer:control */
 	gfarm_mutex_lock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
-#ifdef HAVE_EPOLL_WAIT
-	peer->control |= PEER_WATCHING|PEER_WATCHED;
-#else
 	peer->control |= PEER_WATCHING;
-#endif
 	gfarm_mutex_unlock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
 #ifdef HAVE_EPOLL_WAIT
