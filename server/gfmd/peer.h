@@ -127,5 +127,5 @@ gfarm_error_t peer_replicating_new(struct peer *, struct host *,
 	struct file_replicating **);
 void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
-	struct host *, gfarm_ino_t, gfarm_int64_t, 
+	struct host *, gfarm_ino_t, gfarm_int64_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
