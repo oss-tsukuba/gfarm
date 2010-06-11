@@ -583,7 +583,8 @@ if test x"${ac_cv_func_printf}" != x"yes"; then
 fi
 
 # We need to add those libraries to $LIBS at first,
-# otherwise some libraries (e.g. OpenLDAP) cannot be linked.
+# otherwise some libraries (e.g. OpenLDAP and OpenSSL) cannot be linked.
+AC_CHECK_LIB(dl, dlopen)
 AC_CHECK_LIB(nsl, gethostname)	# SVR4 and derived
 AC_CHECK_LIB(socket, socket)	# SVR4 and derived
 AC_CHECK_LIB(crypt, crypt)	# 4.4BSD and derived
