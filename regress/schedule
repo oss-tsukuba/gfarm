@@ -1,5 +1,7 @@
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
+lib/libgfarm/gfarm/gfs_pio_create/create/normal.sh
+lib/libgfarm/gfarm/gfs_pio_open/open_read/file_trunc.sh
 
 # gftool/config-gfarm
 gftool/gfls/root.sh
