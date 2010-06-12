@@ -132,9 +132,6 @@ uid_t restricted_user = 0;
 uid_t gfsd_uid = -1;
 mode_t command_umask;
 
-char local_sockdir[PATH_MAX];
-struct sockaddr_un local_sockname;
-
 struct gfm_connection *gfm_server;
 char *canonical_self_name;
 char *username; /* gfarm global user name */
@@ -148,13 +145,39 @@ long rate_limit;
 
 static char *listen_addrname = NULL;
 
+struct local_socket {
+	int sock;
+	char *dir, *name;
+};
+
+struct accepting_sockets {
+	int local_socks_count, udp_socks_count;
+	int tcp_sock, *udp_socks;
+	struct local_socket *local_socks;
+} accepting;
+
+/* this routine should be called before the accepting server calls exit(). */
+void
+cleanup_accepting(int sighandler)
+{
+	int i;
+
+	for (i = 0; i < accepting.local_socks_count; i++) {
+		if (unlink(accepting.local_socks[i].name) == -1 && !sighandler)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "unlink(%s)", accepting.local_socks[i].name);
+		if (rmdir(accepting.local_socks[i].dir) == -1 && !sighandler)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "rmdir(%s)", accepting.local_socks[i].dir);
+	}
+}
+
 /* this routine should be called before calling exit(). */
 static void
 cleanup(int sighandler)
 {
 	if (getpid() == master_gfsd_pid) {
-		unlink(local_sockname.sun_path);
-		rmdir(local_sockdir);
+		cleanup_accepting(sighandler);
 		/* send terminate signal to a back channel process */
 		kill(back_channel_gfsd_pid, SIGTERM);
 	}
@@ -232,29 +255,6 @@ fatal_metadb_proto_full(int msg_no,
 	    gfarm_error_string(e));
 }
 
-struct local_socket {
-	int sock;
-	char *dir, *name;
-};
-
-struct accepting_sockets {
-	int local_socks_count, udp_socks_count;
-	int tcp_sock, *udp_socks;
-	struct local_socket *local_socks;
-} accepting;
-
-/* this routine should be called before the accepting server calls exit(). */
-void
-cleanup_accepting(void)
-{
-	int i;
-
-	for (i = 0; i < accepting.local_socks_count; i++) {
-		unlink(accepting.local_socks[i].name);
-		rmdir(accepting.local_socks[i].dir);
-	}
-}
-
 static void accepting_fatal_full(int, const char *, int, const char *,
 		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
 static void
@@ -263,7 +263,7 @@ accepting_fatal_full(int msg_no, const char *file, int line_no,
 {
 	va_list ap;
 
-	cleanup_accepting();
+	cleanup_accepting(0);
 	va_start(ap, format);
 	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
 	va_end(ap);
@@ -3427,8 +3427,20 @@ open_accepting_local_socket(struct in_addr address, int port,
 		accepting_fatal(GFARM_MSG_1000573, "not enough memory");
 
 	/* to make sure */
-	unlink(sock_name);
-	rmdir(sock_dir);
+	if (unlink(sock_name) == 0)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: remaining socket found and removed", sock_name);
+	else if (errno != ENOENT)
+		accepting_fatal_errno(GFARM_MSG_UNFIXED,
+		    "%s: failed to remove remaining socket", sock_name);
+	if (rmdir(sock_dir) == 0)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: remaining socket directory found and removed",
+		    sock_dir);
+	else if (errno != ENOENT) /* something wrong, but tries to continue */
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "%s: failed to remove remaining socket directory",
+		    sock_dir);
 
 	if (mkdir(sock_dir, LOCAL_SOCKDIR_MODE) == -1) {
 		if (errno != EEXIST) {
@@ -3575,7 +3587,6 @@ main(int argc, char **argv)
 	FILE *pid_fp = NULL;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int syslog_level = -1;
-	struct accepting_sockets accepting;
 	struct in_addr *self_addresses, listen_address;
 	int table_size, self_addresses_count, ch, i, nfound, max_fd, p;
 	struct sigaction sa;
