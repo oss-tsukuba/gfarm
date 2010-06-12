@@ -15,7 +15,25 @@
   ていますが、Red Hat 8 では確認されていません。
 
   対処予定:
-	現在のところ、有効な対策が不明なため対処の予定はありません。
+	nss_ldap の開発元に関しては、下記のバグデータベースを参照して
+	ください。
+		http://bugzilla.padl.com/show_bug.cgi?id=271
+		http://bugzilla.padl.com/show_bug.cgi?id=414
+
+	具体的な解決策は、各 Linux ディストリビューション作成側に依存します。
+
+	Fedore Core Linux に関しては下記のバグデータベースを参照して
+	ください。
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+
+	Red Hat Enterprise Linux に関しては下記のバグデータベースを参照して
+	ください。
+		https://bugzilla.redhat.com/show_bug.cgi?id=474181
+	Red Hat Enterprise Linux 5 および CentOS 5 については、
+	nss_ldap-253-17.el5 以降の RPM で症状が緩和する可能性がありますが、
+	未確認です。この RPM に含まれる修正については、以下の RHBA-2009:0241-4
+	を参照してください。
+	    http://www.jp.redhat.com/support/errata/RHBA/RHBA-2009-0241J.html
 
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 
@@ -148,6 +166,31 @@
 
   config-gfarm, config-gfsd, gfarm.arch.guess,
   gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun
+
+  対処予定:
+	未定です。
+
+
+● gfarm2fs コマンドに関する問題点
+
+- 同一ファイルに対して複数の異なる open(2) を行なった場合、通常のファイル
+  システムに対して read(2)/write(2) を行なった場合に得られるような一貫性は、
+  必ずしも得られません。
+  これは gfarm2fs が、それぞれの open(2) について別の gfs_pio_open() や
+  gfs_pio_create() 呼び出しを行ない、その結果、gfarm ライブラリやカーネル
+  のネットワーク層で別々にバッファリングがされるためです。
+  たとえば PostgreSQL のデータベースファイルをgfarm2fs で提供しようと
+  すると、この問題のため、PostgreSQL が正常に動作しません。
+
+  対処予定:
+	未定です。
+
+- ftruncate(2) システムコールを呼び出した後、同じファイルに対する
+  read(2) システムコールが、期待されるよりも短いサイズを返すことが
+  あります。
+  これは、FUSE がこの場合に getattr エントリポイントを呼び出し、その
+  結果、上述の「stat API が、ファイルをクローズするまで、正確なファイル
+  サイズを返さない」問題の影響を受けるためです。
 
   対処予定:
 	未定です。
