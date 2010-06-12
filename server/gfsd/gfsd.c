@@ -172,11 +172,24 @@ cleanup_accepting(int sighandler)
 	}
 }
 
+static void close_all_fd(void);
+
 /* this routine should be called before calling exit(). */
 static void
 cleanup(int sighandler)
 {
-	if (getpid() == master_gfsd_pid) {
+	static int cleanup_started = 0;
+	pid_t pid = getpid();
+
+	if (!cleanup_started) {
+		cleanup_started = 1;
+
+		if (pid != master_gfsd_pid && pid != back_channel_gfsd_pid &&
+		    !sighandler)
+			close_all_fd(); /* may recursivelly call cleanup() */
+	}
+
+	if (pid == master_gfsd_pid) {
 		cleanup_accepting(sighandler);
 		/* send terminate signal to a back channel process */
 		kill(back_channel_gfsd_pid, SIGTERM);
@@ -190,11 +203,6 @@ cleanup(int sighandler)
 		/* It's not safe to do the following operation */
 		gflog_notice(GFARM_MSG_1000451, "disconnected");
 	}
-}
-
-void
-parent_cleanup(void)
-{
 }
 
 static void
@@ -596,6 +604,20 @@ file_table_set_written(gfarm_int32_t net_fd)
 	file_entry_set_mtime(fe, now.tv_sec, 0);
 }
 
+static void
+file_table_for_each(void (*callback)(void *, gfarm_int32_t), void *closure)
+{
+	gfarm_int32_t net_fd;
+
+	if (file_table == NULL)
+		return;
+
+	for (net_fd = 0; net_fd < file_table_size; net_fd++) {
+		if (file_table[net_fd].local_fd != -1)
+			(*callback)(closure, net_fd);
+	}
+}
+
 int
 gfs_open_flags_localize(int open_flags)
 {
@@ -934,16 +956,13 @@ close_result(struct file_entry *fe)
 	}
 }
 
-void
-gfs_server_close(struct gfp_xdr *client)
+gfarm_error_t
+close_fd(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
-	int fd, stat_is_done = 0;
+	int stat_is_done = 0;
 	struct file_entry *fe;
 	struct stat st;
-	static const char diag[] = "close";
-
-	gfs_server_get_request(client, diag, "i", &fd);
 
 	if ((fe = file_table_entry(fd)) == NULL)
 		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
@@ -1013,7 +1032,30 @@ gfs_server_close(struct gfp_xdr *client)
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 	}
+	return (e);
+}
 
+static void
+close_fd_adapter(void *closure, gfarm_int32_t fd)
+{
+	close_fd(fd, closure);
+}
+
+static void
+close_all_fd(void)
+{
+	file_table_for_each(close_fd_adapter, "closing all descriptor");
+}
+
+void
+gfs_server_close(struct gfp_xdr *client)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd;
+	static const char diag[] = "GFS_PROTO_CLOSE";
+
+	gfs_server_get_request(client, diag, "i", &fd);
+	e = close_fd(fd, diag);
 	gfs_server_put_reply(client, diag, e, "");
 }
 
@@ -1043,7 +1085,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	else
 		file_table_set_read(fd);
 
-	gfs_server_put_reply_with_errno(client, "pread", rv == -1 ? errno : 0,
+	gfs_server_put_reply_with_errno(client, "pread", save_errno,
 	    "b", rv, buffer);
 }
 
@@ -1242,7 +1284,7 @@ is_readonly_mode(void)
 	struct stat st;
 	int length;
 	static char *p = NULL;
-	char *diag = "is_readonly_mode";
+	static const char diag[] = "is_readonly_mode";
 
 	if (p == NULL) {
 		length = strlen(gfarm_spool_root) + 1 +
@@ -1296,7 +1338,7 @@ replica_adding(gfarm_int32_t net_fd, char *src_host,
 	gfarm_uint64_t gen;
 	gfarm_int64_t mtime_sec;
 	gfarm_int32_t mtime_nsec;
-	char *diag = "replica_adding";
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -1350,7 +1392,7 @@ replica_added(gfarm_int32_t net_fd,
     gfarm_off_t size)
 {
 	gfarm_error_t e;
-	char *diag = "replica_added";
+	static const char diag[] = "GFM_PROTO_REPLICA_ADDED2";
 
 	if ((e = gfm_client_compound_begin_request(gfm_server))
 	    != GFARM_ERR_NO_ERROR)
@@ -1400,10 +1442,11 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 	gfarm_ino_t ino;
 	gfarm_uint64_t gen;
 	gfarm_error_t e, e2;
-	char *host, *path, *diag = "replica_add_from";
+	char *host, *path;
 	struct gfs_connection *server;
 	int flags = 0; /* XXX - for now */
 	struct stat sb;
+	static const char diag[] = "GFS_PROTO_REPLICA_ADD_FROM";
 
 	sb.st_size = -1;
 	gfs_server_get_request(client, diag, "sii", &host, &port, &net_fd);
