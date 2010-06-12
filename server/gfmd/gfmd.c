@@ -950,12 +950,13 @@ main(int argc, char **argv)
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t sigs;
+	int check_level = 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:df:p:s:v")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:cdf:p:s:v")) != -1) {
 		switch (ch) {
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
@@ -966,6 +967,9 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			pid_file = optarg;
+			break;
+		case 'c':
+			++check_level;
 			break;
 		case 'd':
 			debug_mode = 1;
@@ -1100,6 +1104,10 @@ main(int argc, char **argv)
 		gflog_fatal(GFARM_MSG_1000211,
 		    "create_detached_thread(db_thread): %s",
 			    gfarm_error_string(e));
+
+	/* check and repair nlink */
+	if (check_level > 0)
+		inode_nlink_check();
 
 	accepting_loop(sock);
 

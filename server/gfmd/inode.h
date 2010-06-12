@@ -106,6 +106,9 @@ int inode_xattr_has_xmlattrs(struct inode *);
 gfarm_error_t inode_xattr_remove(struct inode *, int, const char *);
 gfarm_error_t inode_xattr_list(struct inode *, int, char **, size_t *);
 
+/* check and repair */
+void inode_nlink_check(void);
+
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);
