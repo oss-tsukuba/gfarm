@@ -722,7 +722,7 @@ main(int argc, char *argv[])
 	int mode_src_ch = 0, mode_dst_ch = 0, parallel = -1;
 	int i, ch;
 	gfarm_error_t e;
-	const char *errmsg;
+	const char *errmsg, *errmsg2 = NULL;
 	struct gfrep_arg gfrep_arg;
 	struct flist flist;
 
@@ -868,14 +868,14 @@ main(int argc, char *argv[])
 
 	errmsg = pfor_list(act, &flist.slist, parallel, &gfrep_arg);
 	gfarm_list_free(&flist.slist);
-	if (errmsg != NULL)
-		fprintf(stderr, "%s\n", errmsg), exit(EXIT_FAILURE);
 
 	/* remove file replicas */
 	if (opt_remove)
-		errmsg = pfor_list(
+		errmsg2 = pfor_list(
 			&remove_mode, &flist.dlist, parallel, &gfrep_arg);
 	gfarm_list_free(&flist.dlist);
+	if (errmsg == NULL)
+		errmsg = errmsg2;
 	if (errmsg != NULL)
 		fprintf(stderr, "%s\n", errmsg), exit(EXIT_FAILURE);
 
