@@ -14,7 +14,7 @@ char *program_name = "gfrm";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-h hostname] file...\n", program_name);
+	fprintf(stderr, "Usage: %s [-f] [-h hostname] file...\n", program_name);
 	exit(EXIT_FAILURE);
 }
 
@@ -23,6 +23,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int i, n, c, status = 0;
+	int opt_force = 0;
 	char *host = NULL;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
@@ -36,8 +37,11 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	while ((c = getopt(argc, argv, "h:?")) != -1) {
+	while ((c = getopt(argc, argv, "fh:?")) != -1) {
 		switch (c) {
+		case 'f':
+			opt_force = 1;
+			break;
 		case 'h':
 			host = optarg;
 			break;
@@ -75,7 +79,8 @@ main(int argc, char **argv)
 			e = gfs_unlink(p);
 		else
 			e = gfs_replica_remove_by_file(p, host);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if (e != GFARM_ERR_NO_ERROR &&
+		    (!opt_force || e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, p, gfarm_error_string(e));
 			status = 1;
