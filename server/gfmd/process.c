@@ -1,3 +1,4 @@
+#include <pthread.h>	/* db_access.h currently needs this */
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
