@@ -18,6 +18,11 @@
 #include "gfevent.h"
 
 #define MIN_FDS_SIZE	FD_SETSIZE
+#ifdef __FDS_BITS /* for glibc, esp. Debian/kFreeBSD */
+#define GF_FDS_BITS(set)	__FDS_BITS(set)
+#else
+#define GF_FDS_BITS(set)	(set)->fds_bits
+#endif
 
 /* event */
 
@@ -193,10 +198,10 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 		 * where howmany(x, y) == (((x) + ((y) - 1)) / (y))
 		 */
 		fds_array_length = gfarm_size_add(&overflow, fds_size,
-		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT) - 1) /
-		    (sizeof(fsp->fds_bits[0]) * CHAR_BIT);
+		    (sizeof(GF_FDS_BITS(fsp)[0]) * CHAR_BIT) - 1) /
+		    (sizeof(GF_FDS_BITS(fsp)[0]) * CHAR_BIT);
 		fds_bytes = gfarm_size_mul(&overflow,
-		    fds_array_length, sizeof(fsp->fds_bits[0]));
+		    fds_array_length, sizeof(GF_FDS_BITS(fsp)[0]));
 		fd_set_size = gfarm_size_mul(&overflow,
 		    fds_bytes, CHAR_BIT);
 		if (overflow)
