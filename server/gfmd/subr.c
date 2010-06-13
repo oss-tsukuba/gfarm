@@ -90,7 +90,10 @@ accmode_to_op(gfarm_uint32_t flag)
 	int op;
 
 	switch (flag & GFARM_FILE_ACCMODE) {
-	case GFARM_FILE_RDONLY:	op = GFS_R_OK; break;
+	case GFARM_FILE_RDONLY:
+		op = (flag & GFARM_FILE_TRUNC) ? (GFS_R_OK|GFS_W_OK) :
+		    GFS_R_OK;
+		break;
 	case GFARM_FILE_WRONLY:	op = GFS_W_OK; break;
 	case GFARM_FILE_RDWR:	op = GFS_R_OK|GFS_W_OK; break;
 	case GFARM_FILE_LOOKUP:	op = 0; break;
@@ -98,7 +101,7 @@ accmode_to_op(gfarm_uint32_t flag)
 		assert(0);
 		op = 0;
 	}
-	return op;
+	return (op);
 }
 
 gfarm_error_t

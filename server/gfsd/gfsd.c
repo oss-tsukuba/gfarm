@@ -526,6 +526,8 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags)
 	fe->flags = 0;
 	if (flags & O_CREAT)
 		fe->flags |= FILE_FLAG_CREATED;
+	if (flags & O_TRUNC)
+		fe->flags |= FILE_FLAG_WRITTEN;
 	if ((flags & O_ACCMODE) != O_RDONLY)
 		fe->flags |= FILE_FLAG_WRITABLE;
 	fe->atime = st.st_atime;

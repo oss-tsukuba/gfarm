@@ -1682,6 +1682,11 @@ inode_open(struct file_opening *fo)
 	}
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ios->u.f.writers;
+	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
+		inode_status_changed(inode);
+		inode_modified(inode);
+		inode_set_size(inode, 0);
+	}
 
 	fo->opening_prev = &ios->openings;
 	fo->opening_next = ios->openings.opening_next;
