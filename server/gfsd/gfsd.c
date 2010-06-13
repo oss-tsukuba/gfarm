@@ -3883,6 +3883,11 @@ main(int argc, char **argv)
 	if (spool_check_level > 0)
 		(void)gfsd_spool_check(spool_check_level);
 
+	/*
+	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
+	 */
+	signal(SIGPIPE, SIG_IGN);
+
 	/* start back channel server */
 	start_back_channel_server();
 
@@ -3901,11 +3906,6 @@ main(int argc, char **argv)
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_NOCLDSTOP;
 	sigaction(SIGCHLD, &sa, NULL);
-
-	/*
-	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
-	 */
-	signal(SIGPIPE, SIG_IGN);
 
 	/*
 	 * To deal with race condition which may be caused by RST,
