@@ -47,7 +47,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 }
 
 static gfarm_error_t
-gfs_replicate_to_internal(char *file, char *dsthost, int dstport, int migrate)
+gfs_replicate_to_internal(const char *file, char *dsthost, int dstport,
+	int migrate)
 {
 	char *srchost;
 	int srcport;
@@ -90,19 +91,19 @@ gfs_replicate_to_local(GFS_File gf, char *srchost, int srcport)
 }
 
 gfarm_error_t
-gfs_replicate_to(char *file, char *dsthost, int dstport)
+gfs_replicate_to(const char *file, char *dsthost, int dstport)
 {
 	return (gfs_replicate_to_internal(file, dsthost, dstport, 0));
 }
 
 gfarm_error_t
-gfs_migrate_to(char *file, char *dsthost, int dstport)
+gfs_migrate_to(const char *file, char *dsthost, int dstport)
 {
 	return (gfs_replicate_to_internal(file, dsthost, dstport, 1));
 }
 
 gfarm_error_t
-gfs_replicate_from_to(char *file, char *srchost, int srcport,
+gfs_replicate_from_to(const char *file, char *srchost, int srcport,
 	char *dsthost, int dstport)
 {
 	gfarm_error_t e, e2;
@@ -123,7 +124,7 @@ gfs_replicate_from_to(char *file, char *srchost, int srcport,
 }
 
 gfarm_error_t
-gfs_migrate_from_to(char *file, char *srchost, int srcport,
+gfs_migrate_from_to(const char *file, char *srchost, int srcport,
 	char *dsthost, int dstport)
 {
 	gfarm_error_t e;

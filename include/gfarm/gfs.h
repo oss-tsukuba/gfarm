@@ -271,10 +271,10 @@ gfarm_error_t gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp,
 	char **fpathp, char **namep);
 gfarm_error_t gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp);
 
-gfarm_error_t gfs_replicate_to(char *, char *, int);
-gfarm_error_t gfs_replicate_from_to(char *, char *, int, char *, int);
-gfarm_error_t gfs_migrate_to(char *, char *, int);
-gfarm_error_t gfs_migrate_from_to(char *, char *, int, char *, int);
+gfarm_error_t gfs_replicate_to(const char *, char *, int);
+gfarm_error_t gfs_replicate_from_to(const char *, char *, int, char *, int);
+gfarm_error_t gfs_migrate_to(const char *, char *, int);
+gfarm_error_t gfs_migrate_from_to(const char *, char *, int, char *, int);
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
 gfarm_error_t gfs_replica_remove_by_file(const char *, const char *);
 gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
