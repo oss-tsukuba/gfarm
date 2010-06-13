@@ -306,7 +306,7 @@ inode_cksum_get(struct file_opening *fo,
 static void
 xattrs_init(struct xattrs *xattrs)
 {
-	xattrs->head = xattrs->tail =NULL;
+	xattrs->head = xattrs->tail = NULL;
 }
 
 static void
@@ -1362,7 +1362,7 @@ inode_create_link(struct inode *base, char *name,
 {
 	gfarm_error_t e;
 
-	e = inode_create_link_internal(base, name, process_get_user(process), 
+	e = inode_create_link_internal(base, name, process_get_user(process),
 	    inode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1950,7 +1950,7 @@ inode_schedule_file_reply_default(struct inode *inode, struct peer *peer,
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
 		if (copy->valid && host_is_up(copy->host))
-		    n++;
+			n++;
 	}
 	e_save = host_schedule_reply_n(peer, n, diag);
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
@@ -2240,7 +2240,7 @@ inode_init(void)
 	st.st_user = strdup(ADMIN_USER_NAME);
 	st.st_group = strdup(ADMIN_GROUP_NAME);
 	touch(&st.st_atimespec);
- 	st.st_ctimespec = st.st_mtimespec = st.st_atimespec;
+	st.st_ctimespec = st.st_mtimespec = st.st_atimespec;
 	/* inode_add_one will free(st). need to call db_inode_add before it */
 	e = db_inode_add(&st);
 	inode_add_one(NULL, &st);

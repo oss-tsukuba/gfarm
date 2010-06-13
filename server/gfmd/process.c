@@ -469,7 +469,7 @@ process_open_file(struct process *process, struct inode *file,
 		return (e);
 	}
 	process->filetab[fd] = fo;
-	
+
 	*fdp = fd;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -574,7 +574,6 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 			 */
 			fo->opener = NULL;
 			return (GFARM_ERR_NO_ERROR);
-			
 		}
 	}
 
@@ -935,7 +934,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	
+
 	giant_lock();
 	if (peer_get_process(peer) == NULL)
 		e = GFARM_ERR_NO_SUCH_PROCESS;

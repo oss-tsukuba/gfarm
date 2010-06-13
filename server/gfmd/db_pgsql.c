@@ -490,7 +490,7 @@ gfarm_pgsql_commit(const char *diag)
 		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 0);
-	
+
 	return (gfarm_pgsql_exec_and_log(transaction_ok ? "COMMIT" : "ROLLBACK",
 	    diag));
 }
@@ -1470,7 +1470,7 @@ gfarm_pgsql_inode_add(struct gfs_stat *info)
 {
 	return pgsql_inode_call(info,
 		"INSERT INTO INode (inumber, igen, nlink, size, mode, "
-			           "username, groupname, "
+				   "username, groupname, "
 				   "atimesec, atimensec, "
 				   "mtimesec, mtimensec, "
 				   "ctimesec, ctimensec) "

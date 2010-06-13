@@ -96,7 +96,7 @@ gfm_server_protocol_extension_default(struct peer *peer,
 
 /* this interface is made as a hook for a private extension */
 gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
-	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *) = 
+	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *) =
 		gfm_server_protocol_extension_default;
 
 gfarm_error_t
