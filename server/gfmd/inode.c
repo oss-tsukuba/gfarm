@@ -2303,8 +2303,7 @@ nlink_check(void *closure, struct inode *inode)
 			    (unsigned long long)inode_get_nlink(inode),
 			    (unsigned long long)inode_get_nlink_ini(inode));
 			inode->i_nlink = 2;
-		}
-		else
+		} else
 			return;
 	} else if (inode_get_nlink_ini(inode) == 0) {
 		gflog_warning(GFARM_MSG_UNFIXED,
@@ -2319,7 +2318,8 @@ nlink_check(void *closure, struct inode *inode)
 		    (unsigned long long)inode_get_nlink(inode),
 		    (unsigned long long)inode_get_nlink_ini(inode));
 		inode->i_nlink = inode_get_nlink_ini(inode);
-	}
+	} else
+		return;
 	e = db_inode_nlink_modify(
 	    inode_get_number(inode), inode_get_nlink(inode));
 	if (e != GFARM_ERR_NO_ERROR)
