@@ -1094,7 +1094,6 @@ search_idle_connect_callback(void *closure)
 		    gfarm_error_string(e));
 	}
 	c->state->concurrency--;
-	c->state->concurrency--;
 	c->h->net->ongoing--;
 	free(c);
 }
