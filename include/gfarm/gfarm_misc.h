@@ -79,42 +79,28 @@ extern char GFARM_URL_PREFIX[];
 extern const char GFARM_PATH_ROOT[];
 
 /*
- * Pool Host Scheduling
+ * File System Node Scheduling
  * XXX - will be separated to <gfarm_schedule.h>?
  */
-void gfarm_schedule_search_mode_use_loadavg(void);
-gfarm_error_t gfarm_schedule_search_idle_hosts(int, char **, int, char **);
-gfarm_error_t gfarm_schedule_search_idle_acyclic_hosts(int, char **, int *, char **);
-gfarm_error_t gfarm_schedule_search_idle_by_all(int, char **);
-gfarm_error_t gfarm_schedule_search_idle_by_domainname(const char *, int, char **);
-gfarm_error_t gfarm_schedule_search_idle_acyclic_by_domainname(const char *, int *,
-	char **);
-gfarm_error_t gfarm_schedule_search_idle_by_program(char *, int, char **);
-gfarm_error_t gfarm_url_hosts_schedule(const char *, char *, int *, char ***);
-gfarm_error_t gfarm_url_hosts_schedule_by_program(char *, char *, char *,
-	int *, char ***);
-gfarm_error_t gfarm_file_section_host_schedule(char *, char *, char **);
-gfarm_error_t gfarm_file_section_host_schedule_by_program(
-	char *, char *, char *, char **);
-gfarm_error_t gfarm_file_section_host_schedule_with_priority_to_local(char *, char *,
-	char **);
+struct gfarm_host_sched_info;
+gfarm_error_t gfarm_schedule_hosts_domain_all(const char *, const char *,
+    int *, struct gfarm_host_sched_info **);
+void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
+gfarm_error_t gfarm_schedule_hosts(const char *,
+	int, struct gfarm_host_sched_info *, int, char **, int *);
+gfarm_error_t gfarm_schedule_hosts_to_write(const char *,
+	int, struct gfarm_host_sched_info *, int, char **, int *);
+gfarm_error_t gfarm_schedule_hosts_acyclic(const char *,
+	int, struct gfarm_host_sched_info *, int *, char **, int *);
+gfarm_error_t gfarm_schedule_hosts_acyclic_to_write(const char *,
+	int, struct gfarm_host_sched_info *, int *, char **, int *);
 
 /* for debugging */
 void gfarm_schedule_cache_dump(void);
 
 /*
- * MetaDB utility
- */
-gfarm_error_t gfarm_url_fragment_cleanup(char *, int, char **);
-gfarm_error_t gfarm_url_fragment_number(const char *, int *);
-
-/*
  * helper functions for import
  */
-
-gfarm_error_t gfarm_import_fragment_config_read(char *,
-	int *, char ***, gfarm_int64_t **, int *);
-gfarm_int64_t *gfarm_import_fragment_size_alloc(gfarm_int64_t, int);
 gfarm_error_t gfarm_hostlist_read(char *, int *, char ***, int *);
 
 /*

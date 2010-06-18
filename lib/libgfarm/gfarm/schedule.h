@@ -27,8 +27,6 @@ int gfm_host_is_in_local_net(struct gfm_connection *, const char *);
 
 #if 0 /* not yet in gfarm v2 */
 
-void gfarm_strings_expand_cyclic(int, char **, int, char **);
-
 int gfarm_is_active_fsnode(void);
 int gfarm_is_active_fsnode_to_write(file_offset_t);
 
