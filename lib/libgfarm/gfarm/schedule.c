@@ -1020,7 +1020,6 @@ search_idle_connect_callback(void *closure)
 #endif
 	}
 	c->state->concurrency--;
-	c->state->concurrency--;
 	c->h->net->ongoing--;
 	free(c);
 }
