@@ -1,3 +1,44 @@
+Release note for Gfarm 2.3.2
+============================
+
+[2010.6.19]
+
+New API
+* new scheduling APIs - gfarm_schedule_hosts_domain_all,
+  gfarm_host_sched_info_free, gfarm_schedule_hosts{,_acyclic}{,_to_write}
+
+Updated feature
+* support OpenSSL 1.0.0
+* support kfreebsd-gnu and linux-gnuabi
+* gfmd - check and repair nlinks at start-up
+* gfrm - -f option to force to remove
+
+Bug fix
+* gfrep - -x option does not remove excessive number of file replicas
+  in case some file replica creations fail
+* gfhost - -c/-m/-d without a hostname doesn't cause an error [sf.net
+  trac #93]
+* gfs_pio_fstat() - may not return correct file size [sf.net trac
+  #111]
+* gfsd failed to report an error that its hostname is not registered
+  in gfmd (i.e. "gfhost -M")
+* file close operation is missing in gfsd when a client crashed
+  [sf.net trac #2]
+* file close operation is missing in gfmd
+* fix data race to calculate total amount of disk usage when a file
+  system node is up and down
+* fix missing metadata update when GFARM_FILE_TRUNC is specified
+  [sf.net trac #103]
+* fix missing permission check when GFARM_FILE_RDONLY|GFARM_FILE_TRUNC
+  is specified [sf.net trac #107]
+* try the next auth method in case of permission denied
+* the test program "fsx" causes an assertion failure [sf.net trac
+  #102]
+* fix compilation errors on FreeBSD 8.0
+* fix bashism reported by checkbashisms
+* UNIX sockets and their parent directories are not removed when gfsd
+  is stopped [sf.net trac #94]
+
 Release note for Gfarm 2.3.1
 ============================
 
