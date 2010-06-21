@@ -46,7 +46,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_DOC = sh $(top_builddir)/makes/install-doc
 
-LIBS = @LIBS@
+LIBS = @LIBS@ $(pthread_libs)
 
 largefile_cflags = @largefile_cflags@
 largefile_ldflags = @largefile_ldflags@

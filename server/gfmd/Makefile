@@ -11,8 +11,7 @@ CFLAGS = $(pthread_includes) \
 	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) -I$(srcdir) \
 	$(metadb_client_includes) $(optional_cflags) \
 	-DGFMD_CONFIG='"$(sysconfdir)/gfmd.conf"'
-LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(metadb_client_libs) \
-	$(LIBS) $(pthread_libs)
+LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(metadb_client_libs) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
 PROGRAM = gfmd
