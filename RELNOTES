@@ -1,7 +1,7 @@
 Release note for Gfarm 2.3.2
 ============================
 
-[2010.6.19]
+[2010.6.21]
 
 New API
 * new scheduling APIs - gfarm_schedule_hosts_domain_all,
@@ -11,6 +11,8 @@ Updated feature
 * support OpenSSL 1.0.0
 * support kfreebsd-gnu and linux-gnuabi
 * gfmd - check and repair nlinks at start-up
+* gfsd - if the input/output error occurs, kill oneself to cope with
+  the hardware failure
 * gfrm - -f option to force to remove
 
 Bug fix
