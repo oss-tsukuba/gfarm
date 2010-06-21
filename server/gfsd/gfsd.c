@@ -212,6 +212,8 @@ cleanup_handler(int signo)
 	_exit(2);
 }
 
+static int kill_master_gfsd;
+
 static void fatal_full(int, const char *, int, const char *,
 		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
 static void
@@ -225,7 +227,7 @@ fatal_full(int msg_no, const char *file, int line_no, const char *func,
 	va_end(ap);
 
 	cleanup(0);
-	if (getpid() == back_channel_gfsd_pid) {
+	if (getpid() == back_channel_gfsd_pid || kill_master_gfsd) {
 		/*
 		 * send terminate signal to the master process.
 		 * this should be done at the end of fatal(),
@@ -295,7 +297,6 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 	accepting_fatal_full(msg_no, file, line_no, func, "%s: %s", buffer,
 			strerror(save_errno));
 }
-
 
 static int
 fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
@@ -403,7 +404,12 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1000459, "%s: %s", diag, gfarm_error_string(e));
 
-	if (ecode == GFARM_ERR_NO_ERROR && *format != '\0')
+	/* if input/output error occurs, die */
+	if (ecode == GFARM_ERR_INPUT_OUTPUT) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		    gfarm_error_string(e));
+	} else if (ecode == GFARM_ERR_NO_ERROR && *format != '\0')
 		fatal(GFARM_MSG_1000460,
 		    "%s: invalid format character `%c' to put reply",
 		    diag, *format);
@@ -3117,7 +3123,7 @@ gfm_client_connect_with_reconnection()
 	    != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1000551,
 		    "cannot set canonical hostname of this node (%s), "
-		    "died: %s\n", canonical_self_name, gfarm_error_string(e));
+		    "die: %s\n", canonical_self_name, gfarm_error_string(e));
 }
 
 static void
@@ -3791,7 +3797,7 @@ main(int argc, char **argv)
 	    &canonical_self_name, &p)) != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1000591,
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server, died: %s\n",
+		    "register this node in Gfarm metadata server, die: %s\n",
 		    gfarm_host_get_self_name(), gfarm_error_string(e));
 	}
 	/* avoid gcc warning "passing arg 3 from incompatible pointer type" */
@@ -3806,7 +3812,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_1000592,
 		    "cannot get canonical hostname of %s, ask admin to "
-		    "register this node in Gfarm metadata server, died: %s\n",
+		    "register this node in Gfarm metadata server, die: %s\n",
 		    canonical_self_name, gfarm_error_string(e));
 	}
 
