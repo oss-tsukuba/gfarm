@@ -218,6 +218,17 @@ inode_cksum_set(struct file_opening *fo,
 
 	assert(ios != NULL);
 
+	if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "too long cksum type: \"%s\"", cksum_type);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "too long cksum (type: \"%s\"): %d bytes",
+		    cksum_type, (int)cksum_len);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
 	if (!inode_is_file(fo->inode))
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 
@@ -1029,8 +1040,11 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		return (GFARM_ERR_NO_ERROR);
 	} else if (memchr(name, '/', len) != NULL)
 		return (GFARM_ERR_INVALID_ARGUMENT);
-	if (len > GFS_MAXNAMLEN)
-		len = GFS_MAXNAMLEN;
+	if (len > GFS_MAXNAMLEN) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "op %d: too long file name: \"%s\"", op, name);
+		return (GFARM_ERR_FILE_NAME_TOO_LONG);
+	}
 	if (op != INODE_CREATE && op != INODE_CREATE_EXCLUSIVE &&
 	    op != INODE_LINK) {
 		entry = dir_lookup(parent->u.c.s.d.entries, name, len);
@@ -1341,6 +1355,13 @@ inode_create_symlink(struct inode *base, char *name,
 	struct process *process, char *source_path)
 {
 	struct inode *inode;
+
+	if (strlen(source_path) > GFARM_PATH_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "create symlink \"%s\"  \"%s\": too long source path",
+		    source_path, name);
+		return (GFARM_ERR_FILE_NAME_TOO_LONG);
+	}
 
 	return (inode_lookup_relative(base, name, GFS_DT_LNK,
 	    INODE_CREATE_EXCLUSIVE, process_get_user(process),
