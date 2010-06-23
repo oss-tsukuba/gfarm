@@ -117,9 +117,24 @@ peer_epoll_ctl_fd(int op, int fd)
 
 	ev.data.fd = fd;
 	ev.events = EPOLLIN; /* level triggered, since we use blocking mode */
-	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1)
-		gflog_fatal(GFARM_MSG_1000275,
-		    "epoll_ctl: %s\n", strerror(errno));
+	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1) {
+		if (op == EPOLL_CTL_DEL) {
+ 			/*
+ 			 * this is expected.  see the comment in peer_watcher()
+ 			 * about calling peer_epoll_del_fd() and
+ 			 * https://sourceforge.net/apps/trac/gfarm/ticket/80
+			 * https://sourceforge.net/apps/trac/gfarm/ticket/113
+ 			 */
+			gflog_info(GFARM_MSG_UNFIXED,
+ 			    "epoll_ctl(%d, %d, %d): "
+			    "probably called against a closed file: %s",
+			    peer_epoll.fd, op, fd, strerror(errno));
+ 		} else {
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "epoll_ctl(%d, %d, %d): %s",
+			    peer_epoll.fd, op, fd, strerror(errno));
+		}
+	}
 }
 
 static void
