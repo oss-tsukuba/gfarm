@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gfgroup -l gfarmadm | egrep " `gfwhoami`"'( |$)' >/dev/null

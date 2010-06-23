@@ -322,9 +322,28 @@ enum gfm_proto_command {
 /* GFM_PROTO_CKSUM_SET flags */
 #define	GFM_PROTO_CKSUM_SET_FILE_MODIFIED	0x00000001
 
-#define GFM_PROTO_CKSUM_MAXLEN	256
+/*
+ * data size limits:
+ *
+ * see also:
+ * GFS_MAXNAMLEN in <gfarm/gfs.h>
+ * MAX_XATTR_NAME_LEN in gfm/xattr.c
+ * gftool/config-gfarm/gfarm.sql
+ */
+
+#define GFM_PROTO_CKSUM_TYPE_MAXLEN		32
+#define GFM_PROTO_CKSUM_MAXLEN			256
 
 #define GFM_PROTO_MAX_DIRENT	10240
+
+#define GFARM_HOST_NAME_MAX			256
+#define GFARM_HOST_ARCHITECTURE_NAME_MAX	128
+
+#define GFARM_LOGIN_NAME_MAX			64
+#define GFARM_USER_REALNAME_MAX			256
+#define GFARM_USER_GSI_DN_MAX			1024
+
+#define GFARM_PATH_MAX				1024
 
 /* GFM_PROTO_SCHEDULE_FILE, GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM */
 #define GFM_PROTO_SCHED_FLAG_HOST_AVAIL		1 /* always TRUE for now */

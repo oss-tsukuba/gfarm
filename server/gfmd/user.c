@@ -14,6 +14,7 @@
 #include "config.h"	/* gfarm_metadb_admin_user */
 #include "auth.h"
 #include "gfp_xdr.h"
+#include "gfm_proto.h"	/* GFARM_LOGIN_NAME_MAX, etc */
 
 #include "subr.h"
 #include "db_access.h"
@@ -568,6 +569,22 @@ gfm_server_user_info_get_by_gsi_dn(
 	return (e);
 }
 
+static gfarm_error_t
+user_info_verify(struct gfarm_user_info *ui, const char *diag)
+{
+	if (strlen(ui->username) > GFARM_LOGIN_NAME_MAX ||
+	    strlen(ui->realname) > GFARM_USER_REALNAME_MAX ||
+	    strlen(ui->homedir) > GFARM_PATH_MAX ||
+	    strlen(ui->gsi_dn) > GFARM_USER_GSI_DN_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: invalid user info(%s, %s, %s, %s): argument too long",
+		    diag, ui->username, ui->realname, ui->homedir, ui->gsi_dn);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	} else {
+		return (GFARM_ERR_NO_ERROR);
+	}
+}
+
 gfarm_error_t
 gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 {
@@ -598,6 +615,8 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_debug(GFARM_MSG_1001506,
 			"User already exists");
+	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
 	} else {
 		e = user_enter(&ui, NULL);
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -650,6 +669,8 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_USER;
 		gflog_debug(GFARM_MSG_1001510,
 			"user_lookup() failed");
+		needs_free = 1;
+	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
 		needs_free = 1;
 	} else if ((e = db_user_modify(&ui,
 	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=

@@ -1360,18 +1360,46 @@ gfm_server_host_info_get_by_namealiases(struct peer *peer,
 	    "host_info_get_by_namealiases"));
 }
 
+static gfarm_error_t
+host_info_verify(struct gfarm_host_info *hi, const char *diag)
+{
+	if (strlen(hi->hostname) > GFARM_HOST_NAME_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: too long hostname: %s",
+		    diag, hi->hostname);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (strlen(hi->architecture) > GFARM_HOST_ARCHITECTURE_NAME_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s: too long architecture: %s",
+		    diag, hi->hostname, hi->architecture);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (hi->ncpu < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s: invalid cpu number: %d",
+		    diag, hi->hostname, hi->ncpu);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (hi->port <= 0 || hi->port >= 65536) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s: invalid port number: %d",
+		    diag, hi->hostname, hi->port);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 {
 	gfarm_int32_t e;
 	struct user *user = peer_get_user(peer);
-	char *hostname, *architecture;
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_SET";
 
 	e = gfm_server_get_request(peer, diag, "ssiii",
-	    &hostname, &architecture, &ncpu, &port, &flags);
+	    &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001562,
 			"host_info_set request failure: %s",
@@ -1379,49 +1407,45 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 		return (e);
 	}
 	if (skip) {
-		free(hostname);
-		free(architecture);
+		free(hi.hostname);
+		free(hi.architecture);
 		return (GFARM_ERR_NO_ERROR);
 	}
+	hi.ncpu = ncpu;
+	hi.port = port;
+	hi.flags = flags;
+	/* XXX FIXME missing hostaliases */
+	hi.nhostaliases = 0;
+	hi.hostaliases = NULL;
 
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		gflog_debug(GFARM_MSG_1001563,
 			"operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (host_lookup(hostname) != NULL) {
+	} else if (host_lookup(hi.hostname) != NULL) {
 		gflog_debug(GFARM_MSG_1001564,
 			"host already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
-	} else {
-		hi.hostname = hostname;
-		hi.port = port;
-		/* XXX FIXME missing hostaliases */
-		hi.nhostaliases = 0;
-		hi.hostaliases = NULL;
-		hi.architecture = architecture;
-		hi.ncpu = ncpu;
-		hi.flags = flags;
-		e = host_enter(&hi, NULL);
-		if (e == GFARM_ERR_NO_ERROR) {
-			e = db_host_add(&hi);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001565,
-					"db_host_add() failed: %s",
-					gfarm_error_string(e));
-				host_remove(hostname);
-				hostname = architecture = NULL;
-			}
-		}
+	} else if ((e = host_info_verify(&hi, diag)) != GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
+	} else if ((e = host_enter(&hi, NULL)) != GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
+	} else if ((e = db_host_add(&hi)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001565,
+			"db_host_add() failed: %s",
+			gfarm_error_string(e));
+		host_remove(hi.hostname);
+		hi.hostname = hi.architecture = NULL;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001566,
 			"error occurred during process: %s",
 			gfarm_error_string(e));
-		if (hostname != NULL)
-			free(hostname);
-		if (architecture != NULL)
-			free(architecture);
+		if (hi.hostname != NULL)
+			free(hi.hostname);
+		if (hi.architecture != NULL)
+			free(hi.architecture);
 	}
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -1432,13 +1456,14 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
+	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
 	struct host *h;
 	int needs_free = 0;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_MODIFY";
 
 	e = gfm_server_get_request(peer, diag, "ssiii",
-	    &hi.hostname, &hi.architecture, &hi.ncpu, &hi.port, &hi.flags);
+	    &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001567,
 			"host_info_modify request failed: %s",
@@ -1450,6 +1475,10 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 		free(hi.architecture);
 		return (GFARM_ERR_NO_ERROR);
 	}
+	hi.ncpu = ncpu;
+	hi.port = port;
+	hi.flags = flags;
+	/* XXX FIXME missing hostaliases */
 
 	/* XXX should we disconnect a back channel to the host? */
 	giant_lock();
@@ -1461,6 +1490,8 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 	} else if ((h = host_lookup(hi.hostname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001569, "host does not exists");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+		needs_free = 1;
+	} else if ((e = host_info_verify(&hi, diag)) != GFARM_ERR_NO_ERROR) {
 		needs_free = 1;
 	} else if ((e = db_host_modify(&hi,
 	    DB_HOST_MOD_ARCHITECTURE|DB_HOST_MOD_NCPU|DB_HOST_MOD_FLAGS,

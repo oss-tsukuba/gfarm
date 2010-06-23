@@ -11,9 +11,23 @@ lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
 
 # gftool/config-gfarm
+gftool/gfhost/gfhost-c.sh
+gftool/gfhost/gfhost-c.name.toolong.sh
+gftool/gfhost/gfhost-c.arch.toolong.sh
+gftool/gfhost/gfhost-c.port.toobig.sh
+gftool/gfhost/gfhost-m.sh
+gftool/gfhost/gfhost-m.arch.toolong.sh
+gftool/gfuser/gfuser-c.sh
+gftool/gfuser/gfuser-c.real.toolong.sh
+gftool/gfuser/gfuser-c.home.toolong.sh
+gftool/gfuser/gfuser-m.sh
+gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
+gftool/gfln/gfln-s.sh
+gftool/gfln/gfln-s_toolong.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
 gftool/gfmkdir/mkdir.sh
+gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
