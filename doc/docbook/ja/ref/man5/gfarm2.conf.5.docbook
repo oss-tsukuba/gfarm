@@ -1049,6 +1049,36 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>利用可能なファイルシステムノードが存在しない場合，
+Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	no_file_system_node_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfmd_reconnection_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>メタデータサーバへの接続が切断された場合，
+メタデータサーバへの再接続を繰り返しますが，
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	gfmd_reconnection_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
 <!--
 <varlistentry>
 <term><token>record_atime</token> <parameter>有効性</parameter></term>
@@ -1198,6 +1228,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
+	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
+	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"

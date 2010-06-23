@@ -55,3 +55,12 @@ gfarm_timeval_add_microsec(struct timeval *t, long microsec)
 	t->tv_usec += microsec;
 	gfarm_timeval_normalize(t);
 }
+
+int
+gfarm_timeval_is_expired(const struct timeval *expiration)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	return (gfarm_timeval_cmp(&now, expiration) > 0);
+}
