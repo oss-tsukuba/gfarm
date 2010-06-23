@@ -1511,6 +1511,50 @@ CLASS="PARAMETER"
 CLASS="LITERALLAYOUT"
 >	log_message_verbose_level&nbsp;1</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>no_file_system_node_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>ÍøÍÑ²ÄÇ½¤Ê¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬Â¸ºß¤·¤Ê¤¤¾ì¹ç¡¤
+Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¤Ï¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬ÍøÍÑ²ÄÇ½¤Ë¤Ê¤ë¤Ş¤Ç»î¹Ô¤ò·«¤êÊÖ¤·¤Ş¤¹¤¬¡¢
+¤½¤Î¥¿¥¤¥à¥¢¥¦¥È»ş´Ö¤òÉÃÃ±°Ì¤Ç»ØÄê¤·¤Ş¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï 30ÉÃ¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	no_file_system_node_timeout&nbsp;30</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfmd_reconnection_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ÉÃ¿ô</I
+></TT
+></DT
+><DD
+><P
+>¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ğ¤Ø¤ÎÀÜÂ³¤¬ÀÚÃÇ¤µ¤ì¤¿¾ì¹ç¡¤
+¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ğ¤Ø¤ÎºÆÀÜÂ³¤ò·«¤êÊÖ¤·¤Ş¤¹¤¬¡¤
+¤½¤Î¥¿¥¤¥à¥¢¥¦¥È»ş´Ö¤òÉÃÃ±°Ì¤Ç»ØÄê¤·¤Ş¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï 30ÉÃ¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfmd_reconnection_timeout&nbsp;30</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1629,6 +1673,8 @@ CLASS="LITERALLAYOUT"
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
+	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

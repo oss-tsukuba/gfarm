@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "25 March 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "23 June 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -701,6 +701,30 @@ gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
 .nf
 	log_message_verbose_level 1
 .fi
+.TP
+\fBno_file_system_node_timeout \fI秒数\fB\fR
+利用可能なファイルシステムノードが存在しない場合，
+Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+
+例:
+
+.nf
+	no_file_system_node_timeout 30
+.fi
+.TP
+\fBgfmd_reconnection_timeout \fI秒数\fB\fR
+メタデータサーバへの接続が切断された場合，
+メタデータサーバへの再接続を繰り返しますが，
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+
+例:
+
+.nf
+	gfmd_reconnection_timeout 30
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm2.confの文法をBNFで記述すると、下記のようになります。
@@ -810,6 +834,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
+	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
+	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

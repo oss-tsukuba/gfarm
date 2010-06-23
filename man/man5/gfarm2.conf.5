@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "25 March 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "23 June 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -748,6 +748,30 @@ For example,
 .nf
 	log_message_verbose_level 1
 .fi
+.TP
+\fBno_file_system_node_timeout \fIseconds\fB\fR
+If there is no file system node available,
+Gfarm client library periodically tries to find a file system node.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.
+
+For example,
+
+.nf
+	no_file_system_node_timeout 30
+.fi
+.TP
+\fBgfmd_reconnection_timeout \fIseconds\fB\fR
+If the connection to the metadata server is disconnected,
+Gfarm client library periodically tries to reconnect.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.
+
+For example,
+
+.nf
+	gfmd_reconnection_timeout 30
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -858,6 +882,8 @@ notation.
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
+	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
+	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
