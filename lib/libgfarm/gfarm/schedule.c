@@ -1479,8 +1479,8 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 }
 
 static void
-strings_expand_cyclic(int nsrchosts, char **srchosts,
-	int ndsthosts, char **dsthosts)
+hosts_expand_cyclic(int nsrchosts, char **srchosts, int *srcports,
+	int ndsthosts, char **dsthosts, int *dstports)
 {
 	int i, j;
 
@@ -1488,6 +1488,7 @@ strings_expand_cyclic(int nsrchosts, char **srchosts,
 		if (j >= nsrchosts)
 			j = 0;
 		dsthosts[i] = srchosts[j];
+		dstports[i] = dstports[j];
 	}
 }
 
@@ -1503,8 +1504,8 @@ search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode)
 	if (nfound == 0)
 		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
 	if (nohosts > nfound)
-		strings_expand_cyclic(nfound, ohosts,
-		    nohosts - nfound, &ohosts[nfound]);
+		hosts_expand_cyclic(nfound, ohosts, oports,
+		    nohosts - nfound, &ohosts[nfound], &oports[nfound]);
 	return (GFARM_ERR_NO_ERROR);
 }
 
