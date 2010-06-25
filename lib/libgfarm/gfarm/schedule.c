@@ -1790,23 +1790,6 @@ gfarm_schedule_hosts_acyclic_to_write(const char *path,
 }
 
 
-gfarm_error_t
-gfarm_schedule_hosts_domain_all(const char *path, const char *domain,
-	int *nhostsp, struct gfarm_host_sched_info **infosp)
-{
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-
-	if ((e = gfm_client_connection_and_process_acquire_by_path(
-	    path, &gfm_server)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	e = gfm_client_schedule_host_domain(gfm_server, domain,
-	    nhostsp, infosp);
-	gfm_client_connection_free(gfm_server);
-	return (e);
-}
-
-
 /* this function shouldn't belong to this file, but... */
 int
 gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
