@@ -229,7 +229,7 @@ iobuffer.lo: iobuffer.h
 lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h
 metadb_common.lo: metadb_common.h xattr_info.h quota_info.h
 param.lo: hostspec.h param.h
-schedule.lo: $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h host.h auth.h config.h gfs_client.h gfs_profile.h
+schedule.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/timer.h liberror.h conn_hash.h host.h config.h gfm_proto.h gfm_client.h gfs_client.h schedule.h lookup.h gfs_profile.h
 sockutil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h sockutil.h
 sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:

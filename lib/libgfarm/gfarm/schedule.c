@@ -38,6 +38,7 @@
 #include "gfm_client.h"
 #include "gfs_client.h"
 #include "schedule.h"
+#include "lookup.h"
 #include "gfs_profile.h"
 
 /*
@@ -837,9 +838,9 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 
 	/*
 	 * return hostname parameter, instead of cached hostname, as results.
-	 * this is needed for gfarm_schedule_search_idle_hosts()
-	 * and gfarm_schedule_search_idle_acyclic_hosts() which return
-	 * input hostnames instead of newly allocated onews.
+	 * this is needed for gfarm_schedule_hosts()
+	 * and gfarm_schedule_hosts_acyclic() which return
+	 * input hostnames instead of newly allocated strings.
 	 */
 	h->return_value = hostname;
 	return (GFARM_ERR_NO_ERROR);
@@ -1588,16 +1589,50 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfarm_schedule_select_host(struct gfm_connection *gfm_server,
-	int nhosts, struct gfarm_host_sched_info *infos,
-	int write_mode, char **hostp, int *portp)
+static void
+hosts_expand_cyclic(int nsrchosts, char **srchosts, int *srcports,
+	int ndsthosts, char **dsthosts, int *dstports)
+{
+	int i, j;
+
+	for (i = 0, j = 0; i < ndsthosts; i++, j++) {
+		if (j >= nsrchosts)
+			j = 0;
+		dsthosts[i] = srchosts[j];
+		dstports[i] = dstports[j];
+	}
+}
+
+static gfarm_error_t
+search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode)
 {
 	gfarm_error_t e;
-	int i, n;
-	char *host;
-	int port;
-	gfarm_timerval_t t1, t2, t3, t4, t5;
+	int nfound = nohosts;
+
+	e = search_idle(&nfound, ohosts, oports, write_mode);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (nfound == 0)
+		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
+	if (nohosts > nfound)
+		hosts_expand_cyclic(nfound, ohosts, oports,
+		    nohosts - nfound, &ohosts[nfound], &oports[nfound]);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * If acyclic, *nohostsp is an input/output parameter,
+ * otherwise *nohostsp is an input parameter.
+ */
+gfarm_error_t
+select_hosts(struct gfm_connection *gfm_server,
+	int acyclic, int write_mode,
+	int ninfos, struct gfarm_host_sched_info *infos,
+	int *nohostsp, char **ohosts, int *oports)
+{
+	gfarm_error_t e;
+	int i;
+	gfarm_timerval_t t1, t2, t3, t4;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
@@ -1610,7 +1645,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	 */
 	if (!gfm_client_is_connection_valid(gfm_server)) {
 		gflog_debug(GFARM_MSG_1001452,
-		    "gfarm_schedule_select_host: connection cache was purged");
+		    "select_hosts: connection cache was purged");
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 
@@ -1624,7 +1659,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));
-	for (i = 0; i < nhosts; i++) {
+	for (i = 0; i < ninfos; i++) {
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001454,
@@ -1635,14 +1670,39 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 		}
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
-	n = 1;
-	e = search_idle(&n, &host, &port, write_mode);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (acyclic)
+		e = search_idle(nohostsp, ohosts, oports, write_mode);
+	else
+		e = search_idle_cyclic(*nohostsp, ohosts, oports, write_mode);
+	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1001455,
-		    "gfarm_schedule_select_host: search_idle: %s",
+		    "gfarm_schedule_select_host: search result: %s",
 		    gfarm_error_string(e));
+
+	gfs_profile(gfarm_gettimerval(&t4));
+	gfs_profile(
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "(select_hosts) init %f, add %f, schedule %f",
+			   gfarm_timerval_sub(&t2, &t1),
+			   gfarm_timerval_sub(&t3, &t2),
+			   gfarm_timerval_sub(&t4, &t3)));
+
+	return (e);
+}
+
+gfarm_error_t
+gfarm_schedule_select_host(struct gfm_connection *gfm_server,
+	int nhosts, struct gfarm_host_sched_info *infos,
+	int write_mode, char **hostp, int *portp)
+{
+	gfarm_error_t e;
+	char *host;
+	int port, n = 1;
+
+	e = select_hosts(gfm_server, 1, write_mode, nhosts, infos,
+	    &n, &host, &port);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (n == 0) { /* although this shouldn't happen */
 		gflog_debug(GFARM_MSG_1001456,
 		    "gfarm_schedule_select_host: no filesystem node");
@@ -1654,23 +1714,98 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 		    "gfarm_schedule_select_host: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	gfs_profile(gfarm_gettimerval(&t4));
 
 	*hostp = host;
 	*portp = port;
-	gfs_profile(gfarm_gettimerval(&t5));
-
-	gfs_profile(
-		gflog_info(GFARM_MSG_1000173,
-		    "(select_host) init %f, add %f, schedule %f, "
-			   "lookup %f",
-			   gfarm_timerval_sub(&t2, &t1),
-			   gfarm_timerval_sub(&t3, &t2),
-			   gfarm_timerval_sub(&t4, &t3),
-			   gfarm_timerval_sub(&t5, &t4)));
-
 	return (GFARM_ERR_NO_ERROR);
 }
+
+static gfarm_error_t
+select_hosts_by_path(const char *path,
+	int acyclic, int write_mode,
+	int ninfos, struct gfarm_host_sched_info *infos, 
+	int *nohostsp, char **ohosts, int *oports)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
+	    &gfm_server)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = select_hosts(gfm_server, acyclic, write_mode, ninfos, infos,
+	    nohostsp, ohosts, oports);
+	gfm_client_connection_free(gfm_server);
+	return (e);
+}
+
+/*
+ * Select 'nohosts' hosts among 'nihosts' ihinfos in the order of
+ * load average, and return to 'ohosts' and 'oports'.
+ * When enough number of hosts are not available, the available hosts
+ * will be listed in the cyclic manner.
+ * NOTE:
+ *	each entry of ohosts[] is not strdup'ed but points ihinfos[], thus,
+ *	- DO NOT call free() against each entry of ohosts[].
+ *	- DO NOT access ohosts[] after gfarm_host_sched_info_free(ihinfos).
+ */
+gfarm_error_t
+gfarm_schedule_hosts(const char *path,
+	int nihosts, struct gfarm_host_sched_info *ihinfos,
+	int nohosts, char **ohosts, int *oports)
+{
+	return (select_hosts_by_path(path, 0, 0, nihosts, ihinfos,
+	    &nohosts, ohosts, oports));
+}
+
+gfarm_error_t
+gfarm_schedule_hosts_to_write(const char *path,
+	int nihosts, struct gfarm_host_sched_info *ihinfos,
+	int nohosts, char **ohosts, int *oports)
+{
+	return (select_hosts_by_path(path, 0, 1, nihosts, ihinfos,
+	    &nohosts, ohosts, oports));
+}
+
+/*
+ * Similar to 'gfarm_schedule_hosts()' except for the fact that
+ * the available hosts will be listed only once even if enough number of
+ * hosts are not available, 
+ */
+gfarm_error_t
+gfarm_schedule_hosts_acyclic(const char *path,
+	int nihosts, struct gfarm_host_sched_info *ihinfos,
+	int *nohostsp, char **ohosts, int *oports)
+{
+	return (select_hosts_by_path(path, 1, 0, nihosts, ihinfos,
+	    nohostsp, ohosts, oports));
+}
+
+gfarm_error_t
+gfarm_schedule_hosts_acyclic_to_write(const char *path,
+	int nihosts, struct gfarm_host_sched_info *ihinfos,
+	int *nohostsp, char **ohosts, int *oports)
+{
+	return (select_hosts_by_path(path, 1, 1, nihosts, ihinfos,
+	    nohostsp, ohosts, oports));
+}
+
+
+gfarm_error_t
+gfarm_schedule_hosts_domain_all(const char *path, const char *domain,
+	int *nhostsp, struct gfarm_host_sched_info **infosp)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+	    path, &gfm_server)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = gfm_client_schedule_host_domain(gfm_server, domain,
+	    nhostsp, infosp);
+	gfm_client_connection_free(gfm_server);
+	return (e);
+}
+
 
 /* this function shouldn't belong to this file, but... */
 int
@@ -1852,108 +1987,6 @@ gfarm_schedule_cache_dump(void)
 
 
 #if 0 /* not yet in gfarm v2 */
-
-void
-gfarm_strings_expand_cyclic(int nsrchosts, char **srchosts,
-	int ndsthosts, char **dsthosts)
-{
-	int i, j;
-
-	for (i = 0, j = 0; i < ndsthosts; i++, j++) {
-		if (j >= nsrchosts)
-			j = 0;
-		dsthosts[i] = srchosts[j];
-	}
-}
-
-static char *
-search_idle_cyclic(int nohosts, char **ohosts, int write_mode)
-{
-	char *e;
-	int nfound = nohosts;
-
-	e = search_idle(&nfound, ohosts, write_mode);
-	if (e != NULL)
-		return (e);
-	if (nfound == 0)
-		return (GFARM_ERR_NO_HOST);
-	if (nohosts > nfound)
-		gfarm_strings_expand_cyclic(nfound, ohosts,
-		    nohosts - nfound, &ohosts[nfound]);
-	return (NULL);
-}
-
-/*
- * If acyclic, *nohostsp is an input/output parameter,
- * otherwise *nohostsp is an input parameter.
- */
-static char *
-schedule_search_idle_hosts(int acyclic, int write_mode,
-	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
-{
-	char *e;
-	int i;
-
-	e = search_idle_candidate_list_init();
-	if (e != NULL)
-		return (e);
-	for (i = 0; i < nihosts; i++) {
-		e = search_idle_candidate_list_add_host(ihosts[i]);
-		if (e != NULL)
-			return (e);
-	}
-	return (acyclic ?
-	    search_idle(nohostsp, ohosts, write_mode) :
-	    search_idle_cyclic(*nohostsp, ohosts, write_mode));
-}
-
-/*
- * Select 'nohosts' hosts among 'nihosts' ihosts in the order of
- * load average, and return to 'ohosts'.
- * When enough number of hosts are not available, the available hosts
- * will be listed in the cyclic manner.
- * NOTE:
- *	- all of ihosts[] must be canonical hostnames.
- *	- each entry of ohosts is not strdup'ed unlike other
- *	  gfarm_schedule_* functions.
- *	  DO NOT call gfarm_strings_free_deeply() or free(*ohosts).
- */
-char *
-gfarm_schedule_search_idle_hosts(
-	int nihosts, char **ihosts, int nohosts, char **ohosts)
-{
-	return (schedule_search_idle_hosts(0, 0, nihosts, ihosts,
-	    &nohosts, ohosts));
-}
-
-char *
-gfarm_schedule_search_idle_hosts_to_write(
-	int nihosts, char **ihosts, int nohosts, char **ohosts)
-{
-	return (schedule_search_idle_hosts(0, 1, nihosts, ihosts,
-	    &nohosts, ohosts));
-}
-
-/*
- * Similar to 'gfarm_schedule_search_idle_hosts' except for the fact that
- * the available hosts will be listed only once even if enough number of
- * hosts are not available, 
- */
-char *
-gfarm_schedule_search_idle_acyclic_hosts(
-	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
-{
-	return (schedule_search_idle_hosts(1, 0, nihosts, ihosts,
-	    nohostsp, ohosts));
-}
-
-char *
-gfarm_schedule_search_idle_acyclic_hosts_to_write(
-	int nihosts, char **ihosts, int *nohostsp, char **ohosts)
-{
-	return (schedule_search_idle_hosts(1, 1, nihosts, ihosts,
-	    nohostsp, ohosts));
-}
 
 /*
  * If acyclic, *nohostsp is an input/output parameter,
