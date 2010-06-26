@@ -2,7 +2,7 @@
 
 <refentry id='gfarm.3'>
 
-<refentryinfo><date>22 Aug 2005</date></refentryinfo>
+<refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm</refentrytitle>
@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfarm</refname>
-<refpurpose>Gfarm ネイティブ API ライブラリ</refpurpose>
+<refpurpose>Gfarm ファイルシステム API ライブラリ</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <synopsis>
@@ -24,7 +24,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
+<para>Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 機能に対するインターフェースを提供します．このマニュアルはライブラリ
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
 ください．</para>
@@ -34,21 +34,16 @@
 <para>
 <citerefentry>
 <refentrytitle>gfarm_initialize</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は gfarm ライブラリの初期化に，
+</citerefentry> 関数は Gfarm ライブラリの初期化に，
 <citerefentry>
 <refentrytitle>gfarm_terminate</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は gfarm ライブラリの終了処理に用います．
+</citerefentry> 関数は Gfarm ライブラリの終了処理に用います．
 </para>
 </refsect2>
 
 <refsect2>
 <title>ファイル入出力処理</title>
 <para>
-<citerefentry>
-<refentrytitle>gfs_pio_set_local</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は，並列プロセスの初期化として，自ノードのノード番号と
-総ノード数の設定に用います．
-
 既存のファイルをストリームとしてオープンするには
 <citerefentry>
 <refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum>
@@ -61,13 +56,6 @@
 <citerefentry>
 <refentrytitle>gfs_pio_close</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数を使います．
-<citerefentry>
-<refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数と
-<citerefentry>
-<refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は，
-並列ファイルのアクセス方法を指定します．
 </para>
 
 <para>
@@ -139,6 +127,7 @@
 
 <refsect2>
 <title>ディレクトリアクセス</title>
+<!--
 <para>
 <citerefentry>
 <refentrytitle>gfs_chdir</refentrytitle><manvolnum>3</manvolnum>
@@ -147,7 +136,7 @@
 <refentrytitle>gfs_realpath</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数は，引数のフルパス名を返します．
 </para>
-
+ -->
 <para>
 <citerefentry>
 <refentrytitle>gfs_opendir</refentrytitle><manvolnum>3</manvolnum>
@@ -185,11 +174,9 @@
 <citerefentry>
 <refentrytitle>gfs_chmod</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数でファイルのモードを変更し，
-<!--
 <citerefentry>
 <refentrytitle>gfs_chown</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数でファイルの所有者を変更し，
--->
 <citerefentry>
 <refentrytitle>gfs_utimes</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数でファイルの更新時刻とアクセス時刻を変更します．
@@ -205,9 +192,6 @@
 <citerefentry>
 <refentrytitle>gfs_unlink</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数はファイルを削除し，
-<citerefentry>
-<refentrytitle>gfs_unlink_section</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は並列ファイルを構成するフラグメントを削除します．
 <citerefentry>
 <refentrytitle>gfs_rename</refentrytitle><manvolnum>3</manvolnum>
 </citerefentry> 関数はディレクトリやファイルを改名します．
@@ -226,27 +210,20 @@
 </refsect2>
 
 <refsect2>
-<title>ユーティリティ関数</title>
+<title>エラーコード</title>
 <para>
+ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
+ドを返します。
 <citerefentry>
-<refentrytitle>gfarm_hostlist_read</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，
+<refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は Gfarm エラーコードを表す文字列を返します。
 <citerefentry>
-<refentrytitle>gfarm_import_fragment_config_read</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，および
+<refentrytitle>gfarm_errno_to_error</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は errno を Gfarm エラーコードに変換します。
 <citerefentry>
-<refentrytitle>gfarm_import_fragment_size_alloc</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は，並列ファイルをフラグメント化して登録する際に
-使うユーティリティ関数です．利用方法の例は
-<citerefentry>
-<refentrytitle>gfimport_text</refentrytitle><manvolnum>1</manvolnum>
-</citerefentry> コマンドや
-<citerefentry>
-<refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>
-</citerefentry> コマンドの
-ソースを参照してください．
+<refentrytitle>gfarm_error_to_errno</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は Gfarm エラーコードを errno に変換します。
 </para>
-
 </refsect2>
 
 <refsect2>
@@ -316,34 +293,6 @@ gfarm_stringlist 型の <parameter>list</parameter> 引数が
 
 </varlistentry>
 </variablelist>
-
-</refsect2>
-
-<refsect2>
-<title>内部関数</title>
-
-<para>
-<citerefentry>
-<refentrytitle>gfarm_url_program_register</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，
-<citerefentry>
-<refentrytitle>gfarm_url_hosts_schedule</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，
-<citerefentry>
-<refentrytitle>gfarm_url_fragments_replicate</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，
-<citerefentry>
-<refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，
-<citerefentry>
-<refentrytitle>gfarm_url_section_replicate_from_to</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数，および
-<citerefentry>
-<refentrytitle>gfarm_url_section_replicate_to</refentrytitle><manvolnum>3</manvolnum>
-</citerefentry> 関数は，gfarm が内部的に利用している関数です．
-歴史的理由でマニュアルも提供されていますが，将来仕様が変更される
-可能性があります．
-</para>
 
 </refsect2>
 
