@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm&nbsp;--&nbsp;Gfarm ネイティブ API ライブラリ</DIV
+>gfarm&nbsp;--&nbsp;Gfarm ファイルシステム API ライブラリ</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -55,7 +54,7 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
+>Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 機能に対するインターフェースを提供します．このマニュアルはライブラリ
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
 ください．</P
@@ -73,14 +72,14 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfarm_initialize</SPAN
 >(3)</SPAN
-> 関数は gfarm ライブラリの初期化に，
+> 関数は Gfarm ライブラリの初期化に，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfarm_terminate</SPAN
 >(3)</SPAN
-> 関数は gfarm ライブラリの終了処理に用います．</P
+> 関数は Gfarm ライブラリの終了処理に用います．</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
@@ -90,16 +89,7 @@ NAME="AEN25"
 ><H3
 >ファイル入出力処理</H3
 ><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_local</SPAN
->(3)</SPAN
-> 関数は，並列プロセスの初期化として，自ノードのノード番号と
-総ノード数の設定に用います．
-
-既存のファイルをストリームとしてオープンするには
+>既存のファイルをストリームとしてオープンするには
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -122,22 +112,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_close</SPAN
 >(3)</SPAN
-> 関数を使います．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_view_index</SPAN
->(3)</SPAN
-> 関数と
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_view_local</SPAN
->(3)</SPAN
-> 関数は，
-並列ファイルのアクセス方法を指定します．</P
+> 関数を使います．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -274,25 +249,10 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN103"
+NAME="AEN94"
 ></A
 ><H3
 >ディレクトリアクセス</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_chdir</SPAN
->(3)</SPAN
-> 関数は，カレント作業ディレクトリを変更します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_realpath</SPAN
->(3)</SPAN
-> 関数は，引数のフルパス名を返します．</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -351,7 +311,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN135"
+NAME="AEN119"
 ></A
 ><H3
 >ファイル／ディレクトリ操作</H3
@@ -363,6 +323,13 @@ CLASS="REFENTRYTITLE"
 >gfs_chmod</SPAN
 >(3)</SPAN
 > 関数でファイルのモードを変更し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_chown</SPAN
+>(3)</SPAN
+> 関数でファイルの所有者を変更し，
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -396,13 +363,6 @@ CLASS="REFENTRYTITLE"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfs_unlink_section</SPAN
->(3)</SPAN
-> 関数は並列ファイルを構成するフラグメントを削除します．
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
 >gfs_rename</SPAN
 >(3)</SPAN
 > 関数はディレクトリやファイルを改名します．</P
@@ -427,53 +387,39 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN167"
+NAME="AEN151"
 ></A
 ><H3
->ユーティリティ関数</H3
+>エラーコード</H3
 ><P
-><SPAN
+>ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
+ドを返します。
+<SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_hostlist_read</SPAN
+>gfarm_error_string</SPAN
 >(3)</SPAN
-> 関数，
+> 関数は Gfarm エラーコードを表す文字列を返します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_import_fragment_config_read</SPAN
+>gfarm_errno_to_error</SPAN
 >(3)</SPAN
-> 関数，および
+> 関数は errno を Gfarm エラーコードに変換します。
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_import_fragment_size_alloc</SPAN
+>gfarm_error_to_errno</SPAN
 >(3)</SPAN
-> 関数は，並列ファイルをフラグメント化して登録する際に
-使うユーティリティ関数です．利用方法の例は
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfimport_text</SPAN
->(1)</SPAN
-> コマンドや
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfimport_fixed</SPAN
->(1)</SPAN
-> コマンドの
-ソースを参照してください．</P
+> 関数は Gfarm エラーコードを errno に変換します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN185"
+NAME="AEN163"
 ></A
 ><H3
 >文字列配列操作ユーティリティ</H3
@@ -537,7 +483,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN210"
+NAME="AEN188"
 ></A
 ><H3
 >文字列配列操作ユーティリティマクロ</H3
@@ -587,59 +533,6 @@ CLASS="PARAMETER"
 ></DD
 ></DL
 ></DIV
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN227"
-></A
-><H3
->内部関数</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_program_register</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_hosts_schedule</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_fragments_replicate</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_program_deliver</SPAN
->(3)</SPAN
-> 関数，
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_from_to</SPAN
->(3)</SPAN
-> 関数，および
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_to</SPAN
->(3)</SPAN
-> 関数は，gfarm が内部的に利用している関数です．
-歴史的理由でマニュアルも提供されていますが，将来仕様が変更される
-可能性があります．</P
 ></DIV
 ></DIV
 ></BODY

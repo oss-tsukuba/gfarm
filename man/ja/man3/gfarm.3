@@ -3,9 +3,10 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM" "3" "22 August 2005" "Gfarm" ""
+.TH "GFARM" "3" "26 June 2010" "Gfarm" ""
+
 .SH NAME
-gfarm \- Gfarm ネイティブ API ライブラリ
+gfarm \- Gfarm ファイルシステム API ライブラリ
 .SH SYNOPSIS
 
 .nf
@@ -13,27 +14,22 @@ gfarm \- Gfarm ネイティブ API ライブラリ
 .fi
 .SH "DESCRIPTION"
 .PP
-gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
+Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 機能に対するインターフェースを提供します．このマニュアルはライブラリ
 の概要を記述します．各関数の詳細は，関数単位のマニュアルを参照して
 ください．
 .SS "初期化／終了処理"
 .PP
-\fBgfarm_initialize\fR(3) 関数は gfarm ライブラリの初期化に，
-\fBgfarm_terminate\fR(3) 関数は gfarm ライブラリの終了処理に用います．
+\fBgfarm_initialize\fR(3) 関数は Gfarm ライブラリの初期化に，
+\fBgfarm_terminate\fR(3) 関数は Gfarm ライブラリの終了処理に用います．
 .SS "ファイル入出力処理"
 .PP
-\fBgfs_pio_set_local\fR(3) 関数は，並列プロセスの初期化として，自ノードのノード番号と
-総ノード数の設定に用います．
 既存のファイルをストリームとしてオープンするには
 \fBgfs_pio_open\fR(3) 関数を，
 新規ファイルを作成してストリームとしてオープンするには
 \fBgfs_pio_create\fR(3) 関数を用います．
 ファイルのクローズは
 \fBgfs_pio_close\fR(3) 関数を使います．
-\fBgfs_pio_set_view_index\fR(3) 関数と
-\fBgfs_pio_set_view_local\fR(3) 関数は，
-並列ファイルのアクセス方法を指定します．
 .PP
 \fBgfs_pio_error\fR(3) 関数はオープンしているストリームに関してエラーが生じているか
 を判別し，
@@ -59,9 +55,6 @@ gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
 \fBgfs_pio_truncate\fR(3) 関数は，ファイルのサイズを変更します．
 .SS "ディレクトリアクセス"
 .PP
-\fBgfs_chdir\fR(3) 関数は，カレント作業ディレクトリを変更します．
-\fBgfs_realpath\fR(3) 関数は，引数のフルパス名を返します．
-.PP
 \fBgfs_opendir\fR(3) 関数でディレクトリをオープンすると，
 \fBgfs_readdir\fR(3) 関数で，そのディレクトリを構成するエントリを得ることが
 できます．オープンしたディレクトリへのアクセスは，
@@ -76,27 +69,25 @@ gfarm ライブラリは，gfarm ファイルシステムや，スケジューリング
 .SS "ファイル／ディレクトリ操作"
 .PP
 \fBgfs_chmod\fR(3) 関数でファイルのモードを変更し，
+\fBgfs_chown\fR(3) 関数でファイルの所有者を変更し，
 \fBgfs_utimes\fR(3) 関数でファイルの更新時刻とアクセス時刻を変更します．
 .PP
 \fBgfs_mkdir\fR(3) 関数はディレクトリを作成し，
 \fBgfs_rmdir\fR(3) 関数はディレクトリを削除します．
 \fBgfs_unlink\fR(3) 関数はファイルを削除し，
-\fBgfs_unlink_section\fR(3) 関数は並列ファイルを構成するフラグメントを削除します．
 \fBgfs_rename\fR(3) 関数はディレクトリやファイルを改名します．
 .PP
 \fBgfs_stat\fR(3) 関数は指定したファイルあるいはディレクトリのサイズや
 更新時刻などの情報を返します．
 この関数が返した gfs_stat 構造体は
 \fBgfs_stat_free\fR(3) 関数を用いて解放する必要があります．
-.SS "ユーティリティ関数"
+.SS "エラーコード"
 .PP
-\fBgfarm_hostlist_read\fR(3) 関数，
-\fBgfarm_import_fragment_config_read\fR(3) 関数，および
-\fBgfarm_import_fragment_size_alloc\fR(3) 関数は，並列ファイルをフラグメント化して登録する際に
-使うユーティリティ関数です．利用方法の例は
-\fBgfimport_text\fR(1) コマンドや
-\fBgfimport_fixed\fR(1) コマンドの
-ソースを参照してください．
+ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
+ドを返します。
+\fBgfarm_error_string\fR(3) 関数は Gfarm エラーコードを表す文字列を返します。
+\fBgfarm_errno_to_error\fR(3) 関数は errno を Gfarm エラーコードに変換します。
+\fBgfarm_error_to_errno\fR(3) 関数は Gfarm エラーコードを errno に変換します。
 .SS "文字列配列操作ユーティリティ"
 .PP
 文字列配列を表す gfarm_stringlist 型の変数は，
@@ -125,13 +116,3 @@ gfarm_stringlist 型の \fIlist\fR 引数が表す文字列配列の
 gfarm_stringlist 型の \fIlist\fR 引数が
 表す文字列配列の先頭要素へのポインタを返します．
 返り値は，文字へのポインタへのポインタとなります．
-.SS "内部関数"
-.PP
-\fBgfarm_url_program_register\fR(3) 関数，
-\fBgfarm_url_hosts_schedule\fR(3) 関数，
-\fBgfarm_url_fragments_replicate\fR(3) 関数，
-\fBgfarm_url_program_deliver\fR(3) 関数，
-\fBgfarm_url_section_replicate_from_to\fR(3) 関数，および
-\fBgfarm_url_section_replicate_to\fR(3) 関数は，gfarm が内部的に利用している関数です．
-歴史的理由でマニュアルも提供されていますが，将来仕様が変更される
-可能性があります．

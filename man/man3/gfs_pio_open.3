@@ -3,21 +3,25 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "13 November 2006" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "26 June 2010" "Gfarm" ""
 
 .SH NAME
-gfs_pio_open \- open a Gfarm file
+gfs_pio_open \- open a file in the Gfarm file system
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\fB);
+gfarm_error_t gfs_pio_open (const char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-\fBgfs_pio_open()\fR opens the Gfarm file whose name is the string
-specified by \fIgfarm_url\fR, and returns a \fIGFS_File\fR structure
+\fBgfs_pio_open()\fR opens a file in the Gfarm
+file system specified by \fIgfarm_url\fR,
+and returns a \fIGFS_File\fR structure
 to the address pointed by \fIgfp\fR\&.
+\fIgfarm_url\fR is a path name in the Gfarm file
+system, or a Gfarm URL in the form of gfarm://metaserver:port/path/name.
+.PP
 Values of \fIflags\fR are constructed by a
 bitwise-inclusive-OR of the following list.  Exactly one of the first
 three values should be specified:
@@ -34,53 +38,19 @@ Open for reading and writing.
 \fBGFARM_FILE_TRUNC\fR
 If the file already exist and is a regular file, it will be
 truncated to length 0 if the open mode allows writing.
-.TP
-\fBGFARM_FILE_APPEND\fR
-The file is opened in append mode.
-.PP
-The following may be specified as a hint for efficient execution:
-.TP
-\fBGFARM_FILE_SEQUENTIAL\fR
-File will be accessed sequentially.
-.TP
-\fBGFARM_FILE_REPLICATION\fR
-File may be replicated to a local filesystem when accessing
-remotely.
-.TP
-\fBGFARM_FILE_NOT_REPLICATION\fR
-File may not be replicated to a local filesystem when accessing
-remotely.
-.TP
-\fBGFARM_FILE_NOT_RETRY\fR
-When the selected file replica does not exist or cannot be
-accessed by some reason, open will fail without trying to access
-another file replica.
-.PP
-GFARM_FILE_REPLICATION and
-GFARM_FILE_NOT_REPLICATION cannot be specified at
-the same time.
-.PP
-When \fBgfs_pio_open()\fR is used by parallel processes executed by
-gfrun(3) or gfmpirun_p4(3), the returned GFS_File structure of each
-process has individual file pointers among parallel processes.
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 The function terminated successfully.
-.TP
-\fBGFARM_ERR_NO_MEMORY\fR
-Insufficient memory was available.
-.TP
-\fBGFARM_ERR_AUTHENTICATION\fR
-User authentication failed when connecting to gfmd(8) or gfsd(8).
-.TP
-\fBGFARM_ERR_PERMISSION_DENIED\fR
-The requested access to the file is not allowed, or one of the
-directories in \fIgfarm_url\fR did not allow search (execute)
-permission.
 .TP
 \fBGFARM_ERR_IS_A_DIRECTORY\fR
 \fIgfarm_url\fR refers to a directory.
+.TP
+\fBGFARM_ERR_IS_A_SYMBOLIC_LINK\fR
+\fIgfarm_url\fR refers to a symbolic link.
+.TP
+\fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
+\fIgfarm_url\fR refers to not a regular file.
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
 A component used as a directory in \fIgfarm_url\fR does not exist.
@@ -89,9 +59,56 @@ A component used as a directory in \fIgfarm_url\fR does not exist.
 A component used as a directory in \fIgfarm_url\fR is not, in fact, a
 directory.
 .TP
+\fBGFARM_ERR_NO_MEMORY\fR
+Insufficient memory was available.
+.TP
+\fBGFARM_ERR_INVALID_ARGUMENT\fR
+\fIflags\fR
+is not valid.
+.TP
+\fBGFARM_ERR_GFARM_URL_HOST_IS_MISSING\fR
+\fIgfarm_url\fR
+does not include a metadata server.
+.TP
+\fBGFARM_ERR_GFARM_URL_PORT_IS_MISSING\fR
+\fIgfarm_url\fR
+does not include a port number of the metadata server.
+.TP
+\fBGFARM_ERR_UNKNOWN_HOST\fR
+The metadata server cannot be resolved.
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES\fR
+The process opens too many files.
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM\fR
+The system limit on the total number of open files has been reached.
+.TP
+\fBGFARM_ERR_NETWORK_IS_UNREACHABLE\fR
+Network is unrechable.
+.TP
+\fBGFARM_ERR_OPERATION_TIMED_OUT\fR
+Connetion timeout occurs.
+.TP
+\fBGFARM_ERR_PROTOCOL\fR
+Protocol error occurs.
+.TP
+\fBGFARM_ERR_BROKEN_PIPE\fR
+Connection to the metadata server is broken.
+.TP
+\fBGFARM_ERR_PERMISSION_DENIED\fR
+The requested access to the file is not allowed, or one of the
+directories in \fIgfarm_url\fR did not allow search (execute)
+permission.  Or, the authentication to the metadata server fails.
+.TP
+\fBGFARM_ERR_PROTOCOL_NOT_SUPPORTED\fR
+Specified authentication protocol is not supported.
+.TP
+\fBGFARM_ERR_AUTHENTICATION\fR
+User authentication failed when connecting to the metadata server.
+.TP
 \fBOthers\fR
-An error except the above occurred.  The reason is shown by its
-pointed strings.
+An error except the above occurred.  The reason is shown by
+gfarm_error_string(3).
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_close\fR(3),
@@ -107,7 +124,5 @@ pointed strings.
 \fBgfs_pio_puts\fR(3),
 \fBgfs_pio_read\fR(3),
 \fBgfs_pio_seek\fR(3),
-\fBgfs_pio_set_view_index\fR(3),
-\fBgfs_pio_set_view_local\fR(3),
 \fBgfs_pio_ungetc\fR(3),
 \fBgfs_pio_write\fR(3)
