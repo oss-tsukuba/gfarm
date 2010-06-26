@@ -3,23 +3,26 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_OPEN" "3" "30 October 2004" "Gfarm" ""
+.TH "GFS_PIO_OPEN" "3" "26 June 2010" "Gfarm" ""
 
 .SH NAME
-gfs_pio_open \- Gfarmファイルのオープン
+gfs_pio_open \- Gfarmファイルシステムのファイルのオープン
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\fB);
+gfarm_error_t gfs_pio_open (const char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-指定した
 \fIgfarm_url\fR
-ファイルをオープンし、GFS_File 構造体を
+で指定したファイルをオープンし、GFS_File 構造体を
 \fIgfp\fR
 の指す先に返します。
+\fIgfarm_url\fR
+はGfarmファイルシステムのパス名、あるいは
+gfarm://metaserver:port/path/name
+形式のGfarm URLです。
 .PP
 \fIflags\fR
 は、以下のフラグの bitwise-or で指定します。
@@ -35,69 +38,80 @@ char *gfs_pio_open (char * \fIgfarm_url\fB, int \fIflags\fB, GFS_File * \fIgfp\f
 読み書きモードでファイルをオープンします。
 .TP
 \fBGFARM_FILE_TRUNC\fR
-ファイルが存在し，レギュラーファイルで、書込みが許される場合、ファイルサイズを0にします。
-.TP
-\fBGFARM_FILE_APPEND\fR
-ファイルをアペンドモードでオープンします。
-.PP
-以下のフラグは効率的な実行のためのヒントとして指定することができます。
-.TP
-\fBGFARM_FILE_SEQUENTIAL\fR
-ファイルが連続的にアクセスされることを示します。
-.TP
-\fBGFARM_FILE_REPLICATION\fR
-ファイルの複製がローカル・ファイルシステムにない場合は、
-ファイルアクセスに先立ち、
-ローカル・ファイルシステムにファイルの複製を作成します。
-.TP
-\fBGFARM_FILE_NOT_REPLICATION\fR
-ファイルの複製がローカル・ファイルシステムにない場合でも、
-ファイルの複製を作成せず、
-遠隔のファイルシステムノードに格納されているファイルコピーを直接参照します。
-.TP
-\fBGFARM_FILE_NOT_RETRY\fR
-選択されたファイル複製が何らかの理由で存在しない、
-あるいはアクセスできない場合でも、
-自動的には別のファイル複製の参照を試みず、オープンに失敗します。
-.PP
-GFARM_FILE_REPLICATIONと
-GFARM_FILE_NOT_REPLICATIONは同時に指定することはできません。
-.PP
-gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
-\fBgfs_pio_open()\fR
-を呼ぶ場合、それぞれのプロセスの
-\fIGFS_File\fR
-構造体は個別ファイルポインタを持ちます。
+ファイルが存在し、レギュラーファイルで書込みが許される場合、ファイルサイズを0にします。
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 正常終了を示します。
 .TP
-\fBGFARM_ERR_NO_MEMORY\fR
-メモリ不足のため処理を中止しました。
-.TP
-\fBGFARM_ERR_AUTHENTICATION\fR
-gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。
-.TP
-\fBGFARM_ERR_PERMISSION_DENIED\fR
-\fIgfarm_url\fRへ、
-\fIflags\fR
-で指定されたモードでアクセスする権限が、ありません。
-.TP
 \fBGFARM_ERR_IS_A_DIRECTORY\fR
-指定された
-\fIgfarm_url\fR
-は、ディレクトリです。
+指定されたファイルはディレクトリです。
+.TP
+\fBGFARM_ERR_IS_A_SYMBOLIC_LINK\fR
+指定されたファイルはシンボリックリンクです。
+.TP
+\fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
+指定されたファイルはファイルではありません。
 .TP
 \fBGFARM_ERR_NO_SUCH_OBJECT\fR
 指定されたファイルが存在しません。
 .TP
 \fBGFARM_ERR_NOT_A_DIRECTORY\fR
-指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
-示します。
+指定したパス名の親ディレクトリが、ディレクトリではありません。
+.TP
+\fBGFARM_ERR_NO_MEMORY\fR
+メモリ不足のため処理を中止しました。
+.TP
+\fBGFARM_ERR_INVALID_ARGUMENT\fR
+\fIflags\fR
+の指定が不正です。
+.TP
+\fBGFARM_ERR_GFARM_URL_HOST_IS_MISSING\fR
+\fIgfarm_url\fR
+で指定されたGfarm URLにおいて、
+メタデータサーバが指定されていません。
+.TP
+\fBGFARM_ERR_GFARM_URL_PORT_IS_MISSING\fR
+\fIgfarm_url\fR
+で指定されたGfarm URLにおいて、
+メタデータサーバのポート番号が指定されていません。
+.TP
+\fBGFARM_ERR_UNKNOWN_HOST\fR
+指定されたメタデータサーバのアドレス解決ができません。
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES\fR
+プロセスにおけるオープン可能なファイル数の限界に達しました。
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM\fR
+システムにおけるオープンできるファイル数の限界に達しました。
+.TP
+\fBGFARM_ERR_NETWORK_IS_UNREACHABLE\fR
+メタデータサーバに到達できません。
+.TP
+\fBGFARM_ERR_OPERATION_TIMED_OUT\fR
+メタデータサーバへの接続がタイムアウトをおこしました。
+.TP
+\fBGFARM_ERR_PROTOCOL\fR
+メタデータサーバとの通信にプロトコルエラーが発生しました。
+.TP
+\fBGFARM_ERR_BROKEN_PIPE\fR
+メタデータサーバとの通信が切断しました。
+.TP
+\fBGFARM_ERR_PERMISSION_DENIED\fR
+指定されたファイルに対し、
+\fIflags\fR
+で指定されたモードでアクセスする権限がないか、
+メタデータサーバへの認証に失敗しました。
+.TP
+\fBGFARM_ERR_PROTOCOL_NOT_SUPPORTED\fR
+指定された認証プロトコルはサポートしていません。
+.TP
+\fBGFARM_ERR_AUTHENTICATION\fR
+メタデータサーバに対する認証に失敗しました。
 .TP
 \fBその他\fR
 上記以外のエラーが生じたことを示します。
+\fBgfarm_error_string\fR(3)によりエラーの原因を文字列に変換することができます。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_close\fR(3),
@@ -113,7 +127,5 @@ gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。
 \fBgfs_pio_puts\fR(3),
 \fBgfs_pio_read\fR(3),
 \fBgfs_pio_seek\fR(3),
-\fBgfs_pio_set_view_index\fR(3),
-\fBgfs_pio_set_view_local\fR(3),
 \fBgfs_pio_ungetc\fR(3),
 \fBgfs_pio_write\fR(3)

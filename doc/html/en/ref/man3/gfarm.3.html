@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfarm</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfarm&nbsp;--&nbsp;Gfarm native API library</DIV
+>gfarm&nbsp;--&nbsp;Gfarm file system API library</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -56,9 +55,8 @@ NAME="DESCRIPTION"
 >DESCRIPTION</H2
 ><P
 >The Gfarm library provides an interface layer to
-the gfarm filesystem. This manual only gives an overview of the
-library, please use manual pages of each functions to see the
-detail of the functions.</P
+the Gfarm file system.  This manual gives an overview of the
+library.  For details, refer to a manual page of each function.</P
 ><DIV
 CLASS="REFSECT2"
 ><A
@@ -91,16 +89,7 @@ NAME="AEN25"
 ><H3
 >File input/output operations</H3
 ><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_local</SPAN
->(3)</SPAN
-> function specifies current node number and total number
-of nodes as an initialization step of a parallel process.
-
-To open an existing file as a stream,
+>To open an existing file as a stream,
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -122,21 +111,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_close</SPAN
 >(3)</SPAN
-> function is used to close such streams.
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_view_index</SPAN
->(3)</SPAN
-> function and
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_pio_set_view_local</SPAN
->(3)</SPAN
-> function specifies an access method of a parallel file.</P
+> function is used to close such streams.</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -168,14 +143,14 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_getc</SPAN
 >(3)</SPAN
-> functions reads a character from a stream, and
+> function reads a character from a stream, and
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfs_pio_ungetc</SPAN
 >(3)</SPAN
-> functions puts back a character to a stream.
+> function puts back a character to a stream.
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -211,7 +186,7 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfs_pio_read</SPAN
 >(3)</SPAN
-> functions reads specified bytes from a stream.</P
+> function reads specified bytes from a stream.</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -274,25 +249,10 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN103"
+NAME="AEN94"
 ></A
 ><H3
 >Directory access</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_chdir</SPAN
->(3)</SPAN
-> function changes current working directory.
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_realpath</SPAN
->(3)</SPAN
-> function returns full pathname of the argument.</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -316,7 +276,7 @@ CLASS="REFENTRYTITLE"
 >(3)</SPAN
 > function closes the directory.</P
 ><P
->A gfs_glob_t data, which is initilized by
+>A gfs_glob_t data, which is initialized by
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -352,7 +312,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN135"
+NAME="AEN119"
 ></A
 ><H3
 >File / Directory manipulation</H3
@@ -368,9 +328,16 @@ CLASS="REFENTRYTITLE"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
+>gfs_chown</SPAN
+>(3)</SPAN
+> function changes the owner of a file, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
 >gfs_utimes</SPAN
 >(3)</SPAN
-> function changes file's modified time and access time.</P
+> function changes file's modification time and access time.</P
 ><P
 ><SPAN
 CLASS="CITEREFENTRY"
@@ -393,14 +360,6 @@ CLASS="REFENTRYTITLE"
 >gfs_unlink</SPAN
 >(3)</SPAN
 > function removes a file, and
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfs_unlink_section</SPAN
->(3)</SPAN
-> function removes a fragment which is a member of
-a parallel file.
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
@@ -429,52 +388,39 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN167"
+NAME="AEN151"
 ></A
 ><H3
->Utility functions</H3
+>Error handling</H3
 ><P
-><SPAN
+>Most Gfarm API returns the Gfarm error code in gfarm_error_t.
+<SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_hostlist_read</SPAN
+>gfarm_error_string</SPAN
 >(3)</SPAN
-> function,
+> function returns a string describing the Gfarm error code.
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_import_fragment_config_read</SPAN
+>gfarm_errno_to_error</SPAN
 >(3)</SPAN
-> function, and
+> function translates the error number (errno) to the Gfarm
+error code.
 <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm_import_fragment_size_alloc</SPAN
+>gfarm_error_to_errno</SPAN
 >(3)</SPAN
-> function are utility functions used to register
-a file as a fragmented parallel file. Please see the source code of
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfimport_text</SPAN
->(1)</SPAN
-> command and
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfimport_fixed</SPAN
->(1)</SPAN
-> command as an example how to use these functions.</P
+> function translates the Gfarm error code to the error number.</P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN185"
+NAME="AEN163"
 ></A
 ><H3
 >String Array manipulation utilities</H3
@@ -538,7 +484,7 @@ array by calling standard library function free().</P
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN210"
+NAME="AEN188"
 ></A
 ><H3
 >String Array manipulation macros</H3
@@ -588,59 +534,6 @@ The type of the return value is a pointer to pointer to a character.</P
 ></DD
 ></DL
 ></DIV
-></DIV
-><DIV
-CLASS="REFSECT2"
-><A
-NAME="AEN227"
-></A
-><H3
->Internal functions</H3
-><P
-><SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_program_register</SPAN
->(3)</SPAN
-> function,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_hosts_schedule</SPAN
->(3)</SPAN
-> function,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_fragments_replicate</SPAN
->(3)</SPAN
-> function,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_program_deliver</SPAN
->(3)</SPAN
-> function,
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_from_to</SPAN
->(3)</SPAN
-> function, and
-<SPAN
-CLASS="CITEREFENTRY"
-><SPAN
-CLASS="REFENTRYTITLE"
->gfarm_url_section_replicate_to</SPAN
->(3)</SPAN
-> functions are internal functions of Gfarm.
-These manual are provided by historical reasons, but these specification
-may be changed later.</P
 ></DIV
 ></DIV
 ></BODY
