@@ -3,7 +3,7 @@
 
 <refentry id='gfs-pio-open.3'>
 
-<refentryinfo><date>30 Oct 2004</date></refentryinfo>
+<refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_open</refentrytitle>
@@ -13,7 +13,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_open</refname>
-<refpurpose>open a Gfarm file</refpurpose>
+<refpurpose>open a file in the Gfarm file system</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -22,12 +22,11 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_open</function></funcdef>
-    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_open</function></funcdef>
+    <paramdef>const char * <parameter>gfarm_url</parameter></paramdef>
     <paramdef>int <parameter>flags</parameter></paramdef>
     <paramdef>GFS_File * <parameter>gfp</parameter></paramdef>
 </funcprototype>
-
 
 </funcsynopsis>
 </refsynopsisdiv>
@@ -35,9 +34,15 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><function>gfs_pio_open()</function> opens the Gfarm file whose name is the string
-specified by <parameter>gfarm_url</parameter>, and returns a <parameter>GFS_File</parameter> structure
+<para><function>gfs_pio_open()</function> opens a file in the Gfarm
+file system specified by <parameter>gfarm_url</parameter>,
+and returns a <parameter>GFS_File</parameter> structure
 to the address pointed by <parameter>gfp</parameter>.
+<parameter>gfarm_url</parameter> is a path name in the Gfarm file
+system, or a Gfarm URL in the form of gfarm://metaserver:port/path/name.
+</para>
+
+<para>
 Values of <parameter>flags</parameter> are constructed by a
 bitwise-inclusive-OR of the following list.  Exactly one of the first
 three values should be specified:
@@ -68,13 +73,17 @@ three values should be specified:
 truncated to length 0 if the open mode allows writing.</para>
 </listitem>
 </varlistentry>
+<!--
 <varlistentry>
 <term><constant>GFARM_FILE_APPEND</constant></term>
 <listitem>
 <para>The file is opened in append mode.</para>
 </listitem>
 </varlistentry>
+ -->
 </variablelist>
+
+<!--
 <para>
 The following may be specified as a hint for efficient execution:
 </para>
@@ -113,45 +122,34 @@ another file replica.</para>
 <constant>GFARM_FILE_NOT_REPLICATION</constant> cannot be specified at
 the same time.
 </para>
-
-<para>When <function>gfs_pio_open()</function> is used by parallel processes executed by
-gfrun(3) or gfmpirun_p4(3), the returned <structname>GFS_File</structname> structure of each
-process has individual file pointers among parallel processes.</para>
+ -->
 
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>The function terminated successfully.</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
-<listitem>
-<para>Insufficient memory was available.</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
-<listitem>
-<para>User authentication failed when connecting to gfmd(8) or gfsd(8).</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
-<listitem>
-<para>The requested access to the file is not allowed, or one of the
-directories in <parameter>gfarm_url</parameter> did not allow search (execute)
-permission.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
 <term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
 <listitem>
 <para><parameter>gfarm_url</parameter> refers to a directory.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_SYMBOLIC_LINK</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter> refers to a symbolic link.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter> refers to not a regular file.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -165,6 +163,95 @@ permission.</para>
 <listitem>
 <para>A component used as a directory in <parameter>gfarm_url</parameter> is not, in fact, a
 directory.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
+<listitem>
+<para><parameter>flags</parameter>
+is not valid.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_GFARM_URL_HOST_IS_MISSING</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>
+does not include a metadata server.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_GFARM_URL_PORT_IS_MISSING</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>
+does not include a port number of the metadata server.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_UNKNOWN_HOST</constant></term>
+<listitem>
+<para>The metadata server cannot be resolved.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_TOO_MANY_OPEN_FILES</constant></term>
+<listitem>
+<para>The process opens too many files.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM</constant></term>
+<listitem>
+<para>The system limit on the total number of open files has been reached.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NETWORK_IS_UNREACHABLE</constant></term>
+<listitem>
+<para>Network is unrechable.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_TIMED_OUT</constant></term>
+<listitem>
+<para>Connetion timeout occurs.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PROTOCOL</constant></term>
+<listitem>
+<para>Protocol error occurs.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_BROKEN_PIPE</constant></term>
+<listitem>
+<para>Connection to the metadata server is broken.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>The requested access to the file is not allowed, or one of the
+directories in <parameter>gfarm_url</parameter> did not allow search (execute)
+permission.  Or, the authentication to the metadata server fails.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PROTOCOL_NOT_SUPPORTED</constant></term>
+<listitem>
+<para>Specified authentication protocol is not supported.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>User authentication failed when connecting to the metadata server.</para>
 </listitem>
 </varlistentry>
 
@@ -181,13 +268,13 @@ write access was requested.
 </para>
 </listitem>
 </varlistentry>
--->
+ -->
 
 <varlistentry>
 <term>Others</term>
 <listitem>
-<para>An error except the above occurred.  The reason is shown by its
-pointed strings.</para>
+<para>An error except the above occurred.  The reason is shown by
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>.</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -208,8 +295,6 @@ pointed strings.</para>
 <citerefentry><refentrytitle>gfs_pio_puts</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_seek</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_ungetc</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 </para>
