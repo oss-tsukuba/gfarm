@@ -2,7 +2,7 @@
 
 <refentry id='gfs-pio-create.3'>
 
-<refentryinfo><date>30 Oct 2004</date></refentryinfo>
+<refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_create</refentrytitle>
@@ -12,7 +12,7 @@
 
 <refnamediv id='name'>
 <refname>gfs_pio_create</refname>
-<refpurpose>Gfarmファイルの作成</refpurpose>
+<refpurpose>Gfarmファイルシステムのファイルの作成</refpurpose>
 </refnamediv>
 <refsynopsisdiv id='synopsis'>
 <funcsynopsis>
@@ -21,13 +21,12 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_create</function></funcdef>
-    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_create</function></funcdef>
+    <paramdef>const char * <parameter>gfarm_url</parameter></paramdef>
     <paramdef>int <parameter>flags</parameter></paramdef>
-    <paramdef>mode_t <parameter>mode</parameter></paramdef>
+    <paramdef>gfarm_mode_t <parameter>mode</parameter></paramdef>
     <paramdef>GFS_File * <parameter>gfp</parameter></paramdef>
 </funcprototype>
-
 
 </funcsynopsis>
 </refsynopsisdiv>
@@ -55,39 +54,66 @@
 <parameter>GFARM_FILE_WRONLY</parameter>、
 <parameter>GFARM_FILE_RDWR</parameter>
 のいずれか一つのフラグを必ず指定しなければならない点も同じです。
+<!--
 ただし、
 <function>gfs_pio_create()</function>
 に特有のフラグとして、
 <parameter>GFARM_FILE_EXCLUSIVE</parameter>
 を指定することができます。この指定を行なった場合、
 ファイルが既に存在する場合は、ファイルのオープンに失敗します。
+ -->
 </para>
 <para>
-以前のバージョンでは、引数
+引数
 <parameter>flags</parameter>
 の値として
 <parameter>GFARM_FILE_TRUNC</parameter>
-が暗黙裡に仮定されていましたが、gfarm-1.0.4 以降は、
-明示的に指定しなければならなくなりましたので、ご注意ください。
+が必要な場合は、
+明示的に指定する必要がありますので、ご注意ください。
 </para>
-
-<para>gfrun(3) や gfmpirun_p4(3) で起動された並列プロセスで
-<function>gfs_pio_create()</function>
-を呼ぶ場合、それぞれのプロセスは引数
-<parameter>mode</parameter>
-に、一貫した値を指定しなければなりません。
-また、この場合それぞれのプロセスの
-<parameter>GFS_File</parameter>
-構造体は個別ファイルポインタを持ちます。</para>
-
 </refsect1>
 
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定されたファイルはディレクトリです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_SYMBOLIC_LINK</constant></term>
+<listitem>
+<para>指定されたファイルはシンボリックリンクです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para>指定されたファイルはファイルではありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリが、ディレクトリではありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>指定されたファイルに対し、
+<parameter>flags</parameter>
+で指定されたモードでアクセスする権限がないか、その親ディレクトリへの
+書き込み権限がありません。
+あるいは、メタデータサーバへの認証に失敗しました。
+</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -97,20 +123,83 @@
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
 <listitem>
-<para>gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。</para>
+<para><parameter>flags</parameter>
+の指定が不正です。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
-<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<term><constant>GFARM_ERR_GFARM_URL_HOST_IS_MISSING</constant></term>
 <listitem>
-<para><parameter>gfarm_url</parameter>へ、
-<parameter>flags</parameter>
-で指定されたモードでアクセスする権限がないか、その親ディレクトリへの
-書き込み権限がありません。</para>
+<para><parameter>gfarm_url</parameter>
+で指定されたGfarm URLにおいて、
+メタデータサーバが指定されていません。</para>
 </listitem>
 </varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_GFARM_URL_PORT_IS_MISSING</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>
+で指定されたGfarm URLにおいて、
+メタデータサーバのポート番号が指定されていません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_UNKNOWN_HOST</constant></term>
+<listitem>
+<para>指定されたメタデータサーバのアドレス解決ができません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_TOO_MANY_OPEN_FILES</constant></term>
+<listitem>
+<para>プロセスにおけるオープン可能なファイル数の限界に達しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM</constant></term>
+<listitem>
+<para>システムにおけるオープンできるファイル数の限界に達しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NETWORK_IS_UNREACHABLE</constant></term>
+<listitem>
+<para>メタデータサーバに到達できません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_TIMED_OUT</constant></term>
+<listitem>
+<para>メタデータサーバへの接続がタイムアウトをおこしました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PROTOCOL</constant></term>
+<listitem>
+<para>メタデータサーバとの通信にプロトコルエラーが発生しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_BROKEN_PIPE</constant></term>
+<listitem>
+<para>メタデータサーバとの通信が切断しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PROTOCOL_NOT_SUPPORTED</constant></term>
+<listitem>
+<para>指定された認証プロトコルはサポートしていません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>メタデータサーバに対する認証に失敗しました。</para>
+</listitem>
+</varlistentry>
+<!--
 <varlistentry>
 <term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
 <listitem>
@@ -120,25 +209,8 @@
 </para>
 </listitem>
 </varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
-<listitem>
-<para>指定された
-<parameter>gfarm_url</parameter>
-は、ディレクトリです。</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
-<listitem>
-<para>指定したパス名の親ディレクトリが、実際には存在しなかったことを示します。</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
-<listitem>
-<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
-示します。</para>
+ -->
+
 <!--
 <varlistentry>
 <term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
@@ -146,13 +218,15 @@
 <para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
 </listitem>
 </varlistentry>
--->
-</listitem>
-</varlistentry>
+ -->
+
 <varlistentry>
 <term>その他</term>
 <listitem>
-<para>上記以外のエラーが生じたことを示します。</para>
+<para>上記以外のエラーが生じたことを示します。
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+によりエラーの原因を文字列に変換することができます。
+</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -173,11 +247,8 @@
 <citerefentry><refentrytitle>gfs_pio_puts</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_read</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_seek</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>gfs_pio_set_view_index</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
-<citerefentry><refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_ungetc</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
 <citerefentry><refentrytitle>gfs_pio_write</refentrytitle><manvolnum>3</manvolnum></citerefentry>
 </para>
 </refsect1>
 </refentry>
-
