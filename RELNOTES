@@ -7,6 +7,16 @@ New API
 * new scheduling APIs - gfarm_schedule_hosts_domain_all,
   gfarm_host_sched_info_free, gfarm_schedule_hosts{,_acyclic}{,_to_write}
 
+New configuration in gfarm2.conf
+* no_file_system_node_timeout and gfmd_reconnection_timeout directives
+  to specify the timeout to try to find a file system node and to
+  reconnect to the gfmd, respectively.  Default is 30 seconds.
+
+Documentation
+* manual pages -  gfarm(3), gfarm_initialize(3), gfarm_terminate(3), 
+  gfs_pio_create(3), gfs_pio_open(3), gfs_pio_close(3), gfs_pio_write(3),
+  gfs_pio_read(3)
+
 Updated feature
 * support OpenSSL 1.0.0
 * support kfreebsd-gnu and linux-gnuabi
