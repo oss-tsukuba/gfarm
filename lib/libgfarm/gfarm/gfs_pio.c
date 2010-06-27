@@ -1110,7 +1110,7 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 
 	if (gfs_pio_is_view_set(gf)) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
-			gfs_pio_flush(gf);		
+			gfs_pio_flush(gf);
 		e = (*gf->ops->view_fstat)(gf, st);
 		if (e != GFARM_ERR_NO_ERROR)
 			gf->error = e;
