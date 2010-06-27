@@ -2,7 +2,7 @@
 
 <refentry id='gfarm-terminate.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>26 Jun 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm_terminate</refentrytitle>
@@ -21,10 +21,9 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfarm_terminate</function></funcdef>
+  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfarm_terminate</function></funcdef>
     <paramdef><parameter>void</parameter></paramdef>
 </funcprototype>
-
 
 </funcsynopsis>
 </refsynopsisdiv>
@@ -39,7 +38,7 @@
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
 </listitem>

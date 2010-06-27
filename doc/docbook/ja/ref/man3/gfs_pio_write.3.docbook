@@ -2,7 +2,7 @@
 
 <refentry id='gfs-pio-write.3'>
 
-<refentryinfo><date>1 May 2002</date></refentryinfo>
+<refentryinfo><date>27 Jun 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfs_pio_write</refentrytitle>
@@ -21,13 +21,12 @@
 </funcsynopsisinfo>
 
 <funcprototype>
-  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_write</function></funcdef>
+  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_pio_write</function></funcdef>
     <paramdef>GFS_File <parameter>gf</parameter></paramdef>
-    <paramdef>void * <parameter>buffer</parameter></paramdef>
+    <paramdef>const void * <parameter>buffer</parameter></paramdef>
     <paramdef>int <parameter>size</parameter></paramdef>
     <paramdef>int * <parameter>np</parameter></paramdef>
 </funcprototype>
-
 
 </funcsynopsis>
 </refsynopsisdiv>
@@ -49,9 +48,36 @@
 <refsect1 id='return-values'><title>RETURN VALUES</title>
 <variablelist>
 <varlistentry>
-<term><constant>NULL</constant></term>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
 <listitem>
 <para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para><parameter>gf</parameter>
+で指定されるファイルがレギュラーファイルではありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_BAD_FILE_DESCRIPTOR</constant></term>
+<listitem>
+<para><parameter>gf</parameter>
+で指定されるファイルディスクリプタが不正、
+あるいは書込可能でオープンされていません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SPACE</constant></term>
+<listitem>
+<para>書き込みスペースがありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_FILE_SYSTEM_NODE</constant></term>
+<listitem>
+<para>利用可能なファイルシステムノードがありません。</para>
 </listitem>
 </varlistentry>
 <varlistentry>
@@ -63,7 +89,10 @@
 <varlistentry>
 <term>その他</term>
 <listitem>
-<para>上記以外のエラーが生じたことを示します。</para>
+<para>上記以外のエラーが生じたことを示します。
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+によりエラーの原因を文字列に変換することができます。
+</para>
 </listitem>
 </varlistentry>
 </variablelist>
@@ -77,4 +106,3 @@
 </para>
 </refsect1>
 </refentry>
-

@@ -1,11 +1,15 @@
 DOCBOOK = \
 	gfarm.3 \
-	gfs_pio_open.3
+	gfarm_initialize.3 \
+	gfarm_terminate.3 \
+	gfs_pio_close.3 \
+	gfs_pio_create.3 \
+	gfs_pio_open.3 \
+	gfs_pio_read.3 \
+	gfs_pio_write.3
 
 #DOCBOOK = \
-#	gfarm_initialize.3 \
 #	gfarm_strings_free_deeply.3 \
-#	gfarm_terminate.3 \
 #	gfarm_url_fragments_replicate.3 \
 #	gfarm_url_hosts_schedule.3 \
 #	gfarm_url_section_replicate_from_to.3 \
@@ -15,8 +19,6 @@ DOCBOOK = \
 #	gfs_closedir.3 \
 #	gfs_mkdir.3 \
 #	gfs_opendir.3 \
-#	gfs_pio_close.3 \
-#	gfs_pio_create.3 \
 #	gfs_pio_datasync.3 \
 #	gfs_pio_eof.3 \
 #	gfs_pio_error.3 \
@@ -27,7 +29,6 @@ DOCBOOK = \
 #	gfs_pio_putc.3 \
 #	gfs_pio_putline.3 \
 #	gfs_pio_puts.3 \
-#	gfs_pio_read.3 \
 #	gfs_pio_readdelim.3 \
 #	gfs_pio_readline.3 \
 #	gfs_pio_seek.3 \
@@ -37,7 +38,6 @@ DOCBOOK = \
 #	gfs_pio_set_view_local.3 \
 #	gfs_pio_truncate.3 \
 #	gfs_pio_ungetc.3 \
-#	gfs_pio_write.3 \
 #	gfs_readdir.3 \
 #	gfs_realpath.3 \
 #	gfs_rename.3 \

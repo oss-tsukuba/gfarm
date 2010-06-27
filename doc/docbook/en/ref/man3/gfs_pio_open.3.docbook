@@ -166,6 +166,14 @@ directory.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>The requested access to the file is not allowed, or one of the
+directories in <parameter>gfarm_url</parameter> did not allow search (execute)
+permission.  Or, the authentication to the metadata server fails.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
 <term><constant>GFARM_ERR_NO_MEMORY</constant></term>
 <listitem>
 <para>Insufficient memory was available.</para>
@@ -232,14 +240,6 @@ does not include a port number of the metadata server.</para>
 <term><constant>GFARM_ERR_BROKEN_PIPE</constant></term>
 <listitem>
 <para>Connection to the metadata server is broken.</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
-<listitem>
-<para>The requested access to the file is not allowed, or one of the
-directories in <parameter>gfarm_url</parameter> did not allow search (execute)
-permission.  Or, the authentication to the metadata server fails.</para>
 </listitem>
 </varlistentry>
 <varlistentry>
