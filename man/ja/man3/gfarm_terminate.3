@@ -3,21 +3,22 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM_TERMINATE" "3" "18 March 2003" "Gfarm" ""
+.TH "GFARM_TERMINATE" "3" "26 June 2010" "Gfarm" ""
+
 .SH NAME
 gfarm_terminate \- gfarm ライブラリに関する終了処理をする
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfarm_terminate (\fIvoid\fB);
+gfarm_error_t gfarm_terminate (\fIvoid\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
 Gfarm ライブラリについて、終了処理を行います。
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 正常終了を示します。
 .TP
 \fBその他\fR

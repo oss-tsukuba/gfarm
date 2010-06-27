@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfs_pio_close</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfs_pio_close&nbsp;--&nbsp;Gfarmファイルのクローズ</DIV
+>gfs_pio_close&nbsp;--&nbsp;Gfarmファイルシステムのファイルのクローズ</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,11 +35,11 @@ NAME="SYNOPSIS"
 >Synopsis</H2
 ><DIV
 CLASS="FUNCSYNOPSIS"
+><P
+></P
 ><A
 NAME="AEN12"
 ></A
-><P
-></P
 ><TABLE
 BORDER="0"
 BGCOLOR="#E0E0E0"
@@ -61,8 +60,8 @@ CLASS="FUNCDEF"
 CLASS="FUNCTION"
 ><SPAN
 CLASS="RETURNVALUE"
->char *</SPAN
->gfs_pio_close</TT
+>gfarm_error_t</SPAN
+> gfs_pio_close</TT
 ></CODE
 >(GFS_File <TT
 CLASS="PARAMETER"
@@ -105,18 +104,33 @@ NAME="RETURN-VALUES"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->NULL</TT
+>GFARM_ERR_NO_ERROR</CODE
 ></DT
 ><DD
 ><P
 >正常終了を示します。</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="CONSTANT"
->GFARM_ERR_NO_MEMORY</TT
+>GFARM_ERR_BAD_FILE_DESCRIPTOR</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfp</I
+></TT
+>
+で指定されるファイルディスクリプタが不正です。</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</CODE
 ></DT
 ><DD
 ><P
@@ -126,7 +140,15 @@ CLASS="CONSTANT"
 >その他</DT
 ><DD
 ><P
->上記以外のエラーが生じたことを示します。</P
+>上記以外のエラーが生じたことを示します。
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_error_string</SPAN
+>(3)</SPAN
+>
+によりエラーの原因を文字列に変換することができます。</P
 ></DD
 ></DL
 ></DIV

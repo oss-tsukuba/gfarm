@@ -3,27 +3,28 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM_TERMINATE" "3" "18 March 2003" "Gfarm" ""
+.TH "GFARM_TERMINATE" "3" "26 June 2010" "Gfarm" ""
+
 .SH NAME
-gfarm_terminate \- termination of Gfarm execution environment
+gfarm_terminate \- terminate the Gfarm execution environment for client
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfarm_terminate (\fIvoid\fB);
+gfarm_error_t gfarm_terminate (\fIvoid\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-\fBgfarm_terminate()\fR terminates the execution environment for the
-Gfarm application.
+\fBgfarm_terminate()\fR terminates the Gfarm
+execution environment for client application.
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 The function terminated successfully.
 .TP
 \fBOthers\fR
-An error except the above occurred.  The reason is shown by its
-pointed strings.
+An error except the above occurred.  The reason is shown by
+\fBgfarm_error_string\fR(3)\&.
 .SH "SEE ALSO"
 .PP
 \fBgfarm_initialize\fR(3)

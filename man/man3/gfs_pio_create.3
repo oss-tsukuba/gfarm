@@ -3,19 +3,20 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_CREATE" "3" "13 November 2006" "Gfarm" ""
+.TH "GFS_PIO_CREATE" "3" "27 June 2010" "Gfarm" ""
 
 .SH NAME
-gfs_pio_create \- create a Gfarm file
+gfs_pio_create \- create a file in the Gfarm file system
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfs_pio_create (char * \fIgfarm_url\fB, int \fIflags\fB, mode_t \fImode\fB, GFS_File * \fIgfp\fB);
+gfarm_error_t gfs_pio_create (const char * \fIgfarm_url\fB, int \fIflags\fB, gfarm_mode_t \fImode\fB, GFS_File * \fIgfp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
-\fBgfs_pio_create()\fR creates a new Gfarm file whose name is the
+\fBgfs_pio_create()\fR creates a new file in the
+Gfarm file system whose name is the
 string pointed to by \fIgfarm_url\fR with the access mode \fImode\fR,
 and returns a \fIGFS_File\fR structure to the address pointed to by
 \fIgfp\fR\&.  \fIMode\fR specifies the file permissions to be created,
@@ -30,56 +31,82 @@ such that exactly one of
 \fIGFARM_FILE_WRONLY\fR, and
 \fIGFARM_FILE_RDWR\fR
 should be specified.
-In addition, it is possible to specify
-\fIGFARM_FILE_EXCLUSIVE\fR\&.
-With this flag, 
-\fBgfs_pio_create()\fR
-will fail when the file already exists.
 .PP
 Note that
 \fIGFARM_FILE_TRUNC\fR
 must be explicitly specified by the
 \fIflags\fR
-argument since gfarm-1.0.4, if it's needed.
-Although this was implicitly assumed before.
-.PP
-When \fBgfs_pio_create()\fR is used by parallel processes executed by
-gfrun(3) or gfmpirun_p4(3), each process should specify a consistent
-value for \fImode\fR\&.  The returned GFS_File structure of each
-process has individual file pointers among parallel processes.
+argument if needed.
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 The function terminated successfully.
 .TP
-\fBGFARM_ERR_NO_MEMORY\fR
-Insufficient memory was available.
+\fBGFARM_ERR_IS_A_DIRECTORY\fR
+\fIgfarm_url\fR refers to a directory.
 .TP
-\fBGFARM_ERR_AUTHENTICATION\fR
-User authentication failed when connecting to gfmd(8) or gfsd(8).
+\fBGFARM_ERR_IS_A_SYMBOLIC_LINK\fR
+\fIgfarm_url\fR refers to a symbolic link.
+.TP
+\fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
+\fIgfarm_url\fR refers to not a regular file.
+.TP
+\fBGFARM_ERR_NOT_A_DIRECTORY\fR
+A component used as a directory in \fIgfarm_url\fR is not, in fact, a
+directory.
 .TP
 \fBGFARM_ERR_PERMISSION_DENIED\fR
 The requested access to the file is not allowed, or one of the
 directories in \fIgfarm_url\fR did not allow search (execute)
 permission, or the file did not exist yet and write access to the
 parent directory is not allowed.
+Or, the authentication to the metadata server fails.
 .TP
-\fBGFARM_ERR_ALREADY_EXISTS\fR
-\fIgfarm_url\fR already exists and GFARM_FILE_EXCLUSIVE was used.
+\fBGFARM_ERR_NO_MEMORY\fR
+Insufficient memory was available.
 .TP
-\fBGFARM_ERR_IS_A_DIRECTORY\fR
-\fIgfarm_url\fR refers to a directory.
+\fBGFARM_ERR_INVALID_ARGUMENT\fR
+\fIflags\fR
+is not valid.
 .TP
-\fBGFARM_ERR_NO_SUCH_OBJECT\fR
-A component used as a directory in \fIgfarm_url\fR does not exist.
+\fBGFARM_ERR_GFARM_URL_HOST_IS_MISSING\fR
+\fIgfarm_url\fR
+does not include a metadata server.
 .TP
-\fBGFARM_ERR_NOT_A_DIRECTORY\fR
-A component used as a directory in \fIgfarm_url\fR is not, in fact, a
-directory.
+\fBGFARM_ERR_GFARM_URL_PORT_IS_MISSING\fR
+\fIgfarm_url\fR
+does not include a port number of the metadata server.
+.TP
+\fBGFARM_ERR_UNKNOWN_HOST\fR
+The metadata server cannot be resolved.
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES\fR
+The process opens too many files.
+.TP
+\fBGFARM_ERR_TOO_MANY_OPEN_FILES_IN_SYSTEM\fR
+The system limit on the total number of open files has been reached.
+.TP
+\fBGFARM_ERR_NETWORK_IS_UNREACHABLE\fR
+Network is unrechable.
+.TP
+\fBGFARM_ERR_OPERATION_TIMED_OUT\fR
+Connetion timeout occurs.
+.TP
+\fBGFARM_ERR_PROTOCOL\fR
+Protocol error occurs.
+.TP
+\fBGFARM_ERR_BROKEN_PIPE\fR
+Connection to the metadata server is broken.
+.TP
+\fBGFARM_ERR_PROTOCOL_NOT_SUPPORTED\fR
+Specified authentication protocol is not supported.
+.TP
+\fBGFARM_ERR_AUTHENTICATION\fR
+User authentication failed when connecting to the metadata server.
 .TP
 \fBOthers\fR
-An error except the above occurred.  The reason is shown by its
-pointed strings.
+An error except the above occurred.  The reason is shown by
+\fBgfarm_error_string\fR(3)\&.
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_close\fR(3),
@@ -95,7 +122,5 @@ pointed strings.
 \fBgfs_pio_puts\fR(3),
 \fBgfs_pio_read\fR(3),
 \fBgfs_pio_seek\fR(3),
-\fBgfs_pio_set_view_index\fR(3),
-\fBgfs_pio_set_view_local\fR(3),
 \fBgfs_pio_ungetc\fR(3),
 \fBgfs_pio_write\fR(3)

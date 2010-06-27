@@ -3,14 +3,15 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFS_PIO_READ" "3" "18 March 2003" "Gfarm" ""
+.TH "GFS_PIO_READ" "3" "27 June 2010" "Gfarm" ""
+
 .SH NAME
 gfs_pio_read \- ファイルの読み込み
 .SH SYNOPSIS
 .sp
 \fB#include <gfarm/gfarm.h>
 .sp
-char *gfs_pio_read (GFS_File \fIgf\fB, void * \fIbuffer\fB, int \fIsize\fB, int * \fInp\fB);
+gfarm_error_t gfs_pio_read (GFS_File \fIgf\fB, void * \fIbuffer\fB, int \fIsize\fB, int * \fInp\fB);
 \fR
 .SH "DESCRIPTION"
 .PP
@@ -26,14 +27,28 @@ EOF
 を意味します。
 .SH "RETURN VALUES"
 .TP
-\fBNULL\fR
+\fBGFARM_ERR_NO_ERROR\fR
 正常終了を示します。
+.TP
+\fBGFARM_ERR_OPERATION_NOT_PERMITTED\fR
+\fIgf\fR
+で指定されるファイルがレギュラーファイルではありません。
+.TP
+\fBGFARM_ERR_BAD_FILE_DESCRIPTOR\fR
+\fIgf\fR
+で指定されるファイルディスクリプタが不正、
+あるいは読込可能でオープンされていません。
+.TP
+\fBGFARM_ERR_NO_FILE_SYSTEM_NODE\fR
+利用可能なファイルシステムノードがありません。
 .TP
 \fBGFARM_ERR_NO_MEMORY\fR
 メモリ不足のため処理を中止しました。
 .TP
 \fBその他\fR
 上記以外のエラーが生じたことを示します。
+\fBgfarm_error_string\fR(3)
+によりエラーの原因を文字列に変換することができます。
 .SH "SEE ALSO"
 .PP
 \fBgfs_pio_create\fR(3),

@@ -270,6 +270,22 @@ directory.</P
 ><DT
 ><CODE
 CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</CODE
+></DT
+><DD
+><P
+>The requested access to the file is not allowed, or one of the
+directories in <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> did not allow search (execute)
+permission.  Or, the authentication to the metadata server fails.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
 >GFARM_ERR_NO_MEMORY</CODE
 ></DT
 ><DD
@@ -383,22 +399,6 @@ CLASS="CONSTANT"
 ><DD
 ><P
 >Connection to the metadata server is broken.</P
-></DD
-><DT
-><CODE
-CLASS="CONSTANT"
->GFARM_ERR_PERMISSION_DENIED</CODE
-></DT
-><DD
-><P
->The requested access to the file is not allowed, or one of the
-directories in <TT
-CLASS="PARAMETER"
-><I
->gfarm_url</I
-></TT
-> did not allow search (execute)
-permission.  Or, the authentication to the metadata server fails.</P
 ></DD
 ><DT
 ><CODE
