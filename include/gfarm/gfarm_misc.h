@@ -84,8 +84,13 @@ extern const char GFARM_PATH_ROOT[];
  */
 struct gfarm_host_sched_info;
 gfarm_error_t gfarm_schedule_hosts_domain_all(const char *, const char *,
-    int *, struct gfarm_host_sched_info **);
+	int *, struct gfarm_host_sched_info **);
+gfarm_error_t gfarm_schedule_hosts_domain_by_file(
+	const char *, int, const char *,
+	int *, struct gfarm_host_sched_info **);
 void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
+
+void gfarm_schedule_search_mode_use_loadavg(void);
 gfarm_error_t gfarm_schedule_hosts(const char *,
 	int, struct gfarm_host_sched_info *, int, char **, int *);
 gfarm_error_t gfarm_schedule_hosts_to_write(const char *,
