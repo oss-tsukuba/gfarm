@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsched&nbsp;--&nbsp;create a host file using file-affinity scheduling</DIV
+>gfsched&nbsp;--&nbsp;schedule and display available filesystem nodes</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,47 +37,37 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsched</B
-> [-U] [-I <TT
-CLASS="REPLACEABLE"
-><I
->fragment-index</I
-></TT
->] [-p <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-program-URL</I
-></TT
->]  <TT
+> [-f <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
 ></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->output-hostfile</I
-></TT
->]</P
-><P
-><B
-CLASS="COMMAND"
->gfsched</B
-> [-U]  -N <TT
+>] [-n <TT
 CLASS="REPLACEABLE"
 ><I
 >number</I
 ></TT
->  [-p <TT
+>] [-LMlw]</P
+><P
+><B
+CLASS="COMMAND"
+>gfsched</B
+> [-P <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-program-URL</I
+>gfarm-URL</I
 ></TT
->] [<TT
+>] [-D <TT
 CLASS="REPLACEABLE"
 ><I
->host</I
+>number</I
 ></TT
->...]</P
+>] [-n <TT
+CLASS="REPLACEABLE"
+><I
+>number</I
+></TT
+>] [-LMlw]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -87,58 +77,46 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->  <B
+>  The <B
 CLASS="COMMAND"
 >gfsched</B
-> creates a host file
-  using the file-affinity scheduling of <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.
-  In other words, <B
-CLASS="COMMAND"
->gfsched</B
-> chooses and displays
-  hostnames, matching the number with the fragments of
-  the <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->, giving priority, as far as possible to
-  the host which has the fragment.
-  When <TT
-CLASS="PARAMETER"
-><I
->output-hostfile</I
-></TT
-> is omitted,
-  <B
-CLASS="COMMAND"
->gfsched</B
-> displays to the standard output.</P
-><P
->  If <CODE
+> command
+  with a <CODE
 CLASS="OPTION"
->-N</CODE
-> is specified instead of 
-  <TT
+>-f</CODE
+> <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
->, <B
+> option
+  displays available filesystem nodes which have a file replica of the
+  specified gfarm-URL.</P
+><P
+>  When a <CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> option
+  is not specified, the <B
 CLASS="COMMAND"
 >gfsched</B
-> chooses and
-  displays a specified number of hosts from the hosts in the arguments.
-  If no hosts are specified in the argument, <B
-CLASS="COMMAND"
->gfsched</B
->
-  chooses hosts from all registered hosts.</P
+> command just displays
+  available filesystem nodes.  In this case, you can specify a metadata
+  server by a <CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> option,
+  if necessary.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -155,21 +133,26 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-I</CODE
+>-D</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
->fragment-index</I
+>domain-name4</I
 ></TT
 ></DT
 ><DD
 ><P
->Specifies the fragment index to be scheduled.</P
+>Limits filesystem node by specifying a domain name or a hostname.</P
+><P
+>Currently, this option doesn't work with the <CODE
+CLASS="OPTION"
+>-f</CODE
+> option.</P
 ></DD
 ><DT
 ><CODE
 CLASS="OPTION"
->-U</CODE
+>-L</CODE
 ></DT
 ><DD
 ><P
@@ -183,29 +166,109 @@ the user may be scheduled.</P
 ><DT
 ><CODE
 CLASS="OPTION"
->-p</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->program-URL</I
-></TT
+>-M</CODE
 ></DT
 ><DD
 ><P
->Creates a host file with a program name which will be used
-to process the <TT
+>Suppresses client-side scheduling and only performs metadata-server-side
+scheduling.
+This option makes scheduling faster,
+but also creates a risk that hosts which is network-unreachable or
+fails authentication with the user may be scheduled.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
 CLASS="PARAMETER"
 ><I
 >gfarm-URL</I
 ></TT
->.
-In other words, only hosts which can run the <TT
+></DT
+><DD
+><P
+>Specifies a <TT
 CLASS="PARAMETER"
 ><I
->program-URL</I
+>gfarm-URL</I
 ></TT
->
-will be selected, if this option is specified.</P
+> or a pathname
+to identify a metadata server which is used for the scheduling.
+This option conflicts with an <CODE
+CLASS="OPTION"
+>-f</CODE
+>.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>The <B
+CLASS="COMMAND"
+>gfsched</B
+> command schedules filesystem nodes
+which have a replica of a file specified by this option.
+This option conflicts with a <CODE
+CLASS="OPTION"
+>-P</CODE
+> option.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-l</CODE
+></DT
+><DD
+><P
+>Long format.
+This option displays port numbers as well as hostnames.
+Note that the display format of this option may be changed in future.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-n</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>Displays specified number of filesystem nodes at most.
+If this option is not specified, it displays all available nodes.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-w</CODE
+></DT
+><DD
+><P
+>Schedules with write-mode.
+When this option is specified, filesystem nodes which don't have
+enough free space won't be displayed.</P
+><P
+>When both this option and an <CODE
+CLASS="OPTION"
+>-f</CODE
+> are specified,
+and if the file is already opened by an existing process with write-mode,
+the <B
+CLASS="COMMAND"
+>gfsched</B
+> command only displays one filesystem node
+which is assigned for writing to the file.</P
 ></DD
 ><DT
 ><CODE
@@ -218,6 +281,20 @@ CLASS="OPTION"
 ></DD
 ></DL
 ></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><P
+>The following is an example to inquire filesystem nodes that the metadata
+server thinks they are currently working.</P
+><P
+CLASS="LITERALLAYOUT"
+>$&nbsp;gfsched&nbsp;-M</P
 ></DIV
 ></BODY
 ></HTML
