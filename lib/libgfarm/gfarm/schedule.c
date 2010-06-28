@@ -228,7 +228,7 @@ struct search_idle_host_state {
 	/*if HOST_STATE_FLAG_STATFS_AVAIL*/
 	struct timeval statfs_cache_time;
 #if 0
-	gfarm_off_t blocks, bfree, bavail; 
+	gfarm_off_t blocks, bfree, bavail;
 	gfarm_off_t files, ffree, favail;
 	gfarm_int32_t bsize;
 #else
@@ -467,7 +467,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	/* first host in the network */
-	GFARM_MALLOC(net); 
+	GFARM_MALLOC(net);
 	if (net == NULL) {
 		gflog_debug(GFARM_MSG_1001426,
 		    "search_idle_network_list_add: no memory");
@@ -1467,7 +1467,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 			;
 		/* search netarray[i ... (j-1)] */
 		search_idle_in_networks(s, j - i, &netarray[i]);
-		
+
 		if (search_idle_is_satisfied(s))
 			break;
 	}
@@ -1578,7 +1578,7 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 		n = s.available_hosts_number;
 	}
 
-	for (i = 0; i < n && i < s.desired_number; i++){
+	for (i = 0; i < n && i < s.desired_number; i++) {
 		ohosts[i] = results[i]->return_value;
 		oports[i] = results[i]->port;
 		results[i]->scheduled++;
@@ -1624,7 +1624,7 @@ search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode)
  * If acyclic, *nohostsp is an input/output parameter,
  * otherwise *nohostsp is an input parameter.
  */
-gfarm_error_t
+static gfarm_error_t
 select_hosts(struct gfm_connection *gfm_server,
 	int acyclic, int write_mode,
 	int ninfos, struct gfarm_host_sched_info *infos,
@@ -1723,7 +1723,7 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 static gfarm_error_t
 select_hosts_by_path(const char *path,
 	int acyclic, int write_mode,
-	int ninfos, struct gfarm_host_sched_info *infos, 
+	int ninfos, struct gfarm_host_sched_info *infos,
 	int *nohostsp, char **ohosts, int *oports)
 {
 	gfarm_error_t e;
@@ -1769,7 +1769,7 @@ gfarm_schedule_hosts_to_write(const char *path,
 /*
  * Similar to 'gfarm_schedule_hosts()' except for the fact that
  * the available hosts will be listed only once even if enough number of
- * hosts are not available, 
+ * hosts are not available.
  */
 gfarm_error_t
 gfarm_schedule_hosts_acyclic(const char *path,
@@ -1847,7 +1847,6 @@ gfarm_schedule_network_cache_dump(void)
 			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
 			    ip_max[0], ip_max[1], ip_max[2], ip_max[3]);
 	}
-	
 }
 
 #define GFARM_HUMANIZE_NUMBER_LEN (GFARM_INT64STRLEN + 1 + 1)
@@ -1891,7 +1890,7 @@ gfarm_schedule_host_cache_dump(void)
 
 	gettimeofday(&period, NULL);
 	period.tv_sec -= gfarm_schedule_cache_timeout;
-	
+
 	for (gfarm_hash_iterator_begin(search_idle_hosts_state, &it);
 	    !gfarm_hash_iterator_is_end(&it); gfarm_hash_iterator_next(&it)) {
 		entry = gfarm_hash_iterator_access(&it);
@@ -1991,7 +1990,7 @@ schedule_search_idle_common(int acyclic, int write_mode,
 		if (e != NULL)
 			goto free_ihosts;
 	}
-	e = acyclic ? 
+	e = acyclic ?
 	    search_idle(nohostsp, ohosts, write_mode) :
 	    search_idle_cyclic(*nohostsp, ohosts, write_mode);
 	if (e != NULL)
@@ -2345,9 +2344,8 @@ statfsnode(char *canonical_hostname, int use_cache,
 		    &h->bsize,
 		    &h->blocks, &h->bfree, &h->bavail,
 		    &h->files, &h->ffree, &h->favail);
-		if (e != NULL || e2 != NULL) {
+		if (e != NULL || e2 != NULL)
 			return (e != NULL ? e : e2);
-		}
 		h->statfs_cache_time = search_idle_now;
 		h->flags |=
 		    HOST_STATE_FLAG_AUTH_SUCCEED|HOST_STATE_FLAG_STATFS_AVAIL;
