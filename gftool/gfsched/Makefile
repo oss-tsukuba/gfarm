@@ -19,4 +19,7 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) \
+	$(GFARMLIB_SRCDIR)/gfm_client.h \
+	$(GFARMLIB_SRCDIR)/gfm_schedule.h \
+	$(GFARMLIB_SRCDIR)/schedule.h
