@@ -1620,6 +1620,12 @@ host_schedule_reply_all(struct peer *peer, const char *diag,
 	    filter, closure, 1, diag));
 }
 
+static int
+up_filter(struct host *h, void *closure)
+{
+	return (host_is_up(h));
+}
+
 gfarm_error_t
 host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 {
@@ -1635,7 +1641,7 @@ host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
 		e = host_schedule_reply(h, peer, diag);
 		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
 	} else
-		return (host_schedule_reply_all(peer, diag, NULL, NULL));
+		return (host_schedule_reply_all(peer, diag, up_filter, NULL));
 }
 
 gfarm_error_t
@@ -1670,11 +1676,12 @@ gfm_server_hostname_set(struct peer *peer, int from_client, int skip)
 }
 
 static int
-domain_filter(struct host *h, void *d)
+up_and_domain_filter(struct host *h, void *d)
 {
 	const char *domain = d;
 
-	return (gfarm_host_is_in_domain(host_name(h), domain));
+	return (host_is_up(h) &&
+	    gfarm_host_is_in_domain(host_name(h), domain));
 }
 
 gfarm_error_t
@@ -1698,7 +1705,7 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
-	e = host_schedule_reply_all(peer, diag, domain_filter, domain);
+	e = host_schedule_reply_all(peer, diag, up_and_domain_filter, domain);
 	giant_unlock();
 	free(domain);
 
