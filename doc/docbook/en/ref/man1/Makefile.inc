@@ -13,6 +13,7 @@ DOCBOOK = \
 	gfmv.1 \
 	gfrep.1 \
 	gfrmdir.1 \
+	gfsched.1 \
 	gfstat.1 \
 	gfstatus.1 \
 	gfuser.1 \
@@ -35,7 +36,6 @@ DOCBOOK = \
 #	gfrm.1 \
 #	gfront.1 \
 #	gfrun.1 \
-#	gfsched.1 \
 #	gfsetdir.1 \
 #	gfusage.1 \
 #	gfwc.1 \

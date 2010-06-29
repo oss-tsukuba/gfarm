@@ -19,8 +19,8 @@
 /*
  *  Create a hostfile.
  *
- *  gfsched [-P <path>] [-D <domain>] [-n <number>] [-w]
- *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-w]
+ *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-LMlw]
+ *  gfsched [-P <path>] [-D <domain>] [-n <number>] [-LMlw]
  */
 
 char *program_name = "gfsched";
@@ -29,10 +29,10 @@ void
 usage(void)
 {
 	fprintf(stderr, 
-	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-Mhlw]\n",
+	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMlw]\n",
 	    program_name);
 	fprintf(stderr,
-	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-Mhlw]\n",
+	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMlw]\n",
 	    program_name);
 	fprintf(stderr,
 	    "options:\n");
