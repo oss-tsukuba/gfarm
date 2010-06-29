@@ -53,7 +53,7 @@ static void
 back_channel_disconnect_request(struct host *host, struct peer *peer,
 	const char *proto, const char *op, const char *condition)
 {
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1002435,
 	    "back_channel(%s) %s %s: disconnecting: %s",
 	    host_name(host), proto, op, condition);
 	host_disconnect_request(host, peer);
@@ -63,7 +63,7 @@ static void
 back_channel_already_disconnected_message(struct host *host, struct peer *peer,
 	const char *proto, const char *op, const char *condition)
 {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1002436,
 	    "back_channel(%s) %s %s: already disconnected: %s",
 	    host_name(host), proto, op, condition);
 }
@@ -161,7 +161,7 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 	e = host_sender_trylock(host, &peer);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_DEVICE_BUSY) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002437,
 			    "back_channel(%s) %s (command %d) request: "
 			    "sending busy", host_name(host), diag, command);
 			host_peer_busy(host);
@@ -173,7 +173,7 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 	/* if (peer0 == NULL), the caller doesn't care the connection */
 	if (peer0 != NULL && peer != peer0) {
 		host_sender_unlock(host, peer);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002438,
 		    "back_channel(%s) %s (command %d) request: "
 		    "gfsd was reconnected",
 		    host_name(host), diag, command);
@@ -746,7 +746,7 @@ back_channel_main(void *arg)
 			/* host_disconnect*() must be already called */
 			sync_back_channel_free(host);
 			host_receiver_unlock(host, peer);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002439,
 			    "back_channel(%s): host_disconnect was called",
 			    host_name(host));
 			return (NULL);
@@ -849,7 +849,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    back_channel_main);
 
 		if (host_is_up(host)) /* throw away old connetion */ {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002440,
 			    "back_channel(%s): switching to new connection",
 			    host_name(host));
 			host_disconnect(host, NULL);

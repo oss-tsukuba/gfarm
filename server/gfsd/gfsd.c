@@ -4051,17 +4051,17 @@ open_accepting_local_socket(struct in_addr address, int port,
 
 	/* to make sure */
 	if (unlink(sock_name) == 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002441,
 		    "%s: remaining socket found and removed", sock_name);
 	else if (errno != ENOENT)
-		accepting_fatal_errno(GFARM_MSG_UNFIXED,
+		accepting_fatal_errno(GFARM_MSG_1002442,
 		    "%s: failed to remove remaining socket", sock_name);
 	if (rmdir(sock_dir) == 0)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002443,
 		    "%s: remaining socket directory found and removed",
 		    sock_dir);
 	else if (errno != ENOENT) /* something wrong, but tries to continue */
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1002444,
 		    "%s: failed to remove remaining socket directory",
 		    sock_dir);
 

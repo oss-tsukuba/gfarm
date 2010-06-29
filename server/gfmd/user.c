@@ -576,7 +576,7 @@ user_info_verify(struct gfarm_user_info *ui, const char *diag)
 	    strlen(ui->realname) > GFARM_USER_REALNAME_MAX ||
 	    strlen(ui->homedir) > GFARM_PATH_MAX ||
 	    strlen(ui->gsi_dn) > GFARM_USER_GSI_DN_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002418,
 		    "%s: invalid user info(%s, %s, %s, %s): argument too long",
 		    diag, ui->username, ui->realname, ui->homedir, ui->gsi_dn);
 		return (GFARM_ERR_INVALID_ARGUMENT);

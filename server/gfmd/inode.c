@@ -287,12 +287,12 @@ inode_cksum_set(struct file_opening *fo,
 	assert(ios != NULL);
 
 	if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002429,
 		    "too long cksum type: \"%s\"", cksum_type);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002430,
 		    "too long cksum (type: \"%s\"): %d bytes",
 		    cksum_type, (int)cksum_len);
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -1387,7 +1387,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (len > GFS_MAXNAMLEN) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002431,
 		    "op %d: too long file name: \"%s\"", op, name);
 		return (GFARM_ERR_FILE_NAME_TOO_LONG);
 	}
@@ -1737,7 +1737,7 @@ inode_create_symlink(struct inode *base, char *name,
 	struct inode *inode;
 
 	if (strlen(source_path) > GFARM_PATH_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002432,
 		    "create symlink \"%s\"  \"%s\": too long source path",
 		    source_path, name);
 		return (GFARM_ERR_FILE_NAME_TOO_LONG);
@@ -2483,14 +2483,14 @@ inode_replicated(struct file_replicating *fr,
 		if (e == GFARM_ERR_NO_ERROR) {
 			removal_pendingq_enqueue(dfc);
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1002433,
 			    "cannot remove an incomplete replica "
 			    "(%s, %lld:%lld): probably already removed",
 			    host_name(fr->dst),
 			    (long long)inode_get_number(inode),
 			    (long long)fr->igen);
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002434,
 			    "cannot remove an incomplete replica "
 			    "(%s, %lld:%lld): %s",
 			    host_name(fr->dst),

@@ -2245,11 +2245,11 @@ gfm_client_switch_async_back_channel(struct gfm_connection *gfm_server,
 
 	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
 	if (gfm_tcp_proto == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002414,
 		    "getprotobyname(\"tcp\") failed, slower back channel");
 	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
 	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1002415,
 		    "setting TCP_NODELAY failed, slower back channel");
 	}
 	return (GFARM_ERR_NO_ERROR);

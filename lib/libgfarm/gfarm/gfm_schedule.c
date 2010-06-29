@@ -99,7 +99,7 @@ gfarm_schedule_hosts_domain_by_file(const char *path, int openflags,
 		*nhostsp = closure.nhosts;
 		*infosp = closure.infos;
 	} else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002416,
 		    "gfarm_schedule_hosts_domain_by_file(%s, 0x%x, %s): %s",
 		    path, openflags, domain, gfarm_error_string(e));
 	}

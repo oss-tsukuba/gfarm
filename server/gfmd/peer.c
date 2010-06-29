@@ -289,12 +289,12 @@ peer_epoll_ctl_fd(int op, int fd)
 			 * https://sourceforge.net/apps/trac/gfarm/ticket/80
 			 * https://sourceforge.net/apps/trac/gfarm/ticket/113
 			 */
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1002426,
 			    "epoll_ctl(%d, %d, %d): "
 			    "probably called against a closed file: %s",
 			    peer_epoll.fd, op, fd, strerror(errno));
 		} else {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002427,
 			    "epoll_ctl(%d, %d, %d): %s\n",
 			    peer_epoll.fd, op, fd, strerror(errno));
 		}
@@ -414,7 +414,7 @@ peer_watcher(void *arg)
 				} else if (peer->control & PEER_CLOSING) {
 					skip = 1;
 					peer->control &= ~PEER_WATCHING;
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002428,
 					    "peer_watcher: fd:%d will be "
 					    "closed and input will be ignored",
 					    peer_get_fd(peer));

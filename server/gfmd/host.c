@@ -527,7 +527,7 @@ host_peer_busy(struct host *host)
 	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (unresponsive_peer != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002419,
 		    "back_channel(%s): disconnecting: busy at sending",
 		    host_name(host));
 		host_disconnect_request(host, unresponsive_peer);
@@ -563,7 +563,7 @@ host_check_busy(struct host *host, gfarm_int64_t now)
 	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
 
 	if (unresponsive_peer != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002420,
 		    "back_channel(%s): disconnecting: busy during queue scan",
 		    host_name(host));
 		host_disconnect_request(host, unresponsive_peer);
@@ -1364,24 +1364,24 @@ static gfarm_error_t
 host_info_verify(struct gfarm_host_info *hi, const char *diag)
 {
 	if (strlen(hi->hostname) > GFARM_HOST_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: too long hostname: %s",
+		gflog_debug(GFARM_MSG_1002421, "%s: too long hostname: %s",
 		    diag, hi->hostname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (strlen(hi->architecture) > GFARM_HOST_ARCHITECTURE_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002422,
 		    "%s: %s: too long architecture: %s",
 		    diag, hi->hostname, hi->architecture);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (hi->ncpu < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002423,
 		    "%s: %s: invalid cpu number: %d",
 		    diag, hi->hostname, hi->ncpu);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (hi->port <= 0 || hi->port >= 65536) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002424,
 		    "%s: %s: invalid port number: %d",
 		    diag, hi->hostname, hi->port);
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -1528,7 +1528,7 @@ host_info_remove_default(const char *hostname, const char *diag)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
 	/* disconnect the back channel */
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1002425,
 	    "back_channel(%s): disconnecting: host info removed", hostname);
 	host_disconnect(host, NULL);
 

@@ -1681,7 +1681,7 @@ select_hosts(struct gfm_connection *gfm_server,
 
 	gfs_profile(gfarm_gettimerval(&t4));
 	gfs_profile(
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002417,
 		    "(select_hosts) init %f, add %f, schedule %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2),
