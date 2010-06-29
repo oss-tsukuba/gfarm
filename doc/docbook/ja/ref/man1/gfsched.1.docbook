@@ -26,7 +26,8 @@
     <arg choice='opt'>-I <replaceable>フラグメント番号</replaceable></arg>
     <arg choice='opt'>-p <replaceable>プログラムURL</replaceable></arg>
    -->
-    <arg choice='opt'>-f <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
     <arg choice='opt'>-LMlw</arg>
 </cmdsynopsis>
@@ -102,9 +103,6 @@
 <listitem>
 <para>ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
 絞ります。
-</para>
-<para>現在のところ、このオプションと <option>-f</option>オプションを
-同時に使うことはできません。
 </para>
 </listitem>
 </varlistentry>
