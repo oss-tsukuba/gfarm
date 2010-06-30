@@ -351,11 +351,11 @@ fi
 %{man_prefix}/man1/gfrm.1.gz
 %endif
 %{man_prefix}/man1/gfrmdir.1.gz
+%{man_prefix}/man1/gfsched.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfront.1.gz
 %{man_prefix}/man1/gfrsh.1.gz
 %{man_prefix}/man1/gfrun.1.gz
-%{man_prefix}/man1/gfsched.1.gz
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
 %endif
@@ -467,11 +467,11 @@ fi
 %{man_prefix}/ja/man1/gfrm.1.gz
 %endif
 %{man_prefix}/ja/man1/gfrmdir.1.gz
+%{man_prefix}/ja/man1/gfsched.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfront.1.gz
 %{man_prefix}/ja/man1/gfrsh.1.gz
 %{man_prefix}/ja/man1/gfrun.1.gz
-%{man_prefix}/ja/man1/gfsched.1.gz
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
 %endif
@@ -596,10 +596,10 @@ fi
 %{html_prefix}/en/ref/man1/gfrm.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfrmdir.1.html
+%{html_prefix}/en/ref/man1/gfsched.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfront.1.html
 %{html_prefix}/en/ref/man1/gfrun.1.html
-%{html_prefix}/en/ref/man1/gfsched.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfstat.1.html
@@ -715,10 +715,10 @@ fi
 %{html_prefix}/ja/ref/man1/gfrm.1.html
 %endif
 %{html_prefix}/ja/ref/man1/gfrmdir.1.html
+%{html_prefix}/ja/ref/man1/gfsched.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfront.1.html
 %{html_prefix}/ja/ref/man1/gfrun.1.html
-%{html_prefix}/ja/ref/man1/gfsched.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %endif
 %{html_prefix}/ja/ref/man1/gfstat.1.html
@@ -900,11 +900,11 @@ fi
 %{prefix}/bin/gfrmdir
 %{prefix}/bin/gfusage
 %{prefix}/bin/gfuser
+%{prefix}/bin/gfsched
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrsh
 %{prefix}/bin/gfrshl
 %{prefix}/bin/gfrun
-%{prefix}/bin/gfsched
 %{prefix}/bin/gfsck
 %{prefix}/bin/gfsetdir
 %{prefix}/bin/gfssh

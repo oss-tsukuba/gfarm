@@ -1,7 +1,10 @@
 Release note for Gfarm 2.3.2
 ============================
 
-[2010.6.21]
+[2010.7.1]
+
+New Command
+* gfsched - schedule and display available file system nodes
 
 New API
 * new scheduling APIs - gfarm_schedule_hosts_domain_all,
@@ -13,7 +16,8 @@ New configuration in gfarm2.conf
   reconnect to the gfmd, respectively.  Default is 30 seconds.
 
 Documentation
-* manual pages -  gfarm(3), gfarm_initialize(3), gfarm_terminate(3), 
+* manual pages - gfsched(1),
+  gfarm(3), gfarm_initialize(3), gfarm_terminate(3), 
   gfs_pio_create(3), gfs_pio_open(3), gfs_pio_close(3), gfs_pio_write(3),
   gfs_pio_read(3)
 
@@ -36,7 +40,6 @@ Bug fix
   in gfmd (i.e. "gfhost -M")
 * file close operation is missing in gfsd when a client crashed
   [sf.net trac #2]
-* file close operation is missing in gfmd
 * fix data race to calculate total amount of disk usage when a file
   system node is up and down
 * fix missing metadata update when GFARM_FILE_TRUNC is specified
