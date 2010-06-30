@@ -3,39 +3,35 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSCHED" "1" "12 November 2006" "Gfarm" ""
+.TH "GFSCHED" "1" "01 July 2010" "Gfarm" ""
 
 .SH NAME
-gfsched \- create a host file using file-affinity scheduling
+gfsched \- schedule and display available file system nodes
 .SH SYNOPSIS
 
-\fBgfsched\fR [ \fB-U\fR ] [ \fB-I \fIfragment-index\fB\fR ] [ \fB-p \fIgfarm-program-URL\fB\fR ] \fB\fIgfarm-URL\fB\fR [ \fB\fIoutput-hostfile\fB\fR ]
+\fBgfsched\fR \fB-f \fIgfarm-URL\fB\fR [ \fB-D \fIdomain-name\fB\fR ] [ \fB-n \fInumber\fB\fR ] [ \fB-LMlw\fR ]
 
 
-\fBgfsched\fR [ \fB-U\fR ] \fB-N \fInumber\fB\fR [ \fB-p \fIgfarm-program-URL\fB\fR ] [ \fB\fIhost\fB\fR\fI ...\fR ]
+\fBgfsched\fR [ \fB-P \fIgfarm-URL\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-n \fInumber\fB\fR ] [ \fB-LMlw\fR ]
 
 .SH "DESCRIPTION"
 .PP
-\fBgfsched\fR creates a host file
-using the file-affinity scheduling of \fIgfarm-URL\fR\&.
-In other words, \fBgfsched\fR chooses and displays
-hostnames, matching the number with the fragments of
-the \fIgfarm-URL\fR, giving priority, as far as possible to
-the host which has the fragment.
-When \fIoutput-hostfile\fR is omitted,
-\fBgfsched\fR displays to the standard output.
+The \fBgfsched\fR command
+with the \fB-f\fR \fIgfarm-URL\fR option
+displays available file system nodes which have a file replica of the
+specified gfarm-URL.
 .PP
-If \fB-N\fR is specified instead of 
-\fIgfarm-URL\fR, \fBgfsched\fR chooses and
-displays a specified number of hosts from the hosts in the arguments.
-If no hosts are specified in the argument, \fBgfsched\fR
-chooses hosts from all registered hosts.
+When the \fB-f\fR \fIgfarm-URL\fR option
+is not specified, the \fBgfsched\fR command just displays
+available file system nodes.  In this case, you can specify a metadata
+server by the \fB-P\fR \fIgfarm-URL\fR option,
+if necessary.
 .SH "OPTIONS"
 .TP
-\fB-I \fIfragment-index\fB\fR
-Specifies the fragment index to be scheduled.
+\fB-D \fIdomain-name\fB\fR
+Limits file system node by specifying a domain name or a hostname.
 .TP
-\fB-U\fR
+\fB-L\fR
 Suppresses authentication check.
 Without this option, the scheduler checks whether the user will be 
 successfully authenticated with the hosts or not.
@@ -43,11 +39,49 @@ This option omits the check to make scheduling faster,
 but that creates a risk that hosts which fail authentication with
 the user may be scheduled.
 .TP
-\fB-p \fIprogram-URL\fB\fR
-Creates a host file with a program name which will be used
-to process the \fIgfarm-URL\fR\&.
-In other words, only hosts which can run the \fIprogram-URL\fR
-will be selected, if this option is specified.
+\fB-M\fR
+Suppresses client-side scheduling and only performs metadata-server-side
+scheduling.
+This option makes scheduling faster,
+but also creates a risk that hosts which is network-unreachable or
+fails authentication with the user may be scheduled.
+.TP
+\fB-P \fIgfarm-URL\fB\fR
+Specifies a \fIgfarm-URL\fR or a pathname
+to identify a metadata server which is used for the scheduling.
+This option conflicts with the \fB-f\fR option.
+.TP
+\fB-f \fIgfarm-URL\fB\fR
+The \fBgfsched\fR command schedules file system nodes
+which have a replica of a file specified by this option.
+This option conflicts with the \fB-P\fR option.
+.TP
+\fB-l\fR
+Long format.
+This option displays port numbers as well as hostnames.
+Note that the display format of this option may be changed in future.
+.TP
+\fB-n \fInumber\fB\fR
+Displays specified number of file system nodes at most.
+If this option is not specified, it displays all available nodes.
+.TP
+\fB-w\fR
+Schedules with write-mode.
+When this option is specified, file system nodes which don't have
+enough free space won't be displayed.
+
+When both this option and the \fB-f\fR are specified,
+and if the file is already opened by an existing process with write-mode,
+the \fBgfsched\fR command only displays one file system node
+which is assigned for writing to the file.
 .TP
 \fB-?\fR
 Displays a list of command options.
+.SH "EXAMPLES"
+.PP
+The following is an example to inquire file system nodes that the metadata
+server thinks they are currently working.
+
+.nf
+$ gfsched -M
+.fi
