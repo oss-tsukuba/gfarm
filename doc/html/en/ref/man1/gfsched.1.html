@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfsched&nbsp;--&nbsp;schedule and display available filesystem nodes</DIV
+>gfsched&nbsp;--&nbsp;schedule and display available file system nodes</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,10 +37,15 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsched</B
-> [-f <TT
+>  -f <TT
 CLASS="REPLACEABLE"
 ><I
 >gfarm-URL</I
+></TT
+>  [-D <TT
+CLASS="REPLACEABLE"
+><I
+>domain-name</I
 ></TT
 >] [-n <TT
 CLASS="REPLACEABLE"
@@ -60,7 +65,7 @@ CLASS="REPLACEABLE"
 >] [-D <TT
 CLASS="REPLACEABLE"
 ><I
->number</I
+>domain-name</I
 ></TT
 >] [-n <TT
 CLASS="REPLACEABLE"
@@ -81,7 +86,7 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfsched</B
 > command
-  with a <CODE
+  with the <CODE
 CLASS="OPTION"
 >-f</CODE
 > <TT
@@ -90,10 +95,10 @@ CLASS="PARAMETER"
 >gfarm-URL</I
 ></TT
 > option
-  displays available filesystem nodes which have a file replica of the
+  displays available file system nodes which have a file replica of the
   specified gfarm-URL.</P
 ><P
->  When a <CODE
+>  When the <CODE
 CLASS="OPTION"
 >-f</CODE
 > <TT
@@ -106,8 +111,8 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfsched</B
 > command just displays
-  available filesystem nodes.  In this case, you can specify a metadata
-  server by a <CODE
+  available file system nodes.  In this case, you can specify a metadata
+  server by the <CODE
 CLASS="OPTION"
 >-P</CODE
 > <TT
@@ -137,17 +142,12 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->domain-name4</I
+>domain-name</I
 ></TT
 ></DT
 ><DD
 ><P
->Limits filesystem node by specifying a domain name or a hostname.</P
-><P
->Currently, this option doesn't work with the <CODE
-CLASS="OPTION"
->-f</CODE
-> option.</P
+>Limits file system node by specifying a domain name or a hostname.</P
 ></DD
 ><DT
 ><CODE
@@ -195,10 +195,10 @@ CLASS="PARAMETER"
 ></TT
 > or a pathname
 to identify a metadata server which is used for the scheduling.
-This option conflicts with an <CODE
+This option conflicts with the <CODE
 CLASS="OPTION"
 >-f</CODE
->.</P
+> option.</P
 ></DD
 ><DT
 ><CODE
@@ -215,9 +215,9 @@ CLASS="PARAMETER"
 >The <B
 CLASS="COMMAND"
 >gfsched</B
-> command schedules filesystem nodes
+> command schedules file system nodes
 which have a replica of a file specified by this option.
-This option conflicts with a <CODE
+This option conflicts with the <CODE
 CLASS="OPTION"
 >-P</CODE
 > option.</P
@@ -245,7 +245,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->Displays specified number of filesystem nodes at most.
+>Displays specified number of file system nodes at most.
 If this option is not specified, it displays all available nodes.</P
 ></DD
 ><DT
@@ -256,10 +256,10 @@ CLASS="OPTION"
 ><DD
 ><P
 >Schedules with write-mode.
-When this option is specified, filesystem nodes which don't have
+When this option is specified, file system nodes which don't have
 enough free space won't be displayed.</P
 ><P
->When both this option and an <CODE
+>When both this option and the <CODE
 CLASS="OPTION"
 >-f</CODE
 > are specified,
@@ -267,7 +267,7 @@ and if the file is already opened by an existing process with write-mode,
 the <B
 CLASS="COMMAND"
 >gfsched</B
-> command only displays one filesystem node
+> command only displays one file system node
 which is assigned for writing to the file.</P
 ></DD
 ><DT
@@ -290,7 +290,7 @@ NAME="EXAMPLES"
 ><H2
 >EXAMPLES</H2
 ><P
->The following is an example to inquire filesystem nodes that the metadata
+>The following is an example to inquire file system nodes that the metadata
 server thinks they are currently working.</P
 ><P
 CLASS="LITERALLAYOUT"

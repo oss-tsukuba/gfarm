@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSCHED" "1" "28 June 2010" "Gfarm" ""
+.TH "GFSCHED" "1" "30 June 2010" "Gfarm" ""
 
 .SH NAME
 gfsched \- ファイルシステムノードをスケジューリングし、利用可能なノードを表示
 .SH SYNOPSIS
 
-\fBgfsched\fR [ \fB-f \fIgfarm-URL\fB\fR ] [ \fB-n \fIノード数\fB\fR ] [ \fB-LMlw\fR ]
+\fBgfsched\fR \fB-f \fIgfarm-URL\fB\fR [ \fB-D \fIドメイン名\fB\fR ] [ \fB-n \fIノード数\fB\fR ] [ \fB-LMlw\fR ]
 
 
 \fBgfsched\fR [ \fB-P \fIgfarm-URL\fB\fR ] [ \fB-D \fIドメイン名\fB\fR ] [ \fB-n \fIノード数\fB\fR ] [ \fB-LMlw\fR ]
@@ -31,9 +31,6 @@ gfsched \- ファイルシステムノードをスケジューリングし、利用可能なノードを表示
 \fB-D \fIドメイン名\fB\fR
 ドメイン名ないしホスト名を指定し、検索対象のファイルシステムノードを
 絞ります。
-
-現在のところ、このオプションと \fB-f\fRオプションを
-同時に使うことはできません。
 .TP
 \fB-L\fR
 そのホストに対して、認証が成功するか否かの確認を省略します。
