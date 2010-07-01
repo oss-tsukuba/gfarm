@@ -1,114 +1,99 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + Samba [English]</TITLE>
+<HTML><HEAD><TITLE>Grid Datafarm: Samba [English]</TITLE>
 <META content=document name=resource-type>
 </HEAD>
 <BODY><A href="http://datafarm.apgrid.org/">
 <IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
 <a href="../../index.html">documents</a> &gt;
 <a href="index.html">User's Manual</a> &gt;
-samba/gfarmfs-fuse
+samba
 
-<H1>GfarmFS-FUSE + Samba</H1>
+<H1>Mount Gfarm File System from Windows Machines</H1>
 English | <A href="../../ja/user/samba-gfarmfs.html">Japanese</A>
-<P>
-Another solution: <A href="samba-hook.html">Gfarm syscall-hooking library + Samba is here</A>
 
 <H2>1. Summary</H2>
 
+Windows client can access to the Gfarm file system using gfarm2fs and
+Samba.
 
-You can access to Gfarm filesystem via GfarmFS-FUSE via Samba from Windows.
 <P>
-Configurations
+Configuration
 <UL>
-<LI>on Linux (Samba) machine
+<LI>Samba (Linux) machine
   <UL>
-  <LI>You can access to the Gfarm environment which you will use.
-  <LI>FUSE is installed. (= environment of Linux kernel 2.4 or 2.6)
-  <LI>'user_allow_other' is set in /etc/fuse.conf.
-  <LI>GfarmFS-FUSE is installed. You can run the 'gfarmfs' command.
-  <LI>Samba server (smbd) is running.
-  <LI>You can access via Samba to the mountpoint which you mounted using gfarmfs.
-  </UL>
-<LI>on Windows machine
-  <UL>
-  <LI>You can access to the Samba server mentioned above.
+  <LI>Install Gfarm version 2 and gfarm2fs.  Sharedsecret
+      authentication is recommended.
+  <LI>Install FUSE, and specify 'user_allow_other' in /etc/fuse.conf.
+  <LI>Install Samba server (smbd).
   </UL>
 </UL>
 
-Softwares
+Software
 <UL>
-<LI>Gfarm: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
-<LI>GfarmFS-FUSE: <A HREF="https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html">https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html</A>
+<LI>Gfarm version 2 and gfarm2fs: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
 <LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
-<LI>Samba:  <A HREF="http://www.samba.org/">http://www.samba.org/</A>
+<LI>Samba: <A HREF="http://www.samba.org/">http://www.samba.org/</A>
 </UL>
 
 <H2>2. Japanese Filename</H2>
 
-See <A href="../../ja/user/samba-gfarmfs.html">GfarmFS-FUSE + Samba in Japanese</A>
+See <A href="../../ja/user/samba-gfarmfs.html">Samba in Japanese</A>
 
-<H2>3. Samba Configuration</H2>
+<H2>3. Samba Configuration - smb.conf</H2>
 
-Setting shares configuration in smb.conf.
-Adding [homes] or 'Path' in [Section Name] for publishing the mountpoint by GfarmFS-FUSE.<BR>
-This mountpoint is ~/.../mountpoint or ~/mountpoint or 'Path'/.../mountpoint or 'Path'/mountpoint.
-<P>
-And, adding the Samba member corresponding to the unix user (for this purpose).
+Specify the mount point of the Gfarm file system in [homes] or
+[Section Name].  SWAT helps to set up the configuration.
+<br>
+When each user mounts the Gfarm file systen on /tmp/gfarm/username,
+The following configuration exports the mount point via samba;
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+[Gfarm]
+path = /tmp/gfarm/%u
+create mask = 0644
+read only = no
+</PRE></TD></TR></TBODY></TABLE>
 <P>
 See Samba documentations about the details of Samba configurations.
 
 <H2>4. FUSE Configuration</H2>
 
-If you will access to GfarmFS-FUSE via Samba when FUSE version 2.3.0 (or later) is installed, you should set the following.
+The FUSE version 2.3.0 (or later) requires the following setting.
 <P>
 /etc/fuse.conf 
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 user_allow_other
 </PRE></TD></TR></TBODY></TABLE>
 <P>
-This setting is that normal users can use the options of -o allow_root and -o allow_other. (See README of FUSE)
+This allows users to specify the -o allow_root or -o allow_other
+option.
 
-<H2>5. Mount by GfarmFS-FUSE</H2>
+<H2>5. Mount by Gfarm2fs</H2>
 
-Please check whether you can access to Gfarm with 'gfhost -l'.
-Run the 'gfarmfs' to mount on the Samba server.<BR>
-(See documentations of Gfarm and GfarmFS-FUSE about these details.)
+First, check whether you can access to Gfarm by 'gfdf' and 'gfhost
+-l'.  If it is succeeded, mount the Gfarm file system by 'gfarm2fs' on
+the Samba server.
 <P>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-  $ gfarmfs [GfarmFS options] mountpoint [FUSE options]
+  $ gfarm2fs [Gfarm2FS options] mountpoint [FUSE options]
 </PRE></TD></TR></TBODY></TABLE>
 <P>
 This mountpoint must be published by Samba. (See section 3)
 
 <H3>Attention</H3>
-You shall not set '-o allow_other' of FUSE option.
-If '-o allow_other' is set, other normal users can access to your Gfarm environment via the mountpoint by your authority.
+Do not specify '-o allow_other' for the FUSE options.  It allows all
+users to access the Gfarm file system using *your* privilege.
 
 
-<H2>6. Access to Samba from Windows</H2>
+<H2>6. Example of Samba Configuration and Application</H2>
 
-You access to the Samba and you open the share folder and the mountpoint by gfarmfs.
-And, you can assign this share folder to a network drive.
-
-
-<H2>7. Example of Samba Configuration and Application</H2>
-
-This is an example that the mountpoint for gfarmfs is automatically mounted
-, if you connect to the share folder named 'Gfarm'.
-<UL>
-<LI>A name of the share folder is 'Gfarm'.
-<LI>The mountpoint is ~/samba-fuse for gfarmfs, and publishing ~/samba-fuse of any users.
-  <UL>
-  <LI>It is necessary for ~/samba-fuse directory to be created.
-  </UL>
-<LI>The mountpoint is automatically mounted by gfarmfs when you connect to the share folder.
-  <UL>
-  <LI>But you are limited when you use sharedsecret authentication of Gfarm on the home directories shared by NFS.
-  <LI>Or if you use GSI authentication, you must run the grid-proxy-init on the Samba machine.
-  </UL>
-<LI>If you fail to mount the mountpoint, you fail to access to the share folder too.
-<LI>The mountpoint is automatically unmount in disconnected.
-</UL>
+This is an example that the mountpoint for the Gfarm is automatically
+mounted by gfarm2fs, when you connect to the 'Gfarm' shared folder.
+This assume ~/samba-fuse directory exists.  The preexec script mounts
+the Gfarm file system on ~/samba-fuse automatically, and the postexec
+script umounts it.
+<p>
+This also assume the shared secret key is distributed correctly, or a
+valid proxy certificate exists on the samba machine.
 <P>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 [Gfarm]
@@ -123,9 +108,9 @@ gfarmfsmount.sh
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 #! /bin/sh
 
-GFARMFS=/usr/local/bin/gfarmfs
+GFARMFS=/usr/local/bin/gfarm2fs
 USERNAME=`/usr/bin/whoami`
-LOGFILE=/tmp/gfarmfs-$USERNAME.log
+LOGFILE=/tmp/gfarm2fs-$USERNAME.log
 
 #ARCH="-a i686-FC3-linux"
 ALLOWROOT="-o allow_root"
@@ -152,9 +137,9 @@ fi
 DATE=`$DATE '+%Y%m%d-%H%M%S'`
 MOUNTP=$1
 
-($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarmfs &gt; /dev/null &amp;&amp; \
+($DF -t fuse $MOUNTP | $TAIL +2 | $GREP gfarm2fs &gt; /dev/null &amp;&amp; \
     (echo $DATE MOUNT:ALREADY $MOUNTP) || \
-    ($GFARMFS $ARCH -l -s $MOUNTP $ALLOWROOT &amp;&amp; \
+    ($GFARMFS $ARCH $MOUNTP $ALLOWROOT &amp;&amp; \
     echo $DATE MOUNT:SUCCESS $MOUNTP || ! echo $DATE MOUNT:FAIL $MOUNTP)
 ) &gt;&gt; $LOGFILE 2&gt;&amp;1
 
@@ -169,7 +154,7 @@ gfarmfsumount.sh
 FUSERMOUNT=/usr/local/bin/fusermount
 
 USERNAME=`/usr/bin/whoami`
-LOGFILE=/tmp/gfarmfs-$USERNAME.log
+LOGFILE=/tmp/gfarm2fs-$USERNAME.log
 
 DATE=/bin/date
 SLEEP=/bin/sleep
@@ -198,9 +183,8 @@ MOUNTP=$1
 
 <H2>8. comment</H2>
 If you have any question or comment, feel free to send email to 
-<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A>.
+gfarmfs at gmail.com.
 <P>
 <HR>
 
-<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
-href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A></ADDRESS></BODY></HTML>
