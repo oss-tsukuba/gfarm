@@ -1,11 +1,106 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.5.24]
+[2010.7.21]
 
 New Feature
 * update-based replica consistency protocol
   that keeps number of file replicas at file modification
+
+New configuration in gfmd.conf
+* simultaneous_replication_receivers directive to specify the maximum
+  number of pending replication requests to each gfsd
+
+Documentation
+* how to access Gfarm via samba from Windows clients
+
+Updated feature
+* gfwhere - several options to obtain in progress or obsolete replica
+  information
+
+Bug fix
+* fix possibility to lost files in a rare case when updating and
+  replicating at the same time
+* gfhost -R does not work [sf.net trac #120]
+* retry another file system node in GFARM_ERR_FILE_MIGRATED case
+  [sf.net trac #117]
+* fix errors found by static analysis including unchecked return value
+  and missing check against null
+
+Not supported
+* no_file_system_node_timeout and gfmd_reconnection_timeout directives
+  to specify the timeout to try to find a file system node and to
+  reconnect to the gfmd, respectively.  Default is 30 seconds.
+* gfmd - check and repair nlinks at start-up
+* gfsd - if the input/output error occurs, kill oneself to cope with
+  the hardware failure
+* select a file system node having enough capacity regardless of
+  existent file replicas when a file is overwritten
+
+Release note for Gfarm 2.3.2
+============================
+
+[2010.7.1]
+
+New Command
+* gfsched - schedule and display available file system nodes
+
+New API
+* new scheduling APIs - gfarm_schedule_hosts_domain_all,
+  gfarm_host_sched_info_free, gfarm_schedule_hosts{,_acyclic}{,_to_write}
+
+New configuration in gfarm2.conf
+* no_file_system_node_timeout and gfmd_reconnection_timeout directives
+  to specify the timeout to try to find a file system node and to
+  reconnect to the gfmd, respectively.  Default is 30 seconds.
+
+Documentation
+* manual pages - gfsched(1),
+  gfarm(3), gfarm_initialize(3), gfarm_terminate(3), 
+  gfs_pio_create(3), gfs_pio_open(3), gfs_pio_close(3), gfs_pio_write(3),
+  gfs_pio_read(3)
+
+Updated feature
+* support OpenSSL 1.0.0
+* support kfreebsd-gnu and linux-gnuabi
+* gfmd - check and repair nlinks at start-up
+* gfsd - if the input/output error occurs, kill oneself to cope with
+  the hardware failure
+* gfrm - -f option to force to remove
+
+Bug fix
+* gfrep - -x option does not remove excessive number of file replicas
+  in case some file replica creations fail
+* gfhost - -c/-m/-d without a hostname doesn't cause an error [sf.net
+  trac #93]
+* gfs_pio_fstat() - may not return correct file size [sf.net trac
+  #111]
+* gfsd - fix the back channel process stop when the connection error
+  happens
+* gfsd failed to report an error that its hostname is not registered
+  in gfmd (i.e. "gfhost -M")
+* file close operation is missing in gfsd when a client crashed
+  [sf.net trac #2]
+* fix data race to calculate total amount of disk usage when a file
+  system node is up and down
+* fix missing metadata update when GFARM_FILE_TRUNC is specified
+  [sf.net trac #103]
+* fix missing permission check when GFARM_FILE_RDONLY|GFARM_FILE_TRUNC
+  is specified [sf.net trac #107]
+* try the next auth method in case of permission denied
+* the test program "fsx" causes an assertion failure [sf.net trac
+  #102]
+* fix compilation errors on FreeBSD 8.0
+* fix bashism reported by checkbashisms
+* UNIX sockets and their parent directories are not removed when gfsd
+  is stopped [sf.net trac #94]
+
+Release note for Gfarm 2.3.1
+============================
+
+[2010.3.29]
+
+New Feature
 * quota (see doc/quota.en for details)
 * Gfarm URL, gfarm://metaserver:port/path/name
 * partial support of multiple metadata servers
@@ -25,8 +120,6 @@ New configuration in gfmd.conf
   to specify threshold of CPU load average for client scheduling
 * schedule_virtual_load directive to specify virtual load to add when
   a host is scheduled
-* simultaneous_replication_receivers directive to specify the maximum
-  number of pending replication requests to each gfsd
 
 Updated feature
 * gfrep - -x option to remove excess file replicas
@@ -37,10 +130,10 @@ Updated feature
 * gfstat - -c option to display the number of file replicas
 * gfwhere - display error if there is no file replica
 * gfuser, gfgroup - display specified users or groups if any
-* gfwhere - several options to obtain in progress or obsolete replica
-  information
 * gfvoms-sync - search certificates in the same order as Globus
 * change the maximum number of open files from 256 to 1024
+* select a file system node having enough capacity regardless of
+  existent file replicas when a file is overwritten
 * read only mode for gfsd
 * support re-registration of users, groups and hosts without gfmd
   restart
@@ -53,12 +146,8 @@ Updated feature
 * change log format
 
 Bug fix
-* fix possibility to lost files in a rare case when updating and
-  replicating at the same time
 * fix rename problem such that a directory cannot be deleted or orphan
   inodes remain after rebooting gfmd
-* fix missing file close operation when a client crashes
-* fix invalid assertion failure in libgfarm in rather rare file operations
 * fix missing automatic reconnection to gfmd
 * fix file replication error during the file update
 * fix file update problem during replication
@@ -67,12 +156,7 @@ Bug fix
 * fix file migration issue described in the tracker
   https://sourceforge.net/tracker/?func=detail&aid=1976260&group_id=172718&atid=862742
 * fix access control for chmod
-* fix errors found by static analysis including unchecked return value
-  and missing check against null
 * gfmd - fix segfault when the postgresql database is stopped
-* gfsd - fix the back chennel process stop when the connection error
-  happens
-* gfsd - fix no error report when it is not registered in gfmd
 
 Release note for Gfarm 2.3.0
 ============================
