@@ -3614,11 +3614,12 @@ usage(void)
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-L <syslog-priority-level>\n");
 	fprintf(stderr, "\t-P <pid-file>\n");
-	fprintf(stderr, "\t-U\t\t\t\t... don't bind UNIX domain socket\n");
+	fprintf(stderr, "\t-c\t\t\t\t... check and display invalid files\n");
+	fprintf(stderr, "\t-cc\t\t\t\t... check and delete invalid files\n");
 	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
+	fprintf(stderr, "\t-h <hostname>\n");
 	fprintf(stderr, "\t-l <listen_address>\n");
-	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-r <spool_root>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
 	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
