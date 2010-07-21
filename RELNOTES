@@ -1,7 +1,7 @@
 Release note for Gfarm 2.4.0
 ============================
 
-[2010.7.21]
+[2010.7.22]
 
 New Feature
 * update-based replica consistency protocol
@@ -26,6 +26,10 @@ Bug fix
   [sf.net trac #117]
 * fix errors found by static analysis including unchecked return value
   and missing check against null
+* compilation failure with old OpenLDAP library since the version
+  2.3.0 [sf.net trac #121]
+* compilation failure on Linux 2.4 since the version 2.3.0
+  [sf.net trac #122]
 
 Not supported
 * no_file_system_node_timeout and gfmd_reconnection_timeout directives
