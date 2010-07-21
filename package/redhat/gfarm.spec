@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	2.3.2
-%define rel	1
+%define rel	2
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -57,11 +57,10 @@ Name: %{package_name}
 Version: %pkgver
 Release: %{rel}%{?dist}
 Source: %{pkg}-%{ver}.tar.gz
-#Patch: %{pkg}.patch
-#%Patch0: gfarm-1.2-patch1.diff
-#%Patch1: gfarm-1.2-patch2.diff
-#%Patch2: gfarm-1.2-patch3.diff
-#%Patch3: gfarm-1.2-patch4.diff
+Patch0: %{pkg}-r4833-doc.patch
+Patch1: %{pkg}-r4834-libgfarm.patch
+Patch2: %{pkg}-r4835-gfsd.patch
+Patch3: %{pkg}-r4836-gfhost.patch
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
@@ -204,11 +203,10 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-#%patch -p1
-#%patch0 -p1
-#%patch1 -p1
-#%patch2 -p1
-#%patch3 -p1
+%patch0 -p0
+%patch1 -p0
+%patch2 -p0
+%patch3 -p0
 
 %build
 ./configure --prefix=%{prefix} \
