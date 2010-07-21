@@ -266,12 +266,9 @@ parse_string_long(char **linep, int lineno, const char *diag, long *retvalp)
 
 	line += strspn(line, space); /* skip space */
 	len = strcspn(line, space);
-	if (len == 0)
+	if (len == 0 || line[len] == '\0')
 		return (invalid_input(lineno));
-	else if (line[len] != '\0') {
-		line[len] = '\0';
-		++len;
-	}
+	line[len] = '\0';
 	errno = 0;
 	retval = strtol(line, &s, 0);
 	if (s == line) {
@@ -285,7 +282,7 @@ parse_string_long(char **linep, int lineno, const char *diag, long *retvalp)
 		    lineno, strerror(errno), line);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	line += len;
+	line += len + 1;
 	*linep = line;
 	*retvalp = retval;
 	return (GFARM_ERR_NO_ERROR);
