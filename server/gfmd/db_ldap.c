@@ -2653,7 +2653,7 @@ gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
 		"(&(objectclass=XAttr)(inumber=%"GFARM_PRId64")(attrname=%s))",
 		arg->inum, arg->attrname);
 	rv = ldap_search_st(gfarm_ldap_server, gfarm_ldap_base_dn,
-			LDAP_SCOPE_SUB, query_type, attrs, 0, &tout, &res);
+		LDAP_SCOPE_SUBTREE, query_type, attrs, 0, &tout, &res);
 	free(query_type);
 	if (rv == LDAP_NO_SUCH_OBJECT) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
