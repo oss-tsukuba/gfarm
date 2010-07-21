@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 #include <sys/epoll.h>
 #else
 #include <poll.h>
@@ -78,7 +78,7 @@ static struct peer *peer_table;
 static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 struct {
 	int fd;
 	struct epoll_event *events;
@@ -109,7 +109,7 @@ peer_table_unlock(void)
 		    "peer_table_unlock: %s", strerror(err));
 }
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 static void
 peer_epoll_ctl_fd(int op, int fd)
 {
@@ -157,14 +157,14 @@ peer_watcher(void *arg)
 {
 	struct peer *peer;
 	int i, rv, skip, nfds;
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	int efd;
 #else
 	struct pollfd *fd;
 #endif
 
 	for (;;) {
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 		rv = nfds = epoll_wait(peer_epoll.fd, peer_epoll.events,
 				peer_epoll.nevents, PEER_WATCH_INTERVAL);
 #else
@@ -187,7 +187,7 @@ peer_watcher(void *arg)
 		if (rv == -1 && errno == EINTR)
 			continue;
 		if (rv == -1)
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			gflog_fatal(GFARM_MSG_1000276,
 			    "peer_watcher: epoll_wait: %s\n",
 			    strerror(errno));
@@ -198,7 +198,7 @@ peer_watcher(void *arg)
 #endif
 
 		for (i = 0; i < nfds; i++) {
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			efd = peer_epoll.events[i].data.fd;
 			peer = &peer_table[efd];
 #else
@@ -215,7 +215,7 @@ peer_watcher(void *arg)
 			giant_unlock();
 			if (skip)
 				continue;
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			if (peer_epoll.events[i].events & EPOLLIN) {
 #else
 			if (fd->revents & POLLIN) {
@@ -225,7 +225,7 @@ peer_watcher(void *arg)
 				 * so it's ok to modify peer->control.
 				 */
 				peer->control &= ~PEER_WATCHING;
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 				peer_epoll_del_fd(efd);
 #endif
 				/*
@@ -269,7 +269,7 @@ peer_init(int max_peers, void *(*protocol_handler)(void *))
 		peer->u.client.jobs = NULL;
 	}
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	peer_epoll.fd = epoll_create(max_peers);
 	if (peer_epoll.fd == -1)
 		gflog_fatal(GFARM_MSG_1000279,
@@ -447,7 +447,7 @@ peer_shutdown_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	close(peer_epoll.fd);
 #endif
 }
@@ -456,7 +456,7 @@ void
 peer_watch_access(struct peer *peer)
 {
 	peer->control |= PEER_WATCHING;
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	peer_epoll_add_fd(peer_get_fd(peer));
 #endif
 }

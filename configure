@@ -21262,7 +21262,7 @@ fi
 ###### Checks for library functions.
 ######
 
-for ac_func in epoll_wait getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
+for ac_func in getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -21275,6 +21275,38 @@ _ACEOF
 fi
 done
 
+
+### Check epoll_create really implemented
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for epoll" >&5
+$as_echo_n "checking for epoll... " >&6; }
+if test "$cross_compiling" = yes; then :
+  ax_cv_func_epoll=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <sys/epoll.h>
+int main() {
+	return (epoll_create(5) == -1);
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ax_cv_func_epoll=yes
+else
+  ax_cv_func_epoll=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_func_epoll" >&5
+$as_echo "$ax_cv_func_epoll" >&6; }
+if test "$ax_cv_func_epoll" = yes; then
+
+$as_echo "#define HAVE_EPOLL 1" >>confdefs.h
+
+fi
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 

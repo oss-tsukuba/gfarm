@@ -531,17 +531,24 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 
 		if (host_assigned) {
 			free(host);
+			host = NULL;
 			/*
 			 * reschedule another host unless host is
 			 * explicitly specified
 			 */
 			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
+			     e == GFARM_ERR_FILE_MIGRATED ||
 			    gfs_client_is_connection_error(e)) &&
 			    !gfarm_timeval_is_expired(&expiration_time)) {
+				if (e == GFARM_ERR_FILE_MIGRATED) {
+					/* don't have to sleep in this case */
+					gflog_debug(GFARM_MSG_UNFIXED,
+	                                            "file migrated");
+					continue;
+				}
 				gflog_warning(GFARM_MSG_UNFIXED,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
-				host = NULL;
 				sleep(sleep_interval);
 				if (sleep_interval < sleep_max_interval)
 					sleep_interval *= 2;
