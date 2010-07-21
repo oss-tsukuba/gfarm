@@ -1104,7 +1104,20 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(epoll_wait getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
+AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs)
+
+### Check epoll_create really implemented
+
+AC_MSG_CHECKING([for epoll])
+AC_RUN_IFELSE([
+#include <sys/epoll.h>
+int main() {
+	return (epoll_create(5) == -1);
+}], [ax_cv_func_epoll=yes], [ax_cv_func_epoll=no], [ax_cv_func_epoll=no])
+AC_MSG_RESULT([$ax_cv_func_epoll])
+if test "$ax_cv_func_epoll" = yes; then
+  AC_DEFINE(HAVE_EPOLL, 1, [Define to 1 if epoll functions are implemented.])
+fi
 
 ### SUSv2 getpwnam_r() has 5 args, but Solaris's only has 4.
 
