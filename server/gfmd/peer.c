@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 #include <sys/epoll.h>
 #else
 #include <poll.h>
@@ -110,7 +110,7 @@ static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char peer_table_diag[] = "peer_table";
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 struct {
 	int fd;
 	struct epoll_event *events;
@@ -273,7 +273,7 @@ peer_replicating_free_all(struct peer *peer)
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, "loop");
 }
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 static void
 peer_epoll_ctl_fd(int op, int fd)
 {
@@ -321,7 +321,7 @@ peer_watcher(void *arg)
 {
 	struct peer *peer;
 	int i, rv, skip, nfds;
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	int efd;
 #else
 	struct pollfd *fd;
@@ -329,7 +329,7 @@ peer_watcher(void *arg)
 	static const char diag[] = "peer_watcher";
 
 	for (;;) {
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 		rv = nfds = epoll_wait(peer_epoll.fd, peer_epoll.events,
 				peer_epoll.nevents, PEER_WATCH_INTERVAL);
 #else
@@ -360,7 +360,7 @@ peer_watcher(void *arg)
 		if (rv == -1 && errno == EINTR)
 			continue;
 		if (rv == -1)
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			gflog_fatal(GFARM_MSG_1000276,
 			    "peer_watcher: epoll_wait: %s\n",
 			    strerror(errno));
@@ -371,7 +371,7 @@ peer_watcher(void *arg)
 #endif
 
 		for (i = 0; i < nfds; i++) {
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			efd = peer_epoll.events[i].data.fd;
 			peer = &peer_table[efd];
 #else
@@ -390,7 +390,7 @@ peer_watcher(void *arg)
 			gfarm_mutex_lock(&peer->control_mutex,
 			    "peer_watcher checking", "peer:control_mutex");
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 			if ((peer_epoll.events[i].events & EPOLLIN) == 0)
 #else
 			if ((fd->revents & POLLIN) == 0)
@@ -398,7 +398,7 @@ peer_watcher(void *arg)
 			{
 				skip = 1;
 			} else {
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 				/* efd may be closed during epoll */
 				peer_epoll_del_fd(efd);
 #endif
@@ -622,7 +622,7 @@ peer_init(int max_peers,
 		    &peer->replicating_inodes;
 	}
 
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	peer_epoll.fd = epoll_create(max_peers);
 	if (peer_epoll.fd == -1)
 		gflog_fatal(GFARM_MSG_1000279,
@@ -850,7 +850,7 @@ peer_shutdown_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	close(peer_epoll.fd);
 #endif
 }
@@ -876,7 +876,7 @@ peer_watch_access(struct peer *peer)
 	peer->control |= PEER_WATCHING;
 	gfarm_mutex_unlock(&peer->control_mutex,
 	    "peer_watch_access", "peer:control_mutex");
-#ifdef HAVE_EPOLL_WAIT
+#ifdef HAVE_EPOLL
 	peer_epoll_add_fd(peer_get_fd(peer));
 #endif
 }
