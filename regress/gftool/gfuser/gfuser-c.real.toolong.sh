@@ -24,4 +24,5 @@ else
     fi
 fi
 
+rm -f $localtmp
 exit $exit_code
