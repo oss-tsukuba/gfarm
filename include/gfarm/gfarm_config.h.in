@@ -32,8 +32,8 @@
 /* struct dirent has d_type member */
 #undef HAVE_D_TYPE
 
-/* Define to 1 if you have the `epoll_wait' function. */
-#undef HAVE_EPOLL_WAIT
+/* Define to 1 if epoll functions are implemented. */
+#undef HAVE_EPOLL
 
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
