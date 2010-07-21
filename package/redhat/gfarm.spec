@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	2.3.2
-%define rel	1
+%define rel	3
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	%{ver}
@@ -57,11 +57,12 @@ Name: %{package_name}
 Version: %pkgver
 Release: %{rel}%{?dist}
 Source: %{pkg}-%{ver}.tar.gz
-#Patch: %{pkg}.patch
-#%Patch0: gfarm-1.2-patch1.diff
-#%Patch1: gfarm-1.2-patch2.diff
-#%Patch2: gfarm-1.2-patch3.diff
-#%Patch3: gfarm-1.2-patch4.diff
+Patch0: %{pkg}-r4833-doc.patch
+Patch1: %{pkg}-r4834-libgfarm.patch
+Patch2: %{pkg}-r4835-gfsd.patch
+Patch3: %{pkg}-r4836-gfhost.patch
+Patch4: %{pkg}-r4842-ldap.patch
+Patch5: %{pkg}-r4843-epoll.patch
 Group: Applications/Internet
 License: BSD
 Vendor: National Institute of Advanced Industrial Science and Technology (AIST) and Osamu Tatebe
@@ -95,17 +96,6 @@ Provides: %{pkg}-client = %{ver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{ver}
 
-%if %{gfarm_v2_not_yet}
-%package gfptool
-Summary: Parallel tools for Gfarm file system
-Group: Applications/Internet
-# always provide "gfarm-gfptool" as a virtual package.
-%if %{globus}
-Provides: %{pkg}-gfptool = %{ver}-%{rel}
-%endif
-Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
-%endif
-
 %package fsnode
 Summary: File system daemon for Gfarm file system
 Group: System Environment/Daemons
@@ -132,16 +122,6 @@ Provides: %{pkg}-devel = %{ver}-%{rel}
 %endif
 Requires: %{package_name}-libs = %{ver}
 
-%if %{gfarm_v2_not_yet}
-%package gfront
-Summary: File system browser for Gfarm file system
-Group: Applications/Internet
-# always provide "gfarm-gfront" as a virtual package.
-%if %{globus}
-Provides: %{pkg}-gfront = %{ver}-%{rel}
-%endif
-%endif
-
 %description
 The Gfarm filesystem is a distributed filesystem consisting of the
 local storage of commodity PCs.  PCs in a local area network, compute
@@ -161,31 +141,28 @@ Runtime libraries for Gfarm file system
 %description client
 Clients for Gfarm file system
 
-%if %{gfarm_v2_not_yet}
-%description gfptool
-parallel tools installed under gfarm:/bin
-%endif
-
 %description fsnode
 File system daemon for Gfarm file system
 
 %description server
 Metadata server for Gfarm file system
 
-%if %{gfarm_v2_not_yet}
-%description agent
-Metadata cache server for Gfarm file system
-%endif
-
 %description devel
 Development header files and libraries for Gfarm file system
 
-%if %{gfarm_v2_not_yet}
-%description gfront
-file system browser for gfarm
-%endif
-
 %changelog
+* Wed Jul 21 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-3
+- portability fix for old rpm that does not support nested conditionals
+- compatibility fix for Linux 2.4 and old OpenLDAP library
+
+* Tue Jul 20 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-2
+- gfhost -R does not work [sf.net trac #120]
+- retry another file system node in GFARM_ERR_FILE_MIGRATED case
+  [sf.net trac #117]
+
+* Thu Jul  1 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-1
+- Gfarm version 2.3.2 released
+
 * Fri Nov 28 2007 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.0.0-1
 - first release of Gfarm file system version 2
 
@@ -204,11 +181,12 @@ rm -rf ${RPM_BUILD_ROOT}
 mkdir -p $RPM_BUILD_ROOT
 
 %setup -n %{pkg}-%{ver}
-#%patch -p1
-#%patch0 -p1
-#%patch1 -p1
-#%patch2 -p1
-#%patch3 -p1
+%patch0 -p0
+%patch1 -p0
+%patch2 -p0
+%patch3 -p0
+%patch4 -p0
+%patch5 -p0
 
 %build
 ./configure --prefix=%{prefix} \
@@ -938,24 +916,6 @@ fi
 %{prefix}/bin/ns_unlink_dir
 %endif
 
-%if %{gfarm_v2_not_yet}
-%files gfptool
-%defattr(-,root,root)
-%{prefix}/bin/gfcombine
-%{prefix}/bin/gfcombine_hook
-%{prefix}/bin/gfcp
-%{prefix}/bin/gfcp_hook
-
-%{prefix}/bin/gfgrep
-%if %{mpi}
-%{prefix}/bin/gfwc
-%endif
-
-%{prefix}/libexec/gfrepbe_client
-%{prefix}/libexec/gfrepbe_server
-%{prefix}/sbin/gfregister
-%endif
-
 %files fsnode
 %defattr(-,root,root)
 %{prefix}/bin/config-gfsd
@@ -1078,11 +1038,4 @@ fi
 %{lib_prefix}/libnsexec.a
 %{lib_prefix}/libnsexec.la
 %{lib_prefix}/libnsexec.so
-%endif
-
-%if %{gfarm_v2_not_yet}
-%files gfront
-%defattr(-,root,root)
-%{prefix}/bin/gfront
-%{prefix}/share/java/gfront.jar
 %endif
