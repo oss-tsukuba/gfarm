@@ -60,6 +60,7 @@
 
 #include "gfutil.h"
 #include "gfnetdb.h"
+#include "hash.h"
 
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -68,6 +69,7 @@
 #include "sockopt.h"
 #include "hostspec.h"
 #include "host.h"
+#include "conn_hash.h"
 #include "auth.h"
 #include "config.h"
 #include "gfs_proto.h"
@@ -107,6 +109,8 @@
 #ifndef FILE_TABLE_LIMIT
 #define FILE_TABLE_LIMIT	2048
 #endif
+
+#define HOST_HASHTAB_SIZE	3079	/* prime number */
 
 #define fatal(msg_no, ...) \
 	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
@@ -1865,48 +1869,62 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	    "fffll", loadavg[0], loadavg[1], loadavg[2], used, avail));
 }
 
-/*
- * XXX should try to connect all IP addresses. i.e. this interface is wrong.
- * XXX should check gfarm_hostspec, etc.
- */
+static struct gfarm_hash_table *replication_queue_set = NULL;
+
+/* per source-host queue */
+struct replication_queue_data {
+	struct replication_request *head;
+	struct replication_request **tail;
+};
+
 gfarm_error_t
-address_get(const char *name, int port, struct sockaddr *peer_addr)
+replication_queue_lookup(const char *hostname, int port,
+	struct gfarm_hash_entry **qp)
 {
-	struct addrinfo hints, *res, *res0;
-	int error;
-	char sbuf[NI_MAXSERV];
+	gfarm_error_t e;
+	int created;
+	struct gfarm_hash_entry *q;
+	struct replication_queue_data *qd;
 
-	snprintf(sbuf, sizeof(sbuf), "%u", port);
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	error = gfarm_getaddrinfo(name, sbuf, &hints, &res0);
-	if (error != 0)
-		return (GFARM_ERR_UNKNOWN_HOST);
-
-	for (res = res0; res != NULL; res = res->ai_next) {
-		/* to be sure */
-		if (res0->ai_addr->sa_family != AF_INET ||
-		    res0->ai_addrlen > sizeof(*peer_addr)) {
-			gfarm_freeaddrinfo(res0);
-			return (GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
-		}
-		memset(peer_addr, 0, sizeof(*peer_addr));
-		memcpy(peer_addr, res0->ai_addr, sizeof(*peer_addr));
-		gfarm_freeaddrinfo(res0);
-		return (GFARM_ERR_NO_ERROR);
+	e = gfp_conn_hash_enter(&replication_queue_set, HOST_HASHTAB_SIZE,
+	    sizeof(*qd), hostname, port, gfarm_get_global_username(),
+	    &q, &created);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "creating replication queue for %s:%d: %s",
+		    hostname, port, gfarm_error_string(e));
+		return (e);
 	}
-	gfarm_freeaddrinfo(res0);
-	return (GFARM_ERR_NO_SUCH_OBJECT);
+	qd = gfarm_hash_entry_data(q);
+	if (created) {
+		qd->head = NULL;
+		qd->tail = &qd->head;
+	}
+	*qp = q;
+	return (GFARM_ERR_NO_ERROR);
 }
 
-struct ongoing_replication {
-	struct ongoing_replication *next;
+struct replication_request {
+	/* only used when actual replication is ongoing */
+	struct replication_request *ongoing_next, *ongoing_prev;
+
+	struct replication_request *q_next;
+	struct gfarm_hash_entry *q;
+
+	gfp_xdr_xid_t xid;
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
+
+	/* the followings are only used when actual replication is ongoing */
+	struct gfs_connection *src_gfsd;
 	int file_fd, pipe_fd;
 	pid_t pid;
-} *ongoing_replications = NULL;
+
+};
+
+/* dummy header of doubly linked circular list */
+struct replication_request ongoing_replications = 
+	{ &ongoing_replications, &ongoing_replications };
 
 struct replication_errcodes {
 	gfarm_int32_t src_errcode;
@@ -1914,69 +1932,54 @@ struct replication_errcodes {
 };
 
 gfarm_error_t
-gfs_async_server_replication_request(struct gfp_xdr *conn,
-	gfp_xdr_xid_t xid, size_t size)
+try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
+	gfarm_error_t *resultp)
 {
 	gfarm_error_t e;
-	char *host, *path;
-	gfarm_int32_t port;
-	gfarm_ino_t ino;
-	gfarm_uint64_t gen;
-	struct sockaddr peer_addr;
-	struct gfs_connection *server;
+	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
+	struct replication_request *rep = qd->head;
+	char *path;
+	struct gfs_connection *src_gfsd;
 	int fds[2];
 	pid_t pid = -1;
 	struct replication_errcodes errcodes;
 	int local_fd, rv;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
-	e = gfs_async_server_get_request(conn, size, diag,
-	    "sill", &host, &port, &ino, &gen);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	local_path(ino, gen, diag, &path);
+	local_path(rep->ino, rep->gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd < 0) {
 		e = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_1002182,
-		    "%s: cannot open local file for %lld:%lld: %s",
-		    diag, (long long)ino, (long long)gen, strerror(errno));
-		free(host);
-
-	/* we cannot use gfmd connection here, since it's now async mode */
-	} else if ((e = address_get(host, port, &peer_addr)) != 
-	    GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002183, "%s: cannot resolve %s: %s",
-		    diag, host, gfarm_error_string(e));
-		close(local_fd);
-		free(host);
-	} else if ((e = gfs_client_connect(host, &peer_addr, &server)) !=
-	    GFARM_ERR_NO_ERROR) {
+		    "%s: cannot open local file for %lld:%lld: %s", diag,
+		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
+	} else if ((e = gfs_client_connection_acquire_by_host(gfm_server,
+	    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
-		    diag, host, port, gfarm_error_string(e));
+		    diag,
+		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+		    gfarm_error_string(e));
 		close(local_fd);
-		free(host);
 	} else if (pipe(fds) == -1) {
 		e = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_1002185, "%s: cannot create pipe: %s",
 		    diag, strerror(errno));
-		gfs_client_connection_free(server);
+		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
-		free(host);
 	} else if (fds[0] > FD_SETSIZE) { /* XXX select FD_SETSIZE */
 		e = GFARM_ERR_TOO_MANY_OPEN_FILES;
 		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
 		    diag, fds[0], gfarm_error_string(e));
 		close(fds[0]);
 		close(fds[1]);
-		gfs_client_connection_free(server);
+		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
-		free(host);
 	} else if ((pid = fork()) == 0) { /* child */
 		close(fds[0]);
-		e = gfs_client_replica_recv(server, ino, gen, local_fd);
+		e = gfs_client_replica_recv(src_gfsd, rep->ino, rep->gen,
+		    local_fd);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002187, "%s: replica_recv: %s",
 			    diag, gfarm_error_string(e));
@@ -2008,32 +2011,116 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 			    "%s: cannot child process: %s",
 			    diag, strerror(errno));
 			close(fds[0]);
+			gfs_client_connection_free(src_gfsd);
 			close(local_fd);
 		} else {
-			struct ongoing_replication *rep;
-
-			GFARM_MALLOC(rep);
-			if (rep == NULL) {
-				e = GFARM_ERR_NO_MEMORY;
-				close(fds[0]);
-				close(local_fd);
-			} else {
-				rep->ino = ino;
-				rep->gen = gen;
-				rep->file_fd = local_fd;
-				rep->pipe_fd = fds[0];
-				rep->pid = pid;
-				rep->next = ongoing_replications;
-				ongoing_replications = rep;
-			}
+			rep->src_gfsd = src_gfsd;
+			rep->file_fd = local_fd;
+			rep->pipe_fd = fds[0];
+			rep->pid = pid;
+			rep->ongoing_next = &ongoing_replications;
+			rep->ongoing_prev = ongoing_replications.ongoing_prev;
+			ongoing_replications.ongoing_prev->ongoing_next = rep;
+			ongoing_replications.ongoing_prev = rep;
 		}
 		close(fds[1]);
-		gfs_client_connection_free(server);
-		free(host);
 	}
 
-	return (gfs_async_server_put_reply(conn, xid, diag, e,
+	*resultp = e;
+	return (gfs_async_server_put_reply(conn, rep->xid, diag, e,
 	    "l", (gfarm_int64_t)pid));
+}
+
+gfarm_error_t
+start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
+{
+	gfarm_error_t e, e2;
+	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
+	struct replication_request *rep;
+
+	for (;;) {
+		e2 = try_replication(conn, q, &e);
+		if (e == GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR)
+			return (e2);
+
+		/* we don't have to touch rep->ongoing_{next,prev} here */
+
+		rep = qd->head->q_next;
+		free(qd->head);
+
+		qd->head = rep;
+		if (rep == NULL) {
+			qd->tail = &qd->head;
+			return (e2);
+		} else {
+			qd->tail = &rep->q_next;
+		}
+	}
+}
+
+gfarm_error_t
+gfs_async_server_replication_request(struct gfp_xdr *conn,
+	gfp_xdr_xid_t xid, size_t size)
+{
+	gfarm_error_t e;
+	char *host;
+	gfarm_int32_t port;
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
+	struct gfarm_hash_entry *q;
+	struct replication_queue_data *qd;
+	struct replication_request *rep;
+	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
+
+	e = gfs_async_server_get_request(conn, size, diag,
+	    "sill", &host, &port, &ino, &gen);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if ((e = replication_queue_lookup(host, port, &q)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "cannot allocate replication queue for %s:%d: %s",
+		    host, port, gfarm_error_string(e));
+	} else {
+		GFARM_MALLOC(rep);
+		if (rep == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "cannot allocate replication record for "
+			    "%s:%d %lld:%lld: no memory",
+			    host, port, (long long)ino, (long long)gen);
+		} else {
+			free(host);
+
+			rep->xid = xid;
+			rep->ino = ino;
+			rep->gen = gen;
+
+			/* not set yet, will be set in try_replication() */
+			rep->src_gfsd = NULL;
+			rep->file_fd = -1;
+			rep->pipe_fd = -1;
+			rep->pid = 0;
+			rep->ongoing_next = rep->ongoing_prev = rep;
+
+			rep->q = q;
+			rep->q_next = NULL;
+
+			qd = gfarm_hash_entry_data(q);
+			*qd->tail = rep;
+			qd->tail = &rep->q_next;
+			if (qd->head == rep) { /* this host is idle */
+				return (start_replication(conn, q));
+			} else { /* the replication is postponed */
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
+	}
+	free(host);
+
+	/* only used in an error case */
+	return (gfs_async_server_put_reply(conn, xid, diag, e, ""));
 }
 
 #if 0 /* not yet in gfarm v2 */
@@ -3736,9 +3823,11 @@ gfm_async_client_replication_free(void *peer, void *arg)
 
 gfarm_error_t
 replication_result_notify(struct gfp_xdr *bc_conn,
-	gfp_xdr_async_peer_t async, struct ongoing_replication *rep)
+	gfp_xdr_async_peer_t async, struct gfarm_hash_entry *q)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2 = GFARM_ERR_NO_ERROR;
+	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
+	struct replication_request *rep = qd->head;
 	struct replication_errcodes errcodes;
 	int rv = read(rep->pipe_fd, &errcodes, sizeof(errcodes)), status;
 	struct stat st;
@@ -3776,7 +3865,24 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 		    "replication(%lld, %lld): child %d: %s",
 		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
 		    strerror(errno));
-	return (e);
+
+	gfs_client_connection_free(rep->src_gfsd);
+
+	rep->ongoing_prev->ongoing_next = rep->ongoing_next;
+	rep->ongoing_next->ongoing_prev = rep->ongoing_prev;
+
+	rep = rep->q_next;
+	free(qd->head);
+
+	qd->head = rep;
+	if (rep == NULL) {
+		qd->tail = &qd->head;
+	} else {
+		qd->tail = &rep->q_next;
+		e2 = start_replication(bc_conn, q);
+	}
+
+	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
 
 static int
@@ -3784,7 +3890,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
 	gfarm_error_t e;
 	fd_set fds; /* XXX select FD_SETSIZE */
-	struct ongoing_replication *rep, **prev;
+	struct replication_request *rep, *next;
 	int nfound, max_fd;
 	struct timeval timeout;
 
@@ -3792,7 +3898,8 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		FD_ZERO(&fds);
 		max_fd = gfp_xdr_fd(conn);
 		FD_SET(max_fd, &fds);
-		for (rep = ongoing_replications; rep != NULL; rep = rep->next) {
+		for (rep = ongoing_replications.ongoing_next;
+		    rep != &ongoing_replications; rep = rep->ongoing_next) {
 			FD_SET(rep->pipe_fd, &fds);
 			if (max_fd < rep->pipe_fd)
 				max_fd = rep->pipe_fd;
@@ -3813,9 +3920,27 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			fatal_errno(GFARM_MSG_1002194, "back channel select");
 		}
 
-		for (prev = &ongoing_replications; (rep = *prev) != NULL; ) {
+		for (rep = ongoing_replications.ongoing_next;
+		    rep != &ongoing_replications; rep = next) {
 			if (FD_ISSET(rep->pipe_fd, &fds)) {
-				e = replication_result_notify(conn, async, rep);
+				/*
+				 * replication_result_notify() may add an entry
+				 * at the tail of the ongoing_replications.
+				 * accessing and ignoring the new entry at
+				 * further iteration of this loop are both ok.
+				 */
+				next = rep->ongoing_next;
+
+				/*
+				 * the following is necessary to make it
+				 * possible to access a new entry in this loop.
+				 * note that the new entry may use same pipe_fd
+				 * with this rep->pipe_fd.
+				 */
+				FD_CLR(rep->pipe_fd, &fds);
+
+				e = replication_result_notify(conn, async,
+				    rep->q);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_1002385,
 					    "back channel: "
@@ -3823,10 +3948,8 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 					    gfarm_error_string(e));
 					return (0);
 				}
-				*prev = rep->next;
-				free(rep);
 			} else {
-				prev = &rep->next;
+				next = rep->ongoing_next;
 			}
 		}
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
@@ -3835,9 +3958,42 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 }
 
 static void
+kill_pending_replications(void)
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *q;
+	struct replication_queue_data *qd;
+	struct replication_request *rep, *next;
+
+	if (replication_queue_set == NULL)
+		return;
+	for (gfarm_hash_iterator_begin(replication_queue_set, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		q = gfarm_hash_iterator_access(&it);
+		qd = gfarm_hash_entry_data(q);
+		if (qd->head == NULL)
+			continue;
+		/* do not free active replication */
+		for (rep = qd->head->q_next; rep != NULL; rep = next) {
+			next = rep->q_next;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "forget pending replication request "
+			    "%s:%d %lld:%lld",
+			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+			    (long long)rep->ino, (long long)rep->gen);
+			free(rep);
+		}
+		qd->head->q_next = NULL;
+		qd->tail = &qd->head->q_next;		
+	}
+}
+
+static void
 back_channel_server(void)
 {
 	gfarm_error_t e;
+	struct gfm_connection *back_channel;
 	struct gfp_xdr *bc_conn;
 	gfp_xdr_async_peer_t async;
 	enum gfp_xdr_msg_type type;
@@ -3870,7 +4026,12 @@ back_channel_server(void)
 			    gfarm_error_string(e));
 		}
 
+		back_channel = gfm_server;
 		bc_conn = gfm_client_connection_conn(gfm_server);
+ 
+		/* create another gfmd connection for a foreground channel */
+		gfm_server = NULL;
+		gfm_client_connect_with_reconnection();
 
 		gflog_debug(GFARM_MSG_1000563, "back channel mode");
 		for (;;) {
@@ -3966,8 +4127,15 @@ back_channel_server(void)
 			if (e != GFARM_ERR_NO_ERROR)
 				break;
 		}
-		gfm_client_reconnect();
+
+		kill_pending_replications();
+
+		/* free the foreground channel */
+		gfm_client_connection_free(gfm_server);
+
 		gfp_xdr_async_peer_free(async, bc_conn);
+		gfm_server = back_channel;
+		gfm_client_reconnect();
 	}
 }
 
