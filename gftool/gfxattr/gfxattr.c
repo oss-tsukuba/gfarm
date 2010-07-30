@@ -218,10 +218,10 @@ usage(char *prog_name)
 		" [ -c | -m ]"
 #endif
 		" [ -f xattrfile ] file [xattrname]\n", prog_name);
-	fprintf(stderr, "\t-s\tset extended metadeata\n");
-	fprintf(stderr, "\t-g\tget extended metadeata\n");
-	fprintf(stderr, "\t-r\tremove extended metadeata\n");
-	fprintf(stderr, "\t-l\tlist extended metadeata\n");
+	fprintf(stderr, "\t-s\tset extended attribute\n");
+	fprintf(stderr, "\t-g\tget extended attribute\n");
+	fprintf(stderr, "\t-r\tremove extended attribute\n");
+	fprintf(stderr, "\t-l\tlist extended attribute\n");
 #ifdef ENABLE_XMLATTR
 	fprintf(stderr, "\t-x\thandle XML extended attribute\n");
 #endif
