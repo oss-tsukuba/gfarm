@@ -70,7 +70,7 @@ usage(char *prog_name)
 			"{expr | -f expr-file-path} path\n",
 		prog_name);
 	fprintf(stderr, "\t-d\tsearch directory depth (>= 0)\n");
-	fprintf(stderr, "\t-F\tdelimter of path and attrname (default is TAB)\n");
+	fprintf(stderr, "\t-F\tdelimiter of path and attrname (default is TAB)\n");
 	fprintf(stderr, "\t-f\tXPath script filename\n");
 	exit(2);
 }
