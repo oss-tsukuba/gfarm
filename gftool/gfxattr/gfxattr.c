@@ -19,7 +19,7 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
-#include "../gfutil/gfutil.h"
+#include "gfutil.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>

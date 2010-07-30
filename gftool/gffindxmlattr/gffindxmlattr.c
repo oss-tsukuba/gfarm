@@ -20,7 +20,7 @@
 #include <limits.h>
 
 #include <gfarm/gfarm.h>
-#include "../gfutil/gfutil.h"
+#include "gfutil.h"
 
 static gfarm_error_t
 read_file(char *filename, char **bufp)

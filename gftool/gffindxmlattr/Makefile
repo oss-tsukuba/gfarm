@@ -9,7 +9,7 @@ include $(top_srcdir)/makes/var.mk
 PROGRAM = gffindxmlattr
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
