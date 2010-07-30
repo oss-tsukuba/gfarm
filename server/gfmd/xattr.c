@@ -117,10 +117,11 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002070,
 			"gfm_server_get_request() failure:%s",
 			gfarm_error_string(e));
-		goto quit;
+		return (e);
 	}
 	if (skip) {
-		goto quit;
+		free(attrname);
+		return (GFARM_ERR_NO_ERROR);
 	}
 	if (xmlMode) {
 		waitctx = &ctx;
@@ -222,10 +223,11 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002079,
 			"%s request failed: %s",
 			diag, gfarm_error_string(e));
-		goto quit;
+		return (e);
 	}
 	if (skip) {
-		goto quit;
+		free(attrname);
+		return (GFARM_ERR_NO_ERROR);
 	}
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
@@ -283,9 +285,8 @@ gfm_server_listxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	gfarm_int32_t fd;
 	struct inode *inode;
 
-	if (skip) {
-		return GFARM_ERR_NO_ERROR;
-	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 #ifndef ENABLE_XMLATTR
 	if (xmlMode)
 		return gfm_server_put_reply(peer, diag,
@@ -362,10 +363,11 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1002090,
 			"%s request failure",
 			diag);
-		goto quit;
+		return (e);
 	}
 	if (skip) {
-		goto quit;
+		free(attrname);
+		return (GFARM_ERR_NO_ERROR);
 	}
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
@@ -1086,17 +1088,20 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 
 	e = gfm_server_get_request(peer, diag,
 			"siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
-#ifdef ENABLE_XMLATTR
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002110,
 			"%s request failed: %s",
 			diag, gfarm_error_string(e));
-		goto quit;
+		return (e);
 	}
 	if (skip) {
-		goto quit;
+		free(expr);
+		free(ck_path);
+		free(ck_name);
+		return (GFARM_ERR_NO_ERROR);
 	}
 
+#ifdef ENABLE_XMLATTR
 	if ((ctxp = gfs_xmlattr_ctx_alloc(nalloc)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002111,
