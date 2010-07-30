@@ -46,7 +46,7 @@
 #include "gfj_client.h"
 #include "gfpath.h"
 
-#include "../gfsl/gfarm_auth.h"
+#include "gfarm_auth.h"	/* gfarmAuthInitialize(), gfarmAuthFinalize() */
 
 #include "subr.h"
 #include "thrpool.h"
