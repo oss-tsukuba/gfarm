@@ -14,7 +14,8 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfarm_error_to_errno \
 	lib/libgfarm/gfarm/gfs_pio_test \
 	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy \
-	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress
+	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress \
+	lib/libgfarm/gfarm/gfs_xattr
 
 check test: all
 	@echo ""

@@ -9,6 +9,10 @@ lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable_rdonly.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy/file_busy.sh
 lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress/in_progress.sh
+lib/libgfarm/gfarm/gfs_xattr/gfs_listxattr.2err.sh
+lib/libgfarm/gfarm/gfs_xattr/gfs_getxattr.2err.sh
+lib/libgfarm/gfarm/gfs_xattr/gfs_setxattr.2err.sh
+lib/libgfarm/gfarm/gfs_xattr/gfs_removexattr.2err.sh
 
 # gftool/config-gfarm
 gftool/gfhost/gfhost-c.sh
