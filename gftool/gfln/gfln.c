@@ -14,7 +14,7 @@ char *program_name = "gfln";
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-s] src dst\n", program_name);
+	fprintf(stderr, "Usage: %s [-s] target link_name\n", program_name);
 	exit(1);
 }
 
