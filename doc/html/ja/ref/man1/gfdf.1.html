@@ -37,7 +37,12 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfdf</B
-> [-a] [-n] [-D <TT
+> [-a] [-n] [-P <TT
+CLASS="REPLACEABLE"
+><I
+>パス名</I
+></TT
+>] [-D <TT
 CLASS="REPLACEABLE"
 ><I
 >ドメイン名</I
@@ -87,6 +92,21 @@ CLASS="OPTION"
 ><DD
 ><P
 >利用可能なファイルシステムノードのホスト名を表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>パス名</I
+></TT
+></DT
+><DD
+><P
+>指定したパス名により特定のメタデータサーバを指定します．
+このオプションは -a オプションと同時に利用すると無視されます．</P
 ></DD
 ><DT
 ><CODE

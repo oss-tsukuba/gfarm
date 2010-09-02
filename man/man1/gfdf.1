@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "11 June 2009" "Gfarm" ""
+.TH "GFDF" "1" "02 September 2010" "Gfarm" ""
 
 .SH NAME
 gfdf \- display disk free space of Gfarm file system
 .SH SYNOPSIS
 
-\fBgfdf\fR [ \fB-a\fR ] [ \fB-n\fR ] [ \fB-D \fIdomainname\fB\fR ]
+\fBgfdf\fR [ \fB-a\fR ] [ \fB-n\fR ] [ \fB-P \fIpath\fB\fR ] [ \fB-D \fIdomainname\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -22,6 +22,11 @@ Displays only summary information of the Gfarm file system.
 .TP
 \fB-n\fR
 Displays hostnames of available Gfarm file system nodes.
+.TP
+\fB-P \fIpath\fB\fR
+Specifies a path name to specify a metadata server instead of the root
+metadata server.  Note that this option is not effective with the -a
+option.
 .TP
 \fB-D \fIdomainname\fB\fR
 Specifies a domain name of filesystem nodes to list the status
