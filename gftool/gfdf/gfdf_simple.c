@@ -8,19 +8,23 @@
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 #include "gfm_client.h"
-#include "config.h"
+#include "lookup.h"
 
 char *program_name = "gfdf";
 
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-a] [-n] [-D domain]\n", program_name);
+	fprintf(stderr, "Usage: %s [-a] [-n] [-P path] [-D domain]\n",
+		program_name);
 	exit(1);
 }
 
+#define TITLE_FORMAT "%13s %13s %13s %4s"
+#define DATA_FORMAT "%13lld %13lld %13lld %3.0f%%"
+
 gfarm_error_t
-display_statfs(const char *dummy)
+display_statfs(const char *path, const char *dummy)
 {
 	gfarm_error_t e;
 	gfarm_off_t used, avail, files;
@@ -30,9 +34,9 @@ display_statfs(const char *dummy)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	printf("%14s%14s%14s%9s%12s\n",
-	       "1K-blocks", "Used", "Avail", "Capacity", "Files");
-	printf("%14lld%14lld%14lld   %3.0f%%  %12lld\n",
+	printf(TITLE_FORMAT " %12s\n",
+	       "1K-blocks", "Used", "Avail", "Use%", "Files");
+	printf(DATA_FORMAT " %12lld\n",
 	       (unsigned long long)used + avail, (unsigned long long)used,
 	       (unsigned long long)avail,
 	       (double)used / (used + avail) * 100, (unsigned long long)files);
@@ -42,14 +46,13 @@ display_statfs(const char *dummy)
 
 /* XXX FIXME: should traverse all mounted metadata servers */
 gfarm_error_t
-schedule_host_domain(const char *domain,
+schedule_host_domain(const char *path, const char *domain,
 	int *nhostsp, struct gfarm_host_sched_info **hostsp)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 
-	if ((e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -60,7 +63,7 @@ schedule_host_domain(const char *domain,
 }
 
 gfarm_error_t
-display_statfs_nodes(const char *domain)
+display_statfs_nodes(const char *path, const char *domain)
 {
 	gfarm_error_t e;
 	int nhosts, i;
@@ -68,16 +71,16 @@ display_statfs_nodes(const char *domain)
 	gfarm_uint64_t used, avail;
 	gfarm_uint64_t total_used = 0, total_avail = 0;
 
-	e = schedule_host_domain(domain, &nhosts, &hosts);
+	e = schedule_host_domain(path, domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	printf("%14s%14s%14s%9s %s\n",
-	       "1K-blocks", "Used", "Avail", "Capacity", "Host");
+	printf(TITLE_FORMAT " %s\n",
+	       "1K-blocks", "Used", "Avail", "Use%", "Host");
 	for (i = 0; i < nhosts; ++i) {
 		used = hosts[i].disk_used;
 		avail = hosts[i].disk_avail;
-		printf("%14lld%14lld%14lld   %3.0f%%   %s\n",
+		printf(DATA_FORMAT " %s\n",
 		       (unsigned long long)used + avail,
 		       (unsigned long long)used, (unsigned long long)avail,
 		       (double)used / (used + avail) * 100,
@@ -86,8 +89,8 @@ display_statfs_nodes(const char *domain)
 		total_avail += avail;
 	}
 	if (nhosts > 0) {
-		puts("---------------------------------------------------");
-		printf("%14lld%14lld%14lld   %3.0f%%\n",
+		puts("----------------------------------------------");
+		printf(DATA_FORMAT "\n",
 		       (unsigned long long)total_used + total_avail,
 		       (unsigned long long)total_used,
 		       (unsigned long long)total_avail,
@@ -102,13 +105,13 @@ display_statfs_nodes(const char *domain)
 }
 
 gfarm_error_t
-display_nodes(const char *domain)
+display_nodes(const char *path, const char *domain)
 {
 	gfarm_error_t e;
 	int nhosts, i;
 	struct gfarm_host_sched_info *hosts;
 
-	e = schedule_host_domain(domain, &nhosts, &hosts);
+	e = schedule_host_domain(path, domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -123,8 +126,9 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char *domain = "";
-	gfarm_error_t (*statfs)(const char *) = display_statfs_nodes;
+	const char *domain = "", *path = GFARM_PATH_ROOT;
+	gfarm_error_t (*statfs)(const char *, const char *) =
+		display_statfs_nodes;
 	int c;
 
 	if (argc > 0)
@@ -137,7 +141,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "anD:?")) != -1) {
+	while ((c = getopt(argc, argv, "anD:P:?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
@@ -148,12 +152,15 @@ main(int argc, char *argv[])
 		case 'D':
 			domain = optarg;
 			break;
+		case 'P':
+			path = optarg;
+			break;
 		case '?':
 		default:
 			usage();
 		}
 	}
-	e = statfs(domain);
+	e = statfs(path, domain);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
