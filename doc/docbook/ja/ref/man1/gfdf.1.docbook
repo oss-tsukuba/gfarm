@@ -2,7 +2,7 @@
 
 <refentry id='gfdf.1'>
 
-<refentryinfo><date>14 May 2008</date></refentryinfo>
+<refentryinfo><date>2 Sep 2010</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfdf</refentrytitle>
@@ -20,6 +20,7 @@
   <command>gfdf</command>
     <arg choice='opt'>-a</arg>
     <arg choice='opt'>-n</arg>
+    <arg choice='opt'>-P <replaceable>パス名</replaceable></arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -43,6 +44,16 @@
 <term><option>-n</option></term>
 <listitem>
 <para>利用可能なファイルシステムノードのホスト名を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>パス名</parameter></term>
+<listitem>
+<para>
+指定したパス名により特定のメタデータサーバを指定します．
+このオプションは -a オプションと同時に利用すると無視されます．
+</para>
 </listitem>
 </varlistentry>
 
