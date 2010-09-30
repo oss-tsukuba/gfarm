@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
+#include <ctype.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <errno.h>
@@ -632,6 +633,56 @@ inode_free(struct inode *inode)
 		    gfarm_error_string(e));
 }
 
+static void
+schedule_replication(struct inode *inode, struct host *spool_host,
+	struct file_copy *existing_targets, int n_existings, int n_shortage)
+{
+	gfarm_error_t e;
+	struct host **existings, **new_targets, *target;
+	struct file_copy *copy;
+	int n_new_targets, i = 0;
+	struct file_replicating *fr;
+
+	GFARM_MALLOC_ARRAY(existings, n_existings);
+	GFARM_MALLOC_ARRAY(new_targets, n_shortage);
+	if (existings == NULL || new_targets == NULL) {
+		free(existings);
+		free(new_targets);
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "no memory to schedule %d+%d hosts",
+		    n_existings, n_shortage);
+		return;
+	}
+	existings[i++] = spool_host;
+	for (copy = existing_targets; copy != NULL; copy = copy->host_next)
+		existings[i++] = copy->host;
+	e = host_schedule_for_replication(inode, existings, n_existings,
+	    n_shortage, new_targets, &n_new_targets);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(existings);
+		free(new_targets);
+		return;
+	}
+
+	for (i = 0; i < n_new_targets; i++) {
+		target = new_targets[i];
+		e = file_replicating_new(inode, target, NULL, &fr);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "file_replicating_new: host %s: %s",
+			    host_name(target),
+			    gfarm_error_string(e));
+		} else if ((e = async_back_channel_replication_request(
+		    host_name(spool_host), host_port(spool_host),
+		    target, inode->i_number, inode->i_gen, fr))
+		    != GFARM_ERR_NO_ERROR) {
+			file_replicating_free(fr); /* may sleep */
+		}
+	}
+	free(existings);
+	free(new_targets);
+}
+
 static gfarm_error_t
 remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 	int, struct dead_file_copy **);
@@ -639,9 +690,11 @@ remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 /* spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING */
 static void
 inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t old_gen, int start_replication)
+	gfarm_int64_t old_gen,
+	int start_replication, int desired_replica_number)
 {
 	struct file_copy **copyp, *copy, *next, *to_be_replicated = NULL;
+	int nreplicas = 1;
 	struct dead_file_copy *deferred_cleanup;
 	struct file_replicating *fr;
 	gfarm_error_t e;
@@ -666,6 +719,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			 */
 			copy->host_next = to_be_replicated;
 			to_be_replicated = copy;
+			++nreplicas;
 		} else {
 			e = remove_replica_entity(inode, old_gen, copy->host,
 			    copy->valid, NULL);
@@ -674,6 +728,12 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			free(copy);
 		}
 	}
+
+	if (nreplicas < desired_replica_number) {
+		schedule_replication(inode, spool_host, to_be_replicated,
+		    nreplicas, desired_replica_number - nreplicas);
+	}
+
 	for (copy = to_be_replicated; copy != NULL; copy = next) {
 		e = remove_replica_entity(inode, old_gen, copy->host,
 		    copy->valid, &deferred_cleanup);
@@ -2082,7 +2142,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	}
 
 	inode_remove_every_other_replicas(inode, spool_host, old_gen,
-	    start_replication);
+	    start_replication, fo->u.f.desired_replica_number);
 
 	return (generation_updated);
 }
@@ -3550,6 +3610,60 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	*namesp = names;
 	*sizep = size;
 	return GFARM_ERR_NO_ERROR;
+}
+
+/* Ensure that the "gfarm.ncopy" xattr is always cached. */
+void
+inode_init_desired_number(void)
+{
+	if (!gfarm_xattr_caching("gfarm.ncopy"))
+		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
+
+}
+
+/* This assumes that the "gfarm.ncopy" xattr is cached. */
+int
+inode_has_desired_number(struct inode *inode, int *desired_numberp)
+{
+	void *value;
+	size_t size;
+	char *s;
+
+	if (inode_xattr_get_cache(inode, 0, "gfarm.ncopy", &value, &size) !=
+	    GFARM_ERR_NO_ERROR)
+		return (0);
+
+	if (value == NULL)
+		return (0);
+	for (s = value; *s == ' ' || *s == '\t'; s++)
+		;
+	if (isdigit(*(unsigned char *)s)) {
+		*desired_numberp = atoi(s);
+		return (1);
+	}
+	return (0);
+}
+
+int
+inode_traverse_desired_replica_number(struct inode *dir, int *desired_numberp)
+{
+	DirEntry entry;
+
+	for (;;) {
+		if (!inode_is_dir(dir))
+			return (0);
+
+		if (inode_has_desired_number(dir, desired_numberp))
+			return (1);
+
+		if (inode_get_number(dir) == ROOT_INUMBER)
+			return (0);
+			
+		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
+		if (entry == NULL)
+			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+		dir = dir_entry_get_inode(entry);
+	}
 }
 
 #if 1 /* DEBUG */

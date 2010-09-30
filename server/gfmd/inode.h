@@ -160,6 +160,9 @@ void inode_xattr_list_free(struct xattr_list *, size_t);
 gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
 	char **, int, struct xattr_list **, size_t *);
 
+void inode_init_desired_number(void);
+int inode_has_desired_number(struct inode *, int *);
+int inode_traverse_desired_replica_number(struct inode *, int *);
 
 /* debug */
 void dir_dump(gfarm_ino_t);

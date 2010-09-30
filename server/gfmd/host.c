@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -996,6 +997,138 @@ host_replicating_new(struct host *dst, struct file_replicating **frp)
 	return (peer_replicating_new(dst->peer, dst, frp));
 }
 
+static int
+host_order(const void *a, const void *b)
+{
+	const struct host *const *h1 = a, *const *h2 = b;
+
+	if (*h1 < *h2)
+		return (-1);
+	else if (*h1 > *h2)
+		return (1);
+	else
+		return (0);			
+}
+
+static long
+mtsafe_random(void)
+{
+	long rv;
+	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	static const char diag[] = "mtsafe_random";
+
+	gfarm_mutex_lock(&mutex, diag, "");
+	rv = random();
+	gfarm_mutex_unlock(&mutex, diag, "");
+	return (rv);
+}
+
+/*
+ * just select randomly		XXX FIXME: needs to improve
+ */
+static gfarm_error_t
+select_hosts(struct inode *inode,
+	struct host **hosts, int nhosts,
+	int n_shortage, struct host **new_targets, int *n_new_targetsp)
+{
+	int i, j;
+
+	assert(nhosts > n_shortage);
+	for (i = 0; i < n_shortage; i++) {
+		j = mtsafe_random() % nhosts;
+		new_targets[i] = hosts[j];
+		hosts[j] = hosts[--nhosts];
+	}
+	*n_new_targetsp = n_shortage;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* called from inode.c:schedule_replication() */
+gfarm_error_t
+host_schedule_for_replication(struct inode *inode,
+	struct host **existings, int n_existings,
+	int n_shortage, struct host **new_targets, int *n_new_targetsp)
+{
+	int nhosts, cmp;
+	struct gfarm_hash_iterator it;
+	struct host **hosts;
+	unsigned char *candidates;
+	gfarm_off_t size;
+	int i, j;
+
+	nhosts = 0;
+	FOR_ALL_HOSTS(&it) {
+		host_iterator_access(&it);
+		++nhosts;
+	}
+
+	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
+	GFARM_CALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
+	if (hosts == NULL || candidates == NULL) {
+		free(hosts);
+		free(candidates);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	i = 0;
+	FOR_ALL_HOSTS(&it) {
+		if (i >= nhosts) /* always false due to giant_lock */
+			break;
+		hosts[i++] = host_iterator_access(&it);
+	}
+	nhosts = i;
+
+	qsort(existings, n_existings, sizeof(*existings), host_order);
+	qsort(hosts, nhosts, sizeof(*hosts), host_order);
+
+	/* exclude existings from hosts */
+	i = j = 0;
+	while (i < nhosts) {
+		if (j >= n_existings) {
+			candidates[i++] = 1;
+			continue;
+		}
+		cmp = host_order(&hosts[i], &existings[j]);
+		if (cmp < 0) {
+			candidates[i++] = 1;
+		} else if (cmp == 0) {
+			candidates[i++] = 0;
+		} else if (cmp > 0) {
+			j++;
+		}
+	}
+
+	/* exclude dead hosts and diskfull hosts */
+	size = gfarm_get_minimum_free_disk_space();
+	if (inode_get_size(inode) > size)
+		size = inode_get_size(inode);
+	for (i = 0; i < nhosts; i++) {
+		if (!candidates[i])
+			continue;
+		if (!host_is_disk_available(hosts[i], size))
+			candidates[i] = 0;
+	}
+
+	/* compaction */
+	j = 0;
+	for (i = 0; i < nhosts; i++) {
+		if (candidates[i])
+			hosts[j++] = hosts[i];
+	}
+	nhosts = j;
+
+	if (nhosts <= n_shortage) {
+		j = 0;
+		for (i = 0; i < nhosts; i++)
+			new_targets[j++] = hosts[i];
+		*n_new_targetsp = nhosts;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	return (select_hosts(inode, hosts, nhosts,
+	    n_shortage, new_targets, n_new_targetsp));
+}
+
 #ifdef NOT_USED
 /*
  * save all to text file
@@ -1288,8 +1421,6 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 		if (hosts == NULL) {
 			free(host);
 		} else {
-			if (host == NULL)
-				no_memory = 1;
 			hosts[i] = host;
 		}
 	}

@@ -83,6 +83,7 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_opener = peer;
 			fo->u.f.spool_host = spool_host;
 		}
+		fo->u.f.desired_replica_number = 0;
 		fo->u.f.replicating = NULL;
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
@@ -288,6 +289,30 @@ process_get_file_opening(struct process *process, int fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	*fop = fo;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_record_desired_number(struct process *process, int fd,
+	int desired_number)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "process_record_desired_number(%ld, %d, %d): %s",
+		    (long)process->pid, fd, desired_number,
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (!inode_is_file(fo->inode)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "process_record_desired_number(%ld, %d, %d): not a file",
+		    (long)process->pid, fd, desired_number);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	fo->u.f.desired_replica_number = desired_number;
 	return (GFARM_ERR_NO_ERROR);
 }
 

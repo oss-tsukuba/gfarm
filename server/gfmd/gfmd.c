@@ -1191,6 +1191,9 @@ main(int argc, char **argv)
 	}
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
+
+	inode_init_desired_number();
+
 	if (port_number != NULL)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	sock = open_accepting_socket(gfarm_metadb_server_port);

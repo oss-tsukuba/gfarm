@@ -54,6 +54,9 @@ int host_check_busy(struct host *host, gfarm_int64_t);
 
 struct file_replicating;
 gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
+struct inode;
+gfarm_error_t host_schedule_for_replication(struct inode *,
+	struct host **, int, int, struct host **, int *);
 
 void host_status_reply_waiting(struct host *);
 int host_status_reply_is_waiting(struct host *);

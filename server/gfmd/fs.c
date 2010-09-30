@@ -209,7 +209,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	struct process *process;
 	int op;
 	struct inode *base, *inode;
-	int created, transaction = 0;;
+	int created, desired_number, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
@@ -294,7 +294,15 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	}
 	if (transaction)
 		db_end(diag);
-	
+
+	if ((created || (op & GFS_W_OK) != 0) && inode_is_file(inode)) {
+		if (inode_has_desired_number(inode, &desired_number) ||
+		    inode_traverse_desired_replica_number(base,
+		    &desired_number))
+			process_record_desired_number(process, fd,
+			    desired_number);
+	}
+
 	peer_fdpair_set_current(peer, fd);
 	*inump = inode_get_number(inode);
 	*genp = inode_get_gen(inode);
