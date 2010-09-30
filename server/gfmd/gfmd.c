@@ -280,6 +280,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_schedule_file_with_program(peer,
 		    from_client, skip);
 		break;
+	case GFM_PROTO_FGETATTRPLUS:
+		e = gfm_server_fgetattrplus(peer, from_client, skip);
+		break;
 	case GFM_PROTO_REMOVE:
 		e = gfm_server_remove(peer, from_client, skip);
 		break;
@@ -309,6 +312,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_GETDIRENTSPLUS:
 		e = gfm_server_getdirentsplus(peer, from_client, skip);
+		break;
+	case GFM_PROTO_GETDIRENTSPLUSXATTR:
+		e = gfm_server_getdirentsplusxattr(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REOPEN:
 		e = gfm_server_reopen(peer, from_client, skip,

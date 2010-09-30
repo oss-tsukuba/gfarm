@@ -23,6 +23,7 @@ gfarm_error_t gfm_server_generation_updated(struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type(struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type_not(struct peer *, int, int);
 gfarm_error_t gfm_server_fstat(struct peer *, int, int);
+gfarm_error_t gfm_server_fgetattrplus(struct peer *, int, int);
 gfarm_error_t gfm_server_futimes(struct peer *, int, int);
 gfarm_error_t gfm_server_fchmod(struct peer *, int, int);
 gfarm_error_t gfm_server_fchown(struct peer *, int, int);
@@ -41,6 +42,7 @@ gfarm_error_t gfm_server_getdirpath(struct peer *, int, int);
 gfarm_error_t gfm_server_getdirents(struct peer *, int, int);
 gfarm_error_t gfm_server_seek(struct peer *, int, int);
 gfarm_error_t gfm_server_getdirentsplus(struct peer *, int, int);
+gfarm_error_t gfm_server_getdirentsplusxattr(struct peer *, int, int);
 
 /* gfs from gfsd */
 gfarm_error_t gfm_server_reopen(struct peer *, int, int, int *);

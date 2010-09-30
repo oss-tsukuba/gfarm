@@ -171,6 +171,11 @@ gfarm_error_t gfm_client_inherit_fd_result(struct gfm_connection *);
 gfarm_error_t gfm_client_fstat_request(struct gfm_connection *);
 gfarm_error_t gfm_client_fstat_result(struct gfm_connection *,
 	struct gfs_stat *);
+gfarm_error_t gfm_client_fgetattrplus_request(struct gfm_connection *,
+	char **, int, int);
+gfarm_error_t gfm_client_fgetattrplus_result(struct gfm_connection *,
+	struct gfs_stat *, int *,
+	char ***, void ***, size_t **);
 gfarm_error_t gfm_client_futimes_request(struct gfm_connection *,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_futimes_result(struct gfm_connection *);
@@ -222,6 +227,11 @@ gfarm_error_t gfm_client_getdirentsplus_request(struct gfm_connection *,
 	gfarm_int32_t);
 gfarm_error_t gfm_client_getdirentsplus_result(struct gfm_connection *,
 	int *, struct gfs_dirent *, struct gfs_stat *);
+gfarm_error_t gfm_client_getdirentsplusxattr_request(struct gfm_connection *,
+	gfarm_int32_t, char **, int);
+gfarm_error_t gfm_client_getdirentsplusxattr_result(struct gfm_connection *,
+	int *, struct gfs_dirent *, struct gfs_stat *,
+	int *, char ***, void ***, size_t **);
 gfarm_error_t gfm_client_seek_request(struct gfm_connection *,
 	gfarm_off_t, gfarm_int32_t);
 gfarm_error_t gfm_client_seek_result(struct gfm_connection *, gfarm_off_t *);

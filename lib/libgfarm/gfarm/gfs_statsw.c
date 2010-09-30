@@ -6,6 +6,8 @@
 struct gfs_statsw {
 	gfarm_error_t (*opendir)(const char *, GFS_Dir *);
 	gfarm_error_t (*stat)(const char *, struct gfs_stat *);
+	gfarm_error_t (*getxattr)(const char *path, const char *name,
+		void *value, size_t *size);
 };
 
 /*
@@ -15,6 +17,7 @@ struct gfs_statsw {
 static struct gfs_statsw gfs_statsw_uncached = {
 	gfs_opendir,
 	gfs_stat,
+	gfs_getxattr,
 };
 
 /*
@@ -24,6 +27,7 @@ static struct gfs_statsw gfs_statsw_uncached = {
 static struct gfs_statsw gfs_statsw_cached = {
 	gfs_opendir_caching_internal,
 	gfs_stat_cached_internal,
+	gfs_getxattr_cached_internal,
 };
 
 /*
@@ -47,6 +51,13 @@ gfarm_error_t
 gfs_lstat_cached(const char *path, struct gfs_stat *st)
 {
 	return ((*gfs_statsw->stat)(path, st)); /* XXX FIXME */
+}
+
+gfarm_error_t
+gfs_getxattr_cached(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	return ((*gfs_statsw->getxattr)(path, name, value, sizep));
 }
 
 void

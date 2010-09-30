@@ -26,6 +26,7 @@
 #include "gfutil.h"
 
 #include "liberror.h"
+#include "patmatch.h"
 #include "hostspec.h"
 #include "param.h"
 #include "sockopt.h"
@@ -49,6 +50,68 @@ gfarm_config_set_filename(char *filename)
 static gfarm_error_t gfarm_strtoken(char **, char **);
 
 /*
+ * xattr cache handling
+ */
+static gfarm_stringlist xattr_cache_list;
+
+/*
+ * NOTE:
+ * client host should call gfs_stat_cache_clear() after
+ * calling this gfarm_xattr_caching_pattern_add() function,
+ * otherwise unexpected GFARM_ERR_NO_SUCH_OBJECT may happen.
+ *
+ * The reason we don't call gfs_stat_cache_clear() automatically is
+ * because it's not appropriate for gfmd.
+ */
+gfarm_error_t
+gfarm_xattr_caching_pattern_add(const char *attr_pattern)
+{
+	gfarm_error_t e;
+	char *pat = strdup(attr_pattern);
+
+	if (pat == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "failed to allocate an attr_pattern \"%s\": no memory",
+		    attr_pattern);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	e = gfarm_stringlist_add(&xattr_cache_list, pat);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "failed to allocate record an attr_pattern \"%s\": "
+		    "no memory", attr_pattern);
+		free(pat);
+	}
+	return (e);
+}
+
+int
+gfarm_xattr_caching(const char *attrname)
+{
+	int i, n = gfarm_stringlist_length(&xattr_cache_list);
+	const char *pattern;
+
+	for (i = 0; i < n; i++) {
+		pattern = gfarm_stringlist_elem(&xattr_cache_list, i);
+		if (gfarm_pattern_match(pattern, attrname, 0))
+			return (1);
+	}
+	return (0);
+}
+
+int
+gfarm_xattr_caching_patterns_number(void)
+{
+	return (gfarm_stringlist_length(&xattr_cache_list));
+}
+
+char **
+gfarm_xattr_caching_patterns(void)
+{
+	return (GFARM_STRINGLIST_STRARRAY(xattr_cache_list));
+}
+
+/*
  * GFarm username handling
  */
 
@@ -57,7 +120,7 @@ static gfarm_stringlist local_group_map_file_list;
 
 /* the return value of the following function should be free(3)ed */
 static gfarm_error_t
-map_user(gfarm_stringlist map_file_list, char *from, char **to_p,
+map_user(gfarm_stringlist *map_file_list, char *from, char **to_p,
 	char *(*mapping)(char *, char *, char *),
 	gfarm_error_t error_redefined)
 {
@@ -69,10 +132,10 @@ map_user(gfarm_stringlist map_file_list, char *from, char **to_p,
 	int lineno = 0;
 
 	*to_p = NULL;
-	list_len = gfarm_stringlist_length(&map_file_list);
+	list_len = gfarm_stringlist_length(map_file_list);
 	mapfile_mapped_index = list_len;
 	for (i = 0; i < list_len; i++) {
-		mapfile = gfarm_stringlist_elem(&map_file_list, i);
+		mapfile = gfarm_stringlist_elem(map_file_list, i);
 		if ((map = fopen(mapfile, "r")) == NULL) {
 			gflog_error(GFARM_MSG_1000009,
 			    "%s: cannot open: %s", mapfile, strerror(errno));
@@ -159,7 +222,7 @@ map_global_to_local(char *from, char *global_user, char *local_user)
 gfarm_error_t
 gfarm_global_to_local_username(char *global_user, char **local_user_p)
 {
-	return (map_user(local_user_map_file_list, global_user, local_user_p,
+	return (map_user(&local_user_map_file_list, global_user, local_user_p,
 	    map_global_to_local, GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
 }
 
@@ -181,7 +244,7 @@ map_local_to_global(char *from, char *global_user, char *local_user)
 gfarm_error_t
 gfarm_local_to_global_username(char *local_user, char **global_user_p)
 {
-	return (map_user(local_user_map_file_list, local_user, global_user_p,
+	return (map_user(&local_user_map_file_list, local_user, global_user_p,
 	    map_local_to_global, GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
 }
 
@@ -195,7 +258,7 @@ gfarm_local_to_global_username(char *local_user, char **global_user_p)
 gfarm_error_t
 gfarm_global_to_local_groupname(char *global_user, char **local_user_p)
 {
-	return (map_user(local_group_map_file_list, global_user, local_user_p,
+	return (map_user(&local_group_map_file_list, global_user, local_user_p,
 	    map_global_to_local, GFARM_ERRMSG_GLOBAL_GROUP_REDEFIEND));
 }
 
@@ -209,7 +272,7 @@ gfarm_global_to_local_groupname(char *global_user, char **local_user_p)
 gfarm_error_t
 gfarm_local_to_global_groupname(char *local_user, char **global_user_p)
 {
-	return (map_user(local_group_map_file_list, local_user, global_user_p,
+	return (map_user(&local_group_map_file_list, local_user, global_user_p,
 	    map_local_to_global, GFARM_ERRMSG_LOCAL_GROUP_REDEFIEND));
 }
 
@@ -937,67 +1000,50 @@ parse_address_use_arguments(char *p, char **op)
 #endif
 
 static gfarm_error_t
-parse_local_user_map(char *p, char **op)
+parse_stringlist(char *p, char **op,
+	gfarm_stringlist *list, const char *listname)
 {
 	gfarm_error_t e;
-	char *tmp, *mapfile;
+	char *tmp, *arg;
 
-	e = gfarm_strtoken(&p, &mapfile);
+	e = gfarm_strtoken(&p, &arg);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000950,
-			"parsing of local user map "
-			"mapfile argument (%s) failed: %s",
-			p, gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing argument %s of %s failed: %s",
+		    p, listname, gfarm_error_string(e));
 		return (e);
 	}
-	if (mapfile == NULL) {
-		gflog_debug(GFARM_MSG_1000951,
-			"Missing local user map mapfile argument");
+	if (arg == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "missing argument for %s", listname);
 		return (GFARM_ERRMSG_MISSING_USER_MAP_FILE_ARGUMENT);
 	}
 	e = gfarm_strtoken(&p, &tmp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000952,
-			"parsing of local user map arguments (%s) failed: %s",
-			p, gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing argument %s of %s failed: %s",
+		    p, listname, gfarm_error_string(e));
 		return (e);
 	}
 	if (tmp != NULL) {
-		gflog_debug(GFARM_MSG_1000953,
-			"Too many local user map arguments passed");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Too many arguments for %s", listname);
 		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
-	mapfile = strdup(mapfile);
-	if (mapfile == NULL) {
-		gflog_debug(GFARM_MSG_1000954,
-			"allocation of 'mapfile' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+	arg = strdup(arg);
+	if (arg == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "failed to allocate an argument of %s: no memory",
+		    listname);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfarm_stringlist_add(&local_user_map_file_list, mapfile);
-	return (e);
-}
-
-static gfarm_error_t
-parse_local_group_map(char *p, char **op)
-{
-	gfarm_error_t e;
-	char *tmp, *mapfile;
-
-	e = gfarm_strtoken(&p, &mapfile);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (mapfile == NULL)
-		return (GFARM_ERRMSG_MISSING_GROUP_MAP_FILE_ARGUMENT);
-	e = gfarm_strtoken(&p, &tmp);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (tmp != NULL)
-		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
-	mapfile = strdup(mapfile);
-	if (mapfile == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-	e = gfarm_stringlist_add(&local_group_map_file_list, mapfile);
+	e = gfarm_stringlist_add(list, arg);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "failed to allocate a %s entry for \"%s\": no memory",
+		    listname, arg);
+		free(arg);
+	}
 	return (e);
 }
 
@@ -1422,10 +1468,15 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "address_use") == 0) {
 		e = parse_address_use_arguments(p, &o);
 #endif
+	} else if (strcmp(s, o = "xattr_cache") == 0) {
+		e = parse_stringlist(p, &o,
+		    &xattr_cache_list, "xattr cache");
 	} else if (strcmp(s, o = "local_user_map") == 0) {
-		e = parse_local_user_map(p, &o);
+		e = parse_stringlist(p, &o,
+		    &local_user_map_file_list, "local user map");
 	} else if (strcmp(s, o = "local_group_map") == 0) {
-		e = parse_local_group_map(p, &o);
+		e = parse_stringlist(p, &o,
+		    &local_group_map_file_list, "local group map");
 #if 0 /* XXX NOTYET */
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
@@ -1487,29 +1538,21 @@ parse_one_line(char *s, char *p, char **op)
 }
 
 gfarm_error_t
-gfarm_init_user_map(void)
+gfarm_init_config_stringlists(void)
 {
-	gfarm_stringlist_init(&local_user_map_file_list);
-	return (GFARM_ERR_NO_ERROR);
-}
+	gfarm_stringlist_init(&xattr_cache_list);
 
-gfarm_error_t
-gfarm_init_group_map(void)
-{
+	gfarm_stringlist_init(&local_user_map_file_list);
 	gfarm_stringlist_init(&local_group_map_file_list);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfarm_free_user_map(void)
+gfarm_free_config_stringlists(void)
 {
-	gfarm_stringlist_free_deeply(&local_user_map_file_list);
-	return (GFARM_ERR_NO_ERROR);
-}
+	gfarm_stringlist_free_deeply(&xattr_cache_list);
 
-gfarm_error_t
-gfarm_free_group_map(void)
-{
+	gfarm_stringlist_free_deeply(&local_user_map_file_list);
 	gfarm_stringlist_free_deeply(&local_group_map_file_list);
 	return (GFARM_ERR_NO_ERROR);
 }

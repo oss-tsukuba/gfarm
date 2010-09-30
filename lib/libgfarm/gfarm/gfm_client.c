@@ -1422,6 +1422,90 @@ gfm_client_fstat_result(struct gfm_connection *gfm_server, struct gfs_stat *st)
 }
 
 gfarm_error_t
+gfm_client_fgetattrplus_request(struct gfm_connection *gfm_server,
+	char **patterns, int npatterns, int flags)
+{
+	gfarm_error_t e;
+	int i;
+
+	if ((e = gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_FGETATTRPLUS, "ii", flags, npatterns)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+
+	for (i = 0; i < npatterns; i++) {
+		e = gfp_xdr_send(gfm_server->conn, "s", patterns[i]);
+		if (IS_CONNECTION_ERROR(e))
+			gfm_client_purge_from_cache(gfm_server);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_fgetattrplus_result(struct gfm_connection *gfm_server,
+	struct gfs_stat *st, int *nattrsp,
+	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
+{
+	gfarm_error_t e;
+	int eof, j, nattrs;
+	char **attrs;
+	void **values;
+	size_t *sizes;
+
+	e = gfm_client_rpc_result(gfm_server, 0, "llilsslllililii",
+	    &st->st_ino, &st->st_gen, &st->st_mode, &st->st_nlink,
+	    &st->st_user, &st->st_group, &st->st_size,
+	    &st->st_ncopy,
+	    &st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec,
+	    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec,
+	    &st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec,
+	    &nattrs);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_fgetattrplus; gfm_client_rpc_result(): %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	GFARM_CALLOC_ARRAY(attrs, nattrs);
+	GFARM_CALLOC_ARRAY(values, nattrs);
+	GFARM_CALLOC_ARRAY(sizes, nattrs);
+	if (attrs == NULL || values == NULL || sizes == NULL) {
+		/* XXX debug output */
+		nattrs = 0;
+		free(attrs);
+		free(values);
+		free(sizes);
+		attrs = NULL;
+		values = NULL;
+		sizes = NULL;
+	}
+	for (j = 0; j < nattrs; j++) {
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "sB",
+		    &attrs[j], &sizes[j], &values[j]);
+		if (IS_CONNECTION_ERROR(e))
+			gfm_client_purge_from_cache(gfm_server);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			if (e == GFARM_ERR_NO_ERROR)
+				e = GFARM_ERR_PROTOCOL;
+			/* XXX memory leak */
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfm_client_fgetattrplus: %s",
+				gfarm_error_string(e));
+			nattrs = j;
+			break;
+		}
+	}
+	*nattrsp = nattrs;
+	*attrnamesp = attrs;
+	*attrvaluesp = values;
+	*attrsizesp = sizes;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
 gfm_client_futimes_request(struct gfm_connection *gfm_server,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
 	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
@@ -1819,6 +1903,119 @@ gfm_client_getdirentsplus_result(struct gfm_connection *gfm_server,
 		dirents[i].d_reclen =
 		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;
 		dirents[i].d_fileno = st->st_ino;
+	}
+	*n_entriesp = n;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t n_entries, char **patterns, int npatterns)
+{
+	gfarm_error_t e;
+	int i;
+
+	if ((e = gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GETDIRENTSPLUSXATTR, "ii", n_entries, npatterns)) !=
+	    GFARM_ERR_NO_ERROR)
+		return (e);
+
+	for (i = 0; i < npatterns; i++) {
+		e = gfp_xdr_send(gfm_server->conn, "s", patterns[i]);
+		if (IS_CONNECTION_ERROR(e))
+			gfm_client_purge_from_cache(gfm_server);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_getdirentsplusxattr_result(struct gfm_connection *gfm_server,
+	int *n_entriesp, struct gfs_dirent *dirents, struct gfs_stat *stv,
+	int *nattrsv, char ***attrsv, void ***valuesv, size_t **sizesv)
+{
+	gfarm_error_t e;
+	int eof, i, j, nattrs;
+	gfarm_int32_t n;
+	char **attrs;
+	void **values;
+	size_t sz, *sizes;
+
+	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001153,
+			"gfm_client_rpc_result() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	for (i = 0; i < n; i++) {
+		struct gfs_stat *st = &stv[i];
+
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "bllilsslllililii",
+		    sizeof(dirents[i].d_name) - 1, &sz, dirents[i].d_name,
+		    &st->st_ino, &st->st_gen, &st->st_mode, &st->st_nlink,
+		    &st->st_user, &st->st_group, &st->st_size,
+		    &st->st_ncopy,
+		    &st->st_atimespec.tv_sec, &st->st_atimespec.tv_nsec,
+		    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec,
+		    &st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec,
+		    &nattrsv[i]);
+		/* XXX st_user or st_group may be NULL */
+		if (IS_CONNECTION_ERROR(e))
+			gfm_client_purge_from_cache(gfm_server);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			if (e == GFARM_ERR_NO_ERROR)
+				e = GFARM_ERR_PROTOCOL;
+			/* XXX memory leak */
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"getdirentsplusxattr response: %s",
+				gfarm_error_string(e));
+			return (e);
+		}
+		if (sz >= sizeof(dirents[i].d_name) - 1)
+			sz = sizeof(dirents[i].d_name) - 1;
+		dirents[i].d_name[sz] = '\0';
+		dirents[i].d_namlen = sz;
+		dirents[i].d_type = gfs_mode_to_type(st->st_mode);
+		/* XXX */
+		dirents[i].d_reclen =
+		    sizeof(dirents[i]) - sizeof(dirents[i].d_name) + sz;
+		dirents[i].d_fileno = st->st_ino;
+		nattrs = nattrsv[i];
+		GFARM_CALLOC_ARRAY(attrs, nattrs);
+		GFARM_CALLOC_ARRAY(values, nattrs);
+		GFARM_CALLOC_ARRAY(sizes, nattrs);
+		if (attrs == NULL || values == NULL || sizes == NULL) {
+			/* XXX debug output */
+			nattrs = 0;
+			free(attrs);
+			free(values);
+			free(sizes);
+			attrs = NULL;
+			values = NULL;
+			sizes = NULL;
+		}
+		for (j = 0; j < nattrs; j++) {
+			e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "sB",
+			    &attrs[j], &sizes[j], &values[j]);
+			if (IS_CONNECTION_ERROR(e))
+				gfm_client_purge_from_cache(gfm_server);
+			if (e != GFARM_ERR_NO_ERROR || eof) {
+				if (e == GFARM_ERR_NO_ERROR)
+					e = GFARM_ERR_PROTOCOL;
+				/* XXX memory leak */
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"getdirentsplusxattr xattr: %s",
+					gfarm_error_string(e));
+				nattrs = j;
+				break;
+			}
+		}
+		nattrsv[i] = nattrs;
+		attrsv[i] = attrs;
+		sizesv[i] = sizes;
+		valuesv[i] = values;
 	}
 	*n_entriesp = n;
 	return (GFARM_ERR_NO_ERROR);

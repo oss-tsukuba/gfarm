@@ -1037,6 +1037,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 	char *a;
 	BerElement *ber;
 	char **vals;
+	struct berval **bervals;
 
 	/* search for entries asynchronously */
 	msgid = ldap_search(gfarm_ldap_server, dn, scope, query, attrs, 0);
@@ -1064,6 +1065,31 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 			    a != NULL;
 			    a = ldap_next_attribute(gfarm_ldap_server, e,
 			    ber)) {
+
+				/* XXX FIXME: a hack for "attrvalue" */
+				if (strcasecmp(a, "attrvalue") == 0) {
+					bervals = ldap_get_values_len(
+					    gfarm_ldap_server, e, a);
+					if (bervals == NULL) {
+						gflog_error(GFARM_MSG_UNFIXED,
+						    "ldap_get_values_len: %s",
+						    gfarm_ldap_session_error());
+						error = GFARM_ERR_UNKNOWN;
+					} else {
+						if (bervals[0] != NULL) {
+							err = ops->set_field(
+							    tmp_info, a,
+							    (char **)bervals);
+							if (err !=
+							    GFARM_ERR_NO_ERROR)
+								error = err;
+						}
+						ldap_value_free_len(bervals);
+					}
+					ldap_memfree(a);
+					continue;
+				}
+						
 				vals = ldap_get_values(gfarm_ldap_server, e, a);
 				if (vals == NULL) {
 					gflog_error(GFARM_MSG_1002368,
@@ -2722,6 +2748,8 @@ gfarm_ldap_symlink_load(
 static char *gfarm_ldap_xattr_info_make_dn(void *vkey);
 static gfarm_error_t gfarm_ldap_db_xattr_set_field(void *vinfo,
 	char *attribute, char **vals);
+static gfarm_error_t gfarm_ldap_db_xmlattr_set_field(void *vinfo,
+	char *attribute, char **vals);
 
 static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_info_ops = {
 	&gfarm_base_xattr_info_ops,
@@ -2729,6 +2757,14 @@ static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xattr_info_ops = {
 	"attrname=%s, inumber=%" GFARM_PRId64 ", %s",
 	gfarm_ldap_xattr_info_make_dn,
 	gfarm_ldap_db_xattr_set_field,
+};
+
+static const struct gfarm_ldap_generic_info_ops gfarm_ldap_xmlattr_info_ops = {
+	&gfarm_base_xattr_info_ops,
+	"(objectclass=XAttr)",
+	"attrname=%s, inumber=%" GFARM_PRId64 ", %s",
+	gfarm_ldap_xattr_info_make_dn,
+	gfarm_ldap_db_xmlattr_set_field,
 };
 
 struct gfarm_ldap_xattr_get_info_key {
@@ -2755,12 +2791,13 @@ gfarm_ldap_xattr_info_make_dn(void *vkey)
 	return (dn);
 }
 
+/* NOTE: if xmlMode, attrvalue is unnecessary to load. */
 static gfarm_error_t
-gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
+gfarm_ldap_db_xmlattr_set_field(void *vinfo, char *attribute, char **vals)
 {
 	gfarm_error_t err = GFARM_ERR_NO_ERROR;
 	struct xattr_info *info = vinfo;
-	static const char diag[] = "gfarm_ldap_db_xattr_set_field";
+	static const char diag[] = "gfarm_ldap_db_x(ml)attr_set_field";
 
 	if (strcasecmp(attribute, "inumber") == 0) {
 		info->inum = gfarm_strtoi64(vals[0], NULL);
@@ -2774,6 +2811,37 @@ gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
 		}
 	}
 	return (err);
+}
+
+static gfarm_error_t
+gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
+{
+	gfarm_error_t err = GFARM_ERR_NO_ERROR;
+	struct xattr_info *info = vinfo;
+	struct berval **bervals;
+
+	if (strcasecmp(attribute, "attrvalue") == 0) {
+		bervals = (struct berval **)vals;
+		info->attrsize = bervals[0]->bv_len;
+		if (info->attrsize <= 0) {
+			info->attrvalue = NULL;
+		} else {
+			info->attrvalue = malloc(info->attrsize);
+			if (info->attrvalue == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "failed to allocate %d bytes xattr value",
+				    info->attrsize);
+				info->attrsize = 0;
+				err = GFARM_ERR_NO_MEMORY;
+			} else {
+				memcpy(info->attrvalue, bervals[0]->bv_val,
+				    info->attrsize);
+			}
+		}
+		return (err);
+	} else
+		return (gfarm_ldap_db_xmlattr_set_field(
+		    vinfo, attribute, vals));
 }
 
 static gfarm_error_t
@@ -2964,15 +3032,14 @@ gfarm_ldap_xattr_load(void *closure,
 	if (xmlMode)
 		return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 
-	/*
-	 * NOTE: Without attrs, attrvalue will be loaded also.
-	 * It's needless for initial loading.
-	 */
 	return (gfarm_ldap_generic_info_get_foreach_withattrs(
 		gfarm_ldap_base_dn,
 		LDAP_SCOPE_SUBTREE, gfarm_ldap_xattr_info_ops.query_type,
 		&tmp_info, (void (*)(void *, void *))callback, &xmlMode,
-		&gfarm_ldap_xattr_info_ops, attrs));
+		/* NOTE: if xmlMode, attrvalue is unnecessary to load. */
+		xmlMode ?
+		&gfarm_ldap_xmlattr_info_ops : &gfarm_ldap_xattr_info_ops,
+		attrs));
 }
 
 static gfarm_error_t

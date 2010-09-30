@@ -2560,6 +2560,13 @@ pgsql_xattr_set_inum_and_attrname(PGresult *res, int row, void *vinfo)
 }
 
 static gfarm_error_t
+pgsql_xattr_info_set_fields(PGresult *res, int row, void *vinfo)
+{
+	pgsql_xattr_set_inum_and_attrname(res, row, vinfo);
+	return (pgsql_xattr_set_attrvalue_binary(res, row, vinfo));
+}
+
+static gfarm_error_t
 gfarm_pgsql_xattr_load(void *closure,
 		void (*callback)(void *, struct xattr_info *))
 {
@@ -2570,18 +2577,23 @@ gfarm_pgsql_xattr_load(void *closure,
 	int i, n;
 
 	if (xmlMode) {
+		/* NOTE: if xmlMode, attrvalue is unnecessary to load. */
 		command = "SELECT inumber,attrname FROM XmlAttr";
 		diag = "pgsql_xattr_load_xml";
 	} else {
-		command = "SELECT inumber,attrname FROM XAttr";
+		command = "SELECT inumber,attrname,attrvalue FROM XAttr";
 		diag = "pgsql_xattr_load_norm";
 	}
 
+	/* XXX FIXME: should use gfarm_pgsql_generic_load() instead */
 	e = gfarm_pgsql_generic_get_all(
 		command,
 		0, NULL,
 		&n, &vinfo,
-		&gfarm_base_xattr_info_ops, pgsql_xattr_set_inum_and_attrname,
+		&gfarm_base_xattr_info_ops,
+		xmlMode ?
+		pgsql_xattr_set_inum_and_attrname :
+		pgsql_xattr_info_set_fields,
 		diag);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		return GFARM_ERR_NO_ERROR;

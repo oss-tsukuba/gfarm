@@ -20,7 +20,9 @@
 #include "thrsubr.h"
 
 #include "timespec.h"
+#include "patmatch.h"
 #include "gfm_proto.h"
+#include "config.h"
 
 #include "quota.h"
 #include "subr.h"
@@ -56,6 +58,8 @@ struct file_copy {
 struct xattr_entry {
 	struct xattr_entry *prev, *next;
 	char *name;
+	void *cached_attrvalue;
+	int cached_attrsize;
 };
 
 struct xattrs {
@@ -407,6 +411,8 @@ xattrs_free_entries(struct xattrs *xattrs)
 	struct xattr_entry *entry = xattrs->head, *next;
 	while (entry != NULL) {
 		free(entry->name);
+		if (entry->cached_attrvalue != NULL)
+			free(entry->cached_attrvalue);
 		next = entry->next;
 		free(entry);
 		entry = next;
@@ -3200,6 +3206,8 @@ xattr_entry_alloc(const char *attrname)
 		free(entry);
 		return NULL;
 	}
+	entry->cached_attrvalue = NULL;
+	entry->cached_attrsize = 0;
 	return entry;
 }
 
@@ -3208,12 +3216,15 @@ xattr_entry_free(struct xattr_entry *entry)
 {
 	if (entry != NULL) {
 		free(entry->name);
+		if (entry->cached_attrvalue != NULL)
+			free(entry->cached_attrvalue);
 		free(entry);
 	}
 }
 
 static struct xattr_entry *
-xattr_add(struct xattrs *xattrs, const char *attrname)
+xattr_add(struct xattrs *xattrs, int xmlMode, const char *attrname,
+	const void *value, int size)
 {
 	struct xattr_entry *entry, *tail;
 
@@ -3222,6 +3233,18 @@ xattr_add(struct xattrs *xattrs, const char *attrname)
 		gflog_debug(GFARM_MSG_1001778,
 			"allocation of 'xattr_entry' failure");
 		return NULL;
+	}
+	if (!xmlMode && gfarm_xattr_caching(attrname) && value != NULL) {
+		/* since malloc(0) is not portable */
+		entry->cached_attrvalue = malloc(size == 0 ? 1 : size);
+		if (entry->cached_attrvalue == NULL) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "trying to cache %d bytes for attr %s: no memory",
+			    size, attrname);
+		} else {
+			memcpy(entry->cached_attrvalue, value, size);
+			entry->cached_attrsize = size;
+		}
 	}
 
 	if (xattrs->head == NULL) {
@@ -3236,6 +3259,7 @@ xattr_add(struct xattrs *xattrs, const char *attrname)
 	return entry;
 }
 
+/* The memory owner is NOT changed to inode.c for now */
 void
 xattr_add_one(void *closure, struct xattr_info *info)
 {
@@ -3249,7 +3273,8 @@ xattr_add_one(void *closure, struct xattr_info *info)
 	else {
 		int xmlMode = (closure != NULL) ? *(int*)closure : 0;
 		xattrs = (xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs);
-		if (xattr_add(xattrs, info->attrname) == NULL)
+		if (xattr_add(xattrs, xmlMode, info->attrname,
+		    info->attrvalue, info->attrsize) == NULL)
 			gflog_error(GFARM_MSG_1000367, "xattr_add_one: "
 				"cannot add attrname %s to %lld",
 				info->attrname, (unsigned long long)info->inum);
@@ -3292,7 +3317,8 @@ xattr_find(struct xattrs *xattrs, const char *attrname)
 }
 
 gfarm_error_t
-inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname)
+inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname,
+	void *value, size_t size)
 {
 	gfarm_error_t e;
 	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
@@ -3301,7 +3327,7 @@ inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname)
 		gflog_debug(GFARM_MSG_1001779,
 			"xattr of inode already exists: %s", attrname);
 		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if (xattr_add(xattrs, attrname) != NULL) {
+	} else if (xattr_add(xattrs, xmlMode, attrname, value, size) != NULL) {
 		e = GFARM_ERR_NO_ERROR;
 	} else {
 		gflog_debug(GFARM_MSG_1001780,
@@ -3311,15 +3337,145 @@ inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname)
 	return e;
 }
 
-int
-inode_xattr_isexists(struct inode *inode, int xmlMode,
-		const char *attrname)
+gfarm_error_t
+inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
+	void *value, size_t size)
+{
+	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+	struct xattr_entry *entry = xattr_find(xattrs, attrname);
+
+	if (entry == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	if (entry->cached_attrvalue != NULL) {
+		free(entry->cached_attrvalue);
+		entry->cached_attrvalue = NULL;
+		entry->cached_attrsize = 0;
+	}
+	if (!xmlMode && gfarm_xattr_caching(attrname)) {
+		entry->cached_attrvalue = malloc(size);
+		if (entry->cached_attrvalue == NULL) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "trying to cache %d bytes for attr %s: no memory",
+			    (int)size, attrname);
+		} else {
+			memcpy(entry->cached_attrvalue, value, size);
+			entry->cached_attrsize = size;
+		}
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_xattr_get_cache(struct inode *inode, int xmlMode,
+	const char *attrname, void **cached_valuep, size_t *cached_sizep)
 {
 	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry;
+	void *r;
 
 	entry = xattr_find(xattrs, attrname);
-	return (entry != NULL);
+	if (entry == NULL)
+		return (GFARM_ERR_NO_SUCH_OBJECT);
+
+	if (entry->cached_attrvalue == NULL ||
+	    (r = malloc(entry->cached_attrsize)) == NULL) {
+		*cached_valuep = NULL;
+		*cached_sizep = 0;
+	} else {
+		memcpy(r, entry->cached_attrvalue, entry->cached_attrsize);
+		*cached_valuep = r;
+		*cached_sizep = entry->cached_attrsize;
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+inode_xattr_list_free(struct xattr_list *list, size_t n)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		free(list[i].name);
+		if (list[i].value != NULL)
+			free(list[i].value);
+	}
+	free(list);
+}
+
+gfarm_error_t
+inode_xattr_list_get_cached_by_patterns(gfarm_ino_t inum,
+	char **patterns, int npattern,
+	struct xattr_list **listp, size_t *np)
+{
+	struct inode *inode;
+	size_t nxattrs;
+	struct xattr_list *list;
+	struct xattrs *xattrs;
+	struct xattr_entry *entry;
+	int i, j;
+	static const char diag[] = "inode_xattr_list_get_cached_by_patterns";
+
+	inode = inode_lookup(inum);
+	if (inode == NULL)
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+
+	xattrs = &inode->i_xattrs;
+	entry = xattrs->head;
+	if (entry == NULL) {
+		*np = 0;
+		*listp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	nxattrs = 0;
+	for (; entry != NULL; entry = entry->next) {
+		for (j = 0; j < npattern; j++) {
+			if (gfarm_pattern_match(patterns[j], entry->name, 0)) {
+				++nxattrs;
+				break;
+			}
+		}
+	}
+	GFARM_CALLOC_ARRAY(list, nxattrs);
+	if (list == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	for (entry = xattrs->head, i = 0;
+	     entry != NULL && i < nxattrs;
+	     entry = entry->next) {
+		for (j = 0; j < npattern; j++) {
+			if (gfarm_pattern_match(patterns[j], entry->name, 0)) {
+				list[i].name = strdup_log(entry->name, diag);
+				if (list[i].name == NULL) {
+					nxattrs = i;
+					break;
+				}
+				if (entry->cached_attrvalue == NULL) {
+					/* not cached */
+					list[i].value = NULL;
+					list[i].size = 0;
+				} else { /* cached */
+					list[i].value =
+					    malloc(entry->cached_attrsize);
+					if (list[i].value == NULL) {
+						list[i].size = 0;
+					} else {
+						memcpy(list[i].value,
+						    entry->cached_attrvalue,
+						    entry->cached_attrsize);
+						list[i].size =
+						    entry->cached_attrsize;
+					}
+				}
+				i++;
+				break;
+			}
+		}
+	}
+	*np = nxattrs;
+	*listp = list;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 int
@@ -3395,6 +3551,7 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	*sizep = size;
 	return GFARM_ERR_NO_ERROR;
 }
+
 #if 1 /* DEBUG */
 void
 dir_dump(gfarm_ino_t i_number)

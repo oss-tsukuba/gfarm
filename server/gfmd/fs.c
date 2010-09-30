@@ -12,9 +12,10 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+
+#include "patmatch.h"
 #include "gfp_xdr.h"
 #include "auth.h"
-
 #include "gfm_proto.h"
 
 #include "subr.h"
@@ -293,6 +294,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	}
 	if (transaction)
 		db_end(diag);
+	
 	peer_fdpair_set_current(peer, fd);
 	*inump = inode_get_number(inode);
 	*genp = inode_get_gen(inode);
@@ -681,6 +683,155 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(st.st_user);
 		free(st.st_group);
+	}
+	return (e2);
+}
+
+gfarm_error_t
+gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e, e2;
+	gfarm_int32_t flags, nattrpatterns, fd;
+	char **attrpatterns, *attrpattern;
+	int i, j, eof;
+	struct host *spool_host = NULL;
+	struct process *process;
+	struct inode *inode;
+	struct gfs_stat st;
+	size_t nxattrs;
+	struct xattr_list *xattrs, *px;
+	struct db_waitctx waitctx;
+	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
+
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	memset(&st, 0, sizeof(st));
+#endif
+
+	e = gfm_server_get_request(peer, diag, "ii", &flags, &nattrpatterns);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
+	for (i = 0; i < nattrpatterns; i++) {
+		e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfp_xdr_recv(xattrpattern) failed: %s",
+			    gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_PROTOCOL;
+			if (attrpatterns != NULL) {
+				for (j = 0; j < i; j++) {
+					if (attrpatterns[j] != NULL)
+						free(attrpatterns[j]);
+				}
+				free(attrpatterns);
+			}
+			return (e);
+		}
+		if (attrpatterns == NULL) {
+			free(attrpattern);
+		} else {
+			attrpatterns[i] = attrpattern;
+		}
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (attrpatterns == NULL)
+		e = GFARM_ERR_NO_MEMORY;
+	else if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted: peer_get_process() "
+			"failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"peer_fdpair_get_current() failed: %s",
+			gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+	    GFARM_ERR_NO_ERROR) {
+	} else if ((e = inode_get_stat(inode, &st)) !=
+	    GFARM_ERR_NO_ERROR) {
+	} else {
+		e = inode_xattr_list_get_cached_by_patterns(
+		    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs);
+		if (e != GFARM_ERR_NO_ERROR) {
+			xattrs = NULL;
+			nxattrs = 0;
+		}
+		for (j = 0; j < nxattrs; j++) {
+			px = &xattrs[j];
+			if (px->value != NULL) /* cached */
+				continue;
+
+			/* not cached */
+			db_waitctx_init(&waitctx);
+			e = db_xattr_get(0, st.st_ino,
+			    px->name, &px->value, &px->size,
+			    &waitctx);
+			if (e == GFARM_ERR_NO_ERROR) {
+				/*
+				 * XXX this is slow, but we don't know
+				 * the safe window size
+				 */
+				giant_unlock();
+				e = dbq_waitret(&waitctx);
+				giant_lock();
+			}
+			db_waitctx_fini(&waitctx);
+			/* if error happens, px->size == 0 here */
+		}
+	}
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, diag, e, "llilsslllililii",
+	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
+	    st.st_user, st.st_group, st.st_size,
+	    st.st_ncopy,
+	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec,
+	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec,
+	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec,
+	    nxattrs);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s@%s: %s replying: %s",
+		    peer_get_username(peer),
+		    peer_get_hostname(peer),
+		    diag, gfarm_error_string(e2));
+	}
+	if (e == GFARM_ERR_NO_ERROR && e2 == GFARM_ERR_NO_ERROR) {
+		for (j = 0; j < nxattrs; j++) {
+			px = &xattrs[j];
+			e2 = gfp_xdr_send(client, "sb",
+			    px->name, px->size, px->value);
+			if (e2 != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%s@%s: %s returing xattr: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    diag, gfarm_error_string(e2));
+				break;
+			}
+		}
+	}
+	if (e == GFARM_ERR_NO_ERROR) {
+		free(st.st_user);
+		free(st.st_group);
+		for (j = 0; j < nxattrs; j++)
+			inode_xattr_list_free(xattrs, nxattrs);
+	}
+	if (attrpatterns != NULL) {
+		for (i = 0; i < nattrpatterns; i++)
+			free(attrpatterns[i]);
+		free(attrpatterns);
 	}
 	return (e2);
 }
@@ -1755,6 +1906,203 @@ gfm_server_getdirentsplus(struct peer *peer, int from_client, int skip)
 			gfs_stat_free(&p[i].st);
 		}
 		free(p);
+	}
+	return (e);
+}
+
+
+gfarm_error_t
+gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e, e2;
+	gfarm_int32_t fd, n, nattrpatterns, i, j, eof;
+	char **attrpatterns, *attrpattern;
+	struct process *process;
+	struct inode *inode, *entry_inode;
+	Dir dir;
+	DirCursor cursor;
+	struct dir_result_rec {
+		char *name;
+		struct gfs_stat st;
+		size_t nxattrs;
+		struct xattr_list *xattrs;
+	} *p = NULL, *pp;
+	struct xattr_list *px;
+	struct db_waitctx waitctx;
+	static const char diag[] = "GFM_PROTO_GETDIRENTSPLUSXATTR";
+
+	e = gfm_server_get_request(peer, diag, "ii", &n, &nattrpatterns);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"getdirentsplusxattr request failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
+	for (i = 0; i < nattrpatterns; i++) {
+		e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"gfp_xdr_recv(xattrpattern) failed: %s",
+				gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_PROTOCOL;
+			if (attrpatterns != NULL) {
+				for (j = 0; j < i; j++) {
+					if (attrpatterns[j] != NULL)
+						free(attrpatterns[j]);
+				}
+				free(attrpatterns);
+			}
+			return (e);
+		}
+		if (attrpatterns == NULL) {
+			free(attrpattern);
+		} else {
+			attrpatterns[i] = attrpattern;
+		}
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+
+	if (attrpatterns == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else if ((e = fs_dir_get(peer, from_client, &n, &process, &fd,
+	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "fs_dir_get() failed: %s",
+		    gfarm_error_string(e));
+	else if (n > 0 && GFARM_CALLOC_ARRAY(p,  n) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "allocation of array failed");
+		e = GFARM_ERR_NO_MEMORY;
+	} else { /* note: (n == 0) means the end of the directory */
+		for (i = 0; i < n; ) {
+			if ((e = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"dir_cursor_get_name_and_inode() "
+					"failed: %s",
+					gfarm_error_string(e));
+				break;
+			}
+			if ((e = inode_get_stat(entry_inode, &p[i].st)) !=
+			    GFARM_ERR_NO_ERROR) {
+				free(p[i].name);
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"inode_get_stat() failed: %s",
+					gfarm_error_string(e));
+				break;
+			}
+
+			i++;
+			if (!dir_cursor_next(dir, &cursor))
+				break;
+		}
+		if (e == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			n = i;
+			if (n > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
+		}
+	}
+
+	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR) {
+		giant_lock();
+		for (i = 0; i < n; i++) {
+			pp = &p[i];
+			e = inode_xattr_list_get_cached_by_patterns(
+			    pp->st.st_ino, attrpatterns, nattrpatterns,
+			    &pp->xattrs, &pp->nxattrs);
+			if (e != GFARM_ERR_NO_ERROR) {
+				pp->xattrs = NULL;
+				pp->nxattrs = 0;
+			}
+			for (j = 0; j < pp->nxattrs; j++) {
+				px = &pp->xattrs[j];
+				if (px->value != NULL) /* cached */
+					continue;
+
+				/* not cached */
+				db_waitctx_init(&waitctx);
+				e = db_xattr_get(0, pp->st.st_ino,
+				    px->name, &px->value, &px->size,
+				    &waitctx);
+				if (e == GFARM_ERR_NO_ERROR) {
+					/*
+					 * XXX this is slow, but we don't know
+					 * the safe window size
+					 */
+					giant_unlock();
+					e = dbq_waitret(&waitctx);
+					giant_lock();
+				}
+				db_waitctx_fini(&waitctx);
+				/* if error happens, px->size == 0 here */
+			}
+		}
+		giant_unlock();
+	}
+
+	e2 = gfm_server_put_reply(peer, diag, e, "i", n);
+	if (e2 == GFARM_ERR_NO_ERROR && e == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			struct gfs_stat *st = &p[i].st;
+
+			e2 = gfp_xdr_send(client, "sllilsslllililii",
+			    p[i].name,
+			    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
+			    st->st_user, st->st_group, st->st_size,
+			    st->st_ncopy,
+			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
+			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
+			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec,
+			    (int)p[i].nxattrs);
+			if (e2 != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%s@%s: getdirentsplusxattr: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    gfarm_error_string(e2));
+				break;
+			}
+			for (j = 0; j < p[i].nxattrs; j++) {
+				px = &p[i].xattrs[j];
+				e2 = gfp_xdr_send(client, "sb",
+				    px->name, px->size, px->value);
+				if (e2 != GFARM_ERR_NO_ERROR) {
+					gflog_warning(GFARM_MSG_UNFIXED,
+					    "%s@%s: getdirentsplusxattr: %s",
+					    peer_get_username(peer),
+					    peer_get_hostname(peer),
+					    gfarm_error_string(e2));
+					break;
+				}
+			}
+			if (e2 != GFARM_ERR_NO_ERROR)
+				break;
+		}
+	}
+	if (p != NULL) {
+		for (i = 0; i < n; i++) {
+			free(p[i].name);
+			gfs_stat_free(&p[i].st);
+			for (j = 0; j < p[i].nxattrs; j++) {
+				inode_xattr_list_free(
+				    p[i].xattrs, p[i].nxattrs);
+			}
+		}
+		free(p);
+	}
+	if (attrpatterns != NULL) {
+		for (i = 0; i < nattrpatterns; i++)
+			free(attrpatterns[i]);
+		free(attrpatterns);
 	}
 	return (e);
 }

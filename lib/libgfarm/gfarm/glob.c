@@ -7,6 +7,7 @@
 #include "gfutil.h"
 
 #include "liberror.h"
+#include "patmatch.h"
 
 #define GFS_GLOB_INITIAL	200
 #define GFS_GLOB_DELTA		200
@@ -84,143 +85,6 @@ glob_pattern_to_name(char *name, const char *pattern, int length)
 	name[i] = '\0';
 }
 
-static int
-glob_charset_parse(const char *pattern, int index, int *ip)
-{
-	int i = index;
-
-	if (pattern[i] == '!')
-		i++;
-	if (pattern[i] != '\0') {
-		if (pattern[i + 1] == '-' && pattern[i + 2] != '\0')
-			i += 3;
-		else
-			i++;
-	}
-	while (pattern[i] != ']') {
-		if (pattern[i] == '\0') {
-			/* end of charset isn't found */
-			if (ip != NULL)
-				*ip = index;
-			return (0);
-		}
-		if (pattern[i + 1] == '-' && pattern[i + 2] != '\0')
-			i += 3;
-		else
-			i++;
-	}
-	if (ip != NULL)
-		*ip = i;
-	return (1);
-}
-
-static int
-glob_charset_match(int ch, const char *pattern, int pattern_length)
-{
-	int i = 0, negate = 0;
-	unsigned char c = ch, *p = (unsigned char *)pattern;
-
-	if (p[i] == '!') {
-		negate = 1;
-		i++;
-	}
-	while (i < pattern_length) {
-		if (p[i + 1] == '-' && p[i + 2] != '\0') {
-			if (p[i] <= c && c <= p[i + 2])
-				return (!negate);
-			i += 3;
-		} else {
-			if (c == p[i])
-				return (!negate);
-			i++;
-		}
-	}
-	return (negate);
-}
-
-static int
-glob_name_submatch(char *name, const char *pattern, int namelen)
-{
-	int w;
-
-	for (; --namelen >= 0; name++, pattern++){
-		if (*pattern == '?')
-			continue;
-		if (*pattern == '[' &&
-		    glob_charset_parse(pattern, 1, &w)) {
-			if (glob_charset_match(*(unsigned char *)name,
-			    pattern + 1, w - 1)) {
-				pattern += w;
-				continue;
-			}
-			return (0);
-		}
-		if (*pattern == '\\' &&
-		    pattern[1] != '\0' && pattern[1] != '/') {
-			if (*name == pattern[1]) {
-				pattern++;
-				continue;
-			}
-		}
-		if (*name != *pattern)
-			return (0);
-	}
-	return (1);
-}
-
-static int
-glob_prefix_length_to_asterisk(const char *pattern, int pattern_length,
-	const char **asterisk)
-{
-	int i, length = 0;
-
-	for (i = 0; i < pattern_length; length++, i++) {
-		if (pattern[i] == '\\') {
-			if (i + 1 < pattern_length  &&
-			    pattern[i + 1] != '/')
-				i++;
-		} else if (pattern[i] == '*') {
-			*asterisk = &pattern[i];
-			return (length);
-		} else if (pattern[i] == '[') {
-			glob_charset_parse(pattern, i + 1, &i);
-		}
-	}
-	*asterisk = &pattern[i];
-	return (length);
-}
-
-static int
-glob_name_match(char *name, const char *pattern, int pattern_length)
-{
-	const char *asterisk;
-	int residual = strlen(name);
-	int sublen = glob_prefix_length_to_asterisk(pattern, pattern_length,
-	    &asterisk);
-
-	if (residual < sublen || !glob_name_submatch(name, pattern, sublen))
-		return (0);
-	if (*asterisk == '\0')
-		return (residual == sublen);
-	for (;;) {
-		name += sublen; residual -= sublen;
-		pattern_length -= asterisk + 1 - pattern;
-		pattern = asterisk + 1;
-		sublen = glob_prefix_length_to_asterisk(pattern,
-		    pattern_length, &asterisk);
-		if (*asterisk == '\0')
-			break;
-		for (;; name++, --residual){
-			if (residual < sublen)
-				return (0);
-			if (glob_name_submatch(name, pattern, sublen))
-				break;
-		}
-	}
-	return (residual >= sublen &&
-	    glob_name_submatch(name + residual - sublen, pattern, sublen));
-}
-
 #define GLOB_PATH_BUFFER_SIZE	(PATH_MAX * 2)
 
 static gfarm_error_t
@@ -244,7 +108,7 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		} else if (pattern[i] == '?' || pattern[i] == '*') {
 			break;
 		} else if (pattern[i] == '[') {
-			if (glob_charset_parse(pattern, i + 1, NULL))
+			if (gfarm_pattern_charset_parse(pattern, i + 1, NULL))
 				break;
 		}
 	}
@@ -306,7 +170,7 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			break;
 		} else if (pattern[i] == '?' || pattern[i] == '*') {
 		} else if (pattern[i] == '[') {
-			glob_charset_parse(pattern, i + 1, &i);
+			gfarm_pattern_charset_parse(pattern, i + 1, &i);
 		}
 	}
 	e = gfs_opendir(path_buffer, &dir);
@@ -331,8 +195,8 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 	    entry != NULL) {
 		if (entry->d_name[0] == '.' && pattern[dirpos] != '.')
 			continue; /* initial '.' must be literally matched */
-		if (!glob_name_match(entry->d_name, &pattern[dirpos],
-		    i - dirpos))
+		if (!gfarm_pattern_submatch(&pattern[dirpos], i - dirpos,
+		    entry->d_name, GFARM_PATTERN_PATHNAME))
 			continue;
 		if (path_tail - path_buffer + strlen(entry->d_name) >
 		    GLOB_PATH_BUFFER_SIZE) {

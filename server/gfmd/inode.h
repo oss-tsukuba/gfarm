@@ -141,11 +141,25 @@ gfarm_error_t inode_replica_list_by_name(struct inode *,
 gfarm_error_t inode_replica_info_get(struct inode *, gfarm_int32_t,
 	gfarm_int32_t *, char ***, gfarm_int64_t **, gfarm_int32_t **);
 
-gfarm_error_t inode_xattr_add(struct inode *, int, const char *);
-int inode_xattr_isexists(struct inode *, int, const char *);
+gfarm_error_t inode_xattr_add(struct inode *, int, const char *,
+	void *, size_t);
+gfarm_error_t inode_xattr_modify(struct inode *, int, const char *,
+	void *, size_t);
+gfarm_error_t inode_xattr_get_cache(struct inode *, int, const char *,
+	void **, size_t *);
 int inode_xattr_has_xmlattrs(struct inode *);
 gfarm_error_t inode_xattr_remove(struct inode *, int, const char *);
 gfarm_error_t inode_xattr_list(struct inode *, int, char **, size_t *);
+
+struct xattr_list {
+	char *name;
+	void *value;
+	size_t size;
+};
+void inode_xattr_list_free(struct xattr_list *, size_t);
+gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
+	char **, int, struct xattr_list **, size_t *);
+
 
 /* debug */
 void dir_dump(gfarm_ino_t);

@@ -11,7 +11,9 @@
 
 #include "config.h"
 #include "gfs_dir.h"
+#include "gfs_dirplusxattr.h"
 #include "gfs_dircache.h"
+#include "gfs_attrplus.h"
 
 /* #define DIRCACHE_DEBUG */
 
@@ -28,6 +30,10 @@ struct stat_cache_data {
 	struct gfarm_hash_entry *entry;
 	struct timeval expiration;
 	struct gfs_stat st;
+	int nattrs;
+	char **attrnames;
+	void **attrvalues;
+	size_t *attrsizes;
 };
 
 /* doubly linked circular list head */
@@ -68,6 +74,26 @@ gfs_stat_cache_init(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+gfarm_anyptrs_free_deeply(int n, void **values)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		free(values[i]);
+	}
+	free(values);
+}
+
+static void
+gfs_stat_cache_data_free(struct stat_cache_data *p)
+{
+	gfs_stat_free(&p->st);
+	gfarm_strings_free_deeply(p->nattrs, p->attrnames);
+	gfarm_anyptrs_free_deeply(p->nattrs, p->attrvalues);
+	free(p->attrsizes);
+}
+
 void
 gfs_stat_cache_clear(void)
 {
@@ -76,7 +102,7 @@ gfs_stat_cache_clear(void)
 
 	for (p = stat_cache_list_head.next; p != &stat_cache_list_head; p = q) {
 		q = p->next;
-		gfs_stat_free(&p->st);
+		gfs_stat_cache_data_free(p);
 
 		entry = p->entry;
 		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
@@ -99,7 +125,7 @@ gfs_stat_cache_expire_internal(const struct timeval *nowp)
 			break;
 
 		q = p->next;
-		gfs_stat_free(&p->st);
+		gfs_stat_cache_data_free(p);
 
 		entry = p->entry;
 		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
@@ -139,10 +165,60 @@ gfs_stat_cache_expiration_set(long lifespan_millsecond)
 }
 
 static gfarm_error_t
-gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
-	const struct timeval *nowp)
+attrnames_copy(int nattrs, char ***attrnamesp, char **attrnames)
 {
 	gfarm_error_t e;
+	char **attrs;
+
+	GFARM_MALLOC_ARRAY(attrs, nattrs);
+	if (attrs == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = gfarm_fixedstrings_dup(nattrs, attrs, attrnames);
+	if (e != GFARM_ERR_NO_MEMORY)
+		return (e);
+	*attrnamesp = attrs;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+attrvalues_copy(int nattrs, void ***attrvaluesp, size_t **attrsizesp,
+	    void **attrvalues, size_t *attrsizes)
+{
+	void **values;
+	size_t *sizes;
+	int i;
+
+	GFARM_MALLOC_ARRAY(values, nattrs);
+	GFARM_MALLOC_ARRAY(sizes, nattrs);
+	if (values == NULL || sizes == NULL) {
+		free(values);
+		free(sizes);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < nattrs; i++) {
+		values[i] = malloc(attrsizes[i]);
+		if (values[i] == NULL) {
+			while (--i >= 0) {
+				free(values[i]);
+			}
+			free(values);
+			free(sizes);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		memcpy(values[i], attrvalues[i], attrsizes[i]);
+		sizes[i] = attrsizes[i];
+	}
+	*attrvaluesp = values;
+	*attrsizesp = sizes;
+	return (GFARM_ERR_NO_ERROR);		
+}
+
+static gfarm_error_t
+gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
+	int nattrs, char **attrnames, void **attrvalues, size_t *attrsizes,
+	const struct timeval *nowp)
+{
+	gfarm_error_t e, e2, e3;
 	struct gfarm_hash_entry *entry;
 	struct stat_cache_data *data;
 	int created;
@@ -162,7 +238,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 		data = stat_cache_list_head.next;
 		data->prev->next = data->next;
 		data->next->prev = data->prev;
-		gfs_stat_free(&data->st);
+		gfs_stat_cache_data_free(data);
 		entry = data->entry;
 		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
@@ -187,18 +263,36 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 		data->prev->next = data->next;
 		data->next->prev = data->prev;
 
-		gfs_stat_free(&data->st);
+		gfs_stat_cache_data_free(data);
 	}
+
 	e = gfs_stat_copy(&data->st, st);
-	if (e != GFARM_ERR_NO_ERROR) {
+	e2 = attrnames_copy(nattrs, &data->attrnames, attrnames);
+	e3 = attrvalues_copy(nattrs, &data->attrvalues, &data->attrsizes,
+	    attrvalues, attrsizes);
+	if (e != GFARM_ERR_NO_ERROR ||
+	    e2 != GFARM_ERR_NO_ERROR ||
+	    e3 != GFARM_ERR_NO_ERROR) {
 		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
 		--stat_cache_count;
 		gflog_debug(GFARM_MSG_1001285,
 			"gfs_stat_copy() failed: %s",
 			gfarm_error_string(e));
-		return (e);
+		if (e == GFARM_ERR_NO_ERROR)
+			gfs_stat_free(&data->st);
+		if (e2 == GFARM_ERR_NO_ERROR)
+			gfarm_strings_free_deeply(
+			    data->nattrs, data->attrnames);
+		if (e3 == GFARM_ERR_NO_ERROR) {
+			gfarm_anyptrs_free_deeply(
+			    data->nattrs, data->attrvalues);
+			free(data->attrsizes);
+		}
+		return (e != GFARM_ERR_NO_ERROR ? e :
+			e2 != GFARM_ERR_NO_ERROR ? e2 : e3);
 	}
+
 	data->expiration = *nowp;
 	gfarm_timeval_add(&data->expiration, &stat_cache_lifespan);
 	/* add to the end of the cache list, i.e. assumes monotonic time */
@@ -235,9 +329,41 @@ gfs_stat_cache_purge(const char *path)
 	data = gfarm_hash_entry_data(entry);
 	data->prev->next = data->next;
 	data->next->prev = data->prev;
-	gfs_stat_free(&data->st);
+	gfs_stat_cache_data_free(data);
 	gfarm_hash_iterator_purge(&it);
 	--stat_cache_count;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* this returns uncached result, but enter the result to the cache */
+static gfarm_error_t
+gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
+	struct gfs_stat *st, int *nattrsp,
+	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
+{
+	gfarm_error_t e;
+	struct timeval now;
+
+	e = gfs_getattrplus(path, patterns, npatterns, 0,
+	    st, nattrsp, attrnamesp, attrvaluesp, attrsizesp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_getattrplusstat(%s): %s",
+		    path, gfarm_error_string(e));
+		return (e);
+	}
+
+	gettimeofday(&now, NULL);
+	if ((e = gfs_stat_cache_enter_internal(path, st, *nattrsp,
+	    *attrnamesp, *attrvaluesp, *attrsizesp, &now)) !=
+	    GFARM_ERR_NO_ERROR) {
+		/*
+		 * It's ok to fail in entering the cache,
+		 * since it's merely cache.
+		 */
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "gfs_getattrplus_caching: failed to cache %s: %s",
+		    path, gfarm_error_string(e));
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -245,30 +371,22 @@ gfs_stat_cache_purge(const char *path)
 gfarm_error_t
 gfs_stat_caching(const char *path, struct gfs_stat *st)
 {
-	gfarm_error_t e;
-	struct timeval now;
+	int nattrs;
+	char **attrnames;
+	void **attrvalues;
+	size_t *attrsizes;
+	gfarm_error_t e = gfs_getattrplus_caching(path,
+	    gfarm_xattr_caching_patterns(),
+	    gfarm_xattr_caching_patterns_number(),
+	    st, &nattrs, &attrnames, &attrvalues, &attrsizes);
 
-	e = gfs_stat(path, st);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001287,
-			"gfs_stat(%s) failed: %s",
-			path,
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 
-	gettimeofday(&now, NULL);
-	if ((e = gfs_stat_cache_enter_internal(path, st, &now)) !=
-	    GFARM_ERR_NO_ERROR) {
-		/*
-		 * It's ok to fail in entering the cache,
-		 * since it's merely cache.
-		 */
-		gflog_warning(GFARM_MSG_UNUSED,
-		    "gfs_stat_caching: failed to cache %s: %s",
-		    path, gfarm_error_string(e));
-	}
-	return (GFARM_ERR_NO_ERROR);
+	gfarm_strings_free_deeply(nattrs, attrnames);
+	gfarm_anyptrs_free_deeply(nattrs, attrvalues);
+	free(attrsizes);
+	return (e);
 }
 
 /* this returns uncached result, but enter the result to the cache */
@@ -278,12 +396,66 @@ gfs_lstat_caching(const char *path, struct gfs_stat *st)
 	return (gfs_stat_caching(path, st)); /* XXX FIXME */
 }
 
-/* this returns cached result */
+/* this returns uncached result, but enter the result to the cache */
 gfarm_error_t
-gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
+gfs_getxattr_caching(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	struct gfs_stat st;
+	int npat, nattrs, i, found = 0;
+	char **patterns, **pat;
+	char **attrnames;
+	void **attrvalues;
+	size_t *attrsizes;
+	gfarm_error_t e;
+
+	npat = gfarm_xattr_caching_patterns_number();
+	GFARM_MALLOC_ARRAY(patterns, npat + 1);
+	if (patterns == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	pat = gfarm_xattr_caching_patterns();
+	for (i = 0; i < npat; i++)
+		patterns[i] = pat[i];
+	/* XXX FIXME: need to add escape characters for metacharacters */
+	patterns[npat] = (char *)name; /* UNCONST */
+
+	e = gfs_getattrplus_caching(path, patterns, npat + 1,
+	    &st, &nattrs, &attrnames, &attrvalues, &attrsizes);
+	free(patterns);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	for (i = 0; i < nattrs; i++) {
+		if (strcmp(attrnames[i], name) == 0) {
+			if (*sizep >= attrsizes[i]) {
+				memcpy(value, attrvalues[i], attrsizes[i]);
+			} else {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_getxattr_caching(%s, %s, size:%d): "
+				    "too large result: %d bytes",
+				    path, name, (int)*sizep,
+				    (int)attrsizes[i]);
+				e = GFARM_ERR_RESULT_OUT_OF_RANGE;
+			}
+			*sizep = attrsizes[i];
+			found = 1;
+			break;
+		}
+	}
+	if (!found)
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+
+	gfs_stat_free(&st);
+	gfarm_strings_free_deeply(nattrs, attrnames);
+	gfarm_anyptrs_free_deeply(nattrs, attrvalues);
+	free(attrsizes);
+	return (e);
+}
+
+gfarm_error_t
+gfs_stat_cache_data_get(const char *path, struct stat_cache_data **datap)
 {
 	struct gfarm_hash_entry *entry;
-	struct stat_cache_data *data;
 	struct timeval now;
 
 	if (stat_cache == NULL) {
@@ -305,16 +477,77 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 		    "%ld.%06ld: gfs_stat_cached(%s): hit (%d)",
 		    (long)now.tv_sec,(long)now.tv_usec, path,stat_cache_count);
 #endif
-		data = gfarm_hash_entry_data(entry);
-		return (gfs_stat_copy(st, &data->st));
+		*datap = gfarm_hash_entry_data(entry);
+		return (GFARM_ERR_NO_ERROR);
 	}
 #ifdef DIRCACHE_DEBUG
 	gflog_debug(GFARM_MSG_1000093,
 	    "%ld.%06ld: gfs_stat_cached(%s): miss (%d)",
 	    (long)now.tv_sec, (long)now.tv_usec, path, stat_cache_count);
 #endif
-	return (gfs_stat_caching(path, st));
+	*datap = NULL;
+	return (GFARM_ERR_NO_ERROR);
 }
+
+/* this returns cached result */
+gfarm_error_t
+gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
+{
+	struct stat_cache_data *data;
+	gfarm_error_t e = gfs_stat_cache_data_get(path, &data);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (data == NULL) /* not hit */
+		return (gfs_stat_caching(path, st));
+
+	return (gfs_stat_copy(st, &data->st)); /* hit */
+}
+
+/* this returns cached result */
+gfarm_error_t
+gfs_getxattr_cached_internal(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	struct stat_cache_data *data;
+	gfarm_error_t e = gfs_stat_cache_data_get(path, &data);
+	int i, found = 0;
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (data == NULL) /* not hit */
+		return (gfs_getxattr_caching(path, name, value, sizep));
+
+	/* hit */
+	for (i = 0; i < data->nattrs; i++) {
+		if (strcmp(data->attrnames[i], name) == 0) {
+			if (*sizep >= data->attrsizes[i]) {
+				memcpy(value, data->attrvalues[i],
+				    data->attrsizes[i]);
+			} else {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_getxattr_cached_internal"
+				    "(%s, %s, size:%d): "
+				    "too large result: %d bytes",
+				    path, name, (int)*sizep,
+				    (int)data->attrsizes[i]);
+				e = GFARM_ERR_RESULT_OUT_OF_RANGE;
+			}
+			*sizep = data->attrsizes[i];
+			found = 1;
+			break;
+		}
+	}
+	if (!found) {
+		if (gfarm_xattr_caching(name)) { /* negative cache */
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+		} else { /* this xattr is uncachable */
+			return (gfs_getxattr(path, name, value, sizep));
+		}
+	}
+	return (e);
+}
+
 
 /*
  * gfs_opendir_caching()/readdir_caching()/closedir_caching()
@@ -325,7 +558,7 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 struct gfs_dir_caching {
 	struct gfs_dir super;
 
-	GFS_DirPlus dp;
+	GFS_DirPlusXAttr dp;
 	char *path;
 };
 
@@ -335,12 +568,17 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
 	struct gfs_dirent *ep;
 	struct gfs_stat *stp;
+	int nattrs;
+	char **attrnames;
+	void **attrvalues;
+	size_t *attrsizes;
 	char *path;
-	gfarm_error_t e = gfs_readdirplus(dir->dp, &ep, &stp);
+	gfarm_error_t e = gfs_readdirplusxattr(dir->dp,
+		&ep, &stp, &nattrs, &attrnames, &attrvalues, &attrsizes);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001289,
-			"gfs_readdirplus() failed: %s",
+			"gfs_readdirplusxattr() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
@@ -372,7 +610,8 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			 * It's ok to fail in entering the cache,
 			 * since it's merely cache.
 			 */
-			if ((e = gfs_stat_cache_enter_internal(path, stp, &now))
+			if ((e = gfs_stat_cache_enter_internal(path, stp,
+			    nattrs, attrnames, attrvalues, attrsizes, &now))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_UNUSED,
 				    "dircache: failed to cache %s: %s",
@@ -390,7 +629,7 @@ static gfarm_error_t
 gfs_closedir_caching_internal(GFS_Dir super)
 {
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
-	gfarm_error_t e = gfs_closedirplus(dir->dp);
+	gfarm_error_t e = gfs_closedirplusxattr(dir->dp);
 
 	free(dir->path);
 	free(dir);
@@ -401,7 +640,7 @@ gfarm_error_t
 gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 {
 	gfarm_error_t e;
-	GFS_DirPlus dp;
+	GFS_DirPlusXAttr dp;
 	struct gfs_dir_caching *dir;
 	char *p;
 	static struct gfs_dir_ops ops = {
@@ -411,9 +650,9 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 		gfs_telldir_unimpl
 	};
 
-	if ((e = gfs_opendirplus(path, &dp)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfs_opendirplusxattr(path, &dp)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001290,
-			"gfs_opendirplus(%s) failed: %s",
+			"gfs_opendirplusxattr(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
 		return (e);
@@ -431,7 +670,7 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 	}
 
 	if (dir == NULL || p == NULL) {
-		gfs_closedirplus(dp);
+		gfs_closedirplusxattr(dp);
 		if (dir != NULL)
 			free(dir);
 		if (p != NULL)

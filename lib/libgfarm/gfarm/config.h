@@ -90,12 +90,15 @@ void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO
 gfarm_error_t gfarm_config_read_file(FILE *, int *);
 #endif
-gfarm_error_t gfarm_init_user_map(void);
-gfarm_error_t gfarm_init_group_map(void);
-gfarm_error_t gfarm_free_user_map(void);
-gfarm_error_t gfarm_free_group_map(void);
+gfarm_error_t gfarm_init_config_stringlists(void);
+gfarm_error_t gfarm_free_config_stringlists(void);
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
+
+int gfarm_xattr_caching(const char *);
+int gfarm_xattr_caching_patterns_number(void);
+char **gfarm_xattr_caching_patterns(void);
+
 
 /* for client */
 struct gfs_connection;
