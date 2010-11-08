@@ -701,7 +701,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e, e2;
 	gfarm_int32_t flags, nattrpatterns, fd;
-	char **attrpatterns, *attrpattern;
+	char **attrpatterns = NULL, *attrpattern;
 	int i, j, eof;
 	struct host *spool_host = NULL;
 	struct process *process;
@@ -720,7 +720,8 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
+	if (!skip)
+		GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
 	for (i = 0; i < nattrpatterns; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
