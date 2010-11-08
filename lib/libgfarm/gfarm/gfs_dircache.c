@@ -267,9 +267,17 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 	}
 
 	e = gfs_stat_copy(&data->st, st);
-	e2 = attrnames_copy(nattrs, &data->attrnames, attrnames);
-	e3 = attrvalues_copy(nattrs, &data->attrvalues, &data->attrsizes,
-	    attrvalues, attrsizes);
+	if (nattrs == 0) {
+		data->attrnames = NULL;
+		data->attrvalues = NULL;
+		data->attrsizes = NULL;
+		e2 = e3 = GFARM_ERR_NO_ERROR;
+	} else {
+		e2 = attrnames_copy(nattrs, &data->attrnames, attrnames);
+		e3 = attrvalues_copy(nattrs,
+		    &data->attrvalues, &data->attrsizes,
+		    attrvalues, attrsizes);
+	}
 	if (e != GFARM_ERR_NO_ERROR ||
 	    e2 != GFARM_ERR_NO_ERROR ||
 	    e3 != GFARM_ERR_NO_ERROR) {
