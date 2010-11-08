@@ -174,7 +174,7 @@ attrnames_copy(int nattrs, char ***attrnamesp, char **attrnames)
 	if (attrs == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	e = gfarm_fixedstrings_dup(nattrs, attrs, attrnames);
-	if (e != GFARM_ERR_NO_MEMORY)
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	*attrnamesp = attrs;
 	return (GFARM_ERR_NO_ERROR);
@@ -292,6 +292,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 		return (e != GFARM_ERR_NO_ERROR ? e :
 			e2 != GFARM_ERR_NO_ERROR ? e2 : e3);
 	}
+	data->nattrs = nattrs;
 
 	data->expiration = *nowp;
 	gfarm_timeval_add(&data->expiration, &stat_cache_lifespan);
