@@ -218,11 +218,11 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	if (xmlMode) {
 		gflog_debug(GFARM_MSG_1002080,
 			"operation is not supported(xmlMode)");
+		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		goto quit;
+		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
 #endif
-
 	giant_lock();
 	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -257,19 +257,19 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		waitctx_initialized = 1;
 		e = db_xattr_get(xmlMode, inode_get_number(inode),
 			attrname, &value, &size, &waitctx);
-	} else {
+	} else
 		cached = 1;
-	}
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR && !cached)
 		e = dbq_waitret(&waitctx);
 	if (waitctx_initialized)
 		db_waitctx_fini(&waitctx);
-quit:
+
 	e = gfm_server_put_reply(peer, diag, e, "b", size, value);
 	free(attrname);
-	free(value);
-	return e;
+	if (value != NULL)
+		free(value);
+	return (e);
 }
 
 gfarm_error_t
@@ -372,11 +372,11 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	if (xmlMode) {
 		gflog_debug(GFARM_MSG_1002091,
 			"operation is not supported(xmlMode)");
+		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		goto quit;
+		return (gfm_server_put_reply(peer, diag, e, ""));
 	}
 #endif
-
 	giant_lock();
 	if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -401,7 +401,7 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	} else
 		e = removexattr(xmlMode, inode, attrname);
 	giant_unlock();
-quit:
+
 	free(attrname);
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
