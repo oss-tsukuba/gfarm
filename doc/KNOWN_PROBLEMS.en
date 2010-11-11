@@ -1,5 +1,16 @@
 *** General problems with Gfarm
 
+- On some Linux distributions, gfmd leaks memory, if ldap is specified
+  in /etc/nsswitch.conf.
+
+  This is not a bug of Gfarm itself, but a bug of system supplied libraries.
+
+  The Linux distribution which this problem is observed on:
+	CentOS 5.4 with glibc-2.5-49.x86_64.rpm
+
+  Countermeasure:
+	This problem is workarounded by using nscd.
+
 - On some Linux distributions, gfarm programs and gfsd sometimes hang,
   if ldap is specified in /etc/nsswitch.conf.
 
