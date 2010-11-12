@@ -1686,6 +1686,50 @@ level 2 additionally outputs the function name.</P
 CLASS="LITERALLAYOUT"
 >	log_message_verbose_level&nbsp;1</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>no_file_system_node_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>If there is no file system node available,
+Gfarm client library periodically tries to find a file system node.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	no_file_system_node_timeout&nbsp;30</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfmd_reconnection_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>If the connection to the metadata server is disconnected,
+Gfarm client library periodically tries to reconnect.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfmd_reconnection_timeout&nbsp;30</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1807,6 +1851,8 @@ CLASS="LITERALLAYOUT"
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
+	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
