@@ -164,6 +164,9 @@ void inode_init_desired_number(void);
 int inode_has_desired_number(struct inode *, int *);
 int inode_traverse_desired_replica_number(struct inode *, int *);
 
+/* check and repair */
+void inode_nlink_check(void);
+
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);

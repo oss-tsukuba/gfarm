@@ -1116,8 +1116,6 @@ void (*gfmd_modules_init)(int); /* intentionally remains uninitialized */
 int
 main(int argc, char **argv)
 {
-	extern char *optarg;
-	extern int optind;
 	gfarm_error_t e;
 	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
@@ -1285,6 +1283,9 @@ main(int argc, char **argv)
 		gflog_fatal(GFARM_MSG_1002209,
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
+
+	/* check and repair nlink */
+	inode_nlink_check();
 
 	accepting_loop(sock);
 

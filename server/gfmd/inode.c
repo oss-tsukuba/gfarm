@@ -71,6 +71,7 @@ struct inode {
 	gfarm_ino_t i_number;
 	gfarm_uint64_t i_gen;
 	gfarm_uint64_t i_nlink;
+	gfarm_uint64_t i_nlink_ini;
 	gfarm_off_t i_size;
 	struct user *i_user;
 	struct group *i_group;
@@ -573,6 +574,7 @@ inode_alloc_num(gfarm_ino_t inum)
 		inode->u.l.prev->u.l.next = inode->u.l.next;
 		inode->i_gen++;
 	}
+	inode->i_nlink_ini = 0;
 	inode->u.c.state = NULL;
 	gfarm_mutex_lock(&total_num_inodes_mutex, diag, total_num_inodes_diag);
 	++total_num_inodes;
@@ -599,7 +601,7 @@ inode_clear(struct inode *inode)
 	static const char diag[] = "inode_clear";
 
 	inode->i_mode = INODE_MODE_FREE;
-	inode->i_nlink = 0;
+	inode->i_nlink = inode->i_nlink_ini = 0;
 	/* add to the inode_free_list */
 	inode->u.l.prev = &inode_free_list;
 	inode->u.l.next = inode_free_list.u.l.next;
@@ -970,6 +972,18 @@ gfarm_int64_t
 inode_get_nlink(struct inode *inode)
 {
 	return (inode->i_nlink);
+}
+
+static gfarm_int64_t
+inode_get_nlink_ini(struct inode *inode)
+{
+	return (inode->i_nlink_ini);
+}
+
+static void
+inode_increment_nlink_ini(struct inode *inode)
+{
+	++inode->i_nlink_ini;
 }
 
 struct user *
@@ -3123,6 +3137,7 @@ dir_entry_add_one(void *closure,
 		    "dir_entry_add_one: already exists ");
 	} else {
 		dir_entry_set_inode(entry, entry_inode);
+		inode_increment_nlink_ini(entry_inode);
 	}
 	free(entry_name);
 }
@@ -3199,6 +3214,50 @@ file_copy_init(void)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1000361,
 		    "loading filecopy: %s", gfarm_error_string(e));
+}
+
+static void
+nlink_check(void *closure, struct inode *inode)
+{
+	gfarm_error_t e;
+
+	/* XXX - nlink of a directory is the constant 2 for now */
+	if (inode_is_dir(inode)) {
+		if (inode_get_nlink(inode) != 2) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "directory inode %lld nlink %lld should be 2 "
+			    "(really %lld): fixed",
+			    inode_get_number(inode), inode_get_nlink(inode),
+			    inode_get_nlink_ini(inode));
+			inode->i_nlink = 2;
+		} else
+			return;
+	} else if (inode_get_nlink_ini(inode) == 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode %lld is not referenced", inode_get_number(inode));
+		/* XXX - move to the /lost+found directory */
+		return;
+	} else if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "inode %lld nlink %lld should be %lld: fixed",
+		    inode_get_number(inode), inode_get_nlink(inode),
+		    inode_get_nlink_ini(inode));
+		inode->i_nlink = inode_get_nlink_ini(inode);
+	} else
+		return;
+	e = db_inode_nlink_modify(
+	    inode_get_number(inode), inode_get_nlink(inode));
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "db_inode_nlink_modify(%lld): %s",
+		    (unsigned long long)inode->i_number,
+		    gfarm_error_string(e));
+}
+
+void
+inode_nlink_check(void)
+{
+	inode_lookup_all(NULL, nlink_check);
 }
 
 void
