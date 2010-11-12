@@ -1010,19 +1010,6 @@ host_order(const void *a, const void *b)
 		return (0);			
 }
 
-static long
-mtsafe_random(void)
-{
-	long rv;
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	static const char diag[] = "mtsafe_random";
-
-	gfarm_mutex_lock(&mutex, diag, "");
-	rv = random();
-	gfarm_mutex_unlock(&mutex, diag, "");
-	return (rv);
-}
-
 /*
  * just select randomly		XXX FIXME: needs to improve
  */
@@ -1035,7 +1022,7 @@ select_hosts(struct inode *inode,
 
 	assert(nhosts > n_shortage);
 	for (i = 0; i < n_shortage; i++) {
-		j = mtsafe_random() % nhosts;
+		j = gfarm_random() % nhosts;
 		new_targets[i] = hosts[j];
 		hosts[j] = hosts[--nhosts];
 	}

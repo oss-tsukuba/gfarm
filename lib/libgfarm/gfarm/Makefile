@@ -187,7 +187,7 @@ $(OBJS): $(DEPGFARMINC)
 $(GLOBUS_OBJS): $(DEPGFSLINC)
 auth_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h auth.h
 auth_client_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h io_fd.h io_gfsl.h auth.h auth_gsi.h
-auth_common.lo: auth.h
+auth_common.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/thrsubr.h liberror.h auth.h
 auth_common_gsi.lo: $(GFUTIL_SRCDIR)/gfutil.h $ $(GFSL_SRCDIR)/gfarm_secure_session.h $(GFSL_SRCDIR)/gfarm_auth.h gfpath.h auth.h auth_gsi.h
 auth_config.lo: hostspec.h auth.h
 auth_server.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h hostspec.h auth.h gfp_xdr.h gfs_proto.h

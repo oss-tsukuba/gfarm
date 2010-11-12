@@ -21,6 +21,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "gfutil.h"
 #include "thrsubr.h"
 
 #include "liberror.h"
@@ -84,26 +85,12 @@ write_hex(FILE *fp, void *buffer, size_t length)
 		fprintf(fp, "%02x", p[i]);
 }
 
-static void
-random_initialize(void)
-{
-	struct timeval t;
-
-	gettimeofday(&t, NULL);
-#ifdef HAVE_RANDOM
-	srandom(t.tv_sec + t.tv_usec + getpid());
-#else
-	srand(t.tv_sec + t.tv_usec + getpid());
-#endif
-}
-
 void
 gfarm_auth_random(void *buffer, size_t length)
 {
 	unsigned char *p = buffer;
 	size_t i = 0;
 	int fd, rv;
-	static pthread_once_t rand_initialized = PTHREAD_ONCE_INIT;
 
 	/*
 	 * do not use fopen(3) here,
@@ -122,12 +109,11 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 
 	/* XXX - this makes things too weak */
-	pthread_once(&rand_initialized, random_initialize);
 	for (; i < length; i++) {
 #ifdef HAVE_RANDOM
-		p[i] = random();
+		p[i] = gfarm_random();
 #else
-		p[i] = rand() / (RAND_MAX + 1.0) * 256;
+		p[i] = gfarm_random() / (RAND_MAX + 1.0) * 256;
 #endif
 	}
 }

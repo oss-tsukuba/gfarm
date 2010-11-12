@@ -29,3 +29,7 @@ int gfarm_timeval_cmp(const struct timeval *, const struct timeval *);
 void gfarm_timeval_add(struct timeval *, const struct timeval *);
 void gfarm_timeval_sub(struct timeval *, const struct timeval *);
 void gfarm_timeval_add_microsec(struct timeval *, long);
+
+/* random */
+
+long gfarm_random(void);
