@@ -30,3 +30,7 @@ void gfarm_timeval_add(struct timeval *, const struct timeval *);
 void gfarm_timeval_sub(struct timeval *, const struct timeval *);
 void gfarm_timeval_add_microsec(struct timeval *, long);
 int gfarm_timeval_is_expired(const struct timeval *);
+
+/* random */
+
+long gfarm_random(void);

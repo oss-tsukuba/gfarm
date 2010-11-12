@@ -711,6 +711,13 @@ search_idle_free_program_filter(void)
 }
 #endif /* not yet in gfarm v2 */
 
+static float entropy(void)
+{
+	float max = 0.01;
+
+	return (max * (gfarm_random() / (RAND_MAX + 1.0)));
+}
+
 static gfarm_error_t
 search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 	struct gfarm_host_sched_info *info)
@@ -758,7 +765,8 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 		    h->loadavg_cache_time.tv_sec < info->cache_time) {
 			h->loadavg_cache_time.tv_sec = info->cache_time;
 			h->loadavg_cache_time.tv_usec = 0;
-			h->loadavg = info->loadavg;
+			/* add entropy to randomize the scheduling result */
+			h->loadavg = info->loadavg + entropy();
 		}
 		h->statfs_cache_time.tv_sec = info->cache_time;
 		h->statfs_cache_time.tv_usec = 0;
@@ -1037,7 +1045,8 @@ search_idle_load_callback(void *closure)
 	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
 	if (e == GFARM_ERR_NO_ERROR) {
 		c->h->flags |= HOST_STATE_FLAG_RTT_AVAIL;
-		c->h->loadavg = load.loadavg_1min;
+		/* add entropy to randomize the scheduling result */
+		c->h->loadavg = load.loadavg_1min + entropy();
 		c->h->loadavg_cache_time = c->h->rtt_cache_time;
 		c->h->scheduled = 0; /* because now we know real loadavg */
 
