@@ -62,6 +62,8 @@ extern char *gfarm_localfs_datadir;
 
 /* miscellaneous configurations */
 extern int gfarm_log_level; /* syslog priority level to log */
+extern int gfarm_no_file_system_node_timeout;
+extern int gfarm_gfmd_reconnection_timeout;
 extern int gfarm_attr_cache_limit;
 extern int gfarm_attr_cache_timeout;
 extern int gfarm_schedule_cache_timeout;

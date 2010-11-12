@@ -520,9 +520,8 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	gfarm_timerval_t t1, t2;
 	int host_assigned = 0;
 	gfarm_int32_t port;
-	int retry = 0, sleep_interval = 5;
-	/* wait at least 10 min = maximum reconnection interval of gfsd */
-	int max_retry = 7;
+	int sleep_interval = 1, sleep_max_interval = 512;
+	struct timeval expiration_time;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -560,17 +559,20 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 	}
 	gf->view_context = vc;
 
+	gettimeofday(&expiration_time, NULL);
+	expiration_time.tv_sec += gfarm_no_file_system_node_timeout;
 	for (;;) {
 		if (host == NULL) {
 			e = gfarm_schedule_file(gf, &host, &port);
 			/* reschedule another host */
 			if (e == GFARM_ERRMSG_NO_FILESYSTEM_NODE &&
-			    ++retry <= max_retry) {
+			    !gfarm_timeval_is_expired(&expiration_time)) {
 				gflog_warning(GFARM_MSG_1001359,
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				sleep(sleep_interval);
-				sleep_interval *= 2;
+				if (sleep_interval < sleep_max_interval)
+					sleep_interval *= 2;
 				continue;
 			}
 			if (e == GFARM_ERR_NO_ERROR)
@@ -589,9 +591,8 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
 			     e == GFARM_ERR_FILE_MIGRATED ||
 			    gfs_client_is_connection_error(e)) &&
-			    ++retry <= max_retry) {
-				if (retry == 1 &&
-				    e == GFARM_ERR_FILE_MIGRATED) {
+			    !gfarm_timeval_is_expired(&expiration_time)) {
+				if (e == GFARM_ERR_FILE_MIGRATED) {
 					/* don't have to sleep in this case */
 					gflog_debug(GFARM_MSG_UNFIXED,
 					    "file migrated");
@@ -601,7 +602,8 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 				    "sleep %d sec: %s", sleep_interval,
 				    gfarm_error_string(e));
 				sleep(sleep_interval);
-				sleep_interval *= 2;
+				if (sleep_interval < sleep_max_interval)
+					sleep_interval *= 2;
 				continue;
 			}
 		}

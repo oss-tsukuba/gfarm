@@ -13,7 +13,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h> /* TCP_NODELAY */
 #include <netdb.h>
-#include <time.h>
+#include <sys/time.h>
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
@@ -281,6 +281,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	int created;
 	unsigned int sleep_interval = 1;	/* 1 sec */
 	unsigned int sleep_max_interval = 512;	/* about 8.5 min */
+	struct timeval expiration_time;
 
 	e = gfp_cached_connection_acquire(&gfm_server_cache,
 	    hostname, port, &cache_entry, &created);
@@ -296,7 +297,10 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	}
 	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
 	    NULL);
-	while (IS_CONNECTION_ERROR(e)) {
+	gettimeofday(&expiration_time, NULL);
+	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
+	while (IS_CONNECTION_ERROR(e) &&
+	       !gfarm_timeval_is_expired(&expiration_time)) {
 		gflog_warning(GFARM_MSG_1000058,
 		    "connecting to gfmd at %s:%d failed, "
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
@@ -306,8 +310,6 @@ gfm_client_connection_acquire(const char *hostname, int port,
 			gfm_serverp, NULL);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
-		else
-			break; /* give up */
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000059,
