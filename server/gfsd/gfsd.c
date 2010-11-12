@@ -122,7 +122,7 @@
 	accepting_fatal_errno_full(msg_no, __FILE__, __LINE__, __func__,\
 				   __VA_ARGS__)
 
-static const char READONLY_CONFIG_FILE[] = ".readonly";
+const char READONLY_CONFIG_FILE[] = ".readonly";
 
 const char *program_name = "gfsd";
 

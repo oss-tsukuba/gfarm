@@ -194,6 +194,8 @@ delete_invalid_file_or_directory(char *pathname)
 	return (e);
 }
 
+extern const char READONLY_CONFIG_FILE[];
+
 static gfarm_error_t
 fixfrag(char *path)
 {
@@ -202,6 +204,10 @@ fixfrag(char *path)
 	gfarm_off_t size;
 	gfarm_error_t e;
 	struct stat st;
+
+	/* READONLY_CONFIG_FILE should be skipped */
+	if (strcmp(path, READONLY_CONFIG_FILE) == 0)
+		return (GFARM_ERR_NO_ERROR);
 
 	if (get_inum_gen(path, &inum, &gen))
 		return (delete_invalid_file_or_directory(path));
