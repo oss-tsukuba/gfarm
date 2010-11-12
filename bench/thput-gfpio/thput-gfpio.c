@@ -183,6 +183,19 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	int rv;
 	off_t residual;
 
+	e = gfs_stat(ifile, &status);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
+		exit(1);
+	}
+	if (file_size <= 0)
+		file_size = status.st_size;
+	if (file_size > status.st_size)
+		file_size = status.st_size;
+	gfs_stat_free(&status);
+
 	gettimerval(&tm_read_open_0);
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &gf);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -201,19 +214,6 @@ readtest(char *ifile, int buffer_size, off_t file_size)
 	}
 #endif /* not yet in gfarm v2 */
 	gettimerval(&tm_read_open_1);
-
-	e = gfs_stat(ifile, &status);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
-			node_index, ifile, gfarm_error_string(e),
-			gfarm_host_get_self_name());
-		exit(1);
-	}
-	if (file_size == 0)
-		file_size = status.st_size;
-	if (file_size > status.st_size)
-		file_size = status.st_size;
-	gfs_stat_free(&status);
 
 	gettimerval(&tm_read_read_all_0);
 	for (residual = file_size; residual > 0; residual -= rv) {
@@ -267,6 +267,19 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 	int rv, osize;
 	off_t residual;
 
+	e = gfs_stat(ifile, &status);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
+			node_index, ifile, gfarm_error_string(e),
+			gfarm_host_get_self_name());
+		exit(1);
+	}
+	if (file_size <= 0)
+		file_size = status.st_size;
+	if (file_size > status.st_size)
+		file_size = status.st_size;
+	gfs_stat_free(&status);
+
 	e = gfs_pio_open(ifile, GFARM_FILE_RDONLY, &igf);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "[%03d] cannot open %s: %s on %s\n",
@@ -300,18 +313,6 @@ copytest(char *ifile, char *ofile, int buffer_size, off_t file_size)
 		exit(1);
 	}
 #endif /* not yet in gfarm v2 */
-	e = gfs_stat(ifile, &status);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "[%03d] stat(%s): %s on %s\n",
-			node_index, ifile, gfarm_error_string(e),
-			gfarm_host_get_self_name());
-		exit(1);
-	}
-	if (file_size == 0)
-		file_size = status.st_size;
-	if (file_size > status.st_size)
-		file_size = status.st_size;
-	gfs_stat_free(&status);
 
 	for (residual = file_size; residual > 0; residual -= rv) {
 		e = gfs_pio_read(igf, buffer, buffer_size, &rv);
