@@ -1,0 +1,685 @@
+記号の意味:
+	i, l, s は、xxx_proto.c の扱うフォーマット文字
+		i: 32bit 整数
+		l: 64bit 整数
+		s: 任意長の文字列 (長さは 32bit 整数で表現)
+		b: 任意長のバイナリデータ (長さは 32bit 整数で表現)
+
+	フォーマット文字[変数] は、
+		「そのフォーマット文字に対応する型」の「変数」回の繰り返し。
+	例: s[npaths] … 文字列(s) の npaths 回の繰り返し
+
+------------------------------------------------------------------------
+
+メタデータサーバープロトコル
+
+	接続時: canonical_host, (job id, paralleism, index, pid) を渡す
+		→ コマンド起動時のオプションとして
+		  --gfarm_nfrag, --gfarm_index の他に --gfarm_job を増やす
+
+	管理者: グループデータベースで、"gfadmin" グループに属するユーザー
+
+	状態
+		COMPOUND の内側では、
+		2つの file descriptor を内部状態としてもつ。
+		多くの操作は current file descriptor を対象とする。
+		- current file descriptor
+		- saved file descriptor
+		これらは、以下の場合に、自動的に CLOSE される。
+		- COMPOUND を終了した時
+		- 他の file descriptor で上書きされた時
+		ただし、外部化された ディスクリプタを除く。
+		外部化されたディスクリプタとは、下記のものを指す。
+		- GET_FD で外部化されたもの。
+		- PUT_FD で外部から渡されたもの。
+
+  ファイルディスクリプタ操作等
+	GFM_PROTO_COMPOUND_BEGIN
+	  入力: なし
+	  出力: i:エラー
+	    ※ たとえ(ネスティングが深い等の理由で)失敗した場合でも、
+	       この次の GFM_PROTO_COMPOUND_END まで必ず読みとばす
+	GFM_PROTO_COMPOUND_END
+	  入力: なし
+	  出力: i:エラー
+	GFM_PROTO_COMPOUND_ON_ERROR
+	  入力: i:対象エラーコード
+	  出力: i:エラー
+	    ※ たとえ(同じエラーコードを複数回指定した等の理由で)
+	       失敗した場合でも、
+	       この次の GFM_PROTO_COMPOUND_{ON_ERROR,END} まで
+	       必ず読みとばす
+	GFM_PROTO_GET_FD
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:fd
+	  副作用 (成功時):
+		current file descriptor は外部化されるため、
+		自動的に CLOSE されなくなる。
+	  ※ エラーとして GFARM_ERR_TOO_MANY_OPEN_FILES も生じる可能性がある。
+	  ※ ファイルディスクリプタを整数値として読みとる唯一の操作
+	GFM_PROTO_PUT_FD
+	  入力: i:file_descriptor
+	  出力: i:エラー
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ current file descriptor は外部化されているため、
+	     自動的には CLOSE されない。
+	GFM_PROTO_SAVE_FD
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+	  副作用 (成功時):
+		saved file descriptor <- current file descriptor
+	  ※ current file descriptor の値は変わらない。
+	GFM_PROTO_RESTORE_FD
+	  暗黙の入力: i:saved file descriptor
+	  入力: なし
+	  出力: i:エラー
+	  副作用 (成功時):
+		current file descriptor <- saved file descriptor
+	  ※ saved file descriptor の値は変わらない。
+	GFM_PROTO_VERIFY_TYPE_NOT
+	  暗黙の入力: i:current file descriptor (target)
+	  入力: i:タイプ
+	  出力: i:エラー
+		※ タイプとしてディレクトリを指定した場合、
+			エラーは GFARM_ERR_IS_A_DIRECTORY
+		   タイプとしてシンボリックリンクを指定した場合、
+			エラーは GFARM_ERR_IS_A_SYMBOLIC_LINK
+	GFM_PROTO_VERIFY_TYPE
+	  暗黙の入力: i:current file descriptor (target)
+	  入力: i:タイプ
+	  出力: i:エラー
+		※ タイプとしてディレクトリを指定した場合、
+			エラーは GFARM_ERR_NOT_A_DIRECTORY
+	GFM_PROTO_BEQUEATH_FD
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+	  副作用 (成功時):
+		 そのファイルディスクリプタに対する、
+		 (GFM_PROTO_PROCESS_ALLOC_CHILD で作成した)子プロセスからの
+		 アクセスを許す。
+	  ※ current file descriptor の外部化を自動的に行なうことはしない。
+	  ※ 現在のところ、カレントディレクトリの受渡し用途としてしか
+	     考えていない。
+	GFM_PROTO_INHEIRIT_FD
+	  入力: i:親のfile descriptor番号
+	  出力: i:エラー
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ current file descriptor の外部化を自動的に行なうことはしない。
+	  ※ 親のfile descriptor番号が、GFM_PROTO_BEQUEATH_FD で
+	     指定されたもの以外だったら、GFARM_ERR_BAD_FILE_DESCRIPTOR
+	  ※ 子プロセスが、GFM_PROTO_PROCESS_ALLOC_CHILD する前、
+	     あるいは GFM_PROTO_INHERIT_FD する前に、親プロセスが終了して
+	     しまった場合には、正しく動作しないという問題がある。
+	  ※ 現在のところ、カレントディレクトリの受渡し用途としてしか
+	     考えていない。
+
+  gfs 系 / クライアントからのアクセス
+
+	GFM_PROTO_CREATE
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: s:name, i:flags, i: mode
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation, i:mode
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ GFM_PROTO_OPEN も参照
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	  ※ ディレクトリに対しては LOOKUP か RDONLY しか許さない。
+	     シンボリックリンクに対しては LOOKUP しか許さない。
+	  ※ 既存のディレクトリに対して行なった場合には成功する。
+	GFM_PROTO_OPEN
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: s:name, i:flags
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation, i:mode
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ GFM_PROTO_CREATE も参照
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	  ※ ディレクトリに対しては LOOKUP か RDONLY しか許さない。
+	     シンボリックリンクに対しては LOOKUP しか許さない。
+	GFM_PROTO_OPEN_ROOT
+	  入力: i:flags
+	  出力: i:エラー
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ flags は、GFARM_FILE_LOOKUP あるいは GFARM_FILE_RDONLY のみ
+	GFM_PROTO_OPEN_PARENT
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: i:flags
+	  出力: i:エラー
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	  ※ flags は、GFARM_FILE_LOOKUP あるいは GFARM_FILE_RDONLY のみ
+	GFM_PROTO_FCHMOD
+	  暗黙の入力: i:current file descriptor
+	  入力: i: mode
+	  出力: i:エラー
+	GFM_PROTO_FCHOWN
+	  暗黙の入力: i:current file descriptor
+	  入力: s: user, s:group
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+
+	GFM_PROTO_REMOVE
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: s:target
+	  出力: i:エラー
+	GFM_PROTO_RENAME
+	  暗黙の入力:
+		i:saved file descriptor (source directory)
+		i:current file descriptor (target directory)
+	  入力: s:src_name, s: target_name
+	  出力: i:エラー
+	GFM_PROTO_FLINK
+	  暗黙の入力:
+		i:saved file descriptor (content)
+		i:current file descriptor (target directory)
+	  入力: s:target_name
+	  出力: i:エラー
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリであれば GFARM_ERR_IS_A_DIRECTORY を返す。
+	GFM_PROTO_MKDIR
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: s: name, i: mode
+	  出力: i:エラー
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	GFM_PROTO_SYMLINK
+	  暗黙の入力:
+		i:current file descriptor (directory to create the link)
+	  入力: s:source_path, s: new_name
+	  出力: i:エラー
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	GFM_PROTO_READLINK
+	  暗黙の入力: i:current file descriptor (symbolic link)
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		s:target_path
+	  ※ current file descriptor がシンボリックリンクかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_INVAILD_ARGUMENT を返す。
+	GFM_PROTO_GETDIRPATH
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		s:path
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	GFM_PROTO_GETDIRENTS
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: i:n_entries,
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_entries, s[n_entries]:ent_names, i[n_entries]:ent_types,
+		l[n_entries]:inode_numbers
+	  ※ n_entries == 0 を返した時が、ディレクトリの末尾
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	GFM_PROTO_SEEK
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: l:offset, i:whence
+	  出力: i:エラー,
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:offset
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	GFM_PROTO_GETDIRENTSPLUS
+	  暗黙の入力: i:current file descriptor (target directory)
+	  入力: i:n_entries,
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_entries
+		下記の、n_entries 回の繰り返し:
+			s:entry_name,
+			l:i_node_number, l:generation,
+			i:mode, l:nlinks, s:user, s:group, l:size, l:ncopies,
+			l:atime_sec, i:atime_nsec,
+			l:mtime_sec, i:mtime_nsec,
+			l:ctime_sec, i:ctime_nsec
+	  ※ n_entries == 0 を返した時が、ディレクトリの末尾
+	  ※ current file descriptor がディレクトリかどうかを検査する。
+	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+
+        GFM_PROTO_XATTR_SET
+        GFM_PROTO_XMLATTR_SET
+          暗黙の入力: i:current file descriptor (target file)
+          入力: s:name, B:value i:flags
+          出力: i:エラー
+        GFM_PROTO_XATTR_GET
+        GFM_PROTO_XMLATTR_GET
+          暗黙の入力: i:current file descriptor (target file)
+          入力: s:name
+          出力: i:エラー, b:value
+          ※ 拡張属性データのサイズ問い合わせはない。
+        GFM_PROTO_XATTR_REMOVE
+        GFM_PROTO_XMLATTR_REMOVE
+          暗黙の入力: i:current file descriptor (target file)
+          入力: s:name
+          出力: i:エラー
+        GFM_PROTO_XATTR_LIST
+        GFM_PROTO_XMLATTR_LIST
+          暗黙の入力: i:current file descriptor (target file)
+          入力: なし
+          出力: i:エラー, b:value
+          ※ 拡張属性名を\0で区切った文字列を返す。
+        GFM_PROTO_XMLATTR_FIND
+          暗黙の入力: i:current file descriptor (target file)
+          入力: s:expr, i:depth, i:nentry, s:cookie_path, s:cookie_name
+          出力: i:エラー, i:eof,i:n_entries, s[n_entries]:path, 
+                s[n_entries]:name
+          ※ サイズ問い合わせはない。
+            要求サイズに近い適当な区切りの名前までを返す。
+            entry は 拡張属性を持つファイルの相対パスと拡張属性名から成る。
+            要求ファイル自身の拡張属性の時にはパスは"."とする。
+            要求のcookieはentryで、初回の要求では拡張属性名がNULLをしめす。
+            継続要求の場合は、最後に返されたentryをcookieとして渡す。
+            eof の場合は eof フラグが1である。
+
+	GFM_PROTO_CKSUM_GET
+	  暗黙の入力: i:current file descriptor (target file)
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		s:cksum_type, b:cksum, i:flags
+	  チェックサムがない場合は、cksum_type == "", cksum = [] となる。
+	  ※ flags には、下記の情報が含まれる。
+		このレプリカが現在書き込みオープンされているか
+	GFM_PROTO_CKSUM_SET
+	  暗黙の入力: i:current file descriptor (target file)
+	  入力: s:cksum_type, b:cksum
+		i:flags, l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+	  ※ flags には、下記の情報が含まれる
+		mtime_{,n}sec が有効か
+			… そのディスクリプタに書き込みが行なわれた場合に真
+	GFM_PROTO_SCHEDULE_FILE
+	  暗黙の入力: i:current file descriptor (file)
+	  入力: s:domain
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts,
+		下記の、n_hosts 回の繰り返し:
+			s:host, i:port,
+			i:loadavg*65536, l:cache_time, l:usedsize, l:availsize,
+			l:rtt_cache_time, i:rtt_usec, i:rtt_flags
+	  ※ 候補となるホストのリストを返す
+	  ※ domain パラメータがあった方が良い?
+	  ※ ホスト数を制限するには？
+
+	GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM
+	  暗黙の入力:
+		i:saved file descriptor (program)
+		i:current file descriptor (file)
+	  入力: s:domain
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts,
+		下記の、n_hosts 回の繰り返し:
+			s:host, i:port,
+			i:loadavg*65536, l:cache_time, l:usedsize, l:availsize,
+			l:rtt_cache_time, i:rtt_usec, i:rtt_flags
+	  ※ 候補となるホストのリストを返す
+	  ※ domain パラメータがあった方が良い?
+	  ※ ホスト数を制限するには？
+
+	GFM_PROTO_REPLICA_LIST_BY_NAME
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_replicas,
+		s[n_replicas]:replica_hosts, i[n_replicas]:replica_ports
+
+	GFM_PROTO_REPLICA_LIST_BY_HOST
+	  入力: s:host, i:port
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_replicas,
+		o[n_replicas]:i_node_numbers
+	  ※ 管理者権限が必要
+	GFM_PROTO_REPLICA_REMOVE_BY_HOST
+	  入力: s:host, i:port
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+
+  gfs 系 / gfsd からのアクセス
+    CERT: ホスト証明書/LDAP証明書類似の、gfsd証明書をつくる
+
+	GFM_PROTO_REOPEN
+	  暗黙の入力: i:current file descriptor
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation, i:mode, i:flags, i:to_create
+	  ※ GFM_PROTO_OPEN, GFM_PROTO_CREATE のどちらの場合も
+	     これを用いる。
+	     → gfarm-v2-outline: [old-replica] も参照
+	GFM_PROTO_CLOSE_READ
+	  暗黙の入力: i:current file descriptor
+	  入力: l:atime_sec, i:atime_nsec
+	  出力: i:エラー
+	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_WRITE も参照
+	GFM_PROTO_CLOSE_WRITE
+	  暗黙の入力: i:current file descriptor
+	  入力: l:size
+		l:atime_sec, i:atime_nsec
+		l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ も参照
+	  → gfarm-v2-outline: [invalidate-replica] も参照
+	GFM_PROTO_LOCK
+	  暗黙の入力: i:current file descriptor
+	  入力: l:start, l:len, i:type, i:whence
+	  出力: i:エラー
+	GFM_PROTO_TRYLOCK
+	  暗黙の入力: i:current file descriptor
+	  入力: l:start, l:len, i:type, i:whence
+	  出力: i:エラー
+	GFM_PROTO_UNLOCK
+	  暗黙の入力: i:current file descriptor
+	  入力: l:start, l:len, i:type, i:whence
+	  出力: i:エラー
+	GFM_PROTO_LOCK_INFO
+	  暗黙の入力: i:current file descriptor
+	  入力: l:start, l:len, i:type, i:whence
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:start, l:len, i:type, s:host, l:pid
+
+	GFM_PROTO_REPLICA_ADDING
+	  暗黙の入力: i:current file descriptor
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation, l:st_mtime_sec, i:st_mtime_nsec
+	GFM_PROTO_REPLICA_ADDED
+	  暗黙の入力: i:current file descriptor
+	  入力: i:flags,
+		l:st_mtime_sec, i:st_mtime_nsec
+	  出力: i:エラー
+	  ※ flags には、下記の情報が含まれる
+		mtime_{,n}sec が有効か
+			… 複製元ノードで書き込みオープンされている場合真
+	GFM_PROTO_REPLICA_REMOVE
+	  入力: l:i_node_number, l:generation
+	  出力: i:エラー
+
+  gfs 系 / クライアントと gfsd の両方からのアクセス
+
+	GFM_PROTO_CLOSE
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+	  ※ GFM_PROTO_CLOSE_READ, GFM_PROTO_CLOSE_WRITE も参照
+	GFM_PROTO_FSTAT
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation,
+		i:mode, l:nlinks, s:user, s:group, l:size, l:ncopies,
+		l:atime_sec, i:atime_nsec,
+		l:mtime_sec, i:mtime_nsec,
+		l:ctime_sec, i:ctime_nsec
+	GFM_PROTO_FUTIMES
+	  暗黙の入力: i:current file descriptor
+	  入力: l:atime_sec, i:atime_nsec,
+		l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+
+  gfs_pio 系
+	GFM_PROTO_GLOB
+		XXX need to rethink
+	  入力: i:n_globs, s[n_globs]:globs
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_globs 回の繰り返し:
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			i:n_entries,
+			s[n_entries]:entries, i[n_entries]:ent_types,
+			l[n_entries]:inode_numbers
+		※ 複数の glob を与えられるインターフェースとしているのは
+		   round trip の回数を減らすため
+	GFM_PROTO_SCHEDULE
+		XXX need to rethink
+	  入力: i:n, s:gfarm_program, s:parallel_file, s:domain,
+		mode:open_mode
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts
+		下記の、n_hosts 回の繰り返し:
+			s:hostname,
+			i:n_host_aliases, s[n_host_aliases]:host_aliases,
+			s:architecture, i:ncpu, i:port, i:flags
+	  ※ gfarm_program/parallel_file/domain は全て "" でも良い
+	     また n も 0 でも良い。
+	     その場合、これらのパラメータは無視される。
+	     さもなくば AND 条件と見なされる。
+	     open_mode には、CPU割り当てが必要か、書き込みが必要か等
+	     の情報を渡す。書き込み情報を渡すのは、書き込みを集中させるため。
+	GFM_PROTO_PIO_OPEN
+		XXX need to rethink
+	  入力: s:parallel_file, i:open_flags
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_files, s[n_files]:filenames
+	  副作用 (成功時):
+		current file descriptor <- new file_descriptor
+	  ※ parallel_file が gfs 以外のファイルシステムのパス名を含む場合、
+	     n_files は 0 を返す。この場合、GFM_PROTO_PIO_SET_PATHS で、
+	     parallel_file が表すパス名のリストを伝えなければならない。
+	  ※ pio_open() では、remove/rename に関するposix semanticsは保存しない
+	     open_flags には、少なくとも write, create は必要
+	GFM_PROTO_PIO_SET_PATHS
+		XXX need to rethink
+	  入力: i:file_descriptor
+		i:n_files, s[n_files]:filenames
+	  出力: i:エラー
+	GFM_PROTO_PIO_CLOSE
+		XXX need to rethink
+	  暗黙の入力: i:current file descriptor
+	  入力: なし
+	  出力: i:エラー
+	GFM_PROTO_PIO_VISIT
+	  暗黙の入力: i:current file descriptor
+	  入力: i:index
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:flags
+	  ※ flags には、下記の情報が含まれる。
+		そのフラグメントに対する最初の訪問か？
+
+  メタデータ・アクセス
+	GFM_PROTO_HOST_INFO_GET_ALL
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts,
+		下記の、n_hosts 回の繰り返し:
+			s:hostname,
+			i:n_host_aliases, s[n_host_aliases]:host_aliases,
+			s:architecture, i:ncpu, i:port, i:flags
+	GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE
+	  入力: s:architecture
+	  出力: i:n_hosts,
+		下記の、n_hosts 回の繰り返し:
+			s:hostname,
+			i:n_host_aliases, s[n_host_aliases]:host_aliases,
+			s:architecture, i:ncpu, i:port, i:flags
+	GFM_PROTO_HOST_INFO_GET_BY_NAMES
+	  入力: i: n_hostnames, s[n_hostnames]:hostnames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_hostnames 回の繰り返し:
+			i:エラー,
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			s:hostname,
+			i:n_host_aliases, s[n_host_aliases]:host_aliases,
+			s:architecture, i:ncpu, i:port, i:flags
+	GFM_PROTO_HOST_INFO_GET_BY_NAMEALIASES
+	  入力: i: n_hostnames, s[n_hostnames]:hostnames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_hostnames 回の繰り返し:
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			s:hostname,
+			i:n_host_aliases, s[n_host_aliases]:host_aliases,
+			s:architecture, i:ncpu, i:port, i:flags
+	GFM_PROTO_HOST_INFO_SET
+	  入力: s:hostname,
+		i:n_host_aliases, s[n_host_aliases]:host_aliases,
+		s:architecture, i:ncpu, i:port, i:flags
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_HOST_INFO_MODIFY
+	  入力: s:hostname,
+		i:n_host_aliases, s[n_host_aliases]:host_aliases,
+		s:architecture, i:ncpu, i:port, i:flags
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_HOST_INFO_REMOVE
+	  入力: s:hostname
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+
+	GFM_PROTO_USER_INFO_GET_ALL
+	  入力: なし
+	  出力: i:n_users
+		下記の、n_users 回の繰り返し:
+			s:username,
+			s:real_name, s:gfarm_homedir, s:gsi_dn
+	GFM_PROTO_USER_INFO_GET_BY_NAMES
+	  入力: i:n_usernames, s[n_usernames]:usernames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_usernames 回の繰り返し:
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			s:username,
+			s:real_name, s:gfarm_homedir, s:gsi_dn
+	   ※ gfsd がこのプロトコルを用いるのを許す必要がある。
+	      これは gfarm_metadb_verify_username() を実装するため。
+	GFM_PROTO_USER_INFO_SET
+	  入力: s:username,
+		s:real_name, s:gfarm_homedir, s:gsi_dn
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_USER_INFO_MODIFY
+	  入力: s:username,
+		s:real_name, s:gfarm_homedir, s:gsi_dn
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_USER_INFO_REMOVE
+	  入力: s:username
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+
+	GFM_PROTO_GROUP_INFO_GET_ALL
+	  入力: なし
+	  出力: i:n_groups
+		下記の、n_groups 回の繰り返し:
+			s:groupname,
+			i:n_users, s[n_users]:users
+	GFM_PROTO_GROUP_INFO_GET_BY_NAMES
+	  入力: i:n_groupnames, s[n_groupnames]:groupnames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_groupnames 回の繰り返し:
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			s:groupname,
+			i:n_users, s[n_users]:users
+	GFM_PROTO_GROUP_INFO_SET
+	  入力: s:groupname,
+		i:n_users, s[n_users]:users
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_GROUP_INFO_MODIFY
+	  入力: s:groupname,
+		i:n_users, s[n_users]:users
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_GROUP_INFO_REMOVE
+	  入力: s:groupname
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_GROUP_INFO_ADD_USERS
+	  入力: s:groupname,
+		i:n_users, s[n_users]:users
+	  出力: i:エラー
+		i[n_users]:userエラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_GROUP_INFO_REMOVE_USERS
+	  入力: s:groupname,
+		i:n_users, s[n_users]:users
+	  出力: i:エラー
+		i[n_users]:userエラー
+	  ※ 管理者権限が必要
+	GFM_PROTO_GROUP_NAMES_GET_BY_USERS
+	  入力: i:n_usernames, s[n_usernames]:usernames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		下記の、n_usernames 回の繰り返し:
+			i:エラー
+			エラー == GFARM_ERR_NO_ERROR の場合:
+			i:n_groups, s[n_groups]:groupnames
+
+  replication manager 系:
+	削除するレプリカを得る
+
+  gfsck 系:
+
+	  入力: 
+	  出力: 
+
+  process 管理系
+	GFM_PROTO_PROCESS_ALLOC
+	  入力: i:key_type, b:shared_key
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:pid
+	GFM_PROTO_PROCESS_ALLOC_CHILD
+	  入力: i:parent_key_type, b:parent_shared_key, l:parent_pid,
+		i:my_key_type, b:my_shared_key
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:my_pid
+	  ※ 親プロセスと子プロセスの間での、カレントディレクトリの受渡しの
+	     ために使う。GFM_PROTO_EXPORT_FD/GFM_PROTO_IMPORT_FD も参照。
+
+	GFM_PROTO_PROCESS_FREE
+	  入力: なし
+	  出力: i:エラー
+	GFM_PROTO_PROCESS_SET
+	  入力: i:key_type, b:shared_key, l:pid
+	  出力: i:エラー
+
+------------------------------------------------------------------------
+
+メモ
+	ファイルオープン操作
+		例: "dir1/dir2/file"
+			GFM_PROTO_COMPOUND_BEGIN
+			GFM_PROTO_PUT_FD(cwd_fd)
+			GFM_PROTO_OPEN("dir1", LOOKUP)
+			GFM_PROTO_OPEN("dir2", LOOKUP)
+			GFM_PROTO_OPEN("file", RDONLY)
+			GFM_PROTO_GET_FD: gfm_fd
+			GFM_PROTO_COMPOUND_ON_ERROR(IS_A_SYMBOLIC_LINK)
+			GFM_PROTO_READLINK
+			GFM_PROTO_COMPOUND_END

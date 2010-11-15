@@ -1,0 +1,94 @@
+記号の意味:
+	i, l, s は、xxx_proto.c の扱うフォーマット文字
+
+	フォーマット文字[変数] は、
+		「そのフォーマット文字に対応する型」の「変数」回の繰り返し。
+	例: s[npaths] … 文字列(s) の npaths 回の繰り返し
+
+------------------------------------------------------------------------
+
+gfsd プロトコル
+
+  クライアント, gfsd からのアクセス
+	GFS_PROTO_PROCESS_SET,
+	  入力: i:type, b:shared_key, l:pid
+	  出力: i:エラー
+
+	GFS_PROTO_OPEN,
+	  入力:	i:fd
+	  出力:	i:エラー
+	GFS_PROTO_OPEN_LOCAL,
+	  入力:	i:fd
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		ディスクリプタパッシングを用いて、local fd を返す。
+	GFS_PROTO_CLOSE,
+	  入力:	i:fd
+	  出力:	i:エラー
+	GFS_PROTO_PREAD,
+	  入力: i:fd, i:size, l:offset
+	  出力:	i:エラー, b:data
+	GFS_PROTO_PWRITE,
+	  入力: i:fd, b:buffer, l:offset,
+	  出力:	i:エラー, i:length
+	GFS_PROTO_FTRUNCATE
+	  入力: i:fd, l:length,
+	  出力:	i:エラー
+	GFS_PROTO_FSYNC
+	  入力: i:fd, i:operation,
+	  出力:	i:エラー
+	GFS_PROTO_FSTAT,
+	  入力: i:fd
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		l:size,
+		l:atime_sec, i:atime_nsec
+		l:mtime_sec, i:mtime_nsec
+	GFS_PROTO_CKSUM_SET,
+	  入力:	i:fd, s:cksum_type, b:cksum
+	  出力:	i:エラー
+
+	GFS_PROTO_LOCK,
+	  入力: i:fd, l:start, l:len, i:type, i:whence
+	  出力: i:エラー
+	GFS_PROTO_TRYLOCK,
+	  入力: i:fd, l:start, l:len, i:type, i:whence
+	  出力:	i:エラー
+	GFS_PROTO_UNLOCK,
+	  入力: i:fd, l:start, l:len, i:type, i:whence
+	  出力:	i:エラー
+	GFS_PROTO_LOCK_INFO,
+	  入力: i:fd, l:start, l:len, i:type, i:whence
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		l:start, l:len, i:type, s:host, l:pid
+
+	GFS_PROTO_REPLICA_ADD,
+	  入力: i:fd
+	  出力:	i:エラー
+
+	GFS_PROTO_REPLICA_RECV,
+		XXX
+	  出力:	i:エラー
+			他の gfsd からのアクセス
+			replication manager からのアクセス?
+
+	GFS_PROTO_COMMAND,
+		いまのところ v1 と同じ
+
+  gfmd からの back channel
+	/* from gfmd */
+
+	GFS_PROTO_FHSTAT
+	  入力	l:i_node_number, l:i_node_generation
+	  出力:	i:エラー
+		エラー == GFARM_ERR_NOERROR の場合:
+		l:size
+		l:atime_sec, i:atime_nsec,
+		l:mtime_sec, i:mtime_nsec,
+			gfmd から gfsd に対して、i-node 番号を指定して、
+			struct gfs_stat を問い合わせる。
+
+	GFS_PROTO_FHREMOVE
+	  入力:	l:i_node_number, l:i_node_generation
+	  出力:	i:エラー
