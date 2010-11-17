@@ -190,6 +190,11 @@ Debian 系の Linux の場合，update-rc.d コマンドを用いて，自動起動の設定
   の所有者が「_gfarmfs」となっているかどうか確認してください．
 
 GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
+サービス証明書は，Distinguished Name の「CN=」の部分に，
+「gfsd/ファイルシステムノードのホスト名」と設定されている
+必要がありますので，注意してください．たとえばファイルシステム・ノード
+「linux-1.example.com」に対応する CN 部は，「CN=gfsd/linux-1.example.com」
+となります．
 
   証明書は /etc/grid-security/gfsd/gfsd{cert,key}.pem に置き，ディレク
   トリとファイルのオーナを _gfarmfs とします．gfsdkey.pem のファイルモー

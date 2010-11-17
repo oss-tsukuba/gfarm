@@ -225,6 +225,10 @@ Ask the administrator to execute the displayed text.
   /etc/grid-security/grid-mapfile of a metadata server in the
   following format.  '@host@' is a fixed string.  It cannot be
   changed.
+  Please note that the "CN=" part of the distinguished name
+  must be "gfsd/<HOSTNAME_OF_THE_FILESYSTEM_NODE>" format.  For example,
+  it must be "CN=gfsd/linux-1.example.com" for a filesystem node
+  "linux-1.example.com".
 
 	"Subject DN of gfsd server cert" @host@ FQDN
 
