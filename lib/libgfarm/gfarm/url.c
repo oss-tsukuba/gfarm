@@ -99,8 +99,6 @@ gfarm_path_info_access(struct gfarm_path_info *pi, int mode)
  *	output: user/path/name
  */
 
-char GFARM_URL_PREFIX[] = "gfarm:";
-
 /*
  * Expand '~'.  Currently, '~/...' or '~username/...' is transformed
  * to '/username/...'.
@@ -285,13 +283,6 @@ gfarm_url_make_path_for_creation(const char *gfarm_url, char **canonic_pathp)
 	gfarm_url = gfarm_url_prefix_skip(gfarm_url);
 
 	return (gfarm_canonical_path_for_creation(gfarm_url, canonic_pathp));
-}
-
-int
-gfarm_is_url(const char *gfarm_url)
-{
-	return (memcmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH)
-	    == 0);
 }
 
 /*
@@ -512,6 +503,15 @@ gfarm_url_prefix_add(const char *s)
 }
 #endif
 
+const char GFARM_URL_PREFIX[] = "gfarm:";
+
+int
+gfarm_is_url(const char *gfarm_url)
+{
+	return (memcmp(gfarm_url, GFARM_URL_PREFIX, GFARM_URL_PREFIX_LENGTH)
+	    == 0);
+}
+
 /*
  * Skip directory in the pathname.
  * We want traditional basename(3) here, rather than weird XPG one.
@@ -526,6 +526,77 @@ gfarm_path_dir_skip(const char *path)
 			base = path + 1;
 	}
 	return (base);
+}
+
+/* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
+char *
+gfarm_url_dir(const char *pathname)
+{
+	char *parent, *top, *dir, *p;
+	int had_scheme = 0;
+	static const char dot[] = ".";
+
+	if (pathname[0] == '\0')
+		return (strdup(dot));
+	parent = strdup(pathname);
+	if (parent == NULL) {
+		gflog_debug(GFARM_MSG_1001463,
+			"allocation of dir failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (NULL);
+	}
+
+	top = dir = parent;
+	if (gfarm_is_url(dir)) {
+		had_scheme = 1;
+		dir += GFARM_URL_PREFIX_LENGTH;
+		top = dir;
+		if (dir[0] == '/') {
+			if (dir[1] != '/') {
+				top = dir;
+			} else {
+				dir += 2; /* skip "//" */
+				/* skip hostname:port */
+				while (dir[0] != '\0' && dir[0] != '/')
+					dir++;
+				top = dir - 1;
+				if (dir[0] == '/') {
+					for (p = dir + 1; *p == '/'; p++)
+						;
+					if (*p == '\0') {
+						dir[0] = '\0';
+						return (parent);
+					}
+				}
+			}
+		}
+		if (dir[0] == '\0')
+			return (parent);
+	}
+		
+	/* remove trailing '/' */
+	p = dir + strlen(dir) - 1;
+	while (p > dir && *p == '/')
+		--p;
+	p[1] = '\0';
+
+	p = (char *)gfarm_path_dir_skip(dir); /* UNCONST */
+	if (p == dir) { /* i.e. no slash */
+		if (had_scheme) {
+			dir[0] = '\0';
+			return (parent);
+		} else {
+			free(parent);
+			return (strdup(dot));
+		}
+	}
+	--p;
+
+	/* remove trailing '/' */
+	while (p > top && *p == '/')
+		--p;
+	p[1] = '\0';
+	return (parent);
 }
 
 /* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
@@ -563,28 +634,6 @@ gfarm_path_dir(const char *pathname)
 		--p;
 	p[1] = '\0';
 	return (dir);
-}
-
-char *
-gfarm_path_dirname(const char *pathname)
-{
-	char *parent = strdup(pathname), *b;
-
-	if (parent == NULL) {
-		gflog_debug(GFARM_MSG_1001464,
-			"allocation of path failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (NULL);
-	}
-
-	/* create parent directory canonic path */
-	for (b = (char *)gfarm_path_dir_skip(parent);
-	    b > parent && b[-1] == '/'; --b)
-		;
-	*b = '\0';
-
-	/* note that the root directory is '\0'. */
-	return (parent);
 }
 
 #if 0

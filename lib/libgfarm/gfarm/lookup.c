@@ -22,15 +22,13 @@ gfarm_error_t
 gfarm_url_parse_metadb(const char **pathp,
 	struct gfm_connection **gfm_serverp)
 {
-	const char gfarm_prefix[] = "gfarm:";
-#define GFARM_PREFIX_LEN	(sizeof(gfarm_prefix) - 1)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	char *ep, *gfm_server_name = NULL /* , *gfm_server_user */ ; 
 	unsigned long gfm_server_port;
 	const char *p, *path = *pathp;
 
-	if (memcmp(path, gfarm_prefix, GFARM_PREFIX_LEN) != 0) {
+	if (!gfarm_is_url(path)) {
 		if (gfm_serverp == NULL)
 			e = GFARM_ERR_NO_ERROR;
 		else
@@ -38,7 +36,7 @@ gfarm_url_parse_metadb(const char **pathp,
 			    gfarm_metadb_server_name, gfarm_metadb_server_port,
 			    &gfm_server);
 	} else {
-		path += GFARM_PREFIX_LEN;
+		path += GFARM_URL_PREFIX_LENGTH;
 		if (path[0] != '/' || path[1] != '/') {
 			gflog_debug(GFARM_MSG_1001254,
 				"Host missing in url (%s): %s",
