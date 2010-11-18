@@ -97,7 +97,6 @@ gfarm_error_t gfarm_free_config_stringlists(void);
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
 
-int gfarm_xattr_caching(const char *);
 int gfarm_xattr_caching_patterns_number(void);
 char **gfarm_xattr_caching_patterns(void);
 
