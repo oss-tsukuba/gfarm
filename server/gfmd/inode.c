@@ -3227,21 +3227,24 @@ nlink_check(void *closure, struct inode *inode)
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "directory inode %lld nlink %lld should be 2 "
 			    "(really %lld): fixed",
-			    inode_get_number(inode), inode_get_nlink(inode),
-			    inode_get_nlink_ini(inode));
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_nlink(inode),
+			    (long long)inode_get_nlink_ini(inode));
 			inode->i_nlink = 2;
 		} else
 			return;
 	} else if (inode_get_nlink_ini(inode) == 0) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-		    "inode %lld is not referenced", inode_get_number(inode));
+		    "inode %lld is not referenced",
+		    (long long)inode_get_number(inode));
 		/* XXX - move to the /lost+found directory */
 		return;
 	} else if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "inode %lld nlink %lld should be %lld: fixed",
-		    inode_get_number(inode), inode_get_nlink(inode),
-		    inode_get_nlink_ini(inode));
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_nlink(inode),
+		    (long long)inode_get_nlink_ini(inode));
 		inode->i_nlink = inode_get_nlink_ini(inode);
 	} else
 		return;
