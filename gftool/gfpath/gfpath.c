@@ -63,6 +63,9 @@ main(int argc, char **argv)
 	default:
 		usage();
 		/*NOTREACHED*/
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+		s = NULL;
+#endif
 	}
 	if (s == NULL) {
 		fprintf(stderr, "%s: no memory for \"%s\"\n",
