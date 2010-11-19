@@ -20,7 +20,8 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int ch, mode = 0;
-	char *path, *s;
+	const char *s;
+	char *path, *allocated = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -51,20 +52,17 @@ main(int argc, char **argv)
 
 	switch (mode) {
 	case 'd':
-		s = gfarm_url_dir(path);
+		s = allocated = gfarm_url_dir(path);
 		break;
 	case 'B':
 		s = gfarm_path_dir_skip(path);
 		break;
 	case 'D':
-		s = gfarm_path_dir(path);
+		s = allocated = gfarm_path_dir(path);
 		break;
 	default:
 		usage();
 		/*NOTREACHED*/
-#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-		s = NULL;
-#endif
 	}
 	if (s == NULL) {
 		fprintf(stderr, "%s: no memory for \"%s\"\n",
@@ -72,7 +70,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	printf("%s\n", s);
-	free(s);
+	free(allocated);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
