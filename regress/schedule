@@ -3,6 +3,8 @@ lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
 lib/libgfarm/gfarm/gfs_pio_create/normal.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable_rdonly.sh
+lib/libgfarm/gfarm/gfs_pio_create/autoreplica0.sh
+lib/libgfarm/gfarm/gfs_pio_create/autoreplica.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_not_writable.sh
