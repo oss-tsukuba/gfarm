@@ -91,6 +91,7 @@ gfm_server_protocol_extension_default(struct peer *peer,
 	gfarm_int32_t *requestp, gfarm_error_t *on_errorp)
 {
 	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
+	peer_record_protocol_error(peer);
 	return (GFARM_ERR_PROTOCOL);
 }
 
@@ -457,9 +458,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		if (debug_mode)
 			gflog_debug(GFARM_MSG_1000182, "gfp_xdr_flush");
 		e2 = gfp_xdr_flush(peer_get_conn(peer));
-		if (e2 != GFARM_ERR_NO_ERROR)
+		if (e2 != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1000183, "protocol flush: %s",
 			    gfarm_error_string(e2));
+			peer_record_protocol_error(peer);
+		}
 		if (e == GFARM_ERR_NO_ERROR)
 			e = e2;
 	}
