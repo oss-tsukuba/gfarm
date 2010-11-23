@@ -262,6 +262,33 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 	return (0);
 }
 
+void
+gfarm_hostspec_to_string(struct gfarm_hostspec *hostspec,
+	char *string, size_t size)
+{
+	unsigned char *a, *m;
+
+	if (size <= 0)
+		return;
+
+	switch (hostspec->type) {
+	case GFHS_ANY:
+		string[0] = '\0';
+		return;
+	case GFHS_NAME:
+		strncpy(string, hostspec->u.name, size);
+		return;
+	case GFHS_AF_INET4:
+		a = (unsigned char *)&hostspec->u.in4_addr.addr.s_addr;
+		m = (unsigned char *)&hostspec->u.in4_addr.mask.s_addr;
+		snprintf(string, size, "%d.%d.%d.%d/%d.%d.%d.%d",
+		    a[0], a[1], a[2], a[3], m[0], m[1], m[2], m[3]);
+		return;
+	}
+	/* assert(0); */
+	return;
+}
+
 gfarm_error_t
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {

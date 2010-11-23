@@ -809,6 +809,21 @@ affects both client nodes and filesystem nodes.
  -->
 
 <varlistentry>
+<term><token>known_network</token> <parameter>Host_specification</parameter></term>
+<listitem>
+<para>The <token>known_network</token> statement specifies a network
+address for file system nodes.  It is used to group file system nodes
+at file systen node scheduling.
+File system nodes that are not specified in this directive are assumed
+to be in an IPv4 class C network.</para>
+<para>For example,</para>
+<literallayout>
+	known_network 192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>admin_user</token> <parameter>user</parameter></term>
 <listitem>
 <para>
@@ -1174,6 +1189,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;address_use_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
+		&nbsp;&nbsp;&lt;known_network_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
@@ -1246,6 +1262,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
 <!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
 <!--	&lt;an_option&gt; ::= "noatime" -->
+	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;

@@ -33,6 +33,7 @@
 #include "liberror.h"
 #include "conn_hash.h"
 #include "host.h" /* gfarm_host_info_address_get() */
+#include "hostspec.h"
 #include "config.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
@@ -286,7 +287,7 @@ static struct gfarm_hash_table *search_idle_arch_filter;
 
 struct search_idle_network {
 	struct search_idle_network *next;
-	struct sockaddr min, max;
+	struct gfarm_hostspec *network;
 	int rtt_usec;			/* if NET_FLAG_RTT_AVAIL */
 	int flags;
 
@@ -364,19 +365,9 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	if (net == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	net->rtt_usec = 0; /* i.e. local network */
-#if 0 /* XXX not implemented yet */
-	/*
-	 * XXX should get the netmark of the local network.
-	 * but gfarm_addr_range_get_localnet() isn't implemented yet, and
-	 * the algorithm to merge networks in search_idle_network_list_add()
-	 * doesn't work for a network which is smaller than IPv4 C class.
-	 */
-	gfarm_addr_range_get_localnet(&peer_addr, &net->min, &net->max);
+	/* XXX - gfarm_addr_network_get() may assume IPv4 class C network */
+	gfarm_addr_network_get(&peer_addr, &net->network);
 	net->flags = NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL;
-#else
-	gfarm_addr_range_get(&peer_addr, &net->min, &net->max);
-	net->flags = NET_FLAG_RTT_AVAIL;
-#endif
 	net->candidate_list = NULL;
 	net->candidate_last = &net->candidate_list;
 	net->next = NULL;
@@ -389,77 +380,14 @@ static gfarm_error_t
 search_idle_network_list_add(struct sockaddr *addr,
 	struct search_idle_network **netp)
 {
-	struct sockaddr min, max;
-	struct search_idle_network *net, *net2, **net2p;
-	int widened, widened2;
-
-	gfarm_addr_range_get(addr, &min, &max);
+	struct search_idle_network *net;
+	gfarm_error_t e;
 
 	/* XXX - if there are lots of networks, this is too slow */
 	for (net = search_idle_network_list; net != NULL;
 	    net = net->next) {
-		if (!gfarm_addr_is_same_net(addr, &net->min, &net->max,
-		    (net->flags & NET_FLAG_NETMASK_KNOWN) == 0,
-		    &widened))
-			continue;;
-		if (widened != 0) {
-			/* widen the net to make it include the addr */
-			if (widened < 0)
-				net->min = min;
-			else
-				net->max = max;
-			for (net2p = &net->next; (net2 = *net2p) != NULL;
-			    net2p = &net2->next) {
-				struct gfarm_hash_iterator it;
-				struct gfarm_hash_entry *entry;
-				struct search_idle_host_state *h;
-
-				if (!gfarm_addr_is_same_net(addr,
-				    &net2->min, &net2->max,
-				    (net2->flags & NET_FLAG_NETMASK_KNOWN)== 0,
-				     &widened2))
-					continue;
-
-				/* merge net2 into net */
-				assert(widened2 == 0 || widened2 == -widened);
-				if (widened < 0)
-					net->min = net2->min;
-				else
-					net->max = net2->max;
-
-				/* choose shorter RTT between net & net2 */
-				if ((net2->flags & NET_FLAG_RTT_AVAIL) == 0) {
-					/* not need to update net->rtt_usec */
-				} else if ((net->flags&NET_FLAG_RTT_AVAIL)==0){
-					net->flags |= NET_FLAG_RTT_AVAIL;
-					net->rtt_usec = net2->rtt_usec;
-				} else if (net->rtt_usec > net2->rtt_usec) {
-					net->rtt_usec = net2->rtt_usec;
-				}
-				net->flags |= net2->flags;
-
-				/* adjust hosts_state appropriately */
-				for (gfarm_hash_iterator_begin(
-				    search_idle_hosts_state, &it);
-				    !gfarm_hash_iterator_is_end(&it);
-				    gfarm_hash_iterator_next(&it)) {
-					entry =
-					    gfarm_hash_iterator_access(&it);
-					h = gfarm_hash_entry_data(entry);
-					if (h->net == net2)
-						h->net = net;
-				}
-				*net->candidate_last = net2->candidate_list;
-				net->candidate_last = net2->candidate_last;
-
-				if (search_idle_local_net == net2)
-					search_idle_local_net = net;
-
-				*net2p = net2->next;
-				free(net2);
-				break;
-			}
-		}
+		if (!gfarm_hostspec_match(net->network, NULL, addr))
+			continue;
 		*netp = net;
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -467,9 +395,15 @@ search_idle_network_list_add(struct sockaddr *addr,
 	GFARM_MALLOC(net);
 	if (net == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	net->min = min;
-	net->max = max;
-	net->flags = 0;
+	e = gfarm_addr_network_get(addr, &net->network);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(net);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "search_idle_network_list_add: no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	/* XXX - may assume IPv4 class C network */
+	net->flags = NET_FLAG_NETMASK_KNOWN; 
 	net->candidate_list = NULL;
 	net->candidate_last = &net->candidate_list;
 	net->ongoing = 0;
@@ -1652,7 +1586,6 @@ gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
 {
 	gfarm_error_t e;
 	struct sockaddr addr;
-	int widened;
 
 	/* XXX it's desirable to use struct sockaddr in the scheduling cache */
 
@@ -1665,11 +1598,8 @@ gfm_host_is_in_local_net(struct gfm_connection *gfm_server, const char *host)
 	    search_idle_network_list_init(gfm_server) != GFARM_ERR_NO_ERROR)
 		return (0);
 
-	return (gfarm_addr_is_same_net(&addr,
-	    &search_idle_local_net->min,
-	    &search_idle_local_net->max,
-	    (search_idle_local_net->flags & NET_FLAG_NETMASK_KNOWN) == 0,
-	    &widened));
+	return (gfarm_hostspec_match(search_idle_local_net->network,
+	    NULL, &addr));
 }
 
 /*
@@ -1679,29 +1609,21 @@ void
 gfarm_schedule_network_cache_dump(void)
 {
 	struct search_idle_network *n;
-	unsigned char *ip_min, *ip_max;
+	char addr[GFARM_HOSTSPEC_STRLEN];
 
 	for (n = search_idle_network_list; n != NULL; n = n->next) {
-		ip_min = (unsigned char *)
-		    &((struct sockaddr_in *)&n->min)->sin_addr.s_addr;
-		ip_max = (unsigned char *)
-		    &((struct sockaddr_in *)&n->max)->sin_addr.s_addr;
 		/*
 		 * the reason why we don't use inet_ntoa() here is
 		 * because inet_ntoa() uses static work area, so it cannot be
 		 * called for two instances (ip_min and ip_max) at once.
 		 */
+		gfarm_hostspec_to_string(n->network, addr, sizeof addr);
 		if (n->flags & NET_FLAG_RTT_AVAIL)
 			gflog_info(GFARM_MSG_1000174,
-			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT %d usec",
-			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
-			    ip_max[0], ip_max[1], ip_max[2], ip_max[3],
-			    n->rtt_usec);
+			    "%s: RTT %d usec", addr, n->rtt_usec);
 		else
 			gflog_info(GFARM_MSG_1000175,
-			    "%d.%d.%d.%d - %d.%d.%d.%d: RTT unavailable",
-			    ip_min[0], ip_min[1], ip_min[2], ip_min[3],
-			    ip_max[0], ip_max[1], ip_max[2], ip_max[3]);
+			    "%s: RTT unavailable", addr);
 	}
 }
 

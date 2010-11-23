@@ -827,6 +827,49 @@ parse_address_use_arguments(char *p, char **op)
 #endif
 
 static gfarm_error_t
+parse_known_network_arguments(char *p, char **op)
+{
+	gfarm_error_t e;
+	char *tmp, *address;
+	struct gfarm_hostspec *hostspecp;
+
+	/* assert(strcmp(*op, "known_network") == 0); */
+
+	e = gfarm_strtoken(&p, &address);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (address == NULL)
+		return (GFARM_ERRMSG_MISSING_ADDRESS_ARGUMENT);
+	e = gfarm_strtoken(&p, &tmp);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (tmp != NULL)
+		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+
+	e = gfarm_hostspec_parse(address, &hostspecp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * we don't return `host' to *op here,
+		 * because it may be too long.
+		 */
+		*op = "1st(address) argument";
+		return (e);
+	}
+
+	e = gfarm_known_network_list_add(hostspecp);
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * we don't return `option' to *op here,
+		 * because it may be too long.
+		 */
+		*op = "1st(address) argument";
+		gfarm_hostspec_free(hostspecp);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_local_user_map(char *p, char **op)
 {
 	gfarm_error_t e;
@@ -1206,6 +1249,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "address_use") == 0) {
 		e = parse_address_use_arguments(p, &o);
 #endif
+	} else if (strcmp(s, o = "known_network") == 0) {
+		e = parse_known_network_arguments(p, &o);
 	} else if (strcmp(s, o = "local_user_map") == 0) {
 		e = parse_local_user_map(p, &o);
 	} else if (strcmp(s, o = "local_group_map") == 0) {
