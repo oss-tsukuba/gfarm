@@ -749,24 +749,69 @@ gfarm_addr_is_same_net(struct sockaddr *addr,
 	return (0);
 }
 
-gfarm_error_t
-gfarm_addr_range_get(struct sockaddr *addr,
-	struct sockaddr *min, struct sockaddr *max)
-{
-	gfarm_uint32_t addr_in, addr_net;
+struct known_network {
+	struct known_network *next;
+	struct gfarm_hostspec *network;
+};
 
+struct known_network *known_network_list = NULL;
+struct known_network **known_network_list_last = &known_network_list;
+
+void
+gfarm_known_network_dump(void)
+{
+	char network[GFARM_HOSTSPEC_STRLEN];
+	struct known_network *n;
+
+	for (n = known_network_list; n != NULL; n = n->next) {
+		gfarm_hostspec_to_string(n->network, network, sizeof network);
+		gflog_info(GFARM_MSG_UNFIXED, "%s", network);
+	}
+}
+
+gfarm_error_t
+gfarm_known_network_list_add(struct gfarm_hostspec *network)
+{
+	struct known_network *known_network = malloc(sizeof(*known_network));
+
+	if (known_network == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	known_network->network = network;
+	known_network->next = NULL;
+	*known_network_list_last = known_network;
+	known_network_list_last = &known_network->next;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_addr_network_get(struct sockaddr *addr,
+	struct gfarm_hostspec **networkp)
+{
+	gfarm_uint32_t addr_in;
+	struct known_network *n;
+	struct gfarm_hostspec *network;
+	gfarm_uint32_t mask;
+	gfarm_error_t e;
+
+	/* search in the known network list */
+	for (n = known_network_list; n != NULL; n = n->next) {
+		if (gfarm_hostspec_match(n->network, NULL, addr)) {
+			if (networkp != NULL)
+				*networkp = n->network;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	/* XXX - assume IPv4 class C network */
 	assert(addr->sa_family == AF_INET);
 	addr_in = ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr);
-	/* XXX - get IPv4 C class part */
-	addr_net = addr_in & 0xffffff00;
-
-	/* XXX - minimum & maximum address in the IPv4 C class net  */
-	memset(min, 0, sizeof(*min));
-	min->sa_family = AF_INET;
-	((struct sockaddr_in *)min)->sin_addr.s_addr = htonl(addr_net);
-
-	memset(max, 0, sizeof(*max));
-	max->sa_family = AF_INET;
-	((struct sockaddr_in *)max)->sin_addr.s_addr = htonl(addr_net | 0xff);
-	return (GFARM_ERR_NO_ERROR);
+	mask = 0xffffff00;
+	e = gfarm_hostspec_af_inet4_new(htonl(addr_in & mask), htonl(mask),
+	    &network);
+	if (e == GFARM_ERR_NO_ERROR) {
+		e = gfarm_known_network_list_add(network);
+		if (e == GFARM_ERR_NO_ERROR)
+			if (networkp != NULL)
+				*networkp = network;
+	}
+	return (e);
 }

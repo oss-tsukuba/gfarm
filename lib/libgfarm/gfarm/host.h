@@ -1,5 +1,6 @@
 struct gfm_connection;
 struct gfarm_host_info;
+struct gfarm_hostspec;
 
 gfarm_error_t gfm_host_info_get_by_name_alias(
 	struct gfm_connection *, const char *, struct gfarm_host_info *);
@@ -27,8 +28,6 @@ gfarm_error_t gfarm_get_ip_addresses(int *, struct in_addr **);
 struct sockaddr;
 
 #if 0 /* XXX for now */
-struct gfarm_hostspec;
-
 gfarm_error_t gfarm_host_address_use(struct gfarm_hostspec *);
 #endif /* for now */
 
@@ -36,11 +35,9 @@ gfarm_error_t gfm_host_info_address_get(struct gfm_connection *,
 	const char *, int,
 	struct gfarm_host_info *, struct sockaddr *, char **);
 
-struct sockaddr;
 gfarm_error_t gfm_host_address_get(struct gfm_connection *, const char *,
 	int, struct sockaddr *, char **);
 
-int gfarm_addr_is_same_net(struct sockaddr *,
-	struct sockaddr *, struct sockaddr *, int, int *);
-gfarm_error_t gfarm_addr_range_get(struct sockaddr *,
-	struct sockaddr *, struct sockaddr *);
+gfarm_error_t gfarm_known_network_list_add(struct gfarm_hostspec *);
+gfarm_error_t gfarm_addr_network_get(struct sockaddr *,
+	struct gfarm_hostspec **);
