@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "23 June 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "24 November 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -520,6 +520,19 @@ tcp_nodelay。setsockopt(2)システムコールで、TCP_NODELAY
 	sockopt rcvbuf=1048576 LISTENER
 .fi
 .TP
+\fBknown_network \fIホスト指定\fB\fR
+ファイルシステムノードのネットワークを指定します。
+本ネットワークは、
+ファイルシステムノード選択時のグルーピングに利用されます。
+この文で指定したアドレスに適合しないIPアドレスの場合、
+IPv4のクラスCネットワークが仮定されます。
+
+例:
+
+.nf
+	known_network 192.168.0.0/24
+.fi
+.TP
 \fBadmin_user \fIユーザ名\fB\fR
 gfmd.conf内のこの文で指定されたユーザが、
 デフォルトの特権ユーザとなります。
@@ -759,6 +772,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<postgresql_conninfo_statement> |
 		\~\~<auth_statement> |
 		\~\~<sockopt_statement> |
+		\~\~<known_network_statement> |
 		\~\~<admin_user_statement> |
 		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
@@ -819,6 +833,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"sockopt" <socket_option>[=<number>] [""LISTENER" | <hostspec>]
 	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
+	<known_network_statement> ::= "known_network" <hostspec>
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
 	<local_user_map_statement> ::= "local_user_map" <pathname>

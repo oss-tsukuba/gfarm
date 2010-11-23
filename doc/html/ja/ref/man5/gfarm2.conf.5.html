@@ -1191,6 +1191,29 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>known_network</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト回年</I
+></TT
+></DT
+><DD
+><P
+>ファイルシステムノ〖ドのネットワ〖クを回年します。
+塑ネットワ〖クは、
+ファイルシステムノ〖ド联买箕のグル〖ピングに网脱されます。
+この矢で回年したアドレスに努圭しないIPアドレスの眷圭、
+IPv4のクラスCネットワ〖クが簿年されます。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	known_network&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >admin_user</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1598,6 +1621,7 @@ CLASS="LITERALLAYOUT"
 		牋&#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
 		牋&#60;auth_statement&#62;&nbsp;|<br>
 		牋&#60;sockopt_statement&#62;&nbsp;|<br>
+		牋&#60;known_network_statement&#62;&nbsp;|<br>
 		牋&#60;admin_user_statement&#62;&nbsp;|<br>
 		牋&#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
 		牋&#60;local_user_map_statement&#62;&nbsp;|<br>
@@ -1658,6 +1682,7 @@ CLASS="LITERALLAYOUT"
 		牋"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		牋"tcp_nodelay"<br>
+	&#60;known_network_statement&#62;&nbsp;::=&nbsp;"known_network"&nbsp;&#60;hostspec&#62;<br>
 	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
 	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>

@@ -1312,6 +1312,32 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>known_network</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>known_network</SPAN
+> statement specifies a network
+address for file system nodes.  It is used to group file system nodes
+at file systen node scheduling.
+File system nodes that are not specified in this directive are assumed
+to be in an IPv4 class C network.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	known_network&nbsp;192.168.0.0/24</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >admin_user</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1753,6 +1779,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
 		  &#60;auth_statement&#62;&nbsp;|<br>
 		  &#60;sockopt_statement&#62;&nbsp;|<br>
+		  &#60;known_network_statement&#62;&nbsp;|<br>
 		  &#60;admin_user_statement&#62;&nbsp;|<br>
 		  &#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
 		  &#60;local_user_map_statement&#62;&nbsp;|<br>
@@ -1813,6 +1840,7 @@ CLASS="LITERALLAYOUT"
 		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
 	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		  "tcp_nodelay"<br>
+	&#60;known_network_statement&#62;&nbsp;::=&nbsp;"known_network"&nbsp;&#60;hostspec&#62;<br>
 	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
 	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
 	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;pathname&#62;<br>
