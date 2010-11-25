@@ -331,8 +331,12 @@ gfarm_error_t gfs_stat_cached(const char *, struct gfs_stat *);
 gfarm_error_t gfs_stat_caching(const char *, struct gfs_stat *);
 gfarm_error_t gfs_lstat_cached(const char *, struct gfs_stat *);
 gfarm_error_t gfs_lstat_caching(const char *, struct gfs_stat *);
-
-gfarm_error_t gfs_opendir_caching(const char *, GFS_Dir *);
+gfarm_error_t gfs_getxattr_cached(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_getxattr_caching(const char *path, const char *name,
+	void *value, size_t *size);
 
 int gfarm_xattr_caching(const char *);
 gfarm_error_t gfarm_xattr_caching_pattern_add(const char *);
+
+gfarm_error_t gfs_opendir_caching(const char *, GFS_Dir *);
