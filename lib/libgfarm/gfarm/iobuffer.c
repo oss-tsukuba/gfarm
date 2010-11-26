@@ -75,6 +75,12 @@ gfarm_iobuffer_free(struct gfarm_iobuffer *b)
 	free(b);
 }
 
+int
+gfarm_iobuffer_get_size(struct gfarm_iobuffer *b)
+{
+	return (b->bufsize);
+}
+
 void
 gfarm_iobuffer_set_error(struct gfarm_iobuffer *b, int error)
 {

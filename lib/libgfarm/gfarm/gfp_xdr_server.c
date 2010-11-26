@@ -141,6 +141,7 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 
 	xid_and_type = (xid | XID_TYPE_REQUEST);
+#define ASYNC_REQUEST_HEADER_SIZE	(4+4)	/* size of "ii" */
 	e = gfp_xdr_send(server, "ii", xid_and_type, (gfarm_int32_t)size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid, diag);
@@ -151,12 +152,13 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 }
 
 /* this does gfp_xdr_flush() too, for freeing xid in an error case */
-gfarm_error_t
-gfp_xdr_vsend_async_request(struct gfp_xdr *server,
+static gfarm_error_t
+gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
 	gfarm_int32_t (*result_callback)(void *, void *, size_t),
 	void (*disconnect_callback)(void *, void *),
 	void *closure,
+	int nonblock,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
 	gfarm_error_t e;
@@ -174,6 +176,10 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	e = gfp_xdr_vsend_size_add(&size, &fmt, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (nonblock && (e = gfp_xdr_sendbuffer_check_size(server,
+	    size + ASYNC_REQUEST_HEADER_SIZE)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	e = gfp_xdr_send_async_request_header(server, async_server, size,
@@ -198,6 +204,32 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
+	gfp_xdr_async_peer_t async_server,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
+	gfarm_int32_t command, const char *format, va_list *app)
+{
+	return (gfp_xdr_vsend_async_request_internal(server,
+	    async_server, result_callback, disconnect_callback, closure, 1,
+	    command, format, app));
+}
+
+gfarm_error_t
+gfp_xdr_vsend_async_request(struct gfp_xdr *server,
+	gfp_xdr_async_peer_t async_server,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
+	gfarm_int32_t command, const char *format, va_list *app)
+{
+	return (gfp_xdr_vsend_async_request_internal(server,
+	    async_server, result_callback, disconnect_callback, closure, 0,
+	    command, format, app));
 }
 
 /*

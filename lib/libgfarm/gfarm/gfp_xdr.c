@@ -118,6 +118,17 @@ gfp_xdr_fd(struct gfp_xdr *conn)
 	return (conn->fd);
 }
 
+gfarm_error_t
+gfp_xdr_sendbuffer_check_size(struct gfp_xdr *conn, int size)
+{
+	if (size > gfarm_iobuffer_get_size(conn->sendbuffer))
+		return (GFARM_ERR_NO_BUFFER_SPACE_AVAILABLE);
+	else if (size > gfarm_iobuffer_avail_length(conn->sendbuffer))
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	else
+		return (GFARM_ERR_NO_ERROR);
+}
+
 
 gfarm_error_t
 gfp_xdr_export_credential(struct gfp_xdr *conn)

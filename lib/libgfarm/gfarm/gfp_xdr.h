@@ -24,6 +24,7 @@ struct gfp_xdr;
 	 (e) == GFARM_ERR_NETWORK_IS_UNREACHABLE || \
 	 (e) == GFARM_ERR_CONNECTION_ABORTED || \
 	 (e) == GFARM_ERR_CONNECTION_RESET_BY_PEER || \
+	 (e) == GFARM_ERR_NO_BUFFER_SPACE_AVAILABLE || \
 	 (e) == GFARM_ERR_SOCKET_IS_NOT_CONNECTED || \
 	 (e) == GFARM_ERR_OPERATION_TIMED_OUT || \
 	 (e) == GFARM_ERR_CONNECTION_REFUSED || \
@@ -35,6 +36,7 @@ gfarm_error_t gfp_xdr_free(struct gfp_xdr *);
 
 void *gfp_xdr_cookie(struct gfp_xdr *);
 int gfp_xdr_fd(struct gfp_xdr *);
+gfarm_error_t gfp_xdr_sendbuffer_check_size(struct gfp_xdr *, int);
 void gfp_xdr_set(struct gfp_xdr *,
 	struct gfp_iobuffer_ops *, void *, int);
 

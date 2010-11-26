@@ -55,6 +55,7 @@ struct gfarm_iobuffer;
 struct gfarm_iobuffer *gfarm_iobuffer_alloc(int);
 void gfarm_iobuffer_free(struct gfarm_iobuffer *);
 
+int gfarm_iobuffer_get_size(struct gfarm_iobuffer *);
 void gfarm_iobuffer_set_error(struct gfarm_iobuffer *, int);
 int gfarm_iobuffer_get_error(struct gfarm_iobuffer *);
 
