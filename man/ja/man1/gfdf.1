@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "02 September 2010" "Gfarm" ""
+.TH "GFDF" "1" "29 November 2010" "Gfarm" ""
 
 .SH NAME
 gfdf \- ディスク空き容量取得
 .SH SYNOPSIS
 
-\fBgfdf\fR [ \fB-a\fR ] [ \fB-n\fR ] [ \fB-P \fIパス名\fB\fR ] [ \fB-D \fIドメイン名\fB\fR ]
+\fBgfdf\fR [ \fB\fIオプション\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -22,6 +22,12 @@ Gfarmファイルシステム全体のディスク空き容量を表示します。
 .TP
 \fB-n\fR
 利用可能なファイルシステムノードのホスト名を表示します。
+.TP
+\fB-r\fR
+逆順に整列して出力します。
+.TP
+\fB-S\fR
+空き容量の順に整列して出力します。
 .TP
 \fB-P \fIパス名\fB\fR
 指定したパス名により特定のメタデータサーバを指定します．
