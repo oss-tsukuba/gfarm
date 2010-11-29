@@ -18,10 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfdf</command>
-    <arg choice='opt'>-a</arg>
-    <arg choice='opt'>-n</arg>
-    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>domainname</replaceable></arg>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -45,6 +42,20 @@ Gfarm file system.
 <term><option>-n</option></term>
 <listitem>
 <para>Displays hostnames of available Gfarm file system nodes.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>Sort output in the reverse order.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>Sort output in the increasing order of the available disk capacity.</para>
 </listitem>
 </varlistentry>
 
