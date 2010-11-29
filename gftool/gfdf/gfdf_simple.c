@@ -6,16 +6,23 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <string.h>
 #include <gfarm/gfarm.h>
 #include "gfm_client.h"
 #include "lookup.h"
 
 char *program_name = "gfdf";
 
+enum sort_order {
+	SO_NAME,
+	SO_SIZE
+} option_sort_order = SO_NAME;
+static int option_reverse_sort = 0;
+
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-a] [-n] [-P path] [-D domain]\n",
+	fprintf(stderr, "Usage: %s [-anrS] [-P path] [-D domain]\n",
 		program_name);
 	exit(1);
 }
@@ -44,6 +51,45 @@ display_statfs(const char *path, const char *dummy)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static int
+compare_hostname(const void *s1, const void *s2)
+{
+	const struct gfarm_host_sched_info *h1 = s1;
+	const struct gfarm_host_sched_info *h2 = s2;
+
+	return (strcoll(h1->host, h2->host));
+}
+
+static int
+compare_hostname_r(const void *s1, const void *s2)
+{
+	return (-compare_hostname(s1, s2));
+}
+
+static int
+compare_available_capacity(const void *s1, const void *s2)
+{
+	const struct gfarm_host_sched_info *h1 = s1;
+	const struct gfarm_host_sched_info *h2 = s2;
+	gfarm_uint64_t a1, a2;
+
+	a1 = h1->disk_avail;
+	a2 = h2->disk_avail;
+
+	if (a1 < a2)
+		return (-1);
+	else if (a1 > a2)
+		return (1);
+	else
+		return (0);
+}
+
+static int
+compare_available_capacity_r(const void *s1, const void *s2)
+{
+	return (-compare_available_capacity(s1, s2));
+}
+
 /* XXX FIXME: should traverse all mounted metadata servers */
 gfarm_error_t
 schedule_host_domain(const char *path, const char *domain,
@@ -51,6 +97,7 @@ schedule_host_domain(const char *path, const char *domain,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
+	int (*compare)(const void *, const void *);
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR)
@@ -59,6 +106,23 @@ schedule_host_domain(const char *path, const char *domain,
 	e = gfm_client_schedule_host_domain(gfm_server, domain,
 	    nhostsp, hostsp);
 	gfm_client_connection_free(gfm_server);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+#ifdef __GNUC__ /* workaround gcc warning: unused variable */
+	compare = NULL;
+#endif
+	switch (option_sort_order) {
+	case SO_NAME:
+		compare = !option_reverse_sort ?
+		    compare_hostname : compare_hostname_r;
+		break;
+	case SO_SIZE:
+		compare = !option_reverse_sort ?
+		    compare_available_capacity : compare_available_capacity_r;
+		break;
+	}
+	qsort(*hostsp, *nhostsp, sizeof(**hostsp), compare);
 	return (e);
 }
 
@@ -141,7 +205,7 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "anD:P:?")) != -1) {
+	while ((c = getopt(argc, argv, "anrD:P:S?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
@@ -149,11 +213,17 @@ main(int argc, char *argv[])
 		case 'n':
 			statfs = display_nodes;
 			break;
+		case 'r':
+			option_reverse_sort = 1;
+			break;
 		case 'D':
 			domain = optarg;
 			break;
 		case 'P':
 			path = optarg;
+			break;
+		case 'S':
+			option_sort_order = SO_SIZE;
 			break;
 		case '?':
 		default:

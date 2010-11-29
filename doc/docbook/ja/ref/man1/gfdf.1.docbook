@@ -18,10 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfdf</command>
-    <arg choice='opt'>-a</arg>
-    <arg choice='opt'>-n</arg>
-    <arg choice='opt'>-P <replaceable>パス名</replaceable></arg>
-    <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -44,6 +41,20 @@
 <term><option>-n</option></term>
 <listitem>
 <para>利用可能なファイルシステムノードのホスト名を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>逆順に整列して出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>空き容量の順に整列して出力します。</para>
 </listitem>
 </varlistentry>
 
