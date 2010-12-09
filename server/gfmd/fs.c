@@ -834,8 +834,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 	if (e == GFARM_ERR_NO_ERROR) {
 		free(st.st_user);
 		free(st.st_group);
-		for (j = 0; j < nxattrs; j++)
-			inode_xattr_list_free(xattrs, nxattrs);
+		inode_xattr_list_free(xattrs, nxattrs);
 	}
 	if (attrpatterns != NULL) {
 		for (i = 0; i < nattrpatterns; i++)
@@ -2101,10 +2100,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 		for (i = 0; i < n; i++) {
 			free(p[i].name);
 			gfs_stat_free(&p[i].st);
-			for (j = 0; j < p[i].nxattrs; j++) {
-				inode_xattr_list_free(
-				    p[i].xattrs, p[i].nxattrs);
-			}
+			inode_xattr_list_free(p[i].xattrs, p[i].nxattrs);
 		}
 		free(p);
 	}
