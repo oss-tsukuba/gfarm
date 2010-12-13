@@ -1053,10 +1053,8 @@ host_schedule_for_replication(struct inode *inode,
 	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
 	GFARM_CALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
 	if (hosts == NULL || candidates == NULL) {
-		if (hosts != NULL)
-			free(hosts);
-		if (candidates != NULL)
-			free(candidates);
+		free(hosts);
+		free(candidates);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
