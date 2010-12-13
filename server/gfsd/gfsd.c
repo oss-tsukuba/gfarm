@@ -1074,12 +1074,19 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 					    (long long)ino, (long long)gen);
 					continue;
 				}
-				if (e == GFARM_ERR_NO_ERROR)
+				if (e == GFARM_ERR_NO_ERROR) {
 					gflog_info(GFARM_MSG_1000480,
 					    "invalid metadata deleted: "
 					    "ino %lld, gen %lld",
 					    (long long)ino, (long long)gen);
-				else
+					/*
+					 * the physical file is lost.
+					 * return GFARM_ERR_FILE_MIGRATED to
+					 * try another available file.
+					 */
+					e = GFARM_ERR_FILE_MIGRATED;
+					break;
+				} else
 					gflog_warning(GFARM_MSG_1000481,
 					    "fails to delete invalid metadata"
 					    ": ino %lld, gen %lld: %s",
