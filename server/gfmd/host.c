@@ -1042,6 +1042,7 @@ host_schedule_for_replication(struct inode *inode,
 	unsigned char *candidates;
 	gfarm_off_t size;
 	int i, j;
+	gfarm_error_t e;
 
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
@@ -1052,8 +1053,10 @@ host_schedule_for_replication(struct inode *inode,
 	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
 	GFARM_CALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
 	if (hosts == NULL || candidates == NULL) {
-		free(hosts);
-		free(candidates);
+		if (hosts != NULL)
+			free(hosts);
+		if (candidates != NULL)
+			free(candidates);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -1103,17 +1106,21 @@ host_schedule_for_replication(struct inode *inode,
 			hosts[j++] = hosts[i];
 	}
 	nhosts = j;
+	free(candidates);
 
 	if (nhosts <= n_shortage) {
 		j = 0;
 		for (i = 0; i < nhosts; i++)
 			new_targets[j++] = hosts[i];
 		*n_new_targetsp = nhosts;
+		free(hosts);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	return (select_hosts(inode, hosts, nhosts,
-	    n_shortage, new_targets, n_new_targetsp));
+	e = select_hosts(inode, hosts, nhosts,
+	    n_shortage, new_targets, n_new_targetsp);
+	free(hosts);
+	return (e);
 }
 
 #ifdef NOT_USED

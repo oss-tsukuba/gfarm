@@ -648,8 +648,10 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 	GFARM_MALLOC_ARRAY(existings, n_existings);
 	GFARM_MALLOC_ARRAY(new_targets, n_shortage);
 	if (existings == NULL || new_targets == NULL) {
-		free(existings);
-		free(new_targets);
+		if (existings != NULL)
+			free(existings);
+		if (new_targets != NULL)
+			free(new_targets);
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "no memory to schedule %d+%d hosts",
 		    n_existings, n_shortage);
@@ -3701,8 +3703,10 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 		;
 	if (isdigit(*(unsigned char *)s)) {
 		*desired_numberp = atoi(s);
+		free(value);
 		return (1);
 	}
+	free(value);
 	return (0);
 }
 
