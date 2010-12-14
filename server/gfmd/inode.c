@@ -666,6 +666,12 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 		return;
 	}
 
+	if (n_new_targets < n_shortage)
+		gflog_warning(GFARM_MSG_UNFIXED, "inum %lld gen %lld: "
+		    "fewer replicas (%d out of %d) will be created",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    n_new_targets, n_shortage);
 	for (i = 0; i < n_new_targets; i++) {
 		target = new_targets[i];
 		e = file_replicating_new(inode, target, NULL, &fr);
