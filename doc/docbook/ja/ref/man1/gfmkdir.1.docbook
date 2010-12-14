@@ -18,6 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmkdir</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>gfarmパス</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -31,6 +32,13 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>指定したディレクトリが存在してもエラーにしません。
+必要に応じて親ディレクトリを作成します。</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>

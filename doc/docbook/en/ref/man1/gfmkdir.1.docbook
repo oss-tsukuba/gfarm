@@ -18,6 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfmkdir</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -32,6 +33,13 @@ the arguments. The arguments must be a pathname in Gfarm file system.</para>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>Even if the specified directory exists, do not return error.
+Create parent directories if needed.</para>
+</listitem>
+</varlistentry>
 <varlistentry>
 <term><option>-?</option></term>
 <listitem>
