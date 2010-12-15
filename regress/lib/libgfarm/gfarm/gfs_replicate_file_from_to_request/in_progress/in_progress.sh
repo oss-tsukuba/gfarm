@@ -4,7 +4,7 @@
 
 trap 'gfrm $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 
-gfhost >$localtmp
+gfsched -w >$localtmp
 
 if [ `sed 2q $localtmp | wc -l` -ne 2 ]; then
     rm -f $localtmp
