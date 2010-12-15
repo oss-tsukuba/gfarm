@@ -268,7 +268,6 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		e = inode_lookup_by_name(base, name, process, op, &inode);
 		created = 0;
 	}
-gflog_info(GFARM_MSG_UNFIXED, "open_common(%s, 0x%x) from_client:%d to:%d c:%d - %s", name, (int)flag, (int)from_client, (int)to_create, (int)created, gfarm_error_string(e));
 	if (e == GFARM_ERR_NO_ERROR)
 		e = process_open_file(process, inode, flag, created, peer,
 		    spool_host, &fd);
