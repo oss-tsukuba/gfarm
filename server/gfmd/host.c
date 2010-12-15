@@ -1215,8 +1215,8 @@ host_schedule_all_except(int n_excludings, struct host **excludings,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	host_unique_sort(n_excludings, excludings);
-	host_unique_sort(nhosts, hosts);
+	n_excludings = host_unique_sort(n_excludings, excludings);
+	nhosts = host_unique_sort(nhosts, hosts);
 
 	e = host_exclude(&nhosts, hosts, n_excludings, excludings,
 	    filter, closure);
