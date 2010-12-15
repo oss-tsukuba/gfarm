@@ -268,6 +268,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		e = inode_lookup_by_name(base, name, process, op, &inode);
 		created = 0;
 	}
+gflog_info(GFARM_MSG_UNFIXED, "open_common(%s, 0x%x) from_client:%d to:%d c:%d - %s", name, (int)flag, (int)from_client, (int)to_create, (int)created, gfarm_error_string(e));
 	if (e == GFARM_ERR_NO_ERROR)
 		e = process_open_file(process, inode, flag, created, peer,
 		    spool_host, &fd);
@@ -1175,12 +1176,11 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e_save;
 	char *domain;
-	gfarm_int32_t fd;
-	struct host *spool_host = NULL;
+	gfarm_int32_t i, fd, nhosts;
+	struct host **hosts, *spool_host = NULL;
 	struct process *process;
-	struct inode *inode;
 	static const char diag[] = "GFM_PROTO_SCHEDULE_FILE";
 
 	e = gfm_server_get_request(peer, diag, "s", &domain);
@@ -1213,30 +1213,24 @@ gfm_server_schedule_file(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001860, "peer_fdpair_get_current() "
 			"failed: %s", gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001861, "process_get_file_inode() "
-			"failed: %s", gfarm_error_string(e));
-	} else if (!inode_is_file(inode)) {
-		gflog_debug(GFARM_MSG_1001862,
-			"inode is not file");
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	} else {
-		/* XXX FIXME too long giant lock */
-		e = inode_schedule_file_reply(inode, peer,
-		    process_get_file_writable(process, peer, fd)
-		    == GFARM_ERR_NO_ERROR,
-		    inode_is_creating_file(inode), diag);
-
-		free(domain);
-		giant_unlock();
-		return (e);
+		e = process_schedule_file(process, peer, fd, &nhosts, &hosts);
 	}
 
-	assert(e != GFARM_ERR_NO_ERROR);
 	free(domain);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (gfm_server_put_reply(peer, diag, e, ""));
+	
+	e_save = gfm_server_put_reply(peer, diag, e, "i", nhosts);
+	for (i = 0; i < nhosts; i++) {
+		e = host_schedule_reply(hosts[i], peer, diag);
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
+	}
+	free(hosts);
+	return (e_save);
 }
 
 gfarm_error_t

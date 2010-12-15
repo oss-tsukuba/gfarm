@@ -644,22 +644,26 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 	struct file_copy *copy;
 	int n_new_targets, i = 0;
 	struct file_replicating *fr;
+	gfarm_off_t necessary_space;
 
-	GFARM_MALLOC_ARRAY(existings, n_existings);
+	GFARM_MALLOC_ARRAY(existings, n_existings+1); /*+1 is for spool_host*/
 	GFARM_MALLOC_ARRAY(new_targets, n_shortage);
 	if (existings == NULL || new_targets == NULL) {
 		free(existings);
 		free(new_targets);
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "no memory to schedule %d+%d hosts",
-		    n_existings, n_shortage);
+		    n_existings + 1, n_shortage);
 		return;
 	}
-	existings[i++] = spool_host;
+	existings[i++] = spool_host; /* this requires +1 */
 	for (copy = existing_targets; copy != NULL; copy = copy->host_next)
 		existings[i++] = copy->host;
-	e = host_schedule_for_replication(inode, existings, n_existings,
-	    n_shortage, new_targets, &n_new_targets);
+
+	necessary_space = inode_get_size(inode);
+	e = host_schedule_except(n_existings, existings,
+	    host_is_disk_available_filter, &necessary_space,
+	    n_shortage, &n_new_targets, new_targets);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(existings);
 		free(new_targets);
@@ -1036,6 +1040,72 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 {
 	return (inode_get_ncopy_common(inode, 1, 0));
 }
+
+static gfarm_error_t
+inode_alloc_file_copy_hosts(struct inode *inode,
+	int (*filter)(struct file_copy *, void *), void *closure,
+	gfarm_int32_t *np, struct host ***hostsp)
+{
+	struct file_copy *copy;
+	int i, nhosts;
+	struct host **hosts;
+
+	assert(inode_is_file(inode));
+
+	nhosts = 0;
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if ((*filter)(copy, closure))
+			nhosts++;
+	}
+	if (nhosts == 0) {
+		*np = 0;
+		*hostsp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	/*
+	 * need to remember the hosts, because results of 
+	 * (*filter)() (i.e. host_is_up()/host_is_disk_available(), ...)
+	 * may change even while the giant lock is held.
+	 */
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
+	if (hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	i = 0;
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if (i >= nhosts) /* the results of (*filter)() may change */
+			break;
+		if ((*filter)(copy, closure))
+			hosts[i++] = copy->host;
+	}
+	*np = i; /* NOTE: this may be 0 */
+	*hostsp = hosts;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static int
+file_copy_is_valid_and_up(struct file_copy *copy, void *closure)
+{
+	return (copy->valid && host_is_up(copy->host));
+}
+
+static int
+file_copy_is_valid_and_disk_available(struct file_copy *copy, void *closure)
+{
+	gfarm_off_t *sizep = closure;
+
+	return (copy->valid && host_is_disk_available(copy->host, *sizep));
+}
+
+static int
+file_copy_is_invalid(struct file_copy *copy, void *closure)
+{
+	return (!copy->valid);
+}
+
 
 gfarm_mode_t
 inode_get_mode(struct inode *inode)
@@ -2323,14 +2393,15 @@ inode_writing_spool_host(struct inode *inode)
 }
 
 int
-inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
-	int to_create)
+inode_schedule_confirm_for_write(struct file_opening *opening,
+	struct host *spool_host, int *to_createp)
 {
-	struct inode_open_state *ios = inode->u.c.state;
+	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
+	struct file_copy *copy;
 	int already_opened, host_match;
 
-	if (!inode_is_file(inode))
+	if (!inode_is_file(opening->inode))
 		gflog_fatal(GFARM_MSG_1000331,
 		    "inode_schedule_confirm_for_write: not a file");
 	if (ios != NULL &&
@@ -2340,7 +2411,8 @@ inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
 			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
 			    fo->u.f.spool_host != NULL)
 				return (fo->u.f.spool_host == spool_host);
-			if (fo->u.f.spool_host != NULL) {
+			if (fo->u.f.spool_host != NULL &&
+			    host_is_disk_available(fo->u.f.spool_host, 0)) {
 				already_opened = 1;
 				if (fo->u.f.spool_host == spool_host)
 					host_match = 1;
@@ -2350,83 +2422,172 @@ inode_schedule_confirm_for_write(struct inode *inode, struct host *spool_host,
 			return (host_match);
 	}
 	/* not opened */
-	if (!inode_is_creating_file(inode))
-		return (inode_has_replica(inode, spool_host));
-	return (to_create);
+	if (inode_is_creating_file(opening->inode)) {
+		*to_createp = 1;
+		return (1);
+	}
+	copy = inode_get_file_copy(opening->inode, spool_host);
+	if (copy != NULL) {
+		/*
+		 * if a replication is ongoing, don't allow to create new one,
+		 * because it incurs a race.
+		 */
+		return (copy->valid); /* i.e. inode_has_replica() */
+	}
+	if ((opening->flag & GFARM_FILE_TRUNC) != 0 ||
+	    inode_get_size(opening->inode) == 0) {
+		/*
+		 * http://sourceforge.net/apps/trac/gfarm/ticket/68
+		 * (measures against disk full for a file overwriting case)
+		 */
+		*to_createp = 1;
+		return (1);
+	}
+	return (0);
 }
 
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
-inode_schedule_file_reply_default(struct inode *inode, struct peer *peer,
-	int writable, int creating, const char *diag)
+inode_schedule_file_default(struct file_opening *opening,
+	struct peer *peer, gfarm_int32_t *np, struct host ***hostsp)
 {
-	gfarm_error_t e, e_save;
-	struct inode_open_state *ios = inode->u.c.state;
+	gfarm_error_t e;
+	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
-	struct file_copy *copy;
-	int n;
+	int n, nhosts;
+	struct host **hosts;
+	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
 	/* XXX FIXME too long giant lock */
 
-	if (!inode_is_file(inode))
-		gflog_fatal(GFARM_MSG_1000332, "%s: not a file", diag);
+	assert(inode_is_file(opening->inode));
 
-	if (creating)
-		return (host_schedule_reply_one_or_all(peer, diag));
-	if (writable && ios != NULL &&
+	if (inode_is_creating_file(opening->inode)) {
+		if (!host_schedule_one_except(peer, 0, NULL,
+		    host_is_disk_available_filter, &necessary_space,
+		    np, hostsp, &e))
+			e = host_schedule_all_except(0, NULL,
+			    host_is_disk_available_filter, &necessary_space,
+			    np, hostsp);
+		return (e);
+	}
+
+	if ((accmode_to_op(opening->flag) & GFS_W_OK) != 0 && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
+
+		/* writing mode, try to choose already opened replicas */
+
 		n = 0;
 		for (; fo != &ios->openings; fo = fo->opening_next) {
 			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
 			    fo->u.f.spool_host != NULL) {
-				e_save = host_schedule_reply_n(peer, 1, diag);
-				e = host_schedule_reply(fo->u.f.spool_host,
-				    peer, diag);
-				return (e_save!=GFARM_ERR_NO_ERROR ? e_save:e);
+				/*
+				 * already opened for writing. 
+				 * only that replica is allowed in this case.
+				 */
+				GFARM_MALLOC_ARRAY(hosts, 1);
+				if (hosts == NULL)
+					return (GFARM_ERR_NO_MEMORY);
+				hosts[0] = fo->u.f.spool_host;
+				*np = 1;
+				*hostsp = hosts;
+				return (GFARM_ERR_NO_ERROR);
 			}
 			if (fo->u.f.spool_host != NULL)
 				n++;
 		}
 		if (n > 0) {
-			e_save = host_schedule_reply_n(peer, n, diag);
-			for (fo = ios->openings.opening_next;
-			     fo != &ios->openings; fo = fo->opening_next) {
-				if (fo->u.f.spool_host != NULL) {
-					e = host_schedule_reply(
-					    fo->u.f.spool_host, peer, diag);
-					if (e_save == GFARM_ERR_NO_ERROR)
-						e_save = e;
-				}
-			}
-			return (e_save);
-		}
-	}
-	/* read access, or write access && no process is opening the file */
+			/*
+			 * already opened for reading.
+			 * try to return the opened replicas in this case,
+			 * to give a chance to a reader to see the changes
+			 * made by this writer.
+			 */
 
-	if (inode_is_creating_file(inode))
-		gflog_fatal(GFARM_MSG_1000333, "%s: should be creating", diag);
-	n = 0;
-	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
-		if (copy->valid && host_is_up(copy->host))
-		    n++;
-	}
-	e_save = host_schedule_reply_n(peer, n, diag);
-	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
-		if (copy->valid && host_is_up(copy->host)) {
-			e = host_schedule_reply(copy->host, peer, diag);
-			if (e_save == GFARM_ERR_NO_ERROR)
-				e_save = e;
+			/*
+			 * need to remember the hosts, because results of
+			 * host_is_up()/host_is_disk_available() may change
+			 * even while the giant lock is held.
+			 */
+			GFARM_MALLOC_ARRAY(hosts, n);
+			if (hosts == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+
+			nhosts = 0;
+			for (fo = ios->openings.opening_next;
+			    fo != &ios->openings; fo = fo->opening_next) {
+				assert(nhosts < n);
+				if (fo->u.f.spool_host != NULL &&
+				    host_is_disk_available(
+				    fo->u.f.spool_host, 0))
+					hosts[nhosts++] = fo->u.f.spool_host;
+			}
+			if (nhosts > 0) {
+				/*
+				 * there may be duplicated entries in hosts[],
+				 * thus we call host_unique_sort() here.
+				 */
+				*np = host_unique_sort(nhosts, hosts);
+				*hostsp = hosts;
+				return (GFARM_ERR_NO_ERROR);
+			}
+			free(hosts);
+		}
+
+		/* all replicas are candidates */
+		e = inode_alloc_file_copy_hosts(opening->inode,
+		    file_copy_is_valid_and_disk_available, &necessary_space,
+		    &nhosts, &hosts);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		if (nhosts > 0) {
+			*np = nhosts;
+			*hostsp = hosts;
+			return (GFARM_ERR_NO_ERROR);
+		}
+		free(hosts);
+
+		if ((opening->flag & GFARM_FILE_TRUNC) != 0 ||
+		    inode_get_size(opening->inode) == 0) {
+			/*
+			 * If there is no other writer and the size of the file
+			 * is zero, it's ok to choose any host unless
+			 * a replication is ongoing on the host. 
+			 * cf. http://sourceforge.net/apps/trac/gfarm/ticket/68
+			 * (measures against disk full for a file overwriting)
+			 */
+
+			/* exclude hosts which are during a replication */
+			e = inode_alloc_file_copy_hosts(opening->inode,
+			    file_copy_is_invalid, NULL, &nhosts, &hosts);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+
+			if (!host_schedule_one_except(peer, nhosts, hosts,
+			    host_is_disk_available_filter, &necessary_space,
+			    np, hostsp, &e))
+				e = host_schedule_all_except(nhosts, hosts,
+				    host_is_disk_available_filter,
+				    &necessary_space, np, hostsp);
+			free(hosts);
+			return (e);
 		}
 	}
-	return (e_save);
+
+	/* all replicas are candidates */
+	e = inode_alloc_file_copy_hosts(opening->inode,
+	    file_copy_is_valid_and_up, NULL, &nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	*np = nhosts;  /* NOTE: this may be 0 */
+	*hostsp = hosts;
+	return(GFARM_ERR_NO_ERROR);
 }
 
 /* this interface is made as a hook for a private extension */
-gfarm_error_t (*inode_schedule_file_reply)(struct inode *, struct peer *,
-	int, int, const char *) =
-	inode_schedule_file_reply_default;
+gfarm_error_t (*inode_schedule_file)(struct file_opening *, struct peer *,
+	gfarm_int32_t *, struct host ***) = inode_schedule_file_default;
 
 static gfarm_error_t
 remove_file_copy(struct inode *inode, struct host *spool_host)
@@ -2864,7 +3025,11 @@ inode_replica_list_by_name(struct inode *inode,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		if (copy->valid && host_is_up(copy->host)) {
+		/*
+		 * We have to check i < n, because the results of 
+		 * host_is_up() may change even while the giant lock is held.
+		 */
+		if (i < n && copy->valid && host_is_up(copy->host)) {
 			hosts[i] = strdup_log(host_name(copy->host), diag);
 			if (hosts[i] == NULL) {
 				gflog_debug(GFARM_MSG_1001774,
@@ -2882,8 +3047,7 @@ inode_replica_list_by_name(struct inode *inode,
 		while (--i >= 0)
 			free(hosts[i]);
 		free(hosts);
-	}
-	else {
+	} else {
 		*np = i;
 		*hostsp = hosts;
 	}
@@ -2940,7 +3104,12 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		if ((valid_only ? copy->valid : 1) &&
+		/*
+		 * We have to check i < n, because the results of 
+		 * host_is_up() may change even while the giant lock is held.
+		 */
+		if (i < n &&
+		    (valid_only ? copy->valid : 1) &&
 		    (up_only ? host_is_up(copy->host) : 1)) {
 			hosts[i] = strdup_log(host_name(copy->host), diag);
 			gens[i] = latest_gen;

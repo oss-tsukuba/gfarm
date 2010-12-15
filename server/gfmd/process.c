@@ -668,6 +668,29 @@ process_open_file(struct process *process, struct inode *file,
 }
 
 gfarm_error_t
+process_schedule_file(struct process *process,
+	struct peer *peer, int fd, gfarm_int32_t *np, struct host ***hostsp)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001861,
+		    "process_get_file_opening() failed: %s",
+		    gfarm_error_string(e));
+	} else if (!inode_is_file(fo->inode)) {
+		gflog_debug(GFARM_MSG_1001862,
+			"inode is not file");
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+	} else {
+		return (inode_schedule_file(fo, peer, np, hostsp));
+	}
+
+	assert(e != GFARM_ERR_NO_ERROR);
+	return (e);
+}
+
+gfarm_error_t
 process_reopen_file(struct process *process,
 	struct peer *peer, struct host *spool_host, int fd,
 	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *modep,
@@ -688,12 +711,14 @@ process_reopen_file(struct process *process,
 			"inode is not file");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	if (fo->u.f.spool_opener != NULL) { /* already REOPENed */
+	if (fo->u.f.spool_opener != NULL || fo->u.f.spool_host != NULL) {
+		/* already REOPENed */
 		gflog_debug(GFARM_MSG_1001629,
 			"file already reopened");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (inode_new_generation_is_pending(fo->inode)) {
+		/* wait until the generation is updated */
 		gflog_debug(GFARM_MSG_1002240,
 		    "process_reopen_file: new_generation pending %lld:%lld",
 		    (long long)inode_get_number(fo->inode),
@@ -701,10 +726,11 @@ process_reopen_file(struct process *process,
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
-	to_create = inode_is_creating_file(fo->inode);
+	to_create = 0;
 	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
 
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 || to_create) {
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 ||
+	    inode_is_creating_file(fo->inode)) {
 		if (is_creating_file_replica) {
 			e = inode_add_replica(fo->inode, spool_host, 0);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -713,9 +739,8 @@ process_reopen_file(struct process *process,
 					gfarm_error_string(e));
 				return (e);
 			}
-		}
-		else if (!inode_schedule_confirm_for_write(fo->inode,
-		    spool_host, to_create)) {
+		} else if (!inode_schedule_confirm_for_write(fo, spool_host,
+		    &to_create)) {
 			gflog_debug(GFARM_MSG_1001631,
 				"file migrated");
 			return (GFARM_ERR_FILE_MIGRATED);

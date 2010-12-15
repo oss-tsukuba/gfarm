@@ -470,7 +470,7 @@ host_is_up(struct host *h)
 int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
-	gfarm_off_t avail;
+	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
 	static const char diag[] = "host_get_disk_avail";
 
 	gfarm_mutex_lock(&h->back_channel_mutex, diag, "back_channel_mutex");
@@ -481,9 +481,9 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 		avail = 0;
 	gfarm_mutex_unlock(&h->back_channel_mutex, diag, "back_channel_mutex");
 
-	if (size <= 0)
-		size = gfarm_get_minimum_free_disk_space();
-	return (avail >= size);
+	if (minfree < size)
+		minfree = size;
+	return (avail >= minfree);
 }
 
 /*
@@ -1010,91 +1010,86 @@ host_order(const void *a, const void *b)
 		return (0);			
 }
 
-/*
- * just select randomly		XXX FIXME: needs to improve
- */
-static gfarm_error_t
-select_hosts(struct inode *inode,
-	struct host **hosts, int nhosts,
-	int n_shortage, struct host **new_targets, int *n_new_targetsp)
+static void
+host_sort(int nhosts, struct host **hosts)
 {
-	int i, j;
+	if (nhosts <= 0) /* 2nd parameter of qsort(3) is unsigned */
+		return;
 
-	assert(nhosts > n_shortage);
-	for (i = 0; i < n_shortage; i++) {
-		j = gfarm_random() % nhosts;
-		new_targets[i] = hosts[j];
-		hosts[j] = hosts[--nhosts];
-	}
-	*n_new_targetsp = n_shortage;
-	return (GFARM_ERR_NO_ERROR);
+	qsort(hosts, nhosts, sizeof(*hosts), host_order);
 }
 
-/* called from inode.c:schedule_replication() */
-gfarm_error_t
-host_schedule_for_replication(struct inode *inode,
-	struct host **existings, int n_existings,
-	int n_shortage, struct host **new_targets, int *n_new_targetsp)
+/*
+ * remove duplicated hosts.
+ * NOTE: this function assumes that hosts[] is sorted by host_order()
+ */
+static int
+host_unique(int nhosts, struct host **hosts)
 {
-	int nhosts, cmp;
-	struct gfarm_hash_iterator it;
-	struct host **hosts;
+	int l, r;
+
+	if (nhosts <= 0)
+		return (0);
+	l = 0;
+	r = l + 1;
+	for (;;) {
+		for (;;) {
+			if (r >= nhosts)
+				return (l + 1);
+			if (hosts[l] != hosts[r])
+				break;
+			r++;
+		}
+		++l;
+		hosts[l] = hosts[r]; /* maybe l == r here */
+		++r;
+	}
+}
+
+int
+host_unique_sort(int nhosts, struct host **hosts)
+{
+	host_sort(nhosts, hosts);
+	return (host_unique(nhosts, hosts));
+}
+
+/* NOTE: both hosts[] and excludings[] must be host_unique_sort()ed */
+static gfarm_error_t
+host_exclude(int *nhostsp, struct host **hosts,
+	int n_excludings, struct host **excludings,
+	int (*filter)(struct host *, void *), void *closure)
+{
+	int cmp, i, j, nhosts = *nhostsp;
 	unsigned char *candidates;
-	gfarm_off_t size;
-	int i, j;
-	gfarm_error_t e;
 
-	nhosts = 0;
-	FOR_ALL_HOSTS(&it) {
-		host_iterator_access(&it);
-		++nhosts;
-	}
-
-	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
-	GFARM_CALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
-	if (hosts == NULL || candidates == NULL) {
-		free(hosts);
-		free(candidates);
+	GFARM_MALLOC_ARRAY(candidates, nhosts > 0 ? nhosts : 1);
+	if (candidates == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	}
 
-	i = 0;
-	FOR_ALL_HOSTS(&it) {
-		if (i >= nhosts) /* always false due to giant_lock */
-			break;
-		hosts[i++] = host_iterator_access(&it);
-	}
-	nhosts = i;
+	memset(candidates, 1, nhosts);
 
-	qsort(existings, n_existings, sizeof(*existings), host_order);
-	qsort(hosts, nhosts, sizeof(*hosts), host_order);
-
-	/* exclude existings from hosts */
-	i = j = 0;
-	while (i < nhosts) {
-		if (j >= n_existings) {
-			candidates[i++] = 1;
-			continue;
-		}
-		cmp = host_order(&hosts[i], &existings[j]);
-		if (cmp < 0) {
-			candidates[i++] = 1;
-		} else if (cmp == 0) {
-			candidates[i++] = 0;
-		} else if (cmp > 0) {
-			j++;
+	if (n_excludings > 0) {
+		/* exclude excludings[] from hosts[] */
+		i = j = 0;
+		while (i < nhosts && j < n_excludings) {
+			cmp = host_order(&hosts[i], &excludings[j]);
+			if (cmp < 0) {
+				i++;
+			} else if (cmp == 0) {
+				candidates[i++] = 0;
+			} else if (cmp > 0) {
+				j++;
+			}
 		}
 	}
 
-	/* exclude dead hosts and diskfull hosts */
-	size = gfarm_get_minimum_free_disk_space();
-	if (inode_get_size(inode) > size)
-		size = inode_get_size(inode);
-	for (i = 0; i < nhosts; i++) {
-		if (!candidates[i])
-			continue;
-		if (!host_is_disk_available(hosts[i], size))
-			candidates[i] = 0;
+	if (filter != NULL) {
+		for (i = 0; i < nhosts; i++) {
+			if (!candidates[i])
+				continue;
+			if (!filter(hosts[i], closure))
+				candidates[i] = 0;
+		}
 	}
 
 	/* compaction */
@@ -1103,22 +1098,167 @@ host_schedule_for_replication(struct inode *inode,
 		if (candidates[i])
 			hosts[j++] = hosts[i];
 	}
-	nhosts = j;
 	free(candidates);
 
-	if (nhosts <= n_shortage) {
-		j = 0;
-		for (i = 0; i < nhosts; i++)
-			new_targets[j++] = hosts[i];
-		*n_new_targetsp = nhosts;
-		free(hosts);
-		return (GFARM_ERR_NO_ERROR);
+	*nhostsp = j;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+host_is_disk_available_filter(struct host *host, void *closure)
+{
+	gfarm_off_t *sizep = closure;
+
+	return (host_is_disk_available(host, *sizep));
+}
+
+static gfarm_error_t
+host_array_alloc(int *nhostsp, struct host ***hostsp)
+{
+	int i, nhosts;
+	struct host **hosts;
+	struct gfarm_hash_iterator it;
+
+	nhosts = 0;
+	FOR_ALL_HOSTS(&it) {
+		host_iterator_access(&it);
+		++nhosts;
 	}
 
-	e = select_hosts(inode, hosts, nhosts,
-	    n_shortage, new_targets, n_new_targetsp);
+	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
+	if (hosts == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	i = 0;
+	FOR_ALL_HOSTS(&it) {
+		if (i >= nhosts) /* always false due to giant_lock */
+			break;
+		hosts[i++] = host_iterator_access(&it);
+	}
+	*nhostsp = i;
+	*hostsp = hosts;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * just select randomly		XXX FIXME: needs to improve
+ */
+static void
+select_hosts(int nhosts, struct host **hosts,
+	int nresults, struct host **results)
+{
+	int i, j;
+
+	assert(nhosts > nresults);
+	for (i = 0; i < nresults; i++) {
+		j = gfarm_random() % nhosts;
+		results[i] = hosts[j];
+		hosts[j] = hosts[--nhosts];
+	}
+}
+
+/*
+ * this function sorts excludings[] as a side effect.
+ * but caller shouldn't depend the fact.
+ */
+gfarm_error_t
+host_schedule_except(int n_excludings, struct host **excludings,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_shortage, int *n_new_targetsp, struct host **new_targets)
+{
+	gfarm_error_t e;
+	struct host **hosts;
+	int nhosts;
+	int i;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	n_excludings = host_unique_sort(n_excludings, excludings);
+	nhosts = host_unique_sort(nhosts, hosts);
+
+	e = host_exclude(&nhosts, hosts, n_excludings, excludings,
+	    filter, closure);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(hosts);
+		return (e);
+	}
+
+	if (nhosts <= n_shortage) {
+		for (i = 0; i < nhosts; i++)
+			new_targets[i] = hosts[i];
+		*n_new_targetsp = nhosts;
+	} else {
+		select_hosts(nhosts, hosts, n_shortage, new_targets);
+		*n_new_targetsp = n_shortage;
+	}
+
 	free(hosts);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * this function sorts excludings[] as a side effect.
+ * but caller shouldn't depend on the side effect.
+ */
+gfarm_error_t
+host_schedule_all_except(int n_excludings, struct host **excludings,
+	int (*filter)(struct host *, void *), void *closure,
+	gfarm_int32_t *nhostsp, struct host ***hostsp)
+{
+	gfarm_error_t e;
+	int nhosts;
+	struct host **hosts;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	host_unique_sort(n_excludings, excludings);
+	host_unique_sort(nhosts, hosts);
+
+	e = host_exclude(&nhosts, hosts, n_excludings, excludings,
+	    filter, closure);
+	if (e == GFARM_ERR_NO_ERROR) {
+		*nhostsp = nhosts;
+		*hostsp = hosts;
+	} else {
+		free(hosts);
+	}
 	return (e);
+}
+
+/* give the top priority to the local host */
+int
+host_schedule_one_except(struct peer *peer,
+	int n_excludings, struct host **excludings,
+	int (*filter)(struct host *, void *), void *closure,
+	gfarm_int32_t *np, struct host ***hostsp, gfarm_error_t *errorp)
+{
+	struct host **hosts, *h = peer_get_host(peer);
+	int i;
+
+	if (h != NULL && (*filter)(h, closure)) {
+
+		/* is the host excluded? */
+		for (i = 0; i < n_excludings; i++) {
+			if (h == excludings[i])
+				return (0); /* not scheduled */
+		}
+
+		GFARM_MALLOC_ARRAY(hosts, 1);
+		if (hosts == NULL) {
+			*errorp = GFARM_ERR_NO_MEMORY;
+			return (1); /* scheduled, sort of */
+		}
+		hosts[0] = h;
+		*np = 1;
+		*hostsp = hosts;
+		*errorp = GFARM_ERR_NO_ERROR;
+		return (1); /* scheduled */
+	}
+	return (0); /* not scheduled */
 }
 
 #ifdef NOT_USED
@@ -1705,14 +1845,7 @@ gfm_server_host_info_remove(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-/* called from inode.c:inode_schedule_file_reply() */
-
-gfarm_error_t
-host_schedule_reply_n(struct peer *peer, gfarm_int32_t n, const char *diag)
-{
-	return (gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "i", n));
-}
-
+/* called from fs.c:gfm_server_schedule_file() as well */
 gfarm_error_t
 host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 {
@@ -1736,35 +1869,11 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 }
 
 gfarm_error_t
-host_schedule_reply_all(struct peer *peer, const char *diag,
-	int (*filter)(struct host *, void *), void *closure)
+host_schedule_reply_all(struct peer *peer,
+	int (*filter)(struct host *, void *), void *closure, const char *diag)
 {
 	return (gfm_server_host_generic_get(peer, host_schedule_reply,
 	    filter, closure, 1, diag));
-}
-
-static int
-up_filter(struct host *h, void *closure)
-{
-	return (host_is_up(h));
-}
-
-gfarm_error_t
-host_schedule_reply_one_or_all(struct peer *peer, const char *diag)
-{
-	gfarm_error_t e, e_save;
-	struct host *h = peer_get_host(peer);
-
-	/*
-	 * give the top priority to the local host if it has enough space
-	 * Note that disk_avail is reported in KiByte.
-	 */
-	if (h != NULL && host_is_disk_available(h, 0)) {
-		e_save = host_schedule_reply_n(peer, 1, diag);
-		e = host_schedule_reply(h, peer, diag);
-		return (e_save != GFARM_ERR_NO_ERROR ? e_save : e);
-	} else
-		return (host_schedule_reply_all(peer, diag, up_filter, NULL));
 }
 
 gfarm_error_t
@@ -1828,7 +1937,7 @@ gfm_server_schedule_host_domain(struct peer *peer, int from_client, int skip)
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
-	e = host_schedule_reply_all(peer, diag, up_and_domain_filter, domain);
+	e = host_schedule_reply_all(peer, up_and_domain_filter, domain, diag);
 	giant_unlock();
 	free(domain);
 

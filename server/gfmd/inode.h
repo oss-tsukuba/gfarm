@@ -117,12 +117,13 @@ gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
 struct host *inode_schedule_host_for_read(struct inode *, struct host *);
 struct host *inode_schedule_host_for_write(struct inode *, struct host *);
 struct host *inode_writing_spool_host(struct inode *);
-int inode_schedule_confirm_for_write(struct inode *, struct host *, int);
+int inode_schedule_confirm_for_write(struct file_opening *, struct host *,
+	int *);
 struct peer;
 
 /* this interface is made as a hook for a private extension */
-extern gfarm_error_t (*inode_schedule_file_reply)(struct inode *,
-	struct peer *, int, int, const char *);
+extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
+	struct peer *, gfarm_int32_t *, struct host ***);
 
 struct file_replicating;
 gfarm_error_t file_replicating_new(
@@ -173,5 +174,5 @@ void rootdir_dump(void);
 
 
 /* exported for a use from a private extension */
-gfarm_error_t inode_schedule_file_reply_default(struct inode *,
-	struct peer *, int, int, const char *);
+gfarm_error_t inode_schedule_file_default(struct file_opening *,
+	struct peer *, gfarm_int32_t *, struct host ***);

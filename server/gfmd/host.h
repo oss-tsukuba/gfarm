@@ -52,11 +52,23 @@ void host_peer_busy(struct host *);
 void host_peer_unbusy(struct host *);
 int host_check_busy(struct host *host, gfarm_int64_t);
 
+int host_unique_sort(int, struct host **);
+
 struct file_replicating;
 gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
-gfarm_error_t host_schedule_for_replication(struct inode *,
-	struct host **, int, int, struct host **, int *);
+
+gfarm_error_t host_is_disk_available_filter(struct host *, void *);
+gfarm_error_t host_schedule_except(
+	int, struct host **, int (*)(struct host *, void *), void *,
+	int, int *, struct host **);
+gfarm_error_t host_schedule_all_except(int, struct host **,
+	int (*)(struct host *, void *),	void *,
+	gfarm_int32_t *, struct host ***);
+int host_schedule_one_except(struct peer *, int, struct host **,
+	int (*)(struct host *, void *), void *,
+	gfarm_int32_t *, struct host ***, gfarm_error_t *);
+
 
 void host_status_reply_waiting(struct host *);
 int host_status_reply_is_waiting(struct host *);
@@ -70,11 +82,9 @@ gfarm_error_t gfm_server_host_info_set(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_remove(struct peer *, int, int);
 
-gfarm_error_t host_schedule_reply_n(struct peer *, gfarm_int32_t,const char *);
 gfarm_error_t host_schedule_reply(struct host *, struct peer *, const char *);
-gfarm_error_t host_schedule_reply_all(struct peer *, const char *,
-	int (*)(struct host *, void *), void *);
-gfarm_error_t host_schedule_reply_one_or_all(struct peer *, const char *);
+gfarm_error_t host_schedule_reply_all(struct peer *,
+	int (*)(struct host *, void *), void *, const char *);
 
 gfarm_error_t gfm_server_hostname_set(struct peer *, int, int);
 gfarm_error_t gfm_server_schedule_host_domain(struct peer *, int, int);

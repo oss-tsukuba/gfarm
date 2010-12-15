@@ -82,6 +82,8 @@ struct file_opening {
 
 gfarm_error_t process_open_file(struct process *, struct inode *,
 	gfarm_int32_t, int, struct peer *, struct host *, gfarm_int32_t *);
+gfarm_error_t process_schedule_file(struct process *,
+	struct peer *, int, gfarm_int32_t *, struct host ***);
 gfarm_error_t process_reopen_file(struct process *,
 	struct peer *, struct host *, int,
 	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *,
