@@ -6,7 +6,7 @@
 
 #include "gfs_pio.h"
 
-#define TEST_FILE_SIZE 10000000 /* 10MB */
+#define TEST_FILE_SIZE 100000000 /* 100MB */
 
 static void
 write_file(char *file, char *src_host)
