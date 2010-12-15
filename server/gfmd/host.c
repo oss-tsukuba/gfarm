@@ -1159,47 +1159,6 @@ select_hosts(int nhosts, struct host **hosts,
 
 /*
  * this function sorts excludings[] as a side effect.
- * but caller shouldn't depend the fact.
- */
-gfarm_error_t
-host_schedule_except(int n_excludings, struct host **excludings,
-	int (*filter)(struct host *, void *), void *closure,
-	int n_shortage, int *n_new_targetsp, struct host **new_targets)
-{
-	gfarm_error_t e;
-	struct host **hosts;
-	int nhosts;
-	int i;
-
-	e = host_array_alloc(&nhosts, &hosts);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	n_excludings = host_unique_sort(n_excludings, excludings);
-	nhosts = host_unique_sort(nhosts, hosts);
-
-	e = host_exclude(&nhosts, hosts, n_excludings, excludings,
-	    filter, closure);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(hosts);
-		return (e);
-	}
-
-	if (nhosts <= n_shortage) {
-		for (i = 0; i < nhosts; i++)
-			new_targets[i] = hosts[i];
-		*n_new_targetsp = nhosts;
-	} else {
-		select_hosts(nhosts, hosts, n_shortage, new_targets);
-		*n_new_targetsp = n_shortage;
-	}
-
-	free(hosts);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/*
- * this function sorts excludings[] as a side effect.
  * but caller shouldn't depend on the side effect.
  */
 gfarm_error_t
@@ -1227,6 +1186,38 @@ host_schedule_all_except(int n_excludings, struct host **excludings,
 		free(hosts);
 	}
 	return (e);
+}
+
+/*
+ * this function sorts excludings[] as a side effect.
+ * but caller shouldn't depend on the side effect.
+ */
+gfarm_error_t
+host_schedule_except(int n_excludings, struct host **excludings,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_shortage, int *n_new_targetsp, struct host **new_targets)
+{
+	gfarm_error_t e;
+	struct host **hosts;
+	int nhosts;
+	int i;
+
+	e = host_schedule_all_except(n_excludings, excludings,
+	    filter, closure, &nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (nhosts <= n_shortage) {
+		for (i = 0; i < nhosts; i++)
+			new_targets[i] = hosts[i];
+		*n_new_targetsp = nhosts;
+	} else {
+		select_hosts(nhosts, hosts, n_shortage, new_targets);
+		*n_new_targetsp = n_shortage;
+	}
+
+	free(hosts);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* give the top priority to the local host */
