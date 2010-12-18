@@ -982,6 +982,10 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 ことができます。
 デフォルトは128Mバイトです。
 </para>
+<para>
+この指定は gfmd.conf で有効です。
+有効にするためには gfmd を再起動する必要があります。
+</para>
 <para>例:</para>
 <literallayout>
 	minimum_free_disk_space 1G

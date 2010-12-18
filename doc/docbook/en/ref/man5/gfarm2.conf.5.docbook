@@ -1019,6 +1019,10 @@ The free space value may have a suffix like ``k'' (kilo bytes),
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.
 </para>
+<para>
+This directive is available in gfmd.conf.  After restarting the gfmd,
+it is effective.
+</para>
 <para>For example,</para>
 <literallayout>
 	minimum_free_disk_space 1G
