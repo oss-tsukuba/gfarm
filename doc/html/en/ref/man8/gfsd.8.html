@@ -55,14 +55,14 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with  root privileges.</P
+> is a filesystem daemon for the Gfarm filesystem, which runs on every filesystem node, usually, with root privileges.</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfsd</B
 > provides remote file operations with access control in the
 Gfarm filesystem as well as user authentication, file replication,
-fast invocation, and node resource status monitoring.</P
+and node resource status monitoring.</P
 ><P
 >It is possible for <B
 CLASS="COMMAND"
@@ -72,26 +72,8 @@ process, although only the user that executes the <B
 CLASS="COMMAND"
 >gfsd</B
 > can be authenticated.
-Other users cannot use it.</P
-><P
->In order to execute <B
-CLASS="COMMAND"
->gfsd</B
-> as a non-privileged user process, a
-configuration file for a user needs to be specified with the -f option.
-At the very least, the port number used by <B
-CLASS="COMMAND"
->gfsd</B
-> should be altered to a
-non-privileged port number using the spool_serverport statement in the
-configuration file, or the -p option.</P
-><P
->In this case, the altered port number of <B
-CLASS="COMMAND"
->gfsd</B
-> should be
-specified with the spool_serverport statement in ~/.gfarmrc or
-%%SYSCONFDIR%%/gfarm.conf on a client node.</P
+Other users cannot use it.
+For details, see SETUP.private.en document.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -119,7 +101,7 @@ CLASS="PARAMETER"
 ><P
 >Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
-Please refer gfarm.conf(5) for the priority levels which can be specified
+Please refer gfarm2.conf(5) for the priority levels which can be specified
 by this option.</P
 ></DD
 ><DT
@@ -139,16 +121,21 @@ CLASS="PARAMETER"
 ><DT
 ><CODE
 CLASS="OPTION"
->-U</CODE
+>-c</CODE
 ></DT
 ><DD
 ><P
->Makes gfsd not create a UNIX domain socket.
-This option is useful to invoke multiple instances of gfsd
-to provide multiple spool directories on the host.
-When new files are created by processes on the local host,
-the gfsd which doesn't have this -U option specified will be used
-to provide spool directory for the new files.</P
+>When starting up, gfsd investigates all files stored in a spool
+directory.  This option is useful when a hostname of a file system
+node is changed.   Valid file copies will be registered to the
+metadata server.</P
+><P
+>When the <CODE
+CLASS="OPTION"
+>-c</CODE
+> option is specified more than once,
+invalid file copies that are not registered in the metadata server are
+deleted.</P
 ></DD
 ><DT
 ><CODE
@@ -184,6 +171,20 @@ configuration file.</P
 ><DT
 ><CODE
 CLASS="OPTION"
+>-h</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>Specifies my own canonical host name.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
 >-l</CODE
 > <TT
 CLASS="PARAMETER"
@@ -198,21 +199,6 @@ requests.
 The default address is all IP addresses of the host.
 This option is useful to invoke multiple instances of gfsd
 to provide multiple spool directories on the host.</P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
->-p</CODE
-> <TT
-CLASS="PARAMETER"
-><I
->port-number</I
-></TT
-></DT
-><DD
-><P
->Specifies a port number for TCP and UDP used by gfsd.  By default, 600
-is used.</P
 ></DD
 ><DT
 ><CODE
@@ -281,7 +267,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfarm2.conf</TT
 ></DT
 ><DD
 ><P
@@ -302,7 +288,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
 ></DIV

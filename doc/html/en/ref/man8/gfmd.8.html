@@ -70,32 +70,21 @@ process, although only the user that executes the <B
 CLASS="COMMAND"
 >gfmd</B
 > can be authenticated.
-Other users cannot use it.</P
+Other users cannot use it.
+For details, see SETUP.private.en document</P
 ><P
->In order to execute <B
-CLASS="COMMAND"
->gfmd</B
-> as a non-privileged user process, a
-configuration file for a user needs to be specified by the -f option.
-At the very least, the port number used by <B
-CLASS="COMMAND"
->gfmd</B
-> should be altered to a
-non-privileged port number by the metadb_serverport statement in the
-configuration file or by the -p option.</P
-><P
->In this case, the altered port number for <B
-CLASS="COMMAND"
->gfmd</B
-> should be
-specified by the metadb_serverport statement in <TT
+>To access gfmd, 
+the hostname and the port number should be
+specified by the metadb_server_host and metadb_server_port statements,
+respectively, in <TT
 CLASS="FILENAME"
->~/.gfarmrc</TT
+>~/.gfarm2rc</TT
 >
 or in <TT
 CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm.conf</TT
-> on a client node.</P
+>%%SYSCONFDIR%%/gfarm2.conf</TT
+>
+on a client node.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -123,7 +112,7 @@ CLASS="PARAMETER"
 ><P
 >Specifies a log priority level.  The log output, which priority
 is higher or equal to this level, will be sent to syslog or standard error.
-Please refer gfarm.conf(5) for the priority levels which can be specified
+Please refer gfarm2.conf(5) for the priority levels which can be specified
 by this option.</P
 ></DD
 ><DT
@@ -183,10 +172,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->Specifies a port number to be used by gfmd.  By default, 601 is used.</P
-><P
->The default port requires root privileges, although privileged ports
-are not necessary to execute gfmd.</P
+>Specifies a port number to be used by gfmd.</P
 ></DD
 ><DT
 ><CODE
@@ -207,18 +193,12 @@ local0 is used.</P
 ><DT
 ><CODE
 CLASS="OPTION"
->-u</CODE
-> <TT
-CLASS="PARAMETER"
-><I
-></I
-></TT
+>-v</CODE
 ></DT
 ><DD
 ><P
->Specifies a syslog facility to report errors encountered by gfmd.
-By default,
-local0 is used.</P
+>Makes gfmd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.</P
 ></DD
 ><DT
 ><CODE
@@ -247,7 +227,7 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfmd.conf</TT
 ></DT
 ><DD
 ><P
@@ -268,7 +248,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
 ></DIV
