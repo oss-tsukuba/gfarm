@@ -52,23 +52,19 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->gfmd は、Gfarm ライブラリと協調して動作し、Gfarm 並列ファイルシステ
+>gfmdは、Gfarmライブラリと協調して動作し、Gfarmファイルシステ
 ムのメタデータへのアクセスを提供するデーモンプログラムです。
-gfmd は Gfarm のメタDBサーバー・ホスト上で、 
+gfmdはGfarmのメタDBサーバー・ホスト上で、
 あらかじめ立ち上げておく必要があります。</P
 ><P
->gfmd はユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
-の gfmd を利用することができません．</P
+>gfmdはユーザ権限で動作させることも可能ですが、この場合他のユーザはこ
+のgfmdを利用することができません。
+詳細はSETUP.private.jaを参照してください。</P
 ><P
->ユーザ権限で動作させるためには，ユーザ用の設定ファイルを -f オプション
-で指定して gfmd を立ち上げます．ユーザ権限による gfmd の起動には少なく
-とも gfmd が利用するポート番号を変更する必要があります．このためには設
-定ファイル内の metadb_serverport あるいは起動時の -p オプションを利用
-します．</P
-><P
->デフォルト以外のポート番号で立ち上がっている gfmd を利用するためには，
-クライアントノードの ~/.gfarmrc あるいは %%SYSCONFDIR%%/gfarm.conf の 
-metadb_serverport で利用したい gfmd のポート番号を指定する必要がありま
+>gfmdを利用するためには，
+クライアントノードの~/.gfarm2rcあるいは%%SYSCONFDIR%%/gfarm2.confの
+metadb_server_hostで利用したいgfmdのホスト名，
+metadb_server_portでポート番号を指定する必要がありま
 す．</P
 ></DIV
 ><DIV
@@ -96,7 +92,7 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >このオプションで指定したレベル以上の優先度のログを出力します。
-指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
+指定できる値はgfarm2.conf(5)のlog_levelの項を参照してください。</P
 ></DD
 ><DT
 ><CODE
@@ -110,7 +106,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->gfmd の process ID を、指定したファイルに記録します。</P
+>gfmdのprocess IDを、指定したファイルに記録します。</P
 ></DD
 ><DT
 ><CODE
@@ -122,11 +118,11 @@ CLASS="OPTION"
 >デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
 プロセスとして立ち上がります。</P
 ><P
->このオプションを指定し、かつ <CODE
+>このオプションを指定し、かつ<CODE
 CLASS="OPTION"
 >-L</CODE
-> オプションを指定しなかった
-場合、ログレベルは debug となります。</P
+>オプションを指定しなかった
+場合、ログレベルはdebugとなります。</P
 ></DD
 ><DT
 ><CODE
@@ -154,11 +150,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->gfmd が利用する TCP のポート番号を指定します。</P
-><P
->省略した場合には 601 番を使用します。
-この場合、gfmd の起動はルート権限で行なう必要があります。
-ただし、動作するユーザー権限は任意のもので構いません。</P
+>gfmdが利用するTCPのポート番号を指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -172,8 +164,18 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->gfmd がエラー報告に用いる syslog のファシリティを指定します。省略
-した場合には、local0 を使用します。</P
+>gfmdがエラー報告に用いるsyslogのファシリティを指定します。省略
+した場合には、local0を使用します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>認証処理に関するログを詳しく出力します。
+GSI認証の問題を解決する場合に有用なオプションです。</P
 ></DD
 ><DT
 ><CODE
@@ -202,11 +204,11 @@ CLASS="VARIABLELIST"
 ><DT
 ><TT
 CLASS="FILENAME"
->%%SYSCONFDIR%%/gfarm.conf</TT
+>%%SYSCONFDIR%%/gfmd.conf</TT
 ></DT
 ><DD
 ><P
->gfmd が参照する設定ファイルです。</P
+>gfmdが参照する設定ファイルです。</P
 ></DD
 ></DL
 ></DIV
@@ -223,7 +225,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfarm.conf</SPAN
+>gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
 ></DIV
