@@ -2788,7 +2788,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 			} else if (valid == 0) {
 				gflog_debug(GFARM_MSG_1001766,
 					"operation is already in progress");
-				return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
+				return (GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS);
 			} else { /* valid == 1 */
 				copy->valid = valid;
 				if (update_quota)
@@ -2966,7 +2966,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 		if (copy->valid) /* i.e. inode_has_replica(inode, dst) */
 			return (GFARM_ERR_ALREADY_EXISTS);
 		else
-			return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
+			return (GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS);
 	}
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))

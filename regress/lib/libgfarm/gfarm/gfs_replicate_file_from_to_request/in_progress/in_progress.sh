@@ -15,7 +15,7 @@ dsthost=`sed -n 2p $localtmp`
 
 # XXX there is a race condition that 1st replication finshes before this error
 if $testbin/in_progress $gftmp $srchost $dsthost 2>&1 |
-	fgrep 'operation now in progress' >/dev/null
+	fgrep 'operation already in progress' >/dev/null
 then
     exit_code=$exit_pass
 fi
