@@ -3878,7 +3878,7 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 		;
 	if (i < size && isdigit(s[i])) {
 		n = 0;
-		for (i = 0; i < size && isdigit(s[i]); i++)
+		for (; i < size && isdigit(s[i]); i++)
 			n = n * 10 + (s[i] - '0');
 		*desired_numberp = n;
 		free(value);
