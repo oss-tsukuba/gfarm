@@ -1,3 +1,45 @@
+Release note for Gfarm 2.4.1
+============================
+
+[2010.12.30]
+
+New Feature
+* automatic replication in gfmd [sf.net trac #129]
+  % echo -n 2 | gfxattr -s / gfarm.ncopy
+
+New configuration in gfmd.conf
+* no_file_system_node_timeout and gfmd_reconnection_timeout directives
+  to specify the timeout to try to find a file system node and to
+  reconnect to the gfmd, respectively.  Default is 30 seconds.
+* known_network directive to specify a network for file system nodes.
+  File system nodes not specified by the known_network directive are
+  assumed to be in an IPv4 class C network as same as before.
+
+Documentation
+
+Performance improvement
+* gfmd-initiated file replication [sf.net trac #123]
+* extended attribute cache in gfmd and libgfarm [sf.net trac #128]
+
+Updated feature
+* gfmd - check and repair nlinks at start-up [sf.net trac #57]
+* gfsd - if the input/output error occurs, kill oneself to cope with
+  the hardware failure [sf.net trac #85]
+* select a file system node having enough capacity regardless of
+  existent file replicas when a file is overwritten [sf.net #68]
+* avoid scheduling conflict of file system nodes
+* try another file replica when the specified physical file does not
+  exist
+* gfdf - -P option to specify the metadata server
+* gfdf - -S and -r options to sort output by available capacity and in
+  reverse order, respectively [sf.net trac #131]
+* gfmkdir - -p option to create parent directories if needed, and not
+  to return error even if the target directory exists
+
+Bug fix
+* fix error handling of protocols in terms of extended attributes in
+  gfmd [sf.net trac #124]
+
 Release note for Gfarm 2.4.0
 ============================
 
