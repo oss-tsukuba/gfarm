@@ -2963,13 +2963,11 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if (!inode_has_replica(inode, src))
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if ((copy = inode_get_file_copy(inode, dst)) != NULL) {
-		if (copy->valid)
+		if (copy->valid) /* i.e. inode_has_replica(inode, dst) */
 			return (GFARM_ERR_ALREADY_EXISTS);
 		else
 			return (GFARM_ERR_OPERATION_NOW_IN_PROGRESS);
 	}
-	if (inode_has_replica(inode, dst))
-		return (GFARM_ERR_ALREADY_EXISTS);
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY);
