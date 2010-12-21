@@ -2067,8 +2067,6 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 		if (rep == NULL) {
 			qd->tail = &qd->head;
 			return (e2);
-		} else {
-			qd->tail = &rep->q_next;
 		}
 	}
 }
@@ -3893,7 +3891,6 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 	if (rep == NULL) {
 		qd->tail = &qd->head;
 	} else {
-		qd->tail = &rep->q_next;
 		e2 = start_replication(bc_conn, q);
 	}
 
