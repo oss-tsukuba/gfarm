@@ -3864,7 +3864,8 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 {
 	void *value;
 	size_t size;
-	char *s;
+	unsigned char *s;
+	int i, n;
 
 	if (inode_xattr_get_cache(inode, 0, "gfarm.ncopy", &value, &size) !=
 	    GFARM_ERR_NO_ERROR)
@@ -3872,10 +3873,14 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 
 	if (value == NULL)
 		return (0);
-	for (s = value; *s == ' ' || *s == '\t'; s++)
+	s = value;
+	for (i = 0; i < size && isspace(s[i]); i++)
 		;
-	if (isdigit(*(unsigned char *)s)) {
-		*desired_numberp = atoi(s);
+	if (i < size && isdigit(s[i])) {
+		n = 0;
+		for (i = 0; i < size && isdigit(s[i]); i++)
+			n = n * 10 + (s[i] - '0');
+		*desired_numberp = n;
 		free(value);
 		return (1);
 	}
