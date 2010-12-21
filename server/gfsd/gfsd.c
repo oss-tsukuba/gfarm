@@ -1946,6 +1946,31 @@ struct replication_errcodes {
 	gfarm_int32_t dst_errcode;
 };
 
+static void
+free_replications(void)
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *q;
+	struct replication_queue_data *qd;
+	struct replication_request *rep, *next;
+
+	if (replication_queue_set == NULL)
+		return;
+	for (gfarm_hash_iterator_begin(replication_queue_set, &it);
+	     !gfarm_hash_iterator_is_end(&it);
+	     gfarm_hash_iterator_next(&it)) {
+		q = gfarm_hash_iterator_access(&it);
+		qd = gfarm_hash_entry_data(q);
+		if (qd->head == NULL)
+			continue;
+		for (rep = qd->head->q_next; rep != NULL; rep = next) {
+			next = rep->q_next;
+			free(rep);
+		}
+		free(qd->head);
+	}
+}
+
 gfarm_error_t
 try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	gfarm_error_t *resultp)
@@ -2018,6 +2043,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 			gflog_error(GFARM_MSG_1002189, "%s: partial write: "
 			    "%d < %d", diag, rv, (int)sizeof(e));
 		close(fds[1]);
+		free_replications();
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	} else { /* parent */
 		if (pid == -1) {
