@@ -2161,6 +2161,7 @@ gfarm_pgsql_deadfilecopy_add(struct db_deadfilecopy_arg *arg)
 		    "deadfilecopy record already inserted : "
 		    "(%" GFARM_PRId64 ",%" GFARM_PRId64 ",%s)",
 		    arg->inum, arg->igen, arg->hostname);
+		free(arg);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	return pgsql_deadfilecopy_call(arg,
