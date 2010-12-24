@@ -23,6 +23,7 @@ const char *gfs_client_hostname(struct gfs_connection *);
 const char *gfs_client_username(struct gfs_connection *);
 int gfs_client_port(struct gfs_connection *);
 gfarm_pid_t gfs_client_pid(struct gfs_connection *);
+void gfs_client_purge_from_cache(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_acquire(const char *, struct sockaddr *,
 	struct gfs_connection **);

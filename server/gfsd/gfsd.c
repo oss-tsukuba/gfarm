@@ -3887,6 +3887,8 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
 		    strerror(errno));
 
+	if (gfs_client_is_connection_error(errcodes.src_errcode))
+		gfs_client_purge_from_cache(rep->src_gfsd);
 	gfs_client_connection_free(rep->src_gfsd);
 
 	rep->ongoing_prev->ongoing_next = rep->ongoing_next;

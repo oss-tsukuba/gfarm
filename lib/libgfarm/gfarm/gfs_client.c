@@ -157,13 +157,16 @@ gfs_client_pid(struct gfs_connection *gfs_server)
 #define gfs_client_connection_is_cached(gfs_server) \
 	gfp_is_cached_connection((gfs_server)->cache_entry)
 
-#define gfs_client_purge_from_cache(gfs_server)	\
-	gfp_cached_connection_purge_from_cache(&gfs_server_cache, \
-	    (gfs_server)->cache_entry)
-
 #define gfs_client_connection_used(gfs_server) \
 	gfp_cached_connection_used(&gfs_server_cache, \
 	    (gfs_server)->cache_entry)
+
+void
+gfs_client_purge_from_cache(struct gfs_connection *gfs_server)
+{
+	gfp_cached_connection_purge_from_cache(&gfs_server_cache,
+	    gfs_server->cache_entry);
+}
 
 void
 gfs_client_connection_gc(void)
