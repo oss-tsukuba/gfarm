@@ -333,6 +333,7 @@ fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 		msg.msg_iovlen = 1;
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
+		msg.msg_flags = 0;
 #ifndef HAVE_MSG_CONTROL
 		if (fdc > 0) {
 			msg.msg_accrights = (caddr_t)fdv;
@@ -350,6 +351,13 @@ fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 			cmsg.hdr.cmsg_type = SCM_RIGHTS;
 			for (i = 0; i < fdc; i++)
 				((int *)CMSG_DATA(&cmsg.hdr))[i] = fdv[i];
+
+			/* to shut up valgrind's "uninitialised byte(s)" */
+			if (CMSG_SPACE(sizeof(*fdv) * fdc)
+			    > CMSG_LEN(sizeof(*fdv) * fdc))
+				memset(&((int *)CMSG_DATA(&cmsg.hdr))[fdc], 0,
+				    CMSG_SPACE(sizeof(*fdv) * fdc)
+				    - CMSG_LEN(sizeof(*fdv) * fdc));
 		} else {
 			msg.msg_control = NULL;
 			msg.msg_controllen = 0;
