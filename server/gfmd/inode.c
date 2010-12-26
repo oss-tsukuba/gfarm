@@ -146,8 +146,8 @@ static char dotdot[] = "..";
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
 
 static char lost_found[] = "lost+found";
-gfarm_ino_t inum_lost_found;
-gfarm_uint64_t gen_lost_found;
+static gfarm_ino_t inum_lost_found;
+static gfarm_uint64_t gen_lost_found;
 
 void
 inode_for_each_file_copies(
