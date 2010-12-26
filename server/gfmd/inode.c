@@ -146,8 +146,6 @@ static char dotdot[] = "..";
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
 
 static char lost_found[] = "lost+found";
-static gfarm_ino_t inum_lost_found;
-static gfarm_uint64_t gen_lost_found;
 
 void
 inode_for_each_file_copies(
@@ -1860,6 +1858,8 @@ inode_lookup_by_name(struct inode *base, char *name,
 struct inode *
 inode_lookup_lost_found(void)
 {
+	static gfarm_ino_t inum_lost_found = 0;
+	static gfarm_uint64_t gen_lost_found = 0;
 	struct inode *root, *inode;
 	struct user *admin;
 	int created;
