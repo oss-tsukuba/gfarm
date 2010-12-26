@@ -145,6 +145,10 @@ static char dotdot[] = "..";
 #define DOT_LEN		(sizeof(dot) - 1)
 #define DOTDOT_LEN	(sizeof(dotdot) - 1)
 
+static char lost_found[] = "lost+found";
+gfarm_ino_t inum_lost_found;
+gfarm_uint64_t gen_lost_found;
+
 void
 inode_for_each_file_copies(
 	struct inode *inode,
@@ -1853,6 +1857,43 @@ inode_lookup_by_name(struct inode *base, char *name,
 	return (e);
 }
 
+struct inode *
+inode_lookup_lost_found(void)
+{
+	struct inode *root, *inode;
+	struct user *admin;
+	int created;
+	gfarm_error_t e;
+
+	if (inum_lost_found != 0) {
+		inode = inode_lookup(inum_lost_found);
+		if (inode != NULL && inode->i_gen == gen_lost_found)
+			return (inode);
+	}
+	root = inode_lookup(ROOT_INUMBER);
+	if (root == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "no root directory");
+		return (NULL);
+	}
+	admin = user_lookup(ADMIN_USER_NAME);
+	if (admin == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED, "no admin user");
+		return (NULL);
+	}
+	e = inode_lookup_relative(root, lost_found, GFS_DT_DIR,
+	    INODE_CREATE, admin, 0700, NULL, &inode, &created);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "no /%s directory", lost_found);
+		return (NULL);
+	}
+	if (created)
+		gflog_info(GFARM_MSG_UNFIXED, "create /%s directory",
+		    lost_found);
+	inum_lost_found = inode->i_number;
+	gen_lost_found = inode->i_gen;
+	return (inode);
+}
+
 gfarm_error_t
 inode_create_file(struct inode *base, char *name,
 	struct process *process, int op, gfarm_mode_t mode,
@@ -1931,6 +1972,28 @@ inode_create_link(struct inode *base, char *name,
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_link_to_lost_found(struct inode *inode)
+{
+	struct inode *base;
+	struct user *admin;
+	static char name[16 + 16 + 1];
+	int name_len;
+
+	base = inode_lookup_lost_found();
+	if (base == NULL)
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+	admin = user_lookup(ADMIN_USER_NAME);
+	if (admin == NULL)
+		return (GFARM_ERR_NO_SUCH_USER);
+
+	name_len = sizeof(name);
+	snprintf(name, name_len, "%016llX%016llX",
+	    (unsigned long long)inode->i_number,
+	    (unsigned long long)inode->i_gen);
+	return (inode_create_link_internal(base, name, admin, inode));
 }
 
 gfarm_error_t
@@ -3406,12 +3469,6 @@ nlink_check(void *closure, struct inode *inode)
 			inode->i_nlink = 2;
 		} else
 			return;
-	} else if (inode_get_nlink_ini(inode) == 0) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-		    "inode %lld is not referenced",
-		    (long long)inode_get_number(inode));
-		/* XXX - move to the /lost+found directory */
-		return;
 	} else if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "inode %lld nlink %lld should be %lld: fixed",
@@ -3419,6 +3476,20 @@ nlink_check(void *closure, struct inode *inode)
 		    (long long)inode_get_nlink(inode),
 		    (long long)inode_get_nlink_ini(inode));
 		inode->i_nlink = inode_get_nlink_ini(inode);
+		if (inode_get_nlink_ini(inode) == 0) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "inode %lld is not referenced, moving to /%s",
+			    (long long)inode_get_number(inode), lost_found);
+			/* move to the /lost+found directory */
+			e = inode_link_to_lost_found(inode);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "failed to link inode %lld in /%s: %s",
+				    (unsigned long long)inode->i_number,
+				    lost_found, gfarm_error_string(e));
+				return;
+			}
+		}
 	} else
 		return;
 	e = db_inode_nlink_modify(
