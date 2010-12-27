@@ -2012,7 +2012,9 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		 * modify gfs_client_replica_recv() interface to return
 		 * the error codes for both source and destination side.
 		 */
-		if (IS_CONNECTION_ERROR(e)) {
+		if (IS_CONNECTION_ERROR(e) ||
+		    e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
+		    e == GFARM_ERR_PERMISSION_DENIED) {
 			errcodes.src_errcode = e;
 			errcodes.dst_errcode = GFARM_ERR_NO_ERROR;
 		} else {

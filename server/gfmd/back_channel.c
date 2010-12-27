@@ -218,29 +218,27 @@ gfs_client_send_request(struct host *host, struct peer *peer0,
 
 /* host_receiver_lock() must be already called here by back_channel_main() */
 static gfarm_error_t
-gfs_client_recv_result(struct peer *peer, struct host *host,
-	size_t size, const char *diag, const char *format, ...)
+gfs_client_recv_vresult(struct peer *peer, struct host *host,
+	size_t size, const char *diag, const char **formatp, va_list *app,
+	gfarm_error_t *errcodep)
 {
 	gfarm_error_t e;
 	gfp_xdr_async_peer_t async = peer_get_async(peer);
 	gfarm_int32_t errcode;
 	struct gfp_xdr *conn = peer_get_conn(peer);
-	va_list ap;
 
 	if (debug_mode)
 		gflog_info(GFARM_MSG_1002279,
 		    "%s: <%s> back_channel receiving reply",
 		    host_name(host), diag);
 
-	va_start(ap, format);
 	if (async != NULL) { /* is async mode? */
 		e = gfp_xdr_vrpc_result_sized(conn, 0,
-		    &size, &errcode, &format, &ap);
+		    &size, &errcode, formatp, app);
 	} else { /*  synchronous mode */
-		e = gfp_xdr_vrpc_result(conn, 0, &errcode, &format, &ap);
+		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
 		host_sender_unlock(host, peer);
 	}
-	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002280,
 		    "back_channel(%s) RPC result: %s",
@@ -254,14 +252,46 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 			    "back_channel(%s) RPC result: skipping: %s",
 			    host_name(host), gfarm_error_string(e));
 		e = GFARM_ERR_PROTOCOL;
-	} else {
-		/*
-		 * We just use gfarm_error_t as the errcode,
-		 * Note that GFARM_ERR_NO_ERROR == 0.
-		 */
-		e = errcode;
+	} else { /* e == GFARM_ERR_NO_ERROR */
+		*errcodep = errcode;
 	}
 	return (e);
+}
+
+static gfarm_error_t
+gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
+	size_t size, gfarm_error_t *errcodep,
+	const char *diag, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfs_client_recv_vresult(peer, host, size, diag,
+	    &format, &ap, errcodep);
+	va_end(ap);
+	return (e);
+}
+
+static gfarm_error_t
+gfs_client_recv_result(struct peer *peer, struct host *host,
+	size_t size, const char *diag, const char *format, ...)
+{
+	gfarm_error_t e, errcode;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfs_client_recv_vresult(peer, host, size, diag,
+	    &format, &ap, &errcode);
+	va_end(ap);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	/*
+	 * We just use gfarm_error_t as the errcode,
+	 * Note that GFARM_ERR_NO_ERROR == 0.
+	 */
+	return (errcode);
 }
 
 static void
@@ -441,22 +471,33 @@ gfs_client_replication_request_result(void *p, void *arg, size_t size)
 	struct host *dst;
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
-	gfarm_error_t e, e2;
+	gfarm_error_t e, errcode, e2;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST result";
 
-	e = gfs_client_recv_result(peer, fr->dst, size, diag, "l", &handle);
+	/* XXX FIXME, src_err and dst_err should be passed separately */
+	e = gfs_client_recv_result_and_error(peer, fr->dst, size, &errcode,
+	    diag, "l", &handle);
 	/* XXX FIXME: deadlock */
 	giant_lock();
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR && errcode == GFARM_ERR_NO_ERROR)
 		file_replicating_set_handle(fr, handle);
 	else {
 		dst = fr->dst;
 		ino = inode_get_number(fr->inode);
 		gen = fr->igen;
-		e2 = peer_replicated(peer, dst, ino, gen, -1, 0, e, -1);
+		if (e != GFARM_ERR_NO_ERROR)
+			e2 = peer_replicated(peer, dst, ino, gen, -1,
+			    0, e, -1);
+		else if (IS_CONNECTION_ERROR(errcode))
+			e2 = peer_replicated(peer, dst, ino, gen, -1,
+			    errcode, 0, -1);
+		else
+			e2 = peer_replicated(peer, dst, ino, gen, -1,
+			    0, errcode, -1);
 		gflog_debug(GFARM_MSG_1002359,
-		    "%s: (%s, %lld:%lld): aborted: %s (%s)",
+		    "%s: (%s, %lld:%lld): aborted: %s - (%s, %s)",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(errcode),
 		    gfarm_error_string(e), gfarm_error_string(e2));
 	}
 	giant_unlock();
