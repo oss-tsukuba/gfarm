@@ -357,6 +357,7 @@ enum gfm_proto_command {
 /* output of GFM_PROTO_REPLICA_INFO_GET */
 #define GFM_PROTO_REPLICA_FLAG_INCOMPLETE	1
 #define GFM_PROTO_REPLICA_FLAG_DEAD_HOST	2
+#define GFM_PROTO_REPLICA_FLAG_DEAD_COPY	4
 
 #if 0 /* There isn't gfm_proto.c for now. */
 extern char GFM_SERVICE_TAG[];

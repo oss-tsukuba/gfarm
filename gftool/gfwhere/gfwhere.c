@@ -53,7 +53,7 @@ display_replica(struct gfs_stat *st, struct gfs_replica_info *ri, int i,
 
 	if (opt->type_suffix) {
 		if (opt->print_dead_copy &&
-		    (igen = gfs_replica_info_nth_gen(ri, i)) != st->st_gen)
+		    gfs_replica_info_nth_is_dead_copy(ri, i))
 			printf(";%llu", (unsigned long long)igen);
 		if (gfs_replica_info_nth_is_incomplete(ri, i))
 			putchar('?');
@@ -85,7 +85,7 @@ display_replica(struct gfs_stat *st, struct gfs_replica_info *ri, int i,
 		if (opt->print_dead_copy) {
 			if (need_space)
 				putchar(' ');
-			putchar(gfs_replica_info_nth_gen(ri, i) != st->st_gen ?
+			putchar(gfs_replica_info_nth_is_dead_copy(ri, i) ?
 			    'o' : '-');
 		}
 		putchar('\n');

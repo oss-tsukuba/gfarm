@@ -952,14 +952,15 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, int up_only,
 		if (up_only) {
 			if (!host_is_up(dfc->host))
 				continue;
-			flag = 0;
+			flag = GFM_PROTO_REPLICA_FLAG_DEAD_COPY;
 		} else {
 			if (!host_is_active(dfc->host))
 				continue;
 			if (host_is_up(dfc->host))
-				flag = 0;
+				flag = GFM_PROTO_REPLICA_FLAG_DEAD_COPY;
 			else
-				flag = GFM_PROTO_REPLICA_FLAG_DEAD_HOST;
+				flag = GFM_PROTO_REPLICA_FLAG_DEAD_COPY |
+				       GFM_PROTO_REPLICA_FLAG_DEAD_HOST;
 		}
 
 		name = strdup_log(host_name(dfc->host), diag);

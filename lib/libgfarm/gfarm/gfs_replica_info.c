@@ -123,6 +123,14 @@ gfs_replica_info_nth_is_dead_host(struct gfs_replica_info *ri, int n)
 	return ((ri->flags[n] & GFM_PROTO_REPLICA_FLAG_DEAD_HOST) != 0);
 }
 
+int
+gfs_replica_info_nth_is_dead_copy(struct gfs_replica_info *ri, int n)
+{
+	if (n < 0 || n >= ri->n)
+		return (1);
+	return ((ri->flags[n] & GFM_PROTO_REPLICA_FLAG_DEAD_COPY) != 0);
+}
+
 void
 gfs_replica_info_free(struct gfs_replica_info *ri)
 {

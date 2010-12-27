@@ -304,6 +304,7 @@ const char *gfs_replica_info_nth_host(struct gfs_replica_info *, int);
 gfarm_uint64_t gfs_replica_info_nth_gen(struct gfs_replica_info *, int);
 int gfs_replica_info_nth_is_incomplete(struct gfs_replica_info *, int);
 int gfs_replica_info_nth_is_dead_host(struct gfs_replica_info *, int);
+int gfs_replica_info_nth_is_dead_copy(struct gfs_replica_info *, int);
 void gfs_replica_info_free(struct gfs_replica_info *);
 
 gfarm_error_t gfs_replica_list_by_name(const char *, int *, char ***);
