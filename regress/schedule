@@ -15,6 +15,7 @@ lib/libgfarm/gfarm/gfs_xattr/gfs_listxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_getxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_setxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_removexattr.2err.sh
+lib/libgfarm/gfarm/gfs_getxattr_cached/size0.sh
 
 # gftool/config-gfarm
 gftool/gfhost/gfhost-c.sh

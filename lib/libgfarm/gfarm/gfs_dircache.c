@@ -438,7 +438,7 @@ gfs_getxattr_caching(const char *path, const char *name,
 		if (strcmp(attrnames[i], name) == 0) {
 			if (*sizep >= attrsizes[i]) {
 				memcpy(value, attrvalues[i], attrsizes[i]);
-			} else {
+			} else if (*sizep != 0) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfs_getxattr_caching(%s, %s, size:%d): "
 				    "too large result: %d bytes",
@@ -533,7 +533,7 @@ gfs_getxattr_cached_internal(const char *path, const char *name,
 			if (*sizep >= data->attrsizes[i]) {
 				memcpy(value, data->attrvalues[i],
 				    data->attrsizes[i]);
-			} else {
+			} else if (*sizep != 0) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfs_getxattr_cached_internal"
 				    "(%s, %s, size:%d): "
