@@ -1956,9 +1956,10 @@ struct replication_errcodes {
 
 gfarm_error_t
 try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
-	gfarm_error_t *resultp)
+	gfarm_error_t *src_errp, gfarm_error_t *dst_errp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, dst_err = GFARM_ERR_NO_ERROR;
+	gfarm_error_t conn_err = GFARM_ERR_NO_ERROR;
 	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
 	struct replication_request *rep = qd->head;
 	char *path;
@@ -1969,30 +1970,36 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	int local_fd, rv;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
+	/*
+	 * XXX FIXME:
+	 * gfs_client_connection_acquire_by_host() needs timeout, otherwise
+	 * the remote gfsd (or its kernel) can block this backchannel gfsd.
+	 * See http://sourceforge.net/apps/trac/gfarm/ticket/130
+	 */
 	local_path(rep->ino, rep->gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd < 0) {
-		e = gfarm_errno_to_error(errno);
+		dst_err = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_1002182,
 		    "%s: cannot open local file for %lld:%lld: %s", diag,
 		    (long long)rep->ino, (long long)rep->gen, strerror(errno));
-	} else if ((e = gfs_client_connection_acquire_by_host(gfm_server,
+	} else if ((conn_err = gfs_client_connection_acquire_by_host(gfm_server,
 	    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 	    &src_gfsd, listen_addrname)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002184, "%s: connecting to %s:%d: %s",
 		    diag,
 		    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-		    gfarm_error_string(e));
+		    gfarm_error_string(conn_err));
 		close(local_fd);
 	} else if (pipe(fds) == -1) {
-		e = gfarm_errno_to_error(errno);
+		dst_err = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_1002185, "%s: cannot create pipe: %s",
 		    diag, strerror(errno));
 		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
 	} else if (fds[0] > FD_SETSIZE) { /* XXX select FD_SETSIZE */
-		e = GFARM_ERR_TOO_MANY_OPEN_FILES;
+		dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
 		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
 		    diag, fds[0], gfarm_error_string(e));
 		close(fds[0]);
@@ -2031,9 +2038,9 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 	} else { /* parent */
 		if (pid == -1) {
-			e = gfarm_errno_to_error(errno);
+			dst_err = gfarm_errno_to_error(errno);
 			gflog_error(GFARM_MSG_1002190,
-			    "%s: cannot child process: %s",
+			    "%s: cannot create child process: %s",
 			    diag, strerror(errno));
 			close(fds[0]);
 			gfs_client_connection_free(src_gfsd);
@@ -2051,34 +2058,59 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		close(fds[1]);
 	}
 
-	*resultp = e;
-	return (gfs_async_server_put_reply(conn, rep->xid, diag, e,
+	*src_errp = conn_err;
+	*dst_errp = dst_err;
+
+	/* XXX FIXME, src_err and dst_err should be passed separately */
+	return (gfs_async_server_put_reply(conn, rep->xid, diag,
+	    conn_err != GFARM_ERR_NO_ERROR ? conn_err : dst_err,
 	    "l", (gfarm_int64_t)pid));
 }
 
 gfarm_error_t
 start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t gfmd_err, dst_err, src_err = GFARM_ERR_NO_ERROR;
 	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
 	struct replication_request *rep;
 
-	for (;;) {
-		e2 = try_replication(conn, q, &e);
-		if (e == GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR)
-			return (e2);
+	do {
+		if (src_err != GFARM_ERR_NO_ERROR) {
+			/*
+			 * avoid retries, because this may take long time,
+			 * if the host is down or network is unreachable.
+			 */
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "skipping replication for %lld:%lld, "
+			    "because %s:%d is down: %s",
+			    (long long)rep->ino, (long long)rep->gen,
+			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
+			    gfarm_error_string(src_err));
+		} else {
+			gfmd_err = try_replication(conn, q,
+			    &src_err, &dst_err);
+			if (gfmd_err != GFARM_ERR_NO_ERROR)
+				return (gfmd_err);
+			if (src_err == GFARM_ERR_NO_ERROR &&
+			    dst_err == GFARM_ERR_NO_ERROR)
+				return (GFARM_ERR_NO_ERROR);
+		}
 
-		/* we don't have to touch rep->ongoing_{next,prev} here */
-
+		/*
+		 * failed to start a replication, try next entry.
+		 *
+		 * we don't have to touch rep->ongoing_{next,prev} here,
+		 * since they are updated only after a replication actually
+		 * started or finished.
+		 */
 		rep = qd->head->q_next;
 		free(qd->head);
 
 		qd->head = rep;
-		if (rep == NULL) {
-			qd->tail = &qd->head;
-			return (e2);
-		}
-	}
+	} while (rep != NULL);
+
+	qd->tail = &qd->head;
+	return (GFARM_ERR_NO_ERROR); /* no gfmd_err */
 }
 
 gfarm_error_t
@@ -3998,7 +4030,7 @@ kill_pending_replications(void)
 		qd = gfarm_hash_entry_data(q);
 		if (qd->head == NULL)
 			continue;
-		/* do not free active replication */
+		/* do not free active replication (i.e. qd->head) */
 		for (rep = qd->head->q_next; rep != NULL; rep = next) {
 			next = rep->q_next;
 			gflog_debug(GFARM_MSG_UNFIXED,
