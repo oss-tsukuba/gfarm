@@ -1839,7 +1839,6 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_uint64_t gen;
 	int save_errno = 0;
 	char *path;
-int rv;
 
 	e = gfs_async_server_get_request(conn, size, "fhremove",
 	    "ll", &ino, &gen);
@@ -1847,15 +1846,8 @@ int rv;
 		return (e);
 
 	local_path(ino, gen, "fhremove", &path);
-#if 0
 	if (unlink(path) == -1)
 		save_errno = errno;
-#else
-rv = unlink(path);
-if (rv == -1)
-	save_errno = errno;
-gflog_info(GFARM_MSG_UNFIXED, "fhremove(%s): %d, %d, %d", path, rv, errno, save_errno);
-#endif
 	free(path);
 
 	return (gfs_async_server_put_reply_with_errno(conn, xid,
