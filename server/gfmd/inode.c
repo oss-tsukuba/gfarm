@@ -2517,7 +2517,7 @@ inode_schedule_file_default(struct file_opening *opening,
 	gfarm_error_t e;
 	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
-	int n, nhosts;
+	int n, nhosts, writing_mode;
 	struct host **hosts;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
@@ -2535,11 +2535,12 @@ inode_schedule_file_default(struct file_opening *opening,
 		return (e);
 	}
 
-	if ((accmode_to_op(opening->flag) & GFS_W_OK) != 0 && ios != NULL &&
+	writing_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
+
+	if (writing_mode && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 
-		/* writing mode, try to choose already opened replicas */
-
+		/* try to choose already opened replicas */
 		n = 0;
 		for (; fo != &ios->openings; fo = fo->opening_next) {
 			if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 &&
@@ -2596,7 +2597,9 @@ inode_schedule_file_default(struct file_opening *opening,
 			}
 			free(hosts);
 		}
+	}
 
+	if (writing_mode) {
 		/* all replicas are candidates */
 		e = inode_alloc_file_copy_hosts(opening->inode,
 		    file_copy_is_valid_and_disk_available, &necessary_space,
