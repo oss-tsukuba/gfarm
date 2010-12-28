@@ -20,8 +20,9 @@
 ・xattr としてかなり大きなデータを想定していた
 ・設計者が他の部分とは別
 であるため。
-逆に、データとして小さな xattr へのアクセスが、全くキャッシュされておらず、
-非常に遅いという制限事項がある。
+逆に、たとえデータサイズが小さくても、xattr へのアクセスは全くキャッシュ
+されておらず、非常に遅いという制限事項があった。現在は、ユーザが指定した
+xattr はキャッシュできる。また、gfarm.ncopy は常にキャッシュする。
 
 ■ mutex 一覧
 
@@ -36,10 +37,11 @@ XXX 保守されてない。要更新
 	cf. host_peer_set()
 
 ・giant_lock -> dfc_allq.mutex
-・giant_lock -> busyq.mutex -> removeq.mutex
+・giant_lock -> busyq.mutex -> removeq.mutex -> host:back_channel_mutex
 	以下の条件の複合による。
 	giant_lock -> removeq.mutex
 	busyq.mutex -> removeq.mutex
+	busyq.mutex -> host:back_channel_mutex (for host_is_up())
 
 ○ giant_lock を保持したまま、休眠して良いスレッド
 
@@ -239,6 +241,29 @@ doc/internal/png/gfmd-thread-dependency.png
     _lock() を使っているので、複数のスレッドプールを占有してしまう
     可能性があるが、これは返答であるため、実質的な危険性はかなり低い。
 
+・host_disconnect_request() の呼び出しについて
+  複数の back_channel スレッドからや、フォアグラウンドの
+  gfm_server_switch_back_channel_common() から同時に呼び出される
+  可能性がある。
+  特に、フォアグラウンドで切断→フォアグラウンドで再接続→古い back_channel
+  が、新しい接続を切断 となるとまずい。
+  この対策として、以下のようにする。
+   - 引数で peer を渡し、これが異なっていたら、なにもしない。
+     フォアグランドから呼び出す時は peer として NULL を渡す。
+     この場合には、有無をいわさず切断する。
+   - 既に host->peer == NULL なら、なにもしない
+  また、host_sender_unlock() や host_receiver_unlock() 時には、既に
+  切断されている可能性があるため、引数で peer を渡し、これが異なってい
+  たら、なにもしない。
+  back_channel.c では、ロックをかけずに host_get_peer() しておき、あとで
+		if (peer != NULL) /* to make the race condition harmless */
+			host_disconnect_request(host, peer);
+  としている部分があるが、これは host_get_peer() 以降、フォアグランドで
+  host_peer_set() が行なわれた場合の対策。この場合、GFS_PROTO_STATUS へ
+  の返事がないにも関わらず、host_disconnect_request() がこの if 条件の
+  ために呼ばれない可能性もわずかにあるが、それは次回の GFS_PROTO_STATUS で
+  救済できる。
+
 ・ホスト down 対策
   - ・gfs_client_status_request() で、前回からまだ答がなかった
     場合、すなわち host_status_reply_is_waiting() が成り立っていた
@@ -246,6 +271,102 @@ doc/internal/png/gfmd-thread-dependency.png
   - 送信処理の時に host_sender_try_lock() で送信可能かどうかを
     確認し、送信が滞留していた場合には、host_peer_busy() で
     コネクションを切断する
+
+■ ファイル複製処理の状態
+
+replication_pendingq
+replication_confirmingq
+replication_finishedq
+replication_busyq
+
+
+requested	初期状態
+newgen_waiting	世代番号更新待ち
+pending		GFS_PROTO_REPLICATION_REQUESTの送信待ちキュー
+in_flight	GFS_PROTO_REPLICATION_REQUEST要求送信
+replicating	GFS_PROTO_REPLICATION_REQUEST返答受信、
+		GFM_PROTO_REPLICATION_RESULT要求の受信待ち
+replicated	GFS_PROTO_REPLICATION_REQUEST返答は未受信にも関わらず、
+		GFM_PROTO_REPLICATION_RESULT要求を受信した  race condition
+		GFS_PROTO_REPLICATION_REQUEST返答の受信待ち
+confirming	GFS_PROTO_REPLICATION_REQUEST返答と
+		GFM_PROTO_REPLICATION_RESULT要求の両方を受信し、
+		GFM_PROTO_REPLICATION_RESULT返答の送信待ちキュー
+finished	GFM_PROTO_REPLICATION_RESULT返答を送信した後の
+		finalizing 待ちキュー
+finalizing	終了処理中
+removal_waiting	複製処理に失敗し、不完全なレプリカの削除待ち。
+		削除完了までは、copy->valid == 0 な状態は維持している。
+replication_waiting
+		削除待ち中に、新たなレプリケーションを依頼された。
+		この場合、必ずリトライする。
+busy		back_channel 送信がbusy状態のため、
+		GFS_PROTO_REPLICATION_REQUESTの送信ないし
+		GFM_PROTO_REPLICATION_RESULT返答の送信が
+		可能になるのを待っている
+
+XXX キャンセルの実装
+
+XXX 失敗した場合、可能ならリトライしたい。
+
+XXX inode:rstate に on going replication が保持されている時、
+  inode がリムーブされると、inode は DB から消えるが、メモリ上には残る。
+  このとき、file_copy は DB からもメモリからも消えてない。
+  この時、gfmd が殺されると、file_copy が orphan になる。
+
+○ ファイル複製に失敗した場合、宛先ホストの不完全な複製は、
+  gfmd が dead_file_copy を使って消した方が良いか？
+  それとも gfsd が自分で消してから、ファイル複製処理結果を報告する
+  のが良いか？
+
+race condition を避ける意味では、gfsd が消した方が簡単。
+しかし、その場合、gfsd がクラッシュすると、不完全なレプリカのゴミが
+残ってしまうことになる。
+そういう意味で、gfmd が消した方が良い。
+
+ただし、gfmd は、消去が完了するまで監視し、その間は incomplete な
+レプリカ状態を維持し、競合を避ける必要がある。
+なお、この消去完了待ちは、複製作成失敗の時だけ行なえば良いわけではない。
+単なるレプリカ削除の場合も、incomplete 状態の維持は必要。
+さもないと、それと並行して複製作成が行なわれる可能性がある。
+
+ちなみに gfarm-2.3.0 以前でも、gfmd が消していた。
+
+この件が
+http://sourceforge.net/apps/trac/gfarm/ticket/88
+https://dev.chubu.sra.co.jp/trac/gfarm/nttcom/ticket/5
+https://xi.lab.sphere.ad.jp/trac/gfarm/ticket/62
+として問題となった。
+
+○ 複製処理の失敗
+	(a1) gfmd が gfsd へ複製要求を出す
+	(a2) 複製処理に失敗する
+	(a3) gfmd が、複製先の実体を消す要求 (== dead_file_copy) を作る
+	(a4) gfmd から gfsd へ要求が伝達され、実体が消える
+○ もう一つの複製処理
+	(b1) 同じファイルに関し、同一の複製先への複製処理が要求が出る
+	(b2) gfsd が複製を作成する
+という 2つの処理が、
+(a1) → (a2) → (a3) → (a4) → (b1) → (b2)
+という順序で実行されれば問題ないが、
+(a1) → (a2) → (a3) → (b1) → (b2) → (a4)
+という順序で実行される、複製された実体が誤って a4 で消されてしまうのでまずい
+対策として、
+	複製要求が出た時、同一レプリカに対するdead_file_copyがあったら、
+	状態が kept/in_flight/finished/finalizing ならば、
+		処理完了まで待つ
+	さもなくば
+		そのdead_file_copyを消す
+という手が考えられる。しかし、処理完了まで待つのはgfmdの内部構造的に
+面倒なので、とりあえずの手として、
+	状態が kept/in_flight/finished/finalizing のケースについては、
+		単に BUSY を返す
+という方法もある。
+
+☆ 注意事項:
+  async_back_channel_replication_request() を呼ぶ前には、
+  dead_file_copy_remove() == GFARM_ERR_NO_ERROR を確認しておく必要がある。
+  さもないと、上記 race condition が発生する。
 
 ■ XXX 未記載 TO-DO
 
