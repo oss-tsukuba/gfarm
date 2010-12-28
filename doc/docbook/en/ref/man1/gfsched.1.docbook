@@ -30,7 +30,7 @@ schedule and display available file system nodes
     <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
     <arg choice='opt'>-D <replaceable>domain-name</replaceable></arg>
     <arg choice='opt'>-n <replaceable>number</replaceable></arg>
-    <arg choice='opt'>-LMlw</arg>
+    <arg choice='opt'>-LMclw</arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -107,6 +107,19 @@ will be selected, if this option is specified.
 <term><option>-D</option> <parameter>domain-name</parameter></term>
 <listitem>
 <para>Limits file system node by specifying a domain name or a hostname.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>Displays scheduling information for a file creation,
+if the file specified by <option>-f</option> doesn't exist.
+</para>
+<para>
+Currently, this option creates the specified file.
+But please note that this behavior may be changed in future.
 </para>
 </listitem>
 </varlistentry>

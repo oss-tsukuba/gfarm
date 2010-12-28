@@ -75,6 +75,7 @@ main(int argc, char **argv)
 	int opt_long_format = 0;
 	int opt_nhosts = 0;
 	int opt_write_mode = 0;
+	int opt_create_mode = 0;
 	int c, i, available_nhosts, nhosts, *ports;
 	struct gfarm_host_sched_info *available_hosts;
 	char *path, **hosts;
@@ -89,7 +90,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "D:LMP:f:ln:w")) != -1) {
+	while ((c = getopt(argc, argv, "D:LMP:cf:ln:w")) != -1) {
 		switch (c) {
 		case 'D':
 			opt_domain = optarg;
@@ -102,6 +103,9 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			opt_mount_point = optarg;
+			break;
+		case 'c':
+			opt_create_mode = 1;
 			break;
 		case 'f':
 			opt_file = optarg;
@@ -138,6 +142,24 @@ main(int argc, char **argv)
 
 	if (opt_file != NULL) {
 		path = opt_file;
+		if (opt_create_mode) {
+			GFS_File gf;
+
+			e = gfs_pio_create(path, GFARM_FILE_WRONLY, 0666, &gf);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr, "%s: creating \"%s\": %s\n",
+				    program_name, path, gfarm_error_string(e));
+				exit(1);
+			}
+			e = gfs_pio_close(gf);
+			if (e != GFARM_ERR_NO_ERROR) {
+				fprintf(stderr,
+				    "%s: gfs_pio_close(\"%s\"): %s\n",
+				    program_name, path, gfarm_error_string(e));
+				/* exit(1); */
+			}
+			/* NOTE: this may leave an empty file with ncopy==0 */
+		}
 		e = gfarm_schedule_hosts_domain_by_file(path,
 		    opt_write_mode ? GFARM_FILE_RDWR : GFARM_FILE_RDONLY,
 		    opt_domain,

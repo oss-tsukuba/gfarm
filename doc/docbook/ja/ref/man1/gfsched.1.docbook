@@ -29,7 +29,7 @@
     <arg choice='plain'>-f <replaceable>gfarm-URL</replaceable></arg>
     <arg choice='opt'>-D <replaceable>ドメイン名</replaceable></arg>
     <arg choice='opt'>-n <replaceable>ノード数</replaceable></arg>
-    <arg choice='opt'>-LMlw</arg>
+    <arg choice='opt'>-LMclw</arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -144,6 +144,20 @@
 <para>指定したファイルについて、その複製を保持するファイルシステムノードを
 検索します。
 このオプションは、<option>-P</option> オプションと排他的です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>オプション「<option>-f</option>」で指定したファイルが存在しない
+場合で、かつ、このオプションを指定した場合、ファイルを新規作成した
+場合のスケジューリング情報を表示します。
+</para>
+<para>
+現在、このオプションを利用すると、指定したファイルを新規作成します。
+この挙動は将来変更される可能性があるのでご注意ください。
 </para>
 </listitem>
 </varlistentry>
