@@ -19,8 +19,8 @@
 /*
  *  Create a hostfile.
  *
- *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-LMlw]
  *  gfsched [-P <path>] [-D <domain>] [-n <number>] [-LMlw]
+ *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-LMclw]
  */
 
 char *program_name = "gfsched";
@@ -32,11 +32,15 @@ usage(void)
 	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMlw]\n",
 	    program_name);
 	fprintf(stderr,
-	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMlw]\n",
+	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMclw]\n",
 	    program_name);
 	fprintf(stderr,
 	    "options:\n");
-	fprintf(stderr, "\t-w\t\twrite mode\n");
+	fprintf(stderr, "\t-L\t\tdo not check authentication\n");
+	fprintf(stderr, "\t-M\t\tmetadata only.  suppress client side scheduling\n");
+	fprintf(stderr, "\t-c\t\tcreate mode (currently leaves a file)\n");
+	fprintf(stderr, "\t-l\t\twrite mode\n");
+	fprintf(stderr, "\t-w\t\tlong format\n");
 	exit(2);
 }
 
