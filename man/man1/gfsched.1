@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSCHED" "1" "30 June 2010" "Gfarm" ""
+.TH "GFSCHED" "1" "28 December 2010" "Gfarm" ""
 
 .SH NAME
 gfsched \- schedule and display available file system nodes
 .SH SYNOPSIS
 
-\fBgfsched\fR \fB-f \fIgfarm-URL\fB\fR [ \fB-D \fIdomain-name\fB\fR ] [ \fB-n \fInumber\fB\fR ] [ \fB-LMlw\fR ]
+\fBgfsched\fR \fB-f \fIgfarm-URL\fB\fR [ \fB-D \fIdomain-name\fB\fR ] [ \fB-n \fInumber\fB\fR ] [ \fB-LMclw\fR ]
 
 
 \fBgfsched\fR [ \fB-P \fIgfarm-URL\fB\fR ] [ \fB-D \fIdomain-name\fB\fR ] [ \fB-n \fInumber\fB\fR ] [ \fB-LMlw\fR ]
@@ -30,6 +30,13 @@ if necessary.
 .TP
 \fB-D \fIdomain-name\fB\fR
 Limits file system node by specifying a domain name or a hostname.
+.TP
+\fB-c\fR
+Displays scheduling information for a file creation,
+if the file specified by \fB-f\fR doesn't exist.
+
+Currently, this option creates the specified file.
+But please note that this behavior may be changed in future.
 .TP
 \fB-L\fR
 Suppresses authentication check.
