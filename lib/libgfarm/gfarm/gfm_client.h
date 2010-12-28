@@ -348,9 +348,9 @@ gfarm_error_t gfm_client_replica_added_request(struct gfm_connection *,
 gfarm_error_t gfm_client_replica_added2_request(struct gfm_connection *,
 	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t, gfarm_off_t);
 gfarm_error_t gfm_client_replica_added_result(struct gfm_connection *);
-gfarm_error_t gfm_client_replica_remove_request(struct gfm_connection *,
+gfarm_error_t gfm_client_replica_lost_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t);
-gfarm_error_t gfm_client_replica_remove_result(struct gfm_connection *);
+gfarm_error_t gfm_client_replica_lost_result(struct gfm_connection *);
 gfarm_error_t gfm_client_replica_add_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t);
 gfarm_error_t gfm_client_replica_add_result(struct gfm_connection *);

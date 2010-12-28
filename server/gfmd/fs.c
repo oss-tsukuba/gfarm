@@ -3286,14 +3286,14 @@ gfm_server_replica_added2(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
-gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
+gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	struct host *spool_host;
 	struct inode *inode;
-	static const char diag[] = "GFM_PROTO_REPLICA_REMOVE";
+	static const char diag[] = "GFM_PROTO_REPLICA_LOST";
 
 	e = gfm_server_get_request(peer, diag, "ll", &inum, &gen);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -3323,7 +3323,7 @@ gfm_server_replica_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001973, "%s: not a file", diag);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 	} else {
-		e = inode_remove_replica_gen(inode, spool_host, gen, 0);
+		e = inode_remove_replica_metadata(inode, spool_host, gen);
 	}
 	giant_unlock();
 

@@ -413,7 +413,7 @@
 	  ※ flags には、下記の情報が含まれる
 		mtime_{,n}sec が有効か
 			… 複製元ノードで書き込みオープンされている場合真
-	GFM_PROTO_REPLICA_REMOVE
+	GFM_PROTO_REPLICA_LOST
 	  入力: l:i_node_number, l:generation
 	  出力: i:エラー
 

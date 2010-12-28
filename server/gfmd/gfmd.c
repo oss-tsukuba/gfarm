@@ -416,8 +416,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_ADDED2:
 		e = gfm_server_replica_added2(peer, from_client, skip);
 		break;
-	case GFM_PROTO_REPLICA_REMOVE:
-		e = gfm_server_replica_remove(peer, from_client, skip);
+	case GFM_PROTO_REPLICA_LOST:
+		e = gfm_server_replica_lost(peer, from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_ADD:
 		e = gfm_server_replica_add(peer, from_client, skip);

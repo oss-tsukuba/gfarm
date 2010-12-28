@@ -90,6 +90,8 @@ gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
+gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
+	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
 	gfarm_int64_t, int);
 gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);

@@ -1002,20 +1002,20 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 }
 
 gfarm_error_t
-replica_remove(gfarm_ino_t ino, gfarm_uint64_t gen)
+replica_lost(gfarm_ino_t ino, gfarm_uint64_t gen)
 {
 	gfarm_error_t e;
-	static const char diag[] = "GFM_PROTO_REPLICA_REMOVE";
+	static const char diag[] = "GFM_PROTO_REPLICA_LOST";
 
-	if ((e = gfm_client_replica_remove_request(gfm_server, ino, gen))
+	if ((e = gfm_client_replica_lost_request(gfm_server, ino, gen))
 	     != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_1000478,
-		    "replica_remove request", diag, e);
-	else if ((e = gfm_client_replica_remove_result(gfm_server))
+		    "replica_lost request", diag, e);
+	else if ((e = gfm_client_replica_lost_result(gfm_server))
 	     != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT)
 		if (debug_mode)
 			gflog_info(GFARM_MSG_1000479,
-			    "replica_remove(%s) result: %s", diag,
+			    "replica_lost(%s) result: %s", diag,
 			    gfarm_error_string(e));
 	return (e);
 }
@@ -1073,7 +1073,7 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 				gfm_client_compound_end(diag);
 
 			if (save_errno == ENOENT) {
-				e = replica_remove(ino, gen);
+				e = replica_lost(ino, gen);
 				if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 					gflog_debug(GFARM_MSG_1002299,
 					    "possible race between "
@@ -1839,6 +1839,7 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	gfarm_uint64_t gen;
 	int save_errno = 0;
 	char *path;
+int rv;
 
 	e = gfs_async_server_get_request(conn, size, "fhremove",
 	    "ll", &ino, &gen);
@@ -1846,8 +1847,15 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 		return (e);
 
 	local_path(ino, gen, "fhremove", &path);
+#if 0
 	if (unlink(path) == -1)
 		save_errno = errno;
+#else
+rv = unlink(path);
+if (rv == -1)
+	save_errno = errno;
+gflog_info(GFARM_MSG_UNFIXED, "fhremove(%s): %d, %d, %d", path, rv, errno, save_errno);
+#endif
 	free(path);
 
 	return (gfs_async_server_put_reply_with_errno(conn, xid,

@@ -2805,15 +2805,15 @@ gfm_client_replica_added_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
-gfm_client_replica_remove_request(struct gfm_connection *gfm_server,
+gfm_client_replica_lost_request(struct gfm_connection *gfm_server,
 	gfarm_ino_t inum, gfarm_uint64_t gen)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_REPLICA_REMOVE, "ll", inum, gen));
+	    GFM_PROTO_REPLICA_LOST, "ll", inum, gen));
 }
 
 gfarm_error_t
-gfm_client_replica_remove_result(struct gfm_connection *gfm_server)
+gfm_client_replica_lost_result(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }
