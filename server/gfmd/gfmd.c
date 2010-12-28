@@ -1288,7 +1288,7 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-	/* check and repair nlink */
+	/* check and repair nlink: must be after db_thread */
 	inode_nlink_check();
 
 	accepting_loop(sock);
