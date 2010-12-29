@@ -2083,7 +2083,7 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "skipping replication for %lld:%lld, "
 			    "because %s:%d is down: %s",
-			    (long long)rep->ino, (long long)rep->gen,
+			    (long long)qd->head->ino, (long long)qd->head->gen,
 			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
 			    gfarm_error_string(src_err));
 		} else {
