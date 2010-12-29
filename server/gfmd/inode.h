@@ -25,7 +25,7 @@ void inode_for_each_file_opening(
 	void *);
 
 struct host *file_copy_host(struct file_copy *);
-int file_copy_valid(struct file_copy *);
+int file_copy_is_valid(struct file_copy *);
 
 int inode_is_dir(struct inode *);
 int inode_is_file(struct inode *);
@@ -89,7 +89,9 @@ gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
 	struct process *);
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 
+void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
+void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,

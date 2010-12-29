@@ -7,9 +7,6 @@ gfarm_ino_t dead_file_copy_get_ino(struct dead_file_copy *);
 gfarm_uint64_t dead_file_copy_get_gen(struct dead_file_copy *);
 struct host *dead_file_copy_get_host(struct dead_file_copy *);
 
-gfarm_error_t dead_file_copy_remove(
-	gfarm_ino_t, gfarm_uint64_t, struct host *);
-
 int dead_file_copy_is_removable_default(struct dead_file_copy *);
 extern int (*dead_file_copy_is_removable)(struct dead_file_copy *);
 
@@ -27,8 +24,8 @@ void dead_file_copy_inode_status_changed(gfarm_ino_t);
 void dead_file_copy_mark_kept(struct dead_file_copy *);
 void dead_file_copy_mark_deferred(struct dead_file_copy *);
 
-int dead_file_copy_count_by_inode(gfarm_ino_t, int);
-gfarm_error_t dead_file_copy_info_by_inode(gfarm_ino_t, int,
+int dead_file_copy_count_by_inode(gfarm_ino_t, gfarm_uint64_t, int);
+gfarm_error_t dead_file_copy_info_by_inode(gfarm_ino_t, gfarm_uint64_t, int,
 	int *, char **, gfarm_int64_t *, gfarm_int32_t *);
 
 void dead_file_copy_init(void);

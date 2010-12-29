@@ -288,6 +288,40 @@ doc/internal/png/gfmd-thread-dependency.png
     確認し、送信が滞留していた場合には、host_peer_busy() で
     コネクションを切断する
 
+■ ファイル複製管理
+
+○ 基本的には、同一の世代番号を持つレプリカは全て同一の内容を持つ。
+
+例外は以下の2種類。
+
+- 更新対象として、書き込み用にオープンされているレプリカ
+	これは、全レプリカ中、一つだけ存在しうる。
+	gfmd 的には、
+		(accmode_to_op(struct file_opening::flag) & GFS_W_OK) != 0
+	という条件が成り立っている場合の
+		struct file_opening::u.f.spool_host
+	が、そのホスト。
+	クローズ時に、このレプリカの世代番号を上げて解決する。
+- レプリケーション途中のファイル
+	レプリケーション先は、転送途中の不完全な内容を持つ。
+	この場合、FILE_COPY_IS_VALID(struct file_copy *) が偽となる。
+
+	FILE_COPY_IS_VALID(struct file_copy *) が偽となるのは、これ以外に、
+	内容は完全だが、削除途中のレプリカすなわち
+	FILE_COPY_IS_BEING_REMOVED(struct file_copy *) が真となるレプリカ
+	がある。
+
+○ 基本的には、削除要求が出る (dead_file_copy ができる) のは、旧世代のみ
+
+例外は以下の2種類
+
+- なんらかの理由でレプリケーションが失敗して、その削除を要求する場合
+- 「gfrm -h ノード」すなわち gfs_replica_remove_by_file() で要求された場合
+
+この2種類の例外については、dead_file_copy に加えて、
+FILE_COPY_IS_BEING_REMOVED(struct file_copy *) を真として、管理/監視する。
+dead_file_copy の load 時には、このための struct file_copy 設定も必要となる。
+
 ■ ファイル複製処理の状態
 
 ○ 現行の gfmd 主導リプリケーションの概要
@@ -311,9 +345,18 @@ doc/internal/png/gfmd-thread-dependency.png
   この間、この dead_file_copy は dead_file_copy_mark_kept() により
   保護されている。
 
+  なお、ここで (すなわち schedule_replication() で)
+  FILE_COPY_IS_BEING_REMOVED(copy) なノードも更新結果の配布先から除外して
+  いるが、この検査はなくても良い。
+  なぜなら、配ろうとしているのは新しい世代のレプリカであるため、旧世代の
+  レプリカの配送が途中でも、並行して配送できるため。
+  ただし、以下のような理由から、この検査を行なっている。
+  - 直前に複製に失敗していれば、今回も失敗する可能性が高いだろうと思われる
+  - 「gfrm -h ノード」で明示的に削除されたなら、配るべきではない。
+
 − データ構造
 
-複製処理実行中は、struct file_copy::valid == 0 となっている。
+複製処理実行中は、!FILE_COPY_IS_VALID() となっている。
 複製処理完了時に inode_replicated() から、inode_add_replica(inode, fr->dst, 1)
 を呼び出し、valid = 1 に変更している。
 
@@ -334,6 +377,21 @@ removal_pendingq_enqueue() 側では、以下の処理を行なっている。
 	最新世代の削除は gfrm -h すなわち gfs_replica_remove_by_file()
 	すなわち GFM_PROTO_REPLICA_REMOVE_BY_FILE → inode_remove_replica()
 	でも行なっている。
+	この問題は、以下で認識され、
+	    https://sourceforge.net/apps/trac/gfarm/ticket/88
+		#88 - race condition between a replication failure
+		and another replication
+	replicationに関しては、r4657, r4659 で dead_file_copy_remove() を
+	導入することにより(効率は悪いが)、一応対策された。
+	しかし、r4955 で、上書き時には、それまでレプリカの存在しなかった
+	ノードにも同一世代のファイルを作成するケースが生まれたため、
+	再度問題になった。
+	また、関連して
+	    https://sourceforge.net/apps/trac/gfarm/ticket/78
+		#78 annoying pgsql error messages about deadfilecopy
+	    https://sourceforge.net/apps/trac/gfarm/ticket/144
+		#144 INode table in the PostgreSQL backend may not be
+		corectly updated
 失敗した複製処理が旧世代に対するものであれば、
 	単に remove_replica_entity() で dead_file_copy を作成する。(DBにも書く)
 	file_copy については存在しないので、何も行なわない。
@@ -349,14 +407,6 @@ XXX FIXME: race condition
 古い複製の複製要求よりも先に実行される可能性が、理論的にはありうる。
 ただし、この場合、スプールにゴミが残るだけなので、ファイルを失うと
 いった問題は起きない。
-
-同一の世代番号を持つファイルで、内容に一貫性がとれない状態となるのは、
-以下の場合。
-・ファイル更新時
-  書き込みオープンされているレプリカ (全レプリカ中で1つしかない) が、
-  別の内容を持つ。クローズ時に、このレプリカの世代番号を上げて解決する。
-・レプリケーションの実行中
-  レプリケーション先は、転送途中の不完全な内容を持つ。
 
 ○ 2.4.0 リリースの頃に、今後の予定として考えていたもの (古い。今はさらに改訂)
 

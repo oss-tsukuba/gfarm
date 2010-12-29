@@ -180,29 +180,6 @@ dfc_workq_remove(struct dead_file_copy *dfc)
 	dfc->workq_prev->workq_next = dfc->workq_next;
 }
 
-static void
-dfc_workq_try_to_remove(
-	struct dfc_workq *q, enum dead_file_copy_state expected_state,
-	struct dead_file_copy *dfc, const char *diag)
-{
-	int do_remove;
-
-	gfarm_mutex_lock(&q->mutex, diag, "lock");
-
-	gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
-	do_remove = dfc->state == expected_state;
-	gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
-
-	if (do_remove) {
-		dfc_workq_remove(dfc);
-		gfarm_mutex_lock(&dfc->mutex, diag, "dfc new state");
-		dfc->state = dfcstate_deferred;
-		gfarm_mutex_unlock(&dfc->mutex, diag, "dfc new state");
-	}
-
-	gfarm_mutex_unlock(&q->mutex, diag, "unlock");
-}
-
 /*
  * PREREQUISITE: nothing
  * LOCKS: dfc_workq::mutex
@@ -518,125 +495,6 @@ host_busyq_scanner_init(void)
 
 /*
  * PREREQUISITE: giant_lock
- * LOCKS: dfc_allq.mutex, removal_pendingq.mutex, host_busyq.mutex
- * SLEEPS: no
- *
- * The result of this function must be checked against GFARM_ERR_NOERROR
- * before calling async_back_channel_replication_request()
- * to avoid a race condition between
- * a replica removal (caused due to a failure of a replication)
- * and new replication against the same replica.
- *
- * XXX FIXME: sequential search
- */
-gfarm_error_t
-dead_file_copy_remove(
-	gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
-{
-	struct dead_file_copy *dfc, *next;
-	enum dead_file_copy_state state;
-	static const char diag[] = "dead_file_copy_remove";
-
-	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
-
-	/* giant_lock prevents dfc from being freed */
-	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
-	     dfc = next) {
-		next = dfc->allq_next;
-
-		if (dfc->inum != inum ||
-		    dfc->igen != igen ||
-		    dfc->host != host)
-			continue;
-
-		for (;;) {
-			gfarm_mutex_lock(&dfc->mutex, diag, "dfc state");
-			state = dfc->state;
-			gfarm_mutex_unlock(&dfc->mutex, diag, "dfc state");
-			switch (state) {
-			case dfcstate_in_flight:
-			case dfcstate_finished:
-			case dfcstate_finalizing:
-				/*
-				 * XXX FIXME:
-				 * this cancels a replication, but that's not
-				 * optimal.  it's better to wait until
-				 * the dfc is freed instead.
-				 */
-				gfarm_mutex_unlock(&dfc_allq.mutex,
-				    diag, "file busy");
-				gflog_debug(GFARM_MSG_1002411,
-				    "%s(%lld, %lld, %s): "
-				    "giving up replication due to state %d",
-				    diag,
-				    (unsigned long long)dfc->inum,
-				    (unsigned long long)dfc->igen,
-				    host_name(dfc->host), dfc->state);
-				return (GFARM_ERR_FILE_BUSY);
-			case dfcstate_kept:
-				/*
-				 * shouldn't happen, since this function is
-				 * only called when a replication (against
-				 * newest replica) is requested, but
-				 * dfcstate_kept is only used for removing
-				 * an old replica.
-				 */
-				gfarm_mutex_unlock(&dfc_allq.mutex,
-				    diag, "kept");
-				gflog_warning(GFARM_MSG_1002412,
-				    "%s(%lld, %lld, %s): unexpected state %d",
-				    diag,
-				    (unsigned long long)dfc->inum,
-				    (unsigned long long)dfc->igen,
-				    host_name(dfc->host), dfc->state);
-				return (GFARM_ERR_UNKNOWN);
-			case dfcstate_deferred:
-				/*
-				 * this state won't be chanegd
-				 * due to the giant_lock
-				 */
-				gfarm_mutex_unlock(&dfc_allq.mutex,
-				    diag, "preparing free");
-				dead_file_copy_free(dfc);
-#if 1
-				/*
-				 * currently, there may be other dead_file_copy
-				 * for the same replica.
-				 * XXX should be corrected.
-				 */
-				goto next_one;
-#else
-				return (GFARM_ERR_NO_ERROR);
-#endif
-			case dfcstate_pending:
-				dfc_workq_try_to_remove(
-				    &removal_pendingq, state, dfc,
-				    "removing from removal_pendingq");
-				break;
-			case dfcstate_busy:
-				dfc_workq_try_to_remove(
-				    &host_busyq, state, dfc,
-				    "removing from host_busyq");
-				break;
-			default:
-				gflog_fatal(GFARM_MSG_1002413,
-				    "%s(%lld, %lld, %s): insane state %d",
-				    diag,
-				    (unsigned long long)dfc->inum,
-				    (unsigned long long)dfc->igen,
-				    host_name(dfc->host), dfc->state);
-				break;
-			}
-		}
-next_one:	;
-	}
-
-	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/*
- * PREREQUISITE: giant_lock
  * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
  * SLEEPS: maybe,
  *	but dfc_allq.mutex and removal_pendingq.mutex
@@ -899,7 +757,8 @@ dead_file_copy_mark_deferred(struct dead_file_copy *dfc)
  * otherwise this is too slow.
  */
 int
-dead_file_copy_count_by_inode(gfarm_ino_t inum, int up_only)
+dead_file_copy_count_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen,
+	int up_only)
 {
 	int n = 0;
 	struct dead_file_copy *dfc;
@@ -910,7 +769,8 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, int up_only)
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
 	     dfc = dfc->allq_next) {
 
-		if (dfc->inum == inum &&
+		/* dfc->inum == igen case is handled by an invalid file_copy */
+		if (dfc->inum == inum && dfc->inum != igen &&
 		    (up_only ?
 		    host_is_up(dfc->host) : host_is_active(dfc->host)))
 			n++;
@@ -930,7 +790,7 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, int up_only)
  * otherwise this is too slow.
  */
 gfarm_error_t
-dead_file_copy_info_by_inode(gfarm_ino_t inum, int up_only,
+dead_file_copy_info_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen, int up_only,
 	int *np, char **hosts, gfarm_int64_t *gens, gfarm_int32_t *flags)
 {
 	int i = 0, n = *np;
@@ -948,6 +808,8 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, int up_only,
 			break;
 
 		if (dfc->inum != inum)
+			continue;
+		if (dfc->igen == igen) /* handled by an invalid file_copy */
 			continue;
 		if (up_only) {
 			if (!host_is_up(dfc->host))
@@ -1121,6 +983,9 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 		    host_name(dfc->host), gfarm_error_string(e));
 
 	gfarm_mutex_destroy(&dfc->mutex, diag, "dfc state");
+
+	inode_remove_replica_completed(dfc->inum, dfc->igen, dfc->host);
+
 	free(dfc);
 }
 
@@ -1150,6 +1015,8 @@ dead_file_copy_add_one(void *closure,
 	} /* otherwise leave it as dfcstate_deferred */
 
 	free(hostname);
+
+	inode_dead_file_copy_added(inum, igen, host);
 }
 
 void

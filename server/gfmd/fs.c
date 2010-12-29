@@ -3012,11 +3012,6 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 		srcport = host_port(src);
 		ino = inode_get_number(inode);
 		gen = inode_get_gen(inode);
-		if (dead_file_copy_remove(ino, gen, dst) !=
-		    GFARM_ERR_NO_ERROR) {
-			e = GFARM_ERR_FILE_BUSY;
-			file_replicating_free(fr);
-		}
 	}
 
 	giant_unlock();
