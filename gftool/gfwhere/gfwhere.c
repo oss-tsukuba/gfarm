@@ -41,7 +41,6 @@ void
 display_replica(struct gfs_stat *st, struct gfs_replica_info *ri, int i,
 	struct options *opt)
 {
-	gfarm_uint64_t igen;
 	int need_space;
 
 	if (opt->long_format)
@@ -54,7 +53,8 @@ display_replica(struct gfs_stat *st, struct gfs_replica_info *ri, int i,
 	if (opt->type_suffix) {
 		if (opt->print_dead_copy &&
 		    gfs_replica_info_nth_is_dead_copy(ri, i))
-			printf(";%llu", (unsigned long long)igen);
+			printf(";%llu",
+			    (long long)gfs_replica_info_nth_gen(ri, i));
 		if (gfs_replica_info_nth_is_incomplete(ri, i))
 			putchar('?');
 		if (gfs_replica_info_nth_is_dead_host(ri, i))
