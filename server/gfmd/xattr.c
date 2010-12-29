@@ -78,12 +78,15 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 		e = inode_xattr_add(inode, xmlMode, attrname, value, size);
 		if (e == GFARM_ERR_NO_ERROR)
 			*addattr = 1;
-		else if (e != GFARM_ERR_ALREADY_EXISTS
-			|| (flags & XATTR_CREATE)) {
+		else if (e == GFARM_ERR_ALREADY_EXISTS &&
+		    (flags & XATTR_CREATE) == 0)
+			e = inode_xattr_modify(inode, xmlMode, attrname,
+					       value, size);
+		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002069,
 				"inode_xattr_add() failed:%s",
 				gfarm_error_string(e));
-			return e;
+			return (e);
 		}
 	}
 
