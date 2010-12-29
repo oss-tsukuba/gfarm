@@ -114,8 +114,7 @@ struct action *act = &replicate_mode;
 static void
 file_info_free(struct file_info *info)
 {
-	if (info->pathname != NULL)
-		free(info->pathname);
+	free(info->pathname);
 	if (info->copy != NULL)
 		gfarm_strings_free_deeply(info->ncopy, info->copy);
 	free(info);
@@ -363,6 +362,8 @@ is_enough_space(char *host, int port, gfarm_off_t size)
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
+	if (size < gfarm_get_minimum_free_disk_space())
+		size = gfarm_get_minimum_free_disk_space();
 	return (e == GFARM_ERR_NO_ERROR && bavail * bsize >= size);
 }
 
@@ -418,6 +419,7 @@ action(struct action *act, int tnum, int nth, int pi, struct file_info *fi,
 	int ndst = arg->ndst;
 	char **dst = arg->dst;
 	int *dst_port = arg->dst_port;
+	gfarm_error_t e;
 
 	di = (tnum + pi * nth) % ndst;
 	/*
@@ -430,24 +432,45 @@ action(struct action *act, int tnum, int nth, int pi, struct file_info *fi,
 	 * fi->surplus_ncopy == 0 means to create file replicas.
 	 */
 	max_niter = ndst;
-	while (fi->surplus_ncopy == 0 && (file_copy_does_exist(fi, dst[di])
-		|| ! is_enough_space(dst[di], dst_port[di], fi->filesize))) {
-		if (opt_verbose)
-			printf("%02d: warning: the destination may conflict: "
-			    "%s -> %s\n", tnum, dst[di], dst[(di + 1) % ndst]);
-		di = (di + 1) % ndst;
-		if (--max_niter == 0)
-			break;
-	}
-	if (max_niter == 0)
-		return (GFARM_ERR_NO_SPACE);
+	while (1) {
+		while (fi->surplus_ncopy == 0
+		       && (file_copy_does_exist(fi, dst[di])
+			   || ! is_enough_space(
+				   dst[di], dst_port[di], fi->filesize))
+		       && max_niter > 0) {
+			if (opt_verbose)
+				printf("%02d: warning: the destination may "
+				       "conflict: %s -> %s\n", tnum, dst[di],
+				       dst[(di + 1) % ndst]);
+			di = (di + 1) % ndst;
+			--max_niter;
+		}
+		if (max_niter == 0)
+			return (GFARM_ERR_NO_SPACE);
 
-	if (fi->surplus_ncopy == 0 && opt_verbose) {
-		printf("%02d(%03d): %s --> %s\n",
-		       tnum, pi, fi->pathname, dst[di]);
-		fflush(stdout);
+		if (fi->surplus_ncopy == 0 && opt_verbose) {
+			printf("%02d(%03d): %s --> %s\n",
+			       tnum, pi, fi->pathname, dst[di]);
+			fflush(stdout);
+		}
+		e = act->action(fi, di, arg);
+		/* this may happen when this gfrep creates the replica */
+		if (e == GFARM_ERR_ALREADY_EXISTS
+		    || e == GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS) {
+			if (opt_verbose) {
+				printf("%s: %s\n", fi->pathname,
+				       gfarm_error_string(e));
+				printf("%02d: warning: the destination may "
+				       "conflict: %s -> %s\n", tnum, dst[di],
+				       dst[(di + 1) % ndst]);
+			}
+			di = (di + 1) % ndst;
+			--max_niter;
+			continue;
+		}
+		break;
 	}
-	return (act->action(fi, di, arg));
+	return (e);
 }
 
 static const char *
@@ -623,6 +646,30 @@ create_hosthash_from_file(char *hostfile,
 	return (e);
 }
 
+static int
+compare_available_capacity(const void *s1, const void *s2)
+{
+	const struct gfarm_host_sched_info *h1 = s1;
+	const struct gfarm_host_sched_info *h2 = s2;
+	gfarm_uint64_t a1, a2;
+
+	a1 = h1->disk_avail;
+	a2 = h2->disk_avail;
+
+	if (a1 < a2)
+		return (-1);
+	else if (a1 > a2)
+		return (1);
+	else
+		return (0);
+}
+
+static int
+compare_available_capacity_r(const void *s1, const void *s2)
+{
+	return (-compare_available_capacity(s1, s2));
+}
+
 /*
  * XXX FIXME
  * - should use appropriate metadata server for the file,
@@ -651,7 +698,7 @@ create_hostlist_by_domain_and_hash(char *domain,
 	struct gfarm_hash_table *hosthash,
 	int *nhostsp, char ***hostsp, int **portsp)
 {
-	int ninfo, i, j, *ports;
+	int ninfo, i, j, *ports, nhosts;
 	struct gfarm_host_sched_info *infos;
 	char **hosts;
 	gfarm_error_t e;
@@ -659,20 +706,28 @@ create_hostlist_by_domain_and_hash(char *domain,
 	e = schedule_host_domain(domain, &ninfo, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	/* sort 'infos' in descending order wrt available capacity */
+	qsort(infos, ninfo, sizeof(*infos), compare_available_capacity_r);
+
+	/* eliminate file system nodes that do not have enough space */
+	for (i = 0; i < ninfo; ++i)
+		if (infos[i].disk_avail < gfarm_get_minimum_free_disk_space())
+			break;
+	nhosts = i;
 
 	/* XXX - abandon CPU load and available capacity */
-	GFARM_MALLOC_ARRAY(hosts, ninfo);
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) {
 		gfarm_host_sched_info_free(ninfo, infos);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	GFARM_MALLOC_ARRAY(ports, ninfo);
+	GFARM_MALLOC_ARRAY(ports, nhosts);
 	if (ports == NULL) {
 		free(hosts);
 		gfarm_host_sched_info_free(ninfo, infos);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	for (i = 0, j = 0; i < ninfo; ++i) {
+	for (i = 0, j = 0; i < nhosts; ++i) {
 		char *host = infos[i].host;
 
 		if (hosthash == NULL ||
