@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 December 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "30 December 2010" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -697,8 +697,8 @@ The free space value may have a suffix like ``k'' (kilo bytes),
 ``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
 The default size is 128M bytes.
 
-This directive is available in gfmd.conf.  After restarting the gfmd,
-it is effective.
+This directive has to be specified in both gfarm2.conf and gfmd.conf.
+After restarting the gfmd and the Gfarm client, it is effective.
 
 For example,
 
