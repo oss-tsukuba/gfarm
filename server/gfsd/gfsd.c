@@ -2001,7 +2001,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	} else if (fds[0] > FD_SETSIZE) { /* XXX select FD_SETSIZE */
 		dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
 		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
-		    diag, fds[0], gfarm_error_string(e));
+		    diag, fds[0], gfarm_error_string(dst_err));
 		close(fds[0]);
 		close(fds[1]);
 		gfs_client_connection_free(src_gfsd);
