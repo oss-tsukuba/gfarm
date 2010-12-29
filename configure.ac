@@ -980,7 +980,7 @@ fi
 ###### Checks for header files.
 ######
 
-AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h attr/xattr.h sys/xattr.h sys/loadavg.h)
+AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h)
 
 ######
 ###### Checks for types.

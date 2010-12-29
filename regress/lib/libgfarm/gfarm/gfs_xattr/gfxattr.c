@@ -21,10 +21,6 @@
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
 
-#ifdef HAVE_SYS_XATTR_H
-#include <sys/xattr.h>
-#endif
-
 #define DEFAULT_ALLOC_SIZE (64 * 1024)
 
 static gfarm_error_t
@@ -214,9 +210,7 @@ usage(char *prog_name)
 #ifdef ENABLE_XMLATTR
 		" [ -x ]"
 #endif
-#ifdef HAVE_SYS_XATTR_H
 		" [ -c | -m ]"
-#endif
 		" [ -f xattrfile] [-n xattrname] path...\n", prog_name);
 	fprintf(stderr, "\t-s\tset extended attribute\n");
 	fprintf(stderr, "\t-g\tget extended attribute\n");
@@ -225,10 +219,8 @@ usage(char *prog_name)
 #ifdef ENABLE_XMLATTR
 	fprintf(stderr, "\t-x\thandle XML extended attribute\n");
 #endif
-#ifdef HAVE_SYS_XATTR_H
 	fprintf(stderr, "\t-c\tfail if xattrname already exists (use with -s)\n");
 	fprintf(stderr, "\t-m\tfail if xattrname does not exist (use with -s)\n");
-#endif
 	exit(2);
 }
 
@@ -244,12 +236,9 @@ main(int argc, char *argv[])
 	enum { NONE, SET_MODE, GET_MODE, REMOVE_MODE, LIST_MODE } mode = NONE;
 	int c, i, xmlMode = 0, flags = 0, ret = 0;
 	gfarm_error_t e;
-	const char *opts = "f:n:ghsrl?"
+	const char *opts = "f:n:gsrlcmh?"
 #ifdef ENABLE_XMLATTR
 		"x"
-#endif
-#ifdef HAVE_SYS_XATTR_H
-		"cm"
 #endif
 		;
 
@@ -278,20 +267,18 @@ main(int argc, char *argv[])
 		case 'l':
 			mode = LIST_MODE;
 			break;
-#ifdef HAVE_SYS_XATTR_H
 		case 'c':
 			if (flags == 0)
-				flags = XATTR_CREATE;
+				flags = GFS_XATTR_CREATE;
 			else
 				usage(prog_name);
 			break;
 		case 'm':
 			if (flags == 0)
-				flags = XATTR_REPLACE;
+				flags = GFS_XATTR_REPLACE;
 			else
 				usage(prog_name);
 			break;
-#endif
 		case 'h':
 		case '?':
 		default:

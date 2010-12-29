@@ -11,12 +11,6 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/types.h> /* fd_set for "filetab.h" */
-#ifdef HAVE_SYS_XATTR_H
-#include <sys/xattr.h>
-#else
-#define XATTR_CREATE    0x1     /* set value, fail if attr already exists */
-#define XATTR_REPLACE   0x2     /* set value, fail if attr does not exist */
-#endif
 
 #include <gfarm/gfarm.h>
 
@@ -60,13 +54,13 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
 	}
-	if ((flags & (XATTR_CREATE|XATTR_REPLACE))
-		== (XATTR_CREATE|XATTR_REPLACE)) {
+	if ((flags & (GFS_XATTR_CREATE|GFS_XATTR_REPLACE))
+		== (GFS_XATTR_CREATE|GFS_XATTR_REPLACE)) {
 		gflog_debug(GFARM_MSG_1002067,
 			"argument 'flags' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
 	}
-	if (flags & XATTR_REPLACE) {
+	if (flags & GFS_XATTR_REPLACE) {
 		e = inode_xattr_modify(inode, xmlMode, attrname, value, size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002068,
@@ -79,7 +73,7 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 		if (e == GFARM_ERR_NO_ERROR)
 			*addattr = 1;
 		else if (e == GFARM_ERR_ALREADY_EXISTS &&
-		    (flags & XATTR_CREATE) == 0)
+		    (flags & GFS_XATTR_CREATE) == 0)
 			e = inode_xattr_modify(inode, xmlMode, attrname,
 					       value, size);
 		if (e != GFARM_ERR_NO_ERROR) {

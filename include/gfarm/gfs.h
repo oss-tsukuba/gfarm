@@ -249,6 +249,10 @@ gfarm_error_t gfs_access(const char *, int);
 #define GFS_W_OK	2
 #define GFS_R_OK	4
 
+/* 5th argument (flags) of gfs_setxattr() and gfs_fsetxattr() */
+#define GFS_XATTR_CREATE    0x1     /* set value, fail if attr already exists */
+#define GFS_XATTR_REPLACE   0x2     /* set value, fail if attr does not exist */
+
 gfarm_error_t gfs_setxattr(const char *path, const char *name,
 	const void *value, size_t size, int flags);
 gfarm_error_t gfs_getxattr(const char *path, const char *name,
