@@ -212,16 +212,6 @@ pgsql_get_int64(PGresult *res, int row, const char *field_name)
 	return (gfarm_ntoh64(val));
 }
 
-static int64_t
-pgsql_get_int64_by_fnumber(PGresult *res, int row, int fnumber)
-{
-	uint64_t val;
-
-	memcpy(&val, PQgetvalue(res, row, fnumber),
-	    sizeof(val));
-	return (gfarm_ntoh64(val));
-}
-
 /* this interface is exported for a use from a private extension */
 int32_t
 pgsql_get_int32(PGresult *res, int row, const char *field_name)
@@ -569,44 +559,6 @@ gfarm_pgsql_update_or_delete_with_retry(const char *command,
 	gfarm_error_t e =
 		gfarm_pgsql_check_update_or_delete(res, command, diag);
 
-	PQclear(res);
-	return (e);
-}
-
-static gfarm_error_t
-gfarm_pgsql_generic_count(
-	const char *count_sql,
-	int nParams,
-	const char **paramValues,
-	gfarm_int64_t *np,
-	const char *diag)
-{
-	PGresult *res;
-	gfarm_error_t e;
-	int n;
-
-	do {
-		res = PQexecParams(conn,
-			count_sql, /* sql which returns COUNT of records */
-			nParams,
-			NULL, /* param types */
-			paramValues,
-			NULL, /* param lengths */
-			NULL, /* param formats */
-			1); /* ask for binary results */
-	} while (PQresultStatus(res) != PGRES_TUPLES_OK &&
-	    pgsql_should_retry(res));
-
-	if ((e = gfarm_pgsql_check_select(res, count_sql, diag))
-	    == GFARM_ERR_NO_ERROR) {
-		n = PQntuples(res);
-		if (n != 1) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "select results count : %d", n);
-			e = GFARM_ERR_INVALID_ARGUMENT;
-		} else
-			*np = pgsql_get_int64_by_fnumber(res, 0, 0);
-	}
 	PQclear(res);
 	return (e);
 }
@@ -2115,55 +2067,8 @@ pgsql_deadfilecopy_call(struct db_deadfilecopy_arg *arg, const char *sql,
 }
 
 static gfarm_error_t
-pgsql_deadfilecopy_exists(struct db_deadfilecopy_arg *arg, int *existsp,
-	const char *diag)
-{
-	gfarm_error_t e;
-	const char *paramValues[3];
-	char inumber[GFARM_INT64STRLEN + 1];
-	char igen[GFARM_INT64STRLEN + 1];
-	gfarm_int64_t n;
-
-	sprintf(inumber, "%" GFARM_PRId64, arg->inum);
-	paramValues[0] = inumber;
-	sprintf(igen, "%" GFARM_PRId64, arg->igen);
-	paramValues[1] = igen;
-	paramValues[2] = arg->hostname;
-
-	if ((e = gfarm_pgsql_generic_count(
-		"SELECT COUNT(*) FROM DeadFileCopy "
-		"WHERE inumber = $1 AND igen = $2 AND hostname = $3",
-		3, paramValues, &n, diag)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	assert(n == 0 || n == 1);
-	*existsp = (n == 1);
-	return (e);
-}
-
-static gfarm_error_t
 gfarm_pgsql_deadfilecopy_add(struct db_deadfilecopy_arg *arg)
 {
-	gfarm_error_t e;
-	int exists;
-
-	/* Workaround for https://sourceforge.net/apps/trac/gfarm/ticket/144
-	 * - INode table in the PostgreSQL backend may not be corectly updated.
-	 *
-	 * Check existence of the key to workaround 'duplicate key value'
-	 * error. Without this, the error can occur because we do not
-	 * check existence of the deadfilecopy object on memory.
-	 */
-	if ((e = pgsql_deadfilecopy_exists(arg, &exists,
-	    "pgsql_deadfilecopy_add")) != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (exists) { /* already inserted */
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "deadfilecopy record already inserted : "
-		    "(%" GFARM_PRId64 ",%" GFARM_PRId64 ",%s)",
-		    arg->inum, arg->igen, arg->hostname);
-		free(arg);
-		return (GFARM_ERR_NO_ERROR);
-	}
 	return pgsql_deadfilecopy_call(arg,
 		"INSERT INTO DeadFileCopy (inumber, igen, hostname) "
 			"VALUES ($1, $2, $3)",
