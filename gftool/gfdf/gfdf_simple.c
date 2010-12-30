@@ -28,7 +28,8 @@ struct formatter {
 	char *nodes_title_format;
 	char *nodes_data_format;
 	char *nodes_separator;
-	size_t (*to_string)(char *, size_t, unsigned long long, int);
+	size_t (*number_to_string)(char *, size_t, unsigned long long);
+	size_t (*blocks_to_string)(char *, size_t, unsigned long long);
 };
 
 #define PRECISE_TITLE_FORMAT	"%13s %13s %13s %4s"
@@ -38,9 +39,23 @@ struct formatter {
 #define READABLE_DATA_FORMAT	"%9s %6s %6s %3.0f%%"
 
 static size_t
-precise_number(char *buf, size_t len, unsigned long long number, int dummy)
+precise_number(char *buf, size_t len, unsigned long long number)
 {
 	return (snprintf(buf, len, "%13llu", number));
+}
+
+static size_t
+readable_number(char *buf, size_t len, unsigned long long number)
+{
+	return (gfarm_humanize_number(buf, len, number,
+	    option_formatting_flags));
+}
+
+static size_t
+readable_blocks(char *buf, size_t len, unsigned long long number)
+{
+	return (gfarm_humanize_number(buf, len, number * 1024,
+	    option_formatting_flags));
 }
 
 const struct formatter precise_formatter = {
@@ -49,6 +64,7 @@ const struct formatter precise_formatter = {
 	PRECISE_TITLE_FORMAT	" %s\n",
 	PRECISE_DATA_FORMAT	" %s\n",
 	"----------------------------------------------",
+	precise_number,
 	precise_number
 };
 
@@ -58,7 +74,8 @@ const struct formatter readable_formatter = {
 	READABLE_TITLE_FORMAT	" %s\n",
 	READABLE_DATA_FORMAT	" %s\n",
 	"----------------------------",
-	gfarm_humanize_number
+	readable_number,
+	readable_blocks
 };
 
 const struct formatter *formatter = &precise_formatter;
@@ -86,14 +103,14 @@ display_statfs(const char *path, const char *dummy)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	(*formatter->to_string)(capbuf, sizeof capbuf,
-	    (unsigned long long)used + avail, option_formatting_flags);
-	(*formatter->to_string)(usedbuf, sizeof usedbuf,
-	    (unsigned long long)used, option_formatting_flags);
-	(*formatter->to_string)(availbuf, sizeof availbuf,
-	    (unsigned long long)avail, option_formatting_flags);
-	(*formatter->to_string)(filesbuf, sizeof filesbuf,
-	    (unsigned long long)files, option_formatting_flags);
+	(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
+	    (unsigned long long)used + avail);
+	(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
+	    (unsigned long long)used);
+	(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
+	    (unsigned long long)avail);
+	(*formatter->number_to_string)(filesbuf, sizeof filesbuf,
+	    (unsigned long long)files);
 
 	printf(formatter->summary_title_format,
 	       "1K-blocks", "Used", "Avail", "Use%", "Files");
@@ -200,12 +217,12 @@ display_statfs_nodes(const char *path, const char *domain)
 	for (i = 0; i < nhosts; ++i) {
 		used = hosts[i].disk_used;
 		avail = hosts[i].disk_avail;
-		(*formatter->to_string)(capbuf, sizeof capbuf,
-		    (unsigned long long)used + avail, option_formatting_flags);
-		(*formatter->to_string)(usedbuf, sizeof usedbuf,
-		    (unsigned long long)used, option_formatting_flags);
-		(*formatter->to_string)(availbuf, sizeof availbuf,
-		    (unsigned long long)avail, option_formatting_flags);
+		(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
+		    (unsigned long long)used + avail);
+		(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
+		    (unsigned long long)used);
+		(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
+		    (unsigned long long)avail);
 		printf(formatter->nodes_data_format,
 		       capbuf, usedbuf, availbuf,
 		       (double)used / (used + avail) * 100,
@@ -215,13 +232,12 @@ display_statfs_nodes(const char *path, const char *domain)
 	}
 	if (nhosts > 0) {
 		puts(formatter->nodes_separator);
-		(*formatter->to_string)(capbuf, sizeof capbuf,
-		    (unsigned long long)total_used + total_avail,
-		    option_formatting_flags);
-		(*formatter->to_string)(usedbuf, sizeof usedbuf,
-		    (unsigned long long)total_used, option_formatting_flags);
-		(*formatter->to_string)(availbuf, sizeof availbuf,
-		    (unsigned long long)total_avail, option_formatting_flags);
+		(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
+		    (unsigned long long)total_used + total_avail);
+		(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
+		    (unsigned long long)total_used);
+		(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
+		    (unsigned long long)total_avail);
 		printf(formatter->nodes_data_format,
 		       capbuf, usedbuf, availbuf,
 		       (double)total_used / (total_used + total_avail) * 100,
