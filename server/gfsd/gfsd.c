@@ -413,7 +413,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	/* if input/output error occurs, die */
 	if (ecode == GFARM_ERR_INPUT_OUTPUT) {
 		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
 		    gfarm_error_string(e));
 	}
 }
@@ -1913,7 +1913,7 @@ replication_queue_lookup(const char *hostname, int port,
 	    sizeof(*qd), hostname, port, gfarm_get_global_username(),
 	    &q, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002514,
 		    "creating replication queue for %s:%d: %s",
 		    hostname, port, gfarm_error_string(e));
 		return (e);
@@ -2080,7 +2080,7 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 			 * avoid retries, because this may take long time,
 			 * if the host is down or network is unreachable.
 			 */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002515,
 			    "skipping replication for %lld:%lld, "
 			    "because %s:%d is down: %s",
 			    (long long)qd->head->ino, (long long)qd->head->gen,
@@ -2134,14 +2134,14 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 
 	if ((e = replication_queue_lookup(host, port, &q)) !=
 	    GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002516,
 		    "cannot allocate replication queue for %s:%d: %s",
 		    host, port, gfarm_error_string(e));
 	} else {
 		GFARM_MALLOC(rep);
 		if (rep == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002517,
 			    "cannot allocate replication record for "
 			    "%s:%d %lld:%lld: no memory",
 			    host, port, (long long)ino, (long long)gen);
@@ -4033,7 +4033,7 @@ kill_pending_replications(void)
 		/* do not free active replication (i.e. qd->head) */
 		for (rep = qd->head->q_next; rep != NULL; rep = next) {
 			next = rep->q_next;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002518,
 			    "forget pending replication request "
 			    "%s:%d %lld:%lld",
 			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),

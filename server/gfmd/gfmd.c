@@ -846,7 +846,7 @@ peer_authorize(struct peer *peer)
 		    id_type, username, hostname, &addr, auth_method);
 		giant_unlock();
 	} else {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002474,
 		    "host %s: authorize: %s", hostname, gfarm_error_string(e));
 		free(hostname);
 	}

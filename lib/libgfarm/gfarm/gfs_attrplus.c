@@ -31,7 +31,7 @@ gfm_getattrplus_request(struct gfm_connection *gfm_server, void *closure)
 		c->patterns, c->npatterns, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002469,
 		    "fgetattrplus request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -46,7 +46,7 @@ gfm_getattrplus_result(struct gfm_connection *gfm_server, void *closure)
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002470,
 		    "fgetattrplus result; %s", gfarm_error_string(e));
 #endif
 	return (e);
@@ -79,7 +79,7 @@ gfs_getattrplus(
 	    &closure);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002471,
 			"gfm_inode_op(%s) failed: %s",
 			path,
 			gfarm_error_string(e));

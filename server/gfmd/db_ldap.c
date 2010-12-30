@@ -1071,7 +1071,7 @@ gfarm_ldap_generic_info_get_foreach_withattrs(
 					bervals = ldap_get_values_len(
 					    gfarm_ldap_server, e, a);
 					if (bervals == NULL) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1002511,
 						    "ldap_get_values_len: %s",
 						    gfarm_ldap_session_error());
 						error = GFARM_ERR_UNKNOWN;
@@ -2828,7 +2828,7 @@ gfarm_ldap_db_xattr_set_field(void *vinfo, char *attribute, char **vals)
 		} else {
 			info->attrvalue = malloc(info->attrsize);
 			if (info->attrvalue == NULL) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002512,
 				    "failed to allocate %d bytes xattr value",
 				    info->attrsize);
 				info->attrsize = 0;

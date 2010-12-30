@@ -1465,7 +1465,7 @@ gfm_client_fgetattrplus_result(struct gfm_connection *gfm_server,
 	    &st->st_ctimespec.tv_sec, &st->st_ctimespec.tv_nsec,
 	    &nattrs);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002454,
 		    "gfm_client_fgetattrplus; gfm_client_rpc_result(): %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -1492,7 +1492,7 @@ gfm_client_fgetattrplus_result(struct gfm_connection *gfm_server,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
 			/* XXX memory leak */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002455,
 				"gfm_client_fgetattrplus: %s",
 				gfarm_error_string(e));
 			nattrs = j;
@@ -1970,7 +1970,7 @@ gfm_client_getdirentsplusxattr_result(struct gfm_connection *gfm_server,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
 			/* XXX memory leak */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002456,
 				"getdirentsplusxattr response: %s",
 				gfarm_error_string(e));
 			return (e);
@@ -2007,7 +2007,7 @@ gfm_client_getdirentsplusxattr_result(struct gfm_connection *gfm_server,
 				if (e == GFARM_ERR_NO_ERROR)
 					e = GFARM_ERR_PROTOCOL;
 				/* XXX memory leak */
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002457,
 					"getdirentsplusxattr xattr: %s",
 					gfarm_error_string(e));
 				nattrs = j;

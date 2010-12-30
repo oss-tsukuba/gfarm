@@ -36,7 +36,7 @@ gfs_dirplusxattr_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	GFARM_MALLOC(dir);
 	if (dir == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002458,
 			"allocation of dir failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -84,7 +84,7 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 
 	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server, &fd, &type))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002459,
 			"gfm_open_fd(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -98,12 +98,12 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (e == GFARM_ERR_NOT_A_DIRECTORY)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002460,
 			"Not a directory (%s): %s",
 			path,
 			gfarm_error_string(e));
 	else if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002461,
 			"allocation of dirplusxattr for path (%s) failed: %s",
 			path,
 			gfarm_error_string(e));
@@ -122,7 +122,7 @@ gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server, void *closure
 	    gfarm_xattr_caching_patterns_number());
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "getdirentsplusxattr request: %s",
+		gflog_warning(GFARM_MSG_1002462, "getdirentsplusxattr request: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -136,7 +136,7 @@ gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server, void *closure)
 	    dir->attrnamebuf, dir->attrvaluebuf, dir->attrsizebuf);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED, "getdirentsplusxattr result: %s",
+		gflog_warning(GFARM_MSG_1002463, "getdirentsplusxattr result: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -159,7 +159,7 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 		    NULL, 
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002464,
 				"gfs_client_compound_fd_op() failed: %s",
 				gfarm_error_string(e));
 			return (e);

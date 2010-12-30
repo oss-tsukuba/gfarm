@@ -356,7 +356,7 @@ gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
 	e = gfs_getattrplus(path, patterns, npatterns, 0,
 	    st, nattrsp, attrnamesp, attrvaluesp, attrsizesp);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfs_getattrplusstat(%s): %s",
+		gflog_debug(GFARM_MSG_1002465, "gfs_getattrplusstat(%s): %s",
 		    path, gfarm_error_string(e));
 		return (e);
 	}
@@ -369,7 +369,7 @@ gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
 		 * It's ok to fail in entering the cache,
 		 * since it's merely cache.
 		 */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002466,
 		    "gfs_getattrplus_caching: failed to cache %s: %s",
 		    path, gfarm_error_string(e));
 	}
@@ -439,7 +439,7 @@ gfs_getxattr_caching(const char *path, const char *name,
 			if (*sizep >= attrsizes[i]) {
 				memcpy(value, attrvalues[i], attrsizes[i]);
 			} else if (*sizep != 0) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002467,
 				    "gfs_getxattr_caching(%s, %s, size:%d): "
 				    "too large result: %d bytes",
 				    path, name, (int)*sizep,
@@ -534,7 +534,7 @@ gfs_getxattr_cached_internal(const char *path, const char *name,
 				memcpy(value, data->attrvalues[i],
 				    data->attrsizes[i]);
 			} else if (*sizep != 0) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002468,
 				    "gfs_getxattr_cached_internal"
 				    "(%s, %s, size:%d): "
 				    "too large result: %d bytes",

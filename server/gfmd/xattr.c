@@ -247,7 +247,7 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			"argument 'attrname' is invalid");
 	} else if ((e = inode_xattr_get_cache(inode, xmlMode, attrname,
 	    &value, &size)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002510,
 		    "getxattr(%s): %s", attrname, gfarm_error_string(e));
 	} else if (value == NULL) { /* not cached */
 		db_waitctx_init(&waitctx);

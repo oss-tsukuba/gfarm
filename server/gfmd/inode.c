@@ -676,7 +676,7 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 	if (existings == NULL || new_targets == NULL) {
 		free(existings);
 		free(new_targets);
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002477,
 		    "no memory to schedule %d+%d hosts",
 		    n_existings + 1, n_shortage);
 		return;
@@ -707,7 +707,7 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 	}
 
 	if (n_new_targets < n_shortage)
-		gflog_warning(GFARM_MSG_UNFIXED, "inum %lld gen %lld: "
+		gflog_warning(GFARM_MSG_1002478, "inum %lld gen %lld: "
 		    "fewer replicas (%d out of %d) will be created",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
@@ -716,7 +716,7 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 		target = new_targets[i];
 		e = file_replicating_new(inode, target, NULL, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002479,
 			    "file_replicating_new: host %s: %s",
 			    host_name(target),
 			    gfarm_error_string(e));
@@ -1919,22 +1919,22 @@ inode_lookup_lost_found(void)
 	}
 	root = inode_lookup(ROOT_INUMBER);
 	if (root == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no root directory");
+		gflog_error(GFARM_MSG_1002480, "no root directory");
 		return (NULL);
 	}
 	admin = user_lookup(ADMIN_USER_NAME);
 	if (admin == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "no admin user");
+		gflog_error(GFARM_MSG_1002481, "no admin user");
 		return (NULL);
 	}
 	e = inode_lookup_relative(root, lost_found, GFS_DT_DIR,
 	    INODE_CREATE, admin, 0700, NULL, &inode, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "no /%s directory", lost_found);
+		gflog_error(GFARM_MSG_1002482, "no /%s directory", lost_found);
 		return (NULL);
 	}
 	if (created)
-		gflog_info(GFARM_MSG_UNFIXED, "create /%s directory",
+		gflog_info(GFARM_MSG_1002483, "create /%s directory",
 		    lost_found);
 	inum_lost_found = inode->i_number;
 	gen_lost_found = inode->i_gen;
@@ -2899,7 +2899,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 				    "inode_add_replica: already exists");
 				return (GFARM_ERR_ALREADY_EXISTS);
 			} else if ((flags & FILE_COPY_VALID) == 0) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1002484,
 				    "inode_add_replica: %s",
 				    FILE_COPY_IS_BEING_REMOVED(copy) ?
 				    "replication while removal is ongoing" :
@@ -2908,7 +2908,7 @@ inode_add_replica_internal(struct inode *inode, struct host *spool_host,
 				    GFARM_ERR_DEVICE_BUSY /* dst is busy */ :
 				    GFARM_ERR_OPERATION_ALREADY_IN_PROGRESS);
 			} else if (FILE_COPY_IS_BEING_REMOVED(copy)) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002485,
 				    "inode_add_replica: "
 				    "replicated while removal is ongoing");
 				return (GFARM_ERR_DEVICE_BUSY); /*dst is busy*/
@@ -3090,7 +3090,7 @@ inode_remove_replica_gen_deferred(struct inode *inode, struct host *spool_host,
 			if (FILE_COPY_IS_BEING_REMOVED(copy) ||
 			    (!invalid_is_removable &&
 			     !FILE_COPY_IS_VALID(copy))) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002486,
 				    "remove_replica(%lld, %lld, %s): %s",
 				    (unsigned long long)inode->i_number,
 				    (unsigned long long)gen,
@@ -3111,7 +3111,7 @@ inode_remove_replica_gen_deferred(struct inode *inode, struct host *spool_host,
 			if (FILE_COPY_IS_VALID(copy)) {
 				e = remove_replica_metadata(inode, copy->host);
 			} else {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002487,
 				    "remove_replica_metadata(%lld, %lld, %s): "
 				    "invalid",
 				    (unsigned long long)inode->i_number,
@@ -3124,7 +3124,7 @@ inode_remove_replica_gen_deferred(struct inode *inode, struct host *spool_host,
 		}
 	} else {
 		/* remove_replica_entity() must be already called */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002488,
 		    "remove_replica%s(%lld, %lld, %s): old, current=%lld",
 		    metadata_only ? "_metadata" : "",
 		    (unsigned long long)inode->i_number,
@@ -3620,7 +3620,7 @@ nlink_check(void *closure, struct inode *inode)
 	/* XXX - nlink of a directory is the constant 2 for now */
 	if (inode_is_dir(inode)) {
 		if (inode_get_nlink(inode) != 2) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002489,
 			    "directory inode %lld nlink %lld should be 2 "
 			    "(really %lld): fixed",
 			    (long long)inode_get_number(inode),
@@ -3630,20 +3630,20 @@ nlink_check(void *closure, struct inode *inode)
 		} else
 			return;
 	} else if (inode_get_nlink(inode) != inode_get_nlink_ini(inode)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002490,
 		    "inode %lld nlink %lld should be %lld: fixed",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_nlink(inode),
 		    (long long)inode_get_nlink_ini(inode));
 		inode->i_nlink = inode_get_nlink_ini(inode);
 		if (inode_get_nlink_ini(inode) == 0) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002491,
 			    "inode %lld is not referenced, moving to /%s",
 			    (long long)inode_get_number(inode), lost_found);
 			/* move to the /lost+found directory */
 			e = inode_link_to_lost_found(inode);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002492,
 				    "failed to link inode %lld in /%s: %s",
 				    (unsigned long long)inode->i_number,
 				    lost_found, gfarm_error_string(e));
@@ -3655,7 +3655,7 @@ nlink_check(void *closure, struct inode *inode)
 	e = db_inode_nlink_modify(
 	    inode_get_number(inode), inode_get_nlink(inode));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002493,
 		    "db_inode_nlink_modify(%lld): %s",
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
@@ -3764,7 +3764,7 @@ xattr_add(struct xattrs *xattrs, int xmlMode, const char *attrname,
 		/* since malloc(0) is not portable */
 		entry->cached_attrvalue = malloc(size == 0 ? 1 : size);
 		if (entry->cached_attrvalue == NULL) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002494,
 			    "trying to cache %d bytes for attr %s: no memory",
 			    size, attrname);
 		} else {
@@ -3881,7 +3881,7 @@ inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
 	if (!xmlMode && gfarm_xattr_caching(attrname)) {
 		entry->cached_attrvalue = malloc(size);
 		if (entry->cached_attrvalue == NULL) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002495,
 			    "trying to cache %d bytes for attr %s: no memory",
 			    (int)size, attrname);
 		} else {

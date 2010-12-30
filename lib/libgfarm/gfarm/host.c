@@ -765,7 +765,7 @@ gfarm_known_network_dump(void)
 
 	for (n = known_network_list; n != NULL; n = n->next) {
 		gfarm_hostspec_to_string(n->network, network, sizeof network);
-		gflog_info(GFARM_MSG_UNFIXED, "%s", network);
+		gflog_info(GFARM_MSG_1002445, "%s", network);
 	}
 }
 

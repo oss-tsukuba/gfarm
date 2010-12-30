@@ -300,14 +300,14 @@ process_record_desired_number(struct process *process, int fd,
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002475,
 		    "process_record_desired_number(%ld, %d, %d): %s",
 		    (long)process->pid, fd, desired_number,
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002476,
 		    "process_record_desired_number(%ld, %d, %d): not a file",
 		    (long)process->pid, fd, desired_number);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);

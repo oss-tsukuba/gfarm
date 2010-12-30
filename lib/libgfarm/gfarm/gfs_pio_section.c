@@ -594,7 +594,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 			    !gfarm_timeval_is_expired(&expiration_time)) {
 				if (e == GFARM_ERR_FILE_MIGRATED) {
 					/* don't have to sleep in this case */
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002472,
 					    "file migrated");
 					continue;
 				}
