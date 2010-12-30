@@ -1780,26 +1780,6 @@ gfarm_schedule_network_cache_dump(void)
 	}
 }
 
-#define GFARM_HUMANIZE_NUMBER_LEN (GFARM_INT64STRLEN + 1 + 1)
-
-char *
-gfarm_humanize_number(char *buf, gfarm_off_t sz)
-{
-	if (sz >= 1024LL*1024*1024*1024*1024)
-		sprintf(buf, "%dP", (int)(sz/(1024LL*1024*1024*1024*1024)));
-	else if (sz >= 1024LL*1024*1024*1024)
-		sprintf(buf, "%dT", (int)(sz/(1024LL*1024*1024*1024)));
-	else if (sz >= 1024LL*1024*1024)
-		sprintf(buf, "%dG", (int)(sz/(1024LL*1024*1024)));
-	else if (sz >= 1024LL*1024)
-		sprintf(buf, "%dM", (int)(sz/(1024LL*1024)));
-	else if (sz >= 1024)
-		sprintf(buf, "%dK", (int)(sz/(1024)));
-	else
-		sprintf(buf, "%d" , (int)(sz));
-	return (buf);
-}
-
 void
 gfarm_schedule_host_cache_dump(void)
 {
@@ -1810,8 +1790,8 @@ gfarm_schedule_host_cache_dump(void)
 	char rttbuf[80];
 	char loadbuf[80];
 	char diskbuf[80];
-	char diskusedbuf[GFARM_HUMANIZE_NUMBER_LEN];
-	char disktotalbuf[GFARM_HUMANIZE_NUMBER_LEN];
+	char diskusedbuf[GFARM_INT64STRLEN];
+	char disktotalbuf[GFARM_INT64STRLEN];
 	struct timeval period;
 
 	if (search_idle_hosts_state == NULL) {
@@ -1873,15 +1853,17 @@ gfarm_schedule_host_cache_dump(void)
 		if ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0) {
 			snprintf(diskbuf, sizeof diskbuf, "disk:unavail");
 		} else {
+			gfarm_humanize_number(diskusedbuf, sizeof diskusedbuf,
+			    h->diskused, GFARM_HUMANIZE_BINARY);
+			gfarm_humanize_number(disktotalbuf, sizeof disktotalbuf,
+			    h->diskused + h->diskavail, GFARM_HUMANIZE_BINARY);
 			snprintf(diskbuf, sizeof diskbuf,
 			    "disk(%d.%d%s):%sB/%sB",
 			    (int)h->statfs_cache_time.tv_sec,
 			    (int)h->statfs_cache_time.tv_usec,
 			    gfarm_timeval_cmp(&h->statfs_cache_time, &period)
 			    < 0 ? "*" : "",
-			    gfarm_humanize_number(diskusedbuf, h->diskused),
-			    gfarm_humanize_number(disktotalbuf,
-			    h->diskused + h->diskavail));
+			    diskusedbuf, disktotalbuf);
 		}
 
 		gflog_info(GFARM_MSG_1000177,

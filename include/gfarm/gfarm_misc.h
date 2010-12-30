@@ -143,3 +143,6 @@ int gfarm_strarray_length(char **);
 char **gfarm_strarray_dup(char **);
 void gfarm_strarray_free(char **);
 int gfarm_attach_debugger(void);
+
+size_t gfarm_humanize_number(char *, size_t, unsigned long long, int);
+#define GFARM_HUMANIZE_BINARY	1

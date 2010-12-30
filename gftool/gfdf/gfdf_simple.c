@@ -7,7 +7,9 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <string.h>
+
 #include <gfarm/gfarm.h>
+
 #include "gfm_client.h"
 #include "lookup.h"
 
@@ -18,35 +20,87 @@ enum sort_order {
 	SO_SIZE
 } option_sort_order = SO_NAME;
 static int option_reverse_sort = 0;
+static int option_formatting_flags = 0;
+
+struct formatter {
+	char *summary_title_format;
+	char *summary_data_format;
+	char *nodes_title_format;
+	char *nodes_data_format;
+	char *nodes_separator;
+	size_t (*to_string)(char *, size_t, unsigned long long, int);
+};
+
+#define PRECISE_TITLE_FORMAT	"%13s %13s %13s %4s"
+#define PRECISE_DATA_FORMAT	"%13s %13s %13s %3.0f%%"
+
+#define READABLE_TITLE_FORMAT	"%9s %6s %6s %4s"
+#define READABLE_DATA_FORMAT	"%9s %6s %6s %3.0f%%"
+
+static size_t
+precise_number(char *buf, size_t len, unsigned long long number, int dummy)
+{
+	return (snprintf(buf, len, "%13llu", number));
+}
+
+const struct formatter precise_formatter = {
+	PRECISE_TITLE_FORMAT	" %13s\n",
+	PRECISE_DATA_FORMAT	" %13s\n",
+	PRECISE_TITLE_FORMAT	" %s\n",
+	PRECISE_DATA_FORMAT	" %s\n",
+	"----------------------------------------------",
+	precise_number
+};
+
+const struct formatter readable_formatter = {
+	READABLE_TITLE_FORMAT	" %6s\n",
+	READABLE_DATA_FORMAT	" %6s\n",
+	READABLE_TITLE_FORMAT	" %s\n",
+	READABLE_DATA_FORMAT	" %s\n",
+	"----------------------------",
+	gfarm_humanize_number
+};
+
+const struct formatter *formatter = &precise_formatter;
 
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-anrS] [-P path] [-D domain]\n",
+	fprintf(stderr, "Usage: %s [-ahHnrS] [-P path] [-D domain]\n",
 		program_name);
 	exit(1);
 }
-
-#define TITLE_FORMAT "%13s %13s %13s %4s"
-#define DATA_FORMAT "%13lld %13lld %13lld %3.0f%%"
 
 gfarm_error_t
 display_statfs(const char *path, const char *dummy)
 {
 	gfarm_error_t e;
 	gfarm_off_t used, avail, files;
+	char capbuf[GFARM_INT64STRLEN];
+	char usedbuf[GFARM_INT64STRLEN];
+	char availbuf[GFARM_INT64STRLEN];
+	char filesbuf[GFARM_INT64STRLEN];
 
 	/* XXX FIXME: should implement and use gfs_statvfs */
 	e = gfs_statfs(&used, &avail, &files);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	printf(TITLE_FORMAT " %12s\n",
+	(*formatter->to_string)(capbuf, sizeof capbuf,
+	    (unsigned long long)used + avail, option_formatting_flags);
+	(*formatter->to_string)(usedbuf, sizeof usedbuf,
+	    (unsigned long long)used, option_formatting_flags);
+	(*formatter->to_string)(availbuf, sizeof availbuf,
+	    (unsigned long long)avail, option_formatting_flags);
+	(*formatter->to_string)(filesbuf, sizeof filesbuf,
+	    (unsigned long long)files, option_formatting_flags);
+
+	printf(formatter->summary_title_format,
 	       "1K-blocks", "Used", "Avail", "Use%", "Files");
-	printf(DATA_FORMAT " %12lld\n",
-	       (unsigned long long)used + avail, (unsigned long long)used,
-	       (unsigned long long)avail,
-	       (double)used / (used + avail) * 100, (unsigned long long)files);
+	printf(formatter->summary_data_format,
+	       capbuf, usedbuf, availbuf,
+	       (double)used / (used + avail) * 100,
+	       filesbuf);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -134,31 +188,44 @@ display_statfs_nodes(const char *path, const char *domain)
 	struct gfarm_host_sched_info *hosts;
 	gfarm_uint64_t used, avail;
 	gfarm_uint64_t total_used = 0, total_avail = 0;
+	char capbuf[GFARM_INT64STRLEN];
+	char usedbuf[GFARM_INT64STRLEN];
+	char availbuf[GFARM_INT64STRLEN];
 
 	e = schedule_host_domain(path, domain, &nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-
-	printf(TITLE_FORMAT " %s\n",
+	printf(formatter->nodes_title_format,
 	       "1K-blocks", "Used", "Avail", "Use%", "Host");
 	for (i = 0; i < nhosts; ++i) {
 		used = hosts[i].disk_used;
 		avail = hosts[i].disk_avail;
-		printf(DATA_FORMAT " %s\n",
-		       (unsigned long long)used + avail,
-		       (unsigned long long)used, (unsigned long long)avail,
+		(*formatter->to_string)(capbuf, sizeof capbuf,
+		    (unsigned long long)used + avail, option_formatting_flags);
+		(*formatter->to_string)(usedbuf, sizeof usedbuf,
+		    (unsigned long long)used, option_formatting_flags);
+		(*formatter->to_string)(availbuf, sizeof availbuf,
+		    (unsigned long long)avail, option_formatting_flags);
+		printf(formatter->nodes_data_format,
+		       capbuf, usedbuf, availbuf,
 		       (double)used / (used + avail) * 100,
 		       hosts[i].host);
 		total_used += used;
 		total_avail += avail;
 	}
 	if (nhosts > 0) {
-		puts("----------------------------------------------");
-		printf(DATA_FORMAT "\n",
-		       (unsigned long long)total_used + total_avail,
-		       (unsigned long long)total_used,
-		       (unsigned long long)total_avail,
-		       (double)total_used / (total_used + total_avail) * 100);
+		puts(formatter->nodes_separator);
+		(*formatter->to_string)(capbuf, sizeof capbuf,
+		    (unsigned long long)total_used + total_avail,
+		    option_formatting_flags);
+		(*formatter->to_string)(usedbuf, sizeof usedbuf,
+		    (unsigned long long)total_used, option_formatting_flags);
+		(*formatter->to_string)(availbuf, sizeof availbuf,
+		    (unsigned long long)total_avail, option_formatting_flags);
+		printf(formatter->nodes_data_format,
+		       capbuf, usedbuf, availbuf,
+		       (double)total_used / (total_used + total_avail) * 100,
+		       "");
 	}
 	else
 		puts("No file system node");
@@ -205,10 +272,18 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "anrD:P:S?")) != -1) {
+	while ((c = getopt(argc, argv, "ahHnrD:P:S?")) != -1) {
 		switch (c) {
 		case 'a':
 			statfs = display_statfs;
+			break;
+		case 'h':
+			formatter = &readable_formatter;
+			option_formatting_flags = GFARM_HUMANIZE_BINARY;
+			break;
+		case 'H':
+			formatter = &readable_formatter;
+			option_formatting_flags = 0;
 			break;
 		case 'n':
 			statfs = display_nodes;

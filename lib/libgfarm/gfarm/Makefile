@@ -83,6 +83,7 @@ SRCS = \
 	gfs_xattr.c \
 	gfarm_foreach.c \
 	glob.c \
+	humanize_number.c \
 	patmatch.c \
 	schedule.c \
 	sockutil.c \
@@ -158,6 +159,7 @@ OBJS = \
 	gfs_xattr.lo \
 	gfarm_foreach.lo \
 	glob.lo \
+	humanize_number.lo \
 	patmatch.lo \
 	schedule.lo \
 	sockutil.lo \
@@ -231,6 +233,7 @@ gfs_utimes.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h
 gfs_xattr.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfm_client.h lookup.h gfs_io.h gfs_misc.h config.h gfs_profile.h xattr_info.h
 gfarm_foreach.lo: gfarm_foreach.h
 glob.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h patmatch.h
+humanize_number.lo:
 host.lo: hostspec.h gfm_client.h host.h
 hostspec.lo: hostspec.h
 import_help.lo: liberror.h
