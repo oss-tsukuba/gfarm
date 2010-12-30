@@ -19,6 +19,7 @@ Table of Contents:
   2.3 Due to a disk crash, all files in a filesystem node are lost.
      What do we have to do?
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
+  2.5 The modification time seems to be strange.
 
 3. Security
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
@@ -167,6 +168,14 @@ Table of Contents:
 	The detailed condition of this bug is described in KNOWN_PROBLEMS.en.
 	For this problem, currently no workaround is known except disabling
 	the "ldap" feature.
+
+  2.5 The modification date seems to be strange.
+
+	The modification date will be set by the file system node
+	where the physical file is stored.  When clocks of file system
+	nodes are not synchronized, the modification date may be
+	strange.  Check and synchronize clocks of all file system
+	nodes.
 
 3. Security
 ***********
