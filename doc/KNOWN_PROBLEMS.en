@@ -46,6 +46,13 @@
 	for the changes in the RPM:
 		http://rhn.redhat.com/errata/RHBA-2009-0241.html
 
+- Automatic replication by the extended attribute gfarm.ncopy may be
+  canceled in some cases (for example, under a heavy load), the number
+  of replicas remains fewer than gfarm.ncopy in such cases.
+  
+  Plans for fixes:
+	We are planning a fix until March 2011.
+
 - gfs_pio_sync() doesn't really update the metadata now.
 
   Plans for fixes:
