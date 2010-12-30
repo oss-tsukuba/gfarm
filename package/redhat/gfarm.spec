@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.4.0
+%define ver	2.4.1
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -862,6 +862,7 @@ fi
 %{prefix}/bin/gfls
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
+%{prefix}/bin/gfpath
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfmpirun_p4
 %{prefix}/bin/gfps

@@ -5,6 +5,8 @@ Release note for Gfarm 2.4.1
 
 New Feature
 * automatic replication in gfmd [sf.net trac #129]
+  extended attribute 'gfarm.ncopy' specifies the number of file
+  replicas to be created automatically.
   % echo -n 2 | gfxattr -s / gfarm.ncopy
 
 New configuration in gfmd.conf
@@ -23,6 +25,7 @@ Performance improvement
 
 Updated feature
 * gfmd - check and repair nlinks at start-up [sf.net trac #57]
+  unreferenced inodes moved to /lost+found
 * gfsd - if the input/output error occurs, kill oneself to cope with
   the hardware failure [sf.net trac #85]
 * select a file system node having enough capacity regardless of
@@ -35,10 +38,21 @@ Updated feature
   reverse order, respectively [sf.net trac #131]
 * gfmkdir - -p option to create parent directories if needed, and not
   to return error even if the target directory exists
+* gfsched - -c option to schedule file system nodes for a file
+  creation [sf.net trac #169]
 
 Bug fix
 * fix error handling of protocols in terms of extended attributes in
   gfmd [sf.net trac #124]
+* gfmd - plug memory leak in case of authentication error [sf.net trac
+  #166]
+* gfmd - a file system node temporarily cannot be used if replication
+  error happens due to the connection error to the source target
+  [sf.net trac #162]
+* Won't compile on FreeBSD 7.3 [sf.net trac #138]
+* gfrep - may fail to create two or more file replicas [sf.net trac
+  #114]
+* gfrep - gfrep may cause no space left on device [sf.net trac #152]
 
 Release note for Gfarm 2.4.0
 ============================
