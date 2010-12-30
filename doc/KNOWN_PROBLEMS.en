@@ -166,15 +166,17 @@ command.
 
 - The following commands are not provided yet:
 
-  gfdump, gfpwd, gfsched, gfsck, gfstatus, gftest, gfusage
+  gfdump, gfcd, gfpwd, gfsck, gftest
 
   Plans for fixes:
 	Not determined yet.
 
 - There is no reference manual for the following commands:
 
-  config-gfarm, config-gfsd, gfarm.arch.guess,
-  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun
+  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
+  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun,
+  gfquota, gfedquota, gfquotacheck, gfusage,
+  gfvoms-sync
 
   Plans for fixes:
 	Not determined yet.

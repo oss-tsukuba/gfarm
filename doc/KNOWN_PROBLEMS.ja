@@ -168,7 +168,7 @@
 
 - 下記のコマンドが存在しません。
 
-  gfdump, gfpwd, gfsched, gfsck, gftest, gfusage
+  gfdump, gfcd, gfpwd, gfsck, gftest
 
   対処予定:
 	未定です。
@@ -176,8 +176,10 @@
 - 下記のコマンドに関する参照マニュアルが存在しないか，更新されていませ
   ん。
 
-  config-gfarm, config-gfsd, gfarm.arch.guess,
-  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun
+  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
+  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun,
+  gfquota, gfedquota, gfquotacheck, gfusage,
+  gfvoms-sync
 
   対処予定:
 	未定です。
