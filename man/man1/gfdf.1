@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "29 November 2010" "Gfarm" ""
+.TH "GFDF" "1" "30 December 2010" "Gfarm" ""
 
 .SH NAME
 gfdf \- display disk free space of Gfarm file system
@@ -19,6 +19,16 @@ Gfarm file system.
 .TP
 \fB-a\fR
 Displays only summary information of the Gfarm file system.
+.TP
+\fB-h\fR
+Displays numbers in human readable format by adding a prefix multiplier
+symbol like "M" (mega).  Since this option uses powers of 1024,
+"M" means 1,048,576.
+.TP
+\fB-H\fR
+Displays numbers in human readable format by adding a prefix multiplier
+symbol like "M" (mega).  Since this option uses powers of 1000,
+"M" means 1,000,000.
 .TP
 \fB-n\fR
 Displays hostnames of available Gfarm file system nodes.

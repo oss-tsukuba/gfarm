@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFDF" "1" "29 November 2010" "Gfarm" ""
+.TH "GFDF" "1" "30 December 2010" "Gfarm" ""
 
 .SH NAME
 gfdf \- ディスク空き容量取得
@@ -19,6 +19,14 @@ gfdf \- ディスク空き容量取得
 .TP
 \fB-a\fR
 Gfarmファイルシステム全体のディスク空き容量を表示します。
+.TP
+\fB-h\fR
+数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。
+.TP
+\fB-H\fR
+数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には10の累乗を用いますので、「M」は 1,000,000 を意味します。
 .TP
 \fB-n\fR
 利用可能なファイルシステムノードのホスト名を表示します。
