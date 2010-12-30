@@ -71,13 +71,69 @@ Table of Contents:
   2.2 "Authentication error" or "no filesystem node" error occurs when
      accessing or replicating files.
 
-	A shared secret key is not set up correctly.  Make sure the
-	same shared secret key file (~/.gfarm_shared_key) is located
-	on a home directory on all file system nodes.
+	Authentication to file system nodes may fail.  It is necessary
+	to set up a shared secret key or the GSI configuration
+	correctly.
+
+	Regarding the shared secret authentication, make sure the same
+	shared secret key file (~/.gfarm_shared_key) is located on a
+	home directory on all file system nodes.
+
+	Regarding the GSI authentication, follow the error message.
+	When executing with the -v option, gfmd and gfsd output
+	verbose authentication error messages to /var/log/messages (or
+	/var/adm/messages).  Detailed descriptions are available at
+	http://www.globus.org.
 
 	If the problem is still there, call administrators of a Gfarm
-	file system.  A shared secret key setting might be incorrect
-	for a _gfarmfs user.
+	file system.  A shared secret key setting or the GSI setting
+	might be incorrect for a _gfarmfs user.
+
+	Here are some hints on typical cases involving this error in
+	GSI:
+
+	(1) Is a valid entry included in the grid-mapfile on file
+	system nodes and filesystem metadata node?
+
+	Note that the subject names displayed for certain certificates
+	have been changed between Globus Toolkit version 2 (GT2) and
+	version 3 (GT3).  The 'Email' field in GT2 has become
+	'emailAddress' in GT3 or later.
+	The 'USERID' field in GT2 has become 'UID' in GT3 or later.
+	For compatibility, you need to register both entries in
+	grid-mapfile.
+
+	(2) Are permissions of user certificate
+	 (~/.globus/usercert.pem) and/or host certificate
+	 (/etc/grid-security/hostcert.pem) not permissive?  The maximum
+	 allowable permissions are limited to 644.
+
+	(3) Are both user certificate and host certificates valid, and
+	not yet expired?
+
+	(4) Is a valid certificate for the CAs that sign user or host
+	certificates, registered in /etc/grid-security/certificates?
+	Has this registration expired?
+
+	Note that CA subject name in the signing_policy files is also
+	affected in the same way as the items in (1), above.  To  use
+	the same
+	signing_policy file for GT2 and GT3, you need both entries in
+	the signing_policy file.
+
+	(5) Has the CRL, which is registered in
+	/etc/grid-security/certificates, expired?
+
+	(7) Does the hostname, which is specified by metadb_serverhost
+	in the gfarm.conf file, match the name in the host certificate?
+
+	(7) Do the host identifiers, which are registered by gfhost,
+	match the hostnames which are written in the host certificates?
+
+	(8) Are the clocks of all filesystem nodes, the filesystem
+	metadata node, and the client synchronized?  The GSI library
+	provided by Globus fails to authenticate these properly when
+	the time difference is more than five minutes.
 
   2.3 Due to a disk crash, all files in a filesystem node are lost.
      What do we have to do?
@@ -167,16 +223,12 @@ Table of Contents:
 
 4. Limitations
 *************
-  4.1 The following functionality is partially supported.
-
-	Group management command
-
-  4.1 The following functionalities supported by Gfarm-1.x are not
-     supported yet.
+  4.1 The following functionality supported by Gfarm-1.x are not
+     supported.
 
 	File view
 
-  4.2 The following functionality supported by Gfarm-1.x is not
-     supported.
+  4.2 There is no plan to support the following functionality
+    supported by Gfarm-1.x.
 
 	Remote program execution
