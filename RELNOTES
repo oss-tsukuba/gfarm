@@ -17,8 +17,6 @@ New configuration in gfmd.conf
   File system nodes not specified by the known_network directive are
   assumed to be in an IPv4 class C network as same as before.
 
-Documentation
-
 Performance improvement
 * gfmd-initiated file replication [sf.net trac #123]
 * extended attribute cache in gfmd and libgfarm [sf.net trac #128]
@@ -36,6 +34,8 @@ Updated feature
 * gfdf - -P option to specify the metadata server
 * gfdf - -S and -r options to sort output by available capacity and in
   reverse order, respectively [sf.net trac #131]
+* gfdf - -h and -H options to display sizes in human readable format
+  [sf.net trac #126]
 * gfmkdir - -p option to create parent directories if needed, and not
   to return error even if the target directory exists
 * gfsched - -c option to schedule file system nodes for a file
