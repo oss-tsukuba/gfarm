@@ -73,13 +73,11 @@ gfm_server_compound_on_error(struct peer *peer, int from_client, int skip,
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
 	if (level < 1) /* there isn't COMPOUND_BEGIN ... END block around */
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	else
 		*on_errorp = on_error;
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

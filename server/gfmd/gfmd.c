@@ -211,6 +211,8 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		e = gfm_server_compound_begin(peer, from_client, skip, level);
 		break;
 	case GFM_PROTO_COMPOUND_END:
+		skip = peer_get_protocol_state(peer)->cs.cause
+			!= GFARM_ERR_NO_ERROR;
 		e = gfm_server_compound_end(peer, from_client, skip, level);
 		break;
 	case GFM_PROTO_COMPOUND_ON_ERROR:
