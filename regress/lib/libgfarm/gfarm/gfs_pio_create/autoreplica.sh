@@ -4,21 +4,56 @@
 
 [ `gfsched -w | wc -l` -ge 2 ] || exit $exit_unsupported
 
-WAIT_TIME=1
+WAIT_TIME=2
 
 gfs_pio_test=$testbin/../gfs_pio_test/gfs_pio_test
 tmpf=$gftmp/foo
+statf=$localtmp
 
-trap 'gfrm -f $tmpf; gfrmdir $gftmp; exit $exit_trap' $trap_sigs
+clean() {
+	gfrm -f $tmpf
+	gfrmdir $gftmp
+	rm -f $statf
+}
 
-if gfmkdir $gftmp &&
-   echo 2 | gfxattr -s $gftmp gfarm.ncopy &&
-   echo 123456789 | $gfs_pio_test -c -w -W10 $tmpf &&
-   sleep $WAIT_TIME && [ `gfstat $tmpf | awk '/Ncopy/{print $NF}'` -eq 2 ]
-then
-	exit_code=$exit_pass
+trap 'clean; exit $exit_trap' $trap_sigs
+
+if gfmkdir $gftmp; then
+	:
+else
+	echo failed gfmkdir
+	exit $exit_fail
 fi
 
-gfrm $tmpf
-gfrmdir $gftmp
+if echo -n 2 | gfxattr -s $gftmp gfarm.ncopy; then
+	:
+else
+	echo failed gfxattr
+	exit $exit_fail
+fi
+
+if echo 123456789 | $gfs_pio_test -c -w -W10 $tmpf; then
+	:
+else
+	echo failed $gfs_pio_test
+	exit $exit_fail
+fi
+
+sleep $WAIT_TIME
+if gfstat $tmpf > $statf 2>&1; then
+	:
+else
+	echo failed gfstat
+	cat $statf
+	exit $exit_fail
+fi
+
+if [ `awk '/Ncopy/{print $NF}' $statf` -eq 2 ]; then
+	exit_code=$exit_pass
+else
+	echo failed gfstat
+	exit $exit_fail
+fi
+
+clean
 exit $exit_code
