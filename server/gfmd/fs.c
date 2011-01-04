@@ -117,7 +117,7 @@ gfm_server_put_fd(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	gfarm_int32_t fd;
 	struct process *process;
-	static const char diag[] = "GFM_PROTO_GET_FD";
+	static const char diag[] = "GFM_PROTO_PUT_FD";
 
 	e = gfm_server_get_request(peer, diag, "i", &fd);
 	if (e != GFARM_ERR_NO_ERROR) {
