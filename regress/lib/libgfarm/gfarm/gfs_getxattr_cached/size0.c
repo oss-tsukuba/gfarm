@@ -87,7 +87,7 @@ main(int argc, char **argv)
 		    path, xattr, (int)sz0, (int)sz1, (int)sz2);
 		return (EXIT_FAILURE);
 	}
-	printf("path %s, xattr %s: size %d\n", path, xattr, sz0);
+	printf("path %s, xattr %s: size %d\n", path, xattr, (int)sz0);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
