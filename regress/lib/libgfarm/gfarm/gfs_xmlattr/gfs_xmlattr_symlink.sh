@@ -11,7 +11,8 @@ lsetxattr_val="<a>lsetxattr</a>"
 xml_mode=-x
 
 # is XML attr supported?
-if gfxattr -x -g / test 2>&1 | grep '^gfxattr: unknown option -- x$' >/dev/null
+if gfxattr -x -g / test 2>&1 |
+	egrep '^gfxattr: (unknown|invalid) option -- x$' >/dev/null
 then
 	exit $exit_unsupported
 fi
