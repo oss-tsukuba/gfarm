@@ -1050,6 +1050,7 @@ search_idle_load_callback(void *closure)
 	struct gfs_client_load load;
 	struct gfs_client_connect_state *cs;
 	struct timeval rtt;
+	char *user;
 
 	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -1074,22 +1075,32 @@ search_idle_load_callback(void *closure)
 			/* completed */
 			search_idle_record(c);
 		} else {
+			e = gfarm_get_global_username_by_host(
+			    c->h->return_value, c->h->port, &user);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfarm_get_global_username_by_host: %s",
+				    gfarm_error_string(e));
+			} else {
 #if 0 /* not actully used */
-			c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
+				c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
 #endif
-			e = gfs_client_connect_request_multiplexed(
-			    c->state->q, c->h->return_value, &c->h->addr,
-			    search_idle_connect_callback, c,
-			    &cs);
-			if (e == GFARM_ERR_NO_ERROR) {
-				c->protocol_state = cs;
-				return; /* request continues */
+				e = gfs_client_connect_request_multiplexed(
+				    c->state->q, c->h->return_value,
+				    c->h->port, user, &c->h->addr,
+				    search_idle_connect_callback, c,
+				    &cs);
+				free(user);
+				if (e == GFARM_ERR_NO_ERROR) {
+					c->protocol_state = cs;
+					return; /* request continues */
+				}
+				/* failed to connect */
+				gflog_debug(GFARM_MSG_1001442,
+				    "search_idle_load_callback: "
+				    "gfs_client_connect_request_multiplexed: "
+				    "%s", gfarm_error_string(e));
 			}
-			/* failed to connect */
-			gflog_debug(GFARM_MSG_1001442,
-			    "search_idle_load_callback: "
-			    "gfs_client_connect_request_multiplexed: %s",
-			    gfarm_error_string(e));
 		}
 	} else {
 		gflog_debug(GFARM_MSG_1001443,

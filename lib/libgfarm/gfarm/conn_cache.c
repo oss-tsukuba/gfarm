@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <gfarm/gfarm.h>
 
@@ -20,6 +21,8 @@ struct gfp_cached_connection {
 	struct gfarm_lru_entry lru_entry;
 
 	struct gfarm_hash_entry *hash_entry;
+
+	struct gfp_conn_hash_id id;
 
 	void *connection_data;
 };
@@ -52,29 +55,48 @@ gfp_cached_connection_set_data(struct gfp_cached_connection *connection,
 const char *
 gfp_cached_connection_hostname(struct gfp_cached_connection *connection)
 {
-	assert(GFP_IS_CACHED_CONNECTION(connection));
-	return (gfp_conn_hash_hostname(connection->hash_entry));
+	return (connection->id.hostname);
 }
 
 const char *
 gfp_cached_connection_username(struct gfp_cached_connection *connection)
 {
-	assert(GFP_IS_CACHED_CONNECTION(connection));
-	return (gfp_conn_hash_username(connection->hash_entry));
+	return (connection->id.username);
 }
 
 int
 gfp_cached_connection_port(struct gfp_cached_connection *connection)
 {
-	assert(GFP_IS_CACHED_CONNECTION(connection));
-	return (gfp_conn_hash_port(connection->hash_entry));
+	return (connection->id.port);
 }
 
+gfarm_error_t
+gfp_cached_connection_set_username(struct gfp_cached_connection *connection,
+	const char *user)
+{
+	struct gfp_conn_hash_id *idp = &connection->id;
+	char *olduser, *newuser;
+
+	olduser = idp->username;
+	if (strcmp(olduser, user) == 0)
+		return (GFARM_ERR_NO_ERROR);
+	newuser = strdup(user);
+	if (newuser == NULL)  {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	idp->username = newuser;
+	free(olduser);
+	return (GFARM_ERR_NO_ERROR);
+}
 
 gfarm_error_t
-gfp_uncached_connection_new(struct gfp_cached_connection **connectionp)
+gfp_uncached_connection_new(const char *hostname, int port,
+	const char *username, struct gfp_cached_connection **connectionp)
 {
 	struct gfp_cached_connection *connection;
+	struct gfp_conn_hash_id *idp;
 
 	GFARM_MALLOC(connection);
 	if (connection == NULL) {
@@ -85,6 +107,21 @@ gfp_uncached_connection_new(struct gfp_cached_connection **connectionp)
 	}
 
 	connection->hash_entry = NULL; /* this is an uncached connection */
+	idp = &connection->id;
+	idp->hostname = strdup(hostname);
+	idp->username = strdup(username);
+	if (idp->hostname == NULL || idp->username == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfp_cached_connection_acquire (%s)(%d)"
+		    " failed: %s",
+		    hostname, port,
+		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		free(idp->hostname);
+		free(idp->username);
+		free(connection);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	idp->port = port;
 
 	gfarm_lru_init_uncached_entry(&connection->lru_entry);
 
@@ -97,6 +134,10 @@ gfp_uncached_connection_new(struct gfp_cached_connection **connectionp)
 void
 gfp_uncached_connection_dispose(struct gfp_cached_connection *connection)
 {
+	struct gfp_conn_hash_id *idp = &connection->id;
+
+	free(idp->hostname);
+	free(idp->username);
 	free(connection);
 }
 
@@ -117,8 +158,7 @@ gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *cache,
 /* convert from uncached connection to cached */
 gfarm_error_t
 gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
-	struct gfp_cached_connection *connection,
-	const char *hostname, int port)
+	struct gfp_cached_connection *connection)
 {
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
@@ -130,21 +170,21 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 		    "programming error", cache->type_name);
 		abort();
 	}
-	e = gfp_conn_hash_enter(&cache->hashtab, cache->table_size,
-	    sizeof(connection),
-	    hostname, port, gfarm_get_global_username(),
-	    &entry, &created);
+	e = gfp_conn_hash_id_enter(&cache->hashtab, cache->table_size,
+	    sizeof(connection), &connection->id, &entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001088,
 			"insertion to connection hash (%s)(%d) failed: %s",
-			hostname, port,
+			gfp_cached_connection_hostname(connection),
+			gfp_cached_connection_port(connection),
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!created) {
 		gflog_debug(GFARM_MSG_1001089,
 			"insertion to connection hash (%s)(%d) failed: %s",
-			hostname, port,
+			gfp_cached_connection_hostname(connection),
+			gfp_cached_connection_port(connection),
 			gfarm_error_string(GFARM_ERR_ALREADY_EXISTS));
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -201,16 +241,16 @@ gfp_cached_connection_gc_all(struct gfp_conn_cache *cache)
 
 gfarm_error_t
 gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
-	const char *canonical_hostname, int port,
+	const char *canonical_hostname, int port, const char *user,
 	struct gfp_cached_connection **connectionp, int *createdp)
 {
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
 	struct gfp_cached_connection *connection;
+	struct gfp_conn_hash_id *idp, *kidp;
 
 	e = gfp_conn_hash_enter(&cache->hashtab, cache->table_size,
-	    sizeof(connection), canonical_hostname, port,
-	    gfarm_get_global_username(),
+	    sizeof(connection), canonical_hostname, port, user,
 	    &entry, createdp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001090,
@@ -234,13 +274,32 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 			return (GFARM_ERR_NO_MEMORY);
 		}
 
+		idp = &connection->id;
+		idp->hostname = strdup(canonical_hostname);
+		idp->port = port;
+		idp->username = strdup(user);
+		if (idp->hostname == NULL || idp->username == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfp_cached_connection_acquire (%s)(%d)"
+			    " failed: %s",
+			    canonical_hostname, port,
+			    gfarm_error_string(e));
+			free(idp->hostname);
+			free(idp->username);
+			free(connection);
+			return (e);
+		}
+		kidp = (struct gfp_conn_hash_id *)gfarm_hash_entry_key(entry);
+		kidp->hostname = idp->hostname;
+		kidp->username = idp->username;
+
 		gfarm_lru_cache_add_entry(&cache->lru_list,
 		    &connection->lru_entry);
 
 		*(struct gfp_cached_connection **)gfarm_hash_entry_data(entry)
 		    = connection;
 		connection->hash_entry = entry;
-
 		connection->connection_data = NULL;
 	}
 	*connectionp = connection;
@@ -305,4 +364,3 @@ gfp_cached_connection_terminate(struct gfp_conn_cache *cache)
 	gfarm_hash_table_free(cache->hashtab);
 	cache->hashtab = NULL;
 }
-

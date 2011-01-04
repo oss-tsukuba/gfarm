@@ -73,13 +73,16 @@ main(int argc, char *argv[])
 	char *prog_name = basename(argv[0]);
 	gfarm_error_t e;
 	extern int optind;
-	int c, r = 0;
+	int c, r = 0, show_symlink = 0;
 	void (*display)(char *, struct gfs_stat *) = display_stat;
 
-	while ((c = getopt(argc, argv, "ch?")) != -1) {
+	while ((c = getopt(argc, argv, "chl?")) != -1) {
 		switch (c) {
 		case 'c':
 			display = display_ncopy;
+			break;
+		case 'l':
+			show_symlink = 1;
 			break;
 		case 'h':
 		case '?':
@@ -102,7 +105,10 @@ main(int argc, char *argv[])
 	for (; *argv; ++argv) {
 		struct gfs_stat st;
 
-		e = gfs_stat(*argv, &st);
+		if (show_symlink)
+			e = gfs_lstat(*argv, &st);
+		else
+			e = gfs_stat(*argv, &st);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", *argv,
 				gfarm_error_string(e));

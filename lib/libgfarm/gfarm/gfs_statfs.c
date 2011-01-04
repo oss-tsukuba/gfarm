@@ -8,9 +8,8 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include "gfm_client.h"
+#include "lookup.h"
 #include "config.h"
-
-/* XXX FIXME: implement gfs_statvfs() which takes a path as an argument */
 
 gfarm_error_t
 gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
@@ -18,15 +17,14 @@ gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	int retry = 0;
+	const char *path = GFARM_PATH_ROOT;
 
 	for (;;) {
-		if ((e = gfm_client_connection_and_process_acquire(
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    &gfm_server)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001379,
-				"acquirement of client connection and process "
-				"failed: %s",
-				gfarm_error_string(e));
+		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_url_parse_metadb failed: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 

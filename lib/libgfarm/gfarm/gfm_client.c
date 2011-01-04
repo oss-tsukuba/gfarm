@@ -98,21 +98,26 @@ gfm_client_is_connection_valid(struct gfm_connection *gfm_server)
 const char *
 gfm_client_hostname(struct gfm_connection *gfm_server)
 {
-	assert(gfm_client_is_connection_valid(gfm_server));
 	return (gfp_cached_connection_hostname(gfm_server->cache_entry));
 }
 
 const char *
 gfm_client_username(struct gfm_connection *gfm_server)
 {
-	assert(gfm_client_is_connection_valid(gfm_server));
 	return (gfp_cached_connection_username(gfm_server->cache_entry));
+}
+
+gfarm_error_t
+gfm_client_set_username_for_gsi(struct gfm_connection *gfm_server,
+	const char *username)
+{
+	return (gfp_cached_connection_set_username(gfm_server->cache_entry,
+		username));
 }
 
 int
 gfm_client_port(struct gfm_connection *gfm_server)
 {
-	assert(gfm_client_is_connection_valid(gfm_server));
 	return (gfp_cached_connection_port(gfm_server->cache_entry));
 }
 
@@ -163,8 +168,7 @@ gfm_client_connection_gc(void)
 }
 
 static gfarm_error_t
-gfm_client_connection0(const char *hostname, int port,
-	struct gfp_cached_connection *cache_entry,
+gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection **gfm_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
@@ -172,6 +176,9 @@ gfm_client_connection0(const char *hostname, int port,
 	int sock, save_errno;
 	struct addrinfo hints, *res;
 	char sbuf[NI_MAXSERV];
+	const char *hostname = gfp_cached_connection_hostname(cache_entry);
+	const char *user = gfp_cached_connection_username(cache_entry);
+	int port = gfp_cached_connection_port(cache_entry);
 
 	snprintf(sbuf, sizeof(sbuf), "%u", port);
 	memset(&hints, 0, sizeof(hints));
@@ -249,7 +256,7 @@ gfm_client_connection0(const char *hostname, int port,
 	/* XXX We should explicitly pass the original global username too. */
 	e = gfarm_auth_request(gfm_server->conn,
 	    GFM_SERVICE_TAG, res->ai_canonname,
-	    res->ai_addr, gfarm_get_auth_id_type(),
+	    res->ai_addr, gfarm_get_auth_id_type(), user,
 	    &gfm_server->auth_method);
 	gfarm_freeaddrinfo(res);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -274,7 +281,7 @@ gfm_client_connection0(const char *hostname, int port,
  */
 gfarm_error_t
 gfm_client_connection_acquire(const char *hostname, int port,
-	struct gfm_connection **gfm_serverp)
+	const char *user, struct gfm_connection **gfm_serverp)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
@@ -284,7 +291,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	struct timeval expiration_time;
 
 	e = gfp_cached_connection_acquire(&gfm_server_cache,
-	    hostname, port, &cache_entry, &created);
+	    hostname, port, user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001100,
 			"acquirement of cached connection failed: %s",
@@ -295,8 +302,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
-	    NULL);
+	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL);
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
 	while (IS_CONNECTION_ERROR(e) &&
@@ -306,8 +312,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
 		    gfarm_error_string(e));
 		sleep(sleep_interval);
-		e = gfm_client_connection0(hostname, port, cache_entry,
-			gfm_serverp, NULL);
+		e = gfm_client_connection0(cache_entry, gfm_serverp, NULL);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
@@ -324,11 +329,11 @@ gfm_client_connection_acquire(const char *hostname, int port,
 
 gfarm_error_t
 gfm_client_connection_and_process_acquire(const char *hostname, int port,
-	struct gfm_connection **gfm_serverp)
+	const char *user, struct gfm_connection **gfm_serverp)
 {
 	struct gfm_connection *gfm_server;
 	gfarm_error_t e = gfm_client_connection_acquire(hostname, port,
-	    &gfm_server);
+	    user, &gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001101,
@@ -365,21 +370,20 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
  * gfm_client_connect - create an uncached connection
  */
 gfarm_error_t
-gfm_client_connect(const char *hostname, int port,
+gfm_client_connect(const char *hostname, int port, const char *user,
 	struct gfm_connection **gfm_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
 
-	e = gfp_uncached_connection_new(&cache_entry);
+	e = gfp_uncached_connection_new(hostname, port, user, &cache_entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001102,
 			"creation of uncached connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
-	e = gfm_client_connection0(hostname, port, cache_entry, gfm_serverp,
-	    source_ip);
+	e = gfm_client_connection0(cache_entry, gfm_serverp, source_ip);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001103,
 			"gfm_client_connection0(%s)(%d) failed: %s",
@@ -3182,7 +3186,7 @@ gfarm_user_job_register(struct gfm_connection *gfm_server,
 
 	gfarm_job_info_clear(&job_info, 1);
 	job_info.total_nodes = nusers;
-	job_info.user = gfarm_get_global_username();
+	job_info.user = gfm_client_username(gfm_server);
 	job_info.job_type = job_type;
 	e = gfm_host_get_canonical_self_name(gfm_server,
 	    &job_info.originate_host, &p);

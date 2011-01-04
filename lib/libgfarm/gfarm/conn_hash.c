@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
@@ -9,20 +10,14 @@
 #include "hash.h"
 #include "conn_hash.h"
 
-struct gfp_conn_hash_id {
-	char *hostname;
-	int port;
-	char *username;
-};
-
 static int
 gfp_conn_hash_index(const void *key, int keylen)
 {
 	const struct gfp_conn_hash_id *id = key;
 
+	/* username is not key */
 	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
-	    id->port * 3 +
-	    gfarm_hash_default(id->username, strlen(id->username)) * 5);
+	    id->port * 3);
 }
 
 static int
@@ -31,12 +26,12 @@ gfp_conn_hash_equal(const void *key1, int key1len,
 {
 	const struct gfp_conn_hash_id *id1 = key1, *id2 = key2;
 
+	/* username is not key */
 	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
-	    id1->port == id2->port &&
-	    strcmp(id1->username, id2->username) == 0);
+	    id1->port == id2->port);
 }
 
-char *
+const char *
 gfp_conn_hash_hostname(struct gfarm_hash_entry *entry)
 {
 	struct gfp_conn_hash_id *id = gfarm_hash_entry_key(entry);
@@ -44,7 +39,7 @@ gfp_conn_hash_hostname(struct gfarm_hash_entry *entry)
 	return (id->hostname);
 }
 
-char *
+const char *
 gfp_conn_hash_username(struct gfarm_hash_entry *entry)
 {
 	struct gfp_conn_hash_id *id = gfarm_hash_entry_key(entry);
@@ -80,13 +75,11 @@ gfp_conn_hash_table_init(
 }
 
 gfarm_error_t
-gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
-	size_t entrysize,
-	const char *hostname, int port, const char *username,
+gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
+	size_t entrysize, struct gfp_conn_hash_id *idp,
 	struct gfarm_hash_entry **entry_ret, int *created_ret)
 {
 	gfarm_error_t e;
-	struct gfp_conn_hash_id id, *idp;
 	struct gfarm_hash_entry *entry;
 	int created;
 
@@ -100,10 +93,10 @@ gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 		return (e);
 	}
 
-	id.hostname = (char *)hostname; /* UNCONST */
-	id.port = port;
-	id.username = (char *)username; /* UNCONST */
-	entry = gfarm_hash_enter(*hashtabp, &id, sizeof(id), entrysize,
+	assert(idp);
+	assert(idp->hostname);
+	assert(idp->port > 0);
+	entry = gfarm_hash_enter(*hashtabp, idp, sizeof(*idp), entrysize,
 	    &created);
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_1001083,
@@ -113,28 +106,22 @@ gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	if (created) {
-		idp = gfarm_hash_entry_key(entry);
-		idp->hostname = strdup(hostname);
-		idp->username = strdup(username);
-		if (idp->hostname == NULL || idp->username == NULL) {
-			if (idp->hostname != NULL)
-				free(idp->hostname);
-			if (idp->username != NULL)
-				free(idp->username);
-			idp->hostname = (char *)hostname; /* UNCONST */
-			idp->username = (char *)username; /* UNCONST */
-			gfarm_hash_purge(*hashtabp, &id, sizeof(id));
-			gflog_debug(GFARM_MSG_1001084,
-				"allocation of hostname or username failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (GFARM_ERR_NO_MEMORY);
-		}
-	}
-
 	*entry_ret = entry;
 	*created_ret = created;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
+	size_t entrysize, const char *hostname, int port, const char *username,
+	struct gfarm_hash_entry **entry_ret, int *created_ret)
+{
+	struct gfp_conn_hash_id id;
+	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
+	id.username = (char *)username; /* UNCONST */
+	return (gfp_conn_hash_id_enter(hashtabp, hashtabsize, entrysize,
+	    &id, entry_ret, created_ret));
 }
 
 gfarm_error_t
@@ -177,22 +164,11 @@ gfp_conn_hash_purge(struct gfarm_hash_table *hashtab,
 {
 	void *key = gfarm_hash_entry_key(entry);
 	int keylen = gfarm_hash_entry_key_length(entry);
-	struct gfp_conn_hash_id *idp = key;
-	struct gfp_conn_hash_id id = *idp;
-
 	gfarm_hash_purge(hashtab, key, keylen);
-	free(id.hostname);
-	free(id.username);
 }
 
 void
 gfp_conn_hash_iterator_purge(struct gfarm_hash_iterator *iterator)
 {
-	void *key = gfarm_hash_entry_key(gfarm_hash_iterator_access(iterator));
-	struct gfp_conn_hash_id *idp = key;
-	struct gfp_conn_hash_id id = *idp;
-
 	gfarm_hash_iterator_purge(iterator);
-	free(id.hostname);
-	free(id.username);
 }

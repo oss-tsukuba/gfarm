@@ -1902,7 +1902,7 @@ struct replication_queue_data {
 
 gfarm_error_t
 replication_queue_lookup(const char *hostname, int port,
-	struct gfarm_hash_entry **qp)
+	const char *user, struct gfarm_hash_entry **qp)
 {
 	gfarm_error_t e;
 	int created;
@@ -1910,7 +1910,7 @@ replication_queue_lookup(const char *hostname, int port,
 	struct replication_queue_data *qd;
 
 	e = gfp_conn_hash_enter(&replication_queue_set, HOST_HASHTAB_SIZE,
-	    sizeof(*qd), hostname, port, gfarm_get_global_username(),
+	    sizeof(*qd), hostname, port, user,
 	    &q, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002514,
@@ -2115,7 +2115,7 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 
 gfarm_error_t
 gfs_async_server_replication_request(struct gfp_xdr *conn,
-	gfp_xdr_xid_t xid, size_t size)
+	const char *user, gfp_xdr_xid_t xid, size_t size)
 {
 	gfarm_error_t e;
 	char *host;
@@ -2132,7 +2132,7 @@ gfs_async_server_replication_request(struct gfp_xdr *conn,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if ((e = replication_queue_lookup(host, port, &q)) !=
+	if ((e = replication_queue_lookup(host, port, user, &q)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002516,
 		    "cannot allocate replication queue for %s:%d: %s",
@@ -2293,8 +2293,8 @@ gfs_server_replicate_file_sequential_common(struct gfp_xdr *client,
 		 * information which was set in gfarm_authorize()
 		 * with switch_to==1.
 		 */
-		e = gfs_client_connect(
-		    src_canonical_hostname, (struct sockaddr *)&peer_addr,
+		e = gfs_client_connect(src_canonical_hostname,
+		    gfarm_spool_server_port, (struct sockaddr *)&peer_addr,
 		    &src_conn);
 	}
 	free(src_canonical_hostname);
@@ -2551,8 +2551,8 @@ gfs_server_replicate_file_parallel_common(struct gfp_xdr *client,
 	/* XXX - this should be done in parallel rather than sequential */
 	for (i = 0; i < ndivisions; i++) {
 
-		e = gfs_client_connect(
-		    src_canonical_hostname, (struct sockaddr *)&peer_addr,
+		e = gfs_client_connect(src_canonical_hostname,
+		    gfarm_spool_server_port, (struct sockaddr *)&peer_addr,
 		    &divisions[i].src_conn);
 		if (e != GFARM_ERR_NO_ERROR) {
 			if (e_save == GFARM_ERR_NO_ERROR)
@@ -3609,7 +3609,8 @@ gfm_client_connect_with_reconnection()
 	unsigned int sleep_max_interval = 640;	/* about 10 min */
 
 	e = gfm_client_connect(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, &gfm_server, listen_addrname);
+	    gfarm_metadb_server_port, GFSD_USERNAME,
+	    &gfm_server, listen_addrname);
 	while (e != GFARM_ERR_NO_ERROR) {
 		/* suppress excessive log */
 		if (sleep_interval < sleep_max_interval)
@@ -3620,7 +3621,8 @@ gfm_client_connect_with_reconnection()
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
 		e = gfm_client_connect(gfarm_metadb_server_name,
-		    gfarm_metadb_server_port, &gfm_server, listen_addrname);
+		    gfarm_metadb_server_port, GFSD_USERNAME,
+		    &gfm_server, listen_addrname);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
@@ -4165,7 +4167,8 @@ back_channel_server(void)
 				break;
 			case GFS_PROTO_REPLICATION_REQUEST:
 				e = gfs_async_server_replication_request(
-				    bc_conn, xid, size);
+				    bc_conn, gfm_client_username(back_channel),
+				    xid, size);
 				break;
 			default:
 				gflog_error(GFARM_MSG_1000566,
@@ -4524,7 +4527,9 @@ main(int argc, char **argv)
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 
-	e = gfarm_global_to_local_username(GFSD_USERNAME, &local_gfsd_user);
+	e = gfarm_global_to_local_username_by_host(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    GFSD_USERNAME, &local_gfsd_user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "no local user for the global `%s' user.\n",
 		    GFSD_USERNAME);
@@ -4549,12 +4554,6 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	free(local_gfsd_user);
-	e = gfarm_set_global_username(GFSD_USERNAME);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, ": gfarm_set_global_username: %s\n",
-		    gfarm_error_string(e));
-		exit(1);
-	}
 
 	/* sanity check on a spool directory */
 	if (stat(gfarm_spool_root, &sb) == -1)

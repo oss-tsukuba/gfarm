@@ -18,26 +18,35 @@ typedef gfarm_int64_t gfarm_pid_t; /* XXX - need better place */
 
 /*
  * username handling
- *
- * XXX these functions do not care about a metadata server.
- * do not use.
  */
 
 /* the return value of the following functions should be free(3)ed */
-gfarm_error_t gfarm_global_to_local_username(char *, char **);
-gfarm_error_t gfarm_local_to_global_username(char *, char **);
-gfarm_error_t gfarm_global_to_local_groupname(char *, char **);
-gfarm_error_t gfarm_local_to_global_groupname(char *, char **);
+gfarm_error_t gfarm_local_to_global_username_by_url(const char *,
+	const char *, char **);
+gfarm_error_t gfarm_global_to_local_username_by_url(const char *,
+	const char *, char **);
+gfarm_error_t gfarm_local_to_global_groupname_by_url(const char *,
+	const char *, char **);
+gfarm_error_t gfarm_global_to_local_groupname_by_url(const char *,
+	const char *, char **);
+gfarm_error_t gfarm_local_to_global_username_by_host(const char *, int,
+	const char *, char **);
+gfarm_error_t gfarm_global_to_local_username_by_host(const char *, int,
+	const char *, char **);
+gfarm_error_t gfarm_local_to_global_groupname_by_host(const char *, int,
+	const char *, char **);
+gfarm_error_t gfarm_global_to_local_groupname_by_host(const char *, int,
+	const char *, char **);
 
 /*
  * the return value of the following gfarm_get_*() funtions should not be
  * trusted (maybe forged) on client side, because any user can forge
  * the name by simply setting $USER.
  */
-gfarm_error_t gfarm_set_global_username(char *);
 gfarm_error_t gfarm_set_local_username(char *);
 gfarm_error_t gfarm_set_local_homedir(char *);
-char *gfarm_get_global_username(void);
+gfarm_error_t gfarm_get_global_username_by_url(const char *, char **);
+gfarm_error_t gfarm_get_global_username_by_host(const char *, int, char **);
 char *gfarm_get_local_username(void);
 char *gfarm_get_local_homedir(void);
 gfarm_error_t gfarm_set_local_user_for_this_local_account(void);

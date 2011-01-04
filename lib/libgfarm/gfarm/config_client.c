@@ -22,41 +22,13 @@
 #include "gfm_client.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
+#include "lookup.h"
 
-static gfarm_error_t
-gfarm_set_global_user_for_sharedsecret(void)
-{
-	gfarm_error_t e;
-	char *local_user, *global_user;
-
-	/*
-	 * Sharedsecret authentication requires to send a global user
-	 * name when connecting to gfmd, which is determined by the
-	 * local user account.
-	 */
-	local_user = gfarm_get_local_username();
-	e = gfarm_local_to_global_username(local_user, &global_user);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000978,
-			"local_to_global_username(%s) failed: %s",
-			local_user, gfarm_error_string(e));
-		return (e);
-	}
-
-	e = gfarm_set_global_username(global_user);
-	free(global_user);
-	return (e);
-}
-
-/*
- * XXX FIXME
- * the global username should not be global, but per metadata server basis.
- */
+#ifdef HAVE_GSI
 static gfarm_error_t
 gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-#ifdef HAVE_GSI
 	struct gfarm_user_info user;
 	char *gsi_dn;
 
@@ -66,7 +38,8 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
 			gsi_dn, &user);
 		if (e == GFARM_ERR_NO_ERROR) {
-			e = gfarm_set_global_username(user.username);
+			e = gfm_client_set_username_for_gsi(gfm_server,
+			    user.username);
 			gfarm_user_info_free(&user);
 		} else {
 			gflog_debug(GFARM_MSG_1000979,
@@ -75,9 +48,9 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 				gsi_dn, gfarm_error_string(e));
 		}
 	}
-#endif
 	return (e);
 }
+#endif
 
 /*
  * the following function is for client,
@@ -115,7 +88,7 @@ gfarm_config_read(void)
 		sprintf(rc, "%s/%s", home, gfarm_client_rc);
 		rc_need_free = 1;
 	}
-	gfarm_init_config_stringlists();
+	gfarm_init_config();
 	if ((config = fopen(rc, "r")) == NULL) {
 		user_config_errno = errno;
 	} else {
@@ -386,8 +359,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	enum gfarm_auth_method auth_method;
 #ifdef HAVE_GSI
+	enum gfarm_auth_method auth_method;
 	int saved_auth_verb;
 #endif
 
@@ -413,23 +386,11 @@ gfarm_initialize(int *argcp, char ***argvp)
 	(void)gfarm_gsi_client_initialize();
 #endif
 	/*
-	 * In sharedsecret authentication, a global user name is
-	 * required to be set to access a metadata server.
-	 */
-	e = gfarm_set_global_user_for_sharedsecret();
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000984,
-			"gfarm_set_global_user_for_sharedsecret() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-
-	/*
-	 * XXX FIXME this shouldn't be necessary here
+	 * this shouldn't be necessary here
 	 * to support multiple metadata server
 	 */
-	e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port, &gfm_server);
+	e = gfm_client_connection_and_process_acquire_by_path(
+	    GFARM_PATH_ROOT, &gfm_server);
 #ifdef HAVE_GSI
 	(void)gflog_auth_set_verbose(saved_auth_verb);
 #endif
@@ -441,6 +402,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 		return (e);
 	}
 
+#ifdef HAVE_GSI
 	/* metadb access is required to obtain a global user name by GSI */
 	auth_method = gfm_client_connection_auth_method(gfm_server);
 	if (GFARM_IS_AUTH_GSI(auth_method)) {
@@ -452,6 +414,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 			return (e);
 		}
 	}
+#endif
 	gfm_client_connection_free(gfm_server);
 
 	gfarm_parse_env_client();
@@ -522,7 +485,7 @@ gfarm_terminate(void)
 			return (e);
 	}
 #endif /* not yet in gfarm v2 */
-	gfarm_free_config_stringlists();
+	gfarm_free_config();
 	gfs_client_terminate();
 	gfm_client_terminate();
 	gflog_terminate();

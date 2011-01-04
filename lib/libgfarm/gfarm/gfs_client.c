@@ -51,6 +51,7 @@
 #include "conn_cache.h"
 #include "gfs_proto.h"
 #include "gfs_client.h"
+#include "gfm_client.h"
 
 #define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
@@ -133,7 +134,7 @@ gfs_client_hostname(struct gfs_connection *gfs_server)
 const char *
 gfs_client_username(struct gfs_connection *gfs_server)
 {
-	return (gfarm_get_global_username()); /* XXX FIXME */
+	return (gfp_cached_connection_username(gfs_server->cache_entry));
 }
 
 int
@@ -395,7 +396,8 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 
 static gfarm_error_t
 gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
-	struct sockaddr *peer_addr, struct gfp_cached_connection *cache_entry,
+	const char *user, struct sockaddr *peer_addr,
+	struct gfp_cached_connection *cache_entry,
 	struct gfs_connection **gfs_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
@@ -416,7 +418,7 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),
-		    &gfs_server->auth_method);
+		    user, &gfs_server->auth_method);
 	if (e == GFARM_ERR_NO_ERROR)
 		*gfs_serverp = gfs_server;
 	else {
@@ -467,7 +469,7 @@ gfs_client_terminate(void)
  * gfs_client_connection_acquire - create or lookup a cached connection
  */
 gfarm_error_t
-gfs_client_connection_acquire(const char *canonical_hostname,
+gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	struct sockaddr *peer_addr, struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e;
@@ -477,7 +479,7 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 	e = gfp_cached_connection_acquire(&gfs_server_cache,
 	    canonical_hostname,
 	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
-	    &cache_entry, &created);
+	    user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001184,
 			"acquirement of cached connection (%s) failed: %s",
@@ -489,8 +491,8 @@ gfs_client_connection_acquire(const char *canonical_hostname,
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
-	    cache_entry, gfs_serverp, NULL);
+	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
+	    peer_addr, cache_entry, gfs_serverp, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
@@ -511,13 +513,14 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	struct gfp_cached_connection *cache_entry;
 	int created;
 	struct sockaddr peer_addr;
+	const char *user = gfm_client_username(gfm_server);
 
 	/*
 	 * lookup gfs_server_cache first,
 	 * to eliminate hostname -> IP-address conversion in a cached case.
 	 */
 	e = gfp_cached_connection_acquire(&gfs_server_cache,
-	    canonical_hostname, port, &cache_entry, &created);
+	    canonical_hostname, port, user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001186,
 			"acquirement of cached connection (%s) failed: %s",
@@ -533,7 +536,7 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	    &peer_addr, NULL);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfs_client_connection_alloc_and_auth(canonical_hostname,
-		    &peer_addr, cache_entry, gfs_serverp, source_ip);
+		    user, &peer_addr, cache_entry, gfs_serverp, source_ip);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&gfs_server_cache,
 		    cache_entry);
@@ -553,21 +556,22 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
  * rather than a caller of this function.
  */
 gfarm_error_t
-gfs_client_connect(const char *canonical_hostname, struct sockaddr *peer_addr,
-	struct gfs_connection **gfs_serverp)
+gfs_client_connect(const char *canonical_hostname, int port, const char *user,
+	struct sockaddr *peer_addr, struct gfs_connection **gfs_serverp)
 {
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
 
-	e = gfp_uncached_connection_new(&cache_entry);
+	e = gfp_uncached_connection_new(canonical_hostname, port, user,
+		&cache_entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001188,
 			"making new uncached connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
-	e = gfs_client_connection_alloc_and_auth(canonical_hostname, peer_addr,
-	    cache_entry, gfs_serverp, NULL);
+	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
+	    peer_addr, cache_entry, gfs_serverp, NULL);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		gflog_debug(GFARM_MSG_1001189,
@@ -588,7 +592,7 @@ gfs_client_connection_enter_cache(struct gfs_connection *gfs_server)
 		abort();
 	}
 	return (gfp_uncached_connection_enter_cache(&gfs_server_cache,
-	    gfs_server->cache_entry, gfs_server->hostname, gfs_server->port));
+	    gfs_server->cache_entry));
 }
 
 /*
@@ -639,8 +643,10 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 	} else { /* successfully connected */
 		state->error = gfarm_auth_request_multiplexed(state->q,
 		    state->gfs_server->conn, GFS_SERVICE_TAG,
-		    state->gfs_server->hostname, &state->peer_addr,
+		    state->gfs_server->hostname,
+		    &state->peer_addr,
 		    gfarm_get_auth_id_type(),
+		    gfs_client_username(state->gfs_server),
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
 		if (state->error == GFARM_ERR_NO_ERROR) {
@@ -660,7 +666,8 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 
 gfarm_error_t
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
-	const char *canonical_hostname, struct sockaddr *peer_addr,
+	const char *canonical_hostname, int port, const char *user,
+	struct sockaddr *peer_addr,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_connect_state **statepp)
 {
@@ -681,7 +688,8 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
-	e = gfp_uncached_connection_new(&cache_entry);
+	e = gfp_uncached_connection_new(canonical_hostname,
+	    port, user, &cache_entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(state);
 		gflog_debug(GFARM_MSG_1001192,
@@ -727,7 +735,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		e = gfarm_auth_request_multiplexed(q,
 		    gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, &state->peer_addr,
-		    gfarm_get_auth_id_type(),
+		    gfarm_get_auth_id_type(), user,
 		    gfs_client_connect_end_auth, state,
 		    &state->auth_state);
 		if (e == GFARM_ERR_NO_ERROR) {

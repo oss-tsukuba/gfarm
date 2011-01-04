@@ -26,6 +26,7 @@ static int omp_get_thread_num(void){ return (0); }
 #include "gfm_client.h"
 #include "gfarm_foreach.h"
 #include "gfarm_list.h"
+#include "lookup.h"
 
 #define HOSTHASH_SIZE	101
 
@@ -681,10 +682,10 @@ schedule_host_domain(const char *domain,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
+	const char *path = GFARM_PATH_ROOT;
 
-	if ((e = gfm_client_connection_and_process_acquire(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
-	    &gfm_server)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
+	    != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	e = gfm_client_schedule_host_domain(gfm_server, domain,

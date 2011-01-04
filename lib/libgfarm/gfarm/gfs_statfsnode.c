@@ -11,12 +11,7 @@
 #include "config.h"
 #include "gfm_client.h"
 #include "gfs_client.h"
-
-/*
- * XXX FIXME
- * a pathname argument is necessary to determine the gfm_server
- * (from multiple metadata servers).
- */
+#include "lookup.h"
 
 gfarm_error_t
 gfs_statfsnode(char *host, int port,
@@ -28,20 +23,19 @@ gfs_statfsnode(char *host, int port,
 	struct gfm_connection *gfm_server;
 	struct gfs_connection *gfs_server;
 	int retry = 0;
+	const char *path = GFARM_PATH_ROOT;
 
 	for (;;) {
-		if ((e = gfm_client_connection_and_process_acquire(
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    &gfm_server)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001380,
-				"acquirement of client connection and process "
-				"failed: %s",
-				gfarm_error_string(e));
+		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_url_parse_metadb failed: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    host, port, &gfs_server, NULL))!= GFARM_ERR_NO_ERROR)
+		    host, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR)
 			goto free_gfm_connection;
 
 		if (gfs_client_pid(gfs_server) == 0)

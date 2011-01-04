@@ -239,7 +239,6 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			   userinfo->authData.userAuth.gid);
 		gfarmSecSessionDedicate(session);
 
-		gfarm_set_global_username(global_username);
 		gfarm_set_local_username(
 		    userinfo->authData.userAuth.localName);
 		gfarm_set_local_homedir(

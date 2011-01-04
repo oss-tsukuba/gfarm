@@ -25,23 +25,23 @@ int gfs_client_port(struct gfs_connection *);
 gfarm_pid_t gfs_client_pid(struct gfs_connection *);
 void gfs_client_purge_from_cache(struct gfs_connection *);
 
-gfarm_error_t gfs_client_connection_acquire(const char *, struct sockaddr *,
-	struct gfs_connection **);
+gfarm_error_t gfs_client_connection_acquire(const char *, const char *,
+	struct sockaddr *, struct gfs_connection **);
 struct gfm_connection; /* XXX */
 gfarm_error_t gfs_client_connection_acquire_by_host(
-	struct gfm_connection *, /* XXX */
-	const char *, int, struct gfs_connection **, const char *);
+	struct gfm_connection *, const char *, /* XXX */
+	int, struct gfs_connection **, const char *);
 void gfs_client_connection_free(struct gfs_connection *);
-gfarm_error_t gfs_client_connect(const char *, struct sockaddr *,
-	struct gfs_connection **);
+gfarm_error_t gfs_client_connect(const char *, int, const char *,
+	struct sockaddr *, struct gfs_connection **);
 void gfs_client_connection_gc(void);
 int gfs_client_connection_is_local(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_enter_cache(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connect_request_multiplexed(
-	struct gfarm_eventqueue *, const char *, struct sockaddr *,
-	void (*)(void *), void *,
+	struct gfarm_eventqueue *, const char *, int, const char *,
+	struct sockaddr *, void (*)(void *), void *,
 	struct gfs_client_connect_state **);
 gfarm_error_t gfs_client_connect_result_multiplexed(
 	struct gfs_client_connect_state *,

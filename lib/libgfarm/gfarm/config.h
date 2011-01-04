@@ -93,8 +93,8 @@ void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO
 gfarm_error_t gfarm_config_read_file(FILE *, int *);
 #endif
-gfarm_error_t gfarm_init_config_stringlists(void);
-gfarm_error_t gfarm_free_config_stringlists(void);
+gfarm_error_t gfarm_init_config(void);
+gfarm_error_t gfarm_free_config(void);
 void gfarm_config_set_default_ports(void);
 void gfarm_config_set_default_misc(void);
 

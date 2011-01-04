@@ -35,19 +35,23 @@ void gfp_cached_connection_set_data(struct gfp_cached_connection *, void *);
 const char *gfp_cached_connection_hostname(struct gfp_cached_connection *);
 const char *gfp_cached_connection_username(struct gfp_cached_connection *);
 int gfp_cached_connection_port(struct gfp_cached_connection *);
+gfarm_error_t gfp_cached_connection_set_username(
+	struct gfp_cached_connection *, const char *user);
 
 
-gfarm_error_t gfp_uncached_connection_new(struct gfp_cached_connection **);
+gfarm_error_t gfp_uncached_connection_new(const char *, int, const char *,
+	struct gfp_cached_connection **);
 void gfp_uncached_connection_dispose(struct gfp_cached_connection *);
 void gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 gfarm_error_t gfp_uncached_connection_enter_cache(struct gfp_conn_cache *,
-	struct gfp_cached_connection *, const char *, int);
+	struct gfp_cached_connection *);
 void gfp_cached_connection_used(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 void gfp_cached_connection_gc_all(struct gfp_conn_cache *);
 gfarm_error_t gfp_cached_connection_acquire(struct gfp_conn_cache *,
-	const char *, int, struct gfp_cached_connection **, int *);
+	const char *, int, const char *, struct gfp_cached_connection **,
+	int *);
 void gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 void gfp_cached_connection_terminate(struct gfp_conn_cache *);

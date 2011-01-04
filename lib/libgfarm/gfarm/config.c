@@ -37,6 +37,13 @@
 #include "gfm_proto.h" /* GFMD_DEFAULT_PORT */
 #include "gfs_proto.h" /* GFSD_DEFAULT_PORT */
 #include "gfs_profile.h"
+#include "gfm_client.h"
+#include "lookup.h"
+
+#include "hash.h"
+#include "lru_cache.h"
+#include "conn_hash.h"
+#include "conn_cache.h"
 
 char *gfarm_config_file = GFARM_CONFIG;
 
@@ -115,23 +122,202 @@ gfarm_xattr_caching_patterns(void)
  * GFarm username handling
  */
 
-static gfarm_stringlist local_user_map_file_list;
-static gfarm_stringlist local_group_map_file_list;
+struct gfarm_local_ug_maps_id {
+	char *hostname;
+	int port;
+};
+
+struct gfarm_local_ug_maps {
+	gfarm_stringlist local_user_map_file_list;
+	gfarm_stringlist local_group_map_file_list;
+};
+
+#define LOCAL_UG_MAP_FILE_HASHTAB_SIZE 31
+
+static struct gfarm_hash_table *local_ug_maps_tab = NULL;
+
+static int
+local_ug_maps_hash_index(const void *key, int keylen)
+{
+	const struct gfarm_local_ug_maps_id *id = key;
+
+	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
+	    id->port * 3);
+}
+
+int
+local_ug_maps_hash_equal(const void *key1, int key1len,
+	const void *key2, int key2len)
+{
+	const struct gfarm_local_ug_maps_id *id1 = key1, *id2 = key2;
+
+	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
+	    id1->port == id2->port);
+}
+
+#define DEFAULT_HOSTNAME_KEY	"."
+#define DEFAULT_PORT_KEY	(-1)
+
+static gfarm_error_t
+local_ug_maps_enter(const char *hostname, int port, int is_user,
+	const char *map_file)
+{
+	gfarm_error_t e;
+	struct gfarm_hash_entry *entry;
+	struct gfarm_local_ug_maps *ugm;
+	struct gfarm_local_ug_maps_id id, *idp = NULL;
+	char *s = NULL;
+	int created;
+
+	if (local_ug_maps_tab == NULL) {
+		local_ug_maps_tab = gfarm_hash_table_alloc(
+		    LOCAL_UG_MAP_FILE_HASHTAB_SIZE,
+		    local_ug_maps_hash_index, local_ug_maps_hash_equal);
+		if (local_ug_maps_tab == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of hashtable failed: %s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (GFARM_ERR_NO_MEMORY);
+		}
+	}
+
+	if (hostname == NULL) {
+		hostname = DEFAULT_HOSTNAME_KEY;
+		port = DEFAULT_PORT_KEY;
+	}
+	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
+	entry = gfarm_hash_enter(local_ug_maps_tab, &id, sizeof(id),
+	    sizeof(*ugm), &created);
+	if (entry == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "insertion to hashtable failed: %s",
+		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if (created) {
+		idp = gfarm_hash_entry_key(entry);
+		idp->hostname = strdup(hostname);
+		if (idp->hostname == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "strdup failed: %s",
+			    gfarm_error_string(e));
+			goto error;
+		}
+		ugm = gfarm_hash_entry_data(entry);
+		gfarm_stringlist_init(&ugm->local_user_map_file_list);
+		gfarm_stringlist_init(&ugm->local_group_map_file_list);
+	} else {
+		ugm = gfarm_hash_entry_data(entry);
+	}
+	s = strdup(map_file);
+	if (s == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "strdup failed: %s",
+		    gfarm_error_string(e));
+		goto error;
+	}
+	if (is_user) {
+		if ((e = gfarm_stringlist_add(&ugm->local_user_map_file_list,
+		    s)) != GFARM_ERR_NO_ERROR) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_stringlist_add failed: %s",
+			    gfarm_error_string(e));
+			goto error;
+		}
+	} else {
+		if ((e = gfarm_stringlist_add(&ugm->local_group_map_file_list,
+		    s)) != GFARM_ERR_NO_ERROR) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfarm_stringlist_add failed: %s",
+			    gfarm_error_string(e));
+			goto error;
+		}
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+error:
+	if (created) {
+		if (idp)
+			free(idp->hostname);
+		gfarm_hash_purge(local_ug_maps_tab, &id, sizeof(id));
+	}
+	free(s);
+	return (e);
+}
+
+static void
+local_ug_maps_tab_free()
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *entry;
+	struct gfarm_local_ug_maps *ugm;
+
+	if (local_ug_maps_tab == NULL)
+		return;
+
+	for (gfarm_hash_iterator_begin(local_ug_maps_tab, &it);
+	     !gfarm_hash_iterator_is_end(&it);) {
+		entry = gfarm_hash_iterator_access(&it);
+		ugm = gfarm_hash_entry_data(entry);
+		gfarm_stringlist_free_deeply(&ugm->local_user_map_file_list);
+		gfarm_stringlist_free_deeply(&ugm->local_group_map_file_list);
+		gfarm_hash_iterator_purge(&it);
+	}
+}
+
+static struct gfarm_local_ug_maps *
+local_ug_maps_lookup(const char *hostname, int port)
+{
+	struct gfarm_hash_entry *entry = NULL;
+	struct gfarm_local_ug_maps_id id;
+
+	if (local_ug_maps_tab == NULL)
+		return (NULL);
+	if (hostname && port >= 0) {
+		id.hostname = (char *)hostname; /* UNCONST */
+		id.port = port;
+		entry = gfarm_hash_lookup(local_ug_maps_tab, &id, sizeof(id));
+	}
+	if (entry == NULL) {
+		id.hostname = DEFAULT_HOSTNAME_KEY;
+		id.port = DEFAULT_PORT_KEY;
+		entry = gfarm_hash_lookup(local_ug_maps_tab, &id, sizeof(id));
+		if (entry == NULL)
+			return (NULL);
+	}
+	return ((struct gfarm_local_ug_maps *)gfarm_hash_entry_data(entry));
+}
+
+#define LOCAL_USER_MAP_FILE_LIST(ugm, hostname, port) \
+	((ugm = local_ug_maps_lookup((hostname), (port))) ? \
+	&ugm->local_user_map_file_list : NULL)
+
+#define LOCAL_GROUP_MAP_FILE_LIST(ugm, hostname, port) \
+	((ugm = local_ug_maps_lookup((hostname), (port))) ? \
+	&ugm->local_group_map_file_list : NULL)
 
 /* the return value of the following function should be free(3)ed */
 static gfarm_error_t
-map_user(gfarm_stringlist *map_file_list, char *from, char **to_p,
-	char *(*mapping)(char *, char *, char *),
+map_user(gfarm_stringlist *map_file_list, const char *from, char **to_p,
+	const char *(*mapping)(const char *, const char *, const char *),
 	gfarm_error_t error_redefined)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	FILE *map = NULL;
 	char *mapfile = NULL;
 	int i, list_len, mapfile_mapped_index;
-	char buffer[1024], *g_user, *l_user, *mapped, *tmp;
+	char buffer[1024], *g_user, *l_user, *tmp;
+	const char *mapped;
 	int lineno = 0;
 
 	*to_p = NULL;
+	if (map_file_list == NULL)
+		goto search_end;
 	list_len = gfarm_stringlist_length(map_file_list);
 	mapfile_mapped_index = list_len;
 	for (i = 0; i < list_len; i++) {
@@ -186,6 +372,7 @@ map_user(gfarm_stringlist *map_file_list, char *from, char **to_p,
 		fclose(map);
 		map = NULL;
 	}
+search_end:
 	if (*to_p == NULL) { /* not found */
 	 	*to_p = strdup(from);
 		if (*to_p == NULL)
@@ -204,76 +391,170 @@ finish:
 	return (e);
 }
 
-static char *
-map_global_to_local(char *from, char *global_user, char *local_user)
+static const char *
+map_global_to_local(const char *from, const char *global_user,
+	const char *local_user)
 {
 	if (strcmp(from, global_user) == 0)
 		return (local_user);
 	return (NULL);
 }
 
-/*
- * XXX FIXME This function should not be used by gfarm clients,
- * because this doesn't cope with multiple metadata server.
- * Thus, this function only should be called from gfmd and gfsd,
- * and should move to config_server.c.
- */
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_global_to_local_username(char *global_user, char **local_user_p)
+gfarm_global_to_local_username_by_host(const char *hostname, int port,
+	const char *global_user, char **local_user_p)
 {
-	return (map_user(&local_user_map_file_list, global_user, local_user_p,
-	    map_global_to_local, GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
+	struct gfarm_local_ug_maps *ugm;
+	return (map_user(LOCAL_USER_MAP_FILE_LIST(ugm, hostname, port),
+	    global_user, local_user_p, map_global_to_local,
+	    GFARM_ERRMSG_GLOBAL_USER_REDEFIEND));
 }
 
-static char *
-map_local_to_global(char *from, char *global_user, char *local_user)
+gfarm_error_t
+gfarm_global_to_local_username_by_url(const char *url,
+	const char *global_user, char **local_user_p)
+{
+	gfarm_error_t e;
+	char *hostname;
+	int port;
+
+	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_get_hostname_by_url(%s) failed: %s",
+		    url, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfarm_global_to_local_username_by_host(hostname, port,
+	    global_user, local_user_p)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_global_to_local_username_by_host(%s,%d) (%s)"
+		    " failed: %s",
+		    hostname, port, url, gfarm_error_string(e));
+	}
+	free(hostname);
+	return (e);
+}
+
+static const char *
+map_local_to_global(const char *from, const char *global_user,
+	const char *local_user)
 {
 	if (strcmp(from, local_user) == 0)
 		return (global_user);
 	return (NULL);
 }
 
-/*
- * XXX FIXME This function should not be used by gfarm clients,
- * because this doesn't cope with multiple metadata server.
- * Thus, this function only should be called from gfmd and gfsd,
- * and should move to config_server.c.
- */
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_local_to_global_username(char *local_user, char **global_user_p)
+gfarm_local_to_global_username_by_host(const char *hostname, int port,
+	const char *local_user, char **global_user_p)
 {
-	return (map_user(&local_user_map_file_list, local_user, global_user_p,
-	    map_local_to_global, GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
+	struct gfarm_local_ug_maps *ugm;
+	return (map_user(LOCAL_USER_MAP_FILE_LIST(ugm, hostname, port),
+	    local_user, global_user_p, map_local_to_global,
+	    GFARM_ERRMSG_LOCAL_USER_REDEFIEND));
 }
 
-/*
- * XXX FIXME This function should not be used by gfarm clients,
- * because this doesn't cope with multiple metadata server.
- * Thus, this function only should be called from gfmd and gfsd,
- * and should move to config_server.c.
- */
-/* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_global_to_local_groupname(char *global_user, char **local_user_p)
+gfarm_local_to_global_username_by_url(const char *url,
+	const char *local_user, char **global_user_p)
 {
-	return (map_user(&local_group_map_file_list, global_user, local_user_p,
-	    map_global_to_local, GFARM_ERRMSG_GLOBAL_GROUP_REDEFIEND));
+	gfarm_error_t e;
+	char *hostname;
+	int port;
+
+	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_get_hostname_by_url(%s) failed: %s",
+		    url, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfarm_local_to_global_username_by_host(hostname, port,
+	    local_user, global_user_p)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_local_to_global_username_by_host(%s,%d) (%s)"
+		    " failed: %s",
+		    hostname, port, url, gfarm_error_string(e));
+	}
+	free(hostname);
+	return (e);
 }
 
-/*
- * XXX FIXME This function should not be used by gfarm clients,
- * because this doesn't cope with multiple metadata server.
- * Thus, this function only should be called from gfmd and gfsd,
- * and should move to config_server.c.
- */
 /* the return value of the following function should be free(3)ed */
 gfarm_error_t
-gfarm_local_to_global_groupname(char *local_user, char **global_user_p)
+gfarm_global_to_local_groupname_by_host(const char *hostname, int port,
+	const char *global_group, char **local_group_p)
 {
-	return (map_user(&local_group_map_file_list, local_user, global_user_p,
-	    map_local_to_global, GFARM_ERRMSG_LOCAL_GROUP_REDEFIEND));
+	struct gfarm_local_ug_maps *ugm;
+	return (map_user(LOCAL_GROUP_MAP_FILE_LIST(ugm, hostname, port),
+	    global_group, local_group_p, map_global_to_local,
+	    GFARM_ERRMSG_GLOBAL_GROUP_REDEFIEND));
+}
+
+gfarm_error_t
+gfarm_global_to_local_groupname_by_url(const char *url,
+	const char *global_group, char **local_group_p)
+{
+	gfarm_error_t e;
+	char *hostname;
+	int port;
+
+	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_get_hostname_by_url(%s) failed: %s",
+		    url, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfarm_global_to_local_groupname_by_host(hostname, port,
+	    global_group, local_group_p)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_global_to_local_groupname_by_host(%s,%d) (%s)"
+		    " failed: %s",
+		    hostname, port, url, gfarm_error_string(e));
+	}
+	free(hostname);
+	return (e);
+}
+
+/* the return value of the following function should be free(3)ed */
+gfarm_error_t
+gfarm_local_to_global_groupname_by_host(const char *hostname, int port,
+	const char *local_group, char **global_group_p)
+{
+	struct gfarm_local_ug_maps *ugm;
+	return (map_user(LOCAL_GROUP_MAP_FILE_LIST(ugm, hostname, port),
+	    local_group, global_group_p, map_local_to_global,
+	    GFARM_ERRMSG_LOCAL_GROUP_REDEFIEND));
+}
+
+gfarm_error_t
+gfarm_local_to_global_groupname_by_url(const char *url,
+	const char *local_group, char **global_group_p)
+{
+	gfarm_error_t e;
+	char *hostname;
+	int port;
+
+	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_get_hostname_by_url(%s) failed: %s",
+		    url, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfarm_local_to_global_groupname_by_host(hostname, port,
+	    local_group, global_group_p)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_local_to_global_groupname_by_host(%s,%d) (%s)"
+		    " failed: %s",
+		    hostname, port, url, gfarm_error_string(e));
+	}
+	free(hostname);
+	return (e);
 }
 
 static gfarm_error_t
@@ -294,20 +575,30 @@ set_string(char **var, char *value)
 /*
  * client side variables
  */
-static char *gfarm_global_username = NULL;
 static char *gfarm_local_username = NULL;
 static char *gfarm_local_homedir = NULL;
 
 gfarm_error_t
-gfarm_set_global_username(char *global_username)
+gfarm_get_global_username_by_url(const char *url, char **userp)
 {
-	return (set_string(&gfarm_global_username, global_username));
+	gfarm_error_t e;
+	char *hostname;
+	int port;
+
+	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = gfarm_get_global_username_by_host(hostname, port, userp);
+	free(hostname);
+	return (GFARM_ERR_NO_ERROR);
 }
 
-char *
-gfarm_get_global_username(void)
+gfarm_error_t
+gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 {
-	return (gfarm_global_username);
+	char *local_user = gfarm_get_local_username();
+	return (gfarm_local_to_global_username_by_host(
+	    hostname, port, local_user, userp));
 }
 
 gfarm_error_t
@@ -1401,6 +1692,108 @@ parse_log_level(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_hostname_and_port(char *host_and_port, const char *listname,
+	char **hostname, int *port)
+{
+	gfarm_error_t e;
+	char c, *p, *sport;
+	long lport;
+	size_t n;
+
+	p = host_and_port;
+	n = strcspn(p, ":");
+	if (n == 0) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing of %s host argument failed: %s",
+		    listname, gfarm_error_string(e));
+		if (*p)
+			p++;
+		*hostname = NULL;
+		return (e);
+	}
+	*hostname = p;
+	p += n;
+	c = *p;
+	*p = 0;
+	if (c != ':')
+		return (GFARM_ERR_NO_ERROR);
+	p++;
+	sport = p;
+	errno = 0;
+	lport = strtol(sport, NULL, 10);
+	if (errno != 0 || lport <= 0 || lport > 0xFFFF) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing of %s port argument (%s) failed: %s",
+		    listname, sport, gfarm_error_string(e));
+		return (e);
+	}
+	*port = (int)lport;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
+{
+	gfarm_error_t e;
+	char *tmp, *filepath, *host_and_port, *host = NULL;
+	const char *listname;
+	int port = GFMD_DEFAULT_PORT;
+
+	listname = *op;
+	if ((e = gfarm_strtoken(&p, &filepath)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing of %s file path argument (%s) failed: %s",
+		    listname, p, gfarm_error_string(e));
+		return (e);
+	}
+	if (filepath == NULL) {
+		*op = "1st (file path) argument";
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Missing %s file path argument", listname);
+		return (GFARM_ERRMSG_MISSING_USER_MAP_FILE_ARGUMENT);
+	}
+	if ((e = gfarm_strtoken(&p, &host_and_port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "parsing of %s file path argument (%s) failed: %s",
+		    listname, p, gfarm_error_string(e));
+		return (e);
+	}
+	if (host_and_port) {
+		if ((e = parse_hostname_and_port(host_and_port, listname,
+		    &host, &port)) != GFARM_ERR_NO_ERROR) {
+			*op = "2nd (hostname:port) argument";
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "parsing of %s arguments (%s) failed: %s",
+			    listname, p, gfarm_error_string(e));
+			return (e);
+		}
+		if ((e = gfarm_strtoken(&p, &tmp)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "parsing of %s arguments (%s) failed: %s",
+			    listname, p, gfarm_error_string(e));
+			return (e);
+		}
+		if (tmp) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Too many netparam arguments passed");
+			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
+		}
+	}
+	if ((e = local_ug_maps_enter(host, (int)port, is_user, filepath))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "local_ug_maps_enter for %s failed: %s",
+		    listname, gfarm_error_string(e));
+		return (e);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
 	gfarm_error_t e;
@@ -1521,11 +1914,9 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_stringlist(p, &o,
 		    &xattr_cache_list, "xattr cache");
 	} else if (strcmp(s, o = "local_user_map") == 0) {
-		e = parse_stringlist(p, &o,
-		    &local_user_map_file_list, "local user map");
+		e = parse_local_usergroup_map_arguments(p, &o, 1);
 	} else if (strcmp(s, o = "local_group_map") == 0) {
-		e = parse_stringlist(p, &o,
-		    &local_group_map_file_list, "local group map");
+		e = parse_local_usergroup_map_arguments(p, &o, 0);
 #if 0 /* XXX NOTYET */
 	} else if (strcmp(s, o = "client_architecture") == 0) {
 		e = parse_client_architecture(p, &o);
@@ -1591,22 +1982,17 @@ parse_one_line(char *s, char *p, char **op)
 }
 
 gfarm_error_t
-gfarm_init_config_stringlists(void)
+gfarm_init_config(void)
 {
 	gfarm_stringlist_init(&xattr_cache_list);
-
-	gfarm_stringlist_init(&local_user_map_file_list);
-	gfarm_stringlist_init(&local_group_map_file_list);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfarm_free_config_stringlists(void)
+gfarm_free_config(void)
 {
 	gfarm_stringlist_free_deeply(&xattr_cache_list);
-
-	gfarm_stringlist_free_deeply(&local_user_map_file_list);
-	gfarm_stringlist_free_deeply(&local_group_map_file_list);
+	local_ug_maps_tab_free();
 	return (GFARM_ERR_NO_ERROR);
 }
 

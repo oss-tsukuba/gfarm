@@ -18,6 +18,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h>
 
 #include "gfutil.h"
 
@@ -27,6 +28,7 @@
 #include "gfp_xdr.h"
 
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
+#include "config.h" /* gfarm_metadb_server_name, gfarm_metadb_server_port */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
 	char *, char *,
@@ -321,8 +323,9 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			    global_username, hostname, gfarm_error_string(e));
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfarm_global_to_local_username(global_username,
-		    &local_username);
+		e = gfarm_global_to_local_username_by_host(
+		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    global_username, &local_username);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000041,
 			    "(%s@%s) authorize_sharedsecret: "
@@ -416,7 +419,6 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			gflog_error_errno(GFARM_MSG_1002350,
 			    "setuid(%d)", (int)pwd->pw_uid);
 
-		gfarm_set_global_username(global_username);
 		gfarm_set_local_username(local_username);
 		gfarm_set_local_homedir(pwd->pw_dir);
 	}
