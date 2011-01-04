@@ -10,6 +10,12 @@ setxattr_val="<a>setxattr</a>"
 lsetxattr_val="<a>lsetxattr</a>"
 xml_mode=-x
 
+# is XML attr supported?
+if gfxattr -x -g / test 2>&1 | grep '^gfxattr: unknown option -- x$' >/dev/null
+then
+	exit $exit_unsupported
+fi
+
 clean_test() {
 	rm -f $attr_file $tmp_file > /dev/null 2>&1
 	gfrm -f $gf_link $gf_file > /dev/null 2>&1
