@@ -83,7 +83,7 @@ main(int argc, char **argv)
 
 	if (sz0 != sz1 || sz0 != sz2) {
 		fprintf(stderr,
-		    "path %s, xattr %s: size mismatch %d vs %d vs %d vs %d\n",
+		    "path %s, xattr %s: size mismatch %d vs %d vs %d\n",
 		    path, xattr, (int)sz0, (int)sz1, (int)sz2);
 		return (EXIT_FAILURE);
 	}
