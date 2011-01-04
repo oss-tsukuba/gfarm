@@ -36,7 +36,7 @@ gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
 どちらの設定ファイルも、同一の文法で記述します。
 同一の指定文が複数あった場合には、先に指定されていた方が優先されます。
 環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに
-ユーザーのホームディレクトリにある.gfarm2rcファイルを使用します。
+ユーザのホームディレクトリにある.gfarm2rcファイルを使用します。
 </para>
 
 <para>
@@ -654,7 +654,7 @@ TCPのストリーム数を指定します。省略時は1です。
 このパラメータは、TCPの通信ウィンドウが十分なサイズ
 まで開かないような遠方との通信の際に、有効なことがあります。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep(1)コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
@@ -670,7 +670,7 @@ TCPのストリーム数を指定します。省略時は1です。
 このパラメータは、上記の<token>parallel_streams</token>として1より大きな値
 を指定した通信のみで有効です。
 現在、このパラメータはファイルの複製機能でのみ有効です。
-現在の実装では、gfrep(1)コマンドを起動したホストのユーザー設定ファイルの
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
 内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
 複製元のホストです。</para>
 
@@ -813,7 +813,7 @@ gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter></term>
+<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]] </term>
 <listitem>
 <para>
 sharedsecret認証において、
@@ -823,7 +823,7 @@ sharedsecret認証において、
 その場合ローカルユーザ名がグローバルユーザ名に変換されます。
 </para>
 <para>
-同一ユーザーに対して、
+同一ユーザに対して、
 異なるローカルアカウント名を与えているファイルシステムノードがある場合や、
 ローカルユーザ名とは異なるグローバルユーザ名を利用したい場合、
 このファイルで、各ノードのローカルなユーザ名に対して、単一の
@@ -833,8 +833,8 @@ sharedsecret認証において、
 	local_user_map /etc/gfarm/gfarm-usermap
 </literallayout>
 
-<para>ユーザーマップファイルは、グローバルユーザー名と
-ローカルユーザー名を、空白で区切って各行に記述します。</para>
+<para>ユーザマップファイルは、グローバルユーザ名と
+ローカルユーザ名を、空白で区切って各行に記述します。</para>
 <para>ユーザマップファイルの内容例:</para>	
 <literallayout>
 	foobar foo
@@ -842,11 +842,30 @@ sharedsecret認証において、
 </literallayout>
 <para>この例の1行目の指定では、このノードのローカルユーザ名fooに
 対してグローバルユーザ名foobarが定義されています。</para>
+
+<para>
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるユーザマップファイルを適用します。
+ポート番号を省略した場合は、デフォルトのポート番号(601)を使用します。
+local_user_map は複数回指定可能です。
+ローカルユーザ名が同一の定義が複数のファイルに存在する場合、最初の定義が選択されます。
+</para>
+<para>複数のユーザマップファイルの例:</para>
+<literallayout>
+	local_user_map /etc/gfarm/gfarm-usermap1-1
+	local_user_map /etc/gfarm/gfarm-usermap1-2
+	local_user_map /etc/gfarm/gfarm-usermap2-1 server2
+	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
+</literallayout>
+<para>
+この例では server2 に接続するときは gfarm-usermap2-1、gfarm-usermap2-2 の順番に適用します。
+server2 以外に接続するときは gfarm-usermap1-1、gfarm-usermap1-2 の順番に適用します。
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter></term>
+<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]]</term>
 <listitem>
 <para>
 グローバルグループ名とローカルグループ名の対応関係を記述した
@@ -863,6 +882,12 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 
 <para>グループマップファイルは、グローバルグループ名と
 ローカルグループ名を、空白で区切って各行に記述します。</para>
+
+<para>
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるグループマップファイルを適用します。
+指定方法は local_user_map と同様です。
+</para>
 </listitem>
 </varlistentry>
 
@@ -1247,8 +1272,12 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
-	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;
-	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;pathname&gt;
+	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_user_and_group_map_spec&gt; ::=
+		&lt;pathname&gt; |
+		&lt;pathname&gt; &lt;hostname&gt;|
+		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;

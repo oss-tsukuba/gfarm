@@ -844,7 +844,7 @@ specified in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>local_user_map</token> <parameter>user-map-file</parameter></term>
+<term><token>local_user_map</token> <parameter>user-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
 <listitem>
 <para>This directive specifies a file name
 <parameter>user-map-file</parameter> for mapping local user names to
@@ -877,11 +877,32 @@ name, and the second field is a local user name.</para>
 <para>According to the first line of this mapping file, a global user
 name, "foobar", is mapped to a local user name,  "foo", on this node.
 </para>
+<para>
+When hostname/port of the meta data server is specified,
+user mapping files different in each server are applied.
+When the port is omitted, default port (601) is used.
+local_user_map can be specified two or more times.
+When the same definitions of local user name exist,
+the first definition is selected.
+</para>
+<para>Example of multiple user mapping file:</para>
+<literallayout>
+	local_user_map /etc/gfarm/gfarm-usermap1-1
+	local_user_map /etc/gfarm/gfarm-usermap1-2
+	local_user_map /etc/gfarm/gfarm-usermap2-1 server2
+	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
+</literallayout>
+<para>
+In this example, when connecting to server2,
+it applies in order of gfarm-usermap2-1 and gfarm-usermap2-2.
+When connecting to excluding server2,
+it applies in order of gfarm-usermap1-1 and gfarm-usermap1-2.
+</para>
 </listitem>
 </varlistentry>
 
 <varlistentry>
-<term><token>local_group_map</token> <parameter>group-map-file</parameter></term>
+<term><token>local_group_map</token> <parameter>group-map-file</parameter> [<parameter>hostname</parameter>:[<parameter>port</parameter>]]</term>
 <listitem>
 <para>This directive specifies a file name
 <parameter>group-map-file</parameter> for mapping global group names to
@@ -899,6 +920,11 @@ name.</para>
 <para>Each line of the <parameter>group-map-file</parameter> consists
 of two fields separated by spaces; the first field is a global group
 name, and the second field is a local group name.</para>
+<para>
+When hostname/port of the meta data server is specified,
+group mapping files different in each server are applied.
+The specification method is similar to local_user_map.
+</para>
 </listitem>
 </varlistentry>
 
@@ -1284,8 +1310,12 @@ notation.</para>
 	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
-	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;pathname&gt;
-	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;pathname&gt;
+	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_user_and_group_map_spec&gt; ::=
+		&lt;pathname&gt; |
+		&lt;pathname&gt; &lt;hostname&gt;|
+		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
