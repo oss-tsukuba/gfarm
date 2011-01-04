@@ -62,6 +62,7 @@ gftool/gfchmod/gfchmod_644_file.sh
 gftool/gfchmod/gfchmod_755_file.sh
 gftool/gfchmod/gfchmod_700_dir.sh
 gftool/gfchmod/gfchmod_755_dir.sh
+gftool/gfstatus/gfstatus_mds2.sh
 
 # gftool/gfchown
 # gftool/gfuser
