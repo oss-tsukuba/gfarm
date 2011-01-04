@@ -562,15 +562,16 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
-gfarm_error_t
-gfm_server_verify_type(struct peer *peer, int from_client, int skip)
+static gfarm_error_t
+gfm_server_verify_type_common(struct peer *peer, int from_client, int skip,
+	int tf, const char *diag)
 {
 	gfarm_error_t e;
+	struct process *process;
 	gfarm_uint32_t type;
-	static const char diag[] = "GFM_PROTO_VERIFY_TYPE";
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_1000383, "%s: not implemented", diag);
+	gfarm_int32_t cfd;
+	struct inode *inode;
+	gfarm_mode_t mode = 0;
 
 	e = gfm_server_get_request(peer, diag, "i", &type);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -582,32 +583,71 @@ gfm_server_verify_type(struct peer *peer, int from_client, int skip)
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_put_reply(peer, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	giant_lock();
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"operation is not permitted : peer_get_process() "
+			"failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+		GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "peer_fdpair_get_current() "
+			"failed: %s", gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, cfd, &inode)) !=
+		GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "process_get_file_inode() "
+			"failed: %s", gfarm_error_string(e));
+	} else {
+		mode = inode_get_mode(inode);
+	}
+	giant_unlock();
+
+#define ERR_FOR_TYPE(m) \
+	(GFARM_S_ISDIR(m) ? GFARM_ERR_IS_A_DIRECTORY : \
+	GFARM_S_ISREG(m) ? GFARM_ERR_IS_A_REGULAR_FILE : \
+	GFARM_S_ISLNK(m) ? GFARM_ERR_IS_A_SYMBOLIC_LINK : \
+	GFARM_ERR_UNKNOWN)
+
+	switch (type) {
+	case GFS_DT_DIR:
+		e = GFARM_S_ISDIR(mode) ?
+			(tf ? GFARM_ERR_NO_ERROR : GFARM_ERR_IS_A_DIRECTORY) :
+			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
+		break;
+	case GFS_DT_REG:
+		e = GFARM_S_ISREG(mode) ?
+			(tf ? GFARM_ERR_NO_ERROR :
+				GFARM_ERR_IS_A_REGULAR_FILE) :
+			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
+		break;
+	case GFS_DT_LNK:
+		e = GFARM_S_ISLNK(mode) ?
+			(tf ? GFARM_ERR_NO_ERROR :
+				GFARM_ERR_IS_A_SYMBOLIC_LINK) :
+			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
+		break;
+	default:
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		break;
+	}
+
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_verify_type(struct peer *peer, int from_client, int skip)
+{
+	static const char diag[] = "GFM_PROTO_VERIFY_TYPE";
+	return (gfm_server_verify_type_common(
+		peer, from_client, skip, 1, diag));
 }
 
 gfarm_error_t
 gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	gfarm_uint32_t type;
 	static const char diag[] = "GFM_PROTO_VERIFY_TYPE_NOT";
-
-	/* XXX - NOT IMPLEMENTED */
-	gflog_error(GFARM_MSG_1000384, "%s: not implemented", diag);
-
-	e = gfm_server_get_request(peer, diag, "i", &type);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
-
-	e = gfm_server_put_reply(peer, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	return (gfm_server_verify_type_common(
+		peer, from_client, skip, 0, diag));
 }
 
 
