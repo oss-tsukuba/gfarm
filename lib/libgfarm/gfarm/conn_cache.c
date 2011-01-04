@@ -288,6 +288,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 			free(idp->hostname);
 			free(idp->username);
 			free(connection);
+			gfp_conn_hash_purge(cache->hashtab, entry);
 			return (e);
 		}
 		kidp = (struct gfp_conn_hash_id *)gfarm_hash_entry_key(entry);
