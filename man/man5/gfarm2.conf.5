@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "30 December 2010" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "04 1月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -585,7 +585,7 @@ specified in gfmd.conf.
 This directive specifies a subject DN of an administrator, which is
 specified in gfmd.conf.
 .TP
-\fBlocal_user_map \fIuser-map-file\fB\fR
+\fBlocal_user_map \fIuser-map-file\fB [\fIhostname\fB:[\fIport\fB]]\fR
 This directive specifies a file name
 \fIuser-map-file\fR for mapping local user names to
 global user names.  This map file is used only for sharedsecret
@@ -618,8 +618,29 @@ Example of the user mapping file:
 
 According to the first line of this mapping file, a global user
 name, "foobar", is mapped to a local user name,  "foo", on this node.
+
+When hostname/port of the meta data server is specified,
+user mapping files different in each server are applied.
+When the port is omitted, default port (601) is used.
+local_user_map can be specified two or more times.
+When the same definitions of local user name exist,
+the first definition is selected.
+
+Example of multiple user mapping file:
+
+.nf
+	local_user_map /etc/gfarm/gfarm-usermap1-1
+	local_user_map /etc/gfarm/gfarm-usermap1-2
+	local_user_map /etc/gfarm/gfarm-usermap2-1 server2
+	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
+.fi
+
+In this example, when connecting to server2,
+it applies in order of gfarm-usermap2-1 and gfarm-usermap2-2.
+When connecting to excluding server2,
+it applies in order of gfarm-usermap1-1 and gfarm-usermap1-2.
 .TP
-\fBlocal_group_map \fIgroup-map-file\fB\fR
+\fBlocal_group_map \fIgroup-map-file\fB [\fIhostname\fB:[\fIport\fB]]\fR
 This directive specifies a file name
 \fIgroup-map-file\fR for mapping global group names to
 local group names.  This map file is used by legacy clients that use
@@ -637,6 +658,10 @@ Example:
 Each line of the \fIgroup-map-file\fR consists
 of two fields separated by spaces; the first field is a global group
 name, and the second field is a local group name.
+
+When hostname/port of the meta data server is specified,
+group mapping files different in each server are applied.
+The specification method is similar to local_user_map.
 .TP
 \fBschedule_cache_timeout \fIseconds\fB\fR
 This directive specifies the time (in seconds) until the cache used for
@@ -899,8 +924,12 @@ notation.
 	<known_network_statement> ::= "known_network" <hostspec>
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
-	<local_user_map_statement> ::= "local_user_map" <pathname>
-	<local_group_map_statement> ::= "local_group_map" <pathname>
+	<local_user_map_statement> ::= "local_user_map" <local_user_and_group_map_spec>
+	<local_group_map_statement> ::= "local_group_map" <local_user_and_group_map_spec>
+	<local_user_and_group_map_spec> ::=
+		<pathname> |
+		<pathname> <hostname>|
+		<pathname> <hostname> ":" <portnumber>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
 	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
 	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
