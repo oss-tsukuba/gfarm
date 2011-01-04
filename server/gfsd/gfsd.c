@@ -1908,6 +1908,8 @@ replication_queue_lookup(const char *hostname, int port,
 	int created;
 	struct gfarm_hash_entry *q;
 	struct replication_queue_data *qd;
+	char *h, *u;
+	struct gfp_conn_hash_id *idp;
 
 	e = gfp_conn_hash_enter(&replication_queue_set, HOST_HASHTAB_SIZE,
 	    sizeof(*qd), hostname, port, user,
@@ -1920,6 +1922,20 @@ replication_queue_lookup(const char *hostname, int port,
 	}
 	qd = gfarm_hash_entry_data(q);
 	if (created) {
+		h = strdup(hostname);
+		u = strdup(user);
+		if (h == NULL || u == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "creating replication queue for %s:%d: no memory",
+			    hostname, port);
+			free(h);
+			free(u);
+			gfp_conn_hash_purge(replication_queue_set, q);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		idp = gfarm_hash_entry_key(q);
+		idp->hostname = h;
+		idp->username = u;
 		qd->head = NULL;
 		qd->tail = &qd->head;
 	}
