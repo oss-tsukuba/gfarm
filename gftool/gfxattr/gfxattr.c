@@ -24,7 +24,8 @@
 #define DEFAULT_ALLOC_SIZE (64 * 1024)
 
 static gfarm_error_t
-set_xattr(int xmlMode, char *path, char *xattrname, char *filename, int flags)
+set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
+	char *filename, int flags)
 {
 	const size_t count = 65536;
 	ssize_t sz;
@@ -70,9 +71,11 @@ set_xattr(int xmlMode, char *path, char *xattrname, char *filename, int flags)
 		close(fd);
 
 	if (xmlMode) {
-		e = gfs_setxmlattr(path, xattrname, buf, msg_sz + 1, flags);
+		e = (nofollow ? gfs_lsetxmlattr : gfs_setxmlattr)
+			(path, xattrname, buf, msg_sz + 1, flags);
 	} else {
-		e = gfs_setxattr(path, xattrname, buf, msg_sz, flags);
+		e = (nofollow ? gfs_lsetxattr : gfs_setxattr)
+			(path, xattrname, buf, msg_sz, flags);
 	}
 free_buf:
 	free(buf);
@@ -80,7 +83,7 @@ free_buf:
 }
 
 static gfarm_error_t
-get_xattr_alloc(int xmlMode, char *path, char *xattrname,
+get_xattr_alloc(int xmlMode, int nofollow, char *path, char *xattrname,
 		void **valuep, size_t *size)
 {
 	gfarm_error_t e;
@@ -91,9 +94,11 @@ get_xattr_alloc(int xmlMode, char *path, char *xattrname,
 		return GFARM_ERR_NO_ERROR;
 
 	if (xmlMode)
-		e = gfs_getxmlattr(path, xattrname, value, size);
+		e = (nofollow ? gfs_lgetxmlattr : gfs_getxmlattr)
+			(path, xattrname, value, size);
 	else
-		e = gfs_getxattr(path, xattrname, value, size);
+		e = (nofollow ? gfs_lgetxattr : gfs_getxattr)
+			(path, xattrname, value, size);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		*valuep = value;
@@ -103,7 +108,8 @@ get_xattr_alloc(int xmlMode, char *path, char *xattrname,
 }
 
 static gfarm_error_t
-get_xattr(int xmlMode, char *path, char *xattrname, char *filename)
+get_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
+	char *filename)
 {
 	gfarm_error_t e;
 	FILE *f;
@@ -112,9 +118,10 @@ get_xattr(int xmlMode, char *path, char *xattrname, char *filename)
 	size_t size, wsize;
 
 	size = DEFAULT_ALLOC_SIZE;
-	e = get_xattr_alloc(xmlMode, path, xattrname, &value, &size);
+	e = get_xattr_alloc(xmlMode, nofollow, path, xattrname, &value, &size);
 	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE) {
-		e = get_xattr_alloc(xmlMode, path, xattrname, &value, &size);
+		e = get_xattr_alloc(xmlMode, nofollow, path, xattrname, &value,
+			&size);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -144,20 +151,23 @@ get_xattr(int xmlMode, char *path, char *xattrname, char *filename)
 }
 
 static gfarm_error_t
-remove_xattr(int xmlMode, char *path, char *xattrname)
+remove_xattr(int xmlMode, int nofollow, char *path, char *xattrname)
 {
 	gfarm_error_t e;
 
 	if (xmlMode) {
-		e = gfs_removexmlattr(path, xattrname);
+		e = (nofollow ? gfs_lremovexmlattr : gfs_removexmlattr)
+			(path, xattrname);
 	} else {
-		e = gfs_removexattr(path, xattrname);
+		e = (nofollow ? gfs_lremovexattr : gfs_removexattr)
+			(path, xattrname);
 	}
 	return (e);
 }
 
 static gfarm_error_t
-list_xattr_alloc(int xmlMode, char *path, char **listp, size_t *size)
+list_xattr_alloc(int xmlMode, int nofollow, char *path, char **listp,
+	size_t *size)
 {
 	gfarm_error_t e;
 	char *list;
@@ -167,9 +177,11 @@ list_xattr_alloc(int xmlMode, char *path, char **listp, size_t *size)
 		return GFARM_ERR_NO_MEMORY;
 
 	if (xmlMode)
-		e = gfs_listxmlattr(path, list, size);
+		e = (nofollow ? gfs_llistxmlattr : gfs_listxmlattr)
+			(path, list, size);
 	else
-		e = gfs_listxattr(path, list, size);
+		e = (nofollow ? gfs_llistxattr : gfs_listxattr)
+			(path, list, size);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		*listp = list;
@@ -179,16 +191,16 @@ list_xattr_alloc(int xmlMode, char *path, char **listp, size_t *size)
 }
 
 static gfarm_error_t
-list_xattr(int xmlMode, char *path)
+list_xattr(int xmlMode, int nofollow, char *path)
 {
 	gfarm_error_t e;
 	char *list = NULL, *base, *p, *last;
 	size_t size;
 
 	size = DEFAULT_ALLOC_SIZE;
-	e = list_xattr_alloc(xmlMode, path, &list, &size);
+	e = list_xattr_alloc(xmlMode, nofollow, path, &list, &size);
 	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE) {
-		e = list_xattr_alloc(xmlMode, path, &list, &size);
+		e = list_xattr_alloc(xmlMode, nofollow, path, &list, &size);
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		return e;
@@ -211,7 +223,7 @@ usage(char *prog_name)
 		" [ -x ]"
 #endif
 		" [ -c | -m ]"
-		" [ -f xattrfile ] file [xattrname]\n", prog_name);
+		" [ -f xattrfile ] [ -h ] file [xattrname]\n", prog_name);
 	fprintf(stderr, "\t-s\tset extended attribute\n");
 	fprintf(stderr, "\t-g\tget extended attribute\n");
 	fprintf(stderr, "\t-r\tremove extended attribute\n");
@@ -221,6 +233,7 @@ usage(char *prog_name)
 #endif
 	fprintf(stderr, "\t-c\tfail if xattrname already exists (use with -s)\n");
 	fprintf(stderr, "\t-m\tfail if xattrname does not exist (use with -s)\n");
+	fprintf(stderr, "\t-h\tprocess symbolic link instead of any referenced file\n");
 	exit(2);
 }
 
@@ -234,7 +247,7 @@ main(int argc, char *argv[])
 	char *prog_name = basename(argv[0]);
 	char *filename = NULL, *c_path = NULL, *xattrname = NULL;
 	enum { NONE, SET_MODE, GET_MODE, REMOVE_MODE, LIST_MODE } mode = NONE;
-	int c, xmlMode = 0, flags = 0;
+	int c, xmlMode = 0, nofollow = 0, flags = 0;
 	gfarm_error_t e;
 	const char *opts = "f:gsrlcmh?"
 #ifdef ENABLE_XMLATTR
@@ -277,6 +290,8 @@ main(int argc, char *argv[])
 				usage(prog_name);
 			break;
 		case 'h':
+			nofollow = 1;
+			break;
 		case '?':
 		default:
 			usage(prog_name);
@@ -303,22 +318,23 @@ main(int argc, char *argv[])
 	case SET_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = set_xattr(xmlMode, c_path, xattrname, filename, flags);
+		e = set_xattr(xmlMode, nofollow, c_path, xattrname, filename,
+			flags);
 		break;
 	case GET_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = get_xattr(xmlMode, c_path, xattrname, filename);
+		e = get_xattr(xmlMode, nofollow, c_path, xattrname, filename);
 		break;
 	case REMOVE_MODE:
 		if (argc != 2)
 			usage(prog_name);
-		e = remove_xattr(xmlMode, c_path, xattrname);
+		e = remove_xattr(xmlMode, nofollow, c_path, xattrname);
 		break;
 	case LIST_MODE:
 		if (argc != 1)
 			usage(prog_name);
-		e = list_xattr(xmlMode, c_path);
+		e = list_xattr(xmlMode, nofollow, c_path);
 		break;
 	default:
 		usage(prog_name);

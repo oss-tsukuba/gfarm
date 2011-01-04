@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-if $testbin/gfxattr -r -n gfarm.ncopy /.not/.exist /.not/.exist
+if $testbin/test_gfxattr -r -n gfarm.ncopy /.not/.exist /.not/.exist
 then
   :
 else

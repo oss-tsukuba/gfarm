@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-if $testbin/gfxattr -l /.not/.exist /.not/.exist
+if $testbin/test_gfxattr -l /.not/.exist /.not/.exist
 then
   :
 else

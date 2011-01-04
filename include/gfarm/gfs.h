@@ -259,10 +259,16 @@ gfarm_error_t gfs_access(const char *, int);
 
 gfarm_error_t gfs_setxattr(const char *path, const char *name,
 	const void *value, size_t size, int flags);
+gfarm_error_t gfs_lsetxattr(const char *path, const char *name,
+	const void *value, size_t size, int flags);
 gfarm_error_t gfs_getxattr(const char *path, const char *name,
 	void *value, size_t *size);
+gfarm_error_t gfs_lgetxattr(const char *path, const char *name,
+	void *value, size_t *size);
 gfarm_error_t gfs_listxattr(const char *path, char *list, size_t *size);
+gfarm_error_t gfs_llistxattr(const char *path, char *list, size_t *size);
 gfarm_error_t gfs_removexattr(const char *path, const char *name);
+gfarm_error_t gfs_lremovexattr(const char *path, const char *name);
 
 gfarm_error_t gfs_fsetxattr(GFS_File gf, const char *name,
 	const void *value, size_t size, int flags);
@@ -272,10 +278,16 @@ gfarm_error_t gfs_fremovexattr(GFS_File gf, const char *name);
 
 gfarm_error_t gfs_setxmlattr(const char *path, const char *name,
 		const void *value, size_t size, int flags);
+gfarm_error_t gfs_lsetxmlattr(const char *path, const char *name,
+		const void *value, size_t size, int flags);
 gfarm_error_t gfs_getxmlattr(const char *path, const char *name,
 		void *value, size_t *size);
+gfarm_error_t gfs_lgetxmlattr(const char *path, const char *name,
+		void *value, size_t *size);
 gfarm_error_t gfs_listxmlattr(const char *path, char *list, size_t *size);
+gfarm_error_t gfs_llistxmlattr(const char *path, char *list, size_t *size);
 gfarm_error_t gfs_removexmlattr(const char *path, const char *name);
+gfarm_error_t gfs_lremovexmlattr(const char *path, const char *name);
 
 struct gfs_xmlattr_ctx;
 gfarm_error_t gfs_findxmlattr(const char *path, const char *expr,
@@ -343,6 +355,10 @@ gfarm_error_t gfs_lstat_caching(const char *, struct gfs_stat *);
 gfarm_error_t gfs_getxattr_cached(const char *path, const char *name,
 	void *value, size_t *size);
 gfarm_error_t gfs_getxattr_caching(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_lgetxattr_cached(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_lgetxattr_caching(const char *path, const char *name,
 	void *value, size_t *size);
 gfarm_error_t gfs_lgetxattr_cached(const char *path, const char *name,
 	void *value, size_t *size);

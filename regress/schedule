@@ -15,6 +15,8 @@ lib/libgfarm/gfarm/gfs_xattr/gfs_listxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_getxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_setxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_removexattr.2err.sh
+lib/libgfarm/gfarm/gfs_xattr/gfs_xattr_symlink.sh
+lib/libgfarm/gfarm/gfs_xmlattr/gfs_xmlattr_symlink.sh
 lib/libgfarm/gfarm/gfs_getxattr_cached/size0.sh
 lib/libgfarm/gfarm/gfm_inode_op/symlink.sh
 lib/libgfarm/gfarm/gfm_inode_op/symlink_mds2.sh
