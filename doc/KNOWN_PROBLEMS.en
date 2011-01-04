@@ -168,6 +168,18 @@ command.
   Plans for fixes:
 	Not determined yet.
 
+- gfs_findxmlattr() does not search attributes for files which are referred
+  by symbolic link.
+
+  When the symbolic link is specified for the argument oof gfs_findxmlattr(),
+  the file or directory referred by the symbolic link is retrieved.
+  However, if the symbolic links exist under the specified directory, their
+  referring files are not retrieved.  Instead, the attributes of the symbolic
+  links are retrieved.
+  As for the reason why this problem occurs, the path resolution is executed
+  at client side but gfs_findxmlattr() executes the process at gfmd that
+  traverses files under a directory.
+
 
 *** Problems with gfarm commands
 
