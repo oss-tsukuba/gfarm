@@ -26,10 +26,10 @@ gfs_unlink(const char *path)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	e = gfs_stat(path, &st);
+	e = gfs_lstat(path, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001396,
-			"gfs_stat(%s) failed: %s",
+			"gfs_lstat(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
 		return (e);

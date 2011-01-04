@@ -79,7 +79,32 @@ gfs_stat(const char *path, struct gfs_stat *s)
 gfarm_error_t
 gfs_lstat(const char *path, struct gfs_stat *s)
 {
-	return (gfs_stat(path, s)); /* XXX FIXME */
+	gfarm_timerval_t t1, t2;
+	struct gfm_stat_closure closure;
+	gfarm_error_t e;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	closure.st = s;
+	e = gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	    gfm_stat_request,
+	    gfm_stat_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure);
+
+	gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_inode_op_no_follow(%s) failed: %s",
+			path,
+			gfarm_error_string(e));
+	}
+
+	return (e);
 }
 
 gfarm_error_t

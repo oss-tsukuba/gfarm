@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
+#include <stddef.h>
 
 #include <gfarm/gfarm.h>
 
@@ -23,8 +24,6 @@
 
 #define STAT_HASH_SIZE	3079	/* prime number */
 
-static struct gfarm_hash_table *stat_cache;
-
 struct stat_cache_data {
 	struct stat_cache_data *next, *prev; /* doubly linked circular list */
 	struct gfarm_hash_entry *entry;
@@ -36,35 +35,60 @@ struct stat_cache_data {
 	size_t *attrsizes;
 };
 
-/* doubly linked circular list head */
-static struct stat_cache_data stat_cache_list_head = {
-	&stat_cache_list_head, &stat_cache_list_head
+struct stat_cache {
+	/* doubly linked circular list head */
+	struct stat_cache_data data_list;
+	gfarm_error_t (*stat_op)(const char *path, struct gfs_stat *s);
+	struct gfarm_hash_table *table;
+	struct timeval lifespan;
+	int count;
+	int lifespan_is_set;
 };
 
-static int stat_cache_count;
+#define STAT_CACHE_DATA_HEAD(c) ((struct stat_cache_data *)((void *)c + \
+	offsetof(struct stat_cache, data_list)))
+#define FOREACH_STAT_CACHE_DATA(p, c) \
+	for (p = (c)->data_list.next; \
+		p != STAT_CACHE_DATA_HEAD(c); p = p->next)
+#define FOREACH_STAT_CACHE_DATA_SAFE(p, q, c) \
+	for (p = (c)->data_list.next, q = p->next; \
+		p != STAT_CACHE_DATA_HEAD(c); p = q, q = p->next)
 
-static struct timeval stat_cache_lifespan;
-static int stat_cache_lifespan_is_set;
+static struct stat_cache stat_cache = {
+	{
+		STAT_CACHE_DATA_HEAD(&stat_cache),
+		STAT_CACHE_DATA_HEAD(&stat_cache),
+	},
+	gfs_stat
+};
 
-gfarm_error_t
-gfs_stat_cache_init(void)
+static struct stat_cache lstat_cache = {
+	{
+		STAT_CACHE_DATA_HEAD(&lstat_cache),
+		STAT_CACHE_DATA_HEAD(&lstat_cache),
+	},
+	gfs_lstat
+};
+
+static gfarm_error_t
+gfs_stat_cache_init0(struct stat_cache *cache)
 {
-	if (!stat_cache_lifespan_is_set) {
+	if (!cache->lifespan_is_set) {
 		/* always reflect gfarm_attr_cache_timeout */
-		stat_cache_lifespan.tv_sec = gfarm_attr_cache_timeout /
+		cache->lifespan.tv_sec = gfarm_attr_cache_timeout /
 		    (GFARM_SECOND_BY_MICROSEC / GFARM_MILLISEC_BY_MICROSEC);
-		stat_cache_lifespan.tv_usec = (gfarm_attr_cache_timeout -
-		    stat_cache_lifespan.tv_sec *
+		cache->lifespan.tv_usec = (gfarm_attr_cache_timeout -
+		    cache->lifespan.tv_sec *
 		    (GFARM_SECOND_BY_MICROSEC / GFARM_MILLISEC_BY_MICROSEC)) *
 		    GFARM_MILLISEC_BY_MICROSEC;
 	}
 
-	if (stat_cache != NULL) /* already initialized */
+	if (cache->table != NULL) /* already initialized */
 		return (GFARM_ERR_NO_ERROR);
 
-	stat_cache = gfarm_hash_table_alloc(
+	cache->table = gfarm_hash_table_alloc(
 	    STAT_HASH_SIZE, gfarm_hash_default, gfarm_hash_key_equal_default);
-	if (stat_cache == NULL) {
+	if (cache->table == NULL) {
 		gflog_debug(GFARM_MSG_1001282,
 			"allocation of stat_cache failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -72,6 +96,16 @@ gfs_stat_cache_init(void)
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_stat_cache_init(void)
+{
+	gfarm_error_t e;
+	e = gfs_stat_cache_init0(&stat_cache);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfs_stat_cache_init0(&lstat_cache));
 }
 
 static void
@@ -94,74 +128,93 @@ gfs_stat_cache_data_free(struct stat_cache_data *p)
 	free(p->attrsizes);
 }
 
-void
-gfs_stat_cache_clear(void)
+static void
+gfs_stat_cache_clear0(struct stat_cache *cache)
 {
 	struct stat_cache_data *p, *q;
 	struct gfarm_hash_entry *entry;
 
-	for (p = stat_cache_list_head.next; p != &stat_cache_list_head; p = q) {
-		q = p->next;
+	FOREACH_STAT_CACHE_DATA_SAFE(p, q, cache) {
 		gfs_stat_cache_data_free(p);
 
 		entry = p->entry;
-		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
+		gfarm_hash_purge(cache->table, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
 	}
-	stat_cache_list_head.next = stat_cache_list_head.prev =
-	    &stat_cache_list_head;
-	stat_cache_count = 0;
+	STAT_CACHE_DATA_HEAD(cache)->next = STAT_CACHE_DATA_HEAD(cache)->prev =
+	    STAT_CACHE_DATA_HEAD(cache);
+	cache->count = 0;
+}
+
+void
+gfs_stat_cache_clear(void)
+{
+	gfs_stat_cache_clear0(&stat_cache);
+	gfs_stat_cache_clear0(&lstat_cache);
 }
 
 static void
-gfs_stat_cache_expire_internal(const struct timeval *nowp)
+gfs_stat_cache_expire_internal0(struct stat_cache *cache,
+	const struct timeval *nowp)
 {
 	struct stat_cache_data *p, *q;
 	struct gfarm_hash_entry *entry;
 
-	for (p = stat_cache_list_head.next; p != &stat_cache_list_head; p = q) {
+	FOREACH_STAT_CACHE_DATA_SAFE(p, q, cache) {
 		/* assumes monotonic time */
 		if (gfarm_timeval_cmp(&p->expiration, nowp) > 0)
 			break;
 
-		q = p->next;
 		gfs_stat_cache_data_free(p);
 
 		entry = p->entry;
-		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
+		gfarm_hash_purge(cache->table, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
-		--stat_cache_count;
+		--cache->count;
 	}
-	stat_cache_list_head.next = p;
-	p->prev = &stat_cache_list_head;
+	STAT_CACHE_DATA_HEAD(cache)->next = p;
+	p->prev = STAT_CACHE_DATA_HEAD(cache);
+}
+
+static void
+gfs_stat_cache_expire0(struct stat_cache *cache)
+{
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
+	gfs_stat_cache_expire_internal0(cache, &now);
 }
 
 void
 gfs_stat_cache_expire(void)
 {
-	struct timeval now;
-
-	gettimeofday(&now, NULL);
-	gfs_stat_cache_expire_internal(&now);
+    gfs_stat_cache_expire0(&stat_cache);
+    gfs_stat_cache_expire0(&lstat_cache);
 }
 
+static void
+gfs_stat_cache_expiration_set0(struct stat_cache *cache,
+	long lifespan_millsecond)
+{
+	struct timeval old_lifespan = cache->lifespan;
+	struct stat_cache_data *p;
+
+	cache->lifespan_is_set = 1;
+	cache->lifespan.tv_sec = lifespan_millsecond / 1000;
+	cache->lifespan.tv_usec =
+	    (lifespan_millsecond - cache->lifespan.tv_sec * 1000) * 1000;
+
+	FOREACH_STAT_CACHE_DATA(p, cache) {
+		gfarm_timeval_sub(&p->expiration, &old_lifespan);
+		gfarm_timeval_add(&p->expiration, &cache->lifespan);
+	}
+}
 
 void
 gfs_stat_cache_expiration_set(long lifespan_millsecond)
 {
-	struct timeval old_lifespan = stat_cache_lifespan;
-	struct stat_cache_data *p;
-
-	stat_cache_lifespan_is_set = 1;
-	stat_cache_lifespan.tv_sec = lifespan_millsecond / 1000;
-	stat_cache_lifespan.tv_usec =
-	    (lifespan_millsecond - stat_cache_lifespan.tv_sec * 1000) * 1000;
-
-	for (p = stat_cache_list_head.next; p != &stat_cache_list_head;
-	    p = p->next) {
-		gfarm_timeval_sub(&p->expiration, &old_lifespan);
-		gfarm_timeval_add(&p->expiration, &stat_cache_lifespan);
-	}
+	gfs_stat_cache_expiration_set0(&stat_cache, lifespan_millsecond);
+	gfs_stat_cache_expiration_set0(&lstat_cache, lifespan_millsecond);
 }
 
 static gfarm_error_t
@@ -214,7 +267,8 @@ attrvalues_copy(int nattrs, void ***attrvaluesp, size_t **attrsizesp,
 }
 
 static gfarm_error_t
-gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
+gfs_stat_cache_enter_internal0(struct stat_cache *cache,
+	const char *path, const struct gfs_stat *st,
 	int nattrs, char **attrnames, void **attrvalues, size_t *attrsizes,
 	const struct timeval *nowp)
 {
@@ -223,29 +277,29 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 	struct stat_cache_data *data;
 	int created;
 
-	if (stat_cache == NULL) {
-		if ((e = gfs_stat_cache_init()) != GFARM_ERR_NO_ERROR) {
+	if (cache->table == NULL) {
+		if ((e = gfs_stat_cache_init0(cache)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001283,
 				"initialization of stat_cache failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 	}
-	gfs_stat_cache_expire_internal(nowp);
+	gfs_stat_cache_expire_internal0(cache, nowp);
 
-	if (stat_cache_count >= gfarm_attr_cache_limit) {
+	if (cache->count >= gfarm_attr_cache_limit) {
 		/* remove the head of the list (i.e. oldest entry) */
-		data = stat_cache_list_head.next;
+		data = STAT_CACHE_DATA_HEAD(cache)->next;
 		data->prev->next = data->next;
 		data->next->prev = data->prev;
 		gfs_stat_cache_data_free(data);
 		entry = data->entry;
-		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
+		gfarm_hash_purge(cache->table, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
-		--stat_cache_count;
+		--cache->count;
 	}
 
-	entry = gfarm_hash_enter(stat_cache, path, strlen(path) + 1,
+	entry = gfarm_hash_enter(cache->table, path, strlen(path) + 1,
 	    sizeof(*data), &created);
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_1001284,
@@ -256,7 +310,7 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 
 	data = gfarm_hash_entry_data(entry);
 	if (created) {
-		++stat_cache_count;
+		++cache->count;
 		data->entry = entry;
 	} else {
 		/* remove from the list, to move this to the end of the list */
@@ -281,9 +335,9 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 	if (e != GFARM_ERR_NO_ERROR ||
 	    e2 != GFARM_ERR_NO_ERROR ||
 	    e3 != GFARM_ERR_NO_ERROR) {
-		gfarm_hash_purge(stat_cache, gfarm_hash_entry_key(entry),
+		gfarm_hash_purge(cache->table, gfarm_hash_entry_key(entry),
 		    gfarm_hash_entry_key_length(entry));
-		--stat_cache_count;
+		--cache->count;
 		gflog_debug(GFARM_MSG_1001285,
 			"gfs_stat_copy() failed: %s",
 			gfarm_error_string(e));
@@ -303,29 +357,29 @@ gfs_stat_cache_enter_internal(const char *path, const struct gfs_stat *st,
 	data->nattrs = nattrs;
 
 	data->expiration = *nowp;
-	gfarm_timeval_add(&data->expiration, &stat_cache_lifespan);
+	gfarm_timeval_add(&data->expiration, &cache->lifespan);
 	/* add to the end of the cache list, i.e. assumes monotonic time */
-	data->next = &stat_cache_list_head;
-	data->prev = stat_cache_list_head.prev;
-	stat_cache_list_head.prev->next = data;
-	stat_cache_list_head.prev = data;
+	data->next = STAT_CACHE_DATA_HEAD(cache);
+	data->prev = STAT_CACHE_DATA_HEAD(cache)->prev;
+	STAT_CACHE_DATA_HEAD(cache)->prev->next = data;
+	STAT_CACHE_DATA_HEAD(cache)->prev = data;
 	return (GFARM_ERR_NO_ERROR);
 		
 }
 
-gfarm_error_t
-gfs_stat_cache_purge(const char *path)
+static gfarm_error_t
+gfs_stat_cache_purge0(struct stat_cache *cache, const char *path)
 {
 	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
 	struct stat_cache_data *data;
 
-	if (stat_cache == NULL) /* there is nothing to purge */
+	if (cache->table == NULL) /* there is nothing to purge */
 		return (GFARM_ERR_NO_ERROR);
 
-	gfs_stat_cache_expire();
+	gfs_stat_cache_expire0(cache);
 	if (!gfarm_hash_iterator_lookup(
-		stat_cache, path, strlen(path)+1, &it)) {
+		cache->table, path, strlen(path)+1, &it)) {
 		gflog_debug(GFARM_MSG_1001286,
 			"lookup for path (%s) in stat cache failed: %s",
 			path,
@@ -340,21 +394,34 @@ gfs_stat_cache_purge(const char *path)
 	data->next->prev = data->prev;
 	gfs_stat_cache_data_free(data);
 	gfarm_hash_iterator_purge(&it);
-	--stat_cache_count;
+	--cache->count;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_stat_cache_purge(const char *path)
+{
+	gfarm_error_t e;
+	if ((e = gfs_stat_cache_purge0(&stat_cache, path))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfs_stat_cache_purge0(&lstat_cache, path));
 }
 
 /* this returns uncached result, but enter the result to the cache */
 static gfarm_error_t
-gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
+gfs_getattrplus_caching0(struct stat_cache *cache,
+	const char *path, char **patterns, int npatterns,
 	struct gfs_stat *st, int *nattrsp,
 	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
 {
 	gfarm_error_t e;
 	struct timeval now;
+	int no_follow = cache == &lstat_cache;
 
-	e = gfs_getattrplus(path, patterns, npatterns, 0,
-	    st, nattrsp, attrnamesp, attrvaluesp, attrsizesp);
+	e = (no_follow ? gfs_lgetattrplus : gfs_getattrplus)
+		(path, patterns, npatterns, 0,
+		st, nattrsp, attrnamesp, attrvaluesp, attrsizesp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002465, "gfs_getattrplusstat(%s): %s",
 		    path, gfarm_error_string(e));
@@ -362,7 +429,7 @@ gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
 	}
 
 	gettimeofday(&now, NULL);
-	if ((e = gfs_stat_cache_enter_internal(path, st, *nattrsp,
+	if ((e = gfs_stat_cache_enter_internal0(cache, path, st, *nattrsp,
 	    *attrnamesp, *attrvaluesp, *attrsizesp, &now)) !=
 	    GFARM_ERR_NO_ERROR) {
 		/*
@@ -376,15 +443,15 @@ gfs_getattrplus_caching(const char *path, char **patterns, int npatterns,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* this returns uncached result, but enter the result to the cache */
-gfarm_error_t
-gfs_stat_caching(const char *path, struct gfs_stat *st)
+static gfarm_error_t
+gfs_stat_caching0(struct stat_cache *cache, const char *path,
+	struct gfs_stat *st)
 {
 	int nattrs;
 	char **attrnames;
 	void **attrvalues;
 	size_t *attrsizes;
-	gfarm_error_t e = gfs_getattrplus_caching(path,
+	gfarm_error_t e = gfs_getattrplus_caching0(cache, path,
 	    gfarm_xattr_caching_patterns(),
 	    gfarm_xattr_caching_patterns_number(),
 	    st, &nattrs, &attrnames, &attrvalues, &attrsizes);
@@ -400,15 +467,22 @@ gfs_stat_caching(const char *path, struct gfs_stat *st)
 
 /* this returns uncached result, but enter the result to the cache */
 gfarm_error_t
-gfs_lstat_caching(const char *path, struct gfs_stat *st)
+gfs_stat_caching(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_caching(path, st)); /* XXX FIXME */
+	return (gfs_stat_caching0(&stat_cache, path, st));
 }
 
 /* this returns uncached result, but enter the result to the cache */
 gfarm_error_t
-gfs_getxattr_caching(const char *path, const char *name,
-	void *value, size_t *sizep)
+gfs_lstat_caching(const char *path, struct gfs_stat *st)
+{
+	return (gfs_stat_caching0(&lstat_cache, path, st));
+}
+
+/* this returns uncached result, but enter the result to the cache */
+static gfarm_error_t
+gfs_getxattr_caching0(struct stat_cache *cache, const char *path,
+	const char *name, void *value, size_t *sizep)
 {
 	struct gfs_stat st;
 	int npat, nattrs, i, found = 0;
@@ -428,7 +502,7 @@ gfs_getxattr_caching(const char *path, const char *name,
 	/* XXX FIXME: need to add escape characters for metacharacters */
 	patterns[npat] = (char *)name; /* UNCONST */
 
-	e = gfs_getattrplus_caching(path, patterns, npat + 1,
+	e = gfs_getattrplus_caching0(cache, path, patterns, npat + 1,
 	    &st, &nattrs, &attrnames, &attrvalues, &attrsizes);
 	free(patterns);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -461,14 +535,31 @@ gfs_getxattr_caching(const char *path, const char *name,
 	return (e);
 }
 
+/* this returns uncached result, but enter the result to the cache */
 gfarm_error_t
-gfs_stat_cache_data_get(const char *path, struct stat_cache_data **datap)
+gfs_getxattr_caching(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	return (gfs_getxattr_caching0(&stat_cache, path, name, value, sizep));
+}
+
+/* this returns uncached result, but enter the result to the cache */
+gfarm_error_t
+gfs_lgetxattr_caching(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	return (gfs_getxattr_caching0(&lstat_cache, path, name, value, sizep));
+}
+
+static gfarm_error_t
+gfs_stat_cache_data_get0(struct stat_cache *cache, const char *path,
+	struct stat_cache_data **datap)
 {
 	struct gfarm_hash_entry *entry;
 	struct timeval now;
 
-	if (stat_cache == NULL) {
-		gfarm_error_t e = gfs_stat_cache_init();
+	if (cache->table == NULL) {
+		gfarm_error_t e = gfs_stat_cache_init0(cache);
 
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001288,
@@ -478,13 +569,13 @@ gfs_stat_cache_data_get(const char *path, struct stat_cache_data **datap)
 		}
 	}
 	gettimeofday(&now, NULL);
-	gfs_stat_cache_expire_internal(&now);
-	entry = gfarm_hash_lookup(stat_cache, path, strlen(path) + 1);
+	gfs_stat_cache_expire_internal0(cache, &now);
+	entry = gfarm_hash_lookup(cache->table, path, strlen(path) + 1);
 	if (entry != NULL) {
 #ifdef DIRCACHE_DEBUG
 		gflog_debug(GFARM_MSG_1000092,
 		    "%ld.%06ld: gfs_stat_cached(%s): hit (%d)",
-		    (long)now.tv_sec,(long)now.tv_usec, path,stat_cache_count);
+		    (long)now.tv_sec, (long)now.tv_usec, path, cache->count);
 #endif
 		*datap = gfarm_hash_entry_data(entry);
 		return (GFARM_ERR_NO_ERROR);
@@ -492,40 +583,55 @@ gfs_stat_cache_data_get(const char *path, struct stat_cache_data **datap)
 #ifdef DIRCACHE_DEBUG
 	gflog_debug(GFARM_MSG_1000093,
 	    "%ld.%06ld: gfs_stat_cached(%s): miss (%d)",
-	    (long)now.tv_sec, (long)now.tv_usec, path, stat_cache_count);
+	    (long)now.tv_sec, (long)now.tv_usec, path, cache->count);
 #endif
 	*datap = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* this returns cached result */
-gfarm_error_t
-gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
+static gfarm_error_t
+gfs_stat_cached_internal0(struct stat_cache *cache, const char *path,
+	struct gfs_stat *st)
 {
 	struct stat_cache_data *data;
-	gfarm_error_t e = gfs_stat_cache_data_get(path, &data);
+	gfarm_error_t e = gfs_stat_cache_data_get0(cache, path, &data);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (data == NULL) /* not hit */
-		return (gfs_stat_caching(path, st));
+		return (gfs_stat_caching0(cache, path, st));
 
 	return (gfs_stat_copy(st, &data->st)); /* hit */
 }
 
 /* this returns cached result */
 gfarm_error_t
-gfs_getxattr_cached_internal(const char *path, const char *name,
-	void *value, size_t *sizep)
+gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
+{
+	return (gfs_stat_cached_internal0(&stat_cache, path, st));
+}
+
+/* this returns cached result */
+gfarm_error_t
+gfs_lstat_cached_internal(const char *path, struct gfs_stat *st)
+{
+	return (gfs_stat_cached_internal0(&lstat_cache, path, st));
+}
+
+/* this returns cached result */
+static gfarm_error_t
+gfs_getxattr_cached_internal0(struct stat_cache *cache,
+	const char *path, const char *name, void *value, size_t *sizep)
 {
 	struct stat_cache_data *data;
-	gfarm_error_t e = gfs_stat_cache_data_get(path, &data);
+	gfarm_error_t e = gfs_stat_cache_data_get0(cache, path, &data);
 	int i, found = 0;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (data == NULL) /* not hit */
-		return (gfs_getxattr_caching(path, name, value, sizep));
+		return (gfs_getxattr_caching0(cache, path, name, value,
+			sizep));
 
 	/* hit */
 	for (i = 0; i < data->nattrs; i++) {
@@ -557,6 +663,22 @@ gfs_getxattr_cached_internal(const char *path, const char *name,
 	return (e);
 }
 
+/* this returns cached result */
+gfarm_error_t
+gfs_getxattr_cached_internal(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	return (gfs_getxattr_cached_internal0(&stat_cache, path, name,
+		value, sizep));
+}
+
+gfarm_error_t
+gfs_lgetxattr_cached_internal(const char *path, const char *name,
+	void *value, size_t *sizep)
+{
+	return (gfs_getxattr_cached_internal0(&lstat_cache, path, name,
+		value, sizep));
+}
 
 /*
  * gfs_opendir_caching()/readdir_caching()/closedir_caching()
@@ -613,14 +735,16 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			    "%ld.%06ld: gfs_readdir_caching()->"
 			    "\"%s\" (%d)",
 			    (long)now.tv_sec, (long)now.tv_usec,
-			    path, stat_cache_count);
+			    path, stat_cache.count);
 #endif
 			/*
 			 * It's ok to fail in entering the cache,
 			 * since it's merely cache.
 			 */
-			if ((e = gfs_stat_cache_enter_internal(path, stp,
-			    nattrs, attrnames, attrvalues, attrsizes, &now))
+			if ((e = gfs_stat_cache_enter_internal0(
+			    &stat_cache, path,
+			    stp, nattrs, attrnames, attrvalues,
+			    attrsizes, &now))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_UNUSED,
 				    "dircache: failed to cache %s: %s",

@@ -62,7 +62,7 @@ gfm_setxattr0_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfs_setxattr0(int xmlMode, const char *path, const char *name,
+gfs_setxattr0(int xmlMode, int cflags, const char *path, const char *name,
 	const void *value, size_t size, int flags)
 {
 	gfarm_timerval_t t1, t2;
@@ -77,7 +77,7 @@ gfs_setxattr0(int xmlMode, const char *path, const char *name,
 	closure.value = value;
 	closure.size = size;
 	closure.flags = flags;
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_setxattr0_request,
 	    gfm_setxattr0_result,
 	    gfm_inode_success_op_connection_free,
@@ -101,14 +101,30 @@ gfarm_error_t
 gfs_setxattr(const char *path, const char *name,
 	const void *value, size_t size, int flags)
 {
-	return gfs_setxattr0(0, path, name, value, size, flags);
+	return (gfs_setxattr0(0, 0, path, name, value, size, flags));
+}
+
+gfarm_error_t
+gfs_lsetxattr(const char *path, const char *name,
+	const void *value, size_t size, int flags)
+{
+	return (gfs_setxattr0(0, GFARM_FILE_SYMLINK_NO_FOLLOW, path,
+		name, value, size, flags));
 }
 
 gfarm_error_t
 gfs_setxmlattr(const char *path, const char *name,
 	const void *value, size_t size, int flags)
 {
-	return gfs_setxattr0(1, path, name, value, size, flags);
+	return (gfs_setxattr0(1, 0, path, name, value, size, flags));
+}
+
+gfarm_error_t
+gfs_lsetxmlattr(const char *path, const char *name,
+	const void *value, size_t size, int flags)
+{
+	return (gfs_setxattr0(1, GFARM_FILE_SYMLINK_NO_FOLLOW, path,
+		name, value, size, flags));
 }
 
 gfarm_error_t
@@ -182,8 +198,8 @@ gfm_getxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
-	void **valuep, size_t *sizep)
+gfs_getxattr_proccall(int xmlMode, int cflags, const char *path,
+	const char *name, void **valuep, size_t *sizep)
 {
 	gfarm_timerval_t t1, t2;
 	struct gfm_getxattr_proccall_closure closure;
@@ -196,7 +212,7 @@ gfs_getxattr_proccall(int xmlMode, const char *path, const char *name,
 	closure.name = name;
 	closure.valuep = valuep;
 	closure.sizep = sizep;
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_getxattr_proccall_request,
 	    gfm_getxattr_proccall_result,
 	    gfm_inode_success_op_connection_free,
@@ -250,7 +266,7 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 }
 
 static gfarm_error_t
-gfs_getxattr0(int xmlMode, const char *path, GFS_File gf,
+gfs_getxattr0(int xmlMode, const char *path, GFS_File gf, int cflags,
 		const char *name, void *value, size_t *size)
 {
 	gfarm_error_t e;
@@ -258,7 +274,7 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf,
 	size_t s;
 
 	if (path != NULL)
-		e = gfs_getxattr_proccall(xmlMode, path, name, &v, &s);
+		e = gfs_getxattr_proccall(xmlMode, cflags, path, name, &v, &s);
 	else
 		e = gfs_fgetxattr_proccall(xmlMode, gf, name, &v, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -285,19 +301,33 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf,
 gfarm_error_t
 gfs_getxattr(const char *path, const char *name, void *value, size_t *size)
 {
-	return gfs_getxattr0(0, path, NULL, name, value, size);
+	return (gfs_getxattr0(0, path, NULL, 0, name, value, size));
+}
+
+gfarm_error_t
+gfs_lgetxattr(const char *path, const char *name, void *value, size_t *size)
+{
+	return (gfs_getxattr0(0, path, NULL, GFARM_FILE_SYMLINK_NO_FOLLOW,
+		name, value, size));
 }
 
 gfarm_error_t
 gfs_getxmlattr(const char *path, const char *name, void *value, size_t *size)
 {
-	return gfs_getxattr0(1, path, NULL, name, value, size);
+	return (gfs_getxattr0(1, path, NULL, 0, name, value, size));
+}
+
+gfarm_error_t
+gfs_lgetxmlattr(const char *path, const char *name, void *value, size_t *size)
+{
+	return (gfs_getxattr0(1, path, NULL, GFARM_FILE_SYMLINK_NO_FOLLOW,
+		name, value, size));
 }
 
 gfarm_error_t
 gfs_fgetxattr(GFS_File gf, const char *name, void *value, size_t *size)
 {
-	return gfs_getxattr0(0, NULL, gf, name, value, size);
+	return (gfs_getxattr0(0, NULL, gf, 0, name, value, size));
 }
 
 
@@ -335,7 +365,7 @@ gfm_listxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfs_listxattr_proccall(int xmlMode, const char *path,
+gfs_listxattr_proccall(int xmlMode, int cflags, const char *path,
 	char **listp, size_t *sizep)
 {
 	gfarm_timerval_t t1, t2;
@@ -348,7 +378,7 @@ gfs_listxattr_proccall(int xmlMode, const char *path,
 	closure.xmlMode = xmlMode;
 	closure.listp = listp;
 	closure.sizep = sizep;
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_listxattr_proccall_request,
 	    gfm_listxattr_proccall_result,
 	    gfm_inode_success_op_connection_free,
@@ -369,13 +399,14 @@ gfs_listxattr_proccall(int xmlMode, const char *path,
 }
 
 static gfarm_error_t
-gfs_listxattr0(int xmlMode, const char *path, char *list, size_t *size)
+gfs_listxattr0(int xmlMode, int cflags, const char *path, char *list,
+	size_t *size)
 {
 	gfarm_error_t e;
 	char *l;
 	size_t s;
 
-	e = gfs_listxattr_proccall(xmlMode, path, &l, &s);
+	e = gfs_listxattr_proccall(xmlMode, cflags, path, &l, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001405,
 			"gfs_listxattr_proccall(%s) failed: %s",
@@ -401,15 +432,28 @@ gfs_listxattr0(int xmlMode, const char *path, char *list, size_t *size)
 gfarm_error_t
 gfs_listxattr(const char *path, char *list, size_t *size)
 {
-	return gfs_listxattr0(0, path, list, size);
+	return (gfs_listxattr0(0, 0, path, list, size));
+}
+
+gfarm_error_t
+gfs_llistxattr(const char *path, char *list, size_t *size)
+{
+	return (gfs_listxattr0(0, GFARM_FILE_SYMLINK_NO_FOLLOW,
+		path, list, size));
 }
 
 gfarm_error_t
 gfs_listxmlattr(const char *path, char *list, size_t *size)
 {
-	return gfs_listxattr0(1, path, list, size);
+	return (gfs_listxattr0(1, 0, path, list, size));
 }
 
+gfarm_error_t
+gfs_llistxmlattr(const char *path, char *list, size_t *size)
+{
+	return (gfs_listxattr0(1, GFARM_FILE_SYMLINK_NO_FOLLOW,
+		path, list, size));
+}
 
 struct gfm_removexattr0_closure {
 	int xmlMode;
@@ -443,7 +487,7 @@ gfm_removexattr0_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfs_removexattr0(int xmlMode, const char *path, const char *name)
+gfs_removexattr0(int xmlMode, int cflags, const char *path, const char *name)
 {
 	gfarm_timerval_t t1, t2;
 	struct gfm_removexattr0_closure closure;
@@ -454,7 +498,7 @@ gfs_removexattr0(int xmlMode, const char *path, const char *name)
 
 	closure.xmlMode = xmlMode;
 	closure.name = name;
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_removexattr0_request,
 	    gfm_removexattr0_result,
 	    gfm_inode_success_op_connection_free,
@@ -476,12 +520,23 @@ gfs_removexattr0(int xmlMode, const char *path, const char *name)
 
 gfarm_error_t gfs_removexattr(const char *path, const char *name)
 {
-	return gfs_removexattr0(0, path, name);
+	return (gfs_removexattr0(0, 0, path, name));
+}
+
+gfarm_error_t gfs_lremovexattr(const char *path, const char *name)
+{
+	return (gfs_removexattr0(0, GFARM_FILE_SYMLINK_NO_FOLLOW, path, name));
 }
 
 gfarm_error_t gfs_removexmlattr(const char *path, const char *name)
 {
-	return gfs_removexattr0(1, path, name);
+	return (gfs_removexattr0(1, 0, path, name));
+}
+
+gfarm_error_t gfs_lremovexmlattr(const char *path, const char *name)
+{
+	return (gfs_removexattr0(1, GFARM_FILE_SYMLINK_NO_FOLLOW,
+		path, name));
 }
 
 gfarm_error_t

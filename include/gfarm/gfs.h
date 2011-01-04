@@ -70,7 +70,9 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_EXCLUSIVE		0x00001000
 #endif
 #ifdef GFARM_INTERNAL_USE /* internal use only */
+#define GFARM_FILE_SYMLINK_NO_FOLLOW	0x00400000 /* used by libgfarm only */
 #define GFARM_FILE_TRUNC_PENDING	0x00800000 /* used by gfmd only */
+#define GFARM_FILE_OPEN_LAST_COMPONENT	0x00800000 /* used by libgfarm only */
 #endif
 #if 0
 /* the followings are just hints */
@@ -94,6 +96,8 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_USER_MODE	(GFARM_FILE_ACCMODE|GFARM_FILE_TRUNC| \
 	GFARM_FILE_UNBUFFERED|GFARM_FILE_CREATE_REPLICA)
 #endif /* not yet on Gfarm v2 */
+#define GFARM_FILE_PROTOCOL_MASK	(GFARM_FILE_USER_MODE|\
+	GFARM_FILE_BEQUEATHED|GFARM_FILE_CKSUM_INVALIDATED)
 #endif /* GFARM_INTERNAL_USE */
 
 #if 0 /* not yet on Gfarm v2 */
@@ -339,6 +343,10 @@ gfarm_error_t gfs_lstat_caching(const char *, struct gfs_stat *);
 gfarm_error_t gfs_getxattr_cached(const char *path, const char *name,
 	void *value, size_t *size);
 gfarm_error_t gfs_getxattr_caching(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_lgetxattr_cached(const char *path, const char *name,
+	void *value, size_t *size);
+gfarm_error_t gfs_lgetxattr_caching(const char *path, const char *name,
 	void *value, size_t *size);
 
 int gfarm_xattr_caching(const char *);

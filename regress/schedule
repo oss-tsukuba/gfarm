@@ -16,6 +16,15 @@ lib/libgfarm/gfarm/gfs_xattr/gfs_getxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_setxattr.2err.sh
 lib/libgfarm/gfarm/gfs_xattr/gfs_removexattr.2err.sh
 lib/libgfarm/gfarm/gfs_getxattr_cached/size0.sh
+lib/libgfarm/gfarm/gfm_inode_op/symlink.sh
+lib/libgfarm/gfarm/gfm_inode_op/symlink_mds2.sh
+lib/libgfarm/gfarm/gfm_inode_op/symlink_mds4.sh
+lib/libgfarm/gfarm/gfm_name_op/symlink.sh
+lib/libgfarm/gfarm/gfm_name_op/symlink_mds2.sh
+lib/libgfarm/gfarm/gfm_name2_op/symlink.sh
+lib/libgfarm/gfarm/gfm_name2_op/symlink_mds2.sh
+lib/libgfarm/gfarm/gfs_realpath/realpath.sh
+lib/libgfarm/gfarm/gfs_realpath/realpath_mds2.sh
 
 # gftool/config-gfarm
 gftool/gfhost/gfhost-c.sh

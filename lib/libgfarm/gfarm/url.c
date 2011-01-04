@@ -310,27 +310,6 @@ gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
 }
 
 /*
- * gfs_realpath
- */
-
-char *
-gfs_realpath(const char *path, char **abspathp)
-{
-	char *e, *canonic_path;
-
-	if (path == NULL)
-		return (GFARM_ERR_INVALID_ARGUMENT);
-
-	path = gfarm_url_prefix_skip(path);
-	e = gfarm_canonical_path(path, &canonic_path);
-	if (e != NULL)
-		return (e);
-	e = gfarm_path_canonical_to_url(canonic_path, abspathp);
-	free(canonic_path);
-	return (e);
-}
-
-/*
  * Append section suffix to pathname.
  * Return malloc(3)ed string, thus caller should free(3) the memory.
  * i.e.
@@ -504,6 +483,7 @@ gfarm_url_prefix_add(const char *s)
 #endif
 
 const char GFARM_URL_PREFIX[] = "gfarm:";
+const char GFARM_PATH_ROOT[] = "/";
 
 int
 gfarm_is_url(const char *gfarm_url)

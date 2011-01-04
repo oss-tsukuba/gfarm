@@ -70,6 +70,7 @@ SRCS = \
 	gfs_mkdir.c \
 	gfs_quota.c \
 	gfs_readlink.c \
+	gfs_realpath.c \
 	gfs_remove.c \
 	gfs_rename.c \
 	gfs_replica.c \
@@ -146,6 +147,7 @@ OBJS = \
 	gfs_mkdir.lo \
 	gfs_quota.lo \
 	gfs_readlink.lo \
+	gfs_realpath.lo \
 	gfs_remove.lo \
 	gfs_rename.lo \
 	gfs_replica.lo \
@@ -222,6 +224,7 @@ gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.
 gfs_proto.lo: gfs_proto.h
 gfs_quota.lo: config.h quota_info.h
 gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
+gfs_realpath.lo: gfm_client.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h host.h config.h lookup.h
 gfs_replica_info.lo: gfm_proto.h gfm_client.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h schedule.h gfs_misc.h

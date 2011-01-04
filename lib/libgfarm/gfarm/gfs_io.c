@@ -163,7 +163,8 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type)
+gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
+	const char *path)
 {
 	struct gfm_open_fd_closure *c = closure;
 

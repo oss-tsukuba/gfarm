@@ -37,6 +37,7 @@ extern int gfarm_metadb_dbq_size;
 #endif
 #define GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT 180 /* 3 min */
 #define GFARM_METADB_DBQ_SIZE_DEFAULT	65536
+#define GFARM_SYMLINK_LEVEL_MAX			20
 
 /* LDAP dependent */
 extern char *gfarm_ldap_server_name;

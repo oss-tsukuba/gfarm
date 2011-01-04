@@ -52,10 +52,10 @@ gfm_getattrplus_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
-gfarm_error_t
-gfs_getattrplus(
+static gfarm_error_t
+gfs_getattrplus0(
 	const char *path, char **patterns, int npatterns, int flags,
-	struct gfs_stat *st, int *nattrsp,
+	int cflags, struct gfs_stat *st, int *nattrsp,
 	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
 {
 	struct gfm_getattrplus_closure closure;
@@ -71,7 +71,7 @@ gfs_getattrplus(
 	closure.attrvaluesp = attrvaluesp;
 	closure.attrsizesp = attrsizesp;
 
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_getattrplus_request,
 	    gfm_getattrplus_result,
 	    gfm_inode_success_op_connection_free,
@@ -86,4 +86,25 @@ gfs_getattrplus(
 	}
 
 	return (e);
+}
+
+gfarm_error_t
+gfs_getattrplus(
+	const char *path, char **patterns, int npatterns, int flags,
+	struct gfs_stat *st, int *nattrsp,
+	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
+{
+	return (gfs_getattrplus0(path, patterns, npatterns, flags, 0,
+	    st, nattrsp, attrnamesp, attrvaluesp, attrsizesp));
+}
+
+gfarm_error_t
+gfs_lgetattrplus(
+	const char *path, char **patterns, int npatterns, int flags,
+	struct gfs_stat *st, int *nattrsp,
+	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
+{
+	return (gfs_getattrplus0(path, patterns, npatterns, flags,
+	    GFARM_FILE_SYMLINK_NO_FOLLOW,
+	    st, nattrsp, attrnamesp, attrvaluesp, attrsizesp));
 }

@@ -79,6 +79,7 @@ char *gfarm_url_dir(const char *);
 extern const char GFARM_URL_PREFIX[];
 #define GFARM_URL_PREFIX_LENGTH 6
 extern const char GFARM_PATH_ROOT[];
+#define GFARM_IS_PATH_ROOT(path)	((path)[0] == '/' && (path)[1] == '\0')
 
 /*
  * File System Node Scheduling

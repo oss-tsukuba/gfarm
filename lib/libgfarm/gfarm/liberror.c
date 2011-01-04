@@ -131,6 +131,9 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"port number is missing in a Gfarm URL",
 	"port number is invalid in a Gfarm URL",
 	"file busy",
+	"not a regular file",
+	"is a regular file",
+	"path is root",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
@@ -410,6 +413,9 @@ static struct gfarm_errno_error_map {
 	/*		GFARM_ERR_GFARM_URL_PORT_IS_MISSING */
 	/*		GFARM_ERR_GFARM_URL_PORT_IS_INVALID */
 	{ EBUSY,	GFARM_ERR_FILE_BUSY },
+	/*		GFARM_ERR_NOT_A_REGULAR_FILE */
+	/*		GFARM_ERR_IS_A_REGULAR_FILE */
+	/*		GFARM_ERR_IS_PATH_ROOT */
 };
 
 struct gfarm_error_domain {
