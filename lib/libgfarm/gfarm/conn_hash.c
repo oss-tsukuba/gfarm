@@ -75,7 +75,7 @@ gfp_conn_hash_table_init(
 }
 
 gfarm_error_t
-gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
+gfp_conn_hash_id_enter_noalloc(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	size_t entrysize, struct gfp_conn_hash_id *idp,
 	struct gfarm_hash_entry **entry_ret, int *created_ret)
 {
@@ -112,11 +112,62 @@ gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 }
 
 gfarm_error_t
+gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
+	size_t entrysize, struct gfp_conn_hash_id *idp,
+	struct gfarm_hash_entry **entry_ret, int *created_ret)
+{
+	gfarm_error_t e;
+	char *h, *u;
+
+	if ((e = gfp_conn_hash_id_enter_noalloc(
+	    hashtabp, hashtabsize, entrysize, idp, entry_ret, created_ret))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "(%s/%d/%s): %s",
+		    idp->hostname, idp->port, idp->username,
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (*created_ret) {
+		h = strdup(idp->hostname);
+		u = strdup(idp->username);
+		if (h == NULL || u == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "(%s/%d/%s): no memory",
+			    idp->hostname, idp->port, idp->username);
+			free(h);
+			free(u);
+			gfp_conn_hash_purge(*hashtabp, *entry_ret);
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		idp = gfarm_hash_entry_key(*entry_ret);
+		idp->hostname = h;
+		idp->username = u;
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_conn_hash_enter_noalloc(struct gfarm_hash_table **hashtabp, int hashtabsize,
+	size_t entrysize, const char *hostname, int port, const char *username,
+	struct gfarm_hash_entry **entry_ret, int *created_ret)
+{
+	struct gfp_conn_hash_id id;
+
+	id.hostname = (char *)hostname; /* UNCONST */
+	id.port = port;
+	id.username = (char *)username; /* UNCONST */
+	return (gfp_conn_hash_id_enter_noalloc(hashtabp, hashtabsize, entrysize,
+	    &id, entry_ret, created_ret));
+}
+
+gfarm_error_t
 gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	size_t entrysize, const char *hostname, int port, const char *username,
 	struct gfarm_hash_entry **entry_ret, int *created_ret)
 {
 	struct gfp_conn_hash_id id;
+
 	id.hostname = (char *)hostname; /* UNCONST */
 	id.port = port;
 	id.username = (char *)username; /* UNCONST */

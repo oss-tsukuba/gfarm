@@ -170,7 +170,7 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 		    "programming error", cache->type_name);
 		abort();
 	}
-	e = gfp_conn_hash_id_enter(&cache->hashtab, cache->table_size,
+	e = gfp_conn_hash_id_enter_noalloc(&cache->hashtab, cache->table_size,
 	    sizeof(connection), &connection->id, &entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001088,
@@ -249,7 +249,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	struct gfp_cached_connection *connection;
 	struct gfp_conn_hash_id *idp, *kidp;
 
-	e = gfp_conn_hash_enter(&cache->hashtab, cache->table_size,
+	e = gfp_conn_hash_enter_noalloc(&cache->hashtab, cache->table_size,
 	    sizeof(connection), canonical_hostname, port, user,
 	    &entry, createdp);
 	if (e != GFARM_ERR_NO_ERROR) {

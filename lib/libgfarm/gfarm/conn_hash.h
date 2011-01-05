@@ -7,8 +7,13 @@ struct gfp_conn_hash_id {
 gfarm_error_t gfp_conn_hash_table_init(struct gfarm_hash_table **, int);
 gfarm_error_t gfp_conn_hash_enter(struct gfarm_hash_table **, int, size_t,
 	const char *, int, const char *, struct gfarm_hash_entry **, int *);
+gfarm_error_t gfp_conn_hash_enter_noalloc(struct gfarm_hash_table **, int,
+	size_t, const char *, int, const char *, struct gfarm_hash_entry **,
+	int *);
 gfarm_error_t gfp_conn_hash_id_enter(struct gfarm_hash_table **, int, size_t,
 	struct gfp_conn_hash_id *, struct gfarm_hash_entry **, int *);
+gfarm_error_t gfp_conn_hash_id_enter_noalloc(struct gfarm_hash_table **, int,
+	size_t, struct gfp_conn_hash_id *, struct gfarm_hash_entry **, int *);
 gfarm_error_t gfp_conn_hash_lookup(struct gfarm_hash_table **, int,
 	const char *, int, const char *, struct gfarm_hash_entry **);
 void gfp_conn_hash_purge(struct gfarm_hash_table *, struct gfarm_hash_entry *);
