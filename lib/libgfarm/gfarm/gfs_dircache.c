@@ -45,8 +45,7 @@ struct stat_cache {
 	int lifespan_is_set;
 };
 
-#define STAT_CACHE_DATA_HEAD(c) ((struct stat_cache_data *)((void *)c + \
-	offsetof(struct stat_cache, data_list)))
+#define STAT_CACHE_DATA_HEAD(c) (&(c)->data_list)
 #define FOREACH_STAT_CACHE_DATA(p, c) \
 	for (p = (c)->data_list.next; \
 		p != STAT_CACHE_DATA_HEAD(c); p = p->next)
