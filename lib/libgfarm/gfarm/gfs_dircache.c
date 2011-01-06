@@ -101,11 +101,11 @@ gfs_stat_cache_init0(struct stat_cache *cache)
 gfarm_error_t
 gfs_stat_cache_init(void)
 {
-	gfarm_error_t e;
-	e = gfs_stat_cache_init0(&stat_cache);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	return (gfs_stat_cache_init0(&lstat_cache));
+	gfarm_error_t e1, e2;
+
+	e1 = gfs_stat_cache_init0(&stat_cache);
+	e2 = gfs_stat_cache_init0(&lstat_cache);
+	return (e1 != GFARM_ERR_NO_ERROR ? e1 : e2);
 }
 
 static void
@@ -401,11 +401,12 @@ gfs_stat_cache_purge0(struct stat_cache *cache, const char *path)
 gfarm_error_t
 gfs_stat_cache_purge(const char *path)
 {
-	gfarm_error_t e;
-	if ((e = gfs_stat_cache_purge0(&stat_cache, path))
-	    != GFARM_ERR_NO_ERROR)
-		return (e);
-	return (gfs_stat_cache_purge0(&lstat_cache, path));
+	gfarm_error_t e1, e2;
+
+	/* both cache must be purged, regardless of any error */
+	e1 = gfs_stat_cache_purge0(&lstat_cache, path);
+	e2 = gfs_stat_cache_purge0(&stat_cache, path);
+	return (e1 != GFARM_ERR_NO_ERROR ? e1 : e2);
 }
 
 /* this returns uncached result, but enter the result to the cache */
