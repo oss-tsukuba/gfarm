@@ -754,7 +754,7 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			 * since it's merely cache.
 			 */
 			if ((e = gfs_stat_cache_enter_internal0(
-			    &stat_cache, path,
+			    &lstat_cache, path,
 			    stp, nattrs, attrnames, attrvalues,
 			    attrsizes, &now))
 			    != GFARM_ERR_NO_ERROR) {
