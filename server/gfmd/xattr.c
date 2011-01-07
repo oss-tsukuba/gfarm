@@ -120,6 +120,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	}
 	if (skip) {
 		free(attrname);
+		free(value);
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (xmlMode) {
