@@ -15,6 +15,7 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfs_pio_test \
 	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/file_busy \
 	lib/libgfarm/gfarm/gfs_replicate_file_from_to_request/in_progress \
+	lib/libgfarm/gfarm/gfs_stat_cached \
 	lib/libgfarm/gfarm/gfs_xattr \
 	lib/libgfarm/gfarm/gfs_getxattr_cached \
 	lib/libgfarm/gfarm/gfm_inode_or_name_op_test
