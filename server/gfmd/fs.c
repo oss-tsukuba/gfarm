@@ -734,29 +734,13 @@ gfm_server_fstat(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
-gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
+gfm_server_recv_attrpatterns(struct peer *peer, int skip,
+	gfarm_int32_t nattrpatterns, char ***attrpatternsp, const char *diag)
 {
+	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e, e2;
-	gfarm_int32_t flags, nattrpatterns, fd;
 	char **attrpatterns = NULL, *attrpattern;
 	int i, j, eof;
-	struct host *spool_host = NULL;
-	struct process *process;
-	struct inode *inode;
-	struct gfs_stat st;
-	size_t nxattrs;
-	struct xattr_list *xattrs, *px;
-	struct db_waitctx waitctx;
-	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
-
-#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
-	memset(&st, 0, sizeof(st));
-#endif
-
-	e = gfm_server_get_request(peer, diag, "ii", &flags, &nattrpatterns);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 
 	if (!skip)
 		GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
@@ -764,8 +748,8 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 		e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			gflog_debug(GFARM_MSG_1002496,
-			    "gfp_xdr_recv(xattrpattern) failed: %s",
-			    gfarm_error_string(e));
+			    "%s: gfp_xdr_recv(xattrpattern) failed: %s",
+			    diag, gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 				e = GFARM_ERR_PROTOCOL;
 			if (attrpatterns != NULL) {
@@ -783,8 +767,41 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 			attrpatterns[i] = attrpattern;
 		}
 	}
+	if (!skip)
+		*attrpatternsp = attrpatterns;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e, e2;
+	gfarm_int32_t flags, nattrpatterns, fd;
+	char **attrpatterns = NULL;
+	int i, j;
+	struct host *spool_host = NULL;
+	struct process *process;
+	struct inode *inode;
+	struct gfs_stat st;
+	size_t nxattrs;
+	struct xattr_list *xattrs, *px;
+	struct db_waitctx waitctx;
+	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
+
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	memset(&st, 0, sizeof(st));
+#endif
+
+	e = gfm_server_get_request(peer, diag, "ii", &flags, &nattrpatterns);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = gfm_server_recv_attrpatterns(peer, skip, nattrpatterns,
+	    &attrpatterns, diag);
 	if (skip)
-		return (GFARM_ERR_NO_ERROR);
+		return (e); /* don't have to free attrpatterns in this case */
+
 	giant_lock();
 
 	if (attrpatterns == NULL)
@@ -1955,8 +1972,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e, e2;
-	gfarm_int32_t fd, n, nattrpatterns, i, j, eof;
-	char **attrpatterns, *attrpattern;
+	gfarm_int32_t fd, n, nattrpatterns, i, j;
+	char **attrpatterns = NULL;
 	struct process *process;
 	struct inode *inode, *entry_inode;
 	Dir dir;
@@ -1978,32 +1995,10 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 			gfarm_error_string(e));
 		return (e);
 	}
-	GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
-	for (i = 0; i < nattrpatterns; i++) {
-		e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
-		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_1002503,
-				"gfp_xdr_recv(xattrpattern) failed: %s",
-				gfarm_error_string(e));
-			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
-				e = GFARM_ERR_PROTOCOL;
-			if (attrpatterns != NULL) {
-				for (j = 0; j < i; j++) {
-					if (attrpatterns[j] != NULL)
-						free(attrpatterns[j]);
-				}
-				free(attrpatterns);
-			}
-			return (e);
-		}
-		if (attrpatterns == NULL) {
-			free(attrpattern);
-		} else {
-			attrpatterns[i] = attrpattern;
-		}
-	}
+	e = gfm_server_recv_attrpatterns(peer, skip, nattrpatterns,
+	    &attrpatterns, diag);
 	if (skip)
-		return (GFARM_ERR_NO_ERROR);
+		return (e); /* don't have to free attrpatterns in this case */
 
 	giant_lock();
 
