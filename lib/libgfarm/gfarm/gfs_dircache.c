@@ -405,7 +405,19 @@ gfs_stat_cache_purge(const char *path)
 	/* both cache must be purged, regardless of any error */
 	e1 = gfs_stat_cache_purge0(&lstat_cache, path);
 	e2 = gfs_stat_cache_purge0(&stat_cache, path);
+	/* only if not found in both lstat cache and stat cache */
+	if (e1 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
+	    e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+#if 0 /* this is ok with current gfs_stat_cache_purge0() implementation */
+	return (GFARM_ERR_NO_ERROR);
+#else /* if gfs_stat_cache_purge0() returns other error, this is necessary */
+	if (e1 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		e1 = GFARM_ERR_NO_ERROR;
+	if (e2 == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		e2 = GFARM_ERR_NO_ERROR;
 	return (e1 != GFARM_ERR_NO_ERROR ? e1 : e2);
+#endif
 }
 
 /* this returns uncached result, but enter the result to the cache */
