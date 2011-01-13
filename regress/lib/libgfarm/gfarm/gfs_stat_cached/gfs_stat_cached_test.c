@@ -78,7 +78,7 @@ int
 main(int argc, char **argv)
 {
 	gfarm_error_t e;
-	int r, c, op;
+	int c, r = 0, op = 0;
 
 	gflog_set_message_verbose(99);
 	if (argc > 0)
