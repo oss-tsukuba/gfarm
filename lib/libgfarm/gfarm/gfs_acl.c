@@ -1,0 +1,1263 @@
+/*
+ * $Id$
+ */
+
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#include <gfarm/gfarm.h>
+
+struct gfarm_acl_entry {
+	gfarm_acl_tag_t tag;
+	gfarm_acl_perm_t perm;
+	char *qualifier;
+};
+
+struct gfarm_acl {
+	struct gfarm_acl_entry **entries;
+	int nentries;
+	int current;  /* for gfs_acl_get_entry() */
+};
+
+/* ----- POSIX(1003.1e draft17)-like functions --------------------- */
+
+gfarm_error_t
+gfs_acl_init(int count, gfarm_acl_t *acl_p)
+{
+	gfarm_acl_t acl;
+
+	GFARM_MALLOC(acl);
+	if (acl == NULL) {
+		*acl_p = NULL;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of gfarm_acl_t failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if (count > 0) {
+		GFARM_CALLOC_ARRAY(acl->entries, count);
+		if (acl->entries == NULL) {
+			free(acl);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "allocation of gfarm_acl_t failed");
+			return (GFARM_ERR_NO_MEMORY);
+		}
+	} else
+		acl->entries = NULL;
+	acl->nentries = count;
+	acl->current = 0;
+	*acl_p = acl;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_dup(gfarm_acl_t *acl_dst_p, const gfarm_acl_t acl_src)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);  /* XXX */
+}
+#endif
+
+static gfarm_error_t
+__gfs_acl_entry_free(struct gfarm_acl_entry *entry_p)
+{
+	if (entry_p) {
+		if (entry_p->qualifier)
+			free(entry_p->qualifier);
+		free(entry_p);
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_free(gfarm_acl_t acl)
+{
+	int i;
+
+	if (acl == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	for (i = 0; i < acl->nentries; i++)
+		__gfs_acl_entry_free(acl->entries[i]);
+	if (acl->nentries > 0)
+		free(acl->entries);
+	free(acl);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_create_entry(gfarm_acl_t *acl_p, gfarm_acl_entry_t *entry_p)
+{
+	gfarm_acl_t acl;
+	int i, new_count;
+	struct gfarm_acl_entry **new_entries;
+	struct gfarm_acl_entry **pp;
+
+	if (acl_p == NULL || entry_p == NULL) {
+		if (entry_p != NULL)
+			*entry_p = NULL;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_create_entry()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	acl = *acl_p;
+	if (acl->nentries == 0 || acl->entries == NULL) {
+		gfs_acl_free(acl);
+		gfs_acl_init(5, &acl);
+		*acl_p = acl;
+	}
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] == NULL) {
+			pp = &acl->entries[i]; /* unused */
+			goto success;
+		}
+	}
+	/* realloc */
+	new_count = acl->nentries * 2;
+	GFARM_REALLOC_ARRAY(new_entries, acl->entries, new_count);
+	if (new_entries == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "reallocation of gfarm_acl_entry array failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	acl->entries = new_entries;
+	for (i = acl->nentries; i < new_count; i++)
+		acl->entries[i] = NULL;
+	pp = &acl->entries[acl->nentries]; /* new */
+	acl->nentries = new_count;
+success:
+	GFARM_CALLOC_ARRAY(*pp, 1);
+	if (*pp == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of gfarm_acl_entry failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	*entry_p = *pp;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_delete_entry(gfarm_acl_t acl, gfarm_acl_entry_t entry_d)
+{
+	int i;
+	if (acl == NULL || entry_d == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_delete_entry()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] == entry_d) {
+			__gfs_acl_entry_free(entry_d);
+			acl->entries[i] = NULL;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		    "This gfarm_acl_t do not include the gfarm_acl_entry_t");
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+gfarm_error_t
+gfs_acl_get_entry(gfarm_acl_t acl, int entry_id, gfarm_acl_entry_t *entry_p)
+{
+	if (acl == NULL || entry_p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_get_entry()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (entry_id == GFARM_ACL_FIRST_ENTRY)
+		acl->current = 0;
+	else if (entry_id != GFARM_ACL_NEXT_ENTRY) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid entry_id of gfs_acl_get_entry()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	do {
+		if (acl->current >= acl->nentries) {
+			*entry_p = NULL;
+			return (GFARM_ERR_NO_SUCH_OBJECT);
+		}
+		*entry_p = acl->entries[acl->current];
+		acl->current++;
+	} while (*entry_p == NULL);
+
+	/* *entry_p != NULL : found */
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_copy_entry(gfarm_acl_entry_t dest_d, gfarm_acl_entry_t src_d)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+#endif
+
+gfarm_error_t
+gfs_acl_valid(const gfarm_acl_t acl)
+{
+	return (gfs_acl_check(acl, NULL, NULL));
+}
+
+gfarm_error_t
+gfs_acl_calc_mask(gfarm_acl_t *acl_p)
+{
+	gfarm_error_t e;
+	int i;
+	gfarm_acl_t acl;
+	gfarm_acl_perm_t perm = 0;
+	gfarm_acl_entry_t mask_ent = NULL;
+
+	acl = *acl_p;
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] != NULL) {
+			switch (acl->entries[i]->tag) {
+			case GFARM_ACL_USER_OBJ:
+			case GFARM_ACL_OTHER:
+				break;
+			case GFARM_ACL_MASK:
+				mask_ent = acl->entries[i];
+				break;
+			case GFARM_ACL_USER:
+			case GFARM_ACL_GROUP_OBJ:
+			case GFARM_ACL_GROUP:
+				perm |= acl->entries[i]->perm;
+				break;
+			default:
+				gflog_debug(GFARM_MSG_UNFIXED,
+					    "invalid acl tag: %d",
+					    acl->entries[i]->tag);
+				return (GFARM_ERR_INVALID_ARGUMENT);
+			}
+		}
+	}
+	if (mask_ent == NULL) {
+		e = gfs_acl_create_entry(&acl, &mask_ent);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_acl_create_entry() failed: %s",
+				    gfarm_error_string(e));
+			return (e);
+		}
+		mask_ent->tag = GFARM_ACL_MASK;
+	}
+	mask_ent->perm = perm;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_get_permset(gfarm_acl_entry_t entry_d,
+		      gfarm_acl_permset_t *permset_p)
+{
+	if (entry_d == NULL || permset_p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_get_permset()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	*permset_p = &entry_d->perm;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_set_permset(gfarm_acl_entry_t entry_d, gfarm_acl_permset_t permset_d)
+{
+	entry_d->perm = *permset_d;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_add_perm(gfarm_acl_permset_t permset_d, gfarm_acl_perm_t perm)
+{
+	*permset_d |= perm;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_clear_perms(gfarm_acl_permset_t permset_d)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+gfarm_error_t
+gfs_acl_delete_perm(gfarm_acl_permset_t permset_d, gfarm_acl_perm_t perm)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+#endif
+
+gfarm_error_t
+gfs_acl_get_perm(gfarm_acl_permset_t permset_d, gfarm_acl_perm_t perm,
+		 int *bool_p)
+{
+	if (bool_p == NULL || permset_d == NULL ||
+	    (perm & !(GFARM_ACL_READ | GFARM_ACL_WRITE | GFARM_ACL_EXECUTE))) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_get_perm()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	*bool_p = ((*permset_d & perm) != 0);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_get_qualifier(gfarm_acl_entry_t entry_d, char **qualifier_p)
+{
+	*qualifier_p = entry_d->qualifier;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_set_qualifier(gfarm_acl_entry_t entry_d, const char *qualifier)
+{
+	if (entry_d->qualifier != NULL)
+		free(entry_d->qualifier);
+	entry_d->qualifier = (char *) qualifier;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_get_tag_type(gfarm_acl_entry_t entry_d, gfarm_acl_tag_t *tag_type_p)
+{
+	*tag_type_p = entry_d->tag;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_set_tag_type(gfarm_acl_entry_t entry_d, gfarm_acl_tag_t tag_type)
+{
+	entry_d->tag = tag_type;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_delete_def_file(const char *path)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+#endif
+
+gfarm_error_t
+gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+{
+	gfarm_error_t e;
+	size_t size = 0;
+	const char *name;
+	void *xattr;
+
+	if (type == GFARM_ACL_TYPE_ACCESS)
+		name = GFARM_ACL_EA_ACCESS;
+	else if (type == GFARM_ACL_TYPE_DEFAULT)
+		name = GFARM_ACL_EA_DEFAULT;
+	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid type of gfs_acl_get_file()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	/* get xattr size */
+	e = gfs_lgetxattr_cached(path, name, NULL, &size);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (e != GFARM_ERR_NO_SUCH_OBJECT)
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_lgetxattr_cached(%s, %s) failed: %s",
+				    path, name, gfarm_error_string(e));
+		return (e);
+	}
+
+	GFARM_MALLOC_ARRAY(xattr, size);
+	if (xattr == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of xattr value failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	e = gfs_lgetxattr_cached(path, name, xattr, &size);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_lgetxattr_cached(%s, %s) failed: %s",
+			    path, name, gfarm_error_string(e));
+	else {
+		e = gfs_acl_from_xattr_value(xattr, size, acl_p);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_acl_from_xattr_value() failed: %s",
+				    gfarm_error_string(e));
+	}
+	free(xattr);
+
+	return (e);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_get_fh(GFS_File gf, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+#endif
+
+gfarm_error_t
+gfs_acl_set_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t acl)
+{
+	gfarm_error_t e;
+	void *xattr;
+	size_t size;
+	const char *name;
+
+	if (type == GFARM_ACL_TYPE_ACCESS)
+		name = GFARM_ACL_EA_ACCESS;
+	else if (type == GFARM_ACL_TYPE_DEFAULT)
+		name = GFARM_ACL_EA_DEFAULT;
+	else {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid type of gfs_acl_set_file()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	e = gfs_acl_to_xattr_value(acl, &xattr, &size);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			    "gfs_acl_to_xattr_value: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+	e = gfs_lsetxattr(path, name, xattr, size, 0);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			    "gfs_lsetxattr(%s, %s): %s",
+			    path, name, gfarm_error_string(e));
+	}
+	free(xattr);
+
+	return (e);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_set_fh(GFS_File gf, gfarm_acl_type_t type, gfarm_acl_t acl)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+#endif
+
+static char *
+__tag_to_str(gfarm_acl_tag_t tag)
+{
+	static char user[] = "user:";
+	static char group[] = "group:";
+	static char other[] = "other:";
+	static char mask[] = "mask:";
+
+	switch (tag) {
+	case GFARM_ACL_USER_OBJ:
+	case GFARM_ACL_USER:
+		return (user);
+	case GFARM_ACL_GROUP_OBJ:
+	case GFARM_ACL_GROUP:
+		return (group);
+	case GFARM_ACL_MASK:
+		return (mask);
+	case GFARM_ACL_OTHER:
+		return (other);
+	default:
+		return (NULL);
+	}
+}
+
+static char *
+__perm_to_str(gfarm_acl_perm_t perm) {
+	static char prwx[] = "rwx";
+	static char prw_[] = "rw-";
+	static char pr_x[] = "r-x";
+	static char pr__[] = "r--";
+	static char p_wx[] = "-wx";
+	static char p_w_[] = "-w-";
+	static char p__x[] = "--x";
+	static char p___[] = "---";
+
+	if (perm & GFARM_ACL_READ) {
+		if (perm & GFARM_ACL_WRITE) {
+			if (perm & GFARM_ACL_EXECUTE)
+				return (prwx);
+			else
+				return (prw_);
+		} else {
+			if (perm & GFARM_ACL_EXECUTE)
+				return (pr_x);
+			else
+				return (pr__);
+		}
+	} else {
+		if (perm & GFARM_ACL_WRITE) {
+			if (perm & GFARM_ACL_EXECUTE)
+				return (p_wx);
+			else
+				return (p_w_);
+		} else {
+			if (perm & GFARM_ACL_EXECUTE)
+				return (p__x);
+			else
+				return (p___);
+		}
+	}
+}
+
+#define ADD_STR(src) \
+	do { \
+		int slen = strlen(src); \
+		while (nowlen + slen + 1 > bufsize) { \
+			char *tmp; \
+			bufsize *= 2; \
+			GFARM_REALLOC_ARRAY(tmp, buf, bufsize); \
+			if (tmp == NULL) { \
+				free(buf); \
+				gflog_debug(GFARM_MSG_UNFIXED, \
+				    "reallocation for acl_to_text failed"); \
+				return (GFARM_ERR_NO_MEMORY); \
+			} \
+			buf = tmp; \
+		} \
+		strcpy(buf + nowlen, src);  /* with '\0' */ \
+		nowlen += slen;  /* without '\0' */ \
+	} while (0)
+
+gfarm_error_t
+gfs_acl_to_text(gfarm_acl_t acl, char **str_p, size_t *len_p)
+{
+	int i;
+	gfarm_acl_perm_t mask_perm = 0;
+	char *buf;
+	int nowlen = 0, bufsize;
+
+	if (acl == NULL || str_p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_to_text()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	/* get MASK previously */
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] != NULL &&
+		    (acl->entries[i]->tag & GFARM_ACL_MASK))
+			mask_perm = acl->entries[i]->perm;
+	}
+
+	bufsize = 64;
+	GFARM_MALLOC_ARRAY(buf, bufsize);
+	if (buf == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation for acl_to_text failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < acl->nentries; i++) {
+		static char nl[] = "\n";
+		static char colon[] = ":";
+		char *s;
+		if (acl->entries[i] == NULL)
+			continue;
+		s = __tag_to_str(acl->entries[i]->tag);
+		if (s)
+			ADD_STR(s);
+		s = acl->entries[i]->qualifier;
+		if (s)
+			ADD_STR(s);
+		ADD_STR(colon);
+		s = __perm_to_str(acl->entries[i]->perm);
+		ADD_STR(s);
+
+		if (acl->entries[i]->tag &
+		    (GFARM_ACL_USER | GFARM_ACL_GROUP_OBJ | GFARM_ACL_GROUP)) {
+			static char effective[] = "\t#effective:";
+			s = effective;
+			ADD_STR(s);
+			s = __perm_to_str(mask_perm & acl->entries[i]->perm);
+			ADD_STR(s);
+		}
+		ADD_STR(nl);
+	}
+	*str_p = buf;
+	if (len_p)
+		*len_p = nowlen; /* without '\0' */
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* --- gfs_acl_from_text() --- */
+
+/* skip whitespace */
+#define SKIP_WS(c) \
+	do { \
+		while (isspace(*(c))) \
+			(c)++; \
+		if (*(c) == '#') { \
+			while (*(c) != '\n' && *(c) != '\0') \
+				(c)++; \
+		} \
+	} while (0)
+
+static const char *
+__skip_tag_name(const char *text, const char *token)
+{
+	size_t len = strlen(token);
+	const char *p = text;
+
+	SKIP_WS(p);
+	if (strncmp(p, token, len) == 0) {
+		p += len;
+		goto delimiter;
+	} else if (*p == *token) {
+		p++;
+		goto delimiter;
+	}
+	return (NULL);
+delimiter:
+	SKIP_WS(p);
+	if (*p == ':')
+		p++;
+	return (p);
+}
+
+static char *
+__get_qualifier(const char *text, const char **next_text_p)
+{
+	const char *p = text;
+	char *str = NULL;
+
+	SKIP_WS(p);
+	while (*p != '\0' && *p != '\r' && *p != '\n' &&
+	       *p != ':' && *p != ',')
+		p++;
+	if (p == text)
+		goto next;
+	GFARM_MALLOC_ARRAY(str, p - text + 1);
+	if (str == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			    "allocation of acl qualifier failed");
+		goto next;
+	}
+	memcpy(str, text, (p - text));
+	str[p - text] = '\0';
+next:
+	if (*p == ':')
+		p++;
+	*next_text_p = p;
+	return (str);
+}
+
+static gfarm_error_t
+__parse_acl_entry(const char *text, gfarm_acl_t *acl_p,
+		  const char **next_text_p)
+{
+	gfarm_error_t e;
+	gfarm_acl_entry_t entry_d;
+	const char *p = text, *nextp;
+	int i;
+	gfarm_acl_tag_t tag = 0;
+	gfarm_acl_perm_t perm = 0;
+	char *qual = NULL;
+	gfarm_acl_permset_t permset;
+
+	SKIP_WS(p);
+	switch (*p) {
+	case '\0':
+	case '\n':
+	case '#':
+		/* no entry data */
+		*next_text_p = p;
+		return (GFARM_ERR_NO_ERROR);
+	case 'u':  /* user */
+		p = __skip_tag_name(p, "user");
+		if (p == NULL)
+			goto fail;
+		qual = __get_qualifier(p, &nextp);
+		if (qual == NULL && p != nextp)
+			return (GFARM_ERR_NO_MEMORY);
+		p = nextp;
+		if (qual != NULL)
+			tag = GFARM_ACL_USER;
+		else  /* user:: */
+			tag = GFARM_ACL_USER_OBJ;
+		break;
+	case 'g':  /* group */
+		p = __skip_tag_name(p, "group");
+		if (p == NULL)
+			goto fail;
+		qual = __get_qualifier(p, &nextp);
+		if (qual == NULL && p != nextp)
+			return (GFARM_ERR_NO_MEMORY);
+		p = nextp;
+		if (qual != NULL)
+			tag = GFARM_ACL_GROUP;
+		else  /* group:: */
+			tag = GFARM_ACL_GROUP_OBJ;
+		break;
+	case 'm':  /* mask */
+		p = __skip_tag_name(p, "mask");
+		if (p == NULL)
+			goto fail;
+		SKIP_WS(p); /* skip empty qualifier */
+		if (*p == ':')
+			p++;
+		tag = GFARM_ACL_MASK;
+		break;
+	case 'o':  /* other */
+		p = __skip_tag_name(p, "other");
+		if (p == NULL)
+			goto fail;
+		SKIP_WS(p); /* skip empty qualifier */
+		if (*p == ':')
+			p++;
+		tag = GFARM_ACL_OTHER;
+		break;
+	default:
+		goto fail;
+	}
+	for (i = 0; i < 3; i++, p++) {
+		switch (*p) {
+		case 'r':
+			if (perm & GFARM_ACL_READ)
+				goto fail;
+			perm |= GFARM_ACL_READ;
+			break;
+		case 'w':
+			if (perm & GFARM_ACL_WRITE)
+				goto fail;
+			perm |= GFARM_ACL_WRITE;
+			break;
+		case 'x':
+			if (perm & GFARM_ACL_EXECUTE)
+				goto fail;
+			perm |= GFARM_ACL_EXECUTE;
+			break;
+		case '-': /* ignore */
+			break;
+		default: /* next ACL entry ? */
+			if (i == 0) /* no rwx */
+				goto fail;
+			goto end;
+		}
+	}
+end:
+	*next_text_p = p;
+	e = gfs_acl_create_entry(acl_p, &entry_d);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(qual);
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_acl_create_entry() failed: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+	gfs_acl_get_permset(entry_d, &permset);
+	gfs_acl_add_perm(permset, perm);
+	gfs_acl_set_permset(entry_d, permset);
+	gfs_acl_set_qualifier(entry_d, qual);
+	gfs_acl_set_tag_type(entry_d, tag);
+
+	return (GFARM_ERR_NO_ERROR);
+fail:
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+gfarm_error_t
+gfs_acl_from_text(const char *buf_p, gfarm_acl_t *acl_p)
+{
+	gfarm_acl_t acl;
+	gfarm_error_t e;
+	const char *p = buf_p, *nextp;
+
+	e = gfs_acl_init(5, &acl);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfs_acl_init() failed: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+	if (p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "buf_p is NULL");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	while (*p != '\0') {
+		e = __parse_acl_entry(p, &acl, &nextp);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfs_acl_free(acl);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "parsing acl text error: %s",
+				    gfarm_error_string(e));
+			return (e);
+		}
+		p = nextp;
+		SKIP_WS(p);
+		if (*p == ',') {
+			p++;
+			SKIP_WS(p);
+		}
+	}
+	/* end of p : *p == '\0' */
+	*acl_p = acl;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* ----- Linux-ACL-Extension-like functions ---------------------- */
+
+const char *
+gfs_acl_error(int acl_check_err_p)
+{
+	static char multi[] = "Multiple entries of same type";
+	static char duplicate[] = "Duplicate entries";
+	static char miss[] = "Missing or wrong entry";
+	static char entry[] = "Invalid entry type";
+	static char noerror[] = "no error";
+
+	switch (acl_check_err_p) {
+	case GFARM_ACL_MULTI_ERROR:
+		return (multi);
+	case GFARM_ACL_DUPLICATE_ERROR:
+		return (duplicate);
+	case GFARM_ACL_MISS_ERROR:
+		return (miss);
+	case GFARM_ACL_ENTRY_ERROR:
+		return (entry);
+	}
+	return (noerror);
+}
+
+/* check required entries and sorted entries */
+gfarm_error_t
+gfs_acl_check(gfarm_acl_t acl, int *last_p, int *acl_check_err_p)
+{
+	int state = GFARM_ACL_USER_OBJ;
+	int need_mask = 0;
+	char *tmp_qual = NULL;
+	int i;
+	int acl_e;
+
+	if (acl == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_check()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (last_p != NULL)
+		*last_p = 0;
+	for (i = 0; i < acl->nentries; i++) {
+		char *q;
+		if (acl->entries[i] == NULL)
+			continue;
+		q = acl->entries[i]->qualifier;
+		switch (acl->entries[i]->tag) {
+		case GFARM_ACL_USER_OBJ:
+			if (state == GFARM_ACL_USER_OBJ) {
+				state = GFARM_ACL_USER;
+				tmp_qual = NULL;
+				break;
+			}
+			acl_e = GFARM_ACL_MULTI_ERROR;
+			goto fail;
+		case GFARM_ACL_USER:
+			if (state != GFARM_ACL_USER) {
+				acl_e = GFARM_ACL_MISS_ERROR;
+				goto fail;
+			}
+			if (q == NULL ||
+			    (tmp_qual != NULL &&
+			     strcmp(q, tmp_qual) <= 0)) {
+				acl_e = GFARM_ACL_DUPLICATE_ERROR;
+				goto fail;
+			}
+			tmp_qual = q;
+			need_mask = 1;
+			break;
+		case GFARM_ACL_GROUP_OBJ:
+			if (state == GFARM_ACL_USER) {
+				state = GFARM_ACL_GROUP;
+				tmp_qual = NULL;
+				break;
+			}
+			if (state >= GFARM_ACL_GROUP)
+				acl_e = GFARM_ACL_MULTI_ERROR;
+			else
+				acl_e = GFARM_ACL_MISS_ERROR;
+			goto fail;
+		case GFARM_ACL_GROUP:
+			if (state != GFARM_ACL_GROUP) {
+				acl_e = GFARM_ACL_MISS_ERROR;
+				goto fail;
+			}
+			if (q == NULL ||
+			    (tmp_qual != NULL &&
+			     strcmp(q, tmp_qual) <= 0)) {
+				acl_e = GFARM_ACL_DUPLICATE_ERROR;
+				goto fail;
+			}
+			tmp_qual = q;
+			need_mask = 1;
+			break;
+		case GFARM_ACL_MASK:
+			if (state == GFARM_ACL_GROUP) {
+				state = GFARM_ACL_OTHER;
+				break;
+			}
+			if (state >= GFARM_ACL_OTHER)
+				acl_e = GFARM_ACL_MULTI_ERROR;
+			else
+				acl_e = GFARM_ACL_MISS_ERROR;
+			goto fail;
+		case GFARM_ACL_OTHER:
+			if (state == GFARM_ACL_OTHER ||
+			    (state == GFARM_ACL_GROUP &&
+			     !need_mask)) {
+				state = 0;
+				break;
+			}
+			acl_e = GFARM_ACL_MISS_ERROR;
+			goto fail;
+		default:
+			acl_e = GFARM_ACL_ENTRY_ERROR;
+			goto fail;
+		}
+		if (last_p != NULL)
+			(*last_p)++;
+	}
+	if (state != 0) {
+		acl_e = GFARM_ACL_MISS_ERROR;
+		goto fail;
+	}
+	if (acl_check_err_p != NULL)
+		*acl_check_err_p = GFARM_ACL_NO_ERROR;
+	return (GFARM_ERR_NO_ERROR);
+fail:
+	gflog_debug(GFARM_MSG_UNFIXED, "error in gfs_acl_check(): %s",
+		    gfs_acl_error(acl_e));
+	if (acl_check_err_p != NULL)
+		*acl_check_err_p = acl_e;
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+int
+gfs_acl_entries(gfarm_acl_t acl)
+{
+	int i, count = 0;
+
+	if (acl == NULL)
+		return (0);
+
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] != NULL)
+			count++;
+	}
+
+	return (count);
+}
+
+gfarm_error_t
+gfs_acl_equiv_mode(gfarm_acl_t acl, gfarm_mode_t *mode_p, int *is_not_equiv_p)
+{
+	int i;
+	gfarm_mode_t mode = 0, mask = 0;
+	int not_equivalent = 0;
+
+	if (acl == NULL || mode_p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_equiv_mode()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] == NULL)
+			continue;
+		switch (acl->entries[i]->tag) {
+		case GFARM_ACL_USER_OBJ:
+			mode |= (acl->entries[i]->perm &
+			 (GFARM_ACL_READ|GFARM_ACL_WRITE|GFARM_ACL_EXECUTE))
+				<< 6;
+			break;
+		case GFARM_ACL_GROUP_OBJ:
+			mode |= (acl->entries[i]->perm &
+			 (GFARM_ACL_READ|GFARM_ACL_WRITE|GFARM_ACL_EXECUTE))
+				<< 3;
+			break;
+		case GFARM_ACL_OTHER:
+			mode |= (acl->entries[i]->perm &
+			(GFARM_ACL_READ|GFARM_ACL_WRITE|GFARM_ACL_EXECUTE));
+			break;
+		case GFARM_ACL_MASK:
+			mask |= (acl->entries[i]->perm &
+			(GFARM_ACL_READ|GFARM_ACL_WRITE|GFARM_ACL_EXECUTE));
+			/* not break */
+		case GFARM_ACL_USER:
+		case GFARM_ACL_GROUP:
+			not_equivalent = 1;
+			break;
+		default:
+			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
+	}
+	if (mode != 0 && mask != 0) /* mask GFARM_ACL_GROUP_OBJ */
+		mode = (mode & ~00070) |
+			((mode & 00070) & ((mask & 00007) << 3));
+	*mode_p = mode;
+
+	if (is_not_equiv_p != NULL)
+		*is_not_equiv_p = not_equivalent;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#if 0
+gfarm_error_t
+gfs_acl_cmp(gfarm_acl_t acl1, gfarm_acl_t acl2)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+gfarm_error_t
+gfs_acl_extended_fh(GFS_file gf)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+gfarm_error_t
+gfs_acl_extended_file(const char *path)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+gfarm_error_t
+gfs_acl_from_mode(gfarm_mode_t mode, gfarm_acl_t *acl_p)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+gfarm_error_t
+gfs_acl_to_any_text(gfarm_acl_t acl, const char *prefix,
+		    char separator, int options, char **str_p)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);  /* XXX */
+}
+#endif
+
+/* ----- non-POSIX-like functions (utilities) ------------------------ */
+
+#define ADD_BUF(src, size) \
+	do { \
+		while (nowlen + size > bufsize) { \
+			char *tmp; \
+			bufsize *= 2; \
+			GFARM_REALLOC_ARRAY(tmp, buf, bufsize); \
+			if (tmp == NULL) { \
+				free(buf); \
+				gflog_debug(GFARM_MSG_UNFIXED, \
+				    "reallocation for acl_to_xattr failed"); \
+				return (GFARM_ERR_NO_MEMORY); \
+			} \
+			buf = tmp; \
+		} \
+		memcpy(buf + nowlen, src, size); \
+		nowlen += size; \
+	} while (0)
+
+gfarm_error_t
+gfs_acl_to_xattr_value(const gfarm_acl_t acl, void **xattr_value_p,
+		       size_t *size_p)
+{
+	int i;
+	char *buf;
+	int nowlen = 0, bufsize;
+	gfarm_uint32_t version;
+	gfarm_uint16_t tag, perm;
+
+	if (acl == NULL || xattr_value_p == NULL || size_p == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_to_xattr_value()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	/* assume that all qualifiers are 15 characters */
+	bufsize = 4 + acl->nentries * (4 + 16);
+	GFARM_MALLOC_ARRAY(buf, bufsize);
+	if (buf == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "allocation of for acl_to_xattr failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	version = gfarm_htol_32(GFARM_ACL_EA_VERSION);
+	ADD_BUF(&version, sizeof(version));
+	for (i = 0; i < acl->nentries; i++) {
+		static char zerostr[] = "";
+		char *s;
+		if (acl->entries[i] == NULL)
+			continue;
+		tag = gfarm_htol_16(
+			(gfarm_uint16_t)(acl->entries[i]->tag));
+		ADD_BUF(&tag, sizeof(tag));
+		perm = gfarm_htol_16(
+			(gfarm_uint16_t)(acl->entries[i]->perm));
+		ADD_BUF(&perm, sizeof(perm));
+		s = acl->entries[i]->qualifier;
+		if (s == NULL)
+			s = zerostr;
+		ADD_BUF(s, strlen(s) + 1);  /* with '\0' */
+	}
+	*xattr_value_p = buf;
+	*size_p = nowlen;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_acl_from_xattr_value(const void *xattr_value, size_t size,
+			   gfarm_acl_t *acl_p)
+{
+	gfarm_error_t e;
+	gfarm_acl_t acl;
+	gfarm_acl_entry_t ent;
+	gfarm_acl_permset_t pset;
+	const void *p = xattr_value;
+	const void *endp = p + size;
+	gfarm_uint32_t version;
+	gfarm_uint16_t tag, perm;
+	char *qual;
+	size_t len;
+
+	memcpy(&version, p, sizeof(version));
+	p += sizeof(version);
+	if (p > endp) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid xattr_value size");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if (gfarm_ltoh_32(version) != GFARM_ACL_EA_VERSION) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "unsupported acl version: %d",
+			    gfarm_ltoh_32(version));
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	e = gfs_acl_init(5, &acl);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_acl_init() failed: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+	while (p < endp) {
+		memcpy(&tag, p, sizeof(tag));
+		p += sizeof(tag);
+		memcpy(&perm, p, sizeof(perm));
+		p += sizeof(perm);
+		len = strlen(p) + 1;  /* with '\0' */
+		if (p + len > endp) {
+			gfs_acl_free(acl);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "invalid xattr_value size");
+			return (GFARM_ERR_INVALID_ARGUMENT);
+		}
+		qual = strdup(p);
+		if (qual == NULL) {
+			gfs_acl_free(acl);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "strdup() failed");
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		p += len;
+		e = gfs_acl_create_entry(&acl, &ent);
+		if (e != GFARM_ERR_NO_ERROR) {
+			free(qual);
+			gfs_acl_free(acl);
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_acl_create_entry() failed: %s",
+				    gfarm_error_string(e));
+			return (e);
+		}
+		gfs_acl_set_tag_type(ent, gfarm_ltoh_16(tag));
+		gfs_acl_get_permset(ent, &pset);
+		gfs_acl_add_perm(pset, gfarm_ltoh_16(perm));
+		gfs_acl_set_permset(ent, pset);
+		gfs_acl_set_qualifier(ent, qual);
+	}
+	*acl_p = acl;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static int
+__compare_acl_entry(const void *p1, const void *p2)
+{
+	struct gfarm_acl_entry *e1 = *(struct gfarm_acl_entry **) p1;
+	struct gfarm_acl_entry *e2 = *(struct gfarm_acl_entry **) p2;
+
+	/* entry1, entry2, ..., NULL, NULL */
+	if (e1 == NULL) {
+		if (e2 == NULL)
+			return (0);
+		else
+			return (1);  /* NULL pointer is end */
+	}
+	/* e1 != NULL */
+	if (e2 == NULL)
+		return (-1);  /* NULL pointer is end */
+	if (e1->tag > e2->tag)
+		return (1);
+	if (e1->tag < e2->tag)
+		return (-1);
+	if (e1->qualifier == NULL) {
+		if (e2->qualifier == NULL)
+			return (0);
+		else
+			return (-1);
+	}
+	/* e1->qualifier != NULL */
+	if (e2->qualifier == NULL)
+		return (1);
+
+	return (strcmp(e1->qualifier, e2->qualifier));
+}
+
+gfarm_error_t
+gfs_acl_sort(gfarm_acl_t acl)
+{
+	qsort(acl->entries, acl->nentries, sizeof(struct gfs_acl_entry *),
+	      __compare_acl_entry);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* remove standard ACL entries */
+gfarm_error_t
+gfs_acl_delete_mode(gfarm_acl_t acl)
+{
+	int i;
+
+	if (acl == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "invalid argument of gfs_acl_delete_mode()");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	for (i = 0; i < acl->nentries; i++) {
+		if (acl->entries[i] != NULL) {
+			switch (acl->entries[i]->tag) {
+			case GFARM_ACL_USER_OBJ:
+			case GFARM_ACL_GROUP_OBJ:
+			case GFARM_ACL_OTHER:
+				__gfs_acl_entry_free(acl->entries[i]);
+				acl->entries[i] = NULL;
+			}
+		}
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}

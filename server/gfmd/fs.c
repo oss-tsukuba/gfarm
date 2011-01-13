@@ -30,6 +30,7 @@
 #include "peer.h"
 #include "back_channel.h"
 #include "fs.h"
+#include "acl.h"
 
 gfarm_error_t
 gfm_server_compound_begin(struct peer *peer, int from_client, int skip,
@@ -834,7 +835,7 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 		for (j = 0; j < nxattrs; j++) {
 			px = &xattrs[j];
 			if (px->value != NULL) /* cached */
-				continue;
+				goto acl_convert;
 
 			/* not cached */
 			db_waitctx_init(&waitctx);
@@ -852,6 +853,16 @@ gfm_server_fgetattrplus(struct peer *peer, int from_client, int skip)
 			}
 			db_waitctx_fini(&waitctx);
 			/* if error happens, px->size == 0 here */
+
+acl_convert:
+			e = acl_convert_for_getxattr(
+				inode, px->name, &px->value, &px->size);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				 "acl_convert_for_getxattr() failed: %s",
+				 gfarm_error_string(e));
+				break;
+			}
 		}
 	}
 
@@ -2060,7 +2071,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 			for (j = 0; j < pp->nxattrs; j++) {
 				px = &pp->xattrs[j];
 				if (px->value != NULL) /* cached */
-					continue;
+					goto acl_convert;
 
 				/* not cached */
 				db_waitctx_init(&waitctx);
@@ -2078,7 +2089,20 @@ gfm_server_getdirentsplusxattr(struct peer *peer, int from_client, int skip)
 				}
 				db_waitctx_fini(&waitctx);
 				/* if error happens, px->size == 0 here */
+acl_convert:
+				e = acl_convert_for_getxattr(
+					inode_lookup(pp->st.st_ino),
+					px->name, &px->value, &px->size);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					  "acl_convert_for_getxattr()"
+					   " failed: %s",
+					    gfarm_error_string(e));
+					break;
+				}
 			}
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
 		}
 		giant_unlock();
 	}

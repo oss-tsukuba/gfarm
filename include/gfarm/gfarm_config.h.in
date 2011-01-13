@@ -11,6 +11,9 @@
 /* support XML extended attributs and searching by XPath */
 #undef ENABLE_XMLATTR
 
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
 

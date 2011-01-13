@@ -30,8 +30,32 @@
 #include "process.h"
 #include "metadb_common.h"
 #include "dir.h"
+#include "acl.h"
+#include "user.h"
 
 #define MAX_XATTR_NAME_LEN	256
+
+static gfarm_error_t
+xattr_access(int xmlMode, struct inode *inode, struct user *user,
+	     const char *attrname, int op)
+{
+	if (!xmlMode && strncmp("gfarm.", attrname, 6) == 0) {
+		/* gfarm.ncopy, gfarm.acl_access, gfarm.acl_default */
+		if (op == GFS_R_OK)
+			return (GFARM_ERR_NO_ERROR); /* Anyone can get */
+		else if (op == GFS_W_OK) {
+			if (user != inode_get_user(inode) &&
+			    !user_is_root(user)) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					    "no privileges to modify `%s'",
+					    attrname);
+				return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+			}
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (inode_access(inode, user, op));
+}
 
 static int
 isvalid_attrname(const char *attrname)
@@ -42,11 +66,12 @@ isvalid_attrname(const char *attrname)
 }
 
 static gfarm_error_t
-setxattr(int xmlMode, struct inode *inode, char *attrname,
-	void *value, size_t size, int flags, struct db_waitctx *waitctx,
-	int *addattr)
+setxattr(int xmlMode, struct inode *inode,
+	 char *attrname, void **valuep, size_t size, int flags,
+	 struct db_waitctx *waitctx, int *addattr)
 {
 	gfarm_error_t e;
+	void *value;
 
 	*addattr = 0;
 	if (!isvalid_attrname(attrname)) {
@@ -54,6 +79,38 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
 	}
+
+	if (!xmlMode) {
+		gfarm_acl_type_t acltype;
+		if (strcmp(attrname, GFARM_ACL_EA_ACCESS) == 0)
+			acltype = GFARM_ACL_TYPE_ACCESS;
+		else if (strcmp(attrname, GFARM_ACL_EA_DEFAULT) == 0)
+			acltype = GFARM_ACL_TYPE_DEFAULT;
+		else
+			acltype = 0;
+		if (acltype == GFARM_ACL_TYPE_ACCESS ||
+		    acltype == GFARM_ACL_TYPE_DEFAULT) {
+			e = acl_convert1_for_setxattr(inode, acltype,
+						      valuep, &size);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"acl_convert1_for_setxattr(%s): %s",
+					attrname, gfarm_error_string(e));
+				return (e);
+			}
+			if (*valuep == NULL || size <= 4) {
+				(void)inode_xattr_remove(
+					inode, xmlMode, attrname);
+				(void)db_xattr_remove(
+					xmlMode, inode_get_number(inode),
+					attrname);
+				/* *addattr = 0 */
+				return (GFARM_ERR_NO_ERROR);
+			}
+		}
+	}
+	value = *valuep;
+
 	if ((flags & (GFS_XATTR_CREATE|GFS_XATTR_REPLACE))
 		== (GFS_XATTR_CREATE|GFS_XATTR_REPLACE)) {
 		gflog_debug(GFARM_MSG_1002067,
@@ -86,6 +143,7 @@ setxattr(int xmlMode, struct inode *inode, char *attrname,
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),
+
 			attrname, value, size, waitctx);
 	} else
 		e = db_xattr_modify(xmlMode, inode_get_number(inode),
@@ -102,7 +160,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	    xmlMode ? "GFM_PROTO_XMLATTR_SET" : "GFM_PROTO_XATTR_SET";
 	char *attrname = NULL;
 	size_t size;
-	char *value = NULL;
+	void *value = NULL;
 	int flags;
 	struct process *process;
 	gfarm_int32_t fd;
@@ -126,7 +184,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	if (xmlMode) {
 		waitctx = &ctx;
 #ifdef ENABLE_XMLATTR
-		if (value[size-1] != '\0') {
+		if (((char *)value)[size-1] != '\0') {
 			e = GFARM_ERR_INVALID_ARGUMENT;
 			gflog_debug(GFARM_MSG_1002071,
 				"argument 'xmlMode' is invalid");
@@ -157,14 +215,15 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002075,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = inode_access(inode, process_get_user(process),
-			GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002076,
-			"inode_access() failed: %s",
-			gfarm_error_string(e));
+	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
+				     attrname, GFS_W_OK))
+		   != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "xattr_access() failed: %s",
+			    gfarm_error_string(e));
 	} else
-		e = setxattr(xmlMode, inode, attrname, value, size,
-				flags, waitctx, &addattr);
+		e = setxattr(xmlMode, inode, attrname, &value, size,
+			     flags, waitctx, &addattr);
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -237,10 +296,10 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1002083,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = inode_access(inode, process_get_user(process),
-			GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002084,
-			"inode_access() failed: %s",
+	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
+				attrname, GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr_access() failed: %s",
 			gfarm_error_string(e));
 	} else if (!isvalid_attrname(attrname)) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -257,6 +316,15 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			attrname, &value, &size, &waitctx);
 	} else
 		cached = 1;
+	if (e == GFARM_ERR_NO_ERROR) {
+		/* for ACL */
+		e = acl_convert_for_getxattr(inode, attrname, &value, &size);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"acl_convert_for_getxattr() failed: %s",
+				gfarm_error_string(e));
+	}
+
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR && !cached)
 		e = dbq_waitret(&waitctx);
@@ -391,10 +459,10 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 		gflog_debug(GFARM_MSG_1002094,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if ((e = inode_access(inode, process_get_user(process),
-			GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002095,
-			"inode_access() failed: %s",
+	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
+				attrname, GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"xattr_access() failed: %s",
 			gfarm_error_string(e));
 	} else
 		e = removexattr(xmlMode, inode, attrname);

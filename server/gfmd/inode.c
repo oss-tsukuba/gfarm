@@ -37,6 +37,7 @@
 #include "process.h" /* struct file_opening */
 #include "xattr_info.h"
 #include "back_channel.h"
+#include "acl.h"
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
@@ -1504,6 +1505,7 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 gfarm_error_t
 inode_access(struct inode *inode, struct user *user, int op)
 {
+	gfarm_error_t e;
 	gfarm_mode_t mask = 0;
 
 	if (user_is_root(user))
@@ -1516,7 +1518,18 @@ inode_access(struct inode *inode, struct user *user, int op)
 			mask |= 0200;
 		if (op & GFS_R_OK)
 			mask |= 0400;
-	} else if (user_in_group(user, inode->i_group)) {
+		goto end;
+	}
+
+	e = acl_access(inode, user, op);
+	if (e != GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_debug(GFARM_MSG_UNFIXED, "acl_access() failed: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+
+	/* this inode does not have ACL */
+	if (user_in_group(user, inode->i_group)) {
 		if (op & GFS_X_OK)
 			mask |= 0010;
 		if (op & GFS_W_OK)
@@ -1531,8 +1544,36 @@ inode_access(struct inode *inode, struct user *user, int op)
 		if (op & GFS_R_OK)
 			mask |= 0004;
 	}
+end:
 	return ((inode->i_mode & mask) == mask ? GFARM_ERR_NO_ERROR :
 	    GFARM_ERR_PERMISSION_DENIED);
+}
+
+static gfarm_error_t
+inode_set_acl_common(struct inode *ino, const char *name,
+		     const void *value, size_t size)
+{
+	/* XXX UNCONST */
+	gfarm_error_t e = db_xattr_add(0, ino->i_number, (char *)name,
+				       (char *)value, size, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+			    "db_xattr_add(%lld): %s",
+			    (unsigned long long)ino->i_number,
+			    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+inode_set_acl_default(struct inode *ino, const void *value, size_t size)
+{
+	return (inode_set_acl_common(ino, GFARM_ACL_EA_DEFAULT, value, size));
+}
+
+static gfarm_error_t
+inode_set_acl_access(struct inode *ino, const void *value, size_t size)
+{
+	return (inode_set_acl_common(ino, GFARM_ACL_EA_ACCESS, value, size));
 }
 
 enum gfarm_inode_lookup_op {
@@ -1569,6 +1610,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	DirEntry entry;
 	int created;
 	struct inode *n;
+	void *acl_acc = NULL, *acl_def = NULL;
+	size_t acl_acc_size, acl_def_size;
 
 	if (len == 0) {
 		if (op != INODE_LOOKUP) {
@@ -1710,6 +1753,17 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (inode_is_file(n))  /* after setting i_user and i_group */
 		quota_update_file_add(n);
 
+	e = acl_inherit_default_acl(parent, n, &acl_def, &acl_def_size,
+				    &acl_acc, &acl_acc_size);
+	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "acl_inherit_default_acl() failed: %s",
+			    gfarm_error_string(e));
+		dir_remove_entry(parent->u.c.s.d.entries, name, len);
+		inode_free(n);
+		return (e);
+	}
+
 	{
 		struct gfs_stat st;
 
@@ -1735,6 +1789,16 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		    n->i_gen == 0 ? "add" : "modify",
 		    (unsigned long long)n->i_number,
 		    gfarm_error_string(e));
+
+	if (acl_def != NULL) {
+		if (inode_is_dir(n))
+			inode_set_acl_default(n, acl_def, acl_def_size);
+		free(acl_def);
+	}
+	if (acl_acc != NULL) {
+		inode_set_acl_access(n, acl_acc, acl_acc_size);
+		free(acl_acc);
+	}
 
 	/*
 	 * We do db_direntry_add() here to make LDAP happy.
@@ -4076,6 +4140,15 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	*namesp = names;
 	*sizep = size;
 	return GFARM_ERR_NO_ERROR;
+}
+
+void
+inode_init_acl(void)
+{
+	if (!gfarm_xattr_caching(GFARM_ACL_EA_ACCESS))
+		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
+	if (!gfarm_xattr_caching(GFARM_ACL_EA_DEFAULT))
+		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 }
 
 /* Ensure that the "gfarm.ncopy" xattr is always cached. */

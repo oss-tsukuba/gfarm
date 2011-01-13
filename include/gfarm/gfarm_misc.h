@@ -156,3 +156,40 @@ int gfarm_attach_debugger(void);
 
 size_t gfarm_humanize_number(char *, size_t, unsigned long long, int);
 #define GFARM_HUMANIZE_BINARY	1
+
+#ifdef HAVE_BYTESWAP_H
+#include <byteswap.h>
+#define gfarm_bswap_16(x) bswap_16(x)
+#define gfarm_bswap_32(x) bswap_32(x)
+#else
+#define gfarm_bswap_16(x) ((((x) & 0xFF00) >> 8) | (((x) & 0xFF) << 8))
+#define gfarm_bswap_32(x) ((((x) & 0xFF000000) >> 24) | \
+			(((x) & 0xFF0000) >> 8) | \
+			(((x) & 0xFF00) <<  8) | (((x) & 0xFF) << 24))
+#endif /* HAVE_BYTESWAP_H */
+
+/* _htol_: host byte order to little endian */
+/* _htob_: host byte order to big endian */
+/* _ltoh_: little endian to host byte order */
+/* _btoh_: big endian to host byte order */
+#ifdef WORDS_BIGENDIAN
+/* big endian */
+#define gfarm_htol_16(x) gfarm_bswap_16(x)
+#define gfarm_ltoh_16(x) gfarm_bswap_16(x)
+#define gfarm_htol_32(x) gfarm_bswap_32(x)
+#define gfarm_ltoh_32(x) gfarm_bswap_32(x)
+#define gfarm_htob_16(x) (x)
+#define gfarm_btoh_16(x) (x)
+#define gfarm_htob_32(x) (x)
+#define gfarm_btoh_32(x) (x)
+#else
+/* litle endian */
+#define gfarm_htol_16(x) (x)
+#define gfarm_ltoh_16(x) (x)
+#define gfarm_htol_32(x) (x)
+#define gfarm_ltoh_32(x) (x)
+#define gfarm_htob_16(x) gfarm_bswap_16(x)
+#define gfarm_btoh_16(x) gfarm_bswap_16(x)
+#define gfarm_htob_32(x) gfarm_bswap_32(x)
+#define gfarm_btoh_32(x) gfarm_bswap_32(x)
+#endif /* WORDS_BIGENDIAN */

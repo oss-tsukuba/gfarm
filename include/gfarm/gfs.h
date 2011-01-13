@@ -339,6 +339,83 @@ gfarm_error_t gfs_statfsnode(char *, int,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 
 /*
+ * ACL operations
+ */
+
+typedef gfarm_uint32_t		gfarm_acl_tag_t;
+typedef gfarm_uint32_t		gfarm_acl_perm_t;
+typedef gfarm_uint32_t		gfarm_acl_type_t;
+
+typedef struct gfarm_acl	*gfarm_acl_t;
+typedef struct gfarm_acl_entry	*gfarm_acl_entry_t;
+typedef gfarm_acl_perm_t	*gfarm_acl_permset_t;
+
+/* gfarm_perm_t flags */
+#define GFARM_ACL_READ			(0x04)
+#define GFARM_ACL_WRITE			(0x02)
+#define GFARM_ACL_EXECUTE		(0x01)
+
+/* gfarm_acl_tag_t values */
+#define GFARM_ACL_UNDEFINED_TAG		(0x00)
+#define GFARM_ACL_USER_OBJ		(0x01)
+#define GFARM_ACL_USER			(0x02)
+#define GFARM_ACL_GROUP_OBJ		(0x04)
+#define GFARM_ACL_GROUP			(0x08)
+#define GFARM_ACL_MASK			(0x10)
+#define GFARM_ACL_OTHER			(0x20)
+
+/* constatns for entry_id of gfs_acl_get_entry() */
+#define GFARM_ACL_FIRST_ENTRY		0
+#define GFARM_ACL_NEXT_ENTRY		1
+
+/* gfs_acl_check() errors */
+#define GFARM_ACL_NO_ERROR		(0x0000)
+#define GFARM_ACL_MULTI_ERROR		(0x1000) /* multiple unique objects */
+#define GFARM_ACL_DUPLICATE_ERROR	(0x2000) /* duplicate Ids in entries */
+#define GFARM_ACL_MISS_ERROR		(0x3000) /* missing required entry */
+#define GFARM_ACL_ENTRY_ERROR 		(0x4000) /* wrong entry type */
+
+/* gfarm_acl_type_t values */
+#define GFARM_ACL_TYPE_ACCESS		(0x8000)
+#define GFARM_ACL_TYPE_DEFAULT		(0x4000)
+
+/* gfarm extended atrribute representation */
+static const char GFARM_ACL_EA_ACCESS[] = "gfarm.acl_access";
+static const char GFARM_ACL_EA_DEFAULT[] = "gfarm.acl_default";
+/* version */
+#define GFARM_ACL_EA_VERSION		(0x0001)
+
+gfarm_error_t gfs_acl_init(int, gfarm_acl_t *);
+gfarm_error_t gfs_acl_free(gfarm_acl_t);
+gfarm_error_t gfs_acl_create_entry(gfarm_acl_t *, gfarm_acl_entry_t *);
+gfarm_error_t gfs_acl_delete_entry(gfarm_acl_t, gfarm_acl_entry_t);
+gfarm_error_t gfs_acl_get_entry(gfarm_acl_t, int, gfarm_acl_entry_t *);
+gfarm_error_t gfs_acl_valid(const gfarm_acl_t);
+gfarm_error_t gfs_acl_calc_mask(gfarm_acl_t *);
+gfarm_error_t gfs_acl_get_permset(gfarm_acl_entry_t, gfarm_acl_permset_t *);
+gfarm_error_t gfs_acl_set_permset(gfarm_acl_entry_t, gfarm_acl_permset_t);
+gfarm_error_t gfs_acl_add_perm(gfarm_acl_permset_t, gfarm_acl_perm_t);
+gfarm_error_t gfs_acl_get_qualifier(gfarm_acl_entry_t, char **);
+gfarm_error_t gfs_acl_set_qualifier(gfarm_acl_entry_t, const char *);
+gfarm_error_t gfs_acl_get_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t *);
+gfarm_error_t gfs_acl_set_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t);
+gfarm_error_t gfs_acl_get_file(const char *, gfarm_acl_type_t, gfarm_acl_t *);
+gfarm_error_t gfs_acl_set_file(const char *, gfarm_acl_type_t, gfarm_acl_t);
+gfarm_error_t gfs_acl_to_text(gfarm_acl_t, char **, size_t *);
+gfarm_error_t gfs_acl_from_text(const char *, gfarm_acl_t *);
+
+gfarm_error_t gfs_acl_get_perm(gfarm_acl_permset_t, gfarm_acl_perm_t, int *);
+const char *gfs_acl_error(int);
+gfarm_error_t gfs_acl_check(gfarm_acl_t, int *, int *);
+int gfs_acl_entries(gfarm_acl_t);
+gfarm_error_t gfs_acl_equiv_mode(gfarm_acl_t, gfarm_mode_t *, int *);
+
+gfarm_error_t gfs_acl_to_xattr_value(const gfarm_acl_t, void **, size_t *);
+gfarm_error_t gfs_acl_from_xattr_value(const void *, size_t, gfarm_acl_t *);
+gfarm_error_t gfs_acl_sort(gfarm_acl_t);
+gfarm_error_t gfs_acl_delete_mode(gfarm_acl_t);
+
+/*
  * Client-side Metadata cache (preliminary version)
  */
 
