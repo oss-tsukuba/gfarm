@@ -1,8 +1,11 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <gfarm/gfarm.h>
 
@@ -28,11 +31,16 @@ test_purge(gfarm_error_t (*stat_cached)(const char *, struct gfs_stat *),
 {
 	gfarm_error_t e;
 	struct gfs_stat st;
-	int r;
+	int r, rs;
 	char cmd[BUFSIZ];
 
 	sprintf(cmd, "gfreg %s %s", opt_local_filepath, opt_gfarm_filepath);
-	if ((r = WEXITSTATUS(system(cmd))) != 0) {
+	rs = system(cmd);
+	if (rs == -1) {
+		gflog_error(GFARM_MSG_UNUSED, "%s : system(\"%s\"): %s",
+			    diag, cmd, strerror(errno));
+		return (0);
+	} else if ((r = WEXITSTATUS(rs)) != 0) {
 		gflog_error(GFARM_MSG_UNUSED, "%s : gfreg returns %d",
 		    diag, r);
 		return (0);
