@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-gfs_pio_test=$testbin/../gfs_pio_test/gfs_pio_test
+gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 
 if $regress/bin/am_I_gfarmroot; then
   exit $exit_unsupported

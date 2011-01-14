@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-gfs_pio_test=$testbin/../gfs_pio_test/gfs_pio_test
+gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 
 trap 'gfrm -f $gftmp; rm -f $localtmp; exit $exit_trap' $trap_sigs
 

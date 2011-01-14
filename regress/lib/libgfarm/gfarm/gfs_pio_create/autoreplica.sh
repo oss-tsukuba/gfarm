@@ -6,7 +6,7 @@
 
 WAIT_TIME=2
 
-gfs_pio_test=$testbin/../gfs_pio_test/gfs_pio_test
+gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 tmpf=$gftmp/foo
 statf=$localtmp
 

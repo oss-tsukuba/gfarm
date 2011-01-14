@@ -9,9 +9,8 @@ clean() {
 
 trap 'clean; exit $exit_trap' $trap_sigs
 
-bindir=`dirname $0`
 echo a > $localtmp
-if $bindir/gfs_stat_cached_test -P $localtmp $gftmp; then :
+if $testbin/gfs_stat_cached_test -P $localtmp $gftmp; then :
 else
 	exit $exit_fail
 fi
