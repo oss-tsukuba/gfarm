@@ -603,7 +603,7 @@ gfs_acl_to_text(gfarm_acl_t acl, char **str_p, size_t *len_p)
 /* skip whitespace */
 #define SKIP_WS(c) \
 	do { \
-		while (isspace(*(c))) \
+		while (isspace(*(unsigned char *)(c))) \
 			(c)++; \
 		if (*(c) == '#') { \
 			while (*(c) != '\n' && *(c) != '\0') \
