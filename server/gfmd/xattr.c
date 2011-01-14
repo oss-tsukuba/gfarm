@@ -143,7 +143,6 @@ setxattr(int xmlMode, struct inode *inode,
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),
-
 			attrname, value, size, waitctx);
 	} else
 		e = db_xattr_modify(xmlMode, inode_get_number(inode),
