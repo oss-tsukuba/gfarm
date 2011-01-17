@@ -379,6 +379,13 @@ typedef gfarm_acl_perm_t	*gfarm_acl_permset_t;
 #define GFARM_ACL_TYPE_ACCESS		(0x8000)
 #define GFARM_ACL_TYPE_DEFAULT		(0x4000)
 
+/* gfs_acl_to_any_text() options */
+#define GFARM_ACL_TEXT_SOME_EFFECTIVE	0x01
+#define GFARM_ACL_TEXT_ALL_EFFECTIVE	0x02
+#define GFARM_ACL_TEXT_SMART_INDENT	0x04
+/* ID is not defined in Gfarm v2 : #define GFARM_ACL_TEXT_NUMERIC_IDS 0x08 */
+#define GFARM_ACL_TEXT_ABBREVIATE	0x10
+
 /* gfarm extended atrribute representation */
 static const char GFARM_ACL_EA_ACCESS[] = "gfarm.acl_access";
 static const char GFARM_ACL_EA_DEFAULT[] = "gfarm.acl_default";
@@ -409,6 +416,9 @@ const char *gfs_acl_error(int);
 gfarm_error_t gfs_acl_check(gfarm_acl_t, int *, int *);
 int gfs_acl_entries(gfarm_acl_t);
 gfarm_error_t gfs_acl_equiv_mode(gfarm_acl_t, gfarm_mode_t *, int *);
+gfarm_error_t gfs_acl_from_mode(gfarm_mode_t, gfarm_acl_t *);
+gfarm_error_t gfs_acl_to_any_text(gfarm_acl_t, const char *, char, int,
+				  char **);
 
 gfarm_error_t gfs_acl_to_xattr_value(const gfarm_acl_t, void **, size_t *);
 gfarm_error_t gfs_acl_from_xattr_value(const void *, size_t, gfarm_acl_t *);

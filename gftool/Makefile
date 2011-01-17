@@ -15,6 +15,7 @@ SUBDIRS = \
 	gfdump \
 	gfexport \
 	gffindxmlattr \
+	gfgetfacl \
 	gfgroup \
 	gfhost \
 	gfkey \
