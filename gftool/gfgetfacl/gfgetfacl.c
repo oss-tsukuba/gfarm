@@ -80,18 +80,17 @@ acl_print(char *path)
 		gfs_acl_free(acl_def);
 		return (e);
 	}
-	printf("%s", text);
+	printf("%s\n", text);
 	free(text);
 
 	if (acl_def != NULL) {
 		e = gfs_acl_to_any_text(acl_def, "default:", '\n', options,
 					&text);
 		if (e == GFARM_ERR_NO_ERROR) {
-			printf("%s", text);
+			printf("%s\n", text);
 			free(text);
 		}
 	}
-	printf("\n");
 
 	gfs_stat_free(&sb);
 	gfs_acl_free(acl_acc);
