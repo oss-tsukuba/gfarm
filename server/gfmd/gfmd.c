@@ -954,26 +954,50 @@ write_pid()
 		gflog_error_errno(GFARM_MSG_1002352, "fclose(%s)", pid_file);
 }
 
-void
+static void
+dummy_sighandler(int signo)
+{
+	/* never called */
+}
+
+static void
+sig_add(sigset_t *sigs, int signo, const char *name)
+{
+	struct sigaction old, new;
+
+	if (sigaction(signo, NULL, &old) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED,
+		    "checking %s signal", name);
+	if (old.sa_handler == SIG_IGN) {
+		/*
+		 * without this, the signal won't be delivered
+		 * to the sigs_handler thread on Solaris and *BSD.
+		 */
+		new = old;
+		new.sa_handler = dummy_sighandler;
+		if (sigaction(signo, &new, NULL) == -1)
+			gflog_fatal_errno(GFARM_MSG_UNFIXED,
+			    "installing %s signal dummy handler", name);
+	}
+	if (sigaddset(sigs, signo) == -1)
+		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaddset(%s)", name);
+}
+
+static void
 sigs_set(sigset_t *sigs)
 {
 	if (sigemptyset(sigs) == -1)
 		gflog_fatal_errno(GFARM_MSG_1002353, "sigemptyset()");
-	sigaddset(sigs, SIGHUP);
+	sig_add(sigs, SIGHUP, "SIGHUP");
 #ifdef __NetBSD__ /* NetBSD 4 delivers SIGINT to gfmd even under gdb */
 	if (!debug_mode)
 #endif
-		if (sigaddset(sigs, SIGINT) == -1)
-			gflog_fatal_errno(GFARM_MSG_1002354,
-			    "sigaddset(SIGINT)");
-	if (sigaddset(sigs, SIGTERM) == -1)
-		gflog_fatal_errno(GFARM_MSG_1002355, "sigaddset(SIGTERM)");
+		sig_add(sigs, SIGINT, "SIGINT");
+	sig_add(sigs, SIGTERM, "SIGTERM");
 #ifdef SIGINFO
-	if (sigaddset(sigs, SIGINFO) == -1)
-		gflog_fatal_errno(GFARM_MSG_1002356, "sigaddset(SIGINFO)");
+	sig_add(sigs, SIGINFO, "SIGINFO");
 #endif
-	if (sigaddset(sigs, SIGUSR2) == -1)
-		gflog_fatal_errno(GFARM_MSG_1002357, "sigaddset(SIGUSR2)");
+	sig_add(sigs, SIGUSR2, "SIGUSR2");
 }
 
 void *
@@ -1262,22 +1286,27 @@ main(int argc, char **argv)
 	 */
 	write_pid(pid_file);
 
-	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
-		gfmd_modules_init = gfmd_modules_init_default;
-	gfmd_modules_init(table_size);
-
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	gfarm_sigpipe_ignore();
-
+	/*
+	 * initialize signal masks before calling gfmd_modules_init(),
+	 * since it invokes some threads.
+	 */
 	sigs_set(&sigs);
-	pthread_sigmask(SIG_BLOCK, &sigs, NULL);
+	if (sigprocmask(SIG_BLOCK, &sigs, NULL) == -1) /*sigwait() needs this*/
+		gflog_fatal(GFARM_MSG_UNFIXED, "sigprocmask(SIG_BLOCK): %s",
+		    strerror(errno));
 	e = create_detached_thread(sigs_handler, &sigs);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
 		    gfarm_error_string(e));
+
+	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
+		gfmd_modules_init = gfmd_modules_init_default;
+	gfmd_modules_init(table_size);
 
 	e = create_detached_thread(db_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
