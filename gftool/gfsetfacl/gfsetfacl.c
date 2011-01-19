@@ -365,7 +365,7 @@ acl_set(const char *path,
 				goto end;
 			}
 		}
-		if (acl_def2 != NULL && GFARM_S_ISDIR(sb.st_mode)) {
+		if (acl_def2 != NULL) {
 			e = merge_acl(&acl_def, acl_def2);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gfs_acl_free(acl_acc2);
@@ -395,7 +395,7 @@ acl_set(const char *path,
 				goto end;
 			}
 		}
-		if (acl_def2 != NULL && GFARM_S_ISDIR(sb.st_mode)) {
+		if (acl_def2 != NULL) {
 			e = merge_acl(&acl_def, acl_def2);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gfs_acl_free(acl_acc2);
@@ -473,7 +473,7 @@ acl_set(const char *path,
 
 	/* print ACL and exit */
 	if (is_test) {
-		print_acl("--- test ACL results ---",
+		print_acl("--- test output ---",
 			  path, acl_acc, acl_def);
 		goto end;
 	}
@@ -494,9 +494,8 @@ acl_set(const char *path,
 				e = gfs_acl_delete_def_file(path);
 		} else if (gfs_acl_entries(acl_def) > 0) {
 			fprintf(stderr,
-				"%s: %s: Only directory "
-				"can have default ACL\n",
-				program_name, path);
+				"%s: Only directory can have default ACL\n",
+				program_name);
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
 	}
