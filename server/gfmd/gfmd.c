@@ -1292,10 +1292,11 @@ main(int argc, char **argv)
 	gfarm_sigpipe_ignore();
 	/*
 	 * initialize signal masks before calling gfmd_modules_init(),
-	 * since it invokes some threads.
+	 * since it invokes some threads.  newly created threads inherits
+	 * this signal mask.
 	 */
 	sigs_set(&sigs);
-	if (sigprocmask(SIG_BLOCK, &sigs, NULL) == -1) /*sigwait() needs this*/
+	if (pthread_sigmask(SIG_BLOCK, &sigs, NULL) == -1) /* for sigwait() */
 		gflog_fatal(GFARM_MSG_UNFIXED, "sigprocmask(SIG_BLOCK): %s",
 		    strerror(errno));
 	e = create_detached_thread(sigs_handler, &sigs);
