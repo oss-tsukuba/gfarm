@@ -373,6 +373,7 @@ gfs_acl_set_tag_type(gfarm_acl_entry_t entry_d, gfarm_acl_tag_t tag_type)
 gfarm_error_t
 gfs_acl_delete_def_file(const char *path)
 {
+	/* follow symlinks because symlinks do not have ACL */
 	return (gfs_removexattr(path, GFARM_ACL_EA_DEFAULT));
 }
 
@@ -396,6 +397,7 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 	}
 
 	/* get xattr size */
+	/* follow symlinks because symlinks do not have ACL */
 	e = gfs_getxattr_cached(path, name, NULL, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
@@ -412,6 +414,7 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
+	/* follow symlinks because symlinks do not have ACL */
 	e = gfs_getxattr_cached(path, name, xattr, &size);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -462,6 +465,7 @@ gfs_acl_set_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t acl)
 			    gfarm_error_string(e));
 		return (e);
 	}
+	/* follow symlinks because symlinks do not have ACL */
 	e = gfs_setxattr(path, name, xattr, size, 0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
