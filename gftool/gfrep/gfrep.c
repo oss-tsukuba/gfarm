@@ -712,7 +712,9 @@ create_hostlist_by_domain_and_hash(char *domain,
 
 	/* eliminate file system nodes that do not have enough space */
 	for (i = 0; i < ninfo; ++i)
-		if (infos[i].disk_avail < gfarm_get_minimum_free_disk_space())
+		/* note that disk_avail is the number of 1K blocks */
+		if (infos[i].disk_avail * 1024
+		    < gfarm_get_minimum_free_disk_space())
 			break;
 	nhosts = i;
 
