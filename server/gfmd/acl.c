@@ -41,6 +41,9 @@ acl_convert2_for_setxattr(
 	gfarm_error_t e;
 	gfarm_acl_t acl;
 	int acl_check_err;
+	gfarm_acl_entry_t ent;
+	gfarm_acl_tag_t tag;
+	gfarm_mode_t mode = 0;
 
 	if (type == GFARM_ACL_TYPE_DEFAULT && !inode_is_dir(inode))
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -62,40 +65,62 @@ acl_convert2_for_setxattr(
 		gfs_acl_free(acl);
 		return (e);
 	}
-	/* aci is valid and sorted */
+
+	/* check whether user/group exists and save standard ACL */
+	e = gfs_acl_get_entry(acl, GFARM_ACL_FIRST_ENTRY, &ent);
+	while (e == GFARM_ERR_NO_ERROR) {
+		char *qual;
+		struct user *u;
+		struct group *g;
+		gfs_acl_get_tag_type(ent, &tag);
+		switch (tag) {
+		case GFARM_ACL_USER_OBJ:
+			mode |= (acl_get_mode(ent) << 6);
+			break;
+		case GFARM_ACL_GROUP_OBJ:
+			mode |= (acl_get_mode(ent) << 3);
+			break;
+		case GFARM_ACL_OTHER:
+			mode |= acl_get_mode(ent);
+			break;
+		case GFARM_ACL_USER:
+			gfs_acl_get_qualifier(ent, &qual);
+			if ((u = user_lookup(qual)) == NULL ||
+			    user_is_invalidated(u)) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					    "unknown user: %s", qual);
+				gfs_acl_free(acl);
+				return (GFARM_ERR_NO_SUCH_USER);
+			}
+			/* Length of user name does not require check here */
+			break;
+		case GFARM_ACL_GROUP:
+			gfs_acl_get_qualifier(ent, &qual);
+			if ((g = group_lookup(qual)) == NULL ||
+			    group_is_invalidated(g)) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					    "unknown group: %s", qual);
+				gfs_acl_free(acl);
+				return (GFARM_ERR_NO_SUCH_GROUP);
+			}
+			break;
+		}
+		e = gfs_acl_get_entry(acl, GFARM_ACL_NEXT_ENTRY, &ent);
+	}
+	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_acl_get_entry() failed: %s",
+			    gfarm_error_string(e));
+		gfs_acl_free(acl);
+		return (e);
+	}
 
 	if (type == GFARM_ACL_TYPE_ACCESS) {
+		gfarm_mode_t old_mode;
+
 		/* chmod */
-		gfarm_acl_entry_t ent;
-		gfarm_acl_tag_t tag;
-		gfarm_mode_t mode = 0, old;
-
-		e = gfs_acl_get_entry(acl, GFARM_ACL_FIRST_ENTRY, &ent);
-		while (e == GFARM_ERR_NO_ERROR) {
-			gfs_acl_get_tag_type(ent, &tag);
-			switch (tag) {
-			case GFARM_ACL_USER_OBJ:
-				mode |= (acl_get_mode(ent) << 6);
-				break;
-			case GFARM_ACL_GROUP_OBJ:
-				mode |= (acl_get_mode(ent) << 3);
-				break;
-			case GFARM_ACL_OTHER:
-				mode |= acl_get_mode(ent);
-				break;
-			}
-			e = gfs_acl_get_entry(acl, GFARM_ACL_NEXT_ENTRY, &ent);
-		}
-		if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfs_acl_get_entry() failed: %s",
-				    gfarm_error_string(e));
-			gfs_acl_free(acl);
-			return (e);
-		}
-
-		old = inode_get_mode(inode);
-		e = inode_set_mode(inode, (mode & 00777) | (old & 07000));
+		old_mode = inode_get_mode(inode);
+		e = inode_set_mode(inode, (mode & 00777) | (old_mode & 07000));
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				    "inode_set_mode(): %s",
