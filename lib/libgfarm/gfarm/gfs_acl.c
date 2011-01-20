@@ -984,9 +984,11 @@ gfs_acl_check(gfarm_acl_t acl, int *last_p, int *acl_check_err_p)
 				acl_e = GFARM_ACL_MISS_ERROR;
 				goto fail;
 			}
-			if (q == NULL ||
-			    (tmp_qual != NULL &&
-			     strcmp(q, tmp_qual) <= 0)) {
+			if (q == NULL || strlen(q) == 0) {
+				acl_e = GFARM_ACL_MISS_ERROR;
+				goto fail;
+			} else if (tmp_qual != NULL &&
+				   strcmp(q, tmp_qual) <= 0) {
 				acl_e = GFARM_ACL_DUPLICATE_ERROR;
 				goto fail;
 			}
@@ -1009,9 +1011,11 @@ gfs_acl_check(gfarm_acl_t acl, int *last_p, int *acl_check_err_p)
 				acl_e = GFARM_ACL_MISS_ERROR;
 				goto fail;
 			}
-			if (q == NULL ||
-			    (tmp_qual != NULL &&
-			     strcmp(q, tmp_qual) <= 0)) {
+			if (q == NULL || strlen(q) == 0) {
+				acl_e = GFARM_ACL_MISS_ERROR;
+				goto fail;
+			} else if (tmp_qual != NULL &&
+			     strcmp(q, tmp_qual) <= 0) {
 				acl_e = GFARM_ACL_DUPLICATE_ERROR;
 				goto fail;
 			}
