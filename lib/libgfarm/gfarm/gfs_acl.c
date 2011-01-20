@@ -373,8 +373,31 @@ gfs_acl_set_tag_type(gfarm_acl_entry_t entry_d, gfarm_acl_tag_t tag_type)
 gfarm_error_t
 gfs_acl_delete_def_file(const char *path)
 {
+	gfarm_error_t e;
+	struct gfs_stat sb;
+
 	/* follow symlinks because symlinks do not have ACL */
-	return (gfs_removexattr(path, GFARM_ACL_EA_DEFAULT));
+	e = gfs_stat_cached(path, &sb);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_stat_cached(%s) failed: %s",
+			    path, gfarm_error_string(e));
+		return (e);
+	}
+
+	if (!GFARM_S_ISDIR(sb.st_mode)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s is not a directory", path);
+		gfs_stat_free(&sb);
+		return (GFARM_ERR_NOT_A_DIRECTORY);
+	}
+	gfs_stat_free(&sb);
+
+	/* follow symlinks because symlinks do not have ACL */
+	e = gfs_removexattr(path, GFARM_ACL_EA_DEFAULT);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_ERROR;
+
+	return (e);
 }
 
 /* GFARM_ERR_NO_SUCH_OBJECT : path does not exist or type does not exist */
