@@ -816,9 +816,10 @@ address for file system nodes.  It is used to group file system nodes
 at file systen node scheduling.
 File system nodes that are not specified in this directive are assumed
 to be in an IPv4 class C network.</para>
-<para>For example,</para>
+<para>Multiple networks can be specified as follows.</para>
 <literallayout>
-	known_network 192.168.0.0/24
+	known_network 192.168.0.0/25
+	known_network 192.168.0.128/25
 </literallayout>
 </listitem>
 </varlistentry>

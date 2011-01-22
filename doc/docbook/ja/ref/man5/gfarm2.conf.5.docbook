@@ -786,9 +786,10 @@ IPアドレスを通信に用いるかを指定します。
 ファイルシステムノード選択時のグルーピングに利用されます。
 この文で指定したアドレスに適合しないIPアドレスの場合、
 IPv4のクラスCネットワークが仮定されます。</para>
-<para>例:</para>
+<para>複数のネットワークを指定する場合は、以下のように複数回指定します。</para>
 <literallayout>
-	known_network 192.168.0.0/24
+	known_network 192.168.0.0/25
+	known_network 192.168.0.128/25
 </literallayout>
 </listitem>
 </varlistentry>
