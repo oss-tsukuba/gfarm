@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "04 1æœˆ 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "22 January 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -527,10 +527,11 @@ tcp_nodelay¡£setsockopt(2)¥·¥¹¥Æ¥à¥³¡¼¥ë¤Ç¡¢TCP_NODELAY
 ¤³¤ÎÊ¸¤Ç»ØÄê¤·¤¿¥¢¥É¥ì¥¹¤ËÅ¬¹ç¤·¤Ê¤¤IP¥¢¥É¥ì¥¹¤Î¾ì¹ç¡¢
 IPv4¤Î¥¯¥é¥¹C¥Í¥Ã¥È¥ï¡¼¥¯¤¬²¾Äê¤µ¤ì¤Þ¤¹¡£
 
-Îã:
+Ê£¿ô¤Î¥Í¥Ã¥È¥ï¡¼¥¯¤ò»ØÄê¤¹¤ë¾ì¹ç¤Ï¡¢°Ê²¼¤Î¤è¤¦¤ËÊ£¿ô²ó»ØÄê¤·¤Þ¤¹¡£
 
 .nf
-	known_network 192.168.0.0/24
+	known_network 192.168.0.0/25
+	known_network 192.168.0.128/25
 .fi
 .TP
 \fBadmin_user \fI¥æ¡¼¥¶Ì¾\fB\fR

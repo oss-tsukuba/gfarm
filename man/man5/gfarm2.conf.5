@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "04 1月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "22 January 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -571,10 +571,11 @@ at file systen node scheduling.
 File system nodes that are not specified in this directive are assumed
 to be in an IPv4 class C network.
 
-For example,
+Multiple networks can be specified as follows.
 
 .nf
-	known_network 192.168.0.0/24
+	known_network 192.168.0.0/25
+	known_network 192.168.0.128/25
 .fi
 .TP
 \fBadmin_user \fIuser\fB\fR
