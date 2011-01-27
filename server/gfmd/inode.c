@@ -1772,6 +1772,14 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		gflog_debug(GFARM_MSG_UNFIXED,
 			    "acl_inherit_default_acl() failed: %s",
 			    gfarm_error_string(e));
+		if (inode_is_file(n)) {
+			quota_update_file_remove(n);
+		} else if (inode_is_dir(n)) {
+			/* "." and ".." are freed automatically */
+			dir_free(n->u.c.s.d.entries);
+		} else if (inode_is_symlink(n)) {
+			free(n->u.c.s.l.source_path);
+		}
 		dir_remove_entry(parent->u.c.s.d.entries, name, len);
 		inode_free(n);
 		return (e);
