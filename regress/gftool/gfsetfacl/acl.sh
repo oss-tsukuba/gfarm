@@ -60,7 +60,7 @@ check_perm()
         exit $exit_fail
     fi
     perm_new=""
-    if [ `expr match "$tq_p" 'default:'` -eq 8 ]; then
+    if [ `expr "$tq_p" : 'default:'` -eq 8 ]; then
         perm_new=`echo $reg_entry | awk -F '[: ]' '{print $4}'`
     else
         perm_new=`echo $reg_entry | awk -F '[: ]' '{print $3}'`
