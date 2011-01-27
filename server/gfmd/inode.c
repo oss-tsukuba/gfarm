@@ -43,6 +43,8 @@
 #include "peer.h" /* peer_reset_pending_new_generation() */
 #include "gfmd.h" /* resuming_*() */
 
+#define MAX_DIR_DEPTH			1024	/* == GFARM_PATH_MAX */
+
 #define ROOT_INUMBER			2
 #define INODE_TABLE_SIZE_INITIAL	1000
 #define INODE_TABLE_SIZE_MULTIPLY	2
@@ -2291,6 +2293,33 @@ inode_link_to_lost_found_and_report(struct inode *inode)
 	}
 }
 
+static int
+is_ok_to_move_to(struct inode *movee, struct inode *dir)
+{
+	DirEntry entry;
+	int depth = 0;
+
+	for (;;) {
+		if (movee == dir) /* movee is an ancestor of dir */
+			return (0);
+
+		if (!inode_is_dir(dir)) /* something is going wrong */
+			return (0);
+
+		if (inode_get_number(dir) == ROOT_INUMBER)
+			return (1);
+			
+		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
+		if (entry == NULL)
+			return (0);
+		dir = dir_entry_get_inode(entry);
+
+		/* this check is not strictly necessary, but... */
+		if (++depth >= MAX_DIR_DEPTH)
+			return (0);
+	}
+}
+
 gfarm_error_t
 inode_rename(
 	struct inode *sdir, char *sname,
@@ -2329,6 +2358,15 @@ inode_rename(
 	if (strchr(dname, '/') != NULL) { /* dname should't have '/' */
 		gflog_debug(GFARM_MSG_1001746,
 			"argument 'dname' is invalid");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	if (!is_ok_to_move_to(src, ddir)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "rename(%llu:%s, %llu:%s): "
+		    "the former is ancestor of the directory of latter",
+		    (unsigned long long)inode_get_number(sdir), sname,
+		    (unsigned long long)inode_get_number(ddir), dname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 

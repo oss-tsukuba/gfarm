@@ -62,6 +62,7 @@ gftool/gfexport/1byte.sh
 gftool/gfmv/file.sh
 gftool/gfmv/dir.sh
 gftool/gfmv/dir_parent.sh
+gftool/gfmv/move_to_descendant.sh
 gftool/gfchmod/gfchmod_644_file.sh
 gftool/gfchmod/gfchmod_755_file.sh
 gftool/gfchmod/gfchmod_700_dir.sh
