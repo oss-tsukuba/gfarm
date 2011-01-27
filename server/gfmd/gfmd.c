@@ -1305,10 +1305,12 @@ main(int argc, char **argv)
 		    "create_detached_thread(sigs_handler): %s",
 		    gfarm_error_string(e));
 
+	/* gfmd_modules_init() shouldn't/cannot write db */
 	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
 		gfmd_modules_init = gfmd_modules_init_default;
 	gfmd_modules_init(table_size);
 
+	/* must be after gfmd_modules_init(). they are mutually exclusive */
 	e = create_detached_thread(db_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000211,
@@ -1321,8 +1323,9 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-	/* check and repair nlink: must be after db_thread */
-	inode_nlink_check();
+	/* these functions write db, thus, must be after db_thread  */
+	inode_remove_orphan(); /* should be before inode_check_and_repair() */
+	inode_check_and_repair();
 
 	accepting_loop(sock);
 

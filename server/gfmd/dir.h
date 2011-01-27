@@ -34,6 +34,7 @@ char *dir_entry_get_name(DirEntry, int *);
 
 int dir_cursor_lookup(Dir, const char *, int, DirCursor *);
 int dir_cursor_next(Dir, DirCursor *);
+int dir_cursor_remove_entry(Dir, DirCursor *);
 int dir_cursor_set_pos(Dir, gfarm_off_t, DirCursor *);
 gfarm_off_t dir_cursor_get_pos(Dir, DirCursor *);
 DirEntry dir_cursor_get_entry(Dir, DirCursor *);

@@ -47,6 +47,7 @@ gftool/gfls/root.sh
 gftool/gfls/notexist.sh
 gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
+gftool/gfmkdir/dir_nlink.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfrmdir/rmdir.sh
@@ -60,6 +61,7 @@ gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
 gftool/gfmv/file.sh
 gftool/gfmv/dir.sh
+gftool/gfmv/dir_parent.sh
 gftool/gfchmod/gfchmod_644_file.sh
 gftool/gfchmod/gfchmod_755_file.sh
 gftool/gfchmod/gfchmod_700_dir.sh

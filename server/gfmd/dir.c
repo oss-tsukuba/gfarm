@@ -115,6 +115,17 @@ dir_cursor_next(Dir dir, DirCursor *cursor)
 	return (gfarm_hash_iterator_is_end(cursor));
 }
 
+int
+dir_cursor_remove_entry(Dir dir, DirCursor *cursor)
+{
+	if (gfarm_hash_iterator_is_end(cursor))
+		return (0); /* end of directory */
+	gfarm_hash_iterator_purge(cursor);
+
+	/* is there still any entry? */
+	return (gfarm_hash_iterator_valid_entry(cursor);
+}
+
 /* this is stupidly slow */
 int
 dir_cursor_set_pos(Dir dir, gfarm_off_t offset, DirCursor *cursor)
@@ -436,6 +447,18 @@ dir_cursor_next(Dir dir, DirCursor *cursor)
 	if (*cursor == NULL)
 		return (0); /* end of directory */
 	return (1); /* ok */
+}
+
+int
+dir_cursor_remove_entry(Dir dir, DirCursor *cursor)
+{
+	DirEntry entry = *cursor;
+
+	if (entry == NULL)
+		return (0); /* end of directory */
+	*cursor = RB_NEXT(rbdir, dir, entry);
+	rbdir_entry_delete(dir, entry);
+	return (*cursor != NULL); /* is there still any entry? */
 }
 
 int

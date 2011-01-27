@@ -171,8 +171,8 @@ void inode_init_desired_number(void);
 int inode_has_desired_number(struct inode *, int *);
 int inode_traverse_desired_replica_number(struct inode *, int *);
 
-/* check and repair */
-void inode_nlink_check(void);
+void inode_remove_orphan(void);
+void inode_check_and_repair(void);
 
 /* debug */
 void dir_dump(gfarm_ino_t);
