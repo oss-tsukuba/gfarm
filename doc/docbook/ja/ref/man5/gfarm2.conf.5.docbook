@@ -1157,6 +1157,19 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </varlistentry>
  -->
 
+<varlistentry>
+<term><token>profile</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+このオプションがenableの場合、プロファイル情報を出力します。
+</para>
+<para>例:</para>
+<literallayout>
+	profile enable
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1213,8 +1226,9 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
-		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt;
-<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; -->
+		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
+		&nbsp;&nbsp;&lt;profile_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1298,6 +1312,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
+	&lt;record_atime_statement&gt; ::= "profile" &lt;validity&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
