@@ -370,10 +370,9 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 
 		break;
 	}
-	gfs_profile(gfarm_gettimerval(&t4));
-
 	gfs_profile(
-		gflog_info(GFARM_MSG_1000108,
+		gfarm_gettimerval(&t4);
+		gflog_debug(GFARM_MSG_1000108,
 		    "(connect_and_open) connection_acquire %f, "
 			   "process_set %f, open %f",
 			   gfarm_timerval_sub(&t2, &t1),
@@ -435,11 +434,11 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gflog_info(GFARM_MSG_1000109,
+	gfs_profile(gflog_debug(GFARM_MSG_1000109,
 	    "schedule_file -> %d hosts", nhosts));
 	gfs_profile(
 		for (i = 0; i < nhosts; ++i)
-			gflog_info(GFARM_MSG_1000110, "<%s>", infos[i].host));
+			gflog_debug(GFARM_MSG_1000110, "<%s>", infos[i].host));
 
 	if (nhosts == 1)
 		e = choose_trivial_one(&infos[0], &host, &port);
@@ -484,11 +483,10 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 			gfarm_error_string(e));
 		return (e);
 	}
-	gfs_profile(gflog_info(GFARM_MSG_1000111, "host -> %s", host));
-	gfs_profile(gfarm_gettimerval(&t3));
-
 	gfs_profile(
-		gflog_info(GFARM_MSG_1000112,
+		gflog_debug(GFARM_MSG_1000111, "host -> %s", host);
+		gfarm_gettimerval(&t3);
+		gflog_debug(GFARM_MSG_1000112,
 		    "(gfarm_schedule_file) schedule %f, select %f",
 			   gfarm_timerval_sub(&t2, &t1),
 			   gfarm_timerval_sub(&t3, &t2)));

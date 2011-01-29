@@ -468,8 +468,6 @@ gfarm_terminate(void)
 #if 0 /* not yet in gfarm v2 */
 	gfarm_error_t e;
 
-	gfs_profile(gfs_display_timers());
-
 	if (gf_stdout != NULL) {
 		fflush(stdout);
 		e = gfs_pio_close(gf_stdout);
@@ -485,6 +483,7 @@ gfarm_terminate(void)
 			return (e);
 	}
 #endif /* not yet in gfarm v2 */
+	gfs_profile(gfs_display_timers());
 	gfarm_free_config();
 	gfs_client_terminate();
 	gfm_client_terminate();
