@@ -523,8 +523,7 @@ gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 			!= GFARM_ERR_NO_ERROR) {
 			if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK) {
 				gflog_debug(GFARM_MSG_UNFIXED,
-				    "verify_type_not result"
-				    "failed: %s",
+				    "verify_type_not result failed: %s",
 				    gfarm_error_string(e));
 			}
 			return (e);
