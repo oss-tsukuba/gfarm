@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "22 January 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "29 January 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -825,6 +825,15 @@ For example,
 .nf
 	gfmd_reconnection_timeout 30
 .fi
+.TP
+\fBprofile \fIvalidity\fB\fR
+When "enabled" is specified, Gfarm outputs the profile information.
+
+Example:
+
+.nf
+	profile enable
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -875,7 +884,8 @@ notation.
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
-		\~\~<log_message_verbose_level_statement>
+		\~\~<log_message_verbose_level_statement> |
+		\~\~<profile_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -945,6 +955,7 @@ notation.
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<record_atime_statement> ::= "profile" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*

@@ -1644,6 +1644,25 @@ CLASS="PARAMETER"
 CLASS="LITERALLAYOUT"
 >	gfmd_reconnection_timeout&nbsp;30</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>profile</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>¤³¤Î¥ª¥×¥·¥ç¥ó¤¬enable¤Î¾ì¹ç¡¢¥×¥í¥Õ¥¡¥¤¥ë¾ðÊó¤ò½ÐÎÏ¤·¤Þ¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	profile&nbsp;enable</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1702,7 +1721,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
 		  &#60;log_level_statement&#62;&nbsp;|<br>
-		  &#60;log_message_verbose_level_statement&#62;<br>
+		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
+		  &#60;profile_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -1772,6 +1792,7 @@ CLASS="LITERALLAYOUT"
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
 	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;record_atime_statement&#62;&nbsp;::=&nbsp;"profile"&nbsp;&#60;validity&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "22 January 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "29 January 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -775,6 +775,15 @@ Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¤Ï¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬ÍøÍÑ²ÄÇ½¤Ë¤Ê¤ë¤Þ¤Ç»î¹Ô¤ò·«¤
 .nf
 	gfmd_reconnection_timeout 30
 .fi
+.TP
+\fBprofile \fIÍ­¸úÀ­\fB\fR
+¤³¤Î¥ª¥×¥·¥ç¥ó¤¬enable¤Î¾ì¹ç¡¢¥×¥í¥Õ¥¡¥¤¥ë¾ðÊó¤ò½ÐÎÏ¤·¤Þ¤¹¡£
+
+Îã:
+
+.nf
+	profile enable
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
@@ -824,7 +833,8 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
-		\~\~<log_message_verbose_level_statement>
+		\~\~<log_message_verbose_level_statement> |
+		\~\~<profile_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -894,6 +904,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<record_atime_statement> ::= "profile" <validity>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
