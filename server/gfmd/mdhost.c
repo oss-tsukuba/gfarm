@@ -184,7 +184,9 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	abstract_host_init(&m->ah, &mdhost_ops, diag);
 	m->ms = ms;
 	m->conn = NULL;
+#ifdef ENABLE_JOURNAL
 	m->last_fetch_seqnum = 0;
+#endif
 	return (m);
 }
 
