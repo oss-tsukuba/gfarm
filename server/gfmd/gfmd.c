@@ -52,6 +52,7 @@
 #include "thrpool.h"
 #include "callout.h"
 #include "db_access.h"
+#include "db_journal.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
@@ -1323,6 +1324,13 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
+#ifdef ENABLE_JOURNAL
+	e = create_detached_thread(db_journal_store_thread, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(db_journal_thread): %s",
+		    gfarm_error_string(e));
+#endif
 	/* these functions write db, thus, must be after db_thread  */
 	inode_remove_orphan(); /* should be before inode_check_and_repair() */
 	inode_check_and_repair();

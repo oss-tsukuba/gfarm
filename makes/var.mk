@@ -59,6 +59,10 @@ DEPGFSLINC = $(GFSL_SRCDIR)/gfarm_auth.h $(GFSL_SRCDIR)/gfarm_gsi.h $(GFSL_SRCDI
 GFUTIL_SRCDIR = $(top_srcdir)/lib/libgfarm/gfutil
 GFARMLIB_SRCDIR = $(top_srcdir)/lib/libgfarm/gfarm
 
+# gfmd
+
+GFMD_SRCDIR = $(top_srcdir)/server/gfmd
+
 # doc & man
 
 DOCBOOK2MAN = jw -b man

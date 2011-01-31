@@ -19,6 +19,7 @@
 #include "gfm_proto.h"
 
 #include "subr.h"
+#include "rpcsubr.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"

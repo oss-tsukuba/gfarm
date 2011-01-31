@@ -14,6 +14,7 @@ struct group;
 struct process;
 struct file_copy;
 struct dead_file_copy;
+struct gfs_stat;
 
 void inode_for_each_file_copies(
 	struct inode *,
@@ -32,29 +33,43 @@ int inode_is_file(struct inode *);
 int inode_is_symlink(struct inode *);
 gfarm_ino_t inode_get_number(struct inode *);
 gfarm_int64_t inode_get_gen(struct inode *);
+void inode_set_gen_in_cache(struct inode *, gfarm_uint64_t);
 gfarm_int64_t inode_get_nlink(struct inode *);
+void inode_set_nlink_in_cache(struct inode *, gfarm_uint64_t);
 struct user *inode_get_user(struct inode *);
+void inode_set_user_by_name_in_cache(struct inode *, const char *);
 struct group *inode_get_group(struct inode *);
+void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_is_creating_file(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
+void inode_set_mode_in_cache(struct inode *, gfarm_mode_t);
 gfarm_off_t inode_get_size(struct inode *);
 void inode_set_size(struct inode *, gfarm_off_t);
+void inode_set_size_in_cache(struct inode *, gfarm_off_t);
 gfarm_error_t inode_set_owner(struct inode *, struct user *, struct group *);
 struct gfarm_timespec *inode_get_atime(struct inode *);
 struct gfarm_timespec *inode_get_mtime(struct inode *);
 struct gfarm_timespec *inode_get_ctime(struct inode *);
 void inode_set_atime(struct inode *, struct gfarm_timespec *);
+void inode_set_atime_in_cache(struct inode *, struct gfarm_timespec *);
 void inode_set_mtime(struct inode *, struct gfarm_timespec *);
+void inode_set_mtime_in_cache(struct inode *, struct gfarm_timespec *);
 void inode_set_ctime(struct inode *, struct gfarm_timespec *);
+void inode_set_ctime_in_cache(struct inode *, struct gfarm_timespec *);
 void inode_accessed(struct inode *);
 void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);
 char *inode_get_symlink(struct inode *);
 int inode_desired_dead_file_copy(gfarm_ino_t);
+gfarm_error_t inode_add(struct gfs_stat *);
+void inode_modify(struct inode *, struct gfs_stat *);
+gfarm_error_t symlink_add(gfarm_ino_t, char *);
+void inode_clear_symlink(struct inode *);
+void inode_free(struct inode *);
 
 struct peer;
 int inode_new_generation_is_pending(struct inode *);
@@ -91,15 +106,18 @@ gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
 
 void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
+gfarm_error_t inode_add_file_copy_in_cache(struct inode *, struct host *);
 void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
 	gfarm_int64_t, int);
 gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
+gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_file_updated_on(struct inode *, struct host *,
 	struct gfarm_timespec *, struct gfarm_timespec *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
+gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
 struct file_opening;
 
@@ -143,6 +161,8 @@ gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
+gfarm_error_t inode_replica_list_by_name_with_dead_host(struct inode *,
+	gfarm_int32_t *, char ***);
 gfarm_error_t inode_replica_info_get(struct inode *, gfarm_int32_t,
 	gfarm_int32_t *, char ***, gfarm_int64_t **, gfarm_int32_t **);
 
@@ -152,9 +172,11 @@ gfarm_error_t inode_xattr_modify(struct inode *, int, const char *,
 	void *, size_t);
 gfarm_error_t inode_xattr_get_cache(struct inode *, int, const char *,
 	void **, size_t *);
+int inode_xattr_has_attr(struct inode *, int, const char *);
 int inode_xattr_has_xmlattrs(struct inode *);
 gfarm_error_t inode_xattr_remove(struct inode *, int, const char *);
 gfarm_error_t inode_xattr_list(struct inode *, int, char **, size_t *);
+void inode_xattrs_clear(struct inode *);
 
 struct xattr_list {
 	char *name;

@@ -457,7 +457,7 @@ inode_xattrs_init(struct inode *inode)
 	xattrs_init(&inode->i_xmlattrs);
 }
 
-static void
+void
 inode_xattrs_clear(struct inode *inode)
 {
 	xattrs_free_entries(&inode->i_xattrs);
@@ -948,6 +948,13 @@ inode_init_symlink(struct inode *inode, char *source_path)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+inode_clear_symlink(struct inode *inode)
+{
+	free(inode->u.c.s.l.source_path);
+	inode->u.c.s.l.source_path = NULL;
+}
+
 gfarm_error_t
 inode_check_file(struct inode *inode)
 {
@@ -1176,6 +1183,13 @@ inode_get_mode(struct inode *inode)
 	return (inode->i_mode);
 }
 
+void
+inode_set_mode_in_cache(struct inode *inode, gfarm_mode_t mode)
+{
+	inode->i_mode = (inode->i_mode & GFARM_S_IFMT) |
+	    (mode & GFARM_S_ALLPERM);
+}
+
 gfarm_error_t
 inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 {
@@ -1186,8 +1200,7 @@ inode_set_mode(struct inode *inode, gfarm_mode_t mode)
 			"argument 'mode' is invalid");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	inode->i_mode = (inode->i_mode & GFARM_S_IFMT) |
-	    (mode & GFARM_S_ALLPERM);
+	inode_set_mode_in_cache(inode, mode);
 
 	e = db_inode_mode_modify(inode->i_number, inode->i_mode);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1206,13 +1219,19 @@ inode_get_size(struct inode *inode)
 }
 
 void
+inode_set_size_in_cache(struct inode *inode, gfarm_off_t size)
+{
+	inode->i_size = size;
+}
+
+void
 inode_set_size(struct inode *inode, gfarm_off_t size)
 {
 	gfarm_error_t e;
 
 	/* inode is file */
 	quota_update_file_resize(inode, size);
-	inode->i_size = size;
+	inode_set_size_in_cache(inode, size);
 
 	e = db_inode_size_modify(inode->i_number, inode->i_size);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1220,6 +1239,30 @@ inode_set_size(struct inode *inode, gfarm_off_t size)
 		    "db_inode_size_modify(%lld): %s",
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
+}
+
+void
+inode_set_nlink_in_cache(struct inode *inode, gfarm_uint64_t nlink)
+{
+	inode->i_nlink = nlink;
+}
+
+void
+inode_set_gen_in_cache(struct inode *inode, gfarm_uint64_t gen)
+{
+	inode->i_gen = gen;
+}
+
+void
+inode_set_user_by_name_in_cache(struct inode *inode, const char *username)
+{
+	inode->i_user = user_lookup(username);
+}
+
+void
+inode_set_group_by_name_in_cache(struct inode *inode, const char *groupname)
+{
+	inode->i_group = group_lookup(groupname);
 }
 
 gfarm_error_t
@@ -1277,6 +1320,12 @@ inode_get_ctime(struct inode *inode)
 }
 
 void
+inode_set_atime_in_cache(struct inode *inode, struct gfarm_timespec *atime)
+{
+	inode->i_atimespec = *atime;
+}
+
+void
 inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 {
 	gfarm_error_t e;
@@ -1287,7 +1336,7 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 	if (gfarm_timespec_cmp(&inode->i_atimespec, atime) == 0)
 		return; /* not necessary to change */
 
-	inode->i_atimespec = *atime;
+	inode_set_atime_in_cache(inode, atime);
 
 	e = db_inode_atime_modify(inode->i_number, &inode->i_atimespec);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1298,6 +1347,12 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 }
 
 void
+inode_set_mtime_in_cache(struct inode *inode, struct gfarm_timespec *mtime)
+{
+	inode->i_mtimespec = *mtime;
+}
+
+void
 inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 {
 	gfarm_error_t e;
@@ -1305,7 +1360,7 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 	if (gfarm_timespec_cmp(&inode->i_mtimespec, mtime) == 0)
 		return; /* not necessary to change */
 
-	inode->i_mtimespec = *mtime;
+	inode_set_mtime_in_cache(inode, mtime);
 
 	e = db_inode_mtime_modify(inode->i_number, inode_get_mtime(inode));
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1316,6 +1371,12 @@ inode_set_mtime(struct inode *inode, struct gfarm_timespec *mtime)
 }
 
 void
+inode_set_ctime_in_cache(struct inode *inode, struct gfarm_timespec *ctime)
+{
+	inode->i_ctimespec = *ctime;
+}
+
+void
 inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 {
 	gfarm_error_t e;
@@ -1323,7 +1384,7 @@ inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 	if (gfarm_timespec_cmp(&inode->i_ctimespec, ctime) == 0)
 		return; /* not necessary to change */
 
-	inode->i_ctimespec = *ctime;
+	inode_set_ctime_in_cache(inode, ctime);
 
 	e = db_inode_ctime_modify(inode->i_number, &inode->i_ctimespec);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -3015,21 +3076,26 @@ inode_schedule_file_default(struct file_opening *opening,
 gfarm_error_t (*inode_schedule_file)(struct file_opening *, struct peer *,
 	gfarm_int32_t *, struct host ***) = inode_schedule_file_default;
 
-static gfarm_error_t
-remove_file_copy(struct inode *inode, struct host *spool_host)
+gfarm_error_t
+inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 
+	assert(inode && inode_is_file(inode));
+
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
 	    copyp = &copy->host_next) {
-		if (copy->host == spool_host)
+		if (copy->host == spool_host) {
 			foundp = copyp;
+			break;
+		}
 	}
 	if (foundp == NULL) {
-		gflog_error(GFARM_MSG_1002326,
-		    "remove_file_copy(%lld, %lld, %s): not found",
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%lld, %lld, %s) : %s",
 		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode), host_name(spool_host));
+		    (long long)inode_get_gen(inode), host_name(spool_host),
+		    gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 	copy = *foundp;
@@ -3054,14 +3120,14 @@ file_replicating_new(struct inode *inode, struct host *dst,
 		return (e);
 
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
-		remove_file_copy(inode, dst);
+		(void)inode_remove_replica_in_cache(inode, dst);
 		return (e);
 	}
 	if (irs == NULL) {
 		GFARM_MALLOC(irs);
 		if (irs == NULL) {
 			peer_replicating_free(fr);
-			remove_file_copy(inode, dst);
+			(void)inode_remove_replica_in_cache(inode, dst);
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		/* make circular list `replicating_hosts' empty */
@@ -3306,6 +3372,12 @@ inode_add_replica(struct inode *inode, struct host *spool_host, int valid)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+inode_add_file_copy_in_cache(struct inode *inode, struct host *host)
+{
+	return (inode_add_replica_internal(inode, host, 1, 0));
+}
+
 static gfarm_error_t
 remove_replica_metadata(struct inode *inode, struct host *spool_host)
 {
@@ -3355,21 +3427,13 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 	struct host *host)
 {
 	struct inode *inode = inode_lookup(inum);
-	struct file_copy **copyp, *copy;
 
 	if (inode == NULL || !inode_is_file(inode))
 		return;
 	if (igen != inode->i_gen)
 		return;
 
-	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
-	    copyp = &copy->host_next) {
-		if (copy->host == host) {
-			*copyp = copy->host_next;
-			free(copy);
-			return;
-		}
-	}
+	(void)inode_remove_replica_in_cache(inode, host);
 }
 
 static gfarm_error_t
@@ -3526,9 +3590,9 @@ inode_is_updated(struct inode *inode, struct gfarm_timespec *mtime)
 	    gfarm_timespec_cmp(mtime, &ios->u.f.last_update) >= 0);
 }
 
-gfarm_error_t
-inode_replica_list_by_name(struct inode *inode,
-	gfarm_int32_t *np, char ***hostsp)
+static gfarm_error_t
+inode_replica_list_by_name_common(struct inode *inode,
+	int is_up, gfarm_int32_t *np, char ***hostsp)
 {
 	struct file_copy *copy;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
@@ -3546,7 +3610,7 @@ inode_replica_list_by_name(struct inode *inode,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	n = inode_get_ncopy(inode);
+	n = inode_get_ncopy_common(inode, 1, is_up);
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL) {
 		gflog_debug(GFARM_MSG_1001773,
@@ -3562,7 +3626,7 @@ inode_replica_list_by_name(struct inode *inode,
 		 * host_is_up() may change even while the giant lock is held.
 		 */
 		if (i < n && FILE_COPY_IS_VALID(copy) &&
-		    host_is_up(copy->host)) {
+		    (is_up == 0 || host_is_up(copy->host))) {
 			hosts[i] = strdup_log(host_name(copy->host), diag);
 			if (hosts[i] == NULL) {
 				gflog_debug(GFARM_MSG_1001774,
@@ -3585,6 +3649,20 @@ inode_replica_list_by_name(struct inode *inode,
 		*hostsp = hosts;
 	}
 	return (e);
+}
+
+gfarm_error_t
+inode_replica_list_by_name(struct inode *inode,
+	gfarm_int32_t *np, char ***hostsp)
+{
+	return (inode_replica_list_by_name_common(inode, 1, np, hostsp));
+}
+
+gfarm_error_t
+inode_replica_list_by_name_with_dead_host(struct inode *inode,
+	gfarm_int32_t *np, char ***hostsp)
+{
+	return (inode_replica_list_by_name_common(inode, 0, np, hostsp));
 }
 
 gfarm_error_t
@@ -3993,6 +4071,27 @@ inode_remove_orphan(void)
 static void
 inode_add_one(void *closure, struct gfs_stat *st)
 {
+	(void)inode_add(st);
+}
+
+void
+inode_modify(struct inode *inode, struct gfs_stat *st)
+{
+	inode->i_gen = st->st_gen;
+	inode->i_nlink = st->st_nlink;
+	inode->i_size = st->st_size;
+	inode->i_mode = st->st_mode;
+	inode_set_user_by_name_in_cache(inode, st->st_user);
+	inode_set_group_by_name_in_cache(inode, st->st_group);
+	inode->i_atimespec = st->st_atimespec;
+	inode->i_mtimespec = st->st_mtimespec;
+	inode->i_ctimespec = st->st_ctimespec;
+}
+
+/* The memory owner of `*st' is changed to inode.c */
+gfarm_error_t
+inode_add(struct gfs_stat *st)
+{
 	gfarm_error_t e;
 	struct inode *inode;
 
@@ -4028,19 +4127,12 @@ inode_add_one(void *closure, struct gfs_stat *st)
 			    gfarm_error_string(e));
 		}
 		gfs_stat_free(st);
-		return;
+		return (e);
 	}
 
-	inode->i_gen = st->st_gen;
-	inode->i_nlink = st->st_nlink;
-	inode->i_size = st->st_size;
-	inode->i_mode = st->st_mode;
-	inode->i_user = user_lookup(st->st_user);
-	inode->i_group = group_lookup(st->st_group);
-	inode->i_atimespec = st->st_atimespec;
-	inode->i_mtimespec = st->st_mtimespec;
-	inode->i_ctimespec = st->st_ctimespec;
+	inode_modify(inode, st);
 	gfs_stat_free(st);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* The memory owner of `type' and `sum' is changed to inode.c */
@@ -4079,6 +4171,14 @@ inode_cksum_add_one(void *closure,
 static void
 symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
 {
+	if (symlink_add(inum, source_path) != GFARM_ERR_NO_ERROR)
+		free(source_path);
+}
+
+gfarm_error_t
+symlink_add(gfarm_ino_t inum, char *source_path)
+{
+	gfarm_error_t e;
 	struct inode *inode = inode_lookup(inum);
 
 	if (inode == NULL) {
@@ -4086,24 +4186,24 @@ symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
 		    "symlink_add_one: no inode %lld",
 		    (unsigned long long)inum);
 		symlink_defer_db_removal(inum, source_path);
-		return;
+		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
 	} else if (!inode_is_symlink(inode)) {
 		gflog_error(GFARM_MSG_1000341,
 		    "symlink_add_one: not symlink %lld",
 		    (unsigned long long)inum);
 		symlink_defer_db_removal(inum, source_path);
-		return;
+		e = GFARM_ERR_NOT_A_SYMBOLIC_LINK;
 	} else if (inode->u.c.s.l.source_path != NULL) {
 		gflog_error(GFARM_MSG_1000342,
 		    "symlink_add_one: dup symlink %lld",
 		    (unsigned long long)inum);
 		symlink_defer_db_removal(inum, source_path);
-		return;
+		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else {
 		inode->u.c.s.l.source_path = source_path;
-		return; /* to skip free(source_path); */
+		e = GFARM_ERR_NO_ERROR;
 	}
-	free(source_path);
+	return (e);
 }
 
 /* The memory owner of `hostname' is changed to inode.c */
@@ -4155,6 +4255,15 @@ dir_entry_add_one(void *closure,
 	gfarm_ino_t dir_inum, char *entry_name, int entry_len,
 	gfarm_ino_t entry_inum)
 {
+	(void)dir_entry_add(dir_inum, entry_name, entry_len, entry_inum);
+	free(entry_name);
+}
+
+gfarm_error_t
+dir_entry_add(gfarm_ino_t dir_inum, char *entry_name, int entry_len,
+	gfarm_ino_t entry_inum)
+{
+	gfarm_error_t e;
 	struct inode *dir_inode = inode_lookup(dir_inum);
 	struct inode *entry_inode = inode_lookup(entry_inum);
 	DirEntry entry;
@@ -4166,27 +4275,29 @@ dir_entry_add_one(void *closure,
 		    (unsigned long long)dir_inum);
 		dir_entry_defer_db_removal(dir_inum,
 		    entry_name, entry_len, entry_inum);
-		return;
+		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (!inode_is_dir(dir_inode)) {
 		gflog_error(GFARM_MSG_1000351,
 		    "dir_entry_add_one: not dir %lld",
 		    (unsigned long long)dir_inum);
 		dir_entry_defer_db_removal(dir_inum,
 		    entry_name, entry_len, entry_inum);
-		return;
+		e = GFARM_ERR_NOT_A_DIRECTORY;
 	} else if (entry_inode == NULL) {
 		gflog_error(GFARM_MSG_1000352,
 		    "dir_entry_add_one: no inode %lld",
 		    (unsigned long long)entry_inum);
 		dir_entry_defer_db_removal(dir_inum,
 		    entry_name, entry_len, entry_inum);
-		return;
+		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if ((entry = dir_enter(dir_inode->u.c.s.d.entries,
 	    entry_name, entry_len, &created)) == NULL) {
 		gflog_error(GFARM_MSG_1000353, "dir_entry_add_one: no memory");
+		e = GFARM_ERR_NO_MEMORY;
 	} else if (!created) {
 		gflog_error(GFARM_MSG_1000354,
 		    "dir_entry_add_one: already exists ");
+		e = GFARM_ERR_ALREADY_EXISTS;
 	} else {
 		dir_entry_set_inode(entry, entry_inode);
 		inode_increment_nlink_ini(entry_inode);
@@ -4197,8 +4308,9 @@ dir_entry_add_one(void *closure,
 			/* remember parent */
 			entry_inode->u.c.s.d.parent_dir = dir_inode;
 		}
+		e = GFARM_ERR_NO_ERROR;
 	}
-	free(entry_name);
+	return (e);
 }
 
 void
@@ -4693,6 +4805,14 @@ xattr_find(struct xattrs *xattrs, const char *attrname)
 		entry = entry->next;
 	}
 	return NULL;
+}
+
+int
+inode_xattr_has_attr(struct inode *inode, int xmlMode, const char *attrname)
+{
+	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+
+	return (xattr_find(xattrs, attrname) != NULL);
 }
 
 gfarm_error_t

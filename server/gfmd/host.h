@@ -32,6 +32,9 @@ void host_receiver_unlock(struct host *, struct peer *);
 
 char *host_name(struct host *);
 int host_port(struct host *);
+char *host_architecture(struct host *);
+int host_ncpu(struct host *);
+int host_flags(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
 
@@ -73,6 +76,11 @@ int host_schedule_one_except(struct peer *, int, struct host **,
 void host_status_reply_waiting(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
+
+struct gfarm_host_info;
+gfarm_error_t host_enter(struct gfarm_host_info *, struct host **);
+void host_modify(struct host *, struct gfarm_host_info *);
+gfarm_error_t host_remove_in_cache(const char *);
 
 gfarm_error_t gfm_server_host_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_get_by_architecture(struct peer *, int,int);

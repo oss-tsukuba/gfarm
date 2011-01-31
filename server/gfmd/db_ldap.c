@@ -1164,7 +1164,7 @@ gfarm_ldap_generic_info_get_foreach(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_ldap_nop(void *arg)
+gfarm_ldap_nop(gfarm_uint64_t seqnum, void *arg)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1302,7 +1302,7 @@ gfarm_ldap_host_info_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_host_add(struct gfarm_host_info *info)
+gfarm_ldap_host_add(gfarm_uint64_t seqnum, struct gfarm_host_info *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_host_info_update(info,
@@ -1312,7 +1312,7 @@ gfarm_ldap_host_add(struct gfarm_host_info *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_host_modify(struct db_host_modify_arg *arg)
+gfarm_ldap_host_modify(gfarm_uint64_t seqnum, struct db_host_modify_arg *arg)
 {
 	gfarm_error_t e;
 	/* XXX FIXME: should use modflags, add_aliases and del_aliases */
@@ -1324,7 +1324,7 @@ gfarm_ldap_host_modify(struct db_host_modify_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_host_remove(char *hostname)
+gfarm_ldap_host_remove(gfarm_uint64_t seqnum, char *hostname)
 {
 	gfarm_error_t e;
 	struct gfarm_ldap_host_info_key key;
@@ -1467,7 +1467,7 @@ gfarm_ldap_user_info_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_user_add(struct gfarm_user_info *info)
+gfarm_ldap_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_user_info_update(info,
@@ -1477,7 +1477,7 @@ gfarm_ldap_user_add(struct gfarm_user_info *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_user_modify(struct db_user_modify_arg *arg)
+gfarm_ldap_user_modify(gfarm_uint64_t seqnum, struct db_user_modify_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_user_info_update(&arg->ui,
@@ -1487,7 +1487,7 @@ gfarm_ldap_user_modify(struct db_user_modify_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_user_remove(char *username)
+gfarm_ldap_user_remove(gfarm_uint64_t seqnum, char *username)
 {
 	gfarm_error_t e;
 	struct gfarm_ldap_user_info_key key;
@@ -1614,7 +1614,7 @@ gfarm_ldap_group_info_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_group_add(struct gfarm_group_info *info)
+gfarm_ldap_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_group_info_update(info,
@@ -1624,7 +1624,8 @@ gfarm_ldap_group_add(struct gfarm_group_info *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_group_modify(struct db_group_modify_arg *arg)
+gfarm_ldap_group_modify(gfarm_uint64_t seqnum,
+	struct db_group_modify_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_group_info_update(&arg->gi,
@@ -1634,7 +1635,7 @@ gfarm_ldap_group_modify(struct db_group_modify_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_group_remove(char *groupname)
+gfarm_ldap_group_remove(gfarm_uint64_t seqnum, char *groupname)
 {
 	gfarm_error_t e;
 	struct gfarm_ldap_group_info_key key;
@@ -1828,7 +1829,7 @@ gfarm_ldap_gfs_stat_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_add(struct gfs_stat *info)
+gfarm_ldap_inode_add(gfarm_uint64_t seqnum, struct gfs_stat *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_gfs_stat_update(info,
@@ -1838,7 +1839,7 @@ gfarm_ldap_inode_add(struct gfs_stat *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_modify(struct gfs_stat *info)
+gfarm_ldap_inode_modify(gfarm_uint64_t seqnum, struct gfs_stat *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_gfs_stat_update(info,
@@ -1951,25 +1952,29 @@ ldap_inode_timespec_modify(struct db_inode_timespec_modify_arg *arg,
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_gen_modify(struct db_inode_uint64_modify_arg *arg)
+gfarm_ldap_inode_gen_modify(gfarm_uint64_t seqnum,
+	struct db_inode_uint64_modify_arg *arg)
 {
 	return (ldap_inode_uint64_modify(arg, "igen"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_nlink_modify(struct db_inode_uint64_modify_arg *arg)
+gfarm_ldap_inode_nlink_modify(gfarm_uint64_t seqnum,
+	struct db_inode_uint64_modify_arg *arg)
 {
 	return (ldap_inode_uint64_modify(arg, "nlink"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_size_modify(struct db_inode_uint64_modify_arg *arg)
+gfarm_ldap_inode_size_modify(gfarm_uint64_t seqnum,
+	struct db_inode_uint64_modify_arg *arg)
 {
 	return (ldap_inode_uint64_modify(arg, "size"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_mode_modify(struct db_inode_uint32_modify_arg *arg)
+gfarm_ldap_inode_mode_modify(gfarm_uint64_t seqnum,
+	struct db_inode_uint32_modify_arg *arg)
 {
 	gfarm_error_t e;
 	int i;
@@ -2002,31 +2007,36 @@ gfarm_ldap_inode_mode_modify(struct db_inode_uint32_modify_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_user_modify(struct db_inode_string_modify_arg *arg)
+gfarm_ldap_inode_user_modify(gfarm_uint64_t seqnum,
+	struct db_inode_string_modify_arg *arg)
 {
 	return (ldap_inode_string_modify(arg, "username"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_group_modify(struct db_inode_string_modify_arg *arg)
+gfarm_ldap_inode_group_modify(gfarm_uint64_t seqnum,
+	struct db_inode_string_modify_arg *arg)
 {
 	return (ldap_inode_string_modify(arg, "groupname"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_atime_modify(struct db_inode_timespec_modify_arg *arg)
+gfarm_ldap_inode_atime_modify(gfarm_uint64_t seqnum,
+	struct db_inode_timespec_modify_arg *arg)
 {
 	return (ldap_inode_timespec_modify(arg, "atimesec", "atimensec"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_mtime_modify(struct db_inode_timespec_modify_arg *arg)
+gfarm_ldap_inode_mtime_modify(gfarm_uint64_t seqnum,
+	struct db_inode_timespec_modify_arg *arg)
 {
 	return (ldap_inode_timespec_modify(arg, "mtimesec", "mtimensec"));
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_ctime_modify(struct db_inode_timespec_modify_arg *arg)
+gfarm_ldap_inode_ctime_modify(gfarm_uint64_t seqnum,
+	struct db_inode_timespec_modify_arg *arg)
 {
 	return (ldap_inode_timespec_modify(arg, "ctimesec", "ctimensec"));
 }
@@ -2116,7 +2126,8 @@ gfarm_ldap_inode_cksum_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_cksum_add(struct db_inode_cksum_arg *arg)
+gfarm_ldap_inode_cksum_add(gfarm_uint64_t seqnum,
+	struct db_inode_cksum_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_inode_cksum_update(arg,
@@ -2126,7 +2137,8 @@ gfarm_ldap_inode_cksum_add(struct db_inode_cksum_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_cksum_modify(struct db_inode_cksum_arg *arg)
+gfarm_ldap_inode_cksum_modify(gfarm_uint64_t seqnum,
+	struct db_inode_cksum_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_inode_cksum_update(arg,
@@ -2136,7 +2148,8 @@ gfarm_ldap_inode_cksum_modify(struct db_inode_cksum_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_inode_cksum_remove(struct db_inode_inum_arg *arg)
+gfarm_ldap_inode_cksum_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
 {
 	gfarm_error_t e;
 	int i;
@@ -2260,7 +2273,7 @@ gfarm_ldap_db_filecopy_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_filecopy_add(struct db_filecopy_arg *info)
+gfarm_ldap_filecopy_add(gfarm_uint64_t seqnum, struct db_filecopy_arg *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_db_filecopy_update(info,
@@ -2270,7 +2283,7 @@ gfarm_ldap_filecopy_add(struct db_filecopy_arg *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_filecopy_remove(struct db_filecopy_arg *arg)
+gfarm_ldap_filecopy_remove(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_generic_info_remove(arg, &gfarm_ldap_db_filecopy_ops);
@@ -2391,7 +2404,8 @@ gfarm_ldap_db_deadfilecopy_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_deadfilecopy_add(struct db_deadfilecopy_arg *info)
+gfarm_ldap_deadfilecopy_add(gfarm_uint64_t seqnum,
+	struct db_deadfilecopy_arg *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_db_deadfilecopy_update(info,
@@ -2401,7 +2415,8 @@ gfarm_ldap_deadfilecopy_add(struct db_deadfilecopy_arg *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_deadfilecopy_remove(struct db_deadfilecopy_arg *arg)
+gfarm_ldap_deadfilecopy_remove(gfarm_uint64_t seqnum,
+	struct db_deadfilecopy_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_generic_info_remove(
@@ -2587,7 +2602,8 @@ gfarm_ldap_db_direntry_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_direntry_add(struct db_direntry_arg *info)
+gfarm_ldap_direntry_add(gfarm_uint64_t seqnum,
+	struct db_direntry_arg *info)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_db_direntry_update(info,
@@ -2597,7 +2613,8 @@ gfarm_ldap_direntry_add(struct db_direntry_arg *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_direntry_remove(struct db_direntry_arg *arg)
+gfarm_ldap_direntry_remove(gfarm_uint64_t seqnum,
+	struct db_direntry_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_generic_info_remove(arg, &gfarm_ldap_db_direntry_ops);
@@ -2657,7 +2674,8 @@ gfarm_ldap_db_symlink_set_field(
 }
 
 static gfarm_error_t
-gfarm_ldap_symlink_add(struct db_symlink_arg *info)
+gfarm_ldap_symlink_add(gfarm_uint64_t seqnum,
+	struct db_symlink_arg *info)
 {
 	gfarm_error_t e;
 	int i;
@@ -2695,7 +2713,8 @@ gfarm_ldap_symlink_add(struct db_symlink_arg *info)
 }
 
 static gfarm_error_t
-gfarm_ldap_symlink_remove(struct db_inode_inum_arg *arg)
+gfarm_ldap_symlink_remove(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
 {
 	gfarm_error_t e;
 	int i;
@@ -2888,7 +2907,7 @@ gfarm_ldap_xattr_update(
 }
 
 static gfarm_error_t
-gfarm_ldap_xattr_add(struct db_xattr_arg *arg)
+gfarm_ldap_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_xattr_update(arg,
@@ -2898,7 +2917,7 @@ gfarm_ldap_xattr_add(struct db_xattr_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_xattr_modify(struct db_xattr_arg *arg)
+gfarm_ldap_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	e = gfarm_ldap_xattr_update(arg,
@@ -2908,7 +2927,7 @@ gfarm_ldap_xattr_modify(struct db_xattr_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_xattr_remove(struct db_xattr_arg *arg)
+gfarm_ldap_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	struct gfarm_ldap_xattr_get_info_key key;
@@ -2925,7 +2944,7 @@ gfarm_ldap_xattr_remove(struct db_xattr_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_xattr_get(struct db_xattr_arg *arg)
+gfarm_ldap_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	gfarm_error_t e;
 	char *query_type;
@@ -3043,7 +3062,8 @@ gfarm_ldap_xattr_load(void *closure,
 }
 
 static gfarm_error_t
-gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
+gfarm_ldap_xmlattr_find(gfarm_uint64_t seqnum,
+	struct db_xmlattr_find_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -3052,7 +3072,7 @@ gfarm_ldap_xmlattr_find(struct db_xmlattr_find_arg *arg)
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_ldap_quota_add(struct db_quota_arg *arg)
+gfarm_ldap_quota_add(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
 	/* XXX not implemented yet */
 	free(arg);
@@ -3060,7 +3080,7 @@ gfarm_ldap_quota_add(struct db_quota_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_quota_modify(struct db_quota_arg *arg)
+gfarm_ldap_quota_modify(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
 	/* XXX not implemented yet */
 	free(arg);
@@ -3068,7 +3088,8 @@ gfarm_ldap_quota_modify(struct db_quota_arg *arg)
 }
 
 static gfarm_error_t
-gfarm_ldap_quota_remove(struct db_quota_remove_arg *arg)
+gfarm_ldap_quota_remove(gfarm_uint64_t seqnum,
+	struct db_quota_remove_arg *arg)
 {
 	/* XXX not implemented yet */
 	free(arg);
@@ -3154,4 +3175,9 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_quota_modify,
 	gfarm_ldap_quota_remove,
 	gfarm_ldap_quota_load,
+
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 };

@@ -47,7 +47,7 @@ gfarm_none_terminate(void)
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_nop(void *arg)
+gfarm_none_nop(gfarm_uint64_t seqnum, void *arg)
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
@@ -55,21 +55,21 @@ gfarm_none_nop(void *arg)
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_host_add(struct gfarm_host_info *info)
+gfarm_none_host_add(gfarm_uint64_t seqnum, struct gfarm_host_info *info)
 {
 	free(info);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_host_modify(struct db_host_modify_arg *arg)
+gfarm_none_host_modify(gfarm_uint64_t seqnum, struct db_host_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_host_remove(char *hostname)
+gfarm_none_host_remove(gfarm_uint64_t seqnum, char *hostname)
 {
 	free(hostname);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -85,21 +85,21 @@ gfarm_none_host_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_user_add(struct gfarm_user_info *info)
+gfarm_none_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 {
 	free(info);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_user_modify(struct db_user_modify_arg *arg)
+gfarm_none_user_modify(gfarm_uint64_t seqnum, struct db_user_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_user_remove(char *username)
+gfarm_none_user_remove(gfarm_uint64_t seqnum, char *username)
 {
 	free(username);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -115,21 +115,22 @@ gfarm_none_user_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_group_add(struct gfarm_group_info *info)
+gfarm_none_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 {
 	free(info);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_group_modify(struct db_group_modify_arg *arg)
+gfarm_none_group_modify(gfarm_uint64_t seqnum,
+	struct db_group_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_group_remove(char *groupname)
+gfarm_none_group_remove(gfarm_uint64_t seqnum, char *groupname)
 {
 	free(groupname);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -145,35 +146,39 @@ gfarm_none_group_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_inode_stat_free(struct gfs_stat *arg)
+gfarm_none_inode_stat_free(gfarm_uint64_t seqnum, struct gfs_stat *arg)
 {
 	gfs_stat_free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_inode_int64_free(struct db_inode_uint64_modify_arg *arg)
+gfarm_none_inode_int64_free(gfarm_uint64_t seqnum,
+	struct db_inode_uint64_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_inode_int32_free(struct db_inode_uint32_modify_arg *arg)
+gfarm_none_inode_int32_free(gfarm_uint64_t seqnum,
+	struct db_inode_uint32_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_inode_string_free(struct db_inode_string_modify_arg *arg)
+gfarm_none_inode_string_free(gfarm_uint64_t seqnum,
+	struct db_inode_string_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_inode_timespec_free(struct db_inode_timespec_modify_arg *arg)
+gfarm_none_inode_timespec_free(gfarm_uint64_t seqnum,
+	struct db_inode_timespec_modify_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -190,14 +195,16 @@ gfarm_none_inode_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_inode_cksum_free(struct db_inode_cksum_arg *arg)
+gfarm_none_inode_cksum_free(gfarm_uint64_t seqnum,
+	struct db_inode_cksum_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_inode_inum_free(struct db_inode_inum_arg *arg)
+gfarm_none_inode_inum_free(gfarm_uint64_t seqnum,
+	struct db_inode_inum_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -214,7 +221,7 @@ gfarm_none_inode_cksum_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_filecopy_free(struct db_filecopy_arg *arg)
+gfarm_none_filecopy_free(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -231,7 +238,8 @@ gfarm_none_filecopy_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_deadfilecopy_free(struct db_deadfilecopy_arg *arg)
+gfarm_none_deadfilecopy_free(gfarm_uint64_t seqnum,
+	struct db_deadfilecopy_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -248,14 +256,14 @@ gfarm_none_deadfilecopy_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_direntry_add(struct db_direntry_arg *arg)
+gfarm_none_direntry_add(gfarm_uint64_t seqnum, struct db_direntry_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_direntry_remove(struct db_direntry_arg *arg)
+gfarm_none_direntry_remove(gfarm_uint64_t seqnum, struct db_direntry_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -272,7 +280,7 @@ gfarm_none_direntry_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_symlink_free(struct db_symlink_arg *arg)
+gfarm_none_symlink_free(gfarm_uint64_t seqnum, struct db_symlink_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -289,28 +297,28 @@ gfarm_none_symlink_load(
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_xattr_add(struct db_xattr_arg *arg)
+gfarm_none_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_xattr_modify(struct db_xattr_arg *arg)
+gfarm_none_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_xattr_remove(struct db_xattr_arg *arg)
+gfarm_none_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_xattr_get(struct db_xattr_arg *arg)
+gfarm_none_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -324,7 +332,8 @@ gfarm_none_xattr_load(void *closure,
 }
 
 static gfarm_error_t
-gfarm_none_xmlattr_find(struct db_xmlattr_find_arg *arg)
+gfarm_none_xmlattr_find(gfarm_uint64_t seqnum,
+	struct db_xmlattr_find_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -333,21 +342,22 @@ gfarm_none_xmlattr_find(struct db_xmlattr_find_arg *arg)
 /**********************************************************************/
 
 static gfarm_error_t
-gfarm_none_quota_add(struct db_quota_arg *arg)
+gfarm_none_quota_add(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_quota_modify(struct db_quota_arg *arg)
+gfarm_none_quota_modify(gfarm_uint64_t seqnum, struct db_quota_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 
 static gfarm_error_t
-gfarm_none_quota_remove(struct db_quota_remove_arg *arg)
+gfarm_none_quota_remove(gfarm_uint64_t seqnum,
+	struct db_quota_remove_arg *arg)
 {
 	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -356,6 +366,33 @@ gfarm_none_quota_remove(struct db_quota_remove_arg *arg)
 static gfarm_error_t
 gfarm_none_quota_load(void *closure, int is_group,
 		void (*callback)(void *, struct gfarm_quota_info *))
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
+gfarm_none_seqnum_add(struct db_seqnum_arg *arg)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_seqnum_modify(struct db_seqnum_arg *arg)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_seqnum_remove(char *name)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_seqnum_load(void *closure,
+		void (*callback)(void *, struct db_seqnum_arg *))
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
@@ -432,4 +469,9 @@ const struct db_ops db_none_ops = {
 	gfarm_none_quota_modify,
 	gfarm_none_quota_remove,
 	gfarm_none_quota_load,
+
+	gfarm_none_seqnum_add,
+	gfarm_none_seqnum_modify,
+	gfarm_none_seqnum_remove,
+	gfarm_none_seqnum_load,
 };

@@ -24,6 +24,7 @@
 
 #include "peer.h"
 #include "subr.h"
+#include "rpcsubr.h"
 #include "thrpool.h"
 #include "callout.h"
 #include "host.h"

@@ -11,6 +11,7 @@
 #include "auth.h"
 #include "peer.h"
 #include "subr.h"
+#include "rpcsubr.h"
 #include "user.h"
 #include "group.h"
 #include "inode.h"
@@ -766,6 +767,38 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 			target = GFARM_QUOTA_INVALID;			\
 	}
 
+gfarm_error_t
+quota_lookup(const char *name, int is_group, struct quota **qp,
+	const char *diag)
+{
+	gfarm_error_t e;
+
+	if (is_group) {
+		struct group *group = group_lookup(name);
+		if (!group_is_active(group)) {
+			e = GFARM_ERR_NO_SUCH_GROUP;
+			gflog_debug(GFARM_MSG_1002061,
+				    "%s: name=%s: %s",
+				    diag, name, gfarm_error_string(e));
+		} else {
+			*qp = group_quota(group);
+			e = GFARM_ERR_NO_ERROR;
+		}
+	} else {
+		struct user *user = user_lookup(name);
+		if (!user_is_active(user)) {
+			e = GFARM_ERR_NO_SUCH_USER;
+			gflog_debug(GFARM_MSG_1002062,
+				    "%s: name=%s: %s",
+				    diag, name, gfarm_error_string(e));
+		} else {
+			*qp = user_quota(user);
+			e = GFARM_ERR_NO_ERROR;
+		}
+	}
+	return (e);
+}
+
 static gfarm_error_t
 quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 {
@@ -774,8 +807,7 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 	gfarm_error_t e;
 	struct gfarm_quota_set_info qi;
 	struct quota *q;
-	struct user *user, *peer_user = peer_get_user(peer);
-	struct group *group;
+	struct user *peer_user = peer_get_user(peer);
 
 	e = gfm_server_get_request(peer, diag, "slllllllll",
 				   &qi.name,
@@ -812,26 +844,9 @@ quota_set_common(struct peer *peer, int from_client, int skip, int is_group)
 			    "%s: !from_client or invalid peer_user"
 			    " or !user_is_admin", diag);
 		goto end;
-	} else if (is_group) {
-		group = group_lookup(qi.name);
-		if (!group_is_active(group)) {
-			e = GFARM_ERR_NO_SUCH_GROUP;
-			gflog_debug(GFARM_MSG_1002061,
-				    "%s: name=%s: %s",
-				    diag, qi.name, gfarm_error_string(e));
-			goto end;
-		}
-		q = group_quota(group);
-	} else {
-		user = user_lookup(qi.name);
-		if (!user_is_active(user)) {
-			e = GFARM_ERR_NO_SUCH_USER;
-			gflog_debug(GFARM_MSG_1002062,
-				    "%s: name=%s: %s",
-				    diag, qi.name, gfarm_error_string(e));
-			goto end;
-		}
-		q = user_quota(user);
+	} else if ((e = quota_lookup(qi.name, is_group, &q, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		goto end;
 	}
 
 	/* set limits */

@@ -4,9 +4,14 @@ struct user;
 struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
+char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
 int user_is_invalidated(struct user *);
 int user_is_active(struct user *);
+struct gfarm_user_info;
+gfarm_error_t user_enter(struct gfarm_user_info *, struct user **);
+void user_modify(struct user *, struct gfarm_user_info *);
+gfarm_error_t user_remove_in_cache(const char *);
 
 void user_all(void *, void (*)(void *, struct user *), int);
 

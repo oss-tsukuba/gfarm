@@ -80,6 +80,7 @@ void gfarm_iobuffer_set_read(struct gfarm_iobuffer *,
 void *gfarm_iobuffer_get_read_cookie(struct gfarm_iobuffer *);
 int gfarm_iobuffer_get_read_fd(struct gfarm_iobuffer *);
 void gfarm_iobuffer_read(struct gfarm_iobuffer *, int *);
+int gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *, int);
 int gfarm_iobuffer_put(struct gfarm_iobuffer *, const void *, int);
 
 /* dequeue */
@@ -106,6 +107,8 @@ int gfarm_iobuffer_get_read(struct gfarm_iobuffer *, void *, int);
 int gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *, void *,int,int);
 int gfarm_iobuffer_get_read_partial_just(struct gfarm_iobuffer *, void *, int);
 int gfarm_iobuffer_get_read_partial(struct gfarm_iobuffer *, void *, int);
+int gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *, void *, int, int,
+	int, int *);
 /*
  * gfarm_iobuffer_get_read{,_partial}_just() functions doesn't perform
  * read ahead for given stream, so the caller can perform read operation
@@ -117,3 +120,5 @@ int gfarm_iobuffer_get_read_partial(struct gfarm_iobuffer *, void *, int);
 
 /* default operation for gfarm_iobuffer_set_write_close() */
 void gfarm_iobuffer_write_close_nop(struct gfarm_iobuffer *, void *, int);
+gfarm_uint32_t gfarm_iobuffer_calc_crc32(struct gfarm_iobuffer *,
+	gfarm_uint32_t, int, int, int);

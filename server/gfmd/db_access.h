@@ -109,6 +109,56 @@ gfarm_error_t db_quota_user_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
 gfarm_error_t db_quota_group_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
+#ifdef ENABLE_JOURNAL
+struct db_seqnum_arg;
+gfarm_error_t db_seqnum_add(char *, gfarm_uint64_t);
+gfarm_error_t db_seqnum_modify(char *, gfarm_uint64_t);
+gfarm_error_t db_seqnum_remove(char *);
+gfarm_error_t db_seqnum_load(void *,
+	void (*)(void *, struct db_seqnum_arg *));
+#endif
+
+/* allocation for storage operations arguments */
+struct db_host_modify_arg;
+struct db_user_modify_arg;
+struct db_group_modify_arg;
+struct db_inode_string_modify_arg;
+struct db_inode_cksum_arg;
+struct db_filecopy_arg;
+struct db_deadfilecopy_arg;
+struct db_direntry_arg;
+struct db_symlink_arg;
+struct db_xattr_arg;
+struct db_quota_arg;
+struct db_quota_remove_arg;
+
+void *db_host_dup(const struct gfarm_host_info *, size_t);
+void *db_user_dup(const struct gfarm_user_info *, size_t);
+void *db_group_dup(const struct gfarm_group_info *, size_t);
+struct gfs_stat *db_inode_dup(const struct gfs_stat *, size_t);
+struct db_host_modify_arg *db_host_modify_arg_alloc(
+	const struct gfarm_host_info *, int, int, const char **, int,
+	const char **);
+struct db_user_modify_arg *db_user_modify_arg_alloc(
+	const struct gfarm_user_info *, int);
+struct db_group_modify_arg *db_group_modify_arg_alloc(
+	const struct gfarm_group_info *, int, int, const char **, int,
+	const char **);
+struct db_inode_string_modify_arg *db_inode_string_modify_arg_alloc(
+	gfarm_ino_t, const char *);
+struct db_inode_cksum_arg *db_inode_cksum_arg_alloc(gfarm_ino_t,
+	const char *, size_t, const char *);
+struct db_filecopy_arg *db_filecopy_arg_alloc(gfarm_ino_t, const char *);
+struct db_deadfilecopy_arg *db_deadfilecopy_arg_alloc(gfarm_ino_t,
+	gfarm_uint64_t, const char *);
+struct db_direntry_arg *db_direntry_arg_alloc(gfarm_ino_t, const char *,
+	int, gfarm_ino_t);
+struct db_symlink_arg *db_symlink_arg_alloc(gfarm_ino_t, const char *);
+struct db_xattr_arg *db_xattr_arg_alloc(int, gfarm_ino_t, const char *,
+	void *, size_t);
+struct db_quota_arg *db_quota_arg_alloc(const struct quota *, const char *,
+	int);
+struct db_quota_remove_arg *db_quota_remove_arg_alloc(const char *, int);
 
 /* external interface to select metadb backend type */
 
@@ -116,6 +166,7 @@ struct db_ops;
 gfarm_error_t db_use(const struct db_ops *);
 
 extern const struct db_ops db_none_ops, db_ldap_ops, db_pgsql_ops;
+const struct db_ops *store_ops;
 
 
 struct db_waitctx {
@@ -131,7 +182,7 @@ gfarm_error_t dbq_waitret(struct db_waitctx *);
 
 /* exported for a use from a private extension */
 /* The official gfmd source code shouldn't use these interface */
-typedef gfarm_error_t (*dbq_entry_func_t)(void *);
+typedef gfarm_error_t (*dbq_entry_func_t)(gfarm_uint64_t, void *);
 gfarm_error_t gfarm_dbq_enter(dbq_entry_func_t, void *);
 gfarm_error_t gfarm_dbq_enter_for_waitret(
 	dbq_entry_func_t, void *, struct db_waitctx *);

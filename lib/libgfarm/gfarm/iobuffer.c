@@ -4,6 +4,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include "iobuffer.h"
+#include "crc32.h"
 
 /* XXX - This implementation is somewhat slow, but probably acceptable */
 
@@ -71,6 +72,8 @@ gfarm_iobuffer_alloc(int bufsize)
 void
 gfarm_iobuffer_free(struct gfarm_iobuffer *b)
 {
+	if (b == NULL)
+		return;
 	free(b->buffer);
 	free(b);
 }
@@ -258,7 +261,6 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp)
 		b->tail += rv;
 		*residualp -= rv;
 	}
-	return;
 }
 
 int
@@ -521,4 +523,49 @@ void
 gfarm_iobuffer_write_close_nop(struct gfarm_iobuffer *b, void *cookie, int fd)
 {
 	/* nop */
+}
+
+gfarm_uint32_t
+gfarm_iobuffer_calc_crc32(struct gfarm_iobuffer *b, gfarm_uint32_t crc,
+	int offset, int len, int head_or_tail)
+{
+	return (gfarm_crc32(crc, b->buffer + (head_or_tail ? b->head : b->tail)
+		+ offset, len));
+}
+
+int
+gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *b, void *data, int len,
+	int just, int offset, int *errp)
+{
+	int rlen;
+	int head0 = b->head;
+	int tail0 = b->tail;
+	int read_eof0 = b->read_eof;
+	int error0 = b->error;
+
+	if (b->head + offset > b->tail)
+		return (0);
+	b->head += offset;
+	rlen = gfarm_iobuffer_get_read_x(b, data, len, just);
+	if (rlen == 0)
+		*errp = b->error;
+	b->head = head0;
+	b->tail = tail0;
+	b->read_eof = read_eof0;
+	b->error = error0;
+	return (rlen);
+}
+
+int
+gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
+{
+	size_t alen = IOBUFFER_AVAIL_LENGTH(b);
+	int rlen;
+
+	if (alen > len)
+		return (alen);
+	rlen = len - alen;
+	while (rlen > 0 && gfarm_iobuffer_is_readable(b) && b->error == 0)
+		gfarm_iobuffer_read(b, &rlen);
+	return (len - rlen);
 }

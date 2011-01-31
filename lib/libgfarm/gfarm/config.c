@@ -724,6 +724,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
+#define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
@@ -748,6 +749,8 @@ int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_metadb_dbq_size = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
+static char *journal_dir = NULL;
+static int journal_max_size = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -776,6 +779,7 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_conninfo,
 		&gfarm_localfs_datadir,
 		&schedule_write_target_domain,
+		&journal_dir,
 	};
 	int i;
 
@@ -852,6 +856,18 @@ void
 gfarm_set_record_atime(int boolean)
 {
 	gfarm_record_atime = boolean;
+}
+
+const char *
+gfarm_journal_dir(void)
+{
+	return (journal_dir);
+}
+
+int
+gfarm_journal_max_size(void)
+{
+	return (journal_max_size);
 }
 
 /*
@@ -1987,6 +2003,10 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &gfarm_profile);
 
+	} else if (strcmp(s, o = "journal_dir") == 0) {
+		e = parse_set_var(p, &journal_dir);
+	} else if (strcmp(s, o = "journal_max_size") == 0) {
+		e = parse_set_misc_int(p, &journal_max_size);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2130,6 +2150,8 @@ gfarm_config_set_default_misc(void)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
 	if (gfarm_profile == MISC_DEFAULT)
 		gfarm_profile = GFARM_PROFILE_DEFAULT;
+	if (journal_max_size == MISC_DEFAULT)
+		journal_max_size = GFARM_JOURNAL_MAX_SIZE_DEFAULT;
 }
 
 void

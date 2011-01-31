@@ -32,6 +32,7 @@
 
 #include "callout.h"
 #include "subr.h"
+#include "rpcsubr.h"
 #include "db_access.h"
 #include "host.h"
 #include "user.h"
@@ -314,7 +315,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 /* XXX FIXME missing hostaliases */
 static gfarm_error_t
-host_remove(const char *hostname)
+host_remove_internal(const char *hostname, int update_deadfilecopy)
 {
 	struct host *h = host_lookup(hostname);
 
@@ -329,9 +330,22 @@ host_remove(const char *hostname)
 	 */
 	host_invalidate(h);
 
-	dead_file_copy_host_removed(h);
+	if (update_deadfilecopy)
+		dead_file_copy_host_removed(h);
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+host_remove(const char *hostname)
+{
+	return (host_remove_internal(hostname, 1));
+}
+
+gfarm_error_t
+host_remove_in_cache(const char *hostname)
+{
+	return (host_remove_internal(hostname, 0));
 }
 
 /*
@@ -355,6 +369,22 @@ int
 host_port(struct host *h)
 {
 	return (h->hi.port);
+}
+
+char *
+host_architecture(struct host *h)
+{
+	return (h->hi.architecture);
+}
+
+int host_ncpu(struct host *h)
+{
+	return (h->hi.ncpu);
+}
+
+int host_flags(struct host *h)
+{
+	return (h->hi.flags);
 }
 
 int
@@ -1614,7 +1644,7 @@ gfm_server_host_info_get_by_namealiases(struct peer *peer,
 	    "host_info_get_by_namealiases"));
 }
 
-static gfarm_error_t
+gfarm_error_t
 host_info_verify(struct gfarm_host_info *hi, const char *diag)
 {
 	if (strlen(hi->hostname) > GFARM_HOST_NAME_MAX) {
@@ -1705,6 +1735,17 @@ gfm_server_host_info_set(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+void
+host_modify(struct host *h, struct gfarm_host_info *hi)
+{
+	free(h->hi.architecture);
+	h->hi.architecture = hi->architecture;
+	hi->architecture = NULL;
+	h->hi.ncpu = hi->ncpu;
+	h->hi.port = hi->port;
+	h->hi.flags = hi->flags;
+}
+
 gfarm_error_t
 gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 {
@@ -1755,11 +1796,7 @@ gfm_server_host_info_modify(struct peer *peer, int from_client, int skip)
 			gfarm_error_string(e));
 		needs_free = 1;
 	} else {
-		free(h->hi.architecture);
-		h->hi.architecture = hi.architecture;
-		h->hi.ncpu = hi.ncpu;
-		h->hi.port = hi.port;
-		h->hi.flags = hi.flags;
+		host_modify(h, &hi);
 		free(hi.hostname);
 	}
 	if (needs_free) {

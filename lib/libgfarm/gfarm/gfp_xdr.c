@@ -47,15 +47,20 @@ gfp_xdr_set(struct gfp_xdr *conn,
 	conn->cookie = cookie;
 	conn->fd = fd;
 
-	gfarm_iobuffer_set_read(conn->recvbuffer, ops->blocking_read,
-	    cookie, fd);
-	gfarm_iobuffer_set_write(conn->sendbuffer, ops->blocking_write,
-	    cookie, fd);
+	if (conn->recvbuffer)
+		gfarm_iobuffer_set_read(conn->recvbuffer, ops->blocking_read,
+		    cookie, fd);
+	if (conn->sendbuffer)
+		gfarm_iobuffer_set_write(conn->sendbuffer, ops->blocking_write,
+		    cookie, fd);
 }
 
-gfarm_error_t
-gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
-	struct gfp_xdr **connp)
+#define GFP_XDR_NEW_RECV	1
+#define GFP_XDR_NEW_SEND	2
+
+static gfarm_error_t
+gfp_xdr_new0(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
+	int flags, struct gfp_xdr **connp)
 {
 	struct gfp_xdr *conn;
 
@@ -66,28 +71,61 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	conn->recvbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
-	if (conn->recvbuffer == NULL) {
-		free(conn);
-		gflog_debug(GFARM_MSG_1000997,
-			"allocation of 'conn recvbuffer' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	conn->sendbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
-	if (conn->sendbuffer == NULL) {
-		gfarm_iobuffer_free(conn->recvbuffer);
-		free(conn);
-		gflog_debug(GFARM_MSG_1000998,
-			"allocation of 'conn sendbuffer' failed: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
+	if ((flags & GFP_XDR_NEW_RECV) != 0) {
+		conn->recvbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
+		if (conn->recvbuffer == NULL) {
+			free(conn);
+			gflog_debug(GFARM_MSG_1000997,
+				"allocation of 'conn recvbuffer' failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (GFARM_ERR_NO_MEMORY);
+		}
+	} else
+		conn->recvbuffer = NULL;
+
+	if ((flags & GFP_XDR_NEW_SEND) != 0) {
+		conn->sendbuffer = gfarm_iobuffer_alloc(GFP_XDR_BUFSIZE);
+		if (conn->sendbuffer == NULL) {
+			gfarm_iobuffer_free(conn->recvbuffer);
+			free(conn);
+			gflog_debug(GFARM_MSG_1000998,
+				"allocation of 'conn sendbuffer' failed: %s",
+				gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			return (GFARM_ERR_NO_MEMORY);
+		}
+	} else
+		conn->sendbuffer = NULL;
+
 	gfp_xdr_set(conn, ops, cookie, fd);
 
 	*connp = conn;
 	return (GFARM_ERR_NO_ERROR);
 }
+
+gfarm_error_t
+gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
+	struct gfp_xdr **connp)
+{
+	return (gfp_xdr_new0(ops, cookie, fd,
+	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
+}
+
+gfarm_error_t
+gfp_xdr_new_recv_only(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
+	struct gfp_xdr **connp)
+{
+	return (gfp_xdr_new0(ops, cookie, fd,
+	    GFP_XDR_NEW_RECV, connp));
+}
+
+gfarm_error_t
+gfp_xdr_new_send_only(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
+	struct gfp_xdr **connp)
+{
+	return (gfp_xdr_new0(ops, cookie, fd,
+	    GFP_XDR_NEW_SEND, connp));
+}
+
 
 gfarm_error_t
 gfp_xdr_free(struct gfp_xdr *conn)
@@ -129,6 +167,24 @@ gfp_xdr_sendbuffer_check_size(struct gfp_xdr *conn, int size)
 		return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfp_xdr_recvbuffer_check_size(struct gfp_xdr *conn, int size)
+{
+	if (size > gfarm_iobuffer_get_size(conn->recvbuffer)) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(GFARM_ERR_INTERNAL_ERROR));
+		return (GFARM_ERR_INTERNAL_ERROR);
+	} else if (size > gfarm_iobuffer_avail_length(conn->recvbuffer))
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	else
+		return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfp_xdr_recvbuffer_clear_read_eof(struct gfp_xdr *conn)
+{
+	gfarm_iobuffer_clear_read_eof(conn->recvbuffer);
+}
 
 gfarm_error_t
 gfp_xdr_export_credential(struct gfp_xdr *conn)
@@ -175,6 +231,8 @@ gfp_xdr_recv_is_ready(struct gfp_xdr *conn)
 gfarm_error_t
 gfp_xdr_flush(struct gfp_xdr *conn)
 {
+	if (conn->sendbuffer == NULL)
+		return (GFARM_ERR_NO_ERROR);
 	gfarm_iobuffer_flush_write(conn->sendbuffer);
 	return (gfarm_iobuffer_get_error(conn->sendbuffer));
 }
@@ -207,6 +265,17 @@ gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 		return (GFARM_ERR_UNEXPECTED_EOF);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfp_xdr_purge_all(struct gfp_xdr *conn)
+{
+	if (conn->sendbuffer)
+		while (gfarm_iobuffer_purge(conn->sendbuffer, NULL) > 0)
+			;
+	if (conn->recvbuffer)
+		while (gfarm_iobuffer_purge(conn->recvbuffer, NULL) > 0)
+			;
 }
 
 gfarm_error_t
@@ -712,6 +781,35 @@ gfp_xdr_send(struct gfp_xdr *conn, const char *format, ...)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_uint32_t
+gfp_xdr_send_calc_crc32(struct gfp_xdr *conn, gfarm_uint32_t crc, int offset,
+	size_t length)
+{
+	return (gfarm_iobuffer_calc_crc32(conn->sendbuffer, crc,
+		offset, length, 0));
+}
+
+gfarm_uint32_t
+gfp_xdr_recv_calc_crc32(struct gfp_xdr *conn, gfarm_uint32_t crc, int offset,
+	size_t length)
+{
+	return (gfarm_iobuffer_calc_crc32(conn->recvbuffer, crc,
+		offset, length, 1));
+}
+
+gfarm_uint32_t
+gfp_xdr_recv_get_crc32_ahead(struct gfp_xdr *conn, int offset)
+{
+	gfarm_uint32_t n;
+	int err;
+	int len = gfarm_iobuffer_get_read_x_ahead(conn->recvbuffer,
+		&n, sizeof(n), 1, offset, &err);
+
+	if (len != sizeof(n))
+		return (0);
+	return (ntohl(n));
+}
+
 gfarm_error_t
 gfp_xdr_recv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	int *eofp, const char *format, ...)
@@ -759,6 +857,19 @@ gfp_xdr_recv(struct gfp_xdr *conn, int just,
 		    "invalid format character: %c(%x)", *format, *format);
 		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
 	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfp_xdr_recv_ahead(struct gfp_xdr *conn, int len, size_t *availp)
+{
+	int r = gfarm_iobuffer_read_ahead(conn->recvbuffer, len);
+
+	if (r == 0) {
+		*availp = 0;
+		return (gfarm_iobuffer_get_error(conn->recvbuffer));
+	}
+	*availp = gfarm_iobuffer_avail_length(conn->recvbuffer);
 	return (GFARM_ERR_NO_ERROR);
 }
 

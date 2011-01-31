@@ -40,6 +40,7 @@ void quota_update_file_resize(struct inode *, gfarm_off_t);
 void quota_update_replica_add(struct inode *);
 void quota_update_replica_remove(struct inode *);
 void quota_update_file_remove(struct inode *);
+gfarm_error_t quota_lookup(const char *, int, struct quota **, const char *);
 
 struct peer;
 gfarm_error_t gfm_server_quota_user_get(struct peer *, int, int);

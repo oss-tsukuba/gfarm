@@ -26,6 +26,12 @@ int group_is_active(struct group *);
 
 void group_all(void *, void (*)(void *, struct group *), int);
 
+struct gfarm_group_info;
+gfarm_error_t group_info_add(struct gfarm_group_info *);
+gfarm_error_t group_user_check(struct gfarm_group_info *, const char *);
+void group_modify(struct group *, struct gfarm_group_info *, const char *);
+gfarm_error_t group_remove_in_cache(const char *);
+
 struct quota;
 struct quota *group_quota(struct group *);
 
