@@ -1,8 +1,10 @@
 /*
  * $Id$
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
@@ -13,6 +15,7 @@
 #include "gfpath.h"
 #define GFARM_USE_STDIO
 #include "config.h"
+#include "metadb_server.h"
 
 static void
 gfarm_config_set_default_spool_on_server(void)
@@ -21,6 +24,34 @@ gfarm_config_set_default_spool_on_server(void)
 		/* XXX - this case is not recommended. */
 		gfarm_spool_root = GFARM_SPOOL_ROOT;
 	}
+}
+
+static void
+gfarm_config_set_default_metadb_server(void)
+{
+	gfarm_error_t e;
+	int n;
+	struct gfarm_metadb_server **msl, *m;
+	struct gfarm_metadb_server *ms[1];
+
+	/* gfarm_metadb_server_name is checked in
+	 * gfarm_config_set_default_ports */
+	assert(gfarm_metadb_server_name != NULL);
+
+	if ((msl = gfarm_get_metadb_server_list(&n)) != NULL)
+		return;
+	if ((e = gfarm_metadb_server_new(&m))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	ms[0] = m;
+	gfarm_metadb_server_set_name(m, gfarm_metadb_server_name);
+	gfarm_metadb_server_set_port(m, gfarm_metadb_server_port);
+	gfarm_metadb_server_set_is_master(m, 1);
+	if ((e = gfarm_set_metadb_server_list(ms, 1))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
 }
 
 /* the following function is for server. */
@@ -47,6 +78,7 @@ gfarm_server_config_read(void)
 
 	gfarm_config_set_default_ports();
 	gfarm_config_set_default_misc();
+	gfarm_config_set_default_metadb_server();
 
 	return (GFARM_ERR_NO_ERROR);
 }

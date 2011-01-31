@@ -22,51 +22,57 @@ PUBLIC_RULE  = /dev/null
 PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
-SRCS =	$(GFMD_SRCDIR)/db_access.c \
-	$(GFMD_SRCDIR)/db_none.c \
-	$(GFMD_SRCDIR)/subr.c \
-	$(GFMD_SRCDIR)/user.c \
-	$(GFMD_SRCDIR)/group.c \
-	$(GFMD_SRCDIR)/host.c \
-	$(GFMD_SRCDIR)/dir.c \
-	$(GFMD_SRCDIR)/inode.c \
-	$(GFMD_SRCDIR)/quota.c \
-	$(GFMD_SRCDIR)/xattr.c \
-	$(GFMD_SRCDIR)/peer.c \
-	$(GFMD_SRCDIR)/thrpool.c \
-	$(GFMD_SRCDIR)/process.c \
-	$(GFMD_SRCDIR)/rpcsubr.c \
-	$(GFMD_SRCDIR)/dead_file_copy.c \
+SRCS = \
+	$(GFMD_SRCDIR)/abstract_host.c \
+	$(GFMD_SRCDIR)/acl.c \
 	$(GFMD_SRCDIR)/back_channel.c \
-	$(GFMD_SRCDIR)/journal_file.c \
+	$(GFMD_SRCDIR)/callout.c \
+	$(GFMD_SRCDIR)/db_access.c \
 	$(GFMD_SRCDIR)/db_journal.c \
 	$(GFMD_SRCDIR)/db_journal_apply.c \
-	$(GFMD_SRCDIR)/callout.c \
+	$(GFMD_SRCDIR)/db_none.c \
+	$(GFMD_SRCDIR)/dead_file_copy.c \
+	$(GFMD_SRCDIR)/dir.c \
+	$(GFMD_SRCDIR)/group.c \
+	$(GFMD_SRCDIR)/host.c \
+	$(GFMD_SRCDIR)/inode.c \
 	$(GFMD_SRCDIR)/job.c \
-	$(GFMD_SRCDIR)/acl.c \
+	$(GFMD_SRCDIR)/journal_file.c \
+	$(GFMD_SRCDIR)/mdhost.c \
+	$(GFMD_SRCDIR)/peer.c \
+	$(GFMD_SRCDIR)/process.c \
+	$(GFMD_SRCDIR)/quota.c \
+	$(GFMD_SRCDIR)/rpcsubr.c \
+	$(GFMD_SRCDIR)/subr.c \
+	$(GFMD_SRCDIR)/thrpool.c \
+	$(GFMD_SRCDIR)/user.c \
+	$(GFMD_SRCDIR)/xattr.c \
 	db_journal_apply_test.c empty_ops.c
 
-OBJS =	$(GFMD_SRCDIR)/db_access.o \
-	$(GFMD_SRCDIR)/db_none.o \
-	$(GFMD_SRCDIR)/subr.o \
-	$(GFMD_SRCDIR)/user.o \
-	$(GFMD_SRCDIR)/group.o \
-	$(GFMD_SRCDIR)/host.o \
-	$(GFMD_SRCDIR)/dir.o \
-	$(GFMD_SRCDIR)/inode.o \
-	$(GFMD_SRCDIR)/quota.o \
-	$(GFMD_SRCDIR)/xattr.o \
-	$(GFMD_SRCDIR)/peer.o \
-	$(GFMD_SRCDIR)/thrpool.o \
-	$(GFMD_SRCDIR)/process.o \
-	$(GFMD_SRCDIR)/rpcsubr.o \
-	$(GFMD_SRCDIR)/dead_file_copy.o \
+OBJS =	\
+	$(GFMD_SRCDIR)/abstract_host.o \
+	$(GFMD_SRCDIR)/acl.o \
 	$(GFMD_SRCDIR)/back_channel.o \
 	$(GFMD_SRCDIR)/callout.o \
-	$(GFMD_SRCDIR)/job.o \
-	$(GFMD_SRCDIR)/acl.o \
-	$(GFMD_SRCDIR)/journal_file.o \
+	$(GFMD_SRCDIR)/db_access.o \
 	$(GFMD_SRCDIR)/db_journal_apply.o \
+	$(GFMD_SRCDIR)/db_none.o \
+	$(GFMD_SRCDIR)/dead_file_copy.o \
+	$(GFMD_SRCDIR)/dir.o \
+	$(GFMD_SRCDIR)/group.o \
+	$(GFMD_SRCDIR)/host.o \
+	$(GFMD_SRCDIR)/inode.o \
+	$(GFMD_SRCDIR)/job.o \
+	$(GFMD_SRCDIR)/journal_file.o \
+	$(GFMD_SRCDIR)/mdhost.o \
+	$(GFMD_SRCDIR)/peer.o \
+	$(GFMD_SRCDIR)/process.o \
+	$(GFMD_SRCDIR)/quota.o \
+	$(GFMD_SRCDIR)/rpcsubr.o \
+	$(GFMD_SRCDIR)/subr.o \
+	$(GFMD_SRCDIR)/thrpool.o \
+	$(GFMD_SRCDIR)/user.o \
+	$(GFMD_SRCDIR)/xattr.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)

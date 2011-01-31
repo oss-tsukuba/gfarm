@@ -1,5 +1,6 @@
 struct peer;
 struct thread_pool;
+struct abstract_host;
 
 void peer_add_ref(struct peer *);
 int peer_del_ref(struct peer *);
@@ -8,6 +9,9 @@ void peer_free_request(struct peer *);
 void peer_init(int, struct thread_pool *, void *(*)(void *));
 
 gfarm_error_t peer_alloc(int, struct peer **);
+struct gfp_xdr;
+gfarm_error_t peer_alloc_with_connection(struct peer **, struct gfp_xdr *,
+	struct abstract_host *, int);
 void peer_authorized(struct peer *,
 	enum gfarm_auth_id_type, char *, char *, struct sockaddr *,
 	enum gfarm_auth_method);
@@ -15,6 +19,7 @@ void peer_free(struct peer *);
 void peer_shutdown_all(void);
 void peer_invoked(struct peer *);
 void peer_watch_access(struct peer *);
+const char *peer_get_service_name(struct peer *);
 
 struct peer *peer_by_fd(int);
 gfarm_error_t peer_free_by_fd(int);
@@ -31,13 +36,17 @@ void peer_set_free_async(void (*)(struct peer *, struct gfp_xdr_async_peer *));
 gfarm_error_t peer_set_host(struct peer *, char *);
 enum gfarm_auth_id_type peer_get_auth_id_type(struct peer *);
 char *peer_get_username(struct peer *);
-char *peer_get_hostname(struct peer *);
+const char *peer_get_hostname(struct peer *);
 
 struct user;
 struct user *peer_get_user(struct peer *);
 void peer_set_user(struct peer *, struct user *);
+struct abstract_host;
+struct abstract_host *peer_get_abstract_host(struct peer *);
 struct host;
 struct host *peer_get_host(struct peer *);
+struct mdhost;
+struct mdhost *peer_get_mdhost(struct peer *);
 
 struct inode;
 void peer_set_pending_new_generation(struct peer *, struct inode *);

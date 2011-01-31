@@ -304,6 +304,8 @@ gfarm_error_t gfm_client_switch_back_channel(struct gfm_connection *);
 #endif
 gfarm_error_t gfm_client_switch_async_back_channel(struct gfm_connection *,
 	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t *);
+gfarm_error_t gfm_client_switch_gfmd_channel(struct gfm_connection *,
+	gfarm_int32_t, gfarm_int64_t, gfarm_int32_t *);
 
 /* gfs_pio from client */
 /*XXX*/

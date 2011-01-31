@@ -41,6 +41,7 @@ SRCS = \
 	gfs_proto.c \
 	io_fd.c \
 	metadb_common.c \
+	metadb_server.c \
 	auth_common.c \
 	auth_client.c \
 	auth_server.c \
@@ -120,6 +121,7 @@ OBJS = \
 	gfs_proto.lo \
 	io_fd.lo \
 	metadb_common.lo \
+	metadb_server.lo \
 	auth_common.lo \
 	auth_client.lo \
 	auth_server.lo \
@@ -251,6 +253,7 @@ io_gfsl.lo: $(GFSL_SRCDIR)/gfarm_secure_session.h iobuffer.h io_fd.h io_gfsl.h
 iobuffer.lo: iobuffer.h
 lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h
 metadb_common.lo: metadb_common.h xattr_info.h quota_info.h
+metadb_server.lo: metadb_server.h
 patmatch.lo: patmatch.h
 param.lo: hostspec.h param.h
 schedule.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/timer.h liberror.h conn_hash.h host.h config.h gfm_proto.h gfm_client.h gfs_client.h schedule.h lookup.h gfs_profile.h

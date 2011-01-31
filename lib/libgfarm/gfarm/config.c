@@ -39,6 +39,7 @@
 #include "gfs_profile.h"
 #include "gfm_client.h"
 #include "lookup.h"
+#include "metadb_server.h"
 
 #include "hash.h"
 #include "lru_cache.h"
@@ -1826,6 +1827,80 @@ parse_profile(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_metadb_server_list_arguments(char *p, char **op)
+{
+#define METADB_SERVER_NUM_MAX 1024
+	gfarm_error_t e;
+	int i, port;
+	char *host_and_port, *host = NULL;
+	const char *listname = *op;
+	struct gfarm_metadb_server *m;
+	int n = 0;
+	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
+
+	for (;;) {
+		if ((e = gfarm_strtoken(&p, &host_and_port))
+		    != GFARM_ERR_NO_ERROR) {
+			*op = "hostname:port argument";
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "parsing of %s (%s) failed: %s",
+			    listname, p, gfarm_error_string(e));
+			goto error;
+		}
+		if (host_and_port == NULL)
+			break;
+		if (n >= METADB_SERVER_NUM_MAX) {
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Too many arguments passed to %s", listname);
+			goto error;
+		}
+		port = -1;
+		if ((e = parse_hostname_and_port(host_and_port, listname,
+		    &host, &port)) != GFARM_ERR_NO_ERROR) {
+			*op = "hostname:port argument";
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "parsing of %s arguments (%s) failed: %s",
+			    listname, p, gfarm_error_string(e));
+			return (e);
+		}
+		host = strdup(host);
+		if (host == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+			goto error;
+		}
+		if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
+			free(host);
+			goto error;
+		}
+		gfarm_metadb_server_set_name(m, host);
+		if (port < 0)
+			port = GFMD_DEFAULT_PORT;
+		gfarm_metadb_server_set_port(m, port);
+		ms[n++] = m;
+	}
+	if (n == 0) {
+		*op = "1st (hostname:port) argument";
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Too few arguments passed to %s", listname);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	gfarm_metadb_server_set_is_master(ms[0], 1);
+	if ((e = gfarm_set_metadb_server_list(ms, n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		goto error;
+	}
+	return (GFARM_ERR_NO_ERROR);
+error:
+	for (i = 0; i < n; ++i)
+		gfarm_metadb_server_free(ms[i]);
+	return (e);
+}
+
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
 	gfarm_error_t e;
@@ -1849,6 +1924,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_var(p, &gfarm_metadb_server_name);
 	} else if (strcmp(s, o = "metadb_server_port") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_portname);
+	} else if (strcmp(s, o = "metadb_server_list") == 0) {
+		e = parse_metadb_server_list_arguments(p, &o);
 	} else if (strcmp(s, o = "admin_user") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_admin_user);
 	} else if (strcmp(s, o = "admin_user_gsi_dn") == 0) {

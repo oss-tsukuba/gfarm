@@ -54,6 +54,7 @@
 #include "db_access.h"
 #include "db_journal.h"
 #include "host.h"
+#include "mdhost.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
@@ -63,6 +64,7 @@
 #include "fs.h"
 #include "job.h"
 #include "back_channel.h"
+#include "gfmd_channel.h"
 #include "xattr.h"
 #include "quota.h"
 #include "gfmd.h"
@@ -364,6 +366,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		/* should not call gfp_xdr_flush() due to race */
 		*requestp = request;
 		return (e);
+	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
+		e = gfm_server_switch_gfmd_channel(peer,
+		    from_client, skip);
+		/* should not call gfp_xdr_flush() due to race */
+		*requestp = request;
+		return (e);
 	case GFM_PROTO_GLOB:
 		e = gfm_server_glob(peer, from_client, skip);
 		break;
@@ -621,7 +629,8 @@ protocol_service(struct peer *peer)
 #ifdef COMPAT_GFARM_2_3
 	    request == GFM_PROTO_SWITCH_BACK_CHANNEL ||
 #endif
-	    request == GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) {
+	    request == GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL ||
+	    request == GFM_PROTO_SWITCH_GFMD_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001482,
 				"failed to process GFM_PROTO_SWITCH_BACK_"
@@ -1121,8 +1130,10 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	back_channel_init();
+	gfmdc_init();
 
 	/* directory service */
+	mdhost_init();
 	host_init();
 	user_init();
 	group_init();

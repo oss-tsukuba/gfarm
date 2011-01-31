@@ -1,0 +1,916 @@
+/*
+ * $Id$
+ */
+
+#include <assert.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include <pthread.h>
+
+#include <gfarm/gfarm.h>
+
+#include "gfutil.h"
+#include "hash.h"
+#include "thrsubr.h"
+
+#include "auth.h"
+#include "gfp_xdr.h"
+#include "gfs_proto.h" /* GFS_PROTOCOL_VERSION_V2_4 */
+#include "config.h"
+
+#include "subr.h"
+#include "rpcsubr.h"
+#include "user.h"
+#include "peer.h"
+#include "abstract_host.h"
+
+#define BACK_CHANNEL_DIAG(peer) (peer == NULL ? "*_channel" : \
+	(peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_SPOOL_HOST ? \
+	"back_channel" : "gfmd_channel"))
+
+void
+abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,
+	const char *diag)
+{
+	h->ops = ops;
+	h->invalid = 0;
+	h->peer = NULL;
+	h->protocol_version = 0;
+	h->can_send = 1;
+	h->can_receive = 1;
+	h->is_active = 0;
+	h->busy_time = 0;
+
+	gfarm_cond_init(&h->ready_to_send, diag, "ready_to_send");
+	gfarm_cond_init(&h->ready_to_receive, diag, "ready_to_receive");
+	gfarm_mutex_init(&h->back_channel_mutex, diag, "back_channel");
+}
+
+int
+abstract_host_get_protocol_version(struct abstract_host *h)
+{
+	return (h->protocol_version);
+}
+
+void
+abstract_host_invalidate(struct abstract_host *h)
+{
+	h->invalid = 1;
+}
+
+void
+abstract_host_validate(struct abstract_host *h)
+{
+	h->invalid = 0;
+}
+
+int
+abstract_host_is_invalidated(struct abstract_host *h)
+{
+	return (h->invalid == 1);
+}
+
+int
+abstract_host_is_valid_unlocked(struct abstract_host *h)
+{
+	return (!abstract_host_is_invalidated(h));
+}
+
+int
+abstract_host_is_valid(struct abstract_host *h, const char *back_channel_diag)
+{
+	int valid;
+	static const char diag[] = "abstract_host_is_valid";
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	valid = abstract_host_is_valid_unlocked(h);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	return (valid);
+}
+
+void
+abstract_host_activate(struct abstract_host *h)
+{
+	h->is_active = 1;
+}
+
+const char *
+abstract_host_get_name(struct abstract_host *h)
+{
+	return (h->ops->get_name(h));
+}
+
+int
+abstract_host_get_port(struct abstract_host *h)
+{
+	return (h->ops->get_port(h));
+}
+
+int
+abstract_host_is_up_unlocked(struct abstract_host *h)
+{
+	return (abstract_host_is_valid_unlocked(h) && h->is_active);
+}
+
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: host::back_channel_mutex
+ * SLEEPS: no
+ */
+int
+abstract_host_is_up(struct abstract_host *h, const char *back_channel_diag)
+{
+	int up;
+	static const char diag[] = "abstract_host_is_up";
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	up = abstract_host_is_up_unlocked(h);
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	return (up);
+}
+
+void
+abstract_host_channel_mutex_lock(struct abstract_host *h,
+	const char *diag, const char *back_channel_diag)
+{
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+}
+
+void
+abstract_host_channel_mutex_unlock(struct abstract_host *h,
+	const char *diag, const char *back_channel_diag)
+{
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+}
+
+/*
+ * PREREQUISITE: host::back_channel_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ */
+static int
+abstract_host_is_unresponsive(struct abstract_host *host, gfarm_int64_t now,
+	const char *diag)
+{
+	int unresponsive = 0;
+
+	if (!host->is_active || host->invalid)
+		;
+	else if (host->can_send)
+		host->busy_time = 0;
+	else if (host->busy_time != 0 &&
+	    now > host->busy_time + gfarm_metadb_heartbeat_interval) {
+		gflog_warning(GFARM_MSG_1002213,
+		    "host %s: too long busy since %lld",
+		    abstract_host_get_name(host), (long long)host->busy_time);
+		unresponsive = 1;
+	}
+
+	return (unresponsive);
+}
+
+static void
+abstract_host_peer_unbusy(struct abstract_host *host,
+	const char *back_channel_diag)
+{
+	static const char diag[] = "abstract_host_peer_unbusy";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+	host->busy_time = 0;
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+}
+
+struct peer *
+abstract_host_get_peer_unlocked(struct abstract_host *h)
+{
+	return (h->peer);
+}
+
+struct peer *
+abstract_host_get_peer(struct abstract_host *h, const char *back_channel_diag)
+{
+	struct peer *peer;
+	static const char diag[] = "abstract_host_get_peer";
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+	peer = h->peer;
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+	return (peer);
+}
+
+gfarm_error_t
+abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
+	const char *back_channel_diag)
+{
+	gfarm_error_t e;
+	static const char diag[] = "abstract_host_sender_trylock";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (!abstract_host_is_up_unlocked(host)) {
+		e = GFARM_ERR_CONNECTION_ABORTED;
+	} else if (host->can_send) {
+		host->can_send = 0;
+		host->busy_time = 0;
+		peer_add_ref(host->peer);
+		*peerp = host->peer;
+		e = GFARM_ERR_NO_ERROR;
+	} else {
+		e = GFARM_ERR_DEVICE_BUSY;
+	}
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	return (e);
+}
+
+static gfarm_error_t
+abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
+	const char *back_channel_diag)
+{
+	gfarm_error_t e;
+	struct peer *peer0;
+	static const char diag[] = "abstract_host_sender_lock";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	for (;;) {
+		if (!abstract_host_is_up_unlocked(host)) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (host->can_send) {
+			host->can_send = 0;
+			host->busy_time = 0;
+			peer_add_ref(host->peer);
+			*peerp = host->peer;
+			e = GFARM_ERR_NO_ERROR;
+			break;
+		}
+		peer0 = host->peer;
+		gfarm_cond_wait(&host->ready_to_send, &host->back_channel_mutex,
+		    diag, "ready_to_send");
+		if (host->peer != peer0) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+	}
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	return (e);
+}
+
+static void
+abstract_host_sender_unlock(struct abstract_host *host, struct peer *peer,
+	const char *back_channel_diag)
+{
+	static const char diag[] = "abstract_host_sender_unlock";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (peer == host->peer) {
+		host->can_send = 1;
+		host->busy_time = 0;
+	}
+	peer_del_ref(peer);
+	gfarm_cond_signal(&host->ready_to_send, diag, "ready_to_send");
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+}
+
+static gfarm_error_t
+abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
+	const char *back_channel_diag)
+{
+	gfarm_error_t e;
+	struct peer *peer0;
+	static const char diag[] = "abstract_host_receiver_lock";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	for (;;) {
+		if (!abstract_host_is_up_unlocked(host)) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (host->can_receive) {
+			host->can_receive = 0;
+			peer_add_ref(host->peer);
+			*peerp = host->peer;
+			e = GFARM_ERR_NO_ERROR;
+			break;
+		}
+		/* may happen at gfsd restart? */
+		peer0 = host->peer;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "waiting for abstract_host_receiver_lock: "
+		    "maybe %s restarted?",
+		    peer_get_service_name(peer0));
+		gfarm_cond_wait(&host->ready_to_receive,
+		    &host->back_channel_mutex, diag, "ready_to_receive");
+		if (host->peer != peer0) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+	}
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	return (e);
+}
+
+static void
+abstract_host_receiver_unlock(struct abstract_host *host, struct peer *peer)
+{
+	static const char diag[] = "abstract_host_receiver_unlock";
+	const char *back_channel_diag = BACK_CHANNEL_DIAG(peer);
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (peer == host->peer)
+		host->can_receive = 1;
+	peer_del_ref(peer);
+	gfarm_cond_signal(&host->ready_to_receive, diag, "ready_to_receive");
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+}
+
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: host::back_channel_mutex, dfc_allq.mutex, removal_pendingq.mutex
+ * SLEEPS: maybe (see the comment of dead_file_copy_host_becomes_up())
+ *	but host::back_channel_mutex, dfc_allq.mutex and removal_pendingq.mutex
+ *	won't be blocked while sleeping.
+ */
+void
+abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
+{
+	static const char diag[] = "abstract_host_set_peer";
+	const char *back_channel_diag = BACK_CHANNEL_DIAG(p);
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	h->can_send = 1;
+	h->can_receive = 1;
+	h->peer = p;
+	h->protocol_version = version;
+	h->is_active = 1;
+	h->busy_time = 0;
+	h->ops->set_peer_locked(h, p);
+
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	h->ops->set_peer_unlocked(h, p);
+}
+
+/*
+ * PREREQUISITE: host::back_channel_mutex
+ * LOCKS: nothing
+ * SLEEPS: no
+ *
+ * should be called after host->is_active = 0;
+ */
+static void
+abstract_host_break_locks(struct abstract_host *host)
+{
+	static const char diag[] = "abstract_host_break_locks";
+
+	gfarm_cond_broadcast(&host->ready_to_send, diag, "ready_to_send");
+	gfarm_cond_broadcast(&host->ready_to_receive, diag, "ready_to_receive");
+}
+
+/*
+ * PREREQUISITE: host::back_channel_mutex
+ * LOCKS: removal_pendingq.mutex, host_busyq.mutex
+ * SLEEPS: no
+ */
+static void
+abstract_host_peer_unset(struct abstract_host *h)
+{
+	h->peer = NULL;
+	h->protocol_version = 0;
+	h->is_active = 0;
+	h->ops->unset_peer(h);
+
+	abstract_host_break_locks(h);
+}
+
+static void
+abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer)
+{
+	int disabled = 0;
+	void *closure;
+	static const char diag[] = "abstract_host_disconnect_request";
+	const char *back_channel_diag = BACK_CHANNEL_DIAG(peer);
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	if (h->is_active && (peer == h->peer || peer == NULL)) {
+		peer_record_protocol_error(h->peer);
+		peer_free_request(h->peer);
+		abstract_host_peer_unset(h);
+		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
+			disabled = 1;
+	}
+
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	if (disabled)
+		h->ops->disabled(h, closure);
+}
+
+static void
+abstract_host_peer_busy(struct abstract_host *host,
+	const char *back_channel_diag)
+{
+	struct peer *unresponsive_peer = NULL;
+	static const char diag[] = "abstract_host_peer_busy";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+	if (!host->is_active || host->invalid)
+		;
+	else if (host->busy_time == 0)
+		host->busy_time = time(NULL);
+	else if (abstract_host_is_unresponsive(host, time(NULL), diag))
+		unresponsive_peer = host->peer;
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (unresponsive_peer != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s(%s): disconnecting: busy at sending",
+		    BACK_CHANNEL_DIAG(unresponsive_peer),
+		    abstract_host_get_name(host));
+		abstract_host_disconnect_request(host, unresponsive_peer);
+	}
+}
+
+int
+abstract_host_check_busy(struct abstract_host *host, gfarm_int64_t now,
+	const char *back_channel_diag)
+{
+	int busy = 0;
+	struct peer *unresponsive_peer = NULL;
+	static const char diag[] = "abstract_host_check_busy";
+
+	gfarm_mutex_lock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (!host->is_active || host->invalid)
+		busy = 1;
+	else if (abstract_host_is_unresponsive(host, now, diag))
+		unresponsive_peer = host->peer;
+
+	gfarm_mutex_unlock(&host->back_channel_mutex, diag, back_channel_diag);
+
+	if (unresponsive_peer != NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s(%s): disconnecting: busy during queue scan",
+		    BACK_CHANNEL_DIAG(unresponsive_peer),
+		    abstract_host_get_name(host));
+		abstract_host_disconnect_request(host, unresponsive_peer);
+	}
+
+	return (busy || unresponsive_peer != NULL);
+}
+
+/* giant_lock should be held before calling this */
+void
+abstract_host_disconnect(struct abstract_host *h, struct peer *peer,
+	const char *back_channel_diag)
+{
+#if 0
+	/*
+	 * commented out,
+	 * not to sleep while holding host::back_channel_mutex
+	 */
+
+	int disabled = 0;
+	void *closure;
+	static const char diag[] = "abstract_host_disconnect";
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	if (h->is_active && (peer == h->peer || peer == NULL)) {
+		peer_record_protocol_error(h->peer);
+		if (h->can_send && h->can_receive) {
+			/*
+			 * NOTE: this shouldn't need db_begin()/db_end()
+			 * at least for now,
+			 * because only externalized descriptor needs the calls.
+			 */
+			peer_free(h->peer);
+		} else
+			peer_free_request(h->peer);
+
+		abstract_host_peer_unset(h);
+		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
+			disabled = 1;
+	}
+
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
+
+	if (disabled)
+		h->ops->disabled(h, closure);
+#else
+	abstract_host_disconnect_request(h, peer);
+#endif
+}
+
+static gfarm_error_t
+async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
+	gfp_xdr_xid_t xid, size_t size,
+	channel_protocol_switch_t channel_protocol_switch)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_int32_t request;
+	int unknown_request = 0;
+
+	e = gfp_xdr_recv_request_command(client, 0, &size, &request);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = channel_protocol_switch(host, peer, request, xid, size,
+	    &unknown_request);
+	if (unknown_request) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%s) unknown request %d (xid:%d size:%d), reset",
+		    BACK_CHANNEL_DIAG(peer),
+		    (int)request, (int)xid, (int)size);
+		e = gfp_xdr_purge(client, 0, size);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+async_channel_service(struct abstract_host *host,
+	struct peer *peer, gfp_xdr_async_peer_t async,
+	channel_protocol_switch_t channel_protocol_switch)
+{
+	gfarm_error_t e;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	enum gfp_xdr_msg_type type;
+	gfp_xdr_xid_t xid;
+	size_t size;
+	gfarm_int32_t rv;
+
+	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	switch (type) {
+	case GFP_XDR_TYPE_REQUEST:
+		e = async_channel_protocol_switch(host, peer, xid, size,
+		    channel_protocol_switch);
+		break;
+	case GFP_XDR_TYPE_RESULT:
+		e = gfp_xdr_callback_async_result(async, peer, xid, size, &rv);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "(%s) unknown reply xid:%d size:%d",
+			    BACK_CHANNEL_DIAG(peer), (int)xid, (int)size);
+			e = gfp_xdr_purge(conn, 0, size);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "(%s) skipping %d bytes: %s",
+				    BACK_CHANNEL_DIAG(peer), (int)size,
+				    gfarm_error_string(e));
+		} else if (IS_CONNECTION_ERROR(rv)) {
+			e = rv;
+		}
+		break;
+	default:
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "type %d", type);
+		/*NOTREACHED*/
+		e = GFARM_ERR_PROTOCOL;
+		break;
+	}
+	return (e);
+}
+
+void *
+gfm_server_channel_main(void *arg,
+	channel_protocol_switch_t channel_protocol_switch
+#ifdef COMPAT_GFARM_2_3
+	    ,void (*channel_free)(struct abstract_host *),
+	    gfarm_error_t (*sync_channel_service)(struct abstract_host *,
+		struct peer *)
+#endif
+	)
+{
+	struct peer *peer0 = arg, *peer;
+	struct abstract_host *host = peer_get_abstract_host(peer0);
+	gfp_xdr_async_peer_t async;
+	gfarm_error_t e;
+
+	e = abstract_host_receiver_lock(host, &peer, BACK_CHANNEL_DIAG(peer0));
+	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "channel(%s): aborted: %s",
+		    abstract_host_get_name(host), gfarm_error_string(e));
+#ifdef COMPAT_GFARM_2_3
+		channel_free(host);
+#endif
+		peer_invoked(peer0);
+		return (NULL);
+	}
+	/*
+	 * the following ensures that the bach_channel connection is
+	 * not switched to another one.
+	 */
+	if (peer != peer0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s(%s): aborted: unexpected peer switch",
+		    BACK_CHANNEL_DIAG(peer), abstract_host_get_name(host));
+#ifdef COMPAT_GFARM_2_3
+		channel_free(host);
+#endif
+		abstract_host_receiver_unlock(host, peer);
+		peer_invoked(peer0);
+		return (NULL);
+	}
+
+	/* now, host_receiver_lock() is protecting this peer */
+	peer_invoked(peer);
+
+	async = peer_get_async(peer);
+
+	do {
+		if (peer_had_protocol_error(peer)) {
+			/* abstract_host_disconnect*() must be already called */
+#ifdef COMPAT_GFARM_2_3
+			channel_free(host);
+#endif
+			abstract_host_receiver_unlock(host, peer);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s(%s): host_disconnect was called",
+			    BACK_CHANNEL_DIAG(peer),
+			    abstract_host_get_name(host));
+			return (NULL);
+		}
+#ifdef COMPAT_GFARM_2_3
+		if (async != NULL)
+#endif
+			e = async_channel_service(host, peer, async,
+			    channel_protocol_switch);
+#ifdef COMPAT_GFARM_2_3
+		else
+			e = sync_channel_service(host, peer);
+#endif
+		if (IS_CONNECTION_ERROR(e)) {
+			if (e == GFARM_ERR_UNEXPECTED_EOF) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s(%s): disconnected",
+				    BACK_CHANNEL_DIAG(peer),
+				    abstract_host_get_name(host));
+			} else {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s(%s): "
+				    "request error, reset: %s",
+				     BACK_CHANNEL_DIAG(peer),
+				     abstract_host_get_name(host),
+				     gfarm_error_string(e));
+			}
+#ifdef COMPAT_GFARM_2_3
+			channel_free(host);
+#endif
+			abstract_host_disconnect_request(host, peer);
+			abstract_host_receiver_unlock(host, peer);
+			return (NULL);
+		}
+	} while (gfp_xdr_recv_is_ready(peer_get_conn(peer)));
+
+	/*
+	 * NOTE:
+	 * We should use do...while loop for the above gfp_xdr_recv_is_ready()
+	 * case, instead of thrpool_add_job().
+	 * See the comment in protocol_main() for detail.
+	 */
+
+	peer_watch_access(peer);
+
+	abstract_host_receiver_unlock(host, peer);
+
+	/* this return value won't be used, because this thread is detached */
+	return (NULL);
+}
+
+void
+gfm_server_channel_already_disconnected_message(struct abstract_host *host,
+	const char *proto, const char *op, const char *condition)
+{
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "channel(%s) %s %s: already disconnected: %s",
+	    abstract_host_get_name(host), proto, op, condition);
+}
+
+void
+gfm_server_channel_disconnect_request(struct abstract_host *host,
+	struct peer *peer, const char *proto, const char *op,
+	const char *condition)
+{
+	gflog_error(GFARM_MSG_UNFIXED,
+	    "%s(%s) %s %s: disconnecting: %s",
+	    BACK_CHANNEL_DIAG(peer), abstract_host_get_name(host),
+	    proto, op, condition);
+	abstract_host_disconnect_request(host, peer);
+}
+
+/*
+ * synchronous mode of back_channel is only used before gfarm-2.4.0
+ */
+gfarm_error_t
+gfm_client_channel_vsend_request(struct abstract_host *host,
+	struct peer *peer0, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *), void *closure,
+#ifdef COMPAT_GFARM_2_3
+	void (*host_set_callback)(struct abstract_host *, struct peer *,
+	    gfarm_int32_t (*)(void *, void *, size_t),
+	    void (*)(void *, void *), void *),
+#endif
+	gfarm_int32_t command, const char *format, va_list *app,
+	const char *back_channel_diag)
+{
+	gfarm_error_t e;
+	struct peer *peer;
+	gfp_xdr_async_peer_t async;
+	struct gfp_xdr *server;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> channel sending request(%d)",
+		    abstract_host_get_name(host), diag, command);
+
+	e = abstract_host_sender_trylock(host, &peer, back_channel_diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_DEVICE_BUSY) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s(%s) channel (command %d) request: "
+			    "sending busy", abstract_host_get_name(host),
+			    diag, command);
+			abstract_host_peer_busy(host, back_channel_diag);
+		} else /* host_disconnect_request() is already called */
+			gfm_server_channel_already_disconnected_message(host,
+			    diag, "request", "sending busy");
+		return (e);
+	}
+	/* if (peer0 == NULL), the caller doesn't care the connection */
+	if (peer0 != NULL && peer != peer0) {
+		abstract_host_sender_unlock(host, peer,
+		    BACK_CHANNEL_DIAG(peer0));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s(%s) %s (command %d) request: "
+		    "%s was reconnected",
+		    back_channel_diag, abstract_host_get_name(host), diag,
+		    command, peer_get_service_name(peer0));
+		return (GFARM_ERR_CONNECTION_ABORTED);
+	}
+	abstract_host_peer_unbusy(host, back_channel_diag);
+	async = peer_get_async(peer);
+	server = peer_get_conn(peer);
+
+	if (async != NULL) { /* is asynchronous mode? */
+		e = gfp_xdr_vsend_async_request(server,
+		    async, result_callback, disconnect_callback, closure,
+		    command, format, app);
+#ifdef COMPAT_GFARM_2_3
+	} else { /*  synchronous mode */
+		host_set_callback(host, peer,
+		    result_callback, disconnect_callback, closure);
+		e = gfp_xdr_vrpc_request(server,
+		    command, &format, app);
+		if (*format != '\0') {
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "gfs_client_send_request(%d): "
+			    "invalid format character: %c(%x)",
+			    command, *format, *format);
+		}
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfp_xdr_flush(server);
+#endif
+	}
+
+	if (e != GFARM_ERR_NO_ERROR) { /* must be IS_CONNECTION_ERROR(e) */
+		gfm_server_channel_disconnect_request(host, peer,
+		    diag, "request", gfarm_error_string(e));
+		abstract_host_sender_unlock(host, peer, back_channel_diag);
+		return (e);
+	}
+
+	if (async != NULL) /* is asynchronous mode? */
+		abstract_host_sender_unlock(host, peer, back_channel_diag);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/* abstract_host_receiver_lock() must be already called here by
+ * channel_main() */
+gfarm_error_t
+gfm_server_channel_vget_request(struct peer *peer, size_t size,
+	const char *diag, const char *format, va_list *app)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> %s start receiving",
+		    peer_get_hostname(peer), diag,
+		    BACK_CHANNEL_DIAG(peer));
+	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, app);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "async server %s receiving parameter: %s",
+		    diag, gfarm_error_string(e));
+	return (e);
+}
+
+/* XXX FIXME: currently called by threads in back_channel_recv_thread_pool or
+ *            gfmdc_recv_thread_pool */
+gfarm_error_t
+gfm_server_channel_vput_reply(struct abstract_host *host,
+	struct peer *peer0, gfp_xdr_xid_t xid,
+	const char *diag, gfarm_error_t errcode, char *format, va_list *app,
+	const char *back_channel_diag)
+{
+	gfarm_error_t e;
+	struct peer *peer;
+	struct gfp_xdr *client;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> %s sending reply: %d",
+		    abstract_host_get_name(host), diag,
+		    back_channel_diag, (int)errcode);
+
+	/*
+	 * Since this is a reply, the peer is probably living,
+	 * thus, not using peer_sender_trylock() is mostly ok.
+	 */
+	if ((e = abstract_host_sender_lock(host, &peer,
+	    back_channel_diag)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (peer != peer0)
+		return (GFARM_ERR_CONNECTION_ABORTED);
+	client = peer_get_conn(peer);
+	e = gfp_xdr_vsend_async_result(client, xid, errcode, format, app);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(client);
+
+	abstract_host_sender_unlock(host, peer, back_channel_diag);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "async server %s receiving parameter: %s",
+		    diag, gfarm_error_string(e));
+	return (e);
+}
+
+/* abstract_host_receiver_lock() must be already called here by
+ * channel_main() */
+gfarm_error_t
+gfm_client_channel_vrecv_result(struct peer *peer,
+	struct abstract_host *host, size_t size, const char *diag,
+	const char **formatp, gfarm_error_t *errcodep, va_list *app)
+{
+	gfarm_error_t e;
+	gfp_xdr_async_peer_t async = peer_get_async(peer);
+	gfarm_int32_t errcode;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "%s: <%s> %s receiving reply", abstract_host_get_name(host),
+		    diag, BACK_CHANNEL_DIAG(peer));
+
+	if (async != NULL) { /* is async mode? */
+		e = gfp_xdr_vrpc_result_sized(conn, 0,
+		    &size, &errcode, formatp, app);
+	} else { /*  synchronous mode */
+		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
+		abstract_host_sender_unlock(host, peer,
+		    BACK_CHANNEL_DIAG(peer));
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s(%s) RPC result: %s", BACK_CHANNEL_DIAG(peer),
+		    abstract_host_get_name(host), gfarm_error_string(e));
+	} else if (async != NULL && size != 0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s(%s) RPC result: protocol residual %d",
+		    BACK_CHANNEL_DIAG(peer), abstract_host_get_name(host),
+		    (int)size);
+		if ((e = gfp_xdr_purge(conn, 0, size)) != GFARM_ERR_NO_ERROR)
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s(%s) RPC result: skipping: %s",
+			    BACK_CHANNEL_DIAG(peer),
+			    abstract_host_get_name(host),
+			    gfarm_error_string(e));
+		e = GFARM_ERR_PROTOCOL;
+	} else { /* e == GFARM_ERR_NO_ERROR */
+		*errcodep = errcode;
+	}
+	return (e);
+}

@@ -2432,6 +2432,24 @@ gfm_tcp_proto_initialize(void)
 	gfm_tcp_proto = getprotobyname("tcp");
 }
 
+static gfarm_error_t
+setsockopt_to_async_channel(struct gfm_connection *gfm_server, const char *diag)
+{
+	int v = 1;
+	static pthread_once_t gfm_tcp_proto_initialized = PTHREAD_ONCE_INIT;
+
+	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
+	if (gfm_tcp_proto == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "getprotobyname(\"tcp\") failed, slower %s", diag);
+	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
+	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
+		gflog_error_errno(GFARM_MSG_UNFIXED,
+		    "setting TCP_NODELAY failed, slower %s", diag);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfm_client_switch_async_back_channel(struct gfm_connection *gfm_server,
 	gfarm_int32_t version, gfarm_int64_t gfsd_cookie,
@@ -2440,22 +2458,24 @@ gfm_client_switch_async_back_channel(struct gfm_connection *gfm_server,
 	gfarm_error_t e = gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il/i",
 	    version, gfsd_cookie, gfmd_knows_me_p);
-	int v = 1;
-	static pthread_once_t gfm_tcp_proto_initialized = PTHREAD_ONCE_INIT;
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	return (setsockopt_to_async_channel(gfm_server, "back channel"));
+}
 
-	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
-	if (gfm_tcp_proto == NULL) {
-		gflog_error(GFARM_MSG_1002414,
-		    "getprotobyname(\"tcp\") failed, slower back channel");
-	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
-	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
-		gflog_error_errno(GFARM_MSG_1002415,
-		    "setting TCP_NODELAY failed, slower back channel");
-	}
-	return (GFARM_ERR_NO_ERROR);
+gfarm_error_t
+gfm_client_switch_gfmd_channel(struct gfm_connection *gfm_server,
+	gfarm_int32_t version, gfarm_int64_t gfmd_cookie,
+	gfarm_int32_t *gfmd_knows_me_p)
+{
+	gfarm_error_t e = gfm_client_rpc(gfm_server, 0,
+	    GFM_PROTO_SWITCH_GFMD_CHANNEL, "il/i",
+	    version, gfmd_cookie, gfmd_knows_me_p);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (setsockopt_to_async_channel(gfm_server, "gfmd channel"));
 }
 
 /*

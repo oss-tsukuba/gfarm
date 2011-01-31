@@ -27,14 +27,17 @@
 #include "rpcsubr.h"
 #include "thrpool.h"
 #include "callout.h"
+#include "abstract_host.h"
 #include "host.h"
 #include "inode.h"
 #include "dead_file_copy.h"
 
 #include "back_channel.h"
 
-struct thread_pool *back_channel_recv_thread_pool;
-struct thread_pool *back_channel_send_thread_pool;
+static struct thread_pool *back_channel_recv_thread_pool;
+static struct thread_pool *back_channel_send_thread_pool;
+
+#define BACK_CHANNEL_DIAG "back_channel"
 
 /*
  * responsibility to call host_disconnect():
@@ -42,7 +45,7 @@ struct thread_pool *back_channel_send_thread_pool;
  * back_channel_main() is responsible for threads in
  * back_channel_recv_thread_pool.
  *
- * gfs_client_send_request() (and other leaf functions) is responsible
+ * gfm_client_channel_send_request() (and other leaf functions) is responsible
  * for threads in back_channel_send_thread_pool.
  *
  * gfm_async_server_put_reply() should be responsible for threads in
@@ -51,22 +54,17 @@ struct thread_pool *back_channel_send_thread_pool;
  */
 
 static void
-back_channel_disconnect_request(struct host *host, struct peer *peer,
-	const char *proto, const char *op, const char *condition)
+gfs_client_status_disconnect_or_message(struct host *host,
+	struct peer *peer, const char *proto, const char *op,
+	const char *condition)
 {
-	gflog_error(GFARM_MSG_1002435,
-	    "back_channel(%s) %s %s: disconnecting: %s",
-	    host_name(host), proto, op, condition);
-	host_disconnect_request(host, peer);
-}
-
-static void
-back_channel_already_disconnected_message(struct host *host, struct peer *peer,
-	const char *proto, const char *op, const char *condition)
-{
-	gflog_debug(GFARM_MSG_1002436,
-	    "back_channel(%s) %s %s: already disconnected: %s",
-	    host_name(host), proto, op, condition);
+	if (peer != NULL) { /* to make the race condition harmless */
+		gfm_server_channel_disconnect_request(ABS_HOST(host), peer,
+		    proto, op, condition);
+	} else {
+		gfm_server_channel_already_disconnected_message(ABS_HOST(host),
+		    proto, op, condition);
+	}
 }
 
 /* host_receiver_lock() must be already called here by back_channel_main() */
@@ -74,188 +72,29 @@ static gfarm_error_t
 gfm_async_server_get_request(struct peer *peer, size_t size,
 	const char *diag, const char *format, ...)
 {
-	struct gfp_xdr *client = peer_get_conn(peer);
-	va_list ap;
 	gfarm_error_t e;
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002274,
-		    "%s: <%s> back_channel start receiving",
-		    host_name(peer_get_host(peer)), diag);
+	va_list ap;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, &ap);
+	e = gfm_server_channel_vget_request(peer, size, diag, format, &ap);
 	va_end(ap);
 
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1001980,
-		    "async server %s receiving parameter: %s",
-		    diag, gfarm_error_string(e));
 	return (e);
 }
 
-/* XXX FIXME: currently called by threads in back_channel_recv_thread_pool */
 static gfarm_error_t
 gfm_async_server_put_reply(struct host *host,
-	struct peer *peer0, gfp_xdr_xid_t xid,
+	struct peer *peer, gfp_xdr_xid_t xid,
 	const char *diag, gfarm_error_t errcode, char *format, ...)
 {
 	gfarm_error_t e;
-	struct peer *peer;
-	struct gfp_xdr *client;
 	va_list ap;
 
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002275,
-		    "%s: <%s> back_channel sending reply: %d",
-		    host_name(host), diag, (int)errcode);
-
-	/*
-	 * Since this is a reply, the peer is probably living,
-	 * thus, not using peer_sender_trylock() is mostly ok.
-	 */
-	if ((e = host_sender_lock(host, &peer)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (peer != peer0)
-		return (GFARM_ERR_CONNECTION_ABORTED);
-	client = peer_get_conn(peer);
-
 	va_start(ap, format);
-	e = gfp_xdr_vsend_async_result(client, xid, errcode, format, &ap);
+	e = gfm_server_channel_vput_reply(ABS_HOST(host), peer, xid, diag,
+	    errcode, format, &ap, BACK_CHANNEL_DIAG);
 	va_end(ap);
 
-	if (e == GFARM_ERR_NO_ERROR)
-		e = gfp_xdr_flush(client);
-
-	host_sender_unlock(host, peer);
-
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_1001981,
-		    "async server %s receiving parameter: %s",
-		    diag, gfarm_error_string(e));
-	return (e);
-}
-
-
-/*
- * synchronous mode of back_channel is only used before gfarm-2.4.0
- */
-static gfarm_error_t
-gfs_client_send_request(struct host *host, struct peer *peer0,
-	const char *diag,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
-	void *closure,
-	gfarm_int32_t command, const char *format, ...)
-{
-	gfarm_error_t e;
-	struct peer *peer;
-	gfp_xdr_async_peer_t async;
-	struct gfp_xdr *server;
-	va_list ap;
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002276,
-		    "%s: <%s> back_channel sending request(%d)",
-		    host_name(host), diag, command);
-
-	e = host_sender_trylock(host, &peer);
-	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_DEVICE_BUSY) {
-			gflog_debug(GFARM_MSG_1002437,
-			    "back_channel(%s) %s (command %d) request: "
-			    "sending busy", host_name(host), diag, command);
-			host_peer_busy(host);
-		} else /* host_disconnect_request() is already called */
-			back_channel_already_disconnected_message(host, peer,
-			    diag, "request", "sending busy");
-		return (e);
-	}
-	/* if (peer0 == NULL), the caller doesn't care the connection */
-	if (peer0 != NULL && peer != peer0) {
-		host_sender_unlock(host, peer);
-		gflog_debug(GFARM_MSG_1002438,
-		    "back_channel(%s) %s (command %d) request: "
-		    "gfsd was reconnected",
-		    host_name(host), diag, command);
-		return (GFARM_ERR_CONNECTION_ABORTED);
-	}
-	host_peer_unbusy(host);
-	async = peer_get_async(peer);
-	server = peer_get_conn(peer);
-
-	va_start(ap, format);
-	if (async != NULL) { /* is asynchronous mode? */
-		e = gfp_xdr_vsend_async_request(server,
-		    async, result_callback, disconnect_callback, closure,
-		    command, format, &ap);
-	} else { /*  synchronous mode */
-		host_set_callback(host, peer,
-		    result_callback, disconnect_callback, closure);
-		e = gfp_xdr_vrpc_request(server,
-		    command, &format, &ap);
-		if (*format != '\0') {
-			gflog_fatal(GFARM_MSG_1002277,
-			    "gfs_client_send_request(%d): "
-			    "invalid format character: %c(%x)",
-			    command, *format, *format);
-		}
-		if (e == GFARM_ERR_NO_ERROR)
-			e = gfp_xdr_flush(server);
-	}
-	va_end(ap);
-
-	if (e != GFARM_ERR_NO_ERROR) { /* must be IS_CONNECTION_ERROR(e) */
-		back_channel_disconnect_request(host, peer,
-		    diag, "request", gfarm_error_string(e));
-		host_sender_unlock(host, peer);
-		return (e);
-	}
-
-	if (async != NULL) /* is asynchronous mode? */
-		host_sender_unlock(host, peer);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/* host_receiver_lock() must be already called here by back_channel_main() */
-static gfarm_error_t
-gfs_client_recv_vresult(struct peer *peer, struct host *host,
-	size_t size, const char *diag, const char **formatp, va_list *app,
-	gfarm_error_t *errcodep)
-{
-	gfarm_error_t e;
-	gfp_xdr_async_peer_t async = peer_get_async(peer);
-	gfarm_int32_t errcode;
-	struct gfp_xdr *conn = peer_get_conn(peer);
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002279,
-		    "%s: <%s> back_channel receiving reply",
-		    host_name(host), diag);
-
-	if (async != NULL) { /* is async mode? */
-		e = gfp_xdr_vrpc_result_sized(conn, 0,
-		    &size, &errcode, formatp, app);
-	} else { /*  synchronous mode */
-		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
-		host_sender_unlock(host, peer);
-	}
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002280,
-		    "back_channel(%s) RPC result: %s",
-		    host_name(host), gfarm_error_string(e));
-	} else if (async != NULL && size != 0) {
-		gflog_error(GFARM_MSG_1002281,
-		    "back_channel(%s) RPC result: protocol residual %d",
-		    host_name(host), (int)size);
-		if ((e = gfp_xdr_purge(conn, 0, size)) != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_1001985,
-			    "back_channel(%s) RPC result: skipping: %s",
-			    host_name(host), gfarm_error_string(e));
-		e = GFARM_ERR_PROTOCOL;
-	} else { /* e == GFARM_ERR_NO_ERROR */
-		*errcodep = errcode;
-	}
 	return (e);
 }
 
@@ -268,22 +107,22 @@ gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfs_client_recv_vresult(peer, host, size, diag,
-	    &format, &ap, errcodep);
+	e = gfm_client_channel_vrecv_result(peer, ABS_HOST(host), size, diag,
+	    &format, errcodep, &ap);
 	va_end(ap);
 	return (e);
 }
 
 static gfarm_error_t
 gfs_client_recv_result(struct peer *peer, struct host *host,
-	size_t size, const char *diag, const char *format, ...)
+       size_t size, const char *diag, const char *format, ...)
 {
 	gfarm_error_t e, errcode;
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfs_client_recv_vresult(peer, host, size, diag,
-	    &format, &ap, &errcode);
+	e = gfm_client_channel_vrecv_result(peer, ABS_HOST(host), size, diag,
+	    &format, &errcode, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -295,19 +134,6 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	return (errcode);
 }
 
-static void
-gfs_client_status_disconnect_or_message(struct host *host, struct peer *peer,
-	const char *proto, const char *op, const char *condition)
-{
-	if (peer != NULL) { /* to make the race condition harmless */
-		back_channel_disconnect_request(host, peer,
-		    proto, op, condition);
-	} else {
-		back_channel_already_disconnected_message(host, peer,
-		    proto, op, condition);
-	}
-}
-
 static gfarm_int32_t
 gfs_client_status_result(void *p, void *arg, size_t size)
 {
@@ -317,7 +143,8 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	struct host_status st;
 	static const char diag[] = "GFS_PROTO_STATUS";
 
-	e = gfs_client_recv_result(peer, host, size, diag, "fffll",
+	e = gfs_client_recv_result(peer, host,
+	    size, diag, "fffll",
 	    &st.loadavg_1min, &st.loadavg_5min, &st.loadavg_15min,
 	    &st.disk_used, &st.disk_avail);
 	if (e == GFARM_ERR_NO_ERROR)
@@ -336,6 +163,28 @@ gfs_client_status_free(void *p, void *arg)
 	struct peer *peer = p;
 	struct host *host = arg;
 #endif
+}
+
+static gfarm_error_t
+gfs_client_send_request(struct host *host,
+	struct peer *peer0, const char *diag,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
+	gfarm_int32_t command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfm_client_channel_vsend_request(ABS_HOST(host), peer0, diag,
+	    result_callback, disconnect_callback, closure,
+#ifdef COMPAT_GFARM_2_3
+	    host_set_callback,
+#endif
+	    command, format, &ap, BACK_CHANNEL_DIAG);
+	va_end(ap);
+	return (e);
 }
 
 /* this function is called via callout */
@@ -639,12 +488,13 @@ gfm_async_server_replication_result(struct host *host,
 }
 
 static gfarm_error_t
-async_back_channel_protocol_switch(struct host *host, struct peer *peer,
-	gfp_xdr_xid_t xid, size_t size)
+async_back_channel_protocol_switch(struct abstract_host *h,
+	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
+	int *unknown_request)
 {
+	struct host *host = FS_HOST(h);
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	gfarm_int32_t request;
 
 	e = gfp_xdr_recv_request_command(client, 0, &size, &request);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -655,55 +505,7 @@ async_back_channel_protocol_switch(struct host *host, struct peer *peer,
 		e = gfm_async_server_replication_result(host, peer, xid, size);
 		break;
 	default:
-		gflog_error(GFARM_MSG_1001989,
-		    "(back channel) unknown request %d "
-		    "(xid:%d size:%d), reset",
-		    (int)request, (int)xid, (int)size);
-		e = gfp_xdr_purge(client, 0, size);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		break;
-	}
-	return (e);
-}
-
-static gfarm_error_t
-async_back_channel_service(struct host *host,
-	struct peer *peer, gfp_xdr_async_peer_t async)
-{
-	gfarm_error_t e;
-	struct gfp_xdr *conn = peer_get_conn(peer);
-	enum gfp_xdr_msg_type type;
-	gfp_xdr_xid_t xid;
-	size_t size;
-	gfarm_int32_t rv;
-
-	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	switch (type) {
-	case GFP_XDR_TYPE_REQUEST:
-		e = async_back_channel_protocol_switch(host, peer, xid, size);
-		break;
-	case GFP_XDR_TYPE_RESULT:
-		e = gfp_xdr_callback_async_result(async, peer, xid, size, &rv);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1001990,
-			    "(back channel) unknown reply "
-			    "xid:%d size:%d", (int)xid, (int)size);
-			e = gfp_xdr_purge(conn, 0, size);
-			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_1001991,
-				    "skipping %d bytes: %s",
-				    (int)size, gfarm_error_string(e));
-		} else if (IS_CONNECTION_ERROR(rv)) {
-			e = rv;
-		}
-		break;
-	default:
-		gflog_fatal(GFARM_MSG_1001992,
-		    "back_channel_service: type %d", type);
-		/*NOTREACHED*/
+		*unknown_request = 1;
 		e = GFARM_ERR_PROTOCOL;
 		break;
 	}
@@ -712,8 +514,9 @@ async_back_channel_service(struct host *host,
 
 #ifdef COMPAT_GFARM_2_3
 static gfarm_error_t
-sync_back_channel_service(struct host *host, struct peer *peer)
+sync_back_channel_service(struct abstract_host *h, struct peer *peer)
 {
+	struct host *host = FS_HOST(h);
 	gfarm_int32_t (*result_callback)(void *, void *, size_t);
 	void *arg;
 
@@ -734,8 +537,9 @@ sync_back_channel_service(struct host *host, struct peer *peer)
  * because host_get_disconnect_callback() returns FALSE in that case.
  */
 static void
-sync_back_channel_free(struct host *host)
+sync_back_channel_free(struct abstract_host *h)
 {
+	struct host *host = FS_HOST(h);
 	void (*disconnect_callback)(void *, void *);
 	struct peer *peer;
 	void *arg;
@@ -750,89 +554,13 @@ sync_back_channel_free(struct host *host)
 static void *
 back_channel_main(void *arg)
 {
-	struct peer *peer0 = arg, *peer;
-	struct host *host = peer_get_host(peer0);;
-	gfp_xdr_async_peer_t async;
-	gfarm_error_t e;
-
-	e = host_receiver_lock(host, &peer);
-	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
-		gflog_error(GFARM_MSG_1002327,
-		    "back_channel(%s): aborted: %s",
-		    host_name(host), gfarm_error_string(e));
-		sync_back_channel_free(host);
-		peer_invoked(peer0);
-		return (NULL);
-	}
-	/*
-	 * the following ensures that the bach_channel connection is
-	 * not switched to another one.
-	 */
-	if (peer != peer0) {
-		gflog_error(GFARM_MSG_1002328,
-		    "back_channel(%s): aborted: unexpected peer switch",
-		    host_name(host));
-		sync_back_channel_free(host);
-		host_receiver_unlock(host, peer);
-		peer_invoked(peer0);
-		return (NULL);
-	}
-
-	/* now, host_receiver_lock() is protecting this peer */
-	peer_invoked(peer);
-
-	async = peer_get_async(peer);
-
-	do {
-		if (peer_had_protocol_error(peer)) {
-			/* host_disconnect*() must be already called */
-			sync_back_channel_free(host);
-			host_receiver_unlock(host, peer);
-			gflog_debug(GFARM_MSG_1002439,
-			    "back_channel(%s): host_disconnect was called",
-			    host_name(host));
-			return (NULL);
-		}
+	return (gfm_server_channel_main(arg,
+		async_back_channel_protocol_switch,
 #ifdef COMPAT_GFARM_2_3
-		if (async != NULL) {
+		sync_back_channel_free,
+		sync_back_channel_service
 #endif
-			e = async_back_channel_service(host, peer, async);
-#ifdef COMPAT_GFARM_2_3
-		} else {
-			e = sync_back_channel_service(host, peer);
-		}
-#endif
-		if (IS_CONNECTION_ERROR(e)) {
-			if (e == GFARM_ERR_UNEXPECTED_EOF) {
-				gflog_error(GFARM_MSG_1002286,
-				    "back_channel(%s): disconnected",
-				    host_name(host));
-			} else {
-				gflog_error(GFARM_MSG_1002287,
-				    "back_channel(%s): "
-				    "request error, reset: %s",
-				     host_name(host), gfarm_error_string(e));
-			}
-			sync_back_channel_free(host);
-			host_disconnect_request(host, peer);
-			host_receiver_unlock(host, peer);
-			return (NULL);
-		}
-	} while (gfp_xdr_recv_is_ready(peer_get_conn(peer)));
-
-	/*
-	 * NOTE:
-	 * We should use do...while loop for the above gfp_xdr_recv_is_ready()
-	 * case, instead of thrpool_add_job().
-	 * See the comment in protocol_main() for detail.
-	 */
-
-	peer_watch_access(peer);
-
-	host_receiver_unlock(host, peer);
-
-	/* this return value won't be used, because this thread is detached */
-	return (NULL);
+		));
 }
 
 /* both giant_lock and peer_table_lock are held before calling this function */
@@ -898,7 +626,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		}
 
 		giant_lock();
-		host_peer_set(host, peer, version);
+		abstract_host_set_peer(ABS_HOST(host), peer, version);
 		giant_unlock();
 
 		peer_watch_access(peer);

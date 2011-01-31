@@ -118,6 +118,27 @@ gfarm_auth_random(void *buffer, size_t length)
 	}
 }
 
+static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
+static const char privilege_diag[] = "privilege_mutex";
+
+/*
+ * Lock mutex for setuid(), setegid().
+ */
+void
+gfarm_auth_privilege_lock(const char *diag)
+{
+	gfarm_mutex_lock(&privilege_mutex, diag, privilege_diag);
+}
+
+/*
+ * Unlock mutex for setuid(), setegid().
+ */
+void
+gfarm_auth_privilege_unlock(const char *diag)
+{
+	gfarm_mutex_unlock(&privilege_mutex, diag, privilege_diag);
+}
+
 /*
  * We switch the user's privilege to read ~/.gfarm_shared_key.
  *
@@ -142,8 +163,6 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	uid_t o_uid;
 	gid_t o_gid;
 	int is_root = 0;
-	static pthread_mutex_t privilege_mutex = PTHREAD_MUTEX_INITIALIZER;
-	static const char privilege_diag[] = "privilege_mutex";
 	static const char diag[] = "gfarm_auth_shared_key_get";
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
@@ -161,7 +180,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	strcat(keyfilename, keyfile_basename);
 
 	if (pwd != NULL) {
-		gfarm_mutex_lock(&privilege_mutex, diag, privilege_diag);
+		gfarm_auth_privilege_lock(diag);
 		o_gid = getegid();
 		o_uid = geteuid();
 		if (seteuid(0) == 0) /* recover root privilege */
@@ -261,7 +280,7 @@ finish:
 		if (seteuid(o_uid) == -1 && is_root)
 			gflog_error_errno(GFARM_MSG_1002345,
 			    "seteuid(%d)", (int)o_uid);
-		gfarm_mutex_unlock(&privilege_mutex, diag, privilege_diag);
+		gfarm_auth_privilege_unlock(diag);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001024,
