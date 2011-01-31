@@ -23,6 +23,7 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 SRCS = \
+	crc32.c \
 	liberror.c \
 	hostspec.c \
 	host.c \
@@ -101,6 +102,7 @@ SRCS = \
 #	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
 
 OBJS = \
+	crc32.lo \
 	liberror.lo \
 	hostspec.lo \
 	host.lo \
@@ -204,6 +206,7 @@ config.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h patmatch.h hostspec.h param.h so
 conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h conn_hash.h conn_cache.h
+crc32.lo: crc32.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h
 gfm_schedule.lo: gfm_client.h gfm_schedule.h
 gfp_xdr.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h iobuffer.h gfp_xdr.h
