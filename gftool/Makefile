@@ -18,6 +18,7 @@ SUBDIRS = \
 	gfgetfacl \
 	gfgroup \
 	gfhost \
+	gfjournal \
 	gfkey \
 	gfln \
 	gfls \
