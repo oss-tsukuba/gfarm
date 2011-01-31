@@ -945,7 +945,8 @@ peer_get_async(struct peer *peer)
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
-	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST) {
+	if (peer->id_type != GFARM_AUTH_ID_TYPE_SPOOL_HOST &&
+	    peer->id_type != GFARM_AUTH_ID_TYPE_METADATA_HOST) {
 		gflog_debug(GFARM_MSG_1001584,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);

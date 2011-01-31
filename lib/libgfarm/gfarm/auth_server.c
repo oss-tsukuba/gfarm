@@ -28,6 +28,7 @@
 #include "gfp_xdr.h"
 
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
+#include "gfm_proto.h" /* for GFSM_USERNAME, XXX layering violation */
 #include "config.h" /* gfarm_metadb_server_name, gfarm_metadb_server_port */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
@@ -306,6 +307,8 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 
 	if (strcmp(global_username, GFSD_USERNAME) == 0) {
 		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+	} else if (strcmp(global_username, GFMD_USERNAME) == 0) {
+		peer_type = GFARM_AUTH_ID_TYPE_METADATA_HOST;
 	} else {
 		/*
 		 * actually, a protocol-level uid is a gfarm global username
