@@ -141,3 +141,8 @@ CREATE TABLE QuotaGroup (
 	phyNumSoft	INT8	NOT NULL,
 	phyNumHard	INT8	NOT NULL
 );
+
+CREATE TABLE SeqNum (
+	name		VARCHAR(256)	PRIMARY KEY,
+	value		INT8	NOT NULL
+);

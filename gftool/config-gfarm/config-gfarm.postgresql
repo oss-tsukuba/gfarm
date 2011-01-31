@@ -441,7 +441,7 @@ _EOF_
 		print "	ON Host, HostAliases, "
 		print "    GfarmUser, GfarmGroup, GfarmGroupAssignment, "
 		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry, "
-		print "    Symlink, QuotaUser, QuotaGroup, "
+		print "    Symlink, QuotaUser, QuotaGroup, SeqNum, "
 		print "    XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
 #		if ($SCHEMA_VERSION > 1) {

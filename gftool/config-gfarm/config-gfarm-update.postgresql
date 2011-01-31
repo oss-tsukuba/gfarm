@@ -85,31 +85,34 @@ update_sanity_postgresql()
 	return $rv
 }
 
+create_table()
+{
+	table=$1
+	count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
+
+	if [ "$?" -ne 0 ]; then
+		return
+	fi
+	if [ $count -eq 0 ]; then
+		echo "${PROGNAME}: adding ${table} table"
+
+		(
+		sed -n "/CREATE TABLE ${table}/,/^)/p" $config_dir/gfarm.sql
+		cat <<__EOF__
+GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO $BACKEND_USER;
+__EOF__
+		) |
+			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
+}
+
 update_postgresql()
 {
-	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt Symlink' | wc -l`" -eq 0 ]; then
-		echo "${PROGNAME}: adding Symlink table"
-
-		(
-		sed -n '/CREATE TABLE Symlink/,/^)/p' $config_dir/gfarm.sql 
-		cat <<__EOF__
-GRANT SELECT, INSERT, UPDATE, DELETE ON Symlink TO $BACKEND_USER;
-__EOF__
-		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
-	fi
-
-	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XAttr' | wc -l`" -eq 0 ]; then
-		echo "${PROGNAME}: adding XAttr table"
-
-		(
-		sed -n '/CREATE TABLE XAttr/,/^)/p' $config_dir/gfarm.sql 
-		cat <<__EOF__
-GRANT SELECT, INSERT, UPDATE, DELETE ON XAttr TO $BACKEND_USER;
-__EOF__
-		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
-	fi
+	create_table Symlink
+	create_table XAttr
+	create_table QuotaUser
+	create_table QuotaGroup
+	create_table SeqNum
 
 	if [ X"$SUPPORT_XML_TYPE" = Xyes -a \
 		"`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then
@@ -119,30 +122,6 @@ __EOF__
 		cat $config_dir/gfarm-xmlattr.sql 
 		cat <<__EOF__
 GRANT SELECT, INSERT, UPDATE, DELETE ON XmlAttr TO $BACKEND_USER;
-__EOF__
-		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
-	fi
-
-	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt QuotaUser' | wc -l`" -eq 0 ]; then
-		echo "${PROGNAME}: adding QuotaUser table"
-
-		(
-		sed -n '/CREATE TABLE QuotaUser/,/^)/p' $config_dir/gfarm.sql 
-		cat <<__EOF__
-GRANT SELECT, INSERT, UPDATE, DELETE ON QuotaUser TO $BACKEND_USER;
-__EOF__
-		) |
-			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
-	fi
-
-	if [ "`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt QuotaGroup' | wc -l`" -eq 0 ]; then
-		echo "${PROGNAME}: adding QuotaGroup table"
-
-		(
-		sed -n '/CREATE TABLE QuotaGroup/,/^)/p' $config_dir/gfarm.sql 
-		cat <<__EOF__
-GRANT SELECT, INSERT, UPDATE, DELETE ON QuotaGroup TO $BACKEND_USER;
 __EOF__
 		) |
 			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
