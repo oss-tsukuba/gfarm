@@ -75,3 +75,8 @@ gftool/gfwhoami/gfwhoami_mds2.sh
 # gftool/gfuser
 # gftool/gfhost
 # gftool/gfkey
+
+# server/gfmd
+server/gfmd/db_journal/db_journal_open.sh
+server/gfmd/db_journal/db_journal_write.sh
+server/gfmd/db_journal/db_journal_ops.sh
