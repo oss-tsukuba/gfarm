@@ -107,10 +107,16 @@ setxattr(int xmlMode, struct inode *inode,
 					free(value);
 					(void)inode_xattr_remove(
 						inode, xmlMode, attrname);
-					(void)db_xattr_remove(
-						xmlMode,
-						inode_get_number(inode),
-						attrname);
+					e = db_xattr_remove(xmlMode,
+					    inode_get_number(inode), attrname);
+					if (e != GFARM_ERR_NO_ERROR)
+						gflog_error(GFARM_MSG_UNFIXED,
+						    "db_xattr_remove(0, %llu, "
+						    "%s): %s",
+						    (unsigned long long)
+						    inode_get_number(inode),
+						    attrname,
+						    gfarm_error_string(e));
 				}
 				/* *addattr = 0 */
 				return (GFARM_ERR_NO_ERROR);
