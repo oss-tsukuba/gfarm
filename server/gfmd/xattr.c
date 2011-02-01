@@ -100,11 +100,18 @@ setxattr(int xmlMode, struct inode *inode,
 				return (e);
 			}
 			if (*valuep == NULL || size <= 4) {
-				(void)inode_xattr_remove(
-					inode, xmlMode, attrname);
-				(void)db_xattr_remove(
-					xmlMode, inode_get_number(inode),
-					attrname);
+				e = inode_xattr_get_cache(
+					inode, xmlMode, attrname,
+					&value, &size);
+				if (e == GFARM_ERR_NO_ERROR) {
+					free(value);
+					(void)inode_xattr_remove(
+						inode, xmlMode, attrname);
+					(void)db_xattr_remove(
+						xmlMode,
+						inode_get_number(inode),
+						attrname);
+				}
 				/* *addattr = 0 */
 				return (GFARM_ERR_NO_ERROR);
 			}
