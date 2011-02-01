@@ -35,7 +35,7 @@
 
 #if 0 /* not necessary in Gfarm */
 #include <sys/cdefs.h>
-#enidif
+#endif
 
 /*
  * This file defines four types of data structures: singly-linked lists,
