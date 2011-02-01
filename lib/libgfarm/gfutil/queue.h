@@ -79,28 +79,28 @@
  * For details on the use of these macros, see the queue(3) manual page.
  *
  *
- *				SLIST	LIST	STAILQ	TAILQ
- * _HEAD			+	+	+	+
- * _HEAD_INITIALIZER		+	+	+	+
- * _ENTRY			+	+	+	+
- * _INIT			+	+	+	+
- * _EMPTY			+	+	+	+
- * _FIRST			+	+	+	+
- * _NEXT			+	+	+	+
- * _PREV			-	-	-	+
- * _LAST			-	-	+	+
- * _FOREACH			+	+	+	+
- * _FOREACH_SAFE		+	+	+	+
- * _FOREACH_REVERSE		-	-	-	+
- * _FOREACH_REVERSE_SAFE	-	-	-	+
- * _INSERT_HEAD			+	+	+	+
- * _INSERT_BEFORE		-	+	-	+
- * _INSERT_AFTER		+	+	+	+
- * _INSERT_TAIL			-	-	+	+
- * _CONCAT			-	-	+	+
- * _REMOVE_AFTER		+	-	+	-
- * _REMOVE_HEAD			+	-	+	-
- * _REMOVE			O(N)	+	O(N)	+
+ *				SLIST	LIST	STAILQ	TAILQ	HCIRCLEQ
+ * _HEAD			+	+	+	+	+
+ * _HEAD_INITIALIZER		+	+	+	+	+(HEAD_ENTRY)
+ * _ENTRY			+	+	+	+	+
+ * _INIT			+	+	+	+	+
+ * _EMPTY			+	+	+	+	+
+ * _FIRST			+	+	+	+	+
+ * _NEXT			+	+	+	+	+
+ * _PREV			-	-	-	+	+
+ * _LAST			-	-	+	+	+
+ * _FOREACH			+	+	+	+	+
+ * _FOREACH_SAFE		+	+	+	+	+
+ * _FOREACH_REVERSE		-	-	-	+	+
+ * _FOREACH_REVERSE_SAFE	-	-	-	+	+
+ * _INSERT_HEAD			+	+	+	+	+
+ * _INSERT_BEFORE		-	+	-	+	+
+ * _INSERT_AFTER		+	+	+	+	+
+ * _INSERT_TAIL			-	-	+	+	+
+ * _CONCAT			-	-	+	+	+
+ * _REMOVE_AFTER		+	-	+	-	+
+ * _REMOVE_HEAD			+	-	+	-	+
+ * _REMOVE			O(N)	+	O(N)	+	+
  *
  */
 #ifdef GFARM_QUEUE_MACRO_DEBUG
@@ -638,5 +638,145 @@ struct {								\
 } while (0)
 
 #endif /* LIST and TAILQ are disabled in Gfarm */
+
+/*
+ * Doubly Linked Circular List with a Header
+ */
+#define GFARM_HCIRCLEQ_HEAD(type)	struct type
+
+#define GFARM_HCIRCLEQ_HEAD_ENTRY_INITIALIZER(head) \
+	{ &(head), &(head) }
+
+#define GFARM_HCIRCLEQ_ENTRY(type) \
+struct { \
+	struct type *hcqe_next; \
+	struct type *hcqe_prev; \
+}
+
+#define GFARM_HCIRCLEQ_INIT(head, field) do { \
+	(head).field.hcqe_next = (head).field.hcqe_prev = &(head); \
+} while (/*CONSTCOND*/0)
+
+#define GFARM_HCIRCLEQ_IS_END(head, elm) \
+	((elm) == &(head))
+
+#define GFARM_HCIRCLEQ_EMPTY(head, field) \
+	GFARM_HCIRCLEQ_IS_END(head, (head).field.hcqe_next, field)
+
+#define GFARM_HCIRCLEQ_NEXT(elm, field)	((elm)->field.hcqe_next)
+#define GFARM_HCIRCLEQ_PREV(elm, field)	((elm)->field.hcqe_prev)
+#define GFARM_HCIRCLEQ_FIRST(head, field) \
+	GFARM_HCIRCLEQ_NEXT(&(head), field) 
+#define GFARM_HCIRCLEQ_LAST(head, field) \
+	GFARM_HCIRCLEQ_PREV(&(head), field)
+
+#define GFARM_HCIRCLEQ_INSERT_AFTER(at, elm, field) do { \
+	(elm)->field.hcqe_next = (at)->field.hcqe_next; \
+	(elm)->field.hcqe_prev = (at); \
+	(at)->field.hcqe_next->field.hcqe_prev = (elm); \
+	(at)->field.hcqe_next = (elm); \
+} while (/*CONSTCOND*/0)
+
+#define GFARM_HCIRCLEQ_INSERT_BEFORE(at, elm, field) do { \
+	(elm)->field.hcqe_next = (at); \
+	(elm)->field.hcqe_prev = (at)->field.hcqe_prev; \
+	(at)->field.hcqe_prev->field.hcqe_next = (elm); \
+	(at)->field.hcqe_prev = (elm); \
+} while (/*CONSTCOND*/0)
+	
+#define GFARM_HCIRCLEQ_INSERT_HEAD(head, elm, field) \
+	GFARM_HCIRCLEQ_INSERT_AFTER(&(head), elm, field)
+
+#define GFARM_HCIRCLEQ_INSERT_TAIL(head, elm, field) \
+	GFARM_HCIRCLEQ_INSERT_BEFORE(&(head), elm, field)
+
+#define GFARM_HCIRCLEQ_REMOVE(elm, field) do { \
+	(elm)->field.hcqe_next->field.hcqe_prev = (elm)->field.hcqe_prev; \
+	(elm)->field.hcqe_prev->field.hcqe_next = (elm)->field.hcqe_next; \
+} while (/*CONSTCOND*/0)
+
+/* assert(!GFARM_HCIRCLEQ_IS_END(head, (elm)->field.hcqe_next, field)); */
+#if 0
+#define GFARM_HCIRCLEQ_REMOVE_AFTER(elm, field) \
+	GFARM_HCIRCLEQ_REMOVE((elm)->field.hcqe_next, field)
+#else
+#define GFARM_HCIRCLEQ_REMOVE_AFTER(elm, field) do { \
+	(elm)->field.hcqe_next = (elm)->field.hcqe_next->field.hcqe_next; \
+	(elm)->field.hcqe_next->field.hcqe_prev = (elm); \
+} while (/*CONSTCOND*/0)
+#endif
+
+/* assert(!GFARM_HCIRCLEQ_IS_END(head, (elm)->field.hcqe_prev, field)); */
+#if 0
+#define GFARM_HCIRCLEQ_REMOVE_BEFORE(elm, field) \
+	GFARM_HCIRCLEQ_REMOVE(head, (elm)->field.hcqe_prev, field)
+#else
+#define GFARM_HCIRCLEQ_REMOVE_BEFORE(elm, field) do { \
+	(elm)->field.hcqe_prev = (elm)->field.hcqe_prev->field.hcqe_prev; \
+	(elm)->field.hcqe_prev->field.hcqe_next = (elm); \
+} while (/*CONSTCOND*/0)
+#endif
+
+/* assert(!GFARM_HCIRCLEQ_EMPTY(head, field)); */
+#define GFARM_HCIRCLEQ_REMOVE_HEAD(head, field)	\
+	GFARM_HCIRCLEQ_REMOVE_AFTER(&(head))
+/* assert(!GFARM_HCIRCLEQ_EMPTY(head, field)); */
+#define GFARM_HCIRCLEQ_REMOVE_TAIL(head, field) \
+	GFARM_HCIRCLEQ_REMOVE_BEFORE(&(head))
+
+#define GFARM_HCIRCLEQ_CONCAT_BEFORE(at, head, field) do { \
+	if (!GFARM_HCIRCLEQ_EMPTY(head, field)) { \
+		(head).field.hcqe_next->field.hcqe_prev = \
+		    (at)->field.hcqe_prev; \
+		(at)->field.hcqe_prev->field.hcqe_next = \
+		    (head).field.hcqe_next; \
+		(head).field.hcqe_prev->field.hcqe_next = at; \
+		(at)->field.hcqe_prev = (head).field.hcqe_prev; \
+		GFARM_HCIRCLEQ_INIT(head, field); \
+	} \
+} while (/*CONSTCOND*/0)
+
+#define GFARM_HCIRCLEQ_CONCAT_AFTER(at, head, field) do { \
+	if (!GFARM_HCIRCLEQ_EMPTY(head, field)) { \
+		(head).field.hcqe_prev->field.hcqe_next = \
+		    (at)->field.hcqe_next; \
+		(at)->field.hcqe_next->field.hcqe_prev = \
+		    (head).field.hcqe_prev; \
+		(head).field.hcqe_next->field.hcqe_prev = at; \
+		(at)->field.hcqe_next = (head).field.hcqe_next; \
+		GFARM_HCIRCLEQ_INIT(head, field); \
+	} \
+} while (/*CONSTCOND*/0)
+
+#define GFARM_HCIRCLEQ_CONCAT_HEAD(head1, head2, field) \
+	GFARM_HCIRCLEQ_CONCAT_AFTER(&head1, head2, field);
+
+#define GFARM_HCIRCLEQ_CONCAT_TAIL(head1, head2, field) \
+	GFARM_HCIRCLEQ_CONCAT_BEFORE(&head1, head2, field);
+
+#define GFARM_HCIRCLEQ_CONCAT(head1, head2, field) \
+	GFARM_HCIRCLEQ_CONCAT_TAIL(head1, head2, field);
+
+#define GFARM_HCIRCLEQ_FOREACH(var, head, field) \
+	for ((var) = GFARM_HCIRCLEQ_FIRST(head, field); \
+	    !GFARM_HCIRCLEQ_IS_END(head, var); \
+	    (var) = GFARM_HCIRCLEQ_NEXT(var, field))
+
+#define GFARM_HCIRCLEQ_FOREACH_SAFE(var, head, field, tvar) \
+	for ((var) = GFARM_HCIRCLEQ_FIRST(head, field); \
+	    !GFARM_HCIRCLEQ_IS_END(head, var) && \
+	    ((tvar) = GFARM_HCIRCLEQ_NEXT(var, next), 1); \
+	    (var) = (tvar))
+
+#define GFARM_HCIRCLEQ_FOREACH_REVERSE(var, head, field) \
+	for ((var) = GFARM_HCIRCLEQ_LAST(head, field); \
+	    !GFARM_HCIRCLEQ_IS_END(head, var); \
+	    (var) = GFARM_HCIRCLEQ_PREV(var, field))
+
+#define GFARM_HCIRCLEQ_FOREACH_REVERSE_SAFE(var, head, field, tvar) \
+	for ((var) = GFARM_HCIRCLEQ_LAST(head, field); \
+	    !GFARM_HCIRCLEQ_IS_END(head, var) && \
+	    ((tvar) = GFARM_HCIRCLEQ_PREV(var, field), 1); \
+	    (var) = (tvar))
 
 #endif /* !GFARM_QUEUE_H_ */
