@@ -33,7 +33,9 @@
 #ifndef _SYS_QUEUE_H_
 #define	_SYS_QUEUE_H_
 
+#if 0 /* not necessary in Gfarm */
 #include <sys/cdefs.h>
+#enidif
 
 /*
  * This file defines four types of data structures: singly-linked lists,
@@ -332,6 +334,7 @@ struct {								\
 		(head2)->stqh_last = &STAILQ_FIRST(head2);		\
 } while (0)
 
+#if 0 /* LIST and TAILQ are disabled in Gfarm */
 
 /*
  * List declarations.
@@ -632,5 +635,7 @@ struct {								\
 	else								\
 		(head2)->tqh_last = &(head2)->tqh_first;		\
 } while (0)
+
+#endif /* LIST and TAILQ are disabled in Gfarm */
 
 #endif /* !_SYS_QUEUE_H_ */
