@@ -100,7 +100,7 @@
  * _CONCAT			-	-	+	+
  * _REMOVE_AFTER		+	-	+	-
  * _REMOVE_HEAD			+	-	+	-
- * _REMOVE			+	+	+	+
+ * _REMOVE			O(N)	+	O(N)	+
  *
  */
 #ifdef GFARM_QUEUE_MACRO_DEBUG
