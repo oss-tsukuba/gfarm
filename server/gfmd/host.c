@@ -680,6 +680,7 @@ host_disable(struct abstract_host *ah, void **closurep)
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	*closurep = c;
 	host_status_disable_unlocked(h, &c->saved_used, &c->saved_avail);
 	return (GFARM_ERR_NO_ERROR);
 }
