@@ -5,6 +5,9 @@
 extern struct mdhost mdhost_list;
 struct peer;
 struct gfm_connection;
+struct abstract_host;
+
+struct abstract_host *mdhost_to_abstract_host(struct mdhost *);
 
 void mdhost_init();
 const char *mdhost_get_name(struct mdhost *);
@@ -27,5 +30,3 @@ struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
 gfarm_uint64_t mdhost_get_last_fetch_seqnum(struct mdhost *);
 void mdhost_set_last_fetch_seqnum(struct mdhost *, gfarm_uint64_t);
 #endif
-
-#define MD_HOST(h) ((struct mdhost *)h)

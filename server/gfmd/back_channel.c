@@ -59,10 +59,12 @@ gfs_client_status_disconnect_or_message(struct host *host,
 	const char *condition)
 {
 	if (peer != NULL) { /* to make the race condition harmless */
-		gfm_server_channel_disconnect_request(ABS_HOST(host), peer,
+		gfm_server_channel_disconnect_request(
+		    host_to_abstract_host(host), peer,
 		    proto, op, condition);
 	} else {
-		gfm_server_channel_already_disconnected_message(ABS_HOST(host),
+		gfm_server_channel_already_disconnected_message(
+		    host_to_abstract_host(host),
 		    proto, op, condition);
 	}
 }
@@ -91,7 +93,8 @@ gfm_async_server_put_reply(struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vput_reply(ABS_HOST(host), peer, xid, diag,
+	e = gfm_server_channel_vput_reply(
+	    host_to_abstract_host(host), peer, xid, diag,
 	    errcode, format, &ap, BACK_CHANNEL_DIAG);
 	va_end(ap);
 
@@ -107,7 +110,8 @@ gfs_client_recv_result_and_error(struct peer *peer, struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vrecv_result(peer, ABS_HOST(host), size, diag,
+	e = gfm_client_channel_vrecv_result(
+	    peer, host_to_abstract_host(host), size, diag,
 	    &format, errcodep, &ap);
 	va_end(ap);
 	return (e);
@@ -121,7 +125,8 @@ gfs_client_recv_result(struct peer *peer, struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vrecv_result(peer, ABS_HOST(host), size, diag,
+	e = gfm_client_channel_vrecv_result(
+	    peer, host_to_abstract_host(host), size, diag,
 	    &format, &errcode, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -177,7 +182,8 @@ gfs_client_send_request(struct host *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vsend_request(ABS_HOST(host), peer0, diag,
+	e = gfm_client_channel_vsend_request(
+	    host_to_abstract_host(host), peer0, diag,
 	    result_callback, disconnect_callback, closure,
 #ifdef COMPAT_GFARM_2_3
 	    host_set_callback,
@@ -492,7 +498,7 @@ async_back_channel_protocol_switch(struct abstract_host *h,
 	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,
 	int *unknown_request)
 {
-	struct host *host = FS_HOST(h);
+	struct host *host = abstract_host_to_host(h);
 	gfarm_error_t e;
 
 	switch (request) {
@@ -511,7 +517,7 @@ async_back_channel_protocol_switch(struct abstract_host *h,
 static gfarm_error_t
 sync_back_channel_service(struct abstract_host *h, struct peer *peer)
 {
-	struct host *host = FS_HOST(h);
+	struct host *host = abstract_host_to_host(h);
 	gfarm_int32_t (*result_callback)(void *, void *, size_t);
 	void *arg;
 
@@ -534,7 +540,7 @@ sync_back_channel_service(struct abstract_host *h, struct peer *peer)
 static void
 sync_back_channel_free(struct abstract_host *h)
 {
-	struct host *host = FS_HOST(h);
+	struct host *host = abstract_host_to_host(h);
 	void (*disconnect_callback)(void *, void *);
 	struct peer *peer;
 	void *arg;
@@ -621,7 +627,8 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		}
 
 		giant_lock();
-		abstract_host_set_peer(ABS_HOST(host), peer, version);
+		abstract_host_set_peer(host_to_abstract_host(host),
+		    peer, version);
 		giant_unlock();
 
 		peer_watch_access(peer);

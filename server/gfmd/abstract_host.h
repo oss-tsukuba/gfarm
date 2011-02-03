@@ -1,6 +1,12 @@
 struct abstract_host;
+struct host;
+struct mdhost;
 
 struct abstract_host_ops {
+	/* downcast functions */
+	struct host *(*abstract_host_to_host)(struct abstract_host *);
+	struct mdhost *(*abstract_host_to_mdhost)(struct abstract_host *);
+
 	const char *(*get_name)(struct abstract_host *);
 	int (*get_port)(struct abstract_host *);
 	void (*set_peer_locked)(struct abstract_host *, struct peer *);
@@ -30,6 +36,9 @@ struct abstract_host {
 
 	gfarm_time_t busy_time;
 };
+
+struct host *abstract_host_to_host(struct abstract_host *);
+struct mdhost *abstract_host_to_mdhost(struct abstract_host *);
 
 void abstract_host_init(struct abstract_host *, struct abstract_host_ops *,
 	const char *diag);
@@ -88,5 +97,3 @@ gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 gfarm_error_t gfm_client_channel_vrecv_result(struct peer *,
 	struct abstract_host *, size_t, const char *, const char **,
 	gfarm_error_t *, va_list *);
-
-#define ABS_HOST(h) ((struct abstract_host *)h)

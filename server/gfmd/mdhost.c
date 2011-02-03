@@ -28,7 +28,7 @@
 
 /* in-core gfarm_metadb_server */
 struct mdhost {
-	struct abstract_host ah;
+	struct abstract_host ah; /* must be the first member of this struct */
 
 	struct mdhost *next;
 	struct gfarm_metadb_server *ms;
@@ -44,7 +44,7 @@ struct mdhost mdhost_list = { {}, &mdhost_list };
 #define FOREACH_MDHOST(m) \
 	for (m = mdhost_list.next; m != &mdhost_list; m = m->next)
 
-#define BACK_CHANNEL_DIAG "gfmdc_channel"
+static const char BACK_CHANNEL_DIAG[] = "gfmdc_channel";
 
 int
 mdhost_is_master(struct mdhost *m)
@@ -64,10 +64,30 @@ mdhost_get_name(struct mdhost *m)
 	return (gfarm_metadb_server_get_name(m->ms));
 }
 
+struct abstract_host *
+mdhost_to_abstract_host(struct mdhost *m)
+{
+	return (&m->ah);
+}
+
+static struct host *
+mdhost_downcast_to_host(struct abstract_host *h)
+{
+	gflog_error(GFARM_MSG_UNFIXED, "downcasting mdhost %p to host", h);
+	abort();
+	return (NULL);
+}
+
+static struct mdhost *
+mdhost_downcast_to_mdhost(struct abstract_host *h)
+{
+	return ((struct mdhost *)h);
+}
+
 static const char *
 mdhost_name0(struct abstract_host *h)
 {
-	return (mdhost_get_name(MD_HOST(h)));
+	return (mdhost_get_name(abstract_host_to_mdhost(h)));
 }
 
 int
@@ -79,31 +99,33 @@ mdhost_get_port(struct mdhost *m)
 static int
 mdhost_port0(struct abstract_host *h)
 {
-	return (mdhost_get_port(MD_HOST(h)));
+	return (mdhost_get_port(abstract_host_to_mdhost(h)));
 }
 
 struct peer *
 mdhost_get_peer(struct mdhost *m)
 {
-	return (abstract_host_get_peer(ABS_HOST(m), BACK_CHANNEL_DIAG));
+	return (abstract_host_get_peer(mdhost_to_abstract_host(m),
+	    BACK_CHANNEL_DIAG));
 }
 
 int
 mdhost_is_up(struct mdhost *m)
 {
-	return (abstract_host_is_up(ABS_HOST(m), BACK_CHANNEL_DIAG));
+	return (abstract_host_is_up(mdhost_to_abstract_host(m),
+	    BACK_CHANNEL_DIAG));
 }
 
 void
 mdhost_activate(struct mdhost *m)
 {
-	abstract_host_activate(ABS_HOST(m));
+	abstract_host_activate(mdhost_to_abstract_host(m));
 }
 
 void
 mdhost_set_peer(struct mdhost *m, struct peer *peer, int version)
 {
-	abstract_host_set_peer(ABS_HOST(m), peer, version);
+	abstract_host_set_peer(mdhost_to_abstract_host(m), peer, version);
 }
 
 struct gfm_connection *
@@ -165,6 +187,8 @@ mdhost_disabled(struct abstract_host *h, void *closure)
 }
 
 struct abstract_host_ops mdhost_ops = {
+	mdhost_downcast_to_host,
+	mdhost_downcast_to_mdhost,
 	mdhost_name0,
 	mdhost_port0,
 	mdhost_set_peer_locked,

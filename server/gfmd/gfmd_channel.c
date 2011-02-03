@@ -68,7 +68,8 @@ gfmdc_server_put_reply(struct mdhost *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vput_reply(ABS_HOST(host), peer, xid, diag,
+	e = gfm_server_channel_vput_reply(
+	    mdhost_to_abstract_host(host), peer, xid, diag,
 	    errcode, format, &ap, BACK_CHANNEL_DIAG);
 	va_end(ap);
 
@@ -199,7 +200,8 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 			    mdhost_get_name(host));
 			mdhost_disconnect(host, NULL);
 		}
-		abstract_host_set_peer(ABS_HOST(host), peer, version);
+		abstract_host_set_peer(mdhost_to_abstract_host(host),
+		    peer, version);
 		peer_watch_access(peer);
 	}
 	return (e);
@@ -348,7 +350,7 @@ gfmdc_connect(struct mdhost *host)
 		return (e);
 	}
 	if ((e = peer_alloc_with_connection(&peer,
-	    gfm_client_connection_conn(conn), ABS_HOST(host),
+	    gfm_client_connection_conn(conn), mdhost_to_abstract_host(host),
 	    GFARM_AUTH_ID_TYPE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfmd_channel(%s) : %s",
@@ -379,7 +381,8 @@ gfmdc_client_recv_result(struct peer *peer, struct mdhost *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vrecv_result(peer, ABS_HOST(host), size, diag,
+	e = gfm_client_channel_vrecv_result(peer,
+	    mdhost_to_abstract_host(host), size, diag,
 	    &format, &errcode, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -404,7 +407,8 @@ gfmdc_client_send_request(struct mdhost *host,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vsend_request(ABS_HOST(host), peer0, diag,
+	e = gfm_client_channel_vsend_request(
+	    mdhost_to_abstract_host(host), peer0, diag,
 	    result_callback, disconnect_callback, closure,
 #ifdef COMPAT_GFARM_2_3
 	    NULL,

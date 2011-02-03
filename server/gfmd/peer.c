@@ -764,7 +764,13 @@ peer_authorized(struct peer *peer,
 	enum gfarm_auth_id_type id_type, char *username, char *hostname,
 	struct sockaddr *addr, enum gfarm_auth_method auth_method)
 {
+	struct host *h;
+	struct mdhost *m;
+
 	peer->id_type = id_type;
+	peer->user = NULL;
+	peer->username = username;
+
 	switch (id_type) {
 	case GFARM_AUTH_ID_TYPE_USER:
 		peer->user = user_lookup(username);
@@ -773,25 +779,33 @@ peer_authorized(struct peer *peer,
 			peer->username = NULL;
 		} else
 			peer->username = username;
-		peer->host = ABS_HOST(host_addr_lookup(hostname, addr));
-		break;
+		/*FALLTHROUGH*/
+
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		peer->user = NULL;
-		peer->username = username;
-		peer->host = ABS_HOST(host_addr_lookup(hostname, addr));
+		h = host_addr_lookup(hostname, addr);
+		if (h == NULL) {
+			peer->host = NULL;
+		} else {
+			peer->host = host_to_abstract_host(h);
+		}
 		break;
+
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		peer->user = NULL;
-		peer->username = username;
-		peer->host = ABS_HOST(mdhost_lookup(hostname));
+		m = mdhost_lookup(hostname);
+		if (m == NULL) {
+			peer->host = NULL;
+		} else {
+			peer->host = mdhost_to_abstract_host(m);
+		}
 		break;
 	}
 
 	if (peer->host != NULL) {
 		free(hostname);
 		peer->hostname = NULL;
-	} else
+	} else {
 		peer->hostname = hostname;
+	}
 
 	switch (id_type) {
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
@@ -999,6 +1013,9 @@ peer_get_async(struct peer *peer)
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
+	struct host *h;
+	struct mdhost *m;
+
 	switch (peer->id_type) {
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
 		if (peer->host != NULL) { /* already set */
@@ -1006,12 +1023,12 @@ peer_set_host(struct peer *peer, char *hostname)
 				"peer host is already set");
 			return (GFARM_ERR_NO_ERROR);
 		}
-		if ((peer->host = ABS_HOST(host_lookup(hostname)))
-		    == NULL) {
-			gflog_debug(GFARM_MSG_1001586,
-				"host does not exist");
+		if ((h = host_lookup(hostname)) == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"host %s does not exist", hostname);
 			return (GFARM_ERR_UNKNOWN_HOST);
 		}
+		peer->host = host_to_abstract_host(h);
 		break;
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
 		if (peer->host != NULL) { /* already set */
@@ -1019,12 +1036,12 @@ peer_set_host(struct peer *peer, char *hostname)
 				"peer metadata-host is already set");
 			return (GFARM_ERR_NO_ERROR);
 		}
-		if ((peer->host = ABS_HOST(mdhost_lookup(hostname)))
-		    == NULL) {
+		if ((m = mdhost_lookup(hostname)) == NULL) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"metadata-host does not exist");
+				"metadata-host %s does not exist", hostname);
 			return (GFARM_ERR_UNKNOWN_HOST);
 		}
+		peer->host = mdhost_to_abstract_host(m);
 		break;
 	default:
 		gflog_debug(GFARM_MSG_1001584,
@@ -1086,13 +1103,13 @@ peer_get_abstract_host(struct peer *peer)
 struct host *
 peer_get_host(struct peer *peer)
 {
-	return (FS_HOST(peer->host));
+	return (abstract_host_to_host(peer->host));
 }
 
 struct mdhost *
 peer_get_mdhost(struct peer *peer)
 {
-	return (MD_HOST(peer->host));
+	return (abstract_host_to_mdhost(peer->host));
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */

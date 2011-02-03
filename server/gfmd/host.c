@@ -52,7 +52,7 @@ static const char total_disk_diag[] = "total_disk";
 struct host {
 	/* abstract_host is common data between
 	 * struct host and struct mdhost */
-	struct abstract_host ah;
+	struct abstract_host ah; /* must be the first member of this struct */
 
 	/*
 	 * resources which are protected by the giant_lock()
@@ -87,7 +87,7 @@ static void host_free(struct host *);
 	    !gfarm_hash_iterator_is_end(it); \
 	     gfarm_hash_iterator_next(it))
 
-#define BACK_CHANNEL_DIAG "back_channel"
+static const char BACK_CHANNEL_DIAG[] = "back_channel";
 
 #define CHANNEL_MUTEX_LOCK(h, diag) \
 	abstract_host_channel_mutex_lock(&(h)->ah, diag, \
@@ -310,10 +310,30 @@ host_remove_in_cache(const char *hostname)
 	return (host_remove_internal(hostname, 0));
 }
 
+struct abstract_host *
+host_to_abstract_host(struct host *h)
+{
+	return (&h->ah);
+}
+
+static struct host *
+host_downcast_to_host(struct abstract_host *h)
+{
+	return ((struct host *)h);
+}
+
+static struct mdhost *
+host_downcast_to_mdhost(struct abstract_host *h)
+{
+	gflog_error(GFARM_MSG_UNFIXED, "downcasting host %p to mdhost", h);
+	abort();
+	return (NULL);
+}
+
 static const char *
 host_name0(struct abstract_host *h)
 {
-	return (host_name(FS_HOST(h)));
+	return (host_name(abstract_host_to_host(h)));
 }
 
 /*
@@ -336,7 +356,7 @@ host_name(struct host *h)
 static int
 host_port0(struct abstract_host *h)
 {
-	return (host_port(FS_HOST(h)));
+	return (host_port(abstract_host_to_host(h)));
 }
 
 int
@@ -377,7 +397,7 @@ host_set_callback(struct abstract_host *ah, struct peer *peer,
 	void (*disconnect_callback)(void *, void *),
 	void *closure)
 {
-	struct host *h = FS_HOST(ah);
+	struct host *h = abstract_host_to_host(ah);
 	static const char diag[] = "host_set_callback";
 
 	/* XXX FIXME sanity check? */
@@ -488,7 +508,7 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 int
 host_check_busy(struct host *host, gfarm_int64_t now)
 {
-	return (abstract_host_check_busy(ABS_HOST(host), now,
+	return (abstract_host_check_busy(host_to_abstract_host(host), now,
 		BACK_CHANNEL_DIAG));
 }
 
@@ -635,7 +655,7 @@ host_status_disable_unlocked(struct host *host,
 static void
 host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 {
-	struct host *h = FS_HOST(ah);
+	struct host *h = abstract_host_to_host(ah);
 
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
@@ -650,7 +670,7 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
-	dead_file_copy_host_becomes_up(FS_HOST(ah));
+	dead_file_copy_host_becomes_up(abstract_host_to_host(ah));
 }
 
 /*
@@ -661,7 +681,7 @@ host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 static void
 host_unset_peer(struct abstract_host *ah)
 {
-	callout_stop(FS_HOST(ah)->status_callout);
+	callout_stop(abstract_host_to_host(ah)->status_callout);
 }
 
 struct host_disable_closure {
@@ -671,7 +691,7 @@ struct host_disable_closure {
 static gfarm_error_t
 host_disable(struct abstract_host *ah, void **closurep)
 {
-	struct host *h = FS_HOST(ah);
+	struct host *h = abstract_host_to_host(ah);
 	struct host_disable_closure *c;
 
 	GFARM_MALLOC(c);
@@ -692,7 +712,7 @@ host_disabled(struct abstract_host *ah, void *closure)
 
 	host_total_disk_update(c->saved_used, c->saved_avail, 0, 0);
 	free(closure);
-	dead_file_copy_host_becomes_down(FS_HOST(ah));
+	dead_file_copy_host_becomes_down(abstract_host_to_host(ah));
 }
 
 /* giant_lock should be held before calling this */
@@ -704,6 +724,8 @@ host_disconnect(struct host *h, struct peer *peer)
 }
 
 struct abstract_host_ops host_ops = {
+	host_downcast_to_host,
+	host_downcast_to_mdhost,
 	host_name0,
 	host_port0,
 	host_set_peer_locked,

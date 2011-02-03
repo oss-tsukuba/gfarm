@@ -4,6 +4,7 @@
 
 void host_init(void);
 
+struct abstract_host;
 struct host;
 struct sockaddr;
 struct peer;
@@ -14,6 +15,8 @@ struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
 	gfarm_off_t disk_used, disk_avail;
 };
+
+struct abstract_host *host_to_abstract_host(struct host *);
 
 struct host *host_lookup(const char *);
 struct host *host_addr_lookup(const char *, struct sockaddr *);
@@ -32,7 +35,6 @@ int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
 
 #ifdef COMPAT_GFARM_2_3
-struct abstract_host;
 void host_set_callback(struct abstract_host *, struct peer *,
 	gfarm_int32_t (*)(void *, void *, size_t),
 	void (*)(void *, void *), void *);
@@ -96,5 +98,3 @@ struct gfp_xdr;
 gfarm_error_t host_info_send(struct gfp_xdr *, struct host *);
 gfarm_error_t host_info_remove_default(const char *, const char *);
 extern gfarm_error_t (*host_info_remove)(const char *, const char *);
-
-#define FS_HOST(h) ((struct host *)h)
