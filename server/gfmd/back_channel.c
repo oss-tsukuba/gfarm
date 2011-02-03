@@ -493,10 +493,7 @@ async_back_channel_protocol_switch(struct abstract_host *h,
 	int *unknown_request)
 {
 	struct host *host = FS_HOST(h);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	gfarm_error_t e;
 
 	switch (request) {
 	case GFM_PROTO_REPLICATION_RESULT:
