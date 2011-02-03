@@ -50,29 +50,29 @@ SRCS = \
 	db_journal_apply_test.c empty_ops.c
 
 OBJS =	\
-	$(GFMD_SRCDIR)/abstract_host.o \
-	$(GFMD_SRCDIR)/acl.o \
-	$(GFMD_SRCDIR)/back_channel.o \
-	$(GFMD_SRCDIR)/callout.o \
-	$(GFMD_SRCDIR)/db_access.o \
-	$(GFMD_SRCDIR)/db_journal_apply.o \
-	$(GFMD_SRCDIR)/db_none.o \
-	$(GFMD_SRCDIR)/dead_file_copy.o \
-	$(GFMD_SRCDIR)/dir.o \
-	$(GFMD_SRCDIR)/group.o \
-	$(GFMD_SRCDIR)/host.o \
-	$(GFMD_SRCDIR)/inode.o \
-	$(GFMD_SRCDIR)/job.o \
-	$(GFMD_SRCDIR)/journal_file.o \
-	$(GFMD_SRCDIR)/mdhost.o \
-	$(GFMD_SRCDIR)/peer.o \
-	$(GFMD_SRCDIR)/process.o \
-	$(GFMD_SRCDIR)/quota.o \
-	$(GFMD_SRCDIR)/rpcsubr.o \
-	$(GFMD_SRCDIR)/subr.o \
-	$(GFMD_SRCDIR)/thrpool.o \
-	$(GFMD_SRCDIR)/user.o \
-	$(GFMD_SRCDIR)/xattr.o \
+	$(GFMD_BUILDDIR)/abstract_host.o \
+	$(GFMD_BUILDDIR)/acl.o \
+	$(GFMD_BUILDDIR)/back_channel.o \
+	$(GFMD_BUILDDIR)/callout.o \
+	$(GFMD_BUILDDIR)/db_access.o \
+	$(GFMD_BUILDDIR)/db_journal_apply.o \
+	$(GFMD_BUILDDIR)/db_none.o \
+	$(GFMD_BUILDDIR)/dead_file_copy.o \
+	$(GFMD_BUILDDIR)/dir.o \
+	$(GFMD_BUILDDIR)/group.o \
+	$(GFMD_BUILDDIR)/host.o \
+	$(GFMD_BUILDDIR)/inode.o \
+	$(GFMD_BUILDDIR)/job.o \
+	$(GFMD_BUILDDIR)/journal_file.o \
+	$(GFMD_BUILDDIR)/mdhost.o \
+	$(GFMD_BUILDDIR)/peer.o \
+	$(GFMD_BUILDDIR)/process.o \
+	$(GFMD_BUILDDIR)/quota.o \
+	$(GFMD_BUILDDIR)/rpcsubr.o \
+	$(GFMD_BUILDDIR)/subr.o \
+	$(GFMD_BUILDDIR)/thrpool.o \
+	$(GFMD_BUILDDIR)/user.o \
+	$(GFMD_BUILDDIR)/xattr.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)
