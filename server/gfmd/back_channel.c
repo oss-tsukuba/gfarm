@@ -493,10 +493,8 @@ async_back_channel_protocol_switch(struct abstract_host *h,
 	int *unknown_request)
 {
 	struct host *host = FS_HOST(h);
-	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	e = gfp_xdr_recv_request_command(client, 0, &size, &request);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
