@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -33,18 +33,9 @@ NAME="SYNOPSIS"
 ></A
 ><H2
 >Synopsis</H2
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
 ><PRE
 CLASS="SYNOPSIS"
->#include &#60;gfarm/gfarm.h&#62;&#13;</PRE
-></TD
-></TR
-></TABLE
+>#include &lt;gfarm/gfarm.h&gt;&#13;</PRE
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -390,6 +381,296 @@ CLASS="REFSECT2"
 NAME="AEN151"
 ></A
 ><H3
+>アクセスコントロールリスト (ACL) 操作</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_init</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_free</SPAN
+>(3)</SPAN
+> 関数で ACL 構造体を開放します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_dup</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体を複製します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_create_entry</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
+をひとつ生成して追加し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_entry</SPAN
+>(3)</SPAN
+> 関数で ACL 構造体の ACL エントリをひとつ取得し，
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_entry</SPAN
+>(3)</SPAN
+> 関数で ACL 構造体の ACL エントリをひとつ削除します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_valid</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体が有効な形式かどうか確認します．
+gfs_acl_check(3) 関数ならばより詳しく確認できます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_calc_mask</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
+して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_tag_type</SPAN
+>(3)</SPAN
+> 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
+(ACL エントリの種類) を取得します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_tag_type</SPAN
+>(3)</SPAN
+> 関数は ACL エントリの ACL タグを差し替えます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_permset</SPAN
+>(3)</SPAN
+> 関数は ACL エントリから ACL パーミッションセット 
+(gfarm_acl_permset_t) を取り出します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_permset</SPAN
+>(3)</SPAN
+> 関数は ACL エントリへ ACL パーミッションセットを差し替えます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_add_perm</SPAN
+>(3)</SPAN
+> 関数は ACL パーミッションセットに ACL パーミッション値 
+(gfarm_acl_perm_t) を追加します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_clear_perms</SPAN
+>(3)</SPAN
+> 関数は ACL パーミッションセットからすべての 
+ACL パーミッション値をクリアします．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_perm</SPAN
+>(3)</SPAN
+> 関数は ACL パーミッションセットから 
+ACL パーミッション値をひとつ削除します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_qualifier</SPAN
+>(3)</SPAN
+> 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
+GFARM_ACL_USER または GFARM_ACL_GROUP タグの ACL エントリから取得できます．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_qualifier</SPAN
+>(3)</SPAN
+> 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
+差し替えます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_def_file</SPAN
+>(3)</SPAN
+> 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_file</SPAN
+>(3)</SPAN
+> 関数は，ファイルやディレクトリから ACL 構造体を取得します．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_file</SPAN
+>(3)</SPAN
+> 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
+事前に gfs_acl_sort(3) 関数でソートしてください．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_text</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体を ACL 文字列形式に変換します．
+gfs_acl_to_any_text(3) 関数のほうがより高機能です．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_text</SPAN
+>(3)</SPAN
+> 関数は ACL 文字列形式から ACL 構造体に変換します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_perm</SPAN
+>(3)</SPAN
+> 関数は ACL パーミッションセットの中から
+ひとつのパーミッションをテストします．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_check</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体が有効な形式かどうか確認します．
+また，エラーの場所とエラーの種類がわかります．
+gfs_acl_valid(3) 関数よりも高機能です．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_error</SPAN
+>(3)</SPAN
+> 関数は gfs_acl_check(3) 
+関数のエラーを文字列に変換します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_entries</SPAN
+>(3)</SPAN
+> 関数は ACL エントリの数を数えます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_equiv_mode</SPAN
+>(3)</SPAN
+> 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
+GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) だけで構成されているかどうか確認します．
+また，基本 ACL 部分から gfarm_mode_t に変換できます．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_cmp</SPAN
+>(3)</SPAN
+> 関数は二つの ACL 構造体を比較します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_mode</SPAN
+>(3)</SPAN
+> 関数は gfarm_mode_t から ACL 構造体を生成します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_any_text</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体を ACL 文字列形式に変換します．
+出力形式をオプションなどで変更できます．
+gfs_acl_to_text(3) 関数と比べて高機能です．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_xattr_value</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体を拡張属性に格納するための 
+ACL バイナリデータに変換します．
+事前に gfs_acl_sort(3) 関数でソートしてください．
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_xattr_value</SPAN
+>(3)</SPAN
+> 関数は拡張属性から取り出した ACL バイナリデータを 
+ACL 構造体に変換します．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_sort</SPAN
+>(3)</SPAN
+> 関数は ACL 構造体を有効な形式となる順番にソートします．</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_text_with_default</SPAN
+>(3)</SPAN
+> 関数は "default:" で始まる ACL エントリを持つ ACL 
+文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN282"
+></A
+><H3
 >エラーコード</H3
 ><P
 >ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー
@@ -419,7 +700,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN163"
+NAME="AEN294"
 ></A
 ><H3
 >文字列配列操作ユーティリティ</H3
@@ -483,7 +764,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN188"
+NAME="AEN319"
 ></A
 ><H3
 >文字列配列操作ユーティリティマクロ</H3
@@ -496,17 +777,13 @@ CLASS="VARIABLELIST"
 >GFARM_STRINGLIST_ELEM(list, i)</DT
 ><DD
 ><P
->gfarm_stringlist 型の <TT
+>gfarm_stringlist 型の <CODE
 CLASS="PARAMETER"
-><I
->list</I
-></TT
+>list</CODE
 > 引数が表す文字列配列の
-<TT
+<CODE
 CLASS="PARAMETER"
-><I
->i</I
-></TT
+>i</CODE
 > 番目の要素を
 表すマクロです．このマクロは左辺値として使えます．
 値として評価した場合には
@@ -522,11 +799,9 @@ CLASS="REFENTRYTITLE"
 >GFARM_STRINGLIST_STRARRAY(list)</DT
 ><DD
 ><P
->gfarm_stringlist 型の <TT
+>gfarm_stringlist 型の <CODE
 CLASS="PARAMETER"
-><I
->list</I
-></TT
+>list</CODE
 > 引数が
 表す文字列配列の先頭要素へのポインタを返します．
 返り値は，文字へのポインタへのポインタとなります．</P
