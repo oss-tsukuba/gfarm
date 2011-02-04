@@ -269,6 +269,9 @@ mdhost_init()
 	gfarm_error_t e;
 	struct journal_file_reader *reader;
 #endif
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	m = NULL;
+#endif
 
 	msl = gfarm_get_metadb_server_list(&n);
 	if (msl == NULL)
