@@ -62,6 +62,7 @@ GFARMLIB_SRCDIR = $(top_srcdir)/lib/libgfarm/gfarm
 # gfmd
 
 GFMD_SRCDIR = $(top_srcdir)/server/gfmd
+GFMD_BUILDDIR = $(top_builddir)/server/gfmd
 
 # doc & man
 
