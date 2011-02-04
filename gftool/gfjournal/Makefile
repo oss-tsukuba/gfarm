@@ -28,11 +28,11 @@ SRCS =	$(GFMD_SRCDIR)/db_access.c \
 	$(GFMD_SRCDIR)/db_journal.c \
 	gfjournal.c
 
-OBJS =	$(GFMD_SRCDIR)/db_access.o \
-	$(GFMD_SRCDIR)/db_none.o \
-	$(GFMD_SRCDIR)/subr.o \
-	$(GFMD_SRCDIR)/journal_file.o \
-	$(GFMD_SRCDIR)/db_journal.o \
+OBJS =	$(GFMD_BUILDDIR)/db_access.o \
+	$(GFMD_BUILDDIR)/db_none.o \
+	$(GFMD_BUILDDIR)/subr.o \
+	$(GFMD_BUILDDIR)/journal_file.o \
+	$(GFMD_BUILDDIR)/db_journal.o \
 	gfjournal.o
 
 all: $(PROGRAM)
