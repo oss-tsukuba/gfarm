@@ -903,9 +903,12 @@ __acl_from_text_common(const char *buf_p, gfarm_acl_t *acl_acc_p,
 
 	while (*p != '\0') {
 		SKIP_WS(p);
-		if (acl_def_p != NULL && *p == 'd')
-			e = __parse_acl_entry(p, acl_def_p, &nextp);
-		else
+		if (*p == 'd') {
+			if (acl_def_p != NULL)
+				e = __parse_acl_entry(p, acl_def_p, &nextp);
+			else
+				e = GFARM_ERR_INVALID_ARGUMENT;
+		} else
 			e = __parse_acl_entry(p, acl_acc_p, &nextp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
