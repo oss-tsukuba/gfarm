@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -33,18 +33,9 @@ NAME="SYNOPSIS"
 ></A
 ><H2
 >Synopsis</H2
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="100%"
-><TR
-><TD
 ><PRE
 CLASS="SYNOPSIS"
->#include &#60;gfarm/gfarm.h&#62;&#13;</PRE
-></TD
-></TR
-></TABLE
+>#include &lt;gfarm/gfarm.h&gt;&#13;</PRE
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -391,6 +382,303 @@ CLASS="REFSECT2"
 NAME="AEN151"
 ></A
 ><H3
+>ACL (Access Control List) OPERATIONS</H3
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_init</SPAN
+>(3)</SPAN
+> function is used for the initilization of an ACL
+structure (gfarm_acl_t), and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_free</SPAN
+>(3)</SPAN
+> function is used to release the ACL structure.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_dup</SPAN
+>(3)</SPAN
+> function duplicates an ACL structure.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_create_entry</SPAN
+>(3)</SPAN
+> function creates an ACL entry (gfarm_acl_entry_t) in
+an ACL structure, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_entry</SPAN
+>(3)</SPAN
+> function gets an ACL entry from the ACL structure, and
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_entry</SPAN
+>(3)</SPAN
+> function removes an ACL entry from the ACL structure.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_valid</SPAN
+>(3)</SPAN
+> function checks an ACL structure for validity.
+gfs_acl_check(3) function can check more for
+validity.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_calc_mask</SPAN
+>(3)</SPAN
+> function calculates and sets an ACL permissions of
+a GFARM_ACL_MASK type entry in an ACL structure.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_tag_type</SPAN
+>(3)</SPAN
+> function gets an ACL tag (gfarm_acl_tag_t) (type of
+ACL entry) from an ACL entry.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_tag_type</SPAN
+>(3)</SPAN
+> function sets an ACL tag of an ACL entry.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_permset</SPAN
+>(3)</SPAN
+> function gets an ACL permission-set
+(gfarm_acl_permset_t) from an ACL entry.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_permset</SPAN
+>(3)</SPAN
+> function an ACL permission-set of an ACL entry.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_add_perm</SPAN
+>(3)</SPAN
+> function adds an ACL permission (gfarm_acl_perm_t) to
+an ACL permission-set.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_clear_perms</SPAN
+>(3)</SPAN
+> clears all ACL permissions from an ACL permission-set.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_perm</SPAN
+>(3)</SPAN
+> function deletes a permission from an ACL permission-set.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_qualifier</SPAN
+>(3)</SPAN
+> function gets a username/groupname from an ACL entry.
+GFARM_ACL_USER/GFARM_ACL_GROUP tag entries have a username/groupname.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_qualifier</SPAN
+>(3)</SPAN
+> function sets a username/groupname of an ACL entry.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_delete_def_file</SPAN
+>(3)</SPAN
+> function deletes a Default ACL from a file or directory.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_file</SPAN
+>(3)</SPAN
+> function gets an ACL structure of a file or directory.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_set_file</SPAN
+>(3)</SPAN
+> function replaces an ACL structure of a file or directory.
+Before using this function, the ACL structure must be sorted by
+gfs_acl_sort(3) function.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_text</SPAN
+>(3)</SPAN
+> function converts an ACL structure to an ACL text.
+gfs_acl_to_any_text(3) function is more
+functional than this function.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_text</SPAN
+>(3)</SPAN
+> function creates an ACL structure from an ACL text.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_get_perm</SPAN
+>(3)</SPAN
+> function tests for an ACL permission in an ACL
+permission set.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_check</SPAN
+>(3)</SPAN
+> function checks an ACL structure for validity.
+And, this function can get the place of the error and the ACL error code.
+This function is more functional than
+gfs_acl_valid(3) function.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_error</SPAN
+>(3)</SPAN
+> function converts an ACL error code of
+gfs_acl_check(3) function to a text message.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_entries</SPAN
+>(3)</SPAN
+> function returns the number of entries in an ACL structure.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_equiv_mode</SPAN
+>(3)</SPAN
+> checks for an equivalent ACL structure.  An equivalent
+ACL structure has only base ACL entries of tag types
+(GFARM_ACL_USER_OBJ, GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER).  And, this
+function can create a file permission bits (gfarm_mode_t) from base
+ACL entries.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_cmp</SPAN
+>(3)</SPAN
+> function compares two ACL structures.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_mode</SPAN
+>(3)</SPAN
+> function creates an ACL structure from file permission
+bits (gfarm_mode_t).</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_any_text</SPAN
+>(3)</SPAN
+> function converts an ACL structure to an ACL text.  This
+function has some options for output format.  This function is more
+functional than gfs_acl_to_text(3) function.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_to_xattr_value</SPAN
+>(3)</SPAN
+> converts an ACL structure to ACL binary data for
+Extended Attribute value.  Before using this function, the ACL
+structure must be sorted by gfs_acl_sort(3)
+function.
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_xattr_value</SPAN
+>(3)</SPAN
+> converts ACL binary data for Extended Attribute value
+to an ACL structure.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_sort</SPAN
+>(3)</SPAN
+> function sorts ACL entries of an ACL structure in ACL
+validity order.</P
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_acl_from_text_with_default</SPAN
+>(3)</SPAN
+> function creates two ACL structures (Access ACL and
+Default ACL) from an ACL text which includes "default:" prefix.</P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN282"
+></A
+><H3
 >Error handling</H3
 ><P
 >Most Gfarm API returns the Gfarm error code in gfarm_error_t.
@@ -420,7 +708,7 @@ CLASS="REFENTRYTITLE"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN163"
+NAME="AEN294"
 ></A
 ><H3
 >String Array manipulation utilities</H3
@@ -484,7 +772,7 @@ array by calling standard library function free().</P
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN188"
+NAME="AEN319"
 ></A
 ><H3
 >String Array manipulation macros</H3
@@ -497,17 +785,13 @@ CLASS="VARIABLELIST"
 >GFARM_STRINGLIST_ELEM(list, i)</DT
 ><DD
 ><P
->represents <TT
+>represents <CODE
 CLASS="PARAMETER"
-><I
->i</I
-></TT
+>i</CODE
 >-th element of
-the <TT
+the <CODE
 CLASS="PARAMETER"
-><I
->list</I
-></TT
+>list</CODE
 > argument which type is gfarm_stringlist.
 This macro can be used as a L-value.
 If this macro is used as a value, it returns same result with
@@ -523,11 +807,9 @@ CLASS="REFENTRYTITLE"
 >GFARM_STRINGLIST_STRARRAY(list)</DT
 ><DD
 ><P
->returns pointer to first element of the <TT
+>returns pointer to first element of the <CODE
 CLASS="PARAMETER"
-><I
->list</I
-></TT
+>list</CODE
 > argument
 which type is gfarm_stringlist.
 The type of the return value is a pointer to pointer to a character.</P

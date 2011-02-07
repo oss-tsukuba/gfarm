@@ -1,0 +1,99 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-attr.5'>
+
+<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_attr</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm_attr</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_attr</refname>
+<refpurpose>Gfarm拡張属性</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+Gfarmの各ファイルやディレクトリは，
+拡張属性を複数持つことができます．
+拡張属性とは，名前に対する値のペアで構成されます．
+</para>
+
+<para>
+</para>
+
+<para>
+</para>
+
+</refsect1>
+
+<refsect1 id='xattrnamespace'>
+<title>拡張属性の名前空間</title>
+<para>
+"gfarm."で始まる名前の拡張属性はGfarmが特別に扱います．それ以外の拡張属
+性はユーザが自由に名前を指定して値を格納できます．
+</para>
+<para>
+"gfarm."で始まる名前の拡張属性は誰でも参照できます．
+ファイルまたはディレクトリの所有者，またはgfarmrootグループに
+所属するユーザーだけが"gfarm."で始まる名前の拡張属性を作成または変更で
+きます．
+それ以外の拡張属性は，ファイルまたはディレクトリのアクセス権限によって
+読み書きできます．
+</para>
+
+</refsect1>
+
+
+<refsect1 id='gfarm-xattr'>
+<title>Gfarm 拡張属性</title>
+<para>
+以下はGfarmのシステムが使用する拡張属性名です．
+</para>
+<variablelist>
+
+<varlistentry>
+<term><parameter>gfarm.ncopy</parameter></term>
+<listitem>
+<para>
+gfmd で自動でファイルを複製する際に目標とする複製の合計数を格納します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_access</parameter></term>
+<listitem>
+<para>
+ACL(アクセスコントロールリスト)を格納します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_default</parameter></term>
+<listitem>
+<para>
+デフォルトACLを格納します．
+ディレクトリだけがこの拡張属性を利用します．
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+</refsect1>
+</refentry>

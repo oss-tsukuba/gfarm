@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM" "3" "26 June 2010" "Gfarm" ""
+.TH "GFARM" "3" "04 February 2011" "Gfarm" ""
 
 .SH NAME
 gfarm \- Gfarm ファイルシステム API ライブラリ
@@ -81,6 +81,85 @@ Gfarm ライブラリは，Gfarm ファイルシステムや，スケジューリング
 更新時刻などの情報を返します．
 この関数が返した gfs_stat 構造体は
 \fBgfs_stat_free\fR(3) 関数を用いて解放する必要があります．
+.SS "アクセスコントロールリスト (ACL) 操作"
+.PP
+\fBgfs_acl_init\fR(3) 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
+\fBgfs_acl_free\fR(3) 関数で ACL 構造体を開放します．
+\fBgfs_acl_dup\fR(3) 関数は ACL 構造体を複製します．
+.PP
+\fBgfs_acl_create_entry\fR(3) 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
+をひとつ生成して追加し，
+\fBgfs_acl_get_entry\fR(3) 関数で ACL 構造体の ACL エントリをひとつ取得し，
+\fBgfs_acl_delete_entry\fR(3) 関数で ACL 構造体の ACL エントリをひとつ削除します．
+.PP
+\fBgfs_acl_valid\fR(3) 関数は ACL 構造体が有効な形式かどうか確認します．
+gfs_acl_check(3) 関数ならばより詳しく確認できます．
+.PP
+\fBgfs_acl_calc_mask\fR(3) 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
+して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．
+.PP
+\fBgfs_acl_get_tag_type\fR(3) 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
+(ACL エントリの種類) を取得します．
+\fBgfs_acl_set_tag_type\fR(3) 関数は ACL エントリの ACL タグを差し替えます．
+.PP
+\fBgfs_acl_get_permset\fR(3) 関数は ACL エントリから ACL パーミッションセット 
+(gfarm_acl_permset_t) を取り出します．
+\fBgfs_acl_set_permset\fR(3) 関数は ACL エントリへ ACL パーミッションセットを差し替えます．
+.PP
+\fBgfs_acl_add_perm\fR(3) 関数は ACL パーミッションセットに ACL パーミッション値 
+(gfarm_acl_perm_t) を追加します．
+\fBgfs_acl_clear_perms\fR(3) 関数は ACL パーミッションセットからすべての 
+ACL パーミッション値をクリアします．
+\fBgfs_acl_delete_perm\fR(3) 関数は ACL パーミッションセットから 
+ACL パーミッション値をひとつ削除します．
+.PP
+\fBgfs_acl_get_qualifier\fR(3) 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
+GFARM_ACL_USER または GFARM_ACL_GROUP タグの ACL エントリから取得できます．
+\fBgfs_acl_set_qualifier\fR(3) 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
+差し替えます．
+.PP
+\fBgfs_acl_delete_def_file\fR(3) 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
+\fBgfs_acl_get_file\fR(3) 関数は，ファイルやディレクトリから ACL 構造体を取得します．
+\fBgfs_acl_set_file\fR(3) 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
+事前に gfs_acl_sort(3) 関数でソートしてください．
+.PP
+\fBgfs_acl_to_text\fR(3) 関数は ACL 構造体を ACL 文字列形式に変換します．
+gfs_acl_to_any_text(3) 関数のほうがより高機能です．
+\fBgfs_acl_from_text\fR(3) 関数は ACL 文字列形式から ACL 構造体に変換します．
+.PP
+\fBgfs_acl_get_perm\fR(3) 関数は ACL パーミッションセットの中から
+ひとつのパーミッションをテストします．
+.PP
+\fBgfs_acl_check\fR(3) 関数は ACL 構造体が有効な形式かどうか確認します．
+また，エラーの場所とエラーの種類がわかります．
+gfs_acl_valid(3) 関数よりも高機能です．
+\fBgfs_acl_error\fR(3) 関数は gfs_acl_check(3) 
+関数のエラーを文字列に変換します．
+.PP
+\fBgfs_acl_entries\fR(3) 関数は ACL エントリの数を数えます．
+.PP
+\fBgfs_acl_equiv_mode\fR(3) 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
+GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) だけで構成されているかどうか確認します．
+また，基本 ACL 部分から gfarm_mode_t に変換できます．
+.PP
+\fBgfs_acl_cmp\fR(3) 関数は二つの ACL 構造体を比較します．
+.PP
+\fBgfs_acl_from_mode\fR(3) 関数は gfarm_mode_t から ACL 構造体を生成します．
+.PP
+\fBgfs_acl_to_any_text\fR(3) 関数は ACL 構造体を ACL 文字列形式に変換します．
+出力形式をオプションなどで変更できます．
+gfs_acl_to_text(3) 関数と比べて高機能です．
+.PP
+\fBgfs_acl_to_xattr_value\fR(3) 関数は ACL 構造体を拡張属性に格納するための 
+ACL バイナリデータに変換します．
+事前に gfs_acl_sort(3) 関数でソートしてください．
+\fBgfs_acl_from_xattr_value\fR(3) 関数は拡張属性から取り出した ACL バイナリデータを 
+ACL 構造体に変換します．
+.PP
+\fBgfs_acl_sort\fR(3) 関数は ACL 構造体を有効な形式となる順番にソートします．
+.PP
+\fBgfs_acl_from_text_with_default\fR(3) 関数は "default:" で始まる ACL エントリを持つ ACL 
+文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．
 .SS "エラーコード"
 .PP
 ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー

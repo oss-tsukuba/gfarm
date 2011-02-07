@@ -4,6 +4,7 @@ DOCBOOK = \
 	gfchown.1 \
 	gfdf.1 \
 	gffindxmlattr.1 \
+	gfgetfacl.1 \
 	gfgroup.1 \
 	gfhost.1 \
 	gfkey.1 \
@@ -14,6 +15,7 @@ DOCBOOK = \
 	gfrep.1 \
 	gfrmdir.1 \
 	gfsched.1 \
+	gfsetfacl.1 \
 	gfstat.1 \
 	gfstatus.1 \
 	gfuser.1 \

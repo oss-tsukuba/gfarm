@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfarm_attr</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM-ATTR.5"
+></A
+>gfarm_attr</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm_attr&nbsp;--&nbsp;Gfarm Extended Attributes</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>Files and directories in Gfarm filesystem can have Extended
+Attributes.  Extended attributes are name:value pairs.</P
+><P
+></P
+><P
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="XATTRNAMESPACE"
+></A
+><H2
+>EXTENDED ATTRIBUTE NAMESPACES</H2
+><P
+>The name of Extended Attribute which has "gfarm." prefix is special in
+Gfarm filesystem.
+Gfarm users can freely use the other names of Extended Attribute.</P
+><P
+>Everyone can get the Extended Attributes named "gfarm.*".
+Owner or gfarmroot group can modify the Extended Attributes named "gfarm.*".
+The others of Extended Attribute can be read/modified on the files
+or directories permission.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="GFARM-XATTR"
+></A
+><H2
+>GFARM EXTENDED ATTRIBUTES</H2
+><P
+>The following is a list of the Extended Attribute names used in Gfarm
+filesystem.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="PARAMETER"
+>gfarm.ncopy</CODE
+></DT
+><DD
+><P
+>The number of file replicas to be created automatically in gfmd.</P
+></DD
+><DT
+><CODE
+CLASS="PARAMETER"
+>gfarm.acl_access</CODE
+></DT
+><DD
+><P
+>Access ACL (Access Control List).</P
+></DD
+><DT
+><CODE
+CLASS="PARAMETER"
+>gfarm.acl_default</CODE
+></DT
+><DD
+><P
+>Default ACL. Only directories can have/use this Extended Attribute.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfxattr</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfgetfacl</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsetfacl</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

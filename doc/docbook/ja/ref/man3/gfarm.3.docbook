@@ -210,6 +210,176 @@
 </refsect2>
 
 <refsect2>
+<title>アクセスコントロールリスト (ACL) 操作</title>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_init</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体 (gfarm_acl_t) を初期化し，
+<citerefentry>
+<refentrytitle>gfs_acl_free</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で ACL 構造体を開放します．
+<citerefentry>
+<refentrytitle>gfs_acl_dup</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体を複製します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_create_entry</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体の ACL エントリ (gfarm_acl_entry_t)
+をひとつ生成して追加し，
+<citerefentry>
+<refentrytitle>gfs_acl_get_entry</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で ACL 構造体の ACL エントリをひとつ取得し，
+<citerefentry>
+<refentrytitle>gfs_acl_delete_entry</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数で ACL 構造体の ACL エントリをひとつ削除します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_valid</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体が有効な形式かどうか確認します．
+gfs_acl_check<manvolnum>3</manvolnum> 関数ならばより詳しく確認できます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_calc_mask</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体の GFARM_ACL_MASK タグのエントリを計算
+して，GFARM_ACL_MASK が既に存在すれば上書きし，存在しなければ作成します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_get_tag_type</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリから ACL タグ (gfarm_acl_tag_t)
+(ACL エントリの種類) を取得します．
+<citerefentry>
+<refentrytitle>gfs_acl_set_tag_type</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリの ACL タグを差し替えます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_get_permset</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリから ACL パーミッションセット 
+(gfarm_acl_permset_t) を取り出します．
+<citerefentry>
+<refentrytitle>gfs_acl_set_permset</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリへ ACL パーミッションセットを差し替えます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_add_perm</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL パーミッションセットに ACL パーミッション値 
+(gfarm_acl_perm_t) を追加します．
+<citerefentry>
+<refentrytitle>gfs_acl_clear_perms</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL パーミッションセットからすべての 
+ACL パーミッション値をクリアします．
+<citerefentry>
+<refentrytitle>gfs_acl_delete_perm</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL パーミッションセットから 
+ACL パーミッション値をひとつ削除します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_get_qualifier</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリから，ユーザ名またはグループ名を取得します．
+GFARM_ACL_USER または GFARM_ACL_GROUP タグの ACL エントリから取得できます．
+<citerefentry>
+<refentrytitle>gfs_acl_set_qualifier</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリに対して，指定したユーザ名またはグループ名を
+差し替えます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_delete_def_file</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ファイルやディレクトリからデフォルト ACL を削除します．
+<citerefentry>
+<refentrytitle>gfs_acl_get_file</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ファイルやディレクトリから ACL 構造体を取得します．
+<citerefentry>
+<refentrytitle>gfs_acl_set_file</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ファイルやディレクトリの ACL 構造体を差し替えます．
+事前に gfs_acl_sort<manvolnum>3</manvolnum> 関数でソートしてください．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_to_text</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体を ACL 文字列形式に変換します．
+gfs_acl_to_any_text<manvolnum>3</manvolnum> 関数のほうがより高機能です．
+<citerefentry>
+<refentrytitle>gfs_acl_from_text</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 文字列形式から ACL 構造体に変換します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_get_perm</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL パーミッションセットの中から
+ひとつのパーミッションをテストします．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_check</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体が有効な形式かどうか確認します．
+また，エラーの場所とエラーの種類がわかります．
+gfs_acl_valid<manvolnum>3</manvolnum> 関数よりも高機能です．
+<citerefentry>
+<refentrytitle>gfs_acl_error</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は gfs_acl_check<manvolnum>3</manvolnum> 
+関数のエラーを文字列に変換します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_entries</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL エントリの数を数えます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_equiv_mode</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は，ACL 構造体が基本 ACL (GFARM_ACL_USER_OBJ,
+GFARM_ACL_GROUP_OBJ, GFARM_ACL_OTHER) だけで構成されているかどうか確認します．
+また，基本 ACL 部分から gfarm_mode_t に変換できます．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_cmp</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は二つの ACL 構造体を比較します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_from_mode</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は gfarm_mode_t から ACL 構造体を生成します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_to_any_text</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体を ACL 文字列形式に変換します．
+出力形式をオプションなどで変更できます．
+gfs_acl_to_text<manvolnum>3</manvolnum> 関数と比べて高機能です．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_to_xattr_value</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体を拡張属性に格納するための 
+ACL バイナリデータに変換します．
+事前に gfs_acl_sort<manvolnum>3</manvolnum> 関数でソートしてください．
+<citerefentry>
+<refentrytitle>gfs_acl_from_xattr_value</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は拡張属性から取り出した ACL バイナリデータを 
+ACL 構造体に変換します．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_sort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は ACL 構造体を有効な形式となる順番にソートします．
+</para>
+<para>
+<citerefentry>
+<refentrytitle>gfs_acl_from_text_with_default</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry> 関数は "default:" で始まる ACL エントリを持つ ACL 
+文字列を解釈し，アクセス ACL 構造体とデフォルト ACL 構造体を 2 個生成します．
+</para>
+</refsect2>
+
+<refsect2>
 <title>エラーコード</title>
 <para>
 ほとんどの Gfarm ライブラリの関数は gfarm_error_t 型の Gfarm エラーコー

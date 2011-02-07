@@ -1,0 +1,97 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-attr.5'>
+
+<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_attr</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm_attr</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_attr</refname>
+<refpurpose>Gfarm Extended Attributes</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+Files and directories in Gfarm filesystem can have Extended
+Attributes.  Extended attributes are name:value pairs.
+</para>
+
+<para>
+</para>
+
+<para>
+</para>
+
+</refsect1>
+
+<refsect1 id='xattrnamespace'>
+<title>EXTENDED ATTRIBUTE NAMESPACES</title>
+<para>
+The name of Extended Attribute which has "gfarm." prefix is special in
+Gfarm filesystem.
+Gfarm users can freely use the other names of Extended Attribute.
+</para>
+<para>
+Everyone can get the Extended Attributes named "gfarm.*".
+Owner or gfarmroot group can modify the Extended Attributes named "gfarm.*".
+The others of Extended Attribute can be read/modified on the files
+or directories permission.
+</para>
+
+</refsect1>
+
+
+<refsect1 id='gfarm-xattr'>
+<title>GFARM EXTENDED ATTRIBUTES</title>
+<para>
+The following is a list of the Extended Attribute names used in Gfarm
+filesystem.
+</para>
+<variablelist>
+
+<varlistentry>
+<term><parameter>gfarm.ncopy</parameter></term>
+<listitem>
+<para>
+The number of file replicas to be created automatically in gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_access</parameter></term>
+<listitem>
+<para>
+Access ACL (Access Control List).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_default</parameter></term>
+<listitem>
+<para>
+Default ACL. Only directories can have/use this Extended Attribute.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+</refsect1>
+</refentry>
