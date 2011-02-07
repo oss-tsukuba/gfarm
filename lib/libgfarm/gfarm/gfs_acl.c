@@ -594,7 +594,7 @@ __perm_to_str(gfarm_acl_perm_t perm) {
 		nowlen += slen;  /* without '\0' */ \
 	} while (0)
 
-gfarm_error_t
+static gfarm_error_t
 __acl_to_text_common(gfarm_acl_t acl, const char *prefix, char separator,
 		     const char *suffix, int options,
 		     char **str_p, size_t *len_p)
@@ -876,7 +876,7 @@ fail:
 	return (GFARM_ERR_INVALID_ARGUMENT);
 }
 
-gfarm_error_t
+static gfarm_error_t
 __acl_from_text_common(const char *buf_p, gfarm_acl_t *acl_acc_p,
 		       gfarm_acl_t *acl_def_p)
 {
