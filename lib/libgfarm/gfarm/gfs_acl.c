@@ -377,10 +377,10 @@ gfs_acl_delete_def_file(const char *path)
 	struct gfs_stat sb;
 
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_stat_cached(path, &sb);
+	e = gfs_stat(path, &sb);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_stat_cached(%s) failed: %s",
+			    "gfs_stat(%s) failed: %s",
 			    path, gfarm_error_string(e));
 		return (e);
 	}
