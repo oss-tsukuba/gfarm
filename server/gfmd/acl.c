@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "inode.h"
@@ -373,7 +374,7 @@ acl_access(struct inode *inode, struct user *user, int op)
 		return (e);
 	if (value == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT); /* no ACL */
-	if (size <= 4) {
+	if (size <= 4) {  /* The value has only version number. */
 		free(value);
 		return (GFARM_ERR_NO_SUCH_OBJECT); /* no ACL */
 	}

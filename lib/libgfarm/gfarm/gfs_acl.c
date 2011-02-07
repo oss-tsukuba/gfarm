@@ -377,10 +377,10 @@ gfs_acl_delete_def_file(const char *path)
 	struct gfs_stat sb;
 
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_stat_cached(path, &sb);
+	e = gfs_stat(path, &sb);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_stat_cached(%s) failed: %s",
+			    "gfs_stat(%s) failed: %s",
 			    path, gfarm_error_string(e));
 		return (e);
 	}
@@ -401,8 +401,11 @@ gfs_acl_delete_def_file(const char *path)
 }
 
 /* GFARM_ERR_NO_SUCH_OBJECT : path does not exist or type does not exist */
-gfarm_error_t
-gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+static gfarm_error_t
+__acl_get_file_common(
+	const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p,
+	gfarm_error_t (*gfs_getxattr_func)(
+		const char *, const char *, void *, size_t *))
 {
 	gfarm_error_t e;
 	size_t size = 0;
@@ -421,11 +424,11 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 
 	/* get xattr size */
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_getxattr_cached(path, name, NULL, &size);
+	e = gfs_getxattr_func(path, name, NULL, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
 			gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfs_getxattr_cached(%s, %s) failed: %s",
+				    "gfs_getxattr(%s, %s) failed: %s",
 				    path, name, gfarm_error_string(e));
 		return (e);
 	}
@@ -438,10 +441,10 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 	}
 
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_getxattr_cached(path, name, xattr, &size);
+	e = gfs_getxattr_func(path, name, xattr, &size);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_getxattr_cached(%s, %s) failed: %s",
+			    "gfs_getxattr(%s, %s) failed: %s",
 			    path, name, gfarm_error_string(e));
 	else {
 		e = gfs_acl_from_xattr_value(xattr, size, acl_p);
@@ -454,6 +457,20 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 
 	return (e);
 }
+
+gfarm_error_t
+gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+{
+	return (__acl_get_file_common(path, type, acl_p, gfs_getxattr));
+}
+
+gfarm_error_t
+gfs_acl_get_file_cached(const char *path, gfarm_acl_type_t type,
+			gfarm_acl_t *acl_p)
+{
+	return (__acl_get_file_common(path, type, acl_p, gfs_getxattr_cached));
+}
+
 
 #if 0
 gfarm_error_t
@@ -594,7 +611,7 @@ __perm_to_str(gfarm_acl_perm_t perm) {
 		nowlen += slen;  /* without '\0' */ \
 	} while (0)
 
-gfarm_error_t
+static gfarm_error_t
 __acl_to_text_common(gfarm_acl_t acl, const char *prefix, char separator,
 		     const char *suffix, int options,
 		     char **str_p, size_t *len_p)
@@ -876,7 +893,7 @@ fail:
 	return (GFARM_ERR_INVALID_ARGUMENT);
 }
 
-gfarm_error_t
+static gfarm_error_t
 __acl_from_text_common(const char *buf_p, gfarm_acl_t *acl_acc_p,
 		       gfarm_acl_t *acl_def_p)
 {
@@ -903,9 +920,12 @@ __acl_from_text_common(const char *buf_p, gfarm_acl_t *acl_acc_p,
 
 	while (*p != '\0') {
 		SKIP_WS(p);
-		if (acl_def_p != NULL && *p == 'd')
-			e = __parse_acl_entry(p, acl_def_p, &nextp);
-		else
+		if (*p == 'd') {
+			if (acl_def_p != NULL)
+				e = __parse_acl_entry(p, acl_def_p, &nextp);
+			else
+				e = GFARM_ERR_INVALID_ARGUMENT;
+		} else
 			e = __parse_acl_entry(p, acl_acc_p, &nextp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,

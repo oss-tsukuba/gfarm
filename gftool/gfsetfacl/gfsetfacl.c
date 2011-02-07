@@ -287,7 +287,7 @@ acl_set(const char *path,
 	e = gfs_stat_cached(path, &sb);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfs_acl_get_file(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
+	e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		e = gfs_acl_from_mode(sb.st_mode, &acl_acc);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -295,7 +295,8 @@ acl_set(const char *path,
 		return (e);
 	}
 	if (GFARM_S_ISDIR(sb.st_mode)) {
-		e = gfs_acl_get_file(path, GFARM_ACL_TYPE_DEFAULT, &acl_def);
+		e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_DEFAULT,
+					    &acl_def);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			acl_def = NULL;
 		else if (e != GFARM_ERR_NO_ERROR) {
@@ -499,6 +500,7 @@ acl_set(const char *path,
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
 	}
+	gfs_stat_cache_purge(path);
 end:
 	gfs_stat_free(&sb);
 	gfs_acl_free(acl_acc);
@@ -622,6 +624,8 @@ main(int argc, char **argv)
 			fclose(f);
 	}
 
+	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
+	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 	for (i = 0; i < argc; i++) {
 		e = acl_set(argv[i], remove_acl_acccess, remove_acl_default,
 			    acl_file_buf, acl_spec, is_test);

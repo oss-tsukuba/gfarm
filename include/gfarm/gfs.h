@@ -411,6 +411,8 @@ gfarm_error_t gfs_acl_get_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t *);
 gfarm_error_t gfs_acl_set_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t);
 gfarm_error_t gfs_acl_delete_def_file(const char *);
 gfarm_error_t gfs_acl_get_file(const char *, gfarm_acl_type_t, gfarm_acl_t *);
+gfarm_error_t gfs_acl_get_file_cached(const char *, gfarm_acl_type_t,
+				      gfarm_acl_t *);
 gfarm_error_t gfs_acl_set_file(const char *, gfarm_acl_type_t, gfarm_acl_t);
 gfarm_error_t gfs_acl_to_text(gfarm_acl_t, char **, size_t *);
 gfarm_error_t gfs_acl_from_text(const char *, gfarm_acl_t *);
@@ -428,9 +430,11 @@ gfarm_error_t gfs_acl_to_any_text(gfarm_acl_t, const char *, char, int,
 gfarm_error_t gfs_acl_to_xattr_value(const gfarm_acl_t, void **, size_t *);
 gfarm_error_t gfs_acl_from_xattr_value(const void *, size_t, gfarm_acl_t *);
 gfarm_error_t gfs_acl_sort(gfarm_acl_t);
-gfarm_error_t gfs_acl_delete_mode(gfarm_acl_t);
 gfarm_error_t gfs_acl_from_text_with_default(const char *, gfarm_acl_t *,
 					     gfarm_acl_t *);
+#ifdef GFARM_INTERNAL_USE /* internal use only */
+gfarm_error_t gfs_acl_delete_mode(gfarm_acl_t);
+#endif
 
 /*
  * Client-side Metadata cache (preliminary version)
