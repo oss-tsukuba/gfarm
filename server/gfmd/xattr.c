@@ -99,6 +99,7 @@ setxattr(int xmlMode, struct inode *inode,
 					attrname, gfarm_error_string(e));
 				return (e);
 			}
+			/* The *valuep has only version number if size == 4 */
 			if (*valuep == NULL || size <= 4) {
 				e = inode_xattr_get_cache(
 					inode, xmlMode, attrname,
