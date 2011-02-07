@@ -411,6 +411,8 @@ gfarm_error_t gfs_acl_get_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t *);
 gfarm_error_t gfs_acl_set_tag_type(gfarm_acl_entry_t, gfarm_acl_tag_t);
 gfarm_error_t gfs_acl_delete_def_file(const char *);
 gfarm_error_t gfs_acl_get_file(const char *, gfarm_acl_type_t, gfarm_acl_t *);
+gfarm_error_t gfs_acl_get_file_cached(const char *, gfarm_acl_type_t,
+				      gfarm_acl_t *);
 gfarm_error_t gfs_acl_set_file(const char *, gfarm_acl_type_t, gfarm_acl_t);
 gfarm_error_t gfs_acl_to_text(gfarm_acl_t, char **, size_t *);
 gfarm_error_t gfs_acl_from_text(const char *, gfarm_acl_t *);

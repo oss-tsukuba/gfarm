@@ -401,8 +401,11 @@ gfs_acl_delete_def_file(const char *path)
 }
 
 /* GFARM_ERR_NO_SUCH_OBJECT : path does not exist or type does not exist */
-gfarm_error_t
-gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+static gfarm_error_t
+__acl_get_file_common(
+	const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p,
+	gfarm_error_t (*gfs_getxattr_func)(
+		const char *, const char *, void *, size_t *))
 {
 	gfarm_error_t e;
 	size_t size = 0;
@@ -421,11 +424,11 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 
 	/* get xattr size */
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_getxattr_cached(path, name, NULL, &size);
+	e = gfs_getxattr_func(path, name, NULL, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e != GFARM_ERR_NO_SUCH_OBJECT)
 			gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfs_getxattr_cached(%s, %s) failed: %s",
+				    "gfs_getxattr(%s, %s) failed: %s",
 				    path, name, gfarm_error_string(e));
 		return (e);
 	}
@@ -438,10 +441,10 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 	}
 
 	/* follow symlinks because symlinks do not have ACL */
-	e = gfs_getxattr_cached(path, name, xattr, &size);
+	e = gfs_getxattr_func(path, name, xattr, &size);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_getxattr_cached(%s, %s) failed: %s",
+			    "gfs_getxattr(%s, %s) failed: %s",
 			    path, name, gfarm_error_string(e));
 	else {
 		e = gfs_acl_from_xattr_value(xattr, size, acl_p);
@@ -454,6 +457,20 @@ gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
 
 	return (e);
 }
+
+gfarm_error_t
+gfs_acl_get_file(const char *path, gfarm_acl_type_t type, gfarm_acl_t *acl_p)
+{
+	return (__acl_get_file_common(path, type, acl_p, gfs_getxattr));
+}
+
+gfarm_error_t
+gfs_acl_get_file_cached(const char *path, gfarm_acl_type_t type,
+			gfarm_acl_t *acl_p)
+{
+	return (__acl_get_file_common(path, type, acl_p, gfs_getxattr_cached));
+}
+
 
 #if 0
 gfarm_error_t

@@ -46,7 +46,7 @@ acl_print(char *path)
 	e = gfs_stat_cached(path, &sb);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = gfs_acl_get_file(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
+	e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_ACCESS, &acl_acc);
 	if (e == GFARM_ERR_NO_SUCH_OBJECT)
 		e = gfs_acl_from_mode(sb.st_mode, &acl_acc);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -55,8 +55,8 @@ acl_print(char *path)
 	}
 
 	if (GFARM_S_ISDIR(sb.st_mode)) {
-		e = gfs_acl_get_file(path, GFARM_ACL_TYPE_DEFAULT,
-				     &acl_def);
+		e = gfs_acl_get_file_cached(path, GFARM_ACL_TYPE_DEFAULT,
+					    &acl_def);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			acl_def = NULL;
 		else if (e != GFARM_ERR_NO_ERROR) {
@@ -126,6 +126,8 @@ main(int argc, char **argv)
 	if (argc <= 0)
 		usage();
 
+	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
+	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 	for (i = 0; i < argc; i++) {
 		e = acl_print(argv[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
