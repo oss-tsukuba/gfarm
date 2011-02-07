@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "inode.h"
