@@ -681,7 +681,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	if (peer->conn != NULL) { /* must be an implementation error */
 		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 		gflog_debug(GFARM_MSG_1001582,
-			"bad file descriptor: conn is NULL");
+			"bad file descriptor: conn is not NULL");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 

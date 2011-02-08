@@ -4576,7 +4576,7 @@ inode_check_and_repair(void)
 	int transaction = 0;
 	int lost_found_modified = 0;
 	struct inode *lost_found;
-	static const char diag[] = "inode_nlink_check";
+	static const char diag[] = "inode_check_and_repair";
 
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR) /* to make things faster */
 		transaction = 1;
