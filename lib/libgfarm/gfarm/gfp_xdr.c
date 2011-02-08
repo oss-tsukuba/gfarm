@@ -344,6 +344,11 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			size += sizeof(i);
 			size += n;
 			continue;
+		case 'r':
+			n = va_arg(*app, size_t);
+			s = va_arg(*app, const char *);
+			size += n;
+			continue;
 		case 'f':
 			d = va_arg(*app, double);
 			size += sizeof(nd);
@@ -457,6 +462,12 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			s = va_arg(*app, const char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    &i, sizeof(i));
+			gfarm_iobuffer_put_write(conn->sendbuffer,
+			    s, n);
+			continue;
+		case 'r':
+			n = va_arg(*app, size_t);
+			s = va_arg(*app, const char *);
 			gfarm_iobuffer_put_write(conn->sendbuffer,
 			    s, n);
 			continue;
