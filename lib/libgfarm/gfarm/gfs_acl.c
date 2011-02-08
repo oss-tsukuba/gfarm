@@ -18,7 +18,8 @@ struct gfarm_acl_entry {
 struct gfarm_acl {
 	struct gfarm_acl_entry **entries;
 	int nentries;
-	int current;  /* for gfs_acl_get_entry() */
+	int current_idx;  /* for gfs_acl_get_entry() */
+	int unused_idx;
 };
 
 /* ----- POSIX(1003.1e draft17)-like functions --------------------- */
@@ -46,7 +47,8 @@ gfs_acl_init(int count, gfarm_acl_t *acl_p)
 	} else
 		acl->entries = NULL;
 	acl->nentries = count;
-	acl->current = 0;
+	acl->current_idx = 0;
+	acl->unused_idx = 0;
 	*acl_p = acl;
 
 	return (GFARM_ERR_NO_ERROR);
@@ -94,6 +96,8 @@ gfs_acl_dup(gfarm_acl_t *acl_dst_p, const gfarm_acl_t acl_src)
 		} else
 			(*acl_dst_p)->entries[i]->qualifier = NULL;
 	}
+	(*acl_dst_p)->unused_idx = acl_src->unused_idx;
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -147,9 +151,10 @@ gfs_acl_create_entry(gfarm_acl_t *acl_p, gfarm_acl_entry_t *entry_p)
 		gfs_acl_init(5, &acl);
 		*acl_p = acl;
 	}
-	for (i = 0; i < acl->nentries; i++) {
+	for (i = acl->unused_idx; i < acl->nentries; i++) {
 		if (acl->entries[i] == NULL) {
 			pp = &acl->entries[i]; /* unused */
+			acl->unused_idx++;    /* next */
 			goto success;
 		}
 	}
@@ -165,6 +170,7 @@ gfs_acl_create_entry(gfarm_acl_t *acl_p, gfarm_acl_entry_t *entry_p)
 	for (i = acl->nentries; i < new_count; i++)
 		acl->entries[i] = NULL;
 	pp = &acl->entries[acl->nentries]; /* new */
+	acl->unused_idx = acl->nentries + 1; /* next */
 	acl->nentries = new_count;
 success:
 	GFARM_CALLOC_ARRAY(*pp, 1);
@@ -191,6 +197,7 @@ gfs_acl_delete_entry(gfarm_acl_t acl, gfarm_acl_entry_t entry_d)
 		if (acl->entries[i] == entry_d) {
 			__gfs_acl_entry_free(entry_d);
 			acl->entries[i] = NULL;
+			acl->unused_idx = i;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
@@ -209,7 +216,7 @@ gfs_acl_get_entry(gfarm_acl_t acl, int entry_id, gfarm_acl_entry_t *entry_p)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (entry_id == GFARM_ACL_FIRST_ENTRY)
-		acl->current = 0;
+		acl->current_idx = 0;
 	else if (entry_id != GFARM_ACL_NEXT_ENTRY) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			    "invalid entry_id of gfs_acl_get_entry()");
@@ -217,12 +224,12 @@ gfs_acl_get_entry(gfarm_acl_t acl, int entry_id, gfarm_acl_entry_t *entry_p)
 	}
 
 	do {
-		if (acl->current >= acl->nentries) {
+		if (acl->current_idx >= acl->nentries) {
 			*entry_p = NULL;
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		}
-		*entry_p = acl->entries[acl->current];
-		acl->current++;
+		*entry_p = acl->entries[acl->current_idx];
+		acl->current_idx++;
 	} while (*entry_p == NULL);
 
 	/* *entry_p != NULL : found */
