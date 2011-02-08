@@ -989,9 +989,8 @@ sigs_set(sigset_t *sigs)
 	if (sigemptyset(sigs) == -1)
 		gflog_fatal_errno(GFARM_MSG_1002353, "sigemptyset()");
 	sig_add(sigs, SIGHUP, "SIGHUP");
-#ifdef __NetBSD__ /* NetBSD 4 delivers SIGINT to gfmd even under gdb */
+	 /* don't do this in debug_mode, to use Control-C under gdb */
 	if (!debug_mode)
-#endif
 		sig_add(sigs, SIGINT, "SIGINT");
 	sig_add(sigs, SIGTERM, "SIGTERM");
 #ifdef SIGINFO
