@@ -850,9 +850,6 @@ peer_shutdown_all(void)
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
-#ifdef HAVE_EPOLL
-	close(peer_epoll.fd);
-#endif
 }
 
 void
