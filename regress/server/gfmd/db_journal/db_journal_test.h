@@ -97,3 +97,13 @@ test_assert_err(const char *msg, gfarm_error_t e1, gfarm_error_t e2,
 	exit(EXIT_FAILURE);
 }
 
+/* some externs in server/gfmd/host.h
+ * server/gfmd/host.h is hidden by lib/libgfarm/gfarm/host.h.
+ */
+struct host *host_lookup(const char *);
+char *host_name(struct host *);
+int host_port(struct host *);
+char *host_architecture(struct host *);
+int host_ncpu(struct host *);
+int host_flags(struct host *);
+void host_init(void);

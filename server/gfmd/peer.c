@@ -749,6 +749,12 @@ peer_alloc_with_connection(struct peer **peerp, struct gfp_xdr *conn,
 	return (e);
 }
 
+void
+peer_unset_connection(struct peer *peer)
+{
+	peer->conn = NULL;
+}
+
 const char *
 peer_get_service_name(struct peer *peer)
 {
@@ -887,7 +893,10 @@ peer_free(struct peer *peer)
 	}
 	peer->findxmlattrctx = NULL;
 
-	gfp_xdr_free(peer->conn); peer->conn = NULL;
+	if (peer->conn) {
+		gfp_xdr_free(peer->conn);
+		peer->conn = NULL;
+	}
 	peer->next_close = NULL;
 	peer->refcount = 0;
 

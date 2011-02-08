@@ -415,10 +415,12 @@ abstract_host_break_locks(struct abstract_host *host)
 static void
 abstract_host_peer_unset(struct abstract_host *h)
 {
+	struct peer *peer = h->peer;
+
 	h->peer = NULL;
 	h->protocol_version = 0;
 	h->is_active = 0;
-	h->ops->unset_peer(h);
+	h->ops->unset_peer(h, peer);
 
 	abstract_host_break_locks(h);
 }
@@ -428,16 +430,18 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer)
 {
 	int disabled = 0;
 	void *closure;
+	struct peer *hpeer;
 	static const char diag[] = "abstract_host_disconnect_request";
 	const char *back_channel_diag = back_channel_type_name(peer);
 
 	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 
-	if (h->is_active && (peer == h->peer || peer == NULL)) {
-		peer_record_protocol_error(h->peer);
-		peer_free_request(h->peer);
+	hpeer = h->peer;
+	if (h->is_active && (peer == hpeer || peer == NULL)) {
+		peer_record_protocol_error(hpeer);
+		peer_free_request(hpeer);
 		abstract_host_peer_unset(h);
-		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
+		if (h->ops->disable(h, hpeer, &closure) == GFARM_ERR_NO_ERROR)
 			disabled = 1;
 	}
 

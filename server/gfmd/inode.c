@@ -4067,13 +4067,6 @@ inode_remove_orphan(void)
  * loading metadata from persistent storage.
  */
 
-/* The memory owner of `*st' is changed to inode.c */
-static void
-inode_add_one(void *closure, struct gfs_stat *st)
-{
-	(void)inode_add(st);
-}
-
 void
 inode_modify(struct inode *inode, struct gfs_stat *st)
 {
@@ -4089,8 +4082,8 @@ inode_modify(struct inode *inode, struct gfs_stat *st)
 }
 
 /* The memory owner of `*st' is changed to inode.c */
-gfarm_error_t
-inode_add(struct gfs_stat *st)
+static gfarm_error_t
+inode_add(struct gfs_stat *st, struct inode **inodep)
 {
 	gfarm_error_t e;
 	struct inode *inode;
@@ -4132,8 +4125,47 @@ inode_add(struct gfs_stat *st)
 
 	inode_modify(inode, st);
 	gfs_stat_free(st);
+	if (inodep)
+		*inodep = inode;
 	return (GFARM_ERR_NO_ERROR);
 }
+
+/* The memory owner of `*st' is changed to inode.c */
+static void
+inode_add_one(void *closure, struct gfs_stat *st)
+{
+	(void)inode_add(st, NULL);
+}
+
+gfarm_error_t
+inode_add_or_modify_in_cache(struct gfs_stat *st, struct inode **inodep)
+{
+	struct inode *n = inode_lookup(st->st_ino);
+
+	if (n != NULL) {
+		if ((GFARM_S_IFMT & st->st_mode) ==
+		    (GFARM_S_IFMT & n->i_mode)) {
+			inode_modify(n, st);
+			gfs_stat_free(st);
+			*inodep = n;
+			return (GFARM_ERR_NO_ERROR);
+		}
+		switch (GFARM_S_IFMT & n->i_mode) {
+		case GFARM_S_IFDIR:
+			dir_free(n->u.c.s.d.entries);
+			break;
+		case GFARM_S_IFREG:
+			/* XXX need to free file_copy ? */
+			break;
+		case GFARM_S_IFLNK:
+			inode_clear_symlink(n);
+			break;
+		}
+		inode_clear(n);
+	}
+	return (inode_add(st, inodep));
+}
+
 
 /* The memory owner of `type' and `sum' is changed to inode.c */
 static void

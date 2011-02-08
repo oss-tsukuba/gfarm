@@ -367,8 +367,12 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		*requestp = request;
 		return (e);
 	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
+#ifdef ENABLE_JOURNAL
 		e = gfm_server_switch_gfmd_channel(peer,
 		    from_client, skip);
+#else
+		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
+#endif
 		/* should not call gfp_xdr_flush() due to race */
 		*requestp = request;
 		return (e);
@@ -1074,7 +1078,7 @@ sigs_handler(void *p)
 	giant_lock();
 
 	gflog_info(GFARM_MSG_1000201, "shutting down peers");
-	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+	if (!mdhost_self_is_readonly() && db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	/*
 	 * the following internally calls inode_close*() and
@@ -1129,7 +1133,9 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	back_channel_init();
+#ifdef ENABLE_JOURNAL
 	gfmdc_init();
+#endif
 
 	/* directory service */
 	mdhost_init();
@@ -1335,15 +1341,47 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 
 #ifdef ENABLE_JOURNAL
-	e = create_detached_thread(db_journal_store_thread, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "create_detached_thread(db_journal_thread): %s",
-		    gfarm_error_string(e));
+	if (mdhost_self_is_master()) {
+		e = create_detached_thread(db_journal_store_thread, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_journal_store_thread): "
+			    "%s", gfarm_error_string(e));
+	} else {
+		e = create_detached_thread(db_journal_recvq_thread, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_ournal_recvq_thread): "
+			    "%s", gfarm_error_string(e));
+		e = create_detached_thread(db_journal_apply_thread, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_journal_apply_thread): "
+			    "%s", gfarm_error_string(e));
+	}
 #endif
-	/* these functions write db, thus, must be after db_thread  */
-	inode_remove_orphan(); /* should be before inode_check_and_repair() */
-	inode_check_and_repair();
+	if (!mdhost_self_is_readonly()) {
+		/* these functions write db, thus, must be after db_thread  */
+		inode_remove_orphan(); /* should be before
+					  inode_check_and_repair() */
+		inode_check_and_repair();
+	}
+#ifdef ENABLE_JOURNAL
+	db_journal_boot_apply();
+	if (mdhost_self_is_master()) {
+		e = create_detached_thread(gfmdc_master_thread, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(gfmdc_master_thread): %s",
+			    gfarm_error_string(e));
+	} else {
+		e = create_detached_thread(gfmdc_slave_thread, NULL);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(gfmdc_slave_thread): %s",
+			    gfarm_error_string(e));
+	}
+#endif
 
 	accepting_loop(sock);
 

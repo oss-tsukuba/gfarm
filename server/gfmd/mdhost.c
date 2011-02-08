@@ -18,6 +18,8 @@
 #include "gfp_xdr.h"
 #include "config.h"
 
+#include "gfm_client.h"
+
 #include "host.h"
 #include "user.h"
 #include "peer.h"
@@ -25,6 +27,7 @@
 #include "metadb_server.h"
 #include "mdhost.h"
 #include "db_journal.h"
+#include "journal_file.h"
 
 /* in-core gfarm_metadb_server */
 struct mdhost {
@@ -33,7 +36,9 @@ struct mdhost {
 	struct mdhost *next;
 	struct gfarm_metadb_server *ms;
 	struct gfm_connection *conn;
+	int is_readonly;
 #ifdef ENABLE_JOURNAL
+	int is_recieved_seqnum;
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
 #endif
@@ -140,6 +145,29 @@ mdhost_set_connection(struct mdhost *m, struct gfm_connection *conn)
 	m->conn = conn;
 }
 
+void
+mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
+{
+	struct mdhost *m;
+
+	FOREACH_MDHOST(m) {
+		if (func(m, closure) == 0)
+			break;
+	}
+}
+
+static int
+mdhost_is_readonly(struct mdhost *m)
+{
+	return (m->is_readonly);
+}
+
+static void
+mdhost_set_is_readonly(struct mdhost *m, int flag)
+{
+	m->is_readonly = flag;
+}
+
 #ifdef ENABLE_JOURNAL
 struct journal_file_reader *
 mdhost_get_journal_file_reader(struct mdhost *m)
@@ -158,6 +186,26 @@ mdhost_set_last_fetch_seqnum(struct mdhost *m, gfarm_uint64_t seqnum)
 {
 	m->last_fetch_seqnum = seqnum;
 }
+
+int
+mdhost_is_recieved_seqnum(struct mdhost *m)
+{
+	return (m->is_recieved_seqnum);
+}
+
+void
+mdhost_set_is_recieved_seqnum(struct mdhost *m, int flag)
+{
+	m->is_recieved_seqnum = flag;
+}
+
+static void
+mdhost_self_change_to_readonly(void)
+{
+	mdhost_set_is_readonly(mdhost_lookup_self(), 1);
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "changed to read-only mode");
+}
 #endif
 
 static void
@@ -171,13 +219,26 @@ mdhost_set_peer_unlocked(struct abstract_host *h, struct peer *peer)
 }
 
 static void
-mdhost_unset_peer(struct abstract_host *h)
+mdhost_unset_peer(struct abstract_host *h, struct peer *peer)
 {
 }
 
 static gfarm_error_t
-mdhost_disable(struct abstract_host *h, void **closurep)
+mdhost_disable(struct abstract_host *h, struct peer *peer, void **closurep)
 {
+	struct mdhost *m = abstract_host_to_mdhost(h);
+
+	if (m->conn) {
+		gfm_client_connection_free(m->conn);
+		m->conn = NULL;
+		peer_unset_connection(peer);
+		peer_invoked(peer);
+	}
+#ifdef ENABLE_JOURNAL
+	m->is_recieved_seqnum = 0;
+	if (m->jreader && journal_file_reader_is_invalid(m->jreader))
+		journal_file_reader_close(m->jreader);
+#endif
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -209,8 +270,11 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	abstract_host_init(&m->ah, &mdhost_ops, diag);
 	m->ms = ms;
 	m->conn = NULL;
+	m->is_readonly = 0;
 #ifdef ENABLE_JOURNAL
+	m->jreader = NULL;
 	m->last_fetch_seqnum = 0;
+	m->is_recieved_seqnum = 0;
 #endif
 	return (m);
 }
@@ -243,20 +307,40 @@ struct mdhost *
 mdhost_lookup_self(void)
 {
 	struct mdhost *m;
+	static struct mdhost *self = NULL;
 
+	if (self)
+		return (self);
 	FOREACH_MDHOST(m)
-		if (mdhost_is_self(m))
+		if (mdhost_is_self(m)) {
+			self = m;
 			return (m);
+		}
 	abort();
 	return (NULL);
 }
 
+int
+mdhost_self_is_master(void)
+{
+	struct mdhost *m = mdhost_lookup_self();
+
+	return (mdhost_is_master(m));
+}
+
+int
+mdhost_self_is_readonly(void)
+{
+	struct mdhost *m = mdhost_lookup_self();
+
+	return (mdhost_is_readonly(m));
+}
+
 /* giant_lock should be held before calling this */
 void
-mdhost_disconnect(struct mdhost *h, struct peer *peer)
+mdhost_disconnect(struct mdhost *m, struct peer *peer)
 {
-	return (abstract_host_disconnect(&h->ah, peer,
-		BACK_CHANNEL_DIAG));
+	return (abstract_host_disconnect(&m->ah, peer, BACK_CHANNEL_DIAG));
 }
 
 void
@@ -269,10 +353,10 @@ mdhost_init()
 	gfarm_error_t e;
 	struct journal_file_reader *reader;
 #endif
+
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	m = NULL;
 #endif
-
 	msl = gfarm_get_metadb_server_list(&n);
 	if (msl == NULL)
 		return;
@@ -296,11 +380,13 @@ mdhost_init()
 		    "not found in metadb_server_list");
 	}
 	m->next = &mdhost_list;
+	if (!mdhost_is_master(self))
+		mdhost_set_is_readonly(self, 1);
 #ifdef ENABLE_JOURNAL
 	if (mdhost_is_master(self)) {
 		FOREACH_MDHOST(m) {
 			if (m != self) {
-				if ((e = db_journal_add_reader(&reader))
+				if ((e = db_journal_add_initial_reader(&reader))
 				    != GFARM_ERR_NO_ERROR) {
 					gflog_fatal(GFARM_MSG_UNFIXED,
 					    "%s", gfarm_error_string(e));
@@ -309,5 +395,6 @@ mdhost_init()
 			}
 		}
 	}
+	db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
 #endif
 }

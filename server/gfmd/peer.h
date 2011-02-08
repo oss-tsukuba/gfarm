@@ -25,6 +25,7 @@ struct peer *peer_by_fd(int);
 gfarm_error_t peer_free_by_fd(int);
 
 struct gfp_xdr *peer_get_conn(struct peer *);
+void peer_unset_connection(struct peer *);
 int peer_get_fd(struct peer *);
 
 /* (struct gfp_xdr_aync_peer *) == gfp_xdr_async_peer_t XXX  */

@@ -14,7 +14,10 @@
 #define GFARM_JOURNAL_RDWR	2
 
 enum journal_operation {
-	GFM_JOURNAL_HOST_ADD = 1,
+	GFM_JOURNAL_BEGIN = 1,
+	GFM_JOURNAL_END,
+
+	GFM_JOURNAL_HOST_ADD,
 	GFM_JOURNAL_HOST_MODIFY,
 	GFM_JOURNAL_HOST_REMOVE,
 
@@ -73,7 +76,7 @@ struct journal_file_writer;
 
 typedef gfarm_error_t (*journal_size_add_op_t)(enum journal_operation,
 	size_t *, void *);
-typedef gfarm_error_t (*journal_send_add_op_t)(enum journal_operation,
+typedef gfarm_error_t (*journal_send_op_t)(enum journal_operation,
 	void *);
 typedef gfarm_error_t (*journal_post_read_op_t)(void *, gfarm_uint64_t,
 	enum journal_operation, void *, size_t);
@@ -89,23 +92,30 @@ struct journal_file_writer *journal_file_writer(struct journal_file *);
 struct journal_file_reader *journal_file_main_reader(struct journal_file *);
 gfarm_error_t journal_file_write(struct journal_file *,
 	gfarm_uint64_t, enum journal_operation, void *,
-	journal_size_add_op_t, journal_send_add_op_t);
+	journal_size_add_op_t, journal_send_op_t);
+gfarm_error_t journal_file_write_raw(struct journal_file *, int,
+	unsigned char *, gfarm_uint64_t *, int *);
 gfarm_error_t journal_file_read(struct journal_file_reader *, void *,
 	journal_read_op_t, journal_post_read_op_t, journal_free_op_t,
 	int *);
 gfarm_error_t journal_file_read_serialized(struct journal_file_reader *,
 	char **, gfarm_uint32_t *, gfarm_uint64_t *, int *);
-gfarm_error_t journal_file_flush(struct journal_file *);
+void journal_file_wait_until_empty(struct journal_file *);
 
+void journal_file_writer_sync(struct journal_file_writer *writer);
+gfarm_error_t journal_file_writer_flush(struct journal_file_writer *);
 struct gfp_xdr *journal_file_writer_xdr(struct journal_file_writer *);
 off_t journal_file_writer_pos(struct journal_file_writer *);
+
 struct gfp_xdr *journal_file_reader_xdr(struct journal_file_reader *);
 off_t journal_file_reader_cache_pos(struct journal_file_reader *);
 int journal_file_reader_is_invalid(struct journal_file_reader *);
-void journal_file_reader_invalidate(struct journal_file_reader *);
 void journal_file_reader_disable_block_writer(struct journal_file_reader *);
 gfarm_error_t journal_file_reader_dup(struct journal_file_reader *,
 	struct journal_file_reader **);
+void journal_file_reader_close(struct journal_file_reader *);
+gfarm_error_t journal_file_reader_reopen(struct journal_file_reader *,
+	gfarm_uint64_t);
 
 const char *journal_operation_name(enum journal_operation);
 

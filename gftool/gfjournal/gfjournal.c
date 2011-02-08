@@ -42,6 +42,9 @@ static struct journal_file_reader *reader;
 
 /* dummy definition to link successfully without db_journal_apply.o */
 const struct db_ops db_journal_apply_ops;
+/* dummy definition to link successfully without mdhost.o */
+void mdhost_self_is_master(void) {}
+void mdhost_self_is_readonly(void) {}
 
 static void
 usage(void)
@@ -240,6 +243,9 @@ static void
 print_obj(enum journal_operation ope, void *obj)
 {
 	switch (ope) {
+	case GFM_JOURNAL_BEGIN:
+	case GFM_JOURNAL_END:
+		break;
 	case GFM_JOURNAL_HOST_ADD:
 		print_host(obj);
 		break;

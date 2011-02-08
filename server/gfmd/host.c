@@ -679,7 +679,7 @@ host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
  * SLEEPS: no
  */
 static void
-host_unset_peer(struct abstract_host *ah)
+host_unset_peer(struct abstract_host *ah, struct peer *peer)
 {
 	callout_stop(abstract_host_to_host(ah)->status_callout);
 }
@@ -689,7 +689,7 @@ struct host_disable_closure {
 };
 
 static gfarm_error_t
-host_disable(struct abstract_host *ah, void **closurep)
+host_disable(struct abstract_host *ah, struct peer *peer, void **closurep)
 {
 	struct host *h = abstract_host_to_host(ah);
 	struct host_disable_closure *c;

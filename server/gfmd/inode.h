@@ -65,11 +65,12 @@ void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);
 char *inode_get_symlink(struct inode *);
 int inode_desired_dead_file_copy(gfarm_ino_t);
-gfarm_error_t inode_add(struct gfs_stat *);
+gfarm_error_t inode_add_or_modify_in_cache(struct gfs_stat *, struct inode **);
 void inode_modify(struct inode *, struct gfs_stat *);
 gfarm_error_t symlink_add(gfarm_ino_t, char *);
 void inode_clear_symlink(struct inode *);
 void inode_free(struct inode *);
+struct inode *inode_alloc_num(gfarm_ino_t);
 
 struct peer;
 int inode_new_generation_is_pending(struct inode *);

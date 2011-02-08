@@ -24,9 +24,14 @@ struct mdhost *mdhost_lookup(const char *);
 struct mdhost *mdhost_lookup_master(void);
 struct mdhost *mdhost_lookup_self(void);
 void mdhost_disconnect(struct mdhost *, struct peer *);
+void mdhost_foreach(int (*)(struct mdhost *, void *), void *);
+int mdhost_self_is_master(void);
+int mdhost_self_is_readonly(void);
 #ifdef ENABLE_JOURNAL
 struct journal_file_reader;
 struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
 gfarm_uint64_t mdhost_get_last_fetch_seqnum(struct mdhost *);
 void mdhost_set_last_fetch_seqnum(struct mdhost *, gfarm_uint64_t);
+int mdhost_is_recieved_seqnum(struct mdhost *);
+void mdhost_set_is_recieved_seqnum(struct mdhost *, int);
 #endif
