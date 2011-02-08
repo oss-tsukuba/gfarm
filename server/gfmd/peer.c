@@ -1109,13 +1109,15 @@ peer_get_abstract_host(struct peer *peer)
 struct host *
 peer_get_host(struct peer *peer)
 {
-	return (abstract_host_to_host(peer->host));
+	return (peer->host == NULL ? NULL :
+	    abstract_host_to_host(peer->host));
 }
 
 struct mdhost *
 peer_get_mdhost(struct peer *peer)
 {
-	return (abstract_host_to_mdhost(peer->host));
+	return (peer->host == NULL ? NULL :
+	    abstract_host_to_mdhost(peer->host));
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
