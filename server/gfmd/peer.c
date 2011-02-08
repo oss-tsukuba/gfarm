@@ -320,6 +320,8 @@ peer_epoll_del_fd(int fd)
 
 #define PEER_WATCH_INTERVAL 10 /* 10ms: XXX FIXME */
 
+static int shutting_down = 0;
+
 void *
 peer_watcher(void *arg)
 {
@@ -363,7 +365,9 @@ peer_watcher(void *arg)
 #endif
 		if (rv == -1 && errno == EINTR)
 			continue;
-		if (rv == -1)
+		if (rv == -1) {
+			if (shutting_down)
+				return (NULL);
 #ifdef HAVE_EPOLL
 			gflog_fatal(GFARM_MSG_1000276,
 			    "peer_watcher: epoll_wait: %s\n",
@@ -373,6 +377,7 @@ peer_watcher(void *arg)
 			    "peer_watcher: poll: %s\n",
 			    strerror(errno));
 #endif
+		}
 
 		for (i = 0; i < nfds; i++) {
 #ifdef HAVE_EPOLL
@@ -904,6 +909,7 @@ peer_shutdown_all(void)
 
 	/* We never unlock this mutex any more */
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+	shutting_down = 1;
 
 	for (i = 0; i < peer_table_size; i++) {
 		peer = &peer_table[i];
