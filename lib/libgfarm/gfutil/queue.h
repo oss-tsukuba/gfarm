@@ -293,7 +293,8 @@ struct {								\
 	(GFARM_STAILQ_EMPTY((head)) ?					\
 		NULL :							\
 	        ((struct type *)(void *)				\
-		((char *)((head)->stqh_last) - __offsetof(struct type, field))))
+		((char *)((head)->stqh_last) -				\
+		((long)&((struct type *)0)->field))))
 
 #define	GFARM_STAILQ_NEXT(elm, field)	((elm)->field.stqe_next)
 
