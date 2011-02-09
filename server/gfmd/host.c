@@ -689,7 +689,7 @@ struct host_disable_closure {
 };
 
 static gfarm_error_t
-host_disable(struct abstract_host *ah, struct peer *peer, void **closurep)
+host_disable(struct abstract_host *ah, void **closurep)
 {
 	struct host *h = abstract_host_to_host(ah);
 	struct host_disable_closure *c;
@@ -706,7 +706,7 @@ host_disable(struct abstract_host *ah, struct peer *peer, void **closurep)
 }
 
 static void
-host_disabled(struct abstract_host *ah, void *closure)
+host_disabled(struct abstract_host *ah, struct peer *peer, void *closure)
 {
 	struct host_disable_closure *c = closure;
 

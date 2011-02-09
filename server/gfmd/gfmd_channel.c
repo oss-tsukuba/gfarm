@@ -235,6 +235,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *host, struct peer *peer,
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
+	struct journal_file_reader *reader;
 	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	if ((e = gfmdc_server_get_request(peer, size, diag, "l", &seqnum))
@@ -246,6 +247,18 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *host, struct peer *peer,
 		    "%s : last_fetch_seqnum=%llu",
 		    mdhost_get_name(host), (unsigned long long)seqnum);
 #endif
+		reader = mdhost_get_journal_file_reader(host);
+		if (reader == NULL || journal_file_reader_is_invalid(reader)) {
+			if ((e = db_journal_reader_reopen(&reader,
+			    mdhost_get_last_fetch_seqnum(host)))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "gfmd_channel(%s) : %s",
+				    mdhost_get_name(host),
+				    gfarm_error_string(e));
+			} else
+				mdhost_set_journal_file_reader(host, reader);
+		}
 	}
 	e = gfmdc_server_put_reply(host, peer, xid, diag, e, "");
 	return (e);
@@ -472,7 +485,6 @@ gfmdc_connect(struct mdhost *host)
 	gfarm_int32_t gfmd_knows_me;
 	struct gfm_connection *conn;
 	struct peer *peer = NULL;
-	struct journal_file_reader *reader;
 	/* XXX FIXME must be configuable */
 	unsigned int sleep_interval = 10;
 	/* XXX FIXME must be configuable */
@@ -543,17 +555,6 @@ gfmdc_connect(struct mdhost *host)
 	    != GFARM_ERR_NO_ERROR) {
 		mdhost_set_connection(host, NULL);
 		goto error;
-	}
-	reader = mdhost_get_journal_file_reader(host);
-	if (reader != NULL && journal_file_reader_is_invalid(reader)) {
-		if ((e = journal_file_reader_reopen(reader,
-		    mdhost_get_last_fetch_seqnum(host)))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "gfmd_channel(%s) : %s",
-			    hostname, gfarm_error_string(e));
-			goto error;
-		}
 	}
 	return (GFARM_ERR_NO_ERROR);
 error:

@@ -175,6 +175,13 @@ mdhost_get_journal_file_reader(struct mdhost *m)
 	return (m->jreader);
 }
 
+void
+mdhost_set_journal_file_reader(struct mdhost *m,
+	struct journal_file_reader *reader)
+{
+	m->jreader = reader;
+}
+
 gfarm_uint64_t
 mdhost_get_last_fetch_seqnum(struct mdhost *m)
 {
@@ -224,11 +231,18 @@ mdhost_unset_peer(struct abstract_host *h, struct peer *peer)
 }
 
 static gfarm_error_t
-mdhost_disable(struct abstract_host *h, struct peer *peer, void **closurep)
+mdhost_disable(struct abstract_host *h, void **closurep)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
 {
 	struct mdhost *m = abstract_host_to_mdhost(h);
 
 	if (m->conn) {
+		/* move to peer_free */
 		gfm_client_connection_free(m->conn);
 		m->conn = NULL;
 		peer_unset_connection(peer);
@@ -236,15 +250,9 @@ mdhost_disable(struct abstract_host *h, struct peer *peer, void **closurep)
 	}
 #ifdef ENABLE_JOURNAL
 	m->is_recieved_seqnum = 0;
-	if (m->jreader && journal_file_reader_is_invalid(m->jreader))
+	if (m->jreader)
 		journal_file_reader_close(m->jreader);
 #endif
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static void
-mdhost_disabled(struct abstract_host *h, void *closure)
-{
 }
 
 struct abstract_host_ops mdhost_ops = {
@@ -349,10 +357,6 @@ mdhost_init()
 	int i, n;
 	struct gfarm_metadb_server **msl;
 	struct mdhost *m, *m0, *self = NULL;
-#ifdef ENABLE_JOURNAL
-	gfarm_error_t e;
-	struct journal_file_reader *reader;
-#endif
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	m = NULL;
@@ -383,18 +387,6 @@ mdhost_init()
 	if (!mdhost_is_master(self))
 		mdhost_set_is_readonly(self, 1);
 #ifdef ENABLE_JOURNAL
-	if (mdhost_is_master(self)) {
-		FOREACH_MDHOST(m) {
-			if (m != self) {
-				if ((e = db_journal_add_initial_reader(&reader))
-				    != GFARM_ERR_NO_ERROR) {
-					gflog_fatal(GFARM_MSG_UNFIXED,
-					    "%s", gfarm_error_string(e));
-				} else
-					m->jreader = reader;
-			}
-		}
-	}
 	db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
 #endif
 }

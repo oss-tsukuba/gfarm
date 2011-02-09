@@ -441,14 +441,14 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer)
 		peer_record_protocol_error(hpeer);
 		peer_free_request(hpeer);
 		abstract_host_peer_unset(h);
-		if (h->ops->disable(h, hpeer, &closure) == GFARM_ERR_NO_ERROR)
+		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
 			disabled = 1;
 	}
 
 	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 
 	if (disabled)
-		h->ops->disabled(h, closure);
+		h->ops->disabled(h, hpeer, closure);
 }
 
 static void

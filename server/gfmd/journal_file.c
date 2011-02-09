@@ -90,7 +90,6 @@ struct journal_file {
 	char *path;
 	size_t size, max_size;
 	off_t tail;
-	off_t initial_fetch_pos; /* use only first open */
 	pthread_cond_t nonfull_cond, nonempty_cond;
 	pthread_mutex_t mutex;
 };
@@ -212,6 +211,13 @@ journal_file_add_reader(struct journal_file *jf,
 		last = JOURNAL_READER_LIST_HEAD(jf);
 	last->next = reader;
 	reader->next = JOURNAL_READER_LIST_HEAD(jf);
+}
+
+static void
+journal_file_reader_invalidate(struct journal_file_reader *reader)
+{
+	journal_file_reader_set_flag(reader,
+	    JOURNAL_FILE_READER_F_INVALID, 1);
 }
 
 void
@@ -407,8 +413,8 @@ journal_write_fully(int fd, void *data, size_t length, off_t *posp)
 }
 
 static gfarm_error_t
-journal_seek(int fd, size_t file_size,
-	gfarm_uint64_t *seqnump, off_t *posp, off_t *next_posp)
+journal_seek(int fd, size_t file_size, gfarm_uint64_t *seqnump,
+	enum journal_operation *opep, off_t *posp, off_t *next_posp)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	ssize_t ssz;
@@ -460,6 +466,7 @@ journal_seek(int fd, size_t file_size,
 		if (ssz == 0)
 			goto next;
 		raw += sizeof(gfarm_uint32_t);
+		*opep = ope;
 		if ((ssz = journal_read_uint32(fd, &len,
 		    raw, &pos)) < 0)
 			return (gfarm_errno_to_error(errno));
@@ -586,8 +593,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		 */
 		if (rpos < npos && rpos >= wpos &&
 		    (rpos != wpos || JOURNAL_FILE_READER_IS_WRAP(reader)))
-			journal_file_reader_set_flag(reader,
-			    JOURNAL_FILE_READER_F_INVALID, 1);
+			journal_file_reader_invalidate(reader);
 	} else {
 		/* 0       r  n         w   max_size
 		 * +--+----+--+---------+---+
@@ -600,8 +606,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		if (rpos < rec_len + JOURNAL_FILE_HEADER_SIZE ||
 		    (rpos >= wpos &&
 		    (rpos != wpos || !JOURNAL_FILE_READER_IS_WRAP(reader))))
-			journal_file_reader_set_flag(reader,
-			    JOURNAL_FILE_READER_F_INVALID, 1);
+			journal_file_reader_invalidate(reader);
 	}
 	if (JOURNAL_FILE_READER_IS_INVALID(reader)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -704,17 +709,18 @@ journal_read_file_header(int fd)
 static gfarm_error_t
 journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	gfarm_uint64_t cur_seqnum, off_t *rposp, off_t *wposp,
-	off_t *fetch_rposp, off_t *tailp, int *wrapp)
+	off_t *tailp, int *wrapp)
 {
 	gfarm_error_t e;
 	off_t pos, pos1, pos2, tail;
-	off_t min_seqnum_pos, old_min_seqnum_pos, max_seqnum_next_pos;
-	gfarm_uint64_t min_seqnum, old_min_seqnum, max_seqnum, seqnum = 0;
+	off_t min_seqnum_pos, max_seqnum_next_pos;
+	enum journal_operation ope;
+	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0;
 	int stored_all = 0;
 
-	min_seqnum = old_min_seqnum = UINT64_MAX;
+	min_seqnum = UINT64_MAX;
 	max_seqnum = 0;
-	min_seqnum_pos = old_min_seqnum_pos = max_seqnum_next_pos = -1;
+	min_seqnum_pos = max_seqnum_next_pos = -1;
 
 	if ((e = journal_read_file_header(rfd)) != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -722,23 +728,19 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	errno = 0;
 	for (;;) {
 		if ((e = journal_seek(rfd, file_size,
-		    &seqnum, &pos1, &pos2)) != GFARM_ERR_NO_ERROR) {
+		    &seqnum, &ope, &pos1, &pos2)) != GFARM_ERR_NO_ERROR) {
 			return (e);
 		}
 		if (pos1 == -1)
 			break;
 		pos = pos1;
-		if (cur_seqnum < seqnum) {
-			if (min_seqnum > seqnum) {
-				min_seqnum = seqnum;
-				min_seqnum_pos = pos1;
-			}
+		if (ope == GFM_JOURNAL_BEGIN &&
+		    cur_seqnum < seqnum && min_seqnum > seqnum) {
+			min_seqnum = seqnum;
+			min_seqnum_pos = pos1;
 		}
-		if (old_min_seqnum > seqnum) {
-			old_min_seqnum = seqnum;
-			old_min_seqnum_pos = pos1;
-		}
-		if (max_seqnum < seqnum && cur_seqnum <= seqnum) {
+		if (ope == GFM_JOURNAL_END &&
+		    max_seqnum < seqnum && cur_seqnum <= seqnum) {
 			max_seqnum = seqnum;
 			max_seqnum_next_pos = pos2;
 		}
@@ -756,8 +758,6 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		*rposp = JOURNAL_FILE_HEADER_SIZE;
 		if (wposp)
 			*wposp = *rposp;
-		if (fetch_rposp)
-			*fetch_rposp = *rposp;
 		if (tailp)
 			*tailp = *rposp;
 		if (wrapp)
@@ -766,8 +766,6 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		*rposp = min_seqnum_pos;
 		if (wposp)
 			*wposp = max_seqnum_next_pos;
-		if (fetch_rposp)
-			*fetch_rposp = old_min_seqnum_pos;
 		if (tailp)
 			*tailp = tail;
 		if (wrapp)
@@ -956,16 +954,15 @@ journal_file_reader_init(struct journal_file *jf, int fd,
 		return (e);
 	}
 
-	memset(reader, 0, sizeof(*reader));
 	reader->file = jf;
 	reader->pos = pos;
+	reader->cache_size = 0;
 	reader->xdr = xdr;
 	reader->flags = 0;
 	journal_file_reader_set_flag(reader,
 	    JOURNAL_FILE_READER_F_BLOCK_WRITER, block_writer);
 	journal_file_reader_set_flag(reader,
 	    JOURNAL_FILE_READER_F_WRAP, wrap);
-	journal_file_add_reader(jf, reader);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -989,6 +986,7 @@ journal_file_reader_new(struct journal_file *jf, int fd,
 		free(reader);
 		return (e);
 	}
+	journal_file_add_reader(jf, reader);
 	*readerp = reader;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1001,7 +999,7 @@ journal_file_open(const char *path, size_t max_size,
 	struct stat st;
 	int r, reader_fd = -1, writer_fd = -1, wrap = 0;
 	size_t size = 0;
-	off_t reader_pos = 0, writer_pos = 0, fetch_pos = 0, tail = 0;
+	off_t reader_pos = 0, writer_pos = 0, tail = 0;
 	struct journal_file *jf;
 	struct journal_file_reader *reader = NULL;
 	struct gfp_xdr *writer_xdr = NULL;
@@ -1083,7 +1081,7 @@ journal_file_open(const char *path, size_t max_size,
 	if (size > 0) {
 		if ((e = journal_find_rw_pos(reader_fd, writer_fd,
 		    size, cur_seqnum, &reader_pos, &writer_pos,
-		    &fetch_pos, &tail, &wrap)) != GFARM_ERR_NO_ERROR)
+		    &tail, &wrap)) != GFARM_ERR_NO_ERROR)
 			goto error;
 	} else {
 		if (writer_fd >= 0) {
@@ -1097,7 +1095,7 @@ journal_file_open(const char *path, size_t max_size,
 			e = gfarm_errno_to_error(errno);
 			goto error;
 		}
-		tail = reader_pos = fetch_pos = JOURNAL_FILE_HEADER_SIZE;
+		tail = reader_pos = JOURNAL_FILE_HEADER_SIZE;
 	}
 	jf->path = strdup_log(path, "journal_file_open");
 	if (jf->path == NULL) {
@@ -1105,7 +1103,6 @@ journal_file_open(const char *path, size_t max_size,
 		goto error;
 	}
 	jf->tail = tail;
-	jf->initial_fetch_pos = fetch_pos;
 	if ((flags & GFARM_JOURNAL_RDWR) != 0) {
 		if ((e = gfp_xdr_new_send_only(&journal_iobuffer_ops,
 		    &jf->writer, writer_fd, &writer_xdr)))
@@ -1141,25 +1138,6 @@ error:
 	return (e);
 }
 
-gfarm_error_t
-journal_file_reader_dup(struct journal_file_reader *org_reader,
-	struct journal_file_reader **readerp)
-{
-	int fd, wrap;
-	struct journal_file *jf = org_reader->file;
-	struct journal_file_writer *writer = &jf->writer;
-
-	errno = 0;
-	if ((fd = open(jf->path, O_RDONLY)) == -1)
-		return (gfarm_errno_to_error(errno));
-	if (jf->initial_fetch_pos == org_reader->pos)
-		wrap = JOURNAL_FILE_READER_IS_WRAP(org_reader);
-	else
-		wrap = (jf->initial_fetch_pos > writer->pos);
-	return (journal_file_reader_new(org_reader->file, fd,
-	    jf->initial_fetch_pos, 0, wrap, readerp));
-}
-
 void
 journal_file_reader_close(struct journal_file_reader *reader)
 {
@@ -1167,29 +1145,30 @@ journal_file_reader_close(struct journal_file_reader *reader)
 		gfp_xdr_free(reader->xdr);
 		reader->xdr = NULL;
 	}
-	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_INVALID, 1);
+	journal_file_reader_invalidate(reader);
 }
 
 gfarm_error_t
-journal_file_reader_reopen(struct journal_file_reader *reader,
+journal_file_reader_reopen(struct journal_file *jf,
+	struct journal_file_reader **readerp,
 	gfarm_uint64_t seqnum)
 {
 	gfarm_error_t e;
 	int fd;
 	off_t rpos;
-	struct journal_file *jf = reader->file;
-	int wpos = jf->writer.pos;
+	int wrap;
 
-	assert(reader->xdr == NULL);
+	assert(*readerp == NULL || (*readerp)->xdr == NULL);
 
 	if ((fd = open(jf->path, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
-	if ((e = journal_find_rw_pos(gfp_xdr_fd(reader->xdr),
-	    -1, jf->tail, seqnum, &rpos, NULL, NULL, NULL, NULL)) !=
-	    GFARM_ERR_NO_ERROR)
+	if ((e = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
+	    NULL, NULL, &wrap)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (journal_file_reader_init(jf, fd, rpos, 0, (rpos > wpos),
-	    reader));
+	if (*readerp)
+		return (journal_file_reader_init(jf, fd, rpos, 0, wrap,
+		    *readerp));
+	return (journal_file_reader_new(jf, fd, rpos, 0, wrap, readerp));
 }
 
 void
@@ -1455,11 +1434,12 @@ gfarm_error_t
 journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	journal_read_op_t read_op,
 	journal_post_read_op_t post_read_op,
-	journal_free_op_t free_op, int *eofp)
+	journal_free_op_t free_op, void *closure, int *eofp)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
 	enum journal_operation ope = 0;
+	int needs_free = 1;
 	size_t len;
 	void *obj = NULL;
 	struct journal_file *jf = reader->file;
@@ -1514,8 +1494,8 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	if ((e = journal_read_purge(xdr, sizeof(gfarm_uint32_t)))
 	    != GFARM_ERR_NO_ERROR) /* skip crc */
 		goto unlock;
-	if ((e = post_read_op(op_arg, seqnum, ope, obj, len))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = post_read_op(op_arg, seqnum, ope, obj, closure, len,
+	    &needs_free)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "post_read_op", e, ope);
 		goto unlock;
@@ -1524,7 +1504,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 unlock:
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
-	if (obj)
+	if (needs_free && obj)
 		free_op(op_arg, ope, obj);
 	return (e);
 }

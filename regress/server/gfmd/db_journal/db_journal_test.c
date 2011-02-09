@@ -215,7 +215,8 @@ static struct gfarm_user_info *t_user_infos[32];
 
 static gfarm_error_t
 t_write_cyclic_post_read(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *arg, size_t length)
+	enum journal_operation ope, void *arg, void *closure, size_t length,
+	int *needs_freep)
 {
 	static int idx = 0;
 	struct gfarm_user_info *ui1 = arg;
@@ -275,7 +276,8 @@ t_write_cyclic(void)
 	 * r                  w
 	 */
 	TEST_ASSERT_NOERR("db_journal_read",
-	    db_journal_read(reader, NULL, t_write_cyclic_post_read, &eof));
+	    db_journal_read(reader, NULL, t_write_cyclic_post_read,
+		NULL, &eof));
 	TEST_ASSERT0(eof == 0);
 
 	/* |user1|user2|user3|  |
@@ -296,7 +298,7 @@ t_write_cyclic(void)
 	for (i = 0; i < 3; ++i) { /* user2, user3, user4 */
 		sprintf(msg, "db_journal_read (i=%d)", i);
 		TEST_ASSERT_NOERR(msg, db_journal_read(reader,
-		    NULL, t_write_cyclic_post_read, &eof));
+		    NULL, t_write_cyclic_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
 
@@ -323,7 +325,7 @@ t_write_cyclic(void)
 	for (i = 0; i < 2; ++i) { /* user1, user2 */
 		sprintf(msg, "db_journal_read (i=%d)", i);
 		TEST_ASSERT_NOERR(msg, db_journal_read(reader,
-		    NULL, t_write_cyclic_post_read, &eof));
+		    NULL, t_write_cyclic_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
 
@@ -370,7 +372,8 @@ t_write_add_op(void *arg)
 
 static gfarm_error_t
 t_write_blocked_post_read(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *arg, size_t length)
+	enum journal_operation ope, void *arg, void *closure, size_t length,
+	int *needs_freep)
 {
 	++t_write_blocked_num_rec_read;
 	return (GFARM_ERR_NO_ERROR);
@@ -404,7 +407,7 @@ t_write_blocked(void)
 	for (i = 0; i < 2; ++i) {
 		TEST_ASSERT_NOERR("db_journal_read",
 		    db_journal_read(reader, NULL, t_write_blocked_post_read,
-		    &eof));
+		    NULL, &eof));
 	}
 	/* |user1|user2|user3|  |
 	 *             r     w
@@ -497,7 +500,8 @@ t_ops_host_check(struct gfarm_host_info *hi)
 
 static gfarm_error_t
 t_ops_host_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_HOST_ADD, ope);
@@ -530,7 +534,8 @@ t_ops_host_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_host_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct db_host_modify_arg *m = obj;
 
@@ -563,7 +568,8 @@ t_ops_host_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_host_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	const char *name = obj;
 
@@ -608,7 +614,8 @@ t_ops_user_check(struct gfarm_user_info *ui)
 
 static gfarm_error_t
 t_ops_user_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct gfarm_user_info *ui = obj;
 
@@ -633,7 +640,8 @@ t_ops_user_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_user_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct db_user_modify_arg *m = obj;
 
@@ -653,7 +661,8 @@ t_ops_user_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_user_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	const char *name = obj;
 
@@ -699,7 +708,8 @@ t_ops_group_check(struct gfarm_group_info *gi)
 
 static gfarm_error_t
 t_ops_group_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_GROUP_ADD, ope);
@@ -732,7 +742,8 @@ t_ops_group_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_group_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct db_group_modify_arg *m = obj;
 
@@ -755,7 +766,8 @@ t_ops_group_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_group_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	const char *name = obj;
 
@@ -819,7 +831,8 @@ t_ops_inode_check(struct gfs_stat *st)
 
 static gfarm_error_t
 t_ops_inode_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct gfs_stat *st = obj;
 
@@ -843,7 +856,8 @@ t_ops_inode_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct gfs_stat *st = obj;
 
@@ -935,7 +949,8 @@ t_ops_inode_gen_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_gen_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_GEN_MODIFY, ope);
@@ -953,7 +968,8 @@ t_ops_inode_nlink_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_nlink_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_NLINK_MODIFY, ope);
@@ -971,7 +987,8 @@ t_ops_inode_size_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_size_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_SIZE_MODIFY, ope);
@@ -989,7 +1006,8 @@ t_ops_inode_mode_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_mode_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_MODE_MODIFY, ope);
@@ -1007,7 +1025,8 @@ t_ops_inode_user_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_user_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_USER_MODIFY, ope);
@@ -1025,7 +1044,8 @@ t_ops_inode_group_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_group_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_GROUP_MODIFY, ope);
@@ -1043,7 +1063,8 @@ t_ops_inode_atime_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_atime_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_ATIME_MODIFY, ope);
@@ -1061,7 +1082,8 @@ t_ops_inode_mtime_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_mtime_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_MTIME_MODIFY, ope);
@@ -1079,7 +1101,8 @@ t_ops_inode_ctime_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_ctime_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_CTIME_MODIFY, ope);
@@ -1132,7 +1155,8 @@ t_ops_inode_cksum_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_cksum_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_CKSUM_ADD, ope);
@@ -1149,7 +1173,8 @@ t_ops_inode_cksum_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_cksum_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_CKSUM_MODIFY, ope);
@@ -1166,7 +1191,8 @@ t_ops_inode_cksum_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_inode_cksum_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_INODE_CKSUM_REMOVE, ope);
@@ -1199,7 +1225,8 @@ t_ops_filecopy_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_filecopy_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_FILECOPY_ADD, ope);
@@ -1216,7 +1243,8 @@ t_ops_filecopy_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_filecopy_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_FILECOPY_REMOVE, ope);
@@ -1251,7 +1279,8 @@ t_ops_deadfilecopy_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_deadfilecopy_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_DEADFILECOPY_ADD, ope);
@@ -1268,7 +1297,8 @@ t_ops_deadfilecopy_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_deadfilecopy_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_DEADFILECOPY_REMOVE, ope);
@@ -1305,7 +1335,8 @@ t_ops_direntry_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_direntry_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_DIRENTRY_ADD, ope);
@@ -1322,7 +1353,8 @@ t_ops_direntry_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_direntry_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_DIRENTRY_REMOVE, ope);
@@ -1341,7 +1373,8 @@ t_ops_symlink_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_symlink_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct db_symlink_arg *m = obj;
 
@@ -1361,7 +1394,8 @@ t_ops_symlink_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_symlink_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_SYMLINK_REMOVE, ope);
@@ -1401,7 +1435,8 @@ t_ops_xattr_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_xattr_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_XATTR_ADD, ope);
@@ -1418,7 +1453,8 @@ t_ops_xattr_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_xattr_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_XATTR_MODIFY, ope);
@@ -1435,7 +1471,8 @@ t_ops_xattr_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_xattr_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_XATTR_REMOVE, ope);
@@ -1452,7 +1489,8 @@ t_ops_xattr_removeall(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_xattr_removeall_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_XATTR_REMOVEALL, ope);
@@ -1530,7 +1568,8 @@ t_ops_quota_add(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_quota_add_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_QUOTA_ADD, ope);
@@ -1546,7 +1585,8 @@ t_ops_quota_modify(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_quota_modify_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	TEST_ASSERT_L("seqnum", 5, seqnum);
 	TEST_ASSERT_I("ope", GFM_JOURNAL_QUOTA_MODIFY, ope);
@@ -1566,7 +1606,8 @@ t_ops_quota_remove(gfarm_uint64_t sn)
 
 static gfarm_error_t
 t_ops_quota_remove_check(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length)
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
 {
 	struct db_quota_remove_arg *m = obj;
 
@@ -1682,7 +1723,7 @@ t_ops(void)
 		printf("executing %s_check ...", ti->name);
 		fflush(stdout);
 		TEST_ASSERT_NOERR("db_journal_read",
-		    db_journal_read(reader, NULL, ti->check, &eof));
+		    db_journal_read(reader, NULL, ti->check, NULL, &eof));
 		printf("ok\n");
 	}
 	journal_file_close(self_jf);

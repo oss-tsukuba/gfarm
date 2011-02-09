@@ -12,9 +12,8 @@ struct abstract_host_ops {
 	void (*set_peer_locked)(struct abstract_host *, struct peer *);
 	void (*set_peer_unlocked)(struct abstract_host *, struct peer *);
 	void (*unset_peer)(struct abstract_host *, struct peer *);
-	gfarm_error_t (*disable)(struct abstract_host *, struct peer *,
-		void **);
-	void (*disabled)(struct abstract_host *, void *);
+	gfarm_error_t (*disable)(struct abstract_host *, void **);
+	void (*disabled)(struct abstract_host *, struct peer *, void *);
 };
 
 /* common struct of host and mdhost */
