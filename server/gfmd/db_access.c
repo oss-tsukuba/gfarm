@@ -116,26 +116,14 @@ db_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 
 	if (with_seqnum && transaction_nesting == 0) {
 		transaction = 1;
-		if ((e = ops->begin(
-#ifdef ENABLE_JOURNAL
-		    db_journal_next_seqnum(),
-#else
-		    0,
-#endif
-		    NULL))
+		if ((e = db_enter_op(ops->begin, NULL, with_seqnum))
 		    != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
 	e = db_enter_op(func, data, with_seqnum);
 	if (transaction) {
 		if (e == GFARM_ERR_NO_ERROR)
-			e = ops->end(
-#ifdef ENABLE_JOURNAL
-			    db_journal_next_seqnum(),
-#else
-			    0,
-#endif
-			    NULL);
+			e = db_enter_op(ops->end, NULL, with_seqnum);
 	}
 	return (e);
 }
