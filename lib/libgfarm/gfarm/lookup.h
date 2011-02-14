@@ -5,10 +5,6 @@ gfarm_error_t gfarm_url_parse_metadb(const char **,
 gfarm_error_t gfarm_get_hostname_by_url(const char *, char **, int *);
 gfarm_error_t gfm_client_connection_and_process_acquire_by_path(const char *,
 	struct gfm_connection **);
-gfarm_error_t gfm_lookup_dir_request(struct gfm_connection *,
-	const char *, const char **);
-gfarm_error_t gfm_lookup_dir_result(struct gfm_connection *,
-	const char *, const char **, int *);
 
 gfarm_error_t gfm_name_success_op_connection_free(struct gfm_connection *,
 	void *);

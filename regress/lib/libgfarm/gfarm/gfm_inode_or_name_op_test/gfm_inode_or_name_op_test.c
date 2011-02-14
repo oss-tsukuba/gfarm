@@ -62,7 +62,34 @@ usage(void)
 }
 
 static gfarm_error_t
-get_inonum(struct gfm_connection *conn, struct file_info *f,
+get_inonum_request(struct gfm_connection *conn, struct file_info *f,
+	int stat_or_open, int open_parent)
+{
+	gfarm_error_t e;
+	const char *errf;
+	const char *name;
+
+	assert(strlen(f->name) > 0 || stat_or_open);
+	name = open_parent ? "." : f->name;
+
+	if (stat_or_open) {
+		if ((e = gfm_client_fstat_request(conn))
+		    != GFARM_ERR_NO_ERROR)
+			errf = "gfm_client_fstat_request";
+	} else if ((e = gfm_client_open_request(conn, name,
+		strlen(name), GFARM_FILE_RDONLY)) != GFARM_ERR_NO_ERROR) {
+		errf = "gfm_client_open_request";
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "get_inonum_request : %s : %s\n",
+		    errf, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+get_inonum_result(struct gfm_connection *conn, struct file_info *f,
 	int stat_or_open, int open_parent)
 {
 	gfarm_error_t e;
@@ -71,105 +98,85 @@ get_inonum(struct gfm_connection *conn, struct file_info *f,
 	gfarm_mode_t mode;
 	gfarm_uint64_t gen;
 	struct gfs_stat st;
-	const char *name;
 
-	assert(strlen(f->name) > 0 || stat_or_open);
-
-	name = open_parent ? "." : f->name;
-
-	for (;;) {
-		if ((e = gfm_client_compound_begin_request(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_compound_begin_request";
-		} else if ((e = gfm_client_put_fd_request(conn, f->fd))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_put_fd_request";
-		} else if (stat_or_open &&
-			(e = gfm_client_fstat_request(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_fstat_request";
-		} else if (!stat_or_open &&
-			(e = gfm_client_open_request(conn, name,
-			    strlen(name), GFARM_FILE_RDONLY))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_open_request";
-		} else if ((e = gfm_client_compound_end_request(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_compound_end_request";
-		} else if ((e = gfm_client_compound_begin_result(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_compound_begin_result";
-		} else if ((e = gfm_client_put_fd_result(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_put_fd_result";
-		} else if (stat_or_open &&
-			(e = gfm_client_fstat_result(conn, &st))
-			!= GFARM_ERR_NO_ERROR) {
+	if (stat_or_open) {
+		if ((e = gfm_client_fstat_result(conn, &st))
+		    != GFARM_ERR_NO_ERROR)
 			errf = "gfm_client_fstat_result";
-		} else if (!stat_or_open && (e = gfm_client_open_result(
-			    conn, &ino, &gen, &mode))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_open_result";
-		} else if ((e = gfm_client_compound_end_result(conn))
-			!= GFARM_ERR_NO_ERROR) {
-			errf = "gfm_client_fstat_result";
-		}
-		break;
-	}
+		else
+			f->ino = st.st_ino;
+	} else if ((e = gfm_client_open_result(
+		    conn, &ino, &gen, &mode)) != GFARM_ERR_NO_ERROR) {
+		errf = "gfm_client_open_result";
+	} else
+		f->ino = ino;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "get_inonum : %s : %s\n",
+		fprintf(stderr, "get_inonum_result : %s : %s\n",
 		    errf, gfarm_error_string(e));
 		return (e);
 	}
 
-	if (stat_or_open)
-		f->ino = st.st_ino;
-	else
-		f->ino = ino;
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 static gfarm_error_t
 inode_op_request(struct gfm_connection *conn, void *closure)
 {
+	gfarm_error_t e;
+	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	((struct op_closure *)closure)->request = 1;
-	return (gfm_client_get_fd_request(conn));
+	if ((e = gfm_client_get_fd_request(conn)) != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_request(conn, &c->f1, 1, open_parent))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_close_request(conn));
 }
 
 static gfarm_error_t
 inode_op_result(struct gfm_connection *conn, void *closure)
 {
+	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->result = 1;
-	return (gfm_client_get_fd_result(conn, &c->f1.fd));
+	if ((e = (gfm_client_get_fd_result(conn, &c->f1.fd)))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_result(conn, &c->f1, 1, open_parent))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	return (gfm_client_close_result(conn));
 }
 
 static gfarm_error_t
 inode_op_success(struct gfm_connection *conn, void *closure, int type,
 	const char *path)
 {
-	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	assert(path);
 	assert(type == GFS_DT_DIR || type == GFS_DT_LNK ||
 		type == GFS_DT_REG || type == GFS_DT_UNKNOWN);
 	c->success = 1;
-	e = get_inonum(conn, &c->f1, 1, open_parent);
 	gfm_client_connection_free(conn);
-	return (e);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static void
 inode_op_cleanup(struct gfm_connection *conn, void *closure)
 {
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->cleanup++;
@@ -179,36 +186,50 @@ static gfarm_error_t
 name_op_request(struct gfm_connection *conn, void *closure,
 	const char *name)
 {
+	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	assert(name);
 	c->request++;
 	strcpy(c->f1.name, name);
-	return (gfm_client_get_fd_request(conn));
+	if ((e = (gfm_client_get_fd_request(conn))) != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_request(conn, &c->f1, 0, open_parent))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_close_request(conn));
 }
 
 static gfarm_error_t
 name_op_result(struct gfm_connection *conn, void *closure)
 {
+	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->result++;
-	return (gfm_client_get_fd_result(conn, &c->f1.fd));
+	if ((e = (gfm_client_get_fd_result(conn, &c->f1.fd)))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_result(conn, &c->f1, 0, open_parent))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_close_result(conn));
 }
 
 static gfarm_error_t
 name_op_success(struct gfm_connection *conn, void *closure)
 {
-	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->success++;
-	e = get_inonum(conn, &c->f1, 0, open_parent);
 	gfm_client_connection_free(conn);
-	return (e);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -217,6 +238,7 @@ name2_op_request(struct gfm_connection *conn, void *closure,
 {
 	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	assert(sname);
@@ -227,10 +249,22 @@ name2_op_request(struct gfm_connection *conn, void *closure,
 	if ((e = gfm_client_get_fd_request(conn))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
+	if ((e = get_inonum_request(conn, &c->f2, 0, 1))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
 	if ((e = gfm_client_restore_fd_request(conn))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfm_client_get_fd_request(conn));
+	if ((e = gfm_client_get_fd_request(conn))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_request(conn, &c->f1, c->is_stat_or_open, 0))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfm_client_save_fd_request(conn))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_open_root_request(conn, GFARM_FILE_RDONLY));
 }
 
 static gfarm_error_t
@@ -239,6 +273,7 @@ name2_op_ol_request(struct gfm_connection *conn, void *closure,
 {
 	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	assert(dname);
@@ -248,43 +283,70 @@ name2_op_ol_request(struct gfm_connection *conn, void *closure,
 	if ((e = gfm_client_get_fd_request(conn))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
+	if ((e = get_inonum_request(conn, &c->f2, 0, 1))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
 	if ((e = gfm_client_restore_fd_request(conn))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfm_client_get_fd_request(conn));
+	if ((e = (gfm_client_get_fd_request(conn)))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_request(conn, &c->f1, c->is_stat_or_open, 0))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfm_client_save_fd_request(conn))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_open_root_request(conn, GFARM_FILE_RDONLY));
 }
 
 static gfarm_error_t
 name2_op_result(struct gfm_connection *conn, void *closure)
 {
 	gfarm_error_t e;
+	/*
+	gfarm_ino_t ino;
+	gfarm_uint64_t gen;
+	gfarm_mode_t mode;
+	*/
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->result++;
 	if ((e = gfm_client_get_fd_result(conn, &c->f2.fd))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
+	if ((e = get_inonum_result(conn, &c->f2, 0, 1))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
 	if ((e = gfm_client_restore_fd_result(conn))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
-	return (gfm_client_get_fd_result(conn, &c->f1.fd));
+	if ((e != gfm_client_get_fd_result(conn, &c->f1.fd))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = get_inonum_result(conn, &c->f1, c->is_stat_or_open, 0))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfm_client_save_fd_result(conn))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfm_client_open_root_result(conn));
+	/*return (gfm_client_open_result(conn, &ino, &gen, &mode));*/
 }
 
 static gfarm_error_t
 name2_op_success(struct gfm_connection *conn, void *closure)
 {
-	gfarm_error_t e;
 	struct op_closure *c = (struct op_closure *)closure;
+
 	assert(conn);
 	assert(closure);
 	c->success++;
-	if ((e = get_inonum(conn, &c->f1, c->is_stat_or_open, 0))
-	    == GFARM_ERR_NO_ERROR) {
-		e = get_inonum(conn, &c->f2, 0, 1);
-	}
 	gfm_client_connection_free(conn);
-	return (e);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static void

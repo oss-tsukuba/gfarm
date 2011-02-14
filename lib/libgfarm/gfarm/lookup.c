@@ -125,6 +125,8 @@ gfarm_get_hostname_by_url(const char *path,
 		return (e);
 	if (nospec) {
 		*hostnamep = strdup(gfarm_metadb_server_name);
+		if (*hostnamep == NULL)
+			return (GFARM_ERR_NO_MEMORY);
 		*portp = gfarm_metadb_server_port;
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -201,16 +203,17 @@ gfm_client_connection_and_process_acquire_by_path(const char *path,
 
 #define SKIP_SLASH(p) { while (*(p) == '/') (p)++; }
 
-gfarm_error_t
+static gfarm_error_t
 gfm_lookup_dir_request(struct gfm_connection *gfm_server, const char *path,
-	const char **basep)
+	const char **basep, int *is_lastp)
 {
 	gfarm_error_t e;
 	int beginning = 1;
 	int len;
 
 	/* XXX FIX ME: current directory is always "/" on v2 for now */
-
+	if (is_lastp != NULL)
+		*is_lastp = 0;
 	SKIP_SLASH(path);
 
 	for (;;) {
@@ -221,6 +224,8 @@ gfm_lookup_dir_request(struct gfm_connection *gfm_server, const char *path,
 				if (len == 0) {
 					path = "/";
 					e = GFARM_ERR_NO_ERROR;
+					if (is_lastp != NULL)
+						*is_lastp = 1;
 					break;
 				}
 				e = gfm_client_open_root_request(gfm_server,
@@ -229,6 +234,8 @@ gfm_lookup_dir_request(struct gfm_connection *gfm_server, const char *path,
 					break;
 			}
 			e = GFARM_ERR_NO_ERROR;
+			if (is_lastp != NULL)
+				*is_lastp = 1;
 			break;
 		}
 		if (len == 0) {
@@ -282,7 +289,6 @@ gfm_lookup_dir_result(struct gfm_connection *gfm_server, const char *path,
 	/* XXX FIX ME: current directory is always "/" on v2 for now */
 	if (is_lastp != NULL)
 		*is_lastp = 0;
-
 	SKIP_SLASH(path);
 
 	for (;;) {
@@ -413,24 +419,17 @@ trim_tailing_file_separator(const char *path)
 	return (npath);
 }
 
-
 static gfarm_error_t
 gfm_inode_or_name_op_lookup_request(struct gfm_connection *gfm_server,
-	const char *path, int flags, char **restp)
+	const char *path, int flags, char **restp, int *do_verifyp)
 {
 	gfarm_error_t e;
+	int is_last;
 	int pflags = (flags & GFARM_FILE_PROTOCOL_MASK);
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 
-	if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
-		e = GFARM_ERR_PATH_IS_ROOT;
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "inode_or_name_op_lookup_request : %s",
-		    gfarm_error_string(e));
-		return (e);
-	}
 	if ((e = gfm_lookup_dir_request(gfm_server, path,
-		(const char **)restp)) != GFARM_ERR_NO_ERROR) {
+		(const char **)restp, &is_last)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "lookup_dir(%s) request: %s", path,
 		    gfarm_error_string(e));
@@ -439,6 +438,7 @@ gfm_inode_or_name_op_lookup_request(struct gfm_connection *gfm_server,
 	if (!is_open_last)
 		return (GFARM_ERR_NO_ERROR);
 
+	*do_verifyp = ((flags & GFARM_FILE_SYMLINK_NO_FOLLOW) == 0) || !is_last;
 	if (GFARM_IS_PATH_ROOT(path)) {
 		if ((e = gfm_client_open_root_request(
 			    gfm_server, pflags))
@@ -459,9 +459,8 @@ gfm_inode_or_name_op_lookup_request(struct gfm_connection *gfm_server,
 			    gfarm_error_string(e));
 			return (e);
 		}
-		if ((e = gfm_client_verify_type_not_request(
-			    gfm_server, GFS_DT_LNK))
-		    != GFARM_ERR_NO_ERROR) {
+		if (*do_verifyp && (e = gfm_client_verify_type_not_request(
+		    gfm_server, GFS_DT_LNK)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "verify_type_not_request failed: %s",
 			    gfarm_error_string(e));
@@ -475,15 +474,14 @@ gfm_inode_or_name_op_lookup_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
-	const char *path, int flags, char **restp, int *is_lastp,
-	int *typep, int *retry_countp, int *is_retryp)
+	const char *path, int flags, int do_verify, char **restp,
+	int *typep, int *retry_countp, int *is_lastp, int *is_retryp)
 {
 	gfarm_error_t e;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 
-	if ((e = gfm_lookup_dir_result(gfm_server, path,
-			(const char **)restp, is_lastp))
-		!= GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_lookup_dir_result(gfm_server, path, (const char **)restp,
+	    is_lastp)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "lookup_dir(path=%s) result failed: %s",
 		    path, gfarm_error_string(e));
@@ -519,8 +517,9 @@ gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 			}
 			return (e);
 		}
-		if ((e = gfm_client_verify_type_not_result(gfm_server))
-			!= GFARM_ERR_NO_ERROR) {
+		if (do_verify &&
+		    (e = gfm_client_verify_type_not_result(gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
 			if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "verify_type_not result failed: %s",
@@ -539,6 +538,7 @@ static gfarm_error_t
 gfm_inode_or_name_op_on_error_request(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
+
 	if ((e = gfm_client_compound_on_error_request(gfm_server,
 		GFARM_ERR_IS_A_SYMBOLIC_LINK)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -547,16 +547,9 @@ gfm_inode_or_name_op_on_error_request(struct gfm_connection *gfm_server)
 		return (e);
 	}
 	if ((e = gfm_client_readlink_request(gfm_server))
-		!= GFARM_ERR_NO_ERROR) {
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "readlink request failed: %s",
-		    gfarm_error_string(e));
-		return (e);
-	}
-	if ((e = gfm_client_get_fd_request(gfm_server))
-		!= GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "get_fd request failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
@@ -566,13 +559,10 @@ gfm_inode_or_name_op_on_error_request(struct gfm_connection *gfm_server)
 
 static gfarm_error_t
 gfm_inode_or_name_op_on_error_result(struct gfm_connection *gfm_server,
-	int flags, int is_last, int *is_symlinkp,
-	char *rest, char **nextpathp, int *is_retryp, int *fdp)
+	int is_last, char *rest, char **nextpathp, int *is_retryp)
 {
 	gfarm_error_t e;
 	char *link;
-
-	*is_symlinkp = ((flags & GFARM_FILE_SYMLINK_NO_FOLLOW) != 0) && is_last;
 
 	if ((e = gfm_client_readlink_result(gfm_server, &link))
 	    != GFARM_ERR_NO_ERROR) {
@@ -581,23 +571,12 @@ gfm_inode_or_name_op_on_error_result(struct gfm_connection *gfm_server,
 		    gfarm_error_string(e));
 		return (e);
 	}
-	if (!*is_symlinkp &&
-	    (e = gfm_alloc_link_destination(
-	    gfm_server, link, nextpathp, rest, is_last))
-	    == GFARM_ERR_NO_ERROR)
+	if ((e = gfm_alloc_link_destination(gfm_server, link, nextpathp,
+	    rest, is_last)) == GFARM_ERR_NO_ERROR)
 		*is_retryp = 1;
 	free(link);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if ((e = gfm_client_get_fd_result(gfm_server, fdp))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "get_fd result failed: %s",
-		    gfarm_error_string(e));
-	}
 	return (e);
 }
-
 
 static gfarm_error_t
 gfm_inode_or_name_op(const char *url, int flags,
@@ -620,10 +599,9 @@ gfm_inode_or_name_op(const char *url, int flags,
 	int retry_count = 0, nlinks = 0;
 	char *path;
 	char *rest, *nextpath;
-	int is_last, is_retry, lookup;
-	int is_success = 0, is_symlink = 0;
+	int do_verify, is_last, is_retry;
+	int is_success = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
-	gfarm_int32_t fd = -1, tmpfd;
 
 	nextpath = trim_tailing_file_separator(url);
 	if (nextpath == NULL) {
@@ -635,11 +613,8 @@ gfm_inode_or_name_op(const char *url, int flags,
 	}
 
 	for (;;) {
-		lookup = fd < 0;
-
 		path = nextpath;
-		if (gfm_server == NULL ||
-		    (lookup && gfarm_is_url(path))) {
+		if (gfm_server == NULL || gfarm_is_url(path)) {
 			if (gfm_server)
 				gfm_client_connection_free(gfm_server);
 			gfm_server = NULL;
@@ -654,6 +629,13 @@ gfm_inode_or_name_op(const char *url, int flags,
 			if (path[0] == '\0')
 				path = "/";
 		}
+		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
+			e = GFARM_ERR_PATH_IS_ROOT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_or_name_op_lookup_request : %s",
+			    gfarm_error_string(e));
+			break;
+		}
 
 		if ((e = gfm_client_compound_begin_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
@@ -661,21 +643,10 @@ gfm_inode_or_name_op(const char *url, int flags,
 			    "compound_begin(%s) request: %s", path,
 			    gfarm_error_string(e));
 			break;
-		} else if (!lookup) {
-			if ((e = gfm_client_put_fd_request(gfm_server, fd))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001266,
-				    "put_fd(%d) request failed: %s",
-				    (int)fd, gfarm_error_string(e));
-				break;
-			}
-		} else {
-			if ((e = gfm_inode_or_name_op_lookup_request(
-			    gfm_server, path, flags, &rest))
-			    != GFARM_ERR_NO_ERROR) {
-				break;
-			}
-		}
+		} else if ((e = gfm_inode_or_name_op_lookup_request(
+		    gfm_server, path, flags, &rest, &do_verify))
+		    != GFARM_ERR_NO_ERROR)
+			break;
 
 		if (is_open_last)
 			e = (*inode_request_op)(gfm_server, closure);
@@ -687,11 +658,9 @@ gfm_inode_or_name_op(const char *url, int flags,
 			    gfarm_error_string(e));
 			break;
 		}
-
-		if ((e = gfm_inode_or_name_op_on_error_request(gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
+		if ((e = gfm_inode_or_name_op_on_error_request(
+		    gfm_server)) != GFARM_ERR_NO_ERROR)
 			break;
-		}
 		if ((e = gfm_client_compound_end_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -707,40 +676,24 @@ gfm_inode_or_name_op(const char *url, int flags,
 			    "compound_begin result: %s",
 			    gfarm_error_string(e));
 			break;
-		} else if (!lookup) {
-			if ((e = gfm_client_put_fd_result(gfm_server))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "put_fd(%d) result failed: %s",
-				    (int)fd, gfarm_error_string(e));
+		} else if ((e = gfm_inode_or_name_op_lookup_result(gfm_server,
+		    path, flags, do_verify, &rest, &type, &retry_count,
+		    &is_last, &is_retry)) != GFARM_ERR_NO_ERROR) {
+			if (is_retry)
+				continue;
+			if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK)
 				break;
-			}
-		} else {
-			if ((e = gfm_inode_or_name_op_lookup_result(gfm_server,
-			    path, flags, &rest, &is_last, &type,
-			    &retry_count, &is_retry)) != GFARM_ERR_NO_ERROR) {
-				if (is_retry)
-					continue;
-				if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK)
-					break;
-				if ((e = gfm_inode_or_name_op_on_error_result(
-				    gfm_server, flags, is_last,
-				    &is_symlink, rest, &nextpath, &is_retry,
-				    &tmpfd))
-				    != GFARM_ERR_NO_ERROR)
-					break;
-				if (is_symlink) {
-					fd = tmpfd;
-					type = GFS_DT_LNK;
-				}
-				if (++nlinks <= GFARM_SYMLINK_LEVEL_MAX)
-					continue;
-				e = GFARM_ERR_TOO_MANY_LEVELS_OF_SYMBOLIC_LINK;
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "maybe loop: %s",
-				    gfarm_error_string(e));
+			if ((e = gfm_inode_or_name_op_on_error_result(
+			    gfm_server, is_last, rest, &nextpath, &is_retry))
+			    != GFARM_ERR_NO_ERROR)
 				break;
-			}
+			if (++nlinks <= GFARM_SYMLINK_LEVEL_MAX)
+				continue;
+			e = GFARM_ERR_TOO_MANY_LEVELS_OF_SYMBOLIC_LINK;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "maybe loop: %s",
+			    gfarm_error_string(e));
+			break;
 		}
 
 		if (is_open_last) {
@@ -752,8 +705,8 @@ gfm_inode_or_name_op(const char *url, int flags,
 				break;
 			}
 		} else if (!GFARM_IS_PATH_ROOT(path) &&
-			    (e = (*result_op)(gfm_server, closure))
-			    != GFARM_ERR_NO_ERROR) {
+		    (e = (*result_op)(gfm_server, closure))
+		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "result_op failed: %s",
 			    gfarm_error_string(e));
@@ -829,6 +782,57 @@ gfm_inode_op_no_follow(const char *url, int flags,
 		request_op, result_op, success_op, cleanup_op, closure));
 }
 
+static void
+gfm_close_fd(struct gfm_connection *conn, int current, int saved)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_compound_begin_request(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_begin request: %s", gfarm_error_string(e));
+	} else if (current && (e = gfm_client_close_request(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "close request: %s", gfarm_error_string(e));
+	} else if (saved) {
+		if ((e = gfm_client_restore_fd_request(conn))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "restore request: %s", gfarm_error_string(e));
+		} else if ((e = gfm_client_close_request(conn))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close request: %s", gfarm_error_string(e));
+		}
+	} else if ((e = gfm_client_compound_end_request(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_end request: %s", gfarm_error_string(e));
+	} else if ((e = gfm_client_compound_begin_result(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_begin result: %s", gfarm_error_string(e));
+	} else if (current && (e = gfm_client_close_result(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "close result: %s", gfarm_error_string(e));
+	} else if (saved) {
+		if ((e = gfm_client_restore_fd_result(conn))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "restore result: %s", gfarm_error_string(e));
+		} else if ((e = gfm_client_close_result(conn))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close result: %s", gfarm_error_string(e));
+		}
+	} else if ((e = gfm_client_compound_end_result(conn))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_end result: %s", gfarm_error_string(e));
+	}
+}
 
 gfarm_error_t
 gfm_name_op(const char *url, gfarm_error_t root_error_code,
@@ -843,7 +847,6 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 	    NULL, closure);
 	return (e == GFARM_ERR_PATH_IS_ROOT ? root_error_code : e);
 }
-
 
 gfarm_error_t
 gfm_name2_op(const char *src, const char *dst, int flags,
@@ -860,13 +863,13 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 	struct gfm_connection *sconn = NULL, *dconn = NULL;
 	const char *spath = NULL, *dpath = NULL;
 	char *srest, *drest, *snextpath, *dnextpath;
-	int type, s_is_last, d_is_last;
+	int type, s_is_last, d_is_last, s_do_verify, d_do_verify;
 	int sretry, dretry, slookup, dlookup;
-	int retry_count = 0, same_mds = 0, is_success = 0;
+	int sfd_saved = 0, current_closed = 0, restored = 0, saved_closed = 0;
+	int retry_count = 0, same_mds = 0, is_success = 0, op_called = 0;
 	int snlinks = 0, dnlinks = 0;
-	int s_is_symlink = 0, d_is_symlink = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
-	gfarm_int32_t tmpfd, sfd = -1, dfd = -1;
+	gfarm_int32_t sfd = -1, dfd = -1;
 
 	snextpath = trim_tailing_file_separator(src);
 	dnextpath = trim_tailing_file_separator(dst);
@@ -880,83 +883,96 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 
 	for (;;) {
 		/*
-		[same_mds == 1, slookup == 1, dlookup == 1]
-
-			compound_begin(sconn)
-			inode_or_name_op_lookup(sconn, flags=flags)
-			get_fd(sconn)
-			save_fd(sconn)
-			inode_or_name_op_lookup(sconn, flags=0)
-			get_fd(sconn)
-			op(sconn)
-			inode_or_name_op_on_error(sconn)
-			compound_end
-
-		[same_mds == 1, slookup == 0, dlookup == 1]
-
-			compound_begin(sconn)
-			put_fd(sconn)
-			save_fd(sconn)
-			inode_or_name_op_lookup(sconn, flags=0)
-			get_fd(sconn)
-			op(sconn)
-			inode_or_name_op_on_error(sconn)
-			compound_end
-
-		[same_mds == 1, slookup == 1, dlookup == 0]
-
-			compound_begin(sconn)
-			inode_or_name_op_lookup(sconn, flags=flags)
-			get_fd(sconn)
-			save_fd(sconn)
-			put_fd(sconn, flags=0)
-			op(sconn)
-			inode_or_name_op_on_error(sconn)
-			compound_end
-
-		[same_mds == 1, slookup == 0, dlookup == 0]
-
-			compound_begin(sconn)
-			put_fd(sconn)
-			save_fd(sconn)
-			put_fd(sconn)
-			op(sconn)
-			compound_end
-
-		[same_mds == 0, slookup == 1, dlookup == 1]
-
-			compound_begin(sconn)
-			inode_or_name_op_lookup(sconn, flags=flags)
-			get_fd(sconn)
-			inode_or_name_op_on_error(sconn)
-			compound_end
-
-			compound_begin(dconn)
-			inode_or_name_op_lookup(dconn, flags=0)
-			get_fd(dconn)
-			inode_or_name_op_on_error(dconn)
-			compound_end
-
-		[same_mds == 0, slookup == 0, dlookup == 1]
-
-			compound_begin(dconn)
-			inode_or_name_op_lookup(dconn, flags=0)
-			get_fd(dconn)
-			inode_or_name_op_on_error(dconn)
-			compound_end
-
-		[same_mds == 0, slookup == 1, dlookup == 0]
-
-			compound_begin(sconn)
-			inode_or_name_op_lookup(sconn, flags=flags)
-			get_fd(sconn)
-			inode_or_name_op_on_error(sconn)
-			compound_end
-
-		[same_mds == 0, slookup == 0, dlookup == 0]
-
-			ERR_CROSS_DEVICE_LINK
-		*/
+		 * [same_mds == 1, slookup == 1, dlookup == 1]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	inode_or_name_op_lookup(sconn, spath, flags=flags)
+		 * 	get_fd(sconn)
+		 * 	save_fd(sconn)
+		 * 	inode_or_name_op_lookup(sconn, dpath, flags=0)
+		 * 	get_fd(sconn)
+		 * 	op(sconn)
+		 *	close
+		 *	restore
+		 *	close
+		 * 	inode_or_name_op_on_error(sconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 1, slookup == 0, dlookup == 1]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	put_fd(sconn)
+		 * 	save_fd(sconn)
+		 * 	inode_or_name_op_lookup(sconn, dpath, flags=0)
+		 * 	get_fd(sconn)
+		 * 	op(sconn)
+		 *	close
+		 *	restore
+		 *	close
+		 * 	inode_or_name_op_on_error(sconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 1, slookup == 1, dlookup == 0]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	inode_or_name_op_lookup(sconn, spath, flags=flags)
+		 * 	get_fd(sconn)
+		 * 	save_fd(sconn)
+		 * 	put_fd(sconn, flags=0)
+		 * 	op(sconn)
+		 *	close
+		 *	restore
+		 *	close
+		 * 	inode_or_name_op_on_error(sconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 1, slookup == 0, dlookup == 0]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	put_fd(sconn)
+		 * 	save_fd(sconn)
+		 * 	put_fd(sconn)
+		 * 	op(sconn)
+		 *	close
+		 *	restore
+		 *	close
+		 * 	compound_end
+		 *
+		 * [same_mds == 0, slookup == 1, dlookup == 1]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	inode_or_name_op_lookup(sconn, spath, flags=flags)
+		 * 	get_fd(sconn)
+		 * 	inode_or_name_op_on_error(sconn)
+		 * 	compound_end
+		 *
+		 * 	compound_begin(dconn)
+		 * 	inode_or_name_op_lookup(dconn, dpath, flags=0)
+		 * 	get_fd(dconn)
+		 * 	inode_or_name_op_on_error(dconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 0, slookup == 0, dlookup == 1]
+		 *
+		 * 	compound_begin(dconn)
+		 * 	inode_or_name_op_lookup(dconn, dpath, flags=0)
+		 * 	get_fd(dconn)
+		 * 	inode_or_name_op_on_error(dconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 0, slookup == 1, dlookup == 0]
+		 *
+		 * 	compound_begin(sconn)
+		 * 	inode_or_name_op_lookup(sconn, spath, flags=flags)
+		 * 	get_fd(sconn)
+		 * 	inode_or_name_op_on_error(sconn)
+		 * 	compound_end
+		 *
+		 * [same_mds == 0, slookup == 0, dlookup == 0]
+		 *
+		 * 	ERR_CROSS_DEVICE_LINK
+		 *
+		 */
 
 		slookup = sfd < 0;
 		dlookup = dfd < 0;
@@ -971,11 +987,11 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			    spath, dpath);
 			break;
 		}
-		if (sconn == NULL ||
-		    (slookup && gfarm_is_url(spath))) {
-			if (sconn)
+		if (sconn == NULL || (slookup && gfarm_is_url(spath))) {
+			if (sconn) {
 				gfm_client_connection_free(sconn);
-			sconn = NULL;
+				sconn = NULL;
+			}
 			if ((e = gfarm_url_parse_metadb(&spath, &sconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
@@ -986,11 +1002,11 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			if (spath[0] == '\0')
 				spath = "/";
 		}
-		if (dconn == NULL ||
-		    (dlookup && gfarm_is_url(dpath))) {
-			if (dconn && dconn != sconn)
+		if (dconn == NULL || (dlookup && gfarm_is_url(dpath))) {
+			if (dconn) {
 				gfm_client_connection_free(dconn);
-			dconn = NULL;
+				dconn = NULL;
+			}
 			if ((e = gfarm_url_parse_metadb(&dpath, &dconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
@@ -1000,6 +1016,14 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			}
 			if (dpath[0] == '\0')
 				dpath = "/";
+		}
+		if ((!is_open_last && GFARM_IS_PATH_ROOT(spath)) ||
+		    GFARM_IS_PATH_ROOT(dpath)) {
+			e = GFARM_ERR_PATH_IS_ROOT;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_or_name_op_lookup_request : %s",
+			    gfarm_error_string(e));
+			break;
 		}
 
 		same_mds = sconn == dconn;
@@ -1022,12 +1046,11 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		}
 		if (slookup) {
 			if ((e = gfm_inode_or_name_op_lookup_request(sconn,
-				spath, flags, &srest))
-			    != GFARM_ERR_NO_ERROR) {
+			    spath, flags, &srest, &s_do_verify))
+			    != GFARM_ERR_NO_ERROR)
 				break;
-			}
-			if ((e = gfm_client_get_fd_request(sconn))
-			    != GFARM_ERR_NO_ERROR) {
+			if ((e = gfm_client_get_fd_request(
+			    sconn)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "get_fd request: %s",
 				    gfarm_error_string(e));
@@ -1035,8 +1058,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			}
 		} else if (same_mds) {
 			if ((e = gfm_client_put_fd_request(
-				sconn, sfd))
-			    != GFARM_ERR_NO_ERROR) {
+			    sconn, sfd)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "put_fd(%d) request: %s", sfd,
 				    gfarm_error_string(e));
@@ -1054,12 +1076,11 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		}
 		if (dlookup) {
 			if ((e = gfm_inode_or_name_op_lookup_request(dconn,
-				dpath, 0, &drest))
-			    != GFARM_ERR_NO_ERROR) {
+				dpath, 0, &drest, &d_do_verify))
+			    != GFARM_ERR_NO_ERROR)
 				break;
-			}
-			if ((e = gfm_client_get_fd_request(dconn))
-			    != GFARM_ERR_NO_ERROR) {
+			if ((e = gfm_client_get_fd_request(
+			    dconn)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "get_fd request: %s",
 				    gfarm_error_string(e));
@@ -1083,6 +1104,27 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "request_op failed: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			if ((e = gfm_client_close_request(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "close request: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			if ((e = gfm_client_restore_fd_request(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "restore request: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			if ((e = gfm_client_close_request(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "close request: %s",
 				    gfarm_error_string(e));
 				break;
 			}
@@ -1112,7 +1154,6 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 				break;
 			}
 		}
-
 		if ((slookup || same_mds) &&
 		    (e = gfm_client_compound_begin_result(sconn))
 		    != GFARM_ERR_NO_ERROR) {
@@ -1133,8 +1174,9 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		sretry = dretry = 0;
 		if (slookup) {
 			if ((se = gfm_inode_or_name_op_lookup_result(sconn,
-			    spath, flags, &srest, &s_is_last, &type,
-			    &retry_count, &sretry)) != GFARM_ERR_NO_ERROR) {
+			    spath, flags, s_do_verify, &srest, &type,
+			    &retry_count, &s_is_last, &sretry))
+			    != GFARM_ERR_NO_ERROR) {
 				if (sretry)
 					continue;
 				if (se == GFARM_ERR_IS_A_SYMBOLIC_LINK) {
@@ -1142,10 +1184,11 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 						goto dst_lookup_result;
 					goto on_error_result;
 				}
+				e = se;
 				break;
 			}
-			if ((e = gfm_client_get_fd_result(sconn, &sfd))
-			    != GFARM_ERR_NO_ERROR) {
+			if ((e = gfm_client_get_fd_result(sconn,
+			    &sfd)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "get_fd result: %s",
 				    gfarm_error_string(e));
@@ -1168,21 +1211,24 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 				    gfarm_error_string(e));
 				break;
 			}
+			sfd_saved = 1;
 		}
 
 dst_lookup_result:
 		if (dlookup) {
 			if ((de = gfm_inode_or_name_op_lookup_result(dconn,
-			    dpath, 0, &drest, &d_is_last, &type,
-			    &retry_count, &dretry)) != GFARM_ERR_NO_ERROR) {
+			    dpath, 0, d_do_verify, &drest, &type,
+			    &retry_count, &d_is_last, &dretry))
+			    != GFARM_ERR_NO_ERROR) {
 				if (dretry)
 					continue;
 				if (de == GFARM_ERR_IS_A_SYMBOLIC_LINK)
 					goto on_error_result;
+				e = de;
 				break;
 			}
-			if ((e = gfm_client_get_fd_result(dconn, &dfd))
-			    != GFARM_ERR_NO_ERROR) {
+			if ((e = gfm_client_get_fd_result(dconn,
+			    &dfd)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "get_fd result: %s",
 				    gfarm_error_string(e));
@@ -1197,34 +1243,58 @@ dst_lookup_result:
 				break;
 			}
 		}
-		if (same_mds &&
-		    (e = (*result_op)(sconn, closure))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "result_op failed: %s",
-			    gfarm_error_string(e));
-			break;
+		if (same_mds) {
+			if ((e = (*result_op)(sconn, closure))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "result_op failed: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			op_called = 1;
+			if ((e = gfm_client_close_result(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "close result: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			current_closed = 1;
+			if ((e = gfm_client_restore_fd_result(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "restore_fd result: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			restored = 1;
+			if ((e = gfm_client_close_result(sconn))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "close result: %s",
+				    gfarm_error_string(e));
+				break;
+			}
+			saved_closed = 1;
 		}
 
 on_error_result:
 		if (slookup &&
 		    se == GFARM_ERR_IS_A_SYMBOLIC_LINK &&
 		    (e = gfm_inode_or_name_op_on_error_result(sconn,
-			flags, s_is_last, &s_is_symlink,
-			srest, &snextpath, &sretry, &tmpfd))
+			s_is_last, srest, &snextpath, &sretry))
 		    != GFARM_ERR_NO_ERROR) {
 			break;
 		}
 		if (dlookup &&
 		    de == GFARM_ERR_IS_A_SYMBOLIC_LINK &&
 		    (e = gfm_inode_or_name_op_on_error_result(dconn,
-			0, d_is_last, &d_is_symlink,
-			drest, &dnextpath, &dretry, &tmpfd))
+			d_is_last, drest, &dnextpath, &dretry))
 		    != GFARM_ERR_NO_ERROR) {
 			break;
 		}
 		if (((same_mds && se == GFARM_ERR_NO_ERROR &&
-			de == GFARM_ERR_NO_ERROR) ||
+		    de == GFARM_ERR_NO_ERROR) ||
 		    (!same_mds && slookup && se == GFARM_ERR_NO_ERROR)) &&
 		    (e = gfm_client_compound_end_result(sconn))
 		    != GFARM_ERR_NO_ERROR) {
@@ -1244,19 +1314,16 @@ on_error_result:
 			    gfarm_error_string(e));
 			break;
 		}
+		if (op_called) {
+			is_success = 1;
+			break;
+		}
 		if ((sretry && ++snlinks > GFARM_SYMLINK_LEVEL_MAX) ||
 		    (dretry && ++dnlinks > GFARM_SYMLINK_LEVEL_MAX)) {
 			e = GFARM_ERR_TOO_MANY_LEVELS_OF_SYMBOLIC_LINK;
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "maybe loop: %s",
 			    gfarm_error_string(e));
-			break;
-		}
-		if (slookup && s_is_symlink)
-			sfd = tmpfd;
-		if (same_mds && !sretry && !dretry &&
-		    (!slookup || !s_is_symlink)) {
-			is_success = 1;
 			break;
 		}
 	}
@@ -1269,12 +1336,24 @@ on_error_result:
 	if (is_success)
 		return (*success_op)(sconn, closure);
 
+	if (same_mds) {
+		if (!saved_closed)
+			gfm_close_fd(sconn, current_closed == 0,
+			    sfd_saved && !restored);
+	} else {
+		if (sfd >= 0)
+			gfm_close_fd(sconn, 1, 0);
+		if (dfd >= 0)
+			gfm_close_fd(dconn, 1, 0);
+	}
 	if (sconn)
 		gfm_client_connection_free(sconn);
 	if (dconn && !same_mds)
 		gfm_client_connection_free(dconn);
 
-	/* NOTE: the opened descriptor is automatically closed by gfmd */
+	/* NOTE: the opened descriptor unexternalized is automatically closed
+	 * by gfmd
+	 */
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
