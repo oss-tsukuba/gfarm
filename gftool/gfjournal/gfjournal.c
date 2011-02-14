@@ -62,7 +62,8 @@ usage(void)
 
 static gfarm_error_t
 post_read_aggregate(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *arg, size_t length)
+	enum journal_operation ope, void *arg, void *closure, size_t length,
+	int *needs_freep)
 {
 	ave_reclen += length;
 	++num_rec;
@@ -414,11 +415,11 @@ print_obj(enum journal_operation ope, void *obj)
 
 static gfarm_error_t
 post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
-	void *obj, size_t length)
+	void *obj, void *closure, size_t length, int *needs_freep)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	post_read_aggregate(NULL, seqnum, ope, obj, length);
+	post_read_aggregate(NULL, seqnum, ope, obj, NULL, length, needs_freep);
 	/* seqnum operation length */
 	printf("%12" GFARM_PRId64 " %-22s %7lu ", seqnum,
 	    journal_operation_name(ope), (unsigned long)length);
@@ -498,7 +499,7 @@ main(int argc, char **argv)
 		printf("argument\n");
 	}
 
-	while ((e = db_journal_read(reader, reader, post_read, &eof))
+	while ((e = db_journal_read(reader, reader, post_read, NULL, &eof))
 		== GFARM_ERR_NO_ERROR && eof == 0)
 		;
 	ave_reclen = num_rec > 0 ? ave_reclen / num_rec : 0;
