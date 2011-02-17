@@ -384,7 +384,6 @@ peer_watcher(void *arg)
 			fd = &peer_poll_fds[i];
 			peer = &peer_table[fd->fd];
 #endif
-			giant_lock();
 			gfarm_mutex_lock(&peer_table_mutex,
 			    diag, peer_table_diag);
 			/*
@@ -438,7 +437,6 @@ peer_watcher(void *arg)
 			    "peer_watcher checking", "peer:control_mutex");
 			gfarm_mutex_unlock(&peer_table_mutex,
 			    diag, peer_table_diag);
-			giant_unlock();
 
 			if (!skip) {
 				/*
