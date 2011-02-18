@@ -3846,8 +3846,6 @@ symlink_defer_db_removal(gfarm_ino_t inum, char *source_path)
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "symlink %llu (%s): removing orphan data",
 		    (unsigned long long)inum, source_path);
-
-	free(source_path);
 }
 
 static void
