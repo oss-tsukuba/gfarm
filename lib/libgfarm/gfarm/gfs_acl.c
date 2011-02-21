@@ -55,7 +55,7 @@ gfs_acl_init(int count, gfarm_acl_t *acl_p)
 }
 
 gfarm_error_t
-gfs_acl_dup(gfarm_acl_t *acl_dst_p, const gfarm_acl_t acl_src)
+gfs_acl_dup(gfarm_acl_t *acl_dst_p, gfarm_acl_t acl_src)
 {
 	gfarm_error_t e;
 	int i;
@@ -245,7 +245,7 @@ gfs_acl_copy_entry(gfarm_acl_entry_t dest_d, gfarm_acl_entry_t src_d)
 #endif
 
 gfarm_error_t
-gfs_acl_valid(const gfarm_acl_t acl)
+gfs_acl_valid(gfarm_acl_t acl)
 {
 	return (gfs_acl_check(acl, NULL, NULL));
 }
@@ -255,35 +255,33 @@ gfs_acl_calc_mask(gfarm_acl_t *acl_p)
 {
 	gfarm_error_t e;
 	int i;
-	gfarm_acl_t acl;
 	gfarm_acl_perm_t perm = 0;
 	gfarm_acl_entry_t mask_ent = NULL;
 
-	acl = *acl_p;
-	for (i = 0; i < acl->nentries; i++) {
-		if (acl->entries[i] != NULL) {
-			switch (acl->entries[i]->tag) {
+	for (i = 0; i < (*acl_p)->nentries; i++) {
+		if ((*acl_p)->entries[i] != NULL) {
+			switch ((*acl_p)->entries[i]->tag) {
 			case GFARM_ACL_USER_OBJ:
 			case GFARM_ACL_OTHER:
 				break;
 			case GFARM_ACL_MASK:
-				mask_ent = acl->entries[i];
+				mask_ent = (*acl_p)->entries[i];
 				break;
 			case GFARM_ACL_USER:
 			case GFARM_ACL_GROUP_OBJ:
 			case GFARM_ACL_GROUP:
-				perm |= acl->entries[i]->perm;
+				perm |= (*acl_p)->entries[i]->perm;
 				break;
 			default:
 				gflog_debug(GFARM_MSG_UNFIXED,
 					    "invalid acl tag: %d",
-					    acl->entries[i]->tag);
+					    (*acl_p)->entries[i]->tag);
 				return (GFARM_ERR_INVALID_ARGUMENT);
 			}
 		}
 	}
 	if (mask_ent == NULL) {
-		e = gfs_acl_create_entry(&acl, &mask_ent);
+		e = gfs_acl_create_entry(acl_p, &mask_ent);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfs_acl_create_entry() failed: %s",
@@ -979,15 +977,15 @@ gfs_acl_get_perm(gfarm_acl_permset_t permset_d, gfarm_acl_perm_t perm,
 }
 
 const char *
-gfs_acl_error(int acl_check_err_p)
+gfs_acl_error(int acl_check_err)
 {
 	static char multi[] = "Multiple entries of same type";
 	static char duplicate[] = "Duplicate entries";
 	static char miss[] = "Missing or wrong entry";
 	static char entry[] = "Invalid entry type";
-	static char noerror[] = "no error";
+	static char noerror[] = "No error";
 
-	switch (acl_check_err_p) {
+	switch (acl_check_err) {
 	case GFARM_ACL_MULTI_ERROR:
 		return (multi);
 	case GFARM_ACL_DUPLICATE_ERROR:
@@ -1317,8 +1315,7 @@ gfs_acl_to_any_text(gfarm_acl_t acl, const char *prefix,
 	} while (0)
 
 gfarm_error_t
-gfs_acl_to_xattr_value(const gfarm_acl_t acl, void **xattr_value_p,
-		       size_t *size_p)
+gfs_acl_to_xattr_value(gfarm_acl_t acl, void **xattr_value_p, size_t *size_p)
 {
 	int i;
 	char *buf;
