@@ -55,7 +55,7 @@ gfs_acl_init(int count, gfarm_acl_t *acl_p)
 }
 
 gfarm_error_t
-gfs_acl_dup(gfarm_acl_t *acl_dst_p, const gfarm_acl_t acl_src)
+gfs_acl_dup(gfarm_acl_t *acl_dst_p, gfarm_acl_t acl_src)
 {
 	gfarm_error_t e;
 	int i;
@@ -245,7 +245,7 @@ gfs_acl_copy_entry(gfarm_acl_entry_t dest_d, gfarm_acl_entry_t src_d)
 #endif
 
 gfarm_error_t
-gfs_acl_valid(const gfarm_acl_t acl)
+gfs_acl_valid(gfarm_acl_t acl)
 {
 	return (gfs_acl_check(acl, NULL, NULL));
 }
@@ -1315,8 +1315,7 @@ gfs_acl_to_any_text(gfarm_acl_t acl, const char *prefix,
 	} while (0)
 
 gfarm_error_t
-gfs_acl_to_xattr_value(const gfarm_acl_t acl, void **xattr_value_p,
-		       size_t *size_p)
+gfs_acl_to_xattr_value(gfarm_acl_t acl, void **xattr_value_p, size_t *size_p)
 {
 	int i;
 	char *buf;

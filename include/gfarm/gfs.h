@@ -393,12 +393,12 @@ static const char GFARM_ACL_EA_DEFAULT[] = "gfarm.acl_default";
 #define GFARM_ACL_EA_VERSION		(0x0001)
 
 gfarm_error_t gfs_acl_init(int, gfarm_acl_t *);
-gfarm_error_t gfs_acl_dup(gfarm_acl_t *, const gfarm_acl_t);
+gfarm_error_t gfs_acl_dup(gfarm_acl_t *, gfarm_acl_t);
 gfarm_error_t gfs_acl_free(gfarm_acl_t);
 gfarm_error_t gfs_acl_create_entry(gfarm_acl_t *, gfarm_acl_entry_t *);
 gfarm_error_t gfs_acl_delete_entry(gfarm_acl_t, gfarm_acl_entry_t);
 gfarm_error_t gfs_acl_get_entry(gfarm_acl_t, int, gfarm_acl_entry_t *);
-gfarm_error_t gfs_acl_valid(const gfarm_acl_t);
+gfarm_error_t gfs_acl_valid(gfarm_acl_t);
 gfarm_error_t gfs_acl_calc_mask(gfarm_acl_t *);
 gfarm_error_t gfs_acl_get_permset(gfarm_acl_entry_t, gfarm_acl_permset_t *);
 gfarm_error_t gfs_acl_set_permset(gfarm_acl_entry_t, gfarm_acl_permset_t);
@@ -427,7 +427,7 @@ gfarm_error_t gfs_acl_from_mode(gfarm_mode_t, gfarm_acl_t *);
 gfarm_error_t gfs_acl_to_any_text(gfarm_acl_t, const char *, char, int,
 				  char **);
 
-gfarm_error_t gfs_acl_to_xattr_value(const gfarm_acl_t, void **, size_t *);
+gfarm_error_t gfs_acl_to_xattr_value(gfarm_acl_t, void **, size_t *);
 gfarm_error_t gfs_acl_from_xattr_value(const void *, size_t, gfarm_acl_t *);
 gfarm_error_t gfs_acl_sort(gfarm_acl_t);
 gfarm_error_t gfs_acl_from_text_with_default(const char *, gfarm_acl_t *,
