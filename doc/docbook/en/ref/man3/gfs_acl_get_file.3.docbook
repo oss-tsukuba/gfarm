@@ -1,0 +1,106 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<refentry id='gfs-acl-get-file.3'>
+
+<refentryinfo><date>14 Feb 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_acl_get_file</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_acl_get_file</refname>
+<refpurpose>get a Gfarm ACL by filename</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>gfarm_error_t</returnvalue> gfs_acl_get_file</function></funcdef>
+    <paramdef>const char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>gfarm_acl_type_t <parameter>type</parameter></paramdef>
+    <paramdef>gfarm_acl_t *<parameter>acl_p</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='input-arguments'><title>INPUT ARGUMENTS</title>
+<variablelist>
+
+<varlistentry>
+<term><parameter>gfarm_url</parameter></term>
+<listitem>
+<para>A path name in the Gfarm filesystem.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>type</parameter></term>
+<listitem>
+<para>GFARM_ACL_TYPE_ACCESS (to get the access ACL) or
+ GFARM_ACL_TYPE_DEFAULT (to get the default ACL).</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>acl_p</parameter></term>
+<listitem>
+<para>A pointer of ACL structure type.</para>
+</listitem>
+</varlistentry>
+
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_ERROR</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>The gfarm_url does not exist or
+ The gfarm_url does not have the type of ACL.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by
+<citerefentry><refentrytitle>gfarm_error_string</refentrytitle><manvolnum>3</manvolnum></citerefentry>.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_acl_free</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_acl_get_entry</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_acl_set_file</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_attr</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

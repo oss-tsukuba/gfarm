@@ -2,6 +2,40 @@ DOCBOOK = \
 	gfarm.3 \
 	gfarm_initialize.3 \
 	gfarm_terminate.3 \
+	gfs_acl_init.3 \
+	gfs_acl_dup.3 \
+	gfs_acl_free.3 \
+	gfs_acl_create_entry.3 \
+	gfs_acl_delete_entry.3 \
+	gfs_acl_get_entry.3 \
+	gfs_acl_valid.3 \
+	gfs_acl_calc_mask.3 \
+	gfs_acl_get_permset.3 \
+	gfs_acl_set_permset.3 \
+	gfs_acl_add_perm.3 \
+	gfs_acl_clear_perms.3 \
+	gfs_acl_delete_perm.3 \
+	gfs_acl_get_qualifier.3 \
+	gfs_acl_set_qualifier.3 \
+	gfs_acl_get_tag_type.3 \
+	gfs_acl_set_tag_type.3 \
+	gfs_acl_delete_def_file.3 \
+	gfs_acl_get_file.3 \
+	gfs_acl_set_file.3 \
+	gfs_acl_to_text.3 \
+	gfs_acl_from_text.3 \
+	gfs_acl_get_perm.3 \
+	gfs_acl_error.3 \
+	gfs_acl_check.3 \
+	gfs_acl_entries.3 \
+	gfs_acl_equiv_mode.3 \
+	gfs_acl_cmp.3 \
+	gfs_acl_from_mode.3 \
+	gfs_acl_to_any_text.3 \
+	gfs_acl_to_xattr_value.3 \
+	gfs_acl_from_xattr_value.3 \
+	gfs_acl_sort.3 \
+	gfs_acl_from_text_with_default.3 \
 	gfs_pio_close.3 \
 	gfs_pio_create.3 \
 	gfs_pio_open.3 \
