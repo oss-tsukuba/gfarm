@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <gfarm/gfarm.h>
 
@@ -66,6 +67,20 @@ gfarm_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1000216, "%s: %s cond wait: %s",
 		    where, what, strerror(err));
+}
+
+int
+gfarm_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+	const struct timespec *ts, const char *where, const char *what)
+{
+	int err = pthread_cond_timedwait(cond, mutex, ts);
+
+	if (err == ETIMEDOUT)
+		return (0);
+	if (err != 0)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond timedwait: %s",
+		    where, what, strerror(err));
+	return (1);
 }
 
 void
