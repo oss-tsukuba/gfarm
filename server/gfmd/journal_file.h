@@ -2,7 +2,7 @@
  * $Id$
  */
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 #define GFARM_JOURNAL_FILE_MAGIC		"GfMj"
 #define GFARM_JOURNAL_RECORD_MAGIC		"GfMr"
@@ -102,7 +102,7 @@ gfarm_error_t journal_file_read_serialized(struct journal_file_reader *,
 	char **, gfarm_uint32_t *, gfarm_uint64_t *, int *);
 void journal_file_wait_until_empty(struct journal_file *);
 
-void journal_file_writer_sync(struct journal_file_writer *writer);
+gfarm_error_t journal_file_writer_sync(struct journal_file_writer *writer);
 gfarm_error_t journal_file_writer_flush(struct journal_file_writer *);
 struct gfp_xdr *journal_file_writer_xdr(struct journal_file_writer *);
 off_t journal_file_writer_pos(struct journal_file_writer *);
@@ -124,6 +124,10 @@ const char *journal_operation_name(enum journal_operation);
 		journal_operation_name(ope), gfarm_error_string(e))
 #define GFLOG_ERROR_WITH_OPE(logid, msg, e, ope) \
 	gflog_error(logid, "ope=%s " msg " : %s", \
+		journal_operation_name(ope), gfarm_error_string(e))
+#define GFLOG_ERROR_WITH_SN(logid, msg, e, seqnum, ope) \
+	gflog_error(logid, "seqnum=%llu ope=%s " msg " : %s", \
+		(unsigned long long)seqnum, \
 		journal_operation_name(ope), gfarm_error_string(e))
 
 #endif

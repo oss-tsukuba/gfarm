@@ -2,9 +2,9 @@
  * $Id$
  */
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 struct peer;
-struct mdhost;
+struct gfmdc_journal_send_closure;
 
 gfarm_error_t gfm_server_switch_gfmd_channel(struct peer *, int, int);
 void gfmdc_init(void);

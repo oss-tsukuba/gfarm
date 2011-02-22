@@ -37,7 +37,7 @@ struct mdhost {
 	struct gfarm_metadb_server *ms;
 	struct gfm_connection *conn;
 	int is_readonly;
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	int is_recieved_seqnum;
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
@@ -127,6 +127,12 @@ mdhost_activate(struct mdhost *m)
 	abstract_host_activate(mdhost_to_abstract_host(m));
 }
 
+static void
+mdhost_validate(struct mdhost *m)
+{
+	abstract_host_validate(mdhost_to_abstract_host(m));
+}
+
 void
 mdhost_set_peer(struct mdhost *m, struct peer *peer, int version)
 {
@@ -168,7 +174,7 @@ mdhost_set_is_readonly(struct mdhost *m, int flag)
 	m->is_readonly = flag;
 }
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 struct journal_file_reader *
 mdhost_get_journal_file_reader(struct mdhost *m)
 {
@@ -248,7 +254,7 @@ mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
 		peer_unset_connection(peer);
 		peer_invoked(peer);
 	}
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	m->is_recieved_seqnum = 0;
 	if (m->jreader)
 		journal_file_reader_close(m->jreader);
@@ -279,7 +285,7 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	m->ms = ms;
 	m->conn = NULL;
 	m->is_readonly = 0;
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	m->jreader = NULL;
 	m->last_fetch_seqnum = 0;
 	m->is_recieved_seqnum = 0;
@@ -348,6 +354,8 @@ mdhost_self_is_readonly(void)
 void
 mdhost_disconnect(struct mdhost *m, struct peer *peer)
 {
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "disconnect gfmd %s", mdhost_get_name(m));
 	return (abstract_host_disconnect(&m->ah, peer, BACK_CHANNEL_DIAG));
 }
 
@@ -384,9 +392,11 @@ mdhost_init()
 		    "not found in metadb_server_list");
 	}
 	m->next = &mdhost_list;
+	mdhost_validate(self);
+	mdhost_activate(self);
 	if (!mdhost_is_master(self))
 		mdhost_set_is_readonly(self, 1);
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
 #endif
 }

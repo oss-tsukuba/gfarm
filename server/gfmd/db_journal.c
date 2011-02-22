@@ -19,6 +19,7 @@
 
 #include "queue.h"
 #include "gfutil.h"
+#include "thrsubr.h"
 #ifdef DEBUG_JOURNAL
 #include "timer.h"
 #endif
@@ -27,6 +28,7 @@
 #include "xattr_info.h"
 #include "quota_info.h"
 #include "quota.h"
+#include "metadb_server.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #ifdef DEBUG_JOURNAL
@@ -35,7 +37,6 @@
 #include "config.h"
 
 #include "subr.h"
-#include "thrsubr.h"
 #include "journal_file.h"
 #include "db_common.h"
 #include "db_access.h"
@@ -49,11 +50,12 @@
 
 #define NON_NULL_STR(s) ((s) ? (s) : "")
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 static struct journal_file	*self_jf;
 static const struct db_ops	*journal_apply_ops;
 static void			(*db_journal_fail_store_op)(void);
+static gfarm_error_t		(*db_journal_sync_op)(gfarm_uint64_t);
 
 struct db_journal_recv_info {
 	gfarm_uint64_t from_sn, to_sn;
@@ -68,8 +70,8 @@ static int journal_recvq_nelems = 0;
 static pthread_mutex_t journal_recvq_mutex;
 static pthread_cond_t journal_recvq_nonempty_cond;
 
-#define RECVQ_MUTEX_DIAG		"journal_recvq"
-#define RECVQ_NONEMPTY_COND_DIAG	"journal_nonempty_cond"
+#define RECVQ_MUTEX_DIAG		"journal_recvq_mutex"
+#define RECVQ_NONEMPTY_COND_DIAG	"journal_recvq_nonempty_cond"
 
 static gfarm_uint64_t	journal_seqnum = JOURNAL_SEQNUM_NOT_SET;
 static gfarm_uint64_t	journal_seqnum_pre = JOURNAL_SEQNUM_NOT_SET;
@@ -87,11 +89,11 @@ db_seqnum_load_callback(void *closure, struct db_seqnum_arg *a)
 }
 
 static gfarm_error_t
-db_journal_initialize(void)
+db_journal_initialize(int is_master)
 {
 	gfarm_error_t e;
 	char path[MAXPATHLEN + 1];
-	const char *journal_dir = gfarm_journal_dir();
+	const char *journal_dir = gfarm_get_journal_dir();
 	const char *diag = "db_journal_initialize";
 #ifdef DEBUG_JOURNAL
 	gfarm_timerval_t t1, t2;
@@ -113,13 +115,15 @@ db_journal_initialize(void)
 		return (e);
 	}
 	if (journal_seqnum == JOURNAL_SEQNUM_NOT_SET) {
-		do {
-			if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR)
-				break;
-			if ((e = db_seqnum_add("", 1)) != GFARM_ERR_NO_ERROR)
-				break;
-			e = db_end(diag);
-		} while (0);
+		if (!is_master) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "database is not replicated from master gfmd");
+			return (GFARM_ERR_INTERNAL_ERROR);
+		}
+		if ((e = db_begin(diag)) == GFARM_ERR_NO_ERROR) {
+			if ((e = db_seqnum_add("", 1)) == GFARM_ERR_NO_ERROR)
+				e = db_end(diag);
+		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "failed to add the update sequence number to db"
@@ -133,7 +137,7 @@ db_journal_initialize(void)
 	gfs_profile_set();
 	gfarm_gettimerval(&t1);
 #endif
-	if ((e = journal_file_open(path, gfarm_journal_max_size(),
+	if ((e = journal_file_open(path, gfarm_get_journal_max_size(),
 	    journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -145,12 +149,20 @@ db_journal_initialize(void)
 	gfarm_gettimerval(&t2);
 	ts = gfarm_timerval_sub(&t2, &t1);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "DEBUG_JOURNAL : journal_file_open : %10.5lf sec", ts);
+	    "journal_file_open : %10.5lf sec", ts);
 #endif
 	gfarm_mutex_init(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
+
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+db_journal_init(int is_master)
+{
+	if (db_journal_initialize(is_master) != GFARM_ERR_NO_ERROR)
+		exit(1);
 }
 
 void
@@ -165,11 +177,16 @@ db_journal_set_fail_store_op(void (*func)(void))
 	db_journal_fail_store_op = func;
 }
 
-static gfarm_error_t
+void
+db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
+{
+	db_journal_sync_op = func;
+}
+
+void
 db_journal_terminate(void)
 {
 	journal_file_close(self_jf);
-	return (GFARM_ERR_NO_ERROR);
 }
 
 /* PREREQUISITE: giant_lock */
@@ -459,7 +476,18 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 		db_journal_fail_store_op();
 		return (e);
 	}
-	return (GFARM_ERR_NO_ERROR);
+	if (ope == GFM_JOURNAL_END) {
+		if ((e = db_journal_sync_op(seqnum)) != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+	}
+	return (e);
+}
+
+gfarm_error_t
+db_journal_file_writer_sync(void)
+{
+	return (journal_file_writer_sync(journal_file_writer(self_jf)));
 }
 
 static gfarm_error_t
@@ -2902,7 +2930,7 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	}
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_ERROR_WITH_OPE(GFARM_MSG_UNFIXED,
 		    "read record", e, ope);
 	}
 	return (e);
@@ -3017,20 +3045,26 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 	return (e);
 }
 
+#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
+
 static gfarm_error_t
 db_journal_store_op(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *obj, void *closure, size_t length,
 	int *needs_freep)
 {
+	gfarm_error_t e;
 	const struct db_ops *ops = op_arg;
+	static const char *diag = "db_journal_store_op";
 
 #ifdef DEBUG_JOURNAL
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "DEBUG_JOURNAL: store seqnum=%" GFARM_PRId64 " ope=%s", seqnum,
+	    "store seqnum=%" GFARM_PRId64 " ope=%s", seqnum,
 	    journal_operation_name(ope));
 #endif
-	return (db_journal_ops_call(ops, seqnum, ope, obj, length,
-		"db_journal_store_op"));
+	gfarm_mutex_lock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
+	e = db_journal_ops_call(ops, seqnum, ope, obj, length, diag);
+	gfarm_mutex_unlock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 struct db_journal_apply_info {
@@ -3071,17 +3105,16 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 		if (first) {
 			if (ai->ope != GFM_JOURNAL_BEGIN) {
 				e = GFARM_ERR_INTERNAL_ERROR;
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "first record must be BEGIN : seqnum=%llu"
-				    " ope=%s", (unsigned long long)ai->seqnum,
-				    journal_operation_name(ai->ope));
+				GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+				    "first record must be BEGIN", e,
+				    (unsigned long long)ai->seqnum, ai->ope);
 				goto end;
 			}
 			first = 0;
 		}
 #ifdef DEBUG_JOURNAL
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "DEBUG_JOURNAL: apply seqnum=%llu ope=%s",
+		    "apply seqnum=%llu ope=%s",
 		    (unsigned long long)ai->seqnum,
 		    journal_operation_name(ai->ope));
 #endif
@@ -3218,9 +3251,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 	struct db_journal_fetch_info *fi, *fi0 = NULL, *fih = NULL;
 	gfarm_uint64_t from_sn = 0, to_sn;
 
-	giant_lock();
 	cur_seqnum = journal_seqnum;
-	giant_unlock();
 
 	if (cur_seqnum + 1 == min_seqnum) {
 		*no_recp = 1;
@@ -3539,8 +3570,8 @@ db_journal_seqnum_load(void *closure,
 /**********************************************************/
 
 struct db_ops db_journal_ops = {
-	db_journal_initialize,
-	db_journal_terminate,
+	NULL,
+	NULL,
 
 	db_journal_write_begin,
 	db_journal_write_end,
@@ -3613,4 +3644,4 @@ struct db_ops db_journal_ops = {
 	db_journal_seqnum_load,
 };
 
-#endif /* ENABLE_JOURNAL */
+#endif /* ENABLE_METADATA_REPLICATION */

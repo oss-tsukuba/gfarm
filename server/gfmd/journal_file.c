@@ -46,7 +46,7 @@
 #include "thrsubr.h"
 #include "journal_file.h"
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 struct journal_file;
 struct journal_file_writer;
@@ -419,7 +419,7 @@ journal_seek(int fd, size_t file_size, gfarm_uint64_t *seqnump,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	ssize_t ssz;
 	gfarm_uint32_t crc, crc1;
-	off_t pos = 0, pos1;
+	off_t pos, pos1;
 	int eof, found = 0;
 	char *rec = NULL;
 	char magic[GFARM_JOURNAL_MAGIC_SIZE];
@@ -576,7 +576,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		    rec_len, max_size)) {
 #ifdef DEBUG_JOURNAL
 			gflog_info(GFARM_MSG_UNFIXED,
-			    "DEBUG_JOURNAL: wait jounal_file.nonfull_cond");
+			    "wait jounal_file.nonfull_cond");
 #endif
 			gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex,
 			    diag, JOURNAL_FILE_STR);
@@ -712,10 +712,10 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	off_t *tailp, int *wrapp)
 {
 	gfarm_error_t e;
-	off_t pos, pos1, pos2, tail;
+	off_t pos, pos0 = 0, pos1, pos2, tail;
 	off_t min_seqnum_pos, max_seqnum_next_pos;
 	enum journal_operation ope;
-	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0;
+	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0, seqnum0 = 0;
 	int stored_all = 0;
 
 	min_seqnum = UINT64_MAX;
@@ -734,15 +734,17 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		if (pos1 == -1)
 			break;
 		pos = pos1;
-		if (ope == GFM_JOURNAL_BEGIN &&
-		    cur_seqnum < seqnum && min_seqnum > seqnum) {
-			min_seqnum = seqnum;
-			min_seqnum_pos = pos1;
-		}
-		if (ope == GFM_JOURNAL_END &&
+		if (ope == GFM_JOURNAL_BEGIN) {
+			pos0 = pos1;
+			seqnum0 = seqnum;
+		} else if (ope == GFM_JOURNAL_END &&
 		    max_seqnum < seqnum && cur_seqnum <= seqnum) {
 			max_seqnum = seqnum;
 			max_seqnum_next_pos = pos2;
+			if (cur_seqnum < seqnum0 && min_seqnum > seqnum0) {
+				min_seqnum = seqnum0;
+				min_seqnum_pos = pos0;
+			}
 		}
 		tail = pos2;
 		if (lseek(rfd, pos2, SEEK_SET) < 0)
@@ -912,7 +914,9 @@ journal_write_file_header(int fd)
 	    pos)) != GFARM_ERR_NO_ERROR) {
 		no = GFARM_MSG_UNFIXED;
 	} else {
-		fdatasync(fd);
+		errno = 0;
+		if (fdatasync(fd) == -1)
+			return (gfarm_errno_to_error(errno));
 		return (GFARM_ERR_NO_ERROR);
 	}
 	gflog_error(no,
@@ -1177,15 +1181,18 @@ journal_file_wait_until_empty(struct journal_file *jf)
 	struct journal_file_writer *writer = &jf->writer;
 	struct journal_file_reader *reader = journal_file_main_reader(jf);
 	static const char *diag = "journal_file_wait_until_empty";
-
+#ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_UNFIXED,
-	    "wait until applylig all rest journal records");
+	    "wait until applying all rest journal records");
+#endif
 	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	while (writer->pos != reader->pos)
 		gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex, diag,
 		    JOURNAL_FILE_STR);
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
-	gflog_debug(GFARM_MSG_UNFIXED, "resumed");
+#ifdef DEBUG_JOURNAL
+	gflog_debug(GFARM_MSG_UNFIXED, "end applying journal records");
+#endif
 }
 
 void
@@ -1208,10 +1215,12 @@ journal_file_close(struct journal_file *jf)
 	jf->path = NULL;
 }
 
-void
+gfarm_error_t
 journal_file_writer_sync(struct journal_file_writer *writer)
 {
-	fdatasync(gfp_xdr_fd(writer->xdr));
+	if (fdatasync(gfp_xdr_fd(writer->xdr)) == -1)
+		return (gfarm_errno_to_error(errno));
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
@@ -1298,8 +1307,8 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	assert(send_op);
 	assert(seqnum > 0);
 	if ((e = size_add_op(ope, &len, arg)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
-		    "size_add_op", e, ope);
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		    "size_add_op", e, seqnum, ope);
 		goto end;
 	}
 
@@ -1315,8 +1324,8 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
 	if ((e = send_op(ope, arg)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
-		    "send_op", e, ope);
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		    "send_op", e, seqnum, ope);
 		goto unlock;
 	}
 	if ((e = journal_write_footer(xdr, len, crc))
@@ -1324,18 +1333,17 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 		goto unlock;
 	if ((e = journal_file_writer_flush(writer)) != GFARM_ERR_NO_ERROR)
 		goto unlock;
-	/* sync only at db_end */
-	if (ope == GFM_JOURNAL_END)
-		journal_file_writer_sync(writer);
 	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 #ifdef DEBUG_JOURNAL
 	if (JOURNAL_FILE_READER_IS_INVALID(reader)) {
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "DEBUG_JOURNAL: wp=%llu mrp=invalid",
+		    "write seqnum=%llu ope=%s wp=%llu mrp=invalid",
+		    (unsigned long long)seqnum, journal_operation_name(ope),
 		    (unsigned long long)writer->pos);
 	} else {
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "DEBUG_JOURNAL: wp=%llu mrp=%llu wr=%u u=%u %%",
+		    "write seqnum=%llu ope=%s wp=%llu mrp=%llu wr=%u u=%u %%",
+		    (unsigned long long)seqnum, journal_operation_name(ope),
 		    (unsigned long long)writer->pos,
 		    (unsigned long long)reader->pos,
 		    JOURNAL_FILE_READER_IS_WRAP(reader),
@@ -1487,8 +1495,8 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		goto unlock;
 	if ((e = read_op(op_arg, xdr, ope, &obj))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
-		    "read_arg_op", e, ope);
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		    "read_arg_op", e, seqnum, ope);
 		goto unlock;
 	}
 	if ((e = journal_read_purge(xdr, sizeof(gfarm_uint32_t)))
@@ -1496,8 +1504,8 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		goto unlock;
 	if ((e = post_read_op(op_arg, seqnum, ope, obj, closure, len,
 	    &needs_free)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
-		    "post_read_op", e, ope);
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		    "post_read_op", e, seqnum, ope);
 		goto unlock;
 	}
 	reader->cache_size -= len;
@@ -1649,4 +1657,4 @@ unlock:
 	return (e);
 }
 
-#endif /* ENABLE_JOURNAL */
+#endif /* ENABLE_METADATA_REPLICATION */

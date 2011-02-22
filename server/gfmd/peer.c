@@ -49,6 +49,7 @@
 
 #define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_type(peer) == \
 	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
+#define PROTOCOL_ERROR_MUTEX_DIAG "protocol_error_mutex"
 
 struct peer_closing_queue {
 	pthread_mutex_t mutex;
@@ -75,6 +76,7 @@ struct peer {
 
 	struct process *process;
 	int protocol_error;
+	pthread_mutex_t protocol_error_mutex;
 	void *(*protocol_handler)(void *);
 	struct thread_pool *handler_thread_pool;
 
@@ -604,6 +606,8 @@ peer_init(int max_peers,
 		peer->host = NULL;
 		peer->process = NULL;
 		peer->protocol_error = 0;
+		gfarm_mutex_init(&peer->protocol_error_mutex,
+		    "peer_init", "peer:protocol_error_mutex");
 
 		peer->control = 0;
 		gfarm_mutex_init(&peer->control_mutex,
@@ -1177,13 +1181,27 @@ peer_unset_process(struct peer *peer)
 void
 peer_record_protocol_error(struct peer *peer)
 {
+	static const char *diag = "peer_record_protocol_error";
+
+	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
+	    PROTOCOL_ERROR_MUTEX_DIAG);
 	peer->protocol_error = 1;
+	gfarm_mutex_unlock(&peer->protocol_error_mutex, diag,
+	    PROTOCOL_ERROR_MUTEX_DIAG);
 }
 
 int
 peer_had_protocol_error(struct peer *peer)
 {
-	return (peer->protocol_error);
+	int e;
+	static const char *diag = "peer_had_protocol_error";
+
+	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
+	    PROTOCOL_ERROR_MUTEX_DIAG);
+	e = peer->protocol_error;
+	gfarm_mutex_unlock(&peer->protocol_error_mutex, diag,
+	    PROTOCOL_ERROR_MUTEX_DIAG);
+	return (e);
 }
 
 void

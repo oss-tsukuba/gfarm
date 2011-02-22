@@ -726,6 +726,9 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
+#define GFARM_JOURNAL_SYNC_FILE_DEFAULT		1
+#define GFARM_JOURNAL_SYNC_SLAVE_DEFAULT	0
+#define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
@@ -752,6 +755,9 @@ int gfarm_record_atime = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
 static char *journal_dir = NULL;
 static int journal_max_size = MISC_DEFAULT;
+static int journal_sync_file = MISC_DEFAULT;
+static int journal_sync_slave = MISC_DEFAULT;
+static int journal_sync_slave_timeout = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -860,15 +866,33 @@ gfarm_set_record_atime(int boolean)
 }
 
 const char *
-gfarm_journal_dir(void)
+gfarm_get_journal_dir(void)
 {
 	return (journal_dir);
 }
 
 int
-gfarm_journal_max_size(void)
+gfarm_get_journal_max_size(void)
 {
 	return (journal_max_size);
+}
+
+int
+gfarm_get_journal_sync_file(void)
+{
+	return (journal_sync_file);
+}
+
+int
+gfarm_get_journal_sync_slave(void)
+{
+	return (journal_sync_slave);
+}
+
+int
+gfarm_get_journal_sync_slave_timeout(void)
+{
+	return (journal_sync_slave_timeout);
 }
 
 /*
@@ -2080,10 +2104,16 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &gfarm_profile);
 
-	} else if (strcmp(s, o = "journal_dir") == 0) {
+	} else if (strcmp(s, o = "metadb_journal_dir") == 0) {
 		e = parse_set_var(p, &journal_dir);
-	} else if (strcmp(s, o = "journal_max_size") == 0) {
+	} else if (strcmp(s, o = "metadb_journal_max_size") == 0) {
 		e = parse_set_misc_int(p, &journal_max_size);
+	} else if (strcmp(s, o = "synchronous_journaling") == 0) {
+		e = parse_set_misc_enabled(p, &journal_sync_file);
+	} else if (strcmp(s, o = "synchronous_replication") == 0) {
+		e = parse_set_misc_enabled(p, &journal_sync_slave);
+	} else if (strcmp(s, o = "synchronous_replication_timeout") == 0) {
+		e = parse_set_misc_int(p, &journal_sync_slave_timeout);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2229,6 +2259,13 @@ gfarm_config_set_default_misc(void)
 		gfarm_profile = GFARM_PROFILE_DEFAULT;
 	if (journal_max_size == MISC_DEFAULT)
 		journal_max_size = GFARM_JOURNAL_MAX_SIZE_DEFAULT;
+	if (journal_sync_file == MISC_DEFAULT)
+		journal_sync_file = GFARM_JOURNAL_SYNC_FILE_DEFAULT;
+	if (journal_sync_slave == MISC_DEFAULT)
+		journal_sync_slave = GFARM_JOURNAL_SYNC_SLAVE_DEFAULT;
+	if (journal_sync_slave_timeout == MISC_DEFAULT)
+		journal_sync_slave_timeout =
+		    GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT;
 }
 
 void

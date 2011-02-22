@@ -53,6 +53,7 @@
 #include "callout.h"
 #include "db_access.h"
 #include "db_journal.h"
+#include "db_journal_apply.h"
 #include "host.h"
 #include "mdhost.h"
 #include "user.h"
@@ -367,7 +368,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		*requestp = request;
 		return (e);
 	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 		e = gfm_server_switch_gfmd_channel(peer,
 		    from_client, skip);
 #else
@@ -1092,6 +1093,9 @@ sigs_handler(void *p)
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
+#ifdef ENABLE_METADATA_REPLICATION
+	db_journal_terminate();
+#endif
 
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
@@ -1133,12 +1137,13 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	back_channel_init();
-#ifdef ENABLE_JOURNAL
-	gfmdc_init();
+	mdhost_init(); /* must be called before db_journal_init() */
+#ifdef ENABLE_METADATA_REPLICATION
+	gfmdc_init(); /* must be called before db_journal_init() */
+	db_journal_apply_init();
+	db_journal_init(mdhost_self_is_master());
 #endif
-
 	/* directory service */
-	mdhost_init();
 	host_init();
 	user_init();
 	group_init();
@@ -1340,7 +1345,7 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	if (mdhost_self_is_master()) {
 		e = create_detached_thread(db_journal_store_thread, NULL);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -1359,6 +1364,7 @@ main(int argc, char **argv)
 			    "create_detached_thread(db_journal_apply_thread): "
 			    "%s", gfarm_error_string(e));
 	}
+	db_journal_boot_apply();
 #endif
 	if (!mdhost_self_is_readonly()) {
 		/* these functions write db, thus, must be after db_thread  */
@@ -1366,14 +1372,16 @@ main(int argc, char **argv)
 					  inode_check_and_repair() */
 		inode_check_and_repair();
 	}
-#ifdef ENABLE_JOURNAL
-	db_journal_boot_apply();
+#ifdef ENABLE_METADATA_REPLICATION
 	if (mdhost_self_is_master()) {
-		e = create_detached_thread(gfmdc_master_thread, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(gfmdc_master_thread): %s",
-			    gfarm_error_string(e));
+		if (!gfarm_get_journal_sync_slave()) {
+			e = create_detached_thread(gfmdc_master_thread, NULL);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "create_detached_thread"
+				    "(gfmdc_master_thread): %s",
+				    gfarm_error_string(e));
+		}
 	} else {
 		e = create_detached_thread(gfmdc_slave_thread, NULL);
 		if (e != GFARM_ERR_NO_ERROR)

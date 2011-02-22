@@ -57,15 +57,7 @@
 		TEST_ASSERT(assertbuf, 0); \
 	}
 
-#define EXIT_UNSUPPORTED 6
-
 extern struct db_ops empty_ops;
-
-/* dummy deinitions to link successfully without gfmd.o */
-#define DUMMY_DEFINITIONS_FOR_GFMD_O \
-    struct thread_pool *sync_protocol_thread_pool;\
-    void resuming_enqueue(void *entry) {}
-
 
 void
 test_assert(const char *msg, long long x, const char *file, int line)

@@ -14,8 +14,9 @@
 #include "group.h"
 #include "inode.h"
 #include "dir.h"
+#include "db_journal.h"
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 /**********************************************************/
 /* transaction */
@@ -802,4 +803,10 @@ const struct db_ops db_journal_apply_ops = {
 	NULL,
 };
 
-#endif /* ENABLE_JOURNAL */
+void
+db_journal_apply_init(void)
+{
+	db_journal_set_apply_ops(&db_journal_apply_ops);
+}
+
+#endif /* ENABLE_METADATA_REPLICATION */

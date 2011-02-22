@@ -585,8 +585,11 @@ async_channel_service(struct abstract_host *host,
 	gfarm_int32_t rv;
 
 	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
 		return (e);
+	}
 	switch (type) {
 	case GFP_XDR_TYPE_REQUEST:
 		e = async_channel_protocol_switch(host, peer, xid, size,
@@ -704,7 +707,7 @@ gfm_server_channel_main(void *arg,
 			}
 #ifdef COMPAT_GFARM_2_3
 			channel_free(host);
-#endif
+	#endif
 			abstract_host_disconnect_request(host, peer);
 			abstract_host_receiver_unlock(host, peer);
 			return (NULL);

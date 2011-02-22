@@ -38,7 +38,7 @@
 #include "db_access.h"
 #include "db_ops.h"
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 #define FREE_ARG(x)
 #else
 #define FREE_ARG(x) free(x)
@@ -65,7 +65,7 @@ typedef gfarm_error_t (*gfarm_pgsql_dml_t)(
 	const char *, int, const Oid *, const char *const *,
 	const int *, const int *, int, const char *);
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 static gfarm_error_t gfarm_pgsql_seqnum_modify(struct db_seqnum_arg *);
 #endif
 
@@ -529,7 +529,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 
 	assert(transaction_nesting == 0);
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	if (seqnum > 0) {
 		gfarm_error_t e;
 		struct db_seqnum_arg a;
@@ -3020,7 +3020,7 @@ gfarm_pgsql_quota_load(void *closure, int is_group,
 
 /**********************************************************************/
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 static gfarm_error_t
 pgsql_seqnum_call(struct db_seqnum_arg *arg,
@@ -3213,7 +3213,7 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_quota_modify,
 	gfarm_pgsql_quota_remove,
 	gfarm_pgsql_quota_load,
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	gfarm_pgsql_seqnum_add,
 	gfarm_pgsql_seqnum_modify,
 	gfarm_pgsql_seqnum_remove,

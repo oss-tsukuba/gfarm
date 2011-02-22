@@ -27,7 +27,7 @@ void mdhost_disconnect(struct mdhost *, struct peer *);
 void mdhost_foreach(int (*)(struct mdhost *, void *), void *);
 int mdhost_self_is_master(void);
 int mdhost_self_is_readonly(void);
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 struct journal_file_reader;
 struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
 void mdhost_set_journal_file_reader(struct mdhost *,

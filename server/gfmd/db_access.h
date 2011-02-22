@@ -109,13 +109,14 @@ gfarm_error_t db_quota_user_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
 gfarm_error_t db_quota_group_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 struct db_seqnum_arg;
 gfarm_error_t db_seqnum_add(char *, gfarm_uint64_t);
 gfarm_error_t db_seqnum_modify(char *, gfarm_uint64_t);
 gfarm_error_t db_seqnum_remove(char *);
 gfarm_error_t db_seqnum_load(void *,
 	void (*)(void *, struct db_seqnum_arg *));
+pthread_mutex_t *get_db_access_mutex(void);
 #endif
 
 /* allocation for storage operations arguments */

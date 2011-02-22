@@ -52,21 +52,24 @@ struct dbq {
 	struct dbq_entry *entries;
 } dbq;
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
+static pthread_mutex_t db_access_mutex;
+#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
+
 static gfarm_error_t db_journal_enter(dbq_entry_func_t, void *, int);
 #else
 static gfarm_error_t dbq_enter1(dbq_entry_func_t, void *, int);
 #endif
 
 static const struct db_ops *ops =
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	&db_journal_ops;
 #else
 	&db_none_ops;
 #endif
 const struct db_ops *store_ops = &db_none_ops;
 static db_enter_func_t db_enter_op =
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	&db_journal_enter;
 #else
 	&dbq_enter1;
@@ -147,7 +150,7 @@ dbq_enter0(struct dbq *q, dbq_entry_func_t func, void *data, int with_seqnum)
 	static const char diag[] = "dbq_enter";
 	struct dbq_entry *ent;
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	assert(with_seqnum == 0);
 #endif
 	gfarm_mutex_lock(&q->mutex, diag, "mutex");
@@ -353,7 +356,7 @@ db_getfreenum(void)
 	return (freenum);
 }
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 static gfarm_error_t
 db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 {
@@ -374,7 +377,7 @@ db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 const struct db_ops *
 db_get_ops(void)
 {
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	return (store_ops);
 #else
 	return (ops);
@@ -384,7 +387,7 @@ db_get_ops(void)
 gfarm_error_t
 db_use(const struct db_ops *o)
 {
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	store_ops = o;
 #else
 	ops = o;
@@ -395,52 +398,57 @@ db_use(const struct db_ops *o)
 gfarm_error_t
 db_initialize(void)
 {
-	gfarm_error_t e;
-
 	dbq_init(&dbq);
-#ifdef ENABLE_JOURNAL
-	if ((e = (*store_ops->initialize)()) != GFARM_ERR_NO_ERROR)
-		return (e);
-	db_journal_set_apply_ops(&db_journal_apply_ops);
+#ifdef ENABLE_METADATA_REPLICATION
+	gfarm_mutex_init(&db_access_mutex, "db_initialize",
+	    DB_ACCESS_MUTEX_DIAG);
+	return ((*store_ops->initialize)());
+#else
+	return ((*ops->initialize)());
 #endif
-	if ((e = (*ops->initialize)()) != GFARM_ERR_NO_ERROR)
-		return (e);
-	return (e);
 }
 
 gfarm_error_t
 db_terminate(void)
 {
-	gfarm_error_t e_save;
-#ifdef ENABLE_JOURNAL
-	gfarm_error_t e;
-#endif
-
 	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
 	dbq_wait_to_finish(&dbq);
 
 	gflog_info(GFARM_MSG_1000407, "terminating the database");
-	e_save = (*ops->terminate)();
-#ifdef ENABLE_JOURNAL
-	e = (*store_ops->terminate)();
-	return (e_save == GFARM_ERR_NO_ERROR ?  e : e_save);
-#else
-	return (e_save);
-#endif
+	return ((*ops->terminate)());
 }
+
+#ifdef ENABLE_METADATA_REPLICATION
+pthread_mutex_t *
+get_db_access_mutex(void)
+{
+	return (&db_access_mutex);
+}
+#endif
 
 void *
 db_thread(void *arg)
 {
 	gfarm_error_t e;
 	struct dbq_entry ent;
+#ifdef ENABLE_METADATA_REPLICATION
+	static const char *diag = "db_thread";
+#endif
 
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
 		if (e == GFARM_ERR_NO_ERROR) {
+#ifdef ENABLE_METADATA_REPLICATION
+			gfarm_mutex_lock(&db_access_mutex, diag,
+			    DB_ACCESS_MUTEX_DIAG);
+#endif
 			/* Do not execute a function that writes to database.
 			 * Because we pass seqnum as zero. */
 			(*ent.func)(0, ent.data);
+#ifdef ENABLE_METADATA_REPLICATION
+			gfarm_mutex_unlock(&db_access_mutex, diag,
+			    DB_ACCESS_MUTEX_DIAG);
+#endif
 		} else if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			break;
 	}
@@ -1441,7 +1449,7 @@ db_xattr_add(int xmlMode, gfarm_ino_t inum, char *attrname,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (waitctx != NULL) {
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 		/* XXX FIXME we cannot wait for db transaction to be
 		 * committed when the journal function is enabled. */
 		e = db_enter_sn((dbq_entry_func_t)ops->xattr_add, arg);
@@ -1474,7 +1482,7 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (waitctx != NULL) {
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 		/* XXX FIXME we cannot wait for db transaction to be
 		 * committed when the journal function is enabled. */
 		e = db_enter_sn((dbq_entry_func_t)ops->xattr_modify, arg);
@@ -1692,7 +1700,7 @@ db_quota_group_load(void *closure,
 	return ((*ops->quota_load)(closure, 1, callback));
 }
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 gfarm_error_t
 db_seqnum_add(char *name, gfarm_uint64_t value)
@@ -1729,4 +1737,4 @@ db_seqnum_load(void *closure,
 	return ((*ops->seqnum_load)(closure, callback));
 }
 
-#endif /* ENABLE_JOURNAL */
+#endif /* ENABLE_METADATA_REPLICATION */

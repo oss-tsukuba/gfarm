@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
+#ifdef ENABLE_METADATA_REPLICATION
 #include "db_journal.c"
 
 #include "crc32.h"
@@ -20,10 +21,13 @@
 #include "dir.h"
 #include "db_journal_test.h"
 #include "db_journal_apply.h"
+#endif
 
-DUMMY_DEFINITIONS_FOR_GFMD_O
+/* dummy deinitions to link successfully without gfmd.o */
+struct thread_pool *sync_protocol_thread_pool;
+void resuming_enqueue(void *entry) {}
 
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 
 static char *program_name = "db_journal_test";
 static const char *filepath;
@@ -3015,6 +3019,12 @@ struct t_apply_info apply_tests[] = {
 	{ "t_apply_quota_remove", t_apply_quota_remove },
 };
 
+static gfarm_error_t
+t_no_sync(gfarm_uint64_t seqnum)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
 void
 t_apply(void)
 {
@@ -3036,6 +3046,8 @@ t_apply(void)
 	   only journal will be written to the temporary file. */
 
 	journal_seqnum = 1;
+	db_journal_apply_init();
+	db_journal_set_sync_op(t_no_sync);
 	gfarm_server_config_read();
 	db_use(&empty_ops);
 	mdhost_init();
@@ -3066,12 +3078,12 @@ t_apply(void)
 	journal_file_close(self_jf);
 }
 
-#endif /* ENABLE_JOURNAL */
+#endif /* ENABLE_METADATA_REPLICATION */
 
 int
 main(int argc, char **argv)
 {
-#ifdef ENABLE_JOURNAL
+#ifdef ENABLE_METADATA_REPLICATION
 	int c, op = 0;
 
 	debug_mode = 1;
@@ -3125,6 +3137,7 @@ main(int argc, char **argv)
 #else
 	fprintf(stderr,
 	    "journal function is disabled in build configuration.\n");
+#define EXIT_UNSUPPORTED 6
 	return (EXIT_UNSUPPORTED);
-#endif /* ENABLE_JOURNAL */
+#endif /* ENABLE_METADATA_REPLICATION */
 }
