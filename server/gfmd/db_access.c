@@ -439,6 +439,8 @@ db_thread(void *arg)
 		e = dbq_delete(&dbq, &ent);
 		if (e == GFARM_ERR_NO_ERROR) {
 #ifdef ENABLE_METADATA_REPLICATION
+			/* lock to avoid race condition between
+			 * db_journal_store_thread. */
 			gfarm_mutex_lock(&db_access_mutex, diag,
 			    DB_ACCESS_MUTEX_DIAG);
 #endif

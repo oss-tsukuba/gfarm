@@ -3061,6 +3061,7 @@ db_journal_store_op(void *op_arg, gfarm_uint64_t seqnum,
 	    "store seqnum=%" GFARM_PRId64 " ope=%s", seqnum,
 	    journal_operation_name(ope));
 #endif
+	/* lock to avoid race condition between db_thread. */
 	gfarm_mutex_lock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
 	e = db_journal_ops_call(ops, seqnum, ope, obj, length, diag);
 	gfarm_mutex_unlock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
