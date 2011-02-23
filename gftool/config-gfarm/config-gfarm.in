@@ -10,6 +10,7 @@ prefix="@prefix@"
 sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
 globus_location="@globus_location@"
+enable_metadata_replication="@enable_metadata_replication@"
 
 #
 # backend initialization
@@ -144,6 +145,9 @@ usage()
 	echo >&2 "	[-V metadata_backend_version] [-p metadata_backend_port]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
+	if [ "${enable_metadata_replication}" = "yes" ]; then
+		echo >&2 "	[-j metadata_journal_directory]"
+	fi
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
@@ -197,6 +201,9 @@ display_params()
 
     display_backend_params_$BACKEND_TYPE
 
+    if [ "${enable_metadata_replication}" = "yes" ]; then
+        echo "metadata journal directory [-j]: $METADATA_JOURNAL_DIR"
+    fi
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
     echo     "matadata admin user [-A]: $METADATA_ADMIN_USER"
     echo     "matadata admin dn   [-D]: $METADATA_ADMIN_USER_GSI_DN"
@@ -258,6 +265,9 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -h) shift; [ $# -ge 1 ] || usage
 		BACKEND_HOSTNAME=$1
+		;;
+	  -j) shift; [ $# -ge 1 ] || usage
+		METADATA_JOURNAL_DIR=$1
 		;;
 	  -A) shift; [ $# -ge 1 ] || usage
 		METADATA_ADMIN_USER=$1
@@ -365,6 +375,8 @@ fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
+: ${METADATA_JOURNAL_DIR:="/var/gfarm-metadata/journal"}
+
 : ${METADATA_ADMIN_USER:=`who am i | awk '{print $1}'`}
 : ${METADATA_ADMIN_USER_GSI_DN:=}
 
@@ -407,6 +419,7 @@ s|@config_gfarm_backend_port@|$BACKEND_PORT|g
 s|@config_gfarm_backend_prefix@|$BACKEND_PREFIX|g
 s|@config_gfarm_backend_data_dir@|$BACKEND_DATA_DIR|g
 s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
+s|@config_gfarm_metadata_journal_dir@|$METADATA_JOURNAL_DIR|g
 _EOF_
 }
 
@@ -511,6 +524,9 @@ delete_file_or_directory \
 	"$BACKEND_DATA_DIR" \
 	"$BACKEND_LOG_DIR" \
 	"$RC_DIR/$RC_BACKEND_BASENAME"
+if [ "${enable_metadata_replication}" = "yes" ]; then
+	delete_file_or_directory "$METADATA_JOURNAL_DIR"
+fi
 
 # We won't create "$BACKEND_LOG_DIR", otherwise initdb of PostgreSQL fails.
 create_directory \
@@ -520,6 +536,11 @@ create_directory \
 	"$RUN_DIR"
 
 chmod 700 "$BACKEND_DATA_DIR"
+
+if [ "$enable_metadata_replication" = "yes" ]; then
+	create_directory "$METADATA_JOURNAL_DIR"
+	chmod 700 "$METADATA_JOURNAL_DIR"
+fi
 
 make_configuration_directory_$BACKEND_TYPE
 
@@ -574,6 +595,12 @@ if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
 	echo "admin_user_gsi_dn \"$METADATA_ADMIN_USER_GSI_DN\"" >> $GFMD_CONF
 fi
 
+# for replication
+if [ "${enable_metadata_replication}" = "yes" ]; then
+	echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
+fi
+
+# by backend type
 make_configuration_file_$BACKEND_TYPE
 
 # private user mode

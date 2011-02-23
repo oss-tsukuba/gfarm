@@ -1312,6 +1312,18 @@ AS_HELP_STRING([--enable-xmlattr],[support XML extended attributs and searching 
 fi],[])
 
 ###
+###  --enable-metadata-replication support metadata replication between metadata servers
+###
+
+AC_ARG_ENABLE(metadata_replication,
+AS_HELP_STRING([--enable-metadata-replication],[support metadata replication between metadata servers.[[default=no]]]),
+[if test "${enable_metadata_replication}" = "yes"; then
+	AC_DEFINE(ENABLE_METADATA_REPLICATION, 1, [support metadata replication between metadata servers])
+fi],[])
+
+AC_SUBST(enable_metadata_replication)
+
+###
 ### ns
 ###
 
