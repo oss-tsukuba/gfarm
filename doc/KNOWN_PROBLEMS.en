@@ -168,6 +168,18 @@ command.
   Plans for fixes:
 	Not determined yet.
 
+- There is small window that gfs_getxattr()/gfs_setxmlattr()/etc return
+  old data just after an update by gfs_setxattr()/gfs_setxmlattr()/etc,
+  if gfmd is recording metadata in a journaling file.
+
+  Plans for fixes:
+	Not determined yet.
+
+  Countermeasure:
+	For the extended attribute case, you can workaround this symptom
+	by caching the extended attribute in the memory of gfmd, by
+	using "xattr_cache" directive in gfmd.conf.
+
 - gfs_findxmlattr() does not search attributes for files which are referred
   by symbolic link.
 
