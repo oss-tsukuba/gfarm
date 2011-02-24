@@ -544,39 +544,6 @@ gfm_server_switch_gfmd_channel(struct peer *peer, int from_client,
 	return (switch_gfmd_channel(peer, from_client, version, diag));
 }
 
-static void
-gfmdc_seteuid(const char *guser)
-{
-	gfarm_error_t e;
-	char *local_user;
-	struct passwd *pw;
-	uid_t uid;
-
-	if ((e = gfarm_global_to_local_username_by_host(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
-	    guser, &local_user)) != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "no local user for the global `%s' user.",
-		    guser); /* exit */
-	}
-	if ((pw = getpwnam(local_user)) == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "user `%s' is necessary, but doesn't exist.",
-		    local_user); /* exit */
-	}
-	uid = pw->pw_uid;
-	if (seteuid(uid) == -1)
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "seteuid(%d)", (int)uid);
-	e = gfarm_set_local_user_for_this_local_account();
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "acquiring information about user `%s': %s",
-		    local_user, gfarm_error_string(e));
-	}
-	free(local_user);
-}
-
 static gfarm_error_t
 gfmdc_connect(struct mdhost *host)
 {
@@ -586,10 +553,13 @@ gfmdc_connect(struct mdhost *host)
 	gfarm_int32_t gfmd_knows_me;
 	struct gfm_connection *conn;
 	struct peer *peer = NULL;
+	char *local_user;
+	struct passwd *pwd;
+	/* char *pwdbuf; */
 	/* XXX FIXME must be configuable */
 	unsigned int sleep_interval = 10;
 	/* XXX FIXME must be configuable */
-	static unsigned int sleep_max_interval = 640;
+	static unsigned int sleep_max_interval = 40;
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 	static const char *service_user = GFMD_USERNAME;
 	static const char *diag = "gfmdc_connect";
@@ -603,15 +573,22 @@ gfmdc_connect(struct mdhost *host)
 	hostname = mdhost_get_name(host);
 	port = mdhost_get_port(host);
 
+	if ((e = gfarm_global_to_local_username_by_host(
+	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	    service_user, &local_user)) != GFARM_ERR_NO_ERROR) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "no local user for the global `%s' user.",
+		    service_user); /* exit */
+	}
+	if ((pwd = getpwnam(local_user)) == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "user `%s' is necessary, but doesn't exist.",
+		    local_user); /* exit */
+	}
+
 	for (;;) {
-		gfarm_auth_privilege_lock(diag);
-		gfmdc_seteuid(service_user);
-		e = gfm_client_connect(hostname, port, service_user,
-		    &conn, NULL);
-		if (seteuid(0) == -1)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "seteuid(0)"); /* exit */
-		gfarm_auth_privilege_unlock(diag);
+		e = gfm_client_connect_with_seteuid(hostname, port,
+		    service_user, &conn, NULL, pwd);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -623,9 +600,15 @@ gfmdc_connect(struct mdhost *host)
 			    "sleep %d sec: %s", hostname, port, sleep_interval,
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
+		if (mdhost_self_is_master())
+			break;
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
+	free(local_user);
+	if (mdhost_self_is_master())
+		return (GFARM_ERR_NO_ERROR);
+
 	if ((e = gfm_client_switch_gfmd_channel(conn,
 	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
 	    &gfmd_knows_me))
@@ -651,7 +634,7 @@ gfmdc_connect(struct mdhost *host)
 		goto error;
 	}
 	mdhost_set_connection(host, conn);
-	mdhost_activate(host);
+	mdhost_activate(host, BACK_CHANNEL_DIAG);
 	if ((e = gfmdc_client_journal_ready_to_recv(host))
 	    != GFARM_ERR_NO_ERROR) {
 		mdhost_set_connection(host, NULL);
@@ -691,7 +674,7 @@ gfmdc_journal_asyncsend(struct mdhost *host, void *closure)
 }
 
 void *
-gfmdc_master_thread(void *arg)
+gfmdc_journal_asyncsend_thread(void *arg)
 {
 	struct timespec ts;
 
@@ -706,7 +689,7 @@ gfmdc_master_thread(void *arg)
 }
 
 void *
-gfmdc_slave_thread(void *arg)
+gfmdc_connect_thread(void *arg)
 {
 	gfarm_error_t e;
 	struct mdhost *host;
@@ -722,6 +705,8 @@ gfmdc_slave_thread(void *arg)
 			    mdhost_get_name(host), gfarm_error_string(e));
 			break;
 		}
+		if (mdhost_self_is_master())
+			break;
 	}
 	return (NULL);
 }

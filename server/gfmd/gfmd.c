@@ -105,6 +105,12 @@ static char *pid_file;
 struct thread_pool *authentication_thread_pool;
 struct thread_pool *sync_protocol_thread_pool;
 
+static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
+
+#define TRANSFORM_MUTEX_DIAG "transform_mutex"
+#define TRANSFORM_COND_DIAG "transform_cond"
+
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 gfm_server_protocol_extension_default(struct peer *peer,
@@ -890,6 +896,8 @@ try_auth(void *arg)
 	return (NULL);
 }
 
+static int open_accepting_socket(int);
+
 void
 accepting_loop(int accepting_socket)
 {
@@ -919,7 +927,7 @@ accepting_loop(int accepting_socket)
 	}
 }
 
-int
+static int
 open_accepting_socket(int port)
 {
 	gfarm_error_t e;
@@ -969,6 +977,95 @@ write_pid()
 		gflog_error_errno(GFARM_MSG_1002352, "fclose(%s)", pid_file);
 }
 
+#ifdef ENABLE_METADATA_REPLICATION
+static void
+start_db_journal_threads(void)
+{
+	gfarm_error_t e;
+
+	if (mdhost_self_is_master()) {
+		if ((e = create_detached_thread(db_journal_store_thread, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_journal_store_thread): "
+			    "%s", gfarm_error_string(e));
+	} else {
+		if ((e = create_detached_thread(db_journal_recvq_thread, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_ournal_recvq_thread): "
+			    "%s", gfarm_error_string(e));
+		if ((e = create_detached_thread(db_journal_apply_thread, NULL))
+		    != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(db_journal_apply_thread): "
+			    "%s", gfarm_error_string(e));
+	}
+}
+
+static void
+start_gfmdc_threads(void)
+{
+	gfarm_error_t e;
+
+	if (mdhost_self_is_master()) {
+		if (gfarm_get_journal_sync_slave())
+			return;
+		if ((e = create_detached_thread(gfmdc_journal_asyncsend_thread,
+		    NULL)) != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(gfmdc_master_thread): %s",
+			    gfarm_error_string(e));
+	} else if ((e = create_detached_thread(gfmdc_connect_thread, NULL))
+	    != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "create_detached_thread(gfmdc_slave_thread): %s",
+			    gfarm_error_string(e));
+}
+
+static void
+transform_to_master(void)
+{
+	static const char *diag = "transform_to_master";
+
+	if (mdhost_self_is_master())
+		return;
+
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "start transforming to master gfmd ...");
+	giant_lock();
+
+	mdhost_set_self_as_master();
+	dead_file_copy_init_load();
+	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
+
+	db_journal_cancel_read();
+	start_db_journal_threads();
+
+	giant_unlock();
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "end transforming to master gfmd");
+}
+
+static int
+wait_transform_to_master(void)
+{
+	static const char *diag = "accepting_loop";
+
+	/* Wait until this process transforms to the master.
+	 * This behavior will be deleted when the feature are
+	 * implemented that requests to a slave gfmd are forwarded
+	 * to a master gfmd.
+	 */
+	gfarm_mutex_lock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
+	while (!mdhost_self_is_master())
+		gfarm_cond_wait(&transform_cond, &transform_mutex, diag,
+		    TRANSFORM_COND_DIAG);
+	gfarm_mutex_unlock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
+	return (open_accepting_socket(gfarm_metadb_server_port));
+}
+#endif
+
 static void
 dummy_sighandler(int signo)
 {
@@ -1011,6 +1108,7 @@ sigs_set(sigset_t *sigs)
 #ifdef SIGINFO
 	sig_add(sigs, SIGINFO, "SIGINFO");
 #endif
+	sig_add(sigs, SIGUSR1, "SIGUSR1");
 	sig_add(sigs, SIGUSR2, "SIGUSR2");
 }
 
@@ -1041,6 +1139,7 @@ sigs_handler(void *p)
 #ifdef SIGINFO
 		     && sig != SIGINFO
 #endif
+		     && sig != SIGUSR1
 		     && sig != SIGUSR2)) {
 			gflog_info(GFARM_MSG_1000198,
 			    "spurious signal %d received: ignoring...", sig);
@@ -1057,6 +1156,11 @@ sigs_handler(void *p)
 #endif
 			continue;
 
+		case SIGUSR1:
+#ifdef ENABLE_METADATA_REPLICATION
+			transform_to_master();
+#endif
+			continue;
 #ifdef SIGINFO
 		case SIGINFO:
 			/*FALLTHRU*/
@@ -1137,7 +1241,6 @@ gfmd_modules_init_default(int table_size)
 	callout_module_init(CALLOUT_NTHREADS);
 
 	back_channel_init();
-	mdhost_init(); /* must be called before db_journal_init() */
 #ifdef ENABLE_METADATA_REPLICATION
 	gfmdc_init(); /* must be called before db_journal_init() */
 	db_journal_apply_init();
@@ -1159,7 +1262,7 @@ gfmd_modules_init_default(int table_size)
 	quota_init();
 
 	/* must be after hosts and filesystem */
-	dead_file_copy_init();
+	dead_file_copy_init(mdhost_self_is_master());
 
 	peer_init(table_size, sync_protocol_thread_pool, protocol_main);
 	job_table_init(table_size);
@@ -1247,7 +1350,11 @@ main(int argc, char **argv)
 
 	if (port_number != NULL)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
-	sock = open_accepting_socket(gfarm_metadb_server_port);
+	mdhost_init();
+	if (mdhost_self_is_master())
+		sock = open_accepting_socket(gfarm_metadb_server_port);
+	else
+		sock = -1;
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1346,24 +1453,7 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 
 #ifdef ENABLE_METADATA_REPLICATION
-	if (mdhost_self_is_master()) {
-		e = create_detached_thread(db_journal_store_thread, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(db_journal_store_thread): "
-			    "%s", gfarm_error_string(e));
-	} else {
-		e = create_detached_thread(db_journal_recvq_thread, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(db_ournal_recvq_thread): "
-			    "%s", gfarm_error_string(e));
-		e = create_detached_thread(db_journal_apply_thread, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(db_journal_apply_thread): "
-			    "%s", gfarm_error_string(e));
-	}
+	start_db_journal_threads();
 	db_journal_boot_apply();
 #endif
 	if (!mdhost_self_is_readonly()) {
@@ -1373,24 +1463,10 @@ main(int argc, char **argv)
 		inode_check_and_repair();
 	}
 #ifdef ENABLE_METADATA_REPLICATION
-	if (mdhost_self_is_master()) {
-		if (!gfarm_get_journal_sync_slave()) {
-			e = create_detached_thread(gfmdc_master_thread, NULL);
-			if (e != GFARM_ERR_NO_ERROR)
-				gflog_fatal(GFARM_MSG_UNFIXED,
-				    "create_detached_thread"
-				    "(gfmdc_master_thread): %s",
-				    gfarm_error_string(e));
-		}
-	} else {
-		e = create_detached_thread(gfmdc_slave_thread, NULL);
-		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(gfmdc_slave_thread): %s",
-			    gfarm_error_string(e));
-	}
+	start_gfmdc_threads();
+	if (sock == -1)
+		sock = wait_transform_to_master();
 #endif
-
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

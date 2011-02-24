@@ -104,9 +104,13 @@ abstract_host_is_valid(struct abstract_host *h, const char *back_channel_diag)
 }
 
 void
-abstract_host_activate(struct abstract_host *h)
+abstract_host_activate(struct abstract_host *h, const char *back_channel_diag)
 {
+	static const char diag[] = "abstract_host_activate";
+
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, back_channel_diag);
 	h->is_active = 1;
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, back_channel_diag);
 }
 
 struct host *

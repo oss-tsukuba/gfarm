@@ -121,8 +121,11 @@ db_journal_initialize(int is_master)
 			return (GFARM_ERR_INTERNAL_ERROR);
 		}
 		if ((e = db_begin(diag)) == GFARM_ERR_NO_ERROR) {
-			if ((e = db_seqnum_add("", 1)) == GFARM_ERR_NO_ERROR)
+			if ((e = db_seqnum_add("", 1)) == GFARM_ERR_NO_ERROR) {
 				e = db_end(diag);
+				if (e == GFARM_ERR_NO_ERROR)
+					journal_seqnum = 1;
+			}
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -3082,7 +3085,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *obj, void *closure, size_t length,
 	int *needs_freep)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct db_journal_apply_info *ai, *tai;
 	struct db_journal_apply_op_closure *c = closure;
 	int first = 1;
@@ -3150,6 +3153,12 @@ db_journal_read(struct journal_file_reader *reader, void *op_arg,
 	    db_journal_ops_free, closure, eofp));
 }
 
+void
+db_journal_cancel_read(void)
+{
+	journal_file_cancel_read(journal_file_main_reader(self_jf));
+}
+
 void *
 db_journal_store_thread(void *arg)
 {
@@ -3185,6 +3194,8 @@ db_journal_apply_thread(void *arg)
 		if ((e = db_journal_read(reader,
 		    (void *)store_ops /* UNCONST */, db_journal_apply_op,
 		    &closure, &eof)) != GFARM_ERR_NO_ERROR) {
+			if (e == GFARM_ERR_CANT_OPEN)
+				break; /* transforming to master */
 			gflog_fatal(GFARM_MSG_UNFIXED,
 			    "failed to read journal or apply to memory/db : %s",
 			    gfarm_error_string(e)); /* exit */
@@ -3249,7 +3260,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 	char *rec, *recs, *p;
 	int eof, num_fi = 0;
 	gfarm_uint32_t rec_len, all_len = 0;
-	struct db_journal_fetch_info *fi, *fi0 = NULL, *fih = NULL;
+	struct db_journal_fetch_info *fi = NULL, *fi0 = NULL, *fih = NULL;
 	gfarm_uint64_t from_sn = 0, to_sn;
 
 	cur_seqnum = journal_seqnum;
@@ -3428,6 +3439,8 @@ db_journal_recvq_proc(void)
 		journal_seqnum = last_seqnum;
 	free(ri->recs);
 	free(ri);
+	if (gfarm_get_journal_sync_file())
+		db_journal_file_writer_sync();
 	return (e);
 }
 

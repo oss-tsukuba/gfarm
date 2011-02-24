@@ -63,12 +63,15 @@ struct journal_file_reader {
 #define JOURNAL_FILE_READER_F_BLOCK_WRITER	0x1
 #define JOURNAL_FILE_READER_F_WRAP		0x2
 #define JOURNAL_FILE_READER_F_INVALID		0x4
+#define JOURNAL_FILE_READER_F_CANCEL		0x8
 #define JOURNAL_FILE_READER_IS_BLOCK_WRITER(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_BLOCK_WRITER) != 0)
 #define JOURNAL_FILE_READER_IS_WRAP(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_WRAP) != 0)
 #define JOURNAL_FILE_READER_IS_INVALID(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_INVALID) != 0)
+#define JOURNAL_FILE_READER_CANCELED(r) \
+	(((r)->flags & JOURNAL_FILE_READER_F_CANCEL) != 0)
 
 #define JOURNAL_RECORD_SIZE_MAX			(1024 * 1024)
 #define JOURNAL_FILE_HEADER_SIZE		4096
@@ -90,7 +93,7 @@ struct journal_file {
 	char *path;
 	size_t size, max_size;
 	off_t tail;
-	pthread_cond_t nonfull_cond, nonempty_cond;
+	pthread_cond_t nonfull_cond, nonempty_cond, cancel_cond;
 	pthread_mutex_t mutex;
 };
 
@@ -712,7 +715,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	off_t *tailp, int *wrapp)
 {
 	gfarm_error_t e;
-	off_t pos, pos0 = 0, pos1, pos2, tail;
+	off_t pos, pos0 = 0, pos1, pos2, tail = 0;
 	off_t min_seqnum_pos, max_seqnum_next_pos;
 	enum journal_operation ope;
 	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0, seqnum0 = 0;
@@ -1125,6 +1128,7 @@ journal_file_open(const char *path, size_t max_size,
 
 	gfarm_cond_init(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+	gfarm_cond_init(&jf->cancel_cond, diag, JOURNAL_FILE_STR);
 	gfarm_mutex_init(&jf->mutex, diag, JOURNAL_FILE_STR);
 	*jfp = jf;
 
@@ -1447,7 +1451,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
 	enum journal_operation ope = 0;
-	int needs_free = 1;
+	int needs_free = 1, canceled = 0;
 	size_t len;
 	void *obj = NULL;
 	struct journal_file *jf = reader->file;
@@ -1478,6 +1482,13 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		while (avail < min_rec_size) {
 			gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex,
 			    diag, JOURNAL_FILE_STR);
+			if (JOURNAL_FILE_READER_CANCELED(reader)) {
+				journal_file_reader_set_flag(reader,
+				    JOURNAL_FILE_READER_F_CANCEL, 0);
+				canceled = 1;
+				e = GFARM_ERR_CANT_OPEN;
+				goto unlock;
+			}
 			if ((e = gfp_xdr_recv_ahead(xdr,
 			    JOURNAL_READ_AHEAD_SIZE, &avail))
 			    != GFARM_ERR_NO_ERROR) {
@@ -1514,6 +1525,8 @@ unlock:
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	if (needs_free && obj)
 		free_op(op_arg, ope, obj);
+	if (canceled)
+		gfarm_cond_signal(&jf->cancel_cond, diag, JOURNAL_FILE_STR);
 	return (e);
 }
 
@@ -1600,6 +1613,24 @@ error:
 end:
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	return (e);
+}
+
+void
+journal_file_cancel_read(struct journal_file_reader *reader)
+{
+	struct journal_file *jf = reader->file;
+	static const char *diag = "journal_file_cancel_read";
+
+	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_CANCEL, 1);
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+
+	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	while (JOURNAL_FILE_READER_CANCELED(reader))
+		gfarm_cond_wait(&jf->cancel_cond, &jf->mutex, diag,
+		    JOURNAL_FILE_STR);
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 }
 
 gfarm_error_t

@@ -100,6 +100,7 @@ gfarm_error_t journal_file_read(struct journal_file_reader *, void *,
 	void *, int *);
 gfarm_error_t journal_file_read_serialized(struct journal_file_reader *,
 	char **, gfarm_uint32_t *, gfarm_uint64_t *, int *);
+void journal_file_cancel_read(struct journal_file_reader *);
 void journal_file_wait_until_empty(struct journal_file *);
 
 gfarm_error_t journal_file_writer_sync(struct journal_file_writer *writer);

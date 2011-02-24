@@ -1020,7 +1020,7 @@ dead_file_copy_add_one(void *closure,
 }
 
 void
-dead_file_copy_init(void)
+dead_file_copy_init_load(void)
 {
 	gfarm_error_t e;
 
@@ -1030,6 +1030,15 @@ dead_file_copy_init(void)
 		    "loading deadfilecopy: %s", gfarm_error_string(e));
 
 	host_busyq_scanner_init();
+}
+
+void
+dead_file_copy_init(int is_master)
+{
+	gfarm_error_t e;
+
+	if (is_master)
+		dead_file_copy_init_load();
 
 	e = create_detached_thread(removal_finalizer, NULL);
 	if (e != GFARM_ERR_NO_ERROR)

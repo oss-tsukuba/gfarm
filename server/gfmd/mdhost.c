@@ -36,7 +36,6 @@ struct mdhost {
 	struct mdhost *next;
 	struct gfarm_metadb_server *ms;
 	struct gfm_connection *conn;
-	int is_readonly;
 #ifdef ENABLE_METADATA_REPLICATION
 	int is_recieved_seqnum;
 	struct journal_file_reader *jreader;
@@ -45,6 +44,7 @@ struct mdhost {
 };
 
 struct mdhost mdhost_list = { {}, &mdhost_list };
+static int localhost_is_readonly = 0;
 
 #define FOREACH_MDHOST(m) \
 	for (m = mdhost_list.next; m != &mdhost_list; m = m->next)
@@ -122,9 +122,9 @@ mdhost_is_up(struct mdhost *m)
 }
 
 void
-mdhost_activate(struct mdhost *m)
+mdhost_activate(struct mdhost *m, const char *back_channel_diag)
 {
-	abstract_host_activate(mdhost_to_abstract_host(m));
+	abstract_host_activate(mdhost_to_abstract_host(m), back_channel_diag);
 }
 
 static void
@@ -160,18 +160,6 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 		if (func(m, closure) == 0)
 			break;
 	}
-}
-
-static int
-mdhost_is_readonly(struct mdhost *m)
-{
-	return (m->is_readonly);
-}
-
-static void
-mdhost_set_is_readonly(struct mdhost *m, int flag)
-{
-	m->is_readonly = flag;
 }
 
 #ifdef ENABLE_METADATA_REPLICATION
@@ -215,7 +203,7 @@ mdhost_set_is_recieved_seqnum(struct mdhost *m, int flag)
 static void
 mdhost_self_change_to_readonly(void)
 {
-	mdhost_set_is_readonly(mdhost_lookup_self(), 1);
+	localhost_is_readonly = 1;
 	gflog_warning(GFARM_MSG_UNFIXED,
 	    "changed to read-only mode");
 }
@@ -284,7 +272,6 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	abstract_host_init(&m->ah, &mdhost_ops, diag);
 	m->ms = ms;
 	m->conn = NULL;
-	m->is_readonly = 0;
 #ifdef ENABLE_METADATA_REPLICATION
 	m->jreader = NULL;
 	m->last_fetch_seqnum = 0;
@@ -345,18 +332,30 @@ mdhost_self_is_master(void)
 int
 mdhost_self_is_readonly(void)
 {
-	struct mdhost *m = mdhost_lookup_self();
-
-	return (mdhost_is_readonly(m));
+	return (localhost_is_readonly);
 }
 
 /* giant_lock should be held before calling this */
 void
 mdhost_disconnect(struct mdhost *m, struct peer *peer)
 {
-	gflog_warning(GFARM_MSG_UNFIXED,
-	    "disconnect gfmd %s", mdhost_get_name(m));
+	if (abstract_host_get_peer_unlocked(mdhost_to_abstract_host(m)) != NULL)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "disconnect gfmd %s", mdhost_get_name(m));
 	return (abstract_host_disconnect(&m->ah, peer, BACK_CHANNEL_DIAG));
+}
+
+void
+mdhost_set_self_as_master(void)
+{
+	struct mdhost *m, *s = mdhost_lookup_self();
+
+	FOREACH_MDHOST(m) {
+		if (mdhost_is_master(m))
+			mdhost_disconnect(m, NULL);
+		gfarm_metadb_server_set_is_master(m->ms, m == s);
+	}
+	localhost_is_readonly = 0;
 }
 
 void
@@ -393,10 +392,13 @@ mdhost_init()
 	}
 	m->next = &mdhost_list;
 	mdhost_validate(self);
-	mdhost_activate(self);
+	mdhost_activate(self, BACK_CHANNEL_DIAG);
 	if (!mdhost_is_master(self))
-		mdhost_set_is_readonly(self, 1);
+		localhost_is_readonly = 1;
 #ifdef ENABLE_METADATA_REPLICATION
 	db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "metadata replication %s mode",
+	    mdhost_is_master(self) ? "master" : "slave");
 #endif
 }
