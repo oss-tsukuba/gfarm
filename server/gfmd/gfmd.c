@@ -105,12 +105,6 @@ static char *pid_file;
 struct thread_pool *authentication_thread_pool;
 struct thread_pool *sync_protocol_thread_pool;
 
-static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
-
-#define TRANSFORM_MUTEX_DIAG "transform_mutex"
-#define TRANSFORM_COND_DIAG "transform_cond"
-
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 gfm_server_protocol_extension_default(struct peer *peer,
@@ -1022,6 +1016,12 @@ start_gfmdc_threads(void)
 			    "create_detached_thread(gfmdc_slave_thread): %s",
 			    gfarm_error_string(e));
 }
+
+static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
+
+#define TRANSFORM_MUTEX_DIAG "transform_mutex"
+#define TRANSFORM_COND_DIAG "transform_cond"
 
 static void
 transform_to_master(void)

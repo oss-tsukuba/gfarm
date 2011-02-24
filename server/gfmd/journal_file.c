@@ -717,7 +717,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	gfarm_error_t e;
 	off_t pos, pos0 = 0, pos1, pos2, tail = 0;
 	off_t min_seqnum_pos, max_seqnum_next_pos;
-	enum journal_operation ope;
+	enum journal_operation ope = 0;
 	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0, seqnum0 = 0;
 	int stored_all = 0;
 
