@@ -169,7 +169,8 @@ gfm_client_connection_gc(void)
 
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
-	struct gfm_connection **gfm_serverp, const char *source_ip)
+	struct gfm_connection **gfm_serverp, const char *source_ip,
+	struct passwd *pwd)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
@@ -257,7 +258,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	e = gfarm_auth_request(gfm_server->conn,
 	    GFM_SERVICE_TAG, res->ai_canonname,
 	    res->ai_addr, gfarm_get_auth_id_type(), user,
-	    &gfm_server->auth_method);
+	    &gfm_server->auth_method, pwd);
 	gfarm_freeaddrinfo(res);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_free(gfm_server->conn);
@@ -302,7 +303,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		*gfm_serverp = gfp_cached_connection_get_data(cache_entry);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL);
+	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL, NULL);
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
 	while (IS_CONNECTION_ERROR(e) &&
@@ -312,7 +313,8 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		    "sleep %d sec: %s", hostname, port, sleep_interval,
 		    gfarm_error_string(e));
 		sleep(sleep_interval);
-		e = gfm_client_connection0(cache_entry, gfm_serverp, NULL);
+		e = gfm_client_connection0(cache_entry, gfm_serverp, NULL,
+		    NULL);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
 	}
@@ -373,6 +375,19 @@ gfarm_error_t
 gfm_client_connect(const char *hostname, int port, const char *user,
 	struct gfm_connection **gfm_serverp, const char *source_ip)
 {
+	return (gfm_client_connect_with_seteuid(hostname, port, user,
+	    gfm_serverp, source_ip, NULL));
+}
+
+/*
+ * create an uncached connection. if sharedsecret is used
+ * and pwd is passed, seteuid is called in gfarm_auth_shared_key_get()
+ */
+gfarm_error_t
+gfm_client_connect_with_seteuid(const char *hostname, int port,
+	const char *user, struct gfm_connection **gfm_serverp,
+	const char *source_ip, struct passwd *pwd)
+{
 	gfarm_error_t e;
 	struct gfp_cached_connection *cache_entry;
 
@@ -383,7 +398,7 @@ gfm_client_connect(const char *hostname, int port, const char *user,
 			gfarm_error_string(e));
 		return (e);
 	}
-	e = gfm_client_connection0(cache_entry, gfm_serverp, source_ip);
+	e = gfm_client_connection0(cache_entry, gfm_serverp, source_ip, pwd);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001103,
 			"gfm_client_connection0(%s)(%d) failed: %s",

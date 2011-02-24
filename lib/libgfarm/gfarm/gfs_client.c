@@ -418,7 +418,7 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),
-		    user, &gfs_server->auth_method);
+		    user, &gfs_server->auth_method, NULL);
 	if (e == GFARM_ERR_NO_ERROR)
 		*gfs_serverp = gfs_server;
 	else {
@@ -648,7 +648,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 		    gfarm_get_auth_id_type(),
 		    gfs_client_username(state->gfs_server),
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state);
+		    &state->auth_state, NULL);
 		if (state->error == GFARM_ERR_NO_ERROR) {
 			/*
 			 * call auth_request,
@@ -737,7 +737,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		    gfs_server->hostname, &state->peer_addr,
 		    gfarm_get_auth_id_type(), user,
 		    gfs_client_connect_end_auth, state,
-		    &state->auth_state);
+		    &state->auth_state, NULL);
 		if (e == GFARM_ERR_NO_ERROR) {
 			*statepp = state;
 			/*

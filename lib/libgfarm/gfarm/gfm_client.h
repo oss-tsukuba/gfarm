@@ -50,6 +50,9 @@ gfarm_error_t gfm_client_connection_and_process_acquire(const char *, int,
 	const char *, struct gfm_connection **);
 gfarm_error_t gfm_client_connect(const char *, int, const char *,
 	struct gfm_connection **, const char *);
+struct passwd;
+gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
+	struct gfm_connection **, const char *, struct passwd *);
 void gfm_client_connection_free(struct gfm_connection *);
 void gfm_client_terminate(void);
 
