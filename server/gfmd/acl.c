@@ -13,6 +13,9 @@
 #include "user.h"
 #include "group.h"
 
+#define REPLACE_MODE_T 1
+#define CHECK_VALIDITY 1
+
 static gfarm_mode_t
 acl_get_mode(gfarm_acl_entry_t ent)
 {
@@ -33,11 +36,12 @@ acl_get_mode(gfarm_acl_entry_t ent)
 	return (mode);
 }
 
-gfarm_error_t
-acl_convert2_for_setxattr(
+static gfarm_error_t
+acl_convert_for_setxattr_internal(
 	struct inode *inode, gfarm_acl_type_t type,
 	const void *in_value, size_t in_size,
-	void **out_valuep, size_t *out_sizep)
+	void **out_valuep, size_t *out_sizep,
+	int replace_mode_t, int check_validity)
 {
 	gfarm_error_t e;
 	gfarm_acl_t acl;
@@ -57,14 +61,16 @@ acl_convert2_for_setxattr(
 		return (e);
 	}
 
-	/* valid ? */
-	e = gfs_acl_check(acl, NULL, &acl_check_err);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			    "gfs_acl_check() failed: %s",
-			    gfs_acl_error(acl_check_err));
-		gfs_acl_free(acl);
-		return (e);
+	if (check_validity) {
+		e = gfs_acl_check(acl, NULL, &acl_check_err);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+				    "gfs_acl_check() failed by %s: %s",
+				     user_name(inode_get_user(inode)),
+				    gfs_acl_error(acl_check_err));
+			gfs_acl_free(acl);
+			return (e);
+		}
 	}
 
 	/* check whether user/group exists and save standard ACL */
@@ -117,14 +123,16 @@ acl_convert2_for_setxattr(
 	}
 
 	if (type == GFARM_ACL_TYPE_ACCESS) {
-		gfarm_mode_t old_mode;
-
-		/* chmod */
-		old_mode = inode_get_mode(inode);
-		e = inode_set_mode(inode, (mode & 00777) | (old_mode & 07000));
+		gfarm_mode_t old_mode = inode_get_mode(inode);
+		if (replace_mode_t)  /* chmod by setfacl */
+			e = inode_set_mode(
+				inode, (old_mode & 07000) | mode);
+		else  /* inheritance of Default ACL */
+			e = inode_set_mode(
+				inode, (old_mode & 07000) | (old_mode & mode));
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				    "inode_set_mode(): %s",
+				    "inode_set_mode() failed: %s",
 				    gfarm_error_string(e));
 			gfs_acl_free(acl);
 			return (e);
@@ -155,7 +163,7 @@ acl_convert2_for_setxattr(
 }
 
 gfarm_error_t
-acl_convert1_for_setxattr(
+acl_convert_for_setxattr(
 	struct inode *inode, gfarm_acl_type_t type,
 	void **valuep, size_t *sizep)
 {
@@ -163,11 +171,12 @@ acl_convert1_for_setxattr(
 	void *out_value = NULL;
 	size_t out_size;
 
-	e = acl_convert2_for_setxattr(inode, type,
-				      *valuep, *sizep, &out_value, &out_size);
+	e = acl_convert_for_setxattr_internal(
+		inode, type, *valuep, *sizep, &out_value, &out_size,
+		REPLACE_MODE_T, CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "acl_convert2_for_setxattr() failed: %s",
+			    "acl_convert_for_setxattr_internal() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
 	}
@@ -294,12 +303,14 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 	if (*acl_def_p == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
-	e = acl_convert2_for_setxattr(child, GFARM_ACL_TYPE_ACCESS,
-				      *acl_def_p, *acl_def_size_p,
-				      acl_acc_p, acl_acc_size_p);
+	e = acl_convert_for_setxattr_internal(
+		child, GFARM_ACL_TYPE_ACCESS,
+		*acl_def_p, *acl_def_size_p,
+		acl_acc_p, acl_acc_size_p,
+		!REPLACE_MODE_T, !CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "acl_convert2_for_setxattr() failed: %s",
+			    "acl_convert_for_setxattr_internal() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
 	}
