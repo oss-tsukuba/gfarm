@@ -90,11 +90,11 @@ setxattr(int xmlMode, struct inode *inode,
 			acltype = 0;
 		if (acltype == GFARM_ACL_TYPE_ACCESS ||
 		    acltype == GFARM_ACL_TYPE_DEFAULT) {
-			e = acl_convert1_for_setxattr(inode, acltype,
+			e = acl_convert_for_setxattr(inode, acltype,
 						      valuep, &size);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
-					"acl_convert1_for_setxattr(%s): %s",
+					"acl_convert_for_setxattr(%s): %s",
 					attrname, gfarm_error_string(e));
 				return (e);
 			}

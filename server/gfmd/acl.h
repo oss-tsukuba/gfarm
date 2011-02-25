@@ -2,11 +2,8 @@
  * $Id$
  */
 
-gfarm_error_t acl_convert1_for_setxattr(
+gfarm_error_t acl_convert_for_setxattr(
 	struct inode *, gfarm_acl_type_t type, void **, size_t *);
-gfarm_error_t acl_convert2_for_setxattr(
-	struct inode *, gfarm_acl_type_t type,
-	const void *, size_t, void **, size_t *);
 gfarm_error_t acl_convert_for_getxattr(
 	struct inode *, const char *, void **, size_t *);
 
