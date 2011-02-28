@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#ifdef ENABLE_METADATA_REPLICATION
 #include "db_journal.c"
 
 #include "crc32.h"
@@ -21,7 +20,6 @@
 #include "dir.h"
 #include "db_journal_test.h"
 #include "db_journal_apply.h"
-#endif
 
 /* dummy deinitions to link successfully without gfmd.o */
 struct thread_pool *sync_protocol_thread_pool;
