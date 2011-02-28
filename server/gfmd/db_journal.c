@@ -89,6 +89,12 @@ db_seqnum_load_callback(void *closure, struct db_seqnum_arg *a)
 }
 
 static gfarm_error_t
+db_journal_noaction(void)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 db_journal_initialize(int is_master)
 {
 	gfarm_error_t e;
@@ -186,10 +192,12 @@ db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 	db_journal_sync_op = func;
 }
 
-void
+gfarm_error_t
 db_journal_terminate(void)
 {
+	store_ops->terminate();
 	journal_file_close(self_jf);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* PREREQUISITE: giant_lock */
@@ -3584,8 +3592,8 @@ db_journal_seqnum_load(void *closure,
 /**********************************************************/
 
 struct db_ops db_journal_ops = {
-	NULL,
-	NULL,
+	db_journal_noaction,
+	db_journal_terminate,
 
 	db_journal_write_begin,
 	db_journal_write_end,

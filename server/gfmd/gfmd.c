@@ -1197,9 +1197,6 @@ sigs_handler(void *p)
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
-#ifdef ENABLE_METADATA_REPLICATION
-	db_journal_terminate();
-#endif
 
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
