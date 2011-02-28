@@ -14,6 +14,3 @@ void gfarm_metadb_server_set_is_master(struct gfarm_metadb_server *, int);
 int gfarm_metadb_server_is_self(struct gfarm_metadb_server *);
 void gfarm_metadb_server_set_is_self(struct gfarm_metadb_server *, int);
 void gfarm_metadb_server_free(struct gfarm_metadb_server *);
-
-struct gfarm_metadb_server **gfarm_get_metadb_server_list(int *);
-gfarm_error_t gfarm_set_metadb_server_list(struct gfarm_metadb_server **, int);

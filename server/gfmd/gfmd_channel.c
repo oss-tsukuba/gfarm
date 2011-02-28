@@ -27,6 +27,7 @@
 #include "gfm_client.h"
 #include "config.h"
 #include "metadb_server.h"
+#include "filesystem.h"
 
 #include "peer.h"
 #include "subr.h"
@@ -588,7 +589,7 @@ gfmdc_connect(struct mdhost *host)
 
 	for (;;) {
 		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &conn, NULL, pwd);
+		    service_user, &conn, NULL, pwd, 0);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -856,12 +857,14 @@ static void
 gfmdc_sync_init(void)
 {
 	int i, thrpool_size, jobq_len, nsvrs;
+	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server **svrs;
 	struct gfmdc_journal_sync_info *si = &journal_sync_info;
 	struct gfmdc_journal_send_closure *c;
 	static const char *diag = "gfmdc_sync_init";
 
-	svrs = gfarm_get_metadb_server_list(&nsvrs);
+	fs = gfarm_filesystem_get_default();
+	svrs = gfarm_filesystem_get_metadb_server_list(fs, &nsvrs);
 	if (nsvrs <= 1 || !gfarm_get_journal_sync_slave())
 		thrpool_size = 0;
 	else

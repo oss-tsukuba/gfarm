@@ -4,7 +4,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include <gfarm/gfarm.h>
 
@@ -16,8 +15,8 @@ struct gfarm_metadb_server {
 	int flags;
 };
 
-#define GFARM_MDHOST_FLAGS_IS_SELF	0x00000001
-#define GFARM_MDHOST_FLAGS_IS_MASTER	0x00000002
+#define GFARM_METADB_SERVER_FLAG_IS_SELF	0x00000001
+#define GFARM_METADB_SERVER_FLAG_IS_MASTER	0x00000002
 
 
 gfarm_error_t
@@ -68,25 +67,25 @@ set_flag(struct gfarm_metadb_server *m, int flag, int enable)
 int
 gfarm_metadb_server_is_master(struct gfarm_metadb_server *m)
 {
-	return ((m->flags & GFARM_MDHOST_FLAGS_IS_MASTER) != 0);
+	return ((m->flags & GFARM_METADB_SERVER_FLAG_IS_MASTER) != 0);
 }
 
 void
 gfarm_metadb_server_set_is_master(struct gfarm_metadb_server *m, int enable)
 {
-	set_flag(m, GFARM_MDHOST_FLAGS_IS_MASTER, enable);
+	set_flag(m, GFARM_METADB_SERVER_FLAG_IS_MASTER, enable);
 }
 
 int
 gfarm_metadb_server_is_self(struct gfarm_metadb_server *m)
 {
-	return ((m->flags & GFARM_MDHOST_FLAGS_IS_SELF) != 0);
+	return ((m->flags & GFARM_METADB_SERVER_FLAG_IS_SELF) != 0);
 }
 
 void
 gfarm_metadb_server_set_is_self(struct gfarm_metadb_server *m, int enable)
 {
-	set_flag(m, GFARM_MDHOST_FLAGS_IS_SELF, enable);
+	set_flag(m, GFARM_METADB_SERVER_FLAG_IS_SELF, enable);
 }
 
 void
@@ -94,29 +93,3 @@ gfarm_metadb_server_free(struct gfarm_metadb_server *m)
 {
 	free(m->name);
 }
-
-static struct gfarm_metadb_server **metadb_server_list = NULL;
-static int num_metadb_server_list = 0;
-
-struct gfarm_metadb_server**
-gfarm_get_metadb_server_list(int *n)
-{
-	*n = num_metadb_server_list;
-	return (metadb_server_list);
-}
-
-gfarm_error_t
-gfarm_set_metadb_server_list(struct gfarm_metadb_server **metadb_servers,
-	int n)
-{
-	metadb_server_list = malloc(sizeof(void *) * n);
-	if (metadb_server_list == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	memcpy(metadb_server_list, metadb_servers, sizeof(void *) * n);
-	num_metadb_server_list = n;
-	return (GFARM_ERR_NO_ERROR);
-}
-

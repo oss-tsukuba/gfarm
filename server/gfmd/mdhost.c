@@ -24,6 +24,7 @@
 #include "user.h"
 #include "peer.h"
 #include "abstract_host.h"
+#include "filesystem.h"
 #include "metadb_server.h"
 #include "mdhost.h"
 #include "db_journal.h"
@@ -355,7 +356,8 @@ mdhost_set_self_as_master(void)
 			mdhost_disconnect(m, NULL);
 		gfarm_metadb_server_set_is_master(m->ms, m == s);
 	}
-	localhost_is_readonly = 0;
+	/* should be writable in the future */
+	/* localhost_is_readonly = 0; */
 }
 
 void
@@ -364,11 +366,13 @@ mdhost_init()
 	int i, n;
 	struct gfarm_metadb_server **msl;
 	struct mdhost *m, *m0, *self = NULL;
+	struct gfarm_filesystem *fs;
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	m = NULL;
 #endif
-	msl = gfarm_get_metadb_server_list(&n);
+	fs = gfarm_filesystem_get_default();
+	msl = gfarm_filesystem_get_metadb_server_list(fs, &n);
 	if (msl == NULL)
 		return;
 	assert(n > 0);
@@ -383,7 +387,14 @@ mdhost_init()
 		if (strcmp(mdhost_get_name(m), gfarm_metadb_server_name) == 0) {
 			self = m;
 			gfarm_metadb_server_set_is_self(m->ms, 1);
+#ifndef ENABLE_METADATA_REPLICATION
+			gfarm_metadb_server_set_is_master(m->ms, 1);
+#endif
 		}
+#ifndef ENABLE_METADATA_REPLICATION
+		else
+			gfarm_metadb_server_set_is_master(m->ms, 0);
+#endif
 	}
 	if (self == NULL) {
 		gflog_fatal(GFARM_MSG_UNFIXED,

@@ -40,6 +40,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "metadb_server.h"
+#include "filesystem.h"
 
 #include "hash.h"
 #include "lru_cache.h"
@@ -1860,6 +1861,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	const char *listname = *op;
 	struct gfarm_metadb_server *m;
 	int n = 0;
+	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
 	for (;;) {
@@ -1912,7 +1914,14 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	gfarm_metadb_server_set_is_master(ms[0], 1);
-	if ((e = gfarm_set_metadb_server_list(ms, n)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		goto error;
+	}
+	fs = gfarm_filesystem_get_default();
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, n))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
 		goto error;
@@ -2195,6 +2204,42 @@ gfarm_config_set_default_ports(void)
 	}
 }
 
+static void
+gfarm_config_set_default_metadb_server(void)
+{
+	gfarm_error_t e;
+	int n;
+	struct gfarm_filesystem *fs;
+	struct gfarm_metadb_server **msl, *m;
+	struct gfarm_metadb_server *ms[1];
+
+	/* gfarm_metadb_server_name is checked in
+	 * gfarm_config_set_default_ports */
+	assert(gfarm_metadb_server_name != NULL);
+
+	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return;
+	}
+	fs = gfarm_filesystem_get_default();
+	if ((msl = gfarm_filesystem_get_metadb_server_list(fs, &n)) != NULL)
+		return;
+	if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return;
+	}
+	ms[0] = m;
+	gfarm_metadb_server_set_name(m, gfarm_metadb_server_name);
+	gfarm_metadb_server_set_port(m, gfarm_metadb_server_port);
+	gfarm_metadb_server_set_is_master(m, 1);
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+}
+
 void
 gfarm_config_set_default_misc(void)
 {
@@ -2266,6 +2311,8 @@ gfarm_config_set_default_misc(void)
 	if (journal_sync_slave_timeout == MISC_DEFAULT)
 		journal_sync_slave_timeout =
 		    GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT;
+
+	gfarm_config_set_default_metadb_server();
 }
 
 void
