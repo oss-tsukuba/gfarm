@@ -67,11 +67,14 @@ struct db_journal_recv_info {
 static GFARM_STAILQ_HEAD(journal_recvq, db_journal_recv_info) journal_recvq
 	= GFARM_STAILQ_HEAD_INITIALIZER(journal_recvq);
 static int journal_recvq_nelems = 0;
+static int journal_recvq_cancel;
 static pthread_mutex_t journal_recvq_mutex;
 static pthread_cond_t journal_recvq_nonempty_cond;
+static pthread_cond_t journal_recvq_cancel_cond;
 
 #define RECVQ_MUTEX_DIAG		"journal_recvq_mutex"
 #define RECVQ_NONEMPTY_COND_DIAG	"journal_recvq_nonempty_cond"
+#define RECVQ_CANCEL_COND_DIAG		"journal_recvq_cancel_cond"
 
 static gfarm_uint64_t	journal_seqnum = JOURNAL_SEQNUM_NOT_SET;
 static gfarm_uint64_t	journal_seqnum_pre = JOURNAL_SEQNUM_NOT_SET;
@@ -163,6 +166,8 @@ db_journal_initialize(int is_master)
 	gfarm_mutex_init(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
+	gfarm_cond_init(&journal_recvq_cancel_cond, diag,
+	    RECVQ_CANCEL_COND_DIAG);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -192,10 +197,16 @@ db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 	db_journal_sync_op = func;
 }
 
+#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
+
 gfarm_error_t
 db_journal_terminate(void)
 {
+	static const char *diag = "db_journal_terminate";
+
+	gfarm_mutex_lock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
 	store_ops->terminate();
+	gfarm_mutex_unlock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
 	journal_file_close(self_jf);
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -3056,8 +3067,6 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 	return (e);
 }
 
-#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
-
 static gfarm_error_t
 db_journal_store_op(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *obj, void *closure, size_t length,
@@ -3185,6 +3194,8 @@ db_journal_store_thread(void *arg)
 			db_journal_fail_store_op();
 			break;
 		}
+		if (journal_file_is_closed(self_jf))
+			break;
 	}
 	return (NULL);
 }
@@ -3208,6 +3219,8 @@ db_journal_apply_thread(void *arg)
 			    "failed to read journal or apply to memory/db : %s",
 			    gfarm_error_string(e)); /* exit */
 		}
+		if (journal_file_is_closed(self_jf))
+			break;
 	}
 	return (NULL);
 }
@@ -3405,10 +3418,17 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	for (;;) {
 		while ((ri = GFARM_STAILQ_LAST(&journal_recvq,
-		    db_journal_recv_info, next)) == ri_last)
+		    db_journal_recv_info, next)) == ri_last &&
+		    journal_recvq_cancel == 0)
 			gfarm_cond_wait(&journal_recvq_nonempty_cond,
 			    &journal_recvq_mutex, diag,
 			    RECVQ_NONEMPTY_COND_DIAG);
+		if (journal_recvq_cancel && ri == ri_last) {
+			*rip = NULL;
+			gfarm_mutex_unlock(&journal_recvq_mutex, diag,
+			    RECVQ_MUTEX_DIAG);
+			return (GFARM_ERR_NO_ERROR);
+		}
 		if (journal_recvq_nelems > JOURNAL_RECVQ_NELEMS_MAX) {
 			gflog_fatal(GFARM_MSG_UNFIXED,
 			    "journal recieve queue overflow on memory");
@@ -3432,15 +3452,43 @@ found:
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+db_journal_cancel_recvq()
+{
+	static const char *diag = "db_journal_recvq_cancel";
+
+	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	journal_recvq_cancel = 1;
+	gfarm_cond_signal(&journal_recvq_nonempty_cond, diag,
+	    RECVQ_NONEMPTY_COND_DIAG);
+	while (journal_recvq_cancel)
+		gfarm_cond_wait(&journal_recvq_cancel_cond,
+		    &journal_recvq_mutex, diag, RECVQ_CANCEL_COND_DIAG);
+	gfarm_mutex_unlock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+}
+
 static gfarm_error_t
-db_journal_recvq_proc(void)
+db_journal_recvq_proc(int *canceledp)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t last_seqnum;
 	struct db_journal_recv_info *ri;
+	static const char *diag = "db_journal_recvq_proc";
 
 	if ((e = db_journal_recvq_delete(&ri)) != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (ri == NULL) {
+		/* canceled */
+		gfarm_mutex_lock(&journal_recvq_mutex, diag,
+		    RECVQ_MUTEX_DIAG);
+		journal_recvq_cancel = 0;
+		gfarm_mutex_unlock(&journal_recvq_mutex, diag,
+		    RECVQ_MUTEX_DIAG);
+		gfarm_cond_signal(&journal_recvq_cancel_cond, diag,
+		    RECVQ_NONEMPTY_COND_DIAG);
+		*canceledp = 1;
+		return (GFARM_ERR_NO_ERROR);
+	}
 	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,
 	    &last_seqnum, &journal_slave_transaction_nesting))
 	    == GFARM_ERR_NO_ERROR)
@@ -3456,11 +3504,15 @@ void *
 db_journal_recvq_thread(void *arg)
 {
 	gfarm_error_t e;
+	int canceled = 0;
 
 	for (;;) {
-		if ((e = db_journal_recvq_proc()) != GFARM_ERR_NO_ERROR)
+		if ((e = db_journal_recvq_proc(&canceled))
+		    != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_UNFIXED,
 			    "%s", gfarm_error_string(e)); /* exit */
+		if (canceled)
+			break;
 	}
 	return (NULL);
 }

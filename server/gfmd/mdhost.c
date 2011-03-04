@@ -356,8 +356,7 @@ mdhost_set_self_as_master(void)
 			mdhost_disconnect(m, NULL);
 		gfarm_metadb_server_set_is_master(m->ms, m == s);
 	}
-	/* should be writable in the future */
-	/* localhost_is_readonly = 0; */
+	localhost_is_readonly = 0;
 }
 
 void
@@ -408,8 +407,5 @@ mdhost_init()
 		localhost_is_readonly = 1;
 #ifdef ENABLE_METADATA_REPLICATION
 	db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
-	gflog_info(GFARM_MSG_UNFIXED,
-	    "metadata replication %s mode",
-	    mdhost_is_master(self) ? "master" : "slave");
 #endif
 }

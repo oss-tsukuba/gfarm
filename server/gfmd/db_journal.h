@@ -24,6 +24,7 @@ gfarm_error_t db_journal_fetch(struct journal_file_reader *, gfarm_uint64_t,
 	const char *);
 gfarm_error_t db_journal_recvq_enter(gfarm_uint64_t, gfarm_uint64_t, int,
 	unsigned char *, const char *);
+void db_journal_cancel_recvq();
 void db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t));
 gfarm_error_t db_journal_file_writer_sync(void);
 

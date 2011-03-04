@@ -69,6 +69,12 @@ gfarm_filesystem_add(struct gfarm_filesystem **fsp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+int
+gfarm_filesystem_is_initialized(void)
+{
+	return (filesystems.next != &filesystems);
+}
+
 gfarm_error_t
 gfarm_filesystem_init(void)
 {
@@ -76,7 +82,7 @@ gfarm_filesystem_init(void)
 	gfarm_error_t e;
 	struct gfarm_filesystem *fs;
 
-	if (filesystems.next != &filesystems)
+	if (gfarm_filesystem_is_initialized())
 		return (GFARM_ERR_NO_ERROR);
 	if ((e = gfarm_filesystem_add(&fs)) != GFARM_ERR_NO_ERROR)
 		return (e);

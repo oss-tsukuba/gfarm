@@ -1165,18 +1165,24 @@ journal_file_reader_reopen(struct journal_file *jf,
 	int fd;
 	off_t rpos;
 	int wrap;
+	static const char *diag = "journal_file_reader_reopen";
 
 	assert(*readerp == NULL || (*readerp)->xdr == NULL);
 
 	if ((fd = open(jf->path, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
+
+	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	if ((e = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
 	    NULL, NULL, &wrap)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (*readerp)
-		return (journal_file_reader_init(jf, fd, rpos, 0, wrap,
-		    *readerp));
-	return (journal_file_reader_new(jf, fd, rpos, 0, wrap, readerp));
+		;
+	else if (*readerp)
+		e = journal_file_reader_init(jf, fd, rpos, 0, wrap,
+		    *readerp);
+	else
+		e = journal_file_reader_new(jf, fd, rpos, 0, wrap, readerp);
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	return (e);
 }
 
 void
@@ -1214,9 +1220,15 @@ journal_file_close(struct journal_file *jf)
 	if (jf->writer.xdr)
 		gfp_xdr_free(jf->writer.xdr);
 	jf->writer.xdr = NULL;
-	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	free(jf->path);
 	jf->path = NULL;
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
+}
+
+int
+journal_file_is_closed(struct journal_file *jf)
+{
+	return (jf->path == NULL);
 }
 
 gfarm_error_t
@@ -1463,6 +1475,10 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 
 	*eofp = 0;
 	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	if (journal_file_is_closed(jf)) {
+		e = GFARM_ERR_NO_ERROR;
+		goto unlock;
+	}
 	if (xdr == NULL) {
 		e = GFARM_ERR_INPUT_OUTPUT; /* shutting down */
 		goto unlock;

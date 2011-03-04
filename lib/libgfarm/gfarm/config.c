@@ -728,7 +728,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
 #define GFARM_JOURNAL_SYNC_FILE_DEFAULT		1
-#define GFARM_JOURNAL_SYNC_SLAVE_DEFAULT	0
+#define GFARM_JOURNAL_SYNC_SLAVE_DEFAULT	1
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
@@ -1864,6 +1864,8 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
+	if (gfarm_filesystem_is_initialized())
+		return (GFARM_ERR_NO_ERROR);
 	for (;;) {
 		if ((e = gfarm_strtoken(&p, &host_and_port))
 		    != GFARM_ERR_NO_ERROR) {

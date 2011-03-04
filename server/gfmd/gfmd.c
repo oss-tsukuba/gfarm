@@ -1012,9 +1012,9 @@ start_gfmdc_threads(void)
 			    gfarm_error_string(e));
 	} else if ((e = create_detached_thread(gfmdc_connect_thread, NULL))
 	    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "create_detached_thread(gfmdc_slave_thread): %s",
-			    gfarm_error_string(e));
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(gfmdc_slave_thread): %s",
+		    gfarm_error_string(e));
 }
 
 static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1026,13 +1026,20 @@ static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
 static void
 transform_to_master(void)
 {
+	struct mdhost *master;
 	static const char *diag = "transform_to_master";
 
-	if (mdhost_self_is_master())
+	if (mdhost_self_is_master()) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "cannot transform to the master gfmd "
+		    "because this is already the master gfmd");
 		return;
-
+	}
+	master = mdhost_lookup_master();
+	if (mdhost_is_up(master))
+		mdhost_disconnect(master, NULL);
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "start transforming to master gfmd ...");
+	    "start transforming to the master gfmd ...");
 	giant_lock();
 
 	mdhost_set_self_as_master();
@@ -1040,11 +1047,14 @@ transform_to_master(void)
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
 
 	db_journal_cancel_read();
+	db_journal_cancel_recvq();
+
 	start_db_journal_threads();
+	start_gfmdc_threads();
 
 	giant_unlock();
 	gflog_info(GFARM_MSG_UNFIXED,
-	    "end transforming to master gfmd");
+	    "end transforming to the master gfmd");
 }
 
 static int
@@ -1460,6 +1470,9 @@ main(int argc, char **argv)
 		inode_check_and_repair();
 	}
 #ifdef ENABLE_METADATA_REPLICATION
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "metadata replication %s mode",
+	    mdhost_self_is_master() ? "master" : "slave");
 	start_gfmdc_threads();
 	if (sock == -1)
 		sock = wait_transform_to_master();

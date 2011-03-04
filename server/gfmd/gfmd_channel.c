@@ -656,9 +656,8 @@ gfmdc_journal_asyncsend(struct mdhost *host, void *closure)
 	gfarm_uint64_t to_sn;
 	struct gfmdc_journal_send_closure *c;
 
-	if (mdhost_is_master(host))
-		return (1);
-	if (!mdhost_is_recieved_seqnum(host))
+	if (mdhost_is_master(host) || !mdhost_is_recieved_seqnum(host) ||
+	    mdhost_get_journal_file_reader(host) == NULL)
 		return (1);
 	GFARM_MALLOC(c);
 	if (c == NULL) {
@@ -671,6 +670,8 @@ gfmdc_journal_asyncsend(struct mdhost *host, void *closure)
 	if ((e = gfmdc_client_journal_asyncsend(&to_sn, c))
 	    != GFARM_ERR_NO_ERROR)
 		mdhost_disconnect(host, mdhost_get_peer(host));
+	else if (to_sn == 0)
+		free(c);
 	return (1);
 }
 
@@ -810,7 +811,8 @@ gfmdc_journal_sync_mdhost_add_job(struct mdhost *host, void *closure)
 	struct gfmdc_journal_send_closure *c;
 	const char *diag = "gfmdc_journal_sync_mdhost_add_job";
 
-	if (mdhost_is_self(host) || !mdhost_is_up(host))
+	if (mdhost_is_self(host) || !mdhost_is_up(host) ||
+	    mdhost_get_journal_file_reader(host) == NULL)
 		return (1);
 	c = &journal_sync_info.closures[journal_sync_info.slave_index++];
 	assert(c->data == NULL);
