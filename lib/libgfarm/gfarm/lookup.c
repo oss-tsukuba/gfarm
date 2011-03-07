@@ -805,7 +805,10 @@ gfm_close_fd(struct gfm_connection *conn, int current, int saved)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close request: %s", gfarm_error_string(e));
 		}
-	} else if ((e = gfm_client_compound_end_request(conn))
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		return;
+	if ((e = gfm_client_compound_end_request(conn))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "compound_end request: %s", gfarm_error_string(e));
@@ -827,7 +830,10 @@ gfm_close_fd(struct gfm_connection *conn, int current, int saved)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close result: %s", gfarm_error_string(e));
 		}
-	} else if ((e = gfm_client_compound_end_result(conn))
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		return;
+	if ((e = gfm_client_compound_end_result(conn))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "compound_end result: %s", gfarm_error_string(e));
