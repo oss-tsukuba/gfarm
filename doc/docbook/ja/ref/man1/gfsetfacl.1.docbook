@@ -53,6 +53,23 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
+算します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-t</option></term>
 <listitem>
 <para>テストモードです．ファイルやディレクトリの ACL を変更する代わりに，

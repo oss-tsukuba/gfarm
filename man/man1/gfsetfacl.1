@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSETFACL" "1" "04 February 2011" "Gfarm" ""
+.TH "GFSETFACL" "1" "08 March 2011" "Gfarm" ""
 
 .SH NAME
 gfsetfacl \- set Gfarm file access control lists
@@ -23,6 +23,15 @@ owner, group and others are not removed.)
 .TP
 \fB-k\fR
 removes the only Default ACL.
+.TP
+\fB-n\fR
+do not recalculate the mask entry of the ACL. The default
+behavior of gfsetfacl is to recalculate the mask entry, if a mask
+entry is not explicitly given.
+.TP
+\fB-r\fR
+always recalculate the mask entry of the ACL. (Even if a mask
+entry is explicitly given.) (See the -n option.)
 .TP
 \fB-t\fR
 is test mode. Instead of changing the ACL of any files or
