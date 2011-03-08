@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSETFACL" "1" "04 February 2011" "Gfarm" ""
+.TH "GFSETFACL" "1" "08 March 2011" "Gfarm" ""
 
 .SH NAME
 gfsetfacl \- Gfarm ファイルのアクセス制御リストを設定する
@@ -23,6 +23,15 @@ gfsetfacl \- Gfarm ファイルのアクセス制御リストを設定する
 .TP
 \fB-k\fR
 デフォルト ACL だけを削除します．
+.TP
+\fB-n\fR
+ACL マスクエントリを再計算しません．gfsetfacl コマンドデフォルト
+の挙動は，マスクエントリが指定されなかった場合だけマスクエントリを再計
+算します．
+.TP
+\fB-r\fR
+常に ACL マスクエントリを再計算します．マスクエントリを指定したと
+しても再計算します．(-n オプションも参照してください．)
 .TP
 \fB-t\fR
 テストモードです．ファイルやディレクトリの ACL を変更する代わりに，

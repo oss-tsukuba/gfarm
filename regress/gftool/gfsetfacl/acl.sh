@@ -56,7 +56,7 @@ check_perm()
 
     reg_entry=`grep "^$tq_p" $file_p`
     if [ $? -ne 0 ]; then
-        echo fail: $entry_p does not have ${tq_p}${perm_p}
+        echo "fail($method_p, $tq_p): $entry_p does not have $tq_p"
         exit $exit_fail
     fi
     perm_new=""
@@ -124,7 +124,7 @@ test_mM_2()
 
     check_perm $local_acl $entry2 $tq2 $perm2 $option2
 
-    if gfsetfacl -M $local_acl_orig $entry2 ;then
+    if gfsetfacl -b -M $local_acl_orig $entry2 ;then
         :
     else
         echo fail: gfsetfacl -M $local_acl_orig $entry2
@@ -165,8 +165,8 @@ test_mM() {
     test_mM_0 "user::" $entry
     test_mM_0 "group::" $entry
     test_mM_0 "other::" $entry
-    test_mM_0 "user:${testuser}:" $entry
-    test_mM_0 "group:${tsetgroup}:" $entry
+    test_mM_0 "user:${tmpuser}:" $entry
+    test_mM_0 "group:${tmpgroup}:" $entry
     test_mM_0 "mask::" $entry
 }
 
@@ -241,6 +241,98 @@ test_bk() {
     check_perm $local_acl $entry "other::" rwx $method
 }
 
+test_mask() {
+    entry=$1
+
+    gfsetfacl -m "m::---" $entry
+    if gfsetfacl -m "g::rwx" $entry; then
+        :
+    else
+        echo fail: gfsetfacl
+        exit $exit_fail
+    fi
+    if gfgetfacl $entry > $local_acl; then
+        :
+    else
+        echo fail: gfgetfacl $entry
+        exit $exit_fail
+    fi
+    check_perm $local_acl $entry "mask::" rwx 'gfsetfacl [1]'
+    gfsetfacl -b $entry
+
+    gfsetfacl -m "m::rwx" $entry
+    if gfsetfacl -m "g::rwx,m::---" $entry; then
+        :
+    else
+        echo fail: gfsetfacl
+        exit $exit_fail
+    fi
+    if gfgetfacl $entry > $local_acl; then
+        :
+    else
+        echo fail: gfgetfacl $entry
+        exit $exit_fail
+    fi
+    check_perm $local_acl $entry "mask::" --- 'gfsetfacl [2]'
+    gfsetfacl -b $entry
+
+    gfsetfacl -m "g::r--" $entry
+    if gfsetfacl -m "u:${tmpuser}:--x" $entry; then
+        :
+    else
+        echo fail: gfsetfacl
+        exit $exit_fail
+    fi
+    if gfgetfacl $entry > $local_acl; then
+        :
+    else
+        echo fail: gfgetfacl $entry
+        exit $exit_fail
+    fi
+    check_perm $local_acl $entry "mask::" r-x 'gfsetfacl [3]'
+    gfsetfacl -b $entry
+}
+
+test_n() {
+    entry=$1
+
+    gfsetfacl -m "m::---" $entry
+    if gfsetfacl -n -m "g::rwx" $entry; then
+        :
+    else
+        echo fail: gfsetfacl with -n option
+        exit $exit_fail
+    fi
+    if gfgetfacl $entry > $local_acl; then
+        :
+    else
+        echo fail: gfgetfacl $entry
+        exit $exit_fail
+    fi
+    check_perm $local_acl $entry "mask::" --- 'gfsetfacl -n'
+    gfsetfacl -b $entry
+}
+
+test_r() {
+    entry=$1
+
+    gfsetfacl -m "m::---" $entry
+    if gfsetfacl -r -m "g::rwx" $entry; then
+        :
+    else
+        echo fail: gfsetfacl with -r option
+        exit $exit_fail
+    fi
+    if gfgetfacl $entry > $local_acl; then
+        :
+    else
+        echo fail: gfgetfacl $entry
+        exit $exit_fail
+    fi
+    check_perm $local_acl $entry "mask::" rwx 'gfsetfacl -r'
+    gfsetfacl -b $entry
+}
+
 test_1() {
     entry=$1
 
@@ -249,11 +341,20 @@ test_1() {
     # -m or -M
     test_mM $entry
 
+    # -k
+    test_bk $entry -k
+
     # -b
     test_bk $entry -b
 
-    # -k
-    test_bk $entry -k
+    # default : recalculate a mask entry if the mask entry is not given
+    test_mask $entry
+
+    # -n : do not recalculate a mask entry
+    test_n $entry
+
+    # -r : force to recalculate a mask entry
+    test_r $entry
 }
 
 test_1 $gf_dir

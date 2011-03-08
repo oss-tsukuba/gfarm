@@ -17,7 +17,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		"Usage: %s [-bkt] [-m acl_spec] [-M acl_file] path...\n",
+		"Usage: %s [-bknrt] [-m acl_spec] [-M acl_file] path...\n",
 		program_name);
 	exit(1);
 }
@@ -107,7 +107,7 @@ find_acl_entry(const gfarm_acl_t acl, gfarm_acl_tag_t tag, const char *qual,
 		e = gfs_acl_get_entry(acl, GFARM_ACL_NEXT_ENTRY, &ent);
 	}
 	*entry_p = NULL;
-	return (e); /* not found or error */
+	return (e); /* GFARM_ERR_NO_SUCH_OBJECT or other errors */
 }
 
 static gfarm_error_t
@@ -158,13 +158,64 @@ remove_extended_acl(gfarm_acl_t acl)
 }
 
 static gfarm_error_t
+copy_permset_from_entry(
+	gfarm_acl_t *acl_to_p, gfarm_acl_tag_t tag_to, char *qual_to,
+	gfarm_acl_entry_t ent_from, int replace)
+{
+	gfarm_error_t e;
+	gfarm_acl_entry_t ent_to;
+	char *qual_from;
+	gfarm_acl_permset_t pset_from;
+
+	e = find_acl_entry(*acl_to_p, tag_to, qual_to, &ent_to);
+	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (ent_to == NULL) {  /* e == GFARM_ERR_NO_SUCH_OBJECT */
+		e = gfs_acl_create_entry(acl_to_p, &ent_to);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+		gfs_acl_set_tag_type(ent_to, tag_to);
+		gfs_acl_get_qualifier(ent_from, &qual_from);
+		if (qual_from != NULL) {
+			char *qual_tmp = strdup(qual_from);
+			if (qual_tmp == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+			gfs_acl_set_qualifier(ent_to, qual_tmp);
+		} else
+			gfs_acl_set_qualifier(ent_to, NULL);
+	} else if (!replace)
+		return (GFARM_ERR_ALREADY_EXISTS);
+
+	gfs_acl_get_permset(ent_from, &pset_from);
+	gfs_acl_set_permset(ent_to, pset_from);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+copy_permset(
+	gfarm_acl_t *acl_to_p, gfarm_acl_tag_t tag_to, char *qual_to,
+	gfarm_acl_t acl_from, gfarm_acl_tag_t tag_from, char *qual_from,
+	int replace)
+{
+	gfarm_error_t e;
+	gfarm_acl_entry_t ent_from;
+
+	e = find_acl_entry(acl_from, tag_from, qual_from, &ent_from);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (copy_permset_from_entry(
+			acl_to_p, tag_to, qual_to, ent_from, replace));
+}
+
+static gfarm_error_t
 merge_acl(gfarm_acl_t *acl_to_p, const gfarm_acl_t acl_from)
 {
 	gfarm_error_t e;
-	gfarm_acl_entry_t ent_from, ent_to;
+	gfarm_acl_entry_t ent_from;
 	gfarm_acl_tag_t tag;
 	char *qual_from;
-	gfarm_acl_permset_t pset_from;
 
 	if (acl_from == NULL)
 		return (GFARM_ERR_NO_ERROR); /* do nothing */
@@ -175,26 +226,10 @@ merge_acl(gfarm_acl_t *acl_to_p, const gfarm_acl_t acl_from)
 	while (e == GFARM_ERR_NO_ERROR) {
 		gfs_acl_get_tag_type(ent_from, &tag);
 		gfs_acl_get_qualifier(ent_from, &qual_from);
-		e = find_acl_entry(*acl_to_p, tag, qual_from, &ent_to);
-		if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR)
+		e = copy_permset_from_entry(
+			acl_to_p, tag, qual_from, ent_from, 1);
+		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
-		if (ent_to == NULL) {
-			e = gfs_acl_create_entry(acl_to_p, &ent_to);
-			if (e != GFARM_ERR_NO_ERROR)
-				return (e);
-			gfs_acl_set_tag_type(ent_to, tag);
-			if (qual_from != NULL) {
-				char *qual_to = strdup(qual_from);
-				if (qual_to == NULL)
-					return (GFARM_ERR_NO_MEMORY);
-				gfs_acl_set_qualifier(ent_to, qual_to);
-			} else
-				gfs_acl_set_qualifier(ent_to, NULL);
-		}
-		/* ent_to != NULL */
-		gfs_acl_get_permset(ent_from, &pset_from);
-		gfs_acl_set_permset(ent_to, pset_from);
-
 		e = gfs_acl_get_entry(acl_from, GFARM_ACL_NEXT_ENTRY,
 				      &ent_from);
 	}
@@ -207,35 +242,10 @@ static gfarm_error_t
 set_missing(gfarm_acl_t *acl_def_p, const gfarm_acl_t acl_acc,
 	    gfarm_acl_tag_t tag)
 {
-	gfarm_error_t e;
-	gfarm_acl_entry_t ent_def, ent_acc;
-	gfarm_acl_tag_t tag_acc;
-	gfarm_acl_permset_t pset_acc;
-	char *qual_acc;
-
-	e = find_acl_entry(*acl_def_p, tag, NULL, &ent_def);
-	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (ent_def == NULL) {
-		e = find_acl_entry(acl_acc, tag, NULL, &ent_acc);
-		if (e != GFARM_ERR_NO_ERROR) /* don't fail */
-			return (e);
-		e = gfs_acl_create_entry(acl_def_p, &ent_def);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		gfs_acl_get_tag_type(ent_acc, &tag_acc);
-		gfs_acl_set_tag_type(ent_def, tag_acc);
-		gfs_acl_get_qualifier(ent_acc, &qual_acc);
-		if (qual_acc != NULL) {
-			char *qual_def = strdup(qual_acc);
-			if (qual_def == NULL)
-				return (GFARM_ERR_NO_MEMORY);
-			gfs_acl_set_qualifier(ent_def, qual_def);
-		} else
-			gfs_acl_set_qualifier(ent_def, NULL);
-		gfs_acl_get_permset(ent_acc, &pset_acc);
-		gfs_acl_set_permset(ent_def, pset_acc);
-	}
+	gfarm_error_t e = copy_permset(
+		acl_def_p, tag, NULL, acl_acc, tag, NULL, 0);
+	if (e == GFARM_ERR_ALREADY_EXISTS)
+		e = GFARM_ERR_NO_ERROR;
 	return (e);
 }
 
@@ -255,7 +265,7 @@ fill_missing_acl_default(gfarm_acl_t *acl_def_p, const gfarm_acl_t acl_acc)
 }
 
 static int
-have_mask(gfarm_acl_t acl)
+have_acl_mask(gfarm_acl_t acl)
 {
 	gfarm_error_t e;
 	gfarm_acl_entry_t ent;
@@ -270,18 +280,62 @@ have_mask(gfarm_acl_t acl)
 }
 
 static gfarm_error_t
+merge_acl_buf(gfarm_acl_t *acl_acc_p, gfarm_acl_t *acl_def_p,
+	      const char *acl_buf,
+	      int *modified_acc_p, int *give_mask_acc_p,
+	      int *modified_def_p, int *give_mask_def_p,
+	      int is_test, const char *path, const char *msg)
+{
+	gfarm_error_t e;
+	gfarm_acl_t acl_acc2 = NULL, acl_def2 = NULL;
+
+	e = gfs_acl_from_text_with_default(acl_buf,
+					   &acl_acc2, &acl_def2);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (acl_acc2 != NULL) {
+		e = merge_acl(acl_acc_p, acl_acc2);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfs_acl_free(acl_acc2);
+			gfs_acl_free(acl_def2);
+			return (e);
+		}
+		*modified_acc_p = 1;
+		if (*give_mask_acc_p == 0)
+			*give_mask_acc_p = have_acl_mask(acl_acc2);
+	}
+	if (acl_def2 != NULL) {
+		e = merge_acl(acl_def_p, acl_def2);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfs_acl_free(acl_acc2);
+			gfs_acl_free(acl_def2);
+			return (e);
+		}
+		*modified_def_p = 1;
+		if (*give_mask_def_p == 0)
+			*give_mask_def_p = have_acl_mask(acl_def2);
+	}
+	if (is_test)
+		print_acl(msg, path, acl_acc2, acl_def2);
+	gfs_acl_free(acl_acc2);
+	gfs_acl_free(acl_def2);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 acl_set(const char *path,
 	int remove_acl_acccess, int remove_acl_default,
-	const char *acl_file_buf, const char *acl_spec, int is_test)
+	const char *acl_file_buf, const char *acl_spec_buf,
+	int is_test, int recalc_mask)
 {
 	gfarm_error_t e;
 	struct gfs_stat sb;
 	gfarm_acl_t acl_acc, acl_def;
 	gfarm_acl_t acl_acc_orig, acl_def_orig;
-#if 0
-	int have_mask_acc, have_mask_def;
-#endif
+	int modified_acc = 0, modified_def = 0;
 	int is_not_equiv;
+	int give_mask_acc = 0, give_mask_def = 0;
 	int acl_check_err;
 
 	e = gfs_stat_cached(path, &sb);
@@ -309,7 +363,7 @@ acl_set(const char *path,
 		}
 	} else
 		acl_def = NULL;
-	/* acl_acc != NULL / acl_def != NULL or NULL */
+	/* acl_acc != NULL && (acl_def != NULL || acl_def == NULL) */
 
 	/* save original ACL */
 	e = gfs_acl_dup(&acl_acc_orig, acl_acc);
@@ -330,8 +384,8 @@ acl_set(const char *path,
 		}
 	} else
 		acl_def_orig = NULL;
-	/* prepared: acl_acc, acl_def, acl_acc_orig, acl_def_orig */
 
+	/* remove ACL entries */
 	if (remove_acl_acccess) {
 		e = remove_extended_acl(acl_acc);
 		if (e != GFARM_ERR_NO_ERROR)
@@ -343,98 +397,75 @@ acl_set(const char *path,
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
-#if 0
-	/* Does gfarm_acl_t have a MASK entry ? */
-	have_mask_acc = have_mask(acl_acc);
-	if (acl_def != NULL)
-		have_mask_def = have_mask(acl_def);
-	else
-		have_mask_def = 0;
-#endif
 
+	/* set/replace ACL entries from file */
 	if (acl_file_buf) {
-		gfarm_acl_t acl_acc2 = NULL, acl_def2 = NULL;
-		e = gfs_acl_from_text_with_default(acl_file_buf,
-						   &acl_acc2, &acl_def2);
+		e = merge_acl_buf(&acl_acc, &acl_def, acl_file_buf,
+				  &modified_acc, &give_mask_acc,
+				  &modified_def, &give_mask_def,
+				  is_test, path, "--- file input ---");
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
-		if (acl_acc2 != NULL) {
-			e = merge_acl(&acl_acc, acl_acc2);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gfs_acl_free(acl_acc2);
-				gfs_acl_free(acl_def2);
-				goto end;
-			}
-		}
-		if (acl_def2 != NULL) {
-			e = merge_acl(&acl_def, acl_def2);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gfs_acl_free(acl_acc2);
-				gfs_acl_free(acl_def2);
-				goto end;
-			}
-		}
-		if (is_test)
-			print_acl("--- file input ---",
-				  path, acl_acc2, acl_def2);
-
-		gfs_acl_free(acl_acc2);
-		gfs_acl_free(acl_def2);
 	}
-
-	if (acl_spec) {
-		gfarm_acl_t acl_acc2 = NULL, acl_def2 = NULL;
-		e = gfs_acl_from_text_with_default(acl_spec,
-						   &acl_acc2, &acl_def2);
+	/* set/replace ACL entries from command line */
+	if (acl_spec_buf) {
+		e = merge_acl_buf(&acl_acc, &acl_def, acl_spec_buf,
+				  &modified_acc, &give_mask_acc,
+				  &modified_def, &give_mask_def,
+				  is_test, path, "--- command line input ---");
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
-		if (acl_acc2 != NULL) {
-			e = merge_acl(&acl_acc, acl_acc2);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gfs_acl_free(acl_acc2);
-				gfs_acl_free(acl_def2);
-				goto end;
-			}
-		}
-		if (acl_def2 != NULL) {
-			e = merge_acl(&acl_def, acl_def2);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gfs_acl_free(acl_acc2);
-				gfs_acl_free(acl_def2);
-				goto end;
-			}
-		}
-		if (is_test)
-			print_acl("--- command line input ---",
-				  path, acl_acc2, acl_def2);
-
-		gfs_acl_free(acl_acc2);
-		gfs_acl_free(acl_def2);
 	}
 
+	/* add missing ACL entries for default ACL */
 	if (acl_def != NULL && gfs_acl_entries(acl_def) > 0) {
 		e = fill_missing_acl_default(&acl_def, acl_acc);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
 
-	/* calculate MASK if a MASK entry does not exist */
-	e = gfs_acl_equiv_mode(acl_acc, NULL, &is_not_equiv);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto end;
-	if (is_not_equiv && !have_mask(acl_acc)) {
-		e = gfs_acl_calc_mask(&acl_acc);
+	/* recalc_mask: need to recalcurate mask entry ? */
+	/*  [0] default : set a mask entry if the entry does not exist */
+	/*  [1] -r : force to recalculate a mask entry */
+	/* [-1] -n : do not recalculate a mask entry */
+	if (modified_acc) {
+		e = gfs_acl_equiv_mode(acl_acc, NULL, &is_not_equiv);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
+		if (is_not_equiv) {
+			if (!give_mask_acc && !have_acl_mask(acl_acc)) {
+				e = copy_permset(
+					&acl_acc, GFARM_ACL_MASK, NULL,
+					acl_acc, GFARM_ACL_GROUP_OBJ, NULL, 0);
+				if (e != GFARM_ERR_NO_ERROR)
+					goto end;
+			}
+			if (recalc_mask == 1 ||
+			    (recalc_mask == 0 && !give_mask_acc)) {
+				e = gfs_acl_calc_mask(&acl_acc);
+				if (e != GFARM_ERR_NO_ERROR)
+					goto end;
+			}
+		}
 	}
-	if (acl_def != NULL && gfs_acl_entries(acl_def) > 0) {
+	if (modified_def && acl_def != NULL && gfs_acl_entries(acl_def) > 0) {
 		e = gfs_acl_equiv_mode(acl_def, NULL, &is_not_equiv);
 		if (e != GFARM_ERR_NO_ERROR)
 			goto end;
-		if (is_not_equiv && !have_mask(acl_def)) {
-			e = gfs_acl_calc_mask(&acl_def);
-			if (e != GFARM_ERR_NO_ERROR)
-				goto end;
+		if (is_not_equiv) {
+			if (!give_mask_def && !have_acl_mask(acl_def)) {
+				e = copy_permset(
+					&acl_def, GFARM_ACL_MASK, NULL,
+					acl_def, GFARM_ACL_GROUP_OBJ, NULL, 0);
+				if (e != GFARM_ERR_NO_ERROR)
+					goto end;
+			}
+			if (recalc_mask == 1 ||
+			    (recalc_mask == 0 && !give_mask_def)) {
+				e = gfs_acl_calc_mask(&acl_def);
+				if (e != GFARM_ERR_NO_ERROR)
+					goto end;
+			}
 		}
 	}
 
@@ -518,7 +549,8 @@ main(int argc, char **argv)
 	int i, c, status = 0;
 	const char *acl_spec = NULL, *acl_file = NULL;
 	char *acl_file_buf = NULL;
-	int remove_acl_acccess = 0, remove_acl_default = 0, is_test = 0;
+	int remove_acl_acccess = 0, remove_acl_default = 0;
+	int is_test = 0, recalc_mask = 0;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -529,7 +561,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "bhkm:M:t?")) != -1) {
+	while ((c = getopt(argc, argv, "bkm:M:nrth?")) != -1) {
 		switch (c) {
 		case 'b':
 			remove_acl_acccess = 1;
@@ -543,6 +575,12 @@ main(int argc, char **argv)
 			break;
 		case 'M':
 			acl_file = optarg;
+			break;
+		case 'n': /* no mask */
+			recalc_mask = -1;
+			break;
+		case 'r': /* force mask */
+			recalc_mask = 1;
 			break;
 		case 't':
 			is_test = 1;
@@ -628,7 +666,7 @@ main(int argc, char **argv)
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 	for (i = 0; i < argc; i++) {
 		e = acl_set(argv[i], remove_acl_acccess, remove_acl_default,
-			    acl_file_buf, acl_spec, is_test);
+			    acl_file_buf, acl_spec, is_test, recalc_mask);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));
