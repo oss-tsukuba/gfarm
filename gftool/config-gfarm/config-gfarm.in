@@ -179,6 +179,14 @@ service_start_common()
 
 sanity()
 {
+	if [ "${enable_metadata_replication}" = "yes" ]; then
+		if id _gfarmmd >/dev/null 2>&1; then :
+		else
+			echo "error: user _gfarmmd is not registered."
+			return 1
+		fi
+	fi
+
 	sanity_$BACKEND_TYPE
 }
 
