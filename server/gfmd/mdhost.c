@@ -38,7 +38,7 @@ struct mdhost {
 	struct gfarm_metadb_server *ms;
 	struct gfm_connection *conn;
 #ifdef ENABLE_METADATA_REPLICATION
-	int is_recieved_seqnum;
+	int is_recieved_seqnum, is_in_first_sync;
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
 #endif
@@ -164,41 +164,107 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 }
 
 #ifdef ENABLE_METADATA_REPLICATION
+static void
+mdhost_channel_mutex_lock(struct mdhost *m, const char *diag)
+{
+	abstract_host_channel_mutex_lock(mdhost_to_abstract_host(m), diag,
+	    BACK_CHANNEL_DIAG);
+}
+
+static void
+mdhost_channel_mutex_unlock(struct mdhost *m, const char *diag)
+{
+	abstract_host_channel_mutex_unlock(mdhost_to_abstract_host(m), diag,
+	    BACK_CHANNEL_DIAG);
+}
+
 struct journal_file_reader *
 mdhost_get_journal_file_reader(struct mdhost *m)
 {
-	return (m->jreader);
+	struct journal_file_reader *reader;
+	static const char *diag = "mdhost_get_journal_file_reader";
+
+	mdhost_channel_mutex_lock(m, diag);
+	reader = m->jreader;
+	mdhost_channel_mutex_unlock(m, diag);
+	return (reader);
 }
 
 void
 mdhost_set_journal_file_reader(struct mdhost *m,
 	struct journal_file_reader *reader)
 {
+	static const char *diag = "mdhost_set_journal_file_reader";
+
+	mdhost_channel_mutex_lock(m, diag);
 	m->jreader = reader;
+	mdhost_channel_mutex_unlock(m, diag);
 }
 
 gfarm_uint64_t
 mdhost_get_last_fetch_seqnum(struct mdhost *m)
 {
-	return (m->last_fetch_seqnum);
+	gfarm_uint64_t r;
+	static const char *diag = "mdhost_get_last_fetch_seqnum";
+
+	mdhost_channel_mutex_lock(m, diag);
+	r = m->last_fetch_seqnum;
+	mdhost_channel_mutex_unlock(m, diag);
+	return (r);
 }
 
 void
 mdhost_set_last_fetch_seqnum(struct mdhost *m, gfarm_uint64_t seqnum)
 {
+	static const char *diag = "mdhost_set_last_fetch_seqnum";
+
+	mdhost_channel_mutex_lock(m, diag);
 	m->last_fetch_seqnum = seqnum;
+	mdhost_channel_mutex_unlock(m, diag);
 }
 
 int
 mdhost_is_recieved_seqnum(struct mdhost *m)
 {
-	return (m->is_recieved_seqnum);
+	int r;
+	static const char *diag = "mdhost_is_recieved_seqnum";
+
+	mdhost_channel_mutex_lock(m, diag);
+	r = m->is_recieved_seqnum;
+	mdhost_channel_mutex_unlock(m, diag);
+	return (r);
 }
 
 void
 mdhost_set_is_recieved_seqnum(struct mdhost *m, int flag)
 {
+	static const char *diag = "mdhost_set_is_recieved_seqnum";
+
+	mdhost_channel_mutex_lock(m, diag);
 	m->is_recieved_seqnum = flag;
+	mdhost_channel_mutex_unlock(m, diag);
+}
+
+int
+mdhost_is_in_first_sync(struct mdhost *m)
+{
+	int r;
+	static const char *diag = "mdhost_is_in_first_sync";
+
+	mdhost_channel_mutex_lock(m, diag);
+	r = m->is_in_first_sync;
+	mdhost_channel_mutex_unlock(m, diag);
+	return (r);
+}
+
+void
+mdhost_set_is_in_first_sync(struct mdhost *m, int flag)
+{
+	static const char *diag = "mdhost_set_is_in_first_sync";
+
+	mdhost_channel_mutex_lock(m, diag);
+	m->is_in_first_sync = flag;
+	mdhost_channel_mutex_unlock(m, diag);
 }
 
 static void
@@ -277,6 +343,7 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	m->jreader = NULL;
 	m->last_fetch_seqnum = 0;
 	m->is_recieved_seqnum = 0;
+	m->is_in_first_sync = 0;
 #endif
 	return (m);
 }

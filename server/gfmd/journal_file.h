@@ -103,6 +103,7 @@ gfarm_error_t journal_file_read_serialized(struct journal_file_reader *,
 void journal_file_cancel_read(struct journal_file_reader *);
 void journal_file_wait_until_empty(struct journal_file *);
 int journal_file_is_closed(struct journal_file *);
+int journal_file_is_waiting_until_nonempty(struct journal_file *);
 
 gfarm_error_t journal_file_writer_sync(struct journal_file_writer *writer);
 gfarm_error_t journal_file_writer_flush(struct journal_file_writer *);

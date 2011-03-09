@@ -411,11 +411,22 @@ db_initialize(void)
 gfarm_error_t
 db_terminate(void)
 {
-	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
-	dbq_wait_to_finish(&dbq);
+	gfarm_error_t e;
+#ifdef ENABLE_METADATA_REPLICATION
+	static const char *diag = "db_terminate";
+#endif
 
+	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
+#ifdef ENABLE_METADATA_REPLICATION
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+#endif
+	dbq_wait_to_finish(&dbq);
 	gflog_info(GFARM_MSG_1000407, "terminating the database");
-	return ((*ops->terminate)());
+	e = ops->terminate();
+#ifdef ENABLE_METADATA_REPLICATION
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+#endif
+	return (e);
 }
 
 #ifdef ENABLE_METADATA_REPLICATION

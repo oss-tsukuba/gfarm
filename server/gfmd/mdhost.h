@@ -16,6 +16,8 @@ struct peer *mdhost_get_peer(struct mdhost *);
 int mdhost_is_master(struct mdhost *);
 int mdhost_is_self(struct mdhost *);
 int mdhost_is_up(struct mdhost *);
+int mdhost_is_in_first_sync(struct mdhost *);
+void mdhost_set_is_in_first_sync(struct mdhost *, int);
 void mdhost_activate(struct mdhost *, const char *);
 void mdhost_set_peer(struct mdhost *, struct peer *, int);
 struct gfm_connection *mdhost_get_connection(struct mdhost *);

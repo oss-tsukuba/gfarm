@@ -93,6 +93,7 @@ struct journal_file {
 	char *path;
 	size_t size, max_size;
 	off_t tail;
+	int wait_until_nonempty;
 	pthread_cond_t nonfull_cond, nonempty_cond, cancel_cond;
 	pthread_mutex_t mutex;
 };
@@ -178,6 +179,18 @@ off_t
 journal_file_tail(struct journal_file *jf)
 {
 	return (jf->tail);
+}
+
+int
+journal_file_is_waiting_until_nonempty(struct journal_file *jf)
+{
+	int r;
+	static const char *diag = "journal_file_is_waiting_until_nonempty";
+
+	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	r = jf->wait_until_nonempty;
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	return (r);
 }
 
 struct journal_file_reader *
@@ -557,7 +570,7 @@ journal_file_reader_needs_wait(struct journal_file_reader *reader,
 	 *
 	 *             c          w  max_size
 	 *     +--+----+----------+--+
-	 *     |FH|rec_len|       |rec_len}
+	 *     |FH|rec_len|       |rec_len|
 	 */
 	return ((wpos < cpos && wpos + rec_len > cpos) ||
 		(cpos < rec_len + JOURNAL_FILE_HEADER_SIZE &&
@@ -1130,6 +1143,7 @@ journal_file_open(const char *path, size_t max_size,
 	gfarm_cond_init(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->cancel_cond, diag, JOURNAL_FILE_STR);
 	gfarm_mutex_init(&jf->mutex, diag, JOURNAL_FILE_STR);
+	jf->wait_until_nonempty = 0;
 	*jfp = jf;
 
 	return (GFARM_ERR_NO_ERROR);
@@ -1149,6 +1163,7 @@ error:
 void
 journal_file_reader_close(struct journal_file_reader *reader)
 {
+	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_CANCEL, 1);
 	if (reader->xdr) {
 		gfp_xdr_free(reader->xdr);
 		reader->xdr = NULL;
@@ -1496,8 +1511,10 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 			goto unlock;
 		}
 		while (avail < min_rec_size) {
+			jf->wait_until_nonempty = 1;
 			gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex,
 			    diag, JOURNAL_FILE_STR);
+			jf->wait_until_nonempty = 0;
 			if (JOURNAL_FILE_READER_CANCELED(reader)) {
 				journal_file_reader_set_flag(reader,
 				    JOURNAL_FILE_READER_F_CANCEL, 0);
@@ -1672,8 +1689,8 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 		data_len = journal_deserialize_uint32(rec + header_size -
 			sizeof(data_len));
 		rec_len = JOURNAL_RECORD_SIZE(data_len);
-		if ((e = journal_file_check_pos(jf,
-		    JOURNAL_RECORD_SIZE(data_len))) != GFARM_ERR_NO_ERROR)
+		if ((e = journal_file_check_pos(jf, rec_len))
+		    != GFARM_ERR_NO_ERROR)
 			goto unlock;
 		if ((e = gfp_xdr_send(writer->xdr, "r", rec_len, rec))
 		    != GFARM_ERR_NO_ERROR) {
@@ -1681,6 +1698,9 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 			    "gfp_xdr_send : %s", gfarm_error_string(e));
 			goto unlock;
 		}
+		if ((e = journal_file_writer_flush(writer))
+		    != GFARM_ERR_NO_ERROR)
+			goto unlock;
 		rec += rec_len;
 		switch (ope) {
 		case GFM_JOURNAL_BEGIN:
@@ -1697,8 +1717,6 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 	}
 	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 unlock:
-	if (rec != recs)
-		(void)journal_file_writer_flush(writer);
 	*last_seqnump = seqnum;
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	return (e);
