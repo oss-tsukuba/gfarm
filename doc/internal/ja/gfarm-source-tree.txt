@@ -208,9 +208,13 @@ lib/libgfarm/gfarm/
 	gfs_pio_section.c	index view, section view に関する処理 
 	gfs_pio_misc.c		gfs_pio_*() 以外の <gfarm/gfs.h> 関数
 
+	crc32.c		crc32を算出する関数
+	filesystem.c	gfarm_filesystem に関する処理
 	import_help.c	gfimport_{text,fixed} 等へのヘルパ関数
+	lookup.c	パス名解決の処理
 	metadb_ldap.c	LDAP アクセス処理。<gfarm/gfarm_metadb.h> の実装
 	metadb_misc.c	metadb 関係のいろいろな処理
+	metadb_server.c	gfarm_metadb_server に関する処理
 	schedule.c	レプリカや計算ノードへのアクセスのスケジューリング
 	stringlist.c	文字列リスト
 	url.c		gfarm ファイル名の処理
@@ -231,7 +235,44 @@ server/gfsd/
 
 server/gfmd/
 	Makefile
+
 	gfmd.c		gfmd のメイン・プログラム。
+	acl.c		acl の処理
+	dir.c		DirEntry の処理
+	fs.c		GFM_PROTO_* のプロトコル処理
+	inode.c		inode の処理
+	peer.c		peer の処理
+	process.c	process の処理
+	quota.c		quota の処理
+	user.c		user の処理
+	group.c		group の処理
+	xattr.c		xattr の処理
+	job.c
+
+	abstract_host.c	host, mdhost の共通処理,
+			back channel, gfmd channelの共通処理
+	host.c		host (gfsd ノード)の処理
+	back_channel.c	back channel (gfsd-gfmd 間通信用)の処理
+			GFS_PROTO_* のプロトコル処理
+	mdhost.c	mdhost (gfmd ノード)の処理
+			GFM_PROTO_* の内、gfmd channel用プロトコルの処理
+	gfmd_channel.c	gfmd channel (gfmd-gfmd 間通信用)の処理
+
+	db_access.c	DB抽象化層の処理
+	db_common.c	DBオブジェクトに対する補助的な処理
+	db_none.c	db_ops の実装、エラーのみを返す
+	db_pgsql.c	db_ops の実装、postgres との通信処理
+	db_ldap.c	db_ops の実装、ldap との通信処理
+	dead_file_copy.c	dead file copy の処理
+
+	db_journal.c	ジャーナル関連の処理
+	journal_file.c	ジャーナルファイルの低レベルI/Oの処理
+	db_journal_apply.c	db_ops の実装、slave gfmd でのジャーナル反映処理
+
+	callout.c	call outの処理
+	subr.c		他の .o に依存しないユーティリティ関数
+	rpcsubr.c	rpc関連のユーティリティ関数
+	thrpool.c	スレッドプールの処理
 
 bench/
 	Makefile
