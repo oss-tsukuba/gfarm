@@ -209,4 +209,9 @@ gfarm-2.x のスキーマ (論理設計寄り)
                 attrvalue: XML, ×1
         関連:
 
+実体: SeqNum
+        属性:   name: 文字列, ×1 (PK)
+                value: 文字列, ×1
+        関連:
+
 TODO: ACL サポート
