@@ -1,0 +1,85 @@
+■  stat/xattrキャッシュ
+
+libgfarmにはファイルパスに対する stat と xattr をキャッシュする機能があり、
+gfs_dircache.c に実装されている。
+この機能は基本的には gfarm2fs を介した ls コマンドによる参照を高速化するために
+実装された。
+
+キャッシュの機能を利用するには、キャッシュを利用するAPIを呼ぶ必要がある。
+すなわち、gfs_stat() や gfs_getxattr() のような直接 RPC を呼ぶ API はキャッシュ
+を一切利用せず、直接 RPC を呼ぶ API に対応する *_caching()、*_cached()
+という名称の関数がキャッシュを利用する。
+API 利用者が使用する関数は gfs_statsw.c に実装されている次の関数である。
+
+  gfs_opendir_caching()
+  gfs_stat_cached()
+  gfs_lstat_cached()
+  gfs_getxattr_cached()
+  gfs_lgetxattr_cached()
+
+*_cached()、*_caching() 関数は gfs_stat_cache_enable() によって
+キャッシュの利用を有効または無効に切り替えられる(ただし、gfs_opendir_caching()
+以外の *_caching() を除く)。
+キャッシュの利用を無効にすると、gfs_stat() 等の直接 RPC を呼ぶ API と
+同等の動作をする。
+
+* *_cached()、*_caching() の役割
+
+  - *_cached() はキャッシュを検索してヒットすれば、キャッシュの
+    値を返し、ヒットしなければ RPC で値を取得してキャッシュへ格納し、
+    値を返す。
+
+  - *_caching() は RPC で取得した値をキャッシュへ格納し、値を返す。
+    gfs_opendir_caching() にも、gfs_dircache.h で公開されている *_caching() 系の
+    関数があるが、通常は gfs_opendir_caching() だけ使用すれば良い。
+
+* キャッシュ対象のデータ
+
+  キャッシュ対象のファイルパスに対して次の値をキャッシュ領域に格納する。
+
+  - xattr_cache_list が保持する全ての属性名に対応する xattr の名称と値
+    (gfarm.ncopy がこれに該当)
+
+  - gfs_getxattr_cached() などの属性取得系の関数で取得しようとした
+    xattr_cache_list に含まれない xattr の名称と値。
+
+  RPC による値の取得には gfs_getattrplus() / gfs_lgetattrplus() を使用している。
+
+* キャッシュ領域の種類
+
+  キャッシュ領域にはシンボリックリンク解決後のパスに対する stat_cache、
+  解決前のパスに対する lstat_cache の2種類がある。
+
+  stat_cache のエントリは gfs_stat_cached(), gfs_getxattr_cached() で
+  利用する。
+  lstat_cache のエントリは gfs_lstat_cached(), gfs_lgetxattr_cached() で
+  利用する。さらに RPC で取得した stat を見て inode の種類が symlink 以外で
+  あれば、stat_cache にもエントリを格納する。
+  gfs_opendir_caching() も同様に inode の種類のより、symlink は lstat_cache
+  へ、symlink 以外は lstat_cache と stat_cache へ格納する。
+
+* キャッシュを破棄するタイミング
+
+  - 暗黙的な破棄
+  
+    キャッシュへ値を格納するタイミングで、キャッシュ保持の条件を満たさない
+    エントリを破棄する。破棄するかどうかは gfarm_attr_cache_limit と
+    gfarm_attr_cache_timeout によって決まる。gfarm_attr_cache_limit は
+    それぞれのキャッシュ領域に対して独立して適用する。
+
+  - 明示的な破棄
+
+    gfs_stat_cache_purge() は任意のパスのキャッシュを明示的に破棄する。
+    stat_cache、lstat_cache の両方の領域が対象。
+
+* Configuration
+
+  キャッシュ関連の設定値に以下のものがある。
+
+  - gfarm_attr_cache_limit (設定ファイルの attr_cache_limit)
+    キャッシュ領域に保持するエントリ数。
+
+  - gfarm_attr_cache_timeout (設定ファイルの attr_cache_timeout)
+    エントリをキャッシュ領域に保持する期間(ミリ秒単位)。
+    デフォルトで 1 秒。
+
