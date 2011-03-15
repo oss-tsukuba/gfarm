@@ -363,7 +363,6 @@ gfs_stat_cache_enter_internal0(struct stat_cache *cache,
 	STAT_CACHE_DATA_HEAD(cache)->prev->next = data;
 	STAT_CACHE_DATA_HEAD(cache)->prev = data;
 	return (GFARM_ERR_NO_ERROR);
-		
 }
 
 static gfarm_error_t
@@ -463,6 +462,7 @@ gfs_stat_caching0(struct stat_cache *cache, const char *path,
 	char **attrnames;
 	void **attrvalues;
 	size_t *attrsizes;
+
 	gfarm_error_t e = gfs_getattrplus_caching0(cache, path,
 	    gfarm_xattr_caching_patterns(),
 	    gfarm_xattr_caching_patterns_number(),
@@ -627,7 +627,40 @@ gfs_stat_cached_internal(const char *path, struct gfs_stat *st)
 gfarm_error_t
 gfs_lstat_cached_internal(const char *path, struct gfs_stat *st)
 {
-	return (gfs_stat_cached_internal0(&lstat_cache, path, st));
+	gfarm_error_t e;
+	struct timeval now;
+	struct stat_cache_data *data;
+
+	if ((e = gfs_stat_cached_internal0(&lstat_cache, path, st))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_stat_cached_internal0(%s): %s",
+		    path, gfarm_error_string(e));
+		return (e);
+	}
+	if (GFARM_S_ISLNK(st->st_mode))
+		return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * Also cache to stat_cache if the path is not symlink.
+	 */
+	if ((e = gfs_stat_cache_data_get0(&lstat_cache, path, &data))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_stat_cached_internal0(%s): %s",
+		    path, gfarm_error_string(e));
+		return (GFARM_ERR_NO_ERROR);
+	}
+	assert(data != NULL);
+	gettimeofday(&now, NULL);
+	if ((e = gfs_stat_cache_enter_internal0(&stat_cache, path,
+	    &data->st, data->nattrs, data->attrnames, data->attrvalues,
+	    data->attrsizes, &now)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_stat_cached_internal0(%s): %s",
+		    path, gfarm_error_string(e));
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /* this returns cached result */
@@ -688,8 +721,40 @@ gfarm_error_t
 gfs_lgetxattr_cached_internal(const char *path, const char *name,
 	void *value, size_t *sizep)
 {
-	return (gfs_getxattr_cached_internal0(&lstat_cache, path, name,
-		value, sizep));
+	gfarm_error_t e;
+	struct timeval now;
+	struct stat_cache_data *data;
+
+	if ((e = gfs_getxattr_cached_internal0(&lstat_cache, path, name,
+	    value, sizep)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_lgetxattr_cached_internal(%s): %s",
+		    path, gfarm_error_string(e));
+		return (e);
+	}
+	if (GFARM_S_ISLNK(data->st.st_mode))
+		return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * Also cache to stat_cache if the path is not symlink.
+	 */
+	if ((e = gfs_stat_cache_data_get0(&lstat_cache, path, &data))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_lgetxattr_cached_internal(%s): %s",
+		    path, gfarm_error_string(e));
+		return (GFARM_ERR_NO_ERROR);
+	}
+	assert(data != NULL);
+	gettimeofday(&now, NULL);
+	if ((e = gfs_stat_cache_enter_internal0(&stat_cache, path,
+	    &data->st, data->nattrs, data->attrnames, data->attrvalues,
+	    data->attrsizes, &now)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_lgetxattr_cached_internal(%s): %s",
+		    path, gfarm_error_string(e));
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 /*
@@ -752,12 +817,31 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 			/*
 			 * It's ok to fail in entering the cache,
 			 * since it's merely cache.
+			 *
+			 * Also cache to stat_cache if the path is not symlink.
 			 */
 			if ((e = gfs_stat_cache_enter_internal0(
 			    &lstat_cache, path,
 			    stp, nattrs, attrnames, attrvalues,
 			    attrsizes, &now))
 			    != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNUSED,
+				    "dircache: failed to cache %s: %s",
+				    path, gfarm_error_string(e));
+			}
+			if ((e = gfs_stat_cache_enter_internal0(
+			    &lstat_cache, path,
+			    stp, nattrs, attrnames, attrvalues,
+			    attrsizes, &now))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNUSED,
+				    "dircache: failed to cache %s: %s",
+				    path, gfarm_error_string(e));
+			} else if (!GFARM_S_ISLNK(stp->st_mode) &&
+			    (e = gfs_stat_cache_enter_internal0(
+			    &stat_cache, path,
+			    stp, nattrs, attrnames, attrvalues,
+			    attrsizes, &now)) != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_UNUSED,
 				    "dircache: failed to cache %s: %s",
 				    path, gfarm_error_string(e));
