@@ -1235,12 +1235,10 @@ The default is "enable".
 <para>
 The synchronous replication completes both sending update information to
 all slave gfmds connected and calling fdatasync against the journal file.
-When the "synchronous_journaling" is "disable", it does not call fdatasync.
 </para>
 <para>
 The asynchronous replication completes only calling fdatasync against the jounral
 when the gfmd recieves the client requests.
-When the "synchronous_journaling" is "disable", it does not call fdatasync.
 On the other side, the resident thread sends update information
 stored in the journal file to the slaves connected.
 </para>
