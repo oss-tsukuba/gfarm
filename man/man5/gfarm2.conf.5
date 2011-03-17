@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "17 3月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "18 3月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -856,11 +856,9 @@ The default is "enable".
 
 The synchronous replication completes both sending update information to
 all slave gfmds connected and calling fdatasync against the journal file.
-When the "synchronous_journaling" is "disable", it does not call fdatasync.
 
 The asynchronous replication completes only calling fdatasync against the jounral
 when the gfmd recieves the client requests.
-When the "synchronous_journaling" is "disable", it does not call fdatasync.
 On the other side, the resident thread sends update information
 stored in the journal file to the slaves connected.
 

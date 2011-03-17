@@ -1589,12 +1589,10 @@ disableの場合、非同期レプリケーションが選択されます。
 ><P
 >同期レプリケーションはクライアントからのリクエストに対して返信する前に、
 接続中の全てのスレーブgfmdへの更新情報送信と、
-ジャーナルファイルのfdatasyncを完了します。
-synchronous_journalingがdisableのときはfdatasyncを実行しません。</P
+ジャーナルファイルのfdatasyncを完了します。</P
 ><P
 >非同期レプリケーションはクライアントからのリクエスト時には、
 ジャーナルファイルのfdatasyncだけを行います。
-synchronous_journalingがdisableのときはfdatasyncを実行しません。
 一方で、常駐スレッドがジャーナルファイルに保存された更新情報を、
 接続中の全てのスレーブgfmdへ送信します。</P
 ><P
