@@ -1207,6 +1207,126 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>metadb_server_list</token> <parameter>gfmd-hostname[:port]</parameter> <parameter>...</parameter></term>
+<listitem>
+<para>This parameter specifies connection destinations of redundant metadata servers delimited by space.
+The master gfmd is specified for the head. The slave gfmds are specified from the second.
+If port is not specified, port will be 601 which is the default value.
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. This parameter is always available in gfarm2.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	metadb_server_list mdsmaster mdsslave:701
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_replication</token> <parameter>validity</parameter></term>
+<listitem>
+<para>This parameter specifies the timing of the metadata replication.
+When "enable" is specified, the synchronous replication is selected.
+When "disable" is specified, the asynchronous replication is selected.
+The default is "enable".
+</para>
+<para>
+The synchronous replication completes both sending update information to
+all slave gfmds connected and calling fdatasync against the journal file.
+When the "synchronous_journaling" is "disable", it does not call fdatasync.
+</para>
+<para>
+The asynchronous replication completes only calling fdatasync against the jounral
+when the gfmd recieves the client requests.
+When the "synchronous_journaling" is "disable", it does not call fdatasync.
+On the other side, the resident thread sends update information
+stored in the journal file to the slaves connected.
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+</para>
+<para>Example:</para>
+<literallayout>
+	synchronous_replication disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_replication_timeout</token> <parameter>seconds</parameter></term>
+<listitem>
+<para>This parameter specifies timeout for executing synchronous replication in seconds.
+If the timeout period passed, the connection to the slave gfmd where replicates to
+will disconnect.
+The replication process in the master gfmd for the disconnected slave gfmd stops until
+the slave gfmd connects.
+The default is 10.
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+</para>
+<para>Example:</para>
+<literallayout>
+	synchronous_replication_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_journaling</token> <parameter>validity</parameter></term>
+<listitem>
+<para>When "enable" is specified, fdatasync is called
+after update information is saved to the journal file.
+The timing of calling fdatasync is after writing the records from transaction-begin
+to transaction-end in one transaction.
+The default is "enable".
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+</para>
+<para>Example:</para>
+<literallayout>
+	synchronous_journaling disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_dir</token> <parameter>directory</parameter></term>
+<listitem>
+<para>This parameter specifies the directory for the journal file.
+The value of this parameter is specified at config-gfarm execution .
+When this parameter is not specified, the gfmd does not start.
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+</para>
+<para>Example:</para>
+<literallayout>
+	metadb_journal_dir /var/gfarm-metadata/journal
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_max_size</token> <parameter>file_size</parameter></term>
+<listitem>
+<para>This parameter specifies the max size of the journal file in bytes.
+Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
+The default is 33554432 (32 MBytes).
+</para>
+<para>
+This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+</para>
+<para>Example:</para>
+<literallayout>
+	metadb_journal_max_size 8388608
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1266,7 +1386,13 @@ notation.</para>
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
-		&nbsp;&nbsp;&lt;profile_statement&gt;
+		&nbsp;&nbsp;&lt;profile_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_replication_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1350,11 +1476,23 @@ notation.</para>
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
-	&lt;record_atime_statement&gt; ::= "profile" &lt;validity&gt;
+	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
+	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
+	&lt;metadb_server_list_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
+	&lt;synchronous_replication_statement&gt; ::= "synchronous_replication" &lt;validity&gt;
+	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
+	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
+	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
+	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
 	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
+	&lt;hostname_port_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname&gt;|
+		&nbsp;&nbsp;&lt;hostname&gt; ":" &lt;portnumber&gt;
 	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
 	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
 	&lt;portnumber&gt; ::= &lt;number&gt;

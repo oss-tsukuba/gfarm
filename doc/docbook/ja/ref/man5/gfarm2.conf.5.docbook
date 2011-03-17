@@ -1170,6 +1170,123 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>metadb_server_list</token> <parameter>gfmdホスト名[:ポート番号]</parameter> <parameter>...</parameter></term>
+<listitem>
+<para>冗長化メタデータサーバの接続先一覧をスペース区切りで指定します。
+先頭にマスターgfmd、2番目以降にスレーブgfmdを指定します。
+ポート番号を省略するとデフォルトの601を指定したことになります。
+</para>
+<para>
+この文はgfmd.confにおいてはconfigure時に --enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。gfarm2.confにおいては、常に有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_list mdsmaster mdsslave:701
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_replication</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>メタデータレプリケーションのタイミングを設定します。
+このオプションがenableの場合、同期レプリケーションが選択され、
+disableの場合、非同期レプリケーションが選択されます。
+デフォルトはenableです。
+</para>
+<para>
+同期レプリケーションはクライアントからのリクエストに対して返信する前に、
+接続中の全てのスレーブgfmdへの更新情報送信と、
+ジャーナルファイルのfdatasyncを完了します。
+synchronous_journalingがdisableのときはfdatasyncを実行しません。
+</para>
+<para>
+非同期レプリケーションはクライアントからのリクエスト時には、
+ジャーナルファイルのfdatasyncだけを行います。
+synchronous_journalingがdisableのときはfdatasyncを実行しません。
+一方で、常駐スレッドがジャーナルファイルに保存された更新情報を、
+接続中の全てのスレーブgfmdへ送信します。
+</para>
+<para>
+この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	synchronous_replication disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_replication_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>メタデータの同期レプリケーション実行時のタイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、同期先のスレーブgfmdとのgfmd channelの接続は切断されます。
+接続が切断したスレーブgfmdへのレプリケーションは、スレーブgfmdが再接続してくるまで中断します。
+デフォルトは 10 です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	synchronous_replication_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_journaling</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>このオプションがenableの場合、ジャーナルファイルへ更新情報を保存した後にfdatasyncを実行します。
+実行するタイミングは、1つのトランザクションの開始から終了までのレコードを書き込んだ後です。
+デフォルトはenableです。
+</para>
+<para>
+この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	synchronous_journaling disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_dir</token> <parameter>ジャーナルディレクトリ</parameter></term>
+<listitem>
+<para>ジャーナルファイルの保存ディレクトリを指定します。
+このオプションはconfig-gfarmで指定します。
+このオプションが指定されていない場合、gfmdは起動しません。
+</para>
+<para>
+この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_dir /var/gfarm-metadata/journal
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_max_size</token> <parameter>ファイルサイズ</parameter></term>
+<listitem>
+<para>ジャーナルファイルの最大サイズを指定します。
+サイズが大きいほど、gfmdが起動完了するまでの時間が長くなることに注意してください。
+デフォルトは 33554432 (32 MBytes)です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_max_size 8388608
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1228,7 +1345,13 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
-		&nbsp;&nbsp;&lt;profile_statement&gt;
+		&nbsp;&nbsp;&lt;profile_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_replication_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1312,11 +1435,23 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
-	&lt;record_atime_statement&gt; ::= "profile" &lt;validity&gt;
+	&lt;profile_tatement&gt; ::= "profile" &lt;validity&gt;
+	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
+	&lt;metadb_server_list_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
+	&lt;synchronous_replication_statement&gt; ::= "synchronous_replication" &lt;validity&gt;
+	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
+	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
+	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
+	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
 	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
+	&lt;hostname_port_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname&gt;|
+		&nbsp;&nbsp;&lt;hostname&gt; ":" &lt;portnumber&gt;
 	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
 	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
 	&lt;portnumber&gt; ::= &lt;number&gt;
