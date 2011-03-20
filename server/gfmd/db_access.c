@@ -788,6 +788,9 @@ db_inode_user_modify(gfarm_ino_t inum, const char *user)
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg),
 		gfarm_size_add(&overflow, strlen(user), 1));
 	if (!overflow)
@@ -813,6 +816,9 @@ db_inode_group_modify(gfarm_ino_t inum, const char *group)
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg),
 		gfarm_size_add(&overflow, strlen(group), 1));
 	if (!overflow)
@@ -983,6 +989,9 @@ db_filecopy_arg_alloc(gfarm_ino_t inum, const char *hostname)
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), hsize);
 	if (!overflow)
 		arg = malloc(sz);
@@ -1043,6 +1052,9 @@ db_deadfilecopy_arg_alloc(gfarm_ino_t inum, gfarm_uint64_t igen,
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), hsize);
 	if (!overflow)
 		arg = malloc(sz);
@@ -1109,6 +1121,9 @@ db_direntry_arg_alloc(
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), entry_len + 1);
 	if (!overflow)
 		arg = malloc(sz);
@@ -1172,6 +1187,9 @@ db_symlink_arg_alloc(gfarm_ino_t inum, const char *source_path)
 	size_t sz;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), strlen(source_path) + 1);
 	if (!overflow)
 		arg = malloc(sz);
@@ -1229,6 +1247,9 @@ db_xattr_arg_alloc(char *attrname, size_t valsize)
 	size_t size;
 	int overflow = 0;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	size = gfarm_size_add(&overflow, sizeof(*arg), valsize);
 	if (attrname != NULL) {
 		size = gfarm_size_add(&overflow, size, strlen(attrname) + 1);
@@ -1396,6 +1417,9 @@ db_quota_arg_alloc(const struct quota *q, const char *name, int is_group)
 	int overflow = 0;
 	int name_len = strlen(name);
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), name_len + 1);
 	if (!overflow)
 		arg = malloc(sz);
@@ -1452,6 +1476,9 @@ db_quota_remove_arg_alloc(const char *name, int is_group)
 	int overflow = 0;
 	int name_len = strlen(name);
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	arg = NULL;
+#endif
 	sz = gfarm_size_add(&overflow, sizeof(*arg), name_len + 1);
 	if (!overflow)
 		arg = malloc(sz);
