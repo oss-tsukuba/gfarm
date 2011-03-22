@@ -828,15 +828,6 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 				gflog_warning(GFARM_MSG_UNUSED,
 				    "dircache: failed to cache %s: %s",
 				    path, gfarm_error_string(e));
-			}
-			if ((e = gfs_stat_cache_enter_internal0(
-			    &lstat_cache, path,
-			    stp, nattrs, attrnames, attrvalues,
-			    attrsizes, &now))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNUSED,
-				    "dircache: failed to cache %s: %s",
-				    path, gfarm_error_string(e));
 			} else if (!GFARM_S_ISLNK(stp->st_mode) &&
 			    (e = gfs_stat_cache_enter_internal0(
 			    &stat_cache, path,
