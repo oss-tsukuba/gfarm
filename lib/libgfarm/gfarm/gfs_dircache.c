@@ -732,8 +732,6 @@ gfs_lgetxattr_cached_internal(const char *path, const char *name,
 		    path, gfarm_error_string(e));
 		return (e);
 	}
-	if (GFARM_S_ISLNK(data->st.st_mode))
-		return (GFARM_ERR_NO_ERROR);
 
 	/*
 	 * Also cache to stat_cache if the path is not symlink.
@@ -746,6 +744,8 @@ gfs_lgetxattr_cached_internal(const char *path, const char *name,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	assert(data != NULL);
+	if (GFARM_S_ISLNK(data->st.st_mode))
+		return (GFARM_ERR_NO_ERROR);
 	gettimeofday(&now, NULL);
 	if ((e = gfs_stat_cache_enter_internal0(&stat_cache, path,
 	    &data->st, data->nattrs, data->attrnames, data->attrvalues,
