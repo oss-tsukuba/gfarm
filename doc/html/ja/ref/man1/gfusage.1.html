@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfusage</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfusage&nbsp;--&nbsp;Gfarm の使用量を表示する</DIV
+>gfusage&nbsp;--&nbsp;現在の使用量を表示する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfusage</B
-> [-c]</P
+>  [オプション] [名前]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -50,8 +50,33 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfusage</B
-> は、ユーザごとに Gfarm ファイルシステムの使用量を表示します。</P
+> は、Gfarm ファイルシステムの使用量を
+ユーザごとやグループごとに表示します。
+<CODE
+CLASS="PARAMETER"
+>名前</CODE
+>を指定すると、そのユーザやグループだけを表示
+します。
+デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
+ループの使用量を表示します。
+<B
+CLASS="COMMAND"
+>gfedquota</B
+> と <B
+CLASS="COMMAND"
+>gfquotacheck</B
+> によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。</P
 ></DIV
+><DT
+><CODE
+CLASS="OPTION"
+>-P NAME</CODE
+></DT
+><DD
+><P
+>指定したパス名により特定のメタデータサーバを指定します。</P
+></DD
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -65,13 +90,22 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><VAR
+><CODE
 CLASS="OPTION"
->-c</VAR
+>-g</CODE
 ></DT
 ><DD
 ><P
->ファイル複製を考慮して合計サイズを計算します。</P
+>グループの使用量を表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -89,6 +123,13 @@ CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfdf</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfquota</SPAN
 >(1)</SPAN
 ></P
 ></DIV
