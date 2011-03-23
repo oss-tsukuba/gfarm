@@ -3,6 +3,7 @@ DOCBOOK = \
 	gfchmod.1 \
 	gfchown.1 \
 	gfdf.1 \
+	gfedquota.1 \
 	gffindxmlattr.1 \
 	gfgetfacl.1 \
 	gfgroup.1 \
@@ -12,12 +13,15 @@ DOCBOOK = \
 	gfls.1 \
 	gfmkdir.1 \
 	gfmv.1 \
+	gfquota.1 \
+	gfquotacheck.1 \
 	gfrep.1 \
 	gfrmdir.1 \
 	gfsched.1 \
 	gfsetfacl.1 \
 	gfstat.1 \
 	gfstatus.1 \
+	gfusage.1 \
 	gfuser.1 \
 	gfwhere.1 \
 	gfwhoami.1 \
@@ -39,5 +43,4 @@ DOCBOOK = \
 #	gfront.1 \
 #	gfrun.1 \
 #	gfsetdir.1 \
-#	gfusage.1 \
 #	gfwc.1 \
