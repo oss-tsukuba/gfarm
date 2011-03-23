@@ -2,7 +2,7 @@
 
 <refentry id='gfusage.1'>
 
-<refentryinfo><date>24 July 2006</date></refentryinfo>
+<refentryinfo><date>23 Mar 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfusage</refentrytitle>
@@ -12,29 +12,53 @@
 
 <refnamediv id='name'>
 <refname>gfusage</refname>
-<refpurpose>Gfarm の使用量を表示する</refpurpose>
+<refpurpose>現在の使用量を表示する</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfusage</command>
-    <arg choice='opt'>-c</arg>
+    <arg choice='opt'>オプション</arg>
+    <arg choice='opt'>名前</arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><command>gfusage</command> は、ユーザごとに Gfarm ファイルシステムの使用量を表示します。
+<para><command>gfusage</command> は、Gfarm ファイルシステムの使用量を
+ユーザごとやグループごとに表示します。
+<parameter>名前</parameter>を指定すると、そのユーザやグループだけを表示
+します。
+デフォルトはユーザの使用量を表示しますが、-g オプションを指定すると、グ
+ループの使用量を表示します。
+<command>gfedquota</command> と <command>gfquotacheck</command> によっ
+て使用量テーブルを構築すると、ユーザやグループの使用量を利用できます。
 </para>
 </refsect1>
 
-<refsect1 id='options'><title>OPTIONS</title>
-<variablelist>
 <varlistentry>
-<term><option>-c</option></term>
+<term><option>-P NAME</option></term>
 <listitem>
-<para>ファイル複製を考慮して合計サイズを計算します。</para>
+<para>指定したパス名により特定のメタデータサーバを指定します。</para>
 </listitem>
 </varlistentry>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>グループの使用量を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -42,6 +66,9 @@
 <para>
   <citerefentry>
   <refentrytitle>gfdf</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfquota</refentrytitle><manvolnum>1</manvolnum>
   </citerefentry>
 </para>
 </refsect1>
