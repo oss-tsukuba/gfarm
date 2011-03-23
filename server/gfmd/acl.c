@@ -196,21 +196,16 @@ acl_convert_for_getxattr(
 {
 	gfarm_error_t e;
 	gfarm_acl_t acl;
-	gfarm_acl_type_t type;
 	gfarm_acl_entry_t entry;
 	gfarm_acl_permset_t permset;
 	void *acl_value;
 	size_t acl_size;
 	gfarm_mode_t mode;
 
-	if (strcmp(name, GFARM_ACL_EA_ACCESS) == 0)
-		type = GFARM_ACL_TYPE_ACCESS;
-	else if (strcmp(name, GFARM_ACL_EA_DEFAULT) == 0)
-		return (GFARM_ERR_NO_ERROR); /* through */
-	else  /* not ACL xattr */
+	if (strcmp(name, GFARM_ACL_EA_ACCESS) != 0)
 		return (GFARM_ERR_NO_ERROR); /* through */
 
-	/* type == GFARM_ACL_TYPE_ACCESS */
+	/* GFARM_ACL_EA_ACCESS */
 	e = gfs_acl_from_xattr_value(*valuep, *sizep, &acl);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
