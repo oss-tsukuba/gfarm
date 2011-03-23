@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfusage</TITLE
+>gfquotacheck</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFUSAGE.1"
+NAME="GFQUOTACHECK.1"
 ></A
->gfusage</H1
+>gfquotacheck</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfusage&nbsp;--&nbsp;display the current usage</DIV
+>gfquotacheck&nbsp;--&nbsp;現在の使用量管理表を構築し、quota チェックを有効にする</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,8 +36,13 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfusage</B
->  [options] [name]</P
+>gfquotacheck</B
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -49,23 +54,13 @@ NAME="DESCRIPTION"
 ><P
 ><B
 CLASS="COMMAND"
->gfusage</B
-> displays the current usage for users
-or groups.  If <CODE
-CLASS="PARAMETER"
->name</CODE
-> is specified, it displays
-only the specified user or group.  With the -g option, it displays the
-current usage for groups.  The current usage is available for users or
-groups after building a table of the current usage
-by <B
-CLASS="COMMAND"
->gfedquota</B
-> and
-<B
-CLASS="COMMAND"
 >gfquotacheck</B
->.</P
+> は、すべてのユーザのファイル数と
+ファイルサイズを数えなおします。
+そして、まだ有効になっていないユーザやグループに対する quota によるファ
+イル制限を有効にします。</P
+><P
+>このコマンドは gfarmadm グループに所属している管理者が実行できます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -82,11 +77,11 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-g</CODE
+>-P NAME</CODE
 ></DT
 ><DD
 ><P
->Displays the current usage for groups.</P
+>指定したパス名により特定のメタデータサーバを指定します。</P
 ></DD
 ><DT
 ><CODE
@@ -95,7 +90,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Displays a list of command options.</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -112,7 +107,7 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfdf</SPAN
+>gfedquota</SPAN
 >(1)</SPAN
 >,
   <SPAN
@@ -120,6 +115,13 @@ CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
 >gfquota</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfusage</SPAN
 >(1)</SPAN
 ></P
 ></DIV

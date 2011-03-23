@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->gfusage</TITLE
+>gfquota</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
@@ -15,9 +15,9 @@ VLINK="#840084"
 ALINK="#0000FF"
 ><H1
 ><A
-NAME="GFUSAGE.1"
+NAME="GFQUOTA.1"
 ></A
->gfusage</H1
+>gfquota</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfusage&nbsp;--&nbsp;display the current usage</DIV
+>gfquota&nbsp;--&nbsp;現在の使用量と制限値を表示</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -36,8 +36,13 @@ NAME="SYNOPSIS"
 ><P
 ><B
 CLASS="COMMAND"
->gfusage</B
->  [options] [name]</P
+>gfquota</B
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -49,23 +54,25 @@ NAME="DESCRIPTION"
 ><P
 ><B
 CLASS="COMMAND"
->gfusage</B
-> displays the current usage for users
-or groups.  If <CODE
-CLASS="PARAMETER"
->name</CODE
-> is specified, it displays
-only the specified user or group.  With the -g option, it displays the
-current usage for groups.  The current usage is available for users or
-groups after building a table of the current usage
-by <B
+>gfquota</B
+> は、現在の使用量と制限値を表示します。
+gfarmadm グループに所属している管理者は、ユーザ名やグループ名を指定する
+ことができます。
+一般ユーザの場合は、そのユーザが所属するグループ名を指定することができ
+ます。</P
+><P
+><B
 CLASS="COMMAND"
 >gfedquota</B
-> and
-<B
+> と <B
 CLASS="COMMAND"
 >gfquotacheck</B
->.</P
+> を
+実行すると使用量のカウントと制限値が有効になり、
+<B
+CLASS="COMMAND"
+>gfquota</B
+> で表示できるようになります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -82,11 +89,39 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-g</CODE
+>-P NAME</CODE
 ></DT
 ><DD
 ><P
->Displays the current usage for groups.</P
+>指定したパス名により特定のメタデータサーバを指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-q</CODE
+></DT
+><DD
+><P
+>使用量を表示しません。
+制限値を超えていた場合に警告だけを表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u NAME</CODE
+></DT
+><DD
+><P
+>指定したユーザ名の使用量と制限値を表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-g NAME</CODE
+></DT
+><DD
+><P
+>指定したグループ名の使用量と制限値を表示します。</P
 ></DD
 ><DT
 ><CODE
@@ -95,7 +130,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Displays a list of command options.</P
+>引数オプションを表示します。</P
 ></DD
 ></DL
 ></DIV
@@ -112,14 +147,21 @@ NAME="SEE-ALSO"
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfdf</SPAN
+>gfedquota</SPAN
 >(1)</SPAN
 >,
   <SPAN
 CLASS="CITEREFENTRY"
 ><SPAN
 CLASS="REFENTRYTITLE"
->gfquota</SPAN
+>gfquotacheck</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfusage</SPAN
 >(1)</SPAN
 ></P
 ></DIV
