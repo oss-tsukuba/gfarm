@@ -684,7 +684,10 @@ gfs_getxattr_cached_internal0(struct stat_cache *cache,
 		if (gfarm_xattr_caching(name)) { /* negative cache */
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 		} else { /* this xattr is uncachable */
-			return (gfs_getxattr(path, name, value, sizep));
+			int no_follow = cache == &lstat_cache;
+
+			return ((no_follow ? gfs_lgetxattr : gfs_getxattr)
+			    (path, name, value, sizep));
 		}
 	}
 	return (e);
