@@ -23,7 +23,7 @@ gfarm_foreach_directory_hierarchy(
 	GFS_Dir dir;
 	struct gfs_dirent *dent;
 
-	e = gfs_stat(file, &st);
+	e = gfs_lstat(file, &st);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
