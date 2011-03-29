@@ -832,7 +832,7 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 	}
 
 	GFARM_MALLOC(dir);
-	if (*gfarm_path_dir_skip(path) != '\0') {
+	if (*gfarm_url_dir_skip(path) != '\0') {
 		GFARM_MALLOC_ARRAY(p, strlen(path) + 1 + 1);
 		if (p != NULL)
 			sprintf(p, "%s/", path);
