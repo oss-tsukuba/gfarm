@@ -51,6 +51,9 @@ main(int argc, char **argv)
 	path = argv[0];
 
 	switch (mode) {
+	case 'b':
+		s = gfarm_url_dir_skip(path);
+		break;
 	case 'd':
 		s = allocated = gfarm_url_dir(path);
 		break;

@@ -82,6 +82,7 @@ gfarm_error_t gfarm_path_canonical_to_url(const char *, char **);
 const char *gfarm_url_prefix_skip(const char *);
 gfarm_error_t gfarm_url_prefix_add(const char *);
 const char *gfarm_path_dir_skip(const char *);
+const char *gfarm_url_dir_skip(const char *);
 char *gfarm_path_dir(const char *);
 char *gfarm_url_dir(const char *);
 
