@@ -28,7 +28,7 @@ gfarm_foreach_directory_hierarchy(
 		return (e);
 
 	/* add '/' if necessary */
-	if (*gfarm_path_dir_skip(file))
+	if (*gfarm_url_dir_skip(file))
 		slash = "/";
 	else
 		slash = "";
