@@ -16,6 +16,7 @@
 #include "gfp_xdr.h"
 #include "gfm_proto.h"	/* GFARM_LOGIN_NAME_MAX, etc */
 
+#include "inode.h"
 #include "subr.h"
 #include "db_access.h"
 #include "user.h"
@@ -293,14 +294,146 @@ user_is_admin(struct user *user)
 	return (user_in_group(user, admin));
 }
 
+#define is_nl_cr(c)  ((c == '\n' || c == '\r' || c == '\0') ? 1 : 0)
+
+static gfarm_error_t
+__list_to_names(char **value_p, size_t size,
+		char ***names_p, size_t *names_num_p)
+{
+	char *value, *priv, *now, *end;
+	char **names;
+	size_t i = 0;
+
+	value = *value_p;
+	if (!is_nl_cr(value[size - 1])) { /* allocation for last '\0' */
+		char *tmp;
+		GFARM_MALLOC_ARRAY(tmp, size + 1);
+		if (tmp == NULL) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				      "allocation of tmp failed");
+			return (GFARM_ERR_NO_MEMORY);
+		}
+		memcpy(tmp, value, size);
+		tmp[size] = '\0';
+		free(value);
+		value = tmp;
+		*value_p = tmp;
+		size++;
+	}
+	end = &value[size];
+	*names_num_p = 0;
+
+	/* count */
+	now = value;
+	priv = NULL;
+	while (now != end) {
+		if (!is_nl_cr(*now) && (priv == NULL || is_nl_cr(*priv)))
+			(*names_num_p)++;
+		priv = now;
+		now++;
+	}
+	GFARM_MALLOC_ARRAY(names, *names_num_p);
+	if (names == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			      "allocation of names failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	now = value;
+	priv = NULL;
+	while (now != end) {
+		if (!is_nl_cr(*now)) {
+			if ((priv == NULL || is_nl_cr(*priv)))
+				names[i++] = now;
+		} else
+			*now = '\0';
+		priv = now;
+		now++;
+	}
+	*names_p = names;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static int
+user_in_user_list(struct inode *inode, struct user *user)
+{
+	gfarm_error_t e;
+	void *value;
+	size_t size, names_num, i;
+	char **names;
+
+	e = inode_xattr_get_cache(inode, 0, GFARM_ROOT_EA_USER, &value, &size);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT || value == NULL)
+		return (0);
+	else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			      "inode_xattr_get_cache(%s) failed: %s",
+			      GFARM_ROOT_EA_USER, gfarm_error_string(e));
+		return (0);
+	}
+	e = __list_to_names((char **)&value, size, &names, &names_num);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(value);
+		return (0);
+	}
+	for (i = 0; i < names_num; i++) {
+		if (user == user_lookup(names[i])) {
+			free(names);
+			free(value);
+			return (1);
+		}
+	}
+	free(names);
+	free(value);
+	return (0);
+}
+
+static int
+user_in_group_list(struct inode *inode, struct user *user)
+{
+	gfarm_error_t e;
+	void *value;
+	size_t size, names_num, i;
+	char **names;
+
+	e = inode_xattr_get_cache(inode, 0, GFARM_ROOT_EA_GROUP,
+				  &value, &size);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT || value == NULL)
+		return (0);
+	else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			      "inode_xattr_get_cache(%s) failed: %s",
+			      GFARM_ROOT_EA_GROUP, gfarm_error_string(e));
+		return (0);
+	}
+	e = __list_to_names((char **)&value, size, &names, &names_num);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(value);
+		return (0);
+	}
+	for (i = 0; i < names_num; i++) {
+		if (user_in_group(user, group_lookup(names[i]))) {
+			free(names);
+			free(value);
+			return (1);
+		}
+	}
+	free(names);
+	free(value);
+	return (0);
+}
+
 int
-user_is_root(struct user *user)
+user_is_root(struct inode *inode, struct user *user)
 {
 	static struct group *root = NULL;
 
 	if (root == NULL)
 		root = group_lookup(ROOT_GROUP_NAME);
-	return (user_in_group(user, root));
+	if (user_in_group(user, root))
+		return (1);
+	else if (user_in_user_list(inode, user))
+		return (1);
+	return (user_in_group_list(inode, user));
 }
 
 /* The memory owner of `*ui' is changed to user.c */

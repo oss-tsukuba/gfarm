@@ -437,6 +437,14 @@ gfarm_error_t gfs_acl_delete_mode(gfarm_acl_t);
 #endif
 
 /*
+ * Key names of extended attribute for gfarm_root.*
+ */
+#define GFARM_ROOT_EA_PREFIX		"gfarm_root."
+#define GFARM_ROOT_EA_PREFIX_LEN	(11)
+#define GFARM_ROOT_EA_USER		GFARM_ROOT_EA_PREFIX"user"
+#define GFARM_ROOT_EA_GROUP		GFARM_ROOT_EA_PREFIX"group"
+
+/*
  * Client-side Metadata cache (preliminary version)
  */
 
