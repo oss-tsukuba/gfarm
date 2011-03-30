@@ -508,6 +508,23 @@ gfarm_path_dir_skip(const char *path)
 	return (base);
 }
 
+const char *
+gfarm_url_dir_skip(const char *gfarm_url)
+{
+	const char *dir = gfarm_url;
+
+	if (gfarm_is_url(dir)) {
+		dir += GFARM_URL_PREFIX_LENGTH;
+		if (dir[0] == '/' && dir[1] == '/') {
+			dir += 2; /* skip "//" */
+			/* skip hostname:port */
+			while (dir[0] != '\0' && dir[0] != '/')
+				dir++;
+		}
+	}
+	return (gfarm_path_dir_skip(dir));
+}
+
 /* similar to dirname(3) in libc, but returns the result by malloc'ed memory */
 char *
 gfarm_url_dir(const char *pathname)

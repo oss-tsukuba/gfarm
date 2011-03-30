@@ -50,6 +50,7 @@ gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfmkdir/dir_nlink.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
+gftool/gfpath/url_base.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
