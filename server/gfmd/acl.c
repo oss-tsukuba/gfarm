@@ -287,17 +287,21 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 {
 	gfarm_error_t e;
 
+	*acl_def_p = NULL;
+	*acl_acc_p = NULL;
+	if (inode_is_symlink(child))
+		return (GFARM_ERR_NO_ERROR);  /* not inherit */
+
 	e = inode_xattr_get_cache(parent, 0, GFARM_ACL_EA_DEFAULT,
 				  acl_def_p, acl_def_size_p);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_SUCH_OBJECT || *acl_def_p == NULL)
+		return (GFARM_ERR_NO_ERROR);  /* not inherit */
+	else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "inode_xattr_get_cache() failed: %s",
-			    gfarm_error_string(e));
+			    "inode_xattr_get_cache(%s) failed: %s",
+			    GFARM_ACL_EA_DEFAULT, gfarm_error_string(e));
 		return (e);
 	}
-	if (*acl_def_p == NULL)
-		return (GFARM_ERR_NO_SUCH_OBJECT);
-
 	e = acl_convert_for_setxattr_internal(
 		child, GFARM_ACL_TYPE_ACCESS,
 		*acl_def_p, *acl_def_size_p,
@@ -333,7 +337,11 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 			free(*acl_def_p);
 			return (e);
 		}
+	} else {
+		free(*acl_def_p);
+		*acl_def_p = NULL;
 	}
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -376,8 +384,12 @@ acl_access(struct inode *inode, struct user *user, int op)
 
 	e = inode_xattr_get_cache(inode, 0, GFARM_ACL_EA_ACCESS,
 				  &value, &size);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_xattr_get_cache(%s) failed: %s",
+			    GFARM_ACL_EA_ACCESS, gfarm_error_string(e));
 		return (e);
+	}
 	if (value == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT); /* no ACL */
 	if (size <= 4) {  /* The value has only version number. */
@@ -389,7 +401,7 @@ acl_access(struct inode *inode, struct user *user, int op)
 	free(value);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-			    "inode_xattr_get_cache() failed: %s",
+			    "gfs_acl_from_xattr_value() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
 	}

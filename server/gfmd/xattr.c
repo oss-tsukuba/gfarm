@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -37,25 +38,123 @@
 #define MAX_XATTR_NAME_LEN	256
 
 static gfarm_error_t
+xattr_inherit_common(struct inode *parent, struct inode *child,
+		     const char *name, void **value_p, size_t *size_p)
+{
+	gfarm_error_t e;
+
+	*value_p = NULL;
+	e = inode_xattr_get_cache(parent, 0, name, value_p, size_p);
+	if (e == GFARM_ERR_NO_SUCH_OBJECT || *value_p == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_xattr_get_cache(%s) failed: %s",
+			    name, gfarm_error_string(e));
+		return (e);
+	}
+
+	e = inode_xattr_add(child, 0, name, *value_p, *size_p);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "inode_xattr_add(%lld, %s): %s",
+			    (unsigned long long)inode_get_number(child),
+			    name, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+xattr_inherit(struct inode *parent, struct inode *child,
+	      void **acl_def_p, size_t *acl_def_size_p,
+	      void **acl_acc_p, size_t *acl_acc_size_p,
+	      void **root_user_p, size_t *root_user_size_p,
+	      void **root_group_p, size_t *root_group_size_p)
+{
+	gfarm_error_t e = acl_inherit_default_acl(parent, child,
+						  acl_def_p, acl_def_size_p,
+						  acl_acc_p, acl_acc_size_p);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			    "acl_inherit_default_acl() failed: %s",
+			    gfarm_error_string(e));
+		return (e);
+	}
+
+	if (inode_is_symlink(child))
+		return (GFARM_ERR_NO_ERROR);  /* not inherit */
+
+	e = xattr_inherit_common(parent, child, GFARM_ROOT_EA_USER,
+			     root_user_p, root_user_size_p);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto error;
+	e = xattr_inherit_common(parent, child, GFARM_ROOT_EA_GROUP,
+			     root_group_p, root_group_size_p);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto error;
+
+	return (GFARM_ERR_NO_ERROR);
+error:
+	if (*acl_def_p != NULL)
+		free(*acl_def_p);
+	if (*acl_acc_p != NULL)
+		free(*acl_acc_p);
+	if (*root_user_p != NULL)
+		free(*root_user_p);
+	if (*root_group_p != NULL)
+		free(*root_group_p);
+
+	return (e);
+}
+
+static int
+user_is_owner_or_root(struct inode *inode, struct user *user)
+{
+	if (user == inode_get_user(inode) || user_is_root(inode, user))
+		return (1);
+	else
+		return (0);
+}
+
+static gfarm_error_t
 xattr_access(int xmlMode, struct inode *inode, struct user *user,
 	     const char *attrname, int op)
 {
-	if (!xmlMode && strncmp("gfarm.", attrname, 6) == 0) {
+	assert(op == GFS_R_OK || op == GFS_W_OK);
+
+	if (xmlMode)
+		return (inode_access(inode, user, op));
+
+	if (strncmp("gfarm.", attrname, 6) == 0) {
 		/* gfarm.ncopy, gfarm.acl_access, gfarm.acl_default */
-		if (op == GFS_R_OK)
+		if (inode_is_symlink(inode))
+			goto symlink;
+		else if (op == GFS_R_OK)
 			return (GFARM_ERR_NO_ERROR); /* Anyone can get */
-		else if (op == GFS_W_OK) {
-			if (user != inode_get_user(inode) &&
-			    !user_is_root(user)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-					    "no privileges to modify `%s'",
-					    attrname);
-				return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-			}
+		else if (user_is_owner_or_root(inode, user))
 			return (GFARM_ERR_NO_ERROR);
-		}
+		else
+			goto not_permit;
+	} else if (strncmp(GFARM_ROOT_EA_PREFIX, attrname,
+			   GFARM_ROOT_EA_PREFIX_LEN) == 0) {
+		if (inode_is_symlink(inode))
+			goto symlink;
+		else if (user_is_root(inode, user))
+			return (GFARM_ERR_NO_ERROR);
+		else
+			goto not_permit;
 	}
+
 	return (inode_access(inode, user, op));
+not_permit:
+	gflog_debug(GFARM_MSG_UNFIXED,
+		    "not permitted to modify `%s'", attrname);
+	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+symlink:
+	gflog_debug(GFARM_MSG_UNFIXED,
+		    "symlinks cannot have `%s'", attrname);
+	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
 
 static int

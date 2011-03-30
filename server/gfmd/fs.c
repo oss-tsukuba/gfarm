@@ -954,7 +954,8 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 	} else if ((user = process_get_user(process)) == NULL) {
 		gflog_debug(GFARM_MSG_1001825, "process_get_user() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (user != inode_get_user(inode) && !user_is_root(user) &&
+	} else if (user != inode_get_user(inode) &&
+	    !user_is_root(inode, user) &&
 	    (e = process_get_file_writable(process, peer, fd)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001826, "permission denied");
@@ -1018,7 +1019,8 @@ gfm_server_fchmod(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001833,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
-	} else if (user != inode_get_user(inode) && !user_is_root(user)) {
+	} else if (user != inode_get_user(inode) &&
+	    !user_is_root(inode, user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1001834,
 			"operation is not permitted for user");
@@ -1090,11 +1092,11 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 	     group_is_invalidated(new_group))) {
 		gflog_debug(GFARM_MSG_1001842, "group is not found");
 		e = GFARM_ERR_NO_SUCH_GROUP;
-	} else if (new_user != NULL && !user_is_root(user)) {
+	} else if (new_user != NULL && !user_is_root(inode, user)) {
 		gflog_debug(GFARM_MSG_1001843,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (new_group != NULL && !user_is_root(user) &&
+	} else if (new_group != NULL && !user_is_root(inode, user) &&
 	    (user != inode_get_user(inode) ||
 	    !user_in_group(user, new_group))) {
 		gflog_debug(GFARM_MSG_1001844,

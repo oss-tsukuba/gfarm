@@ -38,6 +38,7 @@
 #include "xattr_info.h"
 #include "back_channel.h"
 #include "acl.h"
+#include "xattr.h"
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
@@ -1576,14 +1577,14 @@ inode_new_generation_wait(struct inode *inode, struct peer *peer,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+#define check_mode(mode, mask) ((mode & mask) == mask ? \
+			GFARM_ERR_NO_ERROR : GFARM_ERR_PERMISSION_DENIED)
+
 gfarm_error_t
 inode_access(struct inode *inode, struct user *user, int op)
 {
 	gfarm_error_t e;
 	gfarm_mode_t mask = 0;
-
-	if (user_is_root(user))
-		return (GFARM_ERR_NO_ERROR);
 
 	if (inode->i_user == user) {
 		if (op & GFS_X_OK)
@@ -1592,13 +1593,23 @@ inode_access(struct inode *inode, struct user *user, int op)
 			mask |= 0200;
 		if (op & GFS_R_OK)
 			mask |= 0400;
-		goto end;
+
+		if (check_mode(inode->i_mode, mask) == GFARM_ERR_NO_ERROR)
+			return (GFARM_ERR_NO_ERROR);
+		else if (user_is_root(inode, user))
+			return (GFARM_ERR_NO_ERROR);
+		return (GFARM_ERR_PERMISSION_DENIED);
 	}
+
+	if (user_is_root(inode, user))
+		return (GFARM_ERR_NO_ERROR);
 
 	e = acl_access(inode, user, op);
 	if (e != GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_debug(GFARM_MSG_UNFIXED, "acl_access() failed: %s",
-			    gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+				    "acl_access() failed: %s",
+				    gfarm_error_string(e));
 		return (e);
 	}
 
@@ -1618,36 +1629,23 @@ inode_access(struct inode *inode, struct user *user, int op)
 		if (op & GFS_R_OK)
 			mask |= 0004;
 	}
-end:
-	return ((inode->i_mode & mask) == mask ? GFARM_ERR_NO_ERROR :
-	    GFARM_ERR_PERMISSION_DENIED);
+
+	return (check_mode(inode->i_mode, mask));
 }
 
 static gfarm_error_t
-inode_set_acl_common(struct inode *ino, const char *name,
-		     const void *value, size_t size)
+inode_add_xattr_common(struct inode *ino, const char *name,
+		       const void *value, size_t size)
 {
 	/* XXX UNCONST */
 	gfarm_error_t e = db_xattr_add(0, ino->i_number, (char *)name,
 				       (char *)value, size, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
-			    "db_xattr_add(%lld): %s",
-			    (unsigned long long)ino->i_number,
+			    "db_xattr_add(%lld, %s): %s",
+			    (unsigned long long)ino->i_number, name,
 			    gfarm_error_string(e));
 	return (e);
-}
-
-static gfarm_error_t
-inode_set_acl_default(struct inode *ino, const void *value, size_t size)
-{
-	return (inode_set_acl_common(ino, GFARM_ACL_EA_DEFAULT, value, size));
-}
-
-static gfarm_error_t
-inode_set_acl_access(struct inode *ino, const void *value, size_t size)
-{
-	return (inode_set_acl_common(ino, GFARM_ACL_EA_ACCESS, value, size));
 }
 
 enum gfarm_inode_lookup_op {
@@ -1686,6 +1684,8 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	struct inode *n;
 	void *acl_acc = NULL, *acl_def = NULL;
 	size_t acl_acc_size, acl_def_size;
+	void *root_user = NULL, *root_group = NULL;
+	size_t root_user_size, root_group_size;
 
 	if (len == 0) {
 		if (op != INODE_LOOKUP) {
@@ -1827,11 +1827,13 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 	if (inode_is_file(n))  /* after setting i_user and i_group */
 		quota_update_file_add(n);
 
-	e = acl_inherit_default_acl(parent, n, &acl_def, &acl_def_size,
-				    &acl_acc, &acl_acc_size);
-	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			    "acl_inherit_default_acl() failed: %s",
+	e = xattr_inherit(parent, n,
+			  &acl_def, &acl_def_size,
+			  &acl_acc, &acl_acc_size,
+			  &root_user, &root_user_size,
+			  &root_group, &root_group_size);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "xattr_inherit() failed: %s",
 			    gfarm_error_string(e));
 		if (inode_is_file(n)) {
 			quota_update_file_remove(n);
@@ -1873,13 +1875,28 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		    gfarm_error_string(e));
 
 	if (acl_def != NULL) {
-		if (inode_is_dir(n))
-			inode_set_acl_default(n, acl_def, acl_def_size);
+		assert(inode_is_dir(n));
+		inode_add_xattr_common(n, GFARM_ACL_EA_DEFAULT,
+				       acl_def, acl_def_size);
 		free(acl_def);
 	}
 	if (acl_acc != NULL) {
-		inode_set_acl_access(n, acl_acc, acl_acc_size);
+		assert(!inode_is_symlink(n));
+		inode_add_xattr_common(n, GFARM_ACL_EA_ACCESS,
+				       acl_acc, acl_acc_size);
 		free(acl_acc);
+	}
+	if (root_user != NULL) {
+		assert(!inode_is_symlink(n));
+		inode_add_xattr_common(n, GFARM_ROOT_EA_USER,
+				       root_user, root_user_size);
+		free(root_user);
+	}
+	if (root_group != NULL) {
+		assert(!inode_is_symlink(n));
+		inode_add_xattr_common(n, GFARM_ROOT_EA_GROUP,
+				       root_group, root_group_size);
+		free(root_group);
 	}
 
 	/*
@@ -4808,6 +4825,16 @@ xattr_init(void)
 	gfarm_error_t e;
 	int xmlMode;
 
+	if (!gfarm_xattr_caching(GFARM_ACL_EA_ACCESS))
+		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
+	if (!gfarm_xattr_caching(GFARM_ACL_EA_DEFAULT))
+		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
+
+	if (!gfarm_xattr_caching(GFARM_ROOT_EA_USER))
+		gfarm_xattr_caching_pattern_add(GFARM_ROOT_EA_USER);
+	if (!gfarm_xattr_caching(GFARM_ROOT_EA_GROUP))
+		gfarm_xattr_caching_pattern_add(GFARM_ROOT_EA_GROUP);
+
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4850,7 +4877,8 @@ inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname,
 	void *value, size_t size)
 {
 	gfarm_error_t e;
-	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+	struct xattrs *xattrs =
+		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 
 	if (xattr_find(xattrs, attrname) != NULL) {
 		gflog_debug(GFARM_MSG_1001779,
@@ -4863,14 +4891,15 @@ inode_xattr_add(struct inode *inode, int xmlMode, const char *attrname,
 			"xattr_add() failed : %s", attrname);
 		e = GFARM_ERR_NO_MEMORY;
 	}
-	return e;
+	return (e);
 }
 
 gfarm_error_t
 inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
 	void *value, size_t size)
 {
-	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+	struct xattrs *xattrs =
+		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry = xattr_find(xattrs, attrname);
 
 	if (entry == NULL)
@@ -4887,6 +4916,7 @@ inode_xattr_modify(struct inode *inode, int xmlMode, const char *attrname,
 			gflog_warning(GFARM_MSG_1002495,
 			    "trying to cache %d bytes for attr %s: no memory",
 			    (int)size, attrname);
+			return (GFARM_ERR_NO_MEMORY);
 		} else {
 			memcpy(entry->cached_attrvalue, value, size);
 			entry->cached_attrsize = size;
@@ -4899,7 +4929,8 @@ gfarm_error_t
 inode_xattr_get_cache(struct inode *inode, int xmlMode,
 	const char *attrname, void **cached_valuep, size_t *cached_sizep)
 {
-	struct xattrs *xattrs = xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+	struct xattrs *xattrs =
+		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
 	struct xattr_entry *entry;
 	void *r;
 
@@ -4907,11 +4938,12 @@ inode_xattr_get_cache(struct inode *inode, int xmlMode,
 	if (entry == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 
-	if (entry->cached_attrvalue == NULL ||
-	    (r = malloc(entry->cached_attrsize)) == NULL) {
+	if (entry->cached_attrvalue == NULL) {
 		*cached_valuep = NULL;
 		*cached_sizep = 0;
-	} else {
+	} else if ((r = malloc(entry->cached_attrsize)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	else {
 		memcpy(r, entry->cached_attrvalue, entry->cached_attrsize);
 		*cached_valuep = r;
 		*cached_sizep = entry->cached_attrsize;
@@ -5079,15 +5111,6 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	*namesp = names;
 	*sizep = size;
 	return GFARM_ERR_NO_ERROR;
-}
-
-void
-inode_init_acl(void)
-{
-	if (!gfarm_xattr_caching(GFARM_ACL_EA_ACCESS))
-		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
-	if (!gfarm_xattr_caching(GFARM_ACL_EA_DEFAULT))
-		gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 }
 
 /* Ensure that the "gfarm.ncopy" xattr is always cached. */
