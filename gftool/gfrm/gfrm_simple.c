@@ -58,13 +58,7 @@ is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 static gfarm_error_t
 do_not_add_dir(char *file, struct gfs_stat *st, void *arg)
 {
-	const char *f = gfarm_url_dir_skip(file);
-	gfarm_error_t e = GFARM_ERR_IS_A_DIRECTORY;
-
-	fprintf(stderr, "%s: '%s' %s\n",
-	    program_name, f, gfarm_error_string(e));
-	/* return error always to prevent further traverse */
-	return (e);
+	return (GFARM_ERR_IS_A_DIRECTORY);
 }
 
 static gfarm_error_t
@@ -98,10 +92,12 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 		else
 			e = gfs_replica_remove_by_file(file, options->host);
 
-		if (e != GFARM_ERR_NO_ERROR && !options->force &&
+		if (e != GFARM_ERR_NO_ERROR &&
+		    (!options->force ||
+		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) &&
 		    (!options->recursive || e != GFARM_ERR_NO_SUCH_OBJECT)) {
 			fprintf(stderr, "%s: %s: %s\n",
-			    program_name, file, gfarm_error_string(e));
+				program_name, file, gfarm_error_string(e));
 			e2 = e;
 			nerr++;
 		}
@@ -116,10 +112,13 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 		} else
 			e = gfs_rmdir(dir);
 
-		if (e != GFARM_ERR_NO_ERROR && !options->force) {
+		if (e != GFARM_ERR_NO_ERROR &&
+		    (!options->force ||
+		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
 			nerr++;
 			e2 = e;
-			fprintf(stderr, "%s: %s\n", dir, gfarm_error_string(e));
+			fprintf(stderr, "%s: %s: %s\n",
+				program_name, dir, gfarm_error_string(e));
 		}
 	}
 	return (nerr == 0 ? GFARM_ERR_NO_ERROR : e2);
@@ -204,14 +203,14 @@ main(int argc, char **argv)
 
 		e = gfarm_foreach_directory_hierarchy(
 			add_file, op_dir_before, add_dir, file, &files);
-		/*
-		 * GFARM_ERR_IS_A_DIRECTORY may be returned to prevent
-		 * further traverse.
-		 */
-		if (!options.force &&
-		    e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_IS_A_DIRECTORY)
-			fprintf(stderr, "%s: %s\n",
-			    file, gfarm_error_string(e));
+
+		if (e != GFARM_ERR_NO_ERROR &&
+		    (!options.force ||
+		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
+			fprintf(stderr, "%s: %s: %s\n",
+			    program_name, file, gfarm_error_string(e));
+			status = 1;
+		}
 
 	}
 	gfarm_stringlist_free_deeply(&paths);
