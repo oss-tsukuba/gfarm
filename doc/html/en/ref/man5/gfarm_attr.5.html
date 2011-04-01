@@ -34,12 +34,8 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->Files and directories in Gfarm filesystem can have Extended
-Attributes.  Extended attributes are name:value pairs.</P
-><P
-></P
-><P
-></P
+>Every files and directories in Gfarm filesystem can have extended
+attributes.  Extended attributes are name:value pairs.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -49,14 +45,22 @@ NAME="XATTRNAMESPACE"
 ><H2
 >EXTENDED ATTRIBUTE NAMESPACES</H2
 ><P
->The name of Extended Attribute which has "gfarm." prefix is special in
-Gfarm filesystem.
-Gfarm users can freely use the other names of Extended Attribute.</P
+>The extended attributes which have "gfarm." or "gfarm_root." prefix
+name are specially treated in Gfarm filesystem.  General Gfarm users
+can freely use the extended attributes which have "user." prefix name.
+XML extended attributes can have any names.</P
 ><P
->Everyone can get the Extended Attributes named "gfarm.*".
-Owner or gfarmroot group can modify the Extended Attributes named "gfarm.*".
-The others of Extended Attribute can be read/modified on the files
-or directories permission.</P
+>Everyone can get the "gfarm.*" extended attributes.  Owner or
+gfarmroot group can modify the "gfarm.*" extended attributes.</P
+><P
+>The users in gfarmroot group or the users in "gfarm_root.uesr" of the
+entry or the groups in "gfarm_root.group" of the entry can get/modify
+the "gfarm_root.*" extended attributes.</P
+><P
+>The "user.*" extended attributes can be gotten/modified on the entry
+(file or directory) permission.</P
+><P
+>Symbolic links cannot have any extended attributes.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -66,7 +70,7 @@ NAME="GFARM-XATTR"
 ><H2
 >GFARM EXTENDED ATTRIBUTES</H2
 ><P
->The following is a list of the Extended Attribute names used in Gfarm
+>The following is a list of the extended attribute names used in Gfarm
 filesystem.</P
 ><P
 ></P
@@ -80,7 +84,8 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->The number of file replicas to be created automatically in gfmd.</P
+>This is the number of file replicas to be created automatically in
+gfmd.</P
 ></DD
 ><DT
 ><CODE
@@ -89,7 +94,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->Access ACL (Access Control List).</P
+>This is Access ACL (Access Control List).</P
 ></DD
 ><DT
 ><CODE
@@ -98,10 +103,53 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->Default ACL. Only directories can have/use this Extended Attribute.</P
+>This is Default ACL. Only directories can have/use this extended
+attribute.</P
+></DD
+><DT
+><CODE
+CLASS="PARAMETER"
+>gfarm_root.user</CODE
+></DT
+><DD
+><P
+>This is the list of user names who can have the privilege for the
+entry (file or directory).  The names are separated by a new line
+(\n).  This extended attribute is copied to a new entry (file or
+directory) from the parent directory (when the parent directory has
+this extended attribute).</P
+></DD
+><DT
+><CODE
+CLASS="PARAMETER"
+>gfarm_root.group</CODE
+></DT
+><DD
+><P
+>This is the list of group names who can have the privilege for the
+entry (file or directory).  The names are separated by a new line
+(\n).  This extended attribute is copied to a new entry (file or
+directory) from the parent directory (when the parent directory has
+this extended attribute).</P
 ></DD
 ></DL
 ></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SECURITY"
+></A
+><H2
+>SECURITY NOTES</H2
+><P
+>When untrusted users are registered in the gfarm_root.{user,group}
+extended attributes of any files or directories,
+a Security Hole exists on the mount point of gfarm2fs with
+"-o suid,allow_other" option executed by root (even if either
+"-o ro" option or "-o default_permissions" option is also specified).
+Therefore both "-o suid,allow_other" option and
+gfarm_root.{user,group} extended attributes should not be used.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
