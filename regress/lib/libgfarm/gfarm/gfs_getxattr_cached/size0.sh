@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-name=foo
+name=user.foo
 value=hoge
 
 trap 'gfrm -f $gftmp; exit $exit_trap' $trap_sigs
