@@ -201,6 +201,21 @@ gfm_client_connection_and_process_acquire_by_path(const char *path,
 	return (gfarm_url_parse_metadb(&path, gfm_serverp));
 }
 
+int
+gfm_is_mounted(struct gfm_connection *gfm_server)
+{
+	struct gfm_connection *gfm_root;
+	int rv;
+
+	if (gfm_client_connection_and_process_acquire_by_path("/",
+	    &gfm_root) == GFARM_ERR_NO_ERROR) {
+		rv = gfm_server == gfm_root;
+		gfm_client_connection_free(gfm_root);
+		return (rv);
+	}
+	return (0);
+}
+
 #define SKIP_SLASH(p) { while (*(p) == '/') (p)++; }
 
 static gfarm_error_t

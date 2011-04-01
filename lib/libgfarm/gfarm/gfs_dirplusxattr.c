@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "gfm_client.h"
+#include "lookup.h"
 #include "gfs_io.h"
 #include "gfs_dirplusxattr.h"
 
@@ -178,6 +179,13 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 	*attrvaluesp = dir->attrvaluebuf[dir->index];
 	*attrsizesp = dir->attrsizebuf[dir->index];
 	dir->index++;
+
+	if (GFARM_S_IS_SUGID_PROGRAM((*status)->st_mode) &&
+	    !gfm_is_mounted(dir->gfm_server)) {
+		/* for safety of gfarm2fs "suid" option. */
+		(*status)->st_mode &= ~(GFARM_S_ISUID|GFARM_S_ISGID);
+	}
+
 	return (GFARM_ERR_NO_ERROR);
 }
 

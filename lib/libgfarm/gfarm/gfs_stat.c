@@ -42,6 +42,17 @@ gfm_stat_result(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_1000131,
 		    "fstat result; %s", gfarm_error_string(e));
 #endif
+	if (e == GFARM_ERR_NO_ERROR &&
+	    GFARM_S_IS_SUGID_PROGRAM(c->st->st_mode) &&
+	    !gfm_is_mounted(gfm_server)) {
+		/*
+		 * for safety of gfarm2fs "suid" option.
+		 * We have to check gfm_server here instead of using
+		 * gfm_client_connection_and_process_acquire_by_path(path,),
+		 * because we have to follow a symolic link to check it.
+		 */
+		c->st->st_mode &= ~(GFARM_S_ISUID|GFARM_S_ISGID);
+	}
 	return (e);
 }
 
