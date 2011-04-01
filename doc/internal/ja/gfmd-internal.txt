@@ -111,6 +111,10 @@ doc/internal/png/gfmd-thread-dependency.png
 
   ・db_thread()
 
+    dbq の要素を取得して db へ反映するスレッド。
+    metadata-replication が有効な場合、dbq に追加される要素は参照系の
+    操作に限られる。
+
 　・ネットワーク受信監視用 peer_watcher() × 1
 
     peer_watcher() が thrpool_add_job() するスレッドプールの数だけ、
@@ -142,6 +146,55 @@ doc/internal/png/gfmd-thread-dependency.png
   ・旧backend_protocolの場合、各filesystem nodeに対し remover() × 大量
 
     廃止して、back_channel_recv_thread_pool を使うようにする予定。
+
+  − metadata-replicationが有効な場合
+
+    <master gfmd において>
+
+    ・gfmdc_journal_asyncsend_thread()
+      (synchronous_replication=disable の場合のみ)
+
+      journal record を slave gfmd へ送信するスレッド。複数の slave gfmd が
+      存在する場合は、順番に送信する(並列に送信しない)。
+      synchronous_replication はデフォルトで enable である。
+      このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
+
+    ・db_journal_store_thread()
+
+      journal file から journal record を読み込んで、DB へ反映するスレッド。
+      metadata-replication が有効の場合、変更操作についての db_access の
+      関数では dbq を使用せずに journal file へ更新情報を書き出す。
+      このスレッドは slave gfmd が master gfmd に昇格するときにも生成される。
+
+    <slave gfmd において>
+
+    ・gfmdc_connect_thread()
+
+      gfmd channel を接続するスレッド。master gfmd へ接続するまで再試行し、
+      接続後に切断すると、再接続を試みる。
+      master gfmd へ昇格するとき停止する。
+
+    ・db_journal_recvq_thread()
+
+      master gfmd から受け取った journal record を保持しているリストから journal
+      record を取り出して、journal file へ書き出すスレッド。
+      gfmd channel は async protocol なので、master gfmd が journal record を
+      送信した順番に slave gfmd が受信するとは限らない。そのため、slave gfmd は
+      受信した journal record を一度メモリ上のリストへ保留する。
+      ところで、journal record をリストへ追加するスレッドは、
+      gfmdc_recv_thread_pool の gfmdc_server_journal_send() である。
+      リストの要素数が一定値を超え、journal file reader が読み込み待ち状態でない
+      (すなわち db_journal_apply_thread() が journal record を反映中) である場合
+      は、gfmdc_server_journal_send() はリストの要素数が一定値以下になるまで待機
+      する。このスレッドは、gfmdc_server_journal_send() のスレッドを再開する役割
+      がある。
+      このスレッドは master gfmd へ昇格するとき、journal file へ書き出すことが
+      可能な journal reocrd を全て書き出してから、停止する。
+
+    ・db_journal_apply_thread()
+
+      journal file から読み込んだ情報をメモリと DB へ反映するスレッド。
+      master gfmd へ昇格するとき停止する。
 
 ○ スレッドプール
 
@@ -182,7 +235,7 @@ doc/internal/png/gfmd-thread-dependency.png
 
     このプールを用いて起動されるのは、以下のスレッド。
 
-    ・async_back_channel_main()
+    ・back_channel_main()
       - protocol_main() が、gfm_server_switch_async_back_channel() 経由で、
         thrpool_add_job() する。
       - peer_watcher() が、thrpool_add_job() する。
@@ -208,6 +261,58 @@ doc/internal/png/gfmd-thread-dependency.png
 		・結果の処理のための host_replicated()
 		・結果の送信 peer_sender_lock() を待つことがある。
 				→ 送信側を待つことがある。XXX DEADLOCK
+
+ − metadata-replicationが有効な場合
+
+   − gfmdc_recv_thread_pool
+
+     このプールを用いて起動されるのは、以下のスレッド。
+
+     ・gfmdc_main()
+
+       gfm_server_switch_gfmd_channel() で peer の protocl_handler として
+       設定する。db_journal_recvq_thread() でも述べているが、このスレッド
+       は gfmdc_server_journal_send() 内で journal record をメモリ上の
+       リストへ追加する際に、待機することがある。
+
+   − gfmdc_send_thread_pool
+
+      r5204 時点においては未使用。
+      gfmd channel の送信側スレッドプールとして使用する予定であるが、
+      r5204 時点ではまだ使用していない。
+
+   − journal_sync_thread_pool
+      (master gfmd, synchronous_replication=enableの場合のみ)
+
+     このプールを用いて起動されるのは、以下のスレッド。
+
+     ・gfmdc_journal_send_thread()
+
+       journal record を slave gfmd へ同期的に送信するスレッド。
+       async protocol の返信が戻るまで待機する。
+       このスレッドは変更操作発生時に gfmd channel で接続中の slave gfmd の
+       数だけ並列に動作する。protocol_main() スレッドは
+       全ての gfmdc_journal_send_thread() と、gfmdc_journal_file_sync_thread()
+       が終了するまで、待機する。
+       protocol_main() は giant_lock を取得した状態で待機することに注意が
+       必要である。gfmdc_recv_thread_pool のスレッドが async protocol の
+       受信を行う際、giant lock を取得してはならない。
+
+     ・gfmdc_journal_file_sync_thread()
+       (synchronous_journaling=enable の場合のみ)
+
+       journal file へ fdatasync を実行するスレッドである。
+       synchronous_journaling=disable のとき、このスレッドは生成されない。
+       デフォルトで synchronous_journaling=enable である。
+
+     ・gfmdc_journal_first_sync_thread()
+
+       gfmd channel 接続直後に slave へ送信するべき journal record が存在
+       する場合、このスレッドが連続的に journal record を送信する。
+       このスレッドの動作中に、protocol_main() スレッドが db_access から
+       変更操作を行った場合、このスレッドの通信先の slave gfmd を除いて、
+       gfmdc_journal_send_thread() による journal record の送信が実行される。
+
 
 ■ ファイルの削除について
 
