@@ -123,12 +123,19 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 {
 	assert(op == GFS_R_OK || op == GFS_W_OK);
 
-	if (xmlMode)
+	if (xmlMode) { /* any attrname */
+		if (inode_is_symlink(inode))
+			goto symlink;
 		return (inode_access(inode, user, op));
+	}
 
 	if (strncmp("gfarm.", attrname, 6) == 0) {
-		/* gfarm.ncopy, gfarm.acl_access, gfarm.acl_default */
-		if (inode_is_symlink(inode))
+		const char *type = attrname + 6;
+		if (strcmp("ncopy", type) != 0 &&
+		    strcmp("acl_access", type) != 0 &&
+		    strcmp("acl_default", type) != 0)
+			goto not_supp;
+		else if (inode_is_symlink(inode))
 			goto symlink;
 		else if (op == GFS_R_OK)
 			return (GFARM_ERR_NO_ERROR); /* Anyone can get */
@@ -138,15 +145,26 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 			goto not_permit;
 	} else if (strncmp(GFARM_ROOT_EA_PREFIX, attrname,
 			   GFARM_ROOT_EA_PREFIX_LEN) == 0) {
-		if (inode_is_symlink(inode))
+		const char *type = attrname + GFARM_ROOT_EA_PREFIX_LEN;
+		if (strcmp("user", type) != 0 && strcmp("group", type) != 0)
+			goto not_supp;
+		else if (inode_is_symlink(inode))
 			goto symlink;
 		else if (user_is_root(inode, user))
 			return (GFARM_ERR_NO_ERROR);
 		else
 			goto not_permit;
+	} else if (strncmp("user.", attrname, 5) == 0 &&
+		   strlen(attrname) >= 6) {
+		if (inode_is_symlink(inode))
+			goto symlink;
+		return (inode_access(inode, user, op));
 	}
-
-	return (inode_access(inode, user, op));
+	/* else : not supported */
+not_supp:
+	gflog_debug(GFARM_MSG_UNFIXED,
+		    "not supported to modify `%s'", attrname);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 not_permit:
 	gflog_debug(GFARM_MSG_UNFIXED,
 		    "not permitted to modify `%s'", attrname);
