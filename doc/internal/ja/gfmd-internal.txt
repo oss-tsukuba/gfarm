@@ -298,6 +298,14 @@ doc/internal/png/gfmd-thread-dependency.png
        必要である。gfmdc_recv_thread_pool のスレッドが async protocol の
        受信を行う際、giant lock を取得してはならない。
 
+       [スレッドの依存関係についての補足]
+
+         図 doc/internal/chart/gfmd-thread-dependency.png では、
+         gfmdc_journal_send_thread -> gfmdc_main の依存によって、依存関係の
+         ループができているように見えるが、gfmdc_journal_send_thread は
+         master gfmd 上、gfmdc_main は slave gfmd 上で動作するため、
+	 実際はループになっていない。
+
      ・gfmdc_journal_file_sync_thread()
        (synchronous_journaling=enable の場合のみ)
 

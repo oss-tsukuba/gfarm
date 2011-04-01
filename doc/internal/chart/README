@@ -1,0 +1,20 @@
+* File Formats
+
+   - gfmd-thread-dependency.dot is Graphviz fromat.
+
+   - gfmd-thread-dependency.png is made by dot command.
+     To make it, execute 'make' command.
+
+   - gfarm-v2-schema*.svgz are gzipped inkscape svg format.
+
+   - gfarm-v2-schema*.pdf are saved as PDF format by inkscape.
+
+* Rules for gfmd-thread-dependency
+
+   - color of arrows 
+
+     green    : network
+     sky blue : db
+     blue     : thread pool
+     red      : mutex
+

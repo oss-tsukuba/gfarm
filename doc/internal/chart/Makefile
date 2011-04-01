@@ -7,7 +7,5 @@ TARGETS = gfmd-thread-dependency.png
 
 all: $(TARGETS)
 
-dep_libgfarm.png: dep_libgfarm.dot
-
 clean:
 	-rm -f $(TARGETS)
