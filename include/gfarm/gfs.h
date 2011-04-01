@@ -18,6 +18,9 @@ typedef gfarm_uint64_t gfarm_ino_t;
 
 typedef gfarm_uint32_t gfarm_mode_t;
 #define	GFARM_S_ALLPERM	0007777		/* all access permissions */
+#define	GFARM_S_ISUID	0004000		/* set user id on execution */
+#define	GFARM_S_ISGID	0002000		/* set group id on execution */
+#define	GFARM_S_ISTXT	0001000		/* sticky bit */
 #define	GFARM_S_IFMT	0170000		/* type of file mask */
 #define	GFARM_S_IFDIR	0040000		/* directory */
 #define	GFARM_S_IFREG	0100000		/* regular file */
@@ -28,6 +31,10 @@ typedef gfarm_uint32_t gfarm_mode_t;
 
 #define	GFARM_S_IS_PROGRAM(m) \
 	(GFARM_S_ISREG(m) && ((m) & 0111) != 0)
+
+#define GFARM_S_IS_SUGID_PROGRAM(mode) \
+	(((mode) & (GFARM_S_ISUID|GFARM_S_ISGID)) != 0 && \
+	 GFARM_S_IS_PROGRAM(mode))
 
 struct gfs_stat {
 	gfarm_ino_t st_ino;
