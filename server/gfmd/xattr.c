@@ -117,12 +117,14 @@ user_is_owner_or_root(struct inode *inode, struct user *user)
 		return (0);
 }
 
+#define XATTR_GET	1
+#define XATTR_SET	2
+#define XATTR_REMOVE	4
+
 static gfarm_error_t
 xattr_access(int xmlMode, struct inode *inode, struct user *user,
 	     const char *attrname, int op)
 {
-	assert(op == GFS_R_OK || op == GFS_W_OK);
-
 	if (xmlMode) { /* any attrname */
 		if (inode_is_symlink(inode))
 			goto symlink;
@@ -137,9 +139,10 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
-		else if (op == GFS_R_OK)
+		else if (op == XATTR_GET)
 			return (GFARM_ERR_NO_ERROR); /* Anyone can get */
 		else if (user_is_owner_or_root(inode, user))
+			/* XATTR_SET or XATTR_REMOVE */
 			return (GFARM_ERR_NO_ERROR);
 		else
 			goto not_permit;
@@ -159,6 +162,15 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		if (inode_is_symlink(inode))
 			goto symlink;
 		return (inode_access(inode, user, op));
+	} else if (strncmp("system.", attrname, 7) == 0) {
+		/* workaround for gfarm2fs_fix_acl */
+		if (op == XATTR_SET)
+			goto not_supp;
+		else if (user_is_owner_or_root(inode, user))
+			/* XATTR_GET or XATTR_REMOVE */
+			return (GFARM_ERR_NO_ERROR);
+		else
+			goto not_permit;
 	}
 	/* else : not supported */
 not_supp:
@@ -347,7 +359,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				     attrname, GFS_W_OK))
+				     attrname, XATTR_SET))
 		   != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			    "xattr_access() failed: %s",
@@ -428,7 +440,7 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				attrname, GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
+				attrname, XATTR_GET)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
@@ -591,7 +603,7 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
-				attrname, GFS_W_OK)) != GFARM_ERR_NO_ERROR) {
+			attrname, XATTR_REMOVE)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
