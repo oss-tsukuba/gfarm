@@ -317,7 +317,7 @@ user_is_admin(struct user *user)
 #define is_nl_cr(c)  ((c == '\n' || c == '\r' || c == '\0') ? 1 : 0)
 
 static gfarm_error_t
-list_to_names(char **value_p, size_t size,
+list_to_names(void **value_p, size_t size,
 	      char ***names_p, size_t *names_num_p)
 {
 	char *value, *priv, *now, *end;
@@ -390,7 +390,7 @@ user_in_user_list(struct inode *inode, struct user *user)
 			      GFARM_ROOT_EA_USER, gfarm_error_string(e));
 		return (0);
 	}
-	e = list_to_names((char **)&value, size, &names, &names_num);
+	e = list_to_names(&value, size, &names, &names_num);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(value);
 		return (0);
@@ -425,7 +425,7 @@ user_in_group_list(struct inode *inode, struct user *user)
 			      GFARM_ROOT_EA_GROUP, gfarm_error_string(e));
 		return (0);
 	}
-	e = list_to_names((char **)&value, size, &names, &names_num);
+	e = list_to_names(&value, size, &names, &names_num);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(value);
 		return (0);
