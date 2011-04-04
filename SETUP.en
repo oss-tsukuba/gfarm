@@ -418,6 +418,44 @@ Gfarm root users are members of the gfarmroot group.
 
 	% gfgroup -m gfarmroot user1 user2 ...
 
+Examples of basic functionality
+===============================
+
+o File copy
+
+Files can be copied into the Gfarm file system by the 'gfreg' command.
+
+	% gfreg .gfarmrc foo
+
+This example shows that a local file .gfarmrc is copied to foo, more
+exactly /foo, in the Gfarm file system.
+
+o File access
+
+Files in the Gfarm file systemcan be accessed by the 'gfexport'
+command.
+
+	% gfexport foo
+
+This example displays the content of foo in the Gfarm file system to
+the standard output.
+
+o mount
+
+When installing the 'gfarm2fs' command, it is possible to mount the
+Gfarm file system.
+
+	% mkdir /tmp/foo
+	% gfarm2fs /tmp/foo
+
+After mounting the Gfarm file system, any file system access can be
+available by usual commands.  To unmount it, use the 'fusermount' with
+the -u option.
+
+	% fusermont -u /tmp/foo
+
+For details, refer to documents in the gfarm2fs package.
+
 Further examples of advanced functionality
 ==========================================
 
