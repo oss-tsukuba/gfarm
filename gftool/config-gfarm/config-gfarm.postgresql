@@ -298,7 +298,7 @@ _EOF_
 	echo '# IPv4 local connections:'
 	echo 'host	all		all	127.0.0.1/32	md5'
 	echo '# IPv6 local connections:'
-	echo '#host	all		all	::1/128		md5'
+	echo 'host	all		all	::1/128		md5'
 
 	echo ""
 	echo "## The following should work, but actually doesn't with PostgreSQL-7.4"
