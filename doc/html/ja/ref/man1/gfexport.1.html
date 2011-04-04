@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfexport</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfexport&nbsp;--&nbsp;Gfarm ファイルを通常のファイルに変換する</DIV
+>gfexport&nbsp;--&nbsp;Gfarm ファイルシステムのファイルの内容を表示する</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,20 +37,15 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfexport</B
-> [-H <TT
+>  [-h <TT
 CLASS="REPLACEABLE"
 ><I
->ホスト指定ファイル</I
-></TT
->] [-I <TT
-CLASS="REPLACEABLE"
-><I
->フラグメント番号</I
+>ファイルシステムノード</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
+>Gfarm-URL</I
 ></TT
 > </P
 ></DIV
@@ -63,8 +57,7 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->指定した Gfarm URL の表す Gfarm 並列ファイルを、通常のファイルに変換
-して標準出力に出力します。</P
+>Gfarm URL で指定された Gfarm ファイルシステム上のファイルを標準出力に出力します．</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -79,45 +72,21 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-H</TT
-> <TT
+>-h</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->ホスト指定ファイル</I
-></TT
+>ファイルシステムノード</CODE
 ></DT
 ><DD
 ><P
->フラグメントを取り出すホスト名のリストを指定します。
-ホスト名は、各行に一ホストずつ記述します。
-省略した場合には、自動的に選ばれたホストからフラグメントを得ます。</P
-><P
->ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。</P
+>指定したファイルシステムノードに格納されているファイルを出力します．</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
-> <TT
-CLASS="PARAMETER"
-><I
->フラグメント番号</I
-></TT
-></DT
-><DD
-><P
->並列ファイル中の、指定したフラグメントのみを取り出します。
-実行形式のファイルの場合には、このオプションで実行アーキテクチャ
-(例 「sparc-sun-solaris8」) を指定することによって、指定したアーキ
-テクチャの実行ファイルを取り出せます。</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
