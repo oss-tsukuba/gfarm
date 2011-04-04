@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfreg</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfreg&nbsp;--&nbsp;register a Gfarm file, Gfarm file fragments, or a Gfarm directory</DIV
+>gfreg&nbsp;--&nbsp;copy a file into the Gfarm file system</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,150 +37,20 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfreg</B
-> [-p ] [-h <TT
-CLASS="REPLACEABLE"
-><I
->filesystem-node</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->hostfile</I
-></TT
-> | -D <TT
-CLASS="REPLACEABLE"
-><I
->domainname</I
-></TT
->] [-a <TT
-CLASS="REPLACEABLE"
-><I
->architecture</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->program</I
-></TT
->   ...   <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
-> </P
-><P
-><B
-CLASS="COMMAND"
->gfreg</B
-> [-i ] [-h <TT
-CLASS="REPLACEABLE"
-><I
->filesystem-node</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->hostfile</I
-></TT
-> | -D <TT
-CLASS="REPLACEABLE"
-><I
->domainname</I
-></TT
->]  <TT
-CLASS="REPLACEABLE"
-><I
->localfile</I
-></TT
->   ...   <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
-></TT
-> </P
-><P
-><B
-CLASS="COMMAND"
->gfreg</B
->  -N <TT
-CLASS="REPLACEABLE"
-><I
->total-num-of-fragments</I
-></TT
->   -I <TT
-CLASS="REPLACEABLE"
-><I
->fragment-index</I
-></TT
 >  [-h <TT
 CLASS="REPLACEABLE"
 ><I
 >filesystem-node</I
 ></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->hostfile</I
-></TT
-> | -D <TT
-CLASS="REPLACEABLE"
-><I
->domainname</I
-></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
 >localfile</I
 ></TT
->   ...   <TT
+>   <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
-></TT
-> </P
-><P
-><B
-CLASS="COMMAND"
->gfreg</B
->  -r  [-h <TT
-CLASS="REPLACEABLE"
-><I
->filesystem-node</I
-></TT
-> | -H <TT
-CLASS="REPLACEABLE"
-><I
->hostfile</I
-></TT
-> | -D <TT
-CLASS="REPLACEABLE"
-><I
->domainname</I
-></TT
->] [-a <TT
-CLASS="REPLACEABLE"
-><I
->architecture</I
-></TT
->] [<TT
-CLASS="REPLACEABLE"
-><I
->directory</I
-></TT
-> | <TT
-CLASS="REPLACEABLE"
-><I
->program</I
-></TT
-> | <TT
-CLASS="REPLACEABLE"
-><I
->localfile</I
-></TT
->]  ...   <TT
-CLASS="REPLACEABLE"
-><I
->gfarm-URL</I
+>Gfarm-URL</I
 ></TT
 > </P
 ></DIV
@@ -193,270 +62,16 @@ NAME="DESCRIPTION"
 ><H2
 >DESCRIPTION</H2
 ><P
->The first form copies and registers the
-<TT
+>Copy a file specified by <CODE
 CLASS="PARAMETER"
-><I
->program</I
-></TT
-> as a Gfarm file
-<TT
+>localfile</CODE
+> to a
+file specified by <CODE
 CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> in the Gfarm filesystem.  When
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> is a directory, multiple programs
-can be specified.  After the registration, the
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> can be specified as a program name of
-gfrun(1) and gfmpirun_p4(1).  Without the <TT
-CLASS="OPTION"
->-p</TT
-> option,
-only executable file can be specified.  With the <TT
-CLASS="OPTION"
->-p</TT
->
-option, non-executable file can be specified as well.  Without the
-<TT
-CLASS="OPTION"
->-a</TT
-> option or the <TT
-CLASS="OPTION"
->-h</TT
->
-option, architecture of the <TT
-CLASS="PARAMETER"
-><I
->program</I
-></TT
-> is assumed
-to be the same architecture as the client host on that gfreg(1) is
-executed, which is obtained by the Gfarm metaserver.</P
-><P
->The second form registers one or more
-<TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->s as a single Gfarm file.  Without the
-<TT
-CLASS="OPTION"
->-i</TT
-> option, only non-executable file can be specified
-as <TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->.  With the <TT
-CLASS="OPTION"
->-i</TT
->
-option, both excutable and non-executable file can be specified as
-<TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->. 
-The destination filesystem node will be automatically selected by CPU
-load average.  With any one of <TT
-CLASS="OPTION"
->-h</TT
->, <TT
-CLASS="OPTION"
->-H</TT
->, 
-<TT
-CLASS="OPTION"
->-D</TT
-> options, filesystem node can be limited.</P
-><P
->The third form registers <TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
-> as a
-file fragment of a Gfarm file.  The total number of fragments and the
-fragment index are specified by the <TT
-CLASS="OPTION"
->-N</TT
-> option and the
-<TT
-CLASS="OPTION"
->-I</TT
-> option, respectively.  When
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> is a directory, multiple
-<TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->s can be specified.
-The destination filesystemnode will be automatically decided by CPU
-load average unless any one of <TT
-CLASS="OPTION"
->-h</TT
->,
-<TT
-CLASS="OPTION"
->-H</TT
->, <TT
-CLASS="OPTION"
->-D</TT
-> options is explicitly
-specified.  When the gfreg command of this form is executed on a
-filesystem node, the local filesystem node is always selected rather
-than a remote filesystemnode.  In this case, <TT
-CLASS="OPTION"
->-h</TT
->,
-<TT
-CLASS="OPTION"
->-H</TT
->, <TT
-CLASS="OPTION"
->-D</TT
-> options help to store files
-dispersively.</P
-><P
->The fourth form registers the <TT
-CLASS="PARAMETER"
-><I
->directory</I
-></TT
->
-as a Gfarm directory <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->, the
-<TT
-CLASS="PARAMETER"
-><I
->program</I
-></TT
-> or the <TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->
-as a Gfarm file <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.
-If <TT
-CLASS="PARAMETER"
-><I
->directory</I
-></TT
-> have some sub directories and/or
-files, they will be registered recursively.  The non-executable file 
-<TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
-> will be registered as a file has
-one fragment.  A non-executable file in the
-<TT
-CLASS="PARAMETER"
-><I
->directory</I
-></TT
-> will be registered in the same way.
-When <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> already exists as a directory,
-multiple <TT
-CLASS="PARAMETER"
-><I
->directorie</I
-></TT
->s,
-<TT
-CLASS="PARAMETER"
-><I
->program</I
-></TT
->s, and <TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
->s
-can be specified and they will be registered in
-<TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.  They can be mixed in parameteres,
-while other forms inhibit this manner.
-If <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> does not exist, one
-<TT
-CLASS="PARAMETER"
-><I
->directory</I
-></TT
-> or one
-<TT
-CLASS="PARAMETER"
-><I
->program</I
-></TT
->, or one
-<TT
-CLASS="PARAMETER"
-><I
->localfile</I
-></TT
-> can be specified and it will be
-registered as <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
->.
-Refer to the first form's part above to specify filesystem node
-thatprogfarms and files will reside with the <TT
-CLASS="OPTION"
->-a</TT
->
-option or the <TT
-CLASS="OPTION"
->-h</TT
-> option.</P
+>Gfarm-URL</CODE
+> in the Gfarm file
+system.  The Gfarm-URL can be a full path name in the Gfarm file
+system or a Gfarm URL such as gfarm://metaserver:port/path/name.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -471,18 +86,21 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-f</TT
+>-h</CODE
+> <CODE
+CLASS="PARAMETER"
+>filesystem-node</CODE
 ></DT
 ><DD
 ><P
->overwrites gfarm-URL even if it exits as a Gfarm file.</P
+>explicitly specifies the file system node to be stored.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P
