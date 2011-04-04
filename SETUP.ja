@@ -439,6 +439,44 @@ root 権限を持つユーザは，同様に gfarmroot グループに所属させます．
 
 	% gfgroup -m gfarmroot user1 user2 ...
 
+● Gfarm の基本的な利用
+=======================
+
+▽ ファイルのコピー
+
+ファイルを Gfarm ファイルシステムにコピーするためには，gfreg コマンドを
+利用します．
+
+	% gfreg .gfarmrc foo
+
+この例では，ファイル .gfarmrc を Gfarm ファイルシステムに foo（より正
+確には /foo）としてコピーしています．
+
+▽ ファイルの参照
+
+Gfarm ファイルシステムのファイルは gfexport コマンドで参照できます．
+
+	% gfexport foo
+
+この例では，Gfarm ファイルシステム上のファイル foo の内容を標準出力に
+出力します．
+
+▽ マウント
+
+gfarm2fs コマンドを導入すると，Gfarm ファイルシステムをマウントするこ
+とができます．
+
+	% mkdir /tmp/foo
+	% gfarm2fs /tmp/foo
+
+マウント後は，通常のコマンドでファイル操作を行うことが可能です．アンマ
+ウントは，fusermount コマンドで行います．
+
+	% fusermont -u /tmp/foo
+
+詳細は，gfarm2fs のパッケージに含まれるドキュメントを参照してください．
+
+
 ● Gfarm の進んだ利用
 =====================
 

@@ -3,32 +3,21 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFEXPORT" "1" "24 May 2003" "Gfarm" ""
+.TH "GFEXPORT" "1" "04 April 2011" "Gfarm" ""
+
 .SH NAME
-gfexport \- Gfarm ファイルを通常のファイルに変換する
+gfexport \- Gfarm ファイルシステムのファイルの内容を表示する
 .SH SYNOPSIS
 
-\fBgfexport\fR [ \fB-H \fIホスト指定ファイル\fB\fR ] [ \fB-I \fIフラグメント番号\fB\fR ] \fB\fIgfarm-URL\fB\fR
+\fBgfexport\fR [ \fB-h \fIファイルシステムノード\fB\fR ] \fB\fIGfarm-URL\fB\fR
 
 .SH "DESCRIPTION"
 .PP
-指定した Gfarm URL の表す Gfarm 並列ファイルを、通常のファイルに変換
-して標準出力に出力します。
+Gfarm URL で指定された Gfarm ファイルシステム上のファイルを標準出力に出力します．
 .SH "OPTIONS"
 .TP
-\fB-H \fIホスト指定ファイル\fB\fR
-フラグメントを取り出すホスト名のリストを指定します。
-ホスト名は、各行に一ホストずつ記述します。
-省略した場合には、自動的に選ばれたホストからフラグメントを得ます。
-
-ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
-読み込みます。
-.TP
-\fB-I \fIフラグメント番号\fB\fR
-並列ファイル中の、指定したフラグメントのみを取り出します。
-実行形式のファイルの場合には、このオプションで実行アーキテクチャ
-(例 「sparc-sun-solaris8」) を指定することによって、指定したアーキ
-テクチャの実行ファイルを取り出せます。
+\fB-h \fIファイルシステムノード\fB\fR
+指定したファイルシステムノードに格納されているファイルを出力します．
 .TP
 \fB-?\fR
 引数オプションを表示します。

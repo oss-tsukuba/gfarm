@@ -3,7 +3,7 @@
 
 <refentry id='gfreg.1'>
 
-<refentryinfo><date>5 Apr 2006</date></refentryinfo>
+<refentryinfo><date>4 Apr 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfreg</refentrytitle>
@@ -13,120 +13,28 @@
 
 <refnamediv id='name'>
 <refname>gfreg</refname>
-<refpurpose>Gfarm ファイルシステムへのファイル，ファイルフラグメント，ディレクトリの登録</refpurpose>
+<refpurpose>Gfarm ファイルシステムへのファイルのコピー</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfreg</command>
-    <arg choice='opt'>-p </arg>
     <group choice='opt'>
       <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
-      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
-    </group>
-    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <!-- arg choice='opt'>-N <replaceable>複製の数</replaceable></arg -->
-    <arg choice='plain'><replaceable>program</replaceable></arg>
-    <arg choice='plain'>...</arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfreg</command>
-    <arg choice='opt'>-i </arg>
-    <group choice='opt'>
-      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
-      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
     </group>
     <arg choice='plain'><replaceable>localfile</replaceable></arg>
-    <arg choice='plain'>...</arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfreg</command>
-    <arg choice='plain'>-N <replaceable>フラグメント総数</replaceable></arg>
-    <arg choice='plain'>-I <replaceable>フラグメント番号</replaceable></arg>
-    <group choice='opt'>
-      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
-      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
-    </group>
-    <arg choice='plain'><replaceable>localfile</replaceable></arg>
-    <arg choice='plain'>...</arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
-</cmdsynopsis>
-<cmdsynopsis>
-  <command>gfreg</command>
-    <arg choice='plain'>-r</arg>
-    <group choice='opt'>
-      <arg choice='plain'>-h <replaceable>ファイルシステムノード</replaceable></arg>
-      <arg choice='plain'>-H <replaceable>ホストファイル名</replaceable></arg>
-      <arg choice='plain'>-D <replaceable>ドメイン名</replaceable></arg>
-    </group>
-    <arg choice='opt'>-a <replaceable>architecture</replaceable></arg>
-    <group choice='opt'>
-      <arg choice='plain'><replaceable>directory</replaceable></arg>
-      <arg choice='plain'><replaceable>program</replaceable></arg>
-      <arg choice='plain'><replaceable>localfile</replaceable></arg>
-    </group>
-    <arg choice='plain'>...</arg>
-    <arg choice='plain'><replaceable>gfarm-URL</replaceable></arg>
+    <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para>第1の形式の場合，引数 program に指定したローカルディスク上の
-プログラム・ファイルを，gfarm-URL に登録します．gfarm-URL がディレクト
-リの場合は，複数の program を指定することができます．これ以降，
-gfrun および gfmpirun_p4 で指定するプログラム名として，この URL が
-使えるようになります．オプション -p がない場合には，実行が許可されてい
-る program のみ指定できます．ある場合には，実行が許可されていないファイ
-ルも指定できますが，このファイル名を gfrun および gfmpirun_p4 で指定し
-ても，実行できません．オプション -a でプログラムの動作するアーキテ
-クチャを指定しなかった場合，あるいはオプション -h で登録するファイルシ
-ステムノードを指定しなかった場合には，gfreg コマンドを実行したホストの
-アーキテクチャと同じであると仮定します．ただし，そのホストが Gfarm メ
-タサーバに登録されている必要があります．
-<!--
-オプション -N により，複製の数を指定することができます．指定しない場
-合は 1 となります．
-  -->
-</para>
 
-<para>第2の形式の場合，一つ以上の複数のlocalfileをGfarmファイルとして
-登録します．オプション -i がない場合には，実行が許可されていない
-localfile のみを指定できます．ある場合には，実行許可とは無関係に
-localfile を指定できます．ファイルの複製が作成されるファイルシス
-テムノードは自動的にCPU負荷により選ばれますが，オプション -h, -H, -D
-のいずれかにより選択されるファイルシステムノードを制限することができます．
-</para>
-
-<para>第3の形式の場合，localfileをGfarmファイルのフラグメントとして登
-録します．オプション -N と -I で，総フラグメント数と，このlocalfileの
-フラグメント番号を必ず指定する必要があります．Gfarm-URL がディレクトリ
-の場合は localfile を複数指定することが可能です．ファイルの複製が作成
-されるファイルシステムノードは自動的にCPU負荷により選ばれますが，オプ
-ション -h, -H, -D のいずれかによりにより明示的に指定することもできます．
-ただ，ファイルシステムノードで gfreg を実行した場合は常に自ノードが
-選ばれてしまうため，ファイルを分散させて配置したい場合はオプション -h,
--H, -D のいずれかを指定する必要があります．
-</para>
-
-<para>第4の形式の場合，directory, program, localfile を gfarm-URL に
-登録します．directory にサブディレクトリやファイルが含まれていれば再帰
-的に登録します．ディレクトリに含まれている，あるいは，引数 localfile
-で指定されている非実行ファイルは，一つのフラグメントからなる Gfarmファ
-イルとして登録されます．
-Gfarm-URL がディレクトリとして存在する場合は，複数の directory,
-program, localfile を Gfarm-URL ディレクトリに登録します．
-他の形式と異なり，これらをいっしょに引数として指定することもできます．
-gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
-一つを登録できます．
-ファイルが登録されるファイルシステムノードとオプション -a -h について
-は，上記の第1の形式での説明を参照しください．
+<para>localfile で指定されるファイルを Gfarmファイルシステム上の
+Gfarm-URL にコピーします．
+Gfarm-URL では Gfarmファイルシステム上の絶対パス名のほか、
+gfarm://metaserver:port/path/name 形式での指定が可能です。
 </para>
 
 </refsect1>
@@ -134,9 +42,9 @@ gfarm_URL が存在しない場合は，directory, program, localfile のいずれか
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 <varlistentry>
-<term><option>-f</option></term>
+<term><option>-h</option> <parameter>ファイルシステムノード</parameter></term>
 <listitem>
-<para>gfarm-URL がファイルとして存在していても，強制的に上書きします．</para>
+<para>指定したファイルシステムノードにファイルを作成します．</para>
 </listitem>
 </varlistentry>
 <varlistentry>

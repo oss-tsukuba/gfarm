@@ -1,12 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >gfexport</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
-"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -26,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfexport&nbsp;--&nbsp;print on the standard output</DIV
+>gfexport&nbsp;--&nbsp;print a file in the Gfarm file system on the standard output</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -38,20 +37,15 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfexport</B
-> [-H <TT
+>  [-h <TT
 CLASS="REPLACEABLE"
 ><I
->hostfile</I
-></TT
->] [-I <TT
-CLASS="REPLACEABLE"
-><I
->fragment-index</I
+>filesystem-node</I
 ></TT
 >]  <TT
 CLASS="REPLACEABLE"
 ><I
->gfarm-URL</I
+>Gfarm-URL</I
 ></TT
 > </P
 ></DIV
@@ -66,11 +60,9 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfexport</B
-> outputs a Gfarm file specified by <TT
+> outputs a Gfarm file specified by <CODE
 CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
+>Gfarm-URL</CODE
 > to
 the standard output.</P
 ></DIV
@@ -87,58 +79,21 @@ NAME="OPTIONS"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-H</TT
-> <TT
+>-h</CODE
+> <CODE
 CLASS="PARAMETER"
-><I
->hostfile</I
-></TT
+>filesystem-node</CODE
 ></DT
 ><DD
 ><P
->specifies a list of filesystem nodes explicitly to be accessed.
-<TT
-CLASS="PARAMETER"
-><I
->hostfile</I
-></TT
-> contains of a hostname that stores the corresponding
-file fragment in each line.  When the -H option is specified, the -I
-option cannot be specified.</P
-><P
->if ``-'' is specified, the standard input is used to read the host
-list.</P
+>explicitly specifies a filesystem node to be accessed.</P
 ></DD
 ><DT
-><TT
+><CODE
 CLASS="OPTION"
->-I</TT
-> <TT
-CLASS="PARAMETER"
-><I
->fragment-index</I
-></TT
-></DT
-><DD
-><P
->outputs the only specified fragment index.</P
-><P
->If the <TT
-CLASS="PARAMETER"
-><I
->gfarm-URL</I
-></TT
-> is an executable file, an architecture name,
-for example, sparc-sun-solaris8, can be used to specify the executable
-architecture.  When the -I option is specified, the -H option cannot
-be specified.</P
-></DD
-><DT
-><TT
-CLASS="OPTION"
->-?</TT
+>-?</CODE
 ></DT
 ><DD
 ><P

@@ -4,6 +4,7 @@ DOCBOOK = \
 	gfchown.1 \
 	gfdf.1 \
 	gfedquota.1 \
+	gfexport.1 \
 	gffindxmlattr.1 \
 	gfgetfacl.1 \
 	gfgroup.1 \
@@ -15,6 +16,7 @@ DOCBOOK = \
 	gfmv.1 \
 	gfquota.1 \
 	gfquotacheck.1 \
+	gfreg.1 \
 	gfrep.1 \
 	gfrmdir.1 \
 	gfsched.1 \
@@ -30,7 +32,6 @@ DOCBOOK = \
 #	gfarm_agent.1 \
 #	gfcd.1 \
 #	gfexec.1 \
-#	gfexport.1 \
 #	gfgrep.1 \
 #	gfimport_fixed.1 \
 #	gfimport_text.1 \
@@ -38,7 +39,6 @@ DOCBOOK = \
 #	gfps.1 \
 #	gfpwd.1 \
 #	gfrcmd.1 \
-#	gfreg.1 \
 #	gfrm.1 \
 #	gfront.1 \
 #	gfrun.1 \
