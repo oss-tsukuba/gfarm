@@ -151,12 +151,11 @@ char *gfarm_gsi_client_cred_name(void);
 
 /* auth_client_gsi_auth */
 gfarm_error_t gfarm_auth_request_gsi_auth(struct gfp_xdr *,
-	const char *, const char *, enum gfarm_auth_id_type, const char *,
-	struct passwd *);
+	const char *, const char *, enum gfarm_auth_id_type, const char *);
 gfarm_error_t gfarm_auth_request_gsi_auth_multiplexed(
 	struct gfarm_eventqueue *,
 	struct gfp_xdr *, const char *, const char *, enum gfarm_auth_id_type,
-	const char *, void (*)(void *), void *, void **, struct passwd *);
+	const char *, void (*)(void *), void *, void **);
 gfarm_error_t gfarm_auth_result_gsi_auth_multiplexed(void *);
 
 /* auth_server_sharedsecret */
