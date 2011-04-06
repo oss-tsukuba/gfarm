@@ -1,0 +1,161 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: Servers which export Gfarm [Japanese]</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=euc-jp">
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+メタデータ冗長化 - チュートリアル
+
+<H1>メタデータ冗長化 - チュートリアル</H1>
+<A href="../../en/user/redundancy-tutorial.html">English</A> | 日本語 
+
+<H2>1. インストール</H2>
+ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
+host-a / host-bのそれぞれにおいて、gfarm_v2のソースコードが配置されたディレクトリで、次のコマンドを実行します。
+<BR><BR>
+host-a, host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ ./configure --enable-metadata-replication
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+rootユーザで、次のコマンドを実行します。
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# make install
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>2. セットアップ</H2>
+host-a / host-bのそれぞれにおいて、次のコマンドをrootユーザで実行します。
+<BR><BR>
+host-a, host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# config-gfarm
+# /etc/init.d/gfmd stop
+</PRE></TD></TR></TBODY></TABLE>
+<UL><LI>補足<BR>
+メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
+</UL>
+<BR>
+host-aにおいて/etc/gfmd.confを/etc/gfmd-slave.confにコピーします。<BR>
+host-a / host-bのそれぞれにおける/etc/gfmd.confに、次の行を加えます。
+<BR><BR>
+host-a, host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_list host-a host-b
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+host-aにおける/etc/gfmd-slave.confに、次の行を加えます。
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_list host-b host-a
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+host-aのデータベースをhost-bにコピーします。host-bに存在するジャーナルファイルは削除します。<BR>
+以下に例として、データベースのコピーとジャーナルファイルの削除を実行するスクリプトを示します。
+なお、このスクリプトはhost-bで実行することを前提としています。
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+#!/bin/sh
+
+set -e
+
+# source db
+SRC_HOST=host-a
+SRC_PORT=10602
+SRC_PASSWORD=xxxxxx
+
+# destination db
+DST_PASSWORD=yyyyyy
+DST_PORT=10602
+
+DUMP_FILE=/tmp/gfarm-pgsql.dmp
+JOURNAL_FILE=/var/gfarm-metadata/journal/0000000000.gmj
+PREFIX=/usr
+pg_dump=$PREFIX/bin/pg_dump
+psql=$PREFIX/bin/psql
+dropdb=$PREFIX/bin/dropdb
+createdb=$PREFIX/bin/createdb
+
+trap 'rm -f $DUMP_FILE; exit 1' 1 2 5
+
+echo export db
+PGPASSWORD=$SRC_PASSWORD $pg_dump -h $SRC_HOST -p $SRC_PORT -U gfarm -f $DUMP_FILE gfarm
+echo delete journal file : $JOURNAL_FILE
+rm -f $JOURNAL_FILE
+echo import db
+PGPASSWORD=$DST_PASSWORD $dropdb -p $DST_PORT -U postgres gfarm
+PGPASSWORD=$DST_PASSWORD $createdb -p $DST_PORT -U postgres gfarm
+PGPASSWORD=$DST_PASSWORD $psql -p $DST_PORT -U postgres -d gfarm -f $DUMP_FILE &gt; /dev/null
+rm -f $DUMP_FILE
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>3. 起動</H2>
+host-a / host-b において、gfmd を起動します。
+rootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-a, host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>4. スレーブgfmdをマスターgfmdに昇格する</H2>
+先にhost-aのgfmdを停止します。
+host-aにおいてrootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+</PRE></TD></TR></TBODY></TABLE>
+<UL><LI><FONT COLOR="red">注意</FONT><BR>
+スレーブgfmdをマスターgfmdへ昇格するときは、以下のいずれかの条件を満たす必要あります。
+  <UL>
+  <LI>現在のマスターgfmdが停止している。</LI>
+  <LI>現在のマスターgfmdが、スレーブgfmd / gfsd / クライアントと通信できない。
+  </UL>
+上記の条件を満たさない場合、マスターgfmd / スレーブgfmdのデータベース間で不整合が生じる可能性があります。
+</LI></UL>
+host-bにおいてrootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# kill -SIGUSR1 &lt;gfmdのプロセスID&gt;
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>5. 元のマスターgfmdを起動する</H2>
+host-aのgfmdをスレーブgfmdとして起動します。
+host-aにおいてrootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfmd -P /var/run/gfmd.pid -f /etc/gfmd-slave.conf
+</PRE></TD></TR></TBODY></TABLE>
+<UL><LI><FONT COLOR="red">注意</FONT><BR>
+host-aでgfmdを起動した後に、host-bのgfmdのログに"host-a: expired"と出力されていた場合、
+レプリケーションが実行されません。
+host-aのgfmdを停止した上で、host-bのデータベースをhost-aにコピーし、host-aのgfmdを再起動する必要があります。
+</LI></UL>
+host-bのgfmdを停止します。
+host-bにおいてrootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+host-aのgfmdをマスターgfmdへ昇格します。
+host-aにおいてrootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# kill -SIGUSR1 &lt;gfmdのプロセスID&gt;
+</PRE></TD></TR></TBODY></TABLE>
+
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>
