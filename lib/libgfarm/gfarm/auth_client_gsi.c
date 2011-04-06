@@ -470,7 +470,7 @@ gfarm_auth_request_gsi_auth(struct gfp_xdr *conn,
 	enum gfarm_auth_id_type self_type, const char *user)
 {
 	gfarm_error_t e = gfarm_auth_request_gsi(conn,
-	    service_tag, hostname, self_type, user);
+	    service_tag, hostname, self_type, user, pwd);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		gfp_xdr_downgrade_to_insecure_session(conn);
@@ -487,7 +487,7 @@ gfarm_auth_request_gsi_auth_multiplexed(struct gfarm_eventqueue *q,
 {
 	return (gfarm_auth_request_gsi_multiplexed(q, conn,
 	    service_tag, hostname, self_type, user,
-	    continuation, closure, statepp));
+	    continuation, closure, statepp, pwd));
 }
 
 gfarm_error_t
