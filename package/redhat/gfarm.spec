@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.4.1
+%define ver	2.4.2
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -150,7 +150,10 @@ Metadata server for Gfarm file system
 Development header files and libraries for Gfarm file system
 
 %changelog
-* Thu Jul 22 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-1
+* Thu Apr  7 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.2-1
+- Gfarm version 2.4.2 released
+
+* Thu Jul 22 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.0-1
 - Gfarm version 2.4.0 released
 
 * Wed Jul 21 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.3.2-3
@@ -297,14 +300,16 @@ fi
 %{man_prefix}/man1/gfchmod.1.gz
 %{man_prefix}/man1/gfchown.1.gz
 %{man_prefix}/man1/gfdf.1.gz
+%{man_prefix}/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfexec.1.gz
-%{man_prefix}/man1/gfexport.1.gz
 %endif
+%{man_prefix}/man1/gfexport.1.gz
 %{man_prefix}/man1/gffindxmlattr.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfgrep.1.gz
 %endif
+%{man_prefix}/man1/gfgetfacl.1.gz
 %{man_prefix}/man1/gfgroup.1.gz
 %{man_prefix}/man1/gfhost.1.gz
 %if %{gfarm_v2_not_yet}
@@ -323,8 +328,10 @@ fi
 %{man_prefix}/man1/gfps.1.gz
 %{man_prefix}/man1/gfpwd.1.gz
 %{man_prefix}/man1/gfrcmd.1.gz
-%{man_prefix}/man1/gfreg.1.gz
 %endif
+%{man_prefix}/man1/gfquota.1.gz
+%{man_prefix}/man1/gfquotacheck.1.gz
+%{man_prefix}/man1/gfreg.1.gz
 %{man_prefix}/man1/gfrep.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfrm.1.gz
@@ -338,11 +345,10 @@ fi
 %{man_prefix}/man1/gfsetdir.1.gz
 %{man_prefix}/man1/gfssh.1.gz
 %endif
+%{man_prefix}/man1/gfsetfacl.1.gz
 %{man_prefix}/man1/gfstat.1.gz
 %{man_prefix}/man1/gfstatus.1.gz
-%if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfusage.1.gz
-%endif
 %{man_prefix}/man1/gfuser.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfwc.1.gz
@@ -353,6 +359,40 @@ fi
 %{man_prefix}/man3/gfarm.3.gz
 %{man_prefix}/man3/gfarm_initialize.3.gz
 %{man_prefix}/man3/gfarm_terminate.3.gz
+%{man_prefix}/man3/gfs_acl_add_perm.3.gz
+%{man_prefix}/man3/gfs_acl_calc_mask.3.gz
+%{man_prefix}/man3/gfs_acl_check.3.gz
+%{man_prefix}/man3/gfs_acl_clear_perms.3.gz
+%{man_prefix}/man3/gfs_acl_cmp.3.gz
+%{man_prefix}/man3/gfs_acl_create_entry.3.gz
+%{man_prefix}/man3/gfs_acl_delete_def_file.3.gz
+%{man_prefix}/man3/gfs_acl_delete_entry.3.gz
+%{man_prefix}/man3/gfs_acl_delete_perm.3.gz
+%{man_prefix}/man3/gfs_acl_dup.3.gz
+%{man_prefix}/man3/gfs_acl_entries.3.gz
+%{man_prefix}/man3/gfs_acl_equiv_mode.3.gz
+%{man_prefix}/man3/gfs_acl_error.3.gz
+%{man_prefix}/man3/gfs_acl_free.3.gz
+%{man_prefix}/man3/gfs_acl_from_mode.3.gz
+%{man_prefix}/man3/gfs_acl_from_text.3.gz
+%{man_prefix}/man3/gfs_acl_from_text_with_default.3.gz
+%{man_prefix}/man3/gfs_acl_from_xattr_value.3.gz
+%{man_prefix}/man3/gfs_acl_get_entry.3.gz
+%{man_prefix}/man3/gfs_acl_get_file.3.gz
+%{man_prefix}/man3/gfs_acl_get_perm.3.gz
+%{man_prefix}/man3/gfs_acl_get_permset.3.gz
+%{man_prefix}/man3/gfs_acl_get_qualifier.3.gz
+%{man_prefix}/man3/gfs_acl_get_tag_type.3.gz
+%{man_prefix}/man3/gfs_acl_init.3.gz
+%{man_prefix}/man3/gfs_acl_set_file.3.gz
+%{man_prefix}/man3/gfs_acl_set_permset.3.gz
+%{man_prefix}/man3/gfs_acl_set_qualifier.3.gz
+%{man_prefix}/man3/gfs_acl_set_tag_type.3.gz
+%{man_prefix}/man3/gfs_acl_sort.3.gz
+%{man_prefix}/man3/gfs_acl_to_any_text.3.gz
+%{man_prefix}/man3/gfs_acl_to_text.3.gz
+%{man_prefix}/man3/gfs_acl_to_xattr_value.3.gz
+%{man_prefix}/man3/gfs_acl_valid.3.gz
 %{man_prefix}/man3/gfs_pio_close.3.gz
 %{man_prefix}/man3/gfs_pio_create.3.gz
 %{man_prefix}/man3/gfs_pio_open.3.gz
@@ -403,6 +443,7 @@ fi
 %{man_prefix}/man3/gfs_utimes.3.gz
 %endif
 %{man_prefix}/man5/gfarm2.conf.5.gz
+%{man_prefix}/man5/gfarm_attr.5.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
 %if %{gfarm_v2_not_yet}
@@ -413,14 +454,16 @@ fi
 %{man_prefix}/ja/man1/gfchmod.1.gz
 %{man_prefix}/ja/man1/gfchown.1.gz
 %{man_prefix}/ja/man1/gfdf.1.gz
+%{man_prefix}/ja/man1/gfedquota.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfexec.1.gz
-%{man_prefix}/ja/man1/gfexport.1.gz
 %endif
+%{man_prefix}/ja/man1/gfexport.1.gz
 %{man_prefix}/ja/man1/gffindxmlattr.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfgrep.1.gz
 %endif
+%{man_prefix}/ja/man1/gfgetfacl.1.gz
 %{man_prefix}/ja/man1/gfgroup.1.gz
 %{man_prefix}/ja/man1/gfhost.1.gz
 %if %{gfarm_v2_not_yet}
@@ -439,8 +482,10 @@ fi
 %{man_prefix}/ja/man1/gfps.1.gz
 %{man_prefix}/ja/man1/gfpwd.1.gz
 %{man_prefix}/ja/man1/gfrcmd.1.gz
-%{man_prefix}/ja/man1/gfreg.1.gz
 %endif
+%{man_prefix}/ja/man1/gfquota.1.gz
+%{man_prefix}/ja/man1/gfquotacheck.1.gz
+%{man_prefix}/ja/man1/gfreg.1.gz
 %{man_prefix}/ja/man1/gfrep.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfrm.1.gz
@@ -454,11 +499,10 @@ fi
 %{man_prefix}/ja/man1/gfsetdir.1.gz
 %{man_prefix}/ja/man1/gfssh.1.gz
 %endif
+%{man_prefix}/ja/man1/gfsetfacl.1.gz
 %{man_prefix}/ja/man1/gfstat.1.gz
 %{man_prefix}/ja/man1/gfstatus.1.gz
-%if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfusage.1.gz
-%endif
 %{man_prefix}/ja/man1/gfuser.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfwc.1.gz
@@ -530,6 +574,7 @@ fi
 %{man_prefix}/ja/man3/gfs_utimes.3.gz
 %endif
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
+%{man_prefix}/ja/man5/gfarm_attr.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
 %{html_prefix}/index.html
@@ -542,14 +587,16 @@ fi
 %{html_prefix}/en/ref/man1/gfchmod.1.html
 %{html_prefix}/en/ref/man1/gfchown.1.html
 %{html_prefix}/en/ref/man1/gfdf.1.html
+%{html_prefix}/en/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfexec.1.html
-%{html_prefix}/en/ref/man1/gfexport.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfexport.1.html
 %{html_prefix}/en/ref/man1/gffindxmlattr.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfgrep.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfgetfacl.1.html
 %{html_prefix}/en/ref/man1/gfgroup.1.html
 %{html_prefix}/en/ref/man1/gfhost.1.html
 %if %{gfarm_v2_not_yet}
@@ -568,8 +615,10 @@ fi
 %{html_prefix}/en/ref/man1/gfps.1.html
 %{html_prefix}/en/ref/man1/gfpwd.1.html
 %{html_prefix}/en/ref/man1/gfrcmd.1.html
-%{html_prefix}/en/ref/man1/gfreg.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfquota.1.html
+%{html_prefix}/en/ref/man1/gfquotacheck.1.html
+%{html_prefix}/en/ref/man1/gfreg.1.html
 %{html_prefix}/en/ref/man1/gfrep.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfrm.1.html
@@ -581,11 +630,10 @@ fi
 %{html_prefix}/en/ref/man1/gfrun.1.html
 %{html_prefix}/en/ref/man1/gfsetdir.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfsetfacl.1.html
 %{html_prefix}/en/ref/man1/gfstat.1.html
 %{html_prefix}/en/ref/man1/gfstatus.1.html
-%if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfusage.1.html
-%endif
 %{html_prefix}/en/ref/man1/gfuser.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfwc.1.html
@@ -596,6 +644,40 @@ fi
 %{html_prefix}/en/ref/man3/gfarm.3.html
 %{html_prefix}/en/ref/man3/gfarm_initialize.3.html
 %{html_prefix}/en/ref/man3/gfarm_terminate.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_add_perm.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_calc_mask.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_check.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_clear_perms.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_cmp.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_create_entry.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_delete_def_file.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_delete_entry.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_delete_perm.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_dup.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_entries.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_equiv_mode.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_error.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_free.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_from_mode.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_from_text.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_from_text_with_default.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_from_xattr_value.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_entry.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_file.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_perm.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_permset.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_qualifier.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_get_tag_type.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_init.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_set_file.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_set_permset.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_set_qualifier.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_set_tag_type.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_sort.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_to_any_text.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_to_text.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_to_xattr_value.3.html
+%{html_prefix}/en/ref/man3/gfs_acl_valid.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_close.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_create.3.html
 %{html_prefix}/en/ref/man3/gfs_pio_open.3.html
@@ -646,6 +728,7 @@ fi
 %{html_prefix}/en/ref/man3/gfs_utimes.3.html
 %endif
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
+%{html_prefix}/en/ref/man5/gfarm_attr.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
@@ -661,14 +744,16 @@ fi
 %{html_prefix}/ja/ref/man1/gfchmod.1.html
 %{html_prefix}/ja/ref/man1/gfchown.1.html
 %{html_prefix}/ja/ref/man1/gfdf.1.html
+%{html_prefix}/ja/ref/man1/gfedquota.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfexec.1.html
-%{html_prefix}/ja/ref/man1/gfexport.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfexport.1.html
 %{html_prefix}/ja/ref/man1/gffindxmlattr.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfgrep.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfgetfacl.1.html
 %{html_prefix}/ja/ref/man1/gfgroup.1.html
 %{html_prefix}/ja/ref/man1/gfhost.1.html
 %if %{gfarm_v2_not_yet}
@@ -687,8 +772,10 @@ fi
 %{html_prefix}/ja/ref/man1/gfps.1.html
 %{html_prefix}/ja/ref/man1/gfpwd.1.html
 %{html_prefix}/ja/ref/man1/gfrcmd.1.html
-%{html_prefix}/ja/ref/man1/gfreg.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfquota.1.html
+%{html_prefix}/ja/ref/man1/gfquotacheck.1.html
+%{html_prefix}/ja/ref/man1/gfreg.1.html
 %{html_prefix}/ja/ref/man1/gfrep.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfrm.1.html
@@ -700,11 +787,10 @@ fi
 %{html_prefix}/ja/ref/man1/gfrun.1.html
 %{html_prefix}/ja/ref/man1/gfsetdir.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfsetfacl.1.html
 %{html_prefix}/ja/ref/man1/gfstat.1.html
 %{html_prefix}/ja/ref/man1/gfstatus.1.html
-%if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfusage.1.html
-%endif
 %{html_prefix}/ja/ref/man1/gfuser.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfwc.1.html
@@ -776,6 +862,7 @@ fi
 %{html_prefix}/ja/ref/man3/gfs_utimes.3.html
 %endif
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
+%{html_prefix}/ja/ref/man5/gfarm_attr.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/export-gfarm.html
@@ -850,6 +937,7 @@ fi
 %{prefix}/bin/gfedquota
 %{prefix}/bin/gfexport
 %{prefix}/bin/gffindxmlattr
+%{prefix}/bin/gfgetfacl
 %{prefix}/bin/gfgroup
 %{prefix}/bin/gfhost
 %if %{gfarm_v2_not_yet}
@@ -881,6 +969,7 @@ fi
 %{prefix}/bin/gfusage
 %{prefix}/bin/gfuser
 %{prefix}/bin/gfsched
+%{prefix}/bin/gfsetfacl
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfrsh
 %{prefix}/bin/gfrshl
