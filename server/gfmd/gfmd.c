@@ -1044,6 +1044,9 @@ transform_to_master(void)
 
 	mdhost_set_self_as_master();
 	dead_file_copy_init_load();
+
+	giant_unlock();
+
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
 
 	db_journal_cancel_read();
@@ -1052,7 +1055,6 @@ transform_to_master(void)
 	start_db_journal_threads();
 	start_gfmdc_threads();
 
-	giant_unlock();
 	gflog_info(GFARM_MSG_UNFIXED,
 	    "end transforming to the master gfmd");
 }
