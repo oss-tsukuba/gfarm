@@ -303,10 +303,9 @@ mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
 	struct mdhost *m = abstract_host_to_mdhost(h);
 
 	if (m->conn) {
-		/* move to peer_free */
+		gfm_client_connection_unset_conn(m->conn);
 		gfm_client_connection_free(m->conn);
 		m->conn = NULL;
-		peer_unset_connection(peer);
 		peer_invoked(peer);
 	}
 #ifdef ENABLE_METADATA_REPLICATION

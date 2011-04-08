@@ -82,6 +82,12 @@ gfm_client_connection_conn(struct gfm_connection *gfm_server)
 	return (gfm_server->conn);
 }
 
+void
+gfm_client_connection_unset_conn(struct gfm_connection *gfm_server)
+{
+	gfm_server->conn = NULL;
+}
+
 int
 gfm_client_connection_fd(struct gfm_connection *gfm_server)
 {

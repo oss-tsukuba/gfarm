@@ -751,12 +751,6 @@ peer_alloc_with_connection(struct peer **peerp, struct gfp_xdr *conn,
 	return (e);
 }
 
-void
-peer_unset_connection(struct peer *peer)
-{
-	peer->conn = NULL;
-}
-
 const char *
 peer_get_service_name(struct peer *peer)
 {
