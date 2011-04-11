@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <pthread.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
