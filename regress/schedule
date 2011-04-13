@@ -52,6 +52,7 @@ gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
 gftool/gfrmdir/rmdir.sh
+gftool/gfrmdir/rmdir_symlink.sh
 gftool/gfreg/0byte.sh
 gftool/gfrm/0byte.sh
 gftool/gfreg/1byte.sh

@@ -9,10 +9,10 @@ gfs_rmdir(const char *path)
 	struct gfs_stat st;
 	int is_dir;
 
-	e = gfs_stat(path, &st);
+	e = gfs_lstat(path, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001394,
-			"gfs_stat(%s) failed: %s",
+			"gfs_lstat(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
 		return (e);
