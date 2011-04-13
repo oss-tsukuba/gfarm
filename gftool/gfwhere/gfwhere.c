@@ -258,7 +258,7 @@ main(int argc, char **argv)
 			if (GFARM_S_ISREG(st.st_mode)) {
 				opt.do_not_display_name = (n == 1);
 				e = display_replica_catalog(p, &st, &opt);
-			} else if (opt_recursive)
+			} else if (GFARM_S_ISDIR(st.st_mode) && opt_recursive)
 				e = gfarm_foreach_directory_hierarchy(
 				    display_replica_catalog, NULL, NULL,
 				    p, &opt);
