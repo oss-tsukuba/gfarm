@@ -70,8 +70,7 @@ gfarm_foreach_directory_hierarchy(
 			e_save = e;
 		if (op_dir2 != NULL)
 			e = op_dir2(file, &st, arg);
-	}
-	else if (GFARM_S_ISREG(st.st_mode) && op_file != NULL)
+	} else if (op_file != NULL) /* not only file but also symlink */
 		e = op_file(file, &st, arg);
 free_st:
 	gfs_stat_free(&st);
