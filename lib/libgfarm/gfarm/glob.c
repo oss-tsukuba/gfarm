@@ -122,10 +122,10 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			return (GFARM_ERR_FILE_NAME_TOO_LONG);
 		}
 		glob_pattern_to_name(path_tail, pattern, strlen(pattern));
-		e = gfs_stat(path_buffer, &st);
+		e = gfs_lstat(path_buffer, &st);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001417,
-				"gfs_stat(%s) failed: %s",
+				"gfs_lstat(%s) failed: %s",
 				path_buffer,
 				gfarm_error_string(e));
 			return (e);
@@ -139,10 +139,7 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		gfarm_stringlist_add(paths, s);
-		if (GFARM_S_ISDIR(st.st_mode))
-			gfs_glob_add(types, GFS_DT_DIR);
-		else
-			gfs_glob_add(types, GFS_DT_REG);
+		gfs_glob_add(types, gfs_mode_to_type(st.st_mode));
 		gfs_stat_free(&st);
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -283,7 +280,8 @@ gfs_glob(const char *pattern, gfarm_stringlist *paths, gfs_glob_t *types)
 		e = gfs_glob_sub(path_buffer, path_buffer, pattern,
 		    paths, types);
 	}
-	if (gfarm_stringlist_length(paths) <= n) {
+	if (gfarm_stringlist_length(paths) <= n) { /* doesn't match */
+		/* in that case, add the pattern itself */
 		gfarm_stringlist_add(paths, strdup(pattern));
 		gfs_glob_add(types, GFS_DT_UNKNOWN);
 	}
