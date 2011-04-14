@@ -19,27 +19,33 @@ usage(void)
 }
 
 static gfarm_error_t
-gfs_mkdir_p(char *path, gfarm_mode_t mode, int option_parent)
+gfs_mkdir_p(char *path, gfarm_mode_t mode)
 {
 	gfarm_error_t e;
 	struct gfs_stat sb;
+	char *parent = gfarm_url_dir(path);
+	int is_dir = 0;
 
-	if (option_parent) {
-		char *parent = gfarm_url_dir(path);
-
-		if (parent == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		e = gfs_stat(parent, &sb);
-		if (e == GFARM_ERR_NO_ERROR)
-			gfs_stat_free(&sb);
-		else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-			e = gfs_mkdir_p(parent, mode, option_parent);
-		free(parent);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	e = gfs_stat(parent, &sb);
+	if (e == GFARM_ERR_NO_ERROR) {
+		is_dir = GFARM_S_ISDIR(sb.st_mode);
+		gfs_stat_free(&sb);
+	} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+		e = gfs_mkdir_p(parent, mode);
+		is_dir = 1;
 	}
+	free(parent);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (!is_dir)
+		return (GFARM_ERR_ALREADY_EXISTS);
+
 	e = gfs_mkdir(path, mode);
-	if (option_parent && e == GFARM_ERR_ALREADY_EXISTS)
+	if (e == GFARM_ERR_ALREADY_EXISTS &&
+	    gfs_stat(path, &sb) == GFARM_ERR_NO_ERROR &&
+	    GFARM_S_ISDIR(sb.st_mode))
 		e = GFARM_ERR_NO_ERROR;
 	return (e);
 }
@@ -77,7 +83,10 @@ main(int argc, char **argv)
 		usage();
 
 	for (i = 0; i < argc; i++) {
-		e = gfs_mkdir_p(argv[i], 0755, option_parent);
+		if (option_parent)
+			e = gfs_mkdir_p(argv[i], 0755);
+		else
+			e = gfs_mkdir(argv[i], 0755);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));
