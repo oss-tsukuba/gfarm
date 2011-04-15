@@ -23,11 +23,27 @@ $ ./configure --enable-metadata-replication
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
 root¥æ¡¼¥¶¤Ç¡¢¼¡¤Î¥³¥Þ¥ó¥É¤ò¼Â¹Ô¤·¤Þ¤¹¡£
+<BR><BR>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # make install
 </PRE></TD></TR></TBODY></TABLE>
 
 <H2>2. ¥»¥Ã¥È¥¢¥Ã¥×</H2>
+<H3>2.1 gfmd</H3>
+
+host-a / host-b¤Î¤½¤ì¤¾¤ì¤Ë¤ª¤¤¤Æ¡¢_gfarmmd¥æ¡¼¥¶¤òºîÀ®¤·¤Þ¤¹¡£
+
+<BR><BR>
+host-a, host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# useradd -c "Gfarm gfmd" -m _gfarmmd
+# su _gfarmfs
+$ gfkey -f -p 31536000
+</PRE></TD></TR></TBODY></TABLE>
+<UL><LI>ÊäÂ­<BR>
+¥Þ¥¹¥¿¡¼ / ¥¹¥ì¡¼¥Ögfmd¤Î´Ö¤ÎÇ§¾Ú¤Ï¡¢¶¦Í­¸°Ç§¾Ú¤Î¤ß¥µ¥Ý¡¼¥È¤·¤Æ¤¤¤Þ¤¹¡£
+</UL>
+¼¡¤Ë¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ð¤Î¥»¥Ã¥È¥¢¥Ã¥×¤ò¼Â¹Ô¤·¤Þ¤¹¡£
 host-a / host-b¤Î¤½¤ì¤¾¤ì¤Ë¤ª¤¤¤Æ¡¢¼¡¤Î¥³¥Þ¥ó¥É¤òroot¥æ¡¼¥¶¤Ç¼Â¹Ô¤·¤Þ¤¹¡£
 <BR><BR>
 host-a, host-b:
@@ -39,19 +55,11 @@ host-a, host-b:
 ¥á¥¿¥Ç¡¼¥¿¾éÄ¹²½¤Ë»ÈÍÑ¤¹¤ë¥¸¥ã¡¼¥Ê¥ë¥Õ¥¡¥¤¥ë¤Ï¡¢¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï/var/gfarm-metadata/journal¥Ç¥£¥ì¥¯¥È¥ê¤ËÊÝÂ¸¤µ¤ì¤Þ¤¹¡£ÊÑ¹¹¤¹¤ë¾ì¹ç¤Ï¡¢config-gfarm¤Ë-j¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Þ¤¹¡£</LI>
 </UL>
 <BR>
-host-a¤Ë¤ª¤¤¤Æ/etc/gfmd.conf¤ò/etc/gfmd-slave.conf¤Ë¥³¥Ô¡¼¤·¤Þ¤¹¡£<BR>
 host-a / host-b¤Î¤½¤ì¤¾¤ì¤Ë¤ª¤±¤ë/etc/gfmd.conf¤Ë¡¢¼¡¤Î¹Ô¤ò²Ã¤¨¤Þ¤¹¡£
 <BR><BR>
 host-a, host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 metadb_server_list host-a host-b
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-host-a¤Ë¤ª¤±¤ë/etc/gfmd-slave.conf¤Ë¡¢¼¡¤Î¹Ô¤ò²Ã¤¨¤Þ¤¹¡£
-<BR><BR>
-host-a:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_list host-b host-a
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
 host-a¤Î¥Ç¡¼¥¿¥Ù¡¼¥¹¤òhost-b¤Ë¥³¥Ô¡¼¤·¤Þ¤¹¡£host-b¤ËÂ¸ºß¤¹¤ë¥¸¥ã¡¼¥Ê¥ë¥Õ¥¡¥¤¥ë¤Ïºï½ü¤·¤Þ¤¹¡£<BR>
@@ -94,6 +102,16 @@ PGPASSWORD=$DST_PASSWORD $psql -p $DST_PORT -U postgres -d gfarm -f $DUMP_FILE &
 rm -f $DUMP_FILE
 </PRE></TD></TR></TBODY></TABLE>
 
+<H3>2.2 ¥¯¥é¥¤¥¢¥ó¥È</H3>
+
+¥¯¥é¥¤¥¢¥ó¥È¥Û¥¹¥È¤Î/etc/gfarm2.conf¤Ë¤ª¤¤¤Æ¡¢metadb_server_host / metadb_server_port¤ò¥Þ¥¹¥¿¡¼gfmd¤Î¥Û¥¹¥È / ¥Ý¡¼¥È¤ËÊÑ¹¹¤·¤Þ¤¹¡£¤Þ¤¿¡¢metadb_server_list¤òÄÉ²Ã¤·¤Þ¤¹¡£
+<BR><BR>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_host host-a
+metadb_server_port 601
+metadb_server_list host-a host-b
+</PRE></TD></TR></TBODY></TABLE>
+
 <H2>3. µ¯Æ°</H2>
 host-a / host-b ¤Ë¤ª¤¤¤Æ¡¢gfmd ¤òµ¯Æ°¤·¤Þ¤¹¡£
 root¥æ¡¼¥¶¤Ç¡¢¼¡¤Î¥³¥Þ¥ó¥É¤ò¼Â¹Ô¤·¤Þ¤¹¡£
@@ -127,6 +145,14 @@ host-b:
 </PRE></TD></TR></TBODY></TABLE>
 
 <H2>5. ¸µ¤Î¥Þ¥¹¥¿¡¼gfmd¤òµ¯Æ°¤¹¤ë</H2>
+host-a¤Ë¤ª¤¤¤Æ/etc/gfmd.conf¤ò/etc/gfmd-slave.conf¤Ë¥³¥Ô¡¼¤·¤Þ¤¹¡£<BR>
+/etc/gfmd-slave.confÆâ¤Îmetadb_server_list¤ò¡¢¼¡¤Î¤È¤ª¤ê¤Ë½ñ¤­´¹¤¨¤Þ¤¹¡£
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_list host-b host-a
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
 host-a¤Îgfmd¤ò¥¹¥ì¡¼¥Ögfmd¤È¤·¤Æµ¯Æ°¤·¤Þ¤¹¡£
 host-a¤Ë¤ª¤¤¤Æroot¥æ¡¼¥¶¤Ç¡¢¼¡¤Î¥³¥Þ¥ó¥É¤ò¼Â¹Ô¤·¤Þ¤¹¡£
 <BR><BR>
@@ -139,21 +165,6 @@ host-a¤Çgfmd¤òµ¯Æ°¤·¤¿¸å¤Ë¡¢host-b¤Îgfmd¤Î¥í¥°¤Ë"host-a: expired"¤È½ÐÎÏ¤µ¤ì¤Æ¤¤¤
 ¥ì¥×¥ê¥±¡¼¥·¥ç¥ó¤¬¼Â¹Ô¤µ¤ì¤Þ¤»¤ó¡£
 host-a¤Îgfmd¤òÄä»ß¤·¤¿¾å¤Ç¡¢host-b¤Î¥Ç¡¼¥¿¥Ù¡¼¥¹¤òhost-a¤Ë¥³¥Ô¡¼¤·¡¢host-a¤Îgfmd¤òºÆµ¯Æ°¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£
 </LI></UL>
-host-b¤Îgfmd¤òÄä»ß¤·¤Þ¤¹¡£
-host-b¤Ë¤ª¤¤¤Æroot¥æ¡¼¥¶¤Ç¡¢¼¡¤Î¥³¥Þ¥ó¥É¤ò¼Â¹Ô¤·¤Þ¤¹¡£
-<BR><BR>
-host-b:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd stop
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-host-a¤Îgfmd¤ò¥Þ¥¹¥¿¡¼gfmd¤Ø¾º³Ê¤·¤Þ¤¹¡£
-host-a¤Ë¤ª¤¤¤Æroot¥æ¡¼¥¶¤Ç¡¢¼¡¤Î¥³¥Þ¥ó¥É¤ò¼Â¹Ô¤·¤Þ¤¹¡£
-<BR><BR>
-host-a:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# kill -SIGUSR1 &lt;gfmd¤Î¥×¥í¥»¥¹ID&gt;
-</PRE></TD></TR></TBODY></TABLE>
 
 <HR>
 
