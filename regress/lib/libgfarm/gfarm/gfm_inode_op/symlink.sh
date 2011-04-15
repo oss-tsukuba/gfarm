@@ -89,7 +89,7 @@ clean_test() {
 	clean_file_structure
 }
 
-trap 'clean_test; exit $exit_trap' $trap_sigs
+#trap 'clean_test; exit $exit_trap' $trap_sigs
 
 # setup conditions
 setup_file_structure
@@ -103,6 +103,10 @@ check_symlink 4 $a1_f $toa1_l
 check_symlink 5 $a2_f $toa2_l
 check_symlink 6 $a3_f $toa3_l
 check_symlink 7 $a4_f $toa4_l
+# test symlink of relative directory
+check_symlink 8 $BB_d $toBB_l
+# test symlink of relative file
+check_symlink 9 $a5_f $toBB_l/toa5
 # test file/dir of which middle component is symlink
 check_mid_symlink 1 $toA_l/a1
 check_mid_symlink 2 $toA_l/AA

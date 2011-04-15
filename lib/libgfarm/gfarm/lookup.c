@@ -384,8 +384,15 @@ static gfarm_error_t
 gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 	char *link, char **nextpathp, char *rest, int is_last)
 {
-	char *p = *nextpathp;
-	int len, blen, linklen;
+	char *p, *p0, *n = *nextpathp;
+	int len, blen, linklen, is_rel;
+
+	linklen = link == NULL ? 0 : strlen(link);
+	if (linklen == 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "symlink is empty : %s", n);
+		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+	}
 
 	blen = strlen(rest);
 	if (blen > 0) {
@@ -397,18 +404,40 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 			blen = strlen(rest);
 		}
 	}
-	linklen = strlen(link);
-	len = linklen + (is_last ? 0 : blen + 1);
+
+	is_rel = link[0] != '/' && (linklen < 6 || !gfarm_is_url(link));
+	len = linklen + (is_last ? 0 : blen + 1) +
+		(is_rel ? strlen(n) + 1 : 0);
 	GFARM_MALLOC_ARRAY(p, len + 1);
-	strcpy(p, link);
-	if (!is_last) {
-		p[linklen] = '/';
-		strcpy(p + linklen + 1, rest);
+	p0 = p;
+
+	if (is_rel) {
+		/* add relative path */
+		char *r = rest;
+		--r;
+		if (!is_last) {
+			while (*r == '/')
+				--r;
+			while (*r != '/')
+				--r;
+		}
+		while (*r == '/')
+			*(r--) = 0;
+		strcpy(p, n);
+		p += strlen(n);
+		*(p++) = '/';
 	}
-	p[len] = 0;
-	if (*nextpathp)
-		free(*nextpathp);
-	*nextpathp = p;
+
+	strcpy(p, link);
+	p += linklen;
+	if (!is_last) {
+		*(p++) = '/';
+		strcpy(p, rest);
+		p += blen;
+	}
+	*p = 0;
+	free(n);
+	*nextpathp = p0;
 	return (GFARM_ERR_NO_ERROR);
 }
 
