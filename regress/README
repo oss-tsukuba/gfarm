@@ -8,6 +8,17 @@ TO RUN TEST
 
 2. run "make check"
 
+optional variables:
+	$GFARM_TEST_MDS2=<host>:<port>	... optional gfmd
+	$GFARM_TEST_MDS3=<host>:<port>	... optional gfmd
+	$GFARM_TEST_MDS4=<host>:<port>	... optional gfmd
+
+optional conditions:
+	- whether this user have the gfarmadm group privilege or not.
+	- whether this user have the gfarmroot group privilege or not.
+	- whether there are at least two filesystem nodes or not.
+	- whether XML attribute is enabled by the configure command or not.
+
 TO WRITE TEST
 - each test should be independent from other test.
 i.e.
