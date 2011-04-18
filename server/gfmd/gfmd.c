@@ -953,7 +953,7 @@ open_accepting_socket(int port)
 }
 
 static void
-write_pid()
+write_pid(void)
 {
 	FILE *pid_fp;
 
@@ -1134,7 +1134,7 @@ sigs_handler(void *p)
 
 #ifdef __linux__
 	/* A Linux Thread is a process having its own process id. */
-	write_pid(pid_file);
+	write_pid();
 #endif
 	for (;;) {
 		if (sigwait(sigs, &sig) == -1)
@@ -1368,7 +1368,7 @@ main(int argc, char **argv)
 	 * We do this before calling gfarm_daemon()
 	 * to print the error message to stderr.
 	 */
-	write_pid(pid_file);
+	write_pid();
 
 	giant_init();
 
@@ -1421,7 +1421,7 @@ main(int argc, char **argv)
 	 * We do this after calling gfarm_daemon(),
 	 * because it changes pid.
 	 */
-	write_pid(pid_file);
+	write_pid();
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
