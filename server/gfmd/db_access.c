@@ -455,9 +455,12 @@ db_thread(void *arg)
 			gfarm_mutex_lock(&db_access_mutex, diag,
 			    DB_ACCESS_MUTEX_DIAG);
 #endif
-			/* Do not execute a function that writes to database.
+			/* Do not execute a function that writes to database
+			 * when metadata-replication enabled.
 			 * Because we pass seqnum as zero. */
-			(*ent.func)(0, ent.data);
+			do {
+				e = (*ent.func)(0, ent.data);
+			} while (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED);
 #ifdef ENABLE_METADATA_REPLICATION
 			gfarm_mutex_unlock(&db_access_mutex, diag,
 			    DB_ACCESS_MUTEX_DIAG);

@@ -2960,7 +2960,7 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 
 static gfarm_error_t
 db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, size_t length, const char *diag)
+	enum journal_operation ope, void *obj, const char *diag)
 {
 	gfarm_error_t e;
 
@@ -3067,35 +3067,14 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 	return (e);
 }
 
-static gfarm_error_t
-db_journal_store_op(void *op_arg, gfarm_uint64_t seqnum,
-	enum journal_operation ope, void *obj, void *closure, size_t length,
-	int *needs_freep)
-{
-	gfarm_error_t e;
-	const struct db_ops *ops = op_arg;
-	static const char *diag = "db_journal_store_op";
-
-#ifdef DEBUG_JOURNAL
-	gflog_info(GFARM_MSG_UNFIXED,
-	    "store seqnum=%" GFARM_PRId64 " ope=%s", seqnum,
-	    journal_operation_name(ope));
-#endif
-	/* lock to avoid race condition between db_thread. */
-	gfarm_mutex_lock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
-	e = db_journal_ops_call(ops, seqnum, ope, obj, length, diag);
-	gfarm_mutex_unlock(get_db_access_mutex(), diag, DB_ACCESS_MUTEX_DIAG);
-	return (e);
-}
-
-struct db_journal_apply_info {
+struct db_journal_rec {
 	gfarm_uint64_t seqnum;
 	enum journal_operation ope;
 	void *obj;
-	GFARM_STAILQ_ENTRY(db_journal_apply_info) next;
+	GFARM_STAILQ_ENTRY(db_journal_rec) next;
 };
 
-GFARM_STAILQ_HEAD(db_journal_apply_op_closure, db_journal_apply_info);
+GFARM_STAILQ_HEAD(db_journal_rec_list, db_journal_rec);
 
 static gfarm_error_t
 db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
@@ -3103,9 +3082,8 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	int *needs_freep)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	struct db_journal_apply_info *ai, *tai;
-	struct db_journal_apply_op_closure *c = closure;
-	int first = 1;
+	struct db_journal_rec *ai, *tai;
+	struct db_journal_rec_list *c = closure;
 
 	*needs_freep = 0;
 	GFARM_MALLOC(ai);
@@ -3121,18 +3099,18 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	GFARM_STAILQ_INSERT_TAIL(c, ai, next);
 	if (ope != GFM_JOURNAL_END)
 		return (GFARM_ERR_NO_ERROR);
+
 	giant_lock();
+	ai = GFARM_STAILQ_FIRST(c);
+	if (ai->ope != GFM_JOURNAL_BEGIN) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		    "first record must be BEGIN", e,
+		    (unsigned long long)ai->seqnum, ai->ope);
+		goto end;
+	}
+retry:
 	GFARM_STAILQ_FOREACH(ai, c, next) {
-		if (first) {
-			if (ai->ope != GFM_JOURNAL_BEGIN) {
-				e = GFARM_ERR_INTERNAL_ERROR;
-				GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
-				    "first record must be BEGIN", e,
-				    (unsigned long long)ai->seqnum, ai->ope);
-				goto end;
-			}
-			first = 0;
-		}
 #ifdef DEBUG_JOURNAL
 		gflog_info(GFARM_MSG_UNFIXED,
 		    "apply seqnum=%llu ope=%s",
@@ -3140,13 +3118,18 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 		    journal_operation_name(ai->ope));
 #endif
 		if ((e = db_journal_ops_call(store_ops, ai->seqnum, ai->ope,
-		    ai->obj, 0, "db_journal_apply_op[store]"))
-		    != GFARM_ERR_NO_ERROR)
+		    ai->obj, "db_journal_apply_op[store]"))
+		    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
+			goto retry;
+		else if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
+
+	journal_file_reader_commit_pos(journal_file_main_reader(self_jf));
+
 	GFARM_STAILQ_FOREACH(ai, c, next) {
 		if ((e = db_journal_ops_call(journal_apply_ops, ai->seqnum,
-		    ai->ope, ai->obj, length, "db_journal_apply_op[apply]"))
+		    ai->ope, ai->obj, "db_journal_apply_op[apply]"))
 		    != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
@@ -3176,27 +3159,109 @@ db_journal_cancel_read(void)
 	journal_file_cancel_read(journal_file_main_reader(self_jf));
 }
 
+static gfarm_error_t
+db_journal_add_rec(void *op_arg, gfarm_uint64_t seqnum,
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
+{
+	struct db_journal_rec *rec;
+	struct db_journal_rec_list *recs = closure;
+
+	*needs_freep = 0;
+	GFARM_MALLOC(rec);
+	if (rec == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	rec->seqnum = seqnum;
+	rec->ope = ope;
+	rec->obj = obj;
+	GFARM_STAILQ_INSERT_TAIL(recs, rec, next);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+db_journal_free_rec_list(struct db_journal_rec_list *recs)
+{
+	struct db_journal_rec *rec, *rec2;
+
+	GFARM_STAILQ_FOREACH_SAFE(rec, recs, next, rec2) {
+		db_journal_ops_free(NULL, rec->ope, rec->obj);
+		free(rec);
+	}
+}
+
 void *
 db_journal_store_thread(void *arg)
 {
-	int eof;
+	int first;
 	gfarm_error_t e;
 	struct journal_file_reader *reader =
 		journal_file_main_reader(self_jf);
+	struct db_journal_rec *rec;
+	struct db_journal_rec_list recs;
+	static const char *diag = "db_journal_store_thread";
 
 	for (;;) {
-		if ((e = db_journal_read(reader,
-		    (void *)store_ops, /* UNCONST */
-		    db_journal_store_op, NULL, &eof)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "failed to read journal or store to db : %s",
-			    gfarm_error_string(e));
-			db_journal_fail_store_op();
-			break;
+		GFARM_STAILQ_INIT(&recs);
+		first = 1;
+		do {
+			if ((e = journal_file_read(reader, NULL,
+			    db_journal_read_ops, db_journal_add_rec, NULL,
+			    &recs, NULL)) != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "failed to read journal record : %s",
+				    gfarm_error_string(e));
+				goto error;
+			}
+			if (journal_file_is_closed(self_jf))
+				goto end;
+			rec = GFARM_STAILQ_LAST(&recs, db_journal_rec, next);
+			if (first) {
+				if (rec->ope != GFM_JOURNAL_BEGIN)
+					gflog_fatal(GFARM_MSG_UNFIXED,
+					    "invalid journal record");
+					    /* exit */
+				else
+					first = 0;
+			}
+		} while (rec->ope != GFM_JOURNAL_END);
+
+		/* lock to avoid race condition between db_thread. */
+		gfarm_mutex_lock(get_db_access_mutex(), diag,
+		    DB_ACCESS_MUTEX_DIAG);
+retry:
+		GFARM_STAILQ_FOREACH(rec, &recs, next) {
+#ifdef DEBUG_JOURNAL
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "store seqnum=%" GFARM_PRId64 " ope=%s",
+			    rec->seqnum, journal_operation_name(rec->ope));
+#endif
+			if ((e = db_journal_ops_call(store_ops, rec->seqnum,
+			    rec->ope, rec->obj, diag))
+			    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
+				goto retry;
+			} else if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "failed to store to db : %s",
+				    gfarm_error_string(e));
+				gfarm_mutex_unlock(get_db_access_mutex(), diag,
+				    DB_ACCESS_MUTEX_DIAG);
+				goto error;
+			}
 		}
+		gfarm_mutex_unlock(get_db_access_mutex(), diag,
+		    DB_ACCESS_MUTEX_DIAG);
 		if (journal_file_is_closed(self_jf))
-			break;
+			goto end;
+		journal_file_reader_commit_pos(reader);
+		db_journal_free_rec_list(&recs);
 	}
+error:
+	db_journal_fail_store_op();
+end:
+	db_journal_free_rec_list(&recs);
 	return (NULL);
 }
 
@@ -3206,7 +3271,7 @@ db_journal_apply_thread(void *arg)
 	int eof;
 	gfarm_error_t e;
 	struct journal_file_reader *reader = journal_file_main_reader(self_jf);
-	struct db_journal_apply_op_closure closure =
+	struct db_journal_rec_list closure =
 		GFARM_STAILQ_HEAD_INITIALIZER(closure);
 
 	for (;;) {
@@ -3305,8 +3370,10 @@ db_journal_fetch(struct journal_file_reader *reader,
 		return (GFARM_ERR_EXPIRED);
 	}
 	for (;;) {
-		if ((e = journal_file_read_serialized(reader, &rec, &rec_len,
-		    &seqnum, &eof)) != GFARM_ERR_NO_ERROR) {
+		e = journal_file_read_serialized(reader, &rec, &rec_len,
+		    &seqnum, &eof);
+		journal_file_reader_commit_pos(reader);
+		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s : %s", diag, gfarm_error_string(e));
 			goto error;
@@ -3316,6 +3383,16 @@ db_journal_fetch(struct journal_file_reader *reader,
 		if (seqnum < min_seqnum)
 			free(rec);
 		else {
+			if (fih == NULL && seqnum > 0 && seqnum != min_seqnum) {
+				free(rec);
+				journal_file_reader_close(reader);
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%s : target journal records are expired "
+				    "(cur:%llu, target:%llu)", diag,
+				    (unsigned long long)seqnum,
+				    (unsigned long long)min_seqnum);
+				return (GFARM_ERR_EXPIRED);
+			}
 			GFARM_MALLOC(fi);
 			if (fi == NULL) {
 				e = GFARM_ERR_NO_MEMORY;

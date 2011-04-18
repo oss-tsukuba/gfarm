@@ -281,6 +281,7 @@ t_write_cyclic(void)
 	    db_journal_read(reader, NULL, t_write_cyclic_post_read,
 		NULL, &eof));
 	TEST_ASSERT0(eof == 0);
+	journal_file_reader_commit_pos(reader);
 
 	/* |user1|user2|user3|  |
 	 *        r           w
@@ -303,6 +304,7 @@ t_write_cyclic(void)
 		    NULL, t_write_cyclic_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
+	journal_file_reader_commit_pos(reader);
 
 	/* |user4|user2|user3|  |
 	 *       rw
@@ -330,6 +332,7 @@ t_write_cyclic(void)
 		    NULL, t_write_cyclic_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
+	journal_file_reader_commit_pos(reader);
 
 	/* |user4|user1|user2|  |
 	 *                   rw
@@ -410,6 +413,7 @@ t_write_blocked(void)
 		TEST_ASSERT_NOERR("db_journal_read",
 		    db_journal_read(reader, NULL, t_write_blocked_post_read,
 		    NULL, &eof));
+		journal_file_reader_commit_pos(reader);
 	}
 	/* |user1|user2|user3|  |
 	 *             r     w
@@ -1727,6 +1731,7 @@ t_ops(void)
 		TEST_ASSERT_NOERR("db_journal_read",
 		    db_journal_read(reader, NULL, ti->check, NULL, &eof));
 		printf("ok\n");
+		journal_file_reader_commit_pos(reader);
 	}
 	journal_file_close(self_jf);
 }

@@ -8,7 +8,7 @@
  *           |MAGIC(4)|VERSION(4)|0000...(4088)|
  *   offset  0        4          8          4096
  *
- * << Journal Record Header Format >>
+ * << Journal Record Format >>
  *
  *           |MAGIC(4)|SEQNUM(8)|OPE_ID(4)|DATA_LENGTH(4)=n|
  *   offset  0        4        12        16               20
@@ -54,8 +54,8 @@ struct journal_file_writer;
 struct journal_file_reader {
 	struct journal_file_reader *next;
 	struct journal_file *file;
-	off_t pos;
-	size_t cache_size;
+	off_t pos, la_pos;
+	size_t cache_size, la_cache_size;
 	struct gfp_xdr *xdr;
 	int flags;
 };
@@ -262,6 +262,13 @@ off_t
 journal_file_reader_cache_pos(struct journal_file_reader *reader)
 {
 	return ((reader)->pos - (reader)->cache_size);
+}
+
+void
+journal_file_reader_commit_pos(struct journal_file_reader *reader)
+{
+	reader->pos = reader->la_pos;
+	reader->cache_size = reader->la_cache_size;
 }
 
 int
@@ -538,9 +545,9 @@ journal_file_reader_rewind(struct journal_file_reader *reader)
 	gfarm_error_t e;
 
 	errno = 0;
-	reader->pos = lseek(gfp_xdr_fd(reader->xdr), JOURNAL_FILE_HEADER_SIZE,
-	    SEEK_SET);
-	if (reader->pos == -1) {
+	reader->la_pos = lseek(gfp_xdr_fd(reader->xdr),
+		JOURNAL_FILE_HEADER_SIZE, SEEK_SET);
+	if (reader->la_pos == -1) {
 		e = gfarm_errno_to_error(errno);
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "lseek : %s", gfarm_error_string(e));
@@ -626,8 +633,10 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 	}
 	if (JOURNAL_FILE_READER_IS_INVALID(reader)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "invalidated journal_file_reader : rec_len=%lu",
-		    (unsigned long)rec_len);
+		    "invalidated journal_file_reader : rec_len=%lu, "
+		    "rpos=%lu, wpos=%lu",
+		    (unsigned long)rec_len, (unsigned long)rpos,
+		    (unsigned long)wpos);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -853,7 +862,7 @@ journal_blocking_read_op(struct gfarm_iobuffer *b,
 	struct journal_file_reader *reader = cookie;
 	struct journal_file *jf = reader->file;
 	struct journal_file_writer *writer = &jf->writer;
-	off_t wpos = writer->pos, rpos = reader->pos;
+	off_t wpos = writer->pos, rpos = reader->la_pos;
 
 	assert(rpos >= 0 && wpos >= 0);
 
@@ -874,14 +883,14 @@ journal_blocking_read_op(struct gfarm_iobuffer *b,
 		    length : wpos - JOURNAL_FILE_HEADER_SIZE;
 	}
 	errno = 0;
-	ssz = jounal_read_fully(fd, data, rlen, &reader->pos, &eof);
+	ssz = jounal_read_fully(fd, data, rlen, &reader->la_pos, &eof);
 	if (ssz < 0) {
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
 		return (ssz);
 	}
 	if (eof)
 		gfarm_iobuffer_set_read_eof(b);
-	reader->cache_size += ssz;
+	reader->la_cache_size += ssz;
 	return (ssz);
 }
 
@@ -976,7 +985,9 @@ journal_file_reader_init(struct journal_file *jf, int fd,
 
 	reader->file = jf;
 	reader->pos = pos;
+	reader->la_pos = pos;
 	reader->cache_size = 0;
+	reader->la_cache_size = 0;
 	reader->xdr = xdr;
 	reader->flags = 0;
 	journal_file_reader_set_flag(reader,
@@ -1488,7 +1499,8 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	size_t min_rec_size = journal_rec_header_size()
 		+ sizeof(gfarm_uint32_t);
 
-	*eofp = 0;
+	if (eofp)
+		*eofp = 0;
 	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	if (journal_file_is_closed(jf)) {
 		e = GFARM_ERR_NO_ERROR;
@@ -1535,7 +1547,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 	if ((e = journal_read_rec_header(xdr, &ope, &seqnum, &len))
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
-	if (*eofp)
+	if (eofp && *eofp)
 		goto unlock;
 	if ((e = read_op(op_arg, xdr, ope, &obj))
 	    != GFARM_ERR_NO_ERROR) {
@@ -1552,7 +1564,7 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		    "post_read_op", e, seqnum, ope);
 		goto unlock;
 	}
-	reader->cache_size -= len;
+	reader->la_cache_size -= len;
 	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 unlock:
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
@@ -1638,7 +1650,7 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	*recp = (char *)rec;
 	*seqnump = seqnum;
 	*sizep = rec_len;
-	reader->cache_size -= rec_len;
+	reader->la_cache_size -= rec_len;
 	e = GFARM_ERR_NO_ERROR;
 	goto end;
 error:
