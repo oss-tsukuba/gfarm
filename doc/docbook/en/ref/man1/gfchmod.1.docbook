@@ -2,7 +2,7 @@
 
 <refentry id='gfchmod.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>19 Apr 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfchmod</refentrytitle>
@@ -37,6 +37,13 @@
 <refsect1 id='options'><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Affects symbolic links instead of referenced files/directories.</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>

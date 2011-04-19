@@ -70,6 +70,10 @@ gftool/gfchmod/gfchmod_644_file.sh
 gftool/gfchmod/gfchmod_755_file.sh
 gftool/gfchmod/gfchmod_700_dir.sh
 gftool/gfchmod/gfchmod_755_dir.sh
+gftool/gfchmod/gfchmod_symlink.sh
+gftool/gfchmod/gfchmod-h.sh
+gftool/gfchown/gfchown.sh
+gftool/gfchown/gfchown-h.sh
 gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh

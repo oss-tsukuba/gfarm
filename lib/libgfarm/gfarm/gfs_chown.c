@@ -57,3 +57,18 @@ gfs_chown(const char *path, const char *username, const char *groupname)
 	    NULL,
 	    &closure));
 }
+
+gfarm_error_t
+gfs_lchown(const char *path, const char *username, const char *groupname)
+{
+	struct gfm_chown_closure closure;
+
+	closure.username = username;
+	closure.groupname = groupname;
+	return (gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	    gfm_chown_request,
+	    gfm_chown_result,
+	    gfm_inode_success_op_connection_free,
+	    NULL,
+	    &closure));
+}
