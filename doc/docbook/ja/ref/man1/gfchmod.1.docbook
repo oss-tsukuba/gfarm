@@ -2,7 +2,7 @@
 
 <refentry id='gfchmod.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>19 Apr 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfchmod</refentrytitle>
@@ -37,6 +37,16 @@ Gfarm ファイルのアクセス権限を変更します．
 <refsect1 id='options'><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+シンボリックリンクの指すファイル／ディレクトリではなく、
+シンボリック自身のアクセス権限を変更します。
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>

@@ -2,7 +2,7 @@
 
 <refentry id='gfchgrp.1'>
 
-<refentryinfo><date>21 Dec 2008</date></refentryinfo>
+<refentryinfo><date>19 Apr 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfchgrp</refentrytitle>
@@ -37,6 +37,16 @@ Gfarm ファイルの所有グループを変更します．
 <refsect1 id='options'><title>OPTIONS</title>
 
 <variablelist>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+シンボリックリンクの指すファイル／ディレクトリではなく、
+シンボリック自身の所有グループを変更します。
+</para>
+</listitem>
+</varlistentry>
 
 <varlistentry>
 <term><option>-?</option></term>
