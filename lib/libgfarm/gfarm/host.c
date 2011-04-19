@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#include <gfarm/gfarm_config.h>
+
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
@@ -19,6 +21,9 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/un.h> /* for SUN_LEN */
+#ifdef HAVE_GETIFADDRS
+#include <ifaddrs.h>
+#endif
 #include <errno.h>
 
 #include <unistd.h>
@@ -338,6 +343,46 @@ gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 	return (is_local);
 }
 
+#ifdef HAVE_GETIFADDRS
+
+gfarm_error_t
+gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
+{
+	struct ifaddrs *ifa_head, *ifa;
+	int i, n;
+	struct in_addr *addresses;
+
+	if (getifaddrs(&ifa_head) == -1)
+		return (gfarm_errno_to_error(errno));
+
+	for (n = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr->sa_family == AF_INET &&
+		    (ifa->ifa_flags & IFF_UP) != 0) {
+			n++;
+		}
+	}
+	GFARM_MALLOC_ARRAY(addresses,  n);
+	if (addresses == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_get_ip_addresses: no memory for %d IPs", n);
+		freeifaddrs(ifa_head);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0, ifa = ifa_head; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr->sa_family == AF_INET &&
+		    (ifa->ifa_flags & IFF_UP) != 0) {
+			addresses[i++] =
+			    ((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+		}
+	}
+	freeifaddrs(ifa_head);
+	*ip_addressesp = addresses;
+	*countp = n;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#else /* HAVE_GETIFADDRS */
+
 #ifdef SUN_LEN
 # ifndef linux
 #  define NEW_SOCKADDR /* 4.3BSD-Reno or later */
@@ -466,6 +511,8 @@ err:
 	close(fd);
 	return (e);
 }
+
+#endif /* HAVE_GETIFADDRS */
 
 #if 0 /* "address_use" directive is disabled for now */
 
