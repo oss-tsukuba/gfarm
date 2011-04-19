@@ -219,6 +219,9 @@ main(int argc, char **argv)
 	    GFARM_ERR_NO_ERROR)
 		status = 1; /* error message is already printed */
 
+	gfarm_stringlist_free_deeply(&files.dirs);
+	gfarm_stringlist_free_deeply(&files.files);
+
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
