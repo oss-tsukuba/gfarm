@@ -8,7 +8,7 @@ srcdir=$gftmp/b-src
 dstdir=$gftmp/b-dst
 
 clean_test() {
-	rm -f /tmp/$localtmp 2> /dev/null
+	rm -f $localtmp 2> /dev/null
 	gfrm $dstpath $dstdir $srcpath 2> /dev/null
 	gfrmdir $srcdir $gftmp 2> /dev/null
 }
