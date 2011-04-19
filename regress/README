@@ -17,6 +17,7 @@ optional conditions:
 	- whether this user have the gfarmadm group privilege or not.
 	- whether this user have the gfarmroot group privilege or not.
 	- whether there are at least two filesystem nodes or not.
+	- whether there are at least two users or not.
 	- whether XML attribute is enabled by the configure command or not.
 
 TO WRITE TEST
