@@ -28,18 +28,16 @@ Gfarm file system, refer to the following papers.
     IEEE, pp.102-110, 2002
     http://datafarm.apgrid.org/
 
-[2] Osamu Tatebe, Noriyuki Soda, Youhei Morita, Satoshi Matsuoka,
-    Satoshi Sekiguchi,
-    "Gfarm v2: A Grid file system that supports high-performance
-    distributed and parallel data computing"
-    Proceedings of the 2004 Computing in High Energy and Nuclear
-    Physics (CHEP04), 2004
-    http://datafarm.apgrid.org/pdf/CHEP04-gfarmv2.pdf
+[2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
+    "Gfarm Grid File System,"
+    New Generation Computing, Ohmsha, Ltd. and Springer,
+    Vol.28, No.3, pp.257-275, DOI: 10.1007/s00354-009-0089-5, 2010.
+    http://www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s00354-009-0089-5
 
 How to access Gfarm
 ===================
 
-There are two methods that can be used to access the Gfarm filesystem:
+There are several methods that can be used to access the Gfarm filesystem:
 
  - Using Gfarm commands and Gfarm native file I/O APIs
    You can use Gfarm specific features like file replication,
@@ -50,6 +48,21 @@ There are two methods that can be used to access the Gfarm filesystem:
    by using FUSE (http://fuse.sourceforge.net/).
    Unlike the other methods, this one is completely transparent from your
    application.
+
+ - Gfarm Samba plugin
+   This is a plugin for a Samba server to access Gfarm file system.
+   Using the plugin, Windows clients can access Gfarm file system via
+   Windows file sharing service.
+
+ - Gfarm Hadoop plugin
+   This is a plugin for Hadoop to access Gfarm file system.  Using
+   the plugin module, Hadoop MapReduce applications can access Gfarm
+   file system by Gfarm URL.
+
+ - Gfarm GridFTP DSI
+   This is a plugin for Globus GridFTP server to access Gfarm file
+   system.  Using the plugin, GridFTP clients can access Gfarm file
+   system.
 
 Host types that make up the Gfarm system
 ========================================

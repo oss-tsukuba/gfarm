@@ -150,7 +150,7 @@ Metadata server for Gfarm file system
 Development header files and libraries for Gfarm file system
 
 %changelog
-* Thu Apr  7 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.2-1
+* Thu Apr 22 2011 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.2-1
 - Gfarm version 2.4.2 released
 
 * Thu Jul 22 2010 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.4.0-1

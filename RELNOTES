@@ -1,3 +1,56 @@
+Release note for Gfarm 2.4.2
+============================
+
+[2011.4.22]
+
+New Feature
+* extended Access Control List (ACL) based on POSIX 1003.1e DRAFT 17
+* gfarm_root.{user,group} extended attributes to specify root
+  privileged users
+* support of a symbolic link in Gfarm URL format to federate Gfarm
+  file systems
+
+New Command
+* gfsetfacl, gfgetfacl - managing extended ACLs
+
+New API
+* Gfarm ACL APIs - gfs_acl_*
+* gfs_lgetxattr, gfs_lsetxattr, gfs_lremovexattr, gfs_llistxattr,
+  gfs_lgetxmlattr, gfs_lsetxmlattr, gfs_lremovexmlattr, gfs_llistxmlattr
+* gfs_lchown, gfs_lchmod, gfs_lutimes - operations that do not follow
+  a symlink
+
+Documentation
+* manual pages - gfexport(1), gfreg(1)
+  gfquota(1), gfedquota(1), gfquotacheck(1), gfusage(1) - managing quota
+  gfgetfacl(1), gfsetfacl(1) - managing extended ACLs
+  gfarm_attr(5) - extended attribute
+* SETUP - new basic functionality section
+
+Performance improvement
+* latency improvement in a recursive operation of gfarm commands
+
+Updated feature
+* gfchmod, gfchown - -h option not to follow a symlink, and wildcard
+  expansion
+* config-gfarm - support Ubuntu 10.10
+* namespace of extended attribute - see gfarm_attr(5)
+* gfrm - -r and -n options
+
+Bug fix
+* libgfarm APIs do not follow symlinks [sf.net trac #185]
+* gfsd does not work on NetBSD-5 [sf.net trac #208]
+* error detection problem of gfmkdir -p [sf.net trac #218]
+* missing sanity check when moving a directory to its descendant
+  [sf.net trac #198]
+* when a directory is moved, its ".." link is not maintained
+  correctly [sf.net trac #182]
+* struct gfs_stat:st_nlink for directories is not maintained
+  correctly [sf.net trac #199] 
+* minimum disk space is not correctly handled by gfrep [sf.net trac
+  #195]
+* signal handlers don't work on CentOS 5.5 [sf.net trac #192]
+
 Release note for Gfarm 2.4.1
 ============================
 
