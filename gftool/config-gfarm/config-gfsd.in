@@ -299,7 +299,7 @@ create_directory $SPOOL_DIRECTORY
 [ X"`ls -ld $SPOOL_DIRECTORY | awk '{print $1}'`" = X"drwx------" ] ||
 	chmod 0700 $SPOOL_DIRECTORY ||
 	ABORT "chmod 0700 $SPOOL_DIRECTORY, failed"
-if [ `id -u` -eq 0 ]; then
+if id | grep '^uid=0(' >/dev/null; then
 	chown $spool_owner $SPOOL_DIRECTORY ||
 	ABORT "chown $spool_owner $SPOOL_DIRECTORY, failed. User '$spool_owner' is needed"
 fi

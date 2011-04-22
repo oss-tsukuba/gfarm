@@ -8,6 +8,10 @@
 #include <memory.h>
 #include <limits.h>
 
+#ifndef NAME_MAX /* Solaris 5.9 doesn't define this */
+#define NAME_MAX	1024
+#endif
+
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 #include "config.h"

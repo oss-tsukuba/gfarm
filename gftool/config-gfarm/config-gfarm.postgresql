@@ -415,7 +415,7 @@ _EOF_
 
 	# wait for postmaster to start up
 	iter=0
-	while ! $PGSQL_BINDIR/psql -l >/dev/null 2>&1
+	while if $PGSQL_BINDIR/psql -l; then false; else true; fi >/dev/null 2>&1
 	do
 		iter=\`expr \$iter + 1\`
 		if [ \$iter -gt 6 ]; then

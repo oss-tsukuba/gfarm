@@ -25,7 +25,9 @@ update_sanity_ldap()
 
 update_ldap()
 {
-	if ! cmp -s ${config_dir}/gfarm.schema ${LDAP_SCHEMA}; then
+	if cmp -s ${config_dir}/gfarm.schema ${LDAP_SCHEMA}; then
+		:
+	else
 		echo "${PROGNAME}: copying new schema"
 
 		if ${START_SERVICE}; then

@@ -35,6 +35,10 @@ set_xattr(int xmlMode, int nofollow, char *path, char *xattrname,
 	int fd, need_close = 0;
 	int overflow;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	tbuf = NULL;
+#endif
+
 	if (filename != NULL) {
 		fd = open(filename, O_RDONLY);
 		need_close = 1;

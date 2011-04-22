@@ -8,12 +8,12 @@
 #include <unistd.h>
 #include <string.h>
 
-#define HAVE_GETOPT_LONG
+#include <gfarm/gfarm.h>
+
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
 
-#include <gfarm/gfarm.h>
 #include "config.h"
 #include "gfm_client.h"
 #include "lookup.h"

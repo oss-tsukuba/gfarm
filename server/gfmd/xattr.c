@@ -957,6 +957,10 @@ make_subpath(char *parent_path, char *name, int namelen)
 	int overflow = 0;
 	char *subpath;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	subpath = NULL;
+#endif
+
 	pathlen = (parent_path[0] == '\0') ? 0 : (strlen(parent_path) + 1);
 	allocsz = gfarm_size_add(&overflow, pathlen, namelen);
 	allocsz = gfarm_size_add(&overflow, allocsz, 1);

@@ -198,7 +198,7 @@ cleanup(int sighandler)
 		/* send terminate signal to a back channel process */
 		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
 			gflog_warning_errno(GFARM_MSG_1002377,
-			    "kill(%d)", back_channel_gfsd_pid);
+			    "kill(%ld)", (long)back_channel_gfsd_pid);
 	}
 
 	if (credential_exported != NULL)
@@ -308,7 +308,7 @@ static int
 fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 {
 	char *buffer = buf;
-	int i, rv;
+	int rv;
 	struct iovec iov[1];
 	struct msghdr msg;
 #ifdef HAVE_MSG_CONTROL /* 4.3BSD Reno or later */
@@ -333,7 +333,6 @@ fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 		msg.msg_iovlen = 1;
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-		msg.msg_flags = 0;
 #ifndef HAVE_MSG_CONTROL
 		if (fdc > 0) {
 			msg.msg_accrights = (caddr_t)fdv;
@@ -343,7 +342,10 @@ fd_send_message(int fd, void *buf, size_t size, int fdc, int *fdv)
 			msg.msg_accrightslen = 0;
 		}
 #else /* 4.3BSD Reno or later */
+		msg.msg_flags = 0;
 		if (fdc > 0) {
+			int i;
+
 			msg.msg_control = (caddr_t)&cmsg.hdr;
 			msg.msg_controllen = CMSG_SPACE(sizeof(*fdv) * fdc);
 			cmsg.hdr.cmsg_len = CMSG_LEN(sizeof(*fdv) * fdc);
@@ -4301,7 +4303,8 @@ open_accepting_local_socket(struct in_addr address, int port,
 			    sock_dir);
 		} else if (st.st_uid != gfsd_uid) {
 			accepting_fatal(GFARM_MSG_1000576,
-			    "%s: not owned by uid %d", sock_dir, gfsd_uid);
+			    "%s: not owned by uid %ld",
+			    sock_dir, (long)gfsd_uid);
 		} else if ((st.st_mode & PERMISSION_MASK) != LOCAL_SOCKDIR_MODE
 		    && chmod(sock_dir, LOCAL_SOCKDIR_MODE) != 0) {
 			accepting_fatal_errno(GFARM_MSG_1000577,
@@ -4333,8 +4336,8 @@ open_accepting_local_socket(struct in_addr address, int port,
 		    sock_name, strerror(save_errno));
 	}
 	if (chown(sock_name, gfsd_uid, -1) == -1)
-		gflog_warning_errno(GFARM_MSG_1002202, "chown(%s, %d)",
-		    sock_name, gfsd_uid);
+		gflog_warning_errno(GFARM_MSG_1002202, "chown(%s, %ld)",
+		    sock_name, (long)gfsd_uid);
 	/* ensure access from all user, Linux at least since 2.4 needs this. */
 	if (chmod(sock_name, LOCAL_SOCKET_MODE) == -1)
 		gflog_debug_errno(GFARM_MSG_1002390, "chmod(%s, 0%o)",
@@ -4703,7 +4706,8 @@ main(int argc, char **argv)
 
 		if (geteuid() == 0)
 			gflog_error(GFARM_MSG_1002403,
-			    "seteuid(%d): %s", gfsd_uid, strerror(save_errno));
+			    "seteuid(%ld): %s",
+			    (long)gfsd_uid, strerror(save_errno));
 	}
 
 	/* XXX - kluge for gfrcmd (to mkdir HOME....) for now */

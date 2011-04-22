@@ -121,8 +121,9 @@ void *foo(void *p){ return 0; }],[
     *-*-hpux*)
 	AC_TRY_PTHREAD(-D_POSIX_C_SOURCE=199506L -D_HPUX_SOURCE,-lpthread,);;
     *-*-solaris*)
+	# -D_POSIX_PTHREAD_SEMANTICS is for SUSv2 compliant getpwuid_r() etc.
 	if test x"$GCC" = x"yes"; then
-		AC_TRY_PTHREAD(-pthread,-pthread,)
+		AC_TRY_PTHREAD(-pthread -D_POSIX_PTHREAD_SEMANTICS,-pthread,)
 	else
 		AC_TRY_PTHREAD(-mt -D_POSIX_PTHREAD_SEMANTICS,-mt -lpthread,)
 	fi;;
@@ -1104,7 +1105,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs)
+AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long)
 
 ### Check epoll_create really implemented
 
