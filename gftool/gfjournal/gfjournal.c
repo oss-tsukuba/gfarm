@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <errno.h>
-#include <stdint.h>
+#include <inttypes.h>	/* more portable than <stdint.h> on UNIX variants */
 #include <time.h>
 #include <sys/types.h>
 #include <sys/param.h>

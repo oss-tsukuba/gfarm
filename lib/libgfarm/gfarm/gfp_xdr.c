@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <stdint.h>
+#include <inttypes.h>	/* more portable than <stdint.h> on UNIX variants */
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <netinet/in.h> /* ntoh[ls]()/hton[ls]() on glibc */
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>

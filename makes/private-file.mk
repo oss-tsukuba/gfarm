@@ -13,24 +13,22 @@ private-dir-unlink: private-src-unlink
 	fi
 
 private-src-link: private-dir-link
-	@if test "x$(PRIVATE_FILES)" != "x"; then \
-		for i in $(PRIVATE_FILES); do \
-			if test ! -r ./$${i}; then \
-				if test -r $(private_dir)/$${i}; then \
-					ln -s $(private_dir)/$${i} . ; \
-				fi ; \
+	for i in -- $(PRIVATE_FILES); do \
+		case $$i in --) continue;; esac; \
+		if test ! -r ./$${i}; then \
+			if test -r $(private_dir)/$${i}; then \
+				ln -s $(private_dir)/$${i} . ; \
 			fi ; \
-		done ; \
-	fi
+		fi ; \
+	done
 
 private-src-unlink:
-	@if test "x$(PRIVATE_FILES)" != "x"; then \
-		for i in $(PRIVATE_FILES); do \
-			if test -L ./$${i}; then \
-				$(RM) ./$${i} ; \
-			fi ; \
-		done ; \
-	fi
+	for i in -- $(PRIVATE_FILES); do \
+		case $$i in --) continue;; esac; \
+		if test -L ./$${i}; then \
+			$(RM) ./$${i} ; \
+		fi ; \
+	done
 
 private-initialize:	private-src-link
 private-finalize:	private-dir-unlink

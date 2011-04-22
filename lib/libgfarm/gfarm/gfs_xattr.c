@@ -709,6 +709,9 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 	int pathlen, overflow;
 	size_t allocsz;
 
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	p = NULL;
+#endif
 	*fpathp = NULL;
 	*namep = NULL;
 
