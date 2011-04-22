@@ -1471,21 +1471,21 @@ main(int argc, char **argv)
 		e_save = register_db();
 		break;
 	case OP_LIST_GFSD_INFO:
-		e = paraccess_list(opt_concurrency, opt_udp_only,
+		e_save = paraccess_list(opt_concurrency, opt_udp_only,
 		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
 		    request_gfsd_info, callback_gfsd_info);
 		break;
 	case OP_NODENAME:
-		e = paraccess_list(opt_concurrency, opt_udp_only,
+		e_save = paraccess_list(opt_concurrency, opt_udp_only,
 		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
 		    request_nodename, callback_nodename);
 		break;
 	case OP_LIST_LONG:
-		e = paraccess_list(opt_concurrency, opt_udp_only,
+		e_save = paraccess_list(opt_concurrency, opt_udp_only,
 		    opt_architecture, opt_domainname, opt_port,
 		    opt_plain_order, opt_sort_by_loadavg,
 		    opt_use_metadb, argc, argv,
