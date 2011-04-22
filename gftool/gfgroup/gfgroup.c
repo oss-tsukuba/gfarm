@@ -67,10 +67,11 @@ delete_group(char *groupname)
 	return (gfm_client_group_info_remove(gfm_server, groupname));
 }
 
-static void
+static gfarm_error_t
 display_group(int op, int n, char *names[],
 	gfarm_error_t *errs, struct gfarm_group_info *groups)
 {
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i, j;
 
 	for (i = 0; i < n; ++i) {
@@ -78,6 +79,8 @@ display_group(int op, int n, char *names[],
 			assert(names != NULL);
 			fprintf(stderr, "%s: %s\n", names[i],
 				gfarm_error_string(errs[i]));
+			if (e == GFARM_ERR_NO_ERROR)
+				e = errs[i];
 			continue;
 		}
 		printf("%s", groups[i].groupname);
@@ -101,7 +104,7 @@ list_all(int op)
 	e = gfm_client_group_info_get_all(gfm_server, &n, &groups);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	display_group(op, n, NULL, NULL, groups);
+	e = display_group(op, n, NULL, NULL, groups);
 
 	free(groups);
 	return (e);
@@ -117,20 +120,15 @@ list(int op, int n, char *names[])
 	GFARM_MALLOC_ARRAY(errs, n);
 	if (groups == NULL || errs == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		goto free_groups;
+	} else if ((e = gfm_client_group_info_get_by_names(
+	    gfm_server, n, (const char **)names, errs, groups)) !=
+	    GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
+	} else {
+		e = display_group(op, n, names, errs, groups);
 	}
-
-	e = gfm_client_group_info_get_by_names(
-		gfm_server, n, (const char **)names, errs, groups);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto free_groups;
-
-	display_group(op, n, names, errs, groups);
-free_groups:
-	if (groups != NULL)
-		free(groups);
-	if (errs != NULL)
-		free(errs);
+	free(groups);
+	free(errs);
 	return (e);
 }
 

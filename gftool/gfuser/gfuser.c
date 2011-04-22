@@ -41,10 +41,11 @@ usage(void)
 	exit(1);
 }
 
-static void
+static gfarm_error_t
 display_user(int op, int nusers, char *names[],
 	gfarm_error_t *errs, struct gfarm_user_info *users)
 {
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	int i;
 
 	for (i = 0; i < nusers; i++) {
@@ -52,6 +53,8 @@ display_user(int op, int nusers, char *names[],
 			assert(names != NULL);
 			fprintf(stderr, "%s: %s\n", names[i],
 				gfarm_error_string(errs[i]));
+			if (e == GFARM_ERR_NO_ERROR)
+				e = errs[i];
 			continue;
 		}
 		switch (op) {
@@ -66,6 +69,7 @@ display_user(int op, int nusers, char *names[],
 		}
 		gfarm_user_info_free(&users[i]);
 	}
+	return (e);
 }
 
 gfarm_error_t
@@ -78,7 +82,7 @@ list_all(int op)
 	e = gfm_client_user_info_get_all(gfm_server, &nusers, &users);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	display_user(op, nusers, NULL, NULL, users);
+	e = display_user(op, nusers, NULL, NULL, users);
 
 	free(users);
 	return (e);
@@ -94,20 +98,15 @@ list(int op, int n, char *names[])
 	GFARM_MALLOC_ARRAY(errs, n);
 	if (users == NULL || errs == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		goto free_users;
+	} else if ((e = gfm_client_user_info_get_by_names(
+	    gfm_server, n, (const char **)names, errs, users)) !=
+	    GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
+	} else {
+		e = display_user(op, n, names, errs, users);
 	}
-
-	e = gfm_client_user_info_get_by_names(
-		gfm_server, n, (const char **)names, errs, users);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto free_users;
-
-	display_user(op, n, names, errs, users);
-free_users:
-	if (users != NULL)
-		free(users);
-	if (errs != NULL)
-		free(errs);
+	free(users);
+	free(errs);
 	return (e);
 }
 
