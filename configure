@@ -18975,11 +18975,12 @@ rm -f core conftest.err conftest.$ac_objext \
     LIBS="$LIBS_SAVE"
   ;;
     *-*-solaris*)
+	# -D_POSIX_PTHREAD_SEMANTICS is for SUSv2 compliant getpwuid_r() etc.
 	if test x"$GCC" = x"yes"; then
 
     CPPFLAGS_SAVE="$CPPFLAGS"
     LIBS_SAVE="$LIBS"
-    CPPFLAGS="${pthread_includes} -pthread $CPPFLAGS_SAVE"
+    CPPFLAGS="${pthread_includes} -pthread -D_POSIX_PTHREAD_SEMANTICS $CPPFLAGS_SAVE"
     # -R is not portable without libtool, and not necessary for AC_TRY_LINK
     LIBS="`echo -pthread | sed 's/-R[^ ]*//g'` $LIBS_SAVE"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -19001,7 +19002,7 @@ main ()
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   	ax_cv_have_pthread=yes
-	pthread_includes="${pthread_includes} -pthread"
+	pthread_includes="${pthread_includes} -pthread -D_POSIX_PTHREAD_SEMANTICS"
 	pthread_libs="${pthread_libs} -pthread"
 
 else
@@ -21268,7 +21269,7 @@ fi
 ###### Checks for library functions.
 ######
 
-for ac_func in getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs
+for ac_func in getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
