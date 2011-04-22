@@ -29,16 +29,16 @@ Gfarm ファイルシステムの詳細は，以下の論文を参照してください．
     情報処理学会，Vol.43，No.SIG 6 (HPS 5)，pp.184-195，2002 年
     http://datafarm.apgrid.org/
 
-[2] 建部 修見，曽田 哲之，関口 智嗣，
-   「広域仮想ファイルシステムGfarm v2の設計と実装」，
-    情報処理学会研究報告，2004-HPC-99，
-    pp.145-150，2004 年
-    http://datafarm.apgrid.org/pdf/SWoPP2004-gfarmv2.pdf
+[2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
+   「Gfarm Grid File System」，
+    New Generation Computing, Ohmsha, Ltd. and Springer,
+    Vol.28, No.3, pp.257-275, DOI: 10.1007/s00354-009-0089-5, 2010.
+    http://www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s00354-009-0089-5
 
 ● Gfarm ファイルシステムの利用手段
 ===================================
 
-Gfarm ファイルシステムは，次の2種類の方法で利用することができます．
+Gfarm ファイルシステムは，次の方法で利用することができます．
 
 ・Gfarm コマンドや，Gfarm 並列入出力 API
   複製機能や，ファイルシステムノード管理機能など，Gfarm 特有の機能にア
@@ -47,8 +47,22 @@ Gfarm ファイルシステムは，次の2種類の方法で利用することができます．
 ・GfarmFS-FUSE (gfarm2fs)
   FUSE (http://fuse.sourceforge.net/) の機能を利用して，Linux クライ
   アントから，Gfarm ファイルシステムをマウントします．
-  他の方法と異なり，既存のプログラムから完全に透過的にアクセスする
-  ことができます．
+  既存のプログラムから完全に透過的にアクセスすることができます．
+
+・Gfarm Samba plugin
+  Samba サーバが Gfarm ファイルシステムをアクセスするためのモジュール
+  です．これより Windowsクライアントなどからファイル共有機能を利用して
+  Gfarm ファイルシステムをアクセスすることが可能になります．
+
+・Gfarm Hadoop plugin
+  Hadoop が Gfarm ファイルシステムをアクセスするためのモジュールで
+  す．Hadoop MapReduce で Gfarm URL を利用することにより，Gfarm ファイ
+  ルシステムをアクセスすることが可能になります．
+
+・Gfarm GridFTP DSI
+  Globus GridFTP サーバが Gfarm ファイルシステムをアクセスするためのモ
+  ジュールです．GridFTP クライアントで Gfarm ファイルシステムをアクセ
+  スが可能になります．
 
 ● Gfarm ファイルシステムを構成するホストの種類
 ===============================================

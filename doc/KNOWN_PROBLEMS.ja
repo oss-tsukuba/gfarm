@@ -209,8 +209,7 @@
   ん。
 
   config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
-  gfexport, gfreg, gfrm, gfarm-pcp, gfarm-prun,
-  gfquota, gfedquota, gfquotacheck, gfusage,
+  gfrm, gfarm-pcp, gfarm-prun,
   gfvoms-sync
 
   対処予定:
