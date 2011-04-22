@@ -92,6 +92,7 @@ display_group(int op, int n, char *names[],
 		puts("");
 		gfarm_group_info_free(&groups[i]);
 	}
+	return (e);
 }
 
 gfarm_error_t
