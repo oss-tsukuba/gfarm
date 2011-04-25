@@ -40,6 +40,8 @@ const char *gfm_client_username(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
 gfarm_error_t gfm_client_set_username_for_gsi(struct gfm_connection *,
 	const char *);
+struct gfarm_metadb_server *gfm_client_connection_get_real_server(
+	struct gfm_connection *);
 
 gfarm_error_t gfm_client_process_get(struct gfm_connection *,
 	gfarm_int32_t *, const char **, size_t *, gfarm_pid_t *);

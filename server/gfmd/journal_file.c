@@ -267,8 +267,13 @@ journal_file_reader_cache_pos(struct journal_file_reader *reader)
 void
 journal_file_reader_commit_pos(struct journal_file_reader *reader)
 {
+	struct journal_file *jf = reader->file;
+	static const char *diag = "journal_file_reader_commit_pos";
+
+	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
 	reader->pos = reader->la_pos;
 	reader->cache_size = reader->la_cache_size;
+	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 }
 
 int
@@ -1193,12 +1198,11 @@ journal_file_reader_reopen(struct journal_file *jf,
 	int wrap;
 	static const char *diag = "journal_file_reader_reopen";
 
-	assert(*readerp == NULL || (*readerp)->xdr == NULL);
-
 	if ((fd = open(jf->path, O_RDONLY)) == -1)
 		return (gfarm_errno_to_error(errno));
 
 	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	assert(*readerp == NULL || (*readerp)->xdr == NULL);
 	if ((e = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
 	    NULL, NULL, &wrap)) != GFARM_ERR_NO_ERROR)
 		;

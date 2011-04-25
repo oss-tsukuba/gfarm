@@ -14,3 +14,6 @@ void gfarm_metadb_server_set_is_master(struct gfarm_metadb_server *, int);
 int gfarm_metadb_server_is_self(struct gfarm_metadb_server *);
 void gfarm_metadb_server_set_is_self(struct gfarm_metadb_server *, int);
 void gfarm_metadb_server_free(struct gfarm_metadb_server *);
+int gfarm_metadb_server_is_sync_replication(struct gfarm_metadb_server *);
+void gfarm_metadb_server_set_is_sync_replication(struct gfarm_metadb_server *,
+	int);

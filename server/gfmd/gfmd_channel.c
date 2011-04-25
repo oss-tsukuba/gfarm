@@ -55,10 +55,13 @@ struct gfmdc_journal_send_closure {
 
 struct gfmdc_journal_sync_info {
 	gfarm_uint64_t seqnum;
+	int nservers;
 	int nrecv_threads, slave_index;
 	gfarm_error_t file_sync_error;
 	pthread_mutex_t sync_mutex;
 	pthread_cond_t sync_end_cond;
+	pthread_mutex_t async_mutex;
+	pthread_cond_t async_wait_cond;
 	struct gfmdc_journal_send_closure *closures;
 };
 
@@ -72,6 +75,8 @@ static struct gfmdc_journal_sync_info journal_sync_info;
 #define SYNC_END_COND_DIAG	"jorunal_sync_info.sync_end_cond"
 #define SEND_MUTEX_DIAG		"send_closure.mutex"
 #define SEND_END_COND_DIAG	"send_closure.end_cond"
+#define ASYNC_MUTEX_DIAG	"journal_sync_info.async_mutex"
+#define ASYNC_WAIT_COND_DIAG	"journal_sync_info.async_wait_cond"
 
 
 static gfarm_error_t
@@ -382,7 +387,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *host, struct peer *peer,
 		}
 	}
 	e = gfmdc_server_put_reply(host, peer, xid, diag, e, "");
-	if (gfarm_get_journal_sync_slave()) {
+	if (mdhost_is_sync_replication(host)) {
 		gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
 		    SYNC_MUTEX_DIAG);
 		thrpool_add_job(journal_sync_thread_pool,
@@ -555,17 +560,17 @@ gfm_server_switch_gfmd_channel(struct peer *peer, int from_client,
 }
 
 static gfarm_error_t
-gfmdc_connect(struct mdhost *host)
+gfmdc_connect()
 {
 	gfarm_error_t e;
 	int port;
 	const char *hostname;
 	gfarm_int32_t gfmd_knows_me;
 	struct gfm_connection *conn;
+	struct mdhost *rhost, *master;
 	struct peer *peer = NULL;
 	char *local_user;
 	struct passwd *pwd;
-	/* char *pwdbuf; */
 	/* XXX FIXME must be configuable */
 	unsigned int sleep_interval = 10;
 	/* XXX FIXME must be configuable */
@@ -574,14 +579,16 @@ gfmdc_connect(struct mdhost *host)
 	static const char *service_user = GFMD_USERNAME;
 	static const char *diag = "gfmdc_connect";
 
+	master = mdhost_lookup_master();
+
 	if (geteuid() != 0)
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "gfmd must be run by root user"); /* exit */
 
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
 
-	hostname = mdhost_get_name(host);
-	port = mdhost_get_port(host);
+	hostname = mdhost_get_name(master);
+	port = mdhost_get_port(master);
 
 	if ((e = gfarm_global_to_local_username_by_host(
 	    gfarm_metadb_server_name, gfarm_metadb_server_port,
@@ -597,8 +604,9 @@ gfmdc_connect(struct mdhost *host)
 	}
 
 	for (;;) {
+		/* try connecting to multiple destinations */
 		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &conn, NULL, pwd, 0);
+		    service_user, &conn, NULL, pwd, 1);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_UNFIXED,
@@ -606,8 +614,8 @@ gfmdc_connect(struct mdhost *host)
 		    hostname, gfarm_error_string(e));
 		if (sleep_interval < sleep_max_interval)
 			gflog_error(GFARM_MSG_UNFIXED,
-			    "connecting to gfmd at %s:%d failed, "
-			    "sleep %d sec: %s", hostname, port, sleep_interval,
+			    "connecting to the master gfmd failed, "
+			    "sleep %d sec: %s", sleep_interval,
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
 		if (mdhost_self_is_master())
@@ -616,8 +624,18 @@ gfmdc_connect(struct mdhost *host)
 			sleep_interval *= 2;
 	}
 	free(local_user);
-	if (mdhost_self_is_master())
+	if (mdhost_self_is_master()) {
+		gfm_client_connection_free(conn);
 		return (GFARM_ERR_NO_ERROR);
+	}
+
+	rhost = mdhost_lookup_metadb_server(
+	    gfm_client_connection_get_real_server(conn));
+	if (master != rhost) {
+		mdhost_set_is_master(master, 0);
+		mdhost_set_is_master(rhost, 1);
+	}
+	hostname = mdhost_get_name(rhost);
 
 	if ((e = gfm_client_switch_gfmd_channel(conn,
 	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
@@ -629,7 +647,7 @@ gfmdc_connect(struct mdhost *host)
 		return (e);
 	}
 	if ((e = peer_alloc_with_connection(&peer,
-	    gfm_client_connection_conn(conn), mdhost_to_abstract_host(host),
+	    gfm_client_connection_conn(conn), mdhost_to_abstract_host(rhost),
 	    GFARM_AUTH_ID_TYPE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfmd_channel(%s) : %s",
@@ -643,11 +661,11 @@ gfmdc_connect(struct mdhost *host)
 		    hostname, gfarm_error_string(e));
 		goto error;
 	}
-	mdhost_set_connection(host, conn);
-	mdhost_activate(host, BACK_CHANNEL_DIAG);
-	if ((e = gfmdc_client_journal_ready_to_recv(host))
+	mdhost_set_connection(rhost, conn);
+	mdhost_activate(rhost, BACK_CHANNEL_DIAG);
+	if ((e = gfmdc_client_journal_ready_to_recv(rhost))
 	    != GFARM_ERR_NO_ERROR) {
-		mdhost_set_connection(host, NULL);
+		mdhost_set_connection(rhost, NULL);
 		goto error;
 	}
 	gflog_info(GFARM_MSG_UNFIXED,
@@ -674,7 +692,9 @@ gfmdc_journal_asyncsend(struct mdhost *host, int *exist_recsp)
 	gfarm_uint64_t to_sn;
 	struct gfmdc_journal_send_closure *c;
 
-	if (!gfmdc_journal_mdhost_can_sync(host))
+	if ((mdhost_is_sync_replication(host) &&
+	    !mdhost_is_in_first_sync(host)) ||
+	    !gfmdc_journal_mdhost_can_sync(host))
 		return (GFARM_ERR_NO_ERROR);
 	GFARM_MALLOC(c);
 	if (c == NULL) {
@@ -702,7 +722,8 @@ gfmdc_journal_asyncsend_each_mdhost(struct mdhost *host, void *closure)
 {
 	int exist_recs;
 
-	(void)gfmdc_journal_asyncsend(host, &exist_recs);
+	if (!mdhost_is_sync_replication(host))
+		(void)gfmdc_journal_asyncsend(host, &exist_recs);
 	return (1);
 }
 
@@ -710,11 +731,20 @@ void *
 gfmdc_journal_asyncsend_thread(void *arg)
 {
 	struct timespec ts;
+	static const char *diag = "gfmdc_journal_asyncsend_thread";
 
 	ts.tv_sec = 0;
 	ts.tv_nsec = 500 * 1000 * 1000;
 
 	for (;;) {
+		/* TODO if mdhost that is set to sync replication registered,
+		 * journal_sync_info.async_wait_cond must be signaled.
+		 */
+		while (!mdhost_has_async_replication_target()) {
+			gfarm_cond_wait(&journal_sync_info.async_wait_cond,
+			    &journal_sync_info.async_mutex,
+			    diag, ASYNC_WAIT_COND_DIAG);
+		}
 		mdhost_foreach(gfmdc_journal_asyncsend_each_mdhost, NULL);
 		nanosleep(&ts, NULL);
 	}
@@ -725,35 +755,21 @@ void *
 gfmdc_connect_thread(void *arg)
 {
 	gfarm_error_t e;
-	struct mdhost *host;
 
-	host = mdhost_lookup_master();
-	assert(host != NULL);
 	for (;;) {
-		if (mdhost_get_connection(host) != NULL) {
+		if (mdhost_get_connection(mdhost_lookup_master()) != NULL) {
 			sleep(30);
-		} else if ((e = gfmdc_connect(host)) != GFARM_ERR_NO_ERROR) {
+		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_ERR_NO_ERROR,
-			    "gfmd_channel(%s) : give up to connect : %s",
-			    mdhost_get_name(host), gfarm_error_string(e));
+			    "gfmd_channel : "
+			    "give up to connect to the master gfmd: %s",
+			    gfarm_error_string(e));
 			break;
 		}
 		if (mdhost_self_is_master())
 			break;
 	}
 	return (NULL);
-}
-
-static gfarm_error_t
-gfmdc_journal_no_sync(gfarm_uint64_t seqnum)
-{
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfmdc_journal_sync_single(gfarm_uint64_t seqnum)
-{
-	return (db_journal_file_writer_sync());
 }
 
 static void *
@@ -828,10 +844,11 @@ gfmdc_wait_journal_recv_threads(const char *diag)
 }
 
 static int
-gfmdc_journal_sync_count_host_up(struct mdhost *host, void *closure)
+gfmdc_journal_sync_count_host(struct mdhost *host, void *closure)
 {
 	int *countp = closure;
-	(*countp) += gfmdc_journal_mdhost_can_sync(host) &&
+	(*countp) += mdhost_is_sync_replication(host) &&
+	    gfmdc_journal_mdhost_can_sync(host) &&
 	    !mdhost_is_in_first_sync(host);
 	return (1);
 }
@@ -839,13 +856,13 @@ gfmdc_journal_sync_count_host_up(struct mdhost *host, void *closure)
 static int
 gfmdc_journal_sync_mdhost_add_job(struct mdhost *host, void *closure)
 {
-	int i;
+	int i, s = 0;
 	struct gfmdc_journal_send_closure *c;
 	const char *diag = "gfmdc_journal_sync_mdhost_add_job";
 
 	i = journal_sync_info.slave_index++;
-	if (!gfmdc_journal_mdhost_can_sync(host) ||
-	    mdhost_is_in_first_sync(host))
+	(void)gfmdc_journal_sync_count_host(host, &s);
+	if (s == 0)
 		return (1);
 	c = &journal_sync_info.closures[i];
 	assert(c->data == NULL);
@@ -863,11 +880,11 @@ gfmdc_journal_sync_mdhost_add_job(struct mdhost *host, void *closure)
 static gfarm_error_t
 gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 {
-	int up_count = 0;
+	int nhosts = 0;
 	static const char *diag = "gfmdc_journal_sync_multiple";
 
-	mdhost_foreach(gfmdc_journal_sync_count_host_up, &up_count);
-	if (up_count == 0) {
+	mdhost_foreach(gfmdc_journal_sync_count_host, &nhosts);
+	if (nhosts == 0) {
 		if (gfarm_get_journal_sync_file())
 			return (db_journal_file_writer_sync());
 		return (GFARM_ERR_NO_ERROR);
@@ -937,39 +954,24 @@ gfmdc_journal_first_sync_thread(void *closure)
 }
 
 static void
-gfmdc_sync_init(void)
+gfmdc_alloc_journal_sync_info_closures(int nsvrs)
 {
-	int i, thrpool_size, jobq_len, nsvrs;
-	struct gfarm_filesystem *fs;
-	struct gfarm_metadb_server **svrs;
+	int i;
 	struct gfmdc_journal_sync_info *si = &journal_sync_info;
 	struct gfmdc_journal_send_closure *c;
-	static const char *diag = "gfmdc_sync_init";
+	static const char *diag = "gfmdc_alloc_journal_sync_info_closures";
 
-	fs = gfarm_filesystem_get_default();
-	svrs = gfarm_filesystem_get_metadb_server_list(fs, &nsvrs);
-	if (nsvrs <= 1 || !gfarm_get_journal_sync_slave())
-		thrpool_size = 0;
-	else
-		thrpool_size = jobq_len = nsvrs;
-
-	if (thrpool_size == 0) {
-		db_journal_set_sync_op(gfarm_get_journal_sync_file() ?
-		    gfmdc_journal_sync_single : gfmdc_journal_no_sync);
-		si->seqnum = 0;
-		return;
+	if (si->closures) {
+		for (i = 0; i < si->nservers; ++i) {
+			c = &si->closures[i];
+			gfarm_mutex_destroy(&c->send_mutex, diag,
+			    SEND_MUTEX_DIAG);
+			gfarm_cond_destroy(&c->send_end_cond, diag,
+			    SEND_END_COND_DIAG);
+		}
+		free(si->closures);
 	}
 
-	db_journal_set_sync_op(gfmdc_journal_sync_multiple);
-	journal_sync_thread_pool = thrpool_new(thrpool_size, jobq_len,
-	    "sending and writing journal record");
-	if (journal_sync_thread_pool == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "thread pool size:%d, queue length:%d: no memory",
-		    thrpool_size, jobq_len); /* exit */
-	gfarm_mutex_init(&si->sync_mutex, diag, SYNC_MUTEX_DIAG);
-	gfarm_cond_init(&si->sync_end_cond, diag, SYNC_END_COND_DIAG);
-	si->nrecv_threads = 0;
 	GFARM_MALLOC_ARRAY(si->closures, nsvrs);
 	if (si->closures == NULL)
 		gflog_fatal(GFARM_MSG_UNFIXED,
@@ -980,6 +982,41 @@ gfmdc_sync_init(void)
 		gfarm_mutex_init(&c->send_mutex, diag, SEND_MUTEX_DIAG);
 		gfarm_cond_init(&c->send_end_cond, diag, SEND_END_COND_DIAG);
 	}
+
+	si->nservers = nsvrs;
+}
+
+static void
+gfmdc_sync_init(void)
+{
+	int thrpool_size, jobq_len, nsvrs;
+	struct gfarm_filesystem *fs;
+	struct gfarm_metadb_server **svrs;
+	struct gfmdc_journal_sync_info *si = &journal_sync_info;
+	static const char *diag = "gfmdc_sync_init";
+
+	fs = gfarm_filesystem_get_default();
+	svrs = gfarm_filesystem_get_metadb_server_list(fs, &nsvrs);
+	thrpool_size = gfarm_get_slave_metadb_server_max_size()
+		+ (gfarm_get_journal_sync_file() ? 1 : 0);
+	jobq_len = thrpool_size + 1;
+
+	journal_sync_thread_pool = thrpool_new(thrpool_size, jobq_len,
+	    "sending and writing journal record");
+	if (journal_sync_thread_pool == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "thread pool size:%d, queue length:%d: no memory",
+		    thrpool_size, jobq_len); /* exit */
+
+	gfarm_mutex_init(&si->sync_mutex, diag, SYNC_MUTEX_DIAG);
+	gfarm_cond_init(&si->sync_end_cond, diag, SYNC_END_COND_DIAG);
+	gfarm_mutex_init(&si->async_mutex, diag, ASYNC_MUTEX_DIAG);
+	gfarm_cond_init(&si->async_wait_cond, diag, ASYNC_WAIT_COND_DIAG);
+
+	si->nrecv_threads = 0;
+	si->closures = NULL;
+	gfmdc_alloc_journal_sync_info_closures(nsvrs);
+	db_journal_set_sync_op(gfmdc_journal_sync_multiple);
 }
 
 void

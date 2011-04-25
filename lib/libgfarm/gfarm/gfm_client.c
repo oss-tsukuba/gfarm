@@ -132,6 +132,11 @@ gfm_client_port(struct gfm_connection *gfm_server)
 	return (gfp_cached_connection_port(gfm_server->cache_entry));
 }
 
+struct gfarm_metadb_server*
+gfm_client_connection_get_real_server(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->real_server);
+}
 
 
 gfarm_error_t
@@ -342,7 +347,8 @@ gfm_client_connect_multiple(const char *hostname, int port,
 		ms = msl[i];
 		hostname = gfarm_metadb_server_get_name(ms);
 		port = gfarm_metadb_server_get_port(ms);
-		if ((e = gfm_client_nonblock_sock_connect(hostname, port,
+		if (!gfarm_metadb_server_is_self(ms) &&
+		    (e = gfm_client_nonblock_sock_connect(hostname, port,
 		    source_ip, &sock, &res)) == GFARM_ERR_NO_ERROR) {
 			ci = &cis[nfd];
 			ci->ms = ms;

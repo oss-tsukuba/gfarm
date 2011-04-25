@@ -84,8 +84,8 @@ gfarm_off_t gfarm_get_minimum_free_disk_space(void);
 const char *gfarm_get_journal_dir(void);
 int gfarm_get_journal_max_size(void);
 int gfarm_get_journal_sync_file(void);
-int gfarm_get_journal_sync_slave(void);
 int gfarm_get_journal_sync_slave_timeout(void);
+int gfarm_get_slave_metadb_server_max_size(void);
 
 /* redirection */
 extern struct gfs_file *gf_stdout, *gf_stderr;

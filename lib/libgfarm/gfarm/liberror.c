@@ -136,6 +136,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"path is root",
 	"internal error",
 	"db access should be retried",
+	"too many hosts",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

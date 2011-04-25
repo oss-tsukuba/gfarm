@@ -59,16 +59,40 @@ mdhost_is_master(struct mdhost *m)
 	return (gfarm_metadb_server_is_master(m->ms));
 }
 
+void
+mdhost_set_is_master(struct mdhost *m, int enable)
+{
+	gfarm_metadb_server_set_is_master(m->ms, enable);
+}
+
 int
 mdhost_is_self(struct mdhost *m)
 {
 	return (gfarm_metadb_server_is_self(m->ms));
 }
 
+int
+mdhost_is_sync_replication(struct mdhost *m)
+{
+	return (gfarm_metadb_server_is_sync_replication(m->ms));
+}
+
+void
+mdhost_set_is_sync_replication(struct mdhost *m, int enable)
+{
+	gfarm_metadb_server_set_is_sync_replication(m->ms, enable);
+}
+
 const char *
 mdhost_get_name(struct mdhost *m)
 {
 	return (gfarm_metadb_server_get_name(m->ms));
+}
+
+int
+mdhost_equals(struct mdhost *m, struct gfarm_metadb_server *ms)
+{
+	return (m->ms == ms);
 }
 
 struct abstract_host *
@@ -360,6 +384,17 @@ mdhost_lookup(const char *hostname)
 }
 
 struct mdhost *
+mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
+{
+	struct mdhost *m;
+
+	FOREACH_MDHOST(m)
+		if (m->ms == ms)
+			return (m);
+	return (NULL);
+}
+
+struct mdhost *
 mdhost_lookup_master(void)
 {
 	struct mdhost *m;
@@ -424,6 +459,18 @@ mdhost_set_self_as_master(void)
 		gfarm_metadb_server_set_is_master(m->ms, m == s);
 	}
 	localhost_is_readonly = 0;
+}
+
+int
+mdhost_has_async_replication_target(void)
+{
+	struct mdhost *m;
+
+	FOREACH_MDHOST(m) {
+		if (mdhost_is_sync_replication(m) == 0)
+			return (1);
+	}
+	return (0);
 }
 
 void

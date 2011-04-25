@@ -1003,8 +1003,6 @@ start_gfmdc_threads(void)
 	gfarm_error_t e;
 
 	if (mdhost_self_is_master()) {
-		if (gfarm_get_journal_sync_slave())
-			return;
 		if ((e = create_detached_thread(gfmdc_journal_asyncsend_thread,
 		    NULL)) != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_UNFIXED,

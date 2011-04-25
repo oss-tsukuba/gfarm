@@ -69,11 +69,13 @@ static GFARM_STAILQ_HEAD(journal_recvq, db_journal_recv_info) journal_recvq
 static int journal_recvq_nelems = 0;
 static int journal_recvq_cancel;
 static pthread_mutex_t journal_recvq_mutex;
+static pthread_mutex_t journal_seqnum_mutex;
 static pthread_cond_t journal_recvq_nonempty_cond;
 static pthread_cond_t journal_recvq_nonfull_cond;
 static pthread_cond_t journal_recvq_cancel_cond;
 
 #define RECVQ_MUTEX_DIAG		"journal_recvq_mutex"
+#define SEQNUM_MUTEX_DIAG		"journal_seqnum_mutex"
 #define RECVQ_NONEMPTY_COND_DIAG	"journal_recvq_nonempty_cond"
 #define RECVQ_NONFULL_COND_DIAG		"journal_recvq_nonfull_cond"
 #define RECVQ_CANCEL_COND_DIAG		"journal_recvq_cancel_cond"
@@ -166,6 +168,7 @@ db_journal_initialize(int is_master)
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
 	gfarm_mutex_init(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	gfarm_mutex_init(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
 	    RECVQ_NONEMPTY_COND_DIAG);
 	gfarm_cond_init(&journal_recvq_nonfull_cond, diag,
@@ -211,18 +214,38 @@ db_journal_terminate(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* PREREQUISITE: giant_lock */
 gfarm_uint64_t
 db_journal_next_seqnum(void)
 {
-	return (++journal_seqnum);
+	gfarm_uint64_t n;
+	static const char *diag = "db_journal_next_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	n = ++journal_seqnum;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	return (n);
 }
 
-/* PREREQUISITE: giant_lock */
 gfarm_uint64_t
 db_journal_get_current_seqnum(void)
 {
-	return (journal_seqnum);
+	gfarm_uint64_t n;
+	static const char *diag = "db_journal_get_current_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	n = journal_seqnum;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	return (n);
+}
+
+static void
+db_journal_subtract_current_seqnum(int n)
+{
+	static const char *diag = "db_journal_subtract_current_seqnum";
+
+	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	journal_seqnum -= n;
+	gfarm_mutex_unlock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 }
 
 static gfarm_error_t
@@ -599,7 +622,7 @@ db_journal_write_end(gfarm_uint64_t seqnum, void *arg)
 	 */
 	if (journal_begin_called) {
 		journal_begin_called = 0;
-		journal_seqnum -= 2;
+		db_journal_subtract_current_seqnum(2);
 		journal_seqnum_pre = journal_seqnum;
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -3349,7 +3372,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 	struct db_journal_fetch_info *fi = NULL, *fi0 = NULL, *fih = NULL;
 	gfarm_uint64_t from_sn = 0, to_sn;
 
-	cur_seqnum = journal_seqnum;
+	cur_seqnum = db_journal_get_current_seqnum();
 
 	if (cur_seqnum + 1 == min_seqnum) {
 		*no_recp = 1;
@@ -3499,9 +3522,7 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 	gfarm_uint64_t next_sn;
 	static const char *diag = "db_journal_recvq_delete";
 
-	giant_lock();
-	next_sn = journal_seqnum + 1;
-	giant_unlock();
+	next_sn = db_journal_get_current_seqnum() + 1;
 
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	for (;;) {

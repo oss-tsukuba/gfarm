@@ -17,6 +17,7 @@ struct gfarm_metadb_server {
 
 #define GFARM_METADB_SERVER_FLAG_IS_SELF	0x00000001
 #define GFARM_METADB_SERVER_FLAG_IS_MASTER	0x00000002
+#define GFARM_METADB_SERVER_FLAG_IS_SYNC_REP	0x00000004
 
 
 gfarm_error_t
@@ -86,6 +87,19 @@ void
 gfarm_metadb_server_set_is_self(struct gfarm_metadb_server *m, int enable)
 {
 	set_flag(m, GFARM_METADB_SERVER_FLAG_IS_SELF, enable);
+}
+
+int
+gfarm_metadb_server_is_sync_replication(struct gfarm_metadb_server *m)
+{
+	return ((m->flags & GFARM_METADB_SERVER_FLAG_IS_SYNC_REP) != 0);
+}
+
+void
+gfarm_metadb_server_set_is_sync_replication(struct gfarm_metadb_server *m,
+	int enable)
+{
+	set_flag(m, GFARM_METADB_SERVER_FLAG_IS_SYNC_REP, enable);
 }
 
 void
