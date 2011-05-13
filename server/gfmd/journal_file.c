@@ -95,7 +95,7 @@ struct journal_file {
 	off_t tail;
 	int wait_until_nonempty;
 	pthread_cond_t nonfull_cond, nonempty_cond, cancel_cond;
-	pthread_mutex_t mutex;
+	pthread_mutex_t mutex, pos_mutex;
 };
 
 #define JOURNAL_READER_LIST_HEAD(j) (&(j)->reader_list)
@@ -270,10 +270,10 @@ journal_file_reader_commit_pos(struct journal_file_reader *reader)
 	struct journal_file *jf = reader->file;
 	static const char *diag = "journal_file_reader_commit_pos";
 
-	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	gfarm_mutex_lock(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
 	reader->pos = reader->la_pos;
 	reader->cache_size = reader->la_cache_size;
-	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
+	gfarm_mutex_unlock(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
 }
 
 int
@@ -1159,6 +1159,7 @@ journal_file_open(const char *path, size_t max_size,
 	gfarm_cond_init(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->cancel_cond, diag, JOURNAL_FILE_STR);
 	gfarm_mutex_init(&jf->mutex, diag, JOURNAL_FILE_STR);
+	gfarm_mutex_init(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
 	jf->wait_until_nonempty = 0;
 	*jfp = jf;
 
