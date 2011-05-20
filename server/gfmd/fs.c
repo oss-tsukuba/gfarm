@@ -1083,13 +1083,11 @@ gfm_server_fchown(struct peer *peer, int from_client, int skip)
 			"process_get_file_inode() failed: %s",
 			gfarm_error_string(e));
 	} else if (*username != '\0' &&
-	    ((new_user = user_lookup(username)) == NULL ||
-	     user_is_invalidated(new_user))) {
+	    (new_user = user_lookup(username)) == NULL) {
 		gflog_debug(GFARM_MSG_1001841, "user is not found");
 		e = GFARM_ERR_NO_SUCH_USER;
 	} else if (*groupname != '\0' &&
-	    ((new_group = group_lookup(groupname)) == NULL ||
-	     group_is_invalidated(new_group))) {
+	    (new_group = group_lookup(groupname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001842, "group is not found");
 		e = GFARM_ERR_NO_SUCH_GROUP;
 	} else if (new_user != NULL && !user_is_root(inode, user)) {

@@ -80,15 +80,15 @@ abstract_host_validate(struct abstract_host *h)
 }
 
 int
-abstract_host_is_invalidated(struct abstract_host *h)
+abstract_host_is_invalid_unlocked(struct abstract_host *h)
 {
-	return (h->invalid == 1);
+	return (h->invalid != 0);
 }
 
 int
 abstract_host_is_valid_unlocked(struct abstract_host *h)
 {
-	return (!abstract_host_is_invalidated(h));
+	return (h->invalid == 0);
 }
 
 int

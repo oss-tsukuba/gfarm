@@ -1,13 +1,14 @@
 void user_init(void);
 
 struct user;
+struct user *user_lookup_including_invalid(const char *);
 struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
 char *user_realname(struct user *);
 char *user_gsi_dn(struct user *);
-int user_is_invalidated(struct user *);
-int user_is_active(struct user *);
+int user_is_invalid(struct user *);
+int user_is_valid(struct user *);
 struct gfarm_user_info;
 gfarm_error_t user_enter(struct gfarm_user_info *, struct user **);
 void user_modify(struct user *, struct gfarm_user_info *);

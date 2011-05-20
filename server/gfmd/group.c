@@ -82,25 +82,25 @@ group_invalidate(struct group *g)
 }
 
 static void
-group_activate(struct group *g)
+group_validate(struct group *g)
 {
 	g->invalid = 0;
 }
 
 int
-group_is_invalidated(struct group *g)
+group_is_invalid(struct group *g)
 {
-	return (g->invalid == 1);
+	return (g->invalid != 0);
 }
 
 int
-group_is_active(struct group *g)
+group_is_valid(struct group *g)
 {
-	return (g != NULL && !group_is_invalidated(g));
+	return (g->invalid == 0);
 }
 
 struct group *
-group_lookup(const char *groupname)
+group_lookup_including_invalid(const char *groupname)
 {
 	struct gfarm_hash_entry *entry;
 
@@ -111,6 +111,16 @@ group_lookup(const char *groupname)
 	return (*(struct group **)gfarm_hash_entry_data(entry));
 }
 
+struct group *
+group_lookup(const char *groupname)
+{
+	struct group *g = group_lookup_including_invalid(groupname);
+
+	if (g != NULL && group_is_valid(g))
+		return (g);
+	return (NULL);
+}
+
 /* note that groupname may be free'ed */
 static gfarm_error_t
 group_enter(char *groupname, struct group **gpp)
@@ -119,10 +129,10 @@ group_enter(char *groupname, struct group **gpp)
 	int created;
 	struct group *g;
 
-	g = group_lookup(groupname);
+	g = group_lookup_including_invalid(groupname);
 	if (g != NULL) {
-		if (group_is_invalidated(g)) {
-			group_activate(g);
+		if (group_is_invalid(g)) {
+			group_validate(g);
 			if (gpp != NULL)
 				*gpp = g;
 			free(groupname);
@@ -160,7 +170,7 @@ group_enter(char *groupname, struct group **gpp)
 	quota_data_init(&g->q);
 	g->users.user_prev = g->users.user_next = &g->users;
 	*(struct group **)gfarm_hash_entry_data(entry) = g;
-	group_activate(g);
+	group_validate(g);
 	if (gpp != NULL)
 		*gpp = g;
 	return (GFARM_ERR_NO_ERROR);
@@ -181,9 +191,9 @@ group_remove_internal(const char *groupname, int update_quota)
 		return (GFARM_ERR_NO_SUCH_GROUP);
 	}
 	g = *(struct group **)gfarm_hash_entry_data(entry);
-	if (group_is_invalidated(g)) {
+	if (group_is_invalid(g)) {
 		gflog_debug(GFARM_MSG_1001520,
-		    "\"%s\" group is invalidated", groupname);
+		    "\"%s\" group is invalid", groupname);
 		return (GFARM_ERR_NO_SUCH_GROUP);
 	}
 	if (update_quota)
@@ -217,7 +227,8 @@ group_remove_in_cache(const char *groupname)
 char *
 group_name(struct group *g)
 {
-	return (group_is_active(g) ? g->groupname : REMOVED_GROUP_NAME);
+	return (g != NULL && group_is_valid(g) ?
+	    g->groupname : REMOVED_GROUP_NAME);
 }
 
 struct quota *
@@ -228,7 +239,7 @@ group_quota(struct group *g)
 
 void
 group_all(void *closure, void (*callback)(void *, struct group *),
-	  int active_only)
+	  int valid_only)
 {
 	struct gfarm_hash_iterator it;
 	struct group **g;
@@ -237,7 +248,7 @@ group_all(void *closure, void (*callback)(void *, struct group *),
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		g = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (!active_only || group_is_active(*g))
+		if (!valid_only || group_is_valid(*g))
 			callback(closure, *g);
 	}
 }
@@ -260,7 +271,7 @@ group_info_add(struct gfarm_group_info *gi)
 	}
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
-		if (u == NULL || user_is_invalidated(u)) {
+		if (u == NULL) {
 			gflog_warning(GFARM_MSG_1000242,
 			    "group_add_one: unknown user %s",
 			    gi->usernames[i]);
@@ -303,12 +314,12 @@ group_add_user(struct group *g, const char *username)
 {
 	struct user *u = user_lookup(username);
 
-	if (u == NULL || user_is_invalidated(u)) {
+	if (u == NULL) {
 		gflog_debug(GFARM_MSG_1001521,
 		    "\"%s\" does not exist", username);
 		return (GFARM_ERR_NO_SUCH_USER);
 	}
-	if (g == NULL || group_is_invalidated(g)) {
+	if (g == NULL || group_is_invalid(g)) {
 		gflog_debug(GFARM_MSG_1001522,
 		    "group is invalid or does not exist");
 		return (GFARM_ERR_NO_SUCH_GROUP);
@@ -344,7 +355,7 @@ group_add_user_and_record(struct group *g, const char *username)
 	gi.groupname = group_name(g);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		if (user_is_active(ga->u))
+		if (user_is_valid(ga->u))
 			n++;
 	gi.nusers = n;
 	GFARM_MALLOC_ARRAY(gi.usernames, n);
@@ -353,7 +364,7 @@ group_add_user_and_record(struct group *g, const char *username)
 		    "group_add_user_and_record(%s): no memory", username);
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		if (user_is_active(ga->u))
+		if (user_is_valid(ga->u))
 			gi.usernames[n++] = user_name(ga->u);
 
 	e = db_group_modify(&gi, 0, 1, &username, 0, NULL);
@@ -456,7 +467,7 @@ group_info_send(struct gfp_xdr *client, struct group *g)
 
 	n = 0;
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next)
-		if (user_is_active(ga->u))
+		if (user_is_valid(ga->u))
 			n++;
 	e = gfp_xdr_send(client, "si", g->groupname, n);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -466,7 +477,7 @@ group_info_send(struct gfp_xdr *client, struct group *g)
 		return (e);
 	}
 	for (ga = g->users.user_next; ga != &g->users; ga = ga->user_next) {
-		if (user_is_active(ga->u))
+		if (user_is_valid(ga->u))
 			if ((e = gfp_xdr_send(client, "s", user_name(ga->u)))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001525,
@@ -498,7 +509,7 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		gp = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (group_is_active(*gp))
+		if (group_is_valid(*gp))
 			++ngroups;
 	}
 	e = gfm_server_put_reply(peer, diag,
@@ -514,7 +525,7 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		gp = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (group_is_active(*gp)) {
+		if (group_is_valid(*gp)) {
 			e = group_info_send(client, *gp);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001527,
@@ -597,7 +608,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	giant_lock();
 	for (i = 0; i < ngroups; i++) {
 		g = group_lookup(groups[i]);
-		if (g == NULL || group_is_invalidated(g)) {
+		if (g == NULL) {
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_SUCH_GROUP, "");
 		} else {
@@ -671,7 +682,7 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 
 	for (i = 0; i < gi->nusers; i++) {
 		u = user_lookup(gi->usernames[i]);
-		if (u == NULL || user_is_invalidated(u)) {
+		if (u == NULL) {
 			gflog_warning(GFARM_MSG_1000253,
 			    "%s: unknown user %s", diag,
 				    gi->usernames[i]);
@@ -706,7 +717,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001535,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (group_is_active(group_lookup(gi.groupname))) {
+	} else if (group_lookup(gi.groupname) != NULL) {
 		gflog_debug(GFARM_MSG_1001536,
 			"group already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
@@ -754,7 +765,7 @@ group_modify(struct group *group, struct gfarm_group_info *gi,
 		const char *username = gi->usernames[i];
 		struct user *u = user_lookup(username);
 
-		if (u == NULL || user_is_invalidated(u)) {
+		if (u == NULL) {
 			gflog_warning(GFARM_MSG_1000255,
 			    "%s: unknown user %s", diag,
 			    username);
@@ -794,8 +805,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001540,
 			"operation is not permitted for user");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((group = group_lookup(gi.groupname)) == NULL ||
-		   group_is_invalidated(group)) {
+	} else if ((group = group_lookup(gi.groupname)) == NULL) {
 		gflog_debug(GFARM_MSG_1001541,
 			"group_lookup() failed");
 		e = GFARM_ERR_NO_SUCH_GROUP;

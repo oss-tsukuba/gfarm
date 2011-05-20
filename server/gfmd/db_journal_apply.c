@@ -100,7 +100,7 @@ db_journal_apply_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *ui)
 {
 	gfarm_error_t e;
 
-	if (user_is_active(user_lookup(ui->username))) {
+	if (user_lookup(ui->username) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "seqnum=%llu username=%s : %s",
@@ -124,8 +124,7 @@ db_journal_apply_user_modify(gfarm_uint64_t seqnum,
 	struct user *u;
 	struct gfarm_user_info *ui = &m->ui;
 
-	if ((u = user_lookup(ui->username)) == NULL ||
-	   user_is_invalidated(u)) {
+	if ((u = user_lookup(ui->username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "seqnum=%llu username=%s : %s",
@@ -159,7 +158,7 @@ db_journal_apply_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *gi)
 {
 	gfarm_error_t e;
 
-	if (group_is_active(group_lookup(gi->groupname))) {
+	if (group_lookup(gi->groupname) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "seqnum=%llu groupname=%s : %s",
@@ -190,8 +189,7 @@ db_journal_apply_group_modify(gfarm_uint64_t seqnum,
 	struct gfarm_group_info *gi = &arg->gi;
 	const char *diag = "db_journal_apply_group_modify";
 
-	if ((g = group_lookup(gi->groupname)) == NULL ||
-	    group_is_invalidated(g)) {
+	if ((g = group_lookup(gi->groupname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_GROUP;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "seqnum=%llu groupname=%s : %s",

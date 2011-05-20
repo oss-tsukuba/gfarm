@@ -105,7 +105,7 @@ quota_clear_value_all_user_and_group()
 static void
 quota_active_user_set_db(struct quota *q, struct user *u)
 {
-	if (user_is_active(u)) {
+	if (user_is_valid(u)) {
 		gfarm_error_t e = db_quota_user_set(q, user_name(u));
 		if (e == GFARM_ERR_NO_ERROR)
 			q->on_db = 1;
@@ -119,7 +119,7 @@ quota_active_user_set_db(struct quota *q, struct user *u)
 static void
 quota_active_group_set_db(struct quota *q, struct group *g)
 {
-	if (group_is_active(g)) {
+	if (group_is_valid(g)) {
 		gfarm_error_t e = db_quota_group_set(q, group_name(g));
 		if (e == GFARM_ERR_NO_ERROR)
 			q->on_db = 1;
@@ -263,7 +263,7 @@ quota_user_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 
 	if (qi->name == NULL)
 		return;
-	u = user_lookup(qi->name);
+	u = user_lookup_including_invalid(qi->name);
 	if (u == NULL) {
 		quota_user_remove_db(qi->name);
 	} else {
@@ -281,7 +281,7 @@ quota_group_set_one_from_db(void *closure, struct gfarm_quota_info *qi)
 
 	if (qi->name == NULL)
 		return;
-	g = group_lookup(qi->name);
+	g = group_lookup_including_invalid(qi->name);
 	if (g == NULL) {
 		quota_group_remove_db(qi->name);
 	} else {
@@ -687,11 +687,6 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 				e = GFARM_ERR_NO_SUCH_GROUP;
 			else  /* hidden groupnames */
 				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if (!group_is_active(group)) {
-			if (user_is_admin(peer_user))
-				e = GFARM_ERR_NO_SUCH_GROUP;
-			else  /* hidden groupnames */
-				e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((!user_in_group(peer_user, group)) &&
 			!user_is_admin(peer_user))
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
@@ -708,8 +703,6 @@ quota_get_common(struct peer *peer, int from_client, int skip, int is_group)
 		else if (!user_is_admin(peer_user))
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		else if ((user = user_lookup(name)) == NULL)
-			e = GFARM_ERR_NO_SUCH_USER;
-		else if (!user_is_active(user))
 			e = GFARM_ERR_NO_SUCH_USER;
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -775,7 +768,7 @@ quota_lookup(const char *name, int is_group, struct quota **qp,
 
 	if (is_group) {
 		struct group *group = group_lookup(name);
-		if (!group_is_active(group)) {
+		if (group == NULL) {
 			e = GFARM_ERR_NO_SUCH_GROUP;
 			gflog_debug(GFARM_MSG_1002061,
 				    "%s: name=%s: %s",
@@ -786,7 +779,7 @@ quota_lookup(const char *name, int is_group, struct quota **qp,
 		}
 	} else {
 		struct user *user = user_lookup(name);
-		if (!user_is_active(user)) {
+		if (user == NULL) {
 			e = GFARM_ERR_NO_SUCH_USER;
 			gflog_debug(GFARM_MSG_1002062,
 				    "%s: name=%s: %s",

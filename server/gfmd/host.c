@@ -129,9 +129,9 @@ host_validate(struct host *h)
 }
 
 static int
-host_is_invalidated(struct host *h)
+host_is_invalid_unlocked(struct host *h)
 {
-	return (abstract_host_is_invalidated(&h->ah));
+	return (abstract_host_is_invalid_unlocked(&h->ah));
 }
 
 int
@@ -141,7 +141,7 @@ host_is_valid(struct host *h)
 }
 
 static struct host *
-host_lookup_internal(const char *hostname)
+host_lookup_including_invalid(const char *hostname)
 {
 	return (host_hashtab_lookup(host_hashtab, hostname));
 }
@@ -149,9 +149,9 @@ host_lookup_internal(const char *hostname)
 struct host *
 host_lookup(const char *hostname)
 {
-	struct host *h = host_lookup_internal(hostname);
+	struct host *h = host_lookup_including_invalid(hostname);
 
-	return ((h == NULL || host_is_invalidated(h)) ? NULL : h);
+	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
 }
 
 struct host *
@@ -204,7 +204,7 @@ host_namealiases_lookup(const char *hostname)
 	if (h != NULL)
 		return (h);
 	h = host_hashtab_lookup(hostalias_hashtab, hostname);
-	return ((h == NULL || host_is_invalidated(h)) ? NULL : h);
+	return ((h == NULL || host_is_invalid_unlocked(h)) ? NULL : h);
 }
 
 /* XXX FIXME missing hostaliases */
@@ -217,9 +217,9 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 	struct callout *callout;
 	static const char diag[] = "host_enter";
 
-	h = host_lookup_internal(hi->hostname);
+	h = host_lookup_including_invalid(hi->hostname);
 	if (h != NULL) {
-		if (host_is_invalidated(h)) {
+		if (host_is_invalid_unlocked(h)) {
 			host_validate(h);
 			if (hpp != NULL)
 				*hpp = h;

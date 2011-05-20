@@ -1257,13 +1257,13 @@ inode_set_gen_in_cache(struct inode *inode, gfarm_uint64_t gen)
 void
 inode_set_user_by_name_in_cache(struct inode *inode, const char *username)
 {
-	inode->i_user = user_lookup(username);
+	inode->i_user = user_lookup_including_invalid(username);
 }
 
 void
 inode_set_group_by_name_in_cache(struct inode *inode, const char *groupname)
 {
-	inode->i_group = group_lookup(groupname);
+	inode->i_group = group_lookup_including_invalid(groupname);
 }
 
 gfarm_error_t
@@ -2093,7 +2093,7 @@ inode_lookup_lost_found(void)
 		gflog_error(GFARM_MSG_1002480, "no root directory");
 		return (NULL);
 	}
-	admin = user_lookup(ADMIN_USER_NAME);
+	admin = user_lookup_including_invalid(ADMIN_USER_NAME);
 	if (admin == NULL) {
 		gflog_error(GFARM_MSG_1002481, "no admin user");
 		return (NULL);
@@ -2341,7 +2341,7 @@ inode_link_to_lost_found(struct inode *inode)
 	base = inode_lookup_lost_found();
 	if (base == NULL)
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
-	admin = user_lookup(ADMIN_USER_NAME);
+	admin = user_lookup_including_invalid(ADMIN_USER_NAME);
 	if (admin == NULL)
 		return (GFARM_ERR_NO_SUCH_USER);
 

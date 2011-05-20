@@ -45,7 +45,7 @@ void abstract_host_init(struct abstract_host *, struct abstract_host_ops *,
 int abstract_host_get_protocol_version(struct abstract_host *);
 void abstract_host_invalidate(struct abstract_host *);
 void abstract_host_validate(struct abstract_host *);
-int abstract_host_is_invalidated(struct abstract_host *);
+int abstract_host_is_invalid_unlocked(struct abstract_host *);
 int abstract_host_is_valid_unlocked(struct abstract_host *);
 int abstract_host_is_valid(struct abstract_host *, const char *);
 void abstract_host_activate(struct abstract_host *, const char *);

@@ -798,7 +798,7 @@ auth_uid_to_global_username(void *closure,
 	}
 	giant_unlock();
 
-	if (u == NULL || user_is_invalidated(u)) {
+	if (u == NULL) {
 		/*
 		 * do not return GFARM_ERR_NO_SUCH_USER
 		 * to prevent information leak

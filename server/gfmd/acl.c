@@ -92,8 +92,7 @@ acl_convert_for_setxattr_internal(
 			break;
 		case GFARM_ACL_USER:
 			gfs_acl_get_qualifier(ent, &qual);
-			if ((u = user_lookup(qual)) == NULL ||
-			    user_is_invalidated(u)) {
+			if ((u = user_lookup(qual)) == NULL) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 					    "unknown user: %s", qual);
 				gfs_acl_free(acl);
@@ -103,8 +102,7 @@ acl_convert_for_setxattr_internal(
 			break;
 		case GFARM_ACL_GROUP:
 			gfs_acl_get_qualifier(ent, &qual);
-			if ((g = group_lookup(qual)) == NULL ||
-			    group_is_invalidated(g)) {
+			if ((g = group_lookup(qual)) == NULL) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 					    "unknown group: %s", qual);
 				gfs_acl_free(acl);

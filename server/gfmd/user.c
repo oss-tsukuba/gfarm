@@ -61,25 +61,25 @@ user_invalidate(struct user *u)
 }
 
 static void
-user_activate(struct user *u)
+user_validate(struct user *u)
 {
 	u->invalid = 0;
 }
 
 int
-user_is_invalidated(struct user *u)
+user_is_invalid(struct user *u)
 {
-	return (u->invalid == 1);
+	return (u->invalid != 0);
 }
 
 int
-user_is_active(struct user *u)
+user_is_valid(struct user *u)
 {
-	return (u != NULL && !user_is_invalidated(u));
+	return (u->invalid == 0);
 }
 
 struct user *
-user_lookup(const char *username)
+user_lookup_including_invalid(const char *username)
 {
 	struct gfarm_hash_entry *entry;
 
@@ -89,8 +89,8 @@ user_lookup(const char *username)
 	return (*(struct user **)gfarm_hash_entry_data(entry));
 }
 
-struct user *
-user_lookup_gsi_dn(const char *gsi_dn)
+static struct user *
+user_lookup_gsi_dn_including_invalid(const char *gsi_dn)
 {
 	struct gfarm_hash_entry *entry;
 
@@ -101,6 +101,26 @@ user_lookup_gsi_dn(const char *gsi_dn)
 	if (entry == NULL)
 		return (NULL);
 	return (*(struct user **)gfarm_hash_entry_data(entry));
+}
+
+struct user *
+user_lookup(const char *username)
+{
+	struct user *u = user_lookup_including_invalid(username);
+
+	if (u != NULL && user_is_valid(u))
+		return (u);
+	return (NULL);
+}
+
+struct user *
+user_lookup_gsi_dn(const char *gsi_dn)
+{
+	struct user *u = user_lookup_gsi_dn_including_invalid(gsi_dn);
+
+	if (u != NULL && user_is_valid(u))
+		return (u);
+	return (NULL);
 }
 
 gfarm_error_t
@@ -130,13 +150,13 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	struct user *u;
 	gfarm_error_t e;
 
-	u = user_lookup(ui->username);
+	u = user_lookup_including_invalid(ui->username);
 	if (u != NULL) {
-		if (user_is_invalidated(u)) {
+		if (user_is_invalid(u)) {
 			e = user_enter_gsi_dn(ui->gsi_dn, u);
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
-			user_activate(u);
+			user_validate(u);
 			if (upp != NULL)
 				*upp = u;
 			/* copy user info but keeping address of username */
@@ -187,7 +207,7 @@ user_enter(struct gfarm_user_info *ui, struct user **upp)
 	quota_data_init(&u->q);
 	u->groups.group_prev = u->groups.group_next = &u->groups;
 	*(struct user **)gfarm_hash_entry_data(entry) = u;
-	user_activate(u);
+	user_validate(u);
 	if (upp != NULL)
 		*upp = u;
 	return (GFARM_ERR_NO_ERROR);
@@ -207,9 +227,9 @@ user_remove_internal(const char *username, int update_quota)
 		return (GFARM_ERR_NO_SUCH_USER);
 	}
 	u = *(struct user **)gfarm_hash_entry_data(entry);
-	if (user_is_invalidated(u)) {
+	if (user_is_invalid(u)) {
 		gflog_debug(GFARM_MSG_1001497,
-			"user is invalidated");
+			"user is invalid");
 		return (GFARM_ERR_NO_SUCH_USER);
 	}
 
@@ -246,19 +266,22 @@ user_remove_in_cache(const char *username)
 char *
 user_name(struct user *u)
 {
-	return (user_is_active(u) ? u->ui.username : REMOVED_USER_NAME);
+	return (u != NULL && user_is_valid(u) ?
+	    u->ui.username : REMOVED_USER_NAME);
 }
 
 char *
 user_realname(struct user *u)
 {
-	return (user_is_active(u) ? u->ui.realname : REMOVED_USER_NAME);
+	return (u != NULL && user_is_valid(u) ?
+	    u->ui.realname : REMOVED_USER_NAME);
 }
 
 char *
 user_gsi_dn(struct user *u)
 {
-	return (user_is_active(u) ? u->ui.gsi_dn : REMOVED_USER_NAME);
+	return (u != NULL && user_is_valid(u) ?
+	    u->ui.gsi_dn : REMOVED_USER_NAME);
 }
 
 struct quota *
@@ -269,7 +292,7 @@ user_quota(struct user *u)
 
 void
 user_all(void *closure, void (*callback)(void *, struct user *),
-	 int active_only)
+	 int valid_only)
 {
 	struct gfarm_hash_iterator it;
 	struct user **u;
@@ -278,7 +301,7 @@ user_all(void *closure, void (*callback)(void *, struct user *),
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (!active_only || user_is_active(*u))
+		if (!valid_only || user_is_valid(*u))
 			callback(closure, *u);
 	}
 }
@@ -291,9 +314,9 @@ user_in_group(struct user *user, struct group *group)
 	if (user == NULL || group == NULL) /* either is already removed */
 		return (0);
 
-	if (user_is_invalidated(user))
+	if (user_is_invalid(user))
 		return (0);
-	if (group_is_invalidated(group))
+	if (group_is_invalid(group))
 		return (0);
 
 	for (ga = user->groups.group_next; ga != &user->groups;
@@ -509,7 +532,7 @@ user_init(void)
 		    "loading users: %s", gfarm_error_string(e));
 
 	/*
-	 * there is no removed (invalidated) user since the hash is
+	 * there is no removed (invalid) user since the hash is
 	 * just created.
 	 */
 	if (user_lookup(ADMIN_USER_NAME) == NULL)
@@ -553,7 +576,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (user_is_active(*u))
+		if (user_is_valid(*u))
 			++nusers;
 	}
 	e = gfm_server_put_reply(peer, diag,
@@ -569,7 +592,7 @@ gfm_server_user_info_get_all(struct peer *peer, int from_client, int skip)
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
-		if (user_is_active(*u)) {
+		if (user_is_valid(*u)) {
 			e = user_info_send(client, &(*u)->ui);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001499,
@@ -652,7 +675,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	for (i = 0; i < nusers; i++) {
 		u = user_lookup(users[i]);
-		if (u == NULL || user_is_invalidated(u)) {
+		if (u == NULL) {
 			if (debug_mode)
 				gflog_info(GFARM_MSG_1000238,
 				    "user lookup <%s>: failed",
@@ -708,10 +731,10 @@ gfm_server_user_info_get_by_gsi_dn(
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	u = user_lookup_gsi_dn(gsi_dn);
-	if (u == NULL || user_is_invalidated(u))
+	if (u == NULL) {
 		e = gfm_server_put_reply(peer, diag,
 			GFARM_ERR_NO_SUCH_USER, "");
-	else {
+	} else {
 		ui = &u->ui;
 		e = gfm_server_put_reply(peer, diag, e,
 			"ssss", ui->username, ui->realname, ui->homedir,
@@ -764,7 +787,7 @@ gfm_server_user_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001505,
 			"Operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (user_is_active(user_lookup(ui.username))) {
+	} else if (user_lookup(ui.username) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
 		gflog_debug(GFARM_MSG_1001506,
 			"User already exists");
@@ -831,8 +854,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001509,
 			"operation is not permitted");
 		needs_free = 1;
-	} else if ((u = user_lookup(ui.username)) == NULL ||
-		   user_is_invalidated(u)) {
+	} else if ((u = user_lookup(ui.username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
 		gflog_debug(GFARM_MSG_1001510,
 			"user_lookup() failed");
