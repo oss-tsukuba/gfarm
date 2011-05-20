@@ -1257,13 +1257,13 @@ inode_set_gen_in_cache(struct inode *inode, gfarm_uint64_t gen)
 void
 inode_set_user_by_name_in_cache(struct inode *inode, const char *username)
 {
-	inode->i_user = user_lookup_including_invalid(username);
+	inode->i_user = user_lookup_or_enter_invalid(username);
 }
 
 void
 inode_set_group_by_name_in_cache(struct inode *inode, const char *groupname)
 {
-	inode->i_group = group_lookup_including_invalid(groupname);
+	inode->i_group = group_lookup_or_enter_invalid(groupname);
 }
 
 gfarm_error_t

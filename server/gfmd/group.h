@@ -18,6 +18,7 @@ extern char ADMIN_GROUP_NAME[]; /* can modify host/user/group info of gfarm */
 extern char ROOT_GROUP_NAME[]; /* can modify any data/metadata in gfarmfs */
 
 struct group *group_lookup_including_invalid(const char *);
+struct group *group_lookup_or_enter_invalid(const char *);
 struct group *group_lookup(const char *);
 gfarm_error_t grpassign_add(struct user *, struct group *);
 void grpassign_remove(struct group_assignment *);

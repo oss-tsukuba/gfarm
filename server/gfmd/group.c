@@ -224,6 +224,40 @@ group_remove_in_cache(const char *groupname)
 	return (group_remove_internal(groupname, 0));
 }
 
+struct group *
+group_lookup_or_enter_invalid(const char *groupname)
+{
+	gfarm_error_t e;
+	struct group *g = group_lookup_including_invalid(groupname);
+	char *n;
+	static const char diag[] = "group_lookup_or_enter_invalid";
+
+	if (g != NULL)
+		return (g);
+
+	n = strdup_ck(groupname, diag);
+	if (n == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "group_lookup_or_enter_invalid(%s): no memory", groupname);
+		return (NULL);
+	}
+	e = group_enter(n, &g);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "group_lookup_or_enter_invalid(%s): group_enter: %s",
+		    groupname, gfarm_error_string(e));
+		free(n);
+		return (NULL);
+	}
+	e = group_remove_in_cache(groupname);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "group_lookup_or_enter_invalid(%s): group_remove: %s",
+		    groupname, gfarm_error_string(e));
+	}
+	return (g);
+}
+
 char *
 group_name(struct group *g)
 {

@@ -2,6 +2,7 @@ void user_init(void);
 
 struct user;
 struct user *user_lookup_including_invalid(const char *);
+struct user *user_lookup_or_enter_invalid(const char *);
 struct user *user_lookup(const char *);
 struct user *user_lookup_gsi_dn(const char *);
 char *user_name(struct user *);
