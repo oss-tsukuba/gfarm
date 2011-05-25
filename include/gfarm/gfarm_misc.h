@@ -156,6 +156,7 @@ void gfarm_strarray_free(char **);
 int gfarm_attach_debugger(void);
 
 size_t gfarm_humanize_number(char *, size_t, unsigned long long, int);
+size_t gfarm_humanize_signed_number(char *, size_t, long long, int);
 #define GFARM_HUMANIZE_BINARY	1
 
 #ifdef HAVE_BYTESWAP_H

@@ -25,3 +25,18 @@ gfarm_humanize_number(char *buf, size_t len, unsigned long long number,
 	else
 		return (snprintf(buf, len, "%.0f%c", n, units[scale]));
 }
+
+size_t
+gfarm_humanize_signed_number(char *buf, size_t len, long long number,
+	int flags)
+{
+	if (number < 0) {
+		if (len >= 1 + 1) { /* '-' + '\0' */
+			*buf++ = '-';
+			--len;
+		}
+		return (gfarm_humanize_number(buf, len, -number, flags) + 1);
+	} else {
+		return (gfarm_humanize_number(buf, len, number, flags));
+	}
+}

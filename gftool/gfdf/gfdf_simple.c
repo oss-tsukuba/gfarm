@@ -28,8 +28,8 @@ struct formatter {
 	char *nodes_title_format;
 	char *nodes_data_format;
 	char *nodes_separator;
-	size_t (*number_to_string)(char *, size_t, unsigned long long);
-	size_t (*blocks_to_string)(char *, size_t, unsigned long long);
+	size_t (*number_to_string)(char *, size_t, long long);
+	size_t (*blocks_to_string)(char *, size_t, long long);
 };
 
 #define PRECISE_TITLE_FORMAT	"%13s %13s %13s %4s"
@@ -39,22 +39,22 @@ struct formatter {
 #define READABLE_DATA_FORMAT	"%9s %6s %6s %3.0f%%"
 
 static size_t
-precise_number(char *buf, size_t len, unsigned long long number)
+precise_number(char *buf, size_t len, long long number)
 {
-	return (snprintf(buf, len, "%13llu", number));
+	return (snprintf(buf, len, "%13lld", number));
 }
 
 static size_t
-readable_number(char *buf, size_t len, unsigned long long number)
+readable_number(char *buf, size_t len, long long number)
 {
-	return (gfarm_humanize_number(buf, len, number,
+	return (gfarm_humanize_signed_number(buf, len, number,
 	    option_formatting_flags));
 }
 
 static size_t
-readable_blocks(char *buf, size_t len, unsigned long long number)
+readable_blocks(char *buf, size_t len, long long number)
 {
-	return (gfarm_humanize_number(buf, len, number * 1024,
+	return (gfarm_humanize_signed_number(buf, len, number * 1024,
 	    option_formatting_flags));
 }
 
@@ -104,13 +104,13 @@ display_statfs(const char *path, const char *dummy)
 		return (e);
 
 	(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
-	    (unsigned long long)used + avail);
+	    (long long)used + avail);
 	(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
-	    (unsigned long long)used);
+	    (long long)used);
 	(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
-	    (unsigned long long)avail);
+	    (long long)avail);
 	(*formatter->number_to_string)(filesbuf, sizeof filesbuf,
-	    (unsigned long long)files);
+	    (long long)files);
 
 	printf(formatter->summary_title_format,
 	       "1K-blocks", "Used", "Avail", "Use%", "Files");
@@ -218,11 +218,11 @@ display_statfs_nodes(const char *path, const char *domain)
 		used = hosts[i].disk_used;
 		avail = hosts[i].disk_avail;
 		(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
-		    (unsigned long long)used + avail);
+		    (long long)used + avail);
 		(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
-		    (unsigned long long)used);
+		    (long long)used);
 		(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
-		    (unsigned long long)avail);
+		    (long long)avail);
 		printf(formatter->nodes_data_format,
 		       capbuf, usedbuf, availbuf,
 		       (double)used / (used + avail) * 100,
@@ -233,11 +233,11 @@ display_statfs_nodes(const char *path, const char *domain)
 	if (nhosts > 0) {
 		puts(formatter->nodes_separator);
 		(*formatter->blocks_to_string)(capbuf, sizeof capbuf,
-		    (unsigned long long)total_used + total_avail);
+		    (long long)total_used + total_avail);
 		(*formatter->blocks_to_string)(usedbuf, sizeof usedbuf,
-		    (unsigned long long)total_used);
+		    (long long)total_used);
 		(*formatter->blocks_to_string)(availbuf, sizeof availbuf,
-		    (unsigned long long)total_avail);
+		    (long long)total_avail);
 		printf(formatter->nodes_data_format,
 		       capbuf, usedbuf, availbuf,
 		       (double)total_used / (total_used + total_avail) * 100,
