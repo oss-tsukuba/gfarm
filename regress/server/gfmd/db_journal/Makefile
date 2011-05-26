@@ -39,6 +39,8 @@ SRCS = \
 	$(GFMD_SRCDIR)/job.c \
 	$(GFMD_SRCDIR)/journal_file.c \
 	$(GFMD_SRCDIR)/mdhost.c \
+	$(GFMD_SRCDIR)/mdcluster.c \
+	$(GFMD_SRCDIR)/gfmd_channel.c \
 	$(GFMD_SRCDIR)/peer.c \
 	$(GFMD_SRCDIR)/process.c \
 	$(GFMD_SRCDIR)/quota.c \
@@ -65,6 +67,8 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/job.o \
 	$(GFMD_BUILDDIR)/journal_file.o \
 	$(GFMD_BUILDDIR)/mdhost.o \
+	$(GFMD_BUILDDIR)/mdcluster.o \
+	$(GFMD_BUILDDIR)/gfmd_channel.o \
 	$(GFMD_BUILDDIR)/peer.o \
 	$(GFMD_BUILDDIR)/process.o \
 	$(GFMD_BUILDDIR)/quota.o \

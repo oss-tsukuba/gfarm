@@ -1624,6 +1624,100 @@ t_ops_quota_remove_check(void *op_arg, gfarm_uint64_t seqnum,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static struct gfarm_metadb_server *
+t_ops_mdhost_new(void)
+{
+	struct gfarm_metadb_server *ms;
+
+	GFARM_MALLOC(ms);
+	ms->name = assert_strdup("name");
+	ms->clustername = assert_strdup("clustername");
+	ms->port = 1234;
+	ms->flags = 2;
+	return (ms);
+}
+
+static void
+t_ops_mdhost_add(gfarm_uint64_t seqnum)
+{
+	struct gfarm_metadb_server *ms, *dms;
+
+	ms = t_ops_mdhost_new();
+	dms = db_mdhost_dup(ms, sizeof(*ms));
+	db_journal_metadb_server_destroy(ms);
+	TEST_ASSERT_NOERR("db_journal_write_mdhost_add",
+	    db_journal_write_mdhost_add(5, dms));
+}
+
+static void
+t_ops_mdhost_check(struct gfarm_metadb_server *ms)
+{
+	TEST_ASSERT_S("name", "name", ms->name);
+	TEST_ASSERT_S("clustername", "clustername", ms->clustername);
+	TEST_ASSERT_I("port", 1234, ms->port);
+	TEST_ASSERT_I("flags", 2, ms->flags);
+}
+
+static gfarm_error_t
+t_ops_mdhost_add_check(void *op_arg, gfarm_uint64_t seqnum,
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
+{
+	TEST_ASSERT_L("seqnum", 5, seqnum);
+	TEST_ASSERT_I("ope", GFM_JOURNAL_MDHOST_ADD, ope);
+	t_ops_mdhost_check(obj);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
+static void
+t_ops_mdhost_modify(gfarm_uint64_t sn)
+{
+	struct db_mdhost_modify_arg *dms;
+	struct gfarm_metadb_server *ms;
+
+	ms = t_ops_mdhost_new();
+	dms = db_mdhost_modify_arg_alloc(ms,
+	    0 /* modflags */);
+	db_journal_metadb_server_destroy(ms);
+	TEST_ASSERT_NOERR("db_journal_write_mdhost_modify",
+	    db_journal_write_mdhost_modify(sn, dms));
+}
+
+static gfarm_error_t
+t_ops_mdhost_modify_check(void *op_arg, gfarm_uint64_t seqnum,
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
+{
+	struct db_mdhost_modify_arg *m = obj;
+
+	TEST_ASSERT_L("seqnum", 5, seqnum);
+	TEST_ASSERT_I("ope", GFM_JOURNAL_MDHOST_MODIFY, ope);
+	TEST_ASSERT_I("modflags", 0, m->modflags);
+	t_ops_mdhost_check(&m->ms);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+t_ops_mdhost_remove(gfarm_uint64_t sn)
+{
+	db_journal_write_mdhost_remove(sn, assert_strdup("name"));
+}
+
+static gfarm_error_t
+t_ops_mdhost_remove_check(void *op_arg, gfarm_uint64_t seqnum,
+	enum journal_operation ope, void *obj, void *closure, size_t length,
+	int *needs_freep)
+{
+	const char *name = obj;
+
+	TEST_ASSERT_L("seqnum", 5, seqnum);
+	TEST_ASSERT_I("ope", GFM_JOURNAL_MDHOST_REMOVE, ope);
+	TEST_ASSERT_S("name", "name", name);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+
 struct t_ops_info {
 	const char *name;
 	void (*write)(gfarm_uint64_t);
@@ -1707,6 +1801,12 @@ static struct t_ops_info ops_tests[] = {
 	    t_ops_quota_modify, t_ops_quota_modify_check },
 	{ "t_ops_quota_remove",
 	    t_ops_quota_remove, t_ops_quota_remove_check },
+	{ "t_ops_mdhost_add",
+	    t_ops_mdhost_add, t_ops_mdhost_add_check },
+	{ "t_ops_mdhost_modify",
+	    t_ops_mdhost_modify, t_ops_mdhost_modify_check },
+	{ "t_ops_mdhost_remove",
+	    t_ops_mdhost_remove, t_ops_mdhost_remove_check },
 };
 
 void
@@ -1885,7 +1985,7 @@ t_apply_user_remove(void)
 	TEST_ASSERT_B("user_lookup",
 	    (u = user_lookup(username)) != NULL);
 	TEST_ASSERT_B("user_is_invalidated",
-	    user_is_invalidated(u));
+	    user_is_invalid(u));
 }
 
 #define T_APPLY_GROUP_NAME "group1"
@@ -1971,7 +2071,7 @@ t_apply_group_remove(void)
 	TEST_ASSERT_NOERR("group_remove",
 	    db_journal_apply_ops.group_remove(0, (char *)groupname));
 	TEST_ASSERT_B("group_is_invalidated",
-	    group_is_invalidated(g));
+	    group_is_invalid(g));
 }
 
 #define T_APPLY_INODE_FILE_INUM 10
@@ -2970,6 +3070,80 @@ t_apply_quota_remove(void)
 	    0, qg->on_db);
 }
 
+#define T_APPLY_MDHOST_NAME "mdhost1"
+
+static void
+t_apply_mdhost_add(void)
+{
+	const char *name = T_APPLY_MDHOST_NAME;
+	struct gfarm_metadb_server ms;
+	struct mdhost *h;
+
+	ms.name = assert_strdup(name);
+	ms.clustername = assert_strdup("clustername");
+	ms.port = 1234;
+	ms.flags = 2;
+
+	TEST_ASSERT_B("mdhost_lookup",
+	    (h = mdhost_lookup(name)) == NULL);
+	TEST_ASSERT_NOERR("mdhost_add",
+	    db_journal_apply_ops.mdhost_add(0, &ms));
+	gfarm_metadb_server_free(&ms);
+	TEST_ASSERT_B("mdhost_lookup",
+	    (h = mdhost_lookup(name)) != NULL);
+	TEST_ASSERT_S("name",
+	    name, mdhost_get_name(h));
+	TEST_ASSERT_I("port",
+	    1234, mdhost_get_port(h));
+	TEST_ASSERT_S("clustername",
+	    "clustername", mdhost_get_cluster_name(h));
+	TEST_ASSERT_I("flags",
+	    2, mdhost_get_flags(h));
+}
+
+static void
+t_apply_mdhost_modify(void)
+{
+	const char *name = T_APPLY_MDHOST_NAME;
+	struct db_mdhost_modify_arg m;
+	struct mdhost *mh;
+
+	TEST_ASSERT_B("mdhost_lookup",
+	    (mh = mdhost_lookup(name)) != NULL);
+
+	memset(&m.ms, 0, sizeof(m.ms));
+	m.ms.name = assert_strdup(name);
+	m.ms.clustername = assert_strdup("clustername");
+	m.ms.port = 5678;
+	m.ms.flags = 5;
+	m.modflags = 0; /* modflags is not used yet */
+
+	TEST_ASSERT_NOERR("mdhost_modify",
+	    db_journal_apply_ops.mdhost_modify(0, &m));
+	gfarm_metadb_server_free(&m.ms);
+	TEST_ASSERT_I("port",
+	    5678, mdhost_get_port(mh));
+	TEST_ASSERT_S("clustername",
+	    "clustername", mdhost_get_cluster_name(mh));
+	TEST_ASSERT_I("flags",
+	    5, mdhost_get_flags(mh));
+}
+
+static void
+t_apply_mdhost_remove(void)
+{
+	const char *name = T_APPLY_MDHOST_NAME;
+	struct mdhost *h;
+
+	TEST_ASSERT_B("mdhost_lookup",
+	    (h = mdhost_lookup(name)) != NULL);
+	TEST_ASSERT_NOERR("mdhost_remove",
+	    db_journal_apply_ops.mdhost_remove(0, (char *)name));
+	TEST_ASSERT_B("mdhost_lookup",
+	    (h = mdhost_lookup(name)) == NULL);
+}
+
+
 
 struct t_apply_info {
 	const char *name;
@@ -3020,6 +3194,9 @@ struct t_apply_info apply_tests[] = {
 	{ "t_apply_quota_add", t_apply_quota_add },
 	{ "t_apply_quota_modify", t_apply_quota_modify },
 	{ "t_apply_quota_remove", t_apply_quota_remove },
+	{ "t_apply_mdhost_add", t_apply_mdhost_add },
+	{ "t_apply_mdhost_modify", t_apply_mdhost_modify },
+	{ "t_apply_mdhost_remove", t_apply_mdhost_remove },
 };
 
 static gfarm_error_t

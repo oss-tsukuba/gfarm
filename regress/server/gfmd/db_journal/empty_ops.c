@@ -13,6 +13,7 @@
 
 #include "config.h"
 #include "quota.h"
+#include "metadb_server.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -317,6 +318,31 @@ empty_seqnum_load(void *closure,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+empty_mdhost_add(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_mdhost_modify(gfarm_uint64_t seqnum, struct db_mdhost_modify_arg *arg)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_mdhost_remove(gfarm_uint64_t seqnum, char *name)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+empty_mdhost_load(void *closure, void (*callback)(void *,
+	struct gfarm_metadb_server *))
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /**********************************************************************/
 
 const struct db_ops empty_ops = {
@@ -392,5 +418,10 @@ const struct db_ops empty_ops = {
 	empty_seqnum,
 	empty_seqnum_remove,
 	empty_seqnum_load,
+
+	empty_mdhost_add,
+	empty_mdhost_modify,
+	empty_mdhost_remove,
+	empty_mdhost_load,
 };
 
