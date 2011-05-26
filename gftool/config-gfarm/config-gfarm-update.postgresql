@@ -113,6 +113,13 @@ update_postgresql()
 	create_table QuotaUser
 	create_table QuotaGroup
 	create_table SeqNum
+	create_table MdHost
+
+	seqnum_count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
+	if [ "$seqnum_count" = "0" ]; then
+		echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
+			| $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
 
 	if [ X"$SUPPORT_XML_TYPE" = Xyes -a \
 		"`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then

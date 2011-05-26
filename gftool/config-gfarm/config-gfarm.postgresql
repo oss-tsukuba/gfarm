@@ -441,7 +441,7 @@ _EOF_
 		print "	ON Host, HostAliases, "
 		print "    GfarmUser, GfarmGroup, GfarmGroupAssignment, "
 		print "    INode, FileInfo, FileCopy, DeadFileCopy, DirEntry, "
-		print "    Symlink, QuotaUser, QuotaGroup, SeqNum, "
+		print "    Symlink, QuotaUser, QuotaGroup, SeqNum, MdHost, "
 		print "    XAttr $XMLATTR_TABLENAME"
 		print "	TO $BACKEND_USER;"
 #		if ($SCHEMA_VERSION > 1) {
@@ -458,6 +458,8 @@ _EOF_
 		print "ALTER USER $BACKEND_USER"
 		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
 	}' $admin_password $password | $PGSQL_BINDIR/psql -q $DB_NAME
+	echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
+		| $PGSQL_BINDIR/psql -q $DB_NAME
 _EOF_
 
 	service_ctl $RC_BACKEND_BASENAME stop
