@@ -23,6 +23,8 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "lookup.h"
+#include "filesystem.h"
+#include "metadb_server.h"
 
 #ifdef HAVE_GSI
 static gfarm_error_t
@@ -51,6 +53,33 @@ gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
 	return (e);
 }
 #endif
+
+static gfarm_error_t
+gfarm_config_set_default_metadb_server(void)
+{
+	gfarm_error_t e;
+	int n;
+	struct gfarm_metadb_server *m;
+	struct gfarm_metadb_server *ms[1];
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
+
+	if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
+		return (GFARM_ERR_NO_ERROR);
+	if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	ms[0] = m;
+	gfarm_metadb_server_set_name(m, gfarm_metadb_server_name);
+	gfarm_metadb_server_set_port(m, gfarm_metadb_server_port);
+	gfarm_metadb_server_set_is_master(m, 1);
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	return (e);
+}
 
 /*
  * the following function is for client,
@@ -123,6 +152,7 @@ gfarm_config_read(void)
 
 	gfarm_config_set_default_ports();
 	gfarm_config_set_default_misc();
+	gfarm_config_set_default_metadb_server();
 
 	return (GFARM_ERR_NO_ERROR);
 }

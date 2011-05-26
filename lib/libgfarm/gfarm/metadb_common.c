@@ -13,6 +13,7 @@
 #include "metadb_common.h"
 #include "xattr_info.h"
 #include "quota_info.h"
+#include "metadb_server.h"
 
 /**********************************************************************/
 
@@ -376,4 +377,48 @@ gfarm_quota_info_free_all(
 {
 	gfarm_base_generic_info_free_all(n, infos,
 	    &gfarm_base_quota_info_ops);
+}
+
+/**********************************************************************/
+
+void
+gfarm_metadb_server_free(struct gfarm_metadb_server *info)
+{
+	free(info->name);
+	free(info->clustername);
+}
+
+static void
+gfarm_base_metadb_server_clear(void *vinfo)
+{
+	struct gfarm_metadb_server *info = vinfo;
+
+	memset(info, 0, sizeof(*info));
+}
+
+static int
+gfarm_base_metadb_server_validate(void *vinfo)
+{
+	struct gfarm_metadb_server *info = vinfo;
+
+	return (
+	    info->name != NULL &&
+	    info->clustername != NULL
+	);
+}
+
+const struct gfarm_base_generic_info_ops gfarm_base_metadb_server_ops = {
+	sizeof(struct gfarm_metadb_server),
+	(void (*)(void *))gfarm_metadb_server_free,
+	gfarm_base_metadb_server_clear,
+	gfarm_base_metadb_server_validate,
+};
+
+void
+gfarm_metadb_server_free_all(
+	int n,
+	struct gfarm_metadb_server *infos)
+{
+	gfarm_base_generic_info_free_all(n, infos,
+	    &gfarm_base_metadb_server_ops);
 }

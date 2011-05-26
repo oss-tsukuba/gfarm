@@ -75,10 +75,25 @@ gfarm_filesystem_is_initialized(void)
 	return (filesystems.next != &filesystems);
 }
 
+static gfarm_error_t
+gfarm_filesystem_ms2fs_hash_alloc(void)
+{
+#define MS2FS_HASHTAB_SIZE 17
+	if (ms2fs_hashtab)
+		gfarm_hash_table_free(ms2fs_hashtab);
+	ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
+	    gfarm_filesystem_hash_index, gfarm_filesystem_hash_equal);
+	if (ms2fs_hashtab == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
 gfarm_filesystem_init(void)
 {
-#define MS2FS_HASHTAB_SIZE 5
 	gfarm_error_t e;
 	struct gfarm_filesystem *fs;
 
@@ -87,15 +102,6 @@ gfarm_filesystem_init(void)
 	if ((e = gfarm_filesystem_add(&fs)) != GFARM_ERR_NO_ERROR)
 		return (e);
 	fs->flags |= GFARM_FILESYSTEM_FLAG_IS_DEFAULT;
-
-	ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
-	    gfarm_filesystem_hash_index, gfarm_filesystem_hash_equal);
-	if (ms2fs_hashtab == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
-
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -145,6 +151,8 @@ gfarm_filesystem_get(const char *hostname, int port)
 	struct gfarm_filesystem_hash_id id;
 	struct gfarm_hash_entry *entry;
 
+	if (ms2fs_hashtab == NULL)
+		return (NULL);
 	id.hostname = (char *)hostname; /* UNCONST */
 	id.port = port;
 	entry = gfarm_hash_lookup(ms2fs_hashtab, &id, sizeof(id));
@@ -167,9 +175,11 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memcpy(servers, metadb_servers, sizeof(void *) * n);
+	free(fs->servers);
 	fs->servers = servers;
 	fs->nservers = n;
 
+	gfarm_filesystem_ms2fs_hash_alloc();
 	for (i = 0; i < n; ++i) {
 		if ((e = gfarm_filesystem_hash_enter(fs, servers[i])) !=
 		    GFARM_ERR_NO_ERROR)

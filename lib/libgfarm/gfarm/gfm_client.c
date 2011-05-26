@@ -3203,6 +3203,171 @@ gfm_client_compound_fd_op(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	return (e);
 }
 
+/**
+ * metadb_server management
+ */
+
+static gfarm_error_t
+gfm_client_metadb_server_get_n(struct gfm_connection *gfm_server,
+	int n, struct gfarm_metadb_server *mss)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *ms;
+	int i, eof;
+
+	for (i = 0; i < n; ++i) {
+		ms = &mss[i];
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "sisii",
+		    &ms->name, &ms->port, &ms->clustername, &ms->flags,
+		    &ms->tflags);
+		if (IS_CONNECTION_ERROR(e))
+			gfm_client_purge_from_cache(gfm_server);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfp_xdr_recv() failed: %s",
+			    gfarm_error_string(e));
+			return (e);
+		}
+		if (eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Unexpected EOF when receiving response: %s",
+			    gfarm_error_string(GFARM_ERR_PROTOCOL));
+			return (GFARM_ERR_PROTOCOL);
+		}
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfm_client_metadb_server_get_alloc_n(struct gfm_connection *gfm_server, int n,
+	int *np, struct gfarm_metadb_server **mssp, const char *diag)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *mss;
+
+	if (n == 0) {
+		*mssp = NULL;
+		*np = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	GFARM_MALLOC_ARRAY(mss, n);
+	if (mss == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "alloc metadb_server %d: %s", n, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfm_client_metadb_server_get_n(gfm_server, n, mss))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_metadb_server_get_n() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	*np = n;
+	*mssp = mss;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_metadb_server_get(struct gfm_connection *gfm_server,
+	const char *name, struct gfarm_metadb_server *ms)
+{
+	gfarm_error_t e;
+	int n;
+	struct gfarm_metadb_server *msp;
+	static const char diag[] = "gfm_client_metadb_server_get";
+
+	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_GET,
+	    "s/i", name, &n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_rpc() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (n == 0) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s", gfarm_error_string(e), name);
+	} else {
+		e = gfm_client_metadb_server_get_alloc_n(gfm_server, 1, &n,
+		    &msp, diag);
+		if (e == GFARM_ERR_NO_ERROR) {
+			*ms = *msp;
+			free(msp);
+		}
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_metadb_server_get_all(struct gfm_connection *gfm_server, int *np,
+	struct gfarm_metadb_server **mssp)
+{
+	gfarm_error_t e;
+	gfarm_int32_t n;
+	static const char diag[] = "gfm_client_metadb_server_get_all";
+
+	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_GET_ALL,
+	    "/i", &n)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_rpc() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	return (gfm_client_metadb_server_get_alloc_n(gfm_server, n, np, mssp,
+		diag));
+}
+
+static gfarm_error_t
+gfm_client_metadb_server_send(struct gfm_connection *gfm_server,
+	struct gfarm_metadb_server *ms, int op, const char *diag)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_rpc(gfm_server, 0, op, "sisi/",
+	    ms->name, ms->port, ms->clustername, ms->flags))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: gfm_client_rpc() failed: %s",
+		    diag, gfarm_error_string(e));
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_metadb_server_set(struct gfm_connection *gfm_server,
+	struct gfarm_metadb_server *ms)
+{
+	return (gfm_client_metadb_server_send(gfm_server, ms,
+	    GFM_PROTO_METADB_SERVER_SET, "gfm_client_metadb_server_set"));
+}
+
+gfarm_error_t
+gfm_client_metadb_server_modify(struct gfm_connection *gfm_server,
+	struct gfarm_metadb_server *ms)
+{
+	return (gfm_client_metadb_server_send(gfm_server, ms,
+	    GFM_PROTO_METADB_SERVER_MODIFY, "gfm_client_metadb_server_modify"));
+}
+
+gfarm_error_t
+gfm_client_metadb_server_remove(struct gfm_connection *gfm_server,
+	const char *name)
+{
+	gfarm_error_t e;
+
+	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_REMOVE,
+	    "s/", name)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_rpc() failed: %s",
+		    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+
 #if 0 /* not used in gfarm v2 */
 /*
  * job management

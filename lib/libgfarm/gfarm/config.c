@@ -729,7 +729,8 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
 #define GFARM_JOURNAL_SYNC_FILE_DEFAULT		1
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
-#define GFARM_SLAVE_METADB_SERVER_MAX_SIZE_DEFAULT	16
+#define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
+#define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
@@ -758,7 +759,8 @@ static char *journal_dir = NULL;
 static int journal_max_size = MISC_DEFAULT;
 static int journal_sync_file = MISC_DEFAULT;
 static int journal_sync_slave_timeout = MISC_DEFAULT;
-static int slave_metadb_server_max_size = MISC_DEFAULT;
+static int metadb_server_slave_max_size = MISC_DEFAULT;
+static int metadb_server_force_slave = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -891,9 +893,15 @@ gfarm_get_journal_sync_slave_timeout(void)
 }
 
 int
-gfarm_get_slave_metadb_server_max_size(void)
+gfarm_get_metadb_server_slave_max_size(void)
 {
-	return (slave_metadb_server_max_size);
+	return (metadb_server_slave_max_size);
+}
+
+int
+gfarm_get_metadb_server_force_slave(void)
+{
+	return (metadb_server_force_slave);
 }
 
 /*
@@ -1907,7 +1915,6 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		if (port < 0)
 			port = GFMD_DEFAULT_PORT;
 		gfarm_metadb_server_set_port(m, port);
-		gfarm_metadb_server_set_is_sync_replication(m, 1);
 		ms[n++] = m;
 	}
 	if (n == 0) {
@@ -1934,66 +1941,6 @@ error:
 	for (i = 0; i < n; ++i)
 		gfarm_metadb_server_free(ms[i]);
 	return (e);
-}
-
-/* This function is temporary created for the purpose of implementing
-   the sync/async replication group.
-   This function and the config parameter 'asynchronous_replication_list'
-   will be deleted in near future.
-*/
-static gfarm_error_t
-parse_asynchronous_replication_list_arguments(char *p, char **op)
-{
-	gfarm_error_t e;
-	int i, nms, found;
-	char *hostname;
-	const char *listname = *op;
-	struct gfarm_filesystem *fs = gfarm_filesystem_get_default();
-	struct gfarm_metadb_server *m;
-	struct gfarm_metadb_server **ms =
-		gfarm_filesystem_get_metadb_server_list(fs, &nms);
-
-	if (ms == NULL) {
-		*op = "missing metadb_server_list";
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "parsing of %s failed: %s",
-		    listname, gfarm_error_string(e));
-		return (e);
-	}
-
-	for (;;) {
-		if ((e = gfarm_strtoken(&p, &hostname))
-		    != GFARM_ERR_NO_ERROR) {
-			*op = "hostname argument";
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "parsing of %s (%s) failed: %s",
-			    listname, p, gfarm_error_string(e));
-			return (e);
-		}
-		if (hostname == NULL)
-			break;
-		found = 0;
-		for (i = 0; i < nms; ++i) {
-			m = ms[i];
-			if (strcmp(hostname, gfarm_metadb_server_get_name(m))
-			    == 0) {
-				gfarm_metadb_server_set_is_sync_replication(
-				    m, 0);
-				found = 1;
-				break;
-			}
-		}
-		if (!found) {
-			e = GFARM_ERR_UNKNOWN_HOST;
-			*op = "hostname argument";
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    " %s (%s) failed: %s",
-			    listname, p, gfarm_error_string(e));
-			return (e);
-		}
-	}
-	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -2184,10 +2131,10 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_enabled(p, &journal_sync_file);
 	} else if (strcmp(s, o = "synchronous_replication_timeout") == 0) {
 		e = parse_set_misc_int(p, &journal_sync_slave_timeout);
-	} else if (strcmp(s, o = "asynchronous_replication_list") == 0) {
-		e = parse_asynchronous_replication_list_arguments(p, &o);
-	} else if (strcmp(s, o = "slave_metadb_server_max_size") == 0) {
-		e = parse_set_misc_int(p, &slave_metadb_server_max_size);
+	} else if (strcmp(s, o = "metadb_server_slave_max_size") == 0) {
+		e = parse_set_misc_int(p, &metadb_server_slave_max_size);
+	} else if (strcmp(s, o = "metadb_server_force_slave") == 0) {
+		e = parse_set_misc_enabled(p, &metadb_server_force_slave);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2270,13 +2217,9 @@ gfarm_config_set_default_ports(void)
 }
 
 static gfarm_error_t
-gfarm_config_set_default_metadb_server(void)
+gfarm_config_set_default_filesystem(void)
 {
 	gfarm_error_t e;
-	int n;
-	struct gfarm_filesystem *fs;
-	struct gfarm_metadb_server **msl, *m;
-	struct gfarm_metadb_server *ms[1];
 
 	/* gfarm_metadb_server_name is checked in
 	 * gfarm_config_set_default_ports */
@@ -2287,30 +2230,8 @@ gfarm_config_set_default_metadb_server(void)
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-	fs = gfarm_filesystem_get_default();
-	if ((msl = gfarm_filesystem_get_metadb_server_list(fs, &n)) != NULL) {
-		if (n > slave_metadb_server_max_size) {
-			e = GFARM_ERR_TOO_MANY_HOSTS;
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "%s", gfarm_error_string(e));
-			return (e);
-		}
-		return (GFARM_ERR_NO_ERROR);
-	}
-	if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-	ms[0] = m;
-	gfarm_metadb_server_set_name(m, gfarm_metadb_server_name);
-	gfarm_metadb_server_set_port(m, gfarm_metadb_server_port);
-	gfarm_metadb_server_set_is_master(m, 1);
-	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-	return (e);
+	(void)gfarm_filesystem_get_default();
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -2382,11 +2303,14 @@ gfarm_config_set_default_misc(void)
 	if (journal_sync_slave_timeout == MISC_DEFAULT)
 		journal_sync_slave_timeout =
 		    GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT;
-	if (slave_metadb_server_max_size == MISC_DEFAULT)
-		slave_metadb_server_max_size =
-		    GFARM_SLAVE_METADB_SERVER_MAX_SIZE_DEFAULT;
+	if (metadb_server_slave_max_size == MISC_DEFAULT)
+		metadb_server_slave_max_size =
+		    GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT;
+	if (metadb_server_force_slave == MISC_DEFAULT)
+		metadb_server_force_slave =
+		    GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT;
 
-	gfarm_config_set_default_metadb_server();
+	gfarm_config_set_default_filesystem();
 }
 
 void

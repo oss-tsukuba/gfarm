@@ -383,6 +383,17 @@ gfarm_error_t gfm_client_compound_fd_op(struct gfm_connection *, gfarm_int32_t,
 	void (*)(struct gfm_connection *, void *),
 	void *);
 
+/* metadb_server metadata */
+gfarm_error_t gfm_client_metadb_server_get(struct gfm_connection *,
+	const char *, struct gfarm_metadb_server *);
+gfarm_error_t gfm_client_metadb_server_get_all(struct gfm_connection *, int *,
+	struct gfarm_metadb_server **);
+gfarm_error_t gfm_client_metadb_server_set(struct gfm_connection *,
+	struct gfarm_metadb_server *);
+gfarm_error_t gfm_client_metadb_server_modify(struct gfm_connection *,
+	struct gfarm_metadb_server *);
+gfarm_error_t gfm_client_metadb_server_remove(struct gfm_connection *,
+	const char *);
 
 /* exported for a use from a private extension */
 gfarm_error_t gfm_client_rpc_request(struct gfm_connection *,
