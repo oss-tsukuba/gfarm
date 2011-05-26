@@ -169,6 +169,16 @@ print_group(struct gfarm_group_info *gi)
 }
 
 static void
+print_mdhost(struct gfarm_metadb_server *ms)
+{
+	printf("name=%s", ms->name);
+	if (!opt_verbose)
+		return;
+	printf(";port=%d;clustername=%s;flags=0x%x",
+	    ms->port, ms->clustername, ms->flags);
+}
+
+static void
 print_timespec(const char *name, struct gfarm_timespec *t)
 {
 	struct tm *tm;
@@ -295,6 +305,7 @@ print_obj(enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_HOST_REMOVE:
 	case GFM_JOURNAL_USER_REMOVE:
 	case GFM_JOURNAL_GROUP_REMOVE:
+	case GFM_JOURNAL_MDHOST_REMOVE:
 		printf("name=%s", (const char *)obj);
 		break;
 	case GFM_JOURNAL_INODE_ADD:
@@ -407,6 +418,14 @@ print_obj(enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_QUOTA_REMOVE: {
 		struct db_quota_remove_arg *m = obj;
 		printf("name=%s;is_group=%d", m->name, m->is_group);
+		break;
+	}
+	case GFM_JOURNAL_MDHOST_ADD:
+		print_mdhost(obj);
+		break;
+	case GFM_JOURNAL_MDHOST_MODIFY: {
+		struct db_mdhost_modify_arg *m = obj;
+		print_mdhost(&m->ms);
 		break;
 	}
 	default:
