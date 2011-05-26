@@ -32,6 +32,7 @@
 #include "metadb_common.h"
 #include "xattr_info.h"
 #include "quota_info.h"
+#include "metadb_server.h"
 #include "quota.h"
 
 #include "db_common.h"
@@ -3274,6 +3275,140 @@ gfarm_pgsql_seqnum_load(void *closure,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/**********************************************************************/
+
+static gfarm_error_t
+mdhost_set_field(PGresult *res, int startrow, void *vinfo)
+{
+	struct gfarm_metadb_server *info = vinfo;
+
+	info->name = pgsql_get_string_ck(res, startrow, "hostname");
+	info->port = pgsql_get_int32(res, startrow, "port");
+	info->clustername = pgsql_get_string_ck(res, startrow, "clustername");
+	info->flags = pgsql_get_int32(res, startrow, "flags");
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+pgsql_mdhost_update(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info,
+	const char *sql,
+	gfarm_error_t (*check)(PGresult *, const char *, const char *),
+	const char *diag)
+{
+	PGresult *res;
+	const char *paramValues[4];
+	gfarm_error_t e;
+	char port[GFARM_INT32STRLEN + 1];
+	char flags[GFARM_INT32STRLEN + 1];
+
+	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_pgsql_start() failed");
+		return (e);
+	}
+	paramValues[0] = info->name;
+	sprintf(port, "%d", info->port);
+	paramValues[1] = port;
+	paramValues[2] = info->clustername;
+	sprintf(flags, "%d", info->flags);
+	paramValues[3] = flags;
+	res = PQexecParams(conn,
+	    sql,
+	    4, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0); /* ask for text results */
+	if ((e = (*check)(res, sql, diag))
+	    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
+		return (e);
+	PQclear(res);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfarm_pgsql_commit_sn(seqnum, diag);
+	else
+		gfarm_pgsql_rollback(diag);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_mdhost_add(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info)
+{
+	gfarm_error_t e;
+
+	e = pgsql_mdhost_update(seqnum, info,
+	    "INSERT INTO MDHost (hostname, port, clustername, flags) "
+		"VALUES ($1, $2, $3, $4)",
+	    gfarm_pgsql_check_insert, "pgsql_mdhost_add");
+
+	FREE_ARG(info);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_mdhost_modify(gfarm_uint64_t seqnum,
+	struct db_mdhost_modify_arg *arg)
+{
+	gfarm_error_t e;
+
+	e = pgsql_mdhost_update(seqnum, &arg->ms,
+	    "UPDATE MDHost "
+		"SET port = $2, clustername = $3, flags = $4 "
+		"WHERE hostname = $1",
+	    gfarm_pgsql_check_update_or_delete, "pgsql_mdhost_modify");
+
+	FREE_ARG(arg);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_mdhost_remove(gfarm_uint64_t seqnum, char *hostname)
+{
+	gfarm_error_t e;
+	const char *paramValues[1];
+
+	paramValues[0] = hostname;
+	e = gfarm_pgsql_update_or_delete(seqnum,
+	    "DELETE FROM MDHost WHERE hostname = $1",
+	    1, /* number of params */
+	    NULL, /* param types */
+	    paramValues,
+	    NULL, /* param lengths */
+	    NULL, /* param formats */
+	    0, /* ask for text results */
+	    "pgsql_mdhost_remove");
+
+	FREE_ARG(hostname);
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_mdhost_load(void *closure,
+	void (*callback)(void *, struct gfarm_metadb_server *))
+{
+	gfarm_error_t e;
+	int i, n;
+	struct gfarm_metadb_server *infos;
+
+	e = gfarm_pgsql_generic_get_all_no_retry(
+	    "SELECT * FROM MDHost",
+	    0, NULL,
+	    &n, &infos,
+	    &gfarm_base_metadb_server_ops, mdhost_set_field,
+	    "pgsql_mdhost_load");
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_pgsql_generic_get_all_no_retry()");
+		return (e);
+	}
+	for (i = 0; i < n; i++)
+		(*callback)(closure, &infos[i]);
+
+	free(infos);
+	return (GFARM_ERR_NO_ERROR);
+}
+
 #endif
 
 /**********************************************************************/
@@ -3363,7 +3498,17 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_seqnum_modify,
 	gfarm_pgsql_seqnum_remove,
 	gfarm_pgsql_seqnum_load,
+
+	gfarm_pgsql_mdhost_add,
+	gfarm_pgsql_mdhost_modify,
+	gfarm_pgsql_mdhost_remove,
+	gfarm_pgsql_mdhost_load,
 #else
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+
 	NULL,
 	NULL,
 	NULL,

@@ -22,10 +22,10 @@ struct abstract_host {
 
 	int invalid;	/* set when deleted */
 
+	pthread_mutex_t mutex;
 	/*
-	 * resources which are protected by the host::back_channel_mutex
+	 * resources which are protected by the abstrac_host::mutex
 	 */
-	pthread_mutex_t back_channel_mutex;
 	pthread_cond_t ready_to_send, ready_to_receive;
 
 	int can_send, can_receive;
@@ -50,13 +50,9 @@ int abstract_host_is_valid_unlocked(struct abstract_host *);
 int abstract_host_is_valid(struct abstract_host *, const char *);
 void abstract_host_activate(struct abstract_host *, const char *);
 int abstract_host_is_up_unlocked(struct abstract_host *);
-int abstract_host_is_up(struct abstract_host *, const char *);
+int abstract_host_is_up(struct abstract_host *);
 const char *abstract_host_get_name(struct abstract_host *);
 int abstract_host_get_port(struct abstract_host *);
-void abstract_host_channel_mutex_lock(struct abstract_host *,
-	const char *, const char *);
-void abstract_host_channel_mutex_unlock(struct abstract_host *,
-	const char *, const char *);
 int abstract_host_check_busy(struct abstract_host *, gfarm_int64_t,
 	const char *);
 struct peer *abstract_host_get_peer_unlocked(struct abstract_host *);
@@ -83,7 +79,7 @@ gfarm_error_t gfm_server_channel_vget_request(struct peer *, size_t,
 	const char *, const char *, va_list *);
 gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t, const char *, gfarm_error_t,
-	char *, va_list *, const char *);
+	char *, va_list *);
 
 gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	struct peer *, const char *, gfarm_int32_t (*)(void *, void *, size_t),
@@ -93,7 +89,7 @@ gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	    gfarm_int32_t (*)(void *, void *, size_t),
 	    void (*)(void *, void *), void *),
 #endif
-	gfarm_int32_t, const char *, va_list *, const char *);
+	gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfm_client_channel_vrecv_result(struct peer *,
 	struct abstract_host *, size_t, const char *, const char **,
 	gfarm_error_t *, va_list *);

@@ -117,6 +117,16 @@ gfarm_error_t db_seqnum_remove(char *);
 gfarm_error_t db_seqnum_load(void *,
 	void (*)(void *, struct db_seqnum_arg *));
 pthread_mutex_t *get_db_access_mutex(void);
+
+struct gfarm_metadb_server;
+gfarm_error_t db_mdhost_add(const struct gfarm_metadb_server *);
+void *db_mdhost_dup(const struct gfarm_metadb_server *, size_t);
+struct db_mdhost_modify_arg *db_mdhost_modify_arg_alloc(
+	const struct gfarm_metadb_server *, int);
+gfarm_error_t db_mdhost_modify(const struct gfarm_metadb_server *, int);
+gfarm_error_t db_mdhost_remove(const char *);
+gfarm_error_t db_mdhost_load(void *, void (*)(void *,
+	struct gfarm_metadb_server *));
 #endif
 
 /* allocation for storage operations arguments */
@@ -132,6 +142,7 @@ struct db_symlink_arg;
 struct db_xattr_arg;
 struct db_quota_arg;
 struct db_quota_remove_arg;
+struct db_mdhost_modify_arg;
 
 void *db_host_dup(const struct gfarm_host_info *, size_t);
 void *db_user_dup(const struct gfarm_user_info *, size_t);

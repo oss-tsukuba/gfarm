@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "metadb_common.h"
+#include "metadb_server.h"
 #include "xattr_info.h"
 #include "quota_info.h"
 #include "quota.h"

@@ -8,12 +8,14 @@
 
 #include "config.h"
 #include "quota.h"
+#include "metadb_server.h"
 #include "db_ops.h"
 #include "host.h"
 #include "user.h"
 #include "group.h"
 #include "inode.h"
 #include "dir.h"
+#include "mdhost.h"
 #include "db_journal.h"
 
 #ifdef ENABLE_METADATA_REPLICATION
@@ -725,6 +727,70 @@ db_journal_apply_quota_remove(gfarm_uint64_t seqnum,
 }
 
 /**********************************************************/
+/* mdhost */
+
+static gfarm_error_t
+db_journal_apply_mdhost_add(gfarm_uint64_t seqnum,
+	struct gfarm_metadb_server *ms)
+{
+	gfarm_error_t e;
+
+	if (mdhost_lookup(ms->name)) {
+		e = GFARM_ERR_ALREADY_EXISTS;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu hostname=%s : %s",
+		    (unsigned long long)seqnum, ms->name,
+		    gfarm_error_string(e));
+	} else if ((e = mdhost_enter(ms, NULL)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu hostname=%s : %s",
+		    (unsigned long long)seqnum, ms->name,
+		    gfarm_error_string(e));
+	} else
+		memset(ms, 0, sizeof(*ms));
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_apply_mdhost_modify(gfarm_uint64_t seqnum,
+	struct db_mdhost_modify_arg *arg)
+{
+	gfarm_error_t e;
+	struct mdhost *mh;
+
+	if ((mh = mdhost_lookup(arg->ms.name)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu hostname=%s : %s",
+		    (unsigned long long)seqnum, arg->ms.name,
+		    gfarm_error_string(e));
+	} else if ((e = mdhost_modify_in_cache(mh, &arg->ms))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu hostname=%s : %s",
+		    (unsigned long long)seqnum, arg->ms.name,
+		    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_apply_mdhost_remove(gfarm_uint64_t seqnum, char *name)
+{
+	gfarm_error_t e;
+
+	if (mdhost_lookup(name) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "seqnum=%llu hostname=%s : %s",
+		    (unsigned long long)seqnum, name,
+		    gfarm_error_string(e));
+	} else
+		e = mdhost_remove_in_cache(name);
+	return (e);
+}
+
+/**********************************************************/
 
 const struct db_ops db_journal_apply_ops = {
 	NULL,
@@ -798,6 +864,11 @@ const struct db_ops db_journal_apply_ops = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
+
+	db_journal_apply_mdhost_add,
+	db_journal_apply_mdhost_modify,
+	db_journal_apply_mdhost_remove,
 	NULL,
 };
 

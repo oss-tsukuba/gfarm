@@ -74,11 +74,11 @@ static pthread_cond_t journal_recvq_nonempty_cond;
 static pthread_cond_t journal_recvq_nonfull_cond;
 static pthread_cond_t journal_recvq_cancel_cond;
 
-#define RECVQ_MUTEX_DIAG		"journal_recvq_mutex"
-#define SEQNUM_MUTEX_DIAG		"journal_seqnum_mutex"
-#define RECVQ_NONEMPTY_COND_DIAG	"journal_recvq_nonempty_cond"
-#define RECVQ_NONFULL_COND_DIAG		"journal_recvq_nonfull_cond"
-#define RECVQ_CANCEL_COND_DIAG		"journal_recvq_cancel_cond"
+static const char RECVQ_MUTEX_DIAG[]		= "journal_recvq_mutex";
+static const char SEQNUM_MUTEX_DIAG[]		= "journal_seqnum_mutex";
+static const char RECVQ_NONEMPTY_COND_DIAG[]	= "journal_recvq_nonempty_cond";
+static const char RECVQ_NONFULL_COND_DIAG[]	= "journal_recvq_nonfull_cond";
+static const char RECVQ_CANCEL_COND_DIAG[]	= "journal_recvq_cancel_cond";
 
 static gfarm_uint64_t	journal_seqnum = JOURNAL_SEQNUM_NOT_SET;
 static gfarm_uint64_t	journal_seqnum_pre = JOURNAL_SEQNUM_NOT_SET;
@@ -102,7 +102,7 @@ db_journal_noaction(void)
 }
 
 static gfarm_error_t
-db_journal_initialize(int is_master)
+db_journal_initialize(void)
 {
 	gfarm_error_t e;
 	char path[MAXPATHLEN + 1];
@@ -126,26 +126,6 @@ db_journal_initialize(int is_master)
 		    "db_seqnum_load : %s",
 		    gfarm_error_string(e));
 		return (e);
-	}
-	if (journal_seqnum == JOURNAL_SEQNUM_NOT_SET) {
-		if (!is_master) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "database is not replicated from master gfmd");
-			return (GFARM_ERR_INTERNAL_ERROR);
-		}
-		if ((e = db_begin(diag)) == GFARM_ERR_NO_ERROR) {
-			if ((e = db_seqnum_add("", 1)) == GFARM_ERR_NO_ERROR) {
-				e = db_end(diag);
-				if (e == GFARM_ERR_NO_ERROR)
-					journal_seqnum = 1;
-			}
-		}
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "failed to add the update sequence number to db"
-			    " : %s", gfarm_error_string(e));
-			return (e);
-		}
 	}
 
 	snprintf(path, MAXPATHLEN, "%s/%010d.gmj", journal_dir, 0);
@@ -180,9 +160,9 @@ db_journal_initialize(int is_master)
 }
 
 void
-db_journal_init(int is_master)
+db_journal_init()
 {
-	if (db_journal_initialize(is_master) != GFARM_ERR_NO_ERROR)
+	if (db_journal_initialize() != GFARM_ERR_NO_ERROR)
 		exit(1);
 }
 
@@ -486,6 +466,21 @@ db_journal_stat_destroy(struct gfs_stat *st)
 	free(st);
 }
 
+static void
+db_journal_metadb_server_destroy(struct gfarm_metadb_server *ms)
+{
+	gfarm_metadb_server_free(ms);
+	free(ms);
+}
+
+static void
+db_journal_metadb_server_modify_arg_destroy(
+	struct db_mdhost_modify_arg *arg)
+{
+	gfarm_metadb_server_free(&arg->ms);
+	free(arg);
+}
+
 /**********************************************************/
 
 static gfarm_error_t db_journal_write_begin0(gfarm_uint64_t);
@@ -521,7 +516,7 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 		db_journal_fail_store_op();
 		return (e);
 	}
-	if (ope == GFM_JOURNAL_END) {
+	if (ope == GFM_JOURNAL_END && db_journal_sync_op) {
 		if ((e = db_journal_sync_op(seqnum)) != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "%s", gfarm_error_string(e));
@@ -2774,6 +2769,208 @@ db_journal_read_quota_remove(struct gfp_xdr *xdr,
 }
 
 /**********************************************************/
+/* mdhost */
+
+#define GFM_JOURNAL_MDHOST_CORE_XDR_FMT "sisi"
+
+static gfarm_error_t
+db_journal_write_mdhost_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *ms = arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_MDHOST_CORE_XDR_FMT,
+	    NON_NULL_STR(ms->name),
+	    ms->port,
+	    NON_NULL_STR(ms->clustername),
+	    ms->flags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *ms = arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_MDHOST_CORE_XDR_FMT,
+	    NON_NULL_STR(ms->name),
+	    ms->port,
+	    NON_NULL_STR(ms->clustername),
+	    ms->flags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_read_mdhost_core(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct gfarm_metadb_server *ms)
+{
+	gfarm_error_t e;
+	int eof;
+
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_MDHOST_CORE_XDR_FMT,
+	    &ms->name,
+	    &ms->port,
+	    &ms->clustername,
+	    &ms->flags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, ope);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_add(gfarm_uint64_t seqnum,
+	struct gfarm_metadb_server *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_MDHOST_ADD, arg,
+		db_journal_write_mdhost_size_add,
+		db_journal_write_mdhost_core));
+}
+
+static gfarm_error_t
+db_journal_read_metadb_server(struct gfp_xdr *xdr,
+	struct gfarm_metadb_server **msp)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *ms;
+	const enum journal_operation ope = GFM_JOURNAL_MDHOST_ADD;
+
+	GFARM_MALLOC(ms);
+	if (ms == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(ms, 0, sizeof(*ms));
+	if ((e = db_journal_read_mdhost_core(xdr, ope, ms))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "db_journal_read_mdhost_core", e, ope);
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		*msp = ms;
+	else {
+		db_journal_metadb_server_destroy(ms);
+		*msp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_modify_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_mdhost_modify_arg *m = arg;
+	struct gfarm_metadb_server *ms = &m->ms;
+
+	if ((e = db_journal_write_mdhost_size_add(ope, sizep, ms))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "db_journal_write_mdhost_size_add", e, ope);
+		return (e);
+	}
+	if ((e = gfp_xdr_send_size_add(sizep, "i",
+	    m->modflags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_modify_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_mdhost_modify_arg *m = arg;
+	struct gfarm_metadb_server *ms = &m->ms;
+
+	if ((e = db_journal_write_mdhost_core(ope, ms))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "db_journal_write_mdhost_core", e, ope);
+		return (e);
+	}
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i",
+	    m->modflags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_modify(gfarm_uint64_t seqnum,
+	struct db_mdhost_modify_arg *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_MDHOST_MODIFY, arg,
+		db_journal_write_mdhost_modify_size_add,
+		db_journal_write_mdhost_modify_core));
+}
+
+static gfarm_error_t
+db_journal_read_mdhost_modify(struct gfp_xdr *xdr,
+	struct db_mdhost_modify_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_mdhost_modify_arg *arg;
+	struct gfarm_metadb_server *ms;
+	int eof;
+	const enum journal_operation ope = GFM_JOURNAL_MDHOST_MODIFY;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	ms = &arg->ms;
+	if ((e = db_journal_read_mdhost_core(xdr, ope, ms))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "db_journal_read_mdhost_core", e, ope);
+		goto end;
+	}
+	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i",
+	    &arg->modflags)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_send", e, ope);
+		goto end;
+	}
+end:
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_metadb_server_modify_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_write_mdhost_remove(gfarm_uint64_t seqnum, char *name)
+{
+	return (db_journal_write_string(
+		seqnum, GFM_JOURNAL_MDHOST_REMOVE, name));
+}
+
+/**********************************************************/
 
 static void
 db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
@@ -2837,6 +3034,12 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_QUOTA_REMOVE:
 		db_journal_quota_remove_arg_destroy(obj);
 		break;
+	case GFM_JOURNAL_MDHOST_ADD:
+		db_journal_metadb_server_destroy(obj);
+		break;
+	case GFM_JOURNAL_MDHOST_MODIFY:
+		db_journal_metadb_server_modify_arg_destroy(obj);
+		break;
 	case GFM_JOURNAL_HOST_REMOVE: /* char[] */
 	case GFM_JOURNAL_USER_REMOVE: /* char[] */
 	case GFM_JOURNAL_GROUP_REMOVE: /* char[] */
@@ -2849,6 +3052,7 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_INODE_CTIME_MODIFY: /* db_inode_timespec_modify_arg */
 	case GFM_JOURNAL_INODE_CKSUM_REMOVE: /* db_inode_inum_arg */
 	case GFM_JOURNAL_SYMLINK_REMOVE: /* db_inode_inum_arg */
+	case GFM_JOURNAL_MDHOST_REMOVE: /* char[] */
 		free(obj);
 		break;
 	default:
@@ -2897,6 +3101,7 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	case GFM_JOURNAL_HOST_REMOVE:
 	case GFM_JOURNAL_USER_REMOVE:
 	case GFM_JOURNAL_GROUP_REMOVE:
+	case GFM_JOURNAL_MDHOST_REMOVE:
 		e = db_journal_read_string(xdr, ope, (char **)objp);
 		break;
 	case GFM_JOURNAL_INODE_ADD:
@@ -2968,6 +3173,14 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	case GFM_JOURNAL_QUOTA_REMOVE:
 		e = db_journal_read_quota_remove(xdr,
 			(struct db_quota_remove_arg **)objp);
+		break;
+	case GFM_JOURNAL_MDHOST_ADD:
+		e = db_journal_read_metadb_server(xdr,
+			(struct gfarm_metadb_server **)objp);
+		break;
+	case GFM_JOURNAL_MDHOST_MODIFY:
+		e = db_journal_read_mdhost_modify(xdr,
+			(struct db_mdhost_modify_arg **)objp);
 		break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -3074,6 +3287,12 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->quota_modify(seqnum, obj); break;
 	case GFM_JOURNAL_QUOTA_REMOVE:
 		e = ops->quota_remove(seqnum, obj); break;
+	case GFM_JOURNAL_MDHOST_ADD:
+		e = ops->mdhost_add(seqnum, obj); break;
+	case GFM_JOURNAL_MDHOST_MODIFY:
+		e = ops->mdhost_modify(seqnum, obj); break;
+	case GFM_JOURNAL_MDHOST_REMOVE:
+		e = ops->mdhost_remove(seqnum, obj); break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_fatal(GFARM_MSG_UNFIXED,
@@ -3749,6 +3968,13 @@ db_journal_seqnum_load(void *closure,
 	return (store_ops->seqnum_load(closure, callback));
 }
 
+static gfarm_error_t
+db_journal_mdhost_load(void *closure,
+	void (*callback)(void *, struct gfarm_metadb_server *))
+{
+	return (store_ops->mdhost_load(closure, callback));
+}
+
 /**********************************************************/
 
 struct db_ops db_journal_ops = {
@@ -3824,6 +4050,11 @@ struct db_ops db_journal_ops = {
 	db_journal_seqnum_modify,
 	db_journal_seqnum_remove,
 	db_journal_seqnum_load,
+
+	db_journal_write_mdhost_add,
+	db_journal_write_mdhost_modify,
+	db_journal_write_mdhost_remove,
+	db_journal_mdhost_load,
 };
 
 #endif /* ENABLE_METADATA_REPLICATION */

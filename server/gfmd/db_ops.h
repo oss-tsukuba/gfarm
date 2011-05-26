@@ -129,6 +129,11 @@ struct db_seqnum_arg {
 
 struct gfarm_quota_info;
 
+struct db_mdhost_modify_arg {
+	struct gfarm_metadb_server ms;
+	int modflags;
+};
+
 struct db_ops {
 	gfarm_error_t (*initialize)(void);
 	gfarm_error_t (*terminate)(void);
@@ -241,4 +246,12 @@ struct db_ops {
 	gfarm_error_t (*seqnum_remove)(char *);
 	gfarm_error_t (*seqnum_load)(void *,
 		void (*)(void *, struct db_seqnum_arg *));
+
+	gfarm_error_t (*mdhost_add)(gfarm_uint64_t,
+		struct gfarm_metadb_server *);
+	gfarm_error_t (*mdhost_modify)(gfarm_uint64_t,
+		struct db_mdhost_modify_arg *);
+	gfarm_error_t (*mdhost_remove)(gfarm_uint64_t, char *);
+	gfarm_error_t (*mdhost_load)(void *,
+		void (*)(void *, struct gfarm_metadb_server *));
 };

@@ -56,6 +56,7 @@
 #include "db_journal_apply.h"
 #include "host.h"
 #include "mdhost.h"
+#include "mdcluster.h"
 #include "user.h"
 #include "group.h"
 #include "peer.h"
@@ -509,6 +510,21 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_QUOTA_CHECK:
 		e = gfm_server_quota_check(peer, from_client, skip);
+		break;
+	case GFM_PROTO_METADB_SERVER_GET:
+		e = gfm_server_metadb_server_get(peer, from_client, skip);
+		break;
+	case GFM_PROTO_METADB_SERVER_GET_ALL:
+		e = gfm_server_metadb_server_get_all(peer, from_client, skip);
+		break;
+	case GFM_PROTO_METADB_SERVER_SET:
+		e = gfm_server_metadb_server_set(peer, from_client, skip);
+		break;
+	case GFM_PROTO_METADB_SERVER_MODIFY:
+		e = gfm_server_metadb_server_modify(peer, from_client, skip);
+		break;
+	case GFM_PROTO_METADB_SERVER_REMOVE:
+		e = gfm_server_metadb_server_remove(peer, from_client, skip);
 		break;
 	default:
 		e = gfm_server_protocol_extension(peer,
@@ -1033,6 +1049,13 @@ transform_to_master(void)
 		    "because this is already the master gfmd");
 		return;
 	}
+	if (!mdhost_self_is_master_candidate()) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "cannot transform to the master gfmd "
+		    "because this is not a master candidate.");
+		return;
+	}
+
 	master = mdhost_lookup_master();
 	if (mdhost_is_up(master))
 		mdhost_disconnect(master, NULL);
@@ -1073,6 +1096,31 @@ wait_transform_to_master(void)
 		    TRANSFORM_COND_DIAG);
 	gfarm_mutex_unlock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
 	return (open_accepting_socket(gfarm_metadb_server_port));
+}
+
+static int
+mdcluster_foreach_select_master(struct mdhost *mh, void *closure)
+{
+	struct mdhost **mhp = closure;
+
+	if ((*mhp) != mh) {
+		*mhp = mh;
+		return (0);
+	}
+	return (1);
+}
+
+static void
+select_master(void)
+{
+	struct mdhost *self = mdhost_lookup_self(), *mh = self;
+
+	mdcluster_foreach_mdhost(mdhost_get_cluster(self),
+		mdcluster_foreach_select_master, &mh);
+	if (self != mh) {
+		mdhost_set_is_master(self, 0);
+		mdhost_set_is_master(mh, 1);
+	}
 }
 #endif
 
@@ -1247,11 +1295,14 @@ gfmd_modules_init_default(int table_size)
 
 	callout_module_init(CALLOUT_NTHREADS);
 
+#ifdef ENABLE_METADATA_REPLICATION
+	db_journal_apply_init();
+	db_journal_init();
+#endif
+	mdhost_init();
 	back_channel_init();
 #ifdef ENABLE_METADATA_REPLICATION
-	gfmdc_init(); /* must be called before db_journal_init() */
-	db_journal_apply_init();
-	db_journal_init(mdhost_self_is_master());
+	gfmdc_init();
 #endif
 	/* directory service */
 	host_init();
@@ -1286,6 +1337,9 @@ main(int argc, char **argv)
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t sigs;
+#ifdef ENABLE_METADATA_REPLICATION
+	int is_master;
+#endif
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -1353,14 +1407,6 @@ main(int argc, char **argv)
 	}
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
-
-	if (port_number != NULL)
-		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
-	mdhost_init();
-	if (mdhost_self_is_master())
-		sock = open_accepting_socket(gfarm_metadb_server_port);
-	else
-		sock = -1;
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1468,13 +1514,22 @@ main(int argc, char **argv)
 					  inode_check_and_repair() */
 		inode_check_and_repair();
 	}
+	if (port_number != NULL)
+		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 #ifdef ENABLE_METADATA_REPLICATION
+	if (mdhost_self_is_master() && gfarm_get_metadb_server_force_slave())
+		select_master();
+	is_master = mdhost_self_is_master();
 	gflog_info(GFARM_MSG_UNFIXED,
 	    "metadata replication %s mode",
-	    mdhost_self_is_master() ? "master" : "slave");
+	    is_master ? "master" : "slave");
 	start_gfmdc_threads();
-	if (sock == -1)
+	if (is_master)
+		sock = open_accepting_socket(gfarm_metadb_server_port);
+	else
 		sock = wait_transform_to_master();
+#else
+	sock = open_accepting_socket(gfarm_metadb_server_port);
 #endif
 	accepting_loop(sock);
 

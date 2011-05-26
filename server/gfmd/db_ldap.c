@@ -62,6 +62,7 @@
 #include "config.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
+#include "metadb_server.h"
 
 #include "subr.h"
 #include "db_access.h"
@@ -3175,6 +3176,11 @@ const struct db_ops db_ldap_ops = {
 	gfarm_ldap_quota_modify,
 	gfarm_ldap_quota_remove,
 	gfarm_ldap_quota_load,
+
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 
 	NULL,
 	NULL,

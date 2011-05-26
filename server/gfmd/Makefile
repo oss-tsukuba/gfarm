@@ -33,7 +33,7 @@ SRCS =	gfmd.c thrpool.c callout.c \
 	subr.c rpcsubr.c user.c group.c host.c peer.c dead_file_copy.c \
 	process.c job.c abstract_host.c \
 	dir.c inode.c fs.c back_channel.c acl.c journal_file.c \
-	mdhost.c gfmd_channel.c \
+	mdhost.c gfmd_channel.c mdcluster.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	db_journal.c db_journal_apply.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
@@ -41,7 +41,7 @@ OBJS =	gfmd.o thrpool.o callout.o \
 	subr.o rpcsubr.o user.o group.o host.o peer.o dead_file_copy.o \
 	process.o job.o abstract_host.o \
 	dir.o inode.o fs.o back_channel.o acl.o journal_file.o \
-	mdhost.o gfmd_channel.o \
+	mdhost.o gfmd_channel.o mdcluster.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
 	db_journal.o db_journal_apply.o \
 	$(ldap_objs) $(postgresql_objs) $(optional_objs)
@@ -68,10 +68,10 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfj_client.h \
 	$(GFARMLIB_SRCDIR)/timespec.h \
-	thrpool.h subr.h rpcsubr.h callout.h acl.h \
+	thrpool.h subr.h rpcsubr.h callout.h acl.h db_access.h \
 	user.h group.h host.h peer.h dead_file_copy.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h abstract_host.h \
-	gfmd_channel.h mdhost.h
+	gfmd_channel.h mdhost.h mdcluster.h
 
 include $(optional_rule)

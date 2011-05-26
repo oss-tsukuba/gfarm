@@ -37,7 +37,7 @@
 static struct thread_pool *back_channel_recv_thread_pool;
 static struct thread_pool *back_channel_send_thread_pool;
 
-#define BACK_CHANNEL_DIAG "back_channel"
+static const char BACK_CHANNEL_DIAG[] = "back_channel";
 
 /*
  * responsibility to call host_disconnect():
@@ -95,7 +95,7 @@ gfm_async_server_put_reply(struct host *host,
 	va_start(ap, format);
 	e = gfm_server_channel_vput_reply(
 	    host_to_abstract_host(host), peer, xid, diag,
-	    errcode, format, &ap, BACK_CHANNEL_DIAG);
+	    errcode, format, &ap);
 	va_end(ap);
 
 	return (e);
@@ -188,7 +188,7 @@ gfs_client_send_request(struct host *host,
 #ifdef COMPAT_GFARM_2_3
 	    host_set_callback,
 #endif
-	    command, format, &ap, BACK_CHANNEL_DIAG);
+	    command, format, &ap);
 	va_end(ap);
 	return (e);
 }

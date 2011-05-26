@@ -18,6 +18,7 @@
 
 #include "subr.h"
 #include "quota_info.h"
+#include "metadb_server.h"
 #include "quota.h"
 #include "mdhost.h"
 #include "db_access.h"
@@ -1751,6 +1752,91 @@ db_seqnum_load(void *closure,
 	      void (*callback)(void *, struct db_seqnum_arg *))
 {
 	return ((*ops->seqnum_load)(closure, callback));
+}
+
+void *
+db_mdhost_dup(const struct gfarm_metadb_server *ms, size_t size)
+{
+	struct gfarm_metadb_server *r;
+	size_t nsize = strlen(ms->name) + 1;
+	size_t csize = ms->clustername ? strlen(ms->clustername) + 1 : 0;
+	size_t sz;
+	int overflow = 0;
+
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	r = NULL;
+#endif
+	sz = gfarm_size_add(&overflow, size, nsize + csize);
+	if (!overflow)
+		r = malloc(sz);
+	if (overflow || r == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "allocation of 'gfarm_metadb_server' failed or overflow");
+		return (NULL);
+	}
+	r->name = (char *)r + size;
+	r->clustername = ms->clustername ? r->name + nsize : NULL;
+
+	strcpy(r->name, ms->name);
+	if (ms->clustername)
+		strcpy(r->clustername, ms->clustername);
+	r->port = ms->port;
+	r->flags = ms->flags;
+	return (r);
+}
+
+gfarm_error_t
+db_mdhost_add(const struct gfarm_metadb_server *ms)
+{
+	struct gfarm_metadb_server *m = db_mdhost_dup(ms, sizeof(*ms));
+
+	if (m == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "db_mdhost_dup() failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (db_enter_sn((dbq_entry_func_t)ops->mdhost_add, m));
+}
+
+struct db_mdhost_modify_arg *
+db_mdhost_modify_arg_alloc(const struct gfarm_metadb_server *ms, int modflags)
+{
+	struct db_mdhost_modify_arg *arg = db_mdhost_dup(ms, sizeof(*arg));
+
+	if (arg == NULL)
+		return (NULL);
+	arg->modflags = modflags;
+	return (arg);
+}
+
+gfarm_error_t
+db_mdhost_modify(const struct gfarm_metadb_server *ms, int modflags)
+{
+	struct db_mdhost_modify_arg *arg = db_mdhost_modify_arg_alloc(
+	    ms, modflags);
+
+	if (arg == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "db_mdhost_modify_arg_alloc failed");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (db_enter_sn((dbq_entry_func_t)ops->mdhost_modify, arg));
+}
+
+gfarm_error_t
+db_mdhost_remove(const char *name)
+{
+	char *u = strdup_log(name, "db_mdhost_remove");
+
+	if (u == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (db_enter_sn((dbq_entry_func_t)ops->mdhost_remove, u));
+}
+
+gfarm_error_t
+db_mdhost_load(void *closure,
+	void (*callback)(void *, struct gfarm_metadb_server *))
+{
+	return ((*ops->mdhost_load)(closure, callback));
 }
 
 #endif /* ENABLE_METADATA_REPLICATION */

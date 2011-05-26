@@ -32,6 +32,6 @@ void *db_journal_store_thread(void *);
 void *db_journal_recvq_thread(void *);
 void *db_journal_apply_thread(void *);
 void db_journal_boot_apply(void);
-void db_journal_init(int);
+void db_journal_init(void);
 
 #endif

@@ -59,6 +59,8 @@ struct host {
 	 */
 	struct gfarm_host_info hi;
 
+	pthread_mutex_t back_channel_mutex;
+
 #ifdef COMPAT_GFARM_2_3
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
 	gfarm_int32_t (*back_channel_result)(void *, void *, size_t);
@@ -88,13 +90,6 @@ static void host_free(struct host *);
 	     gfarm_hash_iterator_next(it))
 
 static const char BACK_CHANNEL_DIAG[] = "back_channel";
-
-#define CHANNEL_MUTEX_LOCK(h, diag) \
-	abstract_host_channel_mutex_lock(&(h)->ah, diag, \
-		BACK_CHANNEL_DIAG);
-#define CHANNEL_MUTEX_UNLOCK(h, diag) \
-	abstract_host_channel_mutex_unlock(&(h)->ah, diag, \
-		BACK_CHANNEL_DIAG);
 
 struct host *
 host_hashtab_lookup(struct gfarm_hash_table *hashtab, const char *hostname)
@@ -390,6 +385,18 @@ host_supports_async_protocols(struct host *h)
 		>= GFS_PROTOCOL_VERSION_V2_4);
 }
 
+static void
+back_channel_mutex_lock(struct host *h, const char *diag)
+{
+	gfarm_mutex_lock(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
+}
+
+static void
+back_channel_mutex_unlock(struct host *h, const char *diag)
+{
+	gfarm_mutex_unlock(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
+}
+
 #ifdef COMPAT_GFARM_2_3
 void
 host_set_callback(struct abstract_host *ah, struct peer *peer,
@@ -401,12 +408,12 @@ host_set_callback(struct abstract_host *ah, struct peer *peer,
 	static const char diag[] = "host_set_callback";
 
 	/* XXX FIXME sanity check? */
-	CHANNEL_MUTEX_LOCK(h, diag);
+	back_channel_mutex_lock(h, diag);
 	h->back_channel_result = result_callback;
 	h->back_channel_disconnect = disconnect_callback;
 	h->back_channel_callback_peer = peer;
 	h->back_channel_callback_closure = closure;
-	CHANNEL_MUTEX_UNLOCK(h, diag);
+	back_channel_mutex_unlock(h, diag);
 }
 
 int
@@ -416,7 +423,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 	int ok;
 	static const char diag[] = "host_get_result_callback";
 
-	CHANNEL_MUTEX_LOCK(h, diag);
+	back_channel_mutex_lock(h, diag);
 
 	if (h->back_channel_result == NULL ||
 	    h->back_channel_callback_peer != peer) {
@@ -431,7 +438,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 		ok = 1;
 	}
 
-	CHANNEL_MUTEX_UNLOCK(h, diag);
+	back_channel_mutex_unlock(h, diag);
 	return (ok);
 }
 
@@ -443,7 +450,7 @@ host_get_disconnect_callback(struct host *h,
 	int ok;
 	static const char diag[] = "host_get_disconnect_callback";
 
-	CHANNEL_MUTEX_LOCK(h, diag);
+	back_channel_mutex_lock(h, diag);
 
 	if (h->back_channel_disconnect == NULL) {
 		ok = 0;
@@ -458,7 +465,7 @@ host_get_disconnect_callback(struct host *h,
 		ok = 1;
 	}
 
-	CHANNEL_MUTEX_UNLOCK(h, diag);
+	back_channel_mutex_unlock(h, diag);
 	return (ok);
 }
 
@@ -483,7 +490,7 @@ host_is_up_unlocked(struct host *h)
 int
 host_is_up(struct host *h)
 {
-	return (abstract_host_is_up(&h->ah, BACK_CHANNEL_DIAG));
+	return (abstract_host_is_up(&h->ah));
 }
 
 int
@@ -492,13 +499,13 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
 	static const char diag[] = "host_get_disk_avail";
 
-	CHANNEL_MUTEX_LOCK(h, diag);
+	back_channel_mutex_lock(h, diag);
 
 	if (host_is_up_unlocked(h))
 		avail = h->status.disk_avail * 1024;
 	else
 		avail = 0;
-	CHANNEL_MUTEX_UNLOCK(h, diag);
+	back_channel_mutex_unlock(h, diag);
 
 	if (minfree < size)
 		minfree = size;
@@ -537,13 +544,13 @@ host_status_callout_retry(struct host *host)
 	int ok;
 	static const char diag[] = "host_status_callout_retry";
 
-	CHANNEL_MUTEX_LOCK(host, diag);
+	back_channel_mutex_lock(host, diag);
 
 	++host->status_callout_retry;
 	interval = 1 << host->status_callout_retry;
 	ok = (interval <= gfarm_metadb_heartbeat_interval);
 
-	CHANNEL_MUTEX_UNLOCK(host, diag);
+	back_channel_mutex_unlock(host, diag);
 
 	if (ok) {
 		callout_schedule(host->status_callout, interval);
@@ -559,11 +566,9 @@ host_status_reply_waiting(struct host *host)
 {
 	static const char diag[] = "host_status_reply_waiting";
 
-	CHANNEL_MUTEX_LOCK(host, diag);
-
+	back_channel_mutex_lock(host, diag);
 	host->status_reply_waiting = 1;
-
-	CHANNEL_MUTEX_UNLOCK(host, diag);
+	back_channel_mutex_unlock(host, diag);
 }
 
 int
@@ -572,9 +577,9 @@ host_status_reply_is_waiting(struct host *host)
 	int waiting;
 	static const char diag[] = "host_status_reply_waiting";
 
-	CHANNEL_MUTEX_LOCK(host, diag);
+	back_channel_mutex_lock(host, diag);
 	waiting = host->status_reply_waiting;
-	CHANNEL_MUTEX_UNLOCK(host, diag);
+	back_channel_mutex_unlock(host, diag);
 
 	return (waiting);
 }
@@ -603,7 +608,7 @@ host_status_update(struct host *host, struct host_status *status)
 	gfarm_uint64_t saved_used = 0, saved_avail = 0;
 	const char diag[] = "status_update";
 
-	CHANNEL_MUTEX_LOCK(host, diag);
+	back_channel_mutex_lock(host, diag);
 
 	host->status_reply_waiting = 0;
 	host->status_callout_retry = 0;
@@ -619,7 +624,7 @@ host_status_update(struct host *host, struct host_status *status)
 		GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL;
 	host->status = *status;
 
-	CHANNEL_MUTEX_UNLOCK(host, diag);
+	back_channel_mutex_unlock(host, diag);
 
 	host_total_disk_update(saved_used, saved_avail,
 	    status->disk_used, status->disk_avail);
@@ -739,12 +744,14 @@ static struct host *
 host_new(struct gfarm_host_info *hi, struct callout *callout)
 {
 	struct host *h;
+	static const char diag[] = "host_new";
 
 	GFARM_MALLOC(h);
 	if (h == NULL)
 		return (NULL);
 	abstract_host_init(&h->ah, &host_ops, "host_new");
 	h->hi = *hi;
+	gfarm_mutex_init(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
 	h->back_channel_disconnect = NULL;
@@ -1636,11 +1643,11 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 	gfarm_time_t last_report;
 	gfarm_int32_t report_flags;
 
-	CHANNEL_MUTEX_LOCK(h, diag);
+	back_channel_mutex_lock(h, diag);
 	status = h->status;
 	last_report = h->last_report;
 	report_flags = h->report_flags;
-	CHANNEL_MUTEX_UNLOCK(h, diag);
+	back_channel_mutex_unlock(h, diag);
 	return (gfp_xdr_send(peer_get_conn(peer), "siiillllii",
 	    h->hi.hostname, h->hi.port, h->hi.ncpu,
 	    (gfarm_int32_t)(status.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE),

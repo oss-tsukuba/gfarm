@@ -27,6 +27,7 @@
 
 #include "config.h"
 #include "quota.h"
+#include "metadb_server.h"
 #include "db_access.h"
 #include "db_ops.h"
 
@@ -399,6 +400,34 @@ gfarm_none_seqnum_load(void *closure,
 
 /**********************************************************************/
 
+static gfarm_error_t
+gfarm_none_mdhost_add(gfarm_uint64_t seqnum, struct gfarm_metadb_server *ms)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_mdhost_modify(gfarm_uint64_t seqnum,
+	struct db_mdhost_modify_arg *arg)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_mdhost_remove(gfarm_uint64_t seqnum, char *name)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
+gfarm_none_mdhost_load(void *closure,
+	void (*callback)(void *, struct gfarm_metadb_server *))
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
 const struct db_ops db_none_ops = {
 	gfarm_none_initialize,
 	gfarm_none_terminate,
@@ -474,4 +503,9 @@ const struct db_ops db_none_ops = {
 	gfarm_none_seqnum_modify,
 	gfarm_none_seqnum_remove,
 	gfarm_none_seqnum_load,
+
+	gfarm_none_mdhost_add,
+	gfarm_none_mdhost_modify,
+	gfarm_none_mdhost_remove,
+	gfarm_none_mdhost_load,
 };
