@@ -1982,10 +1982,9 @@ t_apply_user_remove(void)
 
 	TEST_ASSERT_NOERR("user_remove",
 	    db_journal_apply_ops.user_remove(0, (char *)username));
+	/* invalid user cannot be acquired. */
 	TEST_ASSERT_B("user_lookup",
-	    (u = user_lookup(username)) != NULL);
-	TEST_ASSERT_B("user_is_invalidated",
-	    user_is_invalid(u));
+	    (u = user_lookup(username)) == NULL);
 }
 
 #define T_APPLY_GROUP_NAME "group1"
