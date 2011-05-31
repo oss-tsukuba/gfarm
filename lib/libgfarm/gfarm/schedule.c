@@ -829,6 +829,8 @@ static gfarm_error_t
 search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	enum gfarm_schedule_search_mode mode, int write_mode)
 {
+	int syserr;
+
 	s->desired_number = desired_hosts;
 	s->enough_number = desired_hosts * ENOUGH_RATE;
 	s->mode = mode;
@@ -849,10 +851,11 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 		return (GFARM_ERRMSG_NO_FILESYSTEM_NODE);
 	}
 
-	s->q = gfarm_eventqueue_alloc();
-	if (s->q == NULL) {
-		gflog_debug(GFARM_MSG_1001438,
-		    "search_idle_init_state: no memory");
+	syserr = gfarm_eventqueue_alloc(CONCURRENCY, &s->q);
+	if (syserr != 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "search_idle_init_state: gfarm_eventqueue_alloc: %s",
+		    strerror(syserr));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	s->available_hosts_number = s->usable_hosts_number =

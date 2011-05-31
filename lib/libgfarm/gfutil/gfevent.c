@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/select.h>
 #include <assert.h>
 #include <limits.h> /* CHAR_BIT */
 #include <stdlib.h>
@@ -15,8 +14,17 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gflog.h>
 
-#include "gfutil.h"
-#include "gfevent.h"
+#include <gfarm/gfarm_config.h>
+#ifdef HAVE_EPOLL
+
+#include <sys/epoll.h>
+
+#define SECOND_BY_MILLISEC	1000
+#define MILLISEC_BY_MICROSEC	1000
+
+#else /* !HAVE_EPOLL */
+
+#include <sys/select.h>
 
 #define MIN_FDS_SIZE	FD_SETSIZE
 #ifdef __FDS_BITS /* for glibc, esp. Debian/kFreeBSD */
@@ -24,6 +32,11 @@
 #else
 #define GF_FDS_BITS(set)	(set)->fds_bits
 #endif
+
+#endif /* !HAVE_EPOLL */
+
+#include "gfutil.h"
+#include "gfevent.h"
 
 /* event */
 
@@ -117,12 +130,18 @@ struct gfarm_eventqueue {
 	/* doubly linked circular list with a header */
 	struct gfarm_event header;
 
+#ifdef HAVE_EPOLL
+	int size_epoll_events, n_epoll_events;
+	struct epoll_event *epoll_events;
+	int epoll_fd;
+#else
 	int fd_set_size, fd_set_bytes;
 	fd_set *read_fd_set, *write_fd_set, *exception_fd_set;
+#endif
 };
 
-struct gfarm_eventqueue *
-gfarm_eventqueue_alloc(void)
+int
+gfarm_eventqueue_alloc(int ndesc_hint, struct gfarm_eventqueue **qp)
 {
 	struct gfarm_eventqueue *q;
 
@@ -130,27 +149,38 @@ gfarm_eventqueue_alloc(void)
 	if (q == NULL) {
 		gflog_debug(GFARM_MSG_1000768,
 			"allocation of gfarm_eventqueue failed");
-		return (NULL);
+		return (ENOMEM);
 	}
 
 	/* make the queue empty */
 	q->header.next = q->header.prev = &q->header;
 
+#ifdef HAVE_EPOLL
+	q->size_epoll_events = q->n_epoll_events = 0;
+	q->epoll_events = NULL;
+	q->epoll_fd = epoll_create(ndesc_hint);
+	if (q->epoll_fd == -1)
+		return (errno);
+#else
 	q->fd_set_size = q->fd_set_bytes = 0;
 	q->read_fd_set = q->write_fd_set =
 	    q->exception_fd_set = NULL;
-	return (q);
+#endif
+	*qp = q;
+	return (0); /* no error */
 }
 
 void
 gfarm_eventqueue_free(struct gfarm_eventqueue *q)
 {
-	if (q->read_fd_set != NULL)
-		free(q->read_fd_set);
-	if (q->write_fd_set != NULL)
-		free(q->write_fd_set);
-	if (q->exception_fd_set != NULL)
-		free(q->exception_fd_set);
+#ifdef HAVE_EPOLL
+	free(q->epoll_events);
+	close(q->epoll_fd);
+#else
+	free(q->read_fd_set);
+	free(q->write_fd_set);
+	free(q->exception_fd_set);
+#endif
 
 #if 0 /* this may not be true, if gfarm_eventqueue_loop() fails */
 	/* assert that the queue is empty */
@@ -160,6 +190,7 @@ gfarm_eventqueue_free(struct gfarm_eventqueue *q)
 	free(q);
 }
 
+#ifndef HAVE_EPOLL
 /*
  * XXX This is not so portable,
  * but fixed-size fd_set cannot be used.
@@ -264,11 +295,16 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 	}
 	return (1); /* success */
 }
+#endif /* !HAVE_EPOLL */
 
 int
 gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 	struct gfarm_event *ev, const struct timeval *timeout)
 {
+#ifdef HAVE_EPOLL
+	struct epoll_event epoll_ev;
+#endif
+
 	if (ev->next != NULL || ev->prev != NULL) /* shouldn't happen */
 		return (EINVAL);
 
@@ -289,6 +325,26 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 	}
 	switch (ev->type) {
 	case GFARM_FD_EVENT:
+#ifdef HAVE_EPOLL
+		epoll_ev.events = 0; /* We use the level triggered mode */
+		if ((ev->filter & GFARM_EVENT_READ) != 0)
+			epoll_ev.events |= EPOLLIN;
+		if ((ev->filter & GFARM_EVENT_WRITE) != 0)
+			epoll_ev.events |= EPOLLOUT;
+		if ((ev->filter & GFARM_EVENT_EXCEPTION) != 0)
+			epoll_ev.events |= EPOLLPRI;
+		epoll_ev.data.ptr = ev;
+		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_ADD,
+		    ev->u.fd.fd, &epoll_ev) == -1) {
+			int save_errno = errno;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "epoll(%d, EPOLL_CTL_ADD, %d, %p): %s",
+			    q->epoll_fd, ev->u.fd.fd, &epoll_ev,
+			    strerror(errno));
+			return (save_errno);
+		}
+		q->n_epoll_events++;
+#else
 		if ((ev->filter & GFARM_EVENT_READ) != 0) {
 			if (!gfarm_eventqueue_alloc_fd_set(q, ev->u.fd.fd,
 			    &q->read_fd_set)) {
@@ -316,6 +372,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 				return (ENOMEM);
 			}
 		}
+#endif
 		break;
 	case GFARM_TIMER_EVENT:
 		if (timeout == NULL) {
@@ -339,11 +396,34 @@ int
 gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 	struct gfarm_event *ev)
 {
+#ifdef HAVE_EPOLL
+	/* dummy is for linux before 2.6.9 */
+	struct epoll_event dummy;
+#endif
+
 	if (ev->next == NULL || ev->prev == NULL) { /* shouldn't happen */
 		gflog_debug(GFARM_MSG_1000780,
 			"Event queue link broken");
 		return (EINVAL);
 	}
+
+#ifdef HAVE_EPOLL
+	switch (ev->type) {
+
+	case GFARM_FD_EVENT:
+		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_DEL, ev->u.fd.fd, &dummy)
+		    == -1) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "epoll_ctl(%d, EPOLL_CTL_DEL, %d, ): %s",
+			     q->epoll_fd, ev->u.fd.fd, strerror(errno));
+		}
+		break;
+	case GFARM_TIMER_EVENT:
+		/* nothing to do */
+		break;
+	}
+	q->n_epoll_events--;
+#endif
 
 	/* dequeue */
 	ev->next->prev = ev->prev;
@@ -368,11 +448,14 @@ int
 gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	const struct timeval *timeo)
 {
-	int nfound, max_fd = -1;
+	int nfound;
 	struct gfarm_event *ev, *n;
-	fd_set *read_fd_set, *write_fd_set, *exception_fd_set;
 	struct timeval start_time, end_time, timeout_value, *timeout = NULL;
 	int events;
+#ifndef HAVE_EPOLL
+	int max_fd = -1;
+	fd_set *read_fd_set, *write_fd_set, *exception_fd_set;
+#endif
 
 	/* queue is empty? */
 	if (q->header.next == &q->header)
@@ -385,6 +468,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 		timeout_value = *timeo;
 		timeout = &timeout_value;
 	}
+#ifndef HAVE_EPOLL
 	/*
 	 * XXX This is not so portable,
 	 * but usual implementation of FD_ZERO cannot be used.
@@ -396,6 +480,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	if (q->exception_fd_set != NULL)
 		memset(q->exception_fd_set, 0, q->fd_set_bytes);
 	read_fd_set = write_fd_set = exception_fd_set = NULL;
+#endif
 	for (ev = q->header.next; ev != &q->header; ev = ev->next) {
 		if (ev->timeout_specified) {
 			if (timeout == NULL) {
@@ -405,6 +490,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				timeout_value = ev->timeout;
 			}
 		}
+#ifndef HAVE_EPOLL
 		switch (ev->type) {
 		case GFARM_FD_EVENT:
 			if ((ev->filter & GFARM_EVENT_READ) != 0) {
@@ -425,21 +511,43 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 		case GFARM_TIMER_EVENT:
 			break;
 		}
+#endif
 	}
 
 	/*
-	 * do select(2)
+	 * do wait
 	 */
+#ifndef HAVE_EPOLL
 	if (max_fd < 0 && timeout == NULL)
 		return (EDEADLK); /* infinite sleep without any watching fd */
+#endif
 	gettimeofday(&start_time, NULL);
 	if (timeout != NULL) {
 		gfarm_timeval_sub(&timeout_value, &start_time);
 		if (timeout_value.tv_sec < 0)
 			timeout_value.tv_sec = timeout_value.tv_usec = 0;
 	}
+#ifdef HAVE_EPOLL
+	if (q->size_epoll_events <= q->n_epoll_events) {
+		struct epoll_event *p;
+		int sz;
+		if (q->size_epoll_events * 2 >= q->n_epoll_events)
+			sz = q->size_epoll_events * 2;
+		else
+			sz = q->n_epoll_events;
+		GFARM_REALLOC_ARRAY(p, q->epoll_events, sz);
+		if (p == NULL)
+			return (ENOMEM);
+		q->epoll_events = p;
+		q->size_epoll_events = sz;
+	}
+	nfound = epoll_wait(q->epoll_fd, q->epoll_events, q->size_epoll_events,
+	    timeout_value.tv_sec * SECOND_BY_MILLISEC +
+	    timeout_value.tv_usec / MILLISEC_BY_MICROSEC);
+#else
 	nfound = select(max_fd + 1,
 	    read_fd_set, write_fd_set, exception_fd_set, timeout);
+#endif
 	if (nfound == -1) {
 		int save_errno = errno;
 		gflog_debug(GFARM_MSG_1000781,
@@ -452,6 +560,50 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	/*
 	 * call event callback routines
 	 */
+#ifdef HAVE_EPOLL
+	if (nfound > 0) {
+		int i;
+
+		for (i = 0; i < nfound; i++) {
+			ev = q->epoll_events[i].data.ptr;
+			events = 0;
+			if ((q->epoll_events[i].events & EPOLLIN) != 0)
+				events |= GFARM_EVENT_READ;
+			if ((q->epoll_events[i].events & EPOLLOUT) != 0)
+				events |= GFARM_EVENT_WRITE;
+			if ((q->epoll_events[i].events & EPOLLPRI) != 0)
+				events |= GFARM_EVENT_EXCEPTION;
+			gfarm_eventqueue_delete_event(q, ev);
+			(*ev->u.fd.callback)(events, ev->u.fd.fd, ev->closure,
+			    &end_time);
+		}
+	} else {
+		for (ev = q->header.next; ev != &q->header; ev = n) {
+			n = ev->next;
+
+			switch (ev->type) {
+			case GFARM_FD_EVENT:
+				if (ev->timeout_specified &&
+				    gfarm_timeval_cmp(&end_time, &ev->timeout)
+				    >= 0) {
+					gfarm_eventqueue_delete_event(q, ev);
+					(*ev->u.fd.callback)(
+					    GFARM_EVENT_TIMEOUT, ev->u.fd.fd,
+					    ev->closure, &end_time);
+				}
+				break;
+			case GFARM_TIMER_EVENT:
+				if (gfarm_timeval_cmp(&end_time, &ev->timeout)
+				    >= 0){
+					gfarm_eventqueue_delete_event(q, ev);
+					(*ev->u.timeout.callback)(
+					    ev->closure, &end_time);
+				}
+				break;
+			}
+		}
+	}
+#else /* !HAVE_EPOLL */
 	for (ev = q->header.next; ev != &q->header; ev = n) {
 		/*
 		 * We shouldn't use "ev = ev->next" in the 3rd clause
@@ -494,6 +646,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 			break;
 		}
 	}
+#endif /* !HAVE_EPOLL */
 
 	/* queue is empty? */
 	if (q->header.next == &q->header)
@@ -689,8 +842,9 @@ run2(int host1_socket, int host2_socket)
 
 	/* initialize */
 
-	if ((q = gfarm_eventqueue_alloc()) == NULL) {
-		fprintf(stderr, "out of memory\n");
+	if ((error = gfarm_eventqueue_alloc(2, &q)) != 0) {
+		fprintf(stderr, "gfarm_eventqueue_alloc: %s\n",
+		    strerror(error));
 		return;
 	}
 

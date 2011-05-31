@@ -42,7 +42,7 @@ void gfarm_event_free(struct gfarm_event *);
 
 struct gfarm_eventqueue;
 
-struct gfarm_eventqueue *gfarm_eventqueue_alloc(void);
+int gfarm_eventqueue_alloc(int, struct gfarm_eventqueue **);
 void gfarm_eventqueue_free(struct gfarm_eventqueue *);
 
 int gfarm_eventqueue_add_event(struct gfarm_eventqueue *,

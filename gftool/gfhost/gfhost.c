@@ -649,6 +649,7 @@ gfarm_paraccess_alloc(
 	int concurrency, int try_auth,
 	struct gfarm_paraccess **pap)
 {
+	int syserr;
 	struct gfarm_paraccess *pa;
 	int i;
 
@@ -656,10 +657,10 @@ gfarm_paraccess_alloc(
 	if (pa == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	pa->q = gfarm_eventqueue_alloc();
-	if (pa->q == NULL) {
+	syserr = gfarm_eventqueue_alloc(concurrency, &pa->q);
+	if (syserr !=0) {
 		free(pa);
-		return (GFARM_ERR_NO_MEMORY);
+		return (gfarm_errno_to_error(syserr));
 	}
 
 	GFARM_MALLOC_ARRAY(pa->access_state, concurrency);
