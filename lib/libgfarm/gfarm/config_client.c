@@ -65,14 +65,14 @@ gfarm_config_set_default_metadb_server(void)
 
 	if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
 		return (GFARM_ERR_NO_ERROR);
-	if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfarm_metadb_server_new(&m, gfarm_metadb_server_name,
+	    gfarm_metadb_server_port))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 	ms[0] = m;
-	gfarm_metadb_server_set_name(m, gfarm_metadb_server_name);
-	gfarm_metadb_server_set_port(m, gfarm_metadb_server_port);
 	gfarm_metadb_server_set_is_master(m, 1);
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
 	    != GFARM_ERR_NO_ERROR)

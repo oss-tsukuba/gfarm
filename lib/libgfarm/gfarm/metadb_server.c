@@ -7,27 +7,25 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfm_proto.h"
+
 #include "metadb_server.h"
 
-/* Persistent Flags */
-#define GFARM_METADB_SERVER_FLAG_IS_MASTER_CANDIDATE	0x00000001
-#define GFARM_METADB_SERVER_FLAG_IS_DEFAULT_MASTER	0x00000002
-
-/* Volatile Flags */
-#define GFARM_METADB_SERVER_FLAG_IS_SELF	0x00000001
-#define GFARM_METADB_SERVER_FLAG_IS_MASTER	0x00000002
-#define GFARM_METADB_SERVER_FLAG_IS_SYNCREP	0x00000004
-#define GFARM_METADB_SERVER_FLAG_IS_ACTIVE	0x00000008
-
 gfarm_error_t
-gfarm_metadb_server_new(struct gfarm_metadb_server **m)
+gfarm_metadb_server_new(struct gfarm_metadb_server **m,
+	const char *name, int port)
 {
-	if ((*m = malloc(sizeof(struct gfarm_metadb_server))) == NULL) {
+	if (GFARM_MALLOC(*m) == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
+	(*m)->name = name;
+	(*m)->clustername = NULL;
+	(*m)->port = port;
 	(*m)->flags = 0;
+	(*m)->tflags = 0;
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -35,12 +33,6 @@ const char *
 gfarm_metadb_server_get_name(struct gfarm_metadb_server *m)
 {
 	return (m->name);
-}
-
-void
-gfarm_metadb_server_set_name(struct gfarm_metadb_server *m, char *name)
-{
-	m->name = name;
 }
 
 const char *
