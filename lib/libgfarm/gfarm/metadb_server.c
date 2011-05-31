@@ -13,7 +13,7 @@
 
 gfarm_error_t
 gfarm_metadb_server_new(struct gfarm_metadb_server **m,
-	const char *name, int port)
+	char *name, int port)
 {
 	if (GFARM_MALLOC(*m) == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -52,12 +52,6 @@ int
 gfarm_metadb_server_get_port(struct gfarm_metadb_server *m)
 {
 	return (m->port);
-}
-
-void
-gfarm_metadb_server_set_port(struct gfarm_metadb_server *m, int port)
-{
-	m->port = port;
 }
 
 static void
