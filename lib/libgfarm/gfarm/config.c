@@ -645,7 +645,7 @@ gfarm_set_local_user_for_this_local_account(void)
 		if (bufsize == -1)
 			bufsize = BUFSIZE_MAX;
 	}
-	buf = malloc(bufsize);
+	GFARM_MALLOC_ARRAY(buf, bufsize);
 	if (buf == NULL) {
 		error = GFARM_ERR_NO_MEMORY;
 		gflog_error(GFARM_MSG_1000011, "gfarm_set_local_user: %s",
@@ -1907,14 +1907,13 @@ parse_metadb_server_list_arguments(char *p, char **op)
 			    "%s", gfarm_error_string(e));
 			goto error;
 		}
-		if ((e = gfarm_metadb_server_new(&m)) != GFARM_ERR_NO_ERROR) {
+		if (port < 0)
+			port = GFMD_DEFAULT_PORT;
+		if ((e = gfarm_metadb_server_new(&m, host, port))
+		    != GFARM_ERR_NO_ERROR) {
 			free(host);
 			goto error;
 		}
-		gfarm_metadb_server_set_name(m, host);
-		if (port < 0)
-			port = GFMD_DEFAULT_PORT;
-		gfarm_metadb_server_set_port(m, port);
 		ms[n++] = m;
 	}
 	if (n == 0) {

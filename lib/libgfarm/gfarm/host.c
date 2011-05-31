@@ -819,7 +819,9 @@ gfarm_known_network_dump(void)
 gfarm_error_t
 gfarm_known_network_list_add(struct gfarm_hostspec *network)
 {
-	struct known_network *known_network = malloc(sizeof(*known_network));
+	struct known_network *known_network;
+
+	GFARM_MALLOC(known_network);
 
 	if (known_network == NULL)
 		return (GFARM_ERR_NO_MEMORY);

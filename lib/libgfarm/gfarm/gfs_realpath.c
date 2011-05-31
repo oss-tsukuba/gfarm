@@ -40,7 +40,7 @@ gfm_realpath_success(struct gfm_connection *gfm_server, void *closure,
 	int level = 0;
 
 	len = strlen(path);
-	buf = malloc(len + 1);
+	GFARM_MALLOC_ARRAY(buf, len + 1);
 	if (buf == NULL) {
 		gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_MEMORY);
@@ -97,7 +97,7 @@ gfm_realpath_success(struct gfm_connection *gfm_server, void *closure,
 
 	len = strlen(buf);
 	hostname = gfm_client_hostname(gfm_server);
-	b = malloc(len + strlen(hostname) + GFARM_URL_PREFIX_LENGTH +
+	GFARM_MALLOC_ARRAY(b, len + strlen(hostname) + GFARM_URL_PREFIX_LENGTH +
 	    2 + 1 + 5 + 1);
 	    /* (gfarm:=PREFIX_LENGTH)(//=2)(:=1)(port=5)(\0=1) */
 	if (b == NULL) {

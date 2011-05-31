@@ -168,7 +168,7 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	int i;
 	struct gfarm_metadb_server **servers;
 
-	servers = malloc(sizeof(void *) * n);
+	GFARM_MALLOC_ARRAY(servers, sizeof(void *) * n);
 	if (servers == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
