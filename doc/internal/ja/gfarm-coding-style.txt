@@ -41,6 +41,27 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	一部の例外を除き、ほぼ全ての関数は、戻り値としてエラー
 	コードを返すものとします。
 
+	エラーコードは lib/libgfarm/gfutil.h では OS の errno の値を、
+	それ以外では gfarm_error_t を用います。
+
+	gfarm_error_t は以下の2箇所のヘッダで定数定義していますが、
+		include/gfarm/error.h
+		lib/libgfarm/gfarm/liberror.h
+	このうちネットワーク上を流して良い値は include/gfarm/error.h
+	にあるもののみです。
+
+	もし lib/libgfarm/gfarm/liberror.h で定義している値がネット
+	ワーク上を流れる可能性が生じた場合には、定義を
+	include/gfarm/error.h に移します。この移動が生じた場合、
+	エラー番号が変わることになりますが、
+	liberror.h の enum gfarm_errmsg の定義には
+		GFARM_ERRMSG_UNKNOWN_HOST_DEPRECATED
+	のように元の名前に「_DEPRECATED」を付加したエントリを残し、
+	liberror.c の errmsg_string[] の定義には
+		"unknown host (deprecated)"
+	のように元の文字列に「 (deprecated)」を付加したエントリを残し、
+	前後の値が変化しないようにします。
+
 ■ エラー報告について
 
 	libgfarm で定義されている関数では、原則として、stderr や
@@ -59,6 +80,29 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 
 	また、gfmd や gfsd, gftool については、汎用ライブラリでは
 	ありませんから、このような制約はありません。
+
+■ 定数定義について
+
+	ネットワーク上を流れるプロトコル定数やフラグは、たとえ単一の
+	Cソースファイルの中でしか参照しない場合であっても、以下のヘッダ
+	で定義します。
+		include/gfarm/error.h
+		include/gfarm/gfs.h
+		lib/libgfarm/gfarm/gfm_proto.h (gfmd プロトコルの場合)
+		lib/libgfarm/gfarm/gfs_proto.h (gfsd プロトコルの場合)
+
+	なお、lib/libgfarm/gfarm/liberror.h で定義している値はネットワーク
+	に流してはいけません。流れる可能性がある値については、
+	include/gfarm/error.h に移します。(この時、値を変えて良いです)
+
+■ 演算オーバフロー関係のセキュリティ対策
+
+	原則として、生の malloc は使わず、GFARM_MALLOC, GFARM_MALLOC_ARRAY, 
+	GFARM_CALLOC_ARRAY, GFARM_REALLOC_ARAY を用います。
+	(このうち、GFARM_MALLOC のみは、演算オーバフローと無関係です)
+
+	これ以外でも、特にメモリ割り当てに関する計算では、演算オーバー
+	フローが発生する可能性に留意してコーディングする必要があります。
 
 ■ ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
 
