@@ -542,6 +542,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 		q->size_epoll_events = sz;
 	}
 	nfound = epoll_wait(q->epoll_fd, q->epoll_events, q->size_epoll_events,
+	    timeout == NULL ? -1 :
 	    timeout_value.tv_sec * SECOND_BY_MILLISEC +
 	    timeout_value.tv_usec / MILLISEC_BY_MICROSEC);
 #else
