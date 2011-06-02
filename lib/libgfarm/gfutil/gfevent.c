@@ -576,6 +576,10 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				events |= GFARM_EVENT_WRITE;
 			if ((q->epoll_events[i].events & EPOLLPRI) != 0)
 				events |= GFARM_EVENT_EXCEPTION;
+			if ((q->epoll_events[i].events & (EPOLLHUP|EPOLLERR))
+			    != 0)
+				events |= ev->filter & (GFARM_EVENT_READ|
+				    GFARM_EVENT_WRITE|GFARM_EVENT_EXCEPTION);
 			gfarm_eventqueue_delete_event(q, ev);
 			(*ev->u.fd.callback)(events, ev->u.fd.fd, ev->closure,
 			    &end_time);
