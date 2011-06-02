@@ -326,6 +326,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 	switch (ev->type) {
 	case GFARM_FD_EVENT:
 #ifdef HAVE_EPOLL
+		memset(&epoll_ev, 0, sizeof(epoll_ev));
 		epoll_ev.events = 0; /* We use the level triggered mode */
 		if ((ev->filter & GFARM_EVENT_READ) != 0)
 			epoll_ev.events |= EPOLLIN;
@@ -411,6 +412,7 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 	switch (ev->type) {
 
 	case GFARM_FD_EVENT:
+		memset(&dummy, 0, sizeof(dummy));
 		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_DEL, ev->u.fd.fd, &dummy)
 		    == -1) {
 			gflog_warning(GFARM_MSG_UNFIXED,
