@@ -646,7 +646,12 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 		    ((gf->open_flags & GFARM_FILE_UNBUFFERED) &&
 		    size < GFS_FILE_BUFSIZE) ? size : GFS_FILE_BUFSIZE))
 		    != GFARM_ERR_NO_ERROR) {
-			if (!IS_CONNECTION_ERROR(e))
+			/* XXX call reconnect, when failover for writing
+			 *     is supported
+			 */
+			if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
+			    (gf->mode & GFS_FILE_MODE_WRITE) != 0 ||
+			    !IS_CONNECTION_ERROR(e))
 				break;
 			if ((e = gfs_pio_reconnect(gf))
 			    != GFARM_ERR_NO_ERROR)
@@ -1339,6 +1344,9 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 
 	if (gfs_pio_is_view_set(gf)) {
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
+			/* XXX call reconnect, when failover for writing
+			 *     is supported
+			 */
 			if ((e = gfs_pio_flush(gf)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfs_pio_flush() failed: %s",
