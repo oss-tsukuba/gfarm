@@ -22,6 +22,7 @@ gfarm_error_t gfm_server_close_write_v2_4(struct peer *, int, int, int *);
 gfarm_error_t gfm_server_generation_updated(struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type(struct peer *, int, int);
 gfarm_error_t gfm_server_verify_type_not(struct peer *, int, int);
+gfarm_error_t gfm_server_revoke_gfsd_access(struct peer *, int, int);
 gfarm_error_t gfm_server_fstat(struct peer *, int, int);
 gfarm_error_t gfm_server_fgetattrplus(struct peer *, int, int);
 gfarm_error_t gfm_server_futimes(struct peer *, int, int);

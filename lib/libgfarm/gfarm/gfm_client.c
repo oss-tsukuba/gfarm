@@ -1619,6 +1619,20 @@ gfm_client_verify_type_not_result(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
+gfm_client_revoke_gfsd_access_request(struct gfm_connection *gfm_server,
+	gfarm_int32_t fd)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_REVOKE_GFSD_ACCESS,
+	    "i", fd));
+}
+
+gfarm_error_t
+gfm_client_revoke_gfsd_access_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
 gfm_client_bequeath_fd_request(struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_BEQUEATH_FD, ""));

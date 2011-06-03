@@ -508,54 +508,13 @@ connect_and_open_with_reconnection(GFS_File gf, char *host, gfarm_int32_t port)
 	return (e);
 }
 
-static double gfs_pio_set_view_section_time;
-
-gfarm_error_t
-gfs_pio_internal_set_view_section(GFS_File gf, char *host)
+static gfarm_error_t
+schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 {
-	struct gfs_file_section_context *vc;
-	gfarm_error_t e;
-	gfarm_timerval_t t1, t2;
-	int host_assigned = 0;
-	gfarm_int32_t port;
-	int sleep_interval = 1, sleep_max_interval = 512;
 	struct timeval expiration_time;
-
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
-
-	e = gfs_pio_set_view_default(gf);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001356,
-			"gfs_pio_set_view_default() failed: %s",
-			gfarm_error_string(e));
-		goto finish;
-	}
-
-	if (host != NULL) { /* this is slow, but not usually used */
-		struct gfarm_host_info hinfo;
-
-		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
-		    &hinfo);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001357,
-				"gfm_host_info_get_by_name_alias() failed: %s",
-				gfarm_error_string(e));
-			goto finish;
-		}
-		port = hinfo.port;
-		gfarm_host_info_free(&hinfo);
-	}
-
-	GFARM_MALLOC(vc);
-	if (vc == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_1001358,
-			"allocation of file section context failed: %s",
-			gfarm_error_string(e));
-		goto finish;
-	}
-	gf->view_context = vc;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int host_assigned = 0;
+	int sleep_interval = 1, sleep_max_interval = 512;
 
 	gettimeofday(&expiration_time, NULL);
 	expiration_time.tv_sec += gfarm_no_file_system_node_timeout;
@@ -607,8 +566,56 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		}
 		break;
 	}
+	return (e);
+}
 
-	if (e == GFARM_ERR_NO_ERROR) {
+static double gfs_pio_set_view_section_time;
+
+gfarm_error_t
+gfs_pio_internal_set_view_section(GFS_File gf, char *host)
+{
+	struct gfs_file_section_context *vc;
+	gfarm_error_t e;
+	gfarm_timerval_t t1, t2;
+	gfarm_int32_t port = 0;
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	e = gfs_pio_set_view_default(gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001356,
+			"gfs_pio_set_view_default() failed: %s",
+			gfarm_error_string(e));
+		goto finish;
+	}
+
+	if (host != NULL) { /* this is slow, but not usually used */
+		struct gfarm_host_info hinfo;
+
+		e = gfm_host_info_get_by_name_alias(gf->gfm_server, host,
+		    &hinfo);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001357,
+				"gfm_host_info_get_by_name_alias() failed: %s",
+				gfarm_error_string(e));
+			goto finish;
+		}
+		port = hinfo.port;
+		gfarm_host_info_free(&hinfo);
+	}
+
+	GFARM_MALLOC(vc);
+	if (vc == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_1001358,
+			"allocation of file section context failed: %s",
+			gfarm_error_string(e));
+		goto finish;
+	}
+	gf->view_context = vc;
+
+	if ((e = schedule_file_loop(gf, host, port)) == GFARM_ERR_NO_ERROR) {
 		gf->ops = &gfs_pio_view_section_ops;
 		gf->p = gf->length = 0;
 		gf->io_offset = gf->offset = 0;
@@ -642,6 +649,60 @@ finish:
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_set_view_section_time
 		    += gfarm_timerval_sub(&t2, &t1));
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_pio_reconnect(GFS_File gf)
+{
+	gfarm_error_t e;
+	char *host;
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *nsc, *sc = vc->storage_context;
+
+	if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
+	    (gf->mode & GFS_FILE_MODE_WRITE) != 0) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	if ((e = gfm_client_revoke_gfsd_access_request(gf->gfm_server, gf->fd))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfm_client_revoke_gfsd_access_result(gf->gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	host = strdup(gfs_client_hostname(sc));
+	if (host == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	gfarm_schedule_host_cache_purge(sc);
+	if ((e = schedule_file_loop(gf, NULL, 0)) != GFARM_ERR_NO_ERROR)
+		goto end;
+	vc = gf->view_context;
+	nsc = vc->storage_context;
+	if (strcmp(host, gfs_client_hostname(nsc)) == 0) {
+		e = GFARM_ERR_INVALID_FILE_REPLICA;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	}
+	gfs_client_connection_free(sc);
+	gf->error = GFARM_ERR_NO_ERROR;
+end:
+	free(host);
 
 	return (e);
 }

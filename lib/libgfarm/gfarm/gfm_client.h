@@ -171,6 +171,9 @@ gfarm_error_t gfm_client_verify_type_result(struct gfm_connection *);
 gfarm_error_t gfm_client_verify_type_not_request(struct gfm_connection *,
 	gfarm_int32_t);
 gfarm_error_t gfm_client_verify_type_not_result(struct gfm_connection *);
+gfarm_error_t gfm_client_revoke_gfsd_access_request(struct gfm_connection *,
+	gfarm_int32_t);
+gfarm_error_t gfm_client_revoke_gfsd_access_result(struct gfm_connection *);
 gfarm_error_t gfm_client_bequeath_fd_request(struct gfm_connection *);
 gfarm_error_t gfm_client_bequeath_fd_result(struct gfm_connection *);
 gfarm_error_t gfm_client_inherit_fd_request(struct gfm_connection *,

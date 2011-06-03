@@ -419,9 +419,6 @@ search_idle_network_list_add(struct sockaddr *addr,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t gfarm_schedule_host_cache_clear_auth(
-	struct gfs_connection *);
-
 static gfarm_error_t
 search_idle_host_state_initialize(struct gfm_connection *gfm_server)
 {
@@ -440,7 +437,7 @@ search_idle_host_state_initialize(struct gfm_connection *gfm_server)
 
 	/* when a connection error happens, make the host unavailable. */
 	gfs_client_add_hook_for_connection_error(
-		gfarm_schedule_host_cache_clear_auth);
+		gfarm_schedule_host_cache_purge);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -547,8 +544,8 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 }
 
 /* forget that this user was authenticated by the specified host */
-static gfarm_error_t
-gfarm_schedule_host_cache_clear_auth(struct gfs_connection *gfs_server)
+gfarm_error_t
+gfarm_schedule_host_cache_purge(struct gfs_connection *gfs_server)
 {
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
@@ -564,7 +561,7 @@ gfarm_schedule_host_cache_clear_auth(struct gfs_connection *gfs_server)
 	    &entry);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001434,
-		    "gfarm_schedule_host_cache_clear_auth: "
+		    "gfarm_schedule_host_cache_purge: "
 		    "connection is not cached: %s",
 		    gfarm_error_string(e));
 		return (e);

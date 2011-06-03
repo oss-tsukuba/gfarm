@@ -100,6 +100,8 @@ gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 	gfarm_int32_t, struct gfarm_timespec *);
 gfarm_error_t process_cksum_get(struct process *, struct peer *, int,
 	char **, size_t *, char **, gfarm_int32_t *);
+gfarm_error_t process_get_file_opening(struct process *, int,
+	struct file_opening **);
 
 struct peer;
 gfarm_error_t gfm_server_process_alloc(struct peer *, int, int);

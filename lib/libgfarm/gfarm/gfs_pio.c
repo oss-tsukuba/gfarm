@@ -25,6 +25,7 @@
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "gfp_xdr.h"
 
 #include "config.h" /* XXX FIXME this shouldn't be needed here */
 
@@ -644,8 +645,14 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 		if ((e = gfs_pio_fillbuf(gf,
 		    ((gf->open_flags & GFARM_FILE_UNBUFFERED) &&
 		    size < GFS_FILE_BUFSIZE) ? size : GFS_FILE_BUFSIZE))
-		    != GFARM_ERR_NO_ERROR)
-			break;
+		    != GFARM_ERR_NO_ERROR) {
+			if (!IS_CONNECTION_ERROR(e))
+				break;
+			if ((e = gfs_pio_reconnect(gf))
+			    != GFARM_ERR_NO_ERROR)
+				break;
+			continue;
+		}
 		if (gf->error != GFARM_ERR_NO_ERROR) /* EOF or error */
 			break;
 		length = gf->length - gf->p;
@@ -1331,10 +1338,30 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 	}
 
 	if (gfs_pio_is_view_set(gf)) {
-		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
-			gfs_pio_flush(gf);
-		e = (*gf->ops->view_fstat)(gf, st);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0) {
+			if ((e = gfs_pio_flush(gf)) != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_flush() failed: %s",
+				    gfarm_error_string(e));
+			} else if ((e = (*gf->ops->view_fstat)(gf, st))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "view_fstat() failed: %s",
+				    gfarm_error_string(e));
+			}
+		} else if ((e = (*gf->ops->view_fstat)(gf, st))
+		     != GFARM_ERR_NO_ERROR && IS_CONNECTION_ERROR(e)) {
+			if ((e = gfs_pio_reconnect(gf)) != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfs_pio_reconnect() failed: %s",
+				    gfarm_error_string(e));
+			} else if ((e = (*gf->ops->view_fstat)(gf, st))
+				    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "view_stat() failed: %s",
+				    gfarm_error_string(e));
+			}
+		} else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001345,
 				"view_fstat() failed: %s",
 				gfarm_error_string(e));

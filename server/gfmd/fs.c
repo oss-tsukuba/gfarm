@@ -652,6 +652,47 @@ gfm_server_verify_type_not(struct peer *peer, int from_client, int skip)
 		peer, from_client, skip, 0, diag));
 }
 
+gfarm_error_t
+gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_int32_t fd;
+	struct file_opening *fo;
+	struct process *process;
+	static const char diag[] = "GFM_PROTO_REVOKE_FD_HOST";
+
+	if ((e = gfm_server_get_request(peer, diag, "i", &fd))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "revoke_fd_host failed : %s", gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+	if (!from_client) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s", gfarm_error_string(e));
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s", gfarm_error_string(e));
+	} else if ((e = process_get_file_opening(process, fd, &fo))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s", gfarm_error_string(e));
+	} else if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY) {
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s", gfarm_error_string(e));
+	} else if (fo->opener) {
+		fo->u.f.spool_opener = NULL;
+		fo->u.f.spool_host = NULL;
+	}
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
 
 static gfarm_error_t
 inode_get_stat(struct inode *inode, struct gfs_stat *st)

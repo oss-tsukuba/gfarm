@@ -263,6 +263,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_INHERIT_FD:
 		e = gfm_server_inherit_fd(peer, from_client, skip);
 		break;
+	case GFM_PROTO_REVOKE_GFSD_ACCESS:
+		e = gfm_server_revoke_gfsd_access(peer, from_client, skip);
+		break;
 	case GFM_PROTO_FSTAT:
 		e = gfm_server_fstat(peer, from_client, skip);
 		break;

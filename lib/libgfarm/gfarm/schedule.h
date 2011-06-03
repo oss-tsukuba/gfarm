@@ -13,11 +13,13 @@
  */
 
 struct gfm_connection;
+struct gfs_connection;
 struct gfarm_host_sched_info;
 struct gfs_file; /* GFS_File */
 
 gfarm_error_t gfarm_schedule_select_host(struct gfm_connection *,
 	int, struct gfarm_host_sched_info *, int, char **, int *);
+gfarm_error_t gfarm_schedule_host_cache_purge(struct gfs_connection *);
 void gfarm_schedule_host_cache_reset(struct gfm_connection *, int,
 	struct gfarm_host_sched_info *);
 /* XXX - defined in gfs_pio_section.c */
