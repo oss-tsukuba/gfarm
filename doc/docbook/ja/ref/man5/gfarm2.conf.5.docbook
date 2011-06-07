@@ -1178,40 +1178,11 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 ポート番号を省略するとデフォルトの601を指定したことになります。
 </para>
 <para>
-この文はgfmd.confにおいてはconfigure時に --enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。gfarm2.confにおいては、常に有効です。
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
 </para>
 <para>例:</para>
 <literallayout>
 	metadb_server_list mdsmaster mdsslave:701
-</literallayout>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><token>synchronous_replication</token> <parameter>有効性</parameter></term>
-<listitem>
-<para>メタデータレプリケーションのタイミングを設定します。
-このオプションがenableの場合、同期レプリケーションが選択され、
-disableの場合、非同期レプリケーションが選択されます。
-デフォルトはenableです。
-</para>
-<para>
-同期レプリケーションはクライアントからのリクエストに対して返信する前に、
-接続中の全てのスレーブgfmdへの更新情報送信と、
-ジャーナルファイルのfdatasyncを完了します。
-</para>
-<para>
-非同期レプリケーションはクライアントからのリクエスト時には、
-ジャーナルファイルのfdatasyncだけを行います。
-一方で、常駐スレッドがジャーナルファイルに保存された更新情報を、
-接続中の全てのスレーブgfmdへ送信します。
-</para>
-<para>
-この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
-</para>
-<para>例:</para>
-<literallayout>
-	synchronous_replication disable
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1225,7 +1196,7 @@ disableの場合、非同期レプリケーションが選択されます。
 デフォルトは 10 です。
 </para>
 <para>
-この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
 <literallayout>
@@ -1242,11 +1213,42 @@ disableの場合、非同期レプリケーションが選択されます。
 デフォルトはenableです。
 </para>
 <para>
-この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
 <literallayout>
 	synchronous_journaling disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_force_slave</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。
+デフォルトはdisableです。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_force_slave enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_slave_max_size</token> <parameter>ノード数</parameter></term>
+<listitem>
+<para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_slave_max_size 40
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1259,7 +1261,7 @@ disableの場合、非同期レプリケーションが選択されます。
 このオプションが指定されていない場合、gfmdは起動しません。
 </para>
 <para>
-この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
 <literallayout>
@@ -1276,7 +1278,7 @@ disableの場合、非同期レプリケーションが選択されます。
 デフォルトは 33554432 (32 MBytes)です。
 </para>
 <para>
-この文はgfmd.confのみで有効です。configure時に--enable-metadata-replicationを指定したときにのみ有効であり、それ以外の場合は無視されます。
+この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
 <literallayout>
@@ -1345,9 +1347,10 @@ disableの場合、非同期レプリケーションが選択されます。
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
-		&nbsp;&nbsp;&lt;synchronous_replication_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
@@ -1438,9 +1441,10 @@ disableの場合、非同期レプリケーションが選択されます。
 	&lt;metadb_server_list_spec&gt; ::=
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
-	&lt;synchronous_replication_statement&gt; ::= "synchronous_replication" &lt;validity&gt;
 	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
 	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
+	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
+	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
 	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
 	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
