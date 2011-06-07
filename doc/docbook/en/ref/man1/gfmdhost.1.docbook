@@ -1,0 +1,223 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfmdhost.1'>
+
+<refentryinfo><date>30 June 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmdhost</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmdhost</refname>
+<refpurpose>Gfarm metadata server host maintenance command</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <arg choice='opt'>-l</arg>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <group choice='req'>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'>-m</arg>
+  </group>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+  <arg choice='opt'>-p <replaceable>port-number</replaceable></arg>
+  <arg choice='opt'>-C <replaceable>cluster-name</replaceable></arg>
+  <arg choice='opt'>-t 
+    <group choice='req'>
+      <arg choice='plain'>m</arg>
+      <arg choice='plain'>c</arg>
+      <arg choice='plain'>s</arg>
+    </group>
+  </arg>
+  <arg choice='req'><replaceable>metadata-server-name</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <arg choice='req'>-d</arg>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+  <arg choice='req'><replaceable>metadata-server-name</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfmdhost</command> is used to display and maintain
+the information about the metadata server redundancy feature.
+<command>gfmdhost</command> has functions which can be selected by
+-l¡¢-c, -m and -d options.
+These functions are mutually exclusive, and only one option
+among them can be specified.
+If none of them is specified, gfmd host name will be listed as
+the default function of this command.
+</para>
+</refsect1>
+
+<refsect1 id='functions'><title>FUNCTIONS</title>
+<para>
+  The functions of <command>gfmdhost</command> command are listed in following.
+</para>
+<variablelist>
+
+  <varlistentry>
+    <term>&lt;none&gt;</term>
+    <listitem>
+      <para>
+        If no function is specified,
+	all the registered gfmd hosts are displayed
+	in alphabetical order.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-l</option></term>
+    <listitem>
+      <para>
+        All registered gfmd hosts are listed with detail information.
+	They are grouped by the clusters and ordered in alphabetical.
+      </para>
+      <para>
+        The detail information is displayed in the following order.
+      </para>
+      <para><option>Connection State (+|-)</option></para>
+      <para>
+        "+" means that the gfmd connected to the master gfmd.
+        "-" means that the gfmd does not connected to the master gfmd.
+	This column for the master gfmd is always "+".
+      </para>
+      <para><option>Server Type (master|slave)</option></para>
+      <para>
+        This represents whether the gfmd is master or slave.
+      </para>
+      <para><option>Replication Type (sync|async|-)</option></para>
+      <para>
+        "sync" means a synchronous replication.
+        "async" means an asynchronous replication.
+	This column for the master is always "-".
+      </para>
+      <para><option>Configration of Master Candidate (c|m|s)</option></para>
+      <para>
+        "m" means a default master gfmd, "c" means a master candidate one,
+	and "s" means a gfmd as slave only.
+      </para>
+      <para><option>Cluster Name</option></para>
+      <para>
+        A cluster name where the gfmd belongs to.
+        "(empty)" is displayed for the default cluster.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-c</option></term>
+    <listitem>
+      <para>
+        Registers the gfmd host that is specified in the argument.
+	-C, -p, -t can be optionally specified.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-m</option></term>
+    <listitem>
+      <para>
+        Modifies the gfmd host that is specified in the argument.
+	-C, -p, -t can be optionally specified.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-d</option></term>
+    <listitem>
+      <para>
+        Deletes the gfmd host that is specified in the argument.
+	The master gfmd cannot be deleted.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-?</option></term>
+    <listitem>
+      <para>Prints usage.</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+  <varlistentry>
+    <term><option>-C</option> <parameter>cluster-name</parameter></term>
+    <listitem>
+      <para>
+        For -c / -m functions, specifies a cluster name where the gfmd host
+	belongs to.
+	If it is not specified, the gfmd will belong to the default cluster.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-p</option> <parameter>port-number</parameter></term>
+    <listitem>
+      <para>
+        For -c / -m functions, specifies a port number of the gfmd.
+	If it is not specified, 601 as the default port number is used.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>-t {m|c|s}</term>
+    <listitem>
+      <para>
+        For -c / -m functions, specifies a configuration of master candidate.
+	"m" means a default master, "c" means a master candidate and
+	and "s" means a gfmd as slave-only.
+	If it is not specified, "c" is used.
+	The gfmd configured as the default master cannot be changed to
+	a master candidate or slave-only directly.
+	If the gfmd configured as non default master is set to the
+	default master by "-t m", the previous default master changes to
+	a master candidate at same time.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-P</option> <parameter>path</parameter></term>
+    <listitem>
+      <para>
+	This option specifies a pathname or a Gfarm URL to identify
+	a metadata server which will be accessed by this command.
+	If not specified, "/" is used as the default value.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

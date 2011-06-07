@@ -12,6 +12,7 @@ DOCBOOK = \
 	gfkey.1 \
 	gfln.1 \
 	gfls.1 \
+	gfmdhost.1 \
 	gfmkdir.1 \
 	gfmv.1 \
 	gfquota.1 \
