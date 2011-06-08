@@ -98,6 +98,9 @@
 	  出力: i:エラー
 		※ タイプとしてディレクトリを指定した場合、
 			エラーは GFARM_ERR_NOT_A_DIRECTORY
+	GFM_PROTO_REVOKE_GFSD_ACCESS
+	  入力: i:fd
+	  出力: i:エラー
 	GFM_PROTO_BEQUEATH_FD
 	  暗黙の入力: i:current file descriptor
 	  入力: なし
@@ -673,12 +676,42 @@
 	  出力: i:エラー
 
   メタデータ・レプリケーション系 (gfmd channel)
+	GFM_PROTO_SWITCH_GFMD_CHANNEL
+	  入力: なし
+	  出力: i:エラー
+
 	GFM_PROTO_JOURNAL_READY_TO_RECV
 	  入力: l:seqnum
 	  出力: i:エラー
 
 	GFM_PROTO_JOURNAL_SEND
 	  入力: l:from_seqnum, l:to_seqnum, b:journal_records
+	  出力: i:エラー
+
+	GFM_PROTO_METADB_SERVER_GET:
+	  入力: s:hostname
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:1 s:hostname i:port s:clustername i:flags i:tflags
+
+	GFM_PROTO_METADB_SERVER_GET_ALL:
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts
+		下記、n_hosts回の繰り返し
+		s:hostname i:port s:clustername i:flags i:tflags
+
+	GFM_PROTO_METADB_SERVER_SET:
+	  入力: s:hostname i:port s:clustername i:flags
+	  出力: i:エラー
+
+	GFM_PROTO_METADB_SERVER_MODIFY:
+	  入力: s:hostname i:port s:clustername i:flags
+	  出力: i:エラー
+
+	GFM_PROTO_METADB_SERVER_REMOVE:
+	  入力: s:hostname
 	  出力: i:エラー
 
 ------------------------------------------------------------------------
