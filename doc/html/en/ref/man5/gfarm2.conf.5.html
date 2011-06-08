@@ -1673,7 +1673,7 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->When "enabled" is specified, Gfarm outputs the profile information.</P
+>When "enable" is specified, Gfarm outputs the profile information.</P
 ><P
 >Example:</P
 ><P
@@ -1697,42 +1697,12 @@ CLASS="PARAMETER"
 The master gfmd is specified for the head. The slave gfmds are specified from the second.
 If port is not specified, port will be 601 which is the default value.</P
 ><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. This parameter is always available in gfarm2.conf.</P
+>This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.</P
 ><P
 >Example:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	metadb_server_list&nbsp;mdsmaster&nbsp;mdsslave:701</P
-></DD
-><DT
-><SPAN
-CLASS="TOKEN"
->synchronous_replication</SPAN
-> <CODE
-CLASS="PARAMETER"
->validity</CODE
-></DT
-><DD
-><P
->This parameter specifies the timing of the metadata replication.
-When "enable" is specified, the synchronous replication is selected.
-When "disable" is specified, the asynchronous replication is selected.
-The default is "enable".</P
-><P
->The synchronous replication completes both sending update information to
-all slave gfmds connected and calling fdatasync against the journal file.</P
-><P
->The asynchronous replication completes only calling fdatasync against the jounral
-when the gfmd recieves the client requests.
-On the other side, the resident thread sends update information
-stored in the journal file to the slaves connected.</P
-><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.</P
-><P
->Example:</P
-><P
-CLASS="LITERALLAYOUT"
->	synchronous_replication&nbsp;disable</P
 ></DD
 ><DT
 ><SPAN
@@ -1751,7 +1721,7 @@ The replication process in the master gfmd for the disconnected slave gfmd stops
 the slave gfmd connects.
 The default is 10.</P
 ><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.</P
+>This parameter is only available in gfmd.conf.</P
 ><P
 >Example:</P
 ><P
@@ -1774,12 +1744,53 @@ The timing of calling fdatasync is after writing the records from transaction-be
 to transaction-end in one transaction.
 The default is "enable".</P
 ><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.</P
+>This parameter is only available in gfmd.conf.</P
 ><P
 >Example:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	synchronous_journaling&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_force_slave</SPAN
+> <CODE
+CLASS="PARAMETER"
+>validity</CODE
+></DT
+><DD
+><P
+>When "enable" is specified, even if the gfmd is set to default master,
+it run as slave gfmd forcedly.
+The default is "disable".</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_force_slave&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_slave_max_size</SPAN
+> <CODE
+CLASS="PARAMETER"
+>number</CODE
+></DT
+><DD
+><P
+>This parameter specifies the maximum number of slave gfmds.
+The default is "32".</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_slave_max_size&nbsp;40</P
 ></DD
 ><DT
 ><SPAN
@@ -1795,7 +1806,7 @@ CLASS="PARAMETER"
 The value of this parameter is specified at config-gfarm execution .
 When this parameter is not specified, the gfmd does not start.</P
 ><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.</P
+>This parameter is only available in gfmd.conf.</P
 ><P
 >Example:</P
 ><P
@@ -1816,7 +1827,7 @@ CLASS="PARAMETER"
 Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
 The default is 33554432 (32 MBytes).</P
 ><P
->This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.</P
+>This parameter is only available in gfmd.conf.</P
 ><P
 >Example:</P
 ><P
@@ -1838,156 +1849,158 @@ NAME="GRAMMAR"
 notation.</P
 ><P
 CLASS="LITERALLAYOUT"
->	&lt;statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;&lt;spool_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_dbq_size_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_server_host_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_server_port_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_user_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_password_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;auth_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;sockopt_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;known_network_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;admin_user_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;local_user_map_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;local_group_map_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;log_level_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;profile_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;synchronous_replication_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;<br>
-	&lt;spool_statement&gt;&nbsp;::=&nbsp;"spool"&nbsp;&lt;pathname&gt;<br>
-	&lt;spool_server_listen_address_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"spool_server_listen_address"&nbsp;&lt;ipv4_address&gt;<br>
-	&lt;spool_server_cred_type_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"spool_server_cred_type"&nbsp;&lt;cred_type&gt;<br>
-	&lt;spool_server_cred_service_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"spool_server_cred_service"&nbsp;&lt;cred_service&gt;<br>
-	&lt;spool_server_cred_name_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"spool_server_cred_name"&nbsp;&lt;cred_name&gt;<br>
-	&lt;metadb_server_host_statement&gt;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&lt;hostname&gt;<br>
-	&lt;metadb_server_port_statement&gt;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&lt;portnumber&gt;<br>
-	&lt;metadb_server_cred_type_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_cred_type"&nbsp;&lt;cred_type&gt;<br>
-	&lt;metadb_server_cred_service_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_cred_service"&nbsp;&lt;cred_service&gt;<br>
-	&lt;metadb_server_cred_name_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_cred_name"&nbsp;&lt;cred_name&gt;<br>
-	&lt;metadb_server_stack_size_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_stack_size"&nbsp;&lt;number&gt;<br>
-	&lt;metadb_server_thread_pool_size_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_thread_pool_size"&nbsp;&lt;number&gt;<br>
-	&lt;metadb_server_job_queue_length_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_job_queue_length"&nbsp;&lt;number&gt;<br>
-	&lt;metadb_server_heartbeat_interval_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_heartbeat_interval"&nbsp;&lt;number&gt;<br>
-	&lt;metadb_server_dbq_size_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"metadb_server_dbq_size"&nbsp;&lt;number&gt;<br>
-	&lt;ldap_server_host_statement&gt;&nbsp;::=&nbsp;"ldap_server_host"&nbsp;&lt;hostname&gt;<br>
-	&lt;ldap_server_port_statement&gt;&nbsp;::=&nbsp;"ldap_server_port"&nbsp;&lt;portnumber&gt;<br>
-	&lt;ldap_base_dn_statement&gt;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&lt;string&gt;<br>
-	&lt;ldap_bind_dn_statement&gt;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&lt;string&gt;<br>
-	&lt;ldap_bind_password_statement&gt;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&lt;string&gt;<br>
-	&lt;postgresql_server_host_statement&gt;&nbsp;::=&nbsp;"postgresql_server_host"&nbsp;&lt;hostname&gt;<br>
-	&lt;postgresql_server_port_statement&gt;&nbsp;::=&nbsp;"postgresql_server_port"&nbsp;&lt;portnumber&gt;<br>
-	&lt;postgresql_dbname_statement&gt;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&lt;string&gt;<br>
-	&lt;postgresql_user_statement&gt;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&lt;string&gt;<br>
-	&lt;postgresql_password_statement&gt;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&lt;string&gt;<br>
-	&lt;postgresql_conninfo_statement&gt;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&lt;string&gt;<br>
-	&lt;auth_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"auth"&nbsp;&lt;validity&gt;&nbsp;&lt;auth_method&gt;&nbsp;&lt;hostspec&gt;<br>
-	&lt;auth_command&gt;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&lt;auth_method&gt;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
-	&lt;sockopt_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"sockopt"&nbsp;&lt;socket_option&gt;[=&lt;number&gt;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&lt;hostspec&gt;]<br>
-	&lt;socket_option&gt;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
+>	&#60;statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;&#60;spool_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_host_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_port_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_job_queue_length_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_dbq_size_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;ldap_server_host_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;ldap_server_port_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;ldap_bind_password_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_server_host_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_server_port_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_user_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_password_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;auth_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;sockopt_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;known_network_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;admin_user_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;local_user_map_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;local_group_map_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;simultaneous_replication_receivers&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;attr_cache_limit_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;log_level_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;profile_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_list_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;synchronous_journaling_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_journal_max_size_statement&#62;<br>
+	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_host_statement&#62;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;metadb_server_port_statement&#62;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_stack_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_thread_pool_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_job_queue_length_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_job_queue_length"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_heartbeat_interval"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_dbq_size_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"metadb_server_dbq_size"&nbsp;&#60;number&#62;<br>
+	&#60;ldap_server_host_statement&#62;&nbsp;::=&nbsp;"ldap_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;ldap_server_port_statement&#62;&nbsp;::=&nbsp;"ldap_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_server_host_statement&#62;&nbsp;::=&nbsp;"postgresql_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_server_port_statement&#62;&nbsp;::=&nbsp;"postgresql_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
+	&#60;auth_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
+	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
+	&#60;sockopt_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
 		&nbsp;&nbsp;"tcp_nodelay"<br>
-	&lt;known_network_statement&gt;&nbsp;::=&nbsp;"known_network"&nbsp;&lt;hostspec&gt;<br>
-	&lt;admin_user_statement&gt;&nbsp;::=&nbsp;"admin_user"&nbsp;&lt;string&gt;<br>
-	&lt;admin_user_gsi_dn_statement&gt;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&lt;string&gt;<br>
-	&lt;local_user_map_statement&gt;&nbsp;::=&nbsp;"local_user_map"&nbsp;&lt;local_user_and_group_map_spec&gt;<br>
-	&lt;local_group_map_statement&gt;&nbsp;::=&nbsp;"local_group_map"&nbsp;&lt;local_user_and_group_map_spec&gt;<br>
-	&lt;local_user_and_group_map_spec&gt;&nbsp;::=<br>
-		&lt;pathname&gt;&nbsp;|<br>
-		&lt;pathname&gt;&nbsp;&lt;hostname&gt;|<br>
-		&lt;pathname&gt;&nbsp;&lt;hostname&gt;&nbsp;":"&nbsp;&lt;portnumber&gt;<br>
-	&lt;schedule_cache_timeout_statement&gt;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&lt;number&gt;<br>
-	&lt;schedule_idle_load_thresh_statement&gt;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&lt;load&gt;<br>
-	&lt;schedule_busy_load_thresh_statement&gt;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&lt;load&gt;<br>
-	&lt;schedule_virtual_load_statement&gt;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&lt;load&gt;<br>
-	&lt;minimum_free_disk_space_statement&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;"minimum_free_disk_space"&nbsp;&lt;size&gt;<br>
-	&lt;simultaneous_replication_receivers&gt;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&lt;number&gt;<br>
-	&lt;gfsd_connection_cache_statement&gt;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&lt;number&gt;<br>
-	&lt;attr_cache_limit_statement&gt;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&lt;number&gt;<br>
-	&lt;attr_cache_timeout_statement&gt;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&lt;number&gt;<br>
-	&lt;log_level_statement&gt;&nbsp;::=&nbsp;"log_level"&nbsp;&lt;log_priority&gt;<br>
-	&lt;log_message_verbose_level_statement&gt;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&lt;number&gt;<br>
-	&lt;no_file_system_node_timeout_statement&gt;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&lt;number&gt;<br>
-	&lt;gfmd_reconnection_timeout_statement&gt;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&lt;number&gt;<br>
-	&lt;profile_statement&gt;&nbsp;::=&nbsp;"profile"&nbsp;&lt;validity&gt;<br>
-	&lt;metadb_server_list_statement&gt;&nbsp;::=&nbsp;"metadb_server_list"&nbsp;&lt;metadb_server_list_spec&gt;<br>
-	&lt;metadb_server_list_spec&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;&lt;hostname_port_spec&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;hostname_port_spec&gt;&nbsp;&lt;metadb_server_list_spec&gt;<br>
-	&lt;synchronous_replication_statement&gt;&nbsp;::=&nbsp;"synchronous_replication"&nbsp;&lt;validity&gt;<br>
-	&lt;synchronous_replication_timeout_statement&gt;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&lt;number&gt;<br>
-	&lt;synchronous_journaling_statement&gt;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&lt;validity&gt;<br>
-	&lt;metadb_journal_dir_statement&gt;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&lt;pathname&gt;<br>
-	&lt;metadb_journal_max_size_statement&gt;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&lt;number&gt;<br>
-	&lt;hostspec&gt;&nbsp;::=&nbsp;&lt;ipv4_address&gt;&nbsp;|&nbsp;&lt;ipv4_address&gt;&nbsp;"/"&nbsp;&lt;address_mask&gt;&nbsp;|<br>
-		&nbsp;&nbsp;&lt;hostname&gt;&nbsp;|&nbsp;"."&nbsp;&lt;domain_name&gt;&nbsp;|&nbsp;"*"<br>
-	&lt;pathname&gt;&nbsp;::=&nbsp;&lt;pathname_character&gt;&nbsp;&lt;pathname_character&gt;*<br>
-	&lt;pathname_character&gt;&nbsp;::=&nbsp;&lt;hostname_character&gt;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
-	&lt;hostname_port_spec&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;&lt;hostname&gt;|<br>
-		&nbsp;&nbsp;&lt;hostname&gt;&nbsp;":"&nbsp;&lt;portnumber&gt;<br>
-	&lt;hostname&gt;&nbsp;::=&nbsp;&lt;hostname_character&gt;&nbsp;&lt;hostname_character&gt;*<br>
-	&lt;hostname_character&gt;&nbsp;::=&nbsp;&lt;alphabet&gt;&nbsp;|&nbsp;&lt;digit&gt;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
-	&lt;portnumber&gt;&nbsp;::=&nbsp;&lt;number&gt;<br>
-	&lt;size&gt;&nbsp;::=&nbsp;&lt;number&gt;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
-	&lt;number&gt;&nbsp;::=&nbsp;&lt;digit&gt;&nbsp;[&lt;digit&gt;*]<br>
-	&lt;digit&gt;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
-	&lt;string&gt;&nbsp;::=&nbsp;"""&nbsp;&lt;double_quoted_character&gt;*&nbsp;"""<br>
-	&lt;double_quoted_character&gt;&nbsp;::=<br>
-		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt;&nbsp;|<br>
+	&#60;known_network_statement&#62;&nbsp;::=&nbsp;"known_network"&nbsp;&#60;hostspec&#62;<br>
+	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
+	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
+	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
+	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
+	&#60;local_user_and_group_map_spec&#62;&nbsp;::=<br>
+		&#60;pathname&#62;&nbsp;|<br>
+		&#60;pathname&#62;&nbsp;&#60;hostname&#62;|<br>
+		&#60;pathname&#62;&nbsp;&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;"minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;simultaneous_replication_receivers&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
+	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
+	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
+	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;profile_statement&#62;&nbsp;::=&nbsp;"profile"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_list_statement&#62;&nbsp;::=&nbsp;"metadb_server_list"&nbsp;&#60;metadb_server_list_spec&#62;<br>
+	&#60;metadb_server_list_spec&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;&#60;hostname_port_spec&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;hostname_port_spec&#62;&nbsp;&#60;metadb_server_list_spec&#62;<br>
+	&#60;synchronous_replication_timeout_statement&#62;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;synchronous_journaling_statement&#62;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_force_slave_statement&#62;&nbsp;::=&nbsp;"metadb_server_force_slave"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_max_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
+	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>
+	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
+	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
+	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
+	&#60;hostname_port_spec&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;&#60;hostname&#62;|<br>
+		&nbsp;&nbsp;&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
+	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
+	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
+	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
+	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
+	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
+	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
+	&#60;double_quoted_character&#62;&nbsp;::=<br>
+		&nbsp;&nbsp;&#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
 		&nbsp;&nbsp;"\\"&nbsp;|&nbsp;"\""<br>
-	&lt;validity&gt;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
-	&lt;log_priority&gt;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
 		&nbsp;&nbsp;"notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"</P
 ></DIV
 ><DIV

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 3月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "08 6月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -827,7 +827,7 @@ For example,
 .fi
 .TP
 \fBprofile \fIvalidity\fB\fR
-When "enabled" is specified, Gfarm outputs the profile information.
+When "enable" is specified, Gfarm outputs the profile information.
 
 Example:
 
@@ -840,34 +840,12 @@ This parameter specifies connection destinations of redundant metadata servers d
 The master gfmd is specified for the head. The slave gfmds are specified from the second.
 If port is not specified, port will be 601 which is the default value.
 
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. This parameter is always available in gfarm2.conf.
+This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 
 Example:
 
 .nf
 	metadb_server_list mdsmaster mdsslave:701
-.fi
-.TP
-\fBsynchronous_replication \fIvalidity\fB\fR
-This parameter specifies the timing of the metadata replication.
-When "enable" is specified, the synchronous replication is selected.
-When "disable" is specified, the asynchronous replication is selected.
-The default is "enable".
-
-The synchronous replication completes both sending update information to
-all slave gfmds connected and calling fdatasync against the journal file.
-
-The asynchronous replication completes only calling fdatasync against the jounral
-when the gfmd recieves the client requests.
-On the other side, the resident thread sends update information
-stored in the journal file to the slaves connected.
-
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
-
-Example:
-
-.nf
-	synchronous_replication disable
 .fi
 .TP
 \fBsynchronous_replication_timeout \fIseconds\fB\fR
@@ -878,7 +856,7 @@ The replication process in the master gfmd for the disconnected slave gfmd stops
 the slave gfmd connects.
 The default is 10.
 
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+This parameter is only available in gfmd.conf.
 
 Example:
 
@@ -893,7 +871,7 @@ The timing of calling fdatasync is after writing the records from transaction-be
 to transaction-end in one transaction.
 The default is "enable".
 
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+This parameter is only available in gfmd.conf.
 
 Example:
 
@@ -901,12 +879,37 @@ Example:
 	synchronous_journaling disable
 .fi
 .TP
+\fBmetadb_server_force_slave \fIvalidity\fB\fR
+When "enable" is specified, even if the gfmd is set to default master,
+it run as slave gfmd forcedly.
+The default is "disable".
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	metadb_server_force_slave enable
+.fi
+.TP
+\fBmetadb_server_slave_max_size \fInumber\fB\fR
+This parameter specifies the maximum number of slave gfmds.
+The default is "32".
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	metadb_server_slave_max_size 40
+.fi
+.TP
 \fBmetadb_journal_dir \fIdirectory\fB\fR
 This parameter specifies the directory for the journal file.
 The value of this parameter is specified at config-gfarm execution .
 When this parameter is not specified, the gfmd does not start.
 
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+This parameter is only available in gfmd.conf.
 
 Example:
 
@@ -919,7 +922,7 @@ This parameter specifies the max size of the journal file in bytes.
 Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
 The default is 33554432 (32 MBytes).
 
-This parameter is only available in gfmd.conf only when the configuration is done with --enable-metadata-replication. In other cases, this parameter is ingored.
+This parameter is only available in gfmd.conf.
 
 Example:
 
@@ -979,9 +982,10 @@ notation.
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
-		\~\~<synchronous_replication_statement> |
 		\~\~<synchronous_replication_timeout_statement> |
 		\~\~<synchronous_journaling_statement> |
+		\~\~<metadb_server_force_slave_statement> |
+		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement>
 	<spool_statement> ::= "spool" <pathname>
@@ -1058,9 +1062,10 @@ notation.
 	<metadb_server_list_spec> ::=
 		\~\~<hostname_port_spec> |
 		\~\~<hostname_port_spec> <metadb_server_list_spec>
-	<synchronous_replication_statement> ::= "synchronous_replication" <validity>
 	<synchronous_replication_timeout_statement> ::= "synchronous_replication_timeout" <number>
 	<synchronous_journaling_statement> ::= "synchronous_journaling" <validity>
+	<metadb_server_force_slave_statement> ::= "metadb_server_force_slave" <validity>
+	<metadb_server_slave_max_size_statement> ::= "metadb_server_slave_max_size" <number>
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
