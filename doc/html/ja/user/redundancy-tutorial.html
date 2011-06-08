@@ -13,6 +13,9 @@
 <H1>メタデータ冗長化 - チュートリアル</H1>
 <A href="../../en/user/redundancy-tutorial.html">English</A> | 日本語 
 
+<BR><BR>
+この文書では、メタデータサーバを1:1構成で冗長化する方法を説明します。
+<BR>
 <H2>1. インストール</H2>
 ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
 host-a / host-bのそれぞれにおいて、gfarm_v2のソースコードが配置されたディレクトリで、次のコマンドを実行します。
@@ -21,6 +24,7 @@ host-a, host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ ./configure --enable-metadata-replication
 </PRE></TD></TR></TBODY></TABLE>
+(--enable-metadata-replicationは廃止予定)<BR>
 <BR>
 rootユーザで、次のコマンドを実行します。
 <BR><BR>
@@ -44,27 +48,37 @@ $ gfkey -f -p 31536000
 マスター / スレーブgfmdの間の認証は、共有鍵認証のみサポートしています。
 </UL>
 次にメタデータサーバのセットアップを実行します。
-host-a / host-bのそれぞれにおいて、次のコマンドをrootユーザで実行します。
+host-a, host-b において、次のコマンドをrootユーザで実行します。
 <BR><BR>
 host-a, host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm
-# /etc/init.d/gfmd stop
 </PRE></TD></TR></TBODY></TABLE>
 <UL><LI>補足<BR>
 メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
 </UL>
-<BR>
-host-a / host-bのそれぞれにおける/etc/gfmd.confに、次の行を加えます。
+host-bをスレーブとして登録します。
 <BR><BR>
-host-a, host-b:
+host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_list host-a host-b
+$ gfmdhost -c host-b
+$ gfmdhost -l
++ master -     m (empty)      host-a 601
+- slave  sync  c (empty)      host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
-host-aのデータベースをhost-bにコピーします。host-bに存在するジャーナルファイルは削除します。<BR>
+host-b のgfmdを停止します。
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+host-aのデータベースをhost-bにコピーします。host-bにジャーナルファイルが存在する場合は削除します。<BR>
 以下に例として、データベースのコピーとジャーナルファイルの削除を実行するスクリプトを示します。
 なお、このスクリプトはhost-bで実行することを前提としています。
+pg_dumpでデータベースをダンプするときは、そのデータベースに接続しているgfmdを停止する必要はありません。
+pg_dumpで出力されるファイルは内部的に整合性があります。
 <BR><BR>
 host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
@@ -101,27 +115,34 @@ PGPASSWORD=$DST_PASSWORD $createdb -p $DST_PORT -U postgres gfarm
 PGPASSWORD=$DST_PASSWORD $psql -p $DST_PORT -U postgres -d gfarm -f $DUMP_FILE &gt; /dev/null
 rm -f $DUMP_FILE
 </PRE></TD></TR></TBODY></TABLE>
+<BR>
+host-b において、gfmd を起動します。
+rootユーザで、次のコマンドを実行します。
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
 
-<H3>2.2 クライアント</H3>
+<H3>2.2 gfsd および クライアント</H3>
 
-クライアントホストの/etc/gfarm2.confにおいて、metadb_server_host / metadb_server_portをマスターgfmdのホスト / ポートに変更します。また、metadb_server_listを追加します。
+gfsdホストの/etc/gfarm2.conf およびクライアントホストの/etc/gfarm2.conf において、metadb_server_host / metadb_server_portをマスターgfmdのホスト / ポートに変更します。また、metadb_server_listを追加して、メタデータサーバのホスト名一覧を記述します。
 <BR><BR>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 metadb_server_host host-a
 metadb_server_port 601
 metadb_server_list host-a host-b
 </PRE></TD></TR></TBODY></TABLE>
-
-<H2>3. 起動</H2>
-host-a / host-b において、gfmd を起動します。
+<BR>
+gfsd を再起動します。
 rootユーザで、次のコマンドを実行します。
 <BR><BR>
-host-a, host-b:
+各gfsdホスト:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd start
+# /etc/init.d/gfsd restart
 </PRE></TD></TR></TBODY></TABLE>
 
-<H2>4. スレーブgfmdをマスターgfmdに昇格する</H2>
+<H2>3. スレーブgfmdをマスターgfmdに昇格する</H2>
 先にhost-aのgfmdを停止します。
 host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
@@ -144,13 +165,13 @@ host-b:
 # kill -SIGUSR1 &lt;gfmdのプロセスID&gt;
 </PRE></TD></TR></TBODY></TABLE>
 
-<H2>5. 元のマスターgfmdを起動する</H2>
+<H2>4. 元のマスターgfmdを起動する</H2>
 host-aにおいて/etc/gfmd.confを/etc/gfmd-slave.confにコピーします。<BR>
-/etc/gfmd-slave.conf内のmetadb_server_listを、次のとおりに書き換えます。
+/etc/gfmd-slave.confに次の行を追加します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_list host-b host-a
+metadb_server_force_slave enable
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
 host-aのgfmdをスレーブgfmdとして起動します。
@@ -163,7 +184,8 @@ host-a:
 <UL><LI><FONT COLOR="red">注意</FONT><BR>
 host-aでgfmdを起動した後に、host-bのgfmdのログに"host-a: expired"と出力されていた場合、
 レプリケーションが実行されません。
-host-aのgfmdを停止した上で、host-bのデータベースをhost-aにコピーし、host-aのgfmdを再起動する必要があります。
+このメッセージはhost-bにおけるデータの変更量が、ジャーナルファイルの容量を超えてしまったときに出力されます。
+このメッセージが出力されていた場合、host-aのgfmdを停止した上で、host-bのデータベースをhost-aにコピーし、host-aのgfmdを再起動する必要があります。
 </LI></UL>
 
 <HR>
