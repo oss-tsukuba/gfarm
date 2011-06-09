@@ -659,7 +659,7 @@ gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd;
 	struct file_opening *fo;
 	struct process *process;
-	static const char diag[] = "GFM_PROTO_REVOKE_FD_HOST";
+	static const char diag[] = "GFM_PROTO_REVOKE_GFSD_ACCESS";
 
 	if ((e = gfm_server_get_request(peer, diag, "i", &fd))
 	    != GFARM_ERR_NO_ERROR) {
