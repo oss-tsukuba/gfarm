@@ -63,9 +63,6 @@ Registration of Root users
   - The config-gfarm command internally invokes the backend database
     (either PostgreSQL or OpenLDAP slapd) and gfmd daemon automatically.
 
-(*2)
-  - The config-gfsd command internally invokes gfsd daemon automatically.
-
 Configuration of a Gfarm metadata server (MDS)
 ==============================================
 
