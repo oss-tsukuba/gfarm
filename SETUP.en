@@ -25,13 +25,13 @@ administrators and root users.
 Quick Start
 ===========
 
-Configuration of a Gfarm metadata server (MDS)
+Configuration of a Gfarm metadata server (MDS)  (*1)
  # config-gfarm -A <admin_name>
  # useradd -c "Gfarm gfsd" _gfarmfs
  # su _gfarmfs
  $ gfkey -f -p 31536000
 
-Configuration of a Gfarm filesystem node
+Configuration of a Gfarm filesystem node  (*2)
  # useradd -c "Gfarm gfsd" _gfarmfs
  Copy ~_gfarmfs/.gfarm_shared_key from the MDS
  Copy /etc/gfarm2.conf from the MDS
@@ -55,6 +55,16 @@ Registration of Administrators
 
 Registration of Root users
  $ gfgroup -m gfarmroot user1 user2 ...
+
+(*1)
+  - Please specify an account name of a normal user, who will do the
+    administration operations with the "$" prompt above, as <admin_user>.
+    Note that you must NOT specify "_gfarmmd" and "_gfarmfs" here.
+  - The config-gfarm command internally invokes the backend database
+    (either PostgreSQL or OpenLDAP slapd) and gfmd daemon automatically.
+
+(*2)
+  - The config-gfsd command internally invokes gfsd daemon automatically.
 
 Configuration of a Gfarm metadata server (MDS)
 ==============================================
