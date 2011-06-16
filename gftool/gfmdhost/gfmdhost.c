@@ -220,7 +220,7 @@ do_list(int detail)
 			    (gfarm_metadb_server_is_master_candidate(ms) ?
 				'c' : 's'),
 			    strlen(ms->clustername) == 0 ?
-				"(empty)" : ms->clustername,
+				"(default)" : ms->clustername,
 			    ms->name, ms->port);
 		} else {
 		    printf("%s\n", ms->name);
@@ -370,8 +370,8 @@ main(int argc, char **argv)
 	if (opt_operation != OP_CREATE_ENTRY &&
 	    opt_operation != OP_MODIFY_ENTRY &&
 	    (opt_clustername || opt_port != -1 || opt_def_master != -1)) {
-		fprintf(stderr, "%s: option -%c is only available with "
-		    "-%c or -%c\n", program_name, c,
+		fprintf(stderr, "%s: option -t is only available with "
+		    "-%c or -%c\n", program_name,
 		    OP_CREATE_ENTRY, OP_MODIFY_ENTRY);
 		usage();
 	}
