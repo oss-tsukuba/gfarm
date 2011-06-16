@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfhost</B
-> [-H | -l | -M] [-iLprUv] [-P <TT
+>  [-H | -l | -M] [-iLprUv] [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -67,7 +67,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -c  [-P <TT
+>   -c  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -92,17 +92,12 @@ CLASS="REPLACEABLE"
 ><I
 >ホスト名</I
 ></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->ホスト別名</I
-></TT
->...]</P
+> </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -m  [-P <TT
+>   -m  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -127,17 +122,12 @@ CLASS="REPLACEABLE"
 ><I
 >ホスト名</I
 ></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->ホスト別名</I
-></TT
->...]</P
+> </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -d  [-P <TT
+>   -d  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -152,7 +142,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -R  [-P <TT
+>   -R  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -246,27 +236,6 @@ CLASS="OPTION"
 	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
 	1 CPU だとみなします。
       </P
-><P
->	
-	ホスト名は、一つのコマンドで複数記述できます。この場合、最初に
-	指定した名前が、そのホストの固有識別子として、複製情報の管理に
-	用いられます。残りのホスト名は、そのホストに対する別名として
-	扱われます。
-      </P
-><P
->	あるホストが複数のネットワークインターフェースを持ち、それぞれの
-	インターフェースに別々のホスト名が割り当てられている場合、それら
-	全てのインターフェースのホスト名を、固有識別子あるいは別名として
-	登録してください。
-      </P
-><P
->	また、/etc/hosts ファイルや NIS の hosts データベースに登録された
-	ホスト名が、ドメイン部を含んでないような場合 (/etc/hosts や
-	NIS hosts データベースに FQDN が登録されてないような場合) も、
-	必ずホストの別名登録が必要となります。このような場合、固有識別子
-	としてドメイン名を含むホスト名 (FQDN) を、別名としてドメイン名を
-	含まないホスト名を登録してください。
-      </P
 ></DD
 ><DT
 ><CODE
@@ -280,7 +249,6 @@ CLASS="OPTION"
 	削除できてしまいますが、これを行なうと複製データベースが不整合
 	状態となってしまいますので注意が必要です。
 	
-	ホスト名に指定できるのは  固有識別子のみです。
       </P
 ></DD
 ><DT
@@ -334,7 +302,7 @@ CLASS="COMMAND"
 > に問い合わせて得た情報、
 	すなわちロードアベレージおよび認証手段と、
 	メタデータ・サーバーに問い合わせて得た情報、
-	すなわちアーキテクチャ名、CPU数およびホスト別名を
+	すなわちアーキテクチャ名、CPU数を
 	全て表示します。またアクセスに用いられたホスト名の後に、
 	IP アドレスを括弧で囲って表示します。
       </P
@@ -379,11 +347,6 @@ CLASS="OPTION"
 >	固有識別子として用いられているホスト名を指定し、メタデータ
 	に登録されているホスト情報を変更します。
 	-a オプションおよび -n オプションは、それぞれ既存の値を置き換えます。
-	これに対し、ホストの別名に関しては、追加を意味します。
-	追加ではなく、別名の置き換えや削除を行ないたい場合には、-A オプション
-	を指定してください。この場合、全ての別名を削除してから、(もしあれば)
-	引数で指定した別名を追加します。
-	
       </P
 ></DD
 ><DT
@@ -424,23 +387,10 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-A</CODE
-></DT
-><DD
-><P
->	-m 機能でホスト情報を変更する際に、ホストの別名を
-	追加ではなく置き換えたい場合に、このオプションを指定します。
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
 >-a</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->アーキテクチャ</I
-></TT
+>アーキテクチャ</CODE
 ></DT
 ><DD
 ><P
@@ -457,11 +407,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-D</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ドメイン名</I
-></TT
+>ドメイン名</CODE
 ></DT
 ><DD
 ><P
@@ -491,11 +439,9 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-j</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->並列度</I
-></TT
+>並列度</CODE
 ></DT
 ><DD
 ><P
@@ -522,11 +468,9 @@ CLASS="OPTION"
 ><CODE
 CLASS="OPTION"
 >-n</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->CPU数</I
-></TT
+>CPU数</CODE
 ></DT
 ><DD
 ><P
@@ -538,11 +482,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-p</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->ポート番号</I
-></TT
+>ポート番号</CODE
 ></DT
 ><DD
 ><P
@@ -557,11 +499,9 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->パス名</I
-></TT
+>パス名</CODE
 ></DT
 ><DD
 ><P

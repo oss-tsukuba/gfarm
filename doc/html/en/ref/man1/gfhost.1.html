@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfhost</B
-> [-H | -l | -M] [-iLprUv] [-P <TT
+>  [-H | -l | -M] [-iLprUv] [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -67,7 +67,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -c  [-P <TT
+>   -c  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -92,17 +92,12 @@ CLASS="REPLACEABLE"
 ><I
 >hostname</I
 ></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->host-alias</I
-></TT
->...]</P
+> </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -m  [-P <TT
+>   -m  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -127,17 +122,12 @@ CLASS="REPLACEABLE"
 ><I
 >hostname</I
 ></TT
->  [<TT
-CLASS="REPLACEABLE"
-><I
->host-alias</I
-></TT
->...]</P
+> </P
 ><P
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -d  [-P <TT
+>   -d  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -152,7 +142,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfhost</B
->  -R  [-P <TT
+>   -R  [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -275,21 +265,7 @@ CLASS="COMMAND"
 	You can specifiy multiple hostnames in this function.
 	In that case, the first hostname is treated as the identifier of
 	the host, and the host identifier is used for replication
-	information management. The rest of the hostnames are used as aliases
-	of the host.
-      </P
-><P
->	If a host has multiple network interfaces, and each interface
-	has a unique hostname, all of the hostnames must be registered
-	as either host identifiers or host aliases.
-      </P
-><P
->	If /etc/hosts or the NIS hosts database doesn't contain a DNS domain
-	name part in its hostnames (i.e. these hostnames are not Fully
-	Qualified Domain Names), you must register a host alias.
-	In that case, you must register FQDN (a hostname which contain a
-	domain name part) as the host identifier, and 
-	register names without the domain part as the host alias.
+	information management.
       </P
 ></DD
 ><DT
@@ -304,8 +280,6 @@ CLASS="OPTION"
 	replica catalog can be deleted. But be careful, because
 	such deletions cause inconsistencies of metadata.
 	
-	 Only a host identifier can be used as a hostname
-	  in this function.
       </P
 ></DD
 ><DT
@@ -362,8 +336,7 @@ CLASS="OPTION"
 	The types of information retrieved from gfsd are load average and
 	authentication method.
 	And the types of information retrieved from the metadata server are
-	architecture name, number of CPUs, host identifier,
-	and host aliases (if any).
+	architecture name, number of CPUs and host identifier.
 	IP address will be displayed in parentheses just after the
 	hostname used for the access to <B
 CLASS="COMMAND"
@@ -416,11 +389,6 @@ CLASS="OPTION"
 >	Modifies metadata information of the host, by specifying
 	the host identifier.
 	The -a and -n options overwrite the current value of each option.
-	By contrast, host aliases will be added in this function by default.
-	If you want to replace or delete host aliases, please specify
-	the -A option with this function. In that case, all host aliases
-	will be replaced by specified aliases (if any).
-	
       </P
 ></DD
 ><DT
@@ -462,23 +430,10 @@ CLASS="VARIABLELIST"
 ><DT
 ><CODE
 CLASS="OPTION"
->-A</CODE
-></DT
-><DD
-><P
->	Alter. This option is used with the -m function to replace,
-	rather than add, host aliases. 
-      </P
-></DD
-><DT
-><CODE
-CLASS="OPTION"
 >-a</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->architecture</I
-></TT
+>architecture</CODE
 ></DT
 ><DD
 ><P
@@ -494,11 +449,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-D</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->domain-name</I
-></TT
+>domain-name</CODE
 ></DT
 ><DD
 ><P
@@ -531,11 +484,9 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-j</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->concurrency</I
-></TT
+>concurrency</CODE
 ></DT
 ><DD
 ><P
@@ -562,11 +513,9 @@ CLASS="OPTION"
 ><CODE
 CLASS="OPTION"
 >-n</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->number-of-CPUs</I
-></TT
+>number-of-CPUs</CODE
 ></DT
 ><DD
 ><P
@@ -578,11 +527,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-p</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->port-number</I
-></TT
+>port-number</CODE
 ></DT
 ><DD
 ><P
@@ -597,11 +544,9 @@ CLASS="COMMAND"
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->path</I
-></TT
+>path</CODE
 ></DT
 ><DD
 ><P
