@@ -112,7 +112,7 @@ the default function of this command.
       <para><option>Cluster Name</option></para>
       <para>
         A cluster name where the gfmd belongs to.
-        "(empty)" is displayed for the default cluster.
+        "(default)" is displayed for the default cluster.
       </para>
     </listitem>
   </varlistentry>

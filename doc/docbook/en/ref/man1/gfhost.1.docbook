@@ -39,7 +39,6 @@
     <arg choice='plain'>-p <replaceable>port-number</replaceable></arg>
     <arg choice='opt'  >-n <replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -51,7 +50,6 @@
     <arg choice='opt'>-n <replaceable>number-of-CPUs</replaceable></arg>
     <arg choice='opt'>-A</arg>
     <arg choice='plain'><replaceable>hostname</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>host-alias</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -184,21 +182,7 @@ the default function of <command>gfhost</command>.
 	You can specifiy multiple hostnames in this function.
 	In that case, the first hostname is treated as the identifier of
 	the host, and the host identifier is used for replication
-	information management. The rest of the hostnames are used as aliases
-	of the host.
-      </para>
-      <para>
-	If a host has multiple network interfaces, and each interface
-	has a unique hostname, all of the hostnames must be registered
-	as either host identifiers or host aliases.
-      </para>
-      <para>
-	If /etc/hosts or the NIS hosts database doesn't contain a DNS domain
-	name part in its hostnames (i.e. these hostnames are not Fully
-	Qualified Domain Names), you must register a host alias.
-	In that case, you must register FQDN (a hostname which contain a
-	domain name part) as the host identifier, and 
-	register names without the domain part as the host alias.
+	information management.
       </para>
     </listitem>
   </varlistentry>
@@ -216,8 +200,6 @@ the default function of <command>gfhost</command>.
 	  even. Replication information will be deleted by the -f option.
 	  If one want to leave replication information, but don't want to
 	  make accesss to a host, use "temporary unavailable" flag. -->
-	<!-- XXX Currently --> Only a host identifier can be used as a hostname
-	  in this function.
       </para>
     </listitem>
   </varlistentry>
@@ -266,8 +248,7 @@ the default function of <command>gfhost</command>.
 	The types of information retrieved from gfsd are load average and
 	authentication method.
 	And the types of information retrieved from the metadata server are
-	architecture name, number of CPUs, host identifier,
-	and host aliases (if any).
+	architecture name, number of CPUs and host identifier.
 	IP address will be displayed in parentheses just after the
 	hostname used for the access to <command>gfsd</command>.
       </para>
@@ -312,11 +293,6 @@ the default function of <command>gfhost</command>.
 	Modifies metadata information of the host, by specifying
 	the host identifier.
 	The -a and -n options overwrite the current value of each option.
-	By contrast, host aliases will be added in this function by default.
-	If you want to replace or delete host aliases, please specify
-	the -A option with this function. In that case, all host aliases
-	will be replaced by specified aliases (if any).
-	<!-- XXX FIXME check hostname duplication -->
       </para>
     </listitem>
   </varlistentry>
@@ -344,16 +320,6 @@ the default function of <command>gfhost</command>.
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
-
-  <varlistentry>
-    <term><option>-A</option></term>
-    <listitem>
-      <para>
-	Alter. This option is used with the -m function to replace,
-	rather than add, host aliases. 
-      </para>
-    </listitem>
-  </varlistentry>
 
   <varlistentry>
     <term><option>-a</option> <parameter>architecture</parameter></term>

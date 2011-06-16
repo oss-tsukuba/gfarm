@@ -112,7 +112,7 @@ gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行ないます。
       <para><option>クラスタ名</option></para>
       <para>
         gfmd が属するクラスタ名です。
-        デフォルトのクラスタは "(empty)" と表示されます。
+        デフォルトのクラスタは "(default)" と表示されます。
       </para>
     </listitem>
   </varlistentry>

@@ -39,7 +39,6 @@
     <arg choice='plain'>-p<replaceable>ポート番号</replaceable></arg>
     <arg choice='opt'  >-n<replaceable>CPU数</replaceable></arg>
     <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>ホスト別名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -51,7 +50,6 @@
     <arg choice='opt'>-n<replaceable>CPU数</replaceable></arg>
     <arg choice='opt'>-A</arg>
     <arg choice='plain'><replaceable>ホスト名</replaceable></arg>
-    <arg choice='opt' rep='repeat'><replaceable>ホスト別名</replaceable></arg>
 </cmdsynopsis>
 
 <cmdsynopsis>
@@ -170,27 +168,6 @@
 	オプション -n で、そのホストの CPU 数を指定します。省略した場合には
 	1 CPU だとみなします。
       </para>
-      <para>
-	<!-- XXX FIXME ホスト別名の重複チェック -->
-	ホスト名は、一つのコマンドで複数記述できます。この場合、最初に
-	指定した名前が、そのホストの固有識別子として、複製情報の管理に
-	用いられます。残りのホスト名は、そのホストに対する別名として
-	扱われます。
-      </para>
-      <para>
-	あるホストが複数のネットワークインターフェースを持ち、それぞれの
-	インターフェースに別々のホスト名が割り当てられている場合、それら
-	全てのインターフェースのホスト名を、固有識別子あるいは別名として
-	登録してください。
-      </para>
-      <para>
-	また、/etc/hosts ファイルや NIS の hosts データベースに登録された
-	ホスト名が、ドメイン部を含んでないような場合 (/etc/hosts や
-	NIS hosts データベースに FQDN が登録されてないような場合) も、
-	必ずホストの別名登録が必要となります。このような場合、固有識別子
-	としてドメイン名を含むホスト名 (FQDN) を、別名としてドメイン名を
-	含まないホスト名を登録してください。
-      </para>
     </listitem>
   </varlistentry>
 
@@ -207,7 +184,6 @@
 	  ようにする。このとき、複製情報に関しても削除する。
 	  複製情報を残したいが、実際のアクセスはさせたくない場合には、
 	  一時的な不使用フラグを用いる。-->
-	ホスト名に指定できるのは <!-- XXX 現在のところ --> 固有識別子のみです。
       </para>
     </listitem>
   </varlistentry>
@@ -250,7 +226,7 @@
 	<command>gfsd</command> に問い合わせて得た情報、
 	すなわちロードアベレージおよび認証手段と、
 	メタデータ・サーバーに問い合わせて得た情報、
-	すなわちアーキテクチャ名、CPU数およびホスト別名を
+	すなわちアーキテクチャ名、CPU数を
 	全て表示します。またアクセスに用いられたホスト名の後に、
 	IP アドレスを括弧で囲って表示します。
       </para>
@@ -290,11 +266,6 @@
 	固有識別子として用いられているホスト名を指定し、メタデータ
 	に登録されているホスト情報を変更します。
 	-a オプションおよび -n オプションは、それぞれ既存の値を置き換えます。
-	これに対し、ホストの別名に関しては、追加を意味します。
-	追加ではなく、別名の置き換えや削除を行ないたい場合には、-A オプション
-	を指定してください。この場合、全ての別名を削除してから、(もしあれば)
-	引数で指定した別名を追加します。
-	<!-- XXX FIXME ホスト別名の重複チェック -->
       </para>
     </listitem>
   </varlistentry>
@@ -321,16 +292,6 @@
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
-
-  <varlistentry>
-    <term><option>-A</option></term>
-    <listitem>
-      <para>
-	-m 機能でホスト情報を変更する際に、ホストの別名を
-	追加ではなく置き換えたい場合に、このオプションを指定します。
-      </para>
-    </listitem>
-  </varlistentry>
 
   <varlistentry>
     <term><option>-a</option> <parameter>アーキテクチャ</parameter></term>
