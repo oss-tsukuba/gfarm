@@ -2,8 +2,6 @@
  * $Id$
  */
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 #define GFARM_JOURNAL_FILE_MAGIC		"GfMj"
 #define GFARM_JOURNAL_RECORD_MAGIC		"GfMr"
 #define GFARM_JOURNAL_MAGIC_SIZE		4
@@ -137,5 +135,3 @@ const char *journal_operation_name(enum journal_operation);
 	gflog_error(logid, "seqnum=%llu ope=%s " msg " : %s", \
 		(unsigned long long)seqnum, \
 		journal_operation_name(ope), gfarm_error_string(e))
-
-#endif

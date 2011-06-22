@@ -20,8 +20,6 @@
 #include "lookup.h"
 #include "config.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 char *program_name = "gfmdhost";
 
 struct gfm_connection *gfm_conn = NULL;
@@ -194,7 +192,7 @@ do_list(int detail)
 
 	if ((e = gfm_client_metadb_server_get_all(gfm_conn, &n, &mss))
 	    != GFARM_ERR_NO_ERROR) {
-		return (GFARM_ERR_NO_ERROR);
+		return (e);
 	}
 	if (n == 0)
 		return (GFARM_ERR_NO_ERROR);
@@ -308,12 +306,10 @@ parse_opt_long(char *option, int option_char, char *argument_name)
 	}
 	return (value);
 }
-#endif /* ENABLE_METADATA_REPLICATION */
 
 int
 main(int argc, char **argv)
 {
-#ifdef ENABLE_METADATA_REPLICATION
 	int argc_save = argc;
 	char **argv_save = argv;
 	gfarm_error_t e, e2;
@@ -443,8 +439,8 @@ main(int argc, char **argv)
 	case OP_LIST_DETAIL:
 		if ((e = do_list(opt_operation == OP_LIST_DETAIL))
 		    != GFARM_ERR_NO_ERROR)
-			fprintf(stderr, "%s: %s: %s\n", program_name,
-			    argv[0], gfarm_error_string(e));
+			fprintf(stderr, "%s: %s\n", program_name,
+			    gfarm_error_string(e));
 		break;
 	default:
 		abort();
@@ -458,9 +454,4 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
-#else
-	fprintf(stderr,
-	    "metadata replication is disabled in build configuration.\n");
-	return (EXIT_FAILURE);
-#endif /* ENABLE_METADATA_REPLICATION */
 }

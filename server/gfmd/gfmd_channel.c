@@ -41,8 +41,6 @@
 #include "gfmd_channel.h"
 
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 struct gfmdc_journal_send_closure {
 	struct mdhost *host;
 	void *data;
@@ -965,8 +963,6 @@ gfmdc_alloc_journal_sync_info_closures(void)
 	static const char *diag = "gfmdc_alloc_journal_sync_info_closures";
 
 	if (si->closures) {
-		if (si->nservers == nsvrs)
-			return;
 		for (i = 0; i < si->nservers; ++i) {
 			c = &si->closures[i];
 			gfarm_mutex_destroy(&c->send_mutex, diag,
@@ -1042,5 +1038,3 @@ gfmdc_init(void)
 		    gfarm_metadb_job_queue_length);
 	gfmdc_sync_init();
 }
-
-#endif /* ENABLE_METADATA_REPLICATION */

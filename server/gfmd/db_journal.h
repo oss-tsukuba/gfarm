@@ -2,8 +2,6 @@
  * $Id$
  */
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 struct db_ops;
 extern struct db_ops db_journal_ops;
 struct journal_file_reader;
@@ -33,5 +31,3 @@ void *db_journal_recvq_thread(void *);
 void *db_journal_apply_thread(void *);
 void db_journal_boot_apply(void);
 void db_journal_init(void);
-
-#endif

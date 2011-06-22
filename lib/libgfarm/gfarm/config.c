@@ -726,6 +726,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
+#define GFARM_METADB_REPLICATION_ENABLED_DEFAULT	0
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
 #define GFARM_JOURNAL_SYNC_FILE_DEFAULT		1
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
@@ -755,6 +756,7 @@ int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_metadb_dbq_size = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
+static int metadb_replication_enabled = MISC_DEFAULT;
 static char *journal_dir = NULL;
 static int journal_max_size = MISC_DEFAULT;
 static int journal_sync_file = MISC_DEFAULT;
@@ -866,6 +868,18 @@ void
 gfarm_set_record_atime(int boolean)
 {
 	gfarm_record_atime = boolean;
+}
+
+int
+gfarm_get_metadb_replication_enabled(void)
+{
+	return (metadb_replication_enabled);
+}
+
+void
+gfarm_set_metadb_replication_enabled(int enable)
+{
+	metadb_replication_enabled = enable;
 }
 
 const char *
@@ -2122,6 +2136,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &gfarm_profile);
 
+	} else if (strcmp(s, o = "metadb_replication") == 0) {
+		e = parse_set_misc_enabled(p, &metadb_replication_enabled);
 	} else if (strcmp(s, o = "metadb_journal_dir") == 0) {
 		e = parse_set_var(p, &journal_dir);
 	} else if (strcmp(s, o = "metadb_journal_max_size") == 0) {
@@ -2295,6 +2311,9 @@ gfarm_config_set_default_misc(void)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
 	if (gfarm_profile == MISC_DEFAULT)
 		gfarm_profile = GFARM_PROFILE_DEFAULT;
+	if (metadb_replication_enabled == MISC_DEFAULT)
+		metadb_replication_enabled =
+		    GFARM_METADB_REPLICATION_ENABLED_DEFAULT;
 	if (journal_max_size == MISC_DEFAULT)
 		journal_max_size = GFARM_JOURNAL_MAX_SIZE_DEFAULT;
 	if (journal_sync_file == MISC_DEFAULT)

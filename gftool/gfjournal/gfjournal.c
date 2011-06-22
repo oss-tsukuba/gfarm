@@ -31,8 +31,6 @@
 #include "db_access.h"
 #include "db_journal.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 static char *program_name = "gfjournal";
 static int opt_verbose = 0, opt_record_only = 0;
 static size_t min_reclen = UINT32_MAX, max_reclen, ave_reclen;
@@ -454,12 +452,10 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 
 	return (e);
 }
-#endif /* ENABLE_METADATA_REPLICATION */
 
 int
 main(int argc, char **argv)
 {
-#ifdef ENABLE_METADATA_REPLICATION
 	gfarm_error_t e;
 	int exit_code = EXIT_SUCCESS;
 	int opt_list = 0;
@@ -545,9 +541,4 @@ end:
 	journal_file_close(jf);
 	gflog_terminate();
 	return (exit_code);
-#else
-	fprintf(stderr,
-	    "journal function is disabled in build configuration.\n");
-	return (EXIT_FAILURE);
-#endif /* ENABLE_METADATA_REPLICATION */
 }

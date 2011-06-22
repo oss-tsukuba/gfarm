@@ -46,7 +46,6 @@
 #include "thrsubr.h"
 #include "journal_file.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
 
 struct journal_file;
 struct journal_file_writer;
@@ -1772,5 +1771,3 @@ unlock:
 	journal_file_mutex_unlock(jf, diag);
 	return (e);
 }
-
-#endif /* ENABLE_METADATA_REPLICATION */

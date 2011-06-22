@@ -18,8 +18,6 @@
 #include "mdhost.h"
 #include "db_journal.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 /**********************************************************/
 /* transaction */
 
@@ -877,5 +875,3 @@ db_journal_apply_init(void)
 {
 	db_journal_set_apply_ops(&db_journal_apply_ops);
 }
-
-#endif /* ENABLE_METADATA_REPLICATION */

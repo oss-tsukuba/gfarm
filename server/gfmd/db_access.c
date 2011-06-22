@@ -53,28 +53,15 @@ struct dbq {
 	struct dbq_entry *entries;
 } dbq;
 
-#ifdef ENABLE_METADATA_REPLICATION
 static pthread_mutex_t db_access_mutex;
 #define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
 
 static gfarm_error_t db_journal_enter(dbq_entry_func_t, void *, int);
-#else
 static gfarm_error_t dbq_enter1(dbq_entry_func_t, void *, int);
-#endif
 
-static const struct db_ops *ops =
-#ifdef ENABLE_METADATA_REPLICATION
-	&db_journal_ops;
-#else
-	&db_none_ops;
-#endif
-const struct db_ops *store_ops = &db_none_ops;
-static db_enter_func_t db_enter_op =
-#ifdef ENABLE_METADATA_REPLICATION
-	&db_journal_enter;
-#else
-	&dbq_enter1;
-#endif
+static const struct db_ops *ops;
+const struct db_ops *store_ops;
+static db_enter_func_t db_enter_op = dbq_enter1;
 
 static int transaction_nesting = 0;
 
@@ -151,9 +138,8 @@ dbq_enter0(struct dbq *q, dbq_entry_func_t func, void *data, int with_seqnum)
 	static const char diag[] = "dbq_enter";
 	struct dbq_entry *ent;
 
-#ifdef ENABLE_METADATA_REPLICATION
-	assert(with_seqnum == 0);
-#endif
+	assert(!gfarm_get_metadb_replication_enabled() || with_seqnum == 0);
+
 	gfarm_mutex_lock(&q->mutex, diag, "mutex");
 	if (q->quitting) {
 		/*
@@ -357,7 +343,6 @@ db_getfreenum(void)
 	return (freenum);
 }
 
-#ifdef ENABLE_METADATA_REPLICATION
 static gfarm_error_t
 db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 {
@@ -371,28 +356,26 @@ db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 	seqnum = with_seqnum ? db_journal_next_seqnum() : 0;
 	return (func(seqnum, data));
 }
-#endif
 
 /* DO NOT REMOVE: this interfaces is provided for a private extension */
 /* The official gfmd source code shouldn't use these interface */
 const struct db_ops *
 db_get_ops(void)
 {
-#ifdef ENABLE_METADATA_REPLICATION
-	return (store_ops);
-#else
-	return (ops);
-#endif
+	return (gfarm_get_metadb_replication_enabled() ?
+		store_ops : ops);
 }
 
 gfarm_error_t
 db_use(const struct db_ops *o)
 {
-#ifdef ENABLE_METADATA_REPLICATION
-	store_ops = o;
-#else
-	ops = o;
-#endif
+	if (gfarm_get_metadb_replication_enabled()) {
+		store_ops = o;
+		ops = &db_journal_ops;
+		db_enter_op = &db_journal_enter;
+	} else {
+		ops = o;
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -400,72 +383,63 @@ gfarm_error_t
 db_initialize(void)
 {
 	dbq_init(&dbq);
-#ifdef ENABLE_METADATA_REPLICATION
-	gfarm_mutex_init(&db_access_mutex, "db_initialize",
-	    DB_ACCESS_MUTEX_DIAG);
-	return ((*store_ops->initialize)());
-#else
+	if (gfarm_get_metadb_replication_enabled()) {
+		gfarm_mutex_init(&db_access_mutex, "db_initialize",
+		    DB_ACCESS_MUTEX_DIAG);
+		return ((*store_ops->initialize)());
+	}
 	return ((*ops->initialize)());
-#endif
 }
 
 gfarm_error_t
 db_terminate(void)
 {
 	gfarm_error_t e;
-#ifdef ENABLE_METADATA_REPLICATION
 	static const char *diag = "db_terminate";
-#endif
 
 	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
-#ifdef ENABLE_METADATA_REPLICATION
-	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
-#endif
+	if (gfarm_get_metadb_replication_enabled())
+		gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	dbq_wait_to_finish(&dbq);
 	gflog_info(GFARM_MSG_1000407, "terminating the database");
 	e = ops->terminate();
-#ifdef ENABLE_METADATA_REPLICATION
-	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
-#endif
+	if (gfarm_get_metadb_replication_enabled())
+		gfarm_mutex_unlock(&db_access_mutex, diag,
+		    DB_ACCESS_MUTEX_DIAG);
 	return (e);
 }
 
-#ifdef ENABLE_METADATA_REPLICATION
 pthread_mutex_t *
 get_db_access_mutex(void)
 {
 	return (&db_access_mutex);
 }
-#endif
 
 void *
 db_thread(void *arg)
 {
 	gfarm_error_t e;
 	struct dbq_entry ent;
-#ifdef ENABLE_METADATA_REPLICATION
 	static const char *diag = "db_thread";
-#endif
 
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
 		if (e == GFARM_ERR_NO_ERROR) {
-#ifdef ENABLE_METADATA_REPLICATION
-			/* lock to avoid race condition between
-			 * db_journal_store_thread. */
-			gfarm_mutex_lock(&db_access_mutex, diag,
-			    DB_ACCESS_MUTEX_DIAG);
-#endif
+			if (gfarm_get_metadb_replication_enabled())
+				/* lock to avoid race condition between
+				 * db_journal_store_thread. */
+				gfarm_mutex_lock(&db_access_mutex, diag,
+				    DB_ACCESS_MUTEX_DIAG);
 			/* Do not execute a function that writes to database
 			 * when metadata-replication enabled.
 			 * Because we pass seqnum as zero. */
 			do {
 				e = (*ent.func)(0, ent.data);
 			} while (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED);
-#ifdef ENABLE_METADATA_REPLICATION
-			gfarm_mutex_unlock(&db_access_mutex, diag,
-			    DB_ACCESS_MUTEX_DIAG);
-#endif
+
+			if (gfarm_get_metadb_replication_enabled())
+				gfarm_mutex_unlock(&db_access_mutex, diag,
+				    DB_ACCESS_MUTEX_DIAG);
 		} else if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			break;
 	}
@@ -1466,20 +1440,20 @@ db_xattr_add(int xmlMode, gfarm_ino_t inum, char *attrname,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (waitctx != NULL) {
-#ifdef ENABLE_METADATA_REPLICATION
-		/* XXX FIXME we cannot wait for db transaction to be
-		 * committed when the journal function is enabled. */
-		e = db_enter_sn((dbq_entry_func_t)ops->xattr_add, arg);
-		waitctx->e = e;
-#else
-		/*
-		 * NOTE: EINVAL returns from PostgreSQL if value is
-		 * invalid XML data. We must wait to check it.
-		 * Same as db_xattr_modify().
-		 */
-		e = dbq_enter_for_waitret(
-			(dbq_entry_func_t)ops->xattr_add, arg, waitctx);
-#endif
+		if (gfarm_get_metadb_replication_enabled()) {
+			/* XXX FIXME we cannot wait for db transaction to be
+			 * committed when the journal function is enabled. */
+			e = db_enter_sn((dbq_entry_func_t)ops->xattr_add, arg);
+			waitctx->e = e;
+		} else {
+			/*
+			 * NOTE: EINVAL returns from PostgreSQL if value is
+			 * invalid XML data. We must wait to check it.
+			 * Same as db_xattr_modify().
+			 */
+			e = dbq_enter_for_waitret(
+				(dbq_entry_func_t)ops->xattr_add, arg, waitctx);
+		}
 	} else
 		e = db_enter_sn((dbq_entry_func_t)ops->xattr_add, arg);
 	return (e);
@@ -1499,15 +1473,17 @@ db_xattr_modify(int xmlMode, gfarm_ino_t inum, char *attrname,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (waitctx != NULL) {
-#ifdef ENABLE_METADATA_REPLICATION
-		/* XXX FIXME we cannot wait for db transaction to be
-		 * committed when the journal function is enabled. */
-		e = db_enter_sn((dbq_entry_func_t)ops->xattr_modify, arg);
-		waitctx->e = e;
-#else
-		e = dbq_enter_for_waitret(
-			(dbq_entry_func_t)ops->xattr_modify, arg, waitctx);
-#endif
+		if (gfarm_get_metadb_replication_enabled()) {
+			/* XXX FIXME we cannot wait for db transaction to be
+			 * committed when the journal function is enabled. */
+			e = db_enter_sn((dbq_entry_func_t)ops->xattr_modify,
+				arg);
+			waitctx->e = e;
+		} else {
+			e = dbq_enter_for_waitret(
+				(dbq_entry_func_t)ops->xattr_modify, arg,
+				waitctx);
+		}
 	} else
 		e = db_enter_sn((dbq_entry_func_t)ops->xattr_modify, arg);
 	return (e);
@@ -1717,8 +1693,6 @@ db_quota_group_load(void *closure,
 	return ((*ops->quota_load)(closure, 1, callback));
 }
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 gfarm_error_t
 db_seqnum_add(char *name, gfarm_uint64_t value)
 {
@@ -1838,5 +1812,3 @@ db_mdhost_load(void *closure,
 {
 	return ((*ops->mdhost_load)(closure, callback));
 }
-
-#endif /* ENABLE_METADATA_REPLICATION */

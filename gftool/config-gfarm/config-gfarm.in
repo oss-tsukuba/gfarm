@@ -10,7 +10,6 @@ prefix="@prefix@"
 sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
 globus_location="@globus_location@"
-enable_metadata_replication="@enable_metadata_replication@"
 
 #
 # backend initialization
@@ -137,7 +136,7 @@ gen_passwd()
 usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
-	echo >&2 "	[-S] [-N] [-W] [-w]"
+	echo >&2 "	[-S] [-N] [-W] [-w] [-r]"
 	echo >&2 "	[-h hostname] [-d domain_name] [-m gfmd_port]"
 	echo >&2 "	[-A metadata_admin_user] [-D metadata_admin_gsi_dn]"
 	echo >&2 "	[-a auth_type]"
@@ -145,9 +144,7 @@ usage()
 	echo >&2 "	[-V metadata_backend_version] [-p metadata_backend_port]"
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
-	if [ "${enable_metadata_replication}" = "yes" ]; then
-		echo >&2 "	[-j metadata_journal_directory]"
-	fi
+	echo >&2 "	[-j metadata_journal_directory]"
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
@@ -179,7 +176,7 @@ service_start_common()
 
 sanity()
 {
-	if [ "${enable_metadata_replication}" = "yes" ]; then
+	if $METADATA_REPLICATION; then
 		if id _gfarmmd >/dev/null 2>&1; then :
 		else
 			echo "error: user _gfarmmd is not registered."
@@ -201,6 +198,16 @@ display_backend_log_dir_param()
     echo     "metadata log directory    [-L]: $BACKEND_LOG_DIR"
 }
 
+tf2yn()
+{
+    tf=$1
+    if [ "$tf" = "true" ]; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
 display_params()
 {
     echo     "prefix [--prefix]: $CONFIG_PREFIX"
@@ -209,8 +216,10 @@ display_params()
 
     display_backend_params_$BACKEND_TYPE
 
-    if [ "${enable_metadata_replication}" = "yes" ]; then
-        echo "metadata journal directory [-j]: $METADATA_JOURNAL_DIR"
+    METADATA_REPLICATION_YN=`tf2yn $METADATA_REPLICATION`
+    echo "metadata replication         [-r]: $METADATA_REPLICATION_YN"
+    if $METADATA_REPLICATION; then
+        echo "metadata journal dirirectory [-j]: $METADATA_JOURNAL_DIR"
     fi
     echo     "metaserver hostname [-h]: $BACKEND_HOSTNAME"
     echo     "matadata admin user [-A]: $METADATA_ADMIN_USER"
@@ -315,6 +324,10 @@ while [ $# -gt 0 ] ; do
 	  -t)
 		DISPLAY_PARAMS=true
 		;;
+	  -r)
+		METADATA_REPLICATION=true
+		METADATA_REPLICATION_ED=enable
+		;;
 	  -W)
 		stty -echo;
 		( umask 077; 
@@ -372,6 +385,8 @@ sysdep_defaults
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
 : ${DISPLAY_PARAMS:=false}
+: ${METADATA_REPLICATION:=false}
+: ${METADATA_REPLICATION_ED:=disable}
 
 : ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
 
@@ -427,6 +442,7 @@ s|@config_gfarm_backend_port@|$BACKEND_PORT|g
 s|@config_gfarm_backend_prefix@|$BACKEND_PREFIX|g
 s|@config_gfarm_backend_data_dir@|$BACKEND_DATA_DIR|g
 s|@config_gfarm_backend_log_dir@|$BACKEND_LOG_DIR|g
+s|@config_gfarm_metadb_replication@|$METADATA_REPLICATION_ED|g
 s|@config_gfarm_metadata_journal_dir@|$METADATA_JOURNAL_DIR|g
 _EOF_
 }
@@ -532,9 +548,8 @@ delete_file_or_directory \
 	"$BACKEND_DATA_DIR" \
 	"$BACKEND_LOG_DIR" \
 	"$RC_DIR/$RC_BACKEND_BASENAME"
-if [ "${enable_metadata_replication}" = "yes" ]; then
+$METADATA_REPLICATION && \
 	delete_file_or_directory "$METADATA_JOURNAL_DIR"
-fi
 
 # We won't create "$BACKEND_LOG_DIR", otherwise initdb of PostgreSQL fails.
 create_directory \
@@ -545,7 +560,7 @@ create_directory \
 
 chmod 700 "$BACKEND_DATA_DIR"
 
-if [ "$enable_metadata_replication" = "yes" ]; then
+if $METADATA_REPLICATION; then
 	create_directory "$METADATA_JOURNAL_DIR"
 	chmod 700 "$METADATA_JOURNAL_DIR"
 fi
@@ -604,7 +619,8 @@ if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
 fi
 
 # for replication
-if [ "${enable_metadata_replication}" = "yes" ]; then
+if $METADATA_REPLICATION; then
+	echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
 	echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
 fi
 

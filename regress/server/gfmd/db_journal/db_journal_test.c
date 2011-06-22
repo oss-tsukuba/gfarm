@@ -25,8 +25,6 @@
 struct thread_pool *sync_protocol_thread_pool;
 void resuming_enqueue(void *entry) {}
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 static char *program_name = "db_journal_test";
 static const char *filepath;
 
@@ -3228,6 +3226,10 @@ t_apply(void)
 	db_journal_apply_init();
 	db_journal_set_sync_op(t_no_sync);
 	gfarm_server_config_read();
+	gfarm_set_metadb_replication_enabled(0);
+	db_use(&empty_ops);
+	gfarm_set_metadb_replication_enabled(1);
+
 	db_use(&empty_ops);
 	mdhost_init();
 	host_init();
@@ -3257,12 +3259,9 @@ t_apply(void)
 	journal_file_close(self_jf);
 }
 
-#endif /* ENABLE_METADATA_REPLICATION */
-
 int
 main(int argc, char **argv)
 {
-#ifdef ENABLE_METADATA_REPLICATION
 	int c, op = 0;
 
 	debug_mode = 1;
@@ -3313,10 +3312,4 @@ main(int argc, char **argv)
 
 	printf("ok\n");
 	return (EXIT_SUCCESS);
-#else
-	fprintf(stderr,
-	    "journal function is disabled in build configuration.\n");
-#define EXIT_UNSUPPORTED 6
-	return (EXIT_UNSUPPORTED);
-#endif /* ENABLE_METADATA_REPLICATION */
 }

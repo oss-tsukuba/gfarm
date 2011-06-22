@@ -32,7 +32,6 @@
 #include "mdhost.h"
 #include "db_access.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
 
 struct mdhost_elem {
 	struct mdhost *mh;
@@ -242,5 +241,3 @@ mdcluster_init(void)
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 }
-
-#endif /* ENABLE_METADATA_REPLICATION */

@@ -81,6 +81,8 @@ extern int gf_hook_default_global;
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
 gfarm_off_t gfarm_get_minimum_free_disk_space(void);
+int gfarm_get_metadb_replication_enabled(void);
+void gfarm_set_metadb_replication_enabled(int);
 const char *gfarm_get_journal_dir(void);
 int gfarm_get_journal_max_size(void);
 int gfarm_get_journal_sync_file(void);

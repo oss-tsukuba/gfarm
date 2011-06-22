@@ -50,7 +50,6 @@
 
 #define NON_NULL_STR(s) ((s) ? (s) : "")
 
-#ifdef ENABLE_METADATA_REPLICATION
 
 static struct journal_file	*self_jf;
 static const struct db_ops	*journal_apply_ops;
@@ -4056,5 +4055,3 @@ struct db_ops db_journal_ops = {
 	db_journal_write_mdhost_remove,
 	db_journal_mdhost_load,
 };
-
-#endif /* ENABLE_METADATA_REPLICATION */

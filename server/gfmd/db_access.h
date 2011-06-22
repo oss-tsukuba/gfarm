@@ -109,7 +109,6 @@ gfarm_error_t db_quota_user_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
 gfarm_error_t db_quota_group_load(void *,
 	void (*)(void *, struct gfarm_quota_info *));
-#ifdef ENABLE_METADATA_REPLICATION
 struct db_seqnum_arg;
 gfarm_error_t db_seqnum_add(char *, gfarm_uint64_t);
 gfarm_error_t db_seqnum_modify(char *, gfarm_uint64_t);
@@ -127,7 +126,6 @@ gfarm_error_t db_mdhost_modify(const struct gfarm_metadb_server *, int);
 gfarm_error_t db_mdhost_remove(const char *);
 gfarm_error_t db_mdhost_load(void *, void (*)(void *,
 	struct gfarm_metadb_server *));
-#endif
 
 /* allocation for storage operations arguments */
 struct db_host_modify_arg;

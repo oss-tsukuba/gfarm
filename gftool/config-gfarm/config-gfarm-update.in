@@ -12,7 +12,6 @@ unset LANG
 prefix="@prefix@"
 sysconfdir="@sysconfdir@"
 config_dir="@datadir@/gfarm/config"
-enable_metadata_replication="@enable_metadata_replication@"
 
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
@@ -48,13 +47,12 @@ usage()
 {
 	echo >&2 "usage: $PROGNAME [--help] [-t] [--update]"
 	echo >&2 "	[-N]			- do not restart the server processes"
+	echo >&2 "	[-r]			- enable metadata replication"
 	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
 	echo >&2 "	[-P backend_prefix]	- installation prefix of the backend program"
 	echo >&2 "	[-l metadata_directory]	- backend database data directory"
 	echo >&2 "	[-f backend_file]"
-	if [ "${enable_metadata_replication}" = "yes" ]; then
-		echo >&2 "	[-j metadb_journal_dir] - metadata journal directory"
-	fi
+	echo >&2 "	[-j metadb_journal_dir] - metadata journal directory"
 	update_usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
 	exit 1
@@ -62,7 +60,7 @@ usage()
 
 update_sanity_()
 {
-	if [ "${enable_metadata_replication}" = "yes" ]; then
+	if $METADATA_REPLICATION; then
 		if id _gfarmmd >/dev/null 2>&1; then :
 		else
 			echo "error: user _gfarmmd is not registered."
@@ -90,6 +88,16 @@ display_backend_log_dir_param()
     return 0
 }
 
+tf2yn()
+{
+    tf=$1
+    if [ "$tf" = "true" ]; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
 display_params()
 {
     echo     "prefix [--prefix]: $CONFIG_PREFIX"
@@ -100,7 +108,9 @@ display_params()
     display_backend_optional_params_$BACKEND_TYPE
 
     update_sanity
-    if [ "${enable_metadata_replication}" = "yes" ]; then
+    if $METADATA_REPLICATION; then
+        METADATA_REPLICATION_YN=`tf2yn $METADATA_REPLICATION`
+        echo "metadata replication       [-r]: $METADATA_REPLICATION_YN"
         echo "metadata journal directory [-j]: $METADATA_JOURNAL_DIR"
     fi
 
@@ -109,18 +119,33 @@ display_params()
 
 update_metadata_replication()
 {
-    if [ "${enable_metadata_replication}" != "yes" ]; then
-        return;
-    fi
-
     if $MAKE_METADATA_JOURNAL_DIR; then
         if [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
             echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
-            exit 1
+        else
+            [ -d $METADATA_JOURNAL_DIR ] || mkdir -p $METADATA_JOURNAL_DIR
+            [ -e $METADATA_JOURNAL_DIR ] && chmod 700 $METADATA_JOURNAL_DIR
+            echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
+	fi
+    fi
+}
+
+update_first_set_param()
+{
+    if [ ! $METADATA_REPLICATION ]; then
+        : ${METADATA_REPLICATION_ED=`getvalue metadb_replication`}
+        if [ "$METADATA_REPLICATION_ED" = "enable" ]; then
+            METADATA_REPLICATION0=true
+        else
+            METADATA_REPLICATION0=false
         fi
-        [ -d $METADATA_JOURNAL_DIR ] || mkdir -p $METADATA_JOURNAL_DIR
-        [ -e $METADATA_JOURNAL_DIR ] && chmod 700 $METADATA_JOURNAL_DIR
-        echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
+        METADATA_REPLICATION=$METADATA_REPLICATION0
+    fi
+
+    if $METADATA_REPLICATION; then
+        : ${METADATA_JOURNAL_DIR=`getvalue metadb_journal_dir`}
+        : ${METADATA_JOURNAL_DIR:="$METADATA_JOURNAL_DIR0"}
+        : ${METADATA_JOURNAL_DIR:="/var/gfarm-metadata/journal"}
     fi
 }
 
@@ -160,6 +185,10 @@ while [ $# -gt 0 ] ; do
 	  -t)
 		DISPLAY_PARAMS=true
 		;;
+	  -r)
+		METADATA_REPLICATION=true
+		METADATA_REPLICATION_ED=disable
+		;;
 	  --update|--update-symlink) 
 		UPDATE=true
 		;;
@@ -186,18 +215,6 @@ fi
 # sanity check
 if [ ! -f ${GFMD_CONF} ]; then
 	ABORT "${PROGNAME}: cannot find ${GFMD_CONF}, --prefix option required"
-fi
-
-# set replication parameters
-if [ "${enable_metadata_replication}" = "yes" ]; then
-        METADATA_JOURNAL_DIR=`getvalue metadb_journal_dir`
-        if [ "$METADATA_JOURNAL_DIR" = "" ]; then
-                MAKE_METADATA_JOURNAL_DIR=true
-                : ${METADATA_JOURNAL_DIR:="$METADATA_JOURNAL_DIR0"}
-                : ${METADATA_JOURNAL_DIR:="/var/gfarm-metadata/journal"}
-        else
-                MAKE_METADATA_JOURNAL_DIR=false
-	fi
 fi
 
 # determine a backend database type
@@ -234,6 +251,7 @@ sysdep_defaults
 : ${START_SERVICE:=true}
 : ${UPDATE:=false}
 
+update_first_set_param
 update_first_set_param_$BACKEND_TYPE
 set_last_defaults_$BACKEND_TYPE
 update_last_set_param_$BACKEND_TYPE
@@ -246,9 +264,11 @@ $DISPLAY_PARAMS && display_params
 update_postprocess_$BACKEND_TYPE || ABORT "aborted"
 
 # for replication
-if [ "${enable_metadata_replication}" = "yes" ]; then
-	if [ "$METADATA_JOURNAL_DIR" = "" ]; then
-		METADATA_JOURNAL_DIR=/var/gfarm-metadata/journal
+if $METADATA_REPLICATION; then
+	if [ ! $METADATA_REPLICATION0 ]; then
+		echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
+	fi
+	if [ "$METADATA_JOURNAL_DIR0" != "$METADATA_JOURNAL_DIR" ]; then
 		echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
 		-d $METADATA_JOURNAL_DIR || mkdir -p $METADATA_JOURNAL_DIR
 		-e $METADATA_JOURNAL_DIR && chmod 700 $METADATA_JOURNAL_DIR

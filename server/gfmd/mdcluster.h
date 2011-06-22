@@ -2,7 +2,6 @@
  * $Id$
  */
 
-#ifdef ENABLE_METADATA_REPLICATION
 struct mdcluster;
 struct mdhost;
 
@@ -14,4 +13,3 @@ void mdcluster_remove_mdhost(struct mdhost *);
 void mdcluster_foreach(int (*)(struct mdcluster *, void *), void *);
 void mdcluster_foreach_mdhost(struct mdcluster *, int (*)(struct mdhost *,
 	void *), void *);
-#endif

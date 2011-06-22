@@ -39,11 +39,6 @@
 #include "db_access.h"
 #include "db_ops.h"
 
-#ifdef ENABLE_METADATA_REPLICATION
-#define FREE_ARG(x)
-#else
-#define FREE_ARG(x) free(x)
-#endif
 
 /* ERROR:  duplicate key violates unique constraint */
 #define GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION	"23505"
@@ -66,11 +61,16 @@ typedef gfarm_error_t (*gfarm_pgsql_dml_t)(
 	const char *, int, const Oid *, const char *const *,
 	const int *, const int *, int, const char *);
 
-#ifdef ENABLE_METADATA_REPLICATION
 static gfarm_error_t gfarm_pgsql_seqnum_modify(struct db_seqnum_arg *);
-#endif
 
 /**********************************************************************/
+
+static void
+free_arg(void *arg)
+{
+	if (!gfarm_get_metadb_replication_enabled())
+		free(arg);
+}
 
 static PGconn *conn = NULL;
 static int transaction_nesting = 0;
@@ -581,8 +581,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 
 	assert(transaction_nesting == 0);
 
-#ifdef ENABLE_METADATA_REPLICATION
-	if (seqnum > 0) {
+	if (gfarm_get_metadb_replication_enabled() && seqnum > 0) {
 		gfarm_error_t e;
 		struct db_seqnum_arg a;
 
@@ -596,7 +595,6 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			return (e);
 		}
 	}
-#endif
 	return (gfarm_pgsql_exec_and_log(transaction_ok ?
 	    "COMMIT" : "ROLLBACK", diag));
 }
@@ -1364,7 +1362,7 @@ gfarm_pgsql_host_add(gfarm_uint64_t seqnum, struct gfarm_host_info *info)
 		    "VALUES ($1, $2, $3, $4, $5)",
 		gfarm_pgsql_check_insert, 0, "pgsql_host_add");
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -1380,7 +1378,7 @@ gfarm_pgsql_host_modify(gfarm_uint64_t seqnum, struct db_host_modify_arg *arg)
 		    "WHERE hostname = $1",
 		gfarm_pgsql_check_update_or_delete, 1, "pgsql_host_modify");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1401,7 +1399,7 @@ gfarm_pgsql_host_remove(gfarm_uint64_t seqnum, char *hostname)
 		0, /* ask for text results */
 		"pgsql_host_remove");
 
-	FREE_ARG(hostname);
+	free_arg(hostname);
 	return (e);
 }
 
@@ -1489,7 +1487,7 @@ gfarm_pgsql_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 		gfarm_pgsql_insert,
 		"pgsql_user_add");
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -1504,7 +1502,7 @@ gfarm_pgsql_user_modify(gfarm_uint64_t seqnum, struct db_user_modify_arg *arg)
 		gfarm_pgsql_update_or_delete,
 		"pgsql_user_modify");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1525,7 +1523,7 @@ gfarm_pgsql_user_remove(gfarm_uint64_t seqnum, char *username)
 		0, /* ask for text results */
 		"pgsql_user_remove");
 
-	FREE_ARG(username);
+	free_arg(username);
 	return (e);
 }
 
@@ -1663,7 +1661,7 @@ gfarm_pgsql_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *info)
 			gfarm_pgsql_rollback(diag);
 	}
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -1688,7 +1686,7 @@ gfarm_pgsql_group_modify(gfarm_uint64_t seqnum,
 		else
 			gfarm_pgsql_rollback(diag);
 	}
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1709,7 +1707,7 @@ gfarm_pgsql_group_remove(gfarm_uint64_t seqnum, char *groupname)
 		0, /* ask for text results */
 		"pgsql_group_remove");
 
-	FREE_ARG(groupname);
+	free_arg(groupname);
 	return (e);
 }
 
@@ -1806,7 +1804,7 @@ pgsql_inode_call(gfarm_uint64_t seqnum, struct gfs_stat *info,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -1865,7 +1863,7 @@ pgsql_inode_uint64_call(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1895,7 +1893,7 @@ pgsql_inode_uint32_call(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1923,7 +1921,7 @@ pgsql_inode_string_call(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -1956,7 +1954,7 @@ pgsql_inode_timespec_call(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2117,7 +2115,7 @@ pgsql_inode_cksum_call(gfarm_uint64_t seqnum, struct db_inode_cksum_arg *arg,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2142,7 +2140,7 @@ pgsql_inode_inum_call(gfarm_uint64_t seqnum, struct db_inode_inum_arg *arg,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2240,7 +2238,7 @@ pgsql_filecopy_call(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2328,7 +2326,7 @@ pgsql_deadfilecopy_call(gfarm_uint64_t seqnum, struct db_deadfilecopy_arg *arg,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2421,7 +2419,7 @@ gfarm_pgsql_direntry_add(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		"direntry_add");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2447,7 +2445,7 @@ gfarm_pgsql_direntry_remove(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		"direntry_remove");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2514,7 +2512,7 @@ pgsql_symlink_call(gfarm_uint64_t seqnum, struct db_symlink_arg *arg,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2619,7 +2617,7 @@ gfarm_pgsql_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2666,7 +2664,7 @@ gfarm_pgsql_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2704,7 +2702,7 @@ gfarm_pgsql_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -2739,7 +2737,7 @@ gfarm_pgsql_xattr_removeall(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -3020,7 +3018,7 @@ pgsql_quota_call(gfarm_uint64_t seqnum, struct db_quota_arg *info,
 		0, /* ask for text results */
 		diag);
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -3104,7 +3102,7 @@ gfarm_pgsql_quota_remove(gfarm_uint64_t seqnum,
 		0, /* ask for text results */
 		"pgsql_quota_remove");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -3166,8 +3164,6 @@ gfarm_pgsql_quota_load(void *closure, int is_group,
 
 /**********************************************************************/
 
-#ifdef ENABLE_METADATA_REPLICATION
-
 static gfarm_error_t
 pgsql_seqnum_call(struct db_seqnum_arg *arg,
 	const char *sql, gfarm_pgsql_dml_t op, const char *diag)
@@ -3188,7 +3184,6 @@ pgsql_seqnum_call(struct db_seqnum_arg *arg,
 		NULL, /* param formats */
 		0, /* ask for text results */
 		diag);
-	FREE_ARG(info);
 	return (e);
 }
 
@@ -3235,7 +3230,6 @@ gfarm_pgsql_seqnum_remove(char *name)
 		NULL, /* param formats */
 		0, /* ask for text results */
 		"pgsql_seqnum_remove");
-	FREE_ARG(name);
 	return (e);
 }
 
@@ -3342,7 +3336,7 @@ gfarm_pgsql_mdhost_add(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info)
 		"VALUES ($1, $2, $3, $4)",
 	    gfarm_pgsql_check_insert, "pgsql_mdhost_add");
 
-	FREE_ARG(info);
+	free_arg(info);
 	return (e);
 }
 
@@ -3358,7 +3352,7 @@ gfarm_pgsql_mdhost_modify(gfarm_uint64_t seqnum,
 		"WHERE hostname = $1",
 	    gfarm_pgsql_check_update_or_delete, "pgsql_mdhost_modify");
 
-	FREE_ARG(arg);
+	free_arg(arg);
 	return (e);
 }
 
@@ -3379,7 +3373,7 @@ gfarm_pgsql_mdhost_remove(gfarm_uint64_t seqnum, char *hostname)
 	    0, /* ask for text results */
 	    "pgsql_mdhost_remove");
 
-	FREE_ARG(hostname);
+	free_arg(hostname);
 	return (e);
 }
 
@@ -3408,8 +3402,6 @@ gfarm_pgsql_mdhost_load(void *closure,
 	free(infos);
 	return (GFARM_ERR_NO_ERROR);
 }
-
-#endif
 
 /**********************************************************************/
 
@@ -3493,7 +3485,7 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_quota_modify,
 	gfarm_pgsql_quota_remove,
 	gfarm_pgsql_quota_load,
-#ifdef ENABLE_METADATA_REPLICATION
+
 	gfarm_pgsql_seqnum_add,
 	gfarm_pgsql_seqnum_modify,
 	gfarm_pgsql_seqnum_remove,
@@ -3503,15 +3495,4 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_mdhost_modify,
 	gfarm_pgsql_mdhost_remove,
 	gfarm_pgsql_mdhost_load,
-#else
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-#endif
 };

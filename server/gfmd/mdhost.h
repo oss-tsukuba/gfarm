@@ -27,7 +27,6 @@ gfarm_error_t gfm_server_metadb_server_set(struct peer *, int, int);
 gfarm_error_t gfm_server_metadb_server_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_metadb_server_remove(struct peer *, int, int);
 
-#ifdef ENABLE_METADATA_REPLICATION
 struct journal_file_reader;
 struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
 void mdhost_set_journal_file_reader(struct mdhost *,
@@ -62,4 +61,3 @@ struct mdhost *mdhost_lookup_master(void);
 struct mdhost *mdhost_lookup_metadb_server(struct gfarm_metadb_server *);
 int mdhost_get_count(void);
 int mdhost_self_is_master_candidate(void);
-#endif

@@ -372,12 +372,11 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		*requestp = request;
 		return (e);
 	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
-#ifdef ENABLE_METADATA_REPLICATION
-		e = gfm_server_switch_gfmd_channel(peer,
-		    from_client, skip);
-#else
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-#endif
+		if (gfarm_get_metadb_replication_enabled())
+			e = gfm_server_switch_gfmd_channel(peer,
+			    from_client, skip);
+		else
+			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		/* should not call gfp_xdr_flush() due to race */
 		*requestp = request;
 		return (e);
@@ -990,7 +989,6 @@ write_pid(void)
 		gflog_error_errno(GFARM_MSG_1002352, "fclose(%s)", pid_file);
 }
 
-#ifdef ENABLE_METADATA_REPLICATION
 static void
 start_db_journal_threads(void)
 {
@@ -1125,7 +1123,6 @@ select_master(void)
 		mdhost_set_is_master(mh, 1);
 	}
 }
-#endif
 
 static void
 dummy_sighandler(int signo)
@@ -1218,9 +1215,8 @@ sigs_handler(void *p)
 			continue;
 
 		case SIGUSR1:
-#ifdef ENABLE_METADATA_REPLICATION
-			transform_to_master();
-#endif
+			if (gfarm_get_metadb_replication_enabled())
+				transform_to_master();
 			continue;
 #ifdef SIGINFO
 		case SIGINFO:
@@ -1298,15 +1294,14 @@ gfmd_modules_init_default(int table_size)
 
 	callout_module_init(CALLOUT_NTHREADS);
 
-#ifdef ENABLE_METADATA_REPLICATION
-	db_journal_apply_init();
-	db_journal_init();
-#endif
+	if (gfarm_get_metadb_replication_enabled()) {
+		db_journal_apply_init();
+		db_journal_init();
+	}
 	mdhost_init();
 	back_channel_init();
-#ifdef ENABLE_METADATA_REPLICATION
-	gfmdc_init();
-#endif
+	if (gfarm_get_metadb_replication_enabled())
+		gfmdc_init();
 	/* directory service */
 	host_init();
 	user_init();
@@ -1340,9 +1335,7 @@ main(int argc, char **argv)
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t sigs;
-#ifdef ENABLE_METADATA_REPLICATION
 	int is_master;
-#endif
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -1507,10 +1500,10 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-#ifdef ENABLE_METADATA_REPLICATION
-	start_db_journal_threads();
-	db_journal_boot_apply();
-#endif
+	if (gfarm_get_metadb_replication_enabled()) {
+		start_db_journal_threads();
+		db_journal_boot_apply();
+	}
 	if (!mdhost_self_is_readonly()) {
 		/* these functions write db, thus, must be after db_thread  */
 		inode_remove_orphan(); /* should be before
@@ -1519,21 +1512,21 @@ main(int argc, char **argv)
 	}
 	if (port_number != NULL)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
-#ifdef ENABLE_METADATA_REPLICATION
-	if (mdhost_self_is_master() && gfarm_get_metadb_server_force_slave())
-		select_master();
-	is_master = mdhost_self_is_master();
-	gflog_info(GFARM_MSG_UNFIXED,
-	    "metadata replication %s mode",
-	    is_master ? "master" : "slave");
-	start_gfmdc_threads();
-	if (is_master)
+	if (gfarm_get_metadb_replication_enabled()) {
+		if (mdhost_self_is_master() &&
+		    gfarm_get_metadb_server_force_slave())
+			select_master();
+		is_master = mdhost_self_is_master();
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "metadata replication %s mode",
+		    is_master ? "master" : "slave");
+		start_gfmdc_threads();
+		if (is_master)
+			sock = open_accepting_socket(gfarm_metadb_server_port);
+		else
+			sock = wait_transform_to_master();
+	} else
 		sock = open_accepting_socket(gfarm_metadb_server_port);
-	else
-		sock = wait_transform_to_master();
-#else
-	sock = open_accepting_socket(gfarm_metadb_server_port);
-#endif
 	accepting_loop(sock);
 
 	/*NOTREACHED*/
