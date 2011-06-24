@@ -16,6 +16,7 @@
  * $Id$
  */
 
+#include <pthread.h>	/* db_access.h currently needs this */
 #include <sys/time.h>
 #include <assert.h>
 #include <stdio.h>

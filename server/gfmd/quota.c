@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <pthread.h>	/* db_access.h currently needs this */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

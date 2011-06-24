@@ -1,5 +1,6 @@
 #include <stdio.h>	/* config.h needs FILE */
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/time.h>
 
 #define GFARM_INTERNAL_USE
