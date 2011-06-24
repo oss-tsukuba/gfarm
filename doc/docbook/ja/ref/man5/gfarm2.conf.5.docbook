@@ -1174,7 +1174,6 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <term><token>metadb_server_list</token> <parameter>gfmdホスト名[:ポート番号]</parameter> <parameter>...</parameter></term>
 <listitem>
 <para>冗長化メタデータサーバの接続先一覧をスペース区切りで指定します。
-先頭にマスターgfmd、2番目以降にスレーブgfmdを指定します。
 ポート番号を省略するとデフォルトの601を指定したことになります。
 </para>
 <para>
@@ -1182,7 +1181,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </para>
 <para>例:</para>
 <literallayout>
-	metadb_server_list mdsmaster mdsslave:701
+	metadb_server_list mds1 mds2:701
 </literallayout>
 </listitem>
 </varlistentry>

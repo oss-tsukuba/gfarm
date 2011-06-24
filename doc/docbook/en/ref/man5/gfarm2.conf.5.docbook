@@ -1211,7 +1211,6 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 <term><token>metadb_server_list</token> <parameter>gfmd-hostname[:port]</parameter> <parameter>...</parameter></term>
 <listitem>
 <para>This parameter specifies connection destinations of redundant metadata servers delimited by space.
-The master gfmd is specified for the head. The slave gfmds are specified from the second.
 If port is not specified, port will be 601 which is the default value.
 </para>
 <para>
@@ -1219,7 +1218,7 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 </para>
 <para>Example:</para>
 <literallayout>
-	metadb_server_list mdsmaster mdsslave:701
+	metadb_server_list mds1 mds2:701
 </literallayout>
 </listitem>
 </varlistentry>
