@@ -1694,7 +1694,6 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >This parameter specifies connection destinations of redundant metadata servers delimited by space.
-The master gfmd is specified for the head. The slave gfmds are specified from the second.
 If port is not specified, port will be 601 which is the default value.</P
 ><P
 >This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.</P
@@ -1702,7 +1701,7 @@ If port is not specified, port will be 601 which is the default value.</P
 >Example:</P
 ><P
 CLASS="LITERALLAYOUT"
->	metadb_server_list&nbsp;mdsmaster&nbsp;mdsslave:701</P
+>	metadb_server_list&nbsp;mds1&nbsp;mds2:701</P
 ></DD
 ><DT
 ><SPAN

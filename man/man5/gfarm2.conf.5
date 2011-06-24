@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "08 6月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "24 6月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -837,7 +837,6 @@ Example:
 .TP
 \fBmetadb_server_list \fIgfmd-hostname[:port]\fB \fI\&...\fB\fR
 This parameter specifies connection destinations of redundant metadata servers delimited by space.
-The master gfmd is specified for the head. The slave gfmds are specified from the second.
 If port is not specified, port will be 601 which is the default value.
 
 This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
@@ -845,7 +844,7 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 Example:
 
 .nf
-	metadb_server_list mdsmaster mdsslave:701
+	metadb_server_list mds1 mds2:701
 .fi
 .TP
 \fBsynchronous_replication_timeout \fIseconds\fB\fR
