@@ -1574,6 +1574,25 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>metadb_replication</SPAN
+> <CODE
+CLASS="PARAMETER"
+>有効性</CODE
+></DT
+><DD
+><P
+>このオプションがenableの場合、メタデータ冗長化機能が有効になります。デフォルトは disable です。</P
+><P
+>この文はgfmd.confのみで有効です。</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_replication&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >synchronous_replication_timeout</SPAN
 > <CODE
 CLASS="PARAMETER"
@@ -1756,6 +1775,7 @@ CLASS="LITERALLAYOUT"
 		&nbsp;&nbsp;&#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;profile_statement&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;metadb_server_list_statement&#62;&nbsp;|<br>
+		&nbsp;&nbsp;&#60;metadb_replication_statement&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;synchronous_journaling_statement&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
@@ -1836,6 +1856,7 @@ CLASS="LITERALLAYOUT"
 	&#60;metadb_server_list_spec&#62;&nbsp;::=<br>
 		&nbsp;&nbsp;&#60;hostname_port_spec&#62;&nbsp;|<br>
 		&nbsp;&nbsp;&#60;hostname_port_spec&#62;&nbsp;&#60;metadb_server_list_spec&#62;<br>
+	&#60;metadb_replication_statement&#62;&nbsp;::=&nbsp;"metadb_replication"&nbsp;&#60;validity&#62;<br>
 	&#60;synchronous_replication_timeout_statement&#62;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;synchronous_journaling_statement&#62;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&#60;validity&#62;<br>
 	&#60;metadb_server_force_slave_statement&#62;&nbsp;::=&nbsp;"metadb_server_force_slave"&nbsp;&#60;validity&#62;<br>

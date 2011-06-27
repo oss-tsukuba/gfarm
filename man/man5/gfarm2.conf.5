@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "24 6月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "27 6月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -847,6 +847,18 @@ Example:
 	metadb_server_list mds1 mds2:701
 .fi
 .TP
+\fBmetadb_replication \fIvalidity\fB\fR
+When "enable" is specified, the redundant metadata feature is enabled.
+The default value is disable.
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	metadb_replication enable
+.fi
+.TP
 \fBsynchronous_replication_timeout \fIseconds\fB\fR
 This parameter specifies timeout for executing synchronous replication in seconds.
 If the timeout period passed, the connection to the slave gfmd where replicates to
@@ -981,6 +993,7 @@ notation.
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
+		\~\~<metadb_replication_statement> |
 		\~\~<synchronous_replication_timeout_statement> |
 		\~\~<synchronous_journaling_statement> |
 		\~\~<metadb_server_force_slave_statement> |
@@ -1061,6 +1074,7 @@ notation.
 	<metadb_server_list_spec> ::=
 		\~\~<hostname_port_spec> |
 		\~\~<hostname_port_spec> <metadb_server_list_spec>
+	<metadb_replication_statement> ::= "metadb_replication" <validity>
 	<synchronous_replication_timeout_statement> ::= "synchronous_replication_timeout" <number>
 	<synchronous_journaling_statement> ::= "synchronous_journaling" <validity>
 	<metadb_server_force_slave_statement> ::= "metadb_server_force_slave" <validity>
