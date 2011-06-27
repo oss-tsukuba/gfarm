@@ -1187,6 +1187,21 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_replication</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>このオプションがenableの場合、メタデータ冗長化機能が有効になります。デフォルトは disable です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_replication enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>synchronous_replication_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>メタデータの同期レプリケーション実行時のタイムアウト時間を秒単位で設定します。
@@ -1346,6 +1361,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
@@ -1440,6 +1456,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;metadb_server_list_spec&gt; ::=
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
+	&lt;metadb_replication_statement&gt; ::= "metadb_replication" &lt;validity&gt;
 	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
 	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
 	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;

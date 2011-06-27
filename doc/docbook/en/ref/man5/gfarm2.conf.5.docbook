@@ -1224,6 +1224,22 @@ This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_replication</token> <parameter>validity</parameter></term>
+<listitem>
+<para>When "enable" is specified, the redundant metadata feature is enabled.
+The default value is disable.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	metadb_replication enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>synchronous_replication_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
 <para>This parameter specifies timeout for executing synchronous replication in seconds.
@@ -1390,6 +1406,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
@@ -1484,6 +1501,7 @@ notation.</para>
 	&lt;metadb_server_list_spec&gt; ::=
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
+	&lt;metadb_replication_statement&gt; ::= "metadb_replication" &lt;validity&gt;
 	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
 	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
 	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
