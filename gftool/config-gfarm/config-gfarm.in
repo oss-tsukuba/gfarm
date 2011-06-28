@@ -619,10 +619,9 @@ if [ X"$METADATA_ADMIN_USER_GSI_DN" != X ]; then
 fi
 
 # for replication
-if $METADATA_REPLICATION; then
-	echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
-	echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
-fi
+echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
+echo "# mkdir following directory when metadb_replication is set to enable." >> $GFMD_CONF
+echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
 
 # by backend type
 make_configuration_file_$BACKEND_TYPE
