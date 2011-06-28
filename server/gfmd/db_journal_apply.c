@@ -3,6 +3,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 
 #include <gfarm/gfarm.h>
 
@@ -16,6 +17,7 @@
 #include "inode.h"
 #include "dir.h"
 #include "mdhost.h"
+#include "journal_file.h"	/* for enum journal_operation */
 #include "db_journal.h"
 
 /**********************************************************/

@@ -21,6 +21,7 @@
 #include "metadb_server.h"
 #include "quota.h"
 #include "mdhost.h"
+#include "journal_file.h"	/* for enum journal_operation */
 #include "db_access.h"
 #include "db_ops.h"
 #include "db_journal.h"

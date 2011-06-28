@@ -34,9 +34,9 @@
 #include "metadb_server.h"
 #include "mdhost.h"
 #include "mdcluster.h"
+#include "journal_file.h"
 #include "db_access.h"
 #include "db_journal.h"
-#include "journal_file.h"
 #include "gfmd_channel.h"
 
 /* in-core gfarm_metadb_server */

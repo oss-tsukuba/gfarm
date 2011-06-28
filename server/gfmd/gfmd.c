@@ -51,6 +51,7 @@
 #include "subr.h"
 #include "thrpool.h"
 #include "callout.h"
+#include "journal_file.h"	/* for enum journal_operation */
 #include "db_access.h"
 #include "db_journal.h"
 #include "db_journal_apply.h"

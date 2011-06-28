@@ -36,8 +36,8 @@
 #include "host.h"
 #include "mdhost.h"
 #include "inode.h"
-#include "db_journal.h"
 #include "journal_file.h"
+#include "db_journal.h"
 #include "gfmd_channel.h"
 
 
