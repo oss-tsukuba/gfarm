@@ -204,7 +204,7 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 		    "failed to create mdcluster for mdhost %s : %s",
 		    mdhost_get_name(h),
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (e);
+		return (GFARM_ERR_NO_MEMORY);
 	}
 	he->mh = h;
 	GFARM_STAILQ_INSERT_TAIL(&c->mh_list, he, next);
