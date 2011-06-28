@@ -270,12 +270,14 @@
 	typedef long gfarm_int64_t;
 	typedef unsigned long gfarm_uint64_t;
 #	define GFARM_INT64_MAX		0x7fffffffffffffffL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffL
 #	define GFARM_PRId64 "ld"
 #	define gfarm_strtoi64(s, endptr)	strtol(s, endptr, 0)
 #elif SIZEOF_LONG_LONG == 8
 	typedef long long gfarm_int64_t;
 	typedef unsigned long long gfarm_uint64_t;
 #	define GFARM_INT64_MAX		0x7fffffffffffffffLL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffLL
 #	define GFARM_PRId64 "lld"
 #	define gfarm_strtoi64(s, endptr)	strtoll(s, endptr, 0)
 #else

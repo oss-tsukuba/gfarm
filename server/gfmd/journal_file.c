@@ -781,7 +781,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	gfarm_uint64_t min_seqnum, max_seqnum, seqnum = 0, seqnum0 = 0;
 	int stored_all = 0;
 
-	min_seqnum = UINT64_MAX;
+	min_seqnum = GFARM_UINT64_MAX;
 	max_seqnum = 0;
 	min_seqnum_pos = max_seqnum_next_pos = -1;
 

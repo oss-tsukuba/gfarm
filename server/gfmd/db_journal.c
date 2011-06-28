@@ -45,7 +45,7 @@
 #include "db_journal.h"
 /* Do not depend other object files such as host.o, mdhost.o, ... */
 
-#define JOURNAL_SEQNUM_NOT_SET		UINT64_MAX
+#define JOURNAL_SEQNUM_NOT_SET		GFARM_UINT64_MAX
 #define JOURNAL_W_XDR	journal_file_writer_xdr( \
 	journal_file_writer(self_jf))
 
