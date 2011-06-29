@@ -82,7 +82,7 @@ fwrite_file_header(FILE *fp)
 {
 	int i;
 
-	TEST_ASSERT0(fputs(GFARM_JOURNAL_FILE_MAGIC, fp) > 0);
+	TEST_ASSERT0(fputs(GFARM_JOURNAL_FILE_MAGIC, fp) != EOF);
 	TEST_ASSERT0(fwrite_uint32(GFARM_JOURNAL_VERSION, fp) > 0);
 	for (i = 0; i < 4088 / sizeof(gfarm_uint32_t); ++i)
 		TEST_ASSERT0(fwrite_uint32(0, fp) > 0);
@@ -94,11 +94,11 @@ fwrite_record(gfarm_uint64_t seqnum, const char *data, FILE *fp)
 	size_t len = strlen(data);
 	gfarm_uint64_t crc = gfarm_crc32(0, data, len);
 
-	TEST_ASSERT0(fputs(GFARM_JOURNAL_RECORD_MAGIC, fp) > 0);
-	TEST_ASSERT0(fputs("  ", fp) > 0);
+	TEST_ASSERT0(fputs(GFARM_JOURNAL_RECORD_MAGIC, fp) != EOF);
+	TEST_ASSERT0(fputs("  ", fp) != EOF);
 	TEST_ASSERT0(fwrite_uint64(seqnum, fp) > 0);
 	TEST_ASSERT0(fwrite_uint32(len, fp) > 0);
-	TEST_ASSERT0(fputs(data, fp) > 0);
+	TEST_ASSERT0(fputs(data, fp) != EOF);
 	TEST_ASSERT0(fwrite_uint32(crc, fp) > 0);
 }
 
