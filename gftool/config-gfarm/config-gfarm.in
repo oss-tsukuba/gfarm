@@ -176,7 +176,7 @@ service_start_common()
 
 sanity()
 {
-	if $METADATA_REPLICATION; then
+	if [ $METADATA_REPLICATION -a ! $PRIVATE_MODE ]; then
 		if id _gfarmmd >/dev/null 2>&1; then :
 		else
 			echo "error: user _gfarmmd is not registered."
@@ -631,6 +631,7 @@ if $PRIVATE_MODE; then
 	GFSD_CONF="$GFARM_CONF_DIR/gfsd.conf"
 	USERMAP_FILE="$GFARM_CONF_DIR/usermap"
 	echo _gfarmfs `whoami` > $USERMAP_FILE
+	echo _gfarmmd `whoami` >> $USERMAP_FILE
 	cp $GFARM_CONF $GFSD_CONF
 	echo local_user_map $USERMAP_FILE >> $GFMD_CONF
 fi
