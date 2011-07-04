@@ -82,7 +82,7 @@ gfarm_fd_event_alloc(int filter, int fd,
 }
 
 void
-gfarm_fd_event_set_callback(struct gfarm_event * ev,
+gfarm_fd_event_set_callback(struct gfarm_event *ev,
 	void (*callback)(int, int, void *, const struct timeval *),
 	void *closure)
 {
@@ -554,7 +554,12 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 	if (nfound == -1) {
 		int save_errno = errno;
 		gflog_debug(GFARM_MSG_1000781,
-			"select() failed: %s",
+#ifdef HAVE_EPOLL
+			"epoll_wait()"
+#else
+			"select()"
+#endif
+			" failed: %s",
 			strerror(save_errno));
 		return (save_errno);
 	}

@@ -1,12 +1,18 @@
+struct peer_watcher;
 struct peer;
 struct thread_pool;
 struct abstract_host;
+
+void peer_watcher_set_default_nfd(int);
+struct peer_watcher *peer_watcher_alloc(int, int, void *(*)(void *),
+	const char *);
+struct thread_pool *peer_watcher_get_thrpool(struct peer_watcher *);
 
 void peer_add_ref(struct peer *);
 int peer_del_ref(struct peer *);
 void peer_free_request(struct peer *);
 
-void peer_init(int, struct thread_pool *, void *(*)(void *));
+void peer_init(int);
 
 gfarm_error_t peer_alloc(int, struct peer **);
 struct gfp_xdr;
@@ -14,7 +20,7 @@ gfarm_error_t peer_alloc_with_connection(struct peer **, struct gfp_xdr *,
 	struct abstract_host *, int);
 void peer_authorized(struct peer *,
 	enum gfarm_auth_id_type, char *, char *, struct sockaddr *,
-	enum gfarm_auth_method);
+	enum gfarm_auth_method, struct peer_watcher *);
 void peer_free(struct peer *);
 void peer_shutdown_all(void);
 void peer_invoked(struct peer *);
@@ -61,8 +67,7 @@ void peer_unset_process(struct peer *);
 void peer_record_protocol_error(struct peer *);
 int peer_had_protocol_error(struct peer *);
 
-void peer_set_protocol_handler(struct peer *,
-	struct thread_pool *, void *(*)(void *));
+void peer_set_watcher(struct peer *, struct peer_watcher *);
 
 struct protocol_state;
 struct protocol_state *peer_get_protocol_state(struct peer *);

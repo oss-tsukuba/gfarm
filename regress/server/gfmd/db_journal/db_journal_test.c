@@ -21,8 +21,8 @@
 #include "db_journal_test.h"
 #include "db_journal_apply.h"
 
-/* dummy deinitions to link successfully without gfmd.o */
-struct thread_pool *sync_protocol_thread_pool;
+/* XXX FIXME - dummy definitions to link successfully without gfmd.o */
+struct thread_pool *sync_protocol_get_thrpool(void) { return NULL; }
 void resuming_enqueue(void *entry) {}
 
 static char *program_name = "db_journal_test";

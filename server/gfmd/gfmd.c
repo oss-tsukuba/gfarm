@@ -105,7 +105,13 @@ static struct protoent *tcp_proto;
 static char *pid_file;
 
 struct thread_pool *authentication_thread_pool;
-struct thread_pool *sync_protocol_thread_pool;
+struct peer_watcher *sync_protocol_watcher;
+
+struct thread_pool *
+sync_protocol_get_thrpool(void)
+{
+	return (peer_watcher_get_thrpool(sync_protocol_watcher));
+}
 
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
@@ -789,9 +795,8 @@ resumer(void *arg)
 	for (;;) {
 		entry = resuming_dequeue(&resuming_pendings, diag);
 
-		thrpool_add_job(sync_protocol_thread_pool,
+		thrpool_add_job(sync_protocol_get_thrpool(),
 		    resuming_thread, entry);
-
 	}
 
 	/*NOTREACHED*/
@@ -879,7 +884,8 @@ peer_authorize(struct peer *peer)
 
 		giant_lock();
 		peer_authorized(peer,
-		    id_type, username, hostname, &addr, auth_method);
+		    id_type, username, hostname, &addr, auth_method,
+		    sync_protocol_watcher);
 		giant_unlock();
 	} else {
 		gflog_warning(GFARM_MSG_1002474,
@@ -1282,12 +1288,14 @@ usage(void)
 void
 gfmd_modules_init_default(int table_size)
 {
+	peer_watcher_set_default_nfd(table_size);
+	sync_protocol_watcher = peer_watcher_alloc(
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    protocol_main, "synchronous protocol handler");
+
 	authentication_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
 	    gfarm_metadb_job_queue_length, "authentication threads");
-	sync_protocol_thread_pool = thrpool_new(gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "synchronous protocol threads");
-	if (authentication_thread_pool == NULL ||
-	    sync_protocol_thread_pool == NULL)
+	if (authentication_thread_pool == NULL)
 		gflog_fatal(GFARM_MSG_1001485,
 		    "thread pool size:%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,
@@ -1320,7 +1328,7 @@ gfmd_modules_init_default(int table_size)
 	/* must be after hosts and filesystem */
 	dead_file_copy_init(mdhost_self_is_master());
 
-	peer_init(table_size, sync_protocol_thread_pool, protocol_main);
+	peer_init(table_size);
 	job_table_init(table_size);
 }
 

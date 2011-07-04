@@ -15,7 +15,7 @@
 #include "db_access.h"
 #include "host.h"
 #include "inode.h"
-#include "gfmd.h"	/* sync_protocol_thread_pool */
+#include "gfmd.h"	/* sync_protocol_get_thrpool() */
 
 struct dead_file_copy {
 	struct dead_file_copy *allq_next, *allq_prev;
@@ -476,14 +476,14 @@ host_busyq_scanner_schedule(void)
 	 * Q: why we use gfarm_metadb_heartbeat_interval here?
 	 * A: see the comment in callout_schedule_common().
 	 *
-	 * Q: why we use sync_protocol_thread_pool here?
+	 * Q: why we use sync_protocol_get_thrpool() here?
 	 * A: because this thread needs giant_lock, and
 	 *    delay of the invocation is nearly harmless
 	 *    at least from deadlock point of view.
 	 */
 	callout_reset(host_busyq_scanner_callout,
 	    gfarm_metadb_heartbeat_interval * 1000000,
-	    sync_protocol_thread_pool, host_busyq_scanner, NULL);
+	    sync_protocol_get_thrpool(), host_busyq_scanner, NULL);
 }
 
 static void

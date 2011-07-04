@@ -35,23 +35,23 @@
 
 #include "back_channel.h"
 
-static struct thread_pool *back_channel_recv_thread_pool;
 static struct thread_pool *back_channel_send_thread_pool;
+
+static struct peer_watcher *back_channel_recv_watcher;
 
 static const char BACK_CHANNEL_DIAG[] = "back_channel";
 
 /*
  * responsibility to call host_disconnect():
  *
- * back_channel_main() is responsible for threads in
- * back_channel_recv_thread_pool.
+ * back_channel_main() is the handler of back_channel_recv_watcher.
  *
  * gfm_client_channel_send_request() (and other leaf functions) is responsible
  * for threads in back_channel_send_thread_pool.
  *
  * gfm_async_server_put_reply() should be responsible for threads in
  * back_channel_send_thread_pool too, but currently it's not because
- * it's called by threads in back_channel_recv_thread_pool. XXX FIXME
+ * it's called by threads for back_channel_recv_watcher. XXX FIXME
  */
 
 static void
@@ -488,7 +488,7 @@ gfm_async_server_replication_result(struct host *host,
 	 * XXX FIXME
 	 * There is a slight possibility of deadlock in the following call,
 	 * because currently this is called in the context
-	 * of back_channel_recv_thread_pool,
+	 * of threads for back_channel_recv_watcher,
 	 * although it unlikely blocks, since this is a reply.
 	 */
 	return (gfm_async_server_put_reply(host, peer, xid, diag, e, ""));
@@ -616,9 +616,7 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 		    diag, gfarm_error_string(e2));
 	else if (e == GFARM_ERR_NO_ERROR) {
 		peer_set_async(peer, async);
-		peer_set_protocol_handler(peer,
-		    back_channel_recv_thread_pool,
-		    back_channel_main);
+		peer_set_watcher(peer, back_channel_recv_watcher);
 
 		if (host_is_up(host)) /* throw away old connetion */ {
 			gflog_warning(GFARM_MSG_1002440,
@@ -692,15 +690,16 @@ back_channel_init(void)
 
 	peer_set_free_async(back_channel_async_peer_free);
 
-	/* XXX FIXME: use different config parameter */
-	back_channel_recv_thread_pool = thrpool_new(
-	    gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "receiving from filesystem nodes");
+	back_channel_recv_watcher = peer_watcher_alloc(
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    back_channel_main, "receiving from filesystem nodes");
+
 	back_channel_send_thread_pool = thrpool_new(
-	    gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "sending to filesystem nodes");
-	if (back_channel_recv_thread_pool == NULL ||
-	    back_channel_send_thread_pool == NULL)
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "sending to filesystem nodes");
+	if (back_channel_send_thread_pool == NULL)
 		gflog_fatal(GFARM_MSG_1001998,
 		    "filesystem node thread pool size:"
 		    "%d, queue length:%d: no memory",

@@ -15,11 +15,6 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
-#ifdef HAVE_EPOLL
-#include <sys/epoll.h>
-#else
-#include <poll.h>
-#endif
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -36,6 +31,7 @@
 
 #include "subr.h"
 #include "thrpool.h"
+#include "watcher.h"
 #include "user.h"
 #include "abstract_host.h"
 #include "host.h"
@@ -46,6 +42,64 @@
 #include "job.h"
 
 #include "protocol_state.h"
+
+
+/*
+ * peer_watcher
+ */
+
+struct peer_watcher {
+	struct watcher *w;
+	struct thread_pool *thrpool;
+	void *(*readable_handler)(void *);
+};
+
+static int peer_watcher_nfd_hint_default;
+
+void
+peer_watcher_set_default_nfd(int nfd_hint_default)
+{
+	peer_watcher_nfd_hint_default = nfd_hint_default;
+}
+
+/* this function never fails, but aborts. */
+struct peer_watcher *
+peer_watcher_alloc(int thrpool_size, int thrqueue_length, 
+	void *(*readable_handler)(void *),
+	const char *diag)
+{
+	gfarm_error_t e;
+	struct peer_watcher *pw;
+
+	GFARM_MALLOC(pw);
+	if (pw == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "peer_watcher %s: no memory",
+		    diag);
+
+	e = watcher_alloc(peer_watcher_nfd_hint_default, &pw->w);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED, "watcher(%d) %s: no memory",
+		    peer_watcher_nfd_hint_default, diag);
+
+	pw->thrpool = thrpool_new(thrpool_size, thrqueue_length, diag);
+	if (pw->thrpool == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "thrpool(%d, %d) %s: no memory",
+		    thrpool_size, thrqueue_length, diag);
+
+	pw->readable_handler = readable_handler;
+
+	return (pw);
+}
+
+struct thread_pool *
+peer_watcher_get_thrpool(struct peer_watcher *pw)
+{
+	return (pw->thrpool);
+}
+
+/*
+ * peer
+ */
 
 #define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_type(peer) == \
 	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
@@ -77,14 +131,9 @@ struct peer {
 	struct process *process;
 	int protocol_error;
 	pthread_mutex_t protocol_error_mutex;
-	void *(*protocol_handler)(void *);
-	struct thread_pool *handler_thread_pool;
 
-	volatile sig_atomic_t control;
-#define PEER_WATCHING	1
-#define PEER_INVOKING	2 /* block peer_free till protocol_handler is called */
-#define PEER_CLOSING	4 /* prevent protocol_handler from being called */
-	pthread_mutex_t control_mutex;
+	struct peer_watcher *watcher;
+	struct watcher_event *readable_event;
 
 	struct protocol_state pstate;
 
@@ -116,18 +165,6 @@ static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char peer_table_diag[] = "peer_table";
 
-#ifdef HAVE_EPOLL
-struct {
-	int fd;
-	struct epoll_event *events;
-	int nevents;
-} peer_epoll;
-#else
-static struct pollfd *peer_poll_fds;
-#endif
-
-static struct thread_pool *peer_default_thread_pool;
-static void *(*peer_default_protocol_handler)(void *);
 static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
 
 void
@@ -279,179 +316,6 @@ peer_replicating_free_all(struct peer *peer)
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, "loop");
 }
 
-#ifdef HAVE_EPOLL
-static void
-peer_epoll_ctl_fd(int op, int fd)
-{
-	struct epoll_event ev = { 0, { 0 }};
-
-	ev.data.fd = fd;
-	ev.events = EPOLLIN; /* level triggered, since we use blocking mode */
-	if (epoll_ctl(peer_epoll.fd, op, fd, &ev) == -1) {
-		if (op == EPOLL_CTL_DEL) {
-			/*
-			 * this is expected.  see the comment in peer_watcher()
-			 * about calling peer_epoll_del_fd() and
-			 * https://sourceforge.net/apps/trac/gfarm/ticket/80
-			 * https://sourceforge.net/apps/trac/gfarm/ticket/113
-			 */
-			gflog_info(GFARM_MSG_1002426,
-			    "epoll_ctl(%d, %d, %d): "
-			    "probably called against a closed file: %s",
-			    peer_epoll.fd, op, fd, strerror(errno));
-		} else {
-			gflog_fatal(GFARM_MSG_1002427,
-			    "epoll_ctl(%d, %d, %d): %s\n",
-			    peer_epoll.fd, op, fd, strerror(errno));
-		}
-	}
-}
-
-static void
-peer_epoll_add_fd(int fd)
-{
-	peer_epoll_ctl_fd(EPOLL_CTL_ADD, fd);
-}
-
-static void
-peer_epoll_del_fd(int fd)
-{
-	peer_epoll_ctl_fd(EPOLL_CTL_DEL, fd);
-}
-#endif
-
-#define PEER_WATCH_INTERVAL 10 /* 10ms: XXX FIXME */
-
-void *
-peer_watcher(void *arg)
-{
-	struct peer *peer;
-	int i, rv, skip, nfds;
-#ifdef HAVE_EPOLL
-	int efd;
-#else
-	struct pollfd *fd;
-#endif
-	static const char diag[] = "peer_watcher";
-
-	for (;;) {
-#ifdef HAVE_EPOLL
-		rv = nfds = epoll_wait(peer_epoll.fd, peer_epoll.events,
-				peer_epoll.nevents, PEER_WATCH_INTERVAL);
-#else
-		nfds = 0;
-		gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
-		for (i = 0; i < peer_table_size; i++) {
-			peer = &peer_table[i];
-
-			gfarm_mutex_lock(&peer->control_mutex,
-			    "peer_watcher start", "peer:control_mutex");
-			skip = peer->conn == NULL ||
-			    (peer->control & PEER_WATCHING) == 0 ||
-			    (peer->control & PEER_CLOSING);
-			gfarm_mutex_unlock(&peer->control_mutex,
-			    "peer_watcher start", "peer:control_mutex");
-			if (skip)
-				continue;
-
-			fd = &peer_poll_fds[nfds++];
-			fd->fd = i;
-			fd->events = POLLIN;
-			fd->revents = 0;
-		}
-		gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
-
-		rv = poll(peer_poll_fds, nfds, PEER_WATCH_INTERVAL);
-#endif
-		if (rv == -1 && errno == EINTR)
-			continue;
-		if (rv == -1)
-#ifdef HAVE_EPOLL
-			gflog_fatal(GFARM_MSG_1000276,
-			    "peer_watcher: epoll_wait: %s\n",
-			    strerror(errno));
-#else
-			gflog_fatal(GFARM_MSG_1000277,
-			    "peer_watcher: poll: %s\n",
-			    strerror(errno));
-#endif
-
-		for (i = 0; i < nfds; i++) {
-#ifdef HAVE_EPOLL
-			efd = peer_epoll.events[i].data.fd;
-			peer = &peer_table[efd];
-#else
-			if (rv == 0)
-				break; /* all processed */
-			fd = &peer_poll_fds[i];
-			peer = &peer_table[fd->fd];
-#endif
-			gfarm_mutex_lock(&peer_table_mutex,
-			    diag, peer_table_diag);
-			/*
-			 * don't use peer_control_mutex_lock(), because
-			 * collision with peer_watch_access() is expected here.
-			 */
-			gfarm_mutex_lock(&peer->control_mutex,
-			    "peer_watcher checking", "peer:control_mutex");
-
-#ifdef HAVE_EPOLL
-			if ((peer_epoll.events[i].events & EPOLLIN) == 0)
-#else
-			if ((fd->revents & POLLIN) == 0)
-#endif
-			{
-				skip = 1;
-			} else {
-#ifdef HAVE_EPOLL
-				/* efd may be closed during epoll */
-				peer_epoll_del_fd(efd);
-#endif
-				rv--;
-				if (peer->conn == NULL ||
-				    (peer->control & PEER_WATCHING) == 0) {
-					skip = 1;
-					gflog_debug(GFARM_MSG_1002323,
-					    "peer_watcher: fd:%d must be "
-					    "closed during (e)poll: %p, 0x%x",
-					    peer_get_fd(peer),
-					    peer->conn, (int)peer->control);
-				} else if (peer->control & PEER_CLOSING) {
-					skip = 1;
-					peer->control &= ~PEER_WATCHING;
-					gflog_debug(GFARM_MSG_1002428,
-					    "peer_watcher: fd:%d will be "
-					    "closed and input will be ignored",
-					    peer_get_fd(peer));
-				} else {
-					skip = 0;
-
-					peer->control &= ~PEER_WATCHING;
-					/*
-					 * needs peer_table_mutex here
-					 * to protect this from peer_free()
-					 */
-					peer->control |= PEER_INVOKING;
-				}
-			}
-
-			gfarm_mutex_unlock(&peer->control_mutex,
-			    "peer_watcher checking", "peer:control_mutex");
-			gfarm_mutex_unlock(&peer_table_mutex,
-			    diag, peer_table_diag);
-
-			if (!skip) {
-				/*
-				 * We shouldn't have giant_lock or
-				 * peer_table_mutex here.
-				 */
-				thrpool_add_job(peer->handler_thread_pool,
-				    peer->protocol_handler, peer);
-			}
-		}
-	}
-}
-
 void
 peer_add_ref(struct peer *peer)
 {
@@ -491,7 +355,6 @@ void *
 peer_closer(void *arg)
 {
 	struct peer *peer, **prev;
-	int do_close;
 	static const char diag[] = "peer_closer";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex, diag,
@@ -506,17 +369,8 @@ peer_closer(void *arg)
 		for (prev = &peer_closing_queue.head;
 		    (peer = *prev) != NULL; prev = &peer->next_close) {
 			if (peer->refcount == 0) {
-				gfarm_mutex_lock(&peer->control_mutex,
-				    diag, "peer:control_mutex");
-				if ((peer->control & PEER_INVOKING) == 0) {
-					peer->control |= PEER_CLOSING;
-					do_close = 1;
-				} else {
-					do_close = 0;
-				}
-				gfarm_mutex_unlock(&peer->control_mutex,
-				    diag, "peer:control_mutex");
-				if (do_close) {
+				if (!watcher_event_is_active(
+				    peer->readable_event)) {
 					*prev = peer->next_close;
 					if (peer_closing_queue.tail ==
 					    &peer->next_close)
@@ -581,8 +435,7 @@ peer_free_request(struct peer *peer)
 }
 
 void
-peer_init(int max_peers,
-	struct thread_pool *thrpool, void *(*protocol_handler)(void *))
+peer_init(int max_peers)
 {
 	int i;
 	struct peer *peer;
@@ -609,9 +462,7 @@ peer_init(int max_peers,
 		gfarm_mutex_init(&peer->protocol_error_mutex,
 		    "peer_init", "peer:protocol_error_mutex");
 
-		peer->control = 0;
-		gfarm_mutex_init(&peer->control_mutex,
-		    "peer_init", "peer:control_mutex");
+		peer->readable_event = NULL;
 
 		peer->fd_current = -1;
 		peer->fd_saved = -1;
@@ -628,30 +479,6 @@ peer_init(int max_peers,
 		peer->replicating_inodes.next_inode =
 		    &peer->replicating_inodes;
 	}
-
-#ifdef HAVE_EPOLL
-	peer_epoll.fd = epoll_create(max_peers);
-	if (peer_epoll.fd == -1)
-		gflog_fatal(GFARM_MSG_1000279,
-		    "epoll_create: %s\n", strerror(errno));
-	GFARM_MALLOC_ARRAY(peer_epoll.events, max_peers);
-	if (peer_epoll.events == NULL)
-		gflog_fatal(GFARM_MSG_1000280,
-		    "peer epoll event table: %s", strerror(ENOMEM));
-	peer_epoll.nevents = max_peers;
-#else
-	GFARM_MALLOC_ARRAY(peer_poll_fds, max_peers);
-	if (peer_poll_fds == NULL)
-		gflog_fatal(GFARM_MSG_1000281,
-		    "peer pollfd table: %s", strerror(ENOMEM));
-#endif
-	peer_default_protocol_handler = protocol_handler;
-	peer_default_thread_pool = thrpool;
-	e = create_detached_thread(peer_watcher, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_1000282,
-		    "create_detached_thread(peer_watcher): %s",
-			    gfarm_error_string(e));
 
 	e = create_detached_thread(peer_closer, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -678,6 +505,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 			"too many open files: fd >= peer_table_size");
 		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
 	}
+
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 	peer = &peer_table[fd];
 	if (peer->conn != NULL) { /* must be an implementation error */
@@ -692,7 +520,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 
 	/* XXX FIXME gfp_xdr requires too much memory */
 	if (conn == NULL) {
-		e = gfp_xdr_new_socket(fd, &peer->conn);
+		e = gfp_xdr_new_socket(fd, &conn);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001583,
 			    "gfp_xdr_new_socket() failed: %s",
@@ -701,8 +529,8 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 			    peer_table_diag);
 			return (e);
 		}
-	} else
-		peer->conn = conn;
+	}
+	peer->conn = conn;
 
 	peer->async = NULL; /* synchronous protocol by default */
 	peer->username = NULL;
@@ -711,9 +539,22 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	peer->host = NULL;
 	peer->process = NULL;
 	peer->protocol_error = 0;
-	peer->protocol_handler = peer_default_protocol_handler;
-	peer->handler_thread_pool = peer_default_thread_pool;
-	peer->control = 0;
+
+	peer->watcher = NULL;
+	if (peer->readable_event == NULL) {
+		e = watcher_fd_readable_event_alloc(fd,
+		    &peer->readable_event);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "peer watching %d: %s", fd, gfarm_error_string(e));
+			gfp_xdr_free(peer->conn);
+			peer->conn = NULL;
+			gfarm_mutex_unlock(&peer_table_mutex, diag,
+			    peer_table_diag);
+			return (e);
+		}
+	}
+	
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
 	peer->flags = 0;
@@ -764,7 +605,8 @@ peer_get_service_name(struct peer *peer)
 void
 peer_authorized(struct peer *peer,
 	enum gfarm_auth_id_type id_type, char *username, char *hostname,
-	struct sockaddr *addr, enum gfarm_auth_method auth_method)
+	struct sockaddr *addr, enum gfarm_auth_method auth_method,
+	struct peer_watcher *watcher)
 {
 	struct host *h;
 	struct mdhost *m;
@@ -826,15 +668,11 @@ peer_authorized(struct peer *peer,
 	}
 	/* We don't record auth_method for now */
 
-	gfarm_mutex_lock(&peer->control_mutex,
-	    "peer_authorized", "peer:control_mutex");
-	peer->control = 0;
-	gfarm_mutex_unlock(&peer->control_mutex,
-	    "peer_authorized", "peer:control_mutex");
+	peer->watcher = watcher;
 
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
-		thrpool_add_job(peer->handler_thread_pool,
-		    peer->protocol_handler, peer);
+		thrpool_add_job(watcher->thrpool,
+		    watcher->readable_handler, peer);
 	else
 		peer_watch_access(peer);
 }
@@ -871,7 +709,8 @@ peer_free(struct peer *peer)
 
 	peer_unset_pending_new_generation(peer);
 
-	peer->control = 0;
+	peer->watcher = NULL;
+	/* We don't free peer->readable_event. */
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
@@ -925,30 +764,22 @@ peer_shutdown_all(void)
 	}
 }
 
+/* XXX FIXME - rename this to peer_readable_invoked() */
 void
 peer_invoked(struct peer *peer)
 {
-	gfarm_mutex_lock(&peer->control_mutex,
-	    "peer_watch_access", "peer:control_mutex");
-	peer->control &= ~PEER_INVOKING;
-	gfarm_mutex_unlock(&peer->control_mutex,
-	    "peer_watch_access", "peer:control_mutex");
+	watcher_event_ack(peer->readable_event);
 
 	gfarm_cond_signal(&peer_closing_queue.ready_to_close,
 	    "peer_invoked", "connection can be freed");
 }
 
+/* XXX FIXME - rename this to peer_readable_watch() */
 void
 peer_watch_access(struct peer *peer)
 {
-	gfarm_mutex_lock(&peer->control_mutex,
-	    "peer_watch_access", "peer:control_mutex");
-	peer->control |= PEER_WATCHING;
-	gfarm_mutex_unlock(&peer->control_mutex,
-	    "peer_watch_access", "peer:control_mutex");
-#ifdef HAVE_EPOLL
-	peer_epoll_add_fd(peer_get_fd(peer));
-#endif
+	watcher_add_event(peer->watcher->w, peer->readable_event,
+	    peer->watcher->thrpool, peer->watcher->readable_handler, peer);
 }
 
 #if 0
@@ -1199,11 +1030,9 @@ peer_had_protocol_error(struct peer *peer)
 }
 
 void
-peer_set_protocol_handler(struct peer *peer,
-	struct thread_pool *thrpool, void *(*protocol_handler)(void *))
+peer_set_watcher(struct peer *peer, struct peer_watcher *watcher)
 {
-	peer->protocol_handler = protocol_handler;
-	peer->handler_thread_pool = thrpool;
+	peer->watcher = watcher;
 }
 
 struct protocol_state *

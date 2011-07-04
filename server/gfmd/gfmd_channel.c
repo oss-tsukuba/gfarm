@@ -61,7 +61,7 @@ struct gfmdc_journal_sync_info {
 	struct gfmdc_journal_send_closure *closures;
 };
 
-static struct thread_pool *gfmdc_recv_thread_pool;
+static struct peer_watcher *gfmdc_recv_watcher;
 static struct thread_pool *gfmdc_send_thread_pool;
 static struct thread_pool *journal_sync_thread_pool;
 static struct gfmdc_journal_sync_info journal_sync_info;
@@ -503,9 +503,7 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
 		peer_set_async(peer, async);
-		peer_set_protocol_handler(peer,
-		    gfmdc_recv_thread_pool,
-		    gfmdc_main);
+		peer_set_watcher(peer, gfmdc_recv_watcher);
 
 		if (mdhost_is_up(mh)) /* throw away old connetion */ {
 			gflog_warning(GFARM_MSG_UNFIXED,
@@ -1022,15 +1020,16 @@ gfmdc_sync_init(void)
 void
 gfmdc_init(void)
 {
-	/* XXX FIXME use different config parameter */
-	gfmdc_recv_thread_pool = thrpool_new(
-	    gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "receiving from gfmd");
+	gfmdc_recv_watcher = peer_watcher_alloc(
+	    /* XXX FIXME use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    gfmdc_main, "receiving from gfmd");
+
 	gfmdc_send_thread_pool = thrpool_new(
-	    gfarm_metadb_thread_pool_size,
-	    gfarm_metadb_job_queue_length, "sending to gfmd");
-	if (gfmdc_recv_thread_pool == NULL ||
-	    gfmdc_send_thread_pool == NULL)
+	    /* XXX FIXME use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "sending to gfmd");
+	if (gfmdc_send_thread_pool == NULL)
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "gfmd channel thread pool size:"
 		    "%d, queue length:%d: no memory",
