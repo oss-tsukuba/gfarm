@@ -2557,7 +2557,6 @@ t_apply_direntry_add(void)
 	struct db_direntry_arg m;
 	const char *entry_name = "entry";
 	char *entry_name1;
-	int name_len;
 	Dir dir;
 	DirCursor curs;
 
