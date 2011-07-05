@@ -3224,6 +3224,7 @@ t_apply(void)
 
 	journal_seqnum = 1;
 	db_journal_apply_init();
+	db_journal_init_status();
 	db_journal_set_sync_op(t_no_sync);
 	gfarm_server_config_read();
 	gfarm_set_metadb_replication_enabled(0);

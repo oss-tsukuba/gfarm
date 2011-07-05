@@ -101,13 +101,29 @@ db_journal_noaction(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+db_journal_init_status(void)
+{
+	static const char diag[] = "db_journal_init_status";
+
+	gfarm_mutex_init(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
+	gfarm_mutex_init(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
+	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
+	    RECVQ_NONEMPTY_COND_DIAG);
+	gfarm_cond_init(&journal_recvq_nonfull_cond, diag,
+	    RECVQ_NONEMPTY_COND_DIAG);
+	gfarm_cond_init(&journal_recvq_cancel_cond, diag,
+	    RECVQ_CANCEL_COND_DIAG);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 static gfarm_error_t
 db_journal_initialize(void)
 {
 	gfarm_error_t e;
 	char path[MAXPATHLEN + 1];
 	const char *journal_dir = gfarm_get_journal_dir();
-	const char *diag = "db_journal_initialize";
 #ifdef DEBUG_JOURNAL
 	gfarm_timerval_t t1, t2;
 	double ts;
@@ -147,16 +163,8 @@ db_journal_initialize(void)
 	gflog_info(GFARM_MSG_UNFIXED,
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
-	gfarm_mutex_init(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-	gfarm_mutex_init(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
-	gfarm_cond_init(&journal_recvq_nonempty_cond, diag,
-	    RECVQ_NONEMPTY_COND_DIAG);
-	gfarm_cond_init(&journal_recvq_nonfull_cond, diag,
-	    RECVQ_NONEMPTY_COND_DIAG);
-	gfarm_cond_init(&journal_recvq_cancel_cond, diag,
-	    RECVQ_CANCEL_COND_DIAG);
 
-	return (GFARM_ERR_NO_ERROR);
+	return (db_journal_init_status());
 }
 
 void
