@@ -2559,7 +2559,6 @@ t_apply_direntry_add(void)
 	char *entry_name1;
 	int name_len;
 	Dir dir;
-	DirEntry entry;
 	DirCursor curs;
 
 	id = t_add_test_inode(T_APPLY_INODE_DIR_INUM, GFARM_S_IFDIR);
@@ -2577,16 +2576,17 @@ t_apply_direntry_add(void)
 	    (dir = inode_get_dir(id)) != NULL);
 	TEST_ASSERT_B("dir_cursor_set_pos",
 	    dir_cursor_set_pos(dir, 0, &curs));
+	TEST_ASSERT_NOERR("dir_cursor_get_name_and_inode",
+	    dir_cursor_get_name_and_inode(dir, &curs, &entry_name1, &ie1));
 	TEST_ASSERT_B("dir_cursor_get_entry",
-	    (entry = dir_cursor_get_entry(dir, &curs)) != NULL);
-	TEST_ASSERT_B("dir_entry_get_name",
-	    (entry_name1 = dir_entry_get_name(entry, &name_len)) != NULL);
+	    entry_name1 != NULL);
 	TEST_ASSERT_S("entry_name",
 	    entry_name, entry_name1);
 	TEST_ASSERT_B("dir_entry_get_inode",
-	    (ie1 = dir_entry_get_inode(entry)) != NULL);
+	    ie1 != NULL);
 	TEST_ASSERT_B("entry",
 	    ie == ie1);
+	free(entry_name1);
 }
 
 static void
