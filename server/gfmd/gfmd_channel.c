@@ -575,13 +575,7 @@ gfmdc_connect()
 	static const char *diag = "gfmdc_connect";
 
 	master = mdhost_lookup_master();
-
-	if (geteuid() != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
-		    "gfmd must be run by root user"); /* exit */
-
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
-
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
 
