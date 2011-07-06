@@ -13,6 +13,7 @@ HTML =	export-gfarm.html \
 	nfs-gfarmfs.html \
 	samba-gfarmfs.html \
 	samba-hook.html \
-	smboverssh.html
+	smboverssh.html \
+	redundancy-tutorial.html
 
 include $(top_srcdir)/makes/html.mk
