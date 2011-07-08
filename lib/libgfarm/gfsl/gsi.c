@@ -45,9 +45,7 @@ static void gfarmGssInitiateSecurityContextReceiveToken(int events,
 
 
 static char **
-gssCrackStatus(statValue, statType)
-     OM_uint32 statValue;
-     int statType;
+gssCrackStatus(OM_uint32 statValue, int statType)
 {
     OM_uint32 msgCtx;
     OM_uint32 minStat;
@@ -84,8 +82,7 @@ gssCrackStatus(statValue, statType)
 
 
 void
-gfarmGssFreeCrackedStatus(strPtr)
-     char **strPtr;
+gfarmGssFreeCrackedStatus(char **strPtr)
 {
     char **cpS = strPtr;
     while (*cpS != NULL) {
@@ -96,24 +93,21 @@ gfarmGssFreeCrackedStatus(strPtr)
 
 
 char **
-gfarmGssCrackMajorStatus(majStat)
-     OM_uint32 majStat;
+gfarmGssCrackMajorStatus(OM_uint32 majStat)
 {
     return gssCrackStatus(majStat, GSS_C_GSS_CODE);
 }
 
 
 char **
-gfarmGssCrackMinorStatus(minStat)
-     OM_uint32 minStat;
+gfarmGssCrackMinorStatus(OM_uint32 minStat)
 {
     return gssCrackStatus(minStat, GSS_C_MECH_CODE);
 }
 
 
 void
-gfarmGssPrintMajorStatus(majStat)
-     OM_uint32 majStat;
+gfarmGssPrintMajorStatus(OM_uint32 majStat)
 {
     char **list = gfarmGssCrackMajorStatus(majStat);
     char **lP = list;
@@ -129,8 +123,7 @@ gfarmGssPrintMajorStatus(majStat)
 
 
 void
-gfarmGssPrintMinorStatus(minStat)
-     OM_uint32 minStat;
+gfarmGssPrintMinorStatus(OM_uint32 minStat)
 {
     char **list = gfarmGssCrackMinorStatus(minStat); 
     char **lP = list;
@@ -145,13 +138,8 @@ gfarmGssPrintMinorStatus(minStat)
 
 
 int
-gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStatPtr)
-     gss_name_t *namePtr;
-     void *nameValue;
-     size_t nameLength;
-     gss_OID nameType;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
+    gss_OID nameType, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -210,12 +198,8 @@ gfarmGssImportName(namePtr, nameValue, nameLength, nameType, majStatPtr, minStat
 
 
 int
-gfarmGssImportNameOfHostBasedService(namePtr, service, hostname, majStatPtr, minStatPtr)
-     gss_name_t *namePtr;
-     char *service;
-     char *hostname;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr, char *service,
+    char *hostname, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -250,11 +234,8 @@ gfarmGssImportNameOfHostBasedService(namePtr, service, hostname, majStatPtr, min
 
 
 int
-gfarmGssImportNameOfHost(namePtr, hostname, majStatPtr, minStatPtr)
-     gss_name_t *namePtr;
-     char *hostname;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     return gfarmGssImportNameOfHostBasedService(namePtr, "host", hostname,
 						majStatPtr, minStatPtr);
@@ -262,10 +243,8 @@ gfarmGssImportNameOfHost(namePtr, hostname, majStatPtr, minStatPtr)
 
 
 int
-gfarmGssDeleteName(namePtr, majStatPtr, minStatPtr)
-     gss_name_t *namePtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssDeleteName(gss_name_t *namePtr, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -284,11 +263,8 @@ gfarmGssDeleteName(namePtr, majStatPtr, minStatPtr)
 
 #if 0 /* gss_duplicate_name() is not implemented at least in globus-2 yet. */
 int
-gfarmGssDuplicateName(outputNamePtr, inputName, majStatPtr, minStatPtr)
-     gss_name_t *outputNamePtr;
-     const gss_name_t inputName;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssDuplicateName(gss_name_t *outputNamePtr, const gss_name_t inputName,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -307,11 +283,8 @@ gfarmGssDuplicateName(outputNamePtr, inputName, majStatPtr, minStatPtr)
 
 
 int
-gfarmGssNewCredentialName(outputNamePtr, cred, majStatPtr, minStatPtr)
-     gss_name_t *outputNamePtr;
-     gss_cred_id_t cred;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssNewCredentialName(gss_name_t *outputNamePtr, gss_cred_id_t cred,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -331,11 +304,8 @@ gfarmGssNewCredentialName(outputNamePtr, cred, majStatPtr, minStatPtr)
 
 
 char *
-gfarmGssNewDisplayName(inputName, majStatPtr, minStatPtr, outputNameTypePtr)
-     const gss_name_t inputName;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     gss_OID *outputNameTypePtr;
+gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr, gss_OID *outputNameTypePtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
@@ -377,13 +347,9 @@ gfarmGssNewDisplayName(inputName, majStatPtr, minStatPtr, outputNameTypePtr)
 
 
 int
-gfarmGssAcquireCredential(credPtr, desiredName, credUsage, majStatPtr, minStatPtr, credNamePtr)
-     gss_cred_id_t *credPtr;
-     const gss_name_t desiredName;
-     gss_cred_usage_t credUsage;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     gss_name_t *credNamePtr;
+gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
+    const gss_name_t desiredName, gss_cred_usage_t credUsage,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *credNamePtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -475,10 +441,8 @@ gfarmGssAcquireCredential(credPtr, desiredName, credUsage, majStatPtr, minStatPt
 
 
 int
-gfarmGssDeleteCredential(credPtr, majStatPtr, minStatPtr)
-     gss_cred_id_t *credPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat = 0;
     OM_uint32 minStat = 0;
@@ -507,9 +471,7 @@ gfarmGssDeleteCredential(credPtr, majStatPtr, minStatPtr)
 
 
 int
-gfarmGssSendToken(fd, gsBuf)
-     int fd;
-     gss_buffer_t gsBuf;
+gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
 {
     gfarm_int32_t iLen = (gfarm_int32_t)(gsBuf->length);
 
@@ -526,9 +488,7 @@ gfarmGssSendToken(fd, gsBuf)
 
 
 int
-gfarmGssReceiveToken(fd, gsBuf)
-     int fd;
-     gss_buffer_t gsBuf;
+gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf)
 {
     gfarm_int32_t iLen;
     gfarm_int8_t *buf = NULL;
@@ -571,14 +531,9 @@ gfarmGssReceiveToken(fd, gsBuf)
 
 
 int
-gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNamePtr, remoteCredPtr)
-     int fd;
-     gss_cred_id_t cred;
-     gss_ctx_id_t *scPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     gss_name_t *remoteNamePtr;
-     gss_cred_id_t *remoteCredPtr;
+gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr,
+    gss_cred_id_t *remoteCredPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
@@ -683,15 +638,9 @@ gfarmGssAcceptSecurityContext(fd, cred, scPtr, majStatPtr, minStatPtr, remoteNam
 
 
 int
-gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatPtr, minStatPtr, remoteNamePtr)
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gss_ctx_id_t *scPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     gss_name_t *remoteNamePtr;
+gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
+    gss_cred_id_t cred, OM_uint32 reqFlag, gss_ctx_id_t *scPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat, minStat2;
@@ -814,8 +763,7 @@ gfarmGssInitiateSecurityContext(fd, acceptorName, cred, reqFlag, scPtr, majStatP
 
 
 void
-gfarmGssDeleteSecurityContext(scPtr)
-     gss_ctx_id_t *scPtr;
+gfarmGssDeleteSecurityContext(gss_ctx_id_t *scPtr)
 {
     OM_uint32 minStat;
     if (scPtr == NULL || *scPtr == GSS_C_NO_CONTEXT) {
@@ -826,14 +774,9 @@ gfarmGssDeleteSecurityContext(scPtr)
 
 
 int
-gfarmGssConfigureMessageSize(sCtx, doEncrypt, qopReq, reqOutSz, maxInSzPtr, majStatPtr, minStatPtr)
-     gss_ctx_id_t sCtx;
-     int doEncrypt;
-     gss_qop_t qopReq;
-     unsigned int reqOutSz;
-     unsigned int *maxInSzPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx, int doEncrypt,
+    gss_qop_t qopReq, unsigned int reqOutSz, unsigned int *maxInSzPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = -1;
 
@@ -866,15 +809,8 @@ gfarmGssConfigureMessageSize(sCtx, doEncrypt, qopReq, reqOutSz, maxInSzPtr, majS
 
 
 int
-gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
-     int fd;
-     gss_ctx_id_t sCtx;
-     int doEncrypt;
-     gss_qop_t qopReq;
-     gfarm_int8_t *buf;
-     int n;
-     int chunkSz;
-     OM_uint32 *statPtr;
+gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
+    gfarm_int8_t *buf, int n, int chunkSz, OM_uint32 *statPtr)
 {
     int ret = -1;
     OM_uint32 majStat;
@@ -958,12 +894,8 @@ gfarmGssSend(fd, sCtx, doEncrypt, qopReq, buf, n, chunkSz, statPtr)
 
 
 int
-gfarmGssReceive(fd, sCtx, bufPtr, lenPtr, statPtr)
-     int fd;
-     gss_ctx_id_t sCtx;
-     gfarm_int8_t **bufPtr;
-     int *lenPtr;
-     OM_uint32 *statPtr;
+gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
+    int *lenPtr, OM_uint32 *statPtr)
 {
     int ret = -1;
     OM_uint32 majStat;
@@ -1074,9 +1006,7 @@ struct gfarmExportedCredential {
 };
 
 gfarmExportedCredential *
-gfarmGssExportCredential(cred, statPtr)
-     gss_cred_id_t cred;
-     OM_uint32 *statPtr;
+gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
 {
     gfarmExportedCredential *exportedCred = NULL;
     OM_uint32 majStat = 0;
@@ -1144,16 +1074,14 @@ gfarmGssExportCredential(cred, statPtr)
 }
 
 char *
-gfarmGssEnvForExportedCredential(exportedCred)
-    gfarmExportedCredential *exportedCred;
+gfarmGssEnvForExportedCredential(gfarmExportedCredential *exportedCred)
 {
     return exportedCred->env;
 }
 
 void
-gfarmGssDeleteExportedCredential(exportedCred, sigHandler)
-    gfarmExportedCredential *exportedCred;
-    int sigHandler;
+gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred,
+    int sigHandler)
 {
     if (exportedCred->filename != NULL)
 	unlink(exportedCred->filename);
@@ -1200,8 +1128,8 @@ struct gfarmGssInitiateSecurityContextState {
 
 /* this function returns 1, if an event is added */
 static int
-gssInitiateSecurityContextSwitch(state)
-     struct gfarmGssInitiateSecurityContextState *state;
+gssInitiateSecurityContextSwitch(
+    struct gfarmGssInitiateSecurityContextState *state)
 {
     int rv;
     struct timeval timeout;
@@ -1231,8 +1159,8 @@ gssInitiateSecurityContextSwitch(state)
 
 /* this function returns 1, if an event is added */
 static int
-gssInitiateSecurityContextNext(state)
-     struct gfarmGssInitiateSecurityContextState *state;
+gssInitiateSecurityContextNext(
+    struct gfarmGssInitiateSecurityContextState *state)
 {
     OM_uint32 minStat2;
     int rv;
@@ -1275,11 +1203,8 @@ gssInitiateSecurityContextNext(state)
 }
 
 static void
-gfarmGssInitiateSecurityContextSendToken(events, fd, closure, t)
-     int events;
-     int fd;
-     void *closure;
-     const struct timeval *t;
+gfarmGssInitiateSecurityContextSendToken(int events, int fd, void *closure,
+    const struct timeval *t)
 {
     struct gfarmGssInitiateSecurityContextState *state = closure;
     int tknStat;
@@ -1304,11 +1229,8 @@ gfarmGssInitiateSecurityContextSendToken(events, fd, closure, t)
 }
 
 static void
-gfarmGssInitiateSecurityContextReceiveToken(events, fd, closure, t)
-     int events;
-     int fd;
-     void *closure;
-     const struct timeval *t;
+gfarmGssInitiateSecurityContextReceiveToken(int events, int fd, 
+    void *closure, const struct timeval *t)
 {
     struct gfarmGssInitiateSecurityContextState *state = closure;
     int tknStat;
@@ -1335,16 +1257,10 @@ gfarmGssInitiateSecurityContextReceiveToken(events, fd, closure, t)
 }
 
 struct gfarmGssInitiateSecurityContextState *
-gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, continuation, closure, majStatPtr, minStatPtr)
-     struct gfarm_eventqueue *q;
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     void (*continuation)(void *);
-     void *closure;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
+    const gss_name_t acceptorName, gss_cred_id_t cred, OM_uint32 reqFlag,
+    void (*continuation) (void *), void *closure, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
@@ -1468,12 +1384,9 @@ gfarmGssInitiateSecurityContextRequest(q, fd, acceptorName, cred, reqFlag, conti
 }
 
 int
-gfarmGssInitiateSecurityContextResult(state, scPtr, majStatPtr, minStatPtr, remoteNamePtr)
-     struct gfarmGssInitiateSecurityContextState *state;
-     gss_ctx_id_t *scPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     gss_name_t *remoteNamePtr;
+gfarmGssInitiateSecurityContextResult(
+    struct gfarmGssInitiateSecurityContextState *state, gss_ctx_id_t *scPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, gss_name_t *remoteNamePtr)
 {
     int ret;
     OM_uint32 minStat2;

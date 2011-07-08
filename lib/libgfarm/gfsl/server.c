@@ -32,9 +32,7 @@
 static char *hostname = NULL;
 
 static int
-ParseArgs(argc, argv)
-     int argc;
-     char *argv[];
+ParseArgs(int argc, char **argv)
 {
     int c;
 
@@ -64,9 +62,7 @@ void	doServer(int fd, char *host, int port, gss_cred_id_t myCred,
 		 gss_name_t acceptorName);
 
 int
-main(argc, argv)
-     int argc;
-     char *argv[];
+main(int argc, char **argv)
 {
     int bindFd = -1;
     struct sockaddr_in remote;

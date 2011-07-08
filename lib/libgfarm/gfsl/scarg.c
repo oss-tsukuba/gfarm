@@ -17,9 +17,7 @@ int acceptorSpecified = 0;
 gss_name_t acceptorName = GSS_C_NO_NAME;
 
 int
-HandleCommonOptions(option, arg)
-	int option;
-	char *arg;
+HandleCommonOptions(int option, char *arg)
 {
     int tmp;
     OM_uint32 majStat;
@@ -131,8 +129,7 @@ HandleCommonOptions(option, arg)
 
 
 char *
-newStringOfName(inputName)
-     const gss_name_t inputName;
+newStringOfName(const gss_name_t inputName)
 {
     OM_uint32 majStat, minStat;
     char *s = gfarmGssNewDisplayName(inputName, &majStat, &minStat, NULL);
@@ -148,8 +145,7 @@ newStringOfName(inputName)
 
 
 char *
-newStringOfCredential(cred)
-     gss_cred_id_t cred;
+newStringOfCredential(gss_cred_id_t cred)
 {
     OM_uint32 majStat, minStat;
     gss_name_t name;

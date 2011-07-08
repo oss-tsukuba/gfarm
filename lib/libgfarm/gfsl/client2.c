@@ -23,9 +23,7 @@
 static char *hostname = NULL;
 
 static int
-ParseArgs(argc, argv)
-     int argc;
-     char *argv[];
+ParseArgs(int argc, char *argv[])
 {
     int c;
 
@@ -62,9 +60,7 @@ ParseArgs(argc, argv)
 
 
 int
-main(argc, argv)
-     int argc;
-     char *argv[];
+main(int argc, char *argv[])
 {
     OM_uint32 majStat;
     OM_uint32 minStat;

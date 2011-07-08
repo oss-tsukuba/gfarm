@@ -32,12 +32,8 @@ void	doClient(char *host, int port, gss_name_t acceptorName,
 
 
 void
-doServer(fd, hostname, port, myCred, acceptorName)
-     int fd;
-     char *hostname;
-     int port;
-     gss_cred_id_t myCred;
-     gss_name_t acceptorName;
+doServer(int fd, char *hostname, int port, gss_cred_id_t myCred,
+    gss_name_t acceptorName)
 {
     OM_uint32 majStat, minStat;
     char *rBuf = NULL;
@@ -138,9 +134,7 @@ doServer(fd, hostname, port, myCred, acceptorName)
 
 static void	randomizeIt(char *buf, int len);
 static void
-randomizeIt(buf, len)
-     char *buf;
-     int len;
+randomizeIt(char *buf, int len)
 {
     int i;
 
@@ -153,12 +147,8 @@ randomizeIt(buf, len)
 
 
 void
-doClient(hostname, port, acceptorName, deleCred, deleCheck)
-     char *hostname;
-     int port;
-     gss_name_t acceptorName;
-     gss_cred_id_t deleCred;
-     gfarm_int32_t deleCheck;
+doClient(char *hostname, int port, gss_name_t acceptorName,
+    gss_cred_id_t deleCred, gfarm_int32_t deleCheck)
 {
     char *sBuf = NULL;
     char *rBuf = NULL;

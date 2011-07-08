@@ -29,9 +29,7 @@
 #include "scarg.h"
 
 static int
-ParseArgs(argc, argv)
-     int argc;
-     char *argv[];
+ParseArgs(int argc, char **argv)
 {
     int c;
 
@@ -51,9 +49,7 @@ ParseArgs(argc, argv)
 
 
 int
-main(argc, argv)
-     int argc;
-     char *argv[];
+main(int argc, char **argv)
 {
     int ret = 1;
     int bindFd = -1;

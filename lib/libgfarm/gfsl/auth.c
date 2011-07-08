@@ -35,8 +35,7 @@ static void gfarmAuthDestroyUserEntry_unlocked(gfarmAuthEntry *);
 
 #if 0
 static void
-dumpAuthEntry(aePtr)
-     gfarmAuthEntry *aePtr;
+dumpAuthEntry(gfarmAuthEntry *aePtr)
 {
     if (aePtr->authType != GFARM_AUTH_USER &&
 	aePtr->authType != GFARM_AUTH_HOST) {
@@ -170,8 +169,7 @@ checkAuthFileStat(void)
 }
 
 int
-gfarmAuthInitialize(usermapFile)
-     char *usermapFile;
+gfarmAuthInitialize(char *usermapFile)
 {
     int ret = 1;
     static const char diag[] = "gfarmAuthInitialize()";
@@ -417,7 +415,7 @@ gfarmAuthInitialize(usermapFile)
 
 
 void
-gfarmAuthFinalize()
+gfarmAuthFinalize(void)
 {
     static const char diag[] = "gfarmAuthFinalize()";
 
@@ -454,8 +452,7 @@ gfarmAuthFinalize()
 
 
 gfarmAuthEntry *
-gfarmAuthGetUserEntry(distUserName)
-     char *distUserName;
+gfarmAuthGetUserEntry(char *distUserName)
 {
     gfarmAuthEntry *ret = NULL;
     static const char diag[] = "gfarmAuthGetUserEntry";
@@ -494,8 +491,7 @@ gfarmAuthGetUserEntry(distUserName)
 
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 gfarmAuthEntry *
-gfarmAuthGetLocalUserEntry(localUserName)
-     char *localUserName;
+gfarmAuthGetLocalUserEntry(char *localUserName)
 {
     gfarmAuthEntry *ret = NULL;
     static const char diag[] = "gfarmAuthGetLocalUserEntry()";
@@ -534,8 +530,7 @@ gfarmAuthGetLocalUserEntry(localUserName)
 
 
 int
-gfarmAuthGetAuthEntryType(aePtr)
-     gfarmAuthEntry *aePtr;
+gfarmAuthGetAuthEntryType(gfarmAuthEntry *aePtr)
 {
     int authType;
     static const char diag[] = "gfarmAuthGetAuthEntryType()";
@@ -559,8 +554,7 @@ gfarmAuthGetAuthEntryType(aePtr)
 
 /* this function assumes that authTable_mutex is locked */
 static void
-gfarmAuthDestroyUserEntry_unlocked(aePtr)
-     gfarmAuthEntry *aePtr;
+gfarmAuthDestroyUserEntry_unlocked(gfarmAuthEntry *aePtr)
 {
     if (aePtr->sesRefCount == 0 &&
 	aePtr->orphaned == 1) {
@@ -592,8 +586,7 @@ gfarmAuthDestroyUserEntry_unlocked(aePtr)
 }
 
 void
-gfarmAuthDestroyUserEntry(aePtr)
-     gfarmAuthEntry *aePtr;
+gfarmAuthDestroyUserEntry(gfarmAuthEntry *aePtr)
 {
     static const char diag[] = "gfarmAuthDestroyUserEntry";
 
@@ -604,8 +597,7 @@ gfarmAuthDestroyUserEntry(aePtr)
 
 static void	cleanString(char *str);
 static void
-cleanString(str)
-     char *str;
+cleanString(char *str)
 {
     if (str == NULL || str[0] == '\0') {
 	return;
@@ -617,8 +609,7 @@ cleanString(str)
 
 
 void
-gfarmAuthMakeThisAlone(laePtr)
-     gfarmAuthEntry *laePtr;
+gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr)
 {
     static const char diag[] = "gfarmAuthMakeThisAlone()";
 

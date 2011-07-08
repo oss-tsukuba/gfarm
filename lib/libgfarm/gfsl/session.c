@@ -131,10 +131,7 @@ static void	dumpSsOpt(gfarmSecSessionOption *ssOptPtr);
 
 
 static void
-dumpConfParam(qOp, max, conf)
-     gss_qop_t qOp;
-     unsigned int max;
-     unsigned int conf;
+dumpConfParam(gss_qop_t qOp, unsigned int max, unsigned int conf)
 {
     fprintf(stderr, "\tQOP:\t%d\n", (int)qOp);
     fprintf(stderr, "\tMAX:\t%d\n", max);
@@ -150,8 +147,7 @@ dumpConfParam(qOp, max, conf)
 
 
 static void
-dumpSsOpt(ssOptPtr)
-     gfarmSecSessionOption *ssOptPtr;
+dumpSsOpt(gfarmSecSessionOption *ssOptPtr)
 {
     fprintf(stderr, "\n\tQOP:\t");
     if (ssOptPtr->optMask & GFARM_SS_OPT_QOP_MASK) {
@@ -190,9 +186,7 @@ dumpSsOpt(ssOptPtr)
 
 
 static int
-secSessionReadConfigFile(configFile, ssOptPtr)
-     char *configFile;
-     gfarmSecSessionOption *ssOptPtr;
+secSessionReadConfigFile(char *configFile, gfarmSecSessionOption *ssOptPtr)
 {
     FILE *fd = NULL;
     char lineBuf[65536];
@@ -284,10 +278,8 @@ secSessionReadConfigFile(configFile, ssOptPtr)
 
 
 static int
-canonicSecSessionOpt(which, reqPtr, canPtr)
-     int which;
-     gfarmSecSessionOption *reqPtr;
-     gfarmSecSessionOption *canPtr;
+canonicSecSessionOpt(int which, gfarmSecSessionOption *reqPtr,
+    gfarmSecSessionOption *canPtr)
 {
     gfarmSecSessionOption *dPtr = (which == GFARM_SS_INITIATOR) ?
     	&initiatorSsOpt : &acceptorSsOpt;
@@ -361,16 +353,10 @@ canonicSecSessionOpt(which, reqPtr, canPtr)
 
 
 static int
-negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, majStatPtr, minStatPtr)
-     int fd;
-     gss_ctx_id_t sCtx;
-     int which;
-     gfarmSecSessionOption *canPtr;
-     gss_qop_t *qOpPtr;
-     unsigned int *maxTransPtr;
-     unsigned int *configPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
+    gfarmSecSessionOption *canPtr, gss_qop_t *qOpPtr,
+    unsigned int *maxTransPtr, unsigned int *configPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = -1;
     OM_uint32 majStat = GSS_S_FAILURE;
@@ -553,8 +539,7 @@ negotiateConfigParam(fd, sCtx, which, canPtr, qOpPtr, maxTransPtr, configPtr, ma
 
 
 static gfarmSecSession *
-allocSecSession(which)
-     int which;
+allocSecSession(int which)
 {
     gfarmSecSession *ret;
 
@@ -592,8 +577,7 @@ allocSecSession(which)
 
 
 static void
-destroySecSession(ssPtr)
-     gfarmSecSession *ssPtr;
+destroySecSession(gfarmSecSession *ssPtr)
 {
     if (ssPtr != NULL) {
 	OM_uint32 minStat;
@@ -654,35 +638,29 @@ destroySecSession(ssPtr)
 
 
 char **
-gfarmSecSessionCrackStatus(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionCrackStatus(gfarmSecSession *ssPtr)
 {
     return gfarmGssCrackMajorStatus(ssPtr->gssLastStat);
 }
 
 
 void
-gfarmSecSessionFreeCrackedStatus(strPtr)
-     char **strPtr;
+gfarmSecSessionFreeCrackedStatus(char **strPtr)
 {
     gfarmGssFreeCrackedStatus(strPtr);
 }
 
 
 void
-gfarmSecSessionPrintStatus(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr)
 {
     gfarmGssPrintMajorStatus(ssPtr->gssLastStat);
 }
 
 
 int
-gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPtr)
-     char *configFile;
-     char *usermapFile;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitializeAcceptor(char *configFile, char *usermapFile,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
@@ -772,8 +750,7 @@ gfarmSecSessionInitializeAcceptor(configFile, usermapFile, majStatPtr, minStatPt
 }
 
 int
-gfarmSecSessionGetInitiatorInitialCredential(credPtr)
-     gss_cred_id_t *credPtr;
+gfarmSecSessionGetInitiatorInitialCredential(gss_cred_id_t *credPtr)
 {
     int initiator_Initialized;
     static const char diag[] = "gfarmSecSessionGetInitiatorInitialCredential()";
@@ -787,11 +764,8 @@ gfarmSecSessionGetInitiatorInitialCredential(credPtr)
 }
 
 int
-gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatPtr)
-     char *configFile;
-     char *usermapFile;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitializeInitiator(char *configFile, char *usermapFile,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
@@ -884,12 +858,8 @@ gfarmSecSessionInitializeInitiator(configFile, usermapFile, majStatPtr, minStatP
 
 
 int
-gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr, minStatPtr)
-     char *iConfigFile;
-     char *aConfigFile;
-     char *usermapFile;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitializeBoth(char *iConfigFile, char *aConfigFile,
+    char *usermapFile, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     int ret = 1;
     OM_uint32 majStat = GSS_S_COMPLETE;
@@ -1025,7 +995,7 @@ gfarmSecSessionInitializeBoth(iConfigFile, aConfigFile, usermapFile, majStatPtr,
 
 
 void
-gfarmSecSessionFinalizeInitiator()
+gfarmSecSessionFinalizeInitiator(void)
 {
     static const char diag[] = "gfarmSecSessionFinalizeInitiator()";
 
@@ -1042,7 +1012,7 @@ gfarmSecSessionFinalizeInitiator()
 
 
 void
-gfarmSecSessionFinalizeAcceptor()
+gfarmSecSessionFinalizeAcceptor(void)
 {
     static const char diag[] = "gfarmSecSessionFinalizeAcceptor()";
 
@@ -1060,7 +1030,7 @@ gfarmSecSessionFinalizeAcceptor()
 
 
 void
-gfarmSecSessionFinalizeBoth()
+gfarmSecSessionFinalizeBoth(void)
 {
     static const char diag[] = "gfarmSecSessionFinalizeBoth()";
 
@@ -1082,12 +1052,9 @@ gfarmSecSessionFinalizeBoth()
 
 
 gfarmSecSession *
-gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
-     int fd;
-     gss_cred_id_t cred;
-     gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
+    gfarmSecSessionOption *ssOptPtr, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
@@ -1280,15 +1247,9 @@ gfarmSecSessionAccept(fd, cred, ssOptPtr, majStatPtr, minStatPtr)
 
 
 static gfarmSecSession *
-secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr, needClose)
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     int needClose;
+secSessionInitiate(int fd, const gss_name_t acceptorName,
+    gss_cred_id_t cred, OM_uint32 reqFlag, gfarmSecSessionOption *ssOptPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, int needClose)
 {
     gfarmSecSession *ret = NULL;
     gfarmSecSessionOption canOpt = GFARM_SS_DEFAULT_OPTION;
@@ -1456,14 +1417,9 @@ secSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minSta
 
 
 gfarmSecSession *
-gfarmSecSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitiate(int fd, const gss_name_t acceptorName,
+    gss_cred_id_t cred, OM_uint32 reqFlag, gfarmSecSessionOption *ssOptPtr,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     return secSessionInitiate(fd, acceptorName, cred, reqFlag,
 			      ssOptPtr, majStatPtr, minStatPtr, 0);
@@ -1471,15 +1427,10 @@ gfarmSecSessionInitiate(fd, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, m
 
 
 gfarmSecSession *
-gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOptPtr, majStatPtr, minStatPtr)
-     char *hostname;
-     int port;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitiateByName(char *hostname, int port,
+    const gss_name_t acceptorName, gss_cred_id_t cred, OM_uint32 reqFlag,
+    gfarmSecSessionOption *ssOptPtr, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     int fd = gfarmTCPConnectPortByHost(hostname, port);
 
@@ -1501,16 +1452,14 @@ gfarmSecSessionInitiateByName(hostname, port, acceptorName, cred, reqFlag, ssOpt
 
 
 void
-gfarmSecSessionTerminate(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionTerminate(gfarmSecSession *ssPtr)
 {
     destroySecSession(ssPtr);
 }
 
 
 gss_cred_id_t
-gfarmSecSessionGetDelegatedCredential(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionGetDelegatedCredential(gfarmSecSession *ssPtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
 	return GSS_C_NO_CREDENTIAL;
@@ -1519,9 +1468,7 @@ gfarmSecSessionGetDelegatedCredential(ssPtr)
 }
 
 int
-gfarmSecSessionGetInitiatorName(ssPtr, namePtr)
-     gfarmSecSession *ssPtr;
-     gss_name_t *namePtr;
+gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr, gss_name_t *namePtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
 	return -1;
@@ -1531,8 +1478,7 @@ gfarmSecSessionGetInitiatorName(ssPtr, namePtr)
 }
 
 gfarmAuthEntry *
-gfarmSecSessionGetInitiatorInfo(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr)
 {
     if (ssPtr->iOa == GFARM_SS_INITIATOR) {
 	return NULL;
@@ -1542,8 +1488,7 @@ gfarmSecSessionGetInitiatorInfo(ssPtr)
 
 
 int
-gfarmSecSessionDedicate(ssPtr)
-     gfarmSecSession *ssPtr;
+gfarmSecSessionDedicate(gfarmSecSession *ssPtr)
 {
     int ret = -1;
     gfarmAuthEntry *aePtr = gfarmSecSessionGetInitiatorInfo(ssPtr);
@@ -1586,10 +1531,7 @@ gfarmSecSessionDedicate(ssPtr)
 
 
 int
-gfarmSecSessionSendInt8(ssPtr, buf, n)
-     gfarmSecSession *ssPtr;
-     gfarm_int8_t *buf;
-     int n;
+gfarmSecSessionSendInt8(gfarmSecSession *ssPtr, gfarm_int8_t *buf, int n)
 {
     int doEncrypt = GFARM_GSS_ENCRYPTION_ENABLED &
     		    (isBitSet(ssPtr->config,
@@ -1606,10 +1548,8 @@ gfarmSecSessionSendInt8(ssPtr, buf, n)
 
 
 int
-gfarmSecSessionReceiveInt8(ssPtr, bufPtr, lenPtr)
-     gfarmSecSession *ssPtr;
-     gfarm_int8_t **bufPtr;
-     int *lenPtr;
+gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr, gfarm_int8_t **bufPtr,
+    int *lenPtr)
 {
     return gfarmGssReceive(ssPtr->fd,
 			   ssPtr->sCtx,
@@ -1620,10 +1560,7 @@ gfarmSecSessionReceiveInt8(ssPtr, bufPtr, lenPtr)
 
 
 int
-gfarmSecSessionSendInt32(ssPtr, buf, n)
-     gfarmSecSession *ssPtr;
-     gfarm_int32_t *buf;
-     int n;
+gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n)
 {
     gfarm_int32_t *lBuf;
     int i;
@@ -1650,10 +1587,8 @@ gfarmSecSessionSendInt32(ssPtr, buf, n)
 
 
 int
-gfarmSecSessionReceiveInt32(ssPtr, bufPtr, lenPtr)
-     gfarmSecSession *ssPtr;
-     gfarm_int32_t **bufPtr;
-     int *lenPtr;
+gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr, gfarm_int32_t **bufPtr,
+    int *lenPtr)
 {
     gfarm_int8_t *lBuf = NULL;
     gfarm_int8_t *lbPtr = NULL;
@@ -1702,10 +1637,7 @@ gfarmSecSessionReceiveInt32(ssPtr, bufPtr, lenPtr)
 
 
 int
-gfarmSecSessionSendInt16(ssPtr, buf, n)
-     gfarmSecSession *ssPtr;
-     gfarm_int16_t *buf;
-     int n;
+gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n)
 {
     gfarm_int16_t *lBuf;
     int i;
@@ -1732,10 +1664,8 @@ gfarmSecSessionSendInt16(ssPtr, buf, n)
 
 
 int
-gfarmSecSessionReceiveInt16(ssPtr, bufPtr, lenPtr)
-     gfarmSecSession *ssPtr;
-     gfarm_int16_t **bufPtr;
-     int *lenPtr;
+gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr, gfarm_int16_t **bufPtr,
+    int *lenPtr)
 {
     char *lBuf = NULL;
     char *lbPtr = NULL;
@@ -1784,10 +1714,7 @@ gfarmSecSessionReceiveInt16(ssPtr, bufPtr, lenPtr)
 
 
 int
-gfarmSecSessionPoll(ssList, n, toPtr)
-     gfarmSecSession *ssList[];
-     int n;
-     struct timeval *toPtr;
+gfarmSecSessionPoll(gfarmSecSession **ssList, int n, struct timeval *toPtr)
 {
     int nFds = -INT_MAX;
     int i;
@@ -1879,11 +1806,8 @@ struct negotiateConfigParamInitiatorState {
 };
 
 static void
-negotiateConfigParamInitiatorReceive(events, fd, closure, t)
-     int events;
-     int fd;
-     void *closure;
-     const struct timeval *t;
+negotiateConfigParamInitiatorReceive(int events, int fd, void *closure,
+    const struct timeval *t)
 {
     struct negotiateConfigParamInitiatorState *state = closure;
     gfarm_int32_t param[NUM_NEGO_PARAM];
@@ -1914,11 +1838,8 @@ negotiateConfigParamInitiatorReceive(events, fd, closure, t)
 }
 
 static void
-negotiateConfigParamInitiatorSend(events, fd, closure, t)
-     int events;
-     int fd;
-     void *closure;
-     const struct timeval *t;
+negotiateConfigParamInitiatorSend(int events, int fd, void *closure,
+    const struct timeval *t)
 {
     struct negotiateConfigParamInitiatorState *state = closure;
     gfarmSecSessionOption *canPtr = state->canPtr;
@@ -1957,15 +1878,10 @@ negotiateConfigParamInitiatorSend(events, fd, closure, t)
 }
 
 static struct negotiateConfigParamInitiatorState *
-negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure, majStatPtr, minStatPtr)
-     struct gfarm_eventqueue *q;
-     int fd;
-     gss_ctx_id_t sCtx;
-     gfarmSecSessionOption *canPtr;
-     void (*continuation)(void *);
-     void *closure;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+negotiateConfigParamInitiatorRequest(struct gfarm_eventqueue *q, int fd,
+    gss_ctx_id_t sCtx, gfarmSecSessionOption *canPtr,
+    void (*continuation) (void *),
+    void *closure, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     struct negotiateConfigParamInitiatorState *state = NULL;
     OM_uint32 majStat = GSS_S_FAILURE;
@@ -2045,13 +1961,10 @@ negotiateConfigParamInitiatorRequest(q, fd, sCtx, canPtr, continuation, closure,
 }
 
 static int
-negotiateConfigParamInitiatorResult(state, qOpPtr, maxTransPtr, configPtr, majStatPtr, minStatPtr)
-     struct negotiateConfigParamInitiatorState *state;
-     gss_qop_t *qOpPtr;
-     unsigned int *maxTransPtr;
-     unsigned int *configPtr;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+negotiateConfigParamInitiatorResult(
+    struct negotiateConfigParamInitiatorState *state, gss_qop_t *qOpPtr,
+    unsigned int *maxTransPtr, unsigned int *configPtr, OM_uint32 *majStatPtr,
+    OM_uint32 *minStatPtr)
 {
     int ret = -1;
     OM_uint32 majStat = state->majStat;
@@ -2131,8 +2044,7 @@ struct gfarmSecSessionInitiateState {
 };
 
 static void
-secSessionInitiateCleanup(closure)
-     void *closure;
+secSessionInitiateCleanup(void *closure)
 {
     struct gfarmSecSessionInitiateState *state = closure;
 
@@ -2150,11 +2062,8 @@ secSessionInitiateCleanup(closure)
 }
 
 static void
-secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
-     int events;
-     int fd;
-     void *closure;
-     const struct timeval *t;
+secSessionInitiateReceiveAuthorizationAck(int events, int fd, void *closure,
+    const struct timeval *t)
 {
     struct gfarmSecSessionInitiateState *state = closure;
     gfarm_int32_t acknack;
@@ -2205,8 +2114,7 @@ secSessionInitiateReceiveAuthorizationAck(events, fd, closure, t)
 }
 
 static void
-secSessionInitiateWaitAuthorizationAck(closure)
-     void *closure;
+secSessionInitiateWaitAuthorizationAck(void *closure)
 {
     struct gfarmSecSessionInitiateState *state = closure;
     struct timeval timeout;
@@ -2247,18 +2155,10 @@ secSessionInitiateWaitAuthorizationAck(closure)
 }
 
 static struct gfarmSecSessionInitiateState *
-secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continuation, closure, majStatPtr, minStatPtr, needClose)
-     struct gfarm_eventqueue *q;
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     void (*continuation)(void *);
-     void *closure;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
-     int needClose;
+secSessionInitiateRequest(struct gfarm_eventqueue *q, int fd,
+    const gss_name_t acceptorName, gss_cred_id_t cred, OM_uint32 reqFlag,
+    gfarmSecSessionOption *ssOptPtr, void (*continuation) (void *),
+    void *closure, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr, int needClose)
 {
     struct gfarmSecSessionInitiateState *state = NULL;
     gfarmSecSession *ret = NULL;
@@ -2364,10 +2264,8 @@ secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continua
 }
 
 static gfarmSecSession *
-secSessionInitiateResult(state, majStatPtr, minStatPtr)
-     struct gfarmSecSessionInitiateState *state;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+secSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     gfarmSecSession *ret = state->session;
 
@@ -2428,17 +2326,10 @@ secSessionInitiateResult(state, majStatPtr, minStatPtr)
  */
 
 struct gfarmSecSessionInitiateState *
-gfarmSecSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, continuation, closure, majStatPtr, minStatPtr)
-     struct gfarm_eventqueue *q;
-     int fd;
-     const gss_name_t acceptorName;
-     gss_cred_id_t cred;
-     OM_uint32 reqFlag;
-     gfarmSecSessionOption *ssOptPtr;
-     void (*continuation)(void *);
-     void *closure;
-     OM_uint32 *majStatPtr;
-     OM_uint32 *minStatPtr;
+gfarmSecSessionInitiateRequest(struct gfarm_eventqueue *q, int fd,
+    const gss_name_t acceptorName, gss_cred_id_t cred, OM_uint32 reqFlag,
+    gfarmSecSessionOption *ssOptPtr, void (*continuation) (void *),
+    void *closure, OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     return secSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag,
 				     ssOptPtr,
@@ -2447,9 +2338,8 @@ gfarmSecSessionInitiateRequest(q, fd, acceptorName, cred, reqFlag, ssOptPtr, con
 }
 
 gfarmSecSession *
-gfarmSecSessionInitiateResult(state, majStatPtr, minStatPtr)
-     struct gfarmSecSessionInitiateState *state;
-     OM_uint32 *majStatPtr, *minStatPtr;
+gfarmSecSessionInitiateResult(struct gfarmSecSessionInitiateState *state,
+    OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
 {
     return secSessionInitiateResult(state, majStatPtr, minStatPtr);
 }

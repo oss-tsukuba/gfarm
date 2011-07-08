@@ -83,10 +83,7 @@ gfarmGetInt(char *str, int *val)
 
 
 int
-gfarmGetToken(buf, tokens, max)
-     char *buf;
-     char *tokens[];
-     int max;
+gfarmGetToken(char *buf, char *tokens[], int max)
 {
     int n = 0;
     int nonSpace = 0;
@@ -143,7 +140,7 @@ gfarmGetToken(buf, tokens, max)
 
 
 char *
-gfarmGetEtcDir()
+gfarmGetEtcDir(void)
 {
     char buf[PATH_MAX];
     char *dir = getenv(GFARM_INSTALL_DIR_ENV), *path;

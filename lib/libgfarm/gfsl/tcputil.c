@@ -31,9 +31,7 @@
 #define	GFARM_OCTETS_PER_16BIT	2	/* 16/8 */
 
 int
-gfarmTCPConnectPortByHost(host, port)
-     char *host;
-     int port;
+gfarmTCPConnectPortByHost(char *host, int port)
 {
     struct addrinfo hints, *res, *res0;
     int sock, error, rv;
@@ -82,8 +80,7 @@ gfarmTCPConnectPortByHost(host, port)
 }
 
 int
-gfarmTCPBindPort(port)
-     int port;
+gfarmTCPBindPort(int port)
 {
     struct addrinfo hints, *res;
     int sock, e;
@@ -130,10 +127,7 @@ gfarmTCPBindPort(port)
 
 
 int
-gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
-     int sock;
-     int *portPtr;
-     char **hostPtr;
+gfarmGetPeernameOfSocket(int sock, int *portPtr, char **hostPtr)
 {
     struct sockaddr_in sin;
     socklen_t slen = sizeof(sin);
@@ -158,9 +152,7 @@ gfarmGetPeernameOfSocket(sock, portPtr, hostPtr)
 
 
 int
-gfarmGetNameOfSocket(sock, portPtr)
-     int sock;
-     int *portPtr;
+gfarmGetNameOfSocket(int sock, int *portPtr)
 {
     struct sockaddr_in sin;
     socklen_t slen = sizeof(sin);
@@ -176,8 +168,7 @@ gfarmGetNameOfSocket(sock, portPtr)
 
 
 int
-gfarmWaitReadable(fd)
-     int fd;
+gfarmWaitReadable(int fd)
 {
     fd_set rFd;
     int sel;
@@ -201,10 +192,7 @@ gfarmWaitReadable(fd)
 
 
 int
-gfarmReadInt8(fd, buf, len)
-     int fd;
-     gfarm_int8_t *buf;
-     int len;
+gfarmReadInt8(int fd, gfarm_int8_t *buf, int len)
 {
     int sum = 0;
     int cur = 0;
@@ -229,10 +217,7 @@ gfarmReadInt8(fd, buf, len)
 
 
 int
-gfarmReadInt16(fd, buf, len)
-     int fd;
-     gfarm_int16_t *buf;
-     int len;
+gfarmReadInt16(int fd, gfarm_int16_t *buf, int len)
 {
     int i;
     int n;
@@ -251,10 +236,7 @@ gfarmReadInt16(fd, buf, len)
 
 
 int
-gfarmReadInt32(fd, buf, len)
-     int fd;
-     gfarm_int32_t *buf;
-     int len;
+gfarmReadInt32(int fd, gfarm_int32_t *buf, int len)
 {
     int i;
     int n;
@@ -273,10 +255,7 @@ gfarmReadInt32(fd, buf, len)
 
 
 int
-gfarmWriteInt8(fd, buf, len)
-     int fd;
-     gfarm_int8_t *buf;
-     int len;
+gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len)
 {
     int sum = 0;
     int cur = 0;
@@ -294,10 +273,7 @@ gfarmWriteInt8(fd, buf, len)
 
 
 int
-gfarmWriteInt16(fd, buf, len)
-     int fd;
-     gfarm_int16_t *buf;
-     int len;
+gfarmWriteInt16(int fd, gfarm_int16_t *buf, int len)
 {
     int i;
     int n;
@@ -315,10 +291,7 @@ gfarmWriteInt16(fd, buf, len)
 
 
 int
-gfarmWriteInt32(fd, buf, len)
-     int fd;
-     gfarm_int32_t *buf;
-     int len;
+gfarmWriteInt32(int fd, gfarm_int32_t *buf, int len)
 {
     int i;
     int n;
