@@ -20,4 +20,6 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/auth.h \
-	$(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/gfpath.h
+	$(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/gfpath.h \
+	$(GFARMLIB_SRCDIR)/metadb_server.h $(GFARMLIB_SRCDIR)/gfm_client.h \
+	$(GFARMLIB_SRCDIR)/lookup.h

@@ -11,6 +11,7 @@
 #include "auth.h"
 #include "host.h"
 #include "gfpath.h"
+#include "metadb_server.h"
 #include "gfm_client.h"
 #include "lookup.h"
 
@@ -66,6 +67,7 @@ main(int argc, char *argv[])
 	const char *user, *gfmd_hostname;
 	const char *path = GFARM_PATH_ROOT;
 	struct gfm_connection *gfm_server;
+	struct gfarm_metadb_server *ms;
 
 #ifdef HAVE_GSI
 	char *cred;
@@ -97,6 +99,7 @@ main(int argc, char *argv[])
 	    path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		char *hostname;
 		gfarm_error_t e2;
+
 		if ((e2 = gfarm_get_hostname_by_url(path, &hostname, &port))
 		    != GFARM_ERR_NO_ERROR)
 			fprintf(stderr, "cannot get metadata server name"
@@ -124,9 +127,6 @@ main(int argc, char *argv[])
 		    canonical_hostname, port);
 	else
 		printf("canonical hostname: not available\n");
-
-	gfmd_hostname = gfm_client_hostname(gfm_server);
-	port = gfm_client_port(gfm_server);
 #if 0
 	e = gfarm_host_get_self_architecture(&arch);
 	print_msg("architecture name ",
@@ -134,6 +134,7 @@ main(int argc, char *argv[])
 	print_msg("active fs node    ",
 		  gfarm_is_active_file_system_node ? "yes" : "no");
 #endif
+
 	puts("");
 	print_msg("global username", user);
 	print_msg(" local username", gfarm_get_local_username());
@@ -144,6 +145,9 @@ main(int argc, char *argv[])
 #endif
 	/* gfmd */
 	puts("");
+	ms = gfm_client_connection_get_real_server(gfm_server);
+	gfmd_hostname = gfarm_metadb_server_get_name(ms);
+	port = gfarm_metadb_server_get_port(ms);
 	print_msg("gfmd server name", gfmd_hostname);
 	printf("gfmd server port: %d\n", port);
 	print_msg("gfmd admin user", gfarm_metadb_admin_user);
