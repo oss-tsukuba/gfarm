@@ -4530,8 +4530,7 @@ main(int argc, char **argv)
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 
-	e = gfarm_global_to_local_username_by_host(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 	    GFSD_USERNAME, &local_gfsd_user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "no local user for the global `%s' user.\n",

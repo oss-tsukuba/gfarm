@@ -579,8 +579,7 @@ gfmdc_connect()
 	hostname = mdhost_get_name(master);
 	port = mdhost_get_port(master);
 
-	if ((e = gfarm_global_to_local_username_by_host(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port,
+	if ((e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 	    service_user, &local_user)) != GFARM_ERR_NO_ERROR) {
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "no local user for the global `%s' user.",

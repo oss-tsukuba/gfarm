@@ -1886,8 +1886,10 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
+	/* XXX - consider to allow to specify several server lists */
 	if (gfarm_filesystem_is_initialized())
 		return (GFARM_ERR_NO_ERROR);
+
 	for (;;) {
 		if ((e = gfarm_strtoken(&p, &host_and_port))
 		    != GFARM_ERR_NO_ERROR) {
@@ -2235,6 +2237,8 @@ static gfarm_error_t
 gfarm_config_set_default_filesystem(void)
 {
 	gfarm_error_t e;
+	struct gfarm_filesystem *fs;
+	int n;
 
 	/* gfarm_metadb_server_name is checked in
 	 * gfarm_config_set_default_ports */
@@ -2245,7 +2249,16 @@ gfarm_config_set_default_filesystem(void)
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-	(void)gfarm_filesystem_get_default();
+	fs = gfarm_filesystem_get(
+		gfarm_metadb_server_name, gfarm_metadb_server_port);
+	if (fs == NULL) {
+		fs = gfarm_filesystem_get_default();
+		if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
+			/* XXX - for now, this is assumed */
+			gflog_fatal(GFARM_MSG_UNFIXED, "configuration error: "
+			    "metadb_server_host:metadb_server_port is not "
+			    "included in the metadb_server_list");
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 

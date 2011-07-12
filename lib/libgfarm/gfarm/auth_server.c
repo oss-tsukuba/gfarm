@@ -29,7 +29,6 @@
 
 #include "gfs_proto.h" /* for GFSD_USERNAME, XXX layering violation */
 #include "gfm_proto.h" /* for GFSM_USERNAME, XXX layering violation */
-#include "config.h" /* gfarm_metadb_server_name, gfarm_metadb_server_port */
 
 static gfarm_error_t gfarm_authorize_panic(struct gfp_xdr *, int,
 	char *, char *,
@@ -326,8 +325,7 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 			    global_username, hostname, gfarm_error_string(e));
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
-		e = gfarm_global_to_local_username_by_host(
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		e = gfarm_global_to_local_username_by_url(GFARM_PATH_ROOT,
 		    global_username, &local_username);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000041,
