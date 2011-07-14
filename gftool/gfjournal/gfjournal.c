@@ -53,7 +53,7 @@ usage(void)
 		program_name);
 	fprintf(stderr,
 		"       -l : list records\n"
-		"       -r : show records only (no header and summary)\n"
+		"       -r : suppress header and summary\n"
 		"       -d : set log level to debug\n"
 		"       -v : verbose output\n"
 		"       -h,-? : show this message\n");
