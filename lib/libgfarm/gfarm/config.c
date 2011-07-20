@@ -2093,7 +2093,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_log_level(p, &gfarm_log_level);
 	} else if (strcmp(s, o = "log_message_verbose_level") == 0) {
 		e = parse_set_misc_int(p, &gfarm_log_message_verbose);
-		gflog_set_message_verbose(gfarm_log_message_verbose);
+		if (e == GFARM_ERR_NO_ERROR)
+			gflog_set_message_verbose(gfarm_log_message_verbose);
 	} else if (strcmp(s, o = "no_file_system_node_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_no_file_system_node_timeout);
 	} else if (strcmp(s, o = "gfmd_reconnection_timeout") == 0) {
