@@ -121,6 +121,11 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 - gfarm の公開ヘッダ (<gfarm/××.h>)
 	libgfarm の利用者への公開情報。
 	内部実装に関する情報はここには置かない。
+	またファイル名は以下のように(「"〜"」ではなく)「<〜>」で記述する。
+		#include <gfarm/gfarm_misc.h>
+		#include <gfarm/gfarm_gfs.h>
+	これは、非公開ヘッダは「#include "〜"」、公開ヘッダは「#include <〜>」
+	と書く習慣にしているため。
 
 - gfarm の非公開ヘッダ ("××.h")
 	・ヘッダ間の順序は、
