@@ -3,6 +3,7 @@ AC_INIT
 AC_CONFIG_SRCDIR(RELNOTES)
 AC_CONFIG_AUX_DIR(makes)
 AC_CONFIG_HEADER(include/gfarm/gfarm_config.h)
+AC_CONFIG_MACRO_DIR([m4])
 
 # Determine target system
 # This is called "host" on autotools, because its terminology is following:
@@ -244,6 +245,17 @@ AC_ARG_WITH(globus,
 [globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
+ # debian package of Globus can be used by pkg-config
+ if pkg-config globus-gssapi-gsi; then
+	case ${globus_static} in
+	yes) globus_static=--static;;
+	*)   globus_static=        ;;
+	esac
+	globus_gssapi_libs=`pkg-config ${globus_static} --libs globus-gssapi-gsi`
+	globus_includes=`pkg-config --cflags globus-gssapi-gsi`
+	AC_MSG_RESULT([found])
+ else
+ # Grid Packaging Tools (GPT)
  GLBlocation_candidates=${globus_location:-/usr/grid}
  if test -n "$globus_flavor"; then
 	GLBflavor_candidates="$globus_flavor"
@@ -313,12 +325,6 @@ AC_ARG_WITH(globus,
  *)	globus_gssapi_libs="-R${globus_libdir} -L${globus_libdir} $globus_gssapi_libs"
  esac
 
- # for conditional compilation which depends on whether globus is enabled or not
- globus_srcs='${GLOBUS_SRCS}'
- globus_objs='${GLOBUS_OBJS}'
- globus_cflags='${GLOBUS_CFLAGS}'
- globus_targets='${GLOBUS_TARGETS}'
-
  # replace openssl library with that included in globus
  if test -x ${globus_location}/bin/globus-version; then
    globus_version=`env GLOBUS_LOCATION=${globus_location} ${globus_location}/bin/globus-version`
@@ -335,6 +341,14 @@ AC_ARG_WITH(globus,
      ;;
    esac
  fi
+ # End of Grid Packaging Tools (GPT)
+ fi
+
+ # for conditional compilation which depends on whether globus is enabled or not
+ globus_srcs='${GLOBUS_SRCS}'
+ globus_objs='${GLOBUS_OBJS}'
+ globus_cflags='${GLOBUS_CFLAGS}'
+ globus_targets='${GLOBUS_TARGETS}'
 
  AC_DEFINE(HAVE_GSI, 1, [Grid Security Infrastructure exists])
 ],
@@ -1203,12 +1217,14 @@ AH_BOTTOM([
 	typedef long gfarm_int64_t;
 	typedef unsigned long gfarm_uint64_t;
 #	define GFARM_INT64_MAX		0x7fffffffffffffffL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffL
 #	define GFARM_PRId64 "ld"
 #	define gfarm_strtoi64(s, endptr)	strtol(s, endptr, 0)
 #elif SIZEOF_LONG_LONG == 8
 	typedef long long gfarm_int64_t;
 	typedef unsigned long long gfarm_uint64_t;
 #	define GFARM_INT64_MAX		0x7fffffffffffffffLL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffLL
 #	define GFARM_PRId64 "lld"
 #	define gfarm_strtoi64(s, endptr)	strtoll(s, endptr, 0)
 #else
