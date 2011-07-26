@@ -1,3 +1,7 @@
+この文書は、重要な問題について記載しています。
+より細かな点に関しては、以下の文書を参照してください。
+	https://sourceforge.net/apps/trac/gfarm/report/1
+
 ● gfarm 全体に関わる問題点
 
 - Linux のいくつかのバージョンにおいて、/etc/nsswitch.conf で ldap を
@@ -195,6 +199,28 @@
 
   対処予定:
 	未定です。
+
+- gfmd の冗長構成において用いられる gfmd 間の通信では、GSI認証がサポート
+  されていません。
+	https://sourceforge.net/apps/trac/gfarm/ticket/233
+
+  対処予定:
+	未定です。
+
+- バックエンド・データベースとして LDAP を用いた場合、gfmd の冗長構成は
+　サポートされていません。
+
+  対処予定:
+	未定です。
+
+
+- バックエンド・データベースとして LDAP を用いた場合、quota 機能は
+　サポートされていません。
+	https://sourceforge.net/apps/trac/gfarm/ticket/26
+
+  対処予定:
+	未定です。
+
 
 ● gfarm コマンド群に関する問題点
 

@@ -1,3 +1,7 @@
+This document only describes some important problems.
+Please refer the following URL for more detail:
+	https://sourceforge.net/apps/trac/gfarm/report/1
+
 *** General problems with Gfarm
 
 - On some Linux distributions, gfmd leaks memory, if ldap is specified
@@ -191,6 +195,25 @@ command.
   As for the reason why this problem occurs, the path resolution is executed
   at client side but gfs_findxmlattr() executes the process at gfmd that
   traverses files under a directory.
+
+- The GSI authentication is not supported for the inter-gfmd
+  communication which is used for the redundant configuration of gfmd.
+	https://sourceforge.net/apps/trac/gfarm/ticket/233
+
+  Plans for fixes:
+	Not determined yet.
+
+- The redundant configuration of gfmd is not supported, if LDAP is
+  used as the backend database.
+
+  Plans for fixes:
+	Not determined yet.
+
+- The quota feature is not supported, if LDAP is used as the backend database.
+	https://sourceforge.net/apps/trac/gfarm/ticket/26
+
+  Plans for fixes:
+	Not determined yet.
 
 
 *** Problems with gfarm commands
