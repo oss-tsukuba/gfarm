@@ -10,7 +10,9 @@ distribution.  You can skip this document if you use a binary
 distribution.
 
 To build the Gfarm system, the OpenSSL library and either the OpenLDAP
-library, or the PostgreSQL library are required.
+library, or the PostgreSQL library are required.  Regarding RPM
+packages and Debian packages for them, see required package section
+below.
 
 The following is the installation procedure for the Gfarm system.
 Please use GNU make on operating systems other than Linux and NetBSD.
@@ -97,5 +99,23 @@ When you need to specify a compiler program explicitly, use the
 environment variable, CC.  This is an example using gcc.
 
 	% env CC=gcc ./configure [options]
+
+Required Package
+----------------
+
+* RPM Package
+
+openssl-devel
+openldap-devel
+postgresql-devel
+
+* Debian Package
+
+libssl-dev
+libldap2-dev
+libpq-dev
+libglobus-gssapi-gsi-dev	(required for --with-globus option)
+postgresql, postgresql-client	(required to execute config-gfarm)
+libfuse-dev			(required to build gfarm2fs)
 
 $Id$

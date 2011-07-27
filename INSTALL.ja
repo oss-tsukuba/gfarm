@@ -11,7 +11,8 @@
 構築に関しては NetBSD, Solaris 上でテストされています．
 
 システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちら
-か片方と OpenSSL ライブラリが必要です．
+か片方と OpenSSL ライブラリが必要です．構築に必要なパッケージについては
+以下の「構築に必要なパッケージ」の章を参照下さい．
 
 システムを構築するには，下記のようにします．
 Linux と NetBSD 以外の OS では，GNU make を使ってください．
@@ -95,5 +96,23 @@ configure コマンドには，下記のオプションがあります．
 例です．
 
 	% env CC=gcc ./configure [options]
+
+構築に必要なパッケージ
+----------------------
+
+* RPM パッケージ
+
+openssl-devel
+openldap-devel
+postgresql-devel
+
+* Debian パッケージ
+
+libssl-dev
+libldap2-dev
+libpq-dev
+libglobus-gssapi-gsi-dev	(--with-globus オプションに必要)
+postgresql, postgresql-client	(config-gfarm の実行に必要)
+libfuse-dev			(gfarm2fs の構築に必要)
 
 $Id$
