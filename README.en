@@ -10,6 +10,8 @@ the documents in the following order:
   If you intend to install Gfarm from the source code, please read INSTALL.en.
   If you intend to install Gfarm from the RPM binary package, please read
   INSTALL.RPM.en.
+  If you intend to install Gfarm from the Debian binary package, please read
+  INSTALL.Debian.en.
 3. How to setup Gfarm file system
   Please read SETUP.en.
 4. How to use Gfarm file system
@@ -40,6 +42,11 @@ List of Documents
   INSTALL.RPM.ja (in Japanese)
 	This document describes how to install Gfarm from the RPM binary
 	packages that are used in RedHat Linux, Fedora Core, CentOS, etc.
+
+- INSTALL.Debian.en (in English)
+  INSTALL.Debian.ja (in Japanese)
+	This document describes how to install Gfarm from the Debian binary
+	packages that are used in Debian and Ubuntu.
 
 - SETUP.en (in English)
   SETUP.ja (in Japanese)

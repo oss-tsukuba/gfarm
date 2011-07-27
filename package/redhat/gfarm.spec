@@ -876,6 +876,8 @@ fi
 %{doc_prefix}/INSTALL.ja
 %{doc_prefix}/INSTALL.RPM.en
 %{doc_prefix}/INSTALL.RPM.ja
+%{doc_prefix}/INSTALL.Debian.en
+%{doc_prefix}/INSTALL.Debian.ja
 %{doc_prefix}/LICENSE
 %{doc_prefix}/README.en
 %{doc_prefix}/README.ja
