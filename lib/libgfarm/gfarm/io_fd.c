@@ -17,12 +17,14 @@
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gfs.h> /* for definition of gfarm_off_t */
 
 #include "gfutil.h" /* gfarm_send_no_sigpipe() */
 
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
+#include "config.h"
 
 /*
  * nonblocking i/o
@@ -69,8 +71,8 @@ gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *b,
 void
 gfarm_iobuffer_set_nonblocking_read_fd(struct gfarm_iobuffer *b, int fd)
 {
-	gfarm_iobuffer_set_read(b, gfarm_iobuffer_nonblocking_read_fd_op,
-	    NULL, fd);
+	gfarm_iobuffer_set_read_timeout(b, 
+	    gfarm_iobuffer_nonblocking_read_fd_op, NULL, fd);
 }
 
 void
@@ -84,7 +86,62 @@ gfarm_iobuffer_set_nonblocking_write_fd(struct gfarm_iobuffer *b, int fd)
  * blocking i/o
  */
 int
-gfarm_iobuffer_blocking_read_fd_op(struct gfarm_iobuffer *b,
+gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
+	void *cookie, int fd, void *data, int length)
+{
+	ssize_t rv;
+	int avail;
+
+	for (;;) {
+#ifdef HAVE_POLL
+		struct pollfd fds[1];
+
+		fds[0].fd = fd;
+		fds[0].events = POLLIN;
+		avail = poll(fds, 1, gfarm_network_receive_timeout * 1000);
+#else
+		fd_set readable;
+		struct timeval tv;
+
+		FD_ZERO(&readable);
+		FD_SET(fd, &readable);
+		tv.tv_sec = gfarm_network_receive_timeout;
+		tv.tv_usec = 0;
+		avail = select(fd + 1, &readable, NULL, NULL, &tv);
+#endif
+		if (avail == 0) {
+			gfarm_iobuffer_set_error(b,
+			    GFARM_ERR_OPERATION_TIMED_OUT);
+			return (-1);
+		} else if (avail == -1) {
+			if (errno == EINTR)
+				continue;
+			gfarm_iobuffer_set_error(b, 
+			    gfarm_errno_to_error(errno));
+			return (-1);
+		}
+
+		/*
+		 * On Linux, read() below sometimes fails and 'errno'
+		 * is set to EAGAIN though we have confirmed the file
+		 * descriptor is ready to read by calling poll() or
+		 * select().  We should retry poll() or select() in
+		 * that case.
+		 */
+		rv = read(fd, data, length);
+		if (rv == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			gfarm_iobuffer_set_error(b,
+			    gfarm_errno_to_error(errno));
+			return (-1);
+		}
+		return (rv);
+	}
+}
+
+int
+gfarm_iobuffer_blocking_read_notimeout_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
@@ -204,7 +261,8 @@ struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_env_for_credential_fd_op,
 	gfarm_iobuffer_nonblocking_read_fd_op,
 	gfarm_iobuffer_nonblocking_write_socket_op,
-	gfarm_iobuffer_blocking_read_fd_op,
+	gfarm_iobuffer_blocking_read_timeout_fd_op,
+	gfarm_iobuffer_blocking_read_notimeout_fd_op,
 	gfarm_iobuffer_blocking_write_socket_op
 };
 

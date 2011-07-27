@@ -74,12 +74,16 @@ int gfarm_iobuffer_is_writable(struct gfarm_iobuffer *);
 int gfarm_iobuffer_is_eof(struct gfarm_iobuffer *);
 
 /* enqueue */
-void gfarm_iobuffer_set_read(struct gfarm_iobuffer *,
+void gfarm_iobuffer_set_read_timeout(struct gfarm_iobuffer *,
+	int (*)(struct gfarm_iobuffer *, void *, int, void *, int),
+	void *, int);
+void gfarm_iobuffer_set_read_notimeout(struct gfarm_iobuffer *,
 	int (*)(struct gfarm_iobuffer *, void *, int, void *, int),
 	void *, int);
 void *gfarm_iobuffer_get_read_cookie(struct gfarm_iobuffer *);
 int gfarm_iobuffer_get_read_fd(struct gfarm_iobuffer *);
-void gfarm_iobuffer_read(struct gfarm_iobuffer *, int *);
+void gfarm_iobuffer_read(struct gfarm_iobuffer *, int *, int);
+void gfarm_iobuffer_read_timeout(struct gfarm_iobuffer *, int *);
 int gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *, int);
 int gfarm_iobuffer_put(struct gfarm_iobuffer *, const void *, int);
 
@@ -99,16 +103,17 @@ void gfarm_iobuffer_flush_write(struct gfarm_iobuffer *);
 /* enqueue by memory copy, dequeue by write */
 int gfarm_iobuffer_put_write(struct gfarm_iobuffer *, const void *, int);
 /* enqueue by read, dequeue by purge */
-int gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *, int, int);
+int gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *, int, int, int);
 /* enqueue by read, dequeue by memory copy */
-int gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *, void *, int, int);
+int gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *, void *, int, int, int);
 int gfarm_iobuffer_get_read_just(struct gfarm_iobuffer *, void *, int);
 int gfarm_iobuffer_get_read(struct gfarm_iobuffer *, void *, int);
-int gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *, void *,int,int);
+int gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *, void *, int,
+	int, int);
 int gfarm_iobuffer_get_read_partial_just(struct gfarm_iobuffer *, void *, int);
 int gfarm_iobuffer_get_read_partial(struct gfarm_iobuffer *, void *, int);
 int gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *, void *, int, int,
-	int, int *);
+	int, int, int *);
 /*
  * gfarm_iobuffer_get_read{,_partial}_just() functions doesn't perform
  * read ahead for given stream, so the caller can perform read operation

@@ -488,7 +488,7 @@ gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
 
 
 int
-gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf)
+gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 {
     gfarm_int32_t iLen;
     gfarm_int8_t *buf = NULL;
@@ -501,7 +501,7 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf)
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
-    if (gfarmReadInt32(fd, &iLen, 1) != 1) {
+    if (gfarmReadInt32(fd, &iLen, 1, timeoutMsec) != 1) {
 	gflog_debug(GFARM_MSG_1000794, "gfarmReadInt32() failed");
 	return -1;
     }
@@ -518,7 +518,7 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf)
     }
     buf = (gfarm_int8_t *)p;
 
-    if (gfarmReadInt8(fd, buf, iLen) != iLen) {
+    if (gfarmReadInt8(fd, buf, iLen, timeoutMsec) != iLen) {
 	(void)free(buf);
 	gflog_debug(GFARM_MSG_1000796, "gfarmReadInt8() failed");
 	return -1;
@@ -557,7 +557,7 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     *scPtr = GSS_C_NO_CONTEXT;
 
     do {
-	tknStat = gfarmGssReceiveToken(fd, itPtr);
+	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
 	if (tknStat <= 0) {
 	    gflog_auth_error(GFARM_MSG_1000616,
 		"gfarmGssAcceptSecurityContext(): "
@@ -713,7 +713,8 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	}
     
 	if (majStat & GSS_S_CONTINUE_NEEDED) {
-	    tknStat = gfarmGssReceiveToken(fd, itPtr);
+	    tknStat = gfarmGssReceiveToken(fd, itPtr,
+					   GFARM_GSS_TIMEOUT_INFINITE);
 	    if (tknStat <= 0) {
 		gflog_auth_error(GFARM_MSG_1000620,
 		    "gfarmGssInitiateSecurityContext(): "
@@ -895,7 +896,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 
 int
 gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
-    int *lenPtr, OM_uint32 *statPtr)
+    int *lenPtr, OM_uint32 *statPtr, int timeoutMsec)
 {
     int ret = -1;
     OM_uint32 majStat;
@@ -921,7 +922,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
      *		encrypted.
      */
 
-    i = gfarmReadInt32(fd, &n, 1);
+    i = gfarmReadInt32(fd, &n, 1, timeoutMsec);
     if (i == 0) {
 	ret = 0;
 	n = 0;
@@ -939,7 +940,7 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 
     rem = n;
     do {
-	if (gfarmGssReceiveToken(fd, itPtr) <= 0) {
+	if (gfarmGssReceiveToken(fd, itPtr, timeoutMsec) <= 0) {
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    goto Done;
 	}
@@ -1240,7 +1241,8 @@ gfarmGssInitiateSecurityContextReceiveToken(int events, int fd,
 	state->majStat = GSS_S_UNAVAILABLE; /* failure: timeout */
     } else {
 	assert(events == GFARM_EVENT_READ);
-	tknStat = gfarmGssReceiveToken(fd, state->itPtr);
+	tknStat = gfarmGssReceiveToken(fd, state->itPtr,
+				       GFARM_GSS_TIMEOUT_INFINITE);
 	if (tknStat <= 0) {
 	    gflog_auth_error(GFARM_MSG_1000624,
 		"gfarmGssInitiateSecurityContextReceiveToken(): "

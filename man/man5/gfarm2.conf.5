@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 6月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "27 7月 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -578,6 +578,21 @@ Multiple networks can be specified as follows.
 	known_network 192.168.0.128/25
 .fi
 .TP
+\fBnetwork_receive_timeout \fIseconds\fB\fR
+The network_receive_timeout directive specifies
+the time, in seconds, to wait for data reception via network.
+The default value is 20 seconds.
+This directive is effective in both gfarm2.conf and gfmd.conf.
+
+When a Gfarm application program receives no data from a gfsd 
+filesystem server during the timeout period, it aborts the communication
+with the server, and then it tries to communicate with another server
+to continue the operation.
+
+When a gfmd metadata server receives no data from a gfsd filesystem
+server during the timeout period, it aborts the communication with
+the gfsd server and gfmd considers the gfsd server is down.
+.TP
 \fBadmin_user \fIuser\fB\fR
 This directive specifies an administrator user name, which is
 specified in gfmd.conf.
@@ -976,6 +991,7 @@ notation.
 		\~\~<auth_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<known_network_statement> |
+		\~\~<network_receive_timeout_statement> |
 		\~\~<admin_user_statement> |
 		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
@@ -1047,6 +1063,7 @@ notation.
 	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<known_network_statement> ::= "known_network" <hostspec>
+	<network_receive_timeout_statement> ::= "network_receive_timeout" <number>
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
 	<local_user_map_statement> ::= "local_user_map" <local_user_and_group_map_spec>

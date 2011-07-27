@@ -732,6 +732,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
+#define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  20 /* 20 seconds */
 #define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
@@ -763,6 +764,7 @@ static int journal_sync_file = MISC_DEFAULT;
 static int journal_sync_slave_timeout = MISC_DEFAULT;
 static int metadb_server_slave_max_size = MISC_DEFAULT;
 static int metadb_server_force_slave = MISC_DEFAULT;
+int gfarm_network_receive_timeout = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -2153,6 +2155,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &metadb_server_slave_max_size);
 	} else if (strcmp(s, o = "metadb_server_force_slave") == 0) {
 		e = parse_set_misc_enabled(p, &metadb_server_force_slave);
+	} else if (strcmp(s, o = "network_receive_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_network_receive_timeout);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2341,6 +2345,9 @@ gfarm_config_set_default_misc(void)
 	if (metadb_server_force_slave == MISC_DEFAULT)
 		metadb_server_force_slave =
 		    GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT;
+	if (gfarm_network_receive_timeout == MISC_DEFAULT)
+		gfarm_network_receive_timeout =
+		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
 
 	gfarm_config_set_default_filesystem();
 }

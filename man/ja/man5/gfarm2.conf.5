@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 6æœˆ 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "27 7æœˆ 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -534,6 +534,20 @@ IPv4¤Î¥¯¥é¥¹C¥Í¥Ã¥È¥ï¡¼¥¯¤¬²¾Äê¤µ¤ì¤Þ¤¹¡£
 	known_network 192.168.0.128/25
 .fi
 .TP
+\fBnetwork_receive_timeout \fIÉÃ¿ô\fB\fR
+¥Í¥Ã¥È¥ï¡¼¥¯¤ò²ð¤·¤¿¥Ç¡¼¥¿¼õ¿®¤Î¥¿¥¤¥à¥¢¥¦¥È»þ´Ö¤òÉÃÃ±°Ì¤Ç»ØÄê
+¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥ÈÃÍ¤Ï20ÉÃ¤Ç¤¹¡£
+¤³¤ÎÊ¸¤Ï gfarm2.conf ¤ª¤è¤Ó gfmd.conf ¤Î¤¤¤º¤ì¤Ë¤ª¤¤¤Æ¤âÍ­¸ú¤Ç¤¹¡£
+
+Gfarm¥¯¥é¥¤¥¢¥ó¥È¥×¥í¥°¥é¥à¤¬»ØÄê¤·¤¿»þ´ÖÂÔ¤Ã¤¿¤â¤Î¡¢gfsd ¤«¤é
+¤Î¥Ç¡¼¥¿¤¬¤Þ¤Ã¤¿¤¯ÆÏ¤«¤Ê¤«¤Ã¤¿¾ì¹ç¤Ï¡¢¤½¤Î gfsd ¤È¤ÎÄÌ¿®¤òÃæ»ß¤·¡¢½èÍý
+¤ò·ÑÂ³¤µ¤»¤ë¤Ù¤¯Â¾¤Î gfsd ¥µ¡¼¥Ð¤È¤ÎÄÌ¿®¤ò»î¤ß¤Þ¤¹¡£
+
+gfmd ¤¬»ØÄê¤·¤¿»þ´ÖÂÔ¤Ã¤¿¤â¤Î¡¢gfsd ¤«¤é¥Ç¡¼¥¿¤¬¤Þ¤Ã¤¿¤¯
+ÆÏ¤«¤Ê¤«¤Ã¤¿¾ì¹ç¡¢¤½¤Î gfsd ¤È¤ÎÄÌ¿®¤òÃæ»ß¤·¤Æ¡¢¤½¤Î gfsd ¤Ï¥À¥¦¥ó¤·¤¿
+¤â¤Î¤È¤ß¤Ê¤·¤Þ¤¹¡£
+.TP
 \fBadmin_user \fI¥æ¡¼¥¶Ì¾\fB\fR
 gfmd.confÆâ¤Î¤³¤ÎÊ¸¤Ç»ØÄê¤µ¤ì¤¿¥æ¡¼¥¶¤¬¡¢
 ¥Ç¥Õ¥©¥ë¥È¤ÎÆÃ¸¢¥æ¡¼¥¶¤È¤Ê¤ê¤Þ¤¹¡£
@@ -918,6 +932,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 		\~\~<auth_statement> |
 		\~\~<sockopt_statement> |
 		\~\~<known_network_statement> |
+		\~\~<network_receive_timeout_statement> |
 		\~\~<admin_user_statement> |
 		\~\~<admin_user_gsi_dn_statement> |
 		\~\~<local_user_map_statement> |
@@ -989,6 +1004,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 	<socket_option> = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
 		\~\~"tcp_nodelay"
 	<known_network_statement> ::= "known_network" <hostspec>
+	<network_receive_timeout_statement> ::= "network_receive_timeout" <number>
 	<admin_user_statement> ::= "admin_user" <string>
 	<admin_user_gsi_dn_statement> ::= "admin_user_gsi_dn" <string>
 	<local_user_map_statement> ::= "local_user_map" <local_user_and_group_map_spec>

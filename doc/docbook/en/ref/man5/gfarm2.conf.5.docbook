@@ -825,6 +825,24 @@ to be in an IPv4 class C network.</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>network_receive_timeout</token> <parameter>seconds</parameter></term>
+<listitem>
+<para>The <token>network_receive_timeout</token> directive specifies
+the time, in seconds, to wait for data reception via network.
+The default value is 20 seconds.
+This directive is effective in both gfarm2.conf and gfmd.conf.
+</para>
+<para>When a Gfarm application program receives no data from a gfsd 
+filesystem server during the timeout period, it aborts the communication
+with the server, and then it tries to communicate with another server
+to continue the operation.</para>
+<para>When a gfmd metadata server receives no data from a gfsd filesystem
+server during the timeout period, it aborts the communication with
+the gfsd server and gfmd considers the gfsd server is down.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>admin_user</token> <parameter>user</parameter></term>
 <listitem>
 <para>
@@ -1386,6 +1404,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
 		&nbsp;&nbsp;&lt;known_network_statement&gt; |
+		&nbsp;&nbsp;&lt;network_receive_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
@@ -1469,6 +1488,7 @@ notation.</para>
 <!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
 <!--	&lt;an_option&gt; ::= "noatime" -->
 	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
+	&lt;network_receive_timeout_statement&gt; ::= "network_receive_timeout" &lt;number&gt;
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;

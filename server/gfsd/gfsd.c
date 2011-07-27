@@ -3726,7 +3726,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	command_umask = umask(0);
 
 	for (;;) {
-		e = gfp_xdr_recv(client, 0, &eof, "i", &request);
+		e = gfp_xdr_recv_notimeout(client, 0, &eof, "i", &request);
 		if (e != GFARM_ERR_NO_ERROR)
 			fatal(GFARM_MSG_1000557, "request number: %s",
 			    gfarm_error_string(e));

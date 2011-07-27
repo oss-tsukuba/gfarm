@@ -96,6 +96,7 @@ extern struct gfs_file *gf_stdout, *gf_stderr;
 /* miscellaneous */
 extern int gfarm_schedule_cache_timeout;
 extern gfarm_int64_t gfarm_minimum_free_disk_space;
+extern int gfarm_network_receive_timeout;
 
 void gfarm_config_clear(void);
 #ifdef GFARM_USE_STDIO

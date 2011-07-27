@@ -92,5 +92,7 @@
 
 #define GFARM_GSS_AUTH_TIMEOUT	60	/* seconds */
 
+#define GFARM_GSS_TIMEOUT_INFINITE	-1
+
 #endif /* _GFARM_GFSL_CONFIG_H_ */
 

@@ -20,6 +20,12 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 
+#ifdef HAVE_POLL
+#include <poll.h>
+#else
+#include <sys/time.h>
+#endif
+
 #include "gfnetdb.h"
 #include "gfutil.h"
 
@@ -168,38 +174,56 @@ gfarmGetNameOfSocket(int sock, int *portPtr)
 
 
 int
-gfarmWaitReadable(int fd)
+gfarmWaitReadable(int fd, int timeoutMsec)
 {
-    fd_set rFd;
     int sel;
 
-    FD_ZERO(&rFd);
-    FD_SET(fd, &rFd);
+    for (;;) {
+#ifdef HAVE_POLL
+	struct pollfd fds[1];
 
-    SelectAgain:
-    errno = 0;
-    sel = select(fd + 1, &rFd, NULL, NULL, NULL);
-    if (sel < 0) {
-	if (errno == EINTR) {
-	    goto SelectAgain;
-	} else {
-	    gflog_error(GFARM_MSG_1000639, "select: %s", strerror(errno));
-	    return sel;
+	fds[0].fd = fd;
+	fds[0].events = POLLIN;
+	errno = 0;
+	sel = poll(fds, 1, timeoutMsec);
+#else /* ! HAVE_POLL */
+	fd_set rFd;
+	struct timeval tv, *tvPtr;
+
+	FD_ZERO(&rFd);
+	FD_SET(fd, &rFd);
+	if (timeoutMsec == 0)
+	    tvPtr = NULL;
+	else {
+	    tv.tv_sec = timeoutMsec / 1000;
+	    tv.tv_usec = timeoutMsec % 1000 * 1000;
+	    tvPtr = &tv;
 	}
+
+	errno = 0;
+	sel = select(fd + 1, &rFd, NULL, NULL, tvPtr);
+#endif /* ! HAVE_POLL */
+	if (sel == 0)
+	    gflog_error(GFARM_MSG_UNFIXED, "select timeout");
+	else if (sel < 0) {
+	    if (errno == EINTR || errno == EAGAIN)
+		continue;
+	    gflog_error(GFARM_MSG_1000639, "select: %s", strerror(errno));
+	}
+	return sel;
     }
-    return sel;
 }	
 
 
 int
-gfarmReadInt8(int fd, gfarm_int8_t *buf, int len)
+gfarmReadInt8(int fd, gfarm_int8_t *buf, int len, int timeoutMsec)
 {
     int sum = 0;
     int cur = 0;
     int sel;
 
     do {
-	sel = gfarmWaitReadable(fd);
+	sel = gfarmWaitReadable(fd, timeoutMsec);
 	if (sel <= 0) {
 	    return sum;
 	}
@@ -217,14 +241,15 @@ gfarmReadInt8(int fd, gfarm_int8_t *buf, int len)
 
 
 int
-gfarmReadInt16(int fd, gfarm_int16_t *buf, int len)
+gfarmReadInt16(int fd, gfarm_int16_t *buf, int len, int timeoutMsec)
 {
     int i;
     int n;
     gfarm_int16_t s;
 
     for (i = 0; i < len; i++) {
-	n = gfarmReadInt8(fd, (gfarm_int8_t *)&s, GFARM_OCTETS_PER_16BIT);
+	n = gfarmReadInt8(fd, (gfarm_int8_t *)&s, GFARM_OCTETS_PER_16BIT,
+			  timeoutMsec);
 	if (n != GFARM_OCTETS_PER_16BIT) {
 	    return i;
 	}
@@ -236,14 +261,15 @@ gfarmReadInt16(int fd, gfarm_int16_t *buf, int len)
 
 
 int
-gfarmReadInt32(int fd, gfarm_int32_t *buf, int len)
+gfarmReadInt32(int fd, gfarm_int32_t *buf, int len, int timeoutMsec)
 {
     int i;
     int n;
     gfarm_int32_t l;
 
     for (i = 0; i < len; i++) {
-	n = gfarmReadInt8(fd, (gfarm_int8_t *)&l, GFARM_OCTETS_PER_32BIT);
+	n = gfarmReadInt8(fd, (gfarm_int8_t *)&l, GFARM_OCTETS_PER_32BIT,
+			  timeoutMsec);
 	if (n != GFARM_OCTETS_PER_32BIT) {
 	    return i;
 	}

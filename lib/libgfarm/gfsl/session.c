@@ -390,7 +390,8 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    int iMaxF;
 	    int iConf, iConfF;
 	   
-	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
+			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
 		gflog_auth_error(GFARM_MSG_1000662,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "negotiation failure with the initiator");
@@ -489,7 +490,8 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 		goto Done;
 	    }
 
-	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
+			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
 		gflog_auth_error(GFARM_MSG_1000665,
 		    "gfarmSecSession:negotiateConfigParam(): "
 				 "negotiation failure with the acceptor");
@@ -1338,7 +1340,7 @@ secSessionInitiate(int fd, const gss_name_t acceptorName,
     /*
      * Phase 2: Receive authorization acknowledgement.
      */
-    if (gfarmReadInt32(fd, &acknack, 1) != 1) {
+    if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	gflog_auth_error(GFARM_MSG_1000677,
 	    "%s: acceptor does not answer authentication result",
 	    acceptorDistName);
@@ -1549,13 +1551,14 @@ gfarmSecSessionSendInt8(gfarmSecSession *ssPtr, gfarm_int8_t *buf, int n)
 
 int
 gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr, gfarm_int8_t **bufPtr,
-    int *lenPtr)
+    int *lenPtr, int timeoutMsec)
 {
     return gfarmGssReceive(ssPtr->fd,
 			   ssPtr->sCtx,
 			   bufPtr,
 			   lenPtr,
-			   &(ssPtr->gssLastStat));
+			   &(ssPtr->gssLastStat),
+			   timeoutMsec);
 }
 
 
@@ -1588,7 +1591,7 @@ gfarmSecSessionSendInt32(gfarmSecSession *ssPtr, gfarm_int32_t *buf, int n)
 
 int
 gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr, gfarm_int32_t **bufPtr,
-    int *lenPtr)
+    int *lenPtr, int timeoutMsec)
 {
     gfarm_int8_t *lBuf = NULL;
     gfarm_int8_t *lbPtr = NULL;
@@ -1597,7 +1600,7 @@ gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr, gfarm_int32_t **bufPtr,
     int len = 0;
     int i;
     int n;
-    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len);
+    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len, timeoutMsec);
     
     if (ret <= 0) {
 	goto Done;
@@ -1665,7 +1668,7 @@ gfarmSecSessionSendInt16(gfarmSecSession *ssPtr, gfarm_int16_t *buf, int n)
 
 int
 gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr, gfarm_int16_t **bufPtr,
-    int *lenPtr)
+    int *lenPtr, int timeoutMsec)
 {
     char *lBuf = NULL;
     char *lbPtr = NULL;
@@ -1674,7 +1677,7 @@ gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr, gfarm_int16_t **bufPtr,
     int len = 0;
     int i;
     int n;
-    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len);
+    int ret = gfarmSecSessionReceiveInt8(ssPtr, &lBuf, &len, timeoutMsec);
     
     if (ret <= 0) {
 	goto Done;
@@ -1712,6 +1715,9 @@ gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr, gfarm_int16_t **bufPtr,
     return ret;
 }
 
+/*
+ * This function is only used by a test pgrogram.
+ */
 
 int
 gfarmSecSessionPoll(gfarmSecSession **ssList, int n, struct timeval *toPtr)
@@ -1819,7 +1825,8 @@ negotiateConfigParamInitiatorReceive(int events, int fd, void *closure,
 	state->majStat = GSS_S_UNAVAILABLE; /* timeout */
     } else {
 	assert(events == GFARM_EVENT_READ);
-	if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
+	if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
+			   GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
 	    gflog_auth_error(GFARM_MSG_1000680, "gfarmSecSession: "
 			     "negotiateConfigParamInitiatorReceive(): "
 			     "negotiation failure with the acceptor");
@@ -2079,7 +2086,7 @@ secSessionInitiateReceiveAuthorizationAck(int events, int fd, void *closure,
 	/*
 	 * Phase 2: Receive authorization acknowledgement.
 	 */
-	if (gfarmReadInt32(fd, &acknack, 1) != 1) {
+	if (gfarmReadInt32(fd, &acknack, 1, GFARM_GSS_TIMEOUT_INFINITE) != 1) {
 	    gflog_auth_error(GFARM_MSG_1000689,
 	        "%s: acceptor does not answer authentication result",
 		state->acceptorDistName);

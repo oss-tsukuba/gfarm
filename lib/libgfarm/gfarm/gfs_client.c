@@ -1531,7 +1531,8 @@ gfs_client_command_set_stdin(struct gfs_connection *gfs_server,
 {
 	struct gfs_client_command_context *cc = gfs_server->context;
 
-	gfarm_iobuffer_set_read(cc->iobuffer[FDESC_STDIN], rf, cookie, fd);
+	gfarm_iobuffer_set_read_timeout(cc->iobuffer[FDESC_STDIN], rf,
+	    cookie, fd);
 }
 
 void
@@ -1859,7 +1860,8 @@ gfs_client_command_fd_set(struct gfs_connection *gfs_server,
 	if (gfarm_iobuffer_is_readable(cc->iobuffer[FDESC_STDIN])) {
 		fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDIN]);
 		if (fd < 0) {
-			gfarm_iobuffer_read(cc->iobuffer[FDESC_STDIN], NULL);
+			gfarm_iobuffer_read_timeout(cc->iobuffer[FDESC_STDIN],
+				NULL);
 			/* XXX - if the callback sets an error? */
 		} else {
 			FD_SET(fd, readable);
@@ -1894,7 +1896,7 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 
 	fd = gfarm_iobuffer_get_read_fd(cc->iobuffer[FDESC_STDIN]);
 	if (fd >= 0 && FD_ISSET(fd, readable)) {
-		gfarm_iobuffer_read(cc->iobuffer[FDESC_STDIN], NULL);
+		gfarm_iobuffer_read_timeout(cc->iobuffer[FDESC_STDIN], NULL);
 		e = gfarm_iobuffer_get_error(cc->iobuffer[FDESC_STDIN]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			/* treat this as eof */
@@ -1923,7 +1925,6 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 		if (cc->server_state == GFS_COMMAND_SERVER_STATE_NEUTRAL) {
 			gfarm_int32_t cmd, fd, len;
 			int eof;
-			gfarm_error_t e;
 
 			e = gfp_xdr_recv(gfs_server->conn, 1, &eof,
 					   "i", &cmd);
@@ -1984,8 +1985,8 @@ gfs_client_command_io_fd_set(struct gfs_connection *gfs_server,
 				return (GFARM_ERRMSG_GFSD_REPLY_UNKNOWN);
 			}
 		} else if (cc->server_state==GFS_COMMAND_SERVER_STATE_OUTPUT) {
-			gfarm_iobuffer_read(cc->iobuffer[cc->server_output_fd],
-				&cc->server_output_residual);
+			gfarm_iobuffer_read_timeout(cc->iobuffer[cc->server_output_fd],
+			    &cc->server_output_residual);
 			if (cc->server_output_residual == 0)
 				cc->server_state =
 					GFS_COMMAND_SERVER_STATE_NEUTRAL;

@@ -795,6 +795,25 @@ IPv4のクラスCネットワークが仮定されます。</para>
 </varlistentry>
 
 <varlistentry>
+<term><token>network_receive_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>ネットワークを介したデータ受信のタイムアウト時間を秒単位で指定
+します。
+デフォルト値は20秒です。
+この文は gfarm2.conf および gfmd.conf のいずれにおいても有効です。
+</para>
+<para>Gfarmクライアントプログラムが指定した時間待ったもの、gfsd から
+のデータがまったく届かなかった場合は、その gfsd との通信を中止し、処理
+を継続させるべく他の gfsd サーバとの通信を試みます。
+</para>
+<para>gfmd が指定した時間待ったもの、gfsd からデータがまったく
+届かなかった場合、その gfsd との通信を中止して、その gfsd はダウンした
+ものとみなします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>admin_user</token> <parameter>ユーザ名</parameter></term>
 <listitem>
 <para>
@@ -1341,6 +1360,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
 		&nbsp;&nbsp;&lt;known_network_statement&gt; |
+		&nbsp;&nbsp;&lt;network_receive_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
 		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
@@ -1424,6 +1444,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
 <!--	&lt;an_option&gt; ::= "noatime" -->
 	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
+	&lt;network_receive_timeout_statement&gt; ::= "network_receive_timeout" &lt;number&gt;
 	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
 	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
 	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;

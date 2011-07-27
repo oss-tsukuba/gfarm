@@ -13,7 +13,10 @@ struct gfarm_iobuffer {
 	int bufsize;
 	int head, tail;
 
-	int (*read_func)(struct gfarm_iobuffer *, void *, int, void *, int);
+	int (*read_timeout_func)(struct gfarm_iobuffer *, void *, int,
+				 void *, int);
+	int (*read_notimeout_func)(struct gfarm_iobuffer *, void *, int,
+				   void *, int);
 	void *read_cookie;
 	int read_fd; /* for file descriptor i/o */
 
@@ -52,7 +55,8 @@ gfarm_iobuffer_alloc(int bufsize)
 	b->bufsize = bufsize;
 	b->head = b->tail = 0;
 
-	b->read_func = NULL;
+	b->read_timeout_func = NULL;
+	b->read_notimeout_func = NULL;
 	b->read_cookie = NULL;
 	b->read_fd = -1;
 
@@ -97,11 +101,21 @@ gfarm_iobuffer_get_error(struct gfarm_iobuffer *b)
 }
 
 void
-gfarm_iobuffer_set_read(struct gfarm_iobuffer *b,
-	int (*rf)(struct gfarm_iobuffer *, void *, int, void *, int),
+gfarm_iobuffer_set_read_timeout(struct gfarm_iobuffer *b,
+	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int),
 	void *cookie, int fd)
 {
-	b->read_func = rf;
+	b->read_timeout_func = func;
+	b->read_cookie = cookie;
+	b->read_fd = fd;
+}
+
+void
+gfarm_iobuffer_set_read_notimeout(struct gfarm_iobuffer *b,
+	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int),
+	void *cookie, int fd)
+{
+	b->read_notimeout_func = func;
 	b->read_cookie = cookie;
 	b->read_fd = fd;
 }
@@ -233,9 +247,10 @@ gfarm_iobuffer_is_eof(struct gfarm_iobuffer *b)
 }
 
 void
-gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp)
+gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 {
 	int space, rv;
+	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
 
 	if (IOBUFFER_IS_FULL(b))
 		return;
@@ -252,15 +267,21 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp)
 		b->head = 0;
 	}
 
-	rv = (*b->read_func)(b, b->read_cookie, b->read_fd,
-			     b->buffer + b->tail,
-			     *residualp < space ? *residualp : space);
+	func = do_timeout ? b->read_timeout_func : b->read_notimeout_func;
+	rv = (*func)(b, b->read_cookie, b->read_fd, b->buffer + b->tail,
+		     *residualp < space ? *residualp : space);
 	if (rv == 0) {
 		b->read_eof = 1;
 	} else if (rv > 0) {
 		b->tail += rv;
 		*residualp -= rv;
 	}
+}
+
+void
+gfarm_iobuffer_read_timeout(struct gfarm_iobuffer *b, int *residualp)
+{
+	gfarm_iobuffer_read(b, residualp, 1);
 }
 
 int
@@ -436,14 +457,15 @@ gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len)
 }
 
 int
-gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *b, int len, int just)
+gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *b, int len, int just,
+			    int do_timeout)
 {
 	int rv, residual, tmp, *justp = just ? &tmp : NULL;
 
 	for (residual = len; residual > 0; ) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp);
+			gfarm_iobuffer_read(b, justp, do_timeout);
 		}
 		rv = gfarm_iobuffer_purge(b, &residual);
 		if (rv == 0) /* EOF or error */
@@ -454,7 +476,7 @@ gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *b, int len, int just)
 
 int
 gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
-			  int len, int just)
+			  int len, int just, int do_timeout)
 {
 	char *p;
 	int rv, residual, tmp, *justp = just ? &tmp : NULL;
@@ -462,7 +484,7 @@ gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp);
+			gfarm_iobuffer_read(b, justp, do_timeout);
 		}
 		rv = gfarm_iobuffer_get(b, p, residual);
 		if (rv == 0) /* EOF or error */
@@ -474,30 +496,30 @@ gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
 int
 gfarm_iobuffer_get_read_just(struct gfarm_iobuffer *b, void *data, int len)
 {
-	return (gfarm_iobuffer_get_read_x(b, data, len, 1));
+	return (gfarm_iobuffer_get_read_x(b, data, len, 1, 1));
 }
 
 int
 gfarm_iobuffer_get_read(struct gfarm_iobuffer *b, void *data, int len)
 {
-	return (gfarm_iobuffer_get_read_x(b, data, len, 0));
+	return (gfarm_iobuffer_get_read_x(b, data, len, 0, 1));
 }
 
 /*
  * gfarm_iobuffer_get_read*() wait until desired length of data is 
  * received.
  * gfarm_iobuffer_get_read_partial*() don't wait like that, but return
- * the contents of current buffer or the result of (*b->read_func)
- * if current buffer is empty.
+ * the contents of current buffer or the result of (*b->read_timeout_func)
+ * or (*b->read_notimeout_func) if current buffer is empty.
  */
 int
 gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *b, void *data,
-				  int len, int just)
+				  int len, int just, int do_timeout)
 {
 	if (IOBUFFER_IS_EMPTY(b)) {
 		int tmp = len;
 
-		gfarm_iobuffer_read(b, just ? &tmp : NULL);
+		gfarm_iobuffer_read(b, just ? &tmp : NULL, do_timeout);
 	}
 	return (gfarm_iobuffer_get(b, data, len));
 }
@@ -506,13 +528,13 @@ int
 gfarm_iobuffer_get_read_partial_just(struct gfarm_iobuffer *b,
 				     void *data, int len)
 {
-	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 1));
+	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 1, 1));
 }
 
 int
 gfarm_iobuffer_get_read_partial(struct gfarm_iobuffer *b, void *data, int len)
 {
-	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 0));
+	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 0, 1));
 }
 
 /*
@@ -535,7 +557,7 @@ gfarm_iobuffer_calc_crc32(struct gfarm_iobuffer *b, gfarm_uint32_t crc,
 
 int
 gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *b, void *data, int len,
-	int just, int offset, int *errp)
+	int just, int do_timeout, int offset, int *errp)
 {
 	int rlen;
 	int head0 = b->head;
@@ -546,7 +568,7 @@ gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *b, void *data, int len,
 	if (b->head + offset > b->tail)
 		return (0);
 	b->head += offset;
-	rlen = gfarm_iobuffer_get_read_x(b, data, len, just);
+	rlen = gfarm_iobuffer_get_read_x(b, data, len, just, do_timeout);
 	if (rlen == 0)
 		*errp = b->error;
 	b->head = head0;
@@ -566,6 +588,6 @@ gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
 		return (alen);
 	rlen = len - alen;
 	while (rlen > 0 && gfarm_iobuffer_is_readable(b) && b->error == 0)
-		gfarm_iobuffer_read(b, &rlen);
+		gfarm_iobuffer_read(b, &rlen, 1);
 	return (len - rlen);
 }

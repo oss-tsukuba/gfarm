@@ -159,7 +159,8 @@ main(int argc, char **argv)
 	    continue;
 	} else if (sel > 0) {
 	    if (gfarmSecSessionCheckPollReadable(ss0)) {
-		i = gfarmSecSessionReceiveInt8(ss0, &buf, &n);
+		    i = gfarmSecSessionReceiveInt8(ss0, &buf, &n, 
+						   GFARM_GSS_TIMEOUT_INFINITE);
 		if (i == 0) {
 		    break;
 		} else if (i < 0) {
@@ -174,7 +175,8 @@ main(int argc, char **argv)
 		}
 	    }
 	    if (gfarmSecSessionCheckPollReadable(ss1)) {
-		i = gfarmSecSessionReceiveInt8(ss1, &buf, &n);
+		i = gfarmSecSessionReceiveInt8(ss1, &buf, &n,
+					       GFARM_GSS_TIMEOUT_INFINITE);
 		if (i == 0) {
 		    break;
 		} else if (i < 0) {

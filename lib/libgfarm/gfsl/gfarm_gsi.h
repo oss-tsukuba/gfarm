@@ -14,7 +14,8 @@ extern void	gfarmGssPrintMajorStatus(OM_uint32 majStat);
 extern void	gfarmGssPrintMinorStatus(OM_uint32 minStat);
 
 extern int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf);
-extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf);
+extern int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf,
+				     int timeoutMsec);
 
 extern int	gfarmGssImportName(gss_name_t *namePtr,
 				   void *nameValue,
@@ -85,7 +86,7 @@ extern int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
 			     OM_uint32 *statPtr);
 extern int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
 				gfarm_int8_t **bufPtr, int *lenPtr,
-				OM_uint32 *statPtr);
+				OM_uint32 *statPtr, int timeoutMsec);
 
 /* multiplexed version */
 

@@ -20,7 +20,9 @@ int gfarm_iobuffer_nonblocking_read_fd_op(struct gfarm_iobuffer *,
 	void *, int, void *, int);
 int gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *,
 	void *, int, void *, int);
-int gfarm_iobuffer_blocking_read_fd_op(struct gfarm_iobuffer *,
+int gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *,
+	void *, int, void *, int);
+int gfarm_iobuffer_blocking_read_notimeout_fd_op(struct gfarm_iobuffer *,
 	void *, int, void *, int);
 int gfarm_iobuffer_blocking_write_socket_op(struct gfarm_iobuffer *,
 	void *, int, void *, int);

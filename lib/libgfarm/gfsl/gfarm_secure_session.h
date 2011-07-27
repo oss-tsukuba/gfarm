@@ -198,21 +198,24 @@ extern int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
 							 int n);
 extern int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
 							    gfarm_int32_t **bufPtr,
-							    int *lenPtr);
+							    int *lenPtr,
+							    int timeoutMsec);
 
 extern int			gfarmSecSessionSendInt16(gfarmSecSession *ssPtr,
 							 gfarm_int16_t *buf,
 							  int n);
 extern int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
 							    gfarm_int16_t **bufPtr,
-							    int *lenPtr);
+							    int *lenPtr,
+							    int timeoutMsec);
 
 extern int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
 							gfarm_int8_t *buf,
 							int n);
 extern int			gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr,
 							   gfarm_int8_t **bufPtr,
-							   int *lenPtr);
+							   int *lenPtr,
+							   int timeoutMsec);
 
 extern int			gfarmSecSessionPoll(gfarmSecSession *ssList[],
 						    int n,

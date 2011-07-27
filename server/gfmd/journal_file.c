@@ -996,6 +996,7 @@ static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_nonblocking_read_err_op,
 	journal_nonblocking_write_err_op,
 	journal_blocking_read_op,
+	journal_blocking_read_op,
 	journal_blocking_write_op
 };
 
