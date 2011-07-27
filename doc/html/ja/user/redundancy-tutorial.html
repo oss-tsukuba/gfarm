@@ -1,6 +1,6 @@
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<HTML><HEAD><TITLE>Grid Datafarm: Servers which export Gfarm [Japanese]</TITLE>
+<HTML><HEAD><TITLE>Gfarm File System: Master-Slave Metadata Servers [Japanese]</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=euc-jp">
 <META content=document name=resource-type>
 </HEAD>
@@ -18,118 +18,89 @@
 <BR>
 <H2>1. インストール</H2>
 ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
-host-a / host-bのそれぞれにおいて、gfarm_v2のソースコードが配置されたディレクトリで、次のコマンドを実行します。
-<BR><BR>
-host-a, host-b:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-$ ./configure
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-rootユーザで、次のコマンドを実行します。
-<BR><BR>
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# make install
-</PRE></TD></TR></TBODY></TABLE>
+host-a / host-bのそれぞれにおいて、Gfarmのインストールを行います。
+インストールはINSTALLマニュアルを参照してください。
 
 <H2>2. セットアップ</H2>
-<H3>2.1 gfmd</H3>
-
-host-a / host-bのそれぞれにおいて、_gfarmmdユーザを作成します。
-
-<BR><BR>
-host-a, host-b:
+<H3>2.1 マスターメタデータサーバの設定</H3>
+メタデータサーバ間の接続で利用される_gfarmmdユーザと共有鍵を作成します。
+<p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
-# su _gfarmfs
+# su _gfarmmd
 $ gfkey -f -p 31536000
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI>補足<BR>
-マスター / スレーブgfmdの間の認証は、共有鍵認証のみサポートしています。
+<UL><LI>補足1<BR>
+メタデータサーバ間の認証は、共有鍵認証のみサポートしています。
 </UL>
-次にメタデータサーバのセットアップを実行します。
-host-a, host-b において、次のコマンドをrootユーザで実行します。
-<BR><BR>
-host-a, host-b:
+
+次にメタデータサーバのセットアップをrootユーザで行います。
+メタデータ冗長化を有効にするため config-gfarmに-rオプションをつけます。
+<p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI>補足<BR>
+<UL><LI>補足1<BR>
 メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
+<LI>補足2<BR>
+既存のメタデータサーバに対しメタデータ冗長化を有効にするためには-rオプションをつけてconfig-gfarm-updateを実行します。</LI>
+<LI>補足3<BR>
+メタデータ冗長化を有効にするためには、バックエンド・データベースとしてPostgreSQLを利用する必要があります。</LI>
 </UL>
+
 host-bをスレーブとして登録します。
-<BR><BR>
-host-a:
+<p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -c host-b
 $ gfmdhost -l
 + master -     m (default)    host-a 601
 - slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
-<BR>
-host-b のgfmdを停止します。
+
+gfarm2.confにmetadb_server_listを追加して、メタデータサーバのホスト名一覧を記述します。
 <BR><BR>
-host-b:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd stop
+metadb_server_list host-a host-b
 </PRE></TD></TR></TBODY></TABLE>
-<BR>
+
+rootユーザでメタデータをダンプします。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -d -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<H3>2.2 スレーブメタデータサーバの設定</H3>
+
+メタデータサーバ間の接続で利用される_gfarmmdユーザを作成し、
+マスターメタデータサーバから共有鍵をコピーします。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# useradd -c "Gfarm gfmd" -m _gfarmmd
+マスターメタデータサーバから共有鍵(~/.gfarmmd/.gfarm_shared_key)をコピー
+</PRE></TD></TR></TBODY></TABLE>
+
+次にスレーブメタデータサーバのセットアップをrootユーザで行います。
+メタデータ冗長化を有効にするため config-gfarmに-rオプションをつけます。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# config-gfarm -r
+</PRE></TD></TR></TBODY></TABLE>
+
+rootユーザでメタデータをリストアします。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -r -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<!-- >
 host-aのデータベースをhost-bにコピーします。host-bにジャーナルファイルが存在する場合は削除します。<BR>
-以下に例として、データベースのコピーとジャーナルファイルの削除を実行するスクリプトを示します。
-なお、このスクリプトはhost-bで実行することを前提としています。
-pg_dumpでデータベースをダンプするときは、そのデータベースに接続しているgfmdを停止する必要はありません。
-pg_dumpで出力されるファイルは内部的に整合性があります。
-<BR><BR>
-host-b:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-#!/bin/sh
+< -->
 
-set -e
+<H3>2.3 gfsd および クライアント</H3>
 
-# source db
-SRC_HOST=host-a
-SRC_PORT=10602
-SRC_PASSWORD=xxxxxx
-
-# destination db
-DST_PASSWORD=yyyyyy
-DST_PORT=10602
-
-DUMP_FILE=/tmp/gfarm-pgsql.dmp
-JOURNAL_FILE=/var/gfarm-metadata/journal/0000000000.gmj
-PREFIX=/usr
-pg_dump=$PREFIX/bin/pg_dump
-psql=$PREFIX/bin/psql
-dropdb=$PREFIX/bin/dropdb
-createdb=$PREFIX/bin/createdb
-
-trap 'rm -f $DUMP_FILE; exit 1' 1 2 5
-
-echo export db
-PGPASSWORD=$SRC_PASSWORD $pg_dump -h $SRC_HOST -p $SRC_PORT -U gfarm -f $DUMP_FILE gfarm
-echo delete journal file : $JOURNAL_FILE
-rm -f $JOURNAL_FILE
-echo import db
-PGPASSWORD=$DST_PASSWORD $dropdb -p $DST_PORT -U postgres gfarm
-PGPASSWORD=$DST_PASSWORD $createdb -p $DST_PORT -U postgres gfarm
-PGPASSWORD=$DST_PASSWORD $psql -p $DST_PORT -U postgres -d gfarm -f $DUMP_FILE &gt; /dev/null
-rm -f $DUMP_FILE
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-host-b において、gfmd を起動します。
-rootユーザで、次のコマンドを実行します。
-<BR><BR>
-host-b:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd start
-</PRE></TD></TR></TBODY></TABLE>
-
-<H3>2.2 gfsd および クライアント</H3>
-
-gfsdホストの/etc/gfarm2.conf およびクライアントホストの/etc/gfarm2.conf において、metadb_server_host / metadb_server_portをマスターgfmdのホスト / ポートに変更します。また、metadb_server_listを追加して、メタデータサーバのホスト名一覧を記述します。
+gfarm2.confにおいてmetadb_server_listを追加して、メタデータサーバのホスト名一覧を記述します。
 <BR><BR>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_host host-a
-metadb_server_port 601
 metadb_server_list host-a host-b
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
@@ -189,5 +160,4 @@ host-aでgfmdを起動した後に、host-bのgfmdのログに"host-a: expired"と出力されてい�
 
 <HR>
 
-<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
-href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>
+<ADDRESS><A href="http://datafarm.apgrid.org/">Gfarm File System</A> &lt;<TT>gfarmfs at google.com</TT>&gt;</ADDRESS></BODY></HTML>
