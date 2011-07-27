@@ -48,7 +48,7 @@ privilege is required for execution and command lines with the prompt
 '$' mean that they should be executed without the root privilege.
 
 	# useradd -c "Gfarm gfsd" -m _gfarmfs	[with the root privilege]
-	$ gfkey -f -p 31536000					[without the root privilege]
+	$ gfkey -f -p 31536000			[without the root privilege]
 
 Overview
 ========
