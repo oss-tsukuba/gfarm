@@ -1,0 +1,48 @@
+		Gfarm Filesystem Installation Manual
+
+About this document
+===================
+
+This document describes the installation of a Gfarm filesystem
+using Debian binary packages.
+
+Overview
+========
+
+To introduce a Gfarm filesystem, Debian packages for a metadata server,
+filesystem nodes, and client nodes have to be installed.
+
+Note that it is possible to install all Debian packages on the same host.
+
+Installation of a Gfarm metadata server
+=======================================
+
+Install the Debian package for the Gfarm metadata server.
+
+	# apt-get install gfmd
+
+Installation of a Gfarm filesystem node
+=======================================
+
+Install the Debian package for a Gfarm filesystem node.
+
+	# apt-get install gfsd
+
+Since each filesystem node is often a client node, you may install a
+client package, too.  See the next section.
+
+Installation of a Gfarm client node
+===================================
+
+Install the Debian packages for a Gfarm client node.
+
+	# apt-get install gfarm-client gfarm-doc
+
+A document package is optional.
+
+If you want to use the gfarm2fs to mount the Gfarm file system,
+install the gfarm2fs package as well.
+
+	# apt-get install gfarm2fs
+
+$Id: INSTALL.RPM.ja 5010 2010-12-30 00:29:02Z n-soda $
