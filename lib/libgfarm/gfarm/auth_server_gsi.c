@@ -143,6 +143,17 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			gflog_error(GFARM_MSG_1000719,
 			    "GSI authentication error: %s", hostname);
 		}
+		/*
+		 * Since the expiration of CA and CRL cannot be
+		 * checked in gfarm_gsi_server_initialize() and it
+		 * cannot be investigated by e_major and e_minor of
+		 * gfarmSecSessionAccept(), we call
+		 * gfarm_gsi_server_finalize() here to load a new
+		 * setting and initialize again at the next
+		 * gfarm_authorize_gsi().  It is not optimal, though.
+		 */
+		gfarm_gsi_server_finalize();
+
 		return (GFARM_ERR_AUTHENTICATION);
 	}
 

@@ -68,7 +68,9 @@ enum gfarm_auth_sharedsecret_request {
 
 /* GSI */
 gfarm_error_t gfarm_gsi_server_initialize(void);
+void gfarm_gsi_server_finalize(void);
 gfarm_error_t gfarm_gsi_client_initialize(void);
+void gfarm_gsi_client_finalize(void);
 
 #define GFARM_IS_AUTH_GSI(auth) \
 	(((auth) == GFARM_AUTH_METHOD_GSI) || \

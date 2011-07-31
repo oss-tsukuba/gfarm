@@ -26,6 +26,24 @@ static int gsi_initialized;
 static int gsi_server_initialized;
 static const char gsi_initialize_diag[] = "gsi_initialize_mutex";
 
+static void
+gfarm_gsi_client_finalize_unlocked(void)
+{
+	gfarmSecSessionFinalizeInitiator();
+	gsi_initialized = 0;
+}
+
+void
+gfarm_gsi_client_finalize(void)
+{
+	static const char diag[] = "gfarm_gsi_client_finalize";
+
+	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	if (gsi_initialized)
+		gfarm_gsi_client_finalize_unlocked();
+	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+}
+
 gfarm_error_t
 gfarm_gsi_client_initialize(void)
 {
@@ -50,9 +68,10 @@ gfarm_gsi_client_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarmSecSessionFinalizeInitiator();
+		gfarm_gsi_client_finalize_unlocked();
 		gfarm_mutex_unlock(&gsi_initialize_mutex,
 		    diag, gsi_initialize_diag);
+
 		return (GFARM_ERRMSG_GSI_CREDENTIAL_INITIALIZATION_FAILED);
 	}
 	gsi_initialized = 1;
@@ -113,6 +132,25 @@ gfarm_gsi_client_cred_name(void)
 	return (dn);
 }
 
+static void
+gfarm_gsi_server_finalize_unlocked(void)
+{
+	gfarmSecSessionFinalizeBoth();
+	gsi_initialized = 0;
+	gsi_server_initialized = 0;
+}
+
+void
+gfarm_gsi_server_finalize(void)
+{
+	static const char diag[] = "gfarm_gsi_server_finalize";
+
+	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+	if (gsi_initialized && gsi_server_initialized)
+		gfarm_gsi_server_finalize_unlocked();
+	gfarm_mutex_unlock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
+}
+
 gfarm_error_t
 gfarm_gsi_server_initialize(void)
 {
@@ -124,12 +162,31 @@ gfarm_gsi_server_initialize(void)
 	gfarm_mutex_lock(&gsi_initialize_mutex, diag, gsi_initialize_diag);
 	if (gsi_initialized) {
 		if (gsi_server_initialized) {
-			gfarm_mutex_unlock(&gsi_initialize_mutex,
-			    diag, gsi_initialize_diag);
-			return (GFARM_ERR_NO_ERROR);
-		}
-		gfarmSecSessionFinalizeInitiator();
-		gsi_initialized = 0;
+			/*
+			 * check whether the initial acceptor
+			 * credential is valid or not.  Unfortunately,
+			 * this check cannot be used for the
+			 * expiration of CA and CRL.
+			 */
+			if (gfarmSecSessionAcceptorCredIsValid(
+				&e_major, &e_minor)) {
+				/* already initialized */
+				gfarm_mutex_unlock(&gsi_initialize_mutex,
+				    diag, gsi_initialize_diag);
+
+				return (GFARM_ERR_NO_ERROR);
+			}
+			if (gflog_auth_get_verbose() &&
+				e_major != GSS_S_COMPLETE) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "initial acceptor certificate is not valid "
+				    "because of:");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
+			gfarm_gsi_server_finalize_unlocked();
+		} else
+			gfarm_gsi_client_finalize_unlocked();
 	}
 
 	rv = gfarmSecSessionInitializeBoth(NULL, NULL, GRID_MAPFILE,
@@ -141,7 +198,7 @@ gfarm_gsi_server_initialize(void)
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
 		}
-		gfarmSecSessionFinalizeBoth();
+		gfarm_gsi_server_finalize_unlocked();
 		gfarm_mutex_unlock(&gsi_initialize_mutex,
 		    diag, gsi_initialize_diag);
 		return (GFARM_ERRMSG_GSI_INITIALIZATION_FAILED);

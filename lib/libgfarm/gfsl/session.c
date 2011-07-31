@@ -1043,6 +1043,10 @@ gfarmSecSessionFinalizeBoth(void)
 	    gfarmGssDeleteCredential(&acceptorInitialCred, NULL, NULL);
 	    acceptorInitialCred = GSS_C_NO_CREDENTIAL;
 	}
+	/*
+	 * do not delete the initial initiator credential, since it is
+	 * not allocated.
+	 */
 	initiatorInitialCred = GSS_C_NO_CREDENTIAL;
 	gfarmAuthFinalize();
 	acceptorInitialized = 0;
@@ -1052,6 +1056,26 @@ gfarmSecSessionFinalizeBoth(void)
     gfarm_mutex_unlock(&initiator_mutex, diag, initiatorDiag);
 }
 
+/*
+ * This function is intended to check the validity of the initial
+ * acceptor certificate.  Unfortunately, it cannot check the
+ * expiration of CA and CRL.
+ */
+int
+gfarmSecSessionAcceptorCredIsValid(OM_uint32 *majStatPtr, OM_uint32 *minStatPtr)
+{
+    OM_uint32 majStat;
+    static const char diag[] = "gfarmSecSessionAcceptorCredIsValid()";
+
+    gfarm_mutex_lock(&acceptor_mutex, diag, acceptorDiag);
+    majStat = gss_inquire_cred(
+	minStatPtr, acceptorInitialCred, NULL, NULL, NULL, NULL);
+    gfarm_mutex_unlock(&acceptor_mutex, diag, acceptorDiag);
+    if (majStatPtr != NULL)
+	*majStatPtr = majStat;
+
+    return (majStat == GSS_S_COMPLETE ? 1 : 0);
+}
 
 gfarmSecSession *
 gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
