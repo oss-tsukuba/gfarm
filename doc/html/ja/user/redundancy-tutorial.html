@@ -1,4 +1,3 @@
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML><HEAD><TITLE>Gfarm File System: Master-Slave Metadata Servers [Japanese]</TITLE>
 <META http-equiv=Content-Type content="text/html; charset=euc-jp">
@@ -19,7 +18,7 @@
 <H2>1. インストール</H2>
 ここではマスターgfmdを起動するホストをhost-a、スレーブgfmdを起動するホストをhost-bとします。
 host-a / host-bのそれぞれにおいて、Gfarmのインストールを行います。
-インストールはINSTALLマニュアルを参照してください。
+インストールはINSTALLドキュメントを参照してください。
 
 <H2>2. セットアップ</H2>
 <H3>2.1 マスターメタデータサーバの設定</H3>
@@ -76,7 +75,7 @@ rootユーザでメタデータをダンプします。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # useradd -c "Gfarm gfmd" -m _gfarmmd
-マスターメタデータサーバから共有鍵(~/.gfarmmd/.gfarm_shared_key)をコピー
+マスターメタデータサーバから共有鍵(~_gfarmmd/.gfarm_shared_key)をコピー
 </PRE></TD></TR></TBODY></TABLE>
 
 次にスレーブメタデータサーバのセットアップをrootユーザで行います。
@@ -92,29 +91,52 @@ rootユーザでメタデータをリストアします。
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
-<!-- >
-host-aのデータベースをhost-bにコピーします。host-bにジャーナルファイルが存在する場合は削除します。<BR>
-< -->
+<H3>2.3 gfsdおよびクライアント</H3>
 
-<H3>2.3 gfsd および クライアント</H3>
-
-gfarm2.confにおいてmetadb_server_listを追加して、メタデータサーバのホスト名一覧を記述します。
-<BR><BR>
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_list host-a host-b
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-gfsd を再起動します。
-rootユーザで、次のコマンドを実行します。
+マスターメタデータサーバでmetadb_server_listを追加した
+gfarm2.confをコピーします。
+<p>
+以降の設定はSETUPドキュメントを参照してください。
+<p>
+既に設定されている場合は、gfsdを再起動します。
+再起動のためにはrootユーザで、次のコマンドを実行します。
 <BR><BR>
 各gfsdホスト:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # /etc/init.d/gfsd restart
 </PRE></TD></TR></TBODY></TABLE>
+<p>
+ここまでの手順でマスタースレーブで冗長化されたメタデータサーバの構成が完了しました。
+
+<H3>2.4 動作確認</H3>
+
+gfmdhost -lでスレーブメタデータサーバが接続されていることを確認してください。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -l
++ master -     m (default)    host-a 601
+<font color=red>+</font> slave  sync  c (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+rootユーザでgfjournalを実行し、
+スレーブメタデータサーバに更新が伝達されているか確認してください。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfjournal /var/gfarm-metadata/journal/0000000000.gmj 
+records  seqnum(min/max)            record length(min/max/ave)
+     11            63/          <font color=red>73</font>          24/    118/     43
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+更新操作を行い、マスターおよびスレーブメタデータサーバで、
+seqnumのmaxが等しければ更新が伝達されています。
 
 <H2>3. スレーブgfmdをマスターgfmdに昇格する</H2>
-先にhost-aのgfmdを停止します。
-host-aにおいてrootユーザで、次のコマンドを実行します。
+
+これからは、マスターgfmdに障害が発生し、
+スレーブgfmdをマスターgfmdに昇格する手順を説明します。
+<p>
+先にhost-aのgfmdを停止していることを確認します。
+起動している場合は、host-aにおいてrootユーザで、次のコマンドで停止させます。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
@@ -136,6 +158,10 @@ host-b:
 </PRE></TD></TR></TBODY></TABLE>
 
 <H2>4. 元のマスターgfmdを起動する</H2>
+
+これからは、元のマスターgfmdが障害から回復し、
+スレーブgfmdとして復活させる手順を説明します。
+<p>
 host-aにおいて/etc/gfmd.confを/etc/gfmd-slave.confにコピーします。<BR>
 /etc/gfmd-slave.confに次の行を追加します。
 <BR><BR>
@@ -144,7 +170,7 @@ host-a:
 metadb_server_force_slave enable
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
-host-aのgfmdをスレーブgfmdとして起動します。
+この設定ファイルを利用して、host-aのgfmdをスレーブgfmdとして起動します。
 host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-a:
