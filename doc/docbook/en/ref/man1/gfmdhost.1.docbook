@@ -51,13 +51,14 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para><command>gfmdhost</command> is used to display and maintain
-the information about the metadata server redundancy feature.
+the information about synchronous and asynchronous replicated metadata
+servers.
 <command>gfmdhost</command> has functions which can be selected by
--l¡¢-c, -m and -d options.
+-l, -c, -m and -d options.
 These functions are mutually exclusive, and only one option
 among them can be specified.
-If none of them is specified, gfmd host name will be listed as
-the default function of this command.
+If none of them is specified, registered metadata server (gfmd host)
+names will be listed.
 </para>
 </refsect1>
 
@@ -82,16 +83,16 @@ the default function of this command.
     <term><option>-l</option></term>
     <listitem>
       <para>
-        All registered gfmd hosts are listed with detail information.
-	They are grouped by the clusters and ordered in alphabetical.
+        All registered gfmd hosts are listed with detailed information.
+	They are grouped by the clusters and ordered alphabetically.
       </para>
       <para>
-        The detail information is displayed in the following order.
+        The detailed information is displayed in the following order.
       </para>
       <para><option>Connection State (+|-)</option></para>
       <para>
-        "+" means that the gfmd connected to the master gfmd.
-        "-" means that the gfmd does not connected to the master gfmd.
+        "+" means that the gfmd is connected to the master gfmd.
+        "-" means that the gfmd is not connected to the master gfmd.
 	This column for the master gfmd is always "+".
       </para>
       <para><option>Server Type (master|slave)</option></para>
@@ -106,8 +107,10 @@ the default function of this command.
       </para>
       <para><option>Configration of Master Candidate (c|m|s)</option></para>
       <para>
-        "m" means a default master gfmd, "c" means a master candidate one,
-	and "s" means a gfmd as slave only.
+        "m" means the default master gfmd, "c" means a master
+	candidate that can be selected as a master gfmd,
+	and "s" means a gfmd that is not a master candidate and only
+	works for a slave gfmd.
       </para>
       <para><option>Cluster Name</option></para>
       <para>
@@ -164,9 +167,17 @@ the default function of this command.
     <term><option>-C</option> <parameter>cluster-name</parameter></term>
     <listitem>
       <para>
-        For -c / -m functions, specifies a cluster name where the gfmd host
-	belongs to.
-	If it is not specified, the gfmd will belong to the default cluster.
+	This option specifies a cluster name where the gfmd host
+	belongs to.  If it is not specified, the default cluster is
+	assumed.  This option is only available with -c or -m option.
+      </para>
+      <para>
+	The cluster name means a group of synchronous replicated
+	metadata servers.  That is, slave metadata servers in the same
+	cluster with the master metadata server are synchronously
+	replicated servers that can be changed to a master metadata
+	server without any loss of metadata operations.  Other
+	metadata servers are asynchronously replicated servers.
       </para>
     </listitem>
   </varlistentry>
@@ -175,8 +186,9 @@ the default function of this command.
     <term><option>-p</option> <parameter>port-number</parameter></term>
     <listitem>
       <para>
-        For -c / -m functions, specifies a port number of the gfmd.
-	If it is not specified, 601 as the default port number is used.
+        This option specifies a port number of the gfmd.
+	If it is not specified, 601 is assumed.
+	This option is only available with -c or -m option.
       </para>
     </listitem>
   </varlistentry>
@@ -185,15 +197,16 @@ the default function of this command.
     <term>-t {m|c|s}</term>
     <listitem>
       <para>
-        For -c / -m functions, specifies a configuration of master candidate.
-	"m" means a default master, "c" means a master candidate and
-	and "s" means a gfmd as slave-only.
-	If it is not specified, "c" is used.
+        This option specifies a configuration of master candidate.
+        It is only available with -c or -m option.
+	"m" means the default master, "c" means a master candidate and
+	and "s" means a slave only gfmd.
+	If it is not specified, "c" is assumed.
 	The gfmd configured as the default master cannot be changed to
 	a master candidate or slave-only directly.
-	If the gfmd configured as non default master is set to the
-	default master by "-t m", the previous default master changes to
-	a master candidate at same time.
+	If the gfmd that is not the default master is changed to the
+	default master by "-t m", the original default master is
+        changed to a master candidate at the same time.
       </para>
     </listitem>
   </varlistentry>
