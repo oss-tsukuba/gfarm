@@ -98,16 +98,17 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfmdhost</B
 > is used to display and maintain
-the information about the metadata server redundancy feature.
+the information about synchronous and asynchronous replicated metadata
+servers.
 <B
 CLASS="COMMAND"
 >gfmdhost</B
 > has functions which can be selected by
--l¡¢-c, -m and -d options.
+-l, -c, -m and -d options.
 These functions are mutually exclusive, and only one option
 among them can be specified.
-If none of them is specified, gfmd host name will be listed as
-the default function of this command.</P
+If none of them is specified, registered metadata server (gfmd host)
+names will be listed.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -127,7 +128,7 @@ CLASS="COMMAND"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->&#60;none&#62;</DT
+>&lt;none&gt;</DT
 ><DD
 ><P
 >        If no function is specified,
@@ -142,11 +143,11 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->        All registered gfmd hosts are listed with detail information.
-	They are grouped by the clusters and ordered in alphabetical.
+>        All registered gfmd hosts are listed with detailed information.
+	They are grouped by the clusters and ordered alphabetically.
       </P
 ><P
->        The detail information is displayed in the following order.
+>        The detailed information is displayed in the following order.
       </P
 ><P
 ><CODE
@@ -154,8 +155,8 @@ CLASS="OPTION"
 >Connection State (+|-)</CODE
 ></P
 ><P
->        "+" means that the gfmd connected to the master gfmd.
-        "-" means that the gfmd does not connected to the master gfmd.
+>        "+" means that the gfmd is connected to the master gfmd.
+        "-" means that the gfmd is not connected to the master gfmd.
 	This column for the master gfmd is always "+".
       </P
 ><P
@@ -182,8 +183,10 @@ CLASS="OPTION"
 >Configration of Master Candidate (c|m|s)</CODE
 ></P
 ><P
->        "m" means a default master gfmd, "c" means a master candidate one,
-	and "s" means a gfmd as slave only.
+>        "m" means the default master gfmd, "c" means a master
+	candidate that can be selected as a master gfmd,
+	and "s" means a gfmd that is not a master candidate and only
+	works for a slave gfmd.
       </P
 ><P
 ><CODE
@@ -262,9 +265,17 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->        For -c / -m functions, specifies a cluster name where the gfmd host
-	belongs to.
-	If it is not specified, the gfmd will belong to the default cluster.
+>	This option specifies a cluster name where the gfmd host
+	belongs to.  If it is not specified, the default cluster is
+	assumed.  This option is only available with -c or -m option.
+      </P
+><P
+>	The cluster name means a group of synchronous replicated
+	metadata servers.  That is, slave metadata servers in the same
+	cluster with the master metadata server are synchronously
+	replicated servers that can be changed to a master metadata
+	server without any loss of metadata operations.  Other
+	metadata servers are asynchronously replicated servers.
       </P
 ></DD
 ><DT
@@ -277,23 +288,25 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->        For -c / -m functions, specifies a port number of the gfmd.
-	If it is not specified, 601 as the default port number is used.
+>        This option specifies a port number of the gfmd.
+	If it is not specified, 601 is assumed.
+	This option is only available with -c or -m option.
       </P
 ></DD
 ><DT
 >-t {m|c|s}</DT
 ><DD
 ><P
->        For -c / -m functions, specifies a configuration of master candidate.
-	"m" means a default master, "c" means a master candidate and
-	and "s" means a gfmd as slave-only.
-	If it is not specified, "c" is used.
+>        This option specifies a configuration of master candidate.
+        It is only available with -c or -m option.
+	"m" means the default master, "c" means a master candidate and
+	and "s" means a slave only gfmd.
+	If it is not specified, "c" is assumed.
 	The gfmd configured as the default master cannot be changed to
 	a master candidate or slave-only directly.
-	If the gfmd configured as non default master is set to the
-	default master by "-t m", the previous default master changes to
-	a master candidate at same time.
+	If the gfmd that is not the default master is changed to the
+	default master by "-t m", the original default master is
+        changed to a master candidate at the same time.
       </P
 ></DD
 ><DT
