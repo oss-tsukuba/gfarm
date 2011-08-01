@@ -74,6 +74,7 @@ extern float gfarm_schedule_virtual_load;
 extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;
+extern int gfarm_client_file_bufsize;
 
 extern int gf_on_demand_replication;
 extern int gf_hook_default_global;

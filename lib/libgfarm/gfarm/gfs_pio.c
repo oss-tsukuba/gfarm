@@ -134,7 +134,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	char *buffer;
 
 	GFARM_MALLOC(gf);
-	GFARM_MALLOC_ARRAY(buffer, GFS_FILE_BUFSIZE);
+	GFARM_MALLOC_ARRAY(buffer, gfarm_client_file_bufsize);
 	if (buffer == NULL || gf == NULL) {
 		if (buffer != NULL)
 			free(buffer);
@@ -166,6 +166,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->io_offset = 0;
 
 	gf->buffer = buffer;
+	gf->bufsize = gfarm_client_file_bufsize;
 	gf->p = 0;
 	gf->length = 0;
 	gf->offset = 0;
@@ -644,7 +645,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	while (size > 0) {
 		if ((e = gfs_pio_fillbuf(gf,
 		    ((gf->open_flags & GFARM_FILE_UNBUFFERED) &&
-		    size < GFS_FILE_BUFSIZE) ? size : GFS_FILE_BUFSIZE))
+		    size < gf->bufsize) ? size : gf->bufsize))
 		    != GFARM_ERR_NO_ERROR) {
 			/* XXX call reconnect, when failover for writing
 			 *     is supported
@@ -708,9 +709,9 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 
 	CHECK_WRITABLE(gf);
 
-	if (size + gf->p > GFS_FILE_BUFSIZE) {
+	if (size + gf->p > gf->bufsize) {
 		/*
-		 * gf->buffer[gf->p .. GFS_FILE_BUFSIZE-1] will be overridden
+		 * gf->buffer[gf->p .. gf->bufsize-1] will be overridden
 		 * by buffer.
 		 */
 		gf->length = gf->p;
@@ -722,7 +723,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 			goto finish;
 		}
 	}
-	if (size >= GFS_FILE_BUFSIZE) {
+	if (size >= gf->bufsize) {
 		/* shortcut to avoid unnecessary memory copy */
 		assert(gf->p == 0); /* gfs_pio_flush() was called above */
 		gf->length = 0;
@@ -749,7 +750,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	*np = size;
 	e = GFARM_ERR_NO_ERROR;
 	if (gf->open_flags & GFARM_FILE_UNBUFFERED ||
-	    gf->p >= GFS_FILE_BUFSIZE) {
+	    gf->p >= gf->bufsize) {
 		e = gfs_pio_flush(gf);
 		if (gf->open_flags & GFARM_FILE_UNBUFFERED)
 			gfs_pio_purge(gf);
@@ -830,7 +831,7 @@ gfs_pio_getc(GFS_File gf)
 	if (gf->p >= gf->length) {
 		if (gfs_pio_fillbuf(gf,
 		    gf->open_flags & GFARM_FILE_UNBUFFERED ?
-		    1 : GFS_FILE_BUFSIZE) != GFARM_ERR_NO_ERROR) {
+		    1 : gf->bufsize) != GFARM_ERR_NO_ERROR) {
 			c = EOF; /* can get reason via gfs_pio_error() */
 			gflog_debug(GFARM_MSG_1001321,
 				"gfs_pio_fillbuf() failed: %s",
@@ -902,7 +903,7 @@ gfs_pio_putc(GFS_File gf, int c)
 
 	CHECK_WRITABLE(gf);
 
-	if (gf->p >= GFS_FILE_BUFSIZE) {
+	if (gf->p >= gf->bufsize) {
 		gfarm_error_t e = gfs_pio_flush(gf); /* this does purge too */
 
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -916,8 +917,7 @@ gfs_pio_putc(GFS_File gf, int c)
 	gf->buffer[gf->p++] = c;
 	if (gf->p > gf->length)
 		gf->length = gf->p;
-	if (gf->open_flags & GFARM_FILE_UNBUFFERED ||
-	    gf->p >= GFS_FILE_BUFSIZE) {
+	if (gf->open_flags & GFARM_FILE_UNBUFFERED || gf->p >= gf->bufsize) {
 		e = gfs_pio_flush(gf);
 		if (gf->open_flags & GFARM_FILE_UNBUFFERED)
 			gfs_pio_purge(gf);

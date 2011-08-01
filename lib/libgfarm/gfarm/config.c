@@ -725,6 +725,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
+#define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
 #define GFARM_METADB_REPLICATION_ENABLED_DEFAULT	0
 #define GFARM_JOURNAL_MAX_SIZE_DEFAULT		(32 * 1024 * 1024) /* 32MB */
@@ -756,6 +757,7 @@ int gfarm_metadb_job_queue_length = MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_metadb_dbq_size = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
+int gfarm_client_file_bufsize = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
 static int metadb_replication_enabled = MISC_DEFAULT;
 static char *journal_dir = NULL;
@@ -2138,6 +2140,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "record_atime") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_record_atime);
+	} else if (strcmp(s, o = "client_file_bufsize") == 0) {
+		e = parse_set_misc_int(p, &gfarm_client_file_bufsize);
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &gfarm_profile);
 
@@ -2327,6 +2331,8 @@ gfarm_config_set_default_misc(void)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
 	if (gfarm_record_atime == MISC_DEFAULT)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
+	if (gfarm_client_file_bufsize == MISC_DEFAULT)
+		gfarm_client_file_bufsize = GFARM_CLIENT_FILE_BUFSIZE_DEFAULT;
 	if (gfarm_profile == MISC_DEFAULT)
 		gfarm_profile = GFARM_PROFILE_DEFAULT;
 	if (metadb_replication_enabled == MISC_DEFAULT)
