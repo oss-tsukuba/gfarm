@@ -416,7 +416,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	if (ecode == GFARM_ERR_INPUT_OUTPUT) {
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
-		    gfarm_error_string(e));
+		    gfarm_error_string(ecode));
 	}
 }
 
