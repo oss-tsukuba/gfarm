@@ -1,3 +1,46 @@
+Release note for Gfarm 2.5.0
+============================
+
+[2011.8.3]
+
+New Feature
+* synchronous and asynchronous metadata replication support
+
+New command
+* gfmdhost - manages replicated metadata servers
+* gfjournal - displays metadata journal data
+
+New configuration directive
+* metadb_server_list to specify replicated metadata servers
+* metadb_replication to enable the replicated metadata feature
+* synchronous_replication_timeout to speciy the timeout for
+  synchronous metadata replication 
+* synchronous_journaling to disable to flush the journal data in each
+  metadata transaction
+* metadb_journal_dir and metadb_journal_max_size to specify the
+  journal directory and the maximum file size, respectively
+* network_receive_timeout to specify the timeout of packet reception.
+  This timeout is for failover of reading a file replica against the
+  gfsd failure
+* client_file_bufsize to specify the file buffer size in Gfarm client
+  library.  Default is 1048568 bytes.  It should be less than 1048568
+  not for deterioration of remote access performance for version 2.5.0
+  or earlier.
+
+Documentation
+* metadata replication tutorial
+* manual page - gfmdhost(1)
+* install document for debian
+
+Updated feature
+* failover during reading files against the gfsd failure
+* config-gfarm, config-gfarm-update - -r option to support replicated
+  metadata servers, and -j option to specify a journal directory
+* Globus debian package support
+
+Bug fix
+* GSI authorization fails when CA or CRL expires [sf.net trac #235]
+
 Release note for Gfarm 2.4.2
 ============================
 

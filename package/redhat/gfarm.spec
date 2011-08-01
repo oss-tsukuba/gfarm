@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.4.2
+%define ver	2.5.0
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -319,6 +319,7 @@ fi
 %{man_prefix}/man1/gfkey.1.gz
 %{man_prefix}/man1/gfln.1.gz
 %{man_prefix}/man1/gfls.1.gz
+%{man_prefix}/man1/gfmdhost.1.gz
 %{man_prefix}/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfmpirun_p4.1.gz
@@ -473,6 +474,7 @@ fi
 %{man_prefix}/ja/man1/gfkey.1.gz
 %{man_prefix}/ja/man1/gfln.1.gz
 %{man_prefix}/ja/man1/gfls.1.gz
+%{man_prefix}/ja/man1/gfmdhost.1.gz
 %{man_prefix}/ja/man1/gfmkdir.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfmpirun_p4.1.gz
@@ -606,6 +608,7 @@ fi
 %{html_prefix}/en/ref/man1/gfkey.1.html
 %{html_prefix}/en/ref/man1/gfln.1.html
 %{html_prefix}/en/ref/man1/gfls.1.html
+%{html_prefix}/en/ref/man1/gfmdhost.1.html
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfmpirun_p4.1.html
@@ -763,6 +766,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfkey.1.html
 %{html_prefix}/ja/ref/man1/gfln.1.html
 %{html_prefix}/ja/ref/man1/gfls.1.html
+%{html_prefix}/ja/ref/man1/gfmdhost.1.html
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfmpirun_p4.1.html
@@ -950,6 +954,7 @@ fi
 %{prefix}/bin/gfkey
 %{prefix}/bin/gfln
 %{prefix}/bin/gfls
+%{prefix}/bin/gfmdhost
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
 %{prefix}/bin/gfpath
@@ -1032,6 +1037,7 @@ fi
 %{prefix}/bin/config-gfarm
 %{prefix}/bin/config-gfarm-update
 %{prefix}/bin/gfdump.postgresql
+%{prefix}/bin/gfjournal
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
