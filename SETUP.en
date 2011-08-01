@@ -97,8 +97,10 @@ The -a and -D options are only required for GSI authentication.  The
 The default is shared secret authentication (sharedsecret).  For
 details, refer to a manual page of gfarm2.conf(5) and Gfarm-FAQ.en.
 
-Note that the -X option is also required to enable XML Path Language
-(XPath) support for querying XML extended attributes.
+Note that the -X option is required to enable XML Path Language
+(XPath) support for querying XML extended attributes.  The -r option
+is required to enable replicated metadata servers.  For details, see
+tutorial of replicated metadata servers.
 
 You can modify any default parameter with the option shown in [ ].
 When you have confirmed the parameter, run 'config-gfarm' by the root
