@@ -46,8 +46,6 @@
 #include "gfj_client.h"
 #include "gfpath.h"
 
-#include "gfarm_auth.h"	/* gfarmAuthInitialize(), gfarmAuthFinalize() */
-
 #include "subr.h"
 #include "thrpool.h"
 #include "callout.h"
@@ -1212,12 +1210,12 @@ sigs_handler(void *p)
 		}
 #endif
 		switch (sig) {
-		case SIGHUP: /* reload the grid-mapfile */
+		case SIGHUP:
 #ifdef HAVE_GSI
-			giant_lock();
-			gfarmAuthFinalize();
-			(void)gfarmAuthInitialize(GRID_MAPFILE);
-			giant_unlock();
+			/* initialize the GSI environment */
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "initialize the GSI environment");
+			gfarm_gsi_server_finalize();
 #endif
 			continue;
 
