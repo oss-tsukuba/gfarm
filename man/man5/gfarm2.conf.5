@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 7月 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "03 August 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -841,6 +841,19 @@ For example,
 	gfmd_reconnection_timeout 30
 .fi
 .TP
+\fBclient_file_bufsize \fIbytes\fB\fR
+This directive specifies the file buffer size in bytes used in
+the Gfarm client library (libgfarm).  The default size is 1048568
+bytes (= 1MiB - 8B).  The file buffer size should be less than the
+default value not for deterioration of remote access performance for
+version 2.5.0 or earlier.
+
+For example,
+
+.nf
+	client_file_bufsize 65536
+.fi
+.TP
 \fBprofile \fIvalidity\fB\fR
 When "enable" is specified, Gfarm outputs the profile information.
 
@@ -1007,6 +1020,7 @@ notation.
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
 		\~\~<log_message_verbose_level_statement> |
+		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
 		\~\~<metadb_replication_statement> |
@@ -1086,6 +1100,7 @@ notation.
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
 	<profile_statement> ::= "profile" <validity>
 	<metadb_server_list_statement> ::= "metadb_server_list" <metadb_server_list_spec>
 	<metadb_server_list_spec> ::=

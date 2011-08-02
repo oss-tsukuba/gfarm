@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 7æœˆ 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "03 August 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -790,6 +790,19 @@ Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¤Ï¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬ÍøÍÑ²ÄÇ½¤Ë¤Ê¤ë¤Þ¤Ç»î¹Ô¤ò·«¤
 	gfmd_reconnection_timeout 30
 .fi
 .TP
+\fBclient_file_bufsize \fI¥Ð¥¤¥È¿ô\fB\fR
+Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¡Êlibgfarm¡Ë¤Ç»È¤ï¤ì¤ë¥Õ¥¡¥¤¥ë¤Î¥Ð¥Ã¥Õ¥¡
+¥µ¥¤¥º¤ò¥Ð¥¤¥ÈÃ±°Ì¤Ç»ØÄê¤·¤Þ¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï1048568¥Ð¥¤¥È¡Ê= 1MiB -
+8B¡Ë¤Ç¤¹¡£Gfarm-2.5.0°ÊÁ°¤Ç¤Ï¡¢¥Õ¥¡¥¤¥ë¤Î¥Ð¥Ã¥Õ¥¡¥µ¥¤¥º¤Ï¡¢±ó³Ö¥Õ¥¡¥¤
+¥ë¥¢¥¯¥»¥¹À­Ç½¤ò¶ËÃ¼¤ËÄã²¼¤µ¤»¤Ê¤¤¤¿¤á¤Ë¤â¡¢¥Ç¥Õ¥©¥ë¥ÈÃÍ°Ê²¼¤Ç¤¢¤ëÉ¬
+Í×¤¬¤¢¤ê¤Þ¤¹¡£
+
+Îã:
+
+.nf
+	client_file_bufsize 65536
+.fi
+.TP
 \fBprofile \fIÍ­¸úÀ­\fB\fR
 ¤³¤Î¥ª¥×¥·¥ç¥ó¤¬enable¤Î¾ì¹ç¡¢¥×¥í¥Õ¥¡¥¤¥ë¾ðÊó¤ò½ÐÎÏ¤·¤Þ¤¹¡£
 
@@ -948,6 +961,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
 		\~\~<log_message_verbose_level_statement> |
+		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
 		\~\~<metadb_replication_statement> |
@@ -1027,6 +1041,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
 	<profile_tatement> ::= "profile" <validity>
 	<metadb_server_list_statement> ::= "metadb_server_list" <metadb_server_list_spec>
 	<metadb_server_list_spec> ::=
