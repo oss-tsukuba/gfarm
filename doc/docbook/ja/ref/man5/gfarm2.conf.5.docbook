@@ -1177,6 +1177,22 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
  -->
 
 <varlistentry>
+<term><token>client_file_bufsize</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
+  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
+  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
+  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
+  要があります。
+</para>
+<para>例:</para>
+<literallayout>
+	client_file_bufsize 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>profile</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>
@@ -1379,6 +1395,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
+		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
@@ -1472,6 +1489,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
+	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
 	&lt;profile_tatement&gt; ::= "profile" &lt;validity&gt;
 	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
 	&lt;metadb_server_list_spec&gt; ::=
