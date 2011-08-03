@@ -737,6 +737,7 @@ fi
 %{html_prefix}/en/user/index.html
 %{html_prefix}/en/user/nfs-gfarmfs.html
 %{html_prefix}/en/user/samba-gfarmfs.html
+%{html_prefix}/en/user/redundancy-tutorial.html
 # XXX NOTYET %{html_prefix}/en/user/samba-hook.html
 %{html_prefix}/ja/ref/index.html
 %if %{gfarm_v2_not_yet}
@@ -875,6 +876,7 @@ fi
 %{html_prefix}/ja/user/samba-gfarmfs.html
 %{html_prefix}/ja/user/samba-hook.html
 %{html_prefix}/ja/user/smboverssh.html
+%{html_prefix}/ja/user/redundancy-tutorial.html
 %{html_prefix}/pic/gfarm-logo.gif
 %{doc_prefix}/INSTALL.en
 %{doc_prefix}/INSTALL.ja

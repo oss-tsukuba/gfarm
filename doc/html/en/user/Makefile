@@ -10,7 +10,8 @@ htmldir=$(default_htmldir)/en/user
 
 HTML =	index.html \
 	nfs-gfarmfs.html \
-	samba-gfarmfs.html
+	samba-gfarmfs.html \
+	redundancy-tutorial.html
 # XXX not translated yet
 #	export-gfarm.html \
 #	samba-hook.html
