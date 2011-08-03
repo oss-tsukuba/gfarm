@@ -977,6 +977,46 @@ mdhost_updated(void)
 }
 
 static gfarm_error_t
+mdhost_db_modify_default_master(struct mdhost *mh,
+	struct gfarm_metadb_server *ms, const char *diag)
+{
+	gfarm_error_t e;
+
+	if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "db_begin failed: %s",
+		    gfarm_error_string(e));
+	} else if ((e = db_mdhost_modify(ms, 0)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "db_mdhost_modify failed: %s",
+		    gfarm_error_string(e));
+	} else if ((e = mdhost_fix_default_master(mh, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "db_mdhost_modify failed: %s",
+		    gfarm_error_string(e));
+	} else if ((e = db_end(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "db_end failed: %s",
+		    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+/* PREREQUISITE: giant_lock */
+void
+mdhost_set_self_as_default_master(void)
+{
+	gfarm_error_t e;
+	struct mdhost *self = mdhost_lookup_self();
+	static const char diag[] = "mdhost_set_self_as_default_master";
+
+	gfarm_metadb_server_set_is_default_master(&self->ms, 1);
+	if ((e = mdhost_db_modify_default_master(self, &self->ms, diag)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s: mdhost_updated: %s",
+		    diag, gfarm_error_string(e));
+}
+
+static gfarm_error_t
 metadb_server_check_write_access(struct peer *peer, int from_client,
 	const char *diag)
 {
@@ -990,7 +1030,6 @@ metadb_server_check_write_access(struct peer *peer, int from_client,
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
-
 
 gfarm_error_t
 gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
@@ -1120,25 +1159,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 		goto unlock;
 	mdhost_modify_in_cache(mh, &ms);
 	if (isdm) {
-		if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "db_begin failed: %s",
-			    gfarm_error_string(e));
-		} else if ((e = db_mdhost_modify(&ms, 0))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "db_mdhost_modify failed: %s",
-			    gfarm_error_string(e));
-		} else if ((e = mdhost_fix_default_master(mh, diag))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "db_mdhost_modify failed: %s",
-			    gfarm_error_string(e));
-		} else if ((e = db_end(diag)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "db_end failed: %s",
-			    gfarm_error_string(e));
-		}
+		e = mdhost_db_modify_default_master(mh, &ms, diag);
 	} else if ((e = db_mdhost_modify(&ms, 0)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "db_mdhost_modify failed: %s",

@@ -1082,6 +1082,10 @@ transform_to_master(void)
 	start_db_journal_threads();
 	start_gfmdc_threads();
 
+	giant_lock();
+	mdhost_set_self_as_default_master();
+	giant_unlock();
+
 	gflog_info(GFARM_MSG_UNFIXED,
 	    "end transforming to the master gfmd");
 }

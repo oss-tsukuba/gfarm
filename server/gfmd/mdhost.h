@@ -36,6 +36,7 @@ void mdhost_set_last_fetch_seqnum(struct mdhost *, gfarm_uint64_t);
 int mdhost_is_recieved_seqnum(struct mdhost *);
 void mdhost_set_is_recieved_seqnum(struct mdhost *, int);
 void mdhost_set_self_as_master(void);
+void mdhost_set_self_as_default_master(void);
 int mdhost_is_sync_replication(struct mdhost *);
 int mdhost_get_flags(struct mdhost *);
 int mdhost_is_in_first_sync(struct mdhost *);
