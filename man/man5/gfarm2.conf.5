@@ -817,6 +817,15 @@ For example,
 	log_message_verbose_level 1
 .fi
 .TP
+\fBlog_auth_verbose \fIvalidity\fB\fR
+When "enable" is specified, verbose messages about authentication are logged.
+
+Example:
+
+.nf
+	log_auth_verbose enable
+.fi
+.TP
 \fBno_file_system_node_timeout \fIseconds\fB\fR
 If there is no file system node available,
 Gfarm client library periodically tries to find a file system node.
@@ -923,6 +932,9 @@ When "enable" is specified, even if the gfmd is set to default master,
 it run as slave gfmd forcedly.
 The default is "disable".
 
+NOTE: Please do not use this feature for now,
+because this implementation is not complete.
+
 This parameter is only available in gfmd.conf.
 
 Example:
@@ -1020,6 +1032,7 @@ notation.
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
 		\~\~<log_message_verbose_level_statement> |
+		\~\~<log_auth_verbose_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
@@ -1098,6 +1111,7 @@ notation.
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
+	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
@@ -1136,12 +1150,21 @@ notation.
 .fi
 .SH "EXAMPLES"
 .PP
-The following is an example usin PostgreSQL to store the metadata,
+The following is an example of gfarm2.conf to use sharedsecret authentication.
+
+.nf
+metadb_server_host metadb.example.org
+metadb_server_port 601
+auth enable sharedsecret *
+sockopt keepalive
+.fi
+.PP
+The following is an example of gfmd.conf
+to use PostgreSQL to store the metadata,
 and to allow access from filesystem nodes and clients at IP address
 192.168.0.0/24, via sharedsecret authentication.
 
 .nf
-spool /var/spool/gfarm
 metadb_server_host metadb.example.org
 metadb_server_port 601
 postgresql_server_host metadb.example.org
@@ -1150,15 +1173,15 @@ postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password "secret-postgresql-password"
 auth enable sharedsecret 192.168.0.0/24
+admin_user john
 sockopt keepalive
 .fi
 .PP
-The following is an example using LDAP to store the metadata,
+The following is an example of gfmd.conf to use LDAP to store the metadata,
 and to allow access from filesystem nodes and clients at any IP address,
 via GSI authentication.
 
 .nf
-spool /var/spool/gfarm
 metadb_server_host metadb.example.com
 metadb_server_port 601
 ldap_server_host metadb.example.com
@@ -1167,6 +1190,10 @@ ldap_base_dn "dc=example, dc=com"
 ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 ldap_bind_password "secret-ldap-password"
 auth enable gsi *
+spool_server_cred_type host
+spool_server_cred_service gfsd
+admin_user john
+admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Division/CN=John Doe"
 sockopt keepalive
 .fi
 .SH "FILES"
