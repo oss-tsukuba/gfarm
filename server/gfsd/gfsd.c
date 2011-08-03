@@ -61,6 +61,7 @@
 #include "gfutil.h"
 #include "gfnetdb.h"
 #include "hash.h"
+#include "timer.h"
 
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -76,6 +77,7 @@
 #include "gfs_client.h"
 #include "gfm_proto.h"
 #include "gfm_client.h"
+#include "gfs_profile.h"
 
 #include "gfsd_subr.h"
 
@@ -609,6 +611,15 @@ struct file_entry {
 #define FILE_FLAG_WRITABLE	0x04
 #define FILE_FLAG_WRITTEN	0x08
 #define FILE_FLAG_READ		0x10
+
+/*
+ * performance data
+ */
+	gfarm_uint64_t gen, new_gen;
+	struct timeval start_time;
+	unsigned nwrite, nread;
+	double write_time, read_time;
+	gfarm_off_t write_size, read_size;
 } *file_table;
 
 static void
@@ -660,7 +671,8 @@ file_table_is_available(gfarm_int32_t net_fd)
 }
 
 void
-file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino)
+file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
+	gfarm_uint64_t gen, struct timeval *start)
 {
 	struct file_entry *fe;
 	struct stat st;
@@ -682,24 +694,68 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino)
 	fe->mtime = st.st_mtime;
 	/* XXX FIXME st_mtimespec.tv_nsec */
 	fe->size = st.st_size;
+
+	fe->gen = fe->new_gen = gen;
+	fe->start_time = *start;
+	fe->nwrite = fe-> nread = 0;
+	fe->write_time = fe->read_time = 0;
+	fe->write_size = fe->read_size = 0;
 }
+
+struct file_entry *
+file_table_entry(gfarm_int32_t net_fd)
+{
+	if (0 <= net_fd && net_fd < file_table_size)
+		return (&file_table[net_fd]);
+	else
+		return (NULL);
+}
+
+#define timeval_sub(t1, t2) \
+	(((double)(t1)->tv_sec - (double)(t2)->tv_sec)	\
+	+ ((double)(t1)->tv_usec - (double)(t2)->tv_usec) * .000001)
 
 gfarm_error_t
 file_table_close(gfarm_int32_t net_fd)
 {
 	gfarm_error_t e;
+	struct file_entry *fe;
+	struct timeval end_time;
+	char time_buf[26], *t, *te;
+	double total_time;
 
-	if (net_fd < 0 || net_fd >= file_table_size ||
-	    file_table[net_fd].local_fd == -1) {
+	fe = file_table_entry(net_fd);
+	if (fe == NULL || fe->local_fd == -1) {
 		gflog_debug(GFARM_MSG_1002168,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
-	if (close(file_table[net_fd].local_fd) < 0)
+	if (close(fe->local_fd) < 0)
 		e = gfarm_errno_to_error(errno);
 	else
 		e = GFARM_ERR_NO_ERROR;
-	file_table[net_fd].local_fd = -1;
+	fe->local_fd = -1;
+
+	gfs_profile(
+		gettimeofday(&end_time, NULL);
+		total_time = timeval_sub(&end_time, &fe->start_time);
+		ctime_r(&fe->start_time.tv_sec, time_buf);
+		t = time_buf;
+		te = &time_buf[sizeof(time_buf)];
+		while (t < te && *t != '\n')
+			++t;
+		if (t < te && *t == '\n')
+			*t = '\0';
+		else if (t == te)
+			*--t = '\0';
+		gflog_info(GFARM_MSG_UNFIXED, "%s total_time %g "
+		    "inum %lld gen %lld (%lld) "
+		    "write %d size %lld time %g "
+		    "read %d size %lld time %g",
+		    time_buf, total_time, fe->ino, fe->gen, fe->new_gen,
+		    fe->nwrite, fe->write_size, fe->write_time,
+		    fe->nread, fe->read_size, fe->read_time));
+
 	return (e);
 }
 
@@ -710,15 +766,6 @@ file_table_get(gfarm_int32_t net_fd)
 		return (file_table[net_fd].local_fd);
 	else
 		return (-1);
-}
-
-struct file_entry *
-file_table_entry(gfarm_int32_t net_fd)
-{
-	if (0 <= net_fd && net_fd < file_table_size)
-		return (&file_table[net_fd]);
-	else
-		return (NULL);
 }
 
 static void
@@ -1031,6 +1078,9 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 	gfarm_ino_t ino = 0;
 	gfarm_uint64_t gen = 0;
 	int net_fd, local_fd, save_errno, local_flags = 0;
+	struct timeval start;
+
+	gettimeofday(&start, NULL);
 
 	gfs_server_get_request(client, diag, "i", &net_fd);
 
@@ -1053,7 +1103,7 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 			free(path);
 			if (local_fd >= 0) {
 				file_table_add(net_fd, local_fd, local_flags,
-				    ino);
+				    ino, gen, &start);
 				*net_fdp = net_fd;
 				*local_fdp = local_fd;
 				break;
@@ -1195,7 +1245,8 @@ close_result(struct file_entry *fe, gfarm_int32_t *gen_update_result_p)
 				    (unsigned long long)old_gen,
 				    (unsigned long long)new_gen,
 				    strerror(*gen_update_result_p));
-			}
+			} else
+				gfs_profile(fe->new_gen = new_gen);
 			free(old);
 			free(new);
 		} else
@@ -1328,8 +1379,13 @@ gfs_server_pread(struct gfp_xdr *client)
 	ssize_t rv;
 	int save_errno = 0;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
 
 	gfs_server_get_request(client, "pread", "iil", &fd, &size, &offset);
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
@@ -1346,6 +1402,15 @@ gfs_server_pread(struct gfp_xdr *client)
 	else
 		file_table_set_read(fd);
 
+	gfs_profile(
+		gfarm_gettimerval(&t2);
+		fe = file_table_entry(fd);
+		if (fe != NULL) {
+			fe->nread++;
+			fe->read_size += rv;
+			fe->read_time += gfarm_timerval_sub(&t2, &t1);
+		});
+
 	gfs_server_put_reply_with_errno(client, "pread", save_errno,
 	    "b", rv, buffer);
 }
@@ -1359,10 +1424,14 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	ssize_t rv;
 	int save_errno = 0;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
 
 	gfs_server_get_request(client, "pwrite", "ibl",
 	    &fd, sizeof(buffer), &size, buffer, &offset);
 
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
 	/*
 	 * We truncate i/o size bigger than GFS_PROTO_MAX_IOSIZE.
 	 * This is inefficient because passed extra data are just
@@ -1381,6 +1450,15 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		save_errno = errno;
 	else
 		file_table_set_written(fd);
+
+	gfs_profile(
+		gfarm_gettimerval(&t2);
+		fe = file_table_entry(fd);
+		if (fe != NULL) {
+			fe->nwrite++;
+			fe->write_size += rv;
+			fe->write_time += gfarm_timerval_sub(&t2, &t1);
+		});
 
 	gfs_server_put_reply_with_errno(client, "pwrite", save_errno,
 	    "i", (gfarm_int32_t)rv);
