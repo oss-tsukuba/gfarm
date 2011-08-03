@@ -735,10 +735,12 @@ fi
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
-%{html_prefix}/en/user/nfs-gfarmfs.html
 %{html_prefix}/en/user/samba-gfarmfs.html
 %{html_prefix}/en/user/redundancy-tutorial.html
-# XXX NOTYET %{html_prefix}/en/user/samba-hook.html
+%if %{gfarm_v2_not_yet}
+%{html_prefix}/en/user/nfs-gfarmfs.html
+%{html_prefix}/en/user/samba-hook.html
+%endif
 %{html_prefix}/ja/ref/index.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfarm_agent.1.html
@@ -870,11 +872,13 @@ fi
 %{html_prefix}/ja/ref/man5/gfarm_attr.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
-%{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/index.html
-%{html_prefix}/ja/user/nfs-gfarmfs.html
 %{html_prefix}/ja/user/samba-gfarmfs.html
+%if %{gfarm_v2_not_yet}
+%{html_prefix}/ja/user/export-gfarm.html
+%{html_prefix}/ja/user/nfs-gfarmfs.html
 %{html_prefix}/ja/user/samba-hook.html
+%endif
 %{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/ja/user/redundancy-tutorial.html
 %{html_prefix}/pic/gfarm-logo.gif

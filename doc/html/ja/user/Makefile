@@ -8,12 +8,13 @@ include $(top_srcdir)/makes/var.mk
 
 htmldir=$(default_htmldir)/ja/user
 
-HTML =	export-gfarm.html \
+HTML =	\
 	index.html \
-	nfs-gfarmfs.html \
 	samba-gfarmfs.html \
-	samba-hook.html \
 	smboverssh.html \
 	redundancy-tutorial.html
+#	export-gfarm.html
+#	nfs-gfarmfs.html
+#	samba-hook.html
 
 include $(top_srcdir)/makes/html.mk
