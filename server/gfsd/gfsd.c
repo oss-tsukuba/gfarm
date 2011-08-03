@@ -752,9 +752,11 @@ file_table_close(gfarm_int32_t net_fd)
 		    "inum %lld gen %lld (%lld) "
 		    "write %d size %lld time %g "
 		    "read %d size %lld time %g",
-		    time_buf, total_time, fe->ino, fe->gen, fe->new_gen,
-		    fe->nwrite, fe->write_size, fe->write_time,
-		    fe->nread, fe->read_size, fe->read_time));
+		    time_buf, total_time, (unsigned long long)fe->ino,
+		    (unsigned long long)fe->gen,
+		    (unsigned long long)fe->new_gen,
+		    fe->nwrite, (long long)fe->write_size, fe->write_time,
+		    fe->nread, (long long)fe->read_size, fe->read_time));
 
 	return (e);
 }
