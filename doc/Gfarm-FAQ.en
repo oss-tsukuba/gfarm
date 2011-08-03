@@ -80,11 +80,14 @@ Table of Contents:
 	shared secret key file (~/.gfarm_shared_key) is located on a
 	home directory on all file system nodes.
 
-	Regarding the GSI authentication, follow the error message.
-	When executing with the -v option, gfmd and gfsd output
-	verbose authentication error messages to /var/log/messages (or
-	/var/adm/messages).  Detailed descriptions are available at
+	Regarding the GSI authentication, follow the authentication
+	error message.  To see the verbose authentication error messages
+	in /var/log/messages (or /var/adm/messages), please add
+	"log_auth_verbose enable" setting in gfmd.conf and gfarm2.conf.
+	Detailed descriptions about the messages are available at
 	http://www.globus.org.
+	Please note that currently inter-gfmd communication for
+	metadata replication does not support the GSI authentication.
 
 	If the problem is still there, call administrators of a Gfarm
 	file system.  A shared secret key setting or the GSI setting
@@ -104,16 +107,22 @@ Table of Contents:
 	For compatibility, you need to register both entries in
 	grid-mapfile.
 
+	If you will use the GSI authentication for communication
+	between gfmd and gfsd, is the gfsd certificate registered
+	in grid-mapfile with "@host@" in the second field?
+
 	(2) Are permissions of user certificate
 	 (~/.globus/usercert.pem) and/or host certificate
 	 (/etc/grid-security/hostcert.pem) not permissive?  The maximum
-	 allowable permissions are limited to 644.
+	 allowable permissions are limited to 644.  Also, if you are
+	 using service certificate for gfsd, the owner of the certificate
+	 and the private key must be "_gfarmfs".
 
-	(3) Are both user certificate and host certificates valid, and
-	not yet expired?
+	(3) Are user certificate, host certificates and service certificates
+	 valid, and not yet expired?
 
-	(4) Is a valid certificate for the CAs that sign user or host
-	certificates, registered in /etc/grid-security/certificates?
+	(4) Is a valid certificate for the CAs that sign user, host
+	or service certificates, registered in /etc/grid-security/certificates?
 	Has this registration expired?
 
 	Note that CA subject name in the signing_policy files is also
@@ -129,7 +138,8 @@ Table of Contents:
 	in the gfarm.conf file, match the name in the host certificate?
 
 	(7) Do the host identifiers, which are registered by gfhost,
-	match the hostnames which are written in the host certificates?
+	match the hostnames which are written in the host certificates
+	or the service certificates?
 
 	(8) Are the clocks of all filesystem nodes, the filesystem
 	metadata node, and the client synchronized?  The GSI library

@@ -1128,6 +1128,19 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
+<term><token>log_auth_verbose</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、認証処理に関する詳細なログを記録します。
+</para>
+<para>例:</para>
+<literallayout>
+	log_auth_verbose enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>利用可能なファイルシステムノードが存在しない場合，
@@ -1278,6 +1291,9 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 デフォルトはdisableです。
 </para>
 <para>
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+</para>
+<para>
 この文はgfmd.confのみで有効です。
 </para>
 <para>例:</para>
@@ -1394,6 +1410,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
+		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
@@ -1486,11 +1503,12 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
+	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
-	&lt;profile_tatement&gt; ::= "profile" &lt;validity&gt;
+	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
 	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
 	&lt;metadb_server_list_spec&gt; ::=
 		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
@@ -1534,12 +1552,21 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
-ファイルシステムノードやクライアントに対して、sharedsecret認証を
-使う例です。
+以下は sharedsecret認証を使う gfarm2.conf の例です。
 </para>
 <literallayout>
-spool /var/spool/gfarm
+metadb_server_host metadb.example.org
+metadb_server_port 601
+auth enable sharedsecret *
+sockopt keepalive
+</literallayout>
+
+<para>
+メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
+ファイルシステムノードやクライアントに対して、sharedsecret認証を
+使う gfmd.conf の例です。
+</para>
+<literallayout>
 metadb_server_host metadb.example.org
 metadb_server_port 601
 postgresql_server_host metadb.example.org
@@ -1548,15 +1575,16 @@ postgresql_dbname gfarm
 postgresql_user gfarm
 postgresql_password "secret-postgresql-password"
 auth enable sharedsecret 192.168.0.0/24
+admin_user john
 sockopt keepalive
 </literallayout>
 
 <para>
 メタデータの保存にLDAPを使い、任意のIPアドレスを使う
-ファイルシステムノードやクライアントに対して、GSI認証を使う例です。
+ファイルシステムノードやクライアントに対して、GSI認証を使う
+gfmd.conf の例です。
 </para>
 <literallayout>
-spool /var/spool/gfarm
 metadb_server_host metadb.example.com
 metadb_server_port 601
 ldap_server_host metadb.example.com
@@ -1565,6 +1593,10 @@ ldap_base_dn "dc=example, dc=com"
 ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
 ldap_bind_password "secret-ldap-password"
 auth enable gsi *
+spool_server_cred_type host
+spool_server_cred_service gfsd
+admin_user john
+admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Division/CN=John Doe"
 sockopt keepalive
 </literallayout>
 

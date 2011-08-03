@@ -78,12 +78,15 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	リに同一の共有鍵ファイル(~/.gfarm_shared_key) が置かれているか
 	確認してください．
 
-	GSI認証の場合は，表示されるエラーメッセージに従い対応してくだ
-	さい．サーバ側でのエラーの詳細は gfmd および gfsd の起動オプショ
-	ンに -v を加えることにより /var/log/messages (ないし
-	/var/adm/messages) に記録させることができます．
+	GSI認証の場合は，表示される認証エラーメッセージに従い対応して
+	ください．エラーの詳細は gfmd.conf および gfarm2.conf に，設定
+	「log_auth_verbose enable」を書き加えることにより
+	/var/log/messages (ないし/var/adm/messages) に記録させることが
+	できます．
 	認証エラーに関する詳細な情報は http://www.globus.org より得ら
 	れます．
+	現在のところ，メタデータ冗長構成のためのgfmd間接続においては，
+	GSI認証はサポートされていない点にもご注意ください．
 
 	それでも認証エラーが生じる場合は，Gfarm ファイルシステムの管理
 	者に連絡してください．この場合，_gfarmfs ユーザの共有鍵、GSIの
@@ -102,15 +105,20 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	する場合は，互換性のために，両方のエントリを grid-mapfile に登録
 	する必要があります．
 
+	gfmd−gfsd間の通信にGSI認証を使う場合，第2欄を「@host@」とした
+	gfsdの証明書もgrid-mapfileに登録されていますか？
+
 	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
-        (/etc/grid-security/hostcert.pem)のパミッションが 0644 になって
-        いますか？
+        (/etc/grid-security/hostcert.pem)のパーミッションが 0644 になって
+        いますか？ またgfsdのサービス証明書を利用している場合，証明書
+	および秘密鍵のオーナーは「_gfarmfs」とする必要があります．
 
-	(3) ユーザ証明書，ホスト証明書の有効期限は切れていませんか？
+	(3) ユーザ証明書，ホスト証明書，サービス証明書の有効期限は
+	切れていませんか？
 
-	(4) ユーザ証明書，ホスト証明書に署名している CA の証明書は有
-	効なものが正しく /etc/grid-security/certificates に登録されてい
-	ますか？ 有効期限が切れていませんか？
+	(4) ユーザ証明書，ホスト証明書，サービス証明書に署名している
+	CA の証明書は有効なものが正しく /etc/grid-security/certificates
+	に登録されていますか？ 有効期限が切れていませんか？
 
 	signing_policy ファイルにおける CA のサブジェクト名も (1) と同
 	様に変化するので注意が必要です．
@@ -123,7 +131,7 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	いますか？
 
 	(7) gfhost コマンドで登録するホストの固有識別子は，ホスト証明書
-	に書かれているホスト名と一致していますか？ 
+	ないしサービス証明書に書かれているホスト名と一致していますか？ 
 
 	(8) 全てのホストで時刻が正しく設定されていますか？ Globus の 
 	GSI ライブラリの場合，ホスト間で 5分以上時刻が狂っていると認証

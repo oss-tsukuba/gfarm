@@ -2099,6 +2099,11 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_log_message_verbose);
 		if (e == GFARM_ERR_NO_ERROR)
 			gflog_set_message_verbose(gfarm_log_message_verbose);
+	} else if (strcmp(s, o = "log_auth_verbose") == 0) {
+		int tmp;
+		e = parse_set_misc_enabled(p, &tmp);
+		if (e == GFARM_ERR_NO_ERROR)
+			gflog_auth_set_verbose(tmp);
 	} else if (strcmp(s, o = "no_file_system_node_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_no_file_system_node_timeout);
 	} else if (strcmp(s, o = "gfmd_reconnection_timeout") == 0) {
