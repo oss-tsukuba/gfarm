@@ -1067,17 +1067,25 @@ transform_to_master(void)
 		mdhost_disconnect(master, NULL);
 	gflog_info(GFARM_MSG_UNFIXED,
 	    "start transforming to the master gfmd ...");
+
+	db_journal_cancel_recvq();
+
+	/*
+	 * wait for data transfer from the journal to the backend DB.
+	 * this must be done before dead_file_copy_init_load().
+	 */
+	db_journal_wait_for_apply_thread();
+
 	giant_lock();
 
 	mdhost_set_self_as_master();
+
+	/* this must be after db_journal_wait_for_apply_thread() */
 	dead_file_copy_init_load();
 
 	giant_unlock();
 
 	gfarm_cond_signal(&transform_cond, diag, TRANSFORM_COND_DIAG);
-
-	db_journal_cancel_read();
-	db_journal_cancel_recvq();
 
 	start_db_journal_threads();
 	start_gfmdc_threads();

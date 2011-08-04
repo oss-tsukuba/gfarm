@@ -3404,9 +3404,9 @@ db_journal_read(struct journal_file_reader *reader, void *op_arg,
 }
 
 void
-db_journal_cancel_read(void)
+db_journal_wait_for_apply_thread(void)
 {
-	journal_file_cancel_read(journal_file_main_reader(self_jf));
+	journal_file_wait_for_read_completion(journal_file_main_reader(self_jf));
 }
 
 static gfarm_error_t
