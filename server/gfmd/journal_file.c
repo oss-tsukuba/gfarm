@@ -978,7 +978,11 @@ journal_write_file_header(int fd)
 		no = GFARM_MSG_UNFIXED;
 	} else {
 		errno = 0;
+#ifdef HAVE_FDATASYNC
 		if (fdatasync(fd) == -1)
+#else
+		if (fsync(fd) == -1)
+#endif
 			return (gfarm_errno_to_error(errno));
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -1299,7 +1303,11 @@ journal_file_is_closed(struct journal_file *jf)
 gfarm_error_t
 journal_file_writer_sync(struct journal_file_writer *writer)
 {
+#ifdef HAVE_FDATASYNC
 	if (fdatasync(gfp_xdr_fd(writer->xdr)) == -1)
+#else
+	if (fsync(gfp_xdr_fd(writer->xdr)) == -1)
+#endif
 		return (gfarm_errno_to_error(errno));
 	return (GFARM_ERR_NO_ERROR);
 }
