@@ -83,11 +83,18 @@ gfarm_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	return (1);
 }
 
+/*
+ * pthread_cond_signal() and pthraed_cond_broadcast() may return EAGAIN
+ * on MacOS X 10.7 (Lion), if retry count exceeds 8192 times.
+ * http://www.opensource.apple.com/source/Libc/Libc-763.11/pthreads/pthread_cond.c
+ */
 void
 gfarm_cond_signal(pthread_cond_t *cond, const char *where, const char *what)
 {
-	int err = pthread_cond_signal(cond);
+	int err;
 
+	while ((err = pthread_cond_signal(cond)) == EAGAIN)
+		;
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1000217, "%s: %s cond signal: %s",
 		    where, what, strerror(err));
@@ -96,8 +103,10 @@ gfarm_cond_signal(pthread_cond_t *cond, const char *where, const char *what)
 void
 gfarm_cond_broadcast(pthread_cond_t *cond, const char *where, const char *what)
 {
-	int err = pthread_cond_broadcast(cond);
+	int err;
 
+	while ((err = pthread_cond_broadcast(cond)) == EAGAIN)
+		;
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_1002210, "%s: %s cond broadcast: %s",
 		    where, what, strerror(err));
