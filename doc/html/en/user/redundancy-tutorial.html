@@ -56,11 +56,11 @@ $ gfmdhost -l
 - slave  sync  c (default)    host-b 601
 </PRE></TD></TR></TBODY></TABLE>
 
-Insert a metadb_server_list directive to list metadata hostnames (and
-ports) in gfarm2.conf.
+Insert a metadb_server_list directive to list metadata hostnames and
+ports in gfarm2.conf.
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_list host-a host-b
+metadb_server_list host-a:601 host-b:601
 </PRE></TD></TR></TBODY></TABLE>
 
 Dump the metadata by the root user.
