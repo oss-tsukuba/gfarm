@@ -7,7 +7,9 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 include $(srcdir)/../Makefile.inc
 
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
+# $(pthread_includes): ctime_r() needs -D_POSIX_PTHREAD_SEMANTICS on Solaris
+CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) \
+	-I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 	$(openssl_includes) \
 	-DGFARM_DEFAULT_BINDIR=\"$(default_bindir)\"
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)

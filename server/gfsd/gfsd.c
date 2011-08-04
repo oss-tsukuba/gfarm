@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -26,6 +25,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <time.h>
 #include <pwd.h>
 #include <grp.h>
 #include <libgen.h>
