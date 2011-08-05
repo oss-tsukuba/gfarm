@@ -1,7 +1,7 @@
 Release note for Gfarm 2.5.0
 ============================
 
-[2011.8.3]
+[2011.8.5]
 
 New Feature
 * synchronous and asynchronous metadata replication support
@@ -26,6 +26,7 @@ New configuration directive
   library.  Default is 1048568 bytes.  It should be less than 1048568
   not for deterioration of remote access performance for version 2.5.0
   or earlier.
+* log_auth_verbose to display verbose authentication log in GSI.
 
 Documentation
 * metadata replication tutorial
@@ -36,6 +37,8 @@ Updated feature
 * failover during reading files against the gfsd failure
 * config-gfarm, config-gfarm-update - -r option to support replicated
   metadata servers, and -j option to specify a journal directory
+* upgrading to a master gfmd by sinding SIGUSR1 signal to a slave gfmd
+* initialize GSI environment by sending SIGHUP signal to a gfmd
 * Globus debian package support
 
 Bug fix
