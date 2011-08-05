@@ -127,8 +127,10 @@ display_replica_catalog(char *path, struct gfs_stat *st, void *arg)
 	mode = st->st_mode;
 	if (GFARM_S_ISDIR(mode))
 		e = GFARM_ERR_IS_A_DIRECTORY;
+	else if (GFARM_S_ISLNK(mode))
+		e = GFARM_ERR_IS_A_SYMBOLIC_LINK;
 	else if (!GFARM_S_ISREG(mode))
-		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
 	else if (!opt->print_dead_host &&
 		 !opt->print_incomplete_copy &&
 		 !opt->print_dead_copy &&
@@ -252,18 +254,17 @@ main(int argc, char **argv)
 		struct gfs_stat st;
 
 		opt.do_not_display_name = 0;
-		if ((e = gfs_stat(p, &st)) != GFARM_ERR_NO_ERROR) {
+		if ((e = gfs_lstat(p, &st)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", p, gfarm_error_string(e));
 		} else {
-			if (GFARM_S_ISREG(st.st_mode)) {
-				opt.do_not_display_name = (n == 1);
-				e = display_replica_catalog(p, &st, &opt);
-			} else if (GFARM_S_ISDIR(st.st_mode) && opt_recursive)
+			if (GFARM_S_ISDIR(st.st_mode) && opt_recursive)
 				e = gfarm_foreach_directory_hierarchy(
 				    display_replica_catalog, NULL, NULL,
 				    p, &opt);
-			else
-				fprintf(stderr, "%s: not a file\n", p);
+			else {
+				opt.do_not_display_name = (n == 1);
+				e = display_replica_catalog(p, &st, &opt);
+			}
 			gfs_stat_free(&st);
 			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
