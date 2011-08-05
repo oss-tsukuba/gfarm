@@ -22,7 +22,7 @@ gfs_statfs(gfarm_off_t *used, gfarm_off_t *avail, gfarm_off_t *files)
 	for (;;) {
 		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002667,
 			    "gfarm_url_parse_metadb failed: %s",
 			    gfarm_error_string(e));
 			return (e);

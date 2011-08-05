@@ -749,7 +749,7 @@ file_table_close(gfarm_int32_t net_fd)
 			*t = '\0';
 		else if (t == te)
 			*--t = '\0';
-		gflog_info(GFARM_MSG_UNFIXED, "%s total_time %g "
+		gflog_info(GFARM_MSG_1003249, "%s total_time %g "
 		    "inum %lld gen %lld (%lld) "
 		    "write %d size %lld time %g "
 		    "read %d size %lld time %g",

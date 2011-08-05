@@ -48,7 +48,7 @@ xattr_inherit_common(struct inode *parent, struct inode *child,
 	if (e == GFARM_ERR_NO_SUCH_OBJECT || *value_p == NULL)
 		return (GFARM_ERR_NO_ERROR);
 	else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003027,
 			    "inode_xattr_get_cache(%s) failed: %s",
 			    name, gfarm_error_string(e));
 		return (e);
@@ -56,7 +56,7 @@ xattr_inherit_common(struct inode *parent, struct inode *child,
 
 	e = inode_xattr_add(child, 0, name, *value_p, *size_p);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003028,
 			    "inode_xattr_add(%lld, %s): %s",
 			    (unsigned long long)inode_get_number(child),
 			    name, gfarm_error_string(e));
@@ -76,7 +76,7 @@ xattr_inherit(struct inode *parent, struct inode *child,
 						  acl_def_p, acl_def_size_p,
 						  acl_acc_p, acl_acc_size_p);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003029,
 			    "acl_inherit_default_acl() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
@@ -174,15 +174,15 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 	}
 	/* else : not supported */
 not_supp:
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003030,
 		    "not supported to modify `%s'", attrname);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 not_permit:
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003031,
 		    "not permitted to modify `%s'", attrname);
 	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 symlink:
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003032,
 		    "symlinks cannot have `%s'", attrname);
 	return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
@@ -223,7 +223,7 @@ setxattr(int xmlMode, struct inode *inode,
 			e = acl_convert_for_setxattr(inode, acltype,
 						      valuep, &size);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003033,
 					"acl_convert_for_setxattr(%s): %s",
 					attrname, gfarm_error_string(e));
 				return (e);
@@ -240,7 +240,7 @@ setxattr(int xmlMode, struct inode *inode,
 					e = db_xattr_remove(xmlMode,
 					    inode_get_number(inode), attrname);
 					if (e != GFARM_ERR_NO_ERROR)
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1003034,
 						    "db_xattr_remove(0, %llu, "
 						    "%s): %s",
 						    (unsigned long long)
@@ -361,7 +361,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
 				     attrname, GFS_W_OK, XATTR_OP_SET))
 		   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
 	} else
@@ -442,7 +442,7 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
 				     attrname, GFS_R_OK, XATTR_OP_GET))
 		   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003036,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
 	} else if (!isvalid_attrname(attrname)) {
@@ -464,7 +464,7 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		/* for ACL */
 		e = acl_convert_for_getxattr(inode, attrname, &value, &size);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003037,
 				"acl_convert_for_getxattr() failed: %s",
 				gfarm_error_string(e));
 	}
@@ -606,7 +606,7 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	} else if ((e = xattr_access(xmlMode, inode, process_get_user(process),
 				     attrname, GFS_W_OK, XATTR_OP_REMOVE))
 		   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003038,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
 	} else

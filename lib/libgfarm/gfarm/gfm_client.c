@@ -273,7 +273,7 @@ gfm_alloc_connect_info(int n, struct gfm_client_connect_info **cisp,
 	GFARM_MALLOC_ARRAY(pfds, n);
 	if (cis == NULL || pfds == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002571,
 		    "%s", gfarm_error_string(e));
 		free(cis);
 		free(pfds);
@@ -301,7 +301,7 @@ gfm_client_connect_single(const char *hostname, int port,
 		return (e);
 	if ((e = gfm_client_nonblock_sock_connect(hostname, port,
 	    source_ip, &sock, &res)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002572,
 		    "%s", gfarm_error_string(e));
 		free(pfds);
 		free(cis);
@@ -2689,11 +2689,11 @@ setsockopt_to_async_channel(struct gfm_connection *gfm_server, const char *diag)
 
 	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
 	if (gfm_tcp_proto == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002573,
 		    "getprotobyname(\"tcp\") failed, slower %s", diag);
 	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
 	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
-		gflog_error_errno(GFARM_MSG_UNFIXED,
+		gflog_error_errno(GFARM_MSG_1002574,
 		    "setting TCP_NODELAY failed, slower %s", diag);
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -3237,13 +3237,13 @@ gfm_client_metadb_server_get_n(struct gfm_connection *gfm_server,
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002575,
 			    "gfp_xdr_recv() failed: %s",
 			    gfarm_error_string(e));
 			return (e);
 		}
 		if (eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002576,
 			    "Unexpected EOF when receiving response: %s",
 			    gfarm_error_string(GFARM_ERR_PROTOCOL));
 			return (GFARM_ERR_PROTOCOL);
@@ -3268,13 +3268,13 @@ gfm_client_metadb_server_get_alloc_n(struct gfm_connection *gfm_server, int n,
 	GFARM_MALLOC_ARRAY(mss, n);
 	if (mss == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002577,
 		    "alloc metadb_server %d: %s", n, gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfm_client_metadb_server_get_n(gfm_server, n, mss))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002578,
 		    "gfm_client_metadb_server_get_n() failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -3295,14 +3295,14 @@ gfm_client_metadb_server_get(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_GET,
 	    "s/i", name, &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002579,
 		    "gfm_client_rpc() failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (n == 0) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002580,
 		    "%s: %s", gfarm_error_string(e), name);
 	} else {
 		e = gfm_client_metadb_server_get_alloc_n(gfm_server, 1, &n,
@@ -3325,7 +3325,7 @@ gfm_client_metadb_server_get_all(struct gfm_connection *gfm_server, int *np,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_GET_ALL,
 	    "/i", &n)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002581,
 		    "gfm_client_rpc() failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -3343,7 +3343,7 @@ gfm_client_metadb_server_send(struct gfm_connection *gfm_server,
 	if ((e = gfm_client_rpc(gfm_server, 0, op, "sisi/",
 	    ms->name, ms->port, ms->clustername, ms->flags))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002582,
 		    "%s: gfm_client_rpc() failed: %s",
 		    diag, gfarm_error_string(e));
 	}
@@ -3374,7 +3374,7 @@ gfm_client_metadb_server_remove(struct gfm_connection *gfm_server,
 
 	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_METADB_SERVER_REMOVE,
 	    "s/", name)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002583,
 		    "gfm_client_rpc() failed: %s",
 		    gfarm_error_string(e));
 	}

@@ -178,7 +178,7 @@ gfarm_gsi_server_initialize(void)
 			}
 			if (gflog_auth_get_verbose() &&
 				e_major != GSS_S_COMPLETE) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002722,
 				    "initial acceptor certificate is not valid "
 				    "because of:");
 				gfarmGssPrintMajorStatus(e_major);

@@ -855,7 +855,7 @@ inode_remove(struct inode *inode)
 	} else if (inode_is_symlink(inode)) {
 		free(inode->u.c.s.l.source_path);
 	} else {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002800,
 		    "inode_unlink(%llu): unknown inode type: 0%o",
 		    (unsigned long long)inode->i_number, inode->i_mode);
 		/*NOTREACHED*/
@@ -1607,7 +1607,7 @@ inode_access(struct inode *inode, struct user *user, int op)
 	e = acl_access(inode, user, op);
 	if (e != GFARM_ERR_NO_SUCH_OBJECT) {
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002801,
 				    "acl_access() failed: %s",
 				    gfarm_error_string(e));
 		return (e);
@@ -1641,7 +1641,7 @@ inode_add_xattr_common(struct inode *ino, const char *name,
 	gfarm_error_t e = db_xattr_add(0, ino->i_number, (char *)name,
 				       (char *)value, size, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002802,
 			    "db_xattr_add(%lld, %s): %s",
 			    (unsigned long long)ino->i_number, name,
 			    gfarm_error_string(e));
@@ -1833,7 +1833,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 			  &root_user, &root_user_size,
 			  &root_group, &root_group_size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "xattr_inherit() failed: %s",
+		gflog_debug(GFARM_MSG_1002803, "xattr_inherit() failed: %s",
 			    gfarm_error_string(e));
 		if (inode_is_file(n)) {
 			quota_update_file_remove(n);
@@ -1924,7 +1924,7 @@ inode_lookup_basename(struct inode *parent, const char *name, int len,
 		parent->i_nlink++;
 		e = db_inode_nlink_modify(parent->i_number, parent->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002804,
 			    "db_inode_nlink_modify(%llu, %llu): %s",
 			    (unsigned long long)parent->i_number,
 			    (unsigned long long)parent->i_nlink,
@@ -2207,7 +2207,7 @@ inode_dir_reparent(struct inode *dir_inode,
 		e = db_direntry_remove(inode_get_number(dir_inode),
 		    dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002805,
 			    "reparent: db_direntry_remove(%llu, %.*s): %s",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (int)DOTDOT_LEN, dotdot, gfarm_error_string(e));
@@ -2217,7 +2217,7 @@ inode_dir_reparent(struct inode *dir_inode,
 		e = db_inode_nlink_modify(
 		    inode_get_number(old_parent), old_parent->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002806,
 			    "decrement for reparent(%llu): "
 			    "db_inode_nlink_modify(%llu): %s",
 			    (unsigned long long)inode_get_number(dir_inode),
@@ -2232,7 +2232,7 @@ inode_dir_reparent(struct inode *dir_inode,
 	e = db_direntry_add(inode_get_number(dir_inode),
 	    dotdot, DOTDOT_LEN, inode_get_number(new_parent));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002807,
 		    "reparent: db_direntry_add(%llu, %llu): %s",
 		    (unsigned long long)inode_get_number(dir_inode),
 		    (unsigned long long)inode_get_number(new_parent),
@@ -2242,7 +2242,7 @@ inode_dir_reparent(struct inode *dir_inode,
 	e = db_inode_nlink_modify(inode_get_number(new_parent),
 	    new_parent->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002808,
 		    "increment for reparent(%llu): "
 		    "db_inode_nlink_modify(%llu): %s",
 		    (unsigned long long)inode_get_number(dir_inode),
@@ -2262,7 +2262,7 @@ inode_dir_reparent_ini(struct inode *dir_inode,
 	if (dir_remove_entry(dir_inode->u.c.s.d.entries, dotdot, DOTDOT_LEN)) {
 		e = db_direntry_remove(inode_get_number(dir_inode), dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002809,
 			    "reparent_ini: db_direntry_remove(%llu, %.*s): %s",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (int)DOTDOT_LEN, dotdot, gfarm_error_string(e));
@@ -2274,12 +2274,12 @@ inode_dir_reparent_ini(struct inode *dir_inode,
 	entry = dir_enter(dir_inode->u.c.s.d.entries, dotdot, DOTDOT_LEN, NULL);
 	if (entry == NULL) {
 		if (old_parent == NULL)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002810,
 			    "reparent_ini %llu to %llu: no memory for dotdot",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (unsigned long long)inode_get_number(new_parent));
 		else
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002811,
 			    "reparent_ini %llu from %llu to %llu: "
 			    "no memory for dotdot",
 			    (unsigned long long)inode_get_number(dir_inode),
@@ -2291,7 +2291,7 @@ inode_dir_reparent_ini(struct inode *dir_inode,
 	e = db_direntry_add(inode_get_number(dir_inode), dotdot, DOTDOT_LEN,
 	    inode_get_number(new_parent));
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002812,
 		    "reparent_ini: db_direntry_add(%llu, %llu): %s",
 		    (unsigned long long)inode_get_number(dir_inode),
 		    (unsigned long long)inode_get_number(new_parent),
@@ -2309,7 +2309,7 @@ inode_dir_check_and_repair_dotdot(struct inode *dir_inode,
 
 	if (entry == NULL) {
 		inode_dir_reparent_ini(dir_inode, NULL, new_parent);
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002813,
 		    "inode %llu: dotdot didn't exist: fixed to %llu",
 		    (unsigned long long)inode_get_number(dir_inode),
 		    (unsigned long long)inode_get_number(new_parent));
@@ -2320,7 +2320,7 @@ inode_dir_check_and_repair_dotdot(struct inode *dir_inode,
 		if (old_parent != new_parent) {
 			inode_dir_reparent_ini(dir_inode,
 			    old_parent, new_parent);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002814,
 			    "inode %llu: dotdot pointed %llu: fixed to %llu",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (unsigned long long)inode_get_number(old_parent),
@@ -2448,7 +2448,7 @@ inode_rename(
 	}
 
 	if (!is_ok_to_move_to(src, ddir)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002815,
 		    "rename(%llu:%s, %llu:%s): "
 		    "the former is ancestor of the directory of latter",
 		    (unsigned long long)inode_get_number(sdir), sname,
@@ -2496,7 +2496,7 @@ inode_rename(
 	if (e == GFARM_ERR_NO_ERROR && inode_is_dir(src)) {
 		e = inode_dir_reparent(src, sdir, ddir);
 		if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002816,
 			    "rename(%s, %s): failed to reparent: %s",
 			    sname, dname, gfarm_error_string(e));
 	}
@@ -2574,7 +2574,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 		base->i_nlink--;
 		e = db_inode_nlink_modify(base->i_number, base->i_nlink);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002817,
 			    "db_inode_nlink_modify(%llu): %s",
 			    (unsigned long long)base->i_number,
 			    gfarm_error_string(e));
@@ -3108,7 +3108,7 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 		}
 	}
 	if (foundp == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002818,
 		    "(%lld, %lld, %s) : %s",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode), host_name(spool_host),
@@ -3813,7 +3813,7 @@ inum_list_foreach(struct inum_list_entry *list,
 		next = entry->next;
 		e = (*op)(entry->inum);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002819,
 			    "orphan %s %llu removal: %s",
 			    name, (unsigned long long)entry->inum,
 			    gfarm_error_string(e));
@@ -3828,12 +3828,12 @@ inode_cksum_defer_db_removal(gfarm_ino_t inum,
 	char *type, size_t len, char *sum)
 {
 	if (!inum_list_add(&inode_cksum_removal_list, inum))
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002820,
 		    "inode_cksum %llu type:%s len:%d: "
 		    "no memory to record for removal",
 		     (unsigned long long)inum, type, (int)len);
 	else
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002821,
 		    "inode_cksum %llu type:%s len:%d: "
 		    "removing orphan data",
 		     (unsigned long long)inum, type, (int)len);
@@ -3856,11 +3856,11 @@ static void
 symlink_defer_db_removal(gfarm_ino_t inum, char *source_path)
 {
 	if (!inum_list_add(&symlink_removal_list, inum))
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002822,
 		    "symlink %llu (%s): no memory to record for removal",
 		    (unsigned long long)inum, source_path);
 	else
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002823,
 		    "symlink %llu (%s): removing orphan data",
 		    (unsigned long long)inum, source_path);
 }
@@ -3909,7 +3909,7 @@ inum_string_list_foreach(struct inum_string_list_entry *list,
 		next = entry->next;
 		e = (*op)(entry->inum, entry->string);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002824,
 			    "orphan %s %llu %s:%s removal: %s",
 			    name, (unsigned long long)entry->inum,
 			    label, entry->string, gfarm_error_string(e));
@@ -3924,12 +3924,12 @@ static void
 file_copy_defer_db_removal(gfarm_ino_t inum, char *hostname)
 {
 	if (!inum_string_list_add(&file_copy_removal_list, inum, hostname)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002825,
 		    "file_copy %llu host:%s: no memory to record for removal",
 		    (unsigned long long)inum, hostname);
 		free(hostname);
 	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002826,
 		    "file_copy %llu host:%s: removing orphan data",
 		    (unsigned long long)inum, hostname);
 	}
@@ -3958,7 +3958,7 @@ dir_entry_defer_db_removal(gfarm_ino_t dir_inum,
 
 	GFARM_MALLOC(entry);
 	if (entry == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002827,
 		    "dir_entry (%llu name:%.*s) (%llu): "
 		    "no memory to record for removal",
 		    (unsigned long long)dir_inum, entry_len, entry_name,
@@ -3966,7 +3966,7 @@ dir_entry_defer_db_removal(gfarm_ino_t dir_inum,
 		free(entry_name);
 		return;
 	}
-	gflog_warning(GFARM_MSG_UNFIXED, 
+	gflog_warning(GFARM_MSG_1002828, 
 	    "dir_entry (%llu name:%.*s) (%llu): removing orphan data",
 	    (unsigned long long)dir_inum, entry_len, entry_name,
 	    (unsigned long long)entry_inum);
@@ -3990,7 +3990,7 @@ dir_entry_db_remove_orphan(void)
 		e = db_direntry_remove(entry->dir_inum,
 		    entry->entry_name, entry->entry_len);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002829,
 			    "orphan dir_entry (%llu name:%.*s) removal: %s",
 			    (unsigned long long)entry->dir_inum,
 			    entry->entry_len, entry->entry_name,
@@ -4016,13 +4016,13 @@ xattr_xml_defer_db_removal(struct inum_string_list_entry **listp,
 
 	if (attrname == NULL ||
 	    !inum_string_list_add(listp, info->inum, attrname)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002830,
 		    "%s (%llu name:%s) (size:%d): no memory for removal", name,
 		    (unsigned long long)info->inum,
 		    info->attrname, info->attrsize);
 		free(attrname);
 	} else {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002831,
 		    "%s (%llu name:%s) (size:%d): removing orphan data", name,
 		    (unsigned long long)info->inum,
 		    info->attrname, info->attrsize);
@@ -4451,7 +4451,7 @@ inode_dir_check_and_repair_dot(struct inode *dir_inode)
 		dir_remove_entry(dir_inode->u.c.s.d.entries, dot, DOT_LEN);
 		e = db_direntry_remove(inode_get_number(dir_inode), dot, DOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002832,
 			    "repair_dot: db_direntry_remove(%llu, %.*s): %s",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (int)DOT_LEN, dot, gfarm_error_string(e));
@@ -4461,7 +4461,7 @@ inode_dir_check_and_repair_dot(struct inode *dir_inode)
 		entry = dir_enter(dir_inode->u.c.s.d.entries,
 		    dot, DOT_LEN, NULL);
 		if (entry == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002833,
 			    "repair_dot: dir_enter(%llu, %*.s, %llu): "
 			    "no memory",
 			    (unsigned long long)inode_get_number(dir_inode),
@@ -4473,7 +4473,7 @@ inode_dir_check_and_repair_dot(struct inode *dir_inode)
 		e = db_direntry_add(inode_get_number(dir_inode), dot, DOT_LEN,
 		    inode_get_number(dir_inode));
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002834,
 			    "repair_dot: db_direntry_add(%llu, %*.s, %llu): %s",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (int)DOT_LEN, dot,
@@ -4482,11 +4482,11 @@ inode_dir_check_and_repair_dot(struct inode *dir_inode)
 		inode_increment_nlink_ini(dir_inode);
 
 		if (old == NULL)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002835,
 			    "inode %llu: dot didn't exist: fixed",
 			    (unsigned long long)inode_get_number(dir_inode));
 		else
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002836,
 			    "inode %llu: dot pointed %llu: fixed",
 			    (unsigned long long)inode_get_number(dir_inode),
 			    (unsigned long long)inode_get_number(old));
@@ -4528,7 +4528,7 @@ inode_check_and_repair_dir_entries(void *closure, struct inode *inode)
 
 	dir = inode->u.c.s.d.entries;
 	if (!dir_cursor_set_pos(dir, 0, &cursor)) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002837,
 		    "inode_check_and_repair_dir_entries(%llu): "
 		    "cannot get cursor",
 		    (unsigned long long)inode_get_number(inode));
@@ -4547,14 +4547,14 @@ inode_check_and_repair_dir_entries(void *closure, struct inode *inode)
 			e = db_direntry_remove(inode_get_number(inode),
 			    entry_name, entry_len);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002838,
 				    "db_direntry_remove(%llu, %.*s): %s",
 				    (unsigned long long)inode_get_number(inode),
 				    entry_len, entry_name,
 				    gfarm_error_string(e));
 			inode_decrement_nlink_ini(entry_inode);
 
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002839,
 			    "dir %llu: multiple parents - "
 			    "%llu and %llu (name %.*s): the latter is removed",
 			    (unsigned long long)inode_get_number(entry_inode),
@@ -4590,7 +4590,7 @@ inode_check_and_repair_nlink(void *closure, struct inode *inode)
 			    (unsigned long long)inode_get_nlink_ini(inode));
 			if (inode_is_dir(inode)) { /* too noisy */
 				dir_reported = 1;
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1002840,
 				    "suppress nlink reports "
 				    "for other directories");
 			}
@@ -4642,13 +4642,13 @@ inode_check_and_repair(void)
 	if (lost_found_modified) {
 		lost_found = inode_lookup_lost_found();
 		if (lost_found == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002841,
 			    "lost+found: cannot update st_mtime");
 		} else {
 			e = db_inode_nlink_modify(inode_get_number(lost_found),
 			    lost_found->i_nlink);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002842,
 				    "db_inode_nlink_modify(%llu): %s",
 				    (unsigned long long)
 				    inode_get_number(lost_found),
@@ -4677,7 +4677,7 @@ dir_entry_init(void)
 	/* setup root->u.c.s.d.parent_dir */
 	root = inode_lookup(ROOT_INUMBER);
 	if (root == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002843,
 		    "dir_entry_init: no root directory");
 		return;
 	}

@@ -28,7 +28,7 @@ gfs_statfsnode(char *host, int port,
 	for (;;) {
 		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002668,
 			    "gfarm_url_parse_metadb failed: %s",
 			    gfarm_error_string(e));
 			return (e);

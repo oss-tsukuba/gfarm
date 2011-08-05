@@ -539,7 +539,7 @@ gfarm_pgsql_start(const char *diag)
 	res = PQexec(conn, "START TRANSACTION");
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s transaction BEGIN: %s",
+		gflog_error(GFARM_MSG_1003244, "%s transaction BEGIN: %s",
 		    diag, PQresultErrorMessage(res));
 		return (pgsql_should_retry(res) ?
 			GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED :
@@ -590,7 +590,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 		a.value = seqnum;
 		if ((e = gfarm_pgsql_seqnum_modify(&a))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003245,
 			    "gfarm_pgsql_seqnum_modify : %s",
 			    gfarm_error_string(e));
 			return (e);
@@ -3259,7 +3259,7 @@ gfarm_pgsql_seqnum_load(void *closure,
 		&gfarm_base_user_info_ops, seqnum_info_set_field,
 		"pgsql_seqnum_load");
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003246,
 		    "gfarm_pgsql_generic_get_all_no_retry()");
 		return (e);
 	}
@@ -3297,7 +3297,7 @@ pgsql_mdhost_update(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info,
 	char flags[GFARM_INT32STRLEN + 1];
 
 	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003247,
 			"gfarm_pgsql_start() failed");
 		return (e);
 	}
@@ -3393,7 +3393,7 @@ gfarm_pgsql_mdhost_load(void *closure,
 	    &gfarm_base_metadb_server_ops, mdhost_set_field,
 	    "pgsql_mdhost_load");
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003248,
 			"gfarm_pgsql_generic_get_all_no_retry()");
 		return (e);
 	}

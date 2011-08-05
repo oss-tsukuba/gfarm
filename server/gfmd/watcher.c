@@ -237,7 +237,7 @@ watcher_request_enqueue(struct watcher_request_queue *wrq,
 	if (was_empty) {
 		rv = write(wrq->enq_fd, &event, sizeof event);
 		if (rv != sizeof event)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002738,
 			    "watcher_request_queue_enqueue: "
 			    "write: %d (%d)", rv, errno);
 	}
@@ -255,11 +255,11 @@ watcher_request_queue_dequeue(struct watcher_request_queue *wrq)
 
 	gfarm_mutex_lock(&wrq->mutex, diag, "mutex");
 	if (wrq->head.next == &wrq->head)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002739,
 		    "watcher_request_queue_dequeue: queue is empty");
 	rv = read(wrq->deq_fd, &event, sizeof event);
 	if (rv != sizeof event)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002740,
 		    "watcher_request_queue_dequeue: "
 		    "read: %d (%d)", rv, errno);
 
@@ -324,7 +324,7 @@ watcher_control_callback(int events, int fd, void *closure,
 					err = gfarm_eventqueue_delete_event(
 					    w->q, wev->gev);
 					if (err != 0) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1002741,
 						    "delete_event(type:%d, "
 						    "handler:%p): %s",
 						    wev->type, wev->handler,
@@ -354,7 +354,7 @@ watcher_control_callback(int events, int fd, void *closure,
 			if (err == 0) {
 				list->flags |= WATCHER_EVENT_WATCHING;
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002742,
 				    "add_event(type:%d, handler:%p): %s",
 				    list->type, list->handler, strerror(err));
 			}
@@ -364,7 +364,7 @@ watcher_control_callback(int events, int fd, void *closure,
 
 	err = gfarm_eventqueue_add_event(w->q, w->control_gev, NULL);
 	if (err != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002743,
 		    "add_control_event: %s", strerror(err));
 	}
 }
@@ -376,7 +376,7 @@ watcher(void *arg)
 	int err;
 
 	err = gfarm_eventqueue_loop(w->q, NULL);
-	gflog_fatal(GFARM_MSG_UNFIXED, "watcher: %s", strerror(err));
+	gflog_fatal(GFARM_MSG_1002744, "watcher: %s", strerror(err));
 	return (NULL);
 }
 
@@ -390,17 +390,17 @@ watcher_alloc(int size, struct watcher **wp)
 
 	GFARM_MALLOC(w);
 	if (w == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "watcher_alloc: no memory");
+		gflog_error(GFARM_MSG_1002745, "watcher_alloc: no memory");
 		e = GFARM_ERR_NO_MEMORY;
 	} else {
 		if ((err = gfarm_eventqueue_alloc(size, &w->q)) != 0) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002746,
 			    "gfarm_eventqueue_alloc: %s", strerror(err));
 			e = gfarm_errno_to_error(err);
 		} else {
 			e = watcher_request_queue_init(&w->wrq);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002747,
 				    "watcher_request_queue_init: %s",
 				    gfarm_error_string(e));
 			} else {
@@ -409,14 +409,14 @@ watcher_alloc(int size, struct watcher **wp)
 				    watcher_request_queue_get_fd(&w->wrq),
 				    watcher_control_callback, w);
 				if (w->control_gev == NULL) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1002748,
 					    "gfarm_fd_event_alloc: no memory");
 					e = GFARM_ERR_NO_MEMORY;
 				} else {
 					err = gfarm_eventqueue_add_event(
 					    w->q, w->control_gev, NULL);
 					if (err != 0) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1002749,
 						    "add_control_event"
 						    ": %s", strerror(err));
 						e = gfarm_errno_to_error(err);
@@ -425,7 +425,7 @@ watcher_alloc(int size, struct watcher **wp)
 							watcher, w);
 						if (e != GFARM_ERR_NO_ERROR) {
 							gflog_error(
-							    GFARM_MSG_UNFIXED,
+							    GFARM_MSG_1002750,
 							    "create_detached_"
 							    "thread: %s",
 							    gfarm_error_string(

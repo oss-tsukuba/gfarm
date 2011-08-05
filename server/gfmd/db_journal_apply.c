@@ -45,12 +45,12 @@ db_journal_apply_host_add(gfarm_uint64_t seqnum, struct gfarm_host_info *hi)
 
 	if (host_lookup(hi->hostname)) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003202,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum,
 		    hi->hostname, gfarm_error_string(e));
 	} else if ((e = host_enter(hi, NULL)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003203,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum,
 		    hi->hostname, gfarm_error_string(e));
@@ -69,7 +69,7 @@ db_journal_apply_host_modify(gfarm_uint64_t seqnum,
 
 	if ((h = host_lookup(hi->hostname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003204,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum,
 		    hi->hostname, gfarm_error_string(e));
@@ -87,7 +87,7 @@ db_journal_apply_host_remove(gfarm_uint64_t seqnum, char *hostname)
 
 	if ((e = host_remove_in_cache(hostname))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003205,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum,
 		    hostname, gfarm_error_string(e));
@@ -104,12 +104,12 @@ db_journal_apply_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *ui)
 
 	if (user_lookup(ui->username) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003206,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
 		    ui->username, gfarm_error_string(e));
 	} else if ((e = user_enter(ui, NULL)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003207,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
 		    ui->username, gfarm_error_string(e));
@@ -128,7 +128,7 @@ db_journal_apply_user_modify(gfarm_uint64_t seqnum,
 
 	if ((u = user_lookup(ui->username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003208,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
 		    ui->username, gfarm_error_string(e));
@@ -145,7 +145,7 @@ db_journal_apply_user_remove(gfarm_uint64_t seqnum, char *username)
 	gfarm_error_t e;
 
 	if ((e = user_remove_in_cache(username)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003209,
 		    "seqnum=%llu username=%s : %s",
 		    (unsigned long long)seqnum,
 		    username, gfarm_error_string(e));
@@ -162,18 +162,18 @@ db_journal_apply_group_add(gfarm_uint64_t seqnum, struct gfarm_group_info *gi)
 
 	if (group_lookup(gi->groupname) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003210,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
 	} else if ((e = group_user_check(gi, "db_journal_apply_group_add"))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003211,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
 	else if ((e = group_info_add(gi)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003212,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
@@ -193,12 +193,12 @@ db_journal_apply_group_modify(gfarm_uint64_t seqnum,
 
 	if ((g = group_lookup(gi->groupname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_GROUP;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003213,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
 	} else if ((e = group_user_check(gi, diag)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003214,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    gi->groupname, gfarm_error_string(e));
@@ -214,7 +214,7 @@ db_journal_apply_group_remove(gfarm_uint64_t seqnum, char *groupname)
 
 	if ((e = group_remove_in_cache(groupname))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003215,
 		    "seqnum=%llu groupname=%s : %s",
 		    (unsigned long long)seqnum,
 		    groupname, gfarm_error_string(e));
@@ -241,12 +241,12 @@ db_journal_apply_inode_add(gfarm_uint64_t seqnum, struct gfs_stat *st)
 
 	if (inode_lookup(st->st_ino) != NULL) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003216,
 		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
 		    (unsigned long long)st->st_ino, gfarm_error_string(e));
 	} else if ((e = inode_add_or_modify_in_cache(st, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003217,
 		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
 		    (unsigned long long)st->st_ino, gfarm_error_string(e));
 	else
@@ -261,7 +261,7 @@ db_journal_apply_inode_modify(gfarm_uint64_t seqnum, struct gfs_stat *st)
 	struct inode *n;
 
 	if ((e = inode_add_or_modify_in_cache(st, &n)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003218,
 		    "seqnum=%llu inum=%llu : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)st->st_ino,
@@ -280,7 +280,7 @@ db_journal_apply_inode_gen_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_gen_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003219,
 		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -297,7 +297,7 @@ db_journal_apply_inode_nlink_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_nlink_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003220,
 		    "seqnum=%llu inum=%llu : %s", (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -314,7 +314,7 @@ db_journal_apply_inode_size_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_size_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003221,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -331,7 +331,7 @@ db_journal_apply_inode_mode_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_mode_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003222,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -348,7 +348,7 @@ db_journal_apply_inode_user_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_user_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003223,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -365,7 +365,7 @@ db_journal_apply_inode_group_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_group_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003224,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -382,7 +382,7 @@ db_journal_apply_inode_atime_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_atime_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003225,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -399,7 +399,7 @@ db_journal_apply_inode_mtime_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_mtime_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003226,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -416,7 +416,7 @@ db_journal_apply_inode_ctime_modify(gfarm_uint64_t seqnum,
 
 	if ((e = db_journal_inode_lookup(arg->inum, &n,
 	    "db_journal_apply_inode_ctime_modify")) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003227,
 		    "inum=%llu : %s",
 		    (unsigned long long)arg->inum, gfarm_error_string(e));
 	else
@@ -467,13 +467,13 @@ db_journal_apply_filecopy_add(gfarm_uint64_t seqnum,
 		/* nothing to do */
 	} else if ((host = host_lookup(arg->hostname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003228,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
 		    gfarm_error_string(e));
 	} else if ((e = inode_add_file_copy_in_cache(n,
 	    host)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003229,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
 		    gfarm_error_string(e));
@@ -494,13 +494,13 @@ db_journal_apply_filecopy_remove(gfarm_uint64_t seqnum,
 		/* nothing to do */
 	} else if ((host = host_lookup(arg->hostname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003230,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
 		    gfarm_error_string(e));
 	} else if ((e = inode_remove_replica_in_cache(n,
 	    host)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003231,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
 		    gfarm_error_string(e));
@@ -538,7 +538,7 @@ db_journal_apply_direntry_add(gfarm_uint64_t seqnum,
 
 	if ((e = dir_entry_add(arg->dir_inum, arg->entry_name, arg->entry_len,
 	    arg->entry_inum)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003232,
 		    "seqnum=%llu dir_inum=%llu entry_inum=%llu : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->dir_inum,
@@ -558,7 +558,7 @@ db_journal_apply_direntry_remove(gfarm_uint64_t seqnum,
 
 	if (idir == NULL || (dir = inode_get_dir(idir)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003233,
 		    "seqnum=%llu dir_inum=%llu entry_inum=%llu : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->dir_inum,
@@ -566,7 +566,7 @@ db_journal_apply_direntry_remove(gfarm_uint64_t seqnum,
 		    gfarm_error_string(e));
 	} else if (dir_lookup(dir, arg->entry_name, arg->entry_len) == NULL) {
 		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003234,
 		    "seqnum=%llu dir_inum=%llu entry_inum=%llu : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->dir_inum,
@@ -590,7 +590,7 @@ db_journal_apply_symlink_add(gfarm_uint64_t seqnum,
 
 	if ((e = symlink_add(arg->inum, arg->source_path))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003235,
 		    "seqnum=%llu inum=%llu source_path=%s : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, arg->source_path,
@@ -627,7 +627,7 @@ db_journal_apply_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		/* nothing to do */
 	} else if ((e = inode_xattr_add(n, arg->xmlMode, arg->attrname,
 	    arg->value, arg->size)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003236,
 		    "seqnum=%llu inum=%llu attrname=%s : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, arg->attrname,
@@ -646,7 +646,7 @@ db_journal_apply_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		/* nothing to do */
 	} else if ((e = inode_xattr_modify(n, arg->xmlMode, arg->attrname,
 	    arg->value, arg->size)) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003237,
 		    "seqnum=%llu inum=%llu attrname=%s : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, arg->attrname,
@@ -665,7 +665,7 @@ db_journal_apply_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		/* nothing to do */
 	} else if ((e = inode_xattr_remove(n, arg->xmlMode, arg->attrname))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003238,
 		    "seqnum=%llu inum=%llu attrname=%s : %s",
 		    (unsigned long long)seqnum,
 		    (unsigned long long)arg->inum, arg->attrname,
@@ -737,12 +737,12 @@ db_journal_apply_mdhost_add(gfarm_uint64_t seqnum,
 
 	if (mdhost_lookup(ms->name)) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003239,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum, ms->name,
 		    gfarm_error_string(e));
 	} else if ((e = mdhost_enter(ms, NULL)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003240,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum, ms->name,
 		    gfarm_error_string(e));
@@ -760,13 +760,13 @@ db_journal_apply_mdhost_modify(gfarm_uint64_t seqnum,
 
 	if ((mh = mdhost_lookup(arg->ms.name)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003241,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum, arg->ms.name,
 		    gfarm_error_string(e));
 	} else if ((e = mdhost_modify_in_cache(mh, &arg->ms))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003242,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum, arg->ms.name,
 		    gfarm_error_string(e));
@@ -781,7 +781,7 @@ db_journal_apply_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 
 	if (mdhost_lookup(name) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003243,
 		    "seqnum=%llu hostname=%s : %s",
 		    (unsigned long long)seqnum, name,
 		    gfarm_error_string(e));

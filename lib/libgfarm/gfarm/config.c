@@ -176,7 +176,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 		    LOCAL_UG_MAP_FILE_HASHTAB_SIZE,
 		    local_ug_maps_hash_index, local_ug_maps_hash_equal);
 		if (local_ug_maps_tab == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002524,
 			    "allocation of hashtable failed: %s",
 			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
@@ -192,7 +192,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 	entry = gfarm_hash_enter(local_ug_maps_tab, &id, sizeof(id),
 	    sizeof(*ugm), &created);
 	if (entry == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002525,
 		    "insertion to hashtable failed: %s",
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -202,7 +202,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 		idp->hostname = strdup(hostname);
 		if (idp->hostname == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002526,
 			    "strdup failed: %s",
 			    gfarm_error_string(e));
 			goto error;
@@ -216,7 +216,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 	s = strdup(map_file);
 	if (s == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002527,
 		    "strdup failed: %s",
 		    gfarm_error_string(e));
 		goto error;
@@ -225,7 +225,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 		if ((e = gfarm_stringlist_add(&ugm->local_user_map_file_list,
 		    s)) != GFARM_ERR_NO_ERROR) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002528,
 			    "gfarm_stringlist_add failed: %s",
 			    gfarm_error_string(e));
 			goto error;
@@ -234,7 +234,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 		if ((e = gfarm_stringlist_add(&ugm->local_group_map_file_list,
 		    s)) != GFARM_ERR_NO_ERROR) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002529,
 			    "gfarm_stringlist_add failed: %s",
 			    gfarm_error_string(e));
 			goto error;
@@ -423,14 +423,14 @@ gfarm_global_to_local_username_by_url(const char *url,
 
 	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002530,
 		    "gfarm_get_hostname_by_url(%s) failed: %s",
 		    url, gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfarm_global_to_local_username_by_host(hostname, port,
 	    global_user, local_user_p)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002531,
 		    "gfarm_global_to_local_username_by_host(%s,%d) (%s)"
 		    " failed: %s",
 		    hostname, port, url, gfarm_error_string(e));
@@ -469,14 +469,14 @@ gfarm_local_to_global_username_by_url(const char *url,
 
 	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002532,
 		    "gfarm_get_hostname_by_url(%s) failed: %s",
 		    url, gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfarm_local_to_global_username_by_host(hostname, port,
 	    local_user, global_user_p)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002533,
 		    "gfarm_local_to_global_username_by_host(%s,%d) (%s)"
 		    " failed: %s",
 		    hostname, port, url, gfarm_error_string(e));
@@ -506,14 +506,14 @@ gfarm_global_to_local_groupname_by_url(const char *url,
 
 	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002534,
 		    "gfarm_get_hostname_by_url(%s) failed: %s",
 		    url, gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfarm_global_to_local_groupname_by_host(hostname, port,
 	    global_group, local_group_p)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002535,
 		    "gfarm_global_to_local_groupname_by_host(%s,%d) (%s)"
 		    " failed: %s",
 		    hostname, port, url, gfarm_error_string(e));
@@ -543,14 +543,14 @@ gfarm_local_to_global_groupname_by_url(const char *url,
 
 	if ((e = gfarm_get_hostname_by_url(url, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002536,
 		    "gfarm_get_hostname_by_url(%s) failed: %s",
 		    url, gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfarm_local_to_global_groupname_by_host(hostname, port,
 	    local_group, global_group_p)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002537,
 		    "gfarm_local_to_global_groupname_by_host(%s,%d) (%s)"
 		    " failed: %s",
 		    hostname, port, url, gfarm_error_string(e));
@@ -1774,7 +1774,7 @@ parse_hostname_and_port(char *host_and_port, const char *listname,
 	n = strcspn(p, ":");
 	if (n == 0) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002538,
 		    "parsing of %s host argument failed: %s",
 		    listname, gfarm_error_string(e));
 		if (*p)
@@ -1794,7 +1794,7 @@ parse_hostname_and_port(char *host_and_port, const char *listname,
 	lport = strtol(sport, NULL, 10);
 	if (errno != 0 || lport <= 0 || lport > 0xFFFF) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002539,
 		    "parsing of %s port argument (%s) failed: %s",
 		    listname, sport, gfarm_error_string(e));
 		return (e);
@@ -1813,20 +1813,20 @@ parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
 
 	listname = *op;
 	if ((e = gfarm_strtoken(&p, &filepath)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002540,
 		    "parsing of %s file path argument (%s) failed: %s",
 		    listname, p, gfarm_error_string(e));
 		return (e);
 	}
 	if (filepath == NULL) {
 		*op = "1st (file path) argument";
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002541,
 		    "Missing %s file path argument", listname);
 		return (GFARM_ERRMSG_MISSING_USER_MAP_FILE_ARGUMENT);
 	}
 	if ((e = gfarm_strtoken(&p, &host_and_port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002542,
 		    "parsing of %s file path argument (%s) failed: %s",
 		    listname, p, gfarm_error_string(e));
 		return (e);
@@ -1835,26 +1835,26 @@ parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
 		if ((e = parse_hostname_and_port(host_and_port, listname,
 		    &host, &port)) != GFARM_ERR_NO_ERROR) {
 			*op = "2nd (hostname:port) argument";
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002543,
 			    "parsing of %s arguments (%s) failed: %s",
 			    listname, p, gfarm_error_string(e));
 			return (e);
 		}
 		if ((e = gfarm_strtoken(&p, &tmp)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002544,
 			    "parsing of %s arguments (%s) failed: %s",
 			    listname, p, gfarm_error_string(e));
 			return (e);
 		}
 		if (tmp) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002545,
 			    "Too many netparam arguments passed");
 			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		}
 	}
 	if ((e = local_ug_maps_enter(host, (int)port, is_user, filepath))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002546,
 		    "local_ug_maps_enter for %s failed: %s",
 		    listname, gfarm_error_string(e));
 		return (e);
@@ -1898,7 +1898,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		if ((e = gfarm_strtoken(&p, &host_and_port))
 		    != GFARM_ERR_NO_ERROR) {
 			*op = "hostname:port argument";
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002547,
 			    "parsing of %s (%s) failed: %s",
 			    listname, p, gfarm_error_string(e));
 			goto error;
@@ -1907,7 +1907,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 			break;
 		if (n >= METADB_SERVER_NUM_MAX) {
 			e = GFARM_ERR_INVALID_ARGUMENT;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002548,
 			    "Too many arguments passed to %s", listname);
 			goto error;
 		}
@@ -1915,7 +1915,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		if ((e = parse_hostname_and_port(host_and_port, listname,
 		    &host, &port)) != GFARM_ERR_NO_ERROR) {
 			*op = "hostname:port argument";
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002549,
 			    "parsing of %s arguments (%s) failed: %s",
 			    listname, p, gfarm_error_string(e));
 			return (e);
@@ -1923,7 +1923,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 		host = strdup(host);
 		if (host == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002550,
 			    "%s", gfarm_error_string(e));
 			goto error;
 		}
@@ -1938,20 +1938,20 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	}
 	if (n == 0) {
 		*op = "1st (hostname:port) argument";
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002551,
 		    "Too few arguments passed to %s", listname);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	gfarm_metadb_server_set_is_master(ms[0], 1);
 	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002552,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}
 	fs = gfarm_filesystem_get_default();
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, n))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002553,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}
@@ -2259,7 +2259,7 @@ gfarm_config_set_default_filesystem(void)
 	assert(gfarm_metadb_server_name != NULL);
 
 	if ((e = gfarm_filesystem_init()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002554,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -2269,7 +2269,7 @@ gfarm_config_set_default_filesystem(void)
 		fs = gfarm_filesystem_get_default();
 		if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
 			/* XXX - for now, this is assumed */
-			gflog_fatal(GFARM_MSG_UNFIXED, "configuration error: "
+			gflog_fatal(GFARM_MSG_1002555, "configuration error: "
 			    "metadb_server_host:metadb_server_port is not "
 			    "included in the metadb_server_list");
 	}

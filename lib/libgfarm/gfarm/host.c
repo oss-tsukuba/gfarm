@@ -363,7 +363,7 @@ gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
 	}
 	GFARM_MALLOC_ARRAY(addresses,  n);
 	if (addresses == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002523,
 		    "gfarm_get_ip_addresses: no memory for %d IPs", n);
 		freeifaddrs(ifa_head);
 		return (GFARM_ERR_NO_MEMORY);

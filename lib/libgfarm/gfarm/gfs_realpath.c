@@ -89,7 +89,7 @@ gfm_realpath_success(struct gfm_connection *gfm_server, void *closure,
 	*b = 0;
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002669,
 		    "gfm_realpath_success(%s) : %s\n",
 		    path, gfarm_error_string(e));
 		goto end;

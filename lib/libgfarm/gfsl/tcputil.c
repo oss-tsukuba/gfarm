@@ -204,7 +204,7 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 	sel = select(fd + 1, &rFd, NULL, NULL, tvPtr);
 #endif /* ! HAVE_POLL */
 	if (sel == 0)
-	    gflog_error(GFARM_MSG_UNFIXED, "select timeout");
+	    gflog_error(GFARM_MSG_1002522, "select timeout");
 	else if (sel < 0) {
 	    if (errno == EINTR || errno == EAGAIN)
 		continue;

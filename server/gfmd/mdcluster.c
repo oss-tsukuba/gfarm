@@ -151,7 +151,7 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	c = mdcluster_new(name2);
 	if (c == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003012,
 		    "%s", gfarm_error_string(e));
 		free(name2);
 		return (e);
@@ -163,13 +163,13 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	if (entry == NULL) {
 		free(c);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003013,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 	if (!created) {
 		free(c);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003014,
 		    "Entry %s already exists", c->name);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -191,7 +191,7 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 	c = mdcluster_lookup(cname);
 	if (c == NULL && (e = mdcluster_enter(cname, &c))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003015,
 		    "failed to create mdcluster for mdhost %s : %s",
 		    mdhost_get_name(h), gfarm_error_string(e));
 		return (e);
@@ -200,7 +200,7 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 
 	GFARM_MALLOC(he);
 	if (he == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003016,
 		    "failed to create mdcluster for mdhost %s : %s",
 		    mdhost_get_name(h),
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -238,6 +238,6 @@ mdcluster_init(void)
 	    gfarm_hash_table_alloc(MDCLUSTER_HASHTAB_SIZE,
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (mdcluster_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003017,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 }

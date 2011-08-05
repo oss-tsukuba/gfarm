@@ -122,7 +122,7 @@ gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	if ((e = gfp_conn_hash_id_enter_noalloc(
 	    hashtabp, hashtabsize, entrysize, idp, entry_ret, created_ret))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002562,
 		    "(%s/%d/%s): %s",
 		    idp->hostname, idp->port, idp->username,
 		    gfarm_error_string(e));
@@ -132,7 +132,7 @@ gfp_conn_hash_id_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 		h = strdup(idp->hostname);
 		u = strdup(idp->username);
 		if (h == NULL || u == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002563,
 			    "(%s/%d/%s): no memory",
 			    idp->hostname, idp->port, idp->username);
 			free(h);

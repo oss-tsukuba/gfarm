@@ -322,7 +322,7 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 		}
 		/* may happen at gfsd restart? */
 		peer0 = host->peer;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002773,
 		    "waiting for abstract_host_receiver_lock: "
 		    "maybe %s restarted?",
 		    peer_get_service_name(peer0));
@@ -455,7 +455,7 @@ abstract_host_peer_busy(struct abstract_host *host, const char *diag)
 	abstract_host_mutex_unlock(host, diag);
 
 	if (unresponsive_peer != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002774,
 		    "%s(%s): disconnecting: busy at sending",
 		    back_channel_type_name(unresponsive_peer),
 		    abstract_host_get_name(host));
@@ -480,7 +480,7 @@ abstract_host_check_busy(struct abstract_host *host, gfarm_int64_t now,
 	abstract_host_mutex_unlock(host, diag);
 
 	if (unresponsive_peer != NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002775,
 		    "%s(%s): disconnecting: busy during queue scan",
 		    back_channel_type_name(unresponsive_peer),
 		    abstract_host_get_name(host));
@@ -548,7 +548,7 @@ async_channel_protocol_switch(struct abstract_host *host, struct peer *peer,
 	e = channel_protocol_switch(host, peer, request, xid, size,
 	    &unknown_request);
 	if (unknown_request) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002776,
 		    "(%s) unknown request %d (xid:%d size:%d), reset",
 		    back_channel_type_name(peer),
 		    (int)request, (int)xid, (int)size);
@@ -571,7 +571,7 @@ async_channel_service(struct abstract_host *host,
 
 	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002777,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -583,12 +583,12 @@ async_channel_service(struct abstract_host *host,
 	case GFP_XDR_TYPE_RESULT:
 		e = gfp_xdr_callback_async_result(async, peer, xid, size, &rv);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002778,
 			    "(%s) unknown reply xid:%d size:%d",
 			    back_channel_type_name(peer), (int)xid, (int)size);
 			e = gfp_xdr_purge(conn, 0, size);
 			if (e != GFARM_ERR_NO_ERROR)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002779,
 				    "(%s) skipping %d bytes: %s",
 				    back_channel_type_name(peer), (int)size,
 				    gfarm_error_string(e));
@@ -597,7 +597,7 @@ async_channel_service(struct abstract_host *host,
 		}
 		break;
 	default:
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002780,
 		    "type %d", type);
 		/*NOTREACHED*/
 		e = GFARM_ERR_PROTOCOL;
@@ -624,7 +624,7 @@ gfm_server_channel_main(void *arg,
 	e = abstract_host_receiver_lock(host, &peer,
 	    back_channel_type_name(peer0));
 	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002781,
 		    "channel(%s): aborted: %s",
 		    abstract_host_get_name(host), gfarm_error_string(e));
 #ifdef COMPAT_GFARM_2_3
@@ -638,7 +638,7 @@ gfm_server_channel_main(void *arg,
 	 * not switched to another one.
 	 */
 	if (peer != peer0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002782,
 		    "%s(%s): aborted: unexpected peer switch",
 		    back_channel_type_name(peer), abstract_host_get_name(host));
 #ifdef COMPAT_GFARM_2_3
@@ -661,7 +661,7 @@ gfm_server_channel_main(void *arg,
 			channel_free(host);
 #endif
 			abstract_host_receiver_unlock(host, peer);
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002783,
 			    "%s(%s): host_disconnect was called",
 			    back_channel_type_name(peer),
 			    abstract_host_get_name(host));
@@ -678,12 +678,12 @@ gfm_server_channel_main(void *arg,
 #endif
 		if (IS_CONNECTION_ERROR(e)) {
 			if (e == GFARM_ERR_UNEXPECTED_EOF) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002784,
 				    "%s(%s): disconnected",
 				    back_channel_type_name(peer),
 				    abstract_host_get_name(host));
 			} else {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1002785,
 				    "%s(%s): "
 				    "request error, reset: %s",
 				     back_channel_type_name(peer),
@@ -718,7 +718,7 @@ void
 gfm_server_channel_already_disconnected_message(struct abstract_host *host,
 	const char *proto, const char *op, const char *condition)
 {
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1002786,
 	    "channel(%s) %s %s: already disconnected: %s",
 	    abstract_host_get_name(host), proto, op, condition);
 }
@@ -728,7 +728,7 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 	struct peer *peer, const char *proto, const char *op,
 	const char *condition)
 {
-	gflog_error(GFARM_MSG_UNFIXED,
+	gflog_error(GFARM_MSG_1002787,
 	    "%s(%s) %s %s: disconnecting: %s",
 	    back_channel_type_name(peer), abstract_host_get_name(host),
 	    proto, op, condition);
@@ -756,14 +756,14 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 	struct gfp_xdr *server;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002788,
 		    "%s: <%s> channel sending request(%d)",
 		    abstract_host_get_name(host), diag, command);
 
 	e = abstract_host_sender_trylock(host, &peer, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_DEVICE_BUSY) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002789,
 			    "%s(%s) channel (command %d) request: "
 			    "sending busy", abstract_host_get_name(host),
 			    diag, command);
@@ -777,7 +777,7 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 	if (peer0 != NULL && peer != peer0) {
 		abstract_host_sender_unlock(host, peer,
 		    back_channel_type_name(peer0));
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002790,
 		    "(%s) %s (command %d) request: "
 		    "%s was reconnected",
 		    abstract_host_get_name(host), diag,
@@ -799,7 +799,7 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 		e = gfp_xdr_vrpc_request(server,
 		    command, &format, app);
 		if (*format != '\0') {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002791,
 			    "gfs_client_send_request(%d): "
 			    "invalid format character: %c(%x)",
 			    command, *format, *format);
@@ -831,13 +831,13 @@ gfm_server_channel_vget_request(struct peer *peer, size_t size,
 	gfarm_error_t e;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002792,
 		    "%s: <%s> %s start receiving",
 		    peer_get_hostname(peer), diag,
 		    back_channel_type_name(peer));
 	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, app);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002793,
 		    "async server %s receiving parameter: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
@@ -855,7 +855,7 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	struct gfp_xdr *client;
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002794,
 		    "%s: <%s> sending reply: %d",
 		    abstract_host_get_name(host), diag, (int)errcode);
 
@@ -876,7 +876,7 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	abstract_host_sender_unlock(host, peer, diag);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002795,
 		    "async server %s receiving parameter: %s",
 		    diag, gfarm_error_string(e));
 	return (e);
@@ -895,7 +895,7 @@ gfm_client_channel_vrecv_result(struct peer *peer,
 	struct gfp_xdr *conn = peer_get_conn(peer);
 
 	if (debug_mode)
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002796,
 		    "%s: <%s> %s receiving reply", abstract_host_get_name(host),
 		    diag, back_channel_type_name(peer));
 
@@ -908,16 +908,16 @@ gfm_client_channel_vrecv_result(struct peer *peer,
 		    back_channel_type_name(peer));
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002797,
 		    "%s(%s) RPC result: %s", back_channel_type_name(peer),
 		    abstract_host_get_name(host), gfarm_error_string(e));
 	} else if (async != NULL && size != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002798,
 		    "%s(%s) RPC result: protocol residual %d",
 		    back_channel_type_name(peer), abstract_host_get_name(host),
 		    (int)size);
 		if ((e = gfp_xdr_purge(conn, 0, size)) != GFARM_ERR_NO_ERROR)
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002799,
 			    "%s(%s) RPC result: skipping: %s",
 			    back_channel_type_name(peer),
 			    abstract_host_get_name(host),

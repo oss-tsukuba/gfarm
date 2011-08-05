@@ -16,7 +16,7 @@ gfarm_metadb_server_new(struct gfarm_metadb_server **m,
 	char *name, int port)
 {
 	if (GFARM_MALLOC(*m) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002560,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}

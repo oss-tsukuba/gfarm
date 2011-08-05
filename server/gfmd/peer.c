@@ -73,17 +73,17 @@ peer_watcher_alloc(int thrpool_size, int thrqueue_length,
 
 	GFARM_MALLOC(pw);
 	if (pw == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "peer_watcher %s: no memory",
+		gflog_fatal(GFARM_MSG_1002763, "peer_watcher %s: no memory",
 		    diag);
 
 	e = watcher_alloc(peer_watcher_nfd_hint_default, &pw->w);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED, "watcher(%d) %s: no memory",
+		gflog_fatal(GFARM_MSG_1002764, "watcher(%d) %s: no memory",
 		    peer_watcher_nfd_hint_default, diag);
 
 	pw->thrpool = thrpool_new(thrpool_size, thrqueue_length, diag);
 	if (pw->thrpool == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "thrpool(%d, %d) %s: no memory",
+		gflog_fatal(GFARM_MSG_1002765, "thrpool(%d, %d) %s: no memory",
 		    thrpool_size, thrqueue_length, diag);
 
 	pw->readable_handler = readable_handler;
@@ -422,7 +422,7 @@ peer_free_request(struct peer *peer)
 	 */
 	rv = shutdown(fd, SHUT_RDWR);
 	if (rv == -1)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002766,
 		    "%s(%s) : shutdown(%d): %s", BACK_CHANNEL_DIAG(peer),
 		    peer_get_hostname(peer), fd, strerror(errno));
 
@@ -545,7 +545,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 		e = watcher_fd_readable_event_alloc(fd,
 		    &peer->readable_event);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002767,
 			    "peer watching %d: %s", fd, gfarm_error_string(e));
 			gfp_xdr_free(peer->conn);
 			peer->conn = NULL;
@@ -658,7 +658,7 @@ peer_authorized(struct peer *peer,
 			gflog_warning(GFARM_MSG_1000284,
 			    "unknown host: %s", hostname);
 		else
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002768,
 			    "%s connected from %s",
 			    peer_get_service_name(peer),
 			    abstract_host_get_name(peer->host));
@@ -857,7 +857,7 @@ peer_set_host(struct peer *peer, char *hostname)
 			return (GFARM_ERR_NO_ERROR);
 		}
 		if ((h = host_lookup(hostname)) == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002769,
 				"host %s does not exist", hostname);
 			return (GFARM_ERR_UNKNOWN_HOST);
 		}
@@ -865,12 +865,12 @@ peer_set_host(struct peer *peer, char *hostname)
 		break;
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
 		if (peer->host != NULL) { /* already set */
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002770,
 				"peer metadata-host is already set");
 			return (GFARM_ERR_NO_ERROR);
 		}
 		if ((m = mdhost_lookup(hostname)) == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002771,
 				"metadata-host %s does not exist", hostname);
 			return (GFARM_ERR_UNKNOWN_HOST);
 		}
@@ -887,7 +887,7 @@ peer_set_host(struct peer *peer, char *hostname)
 		peer->hostname = NULL;
 	}
 
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1002772,
 	    "%s connected from %s",
 	    peer_get_service_name(peer), abstract_host_get_name(peer->host));
 	return (GFARM_ERR_NO_ERROR);

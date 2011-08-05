@@ -281,13 +281,13 @@ user_lookup_or_enter_invalid(const char *username)
 	ui.gsi_dn = strdup_ck("", diag);
 	if (ui.username == NULL || ui.realname == NULL ||
 	    ui.homedir == NULL || ui.gsi_dn == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002751,
 		    "user_lookup_or_enter_invalid(%s): no memory", username);
 		return (NULL);
 	}
 	e = user_enter(&ui, &u);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002752,
 		    "user_lookup_or_enter_invalid(%s): user_enter: %s",
 		    username, gfarm_error_string(e));
 		gfarm_user_info_free(&ui);
@@ -295,7 +295,7 @@ user_lookup_or_enter_invalid(const char *username)
 	}
 	e = user_remove_in_cache(username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002753,
 		    "user_lookup_or_enter_invalid(%s): user_remove: %s",
 		    username, gfarm_error_string(e));
 	}
@@ -391,7 +391,7 @@ list_to_names(void **value_p, size_t size,
 		char *tmp;
 		GFARM_MALLOC_ARRAY(tmp, size + 1);
 		if (tmp == NULL) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002754,
 				      "allocation of tmp failed");
 			return (GFARM_ERR_NO_MEMORY);
 		}
@@ -416,7 +416,7 @@ list_to_names(void **value_p, size_t size,
 	}
 	GFARM_MALLOC_ARRAY(names, *names_num_p);
 	if (names == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002755,
 			      "allocation of names failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -447,7 +447,7 @@ user_in_user_list(struct inode *inode, struct user *user)
 	if (e == GFARM_ERR_NO_SUCH_OBJECT || value == NULL)
 		return (0);
 	else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002756,
 			      "inode_xattr_get_cache(%s) failed: %s",
 			      GFARM_ROOT_EA_USER, gfarm_error_string(e));
 		return (0);
@@ -482,7 +482,7 @@ user_in_group_list(struct inode *inode, struct user *user)
 	if (e == GFARM_ERR_NO_SUCH_OBJECT || value == NULL)
 		return (0);
 	else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002757,
 			      "inode_xattr_get_cache(%s) failed: %s",
 			      GFARM_ROOT_EA_GROUP, gfarm_error_string(e));
 		return (0);

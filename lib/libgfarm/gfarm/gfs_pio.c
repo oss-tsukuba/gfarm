@@ -1348,24 +1348,24 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 			 *     is supported
 			 */
 			if ((e = gfs_pio_flush(gf)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002655,
 				    "gfs_pio_flush() failed: %s",
 				    gfarm_error_string(e));
 			} else if ((e = (*gf->ops->view_fstat)(gf, st))
 			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002656,
 				    "view_fstat() failed: %s",
 				    gfarm_error_string(e));
 			}
 		} else if ((e = (*gf->ops->view_fstat)(gf, st))
 		     != GFARM_ERR_NO_ERROR && IS_CONNECTION_ERROR(e)) {
 			if ((e = gfs_pio_reconnect(gf)) != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002657,
 				    "gfs_pio_reconnect() failed: %s",
 				    gfarm_error_string(e));
 			} else if ((e = (*gf->ops->view_fstat)(gf, st))
 				    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002658,
 				    "view_stat() failed: %s",
 				    gfarm_error_string(e));
 			}

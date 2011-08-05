@@ -237,13 +237,13 @@ group_lookup_or_enter_invalid(const char *groupname)
 
 	n = strdup_ck(groupname, diag);
 	if (n == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002758,
 		    "group_lookup_or_enter_invalid(%s): no memory", groupname);
 		return (NULL);
 	}
 	e = group_enter(n, &g);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002759,
 		    "group_lookup_or_enter_invalid(%s): group_enter: %s",
 		    groupname, gfarm_error_string(e));
 		free(n);
@@ -251,7 +251,7 @@ group_lookup_or_enter_invalid(const char *groupname)
 	}
 	e = group_remove_in_cache(groupname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002760,
 		    "group_lookup_or_enter_invalid(%s): group_remove: %s",
 		    groupname, gfarm_error_string(e));
 	}

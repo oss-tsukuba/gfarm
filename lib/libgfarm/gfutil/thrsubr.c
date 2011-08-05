@@ -78,7 +78,7 @@ gfarm_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 	if (err == ETIMEDOUT)
 		return (0);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s cond timedwait: %s",
+		gflog_fatal(GFARM_MSG_1002521, "%s: %s cond timedwait: %s",
 		    where, what, strerror(err));
 	return (1);
 }

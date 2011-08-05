@@ -850,7 +850,7 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 
 	syserr = gfarm_eventqueue_alloc(CONCURRENCY, &s->q);
 	if (syserr != 0) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002720,
 		    "search_idle_init_state: gfarm_eventqueue_alloc: %s",
 		    strerror(syserr));
 		return (GFARM_ERR_NO_MEMORY);
@@ -1078,7 +1078,7 @@ search_idle_load_callback(void *closure)
 			e = gfarm_get_global_username_by_host(
 			    c->h->return_value, c->h->port, &user);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002721,
 				    "gfarm_get_global_username_by_host: %s",
 				    gfarm_error_string(e));
 			} else {

@@ -14,7 +14,7 @@ gfm_link_request(struct gfm_connection *gfm_server, void *closure,
 {
 	gfarm_error_t e = gfm_client_flink_request(gfm_server, dname);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002664,
 		    "link(%s) request: %s", dname,
 		    gfarm_error_string(e));
 	return (e);
@@ -25,7 +25,7 @@ gfm_link_result(struct gfm_connection *gfm_server, void *closure)
 {
 	gfarm_error_t e = gfm_client_flink_result(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002665,
 		    "link result: %s",
 		    gfarm_error_string(e));
 	return (e);

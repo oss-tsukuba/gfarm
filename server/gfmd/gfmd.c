@@ -1002,18 +1002,18 @@ start_db_journal_threads(void)
 	if (mdhost_self_is_master()) {
 		if ((e = create_detached_thread(db_journal_store_thread, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002723,
 			    "create_detached_thread(db_journal_store_thread): "
 			    "%s", gfarm_error_string(e));
 	} else {
 		if ((e = create_detached_thread(db_journal_recvq_thread, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002724,
 			    "create_detached_thread(db_ournal_recvq_thread): "
 			    "%s", gfarm_error_string(e));
 		if ((e = create_detached_thread(db_journal_apply_thread, NULL))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002725,
 			    "create_detached_thread(db_journal_apply_thread): "
 			    "%s", gfarm_error_string(e));
 	}
@@ -1027,12 +1027,12 @@ start_gfmdc_threads(void)
 	if (mdhost_self_is_master()) {
 		if ((e = create_detached_thread(gfmdc_journal_asyncsend_thread,
 		    NULL)) != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002726,
 			    "create_detached_thread(gfmdc_master_thread): %s",
 			    gfarm_error_string(e));
 	} else if ((e = create_detached_thread(gfmdc_connect_thread, NULL))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002727,
 		    "create_detached_thread(gfmdc_slave_thread): %s",
 		    gfarm_error_string(e));
 }
@@ -1050,13 +1050,13 @@ transform_to_master(void)
 	static const char *diag = "transform_to_master";
 
 	if (mdhost_self_is_master()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002728,
 		    "cannot transform to the master gfmd "
 		    "because this is already the master gfmd");
 		return;
 	}
 	if (!mdhost_self_is_master_candidate()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002729,
 		    "cannot transform to the master gfmd "
 		    "because this is not a master candidate.");
 		return;
@@ -1065,7 +1065,7 @@ transform_to_master(void)
 	master = mdhost_lookup_master();
 	if (mdhost_is_up(master))
 		mdhost_disconnect(master, NULL);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1002730,
 	    "start transforming to the master gfmd ...");
 
 	db_journal_cancel_recvq();
@@ -1094,7 +1094,7 @@ transform_to_master(void)
 	mdhost_set_self_as_default_master();
 	giant_unlock();
 
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1002731,
 	    "end transforming to the master gfmd");
 }
 
@@ -1153,7 +1153,7 @@ sig_add(sigset_t *sigs, int signo, const char *name)
 	struct sigaction old, new;
 
 	if (sigaction(signo, NULL, &old) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED,
+		gflog_fatal_errno(GFARM_MSG_1002732,
 		    "checking %s signal", name);
 	if (old.sa_handler == SIG_IGN) {
 		/*
@@ -1163,11 +1163,11 @@ sig_add(sigset_t *sigs, int signo, const char *name)
 		new = old;
 		new.sa_handler = dummy_sighandler;
 		if (sigaction(signo, &new, NULL) == -1)
-			gflog_fatal_errno(GFARM_MSG_UNFIXED,
+			gflog_fatal_errno(GFARM_MSG_1002733,
 			    "installing %s signal dummy handler", name);
 	}
 	if (sigaddset(sigs, signo) == -1)
-		gflog_fatal_errno(GFARM_MSG_UNFIXED, "sigaddset(%s)", name);
+		gflog_fatal_errno(GFARM_MSG_1002734, "sigaddset(%s)", name);
 }
 
 static void
@@ -1225,7 +1225,7 @@ sigs_handler(void *p)
 		case SIGHUP:
 #ifdef HAVE_GSI
 			/* initialize the GSI environment */
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1002735,
 			    "initialize the GSI environment");
 			gfarm_gsi_server_finalize();
 #endif
@@ -1493,7 +1493,7 @@ main(int argc, char **argv)
 	 */
 	sigs_set(&sigs);
 	if (pthread_sigmask(SIG_BLOCK, &sigs, NULL) == -1) /* for sigwait() */
-		gflog_fatal(GFARM_MSG_UNFIXED, "sigprocmask(SIG_BLOCK): %s",
+		gflog_fatal(GFARM_MSG_1002736, "sigprocmask(SIG_BLOCK): %s",
 		    strerror(errno));
 	e = create_detached_thread(sigs_handler, &sigs);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1536,7 +1536,7 @@ main(int argc, char **argv)
 		    gfarm_get_metadb_server_force_slave())
 			select_master();
 		is_master = mdhost_self_is_master();
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1002737,
 		    "metadata replication %s mode",
 		    is_master ? "master" : "slave");
 		start_gfmdc_threads();

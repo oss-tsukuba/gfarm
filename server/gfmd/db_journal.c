@@ -131,14 +131,14 @@ db_journal_initialize(void)
 
 	if (journal_dir == NULL) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003039,
 		    "gfarm_journal_file_dir is empty : %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = db_seqnum_load(NULL, db_seqnum_load_callback))
 	    != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003040,
 		    "db_seqnum_load : %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -152,7 +152,7 @@ db_journal_initialize(void)
 	if ((e = journal_file_open(path, gfarm_get_journal_max_size(),
 	    journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003041,
 		    "gfm_server_journal_file_open : %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -160,7 +160,7 @@ db_journal_initialize(void)
 #ifdef DEBUG_JOURNAL
 	gfarm_gettimerval(&t2);
 	ts = gfarm_timerval_sub(&t2, &t1);
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003042,
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
 
@@ -245,7 +245,7 @@ db_journal_read_string(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "s", strp))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003043,
 		    "gfp_xdr_recv", e, ope);
 		return (e);
 	}
@@ -261,14 +261,14 @@ db_journal_xdr_send_string_array_size_add(size_t *sizep,
 
 	if ((e = gfp_xdr_send_size_add(sizep, "i", n))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003044,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
 	for (i = 0; i < n; ++i) {
 		if ((e = gfp_xdr_send_size_add(sizep, "s",
 		    ary[i])) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003045,
 			    "gfp_xdr_send_size_add", e, ope);
 			return (e);
 		}
@@ -285,14 +285,14 @@ db_journal_xdr_send_string_array(
 
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i", n))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003046,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
 	for (i = 0; i < n; ++i) {
 		if ((e = gfp_xdr_send(JOURNAL_W_XDR, "s",
 		    ary[i])) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003047,
 			    "gfp_xdr_send", e, ope);
 			return (e);
 		}
@@ -313,21 +313,21 @@ db_journal_xdr_recv_string_array(struct gfp_xdr *xdr,
 
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i", &n))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003048,
 		    "gfp_xdr_recv", e, ope);
 		return (e);
 	}
 	GFARM_MALLOC_ARRAY(ary, n + 1);
 	if (ary == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003049,
 		    "GFARM_MALLOC_ARRAY", e, ope);
 		return (e);
 	}
 	for (i = 0; i < n; ++i) {
 		if ((e = gfp_xdr_recv(xdr, 1, &eof, "s",
 		    &ary[i])) != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003050,
 			    "gfp_xdr_recv", e, ope);
 			for (j = 0; j < i; ++j)
 				free(ary[i]);
@@ -511,7 +511,7 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 		journal_seqnum_pre = seqnum - 2;
 		if ((e = db_journal_write_begin0(seqnum - 1))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003051,
 			    "%s", gfarm_error_string(e));
 			return (e);
 		}
@@ -519,14 +519,14 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 	journal_seqnum_pre = seqnum;
 	if ((e = journal_file_write(self_jf, seqnum, ope, arg, size_add_op,
 	    send_op)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003052,
 		    "%s", gfarm_error_string(e));
 		db_journal_fail_store_op();
 		return (e);
 	}
 	if (ope == GFM_JOURNAL_END && db_journal_sync_op) {
 		if ((e = db_journal_sync_op(seqnum)) != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003053,
 			    "%s", gfarm_error_string(e));
 	}
 	return (e);
@@ -547,7 +547,7 @@ db_journal_write_string_size_add(enum journal_operation ope,
 
 	if ((e = gfp_xdr_send_size_add(sizep, "s", str))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003054,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -562,7 +562,7 @@ db_journal_write_string_core(enum journal_operation ope, void *arg)
 
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "s", str))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003055,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -665,14 +665,14 @@ db_journal_write_host_size_add(enum journal_operation ope,
 	    NON_NULL_STR(hi->architecture),
 	    hi->ncpu,
 	    hi->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003056,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep,
 	    ope, hi->nhostaliases, hi->hostaliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003057,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -692,14 +692,14 @@ db_journal_write_host_core(enum journal_operation ope, void *arg)
 	    NON_NULL_STR(hi->architecture),
 	    hi->ncpu,
 	    hi->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003058,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(
 	    ope, hi->nhostaliases, hi->hostaliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003059,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
@@ -720,13 +720,13 @@ db_journal_read_host_core(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &hi->architecture,
 	    &hi->ncpu,
 	    &hi->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003060,
 		    "gfp_xdr_recv", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &hi->nhostaliases, &hi->hostaliases)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003061,
 		    "db_journal_xdr_recv_string_array", e, ope);
 	}
 	return (e);
@@ -749,14 +749,14 @@ db_journal_read_host_info(struct gfp_xdr *xdr, struct gfarm_host_info **hip)
 
 	GFARM_MALLOC(hi);
 	if (hi == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003062,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memset(hi, 0, sizeof(*hi));
 	if ((e = db_journal_read_host_core(xdr, ope, hi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003063,
 		    "db_journal_read_host_core", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -778,27 +778,27 @@ db_journal_write_host_modify_size_add(enum journal_operation ope,
 
 	if ((e = db_journal_write_host_size_add(ope, sizep, hi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003064,
 		    "db_journal_write_host_size_add", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send_size_add(sizep, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003065,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep,
 	    ope, m->add_count, m->add_aliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003066,
 		    "db_journal_xdr_send_string_array_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep,
 	    ope, m->del_count, m->del_aliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003067,
 		    "db_journal_xdr_send_string_array_size_add", e, ope);
 		return (e);
 	}
@@ -814,27 +814,27 @@ db_journal_write_host_modify_core(enum journal_operation ope, void *arg)
 
 	if ((e = db_journal_write_host_core(ope, hi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003068,
 		    "db_journal_write_host_core", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003069,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(
 	    ope, m->add_count, m->add_aliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003070,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(
 	    ope, m->del_count, m->del_aliases))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003071,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
@@ -862,7 +862,7 @@ db_journal_read_host_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003072,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -870,25 +870,25 @@ db_journal_read_host_modify(struct gfp_xdr *xdr,
 	hi = &arg->hi;
 	if ((e = db_journal_read_host_core(xdr, ope, hi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003073,
 		    "db_journal_read_host_core", e, ope);
 		goto end;
 	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i",
 	    &arg->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003074,
 		    "gfp_xdr_recv", e, ope);
 		goto end;
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &arg->add_count, &arg->add_aliases)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003075,
 		    "db_journal_xdr_recv_string_array", e, ope);
 		goto end;
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &arg->del_count, &arg->del_aliases)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003076,
 		    "db_journal_xdr_recv_string_array", e, ope);
 		goto end;
 	}
@@ -927,7 +927,7 @@ db_journal_write_user_size_add(enum journal_operation ope,
 	    NON_NULL_STR(ui->homedir),
 	    NON_NULL_STR(ui->realname),
 	    NON_NULL_STR(ui->gsi_dn))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003077,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -946,7 +946,7 @@ db_journal_write_user_core(enum journal_operation ope, void *arg)
 	    NON_NULL_STR(ui->homedir),
 	    NON_NULL_STR(ui->realname),
 	    NON_NULL_STR(ui->gsi_dn))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003078,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -966,7 +966,7 @@ db_journal_read_user_core(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &ui->homedir,
 	    &ui->realname,
 	    &ui->gsi_dn)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003079,
 		    "gfp_xdr_recv", e, ope);
 	}
 	return (e);
@@ -989,14 +989,14 @@ db_journal_read_user_info(struct gfp_xdr *xdr, struct gfarm_user_info **uip)
 
 	GFARM_MALLOC(ui);
 	if (ui == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003080,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memset(ui, 0, sizeof(*ui));
 	if ((e = db_journal_read_user_core(xdr, ope, ui))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003081,
 		    "db_journal_read_user_core", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1018,13 +1018,13 @@ db_journal_write_user_modify_size_add(enum journal_operation ope,
 
 	if ((e = db_journal_write_user_size_add(ope, sizep, ui))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003082,
 		    "db_journal_write_user_size_add", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send_size_add(sizep, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003083,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1040,13 +1040,13 @@ db_journal_write_user_modify_core(enum journal_operation ope, void *arg)
 
 	if ((e = db_journal_write_user_core(ope, ui))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003084,
 		    "db_journal_write_user_core", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003085,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1074,7 +1074,7 @@ db_journal_read_user_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003086,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1082,13 +1082,13 @@ db_journal_read_user_modify(struct gfp_xdr *xdr,
 	ui = &arg->ui;
 	if ((e = db_journal_read_user_core(xdr, ope, ui))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003087,
 		    "db_journal_read_user_core", e, ope);
 		goto end;
 	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i",
 	    &arg->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003088,
 		    "gfp_xdr_send", e, ope);
 		goto end;
 	}
@@ -1124,13 +1124,13 @@ db_journal_write_group_size_add(enum journal_operation ope,
 	if ((e = gfp_xdr_send_size_add(sizep, GFM_JOURNAL_GROUP_CORE_XDR_FMT,
 	    NON_NULL_STR(gi->groupname),
 	    gi->nusers)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003089,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep, ope,
 		gi->nusers, gi->usernames)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003090,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1147,13 +1147,13 @@ db_journal_write_group_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_GROUP_CORE_XDR_FMT,
 	    NON_NULL_STR(gi->groupname),
 	    gi->nusers)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003091,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(ope,
 		gi->nusers, gi->usernames)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003092,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
@@ -1170,13 +1170,13 @@ db_journal_read_group_core(struct gfp_xdr *xdr, enum journal_operation ope,
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_GROUP_CORE_XDR_FMT,
 	    &gi->groupname)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003093,
 		    "gfp_xdr_recv", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &gi->nusers, &gi->usernames)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003094,
 		    "db_journal_xdr_recv_string_array", e, ope);
 	}
 	return (e);
@@ -1199,14 +1199,14 @@ db_journal_read_group_info(struct gfp_xdr *xdr, struct gfarm_group_info **gip)
 
 	GFARM_MALLOC(gi);
 	if (gi == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003095,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memset(gi, 0, sizeof(*gi));
 	if ((e = db_journal_read_group_core(xdr, ope, gi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003096,
 		    "db_journal_read_group_core", e, ope);
 		goto end;
 	}
@@ -1230,27 +1230,27 @@ db_journal_write_group_modify_size_add(enum journal_operation ope,
 
 	if ((e = db_journal_write_group_size_add(ope, sizep, m))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003097,
 		    "db_journal_write_group_size_add", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send_size_add(sizep, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003098,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep,
 	    ope, m->add_count, m->add_users))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003099,
 		    "db_journal_xdr_send_string_array_size_add", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array_size_add(sizep,
 	    ope, m->del_count, m->del_users))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003100,
 		    "db_journal_xdr_send_string_array_size_add", e, ope);
 		return (e);
 	}
@@ -1266,27 +1266,27 @@ db_journal_write_group_modify_core(enum journal_operation ope, void *arg)
 
 	if ((e = db_journal_write_group_core(ope, gi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003101,
 		    "db_journal_write_group_core", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003102,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(
 	    ope, m->add_count, m->add_users))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003103,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
 	if ((e = db_journal_xdr_send_string_array(
 	    ope, m->del_count, m->del_users))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003104,
 		    "db_journal_xdr_send_string_array", e, ope);
 		return (e);
 	}
@@ -1314,7 +1314,7 @@ db_journal_read_group_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003105,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1322,25 +1322,25 @@ db_journal_read_group_modify(struct gfp_xdr *xdr,
 	gi = &arg->gi;
 	if ((e = db_journal_read_group_core(xdr, ope, gi))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003106,
 		    "db_journal_read_group_core", e, ope);
 		goto end;
 	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i",
 	    &arg->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003107,
 		    "gfp_xdr_send", e, ope);
 		goto end;
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &arg->add_count, &arg->add_users)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003108,
 		    "db_journal_xdr_recv_string_array", e, ope);
 		goto end;
 	}
 	if ((e = db_journal_xdr_recv_string_array(xdr, ope,
 	    &arg->del_count, &arg->del_users)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003109,
 		    "db_journal_xdr_recv_string_array", e, ope);
 		goto end;
 	}
@@ -1391,7 +1391,7 @@ db_journal_write_stat_size_add(enum journal_operation ope, size_t *sizep,
 	    st->st_mtimespec.tv_nsec,
 	    st->st_ctimespec.tv_sec,
 	    st->st_ctimespec.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003110,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1418,7 +1418,7 @@ db_journal_write_stat_core(enum journal_operation ope, void *arg)
 	    st->st_mtimespec.tv_nsec,
 	    st->st_ctimespec.tv_sec,
 	    st->st_ctimespec.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003111,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1444,7 +1444,7 @@ db_journal_read_stat(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(st);
 	if (st == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003112,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1464,7 +1464,7 @@ db_journal_read_stat(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &st->st_mtimespec.tv_nsec,
 	    &st->st_ctimespec.tv_sec,
 	    &st->st_ctimespec.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003113,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1501,7 +1501,7 @@ db_journal_write_inode_uint64_modify_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_INODE_UINT64_XDR_FMT,
 	    m->inum,
 	    m->uint64)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003114,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1518,7 +1518,7 @@ db_journal_write_inode_uint64_modify_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_INODE_UINT64_XDR_FMT,
 	    m->inum,
 	    m->uint64)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003115,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1544,7 +1544,7 @@ db_journal_read_inode_uint64_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003116,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1552,7 +1552,7 @@ db_journal_read_inode_uint64_modify(struct gfp_xdr *xdr,
 	    GFM_JOURNAL_INODE_UINT64_XDR_FMT,
 	    &arg->inum,
 	    &arg->uint64)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003117,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1575,7 +1575,7 @@ db_journal_write_inode_uint32_modify_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_INODE_UINT32_XDR_FMT,
 	    m->inum,
 	    m->uint32)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003118,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1592,7 +1592,7 @@ db_journal_write_inode_uint32_modify_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_INODE_UINT32_XDR_FMT,
 	    m->inum,
 	    m->uint32)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003119,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1618,7 +1618,7 @@ db_journal_read_inode_uint32_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003120,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1626,7 +1626,7 @@ db_journal_read_inode_uint32_modify(struct gfp_xdr *xdr,
 	    GFM_JOURNAL_INODE_UINT32_XDR_FMT,
 	    &arg->inum,
 	    &arg->uint32)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003121,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1649,7 +1649,7 @@ db_journal_write_inode_string_modify_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_INODE_STR_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->string))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003122,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1666,7 +1666,7 @@ db_journal_write_inode_string_modify_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_INODE_STR_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->string))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003123,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1692,7 +1692,7 @@ db_journal_read_inode_string_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003124,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1701,7 +1701,7 @@ db_journal_read_inode_string_modify(struct gfp_xdr *xdr,
 	    GFM_JOURNAL_INODE_STR_XDR_FMT,
 	    &arg->inum,
 	    &arg->string)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003125,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1725,7 +1725,7 @@ db_journal_write_inode_timespec_modify_size_add(enum journal_operation ope,
 	    m->inum,
 	    m->time.tv_sec,
 	    m->time.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003126,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1744,7 +1744,7 @@ db_journal_write_inode_timespec_modify_core(enum journal_operation ope,
 	    m->inum,
 	    m->time.tv_sec,
 	    m->time.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003127,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1770,7 +1770,7 @@ db_journal_read_inode_timespec_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003128,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1779,7 +1779,7 @@ db_journal_read_inode_timespec_modify(struct gfp_xdr *xdr,
 	    &arg->inum,
 	    &arg->time.tv_sec,
 	    &arg->time.tv_nsec)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003129,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1877,7 +1877,7 @@ db_journal_write_inode_inum_size_add(enum journal_operation ope,
 
 	if ((e = gfp_xdr_send_size_add(sizep, GFM_JOURNAL_INODE_INUM_XDR_FMT,
 	    m->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003130,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1893,7 +1893,7 @@ db_journal_write_inode_inum_core(enum journal_operation ope, void *arg)
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
 	    GFM_JOURNAL_INODE_INUM_XDR_FMT,
 	    m->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003131,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1919,14 +1919,14 @@ db_journal_read_inode_inum(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003132,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_INODE_INUM_XDR_FMT,
 	    &arg->inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003133,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1955,7 +1955,7 @@ db_journal_write_inode_cksum_size_add(enum journal_operation ope,
 	    m->inum,
 	    NON_NULL_STR(m->type),
 	    NON_NULL_STR(m->sum))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003134,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -1973,7 +1973,7 @@ db_journal_write_inode_cksum_core(enum journal_operation ope, void *arg)
 	    m->inum,
 	    NON_NULL_STR(m->type),
 	    NON_NULL_STR(m->sum))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003135,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -1999,7 +1999,7 @@ db_journal_read_inode_cksum(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003136,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2009,7 +2009,7 @@ db_journal_read_inode_cksum(struct gfp_xdr *xdr,
 	    &arg->inum,
 	    &arg->type,
 	    &arg->sum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003137,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -2062,7 +2062,7 @@ db_journal_write_filecopy_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_FILECOPY_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->hostname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003138,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2079,7 +2079,7 @@ db_journal_write_filecopy_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_FILECOPY_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->hostname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003139,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2105,7 +2105,7 @@ db_journal_read_filecopy(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003140,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2114,7 +2114,7 @@ db_journal_read_filecopy(struct gfp_xdr *xdr, enum journal_operation ope,
 	    GFM_JOURNAL_FILECOPY_XDR_FMT,
 	    &arg->inum,
 	    &arg->hostname)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003141,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2159,7 +2159,7 @@ db_journal_write_deadfilecopy_size_add(enum journal_operation ope,
 	    m->inum,
 	    m->igen,
 	    NON_NULL_STR(m->hostname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003142,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2177,7 +2177,7 @@ db_journal_write_deadfilecopy_core(enum journal_operation ope, void *arg)
 	    m->inum,
 	    m->igen,
 	    NON_NULL_STR(m->hostname))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003143,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2203,7 +2203,7 @@ db_journal_read_deadfilecopy(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003144,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2213,7 +2213,7 @@ db_journal_read_deadfilecopy(struct gfp_xdr *xdr,
 	    &arg->inum,
 	    &arg->igen,
 	    &arg->hostname)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003145,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2258,7 +2258,7 @@ db_journal_write_direntry_size_add(enum journal_operation ope,
 	    m->dir_inum,
 	    NON_NULL_STR(m->entry_name),
 	    m->entry_inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003146,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2276,7 +2276,7 @@ db_journal_write_direntry_core(enum journal_operation ope, void *arg)
 	    m->dir_inum,
 	    NON_NULL_STR(m->entry_name),
 	    m->entry_inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003147,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2303,7 +2303,7 @@ db_journal_read_direntry(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003148,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2313,7 +2313,7 @@ db_journal_read_direntry(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &arg->dir_inum,
 	    &arg->entry_name,
 	    &arg->entry_inum)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003149,
 		    "gfp_xdr_recv", e, ope);
 		goto end;
 	}
@@ -2360,7 +2360,7 @@ db_journal_write_symlink_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_SYMLINK_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->source_path))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003150,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2377,7 +2377,7 @@ db_journal_write_symlink_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_SYMLINK_XDR_FMT,
 	    m->inum,
 	    NON_NULL_STR(m->source_path))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003151,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2403,7 +2403,7 @@ db_journal_read_symlink_add(struct gfp_xdr *xdr, struct db_symlink_arg **argp)
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003152,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2411,7 +2411,7 @@ db_journal_read_symlink_add(struct gfp_xdr *xdr, struct db_symlink_arg **argp)
 	    GFM_JOURNAL_SYMLINK_XDR_FMT,
 	    &arg->inum,
 	    &arg->source_path)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003153,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2451,7 +2451,7 @@ db_journal_write_xattr_size_add(enum journal_operation ope,
 	    NON_NULL_STR(m->attrname),
 	    m->size,
 	    m->value)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003154,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2471,7 +2471,7 @@ db_journal_write_xattr_core(enum journal_operation ope, void *arg)
 	    NON_NULL_STR(m->attrname),
 	    m->size,
 	    m->value)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003155,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2497,7 +2497,7 @@ db_journal_read_xattr(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003156,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2508,7 +2508,7 @@ db_journal_read_xattr(struct gfp_xdr *xdr,
 	    &arg->attrname,
 	    &arg->size,
 	    &arg->value)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003157,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2585,7 +2585,7 @@ db_journal_write_quota_size_add(enum journal_operation ope,
 	    q->phy_num_exceed,
 	    q->phy_num_soft,
 	    q->phy_num_hard)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003158,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2621,7 +2621,7 @@ db_journal_write_quota_core(enum journal_operation ope, void *arg)
 	    q->phy_num_exceed,
 	    q->phy_num_soft,
 	    q->phy_num_hard)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003159,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2648,7 +2648,7 @@ db_journal_read_quota(struct gfp_xdr *xdr, enum journal_operation ope,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003160,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2675,7 +2675,7 @@ db_journal_read_quota(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &q->phy_num_exceed,
 	    &q->phy_num_soft,
 	    &q->phy_num_hard)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003161,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2712,7 +2712,7 @@ db_journal_write_quota_remove_size_add(enum journal_operation ope,
 	    GFM_JOURNAL_QUOTA_REMOVE_XDR_FMT,
 	    m->is_group,
 	    NON_NULL_STR(m->name))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003162,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2729,7 +2729,7 @@ db_journal_write_quota_remove_core(enum journal_operation ope, void *arg)
 	    GFM_JOURNAL_QUOTA_REMOVE_XDR_FMT,
 	    m->is_group,
 	    NON_NULL_STR(m->name))) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003163,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2756,7 +2756,7 @@ db_journal_read_quota_remove(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003164,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2764,7 +2764,7 @@ db_journal_read_quota_remove(struct gfp_xdr *xdr,
 	    GFM_JOURNAL_QUOTA_REMOVE_XDR_FMT,
 	    &arg->is_group,
 	    &arg->name)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003165,
 		    "gfp_xdr_recv", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2794,7 +2794,7 @@ db_journal_write_mdhost_size_add(enum journal_operation ope,
 	    ms->port,
 	    NON_NULL_STR(ms->clustername),
 	    ms->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003166,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2813,7 +2813,7 @@ db_journal_write_mdhost_core(enum journal_operation ope, void *arg)
 	    ms->port,
 	    NON_NULL_STR(ms->clustername),
 	    ms->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003167,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2833,7 +2833,7 @@ db_journal_read_mdhost_core(struct gfp_xdr *xdr, enum journal_operation ope,
 	    &ms->port,
 	    &ms->clustername,
 	    &ms->flags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003168,
 		    "gfp_xdr_recv", e, ope);
 	}
 	return (e);
@@ -2858,14 +2858,14 @@ db_journal_read_metadb_server(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(ms);
 	if (ms == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003169,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memset(ms, 0, sizeof(*ms));
 	if ((e = db_journal_read_mdhost_core(xdr, ope, ms))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003170,
 		    "db_journal_read_mdhost_core", e, ope);
 	}
 	if (e == GFARM_ERR_NO_ERROR)
@@ -2887,13 +2887,13 @@ db_journal_write_mdhost_modify_size_add(enum journal_operation ope,
 
 	if ((e = db_journal_write_mdhost_size_add(ope, sizep, ms))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003171,
 		    "db_journal_write_mdhost_size_add", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send_size_add(sizep, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003172,
 		    "gfp_xdr_send_size_add", e, ope);
 		return (e);
 	}
@@ -2909,13 +2909,13 @@ db_journal_write_mdhost_modify_core(enum journal_operation ope, void *arg)
 
 	if ((e = db_journal_write_mdhost_core(ope, ms))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003173,
 		    "db_journal_write_mdhost_core", e, ope);
 		return (e);
 	}
 	if ((e = gfp_xdr_send(JOURNAL_W_XDR, "i",
 	    m->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003174,
 		    "gfp_xdr_send", e, ope);
 		return (e);
 	}
@@ -2943,7 +2943,7 @@ db_journal_read_mdhost_modify(struct gfp_xdr *xdr,
 
 	GFARM_MALLOC(arg);
 	if (arg == NULL) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003175,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2951,13 +2951,13 @@ db_journal_read_mdhost_modify(struct gfp_xdr *xdr,
 	ms = &arg->ms;
 	if ((e = db_journal_read_mdhost_core(xdr, ope, ms))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003176,
 		    "db_journal_read_mdhost_core", e, ope);
 		goto end;
 	}
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i",
 	    &arg->modflags)) != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003177,
 		    "gfp_xdr_send", e, ope);
 		goto end;
 	}
@@ -3196,7 +3196,7 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	}
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		GFLOG_ERROR_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_ERROR_WITH_OPE(GFARM_MSG_1003178,
 		    "read record", e, ope);
 	}
 	return (e);
@@ -3303,13 +3303,13 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->mdhost_remove(seqnum, obj); break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003179,
 		    "%s : seqnum=%llu ope=%d",
 		    diag, (unsigned long long)seqnum, ope); /* exit */
 		return (e);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003180,
 		    "%s : seqnum=%llu ope=%s : %s",
 		    diag, (unsigned long long)seqnum,
 		    journal_operation_name(ope), gfarm_error_string(e));
@@ -3339,7 +3339,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	GFARM_MALLOC(ai);
 	if (ai == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003181,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -3354,7 +3354,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	ai = GFARM_STAILQ_FIRST(c);
 	if (ai->ope != GFM_JOURNAL_BEGIN) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		GFLOG_ERROR_WITH_SN(GFARM_MSG_UNFIXED,
+		GFLOG_ERROR_WITH_SN(GFARM_MSG_1003182,
 		    "first record must be BEGIN", e,
 		    (unsigned long long)ai->seqnum, ai->ope);
 		goto end;
@@ -3362,7 +3362,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 retry:
 	GFARM_STAILQ_FOREACH(ai, c, next) {
 #ifdef DEBUG_JOURNAL
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003183,
 		    "apply seqnum=%llu ope=%s",
 		    (unsigned long long)ai->seqnum,
 		    journal_operation_name(ai->ope));
@@ -3420,7 +3420,7 @@ db_journal_add_rec(void *op_arg, gfarm_uint64_t seqnum,
 	*needs_freep = 0;
 	GFARM_MALLOC(rec);
 	if (rec == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003184,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -3460,7 +3460,7 @@ db_journal_store_thread(void *arg)
 			if ((e = journal_file_read(reader, NULL,
 			    db_journal_read_ops, db_journal_add_rec, NULL,
 			    &recs, NULL)) != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003185,
 				    "failed to read journal record : %s",
 				    gfarm_error_string(e));
 				goto error;
@@ -3470,7 +3470,7 @@ db_journal_store_thread(void *arg)
 			rec = GFARM_STAILQ_LAST(&recs, db_journal_rec, next);
 			if (first) {
 				if (rec->ope != GFM_JOURNAL_BEGIN)
-					gflog_fatal(GFARM_MSG_UNFIXED,
+					gflog_fatal(GFARM_MSG_1003186,
 					    "invalid journal record");
 					    /* exit */
 				else
@@ -3484,7 +3484,7 @@ db_journal_store_thread(void *arg)
 retry:
 		GFARM_STAILQ_FOREACH(rec, &recs, next) {
 #ifdef DEBUG_JOURNAL
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003187,
 			    "store seqnum=%" GFARM_PRId64 " ope=%s",
 			    rec->seqnum, journal_operation_name(rec->ope));
 #endif
@@ -3493,7 +3493,7 @@ retry:
 			    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
 				goto retry;
 			} else if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003188,
 				    "failed to store to db : %s",
 				    gfarm_error_string(e));
 				gfarm_mutex_unlock(get_db_access_mutex(), diag,
@@ -3530,7 +3530,7 @@ db_journal_apply_thread(void *arg)
 		    &closure, &eof)) != GFARM_ERR_NO_ERROR) {
 			if (e == GFARM_ERR_CANT_OPEN)
 				break; /* transforming to master */
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003189,
 			    "failed to read journal or apply to memory/db : %s",
 			    gfarm_error_string(e)); /* exit */
 		}
@@ -3545,11 +3545,11 @@ db_journal_boot_apply(void)
 {
 	journal_file_wait_until_empty(self_jf);
 #ifdef DEBUG_JOURNAL
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003190,
 	    "journal_seqnum=%llu", (unsigned long long)journal_seqnum);
 #endif
 	if (journal_slave_transaction_nesting > 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003191,
 		    "transaction end point is not found in journal file.");
 		giant_lock();
 		while (journal_slave_transaction_nesting-- > 0)
@@ -3606,14 +3606,14 @@ db_journal_fetch(struct journal_file_reader *reader,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (cur_seqnum < min_seqnum) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003192,
 		    "%s : invalid seqnum (cur:%llu < target:%llu)",
 		    diag, (unsigned long long)cur_seqnum,
 		    (unsigned long long)min_seqnum);
 		return (GFARM_ERR_EXPIRED);
 	}
 	if (journal_file_reader_is_invalid(reader)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003193,
 		    "%s : target journal records are expired (cur:%llu, "
 		    "target:%llu)", diag, (unsigned long long)cur_seqnum,
 		    (unsigned long long)min_seqnum);
@@ -3624,7 +3624,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 		    &seqnum, &eof);
 		journal_file_reader_commit_pos(reader);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003194,
 			    "%s : %s", diag, gfarm_error_string(e));
 			goto error;
 		}
@@ -3636,7 +3636,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 			if (fih == NULL && seqnum > 0 && seqnum != min_seqnum) {
 				free(rec);
 				journal_file_reader_close(reader);
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003195,
 				    "%s : target journal records are expired "
 				    "(cur:%llu, target:%llu)", diag,
 				    (unsigned long long)seqnum,
@@ -3646,7 +3646,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 			GFARM_MALLOC(fi);
 			if (fi == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003196,
 				    "%s : %s", diag, gfarm_error_string(e));
 				free(fi);
 				goto error;
@@ -3674,14 +3674,14 @@ db_journal_fetch(struct journal_file_reader *reader,
 	fi->next = NULL;
 	to_sn = seqnum;
 #ifdef DEBUG_JOURNAL
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003197,
 	    "%s : fetch %llu to %llu (n=%d)", diag,
 	    (unsigned long long)from_sn, (unsigned long long)to_sn, num_fi);
 #endif
 	GFARM_MALLOC_ARRAY(recs, all_len);
 	if (recs == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003198,
 		    "%s : %s", diag, gfarm_error_string(e));
 		goto error;
 	}
@@ -3715,7 +3715,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	GFARM_MALLOC(ri);
 	if (ri == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003199,
 		    "%s : %s", diag, gfarm_error_string(e));
 		return (e);
 	}
@@ -3726,7 +3726,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	while (journal_recvq_nelems >= JOURNAL_RECVQ_NELEMS_MAX) {
 		if (journal_file_is_waiting_until_nonempty(self_jf)) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003200,
 			    "journal recieve queue overflow on memory");
 			/* exit */
 		}
@@ -3844,7 +3844,7 @@ db_journal_recvq_thread(void *arg)
 	for (;;) {
 		if ((e = db_journal_recvq_proc(&canceled))
 		    != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003201,
 			    "%s", gfarm_error_string(e)); /* exit */
 		if (canceled)
 			break;

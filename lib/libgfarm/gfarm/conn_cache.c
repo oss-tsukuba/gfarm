@@ -82,7 +82,7 @@ gfp_cached_connection_set_username(struct gfp_cached_connection *connection,
 		return (GFARM_ERR_NO_ERROR);
 	newuser = strdup(user);
 	if (newuser == NULL)  {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002564,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -111,7 +111,7 @@ gfp_uncached_connection_new(const char *hostname, int port,
 	idp->hostname = strdup(hostname);
 	idp->username = strdup(username);
 	if (idp->hostname == NULL || idp->username == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002565,
 		    "gfp_cached_connection_acquire (%s)(%d)"
 		    " failed: %s",
 		    hostname, port,
@@ -280,7 +280,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 		idp->username = strdup(user);
 		if (idp->hostname == NULL || idp->username == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002566,
 			    "gfp_cached_connection_acquire (%s)(%d)"
 			    " failed: %s",
 			    canonical_hostname, port,

@@ -461,7 +461,7 @@ gfs_getattrplus_caching0(struct stat_cache *cache,
 		 * It's ok to fail in entering the cache,
 		 * since it's merely cache.
 		 */
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002654,
 		    "gfs_getattrplus_caching: failed to cache %s: %s",
 		    path, gfarm_error_string(e));
 	}

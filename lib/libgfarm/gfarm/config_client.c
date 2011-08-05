@@ -70,7 +70,7 @@ gfarm_config_set_default_metadb_server(void)
 	if ((e = gfarm_metadb_server_new(&m, gfarm_metadb_server_name,
 	    gfarm_metadb_server_port))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002556,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -78,7 +78,7 @@ gfarm_config_set_default_metadb_server(void)
 	ms[0] = m;
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002557,
 		    "%s", gfarm_error_string(e));
 	return (e);
 }

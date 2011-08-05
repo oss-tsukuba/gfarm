@@ -587,17 +587,17 @@ gfm_server_verify_type_common(struct peer *peer, int from_client, int skip,
 
 	giant_lock();
 	if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002844,
 			"operation is not permitted : peer_get_process() "
 			"failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
 		GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "peer_fdpair_get_current() "
+		gflog_debug(GFARM_MSG_1002845, "peer_fdpair_get_current() "
 			"failed: %s", gfarm_error_string(e));
 	} else if ((e = process_get_file_inode(process, cfd, &inode)) !=
 		GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "process_get_file_inode() "
+		gflog_debug(GFARM_MSG_1002846, "process_get_file_inode() "
 			"failed: %s", gfarm_error_string(e));
 	} else {
 		mode = inode_get_mode(inode);
@@ -663,7 +663,7 @@ gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
 
 	if ((e = gfm_server_get_request(peer, diag, "i", &fd))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002847,
 		    "revoke_fd_host failed : %s", gfarm_error_string(e));
 		return (e);
 	}
@@ -672,19 +672,19 @@ gfm_server_revoke_gfsd_access(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002848,
 			"%s", gfarm_error_string(e));
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002849,
 			"%s", gfarm_error_string(e));
 	} else if ((e = process_get_file_opening(process, fd, &fo))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002850,
 			"%s", gfarm_error_string(e));
 	} else if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002851,
 			"%s", gfarm_error_string(e));
 	} else if (fo->opener) {
 		fo->u.f.spool_opener = NULL;
@@ -900,7 +900,7 @@ acl_convert:
 			e = acl_convert_for_getxattr(
 				inode, px->name, &px->value, &px->size);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1002852,
 				 "acl_convert_for_getxattr() failed: %s",
 				 gfarm_error_string(e));
 				break;
@@ -2136,7 +2136,7 @@ acl_convert:
 					inode_lookup(pp->st.st_ino),
 					px->name, &px->value, &px->size);
 				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1002853,
 					  "acl_convert_for_getxattr()"
 					   " failed: %s",
 					    gfarm_error_string(e));

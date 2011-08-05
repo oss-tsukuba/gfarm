@@ -664,20 +664,20 @@ gfs_pio_reconnect(GFS_File gf)
 	if ((gf->mode & GFS_FILE_MODE_READ) == 0 ||
 	    (gf->mode & GFS_FILE_MODE_WRITE) != 0) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002659,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 
 	if ((e = gfm_client_revoke_gfsd_access_request(gf->gfm_server, gf->fd))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002660,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 	if ((e = gfm_client_revoke_gfsd_access_result(gf->gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002661,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -685,7 +685,7 @@ gfs_pio_reconnect(GFS_File gf)
 	host = strdup(gfs_client_hostname(sc));
 	if (host == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002662,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -696,7 +696,7 @@ gfs_pio_reconnect(GFS_File gf)
 	nsc = vc->storage_context;
 	if (strcmp(host, gfs_client_hostname(nsc)) == 0) {
 		e = GFARM_ERR_INVALID_FILE_REPLICA;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002663,
 		    "%s", gfarm_error_string(e));
 	}
 	gfs_client_connection_free(sc);

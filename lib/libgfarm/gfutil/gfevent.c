@@ -338,7 +338,7 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_ADD,
 		    ev->u.fd.fd, &epoll_ev) == -1) {
 			int save_errno = errno;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002519,
 			    "epoll(%d, EPOLL_CTL_ADD, %d, %p): %s",
 			    q->epoll_fd, ev->u.fd.fd, &epoll_ev,
 			    strerror(errno));
@@ -415,7 +415,7 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 		memset(&dummy, 0, sizeof(dummy));
 		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_DEL, ev->u.fd.fd, &dummy)
 		    == -1) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1002520,
 			    "epoll_ctl(%d, EPOLL_CTL_DEL, %d, ): %s",
 			     q->epoll_fd, ev->u.fd.fd, strerror(errno));
 		}

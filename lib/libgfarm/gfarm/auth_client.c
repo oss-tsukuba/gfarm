@@ -1022,7 +1022,7 @@ gfarm_auth_request_multiplexed(struct gfarm_eventqueue *q,
 	state->user = strdup(user);
 	if (state->user == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002561,
 			"failed to alloc `user`: %s",
 			gfarm_error_string(e));
 		goto error_free_readable;

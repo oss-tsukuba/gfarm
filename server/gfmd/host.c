@@ -320,7 +320,7 @@ host_downcast_to_host(struct abstract_host *h)
 static struct mdhost *
 host_downcast_to_mdhost(struct abstract_host *h)
 {
-	gflog_error(GFARM_MSG_UNFIXED, "downcasting host %p to mdhost", h);
+	gflog_error(GFARM_MSG_1002761, "downcasting host %p to mdhost", h);
 	abort();
 	return (NULL);
 }
@@ -701,7 +701,7 @@ host_disable(struct abstract_host *ah, void **closurep)
 
 	GFARM_MALLOC(c);
 	if (c == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002762,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}

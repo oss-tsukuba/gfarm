@@ -137,7 +137,7 @@ mdhost_to_abstract_host(struct mdhost *m)
 static struct host *
 mdhost_downcast_to_host(struct abstract_host *h)
 {
-	gflog_error(GFARM_MSG_UNFIXED, "downcasting mdhost %p to host", h);
+	gflog_error(GFARM_MSG_1002925, "downcasting mdhost %p to host", h);
 	abort();
 	return (NULL);
 }
@@ -364,7 +364,7 @@ static void
 mdhost_self_change_to_readonly(void)
 {
 	localhost_is_readonly = 1;
-	gflog_warning(GFARM_MSG_UNFIXED,
+	gflog_warning(GFARM_MSG_1002926,
 	    "changed to read-only mode");
 }
 
@@ -545,7 +545,7 @@ void
 mdhost_disconnect(struct mdhost *m, struct peer *peer)
 {
 	if (abstract_host_get_peer_unlocked(mdhost_to_abstract_host(m)) != NULL)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002927,
 		    "disconnect gfmd %s", mdhost_get_name(m));
 	return (abstract_host_disconnect(&m->ah, peer, MDHOST_MUTEX_DIAG));
 }
@@ -599,13 +599,13 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	mh = mdhost_new(ms);
 	if (mh == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002928,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 	if (gfarm_get_metadb_replication_enabled() &&
 	    (e = mdcluster_get_or_create_by_mdhost(mh)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002929,
 		    "%s", gfarm_error_string(e));
 		free(mh);
 		return (e);
@@ -615,13 +615,13 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 	    sizeof(struct mdhost *), &created);
 	if (entry == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002930,
 		    "%s", gfarm_error_string(e));
 		free(mh);
 		return (e);
 	}
 	if (!created) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002931,
 		    "Entry %s already exists", ms->name);
 		free(mh);
 		return (GFARM_ERR_ALREADY_EXISTS);
@@ -671,7 +671,7 @@ mdhost_add_one(void *closure, struct gfarm_metadb_server *ms)
 	gfarm_error_t e = mdhost_enter(ms, NULL);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1002932,
 		    "mdhost_add_one: %s", gfarm_error_string(e));
 }
 
@@ -702,7 +702,7 @@ mdhost_remove_in_cache(const char *name)
 	m = mdhost_lookup(name);
 	if (m == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002933,
 		    "%s: %s", gfarm_error_string(e), name);
 		return (e);
 	}
@@ -762,7 +762,7 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 
 	if (match == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1002934,
 		    "%s", gfarm_error_string(e));
 	} else {
 		i = 0;
@@ -778,7 +778,7 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 	}
 	e2 = gfm_server_put_reply(peer, diag, e, "i", nmatch);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002935,
 		    "%s: gfm_server_put_reply: %s",
 		    diag, gfarm_error_string(e2));
 	} else if (e == GFARM_ERR_NO_ERROR) {
@@ -787,7 +787,7 @@ metadb_server_get0(struct peer *peer, int (*match_op)(
 			mh = match[i];
 			if ((e2 = metadb_server_reply(mh, peer))
 			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002936,
 				    "%s: metadb_server_reply: %s",
 				    diag, gfarm_error_string(e));
 				break;
@@ -808,7 +808,7 @@ metadb_server_get(struct peer *peer, int (*match_op)(
 	if (!gfarm_get_metadb_replication_enabled()) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		(void)gfm_server_put_reply(peer, diag, e, "");
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002937,
 		    "%s: gfm_server_put_reply: %s",
 		    diag, gfarm_error_string(e));
 		return (e);
@@ -842,7 +842,7 @@ gfm_server_metadb_server_get(struct peer *peer, int from_client, int skip)
 
 	if ((e = gfm_server_get_request(peer, diag, "s", &name))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002938,
 		    "%s: get_request failure: %s",
 		    diag, gfarm_error_string(e));
 	}
@@ -887,7 +887,7 @@ metadb_server_recv(struct peer *peer, struct gfarm_metadb_server *ms)
 	if ((e = gfm_server_get_request(peer, diag, "sisi",
 	    &ms->name, &ms->port, &ms->clustername, &ms->flags))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002939,
 		    "get_request failure: %s",
 		    gfarm_error_string(e));
 	}
@@ -898,24 +898,24 @@ static gfarm_error_t
 metadb_server_verify(struct gfarm_metadb_server *ms, const char *diag)
 {
 	if (ms->name == NULL || strlen(ms->name) == 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: name is empty",
+		gflog_debug(GFARM_MSG_1002940, "%s: name is empty",
 		    diag);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (strlen(ms->name) > GFARM_HOST_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: too long hostname: %s",
+		gflog_debug(GFARM_MSG_1002941, "%s: too long hostname: %s",
 		    diag, ms->name);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (ms->clustername &&
 	    strlen(ms->clustername) > GFARM_CLUSTER_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002942,
 		    "%s: %s: too long clustername: %s",
 		    diag, ms->name, ms->clustername);
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (ms->port <= 0 || ms->port >= 65536) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002943,
 		    "%s: %s: invalid port number: %d",
 		    diag, ms->name, ms->port);
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -938,7 +938,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 		mdhost_set_is_default_master(mh, 0);
 		ms = db_mdhost_dup(&mh->ms, sizeof(*ms));
 		if ((e = db_mdhost_modify(ms, 0)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002944,
 			    "%s: db_mdhost_modify failed: %s", diag,
 			    gfarm_error_string(e));
 			return (e);
@@ -960,7 +960,7 @@ mdhost_updated(void)
 	GFARM_MALLOC_ARRAY(mss, n);
 	if (mss == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002945,
 		    "mdhost_updated: %s", gfarm_error_string(e));
 		return (e);
 	}
@@ -984,17 +984,17 @@ mdhost_db_modify_default_master(struct mdhost *mh,
 	gfarm_error_t e;
 
 	if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "db_begin failed: %s",
+		gflog_error(GFARM_MSG_1002946, "db_begin failed: %s",
 		    gfarm_error_string(e));
 	} else if ((e = db_mdhost_modify(ms, 0)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "db_mdhost_modify failed: %s",
+		gflog_error(GFARM_MSG_1002947, "db_mdhost_modify failed: %s",
 		    gfarm_error_string(e));
 	} else if ((e = mdhost_fix_default_master(mh, diag))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "db_mdhost_modify failed: %s",
+		gflog_error(GFARM_MSG_1002948, "db_mdhost_modify failed: %s",
 		    gfarm_error_string(e));
 	} else if ((e = db_end(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "db_end failed: %s",
+		gflog_error(GFARM_MSG_1002949, "db_end failed: %s",
 		    gfarm_error_string(e));
 	}
 	return (e);
@@ -1013,7 +1013,7 @@ mdhost_set_self_as_default_master(void)
 	    GFARM_ERR_NO_ERROR)
 		;
 	else if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED, "%s: mdhost_updated: %s",
+		gflog_error(GFARM_MSG_1002950, "%s: mdhost_updated: %s",
 		    diag, gfarm_error_string(e));
 }
 
@@ -1026,7 +1026,7 @@ metadb_server_check_write_access(struct peer *peer, int from_client,
 
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002951,
 		    "%s: %s", diag, gfarm_error_string(e));
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -1042,7 +1042,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_SET";
 
 	if ((e = metadb_server_recv(peer, &ms)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002952,
 		    "metadb_server_recv failure: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -1062,7 +1062,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if (mdhost_lookup(ms.name)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002953,
 		    "mdhost already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if ((e = metadb_server_verify(&ms, diag))
@@ -1072,20 +1072,20 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 		/* nothing to do */
 	} else if (isdm) {
 		if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002954,
 			    "db_begin failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = db_mdhost_add(&ms)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002955,
 			    "db_mdhost_add failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = mdhost_fix_default_master(mh, diag))
 		    != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002956,
 			    "db_mdhost_modify failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = db_end(diag)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1002957,
 			    "db_end failed: %s",
 			    gfarm_error_string(e));
 		}
@@ -1095,7 +1095,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 			ms.name = ms.clustername = NULL;
 		}
 	} else if ((e = db_mdhost_add(&ms)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002958,
 		    "db_mdhost_add failed: %s",
 		    gfarm_error_string(e));
 		mdhost_remove_in_cache(ms.name);
@@ -1106,7 +1106,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	if (e == GFARM_ERR_NO_ERROR)
 		mdhost_updated();
 	else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002959,
 		    "error occurred during process: %s",
 		    gfarm_error_string(e));
 		gfarm_metadb_server_free(&ms);
@@ -1125,7 +1125,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_MODIFY";
 
 	if ((e = metadb_server_recv(peer, &ms)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002960,
 		    "metadb_server_recv failure: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -1145,13 +1145,13 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	    != GFARM_ERR_NO_ERROR) {
 		/* nothing to do */
 	} else if ((mh = mdhost_lookup(ms.name)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002961,
 		    "mdhost not found: %s", ms.name);
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (mdhost_is_default_master(mh) &&
 	    !gfarm_metadb_server_is_default_master(&ms)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002962,
 		    "cannot toggle off default master flag directly: %s",
 		    ms.name);
 	} else
@@ -1162,7 +1162,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	if (isdm) {
 		e = mdhost_db_modify_default_master(mh, &ms, diag);
 	} else if ((e = db_mdhost_modify(&ms, 0)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002963,
 		    "db_mdhost_modify failed: %s",
 		    gfarm_error_string(e));
 	}
@@ -1170,7 +1170,7 @@ unlock:
 	if (e == GFARM_ERR_NO_ERROR)
 		mdhost_updated();
 	else {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002964,
 		    "error occurred during process: %s",
 		    gfarm_error_string(e));
 	}
@@ -1189,7 +1189,7 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 
 	if ((e = gfm_server_get_request(peer, diag, "s", &name))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002965,
 		    "get_request failure: %s",
 		    gfarm_error_string(e));
 	}
@@ -1208,18 +1208,18 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 		/* nothing to do */
 	} else if ((mh = mdhost_lookup(name)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002966,
 		    "%s: %s: %s", diag, gfarm_error_string(e), name);
 	} else if (mh == mdhost_lookup_self()) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002967,
 		    "%s: cannot remove self host", diag);
 	} else if ((e = mdhost_remove_in_cache(name)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002968,
 		    "%s: mdhost_remove_in_cache(%s) failed: %s",
 		    diag, name, gfarm_error_string(e));
 	} else if ((e = db_mdhost_remove(name)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002969,
 		    "%s: db_mdhost_remove(%s) failed: %s",
 		    diag, name, gfarm_error_string(e));
 	}
@@ -1246,13 +1246,13 @@ mdhost_init(void)
 	    gfarm_hash_table_alloc(MDHOST_HASHTAB_SIZE,
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (mdhost_hashtab == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002970,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 
 	if (gfarm_get_metadb_replication_enabled()) {
 		e = db_mdhost_load(NULL, mdhost_add_one);
 		if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002971,
 			    "%s", gfarm_error_string(e));
 	}
 	if ((self = mdhost_lookup(gfarm_metadb_server_name)) == NULL) {
@@ -1266,14 +1266,14 @@ mdhost_init(void)
 		gfarm_metadb_server_set_is_master_candidate(&ms, 1);
 		gfarm_metadb_server_set_is_default_master(&ms, 1);
 		if ((e = mdhost_enter(&ms, &self)) != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002972,
 			    "Failed to add self mdhost");
 		else if (gfarm_get_metadb_replication_enabled()) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1002973,
 			    "mdhost '%s' not found, creating...",
 			    gfarm_metadb_server_name);
 			if ((e = db_mdhost_add(&ms)) != GFARM_ERR_NO_ERROR)
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1002974,
 				    "Failed to add self mdhost");
 		}
 	}
@@ -1290,7 +1290,7 @@ mdhost_init(void)
 			localhost_is_readonly = 1;
 		db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
 		if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1002975,
 			    "Failed to update mdhost: %s",
 			    gfarm_error_string(e));
 	}

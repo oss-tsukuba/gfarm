@@ -177,7 +177,7 @@ gfarm_error_t
 gfp_xdr_recvbuffer_check_size(struct gfp_xdr *conn, int size)
 {
 	if (size > gfarm_iobuffer_get_size(conn->recvbuffer)) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1002558,
 		    "%s", gfarm_error_string(GFARM_ERR_INTERNAL_ERROR));
 		return (GFARM_ERR_INTERNAL_ERROR);
 	} else if (size > gfarm_iobuffer_avail_length(conn->recvbuffer))
@@ -900,7 +900,7 @@ gfp_xdr_recv_notimeout(struct gfp_xdr *conn, int just,
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002559,
 			"gfp_xdr_vrecv_sized_x() failed: %s",
 			gfarm_error_string(e));
 		return (e);

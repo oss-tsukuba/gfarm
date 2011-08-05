@@ -55,7 +55,7 @@ acl_convert_for_setxattr_internal(
 
 	e = gfs_acl_from_xattr_value(in_value, in_size, &acl);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002854,
 			    "gfs_acl_from_xattr_value() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
@@ -64,7 +64,7 @@ acl_convert_for_setxattr_internal(
 	if (check_validity) {
 		e = gfs_acl_check(acl, NULL, &acl_check_err);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1002855,
 				    "gfs_acl_check() failed by %s: %s",
 				     user_name(inode_get_user(inode)),
 				    gfs_acl_error(acl_check_err));
@@ -93,7 +93,7 @@ acl_convert_for_setxattr_internal(
 		case GFARM_ACL_USER:
 			gfs_acl_get_qualifier(ent, &qual);
 			if ((u = user_lookup(qual)) == NULL) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002856,
 					    "unknown user: %s", qual);
 				gfs_acl_free(acl);
 				return (GFARM_ERR_NO_SUCH_USER);
@@ -103,7 +103,7 @@ acl_convert_for_setxattr_internal(
 		case GFARM_ACL_GROUP:
 			gfs_acl_get_qualifier(ent, &qual);
 			if ((g = group_lookup(qual)) == NULL) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1002857,
 					    "unknown group: %s", qual);
 				gfs_acl_free(acl);
 				return (GFARM_ERR_NO_SUCH_GROUP);
@@ -113,7 +113,7 @@ acl_convert_for_setxattr_internal(
 		e = gfs_acl_get_entry(acl, GFARM_ACL_NEXT_ENTRY, &ent);
 	}
 	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002858,
 			    "gfs_acl_get_entry() failed: %s",
 			    gfarm_error_string(e));
 		gfs_acl_free(acl);
@@ -129,7 +129,7 @@ acl_convert_for_setxattr_internal(
 			e = inode_set_mode(
 				inode, (old_mode & 07000) | (old_mode & mode));
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002859,
 				    "inode_set_mode() failed: %s",
 				    gfarm_error_string(e));
 			gfs_acl_free(acl);
@@ -139,7 +139,7 @@ acl_convert_for_setxattr_internal(
 		/* GFARM_ACL_TYPE_ACCESS has extended ACL only */
 		e = gfs_acl_delete_mode(acl);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002860,
 				    "gfs_acl_delete_mode() failed: %s",
 				    gfarm_error_string(e));
 			gfs_acl_free(acl);
@@ -149,7 +149,7 @@ acl_convert_for_setxattr_internal(
 
 	e = gfs_acl_to_xattr_value(acl, out_valuep, out_sizep);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002861,
 			    "gfs_acl_to_xattr_value() failed: %s",
 			    gfarm_error_string(e));
 		gfs_acl_free(acl);
@@ -173,7 +173,7 @@ acl_convert_for_setxattr(
 		inode, type, *valuep, *sizep, &out_value, &out_size,
 		REPLACE_MODE_T, CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002862,
 			    "acl_convert_for_setxattr_internal() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
@@ -206,7 +206,7 @@ acl_convert_for_getxattr(
 	/* GFARM_ACL_EA_ACCESS */
 	e = gfs_acl_from_xattr_value(*valuep, *sizep, &acl);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002863,
 			    "gfs_acl_from_xattr_value(%s): %s",
 			    name, gfarm_error_string(e));
 		return (e);
@@ -252,7 +252,7 @@ acl_convert_for_getxattr(
 		int acl_check_err;
 		e = gfs_acl_check(acl, NULL, &acl_check_err);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002864,
 				    "gfs_acl_check(%s): %s",
 				    name, gfs_acl_error(acl_check_err));
 			gfs_acl_free(acl);
@@ -263,7 +263,7 @@ acl_convert_for_getxattr(
 
 	e = gfs_acl_to_xattr_value(acl, &acl_value, &acl_size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002865,
 			    "gfs_acl_to_xattr_value(%s): %s",
 			    name, gfarm_error_string(e));
 		gfs_acl_free(acl);
@@ -295,7 +295,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 	if (e == GFARM_ERR_NO_SUCH_OBJECT || *acl_def_p == NULL)
 		return (GFARM_ERR_NO_ERROR);  /* not inherit */
 	else if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002866,
 			    "inode_xattr_get_cache(%s) failed: %s",
 			    GFARM_ACL_EA_DEFAULT, gfarm_error_string(e));
 		return (e);
@@ -306,7 +306,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 		acl_acc_p, acl_acc_size_p,
 		!REPLACE_MODE_T, !CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002867,
 			    "acl_convert_for_setxattr_internal() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
@@ -314,7 +314,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 	e = inode_xattr_add(child, 0, GFARM_ACL_EA_ACCESS,
 			    *acl_acc_p, *acl_acc_size_p);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002868,
 			    "inode_xattr_add(%lld): %s",
 			    (unsigned long long)inode_get_number(child),
 			    gfarm_error_string(e));
@@ -326,7 +326,7 @@ acl_inherit_default_acl(struct inode *parent, struct inode *child,
 		e = inode_xattr_add(child, 0, GFARM_ACL_EA_DEFAULT,
 				    *acl_def_p, *acl_def_size_p);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1002869,
 				    "inode_xattr_add(%lld): %s",
 				    (unsigned long long)
 				    inode_get_number(child),
@@ -383,7 +383,7 @@ acl_access(struct inode *inode, struct user *user, int op)
 	e = inode_xattr_get_cache(inode, 0, GFARM_ACL_EA_ACCESS,
 				  &value, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002870,
 			    "inode_xattr_get_cache(%s) failed: %s",
 			    GFARM_ACL_EA_ACCESS, gfarm_error_string(e));
 		return (e);
@@ -398,7 +398,7 @@ acl_access(struct inode *inode, struct user *user, int op)
 	e = gfs_acl_from_xattr_value(value, size, &acl);
 	free(value);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002871,
 			    "gfs_acl_from_xattr_value() failed: %s",
 			    gfarm_error_string(e));
 		return (e);
@@ -425,7 +425,7 @@ acl_access(struct inode *inode, struct user *user, int op)
 	}
 	gfs_acl_free(acl);
 	if (e != GFARM_ERR_NO_SUCH_OBJECT && e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002872,
 			    "gfs_acl_get_entry() failed: %s",
 			    gfarm_error_string(e));
 		return (e);

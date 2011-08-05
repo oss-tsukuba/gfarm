@@ -350,7 +350,7 @@ db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 	gfarm_uint64_t seqnum;
 
 	if (with_seqnum > 0 && mdhost_self_is_readonly()) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003018,
 		    "currently in read-only mode");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
@@ -561,7 +561,7 @@ db_host_modify(const struct gfarm_host_info *hi,
 	    add_count, add_aliases, del_count, del_aliases);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003019,
 		    "db_host_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -649,7 +649,7 @@ db_user_modify(const struct gfarm_user_info *ui, int modflags)
 	    ui, modflags);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003020,
 		    "db_user_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -800,7 +800,7 @@ db_group_modify(const struct gfarm_group_info *gi, int modflags,
 	    gi, modflags, add_count, add_users, del_count, del_users);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003021,
 		    "db_group_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -980,7 +980,7 @@ db_inode_user_modify(gfarm_ino_t inum, const char *user)
 	    db_inode_string_modify_arg_alloc(inum, user);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003022,
 		    "db_inode_string_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -994,7 +994,7 @@ db_inode_group_modify(gfarm_ino_t inum, const char *group)
 	    db_inode_string_modify_arg_alloc(inum, group);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003023,
 		    "db_inode_string_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1745,7 +1745,7 @@ db_mdhost_dup(const struct gfarm_metadb_server *ms, size_t size)
 	if (!overflow)
 		r = malloc(sz);
 	if (overflow || r == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003024,
 		    "allocation of 'gfarm_metadb_server' failed or overflow");
 		return (NULL);
 	}
@@ -1766,7 +1766,7 @@ db_mdhost_add(const struct gfarm_metadb_server *ms)
 	struct gfarm_metadb_server *m = db_mdhost_dup(ms, sizeof(*ms));
 
 	if (m == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "db_mdhost_dup() failed");
+		gflog_debug(GFARM_MSG_1003025, "db_mdhost_dup() failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	return (db_enter_sn((dbq_entry_func_t)ops->mdhost_add, m));
@@ -1790,7 +1790,7 @@ db_mdhost_modify(const struct gfarm_metadb_server *ms, int modflags)
 	    ms, modflags);
 
 	if (arg == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003026,
 		    "db_mdhost_modify_arg_alloc failed");
 		return (GFARM_ERR_NO_MEMORY);
 	}

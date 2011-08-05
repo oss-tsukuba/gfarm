@@ -14,7 +14,7 @@ gfm_rename_request(struct gfm_connection *gfm_server, void *closure,
 {
 	gfarm_error_t e = gfm_client_rename_request(gfm_server, sname, dname);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002670,
 		    "rename(%s, %s) request: %s", sname, dname,
 		    gfarm_error_string(e));
 	return (e);
@@ -25,7 +25,7 @@ gfm_rename_result(struct gfm_connection *gfm_server, void *closure)
 {
 	gfarm_error_t e = gfm_client_rename_result(gfm_server);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002671,
 		    "rename result: %s",
 		    gfarm_error_string(e));
 	return (e);
