@@ -1325,6 +1325,7 @@ This parameter is only available in gfmd.conf.
 </listitem>
 </varlistentry>
 
+<!--
 <varlistentry>
 <term><token>metadb_server_force_slave</token> <parameter>validity</parameter></term>
 <listitem>
@@ -1345,6 +1346,7 @@ This parameter is only available in gfmd.conf.
 </literallayout>
 </listitem>
 </varlistentry>
+ -->
 
 <varlistentry>
 <term><token>metadb_server_slave_max_size</token> <parameter>number</parameter></term>
@@ -1463,7 +1465,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; | -->
 		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;
@@ -1561,7 +1563,7 @@ notation.</para>
 	&lt;metadb_replication_statement&gt; ::= "metadb_replication" &lt;validity&gt;
 	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
 	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
-	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
+<!--	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt; -->
 	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
 	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
 	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
