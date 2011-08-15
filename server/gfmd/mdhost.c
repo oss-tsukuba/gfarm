@@ -214,7 +214,7 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
-		if (m != self && func(m, closure) == 0)
+		if (mdhost_is_valid(m) && m != self && func(m, closure) == 0)
 			break;
 	}
 }
@@ -495,7 +495,7 @@ mdhost_lookup_metadb_server(struct gfarm_metadb_server *ms)
 	mdhost_global_mutex_lock(diag);
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
-		if (&m->ms == ms) {
+		if (mdhost_is_valid(m) && &m->ms == ms) {
 			mm = m;
 			break;
 		}
@@ -514,7 +514,7 @@ mdhost_lookup_master(void)
 	mdhost_global_mutex_lock(diag);
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
-		if (mdhost_is_master(m)) {
+		if (mdhost_is_valid(m) && mdhost_is_master(m)) {
 			mm = m;
 			break;
 		}
@@ -558,6 +558,8 @@ mdhost_set_self_as_master(void)
 
 	FOREACH_MDHOST(it) {
 		m = mdhost_iterator_access(&it);
+		if (!mdhost_is_valid(m))
+			continue;
 		if (mdhost_is_master(m))
 			mdhost_disconnect(m, NULL);
 		gfarm_metadb_server_set_is_master(&m->ms, m == s);
@@ -659,6 +661,8 @@ mdhost_has_async_replication_target(void)
 		return (0);
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
+		if (!mdhost_is_valid(mh))
+			continue;
 		if (mh != mmh && !mdhost_is_sync_replication(mh))
 			return (1);
 	}
@@ -933,6 +937,8 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
+		if (!mdhost_is_valid(mh))
+			continue;
 		if (mh == new_mmh || !mdhost_is_default_master(mh))
 			continue;
 		mdhost_set_is_default_master(mh, 0);
@@ -967,10 +973,11 @@ mdhost_updated(void)
 	i = 0;
 	FOREACH_MDHOST(it) {
 		mh = mdhost_iterator_access(&it);
-		mss[i++] = &mh->ms;
+		if (mdhost_is_valid(mh) && i < n)
+			mss[i++] = &mh->ms;
 	}
 	fs = gfarm_filesystem_get_default();
-	gfarm_filesystem_set_metadb_server_list(fs, mss, n);
+	gfarm_filesystem_set_metadb_server_list(fs, mss, i);
 	free(mss);
 	gfmdc_alloc_journal_sync_info_closures();
 
@@ -1283,6 +1290,8 @@ mdhost_init(void)
 	if (gfarm_get_metadb_replication_enabled()) {
 		FOREACH_MDHOST(it) {
 			mh = mdhost_iterator_access(&it);
+			if (!mdhost_is_valid(mh))
+				continue;
 			if (mdhost_is_default_master(mh)) {
 				mdhost_set_is_master(mh, 1);
 				break;
