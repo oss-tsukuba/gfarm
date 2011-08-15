@@ -3326,6 +3326,7 @@ struct db_journal_rec {
 
 GFARM_STAILQ_HEAD(db_journal_rec_list, db_journal_rec);
 
+/* PREREQUISITE: journal_file_mutex */
 static gfarm_error_t
 db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *obj, void *closure, size_t length,
@@ -3375,7 +3376,8 @@ retry:
 			goto end;
 	}
 
-	journal_file_reader_commit_pos(journal_file_main_reader(self_jf));
+	journal_file_reader_commit_pos_unlocked(
+		journal_file_main_reader(self_jf));
 
 	GFARM_STAILQ_FOREACH(ai, c, next) {
 		if ((e = db_journal_ops_call(journal_apply_ops, ai->seqnum,
@@ -3406,7 +3408,8 @@ db_journal_read(struct journal_file_reader *reader, void *op_arg,
 void
 db_journal_wait_for_apply_thread(void)
 {
-	journal_file_wait_for_read_completion(journal_file_main_reader(self_jf));
+	journal_file_wait_for_read_completion(
+		journal_file_main_reader(self_jf));
 }
 
 static gfarm_error_t

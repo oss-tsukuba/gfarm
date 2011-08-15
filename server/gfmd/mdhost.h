@@ -19,6 +19,7 @@ struct mdhost *mdhost_lookup_self(void);
 void mdhost_foreach(int (*)(struct mdhost *, void *), void *);
 int mdhost_self_is_master(void);
 int mdhost_self_is_readonly(void);
+int mdhost_self_is_readonly_unlocked(void);
 
 struct peer;
 gfarm_error_t gfm_server_metadb_server_get(struct peer *, int, int);

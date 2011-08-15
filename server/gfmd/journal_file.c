@@ -94,7 +94,7 @@ struct journal_file {
 	off_t tail;
 	int wait_until_nonempty;
 	pthread_cond_t nonfull_cond, nonempty_cond, drain_cond;
-	pthread_mutex_t mutex, pos_mutex;
+	pthread_mutex_t mutex;
 };
 
 #define JOURNAL_READER_LIST_HEAD(j) (&(j)->reader_list)
@@ -195,18 +195,6 @@ journal_file_mutex_unlock(struct journal_file *jf, const char *diag)
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
 }
 
-static void
-journal_file_pos_mutex_lock(struct journal_file *jf, const char *diag)
-{
-	gfarm_mutex_lock(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
-}
-
-static void
-journal_file_pos_mutex_unlock(struct journal_file *jf, const char *diag)
-{
-	gfarm_mutex_unlock(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
-}
-
 int
 journal_file_is_waiting_until_nonempty(struct journal_file *jf)
 {
@@ -284,6 +272,12 @@ journal_file_reader_xdr(struct journal_file_reader *reader)
 	return (reader->xdr);
 }
 
+static off_t
+journal_file_reader_cache_pos_unlocked(struct journal_file_reader *reader)
+{
+	return (reader->pos - reader->cache_size);
+}
+
 off_t
 journal_file_reader_cache_pos(struct journal_file_reader *reader)
 {
@@ -291,10 +285,17 @@ journal_file_reader_cache_pos(struct journal_file_reader *reader)
 	static const char *diag = "journal_file_reader_cache_pos";
 	off_t p;
 
-	journal_file_pos_mutex_lock(jf, diag);
-	p = reader->pos - reader->cache_size;
-	journal_file_pos_mutex_unlock(jf, diag);
+	journal_file_mutex_lock(jf, diag);
+	p = journal_file_reader_cache_pos_unlocked(reader);
+	journal_file_mutex_unlock(jf, diag);
 	return (p);
+}
+
+void
+journal_file_reader_commit_pos_unlocked(struct journal_file_reader *reader)
+{
+	reader->pos = reader->la_pos;
+	reader->cache_size = reader->la_cache_size;
 }
 
 void
@@ -303,10 +304,9 @@ journal_file_reader_commit_pos(struct journal_file_reader *reader)
 	struct journal_file *jf = reader->file;
 	static const char *diag = "journal_file_reader_commit_pos";
 
-	journal_file_pos_mutex_lock(jf, diag);
-	reader->pos = reader->la_pos;
-	reader->cache_size = reader->la_cache_size;
-	journal_file_pos_mutex_unlock(jf, diag);
+	journal_file_mutex_lock(jf, diag);
+	journal_file_reader_commit_pos_unlocked(reader);
+	journal_file_mutex_unlock(jf, diag);
 }
 
 int
@@ -601,7 +601,7 @@ static int
 journal_file_reader_needs_wait(struct journal_file_reader *reader,
 	off_t wpos, size_t rec_len, size_t max_size)
 {
-	off_t cpos = journal_file_reader_cache_pos(reader);
+	off_t cpos = journal_file_reader_cache_pos_unlocked(reader);
 
 	/*
 	 * (wpos < cpos && wpos + rec_len > cpos)
@@ -644,7 +644,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		}
 		return (GFARM_ERR_NO_ERROR);
 	}
-	rpos = journal_file_reader_cache_pos(reader);
+	rpos = journal_file_reader_cache_pos_unlocked(reader);
 	npos = wpos + rec_len;
 	if (npos < max_size) {
 		/* 0        w   r   n       max_size
@@ -1197,7 +1197,6 @@ journal_file_open(const char *path, size_t max_size,
 	gfarm_cond_init(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	gfarm_cond_init(&jf->drain_cond, diag, JOURNAL_FILE_STR);
 	gfarm_mutex_init(&jf->mutex, diag, JOURNAL_FILE_STR);
-	gfarm_mutex_init(&jf->pos_mutex, diag, JOURNAL_FILE_STR);
 	jf->wait_until_nonempty = 0;
 	*jfp = jf;
 

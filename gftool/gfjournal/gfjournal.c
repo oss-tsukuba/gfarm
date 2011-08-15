@@ -44,7 +44,7 @@ static struct journal_file_reader *reader;
 const struct db_ops db_journal_apply_ops;
 /* dummy definition to link successfully without mdhost.o */
 void mdhost_self_is_master(void) {}
-void mdhost_self_is_readonly(void) {}
+void mdhost_self_is_readonly_unlocked(void) {}
 
 static void
 usage(void)
