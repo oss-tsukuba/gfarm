@@ -342,6 +342,7 @@ t_write_cyclic(void)
 		free(t_user_infos[i]);
 }
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static int t_write_blocked_num_rec_write = 0;
 static int t_write_blocked_num_rec_read = 0;
 
@@ -367,10 +368,11 @@ t_write_add_op(void *arg)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(seqnum++, ui));
+		pthread_mutex_lock(&mutex);
 		++t_write_blocked_num_rec_write;
+		pthread_mutex_unlock(&mutex);
 	}
-
-	return (NULL);
+	pthread_exit(NULL);
 }
 
 static gfarm_error_t
@@ -399,13 +401,15 @@ t_write_blocked(void)
 	    &write_th, NULL, &t_write_add_op, NULL) == 0);
 	ts.tv_sec = 0;
 	ts.tv_nsec = 200 * 1000 * 1000;
-	nanosleep(&ts, NULL);
+	nanosleep(&ts, NULL);	/* XXX need to investigate more portable way */
 
 	/* |user1|user2|user3|  |
 	 * r                 w
 	 */
+	pthread_mutex_lock(&mutex);
 	TEST_ASSERT_I("t_write_blocked_num_rec_write",
 	    3, t_write_blocked_num_rec_write);
+	pthread_mutex_unlock(&mutex);
 	reader = journal_file_main_reader(self_jf);
 	for (i = 0; i < 2; ++i) {
 		TEST_ASSERT_NOERR("db_journal_read",
@@ -418,12 +422,14 @@ t_write_blocked(void)
 	 */
 	TEST_ASSERT_I("t_write_blocked_num_rec_read",
 	    2, t_write_blocked_num_rec_read);
-	nanosleep(&ts, NULL);
+	pthread_join(write_th, NULL);
 	/* |user4|user5|user3|  |
 	 *             wr
 	 */
+	pthread_mutex_lock(&mutex);
 	TEST_ASSERT_I("t_write_blocked_num_rec_write",
 	    5, t_write_blocked_num_rec_write);
+	pthread_mutex_unlock(&mutex);
 }
 
 void
