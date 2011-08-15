@@ -1041,6 +1041,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 	int isdm;
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_SET";
 
+	memset(&ms, 0, sizeof(ms));
 	if ((e = metadb_server_recv(peer, &ms)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002952,
 		    "metadb_server_recv failure: %s",
@@ -1082,7 +1083,7 @@ gfm_server_metadb_server_set(struct peer *peer, int from_client, int skip)
 		} else if ((e = mdhost_fix_default_master(mh, diag))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002956,
-			    "db_mdhost_modify failed: %s",
+			    "db_mdhost_fix_default_master failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = db_end(diag)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002957,
@@ -1124,6 +1125,7 @@ gfm_server_metadb_server_modify(struct peer *peer, int from_client, int skip)
 	int isdm;
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_MODIFY";
 
+	memset(&ms, 0, sizeof(ms));
 	if ((e = metadb_server_recv(peer, &ms)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002960,
 		    "metadb_server_recv failure: %s",
