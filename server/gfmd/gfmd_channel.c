@@ -728,12 +728,16 @@ gfmdc_journal_asyncsend_thread(void *arg)
 	ts.tv_nsec = 500 * 1000 * 1000;
 
 	for (;;) {
+		gfarm_mutex_lock(&journal_sync_info.async_mutex, diag,
+		    ASYNC_MUTEX_DIAG);
 		while (!mdhost_has_async_replication_target()) {
 			gfarm_cond_wait(&journal_sync_info.async_wait_cond,
 			    &journal_sync_info.async_mutex,
 			    diag, ASYNC_WAIT_COND_DIAG);
 		}
 		mdhost_foreach(gfmdc_journal_asyncsend_each_mdhost, NULL);
+		gfarm_mutex_unlock(&journal_sync_info.async_mutex, diag,
+		    ASYNC_MUTEX_DIAG);
 		nanosleep(&ts, NULL);
 	}
 	return (NULL);
