@@ -427,17 +427,16 @@ static gfarm_error_t
 journal_write_zeros(int fd, size_t len)
 {
 	char buf[JOURNAL_BUFSIZE];
-	size_t wlen, sz;
+	size_t wlen;
+	ssize_t ssz;
 
 	memset(buf, 0, JOURNAL_BUFSIZE);
-	wlen = len > sizeof(buf) ? sizeof(buf) : len;
 	errno = 0;
 	while (len > 0) {
-		if ((sz = write(fd, buf, wlen)) < 0)
-			return (gfarm_errno_to_error(sz));
-		if (sz == 0)
-			return (GFARM_ERR_NO_ERROR);
-		len -= sz;
+		wlen = len > sizeof(buf) ? sizeof(buf) : len;
+		if ((ssz = write(fd, buf, wlen)) < 0)
+			return (gfarm_errno_to_error(errno));
+		len -= ssz;
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
