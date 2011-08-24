@@ -138,12 +138,12 @@ mdhost_set_is_master(struct mdhost *m, int enable)
 
 	mdhost_mutex_lock(m, diag);
 	gfarm_metadb_server_set_is_master(&m->ms, enable);
+	mdhost_mutex_unlock(m, diag);
 	if (enable) {
 		mdhost_master_mutex_lock(diag);
 		mdhost_master = m;
 		mdhost_master_mutex_unlock(diag);
 	}
-	mdhost_mutex_unlock(m, diag);
 }
 
 int
