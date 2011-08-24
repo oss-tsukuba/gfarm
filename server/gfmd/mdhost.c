@@ -623,7 +623,8 @@ mdhost_set_self_as_master(void)
 		return;
 	}
 	mdhost_disconnect(m, NULL);
-	mdhost_set_is_master(m, m == s);
+	mdhost_set_is_master(m, 0);
+	mdhost_set_is_master(s, 1);
 	mdhost_set_localhost_is_readonly(0);
 }
 
