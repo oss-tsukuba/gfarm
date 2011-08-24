@@ -180,22 +180,35 @@ postgresql)
 	pg_dump=${PGSQL_BINDIR}/pg_dump
 	dropdb=${PGSQL_BINDIR}/dropdb
 	createdb=${PGSQL_BINDIR}/createdb
+	export PGPASSWORD
 
 	case $MODE in
 	    DUMP)
-		update_pgpass_postgresql ${BACKEND_HOST} ${BACKEND_PORT} "${DB_NAME}" "${BACKEND_USER}" "${BACKEND_USER_PASSWD}" || ABORT "aborted"
-		$pg_dump -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER -f $DUMPF $DB_NAME ||
+		PGPASSWORD=$BACKEND_USER_PASSWD
+		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER -f $DUMPF $DB_NAME ||
 			ABORT "pg_dump fails"
 		;;
 	    RESTORE)
 		[ ! -f "$DUMPF" ] &&
 			ABORT "$DUMPF: database dump file not exist"
-		update_pgpass_postgresql localhost ${BACKEND_PORT} "*" "${BACKEND_ADMIN_USER}" "${BACKEND_ADMIN_PASSWD}" || ABORT "aborted"
 		service_ctl gfmd stop
+		PGPASSWORD=$BACKEND_ADMIN_PASSWD
 		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
 		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
 		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
 			ABORT "restore fails"
+
+		XMLATTR_TABLENAME=
+		grep -i 'Name: xmlattr; Type: TABLE' $DUMPF > /dev/null 2>&1
+		[ $? -eq 0 ] && XMLATTR_TABLENAME=xmlattr
+		for I in Host HostAliases GfarmUser GfarmGroup \
+		    GfarmGroupAssignment INode FileInfo FileCopy \
+		    DeadFileCopy DirEntry Symlink QuotaUser \
+		    QuotaGroup SeqNum MdHost XAttr $XMLATTR_TABLENAME
+		do
+			echo "GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE $I TO $BACKEND_USER ;"
+		done | $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
+			ABORT "grant fails"
 		service_ctl gfmd start
 		;;
 	    *)

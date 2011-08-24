@@ -1,3 +1,9 @@
+--
+-- When a table is added to or removed from the file, please update
+-- 'config-gfarm.postgresql' and '../gfdump/gfdump.postgresql.in' too.
+-- The list of table names is written in them.
+--
+
 CREATE TABLE XmlAttr (
 	inumber		INT8		NOT NULL
 		REFERENCES INode(inumber) ON DELETE CASCADE,
