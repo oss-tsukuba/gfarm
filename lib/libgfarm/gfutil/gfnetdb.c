@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <netdb.h>
 
+#include <gfarm/gfarm_config.h>
+
 #include "thrsubr.h"
 #include "gfnetdb.h"
 
@@ -18,9 +20,10 @@ gfarm_getaddrinfo(const char *hostname,
 	struct addrinfo **res)
 {
 	int rv;
-	static const char diag[] = "gfarm_getaddrinfo";
 
 #ifndef HAVE_MTSAFE_NETDB
+	static const char diag[] = "gfarm_getaddrinfo";
+
 	gfarm_mutex_lock(&netdb_mutex, diag, mutex_name);
 #endif
 	rv = getaddrinfo(hostname, servname, hints, res);
@@ -33,9 +36,9 @@ gfarm_getaddrinfo(const char *hostname,
 void
 gfarm_freeaddrinfo(struct addrinfo *ai)
 {
+#ifndef HAVE_MTSAFE_NETDB
 	static const char diag[] = "gfarm_freeaddrinfo";
 
-#ifndef HAVE_MTSAFE_NETDB
 	gfarm_mutex_lock(&netdb_mutex, diag, mutex_name);
 #endif
 	freeaddrinfo(ai);
@@ -50,9 +53,9 @@ gfarm_getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	size_t servlen, int flags)
 {
 	int rv;
+#ifndef HAVE_MTSAFE_NETDB
 	static const char diag[] = "gfarm_getnameinfo";
 
-#ifndef HAVE_MTSAFE_NETDB
 	gfarm_mutex_lock(&netdb_mutex, diag, mutex_name);
 #endif
 	rv = getnameinfo(sa, salen, host, hostlen, serv, servlen, flags);
