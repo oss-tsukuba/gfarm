@@ -1119,7 +1119,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long)
+AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long pthread_barrier_wait)
 
 ### Check epoll_create really implemented
 

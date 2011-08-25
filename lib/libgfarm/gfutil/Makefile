@@ -21,6 +21,7 @@ SRCS =	alloc.c \
 	lru_cache.c \
 	random.c \
 	send_no_sigpipe.c \
+	thrbarrier.c \
 	thrsubr.c \
 	timer.c \
 	timeval.c
@@ -36,6 +37,7 @@ OBJS =	alloc.lo \
 	lru_cache.lo \
 	random.lo \
 	send_no_sigpipe.lo \
+	thrbarrier.lo \
 	thrsubr.lo \
 	timer.lo \
 	timeval.lo
