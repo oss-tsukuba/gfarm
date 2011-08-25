@@ -140,6 +140,9 @@
 /* pthread_attr_setstacksize() exists */
 #undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
 
+/* Define to 1 if you have the `pthread_barrier_wait' function. */
+#undef HAVE_PTHREAD_BARRIER_WAIT
+
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
