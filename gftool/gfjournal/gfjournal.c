@@ -446,7 +446,7 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 		/* offset */
 		off_t c = journal_file_reader_cache_pos(reader);
 		off_t t = journal_file_tail(jf);
-		printf("%10" GFARM_PRId64 " ",  (c + t) % t);
+		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)((c + t) % t));
 	}
 	print_obj(ope, obj);
 	printf("\n");
