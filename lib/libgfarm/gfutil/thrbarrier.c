@@ -4,9 +4,7 @@
 
 #include <gfarm/gfarm.h>
 
-#undef HAVE_PTHREAD_BARRIER_WAIT /* XXX to debug this file */
-
-#include "thrsubr.h"
+#include "thrbarrier.h"
 
 #ifndef HAVE_PTHREAD_BARRIER_WAIT
 /*
