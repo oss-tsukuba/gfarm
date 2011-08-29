@@ -1116,31 +1116,6 @@ wait_transform_to_master(void)
 	return (open_accepting_socket(gfarm_metadb_server_port));
 }
 
-static int
-mdcluster_foreach_select_master(struct mdhost *mh, void *closure)
-{
-	struct mdhost **mhp = closure;
-
-	if ((*mhp) != mh) {
-		*mhp = mh;
-		return (0);
-	}
-	return (1);
-}
-
-static void
-select_master(void)
-{
-	struct mdhost *self = mdhost_lookup_self(), *mh = self;
-
-	mdcluster_foreach_mdhost(mdhost_get_cluster(self),
-		mdcluster_foreach_select_master, &mh);
-	if (self != mh) {
-		mdhost_set_is_master(self, 0);
-		mdhost_set_is_master(mh, 1);
-	}
-}
-
 static void
 dummy_sighandler(int signo)
 {
@@ -1532,9 +1507,6 @@ main(int argc, char **argv)
 	if (port_number != NULL)
 		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	if (gfarm_get_metadb_replication_enabled()) {
-		if (mdhost_self_is_master() &&
-		    gfarm_get_metadb_server_force_slave())
-			select_master();
 		is_master = mdhost_self_is_master();
 		gflog_info(GFARM_MSG_1002737,
 		    "metadata replication %s mode",

@@ -922,6 +922,12 @@ gfarm_get_metadb_server_force_slave(void)
 	return (metadb_server_force_slave);
 }
 
+void
+gfarm_set_metadb_server_force_slave(int slave)
+{
+	metadb_server_force_slave = slave;
+}
+
 /*
  * get (almost) shell style token.
  * e.g.

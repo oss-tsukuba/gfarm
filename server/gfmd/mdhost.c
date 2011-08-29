@@ -128,6 +128,8 @@ mdhost_is_master(struct mdhost *m)
 	mdhost_mutex_lock(m, diag);
 	is_master = gfarm_metadb_server_is_master(&m->ms);
 	mdhost_mutex_unlock(m, diag);
+	if (gfarm_get_metadb_server_force_slave() && m == mdhost_lookup_self())
+		is_master = 0;
 	return (is_master);
 }
 
@@ -615,6 +617,9 @@ void
 mdhost_set_self_as_master(void)
 {
 	struct mdhost *m, *s = mdhost_lookup_self();
+
+	/* stop "force_slave" mode at first */
+	gfarm_set_metadb_server_force_slave(0);
 
 	m = mdhost_lookup_master();
 	if (m == NULL) {
