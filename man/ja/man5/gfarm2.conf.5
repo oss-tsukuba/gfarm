@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "05 August 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "30 August 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -871,6 +871,20 @@ Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
 	synchronous_journaling disable
 .fi
 .TP
+\fBmetadb_server_force_slave \fI有効性\fB\fR
+enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。
+デフォルトはdisableです。
+
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+
+この文はgfmd.confのみで有効です。
+
+例:
+
+.nf
+	metadb_server_force_slave enable
+.fi
+.TP
 \fBmetadb_server_slave_max_size \fIノード数\fB\fR
 スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
 
@@ -965,6 +979,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_replication_statement> |
 		\~\~<synchronous_replication_timeout_statement> |
 		\~\~<synchronous_journaling_statement> |
+		\~\~<metadb_server_force_slave_statement> |
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement>
@@ -1048,6 +1063,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<metadb_replication_statement> ::= "metadb_replication" <validity>
 	<synchronous_replication_timeout_statement> ::= "synchronous_replication_timeout" <number>
 	<synchronous_journaling_statement> ::= "synchronous_journaling" <validity>
+	<metadb_server_force_slave_statement> ::= "metadb_server_force_slave" <validity>
 	<metadb_server_slave_max_size_statement> ::= "metadb_server_slave_max_size" <number>
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
