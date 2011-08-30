@@ -198,17 +198,24 @@ postgresql)
 		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
 			ABORT "restore fails"
 
-		XMLATTR_TABLENAME=
-		grep -i 'Name: xmlattr; Type: TABLE' $DUMPF > /dev/null 2>&1
-		[ $? -eq 0 ] && XMLATTR_TABLENAME=xmlattr
-		for I in Host HostAliases GfarmUser GfarmGroup \
-		    GfarmGroupAssignment INode FileInfo FileCopy \
-		    DeadFileCopy DirEntry Symlink QuotaUser \
-		    QuotaGroup SeqNum MdHost XAttr $XMLATTR_TABLENAME
-		do
-			echo "GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE $I TO $BACKEND_USER ;"
-		done | $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
+		# Get a list of tables in the database using '\dt' command
+		# of 'psql'.
+		tablelist=/tmp/tablelist.$$
+		trap "rm -f $tablelist; exit 1" 0 1 2 15
+		env LC_ALL=C $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -A -F/ -c '\dt' | grep / > $tablelist ||
+			ABORT "getting tablenames fails"
+
+		# Check the output layout of the '\dt' command.
+		dt_header=`head -1 $tablelist`
+		[ X"$dt_header" = X"Schema/Name/Type/Owner" ] || \
+			ABORT "unexpected result of '\dt' command by psql"
+
+		# Grant permissions on tables listed by '\dt'.
+		sed -e 1d $tablelist \
+		| awk -F/ "{print \"GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE \" \$2 \" TO $BACKEND_USER ;\"}" \
+		| $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
 			ABORT "grant fails"
+		rm -f $tablelist
 		service_ctl gfmd start
 		;;
 	    *)

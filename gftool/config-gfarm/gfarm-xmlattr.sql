@@ -1,7 +1,6 @@
 --
 -- When a table is added to or removed from the file, please update
--- 'config-gfarm.postgresql' and '../gfdump/gfdump.postgresql.in' too.
--- The list of table names is written in them.
+-- 'config-gfarm.postgresql' too.
 --
 
 CREATE TABLE XmlAttr (
