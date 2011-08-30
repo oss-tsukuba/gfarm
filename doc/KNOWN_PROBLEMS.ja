@@ -51,11 +51,13 @@
 	を参照してください。
 	    http://www.jp.redhat.com/support/errata/RHBA/RHBA-2009-0241J.html
 
-- 高負荷時など、拡張属性 gfarm.ncopy の設定による自動複製が行なわれず、
-  複製数が少ないままになることがあります。
+- gfmd 主導の複製処理 (拡張属性 gfarm.ncopy の設定による自動複製や、あるいは
+  gfs_replicate_file_to_request()/gfs_replicate_file_from_to_request() に
+  よって要求された複製処理) は、高負荷時などにキャンセルされることがあります。
+	https://sourceforge.net/apps/trac/gfarm/ticket/245
 
   対処予定:
-	2011年3月までには対処する予定です。
+	2011年12月までには対処する予定です。
 
 - gfs_pio_sync() は、現在のところメタデータの更新を行なっていません。
 
