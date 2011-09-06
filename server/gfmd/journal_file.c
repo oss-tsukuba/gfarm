@@ -294,8 +294,12 @@ journal_file_reader_cache_pos(struct journal_file_reader *reader)
 void
 journal_file_reader_commit_pos_unlocked(struct journal_file_reader *reader)
 {
+	struct journal_file *jf = reader->file;
+	static const char *diag = "journal_file_reader_commit_pos_unlocked";
+
 	reader->pos = reader->la_pos;
 	reader->cache_size = reader->la_cache_size;
+	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 }
 
 void
@@ -1610,7 +1614,6 @@ journal_file_read(struct journal_file_reader *reader, void *op_arg,
 		goto unlock;
 	}
 	reader->la_cache_size -= len;
-	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 unlock:
 	journal_file_mutex_unlock(jf, diag);
 	if (needs_free && obj)
