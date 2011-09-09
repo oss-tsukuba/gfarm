@@ -92,6 +92,14 @@ rootユーザでメタデータをリストアします。
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
+<UL><LI>補足<BR>
+現在のところ、複数のスレーブ・サーバを設定する場合、
+スレーブで同時に config-gfarm -r を行なうことはできません。
+かならず、それぞれのスレーブで gfdump.postgresql -r によるリストアまで
+完了してから、次のスレーブの config-gfarm -r を行なうようにしてください。</LI>
+</UL>
+
+
 <H3>2.3 gfsdおよびクライアント</H3>
 
 マスターメタデータサーバでmetadb_server_listを追加した
@@ -160,35 +168,77 @@ host-b:
 
 <H2>4. 元のマスターgfmdを起動する</H2>
 
-元のマスターgfmdを起動する場合は、新マスターgfmdから
-メタデータをダンプ、リストアして、スレーブgfmdとして復活させます。
-
-<!-- >
-これからは、元のマスターgfmdが障害から回復し、
+元のマスターgfmdが障害から回復し、
 スレーブgfmdとして復活させる手順を説明します。
-<p>
-host-aにおいて/etc/gfmd.confを/etc/gfmd-slave.confにコピーします。<BR>
-/etc/gfmd-slave.confに次の行を追加します。
+
+<H3>4.1 スレーブとしての起動</H3>
+
+host-aにおいて/etc/gfmd.confに次の行を追加します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 metadb_server_force_slave enable
 </PRE></TD></TR></TBODY></TABLE>
 <BR>
-この設定ファイルを利用して、host-aのgfmdをスレーブgfmdとして起動します。
+この設定ファイルを利用すると、host-aのgfmdがスレーブgfmdとして起動します。<BR>
 host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# gfmd -P /var/run/gfmd.pid -f /etc/gfmd-slave.conf
+# /etc/init.d/gfmd start
 </PRE></TD></TR></TBODY></TABLE>
-<UL><LI><FONT COLOR="red">注意</FONT><BR>
-host-aでgfmdを起動した後に、host-bのgfmdのログに"host-a: expired"と出力されていた場合、
-レプリケーションが実行されません。
-このメッセージはhost-bにおけるデータの変更量が、ジャーナルファイルの容量を超えてしまったときに出力されます。
-このメッセージが出力されていた場合、host-aのgfmdを停止した上で、host-bのデータベースをhost-aにコピーし、host-aのgfmdを再起動する必要があります。
-</LI></UL>
-< -->
+
+<H3>4.2 動作確認</H3>
+
+gfmdhost -lでスレーブメタデータサーバとして接続されていることを確認してください。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -l
+<font color=red>+</font> slave  sync  c (default)    host-a 601
++ master -     m (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+
+ここで「<font color=red>+</font>」と表示されている場合は、
+「4.4 完了処理」へ進みます。
+<p>
+ここで「<font color=red>x</font>」と表示されている場合は、
+「4.3 手動での同期」へ進みます。
+
+<H3>4.3 手動での同期</H3>
+
+「<font color=red>x</font>」と表示されていた場合は、host-a が停止中に
+発生したメタデータの更新量が多過ぎたため、自動更新ができなかったことを
+意味します。<BR>
+この場合、以下の手順で、host-bのデータベースをhost-aにコピーする必要が
+あります。
+
+<BR><BR>
+host-b の rootユーザでメタデータをダンプします。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -d -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+host-a の rootユーザでメタデータをリストアします。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -r -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+次に「4.2 動作確認」からやり直します。
+
+<H3>4.4 完了処理</H3>
+
+host-aで/etc/gfmd.confに追加した、以下の行を削除しておきます。
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_force_slave enable
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
 
 <HR>
 

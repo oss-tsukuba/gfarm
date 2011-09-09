@@ -93,6 +93,13 @@ Restore the metadata by the root user.
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
 </PRE></TD></TR></TBODY></TABLE>
 
+<BR>
+<B>NOTE:</B>
+Currently, you cannot do "config-gfarm -r" on multiple slave metadata servers
+simultaneously, even if you'd like to configure multiple slave gfmd at once.
+Instead, you have to do "config-gfarm -r" and then "gfdump.postgresql -r" on
+each slave server, and then you can proceed to next server.
+
 <H3>2.3 gfsd and client</H3>
 
 Copy gfarm2.conf from the metadata server in which the
@@ -166,8 +173,80 @@ host-b:
 
 <H2>4. Restore the original master gfmd</H2>
 
-When restoring the original master gfmd, dump and restore the metadata
-from the new master gfmd, and execute it as a slave gfmd.
+This section describe how to restart old master gfmd
+as a new slave gfmd.
+
+<H3>4.1. restarting gfmd as a slave</H2>
+
+Add the following line to /etc/gfmd.conf on host-a:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_force_slave enable
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+With this configuration, the gfmd on host-a starts as a slave gfmd.<BR>
+Invoke the following command as root user to do so:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
+
+<H3>4.2. Confirmation</H3>
+
+Check whether the gfmd correctly starts as a slave or not
+by the gfmdhost -l command:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -l
+<font color=red>+</font> slave  sync  c (default)    host-a 601
++ master -     m (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+
+If "<font color=red>+</font>" is displayed, please proceed to
+"4.4. Completion".
+<p>
+If "<font color=red>x</font>" is displayed, please proceed to
+"4.3. Manual synchronization".
+
+<H3>4.3. Manual synchronization</H3>
+
+If "<font color=red>x</font>" is displayed, it means automatic synchronization
+is impossible, because the metadata changes while host-a was stopping
+were too much.<BR>
+In that case, you have to copy the database on host-b to host-a
+by the following procedure:
+
+<BR><BR>
+dump metadata by root user on host-b:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -d -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+restore the metadata by root user on host-a:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -r -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+Then, try again from "4.2 Confirmation".
+
+<H3>4.4 Completion</H3>
+
+Remove the following line which was added to /etc/gfmd.conf on host-a:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_force_slave enable
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+
+
 
 <HR>
 
