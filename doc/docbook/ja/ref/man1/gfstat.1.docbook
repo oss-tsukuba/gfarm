@@ -2,7 +2,7 @@
 
 <refentry id='gfstat.1'>
 
-<refentryinfo><date>4 Jan 2010</date></refentryinfo>
+<refentryinfo><date>9 Sep 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstat</refentrytitle>
@@ -36,9 +36,16 @@
 <variablelist>
 
 <varlistentry>
+<term><option>-M</option></term>
+<listitem>
+<para>メタデータ・サーバの情報も表示します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-c</option></term>
 <listitem>
-<para>ファイル複製の数を表示します．</para>
+<para>ファイル複製の数のみを表示します．</para>
 </listitem>
 </varlistentry>
 

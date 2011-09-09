@@ -548,6 +548,34 @@ gfm_client_connection_acquire(const char *hostname, int port,
 }
 
 gfarm_error_t
+gfm_client_connection_addref(struct gfm_connection *gfm_server)
+{
+	gfarm_error_t e;
+	struct gfp_cached_connection *cache_entry;
+	int created;
+
+	e = gfp_cached_connection_acquire(&gfm_server_cache,
+	    gfm_client_hostname(gfm_server),
+	    gfm_client_port(gfm_server),
+	    gfm_client_username(gfm_server),
+	    &cache_entry, &created);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"addref of cached gfm connection failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	if (!created) {
+		assert(gfp_cached_connection_get_data(cache_entry)
+		    == gfm_server);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	gflog_fatal(GFARM_MSG_UNFIXED, "corrupted gfm connection cache");
+
+	return (GFARM_ERR_UNKNOWN);
+}
+
+gfarm_error_t
 gfm_client_connection_and_process_acquire(const char *hostname, int port,
 	const char *user, struct gfm_connection **gfm_serverp)
 {

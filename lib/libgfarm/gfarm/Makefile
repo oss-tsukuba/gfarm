@@ -51,6 +51,7 @@ SRCS = \
 	filesystem.c \
 	gfm_client.c \
 	gfs_client.c \
+	gfm_conn_follow.c \
 	gfm_schedule.c \
 	lookup.c \
 	gfs_io.c \
@@ -132,6 +133,7 @@ OBJS = \
 	filesystem.lo \
 	gfm_client.lo \
 	gfs_client.lo \
+	gfm_conn_follow.lo \
 	gfm_schedule.lo \
 	lookup.lo \
 	gfs_io.lo \

@@ -10,9 +10,20 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfm_client.h"
+#include "lookup.h"
+
 /*
  * Display struct gfs_stat.
  */
+
+void
+display_gfm_server(struct gfm_connection *gfm_server)
+{
+	printf("MetadataHost: %s\n", gfm_client_hostname(gfm_server));
+	printf("MetadataPort: %d\n", gfm_client_port(gfm_server));
+	printf("MetadataUser: %s\n", gfm_client_username(gfm_server));
+}
 
 void
 display_stat(char *fn, struct gfs_stat *st)
@@ -59,7 +70,8 @@ usage(char *prog_name)
 	fprintf(stderr, "Usage: %s [option] file1 [file2 ...]\n",
 		prog_name);
 	fprintf(stderr, "option:\n");
-	fprintf(stderr, "\t-c\t\tdisplay number of file replicas\n");
+	fprintf(stderr, "\t-M\t\tdisplay metadata server information too\n");
+	fprintf(stderr, "\t-c\t\tdisplay number of file replicas only\n");
 	fprintf(stderr, "\t-l\t\tshow symbolic links\n");
 	exit(2);
 }
@@ -71,16 +83,19 @@ usage(char *prog_name)
 int
 main(int argc, char *argv[])
 {
-	char *prog_name = basename(argv[0]);
+	char *prog_name = argc > 0 ? basename(argv[0]) : "gfstat";
 	gfarm_error_t e;
 	extern int optind;
-	int c, r = 0, show_symlink = 0;
-	void (*display)(char *, struct gfs_stat *) = display_stat;
+	int show_gfm_server = 0, show_ncopy_only = 0, show_symlink = 0;
+	int c, first_entry = 1, r = 0;
 
-	while ((c = getopt(argc, argv, "chl?")) != -1) {
+	while ((c = getopt(argc, argv, "Mchl?")) != -1) {
 		switch (c) {
+		case 'M':
+			show_gfm_server = 1;
+			break;
 		case 'c':
-			display = display_ncopy;
+			show_ncopy_only = 1;
 			break;
 		case 'l':
 			show_symlink = 1;
@@ -96,6 +111,11 @@ main(int argc, char *argv[])
 
 	if (argc < 1)
 		usage(prog_name);
+	if (show_gfm_server && show_ncopy_only) {
+		fprintf(stderr, "%s: cannot specify -M and -c at once",
+		    prog_name);
+		usage(prog_name);
+	}
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -105,6 +125,7 @@ main(int argc, char *argv[])
 
 	for (; *argv; ++argv) {
 		struct gfs_stat st;
+		struct gfm_connection *gfm_server;
 
 		if (show_symlink)
 			e = gfs_lstat(*argv, &st);
@@ -116,9 +137,31 @@ main(int argc, char *argv[])
 			r = 1;
 			continue;
 		}
-		display(*argv, &st);
+
+		gfm_server = NULL;
+		if (show_gfm_server &&
+		    (e = gfm_client_connection_and_process_acquire_by_path_follow(
+		    *argv, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "%s: showing metadata server: %s",
+			    *argv, gfarm_error_string(e));
+			r = 1;
+			continue;
+		}
+
+		if (show_ncopy_only) {
+			display_ncopy(*argv, &st);
+		} else {
+			if (!first_entry)
+				putchar('\n');
+			display_stat(*argv, &st);
+		}
+		if (gfm_server != NULL) {
+			display_gfm_server(gfm_server);
+			gfm_client_connection_free(gfm_server);
+		}
 
 		gfs_stat_free(&st);
+		first_entry = 0;
 	}
 
 	e = gfarm_terminate();
