@@ -60,6 +60,7 @@ usage(char *prog_name)
 		prog_name);
 	fprintf(stderr, "option:\n");
 	fprintf(stderr, "\t-c\t\tdisplay number of file replicas\n");
+	fprintf(stderr, "\t-l\t\tshow symbolic links\n");
 	exit(2);
 }
 
