@@ -43,6 +43,13 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>シンボリックリンクを辿らず．リンク自身の情報を表示します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>引数オプションを表示します．</para>
