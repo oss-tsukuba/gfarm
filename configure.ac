@@ -632,6 +632,9 @@ yes)
       AC_MSG_RESULT([no])
     ])
 
+  # Checks for library functions with pthread enabled
+  AC_CHECK_FUNCS(pthread_barrier_wait)
+
   CPPFLAGS="$CPPFLAGS_SAVE"
   LIBS="$LIBS_SAVE"
   ;;
@@ -1119,7 +1122,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long pthread_barrier_wait)
+AC_CHECK_FUNCS(getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long)
 
 ### Check epoll_create really implemented
 
