@@ -389,7 +389,6 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 				mdhost_set_journal_file_reader(mh, reader);
 		}
 	}
-	mdhost_activate(mh);
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	if (mdhost_is_sync_replication(mh)) {
 		gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
@@ -518,8 +517,7 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 			    mdhost_get_name(mh));
 			mdhost_disconnect(mh, NULL);
 		}
-		abstract_host_set_peer(mdhost_to_abstract_host(mh),
-		    peer, version);
+		mdhost_set_peer(mh, peer, version);
 		peer_watch_access(peer);
 	}
 	return (e);
@@ -659,7 +657,6 @@ gfmdc_connect()
 		goto error;
 	}
 	mdhost_set_connection(rhost, conn);
-	mdhost_activate(rhost);
 	if ((e = gfmdc_client_journal_ready_to_recv(rhost))
 	    != GFARM_ERR_NO_ERROR) {
 		mdhost_set_connection(rhost, NULL);

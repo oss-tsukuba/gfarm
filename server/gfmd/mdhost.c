@@ -211,6 +211,13 @@ mdhost_is_up(struct mdhost *m)
 	return (abstract_host_is_up(mdhost_to_abstract_host(m)));
 }
 
+/*
+ * The use of this function is only allowed against self node.
+ * Because using this against remote node breaks the following invariant:
+ * 	if (m->ah.is_active) assert(m->ah.peer != NULL);
+ * The "is_active" flag for remote nodes can be set
+ * via abstract_host_set_peer() via mdhost_set_peer().
+ */
 void
 mdhost_activate(struct mdhost *m)
 {
