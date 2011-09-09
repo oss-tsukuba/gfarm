@@ -3217,7 +3217,19 @@ inode_replicated(struct file_replicating *fr,
 	    fr->igen == inode_get_gen(inode)) {
 		e = inode_add_replica(inode, fr->dst, 1);
 	} else {
-		if (src_errcode != GFARM_ERR_NO_ERROR ||
+		if (src_errcode == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY &&
+		    dst_errcode == GFARM_ERR_NO_ERROR &&
+		    (inode->i_mode == INODE_MODE_FREE ||
+		     fr->igen != inode_get_gen(inode))) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "expected failure of %lld:%lld replication to %s: "
+			    "mode:0o%o gen:%lld",
+			    (long long)inode_get_number(inode),
+			    (long long)fr->igen,
+			    host_name(fr->dst),
+			    inode->i_mode, inode_get_gen(inode));
+		} else if (
+		    src_errcode != GFARM_ERR_NO_ERROR ||
 		    dst_errcode != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1002257,
 			    "error at %lld:%lld replication to %s: "
