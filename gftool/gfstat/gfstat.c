@@ -139,9 +139,12 @@ main(int argc, char *argv[])
 		}
 
 		gfm_server = NULL;
-		if (show_gfm_server &&
-		    (e = gfm_client_connection_and_process_acquire_by_path_follow(
-		    *argv, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+		if (show_gfm_server && (e = (*
+		    (show_symlink
+		    ? gfm_client_connection_and_process_acquire_by_path
+		    : gfm_client_connection_and_process_acquire_by_path_follow)
+					
+		    )(*argv, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: showing metadata server: %s",
 			    *argv, gfarm_error_string(e));
 			r = 1;
