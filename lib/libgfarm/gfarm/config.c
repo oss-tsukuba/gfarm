@@ -2,6 +2,7 @@
  * $Id$
  */
 
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/wait.h>

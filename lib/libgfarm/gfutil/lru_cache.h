@@ -49,4 +49,5 @@ void gfarm_lru_cache_addref_entry(struct gfarm_lru_cache *,
 int gfarm_lru_cache_delref_entry(struct gfarm_lru_cache *,
 	struct gfarm_lru_entry *);
 void gfarm_lru_cache_gc(struct gfarm_lru_cache *, int,
-	void (*)(struct gfarm_lru_entry *, void *), void *, const char *);
+	void (*)(struct gfarm_lru_entry *, void *), void *, const char *,
+	pthread_mutex_t *, const char *);

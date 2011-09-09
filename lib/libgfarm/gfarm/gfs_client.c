@@ -1,4 +1,5 @@
 #define _POSIX_PII_SOCKET /* to use struct msghdr on Tru64 */
+#include <pthread.h>
 #include <assert.h>
 #include <sys/param.h>
 #include <sys/types.h>

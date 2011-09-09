@@ -17,6 +17,8 @@ struct gfp_conn_cache {
 	const char *type_name;
 	int table_size;
 	int *num_cachep;
+
+	pthread_mutex_t mutex;
 };
 
 /* The `dispose' function below must call gfp_uncached_connection_dispose() */
@@ -26,7 +28,8 @@ struct gfp_conn_cache {
 		GFARM_LRU_CACHE_INITIALIZER(var.lru_list), \
 		NULL, \
 		dispose, \
-		type_name, table_size, num_cachep \
+		type_name, table_size, num_cachep, \
+		PTHREAD_MUTEX_INITIALIZER \
 	}
 
 int gfp_is_cached_connection(struct gfp_cached_connection *);

@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,6 +7,7 @@
 
 #include "gfutil.h"
 #include "lru_cache.h"
+#include "thrsubr.h"
 
 /* link the entry to the head of the LRU cache list */
 void
@@ -95,12 +97,17 @@ gfarm_lru_cache_delref_entry(struct gfarm_lru_cache *cache,
 	return (0); /* still occupied by someone else */
 }
 
+/*
+ * PREREQUISITE: mutex in the argument is already held.
+ */
 void
 gfarm_lru_cache_gc(struct gfarm_lru_cache *cache, int free_target,
 	void (*dispose_entry)(struct gfarm_lru_entry *, void *),
-	void *closure, const char *entry_name)
+	void *closure, const char *entry_name,
+	pthread_mutex_t *mutex, const char *diag_what)
 {
 	struct gfarm_lru_entry *entry, *prev;
+	static const char diag[] = "gfarm_lru_cache_gc";
 
 	/* search least recently used connection */
 	for (entry = cache->list_head.prev;
@@ -122,8 +129,10 @@ gfarm_lru_cache_gc(struct gfarm_lru_cache *cache, int free_target,
 			gfarm_lru_cache_purge_entry(entry);
 			--cache->free_cached_entries;
 
+			gfarm_mutex_unlock(mutex, diag, diag_what);
 			/* abandon this free entry */
 			(*dispose_entry)(entry, closure);
+			gfarm_mutex_lock(mutex, diag, diag_what);
 		}
 	}
 }
