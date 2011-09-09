@@ -1916,6 +1916,31 @@ CLASS="PARAMETER"
 CLASS="LITERALLAYOUT"
 >	metadb_journal_max_size&nbsp;8388608</P
 ></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_journal_recvq_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¥­¥å¡¼Ä¹</I
+></TT
+></DT
+><DD
+><P
+>¥¹¥ì¡¼¥Ögfmd¤¬¡¢¥Þ¥¹¥¿¡¼gfmd¤«¤é¼õ¤±¼è¤ë¥¸¥ã¡¼¥Ê¥ë¥Ç¡¼¥¿¤Ë´Ø¤·¤Æ¡¢
+¥á¥â¥ê¾å¤ËÊÝ»ý¤¹¤ëºÇÂç¥ì¥³¡¼¥É¿ô¤ò»ØÄê¤·¤Þ¤¹¡£
+¤³¤Î¥µ¥¤¥º¤ò±Û¤¨¤ÆÊÝ»ý¤¹¤ëÉ¬Í×¤¬À¸¤¸¤¿¾ì¹ç¤Ë¤Ï¡¢¥Ð¥Ã¥¯¥¨¥ó¥É¡¦¥Ç¡¼¥¿¥Ù¡¼¥¹
+¤Ø¤ÎÈ¿±Ç¤ËÃÙ±ä¤¬À¸¤¸¤Æ¤¤¤ë¤È¸«¤Ê¤·¡¢¥¹¥ì¡¼¥Ö¤È¤·¤Æ¤ÎÆ°ºî¤òÄü¤á¤Æ½ªÎ»¤·¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ï100000¤Ç¤¹¡£</P
+><P
+>¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_journal_recvq_size&nbsp;100000</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -1986,7 +2011,8 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
-		  &#60;metadb_journal_max_size_statement&#62;<br>
+		  &#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_journal_recvq_size_statement&#62;&nbsp;|<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -2071,6 +2097,7 @@ CLASS="LITERALLAYOUT"
 	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_max_size"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
 	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_journal_recvq_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_recvq_size"&nbsp;&#60;number&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>

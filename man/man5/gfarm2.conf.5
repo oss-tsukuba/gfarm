@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "30 August 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "10 September 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -980,6 +980,22 @@ Example:
 .nf
 	metadb_journal_max_size 8388608
 .fi
+.TP
+\fBmetadb_journal_recvq_size \fIsize\fB\fR
+This parameter specifies the maximum number of on-memory records of
+the journal data that the slave gfmd receives from the master gfmd.
+If it reaches this value, the slave gfmd gives up and exits,
+because the gfmd thinks that it's too slow to apply the journal data
+to the backend database.
+The default value is 100000.
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	metadb_journal_recvq_size 100000
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -1042,7 +1058,8 @@ notation.
 		\~\~<metadb_server_force_slave_statement> |
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
-		\~\~<metadb_journal_max_size_statement>
+		\~\~<metadb_journal_max_size_statement> |
+		\~\~<metadb_journal_recvq_size_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1127,6 +1144,7 @@ notation.
 	<metadb_server_slave_max_size_statement> ::= "metadb_server_slave_max_size" <number>
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
+	<metadb_journal_recvq_size_statement> ::= "metadb_journal_recvq_size" <number>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
