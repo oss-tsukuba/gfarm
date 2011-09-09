@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
->  [-l] [-P <TT
+> [-l] [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -47,7 +47,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
->  {-c | -m} [-P <TT
+> {-c | -m} [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -74,7 +74,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
->  {-d} [-P <TT
+> {-d} [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -154,8 +154,17 @@ CLASS="OPTION"
 >接続状態 (+|-)</CODE
 ></P
 ><P
->        "+" はマスター gfmd と接続していることを表します。
+>        "+" はマスター gfmd と正常に接続していることを表します。
         "-" は接続していないことを表します。
+	"?" は、マスター gfmd と接続直後でまだ状態が判明してないか、あるいは
+	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
+	から接続した場合に表示されます。
+	"x" はマスター gfmd と接続できたものの、切断している間の更新量が
+        多く自動同期が不可能となり、バックエンド・データベースのダンプ・
+	リストアを用いて同期をとる必要が生じていることを表します。
+	"e" は何らかのエラーが生じ、ログの調査が必要なことを表します。
+	"x" および "e" については、そのスレーブgfmdが停止した後でも、
+	表示が続きます。
         マスター gfmd は常に "+" です。
       </P
 ><P
@@ -256,9 +265,11 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-C</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->クラスタ名</CODE
+><I
+>クラスタ名</I
+></TT
 ></DT
 ><DD
 ><P
@@ -277,9 +288,11 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-p</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->ポート番号</CODE
+><I
+>ポート番号</I
+></TT
 ></DT
 ><DD
 ><P
@@ -306,9 +319,11 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->path</CODE
+><I
+>path</I
+></TT
 ></DT
 ><DD
 ><P
