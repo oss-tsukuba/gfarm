@@ -184,6 +184,21 @@ compare_metadb_server_detail(const void *a, const void *b)
 	return (strcmp(ma->name, mb->name));
 }
 
+static int
+gfarm_metadb_server_get_state_symbol(struct gfarm_metadb_server *ms)
+{
+	if (gfarm_metadb_server_seqnum_is_out_of_sync(ms))
+		return ('x'); /* ignore gfarm_metadb_server_is_active() */
+	else if (gfarm_metadb_server_seqnum_is_error(ms))
+		return ('e'); /* ignore gfarm_metadb_server_is_active() */
+	else if (!gfarm_metadb_server_is_active(ms))
+		return ('-');
+	else if (gfarm_metadb_server_seqnum_is_ok(ms))
+		return ('+');
+	else /* if (gfarm_metadb_server_seqnum_is_unknown(ms)) */
+		return ('?');
+}
+
 static gfarm_error_t
 do_list(int detail)
 {
@@ -209,7 +224,7 @@ do_list(int detail)
 		ms = pmss[i];
 		if (detail) {
 			printf("%c %-6s %-5s %c %-12s %s %d\n",
-			    gfarm_metadb_server_is_active(ms) ? '+' : '-',
+			    gfarm_metadb_server_get_state_symbol(ms),
 			    gfarm_metadb_server_is_master(ms) ?
 				"master" : "slave",
 			    gfarm_metadb_server_is_master(ms) ? "-" :

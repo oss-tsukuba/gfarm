@@ -273,13 +273,20 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 	e = db_journal_fetch(reader, min_seqnum, &data, &data_len, &from_sn,
 	    &to_sn, &no_rec, mdhost_get_name(mh));
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002977, "%s : %s",
+		if (e == GFARM_ERR_EXPIRED)
+			mdhost_set_seqnum_out_of_sync(mh);
+		else
+			mdhost_set_seqnum_error(mh);
+		gflog_error(GFARM_MSG_1002977,
+		    "reading journal to send to %s: %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
 		return (e);
 	} else if (no_rec) {
+		mdhost_set_seqnum_ok(mh);
 		*to_snp = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	mdhost_set_seqnum_ok(mh);
 	mdhost_set_last_fetch_seqnum(mh, to_sn);
 	c->data = data;
 
@@ -917,9 +924,15 @@ gfmdc_journal_first_sync_thread(void *closure)
 	    "%s : first sync start", mdhost_get_name(mh));
 #endif
 	giant_lock();
-	do_sync = (mdhost_get_last_fetch_seqnum(mh) <
-	    db_journal_get_current_seqnum()) &&
-	    !mdhost_is_in_first_sync(mh);
+	do_sync = 0;
+	if (mdhost_get_last_fetch_seqnum(mh) <
+	    db_journal_get_current_seqnum()) {
+		/* it's still unknown whether seqnum is ok or out_of_sync */
+		if (!mdhost_is_in_first_sync(mh))
+			do_sync = 1;
+	} else {
+		mdhost_set_seqnum_ok(mh);
+	}
 	giant_unlock();
 
 	if (!do_sync)

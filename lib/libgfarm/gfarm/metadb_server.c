@@ -158,3 +158,59 @@ gfarm_metadb_server_set_is_active(struct gfarm_metadb_server *m, int enable)
 {
 	set_tflag(m, GFARM_METADB_SERVER_FLAG_IS_ACTIVE, enable);
 }
+
+int
+gfarm_metadb_server_seqnum_is_unknown(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) ==
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_UNKNOWN);
+}
+
+void
+gfarm_metadb_server_set_seqnum_is_unknown(struct gfarm_metadb_server *m)
+{
+	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_UNKNOWN;
+}
+
+int
+gfarm_metadb_server_seqnum_is_ok(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) ==
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_OK);
+}
+
+void
+gfarm_metadb_server_set_seqnum_is_ok(struct gfarm_metadb_server *m)
+{
+	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_OK;
+}
+
+int
+gfarm_metadb_server_seqnum_is_out_of_sync(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) ==
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_OUT_OF_SYNC);
+}
+
+void
+gfarm_metadb_server_set_seqnum_is_out_of_sync(struct gfarm_metadb_server *m)
+{
+	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_OUT_OF_SYNC;
+}
+
+int
+gfarm_metadb_server_seqnum_is_error(struct gfarm_metadb_server *m)
+{
+	return ((m->tflags & GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) ==
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_ERROR);
+}
+
+void
+gfarm_metadb_server_set_seqnum_is_error(struct gfarm_metadb_server *m)
+{
+	m->tflags = (m->tflags & ~GFARM_METADB_SERVER_FLAG_SEQNUM_MASK) |
+	    GFARM_METADB_SERVER_FLAG_SEQNUM_IS_ERROR;
+}

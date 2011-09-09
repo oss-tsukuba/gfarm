@@ -48,6 +48,12 @@ struct mdhost {
 	pthread_mutex_t mutex;
 	struct gfm_connection *conn;
 	int is_recieved_seqnum, is_in_first_sync;
+	enum mdhost_seqnum_state {
+		seqnum_state_unknown,
+		seqnum_state_ok,
+		seqnum_state_out_of_sync,
+		seqnum_state_error
+	} seqnum_state;
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
 	struct mdcluster *cluster;
@@ -399,6 +405,55 @@ mdhost_set_is_in_first_sync(struct mdhost *m, int flag)
 	mdhost_mutex_unlock(m, diag);
 }
 
+static enum mdhost_seqnum_state
+mdhost_get_seqnum_state(struct mdhost *m)
+{
+	enum mdhost_seqnum_state s;
+	static const char diag[] = "mdhost_get_seqnum_state";
+
+	if (mdhost_is_master(m))
+		return (seqnum_state_ok);
+
+	mdhost_mutex_lock(m, diag);
+	s = m->seqnum_state;
+	mdhost_mutex_unlock(m, diag);
+	return (s);
+}
+
+static void
+mdhost_set_seqnum_state(struct mdhost *m, enum mdhost_seqnum_state s)
+{
+	static const char diag[] = "mdhost_set_seqnum_state";
+
+	mdhost_mutex_lock(m, diag);
+	m->seqnum_state = s;
+	mdhost_mutex_unlock(m, diag);
+}
+
+void
+mdhost_set_seqnum_unknown(struct mdhost *m)
+{
+	mdhost_set_seqnum_state(m, seqnum_state_unknown);
+}
+
+void
+mdhost_set_seqnum_ok(struct mdhost *m)
+{
+	mdhost_set_seqnum_state(m, seqnum_state_ok);
+}
+
+void
+mdhost_set_seqnum_out_of_sync(struct mdhost *m)
+{
+	mdhost_set_seqnum_state(m, seqnum_state_out_of_sync);
+}
+
+void
+mdhost_set_seqnum_error(struct mdhost *m)
+{
+	mdhost_set_seqnum_state(m, seqnum_state_error);
+}
+
 static void
 mdhost_set_localhost_is_readonly(int ro)
 {
@@ -461,6 +516,7 @@ mdhost_set_peer_locked(struct abstract_host *h, struct peer *peer)
 static void
 mdhost_set_peer_unlocked(struct abstract_host *h, struct peer *peer)
 {
+	mdhost_set_seqnum_unknown(abstract_host_to_mdhost(h));
 }
 
 static void
@@ -526,6 +582,7 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	m->last_fetch_seqnum = 0;
 	m->is_recieved_seqnum = 0;
 	m->is_in_first_sync = 0;
+	mdhost_set_seqnum_unknown(m);
 	m->cluster = NULL;
 
 	return (m);
@@ -795,6 +852,21 @@ metadb_server_reply(struct peer *peer, struct mdhost *m)
 		gfarm_metadb_server_set_is_sync_replication(&tms, 1);
 	if (mdhost_is_up(m))
 		gfarm_metadb_server_set_is_active(&tms, 1);
+
+	switch (mdhost_get_seqnum_state(m)) {
+	case seqnum_state_unknown:
+		gfarm_metadb_server_set_seqnum_is_unknown(&tms);
+		break;
+	case seqnum_state_ok:
+		gfarm_metadb_server_set_seqnum_is_ok(&tms);
+		break;
+	case seqnum_state_out_of_sync:
+		gfarm_metadb_server_set_seqnum_is_out_of_sync(&tms);
+		break;
+	case seqnum_state_error:
+		gfarm_metadb_server_set_seqnum_is_error(&tms);
+		break;
+	}
 
 	return (gfp_xdr_send(xdr, "sisii",
 	    ms->name, ms->port, ms->clustername ? ms->clustername : "",

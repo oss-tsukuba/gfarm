@@ -94,6 +94,16 @@ names will be listed.
         "+" means that the gfmd is connected to the master gfmd.
         "-" means that the gfmd is not connected to the master gfmd.
 	This column for the master gfmd is always "+".
+	"?" means either the gfmd state is unknown because it's just
+	after the connection was established, or the master gfmd is
+	Gfarm-2.5.0, but this gfmdhost command is 2.5.1 or later.
+	"x" means that the connection with master gfmd was established,
+	but automatic synchronization was impossible because of too many
+        metadata changes, thus, manual synchronization via dump and
+	restore of the backend database is necessary.
+	"e" means an error happened, and log file must be checked manually.
+	Both "x" and "e" are displayed even after the slave gfmd is down.
+	Master gfmd is always marked as "+".
       </para>
       <para><option>Server Type (master|slave)</option></para>
       <para>
