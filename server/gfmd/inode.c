@@ -3227,7 +3227,7 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)inode_get_number(inode),
 			    (long long)fr->igen,
 			    host_name(fr->dst),
-			    inode->i_mode, inode_get_gen(inode));
+			    inode->i_mode, (long long)inode_get_gen(inode));
 		} else if (
 		    src_errcode != GFARM_ERR_NO_ERROR ||
 		    dst_errcode != GFARM_ERR_NO_ERROR)
