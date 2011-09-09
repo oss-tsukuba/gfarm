@@ -3705,8 +3705,6 @@ error:
 	return (e);
 }
 
-#define JOURNAL_RECVQ_NELEMS_MAX 1000
-
 gfarm_error_t
 db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	int recs_len, unsigned char *recs)
@@ -3727,10 +3725,13 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	ri->recs_len = recs_len;
 	ri->recs = recs;
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
-	while (journal_recvq_nelems >= JOURNAL_RECVQ_NELEMS_MAX) {
+	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
 		if (journal_file_is_waiting_until_nonempty(self_jf)) {
-			gflog_fatal(GFARM_MSG_1003200,
-			    "journal recieve queue overflow on memory");
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "journal recieve queue overflow on memory, "
+			    "please try to increase "
+			    "\"metadb_journal_recvq_size\" (currently %d)",
+			    gfarm_get_journal_recvq_size());
 			/* exit */
 		}
 		gfarm_cond_wait(&journal_recvq_nonfull_cond,
@@ -3780,7 +3781,7 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 	}
 found:
 	GFARM_STAILQ_REMOVE_HEAD(&journal_recvq, next);
-	if (journal_recvq_nelems >= JOURNAL_RECVQ_NELEMS_MAX) {
+	if (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
 		gfarm_cond_signal(&journal_recvq_nonfull_cond, diag,
 		    RECVQ_NONFULL_COND_DIAG);
 	}

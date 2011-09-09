@@ -86,6 +86,7 @@ int gfarm_get_metadb_replication_enabled(void);
 void gfarm_set_metadb_replication_enabled(int);
 const char *gfarm_get_journal_dir(void);
 int gfarm_get_journal_max_size(void);
+int gfarm_get_journal_recvq_size(void);
 int gfarm_get_journal_sync_file(void);
 int gfarm_get_journal_sync_slave_timeout(void);
 int gfarm_get_metadb_server_slave_max_size(void);

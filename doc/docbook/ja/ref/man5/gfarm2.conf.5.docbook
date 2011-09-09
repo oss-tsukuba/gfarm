@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>12 Apr 2010</date></refentryinfo>
+<refentryinfo><date>10 Sep 2011</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1352,6 +1352,25 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>metadb_journal_recvq_size</token> <parameter>キュー長</parameter></term>
+<listitem>
+<para>スレーブgfmdが、マスターgfmdから受け取るジャーナルデータに関して、
+メモリ上に保持する最大レコード数を指定します。
+このサイズを越えて保持する必要が生じた場合には、バックエンド・データベース
+への反映に遅延が生じていると見なし、スレーブとしての動作を諦めて終了します。
+デフォルトは100000です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_recvq_size 100000
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1421,7 +1440,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt;
+		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1520,6 +1540,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
 	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
 	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
+	&lt;metadb_journal_recvq_size_statement&gt; ::= "metadb_journal_recvq_size" &lt;number&gt;
 	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
 		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
 	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
