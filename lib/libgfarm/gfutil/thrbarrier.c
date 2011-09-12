@@ -71,18 +71,21 @@ gfarm_barrier_destroy(pthread_barrier_t *barrier,
 #endif
 }
 
-void
+int
 gfarm_barrier_wait(pthread_barrier_t *barrier,
 	const char *where, const char *what)
 {
 #ifdef HAVE_PTHREAD_BARRIER_WAIT
 	int err = pthread_barrier_wait(barrier);
 
+	if (err == PTHREAD_BARRIER_SERIAL_THREAD)
+		return (1); /* this is the serial thread */
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier wait: %s",
 		    where, what, strerror(err));
+	return (0);
 #else
-	int err, cycle;
+	int err, cycle, retval;
 
 	err = pthread_mutex_lock(&barrier->mutex);
 	if (err != 0)
@@ -102,6 +105,7 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 				    where, what, strerror(err));
 		} while (barrier->cycle == cycle);
 		/* XXX need to re-enable cancelstate */
+		retval = 0;
 	} else { /* now all entered */
 		barrier->cycle = !barrier->cycle;
 		barrier->n_pending = barrier->n_members;
@@ -119,11 +123,13 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 			gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier wait: "
 			    "cond_broadcast all_entered: %s",
 			    where, what, strerror(err));
+		reval = 1; /* this is the serial thread */
 	}
 	err = pthread_mutex_unlock(&barrier->mutex);
 	if (err != 0)
 		gflog_fatal(GFARM_MSG_UNFIXED,
 		    "%s: %s barrier wait:  mutex_unlock: %s",
 		    where, what, strerror(err));
+	return (retval);
 #endif
 }
