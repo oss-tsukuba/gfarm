@@ -1,5 +1,11 @@
 #ifndef HAVE_PTHREAD_BARRIER_WAIT
-struct gfarm_thr_barrier;
+struct gfarm_thr_barrier {
+	pthread_mutex_t mutex;
+	pthread_cond_t all_entered;
+	int n_members;
+	int n_pending;
+	int cycle;
+};
 typedef struct gfarm_thr_barrier pthread_barrier_t;
 #endif
 void gfarm_barrier_init(pthread_barrier_t *, unsigned int,

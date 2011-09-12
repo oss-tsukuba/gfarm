@@ -15,14 +15,6 @@
  * but that's OK because gfarm doesn't use pthread_cancel() and
  * libgfarm doesn't support pthread_cancel() at all for now.
  */
-
-struct gfarm_thr_barrier {
-	pthread_mutex_t mutex;
-	pthread_cond_t all_entered;
-	int n_members;
-	int n_pending;
-	int cycle;
-};
 #endif
 
 void
