@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#include <gfarm/gfarm_config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +11,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <pthread.h>
+
+#include "thrsubr.h"
+#include "thrbarrier.h"
 
 #include "db_journal.c"
 
@@ -186,7 +191,7 @@ t_new_user_info(const char *username, const char *realname)
 }
 
 static void
-t_write_sequencial(void)
+t_write_sequential(void)
 {
 	int i;
 	struct gfarm_user_info *ui;
@@ -343,6 +348,7 @@ t_write_cyclic(void)
 }
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_barrier_t barrier;
 static int t_write_blocked_num_rec_write = 0;
 static int t_write_blocked_num_rec_read = 0;
 
@@ -360,6 +366,8 @@ t_write_add_op(void *arg)
 		{ "user4", "USER4" },
 		{ "user5", "USER-5" },
 	};
+	static const char *thr_where = "t_write_add_op";
+	static const char *thr_what  = "db_journal_test";
 
 	setup_write();
 	writer = journal_file_writer(self_jf);
@@ -368,10 +376,18 @@ t_write_add_op(void *arg)
 		    names[i].username, names[i].realname);
 		TEST_ASSERT_NOERR("user_add",
 		    db_journal_ops.user_add(seqnum++, ui));
-		pthread_mutex_lock(&mutex);
+		gfarm_mutex_lock(&mutex, thr_where, thr_what);
 		++t_write_blocked_num_rec_write;
-		pthread_mutex_unlock(&mutex);
+		gfarm_mutex_unlock(&mutex, thr_where, thr_what);
+
+		/*
+		 * After writing info of 'user3', wait the reader reads
+		 * the written data.  See commends in t_write_blocked().
+		 */
+		if (i == 2)
+			gfarm_barrier_wait(&barrier, thr_where, thr_what);
 	}
+
 	pthread_exit(NULL);
 }
 
@@ -389,27 +405,35 @@ t_write_blocked(void)
 {
 	int i, eof;
 	pthread_t write_th;
-	struct timespec ts;
 	struct journal_file_reader *reader;
+	static const char *thr_where = "t_write_blocked";
+	static const char *thr_what  = "db_journal_test";
 
 	unlink_test_file(filepath);
 	TEST_ASSERT_NOERR("journal_file_open",
 	    journal_file_open(filepath, TEST_FILE_MAX_SIZE, 0,
 		&self_jf, GFARM_JOURNAL_RDWR));
 
+	gfarm_barrier_init(&barrier, 2, thr_where, thr_what);
 	TEST_ASSERT0(pthread_create(
 	    &write_th, NULL, &t_write_add_op, NULL) == 0);
-	ts.tv_sec = 0;
-	ts.tv_nsec = 200 * 1000 * 1000;
-	nanosleep(&ts, NULL);	/* XXX need to investigate more portable way */
+	gfarm_barrier_wait(&barrier, thr_where, thr_what);
 
-	/* |user1|user2|user3|  |
-	 * r                 w
+	/*
+	 * Check if the writer thread has written data of user1, user2
+	 * and user3.
+	 *
+	 *     |user1|user2|user3|  |
+	 *     r                 w
 	 */
-	pthread_mutex_lock(&mutex);
+	gfarm_mutex_lock(&mutex, thr_where, thr_what);
 	TEST_ASSERT_I("t_write_blocked_num_rec_write",
 	    3, t_write_blocked_num_rec_write);
-	pthread_mutex_unlock(&mutex);
+	gfarm_mutex_unlock(&mutex, thr_where, thr_what);
+
+	/*
+	 * Read data of user1 and user2.
+	 */
 	reader = journal_file_main_reader(self_jf);
 	for (i = 0; i < 2; ++i) {
 		TEST_ASSERT_NOERR("db_journal_read",
@@ -417,25 +441,36 @@ t_write_blocked(void)
 		    NULL, &eof));
 		journal_file_reader_commit_pos(reader);
 	}
-	/* |user1|user2|user3|  |
-	 *             r     w
+
+	/*
+	 * Check if the position of the reader has been stepped forward.
+	 * Note that the writer now starts writing more data.
+	 *
+	 *     |user1|user2|user3|  |
+	 *                 r     
 	 */
 	TEST_ASSERT_I("t_write_blocked_num_rec_read",
 	    2, t_write_blocked_num_rec_read);
 	pthread_join(write_th, NULL);
-	/* |user4|user5|user3|  |
-	 *             wr
+
+	/*
+	 * Check if the writer has written data of user4 and user5.
+	 *
+	 *     |user4|user5|user3|  |
+	 *                 wr
 	 */
-	pthread_mutex_lock(&mutex);
+	gfarm_mutex_lock(&mutex, thr_where, thr_what);
 	TEST_ASSERT_I("t_write_blocked_num_rec_write",
 	    5, t_write_blocked_num_rec_write);
-	pthread_mutex_unlock(&mutex);
+	gfarm_mutex_unlock(&mutex, thr_where, thr_what);
+
+	gfarm_barrier_destroy(&barrier, thr_where, thr_what);
 }
 
 void
 t_write(void)
 {
-	t_write_sequencial();
+	t_write_sequential();
 	t_write_cyclic();
 	t_write_blocked();
 }
