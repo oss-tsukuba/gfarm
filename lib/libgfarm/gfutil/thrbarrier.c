@@ -123,7 +123,7 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 			gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier wait: "
 			    "cond_broadcast all_entered: %s",
 			    where, what, strerror(err));
-		reval = 1; /* this is the serial thread */
+		retval = 1; /* this is the serial thread */
 	}
 	err = pthread_mutex_unlock(&barrier->mutex);
 	if (err != 0)
