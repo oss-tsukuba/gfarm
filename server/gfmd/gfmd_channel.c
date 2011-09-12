@@ -239,7 +239,15 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 	struct timespec ts;
 	static const char *diag = "gfmdc_wait_journal_syncsend";
 
+#ifdef HAVE_CLOCK_GETTIME
 	clock_gettime(CLOCK_REALTIME, &ts);
+#else
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	ts.tv_sec = tv.tv_sec + gfarm_get_journal_sync_slave_timeout();
+	ts.tv_nsec = tv.tv_usec * 1000;
+#endif
 	ts.tv_sec += gfarm_get_journal_sync_slave_timeout();
 
 	gfarm_mutex_lock(&c->send_mutex, diag, SEND_MUTEX_DIAG);

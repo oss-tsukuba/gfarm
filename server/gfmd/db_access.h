@@ -176,7 +176,7 @@ struct db_ops;
 gfarm_error_t db_use(const struct db_ops *);
 
 extern const struct db_ops db_none_ops, db_ldap_ops, db_pgsql_ops;
-const struct db_ops *store_ops;
+extern const struct db_ops *store_ops;
 
 
 struct db_waitctx {
