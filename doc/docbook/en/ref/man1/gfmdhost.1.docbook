@@ -89,11 +89,10 @@ names will be listed.
       <para>
         The detailed information is displayed in the following order.
       </para>
-      <para><option>Connection State (+|-)</option></para>
+      <para><option>Connection State (+|-|?|x|e)</option></para>
       <para>
         "+" means that the gfmd is connected to the master gfmd.
         "-" means that the gfmd is not connected to the master gfmd.
-	This column for the master gfmd is always "+".
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
 	Gfarm-2.5.0, but this gfmdhost command is 2.5.1 or later.
@@ -102,8 +101,9 @@ names will be listed.
         metadata changes, thus, manual synchronization via dump and
 	restore of the backend database is necessary.
 	"e" means an error happened, and log file must be checked manually.
-	Both "x" and "e" are displayed even after the slave gfmd is down.
-	Master gfmd is always marked as "+".
+	In the case of "x" or "e", it may be displayed even when the
+	slave gfmd is down.
+	This column for the master gfmd is always "+".
       </para>
       <para><option>Server Type (master|slave)</option></para>
       <para>
