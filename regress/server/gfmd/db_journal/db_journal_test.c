@@ -381,8 +381,8 @@ t_write_add_op(void *arg)
 		gfarm_mutex_unlock(&mutex, thr_where, thr_what);
 
 		/*
-		 * After writing info of 'user3', wait the reader reads
-		 * the written data.  See commends in t_write_blocked().
+		 * After writing data of user3, wait until the reader reads
+		 * the written data.  See comments in t_write_blocked().
 		 */
 		if (i == 2)
 			gfarm_barrier_wait(&barrier, thr_where, thr_what);
