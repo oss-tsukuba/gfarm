@@ -1,3 +1,34 @@
+Release note for Gfarm 2.5.1
+============================
+
+[2011.9.14]
+
+New configuration directive
+* metadb_server_force_slave to execute the old master metadata server
+  as a slave server without restoring the backend database.  This
+  directive is used when re-joining the master metadata server as a
+  slave server. [sf.net trac #240]
+* metadb_journal_recvq_size to specify the size of journal receive
+  queue.  The default is changed from 1,000 to 100,000.
+
+Updated feature
+* gfmdhost - introduce new status characters: 'x' means the slave
+  metadata server is too old to synchronize. 'e' means an error
+  happens when connecting to the master metadata server.
+* gfdump.postgresql - dump and restore between PostgreSQL
+  installation with different admin account
+* gfstat - -M option to show the corresponding metadata server
+  information
+
+Bug fix
+* fix segfault when removing and adding metadata servers
+* gfmdhost incorrectly reports slave server status
+* gfmd cannot be executed on FreeBSD 8.1 reported by
+  gfarm-announce:101727
+* fix race condition about mdhost hash table and journal file
+* fix lost wake-up bug among reader and writer threads for the journal
+  file [sf.net trac #239]
+
 Release note for Gfarm 2.5.0
 ============================
 
