@@ -2760,7 +2760,6 @@ inode_get_file_copy(struct inode *inode, struct host *spool_host)
 			return (copy);
 	}
 	return (NULL);
-	return (0);
 }
 
 int
