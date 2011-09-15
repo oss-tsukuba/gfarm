@@ -398,7 +398,7 @@ fi
 : ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
 : ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
-: ${METADATA_JOURNAL_DIR:="/var/gfarm-metadata/journal"}
+: ${METADATA_JOURNAL_DIR:="$CONFIG_PREFIX/var/gfarm-metadata/journal"}
 
 : ${METADATA_ADMIN_USER:=`who am i | awk '{print $1}'`}
 : ${METADATA_ADMIN_USER_GSI_DN:=}
