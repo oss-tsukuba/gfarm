@@ -101,9 +101,9 @@ Table of Contents:
 
 	(f) bytes per one file:
 		= 176 + 64 + align(strlen(basename(pathname)) + OH)
-		  + 32 × number_of_replicas
+		  + 32 * number_of_replicas
 		= 240 + align(strlen(basename(pathname)) + OH)
-		  + 32 × number_of_replicas
+		  + 32 * number_of_replicas
 
 
 	Under an assumption that the length of last component of pathname
