@@ -11,6 +11,7 @@ Table of Contents:
 1. General
   1.1 What is Gfarm?
   1.2 Where can I download Gfarm?
+  1.3 How much memory does gfmd require?
 
 2. Trouble Shooting
   2.1 We cannot connect to filesystem nodes and/or a metadata server.
@@ -53,6 +54,66 @@ Table of Contents:
 
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
+
+  1.3 How much memory does gfmd require?
+
+	The following formulas are rough estimates of Gfarm-2.5.1 gfmd
+	on a 64bit Linux machine.
+	Note that we use the following constant and function:
+		- OH (overhead) = 8 bytes
+		- align() = round up to multiples of 16,
+			    and if it's less than 32, round up to 32.
+
+	(a) bytes per one extended attribute (xattr)
+		  align(64 + OH) + align((length_of_xattr_name) + 1 + OH)
+		= 80 + align((length of xattr name) + 1 + OH)
+
+	(i) bytes per one i-node
+		  align(168 + OH)
+		= 176
+
+	(e) bytes per one directory entry
+		  align(56 + OH) + align(strlen(basename(pathname)) + OH)
+		= 64 + align(strlen(basename(pathname)) + OH)
+
+	(r) bytes per one file replica:
+		  align(24 + OH)
+		= 32
+
+
+	Thus, bytes per file, directory, and symbolic link requires
+	the following size, if the number of xattr is small enough:	
+
+	(d) bytes per one directory:
+		  (i) + (e) 
+		  + align(56 + OH) + align(strlen(".") + OH)
+		  + align(56 + OH) + align(strlen("..") + OH)
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + 64 + 32 + 64 + 32
+		= 432 + align(strlen(basename(pathname)) + OH)
+
+	(s) bytes per one symbolic link:
+		  (i) + (e) + align(strlen(symlink_target)+1 + OH)
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + align(strlen(symlink_target)+1 + OH)
+		= 240 + align(strlen(basename(pathname)) + OH)
+		  + align(strlen(symlink_target)+1 + OH)
+
+	(f) bytes per one file:
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + 32 × number_of_replicas
+		= 240 + align(strlen(basename(pathname)) + OH)
+		  + 32 × number_of_replicas
+
+
+	Under an assumption that the length of last component of pathname
+	is 14 characters, and the number of file replica is 3, and the length
+	of the symbolic link target is 55 characters, (d), (s) and (f) are
+	the following values:
+
+	(d) 432 bytes per one directory
+	(s) 336 bytes per one symbolic link
+	(f) 368 bytes per one file
 
 2. Trouble Shooting
 *******************

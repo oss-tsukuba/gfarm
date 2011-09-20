@@ -10,6 +10,8 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 1. 一般
   1.1 Gfarm とは何ですか？
   1.2 Gfarm はどこからダウンロードできますか？
+  1.3 gfmd は，どの程度のメモリを消費しますか？
+  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
 
 2. トラブル・シューティング
   2.1 ファイルシステムノード，メタサーバに接続できません．
@@ -51,6 +53,68 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
 		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
+
+  1.3 gfmd は，どの程度のメモリを消費しますか？
+
+	64bit Linux マシン上で Gfarm-2.5.1 を利用する場合，おおよその
+	見積りは以下の通りとなります．ただし，
+		OH (オーバーヘッド) = 8 バイト
+		align() = 16の倍数に切り上げ．結果が32未満なら32に切り上げ．
+	とします．
+
+	(a) 拡張属性 (xattr) 1つあたりに必要なバイト数:
+		  align(64 + OH) ＋ align(拡張属性の名称の長さ + 1 + OH)
+		= 80 + align(拡張属性の名称の長さ + 1 + OH)
+
+	(i) i-node 1つあたりに必要なバイト数:
+		  align(168 + OH)
+		= 176
+
+	(e) ディレクトリ・エントリ1つあたりに必要なバイト数:
+		  align(56 + OH) + align(strlen(basename(パス名)) + OH)
+		= 64 + align(strlen(basename(パス名)) + OH)
+
+	(r) ファイル複製 1つあたりに必要なバイト数:
+		  align(24 + OH)
+		= 32
+
+
+	拡張属性の数が十分少ない場合，ファイル・ディレクトリ・シンボリック
+	リンクそれぞれに必要なバイト数は，以下の通りとなります．
+
+	(d) ディレクトリ 1つあたりに必要なバイト数:
+		  (i) + (e) 
+		  + align(56 + OH) + align(strlen(".") + OH)
+		  + align(56 + OH) + align(strlen("..") + OH)
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		  + 64 + 32 + 64 + 32
+		= 432 + align(strlen(basename(パス名)) + OH)
+
+	(s) シンボリックリンク 1つあたりに必要なバイト数:
+		  (i) + (e) + align(strlen(シンボリックリンクの指す先)+1 + OH)
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
+		= 240 + align(strlen(basename(パス名)) + OH)
+		  + align(strlen(シンボリックリンクの指す先)+1 + OH)
+
+	(f) ファイル 1つあたりのバイト数に必要なバイト数:
+		(i) + (e) + (r) × 複製数
+		= 176 + 64 + align(strlen(basename(パス名)) + OH)
+		  + 32 × 複製数
+		= 240 + align(strlen(basename(パス名)) + OH) + 32 × 複製数
+
+
+	さらに，仮に，パス名の最後のコンポーネント部の長さが 14文字程度，
+	ファイルの複製数が3，シンボリックリンクの指す先が55文字と仮定して，
+	上記を計算すると，以下のようになります．
+
+	(d) ディレクトリ1つあたり: 432バイト
+	(s) シンボリック・リンク1つあたり: 336バイト
+	(f) ファイル1つあたり: 368バイト
+
+  1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
+
+	gfmd の必要メモリ量の数倍程度です．
 
 
 2. トラブル・シューティング
