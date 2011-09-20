@@ -1,5 +1,6 @@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
 
 # save default for reference from where installation directory is overridden.
 default_sbindir = @sbindir@

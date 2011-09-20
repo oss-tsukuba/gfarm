@@ -8,7 +8,9 @@ PROGNAME=`basename $0`
 # Gfarm installation directory
 prefix="@prefix@"
 sysconfdir="@sysconfdir@"
-config_dir="@datadir@/gfarm/config"
+datarootdir="@datarootdir@"
+datadir="@datadir@"
+config_dir="${datadir}/gfarm/config"
 
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
