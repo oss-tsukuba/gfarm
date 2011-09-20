@@ -10,7 +10,9 @@ ${DEBUG:="false"} && set -xu
 # Gfarm installation directory
 prefix="@prefix@"
 sysconfdir="@sysconfdir@"
-config_dir="@datadir@/gfarm/config"
+datarootdir="@datarootdir@"
+datadir="@datadir@"
+config_dir="${datadir}/gfarm/config"
 globus_location="@globus_location@"
 
 spool_owner=_gfarmfs
