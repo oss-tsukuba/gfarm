@@ -1412,10 +1412,8 @@ test -d gfptool || mkdir gfptool
 test -d package || mkdir package
 test -d util || mkdir util
 
-AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc
+AC_CONFIG_FILES(Makefile makes/config.mk makes/install-doc makes/build-script
 	${ns_makefiles}
-	gftool/config-gfarm/config-gfarm gftool/config-gfarm/config-gfsd
-	gftool/config-gfarm/config-gfarm-update gftool/gfdump/gfdump.postgresql
 	package/solaris/gfmd package/solaris/gfsd
 )
 AC_OUTPUT

@@ -20,11 +20,11 @@ post-gfregister-hook:
 post-man-hook:
 post-html-hook:
 
-script-all:
+script-all: $(BUILT_SCRIPTS)
 
 script-install:
 	@$(MKDIR_P) $(DESTDIR)$(bindir)
-	@for i in -- $(SCRIPTS); do \
+	@for i in -- $(SCRIPTS) $(BUILT_SCRIPTS); do \
 		case $$i in --) continue;; esac; \
 		echo \
 		$(INSTALL_SCRIPT) $$i $(DESTDIR)$(bindir)/`basename $$i`; \
@@ -33,6 +33,7 @@ script-install:
 
 script-clean:
 	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
+	-$(RM) -f $(BUILT_SCRIPTS)
 
 script-veryclean: clean private-finalize
 	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)

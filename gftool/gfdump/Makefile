@@ -6,6 +6,9 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS = gfdump.postgresql
+BUILT_SCRIPTS = gfdump.postgresql
 
 include $(top_srcdir)/makes/script.mk
+
+gfdump.postgresql: $(srcdir)/gfdump.postgresql.in
+	$(SHELL) $(top_builddir)/makes/build-script $? $@
