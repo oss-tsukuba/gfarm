@@ -378,14 +378,27 @@
 	  暗黙の入力: i:current file descriptor
 	  入力: l:atime_sec, i:atime_nsec
 	  出力: i:エラー
-	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_WRITE も参照
+	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_WRITE,
+	  　 GFM_PROTO_CLOSE_WRITE_V2_4 も参照
 	GFM_PROTO_CLOSE_WRITE
 	  暗黙の入力: i:current file descriptor
 	  入力: l:size
 		l:atime_sec, i:atime_nsec
 		l:mtime_sec, i:mtime_nsec
 	  出力: i:エラー
-	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ も参照
+	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ,
+	  　 GFM_PROTO_CLOSE_WRITE_V2_4 も参照
+	  → gfarm-v2-outline: [invalidate-replica] も参照
+	GFM_PROTO_CLOSE_WRITE_V2_4
+	  暗黙の入力: i:current file descriptor
+	  入力: l:size
+		l:atime_sec, i:atime_nsec
+		l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+	  	i:flags, l:old_gen, l:new_gen
+	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ,
+	     GFM_PROTO_CLOSE_WRITE も参照
 	  → gfarm-v2-outline: [invalidate-replica] も参照
 	GFM_PROTO_LOCK
 	  暗黙の入力: i:current file descriptor
@@ -429,7 +442,8 @@
 	  暗黙の入力: i:current file descriptor
 	  入力: なし
 	  出力: i:エラー
-	  ※ GFM_PROTO_CLOSE_READ, GFM_PROTO_CLOSE_WRITE も参照
+	  ※ GFM_PROTO_CLOSE_READ, GFM_PROTO_CLOSE_WRITE,
+	  　 GFM_PROTO_CLOSE_WRITE_V2_4 も参照
 	GFM_PROTO_FSTAT
 	  暗黙の入力: i:current file descriptor
 	  入力: なし
