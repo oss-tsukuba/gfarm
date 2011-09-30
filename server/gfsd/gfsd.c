@@ -706,10 +706,14 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 struct file_entry *
 file_table_entry(gfarm_int32_t net_fd)
 {
-	if (0 <= net_fd && net_fd < file_table_size)
-		return (&file_table[net_fd]);
-	else
-		return (NULL);
+	struct file_entry *fe;
+
+	if (0 <= net_fd && net_fd < file_table_size) {
+		fe = &file_table[net_fd];
+		if (fe->local_fd != -1)
+			return (fe);
+	}
+	return (NULL);
 }
 
 #define timeval_sub(t1, t2) \
@@ -726,7 +730,7 @@ file_table_close(gfarm_int32_t net_fd)
 	double total_time;
 
 	fe = file_table_entry(net_fd);
-	if (fe == NULL || fe->local_fd == -1) {
+	if (fe == NULL) {
 		gflog_debug(GFARM_MSG_1002168,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -3685,7 +3689,7 @@ rpc_reply:
 #endif /* not yet in gfarm v2 */
 
 static void
-gfm_client_connect_with_reconnection()
+gfm_client_connect_with_reconnection(void)
 {
 	gfarm_error_t e;
 	unsigned int sleep_interval = 10;	/* 10 sec */
