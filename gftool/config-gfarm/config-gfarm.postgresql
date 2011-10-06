@@ -451,11 +451,11 @@ _EOF_
 #		}
 	}
 	FILENAME == "$admin_password" {
-		print "ALTER USER $BACKEND_ADMIN_USER"
+		print "ALTER USER \"$BACKEND_ADMIN_USER\""
 		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
 	}
 	FILENAME == "$password" {
-		print "ALTER USER $BACKEND_USER"
+		print "ALTER USER \"$BACKEND_USER\""
 		printf "  WITH ENCRYPTED PASSWORD '"'%s'"';\n", \$0
 	}' $admin_password $password | $PGSQL_BINDIR/psql -q $DB_NAME
 	echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
