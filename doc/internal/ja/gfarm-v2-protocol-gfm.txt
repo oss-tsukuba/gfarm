@@ -398,8 +398,14 @@
 		エラー == GFARM_ERR_NO_ERROR の場合:
 	  	i:flags, l:old_gen, l:new_gen
 	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ,
-	     GFM_PROTO_CLOSE_WRITE も参照
+	     GFM_PROTO_CLOSE_WRITE, GFM_PROTO_GENERATION_UPDATED
+	     も参照
 	  → gfarm-v2-outline: [invalidate-replica] も参照
+	GFM_PROTO_GENERATION_UPDATED
+	  暗黙の入力: i:current file descriptor
+	  入力: i:errcode
+	  出力: i:エラー
+	  ※ GFM_PROTO_CLOSE_WRITE も参照
 	GFM_PROTO_LOCK
 	  暗黙の入力: i:current file descriptor
 	  入力: l:start, l:len, i:type, i:whence
