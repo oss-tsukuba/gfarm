@@ -662,7 +662,7 @@ struct { \
 	((elm) == &(head))
 
 #define GFARM_HCIRCLEQ_EMPTY(head, field) \
-	GFARM_HCIRCLEQ_IS_END(head, (head).field.hcqe_next, field)
+	GFARM_HCIRCLEQ_IS_END(head, (head).field.hcqe_next)
 
 #define GFARM_HCIRCLEQ_NEXT(elm, field)	((elm)->field.hcqe_next)
 #define GFARM_HCIRCLEQ_PREV(elm, field)	((elm)->field.hcqe_prev)
@@ -710,7 +710,7 @@ struct { \
 /* assert(!GFARM_HCIRCLEQ_IS_END(head, (elm)->field.hcqe_prev, field)); */
 #if 0
 #define GFARM_HCIRCLEQ_REMOVE_BEFORE(elm, field) \
-	GFARM_HCIRCLEQ_REMOVE(head, (elm)->field.hcqe_prev, field)
+	GFARM_HCIRCLEQ_REMOVE((elm)->field.hcqe_prev, field)
 #else
 #define GFARM_HCIRCLEQ_REMOVE_BEFORE(elm, field) do { \
 	(elm)->field.hcqe_prev = (elm)->field.hcqe_prev->field.hcqe_prev; \
@@ -720,10 +720,10 @@ struct { \
 
 /* assert(!GFARM_HCIRCLEQ_EMPTY(head, field)); */
 #define GFARM_HCIRCLEQ_REMOVE_HEAD(head, field)	\
-	GFARM_HCIRCLEQ_REMOVE_AFTER(&(head))
+	GFARM_HCIRCLEQ_REMOVE_AFTER(&(head), field)
 /* assert(!GFARM_HCIRCLEQ_EMPTY(head, field)); */
 #define GFARM_HCIRCLEQ_REMOVE_TAIL(head, field) \
-	GFARM_HCIRCLEQ_REMOVE_BEFORE(&(head))
+	GFARM_HCIRCLEQ_REMOVE_BEFORE(&(head), field)
 
 #define GFARM_HCIRCLEQ_CONCAT_BEFORE(at, head, field) do { \
 	if (!GFARM_HCIRCLEQ_EMPTY(head, field)) { \
