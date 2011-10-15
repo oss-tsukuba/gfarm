@@ -121,6 +121,7 @@ gfarm_get_hostname_by_url(const char *path,
 	int nospec;
 	gfarm_error_t e = gfarm_get_hostname_by_url0(&path, hostnamep,
 	    portp, &nospec);
+
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (nospec) {
@@ -148,6 +149,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		gflog_debug(GFARM_MSG_1002585,
 		    "gfarm_get_hostname_by_url0 failed: %s",
 		    gfarm_error_string(e));
+		return (e);
 	}
 
 	if (nospec) {
