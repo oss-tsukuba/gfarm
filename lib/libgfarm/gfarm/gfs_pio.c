@@ -313,6 +313,12 @@ gfs_pio_close(GFS_File gf)
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
+		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "ignore %s error at pio close operation",
+			    gfarm_error_string(e));
+			e = GFARM_ERR_NO_ERROR;
+		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}

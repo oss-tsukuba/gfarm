@@ -2608,6 +2608,114 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 }
 
 gfarm_error_t
+gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
+	struct gfarm_timespec atime;
+	struct host *spool_host;
+	int transaction = 0;
+	struct inode *inode;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_READ";
+
+	e = gfm_server_get_request(peer, diag, "llli",
+	    &inum, &gen, &atime.tv_sec, &atime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "fhclose_read request failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "peer_get_host() failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((inode = inode_lookup(inum)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup() failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = inode_fhclose_read(inode, &atime);
+		if (transaction)
+			db_end(diag);
+	}
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum;
+	gfarm_off_t size;
+	struct gfarm_timespec atime, mtime;
+	gfarm_int32_t flags = 0;
+	int transaction = 0;
+	gfarm_int64_t old_gen, new_gen;
+	int generation_updated = 0;
+	gfarm_uint64_t cookie = 0;
+	struct inode *inode;
+	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
+
+	e = gfm_server_get_request(peer, diag, "llllili",
+	    &inum, &old_gen, &size,
+	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	new_gen = old_gen;
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (peer_get_host(peer) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "peer_get_host() failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((inode = inode_lookup(inum)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup() failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+
+		/*
+		 * closing must be done regardless of the result of db_begin().
+		 * because not closing may cause descriptor leak.
+		 */
+		e = inode_fhclose_write(inode, old_gen, size, &atime,
+		    &mtime, &new_gen, &generation_updated);
+		if (e == GFARM_ERR_NO_ERROR && generation_updated) {
+			cookie = peer_add_cookie(peer);
+			flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
+		}
+		if (transaction)
+			db_end(diag);
+	}
+
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, diag, e, "illl",
+	    flags, old_gen, new_gen, cookie));
+}
+
+gfarm_error_t
 gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -2652,6 +2760,43 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		gflog_warning(GFARM_MSG_1002271,
 		    "%s: host %s, fd %d: new generation rename: %s\n", diag,
 		    host_name(spool_host), fd, gfarm_error_string(result));
+	}
+
+	giant_unlock();
+	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
+    int skip)
+{
+	gfarm_error_t e;
+	gfarm_uint64_t cookie;
+	gfarm_int32_t result;
+	struct host *spool_host;
+	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
+
+	e = gfm_server_get_request(peer, diag, "li", &cookie, &result);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002265, "%s request failed: %s",
+		    diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	giant_lock();
+
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_get_host() failed", diag);
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (!peer_delete_cookie(peer, cookie)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: peer_delete_cookie() failed", diag);
+		e = GFARM_ERR_BAD_COOKIE;
 	}
 
 	giant_unlock();

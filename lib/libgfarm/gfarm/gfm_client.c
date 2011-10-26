@@ -2616,6 +2616,42 @@ gfm_client_close_write_v2_4_result(struct gfm_connection *gfm_server,
 }
 
 gfarm_error_t
+gfm_client_fhclose_read_request(struct gfm_connection *gfm_server,
+	gfarm_ino_t inode, gfarm_uint64_t gen, 
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FHCLOSE_READ,
+	    "llli", inode, gen, atime_sec, atime_nsec));
+}
+
+gfarm_error_t
+gfm_client_fhclose_read_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_fhclose_write_request(struct gfm_connection *gfm_server,
+	gfarm_ino_t inode, gfarm_uint64_t gen, gfarm_off_t size, 
+	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
+	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
+{
+	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FHCLOSE_WRITE,
+	    "llllili", inode, gen, size, atime_sec, atime_nsec,
+	    mtime_sec, mtime_nsec));
+}
+
+gfarm_error_t
+gfm_client_fhclose_write_result(struct gfm_connection *gfm_server,
+	gfarm_int32_t *flagsp,
+	gfarm_int64_t *old_igenp, gfarm_int64_t *new_igenp,
+	gfarm_uint64_t *cookiep)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "illl",
+	    flagsp, old_igenp, new_igenp, cookiep));
+}
+
+gfarm_error_t
 gfm_client_generation_updated_request(struct gfm_connection *gfm_server,
 	gfarm_int32_t errcode)
 {
@@ -2625,6 +2661,22 @@ gfm_client_generation_updated_request(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_generation_updated_result(struct gfm_connection *gfm_server)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, ""));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_by_cookie_request(
+	struct gfm_connection *gfm_server, gfarm_uint64_t cookie,
+	gfarm_int32_t errcode)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_GENERATION_UPDATED_BY_COOKIE, "li", cookie, errcode));
+}
+
+gfarm_error_t
+gfm_client_generation_updated_by_cookie_result(
+	struct gfm_connection *gfm_server)
 {
 	return (gfm_client_rpc_result(gfm_server, 0, ""));
 }

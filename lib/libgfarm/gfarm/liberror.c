@@ -137,6 +137,9 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"internal error",
 	"db access should be retried",
 	"too many hosts",
+	"gfmd was failed over",
+	"bad inode number",
+	"bad cookie",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

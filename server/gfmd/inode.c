@@ -2687,6 +2687,49 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
 	}
 }
 
+gfarm_error_t
+inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
+{
+	static const char diag[] = "inode_fhclose_read";
+
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		return (GFARM_ERR_STALE_FILE_HANDLE);
+	}
+	if (atime != NULL)
+		inode_set_atime(inode, atime);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
+    gfarm_off_t size, struct gfarm_timespec *atime,
+    struct gfarm_timespec *mtime, gfarm_int64_t *new_genp,
+    int *generation_updatedp)
+{
+	static const char diag[] = "inode_fhclose_write";
+
+	if (!inode_is_file(inode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		return (GFARM_ERR_STALE_FILE_HANDLE);
+	}
+	
+	inode_set_atime(inode, atime);
+	inode_set_mtime(inode, mtime);
+	inode_set_ctime(inode, mtime);
+
+	if (inode->i_gen == old_gen) {
+		/* update generation number */
+		inode_increment_gen(inode);
+		*generation_updatedp = 1;
+	} else
+		*generation_updatedp = 0;
+	*new_genp = inode->i_gen;
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
 /*
  * returns TRUE, if generation number is updated.
  *

@@ -23,6 +23,7 @@
 
 #include "gfutil.h"
 #include "thrsubr.h"
+#include "queue.h"
 
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -117,6 +118,11 @@ struct peer_closing_queue {
 	&peer_closing_queue.head
 };
 
+struct cookie {
+	gfarm_uint64_t id;
+	GFARM_HCIRCLEQ_ENTRY(cookie) hcircleq;
+};
+
 struct peer {
 	struct peer *next_close;
 	int refcount;
@@ -158,12 +164,15 @@ struct peer {
 	pthread_mutex_t replication_mutex;
 	int simultaneous_replication_receivers;
 	struct file_replicating replicating_inodes; /* dummy header */
+
+	GFARM_HCIRCLEQ_HEAD(cookie) cookies;
 };
 
 static struct peer *peer_table;
 static int peer_table_size;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char peer_table_diag[] = "peer_table";
+static gfarm_uint64_t cookie_seqno = 1;
 
 static void (*peer_async_free)(struct peer *, gfp_xdr_async_peer_t) = NULL;
 
@@ -478,6 +487,7 @@ peer_init(int max_peers)
 		peer->replicating_inodes.prev_inode =
 		peer->replicating_inodes.next_inode =
 		    &peer->replicating_inodes;
+		GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
 	}
 
 	e = create_detached_thread(peer_closer, NULL);
@@ -560,6 +570,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	peer->flags = 0;
 	peer->findxmlattrctx = NULL;
 	peer->u.client.jobs = NULL;
+	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
 
 	/* deal with reboots or network problems */
 	sockopt = 1;
@@ -684,6 +695,7 @@ peer_free(struct peer *peer)
 	char *username;
 	const char *hostname;
 	static const char diag[] = "peer_free";
+	struct cookie *cookie;
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
@@ -691,6 +703,13 @@ peer_free(struct peer *peer)
 		(*peer_async_free)(peer, peer->async);
 		peer->async = NULL;
 	}
+
+	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
+		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
+		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
+		free(cookie);
+	}
+	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
 
 	/* this must be called after (*peer_async_free)() */
 	peer_replicating_free_all(peer);
@@ -1209,4 +1228,47 @@ void *
 peer_findxmlattrctx_get(struct peer *peer)
 {
 	return peer->findxmlattrctx;
+}
+
+gfarm_uint64_t
+peer_add_cookie(struct peer *peer)
+{
+	static const char *diag = "peer_add_cookie";
+	struct cookie *cookie;
+	gfarm_uint64_t result;
+
+	GFARM_MALLOC(cookie);
+	if (cookie == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+	result = cookie->id = cookie_seqno++;
+	GFARM_HCIRCLEQ_INSERT_HEAD(peer->cookies, cookie, hcircleq);
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
+
+	return (result);
+}
+
+int
+peer_delete_cookie(struct peer *peer, gfarm_uint64_t cookie_id)
+{
+	static const char *diag = "peer_delete_cookie";
+	struct cookie *cookie;
+	int found = 0;
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+	GFARM_HCIRCLEQ_FOREACH(cookie, peer->cookies, hcircleq) {
+		if (cookie->id == cookie_id) {
+			GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
+			free(cookie);
+			found = 1;
+			break;
+		}
+	}
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
+	if (!found)
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: bad cookie id %llu",
+		    diag, (unsigned long long)cookie_id);
+
+	return (found);
 }

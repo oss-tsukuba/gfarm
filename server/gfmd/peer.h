@@ -143,3 +143,6 @@ void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
 	struct host *, gfarm_ino_t, gfarm_int64_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
+
+gfarm_uint64_t peer_add_cookie(struct peer *);
+int peer_delete_cookie(struct peer *, gfarm_uint64_t);

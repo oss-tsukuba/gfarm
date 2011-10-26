@@ -125,6 +125,9 @@ struct file_opening;
 gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *);
 void inode_close_read(struct file_opening *, struct gfarm_timespec *);
+gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
+gfarm_error_t inode_fhclose_write(struct inode *, gfarm_uint64_t, gfarm_off_t,
+    struct gfarm_timespec *, struct gfarm_timespec *, gfarm_int64_t *, int *);
 int inode_file_update(struct file_opening *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	gfarm_int64_t *, gfarm_int64_t *);
