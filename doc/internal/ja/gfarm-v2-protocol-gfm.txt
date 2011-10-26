@@ -457,7 +457,7 @@
 	  入力: l:atime_sec, i:atime_nsec
 	  出力: i:エラー
 	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_WRITE,
-	  　 GFM_PROTO_CLOSE_WRITE_V2_4 も参照
+	  　 GFM_PROTO_CLOSE_WRITE_V2_4, GFM_PROTO_FHCLOSE_READ も参照
 
 	GFM_PROTO_CLOSE_WRITE
 	  暗黙の入力: i:current file descriptor
@@ -478,15 +478,36 @@
 		エラー == GFARM_ERR_NO_ERROR の場合:
 	  	i:flags, l:old_gen, l:new_gen
 	  ※ GFM_PROTO_CLOSE, GFM_PROTO_CLOSE_READ,
-	     GFM_PROTO_CLOSE_WRITE, GFM_PROTO_GENERATION_UPDATED
-	     も参照
+	     GFM_PROTO_CLOSE_WRITE, GFM_PROTO_GENERATION_UPDATED,
+	     GFM_PROTO_FHCLOSE_WRITE も参照
 	  → gfarm-v2-outline: [invalidate-replica] も参照
+
+	GFM_PROTO_FHCLOSE_READ
+	  入力: l:inode, l:gen, l:atime_sec, i:atime_nsec
+	  出力: i:エラー
+	  ※ GFM_PROTO_CLOSE_READ, GFM_PROTO_FHCLOSE_WRITE も参照
+
+	GFM_PROTO_FHCLOSE_WRITE
+	  入力: l:inode, l:gen, l:size
+		l:atime_sec, i:atime_nsec
+		l:mtime_sec, i:mtime_nsec
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+	  	i:flags, l:old_gen, l:new_gen, l:cookie
+	  ※ GFM_PROTO_CLOSE_WRITE, GFM_PROTO_FHCLOSE_READ,
+	     GFM_PROTO_GENERATION_UPDATED_BY_COOKIE も参照
 
 	GFM_PROTO_GENERATION_UPDATED
 	  暗黙の入力: i:current file descriptor
 	  入力: i:errcode
 	  出力: i:エラー
-	  ※ GFM_PROTO_CLOSE_WRITE_V2_4 も参照
+	  ※ GFM_PROTO_GENERATION_UPDATED_BY_COOKIE,
+	     GFM_PROTO_CLOSE_WRITE_V2_4 も参照
+
+	GFM_PROTO_GENERATION_UPDATED_BY_COOKIE
+	  入力: l:cookie, i:errcode
+	  出力: i:エラー
+	  ※ GFM_PROTO_GENERATION_UPDATED, GFM_PROTO_FHCLOSE_WRITE も参照
 
 	GFM_PROTO_LOCK
 	  暗黙の入力: i:current file descriptor
