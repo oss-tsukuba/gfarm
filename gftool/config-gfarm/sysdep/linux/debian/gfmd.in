@@ -30,7 +30,7 @@ case "$1" in
   stop)
 	echo -n "Stopping gfarm server: $FILE"
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-		--retry forever/0/1 --exec $DAEMON
+		--retry TERM/forever/-0/1 --exec $DAEMON
 	echo "."
 	;;
   restart|force-reload)
