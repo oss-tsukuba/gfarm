@@ -24,6 +24,8 @@ FILE=$prog
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 OPTIONS="@config_gfarm_gfmd_option@"
+warning_facility=local0
+warning_priority=notice
 
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
@@ -50,15 +52,22 @@ case $1 in
 	;;
     stop)
 	echo -n "Shutting down $FILE"
-	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
-		rm -f "$PIDFILE"
-	elif [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
-	then
-		rc_failed 4 # user had insufficient privileges
-	else
-		if [ -f "$PIDFILE" ]; then
-			echo -n "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+	if [ -f "$PIDFILE" ]; then
+		pid=`cat "$PIDFILE"`
+		if kill -TERM $pid; then
+			while kill -0 $pid 2>/dev/null; do
+				echo "old $FILE (pid $pid) is still running, sleeping..."
+				logger -p ${warning_facility}.${warning_priority} "old $FILE (pid $pid) is still running, sleeping..."
+				sleep 1
+			done
+			rm -f "$PIDFILE"
+		elif [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
+			rc_failed 4 # user had insufficient privileges
+		else
+			echo -n "$FILE (pid $pid) is dead, but $PIDFILE remains"
+			rc_failed 7 # program is not running
 		fi
+	else
 		rc_failed 7 # program is not running
 	fi
 	rc_status -v

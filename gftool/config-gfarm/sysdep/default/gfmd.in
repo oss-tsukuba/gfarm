@@ -29,6 +29,8 @@ DAEMON="@config_gfarm_prefix@/sbin/$PROG"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 OPTIONS="@config_gfarm_gfmd_option@"
 globus_location="@config_gfarm_globus_location@"
+warning_facility=local0
+warning_priority=notice
 
 if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
    [ -f "$globus_location/etc/globus-user-env.sh" ]
@@ -52,11 +54,19 @@ start)
 	;;
 
 stop)
-	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
-		rm -f "$PIDFILE"
-	elif [ -f "$PIDFILE" ]; then
-		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
-		exit 1
+	if [ -f "$PIDFILE" ]; then
+		pid=`cat "$PIDFILE"`
+		if kill -TERM $pid; then
+			while kill -0 $pid 2>/dev/null; do
+				echo "old $FILE (pid $pid) is still running, sleeping..."
+				logger -p ${warning_facility}.${warning_priority} "old $FILE (pid $pid) is still running, sleeping..."
+				sleep 1
+			done
+			rm -f "$PIDFILE"
+		else
+			echo "$FILE (pid $pid) is not running? (check $PIDFILE)"
+			exit 1
+		fi
 	else
 		echo "$FILE is already stopped (no $PIDFILE)"
 		exit 1

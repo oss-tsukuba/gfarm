@@ -21,6 +21,8 @@ DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfmd_option@"
+warning_facility=local0
+warning_priority=notice
 
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
@@ -69,8 +71,16 @@ stop()
 	fi
 
 	if [ -f "$PIDFILE" ]; then
-		kill -TERM `cat "$PIDFILE"` && success || failure
+		pid=`cat "$PIDFILE"`
+		kill -TERM $pid && success || failure
 		RETVAL=$?
+		if [ $RETVAL -eq 0 ]; then
+			while kill -0 $pid 2>/dev/null; do
+				echo "old $FILE (pid $pid) is still running, sleeping..."
+				logger -p ${warning_facility}.${warning_priority} "old $FILE (pid $pid) is still running, sleeping..."
+				sleep 1
+			done
+		fi
 		if [ $RETVAL -eq 0 ] ||
 		   [ ! -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
 			rm -f "$PIDFILE" "$LOCKFILE"
