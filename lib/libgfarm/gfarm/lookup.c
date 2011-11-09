@@ -20,27 +20,27 @@
 
 static gfarm_error_t
 gfarm_get_hostname_by_url0(const char **pathp,
-	char **hostnamep, int *portp, int *nospec)
+	char **hostnamep, int *portp)
 {
-	gfarm_error_t e;
 	const char *p, *path = pathp ? *pathp : NULL;
-	char *ep, *hostname, *user;
+	char *ep, *hostname;
 	unsigned long port;
+	int nohost = 1, noport = 1;
 
-	if (path == NULL || !gfarm_is_url(path)) {
-		*nospec = 1;
-		return (GFARM_ERR_NO_ERROR);
-	}
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	hostname = NULL;
+	port = 0;
+#endif
+	if (path == NULL || !gfarm_is_url(path))
+		goto finish;
 
-	*nospec = 0;
 	path += GFARM_URL_PREFIX_LENGTH;
 	if (path[0] != '/' || path[1] != '/') {
 		gflog_debug(GFARM_MSG_1001254,
-			"Host missing in url (%s): %s",
-			*pathp,
+			"Host missing in url (%s): %s", *pathp,
 			gfarm_error_string(
 				GFARM_ERR_GFARM_URL_HOST_IS_MISSING));
-		return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
+		goto finish;
 	}
 	path += 2; /* skip "//" */
 	for (p = path;
@@ -50,20 +50,11 @@ gfarm_get_hostname_by_url0(const char **pathp,
 		;
 	if (p == path) {
 		gflog_debug(GFARM_MSG_1001255,
-			"Host missing in url (%s): %s",
-			*pathp,
+			"Host missing in url (%s): %s", *pathp,
 			gfarm_error_string(
 				GFARM_ERR_GFARM_URL_HOST_IS_MISSING));
-		return (GFARM_ERR_GFARM_URL_HOST_IS_MISSING);
+		goto finish;
 	}
-	if (*p != ':') {
-		gflog_debug(GFARM_MSG_1001256,
-		    "Port missing in url (%s): %s",
-		    *pathp,
-		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
-		return (GFARM_ERR_GFARM_URL_PORT_IS_MISSING);
-	}
-
 	GFARM_MALLOC_ARRAY(hostname, p - path + 1);
 	if (hostname == NULL) {
 		gflog_debug(GFARM_MSG_1002312,
@@ -73,15 +64,21 @@ gfarm_get_hostname_by_url0(const char **pathp,
 	}
 	memcpy(hostname, path, p - path);
 	hostname[p - path] = '\0';
+	nohost = 0;
 
+	if (*p != ':') {
+		gflog_debug(GFARM_MSG_1001256,
+		    "Port missing in url (%s): %s", *pathp,
+		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
+		goto finish;
+	}
 	p++; /* skip ":" */
 	errno = 0;
 	port = strtoul(p, &ep, 10);
 	if (*p == '\0' || (*ep != '\0' && *ep != '/')) {
 		free(hostname);
 		gflog_debug(GFARM_MSG_1001257,
-		    "Port missing in url (%s): %s",
-		    *pathp,
+		    "Port missing in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
 		return (GFARM_ERR_GFARM_URL_PORT_IS_MISSING);
 	}
@@ -90,26 +87,29 @@ gfarm_get_hostname_by_url0(const char **pathp,
 	    port <= 0 || port >= 65536) {
 		free(hostname);
 		gflog_debug(GFARM_MSG_1001258,
-		    "Port invalid in url (%s): %s",
-		    *pathp,
+		    "Port invalid in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_INVALID));
 		return (GFARM_ERR_GFARM_URL_PORT_IS_INVALID);
 	}
+	noport = 0;
 
-	/* XXX FIX ME: user can be got from url */
-	if ((e = gfarm_get_global_username_by_host(
-	    hostname, port, &user))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002584,
-		    "gfarm_get_global_username_by_host: %s",
-		    gfarm_error_string(e));
-		free(hostname);
-		return (e);
+ finish:
+	if (hostnamep != NULL) {
+		if (nohost) {
+			*hostnamep = strdup(gfarm_metadb_server_name);
+			if (*hostnamep == NULL)
+				return (GFARM_ERR_NO_MEMORY);
+		} else
+			*hostnamep = hostname;
 	}
-
-	*pathp = path;
-	*hostnamep = hostname;
-	*portp = port;
+	if (portp != NULL) {
+		if (noport)
+			*portp = gfarm_metadb_server_port;
+		else
+			*portp = port;
+	}
+	if (pathp != NULL)
+		*pathp = path;
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -118,19 +118,7 @@ gfarm_error_t
 gfarm_get_hostname_by_url(const char *path,
 	char **hostnamep, int *portp)
 {
-	int nospec;
-	gfarm_error_t e = gfarm_get_hostname_by_url0(&path, hostnamep,
-	    portp, &nospec);
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (nospec) {
-		*hostnamep = strdup(gfarm_metadb_server_name);
-		if (*hostnamep == NULL)
-			return (GFARM_ERR_NO_MEMORY);
-		*portp = gfarm_metadb_server_port;
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return (gfarm_get_hostname_by_url0(&path, hostnamep, portp));
 }
 
 gfarm_error_t
@@ -142,9 +130,8 @@ gfarm_url_parse_metadb(const char **pathp,
 	char *hostname;
 	int port;
 	char *user;
-	int nospec;
 
-	if ((e = gfarm_get_hostname_by_url0(pathp, &hostname, &port, &nospec))
+	if ((e = gfarm_get_hostname_by_url0(pathp, &hostname, &port))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002585,
 		    "gfarm_get_hostname_by_url0 failed: %s",
@@ -152,24 +139,7 @@ gfarm_url_parse_metadb(const char **pathp,
 		return (e);
 	}
 
-	if (nospec) {
-		if (gfm_serverp == NULL)
-			e = GFARM_ERR_NO_ERROR;
-		else if ((e = gfarm_get_global_username_by_host(
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
-		    &user))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1002586,
-			    "gfarm_get_global_username_by_host: %s",
-			    gfarm_error_string(e));
-			return (e);
-		} else {
-			e = gfm_client_connection_and_process_acquire(
-			    gfarm_metadb_server_name, gfarm_metadb_server_port,
-			    user, &gfm_server);
-			free(user);
-		}
-	} else if (gfm_serverp == NULL) {
+	if (gfm_serverp == NULL) {
 		e = GFARM_ERR_NO_ERROR;
 		free(hostname);
 	} else if ((e = gfarm_get_global_username_by_host(
