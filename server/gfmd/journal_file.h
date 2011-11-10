@@ -113,7 +113,8 @@ struct gfp_xdr *journal_file_writer_xdr(struct journal_file_writer *);
 off_t journal_file_writer_pos(struct journal_file_writer *);
 
 struct gfp_xdr *journal_file_reader_xdr(struct journal_file_reader *);
-off_t journal_file_reader_cache_pos(struct journal_file_reader *);
+void journal_file_reader_cache_pos(struct journal_file_reader *, off_t *,
+	int *);
 void journal_file_reader_commit_pos_unlocked(struct journal_file_reader *);
 void journal_file_reader_commit_pos(struct journal_file_reader *);
 int journal_file_reader_is_invalid(struct journal_file_reader *);

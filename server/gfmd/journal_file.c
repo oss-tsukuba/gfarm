@@ -272,23 +272,32 @@ journal_file_reader_xdr(struct journal_file_reader *reader)
 	return (reader->xdr);
 }
 
-static off_t
-journal_file_reader_cache_pos_unlocked(struct journal_file_reader *reader)
+static void
+journal_file_reader_cache_pos_unlocked(struct journal_file_reader *reader,
+	off_t *rposp, int *wrapp)
 {
-	return (reader->pos - reader->cache_size);
+	struct journal_file *jf = reader->file;
+
+	if (reader->pos - JOURNAL_FILE_HEADER_SIZE >= reader->cache_size) {
+		*rposp = reader->pos - reader->cache_size;
+		*wrapp = JOURNAL_FILE_READER_IS_WRAP(reader);
+	} else {
+		*rposp = (jf->tail + (reader->pos - JOURNAL_FILE_HEADER_SIZE)
+		    - reader->cache_size);
+		*wrapp = 1;
+	}
 }
 
-off_t
-journal_file_reader_cache_pos(struct journal_file_reader *reader)
+void
+journal_file_reader_cache_pos(struct journal_file_reader *reader,
+	off_t *rposp, int *wrapp)
 {
 	struct journal_file *jf = reader->file;
 	static const char *diag = "journal_file_reader_cache_pos";
-	off_t p;
 
 	journal_file_mutex_lock(jf, diag);
-	p = journal_file_reader_cache_pos_unlocked(reader);
+	journal_file_reader_cache_pos_unlocked(reader, rposp, wrapp);
 	journal_file_mutex_unlock(jf, diag);
-	return (p);
 }
 
 void
@@ -600,29 +609,52 @@ journal_file_reader_rewind(struct journal_file_reader *reader)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * Return 1 if the writer thread must wait for the reader thead.
+ */
 static int
-journal_file_reader_needs_wait(struct journal_file_reader *reader,
+journal_file_reader_writer_needs_wait(struct journal_file_reader *reader,
 	off_t wpos, size_t rec_len, size_t max_size)
 {
-	off_t cpos = journal_file_reader_cache_pos_unlocked(reader);
+	off_t rpos;
+	int wrap;
+
+	journal_file_reader_cache_pos_unlocked(reader, &rpos, &wrap);
 
 	/*
-	 * (wpos < cpos && wpos + rec_len > cpos)
+	 * Case 1: wpos == rpos
+	 *   The writer must wait for the reader if the reader is a lap
+	 *   behind.
+	 */
+	if (wpos == rpos)
+		return (rec_len > 0 && wrap);
+
+	/*
+	 * Case 2: wpos < rpos
+	 *   The writer must wait for the reader if it will pass the reader
+	 *   ahead.
 	 *
-	 *           w    c          max_size
+	 *           w    r          max_size
 	 *     +--+--+----+----------+
 	 *     |FH|  |rec_len|
+	 */
+	if (wpos < rpos && wpos + rec_len > rpos)
+		return (1);
+
+	/*
+	 * Case 3: wpos > rpos
+	 *   The writer must wait for the reader if it will pass the reader
+	 *   ahead.
 	 *
-	 * (cpos < rec_len + JOURNAL_FILE_HEADER_SIZE &&
-	 *  wpos + rec_len > max_size))
-	 *
-	 *             c          w  max_size
+	 *             r          w  max_size
 	 *     +--+----+----------+--+
 	 *     |FH|rec_len|       |rec_len|
 	 */
-	return ((wpos < cpos && wpos + rec_len > cpos) ||
-		(cpos < rec_len + JOURNAL_FILE_HEADER_SIZE &&
-		wpos + rec_len > max_size));
+	if ((rpos < rec_len + JOURNAL_FILE_HEADER_SIZE &&
+		wpos + rec_len > max_size))
+		return (1);
+
+	return (0);
 }
 
 static gfarm_error_t
@@ -632,11 +664,12 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 	struct journal_file *jf = reader->file;
 	static const char *diag = "journal_file_reader_adjust_pos";
 	off_t rpos, npos;
+	int wrap;
 
 	if (JOURNAL_FILE_READER_IS_INVALID(reader))
 		return (GFARM_ERR_NO_ERROR);
 	if (JOURNAL_FILE_READER_IS_BLOCK_WRITER(reader)) {
-		while (journal_file_reader_needs_wait(reader, wpos,
+		while (journal_file_reader_writer_needs_wait(reader, wpos,
 		    rec_len, max_size)) {
 #ifdef DEBUG_JOURNAL
 			gflog_info(GFARM_MSG_1002875,
@@ -647,7 +680,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		}
 		return (GFARM_ERR_NO_ERROR);
 	}
-	rpos = journal_file_reader_cache_pos_unlocked(reader);
+	journal_file_reader_cache_pos_unlocked(reader, &rpos, &wrap);
 	npos = wpos + rec_len;
 	if (npos < max_size) {
 		/* 0        w   r   n       max_size
@@ -655,8 +688,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		 * |FH|     |rec_len|
 		 *
 		 */
-		if (rpos < npos && rpos >= wpos &&
-		    (rpos != wpos || JOURNAL_FILE_READER_IS_WRAP(reader)))
+		if (rpos < npos && rpos >= wpos && (rpos != wpos || wrap))
 			journal_file_reader_invalidate(reader);
 	} else {
 		/* 0       r  n         w   max_size
@@ -668,8 +700,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		 * |FH|rec_len|         |rec_len|
 		 */
 		if (rpos < rec_len + JOURNAL_FILE_HEADER_SIZE ||
-		    (rpos >= wpos &&
-		    (rpos != wpos || !JOURNAL_FILE_READER_IS_WRAP(reader))))
+		    (rpos >= wpos && (rpos != wpos || !wrap)))
 			journal_file_reader_invalidate(reader);
 	}
 	if (JOURNAL_FILE_READER_IS_INVALID(reader)) {
