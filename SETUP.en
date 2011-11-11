@@ -506,3 +506,17 @@ The 'gfrep' command creates file copies.
 
 In this case, '.bashrc' has two copies; one is stored on
 linux-1.example.com and the other is stored on linux-2.example.com.
+
+o Automatic file replica creation
+
+The extended attribute gfarm.ncopy is used to create file replica
+automatically.  If you would like to create two file replicas for all
+newly created files, specify two by the extended attribute gfarm.ncopy
+of / (the root directory) as follows,
+
+	$ echo -n 2 | gfxattr -s / gfarm.ncopy
+
+Note that file replicas are not always created when there are not
+enough number of available file system nodes, or when the Gfarm file
+system is too busy.  To ensure to create the specified number of file
+replicas, use 'gfrep' command also.
