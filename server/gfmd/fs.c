@@ -3142,7 +3142,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 			"inode_writing_spool_host() failed");
 		e = GFARM_ERR_TEXT_FILE_BUSY;
 	} else {
-		e = inode_remove_replica(inode, host, 1);
+		e = inode_remove_replica(inode, host);
 	}
 
 	free(hostname);

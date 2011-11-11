@@ -3236,9 +3236,10 @@ file_replicating_get_gen(struct file_replicating *fr)
 	return (fr->igen);
 }
 
-static gfarm_error_t inode_remove_replica_gen_deferred(
-	struct inode *, struct host *, gfarm_int64_t, int, int, int,
-	struct dead_file_copy **);
+static gfarm_error_t
+inode_remove_replica_gen_deferred(struct inode *inode,
+	struct host *spool_host, gfarm_int64_t gen,
+	struct dead_file_copy **deferred_cleanupp);
 
 gfarm_error_t
 inode_replicated(struct file_replicating *fr,
@@ -3289,7 +3290,7 @@ inode_replicated(struct file_replicating *fr,
 			    (long long)inode_get_gen(inode),
 			    (long long)inode_get_size(inode));
 		e = inode_remove_replica_gen_deferred(inode, fr->dst, fr->igen,
-		    0, 1, 0, &dfc);
+		    &dfc);
 		if (e == GFARM_ERR_NO_ERROR) {
 			removal_pendingq_enqueue(dfc);
 		} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
@@ -3508,7 +3509,7 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 }
 
 static gfarm_error_t
-inode_remove_replica_gen_deferred(struct inode *inode, struct host *spool_host,
+inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen,
 	int do_not_delete_last, int invalid_is_removable, int metadata_only,
 	struct dead_file_copy **deferred_cleanupp)
@@ -3587,24 +3588,32 @@ gfarm_error_t
 inode_remove_replica_metadata(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen)
 {
-	return (inode_remove_replica_gen_deferred(inode, spool_host, gen,
+	return (inode_remove_replica_internal(inode, spool_host, gen,
 	    0, 0, 1, NULL));
+}
+
+static gfarm_error_t
+inode_remove_replica_gen_deferred(struct inode *inode,
+	struct host *spool_host, gfarm_int64_t gen,
+	struct dead_file_copy **deferred_cleanupp)
+{
+	return (inode_remove_replica_internal(inode, spool_host, gen,
+	    0, 1, 0, deferred_cleanupp));
 }
 
 gfarm_error_t
 inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t gen, int do_not_delete_last)
+	gfarm_int64_t gen)
 {
 	return (inode_remove_replica_gen_deferred(inode, spool_host, gen,
-	    do_not_delete_last, 0, 0, NULL));
+	    NULL));
 }
 
 gfarm_error_t
-inode_remove_replica(struct inode *inode, struct host *spool_host,
-	int do_not_delete_last)
+inode_remove_replica(struct inode *inode, struct host *spool_host)
 {
-	return (inode_remove_replica_gen(inode, spool_host,
-	    inode_get_gen(inode), do_not_delete_last));
+	return (inode_remove_replica_internal(inode, spool_host,
+	    inode_get_gen(inode), 1, 0, 0, NULL));
 }
 
 gfarm_error_t

@@ -112,8 +112,8 @@ void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
-	gfarm_int64_t, int);
-gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
+	gfarm_int64_t);
+gfarm_error_t inode_remove_replica(struct inode *, struct host *);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_file_updated_on(struct inode *, struct host *,
 	struct gfarm_timespec *, struct gfarm_timespec *);

@@ -1189,7 +1189,7 @@ process_replica_added(struct process *process,
 		    (long long)file_replicating_get_gen(fo->u.f.replicating),
 		    (long long)inode_get_gen(fo->inode));
 		e = inode_remove_replica_gen(fo->inode, spool_host,
-		    file_replicating_get_gen(fo->u.f.replicating), 0);
+		    file_replicating_get_gen(fo->u.f.replicating));
 		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = GFARM_ERR_INVALID_FILE_REPLICA;
 	} else
