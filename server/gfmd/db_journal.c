@@ -152,7 +152,7 @@ db_journal_initialize(void)
 	if ((e = journal_file_open(path, gfarm_get_journal_max_size(),
 	    journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003041,
+		gflog_error(GFARM_MSG_1003041,
 		    "gfm_server_journal_file_open : %s",
 		    gfarm_error_string(e));
 		return (e);
