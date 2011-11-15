@@ -1509,6 +1509,14 @@ journal_read_rec_header(struct gfp_xdr *xdr, enum journal_operation *opep,
 		    gfarm_error_string(e));
 		return (e);
 	}
+	if (memcmp(magic, GFARM_JOURNAL_RECORD_MAGIC,
+	    GFARM_JOURNAL_MAGIC_SIZE) != 0) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "invalid journal record magic : %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
 	if (ope < 0 || ope >= GFM_JOURNAL_OPERATION_MAX || len < 0 ||
 	    len >= JOURNAL_RECORD_SIZE_MAX - header_size) {
 		e = GFARM_ERR_INTERNAL_ERROR;
