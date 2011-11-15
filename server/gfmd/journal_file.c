@@ -278,12 +278,14 @@ journal_file_reader_cache_pos_unlocked(struct journal_file_reader *reader,
 {
 	struct journal_file *jf = reader->file;
 
-	if (reader->pos - JOURNAL_FILE_HEADER_SIZE >= reader->cache_size) {
-		*rposp = reader->pos - reader->cache_size;
+	if (reader->la_pos - JOURNAL_FILE_HEADER_SIZE
+	    >= reader->la_cache_size) {
+		*rposp = reader->la_pos - reader->la_cache_size;
 		*wrapp = JOURNAL_FILE_READER_IS_WRAP(reader);
 	} else {
-		*rposp = (jf->tail + (reader->pos - JOURNAL_FILE_HEADER_SIZE)
-		    - reader->cache_size);
+		*rposp = (jf->tail +
+		    (reader->la_pos - JOURNAL_FILE_HEADER_SIZE) -
+		    reader->la_cache_size);
 		*wrapp = 1;
 	}
 }
@@ -978,7 +980,9 @@ journal_blocking_write_op(struct gfarm_iobuffer *b,
 	if ((ssz = journal_write_fully(fd, data, length, &writer->pos)) < 0)
 		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
 	if (jf->size < writer->pos)
-		jf->size = jf->tail = writer->pos;
+		jf->size = writer->pos;
+	if (jf->tail < writer->pos)
+		jf->tail = writer->pos;
 	return (ssz);
 }
 
