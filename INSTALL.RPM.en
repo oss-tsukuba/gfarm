@@ -14,6 +14,31 @@ filesystem nodes, and client nodes have to be installed.
 
 Note that it is possible to install all RPM packages on the same host.
 
+Instruction to build RPM binary packages
+========================================
+
+RPM binary packages are built from the RPM source package (SRPM).  To
+build the binary packages, development packages of OpenSSL, OpenLDAP
+and PostgreSQL are required.
+
+
+	# yum install openssl-devel openldap-devel postgresql-devel
+	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
+
+Binary packages are located at /usr/src/redhat/RPM/ARCH/.
+
+To enable the GSI authentication, development packages of Globus
+GSSAPI is also required.  Moreover the environment variables
+GLOBUS_PREFIX and GLOBUS_FLAVOR should be defined.
+
+	# GLOBUS_PREFIX=/usr/gt4 GLOBUS_FLAVOR=gcc64 rpmbuild \
+		--rebuild gfarm-X.X.X-X.src.rpm
+
+If it succeeds, gfarm-gsi packages (not gfarm packages) are built.  If
+not, make sure whether the Globus GSSAPI library is correctly
+installed at the location specified by GLOBUS_PREFIX and GLOBUS_FLAVOR
+or not.
+
 Installation of a Gfarm metadata server
 =======================================
 
