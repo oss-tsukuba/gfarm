@@ -1029,6 +1029,32 @@ start_db_journal_threads(void)
 	}
 }
 
+/*
+ * Process all backlog records written in a journal file to database.
+ * When a master or slave gfmd starts, this function must be called once
+ * before loading data (except for seqnum) from the database.
+ */
+static void
+boot_apply_db_journal(void)
+{
+	gfarm_error_t e;
+	static int boot_apply = 1;
+
+	if ((e = create_detached_thread(db_journal_store_thread,
+	    &boot_apply)) != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "create_detached_thread(db_journal_store_thread): %s",
+		    gfarm_error_string(e));
+
+	db_journal_wait_for_apply_thread();
+	gflog_info(GFARM_MSG_UNFIXED, "end boot-apply db journal");
+
+	/*
+	 * Reload seqnum from the database.
+	 */
+	db_journal_init_seqnum();
+}
+
 static void
 start_gfmdc_threads(void)
 {
@@ -1301,6 +1327,7 @@ gfmd_modules_init_default(int table_size)
 	if (gfarm_get_metadb_replication_enabled()) {
 		db_journal_apply_init();
 		db_journal_init();
+		boot_apply_db_journal();
 	}
 	mdhost_init();
 	back_channel_init();
@@ -1506,7 +1533,7 @@ main(int argc, char **argv)
 
 	if (gfarm_get_metadb_replication_enabled()) {
 		start_db_journal_threads();
-		db_journal_boot_apply();
+		db_journal_reset_slave_transaction_nesting();
 	}
 	if (!mdhost_self_is_readonly()) {
 		/* these functions write db, thus, must be after db_thread  */

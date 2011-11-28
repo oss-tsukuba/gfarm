@@ -118,8 +118,21 @@ db_journal_init_status(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
-db_journal_initialize(void)
+void
+db_journal_init_seqnum(void)
+{
+	gfarm_error_t e;
+
+	if ((e = db_seqnum_load(NULL, db_seqnum_load_callback))
+	    != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT) {
+		gflog_fatal(GFARM_MSG_1003040,
+		    "db_seqnum_load : %s",
+		    gfarm_error_string(e));
+	}
+}
+
+void
+db_journal_init(void)
 {
 	gfarm_error_t e;
 	char path[MAXPATHLEN + 1];
@@ -131,18 +144,11 @@ db_journal_initialize(void)
 
 	if (journal_dir == NULL) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_error(GFARM_MSG_1003039,
+		gflog_fatal(GFARM_MSG_1003039,
 		    "gfarm_journal_file_dir is empty : %s",
 		    gfarm_error_string(e));
-		return (e);
 	}
-	if ((e = db_seqnum_load(NULL, db_seqnum_load_callback))
-	    != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_SUCH_OBJECT) {
-		gflog_debug(GFARM_MSG_1003040,
-		    "db_seqnum_load : %s",
-		    gfarm_error_string(e));
-		return (e);
-	}
+	db_journal_init_seqnum();
 
 	snprintf(path, MAXPATHLEN, "%s/%010d.gmj", journal_dir, 0);
 #ifdef DEBUG_JOURNAL
@@ -152,10 +158,9 @@ db_journal_initialize(void)
 	if ((e = journal_file_open(path, gfarm_get_journal_max_size(),
 	    journal_seqnum, &self_jf, GFARM_JOURNAL_RDWR))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1003041,
+		gflog_fatal(GFARM_MSG_1003041,
 		    "gfm_server_journal_file_open : %s",
 		    gfarm_error_string(e));
-		return (e);
 	}
 #ifdef DEBUG_JOURNAL
 	gfarm_gettimerval(&t2);
@@ -164,14 +169,12 @@ db_journal_initialize(void)
 	    "journal_file_open : %10.5lf sec", ts);
 #endif
 
-	return (db_journal_init_status());
-}
-
-void
-db_journal_init()
-{
-	if (db_journal_initialize() != GFARM_ERR_NO_ERROR)
-		exit(1);
+	if ((e = db_journal_init_status()) 
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "db_journal_init_status : %s",
+		    gfarm_error_string(e));
+	}
 }
 
 void
@@ -3448,6 +3451,7 @@ db_journal_free_rec_list(struct db_journal_rec_list *recs)
 void *
 db_journal_store_thread(void *arg)
 {
+	int boot_apply = (arg != NULL) ? *(int *)arg : 0;
 	int first;
 	gfarm_error_t e;
 	struct journal_file_reader *reader =
@@ -3463,6 +3467,8 @@ db_journal_store_thread(void *arg)
 			if ((e = journal_file_read(reader, NULL,
 			    db_journal_read_ops, db_journal_add_rec, NULL,
 			    &recs, NULL)) != GFARM_ERR_NO_ERROR) {
+				if (boot_apply && e == GFARM_ERR_CANT_OPEN)
+					goto end;
 				gflog_error(GFARM_MSG_1003185,
 				    "failed to read journal record : %s",
 				    gfarm_error_string(e));
@@ -3544,7 +3550,7 @@ db_journal_apply_thread(void *arg)
 }
 
 void
-db_journal_boot_apply(void)
+db_journal_reset_slave_transaction_nesting(void)
 {
 	journal_file_wait_until_empty(self_jf);
 #ifdef DEBUG_JOURNAL
@@ -3556,7 +3562,7 @@ db_journal_boot_apply(void)
 		    "transaction end point is not found in journal file.");
 		giant_lock();
 		while (journal_slave_transaction_nesting-- > 0)
-			db_end("db_journal_boot_apply");
+			db_end("db_journal_reset_slave_transaction_nesting");
 		giant_unlock();
 	}
 }
