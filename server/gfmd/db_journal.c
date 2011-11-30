@@ -3338,6 +3338,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct db_journal_rec *ai, *tai;
 	struct db_journal_rec_list *c = closure;
+	static const char *diag = "db_journal_apply_op";
 
 	*needs_freep = 0;
 	GFARM_MALLOC(ai);
@@ -3354,7 +3355,16 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	if (ope != GFM_JOURNAL_END)
 		return (GFARM_ERR_NO_ERROR);
 
+	/*
+	 * Since the giant lock must be taken preceeded by the journal
+	 * file mutex in order to avoid deadlock, we unlock the journal 
+	 * file mutex once, take the giant lock, and then lock the journal
+	 * file mutex again.
+	 */
+	journal_file_mutex_unlock(self_jf, diag);
 	giant_lock();
+	journal_file_mutex_lock(self_jf, diag);
+
 	ai = GFARM_STAILQ_FIRST(c);
 	if (ai->ope != GFM_JOURNAL_BEGIN) {
 		e = GFARM_ERR_INTERNAL_ERROR;

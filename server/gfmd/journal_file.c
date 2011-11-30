@@ -183,13 +183,13 @@ journal_file_tail(struct journal_file *jf)
 	return (jf->tail);
 }
 
-static void
+void
 journal_file_mutex_lock(struct journal_file *jf, const char *diag)
 {
 	gfarm_mutex_lock(&jf->mutex, diag, JOURNAL_FILE_STR);
 }
 
-static void
+void
 journal_file_mutex_unlock(struct journal_file *jf, const char *diag)
 {
 	gfarm_mutex_unlock(&jf->mutex, diag, JOURNAL_FILE_STR);
