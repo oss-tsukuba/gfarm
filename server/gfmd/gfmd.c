@@ -1030,7 +1030,7 @@ start_db_journal_threads(void)
 }
 
 /*
- * Process all backlog records written in a journal file to database.
+ * Flush all backlog records written in a journal file to database.
  * When a master or slave gfmd starts, this function must be called once
  * before loading data (except for seqnum) from the database.
  */
@@ -1040,6 +1040,7 @@ boot_apply_db_journal(void)
 	gfarm_error_t e;
 	static int boot_apply = 1;
 
+	gflog_info(GFARM_MSG_UNFIXED, "start boot-apply db journal");
 	if ((e = create_detached_thread(db_journal_store_thread,
 	    &boot_apply)) != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_UNFIXED,
