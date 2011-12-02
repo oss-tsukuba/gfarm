@@ -1495,6 +1495,24 @@ main(int argc, char **argv)
 	 */
 	write_pid();
 
+	/* gfmd_modules_init() shouldn't/cannot write db */
+	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
+		gfmd_modules_init = gfmd_modules_init_default;
+	gfmd_modules_init(table_size);
+
+	/* must be after gfmd_modules_init(). they are mutually exclusive */
+	e = create_detached_thread(db_thread, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1000211,
+		    "create_detached_thread(db_thread): %s",
+		    gfarm_error_string(e));
+
+	e = create_detached_thread(resumer, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1002209,
+		    "create_detached_thread(resumer): %s",
+		    gfarm_error_string(e));
+
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
@@ -1512,24 +1530,6 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
-		    gfarm_error_string(e));
-
-	/* gfmd_modules_init() shouldn't/cannot write db */
-	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
-		gfmd_modules_init = gfmd_modules_init_default;
-	gfmd_modules_init(table_size);
-
-	/* must be after gfmd_modules_init(). they are mutually exclusive */
-	e = create_detached_thread(db_thread, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_1000211,
-		    "create_detached_thread(db_thread): %s",
-		    gfarm_error_string(e));
-
-	e = create_detached_thread(resumer, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_1002209,
-		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
 	if (gfarm_get_metadb_replication_enabled()) {
