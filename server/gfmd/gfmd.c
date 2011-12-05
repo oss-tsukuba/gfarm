@@ -1489,47 +1489,55 @@ main(int argc, char **argv)
 		if (gfarm_daemon(0, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1001487, "daemon");
 	}
-	/*
-	 * We do this after calling gfarm_daemon(),
-	 * because it changes pid.
-	 */
-	write_pid();
-
-	/* gfmd_modules_init() shouldn't/cannot write db */
-	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
-		gfmd_modules_init = gfmd_modules_init_default;
-	gfmd_modules_init(table_size);
-
-	/* must be after gfmd_modules_init(). they are mutually exclusive */
-	e = create_detached_thread(db_thread, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_1000211,
-		    "create_detached_thread(db_thread): %s",
-		    gfarm_error_string(e));
-
-	e = create_detached_thread(resumer, NULL);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_1002209,
-		    "create_detached_thread(resumer): %s",
-		    gfarm_error_string(e));
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
 	 */
 	gfarm_sigpipe_ignore();
 	/*
-	 * initialize signal masks before calling gfmd_modules_init(),
-	 * since it invokes some threads.  newly created threads inherits
-	 * this signal mask.
+	 * Initialize a signal mask before creating a thread, since
+	 * newly created threads inherit this signal mask.
 	 */
 	sigs_set(&sigs);
 	if (pthread_sigmask(SIG_BLOCK, &sigs, NULL) == -1) /* for sigwait() */
 		gflog_fatal(GFARM_MSG_1002736, "sigprocmask(SIG_BLOCK): %s",
 		    strerror(errno));
+
+	/*
+	 * Create 'db_thread' before 'sigs_handler' thread since
+	 * db_terminate() called by sigs_handler() requires 'db_thread'
+	 * is running.
+	 */
+	e = create_detached_thread(db_thread, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1000211,
+		    "create_detached_thread(db_thread): %s",
+		    gfarm_error_string(e));
+
 	e = create_detached_thread(sigs_handler, &sigs);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
+		    gfarm_error_string(e));
+
+	/*
+	 * We do this after calling gfarm_daemon(),
+	 * because it changes pid.
+	 */
+	write_pid();
+
+	/*
+	 * gfmd_modules_init() shouldn't/cannot write DB except for
+	 * boot_apply_db_journal() call.
+	 */
+	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
+		gfmd_modules_init = gfmd_modules_init_default;
+	gfmd_modules_init(table_size);
+
+	e = create_detached_thread(resumer, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_fatal(GFARM_MSG_1002209,
+		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
 	if (gfarm_get_metadb_replication_enabled()) {
