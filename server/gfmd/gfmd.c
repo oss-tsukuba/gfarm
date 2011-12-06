@@ -1476,6 +1476,11 @@ main(int argc, char **argv)
 		    "in configuration");
 		break;
 	}
+
+	/*
+	 * This initialized dbq, thus, should be called before
+	 * producer:gfmd_modules_init() and consumer:db_thread().
+	 */
 	e = db_initialize();
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* XXX FIXME need to wait and try to reconnect */
@@ -1495,7 +1500,7 @@ main(int argc, char **argv)
 	 */
 	gfarm_sigpipe_ignore();
 	/*
-	 * Initialize a signal mask before creating a thread, since
+	 * Initialize a signal mask before creating threads, since
 	 * newly created threads inherit this signal mask.
 	 */
 	sigs_set(&sigs);
@@ -1527,8 +1532,12 @@ main(int argc, char **argv)
 	write_pid();
 
 	/*
-	 * gfmd_modules_init() shouldn't/cannot write DB except for
-	 * boot_apply_db_journal() call.
+	 * gfmd shouldn't/cannot read/write DB
+	 * before calling boot_apply_db_journal() in gfmd_modules_init()
+	 * (except for reading seqnum in db_journal_init_seqnum()).
+	 *
+	 * Note: both boot_apply_db_journal() and *_init() routines may
+	 * write DB. (The latter is for metadata consistency check.)
 	 */
 	if (gfmd_modules_init == NULL) /* there isn't any private extension? */
 		gfmd_modules_init = gfmd_modules_init_default;
