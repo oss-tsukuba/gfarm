@@ -1478,7 +1478,7 @@ main(int argc, char **argv)
 	}
 
 	/*
-	 * This initialized dbq, thus, should be called before
+	 * This initializes dbq, thus, should be called before
 	 * producer:gfmd_modules_init() and consumer:db_thread().
 	 */
 	e = db_initialize();
@@ -1494,6 +1494,11 @@ main(int argc, char **argv)
 		if (gfarm_daemon(0, 0) == -1)
 			gflog_warning_errno(GFARM_MSG_1001487, "daemon");
 	}
+	/*
+	 * We do this after calling gfarm_daemon(),
+	 * because it changes pid.
+	 */
+	write_pid();
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).
@@ -1509,9 +1514,9 @@ main(int argc, char **argv)
 		    strerror(errno));
 
 	/*
-	 * Create 'db_thread' before 'sigs_handler' thread since
-	 * db_terminate() called by sigs_handler() requires 'db_thread'
-	 * is running.
+	 * Create 'db_thread' at almost same time with 'sigs_handler' thread
+	 * since db_terminate() which is called by sigs_handler() requires
+	 * that 'db_thread' is (eventually) running.
 	 */
 	e = create_detached_thread(db_thread, NULL);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1524,12 +1529,6 @@ main(int argc, char **argv)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
 		    gfarm_error_string(e));
-
-	/*
-	 * We do this after calling gfarm_daemon(),
-	 * because it changes pid.
-	 */
-	write_pid();
 
 	/*
 	 * gfmd shouldn't/cannot read/write DB
