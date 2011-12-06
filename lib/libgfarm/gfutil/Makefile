@@ -10,6 +10,7 @@ LIBRARY = libgfutil.la
 LIBRARY_RESULT = # do not install
 
 SRCS =	alloc.c \
+	assert.c \
 	daemon.c \
 	gfevent.c \
 	gfnetdb.c \
@@ -26,6 +27,7 @@ SRCS =	alloc.c \
 	timer.c \
 	timeval.c
 OBJS =	alloc.lo \
+	assert.lo \
 	daemon.lo \
 	gfevent.lo \
 	gfnetdb.lo \

@@ -75,7 +75,7 @@ gflog_terminate(void)
 }
 
 static char *
-gflog_vmessage_message(int msg_no, const char *file, int line_no,
+gflog_vmessage_message(int verbose, int msg_no, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
 	static char buf[2048];
@@ -87,9 +87,9 @@ gflog_vmessage_message(int msg_no, const char *file, int line_no,
 	if (!log_use_syslog)
 		GFLOG_SNPRINTF(buf, bp, endp, "%s: ", log_identifier);
 	GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
-	if (log_message_verbose > 0) {
+	if (verbose > 0) {
 		GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
-		if (log_message_verbose > 1)
+		if (verbose > 1)
 			GFLOG_SNPRINTF(buf, bp, endp, " %s()", func);
 		GFLOG_SNPRINTF(buf, bp, endp, ") ");
 	}
@@ -127,7 +127,8 @@ gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
 		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_lock: ",
 		    strerror(rv));
 
-	msg = gflog_vmessage_message(msg_no, file, line_no, func, format, ap);
+	msg = gflog_vmessage_message(log_message_verbose,
+	    msg_no, file, line_no, func, format, ap);
 	gflog_sub(priority, "", msg);
 
 	rv = pthread_mutex_unlock(&mutex);
@@ -193,6 +194,37 @@ gflog_fatal_message_errno(int msg_no, int priority, const char *file,
 	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
+	exit(2);
+}
+
+void
+gflog_assert_message(int msg_no, const char *file, int line_no,
+	const char *func, const char *format, ...)
+{
+	va_list ap;
+	int rv;
+	char *msg;
+
+	va_start(ap, format);
+
+	/* gflog_vmessage_message returns statically allocated space */
+	rv = pthread_mutex_lock(&mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR,
+		    "gflog_assert_message: pthread_mutex_lock: ",
+		    strerror(rv));
+
+	msg = gflog_vmessage_message(2, msg_no, file, line_no, func, format,
+	    ap);
+	gflog_sub(LOG_ERR, "", msg);
+
+	rv = pthread_mutex_unlock(&mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR,
+		    "gflog_assert_message: pthread_mutex_unlock: %s",
+		    strerror(rv));
+
+	va_end(ap);
 	exit(2);
 }
 

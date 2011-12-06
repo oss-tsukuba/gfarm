@@ -38,6 +38,8 @@ void gflog_fatal_message(int, int, const char *, int, const char*,
 		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
 void gflog_fatal_message_errno(int, int, const char *, int, const char*,
 		const char *, ...) GFLOG_PRINTF_ARG(6, 7);
+void gflog_assert_message(int, const char *, int, const char *,
+		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
 
 #define gflog_error(msg_no, ...) \
 	gflog_message(msg_no, LOG_ERR,\
