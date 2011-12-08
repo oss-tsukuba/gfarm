@@ -76,6 +76,7 @@ free_arg(void *arg)
 static PGconn *conn = NULL;
 static int transaction_nesting = 0;
 static int transaction_ok;
+static int connection_recovered = 0;
 
 static char *
 gfarm_pgsql_make_conninfo(const char **varnames, char **varvalues, int n,
@@ -336,9 +337,27 @@ pgsql_should_retry(PGresult *res)
 			sleep(RETRY_INTERVAL);
 		}
 		/* XXX FIXME: one transaction may be lost in this case */
+		/*
+		 * A connection to PostgreSQL is recovered here, but if
+		 * metadata replication is disabled, upper layer module
+		 * lacks of retry-transaction mechanism.  The upper layer
+		 * module, in this case, retries to execute SQL commands,
+		 * starting from the middle of the transaction.
+		 *
+		 * It may cause inconsistency of PostgreSQL database, but
+		 * we execute SQL commands requested by the upper layer
+		 * module anyway, since there is no way to keep consistency
+		 * of the database in such a situation.
+		 * 
+		 * We enable 'connection_recovered' flag here.  While the
+		 * flag is enabled, we check 'transaction_nesting' value
+		 * lazily.  Once "START TRANSACTION", "COMMIT" or "ROLLBACK"
+		 * SQL command is executed, the flag is disabled.
+		 */
 		gflog_info(GFARM_MSG_1002333,
 		    "PostgreSQL connection recovered");
 		transaction_nesting = 0;
+		connection_recovered = 1;
 		transaction_ok = 0;
 		return (1);
 	} else if (PQresultStatus(res) == PGRES_FATAL_ERROR &&
@@ -532,6 +551,8 @@ gfarm_pgsql_start(const char *diag)
 {
 	PGresult *res;
 
+	if (connection_recovered)
+		connection_recovered = 0;
 	if (transaction_nesting++ > 0)
 		return (GFARM_ERR_NO_ERROR);
 
@@ -556,6 +577,8 @@ gfarm_pgsql_start_with_retry(const char *diag)
 {
 	PGresult *res;
 
+	if (connection_recovered)
+		connection_recovered = 0;
 	if (transaction_nesting++ > 0)
 		return (GFARM_ERR_NO_ERROR);
 
@@ -577,7 +600,9 @@ gfarm_pgsql_start_with_retry(const char *diag)
 static gfarm_error_t
 gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 {
-	if (--transaction_nesting > 0)
+	if (connection_recovered)
+		connection_recovered = 0;
+	else if (--transaction_nesting > 0)
 		return (GFARM_ERR_NO_ERROR);
 
 	assert(transaction_nesting == 0);
