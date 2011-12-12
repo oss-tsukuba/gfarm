@@ -1,4 +1,5 @@
 extern int debug_mode;
+extern int file_trace_mode;
 
 void giant_init(void);
 void giant_lock(void);
@@ -10,3 +11,5 @@ char *strdup_ck(const char *, const char *);
 char *strdup_log(const char *, const char *);
 
 int accmode_to_op(gfarm_uint32_t);
+
+gfarm_uint64_t trace_log_get_sequence_number(void);

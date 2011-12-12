@@ -91,6 +91,8 @@ file_opening_alloc(struct inode *inode,
 		fo->u.d.key = NULL;
 	}
 
+	fo->path_for_trace_log = NULL;
+
 	return (fo);
 }
 
@@ -107,6 +109,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 		if (fo->u.d.key != NULL)
 			free(fo->u.d.key);
 	}
+	free(fo->path_for_trace_log);
 	free(fo);
 }
 
@@ -210,7 +213,7 @@ process_del_ref(struct process *process)
 		fo = process->filetab[fd];
 		if (fo != NULL) {
 			mode = inode_get_mode(fo->inode);
-			inode_close_read(fo, NULL);
+			inode_close_read(fo, NULL, NULL);
 			file_opening_free(fo, mode);
 		}
 	}
@@ -243,7 +246,7 @@ process_detach_peer(struct process *process, struct peer *peer)
 		 * if we'll support gfmd reconnection.
 		 */
 		if (process->filetab[fd] != NULL)
-			process_close_file(process, peer, fd);
+			process_close_file(process, peer, fd, NULL);
 	}
 }
 
@@ -605,7 +608,7 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 			fo->u.f.spool_host = NULL;
 		} else {
 			mode = inode_get_mode(fo->inode);
-			inode_close(fo);
+			inode_close(fo, NULL);
 
 			file_opening_free(fo, mode);
 			process->filetab[fd] = NULL;
@@ -775,7 +778,8 @@ process_reopen_file(struct process *process,
 }
 
 gfarm_error_t
-process_close_file(struct process *process, struct peer *peer, int fd)
+process_close_file(struct process *process, struct peer *peer, int fd,
+	char **trace_logp)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
@@ -824,7 +828,7 @@ process_close_file(struct process *process, struct peer *peer, int fd)
 		}
 	}
 
-	inode_close(fo);
+	inode_close(fo, trace_logp);
 	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
@@ -864,7 +868,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	inode_close_read(fo, atime);
+	inode_close_read(fo, atime, NULL);
 	file_opening_free(fo, mode);
 	process->filetab[fd] = NULL;
 	return (GFARM_ERR_NO_ERROR);
@@ -875,7 +879,8 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	gfarm_uint64_t *inump)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
@@ -896,6 +901,9 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	mode = inode_get_mode(fo->inode);
+	if (inump != NULL) {
+		*inump = inode_get_number(fo->inode);
+	}
 	if (!GFARM_S_ISREG(mode)) {
 		gflog_debug(GFARM_MSG_1001641,
 			"inode is not file");
@@ -932,7 +940,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	    == GFARM_ERR_ALREADY_EXISTS)) &&
 
-	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp)) {
+	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp, NULL)) {
 
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
@@ -948,7 +956,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
 	} else {
-		inode_close(fo);
+		inode_close(fo, NULL);
 
 		file_opening_free(fo, mode);
 		process->filetab[fd] = NULL;
@@ -1447,4 +1455,42 @@ gfm_server_inherit_fd(struct peer *peer, int from_client, int skip)
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
+}
+
+gfarm_error_t
+process_set_path_for_trace_log(struct process *process, int fd, char *path)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_opening() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	if (fo->path_for_trace_log != NULL)
+		free(fo->path_for_trace_log);
+	fo->path_for_trace_log = path;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_get_path_for_trace_log(struct process *process, int fd, char **path)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_opening() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+	if (fo->path_for_trace_log == NULL) {
+		*path = strdup("");
+	} else {
+		*path = strdup(fo->path_for_trace_log);
+	}
+	return (GFARM_ERR_NO_ERROR);
 }

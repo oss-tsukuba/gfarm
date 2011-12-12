@@ -18,6 +18,7 @@
 #include "subr.h"
 
 int debug_mode = 0;
+int file_trace_mode = 0;
 
 static pthread_mutex_t giant_mutex;
 
@@ -146,4 +147,13 @@ accmode_to_op(gfarm_uint32_t flag)
 		op = 0;
 	}
 	return (op);
+}
+
+/* giant_lock should be held before calling this */
+gfarm_uint64_t
+trace_log_get_sequence_number(void)
+{
+	static gfarm_uint64_t trace_log_seq_num;
+
+	return (trace_log_seq_num++);
 }

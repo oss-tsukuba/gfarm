@@ -15,6 +15,7 @@ struct process;
 struct file_copy;
 struct dead_file_copy;
 struct gfs_stat;
+struct inode_trace_log_info;
 
 void inode_for_each_file_copies(
 	struct inode *,
@@ -98,12 +99,14 @@ gfarm_error_t inode_create_file(struct inode *, char *,
 gfarm_error_t inode_create_dir(struct inode *, char *,
 	struct process *, gfarm_mode_t);
 gfarm_error_t inode_create_symlink(struct inode *, char *,
-	struct process *, char *);
+	struct process *, char *, struct inode_trace_log_info *);
 gfarm_error_t inode_create_link(struct inode *, char *,
 	struct process *, struct inode *);
 gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
-	struct process *);
-gfarm_error_t inode_unlink(struct inode *, char *, struct process *);
+	struct process *, struct inode_trace_log_info *,
+	struct inode_trace_log_info *, int *, int *);
+gfarm_error_t inode_unlink(struct inode *, char *, struct process *,
+	struct inode_trace_log_info *, int *);
 
 void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
@@ -123,14 +126,14 @@ gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 struct file_opening;
 
 gfarm_error_t inode_open(struct file_opening *);
-void inode_close(struct file_opening *);
-void inode_close_read(struct file_opening *, struct gfarm_timespec *);
+void inode_close(struct file_opening *, char**);
+void inode_close_read(struct file_opening *, struct gfarm_timespec *, char**);
 gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
 gfarm_error_t inode_fhclose_write(struct inode *, gfarm_uint64_t, gfarm_off_t,
     struct gfarm_timespec *, struct gfarm_timespec *, gfarm_int64_t *, int *);
 int inode_file_update(struct file_opening *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
-	gfarm_int64_t *, gfarm_int64_t *);
+	gfarm_int64_t *, gfarm_int64_t *, char**);
 
 gfarm_error_t inode_cksum_set(struct file_opening *,
 	const char *, size_t, const char *,
@@ -206,3 +209,9 @@ void rootdir_dump(void);
 /* exported for a use from a private extension */
 gfarm_error_t inode_schedule_file_default(struct file_opening *,
 	struct peer *, gfarm_int32_t *, struct host ***);
+
+struct inode_trace_log_info {
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	gfarm_mode_t imode;
+};

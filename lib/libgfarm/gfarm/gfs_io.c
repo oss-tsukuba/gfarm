@@ -39,6 +39,8 @@ struct gfm_create_fd_closure {
 	struct gfm_connection **gfm_serverp;
 	int *fdp;
 	int *typep;
+	gfarm_ino_t *inum_for_trace;
+	gfarm_uint64_t *gen_for_trace;
 };
 
 static gfarm_error_t
@@ -65,11 +67,10 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 {
 	struct gfm_create_fd_closure *c = closure;
 	gfarm_error_t e;
-	gfarm_ino_t inum;
-	gfarm_uint64_t gen;
 
 	if ((e = gfm_client_create_result(gfm_server,
-	    &inum, &gen, &c->mode_created)) != GFARM_ERR_NO_ERROR) {
+	    c->inum_for_trace, c->gen_for_trace, &c->mode_created))
+	    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
 		gflog_debug(GFARM_MSG_1000082,
 		    "create() result: %s", gfarm_error_string(e));
@@ -96,7 +97,8 @@ gfm_create_fd_success(struct gfm_connection *gfm_server, void *closure)
 
 gfarm_error_t
 gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
-	struct gfm_connection **gfm_serverp, int *fdp, int *typep)
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
+	gfarm_ino_t *inum, gfarm_uint64_t *gen)
 {
 	gfarm_error_t e;
 	struct gfm_create_fd_closure closure;
@@ -119,6 +121,8 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	closure.gfm_serverp = gfm_serverp;
 	closure.fdp = fdp;
 	closure.typep = typep;
+	closure.inum_for_trace = inum;
+	closure.gen_for_trace = gen;
 	return (gfm_name_op(path, GFARM_ERR_IS_A_DIRECTORY,
 	    gfm_create_fd_request,
 	    gfm_create_fd_result,

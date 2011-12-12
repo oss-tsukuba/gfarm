@@ -206,12 +206,15 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_timerval_t t1, t2;
+	int src_port;
+	gfarm_ino_t inum;
+	gfarm_uint64_t gen;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_create_fd(url, flags, mode, &gfm_server, &fd, &type)) ==
-	    GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_create_fd(url, flags, mode, &gfm_server, &fd, &type,
+	    &inum, &gen)) == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
@@ -235,6 +238,17 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
+
+	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
+		gfm_client_source_port(gfm_server, &src_port);
+		gflog_trace(GFARM_MSG_UNFIXED,
+			"%s/%s/%s/%d/CREATE/%s/%d/%lld/%lld///\"%s\"///",
+			gfarm_get_local_username(), gfm_client_username(gfm_server),
+			gfarm_host_get_self_name(), src_port,
+			gfm_client_hostname(gfm_server), gfm_client_port(gfm_server),
+			(unsigned long long)inum, (unsigned long long)gen, url);
+	}
+
 	return (e);
 }
 

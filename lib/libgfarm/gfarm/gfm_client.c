@@ -132,6 +132,22 @@ gfm_client_port(struct gfm_connection *gfm_server)
 	return (gfp_cached_connection_port(gfm_server->cache_entry));
 }
 
+gfarm_error_t
+gfm_client_source_port(struct gfm_connection *gfm_server, int *portp)
+{
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
+
+	if (getsockname(gfm_client_connection_fd(gfm_server),
+	    (struct sockaddr *)&sin, &slen) != 0) {
+		*portp = 0;
+		return (gfarm_errno_to_error(errno));
+	} else {
+		*portp = (int)ntohs(sin.sin_port);
+		return (GFARM_ERR_NO_ERROR);
+	}
+}
+
 struct gfarm_metadb_server*
 gfm_client_connection_get_real_server(struct gfm_connection *gfm_server)
 {

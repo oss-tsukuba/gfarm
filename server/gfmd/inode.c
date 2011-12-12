@@ -2151,8 +2151,10 @@ inode_create_dir(struct inode *base, char *name,
 
 gfarm_error_t
 inode_create_symlink(struct inode *base, char *name,
-	struct process *process, char *source_path)
+	struct process *process, char *source_path,
+	struct inode_trace_log_info *inodetp)
 {
+	gfarm_error_t e;
 	struct inode *inode;
 
 	if (strlen(source_path) > GFARM_PATH_MAX) {
@@ -2162,9 +2164,15 @@ inode_create_symlink(struct inode *base, char *name,
 		return (GFARM_ERR_FILE_NAME_TOO_LONG);
 	}
 
-	return (inode_lookup_relative(base, name, GFS_DT_LNK,
+	e = inode_lookup_relative(base, name, GFS_DT_LNK,
 	    INODE_CREATE_EXCLUSIVE, process_get_user(process),
-	    0777, source_path, &inode, NULL));
+	    0777, source_path, &inode, NULL);
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR && inodetp != NULL) {
+		inodetp->inum = inode_get_number(inode);
+		inodetp->igen = inode_get_gen(inode);
+		inodetp->imode = inode_get_mode(inode);
+	}
+	return (e);
 }
 
 static gfarm_error_t
@@ -2410,7 +2418,10 @@ gfarm_error_t
 inode_rename(
 	struct inode *sdir, char *sname,
 	struct inode *ddir, char *dname,
-	struct process *process)
+	struct process *process,
+	struct inode_trace_log_info *srctp,
+	struct inode_trace_log_info *dsttp,
+	int *dst_removed, int *hlink_removed)
 {
 	gfarm_error_t e;
 	struct user *user = process_get_user(process);
@@ -2436,6 +2447,12 @@ inode_rename(
 			gfarm_error_string(e));
 		return (e);
 	}
+	if (file_trace_mode && srctp != NULL) {
+		srctp->inum = inode_get_number(src);
+		srctp->igen = inode_get_gen(src);
+		srctp->imode = inode_get_mode(src);
+	}
+
 	if (strchr(sname, '/') != NULL) {  /* sname should't have '/' */
 		gflog_debug(GFARM_MSG_1001745,
 			"argument 'sname' is invalid");
@@ -2458,14 +2475,22 @@ inode_rename(
 
 	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
+		if (file_trace_mode && dsttp != NULL) {
+			dsttp->inum = inode_get_number(dst);
+			dsttp->igen = inode_get_gen(dst);
+			dsttp->imode = inode_get_mode(dst);
+		}
 		if (GFARM_S_ISDIR(inode_get_mode(src)) ==
 		    GFARM_S_ISDIR(inode_get_mode(dst))) {
-			e = inode_unlink(ddir, dname, process);
+			e = inode_unlink(ddir, dname, process,
+				NULL, hlink_removed);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001747,
 					"inode_unlink() failed: %s",
 					gfarm_error_string(e));
 				return (e);
+			} else {
+				*dst_removed = 1;
 			}
 		} else if (GFARM_S_ISDIR(inode_get_mode(src))) {
 			gflog_debug(GFARM_MSG_1001748,
@@ -2505,7 +2530,8 @@ inode_rename(
 }
 
 gfarm_error_t
-inode_unlink(struct inode *base, char *name, struct process *process)
+inode_unlink(struct inode *base, char *name, struct process *process,
+	struct inode_trace_log_info *inodetp, int *hlink_removed)
 {
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
@@ -2516,6 +2542,13 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 			gfarm_error_string(e));
 		return (e);
 	}
+
+	if (file_trace_mode && inodetp != NULL) {
+		inodetp->inum = inode_get_number(inode);
+		inodetp->igen = inode_get_gen(inode);
+		inodetp->imode = inode_get_mode(inode);
+	}
+
 	if (inode_is_file(inode)) {
 		e = inode_lookup_relative(base, name, GFS_DT_REG, INODE_REMOVE,
 		    process_get_user(process), 0, NULL, &inode, NULL);
@@ -2533,6 +2566,7 @@ inode_unlink(struct inode *base, char *name, struct process *process)
 				    "db_inode_nlink_modify(%lld): %s",
 				    (unsigned long long)inode->i_number,
 				    gfarm_error_string(e));
+			*hlink_removed = 1;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	} else if (inode_is_dir(inode)) {
@@ -2653,20 +2687,21 @@ inode_open(struct file_opening *fo)
 }
 
 void
-inode_close(struct file_opening *fo)
+inode_close(struct file_opening *fo, char **trace_logp)
 {
-	inode_close_read(fo, NULL);
+	inode_close_read(fo, NULL, trace_logp);
 }
 
 void
-inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime)
+inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
+	char **trace_logp)
 {
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 
 	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
 		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
-		    NULL, NULL);
+		    NULL, NULL, trace_logp);
 	} else if (atime != NULL)
 		inode_set_atime(inode, atime);
 
@@ -2738,7 +2773,8 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 int
 inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	char **trace_logp)
 {
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
@@ -2746,6 +2782,8 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	gfarm_int64_t old_gen;
 	int generation_updated = 0;
 	int start_replication = 0;
+	struct timeval tv;
+	char tmp_str[4096];
 
 	inode_cksum_invalidate(fo);
 	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
@@ -2767,6 +2805,19 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 		if (new_genp != NULL)
 			*new_genp = inode->i_gen;
 		generation_updated = 1;
+
+		if(file_trace_mode && trace_logp != NULL) {
+			gettimeofday(&tv, NULL);
+			snprintf(tmp_str, sizeof(tmp_str),
+				"%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
+				(long long int)trace_log_get_sequence_number(),
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(long long int)inode_get_number(inode),
+				(long long int)old_gen,
+				(long long int)inode->i_gen);
+				*trace_logp = strdup(tmp_str);
+		}
 
 		/* XXX provide an option not to start replication here? */
 

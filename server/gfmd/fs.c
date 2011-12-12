@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h> /* for sprintf(), snprintf() */
+#include <sys/time.h> /* for gettimeofday() */
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gflog.h>
@@ -32,6 +34,10 @@
 #include "back_channel.h"
 #include "fs.h"
 #include "acl.h"
+#include "config.h" /* for gfarm_host_get_self_name(), gfarm_metadb_server_port */
+
+static char dot[] = ".";
+static char dotdot[] = "..";
 
 gfarm_error_t
 gfm_server_compound_begin(struct peer *peer, int from_client, int skip,
@@ -198,11 +204,30 @@ gfm_server_restore_fd(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+char *
+trace_log_get_operation_name(int hlink_removed, gfarm_mode_t imode_removed)
+{
+	if (hlink_removed) {
+		return ("DELLINK");
+	} else if (GFARM_S_ISREG(imode_removed)) {
+		return ("DELETE");
+	} else if (GFARM_S_ISLNK(imode_removed)) {
+		return ("DELSYMLINK");
+	} else {
+		return ("DELUNKNOWN");
+	}
+}
+
 /* this assumes that giant_lock is already acquired */
+/*
+ * create_log and remove_log is malloc(3)ed string,
+ * thus caller should free(3) the memory.
+ */
 gfarm_error_t
 gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	char *name, gfarm_int32_t flag, int to_create, gfarm_int32_t mode,
-	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *modep)
+	gfarm_ino_t *inump, gfarm_uint64_t *genp, gfarm_int32_t *modep,
+	char **create_log, char **remove_log)
 {
 	gfarm_error_t e;
 	struct host *spool_host = NULL;
@@ -211,6 +236,15 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	struct inode *base, *inode;
 	int created, desired_number, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
+	int path_len = 0;
+	int hlink_removed = 0;
+	gfarm_uint64_t seq_num = 0;
+	struct timeval tv;
+#	define BUFSIZE_MAX 2048
+	char tmp_str[BUFSIZE_MAX];
+	char *parent_path, *child_path;
+	int peer_port;
+	struct inode_trace_log_info inodet;
 
 	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1001789,
@@ -264,6 +298,30 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		transaction = 1;
 		e = inode_create_file(base, name, process, op, mode, &inode,
 		    &created);
+
+		if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+			seq_num = trace_log_get_sequence_number();
+			gettimeofday(&tv, NULL);
+			if ((e = process_get_path_for_trace_log(process, cfd, &parent_path))
+				!= GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"process_get_path_for_trace_log() failed: %s",
+					gfarm_error_string(e));
+			} else {
+				peer_get_port(peer, &peer_port);
+				snprintf(tmp_str, sizeof(tmp_str),
+					"%lld/%010ld.%06ld/%s/%s/%d/CREATE/%s/%d//%lld/%lld////\"%s/%s\"///",
+					(unsigned long long)seq_num,
+					(long int)tv.tv_sec, (long int)tv.tv_usec,
+					peer_get_username(peer), peer_get_hostname(peer), peer_port,
+					gfarm_host_get_self_name(), gfarm_metadb_server_port,
+					(unsigned long long)inode_get_number(inode),
+					(unsigned long long)inode_get_gen(inode),
+					parent_path, name);
+				*create_log = strdup(tmp_str);
+				free(parent_path);
+			}
+		}
 	} else {
 		e = inode_lookup_by_name(base, name, process, op, &inode);
 		created = 0;
@@ -285,8 +343,34 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			gflog_debug(GFARM_MSG_1001798,
 				"inode_add_replica() failed: %s",
 				gfarm_error_string(e));
-			process_close_file(process, peer, fd);
-			inode_unlink(base, name, process);
+			process_close_file(process, peer, fd, NULL);
+			if (inode_unlink(base, name, process,
+				&inodet, &hlink_removed) == GFARM_ERR_NO_ERROR) {
+				if (file_trace_mode) {
+					seq_num = trace_log_get_sequence_number();
+					gettimeofday(&tv, NULL);
+					if ((e = process_get_path_for_trace_log(process, cfd, &parent_path))
+						!= GFARM_ERR_NO_ERROR) {
+						gflog_error(GFARM_MSG_UNFIXED,
+							"process_get_path_for_trace_log() failed: %s",
+							gfarm_error_string(e));
+					} else {
+						peer_get_port(peer, &peer_port);
+						snprintf(tmp_str, sizeof(tmp_str),
+							"%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
+							(unsigned long long)trace_log_get_sequence_number(),
+							(long int)tv.tv_sec, (long int)tv.tv_usec,
+							peer_get_username(peer), peer_get_hostname(peer), peer_port,
+							trace_log_get_operation_name(hlink_removed, inodet.imode),
+							gfarm_host_get_self_name(), gfarm_metadb_server_port,
+							(unsigned long long)inodet.inum,
+							(unsigned long long)inodet.igen,
+							parent_path, name);
+						*remove_log = strdup(tmp_str);
+						free(parent_path);
+					}
+				}
+			}
 			if (transaction)
 				db_end(diag);
 			return (e);
@@ -303,22 +387,70 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			    desired_number);
 	}
 
+	/* set full path to file_opening */
+	if (file_trace_mode) {
+		if (strcmp(name, dot) != 0 && strcmp(name, dotdot) != 0) {
+			if ((e = process_get_path_for_trace_log(process, cfd, &parent_path))
+				!= GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"process_get_path_for_trace_log() failed: %s",
+					gfarm_error_string(e));
+			}
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"handling for path including '.' or '..' haven't be implemented: %s",
+				gfarm_error_string(e));
+		}
+	}
+
 	peer_fdpair_set_current(peer, fd);
 	*inump = inode_get_number(inode);
 	*genp = inode_get_gen(inode);
 	*modep = inode_get_mode(inode);
+
+	if (file_trace_mode) {
+		if (strcmp(name, dot) != 0 && strcmp(name, dotdot) != 0) {
+			if (e == GFARM_ERR_NO_ERROR) {
+				path_len = strlen(parent_path) + 1 + strlen(name) + 1;
+				GFARM_MALLOC_ARRAY(child_path, path_len);
+				if (child_path == NULL) {
+					gflog_warning(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+					free(parent_path);
+					return (GFARM_ERR_NO_MEMORY);
+				}
+				snprintf(child_path, path_len, "%s/%s", parent_path, name);
+				free(parent_path);
+				if ((e = process_set_path_for_trace_log(process, fd, child_path))
+					!= GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"process_set_path_for_trace_log() failed: %s",
+						gfarm_error_string(e));
+					free(child_path);
+					return (e);
+				}
+			} else {
+				return (e);
+			}
+		} else {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"handling for path including '.' or '..' haven't be implemented: %s",
+				gfarm_error_string(e));
+		}
+	}
+
 	return(GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfm_server_create(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	char *name;
 	gfarm_int32_t flag, perm;
 	gfarm_ino_t inum = 0;
 	gfarm_uint64_t gen = 0;
 	gfarm_int32_t mode = 0;
+	char *create_log = NULL, *remove_log = NULL;
 	static const char diag[] = "GFM_PROTO_CREATE";
 
 	e = gfm_server_get_request(peer, diag, "sii", &name, &flag, &perm);
@@ -334,7 +466,8 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_open_common(diag, peer, from_client,
-	    name, flag, 1, perm, &inum, &gen, &mode);
+	    name, flag, 1, perm, &inum, &gen, &mode,
+		&create_log, &remove_log);
 
 	if (debug_mode) {
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -353,8 +486,19 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 
 	free(name);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "lli",
-	    inum, gen, mode));
+	e2 = gfm_server_put_reply(peer, diag, e, "lli",
+	    inum, gen, mode);
+
+	if (file_trace_mode && create_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", create_log);
+		free(create_log);
+	}
+	if (file_trace_mode && remove_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", remove_log);
+		free(remove_log);
+	}
+
+	return (e2);
 }
 
 gfarm_error_t
@@ -381,7 +525,7 @@ gfm_server_open(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_open_common(diag, peer, from_client,
-	    name, flag, 0, 0, &inum, &gen, &mode);
+	    name, flag, 0, 0, &inum, &gen, &mode, NULL, NULL);
 
 	if (debug_mode) {
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -521,11 +665,12 @@ gfm_server_open_parent(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_close(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t fd = -1;
 	int transaction = 0;
+	char *trace_log = NULL;
 	static const char diag[] = "GFM_PROTO_CLOSE";
 
 	if (skip)
@@ -553,7 +698,7 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = process_close_file(process, peer, fd);
+		e = process_close_file(process, peer, fd, &trace_log);
 		if (transaction)
 			db_end(diag);
 		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
@@ -561,7 +706,10 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	}
 
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	e2 = gfm_server_put_reply(peer, diag, e, "");
+	if (file_trace_mode && trace_log != NULL)
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+	return (e2);
 }
 
 static gfarm_error_t
@@ -1375,11 +1523,16 @@ gfm_server_schedule_file_with_program(struct peer *peer, int from_client,
 gfarm_error_t
 gfm_server_remove(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	char *name;
+	gfarm_error_t e, e2;
+	char *name, *path;
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *base;
+	int hlink_removed = 0;
+	gfarm_uint64_t seq_num = 0;
+	struct timeval tv;
+	int peer_port;
+	struct inode_trace_log_info inodet;
 	static const char diag[] = "GFM_PROTO_REMOVE";
 
 	e = gfm_server_get_request(peer, diag, "s", &name);
@@ -1414,23 +1567,61 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001869, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		e = inode_unlink(base, name, process);
+		e = inode_unlink(base, name, process,
+			&inodet, &hlink_removed);
 		db_end(diag);
+		if (file_trace_mode && e == GFARM_ERR_NO_ERROR &&
+			!GFARM_S_ISDIR(inodet.imode)) {
+			gettimeofday(&tv, NULL);
+			seq_num = trace_log_get_sequence_number();
+		}
+	}
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, diag, e, "");
+
+	if (file_trace_mode && !GFARM_S_ISDIR(inodet.imode)) {
+		if ((e = process_get_path_for_trace_log(process, cfd, &path))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+		} else {
+			peer_get_port(peer, &peer_port);
+			gflog_trace(GFARM_MSG_UNFIXED,
+				"%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
+				(unsigned long long)seq_num,
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				peer_get_username(peer),
+				peer_get_hostname(peer),
+				peer_port,
+				trace_log_get_operation_name(hlink_removed, inodet.imode),
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(unsigned long long)inodet.inum,
+				(unsigned long long)inodet.igen,
+				path, name);
+			free(path);
+		}
 	}
 
 	free(name);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (e2);
 }
 
 gfarm_error_t
 gfm_server_rename(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	char *sname, *dname;
+	gfarm_error_t e, e2;
+	char *sname, *dname, *spath, *dpath;
 	struct process *process;
+	int dst_removed = 0;
+	int hlink_removed = 0;
 	gfarm_int32_t sfd, dfd;
 	struct inode *sdir, *ddir;
+	gfarm_uint64_t seq_num_rename = 0, seq_num_remove = 0;
+	int peer_port;
+	struct timeval tv;
+	struct inode_trace_log_info srct, dstt;
 	static const char diag[] = "GFM_PROTO_RENAME";
 
 	e = gfm_server_get_request(peer, diag, "ss", &sname, &dname);
@@ -1475,25 +1666,82 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001877, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		e = inode_rename(sdir, sname, ddir, dname, process);
+		e = inode_rename(sdir, sname, ddir, dname, process,
+			&srct, &dstt, &dst_removed, &hlink_removed);
+		if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+			gettimeofday(&tv, NULL),
+			seq_num_rename = trace_log_get_sequence_number();
+			if (dst_removed)
+				seq_num_remove = trace_log_get_sequence_number();
+		}
 		db_end(diag);
+	}
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, diag, e, "");
+
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR &&
+		!GFARM_S_ISDIR(srct.imode)) {
+		if ((e = process_get_path_for_trace_log(process, sfd, &spath))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+		} else if ((e = process_get_path_for_trace_log(process, dfd, &dpath))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+			free(spath);
+		} else {
+			peer_get_port(peer, &peer_port),
+			gflog_trace(GFARM_MSG_UNFIXED,
+				"%lld/%010ld.%06ld/%s/%s/%d/MOVE/%s/%d//%lld/%lld////\"%s/%s\"///\"%s/%s\"",
+				(unsigned long long)seq_num_rename,
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				peer_get_username(peer),
+				peer_get_hostname(peer),
+				peer_port,
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(unsigned long long)srct.inum,
+				(unsigned long long)srct.igen,
+				spath, sname,
+				dpath, dname);
+			if (dst_removed)
+				gflog_trace(GFARM_MSG_UNFIXED,
+					"%lld/%010ld.%06ld/%s/%s/%d/%sOW/%s/%d//%lld/%lld////\"%s/%s\"///",
+					(unsigned long long)seq_num_remove,
+					(long int)tv.tv_sec, (long int)tv.tv_usec,
+					peer_get_username(peer),
+					peer_get_hostname(peer),
+					peer_port,
+					trace_log_get_operation_name(hlink_removed, dstt.imode),
+					gfarm_host_get_self_name(), gfarm_metadb_server_port,
+					(unsigned long long)dstt.inum,
+					(unsigned long long)dstt.igen,
+					dpath, dname);
+			free(spath);
+			free(dpath);
+		}
 	}
 
 	free(sname);
 	free(dname);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (e2);
 }
 
 gfarm_error_t
 gfm_server_flink(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	char *name;
+	gfarm_error_t e, e2;
+	char *name, *spath, *dpath;
 	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t sfd, dfd;
 	struct inode *src, *base;
+	int peer_port;
+	struct timeval tv;
+	gfarm_int64_t seq_num = 0;
 	static const char diag[] = "GFM_PROTO_FLINK";
 
 	e = gfm_server_get_request(peer, diag, "s", &name);
@@ -1545,13 +1793,50 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001887, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-                e = inode_create_link(base, name, process, src);
+		e = inode_create_link(base, name, process, src);
 		db_end(diag);
+		if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+			gettimeofday(&tv, NULL);
+			seq_num = trace_log_get_sequence_number();
+		}
 	}
 
-	free(name);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	e2 = gfm_server_put_reply(peer, diag, e, "");
+
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+		if ((e = process_get_path_for_trace_log(process, sfd, &spath))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+		} else if ((e = process_get_path_for_trace_log(process, dfd, &dpath))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+			free(spath);
+		} else {
+			peer_get_port(peer, &peer_port),
+			gflog_trace(GFARM_MSG_UNFIXED,
+				"%lld/%010ld.%06ld/%s/%s/%d/LINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",
+				(unsigned long long)seq_num,
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				peer_get_username(peer),
+				peer_get_hostname(peer),
+				peer_port,
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(unsigned long long)inode_get_number(src),
+				(unsigned long long)inode_get_gen(src),
+				spath,
+				dpath, name);
+			free(spath);
+			free(dpath);
+		}
+	}
+	free(name);
+
+	return (e2);
 }
 
 gfarm_error_t
@@ -1610,12 +1895,16 @@ gfm_server_mkdir(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfm_server_symlink(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e;
-	char *source_path, *name;
+	gfarm_error_t e, e2;
+	char *source_path, *name, *dpath;
 	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_int32_t cfd;
 	struct inode *base;
+	int peer_port;
+	gfarm_uint64_t seq_num = 0;
+	struct timeval tv;
+	struct inode_trace_log_info inodet;
 	static const char diag[] = "GFM_PROTO_SYMLINK";
 
 	e = gfm_server_get_request(peer, diag, "ss", &source_path, &name);
@@ -1652,14 +1941,46 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001901, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		e = inode_create_symlink(base, name, process, source_path);
+		e = inode_create_symlink(base, name, process,
+			source_path, &inodet);
 		db_end(diag);
+		if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+			gettimeofday(&tv, NULL);
+			seq_num = trace_log_get_sequence_number();
+		}
+	}
+
+	giant_unlock();
+	e2 = gfm_server_put_reply(peer, diag, e, "");
+
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+			gettimeofday(&tv, NULL);
+		if ((e = process_get_path_for_trace_log(process, cfd, &dpath))
+			!= GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"process_get_path_for_trace_log() failed: %s",
+				gfarm_error_string(e));
+		} else {
+			peer_get_port(peer, &peer_port);
+			gflog_trace(GFARM_MSG_UNFIXED,
+				"%lld/%010ld.%06ld/%s/%s/%d/SYMLINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",
+				(unsigned long long)seq_num,
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				peer_get_username(peer),
+				peer_get_hostname(peer),
+				peer_port,
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(unsigned long long)inodet.inum,
+				(unsigned long long)inodet.igen,
+				source_path,
+				dpath, name);
+			free(dpath);
+		}
 	}
 
 	free(source_path);
 	free(name);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (e2);
 }
 
 gfarm_error_t
@@ -2285,13 +2606,15 @@ struct reopen_resume_arg {
 gfarm_error_t
 reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	struct reopen_resume_arg *arg = closure;
 	struct host *spool_host;
 	struct process *process;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, flags, to_create;
+	gfarm_uint64_t seq_num = 0;
+	struct timeval tv;
 	static const char diag[] = "reopen_resume";
 
 	giant_lock();
@@ -2314,25 +2637,44 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+		seq_num = trace_log_get_sequence_number();
+		gettimeofday(&tv, NULL);
+	}
 
 	free(arg);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "lliii",
-	    inum, gen, mode, flags, to_create));
+	e2 = gfm_server_put_reply(peer, diag, e, "lliii",
+	    inum, gen, mode, flags, to_create);
+
+	if (file_trace_mode && e == GFARM_ERR_NO_ERROR) {
+		gflog_trace(GFARM_MSG_UNFIXED,
+			"%lld/%010ld.%06ld////REPLICATE/%s/%d/%s/%lld/%lld///////",
+			(long long int)seq_num,
+			(long int)tv.tv_sec, (long int)tv.tv_usec,
+			gfarm_host_get_self_name(), gfarm_metadb_server_port,
+			host_name(spool_host),
+			(long long int)inum,
+			(long long int)gen);
+	}
+
+	return (e2);
 }
 
 gfarm_error_t
 gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	int *suspendedp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_int32_t fd;
-	struct host *spool_host;
+	struct host *spool_host = NULL;
 	struct process *process;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, flags, to_create;
 	struct reopen_resume_arg *arg;
+	gfarm_uint64_t seq_num = 0;
+	struct timeval tv;
 	static const char diag[] = "GFM_PROTO_REOPEN";
 
 	if (skip)
@@ -2370,9 +2712,28 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 		}
 	}
 
+	if (file_trace_mode && to_create && e == GFARM_ERR_NO_ERROR) {
+		seq_num = trace_log_get_sequence_number();
+		gettimeofday(&tv, NULL);
+	}
+
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, "lliii",
-	    inum, gen, mode, flags, to_create));
+	e2 = gfm_server_put_reply(peer, diag, e, "lliii",
+	    inum, gen, mode, flags, to_create);
+
+	if (file_trace_mode && to_create && e == GFARM_ERR_NO_ERROR) {
+		gflog_trace(GFARM_MSG_UNFIXED,
+			"%lld/%010ld.%06ld////REPLICATE/%s/%d/%s/%lld/%lld///////",
+			(long long int)seq_num,
+			(long int)tv.tv_sec, (long int)tv.tv_usec,
+			gfarm_host_get_self_name(),
+			gfarm_metadb_server_port,
+			host_name(spool_host),
+			(long long int)inum,
+			(long long int)gen);
+	}
+
+	return (e2);
 }
 
 gfarm_error_t
@@ -2465,7 +2826,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, arg->fd, arg->size,
-		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen);
+		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen, NULL);
 		if (transaction)
 			db_end(diag);
 
@@ -2487,18 +2848,23 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	    flags, old_gen, new_gen));
 }
 
+/* trace_log is malloc(3)ed string, thus caller should free(3) the memory. */
 gfarm_error_t
 gfm_server_close_write_common(const char *diag,
 	struct peer *peer, int from_client,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	char **trace_log)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
 	struct process *process;
 	int transaction = 0;
+	struct timeval tv;
+	char tmp_str[4096];
+	gfarm_uint64_t inum = 0;
 	struct close_v2_4_resume_arg *arg;
 
 	if (from_client) { /* from gfsd only */
@@ -2523,7 +2889,20 @@ gfm_server_close_write_common(const char *diag,
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, fd, size,
-		    atime, mtime, flagsp, old_genp, new_genp);
+		    atime, mtime, flagsp, old_genp, new_genp, &inum);
+
+		if (file_trace_mode && (*old_genp != *new_genp)) {
+			gettimeofday(&tv, NULL);
+			snprintf(tmp_str, sizeof(tmp_str),
+				"%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
+				(long long int)trace_log_get_sequence_number(),
+				(long int)tv.tv_sec, (long int)tv.tv_usec,
+				gfarm_host_get_self_name(), gfarm_metadb_server_port,
+				(long long int)inum,
+				(long long int)*old_genp,
+				(long long int)*new_genp);
+			*trace_log = strdup(tmp_str);
+		}
 		if (transaction)
 			db_end(diag);
 
@@ -2567,7 +2946,7 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, NULL, NULL, NULL);
+	    &atime, &mtime, NULL, NULL, NULL, NULL);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -2577,11 +2956,12 @@ gfarm_error_t
 gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 	int *suspendedp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_off_t size;
 	struct gfarm_timespec atime, mtime;
 	gfarm_int32_t flags;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
+	char *trace_log;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_4";
 
 	e = gfm_server_get_request(peer, diag, "llili",
@@ -2594,7 +2974,7 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 	giant_lock();
 
 	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, &flags, &old_gen, &new_gen);
+	    &atime, &mtime, &flags, &old_gen, &new_gen, &trace_log);
 
 	giant_unlock();
 
@@ -2603,8 +2983,15 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	return (gfm_server_put_reply(peer, diag, e, "ill",
-	    flags, old_gen, new_gen));
+	e2 = gfm_server_put_reply(peer, diag, e, "ill",
+	    flags, old_gen, new_gen);
+
+	if (file_trace_mode && trace_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		free(trace_log);
+	}
+
+	return (e2);
 }
 
 gfarm_error_t

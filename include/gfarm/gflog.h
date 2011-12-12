@@ -84,6 +84,9 @@ void gflog_assert_message(int, const char *, int, const char *,
 #define gflog_debug_errno(msg_no, ...) \
 	gflog_message_errno(msg_no, LOG_DEBUG,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_trace(msg_no, ...) \
+	gflog_message(msg_no, LOG_INFO,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 void gflog_initialize(void);
 void gflog_terminate(void);

@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
+#include <netinet/in.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -1081,11 +1082,11 @@ peer_fdpair_clear(struct peer *peer)
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current);
+		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
-		process_close_file(peer->process, peer, peer->fd_saved);
+		process_close_file(peer->process, peer, peer->fd_saved, NULL);
 	}
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
@@ -1136,7 +1137,7 @@ peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current);
+		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
 	peer->fd_current = fd;
@@ -1183,7 +1184,7 @@ peer_fdpair_save(struct peer *peer)
 	if (peer->fd_saved != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
 	    peer->fd_saved != peer->fd_current) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_saved);
+		process_close_file(peer->process, peer, peer->fd_saved, NULL);
 	}
 	peer->fd_saved = peer->fd_current;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_SAVED_EXTERNALIZED) |
@@ -1209,7 +1210,7 @@ peer_fdpair_restore(struct peer *peer)
 	if (peer->fd_current != -1 &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
-		process_close_file(peer->process, peer, peer->fd_current);
+		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	peer->fd_current = peer->fd_saved;
 	peer->flags = (peer->flags & ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED) |
@@ -1271,4 +1272,22 @@ peer_delete_cookie(struct peer *peer, gfarm_uint64_t cookie_id)
 		    diag, (unsigned long long)cookie_id);
 
 	return (found);
+}
+
+gfarm_error_t
+peer_get_port(struct peer *peer, int *portp)
+{
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
+
+	if (getpeername(peer_get_fd(peer), (struct sockaddr *)&sin, &slen) != 0) {
+		*portp = 0;
+		return (gfarm_errno_to_error(errno));
+	} else if (sin.sin_family != AF_INET) {
+		*portp = 0;
+		return (GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
+	} else {
+		*portp = (int)ntohs(sin.sin_port);
+		return (GFARM_ERR_NO_ERROR);
+	}
 }

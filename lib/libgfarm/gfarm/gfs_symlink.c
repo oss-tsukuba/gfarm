@@ -13,6 +13,7 @@
 struct gfm_symlink_closure {
 	/* input */
 	const char *src;
+	const char *path;
 };
 
 static gfarm_error_t
@@ -34,6 +35,8 @@ gfm_symlink_request(struct gfm_connection *gfm_server, void *closure,
 static gfarm_error_t
 gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 {
+	struct gfm_symlink_closure *c = closure;
+	int source_port;
 	gfarm_error_t e;
 
 	if ((e = gfm_client_symlink_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -41,6 +44,16 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_1000156,
 		    "symlink result: %s", gfarm_error_string(e));
 #endif
+	} else {
+		if (gfarm_file_trace) {
+			gfm_client_source_port(gfm_server, &source_port);
+			gflog_trace(GFARM_MSG_UNFIXED,
+				"%s/%s/%s/%d/SYMLINK/%s/%d/////\"%s\"///\"%s\"",
+				gfarm_get_local_username(), gfm_client_username(gfm_server),
+				gfarm_host_get_self_name(), source_port,
+				gfm_client_hostname(gfm_server), gfm_client_port(gfm_server),
+				c->src, c->path);
+		}
 	}
 	return (e);
 }
@@ -51,6 +64,7 @@ gfs_symlink(const char *src, const char *path)
 	struct gfm_symlink_closure closure;
 
 	closure.src = src;
+	closure.path = path;
 	return (gfm_name_op(path, GFARM_ERR_OPERATION_NOT_PERMITTED,
 	    gfm_symlink_request,
 	    gfm_symlink_result,

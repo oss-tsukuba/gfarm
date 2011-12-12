@@ -1302,6 +1302,7 @@ usage(void)
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-p <port>\n");
 	fprintf(stderr, "\t-s <syslog-facility>\n");
+	fprintf(stderr, "\t-t\t\t\t\t... output file-trace log message\n");
 	fprintf(stderr, "\t-v\t\t\t\t... make authentication log verbose\n");
 	exit(1);
 }
@@ -1373,7 +1374,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:df:p:s:v")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:df:p:s:tv")) != -1) {
 		switch (ch) {
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
@@ -1403,6 +1404,9 @@ main(int argc, char **argv)
 				gflog_fatal(GFARM_MSG_1000204,
 				    "%s: unknown syslog facility",
 				    optarg);
+			break;
+		case 't':
+			file_trace_mode = 1;
 			break;
 		case 'v':
 			gflog_auth_set_verbose(1);

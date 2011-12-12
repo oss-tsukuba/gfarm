@@ -31,6 +31,10 @@ gfarm_error_t process_get_dir_key(struct process *, struct peer *, int,
 gfarm_error_t process_set_dir_key(struct process *, struct peer *, int,
 	char *, int);
 gfarm_error_t process_clear_dir_key(struct process *, struct peer *, int);
+gfarm_error_t process_get_path_for_trace_log(struct process *,
+	int, char **);
+gfarm_error_t process_set_path_for_trace_log(struct process *,
+	int, char *);
 
 struct file_opening {
 	/*
@@ -58,6 +62,8 @@ struct file_opening {
 			char *key;
 		} d;
 	} u;
+
+	char *path_for_trace_log;
 };
 
 /*
@@ -88,12 +94,12 @@ gfarm_error_t process_reopen_file(struct process *,
 	struct peer *, struct host *, int,
 	gfarm_ino_t *, gfarm_uint64_t *, gfarm_int32_t *,
 	gfarm_int32_t *, gfarm_int32_t *);
-gfarm_error_t process_close_file(struct process *, struct peer *, int);
+gfarm_error_t process_close_file(struct process *, struct peer *, int, char **);
 gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 	struct gfarm_timespec *);
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
-	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *);
+	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *, gfarm_uint64_t *);
 
 gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 	const char *, size_t, const char *,
