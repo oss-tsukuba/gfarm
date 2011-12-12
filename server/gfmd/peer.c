@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 #include <signal.h> /* for sig_atomic_t */
 #include <netinet/in.h>
+#include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
 
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
@@ -25,6 +26,7 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 #include "queue.h"
+#include "gfnetdb.h"
 
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -689,14 +691,30 @@ peer_authorized(struct peer *peer,
 		peer_watch_access(peer);
 }
 
+static int
+peer_get_numeric_name(struct peer *peer, char *hostbuf, size_t hostlen)
+{
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
+
+	if (getpeername(peer_get_fd(peer),
+	    (struct sockaddr *)&sin, &slen) != 0)
+		return (errno);
+
+	return (gfarm_getnameinfo((struct sockaddr *)&sin, slen,
+	    hostbuf, hostlen, NULL, 0, NI_NUMERICHOST | NI_NUMERICSERV));
+}
+
 /* NOTE: caller of this function should acquire giant_lock as well */
 void
 peer_free(struct peer *peer)
 {
+	int err;
 	char *username;
 	const char *hostname;
 	static const char diag[] = "peer_free";
 	struct cookie *cookie;
+	char hostbuf[NI_MAXHOST];
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
@@ -724,8 +742,28 @@ peer_free(struct peer *peer)
 		    &peer->u.client.jobs);
 	peer->u.client.jobs = NULL;
 
-	gflog_notice(GFARM_MSG_1000286,
-	    "(%s@%s) disconnected", username, hostname);
+	/*
+	 * both username and hostname may be null,
+	 * if peer_authorized() hasn't been called. (== authentication failed)
+	 */
+	if (hostname != NULL) {
+		err = 0;
+	} else {
+		/*
+		 * IP address must be logged instead of (maybe faked) hostname
+		 * in case of an authentication failure.
+		 */
+		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
+		if (err != 0)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "unable to convert peer address to string: %s",
+			    strerror(err));
+	}
+	if (err == 0)
+		gflog_notice(GFARM_MSG_1000286,
+		    "(%s@%s) disconnected",
+		    username != NULL ? username : "<unauthorized>",
+		    hostname != NULL ? hostname : hostbuf);
 
 	peer_unset_pending_new_generation(peer);
 
