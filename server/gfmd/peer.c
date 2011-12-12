@@ -929,7 +929,7 @@ const char *
 peer_get_hostname(struct peer *peer)
 {
 	return (peer->host != NULL ?
-	    abstract_host_get_name(peer->host) : NULL);
+	    abstract_host_get_name(peer->host) : peer->hostname);
 }
 
 struct user *
