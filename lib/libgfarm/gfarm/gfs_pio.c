@@ -206,6 +206,8 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_timerval_t t1, t2;
+
+	/* for gfarm_file_trace */
 	int src_port;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
@@ -242,11 +244,13 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 		gfm_client_source_port(gfm_server, &src_port);
 		gflog_trace(GFARM_MSG_UNFIXED,
-			"%s/%s/%s/%d/CREATE/%s/%d/%lld/%lld///\"%s\"///",
-			gfarm_get_local_username(), gfm_client_username(gfm_server),
-			gfarm_host_get_self_name(), src_port,
-			gfm_client_hostname(gfm_server), gfm_client_port(gfm_server),
-			(unsigned long long)inum, (unsigned long long)gen, url);
+		    "%s/%s/%s/%d/CREATE/%s/%d/%lld/%lld///\"%s\"///",
+		    gfarm_get_local_username(),
+		    gfm_client_username(gfm_server),
+		    gfarm_host_get_self_name(), src_port,
+		    gfm_client_hostname(gfm_server),
+		    gfm_client_port(gfm_server),
+		    (unsigned long long)inum, (unsigned long long)gen, url);
 	}
 
 	return (e);

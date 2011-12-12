@@ -39,6 +39,7 @@ struct gfm_create_fd_closure {
 	struct gfm_connection **gfm_serverp;
 	int *fdp;
 	int *typep;
+
 	gfarm_ino_t *inum_for_trace;
 	gfarm_uint64_t *gen_for_trace;
 };

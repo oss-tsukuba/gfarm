@@ -2421,7 +2421,7 @@ inode_rename(
 	struct process *process,
 	struct inode_trace_log_info *srctp,
 	struct inode_trace_log_info *dsttp,
-	int *dst_removed, int *hlink_removed)
+	int *dst_removed, int *hlink_removed) /* for file_trace_mode */
 {
 	gfarm_error_t e;
 	struct user *user = process_get_user(process);
@@ -2531,7 +2531,8 @@ inode_rename(
 
 gfarm_error_t
 inode_unlink(struct inode *base, char *name, struct process *process,
-	struct inode_trace_log_info *inodetp, int *hlink_removed)
+	struct inode_trace_log_info *inodetp,
+	int *hlink_removed) /* for file_trace_mode */
 {
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
@@ -2809,14 +2810,15 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 		if(file_trace_mode && trace_logp != NULL) {
 			gettimeofday(&tv, NULL);
 			snprintf(tmp_str, sizeof(tmp_str),
-				"%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
-				(long long int)trace_log_get_sequence_number(),
-				(long int)tv.tv_sec, (long int)tv.tv_usec,
-				gfarm_host_get_self_name(), gfarm_metadb_server_port,
-				(long long int)inode_get_number(inode),
-				(long long int)old_gen,
-				(long long int)inode->i_gen);
-				*trace_logp = strdup(tmp_str);
+			    "%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
+			    (long long int)trace_log_get_sequence_number(),
+			    (long int)tv.tv_sec, (long int)tv.tv_usec,
+			    gfarm_host_get_self_name(),
+			    gfarm_metadb_server_port,
+			    (long long int)inode_get_number(inode),
+			    (long long int)old_gen,
+			    (long long int)inode->i_gen);
+			*trace_logp = strdup(tmp_str);
 		}
 
 		/* XXX provide an option not to start replication here? */

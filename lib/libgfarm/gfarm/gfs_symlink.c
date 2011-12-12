@@ -13,7 +13,7 @@
 struct gfm_symlink_closure {
 	/* input */
 	const char *src;
-	const char *path;
+	const char *path;	/* for gfarm_file_trace */
 };
 
 static gfarm_error_t
@@ -48,11 +48,13 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 		if (gfarm_file_trace) {
 			gfm_client_source_port(gfm_server, &source_port);
 			gflog_trace(GFARM_MSG_UNFIXED,
-				"%s/%s/%s/%d/SYMLINK/%s/%d/////\"%s\"///\"%s\"",
-				gfarm_get_local_username(), gfm_client_username(gfm_server),
-				gfarm_host_get_self_name(), source_port,
-				gfm_client_hostname(gfm_server), gfm_client_port(gfm_server),
-				c->src, c->path);
+			    "%s/%s/%s/%d/SYMLINK/%s/%d/////\"%s\"///\"%s\"",
+			    gfarm_get_local_username(),
+			    gfm_client_username(gfm_server),
+			    gfarm_host_get_self_name(), source_port,
+			    gfm_client_hostname(gfm_server),
+			    gfm_client_port(gfm_server),
+			    c->src, c->path);
 		}
 	}
 	return (e);

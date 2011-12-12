@@ -986,12 +986,12 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 
 	if (file_trace_mode && e == GFARM_ERR_NO_ERROR)
 		gflog_trace(GFARM_MSG_UNFIXED,
-			"%lld/////DELREPLICA/%s/%d/%s/%lld/%lld///////",
-			(unsigned long long)trace_log_get_sequence_number(),
-			gfarm_host_get_self_name(), gfarm_metadb_server_port,
-			host_name(dfc->host),
-			(unsigned long long)dfc->inum,
-			(unsigned long long)dfc->igen);
+		    "%lld/////DELREPLICA/%s/%d/%s/%lld/%lld///////",
+		    (unsigned long long)trace_log_get_sequence_number(),
+		    gfarm_host_get_self_name(), gfarm_metadb_server_port,
+		    host_name(dfc->host),
+		    (unsigned long long)dfc->inum,
+		    (unsigned long long)dfc->igen);
 
 	inode_remove_replica_completed(dfc->inum, dfc->igen, dfc->host);
 

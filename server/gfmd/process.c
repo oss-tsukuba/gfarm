@@ -901,7 +901,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	mode = inode_get_mode(fo->inode);
-	if (inump != NULL) {
+	if (inump != NULL) { /* for file_trace_mode */
 		*inump = inode_get_number(fo->inode);
 	}
 	if (!GFARM_S_ISREG(mode)) {

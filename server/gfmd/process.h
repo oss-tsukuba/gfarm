@@ -63,7 +63,7 @@ struct file_opening {
 		} d;
 	} u;
 
-	char *path_for_trace_log;
+	char *path_for_trace_log; /* XXX FIXME not maintained if "." or ".." */
 };
 
 /*

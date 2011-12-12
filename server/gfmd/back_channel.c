@@ -465,7 +465,7 @@ gfm_async_server_replication_result(struct host *host,
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
 	gfarm_int64_t handle;
-	gfarm_int64_t seq_num;
+	gfarm_int64_t trace_seq_num; /* for file_trace_mode */
 	gfarm_off_t filesize;
 	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
@@ -483,7 +483,7 @@ gfm_async_server_replication_result(struct host *host,
 	giant_lock(); /* XXX FIXME: deadlock */
 	e = peer_replicated(peer, host, ino, gen, handle,
 	    src_errcode, dst_errcode, filesize);
-	seq_num = trace_log_get_sequence_number(),
+	trace_seq_num = trace_log_get_sequence_number(),
 	giant_unlock();
 
 	/*
@@ -497,10 +497,10 @@ gfm_async_server_replication_result(struct host *host,
 
 	if (file_trace_mode && e == GFARM_ERR_NO_ERROR)
 		gflog_trace(GFARM_MSG_UNFIXED,
-			"%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
-			(long long int)seq_num,
-			gfarm_host_get_self_name(), gfarm_metadb_server_port,
-			host_name(host), (long long int)ino, (long long int)gen);
+		    "%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
+		    (long long int)trace_seq_num,
+		    gfarm_host_get_self_name(), gfarm_metadb_server_port,
+		    host_name(host), (long long int)ino, (long long int)gen);
 
 	return (e2);
 }

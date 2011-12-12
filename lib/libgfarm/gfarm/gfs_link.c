@@ -9,7 +9,7 @@
 #include "lookup.h"
 
 struct gfm_link_closure {
-	/* input */
+	/* input, for gfarm_file_trace */
 	const char *src;
 	const char *dst;
 };
@@ -42,9 +42,11 @@ gfm_link_result(struct gfm_connection *gfm_server, void *closure)
 			gfm_client_source_port(gfm_server, &src_port);
 			gflog_trace(GFARM_MSG_UNFIXED,
 			    "%s/%s/%s/%d/LINK/%s/%d/////\"%s\"///\"%s\"",
-			    gfarm_get_local_username(), gfm_client_username(gfm_server),
+			    gfarm_get_local_username(),
+			    gfm_client_username(gfm_server),
 			    gfarm_host_get_self_name(), src_port,
-			    gfm_client_hostname(gfm_server), gfm_client_port(gfm_server),
+			    gfm_client_hostname(gfm_server),
+			    gfm_client_port(gfm_server),
 			    c->src, c->dst);
 		}
 	}
