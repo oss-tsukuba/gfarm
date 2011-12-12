@@ -316,11 +316,12 @@ static int
 pgsql_should_retry(PGresult *res)
 {
 	int retry = 0;
+	char *pge = PQresultErrorField(res, PG_DIAG_SQLSTATE);
 
 	if (PQstatus(conn) == CONNECTION_BAD) {
 		gflog_error(GFARM_MSG_1002331,
 		    "PostgreSQL connection is down: %s: %s",
-		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
+		    (pge != NULL) ? pge : "no SQL state",
 		    PQresultErrorMessage(res));
 		PQclear(res);
 		for (;;) {
@@ -361,14 +362,13 @@ pgsql_should_retry(PGresult *res)
 		transaction_ok = 0;
 		return (1);
 	} else if (PQresultStatus(res) == PGRES_FATAL_ERROR &&
-	    strncmp(PQresultErrorField(res, PG_DIAG_SQLSTATE),
-	    GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX,
+	    pge != NULL &&
+	    strncmp(pge, GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX,
 	    strlen(GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX)) == 0) {
 		/* does this code path happen? */
 		gflog_error(GFARM_MSG_1002334,
 		    "PostgreSQL connection problem: %s: %s",
-		    PQresultErrorField(res, PG_DIAG_SQLSTATE),
-		    PQresultErrorMessage(res));
+		    pge, PQresultErrorMessage(res));
 		PQclear(res);
 		return (1);
 	}
