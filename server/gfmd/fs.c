@@ -304,17 +304,18 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 			trace_seq_num = trace_log_get_sequence_number();
 			gettimeofday(&tv, NULL);
-			if ((e = process_get_path_for_trace_log(process, cfd,
-			    &parent_path)) != GFARM_ERR_NO_ERROR) {
+			if ((e = process_get_path_for_trace_log(process,
+			    cfd, &parent_path)) != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
-					"process_get_path_for_trace_log() failed: %s",
-					gfarm_error_string(e));
+				    "process_get_path_for_trace_log() failed: %s",
+				    gfarm_error_string(e));
 			} else {
 				peer_get_port(peer, &peer_port);
 				snprintf(tmp_str, sizeof(tmp_str),
 				    "%lld/%010ld.%06ld/%s/%s/%d/CREATE/%s/%d//%lld/%lld////\"%s/%s\"///",
 				    (unsigned long long)trace_seq_num,
-				    (long int)tv.tv_sec, (long int)tv.tv_usec,
+				    (long int)tv.tv_sec,
+				    (long int)tv.tv_usec,
 				    peer_get_username(peer),
 				    peer_get_hostname(peer), peer_port,
 				    gfarm_host_get_self_name(),
@@ -355,13 +356,14 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 					    trace_log_get_sequence_number();
 					gettimeofday(&tv, NULL);
 					if ((e = process_get_path_for_trace_log(
-					     process, cfd, &parent_path))
+					    process, cfd, &parent_path))
 					    != GFARM_ERR_NO_ERROR) {
 						gflog_error(GFARM_MSG_UNFIXED,
-							"process_get_path_for_trace_log() failed: %s",
-							gfarm_error_string(e));
+						    "process_get_path_for_trace_log() failed: %s",
+						    gfarm_error_string(e));
 					} else {
-						peer_get_port(peer, &peer_port);
+						peer_get_port(peer,
+						    &peer_port);
 						snprintf(tmp_str,
 						    sizeof(tmp_str),
 						    "%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
@@ -376,7 +378,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 						    (unsigned long long)inodet.inum,
 						    (unsigned long long)inodet.igen,
 						    parent_path, name);
-						*remove_log = strdup(tmp_str);
+						*remove_log =
+						    strdup(tmp_str);
 						free(parent_path);
 					}
 				}
@@ -423,20 +426,24 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	if (gfarm_file_trace) {
 		if (strcmp(name, dot) != 0 && strcmp(name, dotdot) != 0) {
 			if (e == GFARM_ERR_NO_ERROR) {
-				path_len = strlen(parent_path) + 1 + strlen(name) + 1;
+				path_len = strlen(parent_path) + 1 +
+				    strlen(name) + 1;
 				GFARM_MALLOC_ARRAY(child_path, path_len);
 				if (child_path == NULL) {
-					gflog_warning(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+					gflog_warning(GFARM_MSG_UNFIXED,
+					    "%s: no memory", diag);
 					free(parent_path);
 					return (GFARM_ERR_NO_MEMORY);
 				}
-				snprintf(child_path, path_len, "%s/%s", parent_path, name);
+				snprintf(child_path, path_len, "%s/%s",
+				     parent_path, name);
 				free(parent_path);
-				if ((e = process_set_path_for_trace_log(process, fd, child_path))
-					!= GFARM_ERR_NO_ERROR) {
+				if ((e = process_set_path_for_trace_log(
+				    process, fd, child_path))
+				    != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_UNFIXED,
-						"process_set_path_for_trace_log() failed: %s",
-						gfarm_error_string(e));
+					    "process_set_path_for_trace_log() failed: %s",
+					    gfarm_error_string(e));
 					free(child_path);
 					return (e);
 				}
@@ -445,8 +452,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			}
 		} else { /* XXX FIXME */
 			gflog_warning(GFARM_MSG_UNFIXED,
-				"handling for path including '.' or '..' haven't be implemented: %s",
-				gfarm_error_string(e));
+			    "handling for path including '.' or '..' haven't be implemented: %s",
+			    gfarm_error_string(e));
 		}
 	}
 
@@ -1588,7 +1595,7 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 			&inodet, &hlink_removed);
 		db_end(diag);
 		if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR &&
-			!GFARM_S_ISDIR(inodet.imode)) {
+		    !GFARM_S_ISDIR(inodet.imode)) {
 			gettimeofday(&tv, NULL);
 			trace_seq_num = trace_log_get_sequence_number();
 		}
@@ -1598,8 +1605,8 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 
 	if (gfarm_file_trace && !GFARM_S_ISDIR(inodet.imode)) {
-		if ((e = process_get_path_for_trace_log(process, cfd, &path))
-			!= GFARM_ERR_NO_ERROR) {
+		if ((e = process_get_path_for_trace_log(process, cfd,
+		    &path)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
@@ -1693,9 +1700,11 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 			&srct, &dstt, &dst_removed, &hlink_removed);
 		if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 			gettimeofday(&tv, NULL),
-			trace_seq_num_rename = trace_log_get_sequence_number();
+			trace_seq_num_rename =
+			    trace_log_get_sequence_number();
 			if (dst_removed)
-				trace_seq_num_remove = trace_log_get_sequence_number();
+				trace_seq_num_remove =
+				    trace_log_get_sequence_number();
 		}
 		db_end(diag);
 	}
@@ -1704,14 +1713,14 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR &&
-		!GFARM_S_ISDIR(srct.imode)) {
-		if ((e = process_get_path_for_trace_log(process, sfd, &spath))
-			!= GFARM_ERR_NO_ERROR) {
+	    !GFARM_S_ISDIR(srct.imode)) {
+		if ((e = process_get_path_for_trace_log(process, sfd,
+		    &spath)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
-		} else if ((e = process_get_path_for_trace_log(process, dfd, &dpath))
-			!= GFARM_ERR_NO_ERROR) {
+		} else if ((e = process_get_path_for_trace_log(
+		    process, dfd, &dpath)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
@@ -1734,7 +1743,8 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 				gflog_trace(GFARM_MSG_UNFIXED,
 				    "%lld/%010ld.%06ld/%s/%s/%d/%sOW/%s/%d//%lld/%lld////\"%s/%s\"///",
 				    (unsigned long long)trace_seq_num_remove,
-				    (long int)tv.tv_sec, (long int)tv.tv_usec,
+				    (long int)tv.tv_sec,
+				    (long int)tv.tv_usec,
 				    peer_get_username(peer),
 				    peer_get_hostname(peer), peer_port,
 				    trace_log_get_operation_name(
@@ -1834,11 +1844,11 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
-		if ((e = process_get_path_for_trace_log(process, sfd, &spath))
-			!= GFARM_ERR_NO_ERROR) {
+		if ((e = process_get_path_for_trace_log(process, sfd,
+		    &spath)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
-				"process_get_path_for_trace_log() failed: %s",
-				gfarm_error_string(e));
+			    "process_get_path_for_trace_log() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = process_get_path_for_trace_log(process, dfd, &dpath))
 			!= GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
@@ -1988,9 +1998,9 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
-			gettimeofday(&tv, NULL);
-		if ((e = process_get_path_for_trace_log(process, cfd, &dpath))
-			!= GFARM_ERR_NO_ERROR) {
+		gettimeofday(&tv, NULL);
+		if ((e = process_get_path_for_trace_log(process, cfd,
+		    &dpath)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
@@ -2939,13 +2949,14 @@ gfm_server_close_write_common(const char *diag,
 		if (gfarm_file_trace && (*old_genp != *new_genp)) {
 			gettimeofday(&tv, NULL);
 			snprintf(tmp_str, sizeof(tmp_str),
-				"%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
-				(long long int)trace_log_get_sequence_number(),
-				(long int)tv.tv_sec, (long int)tv.tv_usec,
-				gfarm_host_get_self_name(), gfarm_metadb_server_port,
-				(long long int)inum,
-				(long long int)*old_genp,
-				(long long int)*new_genp);
+			    "%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
+			    (long long int)trace_log_get_sequence_number(),
+			    (long int)tv.tv_sec, (long int)tv.tv_usec,
+			    gfarm_host_get_self_name(),
+			    gfarm_metadb_server_port,
+			    (long long int)inum,
+			    (long long int)*old_genp,
+			    (long long int)*new_genp);
 			*trace_log = strdup(tmp_str);
 		}
 		if (transaction)

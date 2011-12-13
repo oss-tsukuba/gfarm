@@ -2167,7 +2167,8 @@ inode_create_symlink(struct inode *base, char *name,
 	e = inode_lookup_relative(base, name, GFS_DT_LNK,
 	    INODE_CREATE_EXCLUSIVE, process_get_user(process),
 	    0777, source_path, &inode, NULL);
-	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR && inodetp != NULL) {
+	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR &&
+	    inodetp != NULL) {
 		inodetp->inum = inode_get_number(inode);
 		inodetp->igen = inode_get_gen(inode);
 		inodetp->imode = inode_get_mode(inode);
