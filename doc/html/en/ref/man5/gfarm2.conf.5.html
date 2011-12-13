@@ -1811,6 +1811,28 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>file_trace</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, an audit log feature for file creation,
+modification and removal is enabled.</P
+><P
+>This directive is available in both gfarm2.conf and gfmd.conf.</P
+><P
+>$BNc(B:</P
+><P
+CLASS="LITERALLAYOUT"
+>	file_trace&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >no_file_system_node_timeout</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2176,6 +2198,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;log_level_statement&#62;&nbsp;|<br>
 		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
 		  &#60;log_auth_verbose_statement&#62;&nbsp;|<br>
+		  &#60;file_trace_statement&#62;&nbsp;|<br>
 		  &#60;client_file_bufsize_statement&#62;&nbsp;|<br>
 		  &#60;profile_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_list_statement&#62;&nbsp;|<br>
@@ -2256,6 +2279,7 @@ CLASS="LITERALLAYOUT"
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
 	&#60;log_auth_verbose_statement&#62;&nbsp;::=&nbsp;"log_auth_verbose"&nbsp;&#60;validity&#62;<br>
+	&#60;file_trace_statement&#62;&nbsp;::=&nbsp;"file_trace"&nbsp;&#60;validity&#62;<br>
 	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;client_file_bufsize_statement&#62;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&#60;size&#62;<br>

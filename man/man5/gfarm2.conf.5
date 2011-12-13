@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "10 September 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "10 December 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -826,6 +826,18 @@ Example:
 	log_auth_verbose enable
 .fi
 .TP
+\fBfile_trace \fIvalidity\fB\fR
+When "enable" is specified, an audit log feature for file creation,
+modification and removal is enabled.
+
+This directive is available in both gfarm2.conf and gfmd.conf.
+
+例:
+
+.nf
+	file_trace enable
+.fi
+.TP
 \fBno_file_system_node_timeout \fIseconds\fB\fR
 If there is no file system node available,
 Gfarm client library periodically tries to find a file system node.
@@ -1049,6 +1061,7 @@ notation.
 		\~\~<log_level_statement> |
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<log_auth_verbose_statement> |
+		\~\~<file_trace_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
@@ -1129,6 +1142,7 @@ notation.
 	<log_level_statement> ::= "log_level" <log_priority>
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
+	<file_trace_statement> ::= "file_trace" <validity>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>

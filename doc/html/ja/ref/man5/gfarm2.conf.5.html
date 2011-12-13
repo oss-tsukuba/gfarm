@@ -1647,6 +1647,28 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>file_trace</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>enable¤È»ØÄê¤·¤¿¾ì¹ç¡¢¥Õ¥¡¥¤¥ëºîÀ®¡¦ÊÑ¹¹¡¦ºï½ü¤Ë´Ø¤¹¤ë
+´Æºº¥í¥°¤Î½ÐÎÏµ¡Ç½¤òÍ­¸ú¤Ë¤·¤Þ¤¹¡£</P
+><P
+>¤³¤Î¥Ñ¥é¥á¡¼¥¿¤Ï¡¢gfarm2.conf¤Ègfmd.conf¤ÎÎ¾Êý¤ÇÍ­¸ú¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	file_trace&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >no_file_system_node_timeout</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2002,6 +2024,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;log_level_statement&#62;&nbsp;|<br>
 		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
 		  &#60;log_auth_verbose_statement&#62;&nbsp;|<br>
+		  &#60;file_trace_statement&#62;&nbsp;|<br>
 		  &#60;client_file_bufsize_statement&#62;&nbsp;|<br>
 		  &#60;profile_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_list_statement&#62;&nbsp;|<br>
@@ -2012,7 +2035,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
 		  &#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
-		  &#60;metadb_journal_recvq_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_journal_recvq_size_statement&#62;<br>
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
@@ -2082,6 +2105,7 @@ CLASS="LITERALLAYOUT"
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
 	&#60;log_auth_verbose_statement&#62;&nbsp;::=&nbsp;"log_auth_verbose"&nbsp;&#60;validity&#62;<br>
+	&#60;file_trace_statement&#62;&nbsp;::=&nbsp;"file_trace"&nbsp;&#60;validity&#62;<br>
 	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;client_file_bufsize_statement&#62;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&#60;size&#62;<br>

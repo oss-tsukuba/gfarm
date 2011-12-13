@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "10 September 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "10 December 2011" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -775,6 +775,18 @@ enableと指定した場合、認証処理に関する詳細なログを記録します。
 	log_auth_verbose enable
 .fi
 .TP
+\fBfile_trace \fI有効性\fB\fR
+enableと指定した場合、ファイル作成・変更・削除に関する
+監査ログの出力機能を有効にします。
+
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+
+例:
+
+.nf
+	file_trace enable
+.fi
+.TP
 \fBno_file_system_node_timeout \fI秒数\fB\fR
 利用可能なファイルシステムノードが存在しない場合，
 Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
@@ -988,6 +1000,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<log_level_statement> |
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<log_auth_verbose_statement> |
+		\~\~<file_trace_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
@@ -998,7 +1011,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement> |
-		\~\~<metadb_journal_recvq_size_statement> |
+		\~\~<metadb_journal_recvq_size_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1068,6 +1081,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<log_level_statement> ::= "log_level" <log_priority>
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
+	<file_trace_statement> ::= "file_trace" <validity>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
