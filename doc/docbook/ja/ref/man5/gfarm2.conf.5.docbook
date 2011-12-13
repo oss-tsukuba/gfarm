@@ -1141,6 +1141,23 @@ enableと指定した場合、認証処理に関する詳細なログを記録します。
 </varlistentry>
 
 <varlistentry>
+<term><token>file_trace</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、ファイル作成・変更・削除に関する
+監査ログの出力機能を有効にします。
+</para>
+<para>
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	file_trace enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
 <listitem>
 <para>利用可能なファイルシステムノードが存在しない場合，
@@ -1430,6 +1447,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
+		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
@@ -1441,7 +1459,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1524,6 +1542,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
+	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->

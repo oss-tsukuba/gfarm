@@ -1177,6 +1177,23 @@ When "enable" is specified, verbose messages about authentication are logged.
 </varlistentry>
 
 <varlistentry>
+<term><token>file_trace</token> <parameter>validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, an audit log feature for file creation,
+modification and removal is enabled.
+</para>
+<para>
+This directive is available in both gfarm2.conf and gfmd.conf.
+</para>
+<para>例:</para>
+<literallayout>
+	file_trace enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>no_file_system_node_timeout</token> <parameter>seconds</parameter></term>
 <listitem>
 <para>If there is no file system node available,
@@ -1476,6 +1493,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
+		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
@@ -1570,6 +1588,7 @@ notation.</para>
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
+	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
