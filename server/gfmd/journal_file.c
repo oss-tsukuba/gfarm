@@ -836,10 +836,11 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		if (ope == GFM_JOURNAL_BEGIN) {
 			pos0 = pos1;
 			seqnum0 = seqnum;
-		} else if (ope == GFM_JOURNAL_END &&
-		    max_seqnum < seqnum && cur_seqnum <= seqnum) {
-			max_seqnum = seqnum;
-			max_seqnum_next_pos = pos2;
+		} else if (ope == GFM_JOURNAL_END) {
+			if (max_seqnum < seqnum && cur_seqnum <= seqnum) {
+				max_seqnum = seqnum;
+				max_seqnum_next_pos = pos2;
+			}
 			if (cur_seqnum < seqnum0 && min_seqnum > seqnum0) {
 				min_seqnum = seqnum0;
 				min_seqnum_pos = pos0;
