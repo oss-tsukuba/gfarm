@@ -1760,7 +1760,7 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	char *name;
 	struct host *spool_host = NULL;
-	struct process *process;
+	struct process *process = NULL;
 	gfarm_int32_t sfd, dfd;
 	struct inode *src, *base;
 
@@ -1927,7 +1927,7 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	char *source_path, *name;
 	struct host *spool_host = NULL;
-	struct process *process;
+	struct process *process = NULL;
 	gfarm_int32_t cfd;
 	struct inode *base;
 
