@@ -2167,7 +2167,7 @@ inode_create_symlink(struct inode *base, char *name,
 	e = inode_lookup_relative(base, name, GFS_DT_LNK,
 	    INODE_CREATE_EXCLUSIVE, process_get_user(process),
 	    0777, source_path, &inode, NULL);
-	if (file_trace_mode && e == GFARM_ERR_NO_ERROR && inodetp != NULL) {
+	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR && inodetp != NULL) {
 		inodetp->inum = inode_get_number(inode);
 		inodetp->igen = inode_get_gen(inode);
 		inodetp->imode = inode_get_mode(inode);
@@ -2421,7 +2421,7 @@ inode_rename(
 	struct process *process,
 	struct inode_trace_log_info *srctp,
 	struct inode_trace_log_info *dsttp,
-	int *dst_removed, int *hlink_removed) /* for file_trace_mode */
+	int *dst_removed, int *hlink_removed) /* for gfarm_file_trace */
 {
 	gfarm_error_t e;
 	struct user *user = process_get_user(process);
@@ -2447,7 +2447,7 @@ inode_rename(
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (file_trace_mode && srctp != NULL) {
+	if (gfarm_file_trace && srctp != NULL) {
 		srctp->inum = inode_get_number(src);
 		srctp->igen = inode_get_gen(src);
 		srctp->imode = inode_get_mode(src);
@@ -2475,7 +2475,7 @@ inode_rename(
 
 	e = inode_lookup_by_name(ddir, dname, process, 0, &dst);
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (file_trace_mode && dsttp != NULL) {
+		if (gfarm_file_trace && dsttp != NULL) {
 			dsttp->inum = inode_get_number(dst);
 			dsttp->igen = inode_get_gen(dst);
 			dsttp->imode = inode_get_mode(dst);
@@ -2532,7 +2532,7 @@ inode_rename(
 gfarm_error_t
 inode_unlink(struct inode *base, char *name, struct process *process,
 	struct inode_trace_log_info *inodetp,
-	int *hlink_removed) /* for file_trace_mode */
+	int *hlink_removed) /* for gfarm_file_trace */
 {
 	struct inode *inode;
 	gfarm_error_t e = inode_lookup_by_name(base, name, process, 0, &inode);
@@ -2544,7 +2544,7 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 		return (e);
 	}
 
-	if (file_trace_mode && inodetp != NULL) {
+	if (gfarm_file_trace && inodetp != NULL) {
 		inodetp->inum = inode_get_number(inode);
 		inodetp->igen = inode_get_gen(inode);
 		inodetp->imode = inode_get_mode(inode);
@@ -2807,7 +2807,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 			*new_genp = inode->i_gen;
 		generation_updated = 1;
 
-		if(file_trace_mode && trace_logp != NULL) {
+		if(gfarm_file_trace && trace_logp != NULL) {
 			gettimeofday(&tv, NULL);
 			snprintf(tmp_str, sizeof(tmp_str),
 			    "%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",

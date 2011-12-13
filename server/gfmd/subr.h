@@ -1,5 +1,4 @@
 extern int debug_mode;
-extern int file_trace_mode;
 
 void giant_init(void);
 void giant_lock(void);

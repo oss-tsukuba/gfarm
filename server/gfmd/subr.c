@@ -18,7 +18,6 @@
 #include "subr.h"
 
 int debug_mode = 0;
-int file_trace_mode = 0;
 
 static pthread_mutex_t giant_mutex;
 

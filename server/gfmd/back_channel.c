@@ -465,7 +465,7 @@ gfm_async_server_replication_result(struct host *host,
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
 	gfarm_int64_t handle;
-	gfarm_int64_t trace_seq_num; /* for file_trace_mode */
+	gfarm_int64_t trace_seq_num; /* for gfarm_file_trace */
 	gfarm_off_t filesize;
 	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
@@ -495,7 +495,7 @@ gfm_async_server_replication_result(struct host *host,
 	 */
 	e2 = gfm_async_server_put_reply(host, peer, xid, diag, e, "");
 
-	if (file_trace_mode && e == GFARM_ERR_NO_ERROR)
+	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR)
 		gflog_trace(GFARM_MSG_UNFIXED,
 		    "%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
 		    (long long int)trace_seq_num,

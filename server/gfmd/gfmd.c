@@ -1406,7 +1406,7 @@ main(int argc, char **argv)
 				    optarg);
 			break;
 		case 't':
-			file_trace_mode = 1;
+			gfarm_file_trace = 1;
 			break;
 		case 'v':
 			gflog_auth_set_verbose(1);
