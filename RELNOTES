@@ -1,3 +1,33 @@
+Release note for Gfarm 2.5.2
+============================
+
+[2011.12.19]
+
+New configuration directive
+* file_trace for audit log of file creation, modification, and removal.
+  [sf.net trac #282]
+
+Documentation
+* INSTALL.RPM - includes how to create binary packages.
+
+Bug fix
+* journal file may not be correctly read when the gfmd stops. [sf.net
+  trac #284]
+* a client hostname is not correctly recorded in the log at
+  authentication failure. [sf.net trac #283]
+* a client hostname is not correctly recorded in the log when the
+  client is not a file system node. [sf.net trac #262]
+* gfmd may stop when the backend database is restarted.
+* gfmd may stop without any message. [sf.net trac #278]
+* journal file is not applied when gfmd restarts.
+* Gfarm file system may become read-only when metadata replication is
+  enabled. [sf.net trac #271]
+* incomplete file replica is left when gfrep fails. [sf.net trac #260]
+* when gfmd restarts, it fails to start due to the duplicate
+  application of journal log. [sf.net trac #267]
+* config-gfarm fails when the username includes '-'. [sf.net trac
+  #261]
+
 Release note for Gfarm 2.5.1
 ============================
 
