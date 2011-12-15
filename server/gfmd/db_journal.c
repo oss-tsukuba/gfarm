@@ -90,7 +90,7 @@ static int		journal_slave_transaction_nesting = 0;
 static void
 db_seqnum_load_callback(void *closure, struct db_seqnum_arg *a)
 {
-	if (a->name == NULL || strlen(a->name) == 0)
+	if (a->name == NULL || strcmp(a->name, DB_SEQNUM_MASTER_NAME) == 0)
 		journal_seqnum = a->value;
 	free(a->name);
 }
@@ -3458,6 +3458,16 @@ db_journal_free_rec_list(struct db_journal_rec_list *recs)
 	}
 }
 
+static int
+db_journal_is_rec_stored(struct db_journal_rec *rec)
+{
+	gfarm_uint64_t seqnum;
+	gfarm_error_t e;
+
+	e = store_ops->seqnum_get(DB_SEQNUM_MASTER_NAME, &seqnum);
+	return (e == GFARM_ERR_NO_ERROR && seqnum >= rec->seqnum);
+}
+
 void *
 db_journal_store_thread(void *arg)
 {
@@ -3510,7 +3520,12 @@ retry:
 			if ((e = db_journal_ops_call(store_ops, rec->seqnum,
 			    rec->ope, rec->obj, diag))
 			    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
-				goto retry;
+				if (!db_journal_is_rec_stored(rec))
+					goto retry;
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "db seems to have been committed the "
+				    "last operation, no retry is needed");
+				e = GFARM_ERR_NO_ERROR;
 			} else if (e != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_1003188,
 				    "failed to store to db : %s",
@@ -3972,6 +3987,12 @@ db_journal_quota_load(void *closure, int is_group,
 }
 
 static gfarm_error_t
+db_journal_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
+{
+	return (store_ops->seqnum_get(name, seqnump));
+}
+
+static gfarm_error_t
 db_journal_seqnum_add(struct db_seqnum_arg *arg)
 {
 	return (store_ops->seqnum_add(arg));
@@ -4074,6 +4095,7 @@ struct db_ops db_journal_ops = {
 	db_journal_write_quota_remove,
 	db_journal_quota_load,
 
+	db_journal_seqnum_get,
 	db_journal_seqnum_add,
 	db_journal_seqnum_modify,
 	db_journal_seqnum_remove,

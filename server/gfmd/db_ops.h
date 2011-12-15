@@ -241,6 +241,7 @@ struct db_ops {
 	gfarm_error_t (*quota_load)(void *, int,
 		void (*)(void *, struct gfarm_quota_info *));
 
+	gfarm_error_t (*seqnum_get)(const char *, gfarm_uint64_t *);
 	gfarm_error_t (*seqnum_add)(struct db_seqnum_arg *);
 	gfarm_error_t (*seqnum_modify)(struct db_seqnum_arg *);
 	gfarm_error_t (*seqnum_remove)(char *);

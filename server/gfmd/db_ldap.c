@@ -3182,6 +3182,7 @@ const struct db_ops db_ldap_ops = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 
 	NULL,
 	NULL,

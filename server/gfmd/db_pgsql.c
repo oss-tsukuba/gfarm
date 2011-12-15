@@ -3270,6 +3270,34 @@ seqnum_info_set_field(PGresult *res, int row, void *varg)
 }
 
 static gfarm_error_t
+gfarm_pgsql_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
+{
+	gfarm_error_t e;
+	const char *paramValues[1];
+	struct db_seqnum_arg *args;
+	int n;
+
+	paramValues[0] = name;
+	e = gfarm_pgsql_generic_get_all_no_retry(
+		"SELECT * FROM SeqNum WHERE name = $1",
+		1, paramValues,
+		&n, &args,
+		&gfarm_base_user_info_ops, seqnum_info_set_field,
+		"pgsql_seqnum_get");
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_pgsql_generic_get_all_no_retry()");
+		return (e);
+	}
+	if (n > 0)
+		*seqnump = args[0].value;
+	else
+		e = GFARM_ERR_INTERNAL_ERROR;
+	free(args);
+	return (e);
+}
+
+static gfarm_error_t
 gfarm_pgsql_seqnum_load(void *closure,
 	void (*callback)(void *, struct db_seqnum_arg *))
 {
@@ -3512,6 +3540,7 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_quota_remove,
 	gfarm_pgsql_quota_load,
 
+	gfarm_pgsql_seqnum_get,
 	gfarm_pgsql_seqnum_add,
 	gfarm_pgsql_seqnum_modify,
 	gfarm_pgsql_seqnum_remove,

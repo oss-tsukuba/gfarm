@@ -374,6 +374,12 @@ gfarm_none_quota_load(void *closure, int is_group,
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
+{
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+static gfarm_error_t
 gfarm_none_seqnum_add(struct db_seqnum_arg *arg)
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
@@ -499,6 +505,7 @@ const struct db_ops db_none_ops = {
 	gfarm_none_quota_remove,
 	gfarm_none_quota_load,
 
+	gfarm_none_seqnum_get,
 	gfarm_none_seqnum_add,
 	gfarm_none_seqnum_modify,
 	gfarm_none_seqnum_remove,

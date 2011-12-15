@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#define DB_SEQNUM_MASTER_NAME	""
+
 struct db_ops;
 extern struct db_ops db_journal_ops;
 struct journal_file_reader;

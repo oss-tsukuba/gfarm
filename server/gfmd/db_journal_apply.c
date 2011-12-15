@@ -865,6 +865,7 @@ const struct db_ops db_journal_apply_ops = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 
 	db_journal_apply_mdhost_add,
 	db_journal_apply_mdhost_modify,
