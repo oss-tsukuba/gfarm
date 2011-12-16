@@ -3389,7 +3389,7 @@ retry:
 			goto end;
 	}
 
-	journal_file_reader_commit_pos_unlocked(
+	journal_file_reader_commit_pos(
 		journal_file_main_reader(self_jf));
 
 	GFARM_STAILQ_FOREACH(ai, c, next) {
@@ -3539,7 +3539,11 @@ retry:
 		    DB_ACCESS_MUTEX_DIAG);
 		if (journal_file_is_closed(self_jf))
 			goto end;
+
+		journal_file_mutex_lock(self_jf, diag);
 		journal_file_reader_commit_pos(reader);
+		journal_file_mutex_unlock(self_jf, diag);
+
 		db_journal_free_rec_list(&recs);
 	}
 error:
@@ -3656,7 +3660,11 @@ db_journal_fetch(struct journal_file_reader *reader,
 	for (;;) {
 		e = journal_file_read_serialized(reader, &rec, &rec_len,
 		    &seqnum, &eof);
+
+		journal_file_mutex_lock(self_jf, diag);
 		journal_file_reader_commit_pos(reader);
+		journal_file_mutex_unlock(self_jf, diag);
+
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1003194,
 			    "%s : %s", diag, gfarm_error_string(e));

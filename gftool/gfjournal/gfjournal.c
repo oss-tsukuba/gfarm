@@ -437,8 +437,8 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 	void *obj, void *closure, size_t length, int *needs_freep)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	off_t c, t;
-	int wrap;
+	off_t pos, t;
+	gfarm_uint64_t lap;
 
 	post_read_aggregate(NULL, seqnum, ope, obj, NULL, length, needs_freep);
 	/* seqnum operation length */
@@ -446,9 +446,9 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 	    journal_operation_name(ope), (unsigned long)length);
 	if (opt_verbose) {
 		/* offset */
-		journal_file_reader_cache_pos(reader, &c, &wrap);
+		journal_file_reader_committed_pos(reader, &pos, &lap);
 		t = journal_file_tail(jf);
-		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)((c + t) % t));
+		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)((pos + t) % t));
 	}
 	print_obj(ope, obj);
 	printf("\n");

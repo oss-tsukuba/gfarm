@@ -115,14 +115,11 @@ struct gfp_xdr *journal_file_writer_xdr(struct journal_file_writer *);
 off_t journal_file_writer_pos(struct journal_file_writer *);
 
 struct gfp_xdr *journal_file_reader_xdr(struct journal_file_reader *);
-void journal_file_reader_cache_pos(struct journal_file_reader *, off_t *,
-	int *);
-void journal_file_reader_commit_pos_unlocked(struct journal_file_reader *);
+void journal_file_reader_committed_pos(struct journal_file_reader *, off_t *,
+	gfarm_uint64_t *);
 void journal_file_reader_commit_pos(struct journal_file_reader *);
 int journal_file_reader_is_invalid(struct journal_file_reader *);
 void journal_file_reader_disable_block_writer(struct journal_file_reader *);
-gfarm_error_t journal_file_reader_dup(struct journal_file_reader *,
-	struct journal_file_reader **);
 void journal_file_reader_close(struct journal_file_reader *);
 gfarm_error_t journal_file_reader_reopen(struct journal_file *,
 	struct journal_file_reader **, gfarm_uint64_t);

@@ -1552,10 +1552,8 @@ main(int argc, char **argv)
 		    "create_detached_thread(resumer): %s",
 		    gfarm_error_string(e));
 
-	if (gfarm_get_metadb_replication_enabled()) {
+	if (gfarm_get_metadb_replication_enabled())
 		start_db_journal_threads();
-		db_journal_reset_slave_transaction_nesting();
-	}
 	if (!mdhost_self_is_readonly()) {
 		/* these functions write db, thus, must be after db_thread  */
 		inode_remove_orphan(); /* should be before
