@@ -319,6 +319,12 @@ empty_seqnum_load(void *closure,
 }
 
 static gfarm_error_t
+empty_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 empty_mdhost_add(gfarm_uint64_t seqnum, struct gfarm_metadb_server *info)
 {
 	return (GFARM_ERR_NO_ERROR);
@@ -414,6 +420,7 @@ const struct db_ops empty_ops = {
 	empty_quota_remove,
 	empty_quota_load,
 
+	empty_seqnum_get,
 	empty_seqnum,
 	empty_seqnum,
 	empty_seqnum_remove,
