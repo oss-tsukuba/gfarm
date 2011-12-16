@@ -37,10 +37,10 @@ usage(void)
 	fprintf(stderr,
 	    "options:\n");
 	fprintf(stderr, "\t-L\t\tdo not check authentication\n");
-	fprintf(stderr, "\t-M\t\tmetadata only.  suppress client side scheduling\n");
+	fprintf(stderr, "\t-M\t\tno client-side scheduling\n");
 	fprintf(stderr, "\t-c\t\tcreate mode (currently leaves a file)\n");
-	fprintf(stderr, "\t-l\t\twrite mode\n");
-	fprintf(stderr, "\t-w\t\tlong format\n");
+	fprintf(stderr, "\t-w\t\twrite mode\n");
+	fprintf(stderr, "\t-l\t\tlong format\n");
 	exit(2);
 }
 
