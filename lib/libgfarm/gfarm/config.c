@@ -1865,7 +1865,8 @@ parse_local_usergroup_map_arguments(char *p, char **op, int is_user)
 		}
 		if (tmp) {
 			gflog_debug(GFARM_MSG_1002545,
-			    "Too many netparam arguments passed");
+			    "Too many local_%s_map arguments passed",
+			    is_user ? "user" : "group");
 			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		}
 	}
