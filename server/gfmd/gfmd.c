@@ -1040,15 +1040,15 @@ boot_apply_db_journal(void)
 	gfarm_error_t e;
 	static int boot_apply = 1;
 
-	gflog_info(GFARM_MSG_UNFIXED, "start boot-apply db journal");
+	gflog_info(GFARM_MSG_1003273, "start boot-apply db journal");
 	if ((e = create_detached_thread(db_journal_store_thread,
 	    &boot_apply)) != GFARM_ERR_NO_ERROR)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003274,
 		    "create_detached_thread(db_journal_store_thread): %s",
 		    gfarm_error_string(e));
 
 	db_journal_wait_for_apply_thread();
-	gflog_info(GFARM_MSG_UNFIXED, "end boot-apply db journal");
+	gflog_info(GFARM_MSG_1003275, "end boot-apply db journal");
 
 	/*
 	 * Reload seqnum from the database.

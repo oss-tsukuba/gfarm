@@ -2730,7 +2730,7 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 	static const char diag[] = "inode_fhclose_read";
 
 	if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		gflog_error(GFARM_MSG_1003283, "%s: not a file", diag);
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 	if (atime != NULL)
@@ -2748,7 +2748,7 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 	static const char diag[] = "inode_fhclose_write";
 
 	if (!inode_is_file(inode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", diag);
+		gflog_error(GFARM_MSG_1003284, "%s: not a file", diag);
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 	
@@ -3318,7 +3318,7 @@ inode_replicated(struct file_replicating *fr,
 		    dst_errcode == GFARM_ERR_NO_ERROR &&
 		    (inode->i_mode == INODE_MODE_FREE ||
 		     fr->igen != inode_get_gen(inode))) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003285,
 			    "expected failure of %lld:%lld replication to %s: "
 			    "mode:0o%o gen:%lld",
 			    (long long)inode_get_number(inode),

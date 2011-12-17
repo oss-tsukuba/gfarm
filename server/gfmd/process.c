@@ -1464,7 +1464,7 @@ process_set_path_for_trace_log(struct process *process, int fd, char *path)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003280,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -1482,7 +1482,7 @@ process_get_path_for_trace_log(struct process *process, int fd, char **path)
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003281,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 		return (e);

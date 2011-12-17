@@ -40,7 +40,7 @@ gfm_rename_result(struct gfm_connection *gfm_server, void *closure)
 	} else {
 		if (gfarm_file_trace) {
 			gfm_client_source_port(gfm_server, &src_port);
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003271,
 			    "%s/%s/%s/%d/MOVE/%s/%d/////\"%s\"///\"%s\"",
 			    gfarm_get_local_username(),
 			    gfm_client_username(gfm_server),

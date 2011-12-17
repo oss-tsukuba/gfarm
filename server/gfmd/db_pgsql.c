@@ -3285,7 +3285,7 @@ gfarm_pgsql_seqnum_get(const char *name, gfarm_uint64_t *seqnump)
 		&gfarm_base_user_info_ops, seqnum_info_set_field,
 		"pgsql_seqnum_get");
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003329,
 		    "gfarm_pgsql_generic_get_all_no_retry()");
 		return (e);
 	}

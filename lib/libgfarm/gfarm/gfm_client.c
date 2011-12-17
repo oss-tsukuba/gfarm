@@ -576,7 +576,7 @@ gfm_client_connection_addref(struct gfm_connection *gfm_server)
 	    gfm_client_username(gfm_server),
 	    &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003264,
 			"addref of cached gfm connection failed: %s",
 			gfarm_error_string(e));
 		return (e);
@@ -586,7 +586,7 @@ gfm_client_connection_addref(struct gfm_connection *gfm_server)
 		    == gfm_server);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	gflog_fatal(GFARM_MSG_UNFIXED, "corrupted gfm connection cache");
+	gflog_fatal(GFARM_MSG_1003265, "corrupted gfm connection cache");
 
 	return (GFARM_ERR_UNKNOWN);
 }

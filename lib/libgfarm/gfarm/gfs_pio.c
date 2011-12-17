@@ -243,7 +243,7 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 		gfm_client_source_port(gfm_server, &src_port);
-		gflog_trace(GFARM_MSG_UNFIXED,
+		gflog_trace(GFARM_MSG_1003267,
 		    "%s/%s/%s/%d/CREATE/%s/%d/%lld/%lld///\"%s\"///",
 		    gfarm_get_local_username(),
 		    gfm_client_username(gfm_server),
@@ -332,7 +332,7 @@ gfs_pio_close(GFS_File gf)
 			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003268,
 			    "ignore %s error at pio close operation",
 			    gfarm_error_string(e));
 			e = GFARM_ERR_NO_ERROR;

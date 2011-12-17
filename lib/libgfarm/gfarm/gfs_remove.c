@@ -45,7 +45,7 @@ gfm_remove_result(struct gfm_connection *gfm_server, void *closure)
 			int src_port;
 
 			gfm_client_source_port(gfm_server, &src_port);
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003270,
 			    "%s/%s/%s/%d/DELETE/%s/%d/////\"%s\"///",
 			    gfarm_get_local_username(),
 			    gfm_client_username(gfm_server),

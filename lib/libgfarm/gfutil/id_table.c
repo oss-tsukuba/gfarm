@@ -68,7 +68,7 @@ gfarm_id_table_alloc(struct gfarm_id_table_entry_ops *entry_ops)
 	/* this assumes sizeof(struct gfarm_id_free_data) is power of 2 */
 	if ((sizeof(struct gfarm_id_free_data) &
 	     (sizeof(struct gfarm_id_free_data) - 1)) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003251,
 		    "gfarm_id_table_alloc: unexpected struct size %zd",
 		    sizeof(struct gfarm_id_free_data));
 		abort();

@@ -985,7 +985,7 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	gfarm_mutex_destroy(&dfc->mutex, diag, "dfc state");
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR)
-		gflog_trace(GFARM_MSG_UNFIXED,
+		gflog_trace(GFARM_MSG_1003279,
 		    "%lld/////DELREPLICA/%s/%d/%s/%lld/%lld///////",
 		    (unsigned long long)trace_log_get_sequence_number(),
 		    gfarm_host_get_self_name(), gfarm_metadb_server_port,

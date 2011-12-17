@@ -38,7 +38,7 @@ back_channel_type_name(struct peer *peer)
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
 		return ("gfmd_channel");
 	default:
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003282,
 		    "(%s@%s) unexpected auth_id_type: %d",
 		    peer_get_username(peer), peer_get_hostname(peer),
 		    peer_get_auth_id_type(peer));

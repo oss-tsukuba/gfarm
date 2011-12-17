@@ -755,7 +755,7 @@ peer_free(struct peer *peer)
 		 */
 		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
 		if (err != 0)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003276,
 			    "unable to convert peer address to string: %s",
 			    strerror(err));
 	}
@@ -1278,7 +1278,7 @@ peer_add_cookie(struct peer *peer)
 
 	GFARM_MALLOC(cookie);
 	if (cookie == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: no memory", diag);
+		gflog_fatal(GFARM_MSG_1003277, "%s: no memory", diag);
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 	result = cookie->id = cookie_seqno++;
@@ -1306,7 +1306,7 @@ peer_delete_cookie(struct peer *peer, gfarm_uint64_t cookie_id)
 	}
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 	if (!found)
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: bad cookie id %llu",
+		gflog_warning(GFARM_MSG_1003278, "%s: bad cookie id %llu",
 		    diag, (unsigned long long)cookie_id);
 
 	return (found);

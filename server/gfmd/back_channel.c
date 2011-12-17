@@ -496,7 +496,7 @@ gfm_async_server_replication_result(struct host *host,
 	e2 = gfm_async_server_put_reply(host, peer, xid, diag, e, "");
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR)
-		gflog_trace(GFARM_MSG_UNFIXED,
+		gflog_trace(GFARM_MSG_1003320,
 		    "%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
 		    (long long int)trace_seq_num,
 		    gfarm_host_get_self_name(), gfarm_metadb_server_port,

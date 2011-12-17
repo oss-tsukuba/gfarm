@@ -306,7 +306,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			gettimeofday(&tv, NULL);
 			if ((e = process_get_path_for_trace_log(process,
 			    cfd, &parent_path)) != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003286,
 				    "process_get_path_for_trace_log() failed: %s",
 				    gfarm_error_string(e));
 			} else {
@@ -358,7 +358,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 					if ((e = process_get_path_for_trace_log(
 					    process, cfd, &parent_path))
 					    != GFARM_ERR_NO_ERROR) {
-						gflog_error(GFARM_MSG_UNFIXED,
+						gflog_error(GFARM_MSG_1003287,
 						    "process_get_path_for_trace_log() failed: %s",
 						    gfarm_error_string(e));
 					} else {
@@ -406,12 +406,12 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 			if ((e = process_get_path_for_trace_log(
 			    process, cfd, &parent_path))
 			    != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003288,
 				    "process_get_path_for_trace_log() failed: "
 				    "%s", gfarm_error_string(e));
 			}
 		} else { /* XXX FIXME */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003289,
 				"handling for path including '.' or '..' "
 				"haven't be implemented: %s",
 				gfarm_error_string(e));
@@ -430,7 +430,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 				    strlen(name) + 1;
 				GFARM_MALLOC_ARRAY(child_path, path_len);
 				if (child_path == NULL) {
-					gflog_warning(GFARM_MSG_UNFIXED,
+					gflog_warning(GFARM_MSG_1003290,
 					    "%s: no memory", diag);
 					free(parent_path);
 					return (GFARM_ERR_NO_MEMORY);
@@ -441,7 +441,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 				if ((e = process_set_path_for_trace_log(
 				    process, fd, child_path))
 				    != GFARM_ERR_NO_ERROR) {
-					gflog_error(GFARM_MSG_UNFIXED,
+					gflog_error(GFARM_MSG_1003291,
 					    "process_set_path_for_trace_log() failed: %s",
 					    gfarm_error_string(e));
 					free(child_path);
@@ -451,7 +451,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 				return (e);
 			}
 		} else { /* XXX FIXME */
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003292,
 			    "handling for path including '.' or '..' haven't be implemented: %s",
 			    gfarm_error_string(e));
 		}
@@ -509,11 +509,11 @@ gfm_server_create(struct peer *peer, int from_client, int skip)
 	    inum, gen, mode);
 
 	if (gfarm_file_trace && create_log != NULL) {
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", create_log);
+		gflog_trace(GFARM_MSG_1003293, "%s", create_log);
 		free(create_log);
 	}
 	if (gfarm_file_trace && remove_log != NULL) {
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", remove_log);
+		gflog_trace(GFARM_MSG_1003294, "%s", remove_log);
 		free(remove_log);
 	}
 
@@ -727,7 +727,7 @@ gfm_server_close(struct peer *peer, int from_client, int skip)
 	giant_unlock();
 	e2 = gfm_server_put_reply(peer, diag, e, "");
 	if (gfarm_file_trace && trace_log != NULL)
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
 	return (e2);
 }
 
@@ -1607,12 +1607,12 @@ gfm_server_remove(struct peer *peer, int from_client, int skip)
 	if (gfarm_file_trace && !GFARM_S_ISDIR(inodet.imode)) {
 		if ((e = process_get_path_for_trace_log(process, cfd,
 		    &path)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003296,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else {
 			peer_get_port(peer, &peer_port);
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003297,
 			    "%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
 			    (unsigned long long)trace_seq_num,
 			    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -1716,18 +1716,18 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 	    !GFARM_S_ISDIR(srct.imode)) {
 		if ((e = process_get_path_for_trace_log(process, sfd,
 		    &spath)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003298,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = process_get_path_for_trace_log(
 		    process, dfd, &dpath)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003299,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 			free(spath);
 		} else {
 			peer_get_port(peer, &peer_port),
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003300,
 			    "%lld/%010ld.%06ld/%s/%s/%d/MOVE/%s/%d//%lld/%lld////\"%s/%s\"///\"%s/%s\"",
 			    (unsigned long long)trace_seq_num_rename,
 			    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -1740,7 +1740,7 @@ gfm_server_rename(struct peer *peer, int from_client, int skip)
 			    spath, sname,
 			    dpath, dname);
 			if (dst_removed)
-				gflog_trace(GFARM_MSG_UNFIXED,
+				gflog_trace(GFARM_MSG_1003301,
 				    "%lld/%010ld.%06ld/%s/%s/%d/%sOW/%s/%d//%lld/%lld////\"%s/%s\"///",
 				    (unsigned long long)trace_seq_num_remove,
 				    (long int)tv.tv_sec,
@@ -1846,18 +1846,18 @@ gfm_server_flink(struct peer *peer, int from_client, int skip)
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
 		if ((e = process_get_path_for_trace_log(process, sfd,
 		    &spath)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003302,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else if ((e = process_get_path_for_trace_log(process, dfd, &dpath))
 			!= GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003303,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 			free(spath);
 		} else {
 			peer_get_port(peer, &peer_port),
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003304,
 			    "%lld/%010ld.%06ld/%s/%s/%d/LINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",
 			    (unsigned long long)trace_seq_num,
 			    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -2001,12 +2001,12 @@ gfm_server_symlink(struct peer *peer, int from_client, int skip)
 		gettimeofday(&tv, NULL);
 		if ((e = process_get_path_for_trace_log(process, cfd,
 		    &dpath)) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003305,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else {
 			peer_get_port(peer, &peer_port);
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003306,
 			    "%lld/%010ld.%06ld/%s/%s/%d/SYMLINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",
 			    (unsigned long long)trace_seq_num,
 			    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -2696,7 +2696,7 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 	    inum, gen, mode, flags, to_create);
 
 	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
-		gflog_trace(GFARM_MSG_UNFIXED,
+		gflog_trace(GFARM_MSG_1003307,
 		    "%lld/%010ld.%06ld////REPLICATE/%s/%d/%s/%lld/%lld///////",
 		    (long long int)trace_seq_num,
 		    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -2774,7 +2774,7 @@ gfm_server_reopen(struct peer *peer, int from_client, int skip,
 	    inum, gen, mode, flags, to_create);
 
 	if (gfarm_file_trace && to_create && e == GFARM_ERR_NO_ERROR) {
-		gflog_trace(GFARM_MSG_UNFIXED,
+		gflog_trace(GFARM_MSG_1003308,
 		    "%lld/%010ld.%06ld////REPLICATE/%s/%d/%s/%lld/%lld///////",
 		    (long long int)trace_seq_num,
 		    (long int)tv.tv_sec, (long int)tv.tv_usec,
@@ -3043,7 +3043,7 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 	    flags, old_gen, new_gen);
 
 	if (gfarm_file_trace && trace_log != NULL) {
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		gflog_trace(GFARM_MSG_1003309, "%s", trace_log);
 		free(trace_log);
 	}
 
@@ -3065,7 +3065,7 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 	e = gfm_server_get_request(peer, diag, "llli",
 	    &inum, &gen, &atime.tv_sec, &atime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003310,
 		    "fhclose_read request failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -3075,13 +3075,13 @@ gfm_server_fhclose_read(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
+		gflog_debug(GFARM_MSG_1003311, "operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "peer_get_host() failed");
+		gflog_debug(GFARM_MSG_1003312, "peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup() failed");
+		gflog_debug(GFARM_MSG_1003313, "inode_lookup() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
@@ -3126,13 +3126,13 @@ gfm_server_fhclose_write(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "operation is not permitted");
+		gflog_debug(GFARM_MSG_1003314, "operation is not permitted");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (peer_get_host(peer) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "peer_get_host() failed");
+		gflog_debug(GFARM_MSG_1003315, "peer_get_host() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((inode = inode_lookup(inum)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "inode_lookup() failed");
+		gflog_debug(GFARM_MSG_1003316, "inode_lookup() failed");
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
@@ -3230,14 +3230,14 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 	giant_lock();
 
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: from client", diag);
+		gflog_debug(GFARM_MSG_1003317, "%s: from client", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003318,
 		    "%s: peer_get_host() failed", diag);
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (!peer_delete_cookie(peer, cookie)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003319,
 		    "%s: peer_delete_cookie() failed", diag);
 		e = GFARM_ERR_BAD_COOKIE;
 	}

@@ -25,19 +25,19 @@ gfarm_barrier_init(pthread_barrier_t *barrier, unsigned int count,
 	int err = pthread_barrier_init(barrier, NULL, count);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier init: %s",
+		gflog_fatal(GFARM_MSG_1003252, "%s: %s barrier init: %s",
 		    where, what, strerror(err));
 #else
 	int err;
 
 	err = pthread_mutex_init(&barrier->mutex, NULL);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003253,
 		    "%s: %s barrier init: mutex_init: %s",
 		    where, what, strerror(err));
 	err = pthread_cond_init(&barrier->all_entered, NULL);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003254,
 		    "%s: %s barrier init: cond_init all_entered: %s",
 		    where, what, strerror(err));
 	barrier->n_members = barrier->n_pending = count;
@@ -53,19 +53,19 @@ gfarm_barrier_destroy(pthread_barrier_t *barrier,
 	int err = pthread_barrier_destroy(barrier);
 
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier destroy: %s",
+		gflog_fatal(GFARM_MSG_1003255, "%s: %s barrier destroy: %s",
 		    where, what, strerror(err));
 #else
 	int err;
 
 	err = pthread_cond_destroy(&barrier->all_entered);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003256,
 		    "%s: %s barrier destroy: cond_destroy all_entered: %s",
 		    where, what, strerror(err));
 	err = pthread_mutex_destroy(&barrier->mutex);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003257,
 		    "%s: %s barrier destroy: mutex_destroy: %s",
 		    where, what, strerror(err));
 #endif
@@ -81,7 +81,7 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 	if (err == PTHREAD_BARRIER_SERIAL_THREAD)
 		return (1); /* this is the serial thread */
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier wait: %s",
+		gflog_fatal(GFARM_MSG_1003258, "%s: %s barrier wait: %s",
 		    where, what, strerror(err));
 	return (0);
 #else
@@ -89,7 +89,7 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 
 	err = pthread_mutex_lock(&barrier->mutex);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003259,
 		    "%s: %s barrier wait: mutex_lock: %s",
 		    where, what, strerror(err));
 	cycle = barrier->cycle;
@@ -99,7 +99,7 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 			err = pthread_cond_wait(&barrier->all_entered,
 			    &barrier->mutex);
 			if (err != 0)
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1003260,
 				    "%s: %s barrier wait: "
 				    " cond_wait all_entered: %s",
 				    where, what, strerror(err));
@@ -120,14 +120,14 @@ gfarm_barrier_wait(pthread_barrier_t *barrier,
 		    EAGAIN)
 			;
 		if (err != 0)
-			gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s barrier wait: "
+			gflog_fatal(GFARM_MSG_1003261, "%s: %s barrier wait: "
 			    "cond_broadcast all_entered: %s",
 			    where, what, strerror(err));
 		retval = 1; /* this is the serial thread */
 	}
 	err = pthread_mutex_unlock(&barrier->mutex);
 	if (err != 0)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003262,
 		    "%s: %s barrier wait:  mutex_unlock: %s",
 		    where, what, strerror(err));
 	return (retval);

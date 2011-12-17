@@ -647,7 +647,7 @@ mdhost_lookup_master(void)
 	m = mdhost_master;
 	mdhost_master_mutex_unlock(diag);
 	if (m == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: no master, abort", diag);
+		gflog_fatal(GFARM_MSG_1003324, "%s: no master, abort", diag);
 	return (m);
 }
 
@@ -687,7 +687,7 @@ mdhost_set_self_as_master(void)
 
 	m = mdhost_lookup_master();
 	if (m == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003325,
 		    "mdhost_set_self_as_master: no master");
 		return;
 	}

@@ -1023,7 +1023,7 @@ journal_write_file_header(int fd)
 	GFARM_MALLOC_ARRAY(header, JOURNAL_FILE_HEADER_SIZE);
 	if (header == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003321,
 			"allocation of memory failed: %s",
 			gfarm_error_string(e));
 		goto error;
@@ -1050,7 +1050,7 @@ journal_write_file_header(int fd)
 #endif
 	if (sync_result == -1) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003322,
 			"failed to sync journal file : %s",
 			gfarm_error_string(e));
 		goto error;
@@ -1544,7 +1544,7 @@ journal_read_rec_header(struct gfp_xdr *xdr, enum journal_operation *opep,
 	if (memcmp(magic, GFARM_JOURNAL_RECORD_MAGIC,
 	    GFARM_JOURNAL_MAGIC_SIZE) != 0) {
 		e = GFARM_ERR_INTERNAL_ERROR;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003323,
 		    "invalid journal record magic: seqnum=%lld: %s",
 		    (unsigned long long)seqnum,
 		    gfarm_error_string(e));

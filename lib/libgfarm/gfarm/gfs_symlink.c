@@ -47,7 +47,7 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 	} else {
 		if (gfarm_file_trace) {
 			gfm_client_source_port(gfm_server, &source_port);
-			gflog_trace(GFARM_MSG_UNFIXED,
+			gflog_trace(GFARM_MSG_1003272,
 			    "%s/%s/%s/%d/SYMLINK/%s/%d/////\"%s\"///\"%s\"",
 			    gfarm_get_local_username(),
 			    gfm_client_username(gfm_server),

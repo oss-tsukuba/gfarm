@@ -171,7 +171,7 @@ db_journal_init(void)
 
 	if ((e = db_journal_init_status()) 
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003326,
 		    "db_journal_init_status : %s",
 		    gfarm_error_string(e));
 	}
@@ -3522,7 +3522,7 @@ retry:
 			    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
 				if (!db_journal_is_rec_stored(rec))
 					goto retry;
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1003327,
 				    "db seems to have been committed the "
 				    "last operation, no retry is needed");
 				e = GFARM_ERR_NO_ERROR;
@@ -3766,7 +3766,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
 		if (journal_file_is_waiting_until_nonempty(self_jf)) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003328,
 			    "journal recieve queue overflow on memory, "
 			    "please try to increase "
 			    "\"metadb_journal_recvq_size\" (currently %d)",
