@@ -30,6 +30,7 @@
 #include "gfutil.h"
 
 #include "tcputil.h"
+#include "gfsl_config.h"
 
 #define MAX_BACKLOG	10
 
@@ -192,7 +193,7 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 
 	FD_ZERO(&rFd);
 	FD_SET(fd, &rFd);
-	if (timeoutMsec == 0)
+	if (timeoutMsec == GFARM_GSS_TIMEOUT_INFINITE)
 	    tvPtr = NULL;
 	else {
 	    tv.tv_sec = timeoutMsec / 1000;
