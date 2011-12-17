@@ -128,7 +128,7 @@ set_last_defaults_postgresql()
 		if getent passwd "$BACKEND_ADMIN_USER" >/dev/null; then
 			:
 		else
-			ABORT "postgresql admin user '$$BACKEND_ADMIN_USER' doesn't exist"
+			ABORT "postgresql admin user '$BACKEND_ADMIN_USER' doesn't exist"
 		fi
 	fi
 
