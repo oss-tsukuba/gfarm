@@ -24,6 +24,8 @@ const char *gfs_client_username(struct gfs_connection *);
 int gfs_client_port(struct gfs_connection *);
 gfarm_pid_t gfs_client_pid(struct gfs_connection *);
 void gfs_client_purge_from_cache(struct gfs_connection *);
+int gfs_client_connection_failover_count(struct gfs_connection *);
+void gfs_client_connection_set_failover_count(struct gfs_connection *, int);
 
 gfarm_error_t gfs_client_connection_acquire(const char *, const char *,
 	struct sockaddr *, struct gfs_connection **);
@@ -49,8 +51,10 @@ gfarm_error_t gfs_client_connect_result_multiplexed(
 
 /* from client */
 
-gfarm_error_t gfs_client_process_set(struct gfs_connection *,
-	gfarm_int32_t, const char *, size_t, gfarm_pid_t);
+gfarm_error_t gfs_client_process_set(struct gfs_connection *, gfarm_int32_t,
+	const char *, size_t, gfarm_pid_t);
+gfarm_error_t gfs_client_process_reset(struct gfs_connection *, gfarm_int32_t,
+	const char *, size_t, gfarm_pid_t);
 gfarm_error_t gfs_client_open(struct gfs_connection *, gfarm_int32_t);
 gfarm_error_t gfs_client_open_local(struct gfs_connection *, gfarm_int32_t,
 	int *);

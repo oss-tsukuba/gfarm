@@ -4,10 +4,10 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = in_progress
+PROGRAM = gfs_pio_stat_failover
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -17,4 +17,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfs_pio.h
+$(OBJS): $(DEPGFARMINC)

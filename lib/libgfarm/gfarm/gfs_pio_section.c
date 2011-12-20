@@ -19,6 +19,7 @@
 
 #include "timer.h"
 #include "gfutil.h"
+#include "queue.h"
 
 #include "liberror.h"
 #include "gfs_profile.h"
@@ -266,6 +267,14 @@ gfs_pio_view_section_fstat(GFS_File gf, struct gfs_stat *st)
 	return ((*vc->ops->storage_fstat)(gf, st));
 }
 
+static gfarm_error_t
+gfs_pio_view_section_reopen(GFS_File gf)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+
+	return ((*vc->ops->storage_reopen)(gf));
+}
+
 static int
 gfs_pio_view_section_fd(GFS_File gf)
 {
@@ -282,6 +291,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_ftruncate,
 	gfs_pio_view_section_fsync,
 	gfs_pio_view_section_fstat,
+	gfs_pio_view_section_reopen,
 };
 
 

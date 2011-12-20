@@ -12,22 +12,35 @@
 #include <unistd.h>	/* [FRWX]_OK */
 #include <errno.h>
 #include <openssl/evp.h>
+#include <pthread.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
 #include "timer.h"
 #include "gfutil.h"
+#include "queue.h"
+#include "thrsubr.h"
 
 #include "liberror.h"
+#include "filesystem.h"
 #include "gfs_profile.h"
 #include "gfm_client.h"
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_io.h"
 #include "gfs_pio.h"
 #include "gfp_xdr.h"
+#include "gfs_failover.h"
+#include "gfs_file_list.h"
 
 #include "config.h" /* XXX FIXME this shouldn't be needed here */
+
+
+struct gfs_file_list {
+	GFARM_HCIRCLEQ_HEAD(gfs_file) files;
+	pthread_mutex_t mutex;
+};
+
 
 /*
  * GFARM_ERRMSG_GFS_PIO_IS_EOF is used as mark of EOF,
@@ -128,7 +141,7 @@ gfs_pio_fileno(GFS_File gf)
 
 static gfarm_error_t
 gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
-	GFS_File *gfp)
+	char *url, gfarm_ino_t ino, GFS_File *gfp)
 {
 	GFS_File gf;
 	char *buffer;
@@ -170,9 +183,12 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->p = 0;
 	gf->length = 0;
 	gf->offset = 0;
+	gf->ino = ino;
+	gf->url = url;
 
 	gf->view_context = NULL;
 	gfs_pio_set_view_default(gf);
+	gfs_pio_file_list_add(gfm_client_connection_file_list(gfm_server), gf);
 
 	*gfp = gf;
 	return (GFARM_ERR_NO_ERROR);
@@ -182,6 +198,7 @@ static void
 gfs_file_free(GFS_File gf)
 {
 	free(gf->buffer);
+	free(gf->url);
 	/* do not touch gf->pi here */
 	free(gf);
 }
@@ -206,7 +223,7 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_timerval_t t1, t2;
-
+	char *real_url;
 	/* for gfarm_file_trace */
 	int src_port;
 	gfarm_ino_t inum;
@@ -216,13 +233,14 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	if ((e = gfm_create_fd(url, flags, mode, &gfm_server, &fd, &type,
-	    &inum, &gen)) == GFARM_ERR_NO_ERROR) {
+	    &inum, &gen, &real_url)) == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
 			    GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
-			e = gfs_file_alloc(gfm_server, fd, flags, gfp);
+			e = gfs_file_alloc(gfm_server, fd, flags, real_url,
+			    inum, gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
 			(void)gfm_close_fd(gfm_server, fd); /* ignore result */
 			gfm_client_connection_free(gfm_server);
@@ -263,19 +281,23 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_timerval_t t1, t2;
+	gfarm_ino_t ino;
+	char *real_url = NULL;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
-	if ((e = gfm_open_fd(url, flags, &gfm_server, &fd, &type)) ==
-	    GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_open_fd_with_ino(url, flags, &gfm_server, &fd, &type,
+	    &real_url, &ino)) == GFARM_ERR_NO_ERROR) {
 		if (type != GFS_DT_REG) {
 			e = type == GFS_DT_DIR ? GFARM_ERR_IS_A_DIRECTORY :
 			    type == GFS_DT_LNK ? GFARM_ERR_IS_A_SYMBOLIC_LINK :
 			    GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
-			e = gfs_file_alloc(gfm_server, fd, flags, gfp);
+			e = gfs_file_alloc(gfm_server, fd, flags, real_url, ino,
+			    gfp);
 		if (e != GFARM_ERR_NO_ERROR) {
+			free(real_url);
 			(void)gfm_close_fd(gfm_server, fd); /* ignore result */
 			gfm_client_connection_free(gfm_server);
 			gflog_debug(GFARM_MSG_1001297,
@@ -316,6 +338,7 @@ gfs_pio_close(GFS_File gf)
 {
 	gfarm_error_t e, e_save;
 	gfarm_timerval_t t1, t2;
+	int failed_over = 0;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -335,15 +358,23 @@ gfs_pio_close(GFS_File gf)
 			gflog_error(GFARM_MSG_1003268,
 			    "ignore %s error at pio close operation",
 			    gfarm_error_string(e));
+			failed_over = 1;
 			e = GFARM_ERR_NO_ERROR;
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 
-	e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
-	if (e_save == GFARM_ERR_NO_ERROR)
-		e_save = e;
+	gfs_pio_file_list_remove(
+	    gfm_client_connection_file_list(gf->gfm_server), gf);
+
+	/* do not call gfm_close_fd when fd is read-only and gfmd failed over */
+	if (!failed_over || (gf->open_flags & GFARM_FILE_RDONLY) == 0) {
+		e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
+	}
+
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);
 
@@ -1401,6 +1432,75 @@ gfs_pio_stat(GFS_File gf, struct gfs_stat *st)
 		}
 	}
 	return (e);
+}
+
+#define GFS_FILE_LIST_MUTEX "gfs_file_list.mutex"
+
+struct gfs_file_list *
+gfs_pio_file_list_alloc()
+{
+	struct gfs_file_list *gfl;
+
+	GFARM_MALLOC(gfl);
+	if (gfl == NULL)
+		return (NULL);
+	GFARM_HCIRCLEQ_INIT(gfl->files, hcircleq);
+	gfarm_mutex_init(&gfl->mutex, "gfs_pio_file_list_alloc",
+	    GFS_FILE_LIST_MUTEX);
+
+	return (gfl);
+}
+
+void
+gfs_pio_file_list_free(struct gfs_file_list *gfl)
+{
+	if (gfl == NULL)
+		return;
+	gfarm_mutex_destroy(&gfl->mutex, "gfs_pio_file_list_free",
+	    GFS_FILE_LIST_MUTEX);
+	free(gfl);
+}
+
+void
+gfs_pio_file_list_add(struct gfs_file_list *gfl, GFS_File gf)
+{
+	gfarm_mutex_lock(&gfl->mutex, "gfs_pio_file_list_add",
+	    GFS_FILE_LIST_MUTEX);
+
+	GFARM_HCIRCLEQ_INSERT_TAIL(gfl->files, gf, hcircleq);
+
+	gfarm_mutex_unlock(&gfl->mutex, "gfs_pio_file_list_add",
+	    GFS_FILE_LIST_MUTEX);
+}
+
+void
+gfs_pio_file_list_remove(struct gfs_file_list *gfl, GFS_File gf)
+{
+	gfarm_mutex_lock(&gfl->mutex, "gfs_pio_file_list_remove",
+	    GFS_FILE_LIST_MUTEX);
+
+	GFARM_HCIRCLEQ_REMOVE(gf, hcircleq);
+
+	gfarm_mutex_unlock(&gfl->mutex, "gfs_pio_file_list_remove",
+	    GFS_FILE_LIST_MUTEX);
+}
+
+void
+gfs_pio_file_list_foreach(struct gfs_file_list *gfl,
+	int (*func)(struct gfs_file *, void *), void *closure)
+{
+	GFS_File gf;
+
+	gfarm_mutex_lock(&gfl->mutex, "gfs_pio_file_list_foreach",
+	    GFS_FILE_LIST_MUTEX);
+
+	GFARM_HCIRCLEQ_FOREACH(gf, gfl->files, hcircleq) {
+		if (func(gf, closure) == 0)
+			break;
+	}
+
+	gfarm_mutex_unlock(&gfl->mutex, "gfs_pio_file_list_foreach",
+	    GFS_FILE_LIST_MUTEX);
 }
 
 void

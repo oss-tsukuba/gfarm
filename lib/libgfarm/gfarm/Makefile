@@ -63,6 +63,7 @@ SRCS = \
 	gfs_pio.c \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
+	gfs_pio_failover.c \
 	gfs_profile.c \
 	gfs_chmod.c \
 	gfs_chown.c \
@@ -145,6 +146,7 @@ OBJS = \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
+	gfs_pio_failover.lo \
 	gfs_profile.lo \
 	gfs_chmod.lo \
 	gfs_chown.lo \
@@ -214,7 +216,7 @@ error.lo: $(GFUTIL_SRCDIR)/hash.h
 conn_cache.lo: $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h conn_hash.h conn_cache.h
 crc32.lo: crc32.h
 filesystem.lo: filesystem.h metadb_server.h $(GFUTIL_SRCDIR)/hash.h
-gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h
+gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfs_file_list.h gfm_client.h
 gfm_schedule.lo: gfm_client.h gfm_schedule.h
 gfp_xdr.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h iobuffer.h gfp_xdr.h
 gfp_xdr_server.lo: $(GFUTIL_SRCDIR)/id_table.h gfp_xdr.h
@@ -224,15 +226,16 @@ gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h
 gfs_dirplusxattr.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h gfs_dirplusxattr.h
 gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_dir.h gfs_dircache.h gfs_attrplus.h
 gfs_attrplus.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h gfs_attrplus.h
-gfs_exec.lo: gfs_pio.h
+gfs_exec.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h
 gfs_io.lo: gfs_io.h
 gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
-gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h liberror.h gfs_proto.h gfm_client.h gfs_proto.h gfs_io.h gfs_pio.h config.h
-gfs_pio_global.lo: gfs_proto.h gfs_pio.h
-gfs_pio_local.lo: gfs_proto.h gfs_pio.h
+gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h liberror.h gfs_proto.h gfm_client.h gfs_proto.h gfs_io.h gfs_file_list.h gfs_pio.h config.h
+gfs_pio_global.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_pio.h
+gfs_pio_local.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_pio.h
 gfs_pio_misc.lo: gfs_proto.h gfs_misc.h
-gfs_pio_remote.lo: host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
-gfs_pio_section.lo: gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h
+gfs_pio_remote.lo: $(GFUTIL_SRCDIR)/queue.h host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
+gfs_pio_section.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_file_list.h gfs_failover.h
+gfs_pio_failover.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfm_client.h gfs_client.h gfs_io.h gfs_pio.h gfs_misc.h filesystem.h gfs_file_list.h gfs_failover.h
 gfs_proto.lo: gfs_proto.h
 gfs_quota.lo: config.h quota_info.h
 gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
@@ -240,7 +243,7 @@ gfs_realpath.lo: gfm_client.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h host.h config.h lookup.h
 gfs_replica_info.lo: gfm_proto.h gfm_client.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h schedule.h gfs_misc.h
-gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h gfs_misc.h
+gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h gfs_misc.h gfs_failover.h
 gfs_statsw.lo: gfs_dircache.h
 gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_unlink.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h
@@ -266,6 +269,6 @@ sockutil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h sockutil.h
 sockopt.lo: hostspec.h param.h sockopt.h
 stringlist.lo:
 timespec.lo: timespec.h
-url.lo: config.h gfs_pio.h
+url.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfs_pio.h
 
 include $(optional_rule)

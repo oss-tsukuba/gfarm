@@ -65,7 +65,7 @@ gfs_link(const char *src, const char *dst)
 	e = gfm_name2_op(src, dst,
 	    GFARM_FILE_SYMLINK_NO_FOLLOW | GFARM_FILE_OPEN_LAST_COMPONENT,
 	    gfm_link_request, NULL, gfm_link_result,
-	    gfm_name_success_op_connection_free, NULL, &closure);
+	    gfm_name2_success_op_connection_free, NULL, &closure);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_PATH_IS_ROOT)
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;

@@ -4,6 +4,8 @@
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
 
+#include "queue.h"
+
 #include "gfs_pio.h"
 
 #define TEST_FILE_SIZE 100000000 /* 100MB */

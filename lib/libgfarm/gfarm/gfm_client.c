@@ -29,6 +29,7 @@
 #include "hash.h"
 #include "gfnetdb.h"
 #include "lru_cache.h"
+#include "queue.h"
 
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -45,6 +46,8 @@
 #include "quota_info.h"
 #include "metadb_server.h"
 #include "filesystem.h"
+#include "gfs_misc.h"
+#include "gfs_file_list.h"
 
 struct gfm_connection {
 	struct gfp_cached_connection *cache_entry;
@@ -57,6 +60,9 @@ struct gfm_connection {
 	char pid_key[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 
 	struct gfarm_metadb_server *real_server;
+	struct gfs_file_list *file_list;
+
+	int failover_count;
 };
 
 #define SERVER_HASHTAB_SIZE	31	/* prime number */
@@ -172,6 +178,12 @@ gfm_client_process_get(struct gfm_connection *gfm_server,
 	*sharedkey_sizep = GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET;
 	*pidp = gfm_server->pid;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_client_process_is_set(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->pid != 0);
 }
 
 /* this interface is exported for a use from a private extension */
@@ -387,6 +399,14 @@ gfm_client_connect_multiple(const char *hostname, int port,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+gfm_client_connection_dispose_data(void *data)
+{
+	struct gfm_connection *gfm_server = data;
+
+	gfs_pio_file_list_free(gfm_server->file_list);
+}
+
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection **gfm_serverp, const char *source_ip,
@@ -405,10 +425,13 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct addrinfo *res;
 	struct gfm_client_connect_info *ci, *cis = NULL;
 	struct timeval timeout;
+	struct gfs_file_list *gfl = NULL;
 
 	hostname = gfp_cached_connection_hostname(cache_entry);
 	port = gfp_cached_connection_port(cache_entry);
 	user = gfp_cached_connection_username(cache_entry);
+	gfp_cached_connection_set_dispose_data(cache_entry,
+	    gfm_client_connection_dispose_data);
 	/* connect_op is
 	 *   gfm_client_connect_single or
 	 *   gfm_client_connect_multiple
@@ -466,6 +489,15 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	if (e != GFARM_ERR_NO_ERROR)
 		goto end;
 
+	gfl = gfs_pio_file_list_alloc();
+	if (gfl == NULL) {
+		close(sock);
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'gfs_file_list' failed: %s",
+			gfarm_error_string(e));
+		goto end;
+	}
 	GFARM_MALLOC(gfm_server);
 	if (gfm_server == NULL) {
 		close(sock);
@@ -501,12 +533,16 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	gfm_server->pid = 0;
 	gfm_server->real_server = ms;
+	gfm_server->file_list = gfl;
+	gfl = NULL;
+	gfm_server->failover_count = 0;
 	*gfm_serverp = gfm_server;
 end:
 	if (res)
 		gfarm_freeaddrinfo(res);
 	free(cis);
 	free(pfds);
+	free(gfl);
 	return (e);
 }
 
@@ -682,6 +718,42 @@ gfm_client_connection_dispose(void *connection_data)
 	gfp_uncached_connection_dispose(gfm_server->cache_entry);
 	free(gfm_server);
 	return (e);
+}
+
+struct gfs_file_list *
+gfm_client_connection_file_list(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->file_list);
+}
+
+struct gfs_file_list *
+gfm_client_connection_detach_file_list(struct gfm_connection *gfm_server)
+{
+	struct gfs_file_list *gfl = gfm_server->file_list;
+
+	gfm_server->file_list = NULL;
+	return (gfl);
+}
+
+void
+gfm_client_connection_set_file_list(struct gfm_connection *gfm_server,
+	struct gfs_file_list *gfl)
+{
+	free(gfm_server->file_list);
+	gfm_server->file_list = gfl;
+}
+
+int
+gfm_client_connection_failover_count(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->failover_count);
+}
+
+void
+gfm_client_connection_set_failover_count(
+	struct gfm_connection *gfm_server, int count)
+{
+	gfm_server->failover_count = count;
 }
 
 /*
@@ -2892,7 +2964,7 @@ gfm_client_pio_visit(struct gfm_connection *gfm_server)
  */
 
 gfarm_error_t
-gfm_client_hostname_set(struct gfm_connection *gfm_server, char *hostname)
+gfm_client_hostname_set(struct gfm_connection *gfm_server, const char *hostname)
 {
 	return (gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_HOSTNAME_SET, "s/", hostname));

@@ -8,6 +8,7 @@
 
 #include "filesystem.h"
 #include "metadb_server.h"
+#include "gfm_client.h"
 
 struct gfarm_metadb_server;
 
@@ -160,6 +161,13 @@ gfarm_filesystem_get(const char *hostname, int port)
 	    *(struct gfarm_filesystem **)gfarm_hash_entry_data(entry) : NULL);
 }
 
+struct gfarm_filesystem*
+gfarm_filesystem_get_by_connection(struct gfm_connection *gfm_server)
+{
+	return (gfarm_filesystem_get(gfm_client_hostname(gfm_server),
+		gfm_client_port(gfm_server)));
+}
+
 gfarm_error_t
 gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	struct gfarm_metadb_server **metadb_servers, int n)
@@ -194,4 +202,10 @@ gfarm_filesystem_get_metadb_server_list(struct gfarm_filesystem *fs, int *np)
 {
 	*np = fs->nservers;
 	return (fs->servers);
+}
+
+int
+gfarm_filesystem_has_multiple_servers(struct gfarm_filesystem *fs)
+{
+	return (fs->nservers > 1);
 }

@@ -152,6 +152,8 @@ long rate_limit;
 
 static char *listen_addrname = NULL;
 
+static int client_failover_count;
+
 struct local_socket {
 	int sock;
 	char *dir, *name;
@@ -648,14 +650,45 @@ gfs_server_process_set(struct gfp_xdr *client)
 	gfarm_int32_t keytype;
 	size_t keylen;
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
+	static const char *diag = "process_set";
 
-	gfs_server_get_request(client, "process_set",
+	gfs_server_get_request(client, diag,
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 
-	e = gfm_client_process_set(gfm_server,
-	    keytype, sharedkey, keylen, pid);
+	if (gfm_client_process_is_set(gfm_server)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process is already set");
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if ((e = gfm_client_process_set(gfm_server,
+	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_process_set: %s", gfarm_error_string(e));
 
-	gfs_server_put_reply(client, "process_set", e, "");
+	gfs_server_put_reply(client, diag, e, "");
+}
+
+void
+gfs_server_process_reset(struct gfp_xdr *client)
+{
+	gfarm_int32_t e;
+	gfarm_pid_t pid;
+	gfarm_int32_t keytype, failover_count;
+	size_t keylen;
+	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
+	static const char *diag = "process_reset";
+
+	gfs_server_get_request(client, diag,
+	    "ibli", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid,
+	    &failover_count);
+
+	if ((e = gfm_client_process_set(gfm_server,
+	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_process_set: %s", gfarm_error_string(e));
+	else
+		client_failover_count = failover_count;
+
+	gfs_server_put_reply(client, diag, e, "");
 }
 
 int file_table_size = 0;
@@ -1571,8 +1604,13 @@ gfarm_error_t
 close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
+	int fc = gfm_client_connection_failover_count(gfm_server);
 
-	e = close_fd(fd, diag);
+	if (client_failover_count == fc)
+		e = close_fd(fd, diag);
+	else
+		e = GFARM_ERR_NO_ERROR;
+
 	if (e == GFARM_ERR_NO_ERROR)
 		; /*FALLTHROUGH*/
 	else if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
@@ -1584,11 +1622,13 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 		if ((e = connect_gfm_server(0)) != GFARM_ERR_NO_ERROR)
 			fatal(GFARM_MSG_1003349, 
 			    "%s: cannot reconnect to gfm server", diag);
-		if ((e = fhclose_fd(fd, diag))
-		    != GFARM_ERR_NO_ERROR)
-			fatal_metadb_proto(GFARM_MSG_1003350, "fhclose",
-			    diag, e);
-		e = GFARM_ERR_GFMD_FAILED_OVER;
+		if ((e = fhclose_fd(fd, diag)) == GFARM_ERR_NO_ERROR) {
+			e = GFARM_ERR_GFMD_FAILED_OVER;
+			gfm_client_connection_set_failover_count(
+			    gfm_server, fc + 1);
+		} else
+			gflog_error(GFARM_MSG_UNFIXED, "fhclose_fd : %s",
+				gfarm_error_string(e));
 	} else {
 		fatal_metadb_proto(GFARM_MSG_1003351,
 		    "close_fd_somehow", diag, e);
@@ -4050,6 +4090,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		switch (request) {
 		case GFS_PROTO_PROCESS_SET:
 			gfs_server_process_set(client); break;
+		case GFS_PROTO_PROCESS_RESET:
+			gfs_server_process_reset(client); break;
 		case GFS_PROTO_OPEN_LOCAL:
 			gfs_server_open_local(client); break;
 		case GFS_PROTO_OPEN:	gfs_server_open(client); break;

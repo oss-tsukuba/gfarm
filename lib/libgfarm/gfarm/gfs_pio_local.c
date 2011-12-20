@@ -17,6 +17,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "queue.h"
+
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_client.h"
 #include "gfs_io.h"
@@ -270,6 +272,20 @@ gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfs_pio_local_storage_reopen(GFS_File gf)
+{
+	gfarm_error_t e;
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	if ((e = gfs_client_open_local(gfs_server, gf->fd, &vc->fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_open_local: %s", gfarm_error_string(e));
+	return (e);
+}
+
 static int
 gfs_pio_local_storage_fd(GFS_File gf)
 {
@@ -286,6 +302,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_ftruncate,
 	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_fstat,
+	gfs_pio_local_storage_reopen,
 };
 
 gfarm_error_t

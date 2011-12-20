@@ -48,8 +48,8 @@ gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 	gfarm_error_t (*inode_op)(const char *, int,
 		gfarm_error_t (*request_op)(struct gfm_connection *, void *),
 		gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-		gfarm_error_t (*success_op)(
-		    struct gfm_connection *, void *, int, const char *),
+		gfarm_error_t (*success_op)(struct gfm_connection *,
+		    void *, int, const char *, gfarm_ino_t),
 		void (*cleanup_op)(struct gfm_connection *, void *), void *))
 {
 	struct gfm_utimes_closure closure;

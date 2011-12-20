@@ -73,6 +73,8 @@ struct gfs_connection {
 	int opened; /* reference counter */
 
 	void *context; /* work area for RPC (esp. GFS_PROTO_COMMAND) */
+
+	int failover_count; /* compare to gfm_connection.failover_count */
 };
 
 #define SERVER_HASHTAB_SIZE	3079	/* prime number */
@@ -154,6 +156,19 @@ gfarm_pid_t
 gfs_client_pid(struct gfs_connection *gfs_server)
 {
 	return (gfs_server->pid);
+}
+
+int
+gfs_client_connection_failover_count(struct gfs_connection *gfs_server)
+{
+	return (gfs_server->failover_count);
+}
+
+void
+gfs_client_connection_set_failover_count(
+	struct gfs_connection *gfs_server, int count)
+{
+	gfs_server->failover_count = count;
 }
 
 #define gfs_client_connection_is_cached(gfs_server) \
@@ -386,6 +401,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	gfs_server->pid = 0;
 	gfs_server->context = NULL;
 	gfs_server->opened = 0;
+	gfs_server->failover_count = 0;
 
 	gfs_server->cache_entry = cache_entry;
 	gfp_cached_connection_set_data(cache_entry, gfs_server);
@@ -1003,6 +1019,25 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 		gflog_debug(GFARM_MSG_1001202,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_process_reset(struct gfs_connection *gfs_server,
+	gfarm_int32_t type, const char *key, size_t size, gfarm_pid_t pid)
+{
+	gfarm_error_t e;
+
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET, "ibli/",
+	    type, size, key, pid, gfs_server->failover_count);
+	if (e == GFARM_ERR_NO_ERROR)
+		gfs_server->pid = pid;
+	else {
+		gfs_server->pid = 0;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfs_client_rpc() failed: %s",
+			gfarm_error_string(e));
+	}
 	return (e);
 }
 

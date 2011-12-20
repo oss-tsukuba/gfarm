@@ -336,6 +336,15 @@ gfm_lookup_dir_result(struct gfm_connection *gfm_server, const char *path,
 
 gfarm_error_t
 gfm_name_success_op_connection_free(struct gfm_connection *gfm_server,
+	void *closure, int type, const char *path, gfarm_ino_t ino)
+{
+	return (gfm_inode_success_op_connection_free(gfm_server, closure, type,
+		path, ino));
+}
+
+
+gfarm_error_t
+gfm_name2_success_op_connection_free(struct gfm_connection *gfm_server,
 	void *closure)
 {
 	gfm_client_connection_free(gfm_server);
@@ -345,7 +354,7 @@ gfm_name_success_op_connection_free(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_inode_success_op_connection_free(struct gfm_connection *gfm_server,
-	void *closure, int type, const char *path)
+	void *closure, int type, const char *path, gfarm_ino_t ino)
 {
 	gfm_client_connection_free(gfm_server);
 	return (GFARM_ERR_NO_ERROR);
@@ -491,7 +500,8 @@ gfm_inode_or_name_op_lookup_request(struct gfm_connection *gfm_server,
 static gfarm_error_t
 gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 	const char *path, int flags, int do_verify, char **restp,
-	int *typep, int *retry_countp, int *is_lastp, int *is_retryp)
+	int *typep, int *retry_countp, int *is_lastp, int *is_retryp,
+	gfarm_ino_t *inop)
 {
 	gfarm_error_t e;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
@@ -544,6 +554,8 @@ gfm_inode_or_name_op_lookup_result(struct gfm_connection *gfm_server,
 			return (e);
 		}
 		*typep = gfs_mode_to_type(mode);
+		if (inop)
+			*inop = inum;
 	}
 
 	return (GFARM_ERR_NO_ERROR);
@@ -598,14 +610,13 @@ static gfarm_error_t
 gfm_inode_or_name_op(const char *url, int flags,
 	gfarm_error_t (*inode_request_op)(
 		struct gfm_connection*, void *),
-	gfarm_error_t (*inode_success_op)(
-		struct gfm_connection *, void *, int, const char *),
 	gfarm_error_t (*name_request_op)(
 		struct gfm_connection*, void *, const char *),
-	gfarm_error_t (*name_success_op)(
-		struct gfm_connection *, void *),
 	gfarm_error_t (*result_op)(
 		struct gfm_connection *, void *),
+	gfarm_error_t (*success_op)(
+		struct gfm_connection *, void *, int, const char *,
+		gfarm_ino_t),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -618,6 +629,7 @@ gfm_inode_or_name_op(const char *url, int flags,
 	int do_verify, is_last, is_retry;
 	int is_success = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
+	gfarm_ino_t ino;
 
 	nextpath = trim_tailing_file_separator(url);
 	if (nextpath == NULL) {
@@ -694,7 +706,7 @@ gfm_inode_or_name_op(const char *url, int flags,
 			break;
 		} else if ((e = gfm_inode_or_name_op_lookup_result(gfm_server,
 		    path, flags, do_verify, &rest, &type, &retry_count,
-		    &is_last, &is_retry)) != GFARM_ERR_NO_ERROR) {
+		    &is_last, &is_retry, &ino)) != GFARM_ERR_NO_ERROR) {
 			if (is_retry)
 				continue;
 			if (e != GFARM_ERR_IS_A_SYMBOLIC_LINK)
@@ -742,10 +754,7 @@ gfm_inode_or_name_op(const char *url, int flags,
 	}
 
 	if (is_success) {
-		e = is_open_last ?
-			(*inode_success_op)(gfm_server, closure, type, path) :
-				/* needs 3rd,4th arguments for gfm_inode_op */
-			(*name_success_op)(gfm_server, closure);
+		e = (*success_op)(gfm_server, closure, type, path, ino);
 		if (nextpath)
 			free(nextpath);
 		return (e);
@@ -771,15 +780,14 @@ gfarm_error_t
 gfm_inode_op(const char *url, int flags,
 	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
 	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(
-	    struct gfm_connection *, void *, int, const char *),
+	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
+	    int, const char *, gfarm_ino_t),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
 	gfarm_error_t e = gfm_inode_or_name_op(url,
 	    flags | GFARM_FILE_OPEN_LAST_COMPONENT,
-	    request_op, success_op, NULL, NULL,
-	    result_op, cleanup_op, closure);
+	    request_op, NULL, result_op, success_op, cleanup_op, closure);
 	return (e == GFARM_ERR_PATH_IS_ROOT ?
 		GFARM_ERR_OPERATION_NOT_PERMITTED : e);
 }
@@ -789,8 +797,8 @@ gfarm_error_t
 gfm_inode_op_no_follow(const char *url, int flags,
 	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
 	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(
-	    struct gfm_connection *, void *, int, const char *),
+	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
+	    int, const char *, gfarm_ino_t),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -891,11 +899,12 @@ gfm_name_op(const char *url, gfarm_error_t root_error_code,
 	gfarm_error_t (*request_op)(struct gfm_connection *, void *,
 		const char *),
 	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
+		int, const char *, gfarm_ino_t),
 	void *closure)
 {
 	gfarm_error_t e = gfm_inode_or_name_op(url, 0,
-	    NULL, NULL, request_op, success_op, result_op,
+	    NULL, request_op, result_op, success_op,
 	    NULL, closure);
 	return (e == GFARM_ERR_PATH_IS_ROOT ? root_error_code : e);
 }
@@ -921,6 +930,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 	int snlinks = 0, dnlinks = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 	gfarm_int32_t sfd = -1, dfd = -1;
+	gfarm_ino_t ino;
 
 	snextpath = trim_tailing_file_separator(src);
 	dnextpath = trim_tailing_file_separator(dst);
@@ -1226,7 +1236,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		if (slookup) {
 			if ((se = gfm_inode_or_name_op_lookup_result(sconn,
 			    spath, flags, s_do_verify, &srest, &type,
-			    &retry_count, &s_is_last, &sretry))
+			    &retry_count, &s_is_last, &sretry, &ino))
 			    != GFARM_ERR_NO_ERROR) {
 				if (sretry)
 					continue;
@@ -1268,7 +1278,7 @@ dst_lookup_result:
 		if (dlookup) {
 			if ((de = gfm_inode_or_name_op_lookup_result(dconn,
 			    dpath, 0, d_do_verify, &drest, &type,
-			    &retry_count, &d_is_last, &dretry))
+			    &retry_count, &d_is_last, &dretry, &ino))
 			    != GFARM_ERR_NO_ERROR) {
 				if (dretry)
 					continue;

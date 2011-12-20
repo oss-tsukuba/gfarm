@@ -467,9 +467,11 @@ gfarm_initialize(int *argcp, char ***argvp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfarm_client_process_set(struct gfs_connection *gfs_server,
-	struct gfm_connection *gfm_server)
+static gfarm_error_t
+gfarm_client_process_set_or_reset(struct gfs_connection *gfs_server,
+	struct gfm_connection *gfm_server,
+	gfarm_error_t (*process_set_or_reset_op)(struct gfs_connection *,
+	    gfarm_int32_t, const char *, size_t, gfarm_pid_t))
 {
 	gfarm_int32_t key_type;
 	const char *key;
@@ -484,8 +486,24 @@ gfarm_client_process_set(struct gfs_connection *gfs_server,
 			gfarm_error_string(e));
 		return (e);
 	}
-	return (gfs_client_process_set(gfs_server,
-	    key_type, key, key_size, pid));
+	return (process_set_or_reset_op(gfs_server, key_type, key,
+	    key_size, pid));
+}
+
+gfarm_error_t
+gfarm_client_process_set(struct gfs_connection *gfs_server,
+	struct gfm_connection *gfm_server)
+{
+	return (gfarm_client_process_set_or_reset(gfs_server, gfm_server,
+	    gfs_client_process_set));
+}
+
+gfarm_error_t
+gfarm_client_process_reset(struct gfs_connection *gfs_server,
+	struct gfm_connection *gfm_server)
+{
+	return (gfarm_client_process_set_or_reset(gfs_server, gfm_server,
+	    gfs_client_process_reset));
 }
 
 /*

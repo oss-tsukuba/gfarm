@@ -12,6 +12,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "queue.h" /* for gfs_file */
+
 #include "gfutil.h"
 #include "timer.h"
 #include "gfs_profile.h"

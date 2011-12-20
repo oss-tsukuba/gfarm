@@ -47,6 +47,9 @@ enum gfs_proto_command {
 	GFS_PROTO_STATUS,
 	GFS_PROTO_REPLICATION_REQUEST,
 	GFS_PROTO_REPLICATION_CANCEL,
+
+	/* from client */
+	GFS_PROTO_PROCESS_RESET,
 };
 
 /*

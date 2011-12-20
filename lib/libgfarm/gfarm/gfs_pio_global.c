@@ -386,6 +386,8 @@ struct gfs_pio_ops gfs_pio_view_global_ops = {
 	gfs_pio_view_global_pwrite,
 	gfs_pio_view_global_ftruncate,
 	gfs_pio_view_global_fsync,
+	NULL,
+	NULL,
 };
 
 gfarm_error_t

@@ -122,3 +122,5 @@ struct gfs_connection;
 struct gfm_connection;
 gfarm_error_t gfarm_client_process_set(struct gfs_connection *,
 	struct gfm_connection *);
+gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
+	struct gfm_connection *);

@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>	/* config.h needs FILE */
 #include <unistd.h>
+#include <string.h>
 
 #define GFARM_INTERNAL_USE /* GFARM_FILE_LOOKUP */
 #include <gfarm/gfarm.h>
@@ -39,9 +40,9 @@ struct gfm_create_fd_closure {
 	struct gfm_connection **gfm_serverp;
 	int *fdp;
 	int *typep;
-
-	gfarm_ino_t *inum_for_trace;
-	gfarm_uint64_t *gen_for_trace;
+	char **urlp;
+	gfarm_ino_t *inump;
+	gfarm_uint64_t *igenp; /* currentyly only for gfarm_file_trace */
 };
 
 static gfarm_error_t
@@ -70,7 +71,7 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e;
 
 	if ((e = gfm_client_create_result(gfm_server,
-	    c->inum_for_trace, c->gen_for_trace, &c->mode_created))
+	    c->inump, c->igenp, &c->mode_created))
 	    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
 		gflog_debug(GFARM_MSG_1000082,
@@ -85,21 +86,26 @@ gfm_create_fd_result(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_create_fd_success(struct gfm_connection *gfm_server, void *closure)
+gfm_create_fd_success(struct gfm_connection *gfm_server, void *closure,
+	int type, const char *url, gfarm_ino_t ino)
 {
 	struct gfm_create_fd_closure *c = closure;
 
 	*c->gfm_serverp = gfm_server;
 	*c->fdp = c->fd;
 	if (c->typep != NULL)
-		*c->typep = gfs_mode_to_type(c->mode_created);;
+		*c->typep = gfs_mode_to_type(c->mode_created);
+	if (c->urlp) {
+		if ((*c->urlp = strdup(url)) == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
 gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
-	gfarm_ino_t *inum, gfarm_uint64_t *gen)
+	gfarm_ino_t *inump, gfarm_uint64_t *igenp, char **urlp)
 {
 	gfarm_error_t e;
 	struct gfm_create_fd_closure closure;
@@ -122,8 +128,10 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	closure.gfm_serverp = gfm_serverp;
 	closure.fdp = fdp;
 	closure.typep = typep;
-	closure.inum_for_trace = inum;
-	closure.gen_for_trace = gen;
+	closure.inump = inump;
+	closure.igenp = igenp;
+	closure.urlp = urlp;
+
 	return (gfm_name_op(path, GFARM_ERR_IS_A_DIRECTORY,
 	    gfm_create_fd_request,
 	    gfm_create_fd_result,
@@ -140,6 +148,8 @@ struct gfm_open_fd_closure {
 	struct gfm_connection **gfm_serverp;
 	int *fdp;
 	int *typep;
+	gfarm_ino_t *inump;
+	char **urlp;
 };
 
 static gfarm_error_t
@@ -169,7 +179,7 @@ gfm_open_fd_result(struct gfm_connection *gfm_server, void *closure)
 
 static gfarm_error_t
 gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
-	const char *path)
+	const char *path, gfarm_ino_t ino)
 {
 	struct gfm_open_fd_closure *c = closure;
 
@@ -177,12 +187,17 @@ gfm_open_fd_success(struct gfm_connection *gfm_server, void *closure, int type,
 	*c->fdp = c->fd;
 	if (c->typep != NULL)
 		*c->typep = type;
+	if (c->inump)
+		*c->inump = ino;
+	if (c->urlp)
+		*c->urlp = strdup(path);
 	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
-gfm_open_fd(const char *path, int flags,
-	struct gfm_connection **gfm_serverp, int *fdp, int *typep)
+gfm_open_fd_with_ino(const char *path, int flags,
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep,
+	char **urlp, gfarm_ino_t *inump)
 {
 	gfarm_error_t e;
 	struct gfm_open_fd_closure closure;
@@ -203,12 +218,22 @@ gfm_open_fd(const char *path, int flags,
 	closure.gfm_serverp = gfm_serverp;
 	closure.fdp = fdp;
 	closure.typep = typep;
+	closure.inump = inump;
+	closure.urlp = urlp;
 	return (gfm_inode_op(path, flags,
 	    gfm_open_fd_request,
 	    gfm_open_fd_result,
 	    gfm_open_fd_success,
 	    NULL,
 	    &closure));
+}
+
+gfarm_error_t
+gfm_open_fd(const char *path, int flags,
+	struct gfm_connection **gfm_serverp, int *fdp, int *typep)
+{
+	return (gfm_open_fd_with_ino(path, flags, gfm_serverp, fdp,
+		typep, NULL, NULL));
 }
 
 static gfarm_error_t

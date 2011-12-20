@@ -23,6 +23,7 @@ struct gfs_pio_ops {
 	gfarm_error_t (*view_ftruncate)(GFS_File, gfarm_off_t);
 	gfarm_error_t (*view_fsync)(GFS_File, int);
 	gfarm_error_t (*view_fstat)(GFS_File, struct gfs_stat *);
+	gfarm_error_t (*view_reopen)(GFS_File);
 };
 
 struct gfm_connection;
@@ -42,6 +43,10 @@ struct gfs_file {
 
 	/* remember parameter of open/set_view */
 	int open_flags;
+	/* remember opened url */
+	char *url;
+	/* remember opened inode num */
+	gfarm_ino_t ino;
 #if 0 /* not yet in gfarm v2 */
 	int view_flags;
 #endif /* not yet in gfarm v2 */
@@ -60,6 +65,9 @@ struct gfs_file {
 	int length;
 
 	gfarm_off_t offset;
+
+	/* opening files */
+	GFARM_HCIRCLEQ_ENTRY(gfs_file) hcircleq;
 };
 
 gfarm_error_t gfs_pio_set_view_default(GFS_File);
@@ -85,6 +93,7 @@ struct gfs_storage_ops {
 	gfarm_error_t (*storage_ftruncate)(GFS_File, gfarm_off_t);
 	gfarm_error_t (*storage_fsync)(GFS_File, int);
 	gfarm_error_t (*storage_fstat)(GFS_File, struct gfs_stat *);
+	gfarm_error_t (*storage_reopen)(GFS_File);
 };
 
 #define GFS_DEFAULT_DIGEST_NAME	"md5"

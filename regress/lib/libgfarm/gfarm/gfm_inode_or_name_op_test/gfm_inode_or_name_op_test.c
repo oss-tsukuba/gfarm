@@ -162,7 +162,7 @@ inode_op_result(struct gfm_connection *conn, void *closure)
 
 static gfarm_error_t
 inode_op_success(struct gfm_connection *conn, void *closure, int type,
-	const char *path)
+	const char *path, gfarm_ino_t ino)
 {
 	struct op_closure *c = (struct op_closure *)closure;
 
@@ -225,12 +225,14 @@ name_op_result(struct gfm_connection *conn, void *closure)
 }
 
 static gfarm_error_t
-name_op_success(struct gfm_connection *conn, void *closure)
+name_op_success(struct gfm_connection *conn, void *closure, int type,
+	const char *path, gfarm_ino_t ino)
 {
 	struct op_closure *c = (struct op_closure *)closure;
 
 	assert(conn);
 	assert(closure);
+	assert(path);
 	c->success++;
 	gfm_client_connection_free(conn);
 	return (GFARM_ERR_NO_ERROR);

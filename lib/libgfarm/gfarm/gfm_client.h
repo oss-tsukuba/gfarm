@@ -47,6 +47,7 @@ struct gfarm_metadb_server *gfm_client_connection_get_real_server(
 
 gfarm_error_t gfm_client_process_get(struct gfm_connection *,
 	gfarm_int32_t *, const char **, size_t *, gfarm_pid_t *);
+gfarm_error_t gfm_client_process_is_set(struct gfm_connection *);
 int gfm_cached_connection_had_connection_error(struct gfm_connection *);
 
 gfarm_error_t gfm_client_connection_acquire(const char *, int, const char *,
@@ -59,6 +60,14 @@ gfarm_error_t gfm_client_connect(const char *, int, const char *,
 struct passwd;
 gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
 	struct gfm_connection **, const char *, struct passwd *, int);
+struct gfs_file_list;
+struct gfs_file_list *gfm_client_connection_file_list(struct gfm_connection *);
+struct gfs_file_list *gfm_client_connection_detach_file_list(
+	struct gfm_connection *);
+void gfm_client_connection_set_file_list(struct gfm_connection *,
+	struct gfs_file_list *);
+int gfm_client_connection_failover_count(struct gfm_connection *);
+void gfm_client_connection_set_failover_count(struct gfm_connection *, int);
 void gfm_client_connection_free(struct gfm_connection *);
 void gfm_client_terminate(void);
 
@@ -335,7 +344,7 @@ gfarm_error_t gfm_client_switch_gfmd_channel(struct gfm_connection *,
 /*XXX*/
 
 /* misc operations from gfsd */
-gfarm_error_t gfm_client_hostname_set(struct gfm_connection *, char *);
+gfarm_error_t gfm_client_hostname_set(struct gfm_connection *, const char *);
 
 /* replica management from client */
 gfarm_error_t gfm_client_replica_list_by_name_request(struct gfm_connection *);

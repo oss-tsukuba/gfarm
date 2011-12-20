@@ -11,6 +11,9 @@
 #include <sys/socket.h> /* struct sockaddr */
 #include <openssl/evp.h>
 #include <gfarm/gfarm.h>
+
+#include "queue.h"
+
 #include "host.h"
 #include "config.h"
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
@@ -34,6 +37,7 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	if (vc->pid != getpid())
 		return (GFARM_ERR_NO_ERROR);
 	e = gfs_client_close(gfs_server, gf->fd);
+	vc->storage_context = NULL;
 	gfs_client_connection_free(gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001373,
@@ -108,6 +112,19 @@ gfs_pio_remote_storage_fstat(GFS_File gf, struct gfs_stat *st)
 	    &st->st_mtimespec.tv_sec, &st->st_mtimespec.tv_nsec));
 }
 
+static gfarm_error_t
+gfs_pio_remote_storage_reopen(GFS_File gf)
+{
+	gfarm_error_t e;
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	if ((e = gfs_client_open(gfs_server, gf->fd)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_open_local: %s", gfarm_error_string(e));
+	return (e);
+}
+
 static int
 gfs_pio_remote_storage_fd(GFS_File gf)
 {
@@ -126,6 +143,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_ftruncate,
 	gfs_pio_remote_storage_fsync,
 	gfs_pio_remote_storage_fstat,
+	gfs_pio_remote_storage_reopen,
 };
 
 gfarm_error_t

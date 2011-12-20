@@ -27,6 +27,8 @@ struct gfp_cached_connection {
 	struct gfp_conn_hash_id id;
 
 	void *connection_data;
+
+	void (*dispose_connection_data)(void *);
 };
 
 /*
@@ -54,6 +56,13 @@ gfp_cached_connection_set_data(struct gfp_cached_connection *connection,
 	void *p)
 {
 	connection->connection_data = p;
+}
+
+void
+gfp_cached_connection_set_dispose_data(struct gfp_cached_connection *connection,
+	void (*dispose_connection_data)(void *))
+{
+	connection->dispose_connection_data = dispose_connection_data;
 }
 
 const char *
@@ -130,6 +139,7 @@ gfp_uncached_connection_new(const char *hostname, int port,
 	gfarm_lru_init_uncached_entry(&connection->lru_entry);
 
 	connection->connection_data = NULL;
+	connection->dispose_connection_data = NULL;
 	*connectionp = connection;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -142,6 +152,9 @@ gfp_uncached_connection_dispose(struct gfp_cached_connection *connection)
 
 	free(idp->hostname);
 	free(idp->username);
+	if (connection->dispose_connection_data && connection->connection_data)
+		connection->dispose_connection_data(
+		    connection->connection_data);
 	free(connection);
 }
 
@@ -336,6 +349,7 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 		    = connection;
 		connection->hash_entry = entry;
 		connection->connection_data = NULL;
+		connection->dispose_connection_data = NULL;
 	}
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 	*connectionp = connection;

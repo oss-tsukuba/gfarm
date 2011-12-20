@@ -5,6 +5,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "queue.h" /* for gfs_file */
+
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
