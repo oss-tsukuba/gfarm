@@ -3327,6 +3327,16 @@ struct db_journal_rec {
 	GFARM_STAILQ_ENTRY(db_journal_rec) next;
 };
 
+static int
+db_journal_is_rec_stored(struct db_journal_rec *rec)
+{
+	gfarm_uint64_t seqnum;
+	gfarm_error_t e;
+
+	e = store_ops->seqnum_get(DB_SEQNUM_MASTER_NAME, &seqnum);
+	return (e == GFARM_ERR_NO_ERROR && seqnum >= rec->seqnum);
+}
+
 GFARM_STAILQ_HEAD(db_journal_rec_list, db_journal_rec);
 
 /* PREREQUISITE: journal_file_mutex */
@@ -3383,9 +3393,14 @@ retry:
 #endif
 		if ((e = db_journal_ops_call(store_ops, ai->seqnum, ai->ope,
 		    ai->obj, "db_journal_apply_op[store]"))
-		    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
-			goto retry;
-		else if (e != GFARM_ERR_NO_ERROR)
+		    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
+			if (!db_journal_is_rec_stored(ai))
+				goto retry;
+			gflog_info(GFARM_MSG_1003327,
+			    "db seems to have been committed the "
+			    "last operation, no retry is needed");
+			e = GFARM_ERR_NO_ERROR;
+		} else if (e != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
 
@@ -3456,16 +3471,6 @@ db_journal_free_rec_list(struct db_journal_rec_list *recs)
 		db_journal_ops_free(NULL, rec->ope, rec->obj);
 		free(rec);
 	}
-}
-
-static int
-db_journal_is_rec_stored(struct db_journal_rec *rec)
-{
-	gfarm_uint64_t seqnum;
-	gfarm_error_t e;
-
-	e = store_ops->seqnum_get(DB_SEQNUM_MASTER_NAME, &seqnum);
-	return (e == GFARM_ERR_NO_ERROR && seqnum >= rec->seqnum);
 }
 
 void *
