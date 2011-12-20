@@ -161,15 +161,26 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	switch (gfarmAuthGetAuthEntryType(userinfo)) {
 	case GFARM_AUTH_HOST:
 		peer_type = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
-		if ((global_username = strdup(GFSD_USERNAME)) != NULL)
+		if ((global_username = strdup(GFSD_USERNAME)) != NULL) {
 			e = GFARM_ERR_NO_ERROR;
-		else
+		} else {
 			e = GFARM_ERR_NO_MEMORY;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "authorize_gsi: \"%s\" @ %s: host authentication: "
+			    "no memory", userinfo->distName, hostname);
+		}
 		break;
 	case GFARM_AUTH_USER:
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure, auth_method,
 		    userinfo->distName, &global_username);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "authorize_gsi: \"%s\" @ %s: user authentication: "
+			    "%s%s", userinfo->distName, hostname,
+			    gfarm_error_string(e),
+			    e == GFARM_ERR_AUTHENTICATION ?
+			    " (possibly unregistered user)" : "");
 		break;
 	default:
 		gflog_error(GFARM_MSG_1000720,

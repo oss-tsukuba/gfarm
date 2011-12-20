@@ -537,9 +537,9 @@ gfarm_authorize(struct gfp_xdr *conn,
 			return (e);
 		}
 		if (error != GFARM_AUTH_ERROR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000053,
-			    "%s: incorrect auth-method request",
-			    hostname);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: incorrect auth-method request %d: %d",
+			    hostname, (int)method, (int)error);
 			return (GFARM_ERR_PROTOCOL);
 		}
 		if (method == GFARM_AUTH_METHOD_NONE) {
