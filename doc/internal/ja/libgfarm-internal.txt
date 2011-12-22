@@ -83,3 +83,80 @@ API 利用者が使用する関数は gfs_statsw.c に実装されている次の関数である。
     エントリをキャッシュ領域に保持する期間(ミリ秒単位)。
     デフォルトで 1 秒。
 
+■  gfmd 接続のフェイルオーバ
+
+gfmdフェイルオーバ対応の実装方法について説明する。
+
+gfm_client_* 系の関数による gfmd へのアクセスにおいて gfmd フェイルオーバ
+対応の処理を追加する。
+
+1. gfs_pio_should_failover() によって
+   フェイルオーバを試みるきかどうかを判断する。
+2. 1. の戻値が 1 の場合は、gfs_pio_failover() を呼ぶ。
+3. 2. の戻値が GFARM_ERR_NO_ERROR のとき、エラーの発生した gfm_client_* 関数
+   を再度実行する。
+4. 3. での再実行で発生するエラーに対しては、
+   gfs_pio_should_failover() / gfs_pio_failover() を呼ばないこと。
+   そのようなエラーは高い確率でフェイルオーバ先の gfmd との接続に問題があると
+   考えられ、それ以上のフェイルオーバ処理は無駄であると考えられるため。
+
+* gfs_pio_should_failover
+
+  #include "gfs_pio_failover.h"
+
+  int gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
+
+  DESCRIPTION
+
+    gfmd 接続のフェイルオーバを試みるべきかをどうかを判断する。
+    冗長化構成の設定がされていない場合はフェイルオーバは 0 を返す。
+
+  PARAMETER
+
+    e : gfmd へのアクセスで生じたエラー。
+    gf : アクセス対象のファイル。
+
+  RETURN VALUE
+
+    1 : フェイルオーバを試みるべき。
+	0 : フェイルオーバをできる状態ではない。
+
+* gfs_pio_failover
+
+  #include "gfs_pio_failover.h"
+
+  gfarm_error_t gfs_pio_failover(GFS_File gf)
+
+  DESCRIPTION
+
+    gfmd 接続をフェイルオーバする。
+	フェイルオーバは引数の gf だけでなく、gf に関連する gfmd_connection に格納
+	されたオープン中の GFS_File 全てに対して行われる。
+
+	オープン後、スケジューリング済みの GFS_File については、GFS_File に関連する
+	gfm_connection に加え、gfsd 内の gfm_connection もフェイルオーバする。
+	未スケジューリングの GFS_File については、gfsd と接続していないので
+	GFS_File に関連する gfm_connection のみが対象である。
+
+    スケジューリング済みの GFS_File の gfs_connection はフェイルオーバ処理中に
+	一度だけ GFS_PROTO_PROCESS_RESET を呼び出し、pid を再設定する。
+	この処理に失敗すると、GFS_File が gfs_connection を持つにも関わらず、
+	pid が 0 であるという特殊な状態になることに注意。
+	このような場合、GFS_File.error には GFARM_ERR_CONNECTION_ABORTED
+	が設定される。
+
+    GFS_File の pid の再設定に成功した後、gfmd に対して fd の取得を試みるが、
+	ここでエラーが発生すると GFS_File.fd は -1 に設定され、GFS_File.error には
+	gfmd へのアクセス時に発生したエラーが設定される。
+
+  PARAMETER
+
+    gf : アクセス対象のファイル。
+
+  RETURN VALUE
+
+    GFARM_ERR_NO_ERROR : 成功。
+	それ以外 : - gfm_connection のフェイルオーバに失敗した。
+	           - gf のフェイルオーバに対して個別にエラーが発生した場合
+			     (他のオープン中 GFS_File に対しては成功したかもしれない)。
+
