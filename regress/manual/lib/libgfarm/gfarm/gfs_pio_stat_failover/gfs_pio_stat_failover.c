@@ -147,7 +147,7 @@ test_write(const char *path_base)
 		printf("gf[%d]: write %d bytes\n", i, len);
 		printf("gf[%d]: close\n", i);
 		chkerr(gfs_pio_close(gf[i]), "close", i);
-		printf("%s: unlink\n", path[i], i);
+		printf("%s: unlink\n", path[i]);
 		gfs_unlink(path[i]);
 	}
 }

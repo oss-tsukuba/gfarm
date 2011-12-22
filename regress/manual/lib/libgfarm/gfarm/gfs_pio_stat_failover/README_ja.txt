@@ -12,7 +12,7 @@
 * Set up / Clean up
 
   - 試験前: setup.sh を実行する。
-  - 試験後: clean.sh を実行する。
+  - 試験後: cleanup.sh を実行する。
 
 * Test Item
 
