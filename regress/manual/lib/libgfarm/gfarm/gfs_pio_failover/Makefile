@@ -4,7 +4,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = gfs_pio_stat_failover
+PROGRAM = gfs_pio_failover_test
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
 CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)

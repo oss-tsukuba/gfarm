@@ -1,7 +1,6 @@
-#/bin/sh
+#!/bin/sh
 
-TMPF=/tmp/gfs_pio_stat_failover.tmp
-GF_TMPF=$TMPF
+. ./env.sh
 
 gfrm -f $GF_TMPF.\*
 
