@@ -914,11 +914,13 @@
 	  入力: なし
 	  出力: i:エラー
 	
-  メタデータ・レプリケーション系 (gfmd channel)
+  gfmd 間通信 (gfmd channel)
 
 	GFM_PROTO_SWITCH_GFMD_CHANNEL
 	  入力: なし
 	  出力: i:エラー
+
+     プロトコルメタデータ・レプリケーション系
 
 	GFM_PROTO_JOURNAL_READY_TO_RECV
 	  入力: l:seqnum
@@ -927,6 +929,30 @@
 	GFM_PROTO_JOURNAL_SEND
 	  入力: l:from_seqnum, l:to_seqnum, b:journal_records
 	  出力: i:エラー
+
+     gfmd 間 RPC リレー系
+
+	GFM_PROTO_REMOTE_PEER_ALLOC
+	  入力: l:peer_id, i:auth_id_type, s:user, s:host,
+	  出力: i:エラー
+
+	GFM_PROTO_REMOTE_PEER_FREE
+	  入力: l:peer_id
+	  出力: i:エラー
+
+	GFM_PROTE_REMOTE_RPC … クライアントおよびgfsdからの要求のリレー
+	  入力: l:peer_id
+		これ以降、リレーする gfm protocol の
+			プロトコルID、入力引数が続く
+	  出力: リレーされた gfm protocol の出力
+
+	GFM_PROTE_REMOTE_GFS_RPC … gfsd back channel への要求のリレー
+	  入力: s:fsnode
+		これ以降、リレーする gfs protocol の
+			プロトコルID、入力引数が続く
+	  出力: リレーされた gfs protocol の出力
+
+  MDHost 管理系
 
 	GFM_PROTO_METADB_SERVER_GET:
 	  入力: s:hostname
@@ -953,6 +979,7 @@
 	GFM_PROTO_METADB_SERVER_REMOVE:
 	  入力: s:hostname
 	  出力: i:エラー
+
 
 ------------------------------------------------------------------------
 

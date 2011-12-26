@@ -3,6 +3,7 @@
  */
 
 #include <pthread.h>	/* db_access.h currently needs this */
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -11,9 +12,11 @@
 
 #include "gfutil.h"
 
+#include "gfp_xdr.h"
 #include "config.h"
-#include "quota.h"
 #include "metadb_server.h"
+
+#include "quota.h"
 #include "db_access.h"
 #include "db_ops.h"
 

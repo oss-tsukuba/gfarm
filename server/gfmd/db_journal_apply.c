@@ -2,22 +2,25 @@
  * $Id$
  */
 
+#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
 
+#include "gfp_xdr.h"
 #include "config.h"
-#include "quota.h"
 #include "metadb_server.h"
-#include "db_ops.h"
+
 #include "host.h"
 #include "user.h"
 #include "group.h"
 #include "inode.h"
 #include "dir.h"
+#include "quota.h"
 #include "mdhost.h"
 #include "journal_file.h"	/* for enum journal_operation */
+#include "db_ops.h"
 #include "db_journal.h"
 
 /**********************************************************/

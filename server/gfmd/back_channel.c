@@ -584,7 +584,9 @@ back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
 }
 
 static gfarm_error_t
-gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
+gfm_server_switch_back_channel_common(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client,
 	int version, const char *diag)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
@@ -612,9 +614,10 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 	}
 	giant_unlock();
 	if (version < GFS_PROTOCOL_VERSION_V2_4)
-		e2 = gfm_server_put_reply(peer, diag, e, "");
+		e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
 	else
-		e2 = gfm_server_put_reply(peer, diag, e, "i", 0 /*XXX FIXME*/);
+		e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i",
+		    0 /*XXX FIXME*/);
 	if (e2 != GFARM_ERR_NO_ERROR)
 		return (e2);
 
@@ -656,7 +659,9 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 #ifdef COMPAT_GFARM_2_3
 
 gfarm_error_t
-gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
+gfm_server_switch_back_channel(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 	static const char diag[] = "GFM_PROTO_SWITCH_BACK_CHANNEL";
@@ -664,7 +669,7 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, from_client,
+	e = gfm_server_switch_back_channel_common(peer, xid, sizep, from_client,
 	    GFS_PROTOCOL_VERSION_V2_3, diag);
 
 	return (e);
@@ -673,22 +678,24 @@ gfm_server_switch_back_channel(struct peer *peer, int from_client, int skip)
 #endif /* defined(COMPAT_GFARM_2_3) */
 
 gfarm_error_t
-gfm_server_switch_async_back_channel(struct peer *peer, int from_client,
-	int skip)
+gfm_server_switch_async_back_channel(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 	gfarm_int32_t version;
 	gfarm_int64_t gfsd_cookie;
 	static const char diag[] = "GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL";
 
-	e = gfm_server_get_request(peer, diag, "il", &version, &gfsd_cookie);
+	e = gfm_server_get_request(peer, sizep, diag, "il",
+	    &version, &gfsd_cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, from_client,
+	e = gfm_server_switch_back_channel_common(peer, xid, sizep, from_client,
 	    version, diag);
 
 	return (e);

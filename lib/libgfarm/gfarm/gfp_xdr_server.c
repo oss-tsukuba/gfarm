@@ -159,13 +159,24 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	void (*disconnect_callback)(void *, void *),
 	void *closure,
 	int nonblock,
+	const char *wrapping_format, va_list *wrapping_app,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	size_t size = 0;
-	va_list ap;
-	const char *fmt;
+	va_list ap, wrapping_ap;
+	const char *fmt, *wrapping_fmt;
 	gfarm_int32_t xid;
+
+	if (wrapping_format != NULL) {
+		va_copy(wrapping_ap, *wrapping_app);
+		wrapping_fmt = wrapping_format;
+		e = gfp_xdr_vsend_size_add(&size,
+		    &wrapping_fmt, &wrapping_ap);
+		va_end(wrapping_ap);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
+	}
 
 	e = gfp_xdr_send_size_add(&size, "i", command);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -186,6 +197,16 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	    result_callback, disconnect_callback, closure, &xid);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
+	if (wrapping_format != NULL) {
+		e = gfp_xdr_vsend(server, &wrapping_format, wrapping_app);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfp_xdr_send_async_request_error(async_server, xid,
+			    "gfp_xdr_vsend");
+			return (e);
+		}
+	}
+
 	e = gfp_xdr_vrpc_request(server, command, &format, app);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid,
@@ -216,7 +237,7 @@ gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 {
 	return (gfp_xdr_vsend_async_request_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 1,
-	    command, format, app));
+	    NULL, NULL, command, format, app));
 }
 
 gfarm_error_t
@@ -229,7 +250,21 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 {
 	return (gfp_xdr_vsend_async_request_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 0,
-	    command, format, app));
+	    NULL, NULL, command, format, app));
+}
+
+gfarm_error_t
+gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *server,
+	gfp_xdr_async_peer_t async_server,
+	gfarm_int32_t (*result_callback)(void *, void *, size_t),
+	void (*disconnect_callback)(void *, void *),
+	void *closure,
+	const char *wrapping_format, va_list *wrapping_app,
+	gfarm_int32_t command, const char *format, va_list *app)
+{
+	return (gfp_xdr_vsend_async_request_internal(server,
+	    async_server, result_callback, disconnect_callback, closure, 0,
+	    wrapping_format, wrapping_app, command, format, app));
 }
 
 /*

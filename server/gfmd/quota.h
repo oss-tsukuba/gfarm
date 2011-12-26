@@ -43,8 +43,13 @@ void quota_update_file_remove(struct inode *);
 gfarm_error_t quota_lookup(const char *, int, struct quota **, const char *);
 
 struct peer;
-gfarm_error_t gfm_server_quota_user_get(struct peer *, int, int);
-gfarm_error_t gfm_server_quota_user_set(struct peer *, int, int);
-gfarm_error_t gfm_server_quota_group_get(struct peer *, int, int);
-gfarm_error_t gfm_server_quota_group_set(struct peer *, int, int);
-gfarm_error_t gfm_server_quota_check(struct peer *, int, int);
+gfarm_error_t gfm_server_quota_user_get(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_quota_user_set(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_quota_group_get(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_quota_group_set(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_quota_check(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);

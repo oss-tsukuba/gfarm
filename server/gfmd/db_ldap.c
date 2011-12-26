@@ -19,6 +19,7 @@
 #include <pthread.h>	/* db_access.h currently needs this */
 #include <sys/time.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -60,6 +61,7 @@
 
 #include "gfutil.h"
 
+#include "gfp_xdr.h"
 #include "config.h"
 #include "metadb_common.h"
 #include "xattr_info.h"

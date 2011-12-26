@@ -3,6 +3,7 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h> /* sprintf */
@@ -23,6 +24,7 @@
 #include "timespec.h"
 #include "patmatch.h"
 #include "gfm_proto.h"
+#include "gfp_xdr.h" /* gfmd.h needs this */
 #include "config.h"
 
 #include "quota.h"

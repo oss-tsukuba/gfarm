@@ -148,3 +148,8 @@ gfarm_uint64_t peer_add_cookie(struct peer *);
 int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 
 gfarm_error_t peer_get_port(struct peer *, int *);
+
+gfarm_error_t remote_peer_alloc(struct peer *, gfarm_int64_t,
+	gfarm_int32_t, char *, char *);
+gfarm_error_t remote_peer_free(struct peer *, gfarm_int64_t);
+struct peer *remote_peer_lookup(struct peer *, gfarm_int64_t);

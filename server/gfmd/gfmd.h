@@ -19,12 +19,14 @@ struct thread_pool;
 extern struct thread_pool *authentication_thread_pool;
 struct thread_pool *sync_protocol_get_thrpool(void);
 
-gfarm_error_t gfm_server_protocol_extension_default(struct peer *,
+gfarm_error_t gfm_server_protocol_extension_default(
+	struct peer *, gfp_xdr_xid_t, size_t *,
 	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *);
-extern gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
+extern gfarm_error_t (*gfm_server_protocol_extension)(
+	struct peer *, gfp_xdr_xid_t, size_t *,
 	int, int, int, gfarm_int32_t, gfarm_int32_t *, gfarm_error_t *);
 
-int protocol_service(struct peer *);
+int protocol_service(struct peer *, gfp_xdr_xid_t, size_t *);
 void *protocol_main(void *);
 
 void gfmd_modules_init_default(int);

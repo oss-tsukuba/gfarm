@@ -28,6 +28,8 @@
 
 /* XXX FIXME - dummy definitions to link successfully without gfmd.o */
 struct thread_pool *sync_protocol_get_thrpool(void) { return NULL; }
+int protocol_service(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep)
+{ return 0; }
 void resuming_enqueue(void *entry) {}
 
 static char *program_name = "db_journal_test";

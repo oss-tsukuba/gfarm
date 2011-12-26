@@ -18,6 +18,7 @@
 
 #include <pthread.h>	/* db_access.h currently needs this */
 #include <assert.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,13 +30,14 @@
 
 #include "gfutil.h"
 
+#include "gfp_xdr.h"
 #include "config.h"
 #include "metadb_common.h"
 #include "xattr_info.h"
 #include "quota_info.h"
 #include "metadb_server.h"
-#include "quota.h"
 
+#include "quota.h"
 #include "db_common.h"
 #include "db_access.h"
 #include "db_ops.h"

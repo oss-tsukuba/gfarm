@@ -79,8 +79,18 @@ gfarm_error_t gfm_server_channel_vget_request(struct peer *, size_t,
 	const char *, const char *, va_list *);
 gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t, const char *, gfarm_error_t,
-	char *, va_list *);
+	const char *, va_list *);
 
+gfarm_error_t gfm_client_channel_vsend_wrapped_request(struct abstract_host *,
+	struct peer *, const char *, gfarm_int32_t (*)(void *, void *, size_t),
+	void (*)(void *, void *), void *,
+#ifdef COMPAT_GFARM_2_3
+	void (*)(struct abstract_host *, struct peer *,
+	    gfarm_int32_t (*)(void *, void *, size_t),
+	    void (*)(void *, void *), void *),
+#endif
+	const char *, va_list *,
+	gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	struct peer *, const char *, gfarm_int32_t (*)(void *, void *, size_t),
 	void (*)(void *, void *), void *,

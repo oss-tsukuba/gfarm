@@ -524,7 +524,9 @@ group_info_send(struct gfp_xdr *client, struct group *g)
 }
 
 gfarm_error_t
-gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
+gfm_server_group_info_get_all(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
@@ -546,7 +548,8 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 		if (group_is_valid(*gp))
 			++ngroups;
 	}
-	e = gfm_server_put_reply(peer, diag,
+	/* XXXRELAY FIXME, reply size is not correct */
+	e = gfm_server_put_reply(peer, xid, sizep, diag,
 	    GFARM_ERR_NO_ERROR, "i", ngroups);
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_unlock();
@@ -560,6 +563,7 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 	     gfarm_hash_iterator_next(&it)) {
 		gp = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
 		if (group_is_valid(*gp)) {
+			/* XXXRELAY FIXME */
 			e = group_info_send(client, *gp);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001527,
@@ -575,7 +579,8 @@ gfm_server_group_info_get_all(struct peer *peer, int from_client, int skip)
 }
 
 gfarm_error_t
-gfm_server_group_info_get_by_names(struct peer *peer,
+gfm_server_group_info_get_by_names(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -586,7 +591,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	struct group *g;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_GET_BY_NAMES";
 
-	e = gfm_server_get_request(peer, diag,
+	e = gfm_server_get_request(peer, sizep, diag,
 	    "i", &ngroups);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001528,
@@ -628,7 +633,8 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 		goto free_group;
 	}
 
-	e = gfm_server_put_reply(peer, diag,
+	/* XXXRELAY FIXME, reply size is not correct */
+	e = gfm_server_put_reply(peer, xid, sizep, diag,
 		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
 	if (no_memory || e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001530,
@@ -643,10 +649,12 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	for (i = 0; i < ngroups; i++) {
 		g = group_lookup(groups[i]);
 		if (g == NULL) {
-			e = gfm_server_put_reply(peer, diag,
+			/* XXXRELAY FIXME */
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_SUCH_GROUP, "");
 		} else {
-			e = gfm_server_put_reply(peer, diag,
+			/* XXXRELAY FIXME */
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_ERROR, "");
 			if (e == GFARM_ERR_NO_ERROR)
 				e = group_info_send(client, g);
@@ -668,12 +676,13 @@ free_group:
 }
 
 static gfarm_error_t
-get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
+get_group(struct peer *peer, size_t *sizep,
+	const char *diag, struct gfarm_group_info *gp)
 {
 	gfarm_error_t e;
 	int i, eof;
 
-	e = gfm_server_get_request(peer, diag, "si",
+	e = gfm_server_get_request(peer, sizep, diag, "si",
 		&gp->groupname, &gp->nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001531,
@@ -692,8 +701,12 @@ get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
 		}
 	}
 	for (i = 0; i < gp->nusers; ++i) {
-		e = gfp_xdr_recv(peer_get_conn(peer), 0, &eof, "s",
-			&gp->usernames[i]);
+		if (sizep != NULL)
+			e = gfp_xdr_recv_sized(peer_get_conn(peer), 0, sizep,
+			    &eof, "s", &gp->usernames[i]);
+		else
+			e = gfp_xdr_recv(peer_get_conn(peer), 0,
+			    &eof, "s", &gp->usernames[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001533,
 				"gfp_xdr_recv(usernames) failed: %s",
@@ -727,7 +740,8 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 }
 
 gfarm_error_t
-gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
+gfm_server_group_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfarm_group_info gi;
@@ -735,7 +749,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	int need_free;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_SET";
 
-	e = get_group(peer, diag, &gi);
+	e = get_group(peer, sizep, diag, &gi);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001534,
 			"get_group() failed: %s", gfarm_error_string(e));
@@ -780,7 +794,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 	if (need_free)
 		gfarm_group_info_free(&gi);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
 }
 
 void
@@ -815,7 +829,8 @@ group_modify(struct group *group, struct gfarm_group_info *gi,
 }
 
 gfarm_error_t
-gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
+gfm_server_group_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 	struct gfarm_group_info gi;
@@ -823,7 +838,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 	struct group *group;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_MODIFY";
 
-	e = get_group(peer, diag, &gi);
+	e = get_group(peer, sizep, diag, &gi);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001539,
 			"get_group() failed: %s",
@@ -857,7 +872,7 @@ gfm_server_group_info_modify(struct peer *peer, int from_client, int skip)
 	}
 	gfarm_group_info_free(&gi);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -881,14 +896,16 @@ gfarm_error_t (*group_info_remove)(const char *, const char *) =
 	group_info_remove_default;
 
 gfarm_error_t
-gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
+gfm_server_group_info_remove(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	char *groupname;
 	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, diag, "s", &groupname);
+	e = gfm_server_get_request(peer, sizep, diag, "s", &groupname);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001543,
 			"group_info_remove request failed: %s",
@@ -914,11 +931,13 @@ gfm_server_group_info_remove(struct peer *peer, int from_client, int skip)
 		e = group_info_remove(groupname, diag);
 	free(groupname);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, diag, e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
 }
 
 gfarm_error_t
-gfm_server_group_info_add_users(struct peer *peer, int from_client, int skip)
+gfm_server_group_info_add_users(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
 {
 	gfarm_error_t e;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_ADD_USERS";
@@ -926,14 +945,15 @@ gfm_server_group_info_add_users(struct peer *peer, int from_client, int skip)
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000259, "%s: not implemented", diag);
 
-	e = gfm_server_put_reply(peer, diag,
+	e = gfm_server_put_reply(peer, xid, sizep, diag,
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
 gfarm_error_t
-gfm_server_group_info_remove_users(struct peer *peer,
+gfm_server_group_info_remove_users(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -942,14 +962,15 @@ gfm_server_group_info_remove_users(struct peer *peer,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000260, "%s: not implemented", diag);
 
-	e = gfm_server_put_reply(peer, diag,
+	e = gfm_server_put_reply(peer, xid, sizep, diag,
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
 gfarm_error_t
-gfm_server_group_names_get_by_users(struct peer *peer,
+gfm_server_group_names_get_by_users(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	gfarm_error_t e;
@@ -958,7 +979,7 @@ gfm_server_group_names_get_by_users(struct peer *peer,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000261, "%s: not implemented", diag);
 
-	e = gfm_server_put_reply(peer, diag,
+	e = gfm_server_put_reply(peer, xid, sizep, diag,
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
 	return (e != GFARM_ERR_NO_ERROR ? e :
 	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);

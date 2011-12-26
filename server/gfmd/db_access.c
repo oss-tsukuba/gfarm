@@ -4,6 +4,7 @@
 
 #include <pthread.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -15,6 +16,7 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+#include "gfp_xdr.h"
 #include "config.h"
 
 #include "subr.h"
