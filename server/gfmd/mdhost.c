@@ -60,11 +60,10 @@ struct mdhost {
 };
 static const char MDHOST_MUTEX_DIAG[]		= "mdhost_mutex";
 
-/* global mutex is for mdhost_hashtab and localhost_is_readonly */
+/* global mutex is for mdhost_hashtab */
 pthread_mutex_t mdhost_global_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char MDHOST_GLOBAL_MUTEX_DIAG[]	= "mdhost_global_mutex";
 static struct gfarm_hash_table *mdhost_hashtab;
-static int localhost_is_readonly = 0;
 
 /* no need to protect since it is only updated in mdhost_init() */
 static struct mdhost *mdhost_self;
@@ -462,41 +461,6 @@ mdhost_set_seqnum_error(struct mdhost *m)
 }
 
 static void
-mdhost_set_localhost_is_readonly(int ro)
-{
-	static const char *diag = "mdhost_set_localhost_is_readonly";
-
-	mdhost_global_mutex_lock(diag);
-	localhost_is_readonly = ro;
-	mdhost_global_mutex_unlock(diag);
-}
-
-int
-mdhost_self_is_readonly_unlocked(void)
-{
-	return (localhost_is_readonly);
-}
-
-int
-mdhost_self_is_readonly(void)
-{
-	int ro;
-	static const char *diag = "mdhost_self_is_readonly";
-
-	mdhost_global_mutex_lock(diag);
-	ro = mdhost_self_is_readonly_unlocked();
-	mdhost_global_mutex_unlock(diag);
-	return (ro);
-}
-
-static void
-mdhost_self_change_to_readonly(void)
-{
-	mdhost_set_localhost_is_readonly(1);
-	gflog_warning(GFARM_MSG_1002926, "changed to read-only mode");
-}
-
-static void
 mdhost_invalidate(struct mdhost *m)
 {
 	abstract_host_invalidate(mdhost_to_abstract_host(m));
@@ -694,7 +658,6 @@ mdhost_set_self_as_master(void)
 	mdhost_disconnect(m, NULL);
 	mdhost_set_is_master(m, 0);
 	mdhost_set_is_master(s, 1);
-	mdhost_set_localhost_is_readonly(0);
 }
 
 gfarm_error_t
@@ -1391,6 +1354,13 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
 
+static void
+mdhost_fail(void)
+{
+	gflog_fatal(GFARM_MSG_UNFIXED,
+	    "gfmd is shutting down for unrecoverable error");
+}
+
 /* no need to lock here */
 void
 mdhost_init(void)
@@ -1451,9 +1421,7 @@ mdhost_init(void)
 				break;
 			}
 		}
-		if (!mdhost_is_master(self))
-			localhost_is_readonly = 1;
-		db_journal_set_fail_store_op(mdhost_self_change_to_readonly);
+		db_journal_set_fail_store_op(mdhost_fail);
 		if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_1002975,
 			    "Failed to update mdhost: %s",

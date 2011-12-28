@@ -1269,7 +1269,7 @@ sigs_handler(void *p)
 	giant_lock();
 
 	gflog_info(GFARM_MSG_1000201, "shutting down peers");
-	if (!mdhost_self_is_readonly() && db_begin(diag) == GFARM_ERR_NO_ERROR)
+	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	/*
 	 * the following internally calls inode_close*() and
@@ -1554,7 +1554,7 @@ main(int argc, char **argv)
 
 	if (gfarm_get_metadb_replication_enabled())
 		start_db_journal_threads();
-	if (!mdhost_self_is_readonly()) {
+	if (mdhost_self_is_master()) {
 		/* these functions write db, thus, must be after db_thread  */
 		inode_remove_orphan(); /* should be before
 					  inode_check_and_repair() */

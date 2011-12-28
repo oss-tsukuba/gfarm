@@ -351,11 +351,6 @@ db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 {
 	gfarm_uint64_t seqnum;
 
-	if (with_seqnum > 0 && mdhost_self_is_readonly_unlocked()) {
-		gflog_error(GFARM_MSG_1003018,
-		    "currently in read-only mode");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
-	}
 	seqnum = with_seqnum ? db_journal_next_seqnum() : 0;
 	return (func(seqnum, data));
 }
