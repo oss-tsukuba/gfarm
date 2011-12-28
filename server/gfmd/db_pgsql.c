@@ -423,13 +423,17 @@ gfarm_pgsql_check_insert(PGresult *res,
 		e = GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED;
 	} else {
 		char *err = PQresultErrorField(res, PG_DIAG_SQLSTATE);
-		if (strcmp(err, GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0) {
-			e = GFARM_ERR_ALREADY_EXISTS;
-		} else if (strcmp(err, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT) == 0) {
-			e = GFARM_ERR_INVALID_ARGUMENT;
-		} else {
+
+		if (err == NULL)
 			e = GFARM_ERR_UNKNOWN;
-		}
+		else if (strcmp(err, GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION) == 0)
+			e = GFARM_ERR_ALREADY_EXISTS;
+		else if (strcmp(err, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT)
+		    == 0)
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		else
+			e = GFARM_ERR_UNKNOWN;
+
 		gflog_error(GFARM_MSG_1000425, "%s: %s: %s", diag, command,
 		    PQresultErrorMessage(res));
 	}
