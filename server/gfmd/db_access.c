@@ -57,7 +57,7 @@ struct dbq {
 	struct dbq_entry *entries;
 } dbq;
 
-static pthread_mutex_t db_access_mutex;
+static pthread_mutex_t db_access_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
 
 static gfarm_error_t db_journal_enter(dbq_entry_func_t, void *, int);
@@ -388,12 +388,10 @@ gfarm_error_t
 db_initialize(void)
 {
 	dbq_init(&dbq);
-	if (gfarm_get_metadb_replication_enabled()) {
-		gfarm_mutex_init(&db_access_mutex, "db_initialize",
-		    DB_ACCESS_MUTEX_DIAG);
+	if (gfarm_get_metadb_replication_enabled())
 		return ((*store_ops->initialize)());
-	}
-	return ((*ops->initialize)());
+	else
+		return ((*ops->initialize)());
 }
 
 gfarm_error_t
@@ -403,14 +401,11 @@ db_terminate(void)
 	static const char *diag = "db_terminate";
 
 	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
-	if (gfarm_get_metadb_replication_enabled())
-		gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	dbq_wait_to_finish(&dbq);
 	gflog_info(GFARM_MSG_1000407, "terminating the database");
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ops->terminate();
-	if (gfarm_get_metadb_replication_enabled())
-		gfarm_mutex_unlock(&db_access_mutex, diag,
-		    DB_ACCESS_MUTEX_DIAG);
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	return (e);
 }
 
@@ -430,11 +425,11 @@ db_thread(void *arg)
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
 		if (e == GFARM_ERR_NO_ERROR) {
-			if (gfarm_get_metadb_replication_enabled())
-				/* lock to avoid race condition between
-				 * db_journal_store_thread. */
-				gfarm_mutex_lock(&db_access_mutex, diag,
-				    DB_ACCESS_MUTEX_DIAG);
+			/* lock to avoid race condition between
+			 * db_journal_store_thread. */
+			gfarm_mutex_lock(&db_access_mutex, diag,
+			    DB_ACCESS_MUTEX_DIAG);
+
 			/* Do not execute a function that writes to database
 			 * when metadata-replication enabled.
 			 * Because we pass seqnum as zero. */
@@ -442,9 +437,8 @@ db_thread(void *arg)
 				e = (*ent.func)(0, ent.data);
 			} while (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED);
 
-			if (gfarm_get_metadb_replication_enabled())
-				gfarm_mutex_unlock(&db_access_mutex, diag,
-				    DB_ACCESS_MUTEX_DIAG);
+			gfarm_mutex_unlock(&db_access_mutex, diag,
+			    DB_ACCESS_MUTEX_DIAG);
 		} else if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			break;
 	}
@@ -585,7 +579,13 @@ db_host_remove(const char *hostname)
 gfarm_error_t
 db_host_load(void *closure, void (*callback)(void *, struct gfarm_host_info *))
 {
-	return ((*ops->host_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_host_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = (*ops->host_load)(closure, callback);
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -673,7 +673,13 @@ db_user_remove(const char *username)
 gfarm_error_t
 db_user_load(void *closure, void (*callback)(void *, struct gfarm_user_info *))
 {
-	return ((*ops->user_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_user_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->user_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -825,7 +831,13 @@ gfarm_error_t
 db_group_load(void *closure,
 	void (*callback)(void *, struct gfarm_group_info *))
 {
-	return ((*ops->group_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_group_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->group_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -1046,7 +1058,13 @@ db_inode_ctime_modify(gfarm_ino_t inum, struct gfarm_timespec *ctime)
 gfarm_error_t
 db_inode_load(void *closure, void (*callback)(void *, struct gfs_stat *))
 {
-	return ((*ops->inode_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_inode_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->inode_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 struct db_inode_cksum_arg *
@@ -1129,7 +1147,13 @@ gfarm_error_t
 db_inode_cksum_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, size_t, char *))
 {
-	return ((*ops->inode_cksum_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_inode_cksum_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->inode_cksum_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -1191,7 +1215,13 @@ gfarm_error_t
 db_filecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
-	return ((*ops->filecopy_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_filecopy_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->filecopy_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -1258,7 +1288,13 @@ gfarm_error_t
 db_deadfilecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, gfarm_uint64_t, char *))
 {
-	return ((*ops->deadfilecopy_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_deadfilecopy_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->deadfilecopy_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 
@@ -1325,7 +1361,13 @@ gfarm_error_t
 db_direntry_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, int, gfarm_ino_t))
 {
-	return ((*ops->direntry_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_direntry_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->direntry_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 struct db_symlink_arg *
@@ -1385,7 +1427,13 @@ db_symlink_remove(gfarm_ino_t inum)
 gfarm_error_t
 db_symlink_load(void *closure, void (*callback)(void *, gfarm_ino_t, char *))
 {
-	return ((*ops->symlink_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_symlink_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->symlink_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 struct db_xattr_arg *
@@ -1546,7 +1594,13 @@ gfarm_error_t
 db_xattr_load(void *closure,
 		void (*callback)(void *, struct xattr_info *))
 {
-	return ((*ops->xattr_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_xattr_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->xattr_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 gfarm_error_t
@@ -1688,14 +1742,26 @@ gfarm_error_t
 db_quota_user_load(void *closure,
 	      void (*callback)(void *, struct gfarm_quota_info *))
 {
-	return ((*ops->quota_load)(closure, 0, callback));
+	gfarm_error_t e;
+	const char *diag = "db_quota_user_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->quota_load)(closure, 0, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 gfarm_error_t
 db_quota_group_load(void *closure,
 	      void (*callback)(void *, struct gfarm_quota_info *))
 {
-	return ((*ops->quota_load)(closure, 1, callback));
+	gfarm_error_t e;
+	const char *diag = "db_quota_group_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->quota_load)(closure, 1, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 gfarm_error_t
@@ -1730,7 +1796,13 @@ gfarm_error_t
 db_seqnum_load(void *closure,
 	      void (*callback)(void *, struct db_seqnum_arg *))
 {
-	return ((*ops->seqnum_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_seqnum_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->seqnum_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
 
 void *
@@ -1815,5 +1887,11 @@ gfarm_error_t
 db_mdhost_load(void *closure,
 	void (*callback)(void *, struct gfarm_metadb_server *))
 {
-	return ((*ops->mdhost_load)(closure, callback));
+	gfarm_error_t e;
+	const char *diag = "db_mdhost_load";
+
+	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	e = ((*ops->mdhost_load)(closure, callback));
+	gfarm_mutex_unlock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
+	return (e);
 }
