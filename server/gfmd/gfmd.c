@@ -1167,7 +1167,14 @@ sig_add(sigset_t *sigs, int signo, const char *name)
 	if (sigaction(signo, NULL, &old) == -1)
 		gflog_fatal_errno(GFARM_MSG_1002732,
 		    "checking %s signal", name);
-	if (old.sa_handler == SIG_IGN) {
+	if (old.sa_handler == SIG_IGN
+#ifdef SIGINFO /* SIG_DFL means "discard" */
+	    || (signo == SIGINFO && old.sa_handler == SIG_DFL)
+#endif
+#ifdef SIGPWR /* SIG_DFL means "discard". We don't do sig_add(,SIGPWR) though */
+	    || (signo == SIGPWR && old.sa_handler == SIG_DFL)
+#endif
+	    ) {
 		/*
 		 * without this, the signal won't be delivered
 		 * to the sigs_handler thread on Solaris and *BSD.
@@ -1203,7 +1210,7 @@ void *
 sigs_handler(void *p)
 {
 	sigset_t *sigs = p;
-	int sig;
+	int rv, sig;
 	int transaction = 0;
 	static const char diag[] = "sigs_handler";
 
@@ -1212,27 +1219,11 @@ sigs_handler(void *p)
 	write_pid();
 #endif
 	for (;;) {
-		if (sigwait(sigs, &sig) == -1)
+		if ((rv = sigwait(sigs, &sig)) != 0) {
 			gflog_warning(GFARM_MSG_1000197,
-			    "sigs_handler: %s", strerror(errno));
-#ifdef __linux__
-		/*
-		 * On linux-2.6.11 on Fedora Core 4,
-		 * spurious signal sig=8195840 arrives.
-		 * On debian-etch 4.0, signal 0 arrives.
-		 */
-		if (sig == 0 ||
-		    (sig >= 16
-#ifdef SIGINFO
-		     && sig != SIGINFO
-#endif
-		     && sig != SIGUSR1
-		     && sig != SIGUSR2)) {
-			gflog_info(GFARM_MSG_1000198,
-			    "spurious signal %d received: ignoring...", sig);
+			    "sigs_handler: %s", strerror(rv));
 			continue;
 		}
-#endif
 		switch (sig) {
 		case SIGHUP:
 #ifdef HAVE_GSI
@@ -1255,8 +1246,30 @@ sigs_handler(void *p)
 			thrpool_info();
 			continue;
 
-		default:
+		/* some of these will be never delivered due to `*sigs' */
+		case SIGINT:
+		case SIGQUIT:
+		case SIGILL:
+		case SIGTRAP:
+		case SIGABRT:
+		case SIGFPE:
+		case SIGBUS:
+		case SIGSEGV:
+#ifdef SIGSYS
+		case SIGSYS:
+#endif
+		case SIGTERM:
+		case SIGXCPU:
+		case SIGXFSZ:
+#ifdef SIGPWR
+		case SIGPWR:
+#endif
+			/* terminate gfmd */
 			break;
+		default:
+			gflog_info(GFARM_MSG_1000198,
+			    "spurious signal %d received: ignoring...", sig);
+			continue;
 		}
 		break;
 	}
