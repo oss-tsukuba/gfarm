@@ -674,14 +674,14 @@ gfarm_set_local_user_for_this_local_account(void)
  * If you would like to provide default value other than NULL, set the
  * value at gfarm_config_set_default*().
  */
+#define MISC_DEFAULT -1
 /* GFS dependent */
 char *gfarm_spool_server_listen_address = NULL;
 char *gfarm_spool_root = NULL;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
-static char *gfarm_metadb_server_portname = NULL;
-int gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
+int gfarm_metadb_server_port = MISC_DEFAULT;
 enum gfarm_backend_db_type gfarm_backend_db_type =
 	GFARM_BACKEND_DB_TYPE_UNKNOWN;
 
@@ -737,7 +737,6 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  20 /* 20 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
-#define MISC_DEFAULT -1
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_no_file_system_node_timeout = MISC_DEFAULT;
@@ -780,7 +779,6 @@ gfarm_config_clear(void)
 		&gfarm_spool_server_listen_address,
 		&gfarm_spool_root,
 		&gfarm_metadb_server_name,
-		&gfarm_metadb_server_portname,
 		&gfarm_metadb_admin_user,
 		&gfarm_metadb_admin_user_gsi_dn,
 		&gfarm_ldap_server_name,
@@ -1298,9 +1296,8 @@ parse_sockopt_arguments(char *p, char **op)
 			 */
 			*op = "1st(sockopt-option) argument";
 			gflog_debug(GFARM_MSG_1000947,
-				"add sockopt listener config failed"
-				"(%s)(%s): %s",
-				host, option, gfarm_error_string(e));
+			    "cannot set sockopt %s for listener: %s",
+			    option, gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -1328,8 +1325,9 @@ parse_sockopt_arguments(char *p, char **op)
 			*op = "1st(sockopt-option) argument";
 			gfarm_hostspec_free(hostspecp);
 			gflog_debug(GFARM_MSG_1000949,
-				"add sockopt config (%s)(%s) failed: %s",
-				host, option, gfarm_error_string(e));
+			    "cannot set sockopt %s for host %s: %s",
+			    option, host == NULL ? "*" : host,
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -1731,6 +1729,40 @@ parse_set_misc_enabled(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_metadb_server_port(char *p, char **op)
+{
+	char *s;
+	const char *listname = *op;
+	struct servent *sp;
+	int port;
+	gfarm_error_t e;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		*op = "port argument";
+		gflog_debug(GFARM_MSG_UNFIXED, "%s %s: %s: %s",
+		    listname, *op, p, gfarm_error_string(e));
+		return (e);
+	}
+	if (gfarm_metadb_server_port != MISC_DEFAULT)
+		return (GFARM_ERR_NO_ERROR);
+
+	sp = getservbyname(s, "tcp");
+	if (sp != NULL)
+		gfarm_metadb_server_port = ntohs(sp->s_port);
+	else if ((port = strtol(s, NULL, 0)) != 0 && port > 0 && port < 65536)
+		gfarm_metadb_server_port = port;
+	else {
+		*op = "port argument";
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED, "%s %s: %s: %s",
+		    listname, *op, s, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_cred_config(char *p, char *service,
 	gfarm_error_t (*set)(char *, char *))
 {
@@ -2003,7 +2035,7 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);
 	} else if (strcmp(s, o = "metadb_server_port") == 0) {
-		e = parse_set_var(p, &gfarm_metadb_server_portname);
+		e = parse_metadb_server_port(p, &o);
 	} else if (strcmp(s, o = "metadb_server_list") == 0) {
 		e = parse_metadb_server_list_arguments(p, &o);
 	} else if (strcmp(s, o = "admin_user") == 0) {
@@ -2220,7 +2252,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p)
 {
 	gfarm_error_t e;
 	int lineno = 0;
-	char *s, *p, *o, buffer[1024];
+	char *s, *p, *o = NULL, buffer[1024];
 
 	while (fgets(buffer, sizeof buffer, config) != NULL) {
 		lineno++;
@@ -2236,9 +2268,8 @@ gfarm_config_read_file(FILE *config, int *lineno_p)
 			fclose(config);
 			*lineno_p = lineno;
 			gflog_debug(GFARM_MSG_1000975,
-				"parsing token failed"
-				"when reading config file (%s): %s",
-				p, gfarm_error_string(e));
+			    "line %d: %s: %s: %s", lineno, o == NULL ? "" : o,
+			    p, gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -2257,16 +2288,8 @@ gfarm_config_set_default_ports(void)
 		    "metadb_serverhost isn't specified in "
 		    GFARM_CONFIG " file");
 
-	if (gfarm_metadb_server_portname != NULL) {
-		int p = strtol(gfarm_metadb_server_portname, NULL, 0);
-		struct servent *sp =
-			getservbyname(gfarm_metadb_server_portname, "tcp");
-
-		if (sp != NULL)
-			gfarm_metadb_server_port = ntohs(sp->s_port);
-		else if (p != 0)
-			gfarm_metadb_server_port = p;
-	}
+	if (gfarm_metadb_server_port == MISC_DEFAULT)
+		gfarm_metadb_server_port = GFMD_DEFAULT_PORT;
 }
 
 static gfarm_error_t
@@ -2292,8 +2315,8 @@ gfarm_config_set_default_filesystem(void)
 		if (gfarm_filesystem_get_metadb_server_list(fs, &n) != NULL)
 			/* XXX - for now, this is assumed */
 			gflog_fatal(GFARM_MSG_1002555, "configuration error: "
-			    "metadb_server_host:metadb_server_port is not "
-			    "included in the metadb_server_list");
+			    "%s:%d is not included in the metadb_server_list",
+			    gfarm_metadb_server_name, gfarm_metadb_server_port);
 	}
 	return (GFARM_ERR_NO_ERROR);
 }

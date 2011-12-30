@@ -33,6 +33,7 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 	struct gfarm_param_type *type;
 	long value;
 	char *ep;
+	gfarm_error_t e;
 
 	configlen = strlen(config);
 	namelen = strcspn(config, "=");
@@ -83,11 +84,9 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 		*valuep = value;
 		return (GFARM_ERR_NO_ERROR);				
 	}
-	gflog_debug(GFARM_MSG_1000889,
-		"failed to find object(%s): %s",
-		config,
-		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
-	return (GFARM_ERR_NO_SUCH_OBJECT);
+	e = GFARM_ERR_NO_SUCH_OBJECT;
+	gflog_debug(GFARM_MSG_1000889, "%s: %s", config, gfarm_error_string(e));
+	return (e);
 }
 
 gfarm_error_t

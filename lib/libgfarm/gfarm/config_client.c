@@ -126,7 +126,7 @@ gfarm_config_read(void)
 		user_config_errno = 0;
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000015, "%s: %d: %s",
+			gflog_error(GFARM_MSG_1000015, "%s: line %d: %s",
 			    rc, lineno, gfarm_error_string(e));
 			if (rc_need_free)
 				free(rc);

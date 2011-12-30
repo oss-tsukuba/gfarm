@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h> /* TCP_NODELAY */
 #include <arpa/inet.h>
 #include <sys/resource.h>
 #include <netdb.h>
@@ -129,6 +130,7 @@ const char READONLY_CONFIG_FILE[] = ".readonly";
 
 const char *program_name = "gfsd";
 
+static struct protoent *tcp_proto;
 int debug_mode = 0;
 pid_t master_gfsd_pid;
 pid_t back_channel_gfsd_pid;
@@ -4005,7 +4007,7 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client;
-	int eof;
+	int eof, rv;
 	gfarm_int32_t request;
 	char *aux, addr_string[GFARM_SOCKADDR_STRLEN];
 	enum gfarm_auth_id_type peer_type;
@@ -4069,7 +4071,22 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	if (aux == NULL)
 		fatal(GFARM_MSG_1000556, "%s: no memory\n", client_name);
 	sprintf(aux, "%s@%s", username, client_name);
-	gflog_set_auxiliary_info(aux);	
+	gflog_set_auxiliary_info(aux);
+
+	/*
+	 * In GSI authentication, small packets are sent frequently,
+	 * which requires TCP_NODELAY for reasonable performance.
+	 */
+	if (auth_method == GFARM_AUTH_METHOD_GSI) {
+		rv = 1;
+		if (setsockopt(client_fd, tcp_proto->p_proto, TCP_NODELAY,
+			&rv, sizeof(rv)) == 0)
+			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			    "specified for performance in GSI");
+		else
+			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			    "specified, but fails: %s", strerror(errno));
+	}
 
 	/* set file creation mask */
 	command_umask = umask(0);
@@ -4874,6 +4891,11 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	tcp_proto = getprotobyname("tcp");
+	if (tcp_proto == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "getprotobyname(\"tcp\") failed");
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);

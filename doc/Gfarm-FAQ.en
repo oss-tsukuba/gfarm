@@ -322,6 +322,6 @@ Table of Contents:
 
 	TCP nodelay option may improve the performance.  Add the
 	following line in the configuration file gfarm2.conf or
-	$HOME/.gfarm2rc in the client machine.
+	$HOME/.gfarm2rc for clients and all gfsds.
 
-		sockopt tcp_nodelay *
+		sockopt tcp_nodelay

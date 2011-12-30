@@ -304,7 +304,7 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
   5.1 GSI 認証で性能がでません．
 
 	TCP nodelay オプションを有効にすると性能が改善することがありま
-	す。クライアントの gfarm2.conf あるいは $HOME/.gfarm2rc に次の
-	行を追加してみてください。
+	す。クライアントおよび gfsd の gfarm2.conf あるいは
+	$HOME/.gfarm2rc に次の行を追加してみてください。
 
-		sockopt tcp_nodelay *
+		sockopt tcp_nodelay
