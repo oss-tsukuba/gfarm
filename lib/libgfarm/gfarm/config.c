@@ -1296,9 +1296,8 @@ parse_sockopt_arguments(char *p, char **op)
 			 */
 			*op = "1st(sockopt-option) argument";
 			gflog_debug(GFARM_MSG_1000947,
-				"add sockopt listener config failed"
-				"(%s)(%s): %s",
-				host, option, gfarm_error_string(e));
+			    "cannot set sockopt %s for listener: %s",
+			    option, gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -1326,8 +1325,9 @@ parse_sockopt_arguments(char *p, char **op)
 			*op = "1st(sockopt-option) argument";
 			gfarm_hostspec_free(hostspecp);
 			gflog_debug(GFARM_MSG_1000949,
-				"add sockopt config (%s)(%s) failed: %s",
-				host, option, gfarm_error_string(e));
+			    "cannot set sockopt %s for host %s: %s",
+			    option, host == NULL ? "*" : host,
+			    gfarm_error_string(e));
 			return (e);
 		}
 	}
