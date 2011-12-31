@@ -35,9 +35,6 @@ Table of Contents:
   4.3 The following functionality supported by Gfarm-1.x is not
      supported.
     
-5. Performance
-  5.1 File System Performance is poor when using GSI authentication.
-
 
 1. General
 **********
@@ -315,13 +312,3 @@ Table of Contents:
     supported by Gfarm-1.x.
 
 	Remote program execution
-
-5. Performance
-**************
-  5.1 File System Performance is poor when using GSI authentication.
-
-	TCP nodelay option may improve the performance.  Add the
-	following line in the configuration file gfarm2.conf or
-	$HOME/.gfarm2rc for clients and all gfsds.
-
-		sockopt tcp_nodelay

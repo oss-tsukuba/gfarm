@@ -35,9 +35,6 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
   4.3 Gfarm-1.xでサポートされていた以下の機能はサポートされる予定はあ
     りません．
 
-5. 性能
-  5.1 GSI 認証で性能がでません．
-
 
 1. 一般
 **********
@@ -298,13 +295,3 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
     りません．
 
 	リモートプログラムの起動
-
-5. 性能
-**********
-  5.1 GSI 認証で性能がでません．
-
-	TCP nodelay オプションを有効にすると性能が改善することがありま
-	す。クライアントおよび gfsd の gfarm2.conf あるいは
-	$HOME/.gfarm2rc に次の行を追加してみてください。
-
-		sockopt tcp_nodelay

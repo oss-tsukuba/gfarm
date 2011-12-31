@@ -436,9 +436,24 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 		e = gfarm_auth_request(gfs_server->conn, GFS_SERVICE_TAG,
 		    gfs_server->hostname, peer_addr, gfarm_get_auth_id_type(),
 		    user, &gfs_server->auth_method, NULL);
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
+		/*
+		 * In GSI authentication, small packets are sent frequently,
+		 * which requires TCP_NODELAY for reasonable performance.
+		 */
+		if (gfs_server->auth_method == GFARM_AUTH_METHOD_GSI) {
+			e = gfarm_sockopt_set_option(
+			    gfp_xdr_fd(gfs_server->conn), "tcp_nodelay");
+			if (e == GFARM_ERR_NO_ERROR)
+				gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay "
+				    "is specified for performance in GSI");
+			else
+				gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay "
+				    "is specified, but fails: %s",
+				    gfarm_error_string(e));
+		}
 		*gfs_serverp = gfs_server;
-	else {
+	} else {
 		free(gfs_server->hostname);
 		gfp_xdr_free(gfs_server->conn);
 		free(gfs_server);
@@ -636,10 +651,29 @@ static void
 gfs_client_connect_end_auth(void *closure)
 {
 	struct gfs_client_connect_state *state = closure;
+	gfarm_error_t e;
 
 	state->error = gfarm_auth_result_multiplexed(
 	    state->auth_state,
 	    &state->gfs_server->auth_method);
+	if (state->error == GFARM_ERR_NO_ERROR) {
+		/*
+		 * In GSI authentication, small packets are sent frequently,
+		 * which requires TCP_NODELAY for reasonable performance.
+		 */
+		if (state->gfs_server->auth_method == GFARM_AUTH_METHOD_GSI) {
+			e = gfarm_sockopt_set_option(
+			    gfp_xdr_fd(state->gfs_server->conn), "tcp_nodelay");
+			if (e == GFARM_ERR_NO_ERROR)
+				gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay "
+				    "is specified for performance in GSI");
+			else
+				gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay "
+				    "is specified, but fails: %s",
+				    gfarm_error_string(e));
+		}
+
+	}
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
 }

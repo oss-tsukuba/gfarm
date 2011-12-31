@@ -99,7 +99,6 @@
 #endif
 
 char *program_name = "gfmd";
-static struct protoent *tcp_proto;
 static char *pid_file;
 
 struct thread_pool *authentication_thread_pool;
@@ -862,9 +861,14 @@ peer_authorize(struct peer *peer)
 	static const char diag[] = "peer_authorize";
 
 	/* without TCP_NODELAY, gfmd is too slow at least on NetBSD-3.0 */
-	rv = 1;
-	setsockopt(gfp_xdr_fd(peer_get_conn(peer)), tcp_proto->p_proto,
-	    TCP_NODELAY, &rv, sizeof(rv));
+	e = gfarm_sockopt_set_option(
+	    gfp_xdr_fd(peer_get_conn(peer)), "tcp_nodelay");
+	if (e == GFARM_ERR_NO_ERROR)
+		gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+		    "specified for performance reason");
+	else
+		gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+		    "specified, but fails: %s", gfarm_error_string(e));
 
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);
 	if (rv == -1) {
@@ -1431,11 +1435,6 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
-
-	tcp_proto = getprotobyname("tcp");
-	if (tcp_proto == NULL)
-		gflog_fatal(GFARM_MSG_1000205,
-		    "getprotobyname(\"tcp\") failed");
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
