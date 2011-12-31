@@ -656,12 +656,12 @@ gfs_server_process_set(struct gfp_xdr *client)
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 
 	if (gfm_client_process_is_set(gfm_server)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003399,
 		    "process is already set");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = gfm_client_process_set(gfm_server,
 	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003400,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
 
 	gfs_server_put_reply(client, diag, e, "");
@@ -683,7 +683,7 @@ gfs_server_process_reset(struct gfp_xdr *client)
 
 	if ((e = gfm_client_process_set(gfm_server,
 	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003401,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
 	else
 		client_failover_count = failover_count;
@@ -1627,7 +1627,7 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 			gfm_client_connection_set_failover_count(
 			    gfm_server, fc + 1);
 		} else
-			gflog_error(GFARM_MSG_UNFIXED, "fhclose_fd : %s",
+			gflog_error(GFARM_MSG_1003402, "fhclose_fd : %s",
 				gfarm_error_string(e));
 	} else {
 		fatal_metadb_proto(GFARM_MSG_1003351,
@@ -4078,10 +4078,10 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	if (auth_method == GFARM_AUTH_METHOD_GSI) {
 		e = gfarm_sockopt_set_option(client_fd, "tcp_nodelay");
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			gflog_info(GFARM_MSG_1003403, "tcp_nodelay option is "
 			    "specified for performance in GSI");
 		else
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			gflog_info(GFARM_MSG_1003404, "tcp_nodelay option is "
 			    "specified, but fails: %s", gfarm_error_string(e));
 	}
 

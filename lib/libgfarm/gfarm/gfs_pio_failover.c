@@ -46,7 +46,7 @@ gfs_pio_reopen(GFS_File gf)
 
 	if ((e = gfm_open_fd_with_ino(gf->url, gf->open_flags,
 	    &gfm_server, &fd, &type, &real_url, &ino)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003380,
 		    "reopen operation on file descriptor for URL (%s) "
 		    "failed: %s",
 		    gf->url,
@@ -70,7 +70,7 @@ gfs_pio_reopen(GFS_File gf)
 		gf->fd = -1;
 		gfm_client_connection_free(gfm_server);
 		gf->error = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003381,
 		    "reopen operation on pio for URL (%s) failed: %s",
 		    gf->url,
 		    gfarm_error_string(e));
@@ -94,7 +94,7 @@ close_on_server(GFS_File gf, void *closure)
 	sc = vc->storage_context;
 
 	if ((e = gfs_client_close(sc, gf->fd)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003382,
 		    "gfs_client_close: %s", gfarm_error_string(e));
 	if (e == GFARM_ERR_GFMD_FAILED_OVER)
 		e = GFARM_ERR_NO_ERROR;
@@ -128,7 +128,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	    gfm_client_port(gfm_server), gfm_client_username(gfm_server),
 	    &gfm_server1)) != GFARM_ERR_NO_ERROR) {
 		gf->error = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003383,
 		    "gfm_client_connection_acquire: %s",
 		    gfarm_error_string(e));
 		return (1);
@@ -136,7 +136,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 
 	if (gfm_server != gfm_server1) {
 		gfm_client_connection_free(gfm_server1);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003384,
 		    "reconnected to other gfmd or gfmd restarted");
 		ri->must_retry = 1;
 		return (0);
@@ -153,7 +153,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 		 */
 		if (gfs_client_pid(sc) == 0) {
 			gf->error = GFARM_ERR_CONNECTION_ABORTED;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003385,
 			    "%s", gfarm_error_string(gf->error));
 			return (1);
 		}
@@ -164,7 +164,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 			e = gfarm_client_process_reset(sc, gfm_server);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gf->error = e;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003386,
 				    "gfarm_client_process_reset: %s",
 				    gfarm_error_string(e));
 				return (1);
@@ -175,7 +175,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 	/* reopen file */
 	if (gfs_pio_error(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
 	    (e = gfs_pio_reopen(gf)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));
 	}
 
@@ -216,14 +216,14 @@ gfs_pio_failover(GFS_File gf)
 
 	if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003388,
 		    "%s", gfarm_error_string(e));
 		goto error_all;
 	}
 	if ((user = strdup(gfm_client_username(gfm_server))) ==  NULL) {
 		free(host);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003389,
 		    "%s", gfarm_error_string(e));
 		goto error_all;
 	}
@@ -242,7 +242,7 @@ gfs_pio_failover(GFS_File gf)
 		/* reconnect to gfmd */
 		if ((e = gfm_client_connection_and_process_acquire(
 		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003390,
 			    "gfm_client_connection_acquire failed : %s",
 			    gfarm_error_string(e));
 			goto error_all;
@@ -257,12 +257,12 @@ gfs_pio_failover(GFS_File gf)
 	}
 
 	if (ok) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003391,
 		    "connection to metadb server was failed over successfully");
 	} else {
 		e = GFARM_ERR_OPERATION_TIMED_OUT;
 		gf->error = e;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003392,
 		    "falied to fail over: %s", gfarm_error_string(e));
 	}
 

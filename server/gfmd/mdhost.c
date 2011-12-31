@@ -1357,7 +1357,7 @@ gfm_server_metadb_server_remove(struct peer *peer, int from_client, int skip)
 static void
 mdhost_fail(void)
 {
-	gflog_fatal(GFARM_MSG_UNFIXED,
+	gflog_fatal(GFARM_MSG_1003397,
 	    "gfmd is shutting down for unrecoverable error");
 }
 

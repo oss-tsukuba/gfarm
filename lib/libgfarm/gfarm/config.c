@@ -1740,7 +1740,7 @@ parse_metadb_server_port(char *p, char **op)
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		*op = "port argument";
-		gflog_debug(GFARM_MSG_UNFIXED, "%s %s: %s: %s",
+		gflog_debug(GFARM_MSG_1003367, "%s %s: %s: %s",
 		    listname, *op, p, gfarm_error_string(e));
 		return (e);
 	}
@@ -1755,7 +1755,7 @@ parse_metadb_server_port(char *p, char **op)
 	else {
 		*op = "port argument";
 		e = GFARM_ERR_INVALID_ARGUMENT;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s %s: %s: %s",
+		gflog_debug(GFARM_MSG_1003368, "%s %s: %s: %s",
 		    listname, *op, s, gfarm_error_string(e));
 		return (e);
 	}

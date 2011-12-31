@@ -493,7 +493,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	if (gfl == NULL) {
 		close(sock);
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003370,
 			"allocation of 'gfs_file_list' failed: %s",
 			gfarm_error_string(e));
 		goto end;
@@ -537,10 +537,10 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		e = gfarm_sockopt_set_option(
 		    gfp_xdr_fd(gfm_server->conn), "tcp_nodelay");
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay is "
+			gflog_info(GFARM_MSG_1003371, "tcp_nodelay is "
 			    "specified for performance in GSI");
 		else
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay is "
+			gflog_info(GFARM_MSG_1003372, "tcp_nodelay is "
 			    "specified, but fails: %s", gfarm_error_string(e));
 	}
 	gfm_server->cache_entry = cache_entry;

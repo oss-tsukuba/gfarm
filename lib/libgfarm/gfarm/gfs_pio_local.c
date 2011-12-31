@@ -281,7 +281,7 @@ gfs_pio_local_storage_reopen(GFS_File gf)
 
 	if ((e = gfs_client_open_local(gfs_server, gf->fd, &vc->fd)) !=
 	    GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003378,
 		    "gfs_client_open_local: %s", gfarm_error_string(e));
 	return (e);
 }
