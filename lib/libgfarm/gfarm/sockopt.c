@@ -85,9 +85,8 @@ gfarm_sockopt_initialize(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
-	char *config, struct gfarm_hostspec *hsp)
+static gfarm_error_t
+gfarm_sockopt_config_get_index(char *config, int *indexp, int *valuep)
 {
 	gfarm_error_t e;
 	int param_type_index;
@@ -115,8 +114,49 @@ gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
 			gfarm_error_string(e));
 		return (e);
 	}
-	return (gfarm_param_config_add_long(lastp,
-	    param_type_index, value, hsp));
+	if (indexp != NULL)
+		*indexp = param_type_index;
+	if (valuep != NULL)
+		*valuep = value;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_sockopt_config_add_internal(struct gfarm_param_config ***lastp,
+	char *config, struct gfarm_hostspec *hsp)
+{
+	int index, value;
+	gfarm_error_t e;
+
+	e = gfarm_sockopt_config_get_index(config, &index, &value);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	return (gfarm_param_config_add_long(lastp, index, value, hsp));
+}
+
+gfarm_error_t
+gfarm_sockopt_set_option(int fd, char *config)
+{
+	int index, v;
+	struct gfarm_param_type *type;
+	struct gfarm_sockopt_info *info;
+	gfarm_error_t e;
+
+	e = gfarm_sockopt_config_get_index(config, &index, &v);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	type = &gfarm_sockopt_type_table[index];
+	info = type->extension;
+	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1) {
+		int save_errno = errno;
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"setsocketopt(%d) to (%d) failed: %s",
+			index, v, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t
