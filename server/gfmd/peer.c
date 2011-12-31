@@ -791,27 +791,27 @@ peer_free_common(struct peer *peer)
 	 * if peer_authorized() hasn't been called in a local peer case.
 	 *	(== authentication failed)
 	 */
-	if (hostname != NULL) {
-		err = 0;
-	} else {
+	if (hostname == NULL) {
 		/*
 		 * IP address must be logged instead of (maybe faked) hostname
 		 * in case of an authentication failure.
 		 */
 		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
-		if (err != 0)
+		if (err == 0) {
+			hostname = hostbuf;
+		} else {
+			hostname = "<not-socket>";
 			gflog_error(GFARM_MSG_1003276,
 			    "unable to convert peer address to string: %s",
 			    strerror(err));
+		}
 	}
-	if (err == 0)
-		gflog_notice(GFARM_MSG_UNFIXED,
-		    "(%s@%s%s%s) disconnected",
-		    peer->parent_peer != NULL ? "@" : "",
-		    peer->parent_peer != NULL ?
-		    peer_get_hostname(peer->parent_peer) : "",
-		    username != NULL ? username : "<unauthorized>",
-		    hostname != NULL ? hostname : hostbuf);
+	gflog_notice(GFARM_MSG_UNFIXED,
+	    "(%s@%s%s%s) disconnected",
+	    username != NULL ? username : "<unauthorized>", hostname,
+	    peer->parent_peer != NULL ? "@" : "",
+	    peer->parent_peer != NULL ?
+	    peer_get_hostname(peer->parent_peer) : "");
 
 	peer_unset_pending_new_generation(peer);
 
