@@ -4078,10 +4078,10 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 	if (auth_method == GFARM_AUTH_METHOD_GSI) {
 		e = gfarm_sockopt_set_option(client_fd, "tcp_nodelay");
 		if (e == GFARM_ERR_NO_ERROR)
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			gflog_debug(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
 			    "specified for performance in GSI");
 		else
-			gflog_info(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
+			gflog_debug(GFARM_MSG_UNFIXED, "tcp_nodelay option is "
 			    "specified, but fails: %s", gfarm_error_string(e));
 	}
 
