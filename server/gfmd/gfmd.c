@@ -864,10 +864,10 @@ peer_authorize(struct peer *peer)
 	e = gfarm_sockopt_set_option(
 	    gfp_xdr_fd(peer_get_conn(peer)), "tcp_nodelay");
 	if (e == GFARM_ERR_NO_ERROR)
-		gflog_info(GFARM_MSG_1003395, "tcp_nodelay option is "
+		gflog_debug(GFARM_MSG_1003395, "tcp_nodelay option is "
 		    "specified for performance reason");
 	else
-		gflog_info(GFARM_MSG_1003396, "tcp_nodelay option is "
+		gflog_debug(GFARM_MSG_1003396, "tcp_nodelay option is "
 		    "specified, but fails: %s", gfarm_error_string(e));
 
 	rv = getpeername(gfp_xdr_fd(peer_get_conn(peer)), &addr, &addrlen);

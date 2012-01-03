@@ -445,10 +445,10 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 			e = gfarm_sockopt_set_option(
 			    gfp_xdr_fd(gfs_server->conn), "tcp_nodelay");
 			if (e == GFARM_ERR_NO_ERROR)
-				gflog_info(GFARM_MSG_1003373, "tcp_nodelay "
+				gflog_debug(GFARM_MSG_1003373, "tcp_nodelay "
 				    "is specified for performance in GSI");
 			else
-				gflog_info(GFARM_MSG_1003374, "tcp_nodelay "
+				gflog_debug(GFARM_MSG_1003374, "tcp_nodelay "
 				    "is specified, but fails: %s",
 				    gfarm_error_string(e));
 		}
@@ -665,10 +665,10 @@ gfs_client_connect_end_auth(void *closure)
 			e = gfarm_sockopt_set_option(
 			    gfp_xdr_fd(state->gfs_server->conn), "tcp_nodelay");
 			if (e == GFARM_ERR_NO_ERROR)
-				gflog_info(GFARM_MSG_1003375, "tcp_nodelay "
+				gflog_debug(GFARM_MSG_1003375, "tcp_nodelay "
 				    "is specified for performance in GSI");
 			else
-				gflog_info(GFARM_MSG_1003376, "tcp_nodelay "
+				gflog_debug(GFARM_MSG_1003376, "tcp_nodelay "
 				    "is specified, but fails: %s",
 				    gfarm_error_string(e));
 		}
