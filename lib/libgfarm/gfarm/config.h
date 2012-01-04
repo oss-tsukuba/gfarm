@@ -97,8 +97,6 @@ void gfarm_set_metadb_server_force_slave(int);
 extern struct gfs_file *gf_stdout, *gf_stderr;
 
 /* miscellaneous */
-extern int gfarm_schedule_cache_timeout;
-extern gfarm_int64_t gfarm_minimum_free_disk_space;
 extern int gfarm_network_receive_timeout;
 extern int gfarm_file_trace;
 
