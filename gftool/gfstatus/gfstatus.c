@@ -79,9 +79,12 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "P:?"))
+	while ((c = getopt(argc, argv, "dP:?"))
 	    != -1) {
 		switch (c) {
+		case 'd':
+			gflog_set_priority_level(LOG_DEBUG);
+			break;
 		case 'P':
 			path = optarg;
 			break;
