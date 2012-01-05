@@ -2,11 +2,6 @@
  * $Id$
  */
 
-
-/*
- * $Id$
- */
-
 #include "gfperf-lib.h"
 #include <sys/stat.h>
 #include <dirent.h>
@@ -173,7 +168,7 @@ parse_opt(int argc, char *argv[])
 		{0, 0, 0, 0}
 	};
 #endif
-	if (strcmp(argv[0], PARALLEL_COMMAND) == 0)
+	if (strstr(argv[0], PARALLEL_COMMAND) != NULL)
 		parallel_flag = 1;
 
 	while (1) {
