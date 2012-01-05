@@ -231,7 +231,8 @@ gfs_pio_failover(GFS_File gf)
 	port = gfm_client_port(gfm_server);
 	fc = gfm_client_connection_failover_count(gfm_server);
 	gfl = gfm_client_connection_detach_file_list(gfm_server);
-	gfm_client_connection_free(gfm_server);
+	/* force to create new connection in next connection acquirement. */
+	gfm_client_purge_from_cache(gfm_server);
 
 	for (i = 0; i < NUM_FAILOVER_RETRY; ++i) {
 		/* close fd without accessing to gfmd from client
