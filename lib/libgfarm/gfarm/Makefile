@@ -99,11 +99,7 @@ SRCS = \
 	$(globus_srcs) \
 	$(optional_srcs)
 
-#	gfs_pio_global.c \
-#	gfs_pio_misc.c \
-#	gfs_exec.c \
-
-#	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
+#	$(ldap_srcs) $(postgresql_srcs)
 
 OBJS = \
 	crc32.lo \
@@ -182,11 +178,7 @@ OBJS = \
 	$(globus_objs) \
 	$(optional_objs)
 
-#	gfs_pio_global.lo \
-#	gfs_pio_misc.lo \
-#	gfs_exec.lo \
-
-#	$(ldap_srcs) $(postgresql_srcs) $(globus_srcs)
+#	$(ldap_objs) $(postgresql_objs)
 
 CFLAGS = $(pthread_includes) \
 	$(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) -I$(srcdir) \
@@ -226,13 +218,10 @@ gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h
 gfs_dirplusxattr.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h gfs_dirplusxattr.h
 gfs_dircache.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h config.h gfs_dir.h gfs_dircache.h gfs_attrplus.h
 gfs_attrplus.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h gfs_attrplus.h
-gfs_exec.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h
 gfs_io.lo: gfs_io.h
 gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h liberror.h gfs_proto.h gfm_client.h gfs_proto.h gfs_io.h gfs_file_list.h gfs_pio.h config.h
-gfs_pio_global.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_pio.h
 gfs_pio_local.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_pio.h
-gfs_pio_misc.lo: gfs_proto.h gfs_misc.h
 gfs_pio_remote.lo: $(GFUTIL_SRCDIR)/queue.h host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
 gfs_pio_section.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_file_list.h gfs_failover.h
 gfs_pio_failover.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfm_client.h gfs_client.h gfs_io.h gfs_pio.h gfs_misc.h filesystem.h gfs_file_list.h gfs_failover.h
