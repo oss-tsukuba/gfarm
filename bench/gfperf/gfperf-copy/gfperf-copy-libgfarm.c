@@ -16,6 +16,7 @@
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 #include <openssl/evp.h>
+#include "queue.h"
 #include "gfs_pio.h"
 #include "host.h"
 
