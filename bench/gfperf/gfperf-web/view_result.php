@@ -161,6 +161,55 @@ td.value {text-align: right; padding-right: 1em; }
 td.unit  {text-align: left; padding-right: 1em; }
 tr.gray {background-color: whitesmoke; }
 </style>
+<script type="text/javascript">
+<!--
+function match_keys(target, keys) {
+	var i;
+	for (i = 0; i < keys.length; i++) {
+		k = keys[i];
+		if ( target.indexOf(k) < 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+function filter() {
+	var i;
+	var keys;
+	var table;
+	var table_elements;
+	var str;
+	var tr;
+	var r;
+	var count;
+	var obj;
+	var length;
+	obj = document.getElementById("keywords");
+	keys = obj.value.split(" ");
+	table = document.getElementById("result_table");
+	table_elements = table.childNodes[0];
+	length = table_elements.childNodes.length;
+	count = 0;
+	for (i = 1; i < length; i++) {
+		tr = table_elements.childNodes[i];
+		str = tr.childNodes[0].childNodes[0].innerHTML;
+		r = match_keys(str, keys);
+		if (r) {
+			tr.style.display = "";
+			if (count % 2 == 0) {
+				tr.className = "";
+			} else {
+				tr.className = "gray";
+			}
+			count++;
+		} else {
+			tr.style.display = "none";
+		}
+	}
+}
+// -->
+</script>
 </head>
 <body>
 <div class="menu">
@@ -170,10 +219,11 @@ tr.gray {background-color: whitesmoke; }
 	<?php
         $pt = strftime('%Y/%m/%d %H:%M:%S',$date);
 	?>
-	<h1>Test Results(<?php echo $pt;?>)</t1>
-	<table>
-	<tr><th>key</th><th>value</th><th>unit</th><th>average</th><th>unit</th><th>stddev</th><th>unit</th><tr>
-	<?php
+	<h1>Test Results(<?php echo $pt;?>)</h1>
+	<br>
+	keywords:<input type=text size=45 id="keywords" onkeyup="filter()">
+	<br>
+	<table id="result_table"><tr><th>key</th><th>value</th><th>unit</th><th>average</th><th>unit</th><th>stddev</th><th>unit</th></tr><?php
 	$i=0;
 	foreach ($data as $d)
 {
@@ -198,10 +248,9 @@ tr.gray {background-color: whitesmoke; }
 	echo $d[6];
 	echo "</td><td class=\"unit\">";
 	echo $d[7];
-	echo "</td></tr>\n";
+	echo "</td></tr>";
 	$i += 1;
 }
-	?>
-	</table>
+	?></table>
 </body>
 </html>
