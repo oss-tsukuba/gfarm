@@ -205,9 +205,8 @@ do_sequential_write_posix(const char *filename, char *buf)
 		}
 		size += r;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -216,7 +215,7 @@ do_sequential_write_posix(const char *filename, char *buf)
 	f = (float)ret / t;
 	printf("io/gfarm2fs/%s/sequential/startup/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
@@ -224,7 +223,7 @@ do_sequential_write_posix(const char *filename, char *buf)
 	f = (float)(size-ret) / t;
 	printf("io/gfarm2fs/%s/sequential/average/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	close(fd);
@@ -284,9 +283,8 @@ do_random_write_posix(const char *filename, char *buf)
 		}
 		size += r;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -295,7 +293,7 @@ do_random_write_posix(const char *filename, char *buf)
 	f = (float)r / t;
 	printf("io/gfarm2fs/%s/random/startup/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
@@ -303,7 +301,7 @@ do_random_write_posix(const char *filename, char *buf)
 	f = (float)size / t;
 	printf("io/gfarm2fs/%s/random/average/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	close(fd);
@@ -417,10 +415,8 @@ do_random_write_gfarm(const char *filename, char *buf)
 			break;
 		size += ret;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
-
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -488,10 +484,8 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 			break;
 		size += ret;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
-
 	}
 	gettimeofday(&end_time, NULL);
 

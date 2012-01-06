@@ -113,7 +113,8 @@ find_root_from_url(const char *url)
 {
 	int i = 0;
 	const char *p = url;
-	if (*p == '/') return url;
+	if (*p == '/')
+		return (url);
 	while (*p != '\0') {
 		if (*p == '/') {
 			i++;

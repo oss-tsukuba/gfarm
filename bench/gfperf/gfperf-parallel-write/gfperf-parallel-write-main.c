@@ -210,9 +210,8 @@ do_sequential_write_posix(const char *filename, char *buf)
 		}
 		size += r;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -222,7 +221,7 @@ do_sequential_write_posix(const char *filename, char *buf)
 	printf("parallel/%s/io/gfarm2fs/%s/sequential/average/%s/%s/%s/%s"
 	       " = %.02f bytes/sec\n",
 	       group_name,
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	close(fd);
@@ -272,9 +271,8 @@ do_random_write_posix(const char *filename, char *buf)
 		}
 		size += r;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -284,7 +282,7 @@ do_random_write_posix(const char *filename, char *buf)
 	printf("parallel/%s/io/gfarm2fs/%s/random/average/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
 	       group_name,
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
 
 	close(fd);
@@ -388,10 +386,8 @@ do_random_write_gfarm(const char *filename, char *buf)
 			break;
 		size += ret;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
-
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -401,7 +397,7 @@ do_random_write_gfarm(const char *filename, char *buf)
 	printf("parallel/%s/io/libgfarm/%s/random/average/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
 	       group_name,
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
 	       gfsd_hostname, f);
 
@@ -442,10 +438,8 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 			break;
 		size += ret;
 
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
-
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -455,7 +449,7 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 	printf("parallel/%s/io/libgfarm/%s/sequential/average/%s/%s/%s/%s"
 	       " = %.02f bytes/sec\n",
 	       group_name,
-	       (overwrite_flag)?"overwrite":"write",
+	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
 	       gfsd_hostname, f);
 

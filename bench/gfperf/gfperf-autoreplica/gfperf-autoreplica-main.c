@@ -305,7 +305,7 @@ do_test_posix(struct filenames *p)
 
 	sub_timeval(&end_time, &start_time, &exec_time);
 
-	f = (float)(filesize * p->n) / 
+	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
 
 	if (parallel_flag)
@@ -354,7 +354,7 @@ do_test_gfarm(struct filenames *p)
 	del_ncopy();
 	sub_timeval(&end_time, &start_time, &exec_time);
 
-	f = (float)(filesize * p->n) / 
+	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
 
 	if (parallel_flag)

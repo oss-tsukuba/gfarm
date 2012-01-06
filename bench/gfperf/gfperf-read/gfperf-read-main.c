@@ -192,9 +192,8 @@ do_sequential_read_posix(const char *filename, char *buf)
 	size = 0;
 	while ((r = read(fd, buf, bufsize)) > 0) {
 		size += r;
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -268,9 +267,8 @@ do_random_read_posix(const char *filename, char *buf)
 			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 		size += r;
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -392,9 +390,8 @@ do_random_read_gfarm(const char *filename, char *buf)
 		if (ret == 0)
 			break;
 		size += ret;
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
@@ -453,9 +450,8 @@ do_sequential_read_gfarm(const char *filename, char *buf)
 		if (ret == 0)
 			break;
 		size += ret;
-		if (stop_flag) {
+		if (stop_flag)
 			break;
-		}
 	}
 	gettimeofday(&end_time, NULL);
 
