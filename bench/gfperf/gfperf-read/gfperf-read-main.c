@@ -401,7 +401,7 @@ do_random_read_gfarm(const char *filename, char *buf)
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
-	printf("io/libgfarm/read/single/random/startup/%s/%s/%s/%s = "
+	printf("io/libgfarm/read/random/startup/%s/%s/%s/%s = "
 	       "%.02f bytes/sec\n",
 	       filesize_string, bufsize_string, hostname,
 	       gfsd_hostname, f);
