@@ -2419,6 +2419,7 @@ gfs_display_timers(void)
 	gfs_pio_section_display_timers();
 	gfs_stat_display_timers();
 	gfs_unlink_display_timers();
+	gfs_xattr_display_timers();
 }
 
 #ifdef STRTOKEN_TEST
