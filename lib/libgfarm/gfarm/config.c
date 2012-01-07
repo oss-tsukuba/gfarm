@@ -2416,9 +2416,7 @@ void
 gfs_display_timers(void)
 {
 	gfs_pio_display_timers();
-#if 0
 	gfs_pio_section_display_timers();
-#endif
 	gfs_stat_display_timers();
 	gfs_unlink_display_timers();
 }

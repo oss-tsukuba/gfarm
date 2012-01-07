@@ -1034,11 +1034,11 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 	return (NULL);
 }
 
+#endif /* not yet in gfarm v2 */
+
 void
 gfs_pio_section_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section : %f sec",
 		gfs_pio_set_view_section_time);
 }
-
-#endif /* not yet in gfarm v2 */
