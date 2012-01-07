@@ -95,8 +95,8 @@ gfarm_config_read(void)
 	gfarm_error_t e;
 	char *home;
 	FILE *config;
-	int lineno, user_config_errno, rc_need_free;;
-	static char gfarm_client_rc[] = GFARM_CLIENT_RC;
+	int lineno, user_config_errno, rc_need_free;
+	char client_rc[] = GFARM_CLIENT_RC;
 	char *rc;
 
 	rc_need_free = 0;
@@ -108,15 +108,14 @@ gfarm_config_read(void)
 		 */
 		home = gfarm_get_local_homedir();
 
-		GFARM_MALLOC_ARRAY(rc,
-		    strlen(home) + 1 + sizeof(gfarm_client_rc));
+		GFARM_MALLOC_ARRAY(rc, strlen(home) + 1 + sizeof(client_rc));
 		if (rc == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1000980,
-				"allocation of array for 'gfarm_client_rc' failed: %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return (GFARM_ERR_NO_MEMORY);
+			    "gfarm_config_read: %s", gfarm_error_string(e));
+			return (e);
 		}
-		sprintf(rc, "%s/%s", home, gfarm_client_rc);
+		sprintf(rc, "%s/%s", home, client_rc);
 		rc_need_free = 1;
 	}
 	gfarm_init_config();
@@ -138,15 +137,15 @@ gfarm_config_read(void)
 
 	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
 		if (user_config_errno != 0) {
+			e = GFARM_ERRMSG_CANNOT_OPEN_CONFIG;
 			gflog_debug(GFARM_MSG_1000981,
-				"open operation on config file (%s) failed",
-				gfarm_config_file);
-			return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
+			    "%s: %s", gfarm_config_file, gfarm_error_string(e));
+			return (e);
 		}
 	} else {
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000016, "%s: %d: %s",
+			gflog_error(GFARM_MSG_1000016, "%s: line %d: %s",
 			    gfarm_config_file, lineno, gfarm_error_string(e));
 			return (e);
 		}
