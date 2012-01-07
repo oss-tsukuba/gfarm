@@ -96,7 +96,7 @@ gfarm_config_read(void)
 	char *home;
 	FILE *config;
 	int lineno, user_config_errno, rc_need_free;
-	char client_rc[] = GFARM_CLIENT_RC;
+	static const char gfarm_client_rc[] = GFARM_CLIENT_RC;
 	char *rc;
 
 	rc_need_free = 0;
@@ -108,14 +108,15 @@ gfarm_config_read(void)
 		 */
 		home = gfarm_get_local_homedir();
 
-		GFARM_MALLOC_ARRAY(rc, strlen(home) + 1 + sizeof(client_rc));
+		GFARM_MALLOC_ARRAY(rc,
+		    strlen(home) + 1 + sizeof(gfarm_client_rc));
 		if (rc == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1000980,
 			    "gfarm_config_read: %s", gfarm_error_string(e));
 			return (e);
 		}
-		sprintf(rc, "%s/%s", home, client_rc);
+		sprintf(rc, "%s/%s", home, gfarm_client_rc);
 		rc_need_free = 1;
 	}
 	gfarm_init_config();
