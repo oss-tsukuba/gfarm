@@ -2855,29 +2855,19 @@ gfm_client_switch_back_channel(struct gfm_connection *gfm_server)
 }
 #endif
 
-static struct protoent *gfm_tcp_proto = NULL;
-
-static void
-gfm_tcp_proto_initialize(void)
-{
-	gfm_tcp_proto = getprotobyname("tcp");
-}
-
 static gfarm_error_t
 setsockopt_to_async_channel(struct gfm_connection *gfm_server, const char *diag)
 {
-	int v = 1;
-	static pthread_once_t gfm_tcp_proto_initialized = PTHREAD_ONCE_INIT;
+	gfarm_error_t e;
 
-	pthread_once(&gfm_tcp_proto_initialized, gfm_tcp_proto_initialize);
-	if (gfm_tcp_proto == NULL) {
-		gflog_error(GFARM_MSG_1002573,
-		    "getprotobyname(\"tcp\") failed, slower %s", diag);
-	} else if (setsockopt(gfp_xdr_fd(gfm_server->conn),
-	    gfm_tcp_proto->p_proto, TCP_NODELAY, &v, sizeof(v)) == -1) {
-		gflog_error_errno(GFARM_MSG_1002574,
-		    "setting TCP_NODELAY failed, slower %s", diag);
-	}
+	e = gfarm_sockopt_set_option(
+	    gfp_xdr_fd(gfm_server->conn), "tcp_nodelay");
+	if (e == GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED, "tcp_nodelay is specified "
+		    "for async channel %s", diag);
+	else
+		gflog_error(GFARM_MSG_1002574,
+		    "setting TCP_NODELAY for %s failed, slow", diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
