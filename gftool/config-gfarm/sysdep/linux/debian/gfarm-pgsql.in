@@ -62,7 +62,7 @@ case "$1" in
 	if [ $RETVAL -eq 3 ]; then
 		RETVAL=0
 	else
-		call_pg_ctl stop
+		call_pg_ctl stop > /dev/null
 		RETVAL=$?
 	fi
 	echo "."
@@ -72,7 +72,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   restart)
-	call_pg_ctl restart
+	call_pg_ctl restart > /dev/null
 	RETVAL=$?
 	;;
   force-reload)
