@@ -43,7 +43,16 @@ Regarding the config-gfarm, see SETUP document.
 The metadata journal file is stored in /var/gfarm-metadata/journal
 directory by default.  The location can be changed by the -j option.
 If there is an existing metadata server configuration, use
-config-gfarm-update with the -r option to update the configuration.
+config-gfarm-update with the -r option to update the configuration
+after stopping the gfmd.  For config-gfarm-update, the backend
+PostgreSQL should be running.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+install newer version of Gfarm
+# /etc/init.d/gfmd stop
+# config-gfarm-update -r --update
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
 For now, the PostgreSQL backend database is only supported for the
 replicated metadata servers.
 <p>

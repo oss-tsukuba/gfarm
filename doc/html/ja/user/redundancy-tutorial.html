@@ -43,7 +43,13 @@ config-gfarmに関しては、SETUPドキュメントを参照してください。
 <UL><LI>補足1<BR>
 メタデータ冗長化に使用するジャーナルファイルは、デフォルトでは/var/gfarm-metadata/journalディレクトリに保存されます。変更する場合は、config-gfarmに-jオプションを指定します。</LI>
 <LI>補足2<BR>
-既存のメタデータサーバに対しメタデータ冗長化を有効にするためには-rオプションをつけてconfig-gfarm-updateを実行します。</LI>
+既存のメタデータサーバに対しメタデータ冗長化を有効にするためには、gfmdを停止しPostgreSQLを起動したままの状態で、-rオプションをつけてconfig-gfarm-updateを実行します。</LI>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+Gfarmの新しいバージョンをインストール
+# /etc/init.d/gfmd stop
+# config-gfarm-update -r --update
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
 <LI>補足3<BR>
 メタデータ冗長化を有効にするためには、バックエンド・データベースとしてPostgreSQLを利用する必要があります。</LI>
 </UL>
