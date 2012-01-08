@@ -25,6 +25,7 @@ gfarm_error_t gfarm_param_get_long_by_name_addr(struct gfarm_param_config *,
 	int, char *, struct sockaddr *, long *);
 gfarm_error_t gfarm_param_get_long(struct gfarm_param_config *, int, long *);
 
+#if 0 /* not yet in gfarm v2 */
 /*
  * netparam
  */
@@ -43,3 +44,4 @@ extern struct gfarm_netparam_info gfarm_netparam_file_sync_rate;
 extern struct gfarm_netparam_info gfarm_netparam_file_sync_stripe;
 extern struct gfarm_netparam_info gfarm_netparam_send_stripe_sync;
 extern struct gfarm_netparam_info gfarm_netparam_recv_stripe_sync;
+#endif

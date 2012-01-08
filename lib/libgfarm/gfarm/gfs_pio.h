@@ -3,7 +3,7 @@
  *
  * This defines internal structure of gfs_pio module.
  *
- * Only gfs_pio_{global,section}.c, gfs_pio_{local,remote}.c and gfs_pio.c
+ * Only gfs_pio_section.c, gfs_pio_{local,remote}.c, gfs_pio.c and context.c
  * are allowed to include this header file.
  * Every other modules shouldn't include this.
  */

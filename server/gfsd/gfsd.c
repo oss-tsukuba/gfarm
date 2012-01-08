@@ -51,6 +51,7 @@
 #include "hash.h"
 #include "timer.h"
 
+#include "context.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
@@ -287,8 +288,8 @@ connect_gfm_server(int do_retry)
 	unsigned int sleep_interval = 10;	/* 10 sec */
 	unsigned int sleep_max_interval = 640;	/* about 10 min */
 
-	e = gfm_client_connect(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, GFSD_USERNAME,
+	e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
+	    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
 	    &gfm_server, listen_addrname);
 	if (e != GFARM_ERR_NO_ERROR && !do_retry) {
 		gflog_error(GFARM_MSG_1003330,
@@ -301,12 +302,12 @@ connect_gfm_server(int do_retry)
 		if (sleep_interval < sleep_max_interval)
 			gflog_error(GFARM_MSG_1000550,
 			    "connecting to gfmd at %s:%d failed, "
-			    "sleep %d sec: %s", gfarm_metadb_server_name,
-			    gfarm_metadb_server_port, sleep_interval,
+			    "sleep %d sec: %s", gfarm_ctxp->metadb_server_name,
+			    gfarm_ctxp->metadb_server_port, sleep_interval,
 			    gfarm_error_string(e));
 		sleep(sleep_interval);
-		e = gfm_client_connect(gfarm_metadb_server_name,
-		    gfarm_metadb_server_port, GFSD_USERNAME,
+		e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
 		    &gfm_server, listen_addrname);
 		if (sleep_interval < sleep_max_interval)
 			sleep_interval *= 2;
@@ -4028,9 +4029,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (config_file != NULL)
-		gfarm_config_set_filename(config_file);
-	e = gfarm_server_initialize();
+	e = gfarm_server_initialize(config_file);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
 		    gfarm_error_string(e));

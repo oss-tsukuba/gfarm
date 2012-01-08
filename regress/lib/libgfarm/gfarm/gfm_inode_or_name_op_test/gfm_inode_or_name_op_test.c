@@ -14,7 +14,8 @@
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
-#include "config.h"
+
+#include "context.h"
 #include "gfm_client.h"
 #include "lookup.h"
 
@@ -541,8 +542,8 @@ main(int argc, char **argv)
 		free(path);
 		break;
 	case OP_SHOW_SVR:
-		printf("%s:%d\n", gfarm_metadb_server_name,
-		    gfarm_metadb_server_port);
+		printf("%s:%d\n", gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port);
 		e = GFARM_ERR_NO_ERROR;
 		break;
 	default:

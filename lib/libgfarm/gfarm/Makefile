@@ -23,6 +23,7 @@ GLOBUS_OBJS = auth_client_gsi.lo auth_common_gsi.lo \
 GLOBUS_CFLAGS = -I$(GFSL_SRCDIR) $(globus_includes)
 
 SRCS = \
+	context.c \
 	crc32.c \
 	liberror.c \
 	hostspec.c \
@@ -102,6 +103,7 @@ SRCS = \
 #	$(ldap_srcs) $(postgresql_srcs)
 
 OBJS = \
+	context.lo \
 	crc32.lo \
 	liberror.lo \
 	hostspec.lo \

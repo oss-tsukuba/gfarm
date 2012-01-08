@@ -22,6 +22,7 @@
 
 #include "gfarm_secure_session.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -53,7 +54,7 @@ gfarm_iobuffer_read_session_x(struct gfarm_iobuffer *b, void *cookie, int fd,
 {
 	struct io_gfsl *io = cookie;
 	int rv;
-	int msec = do_timeout ? gfarm_network_receive_timeout * 1000
+	int msec = do_timeout ? gfarm_ctxp->network_receive_timeout * 1000
     	    : GFARM_GSS_TIMEOUT_INFINITE;
 
 	if (io->buffer == NULL) {

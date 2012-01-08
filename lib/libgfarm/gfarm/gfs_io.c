@@ -8,8 +8,8 @@
 
 #include "gfutil.h"
 
+//#include "context.h"
 #include "gfm_client.h"
-#include "config.h"
 #include "lookup.h"
 #include "gfs_io.h"
 

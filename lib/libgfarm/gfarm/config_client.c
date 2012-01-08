@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "gfutil.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
@@ -63,12 +64,13 @@ gfarm_config_set_default_metadb_server(void)
 	struct gfarm_filesystem *fs;
 
 	if (gfarm_filesystem_get(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port) != NULL)
+	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port)
+	    != NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	fs = gfarm_filesystem_get_default();
-	if ((e = gfarm_metadb_server_new(&m, gfarm_metadb_server_name,
-	    gfarm_metadb_server_port))
+	if ((e = gfarm_metadb_server_new(&m, gfarm_ctxp->metadb_server_name,
+	    gfarm_ctxp->metadb_server_port))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002556,
 		    "%s", gfarm_error_string(e));
@@ -97,7 +99,7 @@ gfarm_config_read(void)
 	FILE *config;
 	int lineno, user_config_errno, rc_need_free;
 	static const char gfarm_client_rc[] = GFARM_CLIENT_RC;
-	char *rc;
+	char *rc, *config_file = gfarm_config_get_filename();
 
 	rc_need_free = 0;
 	rc = getenv("GFARM_CONFIG_FILE");
@@ -136,18 +138,18 @@ gfarm_config_read(void)
 	if (rc_need_free)
 		free(rc);
 
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
+	if ((config = fopen(config_file, "r")) == NULL) {
 		if (user_config_errno != 0) {
 			e = GFARM_ERRMSG_CANNOT_OPEN_CONFIG;
 			gflog_debug(GFARM_MSG_1000981,
-			    "%s: %s", gfarm_config_file, gfarm_error_string(e));
+			    "%s: %s", config_file, gfarm_error_string(e));
 			return (e);
 		}
 	} else {
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000016, "%s: line %d: %s",
-			    gfarm_config_file, lineno, gfarm_error_string(e));
+			    config_file, lineno, gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -159,8 +161,6 @@ gfarm_config_read(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-int gf_on_demand_replication;
-
 static void
 gfarm_parse_env_client(void)
 {
@@ -169,7 +169,7 @@ gfarm_parse_env_client(void)
 	if ((env = getenv("GFARM_FLAGS")) != NULL) {
 		for (; *env; env++) {
 			switch (*env) {
-			case 'r': gf_on_demand_replication = 1; break;
+			case 'r': gfarm_ctxp->on_demand_replication = 1; break;
 			}
 		}
 	}
@@ -191,7 +191,15 @@ gfarm_initialize(int *argcp, char ***argvp)
 	int saved_auth_verb;
 #endif
 
+	e = gfarm_context_init();
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_context_init failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
 	gflog_initialize();
+	gfarm_liberror_init();
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -224,7 +232,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000017,
 		    "connecting to gfmd at %s:%d: %s\n",
-		    gfarm_metadb_server_name, gfarm_metadb_server_port,
+		    gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port,
 		    gfarm_error_string(e));
 		return (e);
 	}

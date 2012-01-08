@@ -35,6 +35,9 @@ struct gfarm_lru_cache {
 		0 \
 	}
 
+void gfarm_lru_entry_init(struct gfarm_lru_entry *);
+void gfarm_lru_cache_init(struct gfarm_lru_cache *);
+
 void gfarm_lru_cache_link_entry(struct gfarm_lru_cache *,
 	struct gfarm_lru_entry *);
 void gfarm_lru_cache_access_entry(struct gfarm_lru_cache *,

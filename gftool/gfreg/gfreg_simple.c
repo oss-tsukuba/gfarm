@@ -16,9 +16,10 @@
 
 #include "gfutil.h"
 #include "timer.h"
+
+#include "context.h"
 #include "gfs_profile.h"
 #include "host.h"
-#include "config.h"
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 #include <openssl/evp.h>

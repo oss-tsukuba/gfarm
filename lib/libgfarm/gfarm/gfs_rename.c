@@ -4,8 +4,8 @@
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
+#include "context.h"
 #include "gfm_client.h"
-#include "config.h"
 #include "lookup.h"
 
 struct gfm_rename_closure {
@@ -38,7 +38,7 @@ gfm_rename_result(struct gfm_connection *gfm_server, void *closure)
 		    "rename result: %s",
 		    gfarm_error_string(e));
 	} else {
-		if (gfarm_file_trace) {
+		if (gfarm_ctxp->file_trace) {
 			gfm_client_source_port(gfm_server, &src_port);
 			gflog_trace(GFARM_MSG_1003271,
 			    "%s/%s/%s/%d/MOVE/%s/%d/////\"%s\"///\"%s\"",

@@ -140,6 +140,8 @@ enum gfarm_errmsg {
 	GFARM_ERRMSG_END
 };
 
+void gfarm_liberror_init(void);
+
 /*
  * Dynamically assigned error code for foreign systems (e.g. UNIX, LDAP, ...).
  * Compatibility shouldn't be assumed,

@@ -6,8 +6,8 @@
 
 #include "gfutil.h"
 
+#include "context.h"
 #include "gfm_client.h"
-#include "config.h"
 #include "lookup.h"
 
 struct gfm_symlink_closure {
@@ -45,7 +45,7 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 		    "symlink result: %s", gfarm_error_string(e));
 #endif
 	} else {
-		if (gfarm_file_trace) {
+		if (gfarm_ctxp->file_trace) {
 			gfm_client_source_port(gfm_server, &source_port);
 			gflog_trace(GFARM_MSG_1003272,
 			    "%s/%s/%s/%d/SYMLINK/%s/%d/////\"%s\"///\"%s\"",

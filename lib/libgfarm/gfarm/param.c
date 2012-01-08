@@ -204,6 +204,7 @@ gfarm_param_get_long(struct gfarm_param_config *list,
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
+#if 0 /* not yet in gfarm v2 */
 /*
  * netparam
  */
@@ -350,3 +351,4 @@ gfarm_netparam_config_get_long(struct gfarm_netparam_info *info,
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif

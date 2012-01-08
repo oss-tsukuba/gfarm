@@ -10,6 +10,7 @@
 #include "gfutil.h"
 #include "hash.h"
 
+#include "context.h"
 #include "config.h"
 #include "gfs_dir.h"
 #include "gfs_dirplusxattr.h"
@@ -74,9 +75,9 @@ gfs_stat_cache_init0(struct stat_cache *cache)
 {
 	if (!cache->lifespan_is_set) {
 		/* always reflect gfarm_attr_cache_timeout */
-		cache->lifespan.tv_sec = gfarm_attr_cache_timeout /
+		cache->lifespan.tv_sec = gfarm_ctxp->attr_cache_timeout /
 		    (GFARM_SECOND_BY_MICROSEC / GFARM_MILLISEC_BY_MICROSEC);
-		cache->lifespan.tv_usec = (gfarm_attr_cache_timeout -
+		cache->lifespan.tv_usec = (gfarm_ctxp->attr_cache_timeout -
 		    cache->lifespan.tv_sec *
 		    (GFARM_SECOND_BY_MICROSEC / GFARM_MILLISEC_BY_MICROSEC)) *
 		    GFARM_MILLISEC_BY_MICROSEC;
@@ -286,7 +287,7 @@ gfs_stat_cache_enter_internal0(struct stat_cache *cache,
 	}
 	gfs_stat_cache_expire_internal0(cache, nowp);
 
-	if (cache->count >= gfarm_attr_cache_limit) {
+	if (cache->count >= gfarm_ctxp->attr_cache_limit) {
 		/* remove the head of the list (i.e. oldest entry) */
 		data = STAT_CACHE_DATA_HEAD(cache)->next;
 		data->prev->next = data->next;

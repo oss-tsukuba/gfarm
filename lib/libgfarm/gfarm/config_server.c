@@ -10,6 +10,8 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
+
+#include "context.h"
 #include "liberror.h"
 #include "auth.h"
 #include "gfpath.h"
@@ -32,18 +34,19 @@ gfarm_server_config_read(void)
 	gfarm_error_t e;
 	int lineno;
 	FILE *config;
+	char *config_file = gfarm_config_get_filename();
 
 	gfarm_init_config();
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
+	if ((config = fopen(config_file, "r")) == NULL) {
 		gflog_debug(GFARM_MSG_1000976,
 			"open operation on server config file (%s) failed",
-			gfarm_config_file);
+			config_file);
 		return (GFARM_ERRMSG_CANNOT_OPEN_CONFIG);
 	}
 	e = gfarm_config_read_file(config, &lineno);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000014, "%s: line %d: %s",
-		    gfarm_config_file, lineno, gfarm_error_string(e));
+		    config_file, lineno, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -55,12 +58,21 @@ gfarm_server_config_read(void)
 
 /* the following function is for server. */
 gfarm_error_t
-gfarm_server_initialize(void)
+gfarm_server_initialize(char *config_file)
 {
 	gfarm_error_t e;
 
+	if ((e = gfarm_context_init()) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_context_init failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
 	gflog_initialize();
+	gfarm_liberror_init();
 
+	if (config_file != NULL)
+		gfarm_config_set_filename(config_file);
 	e = gfarm_server_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1000977,
