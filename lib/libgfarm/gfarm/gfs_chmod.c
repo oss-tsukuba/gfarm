@@ -11,7 +11,6 @@
 #include "context.h"
 #include "gfs_profile.h"
 #include "gfm_client.h"
-//#include "config.h"
 #include "lookup.h"
 
 struct gfm_chmod_closure {
