@@ -144,7 +144,8 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 	switch (request) {
 	case GFM_PROTO_HOST_INFO_GET_ALL:
-		e = gfm_server_host_info_get_all(peer, xid, sizep, from_client, skip);
+		e = gfm_server_host_info_get_all(peer, xid, sizep, from_client,
+		    skip);
 		break;
 	case GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE:
 		e = gfm_server_host_info_get_by_architecture(peer, xid, sizep,
@@ -968,7 +969,6 @@ peer_authorize(struct peer *peer)
 	}
 	return (e);
 }
- 
 
 void *
 try_auth(void *arg)
