@@ -32,10 +32,7 @@ create_file_on_gfarm(const char *url, char *hostname,
 	gfarm_error_t e;
 	struct gfs_stat sb;
 
-	if (strncmp(url, "gfarm:///", 9) == 0)
-		filename = &url[8];
-	else
-		filename = url;
+	filename = url;
 
 	buf = (char *)malloc(COPY_BUF_SIZE);
 	if (buf == NULL) {

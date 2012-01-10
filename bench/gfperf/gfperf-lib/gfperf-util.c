@@ -91,10 +91,7 @@ is_dir_gfarm(char *path)
 	struct gfs_stat sb;
 	int e;
 
-	if (strncmp(path, "gfarm:///", 9) == 0)
-		e = gfs_stat(&path[8], &sb);
-	else
-		e = gfs_stat(path, &sb);
+	e = gfs_stat(path, &sb);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NOT_A_DIRECTORY);
