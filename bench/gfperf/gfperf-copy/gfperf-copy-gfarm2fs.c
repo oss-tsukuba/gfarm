@@ -38,8 +38,8 @@ do_copy() {
 				return (e);
 			}
 		}
+		gfsd_hostname_bak = gfsd_hostname;
 		if (gfsd_hostname == NULL) {
-			gfsd_hostname_bak = gfsd_hostname;
 			e = gfs_replica_info_by_name(src_filename, 0, &ri);
 			gfsd_hostname = strdup(gfs_replica_info_nth_host(ri,
 									 0));
