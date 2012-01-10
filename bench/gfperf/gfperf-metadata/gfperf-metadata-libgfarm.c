@@ -45,6 +45,9 @@ do_libgfarm_readdir()
 		c++;
 	}
 	gfs_closedir(d);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
 	gettimeofday(&end_time, NULL);
 
 	sub_timeval(&end_time, &start_time, &exec_time);
@@ -74,10 +77,16 @@ do_libgfarm_readdir()
 		e = gfs_stat_cached(filename, &st);
 		if (e == GFARM_ERR_NO_ERROR)
 			gfs_stat_free(&st);
+		else {
+			gfs_closedir(d);
+			return (e);
+		}
 		c++;
 	}
 
 	gfs_closedir(d);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	gettimeofday(&end_time, NULL);
 
 	sub_timeval(&end_time, &start_time, &exec_time);
@@ -107,6 +116,7 @@ do_libgfarm_mkdir(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "mkdir: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -114,6 +124,7 @@ do_libgfarm_mkdir(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "mkdir: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -143,6 +154,7 @@ do_libgfarm_stat(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "stat: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	gfs_stat_free(&sb);
 	set_middle(&r);
@@ -151,6 +163,7 @@ do_libgfarm_stat(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "stat: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 		gfs_stat_free(&sb);
 	}
@@ -180,6 +193,7 @@ do_libgfarm_chmod(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "chmod: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -187,6 +201,7 @@ do_libgfarm_chmod(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "stat: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -221,6 +236,7 @@ do_libgfarm_utimes(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "utimes: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -228,6 +244,7 @@ do_libgfarm_utimes(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "stat: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -263,6 +280,7 @@ do_libgfarm_rename(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "rename: %s\n",
 			gfarm_error_string(e));
+		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -270,6 +288,7 @@ do_libgfarm_rename(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "rename: %s\n",
 				gfarm_error_string(e));
+			goto err_return;
 		}
 	}
 	set_end(&r);
@@ -287,6 +306,14 @@ do_libgfarm_rename(struct directory_names *names)
 
 	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);
+
+err_return:
+	for (i = 0; i <= names->n; i++)
+		gfs_rename(tmp->names[i], names->names[i]);
+
+	free_directory_names(tmp);
+	return (e);
+
 }
 
 static
@@ -311,6 +338,7 @@ do_libgfarm_symlink(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "symlink: %s\n",
 			gfarm_error_string(e));
+			goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -318,6 +346,7 @@ do_libgfarm_symlink(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "symlink: %s\n",
 				gfarm_error_string(e));
+			goto err_return;
 		}
 	}
 	set_end(&r);
@@ -336,6 +365,7 @@ do_libgfarm_symlink(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "readlink: %s\n",
 			gfarm_error_string(e));
+			goto err_return;
 	}
 	free(read);
 	set_middle(&r);
@@ -344,6 +374,7 @@ do_libgfarm_symlink(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "readlink: %s\n",
 				gfarm_error_string(e));
+			goto err_return;
 		}
 		free(read);
 	}
@@ -362,6 +393,13 @@ do_libgfarm_symlink(struct directory_names *names)
 
 	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);
+
+err_return:
+	for (i = 0; i <= names->n; i++)
+		gfs_unlink(tmp->names[i]);
+
+	free_directory_names(tmp);
+	return (e);
 }
 
 static
@@ -378,6 +416,7 @@ do_libgfarm_rmdir(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "rmdir: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -385,6 +424,7 @@ do_libgfarm_rmdir(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "rmdir: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -416,6 +456,7 @@ do_libgfarm_setxattr(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "setxattr: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -424,6 +465,7 @@ do_libgfarm_setxattr(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "setxattr: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -455,6 +497,7 @@ do_libgfarm_getxattr(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "getxattr: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -463,6 +506,7 @@ do_libgfarm_getxattr(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "getxattr: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -491,6 +535,7 @@ do_libgfarm_removexattr(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "removexattr: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -498,6 +543,7 @@ do_libgfarm_removexattr(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "removexattr: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -527,6 +573,8 @@ do_libgfarm_create(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "create: %s\n",
 			gfarm_error_string(e));
+		gfs_pio_close(f);
+		return (e);
 	}
 	gfs_pio_close(f);
 	set_middle(&r);
@@ -536,6 +584,8 @@ do_libgfarm_create(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "create: %s\n",
 				gfarm_error_string(e));
+			gfs_pio_close(f);
+			return (e);
 		}
 		gfs_pio_close(f);
 	}
@@ -565,6 +615,7 @@ do_libgfarm_unlink(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "unlink: %s\n",
 			gfarm_error_string(e));
+		return (e);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -572,6 +623,7 @@ do_libgfarm_unlink(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "unlink: %s\n",
 				gfarm_error_string(e));
+			return (e);
 		}
 	}
 	set_end(&r);
@@ -586,23 +638,77 @@ do_libgfarm_unlink(struct directory_names *names)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static
 gfarm_error_t
-do_libgfarm_test(struct directory_names *names)
+cleanup_files_libgfarm(struct directory_names *files)
 {
+	int i;
 
-	do_libgfarm_create(names);
-	do_libgfarm_readdir();
-	do_libgfarm_unlink(names);
-	do_libgfarm_mkdir(names);
-	do_libgfarm_stat(names);
-	do_libgfarm_chmod(names);
-	do_libgfarm_utimes(names);
-	do_libgfarm_rename(names);
-	do_libgfarm_symlink(names);
-	do_libgfarm_setxattr(names);
-	do_libgfarm_getxattr(names);
-	do_libgfarm_removexattr(names);
-	do_libgfarm_rmdir(names);
+	for (i = 0; i <= files->n; i++)
+		gfs_unlink(files->names[i]);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static
+gfarm_error_t
+cleanup_dirs_libgfarm(struct directory_names *dirs)
+{
+	int i;
+
+	for (i = 0; i <= dirs->n; i++)
+		gfs_rmdir(dirs->names[i]);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+do_libgfarm_test(struct directory_names *dirs, struct directory_names *files)
+{
+	gfarm_error_t e;
+
+	cleanup_files_libgfarm(files);
+	e = do_libgfarm_create(files);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_readdir();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_unlink(files);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	cleanup_dirs_libgfarm(dirs);
+	e = do_libgfarm_mkdir(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_stat(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_chmod(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_utimes(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_rename(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_symlink(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_setxattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_getxattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_removexattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_libgfarm_rmdir(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	return (GFARM_ERR_NO_ERROR);
 }

@@ -25,7 +25,7 @@ do_posix_readdir()
 {
 	DIR *d;
 	struct dirent *de;
-	int c;
+	int c, e;
 	float f;
 	char filename[1024];
 	struct timeval start_time, end_time, exec_time;
@@ -66,7 +66,9 @@ do_posix_readdir()
 		c++;
 		snprintf(filename, sizeof(filename),
 			"%s/%s", testdir, de->d_name);
-		stat(filename, &st);
+		e = stat(filename, &st);
+		if (e < 0)
+			return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
 	closedir(d);
@@ -97,6 +99,7 @@ do_posix_mkdir(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "mkdir: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -104,6 +107,7 @@ do_posix_mkdir(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "mkdir: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -132,6 +136,7 @@ do_posix_stat(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "stat: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -139,6 +144,7 @@ do_posix_stat(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "stat: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -166,6 +172,7 @@ do_posix_chmod(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "chmod: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -173,6 +180,7 @@ do_posix_chmod(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "chmod: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -204,6 +212,7 @@ do_posix_utimes(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "utimes: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -211,6 +220,7 @@ do_posix_utimes(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "utimes: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -245,6 +255,7 @@ do_posix_rename(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "rename: %s\n",
 			strerror(e));
+		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -252,6 +263,7 @@ do_posix_rename(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "rename: %s\n",
 				strerror(e));
+			goto err_return;
 		}
 	}
 	set_end(&r);
@@ -266,7 +278,15 @@ do_posix_rename(struct directory_names *names)
 	for (i = 0; i <= names->n; i++)
 		e = rename(tmp->names[i], names->names[i]);
 
+	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);
+
+err_return:
+	for (i = 0; i <= names->n; i++)
+		rename(tmp->names[i], names->names[i]);
+
+	free_directory_names(tmp);
+	return (GFARM_ERR_INPUT_OUTPUT);
 }
 
 static
@@ -290,6 +310,7 @@ do_posix_symlink(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "rename: %s\n",
 			strerror(e));
+		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -297,6 +318,7 @@ do_posix_symlink(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "rename: %s\n",
 				strerror(e));
+			goto err_return;
 		}
 	}
 	set_end(&r);
@@ -314,6 +336,7 @@ do_posix_symlink(struct directory_names *names)
 	if (e < 0) {
 		fprintf(stderr, "readlink: %s\n",
 			strerror(e));
+		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -321,6 +344,7 @@ do_posix_symlink(struct directory_names *names)
 		if (e < 0) {
 			fprintf(stderr, "readlink: %s\n",
 				strerror(e));
+			goto err_return;
 		}
 	}
 	set_end(&r);
@@ -335,7 +359,15 @@ do_posix_symlink(struct directory_names *names)
 	for (i = 0; i <= names->n; i++)
 		e = unlink(tmp->names[i]);
 
+	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);
+
+err_return:
+	for (i = 0; i <= names->n; i++)
+		unlink(tmp->names[i]);
+
+	free_directory_names(tmp);
+	return (GFARM_ERR_INPUT_OUTPUT);
 }
 
 static
@@ -351,6 +383,7 @@ do_posix_rmdir(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "rmdir: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -358,6 +391,7 @@ do_posix_rmdir(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "rmdir: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -387,6 +421,7 @@ do_posix_setxattr(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "setxattr: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -395,6 +430,7 @@ do_posix_setxattr(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "setxattr: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -423,6 +459,7 @@ do_posix_getxattr(struct directory_names *names)
 	if (e < 0) {
 		fprintf(stderr, "getxattr: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -430,6 +467,7 @@ do_posix_getxattr(struct directory_names *names)
 		if (e < 0) {
 			fprintf(stderr, "getxattr: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -457,6 +495,7 @@ do_posix_removexattr(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "removexattr: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -464,6 +503,7 @@ do_posix_removexattr(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "removexattr: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -491,6 +531,8 @@ do_posix_create(struct directory_names *names)
 	if (e < 0) {
 		fprintf(stderr, "create: %s\n",
 			strerror(e));
+		close(e);
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	close(e);
 	set_middle(&r);
@@ -499,6 +541,8 @@ do_posix_create(struct directory_names *names)
 		if (e < 0) {
 			fprintf(stderr, "create: %s\n",
 				strerror(e));
+			close(e);
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 		close(e);
 	}
@@ -527,6 +571,7 @@ do_posix_unlink(struct directory_names *names)
 	if (e != 0) {
 		fprintf(stderr, "unlink: %s\n",
 			strerror(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
@@ -534,6 +579,7 @@ do_posix_unlink(struct directory_names *names)
 		if (e != 0) {
 			fprintf(stderr, "unlink: %s\n",
 				strerror(e));
+			return (GFARM_ERR_INPUT_OUTPUT);
 		}
 	}
 	set_end(&r);
@@ -548,22 +594,77 @@ do_posix_unlink(struct directory_names *names)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static
 gfarm_error_t
-do_posix_test(struct directory_names *names)
+cleanup_files_posix(struct directory_names *files)
 {
-	do_posix_create(names);
-	do_posix_readdir();
-	do_posix_unlink(names);
-	do_posix_mkdir(names);
-	do_posix_stat(names);
-	do_posix_chmod(names);
-	do_posix_utimes(names);
-	do_posix_rename(names);
-	do_posix_symlink(names);
-	do_posix_setxattr(names);
-	do_posix_getxattr(names);
-	do_posix_removexattr(names);
-	do_posix_rmdir(names);
+	int i;
+
+	for (i = 0; i <= files->n; i++)
+		unlink(files->names[i]);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static
+gfarm_error_t
+cleanup_dirs_posix(struct directory_names *dirs)
+{
+	int i;
+
+	for (i = 0; i <= dirs->n; i++)
+		rmdir(dirs->names[i]);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+do_posix_test(struct directory_names *dirs, struct directory_names *files)
+{
+	gfarm_error_t e;
+
+	cleanup_files_posix(files);
+	e = do_posix_create(files);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_readdir();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_unlink(files);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	cleanup_dirs_posix(dirs);
+	e = do_posix_mkdir(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_stat(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_chmod(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_utimes(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_rename(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_symlink(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_setxattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_getxattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_removexattr(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	e = do_posix_rmdir(dirs);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	return (GFARM_ERR_NO_ERROR);
 }

@@ -204,6 +204,8 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
+	struct directory_names *dirs;
+	struct directory_names *files;
 
 	e = gfarm_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -219,15 +221,27 @@ main(int argc, char *argv[])
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	struct directory_names *names = create_directory_names(loop_number,
-		"");
+	dirs = create_directory_names(loop_number, ".dir");
+	if (dirs == NULL) {
+		fprintf(stderr, "can not allocate memory\n");
+		gfarm_terminate();
+		return (GFARM_ERR_NO_MEMORY);
+	}
+
+	files = create_directory_names(loop_number, ".file");
+	if (files == NULL) {
+		fprintf(stderr, "can not allocate memory\n");
+		gfarm_terminate();
+		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	if (posix_flag)
-		do_posix_test(names);
+		do_posix_test(dirs, files);
 	else
-		do_libgfarm_test(names);
+		do_libgfarm_test(dirs, files);
 
-	free_directory_names(names);
+	free_directory_names(files);
+	free_directory_names(dirs);
 
 
 	e = gfarm_terminate();

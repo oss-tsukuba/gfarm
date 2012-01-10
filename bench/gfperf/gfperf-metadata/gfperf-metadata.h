@@ -41,9 +41,10 @@ extern int loop_number;
 extern char *unit;
 extern int unit_flag;
 
-gfarm_error_t do_posix_test(struct directory_names *names);
-gfarm_error_t do_libgfarm_test(struct directory_names *names);
-
+gfarm_error_t do_posix_test(struct directory_names *dirs,
+			    struct directory_names *files);
+gfarm_error_t do_libgfarm_test(struct directory_names *dirs,
+			       struct directory_names *files);
 struct directory_names *create_directory_names(int n, char *postfix);
 void free_directory_names(struct directory_names *p);
 
