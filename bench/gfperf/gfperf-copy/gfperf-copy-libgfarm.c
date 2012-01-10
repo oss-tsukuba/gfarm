@@ -95,6 +95,16 @@ do_copy_to_gfarm()
 		}
 	}
 
+	if (ret < 0) {
+		fprintf(stderr, "read: %s\n", strerror(errno));
+		gfs_pio_close(df);
+		close(sf);
+		unlink(src);
+		gfs_unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+
 	gfs_pio_close(df);
 	close(sf);
 
@@ -187,6 +197,17 @@ do_copy_from_gfarm()
 			free(buf);
 			return (GFARM_ERR_NO_SPACE);
 		}
+	}
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "read: %s\n",
+			gfarm_error_string(e));
+		gfs_pio_close(sf);
+		close(df);
+		gfs_unlink(src);
+		unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
 	close(df);

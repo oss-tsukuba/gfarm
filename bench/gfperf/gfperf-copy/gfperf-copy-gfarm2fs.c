@@ -18,7 +18,7 @@ static
 gfarm_error_t
 do_copy() {
 	const char *root;
-	char *buf;
+	char *buf, *gfsd_hostname_bak;
 	int sf, df, ret;
 	float et;
 	gfarm_error_t e;
@@ -39,6 +39,7 @@ do_copy() {
 			}
 		}
 		if (gfsd_hostname == NULL) {
+			gfsd_hostname_bak = gfsd_hostname;
 			e = gfs_replica_info_by_name(src_filename, 0, &ri);
 			gfsd_hostname = strdup(gfs_replica_info_nth_host(ri,
 									 0));
@@ -52,7 +53,7 @@ do_copy() {
 		free(src_filename);
 		ret = asprintf(&src_filename, "%s%s/copy-%s-%s.tst",
 			       gfarm2fs_mount_point, root,
-			       file_size_string, gfsd_hostname);
+			       file_size_string, gfsd_hostname_bak);
 		if (ret < 0) {
 			free(buf);
 			fprintf(stderr, "can not allocate memory.\n");
@@ -126,6 +127,16 @@ do_copy() {
 			free(buf);
 			return (GFARM_ERR_NO_SPACE);
 		}
+	}
+
+	if (ret < 0) {
+		fprintf(stderr, "read: %s\n", strerror(errno));
+		close(df);
+		close(sf);
+		unlink(src_filename);
+		unlink(dst_filename);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
 	close(df);
