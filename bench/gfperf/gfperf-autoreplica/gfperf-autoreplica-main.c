@@ -95,14 +95,16 @@ struct filenames *
 create_filenames()
 {
 	int i, r;
+	size_t size;
+	char *tmp;
 	pid_t pid;
 	struct filenames *p;
 
-	p = (struct filenames *)malloc(sizeof(struct filenames) +
-				      number*(sizeof(char *)));
+	size = sizeof(struct filenames) + number*(sizeof(char *));
+	GFARM_CALLOC_ARRAY(tmp, size);
+	p = (struct filenames *)tmp;
 	if (p == NULL)
 		return (NULL);
-	memset(p, 0, sizeof(struct filenames) + number*(sizeof(char *)));
 
 	p->n = number;
 	pid = getpid();

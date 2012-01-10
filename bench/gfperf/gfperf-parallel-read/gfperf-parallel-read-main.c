@@ -299,7 +299,7 @@ do_test_posix(const char *filename, const char *gfarm_filename)
 		gfs_replica_info_free(ri);
 	}
 
-	buf = (char *)malloc(bufsize);
+	GFARM_MALLOC_ARRAY(buf, bufsize);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory!\n");
 		unlink(filename);
@@ -443,7 +443,7 @@ do_test_gfarm(const char *filename)
 		gfs_replica_info_free(ri);
 	}
 
-	buf = (char *)malloc(bufsize);
+	GFARM_MALLOC_ARRAY(buf, bufsize);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory!\n");
 		gfs_unlink(filename);

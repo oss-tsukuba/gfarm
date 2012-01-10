@@ -128,14 +128,15 @@ struct directory_names *
 create_directory_names(int n, char *postfix)
 {
 	int i, ret, size;
+	char *tmp;
 	struct directory_names *p;
 
 	size = sizeof(struct directory_names)+(n+1)*(sizeof(char *));
-	p = (struct directory_names *)malloc(size);
+	GFARM_CALLOC_ARRAY(tmp, size);
+	p = (struct directory_names *)tmp;
 	if (p == NULL)
 		return (NULL);
 
-	memset(p, 0, size);
 	p->n = n;
 	for (i = 0; i <= n ; i++)
 		p->names[i] = NULL;

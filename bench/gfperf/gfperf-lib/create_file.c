@@ -34,7 +34,7 @@ create_file_on_gfarm(const char *url, char *hostname,
 
 	filename = url;
 
-	buf = (char *)malloc(COPY_BUF_SIZE);
+	GFARM_MALLOC_ARRAY(buf, COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
@@ -100,7 +100,7 @@ create_file_on_local(const char *filename, long long file_size)
 	int ret, s;
 	int fp;
 
-	buf = (char *)malloc(COPY_BUF_SIZE);
+	GFARM_MALLOC_ARRAY(buf, COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);

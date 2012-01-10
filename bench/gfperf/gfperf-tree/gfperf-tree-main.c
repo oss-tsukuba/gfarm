@@ -74,10 +74,9 @@ do_mkdir_posix(char *dir, int n, int w, int d)
 	if (n >= d)
 		return (GFARM_ERR_NO_ERROR);
 
-	names = (char **)malloc(sizeof(char *) * w);
+	GFARM_CALLOC_ARRAY(names, w);
 	if (names == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	memset(names, 0, sizeof(char *) * w);
 
 	for (i = 0; i < w; i++) {
 		e = asprintf(&names[i], "%s/test%04d", dir, i);
@@ -198,10 +197,9 @@ do_mkdir_gfarm(char *dir, int n, int w, int d)
 	if (n >= d)
 		return (GFARM_ERR_NO_ERROR);
 
-	names = (char **)malloc(sizeof(char *) * w);
+	GFARM_CALLOC_ARRAY(names, w);
 	if (names == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	memset(names, 0, sizeof(char *) * w);
 
 	for (i = 0; i < w; i++) {
 		r = asprintf(&names[i], "%s/test%04d", dir, i);

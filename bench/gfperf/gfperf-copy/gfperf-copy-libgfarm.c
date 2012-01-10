@@ -32,7 +32,7 @@ do_copy_to_gfarm()
 	struct gfs_replica_info *ri;
 	struct timeval start_time, end_time, exec_time;
 
-	buf = (char *)malloc(buf_size);
+	GFARM_MALLOC_ARRAY(buf, buf_size);
 	if (buf == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
@@ -149,7 +149,7 @@ do_copy_from_gfarm()
 	struct gfs_replica_info *ri;
 	struct timeval start_time, end_time, exec_time;
 
-	buf = (char *)malloc(buf_size);
+	GFARM_MALLOC_ARRAY(buf, buf_size);
 	if (buf == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
