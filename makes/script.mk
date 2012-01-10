@@ -33,7 +33,7 @@ script-install:
 
 script-clean:
 	-test -z "$(EXTRA_CLEAN_TARGETS)" || $(RM) -f $(EXTRA_CLEAN_TARGETS)
-	-$(RM) -f $(BUILT_SCRIPTS)
+	-test -z "$(BUILT_SCRIPTS)" || $(RM) -f $(BUILT_SCRIPTS)
 
 script-veryclean: clean private-finalize
 	-test -z "$(EXTRA_VERYCLEAN_TARGETS)" || $(RM) -f $(EXTRA_VERYCLEAN_TARGETS)
