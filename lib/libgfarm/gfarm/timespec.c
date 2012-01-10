@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <gfarm/gfarm.h>
 
+#include "timespec.h"
+
 #define GFARM_SECOND_BY_NANOSEC	1000000000
 
 int

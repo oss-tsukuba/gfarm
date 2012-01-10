@@ -18,11 +18,12 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
+#include "gfutil.h"
+
 #include "gfarm_secure_session.h"
 #include "gfarm_auth.h"
 
 #include "liberror.h"
-#include "gfutil.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "io_gfsl.h"
