@@ -15,6 +15,7 @@
 #include <string.h>
 #include <utime.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include "gfperf-lib.h"
 #include "gfperf-metadata.h"
@@ -90,24 +91,26 @@ static
 gfarm_error_t
 do_posix_mkdir(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = mkdir(names->names[0], MKDIR_MODE);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "mkdir: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = mkdir(names->names[i], MKDIR_MODE);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "mkdir: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -126,7 +129,7 @@ static
 gfarm_error_t
 do_posix_stat(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	struct stat sb;
 
@@ -134,17 +137,19 @@ do_posix_stat(struct directory_names *names)
 	set_start(&r);
 	e = stat(names->names[0], &sb);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "stat: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = stat(names->names[i], &sb);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "stat: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -163,24 +168,26 @@ static
 gfarm_error_t
 do_posix_chmod(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = chmod(names->names[0], CHMOD_MODE);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "chmod: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = chmod(names->names[i], CHMOD_MODE);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "chmod: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -199,7 +206,7 @@ static
 gfarm_error_t
 do_posix_utimes(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	struct timeval times[2];
 
@@ -210,17 +217,19 @@ do_posix_utimes(struct directory_names *names)
 	set_start(&r);
 	e = utimes(names->names[0], times);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "utimes: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = utimes(names->names[i], times);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "utimes: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -239,7 +248,7 @@ static
 gfarm_error_t
 do_posix_rename(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	struct directory_names *tmp;
 
@@ -253,16 +262,18 @@ do_posix_rename(struct directory_names *names)
 	set_start(&r);
 	e = rename(names->names[0], tmp->names[0]);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "rename: %s\n",
-			strerror(e));
+			strerror(saved_errno));
 		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = rename(names->names[i], tmp->names[i]);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "rename: %s\n",
-				strerror(e));
+				strerror(saved_errno));
 			goto err_return;
 		}
 	}
@@ -286,14 +297,14 @@ err_return:
 		rename(tmp->names[i], names->names[i]);
 
 	free_directory_names(tmp);
-	return (GFARM_ERR_INPUT_OUTPUT);
+	return (gfarm_errno_to_error(saved_errno));
 }
 
 static
 gfarm_error_t
 do_posix_symlink(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	struct directory_names *tmp;
 	char buf[BUF_SIZE];
@@ -308,16 +319,18 @@ do_posix_symlink(struct directory_names *names)
 	set_start(&r);
 	e = symlink(names->names[0], tmp->names[0]);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "rename: %s\n",
-			strerror(e));
+			strerror(saved_errno));
 		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = symlink(names->names[i], tmp->names[i]);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "rename: %s\n",
-				strerror(e));
+				strerror(saved_errno));
 			goto err_return;
 		}
 	}
@@ -334,16 +347,18 @@ do_posix_symlink(struct directory_names *names)
 	set_start(&r);
 	e = readlink(tmp->names[0], buf, sizeof(buf));
 	if (e < 0) {
+		saved_errno = errno;
 		fprintf(stderr, "readlink: %s\n",
-			strerror(e));
+			strerror(saved_errno));
 		goto err_return;
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = readlink(tmp->names[i], buf, sizeof(buf));
 		if (e < 0) {
+			saved_errno = errno;
 			fprintf(stderr, "readlink: %s\n",
-				strerror(e));
+				strerror(saved_errno));
 			goto err_return;
 		}
 	}
@@ -367,31 +382,33 @@ err_return:
 		unlink(tmp->names[i]);
 
 	free_directory_names(tmp);
-	return (GFARM_ERR_INPUT_OUTPUT);
+	return (gfarm_errno_to_error(saved_errno));
 }
 
 static
 gfarm_error_t
 do_posix_rmdir(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = rmdir(names->names[0]);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "rmdir: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = rmdir(names->names[i]);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "rmdir: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -410,7 +427,7 @@ static
 gfarm_error_t
 do_posix_setxattr(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	static char *value = "2";
 	size_t val_len = strlen(value);
@@ -419,18 +436,20 @@ do_posix_setxattr(struct directory_names *names)
 	set_start(&r);
 	e = setxattr(names->names[0], XATTR_KEY, value, val_len, XATTR_CREATE);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "setxattr: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = setxattr(names->names[i], XATTR_KEY, value, val_len,
 			     XATTR_CREATE);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "setxattr: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -449,7 +468,7 @@ static
 gfarm_error_t
 do_posix_getxattr(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 	char *buf[BUF_SIZE];
 
@@ -457,17 +476,19 @@ do_posix_getxattr(struct directory_names *names)
 	set_start(&r);
 	e = getxattr(names->names[0], XATTR_KEY, buf, sizeof(buf));
 	if (e < 0) {
+		saved_errno = errno;
 		fprintf(stderr, "getxattr: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = getxattr(names->names[i], XATTR_KEY, buf, sizeof(buf));
 		if (e < 0) {
+			saved_errno = errno;
 			fprintf(stderr, "getxattr: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -486,24 +507,26 @@ static
 gfarm_error_t
 do_posix_removexattr(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = removexattr(names->names[0], XATTR_KEY);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "removexattr: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = removexattr(names->names[i], XATTR_KEY);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "removexattr: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
@@ -522,27 +545,29 @@ static
 gfarm_error_t
 do_posix_create(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = creat(names->names[0], MKDIR_MODE);
 	if (e < 0) {
+		saved_errno = errno;
 		fprintf(stderr, "create: %s\n",
-			strerror(e));
+			strerror(saved_errno));
 		close(e);
-		return (GFARM_ERR_INPUT_OUTPUT);
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	close(e);
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = creat(names->names[i], MKDIR_MODE);
 		if (e < 0) {
+			saved_errno = errno;
 			fprintf(stderr, "create: %s\n",
-				strerror(e));
+				strerror(saved_errno));
 			close(e);
-			return (GFARM_ERR_INPUT_OUTPUT);
+			return (gfarm_errno_to_error(saved_errno));
 		}
 		close(e);
 	}
@@ -562,24 +587,26 @@ static
 gfarm_error_t
 do_posix_unlink(struct directory_names *names)
 {
-	int i, e;
+	int i, e, saved_errno;
 	struct test_results r;
 
 	set_number(&r, names->n);
 	set_start(&r);
 	e = unlink(names->names[0]);
 	if (e != 0) {
+		saved_errno = errno;
 		fprintf(stderr, "unlink: %s\n",
-			strerror(e));
-		return (GFARM_ERR_INPUT_OUTPUT);
+			strerror(saved_errno));
+		return (gfarm_errno_to_error(saved_errno));
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
 		e = unlink(names->names[i]);
 		if (e != 0) {
+			saved_errno = errno;
 			fprintf(stderr, "unlink: %s\n",
-				strerror(e));
-			return (GFARM_ERR_INPUT_OUTPUT);
+				strerror(saved_errno));
+			return (gfarm_errno_to_error(saved_errno));
 		}
 	}
 	set_end(&r);
