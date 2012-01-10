@@ -41,7 +41,9 @@ gfarm_context_init(void)
 		gfarm_host_static_init,
 		gfarm_auth_config_static_init,
 		gfarm_auth_common_static_init,
+#ifdef HAVE_GSI
 		gfarm_auth_common_gsi_static_init,
+#endif
 		gfarm_auth_client_static_init,
 		gfarm_liberror_static_init,
 		gfarm_schedule_static_init,
