@@ -608,7 +608,8 @@ main(int argc, char *argv[])
 
 	if (overwrite_flag)
 		r = asprintf(&filename, "%s/overwrite-%s-%s.tst", dir,
-			     filesize_string, gfsd_hostname);
+			     filesize_string,
+			     gfsd_hostname ? gfsd_hostname : "(null)");
 	else
 		r = asprintf(&filename, "%s/test.%d.dat", dir, getpid());
 	if (r < 0) {
@@ -622,7 +623,8 @@ main(int argc, char *argv[])
 			r = asprintf(&gfarm_filename,
 				     "%s/overwrite-%s-%s.tst",
 				     find_root_from_url(testdir),
-				     filesize_string, gfsd_hostname);
+				     filesize_string,
+				     gfsd_hostname ? gfsd_hostname : "(null)");
 		else
 			r = asprintf(&gfarm_filename, "%s/test.%d.dat",
 				     find_root_from_url(testdir), getpid());

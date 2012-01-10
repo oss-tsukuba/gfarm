@@ -565,7 +565,7 @@ main(int argc, char *argv[])
 	}
 
 	r = asprintf(&filename, "%s/read-%s-%s.tst", dir, filesize_string,
-		     gfsd_hostname);
+		     gfsd_hostname ? gfsd_hostname : "(null)");
 	if (r < 0) {
 		fprintf(stderr, "can not allocate memory!\n");
 		free(dir);
@@ -577,7 +577,7 @@ main(int argc, char *argv[])
 		r = asprintf(&gfarm_filename, "%s/read-%s-%s.tst",
 			     find_root_from_url(testdir),
 			     filesize_string,
-			     gfsd_hostname);
+			     gfsd_hostname ? gfsd_hostname : "(null)");
 		if (r < 0) {
 			fprintf(stderr, "can not allocate memory!\n");
 			free(dir);

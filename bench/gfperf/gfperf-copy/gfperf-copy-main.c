@@ -152,10 +152,12 @@ parse_opt(int argc, char *argv[])
 	len = strlen(src_url);
 	if (src_url[len-1] == '/')
 		ret = asprintf(&src_filename, "%scopy-%s-%s.tst",
-			       src_url, file_size_string, gfsd_hostname);
+			       src_url, file_size_string,
+			       gfsd_hostname ? gfsd_hostname : "(null)");
 	else
 		ret = asprintf(&src_filename, "%s/copy-%s-%s.tst",
-			       src_url,  file_size_string, gfsd_hostname);
+			       src_url,  file_size_string,
+			       gfsd_hostname ? gfsd_hostname : "(null)");
 	if (ret < 0) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
@@ -202,7 +204,8 @@ main(int argc, char *argv[])
 	else
 		do_libgfarm_test();
 
-	free(gfsd_hostname);
+	if (gfsd_hostname)
+		free(gfsd_hostname);
 	free(src_filename);
 	free(dst_filename);
 

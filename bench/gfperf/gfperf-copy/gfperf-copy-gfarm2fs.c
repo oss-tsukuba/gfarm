@@ -53,7 +53,9 @@ do_copy() {
 		free(src_filename);
 		ret = asprintf(&src_filename, "%s%s/copy-%s-%s.tst",
 			       gfarm2fs_mount_point, root,
-			       file_size_string, gfsd_hostname_bak);
+			       file_size_string,
+			       gfsd_hostname_bak ? gfsd_hostname_bak :
+			       "(null)");
 		if (ret < 0) {
 			free(buf);
 			fprintf(stderr, "can not allocate memory.\n");
