@@ -126,7 +126,7 @@ Top<br>
 	echo "<a href=\"view_result.php?year=".$year."&month=".$month."&date=$d\">".$pt."</a>";
 	echo "</td>";
 	if ($c > 0) {
-		echo "<td><font color=\"red\">Error Occured! (See error log)</font></td>";
+		echo "<td><font color=\"red\">Error Occurred! (See error log)</font></td>";
 	} else {
 		echo "<td></td>";
 	}
