@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+require 'fileutils'
+require 'optparse'
 require 'yaml'
 require 'pp'
 require 'open3'
@@ -68,6 +70,19 @@ end
 
 def close_db()
   $db.close
+end
+
+def backup_db()
+  if ($config["database"]["backup"].nil?)
+    return
+  end
+
+  begin
+    FileUtils.cp($config["database"]["filename"],
+                 $config["database"]["backup"])
+  rescue => e
+    print e.message+"\n"
+  end
 end
 
 def make_opt(h)
@@ -251,6 +266,12 @@ def umount_gfarm2fs()
   }
 end
 
+$check_flag = false
+OptionParser.new do |opt|
+  opt.on('-c') {|v| $check_flag = true}
+  opt.permute!(ARGV)
+end
+
 conf_file = (ARGV.size > 0) ? ARGV[0] : "config.yml"
 if (!File.exist?(conf_file))
   STDERR.print("#{conf_file} not found\n")
@@ -278,8 +299,14 @@ Signal.trap(:TERM) {
 
 $now = Time.now
 $config = YAML.load(File.read(conf_file))
-$errcount = 0
+if ($check_flag == true)
+  conf_file_fd.flock(File::LOCK_UN)
+  conf_file_fd.close()
+  print "#{conf_file} is ok.\n"
+  exit(0)
+end
 
+$errcount = 0
 result = ""
 $config["authentication"].each do |key|
   mount_gfarm2fs(key)
@@ -310,5 +337,8 @@ insert_error_result()
 calc_stddev()
 
 close_db()
+
+backup_db()
+
 conf_file_fd.flock(File::LOCK_UN)
 conf_file_fd.close()
