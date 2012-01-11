@@ -11,7 +11,7 @@
 #include "hash.h"
 
 #define ALIGNMENT 16
-#define ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
+#define HASH_ALIGN(p) (((unsigned long)(p) + ALIGNMENT - 1) & ~(ALIGNMENT - 1))
 
 /* string hash function by Peter Weinberger */
 int
@@ -80,9 +80,9 @@ struct gfarm_hash_entry {
 
 #define HASH_KEY(entry)	\
 	(((char *)(entry)) + \
-	 ALIGN(offsetof(struct gfarm_hash_entry, key_stub)))
+	 HASH_ALIGN(offsetof(struct gfarm_hash_entry, key_stub)))
 #define HASH_DATA(entry) \
-	(HASH_KEY(entry) + ALIGN((entry)->key_length))
+	(HASH_KEY(entry) + HASH_ALIGN((entry)->key_length))
 
 struct gfarm_hash_table {
 	int table_size;
@@ -195,8 +195,8 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 	hash_entry_size =
 		gfarm_size_add(&overflow,
 		    gfarm_size_add(&overflow, 	 
-			ALIGN(offsetof(struct gfarm_hash_entry, key_stub)),
-			ALIGN(keylen)),
+			HASH_ALIGN(offsetof(struct gfarm_hash_entry, key_stub)),
+			HASH_ALIGN(keylen)),
 		    datalen);
 	if (overflow) {
 		gflog_debug(GFARM_MSG_1000785,
