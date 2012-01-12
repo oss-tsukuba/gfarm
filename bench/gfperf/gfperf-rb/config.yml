@@ -1,4 +1,5 @@
-database: {filename: "/var/www/database.db", check span: "10days"}
+database: {filename: "/var/www/database.db", check span: "10days",
+	   backup: "/var/www/databse.db.bak" }
 errlog: "/tmp/gfperf.err.log"
 #remote_path: "/usr/local/gfarm/bin"
 authentication: ["sharedsecret", "gsi_auth", "gsi"]
@@ -32,12 +33,16 @@ write: [
    {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
    {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
    {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
    {testdir: "gfarm:///tmp", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
    {testdir: "gfarm:///tmp", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
    {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}
       ]
