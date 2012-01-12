@@ -21,7 +21,7 @@ class ProcessIO {
 
 	public function get_stdout_data() {
 		if (!is_null($this->stdin)) {
-			fclose($this->stdin); // gnuplot 終了
+			fclose($this->stdin);
 			$this->stdin = NULL;
 		}
 		if (is_null($this->stdout)) {
@@ -32,7 +32,7 @@ class ProcessIO {
 
 	public function get_stderr_data() {
 		if (!is_null($this->stdin)) {
-			fclose($this->stdin); // gnuplot 終了
+			fclose($this->stdin);
 			$this->stdin = NULL;
 		}
 		if (is_null($this->stderr)) {
@@ -98,8 +98,6 @@ class GNUPlot {
 	private $grid   = false;
 	private $style  = "linespoints";
 
-	// 1970年1月1日0時からの秒数をキーとした値の配列
-	// その配列に、タイトルをキーとした複数のセット
 	public function __construct($data) {
 		$this->gplot = new ProcessOpen(GNUPLOT);
 		$this->data = $data;
