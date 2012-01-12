@@ -40,7 +40,6 @@ def calc_stddev()
   $db.execute("commit;")
 end
 
-
 def open_db()
   fn = $config["database"]["filename"]
   if (File.exist?(fn))
@@ -57,6 +56,12 @@ def open_db()
     sql = "create table "+
       "error(date datetime, count integer);"
     $db.execute(sql)
+    sql = "create table "+
+      "error_msg(date datetime, command text, message text);"
+    $db.execute(sql)
+    sql = "create table "+
+      "execute_time(date datetime, end_date datetime);"
+    $db.execute(sql)
     sql = "create index data_date_index on data(date);";
     $db.execute(sql)
     sql = "create index data_key_index on data(key);";
@@ -64,6 +69,10 @@ def open_db()
     sql = "create index statistics_date_index on statistics(date);";
     $db.execute(sql)
     sql = "create index error_date_index on error(date);";
+    $db.execute(sql)
+    sql = "create index error_msg_date_index on error_msg(date);"
+    $db.execute(sql)
+    sql = "create index execute_time_date_index on execute_time(date);"
     $db.execute(sql)
   end
 end
@@ -96,9 +105,24 @@ def make_opt(h)
   return opt
 end
 
+def insert_error_message(command, message)
+  open_db()
+  sql = "insert into error_msg(date,command,message) "+
+    "values('#{$now.to_i}',?,?);"
+  $db.execute(sql, command, message)
+  close_db()
+end
+
+def insert_execute_time()
+  end_time = Time.now
+  sql = "insert into execute_time(date,end_date) "+
+    "values('#{$now.to_i}','#{end_time.to_i}');"
+  $db.execute(sql)
+end
+
 def insert_error_result()
   if ($errcount > 0)
-    sql="insert into error(date,count) "+
+    sql = "insert into error(date,count) "+
       "values('#{$now.to_i}',#{$errcount});"
     $db.execute(sql)
   end
@@ -143,6 +167,7 @@ def do_single(key, type)
         f.print(command+"\n")
         f.print(errstr)
       }
+      insert_error_message(command, errstr)
       $errcount+=1
     end
     if (tmp.length > 0)
@@ -194,6 +219,7 @@ def do_parallel(key, name, array)
           f.print(command+"\n")
           f.print(errstr)
         }
+        insert_error_message(command, errstr)
         $errcount+=1
       end
       if (tmp.length > 0)
@@ -231,6 +257,7 @@ def do_parallel_autoreplica(key, name, array)
           f.print(command+"\n")
           f.print(errstr)
         }
+        insert_error_message(command, errstr)
         $errcount+=1
       end
       if (tmp.length > 0)
@@ -335,6 +362,7 @@ open_db()
 insert_result(result)
 insert_error_result()
 calc_stddev()
+insert_execute_time()
 
 close_db()
 
