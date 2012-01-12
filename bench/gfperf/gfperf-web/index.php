@@ -57,11 +57,25 @@ if (!is_readable(DATABASE)) {
 
 try {
 $db = new PDO('sqlite:'.DATABASE);
+$sql="select date from error_msg where date >= $s and date <= $e group by date order by date desc;";
+$result = $db->query($sql);
+$err_dates=array();
+while ($row = $result->fetch(PDO::FETCH_NUM)) {
+	$err_dates[$row[0]]=0;
+}
+unset($result);
 $sql="select date from data where date >= $s and date <= $e group by date order by date desc;";
 $result = $db->query($sql);
 $dates=array();
 while ($row = $result->fetch(PDO::FETCH_NUM)) {
 	$dates[$row[0]]=0;
+}
+unset($result);
+$sql="select date, end_date from execute_time where date >= $s and date <= $e;";
+$result = $db->query($sql);
+$end_dates=array();
+while ($row = $result->fetch(PDO::FETCH_NUM)) {
+	$end_dates[$row[0]]=$row[1];
 }
 unset($result);
 $sql="select date,count from error where date >= $s and date <= $e order by date desc;";
@@ -90,8 +104,6 @@ td {padding-right: 5px; padding-left: 5px;}
 <div class="menu">
 <a href="config_view.php?year=<?php echo $year ?>&month=<?php echo $month ?>">config</a>
 </div>
-
-Top<br>
 	<h1>Gfperf Top Page</h1>
 	<table><tr><td>
 	<form method="get" action "#">
@@ -124,9 +136,18 @@ Top<br>
 	$pt = strftime('%Y/%m/%d %H:%M:%S',$d); 
 	echo "<tr><td>";
 	echo "<a href=\"view_result.php?year=".$year."&month=".$month."&date=$d\">".$pt."</a>";
+	if (isset($end_dates[$d])) {
+		$et = strftime('%Y/%m/%d %H:%M:%S',$end_dates[$d]);
+		echo " - ".$et;
+	}
 	echo "</td>";
 	if ($c > 0) {
-		echo "<td><font color=\"red\">Error Occurred! (See error log)</font></td>";
+		if (isset($err_dates[$d])) {
+			$mes = "<a href=\"view_error.php?year=".$year."&month=".$month."&date=$d\">Error Occurred!</a>";
+		} else {
+			$mes = "Error Occurred!";
+		}
+		echo "<td><font color=\"red\">".$mes."</font></td>";
 	} else {
 		echo "<td></td>";
 	}

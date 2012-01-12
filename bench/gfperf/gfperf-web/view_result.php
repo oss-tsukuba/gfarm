@@ -52,6 +52,13 @@ if (!is_readable(DATABASE)) {
 }
 try {
 $db = new PDO("sqlite:".DATABASE);
+$stmt = $db->prepare("select end_date from execute_time where date=:date;");
+$stmt->bindParam(':date', $date, PDO::PARAM_INT);
+$result = $stmt->execute();
+$row = $stmt->fetch(PDO::FETCH_NUM);
+$end_date = $row[0];
+unset($result);
+unset($stmt);
 $st = array();
 $stmt = $db->prepare("select key,avr,stddev from statistics where date=:date;");
 $stmt->bindParam(':date', $date, PDO::PARAM_INT);
@@ -218,8 +225,13 @@ function filter() {
 <a href="index.php?year=<?php echo $year; ?>&month=<?php echo $month; ?>">Top</a>/Results<br>
 	<?php
         $pt = strftime('%Y/%m/%d %H:%M:%S',$date);
+        if (isset($end_date)) {
+        	$et = " - ".strftime('%Y/%m/%d %H:%M:%S',$end_date);
+        } else {
+        	$et = "";
+        }
 	?>
-	<h1>Test Results(<?php echo $pt;?>)</h1>
+	<h1>Test Results(<?php echo $pt;?><?php echo $et;?>)</h1>
 	<br>
 	keywords:<input type=text size=45 id="keywords" onkeyup="filter()">
 	<br>
