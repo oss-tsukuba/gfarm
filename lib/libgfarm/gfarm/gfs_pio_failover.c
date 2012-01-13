@@ -22,7 +22,6 @@
 #include "gfs_client.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
-#include "gfs_misc.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
 #include "gfs_file_list.h"
@@ -37,10 +36,11 @@ get_storage_context(struct gfs_file_section_context *vc)
 }
 
 int
-gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
+gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
+	gfarm_error_t e)
 {
 	return (gfarm_filesystem_has_multiple_servers(
-		    gfarm_filesystem_get_by_connection(gf->gfm_server))
+		    gfarm_filesystem_get_by_connection(gfm_server))
 		&& gfm_client_is_connection_error(e));
 }
 
@@ -331,11 +331,151 @@ failover(struct gfm_connection *gfm_server)
 }
 
 gfarm_error_t
+gfm_client_connection_failover_pre_connect(const char *host, int port,
+	const char *user)
+{
+	return (failover0(NULL, host, port, user));
+}
+
+gfarm_error_t
+gfm_client_connection_failover(struct gfm_connection *gfm_server)
+{
+	return (failover(gfm_server));
+}
+
+gfarm_error_t
 gfs_pio_failover(GFS_File gf)
 {
 	gfarm_error_t e = failover(gf->gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gf->error = e;
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_rpc_with_failover(
+	gfarm_error_t (*rpc_op)(struct gfm_connection **, void *),
+	gfarm_error_t (*post_failover_op)(struct gfm_connection *, void *),
+	void (*exit_op)(struct gfm_connection *, gfarm_error_t, void *),
+	int (*must_be_warned_op)(gfarm_error_t, void *),
+	void *closure)
+{
+	gfarm_error_t e;
+	struct gfm_connection *gfm_server;
+	int nretry = 1;
+
+retry:
+	gfm_server = NULL;
+	e = rpc_op(&gfm_server, closure);
+	if (nretry > 0 && gfm_client_connection_should_failover(
+	    gfm_server, e)) {
+		nretry--;
+		if ((e = failover(gfm_server)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "failover: %s", gfarm_error_string(e));
+		} else if (post_failover_op &&
+		    (e = post_failover_op(gfm_server, closure))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "post_failover_op: %s", gfarm_error_string(e));
+		} else
+			goto retry;
+	} else if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "rpc_op: %s",
+		    gfarm_error_string(e));
+		if (nretry == 0 && must_be_warned_op &&
+		    must_be_warned_op(e, closure))
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "error ocurred at retry for the operation after "
+			    "connection to metadb server was failed over, "
+			    "so the operation possibly succeeded in the server."
+			    " error='%s'",
+			    gfarm_error_string(e));
+	}
+	if (exit_op)
+		exit_op(gfm_server, e, closure);
+
+	return (e);
+}
+
+struct compound_file_op_info {
+	GFS_File gf;
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
+	void (*cleanup_op)(struct gfm_connection *, void *);
+	int (*must_be_warned_op)(gfarm_error_t, void *);
+	void *closure;
+};
+
+static gfarm_error_t
+compound_file_op_rpc(struct gfm_connection **gfm_serverp, void *closure)
+{
+	struct compound_file_op_info *ci = closure;
+
+	*gfm_serverp = ci->gf->gfm_server;
+	return (gfm_client_compound_fd_op(*gfm_serverp,
+	    ci->gf->fd, ci->request_op, ci->result_op, ci->cleanup_op,
+	    ci->closure));
+}
+
+static int
+compound_file_op_must_be_warned_op(gfarm_error_t e, void *closure)
+{
+	struct compound_file_op_info *ci = closure;
+
+	return (ci->must_be_warned_op ? ci->must_be_warned_op(e, ci->closure) :
+	    0);
+}
+
+static gfarm_error_t
+compound_file_op(GFS_File gf,
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	void (*cleanup_op)(struct gfm_connection *, void *),
+	int (*must_be_warned_op)(gfarm_error_t, void *),
+	void *closure)
+{
+	struct compound_file_op_info ci = {
+		gf,
+		request_op, result_op, cleanup_op, must_be_warned_op,
+		closure
+	};
+
+	return (gfm_client_rpc_with_failover(compound_file_op_rpc, NULL,
+	    NULL, compound_file_op_must_be_warned_op, &ci));
+}
+
+gfarm_error_t
+gfm_client_compound_file_op_readonly(GFS_File gf,
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	void (*cleanup_op)(struct gfm_connection *, void *),
+	void *closure)
+{
+	gfarm_error_t e = compound_file_op(gf, request_op, result_op,
+	    cleanup_op, NULL, closure);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_file_op: %s", gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_compound_file_op_modifiable(GFS_File gf,
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	void (*cleanup_op)(struct gfm_connection *, void *),
+	int (*must_be_warned_op)(gfarm_error_t, void *),
+	void *closure)
+{
+	gfarm_error_t e = compound_file_op(gf, request_op, result_op,
+	    cleanup_op, must_be_warned_op, closure);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_file_op: %s", gfarm_error_string(e));
 	return (e);
 }
