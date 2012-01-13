@@ -4,6 +4,7 @@
 
 #include "gfm_client.h"
 #include "gfm_schedule.h"
+#include "gfs_failover.h"
 #include "lookup.h"
 
 struct gfm_schedule_file_closure {
@@ -52,14 +53,14 @@ gfm_schedule_file_cleanup(struct gfm_connection *gfm_server, void *closure)
 }
 
 gfarm_error_t
-gfm_schedule_file(struct gfm_connection *gfm_server, gfarm_int32_t fd,
-	int *nhostsp, struct gfarm_host_sched_info **infosp)
+gfm_schedule_file(struct gfs_file *gf, int *nhostsp,
+	struct gfarm_host_sched_info **infosp)
 {
 	gfarm_error_t e;
 	struct gfm_schedule_file_closure closure;
 
 	closure.domain = "";
-	e = gfm_client_compound_fd_op(gfm_server, fd,
+	e = gfm_client_compound_file_op_readonly(gf,
 	    gfm_schedule_file_request,
 	    gfm_schedule_file_result,
 	    gfm_schedule_file_cleanup,
