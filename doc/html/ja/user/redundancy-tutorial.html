@@ -54,7 +54,11 @@ Gfarmの新しいバージョンをインストール
 メタデータ冗長化を有効にするためには、バックエンド・データベースとしてPostgreSQLを利用する必要があります。</LI>
 </UL>
 
-host-bをスレーブとして登録します。
+host-bをスレーブとして登録します。<br>
+gfmdhost コマンドは、
+Gfarm のシステム管理者 (gfarmadm グループ権限を持つユーザー) が実行します。
+config-gfarm の -A オプションで指定したユーザが、
+デフォルトの Gfarm システム管理者です。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -c host-b

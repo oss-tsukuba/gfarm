@@ -56,7 +56,11 @@ install newer version of Gfarm
 For now, the PostgreSQL backend database is only supported for the
 replicated metadata servers.
 <p>
-Register host-b as a slave metadata server.
+Register host-b as a slave metadata server.<br>
+The gfmdhost command has to be invoked by a Gfarm system administrator,
+who has "gfarmadm" group privilege.
+Default setting of Gfarm system administrator is
+the user who is specified by the -A option of the config-gfarm command.
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 $ gfmdhost -c host-b
