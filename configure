@@ -834,6 +834,7 @@ MKDIR_P
 LEXLIB
 LEX_OUTPUT_ROOT
 LEX
+dynamic_ldflags
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -3290,6 +3291,45 @@ else # CFLAGS='-g'
   CFLAGS="-O" # don't use -g, but use -O
 fi
 
+# Check whether gcc accepts '-rdynamic' option
+# This check is performed for backtrace_symbols() function of glibc.
+dynamic_ldflags=
+if test x"$GCC" = x"yes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc accepts -rdynamic" >&5
+$as_echo_n "checking whether gcc accepts -rdynamic... " >&6; }
+  LDFLAGS_SAVE="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -rdynamic"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+      return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      dynamic_ldflags="-rdynamic"
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LDFLAGS="$LDFLAGS_SAVE"
+fi
+
 
 for ac_prog in flex lex
 do
@@ -4248,13 +4288,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4251: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4291: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4254: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4294: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4257: output\"" >&5)
+  (eval echo "\"\$as_me:4297: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5459,7 +5499,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5462 "configure"' > conftest.$ac_ext
+  echo '#line 5502 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6984,11 +7024,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6987: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7027: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6991: \$? = $ac_status" >&5
+   echo "$as_me:7031: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7323,11 +7363,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7326: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7366: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7330: \$? = $ac_status" >&5
+   echo "$as_me:7370: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7428,11 +7468,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7431: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7471: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7435: \$? = $ac_status" >&5
+   echo "$as_me:7475: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7483,11 +7523,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7486: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7526: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7490: \$? = $ac_status" >&5
+   echo "$as_me:7530: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9867,7 +9907,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9870 "configure"
+#line 9910 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9963,7 +10003,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9966 "configure"
+#line 10006 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12316,7 +12356,7 @@ fi
 ###### Checks for header files.
 ######
 
-for ac_header in inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h
+for ac_header in inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -12840,7 +12880,7 @@ fi
 ###### Checks for library functions.
 ######
 
-for ac_func in clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long
+for ac_func in clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
