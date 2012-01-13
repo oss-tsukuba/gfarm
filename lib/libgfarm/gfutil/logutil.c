@@ -6,6 +6,7 @@
 #include <string.h>
 #include <nl_types.h>
 #include <pthread.h>
+#include "gfutil.h"
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
@@ -158,6 +159,7 @@ gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
+	gfarm_log_backtrace_symbols();
 	exit(2);
 }
 
@@ -194,6 +196,7 @@ gflog_fatal_message_errno(int msg_no, int priority, const char *file,
 	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
+	gfarm_log_backtrace_symbols();
 	exit(2);
 }
 
@@ -225,6 +228,8 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 		    strerror(rv));
 
 	va_end(ap);
+
+	gfarm_log_backtrace_symbols();
 	exit(2);
 }
 
