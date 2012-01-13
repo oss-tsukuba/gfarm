@@ -238,7 +238,7 @@ make_configuration_file_ldap()
 	case $SLAPD_DB in
 	bdb) mkcnf "$BACKEND_DATA_DIR/DB_CONFIG" \
 				replace "$config_dir/bdb.DB_CONFIG.in"
-	     if [ "$BACKEND_DATA_DIR" != "$BACKEND_LOG_DIR" ]; then
+	     if [ X"$BACKEND_DATA_DIR" != X"$BACKEND_LOG_DIR" ]; then
 		echo "set_lg_dir $BACKEND_LOG_DIR" \
 			>> "$BACKEND_DATA_DIR/DB_CONFIG" 
 		mkdir "$BACKEND_LOG_DIR"

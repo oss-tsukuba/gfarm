@@ -208,12 +208,10 @@ display_backend_log_dir_param()
 
 tf2yn()
 {
-    tf=$1
-    if [ "$tf" = "true" ]; then
-        echo "yes"
-    else
-        echo "no"
-    fi
+    case $1 in
+    true) echo yes;;
+    *)    echo no;;
+    esac
 }
 
 display_params()

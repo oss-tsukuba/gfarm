@@ -442,7 +442,7 @@ _EOF_
 		createuser_option=--no-createrole;;
 	esac
 
-	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
+	if [ X"$SUPPORT_XML_TYPE" = X"yes" ]; then
 		XMLATTR_TABLENAME=", XmlAttr "
 	else
 		XMLATTR_TABLENAME=""
@@ -474,7 +474,7 @@ _EOF_
 #		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$PGSQL_BINDIR/psql -q \
 		-f "$config_dir/gfarm.sql" $DB_NAME
-	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
+	if [ X"$SUPPORT_XML_TYPE" = X"yes" ]; then
 		$PGSQL_BINDIR/psql -q \
 			-f "$config_dir/gfarm-xmlattr.sql" $DB_NAME
 	fi
@@ -517,7 +517,7 @@ _EOF_
 	mv "$BACKEND_DATA_DIR"/pg_hba.conf.bak \
 	   "$BACKEND_DATA_DIR"/pg_hba.conf
 
-	if [ "$BACKEND_LOG_DIR" != "$BACKEND_LOG_DIR_DEFAULT" ]; then
+	if [ X"$BACKEND_LOG_DIR" != X"$BACKEND_LOG_DIR_DEFAULT" ]; then
 		# if [ -n "$BACKEND_PRIVILEGE" ], `whoami` should be root, and
 		# the following should preserve the owner of the directory.
 		# otherwise $BACKEND_ADMIN_USER must be `whoami`.
