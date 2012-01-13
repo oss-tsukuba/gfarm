@@ -21,6 +21,7 @@ end
 
 $config = Hash.new
 $config[:testdir] = "gfarm:///stress"
+$config[:number] = 1
 opts = OptionParser.new
 opts.on("-t MANDATORY",
         "--testdir MANDATORY",
@@ -34,40 +35,52 @@ opts.on("-m MANDATORY",
         "gfarm2fs mountpoint") {|v|
   $config[:gfarm2fs] = v
 }
+opts.on("-n MANDATORY",
+        "--number MANDATORY",
+        Integer,
+        "number of multiplex") {|v|
+  $config[:number] = v
+} 
 opts.parse!(ARGV)
 
 if (!$config[:gfarm2fs].nil?)
   $config[:fullpath] = make_path()
 end
   
-system("gfmkdir -p #{$config[:testdir]}/metadata");
-system("gfmkdir -p #{$config[:testdir]}/tree");
-if (!$config[:gfarm2fs].nil?)
-  system("gfmkdir -p #{$config[:testdir]}/metadata2");
-  system("gfmkdir -p #{$config[:testdir]}/tree2");
-  system("gfmkdir -p #{$config[:testdir]}/io2");
-end
+$config[:number].times { |i|
+  system("gfmkdir -p #{$config[:testdir]}/metadata/#{i}");
+  system("gfmkdir -p #{$config[:testdir]}/tree/#{i}");
+  system("gfmkdir -p #{$config[:testdir]}/io/#{i}");
+  if (!$config[:gfarm2fs].nil?)
+    system("gfmkdir -p #{$config[:testdir]}/metadata2/#{i}");
+    system("gfmkdir -p #{$config[:testdir]}/tree2/#{i}");
+    system("gfmkdir -p #{$config[:testdir]}/io2/#{i}");
+  end
+}
 $commands = Array.new
-$commands.push("gfperf-metadata -t #{$config[:testdir]}/metadata -n 500")
-$commands.push("gfperf-tree -t #{$config[:testdir]}/tree -w 3 -d 5")
-$gfsds.each {|g|
-  $commands.push("gfperf-read -t #{$config[:testdir]} -l 1G -g #{g} -k -1")
-  $commands.push("gfperf-write -t #{$config[:testdir]} -l 1G -g #{g} -k -1")
-}
-tg = $gfsds.clone
-tg.push(tg.shift)
-$gfsds.each_index {|i|
-  $commands.push("gfperf-replica -s #{$gfsds[i]} -d #{tg[i]} -l 1M -t #{$config[:testdir]}")
-}
 
-if (!$config[:gfarm2fs].nil?)
-  $commands.push("gfperf-metadata -t file://#{$config[:fullpath]}/metadata2 -n 500")
-  $commands.push("gfperf-tree -t file://#{$config[:fullpath]}/tree2")
+$config[:number].times { |i|
+  $commands.push("gfperf-metadata -t #{$config[:testdir]}/metadata/#{i} -n 500")
+  $commands.push("gfperf-tree -t #{$config[:testdir]}/tree/#{i} -w 3 -d 5")
   $gfsds.each {|g|
-    $commands.push("gfperf-read -t #{$config[:testdir]}/io2 -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
-    $commands.push("gfperf-write -t #{$config[:testdir]}/io2 -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
+    $commands.push("gfperf-read -t #{$config[:testdir]}/io/#{i} -l 1G -g #{g} -k -1")
+    $commands.push("gfperf-write -t #{$config[:testdir]}/io/#{i} -l 1G -g #{g} -k -1")
   }
-end
+  tg = $gfsds.clone
+  tg.push(tg.shift)
+  $gfsds.each_index {|i|
+    $commands.push("gfperf-replica -s #{$gfsds[i]} -d #{tg[i]} -l 1M -t #{$config[:testdir]}/io/#{i}")
+  }
+
+  if (!$config[:gfarm2fs].nil?)
+    $commands.push("gfperf-metadata -t file://#{$config[:fullpath]}/metadata2/#{i} -n 500")
+    $commands.push("gfperf-tree -t file://#{$config[:fullpath]}/tree2/#{i}")
+    $gfsds.each {|g|
+      $commands.push("gfperf-read -t #{$config[:testdir]}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
+      $commands.push("gfperf-write -t #{$config[:testdir]}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
+    }
+  end
+}
 
 class Runner
   def init(manager, command)
@@ -130,6 +143,16 @@ class Runner
       @stdin.close
       @stdout.close
       @stderr.close
+      tmp = errstr.split("\n").map{|l|
+        if (!l.include?("[1000058] connecting to gfmd"))
+          l
+        end
+      }.compact
+      if (tmp.size > 0)
+        errstr = tmp.join("\n")+"\n"
+      else
+        errstr = ""
+      end
       if (errstr.length > 0)
         print @command+"\n"
         print errstr
