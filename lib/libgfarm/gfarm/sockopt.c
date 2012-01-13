@@ -175,7 +175,7 @@ gfarm_sockopt_set_option(int fd, char *config)
 	if (setsockopt(fd, info->level, info->option, &v, sizeof(v)) == -1) {
 		int save_errno = errno;
 
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003366,
 			"setsocketopt(%d) to (%d) failed: %s",
 			index, v, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));

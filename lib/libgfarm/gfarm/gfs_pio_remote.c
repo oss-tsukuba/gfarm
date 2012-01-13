@@ -120,7 +120,7 @@ gfs_pio_remote_storage_reopen(GFS_File gf)
 	struct gfs_connection *gfs_server = vc->storage_context;
 
 	if ((e = gfs_client_open(gfs_server, gf->fd)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003379,
 		    "gfs_client_open_local: %s", gfarm_error_string(e));
 	return (e);
 }

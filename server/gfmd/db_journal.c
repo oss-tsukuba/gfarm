@@ -3396,7 +3396,7 @@ retry:
 		    == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED) {
 			if (!db_journal_is_rec_stored(ai))
 				goto retry;
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003398,
 			    "db seems to have been committed the "
 			    "last operation, no retry is needed");
 			e = GFARM_ERR_NO_ERROR;
