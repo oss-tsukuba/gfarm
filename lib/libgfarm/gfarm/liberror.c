@@ -15,7 +15,6 @@
 
 #include "gfutil.h"
 
-#include "context.h"
 #include "liberror.h"
 #include "gfpath.h"
 
@@ -437,36 +436,11 @@ struct gfarm_error_domain {
 	struct gfarm_error_domain *next;
 };
 
-#define staticp	(gfarm_ctxp->liberror_static)
-
 #define MAX_ERROR_DOMAINS	10
 
-struct gfarm_liberror_static {
-	int error_domain_number;
-	struct gfarm_error_domain error_domains[MAX_ERROR_DOMAINS];
-	struct gfarm_error_domain *error_ranges;
-	struct gfarm_error_domain *errno_domain;
-	int error_to_errno_map[GFARM_ERR_NUMBER];
-};
-
-gfarm_error_t
-gfarm_liberror_static_init(struct gfarm_context *ctxp)
-{
-	struct gfarm_liberror_static *s;
-
-	GFARM_MALLOC(s);
-	if (s == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	s->error_domain_number = 0;
-	memset(s->error_domains, 0, sizeof(s->error_domains));
-	s->error_ranges = NULL;
-	s->errno_domain = NULL;
-	memset(s->error_to_errno_map, 0, sizeof(s->error_to_errno_map));
-
-	ctxp->liberror_static = s;
-	return (GFARM_ERR_NO_ERROR);
-}
+static int gfarm_error_domain_number = 0;
+static struct gfarm_error_domain gfarm_error_domains[MAX_ERROR_DOMAINS];
+static struct gfarm_error_domain *gfarm_error_ranges = NULL;
 
 /*
  * allocate an error_domain
@@ -483,16 +457,15 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	int next_error;
 	struct gfarm_error_domain *last, *new;
 
-	if (staticp->error_domain_number >= MAX_ERROR_DOMAINS) {
+	if (gfarm_error_domain_number >= MAX_ERROR_DOMAINS) {
 		gflog_debug(GFARM_MSG_1000845,
 		    "gfarm_error_domain_alloc: too many error domains");
 		return (GFARM_ERRMSG_TOO_MANY_ERROR_DOMAIN);
 	}
-	if (staticp->error_domain_number == 0) {
+	if (gfarm_error_domain_number == 0) {
 		next_error = GFARM_ERR_FOREIGN_BEGIN;
 	} else {
-		last =
-		    &staticp->error_domains[staticp->error_domain_number - 1];
+		last = &gfarm_error_domains[gfarm_error_domain_number - 1];
 		next_error = last->offset + last->domerror_number;
 	}
 	if (next_error + domerror_max - domerror_min
@@ -502,7 +475,7 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 		    domerror_min, domerror_max);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
 	}
-	new = &staticp->error_domains[staticp->error_domain_number];
+	new = &gfarm_error_domains[gfarm_error_domain_number];
 	new->offset = next_error;
 	new->domerror_min = domerror_min;
 	new->domerror_number = domerror_max - domerror_min + 1;
@@ -511,7 +484,7 @@ gfarm_error_domain_alloc(int domerror_min, int domerror_max,
 	new->domerror_to_message_cookie = cookie;
 	new->next = NULL;
 	*domainp = new;
-	staticp->error_domain_number++;
+	gfarm_error_domain_number++;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -539,7 +512,7 @@ gfarm_error_range_alloc(int domerror_min, int domerror_max,
 		    domerror_min, domerror_max);
 		return (GFARM_ERR_NUMERICAL_ARGUMENT_OUT_OF_DOMAIN);
 	}
-	for (dom = staticp->error_ranges; dom != NULL; dom = dom->next) {
+	for (dom = gfarm_error_ranges; dom != NULL; dom = dom->next) {
 		if (domerror_max >= dom->offset &&
 		    domerror_min < dom->offset + dom->domerror_number - 1) {
 			gflog_debug(GFARM_MSG_1000848,
@@ -563,8 +536,8 @@ gfarm_error_range_alloc(int domerror_min, int domerror_max,
 	new->map_to_gfarm = NULL;
 	new->domerror_to_message = de_to_m;
 	new->domerror_to_message_cookie = cookie;
-	new->next = staticp->error_ranges;
-	staticp->error_ranges = new;
+	new->next = gfarm_error_ranges;
+	gfarm_error_ranges = new;
 	*domainp = new;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -619,14 +592,14 @@ gfarm_error_domain_search(gfarm_error_t error)
 	int i;
 	struct gfarm_error_domain *domain;
 
-	for (i = 0; i < staticp->error_domain_number; i++) {
-		domain = &staticp->error_domains[i];
+	for (i = 0; i < gfarm_error_domain_number; i++) {
+		domain = &gfarm_error_domains[i];
 		if (error < domain->offset)
 			return (NULL);
 		if (error < domain->offset + domain->domerror_number)
 			return (domain);
 	}
-	for (domain = staticp->error_ranges; domain != NULL;
+	for (domain = gfarm_error_ranges; domain != NULL;
 	     domain = domain->next) {
 		if (domain->offset <= error &&
 		    error < domain->offset + domain->domerror_number)
@@ -680,6 +653,8 @@ gfarm_error_string(gfarm_error_t error)
 # define ERRNO_NUMBER 256 /* XXX */
 #endif
 
+static struct gfarm_error_domain *gfarm_errno_domain = NULL;
+
 const char *
 gfarm_errno_to_string(void *cookie, int eno)
 {
@@ -693,18 +668,23 @@ gfarm_errno_to_error_initialize(void)
 	int i;
 	struct gfarm_errno_error_map *map;
 
+	/* Solaris calls this function more than once with non-pthread apps */
+	if (gfarm_errno_domain != NULL)
+		return;
+
 	e = gfarm_error_domain_alloc(0, ERRNO_NUMBER,
-	    gfarm_errno_to_string, NULL, &staticp->errno_domain);
+	    gfarm_errno_to_string, NULL,
+	    &gfarm_errno_domain);
 	if (e != GFARM_ERR_NO_ERROR) /* really fatal problem */
 		gflog_fatal(GFARM_MSG_1000007,
 		    "libgfarm: cannot allocate error domain for errno");
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];
-		if (gfarm_error_domain_map(
-		    staticp->errno_domain, map->unix_errno) < GFARM_ERR_NUMBER)
+		if (gfarm_error_domain_map(gfarm_errno_domain, map->unix_errno)
+		    < GFARM_ERR_NUMBER)
 			continue; /* a mapping is already registered */
-		if ((e = gfarm_error_domain_add_map(staticp->errno_domain,
+		if ((e = gfarm_error_domain_add_map(gfarm_errno_domain,
 		    map->unix_errno, map->gfarm_error)) != GFARM_ERR_NO_ERROR){
 			gflog_fatal(GFARM_MSG_1000853,
 			    "libgfarm: initializing error map "
@@ -719,8 +699,16 @@ gfarm_errno_to_error_initialize(void)
 gfarm_error_t
 gfarm_errno_to_error(int eno)
 {
-	return (gfarm_error_domain_map(staticp->errno_domain, eno));
+	static pthread_once_t gfarm_errno_to_error_initialized =
+	    PTHREAD_ONCE_INIT;
+
+	pthread_once(&gfarm_errno_to_error_initialized,
+	    gfarm_errno_to_error_initialize);
+
+	return (gfarm_error_domain_map(gfarm_errno_domain, eno));
 }
+
+static int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
 
 static void
 gfarm_error_to_errno_initialize(void)
@@ -730,25 +718,23 @@ gfarm_error_to_errno_initialize(void)
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_errno_error_map_table); i++) {
 		map = &gfarm_errno_error_map_table[i];
-		staticp->error_to_errno_map[map->gfarm_error] = map->unix_errno;
+		gfarm_error_to_errno_map[map->gfarm_error] = map->unix_errno;
 	}
-	for (i = 1; i < GFARM_ARRAY_LENGTH(staticp->error_to_errno_map); i++) {
-		if (staticp->error_to_errno_map[i] == 0)
-			staticp->error_to_errno_map[i] = EINVAL;
+	for (i = 1; i < GFARM_ARRAY_LENGTH(gfarm_error_to_errno_map); i++) {
+		if (gfarm_error_to_errno_map[i] == 0)
+			gfarm_error_to_errno_map[i] = EINVAL;
 	}
 }
 
 int
 gfarm_error_to_errno(gfarm_error_t error)
 {
-	if (error < GFARM_ERR_NUMBER)
-		return (staticp->error_to_errno_map[error]);
-	return (EINVAL);
-}
+	static pthread_once_t gfarm_error_to_errno_initialized =
+	    PTHREAD_ONCE_INIT;
 
-void
-gfarm_liberror_init(void)
-{
-	gfarm_errno_to_error_initialize();
-	gfarm_error_to_errno_initialize();
+	pthread_once(&gfarm_error_to_errno_initialized,
+	    gfarm_error_to_errno_initialize);
+	if (error < GFARM_ERR_NUMBER)
+		return (gfarm_error_to_errno_map[error]);
+	return (EINVAL);
 }

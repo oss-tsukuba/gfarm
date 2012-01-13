@@ -69,7 +69,6 @@ gfarm_server_initialize(char *config_file)
 		return (e);
 	}
 	gflog_initialize();
-	gfarm_liberror_init();
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);

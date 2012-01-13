@@ -27,7 +27,6 @@ gfarm_context_init(void)
 		gfarm_auth_common_gsi_static_init,
 #endif
 		gfarm_auth_client_static_init,
-		gfarm_liberror_static_init,
 		gfarm_schedule_static_init,
 		gfarm_gfs_pio_static_init,
 		gfarm_gfs_pio_section_static_init,

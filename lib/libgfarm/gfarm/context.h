@@ -38,7 +38,6 @@ extern struct gfarm_context {
 	struct gfarm_auth_common_static *auth_common_static;
 	struct gfarm_auth_common_gsi_static *auth_common_gsi_static;
 	struct gfarm_auth_client_static *auth_client_static;
-	struct gfarm_liberror_static *liberror_static;
 	struct gfarm_schedule_static *schedule_static;
 	struct gfarm_gfs_pio_static *gfs_pio_static;
 	struct gfarm_gfs_pio_section_static *gfs_pio_section_static;
@@ -59,7 +58,6 @@ gfarm_error_t gfarm_auth_config_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_auth_common_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_auth_common_gsi_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_auth_client_static_init(struct gfarm_context *);
-gfarm_error_t gfarm_liberror_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_schedule_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_gfs_pio_static_init(struct gfarm_context *);
 gfarm_error_t gfarm_gfs_pio_section_static_init(struct gfarm_context *);
