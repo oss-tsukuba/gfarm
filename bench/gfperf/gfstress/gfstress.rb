@@ -188,6 +188,8 @@ class Manager
 
 end
 
+print "start at #{Time.now.to_s}\n"
+
 $manager = Manager.new.init.run
 
 Signal.trap(:INT) {
@@ -199,6 +201,8 @@ Signal.trap(:TERM) {
 }
 
 $manager.wait
+
+print "stop at #{Time.now.to_s}\n"
 
 print "clean up..."
 system("gfrm -rf #{$config[:testdir]}/*");
