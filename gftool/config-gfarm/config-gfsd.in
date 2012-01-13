@@ -19,6 +19,8 @@ spool_owner=_gfarmfs
 
 PROGNAME=`basename $0`
 
+PRIVATE_MODE=false
+
 #
 # check whether shell function does work or not.
 #
@@ -163,7 +165,6 @@ esac
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
 
-: ${PRIVATE_MODE:=false}
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
 : ${DISPLAY_PARAMS:=false}

@@ -29,6 +29,9 @@ if [ -z "$backend_default" ]; then
 fi
 BACKEND_TYPE=$backend_default
 
+PRIVATE_MODE=false
+PRIVATE_MODE_FOR_DEBIAN=false
+
 #
 #
 #
@@ -178,8 +181,11 @@ service_start_common()
 
 sanity()
 {
-	if [ $METADATA_REPLICATION -a ! $PRIVATE_MODE ]; then
-		if id _gfarmmd >/dev/null 2>&1; then :
+	if $METADATA_REPLICATION; then
+		if $PRIVATE_MODE; then
+			:
+		elif id _gfarmmd >/dev/null 2>&1; then
+			:
 		else
 			echo "error: user _gfarmmd is not registered."
 			return 1
@@ -383,7 +389,6 @@ set_first_defaults_$BACKEND_TYPE
 # sysdep_defaults must set: $RC_DIR
 sysdep_defaults
 
-: ${PRIVATE_MODE:=false}
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
 : ${DISPLAY_PARAMS:=false}
