@@ -2,6 +2,9 @@
 size_t gfarm_size_add(int *, size_t, size_t);
 size_t gfarm_size_mul(int *, size_t, size_t);
 
+/* backtrace */
+void gfarm_log_backtrace_symbols(void);
+
 /* daemon */
 
 #ifndef HAVE_DAEMON

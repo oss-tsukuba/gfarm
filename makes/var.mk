@@ -26,7 +26,7 @@ LIBRARY_RESULT = $(LIBRARY)
 COMMON_CFLAGS = $(OPTFLAGS) $(largefile_cflags) \
 	-I$(top_builddir)/include -I$(top_srcdir)/include \
 	-DCOMPAT_GFARM_2_3
-COMMON_LDFLAGS = $(largefile_ldflags)
+COMMON_LDFLAGS = $(largefile_ldflags) $(dynamic_ldflags)
 GFARMLIB = -L$(top_builddir)/lib/libgfarm -lgfarm \
 	$(globus_gssapi_libs) $(openssl_libs)
 

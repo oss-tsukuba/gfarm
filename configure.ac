@@ -28,6 +28,25 @@ else # CFLAGS='-g'
   CFLAGS="-O" # don't use -g, but use -O
 fi
 
+# Check whether gcc accepts '-rdynamic' option
+# This check is performed for backtrace_symbols() function of glibc.
+dynamic_ldflags=
+if test x"$GCC" = x"yes"; then
+  AC_MSG_CHECKING([whether gcc accepts -rdynamic])
+  LDFLAGS_SAVE="$LDFLAGS"
+  LDFLAGS="$LDFLAGS -rdynamic"
+  AC_TRY_LINK([], [
+      return 0;
+    ], [
+      AC_MSG_RESULT([yes])
+      dynamic_ldflags="-rdynamic"
+    ], [
+      AC_MSG_RESULT([no])
+    ])
+  LDFLAGS="$LDFLAGS_SAVE"
+fi
+AC_SUBST(dynamic_ldflags)
+
 AC_PROG_LEX
 # the following definition should not be needed.
 # but there is stupid environment which flex exists but libfl.a doesn't.
@@ -998,7 +1017,7 @@ fi
 ###### Checks for header files.
 ######
 
-AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h)
+AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h)
 
 ######
 ###### Checks for types.
@@ -1122,7 +1141,7 @@ fi
 ###### Checks for library functions.
 ######
 
-AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long)
+AC_CHECK_FUNCS(clock_gettime getdents fdatasync fdopendir poll pread pwrite snprintf getpassphrase mkdtemp setlogin strtoll strtoq setrlimit daemon getloadavg statvfs statfs random getifaddrs getopt_long backtrace_symbols)
 
 ### Check epoll_create really implemented
 

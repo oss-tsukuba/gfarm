@@ -11,6 +11,7 @@ LIBRARY_RESULT = # do not install
 
 SRCS =	alloc.c \
 	assert.c \
+	backtrace.c \
 	daemon.c \
 	gfevent.c \
 	gfnetdb.c \
@@ -28,6 +29,7 @@ SRCS =	alloc.c \
 	timeval.c
 OBJS =	alloc.lo \
 	assert.lo \
+	backtrace.lo \
 	daemon.lo \
 	gfevent.lo \
 	gfnetdb.lo \
@@ -54,6 +56,7 @@ include $(top_srcdir)/makes/gflog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC)
+backtrace.lo: gfutil.h
 daemon.lo: gfutil.h
 gfevent.lo: $(INC_SRCDIR)/gfarm_misc.h gfutil.h gfevent.h
 gfnetdb.lo: gfnetdb.h
