@@ -123,12 +123,12 @@ display_params()
 
 update_metadata_replication()
 {
-    if [ $METADATA_REPLICATION ]; then
-        if [ ! $METADATA_REPLICATION1 ]; then
-            if [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
-                echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
-                exit 1
-            fi
+    if $METADATA_REPLICATION; then
+	if $METADATA_REPLICATION1; then
+	    :
+	elif [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
+	    echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
+	    exit 1
         fi
         [ -d $METADATA_JOURNAL_DIR ] || mkdir -p $METADATA_JOURNAL_DIR
         [ -e $METADATA_JOURNAL_DIR ] && chmod 700 $METADATA_JOURNAL_DIR
