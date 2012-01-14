@@ -44,7 +44,7 @@ gfs_statfsnode(char *host, int port,
 			/* "/" is actually not used */
 			e = gfs_client_statfs(gfs_server, "/", bsize, blocks,
 				bfree, bavail, files, ffree, favail);
-			if (gfs_client_is_connection_error(e) && ++retry<=1) {
+			if (gfs_client_is_connection_error(e) && ++retry <= 1) {
 				gfs_client_connection_free(gfs_server);
 				continue;
 			}

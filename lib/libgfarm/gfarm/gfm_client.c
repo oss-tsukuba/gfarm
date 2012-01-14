@@ -725,11 +725,11 @@ gfm_client_connection_dispose(void *connection_data)
 }
 
 /*
- * gfm_client_connection_free() can be used for both 
+ * gfm_client_connection_free() can be used for both
  * an uncached connection which was created by gfm_client_connect(), and
  * a cached connection which was created by gfm_client_connection_acquire().
  * The connection will be immediately closed in the former uncached case.
- * 
+ *
  */
 void
 gfm_client_connection_free(struct gfm_connection *gfm_server)
@@ -1417,9 +1417,9 @@ gfm_client_group_info_users_op_common(struct gfm_connection *gfm_server,
 			gfarm_error_string(e));
 		return (e);
 	}
-	for (i = 0; i < nusers; i++) {
+	for (i = 0; i < nusers; i++)
 		errors[i] = gfm_client_rpc_result(gfm_server, 0, "");
-	}
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1949,7 +1949,8 @@ gfm_client_get_schedule_result(struct gfm_connection *gfm_server,
 	GFARM_MALLOC_ARRAY(infos, nhosts);
 	if (infos == NULL) { /* XXX this breaks gfm protocol */
 		gflog_debug(GFARM_MSG_1001147,
-			"allocation of array 'gfarm_host_sched_info' failed: %s",
+			"allocation of array 'gfarm_host_sched_info' failed: "
+			"%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2495,10 +2496,10 @@ gfm_client_getxattr_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "B", size, valuep);
 	if ((e == GFARM_ERR_NO_ERROR) && xmlMode) {
-		// value is text with '\0', drop it
+		/* value is text with '\0', drop it */
 		(*size)--;
 	}
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -2519,7 +2520,8 @@ gfarm_error_t
 gfm_client_removexattr_request(struct gfm_connection *gfm_server,
 		int xmlMode, const char *name)
 {
-	int command = xmlMode ? GFM_PROTO_XMLATTR_REMOVE : GFM_PROTO_XATTR_REMOVE;
+	int command = xmlMode ? GFM_PROTO_XMLATTR_REMOVE :
+		GFM_PROTO_XATTR_REMOVE;
 	return (gfm_client_rpc_request(gfm_server, command, "s", name));
 }
 
@@ -2566,7 +2568,7 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 		gflog_debug(GFARM_MSG_1001156,
 			"ctx.nvalid > ctx.nalloc: %s",
 			gfarm_error_string(GFARM_ERR_UNKNOWN));
-		return GFARM_ERR_UNKNOWN;
+		return (GFARM_ERR_UNKNOWN);
 	}
 	for (i = 0; i < ctxp->nvalid; i++) {
 		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ss",
@@ -2589,12 +2591,13 @@ gfm_client_findxmlattr_result(struct gfm_connection *gfm_server,
 		ctxp->cookie_path = strdup(ctxp->entries[ctxp->nvalid-1].path);
 		ctxp->cookie_attrname =
 			strdup(ctxp->entries[ctxp->nvalid-1].attrname);
-		if ((ctxp->cookie_path == NULL) || (ctxp->cookie_attrname == NULL)) {
+		if ((ctxp->cookie_path == NULL) ||
+		    (ctxp->cookie_attrname == NULL)) {
 			gflog_debug(GFARM_MSG_1001158,
 				"allocation of 'ctx.cookie_path' or "
 				"'cookie_attrname' failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
-			return GFARM_ERR_NO_MEMORY;
+			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
 
@@ -2673,7 +2676,7 @@ gfm_client_close_write_v2_4_result(struct gfm_connection *gfm_server,
 
 gfarm_error_t
 gfm_client_fhclose_read_request(struct gfm_connection *gfm_server,
-	gfarm_ino_t inode, gfarm_uint64_t gen, 
+	gfarm_ino_t inode, gfarm_uint64_t gen,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec)
 {
 	return (gfm_client_rpc_request(gfm_server, GFM_PROTO_FHCLOSE_READ,
@@ -2688,7 +2691,7 @@ gfm_client_fhclose_read_result(struct gfm_connection *gfm_server)
 
 gfarm_error_t
 gfm_client_fhclose_write_request(struct gfm_connection *gfm_server,
-	gfarm_ino_t inode, gfarm_uint64_t gen, gfarm_off_t size, 
+	gfarm_ino_t inode, gfarm_uint64_t gen, gfarm_off_t size,
 	gfarm_int64_t atime_sec, gfarm_int32_t atime_nsec,
 	gfarm_int64_t mtime_sec, gfarm_int32_t mtime_nsec)
 {

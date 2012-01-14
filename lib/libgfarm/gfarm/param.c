@@ -82,7 +82,7 @@ gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 
 		*type_indexp = i;
 		*valuep = value;
-		return (GFARM_ERR_NO_ERROR);				
+		return (GFARM_ERR_NO_ERROR);
 	}
 	e = GFARM_ERR_NO_SUCH_OBJECT;
 	gflog_debug(GFARM_MSG_1000889, "%s: %s", config, gfarm_error_string(e));
@@ -111,7 +111,7 @@ gfarm_param_config_add_long(
 	*(*config_list_lastp) = pcp;
 	*config_list_lastp = &pcp->next;
 
-	return (GFARM_ERR_NO_ERROR);				
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

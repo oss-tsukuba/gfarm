@@ -63,7 +63,7 @@ gfarm_filesystem_static_init(struct gfarm_context *ctxp)
 	memset(&s->filesystems, 0, sizeof(s->filesystems));
 	s->filesystems.next = &s->filesystems;
 	s->ms2fs_hashtab = NULL;
-	
+
 	ctxp->filesystem_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }

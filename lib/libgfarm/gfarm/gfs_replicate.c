@@ -150,7 +150,7 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfs_client_replica_add_from(gfs_server,
 			    srchost, srcport, gfs_pio_fileno(gf));
-			if (gfs_client_is_connection_error(e) && ++retry<=1) {
+			if (gfs_client_is_connection_error(e) && ++retry <= 1) {
 				gfs_client_connection_free(gfs_server);
 				continue;
 			}

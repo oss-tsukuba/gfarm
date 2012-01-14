@@ -169,7 +169,9 @@ gfarm_parse_env_client(void)
 	if ((env = getenv("GFARM_FLAGS")) != NULL) {
 		for (; *env; env++) {
 			switch (*env) {
-			case 'r': gfarm_ctxp->on_demand_replication = 1; break;
+			case 'r':
+				gfarm_ctxp->on_demand_replication = 1;
+				break;
 			}
 		}
 	}
@@ -203,7 +205,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1000982,
-			"gfarm_set_local_user_for_this_local_account() failed: %s",
+			"gfarm_set_local_user_for_this_local_account() failed: "
+			"%s",
 			gfarm_error_string(e));
 		return (e);
 	}

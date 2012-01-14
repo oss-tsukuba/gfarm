@@ -64,7 +64,7 @@ gfs_getattrplus0(
 	closure.patterns = patterns;
 	closure.npatterns = npatterns;
 	closure.flags = flags;
-		
+
 	closure.st = st;
 	closure.nattrsp = nattrsp;
 	closure.attrnamesp = attrnamesp;

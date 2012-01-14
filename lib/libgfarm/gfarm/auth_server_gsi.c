@@ -125,7 +125,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	session = gfarmSecSessionAccept(fd, cred, NULL, &e_major, &e_minor);
 	if (cred != GSS_C_NO_CREDENTIAL) {
 		OM_uint32 e_major2, e_minor2;
-		
+
 		if (gfarmGssDeleteCredential(&cred, &e_major2, &e_minor2) < 0
 		    && gflog_auth_get_verbose()) {
 			gflog_warning(GFARM_MSG_1000717,
@@ -275,9 +275,9 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	if (peer_typep != NULL) {
 		if (gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_HOST)
-		     *peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+			*peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
 		else
-		     *peer_typep = GFARM_AUTH_ID_TYPE_USER;
+			*peer_typep = GFARM_AUTH_ID_TYPE_USER;
 	}
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;

@@ -63,7 +63,7 @@ gfarm_name_submatch(const char *pattern, const char *name, int namelen,
 {
 	int w;
 
-	for (; --namelen >= 0; name++, pattern++){
+	for (; --namelen >= 0; name++, pattern++) {
 		if (*pattern == '?')
 			continue;
 		if (*pattern == '[' &&
@@ -75,7 +75,7 @@ gfarm_name_submatch(const char *pattern, const char *name, int namelen,
 			}
 			return (0);
 		}
-		if ((flags & GFARM_PATTERN_NOESCAPE)== 0 && *pattern == '\\') {
+		if ((flags & GFARM_PATTERN_NOESCAPE) == 0 && *pattern == '\\') {
 			if (pattern[1] != '\0' &&
 			    ((flags & GFARM_PATTERN_PATHNAME) == 0 ||
 			     pattern[1] != '/')) {
@@ -138,7 +138,7 @@ gfarm_pattern_submatch(const char *pattern, int pattern_length,
 		    pattern_length, flags, &asterisk);
 		if (*asterisk == '\0')
 			break;
-		for (;; name++, --residual){
+		for (;; name++, --residual) {
 			if (residual < sublen)
 				return (0);
 			if (gfarm_name_submatch(pattern, name, sublen, flags))

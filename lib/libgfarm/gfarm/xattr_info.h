@@ -11,18 +11,18 @@ struct gfs_foundxattr_entry {
 struct gfm_connection;
 
 struct gfs_xmlattr_ctx {
-	// for request from API
+	/* for request from API */
 	char *path;
 	char *expr;
 	int depth;
-	// reply of open
+	/* reply of open */
 	struct gfm_connection *gfm_server;
 	int fd;
 	int type;
-	// for request to gfmd
+	/* for request to gfmd */
 	char *cookie_path;
 	char *cookie_attrname;
-	// for reply
+	/* for reply */
 	int nalloc, nvalid, index;
 	struct gfs_foundxattr_entry *entries;
 	int eof;

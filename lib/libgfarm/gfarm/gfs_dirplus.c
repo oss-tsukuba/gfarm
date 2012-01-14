@@ -133,7 +133,7 @@ gfs_readdirplus(GFS_DirPlus dir,
 		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
 		    gfm_getdirentsplus_request,
 		    gfm_getdirentsplus_result,
-		    NULL, 
+		    NULL,
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001281,

@@ -166,6 +166,7 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 		} else if (pattern[i] == '/') {
 			break;
 		} else if (pattern[i] == '?' || pattern[i] == '*') {
+			; /* nothing to do */;
 		} else if (pattern[i] == '[') {
 			gfarm_pattern_charset_parse(pattern, i + 1, &i);
 		}
@@ -206,9 +207,9 @@ gfs_glob_sub(char *path_buffer, char *path_tail, const char *pattern,
 			s = strdup(path_buffer);
 			if (s == NULL) {
 				gflog_debug(GFARM_MSG_1001422,
-					"allocation of path string failed:"
-					" %s",
-					gfarm_error_string(GFARM_ERR_NO_MEMORY));
+				    "allocation of path string failed:"
+				    " %s",
+				    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 				return (GFARM_ERR_NO_MEMORY);
 			}
 			gfarm_stringlist_add(paths, s);

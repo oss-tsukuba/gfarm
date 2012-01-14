@@ -234,7 +234,7 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn, struct passwd *pwd)
 			error = GFARM_AUTH_ERROR_NOT_SUPPORTED;
 			e = gfp_xdr_send(conn, "i", error);
 			break;
-		}			
+		}
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000036,
 			    "auth_sharedsecret: key query: %s",

@@ -299,7 +299,7 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf, int cflags,
 		gflog_debug(GFARM_MSG_1001402,
 			"getxattr/fgetxattr_proccall() failed: %s",
 			gfarm_error_string(e));
-		return e;
+		return (e);
 	}
 
 	if (*size >= s)
@@ -313,7 +313,7 @@ gfs_getxattr0(int xmlMode, const char *path, GFS_File gf, int cflags,
 	}
 	*size = s;
 	free(v);
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -430,7 +430,7 @@ gfs_listxattr0(int xmlMode, int cflags, const char *path, char *list,
 			"gfs_listxattr_proccall(%s) failed: %s",
 			path,
 			gfarm_error_string(e));
-		return e;
+		return (e);
 	}
 
 	if (*size >= s)
@@ -444,7 +444,7 @@ gfs_listxattr0(int xmlMode, int cflags, const char *path, char *list,
 	}
 	*size = s;
 	free(l);
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -601,16 +601,16 @@ gfs_xmlattr_ctx_alloc(int nentry)
 
 	overflow = 0;
 	ctxsize = gfarm_size_add(&overflow, sizeof(*ctxp),
-			gfarm_size_mul(&overflow, nentry, sizeof(*ctxp->entries)));
+	    gfarm_size_mul(&overflow, nentry, sizeof(*ctxp->entries)));
 	if (!overflow)
 		p = calloc(1, ctxsize);
 	if (p != NULL) {
 		ctxp = (struct gfs_xmlattr_ctx *)p;
 		ctxp->nalloc = nentry;
 		ctxp->entries = (struct gfs_foundxattr_entry *)(ctxp + 1);
-		return ctxp;
+		return (ctxp);
 	} else
-		return NULL;
+		return (NULL);
 }
 
 static void
@@ -745,18 +745,21 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 			fpath = ctxp->entries[ctxp->index].path;
 			pathlen = strlen(ctxp->path);
 			overflow = 0;
-			allocsz = gfarm_size_add(&overflow,
-				gfarm_size_add(&overflow, pathlen, strlen(fpath)), 2);
+			allocsz = gfarm_size_add(&overflow, gfarm_size_add(
+			    &overflow, pathlen, strlen(fpath)), 2);
 			if (!overflow)
 				p = realloc(ctxp->workpath, allocsz);
 			if (!overflow && (p != NULL)) {
 				ctxp->workpath = p;
 				if (ctxp->path[pathlen-1] == '/')
-					sprintf(ctxp->workpath, "%s%s", ctxp->path, fpath);
+					sprintf(ctxp->workpath, "%s%s",
+					    ctxp->path, fpath);
 				else
-					sprintf(ctxp->workpath, "%s/%s", ctxp->path, fpath);
+					sprintf(ctxp->workpath, "%s/%s",
+					    ctxp->path, fpath);
 				pathlen = strlen(ctxp->workpath);
-				if ((pathlen > 1) && (ctxp->workpath[pathlen-1] == '/'))
+				if ((pathlen > 1) && (ctxp->workpath[pathlen-1]
+				    == '/'))
 					ctxp->workpath[pathlen-1] = '\0';
 				*fpathp = ctxp->workpath;
 				*namep = ctxp->entries[ctxp->index].attrname;
@@ -775,7 +778,7 @@ gfs_getxmlent(struct gfs_xmlattr_ctx *ctxp, char **fpathp, char **namep)
 			gfarm_error_string(e));
 	}
 
-	return e;
+	return (e);
 }
 
 gfarm_error_t

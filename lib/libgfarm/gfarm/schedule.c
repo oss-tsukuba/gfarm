@@ -130,9 +130,9 @@
 #define PER_NET_CONCURRENCY	3	/* used when examining RTT */
 #define ENOUGH_RATE		4
 
-#define	ADDR_EXPIRATION		gfarm_ctxp->schedule_cache_timeout
-#define	LOADAVG_EXPIRATION	gfarm_ctxp->schedule_cache_timeout
-#define	STATFS_EXPIRATION	gfarm_ctxp->schedule_cache_timeout
+#define	ADDR_EXPIRATION		(gfarm_ctxp->schedule_cache_timeout)
+#define	LOADAVG_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
+#define	STATFS_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
 
 #define RTT_THRESH		4 /* range to treat as similar distance */
 
@@ -445,7 +445,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	/* XXX - may assume IPv4 class C network */
-	net->flags = NET_FLAG_NETMASK_KNOWN; 
+	net->flags = NET_FLAG_NETMASK_KNOWN;
 	net->candidate_list = NULL;
 	net->candidate_last = &net->candidate_list;
 	net->ongoing = 0;
@@ -756,7 +756,8 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_NO_ERROR); /* ignore this host */
 #if 0 /* not yet in gfarm v2 */
 	if (host_info != NULL && search_idle_arch_filter != NULL &&
-	    !IS_IN_ARCH_SET(host_info->architecture, search_idle_arch_filter)){
+	    !IS_IN_ARCH_SET(host_info->architecture,
+		search_idle_arch_filter)) {
 		/* ignore this host, hostname == NULL case */
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -834,9 +835,9 @@ gfarm_schedule_search_mode_use_loadavg(void)
 	staticp->default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
 }
 
-#define IDLE_LOAD_AVERAGE		gfarm_ctxp->schedule_idle_load
-#define SEMI_IDLE_LOAD_AVERAGE		gfarm_ctxp->schedule_busy_load
-#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	gfarm_ctxp->schedule_virtual_load
+#define IDLE_LOAD_AVERAGE		(gfarm_ctxp->schedule_idle_load)
+#define SEMI_IDLE_LOAD_AVERAGE		(gfarm_ctxp->schedule_busy_load)
+#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	(gfarm_ctxp->schedule_virtual_load)
 
 struct search_idle_state {
 	struct gfarm_eventqueue *q;
@@ -1382,8 +1383,8 @@ search_idle_examine_rtt_of_all_networks(struct search_idle_state *s)
 			for (net = staticp->search_idle_network_list;
 			    net != NULL; net = net->next) {
 				if ((net->flags &
-				    (NET_FLAG_SCHEDULING|NET_FLAG_RTT_AVAIL))!=
-				    NET_FLAG_SCHEDULING)
+				    (NET_FLAG_SCHEDULING|NET_FLAG_RTT_AVAIL))
+				    != NET_FLAG_SCHEDULING)
 					continue; /* RTT is already known */
 				rtt_unknown = 1;
 				if (net->cursor == NULL)
@@ -2221,7 +2222,8 @@ url_hosts_schedule_common(const char *gfarm_url,
 			e = schedule_search_idle_common(
 			    0, write_mode, &shortage, residual);
 		if (e == NULL)
-			e = gfarm_fixedstrings_dup(shortage,residual,residual);
+			e = gfarm_fixedstrings_dup(shortage, residual,
+			    residual);
 		if (e != NULL) {
 			free(residual);
 			gfarm_strings_free_deeply(nfrags, hosts);

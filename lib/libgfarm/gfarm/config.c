@@ -161,7 +161,7 @@ gfarm_xattr_caching_patterns_number(void)
 	return (gfarm_stringlist_length(&staticp->xattr_cache_list));
 }
 
-char **
+char**
 gfarm_xattr_caching_patterns(void)
 {
 	return (GFARM_STRINGLIST_STRARRAY(staticp->xattr_cache_list));
@@ -422,15 +422,15 @@ map_user(gfarm_stringlist *map_file_list, const char *from, char **to_p,
 	}
 search_end:
 	if (*to_p == NULL) { /* not found */
-	 	*to_p = strdup(from);
+		*to_p = strdup(from);
 		if (*to_p == NULL)
 			e = GFARM_ERR_NO_MEMORY;
-	}	
-finish:	
+	}
+finish:
 	if (map != NULL)
 		fclose(map);
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (*to_p != NULL)	 
+		if (*to_p != NULL)
 			free(*to_p);
 		gflog_error(GFARM_MSG_1000010,
 		    "%s line %d: %s", mapfile, lineno,
@@ -1043,7 +1043,7 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 			}
 			*p++ = *s++;
 			break;
-		case '\n':	
+		case '\n':
 		case '#':
 		case '\0':
 			*p = '\0';
@@ -1219,7 +1219,7 @@ parse_netparam_arguments(char *p, char **op)
 			"Too many netparam arguments passed");
 		return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 	}
-	
+
 	e = gfarm_hostspec_parse(host, &hostspecp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/*
@@ -1300,7 +1300,7 @@ parse_sockopt_arguments(char *p, char **op)
 			return (GFARM_ERRMSG_TOO_MANY_ARGUMENTS);
 		}
 	}
-	
+
 	if (is_listener) {
 		e = gfarm_sockopt_listener_config_add(option);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -1578,7 +1578,8 @@ parse_set_var(char *p, char **rv)
 	s = strdup(s);
 	if (s == NULL) {
 		gflog_debug(GFARM_MSG_1000960,
-			"allocation of argument failed when parsing set var: %s",
+			"allocation of argument failed when parsing set var: "
+			"%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -1692,10 +1693,14 @@ parse_set_misc_offset(char *p, gfarm_off_t *vp)
 	}
 	if (*ep != '\0') {
 		switch (*ep) {
-		case 'k': case 'K': ep++; v *= 1024; break;
-		case 'm': case 'M': ep++; v *= 1024 * 1024; break;
-		case 'g': case 'G': ep++; v *= 1024 * 1024 * 1024; break;
-		case 't': case 'T': ep++; v *=1024*1024; v *=1024*1024; break;
+		case 'k': case 'K':
+			ep++; v *= 1024; break;
+		case 'm': case 'M':
+			ep++; v *= 1024 * 1024; break;
+		case 'g': case 'G':
+			ep++; v *= 1024 * 1024 * 1024; break;
+		case 't': case 'T':
+			ep++; v *= 1024 * 1024; v *= 1024 * 1024; break;
 		}
 		if (*ep != '\0') {
 			gflog_debug(GFARM_MSG_1000968,
@@ -2387,7 +2392,7 @@ gfarm_config_set_default_misc(void)
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
 	if (gfarm_simultaneous_replication_receivers ==
 	    GFARM_CONFIG_MISC_DEFAULT)
-		 gfarm_simultaneous_replication_receivers =
+		gfarm_simultaneous_replication_receivers =
 		    GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT;
 	if (gfarm_ctxp->gfsd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfsd_connection_cache =

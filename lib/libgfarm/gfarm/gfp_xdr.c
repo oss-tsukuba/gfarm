@@ -526,7 +526,7 @@ recv_sized(struct gfp_xdr *conn, int just, int do_timeout, void *p, size_t sz,
 }
 
 gfarm_error_t
-gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout, 
+gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 	size_t *sizep, int *eofp, const char **formatp, va_list *app)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e_save = GFARM_ERR_NO_ERROR;
@@ -594,7 +594,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 * may be diffenent (int64_t or double), we must
 			 * not pass this as is via network.
 			 */
-			if ((e = recv_sized(conn, just, do_timeout, lv, 
+			if ((e = recv_sized(conn, just, do_timeout, lv,
 			    sizeof(lv), &size)) != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF)
 					return (GFARM_ERR_NO_ERROR); /* EOF */
@@ -619,7 +619,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			continue;
 		case 's':
 			sp = va_arg(*app, char **);
-			if ((e = recv_sized(conn, just, do_timeout, &i, 
+			if ((e = recv_sized(conn, just, do_timeout, &i,
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF)
 					return (GFARM_ERR_NO_ERROR); /* EOF */
@@ -639,7 +639,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				e_save = GFARM_ERR_NO_MEMORY;
 				continue;
 			}
-			if ((e = recv_sized(conn, just, do_timeout, *sp, i, 
+			if ((e = recv_sized(conn, just, do_timeout, *sp, i,
 			    &size)) != GFARM_ERR_NO_ERROR)
 				break;
 			(*sp)[i] = '\0';
@@ -653,7 +653,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			if ((e = recv_sized(conn, just, do_timeout, &i, 
+			if ((e = recv_sized(conn, just, do_timeout, &i,
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF)
 					return (GFARM_ERR_NO_ERROR); /* EOF */
@@ -687,7 +687,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 * diffenent ([u]int32_t or [u]int64_t), we must not
 			 * pass this as is via network.
 			 */
-			if ((e = recv_sized(conn, just, do_timeout, &i, 
+			if ((e = recv_sized(conn, just, do_timeout, &i,
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF)
 					return (GFARM_ERR_NO_ERROR); /* EOF */
@@ -709,14 +709,14 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				e_save = GFARM_ERR_NO_MEMORY;
 				continue;
 			}
-			if ((e = recv_sized(conn, just, do_timeout, *sp, i, 
+			if ((e = recv_sized(conn, just, do_timeout, *sp, i,
 			    &size)) != GFARM_ERR_NO_ERROR)
 				break;
 			continue;
 		case 'f':
 			dp = va_arg(*app, double *);
 			assert(sizeof(*dp) == 8);
-			if ((e = recv_sized(conn, just, do_timeout, dp, 
+			if ((e = recv_sized(conn, just, do_timeout, dp,
 			    sizeof(*dp), &size)) != GFARM_ERR_NO_ERROR) {
 				if (e == GFARM_ERR_UNEXPECTED_EOF)
 					return (GFARM_ERR_NO_ERROR); /* EOF */
@@ -755,7 +755,8 @@ gfarm_error_t
 gfp_xdr_vrecv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	int *eofp, const char **formatp, va_list *app)
 {
-	return gfp_xdr_vrecv_sized_x(conn, just, 1, sizep, eofp, formatp, app);
+	return (gfp_xdr_vrecv_sized_x(conn, just, 1, sizep, eofp, formatp,
+		app));
 }
 
 gfarm_error_t

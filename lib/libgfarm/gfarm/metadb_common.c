@@ -311,9 +311,9 @@ gfarm_base_xattr_info_free_array(int n, void *vinfo)
 	int i;
 	struct xattr_info *info = vinfo;
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < n; i++)
 		xattr_info_free(&info[i]);
-	}
+
 	free(info);
 }
 
@@ -332,7 +332,7 @@ xattr_info_clear(void *vinfo)
 static int
 xattr_info_validate(void *vinfo)
 {
-	return 1;
+	return (1);
 }
 
 const struct gfarm_base_generic_info_ops gfarm_base_xattr_info_ops = {

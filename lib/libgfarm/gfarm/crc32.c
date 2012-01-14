@@ -101,9 +101,9 @@ gfarm_crc32(gfarm_uint32_t inCrc32, const void *buf, size_t bufLen)
 	/** accumulate crc32 for buffer **/
 	crc32 = inCrc32 ^ 0xFFFFFFFF;
 	byteBuf = (unsigned char *)buf;
-	for (i = 0; i < bufLen; i++) {
+	for (i = 0; i < bufLen; i++)
 		crc32 = (crc32 >> 8) ^ crcTable[(crc32 ^ byteBuf[i]) & 0xFF];
-	}
+
 	return (crc32 ^ 0xFFFFFFFF);
 }
 

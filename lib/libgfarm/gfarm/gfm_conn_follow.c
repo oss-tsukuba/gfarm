@@ -46,7 +46,8 @@ gfm_client_connection_and_process_acquire_by_path_follow(const char *path,
 		*gfm_serverp = closure.gfm_server;
 	} else {
 		gflog_debug(GFARM_MSG_1003266,
-			"gfm_client_connection_and_process_acquire_by_path_follow: gfm_inode_op(%s): %s",
+			"gfm_client_connection_and_process_acquire_by_path"
+			"_follow: gfm_inode_op(%s): %s",
 			path, gfarm_error_string(e));
 	}
 
