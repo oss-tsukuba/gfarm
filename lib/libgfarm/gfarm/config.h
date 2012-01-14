@@ -74,6 +74,7 @@ void gfarm_set_metadb_server_force_slave(int);
 extern int gfarm_network_receive_timeout;
 extern int gfarm_file_trace;
 
+void gfarm_config_set_filename(char *);
 char *gfarm_config_get_filename(void);
 
 void gfarm_config_clear(void);
@@ -98,3 +99,8 @@ gfarm_error_t gfarm_client_process_set(struct gfs_connection *,
 	struct gfm_connection *);
 gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
 	struct gfm_connection *);
+
+/* for server */
+gfarm_error_t gfarm_server_initialize(char *);
+gfarm_error_t gfarm_server_terminate(void);
+gfarm_error_t gfarm_server_config_read(void);
