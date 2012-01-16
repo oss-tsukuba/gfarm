@@ -6,13 +6,15 @@ require "pp"
 $running = true
 
 def make_path()
-  gpath =$config[:testdir]
+  gpath = $config[:testdir]
   if (gpath[0..8] == "gfarm:///")
     gpath.slice!(0..7)
   end
   return $config[:gfarm2fs]+gpath
 end
 
+$hostname = `hostname`.chomp
+$pid = Process.pid
 $gfsds = `gfsched`.split("\n")
 if ($gfsds.size == 0)
   STDERR.print "no gfsd!\n"
@@ -45,39 +47,41 @@ opts.parse!(ARGV)
 
 if (!$config[:gfarm2fs].nil?)
   $config[:fullpath] = make_path()
+  $full_path = "#{$config[:fullpath]}/#{$hostname}-#{$pid}"
 end
   
+$top_dir = "#{$config[:testdir]}/#{$hostname}-#{$pid}"
 $config[:number].times { |i|
-  system("gfmkdir -p #{$config[:testdir]}/metadata/#{i}");
-  system("gfmkdir -p #{$config[:testdir]}/tree/#{i}");
-  system("gfmkdir -p #{$config[:testdir]}/io/#{i}");
+  system("gfmkdir -p #{$top_dir}/metadata/#{i}");
+  system("gfmkdir -p #{$top_dir}/tree/#{i}");
+  system("gfmkdir -p #{$top_dir}/io/#{i}");
   if (!$config[:gfarm2fs].nil?)
-    system("gfmkdir -p #{$config[:testdir]}/metadata2/#{i}");
-    system("gfmkdir -p #{$config[:testdir]}/tree2/#{i}");
-    system("gfmkdir -p #{$config[:testdir]}/io2/#{i}");
+    system("gfmkdir -p #{$top_dir}/metadata2/#{i}");
+    system("gfmkdir -p #{$top_dir}/tree2/#{i}");
+    system("gfmkdir -p #{$top_dir}/io2/#{i}");
   end
 }
 $commands = Array.new
 
 $config[:number].times { |i|
-  $commands.push("gfperf-metadata -t #{$config[:testdir]}/metadata/#{i} -n 500")
-  $commands.push("gfperf-tree -t #{$config[:testdir]}/tree/#{i} -w 3 -d 5")
+  $commands.push("gfperf-metadata -t #{$top_dir}/metadata/#{i} -n 500")
+  $commands.push("gfperf-tree -t #{$top_dir}/tree/#{i} -w 3 -d 5")
   $gfsds.each {|g|
-    $commands.push("gfperf-read -t #{$config[:testdir]}/io/#{i} -l 1G -g #{g} -k -1")
-    $commands.push("gfperf-write -t #{$config[:testdir]}/io/#{i} -l 1G -g #{g} -k -1")
+    $commands.push("gfperf-read -t #{$top_dir}/io/#{i} -l 1G -g #{g} -k -1")
+    $commands.push("gfperf-write -t #{$top_dir}/io/#{i} -l 1G -g #{g} -k -1")
   }
   tg = $gfsds.clone
   tg.push(tg.shift)
   $gfsds.each_index {|j|
-    $commands.push("gfperf-replica -s #{$gfsds[j]} -d #{tg[j]} -l 1M -t #{$config[:testdir]}/io/#{i}")
+    $commands.push("gfperf-replica -s #{$gfsds[j]} -d #{tg[j]} -l 1M -t #{$top_dir}/io/#{i}")
   }
 
   if (!$config[:gfarm2fs].nil?)
-    $commands.push("gfperf-metadata -t file://#{$config[:fullpath]}/metadata2/#{i} -n 500")
-    $commands.push("gfperf-tree -t file://#{$config[:fullpath]}/tree2/#{i}")
+    $commands.push("gfperf-metadata -t file://#{$full_path}/metadata2/#{i} -n 500")
+    $commands.push("gfperf-tree -t file://#{$full_path}/tree2/#{i}")
     $gfsds.each {|g|
-      $commands.push("gfperf-read -t #{$config[:testdir]}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
-      $commands.push("gfperf-write -t #{$config[:testdir]}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
+      $commands.push("gfperf-read -t #{$top_dir}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
+      $commands.push("gfperf-write -t #{$top_dir}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
     }
   end
 }
