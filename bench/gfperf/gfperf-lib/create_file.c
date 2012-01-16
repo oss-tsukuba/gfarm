@@ -63,7 +63,9 @@ create_file_on_gfarm(const char *url, char *hostname,
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(fp, hostname);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s\n", hostname,
+			fprintf(stderr,
+				"gfs_pio_internal_set_view_section() error! "
+				"%s: %s\n", hostname,
 				gfarm_error_string(e));
 			goto err_return;
 		}
