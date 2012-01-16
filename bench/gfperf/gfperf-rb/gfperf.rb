@@ -5,6 +5,9 @@ require 'yaml'
 require 'pp'
 require 'open3'
 require 'sqlite3'
+require 'thread'
+
+$error_message_lock = Mutex.new
 
 def calc_pasttime(str)
   u = {"sec" => 1, "second" => 1, "secs" => 1, "seconds" => 1,
@@ -106,11 +109,13 @@ def make_opt(h)
 end
 
 def insert_error_message(command, message)
-  open_db()
-  sql = "insert into error_msg(date,command,message) "+
+  $error_message_lock.synchronize {
+    open_db()
+    sql = "insert into error_msg(date,command,message) "+
     "values('#{$now.to_i}',?,?);"
-  $db.execute(sql, command, message)
-  close_db()
+    $db.execute(sql, command, message)
+    close_db()
+  }
 end
 
 def insert_execute_time()
@@ -313,12 +318,14 @@ if (conf_file_fd.flock(File::LOCK_EX|File::LOCK_NB) == false)
 end
 
 Signal.trap(:INT) {
+  umount_gfarm2fs()
   conf_file_fd.flock(File::LOCK_UN)
   conf_file_fd.close()
   exit(0)
 }
 
 Signal.trap(:TERM) {
+  umount_gfarm2fs()
   conf_file_fd.flock(File::LOCK_UN)
   conf_file_fd.close()
   exit(0)
