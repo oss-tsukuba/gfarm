@@ -228,7 +228,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 {
 	gfarm_error_t e;
 	struct gfarm_filesystem *fs;
-	struct gfs_file_list *gfl;
+	struct gfs_file_list *gfl = NULL;
 	char *host = NULL, *user = NULL;
 	int fc, i, ok = 0;
 
@@ -319,7 +319,8 @@ error_all:
 	free(host);
 	free(user);
 
-	gfs_pio_file_list_foreach(gfl, set_error, &e);
+	if (gfl != NULL)
+		gfs_pio_file_list_foreach(gfl, set_error, &e);
 
 	return (e);
 }
