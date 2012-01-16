@@ -68,8 +68,8 @@ $config[:number].times { |i|
   }
   tg = $gfsds.clone
   tg.push(tg.shift)
-  $gfsds.each_index {|i|
-    $commands.push("gfperf-replica -s #{$gfsds[i]} -d #{tg[i]} -l 1M -t #{$config[:testdir]}/io/#{i}")
+  $gfsds.each_index {|j|
+    $commands.push("gfperf-replica -s #{$gfsds[j]} -d #{tg[j]} -l 1M -t #{$config[:testdir]}/io/#{i}")
   }
 
   if (!$config[:gfarm2fs].nil?)
