@@ -250,5 +250,5 @@ $manager.wait
 print "stop at #{Time.now.to_s}\n"
 
 print "clean up..."
-system("gfrm -rf #{$config[:testdir]}/*");
+system("gfrm -rf #{$top_dir}");
 print "done.\n"
