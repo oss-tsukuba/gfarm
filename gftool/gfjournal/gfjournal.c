@@ -49,10 +49,11 @@ void mdhost_self_is_readonly_unlocked(void) {}
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-dhlrv?] <journal file path>\n",
+	fprintf(stderr, "Usage: %s [-dhlmrv?] <journal file path>\n",
 		program_name);
 	fprintf(stderr,
 		"       -l : list records\n"
+		"       -m : print the maximum sequence number only\n"
 		"       -r : suppress header and summary\n"
 		"       -d : set log level to debug\n"
 		"       -v : verbose output\n"
@@ -462,6 +463,7 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int exit_code = EXIT_SUCCESS;
 	int opt_list = 0;
+	int opt_max_seqnum_only = 0;
 	int c, eof;
 	const char *path;
 	journal_post_read_op_t post_read = post_read_aggregate;
@@ -470,7 +472,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_initialize();
 
-	while ((c = getopt(argc, argv, "dhlrv?")) != -1) {
+	while ((c = getopt(argc, argv, "dhlmrv?")) != -1) {
 		switch (c) {
 		case 'd':
 			gflog_set_message_verbose(2);
@@ -479,6 +481,9 @@ main(int argc, char **argv)
 		case 'l':
 			opt_list = 1;
 			post_read = post_read_list;
+			break;
+		case 'm':
+			opt_max_seqnum_only = 1;
 			break;
 		case 'v':
 			opt_verbose = 1;
@@ -509,7 +514,7 @@ main(int argc, char **argv)
 
 	reader = journal_file_main_reader(jf);
 
-	if (opt_list && opt_record_only == 0) {
+	if (opt_list && !opt_record_only && !opt_max_seqnum_only) {
 		printf(
 		    "seqnum       operation              "
 		    "length  ");
@@ -524,7 +529,9 @@ main(int argc, char **argv)
 	ave_reclen = num_rec > 0 ? ave_reclen / num_rec : 0;
 	if (num_rec == 0)
 		min_seqnum = 0;
-	if (opt_record_only == 0) {
+	if (opt_max_seqnum_only)
+		printf("%" GFARM_PRId64 "\n", max_seqnum);
+	else if (!opt_record_only) {
 		if (opt_list)
 			printf("\n");
 		printf("records  seqnum(min/max)            "
