@@ -52,13 +52,31 @@ end
   
 $top_dir = "#{$config[:testdir]}/#{$hostname}-#{$pid}"
 $config[:number].times { |i|
-  system("gfmkdir -p #{$top_dir}/metadata/#{i}");
-  system("gfmkdir -p #{$top_dir}/tree/#{i}");
-  system("gfmkdir -p #{$top_dir}/io/#{i}");
+  r = system("gfmkdir -p #{$top_dir}/metadata/#{i}");
+  if (r == false)
+    exit(1);
+  end
+  r = system("gfmkdir -p #{$top_dir}/tree/#{i}");
+  if (r == false)
+    exit(1);
+  end
+  r = system("gfmkdir -p #{$top_dir}/io/#{i}");
+  if (r == false)
+    exit(1);
+  end
   if (!$config[:gfarm2fs].nil?)
-    system("gfmkdir -p #{$top_dir}/metadata2/#{i}");
-    system("gfmkdir -p #{$top_dir}/tree2/#{i}");
-    system("gfmkdir -p #{$top_dir}/io2/#{i}");
+    r = system("gfmkdir -p #{$top_dir}/metadata2/#{i}");
+    if (r == false)
+      exit(1);
+    end
+    r = system("gfmkdir -p #{$top_dir}/tree2/#{i}");
+    if (r == false)
+      exit(1);
+    end
+    r = system("gfmkdir -p #{$top_dir}/io2/#{i}");
+    if (r == false)
+      exit(1);
+    end
   end
 }
 $commands = Array.new
