@@ -59,6 +59,11 @@ do_replica()
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "replicate %s: %s\n", testdir_filename,
 			gfarm_error_string(e));
+		if (e == GFARM_ERR_ALREADY_EXISTS) 
+			fprintf(stderr,
+				"may be enabled auto replication "
+				"in %s or the parent directory.\n",
+				testdir);
 		gfarm_host_info_free(&from);
 		gfarm_host_info_free(&to);
 		return (e);
