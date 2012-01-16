@@ -51,6 +51,16 @@ if (!$config[:gfarm2fs].nil?)
 end
   
 $top_dir = "#{$config[:testdir]}/#{$hostname}-#{$pid}"
+r = system("gfmkdir -p #{$top_dir}");
+if (r == false)
+  exit(1);
+end
+r = system("echo -n 1 | gfxattr -s #{$top_dir} gfarm.ncopy")
+if (r == false)
+  STDERR.print("gfarm.ncopy error!\n")
+  exit(1);
+end
+
 $config[:number].times { |i|
   r = system("gfmkdir -p #{$top_dir}/metadata/#{i}");
   if (r == false)
