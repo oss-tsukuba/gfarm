@@ -486,6 +486,7 @@ main(int argc, char **argv)
 			break;
 		case 'm':
 			opt_max_seqnum_only = 1;
+			break;
 		case 'v':
 			opt_verbose = 1;
 			break;
