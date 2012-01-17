@@ -73,7 +73,9 @@ gfarm2.conf¤Ëmetadb_server_list¤òÄÉ²Ã¤·¤Æ¡¢¥á¥¿¥Ç¡¼¥¿¥µ¡¼¥Ð¤Î¥Û¥¹¥ÈÌ¾¤È¥Ý¡¼¥ÈÈÖ¹
 metadb_server_list host-a:601 host-b:601
 </PRE></TD></TR></TBODY></TABLE>
 
-root¥æ¡¼¥¶¤Ç¥á¥¿¥Ç¡¼¥¿¤ò¥À¥ó¥×¤·¤Þ¤¹¡£
+root¥æ¡¼¥¶¤Ç¥á¥¿¥Ç¡¼¥¿¤ò¥À¥ó¥×¤·¤Þ¤¹¡£<BR>
+config-gfarm ¤ÎºÝ¤Ë¡¢--prefix ¥ª¥×¥·¥ç¥ó¤ä -l ¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Æ¤¤¤¿¾ì¹ç¤Ï¡¢
+gfdump.postgresql ¤ËÂÐ¤·¤Æ¤âÆ±¤¸¥ª¥×¥·¥ç¥ó¤òÍ¿¤¨¤Æ¤¯¤À¤µ¤¤¡£
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -d -f gfarm-pgsql.dmp
@@ -96,7 +98,9 @@ root¥æ¡¼¥¶¤Ç¥á¥¿¥Ç¡¼¥¿¤ò¥À¥ó¥×¤·¤Þ¤¹¡£
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
 
-root¥æ¡¼¥¶¤Ç¥á¥¿¥Ç¡¼¥¿¤ò¥ê¥¹¥È¥¢¤·¤Þ¤¹¡£
+root¥æ¡¼¥¶¤Ç¥á¥¿¥Ç¡¼¥¿¤ò¥ê¥¹¥È¥¢¤·¤Þ¤¹¡£<br>
+config-gfarm ¤ÎºÝ¤Ë¡¢--prefix ¥ª¥×¥·¥ç¥ó¤ä -l ¥ª¥×¥·¥ç¥ó¤ò»ØÄê¤·¤Æ¤¤¤¿¾ì¹ç¤Ï¡¢
+gfdump.postgresql ¤ËÂÐ¤·¤Æ¤âÆ±¤¸¥ª¥×¥·¥ç¥ó¤òÍ¿¤¨¤Æ¤¯¤À¤µ¤¤¡£
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
 # gfdump.postgresql -r -f gfarm-pgsql.dmp
