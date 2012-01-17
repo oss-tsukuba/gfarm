@@ -255,26 +255,28 @@ Table of Contents:
 	when it aborts.  You need to do the following procedures with
 	the root privilege to retrieve a core file:
 
-	(1) Configure a kernel parameter.  Append the line below to
+	(1) Configure a kernel parameters.  Append the lines below to
 	the sysctl configuration file (/etc/sysctl.conf):
 
 		fs.suid_dumpable=1
+		kernel.core_pattern="/var/tmp/core.%e.%p"
 
-	Then reload the settings in the configuration file:
+	The "kernel.core_pattern" line specifies paths of core files.
+	"%e" and "%p" in the pattern are expanded to a program name and
+	a process ID, respectively.  Then, reload the settings:
 
 		/sbin/sysctl -p
 
-	(2) Set the size limit and the location of a core file.  Insert
-	the following lines into near the beginning of the start up script
-	of gfmd (/etc/init.d/gfmd) or gfsd (/etc/init.d/gfsd).
+	(2) Set the size limit of a core file.  Add the following line
+	to the "/etc/security/limits.conf" file:
 
-		cd /tmp
+		*	soft	core	unlimited
+
+	This setting is enabled after the operating system is restarted.
+	If gfmd or gfsd is currently running and you'd like to apply the
+	setting immediately, restart gfmd or gfsd:
+
 		ulimit -c unlimited
-
-	"/tmp" above is a directory where a core file will be created.
-	"unlimited" means no size limit of a core file is provided.
-	If gfmd or gfsd is currently running, restart it.
-
 		/etc/init.d/gfmd restart
 		/etc/init.d/gfsd restart
 
