@@ -33,6 +33,7 @@ static char *fullpath;
 static int parallel_flag = 0;
 static char *wait_time = NULL;
 static char *group_name = "unknown";
+static int stop_waiting = 60;
 
 #define NCOPY_KEY "gfarm.ncopy"
 
@@ -133,12 +134,15 @@ usage(char *argv[])
 	fprintf(stderr, "\t [-l, --filesize <file size>] \n");
 	fprintf(stderr, "\t [-f, --number <number of files>] \n");
 	fprintf(stderr, "\t [-d, --duplicate <number of duplicate>] \n");
+	fprintf(stderr, "\t [-s, "
+		"--stop <number of seconds for stop waiting>] \n");
 #else
 	fprintf(stderr, "\t [-t <gfarm url>] \n");
 	fprintf(stderr, "\t [-m <gfarm2fs mount point>] \n");
 	fprintf(stderr, "\t [-l <file size>] \n");
 	fprintf(stderr, "\t [-f <number of files>] \n");
 	fprintf(stderr, "\t [-d <number of duplicate>] \n");
+	fprintf(stderr, "\t [-s <number of seconds for stop waiting>] \n");
 #endif
 	if (parallel_flag) {
 #ifdef HAVE_GETOPT_LONG
@@ -156,7 +160,7 @@ gfarm_error_t
 parse_opt(int argc, char *argv[])
 {
 	int r;
-	static char *optstr = "ht:l:f:m:d:n:w:";
+	static char *optstr = "ht:l:f:m:d:n:w:s:";
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
 	static struct option long_options[] = {
@@ -167,6 +171,7 @@ parse_opt(int argc, char *argv[])
 		{"duplicate", 1, 0, 'd'},
 		{"name", 1, 0, 'n'},
 		{"wait", 1, 0, 'w'},
+		{"stop", 1, 0, 's'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -198,6 +203,9 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'f':
 			number = atoi(optarg);
+			break;
+		case 's':
+			stop_waiting = atoi(optarg);
 			break;
 		case 'd':
 			duplicate = atoi(optarg);
@@ -241,9 +249,7 @@ dup_wait(char *path)
 	struct gfs_replica_info *ri;
 	int max_wait;
 
-	max_wait = filesize / (16*1024);
-	if (max_wait < 10)
-		max_wait = 10;
+	max_wait = stop_waiting * 2;
 
 	i = 0;
 	while (1) {
