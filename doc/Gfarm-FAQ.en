@@ -273,8 +273,10 @@ Table of Contents:
 		*	soft	core	unlimited
 
 	This setting is enabled after the operating system is restarted.
+
 	If gfmd or gfsd is currently running and you'd like to apply the
-	setting immediately, restart gfmd or gfsd:
+	setting immediately, use ulimit command and restart gfmd or gfsd,
+	as follows:
 
 		ulimit -c unlimited
 		/etc/init.d/gfmd restart

@@ -267,8 +267,10 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 
 		*	soft	core	unlimited
 
-	この設定は，OS 再起動後に有効になります．現在も gfmd や gfsd が
-	動作中で、直ちに設定を適用したい場合は，gfmd または gfsd を再起動
+	この設定は，OS 再起動後に有効になります．
+
+	現在も gfmd や gfsd が動作中で，直ちに設定を適用したい場合は，
+	以下のように ulimit コマンド実行後，gfmd または gfsd を再起動
 	してください．
 
 		ulimit -c unlimited
