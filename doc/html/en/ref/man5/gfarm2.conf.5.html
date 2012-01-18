@@ -1825,10 +1825,37 @@ modification and removal is enabled.</P
 ><P
 >This directive is available in both gfarm2.conf and gfmd.conf.</P
 ><P
->$BNc(B:</P
+>Here is an example:</P
 ><P
 CLASS="LITERALLAYOUT"
 >	file_trace&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>debug_command</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>string_list</I
+></TT
+></DT
+><DD
+><P
+>When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
+a debug command specified in this directive is executed.
+For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	debug_command&nbsp;env&nbsp;DISPLAY=:0.0&nbsp;xterm&nbsp;-e&nbsp;gdb&nbsp;%e&nbsp;%p</P
+><P
+>"%e" and "%p" are expaned to an actual program name and a process ID,
+respectively.
+If you'd like to use "%" character itself in the command line,
+type "%%".</P
+><P
+>This directive is available in both gfarm2.conf and gfmd.conf.
+If this directive is omitted, no debug command is executed.</P
 ></DD
 ><DT
 ><SPAN
@@ -2199,6 +2226,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
 		  &#60;log_auth_verbose_statement&#62;&nbsp;|<br>
 		  &#60;file_trace_statement&#62;&nbsp;|<br>
+		  &#60;debug_command_statement&#62;&nbsp;|<br>
 		  &#60;client_file_bufsize_statement&#62;&nbsp;|<br>
 		  &#60;profile_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_list_statement&#62;&nbsp;|<br>
@@ -2280,6 +2308,7 @@ CLASS="LITERALLAYOUT"
 	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
 	&#60;log_auth_verbose_statement&#62;&nbsp;::=&nbsp;"log_auth_verbose"&nbsp;&#60;validity&#62;<br>
 	&#60;file_trace_statement&#62;&nbsp;::=&nbsp;"file_trace"&nbsp;&#60;validity&#62;<br>
+	&#60;debug_command_statement&#62;&nbsp;::=&nbsp;"debug_command"&nbsp;&#60;string_list&#62;<br>
 	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;client_file_bufsize_statement&#62;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&#60;size&#62;<br>
@@ -2296,6 +2325,9 @@ CLASS="LITERALLAYOUT"
 	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
 	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_journal_recvq_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_recvq_size"&nbsp;&#60;number&#62;<br>
+	&#60;string_list&#62;&nbsp;::=&nbsp;<br>
+		  &#60;string&#62;&nbsp;|<br>
+		  &#60;string&#62;&nbsp;&#60;string_list&#62;<br>
 	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
 		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
 	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
