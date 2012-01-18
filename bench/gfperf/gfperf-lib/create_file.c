@@ -34,17 +34,17 @@ create_file_on_gfarm(const char *url, char *hostname,
 
 	filename = url;
 
-	GFARM_MALLOC_ARRAY(buf, COPY_BUF_SIZE);
+	GFARM_CALLOC_ARRAY(buf, COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	memset(buf, 0, COPY_BUF_SIZE);
 
 	e = gfs_stat(filename, &sb);
 	if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 		fprintf(stderr, "file exists: %s\n", filename);
-		gfs_stat_free(&sb);
+		if (e == GFARM_ERR_NO_ERROR)
+			gfs_stat_free(&sb);
 		free(buf);
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
@@ -102,12 +102,11 @@ create_file_on_local(const char *filename, long long file_size)
 	int ret, s;
 	int fp;
 
-	GFARM_MALLOC_ARRAY(buf, COPY_BUF_SIZE);
+	GFARM_CALLOC_ARRAY(buf, COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	memset(buf, 0, COPY_BUF_SIZE);
 
 	fp = open(filename, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fp < 0) {
