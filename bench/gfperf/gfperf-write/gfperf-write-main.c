@@ -214,17 +214,17 @@ do_sequential_write_posix(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)ret / t;
 	printf("io/gfarm2fs/%s/sequential/startup/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)(size-ret) / t;
 	printf("io/gfarm2fs/%s/sequential/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -292,17 +292,17 @@ do_random_write_posix(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
 	printf("io/gfarm2fs/%s/random/startup/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("io/gfarm2fs/%s/random/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -424,19 +424,19 @@ do_random_write_gfarm(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
 	printf("io/libgfarm/%s/random/startup/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("io/libgfarm/%s/random/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -493,19 +493,19 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
 	printf("io/libgfarm/%s/sequential/startup/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)(size-r) / t;
 	printf("io/libgfarm/%s/sequential/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);

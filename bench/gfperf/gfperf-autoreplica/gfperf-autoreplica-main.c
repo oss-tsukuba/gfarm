@@ -264,7 +264,8 @@ dup_wait(char *path)
 		if (n >= duplicate)
 			break;
 		if (i >= max_wait) {
-			fprintf(stderr, "wait timed out!\n");
+			fprintf(stderr,
+				"time out! replica may not be created.\n");
 			break;
 		}
 		usleep(500000);
@@ -318,15 +319,15 @@ do_test_posix(struct filenames *p)
 
 	if (parallel_flag)
 		printf("parallel/%s/autoreplica/gfam2fs/create/%s/%d/%d = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, duplicate, f);
+		       number, duplicate, f, timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/gfam2fs/create/%s/%d/%d = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, duplicate, f);
+		       number, duplicate, f, timeval_to_float(&exec_time));
 
 
 	return (GFARM_ERR_NO_ERROR);
@@ -367,15 +368,15 @@ do_test_gfarm(struct filenames *p)
 
 	if (parallel_flag)
 		printf("parallel/%s/autoreplica/libgfarm/create/%s/%d/%d = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, duplicate, f);
+		       number, duplicate, f, timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/libgfarm/create/%s/%d/%d = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, duplicate, f);
+		       number, duplicate, f, timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }

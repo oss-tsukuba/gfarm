@@ -152,22 +152,23 @@ do_copy() {
 
 	switch (direction) {
 	case 0:
-		printf("io/posix/copy/%s/%s = %.02f bytes/sec\n",
+		printf("io/posix/copy/%s/%s = %.02f bytes/sec %g sec\n",
 		       file_size_string, buf_size_string,
-		       (float)file_size/et);
+		       (float)file_size/et, et);
 		break;
 	case LOCAL_TO_GFARM:
-		printf("io/gfarm2fs/copy/togfarm/%s/%s/%s = %.02f bytes/sec\n",
+		printf("io/gfarm2fs/copy/togfarm/%s/%s/%s = %.02f bytes/sec"
+		       " %g sec\n",
 		       gfsd_hostname,
 		       file_size_string, buf_size_string,
-		       (float)file_size/et);
+		       (float)file_size/et, et);
 		break;
 	case GFARM_TO_LOCAL:
 		printf("io/gfarm2fs/copy/fromgfarm/%s/%s/%s = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       gfsd_hostname,
 		       file_size_string, buf_size_string,
-		       (float)file_size/et);
+		       (float)file_size/et, et);
 		break;
 	}
 	return (GFARM_ERR_NO_ERROR);

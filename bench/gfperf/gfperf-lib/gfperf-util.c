@@ -11,6 +11,11 @@
 
 #include "gfperf-lib.h"
 
+float timeval_to_float(struct timeval *a)
+{
+	return (((float)a->tv_sec) + ((float)a->tv_usec)/1000000);
+}
+
 long long
 strtonum(const char *str)
 {

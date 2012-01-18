@@ -53,7 +53,8 @@ do_posix_readdir()
 	if (unit_flag == UNIT_FLAG_OPS)
 		f = (float)1000000/f;
 
-	printf("metadata/posix/readdir/%d = %.02f %s\n", c, f, unit);
+	printf("metadata/posix/readdir/%d = %.02f %s %g sec\n",
+	       c, f, unit, timeval_to_float(&exec_time));
 
 	gettimeofday(&start_time, NULL);
 	d = opendir(testdir);
@@ -82,7 +83,8 @@ do_posix_readdir()
 	if (unit_flag == UNIT_FLAG_OPS)
 		f = (float)1000000/f;
 
-	printf("metadata/posix/readdir+stat/%d = %.02f %s\n", c, f, unit);
+	printf("metadata/posix/readdir+stat/%d = %.02f %s %g sec\n",
+	       c, f, unit, timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -117,10 +119,10 @@ do_posix_mkdir(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/mkdir = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/mkdir = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/mkdir = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/mkdir = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -156,10 +158,10 @@ do_posix_stat(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/stat = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/stat = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/stat = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/stat = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -194,10 +196,10 @@ do_posix_chmod(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/chmod = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/chmod = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/chmod = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/chmod = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -236,10 +238,10 @@ do_posix_utimes(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/utimes = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/utimes = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/utimes = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/utimes = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_start_middle(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -281,10 +283,10 @@ do_posix_rename(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/rename = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/rename = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/rename = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/rename = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
 		e = rename(tmp->names[i], names->names[i]);
@@ -338,10 +340,10 @@ do_posix_symlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/symlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/symlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/symlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/symlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	set_number(&r, names->n);
 	set_start(&r);
@@ -366,10 +368,10 @@ do_posix_symlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/readlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/readlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/readlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/readlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
 		e = unlink(tmp->names[i]);
@@ -415,10 +417,10 @@ do_posix_rmdir(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/rmdir = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/rmdir = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/rmdir = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/rmdir = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -456,10 +458,10 @@ do_posix_setxattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/setxattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/setxattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/setxattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/setxattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -495,10 +497,10 @@ do_posix_getxattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/getxattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/getxattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/getxattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/getxattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -533,10 +535,10 @@ do_posix_removexattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/removexattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/removexattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/removexattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/removexattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -575,10 +577,10 @@ do_posix_create(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/create = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/create = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/create = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/create = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -613,10 +615,10 @@ do_posix_unlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/posix/startup/unlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/posix/average/%d/unlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/posix/startup/unlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/posix/average/%d/unlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }

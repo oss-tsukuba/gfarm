@@ -30,6 +30,8 @@ struct test_results {
 	struct timeval start;
 	struct timeval middle;
 	struct timeval end;
+	struct timeval start_middle;
+	struct timeval middle_end;
 	float startup;
 	float average;
 };
@@ -54,4 +56,7 @@ void set_middle(struct test_results *r);
 void set_end(struct test_results *r);
 void calc_result(struct test_results *r);
 void adjust_result(struct test_results *r);
+float get_start_middle(struct test_results *r);
+float get_middle_end(struct test_results *r);
+
 #endif

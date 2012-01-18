@@ -205,9 +205,9 @@ do_sequential_read_posix(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/gfarm2fs/read/sequential/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       group_name,
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -264,9 +264,9 @@ do_random_read_posix(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/gfarm2fs/read/random/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       group_name,
-	       filesize_string, bufsize_string, hostname, gfsd_hostname, f);
+	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
 	close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -370,10 +370,10 @@ do_random_read_gfarm(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/libgfarm/read/random/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       group_name,
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);
@@ -414,10 +414,10 @@ do_sequential_read_gfarm(const char *filename, char *buf)
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/libgfarm/read/sequential/average/%s/%s/%s/%s = "
-	       "%.02f bytes/sec\n",
+	       "%.02f bytes/sec %g sec\n",
 	       group_name,
 	       filesize_string, bufsize_string, hostname,
-	       gfsd_hostname, f);
+	       gfsd_hostname, f, t);
 
 	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);

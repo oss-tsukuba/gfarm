@@ -115,21 +115,22 @@ do_copy_to_gfarm()
 		e = gfs_replica_info_by_name(dst, 0, &ri);
 		if (e != GFARM_ERR_NO_ERROR)
 			printf("io/libgfarm/copy/togfarm/%s/%s = "
-			       "%.02f bytes/sec\n",
+			       "%.02f bytes/sec %g sec\n",
 			       file_size_string, buf_size_string,
-			       (float)file_size/et);
+			       (float)file_size/et, et);
 		else {
 			printf("io/libgfarm/copy/togfarm/%s/%s/%s = "
-			       "%.02f bytes/sec\n",
+			       "%.02f bytes/sec %g sec\n",
 			       gfs_replica_info_nth_host(ri, 0),
 			       file_size_string, buf_size_string,
-			       (float)file_size/et);
+			       (float)file_size/et, et);
 			gfs_replica_info_free(ri);
 		}
 	} else
 		printf("io/libgfarm/copy/togfarm/%s/%s/%s = "
-		       "%.02f bytes/sec\n", gfsd_hostname,
-		       file_size_string, buf_size_string, (float)file_size/et);
+		       "%.02f bytes/sec %g sec\n", gfsd_hostname,
+		       file_size_string, buf_size_string, (float)file_size/et,
+		       et);
 
 	free(buf);
 	gfs_unlink(dst);
@@ -220,21 +221,22 @@ do_copy_from_gfarm()
 		e = gfs_replica_info_by_name(src, 0, &ri);
 		if (e != GFARM_ERR_NO_ERROR)
 			printf("io/libgfarm/copy/fromgfarm/%s/%s = "
-			       "%.02f bytes/sec\n",
+			       "%.02f bytes/sec %g sec\n",
 			       file_size_string, buf_size_string,
-			       (float)file_size/et);
+			       (float)file_size/et, et);
 		else {
 			printf("io/libgfarm/copy/fromgfarm/%s/%s/%s = "
-			       "%.02f bytes/sec\n",
+			       "%.02f bytes/sec %g sec\n",
 			       gfs_replica_info_nth_host(ri, 0),
 			       file_size_string, buf_size_string,
-			       (float)file_size/et);
+			       (float)file_size/et, et);
 			gfs_replica_info_free(ri);
 		}
 	} else
 		printf("io/libgfarm/copy/fromgfarm/%s/%s/%s = "
-		       "%.02f bytes/sec\n", gfsd_hostname,
-		       file_size_string, buf_size_string, (float)file_size/et);
+		       "%.02f bytes/sec %g sec\n", gfsd_hostname,
+		       file_size_string, buf_size_string, (float)file_size/et,
+		       et);
 
 	free(buf);
 	unlink(dst);

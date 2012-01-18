@@ -72,7 +72,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 }
 unset($result);
 unset($stmt);
-$stmt = $db->prepare("select key,val,unit from data where date=:date");
+$stmt = $db->prepare("select key,val,unit,exec_time,exec_unit from data where date=:date");
 $result = $stmt->execute(array(':date' => $date));
 $data = array();
 while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
@@ -81,9 +81,13 @@ while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
 	} else {
 		$color = "black";
 	}
+	if ($row[2] == "bytes/sec") {
+		$row[2] = "B/s";
+	}
 	$data[] = array($row[0],$row[1],$row[2],$color,
 			$st[$row[0]]['avr'], $row[2],
-			$st[$row[0]]['stddev'], $row[2]);
+			$st[$row[0]]['stddev'], $row[2],
+			$row[3], $row[4]);
 }
 unset($result);
 unset($stmt);
@@ -164,7 +168,7 @@ $data = $data2;
 <title>Test Results</title>
 <style>
 div.menu {text-align: right; padding-right: 10px; float: right;}
-td.value {text-align: right; padding-right: 1em; }
+td.value {text-align: right; }
 td.unit  {text-align: left; padding-right: 1em; }
 tr.gray {background-color: whitesmoke; }
 </style>
@@ -235,7 +239,7 @@ function filter() {
 	<br>
 	keywords:<input type=text size=45 id="keywords" onkeyup="filter()">
 	<br>
-	<table id="result_table"><tr><th>key</th><th>value</th><th>unit</th><th>average</th><th>unit</th><th>stddev</th><th>unit</th></tr><?php
+	<table id="result_table"><tr><th>key</th><th colspan="2">value</th><th colspan="2">average</th><th colspan="2">stddev</th><th colspan="2">time</th></tr><?php
 	$i=0;
 	foreach ($data as $d)
 {
@@ -260,6 +264,10 @@ function filter() {
 	echo $d[6];
 	echo "</td><td class=\"unit\">";
 	echo $d[7];
+	echo "</td><td class=\"value\">";
+	echo $d[8];
+	echo "</td><td class=\"unit\">";
+	echo $d[9];
 	echo "</td></tr>";
 	$i += 1;
 }

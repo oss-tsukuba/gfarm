@@ -18,6 +18,8 @@
 #define FILE_URL_PREFIX "file://"
 #define FILE_URL_PREFIX_LEN 7
 
+float timeval_to_float(struct timeval *a);
+
 gfarm_error_t create_file_on_local(const char *filename, long long file_size);
 gfarm_error_t create_file_on_gfarm(const char *url, char *hostname,
 				   long long file_size);

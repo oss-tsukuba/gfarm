@@ -123,24 +123,26 @@ do_test_posix()
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
-		f = (float)1000000/f;
-		printf("metadata/posix/tree/create/%d/%d = %.02f ops\n",
-		       width, depth, f);
+		f = (float)1000000 / f;
+		printf("metadata/posix/tree/create/%d/%d = %.02f ops %g sec\n",
+		       width, depth, f, timeval_to_float(&exec_time));
 	} else
-		printf("metadata/posix/tree/create/%d/%d = %ld usec\n",
+		printf("metadata/posix/tree/create/%d/%d = %ld usec %g sec\n",
 		       width, depth,
-		       exec_time.tv_sec*1000000 + exec_time.tv_usec);
+		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
+		       timeval_to_float(&exec_time));
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
-		printf("metadata/posix/tree/remove/%d/%d = %.02f ops\n",
-		       width, depth, f);
+		printf("metadata/posix/tree/remove/%d/%d = %.02f ops %g sec\n",
+		       width, depth, f, timeval_to_float(&exec_time));
 	} else
-		printf("metadata/posix/tree/remove/%d/%d = %ld usec\n",
+		printf("metadata/posix/tree/remove/%d/%d = %ld usec %g sec\n",
 		       width, depth,
-		       exec_time.tv_sec*1000000 + exec_time.tv_usec);
+		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
+		       timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 
@@ -247,23 +249,29 @@ do_test_gfarm()
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
-		printf("metadata/libgfarm/tree/create/%d/%d = %.02f ops\n",
-		       width, depth, f);
+		printf("metadata/libgfarm/tree/create/%d/%d = %.02f ops"
+		       " %g sec\n",
+		       width, depth, f, timeval_to_float(&exec_time));
 	} else
-		printf("metadata/libgfarm/tree/create/%d/%d = %ld usec\n",
+		printf("metadata/libgfarm/tree/create/%d/%d = %ld usec"
+		       " %g sec\n",
 		       width, depth,
-		       exec_time.tv_sec*1000000 + exec_time.tv_usec);
+		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
+		       timeval_to_float(&exec_time));
 
 	sub_timeval(&end_time, &middle_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
-		printf("metadata/libgfarm/tree/remove/%d/%d = %.02f ops\n",
-		       width, depth, f);
+		printf("metadata/libgfarm/tree/remove/%d/%d = %.02f ops"
+		       " %g sec\n",
+		       width, depth, f, timeval_to_float(&exec_time));
 	} else
-		printf("metadata/libgfarm/tree/remove/%d/%d = %ld usec\n",
+		printf("metadata/libgfarm/tree/remove/%d/%d = %ld usec"
+		       " %g sec\n",
 		       width, depth,
-		       exec_time.tv_sec*1000000 + exec_time.tv_usec);
+		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
+		       timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 

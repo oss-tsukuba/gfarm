@@ -57,8 +57,8 @@ do_libgfarm_readdir()
 	if (unit_flag == UNIT_FLAG_OPS)
 		f = (float)1000000/f;
 
-	printf("metadata/libgfarm/readdir/%d = %.02f %s\n",
-	       c, f, unit);
+	printf("metadata/libgfarm/readdir/%d = %.02f %s %g sec\n",
+	       c, f, unit, timeval_to_float(&exec_time));
 
 
 	gettimeofday(&start_time, NULL);
@@ -96,8 +96,8 @@ do_libgfarm_readdir()
 	if (unit_flag == UNIT_FLAG_OPS)
 		f = (float)1000000/f;
 
-	printf("metadata/libgfarm/readdir+stat/%d = %.02f %s\n",
-	       c, f, unit);
+	printf("metadata/libgfarm/readdir+stat/%d = %.02f %s %g sec\n",
+	       c, f, unit, timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -131,10 +131,10 @@ do_libgfarm_mkdir(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/mkdir = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/mkdir = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/mkdir = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/mkdir = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -171,10 +171,10 @@ do_libgfarm_stat(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/stat = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/stat = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/stat = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/stat = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -208,10 +208,10 @@ do_libgfarm_chmod(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/chmod = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/chmod = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/chmod = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/chmod = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -251,10 +251,10 @@ do_libgfarm_utimes(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/utimes = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/utimes = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/utimes = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/utimes = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -295,10 +295,10 @@ do_libgfarm_rename(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/rename = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/rename = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/rename = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/rename = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
 		e = gfs_rename(tmp->names[i], names->names[i]);
@@ -353,10 +353,10 @@ do_libgfarm_symlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/symlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/symlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/symlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/symlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 
 	set_number(&r, names->n);
@@ -382,10 +382,10 @@ do_libgfarm_symlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/readlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/readlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/readlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/readlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
 		e = gfs_unlink(tmp->names[i]);
@@ -431,10 +431,10 @@ do_libgfarm_rmdir(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/rmdir = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/rmdir = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/rmdir = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/rmdir = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_start_middle(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -472,10 +472,10 @@ do_libgfarm_setxattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/setxattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/setxattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/setxattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/setxattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -513,10 +513,10 @@ do_libgfarm_getxattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/getxattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/getxattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/getxattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/getxattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -550,10 +550,10 @@ do_libgfarm_removexattr(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/removexattr = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/removexattr = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/removexattr = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/removexattr = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -573,7 +573,6 @@ do_libgfarm_create(struct directory_names *names)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "create: %s\n",
 			gfarm_error_string(e));
-		gfs_pio_close(f);
 		return (e);
 	}
 	gfs_pio_close(f);
@@ -584,7 +583,6 @@ do_libgfarm_create(struct directory_names *names)
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "create: %s\n",
 				gfarm_error_string(e));
-			gfs_pio_close(f);
 			return (e);
 		}
 		gfs_pio_close(f);
@@ -593,10 +591,10 @@ do_libgfarm_create(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/create = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/create = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/create = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/create = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -630,10 +628,10 @@ do_libgfarm_unlink(struct directory_names *names)
 	calc_result(&r);
 	adjust_result(&r);
 
-	printf("metadata/libgfarm/startup/unlink = %.2f %s\n",
-	       r.startup, unit);
-	printf("metadata/libgfarm/average/%d/unlink = %.2f %s\n",
-	       loop_number, r.average, unit);
+	printf("metadata/libgfarm/startup/unlink = %.2f %s %g sec\n",
+	       r.startup, unit, get_start_middle(&r));
+	printf("metadata/libgfarm/average/%d/unlink = %.2f %s %g sec\n",
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }

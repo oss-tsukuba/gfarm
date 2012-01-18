@@ -51,7 +51,8 @@ def open_db()
     $db = SQLite3::Database.new(fn)
     sql = "create table "+
       "data(id integer primary key autoincrement, " +
-      "date datetime, key string, val real, unit string);"
+      "date datetime, key string, val real, unit string, "+
+      "exec_time real default 0, exec_unit text default 'sec');"
     $db.execute(sql)
     sql = "create table "+
       "statistics(date datetime, key string, avr real, stddev real);"
@@ -137,12 +138,46 @@ def insert_result(str)
   $db.execute("begin;")
   str.split("\n").each{|line|
     array=line.split(" ");
-    sql="insert into data(date,key,val,unit) "+
-    "values('#{$now.to_i}',"+
-    "'#{array[0]}',#{array[2]},'#{array[3]}');"
-    $db.execute(sql)
+    if (array[1] == "=") 
+      if (array.size == 4)
+        sql="insert into data(date,key,val,unit) values(?,?,?,?);"
+        $db.execute(sql,$now.to_i,array[0],array[2],array[3])
+      elsif (array.size == 6)
+        sql="insert into data(date,key,val,unit,exec_time,exec_unit) "+
+          "values(?,?,?,?,?,?);"
+        $db.execute(sql,$now.to_i,array[0],array[2],array[3],array[4],array[5])
+      end
+    end
   }
   $db.execute("commit;")
+end
+
+def check_server_status()
+  command = "gfsched"
+  tmp = ""
+  errstr = ""
+  Open3.popen3(command) { |stdin, stdout, stderr|
+    stdin.close
+    t1 = Thread.new {
+      tmp = stdout.read
+    }
+    t2 = Thread.new {
+      errstr = stderr.read
+    }
+    t1.join
+    t2.join
+  }
+  if (errstr.length > 0)
+    open($config['errlog'],"a") {|f|
+      f.print(Time.now.to_s+"\n")
+      f.print(command+"\n")
+      f.print(errstr)
+    }
+    insert_error_message(command, errstr)
+    $errcount+=1
+    return false
+  end
+  return true
 end
 
 def do_single(key, type)
@@ -342,6 +377,19 @@ end
 
 $errcount = 0
 result = ""
+r = check_server_status()
+if (!r)
+  open_db()
+  insert_error_result()
+  insert_execute_time()
+  close_db()
+  backup_db()
+
+  conf_file_fd.flock(File::LOCK_UN)
+  conf_file_fd.close()
+  exit(1)
+end
+
 $config["authentication"].each do |key|
   mount_gfarm2fs(key)
 

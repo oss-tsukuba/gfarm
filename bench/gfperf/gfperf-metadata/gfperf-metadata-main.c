@@ -186,9 +186,11 @@ calc_result(struct test_results *r)
 {
 	struct timeval d;
 
-	sub_timeval(&r->middle, &r->start, &d);
+	sub_timeval(&r->middle, &r->start, &r->start_middle);
+	d = r->start_middle;
 	r->startup = (float)(d.tv_sec*1000000 + d.tv_usec);
-	sub_timeval(&r->end, &r->middle, &d);
+	sub_timeval(&r->end, &r->middle, &r->middle_end);
+	d = r->middle_end;
 	r->average = ((float)(d.tv_sec*1000000 + d.tv_usec)) / r->number;
 }
 
@@ -199,6 +201,18 @@ adjust_result(struct test_results *r)
 		r->startup = (float)1000000/r->startup;
 		r->average = (float)1000000/r->average;
 	}
+}
+
+float
+get_start_middle(struct test_results *r)
+{
+	return (timeval_to_float(&r->start_middle));
+}
+
+float
+get_middle_end(struct test_results *r)
+{
+	return (timeval_to_float(&r->middle_end));
 }
 
 int

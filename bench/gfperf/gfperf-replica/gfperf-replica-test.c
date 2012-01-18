@@ -59,7 +59,7 @@ do_replica()
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "replicate %s: %s\n", testdir_filename,
 			gfarm_error_string(e));
-		if (e == GFARM_ERR_ALREADY_EXISTS) 
+		if (e == GFARM_ERR_ALREADY_EXISTS)
 			fprintf(stderr,
 				"may be enabled auto replication "
 				"in %s or the parent directory.\n",
@@ -79,7 +79,7 @@ do_test()
 {
 	gfarm_error_t e;
 	struct timeval start_time, end_time, exec_time;
-	float f;
+	float f, t;
 
 	e = create_file_on_gfarm(testdir_filename, from_gfsd_name, file_size);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -101,16 +101,16 @@ do_test()
 	}
 
 	sub_timeval(&end_time, &start_time, &exec_time);
-	f = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
-	f = (float)file_size / f;
+	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
+	f = (float)file_size / t;
 	if (parallel_flag)
 		printf("parallel/%s/replica/libgfarm/%s/%s/%s = "
-		       "%.02f bytes/sec\n",
+		       "%.02f bytes/sec %g sec\n",
 		       group_name,
-		       file_size_string, from_gfsd_name, to_gfsd_name, f);
+		       file_size_string, from_gfsd_name, to_gfsd_name, f, t);
 	else
-		printf("replica/libgfarm/%s/%s/%s = %.02f bytes/sec\n",
-		       file_size_string, from_gfsd_name, to_gfsd_name, f);
+		printf("replica/libgfarm/%s/%s/%s = %.02f bytes/sec %g sec\n",
+		       file_size_string, from_gfsd_name, to_gfsd_name, f, t);
 
 	return (GFARM_ERR_NO_ERROR);
 }
