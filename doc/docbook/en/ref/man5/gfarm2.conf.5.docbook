@@ -1186,7 +1186,7 @@ modification and removal is enabled.
 <para>
 This directive is available in both gfarm2.conf and gfmd.conf.
 </para>
-<para>例:</para>
+<para>Here is an example:</para>
 <literallayout>
 	file_trace enable
 </literallayout>
