@@ -26,7 +26,7 @@ do_posix_readdir()
 {
 	DIR *d;
 	struct dirent *de;
-	int c, e;
+	int c, e, saved_errno;
 	float f;
 	char filename[1024];
 	struct timeval start_time, end_time, exec_time;
@@ -69,8 +69,13 @@ do_posix_readdir()
 		snprintf(filename, sizeof(filename),
 			"%s/%s", testdir, de->d_name);
 		e = stat(filename, &st);
-		if (e < 0)
-			return (GFARM_ERR_INPUT_OUTPUT);
+		if (e < 0) {
+			saved_errno = errno;
+			fprintf(stderr, "stat: %s\n",
+				strerror(saved_errno));
+			closedir(d);
+			return (gfarm_errno_to_error(saved_errno));
+		}
 	}
 
 	closedir(d);

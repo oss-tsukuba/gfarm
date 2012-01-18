@@ -45,8 +45,11 @@ do_libgfarm_readdir()
 		c++;
 	}
 	gfs_closedir(d);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "gfs_readdir: %s\n",
+			gfarm_error_string(e));
 		return (e);
+	}
 
 	gettimeofday(&end_time, NULL);
 
@@ -78,6 +81,8 @@ do_libgfarm_readdir()
 		if (e == GFARM_ERR_NO_ERROR)
 			gfs_stat_free(&st);
 		else {
+			fprintf(stderr, "gfs_stat: %s\n",
+				gfarm_error_string(e));
 			gfs_closedir(d);
 			return (e);
 		}
@@ -85,8 +90,11 @@ do_libgfarm_readdir()
 	}
 
 	gfs_closedir(d);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "gfs_readdir: %s\n",
+			gfarm_error_string(e));
 		return (e);
+	}
 	gettimeofday(&end_time, NULL);
 
 	sub_timeval(&end_time, &start_time, &exec_time);
