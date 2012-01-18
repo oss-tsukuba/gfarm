@@ -328,6 +328,8 @@ do_test_posix(const char *filename, const char *gfarm_filename)
 
 	if (gfsd_hostname == NULL) {
 		e = gfs_replica_info_by_name(gfarm_filename, 0, &ri);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
 		gfsd_hostname = strdup(gfs_replica_info_nth_host(ri, 0));
 		if (gfsd_hostname == NULL) {
 			fprintf(stderr, "can not allocate memory!\n");
@@ -530,7 +532,15 @@ do_test_gfarm(const char *filename)
 
 	if (gfsd_hostname == NULL) {
 		e = gfs_replica_info_by_name(filename, 0, &ri);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
 		gfsd_hostname = strdup(gfs_replica_info_nth_host(ri, 0));
+		if (gfsd_hostname == NULL) {
+			fprintf(stderr, "can not allocate memory!\n");
+			gfs_unlink(filename);
+			gfs_replica_info_free(ri);
+			return (GFARM_ERR_NO_MEMORY);
+		}
 		gfs_replica_info_free(ri);
 	}
 

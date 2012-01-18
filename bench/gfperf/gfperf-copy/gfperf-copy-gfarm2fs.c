@@ -41,8 +41,18 @@ do_copy() {
 		gfsd_hostname_bak = gfsd_hostname;
 		if (gfsd_hostname == NULL) {
 			e = gfs_replica_info_by_name(src_filename, 0, &ri);
+			if (e != GFARM_ERR_NO_ERROR) {
+				free(buf);
+				return (e);
+			}
 			gfsd_hostname = strdup(gfs_replica_info_nth_host(ri,
 									 0));
+			if (gfsd_hostname == NULL) {
+				fprintf(stderr, "can not allocate memory!\n");
+				gfs_replica_info_free(ri);
+				free(buf);
+				return (GFARM_ERR_NO_MEMORY);
+			}
 			gfs_replica_info_free(ri);
 		}
 		root = find_root_from_url(src_url);

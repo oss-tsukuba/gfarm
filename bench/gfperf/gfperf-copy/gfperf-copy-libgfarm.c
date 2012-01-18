@@ -70,7 +70,9 @@ do_copy_to_gfarm()
 		/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 		e = gfs_pio_internal_set_view_section(df, gfsd_hostname);
 		if (e != GFARM_ERR_NO_ERROR) {
-			fprintf(stderr, "%s: %s\n", gfsd_hostname,
+			fprintf(stderr,
+				"gfs_pio_internal_set_view_section() error! "
+				"%s: %s\n", gfsd_hostname,
 				gfarm_error_string(e));
 			close(sf);
 			unlink(src);
