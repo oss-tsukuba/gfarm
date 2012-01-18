@@ -254,7 +254,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		 */
 		gfm_client_purge_from_cache(gfm_server);
 	} else {
-		fs = gfarm_filesystem_get(host, port);
+		fs = gfarm_filesystem_get(host0, port);
 		if ((host = strdup(host0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
