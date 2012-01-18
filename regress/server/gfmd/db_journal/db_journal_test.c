@@ -3308,7 +3308,7 @@ main(int argc, char **argv)
 	int c, op = 0;
 
 	debug_mode = 1;
-	gfarm_server_initialize(NULL);
+	gfarm_server_initialize(NULL, &argc, &argv);
 	gflog_set_priority_level(LOG_DEBUG);
 	gflog_set_message_verbose(99);
 

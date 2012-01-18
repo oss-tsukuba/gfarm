@@ -59,6 +59,9 @@ extern int gfarm_simultaneous_replication_receivers;
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
 gfarm_off_t gfarm_get_minimum_free_disk_space(void);
+char **gfarm_config_get_debug_command_argv(void);
+const char *gfarm_config_get_argv0(void);
+gfarm_error_t gfarm_config_set_argv0(const char *);
 int gfarm_get_metadb_replication_enabled(void);
 void gfarm_set_metadb_replication_enabled(int);
 const char *gfarm_get_journal_dir(void);
@@ -101,6 +104,6 @@ gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
 	struct gfm_connection *);
 
 /* for server */
-gfarm_error_t gfarm_server_initialize(char *);
+gfarm_error_t gfarm_server_initialize(char *, int *, char ***);
 gfarm_error_t gfarm_server_terminate(void);
 gfarm_error_t gfarm_server_config_read(void);
