@@ -164,10 +164,15 @@ gfs_readdirplus(GFS_DirPlus dir,
 gfarm_error_t
 gfs_closedirplus(GFS_DirPlus dir)
 {
-	gfarm_error_t e = gfm_close_fd(dir->gfm_server, dir->fd);
+	gfarm_error_t e;
 
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_close_fd: %s",
+		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);
 	gfs_dirplus_clear(dir);
 	free(dir);
-	return (e);
+	/* ignore result */
+	return (GFARM_ERR_NO_ERROR);
 }

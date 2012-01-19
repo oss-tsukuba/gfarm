@@ -269,6 +269,12 @@ gfm_close_result(struct gfm_connection *gfm_server, void *closure)
 gfarm_error_t
 gfm_close_fd(struct gfm_connection *gfm_server, int fd)
 {
-	return (gfm_client_compound_fd_op(gfm_server, fd,
-	    gfm_close_request, gfm_close_result, NULL, NULL));
+	gfarm_error_t e;
+
+	if ((e = gfm_client_compound_fd_op(gfm_server, fd,
+	    gfm_close_request, gfm_close_result, NULL, NULL))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_close_fd fd=%d: %s", fd, gfarm_error_string(e));
+	return (e);
 }

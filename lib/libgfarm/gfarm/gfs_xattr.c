@@ -807,7 +807,8 @@ gfs_closexmlattr(struct gfs_xmlattr_ctx *ctxp)
 			gfarm_error_string(e));
 	}
 
-	return (e);
+	/* ignore result */
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
