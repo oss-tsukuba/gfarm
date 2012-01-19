@@ -315,14 +315,21 @@ def do_parallel_autoreplica(key, name, array)
       end
     }
   end
+  num = t.size
   t.each{|thread|
     thread.join
   }
   a=r.compact.map{|line| line.split(' ')[2].to_f}
+  b=r.compact.map{|line| line.split(' ')[4].to_f}
   if (a.size > 0)
     avr=a.inject(0.0){|sum, el| sum += el} / a.size
+    avr2=b.inject(0.0){|sum, el| sum += el} / b.size
     ret = r[0].split(' ')
     ret[2] = avr
+    ret[4] = avr2
+    elm = ret[0].split('/')
+    elm.insert(elm.index("create")+1, num.to_s)
+    ret[0] = elm.join('/')
     return ret.join(' ')+"\n"
   else
     return ""
