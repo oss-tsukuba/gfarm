@@ -2518,6 +2518,36 @@ gfarm_config_set_default_filesystem(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfarm_config_set_default_metadb_server(void)
+{
+	gfarm_error_t e;
+	struct gfarm_metadb_server *m;
+	struct gfarm_metadb_server *ms[1];
+	struct gfarm_filesystem *fs;
+
+	if (gfarm_filesystem_get(
+	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port)
+	    != NULL)
+		return (GFARM_ERR_NO_ERROR);
+
+	fs = gfarm_filesystem_get_default();
+	if ((e = gfarm_metadb_server_new(&m, gfarm_ctxp->metadb_server_name,
+	    gfarm_ctxp->metadb_server_port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	gfarm_metadb_server_set_is_master(m, 1);
+	ms[0] = m;
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	return (e);
+}
+
 void
 gfarm_config_set_default_misc(void)
 {
@@ -2616,6 +2646,7 @@ gfarm_config_set_default_misc(void)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
 
 	gfarm_config_set_default_filesystem();
+	gfarm_config_set_default_metadb_server();
 }
 
 void
