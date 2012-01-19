@@ -405,59 +405,42 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 {
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
-	int retry = 0;
-	gfarm_timerval_t t1, t2, t3, t4;
+	int nretry = 1;
+	gfarm_timerval_t t1, t2, t3;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = gfs_client_connection_acquire_by_host(gf->gfm_server,
-	    hostname, port, &gfs_server, NULL);
-	if (e != GFARM_ERR_NO_ERROR) {
+
+retry:
+	if ((e = gfs_client_connection_and_process_acquire(&gf->gfm_server,
+	    hostname, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001350,
-			"acquirement of client connection failed: %s",
-			gfarm_error_string(e));
+		    "acquirement of client connection failed: %s",
+		    gfarm_error_string(e));
 		return (e);
 	}
 
-	for (;;) {
-		gfs_profile(gfarm_gettimerval(&t2));
+	gfs_profile(gfarm_gettimerval(&t2));
 
-		e = GFARM_ERR_NO_ERROR;
-		if (gfs_client_pid(gfs_server) == 0)
-			e = gfarm_client_process_set(gfs_server,
-			    gf->gfm_server);
-
-		gfs_profile(gfarm_gettimerval(&t3));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = gfs_pio_open_section(gf, gfs_server);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gfs_client_connection_free(gfs_server);
-			if (gfs_client_is_connection_error(e) && ++retry <= 1
-			    && gfs_client_connection_acquire_by_host(
-				gf->gfm_server, hostname, port, &gfs_server,
-				NULL) == GFARM_ERR_NO_ERROR)
-				continue;
-		}
-
-		break;
+	if ((e = gfs_pio_open_section(gf, gfs_server)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_pio_open_section: %s",
+		    gfarm_error_string(e));
+		gfs_client_connection_free(gfs_server);
+		if (gfs_client_is_connection_error(e) && nretry-- > 0)
+			goto retry;
 	}
+
 	gfs_profile(
-		gfarm_gettimerval(&t4);
-		gflog_debug(GFARM_MSG_1000108,
-		    "(connect_and_open) connection_acquire %f, "
-			   "process_set %f, open %f",
+		gfarm_gettimerval(&t3);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "(connect_and_open) connection_acquire/process_set %f, "
+			   "open %f",
 			   gfarm_timerval_sub(&t2, &t1),
-			   gfarm_timerval_sub(&t3, &t2),
-			   gfarm_timerval_sub(&t4, &t3)));
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001351,
-			"error occurred in connect_and_open(): %s",
-			gfarm_error_string(e));
-	}
+			   gfarm_timerval_sub(&t3, &t2)));
 	return (e);
 }
 

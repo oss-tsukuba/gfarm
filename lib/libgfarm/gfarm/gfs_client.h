@@ -33,6 +33,9 @@ struct gfm_connection; /* XXX */
 gfarm_error_t gfs_client_connection_acquire_by_host(
 	struct gfm_connection *, const char *, /* XXX */
 	int, struct gfs_connection **, const char *);
+gfarm_error_t gfs_client_connection_and_process_acquire(
+	struct gfm_connection **, const char *,
+	int, struct gfs_connection **, const char *);
 void gfs_client_connection_free(struct gfs_connection *);
 gfarm_error_t gfs_client_connect(const char *, int, const char *,
 	struct sockaddr *, struct gfs_connection **);
