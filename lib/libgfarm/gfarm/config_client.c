@@ -263,7 +263,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 		return (e);
 	}
 	gflog_initialize();
-	gfarm_config_set_argv0(**argvp);
+	if (argvp)
+		gfarm_config_set_argv0(**argvp);
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {

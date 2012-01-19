@@ -132,7 +132,8 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 		return (e);
 	}
 	gflog_initialize();
-	gfarm_config_set_argv0(**argvp);
+	if (argvp)
+		gfarm_config_set_argv0(**argvp);
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
