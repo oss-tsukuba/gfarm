@@ -637,13 +637,13 @@ watch_stderr(void *arg)
 			maxfd = fd;
 	}
 	setvbuf(stderr, (char *) NULL, _IOLBF, 0);
-	tv.tv_sec = 0;
-	tv.tv_usec = 100000;
 	n_eof = 0;
 	while (n_eof < watch_stderr_arg.n_procs) {
 		if (watch_stderr_arg.is_end)
 			break;
 		memcpy(&fdset_tmp, &fdset_orig, sizeof(fd_set));
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
 		retv = select(maxfd + 1, &fdset_tmp, NULL, NULL, &tv);
 		if (retv == -1) {
 			fprintf(stderr,
