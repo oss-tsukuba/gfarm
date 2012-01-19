@@ -234,6 +234,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 
 	if (gfm_server) {
 		fs = gfarm_filesystem_get_by_connection(gfm_server);
+		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1003388,
@@ -247,14 +248,9 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			goto error_all;
 		}
 		port = gfm_client_port(gfm_server);
-		/*
-		 * This connection is already purged but ensure to be purged
-		 * and force to create new connection in next connection
-		 * acquirement.
-		 */
-		gfm_client_purge_from_cache(gfm_server);
 	} else {
 		fs = gfarm_filesystem_get(host0, port);
+		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(host0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -269,10 +265,15 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		}
 	}
 	gfl = gfarm_filesystem_opened_file_list(fs);
-	fc = gfarm_filesystem_failover_count(fs);
 
-	/* must be set failover_detected to 0 before acquire connection. */
 	gfarm_filesystem_set_failover_detected(fs, 0);
+	/*
+	 * failover_count must be incremented before acquire connection
+	 * because failover_count is set at creating new connection
+	 * and we use failover_count to indicate whether or not the acquired
+	 * connection is new connection.
+	 */
+	gfarm_filesystem_set_failover_count(fs, fc + 1);
 
 	for (i = 0; i < NUM_FAILOVER_RETRY; ++i) {
 		/* reconnect to gfmd */
@@ -282,16 +283,31 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			    "gfm_client_connection_acquire failed : %s",
 			    gfarm_error_string(e));
 		}
+		if (gfm_client_connection_failover_count(gfm_server)
+		    != fc + 1) {
+			/*
+			 * When this function is called from
+			 * gfm_client_connection_failover_pre_connect(),
+			 * the acquired connection is possibly an old
+			 * connection.
+			 */
+			gfm_client_purge_from_cache(gfm_server);
+			gfm_client_connection_free(gfm_server);
+			--i;
+			continue;
+		}
 		/*
 		 * close fd without accessing to gfmd from client
 		 * and release gfm_connection.
 		 */
 		gfs_pio_file_list_foreach(gfl, close_on_server, gfm_server);
 
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfarm_filesystem_set_failover_detected(fs, 1);
+			gfarm_filesystem_set_failover_count(fs, fc);
 			goto error_all;
+		}
 
-		gfarm_filesystem_set_failover_count(fs, fc + 1);
 		/* reset processes and reopen files */
 		ok = reset_and_reopen_all(gfm_server, gfl);
 		gfm_client_connection_free(gfm_server);
