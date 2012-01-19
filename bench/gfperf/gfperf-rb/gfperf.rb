@@ -168,11 +168,13 @@ def check_server_status()
     t2.join
   }
   if (errstr.length > 0)
-    open($config['errlog'],"a") {|f|
-      f.print(Time.now.to_s+"\n")
-      f.print(command+"\n")
-      f.print(errstr)
-    }
+    if (!$config['errlog'].nil?)
+      open($config['errlog'],"a") {|f|
+        f.print(Time.now.to_s+"\n")
+        f.print(command+"\n")
+        f.print(errstr)
+      }
+    end
     insert_error_message(command, errstr)
     $errcount+=1
     return false
@@ -202,11 +204,13 @@ def do_single(key, type)
       t2.join
     }
     if (errstr.length > 0)
-      open($config['errlog'],"a") {|f|
-        f.print(Time.now.to_s+"\n")
-        f.print(command+"\n")
-        f.print(errstr)
-      }
+      if (!$config['errlog'].nil?)
+        open($config['errlog'],"a") {|f|
+          f.print(Time.now.to_s+"\n")
+          f.print(command+"\n")
+          f.print(errstr)
+        }
+      end
       insert_error_message(command, errstr)
       $errcount+=1
     end
@@ -254,11 +258,13 @@ def do_parallel(key, name, array)
         t2.join
       }
       if (errstr.size > 0)
-        open($config['errlog'],"a") {|f|
-          f.print(Time.now.to_s+"\n")
-          f.print(command+"\n")
-          f.print(errstr)
-        }
+        if (!$config['errlog'].nil?)
+          open($config['errlog'],"a") {|f|
+            f.print(Time.now.to_s+"\n")
+            f.print(command+"\n")
+            f.print(errstr)
+          }
+        end
         insert_error_message(command, errstr)
         $errcount+=1
       end
@@ -292,11 +298,13 @@ def do_parallel_autoreplica(key, name, array)
         errstr = stderr.read
       }
       if (errstr.size > 0)
-        open($config['errlog'],"a") {|f|
-          f.print(Time.now.to_s+"\n")
-          f.print(command+"\n")
-          f.print(errstr)
-        }
+        if (!$config['errlog'].nil?)
+          open($config['errlog'],"a") {|f|
+            f.print(Time.now.to_s+"\n")
+            f.print(command+"\n")
+            f.print(errstr)
+          }
+        end
         insert_error_message(command, errstr)
         $errcount+=1
       end
