@@ -48,6 +48,8 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 
+#define MAX_CONFIG_LINE_LENGTH	1023
+ 
 char *gfarm_config_file = GFARM_CONFIG;
 
 void
@@ -314,7 +316,7 @@ map_user(gfarm_stringlist *map_file_list, const char *from, char **to_p,
 	FILE *map = NULL;
 	char *mapfile = NULL;
 	int i, list_len, mapfile_mapped_index;
-	char buffer[1024], *g_user, *l_user, *tmp;
+	char buffer[MAX_CONFIG_LINE_LENGTH + 1], *g_user, *l_user, *tmp;
 	const char *mapped;
 	int lineno = 0;
 
@@ -710,6 +712,10 @@ char *gfarm_postgresql_conninfo = NULL;
 /* LocalFS dependent */
 char *gfarm_localfs_datadir = NULL;
 
+/* for debug */
+char **gfarm_debug_command_argv = NULL;
+char *gfarm_argv0 = NULL;
+
 /* miscellaneous */
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
@@ -814,6 +820,19 @@ gfarm_config_clear(void)
 #endif
 }
 
+static void
+debug_command_argv_free(void)
+{
+	int i;
+
+	if (gfarm_debug_command_argv != NULL) {
+		for (i = 0; gfarm_debug_command_argv[i] != NULL; i++)
+			free(gfarm_debug_command_argv[i]);
+		free(gfarm_debug_command_argv);
+		gfarm_debug_command_argv = NULL;
+	}
+}
+
 static gfarm_error_t
 set_backend_db_type(enum gfarm_backend_db_type set)
 {
@@ -869,6 +888,34 @@ gfarm_off_t
 gfarm_get_minimum_free_disk_space(void)
 {
 	return (gfarm_minimum_free_disk_space);
+}
+
+char **
+gfarm_config_get_debug_command_argv(void)
+{
+	return (gfarm_debug_command_argv);
+}
+
+const char *
+gfarm_config_get_argv0(void)
+{
+	return (gfarm_argv0);
+}
+
+gfarm_error_t
+gfarm_config_set_argv0(const char *argv0)
+{
+	free(gfarm_argv0);
+	gfarm_argv0 = NULL;
+	if (argv0 == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	gfarm_argv0 = strdup(argv0);
+	if (gfarm_argv0 == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "failed to allocate argv0 \"%s\": no memory", argv0);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	return (GFARM_ERR_NO_ERROR);
 }
 
 void
@@ -2012,6 +2059,141 @@ error:
 	return (e);
 }
 
+static char *
+expand_debug_command_arg_pattern(const char *pattern)
+{
+	const char *p = pattern;
+	char *cmd = NULL;
+	size_t cmd_size = 0;
+	size_t cmd_offset = 0;
+	char *cmd_new;
+	const char *copy_from;
+	size_t copy_len;
+	char workbuf[MAX_CONFIG_LINE_LENGTH + 1];
+	int nul_copied = 0;
+
+	for (;;) {
+		if (*p == '%') {
+			switch (*(p + 1)) {
+			case '\0':
+				copy_from = p + 1;
+				copy_len = 1;
+				nul_copied = 1;
+				break;
+			case '%':
+				copy_from = p;
+				copy_len = 1;
+				p += 2;
+				break;
+			case 'p':
+				snprintf(workbuf, sizeof(workbuf), "%ld",
+				    (long) getpid());
+				copy_from = workbuf;
+				copy_len = strlen(workbuf);
+				p += 2;
+				break;
+			case 'e':
+				copy_from = gfarm_argv0;
+				copy_len = strlen(gfarm_argv0);
+				p += 2;
+				break;
+			default:
+				p += 2;
+				continue;
+			}
+		} else if (*p == '\0') {
+			copy_from = p;
+			copy_len = 1;
+			nul_copied = 1;
+		} else {
+			copy_from = p;
+			copy_len = 1;
+			p++;
+		}
+
+		if (cmd_offset + copy_len > cmd_size) {
+			do {
+				cmd_size += (MAX_CONFIG_LINE_LENGTH / 2) + 1;
+			} while (cmd_offset + copy_len > cmd_size);
+			cmd_new = (char *) realloc(cmd, cmd_size);
+			if (cmd_new == NULL) {
+				free(cmd);
+				return NULL;
+			}
+			cmd = cmd_new;
+		}
+		while (copy_len > 0) {
+			cmd[cmd_offset++] = *copy_from++;
+			copy_len--;
+		}
+
+		if (nul_copied)
+			break;
+	}
+
+	return (cmd);
+}
+
+static gfarm_error_t
+parse_debug_command(char *p, char **op)
+{
+	gfarm_error_t e;
+	char *argv[MAX_CONFIG_LINE_LENGTH + 1];
+	char *arg;
+	int argc = 0;
+	int i;
+
+	/* XXX - consider to specify 'debug_command' several times. */
+	if (gfarm_debug_command_argv != NULL || gfarm_argv0 == NULL)
+		return (GFARM_ERR_NO_ERROR);
+
+	for (;;) {
+		e = gfarm_strtoken(&p, &arg);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "parsing of debug_command command argument (%s) "
+			    "failed: %s", p, gfarm_error_string(e));
+			goto error;
+		}
+		if (arg == NULL)
+			break;
+		argv[argc] = expand_debug_command_arg_pattern(arg);
+		if (argv[argc] == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "failed to allocate an argument of debug_command "
+			    "command: no memory");
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
+		}
+		argc++;
+	}
+	argv[argc] = NULL;
+
+	if (argc > 0) {
+		gfarm_debug_command_argv = (char **)
+		    malloc(sizeof(char *) * (argc + 1));
+		if (gfarm_debug_command_argv == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "failed to allocate a list of arguments of "
+			    "debug_command command: no memory");
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
+		}
+		memcpy(gfarm_debug_command_argv, argv,
+		    sizeof(char *) * (argc + 1));
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * In case an error occurs.
+	 */
+error:
+        for (i = 0; i < argc; i++)
+                free(argv[i]);
+	return (e);
+}
+
 static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
@@ -2220,6 +2402,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_network_receive_timeout);
 	} else if (strcmp(s, o = "file_trace") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_file_trace);
+ 	} else if (strcmp(s, o = "debug_command") == 0) {
+ 		e = parse_debug_command(p, &o);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2244,6 +2428,7 @@ gfarm_free_config(void)
 {
 	gfarm_stringlist_free_deeply(&xattr_cache_list);
 	local_ug_maps_tab_free();
+	debug_command_argv_free();
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2252,7 +2437,7 @@ gfarm_config_read_file(FILE *config, int *lineno_p)
 {
 	gfarm_error_t e;
 	int lineno = 0;
-	char *s, *p, *o = NULL, buffer[1024];
+	char *s, *p, *o = NULL, buffer[MAX_CONFIG_LINE_LENGTH + 1];
 
 	while (fgets(buffer, sizeof buffer, config) != NULL) {
 		lineno++;
@@ -2426,7 +2611,7 @@ gfs_display_timers(void)
 #ifdef STRTOKEN_TEST
 main()
 {
-	char buffer[1024];
+	char buffer[MAX_CONFIG_LINE_LENGTH + 1];
 	char *cursor, *token, *error;
 
 	while (fgets(buffer, sizeof buffer, stdin) != NULL) {

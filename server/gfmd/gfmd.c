@@ -1433,14 +1433,12 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
-	argc -= optind;
-	argv += optind;
 
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
 	else
 		gfarm_config_set_filename(GFMD_CONFIG);
-	e = gfarm_server_initialize();
+	e = gfarm_server_initialize(&argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001486,
 			"gfarm_server_initialize() failed: %s",
@@ -1449,6 +1447,10 @@ main(int argc, char **argv)
 		    gfarm_error_string(e));
 		exit(1);
 	}
+
+	argc -= optind;
+	argv += optind;
+
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
 

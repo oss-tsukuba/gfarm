@@ -312,72 +312,66 @@ gfarm_parse_argv(int *argcp, char ***argvp)
 
 #endif /* not yet in gfarm v2 */
 
-char *gfarm_debug_command;
-char gfarm_debug_pid[GFARM_INT64STRLEN + 1];
-
-static int
-gfarm_call_debugger(void)
-{
-	int pid;
-
-	if ((pid = fork()) == 0) {
-		execlp("xterm", "xterm", "-e", "gdb",
-		       gfarm_debug_command, gfarm_debug_pid, NULL);
-		perror("xterm");
-		_exit(1);
-	}
-	return (pid);
-}
-
-int
-gfarm_attach_debugger(void)
-{
-	int pid = gfarm_call_debugger();
-
-	/* not really correct way to wait until attached, but... */
-	sleep(5);
-	return (pid);
-}
-
 void
 gfarm_sig_debug(int sig)
 {
-	int rv, pid, status;
 	static int already_called = 0;
-	static char message[] = "signal 00 caught\n";
+	pid_t pid;
+	const char *message;
+	int status;
+	char **argv;
 
-	message[7] = sig / 10 + '0';
-	message[8] = sig % 10 + '0';
+	switch (sig) {
+	case SIGQUIT:
+		message = "caught SIGQUIT\n";
+		break;
+	case SIGILL:
+		message = "caught SIGILL\n";
+		break;
+	case SIGTRAP:
+		message = "caught SIGTRAP\n";
+		break;
+	case SIGABRT:
+		message = "caught SIGABRT\n";
+		break;
+	case SIGFPE:
+		message = "caught SIGFPE\n";
+		break;
+	case SIGBUS:
+		message = "caught SIGBUS\n";
+		break;
+	case SIGSEGV:
+		message = "caught SIGSEGV\n";
+		break;
+	default:
+		message = "caught a signal\n";
+		break;
+	}
 	/* ignore return value, since there is no other way here */
-	rv = write(2, message, sizeof(message) - 1);
+	write(2, message, strlen(message));
 
 	if (already_called)
 		abort();
 	already_called = 1;
 
-	pid = gfarm_call_debugger();
+	argv = gfarm_config_get_debug_command_argv();
+	if (argv == NULL)
+		_exit(1);
+
+	pid = fork();
 	if (pid == -1) {
 		perror("fork"); /* XXX dangerous to call from signal handler */
 		abort();
+	} else if (pid == 0) {
+		execvp(argv[0], argv);
+		perror(argv[0]);
+		_exit(1);
 	} else {
+		/* not really correct way to wait until attached, but... */
+		sleep(5);
 		waitpid(pid, &status, 0);
 		_exit(1);
 	}
-}
-
-void
-gfarm_debug_initialize(char *command)
-{
-	gfarm_debug_command = command;
-	sprintf(gfarm_debug_pid, "%ld", (long)getpid());
-
-	signal(SIGQUIT, gfarm_sig_debug);
-	signal(SIGILL,  gfarm_sig_debug);
-	signal(SIGTRAP, gfarm_sig_debug);
-	signal(SIGABRT, gfarm_sig_debug);
-	signal(SIGFPE,  gfarm_sig_debug);
-	signal(SIGBUS,  gfarm_sig_debug);
-	signal(SIGSEGV, gfarm_sig_debug);
 }
 
 /*
@@ -397,6 +391,8 @@ gfarm_initialize(int *argcp, char ***argvp)
 #endif
 
 	gflog_initialize();
+	if (argvp)
+		gfarm_config_set_argv0(**argvp);
 
 	e = gfarm_set_local_user_for_this_local_account();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -412,6 +408,15 @@ gfarm_initialize(int *argcp, char ***argvp)
 			gfarm_error_string(e));
 		return (e);
 	}
+
+	signal(SIGQUIT, gfarm_sig_debug);
+	signal(SIGILL,  gfarm_sig_debug);
+	signal(SIGTRAP, gfarm_sig_debug);
+	signal(SIGABRT, gfarm_sig_debug);
+	signal(SIGFPE,  gfarm_sig_debug);
+	signal(SIGBUS,  gfarm_sig_debug);
+	signal(SIGSEGV, gfarm_sig_debug);
+
 #ifdef HAVE_GSI
 	/* Force to display verbose error messages. */
 	saved_auth_verb = gflog_auth_set_verbose(1);
