@@ -323,19 +323,6 @@ local_ug_maps_tab_free()
 	}
 }
 
-static void
-debug_command_argv_free(void)
-{
-	int i;
-
-	if (staticp->debug_command_argv != NULL) {
-		for (i = 0; staticp->debug_command_argv[i] != NULL; i++)
-			free(staticp->debug_command_argv[i]);
-		free(staticp->debug_command_argv);
-		staticp->debug_command_argv = NULL;
-	}
-}
-
 static struct gfarm_local_ug_maps *
 local_ug_maps_lookup(const char *hostname, int port)
 {
@@ -918,6 +905,9 @@ gfarm_error_t
 gfarm_config_set_argv0(const char *argv0)
 {
 	free(staticp->argv0);
+	staticp->argv0 = NULL;
+	if (argv0 == NULL)
+		return (GFARM_ERR_NO_ERROR);
 	staticp->argv0 = strdup(argv0);
 	if (staticp->argv0 == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
@@ -2157,9 +2147,10 @@ parse_debug_command(char *p, char **op)
 	char *argv[MAX_CONFIG_LINE_LENGTH + 1];
 	char *arg;
 	int argc = 0;
+	int i;
 
 	/* XXX - consider to specify 'debug_command' several times. */
-	if (staticp->debug_command_argv != NULL)
+	if (staticp->debug_command_argv != NULL || staticp->argv0 == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	for (;;) {
@@ -2168,7 +2159,7 @@ parse_debug_command(char *p, char **op)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "parsing of debug_command command argument (%s) "
 			    "failed: %s", p, gfarm_error_string(e));
-			return (e);
+			goto error;
 		}
 		if (arg == NULL)
 			break;
@@ -2177,7 +2168,8 @@ parse_debug_command(char *p, char **op)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "failed to allocate an argument of debug_command "
 			    "command: no memory");
-			return (GFARM_ERR_NO_MEMORY);
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
 		}
 		argc++;
 	}
@@ -2190,13 +2182,35 @@ parse_debug_command(char *p, char **op)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "failed to allocate a list of arguments of "
 			    "debug_command command: no memory");
-			return (GFARM_ERR_NO_MEMORY);
+			e = GFARM_ERR_NO_MEMORY;
+			goto error;
 		}
 		memcpy(staticp->debug_command_argv, argv,
 		    sizeof(char *) * (argc + 1));
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+
+	/*
+	 * In case an error occurs.
+	 */
+error:
+	for (i = 0; i < argc; i++)
+		free(argv[i]);
+	return (e);
+}
+
+static void
+debug_command_argv_free(void)
+{
+	int i;
+
+	if (staticp->debug_command_argv != NULL) {
+		for (i = 0; staticp->debug_command_argv[i] != NULL; i++)
+			free(staticp->debug_command_argv[i]);
+		free(staticp->debug_command_argv);
+		staticp->debug_command_argv = NULL;
+	}
 }
 
 static gfarm_error_t
