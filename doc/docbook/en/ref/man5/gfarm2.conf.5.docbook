@@ -1205,7 +1205,7 @@ For example,
 	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
 </literallayout>
 <para>
-"%e" and "%p" are expaned to an actual program name and a process ID,
+"%e" and "%p" are expanded to an actual program name and a process ID,
 respectively.
 If you'd like to use "%" character itself in the command line,
 type "%%".
