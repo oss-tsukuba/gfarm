@@ -168,7 +168,7 @@ gfarm_error_t
 do_sequential_read_posix(const char *filename, char *buf)
 {
 	struct timeval start_time, middle_time, end_time, exec_time;
-	int fd, r, ret;
+	int fd, r, ret, e;
 	long long size;
 	float t, f;
 
@@ -203,8 +203,8 @@ do_sequential_read_posix(const char *filename, char *buf)
 
 	gettimeofday(&end_time, NULL);
 
-	ret = close(fd);
-	if (ret < 0) {
+	e = close(fd);
+	if (e < 0) {
 		fprintf(stderr, "close error %s\n", strerror(errno));
 		close(fd);
 		return (GFARM_ERR_INPUT_OUTPUT);
@@ -233,7 +233,7 @@ do_random_read_posix(const char *filename, char *buf)
 {
 	struct timeval start_time, middle_time, end_time, exec_time;
 	long long i, n;
-	int r, ret;
+	int r, e;
 	int fd;
 	off_t offset, max_offset;
 	long long size;
@@ -284,8 +284,8 @@ do_random_read_posix(const char *filename, char *buf)
 	}
 	gettimeofday(&end_time, NULL);
 
-	ret = close(fd);
-	if (ret < 0) {
+	e = close(fd);
+	if (e < 0) {
 		fprintf(stderr, "close error %s\n", strerror(errno));
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
