@@ -3620,6 +3620,9 @@ db_journal_fetch_info_list_free(struct db_journal_fetch_info *fi_list)
 {
 	struct db_journal_fetch_info *fi, *fin;
 
+	if (fi_list == NULL)
+		return;
+
 	for (fi = fi_list, fin = fi ? fi->next : NULL; fi != NULL; fi = fin,
 	    fin = fi ? fi->next : NULL) {
 		free(fi->rec);
