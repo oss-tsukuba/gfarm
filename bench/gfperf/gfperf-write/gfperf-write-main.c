@@ -210,6 +210,12 @@ do_sequential_write_posix(const char *filename, char *buf)
 	}
 	gettimeofday(&end_time, NULL);
 
+	ret = close(fd);
+	if (ret < 0) {
+		fprintf(stderr, "close error %s\n", strerror(errno));
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)ret / t;
@@ -226,7 +232,6 @@ do_sequential_write_posix(const char *filename, char *buf)
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
-	close(fd);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -236,7 +241,7 @@ do_random_write_posix(const char *filename, char *buf)
 {
 	struct timeval start_time, middle_time, end_time, exec_time;
 	long long i, n;
-	int r;
+	int r, ret;
 	int fd;
 	off_t offset, max_offset;
 	long long size;
@@ -263,7 +268,7 @@ do_random_write_posix(const char *filename, char *buf)
 	lseek(fd,  offset % max_offset, SEEK_SET);
 	r = write(fd, buf, bufsize);
 	if (r < 0) {
-		fprintf(stderr, "read error %s\n", strerror(errno));
+		fprintf(stderr, "write error %s\n", strerror(errno));
 		close(fd);
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
@@ -277,7 +282,7 @@ do_random_write_posix(const char *filename, char *buf)
 		if (r == 0)
 			break;
 		else if (r < 0) {
-			fprintf(stderr, "read error %s\n", strerror(errno));
+			fprintf(stderr, "write error %s\n", strerror(errno));
 			close(fd);
 			return (GFARM_ERR_INPUT_OUTPUT);
 		}
@@ -287,6 +292,13 @@ do_random_write_posix(const char *filename, char *buf)
 			break;
 	}
 	gettimeofday(&end_time, NULL);
+
+	ret = close(fd);
+	if (ret < 0) {
+		fprintf(stderr, "close error %s\n", strerror(errno));
+		close(fd);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
 
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
@@ -304,7 +316,6 @@ do_random_write_posix(const char *filename, char *buf)
 	       (overwrite_flag) ? "overwrite" : "write",
 	       filesize_string, bufsize_string, hostname, gfsd_hostname, f, t);
 
-	close(fd);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -422,6 +433,13 @@ do_random_write_gfarm(const char *filename, char *buf)
 	}
 	gettimeofday(&end_time, NULL);
 
+	e = gfs_pio_close(fd);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "close error %s\n",
+			gfarm_error_string(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
@@ -440,7 +458,6 @@ do_random_write_gfarm(const char *filename, char *buf)
 	       filesize_string, bufsize_string, hostname,
 	       gfsd_hostname, f, t);
 
-	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -491,6 +508,13 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 	}
 	gettimeofday(&end_time, NULL);
 
+	e = gfs_pio_close(fd);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "close error %s\n",
+			gfarm_error_string(e));
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+
 	sub_timeval(&middle_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)r / t;
@@ -509,7 +533,6 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 	       filesize_string, bufsize_string, hostname,
 	       gfsd_hostname, f, t);
 
-	gfs_pio_close(fd);
 	return (GFARM_ERR_NO_ERROR);
 }
 

@@ -107,8 +107,24 @@ do_copy_to_gfarm()
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	gfs_pio_close(df);
-	close(sf);
+	e = gfs_pio_close(df);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "close: %s\n",
+			gfarm_error_string(e));
+		close(sf);
+		unlink(src);
+		gfs_unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+	ret = close(sf);
+	if (ret < 0) {
+		fprintf(stderr, "close: %s\n", strerror(errno));
+		unlink(src);
+		gfs_unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
 
 	gettimeofday(&end_time, NULL);
 	sub_timeval(&end_time, &start_time, &exec_time);
@@ -213,8 +229,24 @@ do_copy_from_gfarm()
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	close(df);
-	gfs_pio_close(sf);
+	ret = close(df);
+	if (ret < 0) {
+		fprintf(stderr, "close: %s\n", strerror(errno));
+		gfs_pio_close(sf);
+		gfs_unlink(src);
+		unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+	e = gfs_pio_close(sf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "close: %s\n",
+			gfarm_error_string(e));
+		gfs_unlink(src);
+		unlink(dst);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
 
 	gettimeofday(&end_time, NULL);
 	sub_timeval(&end_time, &start_time, &exec_time);

@@ -151,8 +151,23 @@ do_copy() {
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	close(df);
-	close(sf);
+	ret = close(df);
+	if (ret < 0) {
+		fprintf(stderr, "close: %s\n", strerror(errno));
+		close(sf);
+		unlink(src_filename);
+		unlink(dst_filename);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
+	ret = close(sf);
+	if (ret < 0) {
+		fprintf(stderr, "close: %s\n", strerror(errno));
+		unlink(src_filename);
+		unlink(dst_filename);
+		free(buf);
+		return (GFARM_ERR_INPUT_OUTPUT);
+	}
 	gettimeofday(&end_time, NULL);
 	sub_timeval(&end_time, &start_time, &exec_time);
 	et = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
