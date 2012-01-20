@@ -394,14 +394,14 @@ main(int argc, char *argv[])
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", argv[0],
 			gfarm_error_string(e));
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	e = parse_opt(argc, argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		usage(argv);
 		gfarm_terminate();
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	if (posix_flag)
@@ -413,7 +413,7 @@ main(int argc, char *argv[])
 			fullpath);
 		free(fullpath);
 		gfarm_terminate();
-		return (e);
+		return (1);
 	}
 
 	filenames = create_filenames();
@@ -421,7 +421,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "can not allocate memory!\n");
 		free(fullpath);
 		gfarm_terminate();
-		return (GFARM_ERR_NO_MEMORY);
+		return (1);
 	}
 
 	if (wait_time != NULL) {
@@ -432,7 +432,7 @@ main(int argc, char *argv[])
 			free_filenames(filenames);
 			free(fullpath);
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
@@ -442,7 +442,7 @@ main(int argc, char *argv[])
 			free_filenames(filenames);
 			free(fullpath);
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		} else {
 			w.tv_sec = diff.tv_sec;
 			w.tv_nsec = diff.tv_usec * 1000;
@@ -464,5 +464,5 @@ main(int argc, char *argv[])
 		return (1);
 	}
 
-	return (GFARM_ERR_NO_ERROR);
+	return (0);
 }

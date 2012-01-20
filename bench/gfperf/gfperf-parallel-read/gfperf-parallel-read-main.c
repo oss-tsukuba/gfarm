@@ -485,14 +485,14 @@ main(int argc, char *argv[])
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", argv[0],
 			gfarm_error_string(e));
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	e = parse_opt(argc, argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		usage(argv);
 		gfarm_terminate();
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	if (gfarm2fsdir == NULL) {
@@ -500,7 +500,7 @@ main(int argc, char *argv[])
 		if (dir == NULL) {
 			fprintf(stderr, "can not allocate memory!\n");
 			gfarm_terminate();
-			return (GFARM_ERR_NO_MEMORY);
+			return (1);
 		}
 	} else {
 		r = asprintf(&dir, "%s%s",
@@ -508,7 +508,7 @@ main(int argc, char *argv[])
 		if (r < 0) {
 			fprintf(stderr, "can not allocate memory!\n");
 			gfarm_terminate();
-			return (GFARM_ERR_NO_MEMORY);
+			return (1);
 		}
 	}
 
@@ -521,7 +521,7 @@ main(int argc, char *argv[])
 			testdir);
 		free(dir);
 		gfarm_terminate();
-		return (e);
+		return (1);
 	}
 
 	r = asprintf(&filename, "%s/parallel-read-%s-%s-%s.tst",
@@ -531,7 +531,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "can not allocate memory!\n");
 		free(dir);
 		gfarm_terminate();
-		return (GFARM_ERR_NO_MEMORY);
+		return (1);
 	}
 
 	if (wait_time != NULL) {
@@ -541,7 +541,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "invalid time format\n");
 			free(dir);
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
@@ -550,7 +550,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "wait time too long!\n");
 			free(dir);
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		} else {
 			w.tv_sec = diff.tv_sec;
 			w.tv_nsec = diff.tv_usec * 1000;
@@ -568,7 +568,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "can not allocate memory!\n");
 			free(dir);
 			gfarm_terminate();
-			return (GFARM_ERR_NO_MEMORY);
+			return (1);
 		}
 		do_test_posix(filename, gfarm_filename);
 		free(gfarm_filename);
@@ -587,5 +587,5 @@ main(int argc, char *argv[])
 		return (1);
 	}
 
-	return (GFARM_ERR_NO_ERROR);
+	return (0);
 }

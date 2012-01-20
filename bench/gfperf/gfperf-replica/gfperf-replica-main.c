@@ -156,14 +156,14 @@ main(int argc, char *argv[])
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", argv[0],
 			gfarm_error_string(e));
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	e = parse_opt(argc, argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		usage(argv);
 		gfarm_terminate();
-		return (GFARM_ERR_INVALID_ARGUMENT);
+		return (1);
 	}
 
 	if (wait_time != NULL) {
@@ -172,7 +172,7 @@ main(int argc, char *argv[])
 		if (r < 0) {
 			fprintf(stderr, "invalid time format\n");
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
@@ -180,7 +180,7 @@ main(int argc, char *argv[])
 		if (diff.tv_sec > MAX_WAIT_SEC) {
 			fprintf(stderr, "wait time too long!\n");
 			gfarm_terminate();
-			return (GFARM_ERR_INVALID_ARGUMENT);
+			return (1);
 		} else {
 			w.tv_sec = diff.tv_sec;
 			w.tv_nsec = diff.tv_usec * 1000;
@@ -198,5 +198,5 @@ main(int argc, char *argv[])
 	}
 
 	free(testdir_filename);
-	return (GFARM_ERR_NO_ERROR);
+	return (0);
 }
