@@ -152,6 +152,28 @@ def insert_result(str)
   $db.execute("commit;")
 end
 
+def check_duplicate_group_name()
+  gn = Array.new
+  if (!$config["parallel"].nil?)
+    $config["parallel"].each{ |key, val|
+      gn.push(key)
+    }
+  end
+  if (!$config["parallel-autoreplica"].nil?)
+    $config["parallel-autoreplica"].each{ |key, val|
+      gn.push(key)
+    }
+  end
+  dup = gn.select{|e| gn.index(e) != gn.rindex(e)}.uniq
+  if (dup.size > 0)
+    dup.each{ |a|
+      STDERR.print("duplicated group name '#{a}'!\n")
+    }
+    return false
+  end
+  return true
+end
+
 def check_server_status()
   command = "gfsched"
   tmp = ""
@@ -383,6 +405,11 @@ Signal.trap(:TERM) {
 
 $now = Time.now
 $config = YAML.load(File.read(conf_file))
+if (check_duplicate_group_name() == false)
+  conf_file_fd.flock(File::LOCK_UN)
+  conf_file_fd.close()
+  exit(1)
+end
 if ($check_flag == true)
   conf_file_fd.flock(File::LOCK_UN)
   conf_file_fd.close()
