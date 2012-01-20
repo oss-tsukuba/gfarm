@@ -178,9 +178,9 @@ do_sequential_read_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	ret = read(fd, buf, bufsize);
 	if (ret < 0) {
 		fprintf(stderr, "read error %s\n", strerror(errno));
@@ -253,9 +253,9 @@ do_random_read_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	offset = ((long long)random()<<32) + random();
 	lseek(fd,  offset % max_offset, SEEK_SET);
 	r = read(fd, buf, bufsize);
@@ -380,9 +380,9 @@ do_random_read_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	offset = ((long long)random()<<32) + random();
 	gfs_pio_seek(fd,  offset % max_offset, GFARM_SEEK_SET, &r_offset);
 	e = gfs_pio_read(fd, buf, bufsize, &r);
@@ -457,9 +457,9 @@ do_sequential_read_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	e = gfs_pio_read(fd, buf, bufsize, &r);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "read error %s\n",

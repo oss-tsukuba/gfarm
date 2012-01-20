@@ -184,9 +184,9 @@ do_sequential_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	ret = write(fd, buf, bufsize);
 	if (ret < 0) {
 		fprintf(stderr, "write error %s\n", strerror(errno));
@@ -261,9 +261,9 @@ do_random_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	offset = ((long long)random()<<32) + random();
 	lseek(fd,  offset % max_offset, SEEK_SET);
 	r = write(fd, buf, bufsize);
@@ -398,9 +398,9 @@ do_random_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	offset = ((long long)random()<<32) + random();
 	gfs_pio_seek(fd,  offset % max_offset, GFARM_SEEK_SET, &r_offset);
 	e = gfs_pio_write(fd, buf, bufsize, &r);
@@ -478,9 +478,9 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	e = gfs_pio_write(fd, buf, bufsize, &r);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "write error %s\n",

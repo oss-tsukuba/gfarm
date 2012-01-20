@@ -197,9 +197,9 @@ do_sequential_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	size = 0;
 	while (size < filesize) {
 		r = write(fd, buf, bufsize);
@@ -259,9 +259,9 @@ do_random_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	size = 0;
 	for (i = 0; i < n; i++) {
 		offset = ((long long)random()<<32) + random();
@@ -379,9 +379,9 @@ do_random_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	size = 0;
 	for (i = 0; i < n; i++) {
 		offset = ((long long)random()<<32) + random();
@@ -440,9 +440,9 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_CANT_OPEN);
 	}
 
-	set_timer();
 
 	gettimeofday(&start_time, NULL);
+	set_timer();
 	size = 0;
 	while (size < filesize) {
 		e = gfs_pio_write(fd, buf, bufsize, &ret);
