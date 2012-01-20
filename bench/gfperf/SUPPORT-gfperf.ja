@@ -1,21 +1,7 @@
                 gfperfコマンドツールサポートマニュアル
 
 
-* gfperf-writeコマンドで"force stop"というエラーメッセージが表示される。
-
-  書きこみが時間内（デフォルトは60秒）に終らなかったことを表します。
-  --timeout オプションで長い時間を設定するか、-1を設定しタイムアウトをしない
-  ことで回避することができます。
-
-  また、--filesizeオプションに小さい値を渡すのも回避する手段の一つです。
-
-
-* gfperf-readコマンドで"force stop"というエラーメッセージが表示される。
-
-  gfperf-writeコマンドと同様です。
-
-
-* gfperf-autoreplica, gfperf-parallel-autoreplicaで"wait time out!"の
+* gfperf-autoreplica, gfperf-parallel-autoreplicaで"time out!"の
   メッセージが表示される。
 
   同時複製数が限界一杯になると複製が作成されず、複製待ち処理が
