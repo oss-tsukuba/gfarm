@@ -231,12 +231,14 @@ do_libgfarm_utimes(struct directory_names *names)
 	int i;
 	struct test_results r;
 	gfarm_error_t e;
-	struct gfarm_timespec ts;
+	struct gfarm_timespec ts[2];
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
-	ts.tv_sec = tv.tv_sec;
-	ts.tv_nsec = tv.tv_usec*1000;
+	ts[0].tv_sec = tv.tv_sec;
+	ts[0].tv_nsec = tv.tv_usec*1000;
+	ts[1].tv_sec = tv.tv_sec;
+	ts[1].tv_nsec = tv.tv_usec*1000;
 
 	set_number(&r, names->n);
 	set_start(&r);
