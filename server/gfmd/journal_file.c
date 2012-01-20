@@ -1722,6 +1722,13 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	errno = 0;
 	journal_file_mutex_lock(jf, diag);
 
+	if (journal_file_reader_is_invalid(reader)) {
+		e = GFARM_ERR_EXPIRED;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "journal file is expired while reading records");
+		goto error;
+	}
+
 	if ((e = gfp_xdr_recv_ahead(xdr, header_size, &avail)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002918,
