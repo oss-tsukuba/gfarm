@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 1æœˆ 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 1æœˆ 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -787,7 +787,7 @@ enable¤È»ØÄê¤·¤¿¾ì¹ç¡¢¥Õ¥¡¥¤¥ëºîÀ®¡¦ÊÑ¹¹¡¦ºï½ü¤Ë´Ø¤¹¤ë
 	file_trace enable
 .fi
 .TP
-\fBdebug_command \fIstring_list\fB\fR
+\fBdebug_command \fI¥³¥Þ¥ó¥É¹Ô\fB\fR
 Gfarm¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤¬¥¯¥é¥Ã¥·¥å¤·¤¿ºÝ (SIGSEGV, SIGBUG¤ò
 ¼õ¤±¼è¤ëÅù¤·¤¿¾ì¹ç)¡¢¤³¤Î¥Ñ¥é¥á¡¼¥¿¤Ëµ­¤·¤¿¥Ç¥Ð¥Ã¥°¥³¥Þ¥ó¥É¤¬¼Â¹Ô¤µ¤ì¤Þ¤¹¡£
 µ­½ÒÎã¤ò¼¨¤·¤Þ¤¹¡£
@@ -801,16 +801,6 @@ Gfarm¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¥×¥í¥°¥é¥à¤¬¥¯¥é¥Ã¥·¥å¤·¤¿ºÝ (SIGSEGV, SIGBUG¤ò
 
 ¤³¤Î¥Ñ¥é¥á¡¼¥¿¤Ï¡¢gfarm2.conf¤Ègfmd.conf¤ÎÎ¾Êý¤ÇÍ­¸ú¤Ç¤¹¡£
 ¤³¤Î¥Ñ¥é¥á¡¼¥¿¤ò»ØÄê¤·¤Ê¤«¤Ã¤¿¾ì¹ç¡¢¥Ç¥Ð¥Ã¥°¥³¥Þ¥ó¥É¤Ï¼Â¹Ô¤µ¤ì¤Þ¤»¤ó¡£
-.TP
-\fBdebug_command \fIstring_list\fB\fR
-
-¤³¤Î¥Ñ¥é¥á¡¼¥¿¤Ï¡¢gfarm2.conf¤Ègfmd.conf¤ÎÎ¾Êý¤ÇÍ­¸ú¤Ç¤¹¡£
-
-For example,
-
-.nf
-	debug_command env DISPLAY=:0.0 xterm -e gdb
-.fi
 .TP
 \fBno_file_system_node_timeout \fIÉÃ¿ô\fB\fR
 ÍøÍÑ²ÄÇ½¤Ê¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬Â¸ºß¤·¤Ê¤¤¾ì¹ç¡¤
