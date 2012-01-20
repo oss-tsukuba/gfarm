@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "10 December 2011" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 1月 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -832,11 +832,28 @@ modification and removal is enabled.
 
 This directive is available in both gfarm2.conf and gfmd.conf.
 
-$BNc(B:
+Here is an example:
 
 .nf
 	file_trace enable
 .fi
+.TP
+\fBdebug_command \fIcommand_line\fB\fR
+When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
+a debug command specified in this directive is executed.
+For example,
+
+.nf
+	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
+.fi
+
+"%e" and "%p" are expaned to an actual program name and a process ID,
+respectively.
+If you'd like to use "%" character itself in the command line,
+type "%%".
+
+This directive is available in both gfarm2.conf and gfmd.conf.
+If this directive is omitted, no debug command is executed.
 .TP
 \fBno_file_system_node_timeout \fIseconds\fB\fR
 If there is no file system node available,
@@ -1062,6 +1079,7 @@ notation.
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<log_auth_verbose_statement> |
 		\~\~<file_trace_statement> |
+		\~\~<debug_command_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
@@ -1143,6 +1161,7 @@ notation.
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
 	<file_trace_statement> ::= "file_trace" <validity>
+	<debug_command_statement> ::= "debug_command" <string_list>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
@@ -1159,6 +1178,9 @@ notation.
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
 	<metadb_journal_recvq_size_statement> ::= "metadb_journal_recvq_size" <number>
+	<string_list> ::= 
+		\~\~<string> |
+		\~\~<string> <string_list>
 	<hostspec> ::= <ipv4_address> | <ipv4_address> "/" <address_mask> |
 		\~\~<hostname> | "." <domain_name> | "*"
 	<pathname> ::= <pathname_character> <pathname_character>*
