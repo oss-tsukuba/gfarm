@@ -1194,7 +1194,7 @@ This directive is available in both gfarm2.conf and gfmd.conf.
 </varlistentry>
 
 <varlistentry>
-<term><token>debug_command</token> <parameter>string_list</parameter></term>
+<term><token>debug_command</token> <parameter>command_line</parameter></term>
 <listitem>
 <para>
 When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),

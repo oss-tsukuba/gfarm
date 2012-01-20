@@ -1158,7 +1158,7 @@ enableと指定した場合、ファイル作成・変更・削除に関する
 </varlistentry>
 
 <varlistentry>
-<term><token>debug_command</token> <parameter>string_list</parameter></term>
+<term><token>debug_command</token> <parameter>コマンド行</parameter></term>
 <listitem>
 <para>
 Gfarmのアプリケーションプログラムがクラッシュした際 (SIGSEGV, SIGBUGを
@@ -1176,21 +1176,6 @@ Gfarmのアプリケーションプログラムがクラッシュした際 (SIGSEGV, SIGBUGを
 このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
 このパラメータを指定しなかった場合、デバッグコマンドは実行されません。
 </para>
-</listitem>
-</varlistentry>
-
-<varlistentry>
-<term><token>debug_command</token> <parameter>string_list</parameter></term>
-<listitem>
-<para>
-</para>
-<para>
-このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
-</para>
-<para>For example,</para>
-<literallayout>
-	debug_command env DISPLAY=:0.0 xterm -e gdb
-</literallayout>
 </listitem>
 </varlistentry>
 
