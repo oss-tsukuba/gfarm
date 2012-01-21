@@ -918,6 +918,93 @@ gfarm_config_set_argv0(const char *argv0)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static char pid_string[] = "XXXXXXXX";
+
+static char *
+pid_to_string(long pid)
+{
+	char *pe = &pid_string[sizeof pid_string - 1];
+
+	while (pid > 0 && pe > pid_string) {
+		*--pe = pid % 10 + '0';
+		pid /= 10;
+	}
+	return (pe);
+}
+
+/* signal handler */
+void
+gfarm_sig_debug(int sig)
+{
+	static volatile sig_atomic_t already_called = 0;
+	pid_t pid;
+	const char *message;
+	int status, ret;
+	char **argv, **argvp;
+
+	switch (sig) {
+	case SIGQUIT:
+		message = "caught SIGQUIT\n";
+		break;
+	case SIGILL:
+		message = "caught SIGILL\n";
+		break;
+	case SIGTRAP:
+		message = "caught SIGTRAP\n";
+		break;
+	case SIGABRT:
+		message = "caught SIGABRT\n";
+		break;
+	case SIGFPE:
+		message = "caught SIGFPE\n";
+		break;
+	case SIGBUS:
+		message = "caught SIGBUS\n";
+		break;
+	case SIGSEGV:
+		message = "caught SIGSEGV\n";
+		break;
+	default:
+		message = "caught a signal\n";
+		break;
+	}
+	/* ignore return value, since there is no other way here */
+	ret = write(2, message, strlen(message));
+
+	if (already_called)
+		return;
+	already_called = 1;
+
+	argv = gfarm_config_get_debug_command_argv();
+	if (argv == NULL)
+		_exit(1);
+
+	/* replace '%p' with pid */
+	for (argvp = argv; *argvp != NULL; ++argvp) {
+		if ((*argvp)[0] == '%' && (*argvp)[1] == 'p' &&
+		    (*argvp)[2] == '\0') {
+			*argvp = pid_to_string(getpid());
+			break;
+		}
+	}
+	pid = fork();
+	if (pid == -1) {
+		char msg[] = "fork failed\n";
+
+		ret = write(2, msg, strlen(msg));
+		_exit(1);
+	} else if (pid == 0) {
+		execvp(argv[0], argv);
+		perror(argv[0]);
+		_exit(1);
+	} else {
+		/* not really correct way to wait until attached, but... */
+		sleep(5);
+		waitpid(pid, &status, 0);
+		_exit(1);
+	}
+}
+
 void
 gfarm_set_record_atime(int boolean)
 {
@@ -1611,8 +1698,8 @@ parse_set_var(char *p, char **rv)
 	s = strdup(s);
 	if (s == NULL) {
 		gflog_debug(GFARM_MSG_1000960,
-			"allocation of argument failed when parsing set var: %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		    "allocation of argument failed when parsing set var: %s",
+		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	*rv = s;
@@ -2059,17 +2146,14 @@ error:
 	return (e);
 }
 
+#define CMD_SIZE_UNIT	10
+
 static char *
 expand_debug_command_arg_pattern(const char *pattern)
 {
-	const char *p = pattern;
-	char *cmd = NULL;
-	size_t cmd_size = 0;
-	size_t cmd_offset = 0;
-	char *cmd_new;
-	const char *copy_from;
-	size_t copy_len;
-	char workbuf[MAX_CONFIG_LINE_LENGTH + 1];
+	const char *p = pattern, *copy_from;
+	char *cmd = NULL, *cmd_new;
+	size_t cmd_size = 0, cmd_offset = 0, copy_len;
 	int nul_copied = 0;
 
 	for (;;) {
@@ -2086,10 +2170,8 @@ expand_debug_command_arg_pattern(const char *pattern)
 				p += 2;
 				break;
 			case 'p':
-				snprintf(workbuf, sizeof(workbuf), "%ld",
-				    (long) getpid());
-				copy_from = workbuf;
-				copy_len = strlen(workbuf);
+				copy_from = p;
+				copy_len = 2;
 				p += 2;
 				break;
 			case 'e':
@@ -2113,12 +2195,12 @@ expand_debug_command_arg_pattern(const char *pattern)
 
 		if (cmd_offset + copy_len > cmd_size) {
 			do {
-				cmd_size += (MAX_CONFIG_LINE_LENGTH / 2) + 1;
+				cmd_size += CMD_SIZE_UNIT;
 			} while (cmd_offset + copy_len > cmd_size);
-			cmd_new = (char *) realloc(cmd, cmd_size);
+			cmd_new = realloc(cmd, cmd_size);
 			if (cmd_new == NULL) {
 				free(cmd);
-				return NULL;
+				return (NULL);
 			}
 			cmd = cmd_new;
 		}
@@ -2134,55 +2216,58 @@ expand_debug_command_arg_pattern(const char *pattern)
 	return (cmd);
 }
 
+#define MAX_DEBUG_COMMAND_LENGTH	20
+
 static gfarm_error_t
 parse_debug_command(char *p, char **op)
 {
 	gfarm_error_t e;
-	char *argv[MAX_CONFIG_LINE_LENGTH + 1];
-	char *arg;
-	int argc = 0;
-	int i;
+	char *argv[MAX_DEBUG_COMMAND_LENGTH], *arg, *diag = "debug_command";
+	int argc, i;
 
 	/* XXX - consider to specify 'debug_command' several times. */
 	if (gfarm_debug_command_argv != NULL || gfarm_argv0 == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
-	for (;;) {
+	for (argc = 0; argc < MAX_DEBUG_COMMAND_LENGTH; ++argc) {
 		e = gfarm_strtoken(&p, &arg);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "parsing of debug_command command argument (%s) "
-			    "failed: %s", p, gfarm_error_string(e));
+			    "invalid argument of %s (%s): %s",
+			    diag, p, gfarm_error_string(e));
 			goto error;
 		}
 		if (arg == NULL)
 			break;
 		argv[argc] = expand_debug_command_arg_pattern(arg);
 		if (argv[argc] == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "failed to allocate an argument of debug_command "
-			    "command: no memory");
 			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "failed to allocate an argument of %s: %s",
+			    diag, gfarm_error_string(e));
 			goto error;
 		}
-		argc++;
+	}
+	if (argc == MAX_DEBUG_COMMAND_LENGTH) {
+		e = GFARM_ERR_ARGUMENT_LIST_TOO_LONG;
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		    gfarm_error_string(e));
+		goto error;
 	}
 	argv[argc] = NULL;
 
 	if (argc > 0) {
-		gfarm_debug_command_argv = (char **)
-		    malloc(sizeof(char *) * (argc + 1));
+		gfarm_debug_command_argv = malloc(sizeof(char *) * (argc + 1));
 		if (gfarm_debug_command_argv == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "failed to allocate a list of arguments of "
-			    "debug_command command: no memory");
 			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "failed to allocate a list of arguments of %s: %s",
+			    diag, gfarm_error_string(e));
 			goto error;
 		}
 		memcpy(gfarm_debug_command_argv, argv,
 		    sizeof(char *) * (argc + 1));
 	}
-
 	return (GFARM_ERR_NO_ERROR);
 
 	/*
