@@ -466,15 +466,16 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 		 * which requires TCP_NODELAY for reasonable performance.
 		 */
 		if (gfs_server->auth_method == GFARM_AUTH_METHOD_GSI) {
-			e = gfarm_sockopt_set_option(
+			gfarm_error_t e1 = gfarm_sockopt_set_option(
 			    gfp_xdr_fd(gfs_server->conn), "tcp_nodelay");
-			if (e == GFARM_ERR_NO_ERROR)
+
+			if (e1 == GFARM_ERR_NO_ERROR)
 				gflog_debug(GFARM_MSG_1003373, "tcp_nodelay "
 				    "is specified for performance in GSI");
 			else
 				gflog_debug(GFARM_MSG_1003374, "tcp_nodelay "
 				    "is specified, but fails: %s",
-				    gfarm_error_string(e));
+				    gfarm_error_string(e1));
 		}
 		*gfs_serverp = gfs_server;
 	} else {
