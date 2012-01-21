@@ -1,3 +1,17 @@
+Release note for Gfarm 2.5.3
+============================
+
+[2011.12.31]
+
+Performance improvement
+* improve communication latency in GSI authentication
+
+Bug fix
+* slave gfmd may become readonly after restart of the backend
+  database. [sf.net trac #281]
+* gfmd - fix segfault or assertion failure. [sf.net trac #288 and
+  #291]
+
 Release note for Gfarm 2.5.2
 ============================
 
