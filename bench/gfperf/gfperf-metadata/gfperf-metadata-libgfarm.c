@@ -242,7 +242,7 @@ do_libgfarm_utimes(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
-	e = gfs_utimes(names->names[0], &ts);
+	e = gfs_utimes(names->names[0], ts);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "utimes: %s\n",
 			gfarm_error_string(e));
@@ -250,7 +250,7 @@ do_libgfarm_utimes(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
-		e = gfs_utimes(names->names[i], &ts);
+		e = gfs_utimes(names->names[i], ts);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "stat: %s\n",
 				gfarm_error_string(e));
