@@ -1445,6 +1445,9 @@ main(int argc, char **argv)
 
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
+	/* gfarm_metadb_server_port is accessed in gfmd_modules_init() */
+	if (port_number != NULL)
+		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1566,8 +1569,6 @@ main(int argc, char **argv)
 					  inode_check_and_repair() */
 		inode_check_and_repair();
 	}
-	if (port_number != NULL)
-		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
 	if (gfarm_get_metadb_replication_enabled()) {
 		is_master = mdhost_self_is_master();
 		gflog_info(GFARM_MSG_1002737,
