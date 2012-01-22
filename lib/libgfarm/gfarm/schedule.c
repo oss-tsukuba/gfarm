@@ -872,7 +872,7 @@ search_idle_count(struct search_idle_state *s,
 
 	if (s->write_mode &&
 	    (h->flags & HOST_STATE_FLAG_STATFS_AVAIL) != 0 &&
-	    h->diskavail < gfarm_minimum_free_disk_space)
+	    h->diskavail < gfarm_get_minimum_free_disk_space())
 		ok = 0; /* not enough free space */
 	if (ok)
 		(*usable_numberp)++;

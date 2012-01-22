@@ -24,7 +24,10 @@
 #include <pwd.h>
 
 #include <gfarm/gfarm.h>
+
 #include "gfutil.h"
+#include "hash.h"
+#include "lru_cache.h"
 
 #include "liberror.h"
 #include "patmatch.h"
@@ -42,9 +45,6 @@
 #include "lookup.h"
 #include "metadb_server.h"
 #include "filesystem.h"
-
-#include "hash.h"
-#include "lru_cache.h"
 #include "conn_hash.h"
 #include "conn_cache.h"
 
@@ -755,7 +755,7 @@ float gfarm_schedule_busy_load = MISC_DEFAULT;
 float gfarm_schedule_virtual_load = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
-gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
+static gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
 int gfarm_simultaneous_replication_receivers = MISC_DEFAULT;
 int gfarm_gfsd_connection_cache = MISC_DEFAULT;
 int gfarm_gfmd_connection_cache = MISC_DEFAULT;
