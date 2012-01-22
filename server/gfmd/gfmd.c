@@ -10,13 +10,10 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h> /* TCP_NODELAY */
-#include <netdb.h> /* getprotobyname() */
 #include <sys/resource.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <setjmp.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <signal.h>
@@ -24,8 +21,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libgen.h>
-#include <pwd.h>
-#include <grp.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
@@ -37,14 +32,11 @@
 
 #include "liberror.h"
 #include "gfp_xdr.h"
-#include "io_fd.h"
 #include "hostspec.h"
 #include "sockopt.h"
 #include "auth.h"
 #include "config.h"
 #include "gfm_proto.h"
-#include "gfj_client.h"
-#include "gfpath.h"
 
 #include "subr.h"
 #include "thrpool.h"
