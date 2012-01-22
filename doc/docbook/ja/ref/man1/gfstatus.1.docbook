@@ -18,6 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstatus</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -27,6 +28,35 @@
 
 <para>Gfarmファイルシステムの情報を表示します．</para>
 
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>デバッグメッセージを表示します．</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>パス名</parameter></term>
+<listitem>
+<para>
+指定したパス名により特定のメタデータサーバを指定します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
 </refsect1>
 </refentry>
 

@@ -18,6 +18,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfstatus</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -28,6 +29,35 @@
 <para><command>gfstatus</command> displays information about the
 Gfarm file system.</para>
 
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>Displays debug messages.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>path</parameter></term>
+<listitem>
+<para>
+Specifies a path name to specify a metadata server instead of the root
+metadata server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
 </refsect1>
 </refentry>
 
