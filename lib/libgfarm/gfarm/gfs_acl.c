@@ -1343,8 +1343,8 @@ gfs_acl_to_xattr_value(gfarm_acl_t acl, void **xattr_value_p, size_t *size_p)
 	version = gfarm_htol_32(GFARM_ACL_EA_VERSION);
 	ADD_BUF(&version, sizeof(version));
 	for (i = 0; i < acl->nentries; i++) {
-		static char zerostr[] = "";
-		char *s;
+		static const char zerostr[] = "";
+		const char *s;
 		if (acl->entries[i] == NULL)
 			continue;
 		tag = gfarm_htol_16(
