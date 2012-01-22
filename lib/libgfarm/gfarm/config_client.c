@@ -175,143 +175,6 @@ gfarm_parse_env_client(void)
 	}
 }
 
-#if 0 /* not yet in gfarm v2 */
-
-/*
- * redirect stdout
- */
-
-static gfarm_error_t
-gfarm_redirect_file(int fd, char *file, GFS_File *gf)
-{
-	gfarm_error_t e;
-	int nfd;
-
-	if (file == NULL)
-		return (GFARM_ERR_NO_ERROR);
-
-	e = gfs_pio_create(file, GFARM_FILE_WRONLY, 0644, gf);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	e = gfs_pio_set_view_local(*gf, 0);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	nfd = gfs_pio_fileno(*gf);
-	if (nfd == -1)
-		return (gfarm_errno_to_error(errno));
-
-	/*
-	 * This assumes the file fragment is created in the local
-	 * spool.
-	 */
-	if (dup2(nfd, fd) == -1)
-		e = gfarm_errno_to_error(errno);
-
-	/* XXX - apparently violate the layer */
-	((struct gfs_file_section_context *)(*gf)->view_context)->fd = fd;
-	(*gf)->mode &= ~GFS_FILE_MODE_CALC_DIGEST;
-
-	close(nfd);
-
-	return (e);
-}
-
-/*
- * eliminate arguments added by the gfrun command.
- */
-
-static GFS_File gf_stdout, gf_stderr;
-
-gfarm_error_t
-gfarm_parse_argv(int *argcp, char ***argvp)
-{
-	gfarm_error_t e;
-	int total_nodes = -1, node_index = -1;
-	int argc = *argcp;
-	char **argv = *argvp;
-	char *argv0 = *argv;
-	int call_set_local = 0;
-	char *stdout_file = NULL, *stderr_file = NULL;
-
-	--argc;
-	++argv;
-	while (argc > 0 && argv[0][0] == '-' && argv[0][1] == '-') {
-		if (strcmp(&argv[0][2], "gfarm_index") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				node_index = strtol(*argv, NULL, 0);
-			call_set_local |= 1;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_nfrags") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				total_nodes = strtol(*argv, NULL, 0);
-			call_set_local |= 2;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_stdout") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				stdout_file = *argv;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_stderr") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0)
-				stderr_file = *argv;
-		}
-		else if (strcmp(&argv[0][2], "gfarm_profile") == 0)
-			gfs_profile_set();
-		else if (strcmp(&argv[0][2], "gfarm_replicate") == 0)
-			gf_on_demand_replication = 1;
-		else if (strcmp(&argv[0][2], "gfarm_cwd") == 0) {
-			--argc;
-			++argv;
-			if (argc > 0) {
-				e = gfs_chdir(*argv);
-				if (e != GFARM_ERR_NO_ERROR)
-					return (e);
-			}
-		}
-		else
-			break;
-		--argc;
-		++argv;
-	}
-	if (call_set_local == 3) {
-		e = gfs_pio_set_local(node_index, total_nodes);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-
-		/* redirect stdout and stderr */
-		if (stdout_file != GFARM_ERR_NO_ERROR) {
-			e = gfarm_redirect_file(1, stdout_file, &gf_stdout);
-			if (e != GFARM_ERR_NO_ERROR)
-				return (e);
-		}
-		if (stderr_file != GFARM_ERR_NO_ERROR) {
-			e = gfarm_redirect_file(2, stderr_file, &gf_stderr);
-			if (e != GFARM_ERR_NO_ERROR)
-				return (e);
-		}
-
-		++argc;
-		--argv;
-
-		*argcp = argc;
-		*argv = argv0;
-		*argvp = argv;
-	}	
-
-	return (GFARM_ERR_NO_ERROR);
-}
-
-#endif /* not yet in gfarm v2 */
-
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -392,19 +255,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 	gfm_client_connection_free(gfm_server);
 
 	gfarm_parse_env_client();
-	if (argvp != NULL) {
-#if 0 /* not yet in gfarm v2 */
-		if (getenv("DISPLAY") != NULL)
-			gfarm_debug_initialize((*argvp)[0]);
-		e = gfarm_parse_argv(argcp, argvp);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-#endif /* not yet in gfarm v2 */
-	}
-
-#if 0 /* not yet in gfarm v2 */
-	gfarm_initialized = 1;
-#endif /* not yet in gfarm v2 */
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -457,24 +307,6 @@ gfarm_client_process_reset(struct gfs_connection *gfs_server,
 gfarm_error_t
 gfarm_terminate(void)
 {
-#if 0 /* not yet in gfarm v2 */
-	gfarm_error_t e;
-
-	if (gf_stdout != NULL) {
-		fflush(stdout);
-		e = gfs_pio_close(gf_stdout);
-		gf_stdout = NULL;
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-	}
-	if (gf_stderr != NULL) {
-		fflush(stderr);
-		e = gfs_pio_close(gf_stderr);
-		gf_stderr = NULL;
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-	}
-#endif /* not yet in gfarm v2 */
 	gfs_profile(gfs_display_timers());
 	gfarm_free_config();
 	gfs_client_terminate();

@@ -77,7 +77,6 @@ extern int gfarm_record_atime;
 extern int gfarm_client_file_bufsize;
 
 extern int gf_on_demand_replication;
-extern int gf_hook_default_global;
 
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
@@ -98,9 +97,6 @@ int gfarm_get_journal_sync_slave_timeout(void);
 int gfarm_get_metadb_server_slave_max_size(void);
 int gfarm_get_metadb_server_force_slave(void);
 void gfarm_set_metadb_server_force_slave(int);
-
-/* redirection */
-extern struct gfs_file *gf_stdout, *gf_stderr;
 
 /* miscellaneous */
 extern int gfarm_network_receive_timeout;
