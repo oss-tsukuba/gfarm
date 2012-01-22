@@ -86,15 +86,17 @@ gfarm_gsi_client_cred_name(void)
 	gss_cred_id_t cred = gfarm_gsi_get_delegated_cred();
 	gss_name_t name;
 	OM_uint32 e_major, e_minor;
+	char *dn;
 	static pthread_mutex_t client_cred_initialize_mutex =
 	    PTHREAD_MUTEX_INITIALIZER;
 	static int initialized = 0;
-	static char *dn;
+	static char *client_dn;
 	static const char diag[] = "gfarm_gsi_client_cred_name";
 	static const char mutex_name[] = "client_cred_initialize_mutex";
 
 	gfarm_mutex_lock(&client_cred_initialize_mutex, diag, mutex_name);
 	if (initialized) {
+		dn = client_dn;
 		gfarm_mutex_unlock(&client_cred_initialize_mutex,
 		    diag, mutex_name);
 		return (dn);
@@ -102,13 +104,13 @@ gfarm_gsi_client_cred_name(void)
 
 	if (cred == GSS_C_NO_CREDENTIAL &&
 	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
-		dn = NULL;
+		client_dn = NULL;
 		gflog_auth_error(GFARM_MSG_1000707,
 		    "gfarm_gsi_client_cred_name(): "
 		    "not initialized as an initiator");
 	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
 	    < 0) {
-		dn = NULL;
+		client_dn = NULL;
 		if (gflog_auth_get_verbose()) {
 			gflog_error(GFARM_MSG_1000708,
 			    "cannot convert initiator credential "
@@ -117,8 +119,9 @@ gfarm_gsi_client_cred_name(void)
 			gfarmGssPrintMinorStatus(e_minor);
 		}
 	} else {
-		dn = gfarmGssNewDisplayName(name, &e_major, &e_minor, NULL);
-		if (dn == NULL && gflog_auth_get_verbose()) {
+		client_dn = gfarmGssNewDisplayName(
+		    name, &e_major, &e_minor, NULL);
+		if (client_dn == NULL && gflog_auth_get_verbose()) {
 			gflog_error(GFARM_MSG_1000709,
 			    "cannot convert initiator credential "
 			    "to string");
@@ -128,6 +131,7 @@ gfarm_gsi_client_cred_name(void)
 		gfarmGssDeleteName(&name, NULL, NULL);
 	}
 	initialized = 1;
+	dn = client_dn;
 	gfarm_mutex_unlock(&client_cred_initialize_mutex, diag, mutex_name);
 	return (dn);
 }
