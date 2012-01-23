@@ -898,7 +898,6 @@ peer_authorize(struct peer *peer)
 	}
 	return (e);
 }
- 
 
 void *
 try_auth(void *arg)
