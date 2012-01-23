@@ -946,9 +946,6 @@ gfarm_sig_debug(int sig)
 	case SIGTRAP:
 		message = "caught SIGTRAP\n";
 		break;
-	case SIGABRT:
-		message = "caught SIGABRT\n";
-		break;
 	case SIGFPE:
 		message = "caught SIGFPE\n";
 		break;
@@ -1005,10 +1002,15 @@ gfarm_setup_debug_command(void)
 	if (gfarm_debug_command_argv == NULL)
 		return;
 
+	/*
+	 * do not set gfarm_sig_debug for SIGABRT, since free() in
+	 * glibc may abort when double free is detected, which causes
+	 * a deadlock to execute fork() in gfarm_sig_debug signal
+	 * handler.
+	 */
 	signal(SIGQUIT, gfarm_sig_debug);
 	signal(SIGILL,  gfarm_sig_debug);
 	signal(SIGTRAP, gfarm_sig_debug);
-	signal(SIGABRT, gfarm_sig_debug);
 	signal(SIGFPE,  gfarm_sig_debug);
 	signal(SIGBUS,  gfarm_sig_debug);
 	signal(SIGSEGV, gfarm_sig_debug);
