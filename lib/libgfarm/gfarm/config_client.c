@@ -187,13 +187,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 		return (e);
 	}
 
-	signal(SIGQUIT, gfarm_sig_debug);
-	signal(SIGILL,  gfarm_sig_debug);
-	signal(SIGTRAP, gfarm_sig_debug);
-	signal(SIGABRT, gfarm_sig_debug);
-	signal(SIGFPE,  gfarm_sig_debug);
-	signal(SIGBUS,  gfarm_sig_debug);
-	signal(SIGSEGV, gfarm_sig_debug);
+	gfarm_setup_debug_command();
 
 #ifdef HAVE_GSI
 	/* Force to display verbose error messages. */

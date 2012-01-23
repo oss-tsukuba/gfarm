@@ -84,13 +84,7 @@ gfarm_server_initialize(char *config_file, int *argcp, char ***argvp)
 		return (e);
 	}
 
-	signal(SIGQUIT, gfarm_sig_debug);
-	signal(SIGILL,  gfarm_sig_debug);
-	signal(SIGTRAP, gfarm_sig_debug);
-	signal(SIGABRT, gfarm_sig_debug);
-	signal(SIGFPE,  gfarm_sig_debug);
-	signal(SIGBUS,  gfarm_sig_debug);
-	signal(SIGSEGV, gfarm_sig_debug);
+	gfarm_setup_debug_command();
 
 	gfarm_config_set_default_spool_on_server();
 

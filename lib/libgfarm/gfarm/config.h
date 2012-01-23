@@ -59,11 +59,10 @@ extern int gfarm_simultaneous_replication_receivers;
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
 gfarm_off_t gfarm_get_minimum_free_disk_space(void);
-char **gfarm_config_get_debug_command_argv(void);
 const char *gfarm_config_get_argv0(void);
 gfarm_error_t gfarm_config_set_argv0(const char *);
 
-void gfarm_sig_debug(int);
+void gfarm_setup_debug_command(void);
 
 int gfarm_get_metadb_replication_enabled(void);
 void gfarm_set_metadb_replication_enabled(int);
