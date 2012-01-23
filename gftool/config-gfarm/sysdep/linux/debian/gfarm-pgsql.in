@@ -45,13 +45,14 @@ checkstatus()
 wait_to_start()
 {
 	iter=0
-	# XXX - checkstatus cannot ensure the database really starts up
 	while if checkstatus; then false; else true; fi >/dev/null 2>&1
 	do
 		iter=`expr $iter + 1`
 		[ $iter -gt 6 ] && exit 1
 		sleep 5
 	done
+	# XXX - checkstatus cannot ensure the database really starts up
+	sleep 3
 }
 
 RETVAL=0
