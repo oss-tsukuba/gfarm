@@ -491,13 +491,8 @@ int
 gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
 {
     gfarm_int32_t iLen;
-    gfarm_int8_t *buf = NULL;
-    char *p;
+    gfarm_int8_t *buf;
 
-    if (gsBuf->value != NULL) {
-	OM_uint32 minStat;
-	(void)gss_release_buffer(&minStat, gsBuf);
-    }
     gsBuf->length = 0;
     gsBuf->value = NULL;
 
@@ -511,21 +506,19 @@ gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf, int timeoutMsec)
      * 	GSSAPI has no API for allocating a gss_buffer_t. It is not
      *	recommended to allocate it with malloc().
      */
-    GFARM_MALLOC_ARRAY(p, iLen);
-    if (p == NULL) {
+    GFARM_MALLOC_ARRAY(buf, iLen);
+    if (buf == NULL) {
 	gflog_debug(GFARM_MSG_1000795, "allocation of buffer failed");
 	return -1;
     }
-    buf = (gfarm_int8_t *)p;
-
     if (gfarmReadInt8(fd, buf, iLen, timeoutMsec) != iLen) {
-	(void)free(buf);
+	free(buf);
 	gflog_debug(GFARM_MSG_1000796, "gfarmReadInt8() failed");
 	return -1;
     }
 
-    gsBuf->length = (size_t)iLen;
-    gsBuf->value = (void *)buf;
+    gsBuf->length = iLen;
+    gsBuf->value = buf;
     return iLen;
 }
 
@@ -602,13 +595,6 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	}
 
     } while (majStat & GSS_S_CONTINUE_NEEDED);
-
-    if (itPtr->length > 0) {
-	(void)gss_release_buffer(&minStat2, itPtr);
-    }
-    if (otPtr->length > 0) {
-	(void)gss_release_buffer(&minStat2, otPtr);
-    }
 
     if (majStatPtr != NULL) {
 	*majStatPtr = majStat;
@@ -948,18 +934,14 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
 			     (const gss_buffer_t)itPtr,
 			     otPtr,
 			     NULL, NULL);
-	(void)gss_release_buffer(&minStat, itPtr);
-	itPtr->length = 0;
-	itPtr->value = NULL;
+	gss_release_buffer(&minStat, itPtr);
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
-		(void)memcpy((void *)(buf + sum), (void *)otPtr->value, otPtr->length);
-		len = (int)(otPtr->length);
+		memcpy(buf + sum, otPtr->value, otPtr->length);
+		len = otPtr->length;
 		rem -= len;
 		sum += len;
-		(void)gss_release_buffer(&minStat, otPtr);
-		otPtr->length = 0;
-		otPtr->value = NULL;
+		gss_release_buffer(&minStat, otPtr);
 	    } else {
 		majStat = GSS_S_DEFECTIVE_TOKEN;
 		goto Done;
@@ -973,12 +955,6 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     }
 
     Done:
-    if (otPtr->length > 0) {
-	(void)gss_release_buffer(&minStat, otPtr);
-    }
-    if (itPtr->length > 0) {
-	(void)gss_release_buffer(&minStat, itPtr);
-    }
     if (statPtr != NULL) {
 	*statPtr = majStat;
     }
