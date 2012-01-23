@@ -21,6 +21,7 @@ Table of Contents:
      What do we have to do?
   2.4 Sometimes a gfarm client or gfsd stops without doing anything.
   2.5 The modification time seems to be strange.
+  2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
 
 3. Security
   3.1 It is safe to use Gfarm in an environment that is NOT protected by
@@ -247,6 +248,49 @@ Table of Contents:
 	nodes are not synchronized, the modification date may be
 	strange.  Check and synchronize clocks of all file system
 	nodes.
+
+  2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
+
+	If gfmd or gfsd runs on Linux, core file is not created by default
+	when it aborts.  You need to do the following procedures with
+	the root privilege to retrieve a core file:
+
+	(1) Configure a kernel parameters.  Append the lines below to
+	the sysctl configuration file (/etc/sysctl.conf):
+
+		fs.suid_dumpable=1
+		kernel.core_pattern="/var/tmp/core.%e.%p"
+
+	The "kernel.core_pattern" line specifies paths of core files.
+	"%e" and "%p" in the pattern are expanded to a program name and
+	a process ID, respectively.  Then, reload the settings:
+
+		/sbin/sysctl -p
+
+	(2) Set the size limit of a core file.  Add the following line
+	to the "/etc/security/limits.conf" file:
+
+		*	soft	core	unlimited
+
+	This setting is enabled after the operating system is restarted.
+
+	If gfmd or gfsd is currently running and you'd like to apply the
+	setting immediately, use ulimit command and restart gfmd or gfsd,
+	as follows:
+
+		ulimit -c unlimited
+		/etc/init.d/gfmd restart
+		/etc/init.d/gfsd restart
+
+	(3) If gfmd or gfsd runs on Red Hat or derived from it, you also
+	need to configure the daily job named "prelink".  Create the file
+	"/etc/prelink.conf.d/gfarm" and insert lines like:
+
+		-b /usr/sbin/gfmd
+		-b /usr/sbin/gfsd
+		-b /usr/lib/libgfarm.*
+
+	Note that this example assumes Gfarm is installed under "/usr".
 
 3. Security
 ***********

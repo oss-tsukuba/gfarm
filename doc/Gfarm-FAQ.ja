@@ -23,6 +23,8 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
   2.4 無通信状態で止まっている gfarm クライアントや gfsd が残ることが
      あるのですが？
   2.5 ファイルの更新時刻がおかしいようです．
+  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収
+      できますか？
 
 3. セキュリティ
   3.1 Gfarm は firewall に守られていない環境で安全に運用できますか？
@@ -174,8 +176,8 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	gfsdの証明書もgrid-mapfileに登録されていますか？
 
 	(2) ユーザ証明書(~/.globus/usercert.pem)，ホスト証明書
-        (/etc/grid-security/hostcert.pem)のパーミッションが 0644 になって
-        いますか？ またgfsdのサービス証明書を利用している場合，証明書
+	(/etc/grid-security/hostcert.pem)のパーミッションが 0644 になって
+	いますか？ またgfsdのサービス証明書を利用している場合，証明書
 	および秘密鍵のオーナーは「_gfarmfs」とする必要があります．
 
 	(3) ユーザ証明書，ホスト証明書，サービス証明書の有効期限は
@@ -241,6 +243,51 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	定されていない場合，そのファイルシステムノードに書き込まれたファ
 	イルの更新時刻などがおかしくなってしまいます．NTPなどを利用し
 	てファイルシステムノードの時刻を正しく設定してください．
+
+  2.6 gfmd や gfsd が異常終了した際，どうすればコアファイルを回収できますか？
+
+	gfmd や gfsd を Linux 上で動かしている場合，異常終了してもコア
+	ファイルはデフォルトでは作成されません．コアファイルを回収する
+	には，root 権限で以下の作業を行ってください．
+
+	(1) カーネルのパラメタを変更します．以下の行を sysctl の設定
+	ファイル (/etc/sysctl.conf) の末尾に加えます．
+
+		fs.suid_dumpable=1
+		kernel.core_pattern="/var/tmp/core.%e.%p"
+
+	"kernel.core_pattern" 行では，コアファイルのパスを指定します．
+	"%e", "%p" はそれぞれ，プログラム名およびプロセス ID に展開
+	されます．加えたら，設定を読み込み直します．
+
+		/sbin/sysctl -p
+
+	(2) コアファイルの最大サイズを設定します．
+	"/etc/security/limits.conf" ファイルに，以下の行を追加します．
+
+		*	soft	core	unlimited
+
+	この設定は，OS 再起動後に有効になります．
+
+	現在も gfmd や gfsd が動作中で，直ちに設定を適用したい場合は，
+	以下のように ulimit コマンド実行後，gfmd または gfsd を再起動
+	してください．
+
+		ulimit -c unlimited
+		/etc/init.d/gfmd restart
+		/etc/init.d/gfsd restart
+
+	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
+	させる場合は、"prelink" という日時ジョブに関する設定を行う必要
+	があります．"/etc/prelink.conf.d/gfarm" というファイルを作成し、
+	以下のような行を足します．
+
+		-b /usr/sbin/gfmd
+		-b /usr/sbin/gfsd
+		-b /usr/lib/libgfarm.*
+
+	この例では Gfarm は /usr 以下にインストールされているものと仮定
+	しています．
 
 3. セキュリティ
 ***************
