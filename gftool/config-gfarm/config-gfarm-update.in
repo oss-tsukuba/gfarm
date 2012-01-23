@@ -15,6 +15,9 @@ datarootdir="@datarootdir@"
 datadir="@datadir@"
 config_dir="${datadir}/gfarm/config"
 
+PRIVATE_MODE=false
+PRIVATE_MODE_FOR_DEBIAN=false
+
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
 search_path="$PATH"
@@ -92,12 +95,10 @@ display_backend_log_dir_param()
 
 tf2yn()
 {
-    tf=$1
-    if [ "$tf" = "true" ]; then
-        echo "yes"
-    else
-        echo "no"
-    fi
+    case $1 in
+    true) echo yes;;
+    *)    echo no;;
+    esac
 }
 
 display_params()
@@ -120,21 +121,21 @@ display_params()
 
 update_metadata_replication()
 {
-    if [ $METADATA_REPLICATION ]; then
-        if [ ! $METADATA_REPLICATION1 ]; then
-            if [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
-                echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
-                exit 1
-            fi
+    if $METADATA_REPLICATION; then
+	if $METADATA_REPLICATION1; then
+	    :
+	elif [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
+	    echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
+	    exit 1
         fi
         [ -d $METADATA_JOURNAL_DIR ] || mkdir -p $METADATA_JOURNAL_DIR
         [ -e $METADATA_JOURNAL_DIR ] && chmod 700 $METADATA_JOURNAL_DIR
     fi
 
-    if [ "$METADATA_REPLICATION_ED1" = "" ]; then
+    if [ X"$METADATA_REPLICATION_ED1" = X"" ]; then
         echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
     fi
-    if [ "$METADATA_JOURNAL_DIR1" = "" ]; then
+    if [ X"$METADATA_JOURNAL_DIR1" = X"" ]; then
         echo "# mkdir following directory when metadb_replication is set to enable." >> $GFMD_CONF
         echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
     fi
@@ -143,7 +144,7 @@ update_metadata_replication()
 update_first_set_param()
 {
     : ${METADATA_REPLICATION_ED1=`getvalue metadb_replication`}
-    if [ "$METADATA_REPLICATION_ED1" = "enable" ]; then
+    if [ X"$METADATA_REPLICATION_ED1" = X"enable" ]; then
         METADATA_REPLICATION=true
         METADATA_REPLICATION1=true
         METADATA_REPLICATION_ED=enable

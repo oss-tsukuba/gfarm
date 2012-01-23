@@ -42,6 +42,19 @@ checkstatus()
 	return $RETVAL
 }
 
+wait_to_start()
+{
+	iter=0
+	while if checkstatus; then false; else true; fi >/dev/null 2>&1
+	do
+		iter=`expr $iter + 1`
+		[ $iter -gt 6 ] && exit 1
+		sleep 5
+	done
+	# XXX - checkstatus cannot ensure the database really starts up
+	sleep 3
+}
+
 RETVAL=0
 
 case "$1" in
@@ -53,6 +66,7 @@ case "$1" in
 		call_pg_ctl start
 		RETVAL=$?
 	fi
+	wait_to_start
 	echo "."
 	;;
   stop)
@@ -62,7 +76,7 @@ case "$1" in
 	if [ $RETVAL -eq 3 ]; then
 		RETVAL=0
 	else
-		call_pg_ctl stop
+		call_pg_ctl stop > /dev/null
 		RETVAL=$?
 	fi
 	echo "."
@@ -72,7 +86,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   restart)
-	call_pg_ctl restart
+	call_pg_ctl restart > /dev/null
 	RETVAL=$?
 	;;
   force-reload)

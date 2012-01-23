@@ -157,11 +157,22 @@ set_last_defaults_postgresql()
 			BACKEND_VERSION="unknown"
 		fi
 	fi
+	WAIT_F='-w '
 	case $BACKEND_VERSION in
 	7.*) # -w option makes "pg_ctl start" ask password on PostgreSQL-7.4
-	    : ${PGSQL_OPTIONS:='-s    -m fast -D $PGDATA -l $PGDATA/logfile'};;
-	*)  : ${PGSQL_OPTIONS:='-s -w -m fast -D $PGDATA -l $PGDATA/logfile'};;
+		WAIT_F='' ;;
 	esac
+	# postgresql in debian needs to specify unix_socket_directory
+	# start up in user mode, which makes -w option ineffective
+	ARCH=`$prefix/bin/gfarm.arch.guess`
+	if $PRIVATE_MODE && [ X"$ARCH" != X ]; then
+		case $ARCH in
+		*debian*)
+			PRIVATE_MODE_FOR_DEBIAN=true
+			WAIT_F='' ;;
+		esac
+	fi
+	: ${PGSQL_OPTIONS:=$WAIT_F'-s -m fast -D $PGDATA -l $PGDATA/logfile'}
 }
 
 #
@@ -182,6 +193,33 @@ _EOF_
 make_configuration_directory_postgresql()
 {
 	:
+}
+
+make_configuration_file_private_for_debian_postgresql()
+{
+	cp -p "$BACKEND_DATA_DIR"/postgresql.conf \
+	      "$BACKEND_DATA_DIR"/postgresql.conf.org
+
+	$awk '
+	/^[ 	]*#*[ 	]*unix_socket_directory[ 	]*=/ {
+		if (/^[ 	]*unix_socket_directory/) {
+			print "#" $0
+		} else {
+			print $0
+		}
+		if (!unix_socket_directory_done) {
+			# prevent access except $BACKEND_ADMIN_USER
+			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+			unix_socket_directory_done = 1
+		}
+		next
+	}
+	{print}
+	END {
+		if (!unix_socket_directory_done)
+			print "unix_socket_directory = '"'$BACKEND_DATA_DIR'"'"
+	}'	 "$BACKEND_DATA_DIR"/postgresql.conf.org \
+		>"$BACKEND_DATA_DIR"/postgresql.conf
 }
 
 make_configuration_file_postgresql()
@@ -306,6 +344,10 @@ _EOF_
 	echo "# TYPE	DATABASE	USER	IP-ADDRESS IP-MASK	METHOD"
 	echo "host	$DB_NAME		$BACKEND_USER	0.0.0.0	0.0.0.0	md5"
 	) > "$BACKEND_DATA_DIR"/pg_hba.conf
+
+	if $PRIVATE_MODE_FOR_DEBIAN; then
+		make_configuration_file_private_for_debian_postgresql
+	fi
 }
 
 apply_configuration_postgresql()
@@ -400,7 +442,7 @@ _EOF_
 		createuser_option=--no-createrole;;
 	esac
 
-	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
+	if [ X"$SUPPORT_XML_TYPE" = X"yes" ]; then
 		XMLATTR_TABLENAME=", XmlAttr "
 	else
 		XMLATTR_TABLENAME=""
@@ -432,7 +474,7 @@ _EOF_
 #		-f "$config_dir/gfarm.schema-$SCHEMA_VERSION.sql" $DB_NAME
 	$PGSQL_BINDIR/psql -q \
 		-f "$config_dir/gfarm.sql" $DB_NAME
-	if [ "$SUPPORT_XML_TYPE" = "yes" ]; then
+	if [ X"$SUPPORT_XML_TYPE" = X"yes" ]; then
 		$PGSQL_BINDIR/psql -q \
 			-f "$config_dir/gfarm-xmlattr.sql" $DB_NAME
 	fi
@@ -475,7 +517,7 @@ _EOF_
 	mv "$BACKEND_DATA_DIR"/pg_hba.conf.bak \
 	   "$BACKEND_DATA_DIR"/pg_hba.conf
 
-	if [ "$BACKEND_LOG_DIR" != "$BACKEND_LOG_DIR_DEFAULT" ]; then
+	if [ X"$BACKEND_LOG_DIR" != X"$BACKEND_LOG_DIR_DEFAULT" ]; then
 		# if [ -n "$BACKEND_PRIVILEGE" ], `whoami` should be root, and
 		# the following should preserve the owner of the directory.
 		# otherwise $BACKEND_ADMIN_USER must be `whoami`.
