@@ -890,12 +890,6 @@ gfarm_get_minimum_free_disk_space(void)
 	return (gfarm_minimum_free_disk_space);
 }
 
-char **
-gfarm_config_get_debug_command_argv(void)
-{
-	return (gfarm_debug_command_argv);
-}
-
 const char *
 gfarm_config_get_argv0(void)
 {
@@ -933,7 +927,7 @@ pid_to_string(long pid)
 }
 
 /* signal handler */
-void
+static void
 gfarm_sig_debug(int sig)
 {
 	static volatile sig_atomic_t already_called = 0;
@@ -975,7 +969,7 @@ gfarm_sig_debug(int sig)
 		return;
 	already_called = 1;
 
-	argv = gfarm_config_get_debug_command_argv();
+	argv = gfarm_debug_command_argv;
 	if (argv == NULL)
 		_exit(1);
 
@@ -995,7 +989,7 @@ gfarm_sig_debug(int sig)
 		_exit(1);
 	} else if (pid == 0) {
 		execvp(argv[0], argv);
-		perror(argv[0]);
+		perror(argv[0]); /* XXX dangerous to call from signal handler */
 		_exit(1);
 	} else {
 		/* not really correct way to wait until attached, but... */
@@ -1003,6 +997,21 @@ gfarm_sig_debug(int sig)
 		waitpid(pid, &status, 0);
 		_exit(1);
 	}
+}
+
+void
+gfarm_setup_debug_command(void)
+{
+	if (gfarm_debug_command_argv == NULL)
+		return;
+
+	signal(SIGQUIT, gfarm_sig_debug);
+	signal(SIGILL,  gfarm_sig_debug);
+	signal(SIGTRAP, gfarm_sig_debug);
+	signal(SIGABRT, gfarm_sig_debug);
+	signal(SIGFPE,  gfarm_sig_debug);
+	signal(SIGBUS,  gfarm_sig_debug);
+	signal(SIGSEGV, gfarm_sig_debug);
 }
 
 void
@@ -2074,7 +2083,10 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
-	/* XXX - consider to allow to specify several server lists */
+	/*
+	 * first line has precedence,
+	 * to make $HOME/.gfarm2rc more effective than /etc/gfarm2.conf
+	 */
 	if (gfarm_filesystem_is_initialized())
 		return (GFARM_ERR_NO_ERROR);
 
