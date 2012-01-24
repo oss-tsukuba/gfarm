@@ -6,12 +6,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-CFLAGS = 
-LDLIBS = 
+SCRIPTS = $(srcdir)/gfperf-wrapper.sh
 
-PROGRAM = gfperf-wrapper.sh
-OBJS = 
-
-all: $(PROGRAM)
-
-include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/script.mk

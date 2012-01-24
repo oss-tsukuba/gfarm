@@ -6,12 +6,6 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-CFLAGS = 
-LDLIBS = 
+SCRIPTS = $(srcdir)/gfperf.rb
 
-PROGRAM = gfperf.rb
-OBJS = 
-
-all: $(PROGRAM)
-
-include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/script.mk
