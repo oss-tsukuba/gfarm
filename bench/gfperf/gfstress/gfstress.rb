@@ -98,11 +98,13 @@ $config[:number].times { |i|
     $commands.push("gfperf-read -t #{$top_dir}/io/#{i} -l 1G -g #{g} -k -1")
     $commands.push("gfperf-write -t #{$top_dir}/io/#{i} -l 1G -g #{g} -k -1")
   }
-  tg = $gfsds.clone
-  tg.push(tg.shift)
-  $gfsds.each_index {|j|
-    $commands.push("gfperf-replica -s #{$gfsds[j]} -d #{tg[j]} -l 1M -t #{$top_dir}/io/#{i}")
-  }
+  if ($gfsds.size > 1)
+    tg = $gfsds.clone
+    tg.push(tg.shift)
+    $gfsds.each_index {|j|
+      $commands.push("gfperf-replica -s #{$gfsds[j]} -d #{tg[j]} -l 1M -t #{$top_dir}/io/#{i}")
+    }
+  end
 
   if (!$config[:gfarm2fs].nil?)
     $commands.push("gfperf-metadata -t file://#{$full_path}/metadata2/#{i} -n 500")
