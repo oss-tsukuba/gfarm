@@ -20,6 +20,7 @@
 #include "peer.h"
 #include "abstract_host.h"
 
+/* sizep != NULL, if this is an inter-gfmd-relayed request. */
 gfarm_error_t
 gfm_server_get_request(struct peer *peer, size_t *sizep,
 	const char *diag, const char *format, ...)
@@ -58,6 +59,7 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* if this is an inter-gfmd-relayed reply, xid is valid and sizep != NULL. */
 gfarm_error_t
 gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	const char *diag, gfarm_error_t ecode, const char *format, ...)

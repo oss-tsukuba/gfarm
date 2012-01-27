@@ -25,7 +25,9 @@
 #include "config.h"
 
 #include "gfmd.h"
+#include "peer_watcher.h"
 #include "peer.h"
+#include "local_peer.h"
 #include "subr.h"
 #include "rpcsubr.h"
 #include "thrpool.h"
@@ -569,20 +571,15 @@ sync_back_channel_free(struct abstract_host *h)
 static void *
 back_channel_main(void *arg)
 {
-	return (gfm_server_channel_main(arg,
+	struct local_peer *local_peer = arg;
+
+	return (gfm_server_channel_main(local_peer,
 		async_back_channel_protocol_switch,
 #ifdef COMPAT_GFARM_2_3
 		sync_back_channel_free,
 		sync_back_channel_service
 #endif
 		));
-}
-
-/* both giant_lock and peer_table_lock are held before calling this function */
-static void
-back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
-{
-	gfp_xdr_async_peer_free(async, peer);
 }
 
 static gfarm_error_t
@@ -631,8 +628,11 @@ gfm_server_switch_back_channel_common(
 		    "%s: protocol flush: %s",
 		    diag, gfarm_error_string(e2));
 	else if (e == GFARM_ERR_NO_ERROR) {
-		peer_set_async(peer, async);
-		peer_set_watcher(peer, back_channel_recv_watcher);
+		struct local_peer *local_peer = peer_to_local_peer(peer);
+
+		local_peer_set_async(local_peer, async); /* XXXRELAY */
+		local_peer_set_readable_watcher(local_peer,
+		    back_channel_recv_watcher);
 
 		if (host_is_up(host)) /* throw away old connetion */ {
 			gflog_warning(GFARM_MSG_1002440,
@@ -646,7 +646,7 @@ gfm_server_switch_back_channel_common(
 		    peer, version);
 		giant_unlock();
 
-		peer_watch_access(peer);
+		local_peer_watch_readable(local_peer);
 		callout_setfunc(host_status_callout(host),
 		    back_channel_send_thread_pool,
 		    gfs_client_status_request, host);
@@ -707,8 +707,6 @@ void
 back_channel_init(void)
 {
 	gfarm_error_t e;
-
-	peer_set_free_async(back_channel_async_peer_free);
 
 	back_channel_recv_watcher = peer_watcher_alloc(
 	    /* XXX FIXME: use different config parameter */

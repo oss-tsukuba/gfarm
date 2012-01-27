@@ -27,7 +27,10 @@
 #include "gfm_client.h"
 #include "config.h"
 
+#include "peer_watcher.h"
 #include "peer.h"
+#include "local_peer.h"
+#include "remote_peer.h"
 #include "subr.h"
 #include "rpcsubr.h"
 #include "thrpool.h"
@@ -457,15 +460,17 @@ gfmdc_server_remote_peer_alloc(struct mdhost *mh, struct peer *peer,
 {
 	gfarm_error_t e;
 	gfarm_int64_t remote_peer_id;
-	gfarm_int32_t auth_id_type;
+	gfarm_int32_t auth_id_type, proto_family, proto_transport, port;
 	char *user, *host;
 	static const char diag[] = "GFM_PROTO_REMOTE_PEER_ALLOC";
 
-	if ((e = gfmdc_server_get_request(peer, size, diag, "liss",
-	    &remote_peer_id, &auth_id_type, &user, &host)) ==
+	if ((e = gfmdc_server_get_request(peer, size, diag, "lissiii",
+	    &remote_peer_id, &auth_id_type, &user, &host,
+	    &proto_family, &proto_transport, &port)) ==
 	    GFARM_ERR_NO_ERROR) {
 		e = remote_peer_alloc(peer, remote_peer_id,
-		    auth_id_type, user, host);
+		    auth_id_type, user, host,
+		    proto_family, proto_transport, port);
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	return (e);
@@ -482,7 +487,7 @@ gfmdc_server_remote_peer_free(struct mdhost *mh, struct peer *peer,
 	if ((e = gfmdc_server_get_request(peer, size, diag, "l",
 	    &remote_peer_id)) == GFARM_ERR_NO_ERROR) {
 		/* XXXRELAY this takes giant lock */
-		e = remote_peer_free(peer, remote_peer_id);
+		e = remote_peer_free_by_id(peer, remote_peer_id);
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	return (e);
@@ -494,7 +499,8 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 {
 	gfarm_error_t e;
 	gfarm_int64_t remote_peer_id;
-	struct peer *remote_peer;
+	struct remote_peer *remote_peer;
+	struct peer *rpeer;
 	int eof;
 	static const char diag[] = "GFM_PROTO_REMOTE_RPC";
 
@@ -512,14 +518,17 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	} else if (eof) {
 		e = gfmdc_server_put_reply(mh, peer, xid, diag,
 		    GFARM_ERR_UNEXPECTED_EOF, "");
-	} else if ((remote_peer = remote_peer_lookup(peer, remote_peer_id)) ==
-	    NULL) {
+	} else if ((remote_peer = local_peer_lookup_remote(
+	    peer_to_local_peer(peer), remote_peer_id)) == NULL) {
 		/* XXXRELAY fix rpc residual */
 		e = gfmdc_server_put_reply(mh, peer, xid, diag,
 		    GFARM_ERR_INVALID_REMOTE_PEER, "");
 	} else {
+		rpeer = remote_peer_to_peer(remote_peer);
+		peer_add_ref(rpeer);
 		/* XXXRELAY split this to another thread */
-		e = protocol_service(remote_peer, xid, &size);
+		e = protocol_service(rpeer, xid, &size);
+		peer_del_ref(rpeer);
 	}
 	return (e);
 }
@@ -568,7 +577,9 @@ gfmdc_channel_free(struct abstract_host *h)
 static void *
 gfmdc_main(void *arg)
 {
-	return (gfm_server_channel_main(arg,
+	struct local_peer *local_peer = arg;
+
+	return (gfm_server_channel_main(local_peer,
 		gfmdc_protocol_switch
 #ifdef COMPAT_GFARM_2_3
 		,gfmdc_channel_free,
@@ -599,8 +610,10 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 	}
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
-		peer_set_async(peer, async);
-		peer_set_watcher(peer, gfmdc_recv_watcher);
+		struct local_peer *local_peer = peer_to_local_peer(peer);
+
+		local_peer_set_async(local_peer, async);
+		local_peer_set_readable_watcher(local_peer, gfmdc_recv_watcher);
 
 		if (mdhost_is_up(mh)) /* throw away old connetion */ {
 			gflog_warning(GFARM_MSG_1002986,
@@ -609,7 +622,7 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 			mdhost_disconnect(mh, NULL);
 		}
 		mdhost_set_peer(mh, peer, version);
-		peer_watch_access(peer);
+		local_peer_watch_readable(local_peer);
 	}
 	return (e);
 }
@@ -733,9 +746,9 @@ gfmdc_connect()
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
-	if ((e = peer_alloc_with_connection(&peer,
+	if ((e = local_peer_alloc_with_connection(
 	    gfm_client_connection_conn(conn), mdhost_to_abstract_host(rhost),
-	    GFARM_AUTH_ID_TYPE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
+	    GFARM_AUTH_ID_TYPE_METADATA_HOST, &peer)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002996,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));

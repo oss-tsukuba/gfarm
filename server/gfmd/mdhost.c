@@ -33,7 +33,9 @@
 #include "host.h"
 #include "user.h"
 #include "peer.h"
+#include "local_peer.h"
 #include "abstract_host.h"
+#include "abstract_host_impl.h"
 #include "metadb_server.h"
 #include "mdhost.h"
 #include "mdcluster.h"
@@ -170,8 +172,7 @@ mdhost_to_abstract_host(struct mdhost *m)
 static struct host *
 mdhost_downcast_to_host(struct abstract_host *h)
 {
-	gflog_error(GFARM_MSG_1002925, "downcasting mdhost %p to host", h);
-	abort();
+	gflog_fatal(GFARM_MSG_1002925, "downcasting mdhost %p to host", h);
 	return (NULL);
 }
 
@@ -519,7 +520,7 @@ mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
 		gfm_client_connection_unset_conn(conn);
 		gfm_client_connection_free(conn);
 		mdhost_set_connection(m, NULL);
-		peer_invoked(peer);
+		local_peer_readable_invoked(peer_to_local_peer(peer));
 	}
 	m->is_recieved_seqnum = 0;
 	if (m->jreader)

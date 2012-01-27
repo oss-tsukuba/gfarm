@@ -934,6 +934,7 @@
 
 	GFM_PROTO_REMOTE_PEER_ALLOC
 	  入力: l:peer_id, i:auth_id_type, s:user, s:host,
+	        i:proto_family, i:proto_transport, i:port
 	  出力: i:エラー
 
 	GFM_PROTO_REMOTE_PEER_FREE

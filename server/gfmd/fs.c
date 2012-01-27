@@ -317,6 +317,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 				    "process_get_path_for_trace_log() failed: %s",
 				    gfarm_error_string(e));
 			} else {
+				peer_port = 0;
 				peer_get_port(peer, &peer_port);
 				snprintf(tmp_str, sizeof(tmp_str),
 				    "%lld/%010ld.%06ld/%s/%s/%d/CREATE/%s/%d//%lld/%lld////\"%s/%s\"///",
@@ -369,8 +370,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 						    "process_get_path_for_trace_log() failed: %s",
 						    gfarm_error_string(e));
 					} else {
-						peer_get_port(peer,
-						    &peer_port);
+						peer_port = 0;
+						peer_get_port(peer, &peer_port);
 						snprintf(tmp_str,
 						    sizeof(tmp_str),
 						    "%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
@@ -1650,6 +1651,7 @@ gfm_server_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else {
+			peer_port = 0;
 			peer_get_port(peer, &peer_port);
 			gflog_trace(GFARM_MSG_1003297,
 			    "%lld/%010ld.%06ld/%s/%s/%d/%s/%s/%d//%lld/%lld////\"%s/%s\"///",
@@ -1766,6 +1768,7 @@ gfm_server_rename(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    gfarm_error_string(e));
 			free(spath);
 		} else {
+			peer_port = 0;
 			peer_get_port(peer, &peer_port),
 			gflog_trace(GFARM_MSG_1003300,
 			    "%lld/%010ld.%06ld/%s/%s/%d/MOVE/%s/%d//%lld/%lld////\"%s/%s\"///\"%s/%s\"",
@@ -1897,6 +1900,7 @@ gfm_server_flink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    gfarm_error_string(e));
 			free(spath);
 		} else {
+			peer_port = 0;
 			peer_get_port(peer, &peer_port),
 			gflog_trace(GFARM_MSG_1003304,
 			    "%lld/%010ld.%06ld/%s/%s/%d/LINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",
@@ -2049,6 +2053,7 @@ gfm_server_symlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    "process_get_path_for_trace_log() failed: %s",
 			    gfarm_error_string(e));
 		} else {
+			peer_port = 0;
 			peer_get_port(peer, &peer_port);
 			gflog_trace(GFARM_MSG_1003306,
 			    "%lld/%010ld.%06ld/%s/%s/%d/SYMLINK/%s/%d//%lld/%lld////\"%s\"///\"%s/%s\"",

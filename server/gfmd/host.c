@@ -39,6 +39,7 @@
 #include "peer.h"
 #include "inode.h"
 #include "abstract_host.h"
+#include "abstract_host_impl.h"
 #include "dead_file_copy.h"
 #include "back_channel.h"
 
@@ -320,8 +321,7 @@ host_downcast_to_host(struct abstract_host *h)
 static struct mdhost *
 host_downcast_to_mdhost(struct abstract_host *h)
 {
-	gflog_error(GFARM_MSG_1002761, "downcasting host %p to mdhost", h);
-	abort();
+	gflog_fatal(GFARM_MSG_1002761, "downcasting host %p to mdhost", h);
 	return (NULL);
 }
 
@@ -425,6 +425,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 
 	back_channel_mutex_lock(h, diag);
 
+	/* peer comparison works only if at least one is a local peer */
 	if (h->back_channel_result == NULL ||
 	    h->back_channel_callback_peer != peer) {
 		ok = 0;

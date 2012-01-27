@@ -41,7 +41,10 @@ SRCS = \
 	$(GFMD_SRCDIR)/mdhost.c \
 	$(GFMD_SRCDIR)/mdcluster.c \
 	$(GFMD_SRCDIR)/gfmd_channel.c \
+	$(GFMD_SRCDIR)/peer_watcher.c \
 	$(GFMD_SRCDIR)/peer.c \
+	$(GFMD_SRCDIR)/local_peer.c \
+	$(GFMD_SRCDIR)/remote_peer.c \
 	$(GFMD_SRCDIR)/process.c \
 	$(GFMD_SRCDIR)/quota.c \
 	$(GFMD_SRCDIR)/rpcsubr.c \
@@ -70,7 +73,10 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/mdhost.o \
 	$(GFMD_BUILDDIR)/mdcluster.o \
 	$(GFMD_BUILDDIR)/gfmd_channel.o \
+	$(GFMD_BUILDDIR)/peer_watcher.o \
 	$(GFMD_BUILDDIR)/peer.o \
+	$(GFMD_BUILDDIR)/local_peer.o \
+	$(GFMD_BUILDDIR)/remote_peer.o \
 	$(GFMD_BUILDDIR)/process.o \
 	$(GFMD_BUILDDIR)/quota.o \
 	$(GFMD_BUILDDIR)/rpcsubr.o \
@@ -113,7 +119,13 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFMD_SRCDIR)/user.h \
 	$(GFMD_SRCDIR)/group.h \
 	$(GFMD_SRCDIR)/host.h \
+	$(GFMD_SRCDIR)/abstract_host.h \
+	$(GFMD_SRCDIR)/abstract_host_impl.h \
+	$(GFMD_SRCDIR)/peer_watcher.h \
 	$(GFMD_SRCDIR)/peer.h \
+	$(GFMD_SRCDIR)/peer_impl.h \
+	$(GFMD_SRCDIR)/local_peer.h \
+	$(GFMD_SRCDIR)/remote_peer.h \
 	$(GFMD_SRCDIR)/dead_file_copy.h \
 	$(GFMD_SRCDIR)/process.h \
 	$(GFMD_SRCDIR)/job.h \

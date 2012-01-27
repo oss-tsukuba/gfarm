@@ -51,7 +51,9 @@
 #include "mdcluster.h"
 #include "user.h"
 #include "group.h"
+#include "peer_watcher.h"
 #include "peer.h"
+#include "local_peer.h"
 #include "inode.h"
 #include "dead_file_copy.h"
 #include "process.h"
@@ -645,7 +647,10 @@ protocol_state_init(struct protocol_state *ps)
 	ps->nesting_level = 0;
 }
 
-/* this interface is exported for a use from a private extension */
+/*
+ * this interface is exported for a use from a private extension too.
+ * sizep != NULL, if this is an inter-gfmd-relayed request.
+ */
 int
 protocol_service(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep)
 {
@@ -763,13 +768,15 @@ protocol_service(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep)
 void *
 protocol_main(void *arg)
 {
-	struct peer *peer = arg;
+	struct local_peer *local_peer = arg;
+	struct peer *peer = local_peer_to_peer(local_peer);
 
 	/*
-	 * the reason we call peer_invoked() here is just for consistency,
+	 * the reason why we call peer_readable_invoked() here is
+	 * just for consistency,
 	 * because currently this is unnecessary for a foreground channel.
 	 */
-	peer_invoked(peer);
+	local_peer_readable_invoked(local_peer);
 
 	do {
 		/* (..., 0, NULL) means sync protocol */
@@ -794,7 +801,7 @@ protocol_main(void *arg)
 	 * and there was no chance that the jobq became available.
 	 */
 
-	peer_watch_access(peer);
+	local_peer_watch_readable(local_peer);
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
@@ -849,8 +856,9 @@ resuming_thread(void *arg)
 	if (suspended)
 		return (NULL);
 
+	/* XXXRELAY FIXME: fail in the relayed case */
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
-		protocol_main(peer);
+		protocol_main(peer_to_local_peer(peer));
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
@@ -912,8 +920,9 @@ auth_uid_to_global_username(void *closure,
 }
 
 gfarm_error_t
-peer_authorize(struct peer *peer)
+peer_authorize(struct local_peer *local_peer)
 {
+	struct peer *peer = local_peer_to_peer(local_peer);
 	gfarm_error_t e;
 	int rv, saved_errno;
 	enum gfarm_auth_id_type id_type;
@@ -959,7 +968,7 @@ peer_authorize(struct peer *peer)
 		protocol_state_init(peer_get_protocol_state(peer));
 
 		giant_lock();
-		peer_authorized(peer,
+		local_peer_authorized(local_peer,
 		    id_type, username, hostname, &addr, auth_method,
 		    sync_protocol_watcher);
 		giant_unlock();
@@ -974,15 +983,15 @@ peer_authorize(struct peer *peer)
 void *
 try_auth(void *arg)
 {
-	struct peer *peer = arg;
+	struct local_peer *local_peer = arg;
 	gfarm_error_t e;
 
-	if ((e = peer_authorize(peer)) != GFARM_ERR_NO_ERROR) {
+	if ((e = peer_authorize(local_peer)) != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000188,
 		    "peer_authorize: %s", gfarm_error_string(e));
 		giant_lock();
 		/* db_begin()/db_end() is not necessary in this case */
-		peer_free(peer);
+		peer_free(local_peer_to_peer(local_peer));
 		giant_unlock();
 	}
 
@@ -999,7 +1008,7 @@ accepting_loop(int accepting_socket)
 	int client_socket;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
-	struct peer *peer;
+	struct local_peer *local_peer;
 
 	for (;;) {
 		client_addr_size = sizeof(client_addr);
@@ -1009,14 +1018,14 @@ accepting_loop(int accepting_socket)
 			if (errno != EINTR)
 				gflog_warning_errno(GFARM_MSG_1000189,
 				    "accept");
-		} else if ((e = peer_alloc(client_socket, &peer)) !=
-		    GFARM_ERR_NO_ERROR) {
+		} else if ((e = local_peer_alloc(client_socket, &local_peer))
+		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1000190,
 			    "peer_alloc: %s", gfarm_error_string(e));
 			close(client_socket);
 		} else {
 			thrpool_add_job(authentication_thread_pool,
-			    try_auth, peer);
+			    try_auth, local_peer);
 		}
 	}
 }
@@ -1356,7 +1365,7 @@ sigs_handler(void *p)
 	 * closing must be done regardless of the result of db_begin().
 	 * because not closing may cause descriptor leak.
 	 */
-	peer_shutdown_all();
+	local_peer_shutdown_all();
 	if (transaction)
 		db_end(diag);
 
@@ -1432,7 +1441,8 @@ gfmd_modules_init_default(int table_size)
 	/* must be after hosts and filesystem */
 	dead_file_copy_init(mdhost_self_is_master());
 
-	peer_init(table_size);
+	local_peer_init(table_size);
+	peer_init();
 	job_table_init(table_size);
 }
 

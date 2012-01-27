@@ -4647,11 +4647,10 @@ inode_check_and_repair_dir_entries(void *closure, struct inode *inode)
 
 	dir = inode->u.c.s.d.entries;
 	if (!dir_cursor_set_pos(dir, 0, &cursor)) {
-		gflog_error(GFARM_MSG_1002837,
+		gflog_fatal(GFARM_MSG_1002837,
 		    "inode_check_and_repair_dir_entries(%llu): "
 		    "cannot get cursor",
 		    (unsigned long long)inode_get_number(inode));
-		abort();
 	}
 	for (;;) {
 		entry = dir_cursor_get_entry(dir, &cursor);
@@ -4824,9 +4823,8 @@ dir_is_empty(Dir dir)
 	int namelen;
 
 	if (!dir_cursor_set_pos(dir, 0, &cursor)) {
-		gflog_error(GFARM_MSG_1000365,
+		gflog_fatal(GFARM_MSG_1000365,
 		    "dir_emptry: cannot get cursor");
-		abort();
 	}
 	for (;;) {
 		entry = dir_cursor_get_entry(dir, &cursor);
