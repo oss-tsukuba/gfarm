@@ -416,6 +416,11 @@ enum gfm_proto_command {
 #define GFARM_METADB_SERVER_FLAG_SEQNUM_IS_OUT_OF_SYNC	0x00000020
 #define GFARM_METADB_SERVER_FLAG_SEQNUM_IS_ERROR	0x00000030
 
+/* GFM_PROTO_REMOTE_PEER_ALLOC */
+#define GFARM_PROTO_FAMILY_IPV4				1
+#define GFARM_PROTO_FAMILY_IPV6				2
+#define GFARM_PROTO_TRANSPORT_IP_TCP			0
+
 #define GFMD_USERNAME	"_gfarmmd"
 
 #if 0 /* There isn't gfm_proto.c for now. */
