@@ -20,6 +20,7 @@
 #include "gfs_io.h"
 #include "gfs_misc.h"
 #include "gfs_profile.h"
+#include "gfs_failover.h"
 
 #include "xattr_info.h"
 
@@ -77,6 +78,20 @@ gfm_setxattr0_result(struct gfm_connection *gfm_server, void *closure)
 		    "setxattr result: %s", gfarm_error_string(e));
 #endif
 	return (e);
+}
+
+static int
+gfm_setxattr0_must_be_warned(gfarm_error_t e, void *closure)
+{
+	struct gfm_setxattr0_closure *sc = closure;
+
+	/* invalid argument */
+	if ((sc->flags & (GFS_XATTR_CREATE | GFS_XATTR_REPLACE)) ==
+	    (GFS_XATTR_CREATE | GFS_XATTR_REPLACE))
+		return (0);
+	/* error returned from inode_xattr_add() */
+	return ((sc->flags & GFS_XATTR_CREATE) != 0 &&
+	    e == GFARM_ERR_ALREADY_EXISTS);
 }
 
 static gfarm_error_t
@@ -161,19 +176,20 @@ gfs_fsetxattr(GFS_File gf, const char *name, const void *value,
 	closure.value = value;
 	closure.size = size;
 	closure.flags = flags;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	e = gfm_client_compound_file_op_modifiable(gf,
 	    gfm_setxattr0_request,
 	    gfm_setxattr0_result,
 	    NULL,
+	    gfm_setxattr0_must_be_warned,
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001399,
-			"gfm_client_compound_fd_op() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_file_op_modifiable: %s",
+		    gfarm_error_string(e));
 	}
 
 	return (e);
@@ -265,7 +281,7 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 	closure.name = name;
 	closure.valuep = valuep;
 	closure.sizep = sizep;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	e = gfm_client_compound_file_op_readonly(gf,
 	    gfm_getxattr_proccall_request,
 	    gfm_getxattr_proccall_result,
 	    NULL,
@@ -275,9 +291,9 @@ gfs_fgetxattr_proccall(int xmlMode, GFS_File gf, const char *name,
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001401,
-			"gfm_client_compound_fd_op() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_file_op_readonly: %s",
+		    gfarm_error_string(e));
 	}
 
 	return (e);
@@ -504,6 +520,13 @@ gfm_removexattr0_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
+static int
+gfm_removexattr0_must_be_warned(gfarm_error_t e, void *closure)
+{
+	/* error returned from inode_xattr_remove() */
+	return (e == GFARM_ERR_NO_SUCH_OBJECT);
+}
+
 static gfarm_error_t
 gfs_removexattr0(int xmlMode, int cflags, const char *path, const char *name)
 {
@@ -569,19 +592,20 @@ gfs_fremovexattr(GFS_File gf, const char *name)
 
 	closure.xmlMode = 0;
 	closure.name = name;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
+	e = gfm_client_compound_file_op_modifiable(gf,
 	    gfm_removexattr0_request,
 	    gfm_removexattr0_result,
 	    NULL,
+	    gfm_removexattr0_must_be_warned,
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->xattr_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001408,
-			"gfm_client_compound_fd_op() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_file_op_modifiable: %s",
+		    gfarm_error_string(e));
 	}
 
 	return (e);

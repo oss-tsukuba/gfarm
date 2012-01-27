@@ -9,6 +9,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_io.h"
+#include "gfs_failover.h"
 
 /*
  * gfs_opendirplus()/readdirplus()/closedirplus()
@@ -22,11 +23,62 @@ struct gfs_dirplus {
 	struct gfs_dirent buffer[DIRENTSPLUS_BUFCOUNT];
 	struct gfs_stat stbuf[DIRENTSPLUS_BUFCOUNT];
 	int n, index;
+	/* remember opened url */
+	char *url;
+	/* remember opened inode num */
+	gfarm_ino_t ino;
+};
+
+static struct gfm_connection *
+dirplus_metadb(struct gfs_failover_file *super)
+{
+	return (((struct gfs_dirplus *)super)->gfm_server);
+}
+
+static void
+dirplus_set_metadb(struct gfs_failover_file *super,
+	struct gfm_connection *gfm_server)
+{
+	((struct gfs_dirplus *)super)->gfm_server = gfm_server;
+}
+
+static gfarm_int32_t
+dirplus_fileno(struct gfs_failover_file *super)
+{
+	return (((struct gfs_dirplus *)super)->fd);
+}
+
+static void
+dirplus_set_fileno(struct gfs_failover_file *super, gfarm_int32_t fd)
+{
+	((struct gfs_dirplus *)super)->fd = fd;
+}
+
+static const char *
+dirplus_url(struct gfs_failover_file *super)
+{
+	return (((struct gfs_dirplus *)super)->url);
+}
+
+static gfarm_ino_t
+dirplus_ino(struct gfs_failover_file *super)
+{
+	return (((struct gfs_dirplus *)super)->ino);
+}
+
+static struct gfs_failover_file_ops failover_file_ops = {
+	GFS_DT_DIR,
+	dirplus_metadb,
+	dirplus_set_metadb,
+	dirplus_fileno,
+	dirplus_set_fileno,
+	dirplus_url,
+	dirplus_ino,
 };
 
 static gfarm_error_t
 gfs_dirplus_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
-	GFS_DirPlus *dirp)
+	char *url, gfarm_ino_t ino, GFS_DirPlus *dirp)
 {
 	GFS_DirPlus dir;
 
@@ -41,6 +93,8 @@ gfs_dirplus_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	dir->gfm_server = gfm_server;
 	dir->fd = fd;
 	dir->n = dir->index = 0;
+	dir->url = url;
+	dir->ino = ino;
 
 	*dirp = dir;
 	return (GFARM_ERR_NO_ERROR);
@@ -62,8 +116,11 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	int fd, type;
+	char *url;
+	gfarm_ino_t ino;
 
-	if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY, &gfm_server, &fd, &type))
+	if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY, &gfm_server,
+	    &fd, &type, &url, &ino))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001278,
 			"gfm_open_fd(%s) failed: %s",
@@ -74,7 +131,7 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 
 	if (type != GFS_DT_DIR)
 		e = GFARM_ERR_NOT_A_DIRECTORY;
-	else if ((e = gfs_dirplus_alloc(gfm_server, fd, dirp)) ==
+	else if ((e = gfs_dirplus_alloc(gfm_server, fd, url, ino, dirp)) ==
 	    GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
 
@@ -130,15 +187,17 @@ gfs_readdirplus(GFS_DirPlus dir,
 
 	if (dir->index >= dir->n) {
 		gfs_dirplus_clear(dir);
-		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
+		e = gfm_client_compound_fd_op_readonly(
+		    (struct gfs_failover_file *)dir,
+		    &failover_file_ops,
 		    gfm_getdirentsplus_request,
 		    gfm_getdirentsplus_result,
 		    NULL,
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001281,
-				"gfs_client_compound_fd_op() failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_compound_readonly_fd_op: %s",
+			    gfarm_error_string(e));
 			return (e);
 		}
 		if (dir->n == 0) {
@@ -172,6 +231,7 @@ gfs_closedirplus(GFS_DirPlus dir)
 		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);
 	gfs_dirplus_clear(dir);
+	free(dir->url);
 	free(dir);
 	/* ignore result */
 	return (GFARM_ERR_NO_ERROR);
