@@ -72,6 +72,9 @@ struct gfm_client_static {
 
 #define SERVER_HASHTAB_SIZE	31	/* prime number */
 
+/* retry count for auth/process_alloc */
+#define CONNERR_RETRY_COUNT 3
+
 static gfarm_error_t gfm_client_connection_dispose(void *);
 
 gfarm_error_t
@@ -460,10 +463,16 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 		r = poll(pfds, nfd, 1000);
 		if (r == -1) {
 			e = gfarm_errno_to_error(errno);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "poll: %s",
+			    gfarm_error_string(e));
 			break;
 		}
 		if (r == 0) {
 			e = GFARM_ERR_CONNECTION_REFUSED;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "poll: %s",
+			    gfarm_error_string(e));
 			break;
 		}
 		for (i = 0; i < nfd; ++i) {
@@ -531,6 +540,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			gfarm_error_string(e));
 		goto end;
 	}
+
 	/*
 	 * In GSI authentication, small packets are sent frequently,
 	 * which requires TCP_NODELAY for reasonable performance.
@@ -646,36 +656,52 @@ gfarm_error_t
 gfm_client_connection_and_process_acquire(const char *hostname, int port,
 	const char *user, struct gfm_connection **gfm_serverp)
 {
+	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	gfarm_error_t e = gfm_client_connection_acquire(hostname, port,
-	    user, &gfm_server);
+	int i, sleep_interval = 1;
 
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001101,
-			"acquirement of client connection failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
+	for (i = 0; i < CONNERR_RETRY_COUNT; ++i) {
+		e = gfm_client_connection_acquire(hostname, port,
+		    user, &gfm_server);
 
-	/*
-	 * XXX FIXME
-	 * should use COMPOUND request to reduce number of roundtrip
-	 */
-	if (gfm_server->pid == 0) {
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001101,
+			    "acquirement of client connection failed: %s",
+			    gfarm_error_string(e));
+			break;
+		}
+
+		if (gfm_server->pid != 0)
+			break;
 		gfarm_auth_random(gfm_server->pid_key,
 		    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET);
+		/*
+		 * XXX FIXME
+		 * should use COMPOUND request to reduce number of roundtrip
+		 */
 		e = gfm_client_process_alloc(gfm_server,
 		    GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET,
 		    gfm_server->pid_key,
 		    GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET,
 		    &gfm_server->pid);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1000060,
-			    "failed to allocate gfarm PID: %s",
-			    gfarm_error_string(e));
-			gfm_client_connection_free(gfm_server);
-		}
+		if (e == GFARM_ERR_NO_ERROR)
+			break;
+
+		gflog_error(GFARM_MSG_1000060,
+		    "failed to allocate gfarm PID: %s",
+		    gfarm_error_string(e));
+
+		gfm_client_connection_free(gfm_server);
+		if (IS_CONNECTION_ERROR(e) == 0)
+			break;
+
+		/* possibly gfmd failover or temporary error */
+		sleep(sleep_interval);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "retry to connect");
+		sleep_interval *= 2;
 	}
+
 	if (e == GFARM_ERR_NO_ERROR)
 		*gfm_serverp = gfm_server;
 	return (e);
