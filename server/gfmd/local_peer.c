@@ -38,7 +38,7 @@
 	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
 
 struct local_peer {
-	struct peer base;
+	struct peer super;
 
 	struct gfp_xdr *conn;
 	gfp_xdr_async_peer_t async; /* used by {back|gfmd}_channel */
@@ -60,7 +60,7 @@ static const char local_peer_table_diag[] = "local_peer_table";
 struct peer *
 local_peer_to_peer(struct local_peer *local_peer)
 {
-	return (&local_peer->base);
+	return (&local_peer->super);
 }
 
 static struct local_peer *
@@ -222,7 +222,7 @@ local_peer_shutdown_all(void)
 	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
 
 	for (i = 0; i < local_peer_table_size; i++) {
-		peer = &local_peer_table[i].base;
+		peer = &local_peer_table[i].super;
 		if (peer->process == NULL)
 			continue;
 
@@ -350,13 +350,13 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 		}
 	}
 
-	peer_clear_common(&local_peer->base);
+	peer_clear_common(&local_peer->super);
 
 	/*
 	 * to support remote peer
 	 */
 	local_peer->child_peers = NULL;
-	local_peer->base.peer_id = local_peer_id++;
+	local_peer->super.peer_id = local_peer_id++;
 
 	*local_peerp = local_peer;
 
@@ -381,7 +381,7 @@ local_peer_alloc_with_connection(
 
 	if ((e = local_peer_alloc0(gfp_xdr_fd(conn), conn, &local_peer))
 	    == GFARM_ERR_NO_ERROR) {
-		*peerp = &local_peer->base;
+		*peerp = &local_peer->super;
 		(*peerp)->host = host;
 		(*peerp)->id_type = id_type;
 	}
@@ -395,7 +395,7 @@ local_peer_authorized(struct local_peer *local_peer,
 	struct sockaddr *addr, enum gfarm_auth_method auth_method,
 	struct peer_watcher *readable_watcher)
 {
-	struct peer *peer = &local_peer->base;
+	struct peer *peer = &local_peer->super;
 	struct host *h;
 	struct mdhost *m;
 
@@ -482,7 +482,7 @@ local_peer_readable_invoked(struct local_peer *local_peer)
 {
 	watcher_event_ack(local_peer->readable_event);
 
-	peer_closer_wakeup(&local_peer->base);
+	peer_closer_wakeup(&local_peer->super);
 }
 
 void
@@ -553,7 +553,7 @@ local_peer_init(int max_peers)
 	for (i = 0; i < local_peer_table_size; i++) {
 		local_peer = &local_peer_table[i];
 
-		peer_construct_common(&local_peer->base,
+		peer_construct_common(&local_peer->super,
 		    &local_peer_ops, diag);
 
 		local_peer->conn = NULL;
@@ -568,6 +568,6 @@ local_peer_init(int max_peers)
 		local_peer->child_peers = NULL;
 		gfarm_mutex_init(&local_peer->child_peers_mutex,
 		    diag, "peer:child_peers_mutex");
-		local_peer->base.peer_id = 0;
+		local_peer->super.peer_id = 0;
 	}
 }

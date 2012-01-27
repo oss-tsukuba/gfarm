@@ -23,7 +23,7 @@
 #include "peer_impl.h"
 
 struct remote_peer {
-	struct peer base;
+	struct peer super;
 
 	struct local_peer *parent_peer;
 	struct remote_peer *next_sibling;	/* must be a remote peer */
@@ -34,7 +34,7 @@ struct remote_peer {
 struct peer *
 remote_peer_to_peer(struct remote_peer *remote_peer)
 {
-	return (&remote_peer->base);
+	return (&remote_peer->super);
 }
 
 static struct local_peer *
@@ -151,7 +151,7 @@ remote_peer_free_by_id(struct peer *parent_peer,
 	assert(remote_peer->parent_peer != NULL);
 	giant_lock();
 
-	remote_peer_free(&remote_peer->base);
+	remote_peer_free(&remote_peer->super);
 
 	giant_unlock();
 
@@ -161,7 +161,7 @@ remote_peer_free_by_id(struct peer *parent_peer,
 void
 remote_peer_free_simply(struct remote_peer *remote_peer)
 {
-	peer_free_common(&remote_peer->base, "remote_peer_free_simply");
+	peer_free_common(&remote_peer->super, "remote_peer_free_simply");
 	free(remote_peer); /* XXXRELAY is this safe? */
 }
 
@@ -199,11 +199,11 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	if (remote_peer == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	peer_construct_common(&remote_peer->base, &remote_peer_ops, diag);
+	peer_construct_common(&remote_peer->super, &remote_peer_ops, diag);
 
 	remote_peer->parent_peer = parent_local_peer;
 	remote_peer->port = port;
-	remote_peer->base.peer_id = remote_peer_id;
+	remote_peer->super.peer_id = remote_peer_id;
 
 	local_peer_add_child(parent_local_peer,
 	    remote_peer, &remote_peer->next_sibling);
@@ -228,7 +228,7 @@ remote_peer_id_lookup_from_siblings(struct remote_peer *remote_peer,
 	gfarm_int64_t remote_peer_id)
 {
 	for (; remote_peer != NULL; remote_peer = remote_peer->next_sibling) {
-		if (remote_peer->base.peer_id == remote_peer_id)
+		if (remote_peer->super.peer_id == remote_peer_id)
 			return (remote_peer);
 	}
 	return (NULL);
