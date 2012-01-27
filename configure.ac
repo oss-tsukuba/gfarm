@@ -288,7 +288,8 @@ AC_ARG_WITH(globus,
 	for GLBbits in 64 32; do
 		for GLBcc in $tmp; do
 			for GLBdebug in "" dbg; do
-				for GLBpthread in "" pthr; do
+				# gfmd requires thread-safe library
+				for GLBpthread in pthr; do
 					GLBflavor_candidates="$GLBflavor_candidates $GLBcc$GLBbits$GLBdebug$GLBpthread"
 				done
 			done
