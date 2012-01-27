@@ -91,6 +91,14 @@
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
+/*
+ * set initial sleep_interval to 1 sec for quick recovery
+ * at gfmd failover.
+ */
+#define GFMD_CONNECT_SLEEP_INTVL_MIN	1	/* 1 sec */
+#define GFMD_CONNECT_SLEEP_INTVL_MAX	640	/* about 10 min */
+#define GFMD_CONNECT_SLEEP_TIMEOUT	60	/* 1 min */
+
 #define fatal(msg_no, ...) \
 	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define fatal_errno(msg_no, ...) \
@@ -283,35 +291,46 @@ accepting_fatal_errno_full(int msg_no, const char *file, int line_no,
 }
 
 static gfarm_error_t
-connect_gfm_server0(int do_retry)
+connect_gfm_server0(int use_timeout)
 {
 	gfarm_error_t e;
-	unsigned int sleep_interval = 10;	/* 10 sec */
-	unsigned int sleep_max_interval = 640;	/* about 10 min */
+	unsigned int sleep_interval = GFMD_CONNECT_SLEEP_INTVL_MIN;
+	unsigned int sleep_max_interval = GFMD_CONNECT_SLEEP_INTVL_MAX;
+	struct timeval expiration_time;
 
+	if (use_timeout) {
+		gettimeofday(&expiration_time, NULL);
+		expiration_time.tv_sec += GFMD_CONNECT_SLEEP_TIMEOUT;
+	}
 	e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
 	    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
 	    &gfm_server, listen_addrname);
-	if (e != GFARM_ERR_NO_ERROR && !do_retry) {
-		gflog_error(GFARM_MSG_1003330,
-		    "connecting to gfmd failed: %s", gfarm_error_string(e));
-		return (e);
-	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		while (e != GFARM_ERR_NO_ERROR && (!use_timeout ||
+			!gfarm_timeval_is_expired(&expiration_time))) {
+			/* suppress excessive log */
+			if (sleep_interval < sleep_max_interval)
+				gflog_error(GFARM_MSG_1000550,
+				    "connecting to gfmd at %s:%d failed, "
+				    "sleep %d sec: %s",
+				    gfarm_ctxp->metadb_server_name,
+				    gfarm_ctxp->metadb_server_port,
+				    sleep_interval,
+				    gfarm_error_string(e));
+			sleep(sleep_interval);
+			e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
+			    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
+			    &gfm_server, listen_addrname);
+			if (sleep_interval < sleep_max_interval)
+				sleep_interval *= 2;
+		}
 
-	while (e != GFARM_ERR_NO_ERROR) {
-		/* suppress excessive log */
-		if (sleep_interval < sleep_max_interval)
-			gflog_error(GFARM_MSG_1000550,
-			    "connecting to gfmd at %s:%d failed, "
-			    "sleep %d sec: %s", gfarm_ctxp->metadb_server_name,
-			    gfarm_ctxp->metadb_server_port, sleep_interval,
+		if (use_timeout && e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1003330,
+			    "connecting to gfmd failed: %s",
 			    gfarm_error_string(e));
-		sleep(sleep_interval);
-		e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
-		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
-		    &gfm_server, listen_addrname);
-		if (sleep_interval < sleep_max_interval)
-			sleep_interval *= 2;
+			return (e);
+		}
 	}
 
 	/*
@@ -334,15 +353,15 @@ connect_gfm_server0(int do_retry)
 }
 
 static gfarm_error_t
-connect_gfm_server_no_retry(void)
+connect_gfm_server_with_timeout(void)
 {
-	return (connect_gfm_server0(0));
+	return (connect_gfm_server0(1));
 }
 
 static gfarm_error_t
 connect_gfm_server(void)
 {
-	return (connect_gfm_server0(1));
+	return (connect_gfm_server0(0));
 }
 
 static void
@@ -360,7 +379,7 @@ reconnect_gfm_server_for_failover(const char *diag)
 	gflog_error(GFARM_MSG_1003348,
 	    "%s: gfmd may be failed over, try to reconnecting", diag);
 	free_gfm_server();
-	if ((e = connect_gfm_server_no_retry()) != GFARM_ERR_NO_ERROR)
+	if ((e = connect_gfm_server_with_timeout()) != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_UNFIXED,
 		    "%s: cannot reconnect to gfm server: %s",
 		    diag, gfarm_error_string(e));
