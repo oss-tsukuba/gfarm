@@ -60,6 +60,13 @@ gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
+static int
+gfm_symlink_must_be_warned(gfarm_error_t e, void *closure)
+{
+	/* error returned inode_lookup_basename() */
+	return (e == GFARM_ERR_ALREADY_EXISTS);
+}
+
 gfarm_error_t
 gfs_symlink(const char *src, const char *path)
 {
@@ -67,9 +74,10 @@ gfs_symlink(const char *src, const char *path)
 
 	closure.src = src;
 	closure.path = path;
-	return (gfm_name_op(path, GFARM_ERR_OPERATION_NOT_PERMITTED,
+	return (gfm_name_op_modifiable(path, GFARM_ERR_OPERATION_NOT_PERMITTED,
 	    gfm_symlink_request,
 	    gfm_symlink_result,
 	    gfm_name_success_op_connection_free,
+	    gfm_symlink_must_be_warned,
 	    &closure));
 }

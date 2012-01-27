@@ -90,7 +90,7 @@ gfarm_schedule_hosts_domain_by_file(const char *path, int openflags,
 		return (e);
 
 	closure.domain = domain;
-	e = gfm_inode_op(path, openflags,
+	e = gfm_inode_op_readonly(path, openflags,
 	    gfm_schedule_file_request,
 	    gfm_schedule_file_result,
 	    gfm_inode_success_op_connection_free,

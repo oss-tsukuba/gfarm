@@ -449,10 +449,10 @@ main(int argc, char **argv)
 
 	switch (op) {
 	case OP_INODE_OP:
-		if ((e = gfm_inode_op(filename,
+		if ((e = gfm_inode_op_modifiable(filename,
 		    GFARM_FILE_RDONLY,
 		    inode_op_request, inode_op_result,
-		    inode_op_success, inode_op_cleanup, &closure))
+		    inode_op_success, inode_op_cleanup, NULL, &closure))
 		    != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "gfm_inode_op : %s\n",
 			    gfarm_error_string(e));
@@ -465,11 +465,11 @@ main(int argc, char **argv)
 		printf("%ld\n", (long)closure.f1.ino);
 		break;
 	case OP_INODE_OP_NF:
-		if ((e = gfm_inode_op_no_follow(filename,
+		if ((e = gfm_inode_op_no_follow_modifiable(filename,
 		    GFARM_FILE_RDONLY,
 		    inode_op_request, inode_op_result,
 		    inode_op_success, inode_op_cleanup,
-		    &closure))
+		    NULL, &closure))
 		    != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "gfm_inode_op_no_follow : %s\n",
 			    gfarm_error_string(e));
@@ -482,10 +482,10 @@ main(int argc, char **argv)
 		printf("%ld\n", (long)closure.f1.ino);
 		break;
 	case OP_NAME_OP:
-		if ((e = gfm_name_op(filename,
+		if ((e = gfm_name_op_modifiable(filename,
 		    GFARM_ERR_OPERATION_NOT_PERMITTED,
 		    name_op_request, name_op_result,
-		    name_op_success, &closure))
+		    name_op_success, NULL, &closure))
 		    != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "gfm_name_op : %s\n",
 			    gfarm_error_string(e));
@@ -511,10 +511,10 @@ main(int argc, char **argv)
 			closure.is_stat_or_open = 1;
 			inode_request_op = name2_op_ol_request;
 		}
-		if ((e = gfm_name2_op(filename, filename2, flags,
+		if ((e = gfm_name2_op_modifiable(filename, filename2, flags,
 		    inode_request_op, name_request_op,
 		    name2_op_result, name2_op_success,
-		    name2_op_cleanup, &closure))
+		    name2_op_cleanup, NULL, &closure))
 		    != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "gfm_name2_op : %s\n",
 			    gfarm_error_string(e));

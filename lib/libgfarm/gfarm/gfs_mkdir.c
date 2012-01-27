@@ -44,15 +44,22 @@ gfm_mkdir_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
+static int
+gfm_mkdir_must_be_warned(gfarm_error_t e, void *closure)
+{
+	/* error in inode_lookup_basename() */
+	return (e == GFARM_ERR_ALREADY_EXISTS);
+}
+
 gfarm_error_t
 gfs_mkdir(const char *path, gfarm_mode_t mode)
 {
 	struct gfm_mkdir_closure closure;
 
 	closure.mode = mode;
-	return (gfm_name_op(path, GFARM_ERR_ALREADY_EXISTS,
+	return (gfm_name_op_modifiable(path, GFARM_ERR_ALREADY_EXISTS,
 	    gfm_mkdir_request,
 	    gfm_mkdir_result,
 	    gfm_name_success_op_connection_free,
-	    &closure));
+	    gfm_mkdir_must_be_warned, &closure));
 }

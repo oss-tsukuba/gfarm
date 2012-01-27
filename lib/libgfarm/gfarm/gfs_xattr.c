@@ -85,10 +85,6 @@ gfm_setxattr0_must_be_warned(gfarm_error_t e, void *closure)
 {
 	struct gfm_setxattr0_closure *sc = closure;
 
-	/* invalid argument */
-	if ((sc->flags & (GFS_XATTR_CREATE | GFS_XATTR_REPLACE)) ==
-	    (GFS_XATTR_CREATE | GFS_XATTR_REPLACE))
-		return (0);
 	/* error returned from inode_xattr_add() */
 	return ((sc->flags & GFS_XATTR_CREATE) != 0 &&
 	    e == GFARM_ERR_ALREADY_EXISTS);
@@ -110,11 +106,12 @@ gfs_setxattr0(int xmlMode, int cflags, const char *path, const char *name,
 	closure.value = value;
 	closure.size = size;
 	closure.flags = flags;
-	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_modifiable(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_setxattr0_request,
 	    gfm_setxattr0_result,
 	    gfm_inode_success_op_connection_free,
 	    NULL,
+	    gfm_setxattr0_must_be_warned,
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
@@ -246,7 +243,7 @@ gfs_getxattr_proccall(int xmlMode, int cflags, const char *path,
 	closure.name = name;
 	closure.valuep = valuep;
 	closure.sizep = sizep;
-	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_getxattr_proccall_request,
 	    gfm_getxattr_proccall_result,
 	    gfm_inode_success_op_connection_free,
@@ -412,7 +409,7 @@ gfs_listxattr_proccall(int xmlMode, int cflags, const char *path,
 	closure.xmlMode = xmlMode;
 	closure.listp = listp;
 	closure.sizep = sizep;
-	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_listxattr_proccall_request,
 	    gfm_listxattr_proccall_result,
 	    gfm_inode_success_op_connection_free,
@@ -539,11 +536,12 @@ gfs_removexattr0(int xmlMode, int cflags, const char *path, const char *name)
 
 	closure.xmlMode = xmlMode;
 	closure.name = name;
-	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_modifiable(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_removexattr0_request,
 	    gfm_removexattr0_result,
 	    gfm_inode_success_op_connection_free,
 	    NULL,
+	    gfm_removexattr0_must_be_warned,
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));

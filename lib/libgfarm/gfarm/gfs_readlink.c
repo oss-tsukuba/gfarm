@@ -46,7 +46,7 @@ gfs_readlink(const char *path, char **srcp)
 	struct gfm_readlink_closure closure;
 
 	closure.srcp = srcp;
-	return (gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_no_follow_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_readlink_request,
 	    gfm_readlink_result,
 	    gfm_inode_success_op_connection_free,

@@ -68,7 +68,7 @@ gfs_replica_info_by_name(const char *file, int flags,
 		return (GFARM_ERR_NO_MEMORY);
 
 	closure.inflags = flags;
-	e = gfm_inode_op(file, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(file, GFARM_FILE_LOOKUP,
 	    gfm_replica_info_get_request,
 	    gfm_replica_info_get_result,
 	    gfm_inode_success_op_connection_free,

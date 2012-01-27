@@ -131,11 +131,11 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 	closure.igenp = igenp;
 	closure.urlp = urlp;
 
-	return (gfm_name_op(path, GFARM_ERR_IS_A_DIRECTORY,
+	return (gfm_name_op_modifiable(path, GFARM_ERR_IS_A_DIRECTORY,
 	    gfm_create_fd_request,
 	    gfm_create_fd_result,
 	    gfm_create_fd_success,
-	    &closure));
+	    NULL, &closure));
 }
 
 /*
@@ -219,11 +219,11 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	closure.typep = typep;
 	closure.inump = inump;
 	closure.urlp = urlp;
-	return (gfm_inode_op(path, flags,
+	return (gfm_inode_op_modifiable(path, flags,
 	    gfm_open_fd_request,
 	    gfm_open_fd_result,
 	    gfm_open_fd_success,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }
 

@@ -71,7 +71,7 @@ gfs_getattrplus0(
 	closure.attrvaluesp = attrvaluesp;
 	closure.attrsizesp = attrsizesp;
 
-	e = gfm_inode_op(path, cflags|GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, cflags|GFARM_FILE_LOOKUP,
 	    gfm_getattrplus_request,
 	    gfm_getattrplus_result,
 	    gfm_inode_success_op_connection_free,

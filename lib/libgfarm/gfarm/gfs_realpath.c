@@ -121,7 +121,7 @@ gfs_realpath(const char *path, char **resolved)
 	struct gfm_realpath_closure closure;
 
 	closure.path = NULL;
-	if ((e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	if ((e = gfm_inode_op_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_realpath_request,
 	    gfm_realpath_result,
 	    gfm_realpath_success,
