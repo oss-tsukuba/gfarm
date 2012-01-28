@@ -179,6 +179,12 @@ gfs_pio_fileno(GFS_File gf)
 	return (gf == NULL ? -1 : gf->fd);
 }
 
+char *
+gfs_pio_url(GFS_File gf)
+{
+	return (gf == NULL ? NULL : gf->url);
+}
+
 #ifndef NDEBUG
 static int
 check_connection_in_file_list(GFS_File gf, void *closure)
