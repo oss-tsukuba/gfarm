@@ -139,6 +139,12 @@ gfs_pio_fileno(GFS_File gf)
 	return (gf == NULL ? -1 : gf->fd);
 }
 
+char *
+gfs_pio_url(GFS_File gf)
+{
+	return (gf == NULL ? NULL : gf->url);
+}
+
 static gfarm_error_t
 gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	char *url, gfarm_ino_t ino, GFS_File *gfp)
