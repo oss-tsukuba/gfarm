@@ -219,7 +219,7 @@ gfarm_gsi_server_initialize(void)
 
 /*
  * XXX - thread-unsafe interface.  this assumes a single thread server
- * like gfsd.  this is not for gfmd.
+ * like gfsd and gfarm_gridftp_dsi.  this is not for gfmd.
  */
 static gss_cred_id_t delegated_cred = GSS_C_NO_CREDENTIAL;
 
