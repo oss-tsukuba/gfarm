@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <netdb.h> /* for NI_MAXHOST */
 
 #include <gfarm/gfarm.h>
