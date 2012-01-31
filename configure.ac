@@ -1018,7 +1018,7 @@ fi
 ###### Checks for header files.
 ######
 
-AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h)
+AC_CHECK_HEADERS(inttypes.h shadow.h crypt.h machine/endian.h sys/loadavg.h byteswap.h execinfo.h sys/xattr.h)
 
 ######
 ###### Checks for types.
