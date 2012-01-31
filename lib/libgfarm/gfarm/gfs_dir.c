@@ -423,3 +423,44 @@ gfs_telldir(GFS_Dir dir, gfarm_off_t *offp)
 	return ((*dir->ops->telldir)(dir, offp));
 }
 
+static gfarm_error_t
+gfm_stat_dir_request(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e = gfm_client_fstat_request(gfm_server);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "fstat request: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfm_stat_dir_result(struct gfm_connection *gfm_server, void *closure)
+{
+	struct gfs_stat *st = closure;
+	gfarm_error_t e = gfm_client_fstat_result(gfm_server, st);
+
+	if (e == GFARM_ERR_NO_ERROR &&
+	    GFARM_S_IS_SUGID_PROGRAM(st->st_mode) &&
+	    !gfm_is_mounted(gfm_server)) {
+		/*
+		 * for safety of gfarm2fs "suid" option.
+		 * We have to check gfm_server here instead of using
+		 * gfm_client_connection_and_process_acquire_by_path(path,),
+		 * because we have to follow a symolic link to check it.
+		 */
+		st->st_mode &= ~(GFARM_S_ISUID|GFARM_S_ISGID);
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfs_statdir(GFS_Dir super, struct gfs_stat *s)
+{
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
+
+	gflog_debug(GFARM_MSG_UNFIXED, "gfs_statdir");
+	return (gfm_client_compound_fd_op(dir->gfm_server,
+	    dir->fd, gfm_stat_dir_request,
+	    gfm_stat_dir_result, NULL, s));
+}
