@@ -130,7 +130,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'l':
 			filesize_string = optarg;
-			filesize = strtonum(filesize_string);
+			filesize = gfperf_strtonum(filesize_string);
 			if (filesize < 0) {
 				fprintf(stderr, "filesize too big!\n");
 				return (GFARM_ERR_INVALID_ARGUMENT);
@@ -138,7 +138,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'b':
 			bufsize_string = optarg;
-			bufsize = strtonum(bufsize_string);
+			bufsize = gfperf_strtonum(bufsize_string);
 			if (bufsize < 0) {
 				fprintf(stderr, "bufsize too big!\n");
 				return (GFARM_ERR_INVALID_ARGUMENT);

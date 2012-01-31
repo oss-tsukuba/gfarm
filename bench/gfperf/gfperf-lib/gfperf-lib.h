@@ -2,9 +2,6 @@
  * $Id$
  */
 
-
-/* $Id */
-
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,7 +21,7 @@ gfarm_error_t create_file_on_local(const char *filename, long long file_size);
 gfarm_error_t create_file_on_gfarm(const char *url, char *hostname,
 				   long long file_size);
 
-long long strtonum(const char *str);
+long long gfperf_strtonum(const char *str);
 void sub_timeval(const struct timeval *a, const struct timeval *b,
 		 struct timeval *c);
 const char *find_root_from_url(const char *url);

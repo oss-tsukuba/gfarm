@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/xattr.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +18,10 @@
 
 #include "gfperf-lib.h"
 #include "gfperf-metadata.h"
+
+#ifdef HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
+#endif
 
 static
 gfarm_error_t
@@ -430,6 +433,7 @@ do_posix_rmdir(struct directory_names *names)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+#ifdef HAVE_SYS_XATTR_H
 static
 gfarm_error_t
 do_posix_setxattr(struct directory_names *names)
@@ -547,6 +551,7 @@ do_posix_removexattr(struct directory_names *names)
 
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif
 
 static
 gfarm_error_t
@@ -687,6 +692,7 @@ do_posix_test(struct directory_names *dirs, struct directory_names *files)
 	e = do_posix_symlink(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+#ifdef HAVE_SYS_XATTR_H
 	e = do_posix_setxattr(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -696,6 +702,7 @@ do_posix_test(struct directory_names *dirs, struct directory_names *files)
 	e = do_posix_removexattr(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+#endif
 	e = do_posix_rmdir(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);

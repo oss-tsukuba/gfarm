@@ -100,7 +100,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'l':
 			file_size_string = optarg;
-			file_size = strtonum(optarg);
+			file_size = gfperf_strtonum(optarg);
 			if (file_size < 0) {
 				fprintf(stderr,
 					"file size lower than zero.\n");

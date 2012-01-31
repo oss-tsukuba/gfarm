@@ -29,4 +29,3 @@ include $(top_srcdir)/makes/lib.mk
 include $(top_srcdir)/makes/gflog.mk
 
 util.lo: gfperf-lib.h
-include $(optional_rule)

@@ -17,7 +17,7 @@ float timeval_to_float(struct timeval *a)
 }
 
 long long
-strtonum(const char *str)
+gfperf_strtonum(const char *str)
 {
 	long long tmp = 0;
 	const char *p = str;

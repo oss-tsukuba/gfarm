@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <libgen.h>
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
@@ -195,7 +196,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'l':
 			filesize_string = optarg;
-			filesize = strtonum(filesize_string);
+			filesize = gfperf_strtonum(filesize_string);
 			if (filesize < 0) {
 				fprintf(stderr, "filesize too big!\n");
 				return (GFARM_ERR_INVALID_ARGUMENT);
