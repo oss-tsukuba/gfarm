@@ -917,6 +917,8 @@ fi
 %defattr(-,root,root)
 %{lib_prefix}/libgfarm.so.1
 %{lib_prefix}/libgfarm.so.1.0.0
+%{lib_prefix}/libgfperf.so.1
+%{lib_prefix}/libgfperf.so.1.0.0
 %if %{gfarm_v2_not_yet}
 %{lib_prefix}/libgfs_hook.so.0
 %{lib_prefix}/libgfs_hook.so.0.0.0
@@ -1025,6 +1027,21 @@ fi
 %{prefix}/bin/ns_unlink
 %{prefix}/bin/ns_unlink_dir
 %endif
+%{prefix}/bin/gfperf-autoreplica
+%{prefix}/bin/gfperf-copy
+%{prefix}/bin/gfperf-metadata
+%{prefix}/bin/gfperf-parallel-autoreplica
+%{prefix}/bin/gfperf-parallel-read
+%{prefix}/bin/gfperf-parallel-replica
+%{prefix}/bin/gfperf-parallel-write
+%{prefix}/bin/gfperf-read
+%{prefix}/bin/gfperf-replica
+%{prefix}/bin/gfperf-tree
+%{prefix}/bin/gfperf-wrapper.sh
+%{prefix}/bin/gfperf-write
+%{prefix}/bin/gfperf.rb
+%{prefix}/bin/gfstress.rb
+%{prefix}/bin/gfiops
 
 %files fsnode
 %defattr(-,root,root)
@@ -1129,6 +1146,9 @@ fi
 %{lib_prefix}/libgfs_hook_mpi_debug.la
 %{lib_prefix}/libgfs_hook_mpi_debug.so
 %endif
+%{lib_prefix}/libgfperf.a
+%{lib_prefix}/libgfperf.la
+%{lib_prefix}/libgfperf.so
 
 
 %if %{have_ns}

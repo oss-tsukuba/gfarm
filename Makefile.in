@@ -12,7 +12,9 @@ SUBDIRS = \
 	server \
 	gftool \
 	util/ptool \
-	nls 
+	nls \
+	bench/gfperf \
+	bench/gfiops
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \
