@@ -715,7 +715,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		valid = 0;
 
 	if (!valid) {
-		journal_file_reader_invalidate(reader);
+		journal_file_reader_close(reader);
 		gflog_debug(GFARM_MSG_1002876,
 		    "invalidated journal_file_reader : rec_len=%lu, "
 		    "rpos=%lu, wpos=%lu",
