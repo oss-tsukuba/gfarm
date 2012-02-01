@@ -10991,6 +10991,13 @@ $as_echo "searched flavors are: ${GLBflavor_candidates}" >&6; }
 	fi
 	exit 1
  fi
+ f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
+ if test x"$f_pthr" != xpthr; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: bad flavor \"$globus_flavor\"" >&5
+$as_echo "bad flavor \"$globus_flavor\"" >&6; }
+	as_fn_error $? "MT-safe flavor required" "$LINENO" 5
+	exit 1
+ fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&5
 $as_echo "found in \"${globus_location}\" with \"${globus_flavor}\" flavor" >&6; }
 
