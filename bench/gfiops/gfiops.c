@@ -663,7 +663,8 @@ watch_stderr(void *arg)
 				FD_CLR(fd, &fdset_orig);
 				continue;
 			}
-			fprintf(stderr, "[pid=%d] %s", procs[i].pid, line);
+			fprintf(stderr, "[pid=%ld] %s",
+				(long int) procs[i].pid, line);
 		}
 	}
 
@@ -893,7 +894,8 @@ term:
 		waitpid(procs[i].pid, &status, 0);
 #if 0 /* ignore: _exit(0) only */
 		if (WEXITSTATUS(status) != 0)
-			fprintf(stderr, "[pid=%d] error\n", procs[i].pid);
+			fprintf(stderr, "[pid=%ld] error\n",
+				(long int) procs[i].pid);
 #endif
 		close(procs[i].pipe_stdin[1]);
 		close(procs[i].pipe_stdout[0]);
