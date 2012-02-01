@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include <gfarm/gfarm.h>
 
@@ -521,8 +522,8 @@ result(const char *name, struct timeval *t1, struct timeval *t2,
 
 	printf("%9s: %6d /sec: %d proc * %4d: "
 	       "%2ld.%06ld sec: %9.3f usec * %d\n",
-	       name, num_persec, nprocs, ntimes, t2->tv_sec, t2->tv_usec,
-	       usec, n);
+	       name, num_persec, nprocs, ntimes,
+	       (long int) t2->tv_sec, t2->tv_usec, usec, n);
 }
 
 static int
