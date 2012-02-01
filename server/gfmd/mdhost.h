@@ -37,6 +37,7 @@ struct journal_file_reader;
 struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
 void mdhost_set_journal_file_reader(struct mdhost *,
 	struct journal_file_reader *);
+int mdhost_journal_file_reader_is_expired(struct mdhost *);
 gfarm_uint64_t mdhost_get_last_fetch_seqnum(struct mdhost *);
 void mdhost_set_last_fetch_seqnum(struct mdhost *, gfarm_uint64_t);
 int mdhost_is_recieved_seqnum(struct mdhost *);

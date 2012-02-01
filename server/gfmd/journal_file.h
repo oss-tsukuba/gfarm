@@ -118,11 +118,11 @@ struct gfp_xdr *journal_file_reader_xdr(struct journal_file_reader *);
 void journal_file_reader_committed_pos(struct journal_file_reader *, off_t *,
 	gfarm_uint64_t *);
 void journal_file_reader_commit_pos(struct journal_file_reader *);
-int journal_file_reader_is_invalid(struct journal_file_reader *);
+int journal_file_reader_is_expired(struct journal_file_reader *);
 void journal_file_reader_disable_block_writer(struct journal_file_reader *);
 void journal_file_reader_close(struct journal_file_reader *);
-gfarm_error_t journal_file_reader_reopen(struct journal_file *,
-	struct journal_file_reader **, gfarm_uint64_t);
+gfarm_error_t journal_file_reader_reopen_if_needed(struct journal_file *,
+	struct journal_file_reader **, gfarm_uint64_t, int *);
 
 const char *journal_operation_name(enum journal_operation);
 

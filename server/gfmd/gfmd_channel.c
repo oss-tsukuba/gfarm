@@ -289,7 +289,7 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 			mdhost_set_seqnum_out_of_sync(mh);
 		else
 			mdhost_set_seqnum_error(mh);
-		gflog_error(GFARM_MSG_1002977,
+		gflog_debug(GFARM_MSG_1002977,
 		    "reading journal to send to %s: %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
 		return (e);
@@ -376,6 +376,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
+	int inited = 0;
 	struct journal_file_reader *reader;
 	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
@@ -389,17 +390,22 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		    mdhost_get_name(mh), (unsigned long long)seqnum);
 #endif
 		reader = mdhost_get_journal_file_reader(mh);
-		if (reader == NULL || journal_file_reader_is_invalid(reader)) {
-			if ((e = db_journal_reader_reopen(&reader,
-			    mdhost_get_last_fetch_seqnum(mh)))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_1002981,
-				    "gfmd_channel(%s) : %s",
-				    mdhost_get_name(mh),
-				    gfarm_error_string(e));
-			} else
-				mdhost_set_journal_file_reader(mh, reader);
+		if ((e = db_journal_reader_reopen_if_needed(&reader,
+		    mdhost_get_last_fetch_seqnum(mh), &inited))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1002981,
+			    "gfmd_channel(%s) : %s",
+			    mdhost_get_name(mh),
+			    gfarm_error_string(e));
 		}
+		/*
+		 * if reader is already expired,
+		 * db_journal_reader_reopen_if_needed() returns EXPIRED and
+		 * sets inited to 1.
+		 * if no error occurrs, it also sets inited to 1.
+		 */
+		if (inited)
+			mdhost_set_journal_file_reader(mh, reader);
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	if (mdhost_is_sync_replication(mh)) {
@@ -1030,7 +1036,8 @@ gfmdc_journal_first_sync_thread(void *closure)
 	if (mdhost_get_last_fetch_seqnum(mh) <
 	    db_journal_get_current_seqnum()) {
 		/* it's still unknown whether seqnum is ok or out_of_sync */
-		if (!mdhost_is_in_first_sync(mh))
+		if (!mdhost_is_in_first_sync(mh) &&
+		    !mdhost_journal_file_reader_is_expired(mh))
 			do_sync = 1;
 	} else {
 		mdhost_set_seqnum_ok(mh);
