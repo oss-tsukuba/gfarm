@@ -8,8 +8,50 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef sun
+#include <stdarg.h>
+#endif
 
 #include "gfperf-lib.h"
+
+#ifdef sun
+int
+asprintf(char **strp, const char *fmt, ...)
+{
+     int ret, size;
+     char *bufp;
+     va_list ap;
+     va_start(ap, fmt);
+     size = vsnprintf(NULL, 0, fmt, ap);
+     if (size < 0) {
+	  va_end(ap);
+	  return size;
+     }
+     GFARM_MALLOC_ARRAY(bufp, size+1);
+     ret = vsnprintf(bufp, size+1, fmt, ap);
+     va_end(ap);
+     *strp = bufp;
+     return ret;
+}
+
+time_t
+timegm(struct tm *tm)
+{
+     time_t ret;
+     char *tz;
+
+     tz = getenv("TZ");
+     setenv("TZ", "UTC", 1);
+     tzset();
+     ret = mktime(tm);
+     if (tz)
+	  setenv("TZ", tz, 1);
+     else
+	  unsetenv("TZ");
+     tzset();
+     return ret;
+}
+#endif
 
 float timeval_to_float(struct timeval *a)
 {

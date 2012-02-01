@@ -4,6 +4,9 @@
 
 
 #include "gfperf-lib.h"
+#ifdef sun
+#include <sys/stat.h>
+#endif
 #include <dirent.h>
 #include <limits.h>
 #include <stdio.h>
@@ -35,6 +38,9 @@ do_rmdir_posix(char *dir)
 	struct dirent *de;
 	char *name;
 	int r;
+#ifdef sun
+	struct stat stat_buf;
+#endif
 
 	current = opendir(dir);
 	if (current == NULL)
@@ -51,12 +57,26 @@ do_rmdir_posix(char *dir)
 			closedir(current);
 			return (GFARM_ERR_NO_MEMORY);
 		}
+#ifdef sun
+		r = lstat(name, &stat_buf);
+		if (r < 0) {
+			closedir(current);
+			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+		}
+		if (S_ISDIR(stat_buf.st_mode)) {
+			do_rmdir_posix(name);
+			rmdir(name);
+		} else if (S_ISREG(stat_buf.st_mode)) {
+			unlink(name);
+		}
+#else
 		if (de->d_type == DT_DIR) {
 			do_rmdir_posix(name);
 			rmdir(name);
 		} else if (de->d_type == DT_REG) {
 			unlink(name);
 		}
+#endif
 		free(name);
 	}
 

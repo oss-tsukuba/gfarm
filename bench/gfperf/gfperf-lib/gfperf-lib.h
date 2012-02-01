@@ -15,6 +15,10 @@
 #define FILE_URL_PREFIX "file://"
 #define FILE_URL_PREFIX_LEN 7
 
+#ifdef sun
+int asprintf(char **strp, const char *fmt, ...);
+#endif
+
 float timeval_to_float(struct timeval *a);
 
 gfarm_error_t create_file_on_local(const char *filename, long long file_size);
