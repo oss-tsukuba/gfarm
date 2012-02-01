@@ -296,8 +296,12 @@ peer_closer(void *arg)
 		    diag, "after giant");
 	}
 
+	/*NOTREACHED*/
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
+	return (NULL);
+#endif
 }
 
 void

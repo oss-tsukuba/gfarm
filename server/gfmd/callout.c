@@ -109,6 +109,10 @@ callout_main(void *arg)
 		if (func != NULL)
 			thrpool_add_job(thrpool, func, closure);
 	}
+#ifdef __GNUC__ /* shut up stupid warning by gcc */
+	/*NOTREACHED*/
+	return (NULL);
+#endif
 }
 
 /* This function is equivalent to callout_startup(9) */
