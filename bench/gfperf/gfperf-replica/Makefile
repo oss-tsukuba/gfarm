@@ -7,7 +7,7 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
-	-I../gfperf-lib $(openssl_includes)
+	-I$(srcdir)/../gfperf-lib $(openssl_includes)
 LDLIBS = $(COMMON_LDFLAGS) -L../gfperf-lib $(GFARMLIB) $(LIBS) -lgfperf
 DEPLIBS = $(DEPGFARMLIB)
 
