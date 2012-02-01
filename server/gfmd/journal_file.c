@@ -60,17 +60,21 @@ struct journal_file_reader {
 	size_t uncommitted_len;
 	struct gfp_xdr *xdr;
 	int flags;
+	gfarm_uint64_t last_seqnum;
 };
 
 #define JOURNAL_FILE_READER_F_BLOCK_WRITER	0x1
 #define JOURNAL_FILE_READER_F_INVALID		0x2
 #define JOURNAL_FILE_READER_F_DRAIN		0x4
+#define JOURNAL_FILE_READER_F_EXPIRED		0x8
 #define JOURNAL_FILE_READER_IS_BLOCK_WRITER(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_BLOCK_WRITER) != 0)
 #define JOURNAL_FILE_READER_IS_INVALID(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_INVALID) != 0)
 #define JOURNAL_FILE_READER_DRAINED(r) \
 	(((r)->flags & JOURNAL_FILE_READER_F_DRAIN) != 0)
+#define JOURNAL_FILE_READER_IS_EXPIRED(r) \
+	(((r)->flags & JOURNAL_FILE_READER_F_EXPIRED) != 0)
 
 #define JOURNAL_RECORD_SIZE_MAX			(1024 * 1024)
 #define JOURNAL_FILE_HEADER_SIZE		4096
@@ -308,10 +312,37 @@ journal_file_reader_commit_pos(struct journal_file_reader *reader)
 	gfarm_cond_signal(&jf->nonfull_cond, diag, JOURNAL_FILE_STR);
 }
 
-int
+static int
 journal_file_reader_is_invalid(struct journal_file_reader *reader)
 {
 	return (JOURNAL_FILE_READER_IS_INVALID(reader));
+}
+
+static int
+journal_file_reader_is_expired_unlocked(struct journal_file_reader *reader)
+{
+	return (JOURNAL_FILE_READER_IS_EXPIRED(reader));
+}
+
+int
+journal_file_reader_is_expired(struct journal_file_reader *reader)
+{
+	int r;
+	struct journal_file *jf = reader->file;
+	static const char *diag = "journal_file_reader_is_expired";
+
+	journal_file_mutex_lock(jf, diag);
+	r = journal_file_reader_is_expired_unlocked(reader);
+	journal_file_mutex_unlock(jf, diag);
+
+	return (r);
+}
+
+static void
+journal_file_reader_expire(struct journal_file_reader *reader)
+{
+	journal_file_reader_set_flag(reader,
+	    JOURNAL_FILE_READER_F_EXPIRED, 1);
 }
 
 static void
@@ -605,7 +636,7 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 	gfarm_uint64_t wlap, rlap;
 	int needed;
 
-	if (JOURNAL_FILE_READER_IS_INVALID(reader) ||
+	if (journal_file_reader_is_invalid(reader) ||
 	    !JOURNAL_FILE_READER_IS_BLOCK_WRITER(reader) ||
 	    rec_len == 0)
 		return;
@@ -715,6 +746,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 		valid = 0;
 
 	if (!valid) {
+		journal_file_reader_expire(reader);
 		journal_file_reader_close(reader);
 		gflog_debug(GFARM_MSG_1002876,
 		    "invalidated journal_file_reader : rec_len=%lu, "
@@ -856,6 +888,38 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		*tailp = next_rec_pos;
 		if (lseek(rfd, next_rec_pos, SEEK_SET) < 0)
 			return (gfarm_errno_to_error(errno));
+	}
+
+	/*
+	 * - 'wfd >= 0' means that this function is called for opening a writer
+	 *   and a main reader which are used for storing records to db
+	 *   in master gfmd.
+	 * - 'wfd < 0' means that this function is called for opening a non-main
+	 *   reader which is used for fetching records to send them to slave.
+	 *
+	 * - 'min_seqnum_found == 1' means that old journal records exist in
+	 *   journal file.
+	 *
+	 * - 'cur_seqnum == 0' means that this function is called for scanning
+	 *   all records such as gfjournal command. valid seqnum starts from 1.
+	 * - 'curs_seqnum == max_seqnum' means that the seqnum which a reader
+	 *   intends to fetch is equal to the last seqnum in this gfmd,
+	 *   so that old journal records are not necessary to send.
+	 * - 'cur_seqnum + 1' is the seqnum which a reader should fetch in
+	 *   next call of journal_file_read_serialized().
+	 */
+
+	if (wfd < 0 && cur_seqnum > 0 && cur_seqnum != max_seqnum &&
+	    (!min_seqnum_found || cur_seqnum + 1 < min_seqnum ||
+	    max_seqnum < cur_seqnum)) {
+		e = GFARM_ERR_EXPIRED;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: seqnum=%llu min_seqnum=%llu max_seqnum=%llu",
+		    gfarm_error_string(e),
+		    (unsigned long long)cur_seqnum,
+		    (unsigned long long)min_seqnum,
+		    (unsigned long long)max_seqnum);
+		return (e);
 	}
 
 	if (!min_seqnum_found) {
@@ -1103,6 +1167,8 @@ journal_file_reader_init(struct journal_file *jf, int fd,
 	reader->uncommitted_len = 0;
 	reader->xdr = xdr;
 	reader->flags = 0;
+	/* do not init last_seqnum here */
+
 	journal_file_reader_set_flag(reader,
 	    JOURNAL_FILE_READER_F_BLOCK_WRITER, block_writer);
 	return (GFARM_ERR_NO_ERROR);
@@ -1129,6 +1195,7 @@ journal_file_reader_new(struct journal_file *jf, int fd,
 		return (e);
 	}
 	journal_file_add_reader(jf, reader);
+	reader->last_seqnum = 0;
 	*readerp = reader;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1297,10 +1364,11 @@ journal_file_reader_close(struct journal_file_reader *reader)
 }
 
 gfarm_error_t
-journal_file_reader_reopen(struct journal_file *jf,
-	struct journal_file_reader **readerp, gfarm_uint64_t seqnum)
+journal_file_reader_reopen_if_needed(struct journal_file *jf,
+	struct journal_file_reader **readerp, gfarm_uint64_t seqnum,
+	int *initedp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	int fd = -1;
 	off_t rpos, wpos;
 	gfarm_uint64_t rlap, wlap, cur_wlap;
@@ -1308,14 +1376,42 @@ journal_file_reader_reopen(struct journal_file *jf,
 	struct journal_file_writer *writer = &jf->writer;
 	static const char *diag = "journal_file_reader_reopen";
 
-	if ((fd = open(jf->path, O_RDONLY)) == -1)
-		return (gfarm_errno_to_error(errno));
-
 	journal_file_mutex_lock(jf, diag);
-	assert(*readerp == NULL || (*readerp)->xdr == NULL);
-	if ((e = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
-	    &rlap, &wpos, &wlap, &tail)) != GFARM_ERR_NO_ERROR)
+
+	if (*readerp) {
+		if ((*readerp)->xdr) {
+			/* opened reader has xdr */
+			e = GFARM_ERR_NO_ERROR;
+			goto unlock;
+		}
+		if (journal_file_reader_is_expired_unlocked(*readerp) &&
+		    (*readerp)->last_seqnum == seqnum) {
+			/* avoid unnecessary calling journal_find_rw_pos() */
+			e = GFARM_ERR_EXPIRED;
+			goto unlock;
+		}
+	}
+
+	/* *readerp is invalidated or non-initialized */
+
+	if ((fd = open(jf->path, O_RDONLY)) == -1) {
+		e = gfarm_errno_to_error(errno);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "open: %s", gfarm_error_string(e));
 		goto unlock;
+	}
+
+	assert(*readerp == NULL || (*readerp)->xdr == NULL);
+	if ((e2 = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
+	    &rlap, &wpos, &wlap, &tail)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "journal_find_rw_pos: %s", gfarm_error_string(e2));
+		if (e2 != GFARM_ERR_EXPIRED) {
+			e = e2;
+			goto unlock;
+		}
+		rpos = 0;
+	}
 
 	cur_wlap = writer->lap;
 	if (rlap < wlap)
@@ -1327,6 +1423,15 @@ journal_file_reader_reopen(struct journal_file *jf,
 		e = journal_file_reader_init(jf, fd, rpos, rlap, 0, *readerp);
 	else
 		e = journal_file_reader_new(jf, fd, rpos, rlap, 0, readerp);
+	if (e == GFARM_ERR_NO_ERROR) {
+		if (e2 != GFARM_ERR_NO_ERROR) {
+			journal_file_reader_expire(*readerp);
+			journal_file_reader_close(*readerp);
+			(*readerp)->last_seqnum = seqnum;
+			e = e2;
+		}
+		*initedp = 1;
+	}
 unlock:
 	journal_file_mutex_unlock(jf, diag);
 	if (e != GFARM_ERR_NO_ERROR && fd != -1)
@@ -1491,7 +1596,8 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 		goto unlock;
 	FOREACH_JOURNAL_READER(reader, jf) {
 		journal_file_reader_writer_wait(reader, jf,rec_len);
-		if ((e = journal_file_reader_check_pos(reader, jf, rec_len))
+		if (!journal_file_reader_is_invalid(reader) &&
+		    (e = journal_file_reader_check_pos(reader, jf, rec_len))
 		    != GFARM_ERR_NO_ERROR)
 			goto unlock;
 		if (reader->xdr)
@@ -1733,6 +1839,7 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	journal_file_mutex_lock(jf, diag);
 
 	if (journal_file_reader_is_invalid(reader)) {
+		/* invalidated reader while reading is always expired */
 		e = GFARM_ERR_EXPIRED;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "journal file is expired while reading records");
@@ -1795,6 +1902,7 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	*seqnump = seqnum;
 	*sizep = rec_len;
 	reader->uncommitted_len += rec_len;
+	reader->last_seqnum = seqnum;
 	e = GFARM_ERR_NO_ERROR;
 	goto end;
 error:

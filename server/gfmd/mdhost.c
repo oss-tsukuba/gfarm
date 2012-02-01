@@ -345,6 +345,12 @@ mdhost_set_journal_file_reader(struct mdhost *m,
 	mdhost_mutex_unlock(m, diag);
 }
 
+int
+mdhost_journal_file_reader_is_expired(struct mdhost *m)
+{
+	return (m->jreader ? journal_file_reader_is_expired(m->jreader) : 0);
+}
+
 gfarm_uint64_t
 mdhost_get_last_fetch_seqnum(struct mdhost *m)
 {

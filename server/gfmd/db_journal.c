@@ -3602,11 +3602,11 @@ db_journal_reset_slave_transaction_nesting(void)
 }
 
 gfarm_error_t
-db_journal_reader_reopen(struct journal_file_reader **readerp,
-	gfarm_uint64_t last_fetch_seqnum)
+db_journal_reader_reopen_if_needed(struct journal_file_reader **readerp,
+	gfarm_uint64_t last_fetch_seqnum, int *initedp)
 {
-	return (journal_file_reader_reopen(self_jf, readerp,
-		last_fetch_seqnum));
+	return (journal_file_reader_reopen_if_needed(self_jf, readerp,
+		last_fetch_seqnum, initedp));
 }
 
 struct db_journal_fetch_info {
@@ -3651,6 +3651,13 @@ db_journal_fetch(struct journal_file_reader *reader,
 		*no_recp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
+	if (journal_file_reader_is_expired(reader)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s : already expired (cur:%llu target:%llu)",
+		    diag, (unsigned long long)cur_seqnum,
+		    (unsigned long long)min_seqnum);
+		return (GFARM_ERR_EXPIRED);
+	}
 	if (cur_seqnum < min_seqnum) {
 		gflog_error(GFARM_MSG_1003192,
 		    "%s : invalid seqnum (cur:%llu < target:%llu)",
@@ -3658,13 +3665,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 		    (unsigned long long)min_seqnum);
 		return (GFARM_ERR_EXPIRED);
 	}
-	if (journal_file_reader_is_invalid(reader)) {
-		gflog_debug(GFARM_MSG_1003193,
-		    "%s : target journal records are expired (cur:%llu, "
-		    "target:%llu)", diag, (unsigned long long)cur_seqnum,
-		    (unsigned long long)min_seqnum);
-		return (GFARM_ERR_EXPIRED);
-	}
+
 	for (;;) {
 		e = journal_file_read_serialized(reader, &rec, &rec_len,
 		    &seqnum, &eof);
