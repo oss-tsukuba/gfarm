@@ -37,19 +37,28 @@ asprintf(char **strp, const char *fmt, ...)
 time_t
 timegm(struct tm *tm)
 {
-	time_t ret;
-	char *tz;
+	time_t time_local, time_gmt;
+	struct tm *tm_gmt;
 
-	tz = getenv("TZ");
-	setenv("TZ", "UTC", 1);
-	tzset();
-	ret = mktime(tm);
-	if (tz)
-		setenv("TZ", tz, 1);
-	else
-		unsetenv("TZ");
-	tzset();
-	return (ret);
+	time_local = mktime(tm);
+	if (time_local == -1) {
+		tm->tm_hour--;
+		time_local = mktime(tm);
+		if (time_local == -1)
+			return (-1);
+		time_local += 3600;
+	}
+	tm_gmt = gmtime(&time_local);
+	tm_gmt->tm_isdst = 0;
+	time_gmt = mktime(tm_gmt);
+	if (time_gmt == -1) {
+		tm_gmt->tm_hour--;
+		time_gmt = mktime(tm_gmt);
+		if (time_gmt == -1)
+			return (-1);
+		time_gmt += 3600;
+	}
+	return (time_local - (time_gmt - time_local));
 }
 #endif
 
