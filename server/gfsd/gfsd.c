@@ -125,6 +125,8 @@ static char *listen_addrname = NULL;
 
 static int client_failover_count;
 
+static int shutting_down; /* set 1 at shutting down */
+
 struct local_socket {
 	int sock;
 	char *dir, *name;
@@ -208,7 +210,11 @@ fatal_full(int msg_no, const char *file, int line_no, const char *func,
 	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
 	va_end(ap);
 
-	cleanup(0);
+	if (!shutting_down) {
+		shutting_down = 1;
+		cleanup(0);
+	}
+
 	if (getpid() == back_channel_gfsd_pid || kill_master_gfsd) {
 		/*
 		 * send terminate signal to the master process.
@@ -255,7 +261,10 @@ accepting_fatal_full(int msg_no, const char *file, int line_no,
 {
 	va_list ap;
 
-	cleanup_accepting(0);
+	if (!shutting_down) {
+		shutting_down = 1;
+		cleanup_accepting(0);
+	}
 	va_start(ap, format);
 	gflog_vmessage(msg_no, LOG_ERR, file, line_no, func, format, ap);
 	va_end(ap);
@@ -1571,13 +1580,19 @@ fhclose_fd(gfarm_int32_t fd, const char *diag)
 	return (e);
 }
 
+/*
+ * Take care that this function is called from running state and shutting
+ * down state represeted by shutting_down.
+ * If reconnect_gfm_server_for_failover() fails, gfm_server is set to NULL
+ * and reenter this function from cleanup().
+ */
 gfarm_error_t
 close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
 	int fc = gfm_client_connection_failover_count(gfm_server);
 
-	if (client_failover_count == fc)
+	if (gfm_server != NULL && client_failover_count == fc)
 		e = close_fd(fd, diag);
 	else
 		e = GFARM_ERR_NO_ERROR;
@@ -1586,13 +1601,17 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 		; /*FALLTHROUGH*/
 	else if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
 		return (e);
-	else if (IS_CONNECTION_ERROR(e)) {
+	else if (IS_CONNECTION_ERROR(e) && !shutting_down) {
 		gflog_error(GFARM_MSG_1003348,
 		    "%s: gfmd may be failed over, try to reconnecting", diag);
 		free_gfm_server();
-		if ((e = connect_gfm_server(0)) != GFARM_ERR_NO_ERROR)
+		if ((e = connect_gfm_server(0)) != GFARM_ERR_NO_ERROR) {
+			gfm_client_connection_free(gfm_server);
+			/* mark gfmd reconnection failed */
+			gfm_server = NULL;
 			fatal(GFARM_MSG_1003349, 
 			    "%s: cannot reconnect to gfm server", diag);
+		}
 		if ((e = fhclose_fd(fd, diag)) == GFARM_ERR_NO_ERROR) {
 			e = GFARM_ERR_GFMD_FAILED_OVER;
 			gfm_client_connection_set_failover_count(
