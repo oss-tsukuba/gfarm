@@ -319,6 +319,12 @@ AC_ARG_WITH(globus,
 	fi
 	exit 1
  fi
+ f_pthr=`expr "$globus_flavor" : '.*\(pthr\)'`
+ if test x"$f_pthr" != xpthr; then
+	AC_MSG_RESULT([bad flavor \"$globus_flavor\"])
+	AC_MSG_ERROR([MT-safe flavor required])
+	exit 1
+ fi
  AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
  globus_includes="-I${globus_location}/include/${globus_flavor}"
