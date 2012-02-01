@@ -50,34 +50,53 @@ gssCrackStatus(OM_uint32 statValue, int statType)
     OM_uint32 msgCtx;
     OM_uint32 minStat;
     gss_buffer_desc stStr;
-    char **ret;
+    char **ret, **ret_new;
     int i = 0;
-    char *dP = NULL;
+    char *dP;
 
     GFARM_MALLOC_ARRAY(ret, 1);
+    if (ret == NULL) {
+	gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	return (ret);
+    }
     ret[0] = NULL;
     while (1) {
 	msgCtx = 0;
-	(void)gss_display_status(&minStat,
+	gss_display_status(&minStat,
 				 statValue,
 				 statType,
 				 GSS_C_NO_OID,
 				 &msgCtx,
 				 &stStr);
-	GFARM_REALLOC_ARRAY(ret, ret, i + 2);
-	GFARM_MALLOC_ARRAY(ret[i], (int)stStr.length + 1);
+	GFARM_REALLOC_ARRAY(ret_new, ret, i + 2);
+	if (ret_new == NULL) {
+	    gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	    goto free_ret;
+	}
+	ret = ret_new;
+	GFARM_MALLOC_ARRAY(ret[i], stStr.length + 1);
+	if (ret[i] == NULL) {
+	    gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	    goto free_ret;
+	}
 	dP = ret[i];
-	dP[(int)stStr.length] = '\0';
+	dP[stStr.length] = '\0';
 	i++;
-	(void)memcpy((void *)dP, (void *)stStr.value, (int)stStr.length);
-	(void)gss_release_buffer(&minStat, (gss_buffer_t)&stStr);
+	memcpy(dP, stStr.value, stStr.length);
+	gss_release_buffer(&minStat, &stStr);
 	if (msgCtx == 0) {
 	    break;
 	}
     }
     ret[i] = NULL;
 
-    return ret;
+    return (ret);
+
+ free_ret:
+    for (--i; i >= 0; --i)
+	free(ret[i]);
+    free(ret);
+    return (ret);
 }
 
 
@@ -85,10 +104,10 @@ void
 gfarmGssFreeCrackedStatus(char **strPtr)
 {
     char **cpS = strPtr;
-    while (*cpS != NULL) {
-	(void)free(*cpS++);
-    }
-    (void)free(strPtr);
+
+    while (*cpS != NULL)
+	free(*cpS++);
+    free(strPtr);
 }
 
 
@@ -106,36 +125,32 @@ gfarmGssCrackMinorStatus(OM_uint32 minStat)
 }
 
 
-void
-gfarmGssPrintMajorStatus(OM_uint32 majStat)
+static void
+gfarmGssPrintStatus(char **list, const char *diag)
 {
-    char **list = gfarmGssCrackMajorStatus(majStat);
     char **lP = list;
-    if (*lP != NULL) {
+
+    if (lP != NULL && *lP != NULL) {
 	while (*lP != NULL) {
 	    gflog_error(GFARM_MSG_1000607, "\t : %s", *lP++);
 	}
-    } else {
-	gflog_error(GFARM_MSG_1000608, "GSS Major Status Error: UNKNOWN");
-    }
+    } else
+	gflog_error(GFARM_MSG_1000608, "GSS %s Status Error: UNKNOWN", diag);
     gfarmGssFreeCrackedStatus(list);
+}
+
+void
+gfarmGssPrintMajorStatus(OM_uint32 majStat)
+{
+    gfarmGssPrintStatus(gfarmGssCrackMajorStatus(majStat), "Major");
 }
 
 
 void
 gfarmGssPrintMinorStatus(OM_uint32 minStat)
 {
-    char **list = gfarmGssCrackMinorStatus(minStat); 
-    char **lP = list;
-    if (*lP != NULL) {
-	while (*lP != NULL)
-	    gflog_error(GFARM_MSG_1000609, "\t : %s", *lP++);
-    } else {
-	gflog_error(GFARM_MSG_1000610, "GSS Minor Status Error: UNKNOWN\n");
-    }
-    gfarmGssFreeCrackedStatus(list);
+    gfarmGssPrintStatus(gfarmGssCrackMinorStatus(minStat), "Minor");
 }
-
 
 int
 gfarmGssImportName(gss_name_t *namePtr, void *nameValue, size_t nameLength,
@@ -330,7 +345,7 @@ gfarmGssNewDisplayName(const gss_name_t inputName, OM_uint32 *majStatPtr,
 	} else {
 	    ret[buf.length] = '\0';
 	    memcpy(ret, buf.value, buf.length);
-	    (void)gss_release_buffer(&minStat2, &buf);
+	    gss_release_buffer(&minStat2, &buf);
 	    if (outputNameTypePtr != NULL) {
 		*outputNameTypePtr = outputNameType;
 	    }
@@ -449,16 +464,13 @@ gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
     int ret = -1;
 
     majStat = gss_release_cred(&minStat, credPtr);
-    if (majStat == GSS_S_COMPLETE) {
+    if (majStat == GSS_S_COMPLETE)
 	ret = 1; /* valid */
-    }
 
-    if (majStatPtr != NULL) {
+    if (majStatPtr != NULL)
 	*majStatPtr = majStat;
-    }
-    if (minStatPtr != NULL) {
+    if (minStatPtr != NULL)
 	*minStatPtr = minStat;
-    }	
 
     if (ret == -1) {
 	gflog_debug(GFARM_MSG_1000791,
@@ -473,13 +485,13 @@ gfarmGssDeleteCredential(gss_cred_id_t *credPtr, OM_uint32 *majStatPtr,
 int
 gfarmGssSendToken(int fd, gss_buffer_t gsBuf)
 {
-    gfarm_int32_t iLen = (gfarm_int32_t)(gsBuf->length);
+    gfarm_int32_t iLen = gsBuf->length;
 
     if (gfarmWriteInt32(fd, &iLen, 1) != 1) {
 	gflog_debug(GFARM_MSG_1000792, "gfarmWriteInt32() failed");
 	return -1;
     }
-    if (gfarmWriteInt8(fd, (gfarm_int8_t *)(gsBuf->value), iLen) != iLen) {
+    if (gfarmWriteInt8(fd, gsBuf->value, iLen) != iLen) {
 	gflog_debug(GFARM_MSG_1000793, "gfarmWriteInt8() failed");
 	return -1;
     }
@@ -574,13 +586,12 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 					 &remCred);
 
 	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
-	if (itPtr->length > 0) {
-	    (void)gss_release_buffer(&minStat2, itPtr);
-	}
+	if (itPtr->length > 0)
+	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
-	    (void)gss_release_buffer(&minStat2, otPtr);
+	    gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
 		gflog_auth_error(GFARM_MSG_1000617,
 		    "gfarmGssAcceptSecurityContext(): "
@@ -596,28 +607,23 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 
     } while (majStat & GSS_S_CONTINUE_NEEDED);
 
-    if (majStatPtr != NULL) {
+    if (majStatPtr != NULL)
 	*majStatPtr = majStat;
-    }
-    if (minStatPtr != NULL) {
+    if (minStatPtr != NULL)
 	*minStatPtr = minStat;
-    }
 
-    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
+    if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL)
 	*remoteNamePtr = initiatorName;
-    } else if (initiatorName != GSS_C_NO_NAME) {
-	(void)gss_release_name(&minStat2, &initiatorName);
-    }
+    else if (initiatorName != GSS_C_NO_NAME)
+	gss_release_name(&minStat2, &initiatorName);
 
-    if (majStat == GSS_S_COMPLETE && remoteCredPtr != NULL) {
+    if (majStat == GSS_S_COMPLETE && remoteCredPtr != NULL)
 	*remoteCredPtr = remCred;
-    } else if (remCred != GSS_C_NO_CREDENTIAL) {
-	(void)gss_release_cred(&minStat2, &remCred);
-    }
+    else if (remCred != GSS_C_NO_CREDENTIAL)
+	gss_release_cred(&minStat2, &remCred);
     
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT) {
-	(void)gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
-    }
+    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
     return majStat == GSS_S_COMPLETE ? 1 : -1;
 }
@@ -678,13 +684,12 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 				       &timeRet);
 	gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 	
-	if (itPtr->length > 0) {
-	    (void)gss_release_buffer(&minStat2, itPtr);
-	}
+	if (itPtr->length > 0)
+	    gss_release_buffer(&minStat2, itPtr);
 
 	if (otPtr->length > 0) {
 	    tknStat = gfarmGssSendToken(fd, otPtr);
-	    (void)gss_release_buffer(&minStat2, otPtr);
+	    gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
 		gflog_auth_error(GFARM_MSG_1000619,
 		    "gfarmGssInitiateSecurityContext(): "
@@ -714,12 +719,8 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
 	}
     }
 
-    if (itPtr->length > 0) {
-	(void)gss_release_buffer(&minStat2, itPtr);
-    }
-    if (otPtr->length > 0) {
-	(void)gss_release_buffer(&minStat2, otPtr);
-    }
+    if (itPtr->length > 0)
+	gss_release_buffer(&minStat2, itPtr);
 
     if (majStat == GSS_S_COMPLETE && remoteNamePtr != NULL) {
 	majStat = gss_inquire_context(&minStat,
@@ -734,16 +735,13 @@ gfarmGssInitiateSecurityContext(int fd, const gss_name_t acceptorName,
     }
 
     Done:
-    if (majStatPtr != NULL) {
+    if (majStatPtr != NULL)
 	*majStatPtr = majStat;
-    }
-    if (minStatPtr != NULL) {
+    if (minStatPtr != NULL)
 	*minStatPtr = minStat;
-    }
 
-    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT) {
-	(void)gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
-    }
+    if (majStat != GSS_S_COMPLETE && *scPtr != GSS_C_NO_CONTEXT)
+	gss_delete_sec_context(&minStat2, scPtr, GSS_C_NO_BUFFER);
 
     return majStat == GSS_S_COMPLETE ? 1 : -1;
 }
@@ -810,7 +808,7 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 
     int sum = 0;
     int rem = n;
-    int len;
+    int len, tknStat;
     gfarm_int32_t n_buf = n;
 
     /*
@@ -841,13 +839,12 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
 			   otPtr);
 	if (majStat == GSS_S_COMPLETE) {
 	    if (otPtr->length > 0) {
-		if (gfarmGssSendToken(fd, otPtr) <= 0) {
+		tknStat = gfarmGssSendToken(fd, otPtr);
+		gss_release_buffer(&minStat, otPtr);
+		if (tknStat <= 0) {
 		    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		    goto Done;
 		}
-		(void)gss_release_buffer(&minStat, otPtr);
-		otPtr->length = 0;
-		otPtr->value = NULL;
 		rem -= len;
 		sum += len;
 	    } else {
@@ -863,9 +860,6 @@ gfarmGssSend(int fd, gss_ctx_id_t sCtx, int doEncrypt, gss_qop_t qopReq,
     }
 
     Done:
-    if (otPtr->length > 0) {
-	(void)gss_release_buffer(&minStat, otPtr);
-    }
     if (statPtr != NULL) {
 	*statPtr = majStat;
     }
@@ -955,9 +949,9 @@ gfarmGssReceive(int fd, gss_ctx_id_t sCtx, gfarm_int8_t **bufPtr,
     }
 
     Done:
-    if (statPtr != NULL) {
+    if (statPtr != NULL)
 	*statPtr = majStat;
-    }
+
     if (ret == -1) {
 	*bufPtr = NULL;
 	*lenPtr = -1;
@@ -998,7 +992,7 @@ gfarmGssExportCredential(gss_cred_id_t cred, OM_uint32 *statPtr)
     if (GSS_ERROR(majStat))
 	goto Done;
 
-    exported = (char *)buf.value;
+    exported = buf.value;
     for (filename = exported; *filename != '\0'; filename++)
 	if (!isalnum(*(unsigned char *)filename) && *filename != '_')
 	    break;
@@ -1159,9 +1153,8 @@ gssInitiateSecurityContextNext(
 					  &state->timeRet);
     gfarm_mutex_unlock(&gss_mutex, diag, gssDiag);
 
-    if (state->itPtr->length > 0) {
-	(void)gss_release_buffer(&minStat2, state->itPtr);
-    }
+    if (state->itPtr->length > 0)
+	gss_release_buffer(&minStat2, state->itPtr);
 
     if (state->otPtr->length > 0) {
 	rv = gfarm_eventqueue_add_event(state->q, state->writable, NULL);
@@ -1188,7 +1181,7 @@ gfarmGssInitiateSecurityContextSendToken(int events, int fd, void *closure,
     OM_uint32 minStat2;
 
     tknStat = gfarmGssSendToken(fd, state->otPtr);
-    (void)gss_release_buffer(&minStat2, state->otPtr);
+    gss_release_buffer(&minStat2, state->otPtr);
     if (tknStat <= 0) {
 	gflog_auth_error(GFARM_MSG_1000623,
 	    "gfarmGssInitiateSecurityContextSendToken(): "
@@ -1345,12 +1338,10 @@ gfarmGssInitiateSecurityContextRequest(struct gfarm_eventqueue *q, int fd,
     free(state);
 
     ReturnStat:
-    if (majStatPtr != NULL) {
+    if (majStatPtr != NULL)
 	*majStatPtr = majStat;
-    }
-    if (minStatPtr != NULL) {
+    if (minStatPtr != NULL)
 	*minStatPtr = minStat;
-    }
 
     if (GSS_ERROR(majStat)) {
 	gflog_debug(GFARM_MSG_1000801,
@@ -1393,17 +1384,15 @@ gfarmGssInitiateSecurityContextResult(
     gfarm_event_free(state->readable);
     gfarm_event_free(state->writable);
 
-    if (majStatPtr != NULL) {
+    if (majStatPtr != NULL)
 	*majStatPtr = state->majStat;
-    }
-    if (minStatPtr != NULL) {
+    if (minStatPtr != NULL)
 	*minStatPtr = state->minStat;
-    }
 
     if (state->majStat == GSS_S_COMPLETE) {
 	*scPtr = state->sc;
     } else if (state->sc != GSS_C_NO_CONTEXT) {
-	(void)gss_delete_sec_context(&minStat2, &state->sc, GSS_C_NO_BUFFER);
+	gss_delete_sec_context(&minStat2, &state->sc, GSS_C_NO_BUFFER);
     }
 
     ret = state->majStat == GSS_S_COMPLETE ? 1 : -1;
