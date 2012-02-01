@@ -92,16 +92,16 @@ parse_opt(int argc, char *argv[])
 		}
 	}
 
-	if (is_file_url(testdir)) {
+	if (gfperf_is_file_url(testdir)) {
 		posix_flag = 1;
-		testdir = &testdir[FILE_URL_PREFIX_LEN];
+		testdir = &testdir[GFPERF_FILE_URL_PREFIX_LEN];
 	} else
 		posix_flag = 0;
 
 	if (posix_flag)
-		e = is_dir_posix(testdir);
+		e = gfperf_is_dir_posix(testdir);
 	else
-		e = is_dir_gfarm(testdir);
+		e = gfperf_is_dir_gfarm(testdir);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s is not a directory.\n",
 			testdir);
@@ -186,10 +186,10 @@ calc_result(struct test_results *r)
 {
 	struct timeval d;
 
-	sub_timeval(&r->middle, &r->start, &r->start_middle);
+	gfperf_sub_timeval(&r->middle, &r->start, &r->start_middle);
 	d = r->start_middle;
 	r->startup = (float)(d.tv_sec*1000000 + d.tv_usec);
-	sub_timeval(&r->end, &r->middle, &r->middle_end);
+	gfperf_sub_timeval(&r->end, &r->middle, &r->middle_end);
 	d = r->middle_end;
 	r->average = ((float)(d.tv_sec*1000000 + d.tv_usec)) / r->number;
 }
@@ -206,13 +206,13 @@ adjust_result(struct test_results *r)
 float
 get_start_middle(struct test_results *r)
 {
-	return (timeval_to_float(&r->start_middle));
+	return (gfperf_timeval_to_float(&r->start_middle));
 }
 
 float
 get_middle_end(struct test_results *r)
 {
-	return (timeval_to_float(&r->middle_end));
+	return (gfperf_timeval_to_float(&r->middle_end));
 }
 
 int

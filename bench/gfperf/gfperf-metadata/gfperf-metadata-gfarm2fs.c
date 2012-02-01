@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/xattr.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +18,10 @@
 
 #include "gfperf-lib.h"
 #include "gfperf-metadata.h"
+
+#ifdef HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
+#endif
 
 static
 gfarm_error_t
@@ -46,7 +49,7 @@ do_posix_readdir()
 	closedir(d);
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	f = (float)exec_time.tv_sec*1000000 + (float)exec_time.tv_usec;
 	f = f / (float)c;
 
@@ -54,7 +57,7 @@ do_posix_readdir()
 		f = (float)1000000/f;
 
 	printf("metadata/posix/readdir/%d = %.02f %s %g sec\n",
-	       c, f, unit, timeval_to_float(&exec_time));
+	       c, f, unit, gfperf_timeval_to_float(&exec_time));
 
 	gettimeofday(&start_time, NULL);
 	d = opendir(testdir);
@@ -68,7 +71,7 @@ do_posix_readdir()
 		c++;
 		snprintf(filename, sizeof(filename),
 			"%s/%s", testdir, de->d_name);
-		e = stat(filename, &st);
+		e = lstat(filename, &st);
 		if (e < 0) {
 			saved_errno = errno;
 			fprintf(stderr, "stat: %s\n",
@@ -81,7 +84,7 @@ do_posix_readdir()
 	closedir(d);
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	f = (float)exec_time.tv_sec*1000000 + (float)exec_time.tv_usec;
 	f = f / (float)c;
 
@@ -89,7 +92,7 @@ do_posix_readdir()
 		f = (float)1000000/f;
 
 	printf("metadata/posix/readdir+stat/%d = %.02f %s %g sec\n",
-	       c, f, unit, timeval_to_float(&exec_time));
+	       c, f, unit, gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -142,7 +145,7 @@ do_posix_stat(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
-	e = stat(names->names[0], &sb);
+	e = lstat(names->names[0], &sb);
 	if (e != 0) {
 		saved_errno = errno;
 		fprintf(stderr, "stat: %s\n",
@@ -151,7 +154,7 @@ do_posix_stat(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
-		e = stat(names->names[i], &sb);
+		e = lstat(names->names[i], &sb);
 		if (e != 0) {
 			saved_errno = errno;
 			fprintf(stderr, "stat: %s\n",
@@ -430,6 +433,7 @@ do_posix_rmdir(struct directory_names *names)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+#ifdef HAVE_SYS_XATTR_H
 static
 gfarm_error_t
 do_posix_setxattr(struct directory_names *names)
@@ -441,7 +445,12 @@ do_posix_setxattr(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
+#ifdef __APPLE_CC__
+	e = setxattr(names->names[0], XATTR_KEY, value, val_len,
+		     0, XATTR_CREATE);
+#else
 	e = setxattr(names->names[0], XATTR_KEY, value, val_len, XATTR_CREATE);
+#endif
 	if (e != 0) {
 		saved_errno = errno;
 		fprintf(stderr, "setxattr: %s\n",
@@ -450,8 +459,13 @@ do_posix_setxattr(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
+#ifdef __APPLE_CC__
+		e = setxattr(names->names[i], XATTR_KEY, value, val_len,
+			     0, XATTR_CREATE);
+#else
 		e = setxattr(names->names[i], XATTR_KEY, value, val_len,
 			     XATTR_CREATE);
+#endif
 		if (e != 0) {
 			saved_errno = errno;
 			fprintf(stderr, "setxattr: %s\n",
@@ -481,7 +495,12 @@ do_posix_getxattr(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
+#ifdef __APPLE_CC__
+	e = getxattr(names->names[0], XATTR_KEY, buf, sizeof(buf),
+		     0, XATTR_NOFOLLOW);
+#else
 	e = getxattr(names->names[0], XATTR_KEY, buf, sizeof(buf));
+#endif
 	if (e < 0) {
 		saved_errno = errno;
 		fprintf(stderr, "getxattr: %s\n",
@@ -490,7 +509,12 @@ do_posix_getxattr(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
+#ifdef __APPLE_CC__
+		e = getxattr(names->names[i], XATTR_KEY, buf, sizeof(buf),
+			     0, XATTR_NOFOLLOW);
+#else
 		e = getxattr(names->names[i], XATTR_KEY, buf, sizeof(buf));
+#endif
 		if (e < 0) {
 			saved_errno = errno;
 			fprintf(stderr, "getxattr: %s\n",
@@ -519,7 +543,11 @@ do_posix_removexattr(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
+#ifdef __APPLE_CC__
+	e = removexattr(names->names[0], XATTR_KEY, XATTR_NOFOLLOW);
+#else
 	e = removexattr(names->names[0], XATTR_KEY);
+#endif
 	if (e != 0) {
 		saved_errno = errno;
 		fprintf(stderr, "removexattr: %s\n",
@@ -528,7 +556,11 @@ do_posix_removexattr(struct directory_names *names)
 	}
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
+#ifdef __APPLE_CC__
+		e = removexattr(names->names[i], XATTR_KEY, XATTR_NOFOLLOW);
+#else
 		e = removexattr(names->names[i], XATTR_KEY);
+#endif
 		if (e != 0) {
 			saved_errno = errno;
 			fprintf(stderr, "removexattr: %s\n",
@@ -547,6 +579,7 @@ do_posix_removexattr(struct directory_names *names)
 
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif
 
 static
 gfarm_error_t
@@ -687,6 +720,7 @@ do_posix_test(struct directory_names *dirs, struct directory_names *files)
 	e = do_posix_symlink(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+#ifdef HAVE_SYS_XATTR_H
 	e = do_posix_setxattr(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -696,6 +730,7 @@ do_posix_test(struct directory_names *dirs, struct directory_names *files)
 	e = do_posix_removexattr(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+#endif
 	e = do_posix_rmdir(dirs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);

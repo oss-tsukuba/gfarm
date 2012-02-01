@@ -53,7 +53,7 @@ do_libgfarm_readdir()
 
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	f = (float)exec_time.tv_sec*1000000 + (float)exec_time.tv_usec;
 	f = f / (float)c;
 
@@ -61,7 +61,7 @@ do_libgfarm_readdir()
 		f = (float)1000000/f;
 
 	printf("metadata/libgfarm/readdir/%d = %.02f %s %g sec\n",
-	       c, f, unit, timeval_to_float(&exec_time));
+	       c, f, unit, gfperf_timeval_to_float(&exec_time));
 
 
 	gettimeofday(&start_time, NULL);
@@ -77,7 +77,7 @@ do_libgfarm_readdir()
 			break;
 		snprintf(filename, sizeof(filename),
 			"%s/%s", testdir, de->d_name);
-		e = gfs_stat_cached(filename, &st);
+		e = gfs_lstat_cached(filename, &st);
 		if (e == GFARM_ERR_NO_ERROR)
 			gfs_stat_free(&st);
 		else {
@@ -97,7 +97,7 @@ do_libgfarm_readdir()
 	}
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	f = (float)exec_time.tv_sec*1000000 + (float)exec_time.tv_usec;
 	f = f / (float)c;
 
@@ -105,7 +105,7 @@ do_libgfarm_readdir()
 		f = (float)1000000/f;
 
 	printf("metadata/libgfarm/readdir+stat/%d = %.02f %s %g sec\n",
-	       c, f, unit, timeval_to_float(&exec_time));
+	       c, f, unit, gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -158,7 +158,7 @@ do_libgfarm_stat(struct directory_names *names)
 
 	set_number(&r, names->n);
 	set_start(&r);
-	e = gfs_stat(names->names[0], &sb);
+	e = gfs_lstat(names->names[0], &sb);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "stat: %s\n",
 			gfarm_error_string(e));
@@ -167,7 +167,7 @@ do_libgfarm_stat(struct directory_names *names)
 	gfs_stat_free(&sb);
 	set_middle(&r);
 	for (i = 1; i <= names->n; i++) {
-		e = gfs_stat(names->names[i], &sb);
+		e = gfs_lstat(names->names[i], &sb);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "stat: %s\n",
 				gfarm_error_string(e));

@@ -6,7 +6,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-CFLAGS = $(COMMON_CFLAGS) -I../gfperf-lib
+CFLAGS = $(COMMON_CFLAGS) -I$(srcdir)/../gfperf-lib
 LDLIBS = $(COMMON_LDFLAGS) -L../gfperf-lib $(GFARMLIB) $(LIBS) -lgfperf
 
 PROGRAM = gfperf-metadata

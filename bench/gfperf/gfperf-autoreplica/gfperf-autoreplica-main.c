@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <libgen.h>
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
@@ -28,7 +29,7 @@ static char *filesize_string = "1G";
 static int posix_flag;
 static int number = 10;
 static char *gfarm2fs_dir = NULL;
-static int duplicate = 1;
+static int replicate = 1;
 static char *fullpath;
 static int parallel_flag = 0;
 static char *wait_time = NULL;
@@ -45,10 +46,10 @@ set_ncopy()
 	char num_str[16];
 	int num_len;
 
-	if (duplicate <= 1)
+	if (replicate <= 1)
 		return (GFARM_ERR_NO_ERROR);
 
-	num_len = snprintf(num_str, sizeof(num_str), "%d", duplicate);
+	num_len = snprintf(num_str, sizeof(num_str), "%d", replicate);
 
 	gfs_removexattr(testdir, NCOPY_KEY);
 
@@ -68,7 +69,7 @@ del_ncopy()
 {
 	gfarm_error_t e;
 
-	if (duplicate <= 1)
+	if (replicate <= 1)
 		return (GFARM_ERR_NO_ERROR);
 
 	e = gfs_removexattr(testdir, NCOPY_KEY);
@@ -133,7 +134,7 @@ usage(char *argv[])
 	fprintf(stderr, "\t [-m, --gfarm2fs <gfarm2fs mount point>] \n");
 	fprintf(stderr, "\t [-l, --filesize <file size>] \n");
 	fprintf(stderr, "\t [-f, --number <number of files>] \n");
-	fprintf(stderr, "\t [-d, --duplicate <number of duplicate>] \n");
+	fprintf(stderr, "\t [-r, --replica <number of replicas>] \n");
 	fprintf(stderr, "\t [-s, "
 		"--stop <number of seconds for stop waiting>] \n");
 #else
@@ -141,7 +142,7 @@ usage(char *argv[])
 	fprintf(stderr, "\t [-m <gfarm2fs mount point>] \n");
 	fprintf(stderr, "\t [-l <file size>] \n");
 	fprintf(stderr, "\t [-f <number of files>] \n");
-	fprintf(stderr, "\t [-d <number of duplicate>] \n");
+	fprintf(stderr, "\t [-r <number of replicas>] \n");
 	fprintf(stderr, "\t [-s <number of seconds for stop waiting>] \n");
 #endif
 	if (parallel_flag) {
@@ -160,7 +161,7 @@ gfarm_error_t
 parse_opt(int argc, char *argv[])
 {
 	int r;
-	static char *optstr = "ht:l:f:m:d:n:w:s:";
+	static char *optstr = "ht:l:f:m:r:n:w:s:";
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
 	static struct option long_options[] = {
@@ -168,7 +169,7 @@ parse_opt(int argc, char *argv[])
 		{"filesize", 1, 0, 'l'},
 		{"number", 1, 0, 'f'},
 		{"gfarm2fs", 1, 0, 'm'},
-		{"duplicate", 1, 0, 'd'},
+		{"replica", 1, 0, 'r'},
 		{"name", 1, 0, 'n'},
 		{"wait", 1, 0, 'w'},
 		{"stop", 1, 0, 's'},
@@ -195,7 +196,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'l':
 			filesize_string = optarg;
-			filesize = strtonum(filesize_string);
+			filesize = gfperf_strtonum(filesize_string);
 			if (filesize < 0) {
 				fprintf(stderr, "filesize too big!\n");
 				return (GFARM_ERR_INVALID_ARGUMENT);
@@ -207,8 +208,8 @@ parse_opt(int argc, char *argv[])
 		case 's':
 			stop_waiting = atoi(optarg);
 			break;
-		case 'd':
-			duplicate = atoi(optarg);
+		case 'r':
+			replicate = atoi(optarg);
 			break;
 		case 'm':
 			gfarm2fs_dir = optarg;
@@ -227,7 +228,7 @@ parse_opt(int argc, char *argv[])
 	if (gfarm2fs_dir) {
 		posix_flag = 1;
 		r = asprintf(&fullpath, "%s%s", gfarm2fs_dir,
-			     find_root_from_url(testdir));
+			     gfperf_find_root_from_url(testdir));
 		if (r < 0)
 			return (GFARM_ERR_NO_MEMORY);
 	} else {
@@ -261,7 +262,7 @@ dup_wait(char *path)
 
 		n = gfs_replica_info_number(ri);
 		gfs_replica_info_free(ri);
-		if (n >= duplicate)
+		if (n >= replicate)
 			break;
 		if (i >= max_wait) {
 			fprintf(stderr,
@@ -290,7 +291,7 @@ do_test_posix(struct filenames *p)
 
 	gettimeofday(&start_time, NULL);
 	for (i = 0; i < p->n; i++) {
-		e = create_file_on_local(p->filename[i], filesize);
+		e = gfperf_create_file_on_local(p->filename[i], filesize);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -312,7 +313,7 @@ do_test_posix(struct filenames *p)
 
 	del_ncopy();
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 
 	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
@@ -322,12 +323,14 @@ do_test_posix(struct filenames *p)
 		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, duplicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/gfam2fs/create/%s/%d/%d = "
 		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, duplicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 
 
 	return (GFARM_ERR_NO_ERROR);
@@ -348,7 +351,8 @@ do_test_gfarm(struct filenames *p)
 
 	gettimeofday(&start_time, NULL);
 	for (i = 0; i < p->n; i++) {
-		e = create_file_on_gfarm(p->filename[i], NULL, filesize);
+		e = gfperf_create_file_on_gfarm(p->filename[i], NULL,
+						filesize);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -361,7 +365,7 @@ do_test_gfarm(struct filenames *p)
 		gfs_unlink(p->filename[i]);
 
 	del_ncopy();
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 
 	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
@@ -371,12 +375,14 @@ do_test_gfarm(struct filenames *p)
 		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, duplicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/libgfarm/create/%s/%d/%d = "
 		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, duplicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -405,9 +411,9 @@ main(int argc, char *argv[])
 	}
 
 	if (posix_flag)
-		e = is_dir_posix(fullpath);
+		e = gfperf_is_dir_posix(fullpath);
 	else
-		e = is_dir_gfarm(fullpath);
+		e = gfperf_is_dir_gfarm(fullpath);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s is not a directory.\n",
 			fullpath);
@@ -426,7 +432,7 @@ main(int argc, char *argv[])
 
 	if (wait_time != NULL) {
 		memset(&w, 0, sizeof(w));
-		r = parse_utc_time_string(wait_time, &dst.tv_sec);
+		r = gfperf_parse_utc_time_string(wait_time, &dst.tv_sec);
 		if (r < 0) {
 			fprintf(stderr, "invalid time format\n");
 			free_filenames(filenames);
@@ -436,7 +442,7 @@ main(int argc, char *argv[])
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
-		sub_timeval(&dst, &now, &diff);
+		gfperf_sub_timeval(&dst, &now, &diff);
 		if (diff.tv_sec > MAX_WAIT_SEC) {
 			fprintf(stderr, "wait time too long!\n");
 			free_filenames(filenames);

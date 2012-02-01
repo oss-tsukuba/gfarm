@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include <gfarm/gfarm.h>
 
@@ -486,9 +487,9 @@ child_main(char *dname, int ntimes)
 
 struct process {
 	pid_t pid;
-	int stdin[2];
-	int stdout[2];
-	int stderr[2];
+	int pipe_stdin[2];
+	int pipe_stdout[2];
+	int pipe_stderr[2];
 	FILE *send_stdin;
 	FILE *recv_stdout;
 	FILE *recv_stderr;
@@ -521,8 +522,8 @@ result(const char *name, struct timeval *t1, struct timeval *t2,
 
 	printf("%9s: %6d /sec: %d proc * %4d: "
 	       "%2ld.%06ld sec: %9.3f usec * %d\n",
-	       name, num_persec, nprocs, ntimes, t2->tv_sec, t2->tv_usec,
-	       usec, n);
+	       name, num_persec, nprocs, ntimes,
+	       (long int) t2->tv_sec, (long int) t2->tv_usec, usec, n);
 }
 
 static int
@@ -662,7 +663,8 @@ watch_stderr(void *arg)
 				FD_CLR(fd, &fdset_orig);
 				continue;
 			}
-			fprintf(stderr, "[pid=%d] %s", procs[i].pid, line);
+			fprintf(stderr, "[pid=%ld] %s",
+				(long int) procs[i].pid, line);
 		}
 	}
 
@@ -734,15 +736,15 @@ main(int argc, char **argv)
 	}
 
 	for (i = 0; i < nprocs; i++) {
-		if (pipe(procs[i].stdin) == -1) {
+		if (pipe(procs[i].pipe_stdin) == -1) {
 			perror("pipe");
 			exit(EXIT_FAILURE);
 		}
-		if (pipe(procs[i].stdout) == -1) {
+		if (pipe(procs[i].pipe_stdout) == -1) {
 			perror("pipe");
 			exit(EXIT_FAILURE);
 		}
-		if (pipe(procs[i].stderr) == -1) {
+		if (pipe(procs[i].pipe_stderr) == -1) {
 			perror("pipe");
 			exit(EXIT_FAILURE);
 		}
@@ -757,15 +759,15 @@ main(int argc, char **argv)
 		} else if (pid == 0) {
 			char dname[MAX_NAMELEN];
 			snprintf(dname, MAX_NAMELEN, "%s/p%d", dir, i);
-			close(procs[i].stdin[1]);
-			close(procs[i].stdout[0]);
-			close(procs[i].stderr[0]);
-			dup2(procs[i].stdin[0], 0);
-			dup2(procs[i].stdout[1], 1);
-			dup2(procs[i].stderr[1], 2);
-			close(procs[i].stdin[0]);
-			close(procs[i].stdout[1]);
-			close(procs[i].stderr[1]);
+			close(procs[i].pipe_stdin[1]);
+			close(procs[i].pipe_stdout[0]);
+			close(procs[i].pipe_stderr[0]);
+			dup2(procs[i].pipe_stdin[0], 0);
+			dup2(procs[i].pipe_stdout[1], 1);
+			dup2(procs[i].pipe_stderr[1], 2);
+			close(procs[i].pipe_stdin[0]);
+			close(procs[i].pipe_stdout[1]);
+			close(procs[i].pipe_stderr[1]);
 			setvbuf(stdout, (char *) NULL, _IOLBF, 0);
 			setvbuf(stderr, (char *) NULL, _IOLBF, 0);
 			child_main(dname, ntimes);
@@ -774,13 +776,13 @@ main(int argc, char **argv)
 			close(2);
 			_exit(0);
 		}
-		close(procs[i].stdin[0]);
-		close(procs[i].stdout[1]);
-		close(procs[i].stderr[1]);
+		close(procs[i].pipe_stdin[0]);
+		close(procs[i].pipe_stdout[1]);
+		close(procs[i].pipe_stderr[1]);
 		procs[i].pid = pid;
-		procs[i].send_stdin = fdopen(procs[i].stdin[1], "w");
-		procs[i].recv_stdout = fdopen(procs[i].stdout[0], "r");
-		procs[i].recv_stderr = fdopen(procs[i].stderr[0], "r");
+		procs[i].send_stdin = fdopen(procs[i].pipe_stdin[1], "w");
+		procs[i].recv_stdout = fdopen(procs[i].pipe_stdout[0], "r");
+		procs[i].recv_stderr = fdopen(procs[i].pipe_stderr[0], "r");
 		if (procs[i].send_stdin == NULL ||
 		    procs[i].recv_stdout == NULL ||
 		    procs[i].recv_stderr == NULL) {
@@ -892,11 +894,12 @@ term:
 		waitpid(procs[i].pid, &status, 0);
 #if 0 /* ignore: _exit(0) only */
 		if (WEXITSTATUS(status) != 0)
-			fprintf(stderr, "[pid=%d] error\n", procs[i].pid);
+			fprintf(stderr, "[pid=%ld] error\n",
+				(long int) procs[i].pid);
 #endif
-		close(procs[i].stdin[1]);
-		close(procs[i].stdout[0]);
-		close(procs[i].stderr[0]);
+		close(procs[i].pipe_stdin[1]);
+		close(procs[i].pipe_stdout[0]);
+		close(procs[i].pipe_stderr[0]);
 	}
 
 	free(procs);

@@ -39,8 +39,8 @@ do_copy_to_gfarm()
 	src = src_filename;
 	dst = dst_filename;
 
-	if (is_file_exist_posix(src) == 0) {
-		e = create_file_on_local(src, file_size);
+	if (gfperf_is_file_exist_posix(src) == 0) {
+		e = gfperf_create_file_on_local(src, file_size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(buf);
 			return (e);
@@ -127,7 +127,7 @@ do_copy_to_gfarm()
 	}
 
 	gettimeofday(&end_time, NULL);
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	et = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	if (gfsd_hostname == NULL) {
 		e = gfs_replica_info_by_name(dst, 0, &ri);
@@ -175,8 +175,8 @@ do_copy_from_gfarm()
 	src = src_filename;
 	dst = dst_filename;
 
-	if (is_file_exist_gfarm(src) == 0) {
-		e = create_file_on_gfarm(src, gfsd_hostname, file_size);
+	if (gfperf_is_file_exist_gfarm(src) == 0) {
+		e = gfperf_create_file_on_gfarm(src, gfsd_hostname, file_size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(buf);
 			return (e);
@@ -249,7 +249,7 @@ do_copy_from_gfarm()
 	}
 
 	gettimeofday(&end_time, NULL);
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	et = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	if (gfsd_hostname == NULL) {
 		e = gfs_replica_info_by_name(src, 0, &ri);

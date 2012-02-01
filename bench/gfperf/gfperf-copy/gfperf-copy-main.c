@@ -4,7 +4,6 @@
 
 
 #include "gfperf-lib.h"
-#include <sys/vfs.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,7 +91,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'l':
 			file_size_string = optarg;
-			file_size = strtonum(optarg);
+			file_size = gfperf_strtonum(optarg);
 			if (file_size < 0) {
 				fprintf(stderr,
 					"file size lower than zero.\n");
@@ -101,7 +100,7 @@ parse_opt(int argc, char *argv[])
 			break;
 		case 'b':
 			buf_size_string = optarg;
-			lltmp = strtonum(optarg);
+			lltmp = gfperf_strtonum(optarg);
 			if (lltmp < 0) {
 				fprintf(stderr,
 					"buffer size lower than zero.\n");
@@ -127,19 +126,19 @@ parse_opt(int argc, char *argv[])
 	if (dst_url == NULL)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
-	if (is_file_url(src_url)) {
-		if (is_file_url(dst_url)) {
+	if (gfperf_is_file_url(src_url)) {
+		if (gfperf_is_file_url(dst_url)) {
 			fprintf(stderr,
 				"either src or dst must be gfarm url\n");
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		} else {
 			direction = LOCAL_TO_GFARM;
-			src_url = &src_url[FILE_URL_PREFIX_LEN];
+			src_url = &src_url[GFPERF_FILE_URL_PREFIX_LEN];
 		}
 	} else {
-		if (is_file_url(dst_url)) {
+		if (gfperf_is_file_url(dst_url)) {
 			direction = GFARM_TO_LOCAL;
-			dst_url = &dst_url[FILE_URL_PREFIX_LEN];
+			dst_url = &dst_url[GFPERF_FILE_URL_PREFIX_LEN];
 		} else {
 			fprintf(stderr,
 				"either src or dst must be file url\n");
