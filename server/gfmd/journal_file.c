@@ -865,17 +865,17 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		 * been stored into database.
 		 */
 		*rposp = max_seqnum_next_pos;
-		*rlapp = 0;
+		*rlapp = 1; /* must be > 0 */
 		*wposp = max_seqnum_next_pos;
-		*wlapp = 0;
+		*wlapp = 1; /* must be > 0 */
 	} else if (min_seqnum_pos < max_seqnum_next_pos) {
 		/*
 		 * The read-position is less than the writer-position.
 		 */
 		*rposp = min_seqnum_pos;
-		*rlapp = 0;
+		*rlapp = 1; /* must be > 0 */
 		*wposp = max_seqnum_next_pos;
-		*wlapp = 0;
+		*wlapp = 1; /* must be > 0 */
 	} else {
 		/*
 		 * The read-position is greater than the write-position.
@@ -883,9 +883,9 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 		 * the reader.
 		 */
 		*rposp = min_seqnum_pos;
-		*rlapp = 0;
+		*rlapp = 1; /* must be > 0 */
 		*wposp = max_seqnum_next_pos;
-		*wlapp = 1;
+		*wlapp = *rlapp + 1;
 	}
 
 	if (lseek(rfd, *rposp, SEEK_SET) < 0)
@@ -1303,8 +1303,9 @@ journal_file_reader_reopen(struct journal_file *jf,
 	gfarm_error_t e;
 	int fd = -1;
 	off_t rpos, wpos;
-	gfarm_uint64_t rlap, wlap;
+	gfarm_uint64_t rlap, wlap, cur_wlap;
 	off_t tail;
+	struct journal_file_writer *writer = &jf->writer;
 	static const char *diag = "journal_file_reader_reopen";
 
 	if ((fd = open(jf->path, O_RDONLY)) == -1)
@@ -1314,12 +1315,19 @@ journal_file_reader_reopen(struct journal_file *jf,
 	assert(*readerp == NULL || (*readerp)->xdr == NULL);
 	if ((e = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
 	    &rlap, &wpos, &wlap, &tail)) != GFARM_ERR_NO_ERROR)
-		;
-	else if (*readerp)
-		e = journal_file_reader_init(jf, fd, rpos, rlap, 0,
-		    *readerp);
+		goto unlock;
+
+	cur_wlap = writer->lap;
+	if (rlap < wlap)
+		rlap = cur_wlap - 1;
+	else
+		rlap = cur_wlap;
+
+	if (*readerp)
+		e = journal_file_reader_init(jf, fd, rpos, rlap, 0, *readerp);
 	else
 		e = journal_file_reader_new(jf, fd, rpos, rlap, 0, readerp);
+unlock:
 	journal_file_mutex_unlock(jf, diag);
 	if (e != GFARM_ERR_NO_ERROR && fd != -1)
 		(void)close(fd);
