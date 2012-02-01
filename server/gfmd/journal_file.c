@@ -1301,7 +1301,7 @@ journal_file_reader_reopen(struct journal_file *jf,
 	struct journal_file_reader **readerp, gfarm_uint64_t seqnum)
 {
 	gfarm_error_t e;
-	int fd;
+	int fd = -1;
 	off_t rpos, wpos;
 	gfarm_uint64_t rlap, wlap;
 	off_t tail;
@@ -1321,6 +1321,8 @@ journal_file_reader_reopen(struct journal_file *jf,
 	else
 		e = journal_file_reader_new(jf, fd, rpos, rlap, 0, readerp);
 	journal_file_mutex_unlock(jf, diag);
+	if (e != GFARM_ERR_NO_ERROR && fd != -1)
+		(void)close(fd);
 	return (e);
 }
 
