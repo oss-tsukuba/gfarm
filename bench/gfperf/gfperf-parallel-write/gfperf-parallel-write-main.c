@@ -221,7 +221,7 @@ do_sequential_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)(size) / t;
 	printf("parallel/%s/io/gfarm2fs/%s/sequential/average/%s/%s/%s/%s"
@@ -287,7 +287,7 @@ do_random_write_posix(const char *filename, char *buf)
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/gfarm2fs/%s/random/average/%s/%s/%s/%s = "
@@ -310,9 +310,10 @@ do_test_posix(const char *filename, const char *gfarm_filename)
 
 	size = (overwrite_flag) ? filesize : 1;
 
-	if (!overwrite_flag || (is_file_exist_gfarm(gfarm_filename) == 0)) {
-		e = create_file_on_gfarm(gfarm_filename, gfsd_hostname,
-					 filesize);
+	if (!overwrite_flag ||
+	    (gfperf_is_file_exist_gfarm(gfarm_filename) == 0)) {
+		e = gfperf_create_file_on_gfarm(gfarm_filename, gfsd_hostname,
+						filesize);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -409,7 +410,7 @@ do_random_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)size / t;
 	printf("parallel/%s/io/libgfarm/%s/random/average/%s/%s/%s/%s = "
@@ -467,7 +468,7 @@ do_sequential_write_gfarm(const char *filename, char *buf)
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)(size) / t;
 	printf("parallel/%s/io/libgfarm/%s/sequential/average/%s/%s/%s/%s"
@@ -491,8 +492,9 @@ do_test_gfarm(const char *filename)
 
 	tmp = (overwrite_flag) ? filesize : 1;
 
-	if (!overwrite_flag || (is_file_exist_gfarm(filename) == 0)) {
-		e = create_file_on_gfarm(filename, gfsd_hostname, tmp);
+	if (!overwrite_flag ||
+	    (gfperf_is_file_exist_gfarm(filename) == 0)) {
+		e = gfperf_create_file_on_gfarm(filename, gfsd_hostname, tmp);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -565,7 +567,7 @@ main(int argc, char *argv[])
 		}
 	} else {
 		r = asprintf(&dir, "%s%s",
-			     gfarm2fsdir, find_root_from_url(testdir));
+			     gfarm2fsdir, gfperf_find_root_from_url(testdir));
 		if (r < 0) {
 			fprintf(stderr, "can not allocate memory!\n");
 			gfarm_terminate();
@@ -574,9 +576,9 @@ main(int argc, char *argv[])
 	}
 
 	if (posix_flag)
-		e = is_dir_posix(dir);
+		e = gfperf_is_dir_posix(dir);
 	else
-		e = is_dir_gfarm(testdir);
+		e = gfperf_is_dir_gfarm(testdir);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s is not a directory.\n",
 			testdir);
@@ -599,7 +601,7 @@ main(int argc, char *argv[])
 
 	if (wait_time != NULL) {
 		memset(&w, 0, sizeof(w));
-		r = parse_utc_time_string(wait_time, &dst.tv_sec);
+		r = gfperf_parse_utc_time_string(wait_time, &dst.tv_sec);
 		if (r < 0) {
 			fprintf(stderr, "invalid time format\n");
 			free(dir);
@@ -608,7 +610,7 @@ main(int argc, char *argv[])
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
-		sub_timeval(&dst, &now, &diff);
+		gfperf_sub_timeval(&dst, &now, &diff);
 		if (diff.tv_sec > MAX_WAIT_SEC) {
 			fprintf(stderr, "wait time too long!\n");
 			free(dir);

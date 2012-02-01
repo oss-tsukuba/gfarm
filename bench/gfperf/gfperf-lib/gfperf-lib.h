@@ -19,23 +19,25 @@
 int asprintf(char **strp, const char *fmt, ...);
 #endif
 
-float timeval_to_float(struct timeval *a);
+float gfperf_timeval_to_float(struct timeval *a);
 
-gfarm_error_t create_file_on_local(const char *filename, long long file_size);
-gfarm_error_t create_file_on_gfarm(const char *url, char *hostname,
+gfarm_error_t
+gfperf_create_file_on_local(const char *filename, long long file_size);
+gfarm_error_t
+gfperf_create_file_on_gfarm(const char *url, char *hostname,
 				   long long file_size);
 
 long long gfperf_strtonum(const char *str);
-void sub_timeval(const struct timeval *a, const struct timeval *b,
-		 struct timeval *c);
-const char *find_root_from_url(const char *url);
+void gfperf_sub_timeval(const struct timeval *a, const struct timeval *b,
+			struct timeval *c);
+const char *gfperf_find_root_from_url(const char *url);
 
-gfarm_error_t is_dir_posix(char *path);
-gfarm_error_t is_dir_gfarm(char *path);
-int is_file_url(const char *url);
-int parse_utc_time_string(const char *s, time_t *ret);
+gfarm_error_t gfperf_is_dir_posix(char *path);
+gfarm_error_t gfperf_is_dir_gfarm(char *path);
+int gfperf_is_file_url(const char *url);
+int gfperf_parse_utc_time_string(const char *s, time_t *ret);
 
-int is_file_exist_gfarm(const char *filename);
-int is_file_exist_posix(const char *filename);
+int gfperf_is_file_exist_gfarm(const char *filename);
+int gfperf_is_file_exist_posix(const char *filename);
 
 #endif

@@ -168,7 +168,7 @@ main(int argc, char *argv[])
 
 	if (wait_time != NULL) {
 		memset(&w, 0, sizeof(w));
-		r = parse_utc_time_string(wait_time, &dst.tv_sec);
+		r = gfperf_parse_utc_time_string(wait_time, &dst.tv_sec);
 		if (r < 0) {
 			fprintf(stderr, "invalid time format\n");
 			gfarm_terminate();
@@ -176,7 +176,7 @@ main(int argc, char *argv[])
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
-		sub_timeval(&dst, &now, &diff);
+		gfperf_sub_timeval(&dst, &now, &diff);
 		if (diff.tv_sec > MAX_WAIT_SEC) {
 			fprintf(stderr, "wait time too long!\n");
 			gfarm_terminate();

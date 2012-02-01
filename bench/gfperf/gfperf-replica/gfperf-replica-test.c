@@ -81,7 +81,8 @@ do_test()
 	struct timeval start_time, end_time, exec_time;
 	float f, t;
 
-	e = create_file_on_gfarm(testdir_filename, from_gfsd_name, file_size);
+	e = gfperf_create_file_on_gfarm(testdir_filename,
+					from_gfsd_name, file_size);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
@@ -100,7 +101,7 @@ do_test()
 		return (e);
 	}
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	t = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 	f = (float)file_size / t;
 	if (parallel_flag)

@@ -126,8 +126,8 @@ parse_opt(int argc, char *argv[])
 	if (dst_url == NULL)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
-	if (is_file_url(src_url)) {
-		if (is_file_url(dst_url)) {
+	if (gfperf_is_file_url(src_url)) {
+		if (gfperf_is_file_url(dst_url)) {
 			fprintf(stderr,
 				"either src or dst must be gfarm url\n");
 			return (GFARM_ERR_INVALID_ARGUMENT);
@@ -136,7 +136,7 @@ parse_opt(int argc, char *argv[])
 			src_url = &src_url[FILE_URL_PREFIX_LEN];
 		}
 	} else {
-		if (is_file_url(dst_url)) {
+		if (gfperf_is_file_url(dst_url)) {
 			direction = GFARM_TO_LOCAL;
 			dst_url = &dst_url[FILE_URL_PREFIX_LEN];
 		} else {

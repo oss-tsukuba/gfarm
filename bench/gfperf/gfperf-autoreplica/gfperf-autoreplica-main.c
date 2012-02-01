@@ -228,7 +228,7 @@ parse_opt(int argc, char *argv[])
 	if (gfarm2fs_dir) {
 		posix_flag = 1;
 		r = asprintf(&fullpath, "%s%s", gfarm2fs_dir,
-			     find_root_from_url(testdir));
+			     gfperf_find_root_from_url(testdir));
 		if (r < 0)
 			return (GFARM_ERR_NO_MEMORY);
 	} else {
@@ -291,7 +291,7 @@ do_test_posix(struct filenames *p)
 
 	gettimeofday(&start_time, NULL);
 	for (i = 0; i < p->n; i++) {
-		e = create_file_on_local(p->filename[i], filesize);
+		e = gfperf_create_file_on_local(p->filename[i], filesize);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -313,7 +313,7 @@ do_test_posix(struct filenames *p)
 
 	del_ncopy();
 
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 
 	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
@@ -323,12 +323,14 @@ do_test_posix(struct filenames *p)
 		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, replicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/gfam2fs/create/%s/%d/%d = "
 		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, replicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 
 
 	return (GFARM_ERR_NO_ERROR);
@@ -349,7 +351,8 @@ do_test_gfarm(struct filenames *p)
 
 	gettimeofday(&start_time, NULL);
 	for (i = 0; i < p->n; i++) {
-		e = create_file_on_gfarm(p->filename[i], NULL, filesize);
+		e = gfperf_create_file_on_gfarm(p->filename[i], NULL,
+						filesize);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -362,7 +365,7 @@ do_test_gfarm(struct filenames *p)
 		gfs_unlink(p->filename[i]);
 
 	del_ncopy();
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 
 	f = (float)(filesize * p->n) /
 		((float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000);
@@ -372,12 +375,14 @@ do_test_gfarm(struct filenames *p)
 		       "%.02f bytes/sec %g sec\n",
 		       group_name,
 		       filesize_string,
-		       number, replicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 	else
 		printf("autoreplica/libgfarm/create/%s/%d/%d = "
 		       "%.02f bytes/sec %g sec\n",
 		       filesize_string,
-		       number, replicate, f, timeval_to_float(&exec_time));
+		       number, replicate, f,
+		       gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -406,9 +411,9 @@ main(int argc, char *argv[])
 	}
 
 	if (posix_flag)
-		e = is_dir_posix(fullpath);
+		e = gfperf_is_dir_posix(fullpath);
 	else
-		e = is_dir_gfarm(fullpath);
+		e = gfperf_is_dir_gfarm(fullpath);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s is not a directory.\n",
 			fullpath);
@@ -427,7 +432,7 @@ main(int argc, char *argv[])
 
 	if (wait_time != NULL) {
 		memset(&w, 0, sizeof(w));
-		r = parse_utc_time_string(wait_time, &dst.tv_sec);
+		r = gfperf_parse_utc_time_string(wait_time, &dst.tv_sec);
 		if (r < 0) {
 			fprintf(stderr, "invalid time format\n");
 			free_filenames(filenames);
@@ -437,7 +442,7 @@ main(int argc, char *argv[])
 		}
 		dst.tv_usec = 0;
 		gettimeofday(&now, NULL);
-		sub_timeval(&dst, &now, &diff);
+		gfperf_sub_timeval(&dst, &now, &diff);
 		if (diff.tv_sec > MAX_WAIT_SEC) {
 			fprintf(stderr, "wait time too long!\n");
 			free_filenames(filenames);

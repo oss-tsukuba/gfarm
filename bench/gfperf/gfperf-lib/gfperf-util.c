@@ -18,42 +18,42 @@
 int
 asprintf(char **strp, const char *fmt, ...)
 {
-     int ret, size;
-     char *bufp;
-     va_list ap;
-     va_start(ap, fmt);
-     size = vsnprintf(NULL, 0, fmt, ap);
-     if (size < 0) {
-	  va_end(ap);
-	  return size;
-     }
-     GFARM_MALLOC_ARRAY(bufp, size+1);
-     ret = vsnprintf(bufp, size+1, fmt, ap);
-     va_end(ap);
-     *strp = bufp;
-     return ret;
+	int ret, size;
+	char *bufp;
+	va_list ap;
+	va_start(ap, fmt);
+	size = vsnprintf(NULL, 0, fmt, ap);
+	if (size < 0) {
+		va_end(ap);
+		return (size);
+	}
+	GFARM_MALLOC_ARRAY(bufp, size+1);
+	ret = vsnprintf(bufp, size+1, fmt, ap);
+	va_end(ap);
+	*strp = bufp;
+	return (ret);
 }
 
 time_t
 timegm(struct tm *tm)
 {
-     time_t ret;
-     char *tz;
+	time_t ret;
+	char *tz;
 
-     tz = getenv("TZ");
-     setenv("TZ", "UTC", 1);
-     tzset();
-     ret = mktime(tm);
-     if (tz)
-	  setenv("TZ", tz, 1);
-     else
-	  unsetenv("TZ");
-     tzset();
-     return ret;
+	tz = getenv("TZ");
+	setenv("TZ", "UTC", 1);
+	tzset();
+	ret = mktime(tm);
+	if (tz)
+		setenv("TZ", tz, 1);
+	else
+		unsetenv("TZ");
+	tzset();
+	return (ret);
 }
 #endif
 
-float timeval_to_float(struct timeval *a)
+float gfperf_timeval_to_float(struct timeval *a)
 {
 	return (((float)a->tv_sec) + ((float)a->tv_usec)/1000000);
 }
@@ -103,8 +103,8 @@ gfperf_strtonum(const char *str)
 }
 
 void
-sub_timeval(const struct timeval *a, const struct timeval *b,
-	    struct timeval *c)
+gfperf_sub_timeval(const struct timeval *a, const struct timeval *b,
+		   struct timeval *c)
 {
 
 	if (a->tv_usec < b->tv_usec) {
@@ -117,7 +117,7 @@ sub_timeval(const struct timeval *a, const struct timeval *b,
 }
 
 gfarm_error_t
-is_dir_posix(char *path)
+gfperf_is_dir_posix(char *path)
 {
 	struct stat sb;
 	int e;
@@ -133,7 +133,7 @@ is_dir_posix(char *path)
 }
 
 gfarm_error_t
-is_dir_gfarm(char *path)
+gfperf_is_dir_gfarm(char *path)
 {
 	struct gfs_stat sb;
 	int e;
@@ -153,7 +153,7 @@ is_dir_gfarm(char *path)
 }
 
 const char *
-find_root_from_url(const char *url)
+gfperf_find_root_from_url(const char *url)
 {
 	int i = 0;
 	const char *p = url;
@@ -170,12 +170,12 @@ find_root_from_url(const char *url)
 	return (NULL);
 }
 
-int is_file_url(const char *url)
+int gfperf_is_file_url(const char *url)
 {
 	return (strncmp(url, FILE_URL_PREFIX, FILE_URL_PREFIX_LEN) == 0);
 }
 
-int parse_utc_time_string(const char *s, time_t *ret)
+int gfperf_parse_utc_time_string(const char *s, time_t *ret)
 {
 	char *r;
 	time_t t;
@@ -193,7 +193,7 @@ int parse_utc_time_string(const char *s, time_t *ret)
 	return (0);
 }
 
-int is_file_exist_posix(const char *filename)
+int gfperf_is_file_exist_posix(const char *filename)
 {
 	struct stat buf;
 	int r;
@@ -205,7 +205,7 @@ int is_file_exist_posix(const char *filename)
 	return (1);
 }
 
-int is_file_exist_gfarm(const char *filename)
+int gfperf_is_file_exist_gfarm(const char *filename)
 {
 	struct gfs_stat buf;
 	int r;

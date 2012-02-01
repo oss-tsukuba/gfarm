@@ -30,9 +30,10 @@ do_copy() {
 		return (GFARM_ERR_NO_MEMORY);
 
 	if (gfarm_is_url(src_url)) {
-		if (is_file_exist_gfarm(src_filename) == 0) {
-			e = create_file_on_gfarm(src_filename, gfsd_hostname,
-						 file_size);
+		if (gfperf_is_file_exist_gfarm(src_filename) == 0) {
+			e = gfperf_create_file_on_gfarm(src_filename,
+							gfsd_hostname,
+							file_size);
 			if (e != GFARM_ERR_NO_ERROR) {
 				free(buf);
 				return (e);
@@ -55,7 +56,7 @@ do_copy() {
 			}
 			gfs_replica_info_free(ri);
 		}
-		root = find_root_from_url(src_url);
+		root = gfperf_find_root_from_url(src_url);
 		if (root == NULL) {
 			free(buf);
 			return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
@@ -74,7 +75,8 @@ do_copy() {
 	}
 
 	if (gfarm_is_url(dst_url)) {
-		e = create_file_on_gfarm(dst_filename, gfsd_hostname, 1);
+		e = gfperf_create_file_on_gfarm(dst_filename,
+						gfsd_hostname, 1);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(buf);
 			return (e);
@@ -85,7 +87,7 @@ do_copy() {
 									 0));
 			gfs_replica_info_free(ri);
 		}
-		root = find_root_from_url(dst_url);
+		root = gfperf_find_root_from_url(dst_url);
 		if (root == NULL) {
 			free(buf);
 			return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
@@ -99,8 +101,9 @@ do_copy() {
 			return (GFARM_ERR_NO_MEMORY);
 		}
 
-		if (is_file_exist_posix(src_filename) == 0) {
-			e = create_file_on_local(src_filename, file_size);
+		if (gfperf_is_file_exist_posix(src_filename) == 0) {
+			e = gfperf_create_file_on_local(src_filename,
+							file_size);
 			if (e != GFARM_ERR_NO_ERROR) {
 				free(buf);
 				return (e);
@@ -169,7 +172,7 @@ do_copy() {
 		return (GFARM_ERR_INPUT_OUTPUT);
 	}
 	gettimeofday(&end_time, NULL);
-	sub_timeval(&end_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &start_time, &exec_time);
 	et = (float)exec_time.tv_sec + (float)exec_time.tv_usec/1000000;
 
 	free(buf);

@@ -140,29 +140,29 @@ do_test_posix()
 	do_rmdir_posix(testdir);
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&middle_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&middle_time, &start_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000 / f;
 		printf("metadata/posix/tree/create/%d/%d = %.02f ops %g sec\n",
-		       width, depth, f, timeval_to_float(&exec_time));
+		       width, depth, f, gfperf_timeval_to_float(&exec_time));
 	} else
 		printf("metadata/posix/tree/create/%d/%d = %ld usec %g sec\n",
 		       width, depth,
 		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
-		       timeval_to_float(&exec_time));
+		       gfperf_timeval_to_float(&exec_time));
 
-	sub_timeval(&end_time, &middle_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &middle_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
 		printf("metadata/posix/tree/remove/%d/%d = %.02f ops %g sec\n",
-		       width, depth, f, timeval_to_float(&exec_time));
+		       width, depth, f, gfperf_timeval_to_float(&exec_time));
 	} else
 		printf("metadata/posix/tree/remove/%d/%d = %ld usec %g sec\n",
 		       width, depth,
 		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
-		       timeval_to_float(&exec_time));
+		       gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 
@@ -265,33 +265,33 @@ do_test_gfarm()
 	do_rmdir_gfarm(testdir);
 	gettimeofday(&end_time, NULL);
 
-	sub_timeval(&middle_time, &start_time, &exec_time);
+	gfperf_sub_timeval(&middle_time, &start_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
 		printf("metadata/libgfarm/tree/create/%d/%d = %.02f ops"
 		       " %g sec\n",
-		       width, depth, f, timeval_to_float(&exec_time));
+		       width, depth, f, gfperf_timeval_to_float(&exec_time));
 	} else
 		printf("metadata/libgfarm/tree/create/%d/%d = %ld usec"
 		       " %g sec\n",
 		       width, depth,
 		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
-		       timeval_to_float(&exec_time));
+		       gfperf_timeval_to_float(&exec_time));
 
-	sub_timeval(&end_time, &middle_time, &exec_time);
+	gfperf_sub_timeval(&end_time, &middle_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
 		f = (float)exec_time.tv_sec*1000000 + exec_time.tv_usec;
 		f = (float)1000000/f;
 		printf("metadata/libgfarm/tree/remove/%d/%d = %.02f ops"
 		       " %g sec\n",
-		       width, depth, f, timeval_to_float(&exec_time));
+		       width, depth, f, gfperf_timeval_to_float(&exec_time));
 	} else
 		printf("metadata/libgfarm/tree/remove/%d/%d = %ld usec"
 		       " %g sec\n",
 		       width, depth,
 		       exec_time.tv_sec*1000000 + exec_time.tv_usec,
-		       timeval_to_float(&exec_time));
+		       gfperf_timeval_to_float(&exec_time));
 
 	return (GFARM_ERR_NO_ERROR);
 
@@ -368,7 +368,7 @@ parse_opt(int argc, char *argv[])
 		}
 	}
 
-	if (is_file_url(testdir)) {
+	if (gfperf_is_file_url(testdir)) {
 		posix_flag = 1;
 		testdir = &testdir[FILE_URL_PREFIX_LEN];
 	} else
@@ -397,9 +397,9 @@ main(int argc, char *argv[])
 	}
 
 	if (posix_flag)
-		e = is_dir_posix(testdir);
+		e = gfperf_is_dir_posix(testdir);
 	else
-		e = is_dir_gfarm(testdir);
+		e = gfperf_is_dir_gfarm(testdir);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s is not a directory.\n",
 			testdir);

@@ -21,8 +21,8 @@
 
 
 gfarm_error_t
-create_file_on_gfarm(const char *url, char *hostname,
-		     long long file_size)
+gfperf_create_file_on_gfarm(const char *url, char *hostname,
+			    long long file_size)
 {
 	const char *filename;
 	char *buf;
@@ -95,7 +95,7 @@ err_return:
 }
 
 gfarm_error_t
-create_file_on_local(const char *filename, long long file_size)
+gfperf_create_file_on_local(const char *filename, long long file_size)
 {
 	char *buf;
 	long long leftsize;
