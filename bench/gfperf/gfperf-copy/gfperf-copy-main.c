@@ -133,12 +133,12 @@ parse_opt(int argc, char *argv[])
 			return (GFARM_ERR_INVALID_ARGUMENT);
 		} else {
 			direction = LOCAL_TO_GFARM;
-			src_url = &src_url[FILE_URL_PREFIX_LEN];
+			src_url = &src_url[GFPERF_FILE_URL_PREFIX_LEN];
 		}
 	} else {
 		if (gfperf_is_file_url(dst_url)) {
 			direction = GFARM_TO_LOCAL;
-			dst_url = &dst_url[FILE_URL_PREFIX_LEN];
+			dst_url = &dst_url[GFPERF_FILE_URL_PREFIX_LEN];
 		} else {
 			fprintf(stderr,
 				"either src or dst must be file url\n");

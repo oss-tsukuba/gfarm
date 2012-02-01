@@ -181,7 +181,8 @@ gfperf_find_root_from_url(const char *url)
 
 int gfperf_is_file_url(const char *url)
 {
-	return (strncmp(url, FILE_URL_PREFIX, FILE_URL_PREFIX_LEN) == 0);
+	return (strncmp(url, GFPERF_FILE_URL_PREFIX,
+			GFPERF_FILE_URL_PREFIX_LEN) == 0);
 }
 
 int gfperf_parse_utc_time_string(const char *s, time_t *ret)

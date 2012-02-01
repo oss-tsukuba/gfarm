@@ -370,7 +370,7 @@ parse_opt(int argc, char *argv[])
 
 	if (gfperf_is_file_url(testdir)) {
 		posix_flag = 1;
-		testdir = &testdir[FILE_URL_PREFIX_LEN];
+		testdir = &testdir[GFPERF_FILE_URL_PREFIX_LEN];
 	} else
 		posix_flag = 0;
 

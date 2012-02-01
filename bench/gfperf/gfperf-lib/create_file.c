@@ -34,7 +34,7 @@ gfperf_create_file_on_gfarm(const char *url, char *hostname,
 
 	filename = url;
 
-	GFARM_CALLOC_ARRAY(buf, COPY_BUF_SIZE);
+	GFARM_CALLOC_ARRAY(buf, GFPERF_COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
@@ -72,7 +72,8 @@ gfperf_create_file_on_gfarm(const char *url, char *hostname,
 	}
 
 	for (leftsize = file_size; leftsize > 0 ; leftsize -= ret) {
-		s = (leftsize < COPY_BUF_SIZE) ? leftsize : COPY_BUF_SIZE;
+		s = (leftsize < GFPERF_COPY_BUF_SIZE) ?
+			leftsize : GFPERF_COPY_BUF_SIZE;
 		e = gfs_pio_write(fp, buf, s, &ret);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "write: %s\n",
@@ -102,7 +103,7 @@ gfperf_create_file_on_local(const char *filename, long long file_size)
 	int ret, s;
 	int fp;
 
-	GFARM_CALLOC_ARRAY(buf, COPY_BUF_SIZE);
+	GFARM_CALLOC_ARRAY(buf, GFPERF_COPY_BUF_SIZE);
 	if (buf == NULL) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
@@ -116,7 +117,8 @@ gfperf_create_file_on_local(const char *filename, long long file_size)
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 	for (leftsize = file_size; leftsize > 0 ; leftsize -= ret) {
-		s = (leftsize < COPY_BUF_SIZE) ? leftsize : COPY_BUF_SIZE;
+		s = (leftsize < GFPERF_COPY_BUF_SIZE) ?
+			leftsize : GFPERF_COPY_BUF_SIZE;
 		ret = write(fp, buf, s);
 		if (ret < 0) {
 			fprintf(stderr, "write: %s\n",

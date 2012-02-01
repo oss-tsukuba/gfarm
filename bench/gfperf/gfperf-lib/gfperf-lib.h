@@ -11,9 +11,9 @@
 #ifndef _GFPERF_LIB_H_
 #define _GFPERF_LIB_H_
 
-#define COPY_BUF_SIZE (4*1024*1024)
-#define FILE_URL_PREFIX "file://"
-#define FILE_URL_PREFIX_LEN 7
+#define GFPERF_COPY_BUF_SIZE (4*1024*1024)
+#define GFPERF_FILE_URL_PREFIX "file://"
+#define GFPERF_FILE_URL_PREFIX_LEN 7
 
 #ifdef sun
 int asprintf(char **strp, const char *fmt, ...);
