@@ -51,10 +51,10 @@ replica: [
    {testdir: "gfarm:///tmp", src: "gfsd1.local", dst: "gfsd0.local", filesize: "1M"}
 	 ]
 autoreplica: [
-   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", duplicate: "1"},
-   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", duplicate: "1"},
-   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", duplicate: "2"},
-   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", duplicate: "2"}
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "1"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "1"},
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "2"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"}
 	 ]
 parallel: {
   group1: [
@@ -72,13 +72,13 @@ parallel: {
 }
 parallel-autoreplica: {
   group4: [
-     {testdir: "gfarm:///tmp1", filesize: "1M", number: "3", duplicate: "2"},
-     {testdir: "gfarm:///tmp2", filesize: "1M", number: "3", duplicate: "2"},
-     {testdir: "gfarm:///tmp3", filesize: "1M", number: "3", duplicate: "2"},
-     {testdir: "gfarm:///tmp4", filesize: "1M", number: "3", duplicate: "2"}
+     {testdir: "gfarm:///tmp1", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp2", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp3", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp4", filesize: "1M", number: "3", replica: "2"}
        ],
   group5: [
-     {testdir: "gfarm:///tmp1", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", duplicate: "2"},
-     {testdir: "gfarm:///tmp2", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", duplicate: "2"}
+     {testdir: "gfarm:///tmp1", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp2", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"}
        ]    
 }
