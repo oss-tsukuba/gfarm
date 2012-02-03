@@ -166,8 +166,7 @@ gfarm_modify_host(const char *hostname, int port,
 			return (e2);
 		host_info_needs_free = 1;
 		if (!add_aliases) {
-			/* XXX - do check_hostaliases() here, too. */
-			hostaliases = hostaliases;
+			/* XXX - do check_hostaliases() against hostaliases */
 		} else {
 			e = check_hostaliases(
 			    gfarm_strarray_length(hostaliases), hostaliases);

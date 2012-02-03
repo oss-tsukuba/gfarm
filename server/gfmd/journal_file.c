@@ -1666,7 +1666,13 @@ journal_read_rec_header(struct gfp_xdr *xdr, enum journal_operation *opep,
 		    gfarm_error_string(e));
 		return (e);
 	}
-	if (ope < 0 || ope >= GFM_JOURNAL_OPERATION_MAX || len < 0 ||
+	/*
+	 * cast "(unsigned)ope" is to shut up the following warning from clang
+	 * against comparison "ope < 0":
+	 *	comparison of unsigned enum expression < 0 is always false
+	 *	[-Wtautological-compare]
+	 */
+	if ((unsigned)ope >= GFM_JOURNAL_OPERATION_MAX ||
 	    len >= JOURNAL_RECORD_SIZE_MAX - header_size) {
 		e = GFARM_ERR_INTERNAL_ERROR;
 		gflog_error(GFARM_MSG_1002909,
