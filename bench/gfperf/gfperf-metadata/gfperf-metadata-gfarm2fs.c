@@ -249,7 +249,7 @@ do_posix_utimes(struct directory_names *names)
 	printf("metadata/posix/startup/utimes = %.2f %s %g sec\n",
 	       r.startup, unit, get_start_middle(&r));
 	printf("metadata/posix/average/%d/utimes = %.2f %s %g sec\n",
-	       loop_number, r.average, unit, get_start_middle(&r));
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }

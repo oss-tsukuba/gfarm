@@ -444,7 +444,7 @@ do_libgfarm_rmdir(struct directory_names *names)
 	printf("metadata/libgfarm/startup/rmdir = %.2f %s %g sec\n",
 	       r.startup, unit, get_start_middle(&r));
 	printf("metadata/libgfarm/average/%d/rmdir = %.2f %s %g sec\n",
-	       loop_number, r.average, unit, get_start_middle(&r));
+	       loop_number, r.average, unit, get_middle_end(&r));
 
 	return (GFARM_ERR_NO_ERROR);
 }
