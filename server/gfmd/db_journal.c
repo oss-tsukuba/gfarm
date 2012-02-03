@@ -2210,7 +2210,7 @@ db_journal_read_deadfilecopy(struct gfp_xdr *xdr,
 		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	memset(arg, 0, sizeof(arg));
+	memset(arg, 0, sizeof(*arg));
 	if ((e = gfp_xdr_recv(xdr, 1, &eof,
 	    GFM_JOURNAL_DEADFILECOPY_XDR_FMT,
 	    &arg->inum,
