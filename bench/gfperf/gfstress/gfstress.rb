@@ -108,7 +108,7 @@ $config[:number].times { |i|
 
   if (!$config[:gfarm2fs].nil?)
     $commands.push("gfperf-metadata -t file://#{$full_path}/metadata2/#{i} -n 500")
-    $commands.push("gfperf-tree -t file://#{$full_path}/tree2/#{i}")
+    $commands.push("gfperf-tree -t file://#{$full_path}/tree2/#{i} -w 3 -d 5")
     $gfsds.each {|g|
       $commands.push("gfperf-read -t #{$top_dir}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
       $commands.push("gfperf-write -t #{$top_dir}/io2/#{i} -m #{$config[:gfarm2fs]} -l 1G -g #{g} -k -1")
