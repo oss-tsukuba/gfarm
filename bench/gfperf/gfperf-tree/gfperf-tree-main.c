@@ -88,42 +88,26 @@ static
 gfarm_error_t
 do_mkdir_posix(char *dir, int n, int w, int d)
 {
-	int i, j;
+	int i;
 	int e;
-	char **names;
+	char *name;
 	if (n >= d)
 		return (GFARM_ERR_NO_ERROR);
 
-	GFARM_CALLOC_ARRAY(names, w);
-	if (names == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
 	for (i = 0; i < w; i++) {
-		e = asprintf(&names[i], "%s/test%04d", dir, i);
+		e = asprintf(&name, "%s/test%04d", dir, i);
 		if (e < 0) {
-			for (j = 0; j < i ; j++)
-				free(names[j]);
-			free(names);
 			return (GFARM_ERR_NO_MEMORY);
 		}
-	}
-
-	for (i = 0; i < w; i++) {
-		e = mkdir(names[i], 0755);
+		e = mkdir(name, 0755);
 		if (e != 0) {
-			for (i = 0; i < w; i++)
-				free(names[i]);
-			free(names);
+			free(name);
 			return (GFARM_ERR_NO_SPACE);
 		}
+		do_mkdir_posix(name, n+1, w, d);
+		free(name);
 	}
 
-	for (i = 0; i < w; i++)
-		do_mkdir_posix(names[i], n+1, w, d);
-
-	for (i = 0; i < w; i++)
-		free(names[i]);
-	free(names);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -212,43 +196,27 @@ static
 gfarm_error_t
 do_mkdir_gfarm(char *dir, int n, int w, int d)
 {
-	int i, j;
+	int i;
 	int r;
 	gfarm_error_t e;
-	char **names;
+	char *name;
 	if (n >= d)
 		return (GFARM_ERR_NO_ERROR);
 
-	GFARM_CALLOC_ARRAY(names, w);
-	if (names == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
 	for (i = 0; i < w; i++) {
-		r = asprintf(&names[i], "%s/test%04d", dir, i);
+		r = asprintf(&name, "%s/test%04d", dir, i);
 		if (r < 0) {
-			for (j = 0; j < i ; j++)
-				free(names[j]);
-			free(names);
 			return (GFARM_ERR_NO_MEMORY);
 		}
-	}
-
-	for (i = 0; i < w; i++) {
-		e = gfs_mkdir(names[i], 0755);
+		e = gfs_mkdir(name, 0755);
 		if (e != GFARM_ERR_NO_ERROR) {
-			for (i = 0; i < w; i++)
-				free(names[i]);
-			free(names);
+			free(name);
 			return (e);
 		}
+		do_mkdir_gfarm(name, n+1, w, d);
+		free(name);
 	}
 
-	for (i = 0; i < w; i++)
-		do_mkdir_gfarm(names[i], n+1, w, d);
-
-	for (i = 0; i < w; i++)
-		free(names[i]);
-	free(names);
 	return (GFARM_ERR_NO_ERROR);
 }
 
