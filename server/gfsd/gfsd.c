@@ -1590,7 +1590,8 @@ gfarm_error_t
 close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
-	int fc = gfm_client_connection_failover_count(gfm_server);
+	int fc = gfm_server != NULL ? gfm_client_connection_failover_count(
+		gfm_server) : 0;
 
 	if (gfm_server != NULL && client_failover_count == fc)
 		e = close_fd(fd, diag);
@@ -1606,9 +1607,9 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 		    "%s: gfmd may be failed over, try to reconnecting", diag);
 		free_gfm_server();
 		if ((e = connect_gfm_server(0)) != GFARM_ERR_NO_ERROR) {
-			gfm_client_connection_free(gfm_server);
 			/* mark gfmd reconnection failed */
-			gfm_server = NULL;
+			if (gfm_server != NULL)
+				free_gfm_server();
 			fatal(GFARM_MSG_1003349, 
 			    "%s: cannot reconnect to gfm server", diag);
 		}
