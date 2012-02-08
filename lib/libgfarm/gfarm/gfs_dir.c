@@ -181,8 +181,10 @@ struct gfs_dir_internal {
 
 	struct gfm_connection *gfm_server;
 	int fd;
+
 	struct gfs_dirent buffer[DIRENTS_BUFCOUNT];
 	int n, index;
+	gfarm_off_t seek_pos;
 };
 
 static gfarm_error_t
@@ -216,8 +218,10 @@ gfs_readdir_internal(GFS_Dir super, struct gfs_dirent **entry)
 {
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 	gfarm_error_t e;
+	int n;
 
 	if (dir->index >= dir->n) {
+		n = dir->n;
 		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
 		    gfm_getdirents_request, gfm_getdirents_result, NULL, dir);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -227,11 +231,12 @@ gfs_readdir_internal(GFS_Dir super, struct gfs_dirent **entry)
 			return (e);
 		}
 
+		dir->seek_pos += n;
+		dir->index = 0;
 		if (dir->n == 0) {
 			*entry = NULL;
 			return (GFARM_ERR_NO_ERROR);
 		}
-		dir->index = 0;
 	}
 	*entry = &dir->buffer[dir->index++];
 	return (GFARM_ERR_NO_ERROR);
@@ -249,21 +254,65 @@ gfs_closedir_internal(GFS_Dir super)
 }
 
 gfarm_error_t
-gfs_seekdir_unimpl(GFS_Dir dir, gfarm_off_t off)
+gfm_seekdir_request(struct gfm_connection *gfm_server, void *closure)
 {
-	gflog_debug(GFARM_MSG_1001271,
-		"Not implemented: %s",
-		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX FIXME */
+	struct gfm_seekdir_closure *c = closure;
+	gfarm_error_t e = gfm_client_seek_request(gfm_server,
+	    c->offset, c->whence);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "seek request: %s", gfarm_error_string(e));
+	return (e);
 }
 
 gfarm_error_t
-gfs_telldir_unimpl(GFS_Dir dir, gfarm_off_t *offp)
+gfm_seekdir_result(struct gfm_connection *gfm_server, void *closure)
 {
-	gflog_debug(GFARM_MSG_1001272,
-		"Not implemented: %s",
-		gfarm_error_string(GFARM_ERR_FUNCTION_NOT_IMPLEMENTED));
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX FIXME */
+	struct gfm_seekdir_closure *c = closure;
+	gfarm_error_t e = gfm_client_seek_result(gfm_server,
+	    &c->offset);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "seek result: %s", gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+gfs_seekdir_internal(GFS_Dir super, gfarm_off_t off)
+{
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
+	gfarm_error_t e;
+	struct gfm_seekdir_closure closure;
+
+	if (dir->seek_pos <= off && off <= dir->seek_pos + dir->n) {
+		dir->index = off - dir->seek_pos;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	closure.offset = off;
+	closure.whence = 0;
+	e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
+	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_fd_op_readonly(seek): %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	dir->n = dir->index = 0; /* purge dir->buffer */
+	dir->seek_pos = closure.offset;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+gfs_telldir_internal(GFS_Dir super, gfarm_off_t *offp)
+{
+	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
+
+	*offp = dir->seek_pos + dir->index;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -274,8 +323,8 @@ gfs_dir_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	static struct gfs_dir_ops ops = {
 		gfs_closedir_internal,
 		gfs_readdir_internal,
-		gfs_seekdir_unimpl,
-		gfs_telldir_unimpl
+		gfs_seekdir_internal,
+		gfs_telldir_internal
 	};
 
 	GFARM_MALLOC(dir);
@@ -289,8 +338,10 @@ gfs_dir_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	dir->super.ops = &ops;
 	dir->gfm_server = gfm_server;
 	dir->fd = fd;
-	dir->n = 0;
-	dir->index = 0;
+
+	dir->n = dir->index = 0;
+	dir->seek_pos = 0;
+
 
 	*dirp = &dir->super;
 	return (GFARM_ERR_NO_ERROR);

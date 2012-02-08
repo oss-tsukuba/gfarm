@@ -2631,7 +2631,9 @@ gfm_server_seek(struct peer *peer, int from_client, int skip)
 		default: assert(0);
 		}
 		if (offset != current) {
-			if (offset > max)
+			if (offset < 0)
+				offset = 0;
+			else if (offset > max)
 				offset = max;
 			process_clear_dir_key(process, peer, fd);
 			process_set_dir_offset(process, peer, fd,

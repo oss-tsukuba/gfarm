@@ -9,6 +9,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_io.h"
+#include "gfs_dir.h" /* gfm_seekdir_{request,result}() */
 #include "gfs_dirplusxattr.h"
 
 /*
@@ -20,6 +21,7 @@
 struct gfs_dirplusxattr {
 	struct gfm_connection *gfm_server;
 	int fd;
+
 	struct gfs_dirent buffer[DIRENTSPLUSXATTR_BUFCOUNT];
 	struct gfs_stat stbuf[DIRENTSPLUSXATTR_BUFCOUNT];
 	int nattrbuf[DIRENTSPLUSXATTR_BUFCOUNT];
@@ -27,6 +29,7 @@ struct gfs_dirplusxattr {
 	void **attrvaluebuf[DIRENTSPLUSXATTR_BUFCOUNT];
 	size_t *attrsizebuf[DIRENTSPLUSXATTR_BUFCOUNT];
 	int n, index;
+	gfarm_off_t seek_pos;
 };
 
 static gfarm_error_t
@@ -45,7 +48,9 @@ gfs_dirplusxattr_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 
 	dir->gfm_server = gfm_server;
 	dir->fd = fd;
+
 	dir->n = dir->index = 0;
+	dir->seek_pos = 0;
 
 	*dirp = dir;
 	return (GFARM_ERR_NO_ERROR);
@@ -151,8 +156,10 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 	char ***attrnamesp, void ***attrvaluesp, size_t **attrsizesp)
 {
 	gfarm_error_t e;
+	int n;
 
 	if (dir->index >= dir->n) {
+		n = dir->n;
 		gfs_dirplusxattr_clear(dir);
 		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
 		    gfm_getdirentsplusxattr_request,
@@ -165,12 +172,13 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 				gfarm_error_string(e));
 			return (e);
 		}
+
+		dir->seek_pos += n;
 		if (dir->n == 0) {
 			*entry = NULL;
 			*status = NULL;
 			return (GFARM_ERR_NO_ERROR);
 		}
-		dir->index = 0;
 	}
 	*entry = &dir->buffer[dir->index];
 	*status = &dir->stbuf[dir->index];
@@ -186,6 +194,38 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 		(*status)->st_mode &= ~(GFARM_S_ISUID|GFARM_S_ISGID);
 	}
 
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_seekdirplusxattr(GFS_DirPlusXAttr dir, gfarm_off_t off)
+{
+	gfarm_error_t e;
+	struct gfm_seekdir_closure closure;
+
+	if (dir->seek_pos <= off && off <= dir->seek_pos + dir->n) {
+		dir->index = off - dir->seek_pos;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	closure.offset = off;
+	closure.whence = 0;
+	e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
+	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_compound_fd_op_readonly(seek): %s",
+		    gfarm_error_string(e));
+	}
+	gfs_dirplusxattr_clear(dir);
+	dir->seek_pos = closure.offset;
+	return (e);
+}
+
+gfarm_error_t
+gfs_telldirplusxattr(GFS_DirPlusXAttr dir, gfarm_off_t *offp)
+{
+	*offp = dir->seek_pos + dir->index;
 	return (GFARM_ERR_NO_ERROR);
 }
 
