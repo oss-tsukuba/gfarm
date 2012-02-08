@@ -29,6 +29,7 @@ static int depth = 3;
 static int posix_flag = 0;
 static char *unit = UNIT_OPS;
 static int unit_flag = UNIT_FLAG_OPS;
+static char hostname[1024];
 
 static
 gfarm_error_t
@@ -96,9 +97,8 @@ do_mkdir_posix(char *dir, int n, int w, int d)
 
 	for (i = 0; i < w; i++) {
 		e = asprintf(&name, "%s/test%04d", dir, i);
-		if (e < 0) {
+		if (e < 0)
 			return (GFARM_ERR_NO_MEMORY);
-		}
 		e = mkdir(name, 0755);
 		if (e != 0) {
 			free(name);
@@ -117,12 +117,28 @@ do_test_posix()
 {
 	struct timeval start_time, middle_time, end_time, exec_time;
 	float f;
+	int r;
+	char *topdir;
+
+	r = asprintf(&topdir, "%s/gfperf-tree-%s-%d", testdir,
+		     hostname, getpid());
+	if (r < 0)
+		return (GFARM_ERR_NO_MEMORY);
+
+	r = mkdir(topdir, 0755);
+	if (r < 0) {
+		fprintf(stderr, "can not make working directory!\n");
+		free(topdir);
+		return (GFARM_ERR_NO_SPACE);
+	}
 
 	gettimeofday(&start_time, NULL);
-	do_mkdir_posix(testdir, 0, width, depth);
+	do_mkdir_posix(topdir, 0, width, depth);
 	gettimeofday(&middle_time, NULL);
-	do_rmdir_posix(testdir);
+	do_rmdir_posix(topdir);
 	gettimeofday(&end_time, NULL);
+	rmdir(topdir);
+	free(topdir);
 
 	gfperf_sub_timeval(&middle_time, &start_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
@@ -205,9 +221,8 @@ do_mkdir_gfarm(char *dir, int n, int w, int d)
 
 	for (i = 0; i < w; i++) {
 		r = asprintf(&name, "%s/test%04d", dir, i);
-		if (r < 0) {
+		if (r < 0)
 			return (GFARM_ERR_NO_MEMORY);
-		}
 		e = gfs_mkdir(name, 0755);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(name);
@@ -226,12 +241,29 @@ do_test_gfarm()
 {
 	struct timeval start_time, middle_time, end_time, exec_time;
 	float f;
+	int r;
+	gfarm_error_t e;
+	char *topdir;
+
+	r = asprintf(&topdir, "%s/gfperf-tree-%s-%d", testdir,
+		     hostname, getpid());
+	if (r < 0)
+		return (GFARM_ERR_NO_MEMORY);
+
+	e = gfs_mkdir(topdir, 0755);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "can not make working directory!\n");
+		free(topdir);
+		return (e);
+	}
 
 	gettimeofday(&start_time, NULL);
-	do_mkdir_gfarm(testdir, 0, width, depth);
+	do_mkdir_gfarm(topdir, 0, width, depth);
 	gettimeofday(&middle_time, NULL);
-	do_rmdir_gfarm(testdir);
+	do_rmdir_gfarm(topdir);
 	gettimeofday(&end_time, NULL);
+	gfs_rmdir(topdir);
+	free(topdir);
 
 	gfperf_sub_timeval(&middle_time, &start_time, &exec_time);
 	if (unit_flag == UNIT_FLAG_OPS) {
@@ -341,6 +373,10 @@ parse_opt(int argc, char *argv[])
 		testdir = &testdir[GFPERF_FILE_URL_PREFIX_LEN];
 	} else
 		posix_flag = 0;
+
+	r = gethostname(hostname, sizeof(hostname));
+	if (r < 0)
+		strcpy(hostname, "unknown");
 
 	return (GFARM_ERR_NO_ERROR);
 }
