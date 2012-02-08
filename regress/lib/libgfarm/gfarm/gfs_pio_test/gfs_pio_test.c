@@ -8,7 +8,7 @@
 
 #define EXIT_USAGE	250
 
-char *program_name = "gfs_pio";
+char *program_name = "gfs_pio_test";
 
 #define OP_READ		'R'
 #define OP_WRITE	'W'
@@ -22,7 +22,7 @@ char *program_name = "gfs_pio";
 
 struct op {
 	unsigned char op;
-	gfarm_off_t off; /* for O_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE */
+	gfarm_off_t off; /* for OP_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE */
 };
 
 #define MAX_OPS	1024
