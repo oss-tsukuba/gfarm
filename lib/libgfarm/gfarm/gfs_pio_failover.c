@@ -433,7 +433,7 @@ compound_fd_op_rpc(struct gfm_connection **gfm_serverp, void *closure)
 {
 	struct compound_fd_op_info *ci = closure;
 
-	*gfm_serverp = ci->ops->get_connection(ci->closure);
+	*gfm_serverp = ci->ops->get_connection(ci->file);
 	return (gfm_client_compound_fd_op(*gfm_serverp,
 	    ci->ops->get_fileno(ci->file), ci->request_op, ci->result_op,
 	    ci->cleanup_op, ci->closure));
