@@ -800,6 +800,22 @@ gfs_readdir_caching_internal(GFS_Dir super, struct gfs_dirent **entryp)
 }
 
 static gfarm_error_t
+gfs_seekdir_caching_internal(GFS_Dir super, gfarm_off_t off)
+{
+	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
+
+	return (gfs_seekdirplusxattr(dir->dp, off));
+}
+
+static gfarm_error_t
+gfs_telldir_caching_internal(GFS_Dir super, gfarm_off_t *offp)
+{
+	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
+
+	return (gfs_telldirplusxattr(dir->dp, offp));
+}
+
+static gfarm_error_t
 gfs_closedir_caching_internal(GFS_Dir super)
 {
 	struct gfs_dir_caching *dir = (struct gfs_dir_caching *)super;
@@ -820,8 +836,8 @@ gfs_opendir_caching_internal(const char *path, GFS_Dir *dirp)
 	static struct gfs_dir_ops ops = {
 		gfs_closedir_caching_internal,
 		gfs_readdir_caching_internal,
-		gfs_seekdir_unimpl,
-		gfs_telldir_unimpl
+		gfs_seekdir_caching_internal,
+		gfs_telldir_caching_internal
 	};
 
 	if ((e = gfs_opendirplusxattr(path, &dp)) != GFARM_ERR_NO_ERROR) {

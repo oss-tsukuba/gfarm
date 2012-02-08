@@ -9,5 +9,9 @@ struct gfs_dir {
 	struct gfs_dir_ops *ops;
 };
 
-gfarm_error_t gfs_seekdir_unimpl(GFS_Dir, gfarm_off_t);
-gfarm_error_t gfs_telldir_unimpl(GFS_Dir, gfarm_off_t *);
+struct gfm_seekdir_closure {
+	gfarm_off_t offset;
+	gfarm_int32_t whence;
+};
+gfarm_error_t gfm_seekdir_request(struct gfm_connection *, void *);
+gfarm_error_t gfm_seekdir_result(struct gfm_connection *, void *);

@@ -269,6 +269,11 @@
 		l:offset
 	  ※ current file descriptor がディレクトリかどうかを検査する。
 	     ディレクトリでなければ GFARM_ERR_NOT_A_DIRECTORY を返す。
+	  ※ offset は、UNIX semantics とは異り、opaque ではない。
+	     gfs_seekdir()/gfs_telldir() の現在の実装では、offset が、
+	     ディレクトリ先頭から数えた要素数である事実を利用している。
+	     もしプロトコル改訂を行なう機会があれば、GETDIRENT系プロトコルの
+	     戻り値に d_off を加えた上で、offset を opaque としたい。
 
 	GFM_PROTO_GETDIRENTSPLUS
 	  暗黙の入力: i:current file descriptor (target directory)
