@@ -1411,13 +1411,14 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 			goto unlock;
 		}
 		rpos = 0;
+		rlap = 1;
+	} else {
+		cur_wlap = writer->lap;
+		if (rlap < wlap)
+			rlap = cur_wlap - 1;
+		else
+			rlap = cur_wlap;
 	}
-
-	cur_wlap = writer->lap;
-	if (rlap < wlap)
-		rlap = cur_wlap - 1;
-	else
-		rlap = cur_wlap;
 
 	if (*readerp)
 		e = journal_file_reader_init(jf, fd, rpos, rlap, 0, *readerp);
