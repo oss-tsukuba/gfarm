@@ -42,7 +42,7 @@
 #include "journal_file.h"
 #include "db_journal.h"
 #include "gfmd_channel.h"
-#include "gfmd.h" /* protocol_service() */
+#include "gfmd.h" /* protocol_service(), gfmd_terminate() */
 
 
 struct gfmdc_journal_send_closure {
@@ -77,7 +77,12 @@ static struct gfmdc_journal_sync_info journal_sync_info;
 #define SEND_END_COND_DIAG	"send_closure.end_cond"
 #define ASYNC_MUTEX_DIAG	"journal_sync_info.async_mutex"
 #define ASYNC_WAIT_COND_DIAG	"journal_sync_info.async_wait_cond"
+#define JOURNAL_READY_TO_RECV_MUTEX_DIAG \
+				"journal_ready_to_recv_info.mutex"
+#define JOURNAL_READY_TO_RECV_WAIT_COND_DIAG \
+				"journal_ready_to_recv_info.wait_cond"
 
+#define GFMDC_CONNECT_INTERVAL	30
 
 static gfarm_error_t
 gfmdc_server_get_request(struct peer *peer, size_t size,
@@ -419,6 +424,27 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	return (e);
 }
 
+struct journal_ready_to_recv_info {
+	int end;
+	pthread_mutex_t mutex;
+	pthread_cond_t wait_cond;
+	gfarm_error_t error;
+};
+
+static void
+gfmdc_client_journal_ready_to_recv_notify(void *arg, gfarm_error_t e,
+	const char *diag)
+{
+	struct journal_ready_to_recv_info *ji = arg;
+
+	ji->error = e;
+	gfarm_mutex_lock(&ji->mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+	ji->end = 1;
+	gfarm_cond_signal(&ji->wait_cond, diag,
+	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
+	gfarm_mutex_unlock(&ji->mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+}
+
 static gfarm_int32_t
 gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
 {
@@ -431,12 +457,18 @@ gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002982, "%s : %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
+	gfmdc_client_journal_ready_to_recv_notify(arg, e, diag);
 	return (e);
 }
 
 static void
 gfmdc_client_journal_ready_to_recv_disconnect(void *p, void *arg)
 {
+	static const char *diag =
+		"gfmdc_client_journal_ready_to_recv_disconnect";
+
+	gfmdc_client_journal_ready_to_recv_notify(arg,
+	    GFARM_ERR_CONNECTION_ABORTED, diag);
 }
 
 gfarm_error_t
@@ -444,7 +476,14 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
+	struct journal_ready_to_recv_info ji;
 	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+
+	gfarm_mutex_init(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+	gfarm_cond_init(&ji.wait_cond, diag,
+	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
+	ji.error = GFARM_ERR_NO_ERROR;
+	ji.end = 0;
 
 	giant_lock();
 	seqnum = db_journal_get_current_seqnum();
@@ -452,11 +491,32 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 
 	if ((e = gfmdc_client_send_request(mh, NULL, diag,
 	    gfmdc_client_journal_ready_to_recv_result,
-	    gfmdc_client_journal_ready_to_recv_disconnect, NULL,
+	    gfmdc_client_journal_ready_to_recv_disconnect, &ji,
 	    GFM_PROTO_JOURNAL_READY_TO_RECV, "l", seqnum))
-	    != GFARM_ERR_NO_ERROR)
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002983,
 		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		goto end;
+	}
+
+	/* wait for recieving result to get GFARM_ERR_EXPIRED */
+	gfarm_mutex_lock(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+	while (!ji.end) {
+		gfarm_cond_wait(&ji.wait_cond, &ji.mutex, diag,
+		    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
+	}
+	gfarm_mutex_unlock(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+	e = ji.error;
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+	}
+
+end:
+	gfarm_mutex_destroy(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
+	gfarm_cond_destroy(&ji.wait_cond, diag,
+	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
+
 	return (e);
 }
 
@@ -671,7 +731,7 @@ gfm_server_switch_gfmd_channel(
 }
 
 static gfarm_error_t
-gfmdc_connect()
+gfmdc_connect(void)
 {
 	gfarm_error_t e;
 	int port;
@@ -742,6 +802,7 @@ gfmdc_connect()
 		mdhost_set_is_master(rhost, 1);
 	}
 	hostname = mdhost_get_name(rhost);
+	mdhost_set_connection(rhost, conn);
 
 	if ((e = gfm_client_switch_gfmd_channel(conn,
 	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
@@ -758,29 +819,26 @@ gfmdc_connect()
 		gflog_error(GFARM_MSG_1002996,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
-		goto error;
+		peer_free(peer);
+		return (e);
 	}
 	if ((e = switch_gfmd_channel(peer, 0, GFM_PROTOCOL_VERSION, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002997,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
-		goto error;
+		return (e);
 	}
-	mdhost_set_connection(rhost, conn);
 	if ((e = gfmdc_client_journal_ready_to_recv(rhost))
 	    != GFARM_ERR_NO_ERROR) {
-		mdhost_set_connection(rhost, NULL);
-		goto error;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfmd_channel(%s) : %s",
+		    hostname, gfarm_error_string(e));
+		return (e);
 	}
 	gflog_info(GFARM_MSG_1002998,
 	    "gfmd_channel(%s) : connected", hostname);
 	return (GFARM_ERR_NO_ERROR);
-error:
-	gfm_client_connection_free(conn);
-	if (peer)
-		peer_free(peer);
-	return (e);
 }
 
 static int
@@ -862,16 +920,18 @@ void *
 gfmdc_connect_thread(void *arg)
 {
 	gfarm_error_t e;
+	static const char *diag = "gfmdc_connect_thread";
 
 	for (;;) {
 		if (mdhost_get_connection(mdhost_lookup_master()) != NULL) {
-			sleep(30);
+			sleep(GFMDC_CONNECT_INTERVAL);
 		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_ERR_NO_ERROR,
+			gflog_error(GFARM_MSG_UNFIXED,
 			    "gfmd_channel : "
 			    "give up to connect to the master gfmd: %s",
 			    gfarm_error_string(e));
-			break;
+			gfmd_terminate(diag);
+			/* NOTREACHED */
 		}
 		if (mdhost_self_is_master())
 			break;

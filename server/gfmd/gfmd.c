@@ -1287,7 +1287,6 @@ sigs_handler(void *p)
 {
 	sigset_t *sigs = p;
 	int rv, sig;
-	int transaction = 0;
 	static const char diag[] = "sigs_handler";
 
 #ifdef __linux__
@@ -1353,6 +1352,17 @@ sigs_handler(void *p)
 	gflog_info(GFARM_MSG_1000199,
 	    "signal %d received: terminating...", sig);
 
+	gfmd_terminate(diag);
+
+	/*NOTREACHED*/
+	return (0); /* to shut up warning */
+}
+
+void
+gfmd_terminate(const char *diag)
+{
+	int transaction = 0;
+
 	/* we never release the giant lock until exit */
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
@@ -1375,9 +1385,6 @@ sigs_handler(void *p)
 
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
-
-	/*NOTREACHED*/
-	return (0); /* to shut up warning */
 }
 
 void
