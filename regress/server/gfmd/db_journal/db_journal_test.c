@@ -29,6 +29,7 @@
 /* XXX FIXME - dummy definitions to link successfully without gfmd.o */
 struct thread_pool *sync_protocol_get_thrpool(void) { return NULL; }
 void resuming_enqueue(void *entry) {}
+void gfmd_terminate(void) {}
 
 static char *program_name = "db_journal_test";
 static const char *filepath;

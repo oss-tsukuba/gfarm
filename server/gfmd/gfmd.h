@@ -26,6 +26,7 @@ extern gfarm_error_t (*gfm_server_protocol_extension)(struct peer *,
 
 int protocol_service(struct peer *);
 void *protocol_main(void *);
+void gfmd_terminate(const char *);
 
 void gfmd_modules_init_default(int);
 extern void (*gfmd_modules_init)(int);
