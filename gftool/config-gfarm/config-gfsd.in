@@ -55,7 +55,7 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t] [-f]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
 	echo >&2 "	[-a arch] [-p port] [-h hostname] [-n ncpu] "
 	echo >&2 "	[-l listen_address] [-S] [-N] spool_directory"
 	exit 1
@@ -83,16 +83,35 @@ sanity()
 	return $rv
 }
 
-display_params()
+display_plain_params()
 {
-	echo "prefix   [--prefix]: $CONFIG_PREFIX"
-	echo "hostname       [-h]: $GFSD_HOSTNAME"
-	echo "listen address [-l]: `if [ x$LISTEN_ADDRESS != x ]; then echo $LISTEN_ADDRESS; else echo '(all local IP addresses)'; fi`"
-	echo "architecture   [-a]: $ARCH"
-	echo "port           [-p]: $GFSD_PORT"
-	echo "ncpu           [-n]: $NCPU"
-	echo "spool directory    : $SPOOL_DIRECTORY"
-	echo "rc script name     : $RC_DIR/$RC_NAME"
+	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
+	echo "hostname                     [-h]: $GFSD_HOSTNAME"
+	echo "listen address               [-l]: `if [ x$LISTEN_ADDRESS != x ]; then echo $LISTEN_ADDRESS; else echo '(all local IP addresses)'; fi`"
+	echo "architecture                 [-a]: $ARCH"
+	echo "port                         [-p]: $GFSD_PORT"
+	echo "ncpu                         [-n]: $NCPU"
+	echo "spool directory                  : $SPOOL_DIRECTORY"
+	echo "rc script                        : $RC_DIR/$RC_NAME"
+	echo "gfarm client conf file           : $GFARM_CONF"
+	echo "gfsd pid file                    : $GFSD_PID_FILE"
+
+	sanity
+	exit 0
+}
+
+display_script_params()
+{
+	echo "CONFIG_PREFIX=$CONFIG_PREFIX"
+	echo "GFSD_HOSTNAME=$GFSD_HOSTNAME"
+	echo "LISTEN_ADDRESS=$LISTEN_ADDRESS"
+	echo "ARCH=$ARCH"
+	echo "GFSD_PORT=$GFSD_PORT"
+	echo "NCPU=$NCPU"
+	echo "SPOOL_DIRECTORY=$SPOOL_DIRECTORY"
+	echo "GFSD_RC=$RC_DIR/$RC_NAME"
+	echo "GFARM_CONF=$GFARM_CONF"
+	echo "GFSD_PID_FILE=$GFSD_PID_FILE"
 
 	sanity
 	exit 0
@@ -135,7 +154,10 @@ while [ $# -gt 0 ] ; do
 		FORCE=true
 		;;
 	  -t)
-		DISPLAY_PARAMS=true
+		PARAMS_DISPLAY_STYLE=plain
+		;;
+	  -T)
+		PARAMS_DISPLAY_STYLE=script
 		;;
 	  -*)
 		usage
@@ -167,9 +189,10 @@ sysdep_defaults
 
 : ${START_SERVICE:=true}
 : ${FORCE:=false}
-: ${DISPLAY_PARAMS:=false}
+: ${PARAMS_DISPLAY_STYLE:=none}
 
 : ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
+: ${GFSD_PID_FILE:="$RUN_DIR/gfsd.pid"}
 
 if [ X"$CONFIG_PREFIX" != X ]; then
 	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
@@ -218,7 +241,7 @@ else
 fi
 
 # -t option; display parameters
-$DISPLAY_PARAMS && display_params
+[ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
 
 sanity || ABORT "aborted"
 
@@ -345,7 +368,7 @@ echo gfhost $GFSD_HOSTNAME: succeeded ||
 echo >&2 "gfhost -c -a $ARCH -p $GFSD_PORT -n $NCPU $GFSD_HOSTNAME: failed"
 
 if $START_SERVICE; then
-	if [ -f $RUN_DIR/$RC_NAME.pid ]; then ctl=restart; else ctl=start; fi
+	if [ -f $GFSD_PID_FILE ]; then ctl=restart; else ctl=start; fi
 	service_add $RC_NAME &&
 		service_ctl $RC_NAME $ctl ||
 		ABORT "failed to $ctl $RC_NAME"

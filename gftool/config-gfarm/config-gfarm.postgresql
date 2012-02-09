@@ -33,27 +33,53 @@ sanity_postgresql()
 	return $rv
 }
 
-display_backend_params_postgresql()
+display_plain_params_backend_postgresql()
 {
-	display_backend_data_dir_param
-	display_backend_log_dir_param
+	display_plain_param_backend_data_dir
+	display_plain_param_backend_log_dir
 
-#	echo "postgresql schema version [-S]: $SCHEMA_VERSION"
-	echo "postgresql admin user     [-U]: $BACKEND_ADMIN_USER"
-	echo "postgresql admin password [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
-	echo "postgresql user           [-u]: $BACKEND_USER"
-	echo "postgresql password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
-	echo "postgresql prefix   [-P]: $BACKEND_PREFIX"
-	echo "postgresql version  [-V]: $BACKEND_VERSION"
-	echo "postgresql XML supported  [-X]: $SUPPORT_XML_TYPE"
+#	echo "postgresql schema version    [-S]: $SCHEMA_VERSION"
+	echo "postgresql admin user        [-U]: $BACKEND_ADMIN_USER"
+	echo "postgresql admin password    [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
+	echo "postgresql user              [-u]: $BACKEND_USER"
+	echo "postgresql password          [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
+	echo "postgresql prefix            [-P]: $BACKEND_PREFIX"
+	echo "postgresql version           [-V]: $BACKEND_VERSION"
+	echo "postgresql XML supported     [-X]: $SUPPORT_XML_TYPE"
 }
 
-display_backend_port_params_postgresql()
+display_script_params_backend_postgresql()
 {
-	echo "portmaster port     [-p]: $BACKEND_PORT"
+	display_script_param_backend_data_dir
+	display_script_param_backend_log_dir
+
+#	echo "SCHEMA_VERSION=$SCHEMA_VERSION"
+	echo "BACKEND_ADMIN_USER=$BACKEND_ADMIN_USER"
+	echo "BACKEND_ADMIN_PASSWORD='`if [ -r $admin_password ]; then cat $admin_password; else echo \*; fi`'"
+	echo "BACKEND_USER=$BACKEND_USER"
+	echo "BACKEND_PASSWORD='`if [ -r $password ]; then cat $password; else echo \*; fi`'"
+	echo "BACKEND_PREFIX=$BACKEND_PREFIX"
+	echo "BACKEND_VERSION=$BACKEND_VERSION"
+	echo "BACKEND_SUPPORT_XML_TYPE=$SUPPORT_XML_TYPE"
 }
 
-display_backend_optional_params_postgresql()
+display_plain_params_backend_port_postgresql()
+{
+	echo "portmaster port              [-p]: $BACKEND_PORT"
+}
+
+display_script_params_backend_port_postgresql()
+{
+	
+	echo "BACKEND_PORT=$BACKEND_PORT"
+}
+
+display_plain_params_backend_optional_postgresql()
+{
+	:
+}
+
+display_script_params_backend_optional_postgresql()
 {
 	:
 }
@@ -139,6 +165,7 @@ set_last_defaults_postgresql()
 	: ${BACKEND_DATA_DIR:="$CONFIG_PREFIX/var/gfarm-pgsql"}
 	BACKEND_LOG_DIR_DEFAULT="$BACKEND_DATA_DIR/pg_xlog"
 	: ${BACKEND_LOG_DIR:="$BACKEND_LOG_DIR_DEFAULT"}
+	: ${BACKEND_PID_FILE:="$RUN_DIR/postmaster.pid"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$BACKEND_PREFIX/bin/pg_config" ]; then
