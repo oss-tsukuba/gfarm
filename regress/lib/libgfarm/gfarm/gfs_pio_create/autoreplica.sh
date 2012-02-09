@@ -62,7 +62,9 @@ do
 	if [ $WAIT_TIME -gt $WAIT_TIME_LIMIT ]; then
 		echo replication timeout
 		clean
-		exit $exit_fail
+		# known bug: https://sourceforge.net/apps/trac/gfarm/ticket/184
+		# exit $exit_fail
+		exit $exit_xfail
 	fi
 	sleep 1
 done
