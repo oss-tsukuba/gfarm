@@ -25,8 +25,9 @@ if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
 status=1
 admin_password=/tmp/ap$$
 password=/tmp/up$$
-rm -f $password $admin_password
-trap 'rm -f $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
+tablelist=/tmp/tablelist.$$
+rm -f $password $admin_password $tablelist
+trap 'rm -f $password $admin_password $tablelist; stty echo 2>/dev/null; exit $status' 0 1 2 15
 
 getvalue()
 {
@@ -44,6 +45,7 @@ usage() {
 	echo >&2 "usage: $PROGNAME -d [options]"
 	echo >&2 "       $PROGNAME -r [options]"
 	echo >&2 " options:"
+	echo >&2 "	[-n]			- do not start/stop a metadata server"
 	echo >&2 "	[-t]			- display configuration, do not execute anything"
 	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
 	echo >&2 "	[-f filename]		- file to dump or to restore"
@@ -110,6 +112,9 @@ do
 	  -d)
 		MODE=DUMP
 		;;
+	  -n)
+		STOP_GFMD=false
+		;;
 	  -r)
 		MODE=RESTORE
 		;;
@@ -165,6 +170,7 @@ set_first_defaults_$BACKEND_TYPE
 sysdep_defaults
 
 : ${DISPLAY_PARAMS:=false}
+: ${STOP_GFMD:=true}
 
 update_first_set_param_$BACKEND_TYPE
 set_last_defaults_$BACKEND_TYPE
@@ -190,23 +196,25 @@ postgresql)
 	case $MODE in
 	    DUMP)
 		PGPASSWORD=$BACKEND_USER_PASSWD
-		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER -f $DUMPF $DB_NAME ||
+		OPT_F=
+		[ "X$DUMPF" != X- ] && OPT_F="-f $DUMPF"
+		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER $OPT_F $DB_NAME ||
 			ABORT "pg_dump fails"
 		;;
 	    RESTORE)
-		[ ! -f "$DUMPF" ] &&
+		[ "X$DUMPF" != X- -a ! -f "$DUMPF" ] &&
 			ABORT "$DUMPF: database dump file not exist"
-		service_ctl gfmd stop
+		$STOP_GFMD && service_ctl gfmd stop
 		PGPASSWORD=$BACKEND_ADMIN_PASSWD
-		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
-		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME
+		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+			ABORT "dropdb fails"
+		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+			ABORT "createdb fails"
 		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
 			ABORT "restore fails"
 
 		# Get a list of tables in the database using '\dt' command
 		# of 'psql'.
-		tablelist=/tmp/tablelist.$$
-		trap "rm -f $tablelist; exit 1" 0 1 2 15
 		env LC_ALL=C $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -A -F/ -c '\dt' | grep / > $tablelist ||
 			ABORT "getting tablenames fails"
 
@@ -221,7 +229,8 @@ postgresql)
 		| $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
 			ABORT "grant fails"
 		rm -f $tablelist
-		service_ctl gfmd start
+		$STOP_GFMD && service_ctl gfmd start
+		status=0
 		;;
 	    *)
 		usage
