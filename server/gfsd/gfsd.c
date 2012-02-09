@@ -815,8 +815,10 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 		fe->flags |= FILE_FLAG_CREATED;
 	if (flags & O_TRUNC)
 		fe->flags |= FILE_FLAG_WRITTEN;
-	if ((flags & O_ACCMODE) != O_RDONLY)
+	if ((flags & O_ACCMODE) != O_RDONLY) {
 		fe->flags |= FILE_FLAG_WRITABLE;
+		++write_open_count;
+	}
 	fe->atime = st.st_atime;
 	/* XXX FIXME st_atimespec.tv_nsec */
 	fe->mtime = st.st_mtime;
@@ -1036,11 +1038,8 @@ open_data(char *path, int flags)
 	int fd = open(path, flags, DATA_FILE_MASK);
 	struct stat st;
 
-	if (fd >= 0) {
-		if ((flags & O_ACCMODE) != O_RDONLY)
-			++write_open_count;
+	if (fd >= 0)
 		return (fd);
-	}
 	if ((flags & O_CREAT) == 0 || errno != ENOENT)
 		return (-1); /* with errno */
 
@@ -1094,10 +1093,7 @@ open_data(char *path, int flags)
 				return (-1);
 			}
 		}
-		fd = open(path, flags, DATA_FILE_MASK);
-		if (fd >= 0 && (flags & O_ACCMODE) != O_RDONLY)
-			++write_open_count;
-		return (fd); /* with errno */
+		return (open(path, flags, DATA_FILE_MASK)); /* with errno */
 	}
 	gflog_warning(GFARM_MSG_1000469,
 	    "gfsd spool_root doesn't exist?: %s\n", path);
