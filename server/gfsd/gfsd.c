@@ -116,7 +116,6 @@ const char *program_name = "gfsd";
 int debug_mode = 0;
 pid_t master_gfsd_pid;
 pid_t back_channel_gfsd_pid;
-
 uid_t gfsd_uid = -1;
 
 struct gfm_connection *gfm_server;
@@ -129,6 +128,8 @@ long file_read_size;
 #if 0 /* not yet in gfarm v2 */
 long rate_limit;
 #endif
+static volatile sig_atomic_t write_open_count = 0;
+static volatile sig_atomic_t terminate_flag = 0;
 
 static char *listen_addrname = NULL;
 
@@ -202,8 +203,11 @@ cleanup(int sighandler)
 static void
 cleanup_handler(int signo)
 {
-	cleanup(1);
-	_exit(2);
+	terminate_flag = 1;
+	if (write_open_count == 0) {
+		cleanup(1);
+		_exit(2);
+	}
 }
 
 static int kill_master_gfsd;
@@ -886,6 +890,14 @@ file_table_close(gfarm_int32_t net_fd)
 		    fe->nwrite, (long long)fe->write_size, fe->write_time,
 		    fe->nread, (long long)fe->read_size, fe->read_time));
 
+	if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
+		--write_open_count;
+		if (terminate_flag) {
+			gflog_debug(GFARM_MSG_UNFIXED, "bye");
+			cleanup(0);
+			exit(2);
+		}
+	}
 	return (e);
 }
 
@@ -1024,8 +1036,11 @@ open_data(char *path, int flags)
 	int fd = open(path, flags, DATA_FILE_MASK);
 	struct stat st;
 
-	if (fd >= 0)
+	if (fd >= 0) {
+		if ((flags & O_ACCMODE) != O_RDONLY)
+			++write_open_count;
 		return (fd);
+	}
 	if ((flags & O_CREAT) == 0 || errno != ENOENT)
 		return (-1); /* with errno */
 
@@ -1079,7 +1094,10 @@ open_data(char *path, int flags)
 				return (-1);
 			}
 		}
-		return (open(path, flags, DATA_FILE_MASK)); /* with errno */
+		fd = open(path, flags, DATA_FILE_MASK);
+		if (fd >= 0 && (flags & O_ACCMODE) != O_RDONLY)
+			++write_open_count;
+		return (fd); /* with errno */
 	}
 	gflog_warning(GFARM_MSG_1000469,
 	    "gfsd spool_root doesn't exist?: %s\n", path);
