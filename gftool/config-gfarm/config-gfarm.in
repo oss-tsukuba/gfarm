@@ -236,7 +236,7 @@ display_plain_params()
     METADATA_REPLICATION_YN=`tf2yn $METADATA_REPLICATION`
     echo "metadata replication         [-r]: $METADATA_REPLICATION_YN"
     if $METADATA_REPLICATION; then
-        echo "metadata journal dirirectory [-j]: $METADATA_JOURNAL_DIR"
+        echo "metadata journal directory   [-j]: $METADATA_JOURNAL_DIR"
     fi
     echo "metaserver hostname          [-h]: $BACKEND_HOSTNAME"
     echo "matadata admin user          [-A]: $METADATA_ADMIN_USER"
