@@ -526,7 +526,6 @@ mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
 		gfm_client_connection_unset_conn(conn);
 		gfm_client_connection_free(conn);
 		mdhost_set_connection(m, NULL);
-		local_peer_readable_invoked(peer_to_local_peer(peer));
 	}
 	m->is_recieved_seqnum = 0;
 	if (m->jreader)
