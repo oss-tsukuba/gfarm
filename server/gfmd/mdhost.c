@@ -1051,7 +1051,6 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct gfarm_hash_iterator it;
 	struct mdhost *mh;
-	struct gfarm_metadb_server *ms;
 
 	mdhost_global_mutex_lock(diag);
 	FOREACH_MDHOST(it) {
@@ -1061,8 +1060,7 @@ mdhost_fix_default_master(struct mdhost *new_mmh, const char *diag)
 		if (mh == new_mmh || !mdhost_is_default_master(mh))
 			continue;
 		mdhost_set_is_default_master(mh, 0);
-		ms = db_mdhost_dup(&mh->ms, sizeof(*ms));
-		if ((e = db_mdhost_modify(ms, 0)) != GFARM_ERR_NO_ERROR) {
+		if ((e = db_mdhost_modify(&mh->ms, 0)) != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1002944,
 			    "%s: db_mdhost_modify failed: %s", diag,
 			    gfarm_error_string(e));
