@@ -526,12 +526,6 @@ function parse_gfm_host_info_get_all_response(tvb, pinfo, item, offset)
       offset, n_hosts = parse_xdr(tvb, item, "i", offset, "n_hosts")
       for i = 1, n_hosts do
          offset = parse_xdr(tvb, item, "s", offset, "hostname")
-         local n_host_aliases
-         offset, n_host_aliases = parse_xdr(tvb, item, "i", offset,
-                                            "n_host_aliases")
-         for j = 1, n_host_aliases do
-            offset = parse_xdr(tvb, item, "s", offset, "host_alias")
-         end
          offset = parse_xdr(tvb, item, "s", offset, "architecture")
          offset = parse_xdr(tvb, item, "i", offset, "ncpu")
          offset = parse_xdr(tvb, item, "i", offset, "port")
@@ -592,15 +586,10 @@ end
 --
 function parse_gfm_host_info_set_request(tvb, pinfo, item, offset)
    -- IN s:hostname,
-   --    i:n_host_aliases, s[n_host_aliases]:host_aliases,
-   --    s:architecture, i:ncpu, i:port, i:flags
+   --    s:hostname, s:architecture
+   --    i:ncpu, i:port, i:flags
    offset = offset + 4
    offset = parse_xdr(tvb, item, "s", offset, "hostname")
-   local n_host_aliases
-   offset, n_host_aliases = parse_xdr(tvb, item, "s", offset, "n_host_aliases")
-   for i = 1, n_host_aliases do
-      offset = parse_xdr(tvb, item, "s", offset, "host_alias")
-   end
    offset = parse_xdr(tvb, item, "s", offset, "architecture")
    offset = parse_xdr(tvb, item, "i", offset, "ncpu")
    offset = parse_xdr(tvb, item, "i", offset, "port")
@@ -989,6 +978,7 @@ end
 
 function parse_gfm_compound_on_error_response(tvb, pinfo, item, offset)
    -- OUT (none)
+   offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
    return offset
 end
 
@@ -1208,7 +1198,27 @@ function parse_gfm_fstat_request(tvb, pinfo, item, offset)
 end
 
 function parse_gfm_fstat_response(tvb, pinfo, item, offset)
-   return nil
+   -- OUT l:ino, l:gen, i:mode, l:nlink,
+   -- s:user, s:group, l:size, l:ncopy,
+   -- l:atime_sec, i:atime_nsec, 
+   -- l:mtime_sec, i:mtime_nsec,
+   -- l:ctime_sec, i:ctime_nsec
+   offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   offset = parse_xdr(tvb, item, "l", offset, "i_node_number")
+   offset = parse_xdr(tvb, item, "l", offset, "generation")
+   offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
+   offset = parse_xdr(tvb, item, "l", offset, "nlink")
+   offset = parse_xdr(tvb, item, "s", offset, "user")
+   offset = parse_xdr(tvb, item, "s", offset, "group")
+   offset = parse_xdr(tvb, item, "l", offset, "size")
+   offset = parse_xdr(tvb, item, "l", offset, "ncopy")
+   offset = parse_xdr(tvb, item, "l", offset, "atime_sec", format_datetime)
+   offset = parse_xdr(tvb, item, "i", offset, "atime_nsec")
+   offset = parse_xdr(tvb, item, "l", offset, "mtime_sec", format_datetime)
+   offset = parse_xdr(tvb, item, "i", offset, "mtime_nsec")
+   offset = parse_xdr(tvb, item, "l", offset, "ctime_sec", format_datetime)
+   offset = parse_xdr(tvb, item, "i", offset, "ctime_nsec")
+   return offset
 end
 
 --
@@ -1235,7 +1245,7 @@ end
 function parse_gfm_fchmod_request(tvb, pinfo, item, offset)
    -- IN i:mode
    offset = offset + 4
-   offset = parse_xdr(tvb, item, "i", offset, "mode")
+   offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
    return offset
 end
 
@@ -1393,7 +1403,7 @@ function parse_gfm_mkdir_request(tvb, pinfo, item, offset)
    -- IN s:name, i:mode
    offset = offset + 4
    offset = parse_xdr(tvb, item, "s", offset, "target_name")
-   offset = parse_xdr(tvb, item, "i", offset, "mode")
+   offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
    return offset
 end
 
@@ -1427,7 +1437,9 @@ function parse_gfm_readlink_request(tvb, pinfo, item, offset)
 end
 
 function parse_gfm_readlink_response(tvb, pinfo, item, offset)
-   return nil
+   offset = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   offset = parse_xdr(tvb, item, "s", offset, "name")
+   return offset
 end
 
 --
@@ -1485,10 +1497,52 @@ end
 -- Parse GFM_PROTO_GETDIRENTSPLUSXATTR.
 --
 function parse_gfm_getdirentsplusxattr_request(tvb, pinfo, item, offset)
+  -- IN i:n_entries, i:n_patterns, s[npatterns]:patterns
+   offset = parse_xdr(tvb, item, "i", offset, "n_entries")
+   offset, n_patterns = parse_xdr(tvb, item, "i", offset, "n_patterns")
+   for i = 1, n_patterns do
+      offset = parse_xdr(tvb, item, "s", offset, "patterns")
+   end
+   return offset
 end
 
 function parse_gfm_getdirentsplusxattr_response(tvb, pinfo, item, offset)
-   return nil
+   -- OUT s:name, l:ino, l:gen, i:mode, l:nlink,
+   -- s:user, s:group, l:size, l:ncopy,
+   -- l:atime_sec, i:atime_nsec, 
+   -- l:mtime_sec, i:mtime_nsec,
+   -- l:ctime_sec, i:ctime_nsec, 
+   -- i:nxattrs, s[0]:key, B[0]:value, ...
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      local n_stats
+      local n_xattr
+      offset, n_stats = parse_xdr(tvb, item, "i", offset, "n_stats")
+      for i = 1, n_stats do
+         offset = parse_xdr(tvb, item, "s", offset, "name")
+         offset = parse_xdr(tvb, item, "l", offset, "i_node_number")
+         offset = parse_xdr(tvb, item, "l", offset, "generation")
+         offset = parse_xdr(tvb, item, "i", offset, "mode", base.OCT)
+         offset = parse_xdr(tvb, item, "l", offset, "nlink")
+         offset = parse_xdr(tvb, item, "s", offset, "user")
+         offset = parse_xdr(tvb, item, "s", offset, "group")
+         offset = parse_xdr(tvb, item, "l", offset, "size")
+         offset = parse_xdr(tvb, item, "l", offset, "ncopy")
+         offset = parse_xdr(tvb, item, "l", offset, "atime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "atime_nsec")
+         offset = parse_xdr(tvb, item, "l", offset, "mtime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "mtime_nsec")
+         offset = parse_xdr(tvb, item, "l", offset, "ctime_sec", format_datetime)
+         offset = parse_xdr(tvb, item, "i", offset, "ctime_nsec")
+         offset, n_xattr = parse_xdr(tvb, item, "i", offset, "nxattr")
+         for j = 1, n_xattr do
+            offset = parse_xdr(tvb, item, "s", offset, "name")
+            offset = parse_xdr(tvb, item, "b", offset, "value")
+         end
+      end
+   end
+   return offset
 end
 
 --
