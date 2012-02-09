@@ -23,33 +23,64 @@ sanity_ldap()
 	return $rv
 }
 
-display_backend_params_ldap()
+display_plain_params_backend_ldap()
 {
-	display_backend_data_dir_param
-	display_backend_log_dir_param
+	display_plain_param_backend_data_dir
+	display_plain_param_backend_log_dir
 
-	echo "domain name         [-d]: $DOMAIN_NAME"
-	echo "ldap root user      [-U]: $BACKEND_ADMIN_USER"
-	echo "ldap root password  [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
-	echo "ldap user           [-u]: $BACKEND_USER"
-	echo "ldap password       [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
-	echo "openldap prefix     [-P]: $BACKEND_PREFIX"
-	echo "openldap version    [-V]: $BACKEND_VERSION"
+	echo "domain name                  [-d]: $DOMAIN_NAME"
+	echo "ldap root user               [-U]: $BACKEND_ADMIN_USER"
+	echo "ldap root password           [-W]: `if [ -r $admin_password ]; then cat $admin_password; else echo '(auto generated)'; fi`"
+	echo "ldap user                    [-u]: $BACKEND_USER"
+	echo "ldap password                [-w]: `if [ -r $password ]; then cat $password; else echo '(auto generated)'; fi`"
+	echo "openldap prefix              [-P]: $BACKEND_PREFIX"
+	echo "openldap version             [-V]: $BACKEND_VERSION"
+	echo "ldap XML supported               : no"
 }
 
-display_backend_port_params_ldap()
+display_script_params_backend_ldap()
 {
-	echo "slapd port [-p]: $BACKEND_PORT"
+	display_script_param_backend_data_dir
+	display_script_param_backend_log_dir
+
+	echo "DOMAIN_NAME=$DOMAIN_NAME"
+	echo "BACKEND_ADMIN_USER=$BACKEND_ADMIN_USER"
+	echo "BACKEND_ADMIN_PASSWORD='`if [ -r $admin_password ]; then cat $admin_password; else echo \*; fi`'"
+	echo "BACKEND_USER=$BACKEND_USER"
+	echo "BACKEND_PASSWORD='`if [ -r $password ]; then cat $password; else echo \*; fi`'"
+	echo "BACKEND_PREFIX=$BACKEND_PREFIX"
+	echo "BACKEND_VERSION=$BACKEND_VERSION"
+	echo "BACKEND_SUPPORT_XML_TYPE=no"
 }
 
-display_backend_optional_params_ldap()
+display_plain_params_backend_port_ldap()
 {
-	echo 'slapd DB cache size [-c]:' `
+	echo "slapd port                   [-p]: $BACKEND_PORT"
+}
+
+display_script_params_backend_port_ldap()
+{
+	echo "BACKEND_PORT=$BACKEND_PORT"
+}
+
+display_plain_params_backend_optional_ldap()
+{
+	echo 'slapd DB cache size          [-c]:' `
 	case $SLAPD_DB in
 	bdb)	echo $SLAPD_BDB_CACHESIZE bytes;;
 	*)	echo '(this option is only available for SLAPD_DB="bdb")';;
 	esac`
-	echo 'slapd DB type ($SLAPD_DB):' "$SLAPD_DB"
+	echo 'slapd DB type ($SLAPD_DB)        :' "$SLAPD_DB"
+}
+
+display_script_params_backend_optional_ldap()
+{
+	echo 'LDAP_BDB_CACHESIZE='`
+	case $SLAPD_DB in
+	bdb)	echo $SLAPD_BDB_CACHESIZE;;
+	*)	echo 0;;
+	esac`
+	echo "LDAP_DB=$SLAPD_DB"
 }
 
 # $argshift is an output parameter, if this function returns success.
@@ -142,6 +173,7 @@ set_last_defaults_ldap()
 	else
 		: ${OPENLDAP_LIBEXEC:="$BACKEND_PREFIX/libexec"}
 	fi
+	: ${BACKEND_PID_FILE:="$RUN_DIR/gfarm-slapd.pid"}
 
 	if [ -z "${BACKEND_VERSION-}" ]; then
 		if [ -x "$BACKEND_PREFIX/bin/ldapsearch" ]; then
