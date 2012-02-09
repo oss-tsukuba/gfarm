@@ -174,6 +174,7 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 {
 	gfarm_error_t e;
 	int i;
+	struct gfarm_metadb_server *ms;
 	struct gfarm_metadb_server **servers;
 
 	GFARM_MALLOC_ARRAY(servers, sizeof(void *) * n);
@@ -183,6 +184,11 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	memcpy(servers, metadb_servers, sizeof(void *) * n);
+	for (i = 0; i < fs->nservers; ++i) {
+		ms = fs->servers[i];
+		gfarm_metadb_server_free(ms);
+		free(ms);
+	}
 	free(fs->servers);
 	fs->servers = servers;
 	fs->nservers = n;
