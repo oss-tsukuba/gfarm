@@ -642,7 +642,7 @@ gfmdc_connect(void)
 	const char *hostname;
 	gfarm_int32_t gfmd_knows_me;
 	struct gfm_connection *conn = NULL;
-	struct mdhost *rhost, *master;
+	struct mdhost *rhost, *master, *self_host;
 	struct peer *peer = NULL;
 	char *local_user;
 	struct passwd *pwd;
@@ -709,13 +709,30 @@ gfmdc_connect(void)
 	mdhost_set_connection(rhost, conn);
 	hostname = mdhost_get_name(rhost);
 
+	/* self_host name is equal to metadb_server_host in gfmd.conf */
+	self_host = mdhost_lookup_self();
+	if (gfm_client_hostname_set(conn, mdhost_get_name(self_host))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "gfmd_channel(%s) : %s",
+		    hostname, gfarm_error_string(e));
+		return (e);
+	}
+
 	if ((e = gfm_client_switch_gfmd_channel(conn,
 	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
 	    &gfmd_knows_me))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002995,
-		    "gfmd_channel(%s) : %s",
-		    hostname, gfarm_error_string(e));
+		if (gfm_client_is_connection_error(e)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfmd_channel(%s) : %s",
+			    hostname, gfarm_error_string(e));
+		} else {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfmd_channel(%s) : authorization denied. "
+			    "set metadb_server_host properly. : %s",
+			    hostname, gfarm_error_string(e));
+		}
 		return (e);
 	}
 	if ((e = peer_alloc_with_connection(&peer,
