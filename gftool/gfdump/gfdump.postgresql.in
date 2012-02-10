@@ -200,6 +200,7 @@ postgresql)
 		[ "X$DUMPF" != X- ] && OPT_F="-f $DUMPF"
 		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER $OPT_F $DB_NAME ||
 			ABORT "pg_dump fails"
+		status=0
 		;;
 	    RESTORE)
 		[ "X$DUMPF" != X- -a ! -f "$DUMPF" ] &&
