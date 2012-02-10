@@ -34,7 +34,7 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	peer_watcher.c peer.c local_peer.c remote_peer.c \
 	dead_file_copy.c process.c job.c abstract_host.c \
 	dir.c inode.c fs.c back_channel.c acl.c journal_file.c \
-	mdhost.c gfmd_channel.c mdcluster.c \
+	mdhost.c gfmd_channel.c mdcluster.c relay.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	db_journal.c db_journal_apply.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
@@ -43,7 +43,7 @@ OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	peer_watcher.o peer.o local_peer.o remote_peer.o \
 	dead_file_copy.o process.o job.o abstract_host.o \
 	dir.o inode.o fs.o back_channel.o acl.o journal_file.o \
-	mdhost.o gfmd_channel.o mdcluster.o \
+	mdhost.o gfmd_channel.o mdcluster.o relay.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
 	db_journal.o db_journal_apply.o \
 	$(ldap_objs) $(postgresql_objs) $(optional_objs)
