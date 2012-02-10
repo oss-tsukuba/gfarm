@@ -14,6 +14,7 @@
 #include "context.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "gfm_proto.h"
 
 #include "subr.h"
 #include "rpcsubr.h"
@@ -22,6 +23,8 @@
 #include "group.h"
 #include "peer.h"
 #include "quota.h"
+#include "mdhost.h"
+#include "relay.h"
 
 #define GROUP_HASHTAB_SIZE	3079	/* prime number */
 
@@ -755,6 +758,9 @@ gfm_server_group_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			"get_group() failed: %s", gfarm_error_string(e));
 		return (e);
 	}
+	if (!mdhost_self_is_master()) {
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
+	}
 	if (skip) {
 		gfarm_group_info_free(&gi);
 		return (GFARM_ERR_NO_ERROR);
@@ -845,6 +851,9 @@ gfm_server_group_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep
 			gfarm_error_string(e));
 		return (e);
 	}
+	if (!mdhost_self_is_master()) {
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
+	}
 	if (skip) {
 		gfarm_group_info_free(&gi);
 		return (GFARM_ERR_NO_ERROR);
@@ -901,8 +910,9 @@ gfm_server_group_info_remove(
 	int from_client, int skip)
 {
 	char *groupname;
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_REMOVE";
 
 	e = gfm_server_get_request(peer, sizep, diag, "s", &groupname);
@@ -910,6 +920,24 @@ gfm_server_group_info_remove(
 		gflog_debug(GFARM_MSG_1001543,
 			"group_info_remove request failed: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag, 
+		    GFM_PROTO_GROUP_INFO_REMOVE, "s", &groupname);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(groupname);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "s", &groupname); 
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(groupname);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
+		    "s",  &groupname);
+		free(groupname);
 		return (e);
 	}
 	if (skip) {

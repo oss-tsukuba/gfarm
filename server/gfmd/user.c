@@ -25,6 +25,9 @@
 #include "group.h"
 #include "peer.h"
 #include "quota.h"
+#include "mdhost.h"
+#include "relay.h"
+
 
 #define USER_HASHTAB_SIZE	3079	/* prime number */
 #define USER_DN_HASHTAB_SIZE	3079	/* prime number */
@@ -760,16 +763,35 @@ gfm_server_user_info_get_by_gsi_dn(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	char *gsi_dn;
 	struct user *u;
 	struct gfarm_user_info *ui;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_GSI_DN";
 
 	e = gfm_server_get_request(peer, sizep, diag, "s", &gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001503,
 		    "%s request: %s", diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag, 
+		    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s", &gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(gsi_dn);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "s",  &gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(gsi_dn);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
+		    "s",  &gsi_dn);
+		free(gsi_dn);
 		return (e);
 	}
 	if (skip) {
@@ -815,9 +837,10 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfarm_user_info ui;
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
 	int do_not_free = 0;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_USER_INFO_SET";
 
 	e = gfm_server_get_request(peer, sizep, diag,
@@ -826,6 +849,26 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_debug(GFARM_MSG_1001504,
 			"USER_INFO_SET request failed: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag, 
+		    GFM_PROTO_USER_INFO_SET, "ssss",
+			&ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			gfarm_user_info_free(&ui);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "ssss",
+		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			gfarm_user_info_free(&ui);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ssss",
+		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		gfarm_user_info_free(&ui);
 		return (e);
 	}
 	if (skip) {
@@ -883,8 +926,9 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	struct gfarm_user_info ui;
 	struct user *u, *user = peer_get_user(peer);
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	int needs_free = 0;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_USER_INFO_MODIFY";
 
 	e = gfm_server_get_request(peer, sizep, diag,
@@ -893,6 +937,26 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_debug(GFARM_MSG_1001508,
 			"USER_INFO_MODIFY request failed: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag, 
+		    GFM_PROTO_USER_INFO_MODIFY, "ssss",
+			&ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			gfarm_user_info_free(&ui);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "ssss",
+		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			gfarm_user_info_free(&ui);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ssss",
+		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
+		gfarm_user_info_free(&ui);
 		return (e);
 	}
 	if (skip) {
@@ -952,8 +1016,9 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	char *username;
-	gfarm_int32_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_USER_INFO_REMOVE";
 
 	e = gfm_server_get_request(peer, sizep, diag,
@@ -962,6 +1027,24 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_debug(GFARM_MSG_1001512,
 			"USER_INFO_REMOVE request failed:%s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag, 
+		    GFM_PROTO_USER_INFO_REMOVE, "s", &username);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(username);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "s", &username);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(username);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
+		    "s", &username);
+		free(username);
 		return (e);
 	}
 	if (skip) {

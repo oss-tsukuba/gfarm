@@ -35,6 +35,7 @@
 #include "rpcsubr.h"
 #include "db_access.h"
 #include "host.h"
+#include "mdhost.h"
 #include "user.h"
 #include "peer.h"
 #include "inode.h"
@@ -42,6 +43,7 @@
 #include "abstract_host_impl.h"
 #include "dead_file_copy.h"
 #include "back_channel.h"
+#include "relay.h"
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
@@ -1279,8 +1281,9 @@ gfm_server_host_info_get_by_architecture(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	char *architecture;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE";
 
 	e = gfm_server_get_request(peer, sizep, diag, "s", &architecture);
@@ -1288,6 +1291,25 @@ gfm_server_host_info_get_by_architecture(
 		gflog_debug(GFARM_MSG_1001555,
 		    "host_info_get_by_architecture request failure: %s",
 		    gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag,
+		    GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE,
+			"s", &architecture);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(architecture);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "s", &architecture);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(architecture);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag,
+		    e, "s", &architecture);
+		free(architecture);
 		return (e);
 	}
 	if (skip) {
@@ -1321,6 +1343,9 @@ gfm_server_host_info_get_by_names_common(
 			"gfm_server_get_request() failed: %s",
 			gfarm_error_string(e));
 		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
 	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
@@ -1459,10 +1484,11 @@ gfarm_error_t
 gfm_server_host_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_int32_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_SET";
 
 	e = gfm_server_get_request(peer, sizep, diag, "ssiii",
@@ -1471,6 +1497,30 @@ gfm_server_host_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_debug(GFARM_MSG_1001562,
 			"host_info_set request failure: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag,
+		    GFM_PROTO_HOST_INFO_SET, "ssiii",
+			&hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hi.hostname);
+			free(hi.architecture);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "ssiii",
+		    &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hi.hostname);
+			free(hi.architecture);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
+		    "ssiii",
+			 &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		free(hi.hostname);
+		free(hi.architecture);
 		return (e);
 	}
 	if (skip) {
@@ -1534,12 +1584,13 @@ gfm_server_host_info_modify(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
 	gfarm_int32_t ncpu, port, flags;
 	struct gfarm_host_info hi;
 	struct host *h;
 	int needs_free = 0;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_MODIFY";
 
 	e = gfm_server_get_request(peer, sizep, diag, "ssiii",
@@ -1548,6 +1599,30 @@ gfm_server_host_info_modify(
 		gflog_debug(GFARM_MSG_1001567,
 			"host_info_modify request failed: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag,
+		    GFM_PROTO_HOST_INFO_MODIFY, "ssiii",
+			&hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hi.hostname);
+			free(hi.architecture);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "ssiii",
+		    &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hi.hostname);
+			free(hi.architecture);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
+		    "ssiii",
+			 &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
+		free(hi.hostname);
+		free(hi.architecture);
 		return (e);
 	}
 	if (skip) {
@@ -1627,9 +1702,10 @@ gfm_server_host_info_remove(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	struct user *user = peer_get_user(peer);
 	char *hostname;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_REMOVE";
 
 	e = gfm_server_get_request(peer, sizep, diag, "s", &hostname);
@@ -1637,6 +1713,24 @@ gfm_server_host_info_remove(
 		gflog_debug(GFARM_MSG_1001571,
 			"host_info_remove request failure: %s",
 			gfarm_error_string(e));
+		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag,
+		    GFM_PROTO_HOST_INFO_REMOVE, "s", &hostname);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hostname);
+			return (e);
+		}	
+		erelay = relay_get_reply(req, diag, &e, "s", &hostname);
+		if (erelay != GFARM_ERR_NO_ERROR) {
+			free(hostname);
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		}	
+		e = gfm_server_put_reply(peer, xid, sizep, diag,
+		    e, "s", &hostname);
+		free(hostname);
 		return (e);
 	}
 	if (skip) {

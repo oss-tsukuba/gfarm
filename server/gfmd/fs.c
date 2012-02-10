@@ -26,6 +26,7 @@
 #include "rpcsubr.h"
 #include "db_access.h"
 #include "host.h"
+#include "mdhost.h"
 #include "user.h"
 #include "group.h"
 #include "dead_file_copy.h"
@@ -36,6 +37,7 @@
 #include "back_channel.h"
 #include "fs.h"
 #include "acl.h"
+#include "relay.h"
 #include "config.h" /* for gfarm_host_get_self_name() */
 
 static char dot[] = ".";
@@ -2635,13 +2637,14 @@ gfarm_error_t
 gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, erelay;
 	gfarm_int32_t fd, whence;
 	gfarm_off_t offset, current, max;
 	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode;
 	Dir dir;
+	struct relayed_reqeust *req;
 	static const char diag[] = "GFM_PROTO_SEEK";
 
 	e = gfm_server_get_request(peer, sizep, diag, "li", &offset, &whence);
@@ -2649,6 +2652,18 @@ gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_debug(GFARM_MSG_1001927, "seek request failed: %s",
 			gfarm_error_string(e));
 		return (e);
+	}
+	if (!mdhost_self_is_master()) {
+		erelay = relay_put_request(&req, diag,
+		    GFM_PROTO_SEEK, "li", offset, whence);
+		if (erelay != GFARM_ERR_NO_ERROR)
+			return (e);
+		erelay = relay_get_reply(req, diag, &e, "l", &offset);
+		if (erelay != GFARM_ERR_NO_ERROR)
+			return (gfm_server_put_reply(peer, xid, sizep,
+			    diag, erelay, ""));
+		return (gfm_server_put_reply(peer, xid, sizep, diag,
+		    e, "l", offset));
 	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
