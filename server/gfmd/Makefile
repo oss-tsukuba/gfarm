@@ -78,6 +78,6 @@ $(OBJS): $(DEPGFARMINC) \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h \
 	abstract_host.h abstract_host_impl.h \
-	gfmd_channel.h mdhost.h mdcluster.h
+	gfmd_channel.h mdhost.h mdcluster.h relay.h
 
 include $(optional_rule)
