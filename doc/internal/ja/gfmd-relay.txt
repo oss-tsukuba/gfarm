@@ -80,3 +80,6 @@ XXXRELAY 各プロトコル・エントリーで、RPC リレーのクライアント側が未記述
 
 XXXRELAY failover でマスターgfmdが落ちたら、スレーブgfmdは、
 	クライアントとのコネクションを切る必要がある。
+
+XXXRELAY 特殊処理が必要
+	- gfm_server_compound_on_error()
