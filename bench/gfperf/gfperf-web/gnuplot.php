@@ -1,5 +1,6 @@
 <?php
 require_once('config.php');
+date_default_timezone_set(TIMEZONE);
 
 if (!defined('GNUPLOT')) {
 	define('GNUPLOT', '/usr/bin/gnuplot');
@@ -239,6 +240,16 @@ class GNUPlot {
 		$this->gplot->puts(")");
 	}
 
+	private function get_timezone_offset() {
+		$iTime = time();
+		$arr = localtime($iTime);
+		$arr[5] += 1900;
+		$arr[4]++;
+		$iTztime = gmmktime($arr[2], $arr[1], $arr[0], $arr[4],
+				    $arr[3], $arr[5], $arr[8]);
+		return $iTztime-$iTime;
+	}
+
 	private function plot() {
 		$max = 0;
 		$min = -1;
@@ -265,8 +276,7 @@ class GNUPlot {
 			}
 		}
 		$this->gplot->puts("");
-		$dt = new DateTime();
-		$off = $dt->getOffset();
+		$off = $this->get_timezone_offset();
 		foreach ($this->data() as $title => $data) {
 			foreach ($data as $time => $value) {
 				$this->gplot->puts(
