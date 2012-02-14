@@ -53,6 +53,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/user.c \
 	$(GFMD_SRCDIR)/watcher.c \
 	$(GFMD_SRCDIR)/xattr.c \
+	$(GFMD_SRCDIR)/relay.c \
 	db_journal_apply_test.c empty_ops.c
 
 OBJS =	\
@@ -85,6 +86,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/user.o \
 	$(GFMD_BUILDDIR)/watcher.o \
 	$(GFMD_BUILDDIR)/xattr.o \
+	$(GFMD_BUILDDIR)/relay.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)
