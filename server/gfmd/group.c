@@ -910,56 +910,42 @@ gfm_server_group_info_remove(
 	int from_client, int skip)
 {
 	char *groupname;
-	gfarm_error_t e, erelay;
+	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
-	struct relayed_reqeust *req;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &groupname);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001543,
-			"group_info_remove request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_GROUP_INFO_REMOVE, "s", &groupname);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (!mdhost_self_is_master()) {
-		erelay = relay_put_request(&req, diag, 
-		    GFM_PROTO_GROUP_INFO_REMOVE, "s", &groupname);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(groupname);
-			return (e);
-		}	
-		erelay = relay_get_reply(req, diag, &e, "s", &groupname); 
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(groupname);
-			return (gfm_server_put_reply(peer, xid, sizep,
-			    diag, erelay, ""));
-		}	
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
-		    "s",  &groupname);
-		free(groupname);
-		return (e);
-	}
 	if (skip) {
 		free(groupname);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_1001544,
-			"operation is not permitted for user");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0 ||
-	    strcmp(groupname, ROOT_GROUP_NAME) == 0) {
-		gflog_debug(GFARM_MSG_1002211,
-		    "%s: administrator group \"%s\" should not be deleted",
-		    diag, groupname);
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
-		e = group_info_remove(groupname, diag);
-	free(groupname);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+
+	if (relay != NULL) {
+		free(groupname);
+	} else {
+		giant_lock();
+		if (!from_client || user == NULL || !user_is_admin(user)) {
+			gflog_debug(GFARM_MSG_1001544,
+			    "operation is not permitted for user");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (strcmp(groupname, ADMIN_GROUP_NAME) == 0 ||
+			   strcmp(groupname, ROOT_GROUP_NAME) == 0) {
+			gflog_debug(GFARM_MSG_1002211,
+			    "%s: administrator group \"%s\" "
+			    "should not be deleted", diag, groupname);
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else
+			e = group_info_remove(groupname, diag);
+		free(groupname);
+		giant_unlock();
+	}
+
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t

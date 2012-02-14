@@ -763,55 +763,39 @@ gfm_server_user_info_get_by_gsi_dn(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, erelay;
+	gfarm_error_t e, e2;
 	char *gsi_dn;
 	struct user *u;
 	struct gfarm_user_info *ui;
-	struct relayed_reqeust *req;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_GSI_DN";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001503,
-		    "%s request: %s", diag, gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s", &gsi_dn);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (!mdhost_self_is_master()) {
-		erelay = relay_put_request(&req, diag, 
-		    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s", &gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(gsi_dn);
-			return (e);
-		}	
-		erelay = relay_get_reply(req, diag, &e, "s",  &gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(gsi_dn);
-			return (gfm_server_put_reply(peer, xid, sizep,
-			    diag, erelay, ""));
-		}	
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
-		    "s",  &gsi_dn);
-		free(gsi_dn);
-		return (e);
-	}
 	if (skip) {
 		free(gsi_dn);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	/* XXX FIXME too long giant lock */
-	giant_lock();
-	u = user_lookup_gsi_dn(gsi_dn);
-	if (u == NULL) {
-		e = gfm_server_put_reply(peer, xid, sizep, diag,
-			GFARM_ERR_NO_SUCH_USER, "");
-	} else {
-		ui = &u->ui;
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
-			"ssss", ui->username, ui->realname, ui->homedir,
-			ui->gsi_dn);
+	if (relay == NULL) {
+		/* XXX FIXME too long giant lock */
+		giant_lock();
+		u = user_lookup_gsi_dn(gsi_dn);
+		if (u == NULL) {
+			e2 = GFARM_ERR_NO_SUCH_USER;
+			e = gfm_server_put_reply_with_relay(peer, xid, sizep,
+			    relay, diag, &e2, "");
+		} else {
+			ui = &u->ui;
+			e2 = e;
+			e = gfm_server_put_reply_with_relay(peer, xid, sizep,
+			    relay, diag, &e2, "ssss", &ui->username,
+			    &ui->realname, &ui->homedir, &ui->gsi_dn);
+		}
+		giant_unlock();
 	}
-	giant_unlock();
 	free(gsi_dn);
 	return (e);
 }
@@ -837,73 +821,58 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfarm_user_info ui;
-	gfarm_error_t e, erelay;
+	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
 	int do_not_free = 0;
-	struct relayed_reqeust *req;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_SET";
 
-	e = gfm_server_get_request(peer, sizep, diag,
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_USER_INFO_SET,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001504,
-			"USER_INFO_SET request failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (!mdhost_self_is_master()) {
-		erelay = relay_put_request(&req, diag, 
-		    GFM_PROTO_USER_INFO_SET, "ssss",
-			&ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			gfarm_user_info_free(&ui);
-			return (e);
-		}	
-		erelay = relay_get_reply(req, diag, &e, "ssss",
-		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			gfarm_user_info_free(&ui);
-			return (gfm_server_put_reply(peer, xid, sizep,
-			    diag, erelay, ""));
-		}	
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ssss",
-		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		gfarm_user_info_free(&ui);
-		return (e);
-	}
 	if (skip) {
 		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_1001505,
-			"Operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (user_lookup(ui.username) != NULL) {
-		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_debug(GFARM_MSG_1001506,
-			"User already exists");
-	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
-		/* nothing to do */
+
+	if (relay != NULL) {
+		gfarm_user_info_free(&ui);
 	} else {
-		e = user_enter(&ui, NULL);
-		if (e == GFARM_ERR_NO_ERROR) {
-			e = db_user_add(&ui);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001507,
-					"db_user_add(): %s",
-					gfarm_error_string(e));
-				user_remove(ui.username);
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (!from_client || user == NULL || !user_is_admin(user)) {
+			gflog_debug(GFARM_MSG_1001505,
+			    "Operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (user_lookup(ui.username) != NULL) {
+			e = GFARM_ERR_ALREADY_EXISTS;
+			gflog_debug(GFARM_MSG_1001506,
+			    "User already exists");
+		} else if ((e = user_info_verify(&ui, diag)) !=
+		    GFARM_ERR_NO_ERROR) {
+			/* nothing to do */
+		} else {
+			e = user_enter(&ui, NULL);
+			if (e == GFARM_ERR_NO_ERROR) {
+				e = db_user_add(&ui);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_1001507,
+					    "db_user_add(): %s",
+					    gfarm_error_string(e));
+					user_remove(ui.username);
 				/* do not free since ui still used in hash */
-				do_not_free = 1;
+					do_not_free = 1;
+				}
 			}
 		}
+		if (e != GFARM_ERR_NO_ERROR && !do_not_free)
+			gfarm_user_info_free(&ui);
+		giant_unlock();
 	}
-	if (e != GFARM_ERR_NO_ERROR && !do_not_free)
-		gfarm_user_info_free(&ui);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 void
@@ -926,71 +895,57 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	struct gfarm_user_info ui;
 	struct user *u, *user = peer_get_user(peer);
-	gfarm_error_t e, erelay;
+	gfarm_error_t e;
 	int needs_free = 0;
-	struct relayed_reqeust *req;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_MODIFY";
 
-	e = gfm_server_get_request(peer, sizep, diag,
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_USER_INFO_MODIFY,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001508,
-			"USER_INFO_MODIFY request failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (!mdhost_self_is_master()) {
-		erelay = relay_put_request(&req, diag, 
-		    GFM_PROTO_USER_INFO_MODIFY, "ssss",
-			&ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			gfarm_user_info_free(&ui);
-			return (e);
-		}	
-		erelay = relay_get_reply(req, diag, &e, "ssss",
-		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			gfarm_user_info_free(&ui);
-			return (gfm_server_put_reply(peer, xid, sizep,
-			    diag, erelay, ""));
-		}	
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ssss",
-		    &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
-		gfarm_user_info_free(&ui);
-		return (e);
-	}
 	if (skip) {
 		gfarm_user_info_free(&ui);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001509,
-			"operation is not permitted");
-		needs_free = 1;
-	} else if ((u = user_lookup(ui.username)) == NULL) {
-		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_1001510,
-			"user_lookup() failed");
-		needs_free = 1;
-	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
-		needs_free = 1;
-	} else if ((e = db_user_modify(&ui,
-	    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001511,
-			"db_user_modify() failed:%s",
-			gfarm_error_string(e));
-		needs_free = 1;
-	} else {
-		user_modify(u, &ui);
-		free(ui.username);
-	}
-	if (needs_free)
+
+	if (relay != NULL) {
 		gfarm_user_info_free(&ui);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	} else {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (!from_client || user == NULL || !user_is_admin(user)) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001509,
+			    "operation is not permitted");
+			needs_free = 1;
+		} else if ((u = user_lookup(ui.username)) == NULL) {
+			e = GFARM_ERR_NO_SUCH_USER;
+			gflog_debug(GFARM_MSG_1001510,
+			    "user_lookup() failed");
+			needs_free = 1;
+		} else if ((e = user_info_verify(&ui, diag)) !=
+		    GFARM_ERR_NO_ERROR) {
+			needs_free = 1;
+		} else if ((e = db_user_modify(&ui,
+	       DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|DB_USER_MOD_GSI_DN)) !=
+		    GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001511,
+			    "db_user_modify() failed:%s",
+			    gfarm_error_string(e));
+			needs_free = 1;
+		} else {
+			user_modify(u, &ui);
+			free(ui.username);
+		}
+		if (needs_free)
+			gfarm_user_info_free(&ui);
+		giant_unlock();
+	}
+
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1016,50 +971,37 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	char *username;
-	gfarm_error_t e, erelay;
+	gfarm_error_t e;
 	struct user *user = peer_get_user(peer);
-	struct relayed_reqeust *req;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_REMOVE";
 
-	e = gfm_server_get_request(peer, sizep, diag,
-	    "s", &username);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001512,
-			"USER_INFO_REMOVE request failed:%s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_USER_INFO_REMOVE, "s", &username);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (!mdhost_self_is_master()) {
-		erelay = relay_put_request(&req, diag, 
-		    GFM_PROTO_USER_INFO_REMOVE, "s", &username);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(username);
-			return (e);
-		}	
-		erelay = relay_get_reply(req, diag, &e, "s", &username);
-		if (erelay != GFARM_ERR_NO_ERROR) {
-			free(username);
-			return (gfm_server_put_reply(peer, xid, sizep,
-			    diag, erelay, ""));
-		}	
-		e = gfm_server_put_reply(peer, xid, sizep, diag, e,
-		    "s", &username);
-		free(username);
-		return (e);
-	}
 	if (skip) {
 		free(username);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
-	if (!from_client || user == NULL || !user_is_admin(user)) {
-		gflog_debug(GFARM_MSG_1001513,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
-		e = user_info_remove(username, diag);
-	free(username);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+
+	if (relay != NULL) {
+		free(username);
+	} else {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (!from_client || user == NULL || !user_is_admin(user)) {
+			gflog_debug(GFARM_MSG_1001513,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else
+			e = user_info_remove(username, diag);
+		free(username);
+		giant_unlock();
+	}
+
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
+
 }
 #endif /* TEST */
