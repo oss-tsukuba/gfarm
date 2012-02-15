@@ -1,8 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 Config_sharedsecret="${HOME}/.gfperf.sharedsecret.conf"
 Config_gsi_auth="${HOME}/.gfperf.gsi_auth.conf"
 Config_gsi="${HOME}/.gfperf.gsi.conf"
+
+if [ -f ${HOME}/.gfperfrc ]; then
+    . ${HOME}/.gfperfrc
+fi
 
 if [ $# -lt 2 ]; then
     echo "usage: $0 <type> <command>" >&2
