@@ -99,8 +99,8 @@ gfm_async_server_put_reply(struct host *host,
 
 	va_start(ap, format);
 	e = gfm_server_channel_vput_reply(
-	    host_to_abstract_host(host), peer, xid, diag,
-	    errcode, format, &ap);
+	    host_to_abstract_host(host), peer, xid, gfp_xdr_vsend,
+	    diag, errcode, format, &ap);
 	va_end(ap);
 
 	return (e);

@@ -22,10 +22,9 @@
 
 /* sizep != NULL, if this is an inter-gfmd-relayed request. */
 gfarm_error_t
-gfm_server_get_request(struct peer *peer, size_t *sizep,
-	const char *diag, const char *format, ...)
+gfm_server_get_vrequest(struct peer *peer, size_t *sizep,
+	const char *diag, const char *format, va_list *app)
 {
-	va_list ap;
 	gfarm_error_t e;
 	int eof;
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -33,12 +32,10 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
 	if (debug_mode)
 		gflog_info(GFARM_MSG_1000225, "<%s> start receiving", diag);
 
-	va_start(ap, format);
 	if (sizep != NULL)
-		e = gfp_xdr_vrecv_sized(client, 0, sizep, &eof, &format, &ap);
+		e = gfp_xdr_vrecv_sized(client, 0, sizep, &eof, &format, app);
 	else
-		e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
-	va_end(ap);
+		e = gfp_xdr_vrecv(client, 0, &eof, &format, app);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000226,
@@ -59,12 +56,26 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* if this is an inter-gfmd-relayed reply, xid is valid and sizep != NULL. */
 gfarm_error_t
-gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	const char *diag, gfarm_error_t ecode, const char *format, ...)
+gfm_server_get_request(struct peer *peer, size_t *sizep,
+	const char *diag, const char *format, ...)
 {
 	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfm_server_get_vrequest(peer, sizep, diag, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+/* if this is an inter-gfmd-relayed reply, xid is valid and sizep != NULL. */
+gfarm_error_t
+gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
+	const char *diag,
+	gfarm_error_t ecode, const char *format, va_list *app)
+{
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
 
@@ -72,13 +83,11 @@ gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gflog_info(GFARM_MSG_1000229,
 		    "<%s> sending reply: %d", diag, (int)ecode);
 
-	va_start(ap, format);
 	if (sizep != NULL) {
 		e = gfm_server_channel_vput_reply(
-		    peer_get_abstract_host(peer),
-		    peer, xid, diag, ecode, format, &ap);
+		    peer_get_abstract_host(peer), peer, xid, xdr_vsend,
+		    diag, ecode, format, app);
 		if (e != GFARM_ERR_NO_ERROR) {
-			va_end(ap);
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s sending relayed reply: %s",
 			    diag, gfarm_error_string(e));
@@ -88,7 +97,6 @@ gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	} else {
 		e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);
 		if (e != GFARM_ERR_NO_ERROR) {
-			va_end(ap);
 			gflog_warning(GFARM_MSG_1000230,
 			    "%s sending reply: %s",
 			    diag, gfarm_error_string(e));
@@ -96,9 +104,8 @@ gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			return (e);
 		}
 		if (ecode == GFARM_ERR_NO_ERROR) {
-			e = gfp_xdr_vsend(client, &format, &ap);
+			e = (*xdr_vsend)(client, &format, app);
 			if (e != GFARM_ERR_NO_ERROR) {
-				va_end(ap);
 				gflog_warning(GFARM_MSG_1000231,
 				    "%s sending reply: %s",
 				    diag, gfarm_error_string(e));
@@ -111,8 +118,21 @@ gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				    "invalid format character");
 		}
 	}
-	va_end(ap);
 	/* do not call gfp_xdr_flush() here for a compound protocol */
 
 	return (ecode);
+}
+
+gfarm_error_t
+gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	const char *diag, gfarm_error_t ecode, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfm_server_put_vreply(peer, xid, sizep, gfp_xdr_vsend, diag,
+	    ecode, format, &ap);
+	va_end(ap);
+	return (e);
 }

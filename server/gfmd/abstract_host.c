@@ -883,6 +883,7 @@ gfm_server_channel_vget_request(struct peer *peer, size_t size,
 gfarm_error_t
 gfm_server_channel_vput_reply(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
+	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
 	const char *diag,
 	gfarm_error_t errcode, const char *format, va_list *app)
 {
@@ -906,7 +907,8 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	if (peer != peer0)
 		return (GFARM_ERR_CONNECTION_ABORTED);
 	client = peer_get_conn(peer);
-	e = gfp_xdr_vsend_async_result(client, xid, errcode, format, app);
+	e = gfp_xdr_vsend_async_result(client, xid, xdr_vsend,
+	    errcode, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 
