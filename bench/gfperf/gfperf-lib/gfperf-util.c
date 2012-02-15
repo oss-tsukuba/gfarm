@@ -23,11 +23,13 @@ asprintf(char **strp, const char *fmt, ...)
 	va_list ap;
 	va_start(ap, fmt);
 	size = vsnprintf(NULL, 0, fmt, ap);
-	if (size < 0) {
-		va_end(ap);
+	va_end(ap);
+	if (size < 0)
 		return (size);
-	}
 	GFARM_MALLOC_ARRAY(bufp, size+1);
+	if (bufp == NULL)
+		return GFARM_ERR_NO_MEMORY;
+	va_start(ap, fmt);
 	ret = vsnprintf(bufp, size+1, fmt, ap);
 	va_end(ap);
 	*strp = bufp;
