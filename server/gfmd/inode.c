@@ -1524,7 +1524,9 @@ inode_new_generation_done(struct inode *inode, struct peer *peer,
 		gflog_warning(GFARM_MSG_1002251, "%s: not pending", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	if (peer != NULL && peer != ios->u.f.event_source) {
+	if (peer == NULL) {
+		peer = ios->u.f.event_source;
+	} else if (peer != ios->u.f.event_source) {
 		gflog_warning(GFARM_MSG_1002252, "%s: different peer", diag);
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
