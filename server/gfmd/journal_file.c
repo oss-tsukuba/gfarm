@@ -285,9 +285,16 @@ journal_file_reader_committed_pos(struct journal_file_reader *reader,
 	static const char *diag = "journal_file_reader_committed_pos";
 
 	journal_file_mutex_lock(jf, diag);
+	journal_file_reader_committed_pos_unlocked(reader, rposp, rlapp);
+	journal_file_mutex_unlock(jf, diag);
+}
+
+void
+journal_file_reader_committed_pos_unlocked(struct journal_file_reader *reader,
+    off_t *rposp, gfarm_uint64_t *rlapp)
+{
 	*rposp = reader->committed_pos;
 	*rlapp = reader->committed_lap;
-	journal_file_mutex_unlock(jf, diag);
 }
 
 /* PREREQUISITE: journal_file_mutex. */

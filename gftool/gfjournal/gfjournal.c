@@ -449,7 +449,7 @@ post_read_list(void *op_arg, gfarm_uint64_t seqnum, enum journal_operation ope,
 	    journal_operation_name(ope), (unsigned long)length);
 	if (opt_verbose) {
 		/* offset */
-		journal_file_reader_committed_pos(reader, &pos, &lap);
+		journal_file_reader_committed_pos_unlocked(reader, &pos, &lap);
 		t = journal_file_tail(jf);
 		printf("%10" GFARM_PRId64 " ",  (gfarm_off_t)((pos + t) % t));
 	}
