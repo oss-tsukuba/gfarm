@@ -2759,6 +2759,7 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 	inode_set_atime(inode, atime);
 	inode_set_mtime(inode, mtime);
 	inode_set_ctime(inode, mtime);
+	inode_set_size(inode, size);
 
 	if (inode->i_gen == old_gen) {
 		/* update generation number */
