@@ -44,10 +44,11 @@ int gfs_client_connection_is_local(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_enter_cache(struct gfs_connection *);
 
+struct gfarm_filesystem;
 gfarm_error_t gfs_client_connect_request_multiplexed(
 	struct gfarm_eventqueue *, const char *, int, const char *,
-	struct sockaddr *, void (*)(void *), void *,
-	struct gfs_client_connect_state **);
+	struct sockaddr *, struct gfarm_filesystem *fs,
+	void (*)(void *), void *, struct gfs_client_connect_state **);
 gfarm_error_t gfs_client_connect_result_multiplexed(
 	struct gfs_client_connect_state *,
 	struct gfs_connection **);

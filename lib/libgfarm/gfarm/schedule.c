@@ -42,6 +42,7 @@
 #include "schedule.h"
 #include "lookup.h"
 #include "gfs_profile.h"
+#include "filesystem.h"
 
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -853,11 +854,14 @@ struct search_idle_state {
 	int semi_idle_hosts_number;
 
 	int concurrency;
+
+	struct gfarm_filesystem *filesystem;
 };
 
 static gfarm_error_t
 search_idle_init_state(struct search_idle_state *s, int desired_hosts,
-	enum gfarm_schedule_search_mode mode, int write_mode)
+	enum gfarm_schedule_search_mode mode, int write_mode,
+	struct gfarm_filesystem *fs)
 {
 	int syserr;
 
@@ -891,6 +895,7 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	s->available_hosts_number = s->usable_hosts_number =
 	    s->idle_hosts_number = s->semi_idle_hosts_number = 0;
 	s->concurrency = 0;
+	s->filesystem = fs;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1122,6 +1127,7 @@ search_idle_load_callback(void *closure)
 				e = gfs_client_connect_request_multiplexed(
 				    c->state->q, c->h->return_value,
 				    c->h->port, user, &c->h->addr,
+				    s->filesystem,
 				    search_idle_connect_callback, c,
 				    &cs);
 				free(user);
@@ -1468,7 +1474,8 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 
 /* `*nohostsp' is INPUT/OUTPUT parameter, and `*ohosts' is OUTPUT parameter */
 static gfarm_error_t
-search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
+search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode,
+	struct gfarm_filesystem *fs)
 {
 	gfarm_error_t e;
 	struct search_idle_state s;
@@ -1482,7 +1489,7 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode)
 
 	gfs_profile(gfarm_gettimerval(&t1));
 	e = search_idle_init_state(&s, *nohostsp,
-	    staticp->default_search_method, write_mode);
+	    staticp->default_search_method, write_mode, fs);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001448,
 		    "search_idle: search_idle_init_state: %s",
@@ -1595,12 +1602,13 @@ hosts_expand_cyclic(int nsrchosts, char **srchosts, int *srcports,
 }
 
 static gfarm_error_t
-search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode)
+search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode,
+	struct gfarm_filesystem *fs)
 {
 	gfarm_error_t e;
 	int nfound = nohosts;
 
-	e = search_idle(&nfound, ohosts, oports, write_mode);
+	e = search_idle(&nfound, ohosts, oports, write_mode, fs);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (nfound == 0)
@@ -1624,6 +1632,8 @@ select_hosts(struct gfm_connection *gfm_server,
 	gfarm_error_t e;
 	int i;
 	gfarm_timerval_t t1, t2, t3, t4;
+	struct gfarm_filesystem *fs =
+	    gfarm_filesystem_get_by_connection(gfm_server);
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
@@ -1662,9 +1672,10 @@ select_hosts(struct gfm_connection *gfm_server,
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 	if (acyclic)
-		e = search_idle(nohostsp, ohosts, oports, write_mode);
+		e = search_idle(nohostsp, ohosts, oports, write_mode, fs);
 	else
-		e = search_idle_cyclic(*nohostsp, ohosts, oports, write_mode);
+		e = search_idle_cyclic(*nohostsp, ohosts, oports, write_mode,
+		    fs);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1001455,
 		    "gfarm_schedule_select_host: search result: %s",
