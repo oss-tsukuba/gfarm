@@ -508,7 +508,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 	gfarm_mutex_unlock(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
 	e = ji.error;
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003425,
 		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
 	}
 
@@ -808,7 +808,7 @@ gfmdc_connect(void)
 	self_host = mdhost_lookup_self();
 	if (gfm_client_hostname_set(conn, mdhost_get_name(self_host))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003426,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
@@ -819,11 +819,11 @@ gfmdc_connect(void)
 	    &gfmd_knows_me))
 	    != GFARM_ERR_NO_ERROR) {
 		if (gfm_client_is_connection_error(e)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003427,
 			    "gfmd_channel(%s) : %s",
 			    hostname, gfarm_error_string(e));
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003428,
 			    "gfmd_channel(%s) : authorization denied. "
 			    "set metadb_server_host properly. : %s",
 			    hostname, gfarm_error_string(e));
@@ -848,7 +848,7 @@ gfmdc_connect(void)
 	}
 	if ((e = gfmdc_client_journal_ready_to_recv(rhost))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003429,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
@@ -943,7 +943,7 @@ gfmdc_connect_thread(void *arg)
 		if (mdhost_get_connection(mdhost_lookup_master()) != NULL) {
 			sleep(GFMDC_CONNECT_INTERVAL);
 		} else if ((e = gfmdc_connect()) != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003430,
 			    "gfmd_channel : "
 			    "give up to connect to the master gfmd: %s",
 			    gfarm_error_string(e));

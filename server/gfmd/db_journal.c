@@ -3652,7 +3652,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (journal_file_reader_is_expired(reader)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003431,
 		    "%s : already expired (cur:%llu target:%llu)",
 		    diag, (unsigned long long)cur_seqnum,
 		    (unsigned long long)min_seqnum);

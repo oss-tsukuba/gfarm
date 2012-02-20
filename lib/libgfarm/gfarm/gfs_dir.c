@@ -323,7 +323,7 @@ gfm_seekdir_request(struct gfm_connection *gfm_server, void *closure)
 	    c->offset, c->whence);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003415,
 		    "seek request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -336,7 +336,7 @@ gfm_seekdir_result(struct gfm_connection *gfm_server, void *closure)
 	    &c->offset);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003416,
 		    "seek result: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -359,7 +359,7 @@ gfs_seekdir_internal(GFS_Dir super, gfarm_off_t off)
 	    (struct gfs_failover_file *)dir, &failover_file_ops,
 	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003417,
 		    "gfm_client_compound_fd_op_readonly(seek): %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -482,7 +482,7 @@ gfm_stat_dir_request(struct gfm_connection *gfm_server, void *closure)
 	gfarm_error_t e = gfm_client_fstat_request(gfm_server);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003418,
 		    "fstat request: %s", gfarm_error_string(e));
 	return (e);
 }
@@ -512,7 +512,7 @@ gfs_statdir(GFS_Dir super, struct gfs_stat *s)
 {
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
 
-	gflog_debug(GFARM_MSG_UNFIXED, "gfs_statdir");
+	gflog_debug(GFARM_MSG_1003419, "gfs_statdir");
 	return (gfm_client_compound_fd_op(dir->gfm_server,
 	    dir->fd, gfm_stat_dir_request,
 	    gfm_stat_dir_result, NULL, s));

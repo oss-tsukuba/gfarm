@@ -277,7 +277,7 @@ gfs_seekdirplusxattr(GFS_DirPlusXAttr dir, gfarm_off_t off)
 	    (struct gfs_failover_file *)dir, &failover_file_ops,
 	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003420,
 		    "gfm_client_compound_fd_op_readonly(seek): %s",
 		    gfarm_error_string(e));
 	}

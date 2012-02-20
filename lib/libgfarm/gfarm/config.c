@@ -904,7 +904,7 @@ gfarm_config_set_argv0(const char *argv0)
 		return (GFARM_ERR_NO_ERROR);
 	staticp->argv0 = strdup(argv0);
 	if (staticp->argv0 == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003409,
 		    "failed to allocate argv0 \"%s\": no memory", argv0);
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -2251,7 +2251,7 @@ parse_debug_command(char *p, char **op)
 	for (argc = 0; argc < MAX_DEBUG_COMMAND_LENGTH; ++argc) {
 		e = gfarm_strtoken(&p, &arg);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003410,
 			    "invalid argument of %s (%s): %s",
 			    diag, p, gfarm_error_string(e));
 			goto error;
@@ -2261,7 +2261,7 @@ parse_debug_command(char *p, char **op)
 		argv[argc] = expand_debug_command_arg_pattern(arg);
 		if (argv[argc] == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003411,
 			    "failed to allocate an argument of %s: %s",
 			    diag, gfarm_error_string(e));
 			goto error;
@@ -2269,7 +2269,7 @@ parse_debug_command(char *p, char **op)
 	}
 	if (argc == MAX_DEBUG_COMMAND_LENGTH) {
 		e = GFARM_ERR_ARGUMENT_LIST_TOO_LONG;
-		gflog_error(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		gflog_error(GFARM_MSG_1003412, "%s: %s", diag,
 		    gfarm_error_string(e));
 		goto error;
 	}
@@ -2280,7 +2280,7 @@ parse_debug_command(char *p, char **op)
 		    malloc(sizeof(char *) * (argc + 1));
 		if (staticp->debug_command_argv == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003413,
 			    "failed to allocate a list of arguments of %s: %s",
 			    diag, gfarm_error_string(e));
 			goto error;

@@ -2896,7 +2896,7 @@ setsockopt_to_async_channel(struct gfm_connection *gfm_server, const char *diag)
 	e = gfarm_sockopt_set_option(
 	    gfp_xdr_fd(gfm_server->conn), "tcp_nodelay");
 	if (e == GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED, "tcp_nodelay is specified "
+		gflog_debug(GFARM_MSG_1003414, "tcp_nodelay is specified "
 		    "for async channel %s", diag);
 	else
 		gflog_error(GFARM_MSG_1002574,

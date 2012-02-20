@@ -56,7 +56,7 @@ gssCrackStatus(OM_uint32 statValue, int statType)
 
     GFARM_MALLOC_ARRAY(ret, 1);
     if (ret == NULL) {
-	gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	gflog_error(GFARM_MSG_1003406, "gssCrackStatus: no memory");
 	return (ret);
     }
     ret[0] = NULL;
@@ -70,13 +70,13 @@ gssCrackStatus(OM_uint32 statValue, int statType)
 				 &stStr);
 	GFARM_REALLOC_ARRAY(ret_new, ret, i + 2);
 	if (ret_new == NULL) {
-	    gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	    gflog_error(GFARM_MSG_1003407, "gssCrackStatus: no memory");
 	    goto free_ret;
 	}
 	ret = ret_new;
 	GFARM_MALLOC_ARRAY(ret[i], stStr.length + 1);
 	if (ret[i] == NULL) {
-	    gflog_error(GFARM_MSG_UNFIXED, "gssCrackStatus: no memory");
+	    gflog_error(GFARM_MSG_1003408, "gssCrackStatus: no memory");
 	    goto free_ret;
 	}
 	dP = ret[i];
