@@ -27,6 +27,8 @@
 #include "process.h"
 #include "id_table.h"
 #include "host.h"
+#include "relay.h"
+
 
 #define FILETAB_INITIAL		16
 #define FILETAB_MULTIPLY	2
@@ -1401,29 +1403,41 @@ gfm_server_bequeath_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct host *spool_host;
 	struct process *process;
 	gfarm_int32_t fd;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_BEQUEATH_FD";
 
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_BEQUEATH_FD, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001675,
-			"operation is not permitted ");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001676,
-			"peer_get_process() failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001677,
-			"peer_fdpair_get_current() failed");
-	} else
-		e = process_bequeath_fd(process, fd);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001675,
+				    "operation is not permitted ");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001676,
+				    "peer_get_process() failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001677,
+				    "peer_fdpair_get_current() failed");
+		} else
+			e = process_bequeath_fd(process, fd);
+
+		giant_unlock();
+	}
+
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1434,37 +1448,42 @@ gfm_server_inherit_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t parent_fd, fd;
 	struct host *spool_host;
 	struct process *process;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_INHERIT_FD";
 
-	e = gfm_server_get_request(peer, sizep, diag, "i", &parent_fd);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001678,
-			"inherit_fd request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_INHERIT_FD, "i", &parent_fd);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001679,
-			"operation is not permitted");
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001680,
-			"peer_get_process() failed");
-	} else if ((e = process_inherit_fd(process, parent_fd, peer, NULL,
-	    &fd)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001681,
-			"process_inherit_fd() failed: %s",
-			gfarm_error_string(e));
-	} else
-		peer_fdpair_set_current(peer, fd);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001679,
+				    "operation is not permitted");
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001680,
+				    "peer_get_process() failed");
+		} else if ((e = process_inherit_fd(process, parent_fd, peer,
+		    NULL, &fd)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001681,
+				    "process_inherit_fd() failed: %s",
+				    gfarm_error_string(e));
+		} else
+			peer_fdpair_set_current(peer, fd);
+
+		giant_unlock();
+	}
+
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t

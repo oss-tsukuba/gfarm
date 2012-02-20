@@ -524,7 +524,9 @@ gfm_server_create(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	if (relay == NULL) {
+	if (relay != NULL) {
+		free(name);
+	} else {
 		/* do not relay RPC to master gfmd */
 		giant_lock();
 		e = gfm_server_open_common(diag, peer, from_client,
@@ -586,7 +588,9 @@ gfm_server_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	if (relay == NULL) {
+	if (relay != NULL) {
+		free(name);
+	} else {
 		/* do not relay RPC to master gfmd */
 		giant_lock();
 
@@ -817,36 +821,39 @@ gfm_server_verify_type_common(
 	gfarm_uint32_t type;
 	gfarm_int32_t cfd;
 	struct inode *inode;
+	struct relayed_request *relay;
 	gfarm_mode_t mode = 0;
 
-	e = gfm_server_get_request(peer, sizep, diag, "i", &type);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001815,
-			"verify_type request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    tf ? GFM_PROTO_VERIFY_TYPE : GFM_PROTO_VERIFY_TYPE_NOT, "i",
+		&type);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1002844,
-			"operation is not permitted : peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
-		GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002845, "peer_fdpair_get_current() "
-			"failed: %s", gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, cfd, &inode)) !=
-		GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002846, "process_get_file_inode() "
-			"failed: %s", gfarm_error_string(e));
-	} else {
-		mode = inode_get_mode(inode);
-	}
-	giant_unlock();
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1002844,
+			    "operation is not permitted : peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &cfd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1002845,
+			    "peer_fdpair_get_current() "
+			    "failed: %s", gfarm_error_string(e));
+		} else if ((e = process_get_file_inode(process, cfd, &inode)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1002846,
+			    "process_get_file_inode() "
+			    "failed: %s", gfarm_error_string(e));
+		} else {
+			mode = inode_get_mode(inode);
+		}
+		giant_unlock();
 
 #define ERR_FOR_TYPE(m) \
 	(GFARM_S_ISDIR(m) ? GFARM_ERR_IS_A_DIRECTORY : \
@@ -854,30 +861,32 @@ gfm_server_verify_type_common(
 	GFARM_S_ISLNK(m) ? GFARM_ERR_IS_A_SYMBOLIC_LINK : \
 	GFARM_ERR_UNKNOWN)
 
-	switch (type) {
-	case GFS_DT_DIR:
-		e = GFARM_S_ISDIR(mode) ?
-			(tf ? GFARM_ERR_NO_ERROR : GFARM_ERR_IS_A_DIRECTORY) :
+		switch (type) {
+		case GFS_DT_DIR:
+			e = GFARM_S_ISDIR(mode) ?
+			  (tf ? GFARM_ERR_NO_ERROR : GFARM_ERR_IS_A_DIRECTORY):
+			  (tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
+			break;
+		case GFS_DT_REG:
+			e = GFARM_S_ISREG(mode) ?
+			  (tf ? GFARM_ERR_NO_ERROR :
+			    GFARM_ERR_IS_A_REGULAR_FILE) :
+			  (tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
+			break;
+		case GFS_DT_LNK:
+			e = GFARM_S_ISLNK(mode) ?
+			  (tf ? GFARM_ERR_NO_ERROR :
+			    GFARM_ERR_IS_A_SYMBOLIC_LINK) :
 			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
-		break;
-	case GFS_DT_REG:
-		e = GFARM_S_ISREG(mode) ?
-			(tf ? GFARM_ERR_NO_ERROR :
-				GFARM_ERR_IS_A_REGULAR_FILE) :
-			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
-		break;
-	case GFS_DT_LNK:
-		e = GFARM_S_ISLNK(mode) ?
-			(tf ? GFARM_ERR_NO_ERROR :
-				GFARM_ERR_IS_A_SYMBOLIC_LINK) :
-			(tf ? ERR_FOR_TYPE(mode) : GFARM_ERR_NO_ERROR);
-		break;
-	default:
-		e = GFARM_ERR_INVALID_ARGUMENT;
-		break;
+			break;
+		default:
+			e = GFARM_ERR_INVALID_ARGUMENT;
+			break;
+		}
 	}
 
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -907,39 +916,44 @@ gfm_server_revoke_gfsd_access(
 	gfarm_int32_t fd;
 	struct file_opening *fo;
 	struct process *process;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REVOKE_GFSD_ACCESS";
 
-	if ((e = gfm_server_get_request(peer, sizep, diag, "i", &fd))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002847,
-		    "revoke_fd_host failed : %s", gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_REVOKE_GFSD_ACCESS, "i", &fd);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
-	if (!from_client) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1002848,
-			"%s", gfarm_error_string(e));
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1002849,
-			"%s", gfarm_error_string(e));
-	} else if ((e = process_get_file_opening(process, fd, &fo))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002850,
-			"%s", gfarm_error_string(e));
-	} else if ((fo->flag & GFARM_FILE_ACCMODE) != GFARM_FILE_RDONLY) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1002851,
-			"%s", gfarm_error_string(e));
-	} else if (fo->opener) {
-		fo->u.f.spool_opener = NULL;
-		fo->u.f.spool_host = NULL;
+
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (!from_client) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1002848,
+				    "%s", gfarm_error_string(e));
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1002849,
+				    "%s", gfarm_error_string(e));
+		} else if ((e = process_get_file_opening(process, fd, &fo))
+			   != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1002850,
+				    "%s", gfarm_error_string(e));
+		} else if ((fo->flag & GFARM_FILE_ACCMODE) !=
+		    GFARM_FILE_RDONLY) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1002851,
+				    "%s", gfarm_error_string(e));
+		} else if (fo->opener) {
+			fo->u.f.spool_opener = NULL;
+			fo->u.f.spool_host = NULL;
+		}
+		giant_unlock();
 	}
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 static gfarm_error_t
@@ -983,42 +997,54 @@ gfm_server_fstat(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct process *process;
 	struct inode *inode;
 	struct gfs_stat st;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FSTAT";
 
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	memset(&st, 0, sizeof(st));
 #endif
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_FSTAT, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001817,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001818,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001819,
-			"peer_fdpair_get_current() failed: %s",
-			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) ==
-	    GFARM_ERR_NO_ERROR)
-		e = inode_get_stat(inode, &st);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	giant_unlock();
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "llilsslllilili",
-	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
-	    st.st_user, st.st_group, st.st_size,
-	    st.st_ncopy,
-	    st.st_atimespec.tv_sec, st.st_atimespec.tv_nsec,
-	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec,
-	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec);
-	if (e == GFARM_ERR_NO_ERROR) {
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001817,
+				    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001818,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001819,
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
+		} else if ((e = process_get_file_inode(process, fd, &inode)) ==
+			   GFARM_ERR_NO_ERROR)
+			e = inode_get_stat(inode, &st);
+
+		giant_unlock();
+	}
+
+	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, "llilsslllilili",
+	    &st.st_ino, &st.st_gen, &st.st_mode, &st.st_nlink,
+	    &st.st_user, &st.st_group, &st.st_size,
+	    &st.st_ncopy,
+	    &st.st_atimespec.tv_sec, &st.st_atimespec.tv_nsec,
+	    &st.st_mtimespec.tv_sec, &st.st_mtimespec.tv_nsec,
+	    &st.st_ctimespec.tv_sec, &st.st_ctimespec.tv_nsec);
+	if (relay == NULL && e == GFARM_ERR_NO_ERROR) {
 		free(st.st_user);
 		free(st.st_group);
 	}
@@ -1220,9 +1246,11 @@ gfm_server_futimes(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct process *process;
 	struct user *user;
 	struct inode *inode;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FUTIMES";
 
-	e = gfm_server_get_request(peer, sizep, diag, "lili",
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_FUTIMES, "lili",
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001820, "futimes request failed: %s",
@@ -1231,45 +1259,55 @@ gfm_server_futimes(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001821,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001822,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001823, "peer_fdpair_get_current() "
-			"failed: %s", gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001824, "process_get_file_inode() "
-			"failed: %s", gfarm_error_string(e));
-	} else if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_1001825, "process_get_user() failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (user != inode_get_user(inode) &&
-	    !user_is_root(inode, user) &&
-	    (e = process_get_file_writable(process, peer, fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001826, "permission denied");
-		e = GFARM_ERR_PERMISSION_DENIED;
-	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001827, "db_begin() failed: %s",
-			gfarm_error_string(e));
-	} else {
-		inode_set_atime(inode, &atime);
-		inode_set_mtime(inode, &mtime);
-		db_end(diag);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001821,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001822,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001823,
+			    "peer_fdpair_get_current() "
+			    "failed: %s", gfarm_error_string(e));
+		} else if ((e = process_get_file_inode(process, fd, &inode))
+			   != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001824,
+			    "process_get_file_inode() "
+			    "failed: %s", gfarm_error_string(e));
+		} else if ((user = process_get_user(process)) == NULL) {
+			gflog_debug(GFARM_MSG_1001825,
+			    "process_get_user() failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (user != inode_get_user(inode) &&
+		    !user_is_root(inode, user) &&
+			(e = process_get_file_writable(process, peer, fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001826, "permission denied");
+			e = GFARM_ERR_PERMISSION_DENIED;
+		} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001827, "db_begin() failed: %s",
+				    gfarm_error_string(e));
+		} else {
+			inode_set_atime(inode, &atime);
+			inode_set_mtime(inode, &mtime);
+			db_end(diag);
+		}
+
+		giant_unlock();
 	}
 
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1283,52 +1321,57 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct process *process;
 	struct user *user;
 	struct inode *inode;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FCHMOD";
 
-	e = gfm_server_get_request(peer, sizep, diag, "i", &mode);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001828, "fchmod request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_FCHMOD, "i", &mode);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001829,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001830,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_1001831,
-			"operation is not permitted: process_get_user() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001832,
-			"peer_fdpair_get_current() failed: %s",
-			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001833,
-			"process_get_file_inode() failed: %s",
-			gfarm_error_string(e));
-	} else if (user != inode_get_user(inode) &&
-	    !user_is_root(inode, user)) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001834,
-			"operation is not permitted for user");
-	} else
-		e = inode_set_mode(inode, mode);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001829,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001830,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((user = process_get_user(process)) == NULL) {
+			gflog_debug(GFARM_MSG_1001831,
+			    "operation is not permitted: process_get_user() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001832,
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
+		} else if ((e = process_get_file_inode(process, fd, &inode))
+			   != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001833,
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
+		} else if (user != inode_get_user(inode) &&
+			   !user_is_root(inode, user)) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001834,
+			    "operation is not permitted for user");
+		} else
+			e = inode_set_mode(inode, mode);
+
+		giant_unlock();
+	}
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1343,76 +1386,84 @@ gfm_server_fchown(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct user *user, *new_user = NULL;
 	struct group *new_group = NULL;
 	struct inode *inode;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FCHOWN";
 
-	e = gfm_server_get_request(peer, sizep, diag, "ss",
-	    &username, &groupname);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001835, "fchown request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_FCHOWN, "ss", &username, &groupname);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip) {
 		free(username);
 		free(groupname);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001836,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001837,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((user = process_get_user(process)) == NULL) {
-		gflog_debug(GFARM_MSG_1001838,
-			"operation is not permitted: process_get_user() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001839,
-			"peer_fdpair_get_current() failed: %s",
-			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001840,
-			"process_get_file_inode() failed: %s",
-			gfarm_error_string(e));
-	} else if (*username != '\0' &&
-	    (new_user = user_lookup(username)) == NULL) {
-		gflog_debug(GFARM_MSG_1001841, "user is not found");
-		e = GFARM_ERR_NO_SUCH_USER;
-	} else if (*groupname != '\0' &&
-	    (new_group = group_lookup(groupname)) == NULL) {
-		gflog_debug(GFARM_MSG_1001842, "group is not found");
-		e = GFARM_ERR_NO_SUCH_GROUP;
-	} else if (new_user != NULL && !user_is_root(inode, user)) {
-		gflog_debug(GFARM_MSG_1001843,
-			"operation is not permitted for user");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (new_group != NULL && !user_is_root(inode, user) &&
-	    (user != inode_get_user(inode) ||
-	    !user_in_group(user, new_group))) {
-		gflog_debug(GFARM_MSG_1001844,
-			"operation is not permitted for group");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001845, "db_begin() failed: %s",
-			gfarm_error_string(e));
+	if (relay != NULL) {
+		free(username);
+		free(groupname);
+
 	} else {
-		e = inode_set_owner(inode, new_user, new_group);
-		db_end(diag);
-	}
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	free(username);
-	free(groupname);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001836,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001837,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((user = process_get_user(process)) == NULL) {
+			gflog_debug(GFARM_MSG_1001838,
+			    "operation is not permitted: process_get_user() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001839,
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
+		} else if ((e = process_get_file_inode(process, fd, &inode))
+			   != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001840,
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
+		} else if (*username != '\0' &&
+			   (new_user = user_lookup(username)) == NULL) {
+			gflog_debug(GFARM_MSG_1001841, "user is not found");
+			e = GFARM_ERR_NO_SUCH_USER;
+		} else if (*groupname != '\0' &&
+			   (new_group = group_lookup(groupname)) == NULL) {
+			gflog_debug(GFARM_MSG_1001842, "group is not found");
+			e = GFARM_ERR_NO_SUCH_GROUP;
+		} else if (new_user != NULL && !user_is_root(inode, user)) {
+			gflog_debug(GFARM_MSG_1001843,
+			    "operation is not permitted for user");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (new_group != NULL && !user_is_root(inode, user) &&
+			   (user != inode_get_user(inode) ||
+			    !user_in_group(user, new_group))) {
+			gflog_debug(GFARM_MSG_1001844,
+			    "operation is not permitted for group");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001845, "db_begin() failed: %s",
+				    gfarm_error_string(e));
+		} else {
+			e = inode_set_owner(inode, new_user, new_group);
+			db_end(diag);
+		}
+
+		free(username);
+		free(groupname);
+		giant_unlock();
+	}
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1427,54 +1478,67 @@ gfm_server_cksum_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct process *process;
 	char *cksum_type = NULL, *cksumbuf = NULL, *cksum;
 	int alloced = 0;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CKSUM_GET";
 
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_CKSUM_GET, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	giant_lock();
 
-	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001846,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001847,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001848, "peer_fdpair_get_current() "
-			"failed: %s", gfarm_error_string(e));
-	} else if ((e = process_cksum_get(process, peer, fd,
-	    &cksum_type, &cksum_len, &cksum, &flags)) != GFARM_ERR_NO_ERROR) {
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001846,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001847,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001848,
+			    "peer_fdpair_get_current() "
+			    "failed: %s", gfarm_error_string(e));
+		} else if ((e = process_cksum_get(
+		    process, peer, fd, &cksum_type, &cksum_len, &cksum, &flags
+			)) != GFARM_ERR_NO_ERROR) {
 		/* We cannot access cksum_type and cksum outside of giant */
-		gflog_debug(GFARM_MSG_1001849,
-			"process_cksum_get() failed: %s",
-			gfarm_error_string(e));
-	} else if (cksum_type == NULL) {
-		cksum_type = "";
-		cksum_len = 0;
-		cksumbuf = "";
-	} else if ((cksum_type = strdup_log(cksum_type, diag)) == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-	} else {
-		GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
-		if (cksumbuf == NULL) {
+			gflog_debug(GFARM_MSG_1001849,
+			    "process_cksum_get() failed: %s",
+			    gfarm_error_string(e));
+		} else if (cksum_type == NULL) {
+			cksum_type = "";
+			cksum_len = 0;
+			cksumbuf = "";
+		} else if ((cksum_type = strdup_log(cksum_type, diag)) ==
+		    NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			free(cksum_type);
-#if 1 /* shut up warning by Fortify */
-			cksum_type = NULL;
-#endif
 		} else {
-			memcpy(cksumbuf, cksum, cksum_len);
-			alloced = 1;
+			GFARM_MALLOC_ARRAY(cksumbuf, cksum_len);
+			if (cksumbuf == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				free(cksum_type);
+#if 1 /* shut up warning by Fortify */
+				cksum_type = NULL;
+#endif
+			} else {
+				memcpy(cksumbuf, cksum, cksum_len);
+				alloced = 1;
+			}
 		}
-	}
 
-	giant_unlock();
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "sbi",
-	    cksum_type, cksum_len, cksumbuf,  flags);
+		giant_unlock();
+	}
+	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, "sbi", &cksum_type, sizeof(cksumbuf), &cksum_len, cksumbuf,
+	    &flags);
 	if (alloced) {
 		free(cksum_type);
 		free(cksumbuf);
@@ -1494,52 +1558,58 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	char *cksum_type;
 	char cksum[GFM_PROTO_CKSUM_MAXLEN];
 	struct gfarm_timespec mtime;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CKSUM_SET";
 
-	e = gfm_server_get_request(peer, sizep, diag, "sbili",
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_CKSUM_SET, "sbili",
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags,
 	    &mtime.tv_sec, &mtime.tv_nsec);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001850,
-			"cksum_set request failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip) {
 		free(cksum_type);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
 
-	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_1001851,
-			"operation is not permitted: from_client");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001852,
-			"operation is not permitted: peer_get_host() failed");
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1001853,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001854, "peer_fdpair_get_current() "
-			"failed: %s", gfarm_error_string(e));
-	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001855, "db_begin() failed: %s",
-			gfarm_error_string(e));
+	if (relay != NULL) {
+		free(cksum_type);
 	} else {
-		e = process_cksum_set(process, peer, fd,
-		    cksum_type, cksum_len, cksum, flags, &mtime);
-		db_end(diag);
-	}
+		/* do not relay RPC to master gfmd */
+		giant_lock();
 
-	free(cksum_type);
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		if (from_client) { /* from gfsd only */
+			gflog_debug(GFARM_MSG_1001851,
+			    "operation is not permitted: from_client");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((spool_host = peer_get_host(peer)) == NULL) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001852,
+			"operation is not permitted: peer_get_host() failed");
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_1001853,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001854,
+			"peer_fdpair_get_current() "
+			    "failed: %s", gfarm_error_string(e));
+		} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001855, "db_begin() failed: %s",
+			    gfarm_error_string(e));
+		} else {
+			e = process_cksum_set(process, peer, fd,
+			    cksum_type, cksum_len, cksum, flags, &mtime);
+			db_end(diag);
+		}
+
+		free(cksum_type);
+		giant_unlock();
+	}
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1551,47 +1621,55 @@ gfm_server_schedule_file(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t i, fd, nhosts;
 	struct host **hosts, *spool_host = NULL;
 	struct process *process;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SCHEDULE_FILE";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &domain);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001856,
-			"schedule_file request failed: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_SCHEDULE_FILE, "s", &domain);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip) {
 		free(domain);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	giant_lock();
 
-	if (*domain != '\0') {
-		gflog_debug(GFARM_MSG_1001857,
-			"function not implemented");
-		e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED; /* XXX FIXME */
-	} else if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001858,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001859,
-			"operation is not permitted: peer_get_process() "
-			"failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-	    GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001860, "peer_fdpair_get_current() "
-			"failed: %s", gfarm_error_string(e));
+	if (relay != NULL) {
+		free(domain);
 	} else {
-		e = process_schedule_file(process, peer, fd, &nhosts, &hosts);
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+
+		if (*domain != '\0') {
+			gflog_debug(GFARM_MSG_1001857,
+			    "function not implemented");
+			e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED; /* XXX FIXME */
+		} else if (!from_client &&
+		    (spool_host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001858,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((process = peer_get_process(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001859,
+			    "operation is not permitted: peer_get_process() "
+			    "failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			   GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001860,
+			    "peer_fdpair_get_current() "
+			    "failed: %s", gfarm_error_string(e));
+		} else {
+			e = process_schedule_file(process, peer, fd,
+			    &nhosts, &hosts);
+		}
+
+		free(domain);
+		giant_unlock();
 	}
 
-	free(domain);
-	giant_unlock();
-
 	if (e != GFARM_ERR_NO_ERROR)
-		return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
+		    relay, diag, &e, ""));
 
 	/* XXXRELAY FIXME, reply size is not correct */
 	e_save = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nhosts);
