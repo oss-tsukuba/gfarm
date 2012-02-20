@@ -920,7 +920,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	    (!min_seqnum_found || cur_seqnum + 1 < min_seqnum ||
 	    max_seqnum < cur_seqnum)) {
 		e = GFARM_ERR_EXPIRED;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003421,
 		    "%s: seqnum=%llu min_seqnum=%llu max_seqnum=%llu",
 		    gfarm_error_string(e),
 		    (unsigned long long)cur_seqnum,
@@ -1403,7 +1403,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 
 	if ((fd = open(jf->path, O_RDONLY)) == -1) {
 		e = gfarm_errno_to_error(errno);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003422,
 		    "open: %s", gfarm_error_string(e));
 		goto unlock;
 	}
@@ -1411,7 +1411,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 	assert(*readerp == NULL || (*readerp)->xdr == NULL);
 	if ((e2 = journal_find_rw_pos(fd, -1, jf->tail, seqnum, &rpos,
 	    &rlap, &wpos, &wlap, &tail)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003423,
 		    "journal_find_rw_pos: %s", gfarm_error_string(e2));
 		if (e2 != GFARM_ERR_EXPIRED) {
 			e = e2;
@@ -1855,7 +1855,7 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 	if (journal_file_reader_is_invalid(reader)) {
 		/* invalidated reader while reading is always expired */
 		e = GFARM_ERR_EXPIRED;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003424,
 		    "journal file is expired while reading records");
 		goto error;
 	}

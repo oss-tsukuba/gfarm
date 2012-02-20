@@ -22,7 +22,7 @@ gfarm_log_backtrace_symbols(void)
 	symbols = backtrace_symbols(addresses, n);
 
 	for (i = 0; i < n; i++) {
-		gflog_info(GFARM_MSG_UNFIXED, "backtrace symbols [%d/%d]: %s",
+		gflog_info(GFARM_MSG_1003405, "backtrace symbols [%d/%d]: %s",
 		    i + 1, n, symbols[i]);
 	}
 
