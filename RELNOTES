@@ -1,3 +1,58 @@
+Release note for Gfarm 2.5.4
+============================
+
+[2012.2.21]
+
+New Command
+* gfperf.rb - performance measurement tool
+* gfstress.rb - heavy load generator
+* gfiops - iops measurement tool
+
+New API
+* gfs_seekdir and gfs_telldir
+
+New configuration directive
+* debug_command - specify the command to be executed when SIGQUIT,
+  SIGILL, SIGTRAP, SIGFPE, SIGBUS, and SIGSEGV are caught
+
+Documentation
+* Gfarm-FAQ - how to dump core
+
+Updated feature
+* link a thread-safe globus flavor
+* support private mode in debian
+* gfstatus - -d option for debug messages
+* gfjournal - -m option to display the latest sequence number [sf.net
+  trac #308]
+* gfdump.postgresql - -n option to suppress stopping and starting the
+  metadata server
+* gfsd - terminates only if there is no file opened in write mode
+* gfmd - gfmd hostname can be specified by the configuration file
+  [sf.net trac #309]
+* gfmd - slave gfmd exits when the database is out of date [sf.net
+  trac #328]
+* display backtrace when gfmd/gfsd aborts [sf.net trac #304]
+
+Bug fix
+* fix connection error in case of GSI and local host
+* gfjournal - deadlock with -lv option [sf.net trac #335]
+* gfdump.postgresql - always exit 1 in the dump mode
+* gfmd - fix potential segfault [sf.net trac #337]
+* gfmd - plug memory leak when updating metadata host at start up
+  [sf.net trac #333]
+* gfmd - plug memory leak when changing a slave gfmd to a master gfmd
+  [sf.net trac #332]
+* gfmd - fix segfault when disconnecting a master-slave gfmd channel
+  [sf.net trac #330]
+* gfmd - fix assertion failure when a slave gfmd reconnects to the
+  master gfmd after the database is out of date [sf.net trac #322]
+* gfmd - journal file cannot be correctly opened when it is
+  overwritten once [sf.net trac #321]
+* gfmd - plug file descriptor leak when the journal records are
+  expired [sf.net trac #320]
+* gfmd - fix internal error during sending journal records [sf.net
+  trac #314]
+
 Release note for Gfarm 2.5.3
 ============================
 
