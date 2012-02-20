@@ -63,7 +63,6 @@ SRCS = \
 	gfs_pio.c \
 	gfs_pio_section.c \
 	gfs_pio_local.c gfs_pio_remote.c \
-	gfs_pio_failover.c \
 	gfs_profile.c \
 	gfs_chmod.c \
 	gfs_chown.c \
@@ -142,7 +141,6 @@ OBJS = \
 	gfs_pio.lo \
 	gfs_pio_section.lo \
 	gfs_pio_local.lo gfs_pio_remote.lo \
-	gfs_pio_failover.lo \
 	gfs_profile.lo \
 	gfs_chmod.lo \
 	gfs_chown.lo \
@@ -223,8 +221,7 @@ gfs_link.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h liberror.h gfs_proto.h gfm_client.h gfs_proto.h gfs_io.h gfs_file_list.h gfs_pio.h config.h
 gfs_pio_local.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_pio.h
 gfs_pio_remote.lo: $(GFUTIL_SRCDIR)/queue.h host.h config.h gfs_proto.h gfs_client.h gfs_pio.h
-gfs_pio_section.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_file_list.h gfs_failover.h
-gfs_pio_failover.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfm_client.h gfs_client.h gfs_io.h gfs_pio.h gfs_misc.h filesystem.h gfs_file_list.h gfs_failover.h
+gfs_pio_section.lo: $(GFUTIL_SRCDIR)/queue.h gfs_pio.h host.h config.h schedule.h gfs_client.h gfs_proto.h $(GFUTIL_SRCDIR)/timer.h gfs_file_list.h
 gfs_proto.lo: gfs_proto.h
 gfs_quota.lo: config.h quota_info.h
 gfs_readlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h

@@ -30,7 +30,6 @@
 #include "gfs_io.h"
 #include "gfs_pio.h"
 #include "gfp_xdr.h"
-#include "gfs_failover.h"
 #include "gfs_file_list.h"
 
 #include "config.h" /* XXX FIXME this shouldn't be needed here */
