@@ -232,7 +232,7 @@ gfs_realpath.lo: gfm_client.h lookup.h
 gfs_replica.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h host.h config.h lookup.h
 gfs_replica_info.lo: gfm_proto.h gfm_client.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h schedule.h gfs_misc.h
-gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h gfs_misc.h gfs_failover.h
+gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h gfm_client.h config.h lookup.h gfs_misc.h
 gfs_statsw.lo: gfs_dircache.h
 gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_unlink.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h gfs_profile.h
