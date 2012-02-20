@@ -15,6 +15,10 @@ trap "" 1
 export LANG=C
 export PATH
 
+# gfsd service certificate
+export X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+export X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+
 test -f $DAEMON || exit 0
 test -f $CONF || exit 0
 

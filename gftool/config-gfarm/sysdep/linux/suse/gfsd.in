@@ -25,6 +25,11 @@ DAEMON="@config_gfarm_prefix@/sbin/$prog"
 PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 OPTIONS="@config_gfarm_gfsd_option@"
 
+# gfsd service certificate
+X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+export X509_USER_CERT X509_USER_KEY
+
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 

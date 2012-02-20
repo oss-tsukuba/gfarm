@@ -23,6 +23,11 @@ required_files="$CONF"
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"
 
+# gfsd service certificate
+X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+export X509_USER_CERT X509_USER_KEY
+
 if [ -f /etc/rc.subr ]; then
 	load_rc_config ${FILE}
 	run_rc_command "$1"

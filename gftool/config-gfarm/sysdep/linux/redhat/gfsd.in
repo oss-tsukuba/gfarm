@@ -22,6 +22,10 @@ PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfsd_option@"
 
+# gfsd service certificate
+export X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+export X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
 
