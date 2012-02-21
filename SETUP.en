@@ -198,7 +198,12 @@ the gfsd.
 
   Copy the certificate to /etc/grid-security/gfsd/gfsd{cert,key}.pem
   and change the owner to '_gfarmfs'.  The permission of gfsdkey.pem
-  should be 0400.
+  should be 0400.  If you would like to execute two or more gfsd
+  servers on the same host using virtual IP addresses, you need to
+  specify the hostname or IP address of each gfsd by -l option of
+  config-gfsd.  In this case, the location of gfsd service certificate
+  should be /etc/grid-security/gfsd-<hostname or IP
+  address>/gfsd{cert,key}.pem
 
 Copy <sysconfdir>/gfarm2.conf from the metadata server that is created
 by 'config-gfarm'.

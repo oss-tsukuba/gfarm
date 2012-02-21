@@ -212,7 +212,11 @@ GSI 認証の場合は，gfsd 用のサービス証明書を取得します．
 
   証明書は /etc/grid-security/gfsd/gfsd{cert,key}.pem に置き，ディレク
   トリとファイルのオーナを _gfarmfs とします．gfsdkey.pem のファイルモー
-  ドは 0400 とします．
+  ドは 0400 とします．複数の gfsd を異なる仮想IPアドレスを用い同一ホス
+  トで立ち上げたい場合は以下の config-gfsd に対し -l オプションでホスト
+  名、あるいはIPアドレスを指定します。その場合、証明書は
+  /etc/grid-security/gfsd-<ホスト名 or IPアドレス>/gfsd{cert,key}.pem
+  に置きます。
 
 次に，メタデータサーバで生成された <sysconfdir>/etc/gfarm2.conf ファイ
 ルをファイルシステムノードの <sysconfdir>/etc にコピーします．
