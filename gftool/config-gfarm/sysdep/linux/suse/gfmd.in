@@ -22,7 +22,7 @@ prog="gfmd"
 FILE=$prog
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_gfmd_pid_file@"
 OPTIONS="@config_gfarm_gfmd_option@"
 warning_facility=local0
 warning_priority=notice

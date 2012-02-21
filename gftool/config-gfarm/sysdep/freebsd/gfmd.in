@@ -31,7 +31,7 @@ FILE=${name}
 rcvar=`set_rcvar`
 
 command="@config_gfarm_prefix@/sbin/${name}"
-pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+pidfile="@config_gfarm_gfmd_pid_file@"
 required_files="$CONF"
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"

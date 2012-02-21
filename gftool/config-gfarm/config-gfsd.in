@@ -192,7 +192,6 @@ sysdep_defaults
 : ${PARAMS_DISPLAY_STYLE:=none}
 
 : ${RUN_DIR:="$CONFIG_PREFIX/var/run"}
-: ${GFSD_PID_FILE:="$RUN_DIR/gfsd.pid"}
 
 if [ X"$CONFIG_PREFIX" != X ]; then
 	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
@@ -239,6 +238,7 @@ else
 	: ${RC_NAME:="gfsd"}
 	: ${RC_VAR:="$RC_NAME"}
 fi
+: ${GFSD_PID_FILE:="$RUN_DIR/${RC_NAME}.pid"}
 
 # -t option; display parameters
 [ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
@@ -256,6 +256,7 @@ config()
 	-e "s|@config_gfarm_gfsd_option@|-f $GFARM_CONF -h $GFSD_HOSTNAME -r $SPOOL_DIRECTORY$GFSD_EXTRA_OPTIONS|g" \
 	-e "s|@config_gfarm_gfsd_rc_name@|$RC_NAME|g" \
 	-e "s|@config_gfarm_gfsd_rc_var@|$RC_VAR|g" \
+	-e "s|@config_gfarm_gfsd_pid_file@|$GFSD_PID_FILE|g" \
 	-e "s|@config_gfarm_run_dir@|$RUN_DIR|g" \
 	${1+"$@"} | config_sysdep
 }

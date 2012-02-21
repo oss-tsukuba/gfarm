@@ -7,7 +7,7 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 NAME=gfmd
 FILE=$NAME
 DAEMON="@config_gfarm_prefix@/sbin/$NAME"
-PIDFILE="@config_gfarm_run_dir@/$FILE.pid"
+PIDFILE="@config_gfarm_gfmd_pid_file@"
 CONF="@config_gfarm_gfmd_config@"
 OPTIONS="@config_gfarm_gfmd_option@"
 

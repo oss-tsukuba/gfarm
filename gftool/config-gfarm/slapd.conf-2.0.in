@@ -5,7 +5,7 @@
 include		@config_gfarm_openldap_etc@/schema/core.schema
 include		@config_gfarm_ldap_schema@
 
-pidfile		@config_gfarm_run_dir@/gfarm-slapd.pid
+pidfile		@config_gfarm_backend_pid_file@
 argsfile	@config_gfarm_run_dir@/gfarm-slapd.args
 
 # disable anonymous access

@@ -18,7 +18,7 @@ name="gfsd"
 FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 rcvar=@config_gfarm_gfsd_rc_var@
 command="@config_gfarm_prefix@/sbin/${name}"
-pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+pidfile="@config_gfarm_gfsd_pid_file@"
 required_files="$CONF"
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"

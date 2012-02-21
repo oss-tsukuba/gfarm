@@ -9,7 +9,7 @@
 # description: LDAP slapd for Gfarm
 # processname: slapd
 # config: @config_gfarm_slapd_config@
-# pidfile: @config_gfarm_run_dir@/gfarm-slapd.pid
+# pidfile: @config_gfarm_backend_pid_file@
 #
 ## For SuSE/United-Linux style rc.d
 ### BEGIN INIT INFO
@@ -27,7 +27,7 @@ FILE="gfarm-slapd"
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_backend_port@
 DAEMON="@config_gfarm_openldap_libexec@/$PROG"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_backend_pid_file@"
 
 case $1 in 
 start)

@@ -22,7 +22,7 @@ prog="gfsd"
 FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_gfsd_pid_file@"
 OPTIONS="@config_gfarm_gfsd_option@"
 
 # gfsd service certificate
