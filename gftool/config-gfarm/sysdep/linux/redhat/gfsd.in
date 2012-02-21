@@ -7,7 +7,7 @@
 #
 # processname: gfsd
 # config: @config_gfarm_gfarm_config@
-# pidfile: @config_gfarm_run_dir@/@config_gfarm_gfsd_rc_name@.pid
+# pidfile: @config_gfarm_gfsd_pid_file@
 #
 # $Id$
 
@@ -18,7 +18,7 @@ prog="gfsd"
 FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_gfsd_pid_file@"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfsd_option@"
 

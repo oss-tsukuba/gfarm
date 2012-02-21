@@ -7,7 +7,7 @@
 #
 # processname: gfmd
 # config: @config_gfarm_gfmd_config@
-# pidfile: @config_gfarm_run_dir@/gfmd.pid
+# pidfile: @config_gfarm_gfmd_pid_file@
 #
 # $Id$
 
@@ -18,7 +18,7 @@ prog="gfmd"
 FILE=$prog
 
 DAEMON="@config_gfarm_prefix@/sbin/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_gfmd_pid_file@"
 LOCKFILE="@config_gfarm_lock_dir@/$FILE"
 OPTIONS="@config_gfarm_gfmd_option@"
 warning_facility=local0

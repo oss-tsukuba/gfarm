@@ -24,7 +24,7 @@ FILE="gfarm-slapd"
 CONF="@config_gfarm_slapd_config@"
 PORT=@config_gfarm_backend_port@
 DAEMON="@config_gfarm_openldap_libexec@/$prog"
-PIDFILE="@config_gfarm_run_dir@/${FILE}.pid"
+PIDFILE="@config_gfarm_backend_pid_file@"
 
 # pull in sysconfig settings
 [ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"

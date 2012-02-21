@@ -19,7 +19,7 @@ FILE="gfarm-slapd"
 name="gfarm_slapd"
 rcvar=${name}
 command="@config_gfarm_openldap_libexec@/slapd"
-pidfile="@config_gfarm_run_dir@/${FILE}.pid"
+pidfile="@config_gfarm_backend_pid_file@"
 required_dirs="@config_gfarm_backend_data_dir@"
 required_files="$CONF"
 # add more flags through ${${name}_flags}
