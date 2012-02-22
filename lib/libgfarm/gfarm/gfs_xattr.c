@@ -673,6 +673,8 @@ gfs_findxmlattr(const char *path, const char *expr,
 	gfarm_error_t e;
 	gfarm_timerval_t t1, t2;
 	struct gfs_xmlattr_ctx *ctxp;
+	char *url;
+	gfarm_ino_t ino;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -683,18 +685,20 @@ gfs_findxmlattr(const char *path, const char *expr,
 		gflog_debug(GFARM_MSG_1001409,
 			"allococation of 'gfs_xmlattr_ctx' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	} else if ((e = gfm_open_fd(path, GFARM_FILE_RDONLY,
-	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type))
+	} else if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY,
+	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino))
 		!= GFARM_ERR_NO_ERROR) {
+		free(url);
 		gfs_xmlattr_ctx_free(ctxp, 1);
-		gflog_debug(GFARM_MSG_1001410,
-			"gfm_open_fd(%s) failed: %s",
-			path,
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_open_fd_with_ino(%s) failed: %s",
+		    path, gfarm_error_string(e));
 	} else {
+		free(url);
 		ctxp->path = strdup(path);
 		ctxp->expr = strdup(expr);
 		ctxp->depth = depth;
+		ctxp->ino = ino;
 		*ctxpp = ctxp;
 	}
 
@@ -730,13 +734,59 @@ gfm_findxmlattr_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
+static struct gfm_connection*
+xmlattr_ctx_metadb(struct gfs_failover_file *super)
+{
+	return (((struct gfs_xmlattr_ctx *)super)->gfm_server);
+}
+
+static void
+xmlattr_ctx_set_metadb(struct gfs_failover_file *super,
+	struct gfm_connection *gfm_server)
+{
+	((struct gfs_xmlattr_ctx *)super)->gfm_server = gfm_server;
+}
+
+static gfarm_int32_t
+xmlattr_ctx_fileno(struct gfs_failover_file *super)
+{
+	return (((struct gfs_xmlattr_ctx *)super)->fd);
+}
+
+static void
+xmlattr_ctx_set_fileno(struct gfs_failover_file *super, gfarm_int32_t fd)
+{
+	((struct gfs_xmlattr_ctx *)super)->fd = fd;
+}
+
+static const char*
+xmlattr_ctx_url(struct gfs_failover_file *super)
+{
+	return (((struct gfs_xmlattr_ctx *)super)->path);
+}
+
+static gfarm_ino_t
+xmlattr_ctx_ino(struct gfs_failover_file *super)
+{
+	return (((struct gfs_xmlattr_ctx *)super)->ino);
+}
+
 static gfarm_error_t
 gfs_findxmlattr_get(struct gfs_xmlattr_ctx *ctxp)
 {
-	return (gfm_client_compound_fd_op(ctxp->gfm_server, ctxp->fd,
-	    gfm_findxmlattr_request,
-	    gfm_findxmlattr_result,
-	    NULL,
+	struct gfs_failover_file_ops failover_file_ops = {
+		ctxp->type,
+		xmlattr_ctx_metadb,
+		xmlattr_ctx_set_metadb,
+		xmlattr_ctx_fileno,
+		xmlattr_ctx_set_fileno,
+		xmlattr_ctx_url,
+		xmlattr_ctx_ino,
+	};
+
+	return (gfm_client_compound_fd_op_readonly(
+	    (struct gfs_failover_file *)ctxp, &failover_file_ops,
+	    gfm_findxmlattr_request, gfm_findxmlattr_result, NULL,
 	    ctxp));
 }
 
