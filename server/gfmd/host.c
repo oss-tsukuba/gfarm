@@ -1721,30 +1721,34 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_int32_t e;
 	char *hostname;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOSTNAME_SET";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &hostname);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001577,
-			"gfm_server_get_request() failure");
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_HOSTNAME_SET, "s", &hostname);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip) {
 		free(hostname);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	giant_lock();
-	if (from_client) {
-		gflog_debug(GFARM_MSG_1001578,
-			"operation is not permitted for from_client");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
-		e = peer_set_host(peer, hostname);
-	giant_unlock();
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (from_client) {
+			gflog_debug(GFARM_MSG_1001578,
+			    "operation is not permitted for from_client");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else
+			e = peer_set_host(peer, hostname);
+		giant_unlock();
+	}
+
 	free(hostname);
 
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 static int
@@ -1763,19 +1767,19 @@ gfm_server_schedule_host_domain(
 {
 	gfarm_int32_t e;
 	char *domain;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &domain);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001579,
-			"schedule_host_domain request failure: %s",
-			gfarm_error_string(e));
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	      GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", &domain);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip) {
 		free(domain);
 		return (GFARM_ERR_NO_ERROR);
 	}
+	if (relay != NULL)
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -1792,20 +1796,29 @@ gfarm_error_t
 gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_uint64_t used, avail, files;
+	gfarm_error_t e;
+	gfarm_uint64_t used = 0, avail = 0, files = 0;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_STATFS";
 
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	      GFM_PROTO_STATFS, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	files = inode_total_num();
-	gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
-	used = total_disk_used;
-	avail = total_disk_avail;
-	gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		files = inode_total_num();
+		gfarm_mutex_lock(&total_disk_mutex, diag, total_disk_diag);
+		used = total_disk_used;
+		avail = total_disk_avail;
+		gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
+	}
 
-	return (gfm_server_put_reply(peer, xid, sizep,
-	    diag, GFARM_ERR_NO_ERROR, "lll", used, avail, files));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, "lll", &used, &avail, &files));
 }
 
 #endif /* TEST */

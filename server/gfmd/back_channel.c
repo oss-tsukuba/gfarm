@@ -36,6 +36,7 @@
 #include "host.h"
 #include "inode.h"
 #include "dead_file_copy.h"
+#include "relay.h"
 
 #include "back_channel.h"
 
@@ -586,37 +587,44 @@ static gfarm_error_t
 gfm_server_switch_back_channel_common(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client,
-	int version, const char *diag)
+	int version, const char *diag, struct relayed_request *relay)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct host *host;
 	gfp_xdr_async_peer_t async = NULL;
+	int i;
 
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	host = NULL;
 #endif
 
-	giant_lock();
-	if (from_client) {
-		gflog_debug(GFARM_MSG_1001995,
-			"Operation not permitted: from_client");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001996,
-			"Operation not permitted: peer_get_host() failed");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (version >= GFS_PROTOCOL_VERSION_V2_4 &&
-	    (e = gfp_xdr_async_peer_new(&async)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1002288,
-		    "%s: gfp_xdr_async_peer_new(): %s",
-		    diag, gfarm_error_string(e));
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (from_client) {
+			gflog_debug(GFARM_MSG_1001995,
+			    "Operation not permitted: from_client");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((host = peer_get_host(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001996,
+			    "Operation not permitted: peer_get_host() failed");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (version >= GFS_PROTOCOL_VERSION_V2_4 &&
+		  (e = gfp_xdr_async_peer_new(&async)) != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_1002288,
+			    "%s: gfp_xdr_async_peer_new(): %s",
+			    diag, gfarm_error_string(e));
+		}
+		giant_unlock();
 	}
-	giant_unlock();
 	if (version < GFS_PROTOCOL_VERSION_V2_4)
-		e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
-	else
-		e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i",
-		    0 /*XXX FIXME*/);
+		e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
+		    diag, &e, "");
+	else {
+		i = 0;
+		e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
+		    diag, &e,  "i", &i/*XXX FIXME*/);
+	}
 	if (e2 != GFARM_ERR_NO_ERROR)
 		return (e2);
 
@@ -666,13 +674,18 @@ gfm_server_switch_back_channel(
 	int from_client, int skip)
 {
 	gfarm_error_t e;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_BACK_CHANNEL";
 
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_SWITCH_BACK_CHANNEL, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, xid, sizep, from_client,
-	    GFS_PROTOCOL_VERSION_V2_3, diag);
+	e = gfm_server_switch_back_channel_common(peer, xid, sizep,
+	    from_client, GFS_PROTOCOL_VERSION_V2_3, diag, relay);
 
 	return (e);
 }
@@ -687,18 +700,18 @@ gfm_server_switch_async_back_channel(
 	gfarm_error_t e;
 	gfarm_int32_t version;
 	gfarm_int64_t gfsd_cookie;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL";
 
-	e = gfm_server_get_request(peer, sizep, diag, "il",
-	    &version, &gfsd_cookie);
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il", &version, &gfsd_cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = gfm_server_switch_back_channel_common(peer, xid, sizep, from_client,
-	    version, diag);
+	e = gfm_server_switch_back_channel_common(peer, xid, sizep,
+	    from_client, version, diag, relay);
 
 	return (e);
 }

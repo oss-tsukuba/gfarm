@@ -41,6 +41,7 @@
 #include "inode.h"
 #include "journal_file.h"
 #include "db_journal.h"
+#include "relay.h"
 #include "gfmd_channel.h"
 #include "gfmd.h" /* protocol_service(), gfmd_terminate() */
 
@@ -701,22 +702,29 @@ gfm_server_switch_gfmd_channel(
 	gfarm_error_t e, er;
 	gfarm_int32_t version;
 	gfarm_int64_t cookie;
+	struct relayed_request *relay;
+	int i;
 	static const char diag[] = "GFM_PROTO_SWITCH_GFMD_CHANNEL";
 
-	e = gfm_server_get_request(peer, sizep, diag, "il", &version, &cookie);
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_SWITCH_GFMD_CHANNEL, "il", &version, &cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (from_client) {
-		gflog_debug(GFARM_MSG_1002987,
-			"Operation not permitted: from_client");
-		er = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else
-		er = GFARM_ERR_NO_ERROR;
-	if ((e = gfm_server_put_reply(peer, xid, sizep, diag, er, "i",
-	    0 /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		if (from_client) {
+			gflog_debug(GFARM_MSG_1002987,
+				    "Operation not permitted: from_client");
+			er = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else
+			er = GFARM_ERR_NO_ERROR;
+	}
+	i = 0;
+	if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
+	    diag, &er, "i", &i /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002988,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);
@@ -725,7 +733,7 @@ gfm_server_switch_gfmd_channel(
 		gflog_warning(GFARM_MSG_1002989,
 		    "%s: protocol flush: %s",
 		    diag, gfarm_error_string(e));
-	if (debug_mode)
+	if (relay == NULL && debug_mode)
 		gflog_debug(GFARM_MSG_1002990, "gfp_xdr_flush");
 	return (switch_gfmd_channel(peer, from_client, version, diag));
 }
