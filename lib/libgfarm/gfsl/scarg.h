@@ -1,9 +1,12 @@
-#define COMMON_OPTIONS	"p:H:M:Nn:U:u"
+#define COMMON_OPTIONS	"p:S:H:M:Nn:U:u"
 
 extern int port;
 
 extern int acceptorSpecified;
 extern gss_name_t acceptorName;
+
+extern char *seviceName;
+extern char *hostName;
 
 extern int HandleCommonOptions(int, char *);
 extern char *newStringOfName(const gss_name_t inputName);

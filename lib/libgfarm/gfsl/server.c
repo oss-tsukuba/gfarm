@@ -107,15 +107,18 @@ main(int argc, char **argv)
     } else {
 	gss_name_t credName;
 	char *credString;
+        char *desired = newStringOfName(acceptorName);
 
 	if (gfarmGssAcquireCredential(&myCred,
 				      acceptorName, GSS_C_BOTH,
 				      &majStat, &minStat, &credName) <= 0) {
-	    fprintf(stderr, "can't acquire credential because of:\n");
+	    fprintf(stderr, "Can't acquire credential for '%s' because of:\n",
+                    desired);
 	    gfarmGssPrintMajorStatus(majStat);
 	    gfarmGssPrintMinorStatus(minStat);
 	    return 1;
 	}
+        free(desired);
 	credString = newStringOfName(credName);
 	fprintf(stderr, "Acceptor Credential: '%s'\n", credString);
 	free(credString);

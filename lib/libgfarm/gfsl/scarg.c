@@ -15,6 +15,8 @@ int port = 0;
 
 int acceptorSpecified = 0;
 gss_name_t acceptorName = GSS_C_NO_NAME;
+char *serviceName = NULL;
+char *hostName = NULL;
 
 int
 HandleCommonOptions(int option, char *arg)
@@ -39,17 +41,15 @@ HandleCommonOptions(int option, char *arg)
 	port = tmp;
 	break;
     case 'H':
-	if (gfarmGssImportName(&acceptorName,
-			       arg, strlen(arg), GSS_C_NT_HOSTBASED_SERVICE,
-			       &majStat, &minStat) < 0) {
-	    fprintf(stderr, "gfarmGssImportName(GSS_C_NT_HOSTBASED_SERVICE)"
-			" failed.\n");
-	    gfarmGssPrintMajorStatus(majStat);
-	    gfarmGssPrintMinorStatus(minStat);
-	    return -1;
-	}
-	acceptorSpecified = 1;
+        if (arg != NULL && *arg != '\0') {
+            hostName = strdup(arg);
+        }
 	break;
+    case 'S':
+        if (arg != NULL && *arg != '\0') {
+            serviceName = arg;
+        }
+        break;
     case 'M': /* mechanism specific name */
 	if (gfarmGssImportName(&acceptorName,
 			       arg, strlen(arg), GSS_C_NO_OID,
@@ -124,6 +124,42 @@ HandleCommonOptions(int option, char *arg)
 	fprintf(stderr, "error happens at an option\n");
         return -1;
     }
+
+
+    if (hostName != NULL || serviceName != NULL) {
+        if (hostName == NULL) {
+            char buf[2048];
+            if (gethostname(buf, sizeof(buf)) != 0) {
+                perror("gethostname");
+                return -1;
+            }
+            hostName = strdup(buf);
+        }
+
+        if (serviceName == NULL) {
+            if (gfarmGssImportNameOfHost(&acceptorName,
+                                         hostName, &majStat, &minStat) < 0) {
+                fprintf(stderr,
+                        "gfarmGssImportNameOfHost() failed with:\n");
+                gfarmGssPrintMajorStatus(majStat);
+                gfarmGssPrintMinorStatus(minStat);
+                return -1;
+            }
+       } else {
+            if (gfarmGssImportNameOfHostBasedService(&acceptorName,
+                                                     serviceName, hostName,
+                                                     &majStat, &minStat) < 0) {
+                fprintf(stderr,
+                        "gfarmGssImportNameOfHostBasedService() "
+                        "failed with:\n");
+                gfarmGssPrintMajorStatus(majStat);
+                gfarmGssPrintMinorStatus(minStat);
+                return -1;
+            }
+        }
+        acceptorSpecified = 1;
+    }
+
     return 0;
 }
 
