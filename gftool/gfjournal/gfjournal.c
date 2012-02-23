@@ -18,6 +18,9 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"	/* for struct gfarm_internal_host_info
+				 * in db_ops.h */
+
 #include "gfutil.h"
 
 #include "gfp_xdr.h"

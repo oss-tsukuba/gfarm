@@ -13,11 +13,13 @@ gfarm_error_t db_begin(const char *);
 gfarm_error_t db_end(const char *);
 
 struct gfarm_host_info;
+struct gfarm_internal_host_info;
 gfarm_error_t db_host_add(const struct gfarm_host_info *);
 gfarm_error_t db_host_modify(const struct gfarm_host_info *,
 	int, int, const char **, int, const char **);
 gfarm_error_t db_host_remove(const char *);
-gfarm_error_t db_host_load(void *, void (*)(void *, struct gfarm_host_info *));
+gfarm_error_t db_host_load(void *, void (*)(void *,
+	struct gfarm_internal_host_info *));
 
 #define DB_HOST_MOD_ARCHITECTURE	1
 #define DB_HOST_MOD_NCPU		2

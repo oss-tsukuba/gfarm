@@ -8,6 +8,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfp_xdr.h"
 #include "config.h"
 #include "metadb_server.h"

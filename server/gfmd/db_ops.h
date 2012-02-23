@@ -146,7 +146,7 @@ struct db_ops {
 		struct db_host_modify_arg *);
 	gfarm_error_t (*host_remove)(gfarm_uint64_t, char *);
 	gfarm_error_t (*host_load)(void *,
-		void (*)(void *, struct gfarm_host_info *));
+		void (*)(void *, struct gfarm_internal_host_info *));
 
 	gfarm_error_t (*user_add)(gfarm_uint64_t, struct gfarm_user_info *);
 	gfarm_error_t (*user_modify)(gfarm_uint64_t,
