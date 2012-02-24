@@ -88,10 +88,8 @@ update_sanity_postgresql()
 create_table()
 {
 	table=$1
-	if count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`; then
-
-		return
-	fi
+	count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
+	[ X"$count" = X ] && return
 	if [ $count -eq 0 ]; then
 		echo "${PROGNAME}: adding ${table} table"
 
