@@ -1826,6 +1826,7 @@ db_mdhost_dup(const struct gfarm_metadb_server *ms, size_t size)
 		strcpy(r->clustername, ms->clustername);
 	r->port = ms->port;
 	r->flags = ms->flags;
+	r->tflags = 0;
 	return (r);
 }
 

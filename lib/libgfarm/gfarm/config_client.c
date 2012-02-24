@@ -61,15 +61,23 @@ gfarm_config_set_default_metadb_server(void)
 	struct gfarm_metadb_server *m;
 	struct gfarm_metadb_server *ms[1];
 	struct gfarm_filesystem *fs;
+	char *host;
 
 	if (gfarm_filesystem_get(
 	    gfarm_metadb_server_name, gfarm_metadb_server_port) != NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	fs = gfarm_filesystem_get_default();
-	if ((e = gfarm_metadb_server_new(&m, gfarm_metadb_server_name,
-	    gfarm_metadb_server_port))
+	if ((host = strdup(gfarm_metadb_server_name)) == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	if ((e = gfarm_metadb_server_new(&m, host, gfarm_metadb_server_port))
 	    != GFARM_ERR_NO_ERROR) {
+		free(host);
 		gflog_debug(GFARM_MSG_1002556,
 		    "%s", gfarm_error_string(e));
 		return (e);

@@ -80,6 +80,8 @@ static struct mdhost *mdhost_master;
 	     !gfarm_hash_iterator_is_end(&(it)); \
 	     gfarm_hash_iterator_next(&(it)))
 
+static gfarm_error_t mdhost_updated(void);
+
 static void
 mdhost_mutex_lock(struct mdhost *m, const char *diag)
 {
@@ -687,6 +689,7 @@ mdhost_enter(struct gfarm_metadb_server *ms, struct mdhost **mpp)
 		if (gfarm_get_metadb_replication_enabled())
 			free(mh->ms.clustername);
 		mh->ms = *ms;
+		gfarm_metadb_server_set_is_memory_owned_by_fs(&mh->ms, 0);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
@@ -812,7 +815,10 @@ mdhost_remove_in_cache(const char *name)
 	mdcluster_remove_mdhost(m);
 	mdhost_invalidate(m);
 
-	return (GFARM_ERR_NO_ERROR);
+	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+	return (e);
 }
 
 static gfarm_error_t
