@@ -1,3 +1,16 @@
+Release note for Gfarm 2.5.4.1
+==============================
+
+[2012.2.25]
+
+Updated feature
+* network_receive_timeout directive - default is changed to 60 seconds
+  from 20 seconds since it is too short when gfmd is overloaded.
+
+Bug fix
+* config-gfarm-update - does not work [sf.net trac #345]
+* gfmdhost - -c option causes gfmd segfault [sf.net trac #346]
+
 Release note for Gfarm 2.5.4
 ============================
 
