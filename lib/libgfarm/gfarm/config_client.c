@@ -70,7 +70,7 @@ gfarm_config_set_default_metadb_server(void)
 	fs = gfarm_filesystem_get_default();
 	if ((host = strdup(gfarm_metadb_server_name)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003433,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}

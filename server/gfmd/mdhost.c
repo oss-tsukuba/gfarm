@@ -816,7 +816,7 @@ mdhost_remove_in_cache(const char *name)
 	mdhost_invalidate(m);
 
 	if ((e = mdhost_updated()) != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003434,
 		    "%s", gfarm_error_string(e));
 	return (e);
 }
