@@ -829,7 +829,7 @@ to be in an IPv4 class C network.</para>
 <listitem>
 <para>The <token>network_receive_timeout</token> directive specifies
 the time, in seconds, to wait for data reception via network.
-The default value is 20 seconds.
+The default value is 60 seconds.
 This directive is effective in both gfarm2.conf and gfmd.conf.
 </para>
 <para>When a Gfarm application program receives no data from a gfsd 
