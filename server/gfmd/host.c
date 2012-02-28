@@ -1711,7 +1711,7 @@ gfm_server_host_info_remove(
 		giant_lock();
 		if (!from_client || user == NULL || !user_is_admin(user)) {
 			gflog_debug(GFARM_MSG_1001572,
-				    "operation is not permitted");
+			    "operation is not permitted");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
 			e = host_info_remove(hostname, diag);

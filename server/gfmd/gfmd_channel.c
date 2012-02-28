@@ -717,7 +717,7 @@ gfm_server_switch_gfmd_channel(
 		/* do not relay RPC to master gfmd */
 		if (from_client) {
 			gflog_debug(GFARM_MSG_1002987,
-				    "Operation not permitted: from_client");
+			    "Operation not permitted: from_client");
 			er = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else
 			er = GFARM_ERR_NO_ERROR;

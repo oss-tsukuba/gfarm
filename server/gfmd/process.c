@@ -1249,7 +1249,7 @@ gfm_server_process_alloc(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		} else if (!from_client ||
 		    (user = peer_get_user(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1001665,
-				    "operation is not permitted");
+			    "operation is not permitted");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
 		    &process, &pid)) == GFARM_ERR_NO_ERROR) {
@@ -1393,7 +1393,7 @@ gfm_server_process_free(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_lock();
 		if (peer_get_process(peer) == NULL) {
 			gflog_debug(GFARM_MSG_1001674,
-				    "peer_get_process() failed");
+			    "peer_get_process() failed");
 			e = GFARM_ERR_NO_SUCH_PROCESS;
 		} else {
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
@@ -1441,16 +1441,16 @@ gfm_server_bequeath_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (!from_client &&
 		    (spool_host = peer_get_host(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1001675,
-				    "operation is not permitted ");
+			    "operation is not permitted ");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((process = peer_get_process(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1001676,
-				    "peer_get_process() failed");
+			    "peer_get_process() failed");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001677,
-				    "peer_fdpair_get_current() failed");
+			    "peer_fdpair_get_current() failed");
 		} else
 			e = process_bequeath_fd(process, fd);
 
@@ -1487,16 +1487,16 @@ gfm_server_inherit_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		    (spool_host = peer_get_host(peer)) == NULL) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1001679,
-				    "operation is not permitted");
+			    "operation is not permitted");
 		} else if ((process = peer_get_process(peer)) == NULL) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1001680,
-				    "peer_get_process() failed");
+			    "peer_get_process() failed");
 		} else if ((e = process_inherit_fd(process, parent_fd, peer,
 		    NULL, &fd)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001681,
-				    "process_inherit_fd() failed: %s",
-				    gfarm_error_string(e));
+			    "process_inherit_fd() failed: %s",
+			    gfarm_error_string(e));
 		} else
 			peer_fdpair_set_current(peer, fd);
 

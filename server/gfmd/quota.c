@@ -677,7 +677,7 @@ quota_get_common(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    "%s: !from_client or invalid peer_user ", diag);
 		free(name);
 		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-							relay, diag, &e, ""));
+		    relay, diag, &e, ""));
 	}
 
 	if (db_state != GFARM_ERR_NO_ERROR) {
@@ -719,11 +719,11 @@ quota_get_common(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_unlock();
 			gflog_debug(GFARM_MSG_1002056,
-				    "%s: name=%s: %s", diag, name,
-				    gfarm_error_string(e));
+			    "%s: name=%s: %s", diag, name,
+			    gfarm_error_string(e));
 			free(name);
 			return (gfm_server_put_reply_with_relay(peer, xid,
-						sizep, relay, diag, &e, ""));
+			    sizep, relay, diag, &e, ""));
 		}
 		if (is_group)
 			q = group_quota(group);
@@ -732,18 +732,18 @@ quota_get_common(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (!is_checked(q)) { /* quota is not enabled */
 			giant_unlock();
 			gflog_debug(GFARM_MSG_1002057,
-				"%s: %s's quota is not enabled", diag, name);
+			    "%s: %s's quota is not enabled", diag, name);
 			free(name);
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 			return (gfm_server_put_reply_with_relay(peer, xid,
-						sizep, relay, diag, &e, ""));
+			    sizep, relay, diag, &e, ""));
 		}
 		quota_convert_1(q, name, &qi);
 		giant_unlock();
 	}
 
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag, &e,
-		"slllllllllllllllll",
+	e = gfm_server_put_reply_with_relay(
+			peer, xid, sizep, relay, diag, &e, "slllllllllllllllll",
 			&qi.name,
 			&qi.grace_period,
 			&qi.space,
@@ -820,7 +820,7 @@ quota_set_common(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
 	    is_group ? GFM_PROTO_QUOTA_GROUP_SET : GFM_PROTO_QUOTA_USER_SET,
-				"slllllllll",
+				   "slllllllll",
 				   &qi.name,
 				   &qi.grace_period,
 				   &qi.space_soft,
@@ -853,8 +853,8 @@ quota_set_common(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				 || !user_is_admin(peer_user)) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1002060,
-				    "%s: !from_client or invalid peer_user"
-				    " or !user_is_admin", diag);
+			    "%s: !from_client or invalid peer_user"
+			    " or !user_is_admin", diag);
 			goto end;
 		} else if ((e = quota_lookup(qi.name, is_group, &q, diag))
 			   != GFARM_ERR_NO_ERROR) {
@@ -948,10 +948,10 @@ gfm_server_quota_check(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			giant_unlock();
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1002065,
-				    "%s: !from_client or invalid peer_user"
-				    " or !user_is_admin", diag);
+			    "%s: !from_client or invalid peer_user"
+			    " or !user_is_admin", diag);
 			return (gfm_server_put_reply_with_relay(peer, xid,
-						sizep, relay, diag, &e, ""));
+			    sizep, relay, diag, &e, ""));
 		}
 		/* zero clear and set true in is_checked */
 		quota_clear_value_all_user_and_group();

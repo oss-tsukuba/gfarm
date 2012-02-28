@@ -333,13 +333,13 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			if (((char *)value)[size-1] != '\0') {
 				e = GFARM_ERR_INVALID_ARGUMENT;
 				gflog_debug(GFARM_MSG_1002071,
-					    "argument 'xmlMode' is invalid");
+				    "argument 'xmlMode' is invalid");
 				goto quit;
 			}
 #else
 			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 			gflog_debug(GFARM_MSG_1002072,
-				    "operation is not supported(xmlMode)");
+			    "operation is not supported(xmlMode)");
 			goto quit;
 #endif
 		} else
@@ -349,28 +349,28 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_lock();
 		if ((process = peer_get_process(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1002073,
-				    "peer_get_process() failed");
+			    "peer_get_process() failed");
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002074,
-				    "peer_fdpair_get_current() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = process_get_file_inode(process, fd, &inode)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002075,
-				    "process_get_file_inode() failed: %s",
-				    gfarm_error_string(e));
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = xattr_access(xmlMode, inode,
 				process_get_user(process),
 				attrname, GFS_W_OK, XATTR_OP_SET))
 			   != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003035,
-				    "xattr_access() failed: %s",
-				    gfarm_error_string(e));
+			    "xattr_access() failed: %s",
+			    gfarm_error_string(e));
 		} else
 			e = setxattr(xmlMode, inode, attrname, &value, size,
-				     flags, waitctx, &addattr);
+			    flags, waitctx, &addattr);
 		giant_unlock();
 
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -426,8 +426,8 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			"operation is not supported(xmlMode)");
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		return (gfm_server_put_reply_with_relay(peer, xid,
-						sizep, relay, diag, &e, ""));
+		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
+		    relay, diag, &e, ""));
 	}
 #endif
 	if (relay == NULL) {
@@ -436,39 +436,39 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if ((process = peer_get_process(peer)) == NULL) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1002081,
-				    "peer_get_process() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_get_process() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002082,
-				    "peer_fdpair_get_current() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = process_get_file_inode(process, fd, &inode)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002083,
-				    "process_get_file_inode() failed: %s",
-				    gfarm_error_string(e));
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = xattr_access(xmlMode, inode,
 				process_get_user(process),
 				attrname, GFS_R_OK, XATTR_OP_GET))
 			   != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003036,
-				    "xattr_access() failed: %s",
-				    gfarm_error_string(e));
+			    "xattr_access() failed: %s",
+			    gfarm_error_string(e));
 		} else if (!isvalid_attrname(attrname)) {
 			e = GFARM_ERR_INVALID_ARGUMENT;
 			gflog_debug(GFARM_MSG_1002077,
-				    "argument 'attrname' is invalid");
+			    "argument 'attrname' is invalid");
 		} else if ((e = inode_xattr_get_cache(inode, xmlMode, attrname,
 				&value, &size)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002510,
-				    "getxattr(%s): %s",
-				    attrname, gfarm_error_string(e));
+			    "getxattr(%s): %s",
+			    attrname, gfarm_error_string(e));
 		} else if (value == NULL) { /* not cached */
 			db_waitctx_init(&waitctx);
 			waitctx_initialized = 1;
 			e = db_xattr_get(xmlMode, inode_get_number(inode),
-					 attrname, &value, &size, &waitctx);
+			    attrname, &value, &size, &waitctx);
 		} else
 			cached = 1;
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -520,7 +520,7 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	if (xmlMode) {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-							relay, diag, &e, ""));
+		    relay, diag, &e, ""));
 	}
 #endif
 
@@ -530,23 +530,23 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if ((process = peer_get_process(peer)) == NULL) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1002085,
-				    "peer_get_process() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_get_process() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002086,
-				    "peer_fdpair_get_current() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = process_get_file_inode(process, fd, &inode)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002087,
-				    "process_get_file_inode() failed: %s",
-				    gfarm_error_string(e));
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = inode_access(inode, process_get_user(process),
 				     GFS_R_OK)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002088,
-				    "inode_access() failed: %s",
-				    gfarm_error_string(e));
+			    "inode_access() failed: %s",
+			    gfarm_error_string(e));
 		} else {
 			/* NOTE: inode_xattrname_list() doesn't access to DB. */
 			e = inode_xattr_list(inode, xmlMode, &value, &size);
@@ -568,12 +568,12 @@ removexattr(int xmlMode, struct inode *inode, char *attrname)
 		e = inode_xattr_remove(inode, xmlMode, attrname);
 		if (e == GFARM_ERR_NO_ERROR) {
 			db_xattr_remove(xmlMode,
-				inode_get_number(inode), attrname);
+			    inode_get_number(inode), attrname);
 			inode_status_changed(inode);
 		}
 	} else {
 		gflog_debug(GFARM_MSG_1002089,
-			"argument 'attrname' is invalid");
+		    "argument 'attrname' is invalid");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	}
 

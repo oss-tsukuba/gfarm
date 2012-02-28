@@ -991,7 +991,7 @@ gfm_server_metadb_server_get(
 		/* do not relay RPC to master gfmd */
 		/* XXXRELAY FIXME, reply size is not correct */
 		e = metadb_server_get(peer, xid, sizep, match_hostname, name,
-				      diag);
+		    diag);
 	}
 end:
 	free(name);
@@ -1302,7 +1302,7 @@ gfm_server_metadb_server_modify(
 
 	memset(&ms, 0, sizeof(ms));
 	if ((e = metadb_server_recv(peer, sizep, skip,
-		    GFM_PROTO_METADB_SERVER_MODIFY, &ms, &relay))
+		GFM_PROTO_METADB_SERVER_MODIFY, &ms, &relay))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002960,
 		    "metadb_server_recv failure: %s",
@@ -1400,11 +1400,11 @@ gfm_server_metadb_server_remove(
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002968,
 			    "%s: mdhost_remove_in_cache(%s) failed: %s",
-				diag, name, gfarm_error_string(e));
+			    diag, name, gfarm_error_string(e));
 		} else if ((e = db_mdhost_remove(name)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002969,
-				    "%s: db_mdhost_remove(%s) failed: %s",
-				    diag, name, gfarm_error_string(e));
+			    "%s: db_mdhost_remove(%s) failed: %s",
+			    diag, name, gfarm_error_string(e));
 		}
 		giant_unlock();
 	}
