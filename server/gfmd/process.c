@@ -1228,34 +1228,37 @@ gfm_server_process_alloc(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *process;
 	gfarm_pid_t pid;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC";
 
-	e = gfm_server_get_request(peer, sizep, diag,
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_PROCESS_ALLOC,
 	    "ib", &keytype, sizeof(sharedkey), &keylen, sharedkey);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001663,
-			"process_alloc request failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	giant_lock();
-	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_1001664,
-			"peer_get_process() failed");
-		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if (!from_client || (user = peer_get_user(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001665,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
-	    &process, &pid)) == GFARM_ERR_NO_ERROR) {
-		peer_set_process(peer, process);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (peer_get_process(peer) != NULL) {
+			gflog_debug(GFARM_MSG_1001664,
+				    "peer_get_process() failed");
+			e = GFARM_ERR_ALREADY_EXISTS;
+		} else if (!from_client ||
+		    (user = peer_get_user(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001665,
+				    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
+		    &process, &pid)) == GFARM_ERR_NO_ERROR) {
+			peer_set_process(peer, process);
+		}
+		giant_unlock();
 	}
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, "l", pid));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, "l", &pid));
 }
 
 gfarm_error_t
@@ -1271,50 +1274,55 @@ gfm_server_process_alloc_child(
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *parent_process, *process;
 	gfarm_pid_t parent_pid, pid;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC_CHILD";
 
-	e = gfm_server_get_request(peer, sizep, diag, "iblib",
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_PROCESS_ALLOC_CHILD, "iblib",
 	    &parent_keytype,
 	    sizeof(parent_sharedkey), &parent_keylen, parent_sharedkey,
-	    &parent_pid,
-	    &keytype, sizeof(sharedkey), &keylen, sharedkey);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001666,
-			"process_alloc_child request failed: %s",
-			gfarm_error_string(e));
+	    &parent_pid, &keytype,
+	    sizeof(sharedkey), &keylen, sharedkey);
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	giant_lock();
-	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_1001667,
-			"peer_get_process() failed");
-		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if (!from_client || (user = peer_get_user(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001668,
-			"operation is not permitted");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-	} else if (parent_keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
-	    parent_keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_debug(GFARM_MSG_1001669,
-			"'parent_keytype' or 'parent_keylen' is invalid");
-		e = GFARM_ERR_INVALID_ARGUMENT;
-	} else if ((e = process_does_match(parent_pid,
-	    parent_keytype, parent_keylen, parent_sharedkey,
-	    &parent_process)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001670,
-			"process_does_match() failed: %s",
-			gfarm_error_string(e));
-		/* error */
-	} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
-	    &process, &pid)) == GFARM_ERR_NO_ERROR) {
-		peer_set_process(peer, process);
-		process_add_child(parent_process, process);
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (peer_get_process(peer) != NULL) {
+			gflog_debug(GFARM_MSG_1001667,
+			    "peer_get_process() failed");
+			e = GFARM_ERR_ALREADY_EXISTS;
+		} else if (!from_client ||
+		    (user = peer_get_user(peer)) == NULL) {
+			gflog_debug(GFARM_MSG_1001668,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if (parent_keytype !=
+			       GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
+			   parent_keylen !=
+			       GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
+			gflog_debug(GFARM_MSG_1001669,
+			    "'parent_keytype' or 'parent_keylen' is invalid");
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		} else if ((e = process_does_match(parent_pid,
+		    parent_keytype, parent_keylen, parent_sharedkey,
+			&parent_process)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001670,
+			    "process_does_match() failed: %s",
+			    gfarm_error_string(e));
+			/* error */
+		} else if ((e = process_alloc(user, keytype, keylen, sharedkey,
+		    &process, &pid)) == GFARM_ERR_NO_ERROR) {
+			peer_set_process(peer, process);
+			process_add_child(parent_process, process);
+		}
+		giant_unlock();
 	}
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, "l", pid));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, "l", &pid));
 }
 
 gfarm_error_t
@@ -1327,37 +1335,41 @@ gfm_server_process_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	size_t keylen;
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 	struct process *process;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_SET";
 
-	e = gfm_server_get_request(peer, sizep, diag,
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_PROCESS_SET,
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001671,
-			"process_set request failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	giant_lock();
-	if (peer_get_process(peer) != NULL) {
-		gflog_debug(GFARM_MSG_1001672,
-			"peer_get_process() failed");
-		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if (keytype != GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
-	    keylen != GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
-		gflog_debug(GFARM_MSG_1001673,
-			"'parent_keytype' or 'parent_keylen' is invalid");
-		e = GFARM_ERR_INVALID_ARGUMENT;
-	} else if ((e = process_does_match(pid, keytype, keylen, sharedkey,
-	    &process)) == GFARM_ERR_NO_ERROR) {
-		peer_set_process(peer, process);
-		if (!from_client)
-			peer_set_user(peer, process_get_user(process));
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (peer_get_process(peer) != NULL) {
+			gflog_debug(GFARM_MSG_1001672,
+				    "peer_get_process() failed");
+			e = GFARM_ERR_ALREADY_EXISTS;
+		} else if (keytype !=
+			       GFM_PROTO_PROCESS_KEY_TYPE_SHAREDSECRET ||
+			   keylen !=
+			       GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET) {
+			gflog_debug(GFARM_MSG_1001673,
+			    "'parent_keytype' or 'parent_keylen' is invalid");
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		} else if ((e = process_does_match(pid, keytype, keylen,
+		    sharedkey, &process)) == GFARM_ERR_NO_ERROR) {
+			peer_set_process(peer, process);
+			if (!from_client)
+				peer_set_user(peer, process_get_user(process));
+		}
+		giant_unlock();
 	}
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1366,33 +1378,42 @@ gfm_server_process_free(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_error_t e;
 	int transaction = 0;
+	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_FREE";
 
+	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	    GFM_PROTO_PROCESS_FREE, "");
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	giant_lock();
-	if (peer_get_process(peer) == NULL) {
-		gflog_debug(GFARM_MSG_1001674,
-			"peer_get_process() failed");
-		e = GFARM_ERR_NO_SUCH_PROCESS;
-	}
-	else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-			transaction = 1;
-		/*
-		 * the following internally calls inode_close*() and
-		 * closing must be done regardless of the result of db_begin().
-		 * because not closing may cause descriptor leak.
-		 */
-		peer_unset_process(peer);
-		e = GFARM_ERR_NO_ERROR;
-		if (transaction)
-			db_end(diag);
-	}
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+		giant_lock();
+		if (peer_get_process(peer) == NULL) {
+			gflog_debug(GFARM_MSG_1001674,
+				    "peer_get_process() failed");
+			e = GFARM_ERR_NO_SUCH_PROCESS;
+		} else {
+			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+				transaction = 1;
+			/*
+			 * the following internally calls inode_close*() and
+			 * closing must be done
+			 * regardless of the result of db_begin().
+			 * because not closing may cause descriptor leak.
+			 */
+			peer_unset_process(peer);
+			e = GFARM_ERR_NO_ERROR;
+			if (transaction)
+				db_end(diag);
+		}
 
-	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, sizep, diag, e, ""));
+		giant_unlock();
+	}
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 }
 
 gfarm_error_t
