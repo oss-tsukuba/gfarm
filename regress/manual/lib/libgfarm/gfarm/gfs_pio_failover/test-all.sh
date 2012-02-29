@@ -1,26 +1,66 @@
 #!/bin/sh
 
-run_test() {
-	_script=$1
-	echo "================================"
-	$_script
+# argment:
+#   no argument: do failover manually
+#   "auto"     : do failover automatically
+
+autotest=$1
+
+. ./env.sh
+
+./cleanup.sh
+./setup.sh
+
+echo -n > failed-list
+echo -n > log
+
+npass=0
+nfail=0
+
+while read type; do
+	if [ "$type" = "" ]; then
+		continue
+	fi
+	tmp=`echo "$type" | cut -c1-1`
+	if [ "$tmp" = "#" ]; then
+		continue
+	fi
+	types="$types $type"
+done < test-list
+
+for type in $types; do
+	if [ "$autotest" = "auto" ]; then
+		echo "================================" >> log 2>&1
+		./test-launch.sh $type $autotest >> log 2>&1
+	else
+		echo "================================"
+		./test-launch.sh $type $autotest
+	fi
+	if [ "$?" = "0" ]; then
+		result=PASS
+		npass=`expr $npass + 1`
+	else
+		echo $type >> failed-list
+		result="*FAIL*"
+		nfail=`expr $nfail + 1`
+	fi
+
+	if [ "$autotest" = "auto" ]; then
+		printf "%-30s ... %s\n" $type $result
+	fi
 	if [ "$SLEEP" != "" ]; then
 		sleep $SLEEP
 	fi
-}
+done
 
-run_test ./test-sched-read.sh
-run_test ./test-sched-create-write.sh
-run_test ./test-sched-open-write.sh
-run_test ./test-read.sh
-run_test ./test-read-stat.sh
-run_test ./test-getc.sh
-run_test ./test-seek.sh
-run_test ./test-seek-dirty.sh
-run_test ./test-write.sh
-run_test ./test-write-stat.sh
-run_test ./test-putc.sh
-run_test ./test-truncate.sh
-run_test ./test-flush.sh
-run_test ./test-sync.sh
-run_test ./test-datasync.sh
+echo ""
+echo "PASS: $npass  FAIL: $nfail"
+
+./cleanup.sh
+
+if [ "$nfail" != "0" ]; then
+    EXIT_CODE=1
+else
+    EXIT_CODE=0
+fi
+exit $EXIT_CODE

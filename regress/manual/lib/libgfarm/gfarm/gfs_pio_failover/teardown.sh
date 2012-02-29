@@ -1,6 +1,6 @@
 #/bin/sh
 
-GF_TMPF=/tmp/gfs_pio_stat_failover.tmp
+. ./env.sh
 
 gfrm -f $GF_TMPF.\*
-
+gfrmdir $GF_TMPD.0 2>/dev/null
