@@ -1899,6 +1899,30 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>metadb_server_slave_listen</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Í­¸úÀ­</I
+></TT
+></DT
+><DD
+><P
+>enable ¤Î¤È¤­¡¢¥¹¥ì¡¼¥Ögfmd¤È¤·¤ÆÀßÄê¤µ¤ì¤Æ¤¤¤ë¾ì¹ç¤Ç¤â¡¢¥¯¥é¥¤¥¢¥ó¥È¤«¤é¤ÎÍ×µá¤ò¼õ¤±ÉÕ¤±¤Þ¤¹¡£
+¥Ç¥Õ¥©¥ë¥È¤Ïdisable¤Ç¤¹¡£</P
+><P
+>Ãí°Õ: ¤³¤Îµ¡Ç½¤Ï³«È¯ÍÑ¤ËÍÑ°Õ¤µ¤ì¤Æ¤¤¤Þ¤¹¤Î¤Ç¡¢ÄÌ¾ï¤ÎÍÑÅÓ¤Ç¤ÏÀßÄê¤·¤Ê¤¤¤Ç¤¯¤À¤µ¤¤¡£</P
+><P
+>¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_slave_listen&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_server_slave_max_size</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2058,6 +2082,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
 		  &#60;synchronous_journaling_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_slave_listen_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
 		  &#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
@@ -2145,6 +2170,7 @@ CLASS="LITERALLAYOUT"
 	&#60;synchronous_replication_timeout_statement&#62;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;synchronous_journaling_statement&#62;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&#60;validity&#62;<br>
 	&#60;metadb_server_force_slave_statement&#62;&nbsp;::=&nbsp;"metadb_server_force_slave"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_slave_listen_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_listen"&nbsp;&#60;validity&#62;<br>
 	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_max_size"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
 	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>

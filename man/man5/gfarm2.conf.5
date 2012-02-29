@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "31 January 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "29 February 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -972,6 +972,22 @@ Example:
 	metadb_server_force_slave enable
 .fi
 .TP
+\fBmetadb_server_slave_listen \fIvalidity\fB\fR
+When "enable" is specified, even if the gfmd is set to slave,
+it receives requests from clients.
+The default is "disable".
+
+NOTE: Please do not set this directive for ordinary use,
+because this feature is only for development.
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	metadb_server_slave_listen enable
+.fi
+.TP
 \fBmetadb_server_slave_max_size \fInumber\fB\fR
 This parameter specifies the maximum number of slave gfmds.
 The default is "32".
@@ -1087,6 +1103,7 @@ notation.
 		\~\~<synchronous_replication_timeout_statement> |
 		\~\~<synchronous_journaling_statement> |
 		\~\~<metadb_server_force_slave_statement> |
+		\~\~<metadb_server_slave_listen_statement> |
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement> |
@@ -1174,6 +1191,7 @@ notation.
 	<synchronous_replication_timeout_statement> ::= "synchronous_replication_timeout" <number>
 	<synchronous_journaling_statement> ::= "synchronous_journaling" <validity>
 	<metadb_server_force_slave_statement> ::= "metadb_server_force_slave" <validity>
+	<metadb_server_slave_listen_statement> ::= "metadb_server_slave_listen" <validity>
 	<metadb_server_slave_max_size_statement> ::= "metadb_server_slave_max_size" <number>
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
