@@ -1343,6 +1343,25 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </varlistentry>
 
 <varlistentry>
+<term><token>metadb_server_slave_listen</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>enable のとき、スレーブgfmdとして設定されている場合でも、クライアントからの要求を受け付けます。
+デフォルトはdisableです。
+</para>
+<para>
+注意: この機能は開発用に用意されていますので、通常の用途では設定しないでください。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_slave_listen enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>metadb_server_slave_max_size</token> <parameter>ノード数</parameter></term>
 <listitem>
 <para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
@@ -1479,6 +1498,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_slave_listen_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
@@ -1580,6 +1600,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
 	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
 	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
+	&lt;metadb_server_slave_listen_statement&gt; ::= "metadb_server_slave_listen" &lt;validity&gt;
 	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
 	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
 	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;

@@ -768,6 +768,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_JOURNAL_SYNC_SLAVE_TIMEOUT_DEFAULT 10 /* 10 second */
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
+#define GFARM_METADB_SERVER_SLAVE_LISTEN_DEFAULT	0
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  20 /* 20 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #if 0 /* not yet in gfarm v2 */
@@ -788,6 +789,7 @@ static int journal_sync_file = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_sync_slave_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
+static int metadb_server_slave_listen = GFARM_CONFIG_MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -1079,6 +1081,12 @@ void
 gfarm_set_metadb_server_force_slave(int slave)
 {
 	metadb_server_force_slave = slave;
+}
+
+int
+gfarm_get_metadb_server_slave_listen(void)
+{
+	return (metadb_server_slave_listen);
 }
 
 /*
@@ -2522,6 +2530,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &metadb_server_slave_max_size);
 	} else if (strcmp(s, o = "metadb_server_force_slave") == 0) {
 		e = parse_set_misc_enabled(p, &metadb_server_force_slave);
+	} else if (strcmp(s, o = "metadb_server_slave_listen") == 0) {
+		e = parse_set_misc_enabled(p, &metadb_server_slave_listen);
 	} else if (strcmp(s, o = "network_receive_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->network_receive_timeout);
 	} else if (strcmp(s, o = "file_trace") == 0) {
@@ -2760,6 +2770,9 @@ gfarm_config_set_default_misc(void)
 	if (metadb_server_force_slave == GFARM_CONFIG_MISC_DEFAULT)
 		metadb_server_force_slave =
 		    GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT;
+	if (metadb_server_slave_listen == GFARM_CONFIG_MISC_DEFAULT)
+		metadb_server_slave_listen =
+		    GFARM_METADB_SERVER_SLAVE_LISTEN_DEFAULT;
 	if (gfarm_ctxp->network_receive_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->network_receive_timeout =
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
