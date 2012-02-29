@@ -606,7 +606,7 @@ gfm_server_removexattr(
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
 		gflog_debug(GFARM_MSG_1002091,
-			"operation is not supported(xmlMode)");
+		    "operation is not supported(xmlMode)");
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
@@ -620,25 +620,25 @@ gfm_server_removexattr(
 		if ((process = peer_get_process(peer)) == NULL) {
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 			gflog_debug(GFARM_MSG_1002092,
-				    "peer_get_process() failed :%s",
-				    gfarm_error_string(e));
+			    "peer_get_process() failed :%s",
+			    gfarm_error_string(e));
 		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002093,
-				    "peer_fdpair_get_current() failed: %s",
-				    gfarm_error_string(e));
+			    "peer_fdpair_get_current() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = process_get_file_inode(process, fd, &inode)) !=
 			   GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002094,
-				    "process_get_file_inode() failed: %s",
-				    gfarm_error_string(e));
+			    "process_get_file_inode() failed: %s",
+			    gfarm_error_string(e));
 		} else if ((e = xattr_access(xmlMode, inode,
-						process_get_user(process),
-					attrname, GFS_W_OK, XATTR_OP_REMOVE))
+				process_get_user(process),
+				attrname, GFS_W_OK, XATTR_OP_REMOVE))
 			   != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003038,
-				    "xattr_access() failed: %s",
-				    gfarm_error_string(e));
+			    "xattr_access() failed: %s",
+			    gfarm_error_string(e));
 		} else
 			e = removexattr(xmlMode, inode, attrname);
 		giant_unlock();
@@ -1352,7 +1352,7 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(ck_name);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-							relay, diag, &e, ""));
+		relay, diag, &e, ""));
 	}
 
 	/* do not relay RPC to master gfmd */
@@ -1421,7 +1421,7 @@ quit:
 	free(ck_path);
 	free(ck_name);
 	e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-						relay, diag, &e, ""));
+	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
+	    &e, ""));
 #endif
 }
