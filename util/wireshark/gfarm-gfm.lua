@@ -2072,10 +2072,20 @@ end
 -- Parse GFM_PROTO_PROCESS_ALLOC.
 --
 function parse_gfm_process_alloc_request(tvb, pinfo, item, offset)
-   return nil
+   -- IN i:key_type, b:shared_key
+   offset = offset + 4
+   offset = parse_xdr(tvb, item, "i", offset, "keytype")
+   offset = parse_xdr(tvb, item, "b", offset, "shared_key")
+   return offset
 end
 
 function parse_gfm_process_alloc_response(tvb, pinfo, item, offset)
+   -- OUT l:pid
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "l", offset, "pid", base.DEC)
+   end
    return nil
 end
 
