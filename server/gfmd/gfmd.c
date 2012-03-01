@@ -1663,7 +1663,7 @@ main(int argc, char **argv)
 		    "metadata replication %s mode",
 		    is_master ? "master" : "slave");
 		start_gfmdc_threads();
-		if (is_master)
+		if (is_master || gfarm_get_metadb_server_slave_listen())
 			sock = open_accepting_socket(gfmd_port);
 		else
 			sock = wait_transform_to_master(gfmd_port);
