@@ -40,6 +40,7 @@ DOCBOOK = \
 	gfperf-parallel-write.1 \
 	gfperf-parallel-replica.1 \
 	gfperf-parallel-autoreplica.1 \
+	gfperf-wrapper.sh.1 \
 	gfperf.rb.1 \
 	gfstress.rb.1
 
