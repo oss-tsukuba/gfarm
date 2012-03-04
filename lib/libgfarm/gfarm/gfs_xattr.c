@@ -688,7 +688,6 @@ gfs_findxmlattr(const char *path, const char *expr,
 	} else if ((e = gfm_open_fd_with_ino(path, GFARM_FILE_RDONLY,
 	    &ctxp->gfm_server, &ctxp->fd, &ctxp->type, &url, &ino))
 		!= GFARM_ERR_NO_ERROR) {
-		free(url);
 		gfs_xmlattr_ctx_free(ctxp, 1);
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_open_fd_with_ino(%s) failed: %s",
