@@ -19,6 +19,7 @@ struct gfs_failover_file_ops {
 /* gfs_pio_failover.c */
 int gfm_client_connection_should_failover(struct gfm_connection *,
 	gfarm_error_t);
+int gfs_pio_should_failover(GFS_File gf, gfarm_error_t);
 gfarm_error_t gfm_client_connection_failover(struct gfm_connection *);
 gfarm_error_t gfm_client_connection_failover_pre_connect(
 	const char *, int, const char *);
