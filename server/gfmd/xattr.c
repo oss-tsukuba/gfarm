@@ -1393,9 +1393,6 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 quit:
 	/* XXXRELAY FIXME, reply size is not correct */
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-						relay, diag, &e, ""));
-
 	if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
 		 &e, "ii", &ctxp->eof, &ctxp->nvalid)) == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < ctxp->nvalid; i++) {
