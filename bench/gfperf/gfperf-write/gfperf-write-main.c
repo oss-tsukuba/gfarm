@@ -642,11 +642,12 @@ main(int argc, char *argv[])
 	}
 
 	if (overwrite_flag)
-		r = asprintf(&filename, "%s/overwrite-%s-%s.tst", dir,
+		r = asprintf(&filename, "%s/overwrite-%s%s%s.tst", dir,
 			     filesize_string,
-			     gfsd_hostname ? gfsd_hostname : "(null)");
+			     gfsd_hostname ? "-" : "",
+			     gfsd_hostname ? gfsd_hostname : "");
 	else
-		r = asprintf(&filename, "%s/test.%d.dat", dir, getpid());
+		r = asprintf(&filename, "%s/test.%d.tst", dir, getpid());
 	if (r < 0) {
 		fprintf(stderr, "can not allocate memory!\n");
 		gfarm_terminate();
@@ -656,12 +657,13 @@ main(int argc, char *argv[])
 	if (posix_flag) {
 		if (overwrite_flag)
 			r = asprintf(&gfarm_filename,
-				     "%s/overwrite-%s-%s.tst",
+				     "%s/overwrite-%s%s%s.tst",
 				     gfperf_find_root_from_url(testdir),
 				     filesize_string,
-				     gfsd_hostname ? gfsd_hostname : "(null)");
+				     gfsd_hostname ? "-" : "",
+				     gfsd_hostname ? gfsd_hostname : "");
 		else
-			r = asprintf(&gfarm_filename, "%s/test.%d.dat",
+			r = asprintf(&gfarm_filename, "%s/test.%d.tst",
 				     gfperf_find_root_from_url(testdir),
 				     getpid());
 		if (r < 0) {

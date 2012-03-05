@@ -28,7 +28,7 @@ asprintf(char **strp, const char *fmt, ...)
 		return (size);
 	GFARM_MALLOC_ARRAY(bufp, size+1);
 	if (bufp == NULL)
-		return GFARM_ERR_NO_MEMORY;
+		return (GFARM_ERR_NO_MEMORY);
 	va_start(ap, fmt);
 	ret = vsnprintf(bufp, size+1, fmt, ap);
 	va_end(ap);

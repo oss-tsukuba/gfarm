@@ -150,13 +150,15 @@ parse_opt(int argc, char *argv[])
 
 	len = strlen(src_url);
 	if (src_url[len-1] == '/')
-		ret = asprintf(&src_filename, "%scopy-%s-%s.tst",
+		ret = asprintf(&src_filename, "%scopy-%s%s%s.tst",
 			       src_url, file_size_string,
-			       gfsd_hostname ? gfsd_hostname : "(null)");
+			       gfsd_hostname ? "-" : "",
+			       gfsd_hostname ? gfsd_hostname : "");
 	else
-		ret = asprintf(&src_filename, "%s/copy-%s-%s.tst",
+		ret = asprintf(&src_filename, "%s/copy-%s%s%s.tst",
 			       src_url,  file_size_string,
-			       gfsd_hostname ? gfsd_hostname : "(null)");
+			       gfsd_hostname ? "-" : "",
+			       gfsd_hostname ? gfsd_hostname : "");
 	if (ret < 0) {
 		fprintf(stderr, "can not allocate memory.\n");
 		return (GFARM_ERR_NO_MEMORY);
