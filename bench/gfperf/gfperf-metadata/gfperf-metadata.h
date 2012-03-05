@@ -37,11 +37,11 @@ struct test_results {
 };
 
 extern int libgfarm_flag;
-extern char *testdir;
 extern char *rootdir;
 extern int loop_number;
 extern char *unit;
 extern int unit_flag;
+extern char *topdir;
 
 gfarm_error_t do_posix_test(struct directory_names *dirs,
 			    struct directory_names *files);

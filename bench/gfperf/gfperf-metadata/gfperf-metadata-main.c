@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #endif
@@ -20,6 +21,8 @@ char *testdir = "gfarm:///tmp";
 int loop_number = 250;
 char *unit = UNIT_OPS;
 int unit_flag = UNIT_FLAG_OPS;
+char *topdir;
+static char hostname[1024];
 
 static
 void
@@ -41,7 +44,7 @@ static
 int
 parse_opt(int argc, char *argv[])
 {
-	int r;
+	int r, saved_errno;
 	gfarm_error_t e;
 	static char *optstr = "hn:t:u:";
 #ifdef HAVE_GETOPT_LONG
@@ -108,6 +111,32 @@ parse_opt(int argc, char *argv[])
 		return (e);
 	}
 
+	r = gethostname(hostname, sizeof(hostname));
+	if (r < 0)
+		strcpy(hostname, "unknown");
+
+	r = asprintf(&topdir, "%s/gfperf-metadata-%s-%d", testdir,
+		     hostname, getpid());
+	if (r < 0)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if (posix_flag) {
+		r = mkdir(topdir, MKDIR_MODE);
+		if (r < 0) {
+			saved_errno = errno;
+			fprintf(stderr, "can not make a directory.(%s)\n",
+				topdir);
+			return (gfarm_errno_to_error(saved_errno));
+		}
+	} else {
+		e = gfs_mkdir(topdir, MKDIR_MODE);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "can not make a directory.(%s)\n",
+				topdir);
+			return (e);
+		}
+	}
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -144,7 +173,7 @@ create_directory_names(int n, char *postfix)
 	for (i = 0; i <= n ; i++) {
 		ret = asprintf(&p->names[i],
 			       "%s/test%07d%s",
-			       testdir, i, postfix);
+			       topdir, i, postfix);
 
 		if (ret == -1)
 			goto err_return;
@@ -218,6 +247,7 @@ get_middle_end(struct test_results *r)
 int
 main(int argc, char *argv[])
 {
+	int r;
 	gfarm_error_t e;
 	struct directory_names *dirs;
 	struct directory_names *files;
@@ -258,6 +288,21 @@ main(int argc, char *argv[])
 	free_directory_names(files);
 	free_directory_names(dirs);
 
+	if (posix_flag) {
+		r = rmdir(topdir);
+		if (r < 0) {
+			fprintf(stderr, "can not remove directory.(%s)\n",
+				topdir);
+		}
+	} else {
+		e = gfs_rmdir(topdir);
+		if (e != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "can not remove directory.(%s)\n",
+				topdir);
+		}
+	}
+
+	free(topdir);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

@@ -32,9 +32,9 @@ do_libgfarm_readdir()
 	gettimeofday(&start_time, NULL);
 
 
-	e = gfs_opendir_caching(testdir, &d);
+	e = gfs_opendir_caching(topdir, &d);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "can not open directory %s\n", testdir);
+		fprintf(stderr, "can not open directory %s\n", topdir);
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 
@@ -65,9 +65,9 @@ do_libgfarm_readdir()
 
 
 	gettimeofday(&start_time, NULL);
-	e = gfs_opendir_caching(testdir, &d);
+	e = gfs_opendir_caching(topdir, &d);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "can not open directory %s\n", testdir);
+		fprintf(stderr, "can not open directory %s\n", topdir);
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 
@@ -76,7 +76,7 @@ do_libgfarm_readdir()
 		if (de == NULL)
 			break;
 		snprintf(filename, sizeof(filename),
-			"%s/%s", testdir, de->d_name);
+			"%s/%s", topdir, de->d_name);
 		e = gfs_lstat_cached(filename, &st);
 		if (e == GFARM_ERR_NO_ERROR)
 			gfs_stat_free(&st);
