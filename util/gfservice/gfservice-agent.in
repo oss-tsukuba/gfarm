@@ -210,9 +210,9 @@ set_client_params()
 		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
-	log_debug "set_gfsd_params: set GFARM_CONF=$GFARM_CONF"
+	log_debug "set_client_params: set GFARM_CONF=$GFARM_CONF"
 
-	log_debug "end set_gfsd_params"
+	log_debug "end set_client_params"
 	return 0
 }
 
@@ -480,9 +480,11 @@ subcmd_get_config_gfarm_param()
 	PARAM=`get_param param` || {
 		log_error "missing mandatory argument 'param'"
 	}
-	log_debug "subcmd_get_config_gfarm_param: param=$PARAM"
 	config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne "/^$PARAM=/s/^[^=]*=//p"
+	log_debug "subcmd_get_config_gfarm_param: param=$PARAM," \
+	"value="`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
 
 	log_debug "end subcmd_get_config_gfarm_param"
 }
@@ -502,6 +504,9 @@ subcmd_get_config_gfsd_param()
 	log_debug "subcmd_get_config_gfsd_param: param=$PARAM"
 	config-gfsd -T $CONFIG_GFSD_OPTIONS \
 		| sed -ne "/^$PARAM=/s/^[^=]*=//p"
+	log_debug "subcmd_get_config_gfsd_param: param=$PARAM," \
+	"value="`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
 
 	log_debug "end subcmd_get_config_gfsd_param"
 }
@@ -986,7 +991,7 @@ subcmd_backup_shared_key()
 	cat $SHARED_KEY_FILE
 	[ $? -ne 0 ] && log_error "failed to backup $SHARED_KEY_FILE"
 
-	log_debug "end subcmd_backup_shard_key"
+	log_debug "end subcmd_backup_shared_key"
 }
 
 #
