@@ -62,11 +62,11 @@ do_copy() {
 			return (GFARM_ERR_GFARM_URL_PREFIX_IS_MISSING);
 		}
 		free(src_filename);
-		ret = asprintf(&src_filename, "%s%s/copy-%s-%s.tst",
+		ret = asprintf(&src_filename, "%s%s/copy-%s%s%s.tst",
 			       gfarm2fs_mount_point, root,
 			       file_size_string,
-			       gfsd_hostname_bak ? gfsd_hostname_bak :
-			       "(null)");
+			       gfsd_hostname_bak ? "-" : "",
+			       gfsd_hostname_bak ? gfsd_hostname_bak : "");
 		if (ret < 0) {
 			free(buf);
 			fprintf(stderr, "can not allocate memory.\n");

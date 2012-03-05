@@ -547,9 +547,10 @@ main(int argc, char *argv[])
 		return (1);
 	}
 
-	r = asprintf(&filename, "%s/parallel-read-%s-%s-%s.tst",
+	r = asprintf(&filename, "%s/parallel-read-%s-%s%s%s.tst",
 		     dir, filesize_string, hostname,
-		     gfsd_hostname ? gfsd_hostname : "(null)");
+		     gfsd_hostname ? "-" : "",
+		     gfsd_hostname ? gfsd_hostname : "");
 	if (r < 0) {
 		fprintf(stderr, "can not allocate memory!\n");
 		free(dir);
@@ -583,10 +584,12 @@ main(int argc, char *argv[])
 
 
 	if (posix_flag) {
-		r = asprintf(&gfarm_filename, "/%s/parallel-read-%s-%s-%s.tst",
+		r = asprintf(&gfarm_filename,
+			     "/%s/parallel-read-%s-%s%s%s.tst",
 			     gfarm_url_dir_skip(testdir),
 			     filesize_string, hostname,
-			     gfsd_hostname ? gfsd_hostname : "(null)");
+			     gfsd_hostname ? "-" : "",
+			     gfsd_hostname ? gfsd_hostname : "");
 		if (r < 0) {
 			fprintf(stderr, "can not allocate memory!\n");
 			free(dir);

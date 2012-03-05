@@ -36,9 +36,9 @@ do_posix_readdir()
 	struct stat st;
 
 	gettimeofday(&start_time, NULL);
-	d = opendir(testdir);
+	d = opendir(topdir);
 	if (d == NULL) {
-		fprintf(stderr, "can not open directory %s\n", testdir);
+		fprintf(stderr, "can not open directory %s\n", topdir);
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 
@@ -60,9 +60,9 @@ do_posix_readdir()
 	       c, f, unit, gfperf_timeval_to_float(&exec_time));
 
 	gettimeofday(&start_time, NULL);
-	d = opendir(testdir);
+	d = opendir(topdir);
 	if (d == NULL) {
-		fprintf(stderr, "can not open directory %s\n", testdir);
+		fprintf(stderr, "can not open directory %s\n", topdir);
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 
@@ -70,7 +70,7 @@ do_posix_readdir()
 	while ((de = readdir(d)) != NULL) {
 		c++;
 		snprintf(filename, sizeof(filename),
-			"%s/%s", testdir, de->d_name);
+			"%s/%s", topdir, de->d_name);
 		e = lstat(filename, &st);
 		if (e < 0) {
 			saved_errno = errno;
