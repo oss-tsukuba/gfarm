@@ -72,7 +72,7 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
 /*
  * if this is an inter-gfmd-relayed reply, xid is valid and sizep != NULL.
  * Note that *sizep won't be used actually, but sizep != NULL condition will
- * to see whether this is an inter-gfmd-relayed reply or not.
+ * be used to see whether this is an inter-gfmd-relayed reply or not.
  */
 gfarm_error_t
 gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
