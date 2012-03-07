@@ -25,6 +25,8 @@ gfarm_error_t db_host_load(void *, void (*)(void *,
 #define DB_HOST_MOD_NCPU		2
 #define DB_HOST_MOD_FLAGS		4
 
+gfarm_error_t db_fsngroup_modify(const char *, const char *);
+
 struct gfarm_user_info;
 gfarm_error_t db_user_add(const struct gfarm_user_info *);
 gfarm_error_t db_user_modify(const struct gfarm_user_info *, int);
@@ -131,6 +133,7 @@ gfarm_error_t db_mdhost_load(void *, void (*)(void *,
 
 /* allocation for storage operations arguments */
 struct db_host_modify_arg;
+struct db_fsngroup_modify_arg;
 struct db_user_modify_arg;
 struct db_group_modify_arg;
 struct db_inode_string_modify_arg;
@@ -151,6 +154,8 @@ struct gfs_stat *db_inode_dup(const struct gfs_stat *, size_t);
 struct db_host_modify_arg *db_host_modify_arg_alloc(
 	const struct gfarm_host_info *, int, int, const char **, int,
 	const char **);
+struct db_fsngroup_modify_arg *db_fsngroup_modify_arg_alloc(
+	const char *hostname, const char *fsngroupname);
 struct db_user_modify_arg *db_user_modify_arg_alloc(
 	const struct gfarm_user_info *, int);
 struct db_group_modify_arg *db_group_modify_arg_alloc(
