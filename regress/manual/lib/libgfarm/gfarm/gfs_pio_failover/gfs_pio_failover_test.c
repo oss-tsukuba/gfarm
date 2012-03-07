@@ -1562,7 +1562,7 @@ test_write_long_loop(const char **argv)
 	char cmd[256];
 	GFS_File gf[WRITE_LOOP_FILES];
 	size_t sz, fsz[WRITE_LOOP_FILES];
-	int loop = 0, r, i, len, rest_files;
+	int loop = 0, wstatus, r, i, len, rest_files;
 	char path[WRITE_LOOP_FILES][GFS_MAXNAMLEN];
 	char buf[WRITE_LOOP_BUFSZ];
 	struct gfs_stat st;
@@ -1570,7 +1570,8 @@ test_write_long_loop(const char **argv)
 	int tmlimit = atoi(stmlimit);
 
 	sprintf(cmd, "./failover-loop-start.sh %d &", tmlimit);
-	r = WEXITSTATUS(system(cmd));
+	wstatus = system(cmd);
+	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
 		msg("failed to exec ./failover-loop-start.sh\n");
 		exit(1);
@@ -1650,7 +1651,8 @@ test_write_long_loop(const char **argv)
 			break;
 	}
 end:
-	r = WEXITSTATUS(system("./failover-loop-end.sh"));
+	wstatus = system("./failover-loop-end.sh");
+	r = WEXITSTATUS(wstatus);
 	if (r != 0) {
 		msg("failed to exec ./failover-loop-end.sh\n");
 		exit(1);
