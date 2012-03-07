@@ -8,9 +8,9 @@
 #include <time.h>
 #include <libgen.h>
 #include <signal.h>
-#include <error.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
