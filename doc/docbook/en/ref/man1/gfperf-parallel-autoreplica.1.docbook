@@ -33,6 +33,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>This command creates specified number of files of specified size in <parameter>test directory</parameter>.
 The created files will be automatically replicated by gfmd. This command measures creation time of the files.
+</para>
 <para>
 This command is expected to be called by gfperf.rb in parallel.
 </para>

@@ -26,8 +26,8 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-This command measure peformance of gfarm file system according to <parameter>config file</paramter>.
-<parameter>config file</paramter> is written in YAML.
+This command measure peformance of gfarm file system according to <parameter>config file</parameter>.
+<parameter>config file</parameter> is written in YAML.
 </para>
 <para>
 Example config files are (gfarm install directory)/share/gfarm/config/gfperf-[config|simple].yml .

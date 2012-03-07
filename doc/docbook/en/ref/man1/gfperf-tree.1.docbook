@@ -29,6 +29,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>This command creates a directory tree in <parameter>test directory</parameter>. And measures performance creating directory tree and removing it.
 The created directory tree has <parameter>number of directories</parameter> in each subdirectories. Total depth of the tree is <parameter> depth of directories</parameter>
+</para>
 <para>Output unit is ops (operation per second) or usec (micro second).
 </para>
 </refsect1>

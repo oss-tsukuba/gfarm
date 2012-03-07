@@ -31,6 +31,7 @@
 <para>
 設定ファイルの例が(Gfarmインストールディレクトリ)/share/gfarm/config/gfperf-[config|simple].ymlにあります。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
