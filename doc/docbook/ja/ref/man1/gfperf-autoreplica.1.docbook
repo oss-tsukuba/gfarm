@@ -31,6 +31,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>引数 <parameter>テストディレクトリ</parameter> に指定されたサイズのファイルを指定された数作成し、その作成性能を測定します。それぞれのファイルは指定された複製数で自動複製が行われます。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

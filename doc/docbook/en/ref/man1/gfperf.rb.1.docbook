@@ -11,14 +11,14 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfperf.rb</refname>
-<refpurpose>Gfarm 性能測定を行う。</refpurpose>
+<refpurpose>Gfarm measure performance</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfperf.rb</command>
     <arg choice='opt'>-c, --check</arg>
-    <arg choice='plain'><replaceable>設定ファイル</replaceable></arg>
+    <arg choice='plain'><replaceable>config file</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -26,11 +26,13 @@
 
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>
-引数<parameter>設定ファイル</parameter>で渡されたyamlファイルを元に性能測定を実施します。
+This command measure peformance of gfarm file system according to <parameter>config file</paramter>.
+<parameter>config file</paramter> is written in YAML.
 </para>
 <para>
-設定ファイルの例が(Gfarmインストールディレクトリ)/share/gfarm/config/gfperf-[config|simple].ymlにあります。
+Example config files are (gfarm install directory)/share/gfarm/config/gfperf-[config|simple].yml .
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
@@ -39,7 +41,7 @@
 <term><option>-c, --check</option></term>
 <listitem>
 <para>
-<parameter>設定ファイル</parameter>にyaml文法上の誤りがあるかどうかをチェックします。
+Check <parameter>config file</parameter> syntax.
 </para>
 </listitem>
 </varlistentry>
@@ -49,7 +51,7 @@
 
 <refsect1 id='examples'><title>EXAMPLES</title>
 <para>
-設定ファイルの例を以下に示します。
+Config file example is following.
 </para>
 <literallayout>
 database: {filename: "/var/www/database.db", check span: "10days",
@@ -189,16 +191,16 @@ parallel-autoreplica: {
 }
 </literallayout>
 <para>
-以下に各設定項目の詳細を述べます。
+Following sentences explain keywords of the YAML.
 </para>
 <variablelist>
   <varlistentry>
     <term>database</term>
     <listitem>
       <para>
-	filename:に性能測定の結果を保持するデータベースを指定します。
-	backup:には自動バックアップ先を指定します。
-	check span:で指定された時間分の平均値及び標準偏差を計算します。
+	Specify databse filename in filename: .
+	Specify backup of database file in backup: .
+	check span: specifies time span of calculating average and standard deviation.
       </para>
     </listitem>
   </varlistentry>
@@ -207,8 +209,9 @@ parallel-autoreplica: {
     <term>errlog</term>
     <listitem>
       <para>
-	エラーが発生したときのログファイルの出力先を指定します。
-	本指定の有無に拘らず上記データベースファイルにエラーメッセージは格納されます。WEBを参照せずにエラーを確認したい場合に使用します。
+	This commands prints error messsages in the file specified by errlog: .
+	All error messages are also written in the database.
+	If you don't need to error log file, this parameter can be omitted.
       </para>
     </listitem>
   </varlistentry>
@@ -217,9 +220,9 @@ parallel-autoreplica: {
     <term>authentication</term>
     <listitem>
       <para>
-	性能測定を行う際の認証方式を指定します。
-	sharedsecret, gsi_auth, gsiを指定することができます。
-	ここで指定した認証方式で全てのテストを実施します。
+	Specify authentication types of performance measuring.
+	Authentication types are sharedsecret, gsi_auth and gsi.
+	Performance test is executed on all specified types.
       </para>
     </listitem>
   </varlistentry>
@@ -228,9 +231,9 @@ parallel-autoreplica: {
     <term>gfarm2fs_mountpoint</term>
     <listitem>
       <para>
-	性能測定を行う際に使用するマウントポイントを指定します。
-	上記認証方式に従って本コマンドがgfarm2fsを呼出します。
-        ここで指定したマウントポイントを使用して各テストのテストディレクトリとしてください。
+	Specify gfarm2fs mount point.
+	When start testing, this command mounts all gfarm2fs mount point automatically. At the end of testing, unmounted automatically.
+	When changing authenticaion type, remounted automatically.
       </para>
     </listitem>
   </varlistentry>
@@ -239,8 +242,8 @@ parallel-autoreplica: {
     <term>metadata</term>
     <listitem>
       <para>
-	gfperf-metadataを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
+	Perfomance measuring using gfperf-metadata.
+	Parameters are gfperf-metadata long options.
       </para>
     </listitem>
   </varlistentry>
@@ -249,8 +252,8 @@ parallel-autoreplica: {
     <term>tree</term>
     <listitem>
       <para>
-	gfperf-treeを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
+	Perfomance measuring using gfperf-tree.
+	Parameters are gfperf-tree long options.
       </para>
     </listitem>
   </varlistentry>
@@ -259,8 +262,8 @@ parallel-autoreplica: {
     <term>copy</term>
     <listitem>
       <para>
-	gfperf-copyを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
+	Perfomance measuring using gfperf-copy.
+	Parameters are gfperf-copy long options.
       </para>
     </listitem>
   </varlistentry>
@@ -269,10 +272,9 @@ parallel-autoreplica: {
     <term>read</term>
     <listitem>
       <para>
-	gfperf-readを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
-	random:オプションは引数に何を渡してもランダム読込の性能測定になります。
-	シーケンシャル読込の測定を行う場合、random:を削除してください。
+	Perfomance measuring using gfperf-read.
+	Parameters are gfperf-read long options.
+	If you need to test sequentially read, remove random option.
       </para>
     </listitem>
   </varlistentry>
@@ -281,12 +283,10 @@ parallel-autoreplica: {
     <term>write</term>
     <listitem>
       <para>
-	gfperf-writeを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
-	random:オプションは引数に何を渡してもランダム書込の性能測定になります。
-	シーケンシャル書込の測定を行う場合、random:を削除してください。
-	overwrite:オプションは引数に何を渡しても上書きの性能測定になります。
-	追記書込みの測定を行う場合、overwrite:を削除してください。
+	Perfomance measuring using gfperf-write.
+	Parameters are gfperf-write long options.
+	If you need to test sequentially write, remove random option.
+	If you need to test append write, remove overwrite option.
       </para>
     </listitem>
   </varlistentry>
@@ -295,8 +295,8 @@ parallel-autoreplica: {
     <term>replica</term>
     <listitem>
       <para>
-	gfperf-replicaを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
+	Perfomance measuring using gfperf-replica.
+	Parameters are gfperf-replica long options.
       </para>
     </listitem>
   </varlistentry>
@@ -305,8 +305,8 @@ parallel-autoreplica: {
     <term>autoreplica</term>
     <listitem>
       <para>
-	gfperf-autoreplicaを用いた測定内容を記述します。
-	パラメータはロングオプションで記述します。
+	Perfomance measuring using gfperf-autoreplica.
+	Parameters are gfperf-autoreplica long options.
       </para>
     </listitem>
   </varlistentry>
@@ -315,12 +315,11 @@ parallel-autoreplica: {
     <term>parallel</term>
     <listitem>
       <para>
-	並列テストのテストパターンを記述します。
-	グループ名をキーにテスト内容を配列にして記述します。
-	グループ名は設定ファイル内で一意でなくてはなりません。
-	テスト内容はrhost:でsshで呼出す実行先を指定し、type:で呼出すコマンドを指定します。
-	type:に指定できるのはread, write, replicaの3つです。
-	それぞれgfperf-parallel-read, gfperf-parallel-write, gfperf-parallel-replicaが呼出されます。
+	Specify parallel test patterns.
+	At first, specify group name that is a sinbol of parallel testing.
+	Group name must be uniq in all parallel testing (includes parallel-autoreplica).
+	Specify remote host in rhost: . This command uses ssh for executing command.
+	type: specifies one of read, write, replica. These types corresponds to gfperf-parallel-read, gfperf-parallel-write, gfperf-parallel-replica.
       </para>
     </listitem>
   </varlistentry>
@@ -329,11 +328,11 @@ parallel-autoreplica: {
     <term>parallel-autoreplica</term>
     <listitem>
       <para>
-	自動複製の並列テストのテストパターンを記述します。
-	グループ名をキーにテスト内容を配列にして記述します。
-	グループ名は設定ファイル内で一意でなくてはなりません。
-	テスト内容はgfperf-parallel-autoreplicaのロングオプションを記述したものです。
-	gfperf-parallel-autoreplicaを記述された数分呼び出し、その平均値をとってテスト結果とします。
+	Specify auto replication test in parallel.
+	At first, specify group name that is a sinbol of parallel testing.
+	Group name must be uniq in all parallel testing (includes parallel).
+	Test parameters are gfperf-parallel-autoreplica long options.
+	The result is average of gfperf-parallel-autoreplica outputs.
       </para>
     </listitem>
   </varlistentry>
@@ -382,12 +381,11 @@ parallel-autoreplica: {
 
 <refsect1 id='notes'><title>NOTES</title>
 <para>
-sshでコマンド起動を行う場合、
-事前にパスワードなしでのログインできる環境を整える必要があります。
+Using ssh command execution, no password is recommended.
 </para>
 <para>
-また、OSによっては.bashrcが読み込まれないことがありますので、
-gfperf.rbを実行する前に確認してください。
+Bash doesn't read ~/.bashrc in some envronment.
+Please check before running gfperf.rb.
 </para>
 </refsect1>
 

@@ -32,6 +32,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その読込性能を測定します。一度作成したテストファイルは削除されずに同じパラメータで次回起動したときに再利用されます。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

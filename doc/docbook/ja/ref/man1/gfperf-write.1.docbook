@@ -33,6 +33,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その書込性能を測定します。overwrite時に限り一度作成したテストファイルは削除されずに同じパラメータで次回起動したときに再利用されます。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

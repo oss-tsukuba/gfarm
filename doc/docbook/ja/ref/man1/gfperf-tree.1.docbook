@@ -31,18 +31,10 @@
 </para>
 <para>測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
-
-<varlistentry>
-<term><option>-n, --number</option> <parameter>テスト実施数</parameter></term>
-<listitem>
-<para>
-それぞれの測定項目に対して何回実施するかを指定します。デフォルトは250です。
-</para>
-</listitem>
-</varlistentry>
 
 <varlistentry>
 <term><option>-t, --testdir</option> <parameter>テストディレクトリ</parameter></term>

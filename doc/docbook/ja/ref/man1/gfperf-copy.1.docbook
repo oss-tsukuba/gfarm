@@ -32,6 +32,7 @@
 <para><parameter>コピー元url</parameter>から<parameter>コピー先url</parameter>にファイルをコピーしそのコピー性能を測定します。
 <parameter>コピー元url</parameter>と<parameter>コピー先url</parameter>はどちらか一方がgfarm url (gfarm:///で始まるもの) でなくてはなりません。そしてもう片方はfile url (file:///で始まるもの) でなくてはなりません。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

@@ -37,6 +37,7 @@
 <para>
 本コマンドはgfperf.rbから並列に呼出されることを期待しています。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

@@ -38,6 +38,7 @@
 <para>
 本コマンドはgfperf.rbから並列に呼出されることを期待しています。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
@@ -118,7 +119,7 @@ gfarm2fsのマウントポイントを指定します。
 <term><option>-k, --timeout</option> <parameter>timeout秒数</parameter></term>
 <listitem>
 <para>
-読込の最大時間を指定します。デフォルトは60秒です。
+書込の最大時間を指定します。デフォルトは60秒です。
 この時間内に書き込めたバイト数を書み込みにかかった時間で割った値を性能値とします。
 </para>
 </listitem>

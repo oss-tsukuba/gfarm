@@ -29,6 +29,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>引数 <parameter>テストディレクトリ</parameter> にテスト用のファイルを作成し、その複製性能を測定します。
 </para>
+</refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>

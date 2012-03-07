@@ -11,7 +11,7 @@
 </refmeta>
 <refnamediv id='name'>
 <refname>gfstress.rb</refname>
-<refpurpose>Gfarm ファイル複製の性能測定を行う。</refpurpose>
+<refpurpose>Gfarm 負荷試験を行う。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
@@ -37,6 +37,8 @@
 <para>
 gfarm2fsマウントポイントが与えられた場合はlibgfarmを使用した通常の負荷に加えてgfarm2fsを経由した負荷も同時に与えます。
 </para>
+</refsect1>
+
 <refsect1 id='options'><title>OPTIONS</title>
 <variablelist>
 

@@ -1,0 +1,105 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfperf-parallel-replica.1'>
+
+<refentryinfo><date>19 May 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfperf-parallel-replica</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfperf-parallel-replica</refname>
+<refpurpose>Gfarm measure file replicate performance</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfperf-parallel-replica</command>
+    <arg choice='plain'>-s, --src <replaceable>source gfsd name</replaceable></arg>
+    <arg choice='plain'>-s, --dst <replaceable>destination gfsd name</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
+    <arg choice='opt'>-n, --name <replaceable>group name</replaceable></arg>
+    <arg choice='opt'>-w, --wait <replaceable>start time</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>This command creates test file in <parameter>test directory</parameter> and measures replication performance.
+</para>
+<para>
+This command is expected to be called by gfperf.rb in parallel.
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-s, --src</option> <parameter>source gfsd name</parameter></term>
+<listitem>
+<para>
+Specify source gfsd name.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d, --dst</option> <parameter>destination gfsd name</parameter></term>
+<listitem>
+<para>
+Specify destination gfsd name.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<listitem>
+<para>
+File size to be created.
+The default is 1M. (1M=2^20)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<listitem>
+<para>
+Test file is created in <parameter>test directory</parameter>.
+Specify only gfarm url (that begins with gfarm:///) .
+The default is gfarm:///tmp .
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n, --name</option> <parameter>group name</parameter></term>
+<listitem>
+<para>
+Group name in parallel execution.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-w, --wait</option> <parameter>start time</parameter></term>
+<listitem>
+<para>
+Start time specified by gfperf.rb.
+This command waits until start time.
+Start time is written in UTC (YYYY-MM-DDThh:mm:ssZ) and
+must be in 10 seconds from current time.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+</refentry>
