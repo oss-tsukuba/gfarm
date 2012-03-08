@@ -2976,6 +2976,7 @@ gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 }
 
 struct reopen_resume_arg {
+	int relayed;
 	gfp_xdr_xid_t xid;
 	int fd;
 };
@@ -2991,7 +2992,7 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 	gfarm_uint64_t gen;
 	gfarm_int32_t mode, flags, to_create;
 	gfp_xdr_xid_t xid;
-	size_t junk = 0;
+	size_t junk = 0, *sizep;
 
 	/* for gfarm_file_trace */
 	gfarm_error_t e2;
@@ -3025,10 +3026,11 @@ reopen_resume(struct peer *peer, void *closure, int *suspendedp)
 		gettimeofday(&tv, NULL);
 	}
 
+	sizep = arg->relayed ? &junk : NULL;
 	xid = arg->xid;
 	free(arg);
 	giant_unlock();
-	e2 = gfm_server_put_reply(peer, xid, &junk, diag, e, "lliii",
+	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "lliii",
 	    inum, gen, mode, flags, to_create);
 
 	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
@@ -3102,6 +3104,7 @@ gfm_server_reopen(
 			if (arg == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 			} else {
+				arg->relayed = sizep != NULL;
 				arg->xid = xid;
 				arg->fd = fd;
 				if ((e = process_new_generation_wait(
@@ -3204,6 +3207,7 @@ gfm_server_close_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 }
 
 struct close_v2_4_resume_arg {
+	int relayed;
 	gfp_xdr_xid_t xid;
 	int fd;
 	gfarm_off_t size;
@@ -3221,7 +3225,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	gfarm_int32_t flags;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
 	gfp_xdr_xid_t xid;
-	size_t junk = 0;
+	size_t junk = 0, *sizep;
 	static const char diag[] = "close_v2_4_resume";
 
 	giant_lock();
@@ -3258,17 +3262,18 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 			}
 		}
 	}
+	sizep = arg->relayed ? &junk : NULL;
 	xid = arg->xid;
 	free(arg);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, &junk, diag, e, "ill",
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, "ill",
 	    flags, old_gen, new_gen));
 }
 
 /* trace_log is malloc(3)ed string, thus caller should free(3) the memory. */
 gfarm_error_t
 gfm_server_close_write_common(const char *diag,
-	struct peer *peer, gfp_xdr_xid_t xid, int from_client,
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep, int from_client,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
@@ -3335,6 +3340,7 @@ gfm_server_close_write_common(const char *diag,
 			if (arg == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 			} else {
+				arg->relayed = sizep != NULL;
 				arg->xid = xid;
 				arg->fd = fd;
 				arg->size = size;
@@ -3373,7 +3379,7 @@ gfm_server_close_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		/* do not relay RPC to master gfmd */
 		giant_lock();
 
-		e = gfm_server_close_write_common(diag, peer, xid,
+		e = gfm_server_close_write_common(diag, peer, xid, sizep,
 		    from_client, size, &atime, &mtime,
 		    NULL, NULL, NULL, NULL);
 
@@ -3409,7 +3415,7 @@ gfm_server_close_write_v2_4(
 		/* do not relay RPC to master gfmd */
 		giant_lock();
 
-		e = gfm_server_close_write_common(diag, peer, xid,
+		e = gfm_server_close_write_common(diag, peer, xid, sizep,
 		    from_client, size, &atime, &mtime,
 		    &flags, &old_gen, &new_gen, &trace_log);
 
@@ -4239,6 +4245,7 @@ gfm_server_replicate_file_from_to(
 }
 
 struct replica_adding_resume_arg {
+	int relayed;
 	gfp_xdr_xid_t xid;
 	int fd;
 	char *src_host;
@@ -4259,7 +4266,7 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 	gfarm_int64_t mtime_sec = 0;
 	gfarm_int32_t mtime_nsec = 0;
 	gfp_xdr_xid_t xid;
-	size_t junk = 0;
+	size_t junk = 0, *sizep;
 	static const char diag[] = "replica_adding_resume";
 
 	giant_lock();
@@ -4296,11 +4303,12 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 
 	/* we don't maintain file_replicating in this case */
 
+	sizep = arg->relayed ? &junk : NULL;
 	xid = arg->xid;
 	free(arg->src_host);
 	free(arg);
 	giant_unlock();
-	return (gfm_server_put_reply(peer, xid, &junk, diag, e, "llli",
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, "llli",
 	    inum, gen, mtime_sec, mtime_nsec));
 }
 
@@ -4362,6 +4370,8 @@ gfm_server_replica_adding(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			if (arg == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 			} else {
+				arg->relayed = sizep != NULL;
+				arg->xid = xid;
 				arg->fd = fd;
 				arg->src_host = src_host;
 				if ((e = process_new_generation_wait(peer, fd,
