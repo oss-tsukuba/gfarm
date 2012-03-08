@@ -168,11 +168,24 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
 	int save_errno = errno;
-	char buffer[2048];
+	int rv;
+	static char buffer[2048];
+	static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	rv = pthread_mutex_lock(&buffer_mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR, "gflog_vmessage_errno: pthread_mutex_lock: ",
+		    strerror(rv));
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	gflog_message(msg_no, priority, file, line_no, func,
-			"%s, %s", buffer, strerror(save_errno));
+	    "%s: %s", buffer, strerror(save_errno));
+
+	rv = pthread_mutex_unlock(&buffer_mutex);
+	if (rv != 0)
+		gflog_sub(LOG_ERR,
+		    "gflog_vmessage_errno: pthread_mutex_unlock: %s",
+		    strerror(rv));
 }
 
 void
