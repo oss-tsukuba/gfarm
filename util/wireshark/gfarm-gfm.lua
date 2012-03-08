@@ -1922,7 +1922,15 @@ function parse_gfm_statfs_request(tvb, pinfo, item, offset)
 end
 
 function parse_gfm_statfs_response(tvb, pinfo, item, offset)
-   return nil
+   -- OUT error_code
+   local err
+   offset, err = parse_xdr(tvb, item, "i", offset, "error_code", error_names)
+   if err == 0 then
+      offset = parse_xdr(tvb, item, "l", offset, "used")
+      offset = parse_xdr(tvb, item, "l", offset, "avail")
+      offset = parse_xdr(tvb, item, "l", offset, "files")
+   end
+   return offset
 end
 
 --
