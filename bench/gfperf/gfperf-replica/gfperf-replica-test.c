@@ -47,7 +47,7 @@ do_replica()
 
 	e = gfm_host_info_get_by_name_alias(sv, to_gfsd_name, &to);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "host_info %s: %s\n", from_gfsd_name,
+		fprintf(stderr, "host_info %s: %s\n", to_gfsd_name,
 			gfarm_error_string(e));
 		gfarm_host_info_free(&from);
 		return (e);
