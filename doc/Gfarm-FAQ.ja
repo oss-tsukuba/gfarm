@@ -278,16 +278,20 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 		/etc/init.d/gfsd restart
 
 	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
-	させる場合は、"prelink" という日時ジョブに関する設定を行う必要
+	させ、RPM パッケージで導入、あるいは prefix を /usr として導入
+	している場合は "prelink" という日時ジョブに関する設定を行う必要
 	があります．"/etc/prelink.conf.d/gfarm" というファイルを作成し、
-	以下のような行を足します．
+	以下のような行を足して、prelink の対象外とします．
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd
 		-b /usr/lib/libgfarm.*
 
-	この例では Gfarm は /usr 以下にインストールされているものと仮定
-	しています．
+	/usr/local などに導入している場合はこの設定は必要ありませ
+	ん．prelink の対象となるディレクトリについては
+	/etc/prelink.conf を参照してください．また prelink については
+	man ページを参照してください．
+
 
 3. セキュリティ
 ***************

@@ -116,6 +116,7 @@ Table of Contents:
 	(s) 336 bytes per one symbolic link
 	(f) 368 bytes per one file
 
+
 2. Trouble Shooting
 *******************
   2.1 We cannot connect to filesystem nodes and/or a metadata server.
@@ -282,15 +283,21 @@ Table of Contents:
 		/etc/init.d/gfmd restart
 		/etc/init.d/gfsd restart
 
-	(3) If gfmd or gfsd runs on Red Hat or derived from it, you also
-	need to configure the daily job named "prelink".  Create the file
-	"/etc/prelink.conf.d/gfarm" and insert lines like:
+	(3) If gfmd or gfsd runs on Red Hat or derived from it and it
+	is installed by an RPM package or with the prefix /usr, you
+	also need to configure the daily job named "prelink".  Create
+	the file "/etc/prelink.conf.d/gfarm" and insert the following
+	lines not to prelink them:
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd
 		-b /usr/lib/libgfarm.*
 
-	Note that this example assumes Gfarm is installed under "/usr".
+	Note that if it is installed in /usr/local or other location
+	than /usr, this setting is not needed.  See /etc/prelink.conf
+	to know which directory will be prelinked.  See prelink(8) for
+	further information.
+
 
 3. Security
 ***********
@@ -344,6 +351,7 @@ Table of Contents:
 	the source code "configure" operation.
 	Please see the following URL for more about the GSI:
 		http://www.globus.org/
+
 
 4. Limitations
 **************
