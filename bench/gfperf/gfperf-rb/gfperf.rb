@@ -372,7 +372,8 @@ end
 
 $check_flag = false
 OptionParser.new do |opt|
-  opt.on('-c') {|v| $check_flag = true}
+  opt.on('-c','--check',Object,'check yaml file') {|v| $check_flag = true}
+  opt.banner = "Usage: gfperf.rb [options] file"
   opt.permute!(ARGV)
 end
 

@@ -1,0 +1,52 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfperf-wrapper.sh.1'>
+
+<refentryinfo><date>19 May 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfperf-wrapper.sh</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfperf-wrapper.sh</refname>
+<refpurpose>Gfarm execute command on specified authentication</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfperf-wrapper.sh</command>
+    <arg choice='plain'>sharedsecret | gsi_auth | gsi </arg>
+    <arg choice='plain'><replaceable>command</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>execute command on sharedsecret, gsi_auth or gsi authentication.
+The servers (gfmd & gfsd) may allow specified authentication.
+</para>
+<para>
+This command uses GFARM_CONFIG_FILE enviroment variable.
+If GFARM_CONFIG_FILE is set, the variable is overwritten by this command.
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>sharedsecret | gsi_auth | gsi</option></term>
+<listitem>
+<para>
+Specify authenticaion.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+</refentry>

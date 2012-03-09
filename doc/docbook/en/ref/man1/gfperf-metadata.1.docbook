@@ -1,0 +1,209 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfperf-metadata.1'>
+
+<refentryinfo><date>19 May 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfperf-metadata</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfperf-metadata</refname>
+<refpurpose>Gfarm measure metadata performance</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfperf-metadata</command>
+    <arg choice='opt'>-n, --number <replaceable>number of entries</replaceable></arg>
+    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
+    <arg choice='opt'>-u, --unit <replaceable>output unit</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>This command makes sepcified number of files and directories in <parameter>test directory</parameter>. And measures performance of execution time.
+</para>
+<para>The following points to measure.
+<variablelist>
+  <varlistentry>
+    <term>create</term>
+    <listitem>
+      <para>
+	Measuring gfs_pio_create() or creat() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>readdir</term>
+    <listitem>
+      <para>
+	Measuring execution time from gfs_opendir_caching() and gfs_readdir() to gfs_closedir(). 
+	In posix filesystem, measuring execution time from opendir() and readdir() to closedir().
+	The output is the time divided by <parameter>number of entries</parameter>.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>readdir+stat</term>
+    <listitem>
+      <para>
+	Measuring time of gfs_lstat_cached() or lstat() added to mentioned above in readdir.
+	The output is the time divided by <parameter>number of entries</parameter>.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>unlink</term>
+    <listitem>
+      <para>
+	Measuring gfs_unlink() or unlink() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>mkdir</term>
+    <listitem>
+      <para>
+	Measuring gfs_mkdir() or mkdir() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>stat</term>
+    <listitem>
+      <para>
+	Measuring gfs_lstat() or lstat() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>chmod</term>
+    <listitem>
+      <para>
+	Measuring gfs_chmod() or chmod() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>utimes</term>
+    <listitem>
+      <para>
+	Measuring gfs_utimes() or utimes() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>rename</term>
+    <listitem>
+      <para>
+	Measuring gfs_rename() or rename() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>symlink</term>
+    <listitem>
+      <para>
+	Measuring gfs_symlink() or symlink() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>readlink</term>
+    <listitem>
+      <para>
+	Measuring gfs_readlink() or readlink() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>setxattr</term>
+    <listitem>
+      <para>
+	Measuring gfs_setattr() or setxattr() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>getxattr</term>
+    <listitem>
+      <para>
+	Measuring gfs_getattr() or getxattr() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>removexattr</term>
+    <listitem>
+      <para>
+	Measuring gfs_removeattr() or removexattr() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>rmdir</term>
+    <listitem>
+      <para>
+	Measuring gfs_removedir() or removedir() performance.
+	The output is average of execute time of this function.
+      </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-n, --number</option> <parameter>number of entries</parameter></term>
+<listitem>
+<para>
+Creating number of files or directories to measure.
+The default is 250.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<listitem>
+<para>
+Files and directories are created in <parameter>test directory</parameter>.
+If gfarm url (that begins with gfarm:///) is specified, measured by gfarm functions. If file url (that begins with file:///) is specified, measured by posix functions.
+The default is gfarm:///tmp .
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u, --uinit</option> <parameter>output unit</parameter></term>
+<listitem>
+<para>Specify ops (operations per second) or usec (micro second).
+The default is ops.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+</refentry>

@@ -28,7 +28,21 @@ DOCBOOK = \
 	gfuser.1 \
 	gfwhere.1 \
 	gfwhoami.1 \
-	gfxattr.1
+	gfxattr.1 \
+	gfperf-autoreplica.1 \
+	gfperf-copy.1 \
+	gfperf-metadata.1 \
+	gfperf-parallel-autoreplica.1 \
+	gfperf-parallel-read.1 \
+	gfperf-parallel-replica.1 \
+	gfperf-parallel-write.1 \
+	gfperf-read.1 \
+	gfperf-replica.1 \
+	gfperf-tree.1 \
+	gfperf-wrapper.sh.1 \
+	gfperf-write.1 \
+	gfperf.rb.1 \
+	gfstress.rb.1
 
 #	gfarm_agent.1 \
 #	gfcd.1 \
