@@ -253,8 +253,8 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	(1) カーネルのパラメタを変更します．以下の行を sysctl の設定
 	ファイル (/etc/sysctl.conf) の末尾に加えます．
 
-		fs.suid_dumpable=1
-		kernel.core_pattern="/var/tmp/core.%e.%p"
+		fs.suid_dumpable = 1
+		kernel.core_pattern = /var/tmp/core.%e.%p
 
 	"kernel.core_pattern" 行では，コアファイルのパスを指定します．
 	"%e", "%p" はそれぞれ，プログラム名およびプロセス ID に展開

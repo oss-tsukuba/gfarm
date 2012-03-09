@@ -258,8 +258,8 @@ Table of Contents:
 	(1) Configure a kernel parameters.  Append the lines below to
 	the sysctl configuration file (/etc/sysctl.conf):
 
-		fs.suid_dumpable=1
-		kernel.core_pattern="/var/tmp/core.%e.%p"
+		fs.suid_dumpable = 1
+		kernel.core_pattern = /var/tmp/core.%e.%p
 
 	The "kernel.core_pattern" line specifies paths of core files.
 	"%e" and "%p" in the pattern are expanded to a program name and
