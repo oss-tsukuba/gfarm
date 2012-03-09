@@ -141,8 +141,6 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"bad inode number",
 	"bad cookie",
 	"invalid remote peer",
-	"invalid database scheme",
-	"SQL syntax error(s)",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {
