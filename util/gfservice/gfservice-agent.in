@@ -1080,6 +1080,26 @@ subcmd_restore_backend_db()
 	log_debug "end subcmd_restore_backend_db"
 }
 
+#
+# Sub-command: gfcmd
+# Exec gf* command.
+#
+subcmd_gfcmd()
+{
+	log_debug "subcmd_gfcmd"
+
+	[ $# -eq 0 ] && log_error "missing command name for 'gfcmd'"
+	GFCMD="$1"
+	shift
+	expr "X$GFCMD" : '^Xgf[a-z0-9._-]*$' > /dev/null 2>&1 || {
+		log_error "invalid command name: '$GFCMD'"
+	}
+	log_debug "subcmd_gfcmd: execute @bindir@/$GFCMD $@"
+	"@bindir@/$GFCMD" "$@"|| log_error "failed to execute $GFCMD"
+
+	log_debug "end subcmd_gfcmd"
+}
+
 ######################################################################
 
 #
@@ -1237,6 +1257,9 @@ restore-shared-key)
 	;;
 restore-backend-db)
 	subcmd_restore_backend_db
+	;;
+gfcmd)
+	subcmd_gfcmd "$@"
 	;;
 *)	echo "$0@$PROGHOST: invalid sub-command: $SUBCMD" 1>&2
 	exit 1

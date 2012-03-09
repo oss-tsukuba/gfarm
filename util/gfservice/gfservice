@@ -146,40 +146,31 @@ get_host()
 }
 
 #
-# Get a path to a Gfarm executable programs which corresponds with a host ID.
+# Get 'gfservice-agent' command path corresponding with a host ID.
 #
-get_gfcmd_path()
+get_agent()
 {
-	log_debug "get_gfcmd_path: HOSTID=$1, GFCMD=$2"
+	log_debug "get_agent: HOSTID=$1"
 
 	if [ "X`eval echo \\$$1_GFBINDIR`" = X ]; then
-		echo "$2"
-		log_debug "get_gfcmd_path: GFCMD_PATH=$2"
+		if $DEBUG; then
+			echo "gfservice-agent -d"
+			log_debug "get_agent: AGENT=$DEFAULT_AGENT -d"
+		else
+			echo "gfservice-agent"
+			log_debug "get_agent: AGENT=$DEFAULT_AGENT"
+		fi
 	else
-		eval echo "\$$1_GFBINDIR"/"$2"
-		log_debug "get_gfcmd_path:" \
-			"GFCMD_PATH=`eval echo \\$$1_GFBINDIR`/$2"
+		if $DEBUG; then
+			eval echo "\$$1_GFBINDIR/gfservice-agent -d"
+			log_debug "get_agent: `eval echo \\$$1_AGENT` -d"
+		else
+			eval echo "\$$1_GFBINDIR/gfservice-agent"
+			log_debug "get_agent: `eval echo \\$$1_AGENT`"
+		fi
 	fi
 
-	log_debug "end get_gfcmd_path"
-	return 0
-}
-
-#
-# Get options passed to 'gfservice-agent'.
-#
-get_agent_options()
-{
-	log_debug "get_agent_options"
-	if $DEBUG; then
-		echo "-d"
-		log_debug "get_agent_options: GFSERVICE_OPTIONS=-d"
-	else
-		echo ""
-		log_debug "get_agent_options: GFSERVICE_OPTIONS="
-	fi
-
-	log_debug "end get_agent_options"
+	log_debug "end get_agent"
 	return 0
 }
 
@@ -401,10 +392,10 @@ distribute_shared_key()
 				restore-shared-key < "$1"
 			if [ $? -ne 0 ]; then
 				log_error "gfservice restore-shared-key" \
-					"$DIST_HOSTID@$DIST_USER failed"
+					"$DIST_USER@$DIST_HOSTID failed"
 			fi
 			log_debug "distribute_shared_key: distributed to" \
-				"$DIST_HOSTID@$DIST_USER"
+				"$DIST_USER@$DIST_HOSTID"
 		done
 	done
 
@@ -428,8 +419,7 @@ exec_gfmd_host_agent()
 	SSH=`get_ssh $EXEC_HOSTID`
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
-	AGENT_PATH=`get_gfcmd_path $EXEC_HOSTID gfservice-agent`
-	AGENT_OPTIONS=`get_agent_options`
+	AGENT=`get_agent $EXEC_HOSTID`
 	CONFIG_GFARM_OPTIONS=`get_config_gfarm_options $EXEC_HOSTID`
 
 	CMD_ARGV=
@@ -444,8 +434,8 @@ exec_gfmd_host_agent()
 	done
 	
 	log_debug "exec_gfmd_host_agent:" \
-		"execute $SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS $CMD_ARGV"
-	$SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS "$CMD_ARGV"
+		"execute $SSH $HOST $SUDO $AGENT $CMD_ARGV"
+	$SSH $HOST $SUDO $AGENT "$CMD_ARGV"
 	RESULT=$?
 
 	log_debug "end exec_gfmd_host_agent: returns $RESULT"
@@ -466,8 +456,7 @@ exec_gfsd_host_agent()
 	SSH=`get_ssh $EXEC_HOSTID`
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
-	AGENT_PATH=`get_gfcmd_path $EXEC_HOSTID gfservice-agent`
-	AGENT_OPTIONS=`get_agent_options`
+	AGENT=`get_agent $EXEC_HOSTID`
 	CONFIG_GFSD_OPTIONS=`get_config_gfsd_options $EXEC_HOSTID`
 
 	CMD_ARGV=
@@ -482,8 +471,8 @@ exec_gfsd_host_agent()
 	done
 	
 	log_debug "exec_gfsd_host_agent:" \
-		"execute $SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS $CMD_ARGV"
-	$SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS "$CMD_ARGV"
+		"execute $SSH $HOST $SUDO $AGENT $CMD_ARGV"
+	$SSH $HOST $SUDO $AGENT "$CMD_ARGV"
 	RESULT=$?
 
 	log_debug "end exec_gfsd_host_agent: returns $RESULT"
@@ -504,8 +493,7 @@ exec_client_host_agent()
 	SSH=`get_ssh $EXEC_HOSTID`
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
-	AGENT_PATH=`get_gfcmd_path $EXEC_HOSTID gfservice-agent`
-	AGENT_OPTIONS=`get_agent_options`
+	AGENT=`get_agent $EXEC_HOSTID`
 
 	CMD_ARGV=
 	for I in "$@"; do
@@ -518,8 +506,8 @@ exec_client_host_agent()
 	done
 	
 	log_debug "exec_client_host_agent:" \
-		"execute $SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS $CMD_ARGV"
-	$SSH $HOST $SUDO $AGENT_PATH $AGENT_OPTIONS "$CMD_ARGV"
+		"execute $SSH $HOST $SUDO $AGENT $CMD_ARGV"
+	$SSH $HOST $SUDO $AGENT "$CMD_ARGV"
 	RESULT=$?
 
 	log_debug "end exec_client_host_agent: returns $RESULT"
@@ -541,7 +529,7 @@ exec_remote_host_gfcmd()
 	SSH=`get_ssh $EXEC_HOSTID`
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
-	EXEC_GFCMD_PATH=`get_gfcmd_path $EXEC_HOSTID $EXEC_GFCMD`
+	AGENT=`get_agent $EXEC_HOSTID`
 
 	CMD_ARGV=
 	for I in "$@"; do
@@ -554,8 +542,8 @@ exec_remote_host_gfcmd()
 	done
 	
 	log_debug "exec_remote_host_gfcmd:" \
-		"execute $SSH $HOST $SUDO $EXEC_GFCMD_PATH $CMD_ARGV"
-	$SSH $HOST $SUDO $EXEC_GFCMD_PATH "$CMD_ARGV"
+		"execute $SSH $HOST $SUDO $AGENT gfcmd $EXEC_GFCMD $CMD_ARGV"
+	$SSH $HOST $SUDO $AGENT gfcmd $EXEC_GFCMD "$CMD_ARGV"
 	RESULT=$?
 
 	log_debug "end exec_remote_host_gfcmd: returns $RESULT"
@@ -1936,7 +1924,7 @@ restore-shared-key)
 restore-backend-db)
 	subcmd_restore_backend_db "$@"
 	;;
-*)	echo "$0@$PROGHOST: invalid sub-command: $SUBCMD" 1>&2
+*)	echo "$0: invalid sub-command: $SUBCMD" 1>&2
 	exit 1
 	;;
 esac
