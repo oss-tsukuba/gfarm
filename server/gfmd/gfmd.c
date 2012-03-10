@@ -179,8 +179,8 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_fsngroup_get_all(peer, xid, sizep,
 			from_client, skip);
 		break;
-	case GFM_PROTO_FSNGROUP_GET_BY_NAMES:
-		e = gfm_server_fsngroup_get_by_names(peer, xid, sizep,
+	case GFM_PROTO_FSNGROUP_GET_BY_HOSTNAMES:
+		e = gfm_server_fsngroup_get_by_hostnames(peer, xid, sizep,
 			from_client, skip);
 		break;
 	case GFM_PROTO_FSNGROUP_MODIFY:
