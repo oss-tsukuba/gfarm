@@ -862,6 +862,14 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			*op = ((gfarm_int64_t)lv[0] << 32) | lv[1];
 #endif
 			continue;
+		case 'r':
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
+			if ((e = recv_sized(conn, just, do_timeout, s,
+			    sz, szp)) != GFARM_ERR_NO_ERROR)
+				break;
+			continue;
 		case 's':
 			sp = va_arg(*app, char **);
 			if ((e = recv_sized(conn, just, do_timeout, &i,
