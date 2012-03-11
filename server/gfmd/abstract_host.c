@@ -26,6 +26,7 @@
 #include "user.h"
 #include "peer.h"
 #include "local_peer.h"
+#include "remote_peer.h"
 #include "abstract_host.h"
 #include "abstract_host_impl.h"
 
@@ -750,29 +751,12 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 	abstract_host_disconnect_request(host, peer);
 }
 
-/*
- * synchronous mode of back_channel is only used before gfarm-2.4.0
- */
 gfarm_error_t
-gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
-	struct peer *peer0, const char *diag,
-	result_callback_t result_callback,
-	disconnect_callback_t disconnect_callback, void *closure,
-#ifdef COMPAT_GFARM_2_3
-	host_set_callback_t host_set_callback,
-#endif
-	const char *wrapping_format, va_list *wrapping_app,
-	gfarm_int32_t command, const char *format, va_list *app)
+gfm_client_channel_sender_lock(struct abstract_host *host, struct peer *peer0,
+	struct peer **peerp, int command, const char *diag)
 {
 	gfarm_error_t e;
 	struct peer *peer;
-	gfp_xdr_async_peer_t async;
-	struct gfp_xdr *server;
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002788,
-		    "%s: <%s> channel sending request(%d)",
-		    abstract_host_get_name(host), diag, command);
 
 	e = abstract_host_sender_trylock(host, &peer, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -800,16 +784,60 @@ gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
 		return (GFARM_ERR_CONNECTION_ABORTED);
 	}
 	abstract_host_peer_unbusy(host, diag);
+	if (peerp)
+		*peerp = peer;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfm_client_channel_sender_unlock(struct abstract_host *host, struct peer *peer,
+	const char *diag)
+{
+	assert(peer_get_async(peer) != NULL);
+	abstract_host_sender_unlock(host, peer, diag);
+}
+
+/*
+ * synchronous mode of back_channel is only used before gfarm-2.4.0
+ */
+gfarm_error_t
+gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
+	struct peer *peer0, const char *diag,
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback, void *closure,
+#ifdef COMPAT_GFARM_2_3
+	host_set_callback_t host_set_callback,
+#endif
+	const char *wrapping_format, va_list *wrapping_app,
+	gfarm_int32_t command, const char *format, va_list *app, int isref)
+{
+	gfarm_error_t e;
+	struct peer *peer;
+	gfp_xdr_async_peer_t async;
+	struct gfp_xdr *server;
+
+	if (debug_mode)
+		gflog_info(GFARM_MSG_1002788,
+		    "%s: <%s> channel sending request(%d)",
+		    abstract_host_get_name(host), diag, command);
+
+	if ((e = gfm_client_channel_sender_lock(host, peer0, &peer, command,
+	    diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
 	async = peer_get_async(peer);
 	server = peer_get_conn(peer);
 
 	if (async != NULL) { /* is asynchronous mode? */
 		e = gfp_xdr_vsend_async_wrapped_request(server,
 		    async, result_callback, disconnect_callback, closure,
-		    wrapping_format, wrapping_app, command, format, app);
+		    wrapping_format, wrapping_app, command, format, app, isref);
 #ifdef COMPAT_GFARM_2_3
 	} else { /*  synchronous mode */
 		assert(wrapping_format == NULL);
+		assert(!isref);
 		host_set_callback(host, peer,
 		    result_callback, disconnect_callback, closure);
 		e = gfp_xdr_vrpc_request(server,
@@ -832,8 +860,8 @@ gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
 		return (e);
 	}
 
-	if (async != NULL) /* is asynchronous mode? */
-		abstract_host_sender_unlock(host, peer, diag);
+	if (async != NULL)
+		gfm_client_channel_sender_unlock(host, peer, diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -855,7 +883,7 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 #ifdef COMPAT_GFARM_2_3
 	    host_set_callback,
 #endif
-	    NULL, NULL, command, format, app));
+	    NULL, NULL, command, format, app, 0));
 }
 
 /* abstract_host_receiver_lock() must be already called here by
@@ -883,19 +911,15 @@ gfm_server_channel_vget_request(struct peer *peer, size_t size,
 /* XXX FIXME: currently called by threads in back_channel_recv_thread_pool or
  *            gfmdc_recv_thread_pool */
 gfarm_error_t
-gfm_server_channel_vput_reply(struct abstract_host *host,
+gfm_server_channel_vput_wrapped_reply(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
-	xdr_vsend_t xdr_vsend, const char *diag,
-	gfarm_error_t errcode, const char *format, va_list *app)
+	xdr_vsend_t xdr_vsend, const char *diag, gfarm_error_t errcode,
+	const char *wrapping_format, va_list *wrapping_app,
+	const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	struct peer *peer;
 	struct gfp_xdr *client;
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1002794,
-		    "%s: <%s> sending reply: %d",
-		    abstract_host_get_name(host), diag, (int)errcode);
 
 	/*
 	 * Since this is a reply, the peer is probably living,
@@ -904,12 +928,23 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	if ((e = abstract_host_sender_lock(host, &peer, diag))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
+
+	if (peer_get_parent(peer) != NULL)
+		/* remote_peer from slave */
+		peer = peer_get_parent(peer);
+
+	if (debug_mode) {
+		gflog_info(GFARM_MSG_1002794,
+		    "%s: <%s> sending reply: %d",
+		    abstract_host_get_name(host), diag, (int)errcode);
+	}
+
 	/* peer comparison works only if at least one is a local peer */
 	if (peer != peer0)
 		return (GFARM_ERR_CONNECTION_ABORTED);
 	client = peer_get_conn(peer);
-	e = gfp_xdr_vsend_async_result(client, xid, xdr_vsend,
-	    errcode, format, app);
+	e = gfp_xdr_vsend_async_wrapped_result(client, xid, xdr_vsend,
+	    errcode, wrapping_format, wrapping_app, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 
@@ -922,12 +957,25 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	return (e);
 }
 
+gfarm_error_t
+gfm_server_channel_vput_reply(struct abstract_host *host,
+	struct peer *peer0, gfp_xdr_xid_t xid,
+	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
+	const char *diag,
+	gfarm_error_t errcode, const char *format, va_list *app)
+{
+	return (gfm_server_channel_vput_wrapped_reply(host, peer0, xid,
+	    xdr_vsend, diag, errcode, NULL, NULL, format, app));
+}
+
 /* abstract_host_receiver_lock() must be already called here by
  * channel_main() */
 gfarm_error_t
-gfm_client_channel_vrecv_result(struct peer *peer,
-	struct abstract_host *host, size_t size, const char *diag,
-	const char **formatp, gfarm_error_t *errcodep, va_list *app)
+gfm_client_channel_vrecv_wrapped_result(struct peer *peer,
+	struct abstract_host *host, size_t size,
+	const char *diag, gfarm_error_t *errcodep,
+	const char *wrapping_format, va_list *wrapping_app,
+	const char **formatp, va_list *app)
 {
 	gfarm_error_t e;
 	gfp_xdr_async_peer_t async = peer_get_async(peer);
@@ -940,8 +988,8 @@ gfm_client_channel_vrecv_result(struct peer *peer,
 		    diag, back_channel_type_name(peer));
 
 	if (async != NULL) { /* is async mode? */
-		e = gfp_xdr_vrpc_result_sized(conn, 0,
-		    &size, &errcode, formatp, app);
+		e = gfp_xdr_vrpc_wrapped_result_sized(conn, 0, &size,
+		    &errcode, wrapping_format, wrapping_app, formatp, app);
 	} else { /*  synchronous mode */
 		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
 		abstract_host_sender_unlock(host, peer,
@@ -967,4 +1015,13 @@ gfm_client_channel_vrecv_result(struct peer *peer,
 		*errcodep = errcode;
 	}
 	return (e);
+}
+
+gfarm_error_t
+gfm_client_channel_vrecv_result(struct peer *peer, struct abstract_host *host,
+	size_t size, const char *diag, const char **formatp,
+	gfarm_error_t *errcodep, va_list *app)
+{
+	return (gfm_client_channel_vrecv_wrapped_result(peer, host, size,
+	    diag, errcodep, NULL, NULL, formatp, app));
 }

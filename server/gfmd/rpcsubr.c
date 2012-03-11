@@ -20,17 +20,21 @@
 #include "peer.h"
 #include "abstract_host.h"
 
+void
+gfm_server_start_get_request(struct peer *peer, const char *diag)
+{
+	if (debug_mode)
+		gflog_info(GFARM_MSG_1000225, "<%s> start receiving", diag);
+}
+
 /* sizep != NULL, if this is an inter-gfmd-relayed request. */
 gfarm_error_t
-gfm_server_get_vrequest(struct peer *peer, size_t *sizep,
+gfm_server_vrecv(struct peer *peer, size_t *sizep,
 	const char *diag, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	int eof;
 	struct gfp_xdr *client = peer_get_conn(peer);
-
-	if (debug_mode)
-		gflog_info(GFARM_MSG_1000225, "<%s> start receiving", diag);
 
 	if (sizep != NULL)
 		e = gfp_xdr_vrecv_sized(client, 0, sizep, &eof, &format, app);
@@ -56,6 +60,15 @@ gfm_server_get_vrequest(struct peer *peer, size_t *sizep,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* sizep != NULL, if this is an inter-gfmd-relayed request. */
+gfarm_error_t
+gfm_server_get_vrequest(struct peer *peer, size_t *sizep,
+	const char *diag, const char *format, va_list *app)
+{
+	gfm_server_start_get_request(peer, diag);
+	return (gfm_server_vrecv(peer, sizep, diag, format, app));
+}
+
 gfarm_error_t
 gfm_server_get_request(struct peer *peer, size_t *sizep,
 	const char *diag, const char *format, ...)
@@ -75,9 +88,10 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
  * be used to see whether this is an inter-gfmd-relayed reply or not.
  */
 gfarm_error_t
-gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	xdr_vsend_t xdr_vsend, const char *diag,
-	gfarm_error_t ecode, const char *format, va_list *app)
+gfm_server_put_wrapped_vreply(struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, xdr_vsend_t xdr_vsend, const char *diag,
+	gfarm_error_t ecode, const char *wrapping_format, va_list *wrapping_app,
+	const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
@@ -90,9 +104,9 @@ gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (peer_get_parent(peer) != NULL)
 			/* remote_peer from slave */
 			peer = peer_get_parent(peer);
-		e = gfm_server_channel_vput_reply(
+		e = gfm_server_channel_vput_wrapped_reply(
 		    peer_get_abstract_host(peer), peer, xid, xdr_vsend,
-		    diag, ecode, format, app);
+		    diag, ecode, wrapping_format, wrapping_app, format, app);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s sending relayed reply: %s",
@@ -127,6 +141,15 @@ gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	/* do not call gfp_xdr_flush() here for a compound protocol */
 
 	return (ecode);
+}
+
+gfarm_error_t
+gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, xdr_vsend_t xdr_vsend, const char *diag,
+	gfarm_error_t ecode, const char *format, va_list *app)
+{
+	return (gfm_server_put_wrapped_vreply(peer, xid, sizep, xdr_vsend,
+	    diag, ecode, NULL, NULL, format, app));
 }
 
 gfarm_error_t

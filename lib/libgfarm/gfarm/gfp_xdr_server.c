@@ -107,7 +107,7 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static void
+void
 gfp_xdr_send_async_request_error(gfp_xdr_async_peer_t async_server,
 	gfarm_int32_t xid, const char *diag)
 {
@@ -116,7 +116,7 @@ gfp_xdr_send_async_request_error(gfp_xdr_async_peer_t async_server,
 	gfarm_mutex_unlock(&async_server->mutex, diag, async_peer_diag);
 }
 
-static gfarm_error_t
+gfarm_error_t
 gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server, size_t size,
 	result_callback_t result_callback,
@@ -160,20 +160,19 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	void *closure,
 	int nonblock,
 	const char *wrapping_format, va_list *wrapping_app,
-	gfarm_int32_t command, const char *format, va_list *app)
+	gfarm_int32_t command, const char *format, va_list *app, int isref)
 {
 	gfarm_error_t e;
 	size_t size = 0;
-	va_list ap, wrapping_ap;
-	const char *fmt, *wrapping_fmt;
+	va_list ap;
+	const char *fmt;
 	gfarm_int32_t xid;
 
 	if (wrapping_format != NULL) {
-		va_copy(wrapping_ap, *wrapping_app);
-		wrapping_fmt = wrapping_format;
-		e = gfp_xdr_vsend_size_add(&size,
-		    &wrapping_fmt, &wrapping_ap);
-		va_end(wrapping_ap);
+		va_copy(ap, *wrapping_app);
+		fmt = wrapping_format;
+		e = gfp_xdr_vsend_size_add(&size, &fmt, &ap);
+		va_end(ap);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
@@ -184,7 +183,8 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 
 	va_copy(ap, *app);
 	fmt = format;
-	e = gfp_xdr_vsend_size_add(&size, &fmt, &ap);
+	e = (isref ? gfp_xdr_vsend_ref_size_add : gfp_xdr_vsend_size_add)
+	    (&size, &fmt, &ap);
 	va_end(ap);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -207,7 +207,7 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 		}
 	}
 
-	e = gfp_xdr_vrpc_request(server, command, &format, app);
+	e = gfp_xdr_vrpc_request_with_ref(server, command, &format, app, isref);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_xdr_send_async_request_error(async_server, xid,
 		    "gfp_xdr_vrpc_request");
@@ -237,7 +237,7 @@ gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 {
 	return (gfp_xdr_vsend_async_request_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 1,
-	    NULL, NULL, command, format, app));
+	    NULL, NULL, command, format, app, 0));
 }
 
 gfarm_error_t
@@ -250,7 +250,7 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 {
 	return (gfp_xdr_vsend_async_request_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 0,
-	    NULL, NULL, command, format, app));
+	    NULL, NULL, command, format, app, 0));
 }
 
 gfarm_error_t
@@ -260,11 +260,11 @@ gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *server,
 	disconnect_callback_t disconnect_callback,
 	void *closure,
 	const char *wrapping_format, va_list *wrapping_app,
-	gfarm_int32_t command, const char *format, va_list *app)
+	gfarm_int32_t command, const char *format, va_list *app, int isref)
 {
 	return (gfp_xdr_vsend_async_request_internal(server,
 	    async_server, result_callback, disconnect_callback, closure, 0,
-	    wrapping_format, wrapping_app, command, format, app));
+	    wrapping_format, wrapping_app, command, format, app, isref));
 }
 
 /*
@@ -296,7 +296,7 @@ gfp_xdr_recv_async_header(struct gfp_xdr *conn, int just,
  * server side functions
  */
 
-static gfarm_error_t
+gfarm_error_t
 gfp_xdr_send_async_result_header(struct gfp_xdr *server,
 	gfarm_int32_t xid, size_t size)
 {
@@ -382,29 +382,49 @@ gfp_xdr_vsend_result(struct gfp_xdr *client,
 
 /* used by asynchronous protocol */
 gfarm_error_t
-gfp_xdr_vsend_async_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
-	xdr_vsend_t xdr_vsend, gfarm_int32_t ecode, const char *format,
-	va_list *app)
+gfp_xdr_vsend_async_wrapped_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
+	xdr_vsend_t xdr_vsend, gfarm_int32_t ecode, const char *wrapping_format,
+	va_list *wrapping_app, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	size_t size = 0;
+	va_list ap;
+	const char *fmt;
 
 	e = gfp_xdr_send_size_add(&size, "i", ecode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (ecode == GFARM_ERR_NO_ERROR) {
-		va_list ap;
-		const char *fmt;
-
-		va_copy(ap, *app);
 		fmt = format;
+		va_copy(ap, *app);
 		e = gfp_xdr_vsend_size_add(&size, &fmt, &ap);
 		va_end(ap);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	}
+	if (wrapping_format != NULL) {
+		fmt = wrapping_format;
+		va_copy(ap, *wrapping_app);
+		e = gfp_xdr_vsend_size_add(&size, &fmt, &ap);
+		va_end(ap);
+	}
 	e = gfp_xdr_send_async_result_header(client, xid, size);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (wrapping_format != NULL) {
+		fmt = wrapping_format;
+		va_copy(ap, *wrapping_app);
+		e = gfp_xdr_vsend(client, &fmt, &ap);
+		va_end(ap);
+	}
 	return (gfp_xdr_vsend_result(client, xdr_vsend, ecode, format, app));
+}
+
+gfarm_error_t
+gfp_xdr_vsend_async_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
+	xdr_vsend_t xdr_vsend, gfarm_int32_t ecode, const char *format,
+	va_list *app)
+{
+	return (gfp_xdr_vsend_async_wrapped_result(client, xid, xdr_vsend,
+		ecode, NULL, NULL, format, app));
 }
