@@ -88,6 +88,9 @@ gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		    "<%s> sending reply: %d", diag, (int)ecode);
 
 	if (sizep != NULL) {
+		if (peer_get_parent(peer) != NULL)
+			/* remote_peer from slave */
+			peer = peer_get_parent(peer);
 		e = gfm_server_channel_vput_reply(
 		    peer_get_abstract_host(peer), peer, xid, xdr_vsend,
 		    diag, ecode, format, app);
