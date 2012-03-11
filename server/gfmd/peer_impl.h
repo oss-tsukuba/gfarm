@@ -1,6 +1,7 @@
 struct peer;
 struct local_peer;
 struct remote_peer;
+struct mdhost;
 struct cookie;
 
 struct peer_ops {
@@ -11,6 +12,8 @@ struct peer_ops {
 	struct gfp_xdr *(*get_conn)(struct peer *);
 	gfp_xdr_async_peer_t (*get_async)(struct peer *);
 	gfarm_error_t (*get_port)(struct peer *, int *);
+	struct mdhost *(*get_mdhost)(struct peer *);
+	struct peer *(*get_parent)(struct peer *);
 	int (*is_busy)(struct peer *);
 	void (*notice_disconnected)(struct peer *, const char *, const char *);
 	void (*shutdown)(struct peer *);
@@ -41,8 +44,9 @@ struct peer {
 
 	gfarm_int32_t fd_current, fd_saved;
 	int flags;
-#define PEER_FLAGS_FD_CURRENT_EXTERNALIZED	1
-#define PEER_FLAGS_FD_SAVED_EXTERNALIZED	2
+#define PEER_FLAGS_FD_CURRENT_EXTERNALIZED	0x1
+#define PEER_FLAGS_FD_SAVED_EXTERNALIZED	0x2
+#define PEER_FLAGS_REMOTE_PEER_ALLOCATED	0x4 /* for local_peer */
 
 	struct inum_path_array *findxmlattrctx;
 

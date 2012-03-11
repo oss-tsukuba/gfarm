@@ -29,7 +29,7 @@ struct remote_peer {
 	struct local_peer *parent_peer;
 	struct remote_peer *next_sibling;	/* must be a remote peer */
 
-	int port;
+	int port, proto_family, proto_transport; /* for gfarm_file_trace */
 };
 
 struct peer *
@@ -73,6 +73,19 @@ remote_peer_get_port(struct peer *peer, int *portp)
 
 	*portp = remote_peer->port;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+static struct mdhost *
+remote_peer_get_mdhost(struct peer *peer)
+{
+	return (peer_get_mdhost(local_peer_to_peer(
+	    peer_to_remote_peer(peer)->parent_peer)));
+}
+
+static struct peer *
+remote_peer_get_parent(struct peer *peer)
+{
+	return (local_peer_to_peer(peer_to_remote_peer(peer)->parent_peer));
 }
 
 static int
@@ -173,6 +186,8 @@ static struct peer_ops remote_peer_ops = {
 	remote_peer_get_conn,
 	remote_peer_get_async,
 	remote_peer_get_port,
+	remote_peer_get_mdhost,
+	remote_peer_get_parent,
 	remote_peer_is_busy,
 	remote_peer_notice_disconnected,
 	remote_peer_shutdown,
@@ -182,10 +197,12 @@ static struct peer_ops remote_peer_ops = {
 gfarm_error_t
 remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	gfarm_int32_t auth_id_type, char *username, char *hostname,
-	int proto_family, int proto_transport, int port)
+	enum gfarm_auth_method auth_method, int proto_family,
+	int proto_transport, int port)
 {
 	struct local_peer *parent_local_peer = peer_to_local_peer(parent_peer);
 	struct remote_peer *remote_peer;
+	struct peer *peer;
 	static const char diag[] = "remote_peer_alloc";
 
 	if (proto_family != GFARM_PROTO_FAMILY_IPV4 ||
@@ -200,11 +217,17 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	if (remote_peer == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	peer_construct_common(&remote_peer->super, &remote_peer_ops, diag);
+	peer = remote_peer_to_peer(remote_peer);
+	peer_construct_common(peer, &remote_peer_ops, diag);
+	peer->peer_id = remote_peer_id;
+	/* We don't pass auth_method for now */
+	peer_authorized_common(peer, auth_id_type, username, hostname, NULL,
+	    auth_method);
 
 	remote_peer->parent_peer = parent_local_peer;
+	remote_peer->proto_family = proto_family;
+	remote_peer->proto_transport = proto_transport;
 	remote_peer->port = port;
-	remote_peer->super.peer_id = remote_peer_id;
 
 	local_peer_add_child(parent_local_peer,
 	    remote_peer, &remote_peer->next_sibling);

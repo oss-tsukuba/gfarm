@@ -118,6 +118,19 @@ local_peer_get_port(struct peer *peer, int *portp)
 	}
 }
 
+static struct mdhost *
+local_peer_get_mdhost(struct peer *peer)
+{
+	struct abstract_host *h = peer->host;
+	return (h != NULL ? abstract_host_to_mdhost(h) : NULL);
+}
+
+static struct peer *
+local_peer_get_parent(struct peer *peer)
+{
+	return (NULL);
+}
+
 #if 0
 
 struct peer *
@@ -278,6 +291,8 @@ static struct peer_ops local_peer_ops = {
 	local_peer_get_conn,
 	local_peer_get_async,
 	local_peer_get_port,
+	local_peer_get_mdhost,
+	local_peer_get_parent,
 	local_peer_is_busy,
 	local_peer_notice_disconnected,
 	local_peer_shutdown,
@@ -395,66 +410,8 @@ local_peer_authorized(struct local_peer *local_peer,
 	struct sockaddr *addr, enum gfarm_auth_method auth_method,
 	struct peer_watcher *readable_watcher)
 {
-	struct peer *peer = &local_peer->super;
-	struct host *h;
-	struct mdhost *m;
-
-	peer->id_type = id_type;
-	peer->user = NULL;
-	peer->username = username;
-
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_USER:
-		peer->user = user_lookup(username);
-		if (peer->user != NULL) {
-			free(username);
-			peer->username = NULL;
-		} else
-			peer->username = username;
-		/*FALLTHROUGH*/
-
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-		h = host_addr_lookup(hostname, addr);
-		if (h == NULL) {
-			peer->host = NULL;
-		} else {
-			peer->host = host_to_abstract_host(h);
-		}
-		break;
-
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		m = mdhost_lookup(hostname);
-		if (m == NULL) {
-			peer->host = NULL;
-		} else {
-			peer->host = mdhost_to_abstract_host(m);
-		}
-		break;
-	}
-
-	if (peer->host != NULL) {
-		free(hostname);
-		peer->hostname = NULL;
-	} else {
-		peer->hostname = hostname;
-	}
-
-	switch (id_type) {
-	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
-	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
-		if (peer->host == NULL)
-			gflog_warning(GFARM_MSG_1000284,
-			    "unknown host: %s", hostname);
-		else
-			gflog_debug(GFARM_MSG_1002768,
-			    "%s connected from %s",
-			    peer_get_service_name(peer),
-			    abstract_host_get_name(peer->host));
-		break;
-	default:
-		break;
-	}
-	/* We don't record auth_method for now */
+	peer_authorized_common(local_peer_to_peer(local_peer), id_type,
+	    username, hostname, addr, auth_method);
 
 	local_peer->readable_watcher = readable_watcher;
 
@@ -570,4 +527,22 @@ local_peer_init(int max_peers)
 		    diag, "peer:child_peers_mutex");
 		local_peer->super.peer_id = 0;
 	}
+}
+
+int
+local_peer_get_remote_peer_allocated(struct local_peer *peer)
+{
+	return (local_peer_to_peer(peer)->flags &
+	    PEER_FLAGS_REMOTE_PEER_ALLOCATED);
+}
+
+void
+local_peer_set_remote_peer_allocated(struct local_peer *peer, int enabled)
+{
+	if (enabled)
+		local_peer_to_peer(peer)->flags |=
+		    PEER_FLAGS_REMOTE_PEER_ALLOCATED;
+	else
+		local_peer_to_peer(peer)->flags &=
+		    ~PEER_FLAGS_REMOTE_PEER_ALLOCATED;
 }

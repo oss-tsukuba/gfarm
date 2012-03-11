@@ -535,8 +535,9 @@ gfmdc_server_remote_peer_alloc(struct mdhost *mh, struct peer *peer,
 	    &remote_peer_id, &auth_id_type, &user, &host,
 	    &proto_family, &proto_transport, &port)) ==
 	    GFARM_ERR_NO_ERROR) {
+		/* FIXME We don't pass auth_method now */
 		e = remote_peer_alloc(peer, remote_peer_id,
-		    auth_id_type, user, host,
+		    auth_id_type, user, host, GFARM_AUTH_METHOD_NONE,
 		    proto_family, proto_transport, port);
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");

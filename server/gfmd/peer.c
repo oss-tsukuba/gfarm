@@ -493,6 +493,18 @@ peer_get_port(struct peer *peer, int *portp)
 	return ((*peer->ops->get_port)(peer, portp));
 }
 
+gfarm_int64_t
+peer_get_id(struct peer *peer)
+{
+	return (peer->peer_id);
+}
+
+struct peer *
+peer_get_parent(struct peer *peer)
+{
+	return ((*peer->ops->get_parent)(peer));
+}
+
 gfarm_error_t
 peer_set_host(struct peer *peer, char *hostname)
 {
@@ -593,8 +605,80 @@ peer_get_host(struct peer *peer)
 struct mdhost *
 peer_get_mdhost(struct peer *peer)
 {
-	return (peer->host == NULL ? NULL :
-	    abstract_host_to_mdhost(peer->host));
+	return (*peer->ops->get_mdhost)(peer);
+}
+
+static void
+protocol_state_init(struct protocol_state *ps)
+{
+	ps->nesting_level = 0;
+}
+
+void
+peer_authorized_common(struct peer *peer,
+	enum gfarm_auth_id_type id_type, char *username, char *hostname,
+	struct sockaddr *addr, enum gfarm_auth_method auth_method)
+{
+	struct host *h;
+	struct mdhost *m;
+
+	protocol_state_init(&peer->pstate);
+
+	peer->id_type = id_type;
+	peer->user = NULL;
+	peer->username = username;
+
+	switch (id_type) {
+	case GFARM_AUTH_ID_TYPE_USER:
+		peer->user = user_lookup(username);
+		if (peer->user != NULL) {
+			free(username);
+			peer->username = NULL;
+		} else
+			peer->username = username;
+		/*FALLTHROUGH*/
+
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+		h = addr != NULL ?
+		    host_addr_lookup(hostname, addr) : host_lookup(hostname);
+		if (h == NULL)
+			peer->host = NULL;
+		else
+			peer->host = host_to_abstract_host(h);
+		break;
+
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		m = mdhost_lookup(hostname);
+		if (m == NULL)
+			peer->host = NULL;
+		else
+			peer->host = mdhost_to_abstract_host(m);
+		break;
+	}
+
+	if (peer->host != NULL) {
+		free(hostname);
+		peer->hostname = NULL;
+	} else
+		peer->hostname = hostname;
+
+	switch (id_type) {
+	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
+	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
+		if (peer->host == NULL)
+			gflog_warning(GFARM_MSG_1000284,
+			    "unknown host: %s", hostname);
+		else
+			gflog_debug(GFARM_MSG_1002768,
+			    "%s connected from %s",
+			    peer_get_service_name(peer),
+			    abstract_host_get_name(peer->host));
+		break;
+	default:
+		break;
+	}
+
+	/* We don't record auth_method for now */
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */

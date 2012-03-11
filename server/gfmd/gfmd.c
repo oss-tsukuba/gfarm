@@ -654,12 +654,6 @@ compound_state_init(struct compound_state *cs)
 	cs->skip = 0;
 }
 
-void
-protocol_state_init(struct protocol_state *ps)
-{
-	ps->nesting_level = 0;
-}
-
 /*
  * this interface is exported for a use from a private extension too.
  * sizep != NULL, if this is an inter-gfmd-relayed request.
@@ -978,8 +972,6 @@ peer_authorize(struct local_peer *local_peer)
 	    hostname, &addr, auth_uid_to_global_username, NULL,
 	    &id_type, &username, &auth_method);
 	if (e == GFARM_ERR_NO_ERROR) {
-		protocol_state_init(peer_get_protocol_state(peer));
-
 		giant_lock();
 		local_peer_authorized(local_peer,
 		    id_type, username, hostname, &addr, auth_method,

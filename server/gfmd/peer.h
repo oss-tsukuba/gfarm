@@ -39,6 +39,9 @@ struct host;
 struct host *peer_get_host(struct peer *);
 struct mdhost;
 struct mdhost *peer_get_mdhost(struct peer *);
+struct sockaddr;
+void peer_authorized_common(struct peer *, enum gfarm_auth_id_type, char *,
+	char *, struct sockaddr *, enum gfarm_auth_method);
 
 struct inode;
 void peer_set_pending_new_generation(struct peer *, struct inode *);
@@ -133,3 +136,5 @@ gfarm_uint64_t peer_add_cookie(struct peer *);
 int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 
 gfarm_error_t peer_get_port(struct peer *, int *);
+gfarm_int64_t peer_get_id(struct peer *);
+struct peer* peer_get_parent(struct peer *);
