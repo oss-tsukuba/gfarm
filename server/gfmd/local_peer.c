@@ -24,6 +24,7 @@
 #include "host.h"
 #include "mdhost.h"
 #include "abstract_host.h"
+#include "gfmd_channel.h"
 #include "watcher.h"
 #include "peer_watcher.h"
 #include "peer.h"
@@ -252,7 +253,11 @@ local_peer_shutdown_all(void)
 static void
 local_peer_free(struct peer *peer)
 {
+	gfarm_error_t e;
 	struct local_peer *local_peer = peer_to_local_peer(peer);
+	gfarm_uint64_t peer_id = peer_get_id(peer);
+	int remote_peer_allocated = local_peer_get_remote_peer_allocated(
+		local_peer);
 	static const char diag[] = "local_peer_free";
 
 	gfarm_mutex_lock(&local_peer->child_peers_mutex,
@@ -282,6 +287,13 @@ local_peer_free(struct peer *peer)
 
 	gfarm_mutex_unlock(&local_peer_table_mutex,
 	    diag, local_peer_table_diag);
+
+	/* gfmdc_client_remote_peer_free() doesn't wait result */
+	if (remote_peer_allocated && (e = gfmdc_client_remote_peer_free(
+	    peer_id)) != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "failed free remote peer: %s", gfarm_error_string(e));
+	}
 }
 
 static struct peer_ops local_peer_ops = {

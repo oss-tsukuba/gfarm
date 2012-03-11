@@ -159,7 +159,7 @@ remote_peer_free_by_id(struct peer *parent_peer,
 	struct remote_peer *remote_peer = local_peer_lookup_remote(
 	    peer_to_local_peer(parent_peer), remote_peer_id);
 
-	if (remote_peer != NULL)
+	if (remote_peer == NULL)
 		return (GFARM_ERR_INVALID_REMOTE_PEER);
 
 	assert(remote_peer->parent_peer != NULL);
