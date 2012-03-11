@@ -76,8 +76,7 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
  */
 gfarm_error_t
 gfm_server_put_vreply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	const char *diag,
+	xdr_vsend_t xdr_vsend, const char *diag,
 	gfarm_error_t ecode, const char *format, va_list *app)
 {
 	gfarm_error_t e;

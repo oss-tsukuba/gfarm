@@ -756,12 +756,10 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 gfarm_error_t
 gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
 	struct peer *peer0, const char *diag,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *), void *closure,
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback, void *closure,
 #ifdef COMPAT_GFARM_2_3
-	void (*host_set_callback)(struct abstract_host *, struct peer *,
-	    gfarm_int32_t (*)(void *, void *, size_t),
-	    void (*)(void *, void *), void *),
+	host_set_callback_t host_set_callback,
 #endif
 	const char *wrapping_format, va_list *wrapping_app,
 	gfarm_int32_t command, const char *format, va_list *app)
@@ -845,12 +843,10 @@ gfm_client_channel_vsend_wrapped_request(struct abstract_host *host,
 gfarm_error_t
 gfm_client_channel_vsend_request(struct abstract_host *host,
 	struct peer *peer0, const char *diag,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *), void *closure,
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback, void *closure,
 #ifdef COMPAT_GFARM_2_3
-	void (*host_set_callback)(struct abstract_host *, struct peer *,
-	    gfarm_int32_t (*)(void *, void *, size_t),
-	    void (*)(void *, void *), void *),
+	host_set_callback_t host_set_callback,
 #endif
 	gfarm_int32_t command, const char *format, va_list *app)
 {
@@ -889,8 +885,7 @@ gfm_server_channel_vget_request(struct peer *peer, size_t size,
 gfarm_error_t
 gfm_server_channel_vput_reply(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	const char *diag,
+	xdr_vsend_t xdr_vsend, const char *diag,
 	gfarm_error_t errcode, const char *format, va_list *app)
 {
 	gfarm_error_t e;

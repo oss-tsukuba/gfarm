@@ -106,6 +106,10 @@ struct gfp_xdr_async_peer;
 typedef struct gfp_xdr_async_peer *gfp_xdr_async_peer_t;
 enum gfp_xdr_msg_type { GFP_XDR_TYPE_REQUEST, GFP_XDR_TYPE_RESULT };
 typedef gfarm_int32_t gfp_xdr_xid_t; /* transaction ID */
+typedef gfarm_error_t (*result_callback_t)(void *, void *, size_t);
+typedef void (*disconnect_callback_t)(void *, void *);
+typedef gfarm_error_t (*xdr_vsend_t)(struct gfp_xdr *, const char **,
+	va_list *);
 
 gfarm_error_t gfp_xdr_async_peer_new(gfp_xdr_async_peer_t *);
 void gfp_xdr_async_peer_free(gfp_xdr_async_peer_t, void *);
@@ -114,15 +118,11 @@ gfarm_error_t gfp_xdr_callback_async_result(gfp_xdr_async_peer_t,
 	void *, gfp_xdr_xid_t, size_t, gfarm_int32_t *);
 gfarm_error_t gfp_xdr_vsend_async_request(struct gfp_xdr *,
 	gfp_xdr_async_peer_t,
-	gfarm_int32_t (*)(void *, void *, size_t),
-	void (*)(void *, void *),
-	void *,
+	result_callback_t, disconnect_callback_t, void *,
 	gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *,
 	gfp_xdr_async_peer_t,
-	gfarm_int32_t (*)(void *, void *, size_t),
-	void (*)(void *, void *),
-	void *,
+	result_callback_t, disconnect_callback_t, void *,
 	const char *, va_list *,
 	gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfp_xdr_recv_async_header(struct gfp_xdr *, int,
@@ -133,11 +133,9 @@ gfarm_error_t gfp_xdr_recv_request_command(struct gfp_xdr *, int, size_t *,
 gfarm_error_t gfp_xdr_vrecv_request_parameters(struct gfp_xdr *, int, size_t *,
 	const char *, va_list *);
 gfarm_error_t gfp_xdr_vsend_result(struct gfp_xdr *,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	gfarm_int32_t, const char *, va_list *);
+	xdr_vsend_t, gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfp_xdr_vsend_async_result(struct gfp_xdr *, gfp_xdr_xid_t,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	gfarm_int32_t, const char *, va_list *);
+	xdr_vsend_t, gfarm_int32_t, const char *, va_list *);
 
 
 /*

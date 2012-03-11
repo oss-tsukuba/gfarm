@@ -28,8 +28,8 @@ struct gfp_xdr_async_peer {
 };
 
 struct gfp_xdr_async_callback {
-	gfarm_int32_t (*result_callback)(void *, void *, size_t);
-	void (*disconnect_callback)(void *, void *);
+	result_callback_t result_callback;
+	disconnect_callback_t disconnect_callback;
 	void *closure;
 };
 
@@ -88,7 +88,7 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	void *peer, gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
 {
 	struct gfp_xdr_async_callback *cb;
-	gfarm_int32_t (*result_callback)(void *, void *, size_t);
+	result_callback_t result_callback;
 	void *closure;
 	static const char diag[] = "gfp_xdr_callback_async_result";
 
@@ -119,8 +119,8 @@ gfp_xdr_send_async_request_error(gfp_xdr_async_peer_t async_server,
 static gfarm_error_t
 gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server, size_t size,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t *xidp)
 {
@@ -155,8 +155,8 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 static gfarm_error_t
 gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	int nonblock,
 	const char *wrapping_format, va_list *wrapping_app,
@@ -230,8 +230,8 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
@@ -243,8 +243,8 @@ gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
@@ -256,8 +256,8 @@ gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_vsend_async_wrapped_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	const char *wrapping_format, va_list *wrapping_app,
 	gfarm_int32_t command, const char *format, va_list *app)
@@ -358,8 +358,8 @@ gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
 /* the caller should call gfp_xdr_flush() after this function */
 gfarm_error_t
 gfp_xdr_vsend_result(struct gfp_xdr *client,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	gfarm_int32_t ecode, const char *format, va_list *app)
+	xdr_vsend_t xdr_vsend, gfarm_int32_t ecode, const char *format,
+	va_list *app)
 {
 	gfarm_error_t e;
 
@@ -383,8 +383,8 @@ gfp_xdr_vsend_result(struct gfp_xdr *client,
 /* used by asynchronous protocol */
 gfarm_error_t
 gfp_xdr_vsend_async_result(struct gfp_xdr *client, gfp_xdr_xid_t xid,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
-	gfarm_int32_t ecode, const char *format, va_list *app)
+	xdr_vsend_t xdr_vsend, gfarm_int32_t ecode, const char *format,
+	va_list *app)
 {
 	gfarm_error_t e;
 	size_t size = 0;
