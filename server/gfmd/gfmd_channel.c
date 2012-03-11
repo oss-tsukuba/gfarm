@@ -78,10 +78,8 @@ static struct gfmdc_journal_sync_info journal_sync_info;
 #define SEND_END_COND_DIAG	"send_closure.end_cond"
 #define ASYNC_MUTEX_DIAG	"journal_sync_info.async_mutex"
 #define ASYNC_WAIT_COND_DIAG	"journal_sync_info.async_wait_cond"
-#define JOURNAL_READY_TO_RECV_MUTEX_DIAG \
-				"journal_ready_to_recv_info.mutex"
-#define JOURNAL_READY_TO_RECV_WAIT_COND_DIAG \
-				"journal_ready_to_recv_info.wait_cond"
+#define REQUEST_WAIT_INFO_MUTEX	"request_sync_info.mutex"
+#define REQUEST_WAIT_INFO_COND	"request_sync_info.cond"
 
 #define GFMDC_CONNECT_INTERVAL	30
 
@@ -138,25 +136,250 @@ gfmdc_client_recv_result(struct peer *peer, struct mdhost *mh,
 	return (errcode);
 }
 
+struct request_sync_info {
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *);
+	void *closure;
+	int end;
+	gfarm_error_t error;
+	const char *diag;
+};
+
+static void
+gfmdc_client_send_request_sync_notify(struct request_sync_info *ri,
+	gfarm_error_t e)
+{
+	ri->error = e;
+	gfarm_mutex_lock(&ri->mutex, ri->diag, REQUEST_WAIT_INFO_MUTEX);
+	ri->end = 1;
+	gfarm_cond_signal(&ri->cond, ri->diag, REQUEST_WAIT_INFO_COND);
+	gfarm_mutex_unlock(&ri->mutex, ri->diag, REQUEST_WAIT_INFO_MUTEX);
+}
+
 static gfarm_error_t
-gfmdc_client_send_request(struct mdhost *mh,
-	struct peer *peer0, const char *diag,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
-	void *closure,
-	gfarm_int32_t command, const char *format, ...)
+gfmdc_client_vsend_request_sync_result(void *p, void *arg, size_t size)
+{
+	gfarm_error_t e;
+	struct peer *peer = p;
+	struct mdhost *mh = peer_get_mdhost(peer);
+	struct request_sync_info *ri = arg;
+
+	if ((e = ri->result_op(mh, peer, size, GFARM_ERR_NO_ERROR,
+	    ri->closure, ri->diag)) != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+		    mdhost_get_name(mh), gfarm_error_string(e));
+	gfmdc_client_send_request_sync_notify(ri, e);
+	return (e);
+}
+
+static void
+gfmdc_client_vsend_request_sync_disconnect(void *p, void *arg)
+{
+	gfarm_error_t e;
+	struct peer *peer = p;
+	struct mdhost *mh = peer_get_mdhost(peer);
+	struct request_sync_info *ri = arg;
+
+	/* FIXME better to set the reason of disconnection */
+	e = GFARM_ERR_CONNECTION_ABORTED;
+	gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+	    mh != NULL ? mdhost_get_name(mh) : "", gfarm_error_string(e));
+	(void)ri->result_op(mh, peer, 0, e, ri->closure, ri->diag);
+	gfmdc_client_send_request_sync_notify(ri, e);
+}
+
+static gfarm_error_t
+gfmdc_client_vsend_request_sync(struct mdhost *mh, struct peer *peer,
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, va_list *app)
+{
+	gfarm_error_t e;
+	struct request_sync_info ri;
+
+	gfarm_mutex_init(&ri.mutex, diag, REQUEST_WAIT_INFO_MUTEX);
+	gfarm_cond_init(&ri.cond, diag, REQUEST_WAIT_INFO_COND);
+	ri.result_op = result_op;
+	ri.closure = closure;
+	ri.end = 0;
+	ri.error = GFARM_ERR_NO_ERROR;
+	ri.diag = diag;
+
+	e = gfm_client_channel_vsend_request(mdhost_to_abstract_host(mh),
+	    peer, diag,
+	    gfmdc_client_vsend_request_sync_result,
+	    gfmdc_client_vsend_request_sync_disconnect, &ri,
+#ifdef COMPAT_GFARM_2_3
+	    NULL,
+#endif
+	    command, format, app);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		goto end;
+	}
+
+	gfarm_mutex_lock(&ri.mutex, diag, REQUEST_WAIT_INFO_MUTEX);
+	while (!ri.end) {
+		gfarm_cond_wait(&ri.cond, &ri.mutex, diag,
+		    REQUEST_WAIT_INFO_COND);
+	}
+	gfarm_mutex_unlock(&ri.mutex, diag, REQUEST_WAIT_INFO_MUTEX);
+	e = ri.error;
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+end:
+	gfarm_mutex_destroy(&ri.mutex, diag, REQUEST_WAIT_INFO_MUTEX);
+	gfarm_cond_destroy(&ri.cond, diag, REQUEST_WAIT_INFO_COND);
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_slave_vsend_request_sync(
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, va_list *app)
+{
+	return (gfmdc_client_vsend_request_sync(mdhost_lookup_master(),
+	    NULL, result_op, closure, diag, command, format, app));
+}
+
+static gfarm_error_t
+gfmdc_slave_send_request_sync(
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, ...)
 {
 	gfarm_error_t e;
 	va_list ap;
 
 	va_start(ap, format);
-	/* XXX FIXME gfm_client_channel_vsend_request must be async-request */
-	e = gfm_client_channel_vsend_request(
-	    mdhost_to_abstract_host(mh), peer0, diag,
-	    result_callback, disconnect_callback, closure,
+	e = gfmdc_slave_vsend_request_sync(result_op, closure, diag,
+	    command, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+struct request_async_info {
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *);
+	void *closure;
+	const char *diag;
+};
+
+static gfarm_error_t
+gfmdc_client_vsend_request_async_result(void *p, void *arg, size_t size)
+{
+	gfarm_error_t e;
+	struct peer *peer = p;
+	struct mdhost *mh = peer_get_mdhost(peer);
+	struct request_async_info *ri = arg;
+
+	e = ri->result_op(mh, peer, size, GFARM_ERR_NO_ERROR, ri->closure,
+	    ri->diag);
+	free(ri);
+	return (e);
+}
+
+static void
+gfmdc_client_vsend_request_async_disconnect(void *p, void *arg)
+{
+	gfarm_error_t e;
+	struct peer *peer = p;
+	struct mdhost *mh = peer_get_mdhost(peer);
+	struct request_async_info *ri = arg;
+
+	/* FIXME better to set the reason of disconnection */
+	e = GFARM_ERR_CONNECTION_ABORTED;
+	gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+	    mh != NULL ? mdhost_get_name(mh) : "", gfarm_error_string(e));
+	(void)ri->result_op(mh, peer, 0, e, ri->closure, ri->diag);
+	free(ri);
+}
+
+static gfarm_error_t
+gfmdc_client_vsend_request_async(struct mdhost *mh, struct peer *peer,
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, va_list *app)
+{
+	gfarm_error_t e;
+	struct request_async_info *ri;
+
+	GFARM_MALLOC(ri);
+	if (ri == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	ri->result_op = result_op;
+	ri->closure = closure;
+	ri->diag = diag;
+
+	e = gfm_client_channel_vsend_request(mdhost_to_abstract_host(mh),
+	    peer, diag,
+	    gfmdc_client_vsend_request_async_result,
+	    gfmdc_client_vsend_request_async_disconnect, ri,
 #ifdef COMPAT_GFARM_2_3
 	    NULL,
 #endif
+	    command, format, app);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+	}
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_client_send_request_async(struct mdhost *mh, struct peer *peer,
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfmdc_client_vsend_request_async(mh, peer, result_op, closure,
+	    diag, command, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_slave_vsend_request_async(
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, va_list *app)
+{
+	return (gfmdc_client_vsend_request_async(mdhost_lookup_master(),
+	    NULL, result_op, closure, diag, command, format, app));
+}
+
+static gfarm_error_t
+gfmdc_slave_send_request_async(
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
+	void *closure, const char *diag, gfarm_int32_t command,
+	const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfmdc_slave_vsend_request_async(result_op, closure, diag,
 	    command, format, &ap);
 	va_end(ap);
 	return (e);
@@ -183,9 +406,8 @@ gfmdc_journal_send_closure_reset(struct gfmdc_journal_send_closure *c,
 }
 
 static void
-gfmdc_client_journal_syncsend_free(void *p, void *arg)
+gfmdc_client_journal_syncsend_free(struct gfmdc_journal_send_closure *c)
 {
-	struct gfmdc_journal_send_closure *c = arg;
 	static const char *diag = "gfmdc_client_journal_syncsend_free";
 
 	free(c->data);
@@ -197,22 +419,18 @@ gfmdc_client_journal_syncsend_free(void *p, void *arg)
 }
 
 static void
-gfmdc_client_journal_asyncsend_free(void *p, void *arg)
+gfmdc_client_journal_asyncsend_free(struct gfmdc_journal_send_closure *c)
 {
-	struct gfmdc_journal_send_closure *c = arg;
-
 	free(c->data);
 	c->data = NULL;
 	free(c);
 }
 
 static gfarm_error_t
-gfmdc_client_journal_send_result_common(void *p, void *arg, size_t size)
+gfmdc_client_journal_send_result_common(struct peer *peer, size_t size,
+	struct gfmdc_journal_send_closure *c, const char *diag)
 {
 	gfarm_error_t e;
-	struct peer *peer = p;
-	struct gfmdc_journal_send_closure *c = arg;
-	static const char *diag = "GFM_PROTO_JOURNAL_SEND";
 
 	if ((e = gfmdc_client_recv_result(peer, c->host, size, diag, ""))
 	    != GFARM_ERR_NO_ERROR)
@@ -223,22 +441,28 @@ gfmdc_client_journal_send_result_common(void *p, void *arg, size_t size)
 }
 
 static gfarm_error_t
-gfmdc_client_journal_syncsend_result(void *p, void *arg, size_t size)
+gfmdc_client_journal_syncsend_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
 {
-	gfarm_error_t e;
+	struct gfmdc_journal_send_closure *c = closure;
 
-	e = gfmdc_client_journal_send_result_common(p, arg, size);
-	gfmdc_client_journal_syncsend_free(p, arg);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfmdc_client_journal_send_result_common(peer, size, c,
+		    diag);
+	gfmdc_client_journal_syncsend_free(c);
 	return (e);
 }
 
 static gfarm_error_t
-gfmdc_client_journal_asyncsend_result(void *p, void *arg, size_t size)
+gfmdc_client_journal_asyncsend_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
 {
-	gfarm_error_t e;
+	struct gfmdc_journal_send_closure *c = closure;
 
-	e = gfmdc_client_journal_send_result_common(p, arg, size);
-	gfmdc_client_journal_asyncsend_free(p, arg);
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfmdc_client_journal_send_result_common(peer, size, c,
+		    diag);
+	gfmdc_client_journal_asyncsend_free(c);
 	return (e);
 }
 
@@ -272,8 +496,8 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 
 static gfarm_error_t
 gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
-	gfarm_error_t (*result_op)(void *, void *, size_t),
-	void (*disconnect_op)(void *, void *),
+	gfarm_error_t (*result_op)(struct mdhost *, struct peer *, size_t,
+		gfarm_error_t, void *, const char *),
 	struct gfmdc_journal_send_closure *c)
 {
 	gfarm_error_t e;
@@ -308,9 +532,8 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 	mdhost_set_last_fetch_seqnum(mh, to_sn);
 	c->data = data;
 
-	if ((e = gfmdc_client_send_request(mh, NULL, diag,
-	    result_op, disconnect_op, c,
-	    GFM_PROTO_JOURNAL_SEND, "llb", from_sn, to_sn,
+	if ((e = gfmdc_client_send_request_async(mh, NULL, result_op,
+	    c, diag, GFM_PROTO_JOURNAL_SEND, "llb", from_sn, to_sn,
 	    (size_t)data_len, data)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002978,
 		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
@@ -331,8 +554,7 @@ gfmdc_client_journal_syncsend(gfarm_uint64_t *to_snp,
 
 	c->end = 0;
 	e = gfmdc_client_journal_send(to_snp,
-	    gfmdc_client_journal_syncsend_result,
-	    gfmdc_client_journal_syncsend_free, c);
+	    gfmdc_client_journal_syncsend_result, c);
 	if (e == GFARM_ERR_NO_ERROR && *to_snp > 0 &&
 	    !gfmdc_wait_journal_syncsend(c))
 		return (GFARM_ERR_OPERATION_TIMED_OUT);
@@ -345,8 +567,7 @@ gfmdc_client_journal_asyncsend(gfarm_uint64_t *to_snp,
 	struct gfmdc_journal_send_closure *c)
 {
 	return (gfmdc_client_journal_send(to_snp,
-	    gfmdc_client_journal_asyncsend_result,
-	    gfmdc_client_journal_asyncsend_free, c));
+	    gfmdc_client_journal_asyncsend_result, c));
 }
 
 static gfarm_error_t
@@ -425,51 +646,18 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	return (e);
 }
 
-struct journal_ready_to_recv_info {
-	int end;
-	pthread_mutex_t mutex;
-	pthread_cond_t wait_cond;
-	gfarm_error_t error;
-};
-
-static void
-gfmdc_client_journal_ready_to_recv_notify(void *arg, gfarm_error_t e,
-	const char *diag)
+static gfarm_error_t
+gfmdc_client_journal_ready_to_recv_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
 {
-	struct journal_ready_to_recv_info *ji = arg;
-
-	ji->error = e;
-	gfarm_mutex_lock(&ji->mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-	ji->end = 1;
-	gfarm_cond_signal(&ji->wait_cond, diag,
-	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
-	gfarm_mutex_unlock(&ji->mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-}
-
-static gfarm_int32_t
-gfmdc_client_journal_ready_to_recv_result(void *p, void *arg, size_t size)
-{
-	gfarm_error_t e;
-	struct peer *peer = p;
-	struct mdhost *mh = peer_get_mdhost(peer);
-	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002982, "%s : %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
-	gfmdc_client_journal_ready_to_recv_notify(arg, e, diag);
 	return (e);
-}
-
-static void
-gfmdc_client_journal_ready_to_recv_disconnect(void *p, void *arg)
-{
-	static const char *diag =
-		"gfmdc_client_journal_ready_to_recv_disconnect";
-
-	gfmdc_client_journal_ready_to_recv_notify(arg,
-	    GFARM_ERR_CONNECTION_ABORTED, diag);
 }
 
 gfarm_error_t
@@ -477,47 +665,19 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
-	struct journal_ready_to_recv_info ji;
 	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
-
-	gfarm_mutex_init(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-	gfarm_cond_init(&ji.wait_cond, diag,
-	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
-	ji.error = GFARM_ERR_NO_ERROR;
-	ji.end = 0;
 
 	giant_lock();
 	seqnum = db_journal_get_current_seqnum();
 	giant_unlock();
 
-	if ((e = gfmdc_client_send_request(mh, NULL, diag,
-	    gfmdc_client_journal_ready_to_recv_result,
-	    gfmdc_client_journal_ready_to_recv_disconnect, &ji,
+	if ((e = gfmdc_slave_send_request_sync(
+	    gfmdc_client_journal_ready_to_recv_result, NULL, diag,
 	    GFM_PROTO_JOURNAL_READY_TO_RECV, "l", seqnum))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002983,
 		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
-		goto end;
 	}
-
-	/* wait for recieving result to get GFARM_ERR_EXPIRED */
-	gfarm_mutex_lock(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-	while (!ji.end) {
-		gfarm_cond_wait(&ji.wait_cond, &ji.mutex, diag,
-		    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
-	}
-	gfarm_mutex_unlock(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-	e = ji.error;
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1003425,
-		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
-	}
-
-end:
-	gfarm_mutex_destroy(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
-	gfarm_cond_destroy(&ji.wait_cond, diag,
-	    JOURNAL_READY_TO_RECV_WAIT_COND_DIAG);
-
 	return (e);
 }
 
@@ -690,12 +850,15 @@ gfmdc_protocol_switch(struct abstract_host *h,
 		e = gfmdc_server_journal_send(mh, peer, xid, size);
 		break;
 	case GFM_PROTO_REMOTE_PEER_ALLOC:
+		/* in master */
 		e = gfmdc_server_remote_peer_alloc(mh, peer, xid, size);
 		break;
 	case GFM_PROTO_REMOTE_PEER_FREE:
+		/* in master */
 		e = gfmdc_server_remote_peer_free(mh, peer, xid, size);
 		break;
 	case GFM_PROTO_REMOTE_RPC:
+		/* in master */
 		e = gfmdc_server_remote_rpc(mh, peer, xid, size);
 		break;
 	default:
