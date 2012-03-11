@@ -590,11 +590,24 @@ user_init(void)
  * protocol handler
  */
 
+/*
+ * XXX Delete this function at supporting protocol relay for
+ * gfm_server_user_info_get_all()
+ */
 gfarm_error_t
-user_info_send(struct gfp_xdr *client, struct gfarm_user_info *ui)
+user_info_send_norelay(struct gfp_xdr *client, struct gfarm_user_info *ui)
 {
 	return (gfp_xdr_send(client, "ssss",
 	    ui->username, ui->realname, ui->homedir, ui->gsi_dn));
+}
+
+static gfarm_error_t
+user_info_send(struct peer *peer, size_t *sizep, struct gfarm_user_info *ui,
+	const char *diag)
+{
+	return (gfm_server_put_reply_with_vrelay(peer, sizep,
+	    diag, "ssss", ui->username, ui->realname, ui->homedir,
+	    ui->gsi_dn));
 }
 
 gfarm_error_t
@@ -639,7 +652,7 @@ gfm_server_user_info_get_all(
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
 		if (user_is_valid(*u)) {
 			/* XXXRELAY FIXME */
-			e = user_info_send(client, &(*u)->ui);
+			e = user_info_send_norelay(client, &(*u)->ui);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001499,
 					"user_info_send() failed: %s",
@@ -654,6 +667,133 @@ gfm_server_user_info_get_all(
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct user_info_get_by_names_closure {
+	gfarm_int32_t nusers;
+	char **users;
+	gfarm_error_t error;
+};
+
+static void
+gfm_server_user_info_get_by_names_free(char **users, int n)
+{
+	int i;
+
+	if (users == NULL)
+		return;
+	for (i = 0; i < n; i++)
+		free(users[i]);
+	free(users);
+}
+
+static gfarm_error_t
+gfm_server_user_info_get_by_names_request(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep,
+	int skip, struct relayed_request *r, void *closure, const char *diag)
+{
+	gfarm_error_t e;
+	int i, no_memory = 0, allocated = mode == RELAY_TRANSFER;
+	struct user_info_get_by_names_closure *c = closure;
+	gfarm_int32_t nusers = c->nusers;
+	char *user, **users = c->users;
+
+	if ((e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
+	    "i", &nusers)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001500, "%s: %s",
+			diag, gfarm_error_string(e));
+		return (e);
+	}
+	if (!allocated) {
+		GFARM_MALLOC_ARRAY(users, nusers);
+		if (users == NULL)
+			no_memory = 1;
+	}
+
+	for (i = 0; i < nusers; i++) {
+		if (allocated)
+			user = users[i];
+		if ((e = gfm_server_get_request_with_vrelay(peer, sizep, skip,
+		    r, diag, "s", &user)) != GFARM_ERR_NO_ERROR) {
+			/* GFARM_ERR_PROTOCOL contains eof */
+			gflog_debug(GFARM_MSG_1001501,
+				"gfp_xdr_recv() failed: %s",
+				gfarm_error_string(e));
+			    gfm_server_user_info_get_by_names_free(users,
+				    allocated ? nusers : i);
+			return (e);
+		}
+		if (!allocated) {
+			if (users == NULL) {
+				free(user);
+			} else {
+				if (user == NULL)
+					no_memory = 1;
+				users[i] = user;
+			}
+		}
+	}
+
+	e = no_memory ? GFARM_ERR_NO_MEMORY : e;
+	if (!allocated && e == GFARM_ERR_NO_ERROR) {
+		c->nusers = nusers;
+		c->users = users;
+	}
+	return (e);
+}
+
+static gfarm_error_t
+gfm_server_user_info_get_by_names_reply(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep, int skip, void *closure,
+	const char *diag)
+{
+	gfarm_error_t e;
+	int i;
+	struct user_info_get_by_names_closure *c = closure;
+	struct user *u;
+
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	e = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
+	    "i", c->error);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001502,
+			"gfm_server_put_reply() failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
+
+	/* XXX FIXME too long giant lock */
+	(void)request_reply_giant_lock(mode);
+
+	for (i = 0; i < c->nusers; i++) {
+		u = user_lookup(c->users[i]);
+		if (u == NULL) {
+			if (debug_mode)
+				gflog_info(GFARM_MSG_1000238,
+				    "user lookup <%s>: failed",
+				    c->users[i]);
+			/* XXXRELAY FIXME */
+			e = gfm_server_put_reply_with_vrelay(peer, sizep,
+			    diag, "i", GFARM_ERR_NO_SUCH_USER);
+		} else {
+			if (debug_mode)
+				gflog_info(GFARM_MSG_1000239,
+				    "user lookup <%s>: ok", c->users[i]);
+			/* XXXRELAY FIXME */
+			e = gfm_server_put_reply_with_vrelay(peer, sizep,
+			    diag, "i", GFARM_ERR_NO_ERROR);
+			if (e == GFARM_ERR_NO_ERROR)
+				e = user_info_send(peer, sizep, &u->ui, diag);
+		}
+		if (peer_had_protocol_error(peer))
+			break;
+	}
+
+	(void)request_reply_giant_unlock(mode, e);
+
+	return (e);
+}
+
 /*
  * We need to allow gfsd use this operation
  * to implement gfarm_metadb_verify_username()
@@ -663,99 +803,24 @@ gfm_server_user_info_get_by_names(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
-	gfarm_int32_t nusers;
-	char *user, **users;
-	int i, j, eof, no_memory = 0;
-	struct user *u;
+	struct user_info_get_by_names_closure c;
 	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_NAMES";
 
-	e = gfm_server_get_request(peer, sizep, diag, "i", &nusers);
-	if (e != GFARM_ERR_NO_ERROR) {
+	c.nusers = 0;
+	c.users = NULL;
+	c.error = GFARM_ERR_NO_ERROR;
+
+	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
+	    gfm_server_user_info_get_by_names_request,
+	    gfm_server_user_info_get_by_names_reply,
+	    GFM_PROTO_USER_INFO_GET_BY_NAMES, &c, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001500, "%s: %s",
 			diag, gfarm_error_string(e));
-		return (e);
 	}
-	GFARM_MALLOC_ARRAY(users, nusers);
-	if (users == NULL)
-		no_memory = 1;
-	for (i = 0; i < nusers; i++) {
-		e = gfp_xdr_recv(client, 0, &eof, "s", &user);
-		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_1001501,
-				"gfp_xdr_recv() failed: %s",
-				gfarm_error_string(e));
-			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
-				e = GFARM_ERR_PROTOCOL;
-			if (users != NULL) {
-				for (j = 0; j < i; j++) {
-					if (users[j] != NULL)
-						free(users[j]);
-				}
-				free(users);
-			}
-			return (e);
-		}
-		if (users == NULL) {
-			free(user);
-		} else {
-			if (user == NULL)
-				no_memory = 1;
-			users[i] = user;
-		}
-	}
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto free_user;
-	}
-
-	/* XXXRELAY FIXME, reply size is not correct */
-	e = gfm_server_put_reply(peer, xid, sizep, diag,
-		no_memory ? GFARM_ERR_NO_MEMORY : e, "");
-	if (no_memory || e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001502,
-			"gfm_server_put_reply() failed: %s",
-			gfarm_error_string(e));
-		goto free_user;
-	}
-
-	/* XXX FIXME too long giant lock */
-	giant_lock();
-	for (i = 0; i < nusers; i++) {
-		u = user_lookup(users[i]);
-		if (u == NULL) {
-			if (debug_mode)
-				gflog_info(GFARM_MSG_1000238,
-				    "user lookup <%s>: failed",
-				    users[i]);
-			/* XXXRELAY FIXME */
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_SUCH_USER, "");
-		} else {
-			if (debug_mode)
-				gflog_info(GFARM_MSG_1000239,
-				    "user lookup <%s>: ok", users[i]);
-			/* XXXRELAY FIXME */
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_ERROR, "");
-			if (e == GFARM_ERR_NO_ERROR)
-				e = user_info_send(client, &u->ui);
-		}
-		if (peer_had_protocol_error(peer))
-			break;
-	}
-	giant_unlock();
-
-free_user:
-	if (users != NULL) {
-		for (i = 0; i < nusers; i++) {
-			if (users[i] != NULL)
-				free(users[i]);
-		}
-		free(users);
-	}
-	return (no_memory ? GFARM_ERR_NO_MEMORY : e);
+	gfm_server_user_info_get_by_names_free(c.users, c.nusers);
+	return (e);
 }
 
 gfarm_error_t
