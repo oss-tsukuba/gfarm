@@ -522,6 +522,49 @@ end:
 }
 
 static gfarm_error_t
+gfmdc_client_remote_peer_alloc_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
+{
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+		    mdhost_get_name(mh), gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfmdc_client_remote_peer_alloc(struct peer *peer)
+{
+	gfarm_error_t e;
+	static const char *diag = "GFM_PROTO_REMOTE_PEER_ALLOC";
+	int port;
+	/* FIXME get from peer */
+	gfarm_int32_t proto_family = GFARM_PROTO_FAMILY_IPV4;
+	gfarm_int32_t proto_transport = GFARM_PROTO_TRANSPORT_IP_TCP;
+
+	if ((e = peer_get_port(peer, &port)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+		return (e);
+	}
+
+	if ((e = gfmdc_slave_send_request_sync(
+	    gfmdc_client_remote_peer_alloc_result, NULL, diag,
+	    GFM_PROTO_REMOTE_PEER_ALLOC, "lissiii",
+	    peer_get_id(peer), peer_get_auth_id_type(peer),
+	    peer_get_username(peer), peer_get_hostname(peer),
+	    proto_family, proto_transport, port)) == GFARM_ERR_NO_ERROR)
+		local_peer_set_remote_peer_allocated(peer_to_local_peer(peer),
+		    1);
+	else
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
 gfmdc_server_remote_peer_alloc(struct mdhost *mh, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size)
 {
@@ -541,6 +584,34 @@ gfmdc_server_remote_peer_alloc(struct mdhost *mh, struct peer *peer,
 		    proto_family, proto_transport, port);
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	return (e);
+}
+
+static gfarm_error_t
+gfmdc_client_remote_peer_free_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
+{
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED, "%s : %s",
+		    mdhost_get_name(mh), gfarm_error_string(e));
+	return (e);
+}
+
+gfarm_error_t
+gfmdc_client_remote_peer_free(gfarm_uint64_t peer_id)
+{
+	gfarm_error_t e;
+	static const char *diag = "GFM_PROTO_REMOTE_PEER_FREE";
+
+	if ((e = gfmdc_slave_send_request_async(
+	    gfmdc_client_remote_peer_free_result, NULL, diag,
+	    GFM_PROTO_REMOTE_PEER_FREE, "l", peer_id))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
 	return (e);
 }
 
