@@ -2602,6 +2602,12 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 			    (unsigned long long)inode->i_number, dot,
 			    gfarm_error_string(e));
 
+		/*
+		 * this i_nlink change will be written to db at the end of
+		 * this function.
+		 */
+		inode->i_nlink--;
+
 		e = db_direntry_remove(inode->i_number, dotdot, DOTDOT_LEN);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1000323,
