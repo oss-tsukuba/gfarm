@@ -280,8 +280,8 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
 	(3) gfmd や gfsd を Red Hat もしくはそれから派生した OS で動作
 	させ、RPM パッケージで導入、あるいは prefix を /usr として導入
 	している場合は "prelink" という日時ジョブに関する設定を行う必要
-	があります．"/etc/prelink.conf.d/gfarm" というファイルを作成し、
-	以下のような行を足して、prelink の対象外とします．
+	があります．"/etc/prelink.conf.d/gfarm.conf" というファイルを
+	作成し、以下のような行を足して、prelink の対象外とします．
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd

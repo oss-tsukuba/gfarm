@@ -286,8 +286,8 @@ Table of Contents:
 	(3) If gfmd or gfsd runs on Red Hat or derived from it and it
 	is installed by an RPM package or with the prefix /usr, you
 	also need to configure the daily job named "prelink".  Create
-	the file "/etc/prelink.conf.d/gfarm" and insert the following
-	lines not to prelink them:
+	the file "/etc/prelink.conf.d/gfarm.conf" and insert the
+	following lines not to prelink them:
 
 		-b /usr/sbin/gfmd
 		-b /usr/sbin/gfsd
