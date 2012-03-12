@@ -554,16 +554,12 @@ gfarm_error_t
 gfj_server_hostinfo(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	static const char diag[] = "GFJ_PROTO_HOSTINFO";
 
-	if (!from_client)
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-
 	/* XXX - NOT IMPLEMENTED */
+
 	gflog_fatal(GFARM_MSG_1000296, "%s: not implemented", diag);
 
 	return (gfj_server_put_reply(peer, xid, sizep,
 	    diag, GFARM_ERR_NO_ERROR, ""));
 }
-

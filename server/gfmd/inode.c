@@ -838,12 +838,12 @@ inode_remove(struct inode *inode)
 		gflog_fatal(GFARM_MSG_1000302, "inode_remove: still opened");
 	if (inode_is_file(inode)) {
 		struct file_copy *copy, *cn;
-		gfarm_error_t e;
 
 		for (copy = inode->u.c.s.f.copies; copy != NULL; copy = cn) {
 			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
-				e = remove_replica_entity(inode, inode->i_gen,
+				(void)remove_replica_entity(inode, inode->i_gen,
 				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
+				/* abandon error */
 			}
 			cn = copy->host_next;
 			free(copy);
@@ -2885,7 +2885,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
-	char *s, *name, *names[GFS_MAX_DIR_DEPTH];
+	char *s, *names[GFS_MAX_DIR_DEPTH];
 	int i, namelen, depth = 0;
 	size_t totallen = 0;
 	int overflow = 0;
@@ -2925,7 +2925,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 			 */
 			assert(ok);
 		}
-		name = dir_entry_get_name(entry, &namelen);
+		(void)dir_entry_get_name(entry, &namelen);
 		GFARM_MALLOC_ARRAY(s, namelen + 1);
 		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
 			for (i = 0; i < depth; i++)
@@ -3239,6 +3239,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
 		(void)inode_remove_replica_in_cache(inode, dst);
+		/* abandon error */
 		return (e);
 	}
 	if (irs == NULL) {
@@ -3246,6 +3247,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 		if (irs == NULL) {
 			peer_replicating_free(fr);
 			(void)inode_remove_replica_in_cache(inode, dst);
+			/* abandon error */
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		/* make circular list `replicating_hosts' empty */
@@ -3530,7 +3532,6 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	struct host *spool_host, int valid,
 	struct dead_file_copy **deferred_cleanupp)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct dead_file_copy *dfc;
 
 	dfc = dead_file_copy_new(inode->i_number, gen, spool_host);
@@ -3547,8 +3548,8 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	}
 
 	if (valid) {
-		e = remove_replica_metadata(inode, spool_host);
-		/* abandon `e' */
+		(void)remove_replica_metadata(inode, spool_host);
+		/* abandon error */
 	}
 	return (dfc == NULL ? GFARM_ERR_NO_MEMORY : GFARM_ERR_NO_ERROR);
 }
@@ -3565,6 +3566,7 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 		return;
 
 	(void)inode_remove_replica_in_cache(inode, host);
+	/* abandon error */
 }
 
 static gfarm_error_t
@@ -4272,6 +4274,7 @@ static void
 inode_add_one(void *closure, struct gfs_stat *st)
 {
 	(void)inode_add(st, NULL);
+	/* abandon error */
 }
 
 gfarm_error_t
@@ -4425,6 +4428,7 @@ dir_entry_add_one(void *closure,
 	gfarm_ino_t entry_inum)
 {
 	(void)dir_entry_add(dir_inum, entry_name, entry_len, entry_inum);
+	/* abandon error */
 	free(entry_name);
 }
 
