@@ -2860,6 +2860,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	int transaction = 0;
 	gfarm_int32_t flags;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
+	char *trace_log;
 	static const char diag[] = "close_v2_4_resume";
 
 	giant_lock();
@@ -2880,13 +2881,14 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, arg->fd, arg->size,
-		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen, NULL);
+		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen,
+		    &trace_log);
 		if (transaction)
 			db_end(diag);
 
-		if (e == GFARM_ERR_NO_ERROR) /* permission ok */
+		if (e == GFARM_ERR_NO_ERROR) { /* permission ok */
 			e = peer_fdpair_close_current(peer);
-		else if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+		} else if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			if ((e = process_new_generation_wait(peer, arg->fd,
 			    close_write_v2_4_resume, arg)) ==
 			    GFARM_ERR_NO_ERROR) {
@@ -2898,6 +2900,14 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	}
 	free(arg);
 	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
+	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    trace_log != NULL) {
+		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		free(trace_log);
+	}
+
 	return (gfm_server_put_reply(peer, diag, e, "ill",
 	    flags, old_gen, new_gen));
 }
@@ -2910,17 +2920,12 @@ gfm_server_close_write_common(const char *diag,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
-	char **trace_log)
+	char **trace_logp)
 {
 	gfarm_error_t e;
 	gfarm_int32_t fd;
 	struct process *process;
 	int transaction = 0;
-
-	/* for gfarm_file_trace */
-	struct timeval tv;
-	char tmp_str[4096];
-	gfarm_uint64_t inum = 0;
 
 	struct close_v2_4_resume_arg *arg;
 
@@ -2946,21 +2951,7 @@ gfm_server_close_write_common(const char *diag,
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, fd, size,
-		    atime, mtime, flagsp, old_genp, new_genp, &inum);
-
-		if (gfarm_file_trace && (*old_genp != *new_genp)) {
-			gettimeofday(&tv, NULL);
-			snprintf(tmp_str, sizeof(tmp_str),
-			    "%lld/%010ld.%06ld////UPDATEGEN/%s/%d//%lld/%lld/%lld//////",
-			    (long long int)trace_log_get_sequence_number(),
-			    (long int)tv.tv_sec, (long int)tv.tv_usec,
-			    gfarm_host_get_self_name(),
-			    gfarm_metadb_server_port,
-			    (long long int)inum,
-			    (long long int)*old_genp,
-			    (long long int)*new_genp);
-			*trace_log = strdup(tmp_str);
-		}
+		    atime, mtime, flagsp, old_genp, new_genp, trace_logp);
 		if (transaction)
 			db_end(diag);
 
@@ -3044,7 +3035,9 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 	e2 = gfm_server_put_reply(peer, diag, e, "ill",
 	    flags, old_gen, new_gen);
 
-	if (gfarm_file_trace && trace_log != NULL) {
+	if (e == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
+	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
+	    trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003309, "%s", trace_log);
 		free(trace_log);
 	}
