@@ -769,7 +769,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_METADB_SERVER_SLAVE_MAX_SIZE_DEFAULT	16
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define GFARM_METADB_SERVER_SLAVE_LISTEN_DEFAULT	0
-#define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  20 /* 20 seconds */
+#define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #if 0 /* not yet in gfarm v2 */
 static char *schedule_write_target_domain = NULL;
