@@ -324,11 +324,10 @@ gfarm_error_t
 do_test_posix(const char *filename, const char *gfarm_filename)
 {
 	gfarm_error_t e;
-	int size;
 	char *buf;
 	struct gfs_replica_info *ri;
 
-	size = (overwrite_flag) ? filesize : 1;
+	/* size = (overwrite_flag) ? filesize : 1; */
 
 	if (!overwrite_flag ||
 	    (gfperf_is_file_exist_gfarm(gfarm_filename) == 0)) {
