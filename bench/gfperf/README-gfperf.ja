@@ -5,6 +5,7 @@
 
 2. Gfarm 性能測定コマンド一覧
    Gfarm 性能測定コマンドは以下のコマンドから構成されています。
+   それぞれのコマンドの詳細についてはmanを参照してください。
 
    (1) gfperf-metadata
         create, unlink, mkdir, rmdir, stat など Gfarm のメタデータアクセス
