@@ -1011,9 +1011,18 @@ gfmdc_connect(void)
 	}
 
 	for (;;) {
+		/*
+		 * XXXRELAY FIXME
+		 * multicast should be used always,
+		 * (otherwise when a slave gfmd is promoted to master,
+		 *  other slaves won't connect to the new master, see #361),
+		 * but currently that doesn't work with protocol relay. FIXME.
+		 */
+		int multicast = gfarm_get_metadb_server_slave_listen() ? 0 : 1;
+
 		/* try connecting to multiple destinations */
 		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &conn, NULL, pwd, 1);
+		    service_user, &conn, NULL, pwd, multicast);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_1002993,
