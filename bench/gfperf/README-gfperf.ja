@@ -18,7 +18,7 @@
         Gfarmからの読み込み性能を測定します。
 
    (4) gfperf-write
-        Gfarmへの書きこみ性能を測定します。
+        Gfarmへの書き込み性能を測定します。
 
    (5) gfperf-replica
         Gfarmのファイル複製性能を測定します。

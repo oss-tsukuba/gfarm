@@ -6,6 +6,13 @@
 
 2. 設定ファイルについて
    設定ファイルは yaml 形式で記述します。
+   設定ファイルのサンプルが以下のディレクトリにあります。
+      gfperf-rb/gfperf-config.yml　　　(フルセット版)
+      gfperf-rb/gfperf-sample.yml      (簡易版)
+
+   なお上記サンプルファイルは以下のディレクトリにインストールされます。
+      <gfarm install directory>/share/gfarm/config
+
    本設定ファイルの大雑把な構造として、まずキーワードを置き、
    その値にパラメータを記述する方法をとります。
 
