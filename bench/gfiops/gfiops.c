@@ -735,7 +735,10 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	fflush(stdout);
+	fflush(stderr);
 	for (i = 0; i < nprocs; i++) {
+		pid_t pid;
 		if (pipe(procs[i].pipe_stdin) == -1) {
 			perror("pipe");
 			exit(EXIT_FAILURE);
@@ -748,11 +751,6 @@ main(int argc, char **argv)
 			perror("pipe");
 			exit(EXIT_FAILURE);
 		}
-	}
-	fflush(stdout);
-	fflush(stderr);
-	for (i = 0; i < nprocs; i++) {
-		pid_t pid;
 		if ((pid = fork()) == -1) {
 			perror("fork");
 			exit(EXIT_FAILURE);
