@@ -37,7 +37,7 @@ gfarm_error_t gfm_server_close_write_v2_4(
 gfarm_error_t gfm_server_fhclose_read(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_fhclose_write(
-	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int, int *);
 gfarm_error_t gfm_server_generation_updated(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_generation_updated_by_cookie(

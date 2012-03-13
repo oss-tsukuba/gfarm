@@ -242,9 +242,8 @@ local_peer_shutdown_all(void)
 
 		gflog_notice(GFARM_MSG_1000287, "(%s@%s) shutting down",
 		    peer->username, peer->hostname);
-#if 0		/* we don't really have to do this at shutdown */
-		peer_unset_pending_new_generation(peer);
-#endif
+		peer_unset_pending_new_generation(peer,
+		    GFARM_ERR_GFMD_FAILED_OVER); /* we do this for logging */
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}

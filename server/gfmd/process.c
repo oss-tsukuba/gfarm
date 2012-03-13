@@ -599,10 +599,11 @@ process_new_generation_done(struct process *process, struct peer *peer, int fd,
 		    "%s: pid %lld descriptor %d: %s", diag,
 		    (long long)process->pid, fd, gfarm_error_string(e));
 		return (e);
-	} else if ((e = inode_new_generation_done(fo->inode, peer,
+	} else if ((e = inode_new_generation_by_fd_finish(fo->inode, peer,
 	    result)) == GFARM_ERR_NO_ERROR) {
 
 		/* resume deferred operaton: close the file */
+		peer_reset_pending_new_generation_by_fd(peer);
 
 		if (fo->opener != peer && fo->opener != NULL) {
 			/*
@@ -884,8 +885,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
-	gfarm_uint64_t *inump)
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, char **trace_logp)
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
@@ -906,9 +906,6 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (e);
 	}
 	mode = inode_get_mode(fo->inode);
-	if (inump != NULL) { /* for gfarm_file_trace */
-		*inump = inode_get_number(fo->inode);
-	}
 	if (!GFARM_S_ISREG(mode)) {
 		gflog_debug(GFARM_MSG_1001641,
 			"inode is not file");
@@ -945,17 +942,16 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
 	    == GFARM_ERR_ALREADY_EXISTS)) &&
 
-	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp, NULL)) {
+	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp,
+	    trace_logp)) {
 
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
 
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */
-		e = inode_new_generation_wait_start(fo->inode, peer);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e); /* XXX FIXME: it's better to close fd */
-		peer_set_pending_new_generation(peer, fo->inode);
+		inode_new_generation_by_fd_start(fo->inode, peer);
+		peer_set_pending_new_generation_by_fd(peer, fo->inode);
 	} else if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;

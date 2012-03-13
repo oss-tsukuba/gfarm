@@ -44,9 +44,13 @@ void peer_authorized_common(struct peer *, enum gfarm_auth_id_type, char *,
 	char *, struct sockaddr *, enum gfarm_auth_method);
 
 struct inode;
-void peer_set_pending_new_generation(struct peer *, struct inode *);
-void peer_reset_pending_new_generation(struct peer *);
-void peer_unset_pending_new_generation(struct peer *);
+void peer_set_pending_new_generation_by_fd(struct peer *, struct inode *);
+void peer_reset_pending_new_generation_by_fd(struct peer *);
+gfarm_error_t peer_add_pending_new_generation_by_cookie(
+	struct peer *, struct inode *, gfarm_uint64_t *);
+int peer_remove_pending_new_generation_by_cookie(struct peer *, gfarm_uint64_t,
+	struct inode **);
+void peer_unset_pending_new_generation(struct peer *, gfarm_error_t);
 
 struct process;
 struct process *peer_get_process(struct peer *);
@@ -131,9 +135,6 @@ void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
 	struct host *, gfarm_ino_t, gfarm_int64_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
-
-gfarm_uint64_t peer_add_cookie(struct peer *);
-int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 
 gfarm_error_t peer_get_port(struct peer *, int *);
 gfarm_int64_t peer_get_id(struct peer *);

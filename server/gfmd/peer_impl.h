@@ -2,7 +2,6 @@ struct peer;
 struct local_peer;
 struct remote_peer;
 struct mdhost;
-struct cookie;
 
 struct peer_ops {
 	/* downcast functions */
@@ -20,9 +19,10 @@ struct peer_ops {
 	void (*free)(struct peer *);
 };
 
-struct cookie {
+struct pending_new_generation_by_cookie {
+	struct inode *inode;
 	gfarm_uint64_t id;
-	GFARM_HCIRCLEQ_ENTRY(cookie) hcircleq;
+	GFARM_HCIRCLEQ_ENTRY(pending_new_generation_by_cookie) cookie_link;
 };
 
 struct peer {
@@ -52,6 +52,9 @@ struct peer {
 
 	/* only one pending GFM_PROTO_GENERATION_UPDATED per peer is allowed */
 	struct inode *pending_new_generation;
+	/* GFM_PROTO_GENERATION_UPDATED_BY_COOKIE */
+	GFARM_HCIRCLEQ_HEAD(pending_new_generation_by_cookie)
+	     pending_new_generation_cookies;
 
 	union {
 		struct {
@@ -64,8 +67,6 @@ struct peer {
 	pthread_mutex_t replication_mutex;
 	int simultaneous_replication_receivers;
 	struct file_replicating replicating_inodes; /* dummy header */
-
-	GFARM_HCIRCLEQ_HEAD(cookie) cookies;
 
 	/*
 	 * to support remote peer

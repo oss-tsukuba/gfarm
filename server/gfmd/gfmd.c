@@ -390,7 +390,8 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		break;
 	case GFM_PROTO_FHCLOSE_WRITE:
 		e = gfm_server_fhclose_write(peer, xid, sizep,
-		    from_client, skip);
+		    from_client, skip,
+		    suspendedp);
 		break;
 	case GFM_PROTO_GENERATION_UPDATED:
 		e = gfm_server_generation_updated(peer, xid, sizep,
@@ -854,18 +855,32 @@ resuming_dequeue(struct resuming_queue *q, const char *diag)
 void *
 resuming_thread(void *arg)
 {
+	gfarm_error_t e;
 	struct event_waiter *entry = arg;
 	struct peer *peer = entry->peer;
 	int suspended = 0;
+	struct local_peer *local_peer;
 
 	(*entry->action)(peer, entry->arg, &suspended);
+	e = gfp_xdr_flush(peer_get_conn(peer));
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "protocol flush: %s",
+		    gfarm_error_string(e));
+		peer_record_protocol_error(peer);
+	}
+
 	free(entry);
 	if (suspended)
 		return (NULL);
 
 	/* XXXRELAY FIXME: fail in the relayed case */
-	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
+	if (gfp_xdr_recv_is_ready(peer_get_conn(peer))) {
 		protocol_main(peer_to_local_peer(peer));
+	} else {
+		local_peer = peer_to_local_peer(peer);
+		local_peer_watch_readable(local_peer);
+	}
+
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
