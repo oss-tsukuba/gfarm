@@ -26,6 +26,7 @@ SUBDIRS = \
 	gfmkdir \
 	gfmv \
 	gfpath \
+	gfprep \
 	gfquota \
 	gfreg \
 	gfrep \
