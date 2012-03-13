@@ -29,9 +29,6 @@ post-install-hook:
 gfarm_list.c:
 	ln -s $(srcdir)/../gfrep/gfarm_list.c .
 
-distclean:
-	-$(RM) -f gfarm_list.c
-
 include $(top_srcdir)/makes/prog.mk
 
 ###
