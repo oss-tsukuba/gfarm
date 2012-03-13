@@ -3,6 +3,18 @@
 1. はじめに
    本ドキュメントでは性能測定ツールの導入手順について述べます。
 
+1.1 事前準備
+   性能測定ツールでは以下のソフトウェアを使用します。
+   予めインストールしておいてください。
+
+   ruby 1.8
+   ruby-sqlite3 (Redhat, CentOSの場合EPELリポジトリが必要)
+   apache 2.2
+   php 5.1以上
+   php-pdo
+   sqlite3
+   gnuplot
+
 2. インストール方法
    Gfarmのインストール方法に従うことでgfperfのコマンド一式が標準でインストール
    されます。もし、インストールされない場合には bench/gfperf のディレクトリで
@@ -10,11 +22,6 @@
    されます。
 
 3. WEB UIのインストール方法
-   WEB UIの動作には次のものが必要です。
-    - WEB server (apache2.2を推奨)
-    - PHP5       (PHP 5.1以上が必要)
-    - gnuplot    (Version 4.0 以上を推奨)
-
    gfperf-webの中にあるphpファイル一式をapacheのDocumentRoot以下の適当な
    ディレクトリにコピーします。
 
