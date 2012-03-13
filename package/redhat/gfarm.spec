@@ -331,6 +331,8 @@ fi
 %{man_prefix}/man1/gfmpirun_p4.1.gz
 %endif
 %{man_prefix}/man1/gfmv.1.gz
+%{man_prefix}/man1/gfpcopy.1.gz
+%{man_prefix}/man1/gfprep.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfps.1.gz
 %{man_prefix}/man1/gfpwd.1.gz
@@ -648,6 +650,8 @@ fi
 %{html_prefix}/en/ref/man1/gfmpirun_p4.1.html
 %endif
 %{html_prefix}/en/ref/man1/gfmv.1.html
+%{html_prefix}/en/ref/man1/gfpcopy.1.html
+%{html_prefix}/en/ref/man1/gfprep.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfps.1.html
 %{html_prefix}/en/ref/man1/gfpwd.1.html
@@ -1029,6 +1033,8 @@ fi
 %{prefix}/bin/gfmdhost
 %{prefix}/bin/gfmkdir
 %{prefix}/bin/gfmv
+%{prefix}/bin/gfpcopy
+%{prefix}/bin/gfprep
 %{prefix}/bin/gfpath
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfmpirun_p4
