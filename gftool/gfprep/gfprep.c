@@ -2548,7 +2548,7 @@ main(int argc, char *argv[])
 		gfprep_fatal("no memory");
 
 	if (is_gfpcopy) { /* gfpcopy */
-		int create_dst_dir, checked;
+		int create_dst_dir = 0, checked;
 		/* gfpcopy p1/d1 p2/d2(exist)     : mkdir p2/d2/d1 */
 		/* gfpcopy p1/d1 p2/d2(not exist) : mkdir p2/d2 */
 		/* gfpcopy p1/f1 p2/(exist)     : copy p2/f1 */
@@ -2605,8 +2605,6 @@ main(int argc, char *argv[])
 				gfprep_error("dst_dir(%s) exists", dst_dir);
 				exit(EXIT_FAILURE);
 			}
-			/* opt_force_copy */
-			create_dst_dir = 0;
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 			e = gfprep_mkdir(dst_is_gfarm, dst_dir, src_dir_mode);
 			if (e != GFARM_ERR_NO_ERROR)
