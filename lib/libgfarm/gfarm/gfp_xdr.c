@@ -523,6 +523,7 @@ gfp_xdr_vsend_ref_size_add(size_t *sizep, const char **formatp, va_list *app)
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
 #else
+	double d;
 #	define nd d
 #endif
 	const char **sp, *s;
