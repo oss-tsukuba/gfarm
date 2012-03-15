@@ -544,7 +544,7 @@ gfprep_hostinfohash_all_free(struct gfarm_hash_table *hash_all)
 static gfarm_error_t
 gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			   struct gfarm_hash_table *hash_info,
-			   int client_scheduling)
+			   int to_write, int client_scheduling)
 {
 	gfarm_error_t e;
 	int nhsis, i, nhost_infos;
@@ -578,9 +578,12 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		nhosts = nhsis;
-		e = gfarm_schedule_hosts_acyclic_to_write(path, nhsis, hsis,
-							  &nhosts,
-							  hosts, ports);
+		if (to_write)
+			e = gfarm_schedule_hosts_acyclic_to_write(
+				path, nhsis, hsis, &nhosts, hosts, ports);
+		else
+			e = gfarm_schedule_hosts_acyclic(
+				path, nhsis, hsis, &nhosts, hosts, ports);
 		if (e != GFARM_ERR_NO_ERROR) {
 			free(hosts);
 			free(ports);
@@ -2722,7 +2725,7 @@ main(int argc, char *argv[])
 		gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
 		e = gfprep_update_hostinfohash(src_dir, &n_src_all,
 					       hash_all_src,
-					       opt_clientsched);
+					       0, opt_clientsched);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfprep_error_e(e, "gfprep_update_hostinfohash_all");
 			exit(EXIT_FAILURE);
@@ -2785,7 +2788,7 @@ main(int argc, char *argv[])
 			gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
 			e = gfprep_update_hostinfohash(dst_dir, &n_all_dst,
 						       hash_all_dst,
-						       opt_clientsched);
+						       1, opt_clientsched);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gfprep_error_e(
 					e, "gfprep_update_hostinfohash_all");
