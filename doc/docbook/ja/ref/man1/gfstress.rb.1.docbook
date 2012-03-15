@@ -26,7 +26,7 @@
 <!-- body begins here -->
 
 <refsect1 id='description'><title>DESCRIPTION</title>
-<para><parameter>テストディレクトリ</parameter>を使用してgfperf-metadata, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
+<para><parameter>テストディレクトリ</parameter>を使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
 </para>
 <para>
 本コマンドはCtrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまで動作し続けます。
