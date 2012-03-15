@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSTRESS.RB" "1" "07 March 2012" "Gfarm" ""
+.TH "GFSTRESS.RB" "1" "15 March 2012" "Gfarm" ""
 
 .SH NAME
 gfstress.rb \- Gfarm 負荷試験を行う。
@@ -13,7 +13,7 @@ gfstress.rb \- Gfarm 負荷試験を行う。
 
 .SH "DESCRIPTION"
 .PP
-\fIテストディレクトリ\fRを使用してgfperf-metadata, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
+\fIテストディレクトリ\fRを使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。
 .PP
 本コマンドはCtrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまで動作し続けます。
 .PP
