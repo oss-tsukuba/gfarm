@@ -13,7 +13,7 @@
 
    (2) gfperf-copy
         ローカルファイルシステムからGfarmへまたは、Gfarmからローカルファイル
-        システムへのファイルコピー性能を即停止ます。
+        システムへのファイルコピー性能を測定します。
 
    (3) gfperf-read
         Gfarmからの読み込み性能を測定します。
@@ -56,8 +56,9 @@
         測定結果は設定ファイルに記述されたDatabase(sqlite3)に格納します。
 
   (14) gfstress.rb
-        上記、gfperf-metadata, gfperf-replica, gfperf-read, gfperf-writeを
-        同時に複数起動し、Gfarmシステムを高負荷状態にするコマンドです。
+        上記、gfperf-metadata, gfperf-tree, gfperf-replica, gfperf-read, 
+        gfperf-writeを同時に複数起動し、Gfarmシステムを高負荷状態にする
+        コマンドです。
 
 3. 性能測定方法について
 
@@ -74,7 +75,10 @@
    (2) CONFIG-gfperf.ja
         gfperf.rbで使用する設定ファイルの記述方法について記載しています。
 
-   (3) SUPPORT-gfperf.ja
+   (3) USING-gfperf.ja
+        gfperf.rbの定期的な起動方法やWEB画面の使用方法について記載しています。
+
+   (4) SUPPORT-gfperf.ja
         性能測定ツールを使用するうえでの注意事項について記載しています。
 
 以上
