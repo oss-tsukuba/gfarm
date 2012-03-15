@@ -81,8 +81,7 @@ gfprep_url_is_gfarm(const char *url)
 int
 gfprep_vasprintf(char **strp, const char *format, va_list ap)
 {
-	int n;
-	size_t size = 32;
+	int n, size = 32;
 	char *p, *np;
 	va_list aq;
 
@@ -317,16 +316,16 @@ struct gfprep_host_info {
 	int max_rw;
 	int n_using; /* src:n_reading, dst:n_writing */
 	int is_available;
-	gfarm_uint64_t disk_used;
-	gfarm_uint64_t disk_avail;
-	gfarm_uint64_t size_writing; /* for dst */
+	gfarm_int64_t disk_used;
+	gfarm_int64_t disk_avail;
+	gfarm_int64_t size_writing; /* for dst */
 };
 
 static pthread_mutex_t mutex_using = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 gfprep_update_using_info(struct gfprep_host_info *info, int add_using,
-			 gfarm_uint64_t add_filesize)
+			 gfarm_int64_t add_filesize)
 {
 	if (info == NULL)
 		return;
@@ -338,7 +337,7 @@ gfprep_update_using_info(struct gfprep_host_info *info, int add_using,
 
 static void
 gfprep_get_using_info(struct gfprep_host_info *info, int *n_using_p,
-		      gfarm_uint64_t *size_writing_p)
+		      gfarm_int64_t *size_writing_p)
 {
 	pthread_mutex_lock(&mutex_using);
 	if (n_using_p)
@@ -1872,7 +1871,7 @@ static gfarm_error_t
 gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size)
 {
 	gfarm_error_t e;
-	gfarm_uint64_t size_writing, avail;
+	gfarm_int64_t size_writing, avail;
 
 	if (!opt.disable_update_disk_avail) {
 		e = gfprep_update_disk_avail(hi);
@@ -1884,6 +1883,7 @@ gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size)
 	else
 		avail = 0;
 	if (avail < gfarm_get_minimum_free_disk_space() || avail < src_size) {
+		hi->is_available = 0;
 		gfprep_warn("not enough space: %s"
 			    "(avail=%"GFARM_PRId64
 			    ", filesize=%"GFARM_PRId64
@@ -1913,7 +1913,7 @@ gfprep_select_dst(int n_array_dst, struct gfprep_host_info **array_dst,
 {
 	struct gfprep_host_info *dst_hi, *tmp_dst_hi;
 	gfarm_error_t e;
-	gfarm_uint64_t size_writing, avail;
+	gfarm_int64_t size_writing, avail;
 	int i, n_writing;
 
 	assert(array_dst && n_array_dst > 0);
