@@ -15,9 +15,8 @@
 struct gfarm_fifo {
 	pthread_mutex_t mutex, mutex_in, mutex_out;
 	pthread_cond_t nonempty, nonfull, finished;
-	int n, in, out, quitting, quited;
+	int n, in, out, quitting, quited, n_ents;
 	void *ents;
-	size_t n_ents;
 	void *tmp;
 	void (*set)(void *, int, void *);
 	void (*get)(void *, int, void *);

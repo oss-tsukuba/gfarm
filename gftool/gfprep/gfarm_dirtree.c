@@ -454,7 +454,7 @@ dents_loop:
 				fwrite(buf, 1, retv, to_parent);
 				if (ferror(to_parent))
 					goto dents_error;
-				if (retv < sizeof(buf))
+				if (retv < (int)sizeof(buf))
 					break; /* EOF */
 			}
 			fclose(tmpfp);
