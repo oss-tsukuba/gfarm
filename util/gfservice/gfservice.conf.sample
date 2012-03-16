@@ -10,7 +10,7 @@ gfmd1_CONFIG_GFARM_OPTIONS="-r -X -A $LOGNAME"
 # gfmd1_SSH=/usr/bin/ssh
 # gfmd1_SUDO=/usr/bin/sudo
 # gfmd1_GFBINDIR=/usr/local/bin
-# gfmd1_PRIVATE=true
+# gfmd1_PRIVATE_MODE=true
 
 ##
 ## gfmd 2
@@ -20,7 +20,7 @@ gfmd2_CONFIG_GFARM_OPTIONS="-r -X -A $LOGNAME"
 # gfmd2_SSH=/usr/bin/ssh
 # gfmd2_SUDO=/usr/bin/sudo
 # gfmd2_GFBINDIR=/usr/local/bin
-# gfmd2_PRIVATE=true
+# gfmd2_PRIVATE_MODE=true
 
 ##
 ## gfsd 1
@@ -30,7 +30,7 @@ gfsd1_CONFIG_GFSD_OPTIONS=
 # gfsd1_SSH=/usr/bin/ssh
 # gfsd1_SUDO=/usr/bin/sudo
 # gfsd1_GFBINDIR=/usr/local/bin
-# gfsd1_PRIVATE=true
+# gfsd1_PRIVATE_MODE=true
 
 ##
 ## gfsd 2
@@ -40,7 +40,7 @@ gfsd2_CONFIG_GFSD_OPTIONS=
 # gfsd2_SSH=/usr/bin/ssh
 # gfsd2_SUDO=/usr/bin/sudo
 # gfsd2_GFBINDIR=/usr/local/bin
-# gfsd2_PRIVATE=true
+# gfsd2_PRIVATE_MODE=true
 
 ##
 ## client 1
