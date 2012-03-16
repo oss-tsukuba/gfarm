@@ -57,6 +57,10 @@ gftool/gfmkdir/mkdir-p.sh
 gftool/gfpath/path_dir.sh
 gftool/gfpath/url_dir.sh
 gftool/gfpath/url_base.sh
+gftool/gfprep/gfpcopy_dir.sh
+gftool/gfprep/gfpcopy_file.sh
+gftool/gfprep/gfprep_m.sh
+gftool/gfprep/gfprep_N.sh
 gftool/gfrmdir/rmdir.sh
 gftool/gfrmdir/rmdir_symlink.sh
 gftool/gfreg/0byte.sh
