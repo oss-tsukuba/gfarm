@@ -44,7 +44,9 @@ DOCBOOK = \
 	gfperf-wrapper.sh.1 \
 	gfperf-write.1 \
 	gfperf.rb.1 \
-	gfstress.rb.1
+	gfstress.rb.1 \
+	gfservice.1 \
+	gfservice-agent.1
 
 #	gfarm_agent.1 \
 #	gfcd.1 \
