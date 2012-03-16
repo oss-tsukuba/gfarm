@@ -93,7 +93,7 @@ get_sudo()
 {
 	log_debug "get_sudo: HOSTID=$1, USER=$2"
 
-	if [ "X`eval echo \\$$1_PRIVATE`" = Xtrue ]; then
+	if [ "X`eval echo \\$$1_PRIVATE_MODE`" = Xtrue ]; then
 		echo ""
 		log_debug "get_sudo: SUDO="
 		log_debug "end get_sudo"
@@ -1430,7 +1430,8 @@ subcmd_mount()
 			OPTIONS="$OPTIONS $I"
 		fi
 	done
-	exec_client_host_agent $HOSTID - mount "dir=$DIR" "options=$OPTIONS"
+	exec_client_host_agent $HOSTID - mount "directory=$DIR" \
+		"options=$OPTIONS"
 	[ $? -ne 0 ] && log_error "gfservice mount failed"
 
 	log_debug "end subcmd_mount"
@@ -1445,7 +1446,7 @@ subcmd_unmount()
 
 	check_argc $# 1
 	check_client_hostid $HOSTID
-	exec_client_host_agent $HOSTID - unmount "dir=$1"
+	exec_client_host_agent $HOSTID - unmount "directory=$1"
 	[ $? -ne 0 ] && log_error "gfservice unmount failed"
 
 	log_debug "end subcmd_unmount"
