@@ -96,14 +96,16 @@ gfarm_fifo_simple_next(gfarm_fifo_simple_t *fifo, void **pp)
 
 struct gfarm_dirtree {
 	pthread_mutex_t mutex;
-	pthread_cond_t wait;
+	pthread_cond_t free_procs;
+	pthread_cond_t get_ents;
 	gfpara_t *gfpara_handle;
 	const char *src_dir;
 	const char *dst_dir;
 	int src_type; /* url type */
 	int dst_type; /* url type */
 	int n_parallel;
-	int n_wait;
+	int n_free_procs;
+	unsigned int n_get_ents;
 	int is_recursive;
 	gfarm_fifo_simple_t *fifo_dirs;
 	gfarm_fifo_simple_t *fifo_ents;
@@ -679,32 +681,11 @@ dirtree_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 		return (GFPARA_NEXT);
 	}
 	gfarm_mutex_lock(&handle->mutex, diag, "mutex");
-#if 1 /* balanced following directory */
-	{
-		static int check = 0;
-		if (check) {
-			check = 0;
-			/* nonblock */
-			e = gfarm_fifo_simple_next(handle->fifo_dirs, &p);
-			if (e == GFARM_ERR_NO_ERROR) {
-				gfarm_cond_broadcast(&handle->wait, diag,
-						     "wait");
-				gfarm_mutex_unlock(&handle->mutex, diag,
-						   "mutex");
-				subdir = p;
-				gfpara_send_int(child_in,
-						DIRTREE_CMD_GET_DENTS);
-				gfpara_send_string(child_in, "%s", subdir);
-				free(subdir);
-				return (GFPARA_NEXT);
-			}
-		} else
-			check = 1;
-	}
-#endif
 retry:
+	/* Don't read fifo_dirs before fifo_ents */
 	e = gfarm_fifo_simple_next(handle->fifo_ents, &p); /* nonblock */
 	if (e == GFARM_ERR_NO_ERROR) {
+		handle->n_get_ents++;
 		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		ent = p;
 		gfpara_send_int(child_in, DIRTREE_CMD_GET_FINFO);
@@ -714,9 +695,14 @@ retry:
 		gfpara_data_set(proc, ent);
 		return (GFPARA_NEXT);
 	}
+	if (handle->n_get_ents > 0) { /* wait all dirtree_recv_finfo() */
+		gfarm_cond_wait(&handle->get_ents, &handle->mutex, diag,
+				"get_ents");
+		goto retry;
+	}
 	e = gfarm_fifo_simple_next(handle->fifo_dirs, &p); /* nonblock */
 	if (e == GFARM_ERR_NO_ERROR) {
-		gfarm_cond_broadcast(&handle->wait, diag, "wait");
+		gfarm_cond_broadcast(&handle->free_procs, diag, "free_prpcs");
 		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		subdir = p;
 		gfpara_send_int(child_in, DIRTREE_CMD_GET_DENTS);
@@ -724,27 +710,30 @@ retry:
 		free(subdir);
 		return (GFPARA_NEXT);
 	} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
-		handle->n_wait++;
-		if (handle->n_wait >= handle->n_parallel) { /* done */
-			gfarm_cond_broadcast(&handle->wait, diag, "wait");
+		handle->n_free_procs++;
+		if (handle->n_free_procs >= handle->n_parallel) { /* done */
+			gfarm_cond_broadcast(&handle->free_procs, diag,
+					     "free_procs");
 			gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 			gfpara_send_int(child_in, DIRTREE_CMD_TERMINATE);
 			return (GFPARA_NEXT);
 		}
-		gfarm_cond_wait(&handle->wait, &handle->mutex, diag, "wait");
-		if (handle->n_wait >= handle->n_parallel) { /* done */
-			gfarm_cond_broadcast(&handle->wait, diag, "wait");
+		gfarm_cond_wait(&handle->free_procs, &handle->mutex, diag,
+				"free_procs");
+		if (handle->n_free_procs >= handle->n_parallel) { /* done */
+			gfarm_cond_broadcast(&handle->free_procs, diag,
+					     "free_procs");
 			gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 			gfpara_send_int(child_in, DIRTREE_CMD_TERMINATE);
 			return (GFPARA_NEXT);
 		}
-		handle->n_wait--;
+		handle->n_free_procs--;
 		goto retry;
 	} else { /* never reach */
-		handle->n_wait++;
+		handle->n_free_procs++;
 		fprintf(stderr, "FATAL: gfarm_fifo_simple_next: %s\n",
 			gfarm_error_string(e));
-		gfarm_cond_broadcast(&handle->wait, diag, "wait");
+		gfarm_cond_broadcast(&handle->free_procs, diag, "free_procs");
 		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 		gfpara_send_int(child_in, DIRTREE_CMD_TERMINATE);
 		return (GFPARA_NEXT);
@@ -780,21 +769,22 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 			gfpara_recv_int(child_out, &ent->src_nlink); /* 4 */
 			gfpara_recv_int(child_out, &d_type_int); /* 5 */
 			ent->src_d_type = (unsigned char) d_type_int;
+			gfarm_mutex_lock(&handle->mutex, diag, "mutex");
 			if (handle->is_recursive &&
 			    ent->src_d_type == GFS_DT_DIR) {
 				char *subpath_copy = strdup(subpath);
 				if (subpath_copy == NULL) {
+					gfarm_mutex_unlock(&handle->mutex,
+							   diag, "mutex");
 					fprintf(stderr, "FATAL: no memory\n");
 					gfpara_recv_purge(child_out);
 					return (GFPARA_FATAL);
 				}
-				gfarm_mutex_lock(&handle->mutex, diag,
-						 "mutex");
 				e = gfarm_fifo_simple_enter(handle->fifo_dirs,
 							    subpath_copy);
-				gfarm_mutex_unlock(&handle->mutex, diag,
-						   "mutex");
 				if (e != GFARM_ERR_NO_ERROR) {
+					gfarm_mutex_unlock(&handle->mutex,
+							   diag, "mutex");
 					fprintf(stderr,
 					"FATAL: gfarm_fifo_simple_enter: "
 					"%s\n", gfarm_error_string(e));
@@ -806,7 +796,6 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 				gfpara_recv_int64(child_out, &ent->src_size);
 			else
 				ent->src_size = 0;
-			gfarm_mutex_lock(&handle->mutex, diag, "mutex");
 			e = gfarm_fifo_simple_enter(handle->fifo_ents, ent);
 			gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -903,14 +892,21 @@ dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 static int
 dirtree_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 {
-	int status;
+	static const char diag[] = "dirtree_recv";
+	gfarm_dirtree_t *handle = param;
+	int status, retv;
 
 	gfpara_recv_int(child_out, &status);
 	switch (status) {
 	case DIRTREE_STAT_GET_DENTS_OK:
 		return (dirtree_recv_dents(child_out, proc, param));
 	case DIRTREE_STAT_GET_FINFO_OK:
-		return (dirtree_recv_finfo(child_out, proc, param));
+		retv = dirtree_recv_finfo(child_out, proc, param);
+		gfarm_mutex_lock(&handle->mutex, diag, "mutex");
+		handle->n_get_ents--;
+		gfarm_cond_broadcast(&handle->get_ents, diag, "get_ents");
+		gfarm_mutex_unlock(&handle->mutex, diag, "mutex");
+		return (retv);
 	case DIRTREE_STAT_IGNORE:
 		return (GFPARA_NEXT);
 	case DIRTREE_STAT_END:
@@ -1054,8 +1050,10 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 		return (e);
 	}
 	gfarm_mutex_init(&handle->mutex, diag, "mutex");
-	gfarm_cond_init(&handle->wait, diag, "wait");
-	handle->n_wait = 0;
+	gfarm_cond_init(&handle->free_procs, diag, "free_procs");
+	gfarm_cond_init(&handle->get_ents, diag, "get_ents");
+	handle->n_free_procs = 0;
+	handle->n_get_ents = 0;
 	handle->is_recursive = is_recursive;
 	e = gfpara_start(handle->gfpara_handle);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1065,7 +1063,8 @@ gfarm_dirtree_open(gfarm_dirtree_t **handlep,
 		gfarm_fifo_simple_free(handle->fifo_dirs);
 		gfarm_fifo_simple_free(handle->fifo_ents);
 		gfarm_mutex_destroy(&handle->mutex, diag, "mutex");
-		gfarm_cond_destroy(&handle->wait, diag, "wait");
+		gfarm_cond_destroy(&handle->free_procs, diag, "free_procs");
+		gfarm_cond_destroy(&handle->get_ents, diag, "get_ents");
 		free(handle);
 		return (e);
 	}
@@ -1139,7 +1138,8 @@ gfarm_dirtree_close(gfarm_dirtree_t *handle)
 	gfarm_fifo_simple_free(handle->fifo_dirs);
 	gfarm_fifo_simple_free(handle->fifo_ents);
 	gfarm_mutex_destroy(&handle->mutex, diag, "mutex");
-	gfarm_cond_destroy(&handle->wait, diag, "wait");
+	gfarm_cond_destroy(&handle->free_procs, diag, "free_procs");
+	gfarm_cond_destroy(&handle->get_ents, diag, "get_ents");
 	free(handle);
 
 	return (e);
