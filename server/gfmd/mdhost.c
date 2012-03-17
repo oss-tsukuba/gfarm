@@ -468,6 +468,19 @@ mdhost_set_seqnum_error(struct mdhost *m)
 	mdhost_set_seqnum_state(m, seqnum_state_error);
 }
 
+void
+mdhost_set_seqnum_state_by_error(struct mdhost *m, gfarm_error_t e)
+{
+	switch (e) {
+	case GFARM_ERR_EXPIRED:
+		mdhost_set_seqnum_out_of_sync(m);
+		break;
+	default:
+		mdhost_set_seqnum_error(m);
+		break;
+	}
+}
+
 static void
 mdhost_invalidate(struct mdhost *m)
 {
