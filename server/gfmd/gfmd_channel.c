@@ -515,10 +515,7 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 	e = db_journal_fetch(reader, min_seqnum, &data, &data_len, &from_sn,
 	    &to_sn, &no_rec, mdhost_get_name(mh));
 	if (e != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_EXPIRED)
-			mdhost_set_seqnum_out_of_sync(mh);
-		else
-			mdhost_set_seqnum_error(mh);
+		mdhost_set_seqnum_state_by_error(mh, e);
 		gflog_debug(GFARM_MSG_1002977,
 		    "reading journal to send to %s: %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
@@ -620,6 +617,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		if ((e = db_journal_reader_reopen_if_needed(&reader,
 		    mdhost_get_last_fetch_seqnum(mh), &inited))
 		    != GFARM_ERR_NO_ERROR) {
+			mdhost_set_seqnum_state_by_error(mh, e);
 			gflog_error(GFARM_MSG_1002981,
 			    "gfmd_channel(%s) : %s",
 			    mdhost_get_name(mh),

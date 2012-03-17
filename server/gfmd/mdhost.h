@@ -52,6 +52,7 @@ void mdhost_set_seqnum_unknown(struct mdhost *);
 void mdhost_set_seqnum_out_of_sync(struct mdhost *);
 void mdhost_set_seqnum_ok(struct mdhost *);
 void mdhost_set_seqnum_error(struct mdhost *);
+void mdhost_set_seqnum_state_by_error(struct mdhost *, gfarm_error_t);
 int mdhost_has_async_replication_target(void);
 int mdhost_is_master(struct mdhost *);
 void mdhost_set_is_master(struct mdhost *, int);
