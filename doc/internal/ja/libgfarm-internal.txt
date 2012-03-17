@@ -83,80 +83,265 @@ API 利用者が使用する関数は gfs_statsw.c に実装されている次の関数である。
     エントリをキャッシュ領域に保持する期間(ミリ秒単位)。
     デフォルトで 1 秒。
 
-■  gfmd 接続のフェイルオーバ
+■  gfm_connection フェイルオーバ
 
-gfmdフェイルオーバ対応の実装方法について説明する。
+gfm_connection フェイルオーバの実装方法および内部仕様について説明する。
 
-gfm_client_* 系の関数による gfmd へのアクセスにおいて gfmd フェイルオーバ
-対応の処理を追加する。
+* gfm_connection フェイルオーバとは
 
-1. gfs_pio_should_failover() によって
-   フェイルオーバを試みるきかどうかを判断する。
-2. 1. の戻値が 1 の場合は、gfs_pio_failover() を呼ぶ。
-3. 2. の戻値が GFARM_ERR_NO_ERROR のとき、エラーの発生した gfm_client_* 関数
-   を再度実行する。
-4. 3. での再実行で発生するエラーに対しては、
-   gfs_pio_should_failover() / gfs_pio_failover() を呼ばないこと。
-   そのようなエラーは高い確率でフェイルオーバ先の gfmd との接続に問題があると
-   考えられ、それ以上のフェイルオーバ処理は無駄であると考えられるため。
+  - gfmd フェイルオーバ を検知した場合、gfm_connection の接続を復帰する。
+    gfmd フェイルオーバが発生する前の情報を使用して GFS_File の 整合性を
+    合わせ、クライアント/gfsd が継続的に gfmd へアクセスできるようにする。
 
-* gfs_pio_should_failover
+  - gfmd がフェイオーバした場合、接続先の gfmd プロセスが切り替わるため、
+    gfmd 側のメモリに存在していた情報は初期状態に戻る。多少のレースコンディ
+    ションの可能性を受け入れて、クライアントまたは gfsd が持つ情報を元に
+    情報を復元する。
+    ただし、gfmd プロセスが切り替わった場合だけでなく、一時的な通信エラー
+    で復帰後の gfmd プロセスは切り替わらない場合でも適切に復帰できるように
+    する。
 
-  #include "gfs_pio_failover.h"
+  - 復元する情報は process の割り当ておよび process 内の fd である。fd は一度削
+    除して新しい系列で割り当て直す。
 
-  int gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
+  - 接続確立時の初期の通信エラー（ホストと通信できない、認証・process allocの
+    通信エラー）についてのリトライ処理を含む。
 
-  DESCRIPTION
+  - gfm_connection フェイルオーバは以下の以下のケースを考慮している。
 
-    gfmd 接続のフェイルオーバを試みるべきかをどうかを判断する。
-    冗長化構成の設定がされていない場合はフェイルオーバは 0 を返す。
+    o: 切断しない   x: 切断する
 
-  PARAMETER
+    | |client-gfmd| gfsd-gfmd |client-gfsd|
+    |-+-----------+-----------+-----------|
+    |1|     x     |     x     |     o     |
+    |2|     x     |     o     |     o     |
+    |3|     o     |     x     |     o     |
 
-    e : gfmd へのアクセスで生じたエラー。
-    gf : アクセス対象のファイル。
+* gfmd フェイルオーバの検知とは
 
-  RETURN VALUE
+  クライアントにおいて gfmd フェイルオーバを検知する基準には、以下の3つがあ
+  る。
+  
+  1. gfm_connection を使った gfmd へのアクセスにおいて、
+     CONNECTION_IS_ERROR(e) が真となった場合。
 
-    1 : フェイルオーバを試みるべき。
-	0 : フェイルオーバをできる状態ではない。
+  2. gfsd が GFARM_ERR_GFMD_FAILED_OVER を返した場合。
+     gfsd 側ではクライアント側同様に、gfm_connectionによるアクセスで
+     IS_CONNECTION_ERROR(e) が真になったときを gfmd フェイルオーバ検知とし
+     ている。
 
-* gfs_pio_failover
+  3. gfarm_client_process_set() で GFARM_ERR_NO_SUCH_PROCESS が返された
+     場合。このケースは実装としては一ヶ所だけである。
+     gfmd へ接続後、gfs_connection を取得する前に gfmd フェイルオーバが発
+     生すると、プロセス情報が失われてこのケースが発生する。
 
-  #include "gfs_pio_failover.h"
+* gfm_connection フェイルオーバの対応範囲
 
-  gfarm_error_t gfs_pio_failover(GFS_File gf)
+  1. gfarm/gfarm.h とその中で include される gfmd アクセスを伴う関数
 
-  DESCRIPTION
+  2. gfarm2fs から使用される gfmd アクセスを伴う非公開関数
 
-    gfmd 接続をフェイルオーバする。
-	フェイルオーバは引数の gf だけでなく、gf に関連する gfmd_connection に格納
-	されたオープン中の GFS_File 全てに対して行われる。
+  3. 1., 2. のフェイルオーバ対応により、内部的に共有化されていることで
+     フェイルオーバ対応している関数
 
-	オープン後、スケジューリング済みの GFS_File については、GFS_File に関連する
-	gfm_connection に加え、gfsd 内の gfm_connection もフェイルオーバする。
-	未スケジューリングの GFS_File については、gfsd と接続していないので
-	GFS_File に関連する gfm_connection のみが対象である。
+  gfm_connection を直接使用している関数は非公開関数であり、
+  フェイルオーバ対応するには個別に変更しなければならない。
+  gftool 下にいくつかそのような非公開関数を使用したツールがある。
 
-    スケジューリング済みの GFS_File の gfs_connection はフェイルオーバ処理中に
-	一度だけ GFS_PROTO_PROCESS_RESET を呼び出し、pid を再設定する。
-	この処理に失敗すると、GFS_File が gfs_connection を持つにも関わらず、
-	pid が 0 であるという特殊な状態になることに注意。
-	このような場合、GFS_File.error には GFARM_ERR_CONNECTION_ABORTED
-	が設定される。
+* gfm_connection フェイルオーバに対応した gfmd アクセスを行う方法
 
-    GFS_File の pid の再設定に成功した後、gfmd に対して fd の取得を試みるが、
-	ここでエラーが発生すると GFS_File.fd は -1 に設定され、GFS_File.error には
-	gfmd へのアクセス時に発生したエラーが設定される。
+  フェイルオーバ対応する方法は大きく分類して以下の3つである。
 
-  PARAMETER
+  1. gfmd へアクセスする際、フェイルオーバ機能付きの関数を呼ぶ。
+    ... gfm_inode_op_readonly() などの関数
 
-    gf : アクセス対象のファイル。
+  2. gfsd へアクセスした後、gfs_pio_should_failover() が真のとき
+     gfs_pio_failover() を呼ぶ。
 
-  RETURN VALUE
+  3. 直接/間接的に gfmd フェイルオーバを検知したとき、
+    gfm_client_connection_failover() を呼ぶ。
 
-    GFARM_ERR_NO_ERROR : 成功。
-	それ以外 : - gfm_connection のフェイルオーバに失敗した。
-	           - gf のフェイルオーバに対して個別にエラーが発生した場合
-			     (他のオープン中 GFS_File に対しては成功したかもしれない)。
+  例外として、gfm_close_fd() はフェイルオーバせず、フェイルオーバを検知した
+  という情報を設定するだけである。
+
+* 方法1. gfmd へアクセスする際、フェイルオーバ機能付きの関数を呼ぶ
+
+  libgfarm 実装者が使うファイルオーバ対応関数は以下のとおりである。
+  (以下の関数を内部で呼んでいる関数は省略した)
+
+  gfm_connection取得
+    gfarm_url_parse_metadb()
+
+    (gfm_client_connection_and_process_acquire() はフェイルオーバを検知
+    するとリトライはするが、その他のフェイルオーバ処理は行わない)
+
+  open
+    gfm_open_fd_with_ino()
+
+  inode に対する操作
+    gfm_inode_op_readonly()
+    gfm_inode_op_modifiable()
+    gfm_inode_op_no_follow_readonly()
+    gfm_inode_op_no_follow_modifiable()
+
+  パスに対する操作
+    gfm_name_op_modifiable()
+    gfm_name2_op_modifiable()
+
+    gfm_client_compound_file_op_readonly()
+    gfm_client_compound_file_op_modifiable()
+
+  主にディレクトリ操作
+    gfm_client_compound_fd_op_readonly()
+
+  上記以外の操作
+    gfm_client_rpc_with_failover()
+
+
+  *_readonly() は参照形操作、*_modifiable() は編集系操作となっている。
+
+  参照形操作の場合、フェイルオーバを検知したら単にリトライしている。
+
+  編集系操作の場合も単にリトライしている。このリトライ処理にはレース
+  コンディションが存在し、レースコンディションの内容は操作の種類によって
+  異なる。
+
+  理想的にはクライアントが gfmd 内でのトランザクション完了有無を知ってリトライ
+  を行うのが良いのだが、現状トランザクション管理は行っていない。
+  そのため 編集系実行時にフェイルオーバを検知したら、必ずリトライして特定の
+  エラーが発生したら warning を出力するという妥協案を実装した。
+  
+  warning を出力するかどうかは、フェイルオーバ対応関数の関数ポインタ型引数
+  must_be_warned_op で判断する。
+
+  例) mkdir をリトライ
+      -> GFARM_ERR_ALREADY_EXISTS
+      -> "リトライしてエラーが発生したが、おそらく操作は成功している"
+         という意味の warning を出力。
+
+      当然、mkdir を実行する前から GFARM_ERR_ALREADY_EXISTS が発生する
+      可能性があったり、フェイルオーバ直後に別のクライアントが mkdir
+      したことで GFARM_ERR_ALREADY_EXISTS が発生する可能性もあるが、
+      それらへの対処は将来の課題である。
+
+* 方法2. gfsd へアクセスした後、gfs_pio_should_failover() が真のとき
+         gfs_pio_failover() を呼ぶ。
+
+  gfs_connection を通じたアクセスにおいて、GFARM_ERR_GFMD_FAILED_OVER が
+  返されたら、クライアントよりもgfsdが先にgfmdフェイルオーバを検知したこと
+  になる。
+  また、gfarm_filesystem に記録されたフェイルオーバ発生の情報、
+  gfarm_filesystem_failover_detected() が真のときもフェイルオーバを行う
+  必要がある。gfarm_filesystem_failover_detected() はフェイルオーバ検知後
+  にまだ gfm_connection フェイルオーバが実行されていないことを意味する。
+  そのようなケースは現時点では gfm_close_fd() で通信エラーが発生した場合
+  のみである。
+
+  いずれの場合も、gfs_pio_should_failover() で条件に該当するかどうかを判断
+  し、真であれば gfs_pio_failover() を呼ぶ必要がある。
+  gfs_pio_*() 系の関数内ですでに実装しているので、新しい GFS_PROTO のプロ
+  トコルを追加するときに必要となる方法である。
+
+* 方法3. 直接/間接的 gfmd フェイルオーバを検知したとき
+         gfm_client_connection_failover() を呼ぶ。
+
+  方法1., 2. 以外でgfmdフェイルオーバを検知するようなケースはおそらくない
+  であろうし、そのような実装状況になったときは、方法1., 2.を使えないか検討
+  しなければならない。
+  現状では唯一、gfs_client_connection_and_process_acquire() 内で方法3.を
+  使っている。
+
+* gfmd connection フェイルオーバしない gfmd アクセス
+
+  gfmd へアクセスする処理の中で、gfm_close_fd() だけは gfmd フェイルオーバ
+  を検知しても gfmd connection ファイルオーバを行わない。 gfm_close_fd()
+  の後はファイル操作を何もしない可能性が高いため、
+  フェイルオーバを敢えて避けた。
+
+* failover count
+
+  gfm_connecton フェイルオーバが実行されると
+  gfarm_filesystem_failover_count() がインクリメントされる。
+  gfm_connection および gfs_connection のメンバ failover_count は
+  gfarm_filesystem_failover_count() と異なる値のとき、まだフェイルオーバ
+  処理されていないことを意味する。
+
+  gfm_connection および gfs_connection のメンバ failover_count が
+  gfarm_filesystem_failover_count() とずれる原因は、connection cache である。
+  gfm_connection についてはフェイルオーバの主処理 failover0() 内で
+  gfarm_filesystem_failover_count() とずれているものが破棄される。
+
+  gfs_connection については、フェイルオーバ処理(具体的ににはfailover0())の
+  処理対象は、open中 GFS_File に関連する gfs_conneciton であるから、
+  GFS_File の close 後、connection cache に返されたままの gfs_connection
+  はファイルオーバ処理されない。
+  そのような gfs_connection は gfs_client_connection_and_process_acquire()
+  で gfs_connection が次に要求されたときに process reset され、
+  gfarm_filesystem_failover_count() に failover_count が追いつく。
+
+  ファイルオーバ処理の中で connection cache は対処の難しいものの一つであり、
+  機能拡張・修正の際に注意を払わなければならない。
+
+* gfarm_filesystem_failover_detected()
+
+  gfarm_filesystem_failover_detected() は gfm_client_*() で gfmd へアクセス
+  した際に通信エラーが発生すると真に設定される。
+  gfarm_filesystem_failover_detected() が真の場合、次に gfmd へアクセスする
+  までにフェイルオーバ処理を行わなければならない。
+
+* gfsd 内の gfm_connection フェイルオーバ
+
+  クライアント/gfmd 間と gfsd/gfmd 間で同様に言えることとして、
+  gfm_connection が切断したら、保持している fd の値が gfmd と同期していない
+  ので無効であるということである。
+
+  gfsd では fd の値が gfmd と同期しているか否かを、fd_usable_to_gfmd に
+  格納している。fd_usable_to_gfmd はフェイルオーバが検知されると偽に設定
+  され、クライアントから GFS_PROTO_PROCESS_RESET が呼ばれると真に設定される。
+
+  fd が同期していない状態でも、gfsd 上で保持しているファイルのプロパティや
+  close することを gfmd へ伝えて、書き込んでいたファイルについては
+  generation update する必要があるために、GFM_PROTO_FHCLOSE_READ、
+  GFM_PROTO_FHCLOSE_WRITE、GFM_PROTO_GENERATION_UPDATED_BY_COOKIE がある。
+  これらのプロトコルは fd を用いず、inum / gen / cookie を用いて
+  操作対象のファイルを特定する。
+
+* gfmd connection フェイルオーバの主処理
+
+  gfmd connectionフェイルオーバの主処理は gfs_pio_failover.c:failover0()
+  で行われる。以下、failover0() の処理の流れである。
+
+  1. 新しいgfm_connectionを取得する。
+
+  2. open中の GFS_File に対して GFM_PROTO_CLOSE を呼ぶ。
+     クライアント - gfsd 間の接続は正常である可能性があり、
+     スケジュール済みの GFS_File については、gfsd 上では close せず、
+     新しい fd を割り当てるのみ。
+
+  3. open中のGFS_Fileに新しいgfm_connectionを設定する。
+
+  4. open中のGFS_Fileが使用しているgfs_connectionに対して、
+     GFS_PROTO_PROCESS_RESET を実行する。
+
+  5. open中のGFS_Fileに対してGFM_PROTO_OPENを呼んで、新しいfdを設定する。
+
+  [補足]
+
+  - open中の GFS_File とは、gfarm_filesystemに関連付いたGFS_Fileのリストである。
+
+  - オープン後、スケジューリング済みの GFS_File については、GFS_File に関
+    連する gfm_connection に加え、gfsd 内の gfm_connection もフェイルオーバ
+    する。 未スケジューリングの GFS_File については、gfsd と接続していない
+    ので GFS_File に関連する gfm_connection のみが対象である。
+
+  - スケジューリング済みの GFS_File の gfs_connection はフェイルオーバ処理
+    中に一度だけ GFS_PROTO_PROCESS_RESET を呼び出し、pid を再設定する。こ
+    の処理に失敗すると、GFS_File が gfs_connection を持つにも関わらず、pid
+    が 0 であるという特殊な状態になることに注意。
+    そのような場合、GFS_File.error には GFARM_ERR_CONNECTION_ABORTED が設定
+    される。
+
+  - GFS_File の pid の再設定に成功した後、gfmd に対して fd の取得を試みるが、
+    ここでエラーが発生すると GFS_File.fd は -1 に設定され、GFS_File.error には
+    gfmd へのアクセス時に発生したエラーが設定される。
 
