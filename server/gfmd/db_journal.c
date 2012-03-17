@@ -56,8 +56,14 @@
 
 static struct journal_file	*self_jf;
 static const struct db_ops	*journal_apply_ops;
+/*
+ * *_op function pointers defined for avoiding to depend other object files
+ * because gfjournal command depends db_journal.o.
+ */
 static void			(*db_journal_fail_store_op)(void);
 static gfarm_error_t		(*db_journal_sync_op)(gfarm_uint64_t);
+static void			(*db_journal_remove_db_update_info_op)(
+					gfarm_uint64_t, const char *);
 
 struct db_journal_recv_info {
 	gfarm_uint64_t from_sn, to_sn;
@@ -197,6 +203,13 @@ void
 db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 {
 	db_journal_sync_op = func;
+}
+
+void
+db_journal_set_remove_db_update_info_op(void (*func)(gfarm_uint64_t,
+	const char *))
+{
+	db_journal_remove_db_update_info_op = func;
 }
 
 gfarm_error_t
@@ -3997,8 +4010,10 @@ db_journal_recvq_proc(int *canceledp)
 	}
 	if ((e = journal_file_write_raw(self_jf, ri->recs_len, ri->recs,
 	    &last_seqnum, &journal_slave_transaction_nesting))
-	    == GFARM_ERR_NO_ERROR)
+	    == GFARM_ERR_NO_ERROR) {
 		journal_seqnum = last_seqnum;
+		db_journal_remove_db_update_info_op(journal_seqnum, diag);
+	}
 	free(ri->recs);
 	free(ri);
 	if (gfarm_get_journal_sync_file())

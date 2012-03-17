@@ -30,6 +30,10 @@ struct remote_peer {
 	struct remote_peer *next_sibling;	/* must be a remote peer */
 
 	int port, proto_family, proto_transport; /* for gfarm_file_trace */
+
+	/* update info */
+	gfarm_uint64_t db_update_seqnum;
+	gfarm_uint64_t db_update_flags;
 };
 
 struct peer *
@@ -86,6 +90,39 @@ static struct peer *
 remote_peer_get_parent(struct peer *peer)
 {
 	return (local_peer_to_peer(peer_to_remote_peer(peer)->parent_peer));
+}
+
+gfarm_uint64_t
+remote_peer_get_db_update_seqnum(struct remote_peer *peer)
+{
+	return (peer->db_update_seqnum);
+}
+
+void
+remote_peer_set_db_update_seqnum(struct remote_peer *peer,
+	gfarm_uint64_t seqnum)
+{
+	peer->db_update_seqnum = seqnum;
+}
+
+gfarm_uint64_t
+remote_peer_get_db_update_flags(struct remote_peer *peer)
+{
+	return (peer->db_update_flags);
+}
+
+void
+remote_peer_merge_db_update_flags(struct remote_peer *peer,
+	gfarm_uint64_t flags)
+{
+	peer->db_update_flags |= flags;
+}
+
+void
+remote_peer_clear_db_update_info(struct remote_peer *peer)
+{
+	peer->db_update_seqnum = 0;
+	peer->db_update_flags = 0;
 }
 
 static int
@@ -228,6 +265,7 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	remote_peer->proto_family = proto_family;
 	remote_peer->proto_transport = proto_transport;
 	remote_peer->port = port;
+	remote_peer_clear_db_update_info(remote_peer);
 
 	local_peer_add_child(parent_local_peer,
 	    remote_peer, &remote_peer->next_sibling);

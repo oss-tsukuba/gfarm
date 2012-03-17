@@ -8,3 +8,8 @@ void remote_peer_for_each_sibling(struct remote_peer *,
 	void (*)(struct remote_peer *));
 struct remote_peer *remote_peer_id_lookup_from_siblings(struct remote_peer *,
 	gfarm_int64_t);
+gfarm_uint64_t remote_peer_get_db_update_seqnum(struct remote_peer *);
+void remote_peer_set_db_update_seqnum(struct remote_peer *, gfarm_uint64_t);
+gfarm_uint64_t remote_peer_get_db_update_flags(struct remote_peer *);
+void remote_peer_merge_db_update_flags(struct remote_peer *, gfarm_uint64_t);
+void remote_peer_clear_db_update_info(struct remote_peer *);

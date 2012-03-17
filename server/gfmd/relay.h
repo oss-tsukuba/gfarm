@@ -8,15 +8,27 @@ enum request_reply_mode {
 	RELAY_TRANSFER,
 };
 
+/* db_update_info flags */
+/* XXXRELAY define flags for meta data update here */
+#define DBUPDATE_USER		((gfarm_uint64_t)1 << 0)
+#define DBUPDATE_NOWAIT		((gfarm_uint64_t)1 << 63)
+				/* NOWAIT is not transfered in protocol */
+#define DBUPDATE_PROTOCOL_MASK	(GFARM_UINT64_MAX & ~DBUPDATE_NOWAIT)
+#define DBUPDATE_ALL		DBUPDATE_PROTOCOL_MASK
+
 typedef gfarm_error_t (*get_request_op_t)(enum request_reply_mode,
 	struct peer *, size_t *, int, struct relayed_request *, void *,
 	const char *);
 typedef gfarm_error_t (*put_reply_op_t)(enum request_reply_mode,
 	struct peer *, size_t *, int, void *, const char *);
 
+void relay_init(void);
 gfarm_error_t gfm_server_get_request_with_relay(struct peer *, size_t *,
 	int, struct relayed_request **, const char *,
 	gfarm_int32_t, const char *, ...);
+gfarm_error_t gfm_server_get_request_with_relaywait(struct peer *, size_t *,
+	int, struct relayed_request **, const char *,
+	gfarm_int32_t, gfarm_uint64_t, const char *, ...);
 gfarm_error_t gfm_server_put_reply_with_relay(
 	struct peer *, gfp_xdr_xid_t, size_t *,
 	struct relayed_request *, const char *,
@@ -28,5 +40,11 @@ gfarm_error_t gfm_server_put_reply_with_vrelay(struct peer *, size_t *,
 gfarm_error_t gfm_server_request_reply_with_vrelay(struct peer *, gfp_xdr_xid_t,
 	int, get_request_op_t, put_reply_op_t, gfarm_int32_t, void *,
 	const char *);
+gfarm_error_t gfm_server_request_reply_with_vrelaywait(struct peer *,
+	gfp_xdr_xid_t, int, get_request_op_t, put_reply_op_t, gfarm_int32_t,
+	gfarm_uint64_t, void *, const char *);
 int request_reply_giant_lock(enum request_reply_mode);
 int request_reply_giant_unlock(enum request_reply_mode, gfarm_error_t);
+void master_set_db_update_info_to_peer(struct peer *, gfarm_uint64_t);
+gfarm_error_t slave_add_initial_db_update_info(gfarm_uint64_t, const char *);
+void slave_clear_db_update_info(void);

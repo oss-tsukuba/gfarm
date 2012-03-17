@@ -811,10 +811,10 @@ gfm_server_user_info_get_by_names(
 	c.users = NULL;
 	c.error = GFARM_ERR_NO_ERROR;
 
-	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
+	if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid, skip,
 	    gfm_server_user_info_get_by_names_request,
 	    gfm_server_user_info_get_by_names_reply,
-	    GFM_PROTO_USER_INFO_GET_BY_NAMES, &c, diag))
+	    GFM_PROTO_USER_INFO_GET_BY_NAMES, DBUPDATE_USER, &c, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001500, "%s: %s",
 			diag, gfarm_error_string(e));

@@ -631,7 +631,8 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		if (inited)
 			mdhost_set_journal_file_reader(mh, reader);
 	}
-	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
+	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "l",
+	    db_journal_get_current_seqnum());
 	if (mdhost_is_sync_replication(mh)) {
 		gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
 		    SYNC_MUTEX_DIAG);
@@ -647,13 +648,17 @@ static gfarm_error_t
 gfmdc_client_journal_ready_to_recv_result(struct mdhost *mh, struct peer *peer,
 	size_t size, gfarm_error_t e, void *closure, const char *diag)
 {
+	gfarm_uint64_t seqnum;
+
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, ""))
+	if ((e = gfmdc_client_recv_result(peer, mh, size, diag, "l", &seqnum))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002982, "%s : %s",
 		    mdhost_get_name(mh), gfarm_error_string(e));
+	else
+		e = slave_add_initial_db_update_info(seqnum, diag);
 	return (e);
 }
 
@@ -825,6 +830,7 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	} else {
 		rpeer = remote_peer_to_peer(remote_peer);
 		peer_add_ref(rpeer);
+		remote_peer_clear_db_update_info(remote_peer);
 		/* XXXRELAY split this to another thread */
 		e = protocol_service(rpeer, xid, &size);
 		peer_del_ref(rpeer);

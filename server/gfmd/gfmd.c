@@ -64,6 +64,7 @@
 #include "gfmd_channel.h"
 #include "xattr.h"
 #include "quota.h"
+#include "relay.h"
 #include "gfmd.h"
 
 #include "protocol_state.h"
@@ -1229,6 +1230,12 @@ transform_to_master(void)
 
 	gflog_info(GFARM_MSG_1002731,
 	    "end transforming to the master gfmd");
+
+	/*
+	 * all journal records generated in old master must be already
+	 * applied here.
+	 */
+	slave_clear_db_update_info();
 }
 
 static int
@@ -1449,8 +1456,10 @@ gfmd_modules_init_default(int table_size)
 	}
 	mdhost_init();
 	back_channel_init();
-	if (gfarm_get_metadb_replication_enabled())
+	if (gfarm_get_metadb_replication_enabled()) {
 		gfmdc_init();
+		relay_init();
+	}
 	/* directory service */
 	host_init();
 	user_init();
