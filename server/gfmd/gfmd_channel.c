@@ -763,6 +763,9 @@ gfmdc_client_remote_peer_free(gfarm_uint64_t peer_id)
 	gfarm_error_t e;
 	static const char diag[] = "GFM_PROTO_REMOTE_PEER_FREE";
 
+	if (mdhost_self_is_master() || !mdhost_is_up(mdhost_lookup_master()))
+		return (GFARM_ERR_NO_ERROR);
+
 	if ((e = gfmdc_slave_send_request_async(
 	    gfmdc_client_remote_peer_free_result, NULL, diag,
 	    GFM_PROTO_REMOTE_PEER_FREE, "l", peer_id))
