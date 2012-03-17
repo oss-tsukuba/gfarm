@@ -71,15 +71,14 @@ static struct thread_pool *gfmdc_send_thread_pool;
 static struct thread_pool *journal_sync_thread_pool;
 static struct gfmdc_journal_sync_info journal_sync_info;
 
-#define CHANNEL_DIAG		"gfmd_channel"
-#define SYNC_MUTEX_DIAG		"jorunal_sync_info.sync_mutex"
-#define SYNC_END_COND_DIAG	"jorunal_sync_info.sync_end_cond"
-#define SEND_MUTEX_DIAG		"send_closure.mutex"
-#define SEND_END_COND_DIAG	"send_closure.end_cond"
-#define ASYNC_MUTEX_DIAG	"journal_sync_info.async_mutex"
-#define ASYNC_WAIT_COND_DIAG	"journal_sync_info.async_wait_cond"
-#define REQUEST_WAIT_INFO_MUTEX	"request_sync_info.mutex"
-#define REQUEST_WAIT_INFO_COND	"request_sync_info.cond"
+static const char SYNC_MUTEX_DIAG[]	= "jorunal_sync_info.sync_mutex";
+static const char SYNC_END_COND_DIAG[]	= "jorunal_sync_info.sync_end_cond";
+static const char SEND_MUTEX_DIAG[]	= "send_closure.mutex";
+static const char SEND_END_COND_DIAG[]	= "send_closure.end_cond";
+static const char ASYNC_MUTEX_DIAG[]	= "journal_sync_info.async_mutex";
+static const char ASYNC_WAIT_COND_DIAG[] = "journal_sync_info.async_wait_cond";
+static const char REQUEST_WAIT_INFO_MUTEX[] = "request_sync_info.mutex";
+static const char REQUEST_WAIT_INFO_COND[] = "request_sync_info.cond";
 
 #define GFMDC_CONNECT_INTERVAL	30
 

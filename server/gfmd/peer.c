@@ -42,7 +42,7 @@
 #include "protocol_state.h"
 #include "peer_impl.h"
 
-#define PROTOCOL_ERROR_MUTEX_DIAG "protocol_error_mutex"
+static const char PROTOCOL_ERROR_MUTEX_DIAG[] = "protocol_error_mutex";
 
 struct peer_closing_queue {
 	pthread_mutex_t mutex;

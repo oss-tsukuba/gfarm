@@ -22,10 +22,14 @@
 #include "gfmd_channel.h"
 #include "peer.h"
 
-#define RELAYED_REQUEST_ACQUIRE_MUTEX	"relayed_request.acquire_mutex"
-#define RELAYED_REQUEST_ACQUIRE_COND	"relayed_request.acquire_cond"
-#define RELAYED_REQUEST_RESULT_MUTEX	"relayed_request.result_mutex"
-#define RELAYED_REQUEST_RESULT_COND	"relayed_request.result_cond"
+static const char RELAYED_REQUEST_ACQUIRE_MUTEX[] =
+	"relayed_request.acquire_mutex";
+static const char RELAYED_REQUEST_ACQUIRE_COND[] =
+	"relayed_request.acquire_cond";
+static const char RELAYED_REQUEST_RESULT_MUTEX[] =
+	"relayed_request.result_mutex";
+static const char RELAYED_REQUEST_RESULT_COND[] =
+	"relayed_request.result_cond";
 
 struct relayed_request {
 	pthread_mutex_t acquire_mutex;

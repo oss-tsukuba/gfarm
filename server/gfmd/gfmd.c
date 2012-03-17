@@ -101,6 +101,9 @@ static char *pid_file;
 struct thread_pool *authentication_thread_pool;
 struct peer_watcher *sync_protocol_watcher;
 
+static const char TRANSFORM_MUTEX_DIAG[] = "transform_mutex";
+static const char TRANSFORM_COND_DIAG[] = "transform_cond";
+
 struct thread_pool *
 sync_protocol_get_thrpool(void)
 {
@@ -1172,9 +1175,6 @@ start_gfmdc_threads(void)
 
 static pthread_mutex_t transform_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t transform_cond = PTHREAD_COND_INITIALIZER;
-
-#define TRANSFORM_MUTEX_DIAG "transform_mutex"
-#define TRANSFORM_COND_DIAG "transform_cond"
 
 static void
 transform_to_master(void)
