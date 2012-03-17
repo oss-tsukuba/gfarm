@@ -135,7 +135,7 @@ int
 mdhost_is_master(struct mdhost *m)
 {
 	int is_master;
-	static const char *diag = "mdhost_is_master";
+	static const char diag[] = "mdhost_is_master";
 
 	mdhost_mutex_lock(m, diag);
 	is_master = gfarm_metadb_server_is_master(&m->ms);
@@ -148,7 +148,7 @@ mdhost_is_master(struct mdhost *m)
 void
 mdhost_set_is_master(struct mdhost *m, int enable)
 {
-	static const char *diag = "mdhost_set_is_master";
+	static const char diag[] = "mdhost_set_is_master";
 
 	mdhost_mutex_lock(m, diag);
 	gfarm_metadb_server_set_is_master(&m->ms, enable);
@@ -332,7 +332,7 @@ struct journal_file_reader *
 mdhost_get_journal_file_reader(struct mdhost *m)
 {
 	struct journal_file_reader *reader;
-	static const char *diag = "mdhost_get_journal_file_reader";
+	static const char diag[] = "mdhost_get_journal_file_reader";
 
 	mdhost_mutex_lock(m, diag);
 	reader = m->jreader;
@@ -344,7 +344,7 @@ void
 mdhost_set_journal_file_reader(struct mdhost *m,
 	struct journal_file_reader *reader)
 {
-	static const char *diag = "mdhost_set_journal_file_reader";
+	static const char diag[] = "mdhost_set_journal_file_reader";
 
 	mdhost_mutex_lock(m, diag);
 	m->jreader = reader;
@@ -361,7 +361,7 @@ gfarm_uint64_t
 mdhost_get_last_fetch_seqnum(struct mdhost *m)
 {
 	gfarm_uint64_t r;
-	static const char *diag = "mdhost_get_last_fetch_seqnum";
+	static const char diag[] = "mdhost_get_last_fetch_seqnum";
 
 	mdhost_mutex_lock(m, diag);
 	r = m->last_fetch_seqnum;
@@ -372,7 +372,7 @@ mdhost_get_last_fetch_seqnum(struct mdhost *m)
 void
 mdhost_set_last_fetch_seqnum(struct mdhost *m, gfarm_uint64_t seqnum)
 {
-	static const char *diag = "mdhost_set_last_fetch_seqnum";
+	static const char diag[] = "mdhost_set_last_fetch_seqnum";
 
 	mdhost_mutex_lock(m, diag);
 	m->last_fetch_seqnum = seqnum;
@@ -383,7 +383,7 @@ int
 mdhost_is_recieved_seqnum(struct mdhost *m)
 {
 	int r;
-	static const char *diag = "mdhost_is_recieved_seqnum";
+	static const char diag[] = "mdhost_is_recieved_seqnum";
 
 	mdhost_mutex_lock(m, diag);
 	r = m->is_recieved_seqnum;
@@ -394,7 +394,7 @@ mdhost_is_recieved_seqnum(struct mdhost *m)
 void
 mdhost_set_is_recieved_seqnum(struct mdhost *m, int flag)
 {
-	static const char *diag = "mdhost_set_is_recieved_seqnum";
+	static const char diag[] = "mdhost_set_is_recieved_seqnum";
 
 	mdhost_mutex_lock(m, diag);
 	m->is_recieved_seqnum = flag;
@@ -405,7 +405,7 @@ int
 mdhost_is_in_first_sync(struct mdhost *m)
 {
 	int r;
-	static const char *diag = "mdhost_is_in_first_sync";
+	static const char diag[] = "mdhost_is_in_first_sync";
 
 	mdhost_mutex_lock(m, diag);
 	r = m->is_in_first_sync;
@@ -416,7 +416,7 @@ mdhost_is_in_first_sync(struct mdhost *m)
 void
 mdhost_set_is_in_first_sync(struct mdhost *m, int flag)
 {
-	static const char *diag = "mdhost_set_is_in_first_sync";
+	static const char diag[] = "mdhost_set_is_in_first_sync";
 
 	mdhost_mutex_lock(m, diag);
 	m->is_in_first_sync = flag;
@@ -564,7 +564,7 @@ static struct mdhost *
 mdhost_new(struct gfarm_metadb_server *ms)
 {
 	struct mdhost *m;
-	static const char *diag = "mdhost_new";
+	static const char diag[] = "mdhost_new";
 
 	if ((m = malloc(sizeof(struct mdhost))) == NULL)
 		return (NULL);
@@ -587,7 +587,7 @@ static struct mdhost *
 mdhost_lookup_internal(const char *hostname)
 {
 	struct gfarm_hash_entry *entry;
-	static const char *diag = "mdhost_lookup_internal";
+	static const char diag[] = "mdhost_lookup_internal";
 
 	mdhost_global_mutex_lock(diag);
 	entry = gfarm_hash_lookup(mdhost_hashtab, &hostname,
@@ -1443,7 +1443,7 @@ mdhost_init(void)
 	gfarm_error_t e;
 	struct mdhost *mh;
 	struct gfarm_hash_iterator it;
-	static const char *diag = "mdhost_init";
+	static const char diag[] = "mdhost_init";
 	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
 
 	if (gfarm_get_metadb_replication_enabled())

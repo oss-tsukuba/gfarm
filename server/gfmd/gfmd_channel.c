@@ -407,7 +407,7 @@ gfmdc_journal_send_closure_reset(struct gfmdc_journal_send_closure *c,
 static void
 gfmdc_client_journal_syncsend_free(struct gfmdc_journal_send_closure *c)
 {
-	static const char *diag = "gfmdc_client_journal_syncsend_free";
+	static const char diag[] = "gfmdc_client_journal_syncsend_free";
 
 	free(c->data);
 	c->data = NULL;
@@ -470,7 +470,7 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 {
 	int r, in_time = 1;
 	struct timespec ts;
-	static const char *diag = "gfmdc_wait_journal_syncsend";
+	static const char diag[] = "gfmdc_wait_journal_syncsend";
 
 #ifdef HAVE_CLOCK_GETTIME
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -505,7 +505,7 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 	gfarm_uint64_t min_seqnum, from_sn, to_sn, lf_sn;
 	struct journal_file_reader *reader;
 	struct mdhost *mh = c->host;
-	static const char *diag = "GFM_PROTO_JOURNAL_SEND";
+	static const char diag[] = "GFM_PROTO_JOURNAL_SEND";
 
 	lf_sn = mdhost_get_last_fetch_seqnum(mh);
 	min_seqnum = lf_sn == 0 ? 0 : lf_sn + 1;
@@ -574,7 +574,7 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 	gfarm_uint64_t from_sn, to_sn;
 	unsigned char *recs = NULL;
 	size_t recs_len;
-	static const char *diag = "GFM_PROTO_JOURNAL_SEND";
+	static const char diag[] = "GFM_PROTO_JOURNAL_SEND";
 
 	if ((er = gfmdc_server_get_request(peer, size, diag, "llB",
 	    &from_sn, &to_sn, &recs_len, &recs))
@@ -601,7 +601,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	gfarm_uint64_t seqnum;
 	int inited = 0;
 	struct journal_file_reader *reader;
-	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+	static const char diag[] = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	if ((e = gfmdc_server_get_request(peer, size, diag, "l", &seqnum))
 	    == GFARM_ERR_NO_ERROR) {
@@ -662,7 +662,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 {
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
-	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+	static const char diag[] = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	giant_lock();
 	seqnum = db_journal_get_current_seqnum();
@@ -695,7 +695,7 @@ gfarm_error_t
 gfmdc_client_remote_peer_alloc(struct peer *peer)
 {
 	gfarm_error_t e;
-	static const char *diag = "GFM_PROTO_REMOTE_PEER_ALLOC";
+	static const char diag[] = "GFM_PROTO_REMOTE_PEER_ALLOC";
 	int port;
 	/* FIXME get from peer */
 	gfarm_int32_t proto_family = GFARM_PROTO_FAMILY_IPV4;
@@ -761,7 +761,7 @@ gfarm_error_t
 gfmdc_client_remote_peer_free(gfarm_uint64_t peer_id)
 {
 	gfarm_error_t e;
-	static const char *diag = "GFM_PROTO_REMOTE_PEER_FREE";
+	static const char diag[] = "GFM_PROTO_REMOTE_PEER_FREE";
 
 	if ((e = gfmdc_slave_send_request_async(
 	    gfmdc_client_remote_peer_free_result, NULL, diag,
@@ -988,7 +988,7 @@ gfmdc_connect(void)
 	static unsigned int sleep_max_interval = 40;
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 	static const char *service_user = GFMD_USERNAME;
-	static const char *diag = "gfmdc_connect";
+	static const char diag[] = "gfmdc_connect";
 
 	master = mdhost_lookup_master();
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
@@ -1161,7 +1161,7 @@ void *
 gfmdc_journal_asyncsend_thread(void *arg)
 {
 	struct timespec ts;
-	static const char *diag = "gfmdc_journal_asyncsend_thread";
+	static const char diag[] = "gfmdc_journal_asyncsend_thread";
 
 	ts.tv_sec = 0;
 	ts.tv_nsec = 500 * 1000 * 1000;
@@ -1186,7 +1186,7 @@ void *
 gfmdc_connect_thread(void *arg)
 {
 	gfarm_error_t e;
-	static const char *diag = "gfmdc_connect_thread";
+	static const char diag[] = "gfmdc_connect_thread";
 
 	for (;;) {
 		if (mdhost_get_connection(mdhost_lookup_master()) != NULL) {
@@ -1208,7 +1208,7 @@ gfmdc_connect_thread(void *arg)
 static void *
 gfmdc_journal_file_sync_thread(void *arg)
 {
-	static const char *diag = "db_journal_file_sync_thread";
+	static const char diag[] = "db_journal_file_sync_thread";
 
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003000,
@@ -1229,7 +1229,7 @@ gfmdc_journal_send_thread(void *closure)
 	gfarm_error_t e;
 	gfarm_uint64_t to_sn;
 	struct gfmdc_journal_send_closure *c = closure;
-	static const char *diag = "gfmdc_journal_send_thread";
+	static const char diag[] = "gfmdc_journal_send_thread";
 
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003002,
@@ -1294,7 +1294,7 @@ gfmdc_journal_sync_mdhost_add_job(struct mdhost *mh, void *closure)
 {
 	int i, s = 0;
 	struct gfmdc_journal_send_closure *c;
-	const char *diag = "gfmdc_journal_sync_mdhost_add_job";
+	const char diag[] = "gfmdc_journal_sync_mdhost_add_job";
 
 	i = journal_sync_info.slave_index++;
 	(void)gfmdc_journal_sync_count_host(mh, &s);
@@ -1317,7 +1317,7 @@ static gfarm_error_t
 gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 {
 	int nhosts = 0;
-	static const char *diag = "gfmdc_journal_sync_multiple";
+	static const char diag[] = "gfmdc_journal_sync_multiple";
 
 	mdhost_foreach(gfmdc_journal_sync_count_host, &nhosts);
 	if (nhosts == 0) {
@@ -1403,7 +1403,7 @@ gfmdc_alloc_journal_sync_info_closures(void)
 	int nsvrs = mdhost_get_count();
 	struct gfmdc_journal_sync_info *si = &journal_sync_info;
 	struct gfmdc_journal_send_closure *c;
-	static const char *diag = "gfmdc_alloc_journal_sync_info_closures";
+	static const char diag[] = "gfmdc_alloc_journal_sync_info_closures";
 
 	if (si->closures) {
 		for (i = 0; i < si->nservers; ++i) {
@@ -1439,7 +1439,7 @@ gfmdc_sync_init(void)
 {
 	int thrpool_size, jobq_len;
 	struct gfmdc_journal_sync_info *si = &journal_sync_info;
-	static const char *diag = "gfmdc_sync_init";
+	static const char diag[] = "gfmdc_sync_init";
 
 	thrpool_size = gfarm_get_metadb_server_slave_max_size()
 		+ (gfarm_get_journal_sync_file() ? 1 : 0);

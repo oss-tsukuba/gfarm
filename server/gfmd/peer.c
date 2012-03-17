@@ -703,7 +703,7 @@ gfarm_error_t
 peer_add_pending_new_generation_by_cookie(
 	struct peer *peer, struct inode *inode, gfarm_uint64_t *cookiep)
 {
-	static const char *diag = "peer_add_cookie";
+	static const char diag[] = "peer_add_cookie";
 	struct pending_new_generation_by_cookie *cookie;
 	gfarm_uint64_t result;
 
@@ -732,7 +732,7 @@ int
 peer_remove_pending_new_generation_by_cookie(
 	struct peer *peer, gfarm_uint64_t cookie_id, struct inode **inodep)
 {
-	static const char *diag = "peer_delete_cookie";
+	static const char diag[] = "peer_delete_cookie";
 	struct pending_new_generation_by_cookie *cookie;
 	int found = 0;
 
@@ -822,7 +822,7 @@ peer_unset_process(struct peer *peer)
 void
 peer_record_protocol_error(struct peer *peer)
 {
-	static const char *diag = "peer_record_protocol_error";
+	static const char diag[] = "peer_record_protocol_error";
 
 	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
 	    PROTOCOL_ERROR_MUTEX_DIAG);
@@ -835,7 +835,7 @@ int
 peer_had_protocol_error(struct peer *peer)
 {
 	int e;
-	static const char *diag = "peer_had_protocol_error";
+	static const char diag[] = "peer_had_protocol_error";
 
 	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
 	    PROTOCOL_ERROR_MUTEX_DIAG);

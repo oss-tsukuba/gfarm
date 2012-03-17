@@ -398,7 +398,7 @@ gfarm_error_t
 db_terminate(void)
 {
 	gfarm_error_t e;
-	static const char *diag = "db_terminate";
+	static const char diag[] = "db_terminate";
 
 	gflog_info(GFARM_MSG_1000406, "try to stop database syncer");
 	dbq_wait_to_finish(&dbq);
@@ -420,7 +420,7 @@ db_thread(void *arg)
 {
 	gfarm_error_t e;
 	struct dbq_entry ent;
-	static const char *diag = "db_thread";
+	static const char diag[] = "db_thread";
 
 	for (;;) {
 		e = dbq_delete(&dbq, &ent);
@@ -581,7 +581,7 @@ db_host_load(void *closure,
 	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_host_load";
+	static const char diag[] = "db_host_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = (*ops->host_load)(closure, callback);
@@ -715,7 +715,7 @@ gfarm_error_t
 db_user_load(void *closure, void (*callback)(void *, struct gfarm_user_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_user_load";
+	static const char diag[] = "db_user_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->user_load)(closure, callback));
@@ -873,7 +873,7 @@ db_group_load(void *closure,
 	void (*callback)(void *, struct gfarm_group_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_group_load";
+	static const char diag[] = "db_group_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->group_load)(closure, callback));
@@ -1100,7 +1100,7 @@ gfarm_error_t
 db_inode_load(void *closure, void (*callback)(void *, struct gfs_stat *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_inode_load";
+	static const char diag[] = "db_inode_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->inode_load)(closure, callback));
@@ -1189,7 +1189,7 @@ db_inode_cksum_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, size_t, char *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_inode_cksum_load";
+	static const char diag[] = "db_inode_cksum_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->inode_cksum_load)(closure, callback));
@@ -1257,7 +1257,7 @@ db_filecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_filecopy_load";
+	static const char diag[] = "db_filecopy_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->filecopy_load)(closure, callback));
@@ -1330,7 +1330,7 @@ db_deadfilecopy_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, gfarm_uint64_t, char *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_deadfilecopy_load";
+	static const char diag[] = "db_deadfilecopy_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->deadfilecopy_load)(closure, callback));
@@ -1403,7 +1403,7 @@ db_direntry_load(void *closure,
 	void (*callback)(void *, gfarm_ino_t, char *, int, gfarm_ino_t))
 {
 	gfarm_error_t e;
-	const char *diag = "db_direntry_load";
+	static const char diag[] = "db_direntry_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->direntry_load)(closure, callback));
@@ -1469,7 +1469,7 @@ gfarm_error_t
 db_symlink_load(void *closure, void (*callback)(void *, gfarm_ino_t, char *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_symlink_load";
+	static const char diag[] = "db_symlink_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->symlink_load)(closure, callback));
@@ -1636,7 +1636,7 @@ db_xattr_load(void *closure,
 		void (*callback)(void *, struct xattr_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_xattr_load";
+	static const char diag[] = "db_xattr_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->xattr_load)(closure, callback));
@@ -1784,7 +1784,7 @@ db_quota_user_load(void *closure,
 	      void (*callback)(void *, struct gfarm_quota_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_quota_user_load";
+	static const char diag[] = "db_quota_user_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->quota_load)(closure, 0, callback));
@@ -1797,7 +1797,7 @@ db_quota_group_load(void *closure,
 	      void (*callback)(void *, struct gfarm_quota_info *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_quota_group_load";
+	static const char diag[] = "db_quota_group_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->quota_load)(closure, 1, callback));
@@ -1838,7 +1838,7 @@ db_seqnum_load(void *closure,
 	      void (*callback)(void *, struct db_seqnum_arg *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_seqnum_load";
+	static const char diag[] = "db_seqnum_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->seqnum_load)(closure, callback));
@@ -1930,7 +1930,7 @@ db_mdhost_load(void *closure,
 	void (*callback)(void *, struct gfarm_metadb_server *))
 {
 	gfarm_error_t e;
-	const char *diag = "db_mdhost_load";
+	static const char diag[] = "db_mdhost_load";
 
 	gfarm_mutex_lock(&db_access_mutex, diag, DB_ACCESS_MUTEX_DIAG);
 	e = ((*ops->mdhost_load)(closure, callback));
