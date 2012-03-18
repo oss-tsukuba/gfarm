@@ -1130,7 +1130,7 @@ process_replica_adding(struct process *process, struct peer *peer,
 	}
 
 	e = process_prepare_to_replicate(process, peer, src, dst, fd,
-	    GFS_REPLICATE_FILE_FORCE, &fo->u.f.replicating, inodep);
+	    0, &fo->u.f.replicating, inodep);
 	if (e == GFARM_ERR_NO_ERROR) {
 		fo->u.f.spool_opener = peer;
 		/*
