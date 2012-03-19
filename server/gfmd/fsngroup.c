@@ -249,6 +249,36 @@ text_line(gfarm_fsngroup_text_t t, size_t i)
  */
 
 /*
+ * Simple fsngroup searcher.
+ *
+ * REQUISITE: giant_lock
+ *
+ *	returned pointer needs to be free'd.
+ */
+static char *
+find_fsngroup_by_hostname(const char *hostname)
+{
+	char *ret = NULL;
+	struct host *h;
+	struct gfarm_hash_iterator it;
+
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		if (strcmp(host_name(h), hostname) == 0) {
+			ret = strdup(host_fsngroup(h));
+			if (ret == NULL)
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: insufficient memory to "
+					"allocate for a host search results.",
+					"find_fsngroup_by_hostname");
+			break;
+		}
+	}
+
+	return (ret);
+}
+
+/*
  * A scanning workhorse.
  *
  * REQUISITE: giant_lock
@@ -689,27 +719,66 @@ done:
 }
 
 gfarm_error_t
-gfm_server_fsngroup_get_by_hostnames(
+gfm_server_fsngroup_get_by_hostname(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	/*
 	 * IN:
-	 *	n::integer:
-	 *	hostname::string[n]
+	 *	hostname::string
 	 *
 	 * OUT:
 	 *	resultcode::integer
 	 *	if resultcode == GFM_ERROR_NO_ERROR
-	 *		n::integer
-	 *		fsngroupname::string[n]
+	 *		fsngroupname::string
 	 */
 
-	/* NOT YET */
-
-	static const char diag[] =
-		macro_stringify(GFM_PROTO_FSNGROUP_GET_BY_HOSTNAMES);
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	char *hostname = NULL;		/* Always need to be free'd */
+	char *fsngroupname = NULL;	/* Always need to be free'd */
+	static const char diag[] =
+		macro_stringify(GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME);
+	struct relayed_request *relay = NULL;
+
+	(void)from_client;
+
+	e = gfm_server_get_request_with_relay(
+		peer, sizep, skip, &relay, diag,
+		GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME,
+		"s", &hostname);
+	if (e != GFARM_ERR_NO_ERROR)
+		goto bailout;
+	if (skip) {
+		e = GFARM_ERR_NO_ERROR;
+		goto bailout;
+	}
+
+	if (relay == NULL) {
+		/* do not relay RPC to master gfmd */
+
+		giant_lock();
+		fsngroupname = find_fsngroup_by_hostname(hostname);
+		giant_unlock();
+
+		if (fsngroupname == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"host does not exists");
+			e = GFARM_ERR_NO_SUCH_OBJECT;
+		}
+	}
+
+	if (fsngroupname != NULL)
+		e = gfm_server_put_reply_with_relay(
+			peer, xid, sizep, relay, diag, &e, "s", fsngroupname);
+	else
+		e = gfm_server_put_reply_with_relay(
+			peer, xid, sizep, relay, diag, &e, "");
+
+bailout:
+	if (hostname != NULL)
+		free((void *)hostname);
+	if (fsngroupname != NULL)
+		free((void *)fsngroupname);
 
 	return (e);
 }
@@ -731,7 +800,7 @@ gfm_server_fsngroup_modify(
 	static const char diag[] =
 		macro_stringify(GFM_PROTO_FSNGROUP_MODIFY);
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
-	struct relayed_request *relay;
+	struct relayed_request *relay = NULL;
 	char *hostname = NULL;		/* need to be free'd always */
 	char *fsngroupname = NULL;	/* need to be free'd always */
 

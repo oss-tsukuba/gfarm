@@ -2,6 +2,7 @@ struct gfm_connection;
 struct gfs_dirent;
 
 struct gfarm_host_info;
+struct gfarm_fsngroup_info;
 struct gfarm_user_info;
 struct gfarm_group_info;
 struct gfarm_group_names;
@@ -82,6 +83,12 @@ gfarm_error_t gfm_client_host_info_modify(struct gfm_connection *,
 	const struct gfarm_host_info *);
 gfarm_error_t gfm_client_host_info_remove(struct gfm_connection *,
 	const char *);
+gfarm_error_t gfm_client_fsngroup_get_all(struct gfm_connection *,
+	size_t *, struct gfarm_fsngroup_info **);
+gfarm_error_t gfm_client_fsngroup_get_by_hostname(struct gfm_connection *,
+	const char *, char **);
+gfarm_error_t gfm_server_fsngroup_modify(struct gfm_connection *,
+	struct gfarm_fsngroup_info *);
 
 gfarm_error_t gfm_client_user_info_get_all(struct gfm_connection *,
 	int *, struct gfarm_user_info **);
