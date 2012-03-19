@@ -316,7 +316,6 @@ struct gfprep_host_info {
 	int max_rw;
 	int n_using; /* src:n_reading, dst:n_writing */
 	int is_available;
-	gfarm_int64_t disk_used;
 	gfarm_int64_t disk_avail;
 	gfarm_int64_t size_writing; /* for dst */
 };
@@ -431,7 +430,6 @@ gfprep_create_hostinfohash_all(const char *path,
 		hi->port = his[i].port;
 		hi->ncpu = his[i].ncpu;
 		hi->max_rw = opt.max_rw > 0 ? opt.max_rw : hi->ncpu;
-		hi->disk_used = 0;
 		hi->disk_avail = 0;
 		hi->n_using = 0;
 		hi->is_available = 0;
@@ -541,6 +539,22 @@ gfprep_hostinfohash_all_free(struct gfarm_hash_table *hash_all)
 }
 
 static gfarm_error_t
+gfprep_update_disk_avail(struct gfprep_host_info *hi)
+{
+	gfarm_error_t e;
+	gfarm_int32_t bsize;
+	gfarm_off_t blocks, bfree, bavail, files;
+	gfarm_off_t ffree, favail;
+
+	e = gfs_statfsnode(hi->hostname, hi->port, &bsize,
+			   &blocks, &bfree, &bavail,
+			   &files, &ffree, &favail);
+	if (e == GFARM_ERR_NO_ERROR) /* update */
+		hi->disk_avail = bavail * bsize;
+	return (e);
+}
+
+static gfarm_error_t
 gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			   struct gfarm_hash_table *hash_info,
 			   int to_write, int client_scheduling)
@@ -596,9 +610,11 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			if (he) {
 				hip = gfarm_hash_entry_data(he);
 				hi = *hip;
-				hi->disk_used = hsis[i].disk_used * 1024;
-				hi->disk_avail = hsis[i].disk_avail * 1024;
-				hi->is_available = 1;
+				e = gfprep_update_disk_avail(hi);
+				gfprep_warn_e(e, "gfs_statfsnode(%s)",
+					      hostname);
+				if (e == GFARM_ERR_NO_ERROR)
+					hi->is_available = 1;
 				nhost_infos++;
 			}
 		}
@@ -612,9 +628,11 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			if (he) {
 				hip = gfarm_hash_entry_data(he);
 				hi = *hip;
-				hi->disk_used = hsis[i].disk_used * 1024;
-				hi->disk_avail = hsis[i].disk_avail * 1024;
-				hi->is_available = 1;
+				e = gfprep_update_disk_avail(hi);
+				gfprep_warn_e(e, "gfs_statfsnode(%s)",
+					      hostname);
+				if (e == GFARM_ERR_NO_ERROR)
+					hi->is_available = 1;
 				nhost_infos++;
 			}
 		}
@@ -1849,22 +1867,6 @@ retry:
 	if (found)
 		goto retry;
 	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-gfprep_update_disk_avail(struct gfprep_host_info *hi)
-{
-	gfarm_error_t e;
-	gfarm_int32_t bsize;
-	gfarm_off_t blocks, bfree, bavail, files;
-	gfarm_off_t ffree, favail;
-
-	e = gfs_statfsnode(hi->hostname, hi->port, &bsize,
-			   &blocks, &bfree, &bavail,
-			   &files, &ffree, &favail);
-	if (e == GFARM_ERR_NO_ERROR) /* update */
-		hi->disk_avail = bavail * bsize;
-	return (e);
 }
 
 static gfarm_error_t
