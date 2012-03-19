@@ -1,6 +1,7 @@
 top_builddir = ../..
 top_srcdir = $(top_builddir)
 srcdir = .
+gfperfdir = /gfperf
 
 include $(top_srcdir)/makes/var.mk
 
@@ -19,6 +20,24 @@ SUBDIRS = \
 	gfperf-parallel-autoreplica \
 	gfperf-rb \
 	gfperf-wrapper \
+	gfperf-web \
 	gfstress
 
 include $(top_srcdir)/makes/subdir.mk
+
+DOC = CONFIG-gfperf.ja \
+      README-gfperf.ja \
+      SETUP-gfperf.ja \
+      SUPPORT-gfperf.ja \
+      USING-gfperf.ja
+
+install:
+	@$(MKDIR_P) $(DESTDIR)$(docdir)$(gfperfdir)
+	@for i in -- $(DOC); do \
+		case $$i in --) continue;; esac; \
+		echo \
+		$(INSTALL_DOC) $(srcdir)/$${i} \
+			$(DESTDIR)$(docdir)$(gfperfdir)/`basename $${i}`; \
+		$(INSTALL_DOC) $(srcdir)/$${i} \
+			$(DESTDIR)$(docdir)$(gfperfdir)/`basename $${i}`; \
+	done

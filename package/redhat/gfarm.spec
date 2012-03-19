@@ -241,6 +241,11 @@ if [ ! -f /etc/gfmd.conf ]; then
 	echo run %{prefix}/bin/config-gfarm to configure Gfarm file system
 fi
 
+%post doc
+if [ -d %{doc_prefix}/gfperf ]; then
+	echo If you want to setup gfperf, see documents in %{doc_prefix}/gfperf
+fi
+
 %preun fsnode
 if [ "$1" = 0 ]
 then
@@ -972,6 +977,11 @@ fi
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
 %endif
+%{doc_prefix}/gfperf/CONFIG-gfperf.ja
+%{doc_prefix}/gfperf/README-gfperf.ja
+%{doc_prefix}/gfperf/SETUP-gfperf.ja
+%{doc_prefix}/gfperf/SUPPORT-gfperf.ja
+%{doc_prefix}/gfperf/USING-gfperf.ja
 
 %files libs
 %defattr(-,root,root)
@@ -992,8 +1002,6 @@ fi
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep
-%{share_prefix}/config/gfperf-config.yml
-%{share_prefix}/config/gfperf-simple.yml
 %if %{mpi}
 %{lib_prefix}/libgfs_hook_mpi.so.0
 %{lib_prefix}/libgfs_hook_mpi.so.0.0.0
@@ -1106,6 +1114,19 @@ fi
 %{prefix}/bin/gfperf.rb
 %{prefix}/bin/gfstress.rb
 %{prefix}/bin/gfiops
+%dir %{share_prefix}
+%dir %{share_prefix}/config
+%{share_prefix}/config/gfperf-config.yml
+%{share_prefix}/config/gfperf-simple.yml
+%dir %{share_prefix}/gfperf-web
+%{share_prefix}/gfperf-web/config.php
+%{share_prefix}/gfperf-web/config_view.php
+%{share_prefix}/gfperf-web/gnuplot.php
+%{share_prefix}/gfperf-web/graph_draw.php
+%{share_prefix}/gfperf-web/graph_page.php
+%{share_prefix}/gfperf-web/index.php
+%{share_prefix}/gfperf-web/view_error.php
+%{share_prefix}/gfperf-web/view_result.php
 
 %files fsnode
 %defattr(-,root,root)
