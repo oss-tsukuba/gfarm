@@ -860,47 +860,81 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	off_t *wposp, gfarm_uint64_t *wlapp, off_t *tailp)
 {
 	gfarm_error_t e;
-	off_t begin_rec_pos = 0;
-	off_t rec_pos = 0;
-	off_t next_rec_pos = JOURNAL_FILE_HEADER_SIZE;
+	off_t pos = 0;
+	off_t begin_pos = 0;
+	off_t first_begin_pos = 0, first_end_pos = 0;
+	off_t last_begin_pos = 0, last_end_pos = 0;
+	off_t next_pos = JOURNAL_FILE_HEADER_SIZE;
 	off_t min_seqnum_pos = JOURNAL_FILE_HEADER_SIZE;
 	off_t max_seqnum_next_pos = JOURNAL_FILE_HEADER_SIZE;
 	enum journal_operation ope = 0;
 	gfarm_uint64_t min_seqnum = GFARM_UINT64_MAX;
 	gfarm_uint64_t max_seqnum = 0;
-	gfarm_uint64_t rec_seqnum = 0;
-	gfarm_uint64_t begin_rec_seqnum = 0;
+	gfarm_uint64_t seqnum = 0;
+	gfarm_uint64_t begin_seqnum = 0;
+	gfarm_uint64_t first_seqnum = 0, last_seqnum = 0;
+	gfarm_uint64_t first_end_seqnum = 0, last_end_seqnum = 0;
+	gfarm_uint64_t last_begin_seqnum = 0;
 	int min_seqnum_found = 0;
-	
+
 	if ((e = journal_read_file_header(rfd)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	errno = 0;
 	for (;;) {
-		if ((e = journal_read_rec_outline(rfd, file_size, &rec_seqnum,
-		    &ope, &rec_pos, &next_rec_pos)) != GFARM_ERR_NO_ERROR)
+		if ((e = journal_read_rec_outline(rfd, file_size, &seqnum,
+		    &ope, &pos, &next_pos)) != GFARM_ERR_NO_ERROR)
 			return (e);
-		if (rec_pos == -1)
+		if (pos == -1)
 			break;
+		if (first_seqnum == 0)
+			first_seqnum = seqnum;
+		last_seqnum = seqnum;
 		if (ope == GFM_JOURNAL_BEGIN) {
-			begin_rec_pos = rec_pos;
-			begin_rec_seqnum = rec_seqnum;
+			if (first_begin_pos == 0)
+				first_begin_pos = pos;
+			begin_pos = pos;
+			begin_seqnum = seqnum;
+			last_begin_seqnum = seqnum;
+			last_begin_pos = pos;
 		} else if (ope == GFM_JOURNAL_END) {
-			if (max_seqnum < rec_seqnum &&
-			    cur_seqnum <= rec_seqnum) {
-				max_seqnum = rec_seqnum;
-				max_seqnum_next_pos = next_rec_pos;
+			if (first_end_seqnum == 0) {
+				first_end_seqnum = seqnum;
+				first_end_pos = pos;
+			}
+			last_end_seqnum = seqnum;
+			last_end_pos = pos;
+			if (max_seqnum < seqnum &&
+			    cur_seqnum <= seqnum) {
+				max_seqnum = seqnum;
+				max_seqnum_next_pos = next_pos;
 			} 
-			if (cur_seqnum < begin_rec_seqnum &&
-			    min_seqnum > begin_rec_seqnum) {
-				min_seqnum = begin_rec_seqnum;
-				min_seqnum_pos = begin_rec_pos;
+			if (cur_seqnum < begin_seqnum &&
+			    min_seqnum > begin_seqnum) {
+				min_seqnum = begin_seqnum;
+				min_seqnum_pos = begin_pos;
 				min_seqnum_found = 1;
 			}
 		}
-		*tailp = next_rec_pos;
-		if (lseek(rfd, next_rec_pos, SEEK_SET) < 0)
+		*tailp = next_pos;
+		if (lseek(rfd, next_pos, SEEK_SET) < 0)
 			return (gfarm_errno_to_error(errno));
+	}
+
+	/*
+	 * Set min_seqnum if the transaction which has next seqnum of min_seqnum
+	 * is split into the head and tail of journal file.
+	 */
+
+	if (first_seqnum == last_seqnum + 1 && /* circulated */
+	    cur_seqnum < last_begin_seqnum && /* newer than current seqnum */
+	    last_begin_seqnum < first_end_seqnum && /* valid BEGIN - END */
+	    last_begin_seqnum < min_seqnum && /* is min BEGIN seqnum */
+	    first_end_pos < first_begin_pos && /* END in head */
+	    last_end_pos < last_begin_pos /* BEGIN in tail */ ) {
+		min_seqnum = last_begin_seqnum;
+		min_seqnum_pos = last_begin_pos;
+		min_seqnum_found = 1;
 	}
 
 	/*
