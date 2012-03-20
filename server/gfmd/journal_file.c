@@ -533,6 +533,7 @@ journal_read_rec_outline(int fd, size_t file_size, gfarm_uint64_t *seqnump,
 		return (gfarm_errno_to_error(errno));
 
 	for (;;) {
+		/* MAGIC(4) */
 		crc1 = 0;
 		if (jounal_read_fully(fd, magic,
 		    GFARM_JOURNAL_MAGIC_SIZE, &pos, &eof) < 0)
@@ -553,12 +554,14 @@ journal_read_rec_outline(int fd, size_t file_size, gfarm_uint64_t *seqnump,
 			return (gfarm_errno_to_error(errno));
 		raw += GFARM_JOURNAL_MAGIC_SIZE;
 		pos1 -= GFARM_JOURNAL_MAGIC_SIZE;
+		/* SEQNUM */
 		if ((ssz = journal_read_uint64(fd, &seqnum,
 		    raw, &pos)) < 0)
 			return (gfarm_errno_to_error(errno));
 		if (ssz == 0)
 			goto next;
 		raw += sizeof(gfarm_uint64_t);
+		/* OPE_ID */
 		if ((ssz = journal_read_uint32(fd, &ope,
 		    raw, &pos)) < 0)
 			return (gfarm_errno_to_error(errno));
@@ -566,12 +569,14 @@ journal_read_rec_outline(int fd, size_t file_size, gfarm_uint64_t *seqnump,
 			goto next;
 		raw += sizeof(gfarm_uint32_t);
 		*opep = ope;
+		/* DATA_LENGTH */
 		if ((ssz = journal_read_uint32(fd, &len,
 		    raw, &pos)) < 0)
 			return (gfarm_errno_to_error(errno));
 		if (ssz == 0)
 			goto next;
 		raw += sizeof(gfarm_uint32_t);
+		/* DATA */
 		if (pos + len + sizeof(crc1) > file_size ||
 		    len > JOURNAL_RECORD_SIZE_MAX)
 			goto next;
@@ -585,6 +590,7 @@ journal_read_rec_outline(int fd, size_t file_size, gfarm_uint64_t *seqnump,
 		}
 		if (eof)
 			goto next;
+		/* CRC */
 		if ((ssz = journal_read_uint32(fd, &crc2, NULL, &pos)) < 0) {
 			e = gfarm_errno_to_error(errno);
 			goto next;
