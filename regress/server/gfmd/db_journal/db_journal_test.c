@@ -38,6 +38,8 @@ static char *program_name = "db_journal_test";
 static const char *filepath;
 
 #define TEST_FILE_MAX_SIZE	(200 + 4096)
+#define TEST_FILE_MAX_SIZE2	(250 + 4096)
+#define TEST_FILE_MAX_SIZE3	(280 + 4096)
 #define TEST_SEQNUM_OFFSET	(GFARM_JOURNAL_MAGIC_SIZE + 2)
 
 struct t_username {
@@ -222,15 +224,16 @@ t_write_sequential(void)
 
 static struct gfarm_user_info *t_user_infos[32];
 
+static int user_idx;
+
 static gfarm_error_t
-t_write_cyclic_post_read(void *op_arg, gfarm_uint64_t seqnum,
+t_check_user_post_read(void *op_arg, gfarm_uint64_t seqnum,
 	enum journal_operation ope, void *arg, void *closure, size_t length,
 	int *needs_freep)
 {
-	static int idx = 0;
 	struct gfarm_user_info *ui1 = arg;
 	struct gfarm_user_info *ui2 =
-	    t_user_infos[idx++];
+	    t_user_infos[user_idx++];
 
 	TEST_ASSERT_S("user_info.username",
 	    ui2->username, ui1->username);
@@ -259,6 +262,8 @@ t_write_cyclic(void)
 		{ "user4", "USER4" },
 	};
 
+	user_idx = 0;
+
 	memset(t_user_infos, 0, sizeof(t_user_infos));
 
 	unlink_test_file(filepath);
@@ -285,7 +290,7 @@ t_write_cyclic(void)
 	 * r                  w
 	 */
 	TEST_ASSERT_NOERR("db_journal_read",
-	    db_journal_read(reader, NULL, t_write_cyclic_post_read,
+	    db_journal_read(reader, NULL, t_check_user_post_read,
 		NULL, &eof));
 	TEST_ASSERT0(eof == 0);
 	journal_file_reader_commit_pos(reader);
@@ -308,7 +313,7 @@ t_write_cyclic(void)
 	for (i = 0; i < 3; ++i) { /* user2, user3, user4 */
 		sprintf(msg, "db_journal_read (i=%d)", i);
 		TEST_ASSERT_NOERR(msg, db_journal_read(reader,
-		    NULL, t_write_cyclic_post_read, NULL, &eof));
+		    NULL, t_check_user_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
 	journal_file_reader_commit_pos(reader);
@@ -336,13 +341,306 @@ t_write_cyclic(void)
 	for (i = 0; i < 2; ++i) { /* user1, user2 */
 		sprintf(msg, "db_journal_read (i=%d)", i);
 		TEST_ASSERT_NOERR(msg, db_journal_read(reader,
-		    NULL, t_write_cyclic_post_read, NULL, &eof));
+		    NULL, t_check_user_post_read, NULL, &eof));
 	}
 	TEST_ASSERT0(eof == 0);
 	journal_file_reader_commit_pos(reader);
 
 	/* |user4|user1|user2|  |
 	 *                   rw
+	 */
+
+	journal_file_close(self_jf);
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(t_user_infos); ++i)
+		free(t_user_infos[i]);
+}
+
+static gfarm_error_t
+t_no_check_post_read(void *op_arg, gfarm_uint64_t seqnum,
+	enum journal_operation ope, void *arg, void *closure, size_t length,
+	int *needs_freep)
+{
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+t_write_transaction_around1(void)
+{
+	int i, k = 0, eof, n = 1;
+	off_t rpos, rpos1, wpos, wpos0, wpos1;
+	gfarm_uint64_t rlap;
+	struct journal_file_reader *reader;
+	struct journal_file_writer *writer;
+	struct gfarm_user_info *ui;
+	static const struct t_username names[] = {
+		{ "user1", "USER-1" },
+		{ "user2", "USER--2" },
+		{ "user3", "USER---3" },
+	};
+
+	user_idx = 0;
+
+	memset(t_user_infos, 0, sizeof(t_user_infos));
+
+	unlink_test_file(filepath);
+	/* must be use global variable journal_file */
+	TEST_ASSERT_NOERR("journal_file_open#1",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE2, 0,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+	setup_write();
+	for (i = 0; i < 2; ++i) {
+		ui = t_new_user_info(
+		    names[i].username, names[i].realname);
+		TEST_ASSERT_NOERR("begin",
+		    db_journal_ops.begin(n++, NULL));
+		TEST_ASSERT_NOERR("user_add",
+		    db_journal_ops.user_add(n++, ui));
+		/* ui is freed */
+		TEST_ASSERT_NOERR("end",
+		    db_journal_ops.end(n++, NULL));
+
+		ui = t_new_user_info(
+		    names[i].username, names[i].realname);
+		t_user_infos[k++] = ui;
+	}
+
+	/*
+	 * now journal file's layout is ...
+	 * |b[1]|user1[2]|e[3]|b[4]|user2[5]|e[6]|    |
+	 * r                                     w
+	 */
+	TEST_ASSERT_NOERR("db_journal_read(begin)",
+	    db_journal_read(reader, NULL,
+	        t_no_check_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("db_journal_read(user_add)",
+	    db_journal_read(reader, NULL,
+	        t_check_user_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("db_journal_read(end)",
+	    db_journal_read(reader, NULL,
+	        t_no_check_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	journal_file_reader_commit_pos(reader);
+
+	/*
+	 * now journal file's layout is ...
+	 * |b[1]|user1[2]|e[3]|b[4]|user2[5]|e[6]|    |
+	 *                    r                  w
+	 */
+
+	wpos0 = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_NOERR("begin",
+	    db_journal_ops.begin(n++, NULL));
+	ui = t_new_user_info(names[2].username, names[2].realname);
+	TEST_ASSERT_NOERR("user_add",
+	    db_journal_ops.user_add(n++, ui));
+	ui = t_new_user_info(names[2].username, names[2].realname);
+	t_user_infos[k++] = ui;
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("end",
+	    db_journal_ops.end(n++, NULL));
+
+	journal_file_reader_committed_pos(reader, &rpos1, &rlap);
+	wpos1 = journal_file_writer_pos(writer);
+
+	/*
+	 * now journal file's layout is ...
+	 * |user3[8]|e[9]|xxxx|b[4]|user2[5]|e[6]|b[7]|
+	 *               w    r
+	 */
+
+	journal_file_close(self_jf);
+
+	/* cur = xxxx[3] */
+	TEST_ASSERT_NOERR("journal_file_open#2",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE2, 3,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+
+	journal_file_reader_committed_pos(reader, &rpos, &rlap);
+	wpos = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_L("rpos", rpos1, rpos);
+	TEST_ASSERT_L("wpos", wpos1, wpos);
+
+	/*
+	 * now journal file's layout is ...
+	 * |user3[8]|e[9]|xxxx|b[4]|user2[5]|e[6]|b[7]|
+	 *               w                       r
+	 */
+
+	journal_file_close(self_jf);
+
+	/* cur = end[6] */
+	TEST_ASSERT_NOERR("journal_file_open#3",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE2, 6,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+
+	journal_file_reader_committed_pos(reader, &rpos, &rlap);
+	wpos = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_L("rpos", wpos0, rpos);
+	TEST_ASSERT_L("wpos", wpos1, wpos);
+
+	/*
+	 * now journal file's layout is ...
+	 * |user3[8]|e[9]|xxxx|b[4]|user2[5]|e[6]|b[7]|
+	 *               w                       r
+	 */
+
+	journal_file_close(self_jf);
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(t_user_infos); ++i)
+		free(t_user_infos[i]);
+}
+
+static void
+t_write_transaction_around2(void)
+{
+	int i, k = 0, eof, n = 1;
+	off_t rpos, rpos1, wpos, wpos0, wpos1;
+	gfarm_uint64_t rlap;
+	struct journal_file_reader *reader;
+	struct journal_file_writer *writer;
+	struct gfarm_user_info *ui;
+	static const struct t_username names[] = {
+		{ "user1", "USER-1" },
+		{ "user2", "USER--2" },
+		{ "user3", "USER---3" },
+	};
+
+	user_idx = 0;
+
+	memset(t_user_infos, 0, sizeof(t_user_infos));
+
+	unlink_test_file(filepath);
+	/* must be use global variable journal_file */
+	TEST_ASSERT_NOERR("journal_file_open#1",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE3, 0,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+	setup_write();
+	for (i = 0; i < 2; ++i) {
+		ui = t_new_user_info(
+		    names[i].username, names[i].realname);
+		TEST_ASSERT_NOERR("begin",
+		    db_journal_ops.begin(n++, NULL));
+		TEST_ASSERT_NOERR("user_add",
+		    db_journal_ops.user_add(n++, ui));
+		/* ui is freed */
+		TEST_ASSERT_NOERR("end",
+		    db_journal_ops.end(n++, NULL));
+
+		ui = t_new_user_info(
+		    names[i].username, names[i].realname);
+		t_user_infos[k++] = ui;
+	}
+
+	/*
+	 * now journal file's layout is ...
+	 * |b[1]|user1[2]|e[3]|b[4]|user2[5]|e[6]|            |
+	 * r                                     w
+	 */
+	TEST_ASSERT_NOERR("db_journal_read(begin)",
+	    db_journal_read(reader, NULL,
+	        t_no_check_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("db_journal_read(user_add)",
+	    db_journal_read(reader, NULL,
+	        t_check_user_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("db_journal_read(end)",
+	    db_journal_read(reader, NULL,
+	        t_no_check_post_read, NULL, &eof));
+	TEST_ASSERT0(eof == 0);
+	journal_file_reader_commit_pos(reader);
+
+	/*
+	 * now journal file's layout is ...
+	 * |b[1]|user1[2]|e[3]|b[4]|user2[5]|e[6]|            |
+	 *                    r                  w
+	 */
+
+	wpos0 = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_NOERR("begin",
+	    db_journal_ops.begin(n++, NULL));
+	ui = t_new_user_info(names[2].username, names[2].realname);
+	TEST_ASSERT_NOERR("user_add",
+	    db_journal_ops.user_add(n++, ui));
+	ui = t_new_user_info(names[2].username, names[2].realname);
+	t_user_infos[k++] = ui;
+	TEST_ASSERT0(eof == 0);
+	TEST_ASSERT_NOERR("end",
+	    db_journal_ops.end(n++, NULL));
+
+	journal_file_reader_committed_pos(reader, &rpos1, &rlap);
+	wpos1 = journal_file_writer_pos(writer);
+
+	/*
+	 * now journal file's layout is ...
+	 *
+	 *       (invalid rec)
+	 *       xxxxxxxxxxxxx
+	 * |e[9]|user1[2]|e[3]|b[4]|user2[5]|e[6]|b[7]|user[8]|
+	 *      w             r
+	 */
+
+	journal_file_close(self_jf);
+
+	/* cur = xxxx[3] */
+	TEST_ASSERT_NOERR("journal_file_open#2",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE3, 3,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+
+	journal_file_reader_committed_pos(reader, &rpos, &rlap);
+	wpos = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_L("rpos", rpos, rpos1);
+	TEST_ASSERT_L("wpos", wpos, wpos1);
+
+	/*
+	 * now journal file's layout is ...
+	 *
+	 *       (invalid rec)
+	 *       xxxxxxxxxxxxx
+	 * |e[9]|user1[2]|e[3]|b[4]|user2[5]|e[6]|b[7]|user[8]|
+	 *      w             r
+	 */
+
+	journal_file_close(self_jf);
+
+	/* cur = end[6] */
+	TEST_ASSERT_NOERR("journal_file_open#3",
+	    journal_file_open(filepath, TEST_FILE_MAX_SIZE3, 6,
+		&self_jf, GFARM_JOURNAL_RDWR));
+	reader = journal_file_main_reader(self_jf);
+	writer = journal_file_writer(self_jf);
+
+	journal_file_reader_committed_pos(reader, &rpos, &rlap);
+	wpos = journal_file_writer_pos(writer);
+
+	TEST_ASSERT_L("rpos", rpos, wpos0);
+	TEST_ASSERT_L("wpos", wpos, wpos1);
+
+	/*
+	 * now journal file's layout is ...
+	 *
+	 *       (invalid rec)
+	 *       xxxxxxxxxxxxx
+	 * |e[9]|user1[2]|e[3]|b[4]|user2[5]|e[6]|b[7]|user[8]|
+	 *      w                                r
 	 */
 
 	journal_file_close(self_jf);
@@ -477,6 +775,8 @@ t_write(void)
 	t_write_sequential();
 	t_write_cyclic();
 	t_write_blocked();
+	t_write_transaction_around1();
+	t_write_transaction_around2();
 }
 
 static char * *
