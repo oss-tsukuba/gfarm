@@ -32,7 +32,7 @@ shhosts-domainfile|rep-info|rep-list)
 	;;
 
 write-long-loop)
-	$PROG $autoopt $type $GF_TMPF 120
+	$PROG $autoopt $type $GF_TMPF 120 10 1
 	;;
 
 statfsnode)
