@@ -41,6 +41,17 @@ gfarm_auth_client_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_auth_client_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_client_static *s = ctxp->auth_client_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 /*
  * currently 31 is enough,
  * but it is possible that future server replies more methods.

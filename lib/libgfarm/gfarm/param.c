@@ -23,6 +23,31 @@ struct gfarm_param_config {
 	struct gfarm_hostspec *hostspec;
 };
 
+void
+gfarm_param_config_init(struct gfarm_param_config **config_listp,
+	struct gfarm_param_config ***config_lastp)
+{
+	*config_listp = NULL;
+	*config_lastp = config_listp;
+}
+
+void
+gfarm_param_config_free(struct gfarm_param_config **config_listp,
+	struct gfarm_param_config ***config_lastp)
+{
+	struct gfarm_param_config *cl;
+	struct gfarm_param_config *next;
+
+	for (cl = *config_listp; cl != NULL; cl = next) {
+		next = cl->next;
+		free(cl->hostspec);
+		free(cl);
+	}
+
+	*config_listp = NULL;
+	*config_lastp = config_listp;
+}
+
 gfarm_error_t
 gfarm_param_config_parse_long(int ntypes, struct gfarm_param_type *type_table,
 	char *config,

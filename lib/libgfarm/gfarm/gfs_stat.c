@@ -36,6 +36,17 @@ gfarm_gfs_stat_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_gfs_stat_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_stat_static *s = ctxp->gfs_stat_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 struct gfm_stat_closure {
 	struct gfs_stat *st;
 };

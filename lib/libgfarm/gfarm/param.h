@@ -12,6 +12,10 @@ struct gfarm_param_type {
 	void *extension;
 };
 
+void gfarm_param_config_init(struct gfarm_param_config **,
+	struct gfarm_param_config ***);
+void gfarm_param_config_free(struct gfarm_param_config **config_listp,
+	struct gfarm_param_config ***config_lastp);
 gfarm_error_t gfarm_param_config_parse_long(int, struct gfarm_param_type *,
 	char *, int *, long *);
 gfarm_error_t gfarm_param_config_add_long(struct gfarm_param_config ***,

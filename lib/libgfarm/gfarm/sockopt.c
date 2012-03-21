@@ -75,13 +75,26 @@ gfarm_sockopt_static_init(struct gfarm_context *ctxp)
 	if (s == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	s->config_list = NULL;
-	s->config_last = &s->config_list;
-	s->listener_config_list = NULL;
-	s->listener_config_last = &s->listener_config_list;
+	gfarm_param_config_init(&s->config_list, &s->config_last);
+	gfarm_param_config_init(&s->listener_config_list,
+	    &s->listener_config_last);
 
 	ctxp->sockopt_static = s;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfarm_sockopt_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_sockopt_static *s = ctxp->sockopt_static;
+	
+	if (s == NULL)
+		return;
+
+	gfarm_param_config_free(&s->config_list, &s->config_last);
+	gfarm_param_config_free(&s->listener_config_list,
+	    &s->listener_config_last);
+	free(s);
 }
 
 static void

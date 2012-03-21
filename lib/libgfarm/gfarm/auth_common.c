@@ -58,6 +58,21 @@ gfarm_auth_common_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_auth_common_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_common_static *s = ctxp->auth_common_static;
+
+	if (s == NULL)
+		return;
+
+	gfarm_mutex_destroy(&s->privilege_mutex,
+	    "gfarm_auth_common_static_term", "privilege mutex");
+	gfarm_mutex_destroy(&s->openssl_mutex,
+	    "gfarm_auth_common_static_term", "openssl mutex");
+	free(s);
+}
+
 static int
 skip_space(FILE *fp)
 {

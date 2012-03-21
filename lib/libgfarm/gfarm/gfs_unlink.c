@@ -36,6 +36,17 @@ gfarm_gfs_unlink_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_gfs_unlink_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_unlink_static *s = ctxp->gfs_unlink_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 gfarm_error_t
 gfs_unlink(const char *path)
 {

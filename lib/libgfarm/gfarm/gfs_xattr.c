@@ -46,6 +46,17 @@ gfarm_gfs_xattr_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_gfs_xattr_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_xattr_static *s = ctxp->gfs_xattr_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 struct gfm_setxattr0_closure {
 	int xmlMode;
 	const char *name;

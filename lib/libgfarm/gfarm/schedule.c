@@ -180,6 +180,8 @@ struct gfarm_schedule_static {
 	enum gfarm_schedule_search_mode default_search_method;
 };
 
+static void search_idle_network_list_free(void);
+
 gfarm_error_t
 gfarm_schedule_static_init(struct gfarm_context *ctxp)
 {
@@ -201,6 +203,20 @@ gfarm_schedule_static_init(struct gfarm_context *ctxp)
 
 	ctxp->schedule_static = s;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfarm_schedule_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_schedule_static *s = ctxp->schedule_static;
+
+	if (s == NULL)
+		return;
+
+	if (s->search_idle_hosts_state != NULL)
+		gfp_conn_hash_table_dispose(s->search_idle_hosts_state);
+	search_idle_network_list_free();
+	free(s);
 }
 
 #if 0 /* not yet in gfarm v2 */
@@ -417,6 +433,20 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+search_idle_network_list_free(void)
+{
+	struct search_idle_network *net, *next;
+
+	for (net = staticp->search_idle_network_list; net != NULL;
+	     net = next) {
+		next = net->next;
+		free(net);
+	}
+
+	staticp->search_idle_network_list = NULL;
+}
+
 static gfarm_error_t
 search_idle_network_list_add(struct sockaddr *addr,
 	struct search_idle_network **netp)
@@ -458,7 +488,7 @@ search_idle_network_list_add(struct sockaddr *addr,
 }
 
 static gfarm_error_t
-search_idle_host_state_initialize(struct gfm_connection *gfm_server)
+search_idle_host_state_init(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
 
@@ -466,7 +496,7 @@ search_idle_host_state_initialize(struct gfm_connection *gfm_server)
 	    HOSTS_HASHTAB_SIZE);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001427,
-		    "search_idle_host_state_initialize: hash_table_init: %s",
+		    "search_idle_host_state_init: hash_table_init: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
@@ -492,11 +522,11 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 	struct search_idle_host_state *h;
 
 	if (staticp->search_idle_hosts_state == NULL) {
-		e = search_idle_host_state_initialize(gfm_server);
+		e = search_idle_host_state_init(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001428,
 			    "search_idle_host_state_add_host_sched_info: "
-			    "search_idle_host_state_initialize: %s",
+			    "search_idle_host_state_init: %s",
 			    gfarm_error_string(e));
 			return (e);
 		}
@@ -654,11 +684,11 @@ search_idle_candidate_list_reset(struct gfm_connection *gfm_server,
 	struct search_idle_network *net;
 
 	if (staticp->search_idle_hosts_state == NULL) {
-		gfarm_error_t e = search_idle_host_state_initialize(gfm_server);
+		gfarm_error_t e = search_idle_host_state_init(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001435,
 			    "search_idle_candidate_list_reset: "
-			    "search_idle_host_state_initialize: %s",
+			    "search_idle_host_state_init: %s",
 			    gfarm_error_string(e));
 			return (e);
 		}
@@ -2038,6 +2068,7 @@ schedule_search_idle(int acyclic, int write_mode,
 	e = schedule_search_idle_common(acyclic, write_mode, nohostsp, ohosts);
 	if (program_filter_alloced)
 		search_idle_free_program_filter();
+	search_idle_set_domain_filter(NULL);
 	return (e);
 }
 

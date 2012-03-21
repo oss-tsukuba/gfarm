@@ -77,6 +77,17 @@ gfarm_gfs_pio_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_gfs_pio_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_pio_static *s = ctxp->gfs_pio_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 struct gfs_file_list {
 	GFARM_HCIRCLEQ_HEAD(gfs_file) files;
 	pthread_mutex_t mutex;

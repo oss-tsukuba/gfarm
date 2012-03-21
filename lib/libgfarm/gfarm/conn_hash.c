@@ -74,6 +74,24 @@ gfp_conn_hash_table_init(
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfp_conn_hash_table_dispose(struct gfarm_hash_table *hashtab)
+{
+	struct gfarm_hash_iterator it;
+	struct gfarm_hash_entry *entry;
+
+	gfarm_hash_iterator_begin(hashtab, &it);
+	for (;;) {
+		if (gfarm_hash_iterator_is_end(&it))
+			break;
+		entry = gfarm_hash_iterator_access(&it);
+		gfarm_hash_iterator_next(&it);
+		gfp_conn_hash_dispose(hashtab, entry);
+	}
+
+	gfarm_hash_table_free(hashtab);
+}
+
 gfarm_error_t
 gfp_conn_hash_id_enter_noalloc(struct gfarm_hash_table **hashtabp,
 	int hashtabsize,
@@ -173,6 +191,18 @@ gfp_conn_hash_enter(struct gfarm_hash_table **hashtabp, int hashtabsize,
 	id.username = (char *)username; /* UNCONST */
 	return (gfp_conn_hash_id_enter(hashtabp, hashtabsize, entrysize,
 	    &id, entry_ret, created_ret));
+}
+
+void
+gfp_conn_hash_dispose(struct gfarm_hash_table *hashtab,
+    struct gfarm_hash_entry *entry)
+{
+	struct gfp_conn_hash_id *idp = gfarm_hash_entry_key(entry);
+	int keylen = gfarm_hash_entry_key_length(entry);
+
+	free(idp->hostname);
+	free(idp->username);
+	gfarm_hash_purge(hashtab, idp, keylen);
 }
 
 gfarm_error_t

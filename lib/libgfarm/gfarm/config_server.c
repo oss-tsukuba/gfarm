@@ -97,6 +97,7 @@ gfarm_server_terminate(void)
 {
 	/* nothing to do (and also may never be called) */
 	gflog_terminate();
+	gfarm_context_term();
 
 	return (GFARM_ERR_NO_ERROR);
 }

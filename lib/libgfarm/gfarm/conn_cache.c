@@ -47,6 +47,13 @@ gfp_conn_cache_init(struct gfp_conn_cache *c,
 	gfarm_mutex_init(&c->mutex, "gfp_conn_cache_init", "conn_cache");
 }
 
+void
+gfp_conn_cache_term(struct gfp_conn_cache *c)
+{
+	gfp_cached_connection_terminate(c);
+	gfarm_mutex_destroy(&c->mutex, "gfp_conn_cache_term", "conn_cache");
+}
+
 /*
  * return TRUE,  if created by gfs_client_connection_acquire() && still cached.
  * return FALSE, if created by gfs_client_connect() || purged from cache.
