@@ -2056,7 +2056,6 @@ gfprep_connection_job_init(struct gfprep_connection *connp)
 		node->nfiles = gfarm_list_length(&node->flist);
 		if (node->nfiles <= 0) {
 			node->files = NULL;
-			connp->nodes_next++;
 			continue;
 		}
 		node->files = gfarm_array_alloc_from_list(&node->flist);
@@ -2090,9 +2089,14 @@ gfprep_connection_job_next(struct file_job *jobp,
 
 	if (connp->n_nodes_base <= 0)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
+next:
 	if (connp->nodes_next >= connp->n_nodes_base)
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	node = connp->nodes_base_array[connp->nodes_next];
+	if (node->files == NULL) {
+		connp->nodes_next++;
+		goto next;
+	}
 	assert(node->nfiles > 0);
 
 	jobp->src_host = node->hostname;
@@ -2156,7 +2160,7 @@ next:
 					   job.file->subpath);
 			if (is_gfpcopy)
 				gfprep_url_realloc(&dst_url, &dst_url_size,
-						   src_dir, job.file->subpath);
+						   dst_dir, job.file->subpath);
 			dst_hi = NULL;
 			while (array_dst && dst_hi == NULL) {
 				e = gfprep_sort_and_check_disk_avail(
