@@ -60,12 +60,7 @@ gfarm_gfs_pio_section_static_init(struct gfarm_context *ctxp)
 void
 gfarm_gfs_pio_section_static_term(struct gfarm_context *ctxp)
 {
-	struct gfarm_gfs_pio_section_static *s = ctxp->gfs_pio_section_static;
-
-	if (s == NULL)
-		return;
-
-	free(s);
+	free(ctxp->gfs_pio_section_static);
 }
 
 static gfarm_error_t
