@@ -94,6 +94,7 @@ gfarm_host_static_term(struct gfarm_context *ctxp)
 		next = n->next;
 		free(n);
 	}
+	free(s->canonical_self_name);
 	free(s);
 }
 
