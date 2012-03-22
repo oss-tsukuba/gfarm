@@ -2570,30 +2570,40 @@ main(int argc, char *argv[])
 				if (!opt_force_copy) {
 					char *tmp_dst_file;
 					retv = gfprep_asprintf(
-						&tmp_dst_file, "%s/%s",
-						dst_dir, src_base_name);
+						&tmp_dst_file, "%s%s%s",
+						dst_dir,
+						(dst_dir[strlen(dst_dir) - 1]
+						 == '/' ? "" : "/"),
+						(src_base_name[0] == '/' ?
+						 (src_base_name + 1) :
+						 src_base_name));
 					if (gfprep_is_existed(
-						    dst_is_gfarm,
-						    tmp_dst_file, NULL,
-						    NULL)) {
+						    dst_is_gfarm, tmp_dst_file,
+						    NULL, &e)) {
 						gfprep_error(
 							"File exists: %s",
 							tmp_dst_file);
 						free(tmp_dst_file);
 						exit(EXIT_FAILURE);
 					}
-					gfprep_fatal_e(e, "%s", tmp_dst_file);
+					if (e != GFARM_ERR_NO_ERROR)
+						exit(EXIT_FAILURE);
 					free(tmp_dst_file);
 				}
 				checked = 1;
 			} else {
 				char *tmp_dst_dir;
 				char *tmp_src_dir = strdup(src_dir);
+				char *tmp_src_base;
 				if (tmp_src_dir == NULL)
 					gfprep_fatal("no memory");
-				retv = gfprep_asprintf(&tmp_dst_dir, "%s/%s",
-						       dst_dir,
-						       basename(tmp_src_dir));
+				tmp_src_base = basename(tmp_src_dir);
+				retv = gfprep_asprintf(
+					&tmp_dst_dir, "%s%s%s", dst_dir,
+					(dst_dir[strlen(dst_dir) - 1] == '/'
+					 ? "" : "/"),
+					(tmp_src_base[0] == '/' ?
+					 (tmp_src_base + 1) : tmp_src_base));
 				if (retv == -1)
 					gfprep_fatal("no memory");
 				free(tmp_src_dir);
@@ -2623,7 +2633,8 @@ main(int argc, char *argv[])
 			gfprep_error_e(e, "dst_dir(%s)", dst_dir);
 			exit(EXIT_FAILURE);
 		}
-		if (gfprep_is_same_name(src_dir, src_is_gfarm,
+		if (src_base_name == NULL &&
+		    gfprep_is_same_name(src_dir, src_is_gfarm,
 					dst_dir, dst_is_gfarm)) {
 			gfprep_error(
 				"cannot copy: "
@@ -3155,6 +3166,7 @@ main(int argc, char *argv[])
 				if (found == 0) {
 					free(src_select_array);
 					free(dst_select_array);
+					free(dst_exist_array);
 					gfprep_debug(
 					    "pending: dst hosts are busy: %s",
 					    src_url);
