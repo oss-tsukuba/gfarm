@@ -1,0 +1,119 @@
+              Gfarm performance measuring configuration file
+
+1. About
+   This document describes the configuration file of gfperf.rb.
+
+2. About configuration file
+   The configuration file is written in yaml format.
+   The sample yaml configurations are in following directories.
+
+   (a) Gfarm source directory
+      gfperf-rb/gfperf-config.yml      (Full configuration)
+      gfperf-rb/gfperf-sample.yml      (Subset)
+
+   (b) Installed path
+      <gfarm install directory>/share/gfarm/config
+
+   The yaml format of this configuration needs keywords and parameters.
+   Detail of keywords and parameters are written in following section.
+
+3. List of keywords
+
+  3.1 database keyword
+      Specify database filename that grperf.rb writes.
+
+      filename: 
+           Database filename.
+           This file is automatically created by gfperf.rb.
+           Null file is dangerous, because gfperf.rb writes in spite of
+           no tables.
+           Initially this file must be deleted and the directory of this
+           file must be writable on executing user privilege of gfperf.rb.
+      check span: 
+           How many days to calculate average and standard deviation.
+      backup:
+           Backup database filename.
+           Backup is automatically created when gfperf.rb finishes writing
+           database. To avoid operation miss, specify different directory
+           from database directory.
+
+  3.2 errlog keyword
+      Specify error log file. This file is not rotated by gfperf.rb, 
+      please use logrotate.
+
+      Error messages are stored in database file, too.
+      If you don't need error log file, this keyword can be omitted.
+
+  3.3 remote_path keyword
+      Specify Gfarm command directory. Usually <gfarm install directory>/bin.
+      This keyword is used on remote command execution through ssh.
+      Some hosts don't set correct PATH.
+      This keyword can be ommited.
+
+  3.4 authentication keyword
+      Specify authentication type of performance measuring.
+      "sharedsecret", "gsi_auth", and "gsi" are available.
+      Gperf.rb measures all authentication types in this keyword.
+      If you specify "gsi_auth" and "gsi", all tests are executed twice.
+
+      Gfarm servers should allow sepcified authentications.
+
+  3.5 gfarm2fs_mountpoint mount points
+      Specify gfarm2fs mount points for performance measuring.
+      All mount points are mounted by gfperf.rb when performance measuring
+      starts, and unmouted at the end of measuring.
+      When gfperf.rb switches authentication type, all mount points are
+      remounted.
+
+  3.6 metadata keyword
+      Specify test items of gfperf-metadata.
+      Test parameters are same as long command options.
+      See gfperf-metadata(1) for detail.
+
+  3.7 copy keyword
+      Specify test items of gfperf-copy.
+      Test parameters are same as long command options.
+      See gfperf-copy(1) for detail.
+
+  3.8 read keyword
+      Specify test items of gfperf-read.
+      Test parameters are same as long command options.
+      See gfperf-read(1) for detail.
+
+  3.9 write keyword
+      Specify test items of gfperf-write.
+      Test parameters are same as long command options.
+      See gfperf-write(1) for detail.
+
+  3.10 replica keyword
+      Specify test items of gfperf-replica.
+      Test parameters are same as long command options.
+      See gfperf-replica(1) for detail.
+
+  3.11 autoreplica keyword
+      Specify test items of gfperf-autoreplica.
+      Test parameters are same as long command options.
+      See gfperf-autoreplica(1) for detail.
+
+
+  3.12 parallel keyword
+      Test combinations for parallel measuring.
+
+      Specify group name that identify parallel group.
+      Specify test items in each group name.
+      rhost: key is remote host name that ssh can execute 
+      commands by no passwords.
+      type: can take one of "read", "write", "replica".
+      Each type means executing gfperf-parallel-read, gfperf-parallel-write,
+      or gfperf-parallel-replica.
+
+      Test parameters are same as long command options.
+
+  3.12 parallel-autoreplica keyword
+      Specify parameters of gfperf-parallel-autoreplica.
+      The parameters are same as long command options.
+
+      In each group name, gfperf-parallel-autoreplica commands are executed
+      in parallel. The results are calculated to average.
+
+EOF

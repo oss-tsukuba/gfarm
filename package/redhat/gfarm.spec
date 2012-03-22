@@ -983,6 +983,11 @@ fi
 %{doc_prefix}/README.hook.en
 %{doc_prefix}/README.hook.ja
 %endif
+%{doc_prefix}/gfperf/CONFIG-gfperf.en
+%{doc_prefix}/gfperf/README-gfperf.en
+%{doc_prefix}/gfperf/SETUP-gfperf.en
+%{doc_prefix}/gfperf/SUPPORT-gfperf.en
+%{doc_prefix}/gfperf/USING-gfperf.en
 %{doc_prefix}/gfperf/CONFIG-gfperf.ja
 %{doc_prefix}/gfperf/README-gfperf.ja
 %{doc_prefix}/gfperf/SETUP-gfperf.ja

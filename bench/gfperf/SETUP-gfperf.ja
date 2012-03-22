@@ -22,8 +22,10 @@
    されます。
 
 3. WEB UIのインストール方法
-   gfperf-webの中にあるphpファイル一式をapacheのDocumentRoot以下の適当な
-   ディレクトリにコピーします。
+   <gfarmインストールディレクトリ>/share/gfarm/gfperf-web に
+   インストールされているphpファイル一式をapacheのDocumentRoot以下の
+   適当なディレクトリにコピーします。
+   コピーされたファイル及びそのコピー先ディレクトリはapache所有とします。
 
    コピー先の config.php を次の通り編集します。
 
