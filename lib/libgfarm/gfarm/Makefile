@@ -97,6 +97,7 @@ SRCS = \
 	sockutil.c \
 	timespec.c \
 	url.c \
+	replicainfo.c \
 	$(globus_srcs) \
 	$(optional_srcs)
 
@@ -177,6 +178,7 @@ OBJS = \
 	sockutil.lo \
 	timespec.lo \
 	url.lo \
+	replicainfo.lo \
 	$(globus_objs) \
 	$(optional_objs)
 
