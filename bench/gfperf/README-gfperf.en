@@ -1,0 +1,90 @@
+                  Gfarm performance measuring commands
+
+1. About
+   This document describes about Gfarm performance measuring commands.
+
+2. The list of Gfarm performance measuring commands
+   Gfarm performance measuring commands includes following commands.   
+   Please referer man documents of each commands for detail.
+
+   (1) gfperf-metadata
+        This command measures Gfarm metadata access performance like create,
+        unlink, mkdir, rmdir, stat, etc.
+
+   (2) gfperf-copy
+        This command measures Gfarm file copy performance that a file 
+        in local file system is copied to Gfarm file system, and vice versa.
+
+   (3) gfperf-read
+        This command measures file read performance from Gfarm file system.
+
+   (4) gfperf-write
+        This command measures file write performance to Gfarm file system.
+
+   (5) gfperf-replica
+        This command measures file replication performance in Gfarm file
+        system.
+
+   (6) gfperf-tree
+        This command measures file tree creation and deletion performance
+        in Gfarm file system.
+
+   (7) gfperf-autoreplica
+        This command measures file creation performance under Gfarm auto
+        replication environment.
+
+   (8) gfperf-parallel-read
+        This command measures file read performance.
+        This command is expected to be executed in parallel.
+
+   (9) gfperf-parallel-write
+        This command measures file write performance.
+        This command is expected to be executed in parallel.
+
+  (10) gfperf-parallel-replica
+        This command measures file replication performance.
+        This command is expected to be executed in parallel.
+
+  (11) gfperf-parallel-autoreplica
+        This command measures file creation performance under Gfarm auto
+        replication environment.
+        This command is expected to be executed in parallel.
+
+  (12) gfperf-wrapper.sh
+        This is a wrapper script that executes argument command on specified
+        authentication.
+
+  (13) gfperf.rb
+        This command executes gfperf commands (mentioned above) according to
+        the configuration file that is described in CONFIG-gfperf.en.
+        The results of gfperf commands are stored in sqlite3 database file.
+
+  (14) gfstress.rb
+        This command makes Gfarm file system high load by executing 
+        gfperf-metadata, gfperf-tree, gfperf-replica, gfperf-read, and
+        gfperf-write in parallel.
+
+3. How to measure peformance
+
+   The gfperf commands mentioned in from (1) to (11) can be executed by hand.
+   You can make gfperf.rb configuration and automatically execute gfperf.rb
+   by cron. The results are stored in sqlite3 database file that can be
+   viewed on WEB.
+
+4. Other documents
+
+   (1) SETUP-gfperf.en
+        This document describes how to install and setup gfperf commands and
+        WEB system.
+
+   (2) CONFIG-gfperf.ja
+        This document describes how to make a configuration file of gfperf.rb.
+
+   (3) USING-gfperf.ja
+        This document describes how to execute gfperf.rb by cron and
+        how WEB view works.
+
+   (4) SUPPORT-gfperf.ja
+        This document describes how to handle known problems.
+
+EOF

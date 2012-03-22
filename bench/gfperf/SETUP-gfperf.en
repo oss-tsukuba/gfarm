@@ -1,0 +1,46 @@
+                       Gfarm performance measuring setup
+
+1. About
+   This document describes how to install and setup gfperf commands.
+
+1.1 Before installation
+   Gfperf requires following software packages.
+
+   ruby 1.8
+   ruby-sqlite3 (EPEL is required on Redhat, CentOS)
+   apache 2.2
+   php 5.1 or above
+   php-pdo
+   sqlite3
+   gnuplot
+
+2. How to install
+   Following usual Gfarm installation, gfperf commands are installed by
+   default. If they are not installed, type "make install" in bench/gfperf
+   directory in Gfarm source tree.
+   Gfperf commands are installed in the directory which is specified by
+   configure command.
+
+3. How to install gfperf-web
+   Gfperf-web is installed <gfarm install directory>/share/gfarm/gfperf-web.
+   Please copy php files from this directory to Apache's DocumentRoot
+   on Apache's previllage.
+   Any subdirectories in Apache's DocumentRoot are available.
+
+   Edit config.php file of following keywords.
+
+    GNUPLOT  : Install path of gnuplot.
+    DATABASE : Specify database filename of gfperf.rb.
+               This file must be readable on Apache's previllage.
+    TIMEZONE : Time zone in php style.
+               Available timezones are listed in following web page.
+               http://php.net/manual/en/timezones.php
+    CONFIG_DB: Specify configuration database file of gfperf-web.
+               This file and the directory are readable and writable
+               on Apache's previllage.
+               Initially this file must be deleted.
+               Index.php creates this file on first access.
+
+    After setup, you can see index.php for top page.
+
+EOF

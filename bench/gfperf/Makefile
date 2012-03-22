@@ -25,7 +25,12 @@ SUBDIRS = \
 
 include $(top_srcdir)/makes/subdir.mk
 
-DOC = CONFIG-gfperf.ja \
+DOC = CONFIG-gfperf.en \
+      README-gfperf.en \
+      SETUP-gfperf.en \
+      SUPPORT-gfperf.en \
+      USING-gfperf.en \
+      CONFIG-gfperf.ja \
       README-gfperf.ja \
       SETUP-gfperf.ja \
       SUPPORT-gfperf.ja \
