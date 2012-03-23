@@ -357,10 +357,12 @@ gfm_client_connect_single(const char *hostname, int port,
 	struct pollfd **pfdsp, int *nfdp)
 {
 	gfarm_error_t e;
-	int sock;
+	int sock, i, nmsl;
 	struct addrinfo *res;
 	struct pollfd *pfd, *pfds;
 	struct gfm_client_connect_info *ci, *cis;
+	struct gfarm_filesystem *fs;
+	struct gfarm_metadb_server *ms, **msl;
 
 	if ((e = gfm_alloc_connect_info(1, &cis, &pfds))
 	    != GFARM_ERR_NO_ERROR)
@@ -375,7 +377,22 @@ gfm_client_connect_single(const char *hostname, int port,
 	}
 	ci = &cis[0];
 	ci->res_ai = res;
+
 	ci->ms = NULL;
+	fs = gfarm_filesystem_get(hostname, port);
+	assert(fs);
+	msl = gfarm_filesystem_get_metadb_server_list(fs, &nmsl);
+	assert(msl);
+	for (i = 0; i < nmsl; ++i) {
+		ms = msl[i];
+		if (strcmp(gfarm_metadb_server_get_name(ms), hostname) == 0 &&
+		    gfarm_metadb_server_get_port(ms) == port &&
+		    !gfarm_metadb_server_is_self(ms)) {
+			ci->ms = ms;
+			break;
+		}
+	}
+
 	pfd = &pfds[0];
 	ci->pfd = pfd;
 	pfd->fd = sock;
