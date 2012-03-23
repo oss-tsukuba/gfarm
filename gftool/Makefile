@@ -44,7 +44,7 @@ SUBDIRS = \
 	gfxattr \
 	config-gfarm \
 	gfhostgroup \
-	gfrepspec \
+	gfrepattr \
 	$(optional_targets)
 
 #	gfexec \
