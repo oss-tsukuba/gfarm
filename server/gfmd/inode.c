@@ -17,6 +17,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/replica_info.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -41,6 +42,7 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
+#include "fsngroup_replica.h"
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
@@ -2961,9 +2963,41 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	if (ia->u.f.cksum_owner == NULL || ia->u.f.cksum_owner != fo)
 		inode_cksum_remove(inode);
 
-	return (inode_file_update_common(fo->inode, size, atime, mtime,
-	    fo->u.f.spool_host, fo->u.f.desired_replica_number,
-	    old_genp, new_genp, trace_logp));
+	/*
+	 * Note:
+	 *
+	 *	The ncopy replication must be omitted if the
+	 *	replicainfo replication is enabled.
+	 *
+	 */
+	if (fo->u.f.replicainfo != NULL) {
+		int ret =
+			inode_file_update_common(fo->inode, size, atime, mtime,
+				fo->u.f.spool_host,
+				0,
+				old_genp, new_genp, trace_logp);
+		fo->u.f.desired_replica_number = 0;
+		/*
+		 * OK now, let the replication begin.
+		 */
+		gfarm_server_fsngroup_replicate_file(
+			fo->inode,
+			fo->u.f.spool_host,
+			fo->u.f.replicainfo);
+		/*
+		 * Make it sure that we don't want replication
+		 * anymore. The area is free'd in the
+		 * gfarm_server_fsngroup_replicate_file().
+		 */
+		fo->u.f.replicainfo = NULL;
+
+		return (ret);
+	} else {
+		return (inode_file_update_common(fo->inode, size, atime, mtime,
+				fo->u.f.spool_host,
+				fo->u.f.desired_replica_number,
+				old_genp, new_genp, trace_logp));
+	}
 }
 
 /* returns TRUE, if generation number is updated. */
@@ -5126,6 +5160,9 @@ xattr_init(void)
 		gfarm_xattr_caching_pattern_add(GFARM_ROOT_EA_USER);
 	if (!gfarm_xattr_caching(GFARM_ROOT_EA_GROUP))
 		gfarm_xattr_caching_pattern_add(GFARM_ROOT_EA_GROUP);
+
+	if (!gfarm_xattr_caching(GFARM_REPLICAINFO_XATTR_NAME))
+		gfarm_xattr_caching_pattern_add(GFARM_REPLICAINFO_XATTR_NAME);
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
