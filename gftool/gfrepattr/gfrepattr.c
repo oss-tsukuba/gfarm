@@ -1,12 +1,6 @@
 /*
- * Copyright (c) 2009 National Institute of Informatics in Japan.
- * All rights reserved.
- */
-
-/*
  * $Id$
  */
-
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -106,23 +100,23 @@ usage(void)
 	fprintf(stderr, "Usage:\t%s [-s|-r] [-c|-m] [-h] ARG [ARG ...]\n",
 		program_name);
 
-	fprintf(stderr, "\t%s -s [-c|-m] [-h] path spec\n", program_name);
+	fprintf(stderr, "\t%s -s [-c|-m] [-h] path attr\n", program_name);
 	fprintf(stderr, "\t%s -r [-c|-m] [-h] path [path ...]\n",
 		program_name);
 	fprintf(stderr, "\t%s [-h] path [path ...]\n\n", program_name);
 
-	fprintf(stderr, "\t\t-s\tset a replicaton spec.\n");
-	fprintf(stderr, "\t\t-r\tremove any replicaton specs.\n");
-	fprintf(stderr, "\t\t-c\tfail if a spec already specified "
+	fprintf(stderr, "\t\t-s\tset a replicaton attr.\n");
+	fprintf(stderr, "\t\t-r\tremove any replicaton attr(s).\n");
+	fprintf(stderr, "\t\t-c\tfail if an attr already specified "
 		"(use with -s).\n");
-	fprintf(stderr, "\t\t-m\tfail if a spec dosen't specified yet "
+	fprintf(stderr, "\t\t-m\tfail if an attr isn't specified yet "
 		"(use with -s).\n");
 	fprintf(stderr, "\t\t-h\tprocess symbolic link instead of "
 		"any referenced files.\n\n");
 
-	fprintf(stderr, "spec BNF:\n");
-	fprintf(stderr, "\tspec := aspec | aspec ',' spec\n");
-	fprintf(stderr, "\taspec := string ':' integer\n");
+	fprintf(stderr, "attr BNF:\n");
+	fprintf(stderr, "\tattr := anattr | anattr ',' attr\n");
+	fprintf(stderr, "\tanattr := string ':' integer\n");
 
 	fprintf(stderr, "e.g.)\n");
 	fprintf(stderr, "\t'group0:2'\n");
@@ -218,7 +212,7 @@ main(int argc, char *argv[])
 		c_path = argv[0];
 		nreps = gfarm_replicainfo_parse(argv[1], &reps);
 		if (nreps == 0) {
-			fprintf(stderr, "%s: invalid spec '%s'\n",
+			fprintf(stderr, "%s: invalid attr '%s'\n",
 				program_name, argv[1]);
 			got_errors++;
 			goto done;

@@ -282,9 +282,9 @@ size_t
 gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 {
 	/*
-	 * aspec := string ':' number
+	 * anattr := string ':' number
 	 *
-	 * speclist := spec | speclist ',' spec
+	 * attr := anattr | anattr ',' attr
 	 */
 
 	size_t ret = 0;
