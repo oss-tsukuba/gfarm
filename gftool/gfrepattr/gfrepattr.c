@@ -225,7 +225,9 @@ main(int argc, char *argv[])
 			got_errors++;
 			goto done;
 		}
-		infolen = strlen(replicainfo);
+
+		/* Add one for the last NUL. */
+		infolen = strlen(replicainfo) + 1;
 		e = set_replicainfo(c_path, replicainfo, infolen, flags,
 			nofollow);
 		switch (e) {
