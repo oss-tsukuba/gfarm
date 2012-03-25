@@ -792,9 +792,9 @@ remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 
 /* spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING */
 static void
-inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t old_gen,
-	int start_replication, int desired_replica_number)
+update_replicas(struct inode *inode, struct host *spool_host,
+	gfarm_int64_t old_gen, int start_replication,
+	int desired_replica_number, char *replicainfo)
 {
 	struct file_copy **copyp, *copy, *next, *to_be_excluded = NULL;
 	int nreplicas = 1;
@@ -802,6 +802,16 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 	struct file_replicating *fr;
 	gfarm_error_t e;
 
+	/*
+	 * First of all, about each and every host having replica of
+	 * the inode:
+	 *
+	 *	If replication is required, count up how many replicas
+	 *	we have at this moment and make a list of them.
+	 *
+	 *	If replication is not required, remove existing
+	 *	replica(s) if it is not yet removed.
+	 */
 	for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL; ) {
 		if (copy->host == spool_host) {
 			copyp = &copy->host_next;
@@ -820,8 +830,9 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			++nreplicas;
 		} else {
 			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
-				e = remove_replica_entity(inode, old_gen,
-				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
+				e = remove_replica_entity(
+					inode, old_gen, copy->host,
+					FILE_COPY_IS_VALID(copy), NULL);
 				/* abandon `e' */
 			} else { /* dead_file_copy must be already created */
 				assert(!FILE_COPY_IS_VALID(copy));
@@ -830,19 +841,44 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		}
 	}
 
-	if (spool_host != NULL && nreplicas < desired_replica_number) {
-		schedule_replication(inode, spool_host, to_be_excluded,
-		    nreplicas, desired_replica_number - nreplicas);
+	/*
+	 * For now the to_be_excluded contains hosts which have to be
+	 * excluded from the replication destination candidate list
+	 * since the hosts in the to_be_excluded had a replica of the
+	 * old contents and the specification says:
+	 *
+	 *	If a replica is created on a host, the host must be
+	 *	kept having the replica of the file ever after.
+	 *
+	 * So we have to avoid to schedule creation of a replica on
+	 * them, at this moment.
+	 */
+	if (spool_host != NULL) {
+		if (replicainfo != NULL) {
+			gfarm_server_fsngroup_replicate_file(
+				inode, spool_host, replicainfo,
+				to_be_excluded);
+		} else if (nreplicas < desired_replica_number) {
+			schedule_replication(
+				inode, spool_host, to_be_excluded, nreplicas,
+				desired_replica_number - nreplicas);
+		}
 	}
 
+	/*
+	 * After scheduling replica creation to new hosts, start
+	 * updation of the existing replicas on the hosts in the
+	 * to_be_excluded VERY HERE.
+	 */
 	for (copy = to_be_excluded; copy != NULL; copy = next) {
 		/* if there is ongoing replication, don't start new one */
 		if (!FILE_COPY_IS_VALID(copy) ||
 		    !host_is_up(copy->host) ||
 		    !host_supports_async_protocols(copy->host)) {
 			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
-				e = remove_replica_entity(inode, old_gen,
-				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
+				e = remove_replica_entity(
+					inode, old_gen, copy->host,
+					FILE_COPY_IS_VALID(copy), NULL);
 				/* abandon `e' */
 			}
 		} else {
@@ -858,7 +894,10 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 				    "replication before removal: host %s: %s",
 				    host_name(copy->host),
 				    gfarm_error_string(e));
-				/* give up the replication and remove the old one */
+				/*
+				 * Give up the replication and remove
+				 * the old one
+				 */
 				removal_pendingq_enqueue(deferred_cleanup);
 			} else if ((e = async_back_channel_replication_request(
 			    host_name(spool_host), host_port(spool_host),
@@ -2888,7 +2927,7 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 static int
 inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	struct host *spool_host, int desired_replica_number,
+	struct host *spool_host, int desired_replica_number, char *replicainfo,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
@@ -2939,8 +2978,8 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 			start_replication = 1;
 	}
 
-	inode_remove_every_other_replicas(inode, spool_host, old_gen,
-	    start_replication, desired_replica_number);
+	update_replicas(inode, spool_host, old_gen,
+		start_replication, desired_replica_number, replicainfo);
 
 	return (generation_updated);
 }
@@ -2963,41 +3002,11 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	if (ia->u.f.cksum_owner == NULL || ia->u.f.cksum_owner != fo)
 		inode_cksum_remove(inode);
 
-	/*
-	 * Note:
-	 *
-	 *	The ncopy replication must be omitted if the
-	 *	replicainfo replication is enabled.
-	 *
-	 */
-	if (fo->u.f.replicainfo != NULL) {
-		int ret =
-			inode_file_update_common(fo->inode, size, atime, mtime,
-				fo->u.f.spool_host,
-				0,
-				old_genp, new_genp, trace_logp);
-		fo->u.f.desired_replica_number = 0;
-		/*
-		 * OK now, let the replication begin.
-		 */
-		gfarm_server_fsngroup_replicate_file(
-			fo->inode,
+	return (inode_file_update_common(fo->inode, size, atime, mtime,
 			fo->u.f.spool_host,
-			fo->u.f.replicainfo);
-		/*
-		 * Make it sure that we don't want replication
-		 * anymore. The area is free'd in the
-		 * gfarm_server_fsngroup_replicate_file().
-		 */
-		fo->u.f.replicainfo = NULL;
-
-		return (ret);
-	} else {
-		return (inode_file_update_common(fo->inode, size, atime, mtime,
-				fo->u.f.spool_host,
-				fo->u.f.desired_replica_number,
-				old_genp, new_genp, trace_logp));
-	}
+			fo->u.f.desired_replica_number,
+			fo->u.f.replicainfo,
+			old_genp, new_genp, trace_logp));
 }
 
 /* returns TRUE, if generation number is updated. */
@@ -3021,9 +3030,17 @@ inode_file_handle_update(struct inode *inode, gfarm_off_t size,
 	inode_cksum_remove(inode);
 
 	*gen_updatedp = inode_file_update_common(inode,
-	    size, atime, mtime, spool_host,
-	    /* XXX FIXME desired_file_number is unknown */ 1,
-	    old_genp, new_genp, trace_logp);
+				size, atime, mtime, spool_host,
+				/*
+				 * XXX FIXME:
+				 *
+				 *	desired_file_number and
+				 *	replicainfo are unknown.
+				 * 	We need a file_opening here.
+				 */
+				1,
+				NULL,
+				old_genp, new_genp, trace_logp);
 	return (GFARM_ERR_NO_ERROR);
 }
 
