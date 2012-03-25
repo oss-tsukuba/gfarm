@@ -60,7 +60,7 @@ gfarm_server_fsngroup_find_replicainfo_by_inode(struct inode *inode)
 	 * Not yet.
 	 */
 	(void)inode;
-	return (NULL);	/* will be free'd in the following procedure. */
+	return (NULL);	/* will be free'd in file_opening_free(). */
 }
 
 void
@@ -81,5 +81,4 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 			info);
 
 	}
-	free(info);
 }

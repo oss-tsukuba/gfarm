@@ -14,6 +14,7 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
+#include "replica_info.h"
 #include "gfutil.h"
 
 #define DEFAULT_ALLOC_SIZE (64 * 1024)

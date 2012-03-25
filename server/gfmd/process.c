@@ -111,6 +111,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			file_replicating_free(fo->u.f.replicating);
 			fo->u.f.replicating = NULL;
 		}
+		free((void *)fo->u.f.replicainfo);
 	} else if (GFARM_S_ISDIR(mode)) {
 		if (fo->u.d.key != NULL)
 			free(fo->u.d.key);
