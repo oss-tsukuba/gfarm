@@ -201,7 +201,10 @@ gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
 
 void inode_init_desired_number(void);
 int inode_has_desired_number(struct inode *, int *);
+int inode_has_replicainfo(struct inode *, char **);
 int inode_traverse_desired_replica_number(struct inode *, int *);
+int inode_visit_directory_bottom_up(
+	struct inode *, int (*)(struct inode *, void *), void *);
 
 void inode_remove_orphan(void);
 void inode_check_and_repair(void);
