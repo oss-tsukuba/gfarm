@@ -386,8 +386,8 @@ gfm_client_connect_single(const char *hostname, int port,
 	for (i = 0; i < nmsl; ++i) {
 		ms = msl[i];
 		if (strcmp(gfarm_metadb_server_get_name(ms), hostname) == 0 &&
-		    gfarm_metadb_server_get_port(ms) == port &&
-		    !gfarm_metadb_server_is_self(ms)) {
+		    gfarm_metadb_server_get_port(ms) == port) {
+			assert(!gfarm_metadb_server_is_self(ms));
 			ci->ms = ms;
 			break;
 		}
