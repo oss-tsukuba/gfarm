@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPREP" "1" "13 March 2012" "Gfarm" ""
+.TH "GFPREP" "1" "26 March 2012" "Gfarm" ""
 
 .SH NAME
 gfprep \- replicate Gfarm files in parallel
@@ -14,7 +14,7 @@ gfprep \- replicate Gfarm files in parallel
 .SH "DESCRIPTION"
 .PP
 \fBgfprep\fR creates replicas of Gfarm files specified by
-the \fIgfarm-url\fR(gfarm:/...) in parallel.
+the \fIgfarm-url\fR(gfarm:///...) in parallel.
 .PP
 When a set of source hosts are specified, only files stored on the set
 of source hosts are replicated.  A set of hosts can be specified by a
@@ -147,19 +147,19 @@ Displays a list of command options.
 To replicate files under the directory recursively.
 
 .nf
-$ gfprep -N 3 gfarm:/dir
+$ gfprep -N 3 gfarm:///dir
 .fi
 .PP
 To replicate a file or reduce surplus replicas of the file.
 
 .nf
-$ gfprep -N 3 -x gfarm:/dir/file
+$ gfprep -N 3 -x gfarm:///dir/file
 .fi
 .PP
 To migrate replicas from gfsd1.example.com to other nodes.
 
 .nf
-$ gfprep -m -S gfsd1.example.com gfarm:/
+$ gfprep -m -S gfsd1.example.com gfarm:///
 .fi
 .SH "NOTES"
 .PP

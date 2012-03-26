@@ -109,7 +109,7 @@ CLASS="COMMAND"
 the <CODE
 CLASS="PARAMETER"
 >gfarm-url</CODE
->(gfarm:/...) in parallel.</P
+>(gfarm:///...) in parallel.</P
 ><P
 >When a set of source hosts are specified, only files stored on the set
 of source hosts are replicated.  A set of hosts can be specified by a
@@ -458,17 +458,17 @@ NAME="EXAMPLES"
 >To replicate files under the directory recursively.</P
 ><P
 CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;gfarm:/dir</P
+>$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;gfarm:///dir</P
 ><P
 >To replicate a file or reduce surplus replicas of the file.</P
 ><P
 CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;-x&nbsp;gfarm:/dir/file</P
+>$&nbsp;gfprep&nbsp;-N&nbsp;3&nbsp;-x&nbsp;gfarm:///dir/file</P
 ><P
 >To migrate replicas from gfsd1.example.com to other nodes.</P
 ><P
 CLASS="LITERALLAYOUT"
->$&nbsp;gfprep&nbsp;-m&nbsp;-S&nbsp;gfsd1.example.com&nbsp;gfarm:/</P
+>$&nbsp;gfprep&nbsp;-m&nbsp;-S&nbsp;gfsd1.example.com&nbsp;gfarm:///</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
