@@ -129,7 +129,7 @@ gfprep_usage()
 {
 	fprintf(stderr,
 "\t[-N <#replica>] [-x (remove surplus replicas)] [-m (migrate)]\n"
-"\t<gfarm_url(gfarm:/...)>\n");
+"\t<gfarm_url(gfarm:///...)>\n");
 }
 
 static void
@@ -137,7 +137,8 @@ gfpcopy_usage()
 {
 	fprintf(stderr,
 "\t[-f (force copy)(overwrite)] [-b <#bufsize to copy>]\n"
-"\t<src_url(gfarm:/... or file:/...)> <dst_dir(gfarm:/... or file:/...)>\n");
+"\t<src_url(gfarm:///... or file:///...)>\n"
+"\t<dst_dir(gfarm:///... or file:///...)>\n");
 }
 
 static void

@@ -42,9 +42,9 @@
 
 <para>
 <command>gfpcopy</command> copies files and directries specified by
-the <parameter>source-url</parameter>(gfarm:/... or file:/...) to a
+the <parameter>source-url</parameter>(gfarm:///... or file:///...) to a
 directory specified by
-the <parameter>destination-url</parameter>(gfarm:/... or file:/...) in
+the <parameter>destination-url</parameter>(gfarm:///... or file:///...) in
 parallel.
 </para>
 <para>
@@ -105,16 +105,16 @@ with <command>gfprep</command>.  (see man <command>gfprep</command>)
 To copy files under the directory recursively.
 </para>
 <literallayout>
-$ gfpcopy gfarm:/dir file:/tmp/dir
-$ gfpcopy file:/tmp/dir gfarm:/dir
-$ gfpcopy gfarm:/dir1 gfarm:/dir2
+$ gfpcopy gfarm:///dir file:///tmp/dir
+$ gfpcopy file:///tmp/dir gfarm:///dir
+$ gfpcopy gfarm:///dir1 gfarm:///dir2
 </literallayout>
 
  <para>
 To copy a file.
 </para>
 <literallayout>
-$ gfpcopy gfarm:/dir/file file:/dir
+$ gfpcopy gfarm:///dir/file file:///dir
 </literallayout>
 </refsect1>
 
