@@ -125,9 +125,7 @@ display_fsngroup(const char *hostname)
 				break;
 			}
 		}
-
-		if (fsngroupname != NULL)
-			free((void *)fsngroupname);
+		free(fsngroupname);
 	} else {
 		struct gfarm_fsngroup_info *fsngs = NULL;
 		size_t n = 0;
@@ -148,10 +146,10 @@ display_fsngroup(const char *hostname)
 
 		if (n > 0 && fsngs != NULL) {
 			for (i = 0; i < n; i++) {
-				free((void *)fsngs[i].hostname);
-				free((void *)fsngs[i].fsngroupname);
+				free(fsngs[i].hostname);
+				free(fsngs[i].fsngroupname);
 			}
-			free((void *)fsngs);
+			free(fsngs);
 		}
 	}
 

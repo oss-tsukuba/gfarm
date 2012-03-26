@@ -16,6 +16,7 @@
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "replica_info.h"
 
 /*****************************************************************************/
@@ -166,7 +167,7 @@ parse_int64_by_base(const char *str, int64_t *val, int base) {
 		*val = tmp_val * t * neg;
 	}
 
-	free((void *)buf);
+	free(buf);
 
 	return (ret);
 }
@@ -252,12 +253,9 @@ allocate_replicainfo(const char *fsngroupname, size_t n)
 
 done:
 	if (is_ok == false) {
-		if (tmp_fsng != NULL)
-			free((void *)tmp_fsng);
-		if (ret != NULL) {
-			free((void *)ret);
-			ret = NULL;
-		}
+		free(tmp_fsng);
+		free(ret);
+		ret = NULL;
 	}
 
 	return ((gfarm_replicainfo_t)ret);
@@ -269,9 +267,8 @@ destroy_replicainfo(gfarm_replicainfo_t rep)
 	struct gfarm_replicainfo *r = (struct gfarm_replicainfo *)rep;
 
 	if (r != NULL) {
-		if (r->fsngroupname != NULL)
-			free((void *)r->fsngroupname);
-		free((void *)r);
+		free(r->fsngroupname);
+		free(r);
 	}
 }
 
@@ -300,8 +297,12 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 	gfarm_replicainfo_t *reps = NULL;
 	gfarm_replicainfo_t rep;
 	size_t len = strlen(s);
-	char *buf = (char *)alloca(len + 1);
+	int of = 0;
+	char *buf = NULL;
 
+	len = gfarm_size_add(&of, len, 1);
+	if (of == 0 && len > 0)
+		buf = (char *)malloc(len);
 	if (buf == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_replicainfo_parse: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -314,8 +315,7 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 	if (n_tokens == 0)
 		goto done;
 
-	reps = (gfarm_replicainfo_t *)malloc(sizeof(gfarm_replicainfo_t) *
-					n_tokens);
+	GFARM_MALLOC_ARRAY(reps, n_tokens);
 	if (reps == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_replicainfo_parse: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -340,11 +340,12 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 	is_ok = true;
 
 done:
+	free(buf);
 	if (is_ok == false || retp == NULL) {
 		if (reps != NULL) {
 			for (i = 0; i < ret; i++)
 				destroy_replicainfo(reps[i]);
-			free((void *)reps);
+			free(reps);
 		}
 	} else {
 		if (retp != NULL)

@@ -245,8 +245,7 @@ main(int argc, char *argv[])
 			got_errors++;
 			break;
 		}
-		if (replicainfo != NULL)
-			free((void *)replicainfo);
+		free(replicainfo);
 		break;
 	case GET_MODE:
 		for (i = 0; i < argc; i++) {
@@ -276,8 +275,7 @@ main(int argc, char *argv[])
 				got_errors++;
 				break;
 			}
-			if (replicainfo != NULL)
-				free((void *)replicainfo);
+			free(replicainfo);
 		}
 		(void)fflush(stdout);
 		break;
