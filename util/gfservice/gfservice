@@ -182,12 +182,25 @@ get_config_gfarm_options()
 	log_debug "get_config_gfarm_options: HOSTID=$1"
 
 	if [ "X`eval echo \\$$1_CONFIG_GFARM_OPTIONS`" = X ]; then
-		echo ""
-		log_debug "get_config_gfarm_options: CONFIG_GFARM_OPTIONS="
+		if [ "X`eval echo \\$$1_PRIVATE_MODE`" = Xtrue ]; then
+		    echo "-S"
+		    log_debug "get_config_gfarm_options:" \
+			"CONFIG_GFARM_OPTIONS=-S"
+		else
+		    echo ""
+		    log_debug "get_config_gfarm_options:" \
+			"CONFIG_GFARM_OPTIONS="
+		fi
 	else
-		eval echo "\$$1_CONFIG_GFARM_OPTIONS"
-		log_debug "get_config_gfarm_options:" \
+		if [ "X`eval echo \\$$1_PRIVATE_MODE`" = Xtrue ]; then
+		    eval echo "\$$1_CONFIG_GFARM_OPTIONS -S"
+		    log_debug "get_config_gfarm_options:" \
+			`eval echo \\$$1_CONFIG_GFARM_OPTIONS` "-S"
+		else
+		    eval echo "\$$1_CONFIG_GFARM_OPTIONS"
+		    log_debug "get_config_gfarm_options:" \
 			`eval echo \\$$1_CONFIG_GFARM_OPTIONS`
+		fi
 	fi
 
 	log_debug "end get_config_gfarm_options"
@@ -202,12 +215,25 @@ get_config_gfsd_options()
 	log_debug "get_config_gfsd_options: HOSTID=$1"
 
 	if [ "X`eval echo \\$$1_CONFIG_GFSD_OPTIONS`" = X ]; then
-		echo ""
-		log_debug "get_config_gfsd_options: CONFIG_GFSD_OPTIONS="
+		if [ "X`eval echo \\$$1_PRIVATE_MODE`" = Xtrue ]; then
+			echo "-S"
+			log_debug "get_config_gfsd_options:" \
+			    "CONFIG_GFSD_OPTIONS=-S"
+		else
+			echo ""
+			log_debug "get_config_gfsd_options:" \
+			    "CONFIG_GFSD_OPTIONS="
+		fi
 	else
-		eval echo "\$$1_CONFIG_GFSD_OPTIONS"
-		log_debug "get_config_gfsd_options:" \
-			`eval echo \\$$1_CONFIG_GFSD_OPTIONS`
+		if [ "X`eval echo \\$$1_PRIVATE_MODE`" = Xtrue ]; then
+			eval echo "\$$1_CONFIG_GFSD_OPTIONS -S"
+			log_debug "get_config_gfsd_options:" \
+			    `eval echo \\$$1_CONFIG_GFSD_OPTIONS` "-S"
+		else
+			eval echo "\$$1_CONFIG_GFSD_OPTIONS"
+			log_debug "get_config_gfsd_options:" \
+			    `eval echo \\$$1_CONFIG_GFSD_OPTIONS`
+		fi
 	fi
 
 	log_debug "end get_config_gfsd_options"

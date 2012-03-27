@@ -809,6 +809,7 @@ subcmd_unconfig_client()
 
 	set_client_params
 	rm -f $GFARM_CONF
+	rm -f $SHARED_KEY_FILE
 
 	log_debug "end subcmd_unconfig_client"
 }
