@@ -25,10 +25,10 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfservice-agent&nbsp;--&nbsp;agent of <B
+>gfservice-agent&nbsp;--&nbsp;<B
 CLASS="COMMAND"
 >gfservice</B
-></DIV
+> のエージェント</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -43,12 +43,12 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
->]  sub-command  [<TT
+>]  サブコマンド  [<TT
 CLASS="REPLACEABLE"
 ><I
->argument ...</I
+>引数 ...</I
 ></TT
 >]</P
 ></DIV
@@ -63,95 +63,88 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> is an agent of
+> は、<B
+CLASS="COMMAND"
+>gfservice</B
+> の
+エージェントです。
 <B
 CLASS="COMMAND"
 >gfservice</B
->.
-It must be installed on all hosts you want to operate using
+> を用いて操作したいホストすべてに、この
+エージェントをインストールする必要があります。
 <B
 CLASS="COMMAND"
 >gfservice</B
->.
-Unlike <B
-CLASS="COMMAND"
->gfservice</B
->, it doesn't read a configuration file.</P
+> と異なり、設定ファイルは読み込みません。</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> is not designed to be executed
-directly by an user.
-In daily use, it is executed only by <B
+> は、ユーザが直接実行することを意図
+して作成されたものではありません。
+日常の利用では、SSH と Sudo を介して <B
 CLASS="COMMAND"
 >gfservice</B
-> via SSH
-and Sudo.</P
+> コマンド
+によって実行されるだけです。</P
 ><P
->Sub-command names of <B
+><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> are similar to
-those of <B
-CLASS="COMMAND"
->gfservice</B
->, but their arguments are different.
-For example, <B
-CLASS="COMMAND"
->"unmount"</B
-> sub-command of
+> のサブコマンド名は 
 <B
 CLASS="COMMAND"
+>gfservice</B
+> のものに似ていますが、引数は異なります。
+たとえば、<B
+CLASS="COMMAND"
 >gfservice-agent</B
-> takes
-<TT
+> の <B
+CLASS="COMMAND"
+>unmount</B
+>
+サブコマンドは、
+「<TT
 CLASS="PARAMETER"
-><I
->"directory=<TT
-CLASS="REPLACEABLE"
 ><I
 >directory</I
 ></TT
->"</I
+>=<TT
+CLASS="REPLACEABLE"
+><I
+>ディレクトリ</I
 ></TT
->
-argument:</P
+>」
+という引数をとります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfservice-agent&nbsp;unmount&nbsp;directory=/somewhere</P
 ><P
->while <B
-CLASS="COMMAND"
->"unmount"</B
-> sub-command of <B
+>これに対して、<B
 CLASS="COMMAND"
 >gfservice</B
->
-takes <TT
+> では、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->"directory"</I
+>ディレクトリ</I
 ></TT
-> argument:</P
+>」という引数をとります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfservice&nbsp;unmount&nbsp;client3&nbsp;/somewhere</P
 ><P
->Almost all arguments of <B
+><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> have "key=value"
-form.
-When two or more arguments are given, <B
-CLASS="COMMAND"
->gfservice-agent</B
->
-doesn't care about the order of arguments.
+> の引数はほとんどすべて、「キー=値」
+という形になっています。
+複数の引数をとる場合、引数の順序は任意です。
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> ignores arguments with unknown keys.</P
+> は、未知のキーを無視します。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -172,7 +165,7 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Print debug information.</P
+>デバッグ情報を出力します。</P
 ></DD
 ></DL
 ></DIV
@@ -188,8 +181,8 @@ NAME="GFMD_SUB_COMMANDS"
 ><B
 CLASS="COMMAND"
 >gfservice-agent</B
-> currently recognizes the following
-sub-commands.</P
+> は現在のところ、次のサブコマンドを
+認識します。</P
 ><P
 ></P
 ><DIV
@@ -208,7 +201,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>パラメタ名</I
 ></TT
 >
 <TT
@@ -219,21 +212,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>「<B
 CLASS="COMMAND"
 >config-gfarm -T</B
-> command and output a value of
-the parameter <TT
+>」コマンドを実行して、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>パラメタ名</I
 ></TT
-> to standard out.</P
+> 」の値を標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -248,7 +241,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>パラメタ名</I
 ></TT
 >
 <TT
@@ -259,21 +252,22 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>「<B
 CLASS="COMMAND"
 >config-gfsd -T</B
-> command and output a value of
-the parameter <TT
+>」コマンドを実行して、
+「<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>パラメタ名</I
 ></TT
-> to standard out.</P
+>」の値を標準出力に
+出力します。</P
 ></DD
 ><DT
 ><B
@@ -288,13 +282,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if a backend database is currently running.
-Otherwise exits with 1.</P
+>バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -309,13 +303,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if gfmd is currently running.
-Otherwise exits with 1.</P
+>gfmd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -330,13 +324,13 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if gfsd is currently running.
-Otherwise exits with 1.</P
+>gfsd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -351,7 +345,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 >
 <TT
@@ -362,12 +356,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->time</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->Start a backend database if it is not running currently.</P
+>バックエンドデータベースが実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -382,7 +376,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 >
 <TT
@@ -393,12 +387,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->time</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->Start gfmd if it is not running currently.</P
+>gfmd が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -413,7 +407,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 >
 <TT
@@ -424,12 +418,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->time</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->Start gfsd if it is not running currently.</P
+>gfsd が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -444,15 +438,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>「<B
 CLASS="COMMAND"
 >config-gfarm</B
-> command.</P
+>」コマンドを実行します。</P
 ></DD
 ><DT
 ><B
@@ -467,12 +461,12 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>「<B
 CLASS="COMMAND"
 >config-gfarm</B
 > <TT
@@ -480,7 +474,8 @@ CLASS="PARAMETER"
 ><I
 >-r</I
 ></TT
-> command.</P
+>」コマンドを実行
+します。</P
 ></DD
 ><DT
 ><B
@@ -495,15 +490,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>「<B
 CLASS="COMMAND"
 >config-gfsd</B
-> command.</P
+>」コマンドを実行します。</P
 ></DD
 ><DT
 ><B
@@ -518,16 +513,16 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+><B
 CLASS="COMMAND"
 >stop-gfarm</B
-> sub-command and then delete all
-files and directories created by gfmd and a backend database.</P
+> サブコマンドを実行して、その後 gfmd と
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。</P
 ></DD
 ><DT
 ><B
@@ -542,16 +537,16 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute <B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfsd</B
-> sub-command and then delete all
-files and directories created by gfsd.</P
+> を実行し、その後 gfsd が作成した
+ファイルやディレクトリをすべて削除します。</P
 ></DD
 ><DT
 ><B
@@ -566,15 +561,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Delete <TT
+><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file.</P
+> ファイルと共有秘密鍵ファイルを削除します。</P
 ></DD
 ><DT
 ><B
@@ -589,15 +584,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Promote <B
+><B
 CLASS="COMMAND"
 >gfmd</B
-> from a slave to a master.</P
+> をスレーブからマスターへ昇格させます。</P
 ></DD
 ><DT
 ><B
@@ -612,15 +607,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->An alias of <B
+>サブコマンド <B
 CLASS="COMMAND"
 >promote</B
-> sub-command.</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -635,7 +630,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 >
 <TT
@@ -646,17 +641,18 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
 ></DT
 ><DD
 ><P
->Mount a Gfarm2 filesystem on <TT
+>Gfarm2 ファイルシステムを「<TT
 CLASS="REPLACEABLE"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
->.</P
+>」に
+マウントします。</P
 ></DD
 ><DT
 ><B
@@ -671,18 +667,18 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->Unmount a Gfarm2 filesystem currenctly mounted on
-<TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
->.</P
+>」にマウントされた Gfarm2
+ファイルシステムをアンマウントします。</P
 ></DD
 ><DT
 ><B
@@ -697,15 +693,15 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->An alias of <B
+>サブコマンド <B
 CLASS="COMMAND"
 >unmount</B
-> sub-command.</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -720,7 +716,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>設定名称</I
 ></TT
 >
 <TT
@@ -731,30 +727,30 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->value</I
+>値</I
 ></TT
 ></DT
 ><DD
 ><P
->Add</P
+><TT
+CLASS="FILENAME"
+>gfmd.conf</TT
+> ファイルに、</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="REPLACEABLE"
 ><I
->directive</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="REPLACEABLE"
 ><I
->value</I
+>値</I
 ></TT
 ></P
 ><P
->line to <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file.</P
+>という行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -769,7 +765,7 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>設定名称</I
 ></TT
 >
 <TT
@@ -780,30 +776,30 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->value</I
+>値</I
 ></TT
 ></DT
 ><DD
 ><P
->Add</P
+><TT
+CLASS="FILENAME"
+>gfarm2.conf</TT
+> ファイルに、</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="REPLACEABLE"
 ><I
->directive</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="REPLACEABLE"
 ><I
->value</I
+>値</I
 ></TT
 ></P
 ><P
->line to <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file.</P
+>という行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -818,21 +814,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->Delete a <TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line in
-<TT
+>」行を <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file.</P
+>
+ファイルから削除します。</P
 ></DD
 ><DT
 ><B
@@ -847,21 +843,21 @@ CLASS="PARAMETER"
 >=<TT
 CLASS="REPLACEABLE"
 ><I
->name</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->Delete a <TT
+>「<TT
 CLASS="REPLACEABLE"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line in
-<TT
+>」行を <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file.</P
+>
+ファイルから削除します。</P
 ></DD
 ><DT
 ><B
@@ -870,7 +866,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Backup a backend database and output the backup data to standard out.</P
+>バックエンドデータベースのバックアップを行い、バックアップデータを標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -879,10 +876,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output <TT
+><TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file to standard out.</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -891,10 +888,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output <TT
+><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file to standard out.</P
+> ファイルを標準出力に出力します。</P
 ></DD
 ><DT
 ><B
@@ -903,10 +900,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output <TT
+><TT
 CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
-> file to standard out.</P
+> ファイルを標準出力に
+出力します。</P
 ></DD
 ><DT
 ><B
@@ -915,8 +913,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Restore a backend database.
-The backup data are read from standard in.</P
+>バックエンドデータベースをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -925,11 +923,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Restore <TT
+><TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file.
-The backup data are read from standard in.</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -938,11 +936,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Restore <TT
+><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file.
-The backup data are read from standard in.</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -951,11 +949,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Restore <TT
+><TT
 CLASS="FILENAME"
 >$HOME/.gfarm_shared_key</TT
-> file.
-The backup data are read from standard in.</P
+> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -965,18 +963,18 @@ CLASS="COMMAND"
 <TT
 CLASS="PARAMETER"
 ><I
->command-name</I
+>コマンド名</I
 ></TT
 >
 <TT
 CLASS="PARAMETER"
 ><I
->command-argument ...</I
+>コマンドの引数 ...</I
 ></TT
 ></DT
 ><DD
 ><P
->Execute a Gfarm command.</P
+>Gfarm コマンドを実行します。</P
 ></DD
 ></DL
 ></DIV

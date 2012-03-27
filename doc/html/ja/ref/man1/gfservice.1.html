@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfservice&nbsp;--&nbsp;control Gfarm servers from a remote host</DIV
+>gfservice&nbsp;--&nbsp;リモートホストから Gfarm のサーバーを制御する。</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -40,12 +40,12 @@ CLASS="COMMAND"
 > [<TT
 CLASS="REPLACEABLE"
 ><I
->options</I
+>オプション</I
 ></TT
->]  sub-command   host-id  [<TT
+>]  サブコマンド   ホスト ID  [<TT
 CLASS="REPLACEABLE"
 ><I
->argument ...</I
+>引数 ...</I
 ></TT
 >]</P
 ></DIV
@@ -60,29 +60,30 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> is an utility for Gfarm administrators
-to operate servers (<B
+> は、Gfarm の管理者がリモートホスト上の
+サーバー (<B
 CLASS="COMMAND"
 >gfmd</B
->, <B
+>、<B
 CLASS="COMMAND"
 >gfsd</B
-> and
-PostgreSQL) on remote hosts.
-OpenLDAP is not supported currently.
-It can start, stop, set up (execute <B
+>、PostgreSQL)
+を操作するためのツールです。
+今のところ、OpenLDAP には対応していません。
+サーバーの実行開始、停止、セットアップ 
+(<B
 CLASS="COMMAND"
 >config-gfarm</B
->
-and <B
+> や <B
 CLASS="COMMAND"
 >config-gfsd</B
->) and clean up the servers, for example.</P
+> の実行)、
+サーバー廃止の後始末といったことができます。</P
 ><P
->A sample command line of <B
+><B
 CLASS="COMMAND"
 >gfservice</B
-> looks like:</P
+> のコマンド行は、たとえば次のようになります。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<B
@@ -100,50 +101,51 @@ CLASS="REPLACEABLE"
 ></B
 ></P
 ><P
->where "<TT
+>ここで、「<TT
 CLASS="REPLACEABLE"
 ><I
 >start-gfmd</I
 ></TT
->" is a sub-command and
-<TT
+>」はサブコマンド、
+「<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> is a host-id respectively.
-Executing the command, <B
+>」 はホスト ID をそれぞれ表しています。
+このコマンド行を実行すると、<B
 CLASS="COMMAND"
 >gfservice</B
-> tries to start gfmd
-on the host named <TT
+> は
+「<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->.
-To specify a remote server host, <B
+>」と名付けられたホスト上の gfmd の
+実行開始を試みます。
+リモートのサーバーホストを指定する際、<B
 CLASS="COMMAND"
 >gfservice</B
-> uses
-host-id instead of hostname.
-All host-ids (<TT
+> では
+ホスト名の代わりにホスト ID  を用います。
+ホスト ID (<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
->,
+>、
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
->, and so on) are defined in a configuration
-file of <B
+>、...) は <B
 CLASS="COMMAND"
 >gfservice</B
->.
-Here is an example of the configuration file:</P
+> 用
+の設定ファイルで定義します。
+以下に、設定ファイルの記述例を載せます。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	gfmd1=metadb1.example.com<br>
@@ -157,89 +159,87 @@ CLASS="LITERALLAYOUT"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> determines a path of the configuration
-file to be read with the following procedures:</P
+> は、読み込むべき設定ファイルのパスを次の要領
+で決定します。</P
 ><P
 ></P
 ><OL
 TYPE="1"
 ><LI
 ><P
-><CODE
+>「<CODE
 CLASS="OPTION"
 >-f</CODE
 > <TT
 CLASS="PARAMETER"
 ><I
->file</I
+>ファイル</I
 ></TT
-> option is specified, read
-<TT
+>」オプションが指定
+されていれば、その<TT
 CLASS="PARAMETER"
 ><I
->file</I
+>ファイル</I
 ></TT
->.</P
+>を読み込みます。</P
 ></LI
 ><LI
 ><P
->Otherwise, the environment variable
-<CODE
+>上記以外の場合で、環境変数 <CODE
 CLASS="VARNAME"
 >GFSERVICE_CONF</CODE
-> is defined and not empty, read the file.</P
+> が定義され、
+かつ値が空文字列でなければ、値として記されたファイルを読み込みます。</P
 ></LI
 ><LI
 ><P
->Otherwise, read <TT
+>上記以外の場合は、<TT
 CLASS="FILENAME"
 >$HOME/.gfservice</TT
->.</P
+> を読み込みます。</P
 ></LI
 ></OL
-><P
->If <B
-CLASS="COMMAND"
->gfservice</B
-> fails to read a configuration file,
-it prints an error message and exits immediately.
-Note that the configuration file itself is a Bourne-shell script and
-<B
-CLASS="COMMAND"
->gfservice</B
-> includes (exactly to say, 
-<I
-CLASS="EMPHASIS"
->evaluates</I
->) the file.
-See gfservice.conf(5) for more details about the configuration file.</P
 ><P
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> uses SSH (Secure Shell) to connect with
-a remote host.
-Since it may execute <B
-CLASS="COMMAND"
->ssh</B
-> several times during a
-sub-command operation, it is recommended to use an SSH agent
-(e.g. <B
-CLASS="COMMAND"
->ssh-agent</B
-> of OpenSSH) or an authentication key
-with an empty passphrase to avoid typing a passphrase every time.</P
-><P
->In addition with SSH, <B
+> は設定ファイルの読み込みに失敗すると、
+エラーメッセージを出力して、ただちに終了します。
+設定ファイルそれ自体は Bourne シェルスクリプトで、<B
 CLASS="COMMAND"
 >gfservice</B
-> uses Sudo to get
-root privilege on the remote host.
-Please add a line like below to <TT
+>
+はそのファイルを自身の一部として取り込みます (正確に言えば、スクリプト
+として評価します)。
+設定ファイルについての詳しい説明は、gfservice.conf(5) を参照して下さい。</P
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+> は、リモートホストと接続するために、SSH
+(Secure Shell) を使用します。
+サブコマンド 1 個の処理を遂行する間、何度も <B
+CLASS="COMMAND"
+>ssh</B
+>
+を実行することがあるので、SSH エージェント (OpenSSH の
+<B
+CLASS="COMMAND"
+>ssh-agent</B
+> など) を用いるか、パスフレーズが空の
+認証キーを用いるなどして、パスフレーズを毎回入力しなくて済むように
+することをお薦めします。</P
+><P
+>SSH に加えて、<B
+CLASS="COMMAND"
+>gfservice</B
+> はリモートホスト上で root
+権限を得るために Sudo コマンドを使用します。
+各リモートホストの <TT
 CLASS="FILENAME"
 >sudoers</TT
-> file
-(Sudo's configuration file) on each remote host.</P
+> ファイル (Sudo の設定
+ファイル) に以下のような行を足して下さい。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
@@ -249,38 +249,35 @@ CLASS="REPLACEABLE"
 ></TT
 >&nbsp;ALL=(root,&nbsp;_gfarmfs,&nbsp;_gfarmmd)&nbsp;NOPASSWD:&nbsp;gfservice-agent</P
 ><P
->where <TT
+>ここで、<TT
 CLASS="REPLACEABLE"
 ><I
 >user</I
 ></TT
-> is an user name who executes
-<B
+> は <B
 CLASS="COMMAND"
 >gfservice</B
->.
-The NOPASSWD option is not mandatory, but <B
+>
+を実行するユーザの名前です。
+NOPASSWD は必須ではありませんが、省くと <B
 CLASS="COMMAND"
 >sudo</B
-> may
-ask you a password several times if omitted.</P
+> は何度も
+パスワードを訊いてくることがあります。</P
 ><P
->Since <B
-CLASS="COMMAND"
->gfservice</B
-> executes an agent command named
+>gfservice は SSH と Sudo を用いて、リモートホスト上にある
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> on the remote host using SSH and Sudo,
+> というエージェントコマンドを実行します
+ので、<B
+CLASS="COMMAND"
+>gfservice</B
+> コマンドで操作したいホストすべてに、
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> command must have been installed on
-all hosts you want to operate using <B
-CLASS="COMMAND"
->gfservice</B
->.</P
+> をインストールしておく必要があります。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -301,19 +298,19 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->Print debug information.
+>デバッグ情報を出力します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> passes this option to
+> は、このオプションを
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> so that also
+> に渡しますので、
 <B
 CLASS="COMMAND"
 >gfservice-agent</B
-> outputs debug information.</P
+> からもデバッグ情報が出力されます。</P
 ></DD
 ><DT
 ><CODE
@@ -322,17 +319,18 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->file</I
+>ファイル</I
 ></TT
 ></DT
 ><DD
 ><P
->Read configuration from <TT
+>デフォルトの設定ファイルの代わりに、「<TT
 CLASS="PARAMETER"
 ><I
->file</I
+>ファイル</I
 ></TT
-> instead of the default.</P
+>」を
+読み込みます。</P
 ></DD
 ><DT
 ><CODE
@@ -341,35 +339,34 @@ CLASS="OPTION"
 > <TT
 CLASS="PARAMETER"
 ><I
->time</I
+>時間</I
 ></TT
 ></DT
 ><DD
 ><P
->Set operation timeout in <TT
+>操作のタイムアウトを、「<TT
 CLASS="PARAMETER"
 ><I
->time</I
+>時間</I
 ></TT
-> seconds.
-When <B
+>」秒とします。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> tries to start or stop a server program
-(gfmd, gfsd or a backend database), it waits until the operation is complete
-or <TT
+> がサーバープログラム (gfmd、gfsd、バックエンド
+データベース) の実行開始ないし終了を試みる際、処理が完了するか、もしくは
+<B
+CLASS="COMMAND"
+>gfservice</B
+> の指定時間が経過するかまで待ちます。
+「<TT
 CLASS="PARAMETER"
 ><I
->time</I
+>時間</I
 ></TT
-> interval is elapsed.
-If "no" is specified as <TT
-CLASS="PARAMETER"
-><I
->time</I
-></TT
->, timeout never occurs.
-The default value is "no".</P
+>」として 「no」を指定すると、タイムアウトは
+起きなくなります。
+デフォルト値は、「no」です。</P
 ></DD
 ></DL
 ></DIV
@@ -382,22 +379,22 @@ NAME="GFMD_SUB_COMMANDS"
 ><H2
 >SUB-COMMANDS FOR GFMD</H2
 ><P
->The followings are sub-commands which operate <B
+>以下に挙げているのは、<B
 CLASS="COMMAND"
 >gfmd</B
->.
-The given host-id argument must be "gfmd<TT
+> を操作するサブコマンドです。
+コマンド行に与えるホスト ID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->"
-(gfmd1, gfmd2, ...).
-Otherwise <B
+>」
+(gfmd1, gfmd2, ...) でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> reports an error and exits
-immediately.</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -410,8 +407,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if a backend database is currently running.
-Otherwise exits with 1.</P
+>バックエンドデータベースが実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -420,11 +417,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if <B
-CLASS="COMMAND"
->gfmd</B
-> is currently running.
-Otherwise exits with 1.</P
+>gfmd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -433,7 +427,7 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Start a backend database if it is not running currently.</P
+>バックエンドデータベースが実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -442,10 +436,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Start <B
+><B
 CLASS="COMMAND"
 >gfmd</B
-> if it is not running currently.</P
+> が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -454,24 +448,24 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Delete <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> on the remote host if the directive is
-specified in the file.
-Then start <B
+> ファイルに設定名称
+「<CODE
+CLASS="VARNAME"
+>metadb_server_force_slave</CODE
+>」の記述行があればそれを
+削除します。
+その後で、<B
 CLASS="COMMAND"
 >gfmd</B
-> if it is not running currently.
-Note that this sub-command doesn't ensure that <B
+> が実行中でなければ、実行を開始します。
+このサブコマンドは、リモートホスト上の <B
 CLASS="COMMAND"
 >gfmd</B
->
-on the remote host runs in master mode.</P
+> が
+マスター gfmd として動作することを保証するものではありません。</P
 ></DD
 ><DT
 ><B
@@ -480,18 +474,19 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Set <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> on the remote host to the value "enabled".
-Then start <B
+> ファイルに変更を加え、
+設定名称「<CODE
+CLASS="VARNAME"
+>metadb_server_force_slave</CODE
+>」に値「enabled」
+をセットします。
+その後で、<B
 CLASS="COMMAND"
 >gfmd</B
-> if it is not running currently.</P
+> が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -500,11 +495,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Start a backend database and <B
+>バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> if they are
-not running currently.</P
+> が実行中でなければ、
+実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -513,25 +508,25 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Delete <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> on the remote host if the directive is
-specified in the file.
-Then start a backend database and <B
+> ファイルに設定名称
+「<CODE
+CLASS="VARNAME"
+>metadb_server_force_slave</CODE
+>」の記述行があればそれを
+削除します。
+その後で、バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> if they are
-not running currently.
-Note that this sub-command doesn't ensure that <B
+> が実行中
+でなければ、実行を開始します。
+このサブコマンドは、リモートホスト上の <B
 CLASS="COMMAND"
 >gfmd</B
->
-on the remote host runs in a master mode.</P
+> が
+マスター gfmd として動作することを保証するものではありません。</P
 ></DD
 ><DT
 ><B
@@ -540,19 +535,20 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Set <CODE
-CLASS="VARNAME"
->metadb_server_force_slave</CODE
-> directive in 
-<TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> on the remote host to the value "enabled".
-Then start a backend database and <B
+> ファイルに変更を加え、
+設定名称「<CODE
+CLASS="VARNAME"
+>metadb_server_force_slave</CODE
+>」に値「enabled」を
+セットします。
+その後で、バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> if they are
-not running currently.</P
+> が実行中
+でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -561,7 +557,7 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Stop a backend database if it is running currently.</P
+>バックエンドデータベースが実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -570,10 +566,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Stop <B
+><B
 CLASS="COMMAND"
 >gfmd</B
-> if it is running currently.</P
+> が実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -582,11 +578,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Stop <B
+>バックエンドデータベースおよび <B
 CLASS="COMMAND"
 >gfmd</B
-> and a backend database if they are running
-currently.</P
+> が実行中なら、
+実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -595,14 +591,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-backend-db</B
->" and 
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-backend-db</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -611,14 +607,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfmd</B
->" and
-"<B
+>」と
+「<B
 CLASS="COMMAND"
 >start-gfmd</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -627,14 +623,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfmd</B
->" and
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfmd-master</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -643,14 +639,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfmd</B
->" and 
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfmd-slave</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -659,14 +655,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfarm</B
->" and 
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfarm</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -675,14 +671,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfarm</B
->" and 
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfarm-master</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -691,14 +687,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfarm</B
->" and 
-"<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfarm-slave</B
->" sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -707,10 +703,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Promote <B
+><B
 CLASS="COMMAND"
 >gfmd</B
-> from a slave to a master.</P
+> をスレーブからマスターへ昇格させます。</P
 ></DD
 ><DT
 ><B
@@ -719,10 +715,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->An alias of "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >promote</B
->" sub-command.</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -731,49 +727,49 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 > <TT
 CLASS="PARAMETER"
 ><I
->value</I
+>値</I
 ></TT
 ></DT
 ><DD
 ><P
->Add</P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfmd.conf</TT
+> ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="PARAMETER"
 ><I
->value</I
+>値</I
 ></TT
 ></P
 ><P
->line to <TT
+>という行を加えます。
+既に <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file on the remote host.
-If <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> already has a
-<TT
+> に
+「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line, <B
+>」という行が存在している場合、
+<B
 CLASS="COMMAND"
 >gfservice</B
->
-deletes it and then add a new line.</P
+> はそれを削除してから、新たに行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -782,31 +778,31 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->Delete a <TT
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfmd.conf</TT
+> ファイルから
+「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line in
+>」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file on the remote host.
-If <TT
-CLASS="FILENAME"
->gfmd.conf</TT
-> file doesn't contain
-<TT
+> ファイルに「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line, the file is unchanged.</P
+>」
+行がない場合、ファイルは更新されません。</P
 ></DD
 ><DT
 ><B
@@ -815,8 +811,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Backup a backend database on the remote host and output the backup data
-to standard out.</P
+>リモートホスト上のバックエンドデータベースのバックアップを行い、
+バックアップデータを標準出力へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -825,11 +821,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
->gfmd.conf</TT
-> file on the remote host to
-standard out.</P
+>gfarm2.conf</TT
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -838,8 +834,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Restore a backend database on the remote host.
-The backup data are read from standard in.</P
+>リモートホスト上のバックエンドデータベースのデータを復旧します。
+バックアップデータは、標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -848,18 +844,18 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Recover <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfmd.conf</TT
-> file on the remote host.
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> reads a backup of <TT
+> は、<TT
 CLASS="FILENAME"
 >gfmd.conf</TT
->
-from standard in.</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -868,64 +864,60 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Execute <B
+>リモートホスト上で <B
 CLASS="COMMAND"
 >config-gfarm</B
-> command on the remote host.
-If "gfmd<TT
+> コマンドを実行します。
+このとき、設定ファイルで変数
+「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_CONFIG_GFARM_OPTIONS" variable is
-declared in the configuration file of <B
-CLASS="COMMAND"
->gfservice</B
->,
-its value is passed to <B
+>_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が <B
 CLASS="COMMAND"
 >config-gfarm</B
-> command as
-options.
-Don't use this sub-command when you want to enable replicatoin of gfmd.
-Instead, use "<B
+> にオプションとして付与されます。
+レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
+<B
 CLASS="COMMAND"
 >config-gfarm-master</B
->" or
-"<B
+> ないし
+<B
 CLASS="COMMAND"
 >config-gfarm-slave</B
->" sub-command in that case.
-If authentication type is "sharedsecret", <B
+> を使って下さい。
+認証タイプが「sharedsecret (共有秘密鍵)」の場合、<B
 CLASS="COMMAND"
 >gfservice</B
 >
-also creates a shared secret key using <B
+は <B
 CLASS="COMMAND"
 >gfkey</B
-> command
-and then distribute the key and <TT
+> コマンドを用いて共有秘密鍵を作成し、作成した
+鍵と <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file
-to all hosts defined in the configuration file 
-(gfmd<TT
+> ファイルを設定ファイルで定義
+されているすべてのホスト (gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->, gfsd<TT
+>、
+gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
-> and
-client<TT
+>、client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->).</P
+>)
+に配布します。</P
 ></DD
 ><DT
 ><B
@@ -934,11 +926,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->This sub-command is the same as <B
+>このサブコマンドは <B
 CLASS="COMMAND"
 >config-gfarm</B
->
-but gfmd replication is enabled automatically.</P
+> と基本的に同じですが、
+gfmd のレプリケーションが自動的に有効になります。</P
 ></DD
 ><DT
 ><B
@@ -947,63 +939,57 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->master-host-id</I
+>マスタホスト ID</I
 ></TT
 ></DT
 ><DD
 ><P
->This sub-command is the same as <B
+>サブコマンド <B
 CLASS="COMMAND"
 >config-gfarm</B
->
-but gfmd replication is enabled automatically and the remote gfmd host
-is configured as a slave of <TT
+> と基本的に同じですが、
+レプリケーション機能が自動的に有効になり、
+「<TT
 CLASS="PARAMETER"
 ><I
->master-host-id</I
+>マスタホスト ID</I
 ></TT
->.
-Then <B
-CLASS="COMMAND"
->gfservice</B
-> registers the slave host to a server list
-using <B
-CLASS="COMMAND"
->gfmdhost</B
-> command.
+>」上で動作する gfmd のスレーブ
+として動作します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> also adds the slave host to
-<CODE
+> は <B
+CLASS="COMMAND"
+>gfmdhost</B
+> コマンドを
+用いてこのスレーブホストをサーバーリストに加えます。
+また、マスター gfmd ホスト上の <TT
+CLASS="FILENAME"
+>gfarm2.conf</TT
+> ファイル
+を更新して、<CODE
 CLASS="VARNAME"
 >metadb_server_list</CODE
-> directive in
-<TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file on the master gfmd host and
-distribute the updated <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file to all hosts
-defined in the configuration file (gfmd<TT
+> にこのスレーブホストを
+加え、設定ファイルで定義されているすべてのホスト
+(gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->,
-gfsd<TT
+>、gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
-> and client<TT
+>、
+client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->).</P
+>) に配布します。</P
 ></DD
 ><DT
 ><B
@@ -1012,16 +998,16 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Execute "<B
+>サブコマンド <B
 CLASS="COMMAND"
->stop-gfarm</B
->" sub-command and then delete all
-files and directories created by gfmd and a backend database.
-If you want to unconfigure a slave gfmd, use
-"<B
+>stop-gfsd</B
+> を実行して、その後 gfmd や
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
+スレーブ gfmd を廃止する場合は、代わりにサブコマンド
+<B
 CLASS="COMMAND"
 >unconfig-gfarm-slave</B
->" sub-command instead.</P
+> を使用して下さい。</P
 ></DD
 ><DT
 ><B
@@ -1030,10 +1016,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->An alias of "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >unconfig-gfarm</B
->" sub-command.</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -1042,49 +1028,47 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->master-host-id</I
+>マスタホスト ID</I
 ></TT
 ></DT
 ><DD
 ><P
->This sub-command is the same as "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >unonfig-gfarm</B
->",
-but <B
-CLASS="COMMAND"
->gfservice</B
-> does some additional works.
-It also deletes the slave host from a server list using
+> と基本的に同じですが、
+以下の追加処理を行います。
 <B
 CLASS="COMMAND"
 >gfmdhost</B
-> command and from
-<CODE
-CLASS="VARNAME"
->metadb_server_list</CODE
-> directive in
-<TT
+> コマンドを用いてサーバーリストから、その
+スレーブホストを削除します。
+また、設定ファイルで定義されているすべてのホスト
+(gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>、gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>、
+client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>) の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file on all hosts defined in the
-configuration file (gfmd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->, 
-gfsd<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
-> and client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->).</P
+>
+を更新し、<CODE
+CLASS="VARNAME"
+>metadb_server_list</CODE
+> に設定されたサーバーリスト
+から、そのスレーブホストを削除します。</P
 ></DD
 ></DL
 ></DIV
@@ -1097,22 +1081,22 @@ NAME="GFSD_SUB_COMMANDS"
 ><H2
 >SUB-COMMANDS FOR GFSD</H2
 ><P
->The followings are sub-commands which operate <B
+>以下に挙げているのは、<B
 CLASS="COMMAND"
 >gfsd</B
->.
-The given host-id argument must be "gfsd<TT
+> を操作するサブコマンドです。
+コマンド行に与えるホスト ID は、「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->"
-(gfsd1, gfsd2, ...).
-Otherwise <B
+>」
+(gfsd1, gfsd2, ...) でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> reports an error and exits
-immediately.</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -1125,11 +1109,8 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Exit with an exit code 0, if <B
-CLASS="COMMAND"
->gfsd</B
-> is currently running.
-Otherwise exits with 1.</P
+>gfsd が実行中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。</P
 ></DD
 ><DT
 ><B
@@ -1138,10 +1119,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Start <B
+><B
 CLASS="COMMAND"
 >gfsd</B
-> if it is not running currently.</P
+> が実行中でなければ、実行を開始します。</P
 ></DD
 ><DT
 ><B
@@ -1150,10 +1131,10 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Stop <B
+><B
 CLASS="COMMAND"
 >gfsd</B
-> if it is running currently.</P
+> が実行中なら、実行を停止します。</P
 ></DD
 ><DT
 ><B
@@ -1162,14 +1143,14 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Perform "<B
+>サブコマンド<B
 CLASS="COMMAND"
 >stop-gfsd</B
->" and "<B
+> と
+<B
 CLASS="COMMAND"
 >start-gfsd</B
->"
-sub-commands successively.</P
+> を続けて実行します。</P
 ></DD
 ><DT
 ><B
@@ -1178,33 +1159,29 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Execute "<B
+>リモートホスト上で <B
 CLASS="COMMAND"
 >config-gfsd</B
->" command on the remote host.
-If "gfsd<TT
+> コマンドを実行します。
+このとき、設定ファイルで変数
+「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_CONFIG_GFSD_OPTIONS" variable is
-declared in the configuration file of <B
-CLASS="COMMAND"
->gfservice</B
->,
-its value is passed to <B
+>_CONFIG_GFARM_OPTIONS」が宣言されていれば、
+その値が <B
 CLASS="COMMAND"
 >config-gfsd</B
-> command as
-options.
-<B
+> にオプションとして付与されます。
+また、<B
 CLASS="COMMAND"
 >gfservice</B
-> also registers the configured remote host
-as a filesystem node using <B
+> は <B
 CLASS="COMMAND"
 >gfhost</B
-> command.</P
+> コマンド
+を用いて、リモートホストをファイルシステムノードとして登録します。</P
 ></DD
 ><DT
 ><B
@@ -1213,11 +1190,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Execute "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >stop-gfsd</B
->" sub-command and then delete all
-files and directories created by gfsd.</P
+> を実行して、その後 gfsd が
+作成したファイルやディレクトリをすべて削除します。</P
 ></DD
 ></DL
 ></DIV
@@ -1230,30 +1207,31 @@ NAME="CLIENT_SUB_COMMANDS"
 ><H2
 >SUB-COMMANDS FOR CLIENT</H2
 ><P
->The followings are sub-commands which operate a client.
-The given host-id argument must be "gfmd<TT
+>以下に挙げているのは、クライアントを操作するサブコマンドです。
+コマンド行に与えるホスト ID は、「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->"
-(gfmd1, gfmd2, ...), "gfsd<TT
+>」
+(gfmd1, gfmd2, ...)、「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" (gfsd1, gfsd2, ...)
-or "client<TT
+>」(gfsd1, gfsd2, ...)、
+「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" (client1, client2, ...).
-Otherwise <B
+>」(client1, client2, ...) のいずれか
+でなくてはなりません。
+それ以外の場合、<B
 CLASS="COMMAND"
 >gfservice</B
-> reports an error and exits
-immediately.</P
+> はエラーを通知してただちに
+終了します。</P
 ><P
 ></P
 ><DIV
@@ -1266,33 +1244,33 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 > <TT
 CLASS="PARAMETER"
 ><I
->option...</I
+>オプション...</I
 ></TT
 ></DT
 ><DD
 ><P
->Mount a Gfarm2 filesystem on <TT
+>リモートホスト上の「<TT
 CLASS="PARAMETER"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
-> on the
-remote host.
-The argument <TT
+>」に、Gfarm2
+ファイルシステムをマウントします。
+引数「<TT
 CLASS="PARAMETER"
 ><I
->option</I
+>オプション</I
 ></TT
-> is an option to 
-<B
+>」は <B
 CLASS="COMMAND"
 >gfarm2fs</B
-> command.</P
+>
+コマンドへの引数とみなされます。</P
 ></DD
 ><DT
 ><B
@@ -1301,18 +1279,18 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->Unmount a Gfarm2 filesystem on <TT
+>リモートホスト上の「<TT
 CLASS="PARAMETER"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
-> on the
-remote host.</P
+>」にマウントされた
+Gfarm2 ファイルシステムをアンマウントします。</P
 ></DD
 ><DT
 ><B
@@ -1321,15 +1299,15 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directory</I
+>ディレクトリ</I
 ></TT
 ></DT
 ><DD
 ><P
->An alias of "<B
+>サブコマンド <B
 CLASS="COMMAND"
 >unmount</B
->" sub-command.</P
+> の別名です。</P
 ></DD
 ><DT
 ><B
@@ -1338,49 +1316,49 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 > <TT
 CLASS="PARAMETER"
 ><I
->value</I
+>値</I
 ></TT
 ></DT
 ><DD
 ><P
->Add</P
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfarm2.conf</TT
+> ファイルに</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 >&nbsp;<TT
 CLASS="PARAMETER"
 ><I
->value</I
+>値</I
 ></TT
 ></P
 ><P
->line to <TT
+>という行を加えます。
+既に <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file on the remote host.
-If <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> already has a
-<TT
+> に
+「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line, <B
+>」という行が存在している場合、
+<B
 CLASS="COMMAND"
 >gfservice</B
->
-deletes it and then add a new line.</P
+> はそれを削除してから、新たに行を追加します。</P
 ></DD
 ><DT
 ><B
@@ -1389,31 +1367,31 @@ CLASS="COMMAND"
 > <TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
 ></DT
 ><DD
 ><P
->Delete a <TT
+>リモートホスト上の <TT
+CLASS="FILENAME"
+>gfarm2.conf</TT
+> ファイルから
+「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line in
+>」行を削除します。
 <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file on the remote host.
-If <TT
-CLASS="FILENAME"
->gfarm2.conf</TT
-> file doesn't contain
-<TT
+> ファイルに「<TT
 CLASS="PARAMETER"
 ><I
->directive</I
+>設定名称</I
 ></TT
-> line, the file is unchanged.</P
+>」
+行がない場合、ファイルは更新されません。</P
 ></DD
 ><DT
 ><B
@@ -1422,11 +1400,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file on the remote host to
-standard out.</P
+> ファイルを、標準出力
+へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1435,7 +1413,7 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Output a shared secret key file to standard out.</P
+>リモートホスト上の共有秘密鍵ファイルを、標準出力へ出力します。</P
 ></DD
 ><DT
 ><B
@@ -1444,18 +1422,18 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Recover <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file on the remote host.
+> ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> reads a backup of <TT
+> は、<TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
->
-from standard in.</P
+> の
+バックアップデータを標準入力から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1464,12 +1442,12 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Recover a shared secret key file on the remote host.
+>リモートホスト上の共有秘密鍵ファイルを復旧します。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> reads a backup of the shared secret key from
-standard in.</P
+> は、共有秘密鍵のバックアップデータを標準入力
+から読み込みます。</P
 ></DD
 ><DT
 ><B
@@ -1478,11 +1456,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Copy <TT
+><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file and a shared secret key file
-from gfmd1 to the client host.</P
+> ファイルおよび共有秘密鍵ファイルを、gfmd1
+からクライアントホストへコピーします。</P
 ></DD
 ><DT
 ><B
@@ -1491,11 +1469,11 @@ CLASS="COMMAND"
 ></DT
 ><DD
 ><P
->Delete <TT
+>リモートホスト上の <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file and a shared secret key file
-on the remote host.</P
+> ファイルおよび
+共有秘密鍵ファイルを削除します。</P
 ></DD
 ></DL
 ></DIV

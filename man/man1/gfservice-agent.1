@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE-AGENT" "1" "16 3月 2012" "Gfarm" ""
+.TH "GFSERVICE-AGENT" "1" "23 March 2012" "Gfarm" ""
 
 .SH NAME
 gfservice-agent \- agent of gfservice
 .SH SYNOPSIS
 
-\fBgfservice-agent\fR [ \fB\fIoptions\fB\fR ] \fBsub-command\fR [ \fB\fIarguments\fB\fR ]
+\fBgfservice-agent\fR [ \fB\fIoptions\fB\fR ] \fBsub-command\fR [ \fB\fIargument ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -28,14 +28,15 @@ Sub-command names of \fBgfservice-agent\fR are similar to
 those of \fBgfservice\fR, but their arguments are different.
 For example, \fB"unmount"\fR sub-command of
 \fBgfservice-agent\fR takes
-\fIdir=directory\fR argument:
+\fI"directory=directory"\fR
+argument:
 
 .nf
-	gfservice-agent unmount dir=/somewhere
+	gfservice-agent unmount directory=/somewhere
 .fi
 .PP
 while \fB"unmount"\fR sub-command of \fBgfservice\fR
-takes \fIdirectory\fR argument:
+takes \fI"directory"\fR argument:
 
 .nf
 	gfservice unmount client3 /somewhere
@@ -110,13 +111,14 @@ Promote \fBgfmd\fR from a slave to a master.
 \fBpromote-gfmd \fIconfig-gfarm-options\fB=\fIoptions\fB\fR
 An alias of \fBpromote\fR sub-command.
 .TP
-\fBmount \fIdir\fB=\fIdirectory\fB \fIoptions\fB=\fIoptions\fB\fR
+\fBmount \fIdirectory\fB=\fIdirectory\fB \fIoptions\fB=\fIoptions\fB\fR
 Mount a Gfarm2 filesystem on \fIdirectory\fR\&.
 .TP
-\fBunmount \fIdir\fB=\fIdirectory\fB\fR
-Unmount a Gfarm2 filesystem on \fIdirectory\fR\&.
+\fBunmount \fIdirectory\fB=\fIdirectory\fB\fR
+Unmount a Gfarm2 filesystem currenctly mounted on
+\fIdirectory\fR\&.
 .TP
-\fBumount \fIdir\fB=\fIdirectory\fB\fR
+\fBumount \fIdirectory\fB=\fIdirectory\fB\fR
 An alias of \fBunmount\fR sub-command.
 .TP
 \fBset-gfmd-conf \fIdirective\fB=\fIname\fB \fIvalue\fB=\fIvalue\fB\fR

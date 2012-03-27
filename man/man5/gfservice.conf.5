@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "16 3月 2012" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "23 March 2012" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- configuration file of gfservice
@@ -26,7 +26,7 @@ Here is an example of the configuration file:
 Same as Bourne-shell script, lines beginning with '#' and empty lines
 are ignored.
 The other lines declare shell variables.
-The variable \fIgfmd1\fR is set to
+In this example, the variable \fIgfmd1\fR is set to
 \fIdb1.example.com\fR and
 \fIgfmd2\fR to
 \fIdb12.example.com\fR respectively.
@@ -145,7 +145,7 @@ The default value is empty (no option).
 Do not delete or edit the declaration even after
 \fBconfig-gfsd\fR has been complete.
 .TP
-\fBgfms\fIn\fB_PRIVATE_MODE\fR
+\fBgfsd\fIn\fB_PRIVATE_MODE\fR
 Set this variable to "true" if gfsd on the remote host is configured
 in private mode.
 .TP

@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfservice.conf&nbsp;--&nbsp;configuration file of gfservice</DIV
+>gfservice.conf&nbsp;--&nbsp;gfservice の設定ファイル</DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -37,77 +37,74 @@ NAME="DESCRIPTION"
 ><B
 CLASS="COMMAND"
 >gfservice</B
-> reads configuration data from the file.
+> は、設定をファイルから読み込みます。
 (<B
 CLASS="COMMAND"
 >gfservice-agent</B
-> doesn't read a configuration file.)</P
+> は設定ファイルを読みません。)</P
 ><P
->The configuration file itself is a Bourne-shell script.
-It is <I
-CLASS="EMPHASIS"
->evaluated as a script</I
-> by
-<B
+>設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
+ファイルは、<B
 CLASS="COMMAND"
 >gfservice</B
->.
-Here is an example of the configuration file:</P
+> によって
+<I
+CLASS="EMPHASIS"
+>スクリプトとして評価されます。</I
+>
+以下に、設定ファイルの記述例を示します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;gfmd&nbsp;entries.<br>
+>	#&nbsp;gfmd&nbsp;サーバー<br>
 	gfmd1=db1.example.com<br>
 	gfmd2=db2.example.com</P
 ><P
->Same as Bourne-shell script, lines beginning with '#' and empty lines
-are ignored.
-The other lines declare shell variables.
-In this example, the variable <TT
+>Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
+それ以外の行では、シェル変数を宣言します。
+この例では、変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
-> is set to
+> を
 <TT
 CLASS="REPLACEABLE"
 ><I
 >db1.example.com</I
 ></TT
-> and
-<TT
+> という値にセットし、
+変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> to
+> には
 <TT
 CLASS="REPLACEABLE"
 ><I
 >db12.example.com</I
 ></TT
-> respectively.
-Whitespaces <I
-CLASS="EMPHASIS"
->must not</I
-> be inserted around '='.</P
+> という値をそれぞれセット
+しています。
+「=」の前後に空白文字を置くことはできないので、注意して下さい。</P
 ><P
->The variables named <TT
+>変数 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1</I
 ></TT
-> and
-<TT
+> と <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> are used as "host-id".
-To specify a remote host, <B
+>
+は「ホスト ID」として使用します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> uses host-id
-instead of hostname:</P
+> では、ホストを指定する際にホスト名ではなく、
+ホスト IDを使用します。</P
 ><P
 CLASS="LITERALLAYOUT"
 >	<B
@@ -125,64 +122,64 @@ CLASS="REPLACEABLE"
 ></B
 ></P
 ><P
->Executing the command, <B
+>上記のコマンドを実行すると、<B
 CLASS="COMMAND"
 >gfservice</B
-> starts gfmd on
+> はサーバー
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd2</I
 ></TT
-> server, metadb2.example.com.
-Note that the numbers at the tails of host-ids must be beginning with 1
-and must be assigned successively.</P
+> 、つまり metadb2.example.com 上の gfmd
+を起動します。
+ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。</P
 ><P
->For specifying gfsd servers and client hosts, use host-ids
-"gfs<TT
+>gfsd サーバーとクライアントホストを指定するには、ホスト ID 
+「gfs<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" and "client<TT
+>」と「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->"
-respectively:</P
+>」
+をそれぞれ使用します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;gfsd&nbsp;entries.<br>
+>	#&nbsp;gfsd&nbsp;サーバー<br>
 	gfsd1=fs1.example.com<br>
 <br>
-	#&nbsp;client&nbsp;entries<br>
+	#&nbsp;クライアント<br>
 	client1=pc1.example.com<br>
 	client2=pc2.example.com<br>
 	client3=pc2.example.com</P
 ><P
->In addition with host-id variables, <B
+>ホスト ID 変数に加え、<B
 CLASS="COMMAND"
 >gfservice</B
-> recognizes
-some variables related to host-id.</P
+> はホスト ID に関連する
+変数をいくつか認識します。</P
 ><P
 CLASS="LITERALLAYOUT"
->	#&nbsp;Configuration&nbsp;about&nbsp;gfmd1.<br>
+>	#&nbsp;gfmd1&nbsp;に関する設定<br>
 	gfmd1_CONFIG_GFARM_OPTIONS="-X&nbsp;-A&nbsp;$LOGNAME"<br>
 	gfmd1_SSH="ssh&nbsp;-i&nbsp;$HOME/.ssh/id_rsa_gfservice"<br>
 	gfmd1_SUDO=/usr/local/bin/sudo</P
 ><P
->As shown in this example, a value containing whitespaces can be set
-by quotation marks.
+>この例で示しているように、空白文字を含む値をセットするには、引用符を使用
+します。
 <CODE
 CLASS="VARNAME"
 >$VARNAME</CODE
-> is expanded to the value of the shell or
-environment variable <CODE
+> は、シェル変数もしくは環境変数 
+<CODE
 CLASS="VARNAME"
 >VARNAME</CODE
->.</P
+> の値に展開されます。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -192,35 +189,36 @@ NAME="GFMD_VARIABLES"
 ><H2
 >VARABILES ABOUT GFMD</H2
 ><P
->Variables named "gfmd<TT
+>変数「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" (gfmd1, gfmd2, ...)
-define gfmd servers.
-Variable names beginning with "gfmd<TT
+>」(gfmd1, gfmd2, ...) は、gfmd
+サーバーを定義するために用います。
+名前が「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_"  such
-as <TT
+>_」で始まる変数 (たとえば
+<TT
 CLASS="REPLACEABLE"
 ><I
 >gfmd1_SSH</I
 ></TT
-> set configuration parameters of
-the corresponding "gfmd<TT
+>) は、対応する
+「gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" server.
+>」サーバーの設定パラメタをセットするため
+に用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> currently the following variables:</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -238,8 +236,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Register a gfmd server.
-Its value represents a hostname (or an IP address) of the server.</P
+>gfmd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
 ></DD
 ><DT
 ><CODE
@@ -253,18 +251,18 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a directory where <B
+>gfmd サーバー上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
->
-command is installed on the gfmd server.
-If the variable is declared, <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> executes
-<B
+> は、
+「<B
 CLASS="COMMAND"
->"<CODE
+><CODE
 CLASS="VARNAME"
 >$gfmd<TT
 CLASS="REPLACEABLE"
@@ -272,12 +270,12 @@ CLASS="REPLACEABLE"
 >n</I
 ></TT
 >_GFBINDIR</CODE
->/gfservice-agent"</B
->.
-Otherwise it executes <B
+>/gfservice-agent</B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
->"gfservice-agent"</B
->.</P
+>gfservice-agent</B
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -291,24 +289,24 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify options of <B
+><B
 CLASS="COMMAND"
 >config-gfarm</B
-> command.
-The default value is empty (no option).
+> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> refers this variable to perform
+> は <B
+CLASS="COMMAND"
+>config-gfarm</B
+> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
 <B
 CLASS="COMMAND"
 >config-gfarm</B
-> and many other sub-commands.
-Do not delete or edit the declaration even after
-<B
-CLASS="COMMAND"
->config-gfarm</B
-> has been complete.</P
+> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。</P
 ></DD
 ><DT
 ><CODE
@@ -322,8 +320,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set this variable to "true" if gfmd on the remote host is configured
-in private mode.</P
+>リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。</P
 ></DD
 ><DT
 ><CODE
@@ -337,13 +335,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to an SSH client command and its options.
-The variable is used when <B
+>SSH クライアントコマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes an SSH
-client command to connect with the gfsd server.
-The default value is "ssh".</P
+> が gfmd サーバーに接続するために
+SSH クライアントコマンドを実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -357,13 +355,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a Sudo command and options.
-The variable is used when <B
+>Sudo コマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes a Sudo
-command on the gfsd server via SSH.
-The default value is "sudo".</P
+> が SSH を介して gfmd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ></DL
 ></DIV
@@ -376,35 +374,36 @@ NAME="GFSD_VARIABLES"
 ><H2
 >VARABILES ABOUT GFSD</H2
 ><P
->Variables named "gfsd<TT
+>変数「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" (gfsd1, gfsd2, ...)
-define gfsd servers.
-Variable names beginning with "gfsd<TT
+>」(gfsd1, gfsd2, ...) は、gfsd
+サーバーを定義するために用います。
+名前が「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_" such as
+>_」で始まる変数 (たとえば
 <TT
 CLASS="REPLACEABLE"
 ><I
 >gfsd1_SSH</I
 ></TT
-> set configuration parameters of the
-corresponding "gfsd<TT
+>) は、対応する
+「gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" server.
+>」サーバーの設定パラメタをセットするため
+に用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> currently recognizes the following variables:</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -422,8 +421,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Register a gfsd server.
-Its value represents a hostname (or an IP address) of the server.</P
+>gfsd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。</P
 ></DD
 ><DT
 ><CODE
@@ -437,18 +436,18 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a directory where <B
+>gfsd サーバー上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
->
-command is installed on the gfsd server.
-If the variable is declared, <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> executes
-<B
+> は、
+「<B
 CLASS="COMMAND"
->"<CODE
+><CODE
 CLASS="VARNAME"
 >$gfsd<TT
 CLASS="REPLACEABLE"
@@ -456,12 +455,12 @@ CLASS="REPLACEABLE"
 >n</I
 ></TT
 >_GFBINDIR</CODE
->/gfservice-agent"</B
->.
-Otherwise it executes <B
+>/gfservice-agent</B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
->"gfservice-agent"</B
->.</P
+>gfservice-agent</B
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -475,24 +474,24 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify options of <B
+><B
 CLASS="COMMAND"
 >config-gfsd</B
-> command.
-The default value is empty (no option).
+> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> refers this variable to perform
+> は <B
+CLASS="COMMAND"
+>config-gfsd</B
+> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
 <B
 CLASS="COMMAND"
 >config-gfsd</B
-> and many other sub-commands.
-Do not delete or edit the declaration even after
-<B
-CLASS="COMMAND"
->config-gfsd</B
-> has been complete.</P
+> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。</P
 ></DD
 ><DT
 ><CODE
@@ -506,8 +505,8 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Set this variable to "true" if gfsd on the remote host is configured
-in private mode.</P
+>リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。</P
 ></DD
 ><DT
 ><CODE
@@ -521,13 +520,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to an SSH client command and its options.
-The variable is used when <B
+>SSH クライアントコマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes an SSH
-client command to connect with the gfsd server.
-The default value is "ssh".</P
+> が gfsd サーバーに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -541,13 +540,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a Sudo command and options.
-The variable is used when <B
+>Sudo コマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes a Sudo
-command on the gfsd server via SSH.
-The default value is "sudo".</P
+> が SSH を介して gfsd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ></DL
 ></DIV
@@ -560,36 +559,36 @@ NAME="CLIENT_VARIABLES"
 ><H2
 >VARABILES ABOUT CLIENT</H2
 ><P
->Variables named "client<TT
+>変数「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" (client1, client2, ...)
-define client hosts.
-Their values are hostnames (or IP addresses).
-Variable names beginning with "client<TT
+>」(client1, client2, ...) は、
+client サーバーを定義するために用います。
+名前が「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->_" 
-such as <TT
+>_」で始まる変数 (たとえば
+<TT
 CLASS="REPLACEABLE"
 ><I
->client1_SUDO</I
+>client1_SSH</I
 ></TT
-> set configuration parameters
-of the corresponding "client<TT
+>) は、対応する
+「client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->" host.
+>」サーバーの設定パラメタをセットする
+ために用います。
 <B
 CLASS="COMMAND"
 >gfservice</B
-> currently recognizes the following variables:</P
+> が現在のところ認識する変数は、以下の通りです。</P
 ><P
 ></P
 ><DIV
@@ -607,8 +606,9 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Register a client host.
-Its value represents a hostname (or an IP address) of the host.</P
+>クライアントホストを登録します。
+変数の値は、クライアントホストのホスト名 (もしくは IP アドレス) を
+表します。</P
 ></DD
 ><DT
 ><CODE
@@ -622,18 +622,18 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a directory where <B
+>クライアントホスト上で <B
 CLASS="COMMAND"
 >gfservice-agent</B
->
-command is installed on the client host.
-If the variable is declared, <B
+> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <B
 CLASS="COMMAND"
 >gfservice</B
-> executes
-<B
+> は、
+「<B
 CLASS="COMMAND"
->"<CODE
+><CODE
 CLASS="VARNAME"
 >$client<TT
 CLASS="REPLACEABLE"
@@ -641,12 +641,12 @@ CLASS="REPLACEABLE"
 >n</I
 ></TT
 >_GFBINDIR</CODE
->/gfservice-agent"</B
->.
-Otherwise it executes <B
+>/gfservice-agent</B
+>」を実行します。
+宣言されていない場合は、「<B
 CLASS="COMMAND"
->"gfservice-agent"</B
->.</P
+>gfservice-agent</B
+>」を実行します。</P
 ></DD
 ><DT
 ><CODE
@@ -660,13 +660,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to an SSH client command and its options.
-The variable is used when <B
+>SSH クライアントコマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes an SSH
-client command to connect with the client host.
-The default value is "ssh".</P
+> がクライアントホストに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。</P
 ></DD
 ><DT
 ><CODE
@@ -680,13 +680,13 @@ CLASS="REPLACEABLE"
 ></DT
 ><DD
 ><P
->Specify a path to a Sudo command and options.
-The variable is used when <B
+>Sudo コマンドのパスおよびオプションを指定します。
+<B
 CLASS="COMMAND"
 >gfservice</B
-> executes a Sudo
-command on the client host via SSH.
-The default value is "sudo".</P
+> が SSH を介してクライアントホスト上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。</P
 ></DD
 ></DL
 ></DIV
