@@ -308,8 +308,11 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
+	/*
+	 * The len is counded as the s/buf is including '\0' thus no
+	 * need to terminate after memcpy().
+	 */
 	(void)memcpy((void *)buf, (void *)s, len);
-	buf[len] = '\0';
 
 	n_tokens = tokenize(buf, tokens, 4096, ",");
 	if (n_tokens == 0)

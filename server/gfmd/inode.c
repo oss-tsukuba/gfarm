@@ -5594,6 +5594,8 @@ inode_has_replicainfo(struct inode *inode, char **infop)
 
 	if (infop != NULL)
 		*infop = info;
+	else
+		free(info);
 
 	return (1);
 }
