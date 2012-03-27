@@ -6,6 +6,8 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
+SUBDIRS = gfpcopy-test
+
 GFREP_SRCDIR = $(srcdir)/../gfrep
 
 SRCS = gfprep.c gfarm_list.c gfarm_parallel.c gfarm_dirtree.c gfarm_fifo.c \
@@ -20,8 +22,6 @@ CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
-SCRIPTS = $(srcdir)/gfpcopy-test.sh
-
 all: $(PROGRAM)
 
 post-install-hook:
@@ -32,7 +32,7 @@ gfarm_list.c:
 	ln -s $(srcdir)/../gfrep/gfarm_list.c .
 
 include $(top_srcdir)/makes/prog.mk
-include $(top_srcdir)/makes/script.mk
+include $(top_srcdir)/makes/subdir.mk
 
 ###
 
