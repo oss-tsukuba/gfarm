@@ -2549,7 +2549,6 @@ main(int argc, char *argv[])
 			     "a positive interger");
 		exit(EXIT_FAILURE);
 	}
-	printf("opt_n_para=%d\n", opt_n_para);//TODO
 	if (opt_dirtree_n_para <= 0)
 		opt_dirtree_n_para = opt_n_para;
 	if (opt_simulate_KBs == 0)
