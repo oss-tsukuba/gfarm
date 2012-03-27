@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPCOPY" "1" "13 March 2012" "Gfarm" ""
+.TH "GFPCOPY" "1" "26 March 2012" "Gfarm" ""
 
 .SH NAME
 gfpcopy \- copy Gfarm files in parallel
@@ -14,9 +14,9 @@ gfpcopy \- copy Gfarm files in parallel
 .SH "DESCRIPTION"
 .PP
 \fBgfpcopy\fR copies files and directries specified by
-the \fIsource-url\fR(gfarm:/... or file:/...) to a
+the \fIsource-url\fR(gfarm:///... or file:///...) to a
 directory specified by
-the \fIdestination-url\fR(gfarm:/... or file:/...) in
+the \fIdestination-url\fR(gfarm:///... or file:///...) in
 parallel.
 .PP
 When a set of source hosts are specified, only files stored on the set
@@ -50,15 +50,15 @@ with \fBgfprep\fR\&.  (see man \fBgfprep\fR)
 To copy files under the directory recursively.
 
 .nf
-$ gfpcopy gfarm:/dir file:/tmp/dir
-$ gfpcopy file:/tmp/dir gfarm:/dir
-$ gfpcopy gfarm:/dir1 gfarm:/dir2
+$ gfpcopy gfarm:///dir file:///tmp/dir
+$ gfpcopy file:///tmp/dir gfarm:///dir
+$ gfpcopy gfarm:///dir1 gfarm:///dir2
 .fi
 .PP
 To copy a file.
 
 .nf
-$ gfpcopy gfarm:/dir/file file:/dir
+$ gfpcopy gfarm:///dir/file file:///dir
 .fi
 .SH "NOTES"
 .PP

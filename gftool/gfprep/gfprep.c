@@ -129,7 +129,7 @@ gfprep_usage()
 {
 	fprintf(stderr,
 "\t[-N <#replica>] [-x (remove surplus replicas)] [-m (migrate)]\n"
-"\t<gfarm_url(gfarm:/...)>\n");
+"\t<gfarm_url(gfarm:///...)>\n");
 }
 
 static void
@@ -137,7 +137,8 @@ gfpcopy_usage()
 {
 	fprintf(stderr,
 "\t[-f (force copy)(overwrite)] [-b <#bufsize to copy>]\n"
-"\t<src_url(gfarm:/... or file:/...)> <dst_dir(gfarm:/... or file:/...)>\n");
+"\t<src_url(gfarm:///... or file:///...)>\n"
+"\t<dst_dir(gfarm:///... or file:///...)>\n");
 }
 
 static void
@@ -316,6 +317,7 @@ struct gfprep_host_info {
 	int max_rw;
 	int n_using; /* src:n_reading, dst:n_writing */
 	int is_available;
+	int is_writable;
 	gfarm_int64_t disk_avail;
 	gfarm_int64_t size_writing; /* for dst */
 };
@@ -433,6 +435,7 @@ gfprep_create_hostinfohash_all(const char *path,
 		hi->disk_avail = 0;
 		hi->n_using = 0;
 		hi->is_available = 0;
+		hi->is_writable = 0;
 		hi->size_writing = 0;
 		*hip = hi;
 	}
@@ -573,6 +576,7 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 		if (he) {
 			hip = gfarm_hash_entry_data(he);
 			(*hip)->is_available = 0; /* reset */
+			(*hip)->is_writable = 0; /* reset */
 		}
 	}
 	e = gfarm_schedule_hosts_domain_all(path, "", &nhsis, &hsis);
@@ -610,11 +614,12 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			if (he) {
 				hip = gfarm_hash_entry_data(he);
 				hi = *hip;
+				hi->is_available = 1;
 				e = gfprep_update_disk_avail(hi);
 				gfprep_warn_e(e, "gfs_statfsnode(%s)",
 					      hostname);
 				if (e == GFARM_ERR_NO_ERROR)
-					hi->is_available = 1;
+					hi->is_writable = 1;
 				nhost_infos++;
 			}
 		}
@@ -628,11 +633,12 @@ gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
 			if (he) {
 				hip = gfarm_hash_entry_data(he);
 				hi = *hip;
+				hi->is_available = 1;
 				e = gfprep_update_disk_avail(hi);
 				gfprep_warn_e(e, "gfs_statfsnode(%s)",
 					      hostname);
 				if (e == GFARM_ERR_NO_ERROR)
-					hi->is_available = 1;
+					hi->is_writable = 1;
 				nhost_infos++;
 			}
 		}
@@ -1885,7 +1891,7 @@ gfprep_check_disk_avail(struct gfprep_host_info *hi, gfarm_off_t src_size)
 	else
 		avail = 0;
 	if (avail < gfarm_get_minimum_free_disk_space() || avail < src_size) {
-		hi->is_available = 0;
+		hi->is_writable = 0;
 		gfprep_warn("not enough space: %s"
 			    "(avail=%"GFARM_PRId64
 			    ", filesize=%"GFARM_PRId64
@@ -1923,7 +1929,7 @@ gfprep_select_dst(int n_array_dst, struct gfprep_host_info **array_dst,
 	tmp_dst_hi = NULL;
 	for (i = 0; i < n_array_dst; i++) {
 		/* XXX should ignore host which has an incomplete replica */
-		if (!array_dst[i]->is_available)
+		if (!array_dst[i]->is_available || !array_dst[i]->is_writable)
 			continue; /* ignore */
 		if (opt.disable_update_disk_avail) {
 			gfprep_get_using_info(array_dst[i], &n_writing, NULL);
@@ -3115,7 +3121,8 @@ main(int argc, char *argv[])
 					gfprep_fatal_e(e, "gfarm_list_add");
 					n_dst_exist++;
 				} else {
-					if (!array_dst[i]->is_available)
+					if (!array_dst[i]->is_available ||
+					    !array_dst[i]->is_writable)
 						continue;
 					e = gfprep_check_disk_avail(
 						array_dst[i], entry->src_size);
@@ -3416,5 +3423,5 @@ next_entry:
 	e = gfarm_terminate();
 	gfprep_warn_e(e, "gfarm_terminate");
 
-	return (0);
+	return (total_ng_filenum > 0 ? 1 : 0);
 }

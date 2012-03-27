@@ -41,7 +41,7 @@
 
 <para>
 <command>gfprep</command> creates replicas of Gfarm files specified by
-the <parameter>gfarm-url</parameter>(gfarm:/...) in parallel.
+the <parameter>gfarm-url</parameter>(gfarm:///...) in parallel.
 </para>
 <para>
 When a set of source hosts are specified, only files stored on the set
@@ -317,21 +317,21 @@ Suppresses non-error messages.
 To replicate files under the directory recursively.
 </para>
 <literallayout>
-$ gfprep -N 3 gfarm:/dir
+$ gfprep -N 3 gfarm:///dir
 </literallayout>
 
 <para>
 To replicate a file or reduce surplus replicas of the file.
 </para>
 <literallayout>
-$ gfprep -N 3 -x gfarm:/dir/file
+$ gfprep -N 3 -x gfarm:///dir/file
 </literallayout>
 
 <para>
 To migrate replicas from gfsd1.example.com to other nodes.
 </para>
 <literallayout>
-$ gfprep -m -S gfsd1.example.com gfarm:/
+$ gfprep -m -S gfsd1.example.com gfarm:///
 </literallayout>
 </refsect1>
 
