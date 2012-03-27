@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "13 March 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "27 March 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -837,6 +837,17 @@ Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
 
 .nf
 	client_file_bufsize 65536
+.fi
+.TP
+\fBclient_parallel_copy_default \fI並列度\fB\fR
+\fBgfprep\fRコマンドと\fBgfpcopy\fRコマ
+ンドが並列で動作する際のデフォルト並列度を指定します。指定しない場合は
+4並列で動作します。
+
+例:
+
+.nf
+	client_parallel_copy_default 10
 .fi
 .TP
 \fBprofile \fI有効性\fB\fR

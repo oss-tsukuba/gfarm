@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "13 March 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "26 March 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -890,6 +890,16 @@ For example,
 
 .nf
 	client_file_bufsize 65536
+.fi
+.TP
+\fBclient_parallel_copy_default \fInum-of-parallel\fB\fR
+This directive specifies the default number of parallel for \fBgfprep\fR and \fBgfpcopy\fR to work in parallel.
+When this number is not specified, the default number of parallel is 4.
+
+For example,
+
+.nf
+	client_palallel_copy_default 10
 .fi
 .TP
 \fBprofile \fIvalidity\fB\fR
