@@ -18,7 +18,7 @@ extern struct gfarm_context {
 	int gfsd_connection_cache;
 	int record_atime;
 	int client_file_bufsize;
-	int client_parallel_copy_default;
+	int client_parallel_copy;
 	int on_demand_replication;
 	int network_receive_timeout;
 	int file_trace;

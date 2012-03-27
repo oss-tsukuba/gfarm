@@ -1245,15 +1245,15 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 </varlistentry>
 
 <varlistentry>
-<term><token>client_parallel_copy_default</token> <parameter>並列度</parameter></term>
+<term><token>client_parallel_copy</token> <parameter>並列度</parameter></term>
 <listitem>
 <para><command>gfprep</command>コマンドと<command>gfpcopy</command>コマ
-ンドが並列で動作する際のデフォルト並列度を指定します。指定しない場合は
+ンドが並列で動作する際の並列度を指定します。指定しない場合は
 4並列で動作します。
 </para>
 <para>例:</para>
 <literallayout>
-	client_parallel_copy_default 10
+	client_parallel_copy 10
 </literallayout>
 </listitem>
 </varlistentry>
