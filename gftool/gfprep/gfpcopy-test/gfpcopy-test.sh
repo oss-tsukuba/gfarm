@@ -13,6 +13,15 @@ NUM_REPLICA=2
 DIR_PATTERN="/gfarm-parallel-copy-test.${HOSTNAME}.$$"
 DIR_PATTERN2="/gfarm-parallel-copy-test.2.${HOSTNAME}.$$"
 
+function sig_handler() {
+    local dir
+    remove_local_files > /dev/null 2>&1
+    remove_gfarm_files > /dev/null 2>&1
+    dir=${LOCAL_DIR}${DIR_PATTERN2}
+    rm -rf ${dir} > /dev/null 2>&1
+    exit 0
+}
+
 function print_parallels() {
     if [[ $1 -eq 1 ]]; then
 	printf "   %3d parallel  " $1
@@ -22,7 +31,8 @@ function print_parallels() {
 }
 
 function print_result() {
-    printf "%12.0f Bytes/sec\n" $1
+    num=`echo "scale=2; $1 / 1024" | bc`
+    printf "%12.02f MB/s\n" ${num}
 }
 
 function create_local_files() {
@@ -145,6 +155,8 @@ fi
 if [[ ! ${GFARM_DIR} =~ "^gfarm:///*" ]]; then
     GFARM_DIR="gfarm://"${GFARM_DIR}
 fi
+
+trap sig_handler 1 2 15
 
 if [[ ${#FILE_SIZE[@]} -le ${#NUM_FILES[@]} ]]; then
     len=${#FILE_SIZE[@]}
