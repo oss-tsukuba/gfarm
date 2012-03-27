@@ -92,7 +92,18 @@ typedef struct {
 	size_t nnames;
 	char **names;
 	gfarm_fsngroup_text_t exclusions;
-	int only_valid;
+	int flags;
+
+#define CHECK_VALID(f)	((f) & FILTER_CHECK_VALID)
+#define CHECK_UP(f)	((f) & FILTER_CHECK_UP)
+
+#define MATCH_VALID(f, h) \
+	((CHECK_VALID(f) && host_is_valid((h))) || !CHECK_VALID(f))
+#define MATCH_UP(f, h) \
+	((CHECK_UP(f) && host_is_up((h))) || !CHECK_UP(f))
+
+#define MATCH_COND(f, h) \
+	((MATCH_VALID((f), (h))) || (MATCH_UP((f), (h))))
 } filter_arg_t;
 
 /*****************************************************************************/
@@ -244,6 +255,15 @@ text_line(gfarm_fsngroup_text_t t, size_t i)
 		return (NULL);
 }
 
+static const char * const *
+text_lines(gfarm_fsngroup_text_t t)
+{
+	struct gfarm_fsngroup_text_record *tr =
+		(struct gfarm_fsngroup_text_record *)t;
+
+	return (const char * const *)(tr->lines);
+}
+
 /*****************************************************************************/
 /*
  * Host table iterations:
@@ -374,14 +394,14 @@ static void *
 match_tuple_all(struct host *h, void *a, int *stopp)
 {
 	filter_arg_t *fa = (filter_arg_t *)a;
-	int only_valid = fa->only_valid;
+	int flags = fa->flags;
 	gfarm_fsngroup_text_t exs = fa->exclusions;
 	char *host = host_name(h);
 
 	if (stopp != NULL)
 		*stopp = 0;
 
-	if ((only_valid && host_is_valid(h)) || !only_valid) {
+	if (MATCH_COND(flags, h)) {
 		if (exs == NULL) {
 			return (allocate_tuple(host, host_fsngroup(h)));
 		} else {
@@ -403,7 +423,7 @@ static void *
 match_tuple_by_hostnames(struct host *h, void *a, int *stopp)
 {
 	filter_arg_t *fa = (filter_arg_t *)a;
-	int only_valid = fa->only_valid;
+	int flags = fa->flags;
 	gfarm_fsngroup_text_t exs = fa->exclusions;
 	char *host = host_name(h);
 	size_t i;
@@ -411,7 +431,7 @@ match_tuple_by_hostnames(struct host *h, void *a, int *stopp)
 	if (stopp != NULL)
 		*stopp = 0;
 
-	if ((only_valid && host_is_valid(h)) || !only_valid) {
+	if (MATCH_COND(flags, h)) {
 		if (exs == NULL) {
 			for (i = 0; i < fa->nnames; i++) {
 				if (strcmp(host, fa->names[i]) == 0)
@@ -441,7 +461,7 @@ static void *
 match_tuple_by_fsngroups(struct host *h, void *a, int *stopp)
 {
 	filter_arg_t *fa = (filter_arg_t *)a;
-	int only_valid = fa->only_valid;
+	int flags = fa->flags;
 	gfarm_fsngroup_text_t exs = fa->exclusions;
 	char *fsngroup = host_fsngroup(h);
 	size_t i;
@@ -449,7 +469,7 @@ match_tuple_by_fsngroups(struct host *h, void *a, int *stopp)
 	if (stopp != NULL)
 		*stopp = 0;
 
-	if ((only_valid && host_is_valid(h)) || !only_valid) {
+	if (MATCH_COND(flags, h)) {
 		if (exs == NULL) {
 			for (i = 0; i < fa->nnames; i++) {
 				if (strcmp(fsngroup, fa->names[i]) == 0)
@@ -481,13 +501,13 @@ match_hostname_by_fsngroup(struct host *h, void *a, int *stopp)
 {
 	filter_arg_t *fa = (filter_arg_t *)a;
 	const char *fsngroupname = (const char *)(fa->names[0]);
-	int only_valid = fa->only_valid;
+	int flags = fa->flags;
 	gfarm_fsngroup_text_t exs = fa->exclusions;
 
 	if (stopp != NULL)
 		*stopp = 0;
 
-	if ((only_valid && host_is_valid(h)) || !only_valid) {
+	if (MATCH_COND(flags, h)) {
 		if (exs == NULL) {
 			if (strcmp(host_fsngroup(h), fsngroupname) == 0)
 				return (strdup_ck(host_name(h),
@@ -516,11 +536,11 @@ match_hostname_by_fsngroup(struct host *h, void *a, int *stopp)
  */
 
 static gfarm_fsngroup_tuples_t
-get_tuples_all(gfarm_fsngroup_text_t exs, int only_valid)
+get_tuples_all(gfarm_fsngroup_text_t exs, int flags)
 {
 	size_t n = 0;
 	filter_arg_t arg = {
-		0, NULL, exs, only_valid
+		0, NULL, exs, flags
 	};
 
 	a_tuple_t **tuples =
@@ -533,11 +553,11 @@ get_tuples_all(gfarm_fsngroup_text_t exs, int only_valid)
 
 static gfarm_fsngroup_tuples_t
 get_tuples_by_hostnames(const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	size_t n = 0;
 	filter_arg_t arg = {
-		nhostnames, (char **)hostnames, exs, only_valid
+		nhostnames, (char **)hostnames, exs, flags
 	};
 	a_tuple_t **tuples =
 		(a_tuple_t **)scan_host_cache(
@@ -549,11 +569,11 @@ get_tuples_by_hostnames(const char **hostnames, size_t nhostnames,
 
 static gfarm_fsngroup_tuples_t
 get_tuples_by_fsngroups(const char **fsngroups, size_t nfsngroups,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	size_t n = 0;
 	filter_arg_t arg = {
-		nfsngroups, (char **)fsngroups, exs, only_valid
+		nfsngroups, (char **)fsngroups, exs, flags
 	};
 	a_tuple_t **tuples =
 		(a_tuple_t **)scan_host_cache(
@@ -565,12 +585,12 @@ get_tuples_by_fsngroups(const char **fsngroups, size_t nfsngroups,
 
 static gfarm_fsngroup_text_t
 get_hostnames_by_fsngroup(const char *fsngroup,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	size_t n = 0;
 	const char * const names[] = { fsngroup, NULL };
 	filter_arg_t arg = {
-		1, (char **)names, exs, only_valid
+		1, (char **)names, exs, flags
 	};
 	char **hostnames =
 		(char **)scan_host_cache(
@@ -625,6 +645,12 @@ gfm_fsngroup_text_line(gfarm_fsngroup_text_t t, size_t i)
 	return (text_line(t, i));
 }
 
+const char * const *
+gfm_fsngroup_text_lines(gfarm_fsngroup_text_t t)
+{
+	return (text_lines(t));
+}
+
 void
 gfm_fsngroup_text_destroy(gfarm_fsngroup_text_t t)
 {
@@ -643,18 +669,18 @@ gfm_fsngroup_text_allocate(size_t n, char **lines)
  */
 
 gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_all_unlock(gfarm_fsngroup_text_t exs, int only_valid)
+gfm_fsngroup_get_tuples_all_unlock(gfarm_fsngroup_text_t exs, int flags)
 {
-	return (get_tuples_all(exs, only_valid));
+	return (get_tuples_all(exs, flags));
 }
 
 gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_all(gfarm_fsngroup_text_t exs, int only_valid)
+gfm_fsngroup_get_tuples_all(gfarm_fsngroup_text_t exs, int flags)
 {
 	gfarm_fsngroup_tuples_t ret;
 
 	giant_lock();
-	ret = get_tuples_all(exs, only_valid);
+	ret = get_tuples_all(exs, flags);
 	giant_unlock();
 
 	return (ret);
@@ -663,21 +689,21 @@ gfm_fsngroup_get_tuples_all(gfarm_fsngroup_text_t exs, int only_valid)
 gfarm_fsngroup_tuples_t
 gfm_fsngroup_get_tuples_by_hostnames_unlock(
 	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	return (get_tuples_by_hostnames(hostnames, nhostnames,
-			exs, only_valid));
+			exs, flags));
 }
 
 gfarm_fsngroup_tuples_t
 gfm_fsngroup_get_tuples_by_hostnames(
 	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	gfarm_fsngroup_tuples_t ret;
 
 	giant_lock();
-	ret = get_tuples_by_hostnames(hostnames, nhostnames, exs, only_valid);
+	ret = get_tuples_by_hostnames(hostnames, nhostnames, exs, flags);
 	giant_unlock();
 
 	return (ret);
@@ -686,21 +712,21 @@ gfm_fsngroup_get_tuples_by_hostnames(
 gfarm_fsngroup_tuples_t
 gfm_fsngroup_get_tuples_by_fsngroups_unlock(
 	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	return (get_tuples_by_fsngroups(hostnames, nhostnames,
-			exs, only_valid));
+			exs, flags));
 }
 
 gfarm_fsngroup_tuples_t
 gfm_fsngroup_get_tuples_by_fsngroups(
 	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int only_valid)
+	gfarm_fsngroup_text_t exs, int flags)
 {
 	gfarm_fsngroup_tuples_t ret;
 
 	giant_lock();
-	ret = get_tuples_by_fsngroups(hostnames, nhostnames, exs, only_valid);
+	ret = get_tuples_by_fsngroups(hostnames, nhostnames, exs, flags);
 	giant_unlock();
 
 	return (ret);
@@ -708,19 +734,19 @@ gfm_fsngroup_get_tuples_by_fsngroups(
 
 gfarm_fsngroup_text_t
 gfm_fsngroup_get_hostnames_by_fsngroup_unlock(
-	const char *fsngroup, gfarm_fsngroup_text_t exs, int only_valid)
+	const char *fsngroup, gfarm_fsngroup_text_t exs, int flags)
 {
-	return (get_hostnames_by_fsngroup(fsngroup, exs, only_valid));
+	return (get_hostnames_by_fsngroup(fsngroup, exs, flags));
 }
 
 gfarm_fsngroup_text_t
 gfm_fsngroup_get_hostnames_by_fsngroup(
-	const char *fsngroup, gfarm_fsngroup_text_t exs, int only_valid)
+	const char *fsngroup, gfarm_fsngroup_text_t exs, int flags)
 {
 	gfarm_fsngroup_text_t ret;
 
 	giant_lock();
-	ret = get_hostnames_by_fsngroup(fsngroup, exs, only_valid);
+	ret = get_hostnames_by_fsngroup(fsngroup, exs, flags);
 	giant_unlock();
 
 	return (ret);
