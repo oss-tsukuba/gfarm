@@ -1168,7 +1168,7 @@ subcmd_config_gfsd()
 	#
 	# Get ARCH of the gfsd host.
 	#
-	ARCH=`exec_gfmd_host_agent \
+	ARCH=`exec_gfsd_host_agent \
 		$HOSTID root get-config-gfsd-param param=ARCH`
 	[ "X$ARCH" = X ] \
 		&& log_error "failed to get ARCH of $HOSTID"
@@ -1177,7 +1177,7 @@ subcmd_config_gfsd()
 	#
 	# Get NCPU of the gfsd host.
 	#
-	NCPU=`exec_gfmd_host_agent \
+	NCPU=`exec_gfsd_host_agent \
 		$HOSTID root get-config-gfsd-param param=NCPU`
 	[ "X$NCPU" = X ] \
 		&& log_error "failed to get NCPU of $HOSTID"
@@ -1186,7 +1186,7 @@ subcmd_config_gfsd()
 	#
 	# Get GFSD_HOSTNAME of the gfsd host.
 	#
-	GFSD_HOSTNAME=`exec_gfmd_host_agent \
+	GFSD_HOSTNAME=`exec_gfsd_host_agent \
 		$HOSTID root get-config-gfsd-param param=GFSD_HOSTNAME`
 	[ "X$GFSD_HOSTNAME" = X ] \
 		&& log_error "failed to get GFSD_HOSTNAME of $HOSTID"
@@ -1195,7 +1195,7 @@ subcmd_config_gfsd()
 	#
 	# Get GFSD_PORT of the gfsd host.
 	#
-	GFSD_PORT=`exec_gfmd_host_agent \
+	GFSD_PORT=`exec_gfsd_host_agent \
 		$HOSTID root get-config-gfsd-param param=GFSD_PORT`
 	[ "X$GFSD_PORT" = X ] \
 		&& log_error "failed to get GFSD_PORT of $HOSTID"
@@ -1213,11 +1213,11 @@ subcmd_config_gfsd()
 	rm -f $TMP_FILE
 	if [ "X$AUTH_TYPE" = Xsharedsecret ]; then
 		rm -f $TMP_FILE
-		exec_gfmd_host_agent gfmd1 root backup-shared-key \
+		exec_gfmd_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key" \
 			"gfmd1 failed"
-		exec_gfmd_host_agent $HOSTID root restore-shared-key \
+		exec_gfsd_host_agent $HOSTID root restore-shared-key \
 			< $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice restore-shared-key" \
 			"$HOSTID failed"
@@ -1229,7 +1229,7 @@ subcmd_config_gfsd()
 	rm -f $TMP_FILE
 	exec_gfmd_host_agent gfmd1 root backup-gfarm-conf > $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice backup-shared-key gfmd1 failed"
-	exec_gfmd_host_agent $HOSTID root restore-gfarm-conf < $TMP_FILE
+	exec_gfsd_host_agent $HOSTID root restore-gfarm-conf < $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice restore-gfarm-conf $HOSTID failed"
 
 	#
