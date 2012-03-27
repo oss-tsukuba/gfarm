@@ -2542,14 +2542,17 @@ main(int argc, char *argv[])
 		}
 	}
 	if (opt_n_para <= 0)
-		opt_n_para = gfarm_client_parallel_copy_default;
+		opt_n_para = gfarm_client_parallel_copy;
 	if (opt_n_para <= 0) {
-		gfprep_error("client_parallel_copy_default must be "
+		gfprep_error("client_parallel_copy must be "
 			     "a positive interger");
 		exit(EXIT_FAILURE);
 	}
+	gfprep_debug("number of parallel: %d", opt_n_para);
 	if (opt_dirtree_n_para <= 0)
 		opt_dirtree_n_para = opt_n_para;
+	gfprep_debug("number of child-processes: %d",
+		     opt_n_para + opt_dirtree_n_para);
 	if (opt_simulate_KBs == 0)
 		gfprep_usage_common(1);
 	if (opt_copy_bufsize <= 0)

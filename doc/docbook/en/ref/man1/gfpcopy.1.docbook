@@ -122,7 +122,8 @@ $ gfpcopy gfarm:///dir/file file:///dir
 <para>
 If the gfmd and <command>gfpcopy</command> are far apart,
 the <command>gfpcopy</command> operation is slow.  Specifying a large
-value by the -j option may be effective in such a case.
+value by the -j option or client_parallel_copy in gfarm2.conf may be
+effective in such a case.
 </para>
 </refsect1>
 
@@ -136,6 +137,9 @@ value by the -j option may be effective in such a case.
   </citerefentry>,
   <citerefentry>
   <refentrytitle>gfexport</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>
