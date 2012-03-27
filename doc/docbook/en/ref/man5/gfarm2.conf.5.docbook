@@ -1283,6 +1283,19 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
 </varlistentry>
 
 <varlistentry>
+<term><token>client_parallel_copy_default</token> <parameter>num-of-parallel</parameter></term>
+<listitem>
+<para>This directive specifies the default number of parallel for <command>gfprep</command> and <command>gfpcopy</command> to work in parallel.
+When this number is not specified, the default number of parallel is 4.
+</para>
+<para>For example,</para>
+<literallayout>
+	client_palallel_copy_default 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>profile </token><parameter>validity</parameter></term>
 <listitem>
 <para>When "enable" is specified, Gfarm outputs the profile information.

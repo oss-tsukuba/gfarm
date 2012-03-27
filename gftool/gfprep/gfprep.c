@@ -18,6 +18,7 @@
 #include <gfarm/gfarm.h>
 
 #include "config.h"
+#include "context.h"
 #include "gfm_client.h"
 #include "gfutil.h"
 #include "hash.h"
@@ -2325,7 +2326,7 @@ main(int argc, char *argv[])
 	const char *opt_way = NULL; /* -w */
 	gfarm_uint64_t opt_sched_threshold_size
 		= 50 * 1024 * 1024; /* -W, default=50MiB */
-	int opt_n_para = 4; /* -j */
+	int opt_n_para = -1; /* -j */
 	gfarm_int64_t opt_simulate_KBs = -1; /* -s and -n */
 	int opt_force_copy = 0; /* -f */
 	int opt_n_desire = 1;  /* -N */
@@ -2445,6 +2446,9 @@ main(int argc, char *argv[])
 	setvbuf(stdout, (char *) NULL, _IOLBF, 0);
 	setvbuf(stderr, (char *) NULL, _IOLBF, 0);
 
+	e = gfarm_initialize(&orig_argc, &orig_argv);
+	gfprep_fatal_e(e, "gfarm_initialize");
+
 	if (opt.debug) {
 		opt.quiet = 0;
 		opt.verbose = 1;
@@ -2539,7 +2543,13 @@ main(int argc, char *argv[])
 		}
 	}
 	if (opt_n_para <= 0)
-		gfprep_usage_common(1);
+		opt_n_para = gfarm_ctxp->client_parallel_copy_default;
+	if (opt_n_para <= 0) {
+		gfprep_error("client_parallel_copy_default must be "
+			     "a positive interger");
+		exit(EXIT_FAILURE);
+	}
+	printf("opt_n_para=%d\n", opt_n_para);//TODO
 	if (opt_dirtree_n_para <= 0)
 		opt_dirtree_n_para = opt_n_para;
 	if (opt_simulate_KBs == 0)
@@ -2548,9 +2558,6 @@ main(int argc, char *argv[])
 		gfprep_usage_common(1);
 	if (opt_dirtree_n_fifo <= 0)
 		gfprep_usage_common(1);
-
-	e = gfarm_initialize(&orig_argc, &orig_argv);
-	gfprep_fatal_e(e, "gfarm_initialize");
 
 	gfprep_check_dirurl_filename(src_is_gfarm, src_orig_url,
 				     &src_dir, &src_base_name,

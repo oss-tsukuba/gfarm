@@ -114,6 +114,7 @@ gfarm_context_init(void)
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->record_atime = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_file_bufsize = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->client_parallel_copy_default = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->on_demand_replication = 0;
