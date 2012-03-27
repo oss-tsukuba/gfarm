@@ -31,8 +31,8 @@ post-install-hook:
 gfarm_list.c:
 	ln -s $(srcdir)/../gfrep/gfarm_list.c .
 
-include $(top_srcdir)/makes/script.mk
 include $(top_srcdir)/makes/prog.mk
+include $(top_srcdir)/makes/script.mk
 
 ###
 

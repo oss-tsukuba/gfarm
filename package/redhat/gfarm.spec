@@ -1048,6 +1048,7 @@ fi
 %{prefix}/bin/gfmv
 %{prefix}/bin/gfpcopy
 %{prefix}/bin/gfprep
+%{prefix}/bin/gfpcopy-test.sh
 %{prefix}/bin/gfpath
 %if %{gfarm_v2_not_yet}
 %{prefix}/bin/gfmpirun_p4
