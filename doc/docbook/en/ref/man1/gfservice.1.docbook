@@ -21,7 +21,7 @@
     <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain'>sub-command</arg>
     <arg choice='plain'>host-id</arg>
-    <arg choice='opt'><replaceable>arguments</replaceable></arg>
+    <arg choice='opt'><replaceable>argument ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -71,7 +71,7 @@ Here is an example of the configuration file:
 
 <para>
 <command>gfservice</command> determines a path of the configuration
-file to be read in the following order:
+file to be read with the following procedures:
 </para>
 
 <orderedlist numeration="arabic">
@@ -168,7 +168,7 @@ Read configuration from <parameter>file</parameter> instead of the default.
 <term><option>-t</option> <parameter>time</parameter></term>
 <listitem>
 <para>
-Set operation timeout in <parameter>time</parameter>.
+Set operation timeout in <parameter>time</parameter> seconds.
 When <command>gfservice</command> tries to start or stop a server program
 (gfmd, gfsd or a backend database), it waits until the operation is complete
 or <parameter>time</parameter> interval is elapsed.
@@ -436,7 +436,7 @@ deletes it and then add a new line.
 <para>
 Delete a <parameter>directive</parameter> line in
 <filename>gfmd.conf</filename> file on the remote host.
-If <filename>gfmd.conf</filename> file on the remote host doesn't contain
+If <filename>gfmd.conf</filename> file doesn't contain
 <parameter>directive</parameter> line, the file is unchanged.
 </para>
 </listitem>
@@ -540,7 +540,7 @@ gfsd<replaceable>n</replaceable> and client<replaceable>n</replaceable>).
 <para>
 Execute "<command>stop-gfarm</command>" sub-command and then delete all
 files and directories created by gfmd and a backend database.
-If you want to unconfigure a slave gfmd only, use
+If you want to unconfigure a slave gfmd, use
 "<command>unconfig-gfarm-slave</command>" sub-command instead.
 </para>
 </listitem>
@@ -690,7 +690,7 @@ remote host.
 </varlistentry>
 
 <varlistentry>
-<term><command>umount</command></term>
+<term><command>umount</command> <parameter>directory</parameter></term>
 <listitem>
 <para>
 An alias of "<command>unmount</command>" sub-command.
@@ -724,7 +724,7 @@ deletes it and then add a new line.
 <para>
 Delete a <parameter>directive</parameter> line in
 <filename>gfarm2.conf</filename> file on the remote host.
-If <filename>gfarm2.conf</filename> file on the remote host doesn't contain
+If <filename>gfarm2.conf</filename> file doesn't contain
 <parameter>directive</parameter> line, the file is unchanged.
 </para>
 </listitem>
@@ -734,7 +734,7 @@ If <filename>gfarm2.conf</filename> file on the remote host doesn't contain
 <term><command>backup-gfarm-conf</command></term>
 <listitem>
 <para>
-Output <filename>gfarm2.conf</filename> on the remote host file to
+Output <filename>gfarm2.conf</filename> file on the remote host to
 standard out.
 </para>
 </listitem>
@@ -775,7 +775,8 @@ standard in.
 <term><command>config-client</command></term>
 <listitem>
 <para>
-Copy <filename>gfarm2.conf</filename> file from gfmd1 to the client host.
+Copy <filename>gfarm2.conf</filename> file and a shared secret key file
+from gfmd1 to the client host.
 </para>
 </listitem>
 </varlistentry>
@@ -784,7 +785,8 @@ Copy <filename>gfarm2.conf</filename> file from gfmd1 to the client host.
 <term><command>unconfig-client</command></term>
 <listitem>
 <para>
-Delete <filename>gfarm2.conf</filename> file on the remote host.
+Delete <filename>gfarm2.conf</filename> file and a shared secret key file
+on the remote host.
 </para>
 </listitem>
 </varlistentry>

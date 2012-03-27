@@ -20,7 +20,7 @@
   <command>gfservice-agent</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain'>sub-command</arg>
-    <arg choice='opt'><replaceable>arguments</replaceable></arg>
+    <arg choice='opt'><replaceable>argument ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -48,16 +48,17 @@ Sub-command names of <command>gfservice-agent</command> are similar to
 those of <command>gfservice</command>, but their arguments are different.
 For example, <command>"unmount"</command> sub-command of
 <command>gfservice-agent</command> takes
-<parameter>dir=<replaceable>directory</replaceable></parameter> argument:
+<parameter>"directory=<replaceable>directory</replaceable>"</parameter>
+argument:
 </para>
 
 <literallayout>
-	gfservice-agent unmount dir=/somewhere
+	gfservice-agent unmount directory=/somewhere
 </literallayout>
 
 <para>
 while <command>"unmount"</command> sub-command of <command>gfservice</command>
-takes <replaceable>directory</replaceable> argument:
+takes <replaceable>"directory"</replaceable> argument:
 </para>
 
 <literallayout>
@@ -307,12 +308,12 @@ An alias of <command>promote</command> sub-command.
 <varlistentry>
 <term>
 <command>mount</command>
-<parameter>dir</parameter>=<replaceable>directory</replaceable>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
 <parameter>options</parameter>=<replaceable>options</replaceable>
 </term>
 <listitem>
 <para>
-Mount a Gfarm2 filesystem on <parameter>directory</parameter>.
+Mount a Gfarm2 filesystem on <replaceable>directory</replaceable>.
 </para>
 </listitem>
 </varlistentry>
@@ -320,11 +321,12 @@ Mount a Gfarm2 filesystem on <parameter>directory</parameter>.
 <varlistentry>
 <term>
 <command>unmount</command>
-<parameter>dir</parameter>=<replaceable>directory</replaceable>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
 </term>
 <listitem>
 <para>
-Unmount a Gfarm2 filesystem on <parameter>directory</parameter>.
+Unmount a Gfarm2 filesystem currenctly mounted on
+<replaceable>directory</replaceable>.
 </para>
 </listitem>
 </varlistentry>
@@ -332,7 +334,7 @@ Unmount a Gfarm2 filesystem on <parameter>directory</parameter>.
 <varlistentry>
 <term>
 <command>umount</command>
-<parameter>dir</parameter>=<replaceable>directory</replaceable>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
 </term>
 <listitem>
 <para>
@@ -353,7 +355,7 @@ Add
 </para>
 
 <literallayout>
-	<parameter>directive</parameter> <parameter>value</parameter>
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
 </literallayout>
 
 <para>
@@ -374,7 +376,7 @@ Add
 </para>
 
 <literallayout>
-	<parameter>directive</parameter> <parameter>value</parameter>
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
 </literallayout>
 
 <para>
@@ -390,7 +392,7 @@ line to <filename>gfarm2.conf</filename> file.
 </term>
 <listitem>
 <para>
-Delete a <parameter>directive</parameter> line in
+Delete a <replaceable>directive</replaceable> line in
 <filename>gfarm2.conf</filename> file.
 </para>
 </listitem>
@@ -403,7 +405,7 @@ Delete a <parameter>directive</parameter> line in
 </term>
 <listitem>
 <para>
-Delete a <parameter>directive</parameter> line in
+Delete a <replaceable>directive</replaceable> line in
 <filename>gfmd.conf</filename> file.
 </para>
 </listitem>

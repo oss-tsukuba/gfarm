@@ -41,7 +41,7 @@ Here is an example of the configuration file:
 Same as Bourne-shell script, lines beginning with '#' and empty lines
 are ignored.
 The other lines declare shell variables.
-The variable <replaceable>gfmd1</replaceable> is set to
+In this example, the variable <replaceable>gfmd1</replaceable> is set to
 <replaceable>db1.example.com</replaceable> and
 <replaceable>gfmd2</replaceable> to
 <replaceable>db12.example.com</replaceable> respectively.
@@ -242,7 +242,7 @@ Do not delete or edit the declaration even after
 </varlistentry>
 
 <varlistentry>
-<term><varname>gfms<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<term><varname>gfsd<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
 <listitem>
 <para>
 Set this variable to "true" if gfsd on the remote host is configured
