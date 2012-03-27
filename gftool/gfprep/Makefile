@@ -20,6 +20,8 @@ CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) \
 LDLIBS = $(COMMON_LDFLAGS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
+SCRIPTS = $(srcdir)/gfpcopy-test.sh
+
 all: $(PROGRAM)
 
 post-install-hook:
@@ -29,6 +31,7 @@ post-install-hook:
 gfarm_list.c:
 	ln -s $(srcdir)/../gfrep/gfarm_list.c .
 
+include $(top_srcdir)/makes/script.mk
 include $(top_srcdir)/makes/prog.mk
 
 ###
