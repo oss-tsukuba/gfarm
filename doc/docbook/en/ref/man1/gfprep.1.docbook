@@ -183,7 +183,8 @@ processes are created of <parameter>num-of-processes</parameter> * 2
 processes.
 </para>
 <para>
-The default value is 4.
+The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)
 </para>
 <para>
 The source nodes and the destination nodes are selected/scheduled and
@@ -344,7 +345,8 @@ selected within a set of specified source nodes.
 <command>gfprep</command> command should be executed at the same host
 of gfmd.  If the gfmd and <command>gfprep</command> are far apart,
 the <command>gfprep</command> operation is slow.  Specifying a large
-value by the -j option may be effective in such a case.
+value by the -j option or client_parallel_copy in gfarm2.conf may be
+effective in such a case.
 </para>
 </refsect1>
 
@@ -358,6 +360,9 @@ value by the -j option may be effective in such a case.
   </citerefentry>,
   <citerefentry>
   <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
   </citerefentry>
 </para>
 </refsect1>
