@@ -308,7 +308,8 @@ CLASS="PARAMETER"
 > * 2
 processes.</P
 ><P
->The default value is 4.</P
+>The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)</P
 ><P
 >The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
@@ -493,7 +494,8 @@ the <B
 CLASS="COMMAND"
 >gfprep</B
 > operation is slow.  Specifying a large
-value by the -j option may be effective in such a case.</P
+value by the -j option or client_parallel_copy in gfarm2.conf may be
+effective in such a case.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -523,6 +525,13 @@ CLASS="CITEREFENTRY"
 CLASS="REFENTRYTITLE"
 >gfhost</SPAN
 >(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm2.conf</SPAN
+>(5)</SPAN
 ></P
 ></DIV
 ></BODY

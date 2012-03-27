@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPCOPY" "1" "26 March 2012" "Gfarm" ""
+.TH "GFPCOPY" "1" "27 March 2012" "Gfarm" ""
 
 .SH NAME
 gfpcopy \- copy Gfarm files in parallel
@@ -64,9 +64,11 @@ $ gfpcopy gfarm:///dir/file file:///dir
 .PP
 If the gfmd and \fBgfpcopy\fR are far apart,
 the \fBgfpcopy\fR operation is slow.  Specifying a large
-value by the -j option may be effective in such a case.
+value by the -j option or client_parallel_copy in gfarm2.conf may be
+effective in such a case.
 .SH "SEE ALSO"
 .PP
 \fBgfprep\fR(1),
 \fBgfreg\fR(1),
-\fBgfexport\fR(1)
+\fBgfexport\fR(1),
+\fBgfarm2.conf\fR(5)

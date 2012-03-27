@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPREP" "1" "26 March 2012" "Gfarm" ""
+.TH "GFPREP" "1" "27 March 2012" "Gfarm" ""
 
 .SH NAME
 gfprep \- replicate Gfarm files in parallel
@@ -88,7 +88,8 @@ files) simultaneously and to read the directory in parallel.  Child
 processes are created of \fInum-of-processes\fR * 2
 processes.
 
-The default value is 4.
+The default value is the parameter of client_parallel_copy in gfarm2.conf.
+(see man gfarm2.conf)
 
 The source nodes and the destination nodes are selected/scheduled and
 used(read/written) up to the number of CPUs (see
@@ -169,9 +170,11 @@ selected within a set of specified source nodes.
 \fBgfprep\fR command should be executed at the same host
 of gfmd.  If the gfmd and \fBgfprep\fR are far apart,
 the \fBgfprep\fR operation is slow.  Specifying a large
-value by the -j option may be effective in such a case.
+value by the -j option or client_parallel_copy in gfarm2.conf may be
+effective in such a case.
 .SH "SEE ALSO"
 .PP
 \fBgfrep\fR(1),
 \fBgfpcopy\fR(1),
-\fBgfhost\fR(1)
+\fBgfhost\fR(1),
+\fBgfarm2.conf\fR(5)

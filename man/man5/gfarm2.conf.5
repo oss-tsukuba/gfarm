@@ -892,14 +892,14 @@ For example,
 	client_file_bufsize 65536
 .fi
 .TP
-\fBclient_parallel_copy_default \fInum-of-parallel\fB\fR
-This directive specifies the default number of parallel for \fBgfprep\fR and \fBgfpcopy\fR to work in parallel.
+\fBclient_parallel_copy \fInum-of-parallel\fB\fR
+This directive specifies the number of parallel for \fBgfprep\fR and \fBgfpcopy\fR to work in parallel.
 When this number is not specified, the default number of parallel is 4.
 
 For example,
 
 .nf
-	client_palallel_copy_default 10
+	client_palallel_copy 10
 .fi
 .TP
 \fBprofile \fIvalidity\fB\fR

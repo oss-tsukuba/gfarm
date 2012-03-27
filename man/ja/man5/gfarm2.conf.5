@@ -839,15 +839,15 @@ Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
 	client_file_bufsize 65536
 .fi
 .TP
-\fBclient_parallel_copy_default \fI並列度\fB\fR
+\fBclient_parallel_copy \fI並列度\fB\fR
 \fBgfprep\fRコマンドと\fBgfpcopy\fRコマ
-ンドが並列で動作する際のデフォルト並列度を指定します。指定しない場合は
+ンドが並列で動作する際の並列度を指定します。指定しない場合は
 4並列で動作します。
 
 例:
 
 .nf
-	client_parallel_copy_default 10
+	client_parallel_copy 10
 .fi
 .TP
 \fBprofile \fI有効性\fB\fR
