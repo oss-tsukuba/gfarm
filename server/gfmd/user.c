@@ -590,17 +590,6 @@ user_init(void)
  * protocol handler
  */
 
-/*
- * XXX Delete this function at supporting protocol relay for
- * gfm_server_user_info_get_all()
- */
-gfarm_error_t
-user_info_send_norelay(struct gfp_xdr *client, struct gfarm_user_info *ui)
-{
-	return (gfp_xdr_send(client, "ssss",
-	    ui->username, ui->realname, ui->homedir, ui->gsi_dn));
-}
-
 static gfarm_error_t
 user_info_send(struct peer *peer, size_t *sizep, struct gfarm_user_info *ui,
 	const char *diag)
@@ -610,23 +599,27 @@ user_info_send(struct peer *peer, size_t *sizep, struct gfarm_user_info *ui,
 	    ui->gsi_dn));
 }
 
-gfarm_error_t
-gfm_server_user_info_get_all(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
+static gfarm_error_t
+gfm_server_user_info_get_all_request(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep,
+	int skip, struct relayed_request *r, void *closure, const char *diag)
+{
+	return (gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
+	    ""));
+}
+
+static gfarm_error_t
+gfm_server_user_info_get_all_reply(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep, int skip, void *closure,
+	const char *diag)
 {
 	gfarm_error_t e;
-	struct gfp_xdr *client = peer_get_conn(peer);
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nusers;
 	struct user **u;
-	static const char diag[] = "GFM_PROTO_USER_INFO_GET_ALL";
-
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
 
 	/* XXX FIXME too long giant lock */
-	giant_lock();
+	(void)request_reply_giant_lock(mode);
 
 	nusers = 0;
 	for (gfarm_hash_iterator_begin(user_hashtab, &it);
@@ -637,8 +630,8 @@ gfm_server_user_info_get_all(
 			++nusers;
 	}
 	/* XXXRELAY FIXME, reply size is not correct */
-	e = gfm_server_put_reply(peer, xid, sizep, diag,
-	    GFARM_ERR_NO_ERROR, "i", nusers);
+	e = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i",
+	    GFARM_ERR_NO_ERROR);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001498,
 			"gfm_server_put_reply() failed: %s",
@@ -646,13 +639,22 @@ gfm_server_user_info_get_all(
 		giant_unlock();
 		return (e);
 	}
+	e = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i", nusers);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001498,
+			"gfm_server_put_reply() failed: %s",
+			gfarm_error_string(e));
+		giant_unlock();
+		return (e);
+	}
+
 	for (gfarm_hash_iterator_begin(user_hashtab, &it);
 	     !gfarm_hash_iterator_is_end(&it);
 	     gfarm_hash_iterator_next(&it)) {
 		u = gfarm_hash_entry_data(gfarm_hash_iterator_access(&it));
 		if (user_is_valid(*u)) {
 			/* XXXRELAY FIXME */
-			e = user_info_send_norelay(client, &(*u)->ui);
+			e = user_info_send(peer, sizep, &(*u)->ui, diag);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1001499,
 					"user_info_send() failed: %s",
@@ -663,8 +665,28 @@ gfm_server_user_info_get_all(
 		}
 	}
 
-	giant_unlock();
+	(void)request_reply_giant_unlock(mode, e);
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfm_server_user_info_get_all(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
+{
+	gfarm_error_t e;
+	static const char diag[] = "GFM_PROTO_USER_INFO_GET_ALL";
+
+	if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid, skip,
+	    gfm_server_user_info_get_all_request,
+	    gfm_server_user_info_get_all_reply,
+	    GFM_PROTO_USER_INFO_GET_ALL, DBUPDATE_NOWAIT, NULL, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001503, "%s: %s",
+			diag, gfarm_error_string(e));
+	}
+
+	return (e);
 }
 
 struct user_info_get_by_names_closure {
