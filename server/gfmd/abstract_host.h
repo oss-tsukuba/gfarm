@@ -1,6 +1,7 @@
 struct abstract_host;
 struct host;
 struct mdhost;
+struct peer;
 
 #ifdef COMPAT_GFARM_2_3
 typedef void (*host_set_callback_t)(struct abstract_host *, struct peer *,
