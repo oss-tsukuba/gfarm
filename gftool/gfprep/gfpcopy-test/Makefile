@@ -1,4 +1,4 @@
-# $Id: Makefile 2533 2006-03-31 10:50:56Z takuya $
+# $Id$
 
 top_builddir = ../../..
 top_srcdir = $(top_builddir)

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# $Id$
 
 # Test parameters (modify if necessary)
 #PARALLELS="1 4 8 16 32 64"
@@ -6,12 +7,13 @@ PARALLELS="1 4 8 16 32"
 # FILE_SIZE and NUM_FILES must be in pairs.
 FILE_SIZE=(1024 104857600)
 NUM_FILES=(1024 32)
-# Definitions for
+# Definitions for Replication
 NUM_REPLICA=2
 
 # Definitions (These shuold not be modified)
-DIR_PATTERN="/gfarm-parallel-copy-test.${HOSTNAME}.$$"
-DIR_PATTERN2="/gfarm-parallel-copy-test.2.${HOSTNAME}.$$"
+DIR_PATTERN="/gfpcopy-test.${HOSTNAME}.$$"
+DIR_PATTERN2="/gfpcopy-test.2.${HOSTNAME}.$$"
+TMP_FILE="/tmp/gfpcopy-test.sh.${HOSTNAME}.$$"
 
 function sig_handler() {
     local dir
@@ -19,6 +21,7 @@ function sig_handler() {
     remove_gfarm_files > /dev/null 2>&1
     dir=${LOCAL_DIR}${DIR_PATTERN2}
     rm -rf ${dir} > /dev/null 2>&1
+    rm ${TMP_FILE}
     exit 0
 }
 
@@ -28,11 +31,14 @@ function print_parallels() {
     else
 	printf "   %3d parallels " $1
     fi
+    echo -n ${PHASE}" "$1" " >> ${TMP_FILE}
 }
 
 function print_result() {
-    num=`echo "scale=2; $1 / 1024" | bc`
-    printf "%12.02f MB/s\n" ${num}
+    local num
+    num=`echo "scale=2; $1 / 1000000" | bc`
+    printf "%12.02f MB/s (%.02f sec)\n" ${num} $2
+    echo $1" "$2 >> ${TMP_FILE}
 }
 
 function create_local_files() {
@@ -71,40 +77,46 @@ function remove_gfarm_files() {
 }
 
 function do_gfpcopy_togfarm() {
-    local src_dir dst_dir tmp_str
+    local src_dir dst_dir tmp_str val time
     src_dir="file://"${LOCAL_DIR}${DIR_PATTERN}
     dst_dir=${GFARM_DIR}${DIR_PATTERN}
 
     print_parallels $1
 
-    tmp_str=`gfpcopy -p -j $1 ${src_dir} ${dst_dir} | grep "total_throughput:" | cut -d ' ' -f 2`
-    print_result $tmp_str
+    tmp_str=`gfpcopy -p -j $1 ${src_dir} ${dst_dir}`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    print_result $val $time
     gfrm -rf $dst_dir
 }
 
 function do_gfpcopy_fromgfarm() {
-    local src_dir dst_dir tmp_str
+    local src_dir dst_dir tmp_str val time
     src_dir=${GFARM_DIR}${DIR_PATTERN}
 
     dst_dir=${LOCAL_DIR}${DIR_PATTERN2}
 
     print_parallels $1
 
-    tmp_str=`gfpcopy -p -j $1 ${src_dir} "file://"${dst_dir} | grep "total_throughput:" | cut -d ' ' -f 2`
-    print_result $tmp_str
+    tmp_str=`gfpcopy -p -j $1 ${src_dir} "file://"${dst_dir}`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    print_result $val $time
     rm -rf ${dst_dir}
 }
 
 function do_gfprep() {
-    local tmp_dir tmp_str
+    local tmp_dir tmp_str val time
     tmp_dir=${GFARM_DIR}${DIR_PATTERN}
 
     [ `gfsched -w | wc -l` -ge  ${NUM_REPLICA} ] || return 1
 
     print_parallels $1
 
-    tmp_str=`gfprep -p -N ${NUM_REPLICA} -j $1 ${tmp_dir} | grep "total_throughput:" | cut -d ' ' -f 2`
-    print_result $tmp_str
+    tmp_str=`gfprep -p -N ${NUM_REPLICA} -j $1 ${tmp_dir}`
+    val=`echo ${tmp_str}  | cut -d ' ' -f 8`
+    time=`echo ${tmp_str}  | cut -d ' ' -f 11`
+    print_result $val $time
 }
 
 function usage() {
@@ -164,6 +176,7 @@ else
     len=${#NUM_FILES[@]}
 fi
 
+PHASE=0
 for (( i = 0; i<$len; i++ )) do
     size=${FILE_SIZE[${i}]}
     num=${NUM_FILES[${i}]}
@@ -173,14 +186,38 @@ for (( i = 0; i<$len; i++ )) do
     echo -e "  Copy Files to gfarm"
     for par in $PARALLELS; do do_gfpcopy_togfarm ${par}; done
     create_gfarm_files $num $size
+    let $((PHASE++))
     echo -e "  Copy Files from gfarm"
     for par in $PARALLELS; do do_gfpcopy_fromgfarm ${par}; done
     remove_gfarm_files
-    echo -e "  Replicate Files on gfarm"
-    for par in $PARALLELS; do
-	create_gfarm_files $num $size
-	do_gfprep ${par}
-	remove_gfarm_files
-    done
+    let $((PHASE++))
+#    echo -e "  Replicate Files on gfarm"
+#    for par in $PARALLELS; do
+#	create_gfarm_files $num $size
+#	do_gfprep ${par}
+#	remove_gfarm_files
+#    done
     remove_local_files
 done
+
+if [ -f ${TMP_FILE} ]; then
+awk -f -  <<"__END__" ${TMP_FILE}
+{
+	if ($4!="" && (res[$1]=="" || res[$1] > $4)) {
+		res[$1]=$4
+		para[$1]=$2
+	}
+}
+END {
+	sum=0
+	count=0
+	for ( i in para ) {
+		count++
+		sum = sum + para[i]
+	}
+	avr = sum / count
+	print "preferred \"client_parallel_copy\" in gfarm2.conf is "int(avr+0.5)
+}
+__END__
+rm ${TMP_FILE}
+fi
