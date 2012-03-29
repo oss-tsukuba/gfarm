@@ -87,3 +87,19 @@ XXXRELAY スレーブは、journal seqnum で待ち合わせをする必要がある。
 XXXRELAY 特殊処理が必要
 	- gfm_server_compound_on_error()
 
+・テスト環境設定
+
+  1. スレーブ gfmd が参照する gfmd.conf に以下の行を追加する
+
+     metadb_server_slave_listen enable
+
+　2. gfsd が参照する gfarm2.conf の metadb_server_list には、
+　　 マスタのホスト名とポート番号だけを記述する。
+
+     etc/init.d/gfsd の OPTIONS のパス名を書き換えておくと楽。
+
+  3. クライアントが参照する gfarm2.conf の metadb_server_list には
+　　 スレーブののホスト名とポート番号だけを記述する。
+
+     テスト時だけ環境変数 GFARM_CONFIG_FILE に gfarm2.conf の
+     パス名を設定すると切り替えが簡単。
