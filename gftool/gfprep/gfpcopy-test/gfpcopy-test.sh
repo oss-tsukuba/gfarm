@@ -216,7 +216,7 @@ END {
 		sum = sum + para[i]
 	}
 	avr = sum / count
-	print "prefered \"client_parallel_copy\" in gfarm2.conf is "int(avr+0.5)
+	print "preferred \"client_parallel_copy\" in gfarm2.conf is "int(avr+0.5)
 }
 __END__
 rm ${TMP_FILE}
