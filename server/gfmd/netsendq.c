@@ -242,13 +242,13 @@ netsendq_new(struct netsendq_manager *manager, struct abstract_host *abhost,
 	GFARM_MALLOC(qhost);
 	if (qhost == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: no memory for %d bytes",
-		    diag, sizeof(*qhost));
+		    diag, (int)sizeof(*qhost));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	GFARM_MALLOC_ARRAY(qhost->workqs, manager->num_types);
 	if (qhost->workqs == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: no memory for %d*%d bytes",
-		    diag, manager->num_types, sizeof(*qhost->workqs));
+		    diag, manager->num_types, (int)sizeof(*qhost->workqs));
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
