@@ -90,7 +90,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/xattr.o \
 	$(GFMD_BUILDDIR)/relay.o \
 	$(GFMD_BUILDDIR)/fsngroup_replica.o \
-	$(GFMD_SRCDIR)/fsngroup.o \
+	$(GFMD_BUILDDIR)/fsngroup.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)
