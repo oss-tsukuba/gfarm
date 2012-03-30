@@ -31,8 +31,8 @@ PUBLIC_OBJS  =
 
 SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	user.c group.c host.c \
-	peer_watcher.c peer.c local_peer.c remote_peer.c \
-	dead_file_copy.c process.c job.c abstract_host.c \
+	peer_watcher.c peer.c local_peer.c remote_peer.c abstract_host.c \
+	netsendq.c dead_file_copy.c process.c job.c \
 	dir.c inode.c fs.c back_channel.c acl.c journal_file.c \
 	mdhost.c gfmd_channel.c mdcluster.c relay.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
@@ -41,8 +41,8 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	user.o group.o host.o \
-	peer_watcher.o peer.o local_peer.o remote_peer.o \
-	dead_file_copy.o process.o job.o abstract_host.o \
+	peer_watcher.o peer.o local_peer.o remote_peer.o abstract_host.o \
+	netsendq.o dead_file_copy.o process.o job.o \
 	dir.o inode.o fs.o back_channel.o acl.o journal_file.o \
 	mdhost.o gfmd_channel.o mdcluster.o relay.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
@@ -76,10 +76,10 @@ $(OBJS): $(DEPGFARMINC) \
 	thrpool.h subr.h rpcsubr.h callout.h watcher.h acl.h db_access.h \
 	user.h group.h host.h peer_watcher.h \
 	peer.h peer_impl.h local_peer.h remote_peer.h \
+	abstract_host.h abstract_host_impl.h netsendq.h netsendq_impl.h \
 	dead_file_copy.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h \
-	abstract_host.h abstract_host_impl.h \
 	gfmd_channel.h mdhost.h mdcluster.h relay.h
 
 include $(optional_rule)
