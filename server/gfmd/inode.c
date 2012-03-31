@@ -3123,11 +3123,12 @@ inode_schedule_file_default(struct file_opening *opening,
 			nhosts = 0;
 			for (fo = ios->openings.opening_next;
 			    fo != &ios->openings; fo = fo->opening_next) {
-				assert(nhosts < n);
 				if (fo->u.f.spool_host != NULL &&
 				    host_is_disk_available(
-				    fo->u.f.spool_host, 0))
+				    fo->u.f.spool_host, 0)) {
+					assert(nhosts < n);
 					hosts[nhosts++] = fo->u.f.spool_host;
+				}
 			}
 			if (nhosts > 0) {
 				/*
