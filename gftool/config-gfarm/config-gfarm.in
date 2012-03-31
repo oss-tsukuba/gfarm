@@ -181,6 +181,15 @@ service_start_common()
 
 sanity()
 {
+	case X"$METADATA_ADMIN_USER" in
+		Xgfarmadm|X_gfarmfs|X_gfarmmd)
+			echo "error: $METADATA_ADMIN_USER cannot be specified as a metadata admin user."
+			return 1
+			;;		
+		*)
+			;;
+	esac
+
 	if $METADATA_REPLICATION; then
 		if $PRIVATE_MODE; then
 			:
