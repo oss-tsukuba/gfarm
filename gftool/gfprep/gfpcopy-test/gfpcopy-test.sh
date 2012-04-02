@@ -7,10 +7,10 @@ PARALLELS="1 4 8 16 32"
 # FILE_SIZE and NUM_FILES must be in pairs.
 FILE_SIZE=(1024 104857600)
 NUM_FILES=(1024 32)
-# Definitions for Replication
+# Number of Replicas
 NUM_REPLICA=2
 
-# Definitions (These shuold not be modified)
+# Definitions (These should not be modified)
 DIR_PATTERN="/gfpcopy-test.${HOSTNAME}.$$"
 DIR_PATTERN2="/gfpcopy-test.2.${HOSTNAME}.$$"
 TMP_FILE="/tmp/gfpcopy-test.sh.${HOSTNAME}.$$"
@@ -50,7 +50,7 @@ function create_local_files() {
 	dd if=/dev/zero of=${src} \
            bs=1024 count=$(($2 / 1024)) > /dev/null 2>&1
 	if [[ $? -ne 0 ]]; then
-	    echo "can not make a file! ("${src}")"
+	    echo "cannot create a test file! ("${src}")"
 	    return 1
 	fi
     done
@@ -93,7 +93,6 @@ function do_gfpcopy_togfarm() {
 function do_gfpcopy_fromgfarm() {
     local src_dir dst_dir tmp_str val time
     src_dir=${GFARM_DIR}${DIR_PATTERN}
-
     dst_dir=${LOCAL_DIR}${DIR_PATTERN2}
 
     print_parallels $1
@@ -144,13 +143,9 @@ while [[ -- != "$1" ]]; do
     shift 
 done
 
-if [[ X${LOCAL_DIR} == X ]]; then
-    usage
-fi
-
-if [[ X${GFARM_DIR} == X ]]; then
-    usage
-fi
+# default value
+: ${LOCAL_DIR:=$PWD}
+: ${GFARM_DIR:=/tmp}
 
 if [[ ! -d $LOCAL_DIR ]]; then
     echo ${LOCAL_DIR} is not a directory.
@@ -160,12 +155,17 @@ fi
 tmp=`gfstat ${GFARM_DIR} 2> /dev/null | grep "Filetype: directory"`
 
 if [[ X${tmp} == X ]]; then
-    echo ${GFARM_DIR} is not a directory.
+    echo ${GFARM_DIR} is not a directory in the Gfarm file system.
     exit 1
 fi
 
-if [[ ! ${GFARM_DIR} =~ "^gfarm:///*" ]]; then
-    GFARM_DIR="gfarm://"${GFARM_DIR}
+if [[ ! ${GFARM_DIR} =~ "^gfarm:*" ]]; then
+    case X"${GFARM_DIR}" in
+	X/*)
+	    GFARM_DIR="gfarm://"${GFARM_DIR} ;;
+	*)
+	    GFARM_DIR="gfarm:///"${GFARM_DIR} ;;
+    esac
 fi
 
 trap sig_handler 1 2 15
@@ -183,11 +183,11 @@ for (( i = 0; i<$len; i++ )) do
 
     echo "File size: "${size}"   Number of files: "${num}
     create_local_files $num $size
-    echo -e "  Copy Files to gfarm"
+    echo -e "  Copy test from local file system ($LOCAL_DIR) to Gfarm ($GFARM_DIR)"
     for par in $PARALLELS; do do_gfpcopy_togfarm ${par}; done
     create_gfarm_files $num $size
     let $((PHASE++))
-    echo -e "  Copy Files from gfarm"
+    echo -e "  Copy test from Gfarm ($GFARM_DIR) to local file system ($LOCAL_DIR)"
     for par in $PARALLELS; do do_gfpcopy_fromgfarm ${par}; done
     remove_gfarm_files
     let $((PHASE++))
