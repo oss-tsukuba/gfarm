@@ -11,6 +11,7 @@ enum request_reply_mode {
 /* db_update_info flags */
 /* XXXRELAY define flags for meta data update here */
 #define DBUPDATE_USER		((gfarm_uint64_t)1 << 0)
+#define DBUPDATE_GROUP		((gfarm_uint64_t)1 << 1)
 #define DBUPDATE_NOWAIT		((gfarm_uint64_t)1 << 63)
 				/* NOWAIT is not transfered in protocol */
 #define DBUPDATE_PROTOCOL_MASK	(GFARM_UINT64_MAX & ~DBUPDATE_NOWAIT)

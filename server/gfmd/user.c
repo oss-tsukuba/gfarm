@@ -618,6 +618,9 @@ gfm_server_user_info_get_all_reply(enum request_reply_mode mode,
 	gfarm_int32_t nusers;
 	struct user **u;
 
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
 	/* XXX FIXME too long giant lock */
 	(void)request_reply_giant_lock(mode);
 
@@ -633,18 +636,18 @@ gfm_server_user_info_get_all_reply(enum request_reply_mode mode,
 	e = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i",
 	    GFARM_ERR_NO_ERROR);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001498,
-			"gfm_server_put_reply() failed: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_server_put_reply_with_vrelay() failed: %s",
 			gfarm_error_string(e));
-		giant_unlock();
+		(void)request_reply_giant_unlock(mode, e);
 		return (e);
 	}
 	e = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i", nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001498,
-			"gfm_server_put_reply() failed: %s",
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfm_server_put_reply_with_vrelay() failed: %s",
 			gfarm_error_string(e));
-		giant_unlock();
+		(void)request_reply_giant_unlock(mode, e);
 		return (e);
 	}
 
@@ -656,10 +659,10 @@ gfm_server_user_info_get_all_reply(enum request_reply_mode mode,
 			/* XXXRELAY FIXME */
 			e = user_info_send(peer, sizep, &(*u)->ui, diag);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001499,
+				gflog_debug(GFARM_MSG_UNFIXED,
 					"user_info_send() failed: %s",
 					gfarm_error_string(e));
-				giant_unlock();
+				(void)request_reply_giant_unlock(mode, e);
 				return (e);
 			}
 		}
