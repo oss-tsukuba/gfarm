@@ -1,3 +1,36 @@
+Release note for Gfarm 2.5.5
+============================
+
+[2012.4.3]
+
+New Command
+* gfprep - parallel file replication command
+* gfpcopy - parallel file copy command
+* gfpcopy-test.sh - test script to investigate effective number of
+  parallel file copy creations
+
+New configuration directive
+* client_parallel_copy - specify the number of parallel operations for
+  gfpcopy and gfprep.
+
+Bug fix
+* gfmd - fix assertion failure when multiple clients open the
+  same file, which was introduced in 2.4.1. [sf.net trac #375]
+* gfmd - fix segfault during replication [sf.net trac #200, #256, and
+  #372]
+* gfmd - journal records are not completely applied at start up
+  [sf.net trac #371]
+* gfmd - directory inode is not freed, when unlink() against the
+  directory is called during the directory is opened [sf.net trac
+  #358]
+* gfmdhost does not output expired state, which was introduced in
+  2.5.4 [sf.net trac #369]
+* Gfarm-FAQ - correct the description about how to dump core
+* gfmd - fix a segfault when multiple clients, each has a valid
+  certificate, try to authenticate but fail. [sf.net trac #348]
+  This fix requires to explicitly send SIGHUP to gfmd and gfsd to
+  reload CA certificate and CRL.
+
 Release note for Gfarm 2.5.4.1
 ==============================
 
