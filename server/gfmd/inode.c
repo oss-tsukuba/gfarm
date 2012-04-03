@@ -3238,9 +3238,10 @@ file_replicating_new(struct inode *inode, struct host *dst,
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
-
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
+	if (frp == NULL)
+		return (GFARM_ERR_NO_ERROR);
 
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
 		(void)inode_remove_replica_in_cache(inode, dst);
@@ -3683,11 +3684,14 @@ inode_remove_replica(struct inode *inode, struct host *spool_host)
 gfarm_error_t
 inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	struct host *src, struct host *dst, gfarm_int32_t flags,
-	struct file_replicating **frp)
+	struct file_replicating **file_replicating_p)
 {
 	gfarm_error_t e;
 	struct file_copy *copy;
-	struct file_replicating *fr;
+	struct file_replicating *fr, **frp = &fr;
+
+	if (file_replicating_p == NULL)
+		frp = NULL;
 
 	if ((flags & ~GFS_REPLICATE_FILE_FORCE) != 0)
 		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
@@ -3713,11 +3717,12 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY); /* src is busy */
-	else if ((e = file_replicating_new(inode, dst, NULL, &fr)) !=
+	else if ((e = file_replicating_new(inode, dst, NULL, frp)) !=
 	    GFARM_ERR_NO_ERROR)
 		return (e);
 
-	*frp = fr;
+	if (file_replicating_p != NULL)
+		*file_replicating_p = *frp;
 	return (GFARM_ERR_NO_ERROR);
 }
 

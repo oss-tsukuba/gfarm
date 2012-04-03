@@ -3,6 +3,7 @@ struct process;
 struct inode;
 struct host;
 struct file_replicating;
+struct replication_info;
 
 struct process *process_lookup(gfarm_pid_t);
 
@@ -55,7 +56,7 @@ struct file_opening {
 			int desired_replica_number;
 
 			/* only used by client initiated replication */
-			struct file_replicating *replicating;
+			struct replication_info *replica_source;
 		} f;
 		struct opening_dir {
 			gfarm_off_t offset;

@@ -60,6 +60,11 @@ static struct gfarm_id_table_entry_ops process_id_table_ops = {
 	sizeof(struct process)
 };
 
+struct replication_info {
+	gfarm_int64_t gen;
+	struct host *dst;
+};
+
 static struct file_opening *
 file_opening_alloc(struct inode *inode,
 	struct peer *peer, struct host *spool_host, int flag)
@@ -85,7 +90,7 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_host = spool_host;
 		}
 		fo->u.f.desired_replica_number = 0;
-		fo->u.f.replicating = NULL;
+		fo->u.f.replica_source = NULL;
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
 		fo->u.d.key = NULL;
@@ -100,15 +105,20 @@ void
 file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 {
 	if (GFARM_S_ISREG(mode)) {
-		if (fo->u.f.replicating != NULL) {
-			gflog_debug(GFARM_MSG_1002236, "orphan replicating");
-			file_replicating_free(fo->u.f.replicating);
-			fo->u.f.replicating = NULL;
+		if (fo->u.f.replica_source != NULL) {
+			gflog_debug(GFARM_MSG_1002236,
+			    "file replication (%lld:%lld) to %s is canceled",
+			    (long long)inode_get_number(fo->inode),
+			    (long long)fo->u.f.replica_source->gen,
+			    host_name(fo->u.f.replica_source->dst));
+			(void)inode_remove_replica_gen(fo->inode,
+			    fo->u.f.replica_source->dst,
+			    fo->u.f.replica_source->gen);
+			free(fo->u.f.replica_source);
+			fo->u.f.replica_source = NULL;
 		}
-	} else if (GFARM_S_ISDIR(mode)) {
-		if (fo->u.d.key != NULL)
-			free(fo->u.d.key);
-	}
+	} else if (GFARM_S_ISDIR(mode))
+		free(fo->u.d.key);
 	free(fo->path_for_trace_log);
 	free(fo);
 }
@@ -1115,7 +1125,7 @@ process_replica_adding(struct process *process, struct peer *peer,
 
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (fo->u.f.replicating != NULL)
+	if (fo->u.f.replica_source != NULL)
 		return (GFARM_ERR_FILE_BUSY);
 	if (inode_new_generation_is_pending(fo->inode)) {
 		gflog_debug(GFARM_MSG_1002242,
@@ -1126,13 +1136,18 @@ process_replica_adding(struct process *process, struct peer *peer,
 	}
 
 	e = process_prepare_to_replicate(process, peer, src, dst, fd,
-	    0, &fo->u.f.replicating, inodep);
+	    0, NULL, inodep);
 	if (e == GFARM_ERR_NO_ERROR) {
 		fo->u.f.spool_opener = peer;
 		/*
 		 * do not set spool_host
 		 * since replica is now creating to this host
 		 */
+		GFARM_MALLOC(fo->u.f.replica_source);
+		if (fo->u.f.replica_source == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		fo->u.f.replica_source->gen = inode_get_gen(fo->inode);
+		fo->u.f.replica_source->dst = dst;
 	}
 	return (e);
 }
@@ -1163,9 +1178,9 @@ process_replica_added(struct process *process,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
-	if (fo->u.f.replicating == NULL) {
+	if (fo->u.f.replica_source == NULL) {
 		gflog_debug(GFARM_MSG_1002243,
-		    "replica_added was called witout adding");
+		    "replica_added was called without adding");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
@@ -1180,8 +1195,7 @@ process_replica_added(struct process *process,
 	} else if (mtime_sec != (mtime = inode_get_mtime(fo->inode))->tv_sec ||
 	    mtime_nsec != mtime->tv_nsec ||
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
-	    file_replicating_get_gen(fo->u.f.replicating) !=
-	    inode_get_gen(fo->inode)) {
+	    fo->u.f.replica_source->gen != inode_get_gen(fo->inode)) {
 		gflog_debug(GFARM_MSG_1002244,
 		    "inode(%lld) updated while replication: "
 		    "mtime %lld.%09lld/%lld.%09lld, "
@@ -1191,16 +1205,16 @@ process_replica_added(struct process *process,
 		    (long long)inode_get_mtime(fo->inode)->tv_sec,
 		    (long long)inode_get_mtime(fo->inode)->tv_nsec,
 		    (long long)size, (long long)inode_get_size(fo->inode),
-		    (long long)file_replicating_get_gen(fo->u.f.replicating),
+		    (long long)fo->u.f.replica_source->gen,
 		    (long long)inode_get_gen(fo->inode));
 		e = inode_remove_replica_gen(fo->inode, spool_host,
-		    file_replicating_get_gen(fo->u.f.replicating));
+		    fo->u.f.replica_source->gen);
 		if (e == GFARM_ERR_NO_ERROR || e == GFARM_ERR_NO_SUCH_OBJECT)
 			e = GFARM_ERR_INVALID_FILE_REPLICA;
 	} else
 		e = inode_add_replica(fo->inode, spool_host, 1);
-	file_replicating_free(fo->u.f.replicating);
-	fo->u.f.replicating = NULL;
+	free(fo->u.f.replica_source);
+	fo->u.f.replica_source = NULL;
 	e2 = process_close_file_read(process, peer, fd, NULL);
 	return (e != GFARM_ERR_NO_ERROR ? e : e2);
 }
