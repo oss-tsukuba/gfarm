@@ -36,6 +36,7 @@ void netsendq_remove_entry(struct netsendq *, struct netsendq_entry *,
 gfarm_error_t netsendq_new(struct netsendq_manager *, struct abstract_host *,
 	struct netsendq **);
 void netsendq_was_sent_to_host(struct netsendq *);
+void netsendq_host_remove(struct netsendq *);
 void netsendq_host_becomes_down(struct netsendq *);
 void netsendq_host_becomes_up(struct netsendq *);
 

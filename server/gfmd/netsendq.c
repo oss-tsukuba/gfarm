@@ -109,9 +109,10 @@ netsendq_workq_to_readyq(struct netsendq *qhost,
 
 static void
 netsendq_finalizeq_add(struct netsendq_manager *manager,
-	struct netsendq_entry *entry, const char *diag)
+	struct netsendq_entry *entry, gfarm_error_t result, const char *diag)
 {
 	gfarm_mutex_lock(&manager->finalizeq_mutex, diag, "finalizeq");
+	entry->result = result;
 	GFARM_HCIRCLEQ_INSERT_TAIL(manager->finalizeq, entry, workq_entries);
 	gfarm_cond_signal(&manager->finalizeq_is_not_empty, diag, "finalizeq");
 	gfarm_mutex_unlock(&manager->finalizeq_mutex, diag, "finalizeq");
@@ -124,11 +125,11 @@ netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 	struct netsendq_workq *workq;
 	static const char diag[] = "netsendq_add_entry";
 
-	if (!abstract_host_is_up(entry->abhost) &&
-	    (entry->sendq_type->flags & NETSENDQ_FLAG_QUEUEABLE_IF_DOWN) == 0) {
+	if ((entry->sendq_type->flags & NETSENDQ_FLAG_QUEUEABLE_IF_DOWN) == 0
+	    && !abstract_host_is_up(entry->abhost)) {
 		if ((flags & NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING) != 0) {
-			entry->result = GFARM_ERR_NO_ROUTE_TO_HOST;
-			netsendq_finalizeq_add(qhost->manager, entry, diag);
+			netsendq_finalizeq_add(qhost->manager, entry,
+			    GFARM_ERR_NO_ROUTE_TO_HOST, diag);
 		}
 		return (GFARM_ERR_NO_ROUTE_TO_HOST);
 	}
@@ -160,8 +161,7 @@ netsendq_remove_entry(struct netsendq *qhost,
 		netsendq_workq_to_readyq(qhost, workq, diag);
 	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
 
-	entry->result = result;
-	netsendq_finalizeq_add(qhost->manager, entry, diag);
+	netsendq_finalizeq_add(qhost->manager, entry, result, diag);
 }
 
 static void
@@ -177,8 +177,8 @@ netsendq_host_is_down_at_entry(struct netsendq *qhost,
 	--workq->inflight_number;
 	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
 
-	entry->result = GFARM_ERR_NO_ROUTE_TO_HOST;
-	netsendq_finalizeq_add(qhost->manager, entry, diag);
+	netsendq_finalizeq_add(qhost->manager, entry,
+	    GFARM_ERR_NO_ROUTE_TO_HOST, diag);
 }
 
 static void
@@ -416,7 +416,7 @@ netsendq_send_manager(void *arg)
  *	netsendq::readq_mutex, netsendq_manager:hostq_mutex
  */
 void
-netsendq_host_becomes_down(struct netsendq *qhost)
+netsendq_host_remove_internal(struct netsendq *qhost, int hold_queue)
 {
 	struct netsendq_manager *manager = qhost->manager;
 	struct netsendq_workq *workq;
@@ -450,15 +450,15 @@ netsendq_host_becomes_down(struct netsendq *qhost)
 		workq = &qhost->workqs[entry->sendq_type->type_index];
 		--workq->inflight_number;
 
-		entry->result = GFARM_ERR_CONNECTION_ABORTED;
-		netsendq_finalizeq_add(manager, entry, diag);
+		netsendq_finalizeq_add(manager, entry,
+		    GFARM_ERR_CONNECTION_ABORTED, diag);
 	}
 	GFARM_STAILQ_INIT(&qhost->readyq);
 	gfarm_mutex_unlock(&qhost->readyq_mutex, diag, "readyq_mutex");
 
 	for (i = 0; i < manager->num_types; i++) {
-		if ((manager->types[i]->flags & NETSENDQ_FLAG_QUEUEABLE_IF_DOWN
-		    ) != 0) {
+		if (hold_queue && (manager->types[i]->flags &
+		    NETSENDQ_FLAG_QUEUEABLE_IF_DOWN) != 0) {
 			/* if it hasn't added to qhost->readyq, hold it */
 			continue;
 		}
@@ -474,8 +474,8 @@ netsendq_host_becomes_down(struct netsendq *qhost)
 				n = GFARM_HCIRCLEQ_NEXT(entry, workq_entries);
 				GFARM_HCIRCLEQ_REMOVE(entry, workq_entries);
 
-				entry->result = GFARM_ERR_CONNECTION_ABORTED;
-				netsendq_finalizeq_add(manager, entry, diag);
+				netsendq_finalizeq_add(manager, entry,
+				    GFARM_ERR_CONNECTION_ABORTED, diag);
 			}
 		}
 	}
@@ -485,6 +485,26 @@ netsendq_host_becomes_down(struct netsendq *qhost)
 		workq = &qhost->workqs[i];
 		gfarm_mutex_unlock(&workq->mutex, diag, "workq::mutex");
 	}
+}
+
+/*
+ * LOCKS: netsendq_workq::mutex ->
+ *	netsendq::readq_mutex, netsendq_manager:hostq_mutex
+ */
+void
+netsendq_host_remove(struct netsendq *qhost)
+{
+	netsendq_host_remove_internal(qhost, 0);
+}
+
+/*
+ * LOCKS: netsendq_workq::mutex ->
+ *	netsendq::readq_mutex, netsendq_manager:hostq_mutex
+ */
+void
+netsendq_host_becomes_down(struct netsendq *qhost)
+{
+	netsendq_host_remove_internal(qhost, 1);
 }
 
 /*

@@ -9,7 +9,7 @@
 struct netsendq_entry;
 struct netsendq_type {
 	void *(*send)(void *);
-	void *(*finalize)(void *);
+	void *(*finalize)(struct netsendq_entry *);
 	int window_size;
 	int flags;	/* NETSENDQ_FLAG_* */
 	int type_index; /* NETSENDQ_TYPE_GF?_* */
