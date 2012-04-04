@@ -85,8 +85,6 @@ gflog_vmessage_message(int verbose, int msg_no, const char *file, int line_no,
 	/* the last one is used as a terminator */
 	*endp = '\0';
 
-	if (!log_use_syslog)
-		GFLOG_SNPRINTF(buf, bp, endp, "%s: ", log_identifier);
 	GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
 	if (verbose > 0) {
 		GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
@@ -103,13 +101,53 @@ gflog_vmessage_message(int verbose, int msg_no, const char *file, int line_no,
 	return (buf);
 }
 
+#define GFLOG_PRIORITY_SIZE	8
+static pthread_once_t gflog_priority_string_once = PTHREAD_ONCE_INIT;
+static char *gflog_priority_string[GFLOG_PRIORITY_SIZE];
+
+static struct {
+	char *name;
+	int priority;
+} gflog_syslog_priorities[] = {
+	{ "emerg",	LOG_EMERG },
+	{ "alert",	LOG_ALERT },
+	{ "crit",	LOG_CRIT },
+	{ "err",	LOG_ERR },
+	{ "warning",	LOG_WARNING },
+	{ "notice",	LOG_NOTICE },
+	{ "info",	LOG_INFO },
+	{ "debug",	LOG_DEBUG },
+};
+
+static void
+gflog_set_priority_string(int priority, char *string)
+{
+	if (priority >= 0 && priority < GFLOG_PRIORITY_SIZE)
+		gflog_priority_string[priority] = string;
+}
+
+static void
+gflog_init_priority_string(void)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gflog_syslog_priorities); i++)
+		gflog_set_priority_string(
+		    gflog_syslog_priorities[i].priority,
+		    gflog_syslog_priorities[i].name);
+}
+
 static void
 gflog_sub(int priority, const char *str1, const char *str2)
 {
+	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
+
 	if (log_use_syslog)
-		syslog(priority, "%s%s", str1, str2);
+		syslog(priority, "<%s> %s%s", gflog_priority_string[priority],
+		    str1, str2);
 	else
-		fprintf(stderr, "%s%s\n", str1, str2);
+		fprintf(stderr, "%s: <%s> %s%s\n", log_identifier,
+		    gflog_priority_string[priority], str1, str2);
 }
 
 void
@@ -322,23 +360,10 @@ int
 gflog_syslog_name_to_priority(const char *name)
 {
 	int i;
-	struct {
-		char *name;
-		int priority;
-	} syslog_priorities[] = {
-		{ "emerg",	LOG_EMERG },
-		{ "alert",	LOG_ALERT },
-		{ "crit",	LOG_CRIT },
-		{ "err",	LOG_ERR },
-		{ "warning",	LOG_WARNING },
-		{ "notice",	LOG_NOTICE },
-		{ "info",	LOG_INFO },
-		{ "debug",	LOG_DEBUG },
-	};
 
-	for (i = 0; i < GFARM_ARRAY_LENGTH(syslog_priorities); i++) {
-		if (strcmp(syslog_priorities[i].name, name) == 0)
-			return (syslog_priorities[i].priority);
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gflog_syslog_priorities); i++) {
+		if (strcmp(gflog_syslog_priorities[i].name, name) == 0)
+			return (gflog_syslog_priorities[i].priority);
 	}
 	return (-1); /* not found */
 }
