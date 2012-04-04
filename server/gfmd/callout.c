@@ -106,8 +106,12 @@ callout_main(void *arg)
 		}
 		gfarm_mutex_unlock(&cm->mutex, module_name, "main lock");
 
-		if (func != NULL)
-			thrpool_add_job(thrpool, func, closure);
+		if (func != NULL) {
+			if (thrpool == NULL)
+				(*func)(closure);
+			else
+				thrpool_add_job(thrpool, func, closure);
+		}
 	}
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	/*NOTREACHED*/
@@ -220,6 +224,7 @@ callout_schedule(struct callout *c, int microseconds)
 	gfarm_mutex_unlock(&cm->mutex, module_name, "schedule unlock");
 }
 
+/* if thrpool == NULL, use the callout_main thread to call the func. */
 void
 callout_reset(struct callout *c, int microseconds,
 	struct thread_pool *thrpool, void *(*func)(void *), void *closure)
@@ -234,6 +239,7 @@ callout_reset(struct callout *c, int microseconds,
 	gfarm_mutex_unlock(&cm->mutex, module_name, "reset unlock");
 }
 
+/* if thrpool == NULL, use the callout_main thread to call the func. */
 void
 callout_setfunc(struct callout *c,
 	struct thread_pool *thrpool, void *(*func)(void *), void *closure)
