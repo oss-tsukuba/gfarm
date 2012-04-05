@@ -22,7 +22,7 @@ gfarm_random_initialize(void)
 long gfarm_random(void)
 {
 	long rv;
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	static pthread_mutex_t mutex = GFARM_MUTEX_INITIALIZER(mutex);
 	static pthread_once_t rand_initialized = PTHREAD_ONCE_INIT;
 	static const char diag[] = "gfarm_random";
 

@@ -7,7 +7,9 @@
 #include "context.h"
 #include "config.h"
 
+#ifndef __KERNEL__
 struct gfarm_context *gfarm_ctxp;
+#endif /* __KERNEL__ */
 
 struct gfarm_context_module_entry {
 	gfarm_error_t (*init)(struct gfarm_context *);
@@ -35,6 +37,7 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_host_static_init,
 		gfarm_host_static_term
 	},
+#ifndef __KERNEL__
 	{
 		gfarm_auth_config_static_init,
 		gfarm_auth_config_static_term
@@ -65,6 +68,7 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_pio_section_static_init,
 		gfarm_gfs_pio_section_static_term
 	},
+#endif /* __KERNEL__ */
 	{
 		gfarm_gfs_stat_static_init,
 		gfarm_gfs_stat_static_term
@@ -73,10 +77,12 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_unlink_static_init,
 		gfarm_gfs_unlink_static_term
 	},
+#ifndef __KERNEL__
 	{
 		gfarm_gfs_xattr_static_init,
 		gfarm_gfs_xattr_static_term
 	},
+#endif /* __KERNEL__ */
 	{
 		gfarm_filesystem_static_init,
 		gfarm_filesystem_static_term

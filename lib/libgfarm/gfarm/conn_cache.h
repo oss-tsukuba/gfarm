@@ -1,6 +1,7 @@
 /*
  * The following #include is necessary to use this module:
  * #include "lru_cache.h"
+ * #include "thrsubr.h"
  */
 
 struct gfarm_hash_table;
@@ -29,7 +30,7 @@ struct gfp_conn_cache {
 		NULL, \
 		dispose, \
 		type_name, table_size, num_cachep, \
-		PTHREAD_MUTEX_INITIALIZER \
+		GFARM_MUTEX_INITIALIZER(var.mutex) \
 	}
 
 void gfp_conn_cache_init(struct gfp_conn_cache *,
@@ -47,6 +48,8 @@ int gfp_cached_connection_port(struct gfp_cached_connection *);
 gfarm_error_t gfp_cached_connection_set_username(
 	struct gfp_cached_connection *, const char *user);
 
+void gfp_connection_lock(struct gfp_cached_connection *);
+void gfp_connection_unlock(struct gfp_cached_connection *);
 
 gfarm_error_t gfp_uncached_connection_new(const char *, int, const char *,
 	struct gfp_cached_connection **);

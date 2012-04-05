@@ -110,8 +110,10 @@ struct gfs_file_section_context {
 	int fd; /* this isn't used for remote case, but only local case */
 	pid_t pid;
 
+#ifdef EVP_MD_CTX_FLAG_ONESHOT /* for kernel mode */
 	/* for checksum, maintained only if GFS_FILE_MODE_CALC_DIGEST */
 	EVP_MD_CTX md_ctx;
+#endif
 };
 
 /*

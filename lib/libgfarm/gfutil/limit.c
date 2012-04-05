@@ -8,6 +8,10 @@
 #include <gfarm/gflog.h>
 #include "gfutil.h"
 
+#ifdef __KERNEL__
+#undef HAVE_SETRLIMIT
+#endif /* __KERNEL__ */
+
 /*
  * - Unlimit file descriptors.
  * - Returns numbers of file descriptors to *file_table_size_p,

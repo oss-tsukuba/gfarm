@@ -64,6 +64,9 @@ gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
 void gfm_client_connection_free(struct gfm_connection *);
 void gfm_client_terminate(void);
 
+void gfm_client_connection_lock(struct gfm_connection *);
+void gfm_client_connection_unlock(struct gfm_connection *);
+
 /* host/user/group metadata */
 
 gfarm_error_t gfm_client_host_info_get_all(struct gfm_connection *,

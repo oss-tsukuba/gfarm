@@ -279,6 +279,7 @@ gfs_file_free(GFS_File gf)
 	free(gf);
 }
 
+
 gfarm_error_t
 gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 {

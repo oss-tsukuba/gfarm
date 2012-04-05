@@ -14,7 +14,8 @@ SUBDIRS = \
 	util/ptool \
 	nls \
 	bench/gfperf \
-	bench/gfiops
+	bench/gfiops \
+	@linuxkernel_targets@
 
 #	`[ -d $(srcdir)/ns ] && echo ns` \
 #	gfptool \

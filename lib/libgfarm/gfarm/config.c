@@ -233,6 +233,8 @@ local_ug_maps_hash_equal(const void *key1, int key1len,
 #define DEFAULT_HOSTNAME_KEY	"."
 #define DEFAULT_PORT_KEY	(-1)
 
+void (*gfarm_ug_maps_notify)(const char *, int , int , const char *);
+
 static gfarm_error_t
 local_ug_maps_enter(const char *hostname, int port, int is_user,
 	const char *map_file)
@@ -313,6 +315,10 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 			goto error;
 		}
 	}
+	/* for gfskd, linux helper daemon */
+	if(gfarm_ug_maps_notify){
+		gfarm_ug_maps_notify(hostname, port, is_user, s);
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 error:
@@ -326,7 +332,7 @@ error:
 }
 
 static void
-local_ug_maps_tab_free()
+local_ug_maps_tab_free(void)
 {
 	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
@@ -677,11 +683,13 @@ gfarm_set_local_username(char *local_username)
 	return (set_string(&staticp->local_username, local_username));
 }
 
+#ifndef __KERNEL__
 char *
 gfarm_get_local_username(void)
 {
 	return (staticp->local_username);
 }
+#endif /* __KERNEL__ */
 
 gfarm_error_t
 gfarm_set_local_homedir(char *local_homedir)
@@ -702,6 +710,11 @@ gfarm_get_local_homedir(void)
 gfarm_error_t
 gfarm_set_local_user_for_this_local_account(void)
 {
+	return gfarm_set_local_user_for_this_uid(geteuid());
+}
+gfarm_error_t
+gfarm_set_local_user_for_this_uid(uid_t uid)
+{
 	gfarm_error_t error;
 	struct passwd pwbuf, *pwd;
 	char *buf;
@@ -713,7 +726,7 @@ gfarm_set_local_user_for_this_local_account(void)
 			gfarm_error_string(error));
 		return (error);
 	}
-	if (getpwuid_r(geteuid(), &pwbuf, buf, gfarm_ctxp->getpw_r_bufsz,
+	if (getpwuid_r(uid, &pwbuf, buf, gfarm_ctxp->getpw_r_bufsz,
 	    &pwd) != 0) {
 		gflog_error(GFARM_MSG_1000012, "local account doesn't exist");
 		error = GFARM_ERR_NO_SUCH_OBJECT;
@@ -950,6 +963,7 @@ pid_to_string(long pid)
 	return (pe);
 }
 
+#ifndef __KERNEL__
 /* signal handler */
 static void
 gfarm_sig_debug(int sig)
@@ -1040,6 +1054,7 @@ gfarm_setup_debug_command(void)
 	signal(SIGBUS,  gfarm_sig_debug);
 	signal(SIGSEGV, gfarm_sig_debug);
 }
+#endif /* __KERNEL__ */
 
 void
 gfarm_set_record_atime(int boolean)
@@ -1230,6 +1245,8 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 static gfarm_error_t
 parse_auth_arguments(char *p, char **op)
 {
+#ifndef __KERNEL__
+
 	gfarm_error_t e;
 	char *tmp, *command, *auth, *host;
 	enum gfarm_auth_method auth_method;
@@ -1338,6 +1355,9 @@ parse_auth_arguments(char *p, char **op)
 		gfarm_hostspec_free(hostspecp);
 	}
 	return (e);
+#else /* __KERNEL__ */
+	return GFARM_ERR_NO_ERROR;
+#endif /* __KERNEL__ */
 }
 
 #if 0 /* not yet in gfarm v2 */
@@ -1798,6 +1818,7 @@ parse_set_misc_int(char *p, int *vp)
 static gfarm_error_t
 parse_set_misc_float(char *p, float *vp)
 {
+#ifndef __KERNEL__
 	gfarm_error_t e;
 	char *ep, *s;
 	double v;
@@ -1817,6 +1838,9 @@ parse_set_misc_float(char *p, float *vp)
 	if (*ep != '\0')
 		return (GFARM_ERRMSG_INVALID_CHARACTER);
 	*vp = (float)v;
+#else /* __KERNEL__ */
+	gflog_warning(GFARM_MSG_1000001, "floating %s is ignored", p);
+#endif /* __KERNEL__ */
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2112,7 +2136,12 @@ parse_profile(char *p, int *vp)
 static gfarm_error_t
 parse_metadb_server_list_arguments(char *p, char **op)
 {
+#ifndef __KERNEL__
 #define METADB_SERVER_NUM_MAX 1024
+#else /* __KERNEL__ */
+#define METADB_SERVER_NUM_MAX 128
+#endif /* __KERNEL__ */
+
 	gfarm_error_t e;
 	int i, port;
 	char *host_and_port, *host = NULL;
@@ -2816,11 +2845,13 @@ gfarm_config_set_default_misc(void)
 void
 gfs_display_timers(void)
 {
+#ifndef __KERNEL__
 	gfs_pio_display_timers();
 	gfs_pio_section_display_timers();
 	gfs_stat_display_timers();
 	gfs_unlink_display_timers();
 	gfs_xattr_display_timers();
+#endif /* __KERNEL__ */
 }
 
 #ifdef STRTOKEN_TEST

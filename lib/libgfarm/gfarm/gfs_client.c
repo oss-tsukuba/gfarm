@@ -38,6 +38,7 @@
 #include "gfevent.h"
 #include "hash.h"
 #include "lru_cache.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "liberror.h"

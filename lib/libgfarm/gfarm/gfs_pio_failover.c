@@ -3,6 +3,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>	/* for free */
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -568,15 +569,23 @@ compound_fd_op(struct gfs_failover_file *file,
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
 {
+	gfarm_error_t e;
 	struct compound_fd_op_info ci = {
 		file, ops,
 		request_op, result_op, cleanup_op, must_be_warned_op,
 		closure
 	};
+	struct gfm_connection *gfm_server;
 
-	return (gfm_client_rpc_with_failover(compound_fd_op_rpc,
+	gfm_server = ops->get_connection(file);
+	gfm_client_connection_lock(gfm_server);
+
+	e = gfm_client_rpc_with_failover(compound_fd_op_rpc,
 	    compound_fd_op_post_failover, NULL,
-	    compound_fd_op_must_be_warned, &ci));
+	    compound_fd_op_must_be_warned, &ci);
+
+	gfm_client_connection_unlock(gfm_server);
+	return (e);
 }
 
 gfarm_error_t
@@ -633,14 +642,20 @@ compound_file_op(GFS_File gf,
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
 {
+	gfarm_error_t e;
 	struct compound_file_op_info ci = {
 		gf,
 		request_op, result_op, cleanup_op, must_be_warned_op,
 		closure
 	};
+	struct gfm_connection *gfm_server;
+	gfm_server = gf->gfm_server;
 
-	return (gfm_client_rpc_with_failover(compound_file_op_rpc, NULL,
-	    NULL, compound_file_op_must_be_warned_op, &ci));
+	gfm_client_connection_lock(gfm_server);
+	e = gfm_client_rpc_with_failover(compound_file_op_rpc, NULL,
+	    NULL, compound_file_op_must_be_warned_op, &ci);
+	gfm_client_connection_unlock(gfm_server);
+	return (e);
 }
 
 gfarm_error_t
