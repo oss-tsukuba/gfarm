@@ -64,7 +64,7 @@ gfsk_req_connectmd(uid_t uid, struct gfsk_req_connect *inarg,
 	fuse_request_send(fc, req);
 	err = req->out.h.error;
 	if (err != 0) {
-		gflog_error(0, "connectmd failed: uid=%d, err=%d", uid, err);
+		gflog_error(GFARM_MSG_UNFIXED, "connectmd failed: uid=%d, err=%d", uid, err);
 	} else {
 		down(&sem);
 		if (outarg->r_fd < 0)

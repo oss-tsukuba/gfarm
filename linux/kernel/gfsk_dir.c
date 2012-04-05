@@ -15,7 +15,7 @@ void invalidate_dir_pages(struct inode *inode)
 	if ((inode->i_mode & S_IFMT) != S_IFDIR)
 		return;
 	invalidate_inode_pages2(inode->i_mapping);
-	gflog_debug(0, "invalidate_inode_pages2 done. ino=%lu", inode->i_ino);
+	gflog_debug(GFARM_MSG_UNFIXED, "invalidate_inode_pages2 done. ino=%lu", inode->i_ino);
 	gi->i_direntsize = 0;
 }
 
@@ -32,7 +32,7 @@ static int check_invalidate_dir_pages(struct inode *inode, struct file *file)
 	retval = gfarm_stat(file->f_path.dentry, &tmp);
 	if (retval)
 		return (retval);
-	gflog_debug(0, "mtime=%ld.%ld, %ld.%ld",
+	gflog_debug(GFARM_MSG_UNFIXED, "mtime=%ld.%ld, %ld.%ld",
 		mtime.tv_sec, mtime.tv_nsec,
 		tmp->i_mtime.tv_sec, tmp->i_mtime.tv_nsec);
 	if (mtime.tv_sec != tmp->i_mtime.tv_sec ||

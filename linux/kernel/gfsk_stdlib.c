@@ -42,9 +42,9 @@ fopen(const char *path, const char *mode)
 	int	i, err = -EINVAL;
 	FILE	*fp = NULL;
 	if (!path) {
-		gflog_error(0, "no path");
+		gflog_error(GFARM_MSG_UNFIXED, "no path");
 	} else if (*mode != 'r') {
-		gflog_error(0, "support only read mode but '%s'", mode);
+		gflog_error(GFARM_MSG_UNFIXED, "support only read mode but '%s'", mode);
 	} else {
 		for (i = 0; i < GFSK_FBUF_MAX; i++) {
 			struct gfsk_fbuf *fbp = &gfsk_fsp->gf_mdata.m_fbuf[i];

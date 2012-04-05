@@ -148,8 +148,8 @@ idtoname_show(struct seq_file *m, struct cache_detail *cd, struct cache_head *h)
 static void
 warn_no_idmapd(struct cache_detail *detail, int has_died)
 {
-	gflog_error(0, "ugidmap: idmapping failing: has idmapd %s?\n",
-			has_died ? "died" : "not been started");
+	gflog_error(GFARM_MSG_UNFIXED, "ugidmap: ID mapping failed: has idmapd %s?",
+			has_died ? "died" : "started");
 }
 
 
