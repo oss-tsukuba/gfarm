@@ -20,6 +20,11 @@
 #define	GFSP_CONN_LOCK(conn)
 #define	GFSP_CONN_UNLOCK(conn)
 #else /* __KERNEL__ */
+/*
+ * In kernel mode, processes of the same user use the same connection.
+ * Lock the connection from sending-request to receiving-reply,
+ * a compound request as well.
+ */
 #define	GFSP_CONN_MUTEX		struct mutex conn_lock;
 #define	GFSP_CONN_INIT(conn)	mutex_init(&(conn)->conn_lock);
 #define	GFSP_CONN_LOCK(conn)	mutex_lock(&(conn)->conn_lock);
