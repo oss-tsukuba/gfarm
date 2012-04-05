@@ -808,6 +808,12 @@ unlock_sender:
 	if (e != GFARM_ERR_NO_ERROR)
 		goto acquire_notify;
 
+	/*
+	 * NOTE: layering violation
+	 * Slave-gfmd is peeking `size' field of the protocol header of here.
+	 * And transfering protocol data from the mater-gfmd to a client,
+	 * by just using that `size' information.
+	 */
 	relayed_request_result_wait(r);
 	e = r->error;
 
