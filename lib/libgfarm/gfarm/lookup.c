@@ -73,17 +73,29 @@ gfarm_get_hostname_by_url0(const char **pathp,
 		gflog_debug(GFARM_MSG_1001256,
 		    "Port missing in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
+		if (*p != '\0' && *p != '/') {
+			free(hostname);
+			return (GFARM_ERR_GFARM_URL_PORT_IS_MISSING);
+		}
+		path = p;
 		goto finish;
 	}
 	p++; /* skip ":" */
-	errno = 0;
-	port = strtoul(p, &ep, 10);
-	if (*p == '\0' || (*ep != '\0' && *ep != '/')) {
-		free(hostname);
+	if (*p == '\0' || *p == '/') {
 		gflog_debug(GFARM_MSG_1001257,
 		    "Port missing in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
-		return (GFARM_ERR_GFARM_URL_PORT_IS_MISSING);
+		path = p;
+		goto finish;
+	}
+	errno = 0;
+	port = strtoul(p, &ep, 10);
+	if (p == ep || (*ep != '\0' && *ep != '/')) {
+		free(hostname);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "Port invalid in url (%s): %s", *pathp,
+		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_INVALID));
+		return (GFARM_ERR_GFARM_URL_PORT_IS_INVALID);
 	}
 	path = ep;
 	if (errno == ERANGE || port == ULONG_MAX ||
