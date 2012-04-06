@@ -381,12 +381,16 @@ gfm_client_connect_single(const char *hostname, int port,
 		free(cis);
 		return (e);
 	}
+	fs = gfarm_filesystem_get(hostname, port);
+	if (fs == NULL) {
+		free(pfds);
+		free(cis);
+		return (GFARM_ERR_UNKNOWN_HOST);
+	}
+
 	ci = &cis[0];
 	ci->res_ai = res;
-
 	ci->ms = NULL;
-	fs = gfarm_filesystem_get(hostname, port);
-	assert(fs);
 	msl = gfarm_filesystem_get_metadb_server_list(fs, &nmsl);
 	assert(msl);
 	for (i = 0; i < nmsl; ++i) {
