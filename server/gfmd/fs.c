@@ -3283,7 +3283,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	if (e == GFARM_ERR_NO_ERROR && gfarm_ctxp->file_trace && 
 	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
 	    trace_log != NULL) {
-		gflog_trace(GFARM_MSG_UNFIXED, "%s", trace_log);
+		gflog_trace(GFARM_MSG_1003435, "%s", trace_log);
 		free(trace_log);
 	}
 
