@@ -2714,7 +2714,7 @@ gfarm_config_set_default_metadb_server(void)
 	fs = gfarm_filesystem_get_default();
 	if ((host = strdup(gfarm_ctxp->metadb_server_name)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003433,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -2722,7 +2722,7 @@ gfarm_config_set_default_metadb_server(void)
 	if ((e = gfarm_metadb_server_new(&m, host,
 	    gfarm_ctxp->metadb_server_port)) != GFARM_ERR_NO_ERROR) {
 		free(host);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002556,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
@@ -2730,7 +2730,7 @@ gfarm_config_set_default_metadb_server(void)
 	ms[0] = m;
 	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
 	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1002557,
 		    "%s", gfarm_error_string(e));
 	return (e);
 }
