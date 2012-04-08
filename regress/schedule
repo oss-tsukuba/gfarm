@@ -54,6 +54,7 @@ gftool/gfuser/gfuser-c.home.toolong.sh
 gftool/gfuser/gfuser-m.sh
 gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser.not-exist.sh
+gftool/gfgroup/gfgroup.sh
 gftool/gfgroup/gfgroup.not-exist.sh
 gftool/gfln/gfln-s.sh
 gftool/gfln/gfln-s_toolong.sh

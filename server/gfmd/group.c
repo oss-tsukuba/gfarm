@@ -938,6 +938,7 @@ gfm_server_group_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep
 	struct group *group;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_MODIFY";
 
+	e = get_group(peer, sizep, diag, &gi);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001539,
 			"get_group() failed: %s",
