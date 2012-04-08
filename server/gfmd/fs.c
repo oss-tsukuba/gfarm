@@ -1071,10 +1071,13 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	char **attrpatterns = NULL, *attrpattern;
-	int i, j, eof;
+	int i, j, eof, no_memory = 1;
 
-	if (!skip)
+	if (!skip) {
 		GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
+		if (attrpatterns == NULL)
+			no_memory = 1;
+	}
 	for (i = 0; i < nattrpatterns; i++) {
 		if (sizep == NULL)
 			e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
@@ -1104,6 +1107,8 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 	}
 	if (!skip)
 		*attrpatternsp = attrpatterns;
+	if (no_memory)
+		return (GFARM_ERR_NO_MEMORY);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1134,14 +1139,17 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    GFM_PROTO_FGETATTRPLUS, "ii", &flags, &nattrpatterns);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+
+	e = gfm_server_recv_attrpatterns(peer, sizep, skip,
+	    nattrpatterns, &attrpatterns, diag); /* XXX RELAY NOTYET */
+	if (e != GFARM_ERR_NO_ERROR && e != GFARM_ERR_NO_MEMORY)
+		return (e);
+
 	if (skip)
 		return (e); /* don't have to free attrpatterns in this case */
 
-	if (relay == NULL) { /* do not relay RPC to master gfmd */
-		e = gfm_server_recv_attrpatterns(peer, sizep, skip,
-		    nattrpatterns, &attrpatterns, diag);
+	if (relay == NULL) /* do not relay RPC to master gfmd */
 		giant_lock();
-	}
 
 	if (relay != NULL)
 		;
@@ -1211,7 +1219,6 @@ acl_convert:
 	if (relay == NULL) /* do not relay RPC to master gfmd */
 		giant_unlock();
 
-
 	/* XXXRELAY FIXME, reply size is not correct */
 	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag, &e,
 	    "llilsslllililii",
@@ -1230,7 +1237,7 @@ acl_convert:
 		    diag, gfarm_error_string(e2));
 	}
 	if (e == GFARM_ERR_NO_ERROR && e2 == GFARM_ERR_NO_ERROR) {
-		/* XXXRELAY FIXME */
+		/* XXX RELAY FIXME */
 		for (j = 0; j < nxattrs; j++) {
 			px = &xattrs[j];
 			e2 = gfp_xdr_send(client, "sb",
@@ -1245,12 +1252,12 @@ acl_convert:
 			}
 		}
 	}
-	if (relay == NULL && e == GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
 		free(st.st_user);
 		free(st.st_group);
 		inode_xattr_list_free(xattrs, nxattrs);
 	}
-	if (relay == NULL && attrpatterns != NULL) {
+	if (attrpatterns != NULL) {
 		for (i = 0; i < nattrpatterns; i++)
 			free(attrpatterns[i]);
 		free(attrpatterns);
