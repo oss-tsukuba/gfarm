@@ -2,7 +2,7 @@ struct process;
 
 struct inode;
 struct host;
-struct file_replicating;
+struct file_replication;
 struct replication_info;
 
 struct process *process_lookup(gfarm_pid_t);
@@ -129,7 +129,7 @@ gfarm_error_t gfm_server_inherit_fd(
 
 gfarm_error_t process_prepare_to_replicate(struct process *, struct peer *,
 	struct host *, struct host *, int, gfarm_int32_t,
-	struct file_replicating **, struct inode **);
+	struct file_replication **, struct inode **);
 gfarm_error_t process_replica_adding(struct process *, struct peer *,
 	struct host *, struct host *, int, struct inode **);
 gfarm_error_t process_replica_added(struct process *, struct peer *,

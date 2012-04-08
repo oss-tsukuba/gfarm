@@ -1119,7 +1119,7 @@ process_inherit_fd(struct process *process, gfarm_int32_t parent_fd,
 gfarm_error_t
 process_prepare_to_replicate(struct process *process, struct peer *peer,
 	struct host *src, struct host *dst, int fd, gfarm_int32_t flags,
-	struct file_replicating **frp, struct inode **inodep)
+	struct file_replication **frp, struct inode **inodep)
 {
 	gfarm_error_t e;
 	struct file_opening *fo;

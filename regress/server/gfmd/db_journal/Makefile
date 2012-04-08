@@ -33,6 +33,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/db_none.c \
 	$(GFMD_SRCDIR)/dead_file_copy.c \
 	$(GFMD_SRCDIR)/dir.c \
+	$(GFMD_SRCDIR)/file_replication.c \
 	$(GFMD_SRCDIR)/group.c \
 	$(GFMD_SRCDIR)/host.c \
 	$(GFMD_SRCDIR)/inode.c \
@@ -40,6 +41,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/journal_file.c \
 	$(GFMD_SRCDIR)/mdhost.c \
 	$(GFMD_SRCDIR)/mdcluster.c \
+	$(GFMD_SRCDIR)/netsendq.c \
 	$(GFMD_SRCDIR)/gfmd_channel.c \
 	$(GFMD_SRCDIR)/peer_watcher.c \
 	$(GFMD_SRCDIR)/peer.c \
@@ -68,6 +70,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/db_none.o \
 	$(GFMD_BUILDDIR)/dead_file_copy.o \
 	$(GFMD_BUILDDIR)/dir.o \
+	$(GFMD_BUILDDIR)/file_replication.o \
 	$(GFMD_BUILDDIR)/group.o \
 	$(GFMD_BUILDDIR)/host.o \
 	$(GFMD_BUILDDIR)/inode.o \
@@ -75,6 +78,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/journal_file.o \
 	$(GFMD_BUILDDIR)/mdhost.o \
 	$(GFMD_BUILDDIR)/mdcluster.o \
+	$(GFMD_BUILDDIR)/netsendq.o \
 	$(GFMD_BUILDDIR)/gfmd_channel.o \
 	$(GFMD_BUILDDIR)/peer_watcher.o \
 	$(GFMD_BUILDDIR)/peer.o \

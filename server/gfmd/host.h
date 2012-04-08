@@ -10,6 +10,7 @@ struct sockaddr;
 struct peer;
 struct callout;
 struct dead_file_copy;
+struct netsendq;
 
 struct host_status {
 	double loadavg_1min, loadavg_5min, loadavg_15min;
@@ -24,7 +25,7 @@ struct host *host_addr_lookup(const char *, struct sockaddr *);
 int host_status_callout_retry(struct host *);
 void host_disconnect(struct host *, struct peer *);
 struct callout *host_status_callout(struct host *);
-struct peer *host_peer(struct host *);
+struct peer *host_get_peer(struct host *);
 
 char *host_name(struct host *);
 int host_port(struct host *);
@@ -32,6 +33,7 @@ char *host_architecture(struct host *);
 int host_ncpu(struct host *);
 int host_flags(struct host *);
 char *host_fsngroup(struct host *);
+struct netsendq *host_sendq(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
 
@@ -48,13 +50,7 @@ int host_get_disconnect_callback(struct host *,
 int host_is_up(struct host *);
 int host_is_valid(struct host *);
 
-int host_check_busy(struct host *host, gfarm_int64_t);
-
 int host_unique_sort(int, struct host **);
-
-struct file_replicating;
-gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
-struct inode;
 
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_schedule_except(

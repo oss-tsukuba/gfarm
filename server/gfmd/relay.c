@@ -380,7 +380,7 @@ slave_request_relay0(struct relayed_request *r, gfarm_int32_t command,
 	struct mdhost *mh = mdhost_lookup_master();
 
 	va_start(wap, wformat);
-	e = gfm_client_channel_vsend_wrapped_request(
+	e = async_client_vsend_wrapped_request(
 	    mdhost_to_abstract_host(mh), mdhost_get_peer(mh), r->diag,
 	    slave_request_relay_result,
 	    slave_request_relay_disconnect, r,
@@ -426,7 +426,7 @@ slave_reply_relay(struct relayed_request *r, const char *format, va_list *app,
 	assert(r->error == GFARM_ERR_NO_ERROR);
 
 	va_start(wap, wformat);
-	e = gfm_client_channel_vrecv_wrapped_result(r->mhpeer,
+	e = async_client_vrecv_wrapped_result(r->mhpeer,
 	    mdhost_to_abstract_host(r->mdhost), r->rsize, r->diag, &ee,
 	    wformat, &wap, &format, app);
 	va_end(wap);
@@ -690,7 +690,7 @@ gfm_server_reply_with_vrelay(struct peer *peer, gfp_xdr_xid_t xid,
 unlock_sender:
 	if (peer_get_parent(peer) != NULL)
 		peer = peer_get_parent(peer);
-	gfm_client_channel_sender_unlock(mdhost_to_abstract_host(
+	async_client_sender_unlock(mdhost_to_abstract_host(
 	    peer_get_mdhost(peer)), peer, diag);
 
 	return (e);
@@ -743,7 +743,7 @@ gfm_server_request_reply_with_vrelay0(struct peer *peer, gfp_xdr_xid_t xid,
 	ah = mdhost_to_abstract_host(mdhost_lookup_master());
 	mhpeer = abstract_host_get_peer(ah, diag);
 
-	if ((e = gfm_client_channel_sender_lock(ah, mhpeer, NULL, command,
+	if ((e = async_client_sender_lock(ah, mhpeer, NULL, command,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));
@@ -803,7 +803,7 @@ gfm_server_request_reply_with_vrelay0(struct peer *peer, gfp_xdr_xid_t xid,
 	}
 
 unlock_sender:
-	gfm_client_channel_sender_unlock(ah, mhpeer, diag);
+	async_client_sender_unlock(ah, mhpeer, diag);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		goto acquire_notify;

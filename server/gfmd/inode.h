@@ -112,7 +112,8 @@ gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *,
 	struct inode_trace_log_info *, int *);
 
-void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
+void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *,
+	struct dead_file_copy *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_add_file_copy_in_cache(struct inode *, struct host *);
 void inode_remove_replica_completed(gfarm_ino_t, gfarm_int64_t, struct host *);
@@ -159,17 +160,17 @@ struct peer;
 extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 	struct peer *, gfarm_int32_t *, struct host ***);
 
-struct file_replicating;
-gfarm_error_t file_replicating_new(
-	struct inode *, struct host *, struct dead_file_copy *,
-	struct file_replicating **);
-void file_replicating_free(struct file_replicating *);
-gfarm_int64_t file_replicating_get_gen(struct file_replicating *);
-gfarm_error_t inode_replicated(struct file_replicating *,
+struct file_replication;
+void inode_replication_start(struct inode *);
+gfarm_error_t inode_replication_new(struct inode *, struct host *,
+	struct host *, struct dead_file_copy *,	struct file_replication **);
+gfarm_error_t inode_replicated(struct file_replication *,
 	gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
 gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 	struct host *, struct host *, gfarm_int32_t,
-	struct file_replicating **);
+	struct file_replication **);
+struct inode_replication_state;
+struct inode_replication_state *inode_get_replication_state(struct inode *);
 
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);

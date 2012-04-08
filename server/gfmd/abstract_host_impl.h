@@ -30,8 +30,10 @@ struct abstract_host {
 	int protocol_version;
 	int is_active;
 
-	gfarm_time_t busy_time;
+	struct netsendq *sendq;
 };
 
-void abstract_host_init(struct abstract_host *, struct abstract_host_ops *,
-	const char *diag);
+struct netsendq_manager;
+gfarm_error_t abstract_host_init(
+	struct abstract_host *, struct abstract_host_ops *,
+	struct netsendq_manager *, const char *);

@@ -63,11 +63,6 @@ struct peer {
 		} client;
 	} u;
 
-	/* the followings are only used for gfsd back channel */
-	pthread_mutex_t replication_mutex;
-	int simultaneous_replication_receivers;
-	struct file_replicating replicating_inodes; /* dummy header */
-
 	/*
 	 * to support remote peer
 	 */

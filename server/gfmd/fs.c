@@ -4313,7 +4313,7 @@ gfm_server_replicate_file_from_to(
 	gfarm_int32_t cfd;
 	struct host *src, *dst;
 	struct inode *inode;
-	struct file_replicating *fr;
+	struct file_replication *fr;
 	int srcport;
 	gfarm_ino_t ino;
 	gfarm_int64_t gen;
@@ -4358,26 +4358,10 @@ gfm_server_replicate_file_from_to(
 		   dst, cfd, flags, &fr, &inode)) != GFARM_ERR_NO_ERROR)
 			;
 		else {
-			srcport = host_port(src);
-			ino = inode_get_number(inode);
-			gen = inode_get_gen(inode);
+			inode_replication_start(inode);
 		}
 
 		giant_unlock();
-
-		if (e == GFARM_ERR_NO_ERROR) {
-			/*
-			 * host_name() is always callable without giant_lock,
-			 * and even accessible after the removal of the host.
-			 */
-			e = async_back_channel_replication_request(
-				host_name(src), srcport, dst, ino, gen, fr);
-			if (e != GFARM_ERR_NO_ERROR) {
-				giant_lock();
-				file_replicating_free(fr);
-				giant_unlock();
-			}
-		}
 	}
 	free(srchost);
 	free(dsthost);
@@ -4442,7 +4426,7 @@ replica_adding_resume(struct peer *peer, void *closure, int *suspendedp)
 		mtime_nsec = mtime->tv_nsec;
 	}
 
-	/* we don't maintain file_replicating in this case */
+	/* we don't maintain file_replication in this case */
 
 	sizep = arg->relayed ? &junk : NULL;
 	xid = arg->xid;
@@ -4533,7 +4517,7 @@ gfm_server_replica_adding(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			mtime_nsec = mtime->tv_nsec;
 		}
 
-		/* we don't maintain file_replicating in this case */
+		/* we don't maintain file_replication in this case */
 
 		free(src_host);
 		giant_unlock();
@@ -4586,7 +4570,7 @@ gfm_server_replica_added_common(const char *diag,
 		if (transaction)
 			db_end(diag);
 	}
-	/* we don't maintain file_replicating in this case */
+	/* we don't maintain file_replication in this case */
 	return (e);
 }
 

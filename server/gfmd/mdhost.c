@@ -36,6 +36,7 @@
 #include "local_peer.h"
 #include "abstract_host.h"
 #include "abstract_host_impl.h"
+#include "netsendq.h"
 #include "metadb_server.h"
 #include "mdhost.h"
 #include "mdcluster.h"
@@ -563,12 +564,23 @@ struct abstract_host_ops mdhost_ops = {
 static struct mdhost *
 mdhost_new(struct gfarm_metadb_server *ms)
 {
+	gfarm_error_t e;
 	struct mdhost *m;
 	static const char diag[] = "mdhost_new";
 
-	if ((m = malloc(sizeof(struct mdhost))) == NULL)
+	if ((m = malloc(sizeof(struct mdhost))) == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "mdhost %s: no memory", gfarm_metadb_server_get_name(ms));
 		return (NULL);
-	abstract_host_init(&m->ah, &mdhost_ops, diag);
+	}
+	e = abstract_host_init(&m->ah, &mdhost_ops, NULL,  diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(m);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "mdhost %s: %s",
+		    gfarm_metadb_server_get_name(ms), gfarm_error_string(e));
+		return (NULL);
+	}
 	m->ms = *ms;
 	gfarm_mutex_init(&m->mutex, diag, MDHOST_MUTEX_DIAG);
 	mdhost_validate(m);

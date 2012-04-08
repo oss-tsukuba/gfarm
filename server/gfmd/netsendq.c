@@ -76,6 +76,7 @@ netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 	entry->sendq_type = type;
 	/* entry->workq_entries is not initialized */
 	/* entry->readyq_entries is not initialized */
+	/* entry->abhost is not initialized */
 #if 0
 	gfarm_mutex_init(&entry->entry_mutex, "netsendq_entry_init", "init");
 	entry->netsendqe_sate = netsendq_entry_send_pending;
@@ -83,9 +84,30 @@ netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 	/* entry->result is not initialized */
 }
 
-static void netsendq_readyq_add(struct netsendq *, struct netsendq_entry *,
-	const char *diag);
+static void
+netsendq_readyq_add(struct netsendq *qhost, struct netsendq_entry *entry,
+	const char *diag)
+{
+	int was_empty;
+	struct netsendq_manager *manager;
 
+	gfarm_mutex_lock(&qhost->readyq_mutex, diag, "readyq");
+	was_empty = GFARM_STAILQ_EMPTY(&qhost->readyq);
+	if ((entry->sendq_type->flags & NETSENDQ_FLAG_PRIOR_ONE_SHOT) != 0)
+		GFARM_STAILQ_INSERT_HEAD(&qhost->readyq, entry, readyq_entries);
+	else
+		GFARM_STAILQ_INSERT_TAIL(&qhost->readyq, entry, readyq_entries);
+	gfarm_mutex_unlock(&qhost->readyq_mutex, diag, "readyq");
+
+	if (!was_empty)
+		return;
+
+	manager = qhost->manager;
+	gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
+	GFARM_HCIRCLEQ_INSERT_TAIL(manager->hostq, qhost, hostq_entries);
+	gfarm_cond_signal(&manager->sendable, diag, "sendable");
+	gfarm_mutex_unlock(&manager->hostq_mutex, diag, "hostq_mutex");
+}
 
 /*
  * PREREQUISITE: netsendq_workq::mutex
@@ -136,6 +158,15 @@ netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 
 	workq = &qhost->workqs[entry->sendq_type->type_index];
 	gfarm_mutex_lock(&workq->mutex, diag, "workq");
+	if ((entry->sendq_type->flags & NETSENDQ_FLAG_PRIOR_ONE_SHOT) != 0 &&
+	    workq->inflight_number >= entry->sendq_type->window_size) {
+		gfarm_mutex_unlock(&workq->mutex, diag, "workq");
+		if ((flags & NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING) != 0) {
+			netsendq_finalizeq_add(qhost->manager, entry,
+			    GFARM_ERR_DEVICE_BUSY, diag);
+		}
+		return (GFARM_ERR_DEVICE_BUSY);
+	}
 	GFARM_HCIRCLEQ_INSERT_TAIL(workq->q, entry, workq_entries);
 	if (workq->next == NULL)
 		workq->next = entry;
@@ -145,6 +176,12 @@ netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * This routine only can be called
+ * after  (*entry->sendq_type->send)() is called, and
+ * before (*entry->sendq_type->finalize)() is called.
+ * Thus, this routine doesn't have to maintain workq->next.
+ */
 void
 netsendq_remove_entry(struct netsendq *qhost,
 	struct netsendq_entry *entry, gfarm_error_t result)
@@ -179,31 +216,6 @@ netsendq_host_is_down_at_entry(struct netsendq *qhost,
 
 	netsendq_finalizeq_add(qhost->manager, entry,
 	    GFARM_ERR_NO_ROUTE_TO_HOST, diag);
-}
-
-static void
-netsendq_readyq_add(struct netsendq *qhost, struct netsendq_entry *entry,
-	const char *diag)
-{
-	int was_empty;
-	struct netsendq_manager *manager;
-
-	gfarm_mutex_lock(&qhost->readyq_mutex, diag, "readyq");
-	was_empty = GFARM_STAILQ_EMPTY(&qhost->readyq);
-	if ((entry->sendq_type->flags & NETSENDQ_FLAG_PRIOR_ONE_SHOT) != 0)
-		GFARM_STAILQ_INSERT_HEAD(&qhost->readyq, entry, readyq_entries);
-	else
-		GFARM_STAILQ_INSERT_TAIL(&qhost->readyq, entry, readyq_entries);
-	gfarm_mutex_unlock(&qhost->readyq_mutex, diag, "readyq");
-
-	if (!was_empty)
-		return;
-
-	manager = qhost->manager;
-	gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
-	GFARM_HCIRCLEQ_INSERT_TAIL(manager->hostq, qhost, hostq_entries);
-	gfarm_cond_signal(&manager->sendable, diag, "sendable");
-	gfarm_mutex_unlock(&manager->hostq_mutex, diag, "hostq_mutex");
 }
 
 static int
@@ -268,6 +280,12 @@ netsendq_new(struct netsendq_manager *manager, struct abstract_host *abhost,
 
 	*qhostp = qhost;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+struct abstract_host *
+netsendq_get_abstract_host(struct netsendq *qhost)
+{
+	return (qhost->abhost);
 }
 
 static int
@@ -477,6 +495,7 @@ netsendq_host_remove_internal(struct netsendq *qhost, int hold_queue)
 				netsendq_finalizeq_add(manager, entry,
 				    GFARM_ERR_CONNECTION_ABORTED, diag);
 			}
+			workq->next = NULL;
 		}
 	}
 

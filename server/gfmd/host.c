@@ -43,7 +43,9 @@
 #include "inode.h"
 #include "abstract_host.h"
 #include "abstract_host_impl.h"
+#include "netsendq.h"
 #include "dead_file_copy.h"
+#include "file_replication.h"
 #include "back_channel.h"
 #include "relay.h"
 
@@ -285,7 +287,7 @@ host_enter(struct gfarm_host_info *hi, struct host **hpp)
 
 /* XXX FIXME missing hostaliases */
 static gfarm_error_t
-host_remove_internal(const char *hostname, int update_deadfilecopy)
+host_remove_internal(const char *hostname, int update_netsendq)
 {
 	struct host *h = host_lookup(hostname);
 
@@ -300,8 +302,11 @@ host_remove_internal(const char *hostname, int update_deadfilecopy)
 	 */
 	host_invalidate(h);
 
-	if (update_deadfilecopy)
+	if (update_netsendq) {
 		dead_file_copy_host_removed(h);
+		netsendq_host_remove(
+		    abstract_host_get_sendq(host_to_abstract_host(h)));
+	}
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -394,6 +399,12 @@ char *
 host_fsngroup(struct host *h)
 {
 	return ((h->fsngroupname != NULL) ? h->fsngroupname : "");
+}
+
+struct netsendq *
+host_sendq(struct host *h)
+{
+	return (h->ah.sendq);
 }
 
 int
@@ -531,13 +542,6 @@ host_is_disk_available(struct host *h, gfarm_off_t size)
 	return (avail >= minfree);
 }
 
-int
-host_check_busy(struct host *host, gfarm_int64_t now)
-{
-	return (abstract_host_check_busy(host_to_abstract_host(host), now,
-		BACK_CHANNEL_DIAG));
-}
-
 struct callout *
 host_status_callout(struct host *h)
 {
@@ -545,39 +549,9 @@ host_status_callout(struct host *h)
 }
 
 struct peer *
-host_peer(struct host *h)
+host_get_peer(struct host *h)
 {
 	return (abstract_host_get_peer(&h->ah, BACK_CHANNEL_DIAG));
-}
-
-static struct peer *
-host_peer_unlocked(struct host *h)
-{
-	return (abstract_host_get_peer_unlocked(&h->ah));
-}
-
-int
-host_status_callout_retry(struct host *host)
-{
-	long interval;
-	int ok;
-	static const char diag[] = "host_status_callout_retry";
-
-	back_channel_mutex_lock(host, diag);
-
-	++host->status_callout_retry;
-	interval = 1 << host->status_callout_retry;
-	ok = (interval <= gfarm_metadb_heartbeat_interval);
-
-	back_channel_mutex_unlock(host, diag);
-
-	if (ok) {
-		callout_schedule(host->status_callout, interval);
-		gflog_debug(GFARM_MSG_1002215,
-		    "%s(%s): retrying in %ld seconds",
-		    diag, host_name(host), interval);
-	}
-	return (ok);
 }
 
 void
@@ -694,7 +668,10 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
-	dead_file_copy_host_becomes_up(abstract_host_to_host(ah));
+	struct host *host = abstract_host_to_host(ah);
+
+	dead_file_copy_host_becomes_up(host);
+	netsendq_host_becomes_up(abstract_host_get_sendq(ah));
 }
 
 /*
@@ -736,7 +713,8 @@ host_disabled(struct abstract_host *ah, struct peer *peer, void *closure)
 
 	host_total_disk_update(c->saved_used, c->saved_avail, 0, 0);
 	free(closure);
-	dead_file_copy_host_becomes_down(abstract_host_to_host(ah));
+
+	netsendq_host_becomes_down(abstract_host_get_sendq(ah));
 }
 
 /* giant_lock should be held before calling this */
@@ -759,16 +737,29 @@ struct abstract_host_ops host_ops = {
 	host_disabled,
 };
 
+struct netsendq_manager *back_channel_send_manager;
+
 static struct host *
 host_new(struct gfarm_host_info *hi, struct callout *callout)
 {
+	gfarm_error_t e;
 	struct host *h;
 	static const char diag[] = "host_new";
 
 	GFARM_MALLOC(h);
-	if (h == NULL)
+	if (h == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "host %s: no memory", hi->hostname);
 		return (NULL);
-	abstract_host_init(&h->ah, &host_ops, "host_new");
+	}
+	e = abstract_host_init(&h->ah, &host_ops, back_channel_send_manager,
+	    diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(h);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "host %s: %s", hi->hostname, gfarm_error_string(e));
+		return (NULL);
+	}
 	h->hi = *hi;
 	h->fsngroupname = NULL;
 	gfarm_mutex_init(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
@@ -796,17 +787,6 @@ host_free(struct host *h)
 {
 	free(h->status_callout);
 	free(h);
-}
-
-/* only file_replicating_new() is allowed to call this routine */
-gfarm_error_t
-host_replicating_new(struct host *dst, struct file_replicating **frp)
-{
-	struct peer *peer = host_peer_unlocked(dst);
-
-	if (peer == NULL)
-		return (GFARM_ERR_NO_ROUTE_TO_HOST);
-	return (peer_replicating_new(peer, dst, frp));
 }
 
 static int
@@ -1124,6 +1104,16 @@ host_add_one(void *closure,
 	}
 }
 
+const struct netsendq_type *
+	back_channel_queue_types[NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES] = {
+	&gfs_proto_status_queue,
+#ifdef not_def_REPLY_QUEUE
+	&gfm_async_server_reply_to_gfsd_queue,
+#endif
+	&gfs_proto_fhremove_queue,
+	&gfs_proto_replication_request_queue,
+};
+
 void
 host_init(void)
 {
@@ -1144,6 +1134,12 @@ host_init(void)
 		gflog_fatal(GFARM_MSG_1000268,
 		    "no memory for hostalias hashtab");
 	}
+
+	back_channel_send_manager = netsendq_manager_new(
+	    NETSENDQ_TYPE_GFS_PROTO_NUM_TYPES, back_channel_queue_types,
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "send queue to gfsd");
 
 	e = db_host_load(NULL, host_add_one);
 	if (e != GFARM_ERR_NO_ERROR)

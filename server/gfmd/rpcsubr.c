@@ -104,7 +104,7 @@ gfm_server_put_wrapped_vreply(struct peer *peer, gfp_xdr_xid_t xid,
 		if (peer_get_parent(peer) != NULL)
 			/* remote_peer from slave */
 			peer = peer_get_parent(peer);
-		e = gfm_server_channel_vput_wrapped_reply(
+		e = async_server_vput_wrapped_reply(
 		    peer_get_abstract_host(peer), peer, xid, xdr_vsend,
 		    diag, ecode, wrapping_format, wrapping_app, format, app);
 		if (e != GFARM_ERR_NO_ERROR) {

@@ -80,62 +80,6 @@ struct inum_path_array;
 void peer_findxmlattrctx_set(struct peer *, struct inum_path_array *);
 struct inum_path_array *peer_findxmlattrctx_get(struct peer *);
 
-
-struct dead_file_copy;
-struct file_replicating {
-	/*
-	 * resources which are protected by the host::replication_mutex
-	 */
-
-	/*
-	 * end marker:
-	 *	{fr->prev_inode, fr->next_inode}
-	 *	== &fr->dst->replicating_inodes
-	 */
-	struct file_replicating *prev_inode, *next_inode;
-
-	/*
-	 * resources which are protected by the giant_lock
-	 */
-
-	/*
-	 * end marker:
-	 *	{fr->prev_host, fr->next_host}
-	 *	== &fr->inode->u.c.s.f.rstate->replicating_hosts
-	 */
-	struct file_replicating *prev_host, *next_host;
-
-	struct peer *peer;
-	struct host *dst;
-
-	/*
-	 * gfmd initialited replication: pid of destination side worker
-	 * client initialited replication: -1
-	 */
-	gfarm_int64_t handle;
-
-	struct inode *inode;
-	gfarm_int64_t igen; /* generation when replication started */
-
-	/*
-	 * old generation which should be removed just after
-	 * the completion of the replication,
-	 * or, NULL
-	 */
-	struct dead_file_copy *cleanup;
-};
-
-void file_replicating_set_handle(struct file_replicating *, gfarm_int64_t);
-gfarm_int64_t file_replicating_get_handle(struct file_replicating *);
-struct peer *file_replicating_get_peer(struct file_replicating *);
-
-gfarm_error_t peer_replicating_new(struct peer *, struct host *,
-	struct file_replicating **);
-void peer_replicating_free(struct file_replicating *);
-gfarm_error_t peer_replicated(struct peer *,
-	struct host *, gfarm_ino_t, gfarm_int64_t,
-	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
-
 gfarm_error_t peer_get_port(struct peer *, int *);
 gfarm_int64_t peer_get_id(struct peer *);
 struct peer* peer_get_parent(struct peer *);

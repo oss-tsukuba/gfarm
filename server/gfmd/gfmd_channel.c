@@ -90,7 +90,7 @@ gfmdc_server_get_request(struct peer *peer, size_t size,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vget_request(peer, size, diag, format, &ap);
+	e = async_server_vget_request(peer, size, diag, format, &ap);
 	va_end(ap);
 
 	return (e);
@@ -105,7 +105,7 @@ gfmdc_server_put_reply(struct mdhost *mh,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_server_channel_vput_reply(
+	e = async_server_vput_reply(
 	    mdhost_to_abstract_host(mh), peer, xid, gfp_xdr_vsend,
 	    diag, errcode, format, &ap);
 	va_end(ap);
@@ -121,7 +121,7 @@ gfmdc_client_recv_result(struct peer *peer, struct mdhost *mh,
 	va_list ap;
 
 	va_start(ap, format);
-	e = gfm_client_channel_vrecv_result(peer,
+	e = async_client_vrecv_result(peer,
 	    mdhost_to_abstract_host(mh), size, diag,
 	    &format, &errcode, &ap);
 	va_end(ap);
@@ -207,7 +207,7 @@ gfmdc_client_vsend_request_sync(struct mdhost *mh, struct peer *peer,
 	ri.error = GFARM_ERR_NO_ERROR;
 	ri.diag = diag;
 
-	e = gfm_client_channel_vsend_request(mdhost_to_abstract_host(mh),
+	e = async_client_vsend_request(mdhost_to_abstract_host(mh),
 	    peer, diag,
 	    gfmdc_client_vsend_request_sync_result,
 	    gfmdc_client_vsend_request_sync_disconnect, &ri,
@@ -324,7 +324,7 @@ gfmdc_client_vsend_request_async(struct mdhost *mh, struct peer *peer,
 	ri->closure = closure;
 	ri->diag = diag;
 
-	e = gfm_client_channel_vsend_request(mdhost_to_abstract_host(mh),
+	e = async_client_vsend_request(mdhost_to_abstract_host(mh),
 	    peer, diag,
 	    gfmdc_client_vsend_request_async_result,
 	    gfmdc_client_vsend_request_async_disconnect, ri,
@@ -887,7 +887,7 @@ gfmdc_main(void *arg)
 {
 	struct local_peer *local_peer = arg;
 
-	return (gfm_server_channel_main(local_peer,
+	return (async_server_main(local_peer,
 		gfmdc_protocol_switch
 #ifdef COMPAT_GFARM_2_3
 		,gfmdc_channel_free,

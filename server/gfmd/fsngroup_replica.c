@@ -289,15 +289,15 @@ schedule(gfarm_fsngroup_text_t t, size_t candmax, size_t **retindicesp,
  */
 static void
 replicate_file_asynchronously(struct inode *inode,
-	const char *src_hostname, int port, const char *dst_hostname)
+	struct host *src_host, const char *dst_hostname)
 {
 	struct host *dst_host = host_lookup(dst_hostname);
-	struct file_replicating *fr = NULL;
+	struct file_replication *fr = NULL;
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
 	gfarm_ino_t i_number;
 	gfarm_uint64_t i_gen;
 
-	assert(inode != NULL && src_hostname != NULL && dst_host != NULL);
+	assert(inode != NULL && src_host != NULL && dst_host != NULL);
 
 	i_number = inode_get_number(inode);
 	i_gen = inode_get_gen(inode);
@@ -307,36 +307,18 @@ replicate_file_asynchronously(struct inode *inode,
 		"[inode %llu(gen %llu)]@%s -> %s",
 		(long long)i_number,
 		(long long)i_gen,
-		src_hostname, dst_hostname);
+		host_name(src_host), dst_hostname);
 
-	e = file_replicating_new(inode, dst_host, NULL, &fr);
+	e = inode_replication_new(inode, src_host, dst_host, NULL, &fr);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 			"replicate_file_asynchronously(): "
-			"file_replicating_new() failed, for replication: "
+			"file_replication_new() failed, for replication: "
 			"[inode %llu(gen %llu)]@%s -> %s: %s",
 			(long long)i_number,
 			(long long)i_gen,
-			src_hostname, dst_hostname,
+			host_name(src_host), dst_hostname,
 			gfarm_error_string(e));
-		return;
-	}
-
-	e = async_back_channel_replication_request(
-		(char *)src_hostname, port,
-		dst_host,
-		inode_get_number(inode), inode_get_gen(inode), fr);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
-			"replicate_file_asynchronously(): "
-			"async_back_channel_replication_request() "
-			"failed, for replication: "
-			"[inode %llu(gen %llu)]@%s -> %s: %s",
-			(long long)i_number,
-			(long long)i_gen,
-			src_hostname, dst_hostname,
-			gfarm_error_string(e));
-		file_replicating_free(fr); /* may sleep */
 		return;
 	}
 
@@ -345,7 +327,7 @@ replicate_file_asynchronously(struct inode *inode,
 		"[inode %llu(gen %llu)]@%s -> %s",
 		(long long)i_number,
 		(long long)i_gen,
-		src_hostname, dst_hostname);
+		host_name(src_host), dst_hostname);
 }
 
 /*****************************************************************************/
@@ -381,8 +363,6 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	gfarm_fsngroup_text_t exs = NULL;
 	size_t nreps = 0;
 	char *fsngroupname;
-	int src_port = 0;
-	const char *src_hostname;
 	size_t i;
 #define diag "gfarm_server_fsngroup_replicate_file(): "
 
@@ -412,9 +392,6 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	 *	owned by us.
 	 */
 	exs = gfm_fsngroup_text_allocate(nexclusions, exclusions);
-
-	src_hostname = host_name(src_host);
-	src_port = host_port(src_host);
 
 	/*
 	 * XXX FIXME:
@@ -464,9 +441,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 				 * Finally, we are here.
 				 */
 				replicate_file_asynchronously(
-					inode,
-					src_hostname, src_port,
-					dst_hostname);
+					inode, src_host, dst_hostname);
 			}
 
 			free(indices);

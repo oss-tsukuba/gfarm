@@ -25,7 +25,6 @@
 
 #include "gfp_xdr.h"
 #include "auth.h"
-#include "config.h" /* gfarm_simultaneous_replication_receivers */
 
 #include "subr.h"
 #include "watcher.h"
@@ -59,149 +58,6 @@ struct peer_closing_queue {
 static const char peer_cookie_seqno_diag[] = "peer_cookie_seqno_mutex";
 static pthread_mutex_t peer_cookie_seqno_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gfarm_uint64_t cookie_seqno = 1;
-
-void
-file_replicating_set_handle(struct file_replicating *fr, gfarm_int64_t handle)
-{
-	fr->handle = handle;
-}
-
-gfarm_int64_t
-file_replicating_get_handle(struct file_replicating *fr)
-{
-	return (fr->handle);
-}
-
-struct peer *
-file_replicating_get_peer(struct file_replicating *fr)
-{
-	return (fr->peer);
-}
-
-/* only host_replicating_new() is allowed to call this routine */
-gfarm_error_t
-peer_replicating_new(struct peer *peer, struct host *dst,
-	struct file_replicating **frp)
-{
-	struct file_replicating *fr;
-	static const char diag[] = "peer_replicating_new";
-	static const char replication_diag[] = "replication";
-
-	GFARM_MALLOC(fr);
-	if (fr == NULL)
-		return (GFARM_ERR_NO_MEMORY);
-
-	fr->peer = peer;
-	fr->dst = dst;
-	fr->handle = -1;
-
-	/* the followings should be initialized by inode_replicating() */
-	fr->prev_host = fr;
-	fr->next_host = fr;
-
-	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
-	if (peer->simultaneous_replication_receivers >=
-	    gfarm_simultaneous_replication_receivers) {
-		free(fr);
-		fr = NULL;
-	} else {
-		++peer->simultaneous_replication_receivers;
-		fr->prev_inode = &peer->replicating_inodes;
-		fr->next_inode = peer->replicating_inodes.next_inode;
-		peer->replicating_inodes.next_inode = fr;
-		fr->next_inode->prev_inode = fr;
-	}
-	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
-
-	if (fr == NULL)
-		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
-	*frp = fr;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-/* only file_replicating_free() is allowed to call this routine */
-void
-peer_replicating_free(struct file_replicating *fr)
-{
-	struct peer *peer = fr->peer;
-	static const char diag[] = "peer_replicating_free";
-	static const char replication_diag[] = "replication";
-
-	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
-	--peer->simultaneous_replication_receivers;
-	fr->prev_inode->next_inode = fr->next_inode;
-	fr->next_inode->prev_inode = fr->prev_inode;
-	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
-	free(fr);
-}
-
-gfarm_error_t
-peer_replicated(struct peer *peer,
-	struct host *host, gfarm_ino_t ino, gfarm_int64_t gen,
-	gfarm_int64_t handle,
-	gfarm_int32_t src_errcode, gfarm_int32_t dst_errcode, gfarm_off_t size)
-{
-	gfarm_error_t e;
-	struct file_replicating *fr;
-	static const char diag[] = "peer_replicated";
-	static const char replication_diag[] = "replication";
-
-	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
-
-	if (handle == -1) {
-		for (fr = peer->replicating_inodes.next_inode;
-		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
-			if (fr->igen == gen &&
-			    inode_get_number(fr->inode) == ino)
-				break;
-		}
-	} else {
-		for (fr = peer->replicating_inodes.next_inode;
-		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
-			if (fr->handle == handle &&
-			    fr->igen == gen &&
-			    inode_get_number(fr->inode) == ino)
-				break;
-		}
-	}
-	if (fr == &peer->replicating_inodes)
-		e = GFARM_ERR_NO_SUCH_OBJECT;
-	else
-		e = GFARM_ERR_NO_ERROR;
-
-	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
-
-	if (e == GFARM_ERR_NO_ERROR)
-		e = inode_replicated(fr, src_errcode, dst_errcode, size);
-	else
-		gflog_error(GFARM_MSG_1002410,
-		    "orphan replication (%s, %lld:%lld): s=%d d=%d size:%lld "
-		    "maybe the connection had a problem?",
-		    host_name(host), (long long)ino, (long long)gen,
-		    src_errcode, dst_errcode, (long long)size);
-	return (e);
-}
-
-static void
-peer_replicating_free_all(struct peer *peer)
-{
-	struct file_replicating *fr;
-	static const char diag[] = "peer_replicating_free_all";
-
-	gfarm_mutex_lock(&peer->replication_mutex, diag, "loop");
-
-	while ((fr = peer->replicating_inodes.next_inode) !=
-	    &peer->replicating_inodes) {
-		gfarm_mutex_unlock(&peer->replication_mutex, diag, "settle");
-		(void)inode_replicated(fr, GFARM_ERR_NO_ERROR,
-		     GFARM_ERR_CONNECTION_ABORTED, -1);
-		/* abandon error */
-		/* assert(e == GFARM_ERR_INVALID_FILE_REPLICA); */
-		gfarm_mutex_lock(&peer->replication_mutex, diag, "settle");
-	}
-
-	gfarm_mutex_unlock(&peer->replication_mutex, diag, "loop");
-}
 
 void
 peer_closer_wakeup(struct peer *peer)
@@ -354,7 +210,6 @@ peer_clear_common(struct peer *peer)
 	peer->host = NULL;
 	peer->process = NULL;
 	peer->protocol_error = 0;
-
 	
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
@@ -375,14 +230,6 @@ peer_construct_common(struct peer *peer, struct peer_ops *ops, const char *diag)
 
 	gfarm_mutex_init(&peer->protocol_error_mutex,
 	    diag, "peer:protocol_error_mutex");
-
-	gfarm_mutex_init(&peer->replication_mutex,
-	    diag, "replication");
-	peer->simultaneous_replication_receivers = 0;
-	/* make circular list `replicating_inodes' empty */
-	peer->replicating_inodes.prev_inode =
-	peer->replicating_inodes.next_inode =
-	    &peer->replicating_inodes;
 }
 
 const char *
@@ -399,9 +246,6 @@ void
 peer_free_common(struct peer *peer, const char *diag)
 {
 	char *username;
-
-	/* this must be called after (*peer_async_free)() */
-	peer_replicating_free_all(peer);
 
 	username = peer_get_username(peer);
 

@@ -790,7 +790,11 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
-#define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
+#ifdef not_def_REPLY_QUEUE
+#define GFM_PROTO_REPLY_TO_GFSD_WINDOW_DEFAULT			200
+#endif
+#define GFS_PROTO_FHREMOVE_REQUEST_WINDOW_DEFAULT		50
+#define GFS_PROTO_REPLICATION_REQUEST_WINDOW_DEFAULT		20
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
@@ -811,7 +815,11 @@ char *gfarm_localfs_datadir = NULL;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;
 #endif
-int gfarm_simultaneous_replication_receivers = GFARM_CONFIG_MISC_DEFAULT;
+#ifdef not_def_REPLY_QUEUE
+int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
+#endif
+int gfs_proto_fhremove_request_window = GFARM_CONFIG_MISC_DEFAULT;
+int gfs_proto_replication_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
@@ -2543,9 +2551,19 @@ parse_one_line(char *s, char *p, char **op)
 #endif
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &staticp->minimum_free_disk_space);
-	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
+#ifdef not_def_REPLY_QUEUE
+	} else if (strcmp(s, o = "gfm_proto_reply_to_gfsd_window") == 0) {
+		e = parse_set_misc_int(p, &gfm_proto_reply_to_gfsd_window);
+#endif
+	} else if (strcmp(s, o = "gfs_proto_fhremove_request_window") == 0) {
+		e = parse_set_misc_int(p, &gfs_proto_fhremove_request_window);
+	} else if (strcmp(s, o = "gfs_proto_replication_request_window") == 0) {
 		e = parse_set_misc_int(p,
-		    &gfarm_simultaneous_replication_receivers);
+		    &gfs_proto_replication_request_window);
+	} else if (strcmp(s, o = "simultaneous_replication_receivers") == 0) {
+		/* old name. for compatibility */
+		e = parse_set_misc_int(p,
+		    &gfs_proto_replication_request_window);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
@@ -2778,10 +2796,17 @@ gfarm_config_set_default_misc(void)
 	if (staticp->minimum_free_disk_space == GFARM_CONFIG_MISC_DEFAULT)
 		staticp->minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;
-	if (gfarm_simultaneous_replication_receivers ==
-	    GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_simultaneous_replication_receivers =
-		    GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT;
+#ifdef not_def_REPLY_QUEUE
+	if (gfm_proto_reply_to_gfsd_window == GFARM_CONFIG_MISC_DEFAULT)
+		gfm_proto_reply_to_gfsd_window =
+		    GFM_PROTO_REPLY_TO_GFSD_WINDOW_DEFAULT;
+#endif
+	if (gfs_proto_fhremove_request_window == GFARM_CONFIG_MISC_DEFAULT)
+		gfs_proto_fhremove_request_window =
+		    GFS_PROTO_FHREMOVE_REQUEST_WINDOW_DEFAULT;
+	if (gfs_proto_replication_request_window == GFARM_CONFIG_MISC_DEFAULT)
+		gfs_proto_replication_request_window =
+		    GFS_PROTO_REPLICATION_REQUEST_WINDOW_DEFAULT;
 	if (gfarm_ctxp->gfsd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfsd_connection_cache =
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;

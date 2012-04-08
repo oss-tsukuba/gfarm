@@ -54,7 +54,11 @@ extern char *gfarm_postgresql_conninfo;
 extern char *gfarm_localfs_datadir;
 
 /* miscellaneous configurations */
-extern int gfarm_simultaneous_replication_receivers;
+#ifdef not_def_REPLY_QUEUE
+extern int gfm_proto_reply_to_gfsd_window;
+#endif
+extern int gfs_proto_fhremove_request_window;
+extern int gfs_proto_replication_request_window;
 
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
