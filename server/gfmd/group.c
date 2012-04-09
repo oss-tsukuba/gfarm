@@ -614,16 +614,6 @@ gfm_server_group_info_get_by_names(
 		goto end;
 	}
 
-	e2 = wait_db_update_info(peer, DBUPDATE_GROUP, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	}
-
 	GFARM_CALLOC_ARRAY(groups, ngroups);
 	if (groups == NULL) {
 		if (e == GFARM_ERR_NO_ERROR)
@@ -654,9 +644,19 @@ gfm_server_group_info_get_by_names(
 		}
 		groups[i] = groupname;
 	}
+
 	if (skip) {
 		e = GFARM_ERR_NO_ERROR;
 		goto end;
+	}
+	e2 = wait_db_update_info(peer, DBUPDATE_GROUP, diag);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to wait for the backend DB to be updated: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
 	}
 
 	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
