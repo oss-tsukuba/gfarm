@@ -20,7 +20,7 @@ cleanup() {
     gfrmdir ${dir}
 }
 
-trap 'celanup; exit $exit_trap' $trap_sigs
+trap 'cleanup; exit $exit_trap' $trap_sigs
 
 setup
 
