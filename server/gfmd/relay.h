@@ -12,6 +12,9 @@ enum request_reply_mode {
 /* XXXRELAY define flags for meta data update here */
 #define DBUPDATE_USER		((gfarm_uint64_t)1 << 0)
 #define DBUPDATE_GROUP		((gfarm_uint64_t)1 << 1)
+#define DBUPDATE_HOST		((gfarm_uint64_t)1 << 2)
+#define DBUPDATE_FS_GETDENT	((gfarm_uint64_t)1 << 3)
+#define DBUPDATE_FS_STAT	((gfarm_uint64_t)1 << 4)
 #define DBUPDATE_NOWAIT		((gfarm_uint64_t)1 << 63)
 				/* NOWAIT is not transfered in protocol */
 #define DBUPDATE_PROTOCOL_MASK	(GFARM_UINT64_MAX & ~DBUPDATE_NOWAIT)
@@ -49,3 +52,4 @@ int request_reply_giant_unlock(enum request_reply_mode, gfarm_error_t);
 void master_set_db_update_info_to_peer(struct peer *, gfarm_uint64_t);
 gfarm_error_t slave_add_initial_db_update_info(gfarm_uint64_t, const char *);
 void slave_clear_db_update_info(void);
+gfarm_error_t wait_db_update_info(struct peer *, gfarm_uint64_t, const char *);

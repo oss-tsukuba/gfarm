@@ -269,7 +269,7 @@ slave_needs_to_wait(gfarm_uint64_t wait_db_update_flags, const char *diag)
 	return (need);
 }
 
-static gfarm_error_t
+gfarm_error_t
 wait_db_update_info(struct peer *peer,
 	gfarm_uint64_t wait_db_update_flags, const char *diag)
 {

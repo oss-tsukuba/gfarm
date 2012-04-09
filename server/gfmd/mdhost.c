@@ -999,29 +999,35 @@ gfm_server_metadb_server_get(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
-	char *name;
-	struct relayed_request *relay;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	char *name = NULL;
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_GET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_METADB_SERVER_GET, "s", &name);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	e = gfm_server_get_request(peer, sizep, diag, "s", &name);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_server_get_request() failed: %s",
+		    gfarm_error_string(e));
+		goto end;
+	}
 	if (skip) {
 		e = GFARM_ERR_NO_ERROR;
 		goto end;
 	}
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		/* XXXRELAY FIXME, reply size is not correct */
-		e = metadb_server_get(peer, xid, sizep, match_hostname, name,
-		    diag);
+
+	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to wait for the backend DB to be updated: %s",
+		    gfarm_error_string(e));
+		goto end;
 	}
+
+	e = metadb_server_get(peer, xid, sizep, match_hostname, name, diag);
+
 end:
 	free(name);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (e);
 }
 
 #ifdef DEBUG_MDCLUSTER
@@ -1039,25 +1045,27 @@ gfm_server_metadb_server_get_all(
 	int from_client, int skip)
 {
 	gfarm_error_t e;
-	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_GET_ALL";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_METADB_SERVER_GET, "");
+	e = gfm_server_get_request(peer, sizep, diag, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
 #ifdef DEBUG_CLUSTER
-		mdcluster_foreach(mdcluster_dump, NULL);
+	mdcluster_foreach(mdcluster_dump, NULL);
 #endif
-		/* XXXRELAY FIXME, reply size is not correct */
-		e = metadb_server_get(peer, xid, sizep, match_all, NULL, diag);
+
+	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to wait for the backend DB to be updated: %s",
+		    gfarm_error_string(e));
+		return (e);
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+
+	e = metadb_server_get(peer, xid, sizep, match_all, NULL, diag);
+	return (e);
 }
 
 static gfarm_error_t
