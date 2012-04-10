@@ -1328,7 +1328,6 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	static const char diag[] = "GFM_PROTO_XMLATTR_FIND";
 	char *expr = NULL, *ck_path = NULL, *ck_name = NULL;
 	int depth, nalloc;
-	struct relayed_request *relay;
 #ifdef ENABLE_XMLATTR
 	struct gfs_xmlattr_ctx *ctxp = NULL;
 	int fd, i;
@@ -1337,28 +1336,30 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct inum_path_array *array = NULL;
 #endif
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_XMLATTR_FIND,
-	    "siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
-	if (e != GFARM_ERR_NO_ERROR)
+	e = gfm_server_get_request(peer, sizep, diag,
+			"siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002110,
+			"%s request failed: %s",
+			diag, gfarm_error_string(e));
 		return (e);
+	}
 	if (skip) {
 		free(expr);
 		free(ck_path);
 		free(ck_name);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	if (relay != NULL) {
-		free(expr);
-		free(ck_path);
-		free(ck_name);
-		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-		relay, diag, &e, ""));
+
+#ifdef ENABLE_XMLATTR
+	e = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to wait for the backend DB to be updated: %s",
+		    gfarm_error_string(e));
+		goto quit;
 	}
 
-	/* do not relay RPC to master gfmd */
-#ifdef ENABLE_XMLATTR
 	if ((ctxp = gfs_xmlattr_ctx_alloc(nalloc)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002111,
@@ -1394,11 +1395,9 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 
 quit:
-	/* XXXRELAY FIXME, reply size is not correct */
-	if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-		 &e, "ii", &ctxp->eof, &ctxp->nvalid)) == GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ii",
+	    ctxp->eof, ctxp->nvalid)) == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < ctxp->nvalid; i++) {
-			/* XXXRELAY FIXME */
 			e = gfp_xdr_send(peer_get_conn(peer), "ss",
 				    ctxp->entries[i].path,
 				    ctxp->entries[i].attrname);
@@ -1419,8 +1418,7 @@ quit:
 	free(expr);
 	free(ck_path);
 	free(ck_name);
-	e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return gfm_server_put_reply(peer, diag,
+			GFARM_ERR_OPERATION_NOT_SUPPORTED, "");
 #endif
 }
