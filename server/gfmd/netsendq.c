@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <assert.h>
 #include <stdarg.h> /* XXX gfp_xdr.h needs this */
 #include <stddef.h>
