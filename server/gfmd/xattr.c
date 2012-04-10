@@ -1418,7 +1418,7 @@ quit:
 	free(expr);
 	free(ck_path);
 	free(ck_name);
-	return gfm_server_put_reply(peer, diag,
-			GFARM_ERR_OPERATION_NOT_SUPPORTED, "");
+	return (gfm_server_put_reply(peer, xid, sizep, diag,
+	    GFARM_ERR_OPERATION_NOT_SUPPORTED, ""));
 #endif
 }
