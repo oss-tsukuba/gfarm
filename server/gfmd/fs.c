@@ -1071,7 +1071,7 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	char **attrpatterns = NULL, *attrpattern;
-	int i, j, eof, no_memory = 1;
+	int i, j, eof, no_memory = 0;
 
 	if (!skip) {
 		GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
