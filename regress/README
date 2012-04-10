@@ -25,6 +25,10 @@ TO WRITE TEST
 i.e.
 - each test shouldn't assume the order of the tests.
 - each test should clear the changes made by the test before exiting.
+- each test should be able to be executed simultaneously on multiple hosts
+  and multiple "make check" on same host.
+- each test should not change/destroy filesystem contents and user, group,
+  host and fsngroup settings.
 
 TODO
 - test by root?
