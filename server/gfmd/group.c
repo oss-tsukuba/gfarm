@@ -740,6 +740,17 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * Closure for
+ *     gfm_server_group_info_set_request()
+ *     gfm_server_group_info_set_reply()
+ *     gfm_server_group_info_set()
+ *     gfm_server_group_info_modify()
+ *
+ * They are protocol handlers for
+ *     GFM_PROTO_GROUP_INFO_SET
+ *     GFM_PROTO_GROUP_INFO_MODIFY
+ */
 struct group_info_closure {
 	struct gfarm_group_info group_info;
 	gfarm_error_t error;
