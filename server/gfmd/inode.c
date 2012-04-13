@@ -3821,26 +3821,10 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	struct dead_file_copy **deferred_cleanupp)
 {
 	struct dead_file_copy *dfc;
-	struct inode_activity *ia = inode->u.c.activity;
-	int ia_alloced = 0;
 
-	if (ia == NULL) {
-		ia = inode_activity_alloc();
-		if (ia == NULL) {
-			gflog_debug(GFARM_MSG_1001756,
-				"inode_activity_alloc() failed");
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		inode->u.c.activity = ia;
-		ia_alloced = 1;
-	}
 	dfc = dead_file_copy_new(inode->i_number, gen, spool_host,
 	    &inode->dead_copies);
 	if (dfc == NULL) {
-		if (ia_alloced) {
-			inode_activity_free(ia);
-			inode->u.c.activity = NULL;
-		}
 		gflog_error(GFARM_MSG_1002260,
 		    "remove_replica_entity(%lld, %lld, %s): no memory",
 		    (unsigned long long)inode->i_number,
