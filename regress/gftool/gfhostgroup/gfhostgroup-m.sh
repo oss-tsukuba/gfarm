@@ -7,42 +7,37 @@ if test $? -ne 0; then
     exit $exit_unsupported
 fi
 
+host=dummy-host-`uname -n | awk -F. '{ print $1 }'`.$$
+
 cleanup() {
-    for i in `gfhost`; do
-	gfhostgroup -r $i > /dev/null 2>&1
-    done
+    gfhost -d ${host} > /dev/null 2>&1
 }
 
 trap 'celanup; exit $exit_trap' $trap_sigs
 
-hosts=`gfhost`
+gfhost -c -a dummy -p 12345 ${host} > /dev/null 2>&1
+if test $? -ne 0; then
+    cleanup
+    exot $exit_fail
+fi
 
-st=0
-for i in ${hosts}; do
-    gfhostgroup -s $i "${i}-group" > /dev/null 2>&1
-    st=$?
-done
-if test ${st} -ne 0; then
+gfhostgroup -s ${host} "${host}-group" > /dev/null 2>&1
+if test $? -ne 0; then
     cleanup
     exit $exit_fail
 fi
 
-for i in ${hosts}; do
-    gfhostgroup -s $i "${i}-group-mod" > /dev/null 2>&1
-    st=$?
-done
-if test ${st} -ne 0; then
+gfhostgroup -s ${host} "${host}-group-mod" > /dev/null 2>&1
+if test $? -ne 0; then
     cleanup
     exit $exit_fail
 fi
 
 st=0
-for i in ${hosts}; do
-    g=`gfhostgroup $i | awk '{ print $NF }'`
-    if test "X${g}" != "X${i}-group-mod" -o "X${g}" = "X"; then
-	st=1
-    fi
-done
+g=`gfhostgroup ${host} | awk '{ print $NF }'`
+if test $? -ne 0 -o "X${g}" != "X${host}-group-mod" -o "X${g}" = "X"; then
+    st=1
+fi
 
 cleanup
 if test ${st} -eq 0; then
