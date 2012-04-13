@@ -1121,7 +1121,6 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t flags, nattrpatterns, fd;
 	char **attrpatterns = NULL;
 	int i, j;
-	int n;
 	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode;
@@ -1212,7 +1211,7 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		/* Continue processing. */
 	}
 
-	for (j = 0; j < n && e == GFARM_ERR_NO_ERROR; j++) {
+	for (j = 0; j < nxattrs && e == GFARM_ERR_NO_ERROR; j++) {
 		px = &xattrs[j];
 		if (px->value == NULL) {
 			/* not cached */
