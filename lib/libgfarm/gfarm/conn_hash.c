@@ -15,7 +15,11 @@ gfp_conn_hash_index(const void *key, int keylen)
 {
 	const struct gfp_conn_hash_id *id = key;
 
-	/* username is key xxxx username is not key xxxxx */
+	/*
+	 * XXX FIXME: username is currently removed from keys,
+	 * to make GSI authentication work.
+	 * (Should we change GSI authentication protocol?)
+	 */
 	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
 #ifdef __KERNEL__
 		gfarm_hash_default(id->username, strlen(id->username)) +
@@ -29,7 +33,7 @@ gfp_conn_hash_equal(const void *key1, int key1len,
 {
 	const struct gfp_conn_hash_id *id1 = key1, *id2 = key2;
 
-	/* username is not key */
+	/* XXX FIXME: username is currently removed from keys */
 	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
 #ifdef __KERNEL__
 		strcmp(id1->username, id2->username) == 0 &&
