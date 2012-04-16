@@ -70,14 +70,14 @@ gfskd_connection_acquire(const char *path,
 
 	if ((error = gfarm_get_hostname_by_url(path, &hostname, &port))
 			!= GFARM_ERR_NO_ERROR) {
-		gflog_debug(0,
+		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfarm_get_hostname_by_url0 failed: %s",
 		    gfarm_error_string(error));
 		return (error);
 	}
 	if ((error = gfarm_get_global_username_by_host(
 		hostname, port, &user)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002587,
+		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfarm_get_global_username_by_host: %s",
 		    gfarm_error_string(error));
 		return (error);
@@ -96,7 +96,7 @@ gfskd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
 
 	error = gfskd_connection_acquire(GFARM_PATH_ROOT, gfm_serverp);
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000017,
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "connecting to gfmd at %s:%d: %s\n",
 		    gfarm_ctxp->metadb_server_name,
 		    gfarm_ctxp->metadb_server_port,
@@ -298,7 +298,7 @@ gfskd_mount(struct gfsk_mount_data *mdatap, struct gfskd_param *paramsp)
 	}
 	error = gfskd_connection_acquire(GFARM_PATH_ROOT, &gfm_server);
 	if (error != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000017,
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "connecting to gfmd at %s:%d: %s\n",
 		    gfarm_ctxp->metadb_server_name,
 		    gfarm_ctxp->metadb_server_port,
@@ -380,7 +380,7 @@ gfskd_initialize(struct gfskd_param *paramsp)
 
 	e = gfarm_set_local_user_for_this_uid(paramsp->local_uid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000982,
+		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfskd_set_local_user_for_this_local_account() failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -398,10 +398,11 @@ gfskd_initialize(struct gfskd_param *paramsp)
 
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1000983,
+		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfarm_config_read() failed: %s", gfarm_error_string(e));
 		return (e);
 	}
+	gfarm_ctxp->gfmd_connection_cache = 0; /* num_cachep is pointer */
 
 	gfarm_ug_maps_notify = NULL;
 

@@ -17,7 +17,9 @@ gfp_conn_hash_index(const void *key, int keylen)
 
 	/* username is key xxxx username is not key xxxxx */
 	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
-		gfarm_hash_casefold(id->username, strlen(id->username)) +
+#ifdef __KERNEL__
+		gfarm_hash_default(id->username, strlen(id->username)) +
+#endif /* __KERNEL__ */
 		id->port * 3);
 }
 
@@ -29,7 +31,9 @@ gfp_conn_hash_equal(const void *key1, int key1len,
 
 	/* username is not key */
 	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
-		strcasecmp(id1->username, id2->username) == 0 &&
+#ifdef __KERNEL__
+		strcmp(id1->username, id2->username) == 0 &&
+#endif /* __KERNEL__ */
 		id1->port == id2->port);
 }
 
