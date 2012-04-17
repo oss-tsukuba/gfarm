@@ -824,6 +824,11 @@ gfm_server_group_info_set_request(enum request_reply_mode mode,
 	char *groupname;
 	int i;
 
+	if (mode == RELAY_TRANSFER) {
+		gi = group_info_closure_get_group_info(closure);
+		groupname = gi->groupname;
+		nusers = gi->nusers;
+	}
 	e2 = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
 	    "si", &groupname, &nusers);
 	if (e2 != GFARM_ERR_NO_ERROR) {

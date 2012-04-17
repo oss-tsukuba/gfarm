@@ -2693,7 +2693,8 @@ gfm_server_getdirentsplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		goto end;
 	}
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS_DIRENT, diag);
+	e2 = wait_db_update_info(peer,
+	    DBUPDATE_FS_DIRENT | DBUPDATE_USER | DBUPDATE_GROUP, diag);
 	if (e2 != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "failed to wait for the backend DB to be updated: %s",
@@ -2850,8 +2851,8 @@ gfm_server_getdirentsplusxattr(struct peer *peer, gfp_xdr_xid_t xid,
 		goto end;
 	}
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS_DIRENT | DBUPDATE_XMLATTR,
-	    diag);
+	e2 = wait_db_update_info(peer, DBUPDATE_FS_DIRENT |
+	    DBUPDATE_USER | DBUPDATE_GROUP | DBUPDATE_XMLATTR, diag);
 	if (e2 != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "failed to wait for the backend DB to be updated: %s",
@@ -4184,7 +4185,7 @@ gfm_server_replica_list_by_name(struct peer *peer, gfp_xdr_xid_t xid,
 		goto end;
 	}
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS, diag);
+	e2 = wait_db_update_info(peer, DBUPDATE_FS | DBUPDATE_HOST, diag);
 	if (e2 != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "failed to wait for the backend DB to be updated: %s",
@@ -4459,7 +4460,8 @@ gfm_server_replica_info_get_request(enum request_reply_mode mode,
 
 	e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
 	    "i", &iflags);
-	replica_info_closure_set_value(closure, iflags, e);
+	if (mode != RELAY_TRANSFER)
+		replica_info_closure_set_value(closure, iflags, e);
 	return (e);
 }
 
@@ -4556,8 +4558,8 @@ gfm_server_replica_info_get(struct peer *peer, gfp_xdr_xid_t xid,
 	if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid, skip,
 	    gfm_server_replica_info_get_request,
 	    gfm_server_replica_info_get_reply,
-	    GFM_PROTO_REPLICA_INFO_GET, DBUPDATE_FS, &closure, diag))
-	    != GFARM_ERR_NO_ERROR) {
+	    GFM_PROTO_REPLICA_INFO_GET, DBUPDATE_FS | DBUPDATE_HOST, &closure,
+	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
 		    diag, gfarm_error_string(e));
 	}
