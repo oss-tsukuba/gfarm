@@ -4158,73 +4158,117 @@ gfm_server_pio_visit(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 }
 
 gfarm_error_t
-gfm_server_replica_list_by_name(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
+gfm_server_replica_list_by_name(struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
 	gfarm_int32_t n;
 	struct inode *inode;
-	char **hosts;
-	struct relayed_request *relay;
+	char **hosts = NULL;
 	static const char diag[] = "GFM_PROTO_REPLICA_LIST_BY_NAME";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_REPLICA_LIST_BY_NAME, "");
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
-
-	if (relay != NULL)
-		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
-
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-
-		if (!from_client &&
-		    (spool_host = peer_get_host(peer)) == NULL) {
-			gflog_debug(GFARM_MSG_1001948,
-			    "operation is not permitted");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if ((process = peer_get_process(peer)) == NULL) {
-			gflog_debug(GFARM_MSG_1001949,
-			    "peer_get_process() failed");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-			   GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001950,
-			    "peer_fdpair_get_current() failed: %s",
-			    gfarm_error_string(e));
-		} else if ((e = process_get_file_inode(process, fd, &inode))
-			   != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001951,
-			    "process_get_file_inode() failed: %s",
-			    gfarm_error_string(e));
-		} else
-			e = inode_replica_list_by_name(inode, &n, &hosts);
-
-		giant_unlock();
+	e2 = gfm_server_get_request(peer, sizep, diag, "");
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_list_by_name request failed: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		goto end;
 	}
-	/* XXXRELAY FIXME, reply size is not correct */
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "i", &n);
-	if (e == GFARM_ERR_NO_ERROR) {
-		for (i = 0; i < n; ++i) {
-			/* XXXRELAY FIXME */
-			e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
-			if (e2 != GFARM_ERR_NO_ERROR)
-				break;
+	if (skip) {
+		e = GFARM_ERR_NO_ERROR;
+		goto end;
+	}
+
+	e2 = wait_db_update_info(peer, DBUPDATE_FS, diag);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "failed to wait for the backend DB to be updated: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	}
+
+	giant_lock();
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		; /* Continue processing. */
+	} else if (!from_client &&
+	    (spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_1001948,
+		    "operation is not permitted");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		/* Continue processing. */
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_1001949,
+		    "peer_get_process() failed");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		/* Continue processing. */
+	} else if ((e2 = peer_fdpair_get_current(peer, &fd)) !=
+	    GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001950,
+		    "peer_fdpair_get_current() failed: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	} else if ((e2 = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001951,
+		    "process_get_file_inode() failed: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	} else if ((e2 = inode_replica_list_by_name(inode, &n, &hosts))
+	    != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	}
+
+	giant_unlock();
+
+	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "replica_list_by_name reply failed: %s",
+		    gfarm_error_string(e2));
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		goto end;
+	}
+	if (e != GFARM_ERR_NO_ERROR)
+		goto end;
+
+	for (i = 0; i < n; ++i) {
+		e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
+		if (e2 != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s@%s: replica_list: %s",
+			    peer_get_username(peer),
+			    peer_get_hostname(peer),
+			    gfarm_error_string(e2));
+			if (e == GFARM_ERR_NO_ERROR)
+				e = e2;
+			goto end;
 		}
+	}
+
+end:
+	if (hosts != NULL) {
 		for (i = 0; i < n; ++i)
 			free(hosts[i]);
 		free(hosts);
 	}
-	return (e2);
+	return (e);
 }
 
 gfarm_error_t
@@ -4358,71 +4402,167 @@ gfm_server_replica_remove_by_file(
 	    &e, ""));
 }
 
-gfarm_error_t
-gfm_server_replica_info_get(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
+/*
+ * Closure for
+ *     gfm_server_replica_info_get_request()
+ *     gfm_server_replica_info_get_reply()
+ *     gfm_server_replica_info_get()
+ *
+ * They are protocol handlers for
+ *     GFM_PROTO_REPLICA_INFO_GET
+ */
+struct replica_info_closure {
+	gfarm_int32_t iflags;
+	gfarm_error_t error;
+};
+
+static void
+replica_info_closure_init(struct replica_info_closure *closure)
 {
-	gfarm_error_t e, e2;
+	closure->iflags = 0;
+	closure->error = GFARM_ERR_NO_ERROR;
+}
+
+static gfarm_int32_t
+replica_info_closure_get_iflags(struct replica_info_closure *closure)
+{
+	return (closure->iflags);
+}
+
+static gfarm_error_t
+replica_info_closure_get_error(struct replica_info_closure *closure)
+{
+	return (closure->error);
+}
+
+static void
+replica_info_closure_set_value(struct replica_info_closure *closure, 
+    gfarm_int32_t iflags, gfarm_error_t e)
+{
+	closure->iflags = iflags;
+	closure->error = e;
+}
+
+static void
+replica_info_closure_term(struct replica_info_closure *closure)
+{
+	; /* Nothing to do */
+}
+
+static gfarm_error_t
+gfm_server_replica_info_get_request(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep, int skip, struct relayed_request *r,
+	void *closure, const char *diag)
+{
+	gfarm_error_t e;
+	gfarm_int32_t iflags = 0;
+
+	e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
+	    "i", &iflags);
+	replica_info_closure_set_value(closure, iflags, e);
+	return (e);
+}
+
+static gfarm_error_t
+gfm_server_replica_info_get_reply(enum request_reply_mode mode,
+	struct peer *peer, size_t *sizep, int skip, void *closure,
+	const char *diag)
+{
+	gfarm_error_t e = replica_info_closure_get_error(closure), e2;
+	gfarm_int32_t iflags = replica_info_closure_get_iflags(closure);
 	struct host *spool_host;
 	struct process *process;
 	int fd, i;
-	gfarm_int32_t iflags, n;
 	struct inode *inode;
-	char **hosts;
-	gfarm_int64_t *gens;
-	gfarm_int32_t *oflags;
-	struct relayed_request *relay;
-	static const char diag[] = "GFM_PROTO_REPLICA_INFO_GET";
+	gfarm_int32_t n = 0;
+	char **hosts = NULL;
+	gfarm_int64_t *gens = NULL;
+	gfarm_int32_t *oflags = NULL;
+	int from_client = 
+	    (peer_get_auth_id_type(peer) == GFARM_AUTH_ID_TYPE_USER);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_REPLICA_INFO_GET, "i", &iflags);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (relay != NULL)
-		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
-
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-
-		if (!from_client && (spool_host = peer_get_host(peer)) == NULL)
+	/* do not relay RPC to master gfmd */
+	giant_lock();
+	if (!from_client && (spool_host = peer_get_host(peer)) == NULL) {
+		if (e == GFARM_ERR_NO_ERROR)
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else if ((process = peer_get_process(peer)) == NULL)
+		/* Continue processing. */
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		if (e == GFARM_ERR_NO_ERROR)
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-			 GFARM_ERR_NO_ERROR)
-			;
-		else if ((e = process_get_file_inode(process, fd, &inode))
-			 != GFARM_ERR_NO_ERROR)
-			;
-		else
-			e = inode_replica_info_get(inode, iflags,
-			    &n, &hosts, &gens, &oflags);
-
-		giant_unlock();
+		/* Continue processing. */
+	} else if ((e2 = peer_fdpair_get_current(peer, &fd)) != 
+	    GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	} else if ((e2 = process_get_file_inode(process, fd, &inode))
+	    != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
+	} else if ((e2 = inode_replica_info_get(inode, iflags, &n, &hosts,
+		    &gens, &oflags)) != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		/* Continue processing. */
 	}
-	/* XXXRELAY FIXME, reply size is not correct */
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "i", &n);
-	if (e == GFARM_ERR_NO_ERROR) {
-		for (i = 0; i < n; ++i) {
-			/* XXXRELAY FIXME */
-			e = gfp_xdr_send(peer_get_conn(peer), "sli",
-			    hosts[i], gens[i], oflags[i]);
-			if (e != GFARM_ERR_NO_ERROR)
-				break;
-		}
+	giant_unlock();
+
+	e2 = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i", e);
+	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		goto end;
+	}
+
+	e2 = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i", n);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR)
+			e = e2;
+		goto end;
+	}
+	for (i = 0; i < n; ++i) {
+		e2 = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
+		    "sli", hosts[i], gens[i], oflags[i]);
+		if (e != GFARM_ERR_NO_ERROR)
+			break;
+	}
+
+end:
+	if (hosts != NULL) {
 		for (i = 0; i < n; ++i)
 			free(hosts[i]);
 		free(hosts);
-		free(gens);
-		free(oflags);
 	}
-	return (e2);
+	free(gens);
+	free(oflags);
+
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_replica_info_get(struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct replica_info_closure closure;
+	static const char diag[] = "GFM_PROTO_REPLICA_INFO_GET";
+
+	replica_info_closure_init(&closure);
+	if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid, skip,
+	    gfm_server_replica_info_get_request,
+	    gfm_server_replica_info_get_reply,
+	    GFM_PROTO_REPLICA_INFO_GET, DBUPDATE_FS, &closure, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+		    diag, gfarm_error_string(e));
+	}
+	replica_info_closure_term(&closure);
+	return (e);
 }
 
 gfarm_error_t
