@@ -24,8 +24,8 @@ struct netsendq_workq {
 	pthread_cond_t dequeueable;
 
 	GFARM_HCIRCLEQ_HEAD(netsendq_entry) q;
-
-	struct netsendq_entry *next;
+					    
+	struct netsendq_entry *next; /* next data to move to readyq */
 
 	int inflight_number;
 };
@@ -194,6 +194,10 @@ netsendq_remove_entry(struct netsendq *qhost,
 	gfarm_mutex_lock(&workq->mutex, diag, "workq");
 	GFARM_HCIRCLEQ_REMOVE(entry, workq_entries);
 	--workq->inflight_number;
+
+	/* if (*entry->sendq_type->send)() isn't called, abort */
+	assert(entry != workq->next);
+
 	if (workq->inflight_number < entry->sendq_type->window_size &&
 	    abstract_host_is_up(qhost->abhost))
 		netsendq_workq_to_readyq(qhost, workq, diag);
@@ -213,6 +217,7 @@ netsendq_host_is_down_at_entry(struct netsendq *qhost,
 	gfarm_mutex_lock(&workq->mutex, diag, "workq");
 	GFARM_HCIRCLEQ_REMOVE(entry, workq_entries);
 	--workq->inflight_number;
+	assert(entry != workq->next);
 	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
 
 	netsendq_finalizeq_add(qhost->manager, entry,
