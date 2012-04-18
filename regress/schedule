@@ -98,9 +98,6 @@ gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh
 
-# gftool/gfchown
-# gftool/gfuser
-# gftool/gfhost
 # gftool/gfkey
 
 # server/gfmd
