@@ -787,6 +787,15 @@ gfm_server_fsngroup_get_all(
 		const char diag[] =
 			macro_stringify(GFM_PROTO_FSNGROUP_GET_ALL);
 
+		e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"failed to wait for the backend DB to "
+				"be updated: %s",
+				gfarm_error_string(e));
+			goto bailout;
+		}
+
 		giant_lock();
 		t = get_tuples_all(NULL, FILTER_CHECK_VALID);
 		giant_unlock();
@@ -834,6 +843,7 @@ done:
 		e = GFARM_ERR_NO_ERROR;
 	}
 
+bailout:
 	return (e);
 }
 
