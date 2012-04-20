@@ -1793,6 +1793,35 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 }
 
 gfarm_error_t
+host_schedule_reply_with_vrelay(struct host *h, struct peer *peer,
+	size_t *sizep, const char *diag)
+{
+	struct host_status status;
+	gfarm_time_t last_report;
+	gfarm_int32_t report_flags;
+
+	back_channel_mutex_lock(h, diag);
+	status = h->status;
+	last_report = h->last_report;
+	report_flags = h->report_flags;
+	back_channel_mutex_unlock(h, diag);
+
+	return (gfm_server_put_reply_with_vrelay(
+			peer, sizep, diag, "siiillllii",
+			h->hi.hostname,
+			h->hi.port,
+			h->hi.ncpu,
+			(gfarm_int32_t)(status.loadavg_1min *
+				GFM_PROTO_LOADAVG_FSCALE),
+			last_report,
+			status.disk_used,
+			status.disk_avail,
+			(gfarm_int64_t)0 /* rtt_cache_time */,
+			(gfarm_int32_t)0 /* rtt_usec */,
+			report_flags));
+}
+
+gfarm_error_t
 host_schedule_reply_all(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int (*filter)(struct host *, void *), void *closure, const char *diag)

@@ -6,6 +6,7 @@
 #include <time.h>
 #include <stdio.h> /* for sprintf(), snprintf() */
 #include <sys/time.h> /* for gettimeofday() */
+#include <limits.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gflog.h>
@@ -40,6 +41,9 @@
 #include "relay.h"
 #include "config.h" /* for gfarm_host_get_self_name() */
 #include "fsngroup_replica.h"
+
+#define macro_stringify(X)   stringify(X)
+#define stringify(X) #X
 
 static char dot[] = ".";
 static char dotdot[] = "..";
@@ -1674,75 +1678,290 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    &e, ""));
 }
 
+/*
+ * A closure/context for GFM_PROTO_SCHEDULE_FILE request receiver and
+ * replier.
+ */
+typedef struct {
+	/*
+	 * Filled in initialization:
+	 */
+	int from_client;
+
+	/*
+	 * Filled in request phase:
+	 */
+	gfarm_error_t req_error;
+	char *domain;		/* malloc'd implicitly. */
+
+	/*
+	 * Filled in reply phase:
+	 */
+	gfarm_error_t rep_error;
+	gfarm_int32_t nhosts;
+	struct host **hosts;	/* malloc'd implicitly. */
+} GFM_PROTO_SCHEDULE_FILE_context;
+
+static void
+GFM_PROTO_SCHEDULE_FILE_context_initialize(
+	GFM_PROTO_SCHEDULE_FILE_context *cp,
+	int from_client)
+{
+	cp->from_client = from_client;
+
+	cp->req_error = GFARM_ERR_UNKNOWN;
+	cp->domain = NULL;
+
+	cp->rep_error = GFARM_ERR_UNKNOWN;
+	cp->nhosts = 0;
+	cp->hosts = NULL;
+}
+
+static void
+GFM_PROTO_SCHEDULE_FILE_context_finalize(GFM_PROTO_SCHEDULE_FILE_context *cp)
+{
+	free(cp->domain);
+	cp->domain = NULL;
+
+	free(cp->hosts);
+	cp->hosts = NULL;
+}
+
+/*
+ * GFM_PROTO_SCHEDULE_FILE request receiver.
+ */
+static gfarm_error_t
+GFM_PROTO_SCHEDULE_FILE_receive_request(
+	enum request_reply_mode mode,
+	struct peer *peer,
+	size_t *sizep,
+	int skip,
+	struct relayed_request *r,
+	void *closure,
+	const char *diag)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	GFM_PROTO_SCHEDULE_FILE_context *cp = 
+		(GFM_PROTO_SCHEDULE_FILE_context *)closure;
+
+	assert(cp != NULL);
+
+	/*
+	 * Note:
+	 *	You don't have to worry about the mode in this case.
+	 */
+	ret = gfm_server_get_request_with_vrelay(
+		peer, sizep, skip, r, diag,
+		"s", &cp->domain);
+	if (cp->domain == NULL) {
+		cp->req_error = GFARM_ERR_NO_MEMORY;
+	} else if (*(cp->domain) != '\0') {
+		cp->req_error = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
+	} else {
+		cp->req_error = ret;
+	}
+
+	if (cp->req_error != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s failed: %s",
+			diag, 
+			"GFM_PROTO_SCHEDULE_FILE_receive_request()",
+			gfarm_error_string(cp->req_error));
+	}
+	return ret;
+}
+
+static gfarm_error_t
+GFM_PROTO_SCHEDULE_FILE_send_reply(
+	enum request_reply_mode mode,
+	struct peer *peer,
+	size_t *sizep,
+	int skip,
+	void *closure,
+	const char *diag)
+{
+	GFM_PROTO_SCHEDULE_FILE_context *cp = 
+		(GFM_PROTO_SCHEDULE_FILE_context *)closure;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+
+	assert(cp != NULL);
+
+	if (!skip) {
+		gfarm_error_t rep_error = GFARM_ERR_UNKNOWN;
+		gfarm_error_t tmp;
+		gfarm_int32_t i;
+
+		if (mode != RELAY_TRANSFER) {
+			struct process *process = NULL;
+			gfarm_int32_t fd = (gfarm_int32_t)-INT_MAX;
+
+			if (cp->req_error != GFARM_ERR_NO_ERROR) {
+				/*
+				 * We already got an error in request
+				 * phase. Just calculate a send size
+				 * and return.
+				 */
+				rep_error = cp->req_error;
+				goto calc_or_reply;
+			}
+
+			/*
+			 * Check validness of the parameters just ONCE
+			 * in !RELAY_TRANSFER mode phase.
+			 */
+
+			rep_error = wait_db_update_info(
+				peer, DBUPDATE_HOST, diag);
+			if (rep_error != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,	
+					"wait_db_update_info()",
+					gfarm_error_string(rep_error));
+				goto calc_or_reply;
+			}
+
+			giant_lock();
+
+			if (!cp->from_client &&
+				peer_get_host(peer) == NULL) {
+				rep_error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"peer_get_host()",
+					gfarm_error_string(rep_error));
+				goto unlock;
+			}
+
+			process = peer_get_process(peer);
+			if (process == NULL) {
+				rep_error = GFARM_ERR_OPERATION_NOT_PERMITTED;
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"peer_get_process()",
+					gfarm_error_string(rep_error));
+				goto unlock;
+			}
+
+			rep_error = peer_fdpair_get_current(peer, &fd);
+			if (rep_error != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"peer_fdpair_get_current()",
+					gfarm_error_string(rep_error));
+				goto unlock;
+			}
+
+			rep_error = process_schedule_file(process, peer, fd,
+				&cp->nhosts, &cp->hosts);
+			if (rep_error != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"process_schedule_file()",
+					gfarm_error_string(rep_error));
+				goto unlock;
+			}
+
+		unlock:
+			giant_unlock();
+
+		} else {
+			/*
+			 * Otherwise, we already checked the validness
+			 * of parameters and the error code is stored
+			 * in the context.
+			 */
+			rep_error = cp->rep_error;
+		}
+
+	calc_or_reply:
+		tmp = gfm_server_put_reply_with_vrelay(
+			peer, sizep, diag, "i", rep_error);
+		if (rep_error != GFARM_ERR_NO_ERROR) {
+			/*
+			 * Nothing to do anymore.
+			 */
+			ret = tmp;
+			goto done;
+		}
+		/*
+		 * Return the first reply error.
+		 */
+		if (tmp != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: %s failed: %s",
+				diag,
+				"gfm_server_put_reply_with_vrelay()",
+				gfarm_error_string(tmp));
+			if (ret == GFARM_ERR_NO_ERROR)
+				ret = tmp;
+		}
+
+		tmp = gfm_server_put_reply_with_vrelay(
+			peer, sizep, diag, "i", cp->nhosts);
+		if (tmp != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: %s failed: %s",
+				diag,
+				"gfm_server_put_reply_with_vrelay()",
+				gfarm_error_string(tmp));
+			if (ret == GFARM_ERR_NO_ERROR)
+				ret = tmp;
+		}
+
+		giant_lock();
+		for (i = 0; i < cp->nhosts; i++) {
+			tmp = host_schedule_reply_with_vrelay(
+				cp->hosts[i], peer, sizep, diag);
+			if (tmp != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"host_schedule_reply_with_vrelay()",
+					gfarm_error_string(tmp));
+			}
+			if (ret == GFARM_ERR_NO_ERROR)
+				ret = tmp;
+		}
+		giant_unlock();
+
+	done:
+		cp->rep_error = rep_error;
+
+	} else {
+		ret = GFARM_ERR_NO_ERROR;
+		cp->rep_error = ret;
+	}
+
+	return ret;
+}
+
 gfarm_error_t
 gfm_server_schedule_file(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e_save;
-	char *domain;
-	gfarm_int32_t i, fd, nhosts;
-	struct host **hosts, *spool_host = NULL;
-	struct process *process;
-	struct relayed_request *relay;
-	static const char diag[] = "GFM_PROTO_SCHEDULE_FILE";
+	gfarm_error_t e;
+	GFM_PROTO_SCHEDULE_FILE_context c;
+	static const char diag[] = macro_stringify(GFM_PROTO_SCHEDULE_FILE);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_SCHEDULE_FILE, "s", &domain);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip) {
-		free(domain);
-		return (GFARM_ERR_NO_ERROR);
+	GFM_PROTO_SCHEDULE_FILE_context_initialize(&c, from_client);
+	e = gfm_server_request_reply_with_vrelaywait(
+		peer, xid, skip,
+		GFM_PROTO_SCHEDULE_FILE_receive_request,
+		GFM_PROTO_SCHEDULE_FILE_send_reply,
+		GFM_PROTO_SCHEDULE_FILE,
+		DBUPDATE_HOST,
+		&c,
+		diag);
+	GFM_PROTO_SCHEDULE_FILE_context_finalize(&c);
+	if (e != GFARM_ERR_NO_ERROR) { 
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+			diag, gfarm_error_string(e));
 	}
-
-	if (relay != NULL) {
-		free(domain);
-	} else {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-
-		if (*domain != '\0') {
-			gflog_debug(GFARM_MSG_1001857,
-			    "function not implemented");
-			e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED; /* XXX FIXME */
-		} else if (!from_client &&
-		    (spool_host = peer_get_host(peer)) == NULL) {
-			gflog_debug(GFARM_MSG_1001858,
-			    "operation is not permitted");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if ((process = peer_get_process(peer)) == NULL) {
-			gflog_debug(GFARM_MSG_1001859,
-			    "operation is not permitted: peer_get_process() "
-			    "failed");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-			   GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001860,
-			    "peer_fdpair_get_current() "
-			    "failed: %s", gfarm_error_string(e));
-		} else {
-			e = process_schedule_file(process, peer, fd,
-			    &nhosts, &hosts);
-		}
-
-		free(domain);
-		giant_unlock();
-	}
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-		    relay, diag, &e, ""));
-
-	/* XXXRELAY FIXME, reply size is not correct */
-	e_save = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nhosts);
-	for (i = 0; i < nhosts; i++) {
-		/* XXXRELAY FIXME */
-		e = host_schedule_reply(hosts[i], peer, diag);
-		if (e_save == GFARM_ERR_NO_ERROR)
-			e_save = e;
-	}
-	free(hosts);
-	return (e_save);
+	return (e);
 }
 
 gfarm_error_t
