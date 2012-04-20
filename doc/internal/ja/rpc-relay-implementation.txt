@@ -259,9 +259,10 @@ gfmd からのレスポンスをクライアントへ送る。ただし、パターン 2 に比べて、
           if (mode != MODE_TRANSFER)
                closure->nusers = nusers;
 
-  5. 従来のコマンド処理関数のうち、gfm_server_get_request() の呼び出し
-     部分よりも後ろをレスポンス処理部として別の関数にする。関数名は、元の
-     関数名に _reply() を足したものとする。
+  5. 従来のコマンド処理関数のうち、「if (skip)」の検査部分よりも後ろ
+     をレスポンス処理部として別の関数にする（「if (skip)」の検査部分も
+     をレスポンス処理関数側に入れる）。関数名は、元の関数名に _reply() を
+     足したものとする。
 
      この関数は static 関数にし、引数列は以下の実装例の通りにする。
 
@@ -287,6 +288,18 @@ gfmd からのレスポンスをクライアントへ送る。ただし、パターン 2 に比べて、
 
   7. 5. で分割したレスポンス関数を改造し、closure に格納されたコマンド
      引数列に応じたレスポンスを返すように改める。
+     mode == RELAY_CALC_SIZE の際には (通常であれば) giant lock を取得し、
+     返答内容を作成して、それを closure に格納しつつ、
+     gfm_server_put_reply_with_relay() を呼び出す。
+     mode == REALY_TRANSFER の際には、RELAY_CALC_SIZE 時に生成され、
+     closure に格納されている結果を gfm_server_put_reply_with_relay()
+     に渡して実際の返答を送る。
+     ※ 返答を closure に格納せず、2つの mode それぞれで giant lock を
+        取得し、返答を生成するというやり方をしてはいけない。なぜなら、
+        2つの mode の狭間、giant lock を手放している間に、返答内容が
+        変わってしまう必要があるからである。もしそうなると、
+        RELAY_CALC_SIZE 時に計算したサイズとは異るサイズの返答を
+        REALY_TRANSFER で送ることになり、プロトコル処理が壊れてしまう。
 
      [実装例]
           if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
