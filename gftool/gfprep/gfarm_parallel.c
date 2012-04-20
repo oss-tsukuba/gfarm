@@ -24,12 +24,22 @@
 #include "gfprep.h"
 #include "gfarm_parallel.h"
 
+#define GFPARA_HANDLE_LIST_MAX 1024
+static int is_parent;
+static int n_handle_list = 0;
+static gfpara_t *handle_list[GFPARA_HANDLE_LIST_MAX];
+
+static void gfpara_watch_stderr_stop(gfpara_t *handle);
 static void gfpara_fatal(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 static void
 gfpara_fatal(const char *format, ...)
 {
 	va_list ap;
+	int i;
 
+	if (is_parent)
+		for (i = 0; i < n_handle_list; i++)
+			gfpara_watch_stderr_stop(handle_list[i]);
 	fprintf(stderr, "fatal error: ");
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
@@ -111,10 +121,8 @@ gfpara_watch_stderr(void *arg)
 	setvbuf(stderr, (char *) NULL, _IOLBF, 0);
 	n_eof = 0;
 	while (n_eof < handle->n_procs) {
-		if (handle->watch_stderr_end)
-			break;
 		memcpy(&fdset_tmp, &fdset_orig, sizeof(fd_set));
-		tv.tv_sec = 1;
+		tv.tv_sec = 5;
 		tv.tv_usec = 0;
 		retv = select(maxfd + 1, &fdset_tmp, NULL, NULL, &tv);
 		if (retv == -1) {
@@ -122,8 +130,11 @@ gfpara_watch_stderr(void *arg)
 				"failed to watch stderr: select: %s\n",
 				strerror(errno));
 			continue;
-		} else if (retv == 0)
+		} else if (retv == 0) { /* timeout */
+			if (handle->watch_stderr_end)
+				break;
 			continue;
+		}
 		for (i = 0; i < handle->n_procs; i++) {
 			fd = fileno(handle->procs[i].err);
 			if (!FD_ISSET(fd, &fdset_tmp))
@@ -138,7 +149,6 @@ gfpara_watch_stderr(void *arg)
 				(long) handle->procs[i].pid, line);
 		}
 	}
-
 	return (NULL);
 }
 
@@ -176,6 +186,11 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	gfpara_proc_t *procs;
 	gfpara_t *handle;
 
+	if (n_handle_list >= GFPARA_HANDLE_LIST_MAX) {
+		fprintf(stderr, "too many called gfpara_init()\n");
+		return (GFARM_ERR_TOO_MANY_OPEN_FILES);
+	}
+
 	GFARM_MALLOC(handle);
 	GFARM_MALLOC_ARRAY(procs, n_procs);
 	if (handle == NULL || procs == NULL)
@@ -201,6 +216,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 			int fd;
 			FILE *from_parent;
 			FILE *to_parent;
+			is_parent = 0;
 			close(pipe_in[1]);
 			close(pipe_out[0]);
 			close(pipe_stderr[0]);
@@ -251,6 +267,9 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 	handle->interrupt = 0;
 
 	*handlep = handle;
+
+	is_parent = 1;
+	handle_list[n_handle_list++] = handle;
 
 	gfpara_watch_stderr_start(handle);
 
