@@ -33,7 +33,7 @@ struct dead_file_copy {
 	gfarm_ino_t inum;
 	gfarm_uint64_t igen;
 
-	int is_kept; /* on dfc_keptq? */
+	int is_kept; /* on dfc_keptq?: protected by giant lock */
 
 	GFARM_HCIRCLEQ_ENTRY(dead_file_copy) same_inode_copies;
 };
@@ -242,6 +242,11 @@ dead_file_copy_inode_status_changed(struct dead_file_copy_list *same_inode_list)
 }
 
 /* prevent dfc from moved to removal_pendingq */
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: XXX
+ * SLEEPS: XXX
+ */
 void
 dead_file_copy_mark_kept(struct dead_file_copy *dfc)
 {
@@ -445,7 +450,6 @@ struct netsendq_type gfs_proto_fhremove_queue = {
 
 /*
  * PREREQUISITE: nothing
- * LOCKS: dfc_keptq.mutex
  * SLEEPS: no
  */
 static struct dead_file_copy *
