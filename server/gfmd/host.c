@@ -22,6 +22,7 @@
 #include "internal_host_info.h"
 
 #include "gfutil.h"
+#include "bool.h"
 #include "hash.h"
 #include "thrsubr.h"
 
@@ -48,6 +49,9 @@
 #include "file_replication.h"
 #include "back_channel.h"
 #include "relay.h"
+
+#define macro_stringify(X)   stringify(X)
+#define stringify(X) #X
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
@@ -1866,6 +1870,256 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    &e, ""));
 }
 
+/*
+ * A closure/context for GFM_PROTO_SCHEDULE_HOST_DOMAIN request receiver and
+ * replier.
+ */
+typedef struct {
+	/*
+	 * Filled in request phase:
+	 */
+	gfarm_error_t req_error;
+	char *domain;		/* malloc'd implicitly. */
+
+	/*
+	 * Filled in reply phase:
+	 */
+	gfarm_error_t rep_error;
+	gfarm_int32_t nhosts;
+	struct host **hosts;	/* malloc'd. */
+} GFM_PROTO_SCHEDULE_HOST_DOMAIN_context;
+
+static void
+GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_initialize(
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *cp)
+{
+	cp->req_error = GFARM_ERR_UNKNOWN;
+	cp->domain = NULL;
+
+	cp->rep_error = GFARM_ERR_UNKNOWN;
+	cp->nhosts = 0;
+	cp->hosts = NULL;
+}
+
+static void
+GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_finalize(GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *cp)
+{
+	free(cp->domain);
+	cp->domain = NULL;
+
+	free(cp->hosts);
+	cp->hosts = NULL;
+}
+
+/*
+ * GFM_PROTO_SCHEDULE_HOST_DOMAIN request receiver.
+ */
+static gfarm_error_t
+GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request(
+	enum request_reply_mode mode,
+	struct peer *peer,
+	size_t *sizep,
+	int skip,
+	struct relayed_request *r,
+	void *closure,
+	const char *diag)
+{
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *cp = 
+		(GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *)closure;
+
+	assert(cp != NULL);
+
+	/*
+	 * Note:
+	 *	You don't have to worry about the mode in this case.
+	 */
+	ret = gfm_server_get_request_with_vrelay(
+		peer, sizep, skip, r, diag,
+		"s", &cp->domain);
+
+	/*
+	 * A null string is allowed as a domain name.
+	 */
+	if (cp->domain == NULL) {
+		cp->req_error = GFARM_ERR_NO_MEMORY;
+	} else {
+		cp->req_error = ret;
+	}
+
+	if (cp->req_error != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: %s failed: %s",
+			diag, 
+			"GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request()",
+			gfarm_error_string(cp->req_error));
+	}
+	return ret;
+}
+
+static void *
+find_hosts_by_domain_visitor(struct host *hp, void *arg, int *st)
+{
+	(void)st;
+	const char *dom = (const char *)arg;
+
+	if (hp != NULL &&
+		host_is_valid(hp) && host_is_up(hp) &&
+		gfarm_host_is_in_domain(host_name(hp), dom))
+		return (hp);
+	else
+		return (NULL);
+}
+
+static struct host **
+find_hosts_by_domain(const char *domain, gfarm_int32_t *np)
+{
+	size_t n = 0;
+	struct host **ret =
+		(struct host **)host_iterate(
+			find_hosts_by_domain_visitor, (void *)domain,
+			sizeof(struct host *), 0, 0, &n);
+	*np = (gfarm_int32_t)(0x7fffffff & n);
+
+	return (ret);
+}
+
+static gfarm_error_t
+GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
+	enum request_reply_mode mode,
+	struct peer *peer,
+	size_t *sizep,
+	int skip,
+	void *closure,
+	const char *diag)
+{
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *cp = 
+		(GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *)closure;
+	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	bool got_error = false;
+
+	assert(cp != NULL);
+
+	if (!skip) {
+		gfarm_error_t rep_error = GFARM_ERR_UNKNOWN;
+		gfarm_error_t tmp;
+		gfarm_int32_t i;
+
+		if (mode != RELAY_TRANSFER) {
+			if (cp->req_error != GFARM_ERR_NO_ERROR) {
+				/*
+				 * We already got an error in request
+				 * phase. Just calculate a send size
+				 * and return.
+				 */
+				rep_error = cp->req_error;
+				goto calc_or_reply;
+			}
+
+			/*
+			 * Check validness of the parameters just ONCE
+			 * in !RELAY_TRANSFER mode phase.
+			 */
+
+			rep_error = wait_db_update_info(
+				peer, DBUPDATE_HOST, diag);
+			if (rep_error != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,	
+					"wait_db_update_info()",
+					gfarm_error_string(rep_error));
+				goto calc_or_reply;
+			}
+
+			giant_lock();
+			cp->hosts = find_hosts_by_domain(
+				cp->domain,
+				&cp->nhosts);
+			giant_unlock();
+
+			rep_error = GFARM_ERR_NO_ERROR;
+
+		} else {
+			/*
+			 * Otherwise, we already checked the validness
+			 * of parameters and the error code is stored
+			 * in the context.
+			 */
+			rep_error = cp->rep_error;
+		}
+
+	calc_or_reply:
+		tmp = gfm_server_put_reply_with_vrelay(
+			peer, sizep, diag, "i", rep_error);
+		if (rep_error != GFARM_ERR_NO_ERROR) {
+			/*
+			 * Nothing to do anymore.
+			 */
+			ret = tmp;
+			goto done;
+		}
+		/*
+		 * Return the first reply error.
+		 */
+		if (tmp != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: %s failed: %s",
+				diag,
+				"gfm_server_put_reply_with_vrelay()",
+				gfarm_error_string(tmp));
+			got_error = true;
+		} else {
+			ret = GFARM_ERR_NO_ERROR;
+		}
+
+		tmp = gfm_server_put_reply_with_vrelay(
+			peer, sizep, diag, "i", cp->nhosts);
+		if (tmp != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: %s failed: %s",
+				diag,
+				"gfm_server_put_reply_with_vrelay()",
+				gfarm_error_string(tmp));
+			if (got_error == false) {
+				ret = tmp;
+				got_error = true;
+			}
+		} else {
+			ret = GFARM_ERR_NO_ERROR;
+		}
+
+		giant_lock();
+		for (i = 0; i < cp->nhosts; i++) {
+			tmp = host_schedule_reply_with_vrelay(
+				cp->hosts[i], peer, sizep, diag);
+			if (tmp != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"%s: %s failed: %s",
+					diag,
+					"host_schedule_reply_with_vrelay()",
+					gfarm_error_string(tmp));
+				if (got_error == false) {
+					ret = tmp;
+					got_error = true;
+				} else {
+					ret = GFARM_ERR_NO_ERROR;
+				}
+			}
+		}
+		giant_unlock();
+
+	done:
+		cp->rep_error = rep_error;
+
+	} else {
+		ret = GFARM_ERR_NO_ERROR;
+		cp->rep_error = ret;
+	}
+
+	return ret;
+}
+
+#if 0
 static int
 up_and_domain_filter(struct host *h, void *d)
 {
@@ -1906,6 +2160,37 @@ gfm_server_schedule_host_domain(
 
 	return (e);
 }
+#else
+gfarm_error_t
+gfm_server_schedule_host_domain(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
+{
+	(void)sizep;
+	(void)from_client;
+
+	gfarm_error_t e;
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context c;
+	static const char diag[] =
+		macro_stringify(GFM_PROTO_SCHEDULE_HOST_DOMAIN);
+
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_initialize(&c);
+	e = gfm_server_request_reply_with_vrelaywait(
+		peer, xid, skip,
+		GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request,
+		GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply,
+		GFM_PROTO_SCHEDULE_HOST_DOMAIN,
+		DBUPDATE_HOST,
+		&c,
+		diag);
+	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_finalize(&c);
+	if (e != GFARM_ERR_NO_ERROR) { 
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
+			diag, gfarm_error_string(e));
+	}
+	return (e);
+}
+#endif
 
 gfarm_error_t
 gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
@@ -1937,3 +2222,104 @@ gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 }
 
 #endif /* TEST */
+
+/*
+ * A generic host hash iteration workhorse
+ *
+ * REQUISITE: giant_lock
+ */
+void *
+host_iterate(
+	/**
+	 * A function to be invoked at each iteration, so called a visitor.
+	 *
+	 *	@param [in] hp	A pointer of a struct host.
+	 *	@param [in] arg	An arbitarary arvument.
+	 *	@param [out] st	Set one if iteration should be stop.	
+	 *
+	 *	@return An arbitarary pointer. host_iterate() itself
+	 *	returns an array of this if it is not NULL.
+	 */
+	void * (*f)(struct host *hp, void *a, int *st),
+	void *arg,		/* The first argumrent of the f */
+	size_t esize,		/* A size of one element to be allocated */
+	size_t alloc_limit,	/* A limit # of elements to be
+				 * allocated (zero means no limit) */
+	size_t iter_limit, 	/* A limit # of iteration (zero means all) */
+	size_t *nelemp		/* Returns # of allocated elements */)
+{
+	/*
+	 * I really hate having the giant lock kinda long period of
+	 * time. In order to avoid it, just copy needed members (or
+	 * pointer of a struct host itself) from the host hash table.
+	 */
+
+	struct gfarm_hash_iterator it;
+	size_t nhosts = 0;
+	int nmatches = 0;
+	char *ret = NULL;
+	char *diag = "scan_host_cache";
+
+	FOR_ALL_HOSTS(&it) {
+		(void)host_iterator_access(&it);
+		nhosts++;
+	}
+
+	if (nhosts > 0) {
+		size_t i = 0;
+		size_t max_alloc;
+		size_t max_iter;
+		struct host *h;
+		void *a_elem;
+		char *dst;
+		int stop_iter;
+		int of;
+		size_t sz;
+
+		if (alloc_limit == 0)
+			max_alloc = nhosts;
+		else
+			max_alloc =
+				(alloc_limit < nhosts) ? alloc_limit : nhosts;
+
+		of = 0;
+		sz = gfarm_size_mul(&of, esize, max_alloc);
+		if (of == 0 && sz > 0)
+			ret = (char *)malloc(sz);
+		if (ret == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: insufficient memory to "
+				"allocate for %zu host(s) search results.",
+				diag, alloc_limit);
+			return (NULL);
+		}
+		dst = ret;
+
+		if (iter_limit == 0)
+			max_iter = nhosts;
+		else
+			max_iter =
+				(alloc_limit < nhosts) ? alloc_limit : nhosts;
+
+		FOR_ALL_HOSTS(&it) {
+			if (i >= max_alloc || i >= max_iter)
+				break;
+			h = host_iterator_access(&it);
+			stop_iter = 0;
+			if ((a_elem = (f)(h, arg, &stop_iter)) != NULL) {
+				(void)memcpy((void *)dst,
+					     (void *)&a_elem, esize);
+				dst += esize;
+				i++;
+			}
+			if (stop_iter)
+				break;
+		}
+		nmatches = i;
+	}
+
+	if (nelemp != NULL)
+		*nelemp = nmatches;
+
+	return ((void *)ret);
+}

@@ -15,6 +15,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "bool.h"
 
 #include "context.h"
 #include "patmatch.h"
@@ -1782,6 +1783,7 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 	GFM_PROTO_SCHEDULE_FILE_context *cp = 
 		(GFM_PROTO_SCHEDULE_FILE_context *)closure;
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
+	bool got_error = false;
 
 	assert(cp != NULL);
 
@@ -1896,8 +1898,9 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 				diag,
 				"gfm_server_put_reply_with_vrelay()",
 				gfarm_error_string(tmp));
-			if (ret == GFARM_ERR_NO_ERROR)
-				ret = tmp;
+			got_error = true;
+		} else {
+			ret = GFARM_ERR_NO_ERROR;
 		}
 
 		tmp = gfm_server_put_reply_with_vrelay(
@@ -1908,8 +1911,12 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 				diag,
 				"gfm_server_put_reply_with_vrelay()",
 				gfarm_error_string(tmp));
-			if (ret == GFARM_ERR_NO_ERROR)
+			if (got_error == false) {
 				ret = tmp;
+				got_error = true;
+			}
+		} else {
+			ret = GFARM_ERR_NO_ERROR;
 		}
 
 		giant_lock();
@@ -1922,9 +1929,13 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 					diag,
 					"host_schedule_reply_with_vrelay()",
 					gfarm_error_string(tmp));
+				if (got_error == false) {
+					ret = tmp;
+					got_error = true;
+				} else {
+					ret = GFARM_ERR_NO_ERROR;
+				}
 			}
-			if (ret == GFARM_ERR_NO_ERROR)
-				ret = tmp;
 		}
 		giant_unlock();
 
