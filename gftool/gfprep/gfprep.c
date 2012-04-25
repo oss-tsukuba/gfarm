@@ -329,24 +329,28 @@ static void
 gfprep_update_using_info(struct gfprep_host_info *info, int add_using,
 			 gfarm_int64_t add_filesize)
 {
+	static const char diag[] = "gfprep_update_using_info";
+
 	if (info == NULL)
 		return;
-	pthread_mutex_lock(&mutex_using);
+	gfarm_mutex_lock(&mutex_using, diag, "mutex_using");
 	info->n_using += add_using;
 	info->size_writing += add_filesize;
-	pthread_mutex_unlock(&mutex_using);
+	gfarm_mutex_unlock(&mutex_using, diag, "mutex_using");
 }
 
 static void
 gfprep_get_using_info(struct gfprep_host_info *info, int *n_using_p,
 		      gfarm_int64_t *size_writing_p)
 {
-	pthread_mutex_lock(&mutex_using);
+	static const char diag[] = "gfprep_get_using_info";
+
+	gfarm_mutex_lock(&mutex_using, diag, "mutex_using");
 	if (n_using_p)
 		*n_using_p = info->n_using;
 	if (size_writing_p)
 		*size_writing_p = info->size_writing;
-	pthread_mutex_unlock(&mutex_using);
+	gfarm_mutex_unlock(&mutex_using, diag, "mutex_using");
 }
 
 static int
@@ -720,8 +724,12 @@ static void
 gfprep_host_info_array_sort_for_src(int nhost_infos,
 				    struct gfprep_host_info **host_infos)
 {
+	static const char diag[] = "gfprep_host_info_array_sort_for_src";
+
+	gfarm_mutex_lock(&mutex_using, diag, "mutex_using");
 	qsort(host_infos, nhost_infos, sizeof(struct gfprep_host_info *),
 	      gfprep_host_info_compare_for_src);
+	gfarm_mutex_unlock(&mutex_using, diag, "mutex_using");
 }
 
 static int
@@ -747,8 +755,12 @@ static void
 gfprep_host_info_array_sort_for_dst(int nhost_infos,
 				    struct gfprep_host_info **host_infos)
 {
+	static const char diag[] = "gfprep_host_info_array_sort_for_dst";
+
+	gfarm_mutex_lock(&mutex_using, diag, "mutex_using");
 	qsort(host_infos, nhost_infos, sizeof(struct gfprep_host_info *),
 	      gfprep_host_info_compare_for_dst);
+	gfarm_mutex_unlock(&mutex_using, diag, "mutex_using");
 }
 
 static gfarm_error_t
@@ -1268,11 +1280,12 @@ enum pfunc_cb_type {
 static void
 pfunc_cb_start(void *data)
 {
+	static const char diag[] = "pfunc_cb_start";
 	struct pfunc_cb_data *cbd = data;
 
 	if (cbd == NULL)
 		return;
-	pthread_mutex_lock(&cb_mutex);
+	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	if (cbd->type == PFUNC_TYPE_COPY)
 		gfprep_debug("START COPY: %s (%s:%d) -> %s (%s:%d)",
 			     cbd->src_url,
@@ -1293,7 +1306,7 @@ pfunc_cb_start(void *data)
 		gfprep_debug("START REMOVE REPLICA: %s (%s:%d)",
 			     cbd->src_url, cbd->src_hi->hostname,
 			     cbd->src_hi->port);
-	pthread_mutex_unlock(&cb_mutex);
+	gfarm_mutex_unlock(&cb_mutex, diag, "cb_mutex");
 	if (opt.performance)
 		gettimeofday(&cbd->start, NULL);
 }
@@ -1301,6 +1314,7 @@ pfunc_cb_start(void *data)
 static void
 pfunc_cb_end(int success, void *data)
 {
+	static const char diag[] = "pfunc_cb_end";
 	struct pfunc_cb_data *cbd = data;
 	struct timeval end;
 
@@ -1310,7 +1324,7 @@ pfunc_cb_end(int success, void *data)
 		gfprep_update_using_info(cbd->src_hi, -1, 0);
 		gfprep_update_using_info(cbd->dst_hi, -1, -cbd->filesize);
 	}
-	pthread_mutex_lock(&cb_mutex);
+	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	if (success && opt.performance && opt.verbose) {
 		double usec;
 		gettimeofday(&end, NULL);
@@ -1362,8 +1376,8 @@ pfunc_cb_end(int success, void *data)
 			*cbd->done_p = 1;
 	}
 
-	pthread_cond_signal(&cb_cond);
-	pthread_mutex_unlock(&cb_mutex);
+	gfarm_cond_signal(&cb_cond, diag, "cb_cond");
+	gfarm_mutex_unlock(&cb_mutex, diag, "cb_mutex");
 
 	free(cbd->src_url);
 	free(cbd->dst_url);
@@ -2131,6 +2145,7 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 			struct gfarm_hash_table *target_hash_src,
 			int n_array_dst, struct gfprep_host_info **array_dst)
 {
+	static const char diag[] = "gfprep_connections_exec";
 	gfarm_error_t e;
 	char *src_url = NULL, *dst_url = NULL;
 	int i, retv, n_end, src_url_size = 0, dst_url_size = 0;
@@ -2150,7 +2165,7 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 	n_end = 0;
 	e = GFARM_ERR_NO_ERROR;
 next:
-	pthread_mutex_lock(&cb_mutex);
+	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	for (i = 0; i < n_conns; i++) {
 		if (done[i] == 1) {
 			e = gfprep_connection_job_next(&job, &conns[i]);
@@ -2196,14 +2211,14 @@ next:
 		timeout.tv_nsec = 0;
 		retv = pthread_cond_timedwait(&cb_cond, &cb_mutex, &timeout);
 		if (retv == ETIMEDOUT)
-			gfprep_debug("timeout");
-		pthread_mutex_unlock(&cb_mutex);
+			gfprep_debug("cb_cond timeout");
+		gfarm_mutex_unlock(&cb_mutex, diag, "cb_mutex");
 		goto next;
 	}
 	/* success */
 	e = GFARM_ERR_NO_ERROR;
 end:
-	pthread_mutex_unlock(&cb_mutex);
+	gfarm_mutex_unlock(&cb_mutex, diag, "cb_mutex");
 	for (i = 0; i < n_conns; i++)
 		gfprep_connection_job_free(&conns[i]);
 	if (src_url)
@@ -3033,12 +3048,12 @@ main(int argc, char *argv[])
 			gettimeofday(&now, NULL);
 			pending_timeout.tv_sec = now.tv_sec + 5;
 			pending_timeout.tv_nsec = now.tv_usec * 1000;
-			pthread_mutex_lock(&cb_mutex);
+			gfarm_mutex_lock(&cb_mutex, "main loop", "cb_mutex");
 			retv = pthread_cond_timedwait(&cb_cond, &cb_mutex,
 						      &pending_timeout);
 			if (retv == ETIMEDOUT)
 				gfprep_debug("pending timeout");
-			pthread_mutex_unlock(&cb_mutex);
+			gfarm_mutex_unlock(&cb_mutex, "main loop", "cb_mutex");
 			base_pending++;
 		} else if (entry->n_pending == 0)
 			entry->n_pending = base_pending;

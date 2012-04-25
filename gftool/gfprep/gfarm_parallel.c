@@ -20,6 +20,7 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h" /* gfarm_sigpipe_ignore() */
+#include "thrsubr.h"
 
 #include "gfprep.h"
 #include "gfarm_parallel.h"
@@ -63,6 +64,7 @@ struct gfpara {
 
 	pthread_t watch_stderr;
 	int watch_stderr_end;
+	pthread_mutex_t watch_stderr_mutex;
 };
 
 gfpara_proc_t *
@@ -79,7 +81,7 @@ struct gfpara_proc {
 	FILE *out;
 	FILE *err;
 	void *data; /* any */
-	int done;
+	int working;
 };
 
 pid_t
@@ -131,7 +133,15 @@ gfpara_watch_stderr(void *arg)
 				strerror(errno));
 			continue;
 		} else if (retv == 0) { /* timeout */
-			if (handle->watch_stderr_end)
+			int is_end;
+			gfarm_mutex_lock(&handle->watch_stderr_mutex,
+					 "gfpara_watch_stderr",
+					 "watch_stderr_mutex");
+			is_end = handle->watch_stderr_end;
+			gfarm_mutex_unlock(&handle->watch_stderr_mutex,
+					   "gfpara_watch_stderr",
+					   "watch_stderr_mutex");
+			if (is_end)
 				break;
 			continue;
 		}
@@ -155,6 +165,8 @@ gfpara_watch_stderr(void *arg)
 static void
 gfpara_watch_stderr_start(gfpara_t *handle)
 {
+	gfarm_mutex_init(&handle->watch_stderr_mutex,
+			 "gfpara_watch_stderr_start", "watch_stderr_mutex");
 	handle->watch_stderr_end = 0;
 	pthread_create(&handle->watch_stderr, NULL,
 		       gfpara_watch_stderr, handle);
@@ -163,7 +175,11 @@ gfpara_watch_stderr_start(gfpara_t *handle)
 static void
 gfpara_watch_stderr_stop(gfpara_t *handle)
 {
+	gfarm_mutex_lock(&handle->watch_stderr_mutex,
+			 "gfpara_watch_stderr_stop", "watch_stderr_mutex");
 	handle->watch_stderr_end = 1;
+	gfarm_mutex_unlock(&handle->watch_stderr_mutex,
+			 "gfpara_watch_stderr_stop", "watch_stderr_mutex");
 	pthread_join(handle->watch_stderr, NULL);
 }
 
@@ -253,7 +269,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 			gfpara_fatal("fdopen: %s", strerror(errno));
 		setvbuf(procs[i].in, (char *) NULL, _IOLBF, 0);
 		procs[i].data = NULL;
-		procs[i].done = 0;
+		procs[i].working = 0;
 		procs[i].handle = handle;
 	}
 	handle->n_procs = n_procs;
@@ -464,7 +480,6 @@ gfpara_thread(void *param)
 		assert(retv == GFPARA_NEXT);
 	}
 end:
-	proc->done = 1;
 	return (NULL);
 }
 
@@ -480,15 +495,13 @@ gfpara_communicate(void *param)
 		int eno = pthread_create(&procs[i].thread, NULL,
 					 gfpara_thread, &procs[i]);
 		if (eno == 0)
-			procs[i].done = 0; /* start */
-		else {
-			procs[i].done = -1; /* not work */
+			procs[i].working = 1;
+		else
 			fprintf(stderr, "pthread_create failed: %s\n",
 				strerror(eno));
-		}
 	}
 	for (i = 0; i < n_procs; i++) {
-		if (procs[i].done != -1)
+		if (procs[i].working)
 			pthread_join(procs[i].thread, NULL);
 	}
 	/* child processes done */
