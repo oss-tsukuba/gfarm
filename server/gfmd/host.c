@@ -2119,48 +2119,6 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
 	return ret;
 }
 
-#if 0
-static int
-up_and_domain_filter(struct host *h, void *d)
-{
-	const char *domain = d;
-
-	return (host_is_up(h) &&
-	    gfarm_host_is_in_domain(host_name(h), domain));
-}
-
-gfarm_error_t
-gfm_server_schedule_host_domain(
-	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
-	int from_client, int skip)
-{
-	gfarm_int32_t e;
-	char *domain;
-	struct relayed_request *relay;
-	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
-
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
-	      GFM_PROTO_SCHEDULE_HOST_DOMAIN, "s", &domain);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (skip) {
-		free(domain);
-		return (GFARM_ERR_NO_ERROR);
-	}
-	if (relay != NULL)
-		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX RELAY */
-
-	/* XXX FIXME too long giant lock */
-	giant_lock();
-	/* XXXRELAY FIXME, reply size is not correct */
-	e = host_schedule_reply_all(peer, xid, sizep,
-	    up_and_domain_filter, domain, diag);
-	giant_unlock();
-	free(domain);
-
-	return (e);
-}
-#else
 gfarm_error_t
 gfm_server_schedule_host_domain(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
@@ -2190,7 +2148,6 @@ gfm_server_schedule_host_domain(
 	}
 	return (e);
 }
-#endif
 
 gfarm_error_t
 gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
