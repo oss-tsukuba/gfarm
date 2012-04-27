@@ -214,8 +214,6 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 	gfp_iobuffer_export_credential_secsession_op,
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,
-	gfarm_iobuffer_read_notimeout_secsession_op,
-	gfarm_iobuffer_write_secsession_op,
 	gfarm_iobuffer_read_timeout_secsession_op,
 	gfarm_iobuffer_read_notimeout_secsession_op,
 	gfarm_iobuffer_write_secsession_op
