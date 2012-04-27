@@ -4087,15 +4087,18 @@ dir_entry_defer_db_removal(gfarm_ino_t dir_inum,
 	char *entry_name, int entry_len, gfarm_ino_t entry_inum)
 {
 	struct dir_entry_removal_todo *entry;
+	char *ename;
 
 	GFARM_MALLOC(entry);
-	if (entry == NULL) {
+	GFARM_MALLOC_ARRAY(ename, entry_len);
+	if (entry == NULL || ename == NULL) {
+		free(entry);
+		free(ename);
 		gflog_error(GFARM_MSG_1002827,
 		    "dir_entry (%llu name:%.*s) (%llu): "
 		    "no memory to record for removal",
 		    (unsigned long long)dir_inum, entry_len, entry_name,
 		    (unsigned long long)entry_inum);
-		free(entry_name);
 		return;
 	}
 	gflog_warning(GFARM_MSG_1002828, 
@@ -4103,8 +4106,10 @@ dir_entry_defer_db_removal(gfarm_ino_t dir_inum,
 	    (unsigned long long)dir_inum, entry_len, entry_name,
 	    (unsigned long long)entry_inum);
 
+	memcpy(ename, entry_name, entry_len);
+
 	entry->dir_inum = dir_inum;
-	entry->entry_name = entry_name;
+	entry->entry_name = ename;
 	entry->entry_len = entry_len;
 
 	entry->next = dir_entry_removal_list;
@@ -4350,8 +4355,11 @@ inode_cksum_add_one(void *closure,
 static void
 symlink_add_one(void *closure, gfarm_ino_t inum, char *source_path)
 {
-	if (symlink_add(inum, source_path) != GFARM_ERR_NO_ERROR)
-		free(source_path);
+	(void)symlink_add(inum, source_path);
+	/* abandon error */
+
+	/* symlink_defer_db_removal() doesn't defer access to source_path */
+	free(source_path);
 }
 
 gfarm_error_t
@@ -4435,6 +4443,8 @@ dir_entry_add_one(void *closure,
 	gfarm_ino_t entry_inum)
 {
 	(void)dir_entry_add(dir_inum, entry_name, entry_len, entry_inum);
+
+	/* abandon error */
 	free(entry_name);
 }
 
