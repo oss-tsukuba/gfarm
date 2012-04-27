@@ -159,6 +159,15 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 		break;
 	}
 	gfs_client_connection_free(gfs_server);
+	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
+	    retry > 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "error ocurred at retry for the operation after "
+		    "connection to gfsd was disconnected, "
+		    "so the operation possibly succeeded in the server."
+		    " error='%s'",
+		    gfarm_error_string(e));
+	}
 	return (e);
 }
 
