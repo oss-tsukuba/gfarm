@@ -246,7 +246,8 @@ gfarm_iobuffer_is_eof(struct gfarm_iobuffer *b)
 	return (IOBUFFER_IS_EMPTY(b) && b->read_eof);
 }
 
-void
+/* enqueue */
+static void
 gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 {
 	int space, rv;
@@ -278,13 +279,8 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 	}
 }
 
-void
-gfarm_iobuffer_read_timeout(struct gfarm_iobuffer *b, int *residualp)
-{
-	gfarm_iobuffer_read(b, residualp, 1);
-}
-
-int
+/* enqueue */
+static int
 gfarm_iobuffer_put(struct gfarm_iobuffer *b, const void *data, int len)
 {
 	int space, iolen;
@@ -315,7 +311,8 @@ gfarm_iobuffer_write_close(struct gfarm_iobuffer *b)
 	b->write_eof = 1;
 }
 
-void
+/* dequeue */
+static void
 gfarm_iobuffer_write(struct gfarm_iobuffer *b, int *residualp)
 {
 	int avail, rv;
@@ -396,7 +393,8 @@ gfarm_iobuffer_purge(struct gfarm_iobuffer *b, int *residualp)
 	return (purgelen);
 }
 
-int
+/* dequeue */
+static int
 gfarm_iobuffer_get(struct gfarm_iobuffer *b, void *data, int len)
 {
 	int avail, iolen;
@@ -493,18 +491,6 @@ gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
 	return (len - residual);
 }
 
-int
-gfarm_iobuffer_get_read_just(struct gfarm_iobuffer *b, void *data, int len)
-{
-	return (gfarm_iobuffer_get_read_x(b, data, len, 1, 1));
-}
-
-int
-gfarm_iobuffer_get_read(struct gfarm_iobuffer *b, void *data, int len)
-{
-	return (gfarm_iobuffer_get_read_x(b, data, len, 0, 1));
-}
-
 /*
  * gfarm_iobuffer_get_read*() wait until desired length of data is
  * received.
@@ -522,19 +508,6 @@ gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *b, void *data,
 		gfarm_iobuffer_read(b, just ? &tmp : NULL, do_timeout);
 	}
 	return (gfarm_iobuffer_get(b, data, len));
-}
-
-int
-gfarm_iobuffer_get_read_partial_just(struct gfarm_iobuffer *b,
-				     void *data, int len)
-{
-	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 1, 1));
-}
-
-int
-gfarm_iobuffer_get_read_partial(struct gfarm_iobuffer *b, void *data, int len)
-{
-	return (gfarm_iobuffer_get_read_partial_x(b, data, len, 0, 1));
 }
 
 /*
@@ -578,6 +551,7 @@ gfarm_iobuffer_get_read_x_ahead(struct gfarm_iobuffer *b, void *data, int len,
 	return (rlen);
 }
 
+/* this function is used to read from file. i.e. server/gfmd/journal_file.c */
 int
 gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
 {
@@ -588,6 +562,6 @@ gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
 		return (alen);
 	rlen = len - alen;
 	while (rlen > 0 && gfarm_iobuffer_is_readable(b) && b->error == 0)
-		gfarm_iobuffer_read(b, &rlen, 1);
+		gfarm_iobuffer_read(b, &rlen, 0);
 	return (len - rlen);
 }
