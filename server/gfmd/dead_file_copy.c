@@ -34,7 +34,9 @@ struct dead_file_copy {
 	gfarm_ino_t inum;
 	gfarm_uint64_t igen;
 
-	int is_kept; /* on dfc_keptq?: protected by giant lock */
+	int dfc_flags;	/* protected by giant lock */
+#define DFC_FLAG_KEPT		1 /* on dfc_keptq? */
+#define DFC_FLAG_KEPT_HARD	2 /* removed when replication is completed */
 
 	GFARM_HCIRCLEQ_ENTRY(dead_file_copy) same_inode_copies;
 };
@@ -52,12 +54,22 @@ struct dfc_keptq {
 /* IMPORTANT NOTE: functions should not sleep while holding dfc_keptq.mutex */
 static struct dfc_keptq dfc_keptq;
 
+/*
+ * PREREQUISITE: giant_lock
+ */
 void
-removal_pendingq_enqueue(struct dead_file_copy *dfc)
+dead_file_copy_schedule_removal(struct dead_file_copy *dfc)
 {
 	struct netsendq *qhost =
 	    abstract_host_get_sendq(dfc->qentry.abhost);
+	static const char diag[] = "dead_file_copy_schedule_removal";
 
+	if ((dfc->dfc_flags & DFC_FLAG_KEPT) != 0) {
+		gfarm_mutex_lock(&dfc_keptq.mutex, diag, "lock");
+		dfc->dfc_flags &= ~(DFC_FLAG_KEPT|DFC_FLAG_KEPT_HARD);
+		GFARM_HCIRCLEQ_REMOVE(&dfc->qentry, workq_entries);
+		gfarm_mutex_unlock(&dfc_keptq.mutex, diag, "unlock");
+	}
 	/* should success always, because of NETSENDQ_FLAG_QUEUEABLE_IF_DOWN */
 	(void)netsendq_add_entry(qhost, &dfc->qentry, 0);
 }
@@ -91,7 +103,9 @@ handle_removal_result(struct netsendq_entry *qentryp)
 		    (long long)dfc->inum, (long long)dfc->igen,
 		    abstract_host_get_name(dfc->qentry.abhost),
 		    gfarm_error_string(dfc->qentry.result));
-		removal_pendingq_enqueue(dfc);
+		giant_lock();
+		dead_file_copy_schedule_removal(dfc);
+		giant_unlock();
 	}
 }
 
@@ -161,10 +175,11 @@ dead_file_copy_host_becomes_up(struct host *host)
 	/* giant_lock prevents dfc from being freed */
 	GFARM_HCIRCLEQ_FOREACH_SAFE(qe, dfc_keptq.q, workq_entries, tmp) {
 		dfc = (struct dead_file_copy *)qe;
-		if (dead_file_copy_is_removable(dfc)) {
-			dfc->is_kept = 0;
+		if ((dfc->dfc_flags & DFC_FLAG_KEPT_HARD) == 0 &&
+		    dead_file_copy_is_removable(dfc)) {
+			dfc->dfc_flags &= ~DFC_FLAG_KEPT;
 			GFARM_HCIRCLEQ_REMOVE(qe, workq_entries);
-			removal_pendingq_enqueue(dfc);
+			dead_file_copy_schedule_removal(dfc);
 		}
 	}
 
@@ -200,9 +215,13 @@ dead_file_copy_host_removed(struct host *host)
 		dfc = (struct dead_file_copy *)qe;
 		if (abstract_host_to_host(dfc->qentry.abhost) != host)
 			continue;
+		if ((dfc->dfc_flags & DFC_FLAG_KEPT_HARD) != 0) {
+			/* still refered by struct file_replication */
+			continue;
+		}
 
+		dfc->dfc_flags &= ~DFC_FLAG_KEPT;
 		GFARM_HCIRCLEQ_REMOVE(qe, workq_entries);
-		dfc->is_kept = 0;
 		/*
 		 * to prevent functions which acquire dfc_kept.mutex
 		 * from sleeping
@@ -233,11 +252,14 @@ dead_file_copy_inode_status_changed(struct dead_file_copy_list *same_inode_list)
 	static const char diag[] = "dead_file_copy_inode_status_changed";
 
 	GFARM_HCIRCLEQ_FOREACH(dfc, same_inode_list->list, same_inode_copies) {
-		if (dfc->is_kept) {
+		/* kept && !kept_hard && removable ? */
+		if ((dfc->dfc_flags & (DFC_FLAG_KEPT|DFC_FLAG_KEPT_HARD)) ==
+		    DFC_FLAG_KEPT && dead_file_copy_is_removable(dfc)) {
 			gfarm_mutex_lock(&dfc_keptq.mutex, diag, "lock");
-			GFARM_HCIRCLEQ_REMOVE(dfc, same_inode_copies);
-			dfc->is_kept = 0;
+			dfc->dfc_flags &= ~DFC_FLAG_KEPT;
+			GFARM_HCIRCLEQ_REMOVE(&dfc->qentry, workq_entries);
 			gfarm_mutex_unlock(&dfc_keptq.mutex, diag, "unlock");
+			dead_file_copy_schedule_removal(dfc);
 		}
 	}
 }
@@ -248,26 +270,52 @@ dead_file_copy_inode_status_changed(struct dead_file_copy_list *same_inode_list)
  * LOCKS: XXX
  * SLEEPS: XXX
  */
-void
-dead_file_copy_mark_kept(struct dead_file_copy *dfc)
+static void
+dead_file_copy_mark_kept_internal(struct dead_file_copy *dfc, int hard)
 {
 	static const char diag[] = "dead_file_copy_mark_kept";
 
 	/* sanity check */
-	if (dfc->is_kept) {
+	if ((dfc->dfc_flags & DFC_FLAG_KEPT) != 0) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "dead copy %lld:%lld host %s: already kept",
+		    "dead copy %lld:%lld host %s: already kept %d->%d",
 		    (long long)dfc->inum, (long long)dfc->igen,
-		    abstract_host_get_name(dfc->qentry.abhost));
+		    abstract_host_get_name(dfc->qentry.abhost),
+		    (dfc->dfc_flags & DFC_FLAG_KEPT_HARD) != 0, hard);
+		if (((dfc->dfc_flags & DFC_FLAG_KEPT_HARD) != 0) != hard)
+			dfc->dfc_flags ^= DFC_FLAG_KEPT_HARD;
 		return;
 	}
 
 	gfarm_mutex_lock(&dfc_keptq.mutex, diag, "lock");
 
+	dfc->dfc_flags |= DFC_FLAG_KEPT;
+	if (hard)
+		dfc->dfc_flags |= DFC_FLAG_KEPT_HARD;
 	GFARM_HCIRCLEQ_INSERT_TAIL(dfc_keptq.q, &dfc->qentry, workq_entries);
-	dfc->is_kept = 1;
 
 	gfarm_mutex_unlock(&dfc_keptq.mutex, diag, "unlock");
+}
+
+void
+dead_file_copy_mark_kept_hard(struct dead_file_copy *dfc)
+{
+	dead_file_copy_mark_kept_internal(dfc, 1);
+}
+
+static void
+dead_file_copy_mark_kept_soft(struct dead_file_copy *dfc)
+{
+	dead_file_copy_mark_kept_internal(dfc, 0);
+}
+
+/*
+ * PREREQUISITE: giant_lock
+ */
+void
+dead_file_copy_change_kept_soft(struct dead_file_copy *dfc)
+{
+	dfc->dfc_flags &= ~DFC_FLAG_KEPT_HARD;
 }
 
 /*
@@ -472,7 +520,7 @@ dead_file_copy_alloc(gfarm_ino_t inum, gfarm_uint64_t igen, struct host *host)
 	dfc->qentry.abhost = host_to_abstract_host(host);
 	dfc->inum = inum;
 	dfc->igen = igen;
-	dfc->is_kept = 0;
+	dfc->dfc_flags = 0;
 
 	return (dfc);
 }
@@ -521,7 +569,7 @@ dead_file_copy_list_free_check(struct dead_file_copy_list *same_inode_list)
 }
 
 /*
- * PREREQUISITE: nothing (XXX host_name()?)
+ * PREREQUISITE: giant_lock
  * LOCKS: dfc_keptq.mutex, dbq.mutex
  * SLEEPS: yes (dbq.mutex)
  */
@@ -583,8 +631,10 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	static const char diag[] = "dead_file_copy_free";
 
 	gfarm_mutex_lock(&dfc_keptq.mutex, diag, "keptq lock");
-	if (dfc->is_kept)
+	if ((dfc->dfc_flags & DFC_FLAG_KEPT) != 0) {
+		dfc->dfc_flags &= ~(DFC_FLAG_KEPT|DFC_FLAG_KEPT_HARD);
 		GFARM_HCIRCLEQ_REMOVE(&dfc->qentry, workq_entries);
+	}
 	gfarm_mutex_unlock(&dfc_keptq.mutex, diag, "keptq unlock");
 
 	e = db_deadfilecopy_remove(dfc->inum, dfc->igen,
@@ -638,7 +688,9 @@ dead_file_copy_add_one(void *closure,
 	if (dfc != NULL) {
 		inode_dead_file_copy_added(inum, igen, host, dfc);
 		if (dead_file_copy_is_removable(dfc))
-			removal_pendingq_enqueue(dfc);
+			dead_file_copy_schedule_removal(dfc);
+		else
+			dead_file_copy_mark_kept_soft(dfc);
 	}
 
 }

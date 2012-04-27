@@ -947,7 +947,8 @@ replicate_on_new_node_done:
 				 * Give up the replication and remove
 				 * the old one
 				 */
-				removal_pendingq_enqueue(deferred_cleanup);
+				dead_file_copy_schedule_removal(
+				    deferred_cleanup);
 			}
 		}
 
@@ -1709,6 +1710,8 @@ inode_replication_start(struct inode *inode)
 	assert(ia != NULL);
 	if (ia->u.f.rstate != NULL)
 		file_replication_start(ia->u.f.rstate, inode->i_gen);
+	else if (inode->dead_copies != NULL)
+		dead_file_copy_inode_status_changed(inode->dead_copies);
 }
 
 gfarm_error_t
@@ -3627,7 +3630,7 @@ inode_replicated(struct file_replication *fr,
 		    file_replication_get_dst(fr), file_replication_get_gen(fr),
 		    &dfc);
 		if (e == GFARM_ERR_NO_ERROR) {
-			removal_pendingq_enqueue(dfc);
+			dead_file_copy_schedule_removal(dfc);
 		} else if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 			gflog_info(GFARM_MSG_1002433,
 			    "cannot remove an incomplete replica "
@@ -3657,9 +3660,10 @@ inode_replicated(struct file_replication *fr,
 		 */
 		if (src_errcode == GFARM_ERR_NO_ERROR &&
 		    dead_file_copy_is_removable(dfc))
-			removal_pendingq_enqueue(dfc);
-		else
-			dead_file_copy_mark_kept(dfc);
+			dead_file_copy_schedule_removal(dfc);
+		else /* change kept_hard -> kept_soft */
+			dead_file_copy_change_kept_soft(dfc);
+		/* otherwise this dfc is already kept */
 	} else if (e == GFARM_ERR_NO_ERROR) {
 		/* try to sweep kept queue */
 		if (inode->dead_copies != NULL)
@@ -3829,10 +3833,11 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 		    "remove_replica_entity(%lld, %lld, %s): no memory",
 		    (unsigned long long)inode->i_number,
 		    (unsigned long long)gen, host_name(spool_host));
-	} else if (deferred_cleanupp == NULL)
-		removal_pendingq_enqueue(dfc);
-	else {
-		dead_file_copy_mark_kept(dfc); /* prevent this from removed */
+	} else if (deferred_cleanupp == NULL) {
+		dead_file_copy_schedule_removal(dfc);
+	} else {
+		/* prevent this from removed */
+		dead_file_copy_mark_kept_hard(dfc);
 		*deferred_cleanupp = dfc;
 	}
 
