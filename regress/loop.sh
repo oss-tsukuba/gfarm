@@ -8,7 +8,7 @@ fail=0
 while :; do
 	echo "############## loop = $loop (fail = $fail) #################"
 
-	./regress.sh
+	$regress/regress.sh
 	exit_code=$?
 
 	case $exit_code in
