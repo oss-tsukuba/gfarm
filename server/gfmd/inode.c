@@ -4671,6 +4671,7 @@ symlink_add(gfarm_ino_t inum, char *source_path)
 {
 	gfarm_error_t e;
 	struct inode *inode = inode_lookup(inum);
+	char *s;
 
 	if (inode == NULL) {
 		gflog_error(GFARM_MSG_1000340,
@@ -4690,8 +4691,14 @@ symlink_add(gfarm_ino_t inum, char *source_path)
 		    (unsigned long long)inum);
 		symlink_defer_db_removal(inum, source_path);
 		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else if ((s = strdup(source_path)) == NULL) {
+		gflog_error(GFARM_MSG_1000342,
+		    "symlink_add_one: no memory %lld -> \"%s\"",
+		    (unsigned long long)inum, source_path);
+		e = GFARM_ERR_NO_MEMORY;
+		/* leave inode->u.c.s.l.source_path NULL: readlink()->EINVAL */
 	} else {
-		inode->u.c.s.l.source_path = source_path;
+		inode->u.c.s.l.source_path = s;
 		e = GFARM_ERR_NO_ERROR;
 	}
 	return (e);
