@@ -934,6 +934,8 @@ replicate_on_new_node_done:
 			assert(FILE_COPY_IS_VALID(copy));
 			e = remove_replica_entity(inode, old_gen, copy->host,
 			    FILE_COPY_IS_VALID(copy), &deferred_cleanup);
+			if (e != GFARM_ERR_NO_ERROR)
+				deferred_cleanup = NULL;
 			/* abandon `e' */
 
 			e = inode_replication_new(inode, spool_host, copy->host,
@@ -947,8 +949,9 @@ replicate_on_new_node_done:
 				 * Give up the replication and remove
 				 * the old one
 				 */
-				dead_file_copy_schedule_removal(
-				    deferred_cleanup);
+				if (deferred_cleanup != NULL)
+					dead_file_copy_schedule_removal(
+					    deferred_cleanup);
 			}
 		}
 
@@ -3661,9 +3664,8 @@ inode_replicated(struct file_replication *fr,
 		if (src_errcode == GFARM_ERR_NO_ERROR &&
 		    dead_file_copy_is_removable(dfc))
 			dead_file_copy_schedule_removal(dfc);
-		else /* change kept_hard -> kept_soft */
-			dead_file_copy_change_kept_soft(dfc);
-		/* otherwise this dfc is already kept */
+		else
+			dead_file_copy_mark_kept(dfc);
 	} else if (e == GFARM_ERR_NO_ERROR) {
 		/* try to sweep kept queue */
 		if (inode->dead_copies != NULL)
@@ -3830,14 +3832,12 @@ remove_replica_entity(struct inode *inode, gfarm_int64_t gen,
 	    &inode->dead_copies);
 	if (dfc == NULL) {
 		gflog_error(GFARM_MSG_1002260,
-		    "remove_replica_entity(%lld, %lld, %s): no memory",
+		    "removing old replica %lld:%lld host %s: no memory",
 		    (unsigned long long)inode->i_number,
 		    (unsigned long long)gen, host_name(spool_host));
 	} else if (deferred_cleanupp == NULL) {
 		dead_file_copy_schedule_removal(dfc);
-	} else {
-		/* prevent this from removed */
-		dead_file_copy_mark_kept_hard(dfc);
+	} else { /* this won't be removed until replication is completed */
 		*deferred_cleanupp = dfc;
 	}
 

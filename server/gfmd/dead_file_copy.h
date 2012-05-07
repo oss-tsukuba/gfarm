@@ -23,8 +23,7 @@ void dead_file_copy_host_removed(struct host *);
 struct dead_file_copy_list;
 void dead_file_copy_inode_status_changed(struct dead_file_copy_list *);
 
-void dead_file_copy_mark_kept_hard(struct dead_file_copy *);
-void dead_file_copy_change_kept_soft(struct dead_file_copy *);
+void dead_file_copy_mark_kept(struct dead_file_copy *);
 
 int dead_file_copy_count_by_inode(struct dead_file_copy_list *,
 	gfarm_uint64_t, int);
