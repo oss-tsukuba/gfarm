@@ -3608,8 +3608,11 @@ main(int argc, char **argv)
 {
 	int c, op = 0;
 
+	/* XXX: settings in gfmd.conf doesn't work in this case */
+	char *config  = getenv("GFARM_CONFIG_FILE");
+
 	debug_mode = 1;
-	gfarm_server_initialize(NULL, &argc, &argv);
+	gfarm_server_initialize(config, &argc, &argv);
 	gflog_set_priority_level(LOG_DEBUG);
 	gflog_set_message_verbose(99);
 
