@@ -31,7 +31,6 @@
 #include "thrsubr.h"
 
 #include "context.h"
-#include "liberror.h"
 #include "gfp_xdr.h"
 #include "hostspec.h"
 #include "sockopt.h"
