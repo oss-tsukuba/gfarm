@@ -770,7 +770,7 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen,
 	     dfc = dfc->allq_next) {
 
 		/* dfc->inum == igen case is handled by an invalid file_copy */
-		if (dfc->inum == inum && dfc->inum != igen &&
+		if (dfc->inum == inum && dfc->igen != igen &&
 		    (up_only ?
 		    host_is_up(dfc->host) : host_is_valid(dfc->host)))
 			n++;
