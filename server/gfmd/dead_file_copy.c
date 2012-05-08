@@ -769,7 +769,7 @@ dead_file_copy_count_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen,
 	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
 	     dfc = dfc->allq_next) {
 
-		/* dfc->inum == igen case is handled by an invalid file_copy */
+		/* dfc->igen == igen case is handled by an invalid file_copy */
 		if (dfc->inum == inum && dfc->igen != igen &&
 		    (up_only ?
 		    host_is_up(dfc->host) : host_is_valid(dfc->host)))
