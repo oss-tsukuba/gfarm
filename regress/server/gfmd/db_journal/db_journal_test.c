@@ -3549,7 +3549,7 @@ t_apply(void)
 	struct journal_file_reader *reader;
 	struct journal_file_writer *writer;
 	off_t wpos1, wpos2;
-	char msg[BUFSIZ];
+	char msg[BUFSIZ], *config;
 	int i;
 
 	unlink_test_file(filepath);
@@ -3567,6 +3567,8 @@ t_apply(void)
 	db_journal_apply_init();
 	db_journal_init_status();
 	db_journal_set_sync_op(t_no_sync);
+	if ((config = getenv("GFARM_CONFIG_FILE")) != NULL)
+		gfarm_config_set_filename(config);
 	gfarm_server_config_read();
 	gfarm_set_metadb_replication_enabled(0);
 	db_use(&empty_ops);
