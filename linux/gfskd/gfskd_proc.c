@@ -5,13 +5,9 @@
 #include <errno.h>
 #include <sys/param.h>
 #include <linux/fuse.h>
-
 #include <gfarm/gfarm.h>
 #include <gfarm/gflog.h>
-#include "timer.h"
-#include "gfutil.h"
 #include "context.h"
-#include "config.h"
 #include "gfsk_if.h"
 #include "gfskd.h"
 

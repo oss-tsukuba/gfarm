@@ -1,20 +1,11 @@
 #include <sys/time.h>
-#include <assert.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
-
 #include "quota_info.h"
 #include "gfm_client.h"
 #include "context.h"
-#include "hostspec.h"
 #include "auth.h"
 
 struct gfs_connection;
