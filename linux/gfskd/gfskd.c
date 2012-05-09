@@ -19,7 +19,6 @@
 #include "gfutil.h"
 #include "auth.h"
 #include "context.h"
-#include "liberror.h"
 #include "gfm_client.h"
 #include "metadb_server.h"
 #include "config.h"
