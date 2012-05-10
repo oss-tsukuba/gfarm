@@ -101,7 +101,8 @@ gfarm_get_hostname_by_url0(const char **pathp,
 				return (GFARM_ERR_NO_MEMORY);
 		} else
 			*hostnamep = hostname;
-	}
+	} else if (nohost == 0)
+		free(hostname);
 	if (portp != NULL) {
 		if (noport)
 			*portp = gfarm_metadb_server_port;
