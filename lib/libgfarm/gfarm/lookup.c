@@ -70,6 +70,7 @@ gfarm_get_hostname_by_url0(const char **pathp,
 		gflog_debug(GFARM_MSG_1001256,
 		    "Port missing in url (%s): %s", *pathp,
 		    gfarm_error_string(GFARM_ERR_GFARM_URL_PORT_IS_MISSING));
+		path = p;
 		goto finish;
 	}
 	p++; /* skip ":" */
