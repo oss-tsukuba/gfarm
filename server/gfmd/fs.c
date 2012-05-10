@@ -3165,7 +3165,7 @@ gfm_server_getdirentsplusxattr(struct peer *peer, gfp_xdr_xid_t xid,
 				/* not cached */
 				db_waitctx_init(&waitctx);
 				if (db_xattr_get(0, pp->st.st_ino, px->name,
-				    &px->value, &px->size, &waitctx) !=
+				    &px->value, &px->size, &waitctx) ==
 				    GFARM_ERR_NO_ERROR) {
 					/*
 					 * XXX this is slow, but we don't know
