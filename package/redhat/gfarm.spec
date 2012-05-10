@@ -209,7 +209,6 @@ mkdir -p $RPM_BUILD_ROOT
 	--libdir=%{lib_prefix} \
 	--sysconfdir=%{sysconfdir} \
 	--with-postgresql=/usr \
-	--with-openldap=/usr \
 	--with-openssl=/usr \
 	`test "%{globus}" -ne 0 && echo	\
 		--with-globus=%{globus_prefix} \
