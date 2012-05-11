@@ -746,23 +746,38 @@ gfm_server_fsngroup_get_by_hostname(
 		goto bailout;
 	}
 
+	/*
+	 * XXX FIXME:
+	 *
+	 *	We should take good care of the case like: The h is
+	 *	valid in mode != RELAY_TRANSFER but not valid in mode
+	 *	== RELAY_TRANSFER. Need a context like
+	 *	GFM_PROTO_SCHEDULE_HOST_DOMAIN.
+	 */
 	if (relay == NULL) {
-		struct host *h = NULL;
 
 		/* do not relay RPC to master gfmd */
 
-		giant_lock();
+		if (hostname != NULL && hostname[0] != '\0') {
+			struct host *h = NULL;
 
-		h = host_lookup(hostname);
-		if (h != NULL) {
-			fsngroupname = strdup(host_fsngroup(h));
+			giant_lock();
+			if ((h = host_lookup(hostname)) != NULL)
+				fsngroupname = strdup(host_fsngroup(h));
+			giant_unlock();
+
+			if (h == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"host \"%s\" does not exist.",
+					hostname);
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+			}
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"host does not exists");
-			e = GFARM_ERR_NO_SUCH_OBJECT;
+				"an invalid hostname parameter (nul).");
+			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
 
-		giant_unlock();
 	}
 
 	if (fsngroupname != NULL)
