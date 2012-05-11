@@ -2163,7 +2163,6 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 		done[i] = 1;
 	}
 	n_end = 0;
-	e = GFARM_ERR_NO_ERROR;
 next:
 	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	for (i = 0; i < n_conns; i++) {
@@ -2607,6 +2606,8 @@ main(int argc, char *argv[])
 						(src_base_name[0] == '/' ?
 						 (src_base_name + 1) :
 						 src_base_name));
+					if (retv == -1)
+						gfprep_fatal("no memory");
 					if (gfprep_is_existed(
 						    dst_is_gfarm, tmp_dst_file,
 						    NULL, &e)) {
