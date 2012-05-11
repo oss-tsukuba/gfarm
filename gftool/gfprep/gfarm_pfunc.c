@@ -19,6 +19,7 @@
 #include "queue.h" /* for gfs_pio.h */
 #include <openssl/evp.h> /* for gfs_pio.h */
 #include "gfs_pio.h"
+#include "thrsubr.h"
 
 #include "gfprep.h"
 #include "gfarm_parallel.h"
@@ -34,6 +35,8 @@ struct gfarm_pfunc {
 	gfarm_int64_t simulate_KBs;
 	char *copy_buf;
 	int copy_bufsize;
+	int is_end;
+	pthread_mutex_t is_end_mutex;
 };
 
 struct gfarm_pfunc_cmd {
@@ -612,14 +615,35 @@ pfunc_entry_free(gfarm_pfunc_cmd_t *entp)
 }
 
 static int
+pfunc_is_end(gfarm_pfunc_t *handle)
+{
+	static const char diag[] = "pfunc_is_end";
+	int res;
+
+	gfarm_mutex_lock(&handle->is_end_mutex, diag, "is_end_mutex");
+	res = handle->is_end;
+	gfarm_mutex_unlock(&handle->is_end_mutex, diag, "is_end_mutex");
+	return (res);
+}
+
+static void
+pfunc_set_end(gfarm_pfunc_t *handle)
+{
+	static const char diag[] = "pfunc_set_end";
+
+	gfarm_mutex_lock(&handle->is_end_mutex, diag, "is_end_mutex");
+	handle->is_end = 1;
+	gfarm_mutex_unlock(&handle->is_end_mutex, diag, "is_end_mutex");
+}
+
+static int
 pfunc_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 {
 	gfarm_pfunc_t *handle = param;
 	gfarm_error_t e;
 	gfarm_pfunc_cmd_t ent;
-	static int is_end = 0;
 
-	if (interrupt || is_end) {
+	if (interrupt || pfunc_is_end(handle)) {
 		gfpara_data_set(proc, NULL);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
 		return (GFPARA_NEXT);
@@ -628,13 +652,13 @@ pfunc_send(FILE *child_in, gfpara_proc_t *proc, void *param, int interrupt)
 	if (e == GFARM_ERR_NO_SUCH_OBJECT) { /* finish and empty */
 		gfpara_data_set(proc, NULL);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
-		is_end = 1;
+		pfunc_set_end(handle);
 		return (GFPARA_NEXT);
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: fifo: %s\n", gfarm_error_string(e));
 		gfpara_data_set(proc, NULL);
 		gfpara_send_int(child_in, PFUNC_CMD_TERMINATE);
-		is_end = 1;
+		pfunc_set_end(handle);
 		return (GFPARA_NEXT);
 	}
 	gfpara_send_int(child_in, ent.command);
@@ -717,6 +741,9 @@ gfarm_pfunc_start(gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
 	handle->copy_bufsize = copy_bufsize;
 	handle->cb_start = cb_start;
 	handle->cb_end = cb_end;
+	handle->is_end = 0;
+	gfarm_mutex_init(&handle->is_end_mutex, "gfarm_pfunc_start",
+			 "is_end_mutex");
 	e = gfpara_init(&handle->gfpara_handle, n_parallel,
 			pfunc_child, handle,
 			pfunc_send, handle, pfunc_recv, handle, NULL, NULL);

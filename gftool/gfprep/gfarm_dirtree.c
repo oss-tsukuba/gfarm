@@ -255,6 +255,8 @@ dirtree_local_lstat(const char *path, struct stat *stp)
 	retv = lstat(path, stp);
 	if (retv == -1) {
 		save_errno = errno;
+		fprintf(stderr, "ERROR: lstat(%s): %s\n",
+			path, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -331,8 +333,11 @@ dirtree_gfarm_lstat(const char *path, struct stat *stp)
 	gfarm_error_t e;
 
 	e = gfs_lstat(path, &st);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "ERROR: gfs_lstat(%s): %s\n",
+			path, gfarm_error_string(e));
 		return (e);
+	}
 	dirtree_convert_stat(&st, stp);
 	gfs_stat_free(&st);
 	return (GFARM_ERR_NO_ERROR);
@@ -429,7 +434,7 @@ dents_retry:
 		gfpara_send_int(tmpfp, DIRTREE_STAT_GET_DENTS_OK);
 dents_loop:
 		e = func_readdirplus(&dh, &dent, &src_st);
-		if (e != GFARM_ERR_NO_ERROR) { /* end of directory */
+		if (e != GFARM_ERR_NO_ERROR) {
 			if (gfm_client_is_connection_error(e)) {
 				fclose(tmpfp);
 				(void) func_closedir(&dh);
@@ -439,6 +444,7 @@ dents_loop:
 			}
 			if (e != GFARM_ERR_NO_SUCH_OBJECT)
 				goto dents_error;
+			/* end of directory */
 			e = func_closedir(&dh);
 			if (gfm_client_is_connection_error(e)) {
 				fclose(tmpfp);
@@ -449,13 +455,19 @@ dents_loop:
 			rewind(tmpfp);
 			for (;;) {
 				retv = fread(buf, 1, sizeof(buf), tmpfp);
-				if (ferror(tmpfp))
+				if (ferror(tmpfp)) {
+					fprintf(stderr,
+						"FATAL: fread() failed\n");
 					goto dents_error;
+				}
 				if (retv == 0)
 					break; /* EOF */
 				fwrite(buf, 1, retv, to_parent);
-				if (ferror(to_parent))
+				if (ferror(to_parent)) {
+					fprintf(stderr,
+						"FATAL: fwrite() failed\n");
 					goto dents_error;
+				}
 				if (retv < (int)sizeof(buf))
 					break; /* EOF */
 			}
@@ -469,10 +481,9 @@ dents_loop:
 			free(src_dir);
 			goto next_command; /* success */
 dents_error:
-			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 			fprintf(stderr,
-				"FATAL: cannot get directory: %s\n", src_dir);
-			fflush(stderr);
+				"FATAL: cannot read directory: %s\n", src_dir);
+			gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 			fclose(tmpfp);
 			free(subpath);
 			free(src_dir);
@@ -583,8 +594,7 @@ finfo_retry2:
 			}
 			if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
 				fprintf(stderr, "ERROR: lstat(%s): %s\n",
-					dst_path,
-					gfarm_error_string(e));
+					dst_path, gfarm_error_string(e));
 			/* dst does not exist */
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
 			free(subpath);
@@ -656,6 +666,8 @@ finfo_retry3:
 		goto term;
 		/* ---------------------------------- */
 	default:
+		fprintf(stderr, "ERROR: unexpected DIRTREE_CMD: %d\n",
+			command);
 		gfpara_send_int(to_parent, DIRTREE_STAT_NG);
 	}
 term: /* -------------------------------------------------------- */
