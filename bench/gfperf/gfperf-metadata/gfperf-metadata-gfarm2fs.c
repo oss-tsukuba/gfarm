@@ -297,7 +297,7 @@ do_posix_rename(struct directory_names *names)
 	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
-		e = rename(tmp->names[i], names->names[i]);
+		rename(tmp->names[i], names->names[i]);
 
 	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);
@@ -382,7 +382,7 @@ do_posix_symlink(struct directory_names *names)
 	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
-		e = unlink(tmp->names[i]);
+		unlink(tmp->names[i]);
 
 	free_directory_names(tmp);
 	return (GFARM_ERR_NO_ERROR);

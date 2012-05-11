@@ -83,6 +83,10 @@ do_copy() {
 		}
 		if (gfsd_hostname == NULL) {
 			e = gfs_replica_info_by_name(dst_filename, 0, &ri);
+			if (e != GFARM_ERR_NO_ERROR) {
+				free(buf);
+				return (e);
+			}
 			gfsd_hostname = strdup(gfs_replica_info_nth_host(ri,
 									 0));
 			gfs_replica_info_free(ri);

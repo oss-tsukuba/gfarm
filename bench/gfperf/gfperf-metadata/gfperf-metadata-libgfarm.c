@@ -311,7 +311,7 @@ do_libgfarm_rename(struct directory_names *names)
 	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
-		e = gfs_rename(tmp->names[i], names->names[i]);
+		gfs_rename(tmp->names[i], names->names[i]);
 
 
 	free_directory_names(tmp);
@@ -398,7 +398,7 @@ do_libgfarm_symlink(struct directory_names *names)
 	       loop_number, r.average, unit, get_middle_end(&r));
 
 	for (i = 0; i <= names->n; i++)
-		e = gfs_unlink(tmp->names[i]);
+		gfs_unlink(tmp->names[i]);
 
 
 	free_directory_names(tmp);
