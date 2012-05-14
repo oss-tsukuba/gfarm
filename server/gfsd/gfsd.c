@@ -2368,7 +2368,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	struct replication_request *rep = qd->head;
 	char *path;
 	struct gfs_connection *src_gfsd;
-	int fds[2];
+	int save_errno, fds[2];
 	pid_t pid = -1;
 	struct replication_errcodes errcodes;
 	int local_fd, rv;
@@ -2415,8 +2415,20 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		e = gfs_client_replica_recv(src_gfsd, rep->ino, rep->gen,
 		    local_fd);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1002187, "%s: replica_recv: %s",
-			    diag, gfarm_error_string(e));
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: replica_recv %lld:%lld: %s",
+			    diag, (long long)rep->ino, (long long)rep->gen,
+			    gfarm_error_string(e));
+		}
+		rv = close(local_fd);
+		if (rv == 0) {
+			save_errno = 0;
+		} else {
+			save_errno = errno;
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: replica_recv %lld:%lld: close: %s",
+			    diag, (long long)rep->ino, (long long)rep->gen,
+			    strerror(save_errno));
 		}
 		/*
 		 * XXX FIXME
@@ -2427,10 +2439,11 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		    e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
 		    e == GFARM_ERR_PERMISSION_DENIED) {
 			errcodes.src_errcode = e;
-			errcodes.dst_errcode = GFARM_ERR_NO_ERROR;
+			errcodes.dst_errcode = gfarm_errno_to_error(save_errno);
 		} else {
 			errcodes.src_errcode = GFARM_ERR_NO_ERROR;
-			errcodes.dst_errcode = e;
+			errcodes.dst_errcode = e != GFARM_ERR_NO_ERROR ? e :
+			    gfarm_errno_to_error(save_errno);
 		}
 		if ((rv = write(fds[1], &errcodes, sizeof(errcodes))) == -1)
 			gflog_error(GFARM_MSG_1002188, "%s: write pipe: %s",
