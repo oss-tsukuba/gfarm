@@ -1076,12 +1076,15 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	char **attrpatterns = NULL, *attrpattern;
-	int i, j, eof, no_memory = 0;
+	int i, j, eof;
 
 	if (!skip) {
 		GFARM_MALLOC_ARRAY(attrpatterns, nattrpatterns);
-		if (attrpatterns == NULL)
-			no_memory = 1;
+		/*
+		 * NOTE: We won't return GFARM_ERR_NO_MEMORY,
+		 * but returns GFARM_ERR_NO_ERROR with *attrpatternsp == NULL,
+		 * to continue protocol processing even in no memory case.
+		 */
 	}
 	for (i = 0; i < nattrpatterns; i++) {
 		if (sizep == NULL)
@@ -1112,8 +1115,6 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 	}
 	if (!skip)
 		*attrpatternsp = attrpatterns;
-	if (no_memory)
-		return (GFARM_ERR_NO_MEMORY);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1122,133 +1123,120 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	gfarm_error_t e_ret, e_rpc;
 	gfarm_int32_t flags, nattrpatterns, fd;
-	char **attrpatterns = NULL;
-	int i, j;
+	char **attrpatterns;
+	int i, j, needs_free = 0;
 	struct host *spool_host = NULL;
 	struct process *process;
 	struct inode *inode;
 	struct gfs_stat st;
 	size_t nxattrs;
-	struct xattr_list *xattrs = NULL, *px;
+	struct xattr_list *xattrs, *px;
 	struct db_waitctx waitctx;
 	static const char diag[] = "GFM_PROTO_FGETATTRPLUS";
 
-	st.st_user = NULL;
-	st.st_group = NULL;
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	memset(&st, 0, sizeof(st));
+#endif
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "ii",
+	e_ret = gfm_server_get_request(peer, sizep, diag, "ii",
 	    &flags, &nattrpatterns);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getattrplus request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
 
-	e2 = gfm_server_recv_attrpatterns(peer, sizep, skip, nattrpatterns,
+	e_ret = gfm_server_recv_attrpatterns(peer, sizep, skip, nattrpatterns,
 	    &attrpatterns, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	/* don't have to free attrpatterns in the return case */
+	if (e_ret != GFARM_ERR_NO_ERROR || skip)
+		return (e_ret);
 
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		/* don't have to free attrpatterns in this case */
-		attrpatterns = NULL;
-		goto end;
-	}
-	e2 = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	/* NOTE: attrpatterns may be NULL here in case of memory shortage */
+
+	if (attrpatterns == NULL) {
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else if ((e_rpc = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e_rpc));
 	}
 
 	giant_lock();
-	if (e != GFARM_ERR_NO_ERROR) {
+
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		;
 	} else if (!from_client &&
 	    (spool_host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002497,
 			"operation is not permitted");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		/* Continue processing. */
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002498,
 			"operation is not permitted: peer_get_process() "
 			"failed");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		/* Continue processing. */
-	} else if ((e2 = peer_fdpair_get_current(peer, &fd)) !=
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e_rpc = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002499,
 			"peer_fdpair_get_current() failed: %s",
-			gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	} else if ((e2 = process_get_file_inode(process, fd, &inode)) !=
+			gfarm_error_string(e_rpc));
+	} else if ((e_rpc = process_get_file_inode(process, fd, &inode)) !=
 	    GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	} else if ((e2 = inode_get_stat(inode, &st)) !=
+		;
+	} else if ((e_rpc = inode_get_stat(inode, &st)) !=
 	    GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	} else if ((e2 = inode_xattr_list_get_cached_by_patterns(
-	    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs)) !=
-	    GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	}
-
-	for (j = 0; j < nxattrs && e == GFARM_ERR_NO_ERROR; j++) {
-		px = &xattrs[j];
-		if (px->value == NULL) {
-			/* not cached */
-			db_waitctx_init(&waitctx);
-			if (db_xattr_get(0, st.st_ino, px->name, &px->value,
-			    &px->size, &waitctx) == GFARM_ERR_NO_ERROR) {
-				/*
-				 * XXX this is slow, but we don't know
-				 * the safe window size
-				 */
-				giant_unlock();
-				dbq_waitret(&waitctx);
-				giant_lock();
-			}
-			db_waitctx_fini(&waitctx);
-			/* if error happens, px->size == 0 here */
+		;
+	} else if ((e_rpc = inode_xattr_list_get_cached_by_patterns(
+	    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs))
+	    != GFARM_ERR_NO_ERROR) {
+		xattrs = NULL;
+		/* workaround gcc warning: may be used uninitialized */
+		nxattrs = 0;
+	} else {
+		needs_free = 1;
+		e_rpc = inode_xattr_list_get_cached_by_patterns(
+		    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs);
+		if (e_rpc != GFARM_ERR_NO_ERROR) {
+			xattrs = NULL;
+			nxattrs = 0;
 		}
-		e2 = acl_convert_for_getxattr(inode, px->name, &px->value,
-		    &px->size);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1002852,
-			    "acl_convert_for_getxattr() failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
+		for (j = 0; j < nxattrs; j++) {
+			px = &xattrs[j];
+			if (px->value == NULL) {
+				/* not cached */
+				db_waitctx_init(&waitctx);
+				e_rpc = db_xattr_get(0, st.st_ino, px->name,
+				    &px->value, &px->size, &waitctx);
+				if (e_rpc == GFARM_ERR_NO_ERROR) {
+					/*
+					 * XXX this is slow, but we don't know
+					 * the safe window size
+					 */
+					giant_unlock();
+					e_rpc = dbq_waitret(&waitctx);
+					giant_lock();
+				}
+				db_waitctx_fini(&waitctx);
+				/* if error happens, px->value == NULL here */
+				if (e_rpc != GFARM_ERR_NO_ERROR)
+					break;
+			}
+			e_rpc = acl_convert_for_getxattr(inode, px->name,
+			    &px->value, &px->size);
+			if (e_rpc != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_1002852,
+				    "acl_convert_for_getxattr() failed: %s",
+				    gfarm_error_string(e_rpc));
+				break;
+			}
 		}
 	}
 
 	giant_unlock();
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "llilsslllililii",
+	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc,
+	    "llilsslllililii",
 	    st.st_ino, st.st_gen, st.st_mode, st.st_nlink,
 	    st.st_user, st.st_group, st.st_size,
 	    st.st_ncopy,
@@ -1256,46 +1244,34 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    st.st_mtimespec.tv_sec, st.st_mtimespec.tv_nsec,
 	    st.st_ctimespec.tv_sec, st.st_ctimespec.tv_nsec,
 	    nxattrs);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1002500,
-		    "%s@%s: %s replying: %s",
-		    peer_get_username(peer),
-		    peer_get_hostname(peer),
-		    diag, gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (e != GFARM_ERR_NO_ERROR)
-		goto end;
-
-	for (j = 0; j < nxattrs; j++) {
-		px = &xattrs[j];
-		e2 = gfp_xdr_send(client, "sb", px->name, px->size, px->value);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1002501,
-			    "%s@%s: %s returing xattr: %s",
-			    peer_get_username(peer),
-			    peer_get_hostname(peer),
-			    diag, gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+	/* if network error doesn't happen, e_ret == e_rpc here */
+	if (e_ret == GFARM_ERR_NO_ERROR) {
+		for (j = 0; j < nxattrs; j++) {
+			px = &xattrs[j];
+			e_ret = gfp_xdr_send(client, "sb",
+			    px->name, px->size, px->value);
+			if (e_ret != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_1002501,
+				    "%s@%s: %s returing xattr: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    diag, gfarm_error_string(e_ret));
+				break;
+			}
 		}
 	}
 
-end:
-	free(st.st_user);
-	free(st.st_group);
-	if (xattrs != NULL)
+	if (needs_free) {
+		free(st.st_user);
+		free(st.st_group);
 		inode_xattr_list_free(xattrs, nxattrs);
-
+	}
 	if (attrpatterns != NULL) {
 		for (i = 0; i < nattrpatterns; i++)
 			free(attrpatterns[i]);
 		free(attrpatterns);
 	}
-	return (e);
+	return (e_ret);
 }
 
 gfarm_error_t
@@ -2777,7 +2753,7 @@ gfm_server_getdirents(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	gfarm_error_t e_ret, e_rpc;
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
@@ -2790,106 +2766,77 @@ gfm_server_getdirents(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	} *p = NULL;
 	static const char diag[] = "GFM_PROTO_GETDIRENTS";
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "i", &n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirents request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
+	e_ret = gfm_server_get_request(peer, sizep, diag, "i", &n);
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS_DIRENT, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	e_rpc = wait_db_update_info(peer, DBUPDATE_FS_DIRENT, diag);
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e_rpc));
 		/* Continue processing. */
 	}
 	giant_lock();
 
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		; /* Continue processing. */
-	} else if ((e2 = fs_dir_get(peer, from_client, &n, &process, &fd,
+	} else if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
 	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001920, "fs_dir_get() failed: %s",
-			gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+			gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL) {
 		gflog_debug(GFARM_MSG_1001921, "allocation of array failed");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_NO_MEMORY;
-		/* Continue processing. */
-	}
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else { /* note: (n == 0) means the end of the directory */
+		for (i = 0; i < n; ) {
+			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL)
+				break;
+			p[i].inum = inode_get_number(entry_inode);
+			p[i].type =
+			    gfs_mode_to_type(inode_get_mode(entry_inode));
 
-	/* Note: (n == 0) means the end of the directory. */
-	for (i = 0; i < n && e == GFARM_ERR_NO_ERROR; ) {
-		e2 = dir_cursor_get_name_and_inode(dir, &cursor,
-		    &p[i].name, &entry_inode);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
-		} else if (p[i].name == NULL)
-			break;
-		p[i].inum = inode_get_number(entry_inode);
-		p[i].type = gfs_mode_to_type(inode_get_mode(entry_inode));
-
-		i++;
-		if (!dir_cursor_next(dir, &cursor))
-			break;
-	}
-	if (e == GFARM_ERR_NO_ERROR) {
-		fs_dir_remember_cursor(peer, process, fd, dir,
-		    &cursor, n == 0);
+			i++;
+			if (!dir_cursor_next(dir, &cursor))
+				break;
+		}
+		if (e_rpc == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			if (i > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
+		}
 		n = i;
-		if (n > 0) /* XXX is this check necessary? */
-			inode_accessed(inode);
 	}
 
 	giant_unlock();
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirents request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-
-	for (i = 0; i < n; i++) {
-		e2 = gfp_xdr_send(client, "sil",
-		    p[i].name, p[i].type, p[i].inum);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000386,
-			    "%s@%s: getdirents: %s",
-			    peer_get_username(peer),
-			    peer_get_hostname(peer),
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc, "i", n);
+	/* if network error doesn't happen, e_ret == e_rpc here */
+	if (e_ret == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			e_ret = gfp_xdr_send(client, "sil",
+			    p[i].name, p[i].type, p[i].inum);
+			if (e_ret != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_1000386,
+				    "%s@%s: getdirents: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    gfarm_error_string(e_ret));
+				break;
+			}
 		}
 	}
-
-end:
 	if (p != NULL) {
 		for (i = 0; i < n; i++)
 			free(p[i].name);
 		free(p);
 	}
-	return (e);
+	return (e_ret);
 }
 
 gfarm_error_t
@@ -2897,7 +2844,7 @@ gfm_server_getdirentsplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	gfarm_error_t e_ret, e_rpc;
 	gfarm_int32_t fd, n, i;
 	struct process *process;
 	struct inode *inode, *entry_inode;
@@ -2909,120 +2856,89 @@ gfm_server_getdirentsplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	} *p = NULL;
 	static const char diag[] = "GFM_PROTO_GETDIRENTSPLUS";
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "i", &n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirentsplus request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
+	e_ret = gfm_server_get_request(peer, sizep, diag, "i", &n);
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	e2 = wait_db_update_info(peer,
+	e_rpc = wait_db_update_info(peer,
 	    DBUPDATE_FS_DIRENT | DBUPDATE_USER | DBUPDATE_GROUP, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e_rpc));
 		/* Continue processing. */
 	}
 	giant_lock();
 
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		; /* Continue processing. */
-	} else if ((e2 = fs_dir_get(peer, from_client, &n, &process, &fd,
-		    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR) {
+	} else if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
+	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001923, "fs_dir_get() failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		    gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_MALLOC_ARRAY(p,  n) == NULL) {
 		gflog_debug(GFARM_MSG_1001924, "allocation of array failed");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_NO_MEMORY;
-		/* Continue processing. */
-	}
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else { /* note: (n == 0) means the end of the directory */
+		for (i = 0; i < n; ) {
+			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL) {
+				gflog_debug(GFARM_MSG_1001925,
+					"dir_cursor_get_name_and_inode() "
+					"failed: %s",
+					gfarm_error_string(e_rpc));
+				break;
+			}
+			if ((e_rpc = inode_get_stat(entry_inode, &p[i].st)) !=
+			    GFARM_ERR_NO_ERROR) {
+				free(p[i].name);
+				gflog_debug(GFARM_MSG_1001926,
+					"inode_get_stat() failed: %s",
+					gfarm_error_string(e_rpc));
+				break;
+			}
 
-	/* Note: (n == 0) means the end of the directory. */
-	for (i = 0; i < n && e == GFARM_ERR_NO_ERROR; ) {
-		e2 = dir_cursor_get_name_and_inode(dir, &cursor,
-		    &p[i].name, &entry_inode);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001925,
-			    "dir_cursor_get_name_and_inode() failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
-		} else if (p[i].name == NULL)
-			break;
-		if ((e2 = inode_get_stat(entry_inode, &p[i].st)) !=
-		    GFARM_ERR_NO_ERROR) {
-			free(p[i].name);
-			gflog_debug(GFARM_MSG_1001926,
-			    "inode_get_stat() failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
+			i++;
+			if (!dir_cursor_next(dir, &cursor))
+				break;
 		}
-
-		i++;
-		if (!dir_cursor_next(dir, &cursor))
-			break;
-	}
-	if (e == GFARM_ERR_NO_ERROR) {
-		fs_dir_remember_cursor(peer, process, fd, dir,
-		    &cursor, n == 0);
+		if (e_rpc == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			if (i > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
+		}
 		n = i;
-		if (n > 0) /* XXX is this check necessary? */
-			inode_accessed(inode);
 	}
 
 	giant_unlock();
+	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc, "i", n);
+	/* if network error doesn't happen, e_ret == e_rpc here */
+	if (e_ret == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			struct gfs_stat *st = &p[i].st;
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirentsplus reply failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-
-	for (i = 0; i < n; i++) {
-		struct gfs_stat *st = &p[i].st;
-
-		e2 = gfp_xdr_send(client, "sllilsslllilili",
-		    p[i].name,
-		    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
-		    st->st_user, st->st_group, st->st_size,
-		    st->st_ncopy,
-		    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
-		    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
-		    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1000387,
-			    "%s@%s: getdirentsplus: %s",
-			    peer_get_username(peer),
-			    peer_get_hostname(peer),
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+			e_ret = gfp_xdr_send(client, "sllilsslllilili",
+			    p[i].name,
+			    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
+			    st->st_user, st->st_group, st->st_size,
+			    st->st_ncopy,
+			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
+			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
+			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec);
+			if (e_ret != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_1000387,
+				    "%s@%s: getdirentsplus: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    gfarm_error_string(e_ret));
+				break;
+			}
 		}
 	}
-
-end:
 	if (p != NULL) {
 		for (i = 0; i < n; i++) {
 			free(p[i].name);
@@ -3030,7 +2946,7 @@ end:
 		}
 		free(p);
 	}
-	return (e);
+	return (e_ret);
 }
 
 gfarm_error_t
@@ -3039,9 +2955,9 @@ gfm_server_getdirentsplusxattr(struct peer *peer, gfp_xdr_xid_t xid,
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	gfarm_error_t e_ret, e_rpc;
 	gfarm_int32_t fd, n, nattrpatterns, i, j;
-	char **attrpatterns = NULL;
+	char **attrpatterns;
 	struct process *process;
 	struct inode *inode, *entry_inode;
 	Dir dir;
@@ -3056,195 +2972,168 @@ gfm_server_getdirentsplusxattr(struct peer *peer, gfp_xdr_xid_t xid,
 	struct db_waitctx waitctx;
 	static const char diag[] = "GFM_PROTO_GETDIRENTSPLUSXATTR";
 
-	e2 = gfm_server_get_request(peer, sizep, diag,
+	e_ret = gfm_server_get_request(peer, sizep, diag,
 	    "ii", &n, &nattrpatterns);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirentsplusxattr request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	e2 = gfm_server_recv_attrpatterns(peer, sizep, skip, nattrpatterns,
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
+
+	e_ret = gfm_server_recv_attrpatterns(peer, sizep, skip, nattrpatterns,
 	    &attrpatterns, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	/* don't have to free attrpatterns in the return case */
+	if (e_ret != GFARM_ERR_NO_ERROR || skip)
+		return (e_ret);
 
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		attrpatterns = NULL;
-		/* don't have to free attrpatterns in this case */
-		goto end;
-	}
+	/* NOTE: attrpatterns may be NULL here in case of memory shortage */
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS_DIRENT |
-	    DBUPDATE_USER | DBUPDATE_GROUP | DBUPDATE_XMLATTR, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	if (attrpatterns == NULL) {
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else if ((e_rpc = wait_db_update_info(peer, DBUPDATE_FS_DIRENT |
+	    DBUPDATE_USER | DBUPDATE_GROUP | DBUPDATE_XMLATTR, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e_rpc));
 		/* Continue processing. */
 	}
 
 	giant_lock();
 
-	if (e != GFARM_ERR_NO_ERROR) {
-		; /* Continue processing. */
-	} else if ((e2 = fs_dir_get(peer, from_client, &n, &process, &fd,
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
+		;
+	} else if ((e_rpc = fs_dir_get(peer, from_client, &n, &process, &fd,
 	    &inode, &dir, &cursor)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002504, "fs_dir_get() failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		    gfarm_error_string(e_rpc));
 	} else if (n > 0 && GFARM_CALLOC_ARRAY(p,  n) == NULL) {
 		gflog_debug(GFARM_MSG_1002505, "allocation of array failed");
-		e2 = GFARM_ERR_NO_MEMORY;
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	}
-
-	/* Note: (n == 0) means the end of the directory. */
-	for (i = 0; i < n && e == GFARM_ERR_NO_ERROR; ) {
-		e2 = dir_cursor_get_name_and_inode(dir, &cursor,
-		    &p[i].name, &entry_inode);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1002506,
-			    "dir_cursor_get_name_and_inode() failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
-		} else if (p[i].name == NULL)
-			break;
-		if ((e2 = inode_get_stat(entry_inode, &p[i].st)) !=
-		    GFARM_ERR_NO_ERROR) {
-			free(p[i].name);
-			gflog_debug(GFARM_MSG_1002507,
-			    "inode_get_stat() failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			break;
-		}
-
-		i++;
-		if (!dir_cursor_next(dir, &cursor))
-			break;
-	}
-	if (e == GFARM_ERR_NO_ERROR) {
-		fs_dir_remember_cursor(peer, process, fd, dir,
-		    &cursor, n == 0);
-		n = i;
-		if (n > 0) /* XXX is this check necessary? */
-			inode_accessed(inode);
-	}
-
-	giant_unlock();
-	giant_lock();
-
-	for (i = 0; i < n && e == GFARM_ERR_NO_ERROR; i++) {
-		pp = &p[i];
-		e2 = inode_xattr_list_get_cached_by_patterns(
-		    pp->st.st_ino, attrpatterns, nattrpatterns,
-		    &pp->xattrs, &pp->nxattrs);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			pp->xattrs = NULL;
-			pp->nxattrs = 0;
-		}
-		for (j = 0; j < pp->nxattrs; j++) {
-			px = &pp->xattrs[j];
-			if (px->value == NULL) {
-				/* not cached */
-				db_waitctx_init(&waitctx);
-				if (db_xattr_get(0, pp->st.st_ino, px->name,
-				    &px->value, &px->size, &waitctx) ==
-				    GFARM_ERR_NO_ERROR) {
-					/*
-					 * XXX this is slow, but we don't know
-					 * the safe window size
-					 */
-					giant_unlock();
-					dbq_waitret(&waitctx);
-					giant_lock();
-				}
-				db_waitctx_fini(&waitctx);
-				/* if error happens, px->size == 0 here */
-			}
-			e2 = acl_convert_for_getxattr(
-			    inode_lookup(pp->st.st_ino),
-			    px->name, &px->value, &px->size);
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1002853,
-				    "acl_convert_for_getxattr()"
-				    " failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else { /* NOTE: (n == 0) means the end of the directory */
+		for (i = 0; i < n; ) {
+			if ((e_rpc = dir_cursor_get_name_and_inode(dir, &cursor,
+			    &p[i].name, &entry_inode)) != GFARM_ERR_NO_ERROR ||
+			    p[i].name == NULL) {
+				gflog_debug(GFARM_MSG_1002506,
+				    "dir_cursor_get_name_and_inode() "
+				    "failed: %s",
+				    gfarm_error_string(e_rpc));
 				break;
 			}
+			if ((e_rpc = inode_get_stat(entry_inode, &p[i].st)) !=
+			    GFARM_ERR_NO_ERROR) {
+				free(p[i].name);
+				gflog_debug(GFARM_MSG_1002507,
+				    "inode_get_stat() failed: %s",
+				    gfarm_error_string(e_rpc));
+				break;
+			}
+
+			i++;
+			if (!dir_cursor_next(dir, &cursor))
+				break;
+		}
+		if (e_rpc == GFARM_ERR_NO_ERROR) {
+			fs_dir_remember_cursor(peer, process, fd, dir,
+			    &cursor, n == 0);
+			if (i > 0) /* XXX is this check necessary? */
+				inode_accessed(inode);
+		}
+		n = i;
+	}
+
+	if (e_rpc == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			pp = &p[i];
+			e_rpc = inode_xattr_list_get_cached_by_patterns(
+			    pp->st.st_ino, attrpatterns, nattrpatterns,
+			    &pp->xattrs, &pp->nxattrs);
+			if (e_rpc != GFARM_ERR_NO_ERROR) {
+				pp->xattrs = NULL;
+				pp->nxattrs = 0;
+			}
+			for (j = 0; j < pp->nxattrs; j++) {
+				px = &pp->xattrs[j];
+				if (px->value == NULL) {
+					/* not cached */
+					db_waitctx_init(&waitctx);
+					e_rpc = db_xattr_get(0,
+					    pp->st.st_ino, px->name,
+					    &px->value, &px->size, &waitctx);
+					if (e_rpc == GFARM_ERR_NO_ERROR) {
+						/*
+						 * XXX this is slow,
+						 * but we don't know
+						 * the safe window size
+						 */
+						giant_unlock();
+						e_rpc = dbq_waitret(&waitctx);
+						giant_lock();
+					}
+					db_waitctx_fini(&waitctx);
+					/*
+					 * if error happens,
+					 * px->value == NULL here
+					 */
+					if (e_rpc != GFARM_ERR_NO_ERROR)
+						break;
+				}
+				e_rpc = acl_convert_for_getxattr(
+				    inode_lookup(pp->st.st_ino),
+				    px->name, &px->value, &px->size);
+				if (e_rpc != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_1002853,
+					    "acl_convert_for_getxattr()"
+					    " failed: %s",
+					    gfarm_error_string(e_rpc));
+					break;
+				}
+			}
+			if (e_rpc != GFARM_ERR_NO_ERROR)
+				break;
 		}
 	}
 
 	giant_unlock();
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "getdirentsplusxattr reply failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc, "i", n);
+	/* if network error doesn't happen, e_ret == e_rpc here */
+	if (e_ret == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			struct gfs_stat *st = &p[i].st;
 
-	for (i = 0; i < n; i++) {
-		struct gfs_stat *st = &p[i].st;
-
-		e2 = gfp_xdr_send(client, "sllilsslllililii",
-		    p[i].name,
-		    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
-		    st->st_user, st->st_group, st->st_size,
-		    st->st_ncopy,
-		    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
-		    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
-		    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec,
-		    (int)p[i].nxattrs);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1002508,
-			    "%s@%s: getdirentsplusxattr: %s",
-			    peer_get_username(peer),
-			    peer_get_hostname(peer),
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
-		}
-		for (j = 0; j < p[i].nxattrs; j++) {
-			px = &p[i].xattrs[j];
-			e2 = gfp_xdr_send(client, "sb",
-			    px->name, px->size, px->value);
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_1002509,
+			e_ret = gfp_xdr_send(client, "sllilsslllililii",
+			    p[i].name,
+			    st->st_ino, st->st_gen, st->st_mode, st->st_nlink,
+			    st->st_user, st->st_group, st->st_size,
+			    st->st_ncopy,
+			    st->st_atimespec.tv_sec, st->st_atimespec.tv_nsec,
+			    st->st_mtimespec.tv_sec, st->st_mtimespec.tv_nsec,
+			    st->st_ctimespec.tv_sec, st->st_ctimespec.tv_nsec,
+			    (int)p[i].nxattrs);
+			if (e_ret != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_1002508,
 				    "%s@%s: getdirentsplusxattr: %s",
 				    peer_get_username(peer),
 				    peer_get_hostname(peer),
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				goto end;
+				    gfarm_error_string(e_ret));
+				break;
 			}
+			for (j = 0; j < p[i].nxattrs; j++) {
+				px = &p[i].xattrs[j];
+				e_ret = gfp_xdr_send(client, "sb",
+				    px->name, px->size, px->value);
+				if (e_ret != GFARM_ERR_NO_ERROR) {
+					gflog_warning(GFARM_MSG_1002509,
+					    "%s@%s: getdirentsplusxattr: %s",
+					    peer_get_username(peer),
+					    peer_get_hostname(peer),
+					    gfarm_error_string(e_ret));
+					break;
+				}
+			}
+			if (e_ret != GFARM_ERR_NO_ERROR)
+				break;
 		}
 	}
-
-end:
 	if (p != NULL) {
 		for (i = 0; i < n; i++) {
 			free(p[i].name);
@@ -3258,7 +3147,7 @@ end:
 			free(attrpatterns[i]);
 		free(attrpatterns);
 	}
-	return (e);
+	return (e_ret);
 }
 
 gfarm_error_t
@@ -4401,27 +4290,14 @@ gfm_server_replica_list_by_name(struct peer *peer, gfp_xdr_xid_t xid,
 	char **hosts = NULL;
 	static const char diag[] = "GFM_PROTO_REPLICA_LIST_BY_NAME";
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "");
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "replica_list_by_name request failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	e2 = wait_db_update_info(peer, DBUPDATE_FS | DBUPDATE_HOST, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
+	e = wait_db_update_info(peer, DBUPDATE_FS | DBUPDATE_HOST, diag);
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		/* Continue processing. */
 	}
 
@@ -4433,68 +4309,36 @@ gfm_server_replica_list_by_name(struct peer *peer, gfp_xdr_xid_t xid,
 	    (spool_host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1001948,
 		    "operation is not permitted");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		/* Continue processing. */
+		    e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_1001949,
-		    "peer_get_process() failed");
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		/* Continue processing. */
-	} else if ((e2 = peer_fdpair_get_current(peer, &fd)) !=
+		gflog_debug(GFARM_MSG_1001949, "peer_get_process() failed");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001950,
 		    "peer_fdpair_get_current() failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	} else if ((e2 = process_get_file_inode(process, fd, &inode))
+		    gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001951,
 		    "process_get_file_inode() failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	} else if ((e2 = inode_replica_list_by_name(inode, &n, &hosts))
-	    != GFARM_ERR_NO_ERROR) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
-	}
+		    gfarm_error_string(e));
+	} else
+		e2 = inode_replica_list_by_name(inode, &n, &hosts);
 
 	giant_unlock();
 
 	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "replica_list_by_name reply failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (e != GFARM_ERR_NO_ERROR)
-		goto end;
-
-	for (i = 0; i < n; ++i) {
-		e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s@%s: replica_list: %s",
-			    peer_get_username(peer),
-			    peer_get_hostname(peer),
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+	/* if network error doesn't happen, e2 == e here */
+	if (e2 == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; ++i) {
+			e2 = gfp_xdr_send(peer_get_conn(peer), "s", hosts[i]);
+			if (e2 != GFARM_ERR_NO_ERROR)
+				break;
 		}
 	}
 
-end:
-	if (hosts != NULL) {
+	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; ++i)
 			free(hosts[i]);
 		free(hosts);

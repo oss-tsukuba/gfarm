@@ -544,8 +544,8 @@ gfm_server_group_info_get_all(
 	e = wait_db_update_info(peer, DBUPDATE_GROUP, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -596,80 +596,64 @@ gfm_server_group_info_get_by_names(
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	gfarm_error_t e2;
+	gfarm_error_t e;
 	gfarm_int32_t ngroups;
-	char *groupname = NULL, **groups = NULL;
-	int i, eof;
+	char *groupname, **groups;
+	int i, j, eof, no_memory = 0;
 	struct group *g;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_GET_BY_NAMES";
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "i", &ngroups);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001528,
-			"group_info_get_by_names request failed: %s",
-			gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	e = gfm_server_get_request(peer, sizep, diag, "i", &ngroups);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	GFARM_CALLOC_ARRAY(groups, ngroups);
+	GFARM_MALLOC_ARRAY(groups, ngroups);
 	if (groups == NULL) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_NO_MEMORY;
+		no_memory = 1;
 		/* Continue processing. */
 	}
 
 	for (i = 0; i < ngroups; i++) {
-		e2 = gfp_xdr_recv(client, 0, &eof, "s", &groupname);
-		if (eof)
-			e2 = GFARM_ERR_PROTOCOL;
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001529,
-				"gfp_xdr_recv(group_info_get_by_names) failed:"
-				" %s",
-				gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+		e = gfp_xdr_recv(client, 0, &eof, "s", &groupname);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: gfp_xdr_recv(): %s",
+			    diag, gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_PROTOCOL;
+			if (groups != NULL) {
+				for (j = 0; j < i; j++)
+					free(groups[j]);
+				free(groups);
+			}
+			return (e);
 		}
 		if (groups == NULL) {
 			free(groupname);
-			continue;
+		} else {
+			if (groupname == NULL)
+				no_memory = 1;
+			groups[i] = groupname;
 		}
-		if (groupname == NULL) {
-			if (e == GFARM_ERR_NO_ERROR)
-				e = GFARM_ERR_NO_MEMORY;
-		}
-		groups[i] = groupname;
 	}
-
 	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
-	e2 = wait_db_update_info(peer, DBUPDATE_GROUP, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		e = GFARM_ERR_NO_ERROR; /* ignore GFARM_ERR_NO_MEMORY */
+		goto free_groups;
 	}
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001530,
-		    "gfm_server_put_reply(group_info_get_by_names) "
-		    "failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+	if (no_memory) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else if ((e = wait_db_update_info(peer, DBUPDATE_GROUP, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 	}
+
+	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	/* if network error doesn't happen, `e' holds RPC result here */
 	if (e != GFARM_ERR_NO_ERROR)
-		goto end;
+		goto free_groups;
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
@@ -677,43 +661,27 @@ gfm_server_group_info_get_by_names(
 		g = group_lookup(groups[i]);
 		if (g == NULL) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "group lookup failed: %s", groups[i]);
-			e2 = gfm_server_put_reply(peer, xid, sizep, diag,
+			    "%s: group lookup <%s>: failed", diag, groups[i]);
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_SUCH_GROUP, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(group_info_get_by_names) failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "group lookup succeeded: %s", groups[i]);
-			e2 = gfm_server_put_reply(peer, xid, sizep, diag,
+			    "%s: group lookup <%s>: ok", diag, groups[i]);
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_ERROR, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(group_info_get_by_names) failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
-			e2 = group_info_send(client, g);
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
+			if (e == GFARM_ERR_NO_ERROR)
+				e = group_info_send(client, g);
 		}
+		if (peer_had_protocol_error(peer))
+			break;
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last group's reply code
+	 */
 	giant_unlock();
 
-end:
+free_groups:
 	if (groups != NULL) {
 		for (i = 0; i < ngroups; i++)
 			free(groups[i]);

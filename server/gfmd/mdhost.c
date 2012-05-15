@@ -936,11 +936,8 @@ metadb_server_get0(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 	/* XXXRELAY FIXME, reply size is not correct */
 	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nmatch);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002935,
-		    "%s: gfm_server_put_reply: %s",
-		    diag, gfarm_error_string(e2));
-	} else if (e == GFARM_ERR_NO_ERROR) {
+	/* if network error doesn't happen, e2 == e here */
+	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = 0;
 		for (i = 0; i < nmatch; ++i) {
 			mh = match[i];
@@ -967,8 +964,12 @@ metadb_server_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e;
 
 	if (!gfarm_get_metadb_replication_enabled()) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		(void)gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+		e = gfm_server_put_reply(peer, xid, sizep, diag,
+		    GFARM_ERR_OPERATION_NOT_PERMITTED, "");
+		/*
+		 * if network error doesn't happen,
+		 * e == GFARM_ERR_OPERATION_NOT_PERMITTED here
+		 */
 		gflog_debug(GFARM_MSG_1002937,
 		    "%s: gfm_server_put_reply: %s",
 		    diag, gfarm_error_string(e));
@@ -1018,8 +1019,8 @@ gfm_server_metadb_server_get(
 	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		goto end;
 	}
 
@@ -1059,8 +1060,8 @@ gfm_server_metadb_server_get_all(
 	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
 

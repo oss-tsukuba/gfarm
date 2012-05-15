@@ -615,8 +615,8 @@ gfm_server_user_info_get_all(
 	e = wait_db_update_info(peer, DBUPDATE_USER, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -672,120 +672,92 @@ gfm_server_user_info_get_by_names(
 	int from_client, int skip)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	gfarm_error_t e2;
+	gfarm_error_t e;
 	gfarm_int32_t nusers;
-	char *user = NULL, **users = NULL;
-	int i, eof;
+	char *user, **users;
+	int i, j, eof, no_memory = 0;
 	struct user *u;
 	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_NAMES";
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "i", &nusers);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001500,
-		    "user_info_get_by_names request failed: %s",
-		    gfarm_error_string(e));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
+	e = gfm_server_get_request(peer, sizep, diag, "i", &nusers);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	GFARM_CALLOC_ARRAY(users, nusers);
+	GFARM_MALLOC_ARRAY(users, nusers);
 	if (users == NULL) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_NO_MEMORY;
+		no_memory = 1;
 		/* Continue processing. */
 	}
 
 	for (i = 0; i < nusers; i++) {
-		e2 = gfp_xdr_recv(client, 0, &eof, "s", &user);
-		if (eof)
-			e2 = GFARM_ERR_PROTOCOL;
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001501,
-			    "gfp_xdr_recv(user_info_get_by_names) "
-			    "failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+		e = gfp_xdr_recv(client, 0, &eof, "s", &user);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: gfp_xdr_recv(): %s",
+			    diag, gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_PROTOCOL;
+			if (users != NULL) {
+				for (j = 0; j < i; j++)
+					free(users[j]);
+				free(users);
+			}
+			return (e);
 		}
 		if (users == NULL) {
 			free(user);
-			continue;
+		} else {
+			if (user == NULL)
+				no_memory = 1;
+			users[i] = user;
 		}
-		if (user == NULL) {
-			if (e == GFARM_ERR_NO_ERROR)
-				e = GFARM_ERR_NO_MEMORY;
-		}
-		users[i] = user;
 	}
-
 	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
-	e2 = wait_db_update_info(peer, DBUPDATE_USER, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		e = GFARM_ERR_NO_ERROR; /* ignore GFARM_ERR_NO_MEMORY */
+		goto free_users;
 	}
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001502,
-			"gfm_server_put_reply() failed: %s",
-			gfarm_error_string(e2));
-		goto end;
+	if (no_memory) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else if ((e = wait_db_update_info(peer, DBUPDATE_USER, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 	}
+
+	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	/* if network error doesn't happen, `e' holds RPC result here */
+	if (e != GFARM_ERR_NO_ERROR)
+		goto free_users;
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	for (i = 0; i < nusers; i++) {
 		u = user_lookup(users[i]);
 		if (u == NULL) {
-			gflog_debug(GFARM_MSG_1000238,
-			    "user lookup failed: %s", users[i]);
-			e2 = gfm_server_put_reply(peer, xid, sizep, diag,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: user lookup <%s>: failed", diag, users[i]);
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_SUCH_USER, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(user_info_get_by_names) failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
 		} else {
-			gflog_debug(GFARM_MSG_1000239,
-			    "user lookup succeeded: %s", users[i]);
-			e2 = gfm_server_put_reply(peer, xid, sizep, diag,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: user lookup <%s>: ok", diag, users[i]);
+			e = gfm_server_put_reply(peer, xid, sizep, diag,
 			    GFARM_ERR_NO_ERROR, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(user_info_get_by_names) failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
-			e2 = user_info_send(client, &u->ui);
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
+			if (e == GFARM_ERR_NO_ERROR)
+				e = user_info_send(client, &u->ui);
 		}
+		if (peer_had_protocol_error(peer))
+			break;
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last user's reply code
+	 */
 	giant_unlock();
 
-end:
+free_users:
 	if (users != NULL) {
 		for (i = 0; i < nusers; i++)
 			free(users[i]);

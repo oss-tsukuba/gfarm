@@ -1355,8 +1355,8 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	e = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		goto quit;
 	}
 

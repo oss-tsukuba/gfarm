@@ -1215,11 +1215,8 @@ gfm_server_host_generic_get(
 	}
 	/* XXXRELAY FIXME, reply size is not correct */
 	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nmatch);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002218,
-		    "gfm_server_put_reply(%s) failed: %s",
-		    diag, gfarm_error_string(e2));
-	} else if (e == GFARM_ERR_NO_ERROR) {
+	/* if network error doesn't happen, e2 == e here */
+	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = answered = 0;
 		FOR_ALL_HOSTS(&it) {
 			if (i >= nhosts || answered >= nmatch)
@@ -1296,8 +1293,8 @@ gfm_server_host_info_get_all(
 	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -1337,8 +1334,8 @@ gfm_server_host_info_get_by_architecture(
 	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e));
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
 
@@ -1354,133 +1351,91 @@ gfm_server_host_info_get_by_names_common(
 	struct host *(*lookup)(const char *), const char *diag)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	gfarm_error_t e2;
+	gfarm_error_t e;
 	gfarm_int32_t nhosts;
-	char *host = NULL, **hosts = NULL;
-	int i, eof;
+	char *host, **hosts;
+	int i, j, eof, no_memory = 0;
 	struct host *h;
 
-	e2 = gfm_server_get_request(peer, sizep, diag, "i", &nhosts);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001558,
-		    "gfm_server_get_request() failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		goto end;
-	}
-	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
-	if (!mdhost_self_is_master()) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED; /* XXX RELAY */
-		goto end;
-	}
+	e = gfm_server_get_request(peer, sizep, diag, "i", &nhosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-	GFARM_CALLOC_ARRAY(hosts, nhosts);
+	GFARM_MALLOC_ARRAY(hosts, nhosts);
 	if (hosts == NULL) {
-		if (e == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_NO_MEMORY;
+		no_memory = 1;
 		/* Continue processing. */
 	}
+
 	for (i = 0; i < nhosts; i++) {
-		e2 = gfp_xdr_recv(client, 0, &eof, "s", &host);
-		if (eof)
-			e2 = GFARM_ERR_PROTOCOL;
-		if (e2 != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001559,
-			    "gfp_xdr_recv(host_info_get_by_names_common) "
-			    "failed: %s",
-			    gfarm_error_string(e2));
-			if (e == GFARM_ERR_NO_ERROR)
-				e = e2;
-			goto end;
+		e = gfp_xdr_recv(client, 0, &eof, "s", &host);
+		if (e != GFARM_ERR_NO_ERROR || eof) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: gfp_xdr_recv(): %s",
+			    diag, gfarm_error_string(e));
+			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
+				e = GFARM_ERR_PROTOCOL;
+			if (hosts != NULL) {
+				for (j = 0; j < i; j++)
+					free(hosts[j]);
+				free(hosts);
+			}
+			return (e);
 		}
 		if (hosts == NULL) {
 			free(host);
-			continue;
+		} else {
+			if (host == NULL)
+				no_memory = 1;
+			hosts[i] = host;
 		}
-		if (host == NULL) {
-			if (e == GFARM_ERR_NO_ERROR)
-				e = GFARM_ERR_NO_MEMORY;
-		}
-		hosts[i] = host;
 	}
-
 	if (skip) {
-		e = GFARM_ERR_NO_ERROR;
-		goto end;
-	}
-	e2 = wait_db_update_info(peer, DBUPDATE_HOST, diag);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "failed to wait for the backend DB to be updated: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
-		/* Continue processing. */
+		e = GFARM_ERR_NO_ERROR; /* ignore GFARM_ERR_NO_MEMORY */
+		goto free_hosts;
 	}
 
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001560,
-		    "gfm_server_put_reply(host_info_get_by_names_common) "
-		    "failed: %s",
-		    gfarm_error_string(e2));
-		if (e == GFARM_ERR_NO_ERROR)
-			e = e2;
+	if (no_memory) {
+		e = GFARM_ERR_NO_MEMORY;
+	} else if ((e = wait_db_update_info(peer, DBUPDATE_HOST, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e));
 	}
+
+	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	/* if network error doesn't happen, `e' holds RPC result here */
 	if (e != GFARM_ERR_NO_ERROR)
-		goto end;
+		goto free_hosts;
 
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	for (i = 0; i < nhosts; i++) {
 		h = (*lookup)(hosts[i]);
 		if (h == NULL) {
-			gflog_debug(GFARM_MSG_1000270,
-			    "host lookup failed: %s", hosts[i]);
-			e2 = gfm_server_put_reply(peer, 0, NULL, diag,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: host lookup <%s>: failed", diag, hosts[i]);
+			e = gfm_server_put_reply(peer, 0, NULL, diag,
 			    GFARM_ERR_UNKNOWN_HOST, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(host_info_get_by_names_common) "
-				    "failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
 		} else {
-			gflog_debug(GFARM_MSG_1000271,
-			    "host lookup succeeded: %s", hosts[i]);
-			e2 = gfm_server_put_reply(peer, 0, NULL, diag,
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: host lookup <%s>: ok", diag, hosts[i]);
+			e = gfm_server_put_reply(peer, 0, NULL, diag,
 			    GFARM_ERR_NO_ERROR, "");
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfm_server_put_reply"
-				    "(host_info_get_by_names_common) "
-				    "failed: %s",
-				    gfarm_error_string(e2));
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
-			e2 = host_info_send(client, h);
-			if (e2 != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_NO_ERROR)
-					e = e2;
-				break;
-			}
+			if (e == GFARM_ERR_NO_ERROR)
+				e = host_info_send(client, h);
 		}
+		if (peer_had_protocol_error(peer))
+			break;
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last host's reply code
+	 */
 	giant_unlock();
 
-end:
+free_hosts:
 	if (hosts != NULL) {
 		for (i = 0; i < nhosts; i++)
 			free(hosts[i]);
