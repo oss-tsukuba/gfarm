@@ -1302,30 +1302,26 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	struct host *h;
 
 	e = gfm_server_get_request(peer, diag, "i", &nhosts);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001558,
-			"gfm_server_get_request() failed: %s",
-			gfarm_error_string(e));
+	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
-	}
-	if (skip)
-		return (GFARM_ERR_NO_ERROR);
+
 	GFARM_MALLOC_ARRAY(hosts, nhosts);
-	if (hosts == NULL)
+	if (hosts == NULL) {
 		no_memory = 1;
+		/* Continue processing. */
+	}
+
 	for (i = 0; i < nhosts; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &host);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_1001559,
-				"gfp_xdr_recv(host) failed: %s",
-				gfarm_error_string(e));
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: gfp_xdr_recv(): %s",
+			    diag, gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
 				e = GFARM_ERR_PROTOCOL;
 			if (hosts != NULL) {
-				for (j = 0; j < i; j++) {
-					if (hosts[j] != NULL)
-						free(hosts[j]);
-				}
+				for (j = 0; j < i; j++)
+					free(hosts[j]);
 				free(hosts);
 			}
 			return (e);
@@ -1333,41 +1329,34 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 		if (hosts == NULL) {
 			free(host);
 		} else {
+			if (host == NULL)
+				no_memory = 1;
 			hosts[i] = host;
 		}
 	}
-	if (no_memory)
-		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_MEMORY, "");
-	else
-		e = gfm_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, "");
-	if (no_memory || e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001560,
-			"gfp_xdr_recv(host) failed: %s",
-			gfarm_error_string(e));
-		if (hosts != NULL) {
-			for (i = 0; i < nhosts; i++) {
-				if (hosts[i] != NULL)
-					free(hosts[i]);
-			}
-			free(hosts);
-		}
-		return (e);
+	if (skip) {
+		e = GFARM_ERR_NO_ERROR; /* ignore GFARM_ERR_NO_MEMORY */
+		goto free_hosts;
 	}
+
+	e = gfm_server_put_reply(peer, diag,
+	    no_memory ? GFARM_ERR_NO_MEMORY : GFARM_ERR_NO_ERROR, "");
+	/* if network error doesn't happen, `e' holds RPC result here */
+	if (e != GFARM_ERR_NO_ERROR)
+		goto free_hosts;
+
 	/* XXX FIXME too long giant lock */
 	giant_lock();
 	for (i = 0; i < nhosts; i++) {
 		h = (*lookup)(hosts[i]);
 		if (h == NULL) {
-			if (debug_mode)
-				gflog_info(GFARM_MSG_1000270,
-				    "host lookup <%s>: failed",
-				    hosts[i]);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: host lookup <%s>: failed", diag, hosts[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_UNKNOWN_HOST, "");
 		} else {
-			if (debug_mode)
-				gflog_info(GFARM_MSG_1000271,
-				    "host lookup <%s>: ok", hosts[i]);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: host lookup <%s>: ok", diag, hosts[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
 			if (e == GFARM_ERR_NO_ERROR)
@@ -1380,11 +1369,14 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 	 * if (!peer_had_protocol_error(peer))
 	 *	the variable `e' holds last host's reply code
 	 */
-
-	for (i = 0; i < nhosts; i++)
-		free(hosts[i]);
-	free(hosts);
 	giant_unlock();
+
+free_hosts:
+	if (hosts != NULL) {
+		for (i = 0; i < nhosts; i++)
+			free(hosts[i]);
+		free(hosts);
+	}
 	return (e);
 }
 
