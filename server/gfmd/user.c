@@ -733,6 +733,10 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 		if (peer_had_protocol_error(peer))
 			break;
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last user's reply code
+	 */
 	giant_unlock();
 
 free_user:

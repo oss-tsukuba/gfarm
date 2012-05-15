@@ -654,6 +654,11 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 		if (peer_had_protocol_error(peer))
 			break;
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last group's reply code
+	 */
+		
 	giant_unlock();
 
 free_group:

@@ -1182,11 +1182,8 @@ gfm_server_host_generic_get(struct peer *peer,
 		}
 	}
 	e2 = gfm_server_put_reply(peer, diag, e, "i", nmatch);
-	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002218,
-		    "gfm_server_put_reply(%s) failed: %s",
-		    diag, gfarm_error_string(e2));
-	} else if (e == GFARM_ERR_NO_ERROR) {
+	/* if network error doesn't happen, e2 == e here */
+	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = answered = 0;
 		FOR_ALL_HOSTS(&it) {
 			if (i >= nhosts || answered >= nmatch)
@@ -1376,13 +1373,14 @@ gfm_server_host_info_get_by_names_common(struct peer *peer,
 			if (e == GFARM_ERR_NO_ERROR)
 				e = host_info_send(client, h);
 		}
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001561,
-				"error occurred during process: %s",
-				gfarm_error_string(e));
+		if (peer_had_protocol_error(peer))
 			break;
-		}
 	}
+	/*
+	 * if (!peer_had_protocol_error(peer))
+	 *	the variable `e' holds last host's reply code
+	 */
+
 	for (i = 0; i < nhosts; i++)
 		free(hosts[i]);
 	free(hosts);
