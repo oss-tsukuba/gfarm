@@ -255,8 +255,9 @@ dirtree_local_lstat(const char *path, struct stat *stp)
 	retv = lstat(path, stp);
 	if (retv == -1) {
 		save_errno = errno;
-		fprintf(stderr, "ERROR: lstat(%s): %s\n",
-			path, strerror(save_errno));
+		if (save_errno != ENOENT)
+			fprintf(stderr, "ERROR: lstat(%s): %s\n",
+				path, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
 	return (GFARM_ERR_NO_ERROR);
@@ -334,8 +335,9 @@ dirtree_gfarm_lstat(const char *path, struct stat *stp)
 
 	e = gfs_lstat(path, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "ERROR: gfs_lstat(%s): %s\n",
-			path, gfarm_error_string(e));
+		if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			fprintf(stderr, "ERROR: gfs_lstat(%s): %s\n",
+				path, gfarm_error_string(e));
 		return (e);
 	}
 	dirtree_convert_stat(&st, stp);
@@ -592,9 +594,6 @@ finfo_retry2:
 				is_retry = 1;
 				goto finfo_retry2;
 			}
-			if (e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
-				fprintf(stderr, "ERROR: lstat(%s): %s\n",
-					dst_path, gfarm_error_string(e));
 			/* dst does not exist */
 			gfpara_send_int(to_parent, 0); /* 3: dst_exist */
 			free(subpath);
