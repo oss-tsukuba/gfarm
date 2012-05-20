@@ -78,16 +78,15 @@ static gfarm_error_t
 remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 	struct options *options)
 {
-	gfarm_error_t e, e2 = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2 = GFARM_ERR_NO_ERROR;
 	int i, nerr = 0;
 
 	for(i = 0; i < gfarm_stringlist_length(files); i++) {
 		char *file = gfarm_stringlist_elem(files, i);
 
-		if (options->noexecute) {
+		if (options->noexecute)
 			printf("%s\n", file);
-			e = GFARM_ERR_NO_ERROR;
-		} else if (options->host == NULL)
+		else if (options->host == NULL)
 			e = gfs_unlink(file);
 		else
 			e = gfs_replica_remove_by_file(file, options->host);
@@ -104,13 +103,15 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 		}
 	}
 
+	if (options->host != NULL)
+		goto skip_directory_remove;
+	/* remove directories only if the -h option is not specified */
 	for (i = 0; i < gfarm_stringlist_length(dirs); i++) {
 		char *dir = gfarm_stringlist_elem(dirs, i);
 
-		e = GFARM_ERR_NO_ERROR;
 		if (options->noexecute)
 			printf("%s\n", dir);
-		else if (options->host == NULL)
+		else
 			e = gfs_rmdir(dir);
 
 		if (e != GFARM_ERR_NO_ERROR &&
@@ -123,6 +124,7 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 			nerr++;
 		}
 	}
+skip_directory_remove:
 	return (nerr == 0 ? GFARM_ERR_NO_ERROR : e2);
 }
 
