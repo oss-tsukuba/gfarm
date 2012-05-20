@@ -98,7 +98,8 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 		    (!options->recursive || e != GFARM_ERR_NO_SUCH_OBJECT)) {
 			fprintf(stderr, "%s: %s: %s\n",
 				program_name, file, gfarm_error_string(e));
-			e2 = e;
+			if (e2 == GFARM_ERR_NO_ERROR)
+				e2 = e;
 			nerr++;
 		}
 	}
@@ -106,19 +107,20 @@ remove_files(gfarm_stringlist *files, gfarm_stringlist *dirs,
 	for (i = 0; i < gfarm_stringlist_length(dirs); i++) {
 		char *dir = gfarm_stringlist_elem(dirs, i);
 
-		if (options->noexecute) {
+		e = GFARM_ERR_NO_ERROR;
+		if (options->noexecute)
 			printf("%s\n", dir);
-			e = GFARM_ERR_NO_ERROR;
-		} else
+		else if (options->host == NULL)
 			e = gfs_rmdir(dir);
 
 		if (e != GFARM_ERR_NO_ERROR &&
 		    (!options->force ||
 		     e != GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)) {
-			nerr++;
-			e2 = e;
 			fprintf(stderr, "%s: %s: %s\n",
 				program_name, dir, gfarm_error_string(e));
+			if (e2 == GFARM_ERR_NO_ERROR)
+				e2 = e;
+			nerr++;
 		}
 	}
 	return (nerr == 0 ? GFARM_ERR_NO_ERROR : e2);
