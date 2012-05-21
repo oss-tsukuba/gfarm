@@ -1520,9 +1520,10 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --enable-voms           Enable voms collaboration.[[default=yes]]
-  --enable-xmlattr        support XML extended attributs and searching by
-                          XPath.[[default=yes]]
+  --enable-voms           enable VOMS synchronization feature
+                          [default=disable]
+  --enable-xmlattr        support XML extended attributes and XPath search
+                          [default=disable]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4245,13 +4246,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4248: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4249: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4251: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4252: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4254: output\"" >&5)
+  (eval echo "\"\$as_me:4255: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5456,7 +5457,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5459 "configure"' > conftest.$ac_ext
+  echo '#line 5460 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6981,11 +6982,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6984: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6985: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6988: \$? = $ac_status" >&5
+   echo "$as_me:6989: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7320,11 +7321,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7323: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7324: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7327: \$? = $ac_status" >&5
+   echo "$as_me:7328: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7425,11 +7426,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7428: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7429: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7432: \$? = $ac_status" >&5
+   echo "$as_me:7433: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7480,11 +7481,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7483: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7484: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7487: \$? = $ac_status" >&5
+   echo "$as_me:7488: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9864,7 +9865,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9867 "configure"
+#line 9868 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9960,7 +9961,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9963 "configure"
+#line 9964 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12806,6 +12807,7 @@ fi
 ###
 ### --enable-voms
 ###
+
 # Check whether --enable-voms was given.
 if test "${enable_voms+set}" = set; then :
   enableval=$enable_voms; if test "${enable_voms}" = "yes"; then
@@ -12848,8 +12850,8 @@ fi
 
 
   gfvoms_sync_targets=''
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking voms-collaboration available" >&5
-$as_echo_n "checking voms-collaboration available... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking VOMS synchronization available" >&5
+$as_echo_n "checking VOMS synchronization available... " >&6; }
   voms_available="no"
   if test "${PYTHON_SPECIFIED}" = "yes" ;then
     py_ver=`python -V 2>&1 | sed -e 's/Python \([0-9\.]*\).*/\1/'`
@@ -12900,7 +12902,7 @@ fi
 
 
 ###
-###  --enable-xmlattr		support XML extended attributs and searching by XPath
+###  --enable-xmlattr		support XML extended attributes and XPath search
 ###
 
 # Check whether --enable-xmlattr was given.
