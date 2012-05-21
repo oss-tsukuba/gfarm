@@ -21,10 +21,10 @@ VOMS のグループ，ロールと連携し，Gfarm のグループのメンバを更新す
 通常の Gfarm のインストール方法と同じですが，configure コマンドの
 オプションで --enable-voms を指定します．
 
-configure コマンドの出力で，以下のように voms-collaboration
+configure コマンドの出力で，以下のように VOMS synchronization
 available が yes となっていることを確認してください．
 
-	checking voms-collaboration available... yes
+	checking VOMS synchronization available... yes
 
 *** インストールファイル
 

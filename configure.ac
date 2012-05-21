@@ -1091,12 +1091,13 @@ AC_SUBST(config_gfarm_sysdep_subdir)
 ###
 ### --enable-voms
 ###
+
 AC_ARG_ENABLE(voms,
-AS_HELP_STRING([--enable-voms],[Enable voms collaboration.[[default=yes]]]),
+AS_HELP_STRING([--enable-voms],[enable VOMS synchronization feature [default=disable]]),
 [if test "${enable_voms}" = "yes"; then
   AC_CHECK_PROG(PYTHON_SPECIFIED, python, yes, no)
   gfvoms_sync_targets=''
-  AC_MSG_CHECKING(voms-collaboration available)
+  AC_MSG_CHECKING(VOMS synchronization available)
   voms_available="no"
   if test "${PYTHON_SPECIFIED}" = "yes" ;then
     py_ver=`python -V 2>&1 | sed -e 's/Python \([[0-9\.]]*\).*/\1/'`
@@ -1143,13 +1144,13 @@ fi
 AC_SUBST(gfvoms_sync_targets)
 
 ###
-###  --enable-xmlattr		support XML extended attributs and searching by XPath
+###  --enable-xmlattr		support XML extended attributes and XPath search
 ###
 
 AC_ARG_ENABLE(xmlattr,
-AS_HELP_STRING([--enable-xmlattr],[support XML extended attributs and searching by XPath.[[default=yes]]]),
+AS_HELP_STRING([--enable-xmlattr],[support XML extended attributes and XPath search [default=disable]]),
 [if test "${enable_xmlattr}" = "yes"; then
-	AC_DEFINE(ENABLE_XMLATTR, 1, [support XML extended attributs and searching by XPath])
+	AC_DEFINE(ENABLE_XMLATTR, 1, [support XML extended attributes and XPath search])
 fi],[])
 
 ###
