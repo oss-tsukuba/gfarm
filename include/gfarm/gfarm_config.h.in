@@ -8,7 +8,7 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* support XML extended attributs and searching by XPath */
+/* support XML extended attributes and XPath search */
 #undef ENABLE_XMLATTR
 
 /* Define to 1 if you have the `backtrace_symbols' function. */
@@ -40,6 +40,9 @@
 
 /* Define to 1 if epoll functions are implemented. */
 #undef HAVE_EPOLL
+
+/* Define to 1 if you have the <event.h> header file. */
+#undef HAVE_EVENT_H
 
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
@@ -104,6 +107,9 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
+/* Define to 1 if you have the `event' library (-levent). */
+#undef HAVE_LIBEVENT
+
 /* Define to 1 if you have the `gen' library (-lgen). */
 #undef HAVE_LIBGEN
 
@@ -157,9 +163,6 @@
 
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM
-
-/* readline-compatible library exists */
-#undef HAVE_READLINE
 
 /* Define to 1 if you have the `setlogin' function. */
 #undef HAVE_SETLOGIN
