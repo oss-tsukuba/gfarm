@@ -158,9 +158,6 @@
 /* Define to 1 if you have the `random' function. */
 #undef HAVE_RANDOM
 
-/* readline-compatible library exists */
-#undef HAVE_READLINE
-
 /* Define to 1 if you have the `setlogin' function. */
 #undef HAVE_SETLOGIN
 

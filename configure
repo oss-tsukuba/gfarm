@@ -752,7 +752,6 @@ top_private_dir
 gfvoms_sync_targets
 PYTHON_SPECIFIED
 config_gfarm_sysdep_subdir
-gfs_hook_sysdep_subdir
 postgresql_targets
 postgresql_cflags
 postgresql_objs
@@ -771,23 +770,6 @@ largefile64_objs
 largefile64_srcs
 largefile_ldflags
 largefile_cflags
-gfarmd_username
-gfarm_rsh
-default_ns_exec_bindir
-default_ns_exec_root
-default_ns_port
-default_ns_server
-readline_libs
-readline_includes
-mpi_targets
-mpi_cflags
-mpi_objs
-mpi_srcs
-mpicc
-gfshook_targets
-gfshook_cflags
-gfshook_objs
-gfshook_srcs
 globus_targets
 globus_cflags
 globus_objs
@@ -902,14 +884,6 @@ with_openssl
 with_globus_static
 with_globus_flavor
 with_globus
-with_gfshook
-with_mpi
-with_readline
-with_default_ns_server
-with_default_ns_port
-with_default_ns_exec_root
-with_gfarm_rsh
-with_gfarmd_username
 with_mtsafe_netdb
 with_openldap
 with_postgresql
@@ -1567,23 +1541,6 @@ Optional Packages:
 				[default=guessed]
   --with-globus=GLOBUS_ROOT	globus root directory
 				[default=disable]
-  --with-gfshook		build libgfs_hook.so syscall hooking library
-				[default]
-  --without-gfshook             disable to build syscall hooking library
-  --with-mpi=MPI_ROOT		MPI root directory
-				[default=disable]
-  --with-readline=READLINE_ROOT	readline root directory
-				[default=disable]
-  --with-default-ns-server=HOSTNAME	default hostname of ns server
-				[default=localhost]
-  --with-default-ns-port=PORTNUMBER	default port number of ns server
-				[default=5000]
-  --with-default-ns-exec-root=DIR	default top directory of ns_exec
-				[default=PREFIX]
-  --with-gfarm-rsh=RSH		command name equivalent to rsh
-				[default=rsh]
-  --with-gfarmd-username=DIR	default username of gfarmd
-				[default=nobody]
   --without-mtsafe-netdb	getaddrinfo(3) and getnameinfo(3) are MT-Safe?
 				[default=yes]
   --with-openldap=OpenLDAP_ROOT	openldap root directory
@@ -4288,13 +4245,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4291: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4248: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4294: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4251: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4297: output\"" >&5)
+  (eval echo "\"\$as_me:4254: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5499,7 +5456,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5502 "configure"' > conftest.$ac_ext
+  echo '#line 5459 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7024,11 +6981,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7027: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6984: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7031: \$? = $ac_status" >&5
+   echo "$as_me:6988: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7363,11 +7320,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7366: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7323: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7370: \$? = $ac_status" >&5
+   echo "$as_me:7327: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7468,11 +7425,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7471: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7428: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7475: \$? = $ac_status" >&5
+   echo "$as_me:7432: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7523,11 +7480,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7526: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7483: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7530: \$? = $ac_status" >&5
+   echo "$as_me:7487: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9907,7 +9864,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9910 "configure"
+#line 9867 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10003,7 +9960,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10006 "configure"
+#line 9963 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11083,232 +11040,6 @@ fi
 # for conditional compilation which depends on whether globus is enabled or not
 
 
-
-
-
-###
-### --with-gfshook
-###
-
-
-# Check whether --with-gfshook was given.
-if test "${with_gfshook+set}" = set; then :
-  withval=$with_gfshook;
-fi
-
-
-if test x${with_gfshook} != xno
-then
- gfshook_srcs='${GFSHOOK_SRCS}'
- gfshook_objs='${GFSHOOK_OBJS}'
- gfshook_cflags='${GFSHOOK_CFLAGS}'
- gfshook_targets='${GFSHOOK_TARGETS}'
-else
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking gfshook" >&5
-$as_echo_n "checking gfshook... " >&6; }
- { $as_echo "$as_me:${as_lineno-$LINENO}: result: disable" >&5
-$as_echo "disable" >&6; }
-
- gfshook_srcs=
- gfshook_objs=
- gfshook_cflags=
- gfshook_targets=
-fi
-
-# for conditional compilation related to syscall hooking library
-
-
-
-
-
-###
-### --with-mpi=MPI_ROOT
-###
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking mpi" >&5
-$as_echo_n "checking mpi... " >&6; }
-
-# Check whether --with-mpi was given.
-if test "${with_mpi+set}" = set; then :
-  withval=$with_mpi; with_mpi="${withval}"
- if test x"${withval}" = x'yes'; then
-  mpicc="mpicc"
- else
-  mpicc="${with_mpi}/bin/mpicc"
- fi
- { $as_echo "$as_me:${as_lineno-$LINENO}: result: using \"${mpicc}\"" >&5
-$as_echo "using \"${mpicc}\"" >&6; }
-
- # for conditional compilation which depends on whether MPI is enabled or not
- mpi_srcs='${MPI_SRCS}'
- mpi_objs='${MPI_OBJS}'
- mpi_cflags='${MPI_CFLAGS}'
- mpi_targets='${MPI_TARGETS}'
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
-$as_echo "disabled" >&6; }
- with_mpi=
-
- mpicc=
- # for conditional compilation which depends on whether MPI is enabled or not
- mpi_srcs=
- mpi_objs=
- mpi_cflags=
- mpi_targets=
-
-fi
-
-
-
-# for conditional compilation which depends on whether globus is enabled or not
-
-
-
-
-
-### The following options are all "ns" specific
-
-###
-### --with-readline=READLINE_ROOT
-###
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking readline" >&5
-$as_echo_n "checking readline... " >&6; }
-
-# Check whether --with-readline was given.
-if test "${with_readline+set}" = set; then :
-  withval=$with_readline; with_readline="${withval}"
-
-else
-  with_readline=
-
-fi
-
-
-readline_specified=
-case ${with_readline} in
-/*)
-  if test -f "${with_readline}"/include/readline/readline.h; then
-	readline_specified=explicit
-  else
-	as_fn_error $? "not found in \"${with_readline}\", aborted" "$LINENO" 5
-  fi;;
-yes)
-  for d in /usr/local /usr/pkg /usr
-  do
-    if test -f $d/include/readline/readline.h; then
-	with_readline=$d
-	readline_specified=yes
-	break
-    fi
-  done;;
-no|'')
-  ;;
-*)
-  readline_specified=explicit;;
-esac
-
-readline_includes=
-readline_libs=
-
-if test x"${readline_specified}" = x""; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: using \"${with_readline}\"" >&5
-$as_echo "using \"${with_readline}\"" >&6; }
-
-$as_echo "#define HAVE_READLINE 1" >>confdefs.h
-
-  readline_libs="-lreadline -ltermcap"
-  case ${with_readline} in
-  /usr)	;;
-  /*)	readline_includes="-I${with_readline}/include ${readline_includes}"
-	readline_libs="-R${with_readline}/lib -L${with_readline}/lib ${readline_libs}"
-	;;
-  *)	readline_includes=${with_readline}
-	readline_libs=${with_readline}
-	;;
-  esac
-fi
-
-
-
-
-###
-### --with-default-ns-server=HOSTNAME
-###
-
-
-# Check whether --with-default_ns_server was given.
-if test "${with_default_ns_server+set}" = set; then :
-  withval=$with_default_ns_server; default_ns_server="${withval}"
-else
-  default_ns_server='localhost'
-fi
-
-
-
-###
-### --with-default-ns-port=PORTNUMBER
-###
-
-
-# Check whether --with-default_ns_port was given.
-if test "${with_default_ns_port+set}" = set; then :
-  withval=$with_default_ns_port; default_ns_port="${withval}"
-else
-  default_ns_port='5000'
-fi
-
-
-
-###
-### --with-default-ns-exec-root=DIR
-###
-
-
-# Check whether --with-default_ns_exec_root was given.
-if test "${with_default_ns_exec_root+set}" = set; then :
-  withval=$with_default_ns_exec_root; default_ns_exec_root="${withval}"
- default_ns_exec_bindir="${default_ns_exec_root}/bin"
-
-else
-  default_ns_exec_root='$(prefix)'
- default_ns_exec_bindir='$(bindir)'
-
-fi
-
-
-
-
-
-###
-### --with-gfarm-rsh=RSH_COMMAND
-###
-
-
-# Check whether --with-gfarm_rsh was given.
-if test "${with_gfarm_rsh+set}" = set; then :
-  withval=$with_gfarm_rsh; gfarm_rsh="${withval}"
-else
-  gfarm_rsh='rsh'
-fi
-
-
-
-###
-### --with-gfarmd-username=DIR
-###
-
-
-# Check whether --with-gfarmd_username was given.
-if test "${with_gfarmd_username+set}" = set; then :
-  withval=$with_gfarmd_username; gfarmd_username="${withval}"
-else
-  gfarmd_username='nobody'
-fi
 
 
 
@@ -13058,23 +12789,6 @@ fi
 
 
 ###
-### lib/gfs_hook
-###
-
-# need to make system dependent source?
-
-gfs_hook_sysdep=lib/gfs_hook/sysdep/${host_os_nickname}
-if test -f ${srcdir}/${gfs_hook_sysdep}/Makefile; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: using ${gfs_hook_sysdep} directory for system dependent objects." >&5
-$as_echo "using ${gfs_hook_sysdep} directory for system dependent objects." >&6; }
-	gfs_hook_sysdep_subdir=${host_os_nickname}
-else
-	gfs_hook_sysdep_subdir=default
-fi
-
-
-
-###
 ### gftool/config-gfarm
 ###
 
@@ -13198,22 +12912,6 @@ $as_echo "#define ENABLE_XMLATTR 1" >>confdefs.h
 fi
 fi
 
-
-###
-### ns
-###
-
-if test -d ${srcdir}/ns; then
-	ns_makefiles='
-		ns/nslib/Makefile
-		ns/gfarmd/Makefile
-		ns/nstool/file/Makefile'
-
-	# The following is for --srcdir option.
-	# AC_OUTPUT() assumes that parent directory of the Makefile exists
-	test -d ns || mkdir ns
-	test -d ns/nstool || mkdir ns/nstool
-fi
 
 ###
 ### --with-private-srcdir
