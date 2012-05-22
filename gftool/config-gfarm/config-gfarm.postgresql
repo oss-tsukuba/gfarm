@@ -252,7 +252,7 @@ make_configuration_file_private_for_debian_postgresql()
 make_configuration_file_postgresql()
 {
 	cat << _EOF_ | $run_with_backend_privilege || ABORT "initdb failed"
-	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" --no-locale -E UTF-8
+	$PGSQL_BINDIR/initdb -D "$BACKEND_DATA_DIR" --no-locale -E SQL_ASCII
 _EOF_
 
 	# record the password
