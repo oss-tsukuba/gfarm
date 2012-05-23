@@ -1385,6 +1385,15 @@ pfunc_cb_end(int success, void *data)
 }
 
 static void
+gfprep_count_ng_file(gfarm_off_t filesize)
+{
+	gfarm_mutex_lock(&cb_mutex, "gfprep_count_ng_file", "cb_mutex");
+	total_ng_filesize += filesize;
+	total_ng_filenum++;
+	gfarm_mutex_unlock(&cb_mutex, "gfprep_count_ng_file", "cb_mutex");
+}
+
+static void
 gfprep_url_realloc(char **url_p, int *url_size_p,
 		   const char *dir, const char *subpath)
 {
@@ -3005,6 +3014,7 @@ main(int argc, char *argv[])
 			   entry->src_ncopy == 0) { /* entry->src_size > 0 */
 			/* shortcut */
 			gfprep_error("no available replica: %s", src_url);
+			gfprep_count_ng_file(entry->src_size);
 			goto next_entry;
 		}
 		/* ----- WAY_GREEDY or WAY_BAD ----- */
@@ -3080,6 +3090,7 @@ main(int argc, char *argv[])
 				gfarm_list_free(&src_select_list);
 				gfprep_error("no available src host: %s",
 					    src_url);
+				gfprep_count_ng_file(entry->src_size);
 				goto next_entry;
 			}
 			/* n_src_select > 0 */
@@ -3212,17 +3223,15 @@ main(int argc, char *argv[])
 			}
 		}
 		if (is_gfpcopy) { /* gfpcopy */
-			n_desire = 1;
-			if (src_is_gfarm && n_src_select <= 0) {
-				gfprep_error("lack of src host to copy"
-					    " (n_src=%d): %s",
-					    n_src_select, src_url);
-			}
+			assert(src_is_gfarm ? n_src_select > 0 : 1);
 			if (dst_is_gfarm && n_dst_select <= 0) {
 				gfprep_error("lack of dst host to copy"
 					    " (n_dst=%d): %s",
 					    n_dst_select, src_url);
+				gfprep_count_ng_file(entry->src_size);
+				goto next_entry_with_free;
 			}
+			n_desire = 1;
 		} else if (opt_migrate) { /* gfprep -m */
 			assert(n_src_select > 0);
 			if (n_dst_select < n_src_select) {
@@ -3233,8 +3242,10 @@ main(int argc, char *argv[])
 				n_desire = n_dst_select;
 			} else
 				n_desire = n_src_select;
-			if (n_desire <= 0)
+			if (n_desire <= 0) {
+				gfprep_count_ng_file(entry->src_size);
 				goto next_entry_with_free;
+			}
 		} else { /* gfprep -N */
 			assert(n_src_select > 0);
 			n_desire = opt_n_desire - n_dst_exist;
@@ -3265,8 +3276,10 @@ main(int argc, char *argv[])
 					    n_desire, n_dst_select,
 					    src_url);
 				n_desire = n_dst_select;
-				if (n_desire <= 0)
+				if (n_desire <= 0) {
+					gfprep_count_ng_file(entry->src_size);
 					goto next_entry_with_free;
+				}
 			}
 		}
 		assert(dst_select_array ? n_dst_select >= n_desire : 1);

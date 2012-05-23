@@ -389,7 +389,7 @@ dirtree_child(void *param, FILE *from_parent, FILE *to_parent)
 			gfarm_error_string(e));
 		gfpara_recv_purge(from_parent);
 		gfpara_send_int(to_parent, DIRTREE_STAT_NG);
-		goto term;
+		return (0);
 	}
 	/* -------------------------------------------------------- */
 next_command: /* instead of "for (;;)" */

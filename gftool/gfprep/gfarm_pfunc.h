@@ -5,7 +5,7 @@
 typedef struct gfarm_pfunc gfarm_pfunc_t;
 typedef struct gfarm_pfunc_cmd gfarm_pfunc_cmd_t;
 
-gfarm_error_t gfarm_pfunc_start(gfarm_pfunc_t **, int, int, gfarm_uint64_t,
+gfarm_error_t gfarm_pfunc_start(gfarm_pfunc_t **, int, int, gfarm_int64_t,
 				int, void (*)(void *), void (*)(int, void *));
 gfarm_error_t gfarm_pfunc_cmd_add(gfarm_pfunc_t *, gfarm_pfunc_cmd_t *);
 gfarm_error_t gfarm_pfunc_interrupt(gfarm_pfunc_t *);
