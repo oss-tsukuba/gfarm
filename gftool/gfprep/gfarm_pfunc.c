@@ -556,7 +556,7 @@ pfunc_child(void *param, FILE *from_parent, FILE *to_parent)
 			gfarm_error_string(e));
 		gfpara_recv_purge(from_parent);
 		gfpara_send_int(to_parent, PFUNC_STAT_FATAL);
-		goto term;
+		return (0);
 	}
 	for (;;) {
 		gfpara_recv_int(from_parent, &command);
@@ -725,7 +725,7 @@ pfunc_recv(FILE *child_out, gfpara_proc_t *proc, void *param)
 /* Do not call this function after gfarm_initialize() */
 gfarm_error_t
 gfarm_pfunc_start(gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
-		  gfarm_uint64_t simulate_KBs, int copy_bufsize,
+		  gfarm_int64_t simulate_KBs, int copy_bufsize,
 		  void (*cb_start)(void *), void (*cb_end)(int, void *))
 {
 	gfarm_error_t e;
