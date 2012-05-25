@@ -2312,6 +2312,20 @@ gfprep_check_dirurl_filename(int is_gfarm, const char *url,
 	}
 }
 
+/* gfarm:// -> gfarm:/// */
+static void
+gfprep_convert_gfarm_rootdir(char **urlp)
+{
+	if (urlp == NULL || *urlp == NULL)
+		return;
+	if (strcmp(*urlp, "gfarm://") == 0) {
+		free(*urlp);
+		*urlp = strdup("gfarm:///");
+		if (*urlp == NULL)
+			gfprep_fatal("no memory");
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2587,6 +2601,8 @@ main(int argc, char *argv[])
 	gfprep_check_dirurl_filename(src_is_gfarm, src_orig_url,
 				     &src_dir, &src_base_name,
 				     &src_dir_mode, NULL);
+	gfprep_convert_gfarm_rootdir(&src_dir);
+
 	if (is_gfpcopy)
 		dst_dir = strdup(dst_orig_url);
 	else
@@ -2596,15 +2612,14 @@ main(int argc, char *argv[])
 
 	if (is_gfpcopy) { /* gfpcopy */
 		int create_dst_dir = 0, checked;
-		/* gfpcopy p1/d1 p2/d2(exist)     : mkdir p2/d2/d1 */
-		/* gfpcopy p1/d1 p2/d2(not exist) : mkdir p2/d2 */
-		/* gfpcopy p1/f1 p2/(exist)     : copy p2/f1 */
-		/* gfpcopy p1/f1 p2/(not exist) : error */
-		/* gfpcopy    p1/f1 p2/f1(exist) : error */
-		/* gfpcopy -f p1/f1 p2/f1(exist) : copy */
+		/* [1] gfpcopy p1/d1 p2/d2(exist)     : mkdir p2/d2/d1 */
+		/* [2] gfpcopy p1/d1 p2/d2(not exist) : mkdir p2/d2 */
+		/* [3] gfpcopy p1/f1 p2/(exist)       : copy p2/f1 */
+		/* [4] gfpcopy p1/f1 p2/(not exist)   : ENOENT */
+		/* [5] gfpcopy p1/f1 p2/f1(exist)     : ENOTDIR */
 		if (gfprep_is_dir(dst_is_gfarm, dst_dir, NULL, &e)) {
 			/* exist dst_dir */
-			if (src_base_name) {
+			if (src_base_name) { /* [3] */
 				if (!opt_force_copy) {
 					char *tmp_dst_file;
 					retv = gfprep_asprintf(
@@ -2631,13 +2646,22 @@ main(int argc, char *argv[])
 					free(tmp_dst_file);
 				}
 				checked = 1;
-			} else {
+			} else { /* [1] */
 				char *tmp_dst_dir;
 				char *tmp_src_dir = strdup(src_dir);
 				char *tmp_src_base;
 				if (tmp_src_dir == NULL)
 					gfprep_fatal("no memory");
 				tmp_src_base = basename(tmp_src_dir);
+				if (strcmp(tmp_src_base, GFARM_URL_PREFIX)
+				    == 0) {
+					/* src_dir is Gfarm root directory */
+					free(tmp_src_dir);
+					tmp_src_dir = strdup("");
+					if (tmp_src_dir == NULL)
+						gfprep_fatal("no memory");
+					tmp_src_base = tmp_src_dir;
+				}
 				retv = gfprep_asprintf(
 					&tmp_dst_dir, "%s%s%s", dst_dir,
 					(dst_dir[strlen(dst_dir) - 1] == '/'
@@ -2652,12 +2676,13 @@ main(int argc, char *argv[])
 				checked = 0;
 			}
 		} else if (src_base_name == NULL &&
-			   e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+			   e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) /* [2] */
 			checked = 1; /* not exist */
-		else {
+		else { /* [4] [5] or other error */
 			gfprep_error_e(e, "dst_dir(%s)", dst_dir);
 			exit(EXIT_FAILURE);
 		}
+		gfprep_convert_gfarm_rootdir(&dst_dir);
 		if (checked == 0 &&
 		    gfprep_is_dir(dst_is_gfarm, dst_dir, NULL, &e)) {
 			if (!opt_force_copy) {
