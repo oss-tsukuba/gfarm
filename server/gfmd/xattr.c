@@ -1324,7 +1324,7 @@ gfarm_error_t
 gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e_ret, e_rpc;
 	static const char diag[] = "GFM_PROTO_XMLATTR_FIND";
 	char *expr = NULL, *ck_path = NULL, *ck_name = NULL;
 	int depth, nalloc;
@@ -1336,13 +1336,13 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct inum_path_array *array = NULL;
 #endif
 
-	e = gfm_server_get_request(peer, sizep, diag,
-			"siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
-	if (e != GFARM_ERR_NO_ERROR) {
+	e_ret = gfm_server_get_request(peer, sizep, diag,
+	    "siiss", &expr, &depth, &nalloc, &ck_path, &ck_name);
+	if (e_ret != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002110,
-			"%s request failed: %s",
-			diag, gfarm_error_string(e));
-		return (e);
+		    "%s request failed: %s",
+		    diag, gfarm_error_string(e_ret));
+		return (e_ret);
 	}
 	if (skip) {
 		free(expr);
@@ -1352,19 +1352,15 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 #ifdef ENABLE_XMLATTR
-	e = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag);
-	if (e != GFARM_ERR_NO_ERROR) {
+	if ((e_rpc = wait_db_update_info(peer, DBUPDATE_XMLATTR, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: failed to wait for the backend DB to be updated: %s",
-		    diag, gfarm_error_string(e));
-		goto quit;
-	}
-
-	if ((ctxp = gfs_xmlattr_ctx_alloc(nalloc)) == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
+		    diag, gfarm_error_string(e_rpc));
+	} else if ((ctxp = gfs_xmlattr_ctx_alloc(nalloc)) == NULL) {
+		e_rpc = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002111,
-			"allocation of 'ctxp' failed");
-		goto quit;
+		    "allocation of 'ctxp' failed");
 	}
 	ctxp->expr = expr;
 	ctxp->depth = depth;
@@ -1372,48 +1368,50 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	ctxp->cookie_attrname = ck_name;
 
 	giant_lock();
-	if ((process = peer_get_process(peer)) == NULL) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
+		;
+	} else if ((process = peer_get_process(peer)) == NULL) {
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		gflog_debug(GFARM_MSG_1002112,
 			"peer_get_process() failed :%s",
-			gfarm_error_string(e));
-	} else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+			gfarm_error_string(e_rpc));
+	} else if ((e_rpc = peer_fdpair_get_current(peer, &fd)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002113,
 			"peer_fdpair_get_current() failed: %s",
-			gfarm_error_string(e));
-	} else if ((e = process_get_file_inode(process, fd, &inode)) !=
+			gfarm_error_string(e_rpc));
+	} else if ((e_rpc = process_get_file_inode(process, fd, &inode)) !=
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002114,
 			"process_get_file_inode() failed: %s",
-			gfarm_error_string(e));
+			gfarm_error_string(e_rpc));
 	}
-	if (e == GFARM_ERR_NO_ERROR) {
+
+	if (e_rpc == GFARM_ERR_NO_ERROR) {
 		// giant_unlock() is called in findxmlattr()
-		e = findxmlattr(peer, inode, ctxp, &array);
+		e_rpc = findxmlattr(peer, inode, ctxp, &array);
 	} else
 		giant_unlock();
 
-quit:
-	if ((e = gfm_server_put_reply(peer, xid, sizep, diag, e, "ii",
+	if ((e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc, "ii",
 	    ctxp->eof, ctxp->nvalid)) == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < ctxp->nvalid; i++) {
-			e = gfp_xdr_send(peer_get_conn(peer), "ss",
+			e_ret = gfp_xdr_send(peer_get_conn(peer), "ss",
 				    ctxp->entries[i].path,
 				    ctxp->entries[i].attrname);
-			if (e != GFARM_ERR_NO_ERROR) {
+			if (e_ret != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1000420,
 				    "%s@%s: findxmlattr: %s",
 					peer_get_username(peer),
 					peer_get_hostname(peer),
-					gfarm_error_string(e));
+					gfarm_error_string(e_ret));
 				break;
 			}
 		}
 	}
 	inum_path_array_free(array);
 	gfs_xmlattr_ctx_free(ctxp, 0);
-	return e;
+	return (e_ret);
 #else
 	free(expr);
 	free(ck_path);

@@ -1284,22 +1284,30 @@ gfm_server_host_info_get_all(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e_ret, e_rpc;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_GET_ALL";
 
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
-	if (e != GFARM_ERR_NO_ERROR) {
+	e_rpc = wait_db_update_info(peer, DBUPDATE_HOST, diag);
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: failed to wait for the backend DB to be updated: %s",
-		    diag, gfarm_error_string(e));
-		return (e);
+		    diag, gfarm_error_string(e_rpc));
+		return (e_rpc);
 	}
 
-	return (gfm_server_host_info_get_common(peer, xid, sizep,
-	    NULL, NULL, diag));
+	if (e_rpc == GFARM_ERR_NO_ERROR) {
+		e_ret = gfm_server_host_info_get_common(peer, xid, sizep,
+		    NULL, NULL, diag);
+	} else {
+		e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc,
+		    "");
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: gfm_server_put_reply: %s",
+		    diag, gfarm_error_string(e_rpc));
+	}
+	return (e_ret);
 }
 
 static int
@@ -1315,33 +1323,39 @@ gfm_server_host_info_get_by_architecture(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e;
+	gfarm_error_t e_ret, e_rpc;
 	char *architecture;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE";
 
-	e = gfm_server_get_request(peer, sizep, diag, "s", &architecture);
-	if (e != GFARM_ERR_NO_ERROR) {
+	e_ret = gfm_server_get_request(peer, sizep, diag, "s", &architecture);
+	if (e_ret != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_server_get_request() failed: %s",
-		    gfarm_error_string(e));
-		return (e);
+		    gfarm_error_string(e_ret));
+		return (e_ret);
 	}
 	if (skip) {
 		free(architecture);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e = wait_db_update_info(peer, DBUPDATE_HOST, diag);
-	if (e != GFARM_ERR_NO_ERROR) {
+	e_rpc = wait_db_update_info(peer, DBUPDATE_HOST, diag);
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: failed to wait for the backend DB to be updated: %s",
-		    diag, gfarm_error_string(e));
-		return (e);
+		    diag, gfarm_error_string(e_rpc));
 	}
 
-	e = gfm_server_host_info_get_common(peer, xid, sizep,
-	    arch_filter, architecture, diag);
-	return (e);
+	if (e_rpc == GFARM_ERR_NO_ERROR) {
+		e_ret = gfm_server_host_info_get_common(peer, xid, sizep,
+		    arch_filter, architecture, diag);
+	} else {
+		e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc,
+		    "");
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: gfm_server_put_reply: %s",
+		    diag, gfarm_error_string(e_rpc));
+	}
+	return (e_ret);
 }
 
 gfarm_error_t
@@ -1895,10 +1909,12 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request(
 	/*
 	 * A null string is allowed as a domain name.
 	 */
-	if (cp->domain == NULL) {
+	if (ret != GFARM_ERR_NO_ERROR) {
+		cp->req_error = ret;
+	} else if (cp->domain == NULL) {
 		cp->req_error = GFARM_ERR_NO_MEMORY;
 	} else {
-		cp->req_error = ret;
+		cp->req_error = GFARM_ERR_NO_ERROR;
 	}
 
 	if (cp->req_error != GFARM_ERR_NO_ERROR) {
@@ -1949,13 +1965,11 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *cp = 
 		(GFM_PROTO_SCHEDULE_HOST_DOMAIN_context *)closure;
 	gfarm_error_t ret = GFARM_ERR_UNKNOWN;
-	bool got_error = false;
 
 	assert(cp != NULL);
 
 	if (!skip) {
 		gfarm_error_t rep_error = GFARM_ERR_UNKNOWN;
-		gfarm_error_t tmp;
 		gfarm_int32_t i;
 
 		if (mode != RELAY_TRANSFER) {
@@ -2003,61 +2017,45 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
 		}
 
 	calc_or_reply:
-		tmp = gfm_server_put_reply_with_vrelay(
+		ret = gfm_server_put_reply_with_vrelay(
 			peer, sizep, diag, "i", rep_error);
+		if (ret != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"%s: %s failed: %s",
+				diag,
+				"gfm_server_put_reply_with_vrelay()",
+				gfarm_error_string(ret));
+			goto done;
+		}
 		if (rep_error != GFARM_ERR_NO_ERROR) {
 			/*
 			 * Nothing to do anymore.
 			 */
-			ret = tmp;
 			goto done;
 		}
-		/*
-		 * Return the first reply error.
-		 */
-		if (tmp != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"%s: %s failed: %s",
-				diag,
-				"gfm_server_put_reply_with_vrelay()",
-				gfarm_error_string(tmp));
-			got_error = true;
-		} else {
-			ret = GFARM_ERR_NO_ERROR;
-		}
 
-		tmp = gfm_server_put_reply_with_vrelay(
+		ret = gfm_server_put_reply_with_vrelay(
 			peer, sizep, diag, "i", cp->nhosts);
-		if (tmp != GFARM_ERR_NO_ERROR) {
+		if (ret != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: %s failed: %s",
 				diag,
 				"gfm_server_put_reply_with_vrelay()",
-				gfarm_error_string(tmp));
-			if (got_error == false) {
-				ret = tmp;
-				got_error = true;
-			}
-		} else {
-			ret = GFARM_ERR_NO_ERROR;
+				gfarm_error_string(ret));
+			goto done;
 		}
 
 		giant_lock();
 		for (i = 0; i < cp->nhosts; i++) {
-			tmp = host_schedule_reply_with_vrelay(
+			ret = host_schedule_reply_with_vrelay(
 				cp->hosts[i], peer, sizep, diag);
-			if (tmp != GFARM_ERR_NO_ERROR) {
+			if (ret != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s: %s failed: %s",
 					diag,
 					"host_schedule_reply_with_vrelay()",
-					gfarm_error_string(tmp));
-				if (got_error == false) {
-					ret = tmp;
-					got_error = true;
-				} else {
-					ret = GFARM_ERR_NO_ERROR;
-				}
+					gfarm_error_string(ret));
+				goto done;
 			}
 		}
 		giant_unlock();
