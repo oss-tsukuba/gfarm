@@ -1191,16 +1191,10 @@ gfm_server_fgetattrplus(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs))
 	    != GFARM_ERR_NO_ERROR) {
 		xattrs = NULL;
-		/* workaround gcc warning: may be used uninitialized */
 		nxattrs = 0;
+		needs_free = 1;
 	} else {
 		needs_free = 1;
-		e_rpc = inode_xattr_list_get_cached_by_patterns(
-		    st.st_ino, attrpatterns, nattrpatterns, &xattrs, &nxattrs);
-		if (e_rpc != GFARM_ERR_NO_ERROR) {
-			xattrs = NULL;
-			nxattrs = 0;
-		}
 		for (j = 0; j < nxattrs; j++) {
 			px = &xattrs[j];
 			if (px->value == NULL) {
