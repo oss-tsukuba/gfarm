@@ -43,9 +43,6 @@
 #include "config.h" /* for gfarm_host_get_self_name() */
 #include "fsngroup_replica.h"
 
-#define macro_stringify(X)   stringify(X)
-#define stringify(X) #X
-
 static char dot[] = ".";
 static char dotdot[] = "..";
 
@@ -1898,7 +1895,7 @@ gfm_server_schedule_file(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_error_t e;
 	GFM_PROTO_SCHEDULE_FILE_context c;
-	static const char diag[] = macro_stringify(GFM_PROTO_SCHEDULE_FILE);
+	static const char diag[] = "GFM_PROTO_SCHEDULE_FILE";
 
 	GFM_PROTO_SCHEDULE_FILE_context_initialize(&c, from_client);
 	e = gfm_server_request_reply_with_vrelaywait(

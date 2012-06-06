@@ -50,9 +50,6 @@
 #include "back_channel.h"
 #include "relay.h"
 
-#define macro_stringify(X)   stringify(X)
-#define stringify(X) #X
-
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
 static pthread_mutex_t total_disk_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -2081,8 +2078,7 @@ gfm_server_schedule_host_domain(
 
 	gfarm_error_t e;
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context c;
-	static const char diag[] =
-		macro_stringify(GFM_PROTO_SCHEDULE_HOST_DOMAIN);
+	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_initialize(&c);
 	e = gfm_server_request_reply_with_vrelaywait(
