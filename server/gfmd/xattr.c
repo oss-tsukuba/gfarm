@@ -1299,6 +1299,7 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	struct inode *inode;
 	struct inum_path_array *array = NULL;
+	int eof, nvalid;
 #endif
 
 	e = gfm_server_get_request(peer, diag,
@@ -1352,8 +1353,15 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 		giant_unlock();
 
 quit:
-	if ((e = gfm_server_put_reply(peer, diag, e, "ii", ctxp->eof,
-			ctxp->nvalid)) == GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		eof = ctxp->eof;
+		nvalid = ctxp->nvalid;
+	} else {
+		eof = 0;
+		nvalid = 0;
+	}
+	if ((e = gfm_server_put_reply(peer, diag, e, "ii", eof,
+		nvalid)) == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < ctxp->nvalid; i++) {
 			e = gfp_xdr_send(peer_get_conn(peer), "ss",
 				    ctxp->entries[i].path,
