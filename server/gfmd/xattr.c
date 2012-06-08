@@ -1299,7 +1299,7 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 	struct process *process;
 	struct inode *inode;
 	struct inum_path_array *array = NULL;
-	int eof, nvalid;
+	int eof = 0, nvalid = 0;
 #endif
 
 	e = gfm_server_get_request(peer, diag,
@@ -1349,20 +1349,22 @@ gfm_server_findxmlattr(struct peer *peer, int from_client, int skip)
 	if (e == GFARM_ERR_NO_ERROR) {
 		// giant_unlock() is called in findxmlattr()
 		e = findxmlattr(peer, inode, ctxp, &array);
+		eof = ctxp->eof;
+		nvalid = ctxp->nvalid;
 	} else
 		giant_unlock();
 
 quit:
-	if (e == GFARM_ERR_NO_ERROR) {
-		eof = ctxp->eof;
-		nvalid = ctxp->nvalid;
-	} else {
-		eof = 0;
-		nvalid = 0;
-	}
 	if ((e = gfm_server_put_reply(peer, diag, e, "ii", eof,
 		nvalid)) == GFARM_ERR_NO_ERROR) {
-		for (i = 0; i < ctxp->nvalid; i++) {
+		/*
+		 * "ctxp" is not NULL here.  If the memory allocation error
+		 * for "ctxp" has occurred, the valiable "e" is set to
+		 * GFARM_ERR_NO_MEMORY and gfm_server_put_reply() here
+		 * returns GFARM_ERR_NO_MEMORY (or a communication error
+		 * code).
+		 */
+		for (i = 0; i < nvalid; i++) {
 			e = gfp_xdr_send(peer_get_conn(peer), "ss",
 				    ctxp->entries[i].path,
 				    ctxp->entries[i].attrname);
