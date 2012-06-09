@@ -161,8 +161,7 @@ db_journal_apply_user_modify(gfarm_uint64_t seqnum,
 		    (unsigned long long)seqnum,
 		    ui->username, gfarm_error_string(e));
 	} else {
-		user_modify(u, ui);
-		e = GFARM_ERR_NO_ERROR;
+		e = user_modify(u, ui);
 	}
 	return (e);
 }
