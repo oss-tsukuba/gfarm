@@ -623,7 +623,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 				e = GFARM_ERR_NO_SUCH_USER;
 			} else {
 				*userp = strdup(user);
-				if (userp == NULL)
+				if (*userp == NULL)
 					e = GFARM_ERR_NO_MEMORY;
 			}
 			gfm_client_connection_free(gfm_server);
