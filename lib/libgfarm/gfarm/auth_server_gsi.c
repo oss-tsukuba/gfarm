@@ -124,7 +124,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	session = gfarmSecSessionAccept(fd, cred, NULL, &e_major, &e_minor);
 	if (cred != GSS_C_NO_CREDENTIAL) {
 		OM_uint32 e_major2, e_minor2;
-		
+
 		if (gfarmGssDeleteCredential(&cred, &e_major2, &e_minor2) < 0
 		    && gflog_auth_get_verbose()) {
 			gflog_warning(GFARM_MSG_1000717,
@@ -172,7 +172,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure, auth_method,
 		    userinfo->distName, &global_username);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			gflog_error(GFARM_MSG_1003394,
 			    "authorize_gsi: \"%s\" @ %s: user authentication: "
@@ -180,6 +180,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			    gfarm_error_string(e),
 			    e == GFARM_ERR_AUTHENTICATION ?
 			    " (possibly unregistered user)" : "");
+		}
 		break;
 	default:
 		gflog_error(GFARM_MSG_1000720,
@@ -267,7 +268,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    userinfo->authData.userAuth.homeDir);
 		/*
 		 * set the delegated credential
-		 * 
+		 *
 		 * XXX - thread unsafe function.  this causes data race
 		 * in gfmd, but it is not harmful since gfmd currently
 		 * does not support to use delegated credential.
@@ -279,9 +280,9 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	/* determine *peer_typep == GFARM_AUTH_ID_TYPE_SPOOL_HOST */
 	if (peer_typep != NULL) {
 		if (gfarmAuthGetAuthEntryType(userinfo) == GFARM_AUTH_HOST)
-		     *peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
+			*peer_typep = GFARM_AUTH_ID_TYPE_SPOOL_HOST;
 		else
-		     *peer_typep = GFARM_AUTH_ID_TYPE_USER;
+			*peer_typep = GFARM_AUTH_ID_TYPE_USER;
 	}
 	if (global_usernamep != NULL)
 		*global_usernamep = global_username;
