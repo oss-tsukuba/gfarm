@@ -4455,6 +4455,8 @@ struct replica_info_closure {
 	gfarm_int32_t iflags;
 	gfarm_int32_t nhosts;
 	char **hosts;
+	gfarm_int64_t *gens;
+	gfarm_int32_t *oflags;
 	gfarm_error_t error;
 };
 
@@ -4463,8 +4465,10 @@ replica_info_closure_init(struct replica_info_closure *closure)
 {
 	closure->iflags = 0;
 	closure->nhosts = 0;
-	closure->hosts = NULL;
-	closure->error = GFARM_ERR_NO_ERROR;
+	closure->hosts  = NULL;
+	closure->gens   = NULL;
+	closure->oflags = NULL;
+	closure->error  = GFARM_ERR_NO_ERROR;
 }
 
 static gfarm_int32_t
@@ -4474,11 +4478,14 @@ replica_info_closure_get_iflags(struct replica_info_closure *closure)
 }
 
 static void
-replica_info_closure_get_hosts(struct replica_info_closure *closure,
-    gfarm_int32_t *nhosts, char ***hosts)
+replica_info_closure_get_info(struct replica_info_closure *closure,
+    gfarm_int32_t *nhosts, char ***hosts,
+    gfarm_int64_t **gens, gfarm_int32_t **oflags)
 {
 	*nhosts = closure->nhosts;
-	*hosts = closure->hosts;
+	*hosts  = closure->hosts;
+	*gens   = closure->gens;
+	*oflags = closure->oflags;
 }
 
 static gfarm_error_t
@@ -4495,11 +4502,14 @@ replica_info_closure_set_iflags(struct replica_info_closure *closure,
 }
 
 static void
-replica_info_closure_set_hosts(struct replica_info_closure *closure, 
-    gfarm_int32_t nhosts, char **hosts)
+replica_info_closure_set_info(struct replica_info_closure *closure, 
+    gfarm_int32_t nhosts, char **hosts,
+    gfarm_int64_t *gens, gfarm_int32_t *oflags)
 {
 	closure->nhosts = nhosts;
-	closure->hosts = hosts;
+	closure->hosts  = hosts;
+	closure->gens   = gens;
+	closure->oflags = oflags;
 }
 
 static void
@@ -4519,6 +4529,8 @@ replica_info_closure_term(struct replica_info_closure *closure)
 			free(closure->hosts[i]);
 		free(closure->hosts);
 	}
+	free(closure->gens);
+	free(closure->oflags);
 }
 
 static gfarm_error_t
@@ -4527,7 +4539,7 @@ gfm_server_replica_info_get_request(enum request_reply_mode mode,
 	void *closure, const char *diag)
 {
 	gfarm_error_t e;
-	gfarm_int32_t iflags = 0;
+	gfarm_int32_t iflags = replica_info_closure_get_iflags(closure);
 
 	e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
 	    "i", &iflags);
@@ -4559,9 +4571,10 @@ gfm_server_replica_info_get_reply(enum request_reply_mode mode,
 		return (GFARM_ERR_NO_ERROR);
 
 	/* do not relay RPC to master gfmd */
-	if (mode == RELAY_TRANSFER)
-		replica_info_closure_get_hosts(closure, &n, &hosts);
-	else {
+	if (mode == RELAY_TRANSFER) {
+		replica_info_closure_get_info(closure, &n, &hosts, &gens,
+		    &oflags);
+	} else {
 		giant_lock();
 		spool_host = peer_get_host(peer);
 		if (e_rpc != GFARM_ERR_NO_ERROR)
@@ -4585,7 +4598,7 @@ gfm_server_replica_info_get_reply(enum request_reply_mode mode,
 		/*
 		 * It works fine even when inode_replica_info_get() has failed.
 		 */
-		replica_info_closure_set_hosts(closure, n, hosts);
+		replica_info_closure_set_info(closure, n, hosts, gens, oflags);
 	}
 
 	e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
@@ -4604,8 +4617,6 @@ gfm_server_replica_info_get_reply(enum request_reply_mode mode,
 	}
 
 end:
-	free(gens);
-	free(oflags);
 	return (e_ret);
 }
 
