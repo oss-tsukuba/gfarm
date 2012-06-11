@@ -602,38 +602,54 @@ gfarm_error_t
 gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 {
 	char *local_user = gfarm_get_local_username();
+	char *global_user;
+	gfarm_error_t e;
 #ifdef HAVE_GSI
 	struct gfm_connection *gfm_server;
 	const char *user;
-	gfarm_error_t e;
 #endif
 
 	if (userp == NULL)
 		return (GFARM_ERR_NO_ERROR);
-#ifdef HAVE_GSI
-	e = gfm_client_connection_acquire(hostname, port, local_user,
-	    &gfm_server);
-	if (e == GFARM_ERR_NO_ERROR) {
-		if (GFARM_IS_AUTH_GSI(
-		    gfm_client_connection_auth_method(gfm_server))) {
-			user = gfm_client_username(gfm_server);
-			if (user == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "global username is not set");
-				e = GFARM_ERR_NO_SUCH_USER;
-			} else {
-				*userp = strdup(user);
-				if (*userp == NULL)
-					e = GFARM_ERR_NO_MEMORY;
-			}
-			gfm_client_connection_free(gfm_server);
-			return (e);
-		}			
-		gfm_client_connection_free(gfm_server);
+	e = gfarm_local_to_global_username_by_host(
+	    hostname, port, local_user, &global_user);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "local-to-global user-mapping failed: %s",
+		    gfarm_error_string(e));
+		return (e);
 	}
+#ifdef HAVE_GSI
+	/* global username can be specified by GSI DN in gfmd user database */
+	e = gfm_client_connection_acquire(hostname, port, global_user,
+	    &gfm_server);
+	free(global_user);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "cannot acquire connection: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (GFARM_IS_AUTH_GSI(
+	    gfm_client_connection_auth_method(gfm_server))) {
+		user = gfm_client_username(gfm_server);
+		if (user == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "global username is not set");
+			e = GFARM_ERR_NO_SUCH_USER;
+		} else {
+			global_user = strdup(user);
+			if (global_user == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s", gfarm_error_string(e));
+			}
+		}
+	}
+	gfm_client_connection_free(gfm_server);
 #endif
-	return (gfarm_local_to_global_username_by_host(
-	    hostname, port, local_user, userp));
+	if (e == GFARM_ERR_NO_ERROR)
+		*userp = global_user;
+	return (e);
 }
 
 gfarm_error_t
