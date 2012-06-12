@@ -15,7 +15,7 @@ end
 
 $hostname = `hostname`.chomp
 $pid = Process.pid
-$gfsds = `gfsched`.split("\n")
+$gfsds = `gfsched -w`.split("\n")
 if ($gfsds.size == 0)
   STDERR.print "no gfsd!\n"
   exit(1)
