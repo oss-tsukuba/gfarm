@@ -886,13 +886,14 @@ struct search_idle_state {
 
 	int concurrency;
 
+	struct gfm_connection *gfm_server;
 	struct gfarm_filesystem *filesystem;
 };
 
 static gfarm_error_t
-search_idle_init_state(struct search_idle_state *s, int desired_hosts,
-	enum gfarm_schedule_search_mode mode, int write_mode,
-	struct gfarm_filesystem *fs)
+search_idle_init_state(struct search_idle_state *s,
+	struct gfm_connection *gfm_server, int desired_hosts,
+	enum gfarm_schedule_search_mode mode, int write_mode)
 {
 	int syserr;
 
@@ -926,7 +927,8 @@ search_idle_init_state(struct search_idle_state *s, int desired_hosts,
 	s->available_hosts_number = s->usable_hosts_number =
 	    s->idle_hosts_number = s->semi_idle_hosts_number = 0;
 	s->concurrency = 0;
-	s->filesystem = fs;
+	s->gfm_server = gfm_server;
+	s->filesystem = gfarm_filesystem_get_by_connection(gfm_server);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1120,7 +1122,6 @@ search_idle_load_callback(void *closure)
 	struct gfs_client_load load;
 	struct gfs_client_connect_state *cs;
 	struct timeval rtt;
-	char *user;
 
 	e = gfs_client_get_load_result_multiplexed(c->protocol_state, &load);
 	if (e == GFARM_ERR_NO_ERROR) {
@@ -1145,33 +1146,24 @@ search_idle_load_callback(void *closure)
 			/* completed */
 			search_idle_record(c);
 		} else {
-			e = gfarm_get_global_username_by_host(
-			    c->h->return_value, c->h->port, &user);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1002721,
-				    "gfarm_get_global_username_by_host: %s",
-				    gfarm_error_string(e));
-			} else {
 #if 0 /* not actully used */
-				c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
+			c->h->flags |= HOST_STATE_FLAG_AUTH_TRIED;
 #endif
-				e = gfs_client_connect_request_multiplexed(
-				    c->state->q, c->h->return_value,
-				    c->h->port, user, &c->h->addr,
-				    s->filesystem,
-				    search_idle_connect_callback, c,
-				    &cs);
-				free(user);
-				if (e == GFARM_ERR_NO_ERROR) {
-					c->protocol_state = cs;
-					return; /* request continues */
-				}
-				/* failed to connect */
-				gflog_debug(GFARM_MSG_1001442,
-				    "search_idle_load_callback: "
-				    "gfs_client_connect_request_multiplexed: "
-				    "%s", gfarm_error_string(e));
+			e = gfs_client_connect_request_multiplexed(c->state->q,
+			    c->h->return_value, c->h->port,
+			    gfm_client_username(s->gfm_server),
+			    &c->h->addr, s->filesystem,
+			    search_idle_connect_callback, c,
+			    &cs);
+			if (e == GFARM_ERR_NO_ERROR) {
+				c->protocol_state = cs;
+				return; /* request continues */
 			}
+			/* failed to connect */
+			gflog_debug(GFARM_MSG_1001442,
+			    "search_idle_load_callback: "
+			    "gfs_client_connect_request_multiplexed: "
+			    "%s", gfarm_error_string(e));
 		}
 	} else {
 		gflog_debug(GFARM_MSG_1001443,
@@ -1502,8 +1494,8 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 
 /* `*nohostsp' is INPUT/OUTPUT parameter, and `*ohosts' is OUTPUT parameter */
 static gfarm_error_t
-search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode,
-	struct gfarm_filesystem *fs)
+search_idle(struct gfm_connection *gfm_server,
+	int *nohostsp, char **ohosts, int *oports, int write_mode)
 {
 	gfarm_error_t e;
 	struct search_idle_state s;
@@ -1516,8 +1508,8 @@ search_idle(int *nohostsp, char **ohosts, int *oports, int write_mode,
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = search_idle_init_state(&s, *nohostsp,
-	    staticp->default_search_method, write_mode, fs);
+	e = search_idle_init_state(&s, gfm_server, *nohostsp,
+	    staticp->default_search_method, write_mode);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001448,
 		    "search_idle: search_idle_init_state: %s",
@@ -1630,13 +1622,13 @@ hosts_expand_cyclic(int nsrchosts, char **srchosts, int *srcports,
 }
 
 static gfarm_error_t
-search_idle_cyclic(int nohosts, char **ohosts, int *oports, int write_mode,
-	struct gfarm_filesystem *fs)
+search_idle_cyclic(struct gfm_connection *gfm_server,
+	int nohosts, char **ohosts, int *oports, int write_mode)
 {
 	gfarm_error_t e;
 	int nfound = nohosts;
 
-	e = search_idle(&nfound, ohosts, oports, write_mode, fs);
+	e = search_idle(gfm_server, &nfound, ohosts, oports, write_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (nfound == 0)
@@ -1660,8 +1652,6 @@ select_hosts(struct gfm_connection *gfm_server,
 	gfarm_error_t e;
 	int i;
 	gfarm_timerval_t t1, t2, t3, t4;
-	struct gfarm_filesystem *fs =
-	    gfarm_filesystem_get_by_connection(gfm_server);
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t2);
@@ -1700,10 +1690,11 @@ select_hosts(struct gfm_connection *gfm_server,
 	}
 	gfs_profile(gfarm_gettimerval(&t3));
 	if (acyclic)
-		e = search_idle(nohostsp, ohosts, oports, write_mode, fs);
+		e = search_idle(gfm_server, nohostsp, ohosts, oports,
+		    write_mode);
 	else
-		e = search_idle_cyclic(*nohostsp, ohosts, oports, write_mode,
-		    fs);
+		e = search_idle_cyclic(gfm_server, *nohostsp, ohosts, oports,
+		    write_mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1001455,
 		    "gfarm_schedule_select_host: search result: %s",
