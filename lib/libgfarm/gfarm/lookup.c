@@ -368,7 +368,7 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 	char *link, char **nextpathp, char *rest, int is_last)
 {
 	char *p, *p0, *n = *nextpathp;
-	int len, blen, linklen, is_rel;
+	int i, len, blen, linklen, is_rel;
 
 	linklen = link == NULL ? 0 : strlen(link);
 	if (linklen == 0) {
@@ -379,16 +379,17 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 
 	blen = strlen(rest);
 	if (blen > 0) {
-		char *ss = rest + blen - 1;
-		if (*ss == '/') {
-			while (*(--ss) == '/')
-				;
-			*(++ss) = 0;
-			blen = strlen(rest);
+		i = blen;
+		while (i > 0 && rest[i - 1] == '/')
+			--i;
+		if (i < blen) {
+			rest[i] = '\0';
+			blen = i;
 		}
 	}
 
-	is_rel = link[0] != '/' && (linklen < 6 || !gfarm_is_url(link));
+	is_rel = link[0] != '/' &&
+	    (linklen < GFARM_URL_PREFIX_LENGTH || !gfarm_is_url(link));
 	len = linklen + (is_last ? 0 : blen + 1) +
 		(is_rel ? strlen(n) + 1 : 0);
 	GFARM_MALLOC_ARRAY(p, len + 1);
@@ -396,25 +397,25 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 
 	if (is_rel) {
 		/* add relative path */
-		char *r = rest;
-		--r;
+		i = rest - n;
 		if (!is_last) {
-			while (*r == '/')
-				--r;
-			while (*r != '/')
-				--r;
+			while (i > 0 && n[i - 1] == '/')
+				--i;
+			while (i > 0 && n[i - 1] != '/')
+				--i;
 		}
-		while (*r == '/')
-			*(r--) = 0;
-		strcpy(p, n);
-		p += strlen(n);
-		*(p++) = '/';
+		while (i > 0 && n[i - 1] == '/')
+			--i;
+		if (i > 0)
+			memcpy(p, n, i);
+		p += i;
+		*p++ = '/';
 	}
 
 	strcpy(p, link);
 	p += linklen;
 	if (!is_last) {
-		*(p++) = '/';
+		*p++ = '/';
 		strcpy(p, rest);
 		p += blen;
 	}
