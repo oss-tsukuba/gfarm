@@ -79,6 +79,9 @@ extern int gfarm_client_parallel_copy;
 
 extern int gf_on_demand_replication;
 
+gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
+	const char *, int, char **);
+
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
 gfarm_off_t gfarm_get_minimum_free_disk_space(void);

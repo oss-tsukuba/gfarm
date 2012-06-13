@@ -599,9 +599,30 @@ gfarm_get_global_username_by_url(const char *url, char **userp)
 }
 
 gfarm_error_t
-gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
+gfarm_get_global_username_by_host_for_connection_cache(
+	const char *hostname, int port, char **userp)
 {
 	char *local_user = gfarm_get_local_username();
+	char *global_user;
+	gfarm_error_t e;
+
+	if (userp == NULL)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfarm_local_to_global_username_by_host(hostname, port, local_user,
+	    &global_user);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "local-to-global user-mapping failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	*userp = global_user;
+	return (e);
+}
+
+gfarm_error_t
+gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
+{
 	char *global_user;
 	gfarm_error_t e;
 #ifdef HAVE_GSI
@@ -611,18 +632,18 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 
 	if (userp == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	e = gfarm_local_to_global_username_by_host(
-	    hostname, port, local_user, &global_user);
+	e = gfarm_get_global_username_by_host_for_connection_cache(
+		hostname, port, &global_user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "local-to-global user-mapping failed: %s",
-		    gfarm_error_string(e));
+		    "gfarm_get_global_username_by_host_for_connection_cache() "
+		    "failed: %s", gfarm_error_string(e));
 		return (e);
 	}
 #ifdef HAVE_GSI
 	/* global username can be specified by GSI DN in gfmd user database */
-	e = gfm_client_connection_acquire(hostname, port, global_user,
-	    &gfm_server);
+	e = gfm_client_connection_and_process_acquire(hostname, port,
+	    global_user, &gfm_server);
 	free(global_user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED, "cannot acquire connection: %s",

@@ -144,11 +144,11 @@ gfarm_url_parse_metadb(const char **pathp,
 	if (gfm_serverp == NULL) {
 		e = GFARM_ERR_NO_ERROR;
 		free(hostname);
-	} else if ((e = gfarm_get_global_username_by_host(
+	} else if ((e = gfarm_get_global_username_by_host_for_connection_cache(
 	    hostname, port, &user)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002587,
-		    "gfarm_get_global_username_by_host: %s",
-		    gfarm_error_string(e));
+		    "gfarm_get_global_username_by_host_for_connection_cache: "
+		    "%s", gfarm_error_string(e));
 		free(hostname);
 		return (e);
 	} else {
