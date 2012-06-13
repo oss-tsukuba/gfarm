@@ -82,6 +82,7 @@ gftool/gfsetfacl/acl.sh
 gftool/gfstat/gfstat.sh
 gftool/gfexport/0byte.sh
 gftool/gfexport/1byte.sh
+gftool/gfexport/gfexport_top_rel_symlink.sh
 gftool/gfmv/file.sh
 gftool/gfmv/dir.sh
 gftool/gfmv/dir_parent.sh
