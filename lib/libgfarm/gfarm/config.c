@@ -644,10 +644,10 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 	/* global username can be specified by GSI DN in gfmd user database */
 	e = gfm_client_connection_and_process_acquire(hostname, port,
 	    global_user, &gfm_server);
-	free(global_user);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED, "cannot acquire connection: %s",
 		    gfarm_error_string(e));
+		free(global_user);
 		return (e);
 	}
 	if (GFARM_IS_AUTH_GSI(
@@ -658,6 +658,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 			    "global username is not set");
 			e = GFARM_ERR_NO_SUCH_USER;
 		} else {
+			free(global_user);
 			global_user = strdup(user);
 			if (global_user == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
@@ -670,6 +671,8 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 #endif
 	if (e == GFARM_ERR_NO_ERROR)
 		*userp = global_user;
+	else
+		free(global_user);
 	return (e);
 }
 
