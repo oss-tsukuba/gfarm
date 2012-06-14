@@ -1,0 +1,107 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfhostgroup.1'>
+
+<refentryinfo><date>14 Jun 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfhostgroup</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfhostgroup</refname>
+<refpurpose>Gfarm hostgroup maintenance command</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfhostgroup</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'><replaceable>host</replaceable></arg>
+      <group choice='opt'>
+        <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
+      </group>
+    </group>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhostgroup</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+    <arg choice='plain'>-s <replaceable>host</replaceable></arg>
+    <arg choice='plain'><replaceable>groupname</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfhostgroup</command>
+    <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+    <arg choice='plain'>-r <replaceable>host</replaceable></arg>
+      <group choice='opt'>
+        <arg choice='opt' rep='repeat'><replaceable>host</replaceable></arg>
+      </group>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+<command>gfhostgroup</command> manages Gfarm host groups (so called <command>filesystem node
+group</command> or <command>fsngroup</command> for short) in Gfarm file system.  The host
+group is used by the <command>Replication-Attribute-based File Replication</command>.
+</para>
+
+<para>
+Default action displays all registered host groups.  Any user can
+display the host groups.
+Gfarm administrators can set the host group of specified hosts by
+using <command>-s</command> option, and the one also can remove the host group of
+specified hosts by using <command>-r</command> option.
+
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+  <varlistentry>
+    <term><option>-P</option> path</term>
+    <listitem>
+      <para>
+    This option specifies a pathname or a Gfarm URL to identify
+    a metadata server which will be accessed by this command.
+    If not specified, "/" is used as the default value.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><option>-s</option></term>
+    <listitem>
+      <para>
+    Sets a host group for the specified host.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry>
+    <term><option>-r</option></term>
+    <listitem>
+      <para>
+    Removes a host group for the specified host(s).
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfrepattr</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

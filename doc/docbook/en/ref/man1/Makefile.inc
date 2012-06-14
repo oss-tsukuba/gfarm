@@ -46,7 +46,9 @@ DOCBOOK = \
 	gfperf.rb.1 \
 	gfstress.rb.1 \
 	gfservice.1 \
-	gfservice-agent.1
+	gfservice-agent.1 \
+	gfrepattr.1 \
+	gfhostgroup.1
 
 #	gfarm_agent.1 \
 #	gfcd.1 \
