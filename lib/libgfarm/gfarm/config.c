@@ -260,6 +260,7 @@ local_ug_maps_tab_free()
 {
 	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
+	struct gfarm_local_ug_maps_id *idp;
 	struct gfarm_local_ug_maps *ugm;
 
 	if (local_ug_maps_tab == NULL)
@@ -268,6 +269,8 @@ local_ug_maps_tab_free()
 	for (gfarm_hash_iterator_begin(local_ug_maps_tab, &it);
 	     !gfarm_hash_iterator_is_end(&it);) {
 		entry = gfarm_hash_iterator_access(&it);
+		idp = gfarm_hash_entry_key(entry);
+		free(idp->hostname);
 		ugm = gfarm_hash_entry_data(entry);
 		gfarm_stringlist_free_deeply(&ugm->local_user_map_file_list);
 		gfarm_stringlist_free_deeply(&ugm->local_group_map_file_list);
