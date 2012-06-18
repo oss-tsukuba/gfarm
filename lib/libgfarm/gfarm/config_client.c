@@ -27,34 +27,6 @@
 #include "filesystem.h"
 #include "metadb_server.h"
 
-#ifdef HAVE_GSI
-static gfarm_error_t
-gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
-{
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
-	struct gfarm_user_info user;
-	char *gsi_dn;
-
-	/* Global user name determined by the distinguished name. */
-	gsi_dn = gfarm_gsi_client_cred_name();
-	if (gsi_dn != NULL) {
-		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
-			gsi_dn, &user);
-		if (e == GFARM_ERR_NO_ERROR) {
-			e = gfm_client_set_username_for_gsi(gfm_server,
-			    user.username);
-			gfarm_user_info_free(&user);
-		} else {
-			gflog_debug(GFARM_MSG_1000979,
-				"gfm_client_user_info_"
-				"get_by_gsi_dn(%s) failed: %s",
-				gsi_dn, gfarm_error_string(e));
-		}
-	}
-	return (e);
-}
-#endif
-
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -158,11 +130,6 @@ gfarm_error_t
 gfarm_initialize(int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-#ifdef HAVE_GSI
-	enum gfarm_auth_method auth_method;
-	int saved_auth_verb;
-#endif
 
 	e = gfarm_context_init();
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -190,45 +157,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 	}
 
 	gfarm_setup_debug_command();
-
-#ifdef HAVE_GSI
-	/* Force to display verbose error messages. */
-	saved_auth_verb = gflog_auth_set_verbose(1);
-	(void)gfarm_gsi_client_initialize();
-#endif
-	/*
-	 * this shouldn't be necessary here
-	 * to support multiple metadata server
-	 */
-	e = gfm_client_connection_and_process_acquire_by_path(
-	    GFARM_PATH_ROOT, &gfm_server);
-#ifdef HAVE_GSI
-	(void)gflog_auth_set_verbose(saved_auth_verb);
-#endif
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000017,
-		    "connecting to gfmd at %s:%d: %s\n",
-		    gfarm_ctxp->metadb_server_name,
-		    gfarm_ctxp->metadb_server_port,
-		    gfarm_error_string(e));
-		return (e);
-	}
-
-#ifdef HAVE_GSI
-	/* metadb access is required to obtain a global user name by GSI */
-	auth_method = gfm_client_connection_auth_method(gfm_server);
-	if (GFARM_IS_AUTH_GSI(auth_method)) {
-		e = gfarm_set_global_user_by_gsi(gfm_server);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1000985,
-				"gfarm_set_global_user_by_gsi() failed: %s",
-				gfarm_error_string(e));
-			return (e);
-		}
-	}
-#endif
-	gfm_client_connection_free(gfm_server);
-
 	gfarm_parse_env_client();
 
 	return (GFARM_ERR_NO_ERROR);

@@ -467,6 +467,34 @@ gfm_client_connect_multiple(const char *hostname, int port,
 #define gfm_client_connect_multiple	NULL
 #endif /* __KERNEL__ */
 
+#ifdef HAVE_GSI
+static gfarm_error_t
+gfarm_set_global_user_by_gsi(struct gfm_connection *gfm_server)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	struct gfarm_user_info user;
+	char *gsi_dn;
+
+	/* Global user name determined by the distinguished name. */
+	gsi_dn = gfarm_gsi_client_cred_name();
+	if (gsi_dn != NULL) {
+		e = gfm_client_user_info_get_by_gsi_dn(gfm_server,
+			gsi_dn, &user);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = gfm_client_set_username_for_gsi(gfm_server,
+			    user.username);
+			gfarm_user_info_free(&user);
+		} else {
+			gflog_debug(GFARM_MSG_1000979,
+				"gfm_client_user_info_"
+				"get_by_gsi_dn(%s) failed: %s",
+				gsi_dn, gfarm_error_string(e));
+		}
+	}
+	return (e);
+}
+#endif
+
 static gfarm_error_t
 gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct gfm_connection **gfm_serverp, const char *source_ip,
@@ -603,7 +631,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			gfarm_error_string(e));
 		goto end;
 	}
-
+#ifdef HAVE_GSI
 	/*
 	 * In GSI authentication, small packets are sent frequently,
 	 * which requires TCP_NODELAY for reasonable performance.
@@ -619,6 +647,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			gflog_debug(GFARM_MSG_1003372, "tcp_nodelay is "
 			    "specified, but fails: %s", gfarm_error_string(e1));
 	}
+#endif
 #endif /* __KERNEL__ */
 	gfm_server->cache_entry = cache_entry;
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
@@ -765,8 +794,22 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 		sleep_interval *= 2;
 	}
 
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
+#ifdef HAVE_GSI
+		/* obtain global username */
+		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method)) {
+			e = gfarm_set_global_user_by_gsi(gfm_server);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "cannot set global username: %s",
+				    gfarm_error_string(e));
+				gfm_client_connection_free(gfm_server);
+				return (e);
+			}
+		}
+#endif
 		*gfm_serverp = gfm_server;
+	}
 	return (e);
 }
 
