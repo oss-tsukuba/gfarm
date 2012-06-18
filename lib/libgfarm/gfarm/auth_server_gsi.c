@@ -163,6 +163,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 			e = GFARM_ERR_NO_ERROR;
 		} else {
 			e = GFARM_ERR_NO_MEMORY;
+			error = GFARM_AUTH_ERROR_RESOURCE_UNAVAILABLE;
 			gflog_error(GFARM_MSG_1003393,
 			    "authorize_gsi: \"%s\" @ %s: host authentication: "
 			    "no memory", userinfo->distName, hostname);
@@ -172,13 +173,15 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		peer_type = GFARM_AUTH_ID_TYPE_USER;
 		e = (*auth_uid_to_global_user)(closure, auth_method,
 		    userinfo->distName, &global_username);
-		if (e != GFARM_ERR_NO_ERROR)
+		if (e != GFARM_ERR_NO_ERROR) {
+			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 			gflog_error(GFARM_MSG_1003394,
 			    "authorize_gsi: \"%s\" @ %s: user authentication: "
 			    "%s%s", userinfo->distName, hostname,
 			    gfarm_error_string(e),
 			    e == GFARM_ERR_AUTHENTICATION ?
 			    " (possibly unregistered user)" : "");
+		}
 		break;
 	default:
 		gflog_error(GFARM_MSG_1000720,
@@ -186,6 +189,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    userinfo->distName, hostname,
 		    gfarmAuthGetAuthEntryType(userinfo));
 		e = GFARM_ERR_AUTHENTICATION;
+		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
 		break;
 	}
 
@@ -264,7 +268,13 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		gfarm_set_local_homedir(
 		    userinfo->authData.userAuth.homeDir);
 
-		/* set the delegated credential. */
+		/*
+		 * set the delegated credential
+		 *
+		 * XXX - thread unsafe function.  this causes data race
+		 * in gfmd, but it is not harmful since gfmd currently
+		 * does not support to use delegated credential.
+		 */
 		gfarm_gsi_set_delegated_cred(
 		    gfarmSecSessionGetDelegatedCredential(session));
 	}
