@@ -60,6 +60,9 @@ extern int gfm_proto_reply_to_gfsd_window;
 extern int gfs_proto_fhremove_request_window;
 extern int gfs_proto_replication_request_window;
 
+gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
+	const char *, int, char **);
+
 int gfarm_schedule_write_local_priority(void);
 char *gfarm_schedule_write_target_domain(void);
 gfarm_off_t gfarm_get_minimum_free_disk_space(void);
