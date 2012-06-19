@@ -709,19 +709,36 @@ get_group(struct peer *peer, const char *diag, struct gfarm_group_info *gp)
 gfarm_error_t
 group_user_check(struct gfarm_group_info *gi, const char *diag)
 {
-	int i;
-	struct user *u;
+	int i, j;
+	struct user *u, **ulist;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
-	for (i = 0; i < gi->nusers; i++) {
+	GFARM_MALLOC_ARRAY(ulist, gi->nusers);
+	if (ulist == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	for (i = 0; i < gi->nusers && e == GFARM_ERR_NO_ERROR; i++) {
 		u = user_lookup(gi->usernames[i]);
 		if (u == NULL) {
 			gflog_warning(GFARM_MSG_1000253,
 			    "%s: unknown user %s", diag,
 				    gi->usernames[i]);
-			return (GFARM_ERR_NO_SUCH_USER);
+			e = GFARM_ERR_NO_SUCH_USER;
+			break;
 		}
+		for (j = 0; j < i; j++) {
+			if (ulist[j] == u) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%s: %s: specified multiple times",
+				    diag, gi->usernames[i]);
+				e = GFARM_ERR_ALREADY_EXISTS;
+				break;
+			}
+		}
+		ulist[i] = u;
 	}
-	return (GFARM_ERR_NO_ERROR);
+	free(ulist);
+	return (e);
 }
 
 gfarm_error_t
