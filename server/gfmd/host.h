@@ -67,7 +67,8 @@ int host_schedule_one_except(struct peer *, int, struct host **,
 	gfarm_int32_t *, struct host ***, gfarm_error_t *);
 
 
-void host_status_reply_waiting(struct host *);
+void host_status_reply_waiting_set(struct host *);
+void host_status_reply_waiting_reset(struct host *);
 int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
 

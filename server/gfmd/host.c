@@ -562,12 +562,22 @@ host_status_callout_retry(struct host *host)
 }
 
 void
-host_status_reply_waiting(struct host *host)
+host_status_reply_waiting_set(struct host *host)
 {
-	static const char diag[] = "host_status_reply_waiting";
+	static const char diag[] = "host_status_reply_waiting_set";
 
 	back_channel_mutex_lock(host, diag);
 	host->status_reply_waiting = 1;
+	back_channel_mutex_unlock(host, diag);
+}
+
+void
+host_status_reply_waiting_reset(struct host *host)
+{
+	static const char diag[] = "host_status_reply_waiting_reset";
+
+	back_channel_mutex_lock(host, diag);
+	host->status_reply_waiting = 0;
 	back_channel_mutex_unlock(host, diag);
 }
 
@@ -575,7 +585,7 @@ int
 host_status_reply_is_waiting(struct host *host)
 {
 	int waiting;
-	static const char diag[] = "host_status_reply_waiting";
+	static const char diag[] = "host_status_reply_is_waiting";
 
 	back_channel_mutex_lock(host, diag);
 	waiting = host->status_reply_waiting;

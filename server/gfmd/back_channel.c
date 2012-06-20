@@ -218,19 +218,20 @@ gfs_client_status_request(void *arg)
 	callout_schedule(host_status_callout(host),
 	    gfarm_metadb_heartbeat_interval * 1000000);
 
+	host_status_reply_waiting_set(host);
 	e = gfs_client_send_request(host, NULL, diag,
 	    gfs_client_status_result, gfs_client_status_free, host,
 	    GFS_PROTO_STATUS, "");
 	if (e == GFARM_ERR_DEVICE_BUSY) {
+		host_status_reply_waiting_reset(host);
 		if (host_status_callout_retry(host))
 			return (NULL);
 		gfs_client_status_disconnect_or_message(host, peer,
 		    diag, "request", "status rpc unresponsive");
 		return (NULL);
 	}
-	if (e == GFARM_ERR_NO_ERROR) {
-		host_status_reply_waiting(host);
-	} else {
+	if (e != GFARM_ERR_NO_ERROR) {
+		host_status_reply_waiting_reset(host);
 		gflog_error(GFARM_MSG_1001986,
 		    "gfs_client_status_request: %s",
 		    gfarm_error_string(e));
