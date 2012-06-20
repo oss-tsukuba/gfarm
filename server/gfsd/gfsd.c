@@ -2120,7 +2120,10 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	struct gfs_client_rep_rate_info *rinfo = NULL;
 #endif
 	char *path;
-	int local_fd;
+	int local_fd, rv2 = 0, save_errno = 0;
+	struct stat st;
+	unsigned int msl = 1, total_msl = 0; /* sleep msec. */
+	struct timespec req, rem;
 	static const char diag[] = "GFS_PROTO_REPLICA_RECV";
 
 	gfs_server_get_request(client, diag, "ll", &ino, &gen);
@@ -2133,12 +2136,41 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	}
 
 	local_path(ino, gen, diag, &path);
-	local_fd = open_data(path, O_RDONLY);
-	free(path);
-	if (local_fd < 0) {
-		error = gfarm_errno_to_error(errno);
-		goto send_eof;
+	for (;;) {
+		if (total_msl > 0) { /* second or subsequent time */
+			rv2 = stat(path, &st);
+			save_errno = errno;
+		}
+		if (rv2 == 0) {
+			local_fd = open_data(path, O_RDONLY);
+			if (local_fd >= 0)
+				break; /* success */
+			save_errno = errno;
+		}
+		if (save_errno != ENOENT || total_msl >= 3000) { /* 3 sec. */
+			error = gfarm_errno_to_error(save_errno);
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "open_data(%lld:%lld): %s",
+			    (long long) ino, (long long) gen,
+			    gfarm_error_string(error));
+			free(path);
+			goto send_eof;
+		}
+		/* ENOENT: retry */
+		req.tv_sec = msl / 1000;
+		req.tv_nsec = (msl % 1000) * 1000000;
+		do {
+			if (nanosleep(&req, &rem) == 0)
+				break;
+			req = rem;
+		} while (errno == EINTR);
+		total_msl += msl;
+		msl *= 2;
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "retry open_data(%lld:%lld): sleep %lld msec.",
+		    (long long) ino, (long long) gen, (long long) total_msl);
 	}
+	free(path);
 
 	/* data transfer */
 	if (file_read_size >= sizeof(buffer))

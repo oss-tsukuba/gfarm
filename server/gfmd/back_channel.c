@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <errno.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_config.h>
@@ -402,16 +403,33 @@ gfs_client_replication_request_request(void *closure)
 	struct file_replicating *fr = arg->fr;
 	struct peer *peer = file_replicating_get_peer(fr);
 	gfarm_error_t e, e2;
+	unsigned int msl = 0, total_msl = 1; /* sleep msec. */
+	struct timespec req, rem;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST request";
 
 	free(arg);
-
-	e = gfs_client_send_request(dst, peer, diag,
-	    gfs_client_replication_request_result,
-	    gfs_client_replication_request_free,
-	    fr,
-	    GFS_PROTO_REPLICATION_REQUEST, "sill",
-	    srchost, srcport, ino, gen);
+	for (;;) {
+		e = gfs_client_send_request(dst, peer, diag,
+		    gfs_client_replication_request_result,
+		    gfs_client_replication_request_free,
+		    fr, GFS_PROTO_REPLICATION_REQUEST, "sill",
+		    srchost, srcport, ino, gen);
+		if (e != GFARM_ERR_DEVICE_BUSY || total_msl >= 3000)/* 3 sec.*/
+			break;
+		/* GFARM_ERR_DEVICE_BUSY: retry */
+		req.tv_sec = msl / 1000;
+		req.tv_nsec = (msl % 1000) * 1000000;
+		do {
+			if (nanosleep(&req, &rem) == 0)
+				break;
+			req = rem;
+		} while (errno == EINTR);
+		total_msl += msl;
+		msl *= 2;
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "retry gfs_client_send_request: sleep %lld msec.",
+		    (long long) total_msl);
+	}
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_lock(); /* XXX FIXME: deadlock */
 		e2 = peer_replicated(peer, dst, ino, gen, -1, 0, e, -1);
