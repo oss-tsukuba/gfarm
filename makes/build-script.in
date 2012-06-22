@@ -17,6 +17,8 @@ postgresql_targets='@postgresql_targets@'
 globus_flavor="@globus_flavor@"
 globus_location="@globus_location@"
 
+RUBY="@RUBY@"
+
 # If Globus is not configured, use "gcc32" for documentation purpose.
 : ${globus_flavor:="gcc32"}
 
@@ -34,6 +36,7 @@ sed	-e "s|[@]prefix[@]|$prefix|g" \
 	-e "s|[@]postgresql_targets[@]|$postgresql_targets|g" \
 	-e "s|[@]globus_flavor[@]|$globus_flavor|g" \
 	-e "s|[@]globus_location[@]|$globus_location|g" \
+	-e "s|[@]RUBY[@]|$RUBY|g" \
 	$src >$tmpfile
 
 @INSTALL_SCRIPT@ "$tmpfile" "$dst"

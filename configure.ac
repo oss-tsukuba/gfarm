@@ -66,6 +66,8 @@ AC_PROG_YACC
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
+AC_PATH_PROG([RUBY], [ruby], [/usr/bin/ruby])
+
 ######
 ###### parsing command line options
 ######
