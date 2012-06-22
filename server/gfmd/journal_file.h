@@ -70,6 +70,7 @@ enum journal_operation {
 
 	GFM_JOURNAL_FSNGROUP_MODIFY,
 
+	GFM_JOURNAL_NOP,
 	GFM_JOURNAL_OPERATION_MAX
 };
 

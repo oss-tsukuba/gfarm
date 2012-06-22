@@ -176,6 +176,7 @@ static const char *journal_operation_names[] = {
 	"MDHOST_REMOVE",
 
 	"FSNGROUP_MODIFY",
+	"NOP",
 };
 
 struct journal_file_writer *
