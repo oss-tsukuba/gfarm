@@ -98,6 +98,14 @@ gfdump.postgresql に対しても同じオプションを与えてください。
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
 
+メタデータのリストアに先立ち、rootユーザでgfmd を停止し、
+ジャーナルファイルを消去します。
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+# rm /var/gfarm-metadata/journal/0000000000.gmj
+</PRE></TD></TR></TBODY></TABLE>
+
 rootユーザでメタデータをリストアします。<br>
 config-gfarm の際に、--prefix オプションや -l オプションを指定していた場合は、
 gfdump.postgresql に対しても同じオプションを与えてください。
@@ -145,7 +153,7 @@ rootユーザでgfjournalを実行し、
 スレーブメタデータサーバに更新が伝達されているか確認してください。
 <p>
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# gfjournal /var/gfarm-metadata/journal/0000000000.gmj 
+# gfjournal /var/gfarm-metadata/journal/0000000000.gmj
 records  seqnum(min/max)            record length(min/max/ave)
      11            63/          <font color=red>73</font>          24/    118/     43
 </PRE></TD></TR></TBODY></TABLE>
