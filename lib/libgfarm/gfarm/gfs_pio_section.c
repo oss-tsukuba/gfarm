@@ -437,6 +437,9 @@ retry:
 		gfs_client_connection_free(gfs_server);
 		if (gfs_client_is_connection_error(e) && nretry-- > 0)
 			goto retry;
+	} else {
+		gf->scheduled_age = gfarm_schedule_host_used(hostname, port,
+		    gfs_client_username(gfs_server));
 	}
 
 	gfs_profile(

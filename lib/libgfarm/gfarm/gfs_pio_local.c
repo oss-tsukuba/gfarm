@@ -23,6 +23,7 @@
 #include "gfs_client.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "schedule.h"
 
 #if 0 /* not yet in gfarm v2 */
 
@@ -120,6 +121,12 @@ gfs_pio_local_storage_close(GFS_File gf)
 		return (e);
 	}
 	e2 = gfs_client_close(gfs_server, gf->fd);
+	gfarm_schedule_host_unused(
+	    gfs_client_hostname(gfs_server),
+	    gfs_client_port(gfs_server),
+	    gfs_client_username(gfs_server),
+	    gf->scheduled_age);
+
 	gfs_client_connection_free(gfs_server);
 
 	if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR) {
