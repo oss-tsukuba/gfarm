@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 March 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "26 June 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -640,6 +640,37 @@ gfarmライブラリが内部的に保持している、ファイルシステムノード
 	schedule_cache_timeout 60
 .fi
 .TP
+\fBschedule_concurrency \fI並列度\fB\fR
+ファイルシステムノードを、スケジューリングのために並列検索する際の
+並列度を指定します。
+この数を増やすと並列度が高まり、スケジューリングが早く終りますが、
+ファイルシステムノードの負荷は高くなります。
+デフォルトは10です。
+
+例:
+
+.nf
+	schedule_concurrency 10
+.fi
+.TP
+\fBschedule_concurrency_per_net \fI並列度\fB\fR
+ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延を計測します。このパラメータは、各ネットワーク毎に
+幾つのファイルシステムノードを対象に計測するかを指定します。
+停止しているファイルシステムノードが多い場合や、
+負荷の高いファイルシステムノードが多く計測誤差が大きい場合には、
+このパラメータを増やした方が良いかもしれません。
+このパラメータを増やした場合には、
+それに応じて schedule_concurrency パラメータについても増やすことを推奨します。
+デフォルトは3です。
+
+例:
+
+.nf
+	schedule_concurrency_per_net 3
+.fi
+.TP
 \fBschedule_idle_load_thresh \fICPU負荷\fB\fR
 ファイルシステムノードのスケジューリング時に、
 CPU負荷が低いとみなされるCPU負荷を指定します。
@@ -677,6 +708,34 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 
 .nf
 	schedule_virtual_load 0.3
+.fi
+.TP
+\fBschedule_candidates_ratio \fI比率\fB\fR
+ファイルシステムノードのスケジューリング時に、
+ロードアベレージが schedule_busy_load_thresh 以下のノードが、
+スケジューリング対象のノード数の何倍見つかったら、
+検索を打ち切るかを指定します。
+この値を大きくすると、より多くのノードを検索するため、
+スケジューリングの精度は上がりますが、処理は遅くなります。
+デフォルト値は4.0です。
+
+例:
+
+.nf
+	schedule_candidates_ratio 4.0
+.fi
+.TP
+\fBschedule_rtt_thresh \fI比率\fB\fR
+ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何倍になったら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+デフォルト値は4.0です。
+
+例:
+
+.nf
+	schedule_rtt_thresh 4.0
 .fi
 .TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
@@ -1029,9 +1088,13 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<local_user_map_statement> |
 		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
+		\~\~<schedule_concurrency_statement> |
+		\~\~<schedule_concurrency_per_net_statement> |
 		\~\~<schedule_idle_load_thresh_statement> |
 		\~\~<schedule_busy_load_thresh_statement> |
 		\~\~<schedule_virtual_load_statement> |
+		\~\~<schedule_candidates_ratio_statement> |
+		\~\~<schedule_rtt_thresh_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
@@ -1111,9 +1174,13 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		<pathname> <hostname>|
 		<pathname> <hostname> ":" <portnumber>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<schedule_concurrency_statement> ::= "schedule_concurrency" <number>
+	<schedule_concurrency_per_net_statement> ::= "schedule_concurrency_per_net" <number>
 	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
 	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
 	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
+	<schedule_candidates_ratio_statement> ::= "schedule_candidates_ratio" <floating_point_number>
+	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>

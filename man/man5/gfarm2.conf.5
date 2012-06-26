@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "27 March 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "26 June 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -692,6 +692,36 @@ For example,
 	schedule_cache_timeout 60
 .fi
 .TP
+\fBschedule_concurrency \fInumber\fB\fR
+This directive specifies the number how many filesystem nodes will be
+searched concurrently at filesystem scheduling.
+If this parameter is increased, the scheduling will finish quicker,
+but the load to filesystem nodes will increase.
+The default number is 10 nodes.
+
+For example,
+
+.nf
+	schedule_concurrency 10
+.fi
+.TP
+\fBschedule_concurrency_per_net \fInumber\fB\fR
+This directive specifies the number how many filesystem nodes will
+be used in same network at measuring network latency
+for each network of filesystem nodes.
+It may be better to increase this parameter,
+if many filesystem nodes are stopping,
+or many filesystem nodes are under higher load.
+If this parameter is increased,
+it's recommened to increase schedule_concurrency parameter too.
+The default number is 3.
+
+For example,
+
+.nf
+	schedule_concurrency_per_net 3
+.fi
+.TP
 \fBschedule_idle_load_thresh \fIload-average\fB\fR
 This directive specifies the threshold of CPU load average to be
 considered idle.  The file system nodes whose CPU load average
@@ -727,6 +757,36 @@ For example,
 
 .nf
 	schedule_virtual_load 0.3
+.fi
+.TP
+\fBschedule_candidates_ratio \fIratio\fB\fR
+This parameter specifies the threshold ratio of number of filesystem nodes
+from number of scheduling nodes,
+to decide to discontinue to search more filesystem nodes
+which load averages are less or equal to
+the schedule_busy_load_thresh parameter.
+If this parameter is increased,
+the accuracy of scheduling will be increased,
+but scheduling process will become slower.
+The default ratio is 4.0.
+
+For example,
+
+.nf
+	schedule_candidates_ratio 4.0
+.fi
+.TP
+\fBschedule_rtt_thresh \fIratio\fB\fR
+This parameter specifies the threshold ratio of network latency
+which divides the domains of scheduling priority.
+If a network latency is larger than this ratio from nearer network,
+the network's scheduling priority is lowered.
+The default ratio is 4.0.
+
+For example,
+
+.nf
+	schedule_rtt_thresh 4.0
 .fi
 .TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
@@ -1093,9 +1153,13 @@ notation.
 		\~\~<local_user_map_statement> |
 		\~\~<local_group_map_statement> |
 		\~\~<schedule_cache_timeout_statement> |
+		\~\~<schedule_concurrency_statement> |
+		\~\~<schedule_concurrency_per_net_statement> |
 		\~\~<schedule_idle_load_thresh_statement> |
 		\~\~<schedule_busy_load_thresh_statement> |
 		\~\~<schedule_virtual_load_statement> |
+		\~\~<schedule_candidates_ratio_statement> |
+		\~\~<schedule_rtt_thresh_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
@@ -1175,9 +1239,13 @@ notation.
 		<pathname> <hostname>|
 		<pathname> <hostname> ":" <portnumber>
 	<schedule_cache_timeout_statement> ::= "schedule_cache_timeout" <number>
+	<schedule_concurrency_statement> ::= "schedule_concurrency" <number>
+	<schedule_concurrency_per_net_statement> ::= "schedule_concurrency_per_net" <number>
 	<schedule_idle_load_thresh_statement> ::= "schedule_idle_load_thresh" <load>
 	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
 	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
+	<schedule_candidates_ratio_statement> ::= "schedule_candidates_ratio" <floating_point_number>
+	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
