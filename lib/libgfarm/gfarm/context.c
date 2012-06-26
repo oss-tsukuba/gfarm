@@ -113,9 +113,13 @@ gfarm_context_init(void)
 	ctxp->attr_cache_limit = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_concurrency = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_concurrency_per_net = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_idle_load = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_busy_load = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_virtual_load = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_candidates_ratio = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_rtt_thresh = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfsd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->record_atime = GFARM_CONFIG_MISC_DEFAULT;

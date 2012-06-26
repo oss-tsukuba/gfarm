@@ -858,9 +858,13 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_CONCURRENCY_DEFAULT	10
+#define GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT	3
 #define GFARM_SCHEDULE_IDLE_LOAD_DEFAULT	0.1F
 #define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	0.5F
 #define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
+#define GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT	4.0F
+#define GFARM_SCHEDULE_RTT_THRESH_DEFAULT	4.0F
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #ifdef not_def_REPLY_QUEUE
@@ -2610,12 +2614,22 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->attr_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->schedule_cache_timeout);
+	} else if (strcmp(s, o = "schedule_concurrency") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->schedule_concurrency);
+	} else if (strcmp(s, o = "schedule_concurrency_per_net") == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_ctxp->schedule_concurrency_per_net);
 	} else if (strcmp(s, o = "schedule_idle_load_thresh") == 0) {
 		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_idle_load);
 	} else if (strcmp(s, o = "schedule_busy_load_thresh") == 0) {
 		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_busy_load);
 	} else if (strcmp(s, o = "schedule_virtual_load") == 0) {
 		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_virtual_load);
+	} else if (strcmp(s, o = "schedule_candidates_ratio") == 0) {
+		e = parse_set_misc_float(p,
+		    &gfarm_ctxp->schedule_candidates_ratio);
+	} else if (strcmp(s, o = "schedule_rtt_thresh") == 0) {
+		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_rtt_thresh);
 #if 0 /* not yet in gfarm v2 */
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
@@ -2852,6 +2866,13 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->schedule_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->schedule_concurrency == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_concurrency =
+		    GFARM_SCHEDULE_CONCURRENCY_DEFAULT;
+	if (gfarm_ctxp->schedule_concurrency_per_net ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_concurrency_per_net =
+		    GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT;
 	if (gfarm_ctxp->schedule_idle_load == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_idle_load =
 		    GFARM_SCHEDULE_IDLE_LOAD_DEFAULT;
@@ -2861,6 +2882,12 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->schedule_virtual_load == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_virtual_load =
 		    GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT;
+	if (gfarm_ctxp->schedule_candidates_ratio == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_candidates_ratio =
+		    GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT;
+	if (gfarm_ctxp->schedule_rtt_thresh == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_rtt_thresh =
+		    GFARM_SCHEDULE_RTT_THRESH_DEFAULT;
 #if 0 /* not yet in gfarm v2 */
 	if (schedule_write_local_priority == GFARM_CONFIG_MISC_DEFAULT)
 		schedule_write_local_priority =

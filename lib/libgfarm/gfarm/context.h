@@ -11,9 +11,13 @@ struct gfarm_context {
 	int attr_cache_limit;
 	int attr_cache_timeout;
 	int schedule_cache_timeout;
+	int schedule_concurrency;
+	int schedule_concurrency_per_net;
 	float schedule_idle_load;
 	float schedule_busy_load;
 	float schedule_virtual_load;
+	float schedule_candidates_ratio;
+	float schedule_rtt_thresh;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
 	int record_atime;

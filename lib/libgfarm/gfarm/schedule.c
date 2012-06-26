@@ -128,15 +128,17 @@
  *   Otherwise `loadavg' member is invalidated, too.
  */
 
-#define CONCURRENCY		10
-#define PER_NET_CONCURRENCY	3	/* used when examining RTT */
-#define ENOUGH_RATE		4
+#define CONCURRENCY		(gfarm_ctxp->schedule_concurrency)
+#define PER_NET_CONCURRENCY	(gfarm_ctxp->schedule_concurrency_per_net)
+				/* used when examining RTT */
+#define ENOUGH_RATE		(gfarm_ctxp->schedule_candidates_ratio)
 
 #define	ADDR_EXPIRATION		(gfarm_ctxp->schedule_cache_timeout)
 #define	LOADAVG_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
 #define	STATFS_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
 
-#define RTT_THRESH		4 /* range to treat as similar distance */
+#define RTT_THRESH		(gfarm_ctxp->schedule_rtt_thresh)
+				/* range to treat as similar distance */
 
 #define staticp	(gfarm_ctxp->schedule_static)
 
