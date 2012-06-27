@@ -66,8 +66,8 @@ GFMD_BUILDDIR = $(top_builddir)/server/gfmd
 
 # doc & man
 
-DOCBOOK2MAN = jw -b man
-DOCBOOK2HTML = jw -b html -u
+DOCBOOK2MAN = env LC_ALL=C jw -b man
+DOCBOOK2HTML = env LC_ALL=C jw -b html -u
 srcsubst = dummy
 dstsubst = dummy
 
