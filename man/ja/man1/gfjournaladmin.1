@@ -3,17 +3,17 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFNOP-JOURNAL" "1" "26 June 2012" "Gfarm" ""
+.TH "GFJOURNALADMIN" "1" "28 June 2012" "Gfarm" ""
 
 .SH NAME
-gfnop-journal \- ジャーナルファイルの特定レコードを消去する。
+gfjournaladmin \- ジャーナルファイルの特定レコードを消去する。
 .SH SYNOPSIS
 
-\fBgfnop-journal\fR [ \fB\fIオプション\fB\fR ] \fB\fIジャーナルファイル\fB\fR \fB\fIシーケンス番号\fB\fR
+\fBgfjournaladmin\fR [ \fB\fIオプション\fB\fR ] \fB\fIジャーナルファイル\fB\fR \fB\fIシーケンス番号\fB\fR
 
 .SH "DESCRIPTION"
 .PP
-\fBgfnop-journal\fR は、ジャーナルファイルの中から、
+\fBgfjournaladmin\fR は、ジャーナルファイルの中から、
 シーケンス番号 \fIsequence-number\fR を持った
 レコードを消去します。
 レコードは、同じ長さの NOP (no operation) レコードで置き換えられるため、
@@ -32,14 +32,14 @@ gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
 よって一旦生じてしまうと、gfmd を再起動できなくなります。
 起動時に gfmd はジャーナルデータの適用を行うため、再び不整合を検知して、
 終了してしまいます。
-\fBgfnop-journal\fR コマンドは、このような状況から抜け出す
+\fBgfjournaladmin\fR コマンドは、このような状況から抜け出す
 ために使用します。
 上記のログメッセージでは、シーケンス番号 938 のレコードによって不整合が
 起きていることが示されています。
 このレコードを消すには、次のようにコマンドを実行します。
 
 .nf
-	gfnop-journal /var/gfarm-metadata/journal/0000000000.gmj 938
+	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938
 .fi
 .PP
 BEGIN (オペレーションID 1) および END (オペレーションID 2) の
