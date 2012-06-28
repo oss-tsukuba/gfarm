@@ -1,23 +1,23 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
-<refentry id='gfnop-journal.1'>
+<refentry id='gfjournaladmin.1'>
 
 <refentryinfo><date>21 Jun 2012</date></refentryinfo>
 
 <refmeta>
-<refentrytitle>gfnop-journal</refentrytitle>
+<refentrytitle>gfjournaladmin</refentrytitle>
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfnop-journal</refname>
+<refname>gfjournaladmin</refname>
 <refpurpose>ジャーナルファイルの特定レコードを消去する。</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
-  <command>gfnop-journal</command>
+  <command>gfjournaladmin</command>
     <arg choice='opt'><replaceable>オプション</replaceable></arg>
     <arg choice='plain'><replaceable>ジャーナルファイル</replaceable></arg>
     <arg choice='plain'><replaceable>シーケンス番号</replaceable></arg>
@@ -29,7 +29,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfnop-journal</command> は、ジャーナルファイルの中から、
+<command>gfjournaladmin</command> は、ジャーナルファイルの中から、
 シーケンス番号 <replaceable>sequence-number</replaceable> を持った
 レコードを消去します。
 レコードは、同じ長さの NOP (no operation) レコードで置き換えられるため、
@@ -52,7 +52,7 @@ gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
 よって一旦生じてしまうと、gfmd を再起動できなくなります。
 起動時に gfmd はジャーナルデータの適用を行うため、再び不整合を検知して、
 終了してしまいます。
-<command>gfnop-journal</command> コマンドは、このような状況から抜け出す
+<command>gfjournaladmin</command> コマンドは、このような状況から抜け出す
 ために使用します。
 上記のログメッセージでは、シーケンス番号 938 のレコードによって不整合が
 起きていることが示されています。
@@ -60,7 +60,7 @@ gfmd はメタデータの不整合を検知すると、以下のようなログメッセージを出力
 </para>
 
 <literallayout>
-	gfnop-journal /var/gfarm-metadata/journal/0000000000.gmj 938
+	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938
 </literallayout>
 
 <para>

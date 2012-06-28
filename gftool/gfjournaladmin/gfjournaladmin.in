@@ -1,13 +1,13 @@
 #! @RUBY@
 #
-# gfnop-journal - Rewrite a particular record in a journal file to
-#                 NOP (no-operation).
+# gfjournaladmin - Rewrite a particular record in a journal file to
+#                  NOP (no-operation).
 #
 
 require 'getoptlong.rb'
 
 def print_usage()
-  warn("Usage: gfnop-journal [-h?nv] <journal file path> <seqnum>")
+  warn("Usage: gfjournaladmin [-h?nv] <journal file path> <seqnum>")
   warn("    -h,-? : show this message")
   warn("       -n : read a journal file, but not write actually")
   warn("       -v : verbose mode")
@@ -16,7 +16,7 @@ end
 #
 # Main operation handler.
 #
-class GFNopJournal
+class GFJournalAdmin
   #
   # Constant values related to journal header and record structures.
   #
@@ -109,7 +109,7 @@ class GFNopJournal
   # Calculate CRC32.
   #
   public
-  def GFNopJournal.crc32(data, in_crc32 = 0)
+  def GFJournalAdmin.crc32(data, in_crc32 = 0)
     crc32 = in_crc32 ^ 0xFFFFFFFF
     data.unpack("C*").each do |i|
       crc32 = (crc32 >> 8) ^ CRCTABLE[(crc32 ^ i) & 0xFF]
@@ -233,7 +233,7 @@ class GFNopJournal
     nop_record += [data_length].pack("N")
     nop_record += [data_length - 4].pack("N")
     nop_record += "\0" * (data_length - 4)
-    nop_record += [GFNopJournal.crc32(nop_record)].pack("N")
+    nop_record += [GFJournalAdmin.crc32(nop_record)].pack("N")
     return nop_record
   end
 
@@ -356,7 +356,7 @@ $target_seqnum = ARGV[1].to_i
 # Rewrite a journal file.
 #
 begin
-  $gfnop = GFNopJournal.new($journal_filename)
+  $gfnop = GFJournalAdmin.new($journal_filename)
   $gfnop.debug_mode = $debug_mode
   if $test_mode
     $gfnop.test_rewrite_record($target_seqnum)

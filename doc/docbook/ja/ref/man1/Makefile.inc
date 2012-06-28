@@ -46,7 +46,7 @@ DOCBOOK = \ gfchgrp.1 \
 	gfservice-agent.1 \
 	gfrepattr.1 \
 	gfhostgroup.1 \
-	gfnop-journal.1
+	gfjournaladmin.1
 
 
 #	gfarm_agent.1 \

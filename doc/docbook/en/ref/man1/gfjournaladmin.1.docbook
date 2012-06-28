@@ -1,23 +1,23 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
 
-<refentry id='gfnop-journal.1'>
+<refentry id='gfjournaladmin.1'>
 
 <refentryinfo><date>21 Jun 2012</date></refentryinfo>
 
 <refmeta>
-<refentrytitle>gfnop-journal</refentrytitle>
+<refentrytitle>gfjournaladmin</refentrytitle>
 <manvolnum>1</manvolnum>
 <refmiscinfo>Gfarm</refmiscinfo>
 </refmeta>
 
 <refnamediv id='name'>
-<refname>gfnop-journal</refname>
+<refname>gfjournaladmin</refname>
 <refpurpose>erase a particular record in a journal file</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
-  <command>gfnop-journal</command>
+  <command>gfjournaladmin</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain'><replaceable>journal-file</replaceable></arg>
     <arg choice='plain'><replaceable>sequence-number</replaceable></arg>
@@ -29,7 +29,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfnop-journal</command> erases a record with 
+<command>gfjournaladmin</command> erases a record with 
 <replaceable>sequence-number</replaceable> in a journal file.
 Since the record is replaced by A NOP (no operation) record with the
 same length, other records in the journal file are not moved or modified.
@@ -50,18 +50,18 @@ Such a conflict should not happen, but once it has been caused by a bug
 of gfmd, restarting gfmd never succeeds.
 Since gfmd applies journal data at boot time, it finds the conflict
 and aborts again.
-<command>gfnop-journal</command> command is used for getting out from
+<command>gfjournaladmin</command> command is used for getting out from
 the situation.  The log message shown above suggests a record with the 
 sequence number 938 causes a conflict.
 You can delete the record by executing:
 </para>
 
 <literallayout>
-	gfnop-journal /var/gfarm-metadata/journal/0000000000.gmj 938
+	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938
 </literallayout>
 
 <para>
-Note that <command>gfnop-journal</command> cannot erase a journal
+Note that <command>gfjournaladmin</command> cannot erase a journal
 record of BEGIN (operation ID 1) or END (operation ID 2).
 </para>
 

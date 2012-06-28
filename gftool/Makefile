@@ -19,6 +19,7 @@ SUBDIRS = \
 	gfgroup \
 	gfhost \
 	gfjournal \
+	gfjournaladmin \
 	gfkey \
 	gfln \
 	gfls \

@@ -4,10 +4,10 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-SCRIPTS = gfnop-journal
-BUILT_SCRIPTS = gfnop-journal
+SCRIPTS = gfjournaladmin
+BUILT_SCRIPTS = gfjournaladmin
 
 include $(top_srcdir)/makes/script.mk
 
-gfnop-journal: $(srcdir)/gfnop-journal.in
+gfjournaladmin: $(srcdir)/gfjournaladmin.in
 	$(SHELL) $(top_builddir)/makes/build-script $? $@
