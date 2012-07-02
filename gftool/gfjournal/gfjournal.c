@@ -257,6 +257,12 @@ print_bin_value(const char *name, const char *s, size_t sz)
 }
 
 static void
+print_fsngroup_modify(const char *hostname, const char *fsngroupname)
+{
+	printf("hostname=%s;fsngroupname=%s", hostname, fsngroupname);
+}
+
+static void
 print_obj(enum journal_operation ope, void *obj)
 {
 	switch (ope) {
@@ -431,6 +437,11 @@ print_obj(enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_MDHOST_MODIFY: {
 		struct db_mdhost_modify_arg *m = obj;
 		print_mdhost(&m->ms);
+		break;
+	}
+	case GFM_JOURNAL_FSNGROUP_MODIFY: {
+		struct db_fsngroup_modify_arg *m = obj;
+		print_fsngroup_modify(m->hostname, m->fsngroupname);
 		break;
 	}
 	default:
