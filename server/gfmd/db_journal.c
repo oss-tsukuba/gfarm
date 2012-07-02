@@ -2981,6 +2981,35 @@ db_journal_write_mdhost_remove(gfarm_uint64_t seqnum, char *name)
 		seqnum, GFM_JOURNAL_MDHOST_REMOVE, name));
 }
 
+ /**********************************************************/
+/* nop */
+ 
+static gfarm_error_t
+db_journal_read_nop(struct gfp_xdr *xdr,
+	struct db_mdhost_modify_arg **argp)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int eof;
+	int len;
+	int c;
+	int i;
+
+	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i", &len))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "gfp_xdr_recv", e, GFM_JOURNAL_NOP);
+	}
+	for (i = 0; i < len; i++) {
+		if ((e = gfp_xdr_recv(xdr, 1, &eof, "c", &c))
+		    != GFARM_ERR_NO_ERROR) {
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			    "gfp_xdr_recv", e, GFM_JOURNAL_NOP);
+		}
+	}
+
+	return (e);
+}
+
 /**********************************************************/
 
 static void
@@ -3193,6 +3222,10 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 		e = db_journal_read_mdhost_modify(xdr,
 			(struct db_mdhost_modify_arg **)objp);
 		break;
+	case GFM_JOURNAL_NOP:
+		e = db_journal_read_nop(xdr,
+			(struct db_mdhost_modify_arg **)objp);
+		break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		break;
@@ -3304,6 +3337,8 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->mdhost_modify(seqnum, obj); break;
 	case GFM_JOURNAL_MDHOST_REMOVE:
 		e = ops->mdhost_remove(seqnum, obj); break;
+	case GFM_JOURNAL_NOP:
+		e = GFARM_ERR_NO_ERROR; break;
 	default:
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_fatal(GFARM_MSG_1003179,

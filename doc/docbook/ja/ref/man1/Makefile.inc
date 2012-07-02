@@ -9,6 +9,7 @@ DOCBOOK = \
 	gfgetfacl.1 \
 	gfgroup.1 \
 	gfhost.1 \
+	gfjournaladmin.1 \
 	gfkey.1 \
 	gfln.1 \
 	gfls.1 \

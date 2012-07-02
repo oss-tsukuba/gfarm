@@ -1,0 +1,110 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfjournaladmin.1'>
+
+<refentryinfo><date>21 Jun 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfjournaladmin</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfjournaladmin</refname>
+<refpurpose>erase a particular record in a journal file</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfjournaladmin</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'><replaceable>journal-file</replaceable></arg>
+    <arg choice='plain'><replaceable>sequence-number</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfjournaladmin</command> erases a record with 
+<replaceable>sequence-number</replaceable> in a journal file.
+Since the record is replaced by A NOP (no operation) record with the
+same length, other records in the journal file are not moved or modified.
+</para>
+
+<para>
+When gfmd detects a conflict of metadata, it reports a log message like
+as the following and aborts immediately.
+</para>
+
+<literallayout>
+	db_journal_store_thread : seqnum=938 ope=FILECOPY_ADD : \
+	    already exists
+</literallayout>
+
+<para>
+Such a conflict should not happen, but once it has been caused by a bug
+of gfmd, restarting gfmd never succeeds.
+Since gfmd applies journal data at boot time, it finds the conflict
+and aborts again.
+<command>gfjournaladmin</command> command is used for getting out from
+the situation.  The log message shown above suggests a record with the 
+sequence number 938 causes a conflict.
+You can delete the record by executing:
+</para>
+
+<literallayout>
+	gfjournaladmin /var/gfarm-metadata/journal/0000000000.gmj 938
+</literallayout>
+
+<para>
+Note that <command>gfjournaladmin</command> cannot erase a journal
+record of BEGIN (operation ID 1) or END (operation ID 2).
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Equivalent to <option>-h</option>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+Read a journal file, but do not write actually.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+Prints verbose messages.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>
