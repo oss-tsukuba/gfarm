@@ -1,0 +1,27 @@
+# $Id$
+
+TOPDIR		=	@TOPDIR@
+MKRULESDIR	=	@MKRULESDIR@
+
+include $(MKRULESDIR)/vars.mk
+
+ifeq ($(TARGET_ARCH), POSIX)
+
+SRCS	=	main.cpp
+OBJS	=	main.lo
+
+TARGETS	=	grid-proxy-agent
+INSTALL_EXE_TARGETS	=	$(TARGETS)
+INSTALL_EXE_DIR		=	$(DEST_EXEDIR)
+
+grid-proxy-agent:	$(OBJS) $(DEP_NATALIB)
+	$(LTCLEAN) $@
+	$(LTLINK_CXX) -o $@ $(OBJS) $(DEP_NATALIB) $(LDFLAGS)
+
+endif
+
+$(DEP_NATALIB):
+	(cd $(BUILD_LIBDIR); $(MAKE))
+
+include $(MKRULESDIR)/rules.mk
+include .depend
