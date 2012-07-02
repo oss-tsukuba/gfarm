@@ -2120,8 +2120,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 	struct gfs_client_rep_rate_info *rinfo = NULL;
 #endif
 	char *path;
-	int local_fd, rv2 = 0, save_errno = 0;
-	struct stat st;
+	int local_fd;
 	unsigned int msl = 1, total_msl = 0; /* sleep msec. */
 	struct timespec req, rem;
 	static const char diag[] = "GFS_PROTO_REPLICA_RECV";
@@ -2137,18 +2136,11 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 
 	local_path(ino, gen, diag, &path);
 	for (;;) {
-		if (total_msl > 0) { /* second or subsequent time */
-			rv2 = stat(path, &st);
-			save_errno = errno;
-		}
-		if (rv2 == 0) {
-			local_fd = open_data(path, O_RDONLY);
-			if (local_fd >= 0)
-				break; /* success */
-			save_errno = errno;
-		}
-		if (save_errno != ENOENT || total_msl >= 3000) { /* 3 sec. */
-			error = gfarm_errno_to_error(save_errno);
+		local_fd = open_data(path, O_RDONLY);
+		if (local_fd >= 0)
+			break; /* success */
+		if (errno != ENOENT || total_msl >= 3000) { /* 3 sec. */
+			error = gfarm_errno_to_error(errno);
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "open_data(%lld:%lld): %s",
 			    (long long) ino, (long long) gen,
