@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfjournaladmin</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFJOURNALADMIN.1"
+></A
+>gfjournaladmin</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfjournaladmin&nbsp;--&nbsp;erase a particular record in a journal file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfjournaladmin</B
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>journal-file</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>sequence-number</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfjournaladmin</B
+> erases a record with 
+<TT
+CLASS="REPLACEABLE"
+><I
+>sequence-number</I
+></TT
+> in a journal file.
+Since the record is replaced by A NOP (no operation) record with the
+same length, other records in the journal file are not moved or modified.</P
+><P
+>When gfmd detects a conflict of metadata, it reports a log message like
+as the following and aborts immediately.</P
+><P
+CLASS="LITERALLAYOUT"
+>	db_journal_store_thread&nbsp;:&nbsp;seqnum=938&nbsp;ope=FILECOPY_ADD&nbsp;:&nbsp;\<br>
+	&nbsp;&nbsp;&nbsp;&nbsp;already&nbsp;exists</P
+><P
+>Such a conflict should not happen, but once it has been caused by a bug
+of gfmd, restarting gfmd never succeeds.
+Since gfmd applies journal data at boot time, it finds the conflict
+and aborts again.
+<B
+CLASS="COMMAND"
+>gfjournaladmin</B
+> command is used for getting out from
+the situation.  The log message shown above suggests a record with the 
+sequence number 938 causes a conflict.
+You can delete the record by executing:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfjournaladmin&nbsp;/var/gfarm-metadata/journal/0000000000.gmj&nbsp;938</P
+><P
+>Note that <B
+CLASS="COMMAND"
+>gfjournaladmin</B
+> cannot erase a journal
+record of BEGIN (operation ID 1) or END (operation ID 2).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Equivalent to <CODE
+CLASS="OPTION"
+>-h</CODE
+>.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-n</CODE
+></DT
+><DD
+><P
+>Read a journal file, but do not write actually.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>Prints verbose messages.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
