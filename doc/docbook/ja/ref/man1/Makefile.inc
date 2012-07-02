@@ -46,6 +46,7 @@ DOCBOOK = \ gfchgrp.1 \
 	gfservice-agent.1 \
 	gfrepattr.1 \
 	gfhostgroup.1 \
+	gfjournal.1 \
 	gfjournaladmin.1
 
 
