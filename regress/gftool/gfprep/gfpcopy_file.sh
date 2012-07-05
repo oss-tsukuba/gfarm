@@ -19,10 +19,10 @@ fi
 test_copy() {
   SIZE=$1
   filename=COPYFILE
-  OPT="-b 65536 -f"
+  OPT="-b 65536 -f -d"
   lfile=$local_dir1/$filename
   gfile=$gf_dir1/$filename
-  if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null 2>&1; then
+  if dd if=/dev/urandom of=$lfile bs=$SIZE count=1 > /dev/null; then
     :
   else
     echo dd failed
