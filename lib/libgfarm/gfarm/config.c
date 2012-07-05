@@ -796,9 +796,13 @@ char *gfarm_argv0 = NULL;
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
+#define GFARM_SCHEDULE_CONCURRENCY_DEFAULT	10
+#define GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT	3
 #define GFARM_SCHEDULE_IDLE_LOAD_DEFAULT	0.1F
 #define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	0.5F
 #define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
+#define GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT	4.0F
+#define GFARM_SCHEDULE_RTT_THRESH_DEFAULT	4.0F
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
@@ -824,9 +828,13 @@ int gfarm_gfmd_reconnection_timeout = MISC_DEFAULT;
 int gfarm_attr_cache_limit = MISC_DEFAULT;
 int gfarm_attr_cache_timeout = MISC_DEFAULT;
 int gfarm_schedule_cache_timeout = MISC_DEFAULT;
+int gfarm_schedule_concurrency = MISC_DEFAULT;
+int gfarm_schedule_concurrency_per_net = MISC_DEFAULT;
 float gfarm_schedule_idle_load = MISC_DEFAULT;
 float gfarm_schedule_busy_load = MISC_DEFAULT;
 float gfarm_schedule_virtual_load = MISC_DEFAULT;
+float gfarm_schedule_candidates_ratio = MISC_DEFAULT;
+float gfarm_schedule_rtt_thresh = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
 static gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
@@ -2520,12 +2528,20 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_attr_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_schedule_cache_timeout);
+	} else if (strcmp(s, o = "schedule_concurrency") == 0) {
+		e = parse_set_misc_int(p, &gfarm_schedule_concurrency);
+	} else if (strcmp(s, o = "schedule_concurrency_per_net") == 0) {
+		e = parse_set_misc_int(p, &gfarm_schedule_concurrency_per_net);
 	} else if (strcmp(s, o = "schedule_idle_load_thresh") == 0) {
 		e = parse_set_misc_float(p, &gfarm_schedule_idle_load);
 	} else if (strcmp(s, o = "schedule_busy_load_thresh") == 0) {
 		e = parse_set_misc_float(p, &gfarm_schedule_busy_load);
 	} else if (strcmp(s, o = "schedule_virtual_load") == 0) {
 		e = parse_set_misc_float(p, &gfarm_schedule_virtual_load);
+	} else if (strcmp(s, o = "schedule_candidates_ratio") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_candidates_ratio);
+	} else if (strcmp(s, o = "schedule_rtt_thresh") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_rtt_thresh);
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
@@ -2705,6 +2721,11 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_cache_timeout == MISC_DEFAULT)
 		gfarm_schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_schedule_concurrency == MISC_DEFAULT)
+		gfarm_schedule_concurrency = GFARM_SCHEDULE_CONCURRENCY_DEFAULT;
+	if (gfarm_schedule_concurrency_per_net == MISC_DEFAULT)
+		gfarm_schedule_concurrency_per_net =
+		    GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT;
 	if (gfarm_schedule_idle_load == MISC_DEFAULT)
 		gfarm_schedule_idle_load = GFARM_SCHEDULE_IDLE_LOAD_DEFAULT;
 	if (gfarm_schedule_busy_load == MISC_DEFAULT)
@@ -2712,6 +2733,11 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_virtual_load == MISC_DEFAULT)
 		gfarm_schedule_virtual_load =
 		    GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT;
+	if (gfarm_schedule_candidates_ratio == MISC_DEFAULT)
+		gfarm_schedule_candidates_ratio =
+		    GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT;
+	if (gfarm_schedule_rtt_thresh == MISC_DEFAULT)
+		gfarm_schedule_rtt_thresh = GFARM_SCHEDULE_RTT_THRESH_DEFAULT;
 	if (schedule_write_local_priority == MISC_DEFAULT)
 		schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;

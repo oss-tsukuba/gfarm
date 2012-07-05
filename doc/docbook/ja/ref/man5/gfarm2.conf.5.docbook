@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>10 Sep 2011</date></refentryinfo>
+<refentryinfo><date>26 June 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -929,6 +929,43 @@ Globus GridFTPのGfarm DSIなどで利用されます。
 </varlistentry>
 
 <varlistentry>
+<term><token>schedule_concurrency</token> <parameter>並列度</parameter></term>
+<listitem>
+<para>ファイルシステムノードを、スケジューリングのために並列検索する際の
+並列度を指定します。
+この数を増やすと並列度が高まり、スケジューリングが早く終りますが、
+ファイルシステムノードの負荷は高くなります。
+デフォルトは10です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_concurrency 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_concurrency_per_net</token> <parameter>並列度</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延を計測します。このパラメータは、各ネットワーク毎に
+幾つのファイルシステムノードを対象に計測するかを指定します。
+停止しているファイルシステムノードが多い場合や、
+負荷の高いファイルシステムノードが多く計測誤差が大きい場合には、
+このパラメータを増やした方が良いかもしれません。
+このパラメータを増やした場合には、
+それに応じて schedule_concurrency パラメータについても増やすことを推奨します。
+デフォルトは3です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_concurrency_per_net 3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>schedule_idle_load_thresh</token> <parameter>CPU負荷</parameter></term>
 <listitem>
 <para>ファイルシステムノードのスケジューリング時に、
@@ -972,6 +1009,40 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 <para>例:</para>
 <literallayout>
 	schedule_virtual_load 0.3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_candidates_ratio</token> <parameter>比率</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ロードアベレージが schedule_busy_load_thresh 以下のノードが、
+スケジューリング対象のノード数の何倍見つかったら、
+検索を打ち切るかを指定します。
+この値を大きくすると、より多くのノードを検索するため、
+スケジューリングの精度は上がりますが、処理は遅くなります。
+デフォルト値は4.0です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_candidates_ratio 4.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何倍になったら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+デフォルト値は4.0です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_rtt_thresh 4.0
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1470,9 +1541,13 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
 		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_concurrency_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_concurrency_per_net_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_candidates_ratio_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
@@ -1565,9 +1640,13 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 <!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
 <!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
 	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;schedule_concurrency_statement&gt; ::= "schedule_concurrency" &lt;number&gt;
+	&lt;schedule_concurrency_per_net_statement&gt; ::= "schedule_concurrency_per_net" &lt;number&gt;
 	&lt;schedule_idle_load_thresh_statement&gt; ::= "schedule_idle_load_thresh" &lt;load&gt;
 	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
 	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
+	&lt;schedule_candidates_ratio_statement&gt; ::= "schedule_candidates_ratio" &lt;floating_point_number&gt;
+	&lt;schedule_rtt_thresh__statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
 <!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
