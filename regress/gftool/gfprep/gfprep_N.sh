@@ -8,19 +8,20 @@ GFPREP_DIR=`dirname $0`
 [ `gfsched -w | wc -l` -ge 2 ] || exit $exit_unsupported
 setup_test
 
-if gfprep -N 2 gfarm:${gf_dir1}; then
+OPT='-d'
+if gfprep $OPT -N 2 gfarm:${gf_dir1}; then
   :
 else
-  echo failed: gfprep -N 2
+  echo failed: gfprep $OPT -N 2
   clean_test
   exit $exit_fail
 fi
 check_N $gf_dir1/dir/1byte 2
 
-if gfprep -N 1 -x gfarm:${gf_dir1}; then
+if gfprep $OPT -N 1 -x gfarm:${gf_dir1}; then
   :
 else
-  echo failed: gfprep -N 1 -x
+  echo failed: gfprep $OPT -N 1 -x
   clean_test
   exit $exit_fail
 fi

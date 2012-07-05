@@ -29,7 +29,7 @@ setup_test() {
 check_N() {
   P=$1
   N=$2
-  if gfstat $P > $local_tmpfile2 2>&1; then
+  if gfstat $P > $local_tmpfile2; then
     :
   else
     echo failed gfstat

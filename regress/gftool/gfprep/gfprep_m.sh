@@ -9,7 +9,7 @@ GFPREP_DIR=`dirname $0`
 setup_test
 
 check_N $gf_dir1/dir/1byte 1
-if gfwhere $gf_dir1/dir/1byte > $local_tmpfile1 2>&1; then
+if gfwhere $gf_dir1/dir/1byte > $local_tmpfile1; then
   :
 else
   echo gfwhere failed
@@ -17,16 +17,17 @@ else
   exit $exit_fail
 fi
 
-if cat $local_tmpfile1 | gfprep -m -h - gfarm:${gf_dir1}; then
+OPT='-d'
+if cat $local_tmpfile1 | gfprep $OPT -m -h - gfarm:${gf_dir1}; then
   :
 else
-  echo failed: gfprep -m
+  echo failed: gfprep $OPT -m
   clean_test
   exit $exit_fail
 fi
 check_N $gf_dir1/dir/1byte 1
 
-if gfwhere $gf_dir1/dir/1byte | diff - $local_tmpfile1 2>&1 > /dev/null; then
+if gfwhere $gf_dir1/dir/1byte | diff - $local_tmpfile1 > /dev/null; then
   echo not migrated
   clean_test
   exit $exit_fail

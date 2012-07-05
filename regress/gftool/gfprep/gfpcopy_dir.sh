@@ -45,7 +45,7 @@ check_local_entries() {
   fi
 }
 
-#OPT="-j 10 -v"
+OPT="-d"
 
 if gfpcopy $OPT gfarm:$gf_dir1 file:$local_dir1; then
   :
@@ -73,7 +73,7 @@ else
 fi
 check_local_entries $local_dir2
 
-if gfpcopy gfarm:$gf_dir2 file:$local_dir2; then
+if gfpcopy $OPT gfarm:$gf_dir2 file:$local_dir2; then
   :
 else
   echo gfpcopy failed [gfarm to local][2]
