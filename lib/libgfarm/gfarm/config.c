@@ -598,7 +598,7 @@ gfarm_get_global_username_by_url(const char *url, char **userp)
 		return (e);
 	e = gfarm_get_global_username_by_host(hostname, port, userp);
 	free(hostname);
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
