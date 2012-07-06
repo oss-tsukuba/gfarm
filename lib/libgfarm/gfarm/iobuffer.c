@@ -29,6 +29,7 @@ struct gfarm_iobuffer {
 	int read_eof; /* eof is detected on read side */
 	int write_eof; /* eof reached on write side */
 	int error;
+	int auto_read_expansion; /* auto extends 'buffer' at reading */
 };
 
 struct gfarm_iobuffer *
@@ -69,6 +70,7 @@ gfarm_iobuffer_alloc(int bufsize)
 	b->read_eof = 0;
 	b->write_eof = 0;
 	b->error = 0;
+	b->auto_read_expansion = 0;
 
 	return (b);
 }
@@ -223,7 +225,10 @@ gfarm_iobuffer_is_write_eof(struct gfarm_iobuffer *b)
 int
 gfarm_iobuffer_is_readable(struct gfarm_iobuffer *b)
 {
-	return (!IOBUFFER_IS_FULL(b) && !b->read_eof);
+	if (b->auto_read_expansion)
+		return (!b->read_eof);
+	else
+		return (!IOBUFFER_IS_FULL(b) && !b->read_eof);
 }
 
 int
@@ -246,12 +251,20 @@ gfarm_iobuffer_is_eof(struct gfarm_iobuffer *b)
 	return (IOBUFFER_IS_EMPTY(b) && b->read_eof);
 }
 
+void
+gfarm_iobuffer_set_auto_read_expansion(struct gfarm_iobuffer *b, int flag)
+{
+	b->auto_read_expansion = flag;
+}
+
 /* enqueue */
 static void
 gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 {
 	int space, rv;
 	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
+	void *new_buffer;
+	int new_bufsize;
 
 	if (IOBUFFER_IS_FULL(b))
 		return;
@@ -266,6 +279,21 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 			IOBUFFER_AVAIL_LENGTH(b));
 		b->tail -= b->head;
 		b->head = 0;
+	}
+	if (b->auto_read_expansion && *residualp > space) {
+		new_bufsize = b->bufsize - space + *residualp;
+		GFARM_REALLOC_ARRAY(new_buffer, b->buffer, new_bufsize);
+		if (new_buffer == NULL) {
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "failed to extend bufsize of struct "
+			    "gfarm_iobuffer: %s",
+			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		}
+		gflog_debug(GFARM_MSG_UNFIXED, "bufsize of struct iobuffer "
+		    "extended: %d -> %d", b->bufsize, new_bufsize);
+		b->bufsize = new_bufsize;
+		b->buffer = new_buffer;
+		space = b->head + (b->bufsize - b->tail);
 	}
 
 	func = do_timeout ? b->read_timeout_func : b->read_notimeout_func;

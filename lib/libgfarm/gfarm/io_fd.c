@@ -212,7 +212,8 @@ struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 gfarm_error_t
 gfp_xdr_new_socket(int fd, struct gfp_xdr **connp)
 {
-	return (gfp_xdr_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd, connp));
+	return (gfp_xdr_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd,
+	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
 }
 
 gfarm_error_t
