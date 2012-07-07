@@ -186,6 +186,12 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	e = gfs_replica_list_by_name(file, &ncopy, &copy);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
+	/* if there is no available file replica, display error message */
+	if (ncopy == 0 && st->st_size > 0) {
+		fprintf(stderr, "%s: no available file repilca\n", file);
+		e = GFARM_ERR_NO_ERROR;
+		goto free_copy;
+	}
 	for (i = 0; i < ncopy; ++i) {
 		if ((a->src_hosthash == NULL || gfarm_hash_lookup(
 			a->src_hosthash, copy[i], strlen(copy[i]) + 1)) &&
