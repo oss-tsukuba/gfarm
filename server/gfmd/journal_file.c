@@ -1638,7 +1638,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 		if ((e = journal_file_writer_rewind(jf)) != GFARM_ERR_NO_ERROR)
 			goto unlock;
 	}
-	gfp_xdr_set_auto_sendbuffer_expansion(xdr, 1);
+	gfp_xdr_begin_sendbuffer_pindown(xdr);
 	if ((e = journal_write_rec_header(xdr, seqnum, ope, data_len, &crc))
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
@@ -1660,7 +1660,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	    (unsigned long long)writer->pos, (unsigned long long)writer->lap);
 #endif
 unlock:
-	gfp_xdr_set_auto_sendbuffer_expansion(xdr, 0);
+	gfp_xdr_end_sendbuffer_pindown(xdr);
 	journal_file_mutex_unlock(jf, diag);
 	return (e);
 }

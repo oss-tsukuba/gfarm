@@ -86,7 +86,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 			return (GFARM_ERR_NO_MEMORY);
 		}
 		if ((flags & GFP_XDR_NEW_AUTO_RECV_EXPANSION) != 0) {
-			gfarm_iobuffer_set_auto_read_expansion(
+			gfarm_iobuffer_set_read_auto_expansion(
 			    conn->recvbuffer, 1);
 		}
 	} else
@@ -1341,7 +1341,14 @@ gfp_xdr_recv_get_error(struct gfp_xdr *conn)
 }
 
 void
-gfp_xdr_set_auto_sendbuffer_expansion(struct gfp_xdr *conn, int flag)
+gfp_xdr_begin_sendbuffer_pindown(struct gfp_xdr *conn)
 {
-	gfarm_iobuffer_set_auto_write_expansion(conn->sendbuffer, flag);
+	gfarm_iobuffer_begin_pindown(conn->sendbuffer);
 }
+
+void
+gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *conn)
+{
+	gfarm_iobuffer_end_pindown(conn->sendbuffer);
+}
+

@@ -146,7 +146,8 @@ gfarm_error_t gfp_xdr_send_async_request_header(struct gfp_xdr *,
 	disconnect_callback_t, void *, gfarm_int32_t *);
 gfarm_error_t gfp_xdr_send_async_result_header(struct gfp_xdr *,
 	gfarm_int32_t, size_t);
-void gfp_xdr_set_auto_sendbuffer_expansion(struct gfp_xdr *, int);
+void gfp_xdr_begin_sendbuffer_pindown(struct gfp_xdr *);
+void gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *);
 
 
 /*
