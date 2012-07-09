@@ -1324,11 +1324,12 @@ gfarm_error_t
 gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e_ret, e_rpc;
+	gfarm_error_t e_ret;
 	static const char diag[] = "GFM_PROTO_XMLATTR_FIND";
 	char *expr = NULL, *ck_path = NULL, *ck_name = NULL;
 	int depth, nalloc;
 #ifdef ENABLE_XMLATTR
+	gfarm_error_t e_rpc;
 	struct gfs_xmlattr_ctx *ctxp = NULL;
 	int fd, i;
 	struct process *process;
