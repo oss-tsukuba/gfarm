@@ -1339,3 +1339,9 @@ gfp_xdr_recv_get_error(struct gfp_xdr *conn)
 {
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
+
+void
+gfp_xdr_set_auto_sendbuffer_expansion(struct gfp_xdr *conn, int flag)
+{
+	gfarm_iobuffer_set_auto_write_expansion(conn->sendbuffer, flag);
+}

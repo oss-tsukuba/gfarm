@@ -73,6 +73,7 @@ int gfarm_iobuffer_is_readable(struct gfarm_iobuffer *);
 int gfarm_iobuffer_is_writable(struct gfarm_iobuffer *);
 int gfarm_iobuffer_is_eof(struct gfarm_iobuffer *);
 void gfarm_iobuffer_set_auto_read_expansion(struct gfarm_iobuffer *, int);
+void gfarm_iobuffer_set_auto_write_expansion(struct gfarm_iobuffer *, int);
 
 /* enqueue */
 void gfarm_iobuffer_set_read_timeout(struct gfarm_iobuffer *,

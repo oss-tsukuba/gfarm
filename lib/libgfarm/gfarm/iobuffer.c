@@ -30,7 +30,13 @@ struct gfarm_iobuffer {
 	int write_eof; /* eof reached on write side */
 	int error;
 	int auto_read_expansion; /* auto extends 'buffer' at reading */
+	int auto_write_expansion; /* auto extends 'buffer' at writing */
 };
+
+#define IOBUFFER_IS_EMPTY(b)	((b)->head >= (b)->tail)
+#define IOBUFFER_IS_FULL(b)	((b)->head <= 0 && (b)->tail >= (b)->bufsize)
+#define IOBUFFER_AVAIL_LENGTH(b)	((b)->tail - (b)->head)
+#define IOBUFFER_SPACE_SIZE(b)	((b)->head + ((b)->bufsize - (b)->tail))
 
 struct gfarm_iobuffer *
 gfarm_iobuffer_alloc(int bufsize)
@@ -71,6 +77,7 @@ gfarm_iobuffer_alloc(int bufsize)
 	b->write_eof = 0;
 	b->error = 0;
 	b->auto_read_expansion = 0;
+	b->auto_write_expansion = 0;
 
 	return (b);
 }
@@ -82,6 +89,37 @@ gfarm_iobuffer_free(struct gfarm_iobuffer *b)
 		return;
 	free(b->buffer);
 	free(b);
+}
+
+static void
+gfarm_iobuffer_squeeze(struct gfarm_iobuffer *b)
+{
+	if (b->head == 0)
+		return;
+	memmove(b->buffer, b->buffer + b->head, IOBUFFER_AVAIL_LENGTH(b));
+	b->tail -= b->head;
+	b->head = 0;
+}
+
+static void
+gfarm_iobuffer_resize(struct gfarm_iobuffer *b, int new_bufsize)
+{
+	void *new_buffer;
+
+	if (new_bufsize <= b->bufsize)
+		return;
+
+	GFARM_REALLOC_ARRAY(new_buffer, b->buffer, new_bufsize);
+	if (new_buffer == NULL) {
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "failed to extend bufsize of struct gfarm_iobuffer: %s",
+		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+	}
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "bufsize of struct iobuffer extended: %d -> %d",
+	    b->bufsize, new_bufsize);
+	b->bufsize = new_bufsize;
+	b->buffer = new_buffer;
 }
 
 int
@@ -167,24 +205,17 @@ gfarm_iobuffer_get_write_fd(struct gfarm_iobuffer *b)
  * gfarm_iobuffer_empty(b) is a synonym of:
  *	gfarm_iobuffer_avail_length(b) == 0
  */
-
-#define IOBUFFER_IS_EMPTY(b)	((b)->head >= (b)->tail)
-
 int
 gfarm_iobuffer_empty(struct gfarm_iobuffer *b)
 {
 	return (IOBUFFER_IS_EMPTY(b));
 }
 
-#define IOBUFFER_IS_FULL(b)	((b)->head <= 0 && (b)->tail >= (b)->bufsize)
-
 int
 gfarm_iobuffer_full(struct gfarm_iobuffer *b)
 {
 	return (IOBUFFER_IS_FULL(b));
 }
-
-#define IOBUFFER_AVAIL_LENGTH(b)	((b)->tail - (b)->head)
 
 int
 gfarm_iobuffer_avail_length(struct gfarm_iobuffer *b)
@@ -257,43 +288,37 @@ gfarm_iobuffer_set_auto_read_expansion(struct gfarm_iobuffer *b, int flag)
 	b->auto_read_expansion = flag;
 }
 
+void
+gfarm_iobuffer_set_auto_write_expansion(struct gfarm_iobuffer *b, int flag)
+{
+	if (!b->auto_write_expansion || !flag)
+		gfarm_iobuffer_squeeze(b);
+	b->auto_write_expansion = flag;
+}
+
 /* enqueue */
 static void
 gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 {
 	int space, rv;
 	int (*func)(struct gfarm_iobuffer *, void *, int, void *, int);
-	void *new_buffer;
 	int new_bufsize;
 
-	if (IOBUFFER_IS_FULL(b))
+	if (!b->auto_read_expansion && IOBUFFER_IS_FULL(b))
 		return;
 
-	space = b->head + (b->bufsize - b->tail);
+	space = IOBUFFER_SPACE_SIZE(b);
 	if (residualp == NULL) /* unlimited */
 		residualp = &space;
 	if (*residualp <= 0)
 		return;
-	if (*residualp > b->bufsize - b->tail && b->head > 0) {
-		memmove(b->buffer, b->buffer + b->head,
-			IOBUFFER_AVAIL_LENGTH(b));
-		b->tail -= b->head;
-		b->head = 0;
-	}
+	if (!b->auto_write_expansion && 
+	    *residualp > b->bufsize - b->tail && b->head > 0)
+		gfarm_iobuffer_squeeze(b);
 	if (b->auto_read_expansion && *residualp > space) {
 		new_bufsize = b->bufsize - space + *residualp;
-		GFARM_REALLOC_ARRAY(new_buffer, b->buffer, new_bufsize);
-		if (new_buffer == NULL) {
-			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "failed to extend bufsize of struct "
-			    "gfarm_iobuffer: %s",
-			    gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		}
-		gflog_debug(GFARM_MSG_UNFIXED, "bufsize of struct iobuffer "
-		    "extended: %d -> %d", b->bufsize, new_bufsize);
-		b->bufsize = new_bufsize;
-		b->buffer = new_buffer;
-		space = b->head + (b->bufsize - b->tail);
+		gfarm_iobuffer_resize(b, new_bufsize);
+		space = IOBUFFER_SPACE_SIZE(b);
 	}
 
 	func = do_timeout ? b->read_timeout_func : b->read_notimeout_func;
@@ -312,19 +337,24 @@ static int
 gfarm_iobuffer_put(struct gfarm_iobuffer *b, const void *data, int len)
 {
 	int space, iolen;
+	int new_bufsize;
 
 	if (len <= 0)
 		return (0);
 
-	if (IOBUFFER_IS_FULL(b))
+	if (!b->auto_write_expansion && IOBUFFER_IS_FULL(b))
 		return (0);
 
-	space = b->head + (b->bufsize - b->tail);
-	if (len > b->bufsize - b->tail && b->head > 0) {
-		memmove(b->buffer, b->buffer + b->head,
-			IOBUFFER_AVAIL_LENGTH(b));
-		b->tail -= b->head;
-		b->head = 0;
+	space = IOBUFFER_SPACE_SIZE(b);
+	if (b->auto_write_expansion) {
+		if (space < len) {
+			new_bufsize = b->bufsize - space + len;
+			gfarm_iobuffer_resize(b, new_bufsize);
+			space = IOBUFFER_SPACE_SIZE(b);
+		}
+	} else {
+		if (len > b->bufsize - b->tail && b->head > 0)
+			gfarm_iobuffer_squeeze(b);
 	}
 	iolen = len < space ? len : space;
 	memcpy(b->buffer + b->tail, data, iolen);
@@ -363,8 +393,8 @@ gfarm_iobuffer_write(struct gfarm_iobuffer *b, int *residualp)
 	if (rv > 0) {
 		b->head += rv;
 		*residualp -= rv;
-		if (IOBUFFER_IS_EMPTY(b)) {
-			b->head = b->tail = 0;
+		if (!b->auto_write_expansion && IOBUFFER_IS_EMPTY(b)) {
+			gfarm_iobuffer_squeeze(b);
 			/*
 			 * We don't do the following here:
 			 *	if (b->read_eof)
@@ -404,7 +434,7 @@ gfarm_iobuffer_purge(struct gfarm_iobuffer *b, int *residualp)
 	b->head += purgelen;
 	*residualp -= purgelen;
 	if (IOBUFFER_IS_EMPTY(b)) {
-		b->head = b->tail = 0;
+		gfarm_iobuffer_squeeze(b);
 		/*
 		 * We don't do the following here:
 		 *	if (b->read_eof)
@@ -439,8 +469,8 @@ gfarm_iobuffer_get(struct gfarm_iobuffer *b, void *data, int len)
 	iolen = len < avail ? len : avail;
 	memcpy(data, b->buffer + b->head, iolen);
 	b->head += iolen;
-	if (IOBUFFER_IS_EMPTY(b)) {
-		b->head = b->tail = 0;
+	if (!b->auto_write_expansion && IOBUFFER_IS_EMPTY(b)) {
+		gfarm_iobuffer_squeeze(b);
 		/*
 		 * We don't do the following here:
 		 *	if (b->read_eof)
@@ -471,13 +501,13 @@ gfarm_iobuffer_put_write(struct gfarm_iobuffer *b, const void *data, int len)
 	int rv, residual;
 
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
-		if (IOBUFFER_IS_FULL(b))
+		if (!b->auto_write_expansion && IOBUFFER_IS_FULL(b))
 			gfarm_iobuffer_write(b, NULL);
 		rv = gfarm_iobuffer_put(b, p, residual);
 		if (rv == 0) /* error */
 			break;
 	}
-	if (IOBUFFER_IS_FULL(b))
+	if (!b->auto_write_expansion && IOBUFFER_IS_FULL(b))
 		gfarm_iobuffer_write(b, NULL);
 	return (len - residual);
 }
