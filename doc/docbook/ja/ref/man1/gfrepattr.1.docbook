@@ -64,10 +64,6 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 
 <para>
-<command>gfrepattr</command> manipulates replication attributes of a specified file or a directory.
-Replication attributes is used by the <command>Replication-Attribute-based File Replication</command>.
-A replication attribute consists of a hostgroup name and a maximum number of file replica that can create in an hostgroup.
-
 <command>gfrepattr</command> はファイルまたはディレクトリのレプリケーション属性を操作します。
 レプリケーション属性は<command>レプリケーション属性を基にしたファイルレプリケーション</command>に使用されます。
 レプリケーション属性はホストグループ名とそのホストグループ内での最大の複製数から構成されます。
