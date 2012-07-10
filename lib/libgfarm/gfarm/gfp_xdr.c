@@ -62,8 +62,8 @@ gfp_xdr_set(struct gfp_xdr *conn,
 #define GFP_XDR_NEW_RECV	1
 #define GFP_XDR_NEW_SEND	2
 
-static gfarm_error_t
-gfp_xdr_new0(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
+gfarm_error_t
+gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	int flags, struct gfp_xdr **connp)
 {
 	struct gfp_xdr *conn;
@@ -83,6 +83,10 @@ gfp_xdr_new0(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 				"allocation of 'conn recvbuffer' failed: %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			return (GFARM_ERR_NO_MEMORY);
+		}
+		if ((flags & GFP_XDR_NEW_AUTO_RECV_EXPANSION) != 0) {
+			gfarm_iobuffer_set_read_auto_expansion(
+			    conn->recvbuffer, 1);
 		}
 	} else
 		conn->recvbuffer = NULL;
@@ -105,31 +109,6 @@ gfp_xdr_new0(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 	*connp = conn;
 	return (GFARM_ERR_NO_ERROR);
 }
-
-gfarm_error_t
-gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
-	struct gfp_xdr **connp)
-{
-	return (gfp_xdr_new0(ops, cookie, fd,
-	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
-}
-
-gfarm_error_t
-gfp_xdr_new_recv_only(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
-	struct gfp_xdr **connp)
-{
-	return (gfp_xdr_new0(ops, cookie, fd,
-	    GFP_XDR_NEW_RECV, connp));
-}
-
-gfarm_error_t
-gfp_xdr_new_send_only(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
-	struct gfp_xdr **connp)
-{
-	return (gfp_xdr_new0(ops, cookie, fd,
-	    GFP_XDR_NEW_SEND, connp));
-}
-
 
 gfarm_error_t
 gfp_xdr_free(struct gfp_xdr *conn)
@@ -1070,6 +1049,19 @@ gfp_xdr_recv_get_error(struct gfp_xdr *conn)
 {
 	return (gfarm_iobuffer_get_error(conn->recvbuffer));
 }
+
+void
+gfp_xdr_begin_sendbuffer_pindown(struct gfp_xdr *conn)
+{
+	gfarm_iobuffer_begin_pindown(conn->sendbuffer);
+}
+
+void
+gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *conn)
+{
+	gfarm_iobuffer_end_pindown(conn->sendbuffer);
+}
+
 
 /*
  * lowest level interface,

@@ -17,6 +17,10 @@ struct gfp_iobuffer_ops {
 	    void *, int);
 };
 
+#define GFP_XDR_NEW_RECV		1
+#define GFP_XDR_NEW_SEND		2
+#define GFP_XDR_NEW_AUTO_RECV_EXPANSION	4
+
 struct gfp_xdr;
 
 #define IS_CONNECTION_ERROR(e) \
@@ -33,11 +37,7 @@ struct gfp_xdr;
 	 (e) == GFARM_ERR_CONNECTION_REFUSED || \
 	 (e) == GFARM_ERR_NO_ROUTE_TO_HOST)
 
-gfarm_error_t gfp_xdr_new(struct gfp_iobuffer_ops *, void *, int,
-	struct gfp_xdr **);
-gfarm_error_t gfp_xdr_new_recv_only(struct gfp_iobuffer_ops *, void *, int,
-	struct gfp_xdr **);
-gfarm_error_t gfp_xdr_new_send_only(struct gfp_iobuffer_ops *, void *, int,
+gfarm_error_t gfp_xdr_new(struct gfp_iobuffer_ops *, void *, int, int,
 	struct gfp_xdr **);
 gfarm_error_t gfp_xdr_free(struct gfp_xdr *);
 
@@ -130,6 +130,8 @@ gfarm_error_t gfp_xdr_vsend_result(struct gfp_xdr *,
 	gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfp_xdr_vsend_async_result(struct gfp_xdr *, gfp_xdr_xid_t,
 	gfarm_int32_t, const char *, va_list *);
+void gfp_xdr_begin_sendbuffer_pindown(struct gfp_xdr *);
+void gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *);
 
 
 /*

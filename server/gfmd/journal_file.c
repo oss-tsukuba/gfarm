@@ -1201,8 +1201,8 @@ journal_file_reader_init(struct journal_file *jf, int fd,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-	if ((e = gfp_xdr_new_recv_only(&journal_iobuffer_ops,
-	    reader, fd, &xdr))) {
+	if ((e = gfp_xdr_new(&journal_iobuffer_ops, reader, fd,
+	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_AUTO_RECV_EXPANSION, &xdr))) {
 		free(reader);
 		gflog_error(GFARM_MSG_1002889,
 		    "%s", gfarm_error_string(e));
@@ -1366,8 +1366,8 @@ journal_file_open(const char *path, size_t max_size,
 	}
 	jf->tail = tail;
 	if ((flags & GFARM_JOURNAL_RDWR) != 0) {
-		if ((e = gfp_xdr_new_send_only(&journal_iobuffer_ops,
-		    &jf->writer, wfd, &writer_xdr)))
+		if ((e = gfp_xdr_new(&journal_iobuffer_ops,
+		    &jf->writer, wfd, GFP_XDR_NEW_SEND, &writer_xdr)))
 			goto error;
 		journal_file_writer_set(jf, writer_xdr, wpos, wlap,
 			&jf->writer);
@@ -1658,6 +1658,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 		if ((e = journal_file_writer_rewind(jf)) != GFARM_ERR_NO_ERROR)
 			goto unlock;
 	}
+	gfp_xdr_begin_sendbuffer_pindown(xdr);
 	if ((e = journal_write_rec_header(xdr, seqnum, ope, data_len, &crc))
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
@@ -1679,6 +1680,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	    (unsigned long long)writer->pos, (unsigned long long)writer->lap);
 #endif
 unlock:
+	gfp_xdr_end_sendbuffer_pindown(xdr);
 	journal_file_mutex_unlock(jf, diag);
 end:
 	free(arg);
