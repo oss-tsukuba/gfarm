@@ -291,8 +291,6 @@ gfarm_iobuffer_set_read_auto_expansion(struct gfarm_iobuffer *b, int flag)
 void
 gfarm_iobuffer_begin_pindown(struct gfarm_iobuffer *b)
 {
-	if (!b->pindown)
-		gfarm_iobuffer_squeeze(b);
 	b->pindown = 1;
 }
 
