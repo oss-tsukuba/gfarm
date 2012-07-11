@@ -1,5 +1,9 @@
 /* need #include <gfarm/gfarm_config.h> to see HAVE_GETLOADAVG */
 
+extern int debug_mode;
+extern struct gfm_connection *gfm_server;
+extern const char READONLY_CONFIG_FILE[];
+
 #ifndef HAVE_GETLOADAVG
 int getloadavg(double *, int);
 #endif
