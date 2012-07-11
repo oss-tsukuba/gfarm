@@ -111,7 +111,8 @@ tokenize(char *buf, char **tokens, int max, const char *delm) {
 		if (*buf == '\0')
 			break;
 
-		tokens[n] = buf;
+		if (tokens != NULL)
+			tokens[n] = buf;
 
 		non_delm = 0;
 		while (strchr(delm, (int)*buf) == NULL && *buf != '\0') {
@@ -123,7 +124,8 @@ tokenize(char *buf, char **tokens, int max, const char *delm) {
 				n++;
 			break;
 		}
-		*buf = '\0';
+		if (tokens != NULL)
+			*buf = '\0';
 		n++;
 		if (*(buf + 1) == '\0')
 			break;
@@ -342,30 +344,32 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 	size_t n_tokens;
 	size_t i;
 	int32_t spec_n;
-	char *tokens[4096];
+	char **tokens = NULL;
 	char *tokens2[3];
 	bool is_ok = false;
 	gfarm_repattr_t *reps = NULL;
 	gfarm_repattr_t rep;
-	size_t len = strlen(s);
-	int of = 0;
 	char *buf = NULL;
 
-	len = gfarm_size_add(&of, len, 1);
-	if (of == 0 && len > 0)
-		buf = (char *)malloc(len);
+	buf = strdup(s);
 	if (buf == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
-	/*
-	 * The len is counded as the s/buf is including '\0' thus no
-	 * need to terminate after memcpy().
-	 */
-	(void)memcpy((void *)buf, (void *)s, len);
 
-	n_tokens = tokenize(buf, tokens, 4096, ",");
+	n_tokens = tokenize(buf, NULL, INT_MAX, ",");
+	if (n_tokens == 0)
+		goto done;
+
+	GFARM_MALLOC_ARRAY(tokens, n_tokens);
+	if (tokens == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse:() %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		goto done;
+	}
+
+	n_tokens = tokenize(buf, tokens, n_tokens, ",");
 	if (n_tokens == 0)
 		goto done;
 
@@ -381,9 +385,9 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 	for (i = 0; i < n_maxreps; i++) {
 		if (strchr(tokens[i], ':') == NULL)
 			continue;
-		n_tokens = tokenize(tokens[i], tokens2, 3, ": \t\r\n");
+		n_tokens = tokenize(tokens[i], tokens2, GFARM_ARRAY_LENGTH(tokens2), ": \t\r\n");
 		if (n_tokens == 2) {
-			if (parse_int32(tokens2[1], &spec_n) != true)
+			if (!parse_int32(tokens2[1], &spec_n))
 				continue;
 			if (spec_n < 1)
 				continue;
@@ -398,6 +402,7 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 
 done:
 	free(buf);
+	free(tokens);
 	if (is_ok == false || retp == NULL) {
 		if (reps != NULL) {
 			for (i = 0; i < ret; i++)
