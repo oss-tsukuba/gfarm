@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-dir=/tmp/gfrepattr-test.$$
+dir=$gftmp
 
 pat00="g0:1, g1:1, g0:2, g2:1, g0:3, g3:1"
 
@@ -25,7 +25,7 @@ trap 'cleanup; exit $exit_trap' $trap_sigs
 
 setup
 
-gfrepattr -s -m ${dir} "${pat00}" > /dev/null 2>&1
+gfrepattr -s -m ${dir} "${pat00}"
 if test $? -ne 1; then
     cleanup
     exit $exit_fail
@@ -37,7 +37,7 @@ if test $? -ne 0; then
     exit $exit_fail
 fi
 
-gfrepattr -s -m ${dir} "${pat}" > /dev/null 2>&1
+gfrepattr -s -m ${dir} "${pat}"
 if test $? -ne 0; then
     cleanup
     exit $exit_fail
