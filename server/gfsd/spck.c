@@ -30,11 +30,12 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 
 	if ((e = gfm_client_replica_add_request(gfm_server, inum, gen, size))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1000601, "request", diag, e);
+		fatal_metadb_proto(GFARM_MSG_1000601, "replica_add request",
+		    diag, e);
 	else if ((e = gfm_client_replica_add_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode && e != GFARM_ERR_ALREADY_EXISTS)
-			gflog_info(GFARM_MSG_1000602, "%s result: %s", diag,
+			gflog_info(GFARM_MSG_1000602, "replica_add result: %s",
 			    gfarm_error_string(e));
 	}
 	return (e);
