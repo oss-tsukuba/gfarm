@@ -99,6 +99,7 @@ gftool/gfchown/gfchown-h.sh
 gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh
+gftool/gfxattr/gfxattr-xml-long-value.sh
 
 # gftool/gfkey
 
