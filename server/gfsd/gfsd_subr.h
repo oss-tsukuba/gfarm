@@ -3,6 +3,7 @@
 extern int debug_mode;
 extern struct gfm_connection *gfm_server;
 extern const char READONLY_CONFIG_FILE[];
+extern int gfarm_spool_root_len;
 
 #ifndef HAVE_GETLOADAVG
 int getloadavg(double *, int);
@@ -22,3 +23,5 @@ void fatal_metadb_proto_full(int,
 	const char *, int, const char *,
 	const char *, const char *, gfarm_error_t);
 
+void gfsd_local_path(gfarm_ino_t, gfarm_uint64_t, const char *, char **);
+gfarm_error_t gfm_client_replica_lost(gfarm_ino_t, gfarm_uint64_t);

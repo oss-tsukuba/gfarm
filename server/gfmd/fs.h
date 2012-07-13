@@ -77,3 +77,4 @@ gfarm_error_t gfm_server_replica_added(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_added2(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_lost(struct peer *, int, int);
 gfarm_error_t gfm_server_replica_add(struct peer *, int, int);
+gfarm_error_t gfm_server_replica_get_my_entries(struct peer *, int, int);

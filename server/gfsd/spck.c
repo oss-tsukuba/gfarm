@@ -22,6 +22,12 @@
 
 #include "gfsd_subr.h"
 
+static enum {
+	MODE_DISPLAY,
+	MODE_DELETE,
+	MODE_LOST_FOUND
+} invalid_file_mode = MODE_DISPLAY;
+
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
@@ -41,8 +47,61 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 	return (e);
 }
 
+static gfarm_error_t
+gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
+	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
+{
+	gfarm_error_t e;
+	static const char diag[] = "replica_get_my_entries";
+
+	if ((e = gfm_client_replica_get_my_entries_request(
+	    gfm_server, start_inum, *np)) != GFARM_ERR_NO_ERROR)
+		fatal_metadb_proto(GFARM_MSG_UNFIXED, "request", diag, e);
+	else if ((e = gfm_client_replica_get_my_entries_result(
+	    gfm_server, np, inumsp, gensp, sizesp)) != GFARM_ERR_NO_ERROR) {
+		if (debug_mode)
+			gflog_info(GFARM_MSG_UNFIXED, "%s result: %s", diag,
+			    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+static gfarm_error_t
+move_file_to_lost_found_main(const char *file, struct stat *stp)
+{
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+}
+
+static gfarm_error_t
+move_file_to_lost_found(const char *file, struct stat *stp)
+{
+	gfarm_error_t e;
+
+	if (stp->st_size == 0) { /* unreferenced empty file is unnecessary */
+		if (unlink(file)) {
+			e = gfarm_errno_to_error(errno);
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: unlink empty file: %s",
+			    file, gfarm_error_string(e));
+			return (e);
+		}
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: unlinked (empty file)", file);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	e = move_file_to_lost_found_main(file, stp);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: cannot move to /lost+found: %s", file,
+		    gfarm_error_string(e));
+	else
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: moved to /lost+found", file);
+	return (e);
+}
+
 /*
- * File format should be consistent with local_path() in gfsd.c
+ * File format should be consistent with gfsd_local_path() in gfsd.c
  */
 static int
 get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
@@ -65,8 +124,6 @@ get_inum_gen(const char *path, gfarm_ino_t *inump, gfarm_uint64_t *genp)
 
 	return (0);
 }
-
-static int delete_invalid_file = 0;
 
 static gfarm_error_t
 dir_foreach(
@@ -151,19 +208,28 @@ unlink_file(char *file)
 }
 
 static gfarm_error_t
-deal_with_invalid_file(char *file)
+deal_with_invalid_file(char *file, struct stat *stp)
 {
 	gfarm_error_t e;
 
-	if (!delete_invalid_file) {
+	switch (invalid_file_mode) {
+	case MODE_DISPLAY:
 		gflog_notice(GFARM_MSG_1000603, "%s: invalid file", file);
-		return (GFARM_ERR_NO_ERROR);
+		e = GFARM_ERR_NO_ERROR;
+		break;
+	case MODE_DELETE:
+		e = unlink_file(file);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_warning(GFARM_MSG_1000604,
+			    "%s: cannot delete", file);
+		else
+			gflog_notice(GFARM_MSG_1000605,
+			    "%s: deleted", file);
+		break;
+	case MODE_LOST_FOUND:
+	default:
+		e = move_file_to_lost_found(file, stp);
 	}
-	e = unlink_file(file);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1000604, "%s: cannot delete", file);
-	else
-		gflog_notice(GFARM_MSG_1000605, "%s: deleted", file);
 	return (e);
 }
 
@@ -180,7 +246,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (get_inum_gen(file, &inum, &gen))
-		return (deal_with_invalid_file(file));
+		return (deal_with_invalid_file(file, stp));
 	size = stp->st_size;
 	e = gfm_client_replica_add(inum, gen, size);
 	switch (e) {
@@ -193,7 +259,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		break;
 	case GFARM_ERR_NO_SUCH_OBJECT:
 	case GFARM_ERR_INVALID_FILE_REPLICA:
-		e = deal_with_invalid_file(file);
+		e = deal_with_invalid_file(file, stp);
 		break;
 	}
 	return (e);
@@ -205,10 +271,99 @@ check_spool(char *dir)
 	return (dir_foreach(check_file, NULL, NULL, dir, NULL));
 }
 
+static void
+compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
+{
+	gfarm_error_t e;
+	char *path, *file;
+	struct stat st;
+	int save_errno, lost = 0;
+	gfarm_ino_t inum2;
+	gfarm_uint64_t gen2;
+
+	/*
+	 * If gfsd_local_path() or get_inum_gen() are broken,
+	 * all replica-references are deleted....
+	 */
+	gfsd_local_path(inum, gen, "compare_file", &path);
+	file = path + gfarm_spool_root_len + 1;
+	get_inum_gen(file, &inum2, &gen2);
+	if (inum != inum2 || gen != gen2)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "%s: gfsd_local_path or get_inum_gen are broken", path);
+	else if (lstat(path, &st)) {
+		save_errno = errno;
+		if (save_errno == ENOENT) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "(%llu:%llu): lost replica",
+			    (unsigned long long)inum, (unsigned long long)gen);
+			lost = 1;
+		} else
+			gflog_error(GFARM_MSG_UNFIXED, "stat(%s): %s",
+			    path, strerror(save_errno));
+	} else if (!S_ISREG(st.st_mode)) {
+		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", path);
+		lost = 1;
+	} else if (st.st_size != size) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		      "(%llu:%llu): invalid file: metadata=%llu, spool=%llu",
+		      (unsigned long long)inum, (unsigned long long)gen,
+		      (unsigned long long)size,
+		      (unsigned long long)st.st_size);
+		(void)move_file_to_lost_found(file, &st);
+		lost = 1;
+	}
+	if (lost) { /* delete the replica-reference from metadata */
+		e = gfm_client_replica_lost(inum, gen);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "replica_lost: %s", gfarm_error_string(e));
+	}
+	free(path);
+}
+
+#define REQUEST_NUM 2048
+
+static gfarm_error_t
+check_metadata()
+{
+	gfarm_error_t e;
+	gfarm_ino_t inum, *inums;
+	gfarm_uint64_t *gens;
+	gfarm_off_t *sizes;
+	int i, n;
+
+	for (inum = 0;; inum++) {
+		n = REQUEST_NUM;
+		e = gfm_client_replica_get_my_entries(inum, &n,
+		    &inums, &gens, &sizes);
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			return (GFARM_ERR_NO_ERROR); /* end */
+		else if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "replica_get_my_entries(%llu, %d): %s",
+			    (unsigned long long)inum, n,
+			    gfarm_error_string(e));
+			return (e);
+		}
+		for (i = 0; i < n && i < REQUEST_NUM; i++) {
+			compare_file(inums[i], gens[i], sizes[i]);
+			inum = inums[i];
+		}
+		free(inums);
+		free(gens);
+		free(sizes);
+		if (n < REQUEST_NUM)
+			return (GFARM_ERR_NO_ERROR); /* end */
+	}
+}
+
 /*
  * check_level:
  *  0, 1      ... display invalid files
- *  otherwise ... delete invalid files
+ *  2         ... delete invalid files
+ *  otherwise ... move invalid files to gfarm:///lost+found
+ *                and delete invalid replica-references from metadata
  */
 gfarm_error_t
 gfsd_spool_check(int check_level)
@@ -216,11 +371,14 @@ gfsd_spool_check(int check_level)
 	switch (check_level) {
 	case 0:
 	case 1:
-		delete_invalid_file = 0;
+		invalid_file_mode = MODE_DISPLAY;
+		break;
+	case 2:
+		invalid_file_mode = MODE_DELETE;
 		break;
 	default:
-		delete_invalid_file = 1;
-		break;
+		check_metadata();
+		invalid_file_mode = MODE_LOST_FOUND;
 	}
 	return (check_spool("."));
 }

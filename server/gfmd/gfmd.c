@@ -447,6 +447,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_ADD:
 		e = gfm_server_replica_add(peer, from_client, skip);
 		break;
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES:
+		e = gfm_server_replica_get_my_entries(peer, from_client, skip);
+		break;
 	case GFM_PROTO_PROCESS_ALLOC:
 		e = gfm_server_process_alloc(peer, from_client, skip);
 		break;
