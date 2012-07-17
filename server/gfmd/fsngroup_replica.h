@@ -23,5 +23,4 @@ void gfarm_server_process_record_replication_attribute(
 	struct process *, int,
 	struct inode *, struct inode *);
 void gfarm_server_fsngroup_replicate_file(
-	struct inode *, struct host *, const char *, char **, size_t,
-	fsngroup_sched_proc_t);
+	struct inode *, struct host *, const char *, char **, size_t);
