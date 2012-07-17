@@ -614,21 +614,3 @@ done:
 		*n_repp = ret;
 	return (e);
 }
-
-gfarm_error_t
-gfarm_repattr_validate(const char *s, int *valid)
-{
-	size_t n_reps = 0;
-	gfarm_error_t e;
-	if (s == NULL) {
-		*valid = 0;
-		return (GFARM_ERR_NO_ERROR);
-	} else {
-		e = gfarm_repattr_parse(s, NULL, &n_reps);
-		if (n_reps > 0)
-			*valid = 1;
-		else
-			*valid = 0;
-		return (e);
-	}
-}

@@ -14,5 +14,3 @@ const char *gfarm_repattr_group(gfarm_repattr_t);
 size_t gfarm_repattr_amount(gfarm_repattr_t);
 gfarm_error_t gfarm_repattr_stringify(gfarm_repattr_t *, size_t, char **);
 gfarm_error_t gfarm_repattr_reduce(const char *, gfarm_repattr_t **, size_t *);
-
-gfarm_error_t gfarm_repattr_validate(const char * , int *);
