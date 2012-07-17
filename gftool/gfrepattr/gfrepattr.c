@@ -32,10 +32,10 @@ set_repattr(char *path, const void *value, size_t len,
 }
 
 static gfarm_error_t
-get_repattr_alloc(char *path, void **valuep, size_t *size, int nofollow)
+get_repattr_alloc(char *path, char **valuep, size_t *size, int nofollow)
 {
 	gfarm_error_t e;
-	void *value;
+	char *value;
 
 	value = malloc(*size);
 	if (value == NULL)
@@ -52,10 +52,10 @@ get_repattr_alloc(char *path, void **valuep, size_t *size, int nofollow)
 }
 
 static gfarm_error_t
-get_repattr(char *path, void **valuep, size_t *lenp, int nofollow)
+get_repattr(char *path, char **valuep, size_t *lenp, int nofollow)
 {
 	gfarm_error_t e;
-	void *value = NULL;
+	char *value = NULL;
 	size_t size;
 
 	size = DEFAULT_ALLOC_SIZE;
@@ -133,7 +133,7 @@ main(int argc, char *argv[])
 	} mode = NONE;
 	const char *opts = "srcmh?";
 	char *c_path = NULL;
-	void *repattr = NULL;
+	char *repattr = NULL;
 	size_t infolen = 0;
 	int c;
 	int i;
@@ -212,24 +212,30 @@ main(int argc, char *argv[])
 			goto done;
 		}
 		c_path = argv[0];
-		nreps = gfarm_repattr_reduce(argv[1], &reps);
+		if ((e = gfarm_repattr_reduce(argv[1], &reps, &nreps))
+		    != GFARM_ERR_NO_ERROR) {
+			got_errors++;
+			goto done;
+		}
 		if (nreps == 0) {
 			fprintf(stderr, "%s: invalid attr '%s'\n",
 				program_name, argv[1]);
 			got_errors++;
 			goto done;
 		}
-		repattr = gfarm_repattr_stringify(reps, nreps);
-		if (repattr == NULL) {
-			fprintf(stderr, "%s: canonicalization failure '%s'\n",
-				program_name, argv[1]);
+		e = gfarm_repattr_stringify(reps, nreps, &repattr);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (repattr == NULL) {
+				fprintf(stderr, "%s: canonicalization failure '%s'\n",
+					program_name, argv[1]);
+			}
 			got_errors++;
 			goto done;
 		}
 
 		/* Add one for the last NUL. */
-		infolen = strlen((char *)repattr) + 1;
-		e = set_repattr(c_path, (char *)repattr, infolen, flags,
+		infolen = strlen(repattr) + 1;
+		e = set_repattr(c_path, repattr, infolen, flags,
 			nofollow);
 		switch (e) {
 		case GFARM_ERR_NO_ERROR:
@@ -254,14 +260,14 @@ main(int argc, char *argv[])
 			infolen = 0;
 			c_path = argv[i];
 			e = get_repattr(c_path,
-				(void **)&repattr, &infolen, nofollow);
+				&repattr, &infolen, nofollow);
 			switch (e) {
 			case GFARM_ERR_NO_ERROR:
 			case GFARM_ERR_NO_SUCH_OBJECT:
 				fprintf(stdout, "%s: '%s'\n",
 					c_path,
 					repattr != NULL ?
-					(char *)repattr : "");
+					repattr : "");
 				break;
 			case GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY:
 				fprintf(stderr, "%s: %s: %s\n",

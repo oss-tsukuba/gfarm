@@ -305,7 +305,7 @@ allocate_repattr(const char *fsngroupname, size_t n)
 	is_ok = true;
 
 done:
-	if (is_ok == false) {
+	if (!is_ok) {
 		free(tmp_fsng);
 		free(ret);
 		ret = NULL;
@@ -330,8 +330,8 @@ destroy_repattr(gfarm_repattr_t rep)
  * Exported APIs:
  */
 
-size_t
-gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
+gfarm_error_t
+gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp, size_t *n_retp)
 {
 	/*
 	 * anattr := string ':' number
@@ -350,11 +350,13 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 	gfarm_repattr_t *reps = NULL;
 	gfarm_repattr_t rep;
 	char *buf = NULL;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
 	buf = strdup(s);
 	if (buf == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse(): %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			gfarm_error_string(e));
 		goto done;
 	}
 
@@ -375,8 +377,9 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 
 	GFARM_MALLOC_ARRAY(reps, n_tokens);
 	if (reps == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse:() %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			gfarm_error_string(e));
 		goto done;
 	}
 	(void)memset((void *)reps, 0, sizeof(*reps) * n_tokens);
@@ -403,20 +406,22 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 done:
 	free(buf);
 	free(tokens);
-	if (is_ok == false || retp == NULL) {
+	if (!is_ok || retp == NULL) {
 		if (reps != NULL) {
 			for (i = 0; i < ret; i++)
 				destroy_repattr(reps[i]);
 			free(reps);
 		}
-		if (is_ok == false)
+		if (!is_ok)
 			ret = 0;
 	} else {
 		if (retp != NULL)
 			*retp = reps;
 	}
 
-	return (ret);
+	if (e == GFARM_ERR_NO_ERROR)
+		*n_retp = ret;
+	return (e);
 }
 
 void
@@ -428,19 +433,19 @@ gfarm_repattr_free(gfarm_repattr_t rep)
 const char *
 gfarm_repattr_group(gfarm_repattr_t rep)
 {
-	struct gfarm_repattr *r = (struct gfarm_repattr *)rep;
+	struct gfarm_repattr *r = rep;
 	return (r->fsngroupname);
 }
 
 size_t
 gfarm_repattr_amount(gfarm_repattr_t rep)
 {
-	struct gfarm_repattr *r = (struct gfarm_repattr *)rep;
+	struct gfarm_repattr *r = rep;
 	return (r->n);
 }
 
-char *
-gfarm_repattr_stringify(gfarm_repattr_t *reps, size_t n)
+gfarm_error_t
+gfarm_repattr_stringify(gfarm_repattr_t *reps, size_t n, char **str_repattr)
 {
 	size_t i;
 	int plen = 0;
@@ -450,20 +455,18 @@ gfarm_repattr_stringify(gfarm_repattr_t *reps, size_t n)
 	char *last;
 
 	for (i = 0, of = 0; i < n && of == 0; i++) {
-		/*
-		 * 12 = 32 * log10(2) + ':' + ','
-		 */
 		len = gfarm_size_add(&of, len,
-			gfarm_size_add(&of, 12,
-				strlen(gfarm_repattr_group(reps[i]))));
+		    gfarm_size_add(&of,
+		    GFARM_INT32STRLEN + 2 /*':' + ',' */,
+		    strlen(gfarm_repattr_group(reps[i]))));
 	}
 	if (of == 0 && len > 0)
 		ret = (char *)malloc(len);
 	if (ret == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"gfarm_repattr_reduce(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		goto done;
+		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	for (i = 0; i < n; i++) {
@@ -476,12 +479,12 @@ gfarm_repattr_stringify(gfarm_repattr_t *reps, size_t n)
 	if (last != NULL)
 		*last = '\0';
 
-done:
-	return (ret);
+	*str_repattr = ret;
+	return (GFARM_ERR_NO_ERROR);
 }
 
-size_t
-gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
+gfarm_error_t
+gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp, size_t *n_repp)
 {
 	bool is_ok = false;
 	size_t i;
@@ -496,15 +499,19 @@ gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
 	const char *fsngroupname;
 	size_t amount;
 	int isnew;
+	gfarm_error_t e;
 
 	/*
 	 * Parse the repattr string first.
 	 */
-	nreps_before = gfarm_repattr_parse(s, &reps_before);
+	if ((e = gfarm_repattr_parse(s, &reps_before, &nreps_before))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
 	if (nreps_before == 0) {
 		if (retp != NULL)
 			*retp = NULL;
-		return (0);
+		*n_repp = 0;
+		return (e);
 	}
 
 	/*
@@ -513,9 +520,10 @@ gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
 	tbl = gfarm_hash_table_alloc(3079,
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (tbl == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"gfarm_repattr_reduce(): %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			gfarm_error_string(e));
 		goto done;
 	}
 
@@ -528,9 +536,10 @@ gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
 		amount = gfarm_repattr_amount(reps_before[i]);
 		entry = fsngroup_hash_new_entry(tbl, fsngroupname, &isnew);
 		if (entry == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
 				"gfarm_repattr_reduce(): %s",
-				gfarm_error_string(GFARM_ERR_NO_MEMORY));
+				gfarm_error_string(e));
 			goto done;
 		}
 
@@ -555,9 +564,10 @@ gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
 	 */
 	GFARM_MALLOC_ARRAY(reps, ret);
 	if (reps == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
 			"gfarm_repattr_reduce(): %s",
-			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+			gfarm_error_string(e));
 		goto done;
 	}
 	(void)memset((void *)reps, 0, sizeof(*reps) * ret);
@@ -588,27 +598,37 @@ done:
 			destroy_repattr(reps_before[i]);
 	free(reps_before);
 
-	if (is_ok == false || retp == NULL) {
+	if (!is_ok || retp == NULL) {
 		if (reps != NULL)
 			for (i = 0; i < ret; i++)
 				destroy_repattr(reps[i]);
 		free(reps);
-		if (is_ok == false)
+		if (!is_ok)
 			ret = 0;
 	} else {
 		if (retp != NULL)
 			*retp = reps;
 	}
 
-	return (ret);
+	if (e == GFARM_ERR_NO_ERROR)
+		*n_repp = ret;
+	return (e);
 }
 
-int
-gfarm_repattr_validate(const char *s)
+gfarm_error_t
+gfarm_repattr_validate(const char *s, int *valid)
 {
+	size_t n_reps = 0;
+	gfarm_error_t e;
 	if (s == NULL) {
-		return (0);
+		*valid = 0;
+		return (GFARM_ERR_NO_ERROR);
 	} else {
-		return (gfarm_repattr_parse(s, NULL) > 0);
+		e = gfarm_repattr_parse(s, NULL, &n_reps);
+		if (n_reps > 0)
+			*valid = 1;
+		else
+			*valid = 0;
+		return (e);
 	}
 }
