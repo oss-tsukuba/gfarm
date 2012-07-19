@@ -198,7 +198,11 @@ gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 	va_end(ap);
 
 	gfarm_log_backtrace_symbols();
+#if 0
 	exit(2);
+#else
+	abort();
+#endif
 }
 
 void
@@ -235,7 +239,11 @@ gflog_fatal_message_errno(int msg_no, int priority, const char *file,
 	va_end(ap);
 
 	gfarm_log_backtrace_symbols();
+#if 0
 	exit(2);
+#else
+	abort();
+#endif
 }
 
 void
@@ -268,7 +276,11 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 	va_end(ap);
 
 	gfarm_log_backtrace_symbols();
+#if 0
 	exit(2);
+#else
+	abort();
+#endif
 }
 
 void
