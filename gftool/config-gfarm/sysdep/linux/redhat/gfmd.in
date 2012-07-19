@@ -51,8 +51,6 @@ start()
 		return 0
 	fi
 
-	# increase the maximum number of open file descriptors
-	ulimit -n 16384 2> /dev/null
 	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
 	RETVAL=$?
 	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"

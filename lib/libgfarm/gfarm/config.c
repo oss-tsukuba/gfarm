@@ -874,6 +874,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFS_PROTO_REPLICATION_REQUEST_WINDOW_DEFAULT		20
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
+#define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
@@ -897,6 +898,7 @@ int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
 #endif
 int gfs_proto_fhremove_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfs_proto_replication_request_window = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = GFARM_CONFIG_MISC_DEFAULT;
@@ -2655,6 +2657,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfmd_connection_cache);
+	} else if (strcmp(s, o = "metadb_server_max_descriptors") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_max_descriptors);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_stack_size);
 	} else if (strcmp(s, o = "metadb_server_thread_pool_size") == 0) {
@@ -2913,6 +2917,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->gfmd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfmd_connection_cache =
 		    GFARM_GFMD_CONNECTION_CACHE_DEFAULT;
+	if (gfarm_metadb_max_descriptors == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_metadb_max_descriptors =
+		    GFARM_METADB_MAX_DESCRIPTORS_DEFAULT;
 	if (gfarm_metadb_stack_size == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_stack_size = GFARM_METADB_STACK_SIZE_DEFAULT;
 	if (gfarm_metadb_thread_pool_size == GFARM_CONFIG_MISC_DEFAULT)

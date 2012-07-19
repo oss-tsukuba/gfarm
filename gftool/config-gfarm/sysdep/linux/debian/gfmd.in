@@ -21,8 +21,6 @@ test -f $CONF || exit 0
 case "$1" in
   start)
 	echo -n "Starting gfarm server: $FILE"
-	# increase the maximum number of open file descriptors
-	ulimit -n 16384 2> /dev/null
 	start-stop-daemon --quiet --start \
              --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE $OPTIONS
 	echo "."

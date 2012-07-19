@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>26 June 2012</date></refentryinfo>
+<refentryinfo><date>20 July 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -351,6 +351,26 @@ GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
 設定の意味については<token>spool_server_cred_type</token>の項を
 参照してください。
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_max_descriptors</token> <parameter>数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_max_descriptors 262144
+</literallayout>
 </listitem>
 </varlistentry>
 

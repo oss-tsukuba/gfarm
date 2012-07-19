@@ -15,6 +15,7 @@ enum gfarm_backend_db_type {
 extern enum gfarm_backend_db_type gfarm_backend_db_type;
 
 /* GFM dependent */
+extern int gfarm_metadb_max_descriptors;
 extern int gfarm_metadb_stack_size;
 extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;

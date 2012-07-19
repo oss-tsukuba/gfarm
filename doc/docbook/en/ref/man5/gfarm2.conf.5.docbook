@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>26 June 2012</date></refentryinfo>
+<refentryinfo><date>20 July 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -359,6 +359,25 @@ authentication.
 Please read the description of the <token>spool_server_cred_type</token> 
 statement on the configuration of this statement.
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_max_descriptors</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive specifies the number of file descriptor limit
+for the gfmd metadata server process.  If not specified, the default
+limit is min(OS's hard limit, 131072).  You may have to increase
+this value on a larger configuration, or decrease on a smaller
+configuration.  See Gfarm FAQ to see how to calculate this value.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	metadb_server_max_descriptors 262144
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1585,6 +1604,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
@@ -1663,6 +1683,8 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_max_descriptors_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
 	&lt;metadb_server_thread_pool_size_statement&gt; ::=
