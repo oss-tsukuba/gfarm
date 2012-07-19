@@ -19,6 +19,10 @@
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 
+#ifndef va_copy /* since C99 standard */
+#define va_copy(dst, src)	((dst) = (src))
+#endif
+
 #if INT64T_IS_FLOAT
 #include <math.h>
 
@@ -504,6 +508,64 @@ recv_sized(struct gfp_xdr *conn, int just, int do_timeout, void *p, size_t sz,
 	return (GFARM_ERR_NO_ERROR); /* rv may be 0, if sz == 0 */
 }
 
+static void
+gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
+{
+	gfarm_int8_t *cp;
+	gfarm_int16_t *hp;
+	gfarm_int32_t *ip;
+	gfarm_int64_t *op;
+	double *dp;
+	char **sp, *s;
+	size_t *szp, sz;
+
+	for (; --format_parsed >= 0 && *format; format++) {
+		switch (*format) {
+		case 'c':
+			cp = va_arg(*app, gfarm_int8_t *);
+			continue;
+		case 'h':
+			hp = va_arg(*app, gfarm_int16_t *);
+			continue;
+		case 'i':
+			ip = va_arg(*app, gfarm_int32_t *);
+			continue;
+		case 'l':
+			op = va_arg(*app, gfarm_int64_t *);
+			continue;
+		case 'r':
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
+			continue;
+		case 's':
+			sp = va_arg(*app, char **);
+			free(*sp);
+			continue;
+		case 'b':
+			sz = va_arg(*app, size_t);
+			szp = va_arg(*app, size_t *);
+			s = va_arg(*app, char *);
+			continue;
+		case 'B':
+			szp = va_arg(*app, size_t *);
+			sp = va_arg(*app, char **);
+			free(*sp);
+			continue;
+		case 'f':
+			dp = va_arg(*app, double *);
+			continue;
+		case '/':
+			break;
+
+		default:
+			break;
+		}
+
+		break;
+	}
+}
+
 gfarm_error_t
 gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout, 
 	size_t *sizep, int *eofp, const char **formatp, va_list *app)
@@ -527,6 +589,12 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 	size_t size;
 	int overflow = 0;
 
+	int format_parsed = 0;
+	const char *format_start = *formatp;
+	va_list ap_start;
+
+	va_copy(ap_start, *app);
+
 	if (sizep != NULL)
 		size = *sizep;
 	else
@@ -541,30 +609,42 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			cp = va_arg(*app, gfarm_int8_t *);
 			if ((e = recv_sized(conn, just, do_timeout, cp,
 			    sizeof(*cp), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
+			format_parsed++;
 			continue;
 		case 'h':
 			hp = va_arg(*app, gfarm_int16_t *);
 			if ((e = recv_sized(conn, just, do_timeout, hp,
 			    sizeof(*hp), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			*hp = ntohs(*hp);
+			format_parsed++;
 			continue;
 		case 'i':
 			ip = va_arg(*app, gfarm_int32_t *);
 			if ((e = recv_sized(conn, just, do_timeout, ip,
 			    sizeof(*ip), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			*ip = ntohl(*ip);
+			format_parsed++;
 			continue;
 		case 'l':
 			op = va_arg(*app, gfarm_int64_t *);
@@ -575,8 +655,11 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 */
 			if ((e = recv_sized(conn, just, do_timeout, lv, 
 			    sizeof(lv), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			lv[0] = ntohl(lv[0]);
@@ -595,13 +678,17 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 #else
 			*op = ((gfarm_int64_t)lv[0] << 32) | lv[1];
 #endif
+			format_parsed++;
 			continue;
 		case 's':
 			sp = va_arg(*app, char **);
 			if ((e = recv_sized(conn, just, do_timeout, &i, 
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			i = ntohl(i);
@@ -611,6 +698,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				break;
 			}
 			GFARM_MALLOC_ARRAY(*sp, sz);
+			format_parsed++;
 			if (*sp == NULL) {
 				if ((e = gfp_xdr_purge_sized(conn, just,
 				    sz, &size)) != GFARM_ERR_NO_ERROR)
@@ -634,8 +722,11 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 */
 			if ((e = recv_sized(conn, just, do_timeout, &i, 
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			i = ntohl(i);
@@ -657,6 +748,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				    i - sz, &size)) != GFARM_ERR_NO_ERROR)
 					break;
 			}
+			format_parsed++;
 			continue;
 		case 'B':
 			szp = va_arg(*app, size_t *);
@@ -668,8 +760,11 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			 */
 			if ((e = recv_sized(conn, just, do_timeout, &i, 
 			    sizeof(i), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 			i = ntohl(i);
@@ -681,6 +776,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				break;
 			}
 			GFARM_MALLOC_ARRAY(*sp, sz);
+			format_parsed++;
 			if (*sp == NULL) {
 				if ((e = gfp_xdr_purge_sized(conn, just,
 				    sz, &size)) != GFARM_ERR_NO_ERROR)
@@ -697,14 +793,18 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 			assert(sizeof(*dp) == 8);
 			if ((e = recv_sized(conn, just, do_timeout, dp, 
 			    sizeof(*dp), &size)) != GFARM_ERR_NO_ERROR) {
-				if (e == GFARM_ERR_UNEXPECTED_EOF)
+				if (e == GFARM_ERR_UNEXPECTED_EOF) {
+					gfp_xdr_vrecv_free(format_parsed,
+					    format_start, &ap_start);
 					return (GFARM_ERR_NO_ERROR); /* EOF */
+				}
 				break;
 			}
 #ifndef WORDS_BIGENDIAN
 			swab(dp, &nd, sizeof(nd));
 			*dp = *(double *)&nd;
 #endif
+			format_parsed++;
 			continue;
 
 		default:
@@ -717,16 +817,23 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 		*sizep = size;
 	*formatp = format;
 	*eofp = 0;
-	/* XXX FIXME free memory allocated by this funciton at an error */
 
 	/* connection error has most precedence to avoid protocol confusion */
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_vrecv_free(format_parsed, format_start, &ap_start);
 		return (e);
+	}
 
 	/* iobuffer error may be a connection error */
 	if ((e = gfarm_iobuffer_get_error(conn->recvbuffer)) !=
-	    GFARM_ERR_NO_ERROR)
+	    GFARM_ERR_NO_ERROR) {
+		gfp_xdr_vrecv_free(format_parsed, format_start, &ap_start);
 		return (e);
+	}
+
+	if (e_save != GFARM_ERR_NO_ERROR)
+		gfp_xdr_vrecv_free(format_parsed, format_start, &ap_start);
+
 	return (e_save); /* NO_MEMORY or SUCCESS */
 }
 

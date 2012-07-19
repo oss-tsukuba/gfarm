@@ -438,6 +438,7 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 	e = gfp_xdr_vrecv_request_parameters(client, 0, NULL, format, &ap);
 	va_end(ap);
 
+	/* XXX FIXME: should handle GFARM_ERR_NO_MEMORY gracefully */
 	if (e != GFARM_ERR_NO_ERROR)
 		fatal(GFARM_MSG_1000455, "%s get request: %s",
 		    diag, gfarm_error_string(e));
@@ -514,6 +515,8 @@ gfs_async_server_get_request(struct gfp_xdr *client, size_t size,
 	va_start(ap, format);
 	e = gfp_xdr_vrecv_request_parameters(client, 0, &size, format, &ap);
 	va_end(ap);
+
+	/* XXX FIXME: should handle GFARM_ERR_NO_MEMORY gracefully */
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002380, "%s get request: %s",
 		    diag, gfarm_error_string(e));
