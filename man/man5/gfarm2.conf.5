@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "05 July 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 July 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -256,6 +256,21 @@ This is ignored when you are using sharedsecret
 authentication.
 Please read the description of the spool_server_cred_type 
 statement on the configuration of this statement.
+.TP
+\fBmetadb_server_max_descriptors \fInumber\fB\fR
+This directive specifies the number of file descriptor limit
+for the gfmd metadata server process.  If not specified, the default
+limit is min(OS's hard limit, 131072).  You may have to increase
+this value on a larger configuration, or decrease on a smaller
+configuration.  See Gfarm FAQ to see how to calculate this value.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+	metadb_server_max_descriptors 262144
+.fi
 .TP
 \fBmetadb_server_stack_size \fIbytes\fB\fR
 This directive specifies the size of each thread in the gfmd 
@@ -1112,6 +1127,7 @@ notation.
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<metadb_server_max_descriptors_statement> |
 		\~\~<metadb_server_stack_size_statement> |
 		\~\~<metadb_server_thread_pool_size_statement> |
 		\~\~<metadb_server_job_queue_length_statement> |
@@ -1182,6 +1198,8 @@ notation.
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<metadb_server_max_descriptors_statement> ::=
+		\~\~"metadb_server_max_descriptors" <number>
 	<metadb_server_stack_size_statement> ::=
 		\~\~"metadb_server_stack_size" <number>
 	<metadb_server_thread_pool_size_statement> ::=
