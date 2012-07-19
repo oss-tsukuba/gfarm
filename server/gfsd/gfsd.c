@@ -4329,9 +4329,9 @@ main(int argc, char **argv)
 	start_back_channel_server();
 
 	table_size = FILE_TABLE_LIMIT;
-	gfarm_unlimit_nofiles(&table_size);
-	if (table_size > FILE_TABLE_LIMIT)
-		table_size = FILE_TABLE_LIMIT;
+	if (gfarm_limit_nofiles(&table_size) == 0)
+		gflog_info(GFARM_MSG_UNFIXED, "max descriptors = %d",
+		    table_size);
 	file_table_init(table_size);
 
 	/*

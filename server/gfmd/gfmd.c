@@ -75,11 +75,6 @@
 #define GFMD_CONFIG		"/etc/gfmd.conf"
 #endif
 
-/* limit maximum connections, when system limit is very high */
-#ifndef GFMD_CONNECTION_LIMIT
-#define GFMD_CONNECTION_LIMIT	65536
-#endif
-
 #ifndef CALLOUT_NTHREADS
 /*
  * this is number of thread pools which are used by callouts,
@@ -1388,7 +1383,7 @@ main(int argc, char **argv)
 	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, sock, table_size;
+	int ch, sock, table_size, limit_nofiles_errno;
 	sigset_t sigs;
 	int is_master;
 
@@ -1470,10 +1465,9 @@ main(int argc, char **argv)
 
 	giant_init();
 
-	table_size = GFMD_CONNECTION_LIMIT;
-	gfarm_unlimit_nofiles(&table_size);
-	if (table_size > GFMD_CONNECTION_LIMIT)
-		table_size = GFMD_CONNECTION_LIMIT;
+	table_size = gfarm_metadb_max_descriptors;
+	limit_nofiles_errno = gfarm_limit_nofiles(&table_size);
+	/* postpone gflog_info() until gflog_syslog_open() is called */
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1555,6 +1549,11 @@ main(int argc, char **argv)
 		gflog_fatal(GFARM_MSG_1000210,
 		    "create_detached_thread(sigs_handler): %s",
 		    gfarm_error_string(e));
+
+	/* do gflog_info() since gflog_syslog_open() was called */
+	if (limit_nofiles_errno == 0)
+		gflog_info(GFARM_MSG_UNFIXED, "max descriptors = %d",
+		    table_size);
 
 	/*
 	 * gfmd shouldn't/cannot read/write DB

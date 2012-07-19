@@ -15,7 +15,7 @@ int gfarm_daemon(int, int);
 
 /* limit */
 
-void gfarm_unlimit_nofiles(int *);
+int gfarm_limit_nofiles(int *);
 
 /* send_no_sigpipe */
 

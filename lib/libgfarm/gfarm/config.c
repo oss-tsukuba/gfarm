@@ -808,6 +808,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
+#define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
@@ -851,6 +852,7 @@ int gfarm_client_file_bufsize = MISC_DEFAULT;
 int gfarm_client_parallel_copy = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
 static int metadb_replication_enabled = MISC_DEFAULT;
+int gfarm_metadb_max_descriptors = MISC_DEFAULT;
 static char *journal_dir = NULL;
 static int journal_max_size = MISC_DEFAULT;
 static int journal_recvq_size = MISC_DEFAULT;
@@ -2555,6 +2557,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_gfmd_connection_cache);
+	} else if (strcmp(s, o = "metadb_server_max_descriptors") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_max_descriptors);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_stack_size);
 	} else if (strcmp(s, o = "metadb_server_thread_pool_size") == 0) {
@@ -2753,7 +2757,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_gfmd_connection_cache == MISC_DEFAULT)
 		gfarm_gfmd_connection_cache =
 		    GFARM_GFMD_CONNECTION_CACHE_DEFAULT;
-	if (gfarm_metadb_stack_size == MISC_DEFAULT)
+	if (gfarm_metadb_max_descriptors == MISC_DEFAULT)
+		gfarm_metadb_max_descriptors =
+		    GFARM_METADB_MAX_DESCRIPTORS_DEFAULT;
 		gfarm_metadb_stack_size = GFARM_METADB_STACK_SIZE_DEFAULT;
 	if (gfarm_metadb_thread_pool_size == MISC_DEFAULT)
 		gfarm_metadb_thread_pool_size =

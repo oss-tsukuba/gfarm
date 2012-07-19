@@ -3,7 +3,7 @@ Gfarm FAQ - Gfarm に関するよくある質問
 Copyright (c) 2003-2008 National Institute of Advanced Industrial
 Science and Technology (AIST).  All Rights Reserved.
 
-Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
+Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 
 目次:
 *****
@@ -12,6 +12,7 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
   1.2 Gfarm はどこからダウンロードできますか？
   1.3 gfmd は，どの程度のメモリを消費しますか？
   1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
+  1.5 gfmd が利用するディスクリプタ数はどの程度を想定すべきですか？
 
 2. トラブル・シューティング
   2.1 ファイルシステムノード，メタサーバに接続できません．
@@ -118,6 +119,47 @@ Copyright (c) 2006-2008 Osamu Tatebe.  All Rights Reserved.
   1.4 gfmd を実行するマシンは，どの程度のディスク消費しますか？
 
 	gfmd の必要メモリ量の数倍程度です．
+
+  1.5 gfmd が利用するディスクリプタ数はどの程度を想定すべきですか？
+
+	この値は，gfmd.conf の metadb_server_max_descriptors で指定します．
+
+	gfmd の利用するファイルディスクリプタ数は，
+	    Nm: メタデータサーバ数の想定最大値
+	    Nf: ファイルシステムノード数の想定最大値
+	    Nc: 同時利用クライアント・プロセス数の想定最大値
+	とすると，
+
+	(Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + 若干数
+	以上に設定しておく必要があります．
+
+	ここで，各項の意味は以下の通りです．
+
+	    (Nm - 1) * 2 =
+		gfmd 間接続の数:(Nm - 1) *
+		(ネットワーク接続用ディスクリプタ:1 +
+		 ジャーナルファイルをアクセスするためのディスクリプタ:1)
+
+	    Nf * (Nf + 1) =
+		Nf * ( 各 gfsd のルートプロセス:1 +
+		       バックチャネル処理プロセス:1 +
+		       自動複製処理用gfsdプロセス数:(Nf - 1) )
+
+	    Nc * (Nf + 1) =
+		Nc * (クライアントとgfmdの間のソケット用:1 +
+		      クライアント対応用gfsdとgfmdの間の接続:Nf )
+
+	   若干 = backend データベース接続や，
+		ジャーナルファイルアクセス用のファイルディスクリプタ 
+
+	このうち，「クライアント対応用gfsdとgfmdの間の接続」の分は，
+	実際にはもっと小さくなる可能性もあります．しかし同時に多数の
+	Gfarmファイルをオープンしている場合は，最大で Nf まで達する可能性も
+	あります．また，もし同時オープン数が Nf より少ない場合でも
+	gfsd_connection_cache パラメータを設定している場合は，
+	min(Nf, gfsd_connection_cache) まで達します．
+
+	gfmd は，descriptor 1つあたり，約320バイトのメモリを消費します．
 
 
 2. トラブル・シューティング
