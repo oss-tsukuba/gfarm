@@ -590,6 +590,32 @@ CLASS="TOKEN"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>metadb_server_max_descriptors</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>数</I
+></TT
+></DT
+><DD
+><P
+>メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。</P
+><P
+>この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_max_descriptors&nbsp;262144</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_server_stack_size</SPAN
 > <TT
 CLASS="PARAMETER"

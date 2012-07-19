@@ -617,6 +617,31 @@ statement on the configuration of this statement.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>metadb_server_max_descriptors</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the number of file descriptor limit
+for the gfmd metadata server process.  If not specified, the default
+limit is min(OS's hard limit, 131072).  You may have to increase
+this value on a larger configuration, or decrease on a smaller
+configuration.  See Gfarm FAQ to see how to calculate this value.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_max_descriptors&nbsp;262144</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_server_stack_size</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2341,6 +2366,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_job_queue_length_statement&#62;&nbsp;|<br>
@@ -2412,6 +2438,8 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;::=<br>
+		  "metadb_server_max_descriptors"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
 		  "metadb_server_stack_size"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;::=<br>

@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "26 June 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 July 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -235,6 +235,22 @@ GSI認証において、metadb_server_cred_typeで指定した値に
 sharedsecret利用時には、この指定は単に無視されます。
 設定の意味についてはspool_server_cred_typeの項を
 参照してください。
+.TP
+\fBmetadb_server_max_descriptors \fI数\fB\fR
+メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+	metadb_server_max_descriptors 262144
+.fi
 .TP
 \fBmetadb_server_stack_size \fIバイト数\fB\fR
 メタデータサーバgfmd内の各スレッドが利用するスタックのサイズを
