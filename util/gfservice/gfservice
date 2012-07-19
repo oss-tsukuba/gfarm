@@ -332,18 +332,14 @@ check_client_hostid()
 }
 
 #
-# Output host-IDs of the specified targets ("gfmd", "gfsd", "client" or
-# "all" or a combination of them ) to standar out a host per a line.
-# Suppose that the configuration file have the following definitions:
+# Output host-IDs of all targets ("gfmd", "gfsd", "client") to standard
+# out, a host per a line.  Suppose that the configuration file have the
+# following definitions:
 #
 #    gfmd1=alpha.example.com
 #    gfmd2=beta.example.com
 #    gfsd1=gamma.example.com
 #    gfsd2=beta.example.com
-#
-# When the following call is performed:
-#
-#    list_hostids gfmd gfsd
 #
 # the function will output lines like: 
 #
