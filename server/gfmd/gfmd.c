@@ -450,6 +450,10 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_REPLICA_GET_MY_ENTRIES:
 		e = gfm_server_replica_get_my_entries(peer, from_client, skip);
 		break;
+	case GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND:
+		e = gfm_server_replica_create_file_in_lost_found(peer,
+		    from_client, skip);
+		break;
 	case GFM_PROTO_PROCESS_ALLOC:
 		e = gfm_server_process_alloc(peer, from_client, skip);
 		break;

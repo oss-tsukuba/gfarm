@@ -4050,6 +4050,9 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 	} else if ((inode = inode_lookup(inum)) == NULL) {
 		gflog_debug(GFARM_MSG_1001977, "inode_lookup() failed");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+	} else if (!inode_is_file(inode)) {
+		gflog_debug(GFARM_MSG_UNFIXED, "not a file");
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (inode_get_gen(inode) != gen) {
 		gflog_debug(GFARM_MSG_1001978, "inode_get_gen() failed");
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -4137,4 +4140,52 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 		}
 	free(ents);
 	return (e_ret);
+}
+
+gfarm_error_t
+gfm_server_replica_create_file_in_lost_found(struct peer *peer,
+	int from_client, int skip)
+{
+	gfarm_error_t e_ret, e_rpc;
+	gfarm_ino_t inum_old, inum_new = 0;
+	gfarm_uint64_t gen_old, gen_new = 0;
+	gfarm_off_t size;
+	struct host *spool_host;
+	struct inode *inode;
+	struct gfarm_timespec mtime;
+	int transaction = 0;
+	static const char diag[]
+		= "GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND";
+
+	e_ret = gfm_server_get_request(peer, diag, "lllli",
+	     &inum_old, &gen_old, &size, &mtime.tv_sec, &mtime.tv_nsec);
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	giant_lock();
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "not permitted: from_client");
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "not permitted: peer_get_host() failed");
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		e_rpc = inode_create_file_in_lost_found(
+			spool_host, inum_old, gen_old, size, &mtime, &inode);
+		if (e_rpc == GFARM_ERR_NO_ERROR) {
+			inum_new = inode_get_number(inode);
+			gen_new = inode_get_gen(inode);
+		}
+		if (transaction)
+			db_end(diag);
+	}
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, diag, e_rpc, "ll",
+	    inum_new, gen_new));
 }

@@ -67,17 +67,61 @@ gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
 }
 
 static gfarm_error_t
-move_file_to_lost_found_main(const char *file, struct stat *stp)
+gfm_client_replica_create_file_in_lost_found(
+	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, gfarm_off_t size,
+	const struct gfarm_timespec *mtime,
+	gfarm_ino_t *inum_newp, gfarm_uint64_t *gen_newp)
 {
-	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED); /* XXX */
+	gfarm_error_t e;
+	static const char diag[] = "replica_create_file_in_lost_found";
+
+	if ((e = gfm_client_replica_create_file_in_lost_found_request(
+	    gfm_server, inum_old, gen_old, size, mtime))
+	    != GFARM_ERR_NO_ERROR)
+		fatal_metadb_proto(GFARM_MSG_UNFIXED, "request", diag, e);
+	else if ((e = gfm_client_replica_create_file_in_lost_found_result(
+	    gfm_server, inum_newp, gen_newp)) != GFARM_ERR_NO_ERROR) {
+		if (debug_mode)
+			gflog_info(GFARM_MSG_UNFIXED, "%s result: %s", diag,
+			    gfarm_error_string(e));
+	}
+	return (e);
 }
 
 static gfarm_error_t
-move_file_to_lost_found(const char *file, struct stat *stp)
+move_file_to_lost_found_main(const char *file, struct stat *stp,
+	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
+{
+	gfarm_error_t e;
+	struct gfarm_timespec mtime;
+	char *newpath;
+	gfarm_ino_t inum_new;
+	gfarm_uint64_t gen_new;
+
+	mtime.tv_sec = stp->st_mtime;
+	mtime.tv_nsec = 0; /* XXX */
+	e = gfm_client_replica_create_file_in_lost_found(
+	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
+	    &inum_new, &gen_new);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	gfsd_local_path(inum_new, gen_new, "move_file_to_lost_found",
+	    &newpath);
+	if (gfsd_create_ancestor_dir(newpath))
+		return (gfarm_errno_to_error(errno));
+	if (rename(file, newpath))
+		return (gfarm_errno_to_error(errno));
+	return (gfm_client_replica_add(inum_new, gen_new,
+	    (gfarm_off_t)stp->st_size));
+}
+
+static gfarm_error_t
+move_file_to_lost_found(const char *file, struct stat *stp,
+	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
 {
 	gfarm_error_t e;
 
-	if (stp->st_size == 0) { /* unreferenced empty file is unnecessary */
+	if (stp->st_size == 0) { /* unreferred empty file is unnecessary */
 		if (unlink(file)) {
 			e = gfarm_errno_to_error(errno);
 			gflog_warning(GFARM_MSG_UNFIXED,
@@ -89,14 +133,17 @@ move_file_to_lost_found(const char *file, struct stat *stp)
 		    "%s: unlinked (empty file)", file);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	e = move_file_to_lost_found_main(file, stp);
+
+	e = move_file_to_lost_found_main(file, stp, inum_old, gen_old);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: cannot move to /lost+found: %s", file,
 		    gfarm_error_string(e));
 	else
 		gflog_notice(GFARM_MSG_UNFIXED,
-		    "%s: moved to /lost+found", file);
+		     "moved to /lost+found/%016llX%016llX-%s",
+		     (unsigned long long)inum_old,
+		     (unsigned long long)gen_old, canonical_self_name);
 	return (e);
 }
 
@@ -200,7 +247,7 @@ dir_foreach(
 }
 
 static gfarm_error_t
-unlink_file(char *file)
+unlink_file(const char *file)
 {
 	if (unlink(file))
 		return (gfarm_errno_to_error(errno));
@@ -208,7 +255,8 @@ unlink_file(char *file)
 }
 
 static gfarm_error_t
-deal_with_invalid_file(char *file, struct stat *stp)
+deal_with_invalid_file(const char *file, struct stat *stp,
+	int valid_inum_gen, gfarm_ino_t inum, gfarm_uint64_t gen)
 {
 	gfarm_error_t e;
 
@@ -228,7 +276,13 @@ deal_with_invalid_file(char *file, struct stat *stp)
 		break;
 	case MODE_LOST_FOUND:
 	default:
-		e = move_file_to_lost_found(file, stp);
+		if (valid_inum_gen)
+			e = move_file_to_lost_found(file, stp, inum, gen);
+		else {
+			gflog_warning(GFARM_MSG_UNFIXED, "%s: unknown file",
+			    file);
+			e = GFARM_ERR_INVALID_ARGUMENT;
+		}
 	}
 	return (e);
 }
@@ -246,7 +300,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (get_inum_gen(file, &inum, &gen))
-		return (deal_with_invalid_file(file, stp));
+		return (deal_with_invalid_file(file, stp, 0, 0, 0));
 	size = stp->st_size;
 	e = gfm_client_replica_add(inum, gen, size);
 	switch (e) {
@@ -259,7 +313,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		break;
 	case GFARM_ERR_NO_SUCH_OBJECT:
 	case GFARM_ERR_INVALID_FILE_REPLICA:
-		e = deal_with_invalid_file(file, stp);
+		e = deal_with_invalid_file(file, stp, 1, inum, gen);
 		break;
 	}
 	return (e);
@@ -289,7 +343,7 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 	file = path + gfarm_spool_root_len + 1;
 	get_inum_gen(file, &inum2, &gen2);
 	if (inum != inum2 || gen != gen2)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_UNFIXED,
 		    "%s: gfsd_local_path or get_inum_gen are broken", path);
 	else if (lstat(path, &st)) {
 		save_errno = errno;
@@ -299,6 +353,12 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 			    (unsigned long long)inum, (unsigned long long)gen);
 			lost = 1;
 		} else
+			/*
+			 * This error is usually EACCES.  If the
+			 * permissions are fixed, this problem may be
+			 * fixed.  Therefore the replica-reference is
+			 * not deleted from metadata in this case.
+			 */
 			gflog_error(GFARM_MSG_UNFIXED, "stat(%s): %s",
 			    path, strerror(save_errno));
 	} else if (!S_ISREG(st.st_mode)) {
@@ -310,7 +370,7 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 		      (unsigned long long)inum, (unsigned long long)gen,
 		      (unsigned long long)size,
 		      (unsigned long long)st.st_size);
-		(void)move_file_to_lost_found(file, &st);
+		(void)move_file_to_lost_found(file, &st, inum, gen);
 		lost = 1;
 	}
 	if (lost) { /* delete the replica-reference from metadata */
@@ -377,6 +437,7 @@ gfsd_spool_check(int check_level)
 		invalid_file_mode = MODE_DELETE;
 		break;
 	default:
+		/* dead_file_copy may be moved to lost+found */
 		check_metadata();
 		invalid_file_mode = MODE_LOST_FOUND;
 	}

@@ -204,6 +204,10 @@ int inode_traverse_desired_replica_number(struct inode *, int *);
 void inode_remove_orphan(void);
 void inode_check_and_repair(void);
 
+gfarm_error_t inode_create_file_in_lost_found(
+	struct host *, gfarm_ino_t, gfarm_uint64_t, gfarm_off_t,
+	struct gfarm_timespec *, struct inode **);
+
 /* debug */
 void dir_dump(gfarm_ino_t);
 void rootdir_dump(void);
