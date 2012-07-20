@@ -131,11 +131,40 @@ Table of Contents:
 	    Nm: maximum number of metadata servers.
 	    Nf: maximum number of filesystem nodes.
 	    Nc: maximum number of client processes. (e.g. gfarm2fs)
-
-	Then the number is:
+	Then the number is calculated by:
 	    (Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + some more
 
-	Each term means:
+	You can see actual setting by looking at system log
+	(e.g. /var/log/messages) at gfmd startup like follows:
+	    gfmd[...]: .... max descriptors = 131072
+	If this value is smaller than the value specified by the
+	metadb_server_max_descriptors parameter, that means it's limited
+	by the hard limit setting of the Operating System.  To increase
+	the hard limit, please follow the following procedure.
+	On Linux:
+	    On Linux, gfarm limits the value to 75% of sysctl fs.file-max
+	    setting, instead of using current hard limit setting.
+	    Thus, to make "metadb_server_max_descriptors 131072" setting
+	    effective, you should add something like "fs.file-max=180224" 
+	    to a file /etc/sysctl.conf, and reboot or invoke a command
+	    "/sbin/sysctl -p".
+	On NetBSD:
+	    Add something like "kern.maxfiles=180224" to a file
+	    /etc/sysctl.conf, and reboot or invoke a command
+	    "/sbin/sysctl -f /etc/sysctl.conf".
+	On FreeBSD:
+	    Add settings like the followings to a file /etc/sysctl.conf:
+		kern.maxfiles=180224
+		kern.maxfilesperproc=131072
+	    and reboot or  invoke a command 
+	    /sbin/sysctl -f /etc/sysctl.conf".
+	On Solaris:
+	    Add a setting like "set rlim_fd_max = 131072" to a file
+	    /etc/system, and then reboot.
+
+	NOTE:
+
+	Each term of the above formula means:
 
 	    (Nm - 1) * 2 =
 		"number of inter-gfmd connections":(Nm - 1) *
@@ -155,11 +184,11 @@ Table of Contents:
 		for backend database connection
 		and file descriptor to access journal file, etc.
 
-	The number of "sockets for gfsd which servers the client" may
-	be smaller than Nf, but it may reach Nf if many Gfarm files are
-	opened by the client at once.  Even if number of simultaneously
-	opened Gfarm files is less than Nf, it may reach
-	min(Nf, gfsd_connection_cache parameter).
+	An actual number of "sockets for gfsd which servers the client"
+	may be smaller than Nf, but it may reach Nf if many Gfarm files
+	are opened by the client at once.  Or, even if number of
+	simultaneously opened Gfarm files is less than Nf, it may reach
+	min(Nf, "gfsd_connection_cache" parameter).
 
 	The gfmd memory size which is needed by this parameter is
 	about 320 byte per descriptor.
