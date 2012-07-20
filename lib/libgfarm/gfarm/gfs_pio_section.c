@@ -496,6 +496,8 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 		gflog_debug(GFARM_MSG_1001353,
 			"gfm_schedule_file() failed: %s",
 			gfarm_error_string(e));
+		if (e == GFARM_ERR_NO_SUCH_OBJECT)
+			e = GFARM_ERR_INPUT_OUTPUT;
 		return (e);
 	}
 	gfs_profile(gfarm_gettimerval(&t2));

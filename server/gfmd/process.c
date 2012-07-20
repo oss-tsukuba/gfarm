@@ -781,12 +781,22 @@ process_reopen_file(struct process *process,
 		    (long long)inode_get_gen(fo->inode));
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
+	if (inode_has_no_replica(fo->inode) &&
+	    (fo->flag & GFARM_FILE_TRUNC) == 0 &&
+	    inode_get_size(fo->inode) > 0) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%llu:%llu, %llu): lost all replicas",
+		    (unsigned long long)inode_get_number(fo->inode),
+		    (unsigned long long)inode_get_gen(fo->inode),
+		    (unsigned long long)inode_get_size(fo->inode));
+		return (GFARM_ERR_STALE_FILE_HANDLE);
+	}
 
 	to_create = 0;
 	is_creating_file_replica = (fo->flag & GFARM_FILE_CREATE_REPLICA) != 0;
 
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0 ||
-	    inode_is_creating_file(fo->inode)) {
+	    inode_has_no_replica(fo->inode)) {
 		if (is_creating_file_replica) {
 			e = inode_add_replica(fo->inode, spool_host, 0);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -1224,7 +1234,7 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	if (inode_is_creating_file(fo->inode)) { /* no file copy */
+	if (inode_has_no_replica(fo->inode)) { /* no file copy */
 		gflog_debug(GFARM_MSG_1001661,
 			"inode has no file copy");
 		e = GFARM_ERR_NO_SUCH_OBJECT;

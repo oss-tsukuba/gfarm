@@ -1224,7 +1224,7 @@ inode_get_group(struct inode *inode)
 }
 
 int
-inode_is_creating_file(struct inode *inode)
+inode_has_no_replica(struct inode *inode)
 {
 	return (inode->u.c.s.f.copies == NULL);
 }
@@ -3307,7 +3307,7 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 			return (host_match);
 	}
 	/* not opened */
-	if (inode_is_creating_file(opening->inode)) {
+	if (inode_has_no_replica(opening->inode)) {
 		*to_createp = 1;
 		return (1);
 	}
@@ -3331,6 +3331,21 @@ inode_schedule_confirm_for_write(struct file_opening *opening,
 	return (0);
 }
 
+static gfarm_error_t
+inode_schedule_new_file(struct peer *peer, gfarm_int32_t *np,
+			struct host ***hostsp)
+{
+	gfarm_error_t e;
+	gfarm_off_t necessary_space = 0; /* i.e. use default value */
+
+	if (!host_schedule_one_except(peer, 0, NULL,
+	    host_is_disk_available_filter, &necessary_space, np, hostsp, &e))
+		e = host_schedule_all_except(0, NULL, 
+		    host_is_disk_available_filter, &necessary_space,
+		    np, hostsp);
+	return (e);
+}
+
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 inode_schedule_file_default(struct file_opening *opening,
@@ -3347,14 +3362,23 @@ inode_schedule_file_default(struct file_opening *opening,
 
 	assert(inode_is_file(opening->inode));
 
-	if (inode_is_creating_file(opening->inode)) {
-		if (!host_schedule_one_except(peer, 0, NULL,
-		    host_is_disk_available_filter, &necessary_space,
-		    np, hostsp, &e))
-			e = host_schedule_all_except(0, NULL,
-			    host_is_disk_available_filter, &necessary_space,
-			    np, hostsp);
-		return (e);
+	if ((opening->flag & GFARM_FILE_TRUNC) != 0)
+		return (inode_schedule_new_file(peer, np, hostsp));
+	else if (inode_has_no_replica(opening->inode)) {
+		/*
+		 * even if a file is opened in read only mode, return
+		 * all available hosts when the size is zero, since
+		 * the following gfs_pio_read() call needs to connect
+		 * a gfsd to read 0-byte file.
+		 */
+		if (inode_get_size(opening->inode) == 0)
+			return (inode_schedule_new_file(peer, np, hostsp));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "(%llu:%llu, %llu): lost all replicas",
+		    (unsigned long long)inode_get_number(opening->inode),
+		    (unsigned long long)inode_get_gen(opening->inode),
+		    (unsigned long long)inode_get_size(opening->inode));
+		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
 
 	writing_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
@@ -4005,7 +4029,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	/* have enough privilege? i.e. can read the file? */
 	if ((e = inode_access(inode, user, GFS_R_OK)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (inode_is_creating_file(inode)) /* no file copy */
+	if (inode_has_no_replica(inode)) /* no file copy */
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	if (!inode_has_replica(inode, src))
 		return (GFARM_ERR_NO_SUCH_OBJECT);

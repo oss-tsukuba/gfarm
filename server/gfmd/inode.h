@@ -41,7 +41,7 @@ struct user *inode_get_user(struct inode *);
 void inode_set_user_by_name_in_cache(struct inode *, const char *);
 struct group *inode_get_group(struct inode *);
 void inode_set_group_by_name_in_cache(struct inode *, const char *);
-int inode_is_creating_file(struct inode *);
+int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
 
