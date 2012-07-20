@@ -577,6 +577,13 @@
 		エラー == GFARM_ERR_NO_SUCH_OBJECT の場合:
 		入力の i_node_number 以降に該当する inode は無い
 
+	GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND
+	  入力: l:i_node_number, l:generation, l:size,
+		l:mtime_sec, i:mtime_nsec,
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		l:i_node_number, l:generation
+
 	GFM_PROTO_REPLICA_REMOVE_BY_FILE
 	  暗黙の入力: i:current file descriptor
 	  入力: s:hostname

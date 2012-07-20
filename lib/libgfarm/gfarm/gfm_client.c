@@ -3583,6 +3583,26 @@ gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfm_client_replica_create_file_in_lost_found_request(
+	struct gfm_connection *gfm_server,
+	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, gfarm_off_t size,
+	const struct gfarm_timespec *mtime)
+{
+	return (gfm_client_rpc_request(gfm_server,
+	    GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND, "lllli",
+	    inum_old, gen_old, size, mtime->tv_sec, mtime->tv_nsec));
+}
+
+gfarm_error_t
+gfm_client_replica_create_file_in_lost_found_result(
+	struct gfm_connection *gfm_server,
+	gfarm_ino_t *inum_newp, gfarm_uint64_t *gen_newp)
+{
+	return (gfm_client_rpc_result(gfm_server, 0, "ll",
+	    inum_newp, gen_newp));
+}
+
 /*
  * process management
  */

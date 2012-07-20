@@ -144,3 +144,5 @@ gfarm_error_t gfm_server_replica_add(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_replica_get_my_entries(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_replica_create_file_in_lost_found(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);

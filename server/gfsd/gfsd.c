@@ -99,8 +99,6 @@
 #define GFMD_CONNECT_SLEEP_INTVL_MAX	640	/* about 10 min */
 #define GFMD_CONNECT_SLEEP_TIMEOUT	60	/* 1 min */
 
-#define fatal(msg_no, ...) \
-	fatal_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define fatal_errno(msg_no, ...) \
 	fatal_errno_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define accepting_fatal(msg_no, ...) \
@@ -215,9 +213,7 @@ cleanup_handler(int signo)
 
 static int kill_master_gfsd;
 
-static void fatal_full(int, const char *, int, const char *,
-		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
-static void
+void
 fatal_full(int msg_no, const char *file, int line_no, const char *func,
 		const char *format, ...)
 {
@@ -1071,17 +1067,12 @@ gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	*pathp = p;
 }
 
+/* with errno */
 int
-open_data(char *path, int flags)
+gfsd_create_ancestor_dir(char *path)
 {
 	int i, j, tail, slashpos[DIRLEVEL];
-	int fd = open(path, flags, DATA_FILE_MASK);
 	struct stat st;
-
-	if (fd >= 0)
-		return (fd);
-	if ((flags & O_CREAT) == 0 || errno != ENOENT)
-		return (-1); /* with errno */
 
 	/* errno == ENOENT, so, maybe we don't have an ancestor directory */
 	tail = strlen(path);
@@ -1133,12 +1124,27 @@ open_data(char *path, int flags)
 				return (-1);
 			}
 		}
-		return (open(path, flags, DATA_FILE_MASK)); /* with errno */
+		return (0);
 	}
 	gflog_warning(GFARM_MSG_1000469,
 	    "gfsd spool_root doesn't exist?: %s\n", path);
 	errno = ENOENT;
 	return (-1);
+}
+
+/* with errno */
+int
+open_data(char *path, int flags)
+{
+	int fd = open(path, flags, DATA_FILE_MASK);
+
+	if (fd >= 0)
+		return (fd);
+	if ((flags & O_CREAT) == 0 || errno != ENOENT)
+		return (-1);
+	if (gfsd_create_ancestor_dir(path))
+		return (-1);
+	return (open(path, flags, DATA_FILE_MASK));
 }
 
 static gfarm_error_t
