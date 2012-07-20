@@ -88,6 +88,8 @@ gfarm_error_t inode_new_generation_wait(struct inode *, struct peer *,
 
 gfarm_error_t inode_access(struct inode *, struct user *, int);
 
+gfarm_ino_t inode_root_number();
+gfarm_ino_t inode_table_current_size();
 struct inode *inode_lookup(gfarm_ino_t);
 void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
 
@@ -147,6 +149,7 @@ gfarm_error_t inode_cksum_set(struct file_opening *,
 gfarm_error_t inode_cksum_get(struct file_opening *,
 	char **, size_t *, char **, gfarm_int32_t *);
 
+int inode_has_file_copy(struct inode *, struct host *);
 int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);
 struct host *inode_schedule_host_for_read(struct inode *, struct host *);

@@ -122,6 +122,8 @@ struct gfm_connection *gfm_server;
 char *canonical_self_name;
 char *username; /* gfarm global user name */
 
+int gfarm_spool_root_len;
+
 struct gfp_xdr *credential_exported = NULL;
 
 long file_read_size;
@@ -1041,7 +1043,7 @@ gfs_open_flags_localize(int open_flags)
  */
 
 void
-local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
+gfsd_local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 	char **pathp)
 {
 	char *p;
@@ -1050,7 +1052,7 @@ local_path(gfarm_ino_t inum, gfarm_uint64_t gen, const char *diag,
 #define DIRLEVEL 5 /* there are 5 levels of directories in template[] */
 
 	if (length == 0)
-		length = strlen(gfarm_spool_root) + sizeof(template);
+		length = gfarm_spool_root_len + sizeof(template);
 
 	GFARM_MALLOC_ARRAY(p, length);
 	if (p == NULL) {
@@ -1242,7 +1244,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		gflog_debug(GFARM_MSG_1002170,
 			"local_flags:operation is not permitted");
 	} else {
-		local_path(ino, gen, diag, &path);
+		gfsd_local_path(ino, gen, diag, &path);
 		if (to_create)
 			local_flags |= O_CREAT;
 		*pathp = path;
@@ -1260,7 +1262,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 }
 
 gfarm_error_t
-replica_lost(gfarm_ino_t ino, gfarm_uint64_t gen)
+gfm_client_replica_lost(gfarm_ino_t ino, gfarm_uint64_t gen)
 {
 	gfarm_error_t e;
 	static const char diag[] = "GFM_PROTO_REPLICA_LOST";
@@ -1369,7 +1371,7 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 			}
 
 			if (save_errno == ENOENT) {
-				e = replica_lost(ino, gen);
+				e = gfm_client_replica_lost(ino, gen);
 				if (e == GFARM_ERR_NO_SUCH_OBJECT) {
 					gflog_debug(GFARM_MSG_1002299,
 					    "possible race between "
@@ -1492,8 +1494,8 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 	gfarm_int32_t gen_update_result;
 	char *old, *new;
 
-	local_path(fe->ino, old_gen, "close_write: old", &old);
-	local_path(fe->ino, new_gen, "close_write: new", &new);
+	gfsd_local_path(fe->ino, old_gen, "close_write: old", &old);
+	gfsd_local_path(fe->ino, new_gen, "close_write: new", &new);
 	gen_update_result = rename(old, new) == -1 ? errno : 0;
 	if (gen_update_result != 0) {
 		gflog_error(GFARM_MSG_1002300,
@@ -2049,7 +2051,7 @@ is_readonly_mode(void)
 	static const char diag[] = "is_readonly_mode";
 
 	if (p == NULL) {
-		length = strlen(gfarm_spool_root) + 1 +
+		length = gfarm_spool_root_len + 1 +
 			sizeof(READONLY_CONFIG_FILE);
 		GFARM_MALLOC_ARRAY(p, length);
 		if (p == NULL)
@@ -2214,7 +2216,7 @@ gfs_server_replica_add_from(struct gfp_xdr *client)
 		goto free_host;
 	}
 
-	local_path(ino, gen, diag, &path);
+	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd < 0) {
@@ -2285,7 +2287,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 		goto send_eof;
 	}
 
-	local_path(ino, gen, diag, &path);
+	gfsd_local_path(ino, gen, diag, &path);
 	local_fd = open_data(path, O_RDONLY);
 	free(path);
 	if (local_fd < 0) {
@@ -2371,7 +2373,7 @@ gfs_async_server_fhstat(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	local_path(ino, gen, "fhstat", &path);
+	gfsd_local_path(ino, gen, "fhstat", &path);
 	if (stat(path, &st) == -1)
 		save_errno = errno;
 	else {
@@ -2402,7 +2404,7 @@ gfs_async_server_fhremove(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	local_path(ino, gen, "fhremove", &path);
+	gfsd_local_path(ino, gen, "fhremove", &path);
 	if (unlink(path) == -1)
 		save_errno = errno;
 	free(path);
@@ -2533,7 +2535,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	 * the remote gfsd (or its kernel) can block this backchannel gfsd.
 	 * See http://sourceforge.net/apps/trac/gfarm/ticket/130
 	 */
-	local_path(rep->ino, rep->gen, diag, &path);
+	gfsd_local_path(rep->ino, rep->gen, diag, &path);
 	local_fd = open_data(path, O_WRONLY|O_CREAT|O_TRUNC);
 	free(path);
 	if (local_fd < 0) {
@@ -3322,7 +3324,7 @@ gfs_server_chdir(struct gfp_xdr *client)
 
 	gfs_server_get_request(client, msg, "s", &gpath);
 
-	local_path(gpath, &path, msg);
+	gfsd_local_path(gpath, &path, msg);
 	if (chdir(path) == -1)
 		save_errno = errno;
 	free(path);
@@ -4142,6 +4144,9 @@ usage(void)
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-c\t\t\t\t... check and display invalid files\n");
 	fprintf(stderr, "\t-cc\t\t\t\t... check and delete invalid files\n");
+	fprintf(stderr, "\t-ccc\t\t\t\t... check and move invalid files to\n");
+	fprintf(stderr, "\t\t\t\t\tgfarm:///lost+found, and delete invalid\n");
+	fprintf(stderr, "\t\t\t\t\treplica-references from metadata\n");
 	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
 	fprintf(stderr, "\t-f <gfarm-configuration-file>\n");
 	fprintf(stderr, "\t-h <hostname>\n");
@@ -4236,6 +4241,8 @@ main(int argc, char **argv)
 
 	argc -= optind;
 	argv += optind;
+
+	gfarm_spool_root_len = strlen(gfarm_spool_root);
 
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);

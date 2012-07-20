@@ -1114,6 +1114,18 @@ inode_check_file(struct inode *inode)
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 }
 
+gfarm_ino_t
+inode_root_number()
+{
+	return (ROOT_INUMBER);
+}
+
+gfarm_ino_t
+inode_table_current_size()
+{
+	return (inode_table_size);
+}
+
 struct inode *
 inode_lookup(gfarm_ino_t inum)
 {
@@ -3145,6 +3157,14 @@ inode_get_file_copy(struct inode *inode, struct host *spool_host)
 			return (copy);
 	}
 	return (NULL);
+}
+
+int
+inode_has_file_copy(struct inode *inode, struct host *spool_host)
+{
+	if (inode_get_file_copy(inode, spool_host) == NULL)
+		return (0);
+	return (1); /* valid or invalid */
 }
 
 int

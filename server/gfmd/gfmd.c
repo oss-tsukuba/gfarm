@@ -509,6 +509,10 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_replica_add(peer, xid, sizep,
 		    from_client, skip);
 		break;
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES:
+		e = gfm_server_replica_get_my_entries(peer, xid, sizep,
+		    from_client, skip);
+		break;
 	case GFM_PROTO_PROCESS_ALLOC:
 		e = gfm_server_process_alloc(peer, xid, sizep,
 		    from_client, skip);

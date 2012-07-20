@@ -5083,3 +5083,89 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
 	    &e, ""));
 }
+
+gfarm_error_t
+gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, int from_client, int skip)
+{
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_error_t e_ret, e_rpc;
+	gfarm_ino_t start_inum, inum, table_size;
+	int i, n_req, n_ret = 0;
+	struct host *spool_host;
+	struct inode *inode;
+	struct entry_result {
+		gfarm_ino_t inum;
+		gfarm_uint64_t gen;
+		gfarm_off_t size;
+		int flags;
+	} *ents = NULL;
+	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES";
+
+	e_ret = gfm_server_get_request(peer, sizep, diag,
+	    "li", &start_inum, &n_req);
+	if (e_ret != GFARM_ERR_NO_ERROR)
+		return (e_ret);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	e_rpc = wait_db_update_info(peer, DBUPDATE_FS, diag);
+	if (e_rpc != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: failed to wait for the backend DB to be updated: %s",
+		    diag, gfarm_error_string(e_rpc));
+		/* Continue processing. */
+	}
+
+	giant_lock();
+	if (from_client) { /* from gfsd only */
+		gflog_debug(GFARM_MSG_UNFIXED, "not permitted: from_client");
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if ((spool_host = peer_get_host(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "not permitted: peer_get_host() failed");
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	} else if (n_req <= 0) {
+		gflog_debug(GFARM_MSG_UNFIXED, "n_req is 0");
+		e_rpc = GFARM_ERR_INVALID_ARGUMENT;
+	} else if (GFARM_MALLOC_ARRAY(ents, n_req) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "no memory");
+		e_rpc = GFARM_ERR_NO_MEMORY;
+	} else {
+		if (start_inum < inode_root_number())
+			start_inum = inode_root_number();
+		table_size = inode_table_current_size();
+		e_rpc = GFARM_ERR_NO_SUCH_OBJECT;
+		for (inum = start_inum; inum < table_size && n_ret < n_req;
+		    inum++) {
+			inode = inode_lookup(inum);
+			if (inode && inode_is_file(inode) &&
+			    inode_has_file_copy(inode, spool_host)) {
+				ents[n_ret].inum = inode_get_number(inode);
+				ents[n_ret].gen = inode_get_gen(inode);
+				ents[n_ret].size = inode_get_size(inode);
+				e_rpc = GFARM_ERR_NO_ERROR;
+				n_ret++;
+			}
+		}
+	}
+	giant_unlock();
+
+	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc,
+	    "i", n_ret);
+	/* if network error doesn't happen, e_ret == e_rpc here */
+	if (e_ret == GFARM_ERR_NO_ERROR)
+		for (i = 0; i < n_ret; i++) {
+			e_ret = gfp_xdr_send(client, "lll",
+			    ents[i].inum, ents[i].gen, ents[i].size);
+			if (e_ret != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "replica_get_my_entries @%s: %s",
+				    peer_get_hostname(peer),
+				    gfarm_error_string(e_ret));
+				break;
+			}
+		}
+	free(ents);
+	return (e_ret);
+}
