@@ -214,7 +214,7 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	gflog_message(msg_no, priority, file, line_no, func,
-			"%s, %s", buffer, strerror(save_errno));
+	    "%s: %s", buffer, strerror(save_errno));
 }
 
 void
