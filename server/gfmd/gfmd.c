@@ -1383,7 +1383,7 @@ main(int argc, char **argv)
 	char *config_file = NULL, *port_number = NULL;
 	int syslog_level = -1;
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
-	int ch, sock, table_size, limit_nofiles_errno;
+	int ch, sock, table_size;
 	sigset_t sigs;
 	int is_master;
 
@@ -1464,10 +1464,6 @@ main(int argc, char **argv)
 	write_pid();
 
 	giant_init();
-
-	table_size = gfarm_metadb_max_descriptors;
-	limit_nofiles_errno = gfarm_limit_nofiles(&table_size);
-	/* postpone gflog_info() until gflog_syslog_open() is called */
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1550,8 +1546,9 @@ main(int argc, char **argv)
 		    "create_detached_thread(sigs_handler): %s",
 		    gfarm_error_string(e));
 
-	/* do gflog_info() since gflog_syslog_open() was called */
-	if (limit_nofiles_errno == 0)
+	/* gfarm_limit_nofiles() should be called after gflog_syslog_open() */
+	table_size = gfarm_metadb_max_descriptors;
+	if (gfarm_limit_nofiles(&table_size) == 0)
 		gflog_info(GFARM_MSG_UNFIXED, "max descriptors = %d",
 		    table_size);
 
