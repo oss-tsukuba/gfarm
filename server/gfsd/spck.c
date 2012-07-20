@@ -22,14 +22,11 @@
 
 #include "gfsd_subr.h"
 
-extern int debug_mode;
-extern struct gfm_connection *gfm_server;
-
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
 	gfarm_error_t e;
-	char *diag = "replica_add";
+	static const char diag[] = "replica_add";
 
 	if ((e = gfm_client_replica_add_request(gfm_server, inum, gen, size))
 	    != GFARM_ERR_NO_ERROR)
@@ -78,7 +75,7 @@ dir_foreach(
 	gfarm_error_t (*op_dir2)(char *, struct stat *, void *),
 	char *dir, void *arg)
 {
-	DIR* dirp;
+	DIR *dirp;
 	struct dirent *dp;
 	struct stat st;
 	gfarm_error_t e;
@@ -146,7 +143,7 @@ dir_foreach(
 }
 
 static gfarm_error_t
-unlink_file(char *file, struct stat *st, void *arg)
+unlink_file(char *file)
 {
 	if (unlink(file))
 		return (gfarm_errno_to_error(errno));
@@ -154,91 +151,58 @@ unlink_file(char *file, struct stat *st, void *arg)
 }
 
 static gfarm_error_t
-unlink_chmod(char *dir, struct stat *st, void *arg)
-{
-	/* try to allow read and write access always */
-	(void)chmod(dir, (st->st_mode | S_IRUSR | S_IWUSR) & 07777);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-unlink_rmdir(char *dir, struct stat *st, void *arg)
-{
-	if (rmdir(dir))
-		return (gfarm_errno_to_error(errno));
-	return (GFARM_ERR_NO_ERROR);
-}
-
-static gfarm_error_t
-unlink_dir(char *src)
-{
-	return (dir_foreach(unlink_file, unlink_chmod, unlink_rmdir,
-			    src, NULL));
-}
-
-static gfarm_error_t
-delete_invalid_file_or_directory(char *pathname)
+deal_with_invalid_file(char *file)
 {
 	gfarm_error_t e;
 
 	if (!delete_invalid_file) {
-		gflog_notice(GFARM_MSG_1000603, "%s: invalid file", pathname);
+		gflog_notice(GFARM_MSG_1000603, "%s: invalid file", file);
 		return (GFARM_ERR_NO_ERROR);
 	}
-
-	e = unlink_dir(pathname);
+	e = unlink_file(file);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1000604, "%s: cannot delete", pathname);
+		gflog_warning(GFARM_MSG_1000604, "%s: cannot delete", file);
 	else
-		gflog_notice(GFARM_MSG_1000605, "%s: deleted", pathname);
+		gflog_notice(GFARM_MSG_1000605, "%s: deleted", file);
 	return (e);
 }
 
-extern const char READONLY_CONFIG_FILE[];
-
 static gfarm_error_t
-fixfrag(char *path)
+check_file(char *file, struct stat *stp, void *arg)
 {
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	gfarm_off_t size;
 	gfarm_error_t e;
-	struct stat st;
 
 	/* READONLY_CONFIG_FILE should be skipped */
-	if (strcmp(path, READONLY_CONFIG_FILE) == 0)
+	if (strcmp(file, READONLY_CONFIG_FILE) == 0)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (get_inum_gen(path, &inum, &gen))
-		return (delete_invalid_file_or_directory(path));
-	if (stat(path, &st))
-		return (gfarm_errno_to_error(errno));
-	size = st.st_size;
+	if (get_inum_gen(file, &inum, &gen))
+		return (deal_with_invalid_file(file));
+	size = stp->st_size;
 	e = gfm_client_replica_add(inum, gen, size);
-	if (e == GFARM_ERR_ALREADY_EXISTS)
+	switch (e) {
+	case GFARM_ERR_ALREADY_EXISTS:
 		/* correct entry */
 		e = GFARM_ERR_NO_ERROR;
-	else if (e == GFARM_ERR_NO_ERROR)
-		gflog_notice(GFARM_MSG_1000606, "%s: fixed", path);
-	else switch (e) {
+		break;
+	case GFARM_ERR_NO_ERROR:
+		gflog_notice(GFARM_MSG_1000606, "%s: fixed", file);
+		break;
 	case GFARM_ERR_NO_SUCH_OBJECT:
 	case GFARM_ERR_INVALID_FILE_REPLICA:
-		e = delete_invalid_file_or_directory(path);
+		e = deal_with_invalid_file(file);
 		break;
 	}
 	return (e);
 }
 
 static gfarm_error_t
-fixdir_file(char *file, struct stat *st, void *arg)
+check_spool(char *dir)
 {
-	return (fixfrag(file));
-}
-
-static gfarm_error_t
-fixdir(char *dir)
-{
-	return (dir_foreach(fixdir_file, NULL, NULL, dir, NULL));
+	return (dir_foreach(check_file, NULL, NULL, dir, NULL));
 }
 
 /*
@@ -258,5 +222,5 @@ gfsd_spool_check(int check_level)
 		delete_invalid_file = 1;
 		break;
 	}
-	return (fixdir("."));
+	return (check_spool("."));
 }
