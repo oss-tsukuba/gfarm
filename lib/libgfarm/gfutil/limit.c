@@ -20,6 +20,9 @@
 /*
  * - Set file descriptor limit to min(*file_table_size_p, hard_limit).
  * - Return file descriptor limit to *file_table_size_p.
+ *
+ * NOTE: even if setrlimit() fails, this function returns SUCCESS (== 0),
+ *	because *file_table_sizep will be correctly updated in that case too.
  */
 int
 gfarm_limit_nofiles(int *file_table_size_p)
@@ -27,18 +30,20 @@ gfarm_limit_nofiles(int *file_table_size_p)
 #ifndef HAVE_SETRLIMIT
 	return (EOPNOTSUPP);
 #else
-	struct rlimit limit;
+	struct rlimit old, new;
 	int save_errno, want = *file_table_size_p;
 #ifdef __linux__
 	FILE *fp;
 	unsigned long file_max;
 #endif
 
-	if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
+	if (getrlimit(RLIMIT_NOFILE, &old) == -1) {
 		save_errno = errno;
 		gflog_warning_errno(GFARM_MSG_1000001, "getrlimit");
 		return (save_errno);
 	}
+	new = old;
+
 #ifdef __linux__
 	/*
 	 * On Linux,
@@ -53,22 +58,36 @@ gfarm_limit_nofiles(int *file_table_size_p)
 			gflog_warning(GFARM_MSG_UNFIXED, "%s: cannot parse",
 			    SYSTEM_FS_FILE_MAX);
 		} else {
-			limit.rlim_max = file_max * (1 - SYSTEM_RESERVE_RATE);
+			file_max *= (1 - SYSTEM_RESERVE_RATE);
+			/*
+			 * fs.file-max may be really large
+			 * (e.g. 7338458 on a machine with large memory),
+			 * and if such large value is set to new.rlim_max,
+			 * setrlimit(2) fails with EPERM.
+			 */
+			new.rlim_max = file_max < want ? file_max : want;
 		}
 		fclose(fp);
 	}
 #endif
-	if (limit.rlim_max != RLIM_INFINITY && want > limit.rlim_max)
-		want = limit.rlim_max;
-	if (limit.rlim_cur != want) {
-		limit.rlim_cur = want;
-		if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
-			save_errno = errno;
-			gflog_warning_errno(GFARM_MSG_1000002, "setrlimit");
-			return (save_errno);
+	/* `want' will be new.rlim_cur, thus it shouldn't exceed new.rlim_max */
+	if (new.rlim_max != RLIM_INFINITY && want > new.rlim_max)
+		want = new.rlim_max;
+	if (new.rlim_cur != want) {
+		new.rlim_cur = want;
+		if (setrlimit(RLIMIT_NOFILE, &new) == -1) {
+			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			    "setrlimit(RLIMIT_NOFILE) "
+			    "from soft=%llu/hard=%llu "
+			    "to soft=%llu/hard=%llu",
+			    (long long)old.rlim_cur, (long long)old.rlim_max,
+			    (long long)new.rlim_cur, (long long)new.rlim_max);
+			/* log warning, but returns SUCCESS */
+			*file_table_size_p = old.rlim_cur;
+			return(0);
 		}
 	}
-	*file_table_size_p = want;
+	*file_table_size_p = new.rlim_cur;
 	return (0);
 #endif
 }
