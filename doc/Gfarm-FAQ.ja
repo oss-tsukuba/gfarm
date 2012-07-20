@@ -124,16 +124,43 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 
 	この値は，gfmd.conf の metadb_server_max_descriptors で指定します．
 
-	gfmd の利用するファイルディスクリプタ数は，
+	設定する値の計算方法は以下の通りです．
 	    Nm: メタデータサーバ数の想定最大値
 	    Nf: ファイルシステムノード数の想定最大値
 	    Nc: 同時利用クライアント・プロセス数の想定最大値
-	とすると，
+	とすると，下記の値以上に設定しておく必要があります．
+	    (Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + 若干数
 
-	(Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + 若干数
-	以上に設定しておく必要があります．
+	gfmd 起動時に，システムのログ (/var/log/messages など) に
+	以下のように表示されますので，確認してみてください．
+	    gfmd[〜]: 〜 max descriptors = 131072
+	ここで表示された値が metadb_server_max_descriptors で指定した値
+	よりも小さい場合は，OS の hard limit 設定により制限を受けています．
+	hard limit 設定を増やすには，以下のようにします．
+	Linux の場合:
+	    Linux の場合は，hard limit 設定による制限ではなく，Gfarm が
+	    sysctl fs.file-max 設定の 75% 未満となるよう制限しています．
+	    このため gfmd.conf の「metadb_server_max_descriptors 131072」
+	    という設定を実際に有効にするには，ファイル /etc/sysctl.conf に
+	    「fs.file-max=180224」といった設定入れた後、リブートするか，
+	    あるいはコマンド「/sbin/sysctl -p」を実行します．
+	NetBSD の場合:
+	    ファイル /etc/sysctl.conf に「kern.maxfiles=180224」といった
+	    設定を行ない，リブートするか，あるいはコマンド
+	    「/sbin/sysctl -f /etc/sysctl.conf」を実行します．
+	FreeBSD の場合:
+	    ファイル /etc/sysctl.conf に以下のような設定を行ない，
+		kern.maxfiles=180224
+		kern.maxfilesperproc=131072
+	    リブートするか，あるいはコマンド
+	    「/sbin/sysctl -f /etc/sysctl.conf」を実行します．
+	Solaris の場合:
+	    ファイル /etc/system に「set rlim_fd_max = 131072」といった
+	    設定を行ない，リブートします．
+	
+	参考:
 
-	ここで，各項の意味は以下の通りです．
+	計算式の各項の意味は，以下の通りです．
 
 	    (Nm - 1) * 2 =
 		gfmd 間接続の数:(Nm - 1) *
@@ -155,7 +182,7 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 	このうち，「クライアント対応用gfsdとgfmdの間の接続」の分は，
 	実際にはもっと小さくなる可能性もあります．しかし同時に多数の
 	Gfarmファイルをオープンしている場合は，最大で Nf まで達する可能性も
-	あります．また，もし同時オープン数が Nf より少ない場合でも
+	あります．あるいは，もし同時オープン数が Nf より少ない場合でも
 	gfsd_connection_cache パラメータを設定している場合は，
 	min(Nf, gfsd_connection_cache) まで達します．
 
