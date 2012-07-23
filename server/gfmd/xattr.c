@@ -316,6 +316,10 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct db_waitctx ctx, *waitctx;
 	int addattr = 0;
 	struct relayed_request *relay;
+	gfarm_repattr_t *reps = NULL;
+	size_t nreps = 0;
+	char *repattr = NULL;
+	int i;
 
 	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
 	    xmlMode ? GFM_PROTO_XMLATTR_SET : GFM_PROTO_XATTR_SET,
@@ -370,9 +374,32 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
-		} else
-			e = setxattr(xmlMode, inode, attrname, &value, size,
-			    flags, waitctx, &addattr);
+		} else {
+			if (strcmp(attrname, GFARM_REPATTR_NAME) == 0) {
+				if ((e = gfarm_repattr_reduce(value, &reps, &nreps))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfarm_repattr_reduce() failed: %s",
+					    gfarm_error_string(e));
+				} else if (nreps == 0 || reps == NULL) {
+					e = GFARM_ERR_INVALID_ARGUMENT;
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "invalid repattr: %s", (char *)value);
+				} else if ((e = gfarm_repattr_stringify(reps, nreps, &repattr))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfarm_repattr_stringify() failed: %s",
+					    gfarm_error_string(e));
+				} else {
+					free(value);
+					value = repattr;
+					size = strlen(repattr) + 1;
+				}
+			}
+			if (e == GFARM_ERR_NO_ERROR)
+				e = setxattr(xmlMode, inode, attrname, &value, size,
+				    flags, waitctx, &addattr);
+		}
 		giant_unlock();
 
 		if (e == GFARM_ERR_NO_ERROR) {
@@ -390,6 +417,11 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		db_waitctx_fini(waitctx);
 	}
 quit:
+	if (reps != NULL) {
+		for (i = 0; i < nreps; i++)
+			gfarm_repattr_free(reps[i]);
+		free(reps);
+	}
 	free(value);
 	free(attrname);
 	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
