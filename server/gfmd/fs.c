@@ -1773,6 +1773,16 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 				goto calc_or_reply;
 			}
 
+			rep_error = wait_db_update_info(peer, DBUPDATE_HOST,
+			    diag);
+			if (rep_error != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: failed to wait for the backend DB"
+				    "to be updated: %s",
+				    diag, gfarm_error_string(rep_error));
+				goto calc_or_reply;
+			}
+
 			/*
 			 * Check validness of the parameters just ONCE
 			 * in !RELAY_TRANSFER mode phase.
@@ -4575,6 +4585,15 @@ gfm_server_replica_info_get_reply(enum request_reply_mode mode,
 		replica_info_closure_get_info(closure, &n, &hosts, &gens,
 		    &oflags);
 	} else {
+		e_rpc = wait_db_update_info(peer, DBUPDATE_FS | DBUPDATE_HOST,
+		    diag);
+		if (e_rpc != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: failed to wait for the backend DB to be "
+			    "updated: %s",
+			    diag, gfarm_error_string(e_rpc));
+		}
+
 		giant_lock();
 		spool_host = peer_get_host(peer);
 		if (e_rpc != GFARM_ERR_NO_ERROR)
@@ -4629,11 +4648,11 @@ gfm_server_replica_info_get(struct peer *peer, gfp_xdr_xid_t xid,
 	static const char diag[] = "GFM_PROTO_REPLICA_INFO_GET";
 
 	replica_info_closure_init(&closure);
-	if ((e = gfm_server_request_reply_with_vrelaywait(peer, xid, skip,
+	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
 	    gfm_server_replica_info_get_request,
 	    gfm_server_replica_info_get_reply,
-	    GFM_PROTO_REPLICA_INFO_GET, DBUPDATE_FS | DBUPDATE_HOST, &closure,
-	    diag)) != GFARM_ERR_NO_ERROR) {
+	    GFM_PROTO_REPLICA_INFO_GET, &closure, diag))
+	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
 		    diag, gfarm_error_string(e));
 	} else

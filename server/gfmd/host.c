@@ -2081,12 +2081,11 @@ gfm_server_schedule_host_domain(
 	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_initialize(&c);
-	e = gfm_server_request_reply_with_vrelaywait(
+	e = gfm_server_request_reply_with_vrelay(
 		peer, xid, skip,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN,
-		DBUPDATE_HOST,
 		&c,
 		diag);
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_finalize(&c);
