@@ -93,6 +93,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
 {
 	gfarm_error_t e;
+	int save_errno;
 	struct gfarm_timespec mtime;
 	char *newpath;
 	gfarm_ino_t inum_new;
@@ -103,16 +104,46 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	e = gfm_client_replica_create_file_in_lost_found(
 	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
 	    &inum_new, &gen_new);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: replica_create_file_in_lost_found: %s",
+		    file, gfarm_error_string(e));
+		/*
+		 * GFARM_ERR_ALREADY_EXISTS will occur, if below
+		 * gfsd_create_ancestor_dir() or rename() are failed
+		 * and gfsd -ccc is retried.  But
+		 * GFARM_ERR_ALREADY_EXISTS should not be ignored
+		 * here.  Because if the metadata is initialized (all
+		 * metadata is lost) or reverted to the backup-data
+		 * (rollback), and if gfsd -ccc is called several
+		 * times, GFARM_ERR_ALREADY_EXISTS also may occur in
+		 * low probability.
+		 */
 		return (e);
+	}
 	gfsd_local_path(inum_new, gen_new, "move_file_to_lost_found",
 	    &newpath);
-	if (gfsd_create_ancestor_dir(newpath))
-		return (gfarm_errno_to_error(errno));
-	if (rename(file, newpath))
-		return (gfarm_errno_to_error(errno));
-	return (gfm_client_replica_add(inum_new, gen_new,
-	    (gfarm_off_t)stp->st_size));
+	if (gfsd_create_ancestor_dir(newpath)) {
+		save_errno = errno;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: cannot create ancestor directory: %s",
+		    newpath, strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+	if (rename(file, newpath)) {
+		save_errno = errno;
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: cannot renamed to %s: %s", file, newpath,
+		    strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+	e = gfm_client_replica_add(inum_new, gen_new,
+	    (gfarm_off_t)stp->st_size);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: replica_add failed: %s", newpath,
+		    gfarm_error_string(e));
+	return (e);
 }
 
 static gfarm_error_t
@@ -137,7 +168,9 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	e = move_file_to_lost_found_main(file, stp, inum_old, gen_old);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: cannot move to /lost+found: %s", file,
+		    "%s cannot be moved to /lost+found/%016llX%016llX-%s: %s",
+		    file, (unsigned long long)inum_old,
+		    (unsigned long long)gen_old, canonical_self_name,
 		    gfarm_error_string(e));
 	else
 		gflog_notice(GFARM_MSG_UNFIXED,

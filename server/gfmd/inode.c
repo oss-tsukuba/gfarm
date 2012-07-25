@@ -2423,6 +2423,8 @@ inode_create_file_in_lost_found(
 	    (unsigned long long)gen_old, host_name(host));
 	e = inode_create_link_internal(lf, fname, admin, n); /* i_nlink++ */
 	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, "cannot create /%s/%s: %s",
+		    lost_found, fname, gfarm_error_string(e));
 		inode_free(n);
 		return (e);
 	}
