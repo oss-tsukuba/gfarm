@@ -1087,9 +1087,15 @@ subcmd_config_gfarm_slave()
 	#
 	# Execute 'gfmdhost -c' on the master host.
 	#
-	exec_remote_host_gfcmd $MASTER - gfmdhost -c $BACKEND_HOSTNAME \
-		-p $GFMD_PORT
-	[ $? -ne 0 ] && log_error "gfservice gfmdhost -c failed"
+	if [ "X$GFMD_REPLICATION_TYPE" = Xasync ]; then
+		exec_remote_host_gfcmd $MASTER - gfmdhost \
+			-c $BACKEND_HOSTNAME -p $GFMD_PORT -C $HOSTID
+		[ $? -ne 0 ] && log_error "gfmdhost -c (async) failed"
+	else
+		exec_remote_host_gfcmd $MASTER - gfmdhost \
+			-c $BACKEND_HOSTNAME -p $GFMD_PORT
+		[ $? -ne 0 ] && log_error "gfmdhost -c failed"
+	fi
 
 	#
 	# Prepare a temporary file.
@@ -1344,7 +1350,7 @@ subcmd_unconfig_gfarm_slave()
 	# Execute 'gfmdhost -d' on the slave host.
 	#
 	exec_remote_host_gfcmd $HOSTID - gfmdhost -d "$BACKEND_HOSTNAME"
-	[ $? -ne 0 ] && log_warn "gfservice gfmdhost -d failed"
+	[ $? -ne 0 ] && log_warn "gfmdhost -d failed"
 
 	#
 	# Execute 'gfservice unconfig-gfarm' on the slave host.
