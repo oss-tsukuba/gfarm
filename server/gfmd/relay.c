@@ -63,7 +63,7 @@ struct relayed_request {
 	size_t rsize;
 	/* gfmd channel host (master gfmd) */
 	struct mdhost *mdhost;
-	/* context in gfm_server_request_reply_with_vrelay() */
+	/* context in gfm_server_relay_request_reply() */
 	enum request_reply_mode mode;
 };
 
@@ -468,7 +468,7 @@ ensure_remote_peer(struct peer *peer, gfarm_int32_t command,
 
 /* returns *reqp != NULL, if !mdhost_self_is_master() case. */
 static gfarm_error_t
-gfm_server_get_vrequest_with_relay(struct peer *peer, size_t *sizep,
+gfm_server_relay_get_vrequest(struct peer *peer, size_t *sizep,
 	int skip, struct relayed_request **rp, const char *diag,
 	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
 	const char *format,
@@ -520,7 +520,7 @@ gfm_server_get_vrequest_with_relay(struct peer *peer, size_t *sizep,
 }
 
 gfarm_error_t
-gfm_server_get_request_with_relay(struct peer *peer, size_t *sizep,
+gfm_server_relay_get_request(struct peer *peer, size_t *sizep,
 	int skip, struct relayed_request **rp, const char *diag,
 	gfarm_int32_t command, const char *format, ...)
 {
@@ -528,31 +528,15 @@ gfm_server_get_request_with_relay(struct peer *peer, size_t *sizep,
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfm_server_get_vrequest_with_relay(peer, sizep, skip, rp, diag,
+	e = gfm_server_relay_get_vrequest(peer, sizep, skip, rp, diag,
 	    command, 0, format, &ap);
-	va_end(ap);
-	return (e);
-}
-
-gfarm_error_t
-gfm_server_get_request_with_relaywait(struct peer *peer, size_t *sizep,
-	int skip, struct relayed_request **rp, const char *diag,
-	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
-	const char *format, ...)
-{
-	va_list ap;
-	gfarm_error_t e;
-
-	va_start(ap, format);
-	e = gfm_server_get_vrequest_with_relay(peer, sizep, skip, rp, diag,
-	    command, wait_db_update_flags, format, &ap);
 	va_end(ap);
 	return (e);
 }
 
 /* for multiple-argument request */
 gfarm_error_t
-gfm_server_get_request_with_vrelay(struct peer *peer, size_t *sizep,
+gfm_server_relay_get_request_dynarg(struct peer *peer, size_t *sizep,
 	int skip, struct relayed_request *r, const char *diag,
 	const char *format, ...)
 {
@@ -567,7 +551,7 @@ gfm_server_get_request_with_vrelay(struct peer *peer, size_t *sizep,
 		 * 2. in master, relayed request from slave
 		 * 3. in slave, non-relayed request from client
 		 * 4. in slave, relayed request from client called from
-		 *    gfm_server_request_reply_with_vrelay() with
+		 *    gfm_server_relay_request_reply() with
 		 *    calculating size context.
 		 */
 		e = gfm_server_vrecv(peer, &sz, diag, format, &ap);
@@ -575,7 +559,7 @@ gfm_server_get_request_with_vrelay(struct peer *peer, size_t *sizep,
 	} else {
 		/*
 		 * in slave, send request from client to master called from
-		 * gfm_server_request_reply_with_vrelay() with
+		 * fm_server_relay_request_reply() with
 		 * transfering context.
 		 */
 		assert(peer == NULL);
@@ -592,11 +576,68 @@ gfm_server_get_request_with_vrelay(struct peer *peer, size_t *sizep,
 
 /* for multiple-argument request */
 gfarm_error_t
-gfm_server_put_reply_with_vrelay(struct peer *peer, size_t *sizep,
-	const char *diag, const char *format, ...)
+gfm_server_relay_put_reply_dynarg(struct peer *peer, size_t *sizep,
+    const char *diag, gfarm_error_t ecode, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	static const char relay_diag[] = "relay_put_reply_dynarg";
+
+	if (sizep == NULL) {
+		/*
+		 * 1. in master, non-relayed reply to client
+		 * 2. in master, relayed reply to slave
+		 * 3. in slave, relayed reply to client
+		 */
+		e = gfp_xdr_send(conn, "i", ecode);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %s (gfp_xdr_send ecode): %s",
+			    diag, relay_diag, gfarm_error_string(e));
+		} else if (ecode == GFARM_ERR_NO_ERROR) {
+			va_start(ap, format);
+			e = gfp_xdr_vsend(conn, &format, &ap);
+			va_end(ap);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: %s (gfp_xdr_vsend): %s",
+				    diag, relay_diag, gfarm_error_string(e));
+			}
+		}
+		if (e == GFARM_ERR_NO_ERROR)
+			e = ecode;
+	} else {
+		/*
+		 * in master relayed reply with calculating size context
+		 */
+		e = gfp_xdr_send_size_add(sizep, "i", ecode);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %s (gfp_xdr_send_size_add ecode): %s",
+			    diag, relay_diag, gfarm_error_string(e));
+		} else if (ecode == GFARM_ERR_NO_ERROR) {
+			va_start(ap, format);
+			e = gfp_xdr_vsend_size_add(sizep, &format, &ap);
+			va_end(ap);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: %s (gfp_xdr_vsend_size_add): %s",
+				    diag, relay_diag, gfarm_error_string(e));
+			}
+		}
+	}
+
+	return (e);
+}
+
+gfarm_error_t
+gfm_server_relay_put_reply_arg_dynarg(struct peer *peer, size_t *sizep,
+    const char *diag, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+	static const char relay_diag[] = "relay_put_reply_arg_dynarg";
 
 	va_start(ap, format);
 	if (sizep == NULL) {
@@ -606,15 +647,21 @@ gfm_server_put_reply_with_vrelay(struct peer *peer, size_t *sizep,
 		 * 3. in slave, relayed reply to client
 		 */
 		e = gfp_xdr_vsend(peer_get_conn(peer), &format, &ap);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %s (gfp_xdr_vsend): %s",
+			    diag, relay_diag, gfarm_error_string(e));
+		}
 	} else {
 		/* in master relayed reply with calculating size context */
 		e = gfp_xdr_vsend_size_add(sizep, &format, &ap);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: %s (gfp_xdr_vsend_size_add): %s",
+			    diag, relay_diag, gfarm_error_string(e));
+		}
 	}
 	va_end(ap);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: %s", diag, gfarm_error_string(e));
-	}
 	return (e);
 }
 
@@ -698,7 +745,7 @@ unlock_sender:
 
 /* for multiple-argument request */
 static gfarm_error_t
-gfm_server_request_reply_with_vrelay0(struct peer *peer, gfp_xdr_xid_t xid,
+gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
 	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
 	void *closure, const char *diag)
@@ -712,7 +759,7 @@ gfm_server_request_reply_with_vrelay0(struct peer *peer, gfp_xdr_xid_t xid,
 	struct peer *mhpeer;
 	gfp_xdr_async_peer_t async_server = NULL;
 	struct relayed_request *r = NULL;
-	static const char diag0[] = "gfm_server_call_get_vrequest_with_vrelay";
+	static const char diag0[] = "gfm_server_relay_request_reply";
 
 	/*
 	 * get request from client
@@ -889,27 +936,16 @@ end:
 }
 
 gfarm_error_t
-gfm_server_request_reply_with_vrelay(struct peer *peer, gfp_xdr_xid_t xid,
+gfm_server_relay_request_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
 	gfarm_int32_t command, void *closure, const char *diag)
 {
-	return (gfm_server_request_reply_with_vrelay0(peer, xid,
+	return (gfm_server_relay_request_reply0(peer, xid,
 		skip, get_request_op, put_reply_op, command, 0, closure, diag));
 }
 
 gfarm_error_t
-gfm_server_request_reply_with_vrelaywait(struct peer *peer, gfp_xdr_xid_t xid,
-	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
-	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
-	void *closure, const char *diag)
-{
-	return (gfm_server_request_reply_with_vrelay0(peer, xid,
-		skip, get_request_op, put_reply_op, command,
-		wait_db_update_flags, closure, diag));
-}
-
-gfarm_error_t
-gfm_server_put_reply_with_relay0(struct peer *peer, gfp_xdr_xid_t xid,
+gfm_server_relay_put_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	size_t *sizep, xdr_vsend_t xdr_vsend, const char *diag,
 	gfarm_error_t ecode, const char *format, va_list *app,
 	const char *wformat, ...)
@@ -925,9 +961,9 @@ gfm_server_put_reply_with_relay0(struct peer *peer, gfp_xdr_xid_t xid,
 }
 
 gfarm_error_t
-gfm_server_put_reply_with_relay(struct peer *peer, gfp_xdr_xid_t xid,
+gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	size_t *sizep, struct relayed_request *r, const char *diag,
-	gfarm_error_t *ep, const char *format, ...)
+	gfarm_error_t ecode, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
@@ -956,8 +992,8 @@ gfm_server_put_reply_with_relay(struct peer *peer, gfp_xdr_xid_t xid,
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s", r->diag, gfarm_error_string(e));
 		}
-		if (*ep == GFARM_ERR_NO_ERROR)
-			*ep = e;
+		if (ecode == GFARM_ERR_NO_ERROR)
+			ecode = e;
 	}
 
 	va_start(ap, format);
@@ -967,19 +1003,23 @@ gfm_server_put_reply_with_relay(struct peer *peer, gfp_xdr_xid_t xid,
 		 * 2. in slave, relayed/non-relayed reply to client
 		 */
 		e = gfm_server_put_vreply(peer, xid, sizep, gfp_xdr_vsend_ref,
-		    diag, *ep, format, &ap);
+		    diag, ecode, format, &ap);
 	else {
 		/* in master, relayed reply to slave */
 		master_get_db_update_info(peer, &seqnum, &flags);
-		e = gfm_server_put_reply_with_relay0(peer, xid, sizep,
-		    gfp_xdr_vsend_ref, diag, *ep, format, &ap, "ll", seqnum,
+		e = gfm_server_relay_put_reply0(peer, xid, sizep,
+		    gfp_xdr_vsend_ref, diag, ecode, format, &ap, "ll", seqnum,
 		    flags);
 	}
 	va_end(ap);
-	if (e != GFARM_ERR_NO_ERROR)
+
+	if (e == GFARM_ERR_NO_ERROR) 
+		e = ecode;
+	else {
 		/* possibly expected error */
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));
+	}
 
 	return (e);
 }

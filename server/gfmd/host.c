@@ -1515,7 +1515,7 @@ gfm_server_host_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_SET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_HOST_INFO_SET, "ssiii",
 	    &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1570,8 +1570,8 @@ gfm_server_host_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 void
@@ -1611,7 +1611,7 @@ gfm_server_host_info_modify(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_MODIFY";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_HOST_INFO_MODIFY,
 	    "ssiii", &hi.hostname, &hi.architecture, &ncpu, &port, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1664,8 +1664,8 @@ gfm_server_host_info_modify(
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -1708,7 +1708,7 @@ gfm_server_host_info_remove(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOST_INFO_REMOVE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_HOST_INFO_REMOVE, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1734,8 +1734,8 @@ gfm_server_host_info_remove(
 		free(hostname);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 /* called from fs.c:gfm_server_schedule_file() as well */
@@ -1762,7 +1762,7 @@ host_schedule_reply(struct host *h, struct peer *peer, const char *diag)
 }
 
 gfarm_error_t
-host_schedule_reply_with_vrelay(struct host *h, struct peer *peer,
+host_schedule_reply_arg_dynarg(struct host *h, struct peer *peer,
 	size_t *sizep, const char *diag)
 {
 	struct host_status status;
@@ -1775,7 +1775,7 @@ host_schedule_reply_with_vrelay(struct host *h, struct peer *peer,
 	report_flags = h->report_flags;
 	back_channel_mutex_unlock(h, diag);
 
-	return (gfm_server_put_reply_with_vrelay(
+	return (gfm_server_relay_put_reply_arg_dynarg(
 			peer, sizep, diag, "siiillllii",
 			h->hi.hostname,
 			h->hi.port,
@@ -1808,7 +1808,7 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_HOSTNAME_SET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_HOSTNAME_SET, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1831,8 +1831,8 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	free(hostname);
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 /*
@@ -1899,7 +1899,7 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request(
 	 * Note:
 	 *	You don't have to worry about the mode in this case.
 	 */
-	ret = gfm_server_get_request_with_vrelay(
+	ret = gfm_server_relay_get_request_dynarg(
 		peer, sizep, skip, r, diag,
 		"s", &cp->domain);
 
@@ -2014,13 +2014,13 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
 		}
 
 	calc_or_reply:
-		ret = gfm_server_put_reply_with_vrelay(
-			peer, sizep, diag, "i", rep_error);
+		ret = gfm_server_relay_put_reply_dynarg(peer, sizep, diag,
+		    rep_error, "");
 		if (ret != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: %s failed: %s",
 				diag,
-				"gfm_server_put_reply_with_vrelay()",
+				"gfm_server_relay_put_reply_dynarg()",
 				gfarm_error_string(ret));
 			goto done;
 		}
@@ -2031,26 +2031,26 @@ GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply(
 			goto done;
 		}
 
-		ret = gfm_server_put_reply_with_vrelay(
-			peer, sizep, diag, "i", cp->nhosts);
+		ret = gfm_server_relay_put_reply_arg_dynarg(peer, sizep,
+		    diag, "i", cp->nhosts);
 		if (ret != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: %s failed: %s",
 				diag,
-				"gfm_server_put_reply_with_vrelay()",
+				"gfm_server_relay_put_reply_arg_dynarg()",
 				gfarm_error_string(ret));
 			goto done;
 		}
 
 		giant_lock();
 		for (i = 0; i < cp->nhosts; i++) {
-			ret = host_schedule_reply_with_vrelay(
-				cp->hosts[i], peer, sizep, diag);
+			ret = host_schedule_reply_arg_dynarg(cp->hosts[i],
+			    peer, sizep, diag);
 			if (ret != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s: %s failed: %s",
 					diag,
-					"host_schedule_reply_with_vrelay()",
+					"host_schedule_reply_arg_dynarg()",
 					gfarm_error_string(ret));
 				goto done;
 			}
@@ -2081,7 +2081,7 @@ gfm_server_schedule_host_domain(
 	static const char diag[] = "GFM_PROTO_SCHEDULE_HOST_DOMAIN";
 
 	GFM_PROTO_SCHEDULE_HOST_DOMAIN_context_initialize(&c);
-	e = gfm_server_request_reply_with_vrelay(
+	e = gfm_server_relay_request_reply(
 		peer, xid, skip,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN_receive_request,
 		GFM_PROTO_SCHEDULE_HOST_DOMAIN_send_reply,
@@ -2105,7 +2105,7 @@ gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_STATFS";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	      GFM_PROTO_STATFS, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2121,8 +2121,8 @@ gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		gfarm_mutex_unlock(&total_disk_mutex, diag, total_disk_diag);
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "lll", &used, &avail, &files));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "lll", &used, &avail, &files));
 }
 
 #endif /* TEST */

@@ -96,7 +96,7 @@ gfarm_error_t gfm_server_host_info_remove(
 gfarm_error_t host_schedule_reply(struct host *, struct peer *, const char *);
 gfarm_error_t host_schedule_reply_all(struct peer *, gfp_xdr_xid_t, size_t *,
 	int (*)(struct host *, void *), void *, const char *);
-gfarm_error_t host_schedule_reply_with_vrelay(struct host *, struct peer *,
+gfarm_error_t host_schedule_reply_arg_dynarg(struct host *, struct peer *,
 	size_t *, const char *);
 
 gfarm_error_t gfm_server_hostname_set(

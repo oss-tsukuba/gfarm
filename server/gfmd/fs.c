@@ -54,7 +54,7 @@ gfm_server_compound_begin(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_COMPOUND_BEGIN";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_COMPOUND_BEGIN, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -65,8 +65,8 @@ gfm_server_compound_begin(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (level > 0) /* We don't allow nesting */
 			e = GFARM_ERR_INVALID_ARGUMENT;
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -77,7 +77,7 @@ gfm_server_compound_end(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_COMPOUND_END";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_COMPOUND_END, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -88,8 +88,8 @@ gfm_server_compound_end(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (level < 1) /* nesting doesn't match */
 			e = GFARM_ERR_INVALID_ARGUMENT;
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -127,7 +127,7 @@ gfm_server_get_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GET_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GET_FD, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -147,8 +147,8 @@ gfm_server_get_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "i", &fd));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "i", &fd));
 }
 
 gfarm_error_t
@@ -161,7 +161,7 @@ gfm_server_put_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PUT_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PUT_FD, "i", &fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -183,8 +183,8 @@ gfm_server_put_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -196,7 +196,7 @@ gfm_server_save_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SAVE_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SAVE_FD, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -213,8 +213,8 @@ gfm_server_save_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -226,7 +226,7 @@ gfm_server_restore_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_RESTORE_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_RESTORE_FD, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -243,8 +243,8 @@ gfm_server_restore_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 char *
@@ -528,7 +528,7 @@ gfm_server_create(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CREATE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CREATE, "sii", &name, &flag, &perm);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -564,8 +564,8 @@ gfm_server_create(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(name);
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "lli", &inum, &gen, &mode);
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "lli", &inum, &gen, &mode);
 
 	if (gfarm_ctxp->file_trace && create_log != NULL) {
 		gflog_trace(GFARM_MSG_1003293, "%s", create_log);
@@ -592,7 +592,7 @@ gfm_server_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_OPEN";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_OPEN, "si", &name, &flag);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -628,8 +628,8 @@ gfm_server_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(name);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "lli", &inum, &gen, &mode));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "lli", &inum, &gen, &mode));
 }
 
 gfarm_error_t
@@ -646,7 +646,7 @@ gfm_server_open_root(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_OPEN_ROOT";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_OPEN_ROOT, "i", &flag);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -689,8 +689,8 @@ gfm_server_open_root(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -707,7 +707,7 @@ gfm_server_open_parent(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_OPEN_PARENT";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_OPEN_PARENT, "i", &flag);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -758,8 +758,8 @@ gfm_server_open_parent(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			peer_fdpair_set_current(peer, fd);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -775,7 +775,7 @@ gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CLOSE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CLOSE, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -818,8 +818,7 @@ gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag, &e,
-	    "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
 	if (gfarm_ctxp->file_trace && trace_log != NULL)
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
 	return (e2);
@@ -839,7 +838,7 @@ gfm_server_verify_type_common(
 	struct relayed_request *relay;
 	gfarm_mode_t mode = 0;
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    tf ? GFM_PROTO_VERIFY_TYPE : GFM_PROTO_VERIFY_TYPE_NOT, "i", &type);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -900,8 +899,8 @@ gfm_server_verify_type_common(
 		}
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -934,7 +933,7 @@ gfm_server_revoke_gfsd_access(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REVOKE_GFSD_ACCESS";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REVOKE_GFSD_ACCESS, "i", &fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -967,8 +966,8 @@ gfm_server_revoke_gfsd_access(
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 static gfarm_error_t
@@ -1018,7 +1017,7 @@ gfm_server_fstat(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
 	memset(&st, 0, sizeof(st));
 #endif
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FSTAT, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1051,8 +1050,8 @@ gfm_server_fstat(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "llilsslllilili",
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "llilsslllilili",
 	    &st.st_ino, &st.st_gen, &st.st_mode, &st.st_nlink,
 	    &st.st_user, &st.st_group, &st.st_size,
 	    &st.st_ncopy,
@@ -1279,7 +1278,7 @@ gfm_server_futimes(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FUTIMES";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FUTIMES, "lili",
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1336,8 +1335,8 @@ gfm_server_futimes(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1354,7 +1353,7 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FCHMOD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FCHMOD, "i", &mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1400,8 +1399,8 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1419,7 +1418,7 @@ gfm_server_fchown(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FCHOWN";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FCHOWN, "ss", &username, &groupname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1492,8 +1491,8 @@ gfm_server_fchown(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(groupname);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1511,7 +1510,7 @@ gfm_server_cksum_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CKSUM_GET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CKSUM_GET, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1569,8 +1568,8 @@ gfm_server_cksum_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "sbi", &cksum_type, sizeof(cksumbuf), &cksum_len, cksumbuf,
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "sbi", &cksum_type, sizeof(cksumbuf), &cksum_len, cksumbuf,
 	    &flags);
 	if (alloced) {
 		free(cksum_type);
@@ -1594,7 +1593,7 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CKSUM_SET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CKSUM_SET, "sbili",
 	    &cksum_type, sizeof(cksum), &cksum_len, cksum, &flags,
 	    &mtime.tv_sec, &mtime.tv_nsec);
@@ -1642,8 +1641,8 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(cksum_type);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 /*
@@ -1718,18 +1717,16 @@ GFM_PROTO_SCHEDULE_FILE_receive_request(
 	 * Note:
 	 *	You don't have to worry about the mode in this case.
 	 */
-	ret = gfm_server_get_request_with_vrelay(
-		peer, sizep, skip, r, diag,
-		"s", &cp->domain);
-	if (ret != GFARM_ERR_NO_ERROR) {
+	ret = gfm_server_relay_get_request_dynarg(peer, sizep, skip, r, diag,
+	    "s", &cp->domain);
+	if (ret != GFARM_ERR_NO_ERROR)
 		cp->req_error = ret;
-	} else if (cp->domain == NULL) {
+	else if (cp->domain == NULL)
 		cp->req_error = GFARM_ERR_NO_MEMORY;
-	} else if (*(cp->domain) != '\0') {
+	else if (*(cp->domain) != '\0')
 		cp->req_error = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	} else {
+	else
 		cp->req_error = GFARM_ERR_NO_ERROR;
-	}
 
 	if (cp->req_error != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED, "%s: %s failed: %s",
@@ -1845,13 +1842,13 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 		}
 
 	calc_or_reply:
-		ret = gfm_server_put_reply_with_vrelay(
-			peer, sizep, diag, "i", rep_error);
+		ret = gfm_server_relay_put_reply_dynarg(peer, sizep, diag,
+		    rep_error, "");
 		if (ret != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: %s failed: %s",
 				diag,
-				"gfm_server_put_reply_with_vrelay()",
+				"gfm_server_relay_put_reply_dynarg()",
 				gfarm_error_string(ret));
 			goto done;
 		}
@@ -1862,26 +1859,26 @@ GFM_PROTO_SCHEDULE_FILE_send_reply(
 			goto done;
 		}
 
-		ret = gfm_server_put_reply_with_vrelay(
-			peer, sizep, diag, "i", cp->nhosts);
+		ret = gfm_server_relay_put_reply_arg_dynarg(peer, sizep, diag,
+		    "i", cp->nhosts);
 		if (ret != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: %s failed: %s",
 				diag,
-				"gfm_server_put_reply_with_vrelay()",
+				"gfm_server_relay_put_reply_arg_dynarg()",
 				gfarm_error_string(ret));
 			goto done;
 		}
 
 		giant_lock();
 		for (i = 0; i < cp->nhosts; i++) {
-			ret = host_schedule_reply_with_vrelay(
-				cp->hosts[i], peer, sizep, diag);
+			ret = host_schedule_reply_arg_dynarg(cp->hosts[i],
+			    peer, sizep, diag);
 			if (ret != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
 					"%s: %s failed: %s",
 					diag,
-					"host_schedule_reply_with_vrelay()",
+					"host_schedule_reply_arg_dynarg()",
 					gfarm_error_string(ret));
 				goto done;
 			}
@@ -1908,14 +1905,10 @@ gfm_server_schedule_file(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	static const char diag[] = "GFM_PROTO_SCHEDULE_FILE";
 
 	GFM_PROTO_SCHEDULE_FILE_context_initialize(&c, from_client);
-	e = gfm_server_request_reply_with_vrelaywait(
-		peer, xid, skip,
-		GFM_PROTO_SCHEDULE_FILE_receive_request,
-		GFM_PROTO_SCHEDULE_FILE_send_reply,
-		GFM_PROTO_SCHEDULE_FILE,
-		DBUPDATE_HOST,
-		&c,
-		diag);
+	e = gfm_server_relay_request_reply(peer, xid, skip,
+	    GFM_PROTO_SCHEDULE_FILE_receive_request,
+	    GFM_PROTO_SCHEDULE_FILE_send_reply,
+	    GFM_PROTO_SCHEDULE_FILE, &c, diag);
 	if (e != GFARM_ERR_NO_ERROR) { 
 		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s",
 			diag, gfarm_error_string(e));
@@ -1981,7 +1974,7 @@ gfm_server_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	static const char diag[] = "GFM_PROTO_REMOVE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REMOVE, "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2033,8 +2026,7 @@ gfm_server_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && !GFARM_S_ISDIR(inodet.imode)) {
@@ -2091,7 +2083,7 @@ gfm_server_rename(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	static const char diag[] = "GFM_PROTO_RENAME";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_RENAME, "ss", &sname, &dname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2154,8 +2146,7 @@ gfm_server_rename(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR &&
@@ -2234,7 +2225,7 @@ gfm_server_flink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	static const char diag[] = "GFM_PROTO_FLINK";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FLINK, "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2301,8 +2292,7 @@ gfm_server_flink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
@@ -2355,7 +2345,7 @@ gfm_server_mkdir(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_MKDIR";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_MKDIR, "si", &name, &mode);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2401,8 +2391,8 @@ gfm_server_mkdir(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	free(name);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -2427,7 +2417,7 @@ gfm_server_symlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 	static const char diag[] = "GFM_PROTO_SYMLINK";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SYMLINK, "ss", &source_path, &name);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2481,8 +2471,7 @@ gfm_server_symlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
@@ -2530,7 +2519,7 @@ gfm_server_readlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_READLINK";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_READLINK, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2571,8 +2560,8 @@ gfm_server_readlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "s", &source_path);
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "s", &source_path);
 	if (relay == NULL && e == GFARM_ERR_NO_ERROR)
 		free(source_path);
 	return (e2);
@@ -2591,7 +2580,7 @@ gfm_server_getdirpath(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GETDIRPATH";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GETDIRPATH, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -2621,8 +2610,8 @@ gfm_server_getdirpath(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e_rpc = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "s", &s);
+	e_rpc = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "s", &s);
 	if (relay == NULL && e == GFARM_ERR_NO_ERROR)
 		free(s);
 	return (e_rpc);
@@ -3139,7 +3128,7 @@ gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SEEK";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SEEK, "li", &offset, &whence);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -3209,8 +3198,8 @@ gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "l", &offset));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "l", &offset));
 }
 
 struct reopen_resume_arg {
@@ -3307,7 +3296,7 @@ gfm_server_reopen(
 
 	static const char diag[] = "GFM_PROTO_REOPEN";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REOPEN, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -3363,8 +3352,8 @@ gfm_server_reopen(
 
 		giant_unlock();
 	}
-	e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "lliii", &inum, &gen, &mode, &flags, &to_create);
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "lliii", &inum, &gen, &mode, &flags, &to_create);
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && to_create && e == GFARM_ERR_NO_ERROR) {
@@ -3395,7 +3384,7 @@ gfm_server_close_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CLOSE_READ";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CLOSE_READ, "li", &atime.tv_sec, &atime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -3440,8 +3429,8 @@ gfm_server_close_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 struct close_v2_4_resume_arg {
@@ -3595,7 +3584,7 @@ gfm_server_close_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CLOSE_WRITE, "llili",
 	    &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
@@ -3613,8 +3602,8 @@ gfm_server_close_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -3631,7 +3620,7 @@ gfm_server_close_write_v2_4(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_4";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CLOSE_WRITE_V2_4, "llili",
 	    &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
@@ -3661,8 +3650,8 @@ gfm_server_close_write_v2_4(
 			free(trace_log);
 		}
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-		&e, "ill", &flags, &old_gen, &new_gen));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+		e, "ill", &flags, &old_gen, &new_gen));
 }
 
 gfarm_error_t
@@ -3679,7 +3668,7 @@ gfm_server_fhclose_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FHCLOSE_READ";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FHCLOSE_READ, "llli",
 	    &inum, &gen, &atime.tv_sec, &atime.tv_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -3719,8 +3708,8 @@ gfm_server_fhclose_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	     &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	     e, ""));
 }
 
 static gfarm_error_t
@@ -3849,7 +3838,7 @@ gfm_server_fhclose_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_FHCLOSE_WRITE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_FHCLOSE_WRITE, "llllili",
 	    &inum, &old_gen, &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
@@ -3914,8 +3903,8 @@ gfm_server_fhclose_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			free(trace_log);
 		}
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	     &e, "illl", &flags, &old_gen, &new_gen, &cookie));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	     e, "illl", &flags, &old_gen, &new_gen, &cookie));
 }
 
 gfarm_error_t
@@ -3930,7 +3919,7 @@ gfm_server_generation_updated(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GENERATION_UPDATED, "i", &result);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -3973,8 +3962,8 @@ gfm_server_generation_updated(
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -3989,7 +3978,7 @@ gfm_server_generation_updated_by_cookie(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GENERATION_UPDATED_BY_COOKIE, "li", &cookie, &result);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -4020,15 +4009,15 @@ gfm_server_generation_updated_by_cookie(
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
 gfm_server_lock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	gfarm_off_t start, len;
 	gfarm_int32_t type, whence;
 	struct relayed_request *relay;
@@ -4037,25 +4026,22 @@ gfm_server_lock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000388, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_LOCK, "llii", &start, &len, &type, &whence);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, 
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_trylock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	gfarm_off_t start, len;
 	gfarm_int32_t type, whence;
 	struct relayed_request *relay;
@@ -4064,25 +4050,22 @@ gfm_server_trylock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000389, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_TRYLOCK, "llii", &start, &len, &type, &whence);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_unlock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	gfarm_off_t start, len;
 	gfarm_int32_t type, whence;
 	struct relayed_request *relay;
@@ -4091,25 +4074,22 @@ gfm_server_unlock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000390, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_UNLOCK, "llii", &start, &len, &type, &whence);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_lock_info(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;;
+	gfarm_error_t e;
 	gfarm_off_t start, len;
 	gfarm_int32_t type, whence;
 	struct relayed_request *relay;
@@ -4118,138 +4098,147 @@ gfm_server_lock_info(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000391, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_LOCK_INFO, "llii", &start, &len, &type, &whence);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
-
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_glob(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GLOB";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000392, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GLOB, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_schedule(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SCHEDULE";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000393, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SCHEDULE, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_pio_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PIO_OPEN";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000394, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PIO_OPEN, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_pio_set_paths(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PIO_SET_PATHS";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000395, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PIO_SET_PATHS, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_pio_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PIO_CLOSE";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000396, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PIO_CLOSE, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
 gfm_server_pio_visit(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PIO_VISIT";
 
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000397, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PIO_CLOSE, "");
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
@@ -4326,7 +4315,7 @@ gfm_server_replica_list_by_host(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	char *host;
 	gfarm_int32_t port;
 	struct relayed_request *relay;
@@ -4335,7 +4324,7 @@ gfm_server_replica_list_by_host(
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000398, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_LIST_BY_HOST, "si",
 	    &host, &port);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4346,11 +4335,9 @@ gfm_server_replica_list_by_host(
 	}
 
 	free(host);
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
@@ -4358,7 +4345,7 @@ gfm_server_replica_remove_by_host(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e;
 	char *host;
 	gfarm_int32_t port;
 	struct relayed_request *relay;
@@ -4367,7 +4354,7 @@ gfm_server_replica_remove_by_host(
 	/* XXX - NOT IMPLEMENTED */
 	gflog_error(GFARM_MSG_1000399, "%s: not implemented", diag);
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_REMOVE_BY_HOST, "si",
 	    &host, &port);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4378,11 +4365,9 @@ gfm_server_replica_remove_by_host(
 	}
 
 	free(host);
-	e2 = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e2, "");
-	return (e != GFARM_ERR_NO_ERROR ? e :
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	return (e);
 }
 
 gfarm_error_t
@@ -4399,7 +4384,7 @@ gfm_server_replica_remove_by_file(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_REMOVE_BY_FILE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_REMOVE_BY_FILE, "s", &hostname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -4448,8 +4433,8 @@ gfm_server_replica_remove_by_file(
 		free(hostname);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 /*
@@ -4551,7 +4536,7 @@ gfm_server_replica_info_get_request(enum request_reply_mode mode,
 	gfarm_error_t e;
 	gfarm_int32_t iflags = replica_info_closure_get_iflags(closure);
 
-	e = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
+	e = gfm_server_relay_get_request_dynarg(peer, sizep, skip, r, diag,
 	    "i", &iflags);
 	if (mode != RELAY_TRANSFER)
 		replica_info_closure_set_iflags(closure, iflags);
@@ -4620,17 +4605,18 @@ gfm_server_replica_info_get_reply(enum request_reply_mode mode,
 		replica_info_closure_set_info(closure, n, hosts, gens, oflags);
 	}
 
-	e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
-	    "i", e_rpc);
+	e_ret = gfm_server_relay_put_reply_dynarg(peer, sizep, diag, e_rpc,
+	    "");
 	if (e_ret != GFARM_ERR_NO_ERROR || e_rpc != GFARM_ERR_NO_ERROR)
 		goto end;
 
-	e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag, "i", n);
+	e_ret = gfm_server_relay_put_reply_arg_dynarg(peer, sizep, diag,
+	    "i", n);
 	if (e_ret != GFARM_ERR_NO_ERROR)
 		goto end;
 	for (i = 0; i < n; ++i) {
-		e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
-		    "sli", hosts[i], gens[i], oflags[i]);
+		e_ret = gfm_server_relay_put_reply_arg_dynarg(peer, sizep,
+		    diag, "sli", hosts[i], gens[i], oflags[i]);
 		if (e_ret != GFARM_ERR_NO_ERROR)
 			goto end;
 	}
@@ -4648,7 +4634,7 @@ gfm_server_replica_info_get(struct peer *peer, gfp_xdr_xid_t xid,
 	static const char diag[] = "GFM_PROTO_REPLICA_INFO_GET";
 
 	replica_info_closure_init(&closure);
-	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
+	if ((e = gfm_server_relay_request_reply(peer, xid, skip,
 	    gfm_server_replica_info_get_request,
 	    gfm_server_replica_info_get_reply,
 	    GFM_PROTO_REPLICA_INFO_GET, &closure, diag))
@@ -4691,7 +4677,7 @@ gfm_server_replicate_file_from_to(
 	gen = 0;
 #endif
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICATE_FILE_FROM_TO, "ssi",
 	    &srchost, &dsthost, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4727,8 +4713,8 @@ gfm_server_replicate_file_from_to(
 	}
 	free(srchost);
 	free(dsthost);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 struct replica_adding_resume_arg {
@@ -4817,7 +4803,7 @@ gfm_server_replica_adding(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADDING";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_ADDING, "s", &src_host);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -4884,8 +4870,8 @@ gfm_server_replica_adding(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(src_host);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "llli", &inum, &gen, &mtime_sec, &mtime_nsec));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "llli", &inum, &gen, &mtime_sec, &mtime_nsec));
 }
 
 /* assume giant lock is obtained */
@@ -4947,7 +4933,7 @@ gfm_server_replica_added(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADDED";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_ADDED, "s", "ili",
 	    &flags, &mtime_sec, &mtime_nsec);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4962,8 +4948,8 @@ gfm_server_replica_added(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		    flags, mtime_sec, mtime_nsec, -1);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -4977,7 +4963,7 @@ gfm_server_replica_added2(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADDED2";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_ADDED2, "ilil",
 	    &flags, &mtime_sec, &mtime_nsec, &size);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -4994,8 +4980,8 @@ gfm_server_replica_added2(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -5010,7 +4996,7 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_LOST";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_LOST, "ll", &inum, &gen);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -5046,8 +5032,8 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -5063,7 +5049,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_REPLICA_ADD, "lll",
 		&inum, &gen, &size);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -5102,8 +5088,8 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -5208,7 +5194,7 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 	static const char diag[]
 		= "GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND";
 
-	e_ret = gfm_server_get_request_with_relay(
+	e_ret = gfm_server_relay_get_request(
 	     peer, sizep, skip, &relay, diag,
 	     GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND, "lllli",
 	     &inum_old, &gen_old, &size, &mtime.tv_sec, &mtime.tv_nsec);
@@ -5244,6 +5230,6 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
-	    diag, &e_rpc, "ll", &inum_new, &gen_new));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay,
+	    diag, e_rpc, "ll", &inum_new, &gen_new));
 }

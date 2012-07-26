@@ -481,12 +481,12 @@ gfm_server_switch_back_channel_common(
 		giant_unlock();
 	}
 	if (version < GFS_PROTOCOL_VERSION_V2_4)
-		e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
-		    diag, &e, "");
+		e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay,
+		    diag, e, "");
 	else {
 		i = 0;
-		e2 = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
-		    diag, &e,  "i", &i/*XXX FIXME*/);
+		e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay,
+		    diag, e,  "i", &i/*XXX FIXME*/);
 	}
 	if (e2 != GFARM_ERR_NO_ERROR)
 		return (e2);
@@ -538,7 +538,7 @@ gfm_server_switch_back_channel(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_BACK_CHANNEL";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SWITCH_BACK_CHANNEL, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -564,7 +564,7 @@ gfm_server_switch_async_back_channel(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL, "il", &version, &gfsd_cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);

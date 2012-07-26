@@ -730,7 +730,7 @@ gfm_server_fsngroup_get_by_hostname(
 
 	(void)from_client;
 
-	e = gfm_server_get_request_with_relay(
+	e = gfm_server_relay_get_request(
 		peer, sizep, skip, &relay, diag,
 		GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME,
 		"s", &hostname);
@@ -776,11 +776,11 @@ gfm_server_fsngroup_get_by_hostname(
 	}
 
 	if (fsngroupname != NULL)
-		e = gfm_server_put_reply_with_relay(
-			peer, xid, sizep, relay, diag, &e, "s", &fsngroupname);
+		e = gfm_server_relay_put_reply(
+			peer, xid, sizep, relay, diag, e, "s", &fsngroupname);
 	else
-		e = gfm_server_put_reply_with_relay(
-			peer, xid, sizep, relay, diag, &e, "");
+		e = gfm_server_relay_put_reply(
+			peer, xid, sizep, relay, diag, e, "");
 
 bailout:
 	free(hostname);
@@ -809,7 +809,7 @@ gfm_server_fsngroup_modify(
 	char *hostname = NULL;		/* need to be free'd always */
 	char *fsngroupname = NULL;	/* need to be free'd always */
 
-	e = gfm_server_get_request_with_relay(
+	e = gfm_server_relay_get_request(
 		peer, sizep, skip, &relay, diag,
 		GFM_PROTO_FSNGROUP_MODIFY,
 		"ss", &hostname, &fsngroupname);
@@ -859,8 +859,8 @@ unlock:
 		giant_unlock();
 	}
 reply:
-	e = gfm_server_put_reply_with_relay(
-		peer, xid, sizep, relay, diag, &e, "");
+	e = gfm_server_relay_put_reply(
+		peer, xid, sizep, relay, diag, e, "");
 
 bailout:
 	free(hostname);

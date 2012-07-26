@@ -784,7 +784,7 @@ gfm_server_user_info_get_by_gsi_dn(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_GET_BY_GSI_DN";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_USER_INFO_GET_BY_GSI_DN, "s", &gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -799,13 +799,13 @@ gfm_server_user_info_get_by_gsi_dn(
 		u = user_lookup_gsi_dn(gsi_dn);
 		if (u == NULL) {
 			e2 = GFARM_ERR_NO_SUCH_USER;
-			e = gfm_server_put_reply_with_relay(peer, xid, sizep,
-			    relay, diag, &e2, "");
+			e = gfm_server_relay_put_reply(peer, xid, sizep,
+			    relay, diag, e2, "");
 		} else {
 			ui = &u->ui;
 			e2 = e;
-			e = gfm_server_put_reply_with_relay(peer, xid, sizep,
-			    relay, diag, &e2, "ssss", &ui->username,
+			e = gfm_server_relay_put_reply(peer, xid, sizep,
+			    relay, diag, e2, "ssss", &ui->username,
 			    &ui->realname, &ui->homedir, &ui->gsi_dn);
 		}
 		giant_unlock();
@@ -841,7 +841,7 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_SET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_USER_INFO_SET,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -885,8 +885,8 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			gfarm_user_info_free(&ui);
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 static int
@@ -941,7 +941,7 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_MODIFY";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_USER_INFO_MODIFY,
 	    "ssss", &ui.username, &ui.realname, &ui.homedir, &ui.gsi_dn);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -990,8 +990,8 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			gfarm_user_info_free(&ui);
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1022,7 +1022,7 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_USER_INFO_REMOVE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_USER_INFO_REMOVE, "s", &username);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1046,8 +1046,8 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 
 }
 #endif /* TEST */

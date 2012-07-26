@@ -1067,7 +1067,7 @@ metadb_server_recv(struct peer *peer, size_t *sizep, int skip, int command,
 	gfarm_error_t e;
 	static const char diag[] = "metadb_server_recv";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, relayp, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, relayp, diag,
 	    command, "sisi",
 	&ms->name, &ms->port, &ms->clustername, &ms->flags);
 	return (e);
@@ -1309,8 +1309,8 @@ gfm_server_metadb_server_set(
 	if (relay == NULL) /* do not relay RPC to master gfmd */
 		giant_unlock();
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1394,7 +1394,7 @@ gfm_server_metadb_server_remove(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_METADB_SERVER_REMOVE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_METADB_SERVER_REMOVE, "s", &name);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1435,8 +1435,8 @@ gfm_server_metadb_server_remove(
 	}
 
 	free(name);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 static void

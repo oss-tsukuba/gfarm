@@ -947,7 +947,7 @@ gfm_server_switch_gfmd_channel(
 	int i;
 	static const char diag[] = "GFM_PROTO_SWITCH_GFMD_CHANNEL";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_SWITCH_GFMD_CHANNEL, "il", &version, &cookie);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -964,8 +964,8 @@ gfm_server_switch_gfmd_channel(
 			er = GFARM_ERR_NO_ERROR;
 	}
 	i = 0;
-	if ((e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay,
-	    diag, &er, "i", &i /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_server_relay_put_reply(peer, xid, sizep, relay,
+	    diag, er, "i", &i /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002988,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);

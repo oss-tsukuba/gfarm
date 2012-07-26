@@ -1287,7 +1287,7 @@ gfm_server_process_alloc(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PROCESS_ALLOC,
 	    "ib", &keytype, sizeof(sharedkey), &keylen, sharedkey);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1313,8 +1313,8 @@ gfm_server_process_alloc(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "l", &pid));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "l", &pid));
 }
 
 gfarm_error_t
@@ -1333,7 +1333,7 @@ gfm_server_process_alloc_child(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_ALLOC_CHILD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PROCESS_ALLOC_CHILD, "iblib",
 	    &parent_keytype,
 	    sizeof(parent_sharedkey), &parent_keylen, parent_sharedkey,
@@ -1377,8 +1377,8 @@ gfm_server_process_alloc_child(
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "l", &pid));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "l", &pid));
 }
 
 gfarm_error_t
@@ -1394,7 +1394,7 @@ gfm_server_process_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_SET";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PROCESS_SET,
 	    "ibl", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -1424,8 +1424,8 @@ gfm_server_process_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		}
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1437,7 +1437,7 @@ gfm_server_process_free(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_PROCESS_FREE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_PROCESS_FREE, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1468,8 +1468,8 @@ gfm_server_process_free(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1483,7 +1483,7 @@ gfm_server_bequeath_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_BEQUEATH_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_BEQUEATH_FD, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1513,8 +1513,8 @@ gfm_server_bequeath_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -1528,7 +1528,7 @@ gfm_server_inherit_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_INHERIT_FD";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_INHERIT_FD, "i", &parent_fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1559,8 +1559,8 @@ gfm_server_inherit_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t

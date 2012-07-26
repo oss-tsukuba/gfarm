@@ -321,7 +321,7 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	char *repattr = NULL;
 	int i;
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    xmlMode ? GFM_PROTO_XMLATTR_SET : GFM_PROTO_XATTR_SET,
 	    "sBi", &attrname, &size, &value, &flags);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -424,8 +424,8 @@ quit:
 	}
 	free(value);
 	free(attrname);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -445,7 +445,7 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct db_waitctx waitctx;
 	struct relayed_request *relay;
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    xmlMode ? GFM_PROTO_XMLATTR_GET : GFM_PROTO_XATTR_GET,
 	    "s", &attrname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -460,8 +460,8 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			"operation is not supported(xmlMode)");
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-		    relay, diag, &e, ""));
+		return (gfm_server_relay_put_reply(peer, xid, sizep,
+		    relay, diag, e, ""));
 	}
 #endif
 	if (relay == NULL) {
@@ -521,8 +521,8 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (waitctx_initialized)
 			db_waitctx_fini(&waitctx);
 	}
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "b", sizeof(value), &size, value);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "b", sizeof(value), &size, value);
 
 	free(attrname);
 	if (value != NULL)
@@ -544,7 +544,7 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	struct inode *inode;
 	struct relayed_request *relay;
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    xmlMode ? GFM_PROTO_XMLATTR_LIST : GFM_PROTO_XATTR_LIST, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -553,8 +553,8 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 #ifndef ENABLE_XMLATTR
 	if (xmlMode) {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-		    relay, diag, &e, ""));
+		return (gfm_server_relay_put_reply(peer, xid, sizep,
+		    relay, diag, e, ""));
 	}
 #endif
 
@@ -587,8 +587,8 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		}
 		giant_unlock();
 	}
-	e = gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, "b", sizeof(value), &size, value);
+	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, "b", sizeof(value), &size, value);
 	free(value);
 	return e;
 }
@@ -628,7 +628,7 @@ gfm_server_removexattr(
 	struct inode *inode;
 	struct relayed_request *relay;
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    xmlMode ? GFM_PROTO_XMLATTR_REMOVE : GFM_PROTO_XATTR_REMOVE,
 	    "s", &attrname);
 	if (e != GFARM_ERR_NO_ERROR)
@@ -643,8 +643,8 @@ gfm_server_removexattr(
 		    "operation is not supported(xmlMode)");
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-		return (gfm_server_put_reply_with_relay(peer, xid, sizep,
-		    relay, diag, &e, ""));
+		return (gfm_server_relay_put_reply(peer, xid, sizep,
+		    relay, diag, e, ""));
 
 	}
 #endif
@@ -679,8 +679,8 @@ gfm_server_removexattr(
 	}
 
 	free(attrname);
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 

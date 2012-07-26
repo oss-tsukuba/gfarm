@@ -813,7 +813,7 @@ gfm_server_group_info_set_request(enum request_reply_mode mode,
 		groupname = gi->groupname;
 		nusers = gi->nusers;
 	}
-	e_ret = gfm_server_get_request_with_vrelay(peer, sizep, skip, r, diag,
+	e_ret = gfm_server_relay_get_request_dynarg(peer, sizep, skip, r, diag,
 	    "si", &groupname, &nusers);
 	if (e_ret != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001531, "%s request failure: %s",
@@ -830,7 +830,7 @@ gfm_server_group_info_set_request(enum request_reply_mode mode,
 		else
 			username = gi->usernames[i];
 
-		e_ret = gfm_server_get_request_with_vrelay(peer, sizep, skip,
+		e_ret = gfm_server_relay_get_request_dynarg(peer, sizep, skip,
 		    r, diag, "s", &username);
 		if (e_ret != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001533,
@@ -904,8 +904,8 @@ gfm_server_group_info_set_reply(enum request_reply_mode mode,
 		group_info_closure_set_error(closure, e_rpc);
 	}
 
-	e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
-	    "i", e_rpc);
+	e_ret = gfm_server_relay_put_reply_dynarg(peer, sizep, diag, e_rpc,
+	    "");
 	return (e_ret);
 }
 
@@ -918,7 +918,7 @@ gfm_server_group_info_set(struct peer *peer, gfp_xdr_xid_t xid,
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_SET";
 
 	group_info_closure_init(&closure);
-	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
+	if ((e = gfm_server_relay_request_reply(peer, xid, skip,
 	    gfm_server_group_info_set_request, gfm_server_group_info_set_reply,
 	    GFM_PROTO_GROUP_INFO_SET, &closure, diag))
 	    != GFARM_ERR_NO_ERROR) {
@@ -1011,8 +1011,8 @@ gfm_server_group_info_modify_reply(enum request_reply_mode mode,
 		group_info_closure_set_error(closure, e_rpc);
 	}
 
-	e_ret = gfm_server_put_reply_with_vrelay(peer, sizep, diag,
-	    "i", e_rpc);
+	e_ret = gfm_server_relay_put_reply_dynarg(peer, sizep, diag, e_rpc,
+	    "");
 	return (e_ret);
 }
 
@@ -1025,7 +1025,7 @@ gfm_server_group_info_modify(struct peer *peer, gfp_xdr_xid_t xid,
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_MODIFY";
 
 	group_info_closure_init(&closure);
-	if ((e = gfm_server_request_reply_with_vrelay(peer, xid, skip,
+	if ((e = gfm_server_relay_request_reply(peer, xid, skip,
 	    gfm_server_group_info_set_request,
 	    gfm_server_group_info_modify_reply,
 	    GFM_PROTO_GROUP_INFO_MODIFY, &closure, diag))
@@ -1070,7 +1070,7 @@ gfm_server_group_info_remove(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GROUP_INFO_REMOVE";
 
-	e = gfm_server_get_request_with_relay(peer, sizep, skip, &relay, diag,
+	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_GROUP_INFO_REMOVE, "s", &groupname);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -1099,8 +1099,8 @@ gfm_server_group_info_remove(
 		giant_unlock();
 	}
 
-	return (gfm_server_put_reply_with_relay(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
+	    e, ""));
 }
 
 gfarm_error_t
