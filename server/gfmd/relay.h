@@ -45,8 +45,6 @@ gfarm_error_t gfm_server_relay_put_reply_arg_dynarg(struct peer *, size_t *,
 gfarm_error_t gfm_server_relay_request_reply(struct peer *, gfp_xdr_xid_t,
 	int, get_request_op_t, put_reply_op_t, gfarm_int32_t, void *,
 	const char *);
-int request_reply_giant_lock(enum request_reply_mode);
-int request_reply_giant_unlock(enum request_reply_mode, gfarm_error_t);
 void master_set_db_update_info_to_peer(struct peer *, gfarm_uint64_t);
 gfarm_error_t slave_add_initial_db_update_info(gfarm_uint64_t, const char *);
 void slave_clear_db_update_info(void);

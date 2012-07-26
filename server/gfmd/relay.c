@@ -1024,27 +1024,6 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	return (e);
 }
 
-int
-request_reply_giant_lock(enum request_reply_mode mode)
-{
-	int lock = (mode == NO_RELAY || mode == RELAY_CALC_SIZE);
-
-	if (lock)
-		giant_lock();
-	return (lock);
-}
-
-int
-request_reply_giant_unlock(enum request_reply_mode mode, gfarm_error_t e)
-{
-	int unlock = (e != GFARM_ERR_NO_ERROR ||
-	    mode == NO_RELAY || mode == RELAY_TRANSFER);
-
-	if (unlock)
-		giant_unlock();
-	return (unlock);
-}
-
 void
 relay_init(void)
 {
