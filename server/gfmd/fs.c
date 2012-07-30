@@ -4052,7 +4052,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (!inode_is_file(inode)) {
 		gflog_debug(GFARM_MSG_UNFIXED, "not a file");
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e = GFARM_ERR_INVALID_FILE_REPLICA;
 	} else if (inode_get_gen(inode) != gen) {
 		gflog_debug(GFARM_MSG_1001978, "inode_get_gen() failed");
 		e = GFARM_ERR_NO_SUCH_OBJECT;

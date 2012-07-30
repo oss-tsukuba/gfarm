@@ -348,6 +348,10 @@ check_file(char *file, struct stat *stp, void *arg)
 	case GFARM_ERR_INVALID_FILE_REPLICA:
 		e = deal_with_invalid_file(file, stp, 1, inum, gen);
 		break;
+	default:
+		gflog_error(GFARM_MSG_UNFIXED, "replica_add(%llu, %llu): %s",
+		    (unsigned long long)inum, (unsigned long long)gen,
+		    gfarm_error_string(e));
 	}
 	return (e);
 }
