@@ -177,7 +177,10 @@ gfarmGetNameOfSocket(int sock, int *portPtr)
 int
 gfarmWaitReadable(int fd, int timeoutMsec)
 {
-    int sel;
+    int sel, err;
+    char hostbuf[NI_MAXHOST], *hostaddr_prefix, *hostaddr;
+    struct sockaddr_in sin;
+    socklen_t slen = sizeof(sin);
 
     for (;;) {
 #ifdef HAVE_POLL
@@ -204,9 +207,26 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 	errno = 0;
 	sel = select(fd + 1, &rFd, NULL, NULL, tvPtr);
 #endif /* ! HAVE_POLL */
-	if (sel == 0)
-	    gflog_error(GFARM_MSG_1002522, "select timeout");
-	else if (sel < 0) {
+	if (sel == 0) {
+	    if (getpeername(fd, (struct sockaddr *)&sin, &slen) == -1) {
+		hostaddr = strerror(errno);
+		hostaddr_prefix = "cannot get peer address: ";
+	    } else if ((err = gfarm_getnameinfo((struct sockaddr *)&sin, slen,
+						hostbuf, sizeof(hostbuf),
+						NULL, 0,
+						NI_NUMERICHOST|NI_NUMERICSERV)
+			!= 0)) {
+		hostaddr = strerror(err);
+		hostaddr_prefix = "cannot convert peer address to string: ";
+	    } else {
+		hostaddr = hostbuf;
+		hostaddr_prefix= "";
+	    }
+	    gflog_error(GFARM_MSG_UNFIXED,
+			"closing network connection due to "
+			"no response within %d milliseconds from %s%s",
+			timeoutMsec, hostaddr_prefix, hostaddr);
+	} else if (sel < 0) {
 	    if (errno == EINTR || errno == EAGAIN)
 		continue;
 	    gflog_error(GFARM_MSG_1000639, "select: %s", strerror(errno));
