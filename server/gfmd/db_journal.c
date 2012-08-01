@@ -148,7 +148,11 @@ db_journal_init(void)
 		    "gfarm_journal_file_dir is empty : %s",
 		    gfarm_error_string(e));
 	}
+
 	db_journal_init_seqnum();
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "db_journal_init_seqnum : seqnum=%llu",
+	    (unsigned long long)journal_seqnum);
 
 	snprintf(path, MAXPATHLEN, "%s/%010d.gmj", journal_dir, 0);
 #ifdef DEBUG_JOURNAL
