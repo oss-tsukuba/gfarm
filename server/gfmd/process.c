@@ -898,7 +898,7 @@ gfarm_error_t
 process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	gfarm_int32_t *flagsp,
+	gfarm_int32_t *flagsp, gfarm_ino_t *inump,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp, char **trace_logp)
 {
 	struct file_opening *fo;
@@ -961,6 +961,9 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 
 		flags = GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED;
 	}
+
+	if (inump != NULL)
+		*inump = inode_get_number(fo->inode);
 
 	if ((flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0) {
 		/* defer file close for GFM_PROTO_GENERATION_UPDATED */

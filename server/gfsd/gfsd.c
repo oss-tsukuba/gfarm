@@ -1522,7 +1522,25 @@ close_fd(gfarm_int32_t fd, const char *diag)
 		gflog_error(GFARM_MSG_1003339,
 		    "%s compound_end: %s", diag, gfarm_error_string(e));
 
-	if (e == GFARM_ERR_NO_ERROR && gen_update_result != -1) {
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (fe->flags & FILE_FLAG_WRITTEN) {
+			if (fe->new_gen != fe->gen)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "inode %lld generation %lld -> %lld: "
+				    "error occurred during close operation "
+				    "for writing: %s",
+				    (long long)fe->ino, (long long)fe->gen,
+				    (long long)fe->new_gen,
+				    gfarm_error_string(e));
+			else
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "inode %lld generation %lld: "
+				    "error occurred during close operation "
+				    "for writing: %s",
+				    (long long)fe->ino, (long long)fe->gen,
+				    gfarm_error_string(e));
+		}
+	} else if (gen_update_result != -1) {
 		if ((e2 = gfm_client_compound_put_fd_request(fd, diag))
 		    != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003340,
@@ -1586,7 +1604,25 @@ fhclose_fd(gfarm_int32_t fd, const char *diag)
 		gflog_error(GFARM_MSG_1003345,
 		    "%s: fhclose result: %s", diag, gfarm_error_string(e));
 
-	if (gen_update_result != -1) {
+	if (e != GFARM_ERR_NO_ERROR) {
+		if (fe->flags & FILE_FLAG_WRITTEN) {
+			if (fe->new_gen != fe->gen)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "inode %lld generation %lld -> %lld: "
+				    "error occurred during close operation "
+				    "for writing after gfmd failover: %s",
+				    (long long)fe->ino, (long long)fe->gen,
+				    (long long)fe->new_gen,
+				    gfarm_error_string(e));
+			else
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "inode %lld generation %lld: "
+				    "error occurred during close operation "
+				    "for writing after gfmd failover: %s",
+				    (long long)fe->ino, (long long)fe->gen,
+				    gfarm_error_string(e));
+		}
+	} else if (gen_update_result != -1) {
 		if ((e2 = gfm_client_generation_updated_by_cookie_request(
 		    gfm_server, cookie, gen_update_result))
 		    != GFARM_ERR_NO_ERROR)

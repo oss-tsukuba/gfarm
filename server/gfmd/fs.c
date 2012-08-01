@@ -2856,12 +2856,13 @@ struct close_v2_4_resume_arg {
 gfarm_error_t
 close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 {
-	gfarm_error_t e;
+	gfarm_error_t e_ret, e_rpc;
 	struct close_v2_4_resume_arg *arg = closure;
 	struct host *spool_host;
 	struct process *process;
 	int transaction = 0;
 	gfarm_int32_t flags;
+	gfarm_ino_t inum = 0;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
 	char *trace_log;
 	static const char diag[] = "close_v2_4_resume";
@@ -2871,11 +2872,11 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	if ((spool_host = peer_get_host(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002263,
 		    "%s: peer_get_host() failed", diag);
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((process = peer_get_process(peer)) == NULL) {
 		gflog_debug(GFARM_MSG_1002264,
 		    "%s: peer_get_process() failed", diag);
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
@@ -2883,16 +2884,17 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * closing must be done regardless of the result of db_begin().
 		 * because not closing may cause descriptor leak.
 		 */
-		e = process_close_file_write(process, peer, arg->fd, arg->size,
-		    &arg->atime, &arg->mtime, &flags, &old_gen, &new_gen,
-		    &trace_log);
+		e_rpc = process_close_file_write(
+		    process, peer, arg->fd, arg->size, &arg->atime, &arg->mtime,
+		    &flags, &inum, &old_gen, &new_gen, &trace_log);
 		if (transaction)
 			db_end(diag);
 
-		if (e == GFARM_ERR_NO_ERROR) { /* permission ok */
-			e = peer_fdpair_close_current(peer);
-		} else if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
-			if ((e = process_new_generation_wait(peer, arg->fd,
+		if (e_rpc == GFARM_ERR_NO_ERROR) { /* permission ok */
+			e_rpc = peer_fdpair_close_current(peer);
+		} else if (e_rpc ==
+		    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+			if ((e_rpc = process_new_generation_wait(peer, arg->fd,
 			    close_write_v2_4_resume, arg)) ==
 			    GFARM_ERR_NO_ERROR) {
 				*suspendedp = 1;
@@ -2904,15 +2906,27 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 	free(arg);
 	giant_unlock();
 
-	if (e == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
+	if (e_rpc == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
 	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
 	    trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003435, "%s", trace_log);
 		free(trace_log);
 	}
 
-	return (gfm_server_put_reply(peer, diag, e, "ill",
-	    flags, old_gen, new_gen));
+	e_ret = gfm_server_put_reply(peer, diag, e_rpc, "ill",
+	    flags, old_gen, new_gen);
+	if (e_rpc == GFARM_ERR_NO_ERROR && e_ret != GFARM_ERR_NO_ERROR) {
+		/*
+		 * There is severe race condition here (SourceForge #419),
+		 * but there is no guarantee that this error is logged.
+		 * because network communication error may happen later.
+		 */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld generation %lld -> %lld: %s", diag,
+		    (long long)inum, (long long)old_gen, (long long)new_gen,
+		    gfarm_error_string(e_ret));
+	}
+	return (e_ret);
 }
 
 /* trace_log is malloc(3)ed string, thus caller should free(3) the memory. */
@@ -2922,7 +2936,7 @@ gfm_server_close_write_common(const char *diag,
 	gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
 	gfarm_int32_t *flagsp,
-	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	gfarm_ino_t *inump, gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
 	gfarm_error_t e;
@@ -2954,7 +2968,8 @@ gfm_server_close_write_common(const char *diag,
 		 * because not closing may cause descriptor leak.
 		 */
 		e = process_close_file_write(process, peer, fd, size,
-		    atime, mtime, flagsp, old_genp, new_genp, trace_logp);
+		    atime, mtime,
+		    flagsp, inump, old_genp, new_genp, trace_logp);
 		if (transaction)
 			db_end(diag);
 
@@ -2998,7 +3013,7 @@ gfm_server_close_write(struct peer *peer, int from_client, int skip)
 	giant_lock();
 
 	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, NULL, NULL, NULL, NULL);
+	    &atime, &mtime, NULL, NULL, NULL, NULL, NULL);
 
 	giant_unlock();
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -3008,44 +3023,55 @@ gfarm_error_t
 gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 	int *suspendedp)
 {
-	gfarm_error_t e, e2;
+	gfarm_error_t e_rpc, e_ret;
 	gfarm_off_t size;
 	struct gfarm_timespec atime, mtime;
 	gfarm_int32_t flags;
+	gfarm_ino_t inum = 0;
 	gfarm_int64_t old_gen = 0, new_gen = 0;
 	char *trace_log;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_4";
 
-	e = gfm_server_get_request(peer, diag, "llili",
+	e_rpc = gfm_server_get_request(peer, diag, "llili",
 	    &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
+	if (e_rpc != GFARM_ERR_NO_ERROR)
+		return (e_rpc);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	giant_lock();
 
-	e = gfm_server_close_write_common(diag, peer, from_client, size,
-	    &atime, &mtime, &flags, &old_gen, &new_gen, &trace_log);
+	e_rpc = gfm_server_close_write_common(diag, peer, from_client, size,
+	    &atime, &mtime, &flags, &inum, &old_gen, &new_gen, &trace_log);
 
 	giant_unlock();
 
-	if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
+	if (e_rpc == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 		*suspendedp = 1;
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	e2 = gfm_server_put_reply(peer, diag, e, "ill",
+	e_ret = gfm_server_put_reply(peer, diag, e_rpc, "ill",
 	    flags, old_gen, new_gen);
 
-	if (e == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
+	if (e_rpc == GFARM_ERR_NO_ERROR && gfarm_file_trace &&
 	    (flags & GFM_PROTO_CLOSE_WRITE_GENERATION_UPDATE_NEEDED) != 0 &&
 	    trace_log != NULL) {
 		gflog_trace(GFARM_MSG_1003309, "%s", trace_log);
 		free(trace_log);
 	}
-
-	return (e2);
+	if (e_rpc == GFARM_ERR_NO_ERROR && e_ret != GFARM_ERR_NO_ERROR) {
+		/*
+		 * There is severe race condition here (SourceForge #419),
+		 * but there is no guarantee that this error is logged.
+		 * because network communication error may happen later.
+		 */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld generation %lld -> %lld: %s", diag,
+		    (long long)inum, (long long)old_gen, (long long)new_gen,
+		    gfarm_error_string(e_ret));
+	}
+	return (e_ret);
 }
 
 gfarm_error_t
