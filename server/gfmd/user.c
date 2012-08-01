@@ -902,8 +902,13 @@ user_modify(struct user *u, struct gfarm_user_info *ui)
 {
 	gfarm_error_t e;
 
-	/* update the GSI DN hash table */
-	if (user_strcmp(u->ui.gsi_dn, ui->gsi_dn) != 0) {
+	if (user_strcmp(u->ui.gsi_dn, ui->gsi_dn) == 0) {
+		/*
+		 * u->ui.gsi_dn shouldn't be touched in this case,
+		 * because it's pointed by user_dn_hashtab.
+		 */
+		free(ui->gsi_dn);
+	} else { /* update the GSI DN hash table */
 		if (!user_is_null_str(ui->gsi_dn)) {
 			e = user_enter_gsi_dn(ui->gsi_dn, u);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -916,17 +921,20 @@ user_modify(struct user *u, struct gfarm_user_info *ui)
 		if (!user_is_null_str(u->ui.gsi_dn))
 			gfarm_hash_purge(user_dn_hashtab,
 			    &u->ui.gsi_dn, sizeof(u->ui.gsi_dn));
+
+		free(u->ui.gsi_dn);
+		u->ui.gsi_dn = ui->gsi_dn;
 	}
+	ui->gsi_dn = NULL;
 
 	free(u->ui.realname);
-	free(u->ui.homedir);
-	free(u->ui.gsi_dn);
 	u->ui.realname = ui->realname;
 	ui->realname = NULL;
+
+	free(u->ui.homedir);
 	u->ui.homedir = ui->homedir;
 	ui->homedir = NULL;
-	u->ui.gsi_dn = ui->gsi_dn;
-	ui->gsi_dn = NULL;
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
