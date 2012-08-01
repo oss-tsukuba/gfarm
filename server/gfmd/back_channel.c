@@ -404,7 +404,7 @@ gfs_client_replication_request_request(void *closure)
 	struct file_replicating *fr = arg->fr;
 	struct peer *peer = file_replicating_get_peer(fr);
 	gfarm_error_t e, e2;
-	unsigned int msl = 0, total_msl = 1; /* sleep msec. */
+	unsigned int msl = 1, total_msl = 0; /* sleep msec. */
 	struct timespec req, rem;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST request";
 
