@@ -1,0 +1,600 @@
+#! @RUBY@
+#
+# gfjournaldump - Analyze a journal file of Gfarm metadata server.
+#
+# Usage:
+#     gfjournaldump JOURNAL-FILE
+#
+# The script reads a journal file, analyzes it and output the result
+# to standard out.
+#
+
+require '@datadir@/gfarm/ruby/gfjournalfile.rb'
+require '@datadir@/gfarm/ruby/gfcrc32.rb'
+
+#
+# Print usage.
+#
+def print_usage()
+  warn("Usage: gfjournaldump <journal file path>")
+end
+
+#
+# A Journal record field.
+#
+class GFJournalRecordField
+  SNIP_DATA_FLAG  = 1
+  GROUP_DATA_FLAG = 2
+  
+  attr_reader :title, :datalen, :text, :data, :flag
+
+  def initialize()
+    @title   = ""
+    @text    = ""
+    @datalen = 0
+    @data    = ""
+    @flag    = 0
+  end
+
+  def initialize(title, text, datalen, data, flag = 0)
+    @title   = title
+    @text    = text
+    @datalen = datalen
+    @data    = data.clone
+    @flag    = flag
+  end
+end
+
+#
+# Format a Journal record and output the result.
+#
+class GFJournalRecordFormatter
+  include GFJournalFileConsts
+
+  FIELD_TITLE_WIDTH =  18
+  FIELD_STRING_WIDTH = 29
+  OCTETS_PER_LINE    = 8
+
+  attr_accessor :title, :datalen, :offset
+
+  #
+  # Constructor.
+  #
+  def initialize(title, offset)
+    @title = title
+    @datalen = 0
+    @offset = offset
+    @fields = []
+  end
+
+  #
+  # Add a decimal unsigned integer field.
+  #
+  def add_dec_uint_field(field_title, extra_text, data, flag = 0)
+    n = 0
+    data.unpack("C*").each {|c| n = (n << 8) + c}
+    text = sprintf("%u%s", n, extra_text)
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add a hexadecimal unsigned integer field.
+  #
+  def add_hex_uint_field(field_title, extra_text, data, flag = 0)
+    n = 0
+    data.unpack("C*").each {|c| n = (n << 8) + c}
+    text = sprintf("0x%x%s", n, extra_text)
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen = @datalen + data.length
+  end
+
+  #
+  # Add a text field.
+  #
+  def add_text_field(field_title, extra_text, data, flag = 0)
+    text = data.gsub(/[\x00-\x1f\x7f-\xff]/, "?")
+    text += extra_text
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add a sized text field.
+  #
+  def add_sized_text_field(field_title, extra_text, data, flag = 0)
+    length = data.unpack("N")[0]
+    text = data[4, length].gsub(/[\x00-\x1f\x7f-\xff]/, "?")
+    text += extra_text
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add a date-time field.
+  #
+  def add_date_time_field(field_title, extra_text, data, flag = 0)
+    (sec1, sec2, usec) = data.unpack("NNN")[0, 3]
+    time = Time.at((sec1 << 32) | sec2)
+    text = time.strftime("%Y-%m-%d %H:%M:%S") + sprintf(".%06d", usec)
+    text += extra_text
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add an octet stream field.
+  #
+  def add_octet_field(field_title, text, data, flag = 0)
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add an operation ID field.
+  #
+  def add_opeid_field(field_title, extra_text, data, flag = 0)
+    opeid = data.unpack("N")[0]
+    if OPEID_TITLES.key?(opeid)
+      text = OPEID_TITLES[opeid] + extra_text
+    else
+      text = "(unknown)" + extra_text
+    end
+    field = GFJournalRecordField.new(field_title, text, data.length, data,
+				     flag)
+    @fields.push(field)
+    @datalen += data.length
+  end
+
+  #
+  # Add an operation ID field.
+  #
+  def add_group_field(title, extra_text, data)
+    opeid = data.unpack("N")[0]
+    if OPEID_TITLES.key?(opeid)
+      text = OPEID_TITLES[opeid] + extra_text
+    else
+      text = "(unknown)" + extra_text
+    end
+    field = GFJournalRecordField.new(title, "", data.length, "", 
+				     GFJournalRecordField::GROUP_DATA_FLAG)
+    @fields.push(field)
+  end
+
+  #
+  # Split record data into fields.
+  #
+  def add_record_data_fields(titles, format, data)
+    add_group_field("DATA", "", data)
+
+    offset = 0
+    format_index = 0
+    ntimes = 1
+
+    titles.each do |title|
+      case format[format_index, 1]
+      when "s"
+	(1..ntimes).each do |i|
+	  n = data[offset, 4].unpack("N")[0]
+	  add_sized_text_field(" #{title}", "", data[offset, n + 4])
+	  offset += n + 4
+	end
+	ntimes = 1
+
+      when "i"
+	n = 1
+	(1..ntimes).each do |i|
+	  n = data[offset, 4].unpack("N")[0]
+	  add_dec_uint_field(" #{title}", "", data[offset, 4])
+	  offset += 4
+	end
+
+	if format[format_index + 1, 1] == "*"
+	  ntimes = n
+	  format_index += 1
+	else
+	  ntimes = 1
+	end
+
+      when "l"
+	(1..ntimes).each do |i|
+	  add_dec_uint_field(" #{title}", "", data[offset, 8])
+	  offset += 8
+	end
+	ntimes = 1
+
+      when "t"
+	(1..ntimes).each do |i|
+	  add_date_time_field(" #{title}", "", data[offset, 12])
+	  offset += 12
+	end
+	ntimes = 1
+      end
+      
+      format_index += 1
+    end
+  end
+
+  #
+  # Dump the title, datalen and added fields.
+  #
+  def dump()
+    printf("%s (offset=%d) [%d]:\n", @title, @offset, @datalen)
+
+    @fields.each do |field|
+      title = field.title + " [#{field.datalen}]"
+      text = field.text.clone
+      index = 0
+
+      while title.length > 0 || text.length > 0 || index < field.data.length
+	printf(" %-*s : %-*s : ",
+	       FIELD_TITLE_WIDTH, title.slice!(0, FIELD_TITLE_WIDTH),
+	       FIELD_STRING_WIDTH, text.slice!(0, FIELD_STRING_WIDTH))
+
+	case field.flag
+	when GFJournalRecordField::GROUP_DATA_FLAG
+	  print("\n")
+	  index = field.data.length
+	when GFJournalRecordField::SNIP_DATA_FLAG
+	  print("(snip)\n")
+	  index = field.data.length
+	else
+	  i = 0
+	  while index < field.data.length && i < OCTETS_PER_LINE
+	    printf("%02x ", field.data[index])
+	    index += 1
+	    i += 1
+	  end
+	  print("\n")
+	end
+      end
+    end
+  end
+end
+
+#
+# Read a Journal file header, analyze it and output the result.
+#
+class GFJournalHeaderAnalyzer
+  include GFJournalFileConsts
+
+  attr_accessor :file
+
+  #
+  # Constructor.
+  #
+  def initialize(file = $stdin)
+    @file = file
+  end
+
+  #
+  # Read a Journal file header, analyze it and output the result.
+  #
+  def analyze()
+    pos = @file.pos
+    begin
+      data = @file.read(HEADER_LENGTH)
+    rescue => e
+      raise "failed to read a journal header: #{e}"
+    end
+    if data.length != HEADER_LENGTH
+      raise "malformed journal header"
+    end
+
+    record = GFJournalRecordFormatter.new("HEADER", pos)
+    
+    magic_data = data.slice(HEADER_MAGIC_OFFSET, HEADER_MAGIC_LENGTH)
+    record.add_text_field("MAGIC", "", magic_data)
+
+    version_data = data.slice(HEADER_VERSION_OFFSET, HEADER_VERSION_LENGTH)
+    record.add_dec_uint_field("VERSION", "", version_data)
+
+    reserved_data = data.slice(HEADER_RESERVED_OFFSET, HEADER_RESERVED_LENGTH)
+    record.add_octet_field("RESERVED", "", reserved_data,
+			   GFJournalRecordField::SNIP_DATA_FLAG)
+    record.dump()
+    return 1
+  end
+end
+
+#
+# Read a Journal record, analyze it and output the result.
+#
+class GFJournalRecordAnalyzer
+  include GFJournalFileConsts
+  include GFCRC32
+
+  attr_accessor :file
+
+  #
+  # Constructor.
+  #
+  def initialize(file = $stdin)
+    @file = file
+  end
+
+  #
+  # Read a Journal record, analyze it and output the result.
+  #
+  def analyze()
+    junkdata = ""
+    saved_pos = 0
+    magic_found = false
+
+    while true
+      saved_pos = @file.pos
+      begin
+	data = @file.read(RECORD_DATA_OFFSET)
+      rescue => e
+	break
+      end
+      if data == nil || data.length != RECORD_DATA_OFFSET
+	break
+      end
+      magic_data = data.slice(RECORD_MAGIC_OFFSET, RECORD_MAGIC_LENGTH)
+      if magic_data == "GfMr"
+	magic_found = true
+	break
+      end
+      @file.pos = saved_pos += 1
+      junkdata += data[0, 1]
+    end
+
+    if junkdata.length > 0
+      record = GFJournalRecordFormatter.new("JUNK",
+					    saved_pos - junkdata.length)
+      record.add_octet_field("JUNK DATA", "", junkdata)
+      record.dump()
+      print("\n") if magic_found
+    end
+
+    return false if !magic_found
+
+    record = GFJournalRecordFormatter.new("RECORD", saved_pos)
+    record.add_text_field("MAGIC", "", magic_data)
+
+    seqnum_data = data.slice(RECORD_SEQNUM_OFFSET, RECORD_SEQNUM_LENGTH)
+    record.add_dec_uint_field("SEQNUM", "", seqnum_data)
+
+    opeid_data = data.slice(RECORD_OPEID_OFFSET, RECORD_OPEID_LENGTH)
+    record.add_opeid_field("OPEID", "", opeid_data)
+
+    datalen_data = data.slice(RECORD_DATALEN_OFFSET, RECORD_DATALEN_LENGTH)
+    record.add_dec_uint_field("DATALEN", "", datalen_data)
+    datalen = datalen_data.unpack("N")[0]
+
+    begin
+      data = @file.read(datalen)
+    rescue => e
+      raise "failed to read a journal record: #{e}"
+    end
+    if data.length != datalen
+      raise "malformed journal record"
+    end
+
+    opeid = opeid_data.unpack("N")[0]
+    case opeid
+    when OPEID_HOST_ADD
+      record.add_record_data_fields(["HOSTNAME", "PORT", "ARCHITECTURE",
+				     "NCPU", "FLAGS", "NHOSTALIASES"],
+				     "sisiii", data)
+    when OPEID_HOST_MODIFY
+      record.add_record_data_fields(["HOSTNAME", "PORT", "ARCHITECTURE",
+				     "NCPU", "FLAGS", "NHOSTALIASES",
+				     "MODFLAGS", "ADDCOUNT", "ADDALIAS",
+				     "DELCOUNT", "DELALIAS"],
+				     "sisiiiii*si*s", data)
+
+    when OPEID_HOST_REMOVE
+      record.add_record_data_fields(["HOSTNAME"], "s", data)
+
+    when OPEID_USER_ADD
+      record.add_record_data_fields(["USERNAME", "HOMEDIR", "REALNAME",
+				     "GSI_DN"],
+				     "ssss", data)
+
+    when OPEID_USER_MODIFY
+      record.add_record_data_fields(["USERNAME", "HOMEDIR", "REALNAME",
+				     "GSI_DN", "MODFLAGS"],
+				     "ssssi", data)
+
+    when OPEID_USER_REMOVE
+      record.add_record_data_fields(["USERNAME"], "s", data)
+
+    when OPEID_GROUP_ADD
+      record.add_record_data_fields(["GROUPNAME", "NUSERS", "USERNAME"],
+				     "si*s", data)
+
+    when OPEID_GROUP_MODIFY
+      record.add_record_data_fields(["GROUPNAME", "NUSERS", "USERNAME",
+				     "MODFLAGS", "ADDCOUNT", "ADDUSER",
+				     "DELCOUNT", "DELUSER"],
+				     "si*sii*si*s", data)
+
+    when OPEID_GROUP_REMOVE
+      record.add_record_data_fields(["GROUPNAME"], "s", data)
+
+    when OPEID_INODE_ADD,
+	 OPEID_INODE_MODIFY
+      record.add_record_data_fields(["INO", "GEN", "NLINK", "SIZE", "MODE",
+				     "USER", "GROUP", "ATIME", "MTIME",
+				     "CTIME"],
+				     "llllissttt", data)
+	
+    when OPEID_INODE_GEN_MODIFY
+      record.add_record_data_fields(["INO", "GEN"], "ll", data)
+
+    when OPEID_INODE_NLINK_MODIFY
+      record.add_record_data_fields(["INO", "NLINK"], "ll", data)
+
+    when OPEID_INODE_SIZE_MODIFY
+      record.add_record_data_fields(["INO", "SIZE"], "ll", data)
+
+    when OPEID_INODE_MODE_MODIFY
+      record.add_record_data_fields(["INO", "MODE"], "li", data)
+
+    when OPEID_INODE_USER_MODIFY
+      record.add_record_data_fields(["INO", "USER"], "ls", data)
+
+    when OPEID_INODE_GROUP_MODIFY
+      record.add_record_data_fields(["INO", "GROUP"], "ls", data)
+
+    when OPEID_INODE_ATIME_MODIFY
+      record.add_record_data_fields(["INO", "ATIME"], "lt", data)
+
+    when OPEID_INODE_MTIME_MODIFY
+      record.add_record_data_fields(["INO", "MTIME"], "lt", data)
+
+    when OPEID_INODE_CTIME_MODIFY
+      record.add_record_data_fields(["INO", "CTIME"], "lt", data)
+
+    when OPEID_INODE_CKSUM_ADD,
+	 OPEID_INODE_CKSUM_MODIFY
+      record.add_record_data_fields(["INO", "TYPE", "CKSUM"],
+				     "lss", data)
+
+    when OPEID_INODE_CKSUM_REMOVE
+      record.add_record_data_fields(["INO"], "l", data)
+
+    when OPEID_FILECOPY_ADD,
+	 OPEID_FILECOPY_REMOVE
+      record.add_record_data_fields(["INO", "HOSTNAME"], "ls", data)
+
+    when OPEID_DEADFILECOPY_ADD,
+	 OPEID_DEADFILECOPY_REMOVE
+      record.add_record_data_fields(["INO", "GEN", "HOSTNAME"], "lls", data)
+
+    when OPEID_DIRENTRY_ADD,
+	 OPEID_DIRENTRY_REMOVE
+      record.add_record_data_fields(["INO", "NAME", "INO"], "lsl", data)
+
+    when OPEID_SYMLINK_ADD
+      record.add_record_data_fields(["INO", "PATH"], "ls", data)
+      
+    when OPEID_SYMLINK_REMOVE
+      record.add_record_data_fields(["INO"], "l", data)
+
+    when OPEID_XATTR_ADD,
+	 OPEID_XATTR_MODIFY,
+	 OPEID_XATTR_REMOVE,
+	 OPEID_XATTR_REMOVEALL
+      record.add_record_data_fields(["XMLMODE", "INUM", "ATTRNAME",
+				     "SIZE", "VALUE"],
+				     "ilss", data)
+
+    when OPEID_QUOTA_ADD,
+         OPEID_QUOTA_MODIFY
+      record.add_record_data_fields(["IS_GROUP", "NAME", "ON_DB",
+				     "GRACE_PERIOD", "SPACE", "SPACE_EXCEED",
+				     "SPACE_SOFT", "SPACE_HARD", "NUM",
+				     "NUM_EXCEED", "NUM_SOFT", "NUM_HARD",
+				     "PHY_SPACE", "PHY_SPACE_EXCEED",
+				     "PHY_SPACE_SOFT", "PHY_SPACE_HARD",
+				     "PHY_NUM", "PHY_NUM_EXCEED",
+				     "PHY_NUM_SOFT", "PHY_HARD"],
+				    "isilllllllllllllllll", data)
+
+    when OPEID_QUOTA_REMOVE
+      record.add_record_data_fields(["GROUP", "NAME"], "is", data)
+
+    when OPEID_MDHOST_ADD,
+         OPEID_MDHOST_MODIFY
+      record.add_record_data_fields(["NAME", "PORT", "CLUSTERNAME", "FLAGS"],
+				    "sisi", data)
+
+    when OPEID_MDHOST_REMOVE
+      record.add_record_data_fields(["NAME"], "s", data)
+
+    when OPEID_FSNGROUP_MODIFY
+      record.add_record_data_fields(["HOSTNAME", "FSNGROUPNAME"], "ss", data)
+
+    when OPEID_NOP
+      record.add_record_data_fields(["LENGTH"], "i", data)
+      record.add_octet_field(" PADDING", "", data[4..-1],
+			     GFJournalRecordField::SNIP_DATA_FLAG)
+
+    else
+      record.add_octet_field("DATA", "", data) if datalen > 0
+    end
+
+    begin
+      crc32_data = @file.read(RECORD_CRC32_LENGTH)
+    rescue => e
+      raise "failed to read a journal record: #{e}"
+    end
+    if crc32_data.length != RECORD_CRC32_LENGTH
+      raise "malformed journal record"
+    end
+
+    crc32 = calculate_crc32(magic_data)
+    crc32 = calculate_crc32(seqnum_data, crc32)
+    crc32 = calculate_crc32(opeid_data, crc32)
+    crc32 = calculate_crc32(datalen_data, crc32)
+    crc32 = calculate_crc32(data, crc32)
+    if crc32 != crc32_data.unpack("N")[0]
+      record.add_hex_uint_field("CRC32", 
+				sprintf(" *BAD* (0x%08x)", crc32), crc32_data)
+    else
+      record.add_hex_uint_field("CRC32", "", crc32_data)
+    end
+
+    record.dump()
+    return 1
+  end
+end
+
+#
+# Read a Journal file, analyze it and output the result.
+#
+class GFJournalFileAnalyzer
+  attr_accessor :file
+
+  #
+  # Constructor.
+  #
+  def initialize(file = $stdin)
+    @file = file
+  end
+
+  #
+  # Read a Journal file, analyze it and output the result.
+  #
+  def analyze()
+    GFJournalHeaderAnalyzer.new(@file).analyze()
+    print("\n")
+    while GFJournalRecordAnalyzer.new(@file).analyze()
+      print("\n")
+    end
+    GFJournalRecordFormatter.new("EOF", @file.pos).dump()
+  end
+end
+
+#
+# Main.
+#
+if (ARGV.length != 1)
+  print_usage
+  exit(1)
+end
+
+$journal_file_name = ARGV[0]
+begin
+  $journal_file = open($journal_file_name, "r")
+rescue => e
+  warn "failed to open the journal file: #{e}"
+  exit(1)
+end
+
+GFJournalFileAnalyzer.new($journal_file).analyze()
