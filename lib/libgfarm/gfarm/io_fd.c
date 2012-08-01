@@ -13,13 +13,17 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
+#include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+#include <gfarm/gflog.h>
 #include <gfarm/gfs.h> /* for definition of gfarm_off_t */
 
 #include "gfutil.h" /* gfarm_send_no_sigpipe() */
+#include "gfnetdb.h"
 
 #include "context.h"
 #include "iobuffer.h"
@@ -35,7 +39,10 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
-	int avail, timeout = gfarm_ctxp->network_receive_timeout;
+	int save_errno, avail, timeout = gfarm_ctxp->network_receive_timeout;
+	char hostbuf[NI_MAXHOST], *hostaddr_prefix, *hostaddr;
+	struct sockaddr_in sin;
+	socklen_t slen = sizeof(sin);
 
 	for (;;) {
 #ifdef HAVE_POLL
@@ -57,6 +64,26 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 		if (avail == 0) {
 			gfarm_iobuffer_set_error(b,
 			    GFARM_ERR_OPERATION_TIMED_OUT);
+			if (getpeername(fd, (struct sockaddr *)&sin, &slen)
+			    == -1) {
+				hostaddr = strerror(errno);
+				hostaddr_prefix = "cannot get peer address: ";
+			} else if ((save_errno = gfarm_getnameinfo(
+			    (struct sockaddr *)&sin, slen,
+			    hostbuf, sizeof(hostbuf), NULL, 0,
+			    NI_NUMERICHOST | NI_NUMERICSERV) != 0)) {
+				hostaddr = strerror(save_errno);
+				hostaddr_prefix =
+				    "cannot convert peer address to string: ";
+			} else {
+				hostaddr = hostbuf;
+				hostaddr_prefix= "";
+			}
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "closing network connection due to "
+			    "no response within %d seconds "
+			    "(network_receive_timeout) from %s%s",
+			    timeout, hostaddr_prefix, hostaddr);
 			return (-1);
 		} else if (avail == -1) {
 			if (errno == EINTR)
