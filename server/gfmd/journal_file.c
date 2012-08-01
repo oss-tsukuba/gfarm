@@ -878,7 +878,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	gfarm_uint64_t first_seqnum = 0, last_seqnum = 0;
 	gfarm_uint64_t first_end_seqnum = 0, last_end_seqnum = 0;
 	gfarm_uint64_t last_begin_seqnum = 0;
-	int min_seqnum_found = 0;
+	int incomplete_transaction = 0;
 
 	/*
 	 * Read all records in the journal file successively and collect
@@ -894,6 +894,15 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 			return (e);
 		if (pos == -1)
 			break;
+
+		/*
+		 * 'seqnum' decreases when the function reads a record of
+		 * a lap behind.  In case it meets a record of a lap behind,
+		 * it must ignore records until it finds the next
+		 * 'GFM_JOURNAL_BEGIN' record.
+		 */
+		if (seqnum <= last_seqnum)
+			incomplete_transaction = 1;
 		if (first_seqnum == 0)
 			first_seqnum = seqnum;
 		last_seqnum = seqnum;
@@ -904,7 +913,8 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 			begin_seqnum = seqnum;
 			last_begin_seqnum = seqnum;
 			last_begin_pos = pos;
-		} else if (ope == GFM_JOURNAL_END) {
+			incomplete_transaction = 0;
+		} else if (ope == GFM_JOURNAL_END && !incomplete_transaction) {
 			if (first_end_seqnum == 0) {
 				first_end_seqnum = seqnum;
 				first_end_pos = pos;
@@ -920,7 +930,6 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 			    min_seqnum > begin_seqnum) {
 				min_seqnum = begin_seqnum;
 				min_seqnum_pos = begin_pos;
-				min_seqnum_found = 1;
 			}
 		}
 		*tailp = next_pos;
@@ -933,23 +942,20 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * file; GFM_JOURNAL_BEGIN and its corresponding GFM_JOURNAL_END
 	 * records are located at the tail and beginning of the file
 	 * respectively.
-	 *
-	 * We have to update 'min_seqnum' if a record with 'min_seqnum' is
-	 * written in such a transaction,
 	 */
 	if (first_seqnum == last_seqnum + 1 && /* circulated */
 	    db_seqnum < last_begin_seqnum && /* newer than current seqnum */
 	    last_begin_seqnum < first_end_seqnum && /* valid BEGIN - END */
 	    last_begin_seqnum < min_seqnum && /* is min BEGIN seqnum */
 	    first_end_pos < first_begin_pos && /* END in head */
-	    last_end_pos < last_begin_pos /* BEGIN in tail */ ) {
+	    last_end_pos < last_begin_pos && /* BEGIN in tail */
+	    !incomplete_transaction /* the transaction is valid */) {
 		min_seqnum = last_begin_seqnum;
 		min_seqnum_pos = last_begin_pos;
-		min_seqnum_found = 1;
 	}
 
 	/*
-	 * Check 'max_seqnum', 'min_seqnum' and 'min_seqnum_found'.
+	 * Check 'max_seqnum' and 'min_seqnum'.
 	 *
 	 * - 'wfd < 0' means that this function is called for creating
 	 *    a reader which is used for sending records to a slave gfmd.
@@ -957,8 +963,8 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * - 'db_seqnum > 0' means that gfmd is about to start.
 	 *   In case of gfjournal command, 'db_seqnum' is always 0.
 	 *
-	 * - '!min_seqnum_found' means that there is no record with 
-	 *   the seqnum greater than 'db_seqnum'.
+	 * - 'min_seqnum == GFARM_UINT64_MAX' means that there is no record
+	 *   with the seqnum greater than 'db_seqnum'.
 	 *   If 'db_seqnum == max_seqnum', it means that all records in
 	 *   the journal file has been written in database.  Otherwise,
 	 *   database, the journal file or both are corrupted.
@@ -971,7 +977,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 *   file or both are corrupted.
 	 */
 	if (wfd < 0 && db_seqnum > 0 && db_seqnum != max_seqnum &&
-	    (!min_seqnum_found || db_seqnum + 1 < min_seqnum ||
+	    (min_seqnum == GFARM_UINT64_MAX || db_seqnum + 1 < min_seqnum ||
 	    max_seqnum < db_seqnum)) {
 		e = GFARM_ERR_EXPIRED;
 		gflog_debug(GFARM_MSG_1003421,
@@ -986,7 +992,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	/*
 	 * Determine the read/write positions.
 	 */
-	if (!min_seqnum_found) {
+	if (min_seqnum == GFARM_UINT64_MAX) {
 		/*
 		 * In the journal file, there is no seqnum greater than
 		 * 'db_seqnum'.  It means that all data in the file have
