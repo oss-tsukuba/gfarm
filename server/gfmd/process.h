@@ -102,7 +102,8 @@ gfarm_error_t process_close_file_read(struct process *, struct peer *, int,
 	struct gfarm_timespec *);
 gfarm_error_t process_close_file_write(struct process *, struct peer *, int,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
-	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *, char **);
+	gfarm_int32_t *, gfarm_ino_t *, gfarm_int64_t *, gfarm_int64_t *,
+	char **);
 
 gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 	const char *, size_t, const char *,
