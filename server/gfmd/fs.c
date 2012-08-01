@@ -3514,7 +3514,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * because network communication error may happen later.
 		 */
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: inode %lld generation %lld -> %lld: %s",
+		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
 	}
@@ -3636,12 +3636,12 @@ gfm_server_close_write_v2_4(
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_CLOSE_WRITE_V2_4";
 
-	e_ret = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
+	e_rpc = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
 	    GFM_PROTO_CLOSE_WRITE_V2_4, "llili",
 	    &size,
 	    &atime.tv_sec, &atime.tv_nsec, &mtime.tv_sec, &mtime.tv_nsec);
-	if (e_ret != GFARM_ERR_NO_ERROR)
-		return (e_ret);
+	if (e_rpc != GFARM_ERR_NO_ERROR)
+		return (e_rpc);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 	if (relay == NULL) {
@@ -3675,7 +3675,7 @@ gfm_server_close_write_v2_4(
 		 * because network communication error may happen later.
 		 */
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: inode %lld generation %lld -> %lld: %s",
+		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
 	}
