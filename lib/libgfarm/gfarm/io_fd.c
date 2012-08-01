@@ -16,6 +16,7 @@
 #include <string.h>
 #include <errno.h>
 #include <netdb.h> /* for NI_MAXHOST, NI_NUMERICHOST, etc */
+#include <netinet/in.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
