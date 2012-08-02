@@ -54,13 +54,13 @@ usage() {
 }
 
 # most $BACKEND_TYPE calls the followings
-# from display_backend_params_$BACKEND_TYPE, but some may not.
-display_backend_data_dir_param()
+# from display_plain_params_backend_$BACKEND_TYPE, but some may not.
+display_plain_param_backend_data_dir()
 {
     echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
 }
 
-display_backend_log_dir_param()
+display_plain_param_backend_log_dir()
 {
     return 0
 }
@@ -70,9 +70,9 @@ display_params()
     echo     "prefix [--prefix]: $CONFIG_PREFIX"
     echo     "metadata backend    [-b]: $BACKEND_TYPE"
 
-    display_backend_params_$BACKEND_TYPE
-    display_backend_port_params_$BACKEND_TYPE
-    display_backend_optional_params_$BACKEND_TYPE
+    display_plain_params_backend_$BACKEND_TYPE
+    display_plain_params_backend_port_$BACKEND_TYPE
+    display_plain_params_backend_optional_$BACKEND_TYPE
     exit 0
 }
 
