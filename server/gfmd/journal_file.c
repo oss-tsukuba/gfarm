@@ -876,7 +876,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	gfarm_uint64_t seqnum = 0;
 	gfarm_uint64_t begin_seqnum = 0;
 	gfarm_uint64_t first_seqnum = 0, last_seqnum = 0;
-	gfarm_uint64_t first_end_seqnum = 0, last_end_seqnum = 0;
+	gfarm_uint64_t first_end_seqnum = 0;
 	gfarm_uint64_t last_begin_seqnum = 0;
 	int incomplete_transaction = 0;
 
@@ -919,7 +919,6 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 				first_end_seqnum = seqnum;
 				first_end_pos = pos;
 			}
-			last_end_seqnum = seqnum;
 			last_end_pos = pos;
 			if (max_seqnum < seqnum &&
 			    db_seqnum <= seqnum) {
