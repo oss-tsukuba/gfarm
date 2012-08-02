@@ -892,8 +892,12 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 static int
 user_strcmp(const char *s1, const char *s2)
 {
-	if (user_is_null_str(s1) || user_is_null_str(s2))
+	if (s1 == NULL && s2 == NULL)
 		return (0);
+	if (s1 == NULL)
+		return (-1);
+	if (s2 == NULL)
+		return (1);
 	return (strcmp(s1, s2));
 }
 
