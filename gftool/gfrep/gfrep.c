@@ -183,6 +183,11 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	char **copy;
 	gfarm_error_t e;
 
+	if (!GFARM_S_ISREG(st->st_mode)) {
+		if (opt_verbose)
+			printf("%s: not a regular file, skipped\n", file);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	e = gfs_replica_list_by_name(file, &ncopy, &copy);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
