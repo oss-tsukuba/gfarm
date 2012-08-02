@@ -541,15 +541,11 @@ gfj_server_info(struct peer *peer, int from_client, int skip)
 gfarm_error_t
 gfj_server_hostinfo(struct peer *peer, int from_client, int skip)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	static const char diag[] = "GFJ_PROTO_HOSTINFO";
 
-	if (!from_client)
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-
 	/* XXX - NOT IMPLEMENTED */
+
 	gflog_fatal(GFARM_MSG_1000296, "%s: not implemented", diag);
 
 	return (gfj_server_put_reply(peer, diag, GFARM_ERR_NO_ERROR, ""));
 }
-

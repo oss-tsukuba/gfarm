@@ -278,15 +278,15 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 	gfarm_uint8_t c;
 	gfarm_int16_t h;
 	gfarm_int32_t i, n;
-	gfarm_int64_t o;
 	gfarm_uint32_t lv[2];
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
-	double d;
+
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
 #else
+	double d;
 #	define nd d
 #endif
 	const char *s;
@@ -310,7 +310,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			 * note that because actual type of gfarm_int64_t
 			 * may be diffenent (int64_t or double), we use lv here
 			 */
-			o = va_arg(*app, gfarm_int64_t);
+			(void)va_arg(*app, gfarm_int64_t);
 			size += sizeof(lv);
 			continue;
 		case 's':
@@ -320,7 +320,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			size += n;
 			continue;
 		case 'S':
-			s = va_arg(*app, const char *);
+			(void)va_arg(*app, const char *);
 			n = va_arg(*app, size_t);
 			size += sizeof(i);
 			size += n;
@@ -332,17 +332,17 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			 * pass this as is via network.
 			 */
 			n = va_arg(*app, size_t);
-			s = va_arg(*app, const char *);
+			(void)va_arg(*app, const char *);
 			size += sizeof(i);
 			size += n;
 			continue;
 		case 'r':
 			n = va_arg(*app, size_t);
-			s = va_arg(*app, const char *);
+			(void)va_arg(*app, const char *);
 			size += n;
 			continue;
 		case 'f':
-			d = va_arg(*app, double);
+			(void)va_arg(*app, double);
 			size += sizeof(nd);
 			continue;
 

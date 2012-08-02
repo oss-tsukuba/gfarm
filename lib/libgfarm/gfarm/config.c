@@ -1018,7 +1018,7 @@ gfarm_sig_debug(int sig)
 	static volatile sig_atomic_t already_called = 0;
 	pid_t pid;
 	const char *message;
-	int status, ret;
+	int status;
 	char **argv, **argvp;
 
 	switch (sig) {
@@ -1045,7 +1045,7 @@ gfarm_sig_debug(int sig)
 		break;
 	}
 	/* ignore return value, since there is no other way here */
-	ret = write(2, message, strlen(message));
+	(void)write(2, message, strlen(message));
 
 	if (already_called)
 		return;
@@ -1067,7 +1067,8 @@ gfarm_sig_debug(int sig)
 	if (pid == -1) {
 		char msg[] = "fork failed\n";
 
-		ret = write(2, msg, strlen(msg));
+		/* ignore return value */
+		(void)write(2, msg, strlen(msg));
 		_exit(1);
 	} else if (pid == 0) {
 		execvp(argv[0], argv);

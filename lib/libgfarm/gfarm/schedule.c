@@ -1278,8 +1278,6 @@ search_idle_in_networks(struct search_idle_state *s,
 {
 	int i;
 	struct search_idle_host_state *h;
-	gfarm_error_t e;
-	int rv;
 
 	/* see cached hosts with using `scheduled` field */
 	for (i = 0; i < nnets; i++) {
@@ -1300,13 +1298,14 @@ search_idle_in_networks(struct search_idle_state *s,
 		for (h = nets[i]->candidate_list;
 		    h != NULL; h = h->next_in_the_net) {
 			/* XXX report this error? */
-			e = search_idle_try_host(s, h, 1);
+			(void)search_idle_try_host(s, h, 1);
 			if (search_idle_is_satisfied(s))
 				goto end_of_trial;
 		}
 	}
 end_of_trial:
-	rv = gfarm_eventqueue_loop(s->q, NULL); /* XXX - report rv? */
+	/* ignore return value */
+	(void)gfarm_eventqueue_loop(s->q, NULL); /* XXX - report rv? */
 	if (search_idle_is_satisfied(s))
 		return;
 
@@ -1327,8 +1326,6 @@ end_of_trial:
 static void
 search_idle_examine_rtt_of_all_networks(struct search_idle_state *s)
 {
-	gfarm_error_t e;
-	int rv;
 	struct search_idle_network *net;
 	struct search_idle_host_state *h;
 	int rtt_unknown, todo, all_tried;
@@ -1356,7 +1353,7 @@ search_idle_examine_rtt_of_all_networks(struct search_idle_state *s)
 					continue;
 				h = net->cursor;
 				/* XXX report this error? */
-				e = search_idle_try_host(s, h, 0);
+				(void)search_idle_try_host(s, h, 0);
 				net->cursor = h->next_in_the_net;
 				if (net->ongoing < PER_NET_CONCURRENCY &&
 				    net->cursor != NULL)
@@ -1366,9 +1363,9 @@ search_idle_examine_rtt_of_all_networks(struct search_idle_state *s)
 		if (!rtt_unknown || all_tried)
 			break;
 
-		rv = gfarm_eventqueue_turn(s->q, NULL); /* XXX - report rv? */
+		(void)gfarm_eventqueue_turn(s->q, NULL); /* XXX - report rv? */
 	}
-	rv = gfarm_eventqueue_loop(s->q, NULL); /* XXX - report rv? */
+	(void)gfarm_eventqueue_loop(s->q, NULL); /* XXX - report rv? */
 }
 
 /*

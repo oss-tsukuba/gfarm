@@ -310,7 +310,6 @@ peer_replicated(struct peer *peer,
 static void
 peer_replicating_free_all(struct peer *peer)
 {
-	gfarm_error_t e;
 	struct file_replicating *fr;
 	static const char diag[] = "peer_replicating_free_all";
 
@@ -319,8 +318,9 @@ peer_replicating_free_all(struct peer *peer)
 	while ((fr = peer->replicating_inodes.next_inode) !=
 	    &peer->replicating_inodes) {
 		gfarm_mutex_unlock(&peer->replication_mutex, diag, "settle");
-		e = inode_replicated(fr, GFARM_ERR_NO_ERROR,
+		(void)inode_replicated(fr, GFARM_ERR_NO_ERROR,
 		     GFARM_ERR_CONNECTION_ABORTED, -1);
+		/* abandon error */
 		/* assert(e == GFARM_ERR_INVALID_FILE_REPLICA); */
 		gfarm_mutex_lock(&peer->replication_mutex, diag, "settle");
 	}
