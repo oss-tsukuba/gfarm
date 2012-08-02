@@ -128,6 +128,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: cannot create ancestor directory: %s",
 		    newpath, strerror(save_errno));
+		free(newpath);
 		return (gfarm_errno_to_error(save_errno));
 	}
 	if (rename(file, newpath)) {
@@ -135,6 +136,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: cannot renamed to %s: %s", file, newpath,
 		    strerror(save_errno));
+		free(newpath);
 		return (gfarm_errno_to_error(save_errno));
 	}
 	e = gfm_client_replica_add(inum_new, gen_new,
@@ -143,6 +145,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: replica_add failed: %s", newpath,
 		    gfarm_error_string(e));
+	free(newpath);
 	return (e);
 }
 
