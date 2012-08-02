@@ -511,49 +511,43 @@ recv_sized(struct gfp_xdr *conn, int just, int do_timeout, void *p, size_t sz,
 static void
 gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 {
-	gfarm_int8_t *cp;
-	gfarm_int16_t *hp;
-	gfarm_int32_t *ip;
-	gfarm_int64_t *op;
-	double *dp;
-	char **sp, *s;
-	size_t *szp, sz;
+	char **sp;
 
 	for (; --format_parsed >= 0 && *format; format++) {
 		switch (*format) {
 		case 'c':
-			cp = va_arg(*app, gfarm_int8_t *);
+			(void)va_arg(*app, gfarm_int8_t *);
 			continue;
 		case 'h':
-			hp = va_arg(*app, gfarm_int16_t *);
+			(void)va_arg(*app, gfarm_int16_t *);
 			continue;
 		case 'i':
-			ip = va_arg(*app, gfarm_int32_t *);
+			(void)va_arg(*app, gfarm_int32_t *);
 			continue;
 		case 'l':
-			op = va_arg(*app, gfarm_int64_t *);
+			(void)va_arg(*app, gfarm_int64_t *);
 			continue;
 		case 'r':
-			sz = va_arg(*app, size_t);
-			szp = va_arg(*app, size_t *);
-			s = va_arg(*app, char *);
+			(void)va_arg(*app, size_t);
+			(void)va_arg(*app, size_t *);
+			(void)va_arg(*app, char *);
 			continue;
 		case 's':
 			sp = va_arg(*app, char **);
 			free(*sp);
 			continue;
 		case 'b':
-			sz = va_arg(*app, size_t);
-			szp = va_arg(*app, size_t *);
-			s = va_arg(*app, char *);
+			(void)va_arg(*app, size_t);
+			(void)va_arg(*app, size_t *);
+			(void)va_arg(*app, char *);
 			continue;
 		case 'B':
-			szp = va_arg(*app, size_t *);
+			(void)va_arg(*app, size_t *);
 			sp = va_arg(*app, char **);
 			free(*sp);
 			continue;
 		case 'f':
-			dp = va_arg(*app, double *);
+			(void)va_arg(*app, double *);
 			continue;
 		case '/':
 			break;
