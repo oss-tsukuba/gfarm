@@ -771,7 +771,8 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			to_be_excluded = copy;
 			++nreplicas;
 		} else {
-			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
+			if (FILE_COPY_IS_VALID(copy) &&
+			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 				e = remove_replica_entity(inode, old_gen,
 				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
 				/* abandon `e' */
@@ -792,12 +793,13 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		if (!FILE_COPY_IS_VALID(copy) ||
 		    !host_is_up(copy->host) ||
 		    !host_supports_async_protocols(copy->host)) {
-			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
+			if (FILE_COPY_IS_VALID(copy) &&
+			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 				e = remove_replica_entity(inode, old_gen,
 				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
 				/* abandon `e' */
 			}
-		} else {
+		} else if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
 			assert(FILE_COPY_IS_VALID(copy));
 			e = remove_replica_entity(inode, old_gen, copy->host,
 			    FILE_COPY_IS_VALID(copy), &deferred_cleanup);
@@ -838,7 +840,8 @@ inode_remove(struct inode *inode)
 		struct file_copy *copy, *cn;
 
 		for (copy = inode->u.c.s.f.copies; copy != NULL; copy = cn) {
-			if (!FILE_COPY_IS_BEING_REMOVED(copy)) {
+			if (FILE_COPY_IS_VALID(copy) &&
+			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
 				(void)remove_replica_entity(inode, inode->i_gen,
 				    copy->host, FILE_COPY_IS_VALID(copy), NULL);
 				/* abandon error */
@@ -3717,6 +3720,10 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    "being removed" : "invalid");
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 			} else {
+				/*
+				 * XXX FIXME invalid_is_removable case is wrong
+				 * see PROBLEM-4 of SourceForge #407
+				 */
 				e = remove_replica_entity(inode, gen,
 				    copy->host, FILE_COPY_IS_VALID(copy),
 				    deferred_cleanupp);
