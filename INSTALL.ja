@@ -111,8 +111,8 @@ postgresql-devel
 libssl-dev
 libldap2-dev
 libpq-dev
-libglobus-gssapi-gsi-dev	(--with-globus オプションに必要)
-postgresql, postgresql-client	(config-gfarm の実行に必要)
-libfuse-dev			(gfarm2fs の構築に必要)
+libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
+postgresql, postgresql-client		(config-gfarm の実行に必要)
+libfuse-dev				(gfarm2fs の構築に必要)
 
 $Id$
