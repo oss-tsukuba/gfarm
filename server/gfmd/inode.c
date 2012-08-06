@@ -2965,7 +2965,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 	Dir dir;
 	DirEntry entry;
 	DirCursor cursor;
-	char *s, *names[GFS_MAX_DIR_DEPTH];
+	char *s, *name, *names[GFS_MAX_DIR_DEPTH];
 	int i, namelen, depth = 0;
 	size_t totallen = 0;
 	int overflow = 0;
@@ -3005,7 +3005,7 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 			 */
 			assert(ok);
 		}
-		(void)dir_entry_get_name(entry, &namelen);
+		name = dir_entry_get_name(entry, &namelen);
 		GFARM_MALLOC_ARRAY(s, namelen + 1);
 		if (depth >= GFS_MAX_DIR_DEPTH || s == NULL) {
 			for (i = 0; i < depth; i++)
@@ -3015,6 +3015,8 @@ inode_getdirpath(struct inode *inode, struct process *process, char **namep)
 				"too deep");
 			return (GFARM_ERR_NO_MEMORY); /* directory too deep */
 		}
+		memcpy(s, name, namelen);
+		s[namelen] = '\0';
 		names[depth++] = s;
 		totallen = gfarm_size_add(&overflow, totallen, namelen);
 	}
