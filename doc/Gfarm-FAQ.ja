@@ -158,6 +158,22 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 	    ファイル /etc/system に「set rlim_fd_max = 131072」といった
 	    設定を行ない，リブートします．
 	
+	なお，Linux 上で，パラメータ net.netfilter.nf_conntrack_max の
+	設定状況にも注意してください．
+	このパラメータは通常は存在しませんが，iptables 等の機能を利用して
+	いる場合は，起動時に /var/log/messages 等に以下のようなメッセージが
+	記録され，パラメータが動的に追加されます．
+		kernel: nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
+	また，この設定にネットワーク通信が制限されている状況では，以下の
+	ようなメッセージが記録されます．
+		kernel: nf_conntrack: table full, dropping packet.
+	このような状況下では，/etc/sysctl.conf に例えば以下のような設定を
+	追加するなどして，制限を緩和する必要があります．
+		net.netfilter.nf_conntrack_max=131072
+	なお，このように負荷のかかる状況で，メタデータサーバ自身で
+	iptables を動かすことは推奨できません．別途ファイアウォールを
+	用意することをお勧めします．
+	
 	参考:
 
 	計算式の各項の意味は，以下の通りです．
