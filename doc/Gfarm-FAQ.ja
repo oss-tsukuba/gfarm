@@ -158,7 +158,7 @@ Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
 	    ファイル /etc/system に「set rlim_fd_max = 131072」といった
 	    設定を行ない，リブートします．
 	
-	なお，Linux 上で，パラメータ net.netfilter.nf_conntrack_max の
+	なお，Linux 上では，パラメータ net.netfilter.nf_conntrack_max の
 	設定状況にも注意してください．
 	このパラメータは通常は存在しませんが，iptables 等の機能を利用して
 	いる場合は，起動時に /var/log/messages 等に以下のようなメッセージが
