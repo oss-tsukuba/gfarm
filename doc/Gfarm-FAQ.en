@@ -162,6 +162,23 @@ Table of Contents:
 	    Add a setting like "set rlim_fd_max = 131072" to a file
 	    /etc/system, and then reboot.
 
+	On Linux, it's better to check how a parameter
+	net.netfilter.nf_conntrack_max is configured.
+	This parameter usually doesn't exist, but is dynamically added
+	when features like iptables are used.  In that case, a message
+	like the following is logged at boot time in a log file like
+	/var/log/messages:
+		kernel: nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
+	Under condition that this parameter limits network traffic,
+	messages like follows are logged:
+		kernel: nf_conntrack: table full, dropping packet.
+	In such case, this limit should be relaxed by the following setting
+	in /etc/sysctl.conf, for example:
+		net.netfilter.nf_conntrack_max=131072
+	Note that it's not recommended to use iptables on a metadata server
+	under such load.  Rather, it's recommended to use firewall on another
+	hardware.
+
 	NOTE:
 
 	Each term of the above formula means:
