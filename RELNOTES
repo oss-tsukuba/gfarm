@@ -1,3 +1,51 @@
+Release note for Gfarm 2.5.6
+============================
+
+[2012.8.10]
+
+New feature
+* gfsd - -ccc option to check consistency of metadata.  When a
+referenced physical file does not exist, the corresponding metadata is
+deleted.  Unreferenced physical files are moved to lost+found/.
+
+New command
+* gfjournaladmin - manipulates a journal file.
+* grid-proxy-agent - a utility to re-new the proxy cert automatically.
+
+New configuration directive
+* metadb_server_max_descriptors - specifies the limit of descriptors
+  for gfmd. [sf.net trac #411]
+* schedule_concurrency, schedule_concurrency_per_net,
+  schedule_candidates_ratio, schedule_rtt_thresh - parameters for
+  client scheduling.
+
+Bug fix
+* gfrep - gfrep fails if a symlink to a directory is included.
+* gfrm - with -h option, directories should not be removed.
+* libgfarm - segfault when resolving symlink in the top
+  directory. [sf.net trac #393]
+* libgfarm - URL without a port number cannot be parsed. [sf.net trac
+  #377]
+* libgfarm - global username should be obtained by gfmd in
+  GSI. [sf.net trac #394]
+* config-gfarm - filename including non utf-8 multibyte characters
+  crashes the gfmd. [sf.net trac #387]
+* gfsd, gfmd - automatic replication may be unintentionally
+  failed. [sf.net trac #184]
+* gfmd - metadata consistency check is broken, and may crash the
+  gfmd, which was introduced in 2.5.0. [sf.net trac #379]
+* gfmd - segfault by specifying the same user multiple times when
+  creating or modifying a group. [sf.net trac #397]
+* gfmd - back channel to gfsd may be unintentionally
+  disconnected. [sf.net trac #79]
+* gfmd - crash by too large extended attribute. [sf.net trac #399]
+* gfmd - crash when multiple clients updates the same file
+  simultaneously. [sf.net trac #407]
+* gfmd - user information change is not effective online in
+  GSI. [sf.net trac #392 and #423]
+* gfmd - when all replica of a nonzero-size file cannot be accessed,
+  return error, instead of unintentionally creating a zero-size file.
+
 Release note for Gfarm 2.5.5
 ============================
 

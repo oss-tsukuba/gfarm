@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.5
+%define ver	2.5.6
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -332,6 +332,7 @@ fi
 %{man_prefix}/man1/gfimport_fixed.1.gz
 %{man_prefix}/man1/gfimport_text.1.gz
 %endif
+%{man_prefix}/man1/gfjournaladmin.1.gz
 %{man_prefix}/man1/gfkey.1.gz
 %{man_prefix}/man1/gfln.1.gz
 %{man_prefix}/man1/gfls.1.gz
@@ -503,6 +504,7 @@ fi
 %{man_prefix}/ja/man1/gfimport_fixed.1.gz
 %{man_prefix}/ja/man1/gfimport_text.1.gz
 %endif
+%{man_prefix}/ja/man1/gfjournaladmin.1.gz
 %{man_prefix}/ja/man1/gfkey.1.gz
 %{man_prefix}/ja/man1/gfln.1.gz
 %{man_prefix}/ja/man1/gfls.1.gz
@@ -651,6 +653,7 @@ fi
 %{html_prefix}/en/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/en/ref/man1/gfimport_text.1.html
 %endif
+%{html_prefix}/en/ref/man1/gfjournaladmin.1.html
 %{html_prefix}/en/ref/man1/gfkey.1.html
 %{html_prefix}/en/ref/man1/gfln.1.html
 %{html_prefix}/en/ref/man1/gfls.1.html
@@ -828,6 +831,7 @@ fi
 %{html_prefix}/ja/ref/man1/gfimport_fixed.1.html
 %{html_prefix}/ja/ref/man1/gfimport_text.1.html
 %endif
+%{html_prefix}/ja/ref/man1/gfjournaladmin.1.html
 %{html_prefix}/ja/ref/man1/gfkey.1.html
 %{html_prefix}/ja/ref/man1/gfln.1.html
 %{html_prefix}/ja/ref/man1/gfls.1.html
@@ -1163,6 +1167,7 @@ fi
 %{prefix}/bin/config-gfarm-update
 %{prefix}/bin/gfdump.postgresql
 %{prefix}/bin/gfjournal
+%{prefix}/bin/gfjournaladmin
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/bdb.DB_CONFIG.in
