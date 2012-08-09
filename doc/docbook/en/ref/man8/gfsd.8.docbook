@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>14 Feb 2008</date></refentryinfo>
+<refentryinfo><date>09 Aug 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -71,25 +71,23 @@ node is changed.   Valid file copies will be registered to the
 metadata server.
 </para>
 <para>
-When the <option>-c</option> option is specified more than once (or
+When the <option>-c</option> option is specified twice (or
 <option>-cc</option> is specified), invalid file copies that are not
-registered in the metadata server are deleted.  This option is not
-recommeded.
+registered in the metadata server are deleted.
 </para>
 <para>
-Furthermore, when the <option>-c</option> option is specified more
-than once (or <option>-ccc</option> is specified), invalid file copies
-that are not registered in the metadata server are moved (not deleted)
-to the lost+found directory.  And, when invalied file copies are
-registered in the metadata server, the informations of file copies are
-deleted from the metadata server.
+When the <option>-c</option> option is specified three times
+(or <option>-ccc</option>), invalid file copies
+that are not registered in the metadata server are moved
+to the lost+found directory in the Gfarm file system.
+Furthermore, invalid metadata pointing to a missing file copy of the
+file system node are deleted.
 </para>
 <para>
-[NOTE] A gfsd should be restarted with the <option>-ccc</option>
-option only when all clients do not access to the Gfarm filesystem.
-If the gfsd is restarted with the <option>-ccc</option> option while a
-file is opened in write-mode or immediately after a file is removed,
-those files may be moved to the lost+found directory.
+Note that the <option>-cc</option> and <option>-ccc</option> options
+should be used after stopping all gfsd processes including the child
+processes.  Otherwise, files opened in the write mode or removed
+recently may be moved to the lost+found directory.
 </para>
 </listitem>
 </varlistentry>
