@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsd</B
->  [<TT
+> [<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
@@ -91,9 +91,11 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-L</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->log-level</CODE
+><I
+>log-level</I
+></TT
 ></DT
 ><DD
 ><P
@@ -106,9 +108,11 @@ by this option.</P
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->pid-file</CODE
+><I
+>pid-file</I
+></TT
 ></DT
 ><DD
 ><P
@@ -129,38 +133,36 @@ metadata server.</P
 >When the <CODE
 CLASS="OPTION"
 >-c</CODE
-> option is specified more than once (or
+> option is specified twice (or
 <CODE
 CLASS="OPTION"
 >-cc</CODE
 > is specified), invalid file copies that are not
-registered in the metadata server are deleted.  This option is not
-recommeded.</P
+registered in the metadata server are deleted.</P
 ><P
->Furthermore, when the <CODE
+>When the <CODE
 CLASS="OPTION"
 >-c</CODE
-> option is specified more
-than once (or <CODE
+> option is specified three times
+(or <CODE
 CLASS="OPTION"
 >-ccc</CODE
-> is specified), invalid file copies
-that are not registered in the metadata server are moved (not deleted)
-to the lost+found directory.  And, when invalied file copies are
-registered in the metadata server, the informations of file copies are
-deleted from the metadata server.</P
+>), invalid file copies
+that are not registered in the metadata server are moved
+to the lost+found directory in the Gfarm file system.
+Furthermore, invalid metadata pointing to a missing file copy of the
+file system node are deleted.</P
 ><P
->[NOTE] A gfsd should be restarted with the <CODE
+>Note that the <CODE
+CLASS="OPTION"
+>-cc</CODE
+> and <CODE
 CLASS="OPTION"
 >-ccc</CODE
->
-option only when all clients do not access to the Gfarm filesystem.
-If the gfsd is restarted with the <CODE
-CLASS="OPTION"
->-ccc</CODE
-> option while a
-file is opened in write-mode or immediately after a file is removed,
-those files may be moved to the lost+found directory.</P
+> options
+should be used after stopping all gfsd processes including the child
+processes.  Otherwise, files opened in the write mode or removed
+recently may be moved to the lost+found directory.</P
 ></DD
 ><DT
 ><CODE
@@ -182,9 +184,11 @@ the log level is set to "debug".</P
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->config-file</CODE
+><I
+>config-file</I
+></TT
 ></DT
 ><DD
 ><P
@@ -195,9 +199,11 @@ configuration file.</P
 ><CODE
 CLASS="OPTION"
 >-h</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->hostname</CODE
+><I
+>hostname</I
+></TT
 ></DT
 ><DD
 ><P
@@ -207,9 +213,11 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-l</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->IP-address</CODE
+><I
+>IP-address</I
+></TT
 ></DT
 ><DD
 ><P
@@ -223,9 +231,11 @@ to provide multiple spool directories on the host.</P
 ><CODE
 CLASS="OPTION"
 >-r</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->directory</CODE
+><I
+>directory</I
+></TT
 ></DT
 ><DD
 ><P
@@ -236,9 +246,11 @@ for a Gfarm filesystem on this filesystem node.</P
 ><CODE
 CLASS="OPTION"
 >-s</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->syslog-facility</CODE
+><I
+>syslog-facility</I
+></TT
 ></DT
 ><DD
 ><P

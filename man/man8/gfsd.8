@@ -40,23 +40,21 @@ directory.  This option is useful when a hostname of a file system
 node is changed.   Valid file copies will be registered to the
 metadata server.
 
-When the \fB-c\fR option is specified more than once (or
+When the \fB-c\fR option is specified twice (or
 \fB-cc\fR is specified), invalid file copies that are not
-registered in the metadata server are deleted.  This option is not
-recommeded.
+registered in the metadata server are deleted.
 
-Furthermore, when the \fB-c\fR option is specified more
-than once (or \fB-ccc\fR is specified), invalid file copies
-that are not registered in the metadata server are moved (not deleted)
-to the lost+found directory.  And, when invalied file copies are
-registered in the metadata server, the informations of file copies are
-deleted from the metadata server.
+When the \fB-c\fR option is specified three times
+(or \fB-ccc\fR), invalid file copies
+that are not registered in the metadata server are moved
+to the lost+found directory in the Gfarm file system.
+Furthermore, invalid metadata pointing to a missing file copy of the
+file system node are deleted.
 
-[NOTE] A gfsd should be restarted with the \fB-ccc\fR
-option only when all clients do not access to the Gfarm filesystem.
-If the gfsd is restarted with the \fB-ccc\fR option while a
-file is opened in write-mode or immediately after a file is removed,
-those files may be moved to the lost+found directory.
+Note that the \fB-cc\fR and \fB-ccc\fR options
+should be used after stopping all gfsd processes including the child
+processes.  Otherwise, files opened in the write mode or removed
+recently may be moved to the lost+found directory.
 .TP
 \fB-d\fR
 Specifies the debug mode.  With the -d option, gfsd runs as a
