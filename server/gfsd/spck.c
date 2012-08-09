@@ -134,7 +134,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	if (rename(file, newpath)) {
 		save_errno = errno;
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: cannot renamed to %s: %s", file, newpath,
+		    "%s: cannot rename to %s: %s", file, newpath,
 		    strerror(save_errno));
 		free(newpath);
 		return (gfarm_errno_to_error(save_errno));
@@ -389,7 +389,7 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 		save_errno = errno;
 		if (save_errno == ENOENT) {
 			gflog_notice(GFARM_MSG_UNFIXED,
-			    "(%llu:%llu): lost replica",
+			    "(%llu:%llu): not exist, delete the metadata entry",
 			    (unsigned long long)inum, (unsigned long long)gen);
 			lost = 1;
 		} else
@@ -402,11 +402,14 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 			gflog_error(GFARM_MSG_UNFIXED, "stat(%s): %s",
 			    path, strerror(save_errno));
 	} else if (!S_ISREG(st.st_mode)) {
-		gflog_error(GFARM_MSG_UNFIXED, "%s: not a file", path);
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: not a file, "
+		    "delete the metadata entry for %llu:%llu", path,
+		    (unsigned long long)inum, (unsigned long long)gen);
 		lost = 1;
 	} else if (st.st_size != size) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		      "(%llu:%llu): invalid file: metadata=%llu, spool=%llu",
+		gflog_notice(GFARM_MSG_UNFIXED,
+		      "(%llu:%llu): size mismatch, move to lost+found: "
+		      "metadata=%llu, spool=%llu",
 		      (unsigned long long)inum, (unsigned long long)gen,
 		      (unsigned long long)size,
 		      (unsigned long long)st.st_size);
