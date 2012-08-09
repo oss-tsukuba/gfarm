@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfsd</B
-> [<TT
+>  [<TT
 CLASS="REPLACEABLE"
 ><I
 >options</I
@@ -91,11 +91,9 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-L</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->log-level</I
-></TT
+>log-level</CODE
 ></DT
 ><DD
 ><P
@@ -108,11 +106,9 @@ by this option.</P
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->pid-file</I
-></TT
+>pid-file</CODE
 ></DT
 ><DD
 ><P
@@ -133,9 +129,38 @@ metadata server.</P
 >When the <CODE
 CLASS="OPTION"
 >-c</CODE
-> option is specified more than once,
-invalid file copies that are not registered in the metadata server are
-deleted.</P
+> option is specified more than once (or
+<CODE
+CLASS="OPTION"
+>-cc</CODE
+> is specified), invalid file copies that are not
+registered in the metadata server are deleted.  This option is not
+recommeded.</P
+><P
+>Furthermore, when the <CODE
+CLASS="OPTION"
+>-c</CODE
+> option is specified more
+than once (or <CODE
+CLASS="OPTION"
+>-ccc</CODE
+> is specified), invalid file copies
+that are not registered in the metadata server are moved (not deleted)
+to the lost+found directory.  And, when invalied file copies are
+registered in the metadata server, the informations of file copies are
+deleted from the metadata server.</P
+><P
+>[NOTE] A gfsd should be restarted with the <CODE
+CLASS="OPTION"
+>-ccc</CODE
+>
+option only when all clients do not access to the Gfarm filesystem.
+If the gfsd is restarted with the <CODE
+CLASS="OPTION"
+>-ccc</CODE
+> option while a
+file is opened in write-mode or immediately after a file is removed,
+those files may be moved to the lost+found directory.</P
 ></DD
 ><DT
 ><CODE
@@ -157,11 +182,9 @@ the log level is set to "debug".</P
 ><CODE
 CLASS="OPTION"
 >-f</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->config-file</I
-></TT
+>config-file</CODE
 ></DT
 ><DD
 ><P
@@ -172,11 +195,9 @@ configuration file.</P
 ><CODE
 CLASS="OPTION"
 >-h</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->hostname</I
-></TT
+>hostname</CODE
 ></DT
 ><DD
 ><P
@@ -186,11 +207,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-l</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->IP-address</I
-></TT
+>IP-address</CODE
 ></DT
 ><DD
 ><P
@@ -204,11 +223,9 @@ to provide multiple spool directories on the host.</P
 ><CODE
 CLASS="OPTION"
 >-r</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->directory</I
-></TT
+>directory</CODE
 ></DT
 ><DD
 ><P
@@ -219,11 +236,9 @@ for a Gfarm filesystem on this filesystem node.</P
 ><CODE
 CLASS="OPTION"
 >-s</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->syslog-facility</I
-></TT
+>syslog-facility</CODE
 ></DT
 ><DD
 ><P
