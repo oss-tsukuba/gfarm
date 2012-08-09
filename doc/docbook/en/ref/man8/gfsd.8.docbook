@@ -71,9 +71,25 @@ node is changed.   Valid file copies will be registered to the
 metadata server.
 </para>
 <para>
-When the <option>-c</option> option is specified more than once,
-invalid file copies that are not registered in the metadata server are
-deleted.
+When the <option>-c</option> option is specified more than once (or
+<option>-cc</option> is specified), invalid file copies that are not
+registered in the metadata server are deleted.  This option is not
+recommeded.
+</para>
+<para>
+Furthermore, when the <option>-c</option> option is specified more
+than once (or <option>-ccc</option> is specified), invalid file copies
+that are not registered in the metadata server are moved (not deleted)
+to the lost+found directory.  And, when invalied file copies are
+registered in the metadata server, the informations of file copies are
+deleted from the metadata server.
+</para>
+<para>
+[NOTE] A gfsd should be restarted with the <option>-ccc</option>
+option only when all clients do not access to the Gfarm filesystem.
+If the gfsd is restarted with the <option>-ccc</option> option while a
+file is opened in write-mode or immediately after a file is removed,
+those files may be moved to the lost+found directory.
 </para>
 </listitem>
 </varlistentry>
