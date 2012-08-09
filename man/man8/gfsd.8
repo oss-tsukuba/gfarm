@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "20 December 2010" "Gfarm" ""
+.TH "GFSD" "8" "09 August 2012" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
@@ -40,9 +40,23 @@ directory.  This option is useful when a hostname of a file system
 node is changed.   Valid file copies will be registered to the
 metadata server.
 
-When the \fB-c\fR option is specified more than once,
-invalid file copies that are not registered in the metadata server are
-deleted.
+When the \fB-c\fR option is specified more than once (or
+\fB-cc\fR is specified), invalid file copies that are not
+registered in the metadata server are deleted.  This option is not
+recommeded.
+
+Furthermore, when the \fB-c\fR option is specified more
+than once (or \fB-ccc\fR is specified), invalid file copies
+that are not registered in the metadata server are moved (not deleted)
+to the lost+found directory.  And, when invalied file copies are
+registered in the metadata server, the informations of file copies are
+deleted from the metadata server.
+
+[NOTE] A gfsd should be restarted with the \fB-ccc\fR
+option only when all clients do not access to the Gfarm filesystem.
+If the gfsd is restarted with the \fB-ccc\fR option while a
+file is opened in write-mode or immediately after a file is removed,
+those files may be moved to the lost+found directory.
 .TP
 \fB-d\fR
 Specifies the debug mode.  With the -d option, gfsd runs as a
