@@ -143,6 +143,7 @@ gfarm_error_t inode_cksum_set(struct file_opening *,
 gfarm_error_t inode_cksum_get(struct file_opening *,
 	char **, size_t *, char **, gfarm_int32_t *);
 
+int inode_is_opened_for_writing(struct inode *);
 int inode_has_file_copy(struct inode *, struct host *);
 int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);

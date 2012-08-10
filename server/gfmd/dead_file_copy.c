@@ -847,6 +847,39 @@ dead_file_copy_info_by_inode(gfarm_ino_t inum, gfarm_uint64_t igen, int up_only,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: dfc_allq.mutex, host::back_channel_mutex
+ * SLEEPS: no
+ *
+ * XXX
+ * this assumes that the number of dead file copies is small enough,
+ * otherwise this is too slow.
+ */
+int
+dead_file_copy_existing(gfarm_ino_t inum, gfarm_uint64_t igen,
+	struct host *host)
+{
+	struct dead_file_copy *dfc;
+	int existing = 0;
+	static const char diag[] = "dead_file_copy_existing";
+
+	gfarm_mutex_lock(&dfc_allq.mutex, diag, "lock");
+
+	for (dfc = dfc_allq.q.allq_next; dfc != &dfc_allq.q;
+	     dfc = dfc->allq_next) {
+		if (dfc->inum == inum && dfc->igen == igen &&
+		    dfc->host == host) {
+			existing = 1;
+			break;
+		}
+	}
+
+	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
+
+	return (existing);
+}
+
 gfarm_ino_t
 dead_file_copy_get_ino(struct dead_file_copy *dfc)
 {

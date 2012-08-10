@@ -27,6 +27,7 @@ void dead_file_copy_mark_deferred(struct dead_file_copy *);
 int dead_file_copy_count_by_inode(gfarm_ino_t, gfarm_uint64_t, int);
 gfarm_error_t dead_file_copy_info_by_inode(gfarm_ino_t, gfarm_uint64_t, int,
 	int *, char **, gfarm_int64_t *, gfarm_int32_t *);
+int dead_file_copy_existing(gfarm_ino_t, gfarm_uint64_t, struct host *);
 
 void dead_file_copy_init_load(void);
 void dead_file_copy_init(int);
