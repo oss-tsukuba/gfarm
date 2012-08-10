@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "09 August 2012" "Gfarm" ""
+.TH "GFSD" "8" "10 August 2012" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarmファイルシステム・デーモン
@@ -47,13 +47,6 @@ gfsdのprocess IDを、指定したファイルに記録します。
 効なファイルをGfarmファイルシステムのlost+foundディクトリに移動すること
 ができます。さらに、ファイルシステムノード上に存在しないファイルを指し
 ている、無効なメタデータを削除します。
-
-子プロセスを含めた全てのgfsdプロセスが停止したあとに、
-\fB-cc\fRまたは\fB-ccc\fRオプションを使用してくだ
-さい。そうしない場合、書き込み中のファイルや削除されたばかりのファイル
-が、\fB-cc\fRの場合には削除される可能性があり、
-\fB-ccc\fRの場合にはlost+foundディレクトリに移動されてしまう
-可能性があります。
 .TP
 \fB-d\fR
 デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
