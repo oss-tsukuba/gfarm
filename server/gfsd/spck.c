@@ -151,7 +151,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 
 static gfarm_error_t
 move_file_to_lost_found(const char *file, struct stat *stp,
-	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
+	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, int size_mismatch)
 {
 	gfarm_error_t e;
 
@@ -169,15 +169,34 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	}
 
 	e = move_file_to_lost_found_main(file, stp, inum_old, gen_old);
-	if (e != GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s cannot be moved to /lost+found/%016llX%016llX-%s: %s",
 		    file, (unsigned long long)inum_old,
 		    (unsigned long long)gen_old, canonical_self_name,
 		    gfarm_error_string(e));
-	else
+		return (e);
+	}
+	if (size_mismatch) {
+		e = gfm_client_replica_lost(inum_old, gen_old);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "replica_lost(%llu, %llu): %s",
+			    (unsigned long long)inum_old,
+			    (unsigned long long)gen_old,
+			    gfarm_error_string(e));
+			return (e);
+		}
 		gflog_notice(GFARM_MSG_UNFIXED,
+		     "(%llu:%llu): size mismatch, "
 		     "moved to /lost+found/%016llX%016llX-%s",
+		     (unsigned long long)inum_old,
+		     (unsigned long long)gen_old,
+		     (unsigned long long)inum_old,
+		     (unsigned long long)gen_old, canonical_self_name);
+	} else
+		gflog_notice(GFARM_MSG_UNFIXED, "unknown file is found: "
+		     "registered to /lost+found/%016llX%016llX-%s",
 		     (unsigned long long)inum_old,
 		     (unsigned long long)gen_old, canonical_self_name);
 	return (e);
@@ -291,8 +310,8 @@ unlink_file(const char *file)
 }
 
 static gfarm_error_t
-deal_with_invalid_file(const char *file, struct stat *stp,
-	int valid_inum_gen, gfarm_ino_t inum, gfarm_uint64_t gen)
+deal_with_invalid_file(const char *file, struct stat *stp, int valid_inum_gen,
+	gfarm_ino_t inum, gfarm_uint64_t gen, int size_mismatch)
 {
 	gfarm_error_t e;
 
@@ -313,10 +332,11 @@ deal_with_invalid_file(const char *file, struct stat *stp,
 	case MODE_LOST_FOUND:
 	default:
 		if (valid_inum_gen)
-			e = move_file_to_lost_found(file, stp, inum, gen);
+			e = move_file_to_lost_found(file, stp, inum, gen,
+			    size_mismatch);
 		else {
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: unknown file",
-			    file);
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: unsupported file (ignored)", file);
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
 	}
@@ -336,7 +356,7 @@ check_file(char *file, struct stat *stp, void *arg)
 		return (GFARM_ERR_NO_ERROR);
 
 	if (get_inum_gen(file, &inum, &gen))
-		return (deal_with_invalid_file(file, stp, 0, 0, 0));
+		return (deal_with_invalid_file(file, stp, 0, 0, 0, 0));
 	size = stp->st_size;
 	e = gfm_client_replica_add(inum, gen, size);
 	switch (e) {
@@ -348,8 +368,15 @@ check_file(char *file, struct stat *stp, void *arg)
 		gflog_notice(GFARM_MSG_1000606, "%s: fixed", file);
 		break;
 	case GFARM_ERR_NO_SUCH_OBJECT:
-	case GFARM_ERR_INVALID_FILE_REPLICA:
-		e = deal_with_invalid_file(file, stp, 1, inum, gen);
+	case GFARM_ERR_NOT_A_REGULAR_FILE:
+		e = deal_with_invalid_file(file, stp, 1, inum, gen, 0);
+		break;
+	case GFARM_ERR_INVALID_FILE_REPLICA: /* size mismatch */
+		e = deal_with_invalid_file(file, stp, 1, inum, gen, 1);
+		break;
+	case GFARM_ERR_FILE_BUSY:
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "%s: ignored (writing or removing now)", file);
 		break;
 	default:
 		gflog_error(GFARM_MSG_UNFIXED, "replica_add(%llu, %llu): %s",
@@ -366,7 +393,7 @@ check_spool(char *dir)
 }
 
 static void
-compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
+check_existing(gfarm_ino_t inum, gfarm_uint64_t gen)
 {
 	gfarm_error_t e;
 	char *path, *file;
@@ -389,7 +416,8 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 		save_errno = errno;
 		if (save_errno == ENOENT) {
 			gflog_notice(GFARM_MSG_UNFIXED,
-			    "(%llu:%llu): not exist, delete the metadata entry",
+			    "physical file does not exist, "
+			    "delete the metadata entry for %llu:%llu",
 			    (unsigned long long)inum, (unsigned long long)gen);
 			lost = 1;
 		} else
@@ -406,21 +434,14 @@ compare_file(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 		    "delete the metadata entry for %llu:%llu", path,
 		    (unsigned long long)inum, (unsigned long long)gen);
 		lost = 1;
-	} else if (st.st_size != size) {
-		gflog_notice(GFARM_MSG_UNFIXED,
-		      "(%llu:%llu): size mismatch, move to lost+found: "
-		      "metadata=%llu, spool=%llu",
-		      (unsigned long long)inum, (unsigned long long)gen,
-		      (unsigned long long)size,
-		      (unsigned long long)st.st_size);
-		(void)move_file_to_lost_found(file, &st, inum, gen);
-		lost = 1;
 	}
 	if (lost) { /* delete the replica-reference from metadata */
 		e = gfm_client_replica_lost(inum, gen);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_UNFIXED,
-			    "replica_lost: %s", gfarm_error_string(e));
+			    "replica_lost(%llu, %llu): %s",
+			    (unsigned long long)inum, (unsigned long long)gen,
+			    gfarm_error_string(e));
 	}
 	free(path);
 }
@@ -433,7 +454,7 @@ check_metadata()
 	gfarm_error_t e;
 	gfarm_ino_t inum, *inums;
 	gfarm_uint64_t *gens;
-	gfarm_off_t *sizes;
+	gfarm_off_t *sizes; /* not used */
 	int i, n;
 
 	for (inum = 0;; inum++) {
@@ -445,12 +466,17 @@ check_metadata()
 		else if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "replica_get_my_entries(%llu, %d): %s",
-			    (unsigned long long)inum, n,
+			    (unsigned long long)inum, REQUEST_NUM,
 			    gfarm_error_string(e));
 			return (e);
 		}
 		for (i = 0; i < n && i < REQUEST_NUM; i++) {
-			compare_file(inums[i], gens[i], sizes[i]);
+			check_existing(inums[i], gens[i]);
+			/*
+			 * size[i] is not used here.
+			 * Because file-sizes are compared by
+			 * gfm_client_replica_add() from check_spool().
+			 */
 			inum = inums[i];
 		}
 		free(inums);
@@ -480,7 +506,6 @@ gfsd_spool_check(int check_level)
 		invalid_file_mode = MODE_DELETE;
 		break;
 	default:
-		/* dead_file_copy may be moved to lost+found */
 		check_metadata();
 		invalid_file_mode = MODE_LOST_FOUND;
 	}

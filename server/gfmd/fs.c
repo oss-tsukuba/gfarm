@@ -5087,6 +5087,20 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    e, ""));
 }
 
+static gfarm_error_t
+dead_file_copy_check(gfarm_ino_t inum, gfarm_uint64_t gen, struct host *host)
+{
+	struct inode *inode = inode_lookup_including_free(inum);
+
+	if (dead_file_copy_existing(inode_get_dead_copies(inode), gen, host)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "(%llu:%llu): has dead_file_copy",
+		    (unsigned long long)inum, (unsigned long long)gen);
+		return  (GFARM_ERR_FILE_BUSY);
+	}
+	return (GFARM_ERR_NO_SUCH_OBJECT);
+}
+
 gfarm_error_t
 gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
@@ -5102,8 +5116,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	static const char diag[] = "GFM_PROTO_REPLICA_ADD";
 
 	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_REPLICA_ADD, "lll",
-		&inum, &gen, &size);
+	    GFM_PROTO_REPLICA_ADD, "lll", &inum, &gen, &size);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
@@ -5123,14 +5136,19 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		} else if ((inode = inode_lookup(inum)) == NULL) {
 			gflog_debug(GFARM_MSG_1001977,
 			    "inode_lookup() failed");
-			e = GFARM_ERR_NO_SUCH_OBJECT;
+			e = dead_file_copy_check(inum, gen, spool_host);
 		} else if (!inode_is_file(inode)) {
 			gflog_debug(GFARM_MSG_UNFIXED, "not a file");
-			e = GFARM_ERR_INVALID_FILE_REPLICA;
+			e = GFARM_ERR_NOT_A_REGULAR_FILE;
 		} else if (inode_get_gen(inode) != gen) {
 			gflog_debug(GFARM_MSG_1001978,
 			    "inode_get_gen() failed");
-			e = GFARM_ERR_NO_SUCH_OBJECT;
+			e = dead_file_copy_check(inum, gen, spool_host);
+		} else if (inode_is_opened_for_writing(inode)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "(%llu:%llu): opened for writing",
+			    (unsigned long long)inum, (unsigned long long)gen);
+			e = GFARM_ERR_FILE_BUSY;
 		} else if (inode_get_size(inode) != size) {
 			gflog_debug(GFARM_MSG_1001979, "invalid file replica");
 			e = GFARM_ERR_INVALID_FILE_REPLICA;

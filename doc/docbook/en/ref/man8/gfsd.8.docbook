@@ -82,14 +82,6 @@ registered in the metadata server are moved to the lost+found
 directory in the Gfarm file system.  Furthermore, invalid metadata
 pointing to a missing file copy of the file system node are deleted.
 </para>
-<para>
-Note that the <option>-cc</option> and <option>-ccc</option> options
-should be used after stopping all gfsd processes including the child
-processes.  Otherwise, files opened in the write mode or removed
-recently may be deleted in case of the <option>-cc</option> option, or
-moved to the lost+found directory in case of the <option>-ccc</option>
-option.
-</para>
 </listitem>
 </varlistentry>
 

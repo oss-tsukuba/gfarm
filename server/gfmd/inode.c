@@ -1141,6 +1141,14 @@ inode_lookup(gfarm_ino_t inum)
 	return (inode);
 }
 
+struct inode *
+inode_lookup_including_free(gfarm_ino_t inum)
+{
+	if (inum >= inode_table_size)
+		return (NULL);
+	return (inode_table[inum]);
+}
+
 void
 inode_lookup_all(void *closure, void (*callback)(void *, struct inode *))
 {
@@ -1619,6 +1627,14 @@ inode_get_replication_state(struct inode *inode)
 
 	assert(ia != NULL);
 	return (ia->u.f.rstate);
+}
+
+struct dead_file_copy_list *
+inode_get_dead_copies(struct inode *inode)
+{
+	if (inode != NULL)
+		return (inode->dead_copies);
+	return (NULL);
 }
 
 int

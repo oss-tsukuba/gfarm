@@ -65,6 +65,7 @@ void inode_accessed(struct inode *);
 void inode_modified(struct inode *);
 void inode_status_changed(struct inode *);
 char *inode_get_symlink(struct inode *);
+struct dead_file_copy_list *inode_get_dead_copies(struct inode *);
 int inode_desired_dead_file_copy(gfarm_ino_t);
 gfarm_error_t inode_add_or_modify_in_cache(struct gfs_stat *, struct inode **);
 void inode_modify(struct inode *, struct gfs_stat *);
@@ -91,6 +92,7 @@ gfarm_error_t inode_access(struct inode *, struct user *, int);
 gfarm_ino_t inode_root_number();
 gfarm_ino_t inode_table_current_size();
 struct inode *inode_lookup(gfarm_ino_t);
+struct inode *inode_lookup_including_free(gfarm_ino_t);
 void inode_lookup_all(void *, void (*callback)(void *, struct inode *));
 
 gfarm_error_t inode_lookup_root(struct process *, int, struct inode **);
@@ -149,6 +151,7 @@ gfarm_error_t inode_cksum_set(struct file_opening *,
 gfarm_error_t inode_cksum_get(struct file_opening *,
 	char **, size_t *, char **, gfarm_int32_t *);
 
+int inode_is_opened_for_writing(struct inode *);
 int inode_has_file_copy(struct inode *, struct host *);
 int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);

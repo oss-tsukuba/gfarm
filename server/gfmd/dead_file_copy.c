@@ -375,6 +375,28 @@ dead_file_copy_info_by_inode(struct dead_file_copy_list *same_inode_list,
 	return (e);
 }
 
+/*
+ * PREREQUISITE: nothing
+ * LOCKS: XXX
+ * SLEEPS: no
+ */
+int
+dead_file_copy_existing(struct dead_file_copy_list *same_inode_list,
+	gfarm_uint64_t igen, struct host *host)
+{
+	struct dead_file_copy *dfc;
+
+	if (same_inode_list == NULL)
+		return (0);
+
+	GFARM_HCIRCLEQ_FOREACH(dfc, same_inode_list->list, same_inode_copies) {
+		if (dfc->igen == igen &&
+		    dfc->qentry.abhost == host_to_abstract_host(host))
+			return (1);
+	}
+	return (0);
+}
+
 gfarm_ino_t
 dead_file_copy_get_ino(struct dead_file_copy *dfc)
 {
