@@ -1,0 +1,61 @@
+/*
+ * Return 1 if 'string' is a valid UTF-8 string, 0 otherwise.
+ */
+int
+gfarm_utf8_validate_string(const char *string)
+{
+	const unsigned char *s = (const unsigned char *)string;
+	unsigned long codepoint;
+	unsigned long min_codepoint;
+	unsigned long max_codepoint;
+	int nfollows;
+
+	while (*s != '\0') {
+		if (*s <= 0x7f) {
+			nfollows = 0;
+			min_codepoint = 0x00;
+			max_codepoint = 0x7f;
+			codepoint = *s & 0x7f;
+		} else if (*s <= 0xbf) {
+			return 0;
+		} else if (*s <= 0xdf) {
+			nfollows = 1;
+			min_codepoint = 0x0080;
+			max_codepoint = 0x07ff;
+			codepoint = *s & 0x1f;
+		} else if (*s <= 0xef) {
+			nfollows = 2;
+			min_codepoint = 0x0800;
+			max_codepoint = 0xffff;
+			codepoint = *s & 0x0f;
+		} else if (*s <= 0xf7) {
+			nfollows = 3;
+			min_codepoint = 0x010000;
+			max_codepoint = 0x10ffff;
+			codepoint = *s & 0x07;
+		} else {
+			return 0;
+		}
+
+		s++;
+		while (nfollows > 0) {
+			if (0x80 <= *s && *s <= 0xbf)
+				codepoint = (codepoint << 6) | (*s & 0x3f);
+			else
+				return 0;
+			s++;
+			nfollows--;
+		}
+
+		if (codepoint < min_codepoint || codepoint > max_codepoint)
+			return 0;
+
+		/*
+		 * Surrogates are not allowed.
+		 */
+		if (0xd800 <= codepoint && codepoint <= 0xdfff)
+			return 0;
+	}
+
+	return 1;
+}

@@ -1,3 +1,4 @@
+lib/libgfarm/gfutil/utf8/utf8_test.sh
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
 lib/libgfarm/gfarm/gfs_dir_test/gfs_dir_test.sh
@@ -102,6 +103,7 @@ gftool/gfstatus/gfstatus_mds2.sh
 gftool/gfwhoami/gfwhoami.sh
 gftool/gfwhoami/gfwhoami_mds2.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
+gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
 
 # gftool/gfkey
 

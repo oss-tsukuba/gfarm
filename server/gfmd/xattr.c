@@ -196,6 +196,9 @@ isvalid_attrname(const char *attrname)
 {
 	int namelen = strlen(attrname);
 
+	if (!gfarm_utf8_validate_string(attrname))
+		return 0;
+
 	return ((0 < namelen) && (namelen <= MAX_XATTR_NAME_LEN));
 }
 
@@ -211,6 +214,13 @@ setxattr(int xmlMode, struct inode *inode,
 	if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
+		return GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	if (!gfarm_utf8_validate_string(*valuep)) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "argument '*valuep' is not a valid UTF-8 string");
 		return GFARM_ERR_INVALID_ARGUMENT;
 	}
 
