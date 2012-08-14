@@ -7,7 +7,7 @@ dir=${gftmp}
 attr_src=${testbin}/gfxattr-xml-non-utf8-value.src
 attr_log=${localtmp}.log
 
-attrname="user.longvalue"
+attrname="user.attr"
 
 setup() {
     gfmkdir ${dir}
@@ -38,7 +38,7 @@ if test $? -eq 0; then
     exit $exit_fail
 fi
 
-if grep "invalid argument" ${attr_log} >/dev/null 2>&1; then
+if grep "illegal byte sequence" ${attr_log} >/dev/null 2>&1; then
     true
 else
     cleanup
