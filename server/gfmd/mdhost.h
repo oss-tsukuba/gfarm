@@ -55,12 +55,11 @@ struct mdcluster *mdhost_get_cluster(struct mdhost *);
 void mdhost_set_cluster(struct mdhost *, struct mdcluster *);
 const char *mdhost_get_cluster_name(struct mdhost *);
 void mdhost_activate(struct mdhost *);
-struct peer *mdhost_get_peer(struct mdhost *);
 void mdhost_set_peer(struct mdhost *, struct peer *, int);
 struct gfm_connection *mdhost_get_connection(struct mdhost *);
 void mdhost_set_connection(struct mdhost *, struct gfm_connection *);
 int mdhost_is_up(struct mdhost *);
-void mdhost_disconnect(struct mdhost *, struct peer *);
+void mdhost_disconnect_request(struct mdhost *, struct peer *);
 gfarm_error_t mdhost_enter(struct gfarm_metadb_server *, struct mdhost **);
 gfarm_error_t mdhost_modify_in_cache(struct mdhost *,
 	struct gfarm_metadb_server *);

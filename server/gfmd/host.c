@@ -525,16 +525,22 @@ host_status_callout(struct host *h)
 	return (h->status_callout);
 }
 
+/*
+ * if host_get_peer() is called,
+ * same number of host_put_peer() calls should be made.
+ */
 struct peer *
-host_peer(struct host *h)
+host_get_peer(struct host *h)
 {
-	return (abstract_host_get_peer(&h->ah, BACK_CHANNEL_DIAG));
+	static const char diag[] = "host_get_peer";
+
+	return (abstract_host_get_peer(&h->ah, diag));
 }
 
-static struct peer *
-host_peer_unlocked(struct host *h)
+void
+host_put_peer(struct host *h, struct peer *peer)
 {
-	return (abstract_host_get_peer_unlocked(&h->ah));
+	abstract_host_put_peer(&h->ah, peer);
 }
 
 int
@@ -641,26 +647,6 @@ host_status_update(struct host *host, struct host_status *status)
 }
 
 /*
- * PREREQUISITE: host::back_channel_mutex
- * LOCKS: nothing
- * SLEEPS: no
- */
-static void
-host_status_disable_unlocked(struct host *host,
-	gfarm_uint64_t *saved_usedp, gfarm_uint64_t *saved_availp)
-{
-	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
-		*saved_usedp = host->status.disk_used;
-		*saved_availp = host->status.disk_avail;
-	} else {
-		*saved_usedp = 0;
-		*saved_availp = 0;
-	}
-
-	host->report_flags = 0;
-}
-
-/*
  * PREREQUISITE: giant_lock
  * LOCKS: host::back_channel_mutex, dfc_allq.mutex, removal_pendingq.mutex
  * SLEEPS: maybe (see the comment of dead_file_copy_host_becomes_up())
@@ -699,43 +685,42 @@ host_unset_peer(struct abstract_host *ah, struct peer *peer)
 	callout_stop(abstract_host_to_host(ah)->status_callout);
 }
 
-struct host_disable_closure {
-	gfarm_uint64_t saved_used, saved_avail;
-};
-
-static gfarm_error_t
-host_disable(struct abstract_host *ah, void **closurep)
+static void
+host_disable(struct abstract_host *ah)
 {
 	struct host *h = abstract_host_to_host(ah);
-	struct host_disable_closure *c;
+	gfarm_uint64_t saved_used, saved_avail;
+	static const char diag[] = "host_disable";
 
-	GFARM_MALLOC(c);
-	if (c == NULL) {
-		gflog_error(GFARM_MSG_1002762,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
+	back_channel_mutex_lock(h, diag);
+
+	if (h->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
+		saved_used = h->status.disk_used;
+		saved_avail = h->status.disk_avail;
+	} else {
+		saved_used = 0;
+		saved_avail = 0;
 	}
-	*closurep = c;
-	host_status_disable_unlocked(h, &c->saved_used, &c->saved_avail);
-	return (GFARM_ERR_NO_ERROR);
+	h->report_flags = 0;
+
+	back_channel_mutex_unlock(h, diag);
+
+	host_total_disk_update(saved_used, saved_avail, 0, 0);
 }
 
 static void
-host_disabled(struct abstract_host *ah, struct peer *peer, void *closure)
+host_disabled(struct abstract_host *ah, struct peer *peer)
 {
-	struct host_disable_closure *c = closure;
-
-	host_total_disk_update(c->saved_used, c->saved_avail, 0, 0);
-	free(closure);
 	dead_file_copy_host_becomes_down(abstract_host_to_host(ah));
 }
 
 /* giant_lock should be held before calling this */
 void
-host_disconnect(struct host *h, struct peer *peer)
+host_disconnect_request(struct host *h, struct peer *peer)
 {
-	return (abstract_host_disconnect(&h->ah, peer,
-		BACK_CHANNEL_DIAG));
+	static const char diag[] = "host_disconnect_request";
+
+	return (abstract_host_disconnect_request(&h->ah, peer, diag));
 }
 
 struct abstract_host_ops host_ops = {
@@ -792,7 +777,7 @@ host_free(struct host *h)
 gfarm_error_t
 host_replicating_new(struct host *dst, struct file_replicating **frp)
 {
-	struct peer *peer = host_peer_unlocked(dst);
+	struct peer *peer = host_get_peer(dst); /* increment refcount */
 
 	if (peer == NULL)
 		return (GFARM_ERR_NO_ROUTE_TO_HOST);
@@ -1583,7 +1568,7 @@ host_info_remove_default(const char *hostname, const char *diag)
 	/* disconnect the back channel */
 	gflog_info(GFARM_MSG_1002425,
 	    "back_channel(%s): disconnecting: host info removed", hostname);
-	host_disconnect(host, NULL);
+	host_disconnect_request(host, NULL);
 
 	if ((e = host_remove(hostname)) == GFARM_ERR_NO_ERROR) {
 		e2 = db_host_remove(hostname);

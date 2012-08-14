@@ -199,13 +199,6 @@ mdhost_port0(struct abstract_host *h)
 	return (mdhost_get_port(abstract_host_to_mdhost(h)));
 }
 
-struct peer *
-mdhost_get_peer(struct mdhost *m)
-{
-	return (abstract_host_get_peer(mdhost_to_abstract_host(m),
-	    MDHOST_MUTEX_DIAG));
-}
-
 int
 mdhost_is_up(struct mdhost *m)
 {
@@ -516,14 +509,13 @@ mdhost_unset_peer(struct abstract_host *h, struct peer *peer)
 {
 }
 
-static gfarm_error_t
-mdhost_disable(struct abstract_host *h, void **closurep)
+static void
+mdhost_disable(struct abstract_host *h)
 {
-	return (GFARM_ERR_NO_ERROR);
 }
 
 static void
-mdhost_disabled(struct abstract_host *h, struct peer *peer, void *closure)
+mdhost_disabled(struct abstract_host *h, struct peer *peer)
 {
 	struct mdhost *m;
 	struct gfm_connection *conn;
@@ -650,14 +642,17 @@ mdhost_self_is_master(void)
 	return (mdhost_is_master(m));
 }
 
-/* giant_lock should be held before calling this */
+/*
+ * PREREQUISITE: giant_lock
+ *
+ * peer may be NULL.
+ */
 void
-mdhost_disconnect(struct mdhost *m, struct peer *peer)
+mdhost_disconnect_request(struct mdhost *m, struct peer *peer)
 {
-	if (abstract_host_get_peer_unlocked(mdhost_to_abstract_host(m)) != NULL)
-		gflog_warning(GFARM_MSG_1002927,
-		    "disconnect gfmd %s", mdhost_get_name(m));
-	return (abstract_host_disconnect(&m->ah, peer, MDHOST_MUTEX_DIAG));
+	static const char diag[] = "mdhost_disconnect_request";
+
+	return (abstract_host_disconnect_request(&m->ah, peer, diag));
 }
 
 /* PREREQUISITE: giant_lock */
@@ -675,7 +670,7 @@ mdhost_set_self_as_master(void)
 		    "mdhost_set_self_as_master: no master");
 		return;
 	}
-	mdhost_disconnect(m, NULL);
+	mdhost_disconnect_request(m, NULL);
 	mdhost_set_is_master(m, 0);
 	mdhost_set_is_master(s, 1);
 }
@@ -824,7 +819,7 @@ mdhost_remove_in_cache(const char *name)
 		return (e);
 	}
 	if (m->conn)
-		mdhost_disconnect(m, NULL);
+		mdhost_disconnect_request(m, NULL);
 	mdcluster_remove_mdhost(m);
 	mdhost_invalidate(m);
 

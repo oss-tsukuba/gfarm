@@ -588,7 +588,7 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 			gflog_warning(GFARM_MSG_1002986,
 			    "gfmd_channel(%s): switching to new connection",
 			    mdhost_get_name(mh));
-			mdhost_disconnect(mh, NULL);
+			mdhost_disconnect_request(mh, NULL);
 		}
 		mdhost_set_peer(mh, peer, version);
 		peer_watch_access(peer);
@@ -790,7 +790,7 @@ gfmdc_journal_asyncsend(struct mdhost *mh, int *exist_recsp)
 	if ((e = gfmdc_client_journal_asyncsend(&to_sn, c))
 	    != GFARM_ERR_NO_ERROR) {
 		free(c);
-		mdhost_disconnect(mh, mdhost_get_peer(mh));
+		mdhost_disconnect_request(mh, NULL);
 	} else if (to_sn == 0) {
 		free(c);
 		*exist_recsp = 0;
@@ -908,7 +908,7 @@ gfmdc_journal_send_thread(void *closure)
 	} while (to_sn < journal_sync_info.seqnum);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		mdhost_disconnect(c->host, mdhost_get_peer(c->host));
+		mdhost_disconnect_request(c->host, NULL);
 	gfmdc_journal_recv_end_signal(diag);
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003005,

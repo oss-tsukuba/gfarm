@@ -257,6 +257,9 @@ peer_replicating_free(struct file_replicating *fr)
 	fr->prev_inode->next_inode = fr->next_inode;
 	fr->next_inode->prev_inode = fr->prev_inode;
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
+
+	host_put_peer(fr->dst, fr->peer); /* decrement refcount */
+
 	free(fr);
 }
 

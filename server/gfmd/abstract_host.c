@@ -209,12 +209,10 @@ abstract_host_peer_unbusy(struct abstract_host *host, const char *diag)
 	abstract_host_mutex_unlock(host, diag);
 }
 
-struct peer *
-abstract_host_get_peer_unlocked(struct abstract_host *h)
-{
-	return (h->peer);
-}
-
+/*
+ * if abstract_host_get_peer() is called,
+ * same number of abstract_host_put_peer() calls should be made.
+ */
 struct peer *
 abstract_host_get_peer(struct abstract_host *h, const char *diag)
 {
@@ -222,8 +220,18 @@ abstract_host_get_peer(struct abstract_host *h, const char *diag)
 
 	abstract_host_mutex_lock(h, diag);
 	peer = h->peer;
+	if (peer != NULL)
+		peer_add_ref(peer);
 	abstract_host_mutex_unlock(h, diag);
+
 	return (peer);
+}
+
+void
+abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
+{
+	if (peer != NULL)
+		peer_del_ref(peer);
 }
 
 gfarm_error_t
@@ -380,6 +388,8 @@ abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
 	h->busy_time = 0;
 	h->ops->set_peer_locked(h, p);
 
+	peer_add_ref(p);
+
 	abstract_host_mutex_unlock(h, diag);
 
 	h->ops->set_peer_unlocked(h, p);
@@ -416,16 +426,24 @@ abstract_host_peer_unset(struct abstract_host *h)
 	h->is_active = 0;
 	h->ops->unset_peer(h, peer);
 
+#if 0
+	/*
+	 * XXX FIXME: peer_del_ref() is currently called from
+	 * abstract_host_disconnect_request()
+	 */
+	peer_del_ref(peer);
+#endif
+
 	abstract_host_break_locks(h);
 }
 
-static void
-abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer)
+/* peer may be NULL */
+void
+abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
+	const char *diag)
 {
 	int disabled = 0;
-	void *closure;
 	struct peer *hpeer;
-	static const char diag[] = "abstract_host_disconnect_request";
 
 	abstract_host_mutex_lock(h, diag);
 
@@ -434,14 +452,31 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer)
 		peer_record_protocol_error(hpeer);
 		peer_free_request(hpeer);
 		abstract_host_peer_unset(h);
-		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
-			disabled = 1;
+		h->ops->disable(h);
+		disabled = 1;
+	} else {
+		if (!h->is_active)
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s: already disconnected",
+			    abstract_host_get_name(h));
+		else
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "%s: already disconnected & reconnected",
+			    abstract_host_get_name(h));
 	}
 
 	abstract_host_mutex_unlock(h, diag);
 
-	if (disabled)
-		h->ops->disabled(h, hpeer, closure);
+	if (disabled) {
+		h->ops->disabled(h, hpeer);
+
+		/*
+		 * XXX FIXME: hpeer argument should be removed from
+		 * h->ops->disabled(), and this peer_del_ref() should be
+		 * moved to abstract_host_peer_unset().
+		 */
+		peer_del_ref(hpeer);
+	}
 }
 
 static void
@@ -463,7 +498,8 @@ abstract_host_peer_busy(struct abstract_host *host, const char *diag)
 		    "%s(%s): disconnecting: busy at sending",
 		    back_channel_type_name(unresponsive_peer),
 		    abstract_host_get_name(host));
-		abstract_host_disconnect_request(host, unresponsive_peer);
+		abstract_host_disconnect_request(host, unresponsive_peer,
+		    diag);
 	}
 }
 
@@ -488,52 +524,11 @@ abstract_host_check_busy(struct abstract_host *host, gfarm_int64_t now,
 		    "%s(%s): disconnecting: busy during queue scan",
 		    back_channel_type_name(unresponsive_peer),
 		    abstract_host_get_name(host));
-		abstract_host_disconnect_request(host, unresponsive_peer);
+		abstract_host_disconnect_request(host, unresponsive_peer,
+		    diag);
 	}
 
 	return (busy || unresponsive_peer != NULL);
-}
-
-/* giant_lock should be held before calling this */
-void
-abstract_host_disconnect(struct abstract_host *h, struct peer *peer,
-	const char *diag)
-{
-#if 0
-	/*
-	 * commented out,
-	 * not to sleep while holding host::channel_mutex
-	 */
-
-	int disabled = 0;
-	void *closure;
-
-	abstract_host_mutex_lock(h, diag);
-
-	if (h->is_active && (peer == h->peer || peer == NULL)) {
-		peer_record_protocol_error(h->peer);
-		if (h->can_send && h->can_receive) {
-			/*
-			 * NOTE: this shouldn't need db_begin()/db_end()
-			 * at least for now,
-			 * because only externalized descriptor needs the calls.
-			 */
-			peer_free(h->peer);
-		} else
-			peer_free_request(h->peer);
-
-		abstract_host_peer_unset(h);
-		if (h->ops->disable(h, &closure) == GFARM_ERR_NO_ERROR)
-			disabled = 1;
-	}
-
-	abstract_host_mutex_unlock(h, diag);
-
-	if (disabled)
-		h->ops->disabled(h, closure);
-#else
-	abstract_host_disconnect_request(h, peer);
-#endif
 }
 
 static gfarm_error_t
@@ -614,7 +609,7 @@ void *
 gfm_server_channel_main(void *arg,
 	channel_protocol_switch_t channel_protocol_switch
 #ifdef COMPAT_GFARM_2_3
-	    ,void (*channel_free)(struct abstract_host *),
+	    , void (*channel_free)(struct abstract_host *),
 	    gfarm_error_t (*sync_channel_service)(struct abstract_host *,
 		struct peer *)
 #endif
@@ -624,6 +619,7 @@ gfm_server_channel_main(void *arg,
 	struct abstract_host *host = peer_get_abstract_host(peer0);
 	gfp_xdr_async_peer_t async;
 	gfarm_error_t e;
+	static const char diag[] = "gfm_server_channel_main";
 
 	e = abstract_host_receiver_lock(host, &peer,
 	    back_channel_type_name(peer0));
@@ -696,8 +692,8 @@ gfm_server_channel_main(void *arg,
 			}
 #ifdef COMPAT_GFARM_2_3
 			channel_free(host);
-	#endif
-			abstract_host_disconnect_request(host, peer);
+#endif
+			abstract_host_disconnect_request(host, peer, diag);
 			abstract_host_receiver_unlock(host, peer);
 			return (NULL);
 		}
@@ -732,11 +728,13 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 	struct peer *peer, const char *proto, const char *op,
 	const char *condition)
 {
+	static const char diag[] = "gfm_server_channel_disconnect_request";
+
 	gflog_error(GFARM_MSG_1002787,
 	    "%s(%s) %s %s: disconnecting: %s",
 	    back_channel_type_name(peer), abstract_host_get_name(host),
 	    proto, op, condition);
-	abstract_host_disconnect_request(host, peer);
+	abstract_host_disconnect_request(host, peer, diag);
 }
 
 /*
