@@ -1,16 +1,20 @@
+#include <stddef.h>
+#include <string.h>
+
 /*
- * Return 1 if 'string' is a valid UTF-8 string, 0 otherwise.
+ * Return 1 if 'sequences' consists of valid UTF-8 sequences.
  */
 int
-gfarm_utf8_validate_string(const char *string)
+gfarm_utf8_validate_sequences(const char *sequences, size_t len)
 {
-	const unsigned char *s = (const unsigned char *)string;
+	const unsigned char *s = (const unsigned char *)sequences;
 	unsigned long codepoint;
 	unsigned long min_codepoint;
 	unsigned long max_codepoint;
 	int nfollows;
 
-	while (*s != '\0') {
+	while (len > 0) {
+		len--;
 		if (*s <= 0x7f) {
 			nfollows = 0;
 			min_codepoint = 0x00;
@@ -37,7 +41,11 @@ gfarm_utf8_validate_string(const char *string)
 			return 0;
 		}
 
+		if (len < nfollows)
+			return 0;
+		len -= nfollows;
 		s++;
+
 		while (nfollows > 0) {
 			if (0x80 <= *s && *s <= 0xbf)
 				codepoint = (codepoint << 6) | (*s & 0x3f);
@@ -58,4 +66,13 @@ gfarm_utf8_validate_string(const char *string)
 	}
 
 	return 1;
+}
+
+/*
+ * Return 1 if 'string' is a valid UTF-8 string, 0 otherwise.
+ */
+int
+gfarm_utf8_validate_string(const char *string)
+{
+	return gfarm_utf8_validate_sequences(string, strlen(string));
 }
