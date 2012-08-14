@@ -381,7 +381,7 @@ slave_request_relay0(struct relayed_request *r, gfarm_int32_t command,
 
 	va_start(wap, wformat);
 	e = async_client_vsend_wrapped_request(
-	    mdhost_to_abstract_host(mh), mdhost_get_peer(mh), r->diag,
+	    mdhost_to_abstract_host(mh), NULL, r->diag,
 	    slave_request_relay_result,
 	    slave_request_relay_disconnect, r,
 #ifdef COMPAT_GFARM_2_3
@@ -788,9 +788,8 @@ gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	 * protocol relay to master gfmd
 	 */
 	ah = mdhost_to_abstract_host(mdhost_lookup_master());
-	mhpeer = abstract_host_get_peer(ah, diag);
 
-	if ((e = async_client_sender_lock(ah, mhpeer, NULL, command,
+	if ((e = async_client_sender_lock(ah, NULL, &mhpeer, command,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));

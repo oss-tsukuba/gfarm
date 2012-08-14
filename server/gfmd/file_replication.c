@@ -486,13 +486,12 @@ gfs_client_replication_request_request(void *closure)
 {
 	struct file_replication *fr = closure;
 	struct host *dst = abstract_host_to_host(fr->qentry.abhost);
-	struct peer *peer = host_get_peer(dst);
 	gfarm_ino_t ino = inode_get_number(fr->inode);
 	gfarm_int64_t gen = fr->igen;
 	gfarm_error_t e;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST request";
 
-	e = gfs_client_send_request(dst, peer, diag,
+	e = gfs_client_send_request(dst, NULL, diag,
 	    gfs_client_replication_request_result,
 	    gfs_client_replication_request_free,
 	    fr,

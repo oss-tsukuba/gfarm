@@ -1200,7 +1200,7 @@ transform_to_master(void)
 
 	master = mdhost_lookup_master();
 	if (mdhost_is_up(master))
-		mdhost_disconnect(master, NULL);
+		mdhost_disconnect_request(master, NULL);
 	gflog_info(GFARM_MSG_1002730,
 	    "start transforming to the master gfmd ...");
 

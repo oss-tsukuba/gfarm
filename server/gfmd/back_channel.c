@@ -45,7 +45,7 @@ static struct peer_watcher *back_channel_recv_watcher;
 static const char BACK_CHANNEL_DIAG[] = "back_channel";
 
 /*
- * responsibility to call host_disconnect():
+ * responsibility to call host_disconnect_request():
  *
  * back_channel_main() is the handler of back_channel_recv_watcher.
  *
@@ -213,12 +213,13 @@ gfs_client_status_request(void *arg)
 	gfarm_error_t e;
 	struct gfs_client_status_entry *qe = arg;
 	struct host *host = abstract_host_to_host(qe->qentry.abhost);
-	struct peer *peer = host_get_peer(host);
+	struct peer *peer = host_get_peer(host); /* increment refcount */
 	static const char diag[] = "GFS_PROTO_STATUS";
 
 	if (host_status_reply_is_waiting(host)) {
 		gfs_client_status_disconnect_or_message(host, peer,
 		    diag, "request", "no status");
+		host_put_peer(host, peer); /* decrement refcount */
 		return (NULL);
 	}
 
@@ -243,6 +244,8 @@ gfs_client_status_request(void *arg)
 		}
 		gfs_client_status_free(peer, qe);
 	}
+
+	host_put_peer(host, peer); /* decrement refcount */
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
@@ -509,7 +512,7 @@ gfm_server_switch_back_channel_common(
 			gflog_warning(GFARM_MSG_1002440,
 			    "back_channel(%s): switching to new connection",
 			    host_name(host));
-			host_disconnect(host, NULL);
+			host_disconnect_request(host, NULL);
 		}
 
 		giant_lock();

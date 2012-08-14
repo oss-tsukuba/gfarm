@@ -3630,15 +3630,15 @@ inode_replication_new(struct inode *inode, struct host *src, struct host *dst,
 	struct file_replication **frp)
 {
 	gfarm_error_t e;
-	struct peer *peer;
 	struct file_replication *fr;
 	struct inode_activity *ia;
 	int ia_alloced = 0;
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
+
 	/* XXXQ should be able to add new replication, even if disconnected */
-	if ((peer = host_get_peer(dst)) == NULL)
+	if (!host_is_up(dst))
 		return (GFARM_ERR_NO_ROUTE_TO_HOST);
 
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
