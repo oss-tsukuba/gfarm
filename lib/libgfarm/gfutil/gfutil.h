@@ -41,4 +41,4 @@ long gfarm_random(void);
 /* utf8 */
 
 int gfarm_utf8_validate_string(const char *);
- 
+int gfarm_utf8_validate_sequences(const char *s, size_t);
