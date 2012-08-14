@@ -191,7 +191,6 @@ static int
 isvalid_attrname(const char *attrname)
 {
 	int namelen = strlen(attrname);
-
 	return ((0 < namelen) && (namelen <= MAX_XATTR_NAME_LEN));
 }
 
@@ -204,10 +203,21 @@ setxattr(int xmlMode, struct inode *inode,
 	void *value;
 
 	*addattr = 0;
-	if (!isvalid_attrname(attrname)) {
+	if (!gfarm_utf8_validate_string(attrname)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "argument 'attrname' is not a valid UTF-8 string");
+		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
+	} else if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
+	}
+
+	if (!gfarm_utf8_validate_string(*valuep)) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "argument '*valuep' is not a valid UTF-8 string");
+		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
 	}
 
 	if (!xmlMode) {
@@ -445,6 +455,10 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1003036,
 			"xattr_access() failed: %s",
 			gfarm_error_string(e));
+	} else if (!gfarm_utf8_validate_string(attrname)) {
+		e = GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "argument 'attrname' is not a valid UTF-8 string");
 	} else if (!isvalid_attrname(attrname)) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_debug(GFARM_MSG_1002077,
@@ -539,17 +553,21 @@ removexattr(int xmlMode, struct inode *inode, char *attrname)
 {
 	gfarm_error_t e;
 
-	if (isvalid_attrname(attrname)) {
+	if (!gfarm_utf8_validate_string(attrname)) {
+		e = GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "argument 'attrname' is not a valid UTF-8 string");
+	} else if (!isvalid_attrname(attrname)) {
+		gflog_debug(GFARM_MSG_1002089,
+		    "argument 'attrname' is invalid");
+		e = GFARM_ERR_INVALID_ARGUMENT;
+	} else {
 		e = inode_xattr_remove(inode, xmlMode, attrname);
 		if (e == GFARM_ERR_NO_ERROR) {
 			db_xattr_remove(xmlMode,
 				inode_get_number(inode), attrname);
 			inode_status_changed(inode);
 		}
-	} else {
-		gflog_debug(GFARM_MSG_1002089,
-			"argument 'attrname' is invalid");
-		e = GFARM_ERR_INVALID_ARGUMENT;
 	}
 
 	return e;

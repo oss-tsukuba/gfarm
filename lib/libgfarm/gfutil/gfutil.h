@@ -37,3 +37,8 @@ int gfarm_timeval_is_expired(const struct timeval *);
 /* random */
 
 long gfarm_random(void);
+
+/* utf8 */
+
+int gfarm_utf8_validate_string(const char *);
+ 

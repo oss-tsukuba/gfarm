@@ -26,7 +26,8 @@ SRCS =	alloc.c \
 	thrbarrier.c \
 	thrsubr.c \
 	timer.c \
-	timeval.c
+	timeval.c \
+	utf8.c
 OBJS =	alloc.lo \
 	assert.lo \
 	backtrace.lo \
@@ -44,7 +45,8 @@ OBJS =	alloc.lo \
 	thrbarrier.lo \
 	thrsubr.lo \
 	timer.lo \
-	timeval.lo
+	timeval.lo \
+	utf8.lo
 
 CFLAGS = $(pthread_includes) $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR)
 
