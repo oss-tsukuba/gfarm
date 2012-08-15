@@ -1150,6 +1150,52 @@ wait_transform_to_master(void)
 	return (open_accepting_socket(gfarm_metadb_server_port));
 }
 
+static struct {
+	pthread_mutex_t mutex;
+	pthread_cond_t become_ready;
+	int ready;
+} gfmd_startup_state = {
+	PTHREAD_MUTEX_INITIALIZER,
+	PTHREAD_COND_INITIALIZER,
+	0
+};
+
+static int
+gfmd_startup_state_is_ready(void)
+{
+	int ready;
+	static const char diag[] = "gfmd_startup_state_is_ready";
+
+	gfarm_mutex_lock(&gfmd_startup_state.mutex, diag, "mutex");
+	ready = gfmd_startup_state.ready;
+	gfarm_mutex_unlock(&gfmd_startup_state.mutex, diag, "mutex");
+	return (ready);
+}
+
+static void
+gfmd_startup_state_wait_ready(void)
+{
+	static const char diag[] = "gfmd_startup_state_wait_ready";
+
+	gfarm_mutex_lock(&gfmd_startup_state.mutex, diag, "mutex");
+	while (!gfmd_startup_state.ready)
+		gfarm_cond_wait(&gfmd_startup_state.become_ready,
+		    &gfmd_startup_state.mutex, diag, "become_ready");
+	gfarm_mutex_unlock(&gfmd_startup_state.mutex, diag, "mutex");
+}
+
+static void
+gfmd_startup_state_notify_ready(void)
+{
+	static const char diag[] = "gfmd_startup_state_notify_ready";
+
+	gfarm_mutex_lock(&gfmd_startup_state.mutex, diag, "mutex");
+	gfmd_startup_state.ready = 1;
+	gfarm_cond_signal(&gfmd_startup_state.become_ready,
+	    diag, "become_ready");
+	gfarm_mutex_unlock(&gfmd_startup_state.mutex, diag, "mutex");
+}
+
 static void
 dummy_sighandler(int signo)
 {
@@ -1231,8 +1277,15 @@ sigs_handler(void *p)
 			continue;
 
 		case SIGUSR1:
-			if (gfarm_get_metadb_replication_enabled())
+			if (gfarm_get_metadb_replication_enabled()) {
+				if (!gfmd_startup_state_is_ready()) {
+					gflog_info(GFARM_MSG_UNFIXED,
+					    "got SIGUSR1, but waiting for "
+					    "completion of initialization");
+					gfmd_startup_state_wait_ready();
+				}
 				transform_to_master();
+			}
 			continue;
 #ifdef SIGINFO
 		case SIGINFO:
@@ -1540,6 +1593,12 @@ main(int argc, char **argv)
 		    "create_detached_thread(db_thread): %s",
 		    gfarm_error_string(e));
 
+	/*
+	 * Create sig_handler thread at earilier stage,
+	 * to make SIGTERM work as soon as possible,
+	 * because applying journal to DB and loading DB to memory
+	 * may take a lot of time.
+	 */
 	e = create_detached_thread(sigs_handler, &sigs);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_fatal(GFARM_MSG_1000210,
@@ -1584,12 +1643,14 @@ main(int argc, char **argv)
 		    "metadata replication %s mode",
 		    is_master ? "master" : "slave");
 		start_gfmdc_threads();
+		gfmd_startup_state_notify_ready();
 		if (is_master)
 			sock = open_accepting_socket(gfarm_metadb_server_port);
 		else
 			sock = wait_transform_to_master();
 	} else
 		sock = open_accepting_socket(gfarm_metadb_server_port);
+
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

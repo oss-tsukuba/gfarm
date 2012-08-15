@@ -172,7 +172,7 @@ struct peer {
 };
 
 static struct peer *peer_table;
-static int peer_table_size;
+static int peer_table_size, peer_initialized;
 static pthread_mutex_t peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char peer_table_diag[] = "peer_table";
 static gfarm_uint64_t cookie_seqno = 1;
@@ -455,6 +455,9 @@ peer_init(int max_peers)
 	int i;
 	struct peer *peer;
 	gfarm_error_t e;
+	static const char diag[] = "peer_init";
+
+	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
 	GFARM_MALLOC_ARRAY(peer_table, max_peers);
 	if (peer_table == NULL)
@@ -501,6 +504,10 @@ peer_init(int max_peers)
 		gflog_fatal(GFARM_MSG_1000282,
 		    "create_detached_thread(peer_closer): %s",
 			    gfarm_error_string(e));
+
+	peer_initialized = 1;
+
+	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
 
 static gfarm_error_t
@@ -809,6 +816,13 @@ peer_shutdown_all(void)
 
 	/* We never unlock this mutex any more */
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
+
+	if (!peer_initialized) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "peer module is not initialized yet, "
+		    "skip to shutdown connections");
+		return;
+	}
 
 	for (i = 0; i < peer_table_size; i++) {
 		peer = &peer_table[i];
