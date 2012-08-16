@@ -214,7 +214,6 @@ setxattr(int xmlMode, struct inode *inode,
 	}
 
 	if (xmlMode && !gfarm_utf8_validate_sequences(*valuep, size)) {
-		e = GFARM_ERR_INVALID_ARGUMENT;
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "argument '*valuep' is not a valid UTF-8 string");
 		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
