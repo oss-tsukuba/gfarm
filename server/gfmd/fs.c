@@ -1440,6 +1440,12 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 	    GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001854, "peer_fdpair_get_current() "
 			"failed: %s", gfarm_error_string(e));
+	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
+	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: invalid cksum type:\"%s\" length: %d bytes",
+		    diag, cksum_type, (int)cksum_len);
+		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = db_begin(diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001855, "db_begin() failed: %s",
 			gfarm_error_string(e));

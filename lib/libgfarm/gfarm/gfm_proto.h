@@ -383,7 +383,21 @@ enum gfm_proto_command {
 #define GFARM_USER_REALNAME_MAX			256
 #define GFARM_USER_GSI_DN_MAX			1024
 
+#define GFARM_GROUP_NAME_MAX			8192 /* VOMS needs long name */
+
+/* see GFS_MAXNAMLEN in <gfarm/gfs.h> as well */
 #define GFARM_PATH_MAX				1024
+
+#define GFARM_XATTR_NAME_MAX			256
+
+/*
+ * NOTE: GFARM_XATTR_SIZE_MAX_LIMIT and GFARM_XMLATTR_SIZE_MAX_LIMIT must be
+ * smaller than JOURNAL_RECORD_SIZE_MAX in server/gfmd/journal_file.c.
+ */
+#define GFARM_XATTR_SIZE_MAX_DEFAULT		(64*1024)
+#define GFARM_XATTR_SIZE_MAX_LIMIT		(1024*1024-64*1024)
+#define GFARM_XMLATTR_SIZE_MAX_DEFAULT		(768*1024)
+#define GFARM_XMLATTR_SIZE_MAX_LIMIT		(1024*1024-64*1024)
 
 /* GFM_PROTO_SCHEDULE_FILE, GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM */
 #define GFM_PROTO_SCHED_FLAG_HOST_AVAIL		1 /* always TRUE for now */

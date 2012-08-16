@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>20 July 2012</date></refentryinfo>
+<refentryinfo><date>16 August 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1198,6 +1198,38 @@ The default is 16.
 </varlistentry>
 
 <varlistentry>
+<term><token>xmlattr_size_limit</token> <parameter>bytes</parameter></term>
+<listitem>
+<para>This directive specifies maximum size of XML extended attributes.
+The default is 786432, and numbers greater than 983040 are not allowed.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	xmlattr_size_limit 786432
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>xattr_size_limit</token> <parameter>bytes</parameter></term>
+<listitem>
+<para>This directive specifies maximum size of extended attributes.
+The default is 65536, and numbers greater than 983040 are not allowed.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	xattr_size_limit 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>attr_cache_limit</token> <parameter>number</parameter></term>
 <listitem>
 <para>This directive specifies maximum number of cached attributes in
@@ -1625,6 +1657,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
@@ -1727,6 +1761,8 @@ notation.</para>
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;simultaneous_replication_receivers&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
+	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
+	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;

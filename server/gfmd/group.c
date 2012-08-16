@@ -14,6 +14,7 @@
 #include "config.h"	/* gfarm_metadb_admin_user */
 #include "gfp_xdr.h"
 #include "auth.h"
+#include "gfm_proto.h"
 
 #include "subr.h"
 #include "rpcsubr.h"
@@ -770,6 +771,11 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001536,
 			"group already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
+	} else if (strlen(gi.groupname) > GFARM_GROUP_NAME_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: too long group name: \"%s\"",
+		    diag, gi.groupname);
+		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = group_user_check(&gi, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001537,
 			"group_user_check() failed: %s",
