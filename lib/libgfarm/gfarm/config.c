@@ -822,6 +822,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_METADB_SERVER_FORCE_SLAVE_DEFAULT		0
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
+#define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_no_file_system_node_timeout = MISC_DEFAULT;
@@ -862,6 +863,7 @@ static int metadb_server_slave_max_size = MISC_DEFAULT;
 static int metadb_server_force_slave = MISC_DEFAULT;
 int gfarm_network_receive_timeout = MISC_DEFAULT;
 int gfarm_file_trace = MISC_DEFAULT;
+int fatal_action = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -2380,6 +2382,34 @@ error:
 }
 
 static gfarm_error_t
+parse_fatal_action(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing fatal action (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+
+	if (*vp != MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	v = gflog_fatal_action_name_to_number(s);
+	if (v == GFLOG_ERROR_INVALID_FATAL_ACTION_NAME) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Invalid fatal action name (%s)", s);
+		return (GFARM_ERRMSG_UNKNOWN_KEYWORD);
+	}
+	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
 	gfarm_error_t e;
@@ -2601,6 +2631,9 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_enabled(p, &gfarm_file_trace);
  	} else if (strcmp(s, o = "debug_command") == 0) {
  		e = parse_debug_command(p, &o);
+	} else if (strcmp(s, o = "fatal_action") == 0) {
+		e = parse_fatal_action(p, &fatal_action);
+		gflog_set_fatal_action(fatal_action);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2805,6 +2838,9 @@ gfarm_config_set_default_misc(void)
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
 	if (gfarm_file_trace == MISC_DEFAULT)
 		gfarm_file_trace = GFARM_FILE_TRACE_DEFAULT;
+	if (fatal_action == MISC_DEFAULT) {
+		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
+	}
 
 	gfarm_config_set_default_filesystem();
 }

@@ -24,6 +24,7 @@ static nl_catd catd = (nl_catd)-1;
 static const char *catalog_file = "gfarm.cat";
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static int log_message_verbose;
+static int fatal_action = 0;
 
 int
 gflog_set_message_verbose(int new)
@@ -187,6 +188,62 @@ gflog_message(int msg_no, int priority, const char *file, int line_no,
 	va_end(ap);
 }
 
+/*
+ * fatal action 
+ */
+void
+gflog_set_fatal_action(int action)
+{
+	fatal_action = action;
+}
+
+static int
+gflog_get_fatal_action(void)
+{
+	return(fatal_action);
+}
+
+static struct {
+	char *name;
+	int action;
+} gflog_fatal_actions[] = {
+	{ "backtrace_and_exit",		GFLOG_FATAL_ACTION_EXIT_BACKTRACE },
+	{ "backtrace_and_abort",	GFLOG_FATAL_ACTION_ABORT_BACKTRACE },
+	{ "exit",			GFLOG_FATAL_ACTION_EXIT },
+	{ "abort",			GFLOG_FATAL_ACTION_ABORT },
+};
+
+int
+gflog_fatal_action_name_to_number(const char *name)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gflog_fatal_actions); i++) {
+		if (strcmp(gflog_fatal_actions[i].name, name) == 0)
+			return (gflog_fatal_actions[i].action);
+	}
+	return (GFLOG_ERROR_INVALID_FATAL_ACTION_NAME); /* not found */
+}
+
+void
+gfarm_log_fatal_action()
+{
+	switch (gflog_get_fatal_action()) {
+	case GFLOG_FATAL_ACTION_EXIT_BACKTRACE:
+		gfarm_log_backtrace_symbols();
+		exit(2);
+	case GFLOG_FATAL_ACTION_ABORT_BACKTRACE:
+		gfarm_log_backtrace_symbols();
+		abort();
+	case GFLOG_FATAL_ACTION_EXIT:
+		exit(2);
+	case GFLOG_FATAL_ACTION_ABORT:
+		abort();
+	default:
+		abort();
+	}
+}
+
 void
 gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, ...)
@@ -197,12 +254,7 @@ gflog_fatal_message(int msg_no, int priority, const char *file, int line_no,
 	gflog_vmessage(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
-	gfarm_log_backtrace_symbols();
-#if 0
-	exit(2);
-#else
-	abort();
-#endif
+	gfarm_log_fatal_action();
 }
 
 void
@@ -238,12 +290,7 @@ gflog_fatal_message_errno(int msg_no, int priority, const char *file,
 	gflog_vmessage_errno(msg_no, priority, file, line_no, func, format, ap);
 	va_end(ap);
 
-	gfarm_log_backtrace_symbols();
-#if 0
-	exit(2);
-#else
-	abort();
-#endif
+	gfarm_log_fatal_action();
 }
 
 void
@@ -275,12 +322,7 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 
 	va_end(ap);
 
-	gfarm_log_backtrace_symbols();
-#if 0
-	exit(2);
-#else
-	abort();
-#endif
+	gfarm_log_fatal_action();
 }
 
 void
