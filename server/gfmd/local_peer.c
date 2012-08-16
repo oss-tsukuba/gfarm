@@ -52,7 +52,7 @@ struct local_peer {
 };
 
 static struct local_peer *local_peer_table;
-static int local_peer_table_size;
+static int local_peer_table_size, local_peer_initialized;
 static gfarm_int64_t local_peer_id = 1;
 static pthread_mutex_t local_peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -234,6 +234,13 @@ local_peer_shutdown_all(void)
 
 	/* We never unlock this mutex any more */
 	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
+
+	if (!local_peer_initialized) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "peer module is not initialized yet, "
+		    "skip to shutdown connections");
+		return;
+	}
 
 	for (i = 0; i < local_peer_table_size; i++) {
 		peer = &local_peer_table[i].super;
@@ -512,6 +519,8 @@ local_peer_init(int max_peers)
 	struct local_peer *local_peer;
 	static const char diag[] = "local_peer_init";
 
+	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
+
 	GFARM_MALLOC_ARRAY(local_peer_table, max_peers);
 	if (local_peer_table == NULL)
 		gflog_fatal(GFARM_MSG_1000278,
@@ -538,6 +547,11 @@ local_peer_init(int max_peers)
 		    diag, "peer:child_peers_mutex");
 		local_peer->super.peer_id = 0;
 	}
+
+	local_peer_initialized = 1;
+
+	gfarm_mutex_unlock(&local_peer_table_mutex, diag,
+	    local_peer_table_diag);
 }
 
 int
