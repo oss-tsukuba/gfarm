@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 July 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "16 August 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -843,6 +843,30 @@ For example,
 	gfsd_connection_cache 32
 .fi
 .TP
+\fBxmlattr_size_limit \fIbytes\fB\fR
+This directive specifies maximum size of XML extended attributes.
+The default is 786432, and numbers greater than 983040 are not allowed.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+	xmlattr_size_limit 786432
+.fi
+.TP
+\fBxattr_size_limit \fIbytes\fB\fR
+This directive specifies maximum size of extended attributes.
+The default is 65536, and numbers greater than 983040 are not allowed.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+	xattr_size_limit 65536
+.fi
+.TP
 \fBattr_cache_limit \fInumber\fB\fR
 This directive specifies maximum number of cached attributes in
 gfarm library.
@@ -1163,6 +1187,8 @@ notation.
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
+		\~\~<xmlattr_size_limit_statement> |
+		\~\~<xattr_size_limit_statement> |
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
@@ -1251,6 +1277,8 @@ notation.
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
+	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>
 	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>
