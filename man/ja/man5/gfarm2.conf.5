@@ -794,6 +794,32 @@ gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
 	gfsd_connection_cache 32
 .fi
 .TP
+\fBxmlattr_size_limit \fIバイト数\fB\fR
+XML拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは786432バイトです。
+983040バイトよりも大きな値を指定することはできません。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+	xmlattr_size_limit 786432
+.fi
+.TP
+\fBxattr_size_limit \fIバイト数\fB\fR
+拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは65536バイトです。
+983040バイトよりも大きな値を指定することはできません。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+	xattr_size_limit 65536
+.fi
+.TP
 \fBattr_cache_limit \fI個数\fB\fR
 gfarmライブラリがキャッシュする属性の最大数を指定します。
 デフォルトは40000個です。
@@ -1115,6 +1141,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
+		\~\~<xmlattr_size_limit_statement> |
+		\~\~<xattr_size_limit_statement> |
 		\~\~<attr_cache_limit_statement> |
 		\~\~<attr_cache_timeout_statement> |
 		\~\~<log_level_statement> |
@@ -1204,6 +1232,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
+	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
+	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>
 	<attr_cache_limit_statement> ::= "attr_cache_limit" <number>
 	<attr_cache_timeout_statement> ::= "attr_cache_timeout" <number>
 	<log_level_statement> ::= "log_level" <log_priority>

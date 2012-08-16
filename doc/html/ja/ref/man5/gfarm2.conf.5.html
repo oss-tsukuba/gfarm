@@ -1666,6 +1666,52 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>xmlattr_size_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>バイト眶</I
+></TT
+></DT
+><DD
+><P
+>XML橙磨掳拉の猛として、部バイトまで肋年材墙かを回年します。
+デフォルトは786432バイトです。
+983040バイトよりも络きな猛を回年することはできません。</P
+><P
+>この矢はgfmd.confのみで铜跟であり、gfarm2.confでは痰浑されます。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	xmlattr_size_limit&nbsp;786432</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>xattr_size_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>バイト眶</I
+></TT
+></DT
+><DD
+><P
+>橙磨掳拉の猛として、部バイトまで肋年材墙かを回年します。
+デフォルトは65536バイトです。
+983040バイトよりも络きな猛を回年することはできません。</P
+><P
+>この矢はgfmd.confのみで铜跟であり、gfarm2.confでは痰浑されます。</P
+><P
+>毋:</P
+><P
+CLASS="LITERALLAYOUT"
+>	xattr_size_limit&nbsp;65536</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >attr_cache_limit</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2225,6 +2271,8 @@ CLASS="LITERALLAYOUT"
 		牋&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		牋&#60;simultaneous_replication_receivers&#62;&nbsp;|<br>
 		牋&#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		牋&#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
+		牋&#60;xattr_size_limit_statement&#62;&nbsp;|<br>
 		牋&#60;attr_cache_limit_statement&#62;&nbsp;|<br>
 		牋&#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
 		牋&#60;log_level_statement&#62;&nbsp;|<br>
@@ -2314,6 +2362,8 @@ CLASS="LITERALLAYOUT"
 		牋"minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;simultaneous_replication_receivers&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
+	&#60;xmlattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xmlattr_size_limit"&nbsp;&#60;size&#62;<br>
+	&#60;xattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xattr_size_limit"&nbsp;&#60;size&#62;<br>
 	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
 	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
 	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
