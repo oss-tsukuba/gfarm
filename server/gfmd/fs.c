@@ -4150,7 +4150,6 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 	struct entry_result {
 		gfarm_ino_t inum;
 		gfarm_uint64_t gen;
-		gfarm_off_t size;
 		int flags;
 	} *ents = NULL;
 	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES";
@@ -4187,7 +4186,6 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 			    inode_has_file_copy(inode, spool_host)) {
 				ents[n_ret].inum = inode_get_number(inode);
 				ents[n_ret].gen = inode_get_gen(inode);
-				ents[n_ret].size = inode_get_size(inode);
 				e_rpc = GFARM_ERR_NO_ERROR;
 				n_ret++;
 			}
@@ -4199,8 +4197,8 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 	/* if network error doesn't happen, e_ret == e_rpc here */
 	if (e_ret == GFARM_ERR_NO_ERROR)
 		for (i = 0; i < n_ret; i++) {
-			e_ret = gfp_xdr_send(client, "lll",
-			    ents[i].inum, ents[i].gen, ents[i].size);
+			e_ret = gfp_xdr_send(client, "ll",
+			    ents[i].inum, ents[i].gen);
 			if (e_ret != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_UNFIXED,
 				    "replica_get_my_entries @%s: %s",

@@ -49,7 +49,7 @@ gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 
 static gfarm_error_t
 gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
-	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
+	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp)
 {
 	gfarm_error_t e;
 	static const char diag[] = "replica_get_my_entries";
@@ -58,7 +58,7 @@ gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
 	    gfm_server, start_inum, *np)) != GFARM_ERR_NO_ERROR)
 		fatal_metadb_proto(GFARM_MSG_UNFIXED, "request", diag, e);
 	else if ((e = gfm_client_replica_get_my_entries_result(
-	    gfm_server, np, inumsp, gensp, sizesp)) != GFARM_ERR_NO_ERROR) {
+	    gfm_server, np, inumsp, gensp)) != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
 			gflog_info(GFARM_MSG_UNFIXED, "%s result: %s", diag,
 			    gfarm_error_string(e));
@@ -454,13 +454,11 @@ check_metadata()
 	gfarm_error_t e;
 	gfarm_ino_t inum, *inums;
 	gfarm_uint64_t *gens;
-	gfarm_off_t *sizes; /* not used */
 	int i, n;
 
 	for (inum = 0;; inum++) {
 		n = REQUEST_NUM;
-		e = gfm_client_replica_get_my_entries(inum, &n,
-		    &inums, &gens, &sizes);
+		e = gfm_client_replica_get_my_entries(inum, &n, &inums, &gens);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_ERROR); /* end */
 		else if (e != GFARM_ERR_NO_ERROR) {
@@ -472,16 +470,10 @@ check_metadata()
 		}
 		for (i = 0; i < n && i < REQUEST_NUM; i++) {
 			check_existing(inums[i], gens[i]);
-			/*
-			 * size[i] is not used here.
-			 * Because file-sizes are compared by
-			 * gfm_client_replica_add() from check_spool().
-			 */
 			inum = inums[i];
 		}
 		free(inums);
 		free(gens);
-		free(sizes);
 		if (n < REQUEST_NUM)
 			return (GFARM_ERR_NO_ERROR); /* end */
 	}
