@@ -26,6 +26,7 @@ struct gfarm_context {
 	int on_demand_replication;
 	int network_receive_timeout;
 	int file_trace;
+	int fatal_action;
 
 	/* platform dependent constant */
 	int getpw_r_bufsz;

@@ -889,6 +889,7 @@ char *gfarm_localfs_datadir = NULL;
 #define GFARM_METADB_SERVER_SLAVE_LISTEN_DEFAULT	0
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
+#define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
 #if 0 /* not yet in gfarm v2 */
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;
@@ -2461,6 +2462,34 @@ debug_command_argv_free(void)
 }
 
 static gfarm_error_t
+parse_fatal_action(char *p, int *vp)
+{
+	gfarm_error_t e;
+	char *s;
+	int v;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing fatal action (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+
+	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+	v = gflog_fatal_action_name_to_number(s);
+	if (v == GFLOG_ERROR_INVALID_FATAL_ACTION_NAME) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"Invalid fatal action name (%s)", s);
+		return (GFARM_ERRMSG_UNKNOWN_KEYWORD);
+	}
+	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_one_line(char *s, char *p, char **op)
 {
 	gfarm_error_t e;
@@ -2703,6 +2732,9 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_enabled(p, &gfarm_ctxp->file_trace);
 	} else if (strcmp(s, o = "debug_command") == 0) {
 		e = parse_debug_command(p, &o);
+	} else if (strcmp(s, o = "fatal_action") == 0) {
+		e = parse_fatal_action(p, &gfarm_ctxp->fatal_action);
+		gflog_set_fatal_action(gfarm_ctxp->fatal_action);
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2969,6 +3001,9 @@ gfarm_config_set_default_misc(void)
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->file_trace == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
+	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT) {
+		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
+	}
 
 	gfarm_config_set_default_filesystem();
 	gfarm_config_set_default_metadb_server();

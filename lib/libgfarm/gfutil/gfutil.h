@@ -42,3 +42,15 @@ long gfarm_random(void);
 
 int gfarm_utf8_validate_string(const char *);
 int gfarm_utf8_validate_sequences(const char *s, size_t);
+
+/* fatal action */
+
+#define GFLOG_ERROR_INVALID_FATAL_ACTION_NAME -1
+enum fatal_actions {
+	GFLOG_FATAL_ACTION_EXIT_BACKTRACE,
+	GFLOG_FATAL_ACTION_ABORT_BACKTRACE,
+	GFLOG_FATAL_ACTION_EXIT,
+	GFLOG_FATAL_ACTION_ABORT,
+};
+void gflog_set_fatal_action(int);
+int gflog_fatal_action_name_to_number(const char *);

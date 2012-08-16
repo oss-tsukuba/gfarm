@@ -128,6 +128,7 @@ gfarm_context_init(void)
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->on_demand_replication = 0;
+	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;
 	if ((ctxp->getpw_r_bufsz = sysconf(_SC_GETPW_R_SIZE_MAX)) == -1)
 		ctxp->getpw_r_bufsz = BUFSIZE_MAX;
 
