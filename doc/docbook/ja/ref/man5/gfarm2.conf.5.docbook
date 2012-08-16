@@ -1551,6 +1551,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
@@ -1629,6 +1630,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_max_descriptors_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
 	&lt;metadb_server_thread_pool_size_statement&gt; ::=
