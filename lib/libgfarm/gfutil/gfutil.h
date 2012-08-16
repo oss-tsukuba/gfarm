@@ -46,7 +46,7 @@ int gfarm_utf8_validate_sequences(const char *s, size_t);
 /* fatal action */
 
 #define GFLOG_ERROR_INVALID_FATAL_ACTION_NAME -1
-enum fatal_actions {
+enum gflog_fatal_actions {
 	GFLOG_FATAL_ACTION_EXIT_BACKTRACE,
 	GFLOG_FATAL_ACTION_ABORT_BACKTRACE,
 	GFLOG_FATAL_ACTION_EXIT,
