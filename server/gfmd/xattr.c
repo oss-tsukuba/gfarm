@@ -38,8 +38,6 @@
 #include "gfm_proto.h"
 #include "relay.h"
 
-#define MAX_XATTR_NAME_LEN	256
-
 static gfarm_error_t
 xattr_inherit_common(struct inode *parent, struct inode *child,
 		     const char *name, void **value_p, size_t *size_p)
@@ -195,7 +193,7 @@ static int
 isvalid_attrname(const char *attrname)
 {
 	int namelen = strlen(attrname);
-	return ((0 < namelen) && (namelen <= MAX_XATTR_NAME_LEN));
+	return ((0 < namelen) && (namelen <= GFARM_XATTR_NAME_MAX));
 }
 
 static gfarm_error_t
@@ -215,6 +213,9 @@ setxattr(int xmlMode, struct inode *inode,
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
+	} else if (size >
+	    (xmlMode ? gfarm_xmlattr_size_limit : gfarm_xattr_size_limit)) {
+		return GFARM_ERR_ARGUMENT_LIST_TOO_LONG; /* i.e. E2BIG */
 	}
 
 	if (xmlMode && !gfarm_utf8_validate_sequences(*valuep, size)) {

@@ -878,6 +878,11 @@ gfm_server_group_info_set_reply(enum request_reply_mode mode,
 			gflog_debug(GFARM_MSG_1001536,
 			    "group already exists");
 			e_rpc = GFARM_ERR_ALREADY_EXISTS;
+		} else if (strlen(gi->groupname) > GFARM_GROUP_NAME_MAX) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s: too long group name: \"%s\"",
+			    diag, gi->groupname);
+			e_rpc = GFARM_ERR_INVALID_ARGUMENT;
 		} else if ((e_rpc = group_user_check(gi, diag))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001537,
@@ -885,7 +890,7 @@ gfm_server_group_info_set_reply(enum request_reply_mode mode,
 			    gfarm_error_string(e_rpc));
 			/*
 			 * We have to call db_group_add() before
-			 * group_info_add(), because group_info_add_and()
+			 * group_info_add(), because group_info_add()
 			 * frees the memory of 'gi'.
 			 */
 		} else if ((e_rpc = db_group_add(gi)) != GFARM_ERR_NO_ERROR) {

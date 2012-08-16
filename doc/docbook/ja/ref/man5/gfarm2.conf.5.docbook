@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>20 July 2012</date></refentryinfo>
+<refentryinfo><date>16 August 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1158,6 +1158,40 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
+<term><token>xmlattr_size_limit</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>XML拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは786432バイトです。
+983040バイトよりも大きな値を指定することはできません。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	xmlattr_size_limit 786432
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>xattr_size_limit</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは65536バイトです。
+983040バイトよりも大きな値を指定することはできません。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	xattr_size_limit 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>attr_cache_limit</token> <parameter>個数</parameter></term>
 <listitem>
 <para>gfarmライブラリがキャッシュする属性の最大数を指定します。
@@ -1593,6 +1627,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
@@ -1696,6 +1732,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;simultaneous_replication_receivers&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
+	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
+	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;

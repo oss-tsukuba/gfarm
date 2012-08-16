@@ -30,13 +30,13 @@ CREATE TABLE GfarmUser (
 );
 
 CREATE TABLE GfarmGroup (
-	groupname	TEXT	PRIMARY KEY
+	groupname	VARCHAR(8192)	PRIMARY KEY
 );
 
 CREATE TABLE GfarmGroupAssignment (
 	username	VARCHAR(64)
 		REFERENCES GfarmUser(username) ON DELETE CASCADE,
-	groupname	TEXT
+	groupname	VARCHAR(8192)
 		REFERENCES GfarmGroup(groupname) ON DELETE CASCADE,
 	PRIMARY KEY(username, groupname)
 );
@@ -49,7 +49,7 @@ CREATE TABLE INode (
 	size		INT8		NOT NULL,
 	mode		INTEGER		NOT NULL,
 	username	VARCHAR(64)	NOT NULL,
-	groupname	TEXT		NOT NULL,
+	groupname	VARCHAR(8192)	NOT NULL,
 	atimesec	INT8		NOT NULL,
 	atimensec	INTEGER		NOT NULL,
 	mtimesec	INT8		NOT NULL,
@@ -84,7 +84,7 @@ CREATE INDEX deadFileCopyByHostname ON DeadFileCopy (hostname);
 
 CREATE TABLE DirEntry (
 	dirINumber	INT8		NOT NULL,
-	entryName	VARCHAR(1024)	NOT NULL,
+	entryName	VARCHAR(255)	NOT NULL,
 	entryINumber	INT8		NOT NULL,
 	PRIMARY KEY(dirINumber, entryName)
 );
@@ -127,7 +127,7 @@ CREATE TABLE QuotaUser (
 );
 
 CREATE TABLE QuotaGroup (
-	groupname	TEXT	PRIMARY KEY
+	groupname	VARCHAR(8192)	PRIMARY KEY
 		 REFERENCES GfarmGroup(groupname) ON DELETE CASCADE,
 	gracePeriod	INT8	NOT NULL,
 	fileSpace	INT8	NOT NULL,

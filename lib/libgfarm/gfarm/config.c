@@ -899,6 +899,8 @@ int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
 #endif
 int gfs_proto_fhremove_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfs_proto_replication_request_window = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
+int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
 int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -2686,6 +2688,20 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfmd_connection_cache);
+	} else if (strcmp(s, o = "xattr_size_limit") == 0) {
+		e = parse_set_misc_int(p, &gfarm_xattr_size_limit);
+		if (e == GFARM_ERR_NO_ERROR &&
+		    gfarm_xattr_size_limit > GFARM_XATTR_SIZE_MAX_LIMIT) {
+			e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
+			gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+		}
+	} else if (strcmp(s, o = "xmlattr_size_limit") == 0) {
+		e = parse_set_misc_int(p, &gfarm_xmlattr_size_limit);
+		if (e == GFARM_ERR_NO_ERROR &&
+		    gfarm_xmlattr_size_limit > GFARM_XMLATTR_SIZE_MAX_LIMIT) {
+			e = GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE;
+			gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+		}
 	} else if (strcmp(s, o = "metadb_server_max_descriptors") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_max_descriptors);
 	} else if (strcmp(s, o = "metadb_server_stack_size") == 0) {
@@ -2949,6 +2965,10 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->gfmd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfmd_connection_cache =
 		    GFARM_GFMD_CONNECTION_CACHE_DEFAULT;
+	if (gfarm_xattr_size_limit == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_xattr_size_limit = GFARM_XATTR_SIZE_MAX_DEFAULT;
+	if (gfarm_xmlattr_size_limit == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_xmlattr_size_limit = GFARM_XMLATTR_SIZE_MAX_DEFAULT;
 	if (gfarm_metadb_max_descriptors == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_max_descriptors =
 		    GFARM_METADB_MAX_DESCRIPTORS_DEFAULT;
