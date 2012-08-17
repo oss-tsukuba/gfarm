@@ -940,7 +940,8 @@ gfm_server_switch_gfmd_channel(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
-	gfarm_error_t e, er;
+	gfarm_error_t e;
+	gfarm_error_t er = GFARM_ERR_NO_ERROR;
 	gfarm_int32_t version;
 	gfarm_int64_t cookie;
 	struct relayed_request *relay;
@@ -960,8 +961,7 @@ gfm_server_switch_gfmd_channel(
 			gflog_debug(GFARM_MSG_1002987,
 			    "Operation not permitted: from_client");
 			er = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else
-			er = GFARM_ERR_NO_ERROR;
+		}
 	}
 	i = 0;
 	if ((e = gfm_server_relay_put_reply(peer, xid, sizep, relay,
