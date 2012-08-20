@@ -1321,6 +1321,77 @@ This directive is available in both gfarm2.conf and gfmd.conf.
 </varlistentry>
 
 <varlistentry>
+<term><token>fatal_action</token> <parameter>action_name</parameter></term>
+<listitem>
+<para>
+This parameter specifies the behavior at a fatal error.
+The default action is <replaceable>backtrace_and_abort</replaceable>.
+</para>
+<para>
+<!-- If you write this paragraph after a below <variablelist>,
+     a indent of this section in a man page will be disabled. -->
+For example,
+</para>
+<literallayout>
+	fatal_action backtrace_and_abort
+</literallayout>
+<para>
+The following actions are supported:
+</para>
+<variablelist>
+<varlistentry>
+<term><token>backtrace_and_abort</token></term>
+<listitem>
+<para>
+Print a backtrace, and then call
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>backtrace_and_exit</token></term>
+<listitem>
+<para>
+Print a backtrace, and then call
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>abort</token></term>
+<listitem>
+<para>
+Call
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>exit</token></term>
+<listitem>
+<para>
+Call
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+.
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>debug_command</token> <parameter>command_line</parameter></term>
 <listitem>
 <para>
@@ -1686,6 +1757,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
 		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
+		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
 		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
@@ -1791,6 +1863,7 @@ notation.</para>
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
 	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
+	&lt;fatal_action_statement&gt; ::= "fatal_action" &lt;fatal_action_name&gt;
 	&lt;debug_command_statement&gt; ::= "debug_command" &lt;string_list&gt;
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
@@ -1839,6 +1912,8 @@ notation.</para>
 	&lt;validity&gt; ::= "enable" | "disable"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
+	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
+		&nbsp;&nbsp;"abort" | "exit"
 </literallayout>
 
 </refsect1>

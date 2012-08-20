@@ -1283,6 +1283,75 @@ enableと指定した場合、ファイル作成・変更・削除に関する
 </varlistentry>
 
 <varlistentry>
+<term><token>fatal_action</token> <parameter>動作名</parameter></term>
+<listitem>
+<para>
+このパラメータでは、致命的なエラーが発生したときの動作を設定します。
+デフォルトは <replaceable>backtrace_and_abort</replaceable> です。
+</para>
+<para>
+<!-- この項を下にある<variablelist>の項の後ろに書くと、
+     man page でのインデントが無効化されます。-->
+例:
+</para>
+<literallayout>
+	fatal_action backtrace_and_abort
+</literallayout>
+<para>
+指定可能な動作名は以下の通りです:
+</para>
+<variablelist>
+<varlistentry>
+<term><token>backtrace_and_abort</token></term>
+<listitem>
+<para>
+バックトレースを出力した後、
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>backtrace_and_exit</token></term>
+<listitem>
+<para>
+バックトレースを出力した後、
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>abort</token></term>
+<listitem>
+<para>
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>exit</token></term>
+<listitem>
+<para>
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>debug_command</token> <parameter>コマンド行</parameter></term>
 <listitem>
 <para>
@@ -1635,6 +1704,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
 		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
+		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
 		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
@@ -1740,6 +1810,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
 	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
+	&lt;fatal_action_statement&gt; ::= "fatal_action" &lt;fatal_action_name&gt;
 	&lt;debug_command_statement&gt; ::= "debug_command" &lt;string_list&gt;
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
@@ -1788,6 +1859,8 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;validity&gt; ::= "enable" | "disable"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
+	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
+		&nbsp;&nbsp;"abort" | "exit"
 </literallayout>
 
 </refsect1>
