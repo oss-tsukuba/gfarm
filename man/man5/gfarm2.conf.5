@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "16 August 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "20 August 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -937,6 +937,40 @@ Here is an example:
 	file_trace enable
 .fi
 .TP
+\fBfatal_action \fIaction_name\fB\fR
+This parameter specifies the behavior at a fatal error.
+The default action is \fIbacktrace_and_abort\fR\&.
+
+For example,
+
+.nf
+	fatal_action backtrace_and_abort
+.fi
+
+The following actions are supported:
+.RS
+.TP
+\fBbacktrace_and_abort\fR
+Print a backtrace, and then call
+\fBabort\fR(3)
+\&.
+.TP
+\fBbacktrace_and_exit\fR
+Print a backtrace, and then call
+\fBexit\fR(3)
+\&.
+.TP
+\fBabort\fR
+Call
+\fBabort\fR(3)
+\&.
+.TP
+\fBexit\fR
+Call
+\fBexit\fR(3)
+\&.
+.RE
+.TP
 \fBdebug_command \fIcommand_line\fB\fR
 When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
 a debug command specified in this directive is executed.
@@ -1211,6 +1245,7 @@ notation.
 		\~\~<log_message_verbose_level_statement> |
 		\~\~<log_auth_verbose_statement> |
 		\~\~<file_trace_statement> |
+		\~\~<fatal_action_statement> |
 		\~\~<debug_command_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<profile_statement> |
@@ -1302,6 +1337,7 @@ notation.
 	<log_message_verbose_level_statement> ::= "log_message_verbose_level" <number>
 	<log_auth_verbose_statement> ::= "log_auth_verbose" <validity>
 	<file_trace_statement> ::= "file_trace" <validity>
+	<fatal_action_statement> ::= "fatal_action" <fatal_action_name>
 	<debug_command_statement> ::= "debug_command" <string_list>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
@@ -1343,6 +1379,8 @@ notation.
 	<validity> ::= "enable" | "disable"
 	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		\~\~"notice" | "info" | "debug"
+	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |
+		\~\~"abort" | "exit"
 .fi
 .SH "EXAMPLES"
 .PP
