@@ -202,11 +202,7 @@ setxattr(int xmlMode, struct inode *inode,
 	void *value;
 
 	*addattr = 0;
-	if (!gfarm_utf8_validate_string(attrname)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "argument 'attrname' is not a valid UTF-8 string");
-		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
-	} else if (!isvalid_attrname(attrname)) {
+	if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
 		return GFARM_ERR_INVALID_ARGUMENT;
