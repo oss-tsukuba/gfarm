@@ -3730,6 +3730,9 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				if (e == GFARM_ERR_NO_ERROR) {
 					copy->flags &= ~FILE_COPY_VALID;
 					copy->flags |= FILE_COPY_BEING_REMOVED;
+				} else {
+					*foundp = copy->host_next;
+					free(copy);
 				}
 			}
 		} else {
