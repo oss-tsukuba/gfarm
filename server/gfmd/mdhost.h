@@ -10,6 +10,15 @@ struct gfarm_metadb_server;
 
 struct abstract_host *mdhost_to_abstract_host(struct mdhost *);
 
+/* for gfmd_channel.c */
+struct gfmdc_journal_send_closure;
+void mdhost_configure_journal_send_closure(
+	void (*wakeup)(void),
+	struct gfmdc_journal_send_closure *(*)(void),
+	void (*)(struct gfmdc_journal_send_closure *));
+struct gfmdc_journal_send_closure *
+	mdhost_get_journal_send_closure(struct mdhost *);
+
 void mdhost_init(void);
 const char *mdhost_get_name(struct mdhost *);
 int mdhost_get_port(struct mdhost *);

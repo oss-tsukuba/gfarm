@@ -1514,6 +1514,7 @@ gfmd_modules_init_default(int table_size)
 		db_journal_apply_init();
 		db_journal_init();
 		boot_apply_db_journal();
+		gfmdc_pre_init(); /* must be called before mdhost_init() */
 	}
 	mdhost_init();
 	back_channel_init();

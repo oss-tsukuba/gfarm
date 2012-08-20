@@ -56,14 +56,12 @@ struct gfmdc_journal_send_closure {
 
 struct gfmdc_journal_sync_info {
 	gfarm_uint64_t seqnum;
-	int nservers;
-	int nrecv_threads, slave_index;
+	int nrecv_threads;
 	gfarm_error_t file_sync_error;
 	pthread_mutex_t sync_mutex;
 	pthread_cond_t sync_end_cond;
 	pthread_mutex_t async_mutex;
 	pthread_cond_t async_wait_cond;
-	struct gfmdc_journal_send_closure *closures;
 };
 
 static struct peer_watcher *gfmdc_recv_watcher;
@@ -1191,6 +1189,16 @@ gfmdc_journal_asyncsend_thread(void *arg)
 	return (NULL);
 }
 
+static void
+gfmdc_journal_asyncsend_thread_wakeup(void)
+{
+	static const char diag[] = "gfmdc_journal_asyncsend_thread_wakeup";
+
+	if (mdhost_has_async_replication_target())
+		gfarm_cond_signal(&journal_sync_info.async_wait_cond, diag,
+			ASYNC_WAIT_COND_DIAG);
+}
+
 void *
 gfmdc_connect_thread(void *arg)
 {
@@ -1301,15 +1309,14 @@ gfmdc_journal_sync_count_host(struct mdhost *mh, void *closure)
 static int
 gfmdc_journal_sync_mdhost_add_job(struct mdhost *mh, void *closure)
 {
-	int i, s = 0;
+	int s = 0;
 	struct gfmdc_journal_send_closure *c;
 	const char diag[] = "gfmdc_journal_sync_mdhost_add_job";
 
-	i = journal_sync_info.slave_index++;
 	(void)gfmdc_journal_sync_count_host(mh, &s);
 	if (s == 0)
 		return (1);
-	c = &journal_sync_info.closures[i];
+	c = mdhost_get_journal_send_closure(mh);
 	assert(c->data == NULL);
 	gfarm_mutex_lock(&journal_sync_info.sync_mutex, diag,
 	    SYNC_MUTEX_DIAG);
@@ -1345,7 +1352,6 @@ gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 		    gfmdc_journal_file_sync_thread, NULL);
 	} else
 		journal_sync_info.nrecv_threads = 0;
-	journal_sync_info.slave_index = 0;
 	mdhost_foreach(gfmdc_journal_sync_mdhost_add_job, NULL);
 
 	gfmdc_wait_journal_recv_threads(diag);
@@ -1405,44 +1411,6 @@ gfmdc_journal_first_sync_thread(void *closure)
 	return (NULL);
 }
 
-void
-gfmdc_alloc_journal_sync_info_closures(void)
-{
-	int i;
-	int nsvrs = mdhost_get_count();
-	struct gfmdc_journal_sync_info *si = &journal_sync_info;
-	struct gfmdc_journal_send_closure *c;
-	static const char diag[] = "gfmdc_alloc_journal_sync_info_closures";
-
-	if (si->closures) {
-		for (i = 0; i < si->nservers; ++i) {
-			c = &si->closures[i];
-			gfarm_mutex_destroy(&c->send_mutex, diag,
-			    SEND_MUTEX_DIAG);
-			gfarm_cond_destroy(&c->send_end_cond, diag,
-			    SEND_END_COND_DIAG);
-		}
-		free(si->closures);
-	}
-
-	GFARM_MALLOC_ARRAY(si->closures, nsvrs);
-	if (si->closures == NULL)
-		gflog_fatal(GFARM_MSG_1003009,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-	for (i = 0; i < nsvrs; ++i) {
-		c = &si->closures[i];
-		c->data = NULL;
-		gfarm_mutex_init(&c->send_mutex, diag, SEND_MUTEX_DIAG);
-		gfarm_cond_init(&c->send_end_cond, diag, SEND_END_COND_DIAG);
-	}
-
-	si->nservers = nsvrs;
-
-	if (mdhost_has_async_replication_target())
-		gfarm_cond_signal(&si->async_wait_cond, diag,
-			ASYNC_WAIT_COND_DIAG);
-}
-
 static void
 gfmdc_sync_init(void)
 {
@@ -1467,7 +1435,6 @@ gfmdc_sync_init(void)
 	gfarm_cond_init(&si->async_wait_cond, diag, ASYNC_WAIT_COND_DIAG);
 
 	si->nrecv_threads = 0;
-	gfmdc_alloc_journal_sync_info_closures();
 	db_journal_set_sync_op(gfmdc_journal_sync_multiple);
 }
 
@@ -1490,4 +1457,39 @@ gfmdc_init(void)
 		    gfarm_metadb_thread_pool_size,
 		    gfarm_metadb_job_queue_length);
 	gfmdc_sync_init();
+}
+
+static struct gfmdc_journal_send_closure *
+gfmdc_journal_send_closure_alloc(void)
+{
+	struct gfmdc_journal_send_closure *c;
+	static const char diag[] = "journal_send_closure_alloc";
+
+	GFARM_MALLOC(c);
+	if (c == NULL)
+		return (NULL);
+	c->data = NULL;
+	gfarm_mutex_init(&c->send_mutex, diag, SEND_MUTEX_DIAG);
+	gfarm_cond_init(&c->send_end_cond, diag, SEND_END_COND_DIAG);
+	return (c);
+}
+
+static void
+gfmdc_journal_send_closure_free(struct gfmdc_journal_send_closure *c)
+{
+	static const char diag[] = "journal_send_closure_free";
+
+	gfarm_mutex_destroy(&c->send_mutex, diag, SEND_MUTEX_DIAG);
+	gfarm_cond_destroy(&c->send_end_cond, diag, SEND_END_COND_DIAG);
+	free(c);
+}
+
+/* this must be called before mdhost_init() */
+void
+gfmdc_pre_init(void)
+{
+	mdhost_configure_journal_send_closure(
+	    gfmdc_journal_asyncsend_thread_wakeup,
+	    gfmdc_journal_send_closure_alloc,
+	    gfmdc_journal_send_closure_free);
 }

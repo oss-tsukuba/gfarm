@@ -63,6 +63,9 @@ struct mdhost {
 	struct journal_file_reader *jreader;
 	gfarm_uint64_t last_fetch_seqnum;
 	struct mdcluster *cluster;
+
+	/* for gfmd_channel.c */
+	struct gfmdc_journal_send_closure *journal_send_closure; 
 };
 static const char MDHOST_MUTEX_DIAG[]		= "mdhost_mutex";
 
@@ -78,7 +81,6 @@ pthread_mutex_t mdhost_master_mutex = PTHREAD_MUTEX_INITIALIZER;
 static const char MDHOST_MASTER_MUTEX_DIAG[]	= "mdhost_master_mutex";
 static struct mdhost *mdhost_master;
 
-
 #define MDHOST_HASHTAB_SIZE	31
 
 #define FOREACH_MDHOST(it) \
@@ -87,6 +89,33 @@ static struct mdhost *mdhost_master;
 	     gfarm_hash_iterator_next(&(it)))
 
 static gfarm_error_t mdhost_updated(void);
+
+/*
+ **********************************************************************
+ * for gfmd_channel.c
+ */
+static void (*journal_send_wakeup)(void);
+static struct gfmdc_journal_send_closure *(*journal_send_closure_alloc)(void);
+static void (*journal_send_closure_free)(struct gfmdc_journal_send_closure *);
+
+void
+mdhost_configure_journal_send_closure(
+	void (*wakeup)(void),
+	struct gfmdc_journal_send_closure *(*alloc)(void),
+	void (*free)(struct gfmdc_journal_send_closure *))
+{
+	journal_send_wakeup = wakeup;
+	journal_send_closure_alloc = alloc;
+	journal_send_closure_free = free;
+}
+
+struct gfmdc_journal_send_closure *
+mdhost_get_journal_send_closure(struct mdhost *m)
+{
+	return (m->journal_send_closure);
+}
+
+/**********************************************************************/
 
 static void
 mdhost_mutex_lock(struct mdhost *m, const char *diag)
@@ -565,8 +594,23 @@ mdhost_new(struct gfarm_metadb_server *ms)
 		    "mdhost %s: no memory", gfarm_metadb_server_get_name(ms));
 		return (NULL);
 	}
+
+	/* for gfmd_channel.c */
+	if (journal_send_closure_alloc == NULL) {
+		m->journal_send_closure = NULL;
+	} else if ((m->journal_send_closure = (*journal_send_closure_alloc)())
+	    == NULL) {
+		free(m);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "mdhost %s: cannot allocate journal_send_closure",
+		    gfarm_metadb_server_get_name(ms));
+		return (NULL);
+	}
+
 	e = abstract_host_init(&m->ah, &mdhost_ops, NULL,  diag);
 	if (e != GFARM_ERR_NO_ERROR) {
+		if (m->journal_send_closure != NULL)
+			(*journal_send_closure_free)(m->journal_send_closure);
 		free(m);
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "mdhost %s: %s",
@@ -1152,7 +1196,8 @@ mdhost_updated(void)
 	fs = gfarm_filesystem_get_default();
 	gfarm_filesystem_set_metadb_server_list(fs, mss, i);
 	free(mss);
-	gfmdc_alloc_journal_sync_info_closures();
+	if (journal_send_wakeup != NULL)
+		(*journal_send_wakeup)();
 
 	return (GFARM_ERR_NO_ERROR);
 }
