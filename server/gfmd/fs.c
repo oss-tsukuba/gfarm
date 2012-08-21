@@ -4071,7 +4071,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	if (e == GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "inode %lld:%lld on %s: invalid metadata deleted",
-		    inum, gen, host_name(spool_host));
+		    (long long)inum, (long long)gen, host_name(spool_host));
 	}
 
 	return (gfm_server_put_reply(peer, diag, e, ""));
@@ -4269,8 +4269,9 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 		gflog_notice(GFARM_MSG_UNFIXED,
 		    "inode %lld:%lld on %s -> %lld:%lld: "
 		    "moved to lost+found",
-		    inum_old, gen_old, host_name(spool_host),
-		    inum_new, gen_new);
+		    (long long)inum_old, (long long)gen_old,
+		    host_name(spool_host),
+		    (long long)inum_new, (long long)gen_new);
 	}
 
 	return (gfm_server_put_reply(peer, diag, e_rpc, "ll",
