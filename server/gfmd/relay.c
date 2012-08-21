@@ -666,54 +666,83 @@ gfm_server_relay_put_reply_arg_dynarg(struct peer *peer, size_t *sizep,
 }
 
 static gfarm_error_t
-gfm_server_reply_with_vrelay(struct peer *peer, gfp_xdr_xid_t xid,
-	int skip, put_reply_op_t put_reply_op,
-	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
-	void *closure, const char *diag)
+request_reply_dynarg_norelay(struct peer *peer, gfp_xdr_xid_t xid, int skip,
+    get_request_op_t get_request_op, put_reply_op_t put_reply_op,
+    gfarm_int32_t command, void *closure, const char *diag)
 {
 	gfarm_error_t e;
 	size_t size = 0;
 	struct gfp_xdr *conn = peer_get_conn(peer);
-	int relay_reply = peer_get_async(peer) != NULL &&
-		mdhost_self_is_master();
-	gfarm_uint64_t seqnum;
-	gfarm_uint64_t flags;
+	static const char relay_diag[] = "request_reply_dynarg_norelay";
 
-	if (!relay_reply && wait_db_update_flags &&
-	    (e = wait_db_update_info(peer, wait_db_update_flags, diag))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		e = gfm_server_put_reply(peer, xid, xid != 0 ? &size : NULL,
-		    diag, e, "");
-	} else if ((e = put_reply_op(relay_reply ? RELAY_CALC_SIZE : NO_RELAY,
-	    peer, relay_reply ? &size : NULL, skip, closure, diag))
+	gfm_server_start_get_request(peer, diag);
+	if ((e = get_request_op(NO_RELAY, peer, &size, skip, NULL, closure,
+	    diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_ERR_NO_ERROR,
+		    "%s: %s (gfm_server_start_get_request): %s",
+		    diag, relay_diag, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = put_reply_op(NO_RELAY, peer, NULL, skip, closure, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (put_reply_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
 	}
 
-	if (!relay_reply) {
-		gfp_xdr_flush(conn);
+	gfp_xdr_flush(conn);
+	return (e);
+}
+
+static gfarm_error_t
+request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
+    get_request_op_t get_request_op, put_reply_op_t put_reply_op,
+    gfarm_int32_t command, void *closure, const char *diag)
+{
+	gfarm_error_t e;
+	size_t size = 0;
+	struct gfp_xdr *conn = peer_get_conn(peer);
+	gfarm_uint64_t seqnum;
+	gfarm_uint64_t flags;
+	static const char relay_diag[] = "request_reply_dynarg_master";
+
+	/*
+	 * Get a requset from a slave gfmd.
+	 */
+	gfm_server_start_get_request(peer, diag);
+	if ((e = get_request_op(NO_RELAY, peer, &size, skip, NULL, closure,
+	    diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_ERR_NO_ERROR,
+		    "%s: %s (get_request_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
 	}
 
 	/*
-	 * in master, reply to slave via gfmd channel
+	 * Reply to the slave gfmd via gfmd channel.
 	 */
+	if ((e = put_reply_op(RELAY_CALC_SIZE, peer, &size, skip, closure,
+	    diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_ERR_NO_ERROR,
+		    "%s: %s (put_reply_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
+		return (e);
+	}
 
 	if ((e = gfp_xdr_send_size_add(&size, "ll", 0, 0))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send_size_add): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
 	if ((e = gfp_xdr_send_async_result_header(conn, xid, size))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send_async_result_header): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
@@ -722,14 +751,16 @@ gfm_server_reply_with_vrelay(struct peer *peer, gfp_xdr_xid_t xid,
 	if ((e = gfp_xdr_send(conn, "ll", seqnum, flags))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
 	if ((e = put_reply_op(RELAY_TRANSFER, peer, NULL, skip, closure, diag))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (put_reply_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 	gfp_xdr_flush(conn);
@@ -743,15 +774,13 @@ unlock_sender:
 	return (e);
 }
 
-/* for multiple-argument request */
 static gfarm_error_t
-gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
-	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
-	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
-	void *closure, const char *diag)
+request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
+    get_request_op_t get_request_op, put_reply_op_t put_reply_op,
+    gfarm_int32_t command, void *closure, const char *diag)
 {
 	gfarm_error_t e;
-	int eof, relay, xid_allocated = 0, db_update_info_received = 0;
+	int eof, xid_allocated = 0;
 	char *buf = NULL;
 	size_t rsz, size = 0;
 	gfarm_uint64_t seqnum, flags;
@@ -759,45 +788,36 @@ gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	struct peer *mhpeer;
 	gfp_xdr_async_peer_t async_server = NULL;
 	struct relayed_request *r = NULL;
-	static const char diag0[] = "gfm_server_relay_request_reply";
+	static const char relay_diag[] = "request_reply_dynarg_slave";
 
 	/*
-	 * get request from client
+	 * Get a requset from a client.
 	 */
-
 	gfm_server_start_get_request(peer, diag);
-	relay = wait_db_update_flags == 0 && !mdhost_self_is_master();
-
-	if ((e = get_request_op(relay ? RELAY_CALC_SIZE : NO_RELAY,
-	    peer, &size, skip, NULL, closure, diag)) != GFARM_ERR_NO_ERROR) {
+	if ((e = get_request_op(RELAY_CALC_SIZE, peer, &size, skip,
+	    NULL, closure, diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
-		return (e);
-	}
-
-	if (!relay) {
-		if ((e = gfm_server_reply_with_vrelay(peer, xid, skip,
-		    put_reply_op, command, wait_db_update_flags, closure, diag))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_ERR_NO_ERROR,
-			    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (get_request_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
 	}
 
 	/*
-	 * protocol relay to master gfmd
+	 * Relay the requset to master gfmd.
 	 */
 	ah = mdhost_to_abstract_host(mdhost_lookup_master());
+	mhpeer = abstract_host_get_peer(ah, diag);
 
-	if ((e = async_client_sender_lock(ah, NULL, &mhpeer, command,
+	if ((e = async_client_sender_lock(ah, mhpeer, NULL, command,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (async_client_sender_lock): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto end;
 	}
 
 	/*
-	 * r will be freed asynchronously in
+	 * `r' will be freed asynchronously in
 	 * slave_request_relay_result() or
 	 * slave_request_relay_disconnect()
 	 * after relayed_request_acquire_notify() is called.
@@ -805,7 +825,8 @@ gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	if ((e = ensure_remote_peer(peer, command, diag, &r))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (ensure_remote_peer): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
@@ -813,11 +834,14 @@ gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	r->conn = peer_get_conn(mhpeer);
 	async_server = peer_get_async(mhpeer);
 
-	/* see slave_request_relay() for packet layout detail */
+	/*
+	 * See slave_request_relay() for packet layout detail.
+	 */
 	if ((e = gfp_xdr_send_size_add(&size, "ili", 0, 0, 0))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send_size_add): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
@@ -833,18 +857,21 @@ gfm_server_relay_request_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	if ((e = gfp_xdr_send(r->conn, "ili", GFM_PROTO_REMOTE_RPC,
 	    peer_get_id(peer), command)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 	if ((e = get_request_op(RELAY_TRANSFER, NULL, &size, skip, r, closure,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (get_request_op): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 	if ((e = gfp_xdr_flush(r->conn)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_flush): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto unlock_sender;
 	}
 
@@ -865,7 +892,8 @@ unlock_sender:
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (relayed_request_result_wait): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		/* r is already freed */
 		goto end;
 	}
@@ -874,24 +902,25 @@ unlock_sender:
 	if ((e = gfp_xdr_recv_sized(r->conn, 1, &rsz, &eof, "ll", &seqnum,
 	    &flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_recv_sized): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto acquire_notify;
 	}
 
-	db_update_info_received = 1;
 	r->rsize -= (SIZE_MAX - rsz);
 
 	GFARM_MALLOC_ARRAY(buf, r->rsize);
 	if (buf == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_error(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s: %s", diag, relay_diag, gfarm_error_string(e));
 		goto acquire_notify;
 	}
 	if ((e = gfp_xdr_recv(r->conn, 1, &eof, "r", r->rsize, &rsz, buf))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_recv): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 	}
 
 acquire_notify:
@@ -904,13 +933,15 @@ acquire_notify:
 	if ((e = gfp_xdr_send(peer_get_conn(peer), "r", r->rsize, buf))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_send): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 		goto end;
 	}
 	if ((e = gfp_xdr_flush(peer_get_conn(peer)))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
-		    "%s: %s", diag, gfarm_error_string(e));
+		    "%s: %s (gfp_xdr_flush): %s",
+		    diag, relay_diag, gfarm_error_string(e));
 	}
 
 end:
@@ -919,16 +950,9 @@ end:
 		if (xid_allocated) {
 			assert(async_server != NULL);
 			gfp_xdr_send_async_request_error(async_server, xid,
-			    diag0);
+			    diag);
 		} else
 			free(r);
-	}
-
-	if (db_update_info_received) {
-		if ((e = slave_add_db_update_info(seqnum, flags, diag))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_ERR_NO_ERROR,
-			    "%s: %s", diag, gfarm_error_string(e));
 	}
 
 	return (e);
@@ -939,8 +963,25 @@ gfm_server_relay_request_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
 	gfarm_int32_t command, void *closure, const char *diag)
 {
-	return (gfm_server_relay_request_reply0(peer, xid,
-		skip, get_request_op, put_reply_op, command, 0, closure, diag));
+	if (!mdhost_self_is_master()) {
+		/*
+		 * This gfmd is slave.
+		 */
+		return request_reply_dynarg_slave(peer, xid, skip,
+		    get_request_op, put_reply_op, command, closure, diag);
+	} else if (peer_get_async(peer) != NULL) {
+		/*
+		 * This gfmd is master and the request comes from a slave.
+		 */
+		return request_reply_dynarg_master(peer, xid, skip,
+		    get_request_op, put_reply_op, command, closure, diag);
+	} else {
+		/*
+		 * The request comes from a client.
+		 */
+		return request_reply_dynarg_norelay(peer, xid, skip,
+		    get_request_op, put_reply_op, command, closure, diag);
+	}
 }
 
 gfarm_error_t
