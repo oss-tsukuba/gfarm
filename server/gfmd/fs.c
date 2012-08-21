@@ -3998,8 +3998,8 @@ gfm_server_generation_updated(
 		} else if ((e = process_get_file_inode(process, fd, &inode))
 			   != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "process_get_file_inode() failed: %s",
-			    gfarm_error_string(e));
+			    "%s: process_get_file_inode() failed: %s",
+			    diag, gfarm_error_string(e));
 		} else if ((e = process_new_generation_done(process, peer, fd,
 		    result)) != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002270,
