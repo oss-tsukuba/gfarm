@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #include <pthread.h>
 
@@ -234,24 +235,44 @@ abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
 		peer_del_ref(peer);
 }
 
-gfarm_error_t
+static gfarm_error_t
 abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
-	const char *diag)
+	const char *diag, long timeout_microsec)
 {
 	gfarm_error_t e;
+	struct peer *peer0;
+	struct timeval tv;
+	struct timespec ts;
 
 	abstract_host_mutex_lock(host, diag);
 
-	if (!abstract_host_is_up_unlocked(host)) {
-		e = GFARM_ERR_CONNECTION_ABORTED;
-	} else if (host->can_send) {
-		host->can_send = 0;
-		host->busy_time = 0;
-		peer_add_ref(host->peer);
-		*peerp = host->peer;
-		e = GFARM_ERR_NO_ERROR;
-	} else {
-		e = GFARM_ERR_DEVICE_BUSY;
+	for (;;) {
+		if (!abstract_host_is_up_unlocked(host)) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
+		if (host->can_send) {
+			host->can_send = 0;
+			host->busy_time = 0;
+			peer_add_ref(host->peer);
+			*peerp = host->peer;
+			e = GFARM_ERR_NO_ERROR;
+			break;
+		}
+		peer0 = host->peer;
+		gettimeofday(&tv, NULL);
+		gfarm_timeval_add_microsec(&tv, timeout_microsec);
+		ts.tv_sec = tv.tv_sec;
+		ts.tv_nsec = tv.tv_usec * 1000;
+		if (gfarm_cond_timedwait(&host->ready_to_send, &host->mutex,
+		    &ts, diag, "ready_to_send") == 0) {
+			e = GFARM_ERR_DEVICE_BUSY;
+			break;
+		}
+		if (host->peer != peer0) {
+			e = GFARM_ERR_CONNECTION_ABORTED;
+			break;
+		}
 	}
 
 	abstract_host_mutex_unlock(host, diag);
@@ -750,7 +771,8 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 	    gfarm_int32_t (*)(void *, void *, size_t),
 	    void (*)(void *, void *), void *),
 #endif
-	gfarm_int32_t command, const char *format, va_list * app)
+	long timeout_microsec, gfarm_int32_t command,
+	const char *format, va_list * app)
 {
 	gfarm_error_t e;
 	struct peer *peer;
@@ -762,7 +784,7 @@ gfm_client_channel_vsend_request(struct abstract_host *host,
 		    "%s: <%s> channel sending request(%d)",
 		    abstract_host_get_name(host), diag, command);
 
-	e = abstract_host_sender_trylock(host, &peer, diag);
+	e = abstract_host_sender_trylock(host, &peer, diag, timeout_microsec);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_DEVICE_BUSY) {
 			gflog_debug(GFARM_MSG_1002789,

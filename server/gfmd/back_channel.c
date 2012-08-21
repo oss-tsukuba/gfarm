@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <errno.h>
 
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_config.h>
@@ -37,10 +36,15 @@
 #include "back_channel.h"
 
 static struct thread_pool *back_channel_send_thread_pool;
+static struct thread_pool *proto_status_send_thread_pool;
 
 static struct peer_watcher *back_channel_recv_watcher;
 
 static const char BACK_CHANNEL_DIAG[] = "back_channel";
+
+#define GFS_PROTO_STATUS_TIMEOUT		10000000 /* 10.0 sec. */
+#define GFS_PROTO_REPLICATION_REQUEST_TIMEOUT	1000000  /*  1.0 sec. */
+#define GFS_PROTO_FHREMOVE_TIMEOUT		100000   /*  0.1 sec. */
 
 /*
  * responsibility to call host_disconnect_request():
@@ -177,7 +181,7 @@ gfs_client_send_request(struct host *host,
 	struct peer *peer0, const char *diag,
 	gfarm_int32_t (*result_callback)(void *, void *, size_t),
 	void (*disconnect_callback)(void *, void *),
-	void *closure,
+	void *closure, long timeout_microsec,
 	gfarm_int32_t command, const char *format, ...)
 {
 	gfarm_error_t e;
@@ -190,7 +194,7 @@ gfs_client_send_request(struct host *host,
 #ifdef COMPAT_GFARM_2_3
 	    host_set_callback,
 #endif
-	    command, format, &ap);
+	    timeout_microsec, command, format, &ap);
 	va_end(ap);
 	return (e);
 }
@@ -222,7 +226,7 @@ gfs_client_status_request(void *arg)
 	host_status_reply_waiting_set(host);
 	e = gfs_client_send_request(host, NULL, diag,
 	    gfs_client_status_result, gfs_client_status_free, host,
-	    GFS_PROTO_STATUS, "");
+	    GFS_PROTO_STATUS_TIMEOUT, GFS_PROTO_STATUS, "");
 	if (e == GFARM_ERR_DEVICE_BUSY) {
 		host_status_reply_waiting_reset(host);
 		if (!host_status_callout_retry(host)) {
@@ -283,7 +287,7 @@ gfs_client_fhremove_request(void *closure)
 
 	e = gfs_client_send_request(host, NULL, diag,
 	    gfs_client_fhremove_result, gfs_client_fhremove_free, dfc,
-	    GFS_PROTO_FHREMOVE, "ll", ino, gen);
+	    GFS_PROTO_FHREMOVE_TIMEOUT, GFS_PROTO_FHREMOVE, "ll", ino, gen);
 	if (e == GFARM_ERR_NO_ERROR) {
 		return (NULL);
 	} else if (e == GFARM_ERR_DEVICE_BUSY) {
@@ -408,33 +412,15 @@ gfs_client_replication_request_request(void *closure)
 	struct file_replicating *fr = arg->fr;
 	struct peer *peer = file_replicating_get_peer(fr);
 	gfarm_error_t e, e2;
-	unsigned int msl = 1, total_msl = 0; /* sleep msec. */
-	struct timespec req, rem;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST request";
 
 	free(arg);
-	for (;;) {
-		e = gfs_client_send_request(dst, peer, diag,
-		    gfs_client_replication_request_result,
-		    gfs_client_replication_request_free,
-		    fr, GFS_PROTO_REPLICATION_REQUEST, "sill",
-		    srchost, srcport, ino, gen);
-		if (e != GFARM_ERR_DEVICE_BUSY || total_msl >= 3000)/* 3 sec.*/
-			break;
-		/* GFARM_ERR_DEVICE_BUSY: retry */
-		req.tv_sec = msl / 1000;
-		req.tv_nsec = (msl % 1000) * 1000000;
-		do {
-			if (nanosleep(&req, &rem) == 0)
-				break;
-			req = rem;
-		} while (errno == EINTR);
-		total_msl += msl;
-		msl *= 2;
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "retry gfs_client_send_request: sleep %lld msec.",
-		    (long long) total_msl);
-	}
+	e = gfs_client_send_request(dst, peer, diag,
+	    gfs_client_replication_request_result,
+	    gfs_client_replication_request_free, fr,
+	    GFS_PROTO_REPLICATION_REQUEST_TIMEOUT,
+	    GFS_PROTO_REPLICATION_REQUEST, "sill",
+	    srchost, srcport, ino, gen);
 	if (e != GFARM_ERR_NO_ERROR) {
 		giant_lock(); /* XXX FIXME: deadlock */
 		e2 = peer_replicated(peer, dst, ino, gen, -1, 0, e, -1);
@@ -666,10 +652,10 @@ gfm_server_switch_back_channel_common(struct peer *peer, int from_client,
 
 		peer_watch_access(peer);
 		callout_setfunc(host_status_callout(host),
-		    back_channel_send_thread_pool,
+		    proto_status_send_thread_pool,
 		    gfs_client_status_request, host);
 		thrpool_add_job(
-		    back_channel_send_thread_pool,
+		    proto_status_send_thread_pool,
 		    gfs_client_status_request, host);
 	}
 
@@ -736,6 +722,17 @@ back_channel_init(void)
 	if (back_channel_send_thread_pool == NULL)
 		gflog_fatal(GFARM_MSG_1001998,
 		    "filesystem node thread pool size:"
+		    "%d, queue length:%d: no memory",
+		    gfarm_metadb_thread_pool_size,
+		    gfarm_metadb_job_queue_length);
+
+	proto_status_send_thread_pool = thrpool_new(
+	    /* XXX FIXME: use different config parameter */
+	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
+	    "sending to filesystem nodes");
+	if (proto_status_send_thread_pool == NULL)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "GFS_PROTO_STATUS thread pool size:"
 		    "%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,
 		    gfarm_metadb_job_queue_length);

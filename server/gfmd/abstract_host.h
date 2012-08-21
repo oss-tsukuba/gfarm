@@ -89,7 +89,7 @@ gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
 	    gfarm_int32_t (*)(void *, void *, size_t),
 	    void (*)(void *, void *), void *),
 #endif
-	gfarm_int32_t, const char *, va_list *);
+	long, gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfm_client_channel_vrecv_result(struct peer *,
 	struct abstract_host *, size_t, const char *, const char **,
 	gfarm_error_t *, va_list *);

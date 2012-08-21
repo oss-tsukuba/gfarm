@@ -78,6 +78,7 @@ static struct gfmdc_journal_sync_info journal_sync_info;
 				"journal_ready_to_recv_info.wait_cond"
 
 #define GFMDC_CONNECT_INTERVAL	30
+#define GFMDC_SEND_DEFAULT_TIMEOUT	1000000 /* 1 sec. */
 
 static gfarm_error_t
 gfmdc_server_get_request(struct peer *peer, size_t size,
@@ -137,7 +138,7 @@ gfmdc_client_send_request(struct mdhost *mh,
 	struct peer *peer0, const char *diag,
 	gfarm_int32_t (*result_callback)(void *, void *, size_t),
 	void (*disconnect_callback)(void *, void *),
-	void *closure,
+	void *closure, long timeout_microsec,
 	gfarm_int32_t command, const char *format, ...)
 {
 	gfarm_error_t e;
@@ -151,7 +152,7 @@ gfmdc_client_send_request(struct mdhost *mh,
 #ifdef COMPAT_GFARM_2_3
 	    NULL,
 #endif
-	    command, format, &ap);
+	    timeout_microsec, command, format, &ap);
 	va_end(ap);
 	return (e);
 }
@@ -300,7 +301,7 @@ gfmdc_client_journal_send(gfarm_uint64_t *to_snp,
 	c->data = data;
 
 	if ((e = gfmdc_client_send_request(mh, NULL, diag,
-	    result_op, disconnect_op, c,
+	    result_op, disconnect_op, c, GFMDC_SEND_DEFAULT_TIMEOUT,
 	    GFM_PROTO_JOURNAL_SEND, "llb", from_sn, to_sn,
 	    (size_t)data_len, data)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002978,
@@ -485,6 +486,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh)
 	if ((e = gfmdc_client_send_request(mh, NULL, diag,
 	    gfmdc_client_journal_ready_to_recv_result,
 	    gfmdc_client_journal_ready_to_recv_disconnect, &ji,
+	    GFMDC_SEND_DEFAULT_TIMEOUT,
 	    GFM_PROTO_JOURNAL_READY_TO_RECV, "l", seqnum))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002983,
