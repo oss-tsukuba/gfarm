@@ -3209,6 +3209,7 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 	gfarm_int32_t fd, result;
 	struct host *spool_host;
 	struct process *process;
+	struct inode *inode;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED";
 
 	e = gfm_server_get_request(peer, diag, "i", &result);
@@ -3237,6 +3238,11 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1002269,
 		    "%s: peer_fdpair_get_current() failed: %s",
 		    diag, gfarm_error_string(e));
+	} else if ((e = process_get_file_inode(process, fd, &inode))
+		   != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: process_get_file_inode() failed: %s",
+		    diag, gfarm_error_string(e));
 	} else if ((e = process_new_generation_done(process, peer, fd, result))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1002270,
@@ -3244,9 +3250,14 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		    diag, host_name(spool_host), fd,
 		    gfarm_error_string(result), gfarm_error_string(e));
 	} else if (result != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1002271,
-		    "%s: host %s, fd %d: new generation rename: %s\n", diag,
-		    host_name(spool_host), fd, gfarm_error_string(result));
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld on host %s, fd %d: "
+		    "new generation rename: %s\n",
+		    diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    host_name(spool_host), fd,
+		    gfarm_error_string(result));
 	}
 
 	giant_unlock();
