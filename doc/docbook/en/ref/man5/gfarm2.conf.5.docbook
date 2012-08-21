@@ -1332,7 +1332,6 @@ The default action is <replaceable>backtrace_and_abort</replaceable>.
      a indent of this section in a man page will be disabled. -->
 For example,
 </para>
-<para>For example,</para>
 <literallayout>
 	fatal_action backtrace_and_abort
 </literallayout>
