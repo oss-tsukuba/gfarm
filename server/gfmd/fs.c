@@ -4028,7 +4028,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	gfarm_error_t e;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
-	struct host *spool_host;
+	struct host *spool_host = NULL;
 	struct inode *inode;
 	int transaction = 0;
 	static const char diag[] = "GFM_PROTO_REPLICA_LOST";
@@ -4068,6 +4068,11 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 			db_end(diag);
 	}
 	giant_unlock();
+	if (e == GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld on %s: invalid metadata deleted",
+		    inum, gen, host_name(spool_host));
+	}
 
 	return (gfm_server_put_reply(peer, diag, e, ""));
 }
@@ -4225,7 +4230,7 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 	gfarm_ino_t inum_old, inum_new = 0;
 	gfarm_uint64_t gen_old, gen_new = 0;
 	gfarm_off_t size;
-	struct host *spool_host;
+	struct host *spool_host = NULL;
 	struct inode *inode;
 	struct gfarm_timespec mtime;
 	int transaction = 0;
@@ -4260,6 +4265,13 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 			db_end(diag);
 	}
 	giant_unlock();
+	if (e_rpc == GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "inode %lld:%lld on %s -> %lld:%lld: "
+		    "moved to lost+found",
+		    inum_old, gen_old, host_name(spool_host),
+		    inum_new, gen_new);
+	}
 
 	return (gfm_server_put_reply(peer, diag, e_rpc, "ll",
 	    inum_new, gen_new));
