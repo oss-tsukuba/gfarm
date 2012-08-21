@@ -27,6 +27,10 @@ i.e.
 - each test should clear the changes made by the test before exiting.
 - each test should be able to be executed simultaneously on multiple hosts
   and multiple "make check" on same host.
+  that means names of temporary files should be unique even on different hosts.
+  $gftmp variable includes a hostname as well as PID due to this reason.
+  $localtmp only includes PID because it's only used for a local filesystem
+  instead of a gfarm filesystem.
 - each test should preserve filesystem contents and user, group,
   host and fsngroup settings.  although it's OK to change them temporarily
   during the test.
