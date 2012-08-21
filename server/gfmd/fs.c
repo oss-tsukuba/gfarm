@@ -5043,7 +5043,7 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e;
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
-	struct host *spool_host;
+	struct host *spool_host = NULL;
 	struct inode *inode;
 	struct relayed_request *relay;
 	int transaction = 0;
@@ -5087,6 +5087,11 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				db_end(diag);
 		}
 		giant_unlock();
+		if (e == GFARM_ERR_NO_ERROR) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inode %lld:%lld on %s: invalid metadata deleted",
+			    inum, gen, host_name(spool_host));
+		}
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
@@ -5264,7 +5269,7 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 	gfarm_ino_t inum_old, inum_new = 0;
 	gfarm_uint64_t gen_old, gen_new = 0;
 	gfarm_off_t size;
-	struct host *spool_host;
+	struct host *spool_host = NULL;
 	struct inode *inode;
 	struct gfarm_timespec mtime;
 	int transaction = 0;
@@ -5306,6 +5311,13 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 				db_end(diag);
 		}
 		giant_unlock();
+		if (e_rpc == GFARM_ERR_NO_ERROR) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "inode %lld:%lld on %s -> %lld:%lld: "
+			    "moved to lost+found",
+			    inum_old, gen_old, host_name(spool_host),
+			    inum_new, gen_new);
+		}
 	} else
 		e_rpc = GFARM_ERR_NO_ERROR;
 
