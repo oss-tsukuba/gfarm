@@ -5116,11 +5116,11 @@ dead_file_copy_check(gfarm_ino_t inum, gfarm_uint64_t gen, struct host *host)
 
 	if (dead_file_copy_existing(inode_get_dead_copies(inode), gen, host)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "(%llu:%llu): has dead_file_copy",
-		    (unsigned long long)inum, (unsigned long long)gen);
-		return  (GFARM_ERR_FILE_BUSY);
+		    "%lld:%lld on %s: has dead_file_copy",
+		    (long long)inum, (long long)gen, host_name(host));
+		return  (GFARM_ERR_FILE_BUSY); /* busy file */
 	}
-	return (GFARM_ERR_NO_SUCH_OBJECT);
+	return (GFARM_ERR_NO_SUCH_OBJECT); /* invalid file */
 }
 
 gfarm_error_t
@@ -5150,33 +5150,56 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		if (from_client) { /* from gfsd only */
 			gflog_debug(GFARM_MSG_1001975,
 			    "not permitted : from_client");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* error */
 		} else if ((spool_host = peer_get_host(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1001976,
 			"operation is not permitted: peer_get_host() failed");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED; /* error */
 		} else if ((inode = inode_lookup(inum)) == NULL) {
 			gflog_debug(GFARM_MSG_1001977,
 			    "inode_lookup() failed");
 			e = dead_file_copy_check(inum, gen, spool_host);
 		} else if (!inode_is_file(inode)) {
-			gflog_debug(GFARM_MSG_UNFIXED, "not a file");
-			e = GFARM_ERR_NOT_A_REGULAR_FILE;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%lld:%lld on %s: not a regular file",
+			    (long long)inum, (long long)gen,
+			    host_name(spool_host));
+			e = dead_file_copy_check(inum, gen, spool_host);
+			if (e == GFARM_ERR_NO_SUCH_OBJECT) /* invalid file */
+				e = GFARM_ERR_NOT_A_REGULAR_FILE;
+		} else if (inode_is_opened_for_writing(inode)) {
+			/* include generation updating */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%lld:%lld on %s: opened for writing",
+			    (long long)inum, (long long)gen,
+			    host_name(spool_host));
+			e = GFARM_ERR_FILE_BUSY; /* busy file */
 		} else if (inode_get_gen(inode) != gen) {
+			/* though this is not opened for writing... */
 			gflog_debug(GFARM_MSG_1001978,
 			    "inode_get_gen() failed");
 			e = dead_file_copy_check(inum, gen, spool_host);
-		} else if (inode_is_opened_for_writing(inode)) {
+		} else if (inode_has_file_copy(inode, spool_host)) {
+			/*
+			 * include !FILE_COPY_VALID
+			 * and FILE_COPY_BEING_REMOVED
+			 */
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "(%llu:%llu): opened for writing",
-			    (unsigned long long)inum, (unsigned long long)gen);
-			e = GFARM_ERR_FILE_BUSY;
+			    "%lld:%lld on %s: a correct file",
+			    (long long)inum, (long long)gen,
+			    host_name(spool_host));
+			e = GFARM_ERR_ALREADY_EXISTS; /* correct file */
 		} else if (inode_get_size(inode) != size) {
+			/*
+			 * though this is not opened for replicating
+			 * or writing...
+			 */
 			gflog_debug(GFARM_MSG_1001979, "invalid file replica");
-			e = GFARM_ERR_INVALID_FILE_REPLICA;
+			e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
 		} else {
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
+			/* to fix */
 			e = inode_add_replica(inode, spool_host, 1);
 			if (transaction)
 				db_end(diag);
