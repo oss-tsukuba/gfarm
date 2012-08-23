@@ -2949,7 +2949,7 @@ inode_has_file_copy(struct inode *inode, struct host *spool_host)
 {
 	if (inode_get_file_copy(inode, spool_host) == NULL)
 		return (0);
-	return (1); /* valid or invalid */
+	return (1); /* include !FILE_COPY_VALID and FILE_COPY_BEING_REMOVED */
 }
 
 int
