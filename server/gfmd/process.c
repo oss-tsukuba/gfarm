@@ -1174,43 +1174,56 @@ process_replica_added(struct process *process,
 	struct file_opening *fo;
 	struct gfarm_timespec *mtime;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo), e2;
+	static const char diag[] = "process_replica_added";
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001658,
-			"process_get_file_opening() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: invalid file descriptor %d: %s", diag, fd, 
+		    gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
-		gflog_debug(GFARM_MSG_1001659,
-			"inode is not file");
-		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+		e = GFARM_ERR_NOT_A_REGULAR_FILE;
+		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		    diag, (long long)inode_get_number(fo->inode),
+		    gfarm_error_string(e));
+		return (e);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_1001660,
-			"operation is not permitted");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld: inconsistent replication "
+		    "(adding by %s, added by %s)", diag,
+		    (long long)inode_get_number(fo->inode),
+		    peer_get_hostname(fo->u.f.spool_opener),
+		    peer_get_hostname(peer));
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.replica_source == NULL) {
-		gflog_debug(GFARM_MSG_1002243,
-		    "replica_added was called without adding");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld: replica_added was called by %s "
+		    "without adding", diag,
+		    (long long)inode_get_number(fo->inode),
+		    peer_get_hostname(peer));
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
 	if (inode_has_no_replica(fo->inode)) { /* no file copy */
-		gflog_debug(GFARM_MSG_1001661,
-			"inode has no file copy");
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld: no file copy", diag,
+		    (long long)inode_get_number(fo->inode));
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (inode_has_replica(fo->inode, spool_host)) {
-		gflog_debug(GFARM_MSG_1001662,
-			"spool_host already has replica");
 		e = GFARM_ERR_ALREADY_EXISTS;
-	} else if (mtime_sec != (mtime = inode_get_mtime(fo->inode))->tv_sec ||
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: inode %lld, host %s: %s",
+		    diag, (long long)inode_get_number(fo->inode),
+		    host_name(spool_host), gfarm_error_string(e));
+	} else if (inode_is_opened_for_writing(fo->inode) ||
+	    mtime_sec != (mtime = inode_get_mtime(fo->inode))->tv_sec ||
 	    mtime_nsec != mtime->tv_nsec ||
 	    (size != -1 && size != inode_get_size(fo->inode)) ||
 	    fo->u.f.replica_source->gen != inode_get_gen(fo->inode)) {
-		gflog_debug(GFARM_MSG_1002244,
-		    "inode(%lld) updated while replication: "
+		gflog_warning(GFARM_MSG_1002244,
+		    "inode(%lld) updated during replication: "
 		    "mtime %lld.%09lld/%lld.%09lld, "
 		    "size: %lld/%lld, gen:%lld/%lld",
 		    (long long)inode_get_number(fo->inode),
