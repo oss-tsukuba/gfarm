@@ -3261,7 +3261,7 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		if (ops == store_ops &&
 		    previous_was_store_filecopy_add &&
 		    e == GFARM_ERR_UNKNOWN) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003545,
 			    "%s: ignoring transaction abort seqnum=%llu "
 			    "caused by duplicate filecopy_add",
 			    diag, (unsigned long long)seqnum);
