@@ -4901,36 +4901,40 @@ dir_entry_add(gfarm_ino_t dir_inum, char *entry_name, int entry_len,
 	struct inode *entry_inode = inode_lookup(entry_inum);
 	DirEntry entry;
 	int created;
+	static const char diag[] = "dir_entry_add_one";
 
 	if (dir_inode == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
 		gflog_error(GFARM_MSG_1000350,
-		    "dir_entry_add_one: no dir %lld",
-		    (unsigned long long)dir_inum);
+		    "%s: directory inode %lld: %s", diag, (long long)dir_inum,
+		    gfarm_error_string(e));
 		dir_entry_defer_db_removal(dir_inum,
 		    entry_name, entry_len, entry_inum);
-		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (!inode_is_dir(dir_inode)) {
-		gflog_error(GFARM_MSG_1000351,
-		    "dir_entry_add_one: not dir %lld",
-		    (unsigned long long)dir_inum);
-		dir_entry_defer_db_removal(dir_inum,
-		    entry_name, entry_len, entry_inum);
 		e = GFARM_ERR_NOT_A_DIRECTORY;
-	} else if (entry_inode == NULL) {
-		gflog_error(GFARM_MSG_1000352,
-		    "dir_entry_add_one: no inode %lld",
-		    (unsigned long long)entry_inum);
+		gflog_error(GFARM_MSG_1000351,
+		    "%s: inode %lld: %s", diag, (long long)dir_inum,
+		    gfarm_error_string(e));
 		dir_entry_defer_db_removal(dir_inum,
 		    entry_name, entry_len, entry_inum);
+	} else if (entry_inode == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_error(GFARM_MSG_1000352,
+		    "%s: entry inode %lld: %s", diag, (long long)entry_inum,
+		    gfarm_error_string(e));
+		dir_entry_defer_db_removal(dir_inum,
+		    entry_name, entry_len, entry_inum);
 	} else if ((entry = dir_enter(dir_inode->u.c.s.d.entries,
 	    entry_name, entry_len, &created)) == NULL) {
-		gflog_error(GFARM_MSG_1000353, "dir_entry_add_one: no memory");
 		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_1000353, "%s: %s", diag,
+		    gfarm_error_string(e));
 	} else if (!created) {
-		gflog_error(GFARM_MSG_1000354,
-		    "dir_entry_add_one: already exists ");
 		e = GFARM_ERR_ALREADY_EXISTS;
+		gflog_error(GFARM_MSG_1000354,
+		    "%s: directory inode %lld entry name \'%*s\': %s", diag,
+		    (long long)dir_inum, entry_len, entry_name,
+		    gfarm_error_string(e));
 	} else {
 		dir_entry_set_inode(entry, entry_inode);
 		inode_increment_nlink_ini(entry_inode);
