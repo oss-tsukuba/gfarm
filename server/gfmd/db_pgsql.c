@@ -672,7 +672,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 	assert(transaction_nesting == 0);
 
 	if (gfarm_get_metadb_replication_enabled() && seqnum > 0) {
-		gfarm_error_t e;
+		gfarm_error_t e, e2;
 		struct db_seqnum_arg a;
 
 		a.name = "";
@@ -682,6 +682,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			gflog_debug(GFARM_MSG_1003245,
 			    "gfarm_pgsql_seqnum_modify : %s",
 			    gfarm_error_string(e));
+			e2 = gfarm_pgsql_exec_and_log("ROLLBACK", diag);
 			return (e);
 		}
 	}
