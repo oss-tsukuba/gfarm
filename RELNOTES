@@ -1,12 +1,12 @@
 Release note for Gfarm 2.5.6
 ============================
 
-[2012.8.10]
+[2012.8.24]
 
 New feature
 * gfsd - -ccc option to check consistency of metadata.  When a
-referenced physical file does not exist, the corresponding metadata is
-deleted.  Unreferenced physical files are moved to lost+found/.
+  referenced physical file does not exist, the corresponding metadata
+  is deleted.  Unreferenced physical files are moved to lost+found/.
 
 New command
 * gfjournaladmin - manipulates a journal file.
@@ -18,6 +18,8 @@ New configuration directive
 * schedule_concurrency, schedule_concurrency_per_net,
   schedule_candidates_ratio, schedule_rtt_thresh - parameters for
   client scheduling.
+* fatal_action - specifies an action when fatal error happens. [sf.net
+  trac #410]
 
 Bug fix
 * gfrep - gfrep fails if a symlink to a directory is included.
@@ -32,6 +34,7 @@ Bug fix
   crashes the gfmd. [sf.net trac #387]
 * gfsd, gfmd - automatic replication may be unintentionally
   failed. [sf.net trac #184]
+* gfmd - physical file removal may be delayed. [sf.net trac #76]
 * gfmd - metadata consistency check is broken, and may crash the
   gfmd, which was introduced in 2.5.0. [sf.net trac #379]
 * gfmd - segfault by specifying the same user multiple times when
@@ -45,6 +48,16 @@ Bug fix
   GSI. [sf.net trac #392 and #423]
 * gfmd - when all replica of a nonzero-size file cannot be accessed,
   return error, instead of unintentionally creating a zero-size file.
+* gfmd - possible crash when the metadata server information is
+  changed. [sf.net trac #391]
+* gfmd - too long extended or XML extended attribute may crash the
+  gfmd. [sf.net trac #427]
+* gfmd - crash when non utf-8 XML extended attribute is
+  stored. [sf.net trac #389]
+* gfmd - frozen by receiving SIGUSR1 during initialization. [sf.net
+  trac #405]
+* gfmd - race condition about peer_free() that may crash the
+  gfmd. [sf.net trac #426]
 
 Release note for Gfarm 2.5.5
 ============================
