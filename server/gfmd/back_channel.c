@@ -731,7 +731,7 @@ back_channel_init(void)
 	    gfarm_metadb_thread_pool_size, gfarm_metadb_job_queue_length,
 	    "sending to filesystem nodes");
 	if (proto_status_send_thread_pool == NULL)
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003498,
 		    "GFS_PROTO_STATUS thread pool size:"
 		    "%d, queue length:%d: no memory",
 		    gfarm_metadb_thread_pool_size,

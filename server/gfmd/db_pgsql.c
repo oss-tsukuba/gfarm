@@ -460,7 +460,7 @@ gfarm_pgsql_check_insert_dup_ok(PGresult *res,
 			e = GFARM_ERR_UNKNOWN;
 		else if (strcmp(err, GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION)
 		    == 0) {
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: %s: %s",
+			gflog_warning(GFARM_MSG_1003506, "%s: %s: %s",
 			    diag, command, PQresultErrorMessage(res));
 			return (GFARM_ERR_NO_ERROR);
 		} else if (strcmp(err, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT)

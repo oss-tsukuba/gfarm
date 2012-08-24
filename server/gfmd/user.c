@@ -681,7 +681,7 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < nusers; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &user);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003456,
 			    "%s: gfp_xdr_recv(): %s",
 			    diag, gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -717,12 +717,12 @@ gfm_server_user_info_get_by_names(struct peer *peer, int from_client, int skip)
 	for (i = 0; i < nusers; i++) {
 		u = user_lookup(users[i]);
 		if (u == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003457,
 			    "%s: user lookup <%s>: failed", diag, users[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_SUCH_USER, "");
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003458,
 			    "%s: user lookup <%s>: ok", diag, users[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
@@ -880,7 +880,7 @@ user_modify(struct user *u, struct gfarm_user_info *ui)
 		if (!user_is_null_str(ui->gsi_dn)) {
 			e = user_enter_gsi_dn(ui->gsi_dn, u);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003459,
 				    "update gsi_dn hash table: %s",
 				    gfarm_error_string(e));
 				return (e);
@@ -930,17 +930,17 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 	giant_lock();
 	if (!from_client || user == NULL || !user_is_admin(user)) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: %s", diag,
+		gflog_debug(GFARM_MSG_1003460, "%s: %s", diag,
 		    gfarm_error_string(e));
 	} else if ((u = user_lookup(ui.username)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_USER;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003461,
 		    "%s: user_lookup: %s", diag, gfarm_error_string(e));
 	} else if ((e = user_info_verify(&ui, diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003462,
 		    "%s: user_info_verify: %s", diag, gfarm_error_string(e));
 	} else if ((e = user_modify(u, &ui)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003463,
 		    "%s: user_modify: %s", diag, gfarm_error_string(e));
 	} else {
 		free(ui.username);
@@ -948,7 +948,7 @@ gfm_server_user_info_modify(struct peer *peer, int from_client, int skip)
 		    DB_USER_MOD_REALNAME|DB_USER_MOD_HOMEDIR|
 		    DB_USER_MOD_GSI_DN);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003464,
 			    "%s: db_user_modify: %s", diag,
 			    gfarm_error_string(e));
 			/* XXX - need to revert the change in memory? */

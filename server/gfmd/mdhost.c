@@ -590,7 +590,7 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	} else if ((m->journal_send_closure = (*journal_send_closure_alloc)())
 	    == NULL) {
 		free(m);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003499,
 		    "mdhost %s: cannot allocate journal_send_closure",
 		    gfarm_metadb_server_get_name(ms));
 		return (NULL);

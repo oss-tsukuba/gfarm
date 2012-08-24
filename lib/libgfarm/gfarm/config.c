@@ -614,7 +614,7 @@ gfarm_get_global_username_by_host_for_connection_cache(
 	e = gfarm_local_to_global_username_by_host(hostname, port, local_user,
 	    &global_user);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003440,
 		    "local-to-global user-mapping failed: %s",
 		    gfarm_error_string(e));
 		return (e);
@@ -638,7 +638,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 	e = gfarm_get_global_username_by_host_for_connection_cache(
 		hostname, port, &global_user);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003441,
 		    "gfarm_get_global_username_by_host_for_connection_cache() "
 		    "failed: %s", gfarm_error_string(e));
 		return (e);
@@ -648,7 +648,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 	e = gfm_client_connection_and_process_acquire(hostname, port,
 	    global_user, &gfm_server);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED, "cannot acquire connection: %s",
+		gflog_error(GFARM_MSG_1003442, "cannot acquire connection: %s",
 		    gfarm_error_string(e));
 		free(global_user);
 		return (e);
@@ -657,7 +657,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 	    gfm_client_connection_auth_method(gfm_server))) {
 		user = gfm_client_username(gfm_server);
 		if (user == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003443,
 			    "global username is not set");
 			e = GFARM_ERR_NO_SUCH_USER;
 		} else {
@@ -665,7 +665,7 @@ gfarm_get_global_username_by_host(const char *hostname, int port, char **userp)
 			global_user = strdup(user);
 			if (global_user == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003444,
 				    "%s", gfarm_error_string(e));
 			}
 		}
@@ -2392,7 +2392,7 @@ parse_fatal_action(char *p, int *vp)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003445,
 			"get_one_argument failed "
 			"when parsing fatal action (%s): %s",
 			p, gfarm_error_string(e));
@@ -2403,7 +2403,7 @@ parse_fatal_action(char *p, int *vp)
 		return (GFARM_ERR_NO_ERROR);
 	v = gflog_fatal_action_name_to_number(s);
 	if (v == GFLOG_ERROR_INVALID_FATAL_ACTION_NAME) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003446,
 			"Invalid fatal action name (%s)", s);
 		return (GFARM_ERRMSG_UNKNOWN_KEYWORD);
 	}

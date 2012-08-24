@@ -818,7 +818,7 @@ peer_shutdown_all(void)
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
 	if (!peer_initialized) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003473,
 		    "peer module is not initialized yet, "
 		    "skip to shutdown connections");
 		return;

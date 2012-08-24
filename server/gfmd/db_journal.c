@@ -150,7 +150,7 @@ db_journal_init(void)
 	}
 
 	db_journal_init_seqnum();
-	gflog_info(GFARM_MSG_UNFIXED,
+	gflog_info(GFARM_MSG_1003503,
 	    "db_journal_init_seqnum : seqnum=%llu",
 	    (unsigned long long)journal_seqnum);
 
@@ -3000,13 +3000,13 @@ db_journal_read_nop(struct gfp_xdr *xdr,
 
 	if ((e = gfp_xdr_recv(xdr, 1, &eof, "i", &len))
 	    != GFARM_ERR_NO_ERROR) {
-		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003504,
 		    "gfp_xdr_recv", e, GFM_JOURNAL_NOP);
 	}
 	for (i = 0; i < len; i++) {
 		if ((e = gfp_xdr_recv(xdr, 1, &eof, "c", &c))
 		    != GFARM_ERR_NO_ERROR) {
-			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			GFLOG_DEBUG_WITH_OPE(GFARM_MSG_1003505,
 			    "gfp_xdr_recv", e, GFM_JOURNAL_NOP);
 		}
 	}

@@ -1442,7 +1442,7 @@ gfm_server_cksum_set(struct peer *peer, int from_client, int skip)
 			"failed: %s", gfarm_error_string(e));
 	} else if (strlen(cksum_type) > GFM_PROTO_CKSUM_TYPE_MAXLEN ||
 	    cksum_len > GFM_PROTO_CKSUM_MAXLEN) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003480,
 		    "%s: invalid cksum type:\"%s\" length: %d bytes",
 		    diag, cksum_type, (int)cksum_len);
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -2941,7 +2941,7 @@ close_write_v2_4_resume(struct peer *peer, void *closure, int *suspendedp)
 		 * but there is no guarantee that this error is logged.
 		 * because network communication error may happen later.
 		 */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003481,
 		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
@@ -3086,7 +3086,7 @@ gfm_server_close_write_v2_4(struct peer *peer, int from_client, int skip,
 		 * but there is no guarantee that this error is logged.
 		 * because network communication error may happen later.
 		 */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003482,
 		    "%s: inode %lld generation %lld -> %lld: %s", diag,
 		    (long long)inum, (long long)old_gen, (long long)new_gen,
 		    gfarm_error_string(e_ret));
@@ -3240,7 +3240,7 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		    diag, gfarm_error_string(e));
 	} else if ((e = process_get_file_inode(process, fd, &inode))
 		   != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003483,
 		    "%s: process_get_file_inode() failed: %s",
 		    diag, gfarm_error_string(e));
 	} else if ((e = process_new_generation_done(process, peer, fd, result))
@@ -3250,7 +3250,7 @@ gfm_server_generation_updated(struct peer *peer, int from_client, int skip)
 		    diag, host_name(spool_host), fd,
 		    gfarm_error_string(result), gfarm_error_string(e));
 	} else if (result != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003484,
 		    "%s: inode %lld:%lld on host %s, fd %d: "
 		    "new generation rename: %s\n",
 		    diag,
@@ -4080,7 +4080,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003485,
 		    "inode %lld:%lld on %s: invalid metadata deleted",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 	}
@@ -4092,7 +4092,7 @@ static gfarm_error_t
 dead_file_copy_check(gfarm_ino_t inum, gfarm_uint64_t gen, struct host *host)
 {
 	if (dead_file_copy_existing(inum, gen, host)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003486,
 		    "%lld:%lld on %s: has dead_file_copy",
 		    (long long)inum, (long long)gen, host_name(host));
 		return  (GFARM_ERR_FILE_BUSY); /* busy file */
@@ -4135,7 +4135,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001977, "inode_lookup() failed");
 		e = dead_file_copy_check(inum, gen, spool_host);
 	} else if (!inode_is_file(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003487,
 		    "%lld:%lld on %s: not a regular file",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = dead_file_copy_check(inum, gen, spool_host);
@@ -4143,7 +4143,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 			e = GFARM_ERR_NOT_A_REGULAR_FILE; /* invalid file */
 	} else if (inode_is_opened_for_writing(inode)) {
 		/* include generation updating */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003488,
 		    "%lld:%lld on %s: opened for writing",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_FILE_BUSY; /* busy file */
@@ -4153,7 +4153,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 		e = dead_file_copy_check(inum, gen, spool_host);
 	} else if (inode_has_file_copy(inode, spool_host)) {
 		/* include !FILE_COPY_VALID and FILE_COPY_BEING_REMOVED */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003489,
 		    "%lld:%lld on %s: a correct file",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_ALREADY_EXISTS; /* correct file */
@@ -4197,17 +4197,17 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 
 	giant_lock();
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "not permitted: from_client");
+		gflog_debug(GFARM_MSG_1003490, "not permitted: from_client");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003491,
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if (n_req <= 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "n_req is 0");
+		gflog_debug(GFARM_MSG_1003492, "n_req is 0");
 		e_rpc = GFARM_ERR_INVALID_ARGUMENT;
 	} else if (GFARM_MALLOC_ARRAY(ents, n_req) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "no memory");
+		gflog_debug(GFARM_MSG_1003493, "no memory");
 		e_rpc = GFARM_ERR_NO_MEMORY;
 	} else {
 		if (start_inum < inode_root_number())
@@ -4235,7 +4235,7 @@ gfm_server_replica_get_my_entries(struct peer *peer, int from_client, int skip)
 			e_ret = gfp_xdr_send(client, "ll",
 			    ents[i].inum, ents[i].gen);
 			if (e_ret != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1003494,
 				    "replica_get_my_entries @%s: %s",
 				    peer_get_hostname(peer),
 				    gfarm_error_string(e_ret));
@@ -4270,10 +4270,10 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 
 	giant_lock();
 	if (from_client) { /* from gfsd only */
-		gflog_debug(GFARM_MSG_UNFIXED, "not permitted: from_client");
+		gflog_debug(GFARM_MSG_1003495, "not permitted: from_client");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else if ((spool_host = peer_get_host(peer)) == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003496,
 		    "not permitted: peer_get_host() failed");
 		e_rpc = GFARM_ERR_OPERATION_NOT_PERMITTED;
 	} else {
@@ -4290,7 +4290,7 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 	}
 	giant_unlock();
 	if (e_rpc == GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003497,
 		    "inode %lld:%lld on %s -> %lld:%lld: "
 		    "moved to lost+found",
 		    (long long)inum_old, (long long)gen_old,

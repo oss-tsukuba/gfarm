@@ -136,7 +136,7 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 				hostaddr = hostbuf;
 				hostaddr_prefix= "";
 			}
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003449,
 			    "closing network connection due to "
 			    "no response within %d seconds "
 			    "(network_receive_timeout) from %s%s",

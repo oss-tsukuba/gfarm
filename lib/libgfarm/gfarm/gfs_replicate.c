@@ -161,7 +161,7 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfs_client_connection_free(gfs_server);
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
 	    retry > 0) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003453,
 		    "error occurred by retrying the non-idempotent file "
 		    "replication operation due to the disconnection of gfsd, "
 		    "so it might succeed in the server."

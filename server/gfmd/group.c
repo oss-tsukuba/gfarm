@@ -600,7 +600,7 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	for (i = 0; i < ngroups; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &groupname);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003465,
 			    "%s: gfp_xdr_recv(): %s",
 			    diag, gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -636,12 +636,12 @@ gfm_server_group_info_get_by_names(struct peer *peer,
 	for (i = 0; i < ngroups; i++) {
 		g = group_lookup(groups[i]);
 		if (g == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003466,
 			    "%s: group lookup <%s>: failed", diag, groups[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_SUCH_GROUP, "");
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003467,
 			    "%s: group lookup <%s>: ok", diag, groups[i]);
 			e = gfm_server_put_reply(peer, diag,
 			    GFARM_ERR_NO_ERROR, "");
@@ -729,7 +729,7 @@ group_user_check(struct gfarm_group_info *gi, const char *diag)
 		}
 		for (j = 0; j < i; j++) {
 			if (ulist[j] == u) {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1003468,
 				    "%s: %s: specified multiple times",
 				    diag, gi->usernames[i]);
 				e = GFARM_ERR_ALREADY_EXISTS;
@@ -772,7 +772,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 			"group already exists");
 		e = GFARM_ERR_ALREADY_EXISTS;
 	} else if (strlen(gi.groupname) > GFARM_GROUP_NAME_MAX) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003469,
 		    "%s: too long group name: \"%s\"",
 		    diag, gi.groupname);
 		e = GFARM_ERR_INVALID_ARGUMENT;

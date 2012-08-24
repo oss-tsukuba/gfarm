@@ -2426,7 +2426,7 @@ inode_create_file_in_lost_found(
 	    (unsigned long long)gen_old, host_name(host));
 	e = inode_create_link_internal(lf, fname, admin, n); /* i_nlink++ */
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003477,
 		    "inode %lld:%lld on %s -> %lld:%lld: "
 		    "cannot create /%s/%s: %s",
 		    (long long)inum_old, (long long)gen_old, host_name(host),
@@ -2438,7 +2438,7 @@ inode_create_file_in_lost_found(
 	}
 	e = db_inode_nlink_modify(inode_get_number(n), n->i_nlink);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003478,
 		    "db_inode_nlink_modify(%lld): %s",
 		    (unsigned long long)inode_get_number(n),
 		    gfarm_error_string(e));
@@ -3180,7 +3180,7 @@ inode_schedule_file_default(struct file_opening *opening,
 		 */
 		if (inode_get_size(opening->inode) == 0)
 			return (inode_schedule_new_file(peer, np, hostsp));
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003479,
 		    "(%llu:%llu, %llu): lost all replicas",
 		    (unsigned long long)inode_get_number(opening->inode),
 		    (unsigned long long)inode_get_gen(opening->inode),

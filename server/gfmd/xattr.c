@@ -212,7 +212,7 @@ setxattr(int xmlMode, struct inode *inode,
 	}
 
 	if (xmlMode && !gfarm_utf8_validate_sequences(*valuep, size)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003500,
 		    "argument '*valuep' is not a valid UTF-8 string");
 		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
 	}
@@ -454,7 +454,7 @@ gfm_server_getxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			gfarm_error_string(e));
 	} else if (!gfarm_utf8_validate_string(attrname)) {
 		e = GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003501,
 		    "argument 'attrname' is not a valid UTF-8 string");
 	} else if (!isvalid_attrname(attrname)) {
 		e = GFARM_ERR_INVALID_ARGUMENT;
@@ -552,7 +552,7 @@ removexattr(int xmlMode, struct inode *inode, char *attrname)
 
 	if (!gfarm_utf8_validate_string(attrname)) {
 		e = GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003502,
 		    "argument 'attrname' is not a valid UTF-8 string");
 	} else if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002089,
