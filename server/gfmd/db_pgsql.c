@@ -440,7 +440,7 @@ gfarm_pgsql_check_insert(PGresult *res,
 
 /*
  * XXX FIXME:
- * gfarm_pgsql_check_insert_dup_ok() is workaround for SourceForge #407.
+ * gfarm_pgsql_check_insert_dup_ok() is workaround for SourceForge #407, #431.
  * This function should be removed.
  */
 static gfarm_error_t
@@ -649,7 +649,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 	assert(transaction_nesting == 0);
 
 	if (gfarm_get_metadb_replication_enabled() && seqnum > 0) {
-		gfarm_error_t e;
+		gfarm_error_t e, e2;
 		struct db_seqnum_arg a;
 
 		a.name = "";
@@ -659,6 +659,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			gflog_debug(GFARM_MSG_1003245,
 			    "gfarm_pgsql_seqnum_modify : %s",
 			    gfarm_error_string(e));
+			e2 = gfarm_pgsql_exec_and_log("ROLLBACK", diag);
 			return (e);
 		}
 	}
@@ -742,7 +743,7 @@ gfarm_pgsql_insert(gfarm_uint64_t seqnum,
 
 /*
  * XXX FIXME:
- * gfarm_pgsql_insert0_dup_ok() is workaround for SourceForge #407.
+ * gfarm_pgsql_insert0_dup_ok() is workaround for SourceForge #407, #431.
  * This function should be removed.
  */
 static gfarm_error_t
@@ -788,7 +789,7 @@ gfarm_pgsql_insert0_dup_ok(gfarm_uint64_t seqnum,
 
 /*
  * XXX FIXME:
- * gfarm_pgsql_insert_dup_ok() is workaround for SourceForge #407.
+ * gfarm_pgsql_insert_dup_ok() is workaround for SourceForge #407, #431.
  * This function should be removed.
  */
 static gfarm_error_t
@@ -2377,13 +2378,18 @@ pgsql_filecopy_call(gfarm_uint64_t seqnum, struct db_filecopy_arg *arg,
 	return (e);
 }
 
+/*
+ * XXX FIXME:
+ * gfarm_pgsql_insert_dup_ok() is workaround for SourceForge #431.
+ * That function should be replaced by gfarm_pgsql_insert.
+ */
 static gfarm_error_t
 gfarm_pgsql_filecopy_add(gfarm_uint64_t seqnum,
 	struct db_filecopy_arg *arg)
 {
 	return (pgsql_filecopy_call(seqnum, arg,
 		"INSERT INTO FileCopy (inumber, hostname) VALUES ($1, $2)",
-		gfarm_pgsql_insert,
+		gfarm_pgsql_insert_dup_ok,
 		"pgsql_filecopy_add"));
 }
 
