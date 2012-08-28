@@ -3248,26 +3248,11 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 {
 	gfarm_error_t e;
 
-	/* workaround for SourceForge #431 */
-	static int previous_was_store_filecopy_add;
-	int this_is_store_filecopy_add = 0;
-
 	switch (ope) {
 	case GFM_JOURNAL_BEGIN:
 		e = ops->begin(seqnum, obj); break;
 	case GFM_JOURNAL_END:
-		e = ops->end(seqnum, obj);
-		/* workaround for SourceForge #431 */
-		if (ops == store_ops &&
-		    previous_was_store_filecopy_add &&
-		    e == GFARM_ERR_UNKNOWN) {
-			gflog_error(GFARM_MSG_1003545,
-			    "%s: ignoring transaction abort seqnum=%llu "
-			    "caused by duplicate filecopy_add",
-			    diag, (unsigned long long)seqnum);
-			e = GFARM_ERR_NO_ERROR;
-		}
-		break;
+		e = ops->end(seqnum, obj); break;
 	case GFM_JOURNAL_HOST_ADD:
 		e = ops->host_add(seqnum, obj); break;
 	case GFM_JOURNAL_HOST_MODIFY:
@@ -3315,11 +3300,7 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 	case GFM_JOURNAL_INODE_CKSUM_REMOVE:
 		e = ops->inode_cksum_remove(seqnum, obj); break;
 	case GFM_JOURNAL_FILECOPY_ADD:
-		e = ops->filecopy_add(seqnum, obj);
-		/* workaround for SourceForge #431 */
-		if (ops == store_ops)
-			this_is_store_filecopy_add = 1;
-		break;
+		e = ops->filecopy_add(seqnum, obj); break;
 	case GFM_JOURNAL_FILECOPY_REMOVE:
 		e = ops->filecopy_remove(seqnum, obj); break;
 	case GFM_JOURNAL_DEADFILECOPY_ADD:
@@ -3375,9 +3356,6 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		    diag, (unsigned long long)seqnum,
 		    journal_operation_name(ope), gfarm_error_string(e));
 	}
-	/* workaround for SourceForge #431 */
-	if (ops == store_ops)
-		previous_was_store_filecopy_add = this_is_store_filecopy_add;
 	return (e);
 }
 
