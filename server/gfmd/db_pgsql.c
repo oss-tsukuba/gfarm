@@ -438,43 +438,6 @@ gfarm_pgsql_check_insert(PGresult *res,
 	return (e);
 }
 
-/*
- * XXX FIXME:
- * gfarm_pgsql_check_insert_dup_ok() is workaround for SourceForge #407.
- * This function should be removed.
- */
-static gfarm_error_t
-gfarm_pgsql_check_insert_dup_ok(PGresult *res,
-	const char *command, const char *diag)
-{
-	gfarm_error_t e;
-
-	if (PQresultStatus(res) == PGRES_COMMAND_OK) {
-		e = GFARM_ERR_NO_ERROR;
-	} else if (pgsql_should_retry(res)) {
-		e = GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED;
-	} else {
-		char *err = PQresultErrorField(res, PG_DIAG_SQLSTATE);
-
-		if (err == NULL)
-			e = GFARM_ERR_UNKNOWN;
-		else if (strcmp(err, GFARM_PGSQL_ERRCODE_UNIQUE_VIOLATION)
-		    == 0) {
-			gflog_warning(GFARM_MSG_1003506, "%s: %s: %s",
-			    diag, command, PQresultErrorMessage(res));
-			return (GFARM_ERR_NO_ERROR);
-		} else if (strcmp(err, GFARM_PGSQL_ERRCODE_INVALID_XML_CONTENT)
-		    == 0)
-			e = GFARM_ERR_INVALID_ARGUMENT;
-		else
-			e = GFARM_ERR_UNKNOWN;
-
-		gflog_error(GFARM_MSG_1000425, "%s: %s: %s", diag, command,
-		    PQresultErrorMessage(res));
-	}
-	return (e);
-}
-
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 gfarm_pgsql_check_update_or_delete(PGresult *res,
@@ -735,74 +698,6 @@ gfarm_pgsql_insert(gfarm_uint64_t seqnum,
 	const char *diag)
 {
 	return (gfarm_pgsql_insert0(seqnum, command, nParams, paramTypes,
-	    paramValues, paramLengths, paramFormats, resultFormat,
-	    gfarm_pgsql_start, gfarm_pgsql_exec_params,
-	    diag));
-}
-
-/*
- * XXX FIXME:
- * gfarm_pgsql_insert0_dup_ok() is workaround for SourceForge #407.
- * This function should be removed.
- */
-static gfarm_error_t
-gfarm_pgsql_insert0_dup_ok(gfarm_uint64_t seqnum,
-	const char *command,
-	int nParams,
-	const Oid *paramTypes,
-	const char *const *paramValues,
-	const int *paramLengths,
-	const int *paramFormats,
-	int resultFormat,
-	gfarm_error_t (*start_op)(const char *),
-	PGresult *(*exec_params_op)(const char *, int, const Oid *,
-	    const char *const *, const int *, const int *, int),
-	const char *diag)
-{
-	PGresult *res;
-	gfarm_error_t e;
-
-	if (transaction_nesting == 0) {
-		e = start_op(diag);
-		if (e != GFARM_ERR_NO_ERROR)
-			return (e);
-		res = PQexecParams(conn, command, nParams, paramTypes,
-		    paramValues, paramLengths, paramFormats, resultFormat);
-		e = gfarm_pgsql_check_insert_dup_ok(res, command, diag);
-		if (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
-			return (e);
-		if (e == GFARM_ERR_NO_ERROR)
-			e = gfarm_pgsql_commit_sn(seqnum, diag);
-		else
-			gfarm_pgsql_rollback(diag);
-	} else {
-		res = exec_params_op(command, nParams, paramTypes,
-		    paramValues, paramLengths, paramFormats, resultFormat);
-		e = gfarm_pgsql_check_insert_dup_ok(res, command, diag);
-		if (e == GFARM_ERR_DB_ACCESS_SHOULD_BE_RETRIED)
-			return (e);
-	}
-	PQclear(res);
-	return (e);
-}
-
-/*
- * XXX FIXME:
- * gfarm_pgsql_insert_dup_ok() is workaround for SourceForge #407.
- * This function should be removed.
- */
-static gfarm_error_t
-gfarm_pgsql_insert_dup_ok(gfarm_uint64_t seqnum,
-	const char *command,
-	int nParams,
-	const Oid *paramTypes,
-	const char *const *paramValues,
-	const int *paramLengths,
-	const int *paramFormats,
-	int resultFormat,
-	const char *diag)
-{
-	return (gfarm_pgsql_insert0_dup_ok(seqnum, command, nParams, paramTypes,
 	    paramValues, paramLengths, paramFormats, resultFormat,
 	    gfarm_pgsql_start, gfarm_pgsql_exec_params,
 	    diag));
@@ -2465,11 +2360,6 @@ pgsql_deadfilecopy_call(gfarm_uint64_t seqnum, struct db_deadfilecopy_arg *arg,
 	return (e);
 }
 
-/*
- * XXX FIXME:
- * gfarm_pgsql_insert_dup_ok() is workaround for SourceForge #407.
- * That function should be replaced by gfarm_pgsql_insert.
- */
 gfarm_error_t
 gfarm_pgsql_deadfilecopy_add(gfarm_uint64_t seqnum,
 	struct db_deadfilecopy_arg *arg)
@@ -2477,7 +2367,7 @@ gfarm_pgsql_deadfilecopy_add(gfarm_uint64_t seqnum,
 	return (pgsql_deadfilecopy_call(seqnum, arg,
 		"INSERT INTO DeadFileCopy (inumber, igen, hostname) "
 			"VALUES ($1, $2, $3)",
-		gfarm_pgsql_insert_dup_ok,
+		gfarm_pgsql_insert,
 		"pgsql_deadfilecopy_add"));
 }
 
