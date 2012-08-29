@@ -2366,7 +2366,23 @@ gfarm_pgsql_deadfilecopy_add(gfarm_uint64_t seqnum,
 {
 	return (pgsql_deadfilecopy_call(seqnum, arg,
 		"INSERT INTO DeadFileCopy (inumber, igen, hostname) "
+#if 0
 			"VALUES ($1, $2, $3)",
+#else /* XXX FIXME: workaround for SourceForge #407 */
+			/*
+			 * without "::varchar" just after $3,
+			 * the following error occurrs with PostgreSQL-8.4.4:
+			 * ERROR:  inconsistent types deduced for parameter $3
+			 * DETAIL:  text versus character varying
+			 *
+			 * "::int8" was not necessary, but added for
+			 * style consistency.
+			 */
+			"SELECT $1::int8, $2::int8, $3::varchar "
+			"WHERE NOT EXISTS (SELECT * FROM DeadFileCopy "
+			"WHERE inumber=$1 AND igen=$2 "
+			"AND hostname=$3)",
+#endif
 		gfarm_pgsql_insert,
 		"pgsql_deadfilecopy_add"));
 }
