@@ -472,6 +472,16 @@ db_journal_apply_filecopy_add(gfarm_uint64_t seqnum,
 		    gfarm_error_string(e));
 	} else if ((e = inode_add_file_copy_in_cache(n,
 	    host)) != GFARM_ERR_NO_ERROR) {
+#if 1 /* XXX FIXME: workaround for SourceForge #434 (#431) */
+		if (e == GFARM_ERR_ALREADY_EXISTS) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "db_journal_apply_filecopy_add: "
+			    "inum=%llu hostname=%s: ignoring - %s",
+			    (unsigned long long)arg->inum, arg->hostname,
+			    gfarm_error_string(e));
+			return (GFARM_ERR_NO_ERROR); /* ignore this error */
+		}
+#endif
 		gflog_error(GFARM_MSG_1003229,
 		    "inum=%llu hostname=%s : %s",
 		    (unsigned long long)arg->inum, arg->hostname,
