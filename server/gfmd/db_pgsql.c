@@ -2277,7 +2277,22 @@ gfarm_pgsql_filecopy_add(gfarm_uint64_t seqnum,
 	struct db_filecopy_arg *arg)
 {
 	return (pgsql_filecopy_call(seqnum, arg,
-		"INSERT INTO FileCopy (inumber, hostname) VALUES ($1, $2)",
+		"INSERT INTO FileCopy (inumber, hostname) "
+#if 0
+		"VALUES ($1, $2)",
+#else /* XXX FIXME: workaround for SourceForge #431 */
+		/*
+		 * without "::varchar" just after $2,
+		 * the following error occurrs with PostgreSQL-8.4.4:
+		 * ERROR:  inconsistent types deduced for parameter $2
+		 * DETAIL:  text versus character varying
+		 *
+		 * "::int8" was not necessary, but added for
+		 * style consistency.
+		 */
+		"SELECT $1::int8, $2::varchar WHERE NOT EXISTS "
+		"(SELECT * FROM FileCopy WHERE inumber=$1 AND hostname=$2)",
+#endif
 		gfarm_pgsql_insert,
 		"pgsql_filecopy_add"));
 }
