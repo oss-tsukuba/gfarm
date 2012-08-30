@@ -220,6 +220,7 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 		int pipe_in[2];
 		int pipe_out[2];
 		int pipe_stderr[2];
+
 		if (pipe(pipe_in) == -1)
 			gfpara_fatal("pipe: %s", strerror(errno));
 		if (pipe(pipe_out) == -1)
@@ -232,6 +233,9 @@ gfpara_init(gfpara_t **handlep, int n_procs,
 			int fd;
 			FILE *from_parent;
 			FILE *to_parent;
+
+			free(handle);
+			free(procs);
 			is_parent = 0;
 			close(pipe_in[1]);
 			close(pipe_out[0]);
