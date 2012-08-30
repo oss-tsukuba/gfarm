@@ -711,13 +711,15 @@ gfprep_host_info_compare_for_src(const void *p1, const void *p2)
 {
 	struct gfprep_host_info *hi1 = *(struct gfprep_host_info **) p1;
 	struct gfprep_host_info *hi2 = *(struct gfprep_host_info **) p2;
+	float ratio1 = (float)hi1->n_using / (float)hi1->max_rw;
+	float ratio2 = (float)hi2->n_using / (float)hi2->max_rw;
 
-	if (hi1->n_using < hi2->n_using)
+	if (ratio1 < ratio2)
 		return (-1); /* high priority */
-	if (hi1->n_using == hi2->n_using)
-		return (0);
-	else
+	else if (ratio1 > ratio2)
 		return (1);
+	else
+		return (0);
 }
 
 static void
@@ -733,27 +735,54 @@ gfprep_host_info_array_sort_for_src(int nhost_infos,
 }
 
 static int
-gfprep_host_info_compare_for_dst(const void *p1, const void *p2)
+gfprep_host_info_compare_by_disk_avail(const void *p1, const void *p2)
 {
 	struct gfprep_host_info *hi1 = *(struct gfprep_host_info **) p1;
 	struct gfprep_host_info *hi2 = *(struct gfprep_host_info **) p2;
 
 	if (hi1->disk_avail > hi2->disk_avail)
 		return (-1); /* high priority */
-	else if (hi1->disk_avail == hi2->disk_avail) {
-		if (hi1->n_using < hi2->n_using)
-			return (-1); /* high priority */
-		if (hi1->n_using == hi2->n_using)
-			return (0);
-		else
-			return (1);
-	} else
+	else if (hi1->disk_avail < hi2->disk_avail)
 		return (1);
+	else
+		return (0);
+}
+
+static void
+gfprep_host_info_array_sort_by_disk_avail(int nhost_infos,
+	struct gfprep_host_info **host_infos)
+{
+	static const char diag[] = "gfprep_host_info_array_sort_by_disk_avail";
+
+	gfarm_mutex_lock(&mutex_using, diag, "mutex_using");
+	qsort(host_infos, nhost_infos, sizeof(struct gfprep_host_info *),
+	      gfprep_host_info_compare_by_disk_avail);
+	gfarm_mutex_unlock(&mutex_using, diag, "mutex_using");
+}
+
+static int
+gfprep_host_info_compare_for_dst(const void *p1, const void *p2)
+{
+	struct gfprep_host_info *hi1 = *(struct gfprep_host_info **) p1;
+	struct gfprep_host_info *hi2 = *(struct gfprep_host_info **) p2;
+	float ratio1 = (float)hi1->n_using / (float)hi1->max_rw;
+	float ratio2 = (float)hi2->n_using / (float)hi2->max_rw;
+
+	if (ratio1 < ratio2)
+		return (-1); /* high priority */
+	else if (ratio1 > ratio2)
+		return (1);
+	else if (hi1->disk_avail > hi2->disk_avail)
+		return (-1); /* high priority */
+	else if (hi1->disk_avail < hi2->disk_avail)
+		return (1);
+	else
+		return (0);
 }
 
 static void
 gfprep_host_info_array_sort_for_dst(int nhost_infos,
-				    struct gfprep_host_info **host_infos)
+	struct gfprep_host_info **host_infos)
 {
 	static const char diag[] = "gfprep_host_info_array_sort_for_dst";
 
@@ -1320,11 +1349,11 @@ pfunc_cb_end(int success, void *data)
 
 	if (cbd == NULL)
 		return;
+	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	if (cbd->type != PFUNC_TYPE_REMOVE_REPLICA) {
 		gfprep_update_using_info(cbd->src_hi, -1, 0);
 		gfprep_update_using_info(cbd->dst_hi, -1, -cbd->filesize);
 	}
-	gfarm_mutex_lock(&cb_mutex, diag, "cb_mutex");
 	if (success && opt.performance && opt.verbose) {
 		double usec;
 		gettimeofday(&end, NULL);
@@ -1934,7 +1963,7 @@ gfprep_sort_and_check_disk_avail(int n_array_dst,
 {
 	assert(array_dst && n_array_dst > 0);
 	/* disk_avail: large to small */
-	gfprep_host_info_array_sort_for_dst(n_array_dst, array_dst);
+	gfprep_host_info_array_sort_by_disk_avail(n_array_dst, array_dst);
 	return (gfprep_check_disk_avail(array_dst[0], src_size));
 }
 
@@ -2326,6 +2355,56 @@ gfprep_convert_gfarm_rootdir(char **urlp)
 	}
 }
 
+static int
+gfprep_check_busy_and_wait(
+	const char *src_url, gfarm_dirtree_entry_t *entry, int n_desire,
+	int n, struct gfprep_host_info **his)
+{
+	struct timeval now;
+	struct timespec timeout;
+	int i, retv, n_unbusy, busy, waited = 0;
+
+	if (n_desire <= 0)
+		return (0); /* skip */
+
+	gfarm_mutex_lock(&cb_mutex, "wait busy", "cb_mutex");
+	for (;;) {
+		n_unbusy = 0;
+		for (i = 0; i < n; i++) {
+			if (his[i]->n_using < his[i]->max_rw) {
+				if (++n_unbusy >= n_desire)
+					break;
+			}
+		}
+		if (n_unbusy >= n_desire) {
+			busy = 0;
+			break;
+		}
+		if (waited) {
+			busy = 1;
+			break;
+		}
+		if (entry->n_pending <= 0) { /* first time: not wait */
+			busy = 1;
+			break;
+		}
+		gfprep_debug("wait[n_pending=%"GFARM_PRId64"]: %s",
+			     entry->n_pending, src_url);
+		gettimeofday(&now, NULL);
+		timeout.tv_sec = now.tv_sec + 1;
+		timeout.tv_nsec = now.tv_usec * 1000;
+		retv = pthread_cond_timedwait(&cb_cond, &cb_mutex, &timeout);
+		if (retv == ETIMEDOUT) {
+			gfprep_debug("timeout: waiting busy host");
+			busy = 1;
+			break;
+		}
+		waited = 1;
+	}
+	gfarm_mutex_unlock(&cb_mutex, "wait busy", "cb_mutex");
+	return (busy);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2349,8 +2428,6 @@ main(int argc, char *argv[])
 	struct gfprep_host_info **array_dst = NULL;
 	char *src_url = NULL, *dst_url = NULL;
 	int src_url_size = 0, dst_url_size = 0;
-	gfarm_uint64_t base_pending = 0;
-	struct timespec pending_timeout;
 	enum way { WAY_NOPLAN, WAY_GREEDY, WAY_BAD };
 	enum way way = WAY_NOPLAN;
 	gfarm_list list_to_schedule;
@@ -2917,7 +2994,7 @@ main(int argc, char *argv[])
 		struct gfprep_host_info *src_hi, *dst_hi;
 		struct gfprep_host_info **src_select_array;
 		struct gfprep_host_info **dst_select_array, **dst_exist_array;
-		int found, n_using, n_desire;
+		int n_desire;
 		int n_src_select, n_dst_select, n_dst_exist;
 
 		if (src_base_name && strcmp(src_base_name,
@@ -3007,7 +3084,8 @@ main(int argc, char *argv[])
 		/* ----- a file ----- */
 		/* select a file within specified src  */
 		if (hash_src && (hash_srcname || opt_src_domain)) {
-			found = 0;
+			int found = 0;
+
 			for (i = 0; i < entry->src_ncopy; i++) {
 				if (gfprep_in_hostinfohash(
 					hash_src, entry->src_copy[i], 0)) {
@@ -3046,8 +3124,9 @@ main(int argc, char *argv[])
 		if (way != WAY_NOPLAN) {
 			/* check an existing replica within hash_dst */
 			if (!is_gfpcopy) { /* gfprep */
+				int found = 0;
+
 				assert(hash_dst);
-				found = 0;
 				for (i = 0; i < entry->src_ncopy; i++) {
 					if (gfprep_in_hostinfohash(
 						    hash_dst,
@@ -3074,25 +3153,8 @@ main(int argc, char *argv[])
 			gfprep_fatal_e(e, "gfarm_list_add");
 			continue; /* next entry */
 		}
+
 		/* ----- WAY_NOPLAN ----- */
-		/* wait busy src and dst */
-		if (entry->n_pending > base_pending) {
-			struct timeval now;
-			gfprep_debug("wait[n_pending=%"GFARM_PRId64"]: %s",
-				     entry->n_pending, src_url);
-			 /* wait a job */
-			gettimeofday(&now, NULL);
-			pending_timeout.tv_sec = now.tv_sec + 5;
-			pending_timeout.tv_nsec = now.tv_usec * 1000;
-			gfarm_mutex_lock(&cb_mutex, "main loop", "cb_mutex");
-			retv = pthread_cond_timedwait(&cb_cond, &cb_mutex,
-						      &pending_timeout);
-			if (retv == ETIMEDOUT)
-				gfprep_debug("pending timeout");
-			gfarm_mutex_unlock(&cb_mutex, "main loop", "cb_mutex");
-			base_pending++;
-		} else if (entry->n_pending == 0)
-			entry->n_pending = base_pending;
 		/* select existing replicas from target_hash_src */
 		if (src_is_gfarm) {
 			gfarm_list src_select_list;
@@ -3104,7 +3166,7 @@ main(int argc, char *argv[])
 				src_hi = gfprep_from_hostinfohash(
 					target_hash_src,
 					entry->src_copy[i], 1);
-				if (src_hi && src_hi->is_available) {
+				if (src_hi) {
 					e = gfarm_list_add(&src_select_list,
 							   src_hi);
 					gfprep_fatal_e(e, "gfarm_list_add");
@@ -3124,17 +3186,13 @@ main(int argc, char *argv[])
 			gfarm_list_free(&src_select_list);
 			if (src_select_array == NULL)
 				gfprep_fatal("no memory");
-			/* at least 1 free(not busy) host */
-			found = 0;
-			for (i = 0; i < n_src_select; i++) {
-				src_hi = src_select_array[i];
-				gfprep_get_using_info(src_hi, &n_using, NULL);
-				if (n_using < src_hi->max_rw) {
-					found = 1;
-					break;
-				}
-			}
-			if (found == 0) {
+			/* prefer unbusy host */
+			gfprep_host_info_array_sort_for_src(
+				n_src_select, src_select_array);
+			/* at least 1 unbusy host */
+			if (gfprep_check_busy_and_wait(
+				    src_url, entry, 1,
+				    n_src_select, src_select_array)) {
 				free(src_select_array);
 				gfprep_debug("pending: src hosts are busy: %s",
 					     src_url);
@@ -3142,9 +3200,6 @@ main(int argc, char *argv[])
 				gfarm_dirtree_pending(dirtree_handle);
 				continue; /* pending */
 			}
-			/* n_using: small(not busy) to large(busy) */
-			gfprep_host_info_array_sort_for_src(
-				n_src_select, src_select_array);
 		} else {
 			src_select_array = NULL;
 			n_src_select = 0;
@@ -3156,6 +3211,8 @@ main(int argc, char *argv[])
 		n_dst_select = 0;
 		if (dst_is_gfarm) {
 			gfarm_list dst_select_list, dst_exist_list;
+			int found;
+
 			assert(array_dst);
 			e = gfarm_list_init(&dst_select_list);
 			gfprep_fatal_e(e, "gfarm_list_init");
@@ -3206,8 +3263,9 @@ main(int argc, char *argv[])
 				gfarm_list_free(&dst_exist_list);
 				if (dst_exist_array == NULL)
 					gfprep_fatal("no memory");
+				/* to remove files */
 				/* disk_avail: large to small */
-				gfprep_host_info_array_sort_for_dst(
+				gfprep_host_info_array_sort_by_disk_avail(
 					n_dst_exist, dst_exist_array);
 			}
 			if (n_dst_select <= 0) {
@@ -3220,19 +3278,13 @@ main(int argc, char *argv[])
 				gfarm_list_free(&dst_select_list);
 				if (dst_select_array == NULL)
 					gfprep_fatal("no memory");
-				/* at least 1 free(not busy) host */
-				found = 0;
-				for (i = 0; i < n_dst_select; i++) {
-					dst_hi = dst_select_array[i];
-					gfprep_get_using_info(dst_hi,
-							      &n_using, NULL);
-					if (n_using < dst_hi->max_rw) {
-						found = 1;
-						break;
-					}
-				}
-				if (found == 0) {
-					free(src_select_array);
+				/* prefer unbusy and much disk_avail */
+				gfprep_host_info_array_sort_for_dst(
+					n_dst_select, dst_select_array);
+				n_desire = opt_n_desire - n_dst_exist;
+				if (gfprep_check_busy_and_wait(
+					    src_url, entry, n_desire,
+					    n_dst_select, dst_select_array)) {
 					free(dst_select_array);
 					free(dst_exist_array);
 					gfprep_debug(
@@ -3242,9 +3294,6 @@ main(int argc, char *argv[])
 					gfarm_dirtree_pending(dirtree_handle);
 					continue; /* pending */
 				}
-				/* disk_avail: large to small */
-				gfprep_host_info_array_sort_for_dst(
-					n_dst_select, dst_select_array);
 			}
 		}
 		if (is_gfpcopy) { /* gfpcopy */
