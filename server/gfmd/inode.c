@@ -2878,9 +2878,12 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 
 	inode_set_size(inode, size);
 	inode_set_atime(inode, atime);
-	inode_set_mtime(inode, mtime);
-	inode_set_ctime(inode, mtime);
-	ios->u.f.last_update = *mtime;
+	/* to avoid that mtime and ctime move backward */
+	if (gfarm_timespec_cmp(mtime, &ios->u.f.last_update) >= 0) {
+		ios->u.f.last_update = *mtime;
+		inode_set_mtime(inode, mtime);
+		inode_set_ctime(inode, mtime);
+	}
 
 	old_gen = inode->i_gen;
 

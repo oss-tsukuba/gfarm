@@ -894,6 +894,12 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * if called from GFM_PROTO_CLOSE_WRITE_4:
+ *	flagsp, inump, old_genp, new_genp, trace_logp are all NULL.
+ * if called from GFM_PROTO_CLOSE_WRITE_V2_4
+ *	flagsp, inump, old_genp, new_genp, trace_logp are all not NULL.
+ */
 gfarm_error_t
 process_close_file_write(struct process *process, struct peer *peer, int fd,
 	gfarm_off_t size,
@@ -943,7 +949,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
-	if (inode_is_updated(fo->inode, mtime) &&
+	if ((is_v2_4 || inode_is_updated(fo->inode, mtime)) &&
 
 	    /*
 	     * GFARM_FILE_CREATE_REPLICA flag means to create and add a
