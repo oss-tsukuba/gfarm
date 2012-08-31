@@ -3111,10 +3111,14 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 
 	inode_set_size(inode, size);
 	inode_set_atime(inode, atime);
-	inode_set_mtime(inode, mtime);
-	inode_set_ctime(inode, mtime);
-	if (ia != NULL)
-		ia->u.f.last_update = *mtime;
+	if (ia == NULL ||
+	    /* to avoid that mtime and ctime move backward */
+	    gfarm_timespec_cmp(mtime, &ia->u.f.last_update) >= 0) {
+		inode_set_mtime(inode, mtime);
+		inode_set_ctime(inode, mtime);
+		if (ia != NULL)
+			ia->u.f.last_update = *mtime;
+	}
 
 	old_gen = inode->i_gen;
 
