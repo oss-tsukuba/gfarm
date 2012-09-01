@@ -100,7 +100,11 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	gfarm_uint64_t gen_new;
 
 	mtime.tv_sec = stp->st_mtime;
-	mtime.tv_nsec = 0; /* XXX */
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+	mtime.tv_nsec = stp->st_mtim.tv_nsec;
+#else
+	mtime.tv_nsec = 0;
+#endif
 	e = gfm_client_replica_create_file_in_lost_found(
 	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
 	    &inum_new, &gen_new);

@@ -680,7 +680,8 @@ int file_table_size = 0;
 
 struct file_entry {
 	off_t size;
-	time_t mtime, atime; /* XXX FIXME tv_nsec */
+	time_t mtime, atime;
+	unsigned long mtimensec, atimensec;
 	gfarm_ino_t ino;
 	int flags, local_fd;
 #define FILE_FLAG_LOCAL		0x01
@@ -705,7 +706,7 @@ file_entry_set_atime(struct file_entry *fe,
 {
 	fe->flags |= FILE_FLAG_READ;
 	fe->atime = sec;
-	/* XXX FIXME st_atimespec.tv_nsec */
+	fe->atimensec = nsec;
 }
 
 static void
@@ -714,7 +715,7 @@ file_entry_set_mtime(struct file_entry *fe,
 {
 	fe->flags |= FILE_FLAG_WRITTEN;
 	fe->mtime = sec;
-	/* XXX FIXME st_mtimespec.tv_nsec */
+	fe->mtimensec = nsec;
 }
 
 static void
@@ -769,9 +770,17 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 		++write_open_count;
 	}
 	fe->atime = st.st_atime;
-	/* XXX FIXME st_atimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+	fe->atimensec = st.st_atim.tv_nsec;
+#else
+	fe->atimensec = 0;
+#endif
 	fe->mtime = st.st_mtime;
-	/* XXX FIXME st_mtimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+	fe->mtimensec = st.st_mtim.tv_nsec;
+#else
+	fe->mtimensec = 0;
+#endif
 	fe->size = st.st_size;
 
 	fe->gen = fe->new_gen = gen;
@@ -880,7 +889,7 @@ file_table_set_read(gfarm_int32_t net_fd)
 		return;
 
 	gettimeofday(&now, NULL);
-	file_entry_set_atime(fe, now.tv_sec, 0);
+	file_entry_set_atime(fe, now.tv_sec, now.tv_usec * 1000);
 }
 
 static void
@@ -893,7 +902,7 @@ file_table_set_written(gfarm_int32_t net_fd)
 		return;
 
 	gettimeofday(&now, NULL);
-	file_entry_set_mtime(fe, now.tv_sec, 0);
+	file_entry_set_mtime(fe, now.tv_sec, now.tv_usec * 1000);
 }
 
 static void
@@ -1337,14 +1346,11 @@ close_request(struct file_entry *fe)
 	if (fe->flags & FILE_FLAG_WRITTEN) {
 		return (gfm_client_close_write_v2_4_request(gfm_server,
 		    fe->size,
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)0,
-		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)0));
-		/* XXX FIXME st_atimespec.tv_nsec */
-		/* XXX FIXME st_mtimespec.tv_nsec */
+		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
+		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec));
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_close_read_request(gfm_server,
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)0));
-		/* XXX FIXME st_atimespec.tv_nsec */
+		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec));
 	} else {
 		return (gfm_client_close_request(gfm_server));
 	}
@@ -1356,15 +1362,12 @@ fhclose_request(struct file_entry *fe)
 	if (fe->flags & FILE_FLAG_WRITTEN) {
 		return (gfm_client_fhclose_write_request(gfm_server,
 		    fe->ino, fe->gen, fe->size,
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)0,
-		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)0));
-		/* XXX FIXME st_atimespec.tv_nsec */
-		/* XXX FIXME st_mtimespec.tv_nsec */
+		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec,
+		    (gfarm_int64_t)fe->mtime, (gfarm_int32_t)fe->mtimensec));
 	} else if (fe->flags & FILE_FLAG_READ) {
 		return (gfm_client_fhclose_read_request(gfm_server,
 		    fe->ino, fe->gen, 
-		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)0));
-		/* XXX FIXME st_atimespec.tv_nsec */
+		    (gfarm_int64_t)fe->atime, (gfarm_int32_t)fe->atimensec));
 	} else {
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -1450,6 +1453,7 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 {
 	struct stat st;
 	int stat_is_done = 0;
+	unsigned long atimensec, mtimensec;
 
 	if ((fe->flags & FILE_FLAG_LOCAL) == 0) { /* remote? */
 		;
@@ -1459,15 +1463,24 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 		    fd, strerror(errno));
 	} else {
 		stat_is_done = 1;
-		/* XXX FIXME st_atimespec.tv_nsec */
-		if (st.st_atime != fe->atime)
-			file_entry_set_atime(fe, st.st_atime, 0);
+#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+		atimensec = st.st_atim.tv_nsec;
+#else
+		atimensec = 0;
+#endif
+		if (st.st_atime != fe->atime || atimensec != fe->atimensec)
+			file_entry_set_atime(fe, st.st_atime, atimensec);
 		/* another process might write this file */
 		if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
-			/* XXX FIXME st_mtimespec.tv_nsec */
-			if (st.st_mtime != fe->mtime)
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+			mtimensec = st.st_mtim.tv_nsec;
+#else
+			mtimensec = 0;
+#endif
+			if (st.st_mtime != fe->mtime ||
+			    mtimensec != fe->mtimensec)
 				file_entry_set_mtime(fe,
-				    st.st_mtime, 0);
+				    st.st_mtime, mtimensec);
 			if (st.st_size != fe->size)
 				file_entry_set_size(fe, st.st_size);
 			/* XXX FIXME this may be caused by others */
@@ -1875,9 +1888,17 @@ gfs_server_fstat(struct gfp_xdr *client)
 	else {
 		size = st.st_size;
 		atime_sec = st.st_atime;
-		/* XXX FIXME st_atimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+		atime_nsec = st.st_atim.tv_nsec;
+#else
+		atime_nsec = 0;
+#endif
 		mtime_sec = st.st_mtime;
-		/* XXX FIXME st_mtimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+		mtime_nsec = st.st_mtim.tv_nsec;
+#else
+		mtime_nsec = 0;
+#endif
 	}
 
 	gfs_server_put_reply_with_errno(client, "fstat", save_errno,
@@ -2295,9 +2316,17 @@ gfs_async_server_fhstat(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	else {
 		filesize = st.st_size;
 		atime_sec = st.st_atime;
-		/* XXX FIXME st_atimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+		atime_nsec = st.st_atim.tv_nsec;
+#else
+		atime_nsec = 0;
+#endif
 		mtime_sec = st.st_mtime;
-		/* XXX FIXME st_mtimespec.tv_nsec */
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+		mtime_nsec = st.st_mtim.tv_nsec;
+#else
+		mtime_nsec = 0;
+#endif
 	}
 	free(path);
 
