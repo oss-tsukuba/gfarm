@@ -265,9 +265,17 @@ gfs_pio_local_storage_fstat(GFS_File gf, struct gfs_stat *st)
 	if (fstat(vc->fd, &sb) == 0) {
 		st->st_size = sb.st_size;
 		st->st_atimespec.tv_sec = sb.st_atime;
-		st->st_atimespec.tv_nsec = 0; /* XXX */
+#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+		st->st_atimespec.tv_nsec = sb.st_atim.tv_nsec;
+#else
+		st->st_atimespec.tv_nsec = 0;
+#endif
 		st->st_mtimespec.tv_sec = sb.st_mtime;
-		st->st_mtimespec.tv_nsec = 0; /* XXX */
+#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+		st->st_mtimespec.tv_nsec = sb.st_mtim.tv_nsec;
+#else
+		st->st_mtimespec.tv_nsec = 0;
+#endif
 	} else {
 		int save_errno = errno;
 		gflog_debug(GFARM_MSG_1001371,
