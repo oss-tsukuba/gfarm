@@ -474,7 +474,7 @@ db_journal_apply_filecopy_add(gfarm_uint64_t seqnum,
 	    host)) != GFARM_ERR_NO_ERROR) {
 #if 1 /* XXX FIXME: workaround for SourceForge #434 (#431) */
 		if (e == GFARM_ERR_ALREADY_EXISTS) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003546,
 			    "db_journal_apply_filecopy_add: "
 			    "inum=%llu hostname=%s: ignoring - %s",
 			    (unsigned long long)arg->inum, arg->hostname,
