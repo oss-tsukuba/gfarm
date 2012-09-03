@@ -1,6 +1,6 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.6
+%define ver	2.5.7
 %define rel	1
 
 # a hook to make RPM version number different from %{ver}
@@ -150,6 +150,9 @@ Metadata server for Gfarm file system
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Mon Sep  3 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.7-1
+- Gfarm version 2.5.7 released
+
 * Tue Feb 25 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.4.1-1
 - Gfarm version 2.5.4.1 released
 

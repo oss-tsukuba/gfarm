@@ -1,3 +1,21 @@
+Release note for Gfarm 2.5.7
+============================
+
+[2012.9.3]
+
+Updated feature
+* gfprep, gfpcopy - improve destination host scheduling not to choose
+  the same destination at the same time
+* libgfarm, gfsd - support nanosecond resolution for file
+  creation/modification/access time if it is supported by the file
+  system node
+* gfmd - suppress too many "accept: Too many open files" messages when
+  thousands of clients access [sf.net trac #412]
+
+Bug fix
+* gfmd - file replicas may be inconsistent if the file is updated
+  within a second but it has the same size.
+
 Release note for Gfarm 2.5.6
 ============================
 
