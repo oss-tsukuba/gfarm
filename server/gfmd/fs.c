@@ -4080,7 +4080,7 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	}
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_1003485,
+		gflog_warning(GFARM_MSG_1003485,
 		    "inode %lld:%lld on %s: invalid metadata deleted",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 	}
