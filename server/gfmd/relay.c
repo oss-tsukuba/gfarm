@@ -1,3 +1,8 @@
+/**
+ * @file  relay.c
+ * @brief RPC relay among a slave and a master gfmd servers.
+ */
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -519,6 +524,57 @@ gfm_server_relay_get_vrequest(struct peer *peer, size_t *sizep,
 	return (e);
 }
 
+/**
+ * Get a request from a client or a slave gfmd.
+ *
+ * @param peer     Connection peer.
+ * @param sizep    Data size of the request.
+ * @param skip     True if the transaction is suppressed.
+ * @param rp       RPC relay handler.
+ * @param diag     Title for diagnostics messages.
+ * @param command  ID of the gfm protocol command.
+ * @param format   Format of arguments of the gfm protocol command.
+ * @return         Error code.
+ *
+ * The function is similar to gfm_server_get_request(), but it supports
+ * RPC relay among master and slave gfmd servers.
+ *
+ * This function can be used in a handler of a gfm protocol command which
+ * receives the fixed number of arguments and sends the fixed number of
+ * response data.  For example, response data of the gfm command
+ * GFM_PROTO_GETDIRENTS are:
+ *
+ * \verbatim
+ *    i:ecode
+ *    also reply the followings if ecode == GFARM_ERR_NO_ERROR:
+ *        i:n_entries
+ *        s[n_entries]:ent_names
+ *        i[n_entries]:ent_types
+ *        l[n_entries]:inode_numbers
+ * \endverbatim
+ *
+ * Since 'ent_names', 'ent_types' and 'inode_numbers' are arrays with
+ * variable length, GFM_PROTO_GETDIRENTS returns the variable number of
+ * data.  That is to say gfm_server_relay_put_reply() cannot be used in
+ * a protocol handler of GFM_PROTO_GETDIRENTS.  For those protocol
+ * commands, use gfm_server_relay_request_reply(),
+ * gfm_server_relay_get_reply_dynarg() and
+ * gfm_server_relay_get_reply_arg_dynarg(), instead.
+ *
+ * Usually the arguments 'peer', 'sizep', 'skip' and 'diag' given by
+ * protocol_switch() to a protocol handler are also passed to this
+ * function as they stand.
+ *
+ * Upon success, the function updates '*rp'.  If the requested command
+ * is fed by a slave gfmd, the function creates an RPC relay handler and
+ * it is set to '*rp'.  Otherwise '*rp' is set to NULL.
+ * The allocated memory for the RPC relay handler will be disposed
+ * asynchronously so that the protocol handler doesn't have to dispose
+ * it explicitly.
+ *
+ * Upon successful completion, the function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_get_request(struct peer *peer, size_t *sizep,
 	int skip, struct relayed_request **rp, const char *diag,
@@ -534,7 +590,31 @@ gfm_server_relay_get_request(struct peer *peer, size_t *sizep,
 	return (e);
 }
 
-/* for multiple-argument request */
+/**
+ * Get a request from a client or a slave gfmd.
+ *
+ * @param peer     Connection peer.
+ * @param sizep    Data size of the request.
+ * @param skip     True if the transaction is suppressed.
+ * @param r        RPC relay handler.
+ * @param diag     Title for diagnostics messages.
+ * @param format   Format of response data.
+ * @return         Error code.
+ *
+ * The function is similar to gfm_server_get_request(), but it supports
+ * RPC relay among master and slave gfmd servers.
+ *
+ * Note that this function must be called in a protocol handler 
+ * implemented with gfm_server_relay_request_reply().  (See the document
+ * of gfm_server_relay_requst_reply() for more details.)
+ *
+ * Usually the arguments 'peer', 'sizep', 'skip', 'r' and 'diag' given by
+ * gfm_server_relay_request_reply() to the reply processor function are
+ * passed to this function as they stand.
+ *
+ * Upon successful completion, the function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_get_request_dynarg(struct peer *peer, size_t *sizep,
 	int skip, struct relayed_request *r, const char *diag,
@@ -574,7 +654,52 @@ gfm_server_relay_get_request_dynarg(struct peer *peer, size_t *sizep,
 	return (e);
 }
 
-/* for multiple-argument request */
+/**
+ * Put a reply to a client or a slave gfmd.
+ *
+ * @param peer     Connection peer.
+ * @param sizep    Data size of the request.
+ * @param diag     Title for diagnostics messages.
+ * @param ecode    Result code of the protocol command.
+ * @param format   Format of arguments of the gfmd protocol command.
+ * @return         Error code.
+ *
+ * The function is usually used for sending the variable number of response
+ * data of the gfm protocol command.  It is used together with
+ * gfm_server_relay_put_reply_arg_dynarg() in a reply processor function
+ * called by gfm_server_relay_request_reply().
+ *
+ * For example, the format of response data of the gfm command
+ * GFM_PROTO_GETDIRENTS is:
+ *
+ * \verbatim
+ *    i:ecode
+ *    also reply the followings if ecode == GFARM_ERR_NO_ERROR:
+ *        i:n_entries
+ *        s[n_entries]:ent_names
+ *        i[n_entries]:ent_types
+ *        l[n_entries]:inode_numbers
+ * \endverbatim
+ *
+ * Using gfm_server_relay_put_reply_dynarg() and 
+ * gfm_server_relay_put_reply_arg_dynarg(), the response data can be
+ * replied, like this:
+ *
+ * \verbatim
+ *    gfm_server_relay_put_reply_dynarg(..., ecode, "i", n_entries)
+ *    if (ecode == GFARM_ERR_NO_ERROR) {
+ *       for (i = 0; i < n_entries; i++) 
+ *          gfm_server_relay_put_reply_arg_dynarg(..., "s", ent_names[i]);
+ *       for (i = 0; i < n_entries; i++) 
+ *          gfm_server_relay_put_reply_arg_dynarg(..., "i", ent_types[i]);
+ *       for (i = 0; i < n_entries; i++) 
+ *          gfm_server_relay_put_reply_arg_dynarg(..., "l", inode_numbers[i]);
+ *    }
+ * \endverbatim
+ *
+ * Upon successful completion, the function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_put_reply_dynarg(struct peer *peer, size_t *sizep,
     const char *diag, gfarm_error_t ecode, const char *format, ...)
@@ -631,6 +756,34 @@ gfm_server_relay_put_reply_dynarg(struct peer *peer, size_t *sizep,
 	return (e);
 }
 
+/**
+ * Put a reply to a client or a slave gfmd.
+ *
+ * @param peer     Connection peer.
+ * @param sizep    Data size of the request.
+ * @param diag     Title for diagnostics messages.
+ * @param format   Format of response data.
+ * @return         Error code.
+ *
+ * The function is similar to gfm_server_put_reply(), but it supports
+ * RPC relay among master and slave gfmd servers.
+ *
+ * Note that this function must be called in a protocol handler 
+ * implemented with gfm_server_relay_request_reply().  (See the document
+ * of gfm_server_relay_requst_reply() for more details.)
+ *
+ * If the gfm protocol command feeds the variable number of the response
+ * data, use gfm_server_relay_put_reply_arg_dynarg() in combination with
+ * this function.  See the document of gfm_server_relay_put_reply_arg_dynarg()
+ * for more details.
+ *
+ * Usually the arguments 'peer', 'sizep' and 'diag' given by
+ * gfm_server_relay_request_reply() to the reply processor function
+ * are passed to this function as they stand.
+ *
+ * Upon successful completion, the function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_put_reply_arg_dynarg(struct peer *peer, size_t *sizep,
     const char *diag, const char *format, ...)
@@ -958,6 +1111,78 @@ end:
 	return (e);
 }
 
+/**
+ * Process a gfm protocol command with RPC relay support.
+ *
+ * @param peer            Connection peer.
+ * @param xid             Transaction ID.
+ * @param skip            True if the transaction is suppressed.
+ * @param get_request_op  Pointer to a request processor function.
+ * @param put_reply_op    Pointer to a reply processor function.
+ * @param command         ID of the gfm protocol command.
+ * @param closure         Data passed to request/reply processor functions.
+ * @param diag            Title for diagnostics messages.
+ * @return                Error code.
+ *
+ * Some of the gfm protocol commands receive the variable number of
+ * arguments and/or send the variable number of response data.
+ * To support RPC relay, protocol handlers of those commands must use
+ * this function.  (Also protocol handlers of other commands may use
+ * this function, but it makes the protocol handlers complex.)
+ *
+ * Usually the arguments 'peer', 'xid', 'sizep' and 'skip' given by
+ * protocol_switch() are passed to this function as they stand.
+ *
+ * The argument 'get_request_op' is a pointer to the request processor
+ * function.  Its prototype is:
+ *
+ *    gfarm_error_t
+ *    get_request(enum request_reply_mode mode, struct peer *peer,
+ *       size_t *sizep, int skip, struct relayed_request *r, void *closure,
+ *       const char *diag);
+ * 
+ * gfm_server_relay_request_reply() forwards the arguments 'peer', 'sizep',
+ * 'skip', 'closure' and 'diag' to the 'get_request_op' function as they
+ * are stands.  The argument 'r' is an RPC relay handler created by
+ * gfm_server_relay_request_reply().
+ *
+ * On a slave gfmd, gfm_server_relay_request_reply() calls the
+ * 'get_request_op' function  twice.  The argument 'mode' of the
+ * 'get_request_op' function is set to RELAY_CALC_SIZE at the first call,
+ * and set to RELAY_TRANSFER at the second call.  On other gfmd servers,
+ * gfm_server_relay_request_reply() calls the 'get_request_op' function
+ * only once and the value of 'mode' is NO_RELAY.
+ * 
+ * For the 'get_request_op' function to get a request, use
+ * gfm_server_relay_get_request_dynarg().
+ *
+ * The argument 'put_reply_op' of gfm_server_relay_request_reply() is
+ * a pointer to the reply processor function.  Its prptotype is:
+ *
+ *    gfarm_error_t
+ *    put_reply(enum request_reply_mode mode, struct peer *peer,
+ *       size_t *sizep, int skip, void *closure, const char *diag);
+ * 
+ * gfm_server_relay_request_reply() forwards the arguments 'peer', 'sizep',
+ * 'skip', 'closure' and 'diag' to the 'put_reply_op' function as they
+ * stand.
+ *
+ * On a master gfmd enabling RPC relay, gfm_server_request_relay() calls
+ * the 'put_reply_op' function twice.  The argument 'mode' of the
+ * 'put_reply_op' function is set to RELAY_CALC_SIZE at the first call,
+ * and set to RELAY_TRANSFER at the second call.  On a master gfmd disabling
+ * RPC relay, gfm_server_relay_request_reply() calls the 'put_reply_op'
+ * function only once and the value of 'mode' is NO_RELAY.  On a slave
+ * gfmd, gfm_server_relay_request_reply() never calls the 'put_reply_op'
+ * function.
+ * 
+ * For the 'put_reply_op' function to put a reply, use
+ * gfm_server_relay_put_reply_dynarg() and
+ * gfm_server_relay_put_reply_arg_dynarg().
+ *
+ * Upon successful completion, this function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_request_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	int skip, get_request_op_t get_request_op, put_reply_op_t put_reply_op,
@@ -1000,6 +1225,35 @@ gfm_server_relay_put_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 	return (e);
 }
 
+/**
+ * Put a reply to a client or a slave gfmd.
+ *
+ * @param peer     Connection peer.
+ * @param xid      Transaction ID.
+ * @param sizep    Data size of the reply.
+ * @param r        RPC relay handler.
+ * @param diag     Title for diagnostics messages.
+ * @param ecode    Result code of the protocol command.
+ * @param format   Format of response data.
+ * @return         Error code.
+ *
+ * The function is similar to gfm_server_put_reply(), but it supports
+ * RPC relay among master and slave gfmd servers.
+ *
+ * This function can be used in a protocol handler of a gfm protocol
+ * command with the fixed number of arguments and response data.
+ * (See the document of gfm_server_relay_get_request() for more details.)
+ *
+ * Usually the arguments 'peer', 'sizep' and 'diag' given by
+ * protocol_switch() to the protocol handler function are passed to
+ * this function as they stand.
+ *
+ * The argument 'r' is a pointer to an RPC relay handler created by
+ * gfm_server_relay_get_request().
+ *
+ * Upon successful completion, the function returns GFARM_ERR_NO_ERROR.
+ * Otherwise it returns an error code.
+ */
 gfarm_error_t
 gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	size_t *sizep, struct relayed_request *r, const char *diag,
