@@ -188,6 +188,7 @@ case ${BACKEND_TYPE} in
 postgresql)
 	BACKEND_HOST="`getvalue postgresql_server_host`"
 	BACKEND_USER_PASSWD="`getvalue postgresql_password | tr -d '"'`"
+	JOURNAL_FILE="`getvalue metadb_journal_dir`"/0000000000.gmj
 	pg_dump=${PGSQL_BINDIR}/pg_dump
 	dropdb=${PGSQL_BINDIR}/dropdb
 	createdb=${PGSQL_BINDIR}/createdb
@@ -230,6 +231,10 @@ postgresql)
 		| $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
 			ABORT "grant fails"
 		rm -f $tablelist
+
+		# remove journal file
+		mv $JOURNAL_FILE $JOURNAL_FILE.bak >& /dev/null &&
+			echo "journal file ($JOURNAL_FILE) is renamed to $JOURNAL_FILE.bak"
 		$STOP_GFMD && service_ctl gfmd start
 		status=0
 		;;
