@@ -58,6 +58,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/relay.c \
 	$(GFMD_SRCDIR)/fsngroup_replica.c \
 	$(GFMD_SRCDIR)/fsngroup.c \
+	$(GFMD_SRCDIR)/thrstatewait.c \
 	db_journal_apply_test.c empty_ops.c
 
 OBJS =	\
@@ -95,6 +96,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/relay.o \
 	$(GFMD_BUILDDIR)/fsngroup_replica.o \
 	$(GFMD_BUILDDIR)/fsngroup.o \
+	$(GFMD_SRCDIR)/thrstatewait.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)

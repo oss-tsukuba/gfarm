@@ -24,6 +24,7 @@
 #include "file_replication.h"
 #include "inode.h"
 #include "gfmd.h" /* gfmd_port */
+#include "thrstatewait.h"
 
 struct dead_file_copy;
 struct file_replication {
@@ -57,7 +58,7 @@ struct file_replication {
 	gfarm_error_t src_errcode; /* qentry.result is dst_errcode */
 	gfarm_int64_t handle; /* pid of destination side worker */
 	gfarm_off_t filesize;
-	struct rendezvous *rendezvous;
+	struct gfarm_thr_statewait *statewait;
 };
 
 struct inode_replication_state {
@@ -136,7 +137,7 @@ file_replication_new(struct inode *inode, gfarm_uint64_t gen,
 	fr->queued = 0;
 	fr->handle = -1;
 	fr->filesize = -1;
-	fr->rendezvous = NULL;
+	fr->statewait = NULL;
 
 	*frp = fr;
 	return (GFARM_ERR_NO_ERROR);
@@ -234,64 +235,6 @@ file_replication_lookup(struct host *dst, gfarm_ino_t ino, gfarm_int64_t gen,
 	return (NULL);
 }
 
-struct rendezvous {
-	pthread_mutex_t mutex;
-	pthread_cond_t arrived;
-	int arrival;
-	gfarm_error_t result;
-};
-
-void
-rendezvous_initialize(struct rendezvous *rendezvous, const char *diag)
-{
-	static const char diag2[] = "rendezvous_initialize";
-
-	gfarm_mutex_init(&rendezvous->mutex, diag, diag2);
-	gfarm_cond_init(&rendezvous->arrived, diag, diag2);
-	rendezvous->arrival = 0;
-	rendezvous->result = GFARM_ERR_NO_ERROR;
-}
-
-gfarm_error_t
-rendezvous_wait(struct rendezvous *rendezvous, const char *diag)
-{
-	gfarm_error_t e;
-	static const char diag2[] = "rendezvous_wait";
-
-	gfarm_mutex_lock(&rendezvous->mutex, diag, diag2);
-	while (!rendezvous->arrival)
-		gfarm_cond_wait(&rendezvous->arrived, &rendezvous->mutex,
-		    diag, diag2);
-	e = rendezvous->result;
-	gfarm_mutex_unlock(&rendezvous->mutex, diag, diag2);
-
-	return (e);
-}
-
-void
-rendezvous_signal(struct rendezvous *rendezvous, gfarm_error_t e,
-	const char *diag)
-{
-	static const char diag2[] = "rendezvous_signal";
-
-	gfarm_mutex_lock(&rendezvous->mutex, diag, diag2);
-	rendezvous->arrival = 1;
-	rendezvous->result = e;
-	gfarm_mutex_unlock(&rendezvous->mutex, diag, diag2);
-
-	gfarm_cond_signal(&rendezvous->arrived, diag, diag2);
-}
-
-void
-rendezvous_terminate(struct rendezvous *rendezvous, const char *diag)
-{
-	static const char diag2[] = "rendezvous_terminate";
-
-	gfarm_cond_destroy(&rendezvous->arrived, diag, diag2);
-	gfarm_mutex_destroy(&rendezvous->mutex, diag, diag2);
-}
-
-
 static void
 handle_file_replication_result(struct netsendq_entry *qentryp)
 {
@@ -300,7 +243,7 @@ handle_file_replication_result(struct netsendq_entry *qentryp)
 	struct host *dst;
 	struct inode *inode;
 	gfarm_error_t dst_error, src_error;
-	struct rendezvous *rendezvous;
+	struct gfarm_thr_statewait *statewait;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
 	giant_lock();
@@ -309,7 +252,7 @@ handle_file_replication_result(struct netsendq_entry *qentryp)
 	inode = fr->inode;
 	dst_error = fr->qentry.result;
 	src_error = fr->src_errcode;
-	rendezvous = fr->rendezvous;
+	statewait = fr->statewait;
 	if (dst_error == GFARM_ERR_NO_ERROR &&
 	    src_error == GFARM_ERR_NO_ERROR) {
 		e = inode_replicated(fr, src_error, dst_error, fr->filesize);
@@ -327,8 +270,8 @@ handle_file_replication_result(struct netsendq_entry *qentryp)
 
 	giant_unlock();
 
-	if (rendezvous != NULL)
-		rendezvous_signal(rendezvous, e, diag);
+	if (statewait != NULL)
+		gfarm_thr_statewait_signal(statewait, e, diag);
 }
 
 static void
@@ -345,10 +288,10 @@ static void
 file_replication_finishedq_enqueue_success(
 	struct file_replication *fr,
 	gfarm_error_t src_error, gfarm_error_t dst_error,
-	gfarm_off_t filesize, struct rendezvous *rendezvous)
+	gfarm_off_t filesize, struct gfarm_thr_statewait *statewait)
 {
 	fr->filesize = filesize;
-	fr->rendezvous = rendezvous;
+	fr->statewait = statewait;
 	file_replication_finishedq_enqueue(fr, src_error, dst_error);
 }
 
@@ -363,8 +306,8 @@ gfm_async_server_replication_result(struct host *dst,
 	gfarm_int64_t handle;
 	gfarm_off_t filesize;
 	struct file_replication *fr;
-	struct rendezvous rendezvous;
-	int do_rendezvous = 0;
+	struct gfarm_thr_statewait statewait;
+	int do_statewait = 0;
 	gfarm_int64_t trace_seq_num; /* for gfarm_file_trace */
 	static const char diag[] = "GFM_PROTO_REPLICATION_RESULT";
 
@@ -391,10 +334,10 @@ gfm_async_server_replication_result(struct host *dst,
 	giant_lock(); /* XXXQ FIXME: potential deadlock */
 
 	if ((fr = file_replication_lookup(dst, ino, gen, handle)) != NULL) {
-		do_rendezvous = 1;
-		rendezvous_initialize(&rendezvous, diag);
+		do_statewait = 1;
+		gfarm_thr_statewait_initialize(&statewait, diag);
 		file_replication_finishedq_enqueue_success(fr,
-		    src_errcode, dst_errcode, filesize, &rendezvous);
+		    src_errcode, dst_errcode, filesize, &statewait);
 	} else {
 		/*
 		 * couldn't call file_replication_finishedq_enqueue() here,
@@ -426,9 +369,9 @@ gfm_async_server_replication_result(struct host *dst,
 	 * because currently this is called in the context
 	 * of threads for back_channel_recv_watcher,
 	 */
-	if (do_rendezvous) {
-		e = rendezvous_wait(&rendezvous, diag);
-		rendezvous_terminate(&rendezvous, diag);
+	if (do_statewait) {
+		e = gfarm_thr_statewait_wait(&statewait, diag);
+		gfarm_thr_statewait_terminate(&statewait, diag);
 	}
 
 	e2 = gfm_async_server_put_reply(dst, peer, xid, diag, e, "");
