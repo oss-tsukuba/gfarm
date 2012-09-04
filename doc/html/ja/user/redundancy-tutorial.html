@@ -98,14 +98,6 @@ gfdump.postgresql に対しても同じオプションを与えてください。
 # config-gfarm -r
 </PRE></TD></TR></TBODY></TABLE>
 
-メタデータのリストアに先立ち、rootユーザでgfmd を停止し、
-ジャーナルファイルを消去します。
-<p>
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd stop
-# rm /var/gfarm-metadata/journal/0000000000.gmj
-</PRE></TD></TR></TBODY></TABLE>
-
 rootユーザでメタデータをリストアします。<br>
 config-gfarm の際に、--prefix オプションや -l オプションを指定していた場合は、
 gfdump.postgresql に対しても同じオプションを与えてください。
