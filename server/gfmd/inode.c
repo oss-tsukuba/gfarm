@@ -850,7 +850,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * So we have to avoid to schedule creation of a replica on
 	 * them, at this moment.
 	 */
-	if (spool_host != NULL) {
+	if (start_replication && spool_host != NULL) {
 		if (repattr != NULL) {
 			/*
 			 * Convert the to_be_excluded into an array.
