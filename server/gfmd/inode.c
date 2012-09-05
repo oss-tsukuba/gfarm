@@ -783,7 +783,8 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 		}
 	}
 
-	if (spool_host != NULL && nreplicas < desired_replica_number) {
+	if (start_replication && spool_host != NULL &&
+	    nreplicas < desired_replica_number) {
 		schedule_replication(inode, spool_host, to_be_excluded,
 		    nreplicas, desired_replica_number - nreplicas);
 	}
