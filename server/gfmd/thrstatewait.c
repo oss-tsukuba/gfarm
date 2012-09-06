@@ -33,6 +33,7 @@ gfarm_thr_statewait_initialize(struct gfarm_thr_statewait *statewait,
  *
  * @param statewait  A 'statewait' object.
  * @param diag       Title for diagnostics messages.
+ * @return           Error code.
  *
  * It waits until another thread calls gfarm_thr_statewait_signal() for
  * the 'statewait' object.  Unlike pthread_cond_wait(), this function
@@ -97,4 +98,22 @@ gfarm_thr_statewait_terminate(struct gfarm_thr_statewait *statewait,
 
 	gfarm_cond_destroy(&statewait->arrived, diag, diag2);
 	gfarm_mutex_destroy(&statewait->mutex, diag, diag2);
+}
+
+/**
+ * Reset a 'statewait' object.
+ *
+ * @param statewait  An object to be reset.
+ * @param diag       Title for diagnostics messages.
+ */
+void
+gfarm_thr_statewait_reset(struct gfarm_thr_statewait *statewait,
+	const char *diag)
+{
+	static const char diag2[] = "gfarm_thr_statewait_reset";
+
+	gfarm_mutex_lock(&statewait->mutex, diag, diag2);
+	statewait->arrival = 0;
+	statewait->result = GFARM_ERR_NO_ERROR;
+	gfarm_mutex_unlock(&statewait->mutex, diag, diag2);
 }

@@ -13,4 +13,4 @@ void gfarm_thr_statewait_signal(struct gfarm_thr_statewait *, gfarm_error_t,
 	const char *);
 void gfarm_thr_statewait_terminate(struct gfarm_thr_statewait *,
 	const char *);
-
+void gfarm_thr_statewait_reset(struct gfarm_thr_statewait *, const char *);

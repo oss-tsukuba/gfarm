@@ -33,6 +33,7 @@
 #include "mdhost.h"
 #include "db_journal.h"
 #include "peer.h"
+#include "thrstatewait.h"
 
 static const char RELAYED_REQUEST_ACQUIRE_MUTEX[] =
 	"relayed_request.acquire_mutex";
@@ -165,14 +166,14 @@ static void
 master_get_db_update_info(struct peer *peer, gfarm_uint64_t *seqnump,
 	gfarm_uint64_t *flagsp)
 {
-	struct remote_peer *rpeer;
+	struct remote_peer *remote_peer;
 
 	assert(mdhost_self_is_master());
 	assert(peer_get_parent(peer) != NULL);
 
-	rpeer = peer_to_remote_peer(peer);
-	*seqnump = remote_peer_get_db_update_seqnum(rpeer);
-	*flagsp = remote_peer_get_db_update_flags(rpeer);
+	remote_peer = peer_to_remote_peer(peer);
+	*seqnump = remote_peer_get_db_update_seqnum(remote_peer);
+	*flagsp = remote_peer_get_db_update_flags(remote_peer);
 }
 
 /*
@@ -182,14 +183,14 @@ master_get_db_update_info(struct peer *peer, gfarm_uint64_t *seqnump,
 void
 master_set_db_update_info_to_peer(struct peer *peer, gfarm_uint64_t flags)
 {
-	struct remote_peer *rpeer;
+	struct remote_peer *remote_peer;
 
 	if (!mdhost_self_is_master() || peer_get_parent(peer) == NULL)
 		return;
-	rpeer = peer_to_remote_peer(peer);
-	remote_peer_set_db_update_seqnum(rpeer,
+	remote_peer = peer_to_remote_peer(peer);
+	remote_peer_set_db_update_seqnum(remote_peer,
 	    db_journal_get_current_seqnum());
-	remote_peer_merge_db_update_flags(rpeer, flags);
+	remote_peer_merge_db_update_flags(remote_peer, flags);
 }
 
 static gfarm_error_t
@@ -481,10 +482,22 @@ gfm_server_relay_get_vrequest(struct peer *peer, size_t *sizep,
 {
 	va_list ap;
 	gfarm_error_t e;
+	struct gfarm_thr_statewait *statewait;
+	struct remote_peer *remote_peer;
 
 	va_copy(ap, *app);
 	e = gfm_server_get_vrequest(peer, sizep, diag, format, &ap);
 	va_end(ap);
+
+	if (mdhost_self_is_master() && peer_get_async(peer) != NULL) {
+		/*
+		 * This gfmd is master and the request comes from a slave.
+		 */
+		remote_peer = peer_to_remote_peer(peer);
+		statewait = remote_peer_get_statewait(remote_peer);
+		gfarm_thr_statewait_signal(statewait, e, diag);
+	}
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));
@@ -858,6 +871,8 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	struct gfp_xdr *conn = peer_get_conn(peer);
 	gfarm_uint64_t seqnum;
 	gfarm_uint64_t flags;
+	struct gfarm_thr_statewait *statewait;
+	struct remote_peer *remote_peer;
 	static const char relay_diag[] = "request_reply_dynarg_master";
 
 	/*
@@ -871,6 +886,10 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
 	}
+
+	remote_peer = peer_to_remote_peer(peer);
+	statewait = remote_peer_get_statewait(remote_peer);
+	gfarm_thr_statewait_signal(statewait, e, diag);
 
 	/*
 	 * Reply to the slave gfmd via gfmd channel.
@@ -941,6 +960,8 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	struct peer *mhpeer;
 	gfp_xdr_async_peer_t async_server = NULL;
 	struct relayed_request *r = NULL;
+	struct gfarm_thr_statewait *statewait;
+	struct remote_peer *remote_peer;
 	static const char relay_diag[] = "request_reply_dynarg_slave";
 
 	/*

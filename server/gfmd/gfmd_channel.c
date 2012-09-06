@@ -44,6 +44,7 @@
 #include "relay.h"
 #include "gfmd_channel.h"
 #include "gfmd.h" /* protocol_service(), gfmd_terminate() */
+#include "thrstatewait.h"
 
 
 struct gfmdc_journal_send_closure {
@@ -795,6 +796,21 @@ gfmdc_server_remote_peer_free(struct mdhost *mh, struct peer *peer,
 	return (e);
 }
 
+struct server_remote_rpc_closure {
+	struct peer *rpeer;
+	gfp_xdr_xid_t xid;
+	size_t size;
+};
+
+static void *
+gfmdc_server_remote_rpc_thread(void *arg)
+{
+	struct server_remote_rpc_closure *cp = arg;
+
+	protocol_service(cp->rpeer, cp->xid, &cp->size); 
+	return (NULL);
+}
+
 static gfarm_error_t
 gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	gfp_xdr_xid_t xid, size_t size)
@@ -803,6 +819,8 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	gfarm_int64_t remote_peer_id;
 	struct remote_peer *remote_peer;
 	struct peer *rpeer;
+	struct gfarm_thr_statewait *statewait;
+	struct server_remote_rpc_closure c;
 	int eof;
 	static const char diag[] = "GFM_PROTO_REMOTE_RPC";
 
@@ -829,8 +847,14 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 		rpeer = remote_peer_to_peer(remote_peer);
 		peer_add_ref(rpeer);
 		remote_peer_clear_db_update_info(remote_peer);
-		/* XXXRELAY split this to another thread */
-		e = protocol_service(rpeer, xid, &size);
+		statewait = remote_peer_get_statewait(remote_peer);
+		gfarm_thr_statewait_reset(statewait, diag);
+		c.rpeer = rpeer;
+		c.xid = xid;
+		c.size = size;
+		thrpool_add_job(journal_sync_thread_pool,
+		    gfmdc_server_remote_rpc_thread, &c);
+		e = gfarm_thr_statewait_wait(statewait, diag);
 		peer_del_ref(rpeer);
 	}
 	return (e);

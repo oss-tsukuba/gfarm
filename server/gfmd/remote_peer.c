@@ -21,6 +21,7 @@
 #include "remote_peer.h"
 
 #include "protocol_state.h"
+#include "thrstatewait.h"
 #include "peer_impl.h"
 
 struct remote_peer {
@@ -34,6 +35,9 @@ struct remote_peer {
 	/* update info */
 	gfarm_uint64_t db_update_seqnum;
 	gfarm_uint64_t db_update_flags;
+
+	/* used for inter-gfmd RPC relay */
+	struct gfarm_thr_statewait statewait;
 };
 
 struct peer *
@@ -266,6 +270,7 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	remote_peer->proto_transport = proto_transport;
 	remote_peer->port = port;
 	remote_peer_clear_db_update_info(remote_peer);
+	gfarm_thr_statewait_initialize(&remote_peer->statewait, diag);
 
 	local_peer_add_child(parent_local_peer,
 	    remote_peer, &remote_peer->next_sibling);
@@ -294,4 +299,10 @@ remote_peer_id_lookup_from_siblings(struct remote_peer *remote_peer,
 			return (remote_peer);
 	}
 	return (NULL);
+}
+
+struct gfarm_thr_statewait *
+remote_peer_get_statewait(struct remote_peer *remote_peer)
+{
+	return (&remote_peer->statewait);
 }
