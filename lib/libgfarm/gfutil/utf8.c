@@ -1,8 +1,19 @@
+/**
+ * @file  utf8.c
+ * @brief UTF-8 validation utility. 
+ */
+
 #include <stddef.h>
 #include <string.h>
 
-/*
- * Return 1 if 'sequences' consists of valid UTF-8 sequences.
+/**
+ * Validate an UTF-8 byte sequences.
+ *
+ * @param sequences  Byte sequences.
+ * @param len        Length of 'sequences'.
+ * @return           Validation result.
+ *
+ * Return 1 if 'sequences' consists of valid UTF-8 sequences, 0 otherwise.
  */
 int
 gfarm_utf8_validate_sequences(const char *sequences, size_t len)
@@ -68,10 +79,14 @@ gfarm_utf8_validate_sequences(const char *sequences, size_t len)
 	return 1;
 }
 
-/*
+/**
+ * Validate an UTF-8 string.
+ *
+ * @param string     A NUL-terminated string.
+ * @return           Validation result.
+ *
  * Return 1 if 'string' is a valid UTF-8 string, 0 otherwise.
  */
-int
 gfarm_utf8_validate_string(const char *string)
 {
 	return gfarm_utf8_validate_sequences(string, strlen(string));
