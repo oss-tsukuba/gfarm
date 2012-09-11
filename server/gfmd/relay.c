@@ -472,71 +472,6 @@ ensure_remote_peer(struct peer *peer, gfarm_int32_t command,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-/* returns *reqp != NULL, if !mdhost_self_is_master() case. */
-static gfarm_error_t
-gfm_server_relay_get_vrequest(struct peer *peer, size_t *sizep,
-	int skip, struct relayed_request **rp, const char *diag,
-	gfarm_int32_t command, gfarm_uint64_t wait_db_update_flags,
-	const char *format,
-	va_list *app)
-{
-	va_list ap;
-	gfarm_error_t e;
-	struct gfarm_thr_statewait *statewait;
-	struct remote_peer *remote_peer;
-
-	va_copy(ap, *app);
-	e = gfm_server_get_vrequest(peer, sizep, diag, format, &ap);
-	va_end(ap);
-
-	if (mdhost_self_is_master() && peer_get_async(peer) != NULL) {
-		/*
-		 * This gfmd is master and the request comes from a slave.
-		 */
-		remote_peer = peer_to_remote_peer(peer);
-		statewait = remote_peer_get_statewait(remote_peer);
-		gfarm_thr_statewait_signal(statewait, e, diag);
-	}
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: %s", diag, gfarm_error_string(e));
-		return (e);
-	}
-
-	if (wait_db_update_flags || mdhost_self_is_master()) {
-		*rp = NULL;
-		if (wait_db_update_flags &&
-		    (e = wait_db_update_info(peer, wait_db_update_flags, diag))
-		    != GFARM_ERR_NO_ERROR)
-			gflog_debug(GFARM_MSG_UNFIXED,
-			    "%s", gfarm_error_string(e));
-		return (e);
-	}
-
-	if ((e = ensure_remote_peer(peer, command, diag, rp))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-
-	va_copy(ap, *app);
-	e = slave_request_relay(*rp, peer, command, format, &ap);
-	va_end(ap);
-	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: %s", diag, gfarm_error_string(e));
-	/*
-	 * rp will be freed asynchronously in
-	 * slave_request_relay_result() or
-	 * slave_request_relay_disconnect()
-	 * after relayed_request_acquire_notify() is called.
-	 */
-
-	return (e);
-}
-
 /**
  * Get a request from a client or a slave gfmd.
  *
@@ -595,11 +530,53 @@ gfm_server_relay_get_request(struct peer *peer, size_t *sizep,
 {
 	va_list ap;
 	gfarm_error_t e;
+	struct gfarm_thr_statewait *statewait;
+	struct remote_peer *remote_peer;
 
 	va_start(ap, format);
-	e = gfm_server_relay_get_vrequest(peer, sizep, skip, rp, diag,
-	    command, 0, format, &ap);
+	e = gfm_server_get_vrequest(peer, sizep, diag, format, &ap);
 	va_end(ap);
+
+	if (mdhost_self_is_master() && peer_get_async(peer) != NULL) {
+		/*
+		 * This gfmd is master and the request comes from a slave.
+		 */
+		remote_peer = peer_to_remote_peer(peer);
+		statewait = remote_peer_get_statewait(remote_peer);
+		gfarm_thr_statewait_signal(statewait, e, diag);
+	}
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+		return (e);
+	}
+
+	if (mdhost_self_is_master()) {
+		*rp = NULL;
+		return (e);
+	}
+
+	if ((e = ensure_remote_peer(peer, command, diag, rp))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+
+	va_start(ap, format);
+	e = slave_request_relay(*rp, peer, command, format, &ap);
+	va_end(ap);
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: %s", diag, gfarm_error_string(e));
+	/*
+	 * rp will be freed asynchronously in
+	 * slave_request_relay_result() or
+	 * slave_request_relay_disconnect()
+	 * after relayed_request_acquire_notify() is called.
+	 */
+
 	return (e);
 }
 
