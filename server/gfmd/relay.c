@@ -960,8 +960,6 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	struct peer *mhpeer;
 	gfp_xdr_async_peer_t async_server = NULL;
 	struct relayed_request *r = NULL;
-	struct gfarm_thr_statewait *statewait;
-	struct remote_peer *remote_peer;
 	static const char relay_diag[] = "request_reply_dynarg_slave";
 
 	/*
