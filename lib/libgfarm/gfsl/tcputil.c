@@ -222,7 +222,7 @@ gfarmWaitReadable(int fd, int timeoutMsec)
 		hostaddr = hostbuf;
 		hostaddr_prefix= "";
 	    }
-	    gflog_error(GFARM_MSG_UNFIXED,
+	    gflog_error(GFARM_MSG_1003439,
 			"closing network connection due to "
 			"no response within %d milliseconds from %s%s",
 			timeoutMsec, hostaddr_prefix, hostaddr);

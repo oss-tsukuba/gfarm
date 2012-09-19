@@ -784,7 +784,7 @@ process_reopen_file(struct process *process,
 	if (inode_has_no_replica(fo->inode) &&
 	    (fo->flag & GFARM_FILE_TRUNC) == 0 &&
 	    inode_get_size(fo->inode) > 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003474,
 		    "(%llu:%llu, %llu): lost all replicas",
 		    (unsigned long long)inode_get_number(fo->inode),
 		    (unsigned long long)inode_get_gen(fo->inode),

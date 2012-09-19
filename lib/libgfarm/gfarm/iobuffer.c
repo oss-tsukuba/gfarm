@@ -111,11 +111,11 @@ gfarm_iobuffer_resize(struct gfarm_iobuffer *b, int new_bufsize)
 
 	GFARM_REALLOC_ARRAY(new_buffer, b->buffer, new_bufsize);
 	if (new_buffer == NULL) {
-		gflog_fatal(GFARM_MSG_UNFIXED,
+		gflog_fatal(GFARM_MSG_1003447,
 		    "failed to extend bufsize of struct gfarm_iobuffer: %s",
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
 	}
-	gflog_debug(GFARM_MSG_UNFIXED,
+	gflog_debug(GFARM_MSG_1003448,
 	    "bufsize of struct iobuffer extended: %d -> %d",
 	    b->bufsize, new_bufsize);
 	b->bufsize = new_bufsize;

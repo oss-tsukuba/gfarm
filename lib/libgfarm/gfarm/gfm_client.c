@@ -800,7 +800,7 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method)) {
 			e = gfarm_set_global_user_by_gsi(gfm_server);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003450,
 				    "cannot set global username: %s",
 				    gfarm_error_string(e));
 				gfm_client_connection_free(gfm_server);
@@ -3543,7 +3543,7 @@ gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003451,
 		    "gfm_client_rpc_result(): %s", gfarm_error_string(e));
 		return (e);
 	} else if (n <= 0)
@@ -3564,7 +3564,7 @@ gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			if (e == GFARM_ERR_NO_ERROR)
 				e = GFARM_ERR_PROTOCOL;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003452,
 			    "gfp_xdr_recv(): %s", gfarm_error_string(e));
 			free(inums);
 			free(gens);

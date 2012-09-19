@@ -1652,7 +1652,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (fe->flags & FILE_FLAG_WRITTEN) {
 			if (fe->new_gen != fe->gen)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003507,
 				    "inode %lld generation %lld -> %lld: "
 				    "error occurred during close operation "
 				    "for writing: %s",
@@ -1660,7 +1660,7 @@ close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 				    (long long)fe->new_gen,
 				    gfarm_error_string(e));
 			else
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003508,
 				    "inode %lld generation %lld: "
 				    "error occurred during close operation "
 				    "for writing: %s",
@@ -1717,7 +1717,7 @@ fhclose_fd(struct file_entry *fe, const char *diag)
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (fe->flags & FILE_FLAG_WRITTEN) {
 			if (fe->new_gen != fe->gen)
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003509,
 				    "inode %lld generation %lld -> %lld: "
 				    "error occurred during close operation "
 				    "for writing after gfmd failover: %s",
@@ -1725,7 +1725,7 @@ fhclose_fd(struct file_entry *fe, const char *diag)
 				    (long long)fe->new_gen,
 				    gfarm_error_string(e));
 			else
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003510,
 				    "inode %lld generation %lld: "
 				    "error occurred during close operation "
 				    "for writing after gfmd failover: %s",
@@ -2641,7 +2641,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		e = gfs_client_replica_recv(src_gfsd, rep->ino, rep->gen,
 		    local_fd);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003513,
 			    "%s: replica_recv %lld:%lld: %s",
 			    diag, (long long)rep->ino, (long long)rep->gen,
 			    gfarm_error_string(e));
@@ -2651,7 +2651,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 			save_errno = 0;
 		} else {
 			save_errno = errno;
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003514,
 			    "%s: replica_recv %lld:%lld: close: %s",
 			    diag, (long long)rep->ino, (long long)rep->gen,
 			    strerror(save_errno));
@@ -4520,7 +4520,7 @@ main(int argc, char **argv)
 
 	table_size = FILE_TABLE_LIMIT;
 	if (gfarm_limit_nofiles(&table_size) == 0)
-		gflog_info(GFARM_MSG_UNFIXED, "max descriptors = %d",
+		gflog_info(GFARM_MSG_1003515, "max descriptors = %d",
 		    table_size);
 	file_table_init(table_size);
 

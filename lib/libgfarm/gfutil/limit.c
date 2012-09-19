@@ -55,11 +55,11 @@ gfarm_limit_nofiles(int *file_table_size_p)
 	 * thus read the system limit and use that as hard limit.
 	 */
 	if ((fp = fopen(SYSTEM_FS_FILE_MAX, "r")) == NULL) {
-		gflog_warning_errno(GFARM_MSG_UNFIXED, "%s",
+		gflog_warning_errno(GFARM_MSG_1003436, "%s",
 		    SYSTEM_FS_FILE_MAX);
 	} else {
 		if (fscanf(fp, "%lu", &file_max) != 1) {
-			gflog_warning(GFARM_MSG_UNFIXED, "%s: cannot parse",
+			gflog_warning(GFARM_MSG_1003437, "%s: cannot parse",
 			    SYSTEM_FS_FILE_MAX);
 		} else {
 			file_max *= (1 - SYSTEM_RESERVE_RATE);
@@ -80,7 +80,7 @@ gfarm_limit_nofiles(int *file_table_size_p)
 	if (new.rlim_cur != want) {
 		new.rlim_cur = want;
 		if (setrlimit(RLIMIT_NOFILE, &new) == -1) {
-			gflog_warning_errno(GFARM_MSG_UNFIXED,
+			gflog_warning_errno(GFARM_MSG_1003438,
 			    "setrlimit(RLIMIT_NOFILE) "
 			    "from soft=%llu/hard=%llu "
 			    "to soft=%llu/hard=%llu",

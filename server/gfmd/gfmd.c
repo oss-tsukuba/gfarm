@@ -1457,7 +1457,7 @@ sigs_handler(void *p)
 		case SIGUSR1:
 			if (gfarm_get_metadb_replication_enabled()) {
 				if (!gfmd_startup_state_is_ready()) {
-					gflog_info(GFARM_MSG_UNFIXED,
+					gflog_info(GFARM_MSG_1003454,
 					    "got SIGUSR1, but waiting for "
 					    "completion of initialization");
 					gfmd_startup_state_wait_ready();
@@ -1791,7 +1791,7 @@ main(int argc, char **argv)
 	/* gfarm_limit_nofiles() should be called after gflog_syslog_open() */
 	table_size = gfarm_metadb_max_descriptors;
 	if (gfarm_limit_nofiles(&table_size) == 0)
-		gflog_info(GFARM_MSG_UNFIXED, "max descriptors = %d",
+		gflog_info(GFARM_MSG_1003455, "max descriptors = %d",
 		    table_size);
 
 	/*

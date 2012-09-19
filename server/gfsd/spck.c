@@ -56,11 +56,11 @@ gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
 
 	if ((e = gfm_client_replica_get_my_entries_request(
 	    gfm_server, start_inum, *np)) != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED, "request", diag, e);
+		fatal_metadb_proto(GFARM_MSG_1003516, "request", diag, e);
 	else if ((e = gfm_client_replica_get_my_entries_result(
 	    gfm_server, np, inumsp, gensp)) != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
-			gflog_info(GFARM_MSG_UNFIXED, "%s result: %s", diag,
+			gflog_info(GFARM_MSG_1003517, "%s result: %s", diag,
 			    gfarm_error_string(e));
 	}
 	return (e);
@@ -78,11 +78,11 @@ gfm_client_replica_create_file_in_lost_found(
 	if ((e = gfm_client_replica_create_file_in_lost_found_request(
 	    gfm_server, inum_old, gen_old, size, mtime))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_UNFIXED, "request", diag, e);
+		fatal_metadb_proto(GFARM_MSG_1003518, "request", diag, e);
 	else if ((e = gfm_client_replica_create_file_in_lost_found_result(
 	    gfm_server, inum_newp, gen_newp)) != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
-			gflog_info(GFARM_MSG_UNFIXED, "%s result: %s", diag,
+			gflog_info(GFARM_MSG_1003519, "%s result: %s", diag,
 			    gfarm_error_string(e));
 	}
 	return (e);
@@ -109,7 +109,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
 	    &inum_new, &gen_new);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003520,
 		    "%s: replica_create_file_in_lost_found: %s",
 		    file, gfarm_error_string(e));
 		/*
@@ -129,7 +129,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	    &newpath);
 	if (gfsd_create_ancestor_dir(newpath)) {
 		save_errno = errno;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003521,
 		    "%s: cannot create ancestor directory: %s",
 		    newpath, strerror(save_errno));
 		free(newpath);
@@ -137,7 +137,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	}
 	if (rename(file, newpath)) {
 		save_errno = errno;
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003522,
 		    "%s: cannot rename to %s: %s", file, newpath,
 		    strerror(save_errno));
 		free(newpath);
@@ -146,7 +146,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	e = gfm_client_replica_add(inum_new, gen_new,
 	    (gfarm_off_t)stp->st_size);
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003523,
 		    "%s: replica_add failed: %s", newpath,
 		    gfarm_error_string(e));
 	free(newpath);
@@ -162,19 +162,19 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	if (stp->st_size == 0) { /* unreferred empty file is unnecessary */
 		if (unlink(file)) {
 			e = gfarm_errno_to_error(errno);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003524,
 			    "%s: unlink empty file: %s",
 			    file, gfarm_error_string(e));
 			return (e);
 		}
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003525,
 		    "%s: unlinked (empty file)", file);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	e = move_file_to_lost_found_main(file, stp, inum_old, gen_old);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003526,
 		    "%s cannot be moved to /lost+found/%016llX%016llX-%s: %s",
 		    file, (unsigned long long)inum_old,
 		    (unsigned long long)gen_old, canonical_self_name,
@@ -184,14 +184,14 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	if (size_mismatch) {
 		e = gfm_client_replica_lost(inum_old, gen_old);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003527,
 			    "replica_lost(%llu, %llu): %s",
 			    (unsigned long long)inum_old,
 			    (unsigned long long)gen_old,
 			    gfarm_error_string(e));
 			return (e);
 		}
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003528,
 		     "(%llu:%llu): size mismatch, "
 		     "moved to /lost+found/%016llX%016llX-%s",
 		     (unsigned long long)inum_old,
@@ -199,7 +199,7 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 		     (unsigned long long)inum_old,
 		     (unsigned long long)gen_old, canonical_self_name);
 	} else
-		gflog_notice(GFARM_MSG_UNFIXED, "unknown file is found: "
+		gflog_notice(GFARM_MSG_1003529, "unknown file is found: "
 		     "registered to /lost+found/%016llX%016llX-%s",
 		     (unsigned long long)inum_old,
 		     (unsigned long long)gen_old, canonical_self_name);
@@ -339,7 +339,7 @@ deal_with_invalid_file(const char *file, struct stat *stp, int valid_inum_gen,
 			e = move_file_to_lost_found(file, stp, inum, gen,
 			    size_mismatch);
 		else {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003530,
 			    "%s: unsupported file (ignored)", file);
 			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
@@ -379,11 +379,11 @@ check_file(char *file, struct stat *stp, void *arg)
 		e = deal_with_invalid_file(file, stp, 1, inum, gen, 1);
 		break;
 	case GFARM_ERR_FILE_BUSY:
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003531,
 		    "%s: ignored (writing or removing now)", file);
 		break;
 	default:
-		gflog_error(GFARM_MSG_UNFIXED, "replica_add(%llu, %llu): %s",
+		gflog_error(GFARM_MSG_1003532, "replica_add(%llu, %llu): %s",
 		    (unsigned long long)inum, (unsigned long long)gen,
 		    gfarm_error_string(e));
 	}
@@ -414,12 +414,12 @@ check_existing(gfarm_ino_t inum, gfarm_uint64_t gen)
 	file = path + gfarm_spool_root_len + 1;
 	get_inum_gen(file, &inum2, &gen2);
 	if (inum != inum2 || gen != gen2)
-		fatal(GFARM_MSG_UNFIXED,
+		fatal(GFARM_MSG_1003533,
 		    "%s: gfsd_local_path or get_inum_gen are broken", path);
 	else if (lstat(path, &st)) {
 		save_errno = errno;
 		if (save_errno == ENOENT) {
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1003534,
 			    "physical file does not exist, "
 			    "delete the metadata entry for %llu:%llu",
 			    (unsigned long long)inum, (unsigned long long)gen);
@@ -431,10 +431,10 @@ check_existing(gfarm_ino_t inum, gfarm_uint64_t gen)
 			 * fixed.  Therefore the replica-reference is
 			 * not deleted from metadata in this case.
 			 */
-			gflog_error(GFARM_MSG_UNFIXED, "stat(%s): %s",
+			gflog_error(GFARM_MSG_1003535, "stat(%s): %s",
 			    path, strerror(save_errno));
 	} else if (!S_ISREG(st.st_mode)) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: not a file, "
+		gflog_notice(GFARM_MSG_1003536, "%s: not a file, "
 		    "delete the metadata entry for %llu:%llu", path,
 		    (unsigned long long)inum, (unsigned long long)gen);
 		lost = 1;
@@ -442,7 +442,7 @@ check_existing(gfarm_ino_t inum, gfarm_uint64_t gen)
 	if (lost) { /* delete the replica-reference from metadata */
 		e = gfm_client_replica_lost(inum, gen);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003537,
 			    "replica_lost(%llu, %llu): %s",
 			    (unsigned long long)inum, (unsigned long long)gen,
 			    gfarm_error_string(e));
@@ -466,7 +466,7 @@ check_metadata()
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_ERROR); /* end */
 		else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003538,
 			    "replica_get_my_entries(%llu, %d): %s",
 			    (unsigned long long)inum, REQUEST_NUM,
 			    gfarm_error_string(e));

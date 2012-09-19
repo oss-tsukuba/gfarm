@@ -1372,7 +1372,7 @@ gfm_server_host_info_get_by_names_common(
 	for (i = 0; i < nhosts; i++) {
 		e = gfp_xdr_recv(client, 0, &eof, "s", &host);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003470,
 			    "%s: gfp_xdr_recv(): %s",
 			    diag, gfarm_error_string(e));
 			if (e == GFARM_ERR_NO_ERROR) /* i.e. eof */
@@ -1416,12 +1416,12 @@ gfm_server_host_info_get_by_names_common(
 	for (i = 0; i < nhosts; i++) {
 		h = (*lookup)(hosts[i]);
 		if (h == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003471,
 			    "%s: host lookup <%s>: failed", diag, hosts[i]);
 			e = gfm_server_put_reply(peer, 0, NULL, diag,
 			    GFARM_ERR_UNKNOWN_HOST, "");
 		} else {
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003472,
 			    "%s: host lookup <%s>: ok", diag, hosts[i]);
 			e = gfm_server_put_reply(peer, 0, NULL, diag,
 			    GFARM_ERR_NO_ERROR, "");

@@ -446,11 +446,11 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 		disabled = 1;
 	} else {
 		if (!h->is_active)
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1003475,
 			    "%s: already disconnected",
 			    abstract_host_get_name(h));
 		else
-			gflog_notice(GFARM_MSG_UNFIXED,
+			gflog_notice(GFARM_MSG_1003476,
 			    "%s: already disconnected & reconnected",
 			    abstract_host_get_name(h));
 	}
