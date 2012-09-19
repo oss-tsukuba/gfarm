@@ -117,7 +117,7 @@ gfarm_auth_request_gsi(struct gfp_xdr *conn,
 		    &e_major, &e_minor, NULL) < 0) {
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1000699,
-				    "Can't acquire my credentail "
+				    "Can't acquire my credential "
 				    "because of:");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
@@ -382,7 +382,7 @@ gfarm_auth_request_gsi_multiplexed(struct gfarm_eventqueue *q,
 		    &e_major, &e_minor, NULL) < 0) {
 			if (gflog_auth_get_verbose()) {
 				gflog_error(GFARM_MSG_1000704,
-				    "Can't acquire my credentail "
+				    "Can't acquire my credential "
 				    "because of:");
 				gfarmGssPrintMajorStatus(e_major);
 				gfarmGssPrintMinorStatus(e_minor);
