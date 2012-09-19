@@ -1223,20 +1223,20 @@ process_replica_added(struct process *process,
 	static const char diag[] = "process_replica_added";
 
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003539,
 		    "%s: invalid file descriptor %d: %s", diag, fd, 
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) { /* i.e. is a directory */
 		e = GFARM_ERR_NOT_A_REGULAR_FILE;
-		gflog_info(GFARM_MSG_UNFIXED, "%s: inode %lld: %s",
+		gflog_info(GFARM_MSG_1003540, "%s: inode %lld: %s",
 		    diag, (long long)inode_get_number(fo->inode),
 		    gfarm_error_string(e));
 		return (e);
 	}
 	if (fo->u.f.spool_opener != peer) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003541,
 		    "%s: inode %lld: inconsistent replication "
 		    "(adding by %s, added by %s)", diag,
 		    (long long)inode_get_number(fo->inode),
@@ -1245,7 +1245,7 @@ process_replica_added(struct process *process,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 	if (fo->u.f.replica_source == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003542,
 		    "%s: inode %lld: replica_added was called by %s "
 		    "without adding", diag,
 		    (long long)inode_get_number(fo->inode),
@@ -1254,13 +1254,13 @@ process_replica_added(struct process *process,
 	}
 
 	if (inode_has_no_replica(fo->inode)) { /* no file copy */
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003543,
 		    "%s: inode %lld: no file copy", diag,
 		    (long long)inode_get_number(fo->inode));
 		e = GFARM_ERR_NO_SUCH_OBJECT;
 	} else if (inode_has_replica(fo->inode, spool_host)) {
 		e = GFARM_ERR_ALREADY_EXISTS;
-		gflog_debug(GFARM_MSG_UNFIXED, "%s: inode %lld, host %s: %s",
+		gflog_debug(GFARM_MSG_1003544, "%s: inode %lld, host %s: %s",
 		    diag, (long long)inode_get_number(fo->inode),
 		    host_name(spool_host), gfarm_error_string(e));
 	} else if (inode_is_opened_for_writing(fo->inode) ||
