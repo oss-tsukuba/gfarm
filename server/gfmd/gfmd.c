@@ -510,8 +510,12 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_replica_add(peer, xid, sizep,
 		    from_client, skip);
 		break;
-	case GFM_PROTO_REPLICA_GET_MY_ENTRIES:
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES: /* obsolete protocol */
 		e = gfm_server_replica_get_my_entries(peer, xid, sizep,
+		    from_client, skip);
+		break;
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES2:
+		e = gfm_server_replica_get_my_entries2(peer, xid, sizep,
 		    from_client, skip);
 		break;
 	case GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND:

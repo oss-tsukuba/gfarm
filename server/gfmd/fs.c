@@ -5230,9 +5230,10 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	    e, ""));
 }
 
-gfarm_error_t
-gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
-	size_t *sizep, int from_client, int skip)
+static gfarm_error_t
+gfm_server_replica_get_my_entries_common(
+	const char *diag, struct peer *peer, gfp_xdr_xid_t xid,
+	size_t *sizep, int from_client, int skip, int with_size)
 {
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e_ret, e_rpc;
@@ -5243,9 +5244,9 @@ gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
 	struct entry_result {
 		gfarm_ino_t inum;
 		gfarm_uint64_t gen;
+		gfarm_off_t size;
 		int flags;
 	} *ents = NULL;
-	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES";
 
 	e_ret = gfm_server_get_request(peer, sizep, diag,
 	    "li", &start_inum, &n_req);
@@ -5288,6 +5289,7 @@ gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
 			    inode_has_file_copy(inode, spool_host)) {
 				ents[n_ret].inum = inode_get_number(inode);
 				ents[n_ret].gen = inode_get_gen(inode);
+				ents[n_ret].size = inode_get_size(inode);
 				e_rpc = GFARM_ERR_NO_ERROR;
 				n_ret++;
 			}
@@ -5300,8 +5302,12 @@ gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
 	/* if network error doesn't happen, e_ret == e_rpc here */
 	if (e_ret == GFARM_ERR_NO_ERROR)
 		for (i = 0; i < n_ret; i++) {
-			e_ret = gfp_xdr_send(client, "ll",
-			    ents[i].inum, ents[i].gen);
+			if (with_size)
+				e_ret = gfp_xdr_send(client, "lll",
+				    ents[i].inum, ents[i].gen, ents[i].size);
+			else
+				e_ret = gfp_xdr_send(client, "ll",
+				    ents[i].inum, ents[i].gen);
 			if (e_ret != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1003494,
 				    "replica_get_my_entries @%s: %s",
@@ -5312,6 +5318,28 @@ gfm_server_replica_get_my_entries(struct peer *peer, gfp_xdr_xid_t xid,
 		}
 	free(ents);
 	return (e_ret);
+}
+
+gfarm_error_t
+gfm_server_replica_get_my_entries(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
+{
+	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES";
+
+	return (gfm_server_replica_get_my_entries_common(
+	    diag, peer, xid, sizep, from_client, skip, 0));
+}
+
+gfarm_error_t
+gfm_server_replica_get_my_entries2(
+	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
+{
+	static const char diag[] = "GFM_PROTO_REPLICA_GET_MY_ENTRIES2";
+
+	return (gfm_server_replica_get_my_entries_common(
+	    diag, peer, xid, sizep, from_client, skip, 1));
 }
 
 gfarm_error_t
