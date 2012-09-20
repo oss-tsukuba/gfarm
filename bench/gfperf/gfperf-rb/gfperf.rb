@@ -358,16 +358,64 @@ def do_parallel_autoreplica(key, name, array)
   end
 end
 
-def mount_gfarm2fs(key)
+def mount_gfarm2fs_main(key, with_error)
+  r_save = true
   $config["gfarm2fs_mountpoint"].each {|mp|
-    `gfperf-wrapper.sh #{key} gfarm2fs #{mp}`
+    if (with_error == true)
+      r = system("gfperf-wrapper.sh #{key} gfarm2fs #{mp}")
+    else
+      r = system("gfperf-wrapper.sh #{key} gfarm2fs #{mp} > /dev/null 2>&1")
+    end
+    if (r == false)
+      r_save = r
+    end
   }
+  return r_save
+end
+
+def mount_gfarm2fs(key)
+  r = mount_gfarm2fs_main(key, false)
+  if (r == true)
+    return
+  end
+  umount_gfarm2fs()
+  r = mount_gfarm2fs_main(key, true)
+  if (r == false)
+    STDERR.print("cannot mount gfarm2fs\n")
+    close_conf_file()
+    exit(1)
+  end
 end
 
 def umount_gfarm2fs()
+  n_retry = 5
   $config["gfarm2fs_mountpoint"].each {|mp|
-    `fusermount -u #{mp}`
+    i = 0
+    while (true)
+      if (i < n_retry - 1)
+        r = system("fusermount -u #{mp} > /dev/null 2>&1")
+      else
+        r = system("fusermount -u #{mp}")
+      end
+      if (r == true)
+        break
+      end
+      `ls #{mp} > /dev/null`
+      sleep(1)
+      i += 1
+      #STDERR.print("unmount #{mp}: retry=#{i}\n")
+      if (i >= n_retry)
+        STDERR.print("cannot unmount gfarm2fs #{mp}\n")
+        close_conf_file()
+        exit(1)
+      end
+    end
   }
+end
+
+def close_conf_file()
+  $conf_file_fd.flock(File::LOCK_UN)
+  $conf_file_fd.close()
 end
 
 $check_flag = false
@@ -383,37 +431,39 @@ if (!File.exist?(conf_file))
   exit(1)
 end
 
-conf_file_fd = File.open(conf_file)
-if (conf_file_fd.flock(File::LOCK_EX|File::LOCK_NB) == false)
+$conf_file_fd = File.open(conf_file)
+begin
+  r = $conf_file_fd.flock(File::LOCK_EX|File::LOCK_NB)
+rescue => e
+  p e.backtrace
+end
+if (r == false)
   print "config file is locked.\n"
   print "another process is running on same config file.\n"
+  $conf_file_fd.close()
   exit(0)
 end
 
 Signal.trap(:INT) {
   umount_gfarm2fs()
-  conf_file_fd.flock(File::LOCK_UN)
-  conf_file_fd.close()
+  close_conf_file()
   exit(0)
 }
 
 Signal.trap(:TERM) {
   umount_gfarm2fs()
-  conf_file_fd.flock(File::LOCK_UN)
-  conf_file_fd.close()
+  close_conf_file()
   exit(0)
 }
 
 $now = Time.now
 $config = YAML.load(File.read(conf_file))
 if (check_duplicate_group_name() == false)
-  conf_file_fd.flock(File::LOCK_UN)
-  conf_file_fd.close()
+  close_conf_file()
   exit(1)
 end
 if ($check_flag == true)
-  conf_file_fd.flock(File::LOCK_UN)
-  conf_file_fd.close()
+  close_conf_file()
   print "#{conf_file} is ok.\n"
   exit(0)
 end
@@ -428,8 +478,7 @@ if (!r)
   close_db()
   backup_db()
 
-  conf_file_fd.flock(File::LOCK_UN)
-  conf_file_fd.close()
+  close_conf_file()
   exit(1)
 end
 
@@ -466,5 +515,4 @@ close_db()
 
 backup_db()
 
-conf_file_fd.flock(File::LOCK_UN)
-conf_file_fd.close()
+close_conf_file()
