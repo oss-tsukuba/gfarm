@@ -3474,9 +3474,7 @@ inode_schedule_file_default(struct file_opening *opening,
 
 	assert(inode_is_file(opening->inode));
 
-	if ((opening->flag & GFARM_FILE_TRUNC) != 0)
-		return (inode_schedule_new_file(peer, np, hostsp));
-	else if (inode_has_no_replica(opening->inode)) {
+	if (inode_has_no_replica(opening->inode)) {
 		/*
 		 * even if a file is opened in read only mode, return
 		 * all available hosts when the size is zero, since
