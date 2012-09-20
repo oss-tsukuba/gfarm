@@ -153,6 +153,20 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 	return (e);
 }
 
+static void
+replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
+{
+	gfarm_error_t e = gfm_client_replica_lost(inum, gen);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_1003527,
+		    "replica_lost(%llu, %llu): %s",
+		    (unsigned long long)inum,
+		    (unsigned long long)gen,
+		    gfarm_error_string(e));
+	}
+}
+
 static gfarm_error_t
 move_file_to_lost_found(const char *file, struct stat *stp,
 	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, int size_mismatch)
@@ -160,6 +174,8 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 	gfarm_error_t e;
 
 	if (stp->st_size == 0) { /* unreferred empty file is unnecessary */
+		if (size_mismatch)
+			replica_lost(inum_old, gen_old);
 		if (unlink(file)) {
 			e = gfarm_errno_to_error(errno);
 			gflog_warning(GFARM_MSG_1003524,
@@ -182,15 +198,7 @@ move_file_to_lost_found(const char *file, struct stat *stp,
 		return (e);
 	}
 	if (size_mismatch) {
-		e = gfm_client_replica_lost(inum_old, gen_old);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003527,
-			    "replica_lost(%llu, %llu): %s",
-			    (unsigned long long)inum_old,
-			    (unsigned long long)gen_old,
-			    gfarm_error_string(e));
-			return (e);
-		}
+		replica_lost(inum_old, gen_old);
 		gflog_notice(GFARM_MSG_1003528,
 		     "(%llu:%llu): size mismatch, "
 		     "moved to /lost+found/%016llX%016llX-%s",

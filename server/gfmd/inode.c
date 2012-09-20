@@ -232,6 +232,12 @@ file_copy_is_valid(struct file_copy *file_copy)
 	return (FILE_COPY_IS_VALID(file_copy));
 }
 
+int
+file_copy_is_being_removed(struct file_copy *file_copy)
+{
+	return (FILE_COPY_IS_BEING_REMOVED(file_copy));
+}
+
 gfarm_uint64_t
 inode_total_num(void)
 {
@@ -3227,7 +3233,7 @@ inode_is_opened_for_writing(struct inode *inode)
 	return (ia != NULL && ia->u.f.writers > 0);
 }
 
-static struct file_copy *
+struct file_copy *
 inode_get_file_copy(struct inode *inode, struct host *spool_host)
 {
 	struct file_copy *copy;

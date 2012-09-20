@@ -28,6 +28,7 @@ void inode_for_each_file_opening(
 
 struct host *file_copy_host(struct file_copy *);
 int file_copy_is_valid(struct file_copy *);
+int file_copy_is_being_removed(struct file_copy *);
 
 int inode_is_dir(struct inode *);
 int inode_is_file(struct inode *);
@@ -152,6 +153,7 @@ gfarm_error_t inode_cksum_get(struct file_opening *,
 	char **, size_t *, char **, gfarm_int32_t *);
 
 int inode_is_opened_for_writing(struct inode *);
+struct file_copy * inode_get_file_copy(struct inode *, struct host *);
 int inode_has_file_copy(struct inode *, struct host *);
 int inode_has_replica(struct inode *, struct host *);
 gfarm_error_t inode_getdirpath(struct inode *, struct process *, char **);

@@ -5133,6 +5133,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_off_t size;
 	struct host *spool_host;
 	struct inode *inode;
+	struct file_copy *copy;
 	struct relayed_request *relay;
 	int transaction = 0;
 	static const char diag[] = "GFM_PROTO_REPLICA_ADD";
@@ -5179,27 +5180,45 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			gflog_debug(GFARM_MSG_1001978,
 			    "inode_get_gen() failed");
 			e = dead_file_copy_check(inum, gen, spool_host);
-		} else if (inode_has_file_copy(inode, spool_host)) {
-			/*
-			 * include !FILE_COPY_VALID
-			 * and FILE_COPY_BEING_REMOVED
-			 */
-			gflog_debug(GFARM_MSG_1003489,
-			    "%lld:%lld on %s: a correct file",
+		} else if ((copy = inode_get_file_copy(inode, spool_host))
+		    != NULL) {
+			/* registered replica */
+			if (!file_copy_is_valid(copy)) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%lld:%lld on %s: being replicated",
+				    (long long)inum, (long long)gen,
+				    host_name(spool_host));
+				e = GFARM_ERR_FILE_BUSY; /* busy file */
+			} else if (file_copy_is_being_removed(copy)) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%lld:%lld on %s: being removed",
+				    (long long)inum, (long long)gen,
+				    host_name(spool_host));
+				e = GFARM_ERR_FILE_BUSY; /* busy file */
+			} else if (inode_get_size(inode) == size) {
+				gflog_debug(GFARM_MSG_1003489,
+				    "%lld:%lld on %s: a correct file",
+				    (long long)inum, (long long)gen,
+				    host_name(spool_host));
+				/* correct file */
+				e = GFARM_ERR_ALREADY_EXISTS;
+			} else {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%lld:%lld on %s: invalid file replica",
+				    (long long)inum, (long long)gen,
+				    host_name(spool_host));
+				/* invalid file */
+				e = GFARM_ERR_INVALID_FILE_REPLICA;
+			}
+		} else if (inode_get_size(inode) != size) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%lld:%lld on %s: invalid file replica, rejected",
 			    (long long)inum, (long long)gen,
 			    host_name(spool_host));
-			e = GFARM_ERR_ALREADY_EXISTS; /* correct file */
-		} else if (inode_get_size(inode) != size) {
-			/*
-			 * though this is not opened for replicating
-			 * or writing...
-			 */
-			gflog_debug(GFARM_MSG_1001979, "invalid file replica");
 			e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
-		} else {
+		} else { /* add a replica */
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
-			/* to fix */
 			e = inode_add_replica(inode, spool_host, 1);
 			if (transaction)
 				db_end(diag);
