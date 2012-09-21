@@ -890,8 +890,10 @@ gfm_server_channel_vput_reply(struct abstract_host *host,
 	if ((e = abstract_host_sender_lock(host, &peer, diag))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (peer != peer0)
+	if (peer != peer0) {
+		abstract_host_sender_unlock(host, peer, diag);
 		return (GFARM_ERR_CONNECTION_ABORTED);
+	}
 	client = peer_get_conn(peer);
 	e = gfp_xdr_vsend_async_result(client, xid, errcode, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
