@@ -864,8 +864,10 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 	}
 
 	/* peer comparison works only if at least one is a local peer */
-	if (peer != peer0)
+	if (peer != peer0) {
+		abstract_host_sender_unlock(host, peer, diag);
 		return (GFARM_ERR_CONNECTION_ABORTED);
+	}
 	client = peer_get_conn(peer);
 	e = gfp_xdr_vsend_async_wrapped_result(client, xid, xdr_vsend,
 	    errcode, wrapping_format, wrapping_app, format, app);
