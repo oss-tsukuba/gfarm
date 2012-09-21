@@ -1185,7 +1185,7 @@ process_replica_added(struct process *process,
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003539,
-		    "%s: invalid file descriptor %d: %s", diag, fd, 
+		    "%s: invalid file descriptor %d: %s", diag, fd,
 		    gfarm_error_string(e));
 		return (e);
 	}
@@ -1410,8 +1410,7 @@ gfm_server_process_free(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001674,
 			"peer_get_process() failed");
 		e = GFARM_ERR_NO_SUCH_PROCESS;
-	}
-	else {
+	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
 		/*
@@ -1531,10 +1530,9 @@ process_get_path_for_trace_log(struct process *process, int fd, char **path)
 			gfarm_error_string(e));
 		return (e);
 	}
-	if (fo->path_for_trace_log == NULL) {
+	if (fo->path_for_trace_log == NULL)
 		*path = strdup("");
-	} else {
+	else
 		*path = strdup(fo->path_for_trace_log);
-	}
 	return (GFARM_ERR_NO_ERROR);
 }
