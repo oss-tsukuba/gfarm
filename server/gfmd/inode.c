@@ -2766,9 +2766,7 @@ inode_open(struct file_opening *fo)
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ios->u.f.writers;
 	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
-		inode_status_changed(inode);
-		inode_modified(inode);
-		inode_set_size(inode, 0);
+		/* do not change the metadata for close-to-open consistency */
 		fo->flag |= GFARM_FILE_TRUNC_PENDING;
 	}
 
@@ -2792,7 +2790,18 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 
-	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+		--ios->u.f.writers;
+	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0 &&
+	    ios->u.f.writers == 0) {
+		/*
+		 * In this case, there will be no file replica since reopen
+		 * was not called or failed.  The reason why we exclude the
+		 * case of writers > 0 is "lost all replica" happens if
+		 * some client already opened this in write mode and the final
+		 * file size is not zero.  XXX - this means a successful call
+		 * of open(O_TRUNC) is ignored in this case.
+		 */
 		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
 		    NULL, NULL, trace_logp);
 	} else if (atime != NULL)
@@ -2806,8 +2815,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 			    GFARM_ERR_PROTOCOL);
 		inode_open_state_free(inode->u.c.state);
 		inode->u.c.state = NULL;
-	} else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
-		--ios->u.f.writers;
+	}
 
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL)) {
