@@ -3466,7 +3466,7 @@ inode_schedule_file_default(struct file_opening *opening,
 	gfarm_error_t e;
 	struct inode_activity *ia = opening->inode->u.c.activity;
 	struct file_opening *fo;
-	int n, nhosts, writing_mode;
+	int n, nhosts, write_mode, truncate_flag;
 	struct host **hosts;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
@@ -3474,6 +3474,8 @@ inode_schedule_file_default(struct file_opening *opening,
 
 	assert(inode_is_file(opening->inode));
 
+	truncate_flag = (opening->flag & GFARM_FILE_TRUNC) != 0;
+	write_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
 	if (inode_has_no_replica(opening->inode)) {
 		/*
 		 * even if a file is opened in read only mode, return
@@ -3481,7 +3483,7 @@ inode_schedule_file_default(struct file_opening *opening,
 		 * the following gfs_pio_read() call needs to connect
 		 * a gfsd to read 0-byte file.
 		 */
-		if (inode_get_size(opening->inode) == 0)
+		if (inode_get_size(opening->inode) == 0 || truncate_flag)
 			return (inode_schedule_new_file(peer, np, hostsp));
 		gflog_error(GFARM_MSG_1003479,
 		    "(%llu:%llu, %llu): lost all replicas",
@@ -3490,10 +3492,7 @@ inode_schedule_file_default(struct file_opening *opening,
 		    (unsigned long long)inode_get_size(opening->inode));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-
-	writing_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
-
-	if (writing_mode && ia != NULL &&
+	if ((write_mode || truncate_flag) && ia != NULL &&
 	    (fo = ia->openings.opening_next) != &ia->openings) {
 
 		/* try to choose already opened replicas */
@@ -3555,8 +3554,11 @@ inode_schedule_file_default(struct file_opening *opening,
 			free(hosts);
 		}
 	}
-
-	if (writing_mode) {
+	if (truncate_flag) {
+		/* all file system nodes are candidates */
+		return (inode_schedule_new_file(peer, np, hostsp));
+	}
+	if (write_mode) {
 		/* all replicas are candidates */
 		e = inode_alloc_file_copy_hosts(opening->inode,
 		    file_copy_is_valid_and_disk_available, &necessary_space,
