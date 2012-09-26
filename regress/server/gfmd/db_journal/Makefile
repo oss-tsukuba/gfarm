@@ -96,7 +96,7 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/relay.o \
 	$(GFMD_BUILDDIR)/fsngroup_replica.o \
 	$(GFMD_BUILDDIR)/fsngroup.o \
-	$(GFMD_SRCDIR)/thrstatewait.o \
+	$(GFMD_BUILDDIR)/thrstatewait.o \
 	db_journal_test.o empty_ops.o
 
 all: $(PROGRAM)
