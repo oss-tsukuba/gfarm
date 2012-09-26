@@ -421,6 +421,11 @@ peer_closer(void *arg)
 	    diag, "peer_closing_queue");
 }
 
+/*
+ * It's caller's responsibility to stop using this peer before.
+ * i.e. calling abstract_host_peer_unset() before peer_free_request()
+ * in abstract_host_disconnect_request().
+ */
 void
 peer_free_request(struct peer *peer)
 {
@@ -444,6 +449,11 @@ peer_free_request(struct peer *peer)
 	*peer_closing_queue.tail = peer;
 	peer->next_close = NULL;
 	peer_closing_queue.tail = &peer->next_close;
+
+	if (peer->async != NULL && peer_async_free != NULL) {
+		(*peer_async_free)(peer, peer->async);
+		peer->async = NULL;
+	}
 
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
@@ -727,11 +737,6 @@ peer_free(struct peer *peer)
 	char hostbuf[NI_MAXHOST];
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
-
-	if (peer->async != NULL && peer_async_free != NULL) {
-		(*peer_async_free)(peer, peer->async);
-		peer->async = NULL;
-	}
 
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
