@@ -160,6 +160,15 @@ peer_closer(void *arg)
 #endif
 }
 
+/*
+ * It's caller's responsibility to stop using this peer before.
+ * i.e. calling abstract_host_peer_unset() before peer_free_request()
+ * in abstract_host_disconnect_request().
+ * because (*peer->ops->shutdown)(peer) frees struct local_peer::async.
+ *
+ * see https://sourceforge.net/apps/trac/gfarm/ticket/408#comment:3
+ * (incomplete replica is left)
+ */
 void
 peer_free_request(struct peer *peer)
 {
