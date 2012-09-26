@@ -8,6 +8,7 @@
 #include <libgen.h>
 #include <gfarm/gfarm.h>
 #include "gfarm_foreach.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfwhere";
 
@@ -250,10 +251,13 @@ main(int argc, char **argv)
 
 	n = gfarm_stringlist_length(&paths);
 	for (i = 0; i < n; i++) {
-		char *p = gfarm_stringlist_elem(&paths, i);
+		char *pi = NULL, *p = gfarm_stringlist_elem(&paths, i);
 		struct gfs_stat st;
 
 		opt.do_not_display_name = 0;
+		e = gfarm_realpath_by_gfarm2fs(p, &pi);
+		if (e == GFARM_ERR_NO_ERROR)
+			p = pi;
 		if ((e = gfs_lstat(p, &st)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", p, gfarm_error_string(e));
 		} else {
@@ -269,6 +273,7 @@ main(int argc, char **argv)
 			if (e_save == GFARM_ERR_NO_ERROR)
 				e_save = e;
 		}
+		free(pi);
 	}
 
 	gfarm_stringlist_free_deeply(&paths);
