@@ -1298,10 +1298,8 @@ inode_alloc_file_copy_hosts(struct inode *inode,
 
 	nhosts = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
-		if ((*filter)(copy, closure))
-			nhosts++;
-	}
+	    copy = copy->host_next)
+		nhosts++; /* include !host_is_up() */
 	if (nhosts == 0) {
 		*np = 0;
 		*hostsp = NULL;
@@ -1320,7 +1318,7 @@ inode_alloc_file_copy_hosts(struct inode *inode,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-		if (i >= nhosts) /* the results of (*filter)() may change */
+		if (i >= nhosts)
 			break;
 		if ((*filter)(copy, closure))
 			hosts[i++] = copy->host;
@@ -4205,7 +4203,9 @@ inode_replica_list_by_name_common(struct inode *inode,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	n = inode_get_ncopy_common(inode, 1, is_up);
+	n = inode_get_ncopy_common(inode, 1, 0); /* include !host_is_up() */
+
+	/* host_is_up() may change even while the giant lock is held. */
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL) {
 		gflog_debug(GFARM_MSG_1001773,
@@ -4216,11 +4216,7 @@ inode_replica_list_by_name_common(struct inode *inode,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		/*
-		 * We have to check i < n, because the results of 
-		 * host_is_up() may change even while the giant lock is held.
-		 */
-		if (i < n && FILE_COPY_IS_VALID(copy) &&
+		if (FILE_COPY_IS_VALID(copy) &&
 		    (is_up == 0 || host_is_up(copy->host))) {
 			hosts[i] = strdup_log(host_name(copy->host), diag);
 			if (hosts[i] == NULL) {
@@ -4283,14 +4279,17 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 		return (e);
 
 	latest_gen = inode_get_gen(inode);
-	nlatest = inode_get_ncopy_common(inode, valid_only, up_only);
+
+	/* include !host_is_up() */
+	nlatest = inode_get_ncopy_common(inode, valid_only, 0);
 
 	if (latest_only)
 		ndead = 0;
 	else
 		ndead = dead_file_copy_count_by_inode(inode->dead_copies,
-		    latest_gen, up_only);
+		    latest_gen, 0); /* include !host_is_up() */
 
+	/* host_is_up() may change even while the giant lock is held. */
 	n = nlatest + ndead;
 	GFARM_MALLOC_ARRAY(hosts, n);
 	if (hosts == NULL)
@@ -4310,10 +4309,6 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		/*
-		 * We have to check i < n, because the results of 
-		 * host_is_up() may change even while the giant lock is held.
-		 */
 		if (i < n &&
 		    (valid_only ? FILE_COPY_IS_VALID(copy) : 1) &&
 		    (up_only ? host_is_up(copy->host) : 1)) {
