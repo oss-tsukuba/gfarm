@@ -49,6 +49,7 @@
 
 #include "gfutil.h"
 #include "hash.h"
+#include "nanosec.h"
 #include "timer.h"
 
 #include "gfp_xdr.h"
@@ -2189,8 +2190,7 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 #endif
 	char *path;
 	int local_fd;
-	unsigned int msl = 1, total_msl = 0; /* sleep msec. */
-	struct timespec req, rem;
+	unsigned long long msl = 1, total_msl = 0; /* sleep millisec. */
 	static const char diag[] = "GFS_PROTO_REPLICA_RECV";
 
 	gfs_server_get_request(client, diag, "ll", &ino, &gen);
@@ -2216,14 +2216,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			free(path);
 			goto send_eof;
 		}
-		/* ENOENT: retry */
-		req.tv_sec = msl / 1000;
-		req.tv_nsec = (msl % 1000) * 1000000;
-		do {
-			if (nanosleep(&req, &rem) == 0)
-				break;
-			req = rem;
-		} while (errno == EINTR);
+		/* ENOENT: wait generation-update, retry open_data() */
+		gfarm_nanosleep((unsigned long long)msl * 1000000);
 		total_msl += msl;
 		msl *= 2;
 		gflog_info(GFARM_MSG_1003512,
