@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfchown";
 int opt_chgrp = 0;
@@ -36,7 +37,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, i, n, follow_symlink = 1, status = 0;
-	char *s, *user = NULL, *group = NULL;
+	char *s, *si = NULL, *user = NULL, *group = NULL;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 
@@ -96,6 +97,9 @@ main(int argc, char **argv)
 		n = gfarm_stringlist_length(&paths);
 		for (i = 0; i < n; i++) {
 			s = gfarm_stringlist_elem(&paths, i);
+			e = gfarm_realpath_by_gfarm2fs(s, &si);
+			if (e == GFARM_ERR_NO_ERROR)
+				s = si;
 			e = (follow_symlink ? gfs_chown : gfs_lchown)(s,
 			    user, group);
 			switch (e) {
@@ -117,6 +121,7 @@ main(int argc, char **argv)
 				status = 1;
 				break;
 			}
+			free(si);
 		}
 		gfs_glob_free(&types);
 		gfarm_stringlist_free_deeply(&paths);

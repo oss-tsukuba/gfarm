@@ -10,7 +10,7 @@ PROGRAM = gfchown
 PROGRAM2 = gfchgrp
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -24,4 +24,4 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/gfarm_path.h

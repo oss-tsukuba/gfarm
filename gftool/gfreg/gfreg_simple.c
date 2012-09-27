@@ -20,6 +20,7 @@
 #include "context.h"
 #include "gfs_profile.h"
 #include "host.h"
+#include "gfarm_path.h"
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 #include <openssl/evp.h>
@@ -128,8 +129,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, status = 0;
-	char *host = NULL;
-	extern int optind;
+	char *host = NULL, *path = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -161,9 +161,13 @@ main(int argc, char **argv)
 	if (argc != 2)
 		usage();
 
+	e = gfarm_realpath_by_gfarm2fs(argv[1], &path);
+	if (e == GFARM_ERR_NO_ERROR)
+		argv[1] = path;
 	e = gfimport_from_to(argv[0], argv[1], host);
 	if (e != GFARM_ERR_NO_ERROR)
 		status = 1;
+	free(path);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

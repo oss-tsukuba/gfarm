@@ -12,6 +12,7 @@
 
 #include "gfm_client.h"
 #include "lookup.h"
+#include "gfarm_path.h"
 
 /*
  * Display struct gfs_stat.
@@ -126,7 +127,11 @@ main(int argc, char *argv[])
 	for (; *argv; ++argv) {
 		struct gfs_stat st;
 		struct gfm_connection *gfm_server;
+		char *realpath = NULL;
 
+		e = gfarm_realpath_by_gfarm2fs(*argv, &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			*argv = realpath;
 		if (show_symlink)
 			e = gfs_lstat(*argv, &st);
 		else
@@ -134,6 +139,7 @@ main(int argc, char *argv[])
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s\n", *argv,
 				gfarm_error_string(e));
+			free(realpath);
 			r = 1;
 			continue;
 		}
@@ -147,6 +153,7 @@ main(int argc, char *argv[])
 		    )(*argv, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: showing metadata server: %s",
 			    *argv, gfarm_error_string(e));
+			free(realpath);
 			r = 1;
 			continue;
 		}
@@ -164,6 +171,7 @@ main(int argc, char *argv[])
 		}
 
 		gfs_stat_free(&st);
+		free(realpath);
 		first_entry = 0;
 	}
 

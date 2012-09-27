@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfmv";
 
@@ -23,7 +24,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, status = 0;
-	extern int optind;
+	char *src = NULL, *dst = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -47,12 +48,20 @@ main(int argc, char **argv)
 	if (argc != 2)
 		usage();
 
+	e = gfarm_realpath_by_gfarm2fs(argv[0], &src);
+	if (e == GFARM_ERR_NO_ERROR)
+		argv[0] = src;
+	e = gfarm_realpath_by_gfarm2fs(argv[1], &dst);
+	if (e == GFARM_ERR_NO_ERROR)
+		argv[1] = dst;
 	e = gfs_rename(argv[0], argv[1]);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s %s %s: %s\n",
 		    program_name, argv[0], argv[1], gfarm_error_string(e));
 		status = 1;
 	}
+	free(src);
+	free(dst);
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,

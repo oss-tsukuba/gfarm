@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfgetfacl";
 
@@ -103,6 +104,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int i, c, status = 0;
+	char *realpath = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -129,12 +131,16 @@ main(int argc, char **argv)
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 	for (i = 0; i < argc; i++) {
+		e = gfarm_realpath_by_gfarm2fs(argv[i], &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			argv[i] = realpath;
 		e = acl_print(argv[i]);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr, "%s: %s: %s\n",
 			    program_name, argv[i], gfarm_error_string(e));
 			status = 1;
 		}
+		free(realpath);
 	}
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
