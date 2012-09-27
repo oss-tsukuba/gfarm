@@ -21,6 +21,7 @@ SRCS =	alloc.c \
 	limit.c \
 	logutil.c \
 	lru_cache.c \
+	nanosec.c \
 	random.c \
 	send_no_sigpipe.c \
 	thrbarrier.c \
@@ -40,6 +41,7 @@ OBJS =	alloc.lo \
 	limit.lo \
 	logutil.lo \
 	lru_cache.lo \
+	nanosec.lo \
 	random.lo \
 	send_no_sigpipe.lo \
 	thrbarrier.lo \
@@ -68,6 +70,7 @@ hash_strptr.lo: hash.h
 limit.lo: gfutil.h
 logutil.lo: gfutil.h
 lru_cache.lo: lru_cache.h
+nanosec.lo: nanosec.h
 random.lo: thrsubr.h
 timer.lo: timer.h
 timeval.lo: gfutil.h
