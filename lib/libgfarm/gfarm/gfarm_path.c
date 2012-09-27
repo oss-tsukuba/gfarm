@@ -17,6 +17,7 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 {
 	char *p, *parent = NULL;
 	const char *base;
+	static const char gfarm2fs_path[] = "gfarm2fs.path";
 	size_t s = 0;
 	int saved_errno, base_len = 0;
 #ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
@@ -24,10 +25,12 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 #endif
 
 #ifdef HAVE_SYS_XATTR_H
-	s = lgetxattr(path, "gfarm2fs.path", NULL, 0);
+	s = lgetxattr(path, gfarm2fs_path, NULL, 0);
 	if (s == -1) {
 		parent = gfarm_path_dir(path);
-		s = lgetxattr(parent, "gfarm2fs.path", NULL, 0);
+		if (parent == NULL)
+			return (GFARM_ERR_NO_MEMORY);
+		s = lgetxattr(parent, gfarm2fs_path, NULL, 0);
 		if (s == -1) {
 			free(parent);
 			return (GFARM_ERR_NO_SUCH_OBJECT);
@@ -43,7 +46,7 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 	GFARM_MALLOC_ARRAY(p, s + base_len + 1); /* 1 for '\0' */
 	if (p == NULL)
 		return (GFARM_ERR_NO_MEMORY);
-	if (lgetxattr(path, "gfarm2fs.path", p, s) == -1) {
+	if (lgetxattr(path, gfarm2fs_path, p, s) == -1) {
 		saved_errno = errno;
 		free(p);
 		return (gfarm_errno_to_error(saved_errno));
