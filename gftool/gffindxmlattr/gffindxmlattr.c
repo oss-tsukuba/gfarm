@@ -21,6 +21,7 @@
 
 #include <gfarm/gfarm.h>
 #include "gfutil.h"
+#include "gfarm_path.h"
 
 static gfarm_error_t
 read_file(char *filename, char **bufp)
@@ -84,11 +85,14 @@ main(int argc, char *argv[])
 {
 	char *prog_name = basename(argv[0]);
 	int c, depth = INT_MAX;
-	char *filename = NULL, *path = NULL, *expr = NULL, *delim = "\t";
+	char *filename = NULL, *path, *realpath = NULL, *expr, *delim = "\t";
 	struct gfs_xmlattr_ctx *ctxp = NULL;
 	char *fpath, *attrname;
 	gfarm_error_t e;
 	int ret = 0;
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	path = expr = NULL;
+#endif
 
 	while ((c = getopt(argc, argv, "d:f:F:h?")) != -1) {
 		switch (c) {
@@ -112,11 +116,20 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	e = gfarm_initialize(&argc, &argv);
+	if (e != GFARM_ERR_NO_ERROR) {
+		fprintf(stderr, "%s: %s\n", prog_name, gfarm_error_string(e));
+		exit(1);
+	}
 	if (filename == NULL) {
 		if (argc < 2)
 			usage(prog_name);
 		expr = argv[0];
-		path = argv[1];
+		e = gfarm_realpath_by_gfarm2fs(argv[1], &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			path = realpath;
+		else
+			path = argv[1];
 	} else if (argc != 1) {
 		usage(prog_name);
 	} else {
@@ -126,13 +139,11 @@ main(int argc, char *argv[])
 					gfarm_error_string(e), filename);
 			exit(1);
 		}
-		path = argv[0];
-	}
-
-	e = gfarm_initialize(&argc, &argv);
-	if (e != GFARM_ERR_NO_ERROR) {
-		fprintf(stderr, "%s: %s\n", prog_name, gfarm_error_string(e));
-		exit(1);
+		e = gfarm_realpath_by_gfarm2fs(argv[0], &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			path = realpath;
+		else
+			path = argv[0];
 	}
 
 	e = gfs_findxmlattr(path, expr, depth, &ctxp);
@@ -142,6 +153,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s\n", gfarm_error_string(e));
 		exit(1);
 	}
+	free(realpath);
 
 	while ((e = gfs_getxmlent(ctxp, &fpath, &attrname))
 			== GFARM_ERR_NO_ERROR) {

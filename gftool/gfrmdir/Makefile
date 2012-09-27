@@ -9,7 +9,7 @@ include $(top_srcdir)/makes/var.mk
 PROGRAM = gfrmdir
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
-CFLAGS = $(COMMON_CFLAGS)
+CFLAGS = $(COMMON_CFLAGS) -I$(GFARMLIB_SRCDIR)
 LDLIBS = $(COMMON_LDLIBS) $(GFARMLIB) $(LIBS)
 DEPLIBS = $(DEPGFARMLIB)
 
@@ -20,7 +20,4 @@ include $(top_srcdir)/makes/prog.mk
 ###
 
 $(OBJS): $(DEPGFARMINC) \
-	$(GFARMLIB_SRCDIR)/gfs_client.h \
-	$(GFARMLIB_SRCDIR)/gfs_misc.h
-
-
+	$(GFARMLIB_SRCDIR)/gfarm_path.h

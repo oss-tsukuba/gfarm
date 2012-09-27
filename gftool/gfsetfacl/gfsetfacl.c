@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfsetfacl";
 
@@ -548,7 +549,7 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int i, c, status = 0;
 	const char *acl_spec = NULL, *acl_file = NULL;
-	char *acl_file_buf = NULL;
+	char *path = NULL, *acl_file_buf = NULL;
 	int remove_acl_acccess = 0, remove_acl_default = 0;
 	int is_test = 0, recalc_mask = 0;
 
@@ -665,6 +666,9 @@ main(int argc, char **argv)
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_ACCESS);
 	gfarm_xattr_caching_pattern_add(GFARM_ACL_EA_DEFAULT);
 	for (i = 0; i < argc; i++) {
+		e = gfarm_realpath_by_gfarm2fs(argv[i], &path);
+		if (e == GFARM_ERR_NO_ERROR)
+			argv[i] = path;
 		e = acl_set(argv[i], remove_acl_acccess, remove_acl_default,
 			    acl_file_buf, acl_spec, is_test, recalc_mask);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -672,6 +676,7 @@ main(int argc, char **argv)
 			    program_name, argv[i], gfarm_error_string(e));
 			status = 1;
 		}
+		free(path);
 	}
 terminate:
 	free(acl_file_buf);

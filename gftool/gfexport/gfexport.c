@@ -10,6 +10,7 @@
 #include "gfs_profile.h"
 #include "host.h"
 #include "config.h"
+#include "gfarm_path.h"
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
 #include <openssl/evp.h>
@@ -73,7 +74,7 @@ int
 main(int argc, char *argv[])
 {
 	gfarm_error_t e;
-	char *url, *hostname = NULL;
+	char *url, *realpath = NULL, *hostname = NULL;
 	int ch;
 
 	if (argc > 0)
@@ -105,7 +106,11 @@ main(int argc, char *argv[])
 		    "error: only one input file name expected");
 		usage();
 	}
-	url = argv[0];
+	e = gfarm_realpath_by_gfarm2fs(argv[0], &realpath);
+	if (e == GFARM_ERR_NO_ERROR)
+		url = realpath;
+	else
+		url = argv[0];
 
 	e = gfexport(url, hostname, stdout);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -113,6 +118,7 @@ main(int argc, char *argv[])
 		    gfarm_error_string(e));
 		exit(1);
 	}
+	free(realpath);
 
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {

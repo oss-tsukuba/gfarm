@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <gfarm/gfarm.h>
+#include "gfarm_path.h"
 
 char *program_name = "gfchmod";
 
@@ -28,7 +29,7 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c, i, n, follow_symlink = 1, status = 0;
-	char *s;
+	char *si = NULL, *s;
 	long mode;
 	gfarm_stringlist paths;
 	gfs_glob_t types;
@@ -80,6 +81,9 @@ main(int argc, char **argv)
 		n = gfarm_stringlist_length(&paths);
 		for (i = 0; i < n; i++) {
 			s = gfarm_stringlist_elem(&paths, i);
+			e = gfarm_realpath_by_gfarm2fs(s, &si);
+			if (e == GFARM_ERR_NO_ERROR)
+				s = si;
 			e = (follow_symlink ? gfs_chmod : gfs_lchmod)(s,
 			    (gfarm_mode_t)mode);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -87,6 +91,7 @@ main(int argc, char **argv)
 				    program_name, s, gfarm_error_string(e));
 				status = 1;
 			}
+			free(si);
 		}
 		gfs_glob_free(&types);
 		gfarm_stringlist_free_deeply(&paths);

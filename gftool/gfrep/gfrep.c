@@ -27,6 +27,7 @@ static int omp_get_thread_num(void){ return (0); }
 #include "gfarm_foreach.h"
 #include "gfarm_list.h"
 #include "lookup.h"
+#include "gfarm_path.h"
 
 #define HOSTHASH_SIZE	101
 
@@ -894,10 +895,14 @@ main(int argc, char *argv[])
 	error_check(e);
 
 	for (i = 0; i < gfarm_stringlist_length(&paths); i++) {
-		char *file = gfarm_stringlist_elem(&paths, i);
+		char *file = gfarm_stringlist_elem(&paths, i), *realpath = NULL;
 
+		e = gfarm_realpath_by_gfarm2fs(file, &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			file = realpath;
 		e = gfarm_foreach_directory_hierarchy(
 			create_filelist, NULL, NULL, file, &flist);
+		free(realpath);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
