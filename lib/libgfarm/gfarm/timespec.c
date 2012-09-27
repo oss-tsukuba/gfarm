@@ -3,11 +3,13 @@
  */
 
 #include <stdio.h>
+#include <time.h>
+
 #include <gfarm/gfarm.h>
 
-#include "timespec.h"
+#include "nanosec.h"
 
-#define GFARM_SECOND_BY_NANOSEC	1000000000
+#include "timespec.h"
 
 int
 gfarm_timespec_cmp(
