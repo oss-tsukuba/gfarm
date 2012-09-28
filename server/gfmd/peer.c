@@ -529,6 +529,7 @@ peer_init(int max_peers)
 		peer = &peer_table[i];
 		peer->next_close = NULL;
 		peer->refcount = 0;
+		peer->replication_refcount = 0;
 		peer->conn = NULL;
 		peer->async = NULL;
 		peer->username = NULL;
@@ -600,6 +601,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 
 	peer->next_close = NULL;
 	peer->refcount = 0;
+	peer->replication_refcount = 0;
 
 	/* XXX FIXME gfp_xdr requires too much memory */
 	if (conn == NULL) {
@@ -857,6 +859,7 @@ peer_free(struct peer *peer)
 	}
 	peer->next_close = NULL;
 	peer->refcount = 0;
+	peer->replication_refcount = 0;
 
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }
