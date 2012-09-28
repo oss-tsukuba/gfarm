@@ -132,6 +132,36 @@ local_peer_get_parent(struct peer *peer)
 	return (NULL);
 }
 
+#if 0
+
+struct peer *
+local_peer_by_fd(int fd)
+{
+	static const char diag[] = "local_peer_by_fd";
+
+	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
+	if (fd < 0 || fd >= local_peer_table_size ||
+	    local_peer_table[fd].conn == NULL)
+		return (NULL);
+	gfarm_mutex_unlock(&local_peer_table_mutex, diag,
+	    local_peer_table_diag);
+	return (&local_peer_table[fd]);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+gfarm_error_t
+local_peer_free_by_fd(int fd)
+{
+	struct peer *peer = local_peer_by_fd(fd);
+
+	if (peer == NULL)
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	peer_free(peer);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#endif /* 0 */
+
 static int
 local_peer_is_busy(struct peer *peer)
 {
@@ -185,24 +215,13 @@ local_peer_notice_disconnected(struct peer *peer,
 static void
 local_peer_shutdown(struct peer *peer)
 {
-	struct local_peer *local_peer = peer_to_local_peer(peer);
-	int fd = local_peer_get_fd(local_peer);
+	int fd = local_peer_get_fd(peer_to_local_peer(peer));
 	int rv = shutdown(fd, SHUT_RDWR);
 
 	if (rv == -1)
 		gflog_warning(GFARM_MSG_1002766,
 		    "%s(%s) : shutdown(%d): %s", BACK_CHANNEL_DIAG(peer),
 		    peer_get_hostname(peer), fd, strerror(errno));
-
-	/*
-	 * do this here to call peer_del_ref() to make peer_free() callable.
-	 * see https://sourceforge.net/apps/trac/gfarm/ticket/408#comment:3
-	 * (incomplete replica is left)
-	 */
-	if (local_peer->async != NULL) {
-		gfp_xdr_async_peer_free(local_peer->async, peer);
-		local_peer->async = NULL;
-	}
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
@@ -258,6 +277,11 @@ local_peer_free(struct peer *peer)
 
 	peer_free_common(peer, diag);
 
+	if (local_peer->async != NULL) {
+		/* needs giant_lock and peer_table_lock */
+		gfp_xdr_async_peer_free(local_peer->async, peer);
+		local_peer->async = NULL;
+	}
 	if (local_peer->conn != NULL) {
 		gfp_xdr_free(local_peer->conn);
 		local_peer->conn = NULL;
