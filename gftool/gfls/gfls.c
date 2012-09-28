@@ -560,7 +560,9 @@ main(int argc, char **argv)
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
-	char *ep, *path, cwd[PATH_MAX * 2], *realpath = NULL;
+	char *ep, *realpath = NULL;
+	const char *cwd;
+	static const char dot[] = ".";
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -642,13 +644,12 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
-		if (getcwd(cwd, sizeof cwd) != NULL &&
-		    gfarm_realpath_by_gfarm2fs(cwd, &realpath)
+		if (gfarm_realpath_by_gfarm2fs(dot, &realpath)
 		    == GFARM_ERR_NO_ERROR)
-			path = realpath;
+			cwd = realpath;
 		else
-			path = ".";
-		gfarm_stringlist_add(&paths, strdup(path));
+			cwd = dot;
+		gfarm_stringlist_add(&paths, strdup(cwd));
 		free(realpath);
 		gfs_glob_add(&types, GFS_DT_DIR);
 	} else {
