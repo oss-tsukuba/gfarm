@@ -10,6 +10,8 @@ struct thread_pool *peer_watcher_get_thrpool(struct peer_watcher *);
 
 void peer_add_ref(struct peer *);
 int peer_del_ref(struct peer *);
+void peer_add_ref_for_replication(struct peer *);
+int peer_del_ref_for_replication(struct peer *);
 void peer_free_request(struct peer *);
 
 void peer_init(int);
