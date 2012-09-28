@@ -15,6 +15,7 @@
 #include <gfarm/gfarm.h>
 
 #include "timespec.h" /* XXX should export this interface */
+#include "gfarm_path.h"
 
 char *program_name = "gfls";
 
@@ -559,7 +560,9 @@ main(int argc, char **argv)
 	gfarm_stringlist paths;
 	gfs_glob_t types;
 	int i, c, exit_code = EXIT_SUCCESS;
-	char *ep;
+	char *ep, *realpath = NULL;
+	const char *cwd;
+	static const char dot[] = ".";
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -641,14 +644,24 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	if (argc < 1) {
-		gfarm_stringlist_add(&paths, strdup("."));
+		if (gfarm_realpath_by_gfarm2fs(dot, &realpath)
+		    == GFARM_ERR_NO_ERROR)
+			cwd = realpath;
+		else
+			cwd = dot;
+		gfarm_stringlist_add(&paths, strdup(cwd));
+		free(realpath);
 		gfs_glob_add(&types, GFS_DT_DIR);
 	} else {
 		for (i = 0; i < argc; i++) {
 			int last;
 
+			e = gfarm_realpath_by_gfarm2fs(argv[i], &realpath);
+			if (e == GFARM_ERR_NO_ERROR)
+				argv[i] = realpath;
 			/* do not treat glob error as an error */
 			gfs_glob(argv[i], &paths, &types);
+			free(realpath);
 
 			last = gfs_glob_length(&types) - 1;
 			if (last >= 0 && gfs_glob_elem(&types, last) ==
