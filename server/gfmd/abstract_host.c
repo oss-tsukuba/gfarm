@@ -470,13 +470,11 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 
 	hpeer = h->peer;
 	if (h->is_active && (peer == hpeer || peer == NULL)) {
-		disabled = 1;
+		peer_record_protocol_error(hpeer);
+		peer_free_request(hpeer);
 		abstract_host_peer_unset(h);
 		h->ops->disable(h);
-
-		peer_record_protocol_error(hpeer);
-		/* must be after abstract_host_peer_unset() */
-		peer_free_request(hpeer);
+		disabled = 1;
 	} else {
 		if (!h->is_active)
 			gflog_notice(GFARM_MSG_1003475,
