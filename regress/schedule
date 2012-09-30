@@ -7,6 +7,7 @@ lib/libgfarm/gfarm/gfs_pio_create/not_writable.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable_rdonly.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica0.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica.sh
+lib/libgfarm/gfarm/gfs_pio_create/autoreplica4.sh
 lib/libgfarm/gfarm/gfs_pio_create/autoreplica-repattr0.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc.sh
 lib/libgfarm/gfarm/gfs_pio_open/file_trunc_read.sh
