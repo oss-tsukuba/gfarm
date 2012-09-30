@@ -54,13 +54,20 @@ int host_is_valid(struct host *);
 int host_unique_sort(int, struct host **);
 
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
-gfarm_error_t host_schedule_except(
+gfarm_error_t host_array_alloc(int *, struct host ***);
+gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
+	gfarm_int32_t *, struct host ***);
+gfarm_error_t host_schedule_n_from_all_except(
 	int, struct host **, int (*)(struct host *, void *), void *,
 	int, int *, struct host **);
-gfarm_error_t host_schedule_all_except(int, struct host **,
+gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);
-int host_schedule_one_except(struct peer *, int, struct host **,
+gfarm_error_t host_schedule_n_except(int *, struct host **,
+	int *, struct host **,
+	int (*)(struct host *, void *), void *,
+	int, int *, struct host ***);
+int host_from_one_except(struct peer *, int, struct host **,
 	int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***, gfarm_error_t *);
 
@@ -75,9 +82,9 @@ void host_modify(struct host *, struct gfarm_host_info *);
 gfarm_error_t host_fsngroup_modify(struct host *, const char *, const char *);
 gfarm_error_t host_remove_in_cache(const char *);
 
-/* A generic host hash iteration workhose */
-void *host_iterate(void * (*)(struct host *, void *, int *), void *,
-	size_t, size_t, size_t, size_t *);
+/* A generic function to select filesystem nodes */
+gfarm_error_t host_iterate(int (*)(struct host *, void *, void *), void *,
+	size_t, size_t *, void **);
 
 gfarm_error_t gfm_server_host_info_get_all(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);

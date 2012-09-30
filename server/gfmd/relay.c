@@ -331,7 +331,8 @@ wait_db_update_info(struct peer *peer,
 		if (gfarm_timeval_is_expired(&timeout)) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "%s: %s", diag, gfarm_error_string(e));
+			    "%s: wait_db_update_info() - timeout: %s",
+			    diag, gfarm_error_string(e));
 			break;
 		}
 	}

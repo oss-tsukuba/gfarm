@@ -720,73 +720,165 @@ inode_free(struct inode *inode)
 }
 
 /*
- * currently this is only called at update (i.e. when new generation is made),
- * and this implementation assumes that fact.
+ * this function breaks *nhostsp and hosts[], and they cannot be used later.
+ * this function modifies *n_exceptionsp and exceptions[],
+ * but they may be abled to be used later.
  */
-static void
-schedule_replication(struct inode *inode, struct host *spool_host,
-	struct file_copy *existing_targets, int n_existings, int n_shortage)
+void
+inode_schedule_replication(struct inode *inode, struct host *spool_host,
+	int *nhostsp, struct host **hosts,
+	int *n_exceptionsp, struct host **exceptions,
+	int n_desired, const char *diag)
 {
 	gfarm_error_t e;
-	struct host **existings, **new_targets, *target;
-	struct file_copy *copy;
-	int n_new_targets, i = 0;
+	struct host **targets;
+	int n_targets, i;
 	struct file_replication *fr;
 	gfarm_off_t necessary_space;
 
-	GFARM_MALLOC_ARRAY(existings, n_existings+1); /*+1 is for spool_host*/
-	GFARM_MALLOC_ARRAY(new_targets, n_shortage);
-	if (existings == NULL || new_targets == NULL) {
-		free(existings);
-		free(new_targets);
-		gflog_warning(GFARM_MSG_1002477,
-		    "no memory to schedule %d+%d hosts",
-		    n_existings + 1, n_shortage);
+	necessary_space = inode_get_size(inode);
+	e = host_schedule_n_except(nhostsp, hosts, n_exceptionsp, exceptions,
+	    host_is_disk_available_filter, &necessary_space,
+	    n_desired, &n_targets, &targets);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		    "cannot create %d replicas from %d hosts except %d: %s",
+		    diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    n_desired, *nhostsp, *n_exceptionsp, gfarm_error_string(e));
 		return;
 	}
-	existings[i++] = spool_host; /* this requires +1 */
+
+	if (n_targets < n_desired)
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		    "fewer replicas (%d out of %d) will be created", diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    n_targets, n_desired);
+	for (i = 0; i < n_targets; i++) {
+		e = inode_replication_new(inode, spool_host, targets[i],
+		    NULL, &fr);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: inode_replication_new: (%s, %lld:%lld): %s",
+			    diag, host_name(targets[i]),
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    gfarm_error_string(e));
+		}
+	}
+	free(targets);
+}
+
+/*
+ * this function modifies *n_exceptionsp and exceptions[],
+ * but they may be abled to be used later.
+ */
+static void
+inode_schedule_replication_from_all(
+	struct inode *inode, struct host *spool_host,
+	int *n_exceptionsp, struct host **exceptions,
+	int n_desired, const char *diag)
+{
+	gfarm_error_t e;
+	int nhosts;
+	struct host **hosts;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		    "cannot create %d replicas except %d: %s",
+		    diag,
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    n_desired, *n_exceptionsp, gfarm_error_string(e));
+		return;
+	}
+	inode_schedule_replication(inode, spool_host,
+	    &nhosts, hosts, n_exceptionsp, exceptions, n_desired, diag);
+	free(hosts);
+}
+
+/*
+ * NOTE: excluding_list may or may not include spool_host.
+ *	it doesn't if this is called from update_replicas(), but
+ *	it does if this this is called from inode_check_pending_replication().
+ */
+static void
+make_replicas_except(struct inode *inode, struct host *spool_host,
+	int desired_replica_number, char *repattr,
+	struct file_copy *exception_list)
+{
+	struct host **exceptions;
+	int n_exceptions = 1; /* +1 is for spool_host */
+	int i = 0, being_removed = 0;
+	struct file_copy *copy;
+	static const char diag[]= "make_replicas_except"; 
+
+	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
+		if (copy->host != spool_host) {
+			if (FILE_COPY_IS_BEING_REMOVED(copy))
+				++being_removed;
+			++n_exceptions;
+		}
+	}
+	GFARM_MALLOC_ARRAY(exceptions, n_exceptions);
+	if (exceptions == NULL) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: no memory to schedule replicas except %d hosts",
+		    diag, n_exceptions);
+		return;
+	}
+
+	exceptions[i++] = spool_host;
 	/*
 	 * copy->host where !FILE_COPY_IS_VALID(copy) is excluded here too.
 	 *
 	 * Such host doesn't have to be excluded, because all of
-	 * existing_targets have only old replicas. (i.e. i_gen is older.)
+	 * exception_list have only old replicas. (i.e. i_gen is older.)
 	 * But it's better to exclude it, because
 	 * - if previous replication failed, next replication will likely
 	 *   fail too.
 	 * - if the copy became invalid due to "gfrm -h <node>",
 	 *   it's better to exclude the node from the destinations.
+	 *
+	 * XXX FIXME: well, it's better to schedule new replication
+	 * even in that case unless it's currently being removed.
 	 */
-	for (copy = existing_targets; copy != NULL; copy = copy->host_next)
-		existings[i++] = copy->host;
-
-	necessary_space = inode_get_size(inode);
-	e = host_schedule_except(n_existings, existings,
-	    host_is_disk_available_filter, &necessary_space,
-	    n_shortage, &n_new_targets, new_targets);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(existings);
-		free(new_targets);
-		return;
+	for (copy = exception_list; copy != NULL; copy = copy->host_next) {
+		if (copy->host != spool_host)
+			exceptions[i++] = copy->host;
 	}
 
-	if (n_new_targets < n_shortage)
-		gflog_warning(GFARM_MSG_1002478, "inum %lld gen %lld: "
-		    "fewer replicas (%d out of %d) will be created",
+	if (repattr != NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: about to schedule "
+		    "repattr-based replication for inode "
+		    "%lld:%lld@%s.", diag,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    n_new_targets, n_shortage);
-	for (i = 0; i < n_new_targets; i++) {
-		target = new_targets[i];
-		e = inode_replication_new(inode, spool_host, target, NULL, &fr);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_1002479,
-			    "inode_replication_new: host %s: %s",
-			    host_name(target),
-			    gfarm_error_string(e));
-		}
+		    host_name(spool_host));
+
+		fsngroup_replicate_file(inode, spool_host, repattr,
+		    n_exceptions, exceptions);
+
+	} else if (n_exceptions - being_removed < desired_replica_number) {
+
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "update_replicas(): about to schedule "
+		    "ncopy-based replication for inode %lld:%lld@%s.",
+		    (long long)inode_get_number(inode),
+		    (long long)inode_get_gen(inode),
+		    host_name(spool_host));
+
+		inode_schedule_replication_from_all(
+		    inode, spool_host, &n_exceptions, exceptions,
+		    desired_replica_number - n_exceptions + being_removed,
+		    diag);
+
 	}
-	free(existings);
-	free(new_targets);
+	free(exceptions);
 }
 
 static gfarm_error_t
@@ -800,7 +892,6 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	int desired_replica_number, char *repattr)
 {
 	struct file_copy **copyp, *copy, *next, *to_be_excluded = NULL;
-	int nreplicas = 1;
 	struct dead_file_copy *deferred_cleanup;
 	struct file_replication *fr;
 	gfarm_error_t e;
@@ -830,7 +921,6 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			 */
 			copy->host_next = to_be_excluded;
 			to_be_excluded = copy;
-			++nreplicas;
 		} else {
 			if (FILE_COPY_IS_VALID(copy) &&
 			    !FILE_COPY_IS_BEING_REMOVED(copy)) {
@@ -856,79 +946,28 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 *
 	 * So we have to avoid to schedule creation of a replica on
 	 * them, at this moment.
+	 *
+	 * NOTE:
+	 * this must be called after the loop above, because
+	 * the above loop obsoletes all replicas except one on the spool_host.
+	 * 
 	 */
-	if (start_replication && spool_host != NULL) {
-		if (repattr != NULL) {
-			/*
-			 * Convert the to_be_excluded into an array.
-			 */
-			char **exhosts = NULL;
-			struct file_copy *orig = NULL;
-			size_t nexhosts = 1;
+	if (start_replication && spool_host != NULL)
+		make_replicas_except(inode, spool_host,
+		    desired_replica_number, repattr, to_be_excluded);
 
-			if ((orig = to_be_excluded) != NULL) {
-				do {
-					nexhosts++;
-					orig = orig->host_next;
-				} while (orig != NULL);
-			}
-			GFARM_MALLOC_ARRAY(exhosts, nexhosts);
-			if (exhosts == NULL) {
-				gflog_error(GFARM_MSG_UNFIXED,
-					"update_replicas(): "
-					"Insufficient memory to allocate "
-					"%zu of sturct host *.",
-					nexhosts);
-				goto replicate_on_new_node_done;
-			}
-
-			nexhosts = 0;
-			if ((orig = to_be_excluded) != NULL) {
-				do {
-					if (orig->host != NULL)
-						exhosts[nexhosts++] =
-							host_name(orig->host);
-					orig = orig->host_next;
-				} while (orig != NULL);
-			}
-			exhosts[nexhosts++] = host_name(spool_host);
-
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"update_replicas(): about to schedule "
-				"repattr-based replication for inode "
-				"%lld@%s.",
-				(long long)inode_get_number(inode),
-				exhosts[nexhosts - 1]);
-
-			gfarm_server_fsngroup_replicate_file(
-				inode, spool_host, repattr,
-				exhosts, nexhosts);
-
-			free(exhosts);
-
-		} else if (nreplicas < desired_replica_number) {
-
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"update_replicas(): about to schedule "
-				"ncopy-based replication for inode %lld@%s.",
-				(long long)inode_get_number(inode),
-				host_name(spool_host));
-
-			schedule_replication(
-				inode, spool_host, to_be_excluded, nreplicas,
-				desired_replica_number - nreplicas);
-
-		}
-	}
-
-replicate_on_new_node_done:
 	/*
 	 * After scheduling replica creation to new hosts, start
 	 * updation of the existing replicas on the hosts in the
 	 * to_be_excluded VERY HERE.
 	 */
 	for (copy = to_be_excluded; copy != NULL; copy = next) {
-		/* if there is ongoing replication, don't start new one */
+		/*
+		 * if there is ongoing replication, don't start new one
+		 *
+		 * XXX FIXME: well, it's better to schedule new replication
+		 * even in that case unless it's currently being removed.
+		 */
 		if (!FILE_COPY_IS_VALID(copy) ||
 		    !host_is_up(copy->host) ||
 		    !host_supports_async_protocols(copy->host)) {
@@ -3467,9 +3506,9 @@ inode_schedule_new_file(struct peer *peer, gfarm_int32_t *np,
 	gfarm_error_t e;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
-	if (!host_schedule_one_except(peer, 0, NULL,
+	if (!host_from_one_except(peer, 0, NULL,
 	    host_is_disk_available_filter, &necessary_space, np, hostsp, &e))
-		e = host_schedule_all_except(0, NULL, 
+		e = host_from_all(
 		    host_is_disk_available_filter, &necessary_space,
 		    np, hostsp);
 	return (e);
@@ -3605,10 +3644,11 @@ inode_schedule_file_default(struct file_opening *opening,
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 
-			if (!host_schedule_one_except(peer, nhosts, hosts,
+			if (!host_from_one_except(peer, nhosts, hosts,
 			    host_is_disk_available_filter, &necessary_space,
 			    np, hostsp, &e))
-				e = host_schedule_all_except(nhosts, hosts,
+				e = host_from_all_except(
+				    &nhosts, hosts,
 				    host_is_disk_available_filter,
 				    &necessary_space, np, hostsp);
 			free(hosts);
@@ -5730,15 +5770,6 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	return GFARM_ERR_NO_ERROR;
 }
 
-/* Ensure that the "gfarm.ncopy" xattr is always cached. */
-void
-inode_init_desired_number(void)
-{
-	if (!gfarm_xattr_caching("gfarm.ncopy"))
-		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
-
-}
-
 /* This assumes that the "gfarm.ncopy" xattr is cached. */
 int
 inode_has_desired_number(struct inode *inode, int *desired_numberp)
@@ -5769,56 +5800,59 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 	return (0);
 }
 
-int
-inode_traverse_desired_replica_number(struct inode *dir, int *desired_numberp)
-{
-	DirEntry entry;
-
-	for (;;) {
-		if (!inode_is_dir(dir))
-			return (0);
-
-		if (inode_has_desired_number(dir, desired_numberp))
-			return (1);
-
-		if (inode_get_number(dir) == ROOT_INUMBER)
-			return (0);
-			
-		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
-		if (entry == NULL)
-			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
-		dir = dir_entry_get_inode(entry);
-	}
-}
-
 /* And also this assumes that the "gfarm.replicainfo" xattr is cached. */
 int
 inode_has_repattr(struct inode *inode, char **repattrp)
 {
 	void *repattr = NULL;
-	size_t s = 0;
+	size_t size = 0;
 
 	if (inode_xattr_get_cache(inode, 0, GFARM_REPATTR_NAME,
-		(void **)&repattr, &s) != GFARM_ERR_NO_ERROR)
+		&repattr, &size) != GFARM_ERR_NO_ERROR)
 		return (0);
 
-	/*
-	 * The repattr is malloc'd in inode_xattr_get_cache().
-	 */
-	if (repattr == NULL || *((char *)repattr) == '\0')
+	if (repattr == NULL)
 		return (0);
 
-	if (repattrp != NULL)
-		*repattrp = (char *)repattr;
-	else
+	/* The repattr is malloc'd in inode_xattr_get_cache(). */
+
+	if (*(char *)repattr == '\0') { /* treat this as unspecified */
 		free(repattr);
+		return (0);
+	}
+	*repattrp = (char *)repattr;
 
 	return (1);
 }
 
+/*
+ * returns 1, if gfarm.replicainfo or gfarm.ncopy is found.
+ * if gfarm.replicainfo is found, *repattrp != NULL, otherwise *repattr == NULL
+ */
 int
-inode_visit_directory_bottom_up(struct inode *dir,
-	int (*v)(struct inode *, void *), void *arg)
+inode_get_replica_spec(struct inode *inode,
+	char **repattrp, int *desired_numberp)
+{
+	if (inode_has_repattr(inode, repattrp)) {
+		*desired_numberp = 0;
+		return (1);
+	}
+	if (inode_has_desired_number(inode, desired_numberp)) {
+		*repattrp = NULL;
+		return (1);
+	}
+	return (0);
+}
+
+/*
+ * do bottom-up search gfarm.replicainfo or gfarm.ncopy.
+ *
+ * returns 1, if gfarm.replicainfo or gfarm.ncopy is found.
+ * if gfarm.replicainfo is found, *repattrp != NULL, otherwise *repattr == NULL
+ */
+int
+inode_search_replica_spec(struct inode *dir,
+	char **repattrp, int *desired_numberp)
 {
 	DirEntry entry;
 
@@ -5826,7 +5860,7 @@ inode_visit_directory_bottom_up(struct inode *dir,
 		if (!inode_is_dir(dir))
 			return (0);
 
-		if (v(dir, arg) == 1)
+		if (inode_get_replica_spec(dir, repattrp, desired_numberp))
 			return (1);
 
 		if (inode_get_number(dir) == ROOT_INUMBER)
