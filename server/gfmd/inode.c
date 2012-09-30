@@ -159,6 +159,7 @@ struct inode_activity {
 
 			struct gfarm_timespec last_update;
 			int writers, spool_writers;
+			int replication_pending;
 
 			struct inode_replication_state *rstate;
 		} f;
@@ -550,6 +551,7 @@ inode_activity_alloc(void)
 
 	ia->u.f.writers = 0;
 	ia->u.f.spool_writers = 0;
+	ia->u.f.replication_pending = 0;
 
 	ia->u.f.event_waiters = NULL;
 	ia->u.f.event_source = NULL;
@@ -866,11 +868,14 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	} else if (n_exceptions - being_removed < desired_replica_number) {
 
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "update_replicas(): about to schedule "
-		    "ncopy-based replication for inode %lld:%lld@%s.",
+		    "%s: about to schedule "
+		    "ncopy-based replication for inode %lld:%lld@%s. "
+		    "number = %d (= %d - %d + %d)", diag,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    host_name(spool_host));
+		    host_name(spool_host),
+		    desired_replica_number - n_exceptions + being_removed,
+		    desired_replica_number, n_exceptions, being_removed);
 
 		inode_schedule_replication_from_all(
 		    inode, spool_host, &n_exceptions, exceptions,
@@ -3152,6 +3157,26 @@ inode_del_ref_spool_writers(struct inode *inode)
 	--ia->u.f.spool_writers;
 }
 
+void
+inode_check_pending_replication(struct file_opening *fo)
+{
+	struct inode *inode = fo->inode;
+	struct host *spool_host = fo->u.f.spool_host;
+	struct inode_activity *ia = inode->u.c.activity;
+
+	assert(spool_host != NULL && ia != NULL);
+
+	if (host_supports_async_protocols(spool_host) &&
+	    ia->u.f.spool_writers == 0 && ia->u.f.replication_pending) {
+		ia->u.f.replication_pending = 0;
+		make_replicas_except(inode, spool_host,
+		    fo->u.f.desired_replica_number, fo->u.f.repattr,
+		    inode->u.c.s.f.copies);
+		if (!inode_new_generation_is_pending(inode))
+			inode_replication_start(inode);
+	}
+}
+
 /*
  * returns TRUE, if generation number is updated.
  *
@@ -3211,8 +3236,12 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 		/* XXX provide an option not to start replication here? */
 
 		/* if there is no other writing process */
-		if (ia == NULL || ia->u.f.spool_writers == 0)
+		if (ia == NULL || ia->u.f.spool_writers == 0) {
 			start_replication = 1;
+			ia->u.f.replication_pending = 0;
+		} else {
+			ia->u.f.replication_pending = 1;
+		}
 	}
 
 	update_replicas(inode, spool_host, old_gen,

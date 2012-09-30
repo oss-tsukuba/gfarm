@@ -63,7 +63,7 @@ do
 	if [ $WAIT_TIME -gt $WAIT_TIME_LIMIT ]; then
 		echo replication timeout
 		clean
-		exit $exit_xfail
+		exit $exit_fail
 	fi
 	sleep 1
 done
