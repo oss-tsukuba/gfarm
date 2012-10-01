@@ -828,8 +828,10 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
 		/* i.e. REOPENed file, and I am a gfsd. */
-		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 			inode_del_ref_spool_writers(fo->inode);
+			inode_check_pending_replication(fo);
+		}
 		if (fo->opener != NULL) {
 			/*
 			 * a gfsd is closing a REOPENed file,
@@ -884,8 +886,10 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
-	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0) {
 		inode_del_ref_spool_writers(fo->inode);
+		inode_check_pending_replication(fo);
+	}
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;

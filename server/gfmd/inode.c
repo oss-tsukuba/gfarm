@@ -146,6 +146,7 @@ struct inode_open_state {
 			struct peer *event_source;
 			struct gfarm_timespec last_update;
 			int writers, spool_writers;
+			int replication_pending;
 		} f;
 	} u;
 };
@@ -524,6 +525,7 @@ inode_open_state_alloc(void)
 	ios->openings.opening_next = &ios->openings;
 	ios->u.f.writers = 0;
 	ios->u.f.spool_writers = 0;
+	ios->u.f.replication_pending = 0;
 	ios->u.f.event_waiters = NULL;
 	ios->u.f.event_source = NULL;
 	ios->u.f.last_update.tv_sec = 0;
@@ -809,11 +811,14 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	if (n_exceptions - being_removed < desired_replica_number) {
 
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "update_replicas(): about to schedule "
-		    "ncopy-based replication for inode %lld:%lld@%s.",
+		    "%s: about to schedule "
+		    "ncopy-based replication for inode %lld:%lld@%s. "
+		    "number = %d (= %d - %d + %d)", diag,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
-		    host_name(spool_host));
+		    host_name(spool_host),
+		    desired_replica_number - n_exceptions + being_removed,
+		    desired_replica_number, n_exceptions, being_removed);
 
 		inode_schedule_replication_from_all(
 		    inode, spool_host, &n_exceptions, exceptions,
@@ -3006,6 +3011,24 @@ inode_del_ref_spool_writers(struct inode *inode)
 	--ios->u.f.spool_writers;
 }
 
+void
+inode_check_pending_replication(struct file_opening *fo)
+{
+	struct inode *inode = fo->inode;
+	struct host *spool_host = fo->u.f.spool_host;
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(spool_host != NULL && ios != NULL);
+
+	if (host_supports_async_protocols(spool_host) &&
+	    ios->u.f.spool_writers == 0 && ios->u.f.replication_pending) {
+		ios->u.f.replication_pending = 0;
+		make_replicas_except(inode, spool_host,
+		    fo->u.f.desired_replica_number,
+		    inode->u.c.s.f.copies);
+	}
+}
+
 /*
  * returns TRUE, if generation number is updated.
  *
@@ -3067,8 +3090,12 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 		/* XXX provide an option not to start replication here? */
 
 		/* if there is no other writing process */
-		if (ios->u.f.spool_writers == 0)
+		if (ios->u.f.spool_writers == 0) {
 			start_replication = 1;
+			ios->u.f.replication_pending = 0;
+		} else {
+			ios->u.f.replication_pending = 1;
+		}
 	}
 
 	inode_remove_every_other_replicas(inode, spool_host, old_gen,
