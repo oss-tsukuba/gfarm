@@ -789,6 +789,8 @@ process_reopen_file(struct process *process,
 	fo->u.f.spool_opener = peer;
 	fo->u.f.spool_host = spool_host;
 	fo->flag &= ~GFARM_FILE_TRUNC_PENDING; /*spool_host will truncate it*/
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+		inode_add_ref_spool_writers(fo->inode);
 	*inump = inode_get_number(fo->inode);
 	*genp = inode_get_gen(fo->inode);
 	*modep = inode_get_mode(fo->inode);
@@ -826,6 +828,8 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 			return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 		}
 		/* i.e. REOPENed file, and I am a gfsd. */
+		if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+			inode_del_ref_spool_writers(fo->inode);
 		if (fo->opener != NULL) {
 			/*
 			 * a gfsd is closing a REOPENed file,
@@ -880,6 +884,8 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
 
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+		inode_del_ref_spool_writers(fo->inode);
 	if (fo->opener != peer && fo->opener != NULL) {
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
@@ -949,6 +955,7 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 
+	inode_del_ref_spool_writers(fo->inode);
 	if ((is_v2_4 || inode_is_updated(fo->inode, mtime)) &&
 
 	    /*
@@ -958,9 +965,9 @@ process_close_file_write(struct process *process, struct peer *peer, int fd,
 	     * first one and this file has only one replica.  If it is
 	     * not, do not change the status.
 	     */
-	    (((fo->flag & GFARM_FILE_CREATE_REPLICA) == 0) ||
-	    (inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
-	    == GFARM_ERR_ALREADY_EXISTS)) &&
+	    ((fo->flag & GFARM_FILE_CREATE_REPLICA) == 0 ||
+	    inode_add_replica(fo->inode, fo->u.f.spool_host, 1)
+	    == GFARM_ERR_ALREADY_EXISTS) &&
 
 	    inode_file_update(fo, size, atime, mtime, old_genp, new_genp,
 	    trace_logp)) {

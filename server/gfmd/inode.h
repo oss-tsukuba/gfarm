@@ -121,8 +121,6 @@ gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica(struct inode *, struct host *);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
-int inode_file_updated_on(struct inode *, struct host *,
-	struct gfarm_timespec *, struct gfarm_timespec *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
@@ -134,6 +132,8 @@ void inode_close_read(struct file_opening *, struct gfarm_timespec *, char**);
 gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
 gfarm_error_t inode_fhclose_write(struct inode *, gfarm_uint64_t, gfarm_off_t,
     struct gfarm_timespec *, struct gfarm_timespec *, gfarm_int64_t *, int *);
+void inode_add_ref_spool_writers(struct inode *);
+void inode_del_ref_spool_writers(struct inode *);
 int inode_file_update(struct file_opening *,
 	gfarm_off_t, struct gfarm_timespec *, struct gfarm_timespec *,
 	gfarm_int64_t *, gfarm_int64_t *, char**);

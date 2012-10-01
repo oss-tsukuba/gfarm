@@ -8,7 +8,7 @@
 
 #define EXIT_USAGE	250
 
-char *program_name = "gfs_pio";
+char *program_name = "gfs_pio_test";
 
 #define OP_READ		'R'
 #define OP_WRITE	'W'
@@ -16,13 +16,15 @@ char *program_name = "gfs_pio";
 #define OP_SEEK_CUR	'C'
 #define OP_SEEK_END	'E'
 #define OP_TRUNCATE	'T'
+#define OP_PAUSE	'P'
 #define OP_FLUSH	'F'
 #define OP_SYNC		'M'
 #define OP_DATASYNC	'D'
 
 struct op {
 	unsigned char op;
-	gfarm_off_t off; /* for O_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE */
+	/* for O_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE, OP_PAUSE */
+	gfarm_off_t off;
 };
 
 #define MAX_OPS	1024
@@ -67,7 +69,7 @@ main(int argc, char **argv)
 		return (1);
 	}
 
-	while ((c = getopt(argc, argv, "acC:DeE:Fm:MnrR:S:tT:vwW:")) != -1) {
+	while ((c = getopt(argc, argv, "acC:DeE:Fm:MnP:rR:S:tT:vwW:")) != -1) {
 		off = -1;
 		switch (c) {
 		case OP_READ:
@@ -76,6 +78,7 @@ main(int argc, char **argv)
 		case OP_SEEK_CUR:
 		case OP_SEEK_END:
 		case OP_TRUNCATE:
+		case OP_PAUSE:
 			off = strtol(optarg, NULL, 0);
 			/*FALLTHROUGH*/
 		case OP_FLUSH:
@@ -233,6 +236,13 @@ main(int argc, char **argv)
 				fprintf(stderr, "gfs_pio_truncate(%lld)",
 				    (long long)off);
 			break;
+		case OP_PAUSE:
+			rv = sleep((unsigned int)off);
+			if (verbose)
+				fprintf(stderr,
+				    "sleep(%d): slept %d seconds\n",
+				    (int)off, rv - (int)off);
+			break;				   
 		case OP_FLUSH:
 			e = gfs_pio_flush(gf);
 			if (e != GFARM_ERR_NO_ERROR) {

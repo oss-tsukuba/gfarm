@@ -145,7 +145,7 @@ struct inode_open_state {
 			struct event_waiter *event_waiters;
 			struct peer *event_source;
 			struct gfarm_timespec last_update;
-			int writers;
+			int writers, spool_writers;
 		} f;
 	} u;
 };
@@ -523,6 +523,7 @@ inode_open_state_alloc(void)
 	ios->openings.opening_prev =
 	ios->openings.opening_next = &ios->openings;
 	ios->u.f.writers = 0;
+	ios->u.f.spool_writers = 0;
 	ios->u.f.event_waiters = NULL;
 	ios->u.f.event_source = NULL;
 	ios->u.f.last_update.tv_sec = 0;
@@ -2865,6 +2866,24 @@ inode_fhclose_write(struct inode *inode, gfarm_uint64_t old_gen,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+inode_add_ref_spool_writers(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(ios != NULL);
+	++ios->u.f.spool_writers;
+}
+
+void
+inode_del_ref_spool_writers(struct inode *inode)
+{
+	struct inode_open_state *ios = inode->u.c.state;
+
+	assert(ios != NULL);
+	--ios->u.f.spool_writers;
+}
+
 /*
  * returns TRUE, if generation number is updated.
  *
@@ -2926,7 +2945,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 		/* XXX provide an option not to start replication here? */
 
 		/* if there is no other writing process */
-		if (ios->u.f.writers == 1)
+		if (ios->u.f.spool_writers == 0)
 			start_replication = 1;
 	}
 
