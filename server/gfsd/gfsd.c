@@ -1414,7 +1414,8 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					    "reopen with O_CREAT "
 					    "ino %lld, gen %lld",
 					    (long long)ino, (long long)gen);
-					continue;
+					e = GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE;
+					break;
 				} else
 					gflog_warning(GFARM_MSG_1000481,
 					    "fails to delete invalid metadata"
