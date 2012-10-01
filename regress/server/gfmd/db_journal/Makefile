@@ -51,7 +51,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/user.c \
 	$(GFMD_SRCDIR)/watcher.c \
 	$(GFMD_SRCDIR)/xattr.c \
-	db_journal_apply_test.c empty_ops.c
+	db_journal_test.c empty_ops.c
 
 OBJS =	\
 	$(GFMD_BUILDDIR)/abstract_host.o \
