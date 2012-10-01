@@ -86,6 +86,11 @@ extern int gfarm_client_parallel_copy;
 
 extern int gf_on_demand_replication;
 
+/* replica_check */
+extern int gfarm_replica_check;
+extern int gfarm_replica_check_host_down_thresh;
+extern int gfarm_replica_check_sleep_time;
+
 gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
 	const char *, int, char **);
 

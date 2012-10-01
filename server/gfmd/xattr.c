@@ -34,6 +34,7 @@
 #include "dir.h"
 #include "acl.h"
 #include "user.h"
+#include "replica_check.h"
 #include "gfm_proto.h"
 
 static gfarm_error_t
@@ -302,6 +303,20 @@ setxattr(int xmlMode, struct inode *inode,
 	return e;
 }
 
+static int
+xattr_ncopy_compare(
+	int xmlMode, struct inode *inode, const char *attrname,
+	const void *value, size_t size)
+{
+	if (!xmlMode &&
+	    strcmp("gfarm.ncopy", attrname) == 0) {
+		if (!inode_xattr_cache_is_same(
+		    inode, xmlMode, attrname, value, size))
+			return (1); /* different value */
+	}
+	return (0);
+}
+
 gfarm_error_t
 gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 {
@@ -316,7 +331,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
-	int addattr;
+	int addattr, change_ncopy = 0;
 
 	e = gfm_server_get_request(peer, diag,
 	    "sBi", &attrname, &size, &value, &flags);
@@ -371,12 +386,18 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
-	} else
+	} else {
+		change_ncopy = xattr_ncopy_compare(
+		    xmlMode, inode, attrname, value, size);
 		e = setxattr(xmlMode, inode, attrname, &value, size,
 			     flags, waitctx, &addattr);
+	}
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR) {
+		if (change_ncopy)
+			replica_check_signal_update_xattr();
+
 		e = dbq_waitret(waitctx);
 		if (e == GFARM_ERR_NO_ERROR) {
 			giant_lock();
@@ -627,6 +648,10 @@ gfm_server_removexattr(struct peer *peer, int from_client, int skip,
 	} else
 		e = removexattr(xmlMode, inode, attrname);
 	giant_unlock();
+
+	if (e == GFARM_ERR_NO_ERROR && !xmlMode &&
+	    strcmp("gfarm.ncopy", attrname) == 0)
+		replica_check_signal_update_xattr();
 
 	free(attrname);
 	return (gfm_server_put_reply(peer, diag, e, ""));

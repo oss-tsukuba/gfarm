@@ -62,6 +62,7 @@
 #include "xattr.h"
 #include "quota.h"
 #include "gfmd.h"
+#include "replica_check.h"
 
 #include "protocol_state.h"
 
@@ -1726,6 +1727,9 @@ main(int argc, char **argv)
 	} else
 		sock = open_accepting_socket(gfarm_metadb_server_port);
 
+	/* master */
+
+	replica_check_start();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

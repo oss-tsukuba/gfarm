@@ -45,6 +45,8 @@ void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
+gfarm_int64_t inode_get_ncopy_with_grace_of_dead(
+	struct inode *, int, gfarm_time_t);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
@@ -172,6 +174,8 @@ gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 	struct host *, struct host *, gfarm_int32_t,
 	struct file_replicating **);
 
+gfarm_error_t inode_replica_list(struct inode *,
+	gfarm_int32_t *, struct host ***);
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
 gfarm_error_t inode_replica_list_by_name_with_dead_host(struct inode *,
@@ -185,6 +189,8 @@ gfarm_error_t inode_xattr_modify(struct inode *, int, const char *,
 	void *, size_t);
 gfarm_error_t inode_xattr_get_cache(struct inode *, int, const char *,
 	void **, size_t *);
+gfarm_error_t inode_xattr_cache_is_same(struct inode *, int, const char *,
+	const void *, size_t);
 int inode_xattr_has_attr(struct inode *, int, const char *);
 int inode_xattr_has_xmlattrs(struct inode *);
 gfarm_error_t inode_xattr_remove(struct inode *, int, const char *);

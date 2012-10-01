@@ -47,6 +47,7 @@ int host_get_disconnect_callback(struct host *,
 #endif
 
 int host_is_up(struct host *);
+int host_is_up_with_grace(struct host *, gfarm_time_t);
 int host_is_valid(struct host *);
 
 int host_check_busy(struct host *host, gfarm_int64_t);

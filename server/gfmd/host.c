@@ -41,6 +41,7 @@
 #include "abstract_host.h"
 #include "dead_file_copy.h"
 #include "back_channel.h"
+#include "replica_check.h"
 
 #define HOST_HASHTAB_SIZE	3079	/* prime number */
 
@@ -74,6 +75,7 @@ struct host {
 	struct host_status status;
 	struct callout *status_callout;
 	gfarm_time_t last_report;
+	gfarm_time_t disconnect_time;
 	int status_callout_retry;
 };
 
@@ -494,6 +496,21 @@ host_is_up(struct host *h)
 }
 
 int
+host_is_up_with_grace(struct host *h, gfarm_time_t grace)
+{
+	static const char diag[] = "host_is_up_with_grace";
+	int rv;
+
+	if (host_is_up(h))
+		return (1);
+
+	back_channel_mutex_lock(h, diag);
+	rv = h->disconnect_time + grace > time(NULL) ? 1 : 0;
+	back_channel_mutex_unlock(h, diag);
+	return (rv);
+}
+
+int
 host_is_disk_available(struct host *h, gfarm_off_t size)
 {
 	gfarm_off_t avail, minfree = gfarm_get_minimum_free_disk_space();
@@ -688,6 +705,7 @@ static void
 host_set_peer_unlocked(struct abstract_host *ah, struct peer *p)
 {
 	dead_file_copy_host_becomes_up(abstract_host_to_host(ah));
+	replica_check_signal_host_up();
 }
 
 /*
@@ -718,10 +736,12 @@ host_disable(struct abstract_host *ah)
 		saved_avail = 0;
 	}
 	h->report_flags = 0;
+	h->disconnect_time = time(NULL);
 
 	back_channel_mutex_unlock(h, diag);
 
 	host_total_disk_update(saved_used, saved_avail, 0, 0);
+	replica_check_signal_host_down();
 }
 
 static void
@@ -779,6 +799,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->status_callout = callout;
 	h->status_callout_retry = 0;
 	h->last_report = 0;
+	h->disconnect_time = time(NULL);
 	return (h);
 }
 

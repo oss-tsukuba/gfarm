@@ -823,6 +823,9 @@ char *gfarm_argv0 = NULL;
 #define GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT  60 /* 60 seconds */
 #define GFARM_FILE_TRACE_DEFAULT 0 /* disable */
 #define GFARM_FATAL_ACTION_DEFAULT GFLOG_FATAL_ACTION_ABORT_BACKTRACE
+#define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
+#define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
+#define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_no_file_system_node_timeout = MISC_DEFAULT;
@@ -866,6 +869,9 @@ static int metadb_server_force_slave = MISC_DEFAULT;
 int gfarm_network_receive_timeout = MISC_DEFAULT;
 int gfarm_file_trace = MISC_DEFAULT;
 int fatal_action = MISC_DEFAULT;
+int gfarm_replica_check = MISC_DEFAULT;
+int gfarm_replica_check_host_down_thresh = MISC_DEFAULT;
+int gfarm_replica_check_sleep_time = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -2650,6 +2656,15 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "fatal_action") == 0) {
 		e = parse_fatal_action(p, &fatal_action);
 		gflog_set_fatal_action(fatal_action);
+
+	} else if (strcmp(s, o = "replica_check") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_replica_check);
+	} else if (strcmp(s, o = "replica_check_host_down_thresh") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_replica_check_host_down_thresh);
+	} else if (strcmp(s, o = "replica_check_sleep_time") == 0) {
+		e = parse_set_misc_int(p, &gfarm_replica_check_sleep_time);
+
 	} else {
 		o = s;
 		gflog_debug(GFARM_MSG_1000974,
@@ -2861,6 +2876,14 @@ gfarm_config_set_default_misc(void)
 	if (fatal_action == MISC_DEFAULT) {
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
 	}
+	if (gfarm_replica_check == MISC_DEFAULT)
+		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
+	if (gfarm_replica_check_host_down_thresh == MISC_DEFAULT)
+		gfarm_replica_check_host_down_thresh =
+		    GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT;
+	if (gfarm_replica_check_sleep_time == MISC_DEFAULT)
+		gfarm_replica_check_sleep_time =
+		    GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT;
 
 	gfarm_config_set_default_filesystem();
 }
