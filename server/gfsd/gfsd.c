@@ -1285,6 +1285,15 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 					 */
 					e = GFARM_ERR_FILE_MIGRATED;
 					break;
+				} else if (e == GFARM_ERR_FILE_BUSY) {
+					/* sourceforge.net #455 */
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "possible race against "
+					    "reopen with O_CREAT "
+					    "ino %lld, gen %lld",
+					    (long long)ino, (long long)gen);
+					e = GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE;
+					break;
 				} else
 					gflog_warning(GFARM_MSG_1000481,
 					    "fails to delete invalid metadata"

@@ -559,6 +559,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 			 */
 			if ((e == GFARM_ERRMSG_NO_FILESYSTEM_NODE ||
 			     e == GFARM_ERR_FILE_MIGRATED ||
+			     e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE ||
 			    gfs_client_is_connection_error(e)) &&
 			    !gfarm_timeval_is_expired(&expiration_time)) {
 				if (e == GFARM_ERR_FILE_MIGRATED) {
