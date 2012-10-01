@@ -59,7 +59,7 @@ SRCS = \
 	$(GFMD_SRCDIR)/fsngroup_replica.c \
 	$(GFMD_SRCDIR)/fsngroup.c \
 	$(GFMD_SRCDIR)/thrstatewait.c \
-	db_journal_apply_test.c empty_ops.c
+	db_journal_test.c empty_ops.c
 
 OBJS =	\
 	$(GFMD_BUILDDIR)/abstract_host.o \
