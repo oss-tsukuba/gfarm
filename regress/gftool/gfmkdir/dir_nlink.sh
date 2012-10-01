@@ -8,7 +8,7 @@ trap 'gfrmdir $sub; gfrmdir $gftmp; exit $exit_trap' $trap_sigs
 
 gfnlink()
 {
-	gfstat $1 | awk '$5 == "Links:" {print $6}'
+	gfstat $1 | sed -n -e 's/^.*Links: \([0-9]*\).*/\1/p'
 }
 
 if gfmkdir $gftmp &&
