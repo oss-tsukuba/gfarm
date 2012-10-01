@@ -59,13 +59,21 @@ gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
 
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
-gfarm_error_t host_schedule_except(
-	int, struct host **, int (*)(struct host *, void *), void *,
-	int, int *, struct host **);
-gfarm_error_t host_schedule_all_except(int, struct host **,
+gfarm_error_t host_array_alloc(int *, struct host ***);
+gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
+	gfarm_int32_t *, struct host ***);
+gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);
-int host_schedule_one_except(struct peer *, int, struct host **,
+gfarm_error_t host_schedule_n_except(int *, struct host **,
+	int *, struct host **,
+	int (*)(struct host *, void *), void *,
+	int, int *, struct host ***);
+gfarm_error_t host_schedule_n_from_all_except(
+	int *, struct host **,
+	int (*)(struct host *, void *), void *,
+	int, int *, struct host ***);
+int host_from_one_except(struct peer *, int, struct host **,
 	int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***, gfarm_error_t *);
 

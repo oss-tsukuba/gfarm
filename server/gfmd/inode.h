@@ -126,6 +126,9 @@ gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
+void inode_schedule_replication(struct inode *, struct host *,
+	int *, struct host **, int *, struct host **, int, const char *);
+
 struct file_opening;
 
 gfarm_error_t inode_open(struct file_opening *);
@@ -206,7 +209,6 @@ void inode_xattr_list_free(struct xattr_list *, size_t);
 gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
 	char **, int, struct xattr_list **, size_t *);
 
-void inode_init_desired_number(void);
 int inode_has_desired_number(struct inode *, int *);
 int inode_traverse_desired_replica_number(struct inode *, int *);
 

@@ -878,10 +878,10 @@ host_unique_sort(int nhosts, struct host **hosts)
 	return (host_unique(nhosts, hosts));
 }
 
-/* NOTE: both hosts[] and excludings[] must be host_unique_sort()ed */
+/* NOTE: both hosts[] and exceptions[] must be host_unique_sort()ed */
 static gfarm_error_t
 host_exclude(int *nhostsp, struct host **hosts,
-	int n_excludings, struct host **excludings,
+	int n_exceptions, struct host **exceptions,
 	int (*filter)(struct host *, void *), void *closure)
 {
 	int cmp, i, j, nhosts = *nhostsp;
@@ -893,11 +893,11 @@ host_exclude(int *nhostsp, struct host **hosts,
 
 	memset(candidates, 1, nhosts);
 
-	if (n_excludings > 0) {
-		/* exclude excludings[] from hosts[] */
+	if (n_exceptions > 0) {
+		/* exclude exceptions[] from hosts[] */
 		i = j = 0;
-		while (i < nhosts && j < n_excludings) {
-			cmp = host_order(&hosts[i], &excludings[j]);
+		while (i < nhosts && j < n_exceptions) {
+			cmp = host_order(&hosts[i], &exceptions[j]);
 			if (cmp < 0) {
 				i++;
 			} else if (cmp == 0) {
@@ -929,6 +929,22 @@ host_exclude(int *nhostsp, struct host **hosts,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/*
+ * this function modifies *nhostsp, hosts[], *n_exceptionsp and exceptions[],
+ * but they may be abled to be used later.
+ */
+static gfarm_error_t
+host_except(int *nhostsp, struct host **hosts,
+	int *n_exceptionsp, struct host **exceptions,
+	int (*filter)(struct host *, void *), void *closure)
+{
+	*n_exceptionsp = host_unique_sort(*n_exceptionsp, exceptions);
+	*nhostsp = host_unique_sort(*nhostsp, hosts);
+
+	return (host_exclude(nhostsp, hosts, *n_exceptionsp, exceptions,
+	    filter, closure));
+}
+
 gfarm_error_t
 host_is_disk_available_filter(struct host *host, void *closure)
 {
@@ -937,17 +953,18 @@ host_is_disk_available_filter(struct host *host, void *closure)
 	return (host_is_disk_available(host, *sizep));
 }
 
-static gfarm_error_t
+gfarm_error_t
 host_array_alloc(int *nhostsp, struct host ***hostsp)
 {
 	int i, nhosts;
-	struct host **hosts;
+	struct host *h, **hosts;
 	struct gfarm_hash_iterator it;
 
 	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
-		host_iterator_access(&it);
-		++nhosts;
+		h = host_iterator_access(&it);
+		if (host_is_valid(h))
+			++nhosts;
 	}
 
 	GFARM_MALLOC_ARRAY(hosts, nhosts > 0 ? nhosts : 1);
@@ -958,11 +975,35 @@ host_array_alloc(int *nhostsp, struct host ***hostsp)
 	FOR_ALL_HOSTS(&it) {
 		if (i >= nhosts) /* always false due to giant_lock */
 			break;
-		hosts[i++] = host_iterator_access(&it);
+		h = host_iterator_access(&it);
+		if (host_is_valid(h))
+			hosts[i++] = h;
 	}
 	*nhostsp = i;
 	*hostsp = hosts;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+host_from_all(int (*filter)(struct host *, void *), void *closure,
+	gfarm_int32_t *nhostsp, struct host ***hostsp)
+{
+	gfarm_error_t e;
+	int i, j, nhosts;
+	struct host **hosts;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	j = 0;
+	for (i = 0; i < nhosts; i++) {
+		if ((*filter)(hosts[i], closure))
+			hosts[j++] = hosts[i];
+	}
+	*nhostsp = j;
+	*hostsp = hosts;
+	return (e);
 }
 
 /*
@@ -983,11 +1024,11 @@ select_hosts(int nhosts, struct host **hosts,
 }
 
 /*
- * this function sorts excludings[] as a side effect.
- * but caller shouldn't depend on the side effect.
+ * this function modifies *n_exceptionsp and exceptions[],
+ * but they may be abled to be used later.
  */
 gfarm_error_t
-host_schedule_all_except(int n_excludings, struct host **excludings,
+host_from_all_except(int *n_exceptionsp, struct host **exceptions,
 	int (*filter)(struct host *, void *), void *closure,
 	gfarm_int32_t *nhostsp, struct host ***hostsp)
 {
@@ -999,11 +1040,9 @@ host_schedule_all_except(int n_excludings, struct host **excludings,
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	n_excludings = host_unique_sort(n_excludings, excludings);
-	nhosts = host_unique_sort(nhosts, hosts);
-
-	e = host_exclude(&nhosts, hosts, n_excludings, excludings,
+	e = host_except(&nhosts, hosts, n_exceptionsp, exceptions,
 	    filter, closure);
+
 	if (e == GFARM_ERR_NO_ERROR) {
 		*nhostsp = nhosts;
 		*hostsp = hosts;
@@ -1014,41 +1053,73 @@ host_schedule_all_except(int n_excludings, struct host **excludings,
 }
 
 /*
- * this function sorts excludings[] as a side effect.
- * but caller shouldn't depend on the side effect.
+ * this function breaks *nhostsp and hosts[], and they cannot be used later.
+ * this function modifies *n_exceptions and exceptions[],
+ * but they may be abled to be used later.
  */
 gfarm_error_t
-host_schedule_except(int n_excludings, struct host **excludings,
+host_schedule_n_except(int *nhostsp, struct host **hosts,
+	int *n_exceptionsp, struct host **exceptions,
 	int (*filter)(struct host *, void *), void *closure,
-	int n_shortage, int *n_new_targetsp, struct host **new_targets)
+	int n_desired, int *n_targetsp, struct host ***targetsp)
 {
 	gfarm_error_t e;
-	struct host **hosts;
-	int nhosts;
-	int i;
+	int i, nhosts, n_targets;
+	struct host **targets;
 
-	e = host_schedule_all_except(n_excludings, excludings,
-	    filter, closure, &nhosts, &hosts);
+	e = host_except(nhostsp, hosts, n_exceptionsp, exceptions,
+	    filter, closure);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (nhosts <= n_shortage) {
+	nhosts = *nhostsp;
+	n_targets = nhosts <= n_desired ? nhosts : n_desired;
+	GFARM_MALLOC_ARRAY(targets, n_targets);
+	if (targets == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	if (nhosts <= n_desired) {
 		for (i = 0; i < nhosts; i++)
-			new_targets[i] = hosts[i];
-		*n_new_targetsp = nhosts;
+			targets[i] = hosts[i];
+		*n_targetsp = nhosts;
 	} else {
-		select_hosts(nhosts, hosts, n_shortage, new_targets);
-		*n_new_targetsp = n_shortage;
+		select_hosts(nhosts, hosts, n_desired, targets);
+		*n_targetsp = n_desired;
 	}
+	*targetsp = targets;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+/*
+ * this function modifies *n_exceptions and exceptions[],
+ * but they may be abled to be used later.
+ */
+gfarm_error_t
+host_schedule_n_from_all_except(int *n_exceptionsp, struct host **exceptions,
+	int (*filter)(struct host *, void *), void *closure,
+	int n_desired, int *n_targetsp, struct host ***targetsp)
+{
+	gfarm_error_t e;
+	int nhosts;
+	struct host **hosts;
+
+	e = host_array_alloc(&nhosts, &hosts);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	e = host_schedule_n_except(&nhosts, hosts,
+	    n_exceptionsp, exceptions, filter, closure, n_desired,
+	    n_targetsp, targetsp);
 
 	free(hosts);
-	return (GFARM_ERR_NO_ERROR);
+
+	return (e);
 }
 
 /* give the top priority to the local host */
 int
-host_schedule_one_except(struct peer *peer,
-	int n_excludings, struct host **excludings,
+host_from_one_except(struct peer *peer,
+	int n_exceptions, struct host **exceptions,
 	int (*filter)(struct host *, void *), void *closure,
 	gfarm_int32_t *np, struct host ***hostsp, gfarm_error_t *errorp)
 {
@@ -1058,8 +1129,8 @@ host_schedule_one_except(struct peer *peer,
 	if (h != NULL && (*filter)(h, closure)) {
 
 		/* is the host excluded? */
-		for (i = 0; i < n_excludings; i++) {
-			if (h == excludings[i])
+		for (i = 0; i < n_exceptions; i++) {
+			if (h == exceptions[i])
 				return (0); /* not scheduled */
 		}
 

@@ -66,7 +66,7 @@ static void suppress_log_reset()
 
 static gfarm_error_t
 replica_check_replicate(
-	struct inode *inode, int n_srcs, struct host **srcs,
+	struct inode *inode, int *n_srcsp, struct host **srcs,
 	int n_desire, int ncopy)
 {
 	gfarm_error_t e;
@@ -79,31 +79,22 @@ replica_check_replicate(
 	n_shortage = n_desire - ncopy;
 	assert(n_shortage > 0);
 
-	GFARM_MALLOC_ARRAY(dsts, n_shortage);
-	if (dsts == NULL) {
-		free(dsts);
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "no memory to schedule %d hosts", n_shortage);
-		e = GFARM_ERR_NO_MEMORY; /* retry in next interval */
-		goto end;
-	}
 	necessary_space = inode_get_size(inode);
-	e = host_schedule_except(
-	    n_srcs, srcs, host_is_disk_available_filter,
-	    &necessary_space, n_shortage, &n_dsts, dsts);
+	e = host_schedule_n_from_all_except(
+	    n_srcsp, srcs, host_is_disk_available_filter,
+	    &necessary_space, n_shortage, &n_dsts, &dsts);
 	if (e != GFARM_ERR_NO_ERROR) {
 		/* no memory ? */
-		free(dsts);
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "host_schedule_except: n_srcs=%d%s",
-		    n_srcs, gfarm_error_string(e));
+		    *n_srcsp, gfarm_error_string(e));
 		goto end; /* retry in next interval */
 	}
 	/* dsts is scheduled */
 
 	busy = 0;
 	for (i = 0, j = 0; i < n_dsts; i++, j++) {
-		if (j >= n_srcs)
+		if (j >= *n_srcsp)
 			j = 0;
 		src = srcs[j];
 		dst = dsts[i];
@@ -241,7 +232,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_FILE_BUSY); /* retry afer a while */
 	}
 	/* ncopy is not necessarily the same as n_src */
-	e = replica_check_replicate(inode, n_srcs, srcs,
+	e = replica_check_replicate(inode, &n_srcs, srcs,
 	    info->desired_number, ncopy);
 	free(srcs);
 

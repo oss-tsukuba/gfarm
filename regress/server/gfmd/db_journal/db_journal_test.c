@@ -3579,7 +3579,6 @@ t_apply(void)
 	host_init();
 	user_init();
 	group_init();
-	inode_init_desired_number();
 	inode_init();
 	dir_entry_init();
 	file_copy_init();

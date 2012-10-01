@@ -1487,7 +1487,6 @@ gfmd_modules_init_default(int table_size)
 	group_init();
 
 	/* filesystem */
-	inode_init_desired_number();
 	inode_init();
 	dir_entry_init();
 	file_copy_init();
