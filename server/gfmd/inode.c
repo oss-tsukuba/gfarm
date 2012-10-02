@@ -1218,6 +1218,7 @@ inode_has_no_replica(struct inode *inode)
 	return (inode->u.c.s.f.copies == NULL);
 }
 
+/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are included */
 static gfarm_int64_t
 inode_get_ncopy_common(struct inode *inode, int is_valid, int is_up)
 {
@@ -1245,6 +1246,7 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 	return (inode_get_ncopy_common(inode, 1, 0));
 }
 
+/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
 gfarm_int64_t
 inode_get_ncopy_with_grace_of_dead(
 	struct inode *inode, int is_valid, gfarm_time_t grace)
@@ -1254,7 +1256,10 @@ inode_get_ncopy_with_grace_of_dead(
 
 	for (copy = inode->u.c.s.f.copies; copy != NULL;
 	    copy = copy->host_next) {
-		if ((is_valid ? FILE_COPY_IS_VALID(copy) : 1) &&
+		if ((is_valid ?
+		     FILE_COPY_IS_VALID(copy) :
+		     !FILE_COPY_IS_BEING_REMOVED(copy))
+		    &&
 		    host_is_up_with_grace(copy->host, grace))
 			n++;
 	}
