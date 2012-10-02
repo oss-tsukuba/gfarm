@@ -356,7 +356,8 @@ replica_check_main()
 		replica_check_giant_unlock();
 
 		while (replica_check_stack_pop(&rep_info)) {
-			unsigned long long sl = 1000000; /* 1 milisec. */
+			unsigned long long sl = GFARM_MILLISEC_BY_NANOSEC;
+			/* 1 milisec. */
 
 			for (;;) {
 				replica_check_giant_lock();
@@ -558,7 +559,7 @@ replica_check_timedwait(
 		return (0); /* past time */
 
 	ts.tv_sec = tv->tv_sec;
-	ts.tv_nsec = tv->tv_usec * 1000;
+	ts.tv_nsec = (long)tv->tv_usec * GFARM_MICROSEC_BY_NANOSEC;
 	return (gfarm_cond_timedwait(
 	    &replica_check_cond, &replica_check_mutex,
 	    &ts, diag, REPLICA_CHECK_DIAG));

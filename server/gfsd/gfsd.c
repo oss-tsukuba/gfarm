@@ -2226,7 +2226,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 			goto send_eof;
 		}
 		/* ENOENT: wait generation-update, retry open_data() */
-		gfarm_nanosleep((unsigned long long)msl * 1000000);
+		gfarm_nanosleep(
+		    (unsigned long long)msl * GFARM_MILLISEC_BY_NANOSEC);
 		total_msl += msl;
 		msl *= 2;
 		gflog_info(GFARM_MSG_1003512,
