@@ -392,7 +392,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	if (transaction)
 		db_end(diag);
 
-	if ((created || (op & GFS_W_OK) != 0) && inode_is_file(inode)) {
+	if ((created || (op & GFS_W_OK) != 0 ||
+	     (flag & GFARM_FILE_REPLICA_SPEC) != 0) && inode_is_file(inode)) {
 		if (inode_has_desired_number(inode, &desired_number) ||
 		    inode_traverse_desired_replica_number(base,
 		    &desired_number))
@@ -3604,6 +3605,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 	struct inode *inode;
 	struct host *host, *spool_host;
 	int transaction = 0;
+	struct file_opening *fo;
 	static const char diag[] = "GFM_PROTO_REPLICA_REMOVE_BY_FILE";
 
 	e = gfm_server_get_request(peer, diag, "s", &hostname);
@@ -3643,10 +3645,16 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001958,
 			"inode_writing_spool_host() failed");
 		e = GFARM_ERR_TEXT_FILE_BUSY;
+	} else if ((e = process_get_file_opening(process, cfd, &fo)) !=
+		   GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"process_get_file_opening() failed: %s",
+			gfarm_error_string(e));
 	} else {
 		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 			transaction = 1;
-		e = inode_remove_replica(inode, host);
+		e = inode_remove_replica(inode, host,
+		    fo->u.f.desired_replica_number);
 		if (transaction)
 			db_end(diag);
 	}

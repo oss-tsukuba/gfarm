@@ -140,6 +140,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"gfmd was failed over",
 	"bad inode number",
 	"bad cookie",
+	"insufficient number of file replicas",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

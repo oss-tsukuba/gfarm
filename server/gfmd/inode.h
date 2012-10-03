@@ -121,7 +121,7 @@ gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
 	gfarm_int64_t);
-gfarm_error_t inode_remove_replica(struct inode *, struct host *);
+gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
