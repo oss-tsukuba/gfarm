@@ -12,9 +12,20 @@ clean_test() {
 
 trap 'clean_test; exit $exit_trap' $trap_sigs
 
+set_ncopy() {
+  if echo -n $1 | gfxattr -s $2 gfarm.ncopy; then
+    :
+  else
+    echo failed gfxattr -s
+    clean_test
+    exit $exit_fail
+  fi
+}
+
 setup_test() {
   if mkdir $localtmp &&
     gfmkdir $gftmp &&
+    set_ncopy 1 $gftmp &&  ### disable automatic replication
     gfmkdir $gf_dir1 &&
     gfmkdir $gf_dir1/dir &&
     gfreg $data/0byte $gf_dir1/dir/0byte &&
