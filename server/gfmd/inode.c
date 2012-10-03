@@ -39,6 +39,7 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
+#include "replica_check.h"
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
@@ -710,7 +711,7 @@ inode_schedule_replication(struct inode *inode, struct host *spool_host,
 		    (long long)inode_get_gen(inode),
 		    n_targets, n_desired);
 	for (i = 0; i < n_targets; i++) {
-		e = file_replicating_new(inode, targets[i], NULL, &fr);
+		e = file_replicating_new(inode, targets[i], 1, NULL, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s: file_replicating_new: (%s, %lld:%lld): %s",
@@ -924,7 +925,7 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			    FILE_COPY_IS_VALID(copy), &deferred_cleanup);
 			/* abandon `e' */
 
-			e = file_replicating_new(inode, copy->host,
+			e = file_replicating_new(inode, copy->host, 1,
 			    deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1002245,
@@ -3528,13 +3529,14 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 }
 
 gfarm_error_t
-file_replicating_new(struct inode *inode, struct host *dst,
+file_replicating_new(struct inode *inode, struct host *dst, int retry,
 	struct dead_file_copy *deferred_cleanup,
 	struct file_replicating **frp)
 {
 	gfarm_error_t e;
 	struct file_replicating *fr;
 	struct inode_replicating_state *irs = inode->u.c.s.f.rstate;
+	static const char retry_diag[] = "retrying-file_replicating_new";
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
@@ -3546,6 +3548,17 @@ file_replicating_new(struct inode *inode, struct host *dst,
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
 		(void)inode_remove_replica_in_cache(inode, dst);
 		/* abandon error */
+
+		/*
+		 * workaround for
+		 * http://sourceforge.net/apps/trac/gfarm/ticket/464
+		 *
+		 * (retrying automatic replication after
+		 *  GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+		 */
+		if (retry && e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+			replica_check_signal_general(retry_diag, 0);
+
 		return (e);
 	}
 	if (irs == NULL) {
@@ -4026,7 +4039,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY); /* src is busy */
-	else if ((e = file_replicating_new(inode, dst, NULL, frp)) !=
+	else if ((e = file_replicating_new(inode, dst, 0, NULL, frp)) !=
 	    GFARM_ERR_NO_ERROR)
 		return (e);
 

@@ -100,7 +100,7 @@ replica_check_replicate(
 		dst = dsts[i];
 
 		/* GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE may occurs */
-		e = file_replicating_new(inode, dst, NULL, &fr);
+		e = file_replicating_new(inode, dst, 0, NULL, &fr);
 		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			busy = 1;
 			gflog_debug(GFARM_MSG_UNFIXED,
@@ -619,8 +619,8 @@ replica_check_wait()
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
 
-static void
-replica_check_signal_common(const char *diag, time_t sec)
+void
+replica_check_signal_general(const char *diag, long sec)
 {
 	if (!gfarm_replica_check)
 		return;
@@ -646,7 +646,7 @@ replica_check_signal_host_up()
 {
 	static const char diag[] = "replica_check_signal_host_up";
 
-	replica_check_signal_common(diag, 0);
+	replica_check_signal_general(diag, 0);
 }
 
 void
@@ -654,7 +654,7 @@ replica_check_signal_host_down()
 {
 	static const char diag[] = "replica_check_signal_host_down";
 
-	replica_check_signal_common(
+	replica_check_signal_general(
 	    diag, gfarm_replica_check_host_down_thresh);
 	/* NOTE: execute replica_check_main() twice after restarting gfsd */
 }
@@ -664,7 +664,7 @@ replica_check_signal_update_xattr()
 {
 	static const char diag[] = "replica_check_signal_update_xattr";
 
-	replica_check_signal_common(diag, 0);
+	replica_check_signal_general(diag, 0);
 }
 
 static void *

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##### parameters #####
-MAXRETRY=4 # sec.
+MAXRETRY=30 # sec.
 DEBUG=1
 
 ##### arguments #####
