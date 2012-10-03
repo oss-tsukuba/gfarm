@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <string.h>
+#include <syslog.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
@@ -43,25 +44,52 @@
 #endif
 
 #define REPLICA_CHECK_SUPPRESS_LOG_MAX 200
-static int log_count, log_suppressed;
+struct suppress_log {
+	char *type;
+	int level, count, suppressed;
+};
 
-static int suppress_log()
+static struct suppress_log log_few
+	= { .type = "fewer", .level = LOG_WARNING };
+static struct suppress_log log_no_avail
+	= { .type = "no available", .level = LOG_WARNING };
+static struct suppress_log log_too_many
+	= { .type = "too many", .level = LOG_INFO };
+
+static int log_is_suppressed(struct suppress_log *log)
 {
-	if (log_count >= REPLICA_CHECK_SUPPRESS_LOG_MAX) {
-		if (!log_suppressed) {
-			gflog_warning(GFARM_MSG_UNFIXED,
-			    "suppress many messages for replica_check");
-			log_suppressed = 1;
-		}
-		return (1);
+	if (log->count < REPLICA_CHECK_SUPPRESS_LOG_MAX) {
+		log->count++;
+		return (0);
 	}
-	log_count++;
-	return (0);
+	if (log->suppressed)
+		return (1);
+
+	log->suppressed = 1;
+	switch (log->level) {
+	case LOG_WARNING:
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "suppress many `%s' warnings for replica_check",
+		    log->type);
+		break;
+	case LOG_INFO:
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "suppress many `%s' infos for replica_check",
+		     log->type);
+		break;
+	}
+	return (1);
 }
 
-static void suppress_log_reset()
+static void suppress_log_reset(struct suppress_log *log)
 {
-	log_count = log_suppressed = 0;
+	log->count = log->suppressed = 0;
+}
+static void suppress_log_reset_all()
+{
+	suppress_log_reset(&log_few);
+	suppress_log_reset(&log_no_avail);
+	suppress_log_reset(&log_too_many);
 }
 
 static gfarm_error_t
@@ -130,7 +158,7 @@ replica_check_replicate(
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 end:
 	if (n_success < n_shortage) {
-		if (!suppress_log())
+		if (!log_is_suppressed(&log_few))
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%lld:%lld:%s: fewer replicas, "
 			    "increase=%d/before=%d/desire=%d",
@@ -181,7 +209,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR);
 	if (ncopy == 0) { /* all gfsd are down or all replicas are lost */
 		if (inode_get_size(inode) > 0) {
-			if (!suppress_log())
+			if (!log_is_suppressed(&log_no_avail))
 				gflog_warning(GFARM_MSG_UNFIXED,
 				    "%lld:%lld:%s: "
 				    "no available replica for replica_check",
@@ -194,7 +222,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (ncopy > info->desired_number) {
-		if (!suppress_log())
+		if (!log_is_suppressed(&log_too_many))
 			gflog_info(GFARM_MSG_UNFIXED,
 			   "%lld:%lld:%s: "
 			   "too many replicas for replica_check: %d > %d",
@@ -690,7 +718,7 @@ replica_check_thread(void *arg)
 
 	for (;;) {
 		replica_check_wait();
-		suppress_log_reset();
+		suppress_log_reset_all();
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
 	}
