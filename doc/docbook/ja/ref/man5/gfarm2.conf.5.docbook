@@ -1130,15 +1130,45 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
+<term><token>gfs_proto_fhremove_request_window</token> <parameter>同時処理数</parameter></term>
+<listitem>
+<para>gfmd から gfsd に対する複製ファイル削除を、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 50 です。
+</para>
+<para>例:</para>
+<literallayout>
+	gfs_proto_fhremove_request_window 50
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfs_proto_replication_request_window</token> <parameter>同時処理数</parameter></term>
+<listitem>
+<para>gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 20 です。
+</para>
+<para>例:</para>
+<literallayout>
+	gfs_proto_replication_request_window 20
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>simultaneous_replication_receivers</token> <parameter>同時処理数</parameter></term>
 <listitem>
-<para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
-同時にいくつまで並行して行なうことを許すかを設定します。
+<para>gfarm-2.6 以降では、
+このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
 デフォルトは 20です。
 </para>
 <para>例:</para>
 <literallayout>
-	simultaneous_replication_receivers 40
+	simultaneous_replication_receivers 20
 </literallayout>
 </listitem>
 </varlistentry>

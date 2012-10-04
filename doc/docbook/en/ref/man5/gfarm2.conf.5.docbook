@@ -1171,15 +1171,46 @@ After restarting the gfmd and the Gfarm client, it is effective.
 </varlistentry>
 
 <varlistentry>
-<term><token>simultaneous_replication_receivers</token> <parameter>number</parameter></term>
+<term><token>gfs_proto_fhremove_request_window</token> <parameter>number</parameter></term>
 <listitem>
-<para>This directive specifies maximum number of simultaneous
-gfmd-initiated replications to same host.
+<para>This directive specifies maximum number of
+outstanding replica removal requests from gfmd to gfsd.
+The default is 50.
+</para>
+<para>For example,</para>
+<literallayout>
+	gfs_proto_fhremove_request_window 50
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfs_proto_replication_request_window</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive specifies maximum number of
+outstanding gfmd-initiated replication requests
+from gfmd to destination-side gfsd.
 The default is 20.
 </para>
 <para>For example,</para>
 <literallayout>
-	simultaneous_replication_receivers 40
+	gfs_proto_replication_request_window 20
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>simultaneous_replication_receivers</token> <parameter>number</parameter></term>
+<listitem>
+<para>This directive is just an alias of
+the gfs_proto_replication_request_window directive since gfarm-2.6.
+Please use that directive instead.
+This directive remains for compatibility with older versions.
+The default is 20.
+</para>
+<para>For example,</para>
+<literallayout>
+	simultaneous_replication_receivers 20
 </literallayout>
 </listitem>
 </varlistentry>
