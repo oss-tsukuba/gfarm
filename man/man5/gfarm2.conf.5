@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 August 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "04 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -1235,8 +1235,8 @@ notation.
 		\~\~<schedule_candidates_ratio_statement> |
 		\~\~<schedule_rtt_thresh_statement> |
 		\~\~<minimum_free_disk_space_statement> |
-		\~\~<simultaneous_replication_receivers> |
-		\~\~<gfsd_connection_cache_statement> |
+		\~\~<simultaneous_replication_receivers_statement> |
+		\~\~<outstanding_file_replication_limit_statement> |
 		\~\~<xmlattr_size_limit_statement> |
 		\~\~<xattr_size_limit_statement> |
 		\~\~<attr_cache_limit_statement> |
@@ -1327,7 +1327,8 @@ notation.
 	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
-	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
+	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>
+	<outstanding_file_replication_limit_statement> ::= "outstanding_file_replication_limit" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
 	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>
