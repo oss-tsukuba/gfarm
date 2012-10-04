@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>16 August 2012</date></refentryinfo>
+<refentryinfo><date>4 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1778,8 +1778,9 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
 <!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;gfs_proto_fhremove_request_window_statement&gt; |
+		&nbsp;&nbsp;&lt;gfs_proto_replication_request_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
-		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
@@ -1884,8 +1885,9 @@ notation.</para>
 <!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;gfs_proto_fhremove_request_window_statement&gt; ::= "gfs_proto_fhremove_request_window" &lt;number&gt;
+	&lt;gfs_proto_replication_request_window_statement&gt; ::= "gfs_proto_replication_request_window" &lt;number&gt;
 	&lt;simultaneous_replication_receivers_statement&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
-	&lt;outstanding_file_replication_limit_statement&gt; ::= "outstanding_file_replication_limit" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
 	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
