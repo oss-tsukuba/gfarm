@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 August 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "04 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -774,7 +774,7 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 .TP
 \fBsimultaneous_replication_receivers \fI同時処理数\fB\fR
 gfmd 主導の複製処理を、単一複製作成ホストに対して、
-同時いくつまで並行して行なうことを許すかを設定します。
+同時にいくつまで並行して行なうことを許すかを設定します。
 デフォルトは 20です。
 
 例:
@@ -1157,7 +1157,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<schedule_candidates_ratio_statement> |
 		\~\~<schedule_rtt_thresh_statement> |
 		\~\~<minimum_free_disk_space_statement> |
-		\~\~<simultaneous_replication_receivers> |
+		\~\~<simultaneous_replication_receivers_statement> |
 		\~\~<gfsd_connection_cache_statement> |
 		\~\~<xmlattr_size_limit_statement> |
 		\~\~<xattr_size_limit_statement> |
@@ -1248,7 +1248,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
-	<simultaneous_replication_receivers> ::= "simultaneous_replication_receivers" <number>
+	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
 	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>
