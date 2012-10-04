@@ -858,6 +858,18 @@ For example,
 	simultaneous_replication_receivers 20
 .fi
 .TP
+\fBoutstanding_file_replication_limit \fInumber\fB\fR
+This directive specifies maximum number of
+outstanding gfmd-initiated replication requests in whole system.
+This exists to prevent memory shortage of gfmd.
+The default is 4194304 and this value corresponds to approximately 512MB memory.
+
+For example,
+
+.nf
+	outstanding_file_replication_limit 4194304
+.fi
+.TP
 \fBgfsd_connection_cache \fInumber\fB\fR
 This directive specifies maximum number of cached gfsd connections.
 The default is 16.
@@ -1263,6 +1275,7 @@ notation.
 		\~\~<gfs_proto_fhremove_request_window_statement> |
 		\~\~<gfs_proto_replication_request_statement> |
 		\~\~<simultaneous_replication_receivers_statement> |
+		\~\~<outstanding_file_replication_limit_statement> |
 		\~\~<xmlattr_size_limit_statement> |
 		\~\~<xattr_size_limit_statement> |
 		\~\~<attr_cache_limit_statement> |
@@ -1356,6 +1369,7 @@ notation.
 	<gfs_proto_fhremove_request_window_statement> ::= "gfs_proto_fhremove_request_window" <number>
 	<gfs_proto_replication_request_window_statement> ::= "gfs_proto_replication_request_window" <number>
 	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>
+	<outstanding_file_replication_limit_statement> ::= "outstanding_file_replication_limit" <number>
 	<gfsd_connection_cache_statement> ::= "gfsd_connection_cache" <number>
 	<xmlattr_size_limit_statement> ::= "xmlattr_size_limit" <size>
 	<xattr_size_limit_statement> ::= "xattr_size_limit" <size>

@@ -1853,6 +1853,28 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>outstanding_file_replication_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of
+outstanding gfmd-initiated replication requests in whole system.
+This exists to prevent memory shortage of gfmd.
+The default is 4194304 and this value corresponds to approximately 512MB memory.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	outstanding_file_replication_limit&nbsp;4194304</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >gfsd_connection_cache</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -2594,6 +2616,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;gfs_proto_fhremove_request_window_statement&#62;&nbsp;|<br>
 		  &#60;gfs_proto_replication_request_statement&#62;&nbsp;|<br>
 		  &#60;simultaneous_replication_receivers_statement&#62;&nbsp;|<br>
+		  &#60;outstanding_file_replication_limit_statement&#62;&nbsp;|<br>
 		  &#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
 		  &#60;xattr_size_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
@@ -2687,6 +2710,7 @@ CLASS="LITERALLAYOUT"
 	&#60;gfs_proto_fhremove_request_window_statement&#62;&nbsp;::=&nbsp;"gfs_proto_fhremove_request_window"&nbsp;&#60;number&#62;<br>
 	&#60;gfs_proto_replication_request_window_statement&#62;&nbsp;::=&nbsp;"gfs_proto_replication_request_window"&nbsp;&#60;number&#62;<br>
 	&#60;simultaneous_replication_receivers_statement&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
+	&#60;outstanding_file_replication_limit_statement&#62;&nbsp;::=&nbsp;"outstanding_file_replication_limit"&nbsp;&#60;number&#62;<br>
 	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
 	&#60;xmlattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xmlattr_size_limit"&nbsp;&#60;size&#62;<br>
 	&#60;xattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xattr_size_limit"&nbsp;&#60;size&#62;<br>
