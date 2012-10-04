@@ -31,6 +31,9 @@ extern int gfarm_metadb_thread_pool_size;
 extern int gfarm_metadb_job_queue_length;
 extern int gfarm_metadb_heartbeat_interval;
 extern int gfarm_metadb_dbq_size;
+extern int gfarm_replica_check;
+extern int gfarm_replica_check_host_down_thresh;
+extern int gfarm_replica_check_sleep_time;
 #define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */
 #define GFARM_METADB_THREAD_POOL_SIZE_DEFAULT	16  /* quadcore, quadsocket */
 #if 0
@@ -85,11 +88,6 @@ extern int gfarm_client_file_bufsize;
 extern int gfarm_client_parallel_copy;
 
 extern int gf_on_demand_replication;
-
-/* replica_check */
-extern int gfarm_replica_check;
-extern int gfarm_replica_check_host_down_thresh;
-extern int gfarm_replica_check_sleep_time;
 
 gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
 	const char *, int, char **);
