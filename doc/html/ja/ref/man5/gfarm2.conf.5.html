@@ -1624,6 +1624,48 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>gfs_proto_fhremove_request_window</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>同時処理数</I
+></TT
+></DT
+><DD
+><P
+>gfmd から gfsd に対する複製ファイル削除を、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 50 です。</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfs_proto_fhremove_request_window&nbsp;50</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfs_proto_replication_request_window</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>同時処理数</I
+></TT
+></DT
+><DD
+><P
+>gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 20 です。</P
+><P
+>例:</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfs_proto_replication_request_window&nbsp;20</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >simultaneous_replication_receivers</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1633,14 +1675,16 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->gfmd 主導の複製処理を、単一複製作成ホストに対して、
-同時にいくつまで並行して行なうことを許すかを設定します。
+>gfarm-2.6 以降では、
+このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
 デフォルトは 20です。</P
 ><P
 >例:</P
 ><P
 CLASS="LITERALLAYOUT"
->	simultaneous_replication_receivers&nbsp;40</P
+>	simultaneous_replication_receivers&nbsp;20</P
 ></DD
 ><DT
 ><SPAN

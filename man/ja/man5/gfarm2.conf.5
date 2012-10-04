@@ -772,15 +772,39 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 	minimum_free_disk_space 1G
 .fi
 .TP
+\fBgfs_proto_fhremove_request_window \fI同時処理数\fB\fR
+gfmd から gfsd に対する複製ファイル削除を、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 50 です。
+
+例:
+
+.nf
+	gfs_proto_fhremove_request_window 50
+.fi
+.TP
+\fBgfs_proto_replication_request_window \fI同時処理数\fB\fR
+gfmd 主導の複製処理を、gfmd から複製作成側の gfsd に対して、
+同時にいくつまで並行して要求できるかを設定します。
+デフォルトは 20 です。
+
+例:
+
+.nf
+	gfs_proto_replication_request_window 20
+.fi
+.TP
 \fBsimultaneous_replication_receivers \fI同時処理数\fB\fR
-gfmd 主導の複製処理を、単一複製作成ホストに対して、
-同時にいくつまで並行して行なうことを許すかを設定します。
+gfarm-2.6 以降では、
+このパラメータは gfs_proto_replication_request_window と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
 デフォルトは 20です。
 
 例:
 
 .nf
-	simultaneous_replication_receivers 40
+	simultaneous_replication_receivers 20
 .fi
 .TP
 \fBgfsd_connection_cache \fIコネクション数\fB\fR

@@ -1787,6 +1787,49 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>gfs_proto_fhremove_request_window</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of
+outstanding replica removal requests from gfmd to gfsd.
+The default is 50.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfs_proto_fhremove_request_window&nbsp;50</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfs_proto_replication_request_window</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of
+outstanding gfmd-initiated replication requests
+from gfmd to destination-side gfsd.
+The default is 20.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfs_proto_replication_request_window&nbsp;20</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >simultaneous_replication_receivers</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -1796,14 +1839,16 @@ CLASS="PARAMETER"
 ></DT
 ><DD
 ><P
->This directive specifies maximum number of simultaneous
-gfmd-initiated replications to same host.
+>This directive is just an alias of
+the gfs_proto_replication_request_window directive since gfarm-2.6.
+Please use that directive instead.
+This directive remains for compatibility with older versions.
 The default is 20.</P
 ><P
 >For example,</P
 ><P
 CLASS="LITERALLAYOUT"
->	simultaneous_replication_receivers&nbsp;40</P
+>	simultaneous_replication_receivers&nbsp;20</P
 ></DD
 ><DT
 ><SPAN
