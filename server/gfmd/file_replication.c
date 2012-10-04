@@ -65,6 +65,7 @@ struct inode_replication_state {
 	GFARM_HCIRCLEQ_HEAD(file_replication) same_inode_list;
 };
 
+static int outstanding_file_replications = 0;
 
 struct host *
 file_replication_get_dst(struct file_replication *fr)
@@ -112,6 +113,10 @@ file_replication_new(struct inode *inode, gfarm_uint64_t gen,
 	struct file_replication *fr;
 	struct inode_replication_state *irs = *rstatep;
 
+	if (outstanding_file_replications >=
+	    gfarm_outstanding_file_replication_limit)
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+
 	GFARM_MALLOC(fr);
 	if (fr == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -139,6 +144,8 @@ file_replication_new(struct inode *inode, gfarm_uint64_t gen,
 	fr->filesize = -1;
 	fr->statewait = NULL;
 
+	++outstanding_file_replications;
+
 	*frp = fr;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -148,6 +155,8 @@ file_replication_free(struct file_replication *fr,
 	struct inode_replication_state **rstatep)
 {
 	struct inode_replication_state *irs = *rstatep;
+
+	--outstanding_file_replications;
 
 	GFARM_HCIRCLEQ_REMOVE(fr, replications);
 	if (GFARM_HCIRCLEQ_EMPTY(irs->same_inode_list, replications)) {

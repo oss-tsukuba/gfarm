@@ -1174,6 +1174,21 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
+<term><token>outstanding_file_replication_limit</token> <parameter>同時処理数</parameter></term>
+<listitem>
+<para>gfmd 主導の複製処理要求を、システム全体で、
+同時にいくつまで未了のまま保持しておけるかを設定します。
+このパラメータは、大量の複製要求によるメモリ不足を防ぐために存在します。
+デフォルトは 4194304 であり、これはおよそ 512MB のメモリに対応します。
+</para>
+<para>例:</para>
+<literallayout>
+	outstanding_file_replication_limit 4194304
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
 <listitem>
 <para>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
@@ -1727,6 +1742,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;gfs_proto_fhremove_request_window_statement&gt; |
 		&nbsp;&nbsp;&lt;gfs_proto_replication_request_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
+		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
@@ -1835,6 +1851,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 	&lt;gfs_proto_fhremove_request_window_statement&gt; ::= "gfs_proto_fhremove_request_window" &lt;number&gt;
 	&lt;gfs_proto_replication_request_window_statement&gt; ::= "gfs_proto_replication_request_window" &lt;number&gt;
 	&lt;simultaneous_replication_receivers_statement&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
+	&lt;outstanding_file_replication_limit_statement&gt; ::= "outstanding_file_replication_limit" &lt;number&gt;
 	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
 	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
 	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;

@@ -872,6 +872,7 @@ char *gfarm_localfs_datadir = NULL;
 #endif
 #define GFS_PROTO_FHREMOVE_REQUEST_WINDOW_DEFAULT		50
 #define GFS_PROTO_REPLICATION_REQUEST_WINDOW_DEFAULT		20
+#define GFARM_OUTSTANDING_FILE_REPLICATION_LIMIT_DEFAULT	4194304 /* 512MB / (sizeof(file_replication), i.e. 128B) */
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
@@ -899,6 +900,7 @@ int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
 #endif
 int gfs_proto_fhremove_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfs_proto_replication_request_window = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_outstanding_file_replication_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
 int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
 int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
@@ -2684,6 +2686,9 @@ parse_one_line(char *s, char *p, char **op)
 		/* old name. for compatibility */
 		e = parse_set_misc_int(p,
 		    &gfs_proto_replication_request_window);
+	} else if (strcmp(s, o = "outstanding_file_replication_limit") == 0) {
+		e = parse_set_misc_int(p,
+		    &gfarm_outstanding_file_replication_limit);
 	} else if (strcmp(s, o = "gfsd_connection_cache") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->gfsd_connection_cache);
 	} else if (strcmp(s, o = "gfmd_connection_cache") == 0) {
@@ -2959,6 +2964,10 @@ gfarm_config_set_default_misc(void)
 	if (gfs_proto_replication_request_window == GFARM_CONFIG_MISC_DEFAULT)
 		gfs_proto_replication_request_window =
 		    GFS_PROTO_REPLICATION_REQUEST_WINDOW_DEFAULT;
+	if (gfarm_outstanding_file_replication_limit ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_outstanding_file_replication_limit =
+		    GFARM_OUTSTANDING_FILE_REPLICATION_LIMIT_DEFAULT;
 	if (gfarm_ctxp->gfsd_connection_cache == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->gfsd_connection_cache =
 		    GFARM_GFSD_CONNECTION_CACHE_DEFAULT;
