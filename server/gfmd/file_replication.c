@@ -171,7 +171,7 @@ file_replication_free(struct file_replication *fr,
 int
 file_replication_is_busy(struct host *dst)
 {
-	return (netsendq_readyq_is_full(
+	return (netsendq_window_is_full(
 	    abstract_host_get_sendq(host_to_abstract_host(dst)),
 	    &gfs_proto_replication_request_queue));
 }

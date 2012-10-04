@@ -33,7 +33,7 @@ struct netsendq_manager;
 struct netsendq;
 struct netsendq_entry;
 
-int netsendq_readyq_is_full(struct netsendq *, struct netsendq_type *);
+int netsendq_window_is_full(struct netsendq *, struct netsendq_type *);
 gfarm_error_t netsendq_add_entry(struct netsendq *, struct netsendq_entry *,
 	int);
 /* use a thread to handle an error, instead of returning the error code */

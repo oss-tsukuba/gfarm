@@ -142,11 +142,11 @@ netsendq_finalizeq_add(struct netsendq_manager *manager,
 }
 
 int
-netsendq_readyq_is_full(struct netsendq *qhost, struct netsendq_type *type)
+netsendq_window_is_full(struct netsendq *qhost, struct netsendq_type *type)
 {
 	int is_full;
 	struct netsendq_workq *workq;
-	static const char diag[] = "netsendq_readyq_is_full";
+	static const char diag[] = "netsendq_window_is_full";
 
 	workq = &qhost->workqs[type->type_index];
 	gfarm_mutex_lock(&workq->mutex, diag, "workq");
