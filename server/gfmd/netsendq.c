@@ -141,6 +141,20 @@ netsendq_finalizeq_add(struct netsendq_manager *manager,
 	gfarm_mutex_unlock(&manager->finalizeq_mutex, diag, "finalizeq");
 }
 
+int
+netsendq_readyq_is_full(struct netsendq *qhost, struct netsendq_type *type)
+{
+	int is_full;
+	struct netsendq_workq *workq;
+	static const char diag[] = "netsendq_readyq_is_full";
+
+	workq = &qhost->workqs[type->type_index];
+	gfarm_mutex_lock(&workq->mutex, diag, "workq");
+	is_full = workq->inflight_number >= type->window_size;
+	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
+	return (is_full);
+}
+
 gfarm_error_t
 netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 	int flags)

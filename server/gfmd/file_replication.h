@@ -13,6 +13,7 @@ struct dead_file_copy *file_replication_get_dead_file_copy(
 
 gfarm_int64_t file_replication_get_handle(struct file_replication *);
 
+int file_replication_is_busy(struct host *);
 void file_replication_start(struct inode_replication_state *, gfarm_uint64_t);
 void file_replication_close_check(struct inode_replication_state **);
 
