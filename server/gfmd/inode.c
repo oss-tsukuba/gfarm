@@ -18,6 +18,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "nanosec.h"
 #include "thrsubr.h"
 
 #include "timespec.h"
@@ -1556,7 +1557,7 @@ touch(struct gfarm_timespec *tsp)
 
 	gettimeofday(&tv, NULL);
 	tsp->tv_sec = tv.tv_sec;
-	tsp->tv_nsec = tv.tv_usec * 1000;
+	tsp->tv_nsec = tv.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
 }
 
 void

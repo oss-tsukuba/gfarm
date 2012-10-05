@@ -8,6 +8,7 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h"
+#include "nanosec.h"
 #include "thrsubr.h"
 
 #include "subr.h"
@@ -61,8 +62,7 @@ callout_main(void *arg)
 	void *(*func)(void *);
 	void *closure;
 	int rv;
-	struct timeval now;
-	struct timespec n;
+	struct timespec now;
 
 #ifdef __GNUC__ /* shut up stupid warning by gcc */
 	thrpool = NULL;
@@ -87,10 +87,8 @@ callout_main(void *arg)
 		/* cm->pendings may be changed while cond_wait */
 		c = cm->pendings.next;
 		if (c != &cm->pendings) {
-			gettimeofday(&now, NULL);
-			n.tv_sec = now.tv_sec;
-			n.tv_nsec = now.tv_usec * 1000;
-			if (timespec_cmp(&c->target_time, &n) <= 0) {
+			gfarm_gettime(&now);
+			if (timespec_cmp(&c->target_time, &now) <= 0) {
 				/* remove the head of the list */
 				c->prev->next = c->next;
 				c->next->prev = c->prev;
@@ -174,7 +172,7 @@ callout_schedule_common(struct callout *n, int microseconds)
 	gettimeofday(&now, NULL);
 	gfarm_timeval_add_microsec(&now, microseconds);
 	n->target_time.tv_sec = now.tv_sec;
-	n->target_time.tv_nsec = now.tv_usec * 1000LL;
+	n->target_time.tv_nsec = now.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
 	n->state &= ~(CALLOUT_FIRED | CALLOUT_INVOKING);
 
 	if ((n->state & CALLOUT_PENDING) != 0) {

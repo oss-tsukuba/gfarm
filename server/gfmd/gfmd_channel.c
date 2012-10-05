@@ -18,6 +18,7 @@
 #include <gfarm/gfs.h>
 
 #include "gfutil.h"
+#include "nanosec.h"
 #include "thrsubr.h"
 
 #include "gfp_xdr.h"
@@ -244,15 +245,7 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 	struct timespec ts;
 	static const char *diag = "gfmdc_wait_journal_syncsend";
 
-#ifdef HAVE_CLOCK_GETTIME
-	clock_gettime(CLOCK_REALTIME, &ts);
-#else
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	ts.tv_sec = tv.tv_sec;
-	ts.tv_nsec = tv.tv_usec * 1000;
-#endif
+	gfarm_gettime(&ts);
 	ts.tv_sec += gfarm_get_journal_sync_slave_timeout();
 
 	gfarm_mutex_lock(&c->send_mutex, diag, SEND_MUTEX_DIAG);
@@ -818,7 +811,7 @@ gfmdc_journal_asyncsend_thread(void *arg)
 	static const char *diag = "gfmdc_journal_asyncsend_thread";
 
 	ts.tv_sec = 0;
-	ts.tv_nsec = 500 * 1000 * 1000;
+	ts.tv_nsec = 500 * GFARM_MILLISEC_BY_NANOSEC;
 
 	for (;;) {
 		gfarm_mutex_lock(&journal_sync_info.async_mutex, diag,
