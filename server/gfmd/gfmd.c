@@ -1097,7 +1097,7 @@ void
 accepting_loop(int accepting_socket)
 {
 	gfarm_error_t e;
-	int client_socket;
+	int client_socket, save_errno;
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
 	struct local_peer *local_peer;
@@ -1108,16 +1108,19 @@ accepting_loop(int accepting_socket)
 		client_socket = accept(accepting_socket,
 		   (struct sockaddr *)&client_addr, &client_addr_size);
 		if (client_socket < 0) {
+			save_errno = errno;
 			now = time(NULL);
-			if (errno == EMFILE)
+			if (save_errno == EMFILE) {
 				gflog_warning_reduced(&emfile_state, now,
 				    "accept: ", strerror(EMFILE));
-			else if (errno == ENFILE)
+			} else if (save_errno == ENFILE) {
 				gflog_warning_reduced(&enfile_state, now,
 				    "accept: ", strerror(ENFILE));
-			else if (errno != EINTR)
+			} else if (save_errno != EINTR) {
+				errno = save_errno;
 				gflog_warning_errno(GFARM_MSG_1000189,
 				    "accept");
+			}
 		} else if ((e = local_peer_alloc(client_socket, &local_peer))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1000190,
