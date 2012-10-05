@@ -9,184 +9,9 @@
 
 #include "dir.h"
 
-#if USE_HASH
-
-/**********************************************************************
- * hash table version
- **********************************************************************/
-
-#define DIR_HASH_SIZE 53 /* prime */
-
-Dir
-dir_alloc(void)
-{
-	return (gfarm_hash_table_alloc(
-	    DIR_HASH_SIZE, gfarm_hash_default, gfarm_hash_key_equal_default));
-}
-
-void
-dir_free(Dir dir)
-{
-	gfarm_hash_table_free(dir);
-}
-
-#if 0 /* need to check "." and ".." */
-int
-dir_is_empty(Dir dir)
-{
-	DirCursor cursor;
-
-	gfarm_hash_iterator_begin(dir, &cursor);
-	return (gfarm_hash_iterator_is_end(&cursor));
-}
-#endif
-
-DirEntry
-dir_enter(Dir dir, const char *name, int namelen, int *createdp)
-{
-	struct inode **eipp;
-	int created;
-	DirEntry entry = gfarm_hash_enter(dir, name, namelen,
-	    sizeof(*eipp), &created);
-
-	if (entry == NULL)
-		return (NULL);
-
-	/* for assertion in dir_entry_set_inode() */
-	if (created) {
-		eipp = gfarm_hash_entry_data(entry);
-		*eipp = NULL;
-	}
-
-	if (createdp != NULL)
-		*createdp = created;
-	return (entry);
-}
-
-DirEntry
-dir_lookup(Dir dir, const char *name, int namelen)
-{
-	return (gfarm_hash_lookup(dir, name, namelen));
-}
-
-int
-dir_remove_entry(Dir dir, const char *name, int namelen)
-{
-	return (gfarm_hash_purge(dir, name, namelen));
-}
-
-void
-dir_entry_set_inode(DirEntry entry, struct inode *inode)
-{
-	struct inode **eipp = gfarm_hash_entry_data(entry);
-
-	assert(*eipp == NULL); /* We don't allow to overwrite existing one */
-	*eipp = inode;
-}
-
-struct inode *
-dir_entry_get_inode(DirEntry entry)
-{
-	struct inode **eipp = gfarm_hash_entry_data(entry);
-
-	assert(*eipp != NULL);
-	return (*eipp);
-}
-
-char *
-dir_entry_get_name(DirEntry entry, int *namelenp)
-{
-	*namelenp = gfarm_hash_entry_key_length(entry);
-	return (gfarm_hash_entry_key(entry));
-}
-
-int
-dir_cursor_lookup(Dir dir, const char *name, int namelen, DirCursor *cursor)
-{
-	return (gfarm_hash_iterator_lookup(dir, name, namelen, cursor));
-}
-
-int
-dir_cursor_next(Dir dir, DirCursor *cursor)
-{
-	if (gfarm_hash_iterator_is_end(cursor))
-		return (0); /* end of directory */
-	gfarm_hash_iterator_next(cursor);
-	return (gfarm_hash_iterator_is_end(cursor));
-}
-
-int
-dir_cursor_remove_entry(Dir dir, DirCursor *cursor)
-{
-	if (gfarm_hash_iterator_is_end(cursor))
-		return (0); /* end of directory */
-	gfarm_hash_iterator_purge(cursor);
-
-	/* is there still any entry? */
-	return (gfarm_hash_iterator_valid_entry(cursor);
-}
-
-/* this is stupidly slow */
-int
-dir_cursor_set_pos(Dir dir, gfarm_off_t offset, DirCursor *cursor)
-{
-	gfarm_off_t i;
-
-	gfarm_hash_iterator_begin(dir, cursor);
-	for (i = 0; i < offset; i++) {
-		if (gfarm_hash_iterator_is_end(cursor))
-			return (0); /* failed */
-		gfarm_hash_iterator_next(cursor);
-	}
-	return (1); /* ok */
-}
-
-/* this is stupidly slow */
-gfarm_off_t
-dir_cursor_get_pos(Dir dir, DirCursor *cursor)
-{
-	DirEntry entry = dir_cursor_get_entry(dir, cursor);
-	gfarm_off_t i;
-
-	gfarm_hash_iterator_begin(dir, cursor);
-	for (i = 0; !gfarm_hash_iterator_is_end(cursor); i++) {
-		if (gfarm_hash_iterator_access(cursor) == entry)
-			break;
-		gfarm_hash_iterator_next(cursor);
-	}
-	return (i);
-}
-
-DirEntry
-dir_cursor_get_entry(Dir dir, DirCursor *cursor)
-{
-	return (gfarm_hash_iterator_access(cursor));
-}
-
 /*
- * this is stupidly slow,
- * because currently gfarm_hash doesn't maintain number of entries.
+ * this implementation uses red-black tree
  */
-gfarm_off_t
-dir_get_entry_count(Dir dir)
-{
-	DirCursor cursor;
-	gfarm_off_t i;
-
-	gfarm_hash_iterator_begin(dir, &cursor);
-	for (i = 0; !gfarm_hash_iterator_is_end(&cursor); i++) {
-		gfarm_hash_iterator_next(&cursor);
-	}
-	return (i);
-}
-
-#else /* ! USE_HASH */
-
-/**********************************************************************
- * red-black tree version
- *
- * (functions which have rbdir_ prefix are private.)
- **********************************************************************/
 
 #include <stdlib.h>
 
@@ -207,7 +32,7 @@ struct rbdir_entry {
 
 RB_HEAD(rbdir, rbdir_entry);
 
-int
+static int
 rbdir_compare(DirEntry a, DirEntry b)
 {
 	int len = a->keylen < b->keylen ? a->keylen : b->keylen;
@@ -222,7 +47,7 @@ rbdir_compare(DirEntry a, DirEntry b)
 		return (1);
 }
 
-int
+static int
 rbdir_node_count(DirEntry entry)
 {
 	gfarm_off_t lc, rc;
@@ -232,7 +57,7 @@ rbdir_node_count(DirEntry entry)
 	return (lc + rc + 1);
 }
 
-void
+static void
 rbdir_augment(DirEntry entry)
 {
 	entry->nentries = rbdir_node_count(entry);
@@ -241,7 +66,7 @@ rbdir_augment(DirEntry entry)
 RB_PROTOTYPE(rbdir, rbdir_entry, node, rbdir_compare)
 RB_GENERATE(rbdir, rbdir_entry, node, rbdir_compare)
 
-DirEntry
+static DirEntry
 rbdir_entry_prev(DirEntry entry)
 {
 	if (RB_LEFT(entry, node) != NULL) {
@@ -260,7 +85,7 @@ rbdir_entry_prev(DirEntry entry)
 	return (entry);
 }
 
-void
+static void
 rbdir_fixup(DirEntry entry)
 {
 	do {
@@ -268,14 +93,14 @@ rbdir_fixup(DirEntry entry)
 	} while ((entry = RB_PARENT(entry, node)) != NULL);
 }
 
-void
+static void
 rbdir_entry_free(struct rbdir_entry *entry)
 {
 	free(entry->key);
 	free(entry);
 }
 
-int
+static int
 rbdir_entry_delete(Dir dir, DirEntry entry)
 {
 	DirEntry deleted;
@@ -516,8 +341,6 @@ dir_cursor_get_entry(Dir dir, DirCursor *cursor)
 {
 	return (*cursor);
 }
-
-#endif /* ! USE_HASH */
 
 /* utility routine */
 
