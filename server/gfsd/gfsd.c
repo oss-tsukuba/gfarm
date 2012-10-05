@@ -771,17 +771,9 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 		++write_open_count;
 	}
 	fe->atime = st.st_atime;
-#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
-	fe->atimensec = st.st_atim.tv_nsec;
-#else
-	fe->atimensec = 0;
-#endif
+	fe->atimensec = gfarm_stat_atime_nsec(&st);
 	fe->mtime = st.st_mtime;
-#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-	fe->mtimensec = st.st_mtim.tv_nsec;
-#else
-	fe->mtimensec = 0;
-#endif
+	fe->mtimensec = gfarm_stat_mtime_nsec(&st);
 	fe->size = st.st_size;
 
 	fe->gen = fe->new_gen = gen;
@@ -1473,20 +1465,12 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 		    fd, strerror(errno));
 	} else {
 		stat_is_done = 1;
-#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
-		atimensec = st.st_atim.tv_nsec;
-#else
-		atimensec = 0;
-#endif
+		atimensec = gfarm_stat_atime_nsec(&st);
 		if (st.st_atime != fe->atime || atimensec != fe->atimensec)
 			file_entry_set_atime(fe, st.st_atime, atimensec);
 		/* another process might write this file */
 		if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
-#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-			mtimensec = st.st_mtim.tv_nsec;
-#else
-			mtimensec = 0;
-#endif
+			mtimensec = gfarm_stat_mtime_nsec(&st);
 			if (st.st_mtime != fe->mtime ||
 			    mtimensec != fe->mtimensec)
 				file_entry_set_mtime(fe,
@@ -1898,17 +1882,9 @@ gfs_server_fstat(struct gfp_xdr *client)
 	else {
 		size = st.st_size;
 		atime_sec = st.st_atime;
-#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
-		atime_nsec = st.st_atim.tv_nsec;
-#else
-		atime_nsec = 0;
-#endif
+		atime_nsec = gfarm_stat_atime_nsec(&st);
 		mtime_sec = st.st_mtime;
-#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-		mtime_nsec = st.st_mtim.tv_nsec;
-#else
-		mtime_nsec = 0;
-#endif
+		mtime_nsec = gfarm_stat_mtime_nsec(&st);
 	}
 
 	gfs_server_put_reply_with_errno(client, "fstat", save_errno,
@@ -2320,17 +2296,9 @@ gfs_async_server_fhstat(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	else {
 		filesize = st.st_size;
 		atime_sec = st.st_atime;
-#ifdef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
-		atime_nsec = st.st_atim.tv_nsec;
-#else
-		atime_nsec = 0;
-#endif
+		atime_nsec = gfarm_stat_atime_nsec(&st);
 		mtime_sec = st.st_mtime;
-#ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-		mtime_nsec = st.st_mtim.tv_nsec;
-#else
-		mtime_nsec = 0;
-#endif
+		mtime_nsec = gfarm_stat_mtime_nsec(&st);
 	}
 	free(path);
 
