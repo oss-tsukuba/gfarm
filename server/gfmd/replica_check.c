@@ -371,6 +371,7 @@ replica_check_main()
 		if (dir_ino && inode_is_dir(dir_ino)) {
 			dir = inode_get_dir(dir_ino);
 			assert(dir_cursor_set_pos(dir, 0, &cursor));
+			/* XXX FIXME too long giant lock */
 			do {
 				entry = dir_cursor_get_entry(dir, &cursor);
 				if (entry == NULL)
