@@ -21,6 +21,7 @@
 #include "internal_host_info.h"	/* for struct gfarm_internal_host_info
 				 * in db_ops.h */
 
+#include "nanosec.h"
 #include "gfutil.h"
 
 #include "gfp_xdr.h"
@@ -193,7 +194,8 @@ print_timespec(const char *name, struct gfarm_timespec *t)
 	tsec = t->tv_sec;
 	tm = gmtime(&tsec);
 	strftime(buf, BUFSIZ, "%Y%m%d-%H%M%S", tm);
-	printf(";%s=%s.%06dGMT", name, buf, (t->tv_nsec / 1000));
+	printf(";%s=%s.%06dGMT",
+	    name, buf, (t->tv_nsec / GFARM_MICROSEC_BY_NANOSEC));
 }
 
 static void
