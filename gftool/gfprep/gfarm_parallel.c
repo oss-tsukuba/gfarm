@@ -20,6 +20,7 @@
 #include <gfarm/gfarm.h>
 
 #include "gfutil.h" /* gfarm_sigpipe_ignore() */
+#include "nanosec.h"
 #include "thrsubr.h"
 
 #include "gfprep.h"
@@ -342,11 +343,11 @@ gfpara_recv_purge(FILE *in)
 }
 
 void
-gfpara_recv_int(FILE *in, int *valp)
+gfpara_recv_int(FILE *in, gfarm_int32_t *valp)
 {
-	size_t retv = fread(valp, sizeof(int), 1, in);
+	size_t retv = fread(valp, sizeof(gfarm_int32_t), 1, in);
 	if (retv != 1)
-		gfpara_fatal("cannot receive message (int)");
+		gfpara_fatal("cannot receive message (int32)");
 }
 
 void
@@ -383,12 +384,12 @@ gfpara_recv_string(FILE *in, char **strp)
 }
 
 void
-gfpara_send_int(FILE *out, int i)
+gfpara_send_int(FILE *out, gfarm_int32_t i)
 {
-	size_t retv = fwrite(&i, sizeof(int), 1, out);
+	size_t retv = fwrite(&i, sizeof(gfarm_int32_t), 1, out);
 	fflush(out);
 	if (retv != 1)
-		gfpara_fatal("cannot send message (int)");
+		gfpara_fatal("cannot send message (int32)");
 }
 
 void
@@ -517,7 +518,8 @@ gfpara_communicate(void *param)
 	for (i = 0; i < n_procs; i++) {
 		int retv = waitpid(procs[i].pid, NULL, WNOHANG);
 		if (retv == 0) {
-			usleep(100000); /* 100ms */
+			/* 100ms */
+			gfarm_nanosleep(100LL * GFARM_MILLISEC_BY_NANOSEC);
 			if (waitpid(procs[i].pid, NULL, WNOHANG) <= 0) {
 				fprintf(stderr,
 					"kill pid=%ld (may be hangup)\n",

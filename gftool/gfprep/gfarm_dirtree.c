@@ -17,7 +17,9 @@
 
 #include <gfarm/gfarm.h>
 
+#include "nanosec.h"
 #include "thrsubr.h"
+
 #include "gfm_client.h"
 
 #include "gfprep.h"
@@ -167,6 +169,34 @@ struct dirtree_dir_handle {
 	void *dir;
 };
 
+struct my_stat {
+	gfarm_int32_t nlink;
+	gfarm_int32_t mode;
+	gfarm_int64_t size;
+	gfarm_int64_t mtime_sec;
+	gfarm_int32_t mtime_nsec;
+};
+
+static void
+dirtree_convert_stat(struct stat *from_st, struct my_stat *to_st)
+{
+	to_st->nlink = from_st->st_nlink;
+	to_st->mode = from_st->st_mode;
+	to_st->size = from_st->st_size;
+	to_st->mtime_sec = from_st->st_mtime;
+	to_st->mtime_nsec = gfarm_stat_mtime_nsec(from_st);
+}
+
+static void
+dirtree_convert_gfs_stat(struct gfs_stat *from_st, struct my_stat *to_st)
+{
+	to_st->nlink = from_st->st_nlink;
+	to_st->mode = from_st->st_mode;
+	to_st->size = from_st->st_size;
+	to_st->mtime_sec = from_st->st_mtimespec.tv_sec;
+	to_st->mtime_nsec = from_st->st_mtimespec.tv_nsec;
+}
+
 static gfarm_error_t
 dirtree_local_opendir(const char *path, struct dirtree_dir_handle *dh)
 {
@@ -187,12 +217,13 @@ dirtree_local_opendir(const char *path, struct dirtree_dir_handle *dh)
 
 static gfarm_error_t
 dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
-			  struct gfs_dirent *dentp, struct stat *stp)
+			  struct gfs_dirent *dentp, struct my_stat *stp)
 {
 	struct dirent *dent;
 	int retv, save_errno;
 	char *child;
 	DIR *dir = dh->dir;
+	struct stat st;
 
 	errno = 0;
 	dent = readdir(dir);
@@ -209,7 +240,7 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 		fprintf(stderr, "FATAL: no memory(%s)\n", dh->path);
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	retv = lstat(child, stp);
+	retv = lstat(child, &st);
 	if (retv == -1) {
 		save_errno = errno;
 		fprintf(stderr, "ERROR: lstat(%s) for readdirplus(%s): %s\n",
@@ -218,12 +249,13 @@ dirtree_local_readdirplus(struct dirtree_dir_handle *dh,
 		return (gfarm_errno_to_error(save_errno));
 	}
 	free(child);
+	dirtree_convert_stat(&st, stp);
 	/* not use dent->d_type here */
-	if (S_ISREG(stp->st_mode))
+	if (S_ISREG(st.st_mode))
 		dentp->d_type = GFS_DT_REG;
-	else if (S_ISDIR(stp->st_mode))
+	else if (S_ISDIR(st.st_mode))
 		dentp->d_type = GFS_DT_DIR;
-	else if (S_ISLNK(stp->st_mode))
+	else if (S_ISLNK(st.st_mode))
 		dentp->d_type = GFS_DT_LNK;
 	else
 		dentp->d_type = GFS_DT_UNKNOWN;
@@ -248,11 +280,12 @@ dirtree_local_closedir(struct dirtree_dir_handle *dh)
 }
 
 static gfarm_error_t
-dirtree_local_lstat(const char *path, struct stat *stp)
+dirtree_local_lstat(const char *path, struct my_stat *stp)
 {
 	int retv, save_errno;
+	struct stat st;
 
-	retv = lstat(path, stp);
+	retv = lstat(path, &st);
 	if (retv == -1) {
 		save_errno = errno;
 		if (save_errno != ENOENT)
@@ -260,6 +293,7 @@ dirtree_local_lstat(const char *path, struct stat *stp)
 				path, strerror(save_errno));
 		return (gfarm_errno_to_error(save_errno));
 	}
+	dirtree_convert_stat(&st, stp);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -280,27 +314,16 @@ dirtree_gfarm_opendir(const char *path, struct dirtree_dir_handle *dh)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static void
-dirtree_convert_stat(struct gfs_stat *from_st, struct stat *to_stp)
-{
-	/* XXX copy all of st_* */
-	to_stp->st_nlink = from_st->st_nlink;
-	to_stp->st_mode = from_st->st_mode;
-	to_stp->st_size = from_st->st_size;
-	to_stp->st_mtime = from_st->st_mtimespec.tv_sec;
-	/* XXX not set st_mtim.tv_nsec or tv_mtimensec */
-}
-
 static gfarm_error_t
 dirtree_gfarm_readdirplus(struct dirtree_dir_handle *dh,
-			  struct gfs_dirent *dentp, struct stat *stp)
+			  struct gfs_dirent *dentp, struct my_stat *stp)
 {
 	GFS_DirPlus dir = dh->dir;
 	struct gfs_dirent *dent;
-	struct gfs_stat *stent;
+	struct gfs_stat *st;
 	gfarm_error_t e;
 
-	e = gfs_readdirplus(dir, &dent, &stent);
+	e = gfs_readdirplus(dir, &dent, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: gfs_readdirplus(%s): %s\n",
 			dh->path, gfarm_error_string(e));
@@ -309,7 +332,7 @@ dirtree_gfarm_readdirplus(struct dirtree_dir_handle *dh,
 	if (dent == NULL)
 		return (GFARM_ERR_NO_SUCH_OBJECT); /* end */
 	*dentp = *dent; /* copy */
-	dirtree_convert_stat(stent, stp);
+	dirtree_convert_gfs_stat(st, stp);
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -328,7 +351,7 @@ dirtree_gfarm_closedir(struct dirtree_dir_handle *dh)
 }
 
 static gfarm_error_t
-dirtree_gfarm_lstat(const char *path, struct stat *stp)
+dirtree_gfarm_lstat(const char *path, struct my_stat *stp)
 {
 	struct gfs_stat st;
 	gfarm_error_t e;
@@ -340,7 +363,7 @@ dirtree_gfarm_lstat(const char *path, struct stat *stp)
 				path, gfarm_error_string(e));
 		return (e);
 	}
-	dirtree_convert_stat(&st, stp);
+	dirtree_convert_gfs_stat(&st, stp);
 	gfs_stat_free(&st);
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -354,7 +377,7 @@ dirtree_child(void *param, FILE *from_parent, FILE *to_parent)
 	char *name;
 	struct dirtree_dir_handle dh;
 	struct gfs_dirent dent;
-	struct stat src_st, dst_st;
+	struct my_stat src_st, dst_st;
 	int ncopy, i, retv, is_retry;
 	char **copy;
 	FILE *tmpfp;
@@ -364,9 +387,9 @@ dirtree_child(void *param, FILE *from_parent, FILE *to_parent)
 				      struct dirtree_dir_handle *dh);
 	gfarm_error_t (*func_readdirplus)(struct dirtree_dir_handle *dh,
 					  struct gfs_dirent *dentp,
-					  struct stat *stp);
+					  struct my_stat *stp);
 	gfarm_error_t (*func_closedir)(struct dirtree_dir_handle *dh);
-	gfarm_error_t (*func_lstat)(const char *path, struct stat *stp);
+	gfarm_error_t (*func_lstat)(const char *path, struct my_stat *stp);
 
 	if (handle->src_type == URL_TYPE_GFARM) {
 		func_opendir = dirtree_gfarm_opendir;
@@ -402,6 +425,8 @@ next_command: /* instead of "for (;;)" */
 		if (subpath[0] == '\0')
 			retv = gfprep_asprintf(&src_dir, "%s",
 					       handle->src_dir);
+		else if (strcmp(handle->src_dir, "/") == 0)
+			retv = gfprep_asprintf(&src_dir, "/%s", subpath);
 		else
 			retv = gfprep_asprintf(&src_dir, "%s/%s",
 					       handle->src_dir, subpath);
@@ -422,7 +447,7 @@ dents_retry:
 		}
 		e = func_opendir(src_dir, &dh); /* with printing error */
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e)) {
+			if (!is_retry && gfm_client_is_connection_error(e)) {
 				fclose(tmpfp);
 				fflush(stderr);
 				is_retry = 1;
@@ -437,23 +462,33 @@ dents_retry:
 dents_loop:
 		e = func_readdirplus(&dh, &dent, &src_st);
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e)) {
+			if (!is_retry && gfm_client_is_connection_error(e)) {
 				fclose(tmpfp);
-				(void) func_closedir(&dh);
+				(void)func_closedir(&dh);
 				fflush(stderr);
 				is_retry = 1;
 				goto dents_retry;
 			}
-			if (e != GFARM_ERR_NO_SUCH_OBJECT)
-				goto dents_error;
-			/* end of directory */
+			if (e != GFARM_ERR_NO_SUCH_OBJECT) {
+				fclose(tmpfp);
+				(void)func_closedir(&dh);
+				fflush(stderr);
+				free(src_dir);
+				free(subpath);
+				gfpara_send_int(
+					to_parent, DIRTREE_STAT_IGNORE);
+				goto next_command;
+			}
+			/* GFARM_ERR_NO_SUCH_OBJECT: end of directory */
 			e = func_closedir(&dh);
-			if (gfm_client_is_connection_error(e)) {
+			if (!is_retry && gfm_client_is_connection_error(e)) {
 				fclose(tmpfp);
 				fflush(stderr);
 				is_retry = 1;
 				goto dents_retry;
 			}
+			/* abandon error */
+
 			rewind(tmpfp);
 			for (;;) {
 				retv = fread(buf, 1, sizeof(buf), tmpfp);
@@ -476,11 +511,11 @@ dents_loop:
 			fclose(tmpfp);
 			fflush(to_parent);
 			gfpara_send_int(to_parent, DIRTREE_ENTRY_END);
-			free(subpath);
 			if (is_retry)
 				fprintf(stderr, "INFO: retry opendir(%s) OK\n",
 					src_dir);
 			free(src_dir);
+			free(subpath);
 			goto next_command; /* success */
 dents_error:
 			fprintf(stderr,
@@ -503,17 +538,18 @@ dents_error:
 		else
 			gfpara_send_string(tmpfp, "%s/%s", subpath, name);
 		/* 2: src_m_sec */
-		gfpara_send_int64(tmpfp, src_st.st_mtime);
-		/* XXX use src_tv_usec */
-		/* 3: src_mode */
-		gfpara_send_int(tmpfp, src_st.st_mode);
-		/* 4: src_nlink */
-		gfpara_send_int(tmpfp, src_st.st_nlink);
-		/* 5: src_d_type */
+		gfpara_send_int64(tmpfp, src_st.mtime_sec);
+		/* 3: src_tv_nsec */
+		gfpara_send_int(tmpfp, src_st.mtime_nsec);
+		/* 4: src_mode */
+		gfpara_send_int(tmpfp, src_st.mode);
+		/* 5: src_nlink */
+		gfpara_send_int(tmpfp, src_st.nlink);
+		/* 6: src_d_type */
 		gfpara_send_int(tmpfp, (int) dent.d_type);
 		if (dent.d_type == GFS_DT_REG) /* src is file */
-			/* 6: src_size */
-			gfpara_send_int64(tmpfp, src_st.st_size);
+			/* 7: src_size */
+			gfpara_send_int64(tmpfp, src_st.size);
 		goto dents_loop; /* loop */
 		/* ---------------------------------- */
 	case DIRTREE_CMD_GET_FINFO:
@@ -548,7 +584,7 @@ dents_error:
 finfo_retry1:
 		e = gfs_replica_list_by_name(src_path, &ncopy, &copy);
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e)) {
+			if (!is_retry && gfm_client_is_connection_error(e)) {
 				is_retry = 1;
 				goto finfo_retry1;
 			}
@@ -590,7 +626,7 @@ finfo_dst:	/* ----- dst ----- */
 finfo_retry2:
 		e = func_lstat(dst_path, &dst_st);
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (gfm_client_is_connection_error(e)) {
+			if (!is_retry && gfm_client_is_connection_error(e)) {
 				is_retry = 1;
 				goto finfo_retry2;
 			}
@@ -607,13 +643,14 @@ finfo_retry2:
 		/* 3: dst_exist */
 		gfpara_send_int(to_parent, 1);
 		/* 4: dst_m_sec */
-		gfpara_send_int64(to_parent, dst_st.st_mtime);
-		/* XXX use dst_tv_usec */
-		if (S_ISREG(dst_st.st_mode)) {
-			/* 5: dst_d_type */
+		gfpara_send_int64(to_parent, dst_st.mtime_sec);
+		/* 5: dst_m_nsec */
+		gfpara_send_int(to_parent, dst_st.mtime_nsec);
+		if (S_ISREG(dst_st.mode)) {
+			/* 6: dst_d_type */
 			gfpara_send_int(to_parent, GFS_DT_REG);
-			/* 6: dst_size */
-			gfpara_send_int64(to_parent, dst_st.st_size);
+			/* 7: dst_size */
+			gfpara_send_int64(to_parent, dst_st.size);
 			if (handle->dst_type == URL_TYPE_GFARM) {
 				is_retry = 0;
 finfo_retry3:
@@ -625,16 +662,17 @@ finfo_retry3:
 						"INFO: retry "
 						"gfs_replica_list_by_name(%s) "
 						"OK\n", src_dir);
-					/* 7: dst_ncopy */
+					/* 8: dst_ncopy */
 					gfpara_send_int(to_parent, ncopy);
 					for (i = 0; i < ncopy; i++)
-						/* 8: dst_copy */
+						/* 9: dst_copy */
 						gfpara_send_string(
 							to_parent,
 							"%s", copy[i]);
 					gfarm_strings_free_deeply(ncopy, copy);
 				} else { /* no replica: ncopy == 0 */
-					if (gfm_client_is_connection_error(e)
+					if (!is_retry &&
+					    gfm_client_is_connection_error(e)
 						) {
 						is_retry = 1;
 						goto finfo_retry3;
@@ -643,17 +681,17 @@ finfo_retry3:
 					"INFO: gfs_replica_list_by_name(%s):"
 					" %s\n", dst_path,
 					gfarm_error_string(e));
-					/* 7: dst_ncopy */
+					/* 8: dst_ncopy */
 					gfpara_send_int(to_parent, 0);
 				}
 			} else /* URL_TYPE_LOCAL: ncopy == 0 */
-				/* 7: dst_ncopy */
+				/* 8: dst_ncopy */
 				gfpara_send_int(to_parent, 0);
-		} else if (S_ISDIR(dst_st.st_mode)) /* 5: dst_d_type */
+		} else if (S_ISDIR(dst_st.mode)) /* 6: dst_d_type */
 			gfpara_send_int(to_parent, GFS_DT_DIR);
-		else if (S_ISLNK(dst_st.st_mode)) /* 5: dst_d_type */
+		else if (S_ISLNK(dst_st.mode)) /* 6: dst_d_type */
 			gfpara_send_int(to_parent, GFS_DT_LNK);
-		else /* 5: dst_d_type */
+		else /* 6: dst_d_type */
 			gfpara_send_int(to_parent, GFS_DT_UNKNOWN);
 		free(subpath);
 		free(src_path);
@@ -775,10 +813,10 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 			}
 			ent->subpath = subpath;
 			gfpara_recv_int64(child_out, &ent->src_m_sec); /* 2 */
-			/* XXX ent->src_tv_nsec */
-			gfpara_recv_int(child_out, &ent->src_mode); /* 3 */
-			gfpara_recv_int(child_out, &ent->src_nlink); /* 4 */
-			gfpara_recv_int(child_out, &d_type_int); /* 5 */
+			gfpara_recv_int(child_out, &ent->src_m_nsec); /* 3 */
+			gfpara_recv_int(child_out, &ent->src_mode); /* 4 */
+			gfpara_recv_int(child_out, &ent->src_nlink); /* 5 */
+			gfpara_recv_int(child_out, &d_type_int); /* 6 */
 			ent->src_d_type = (unsigned char) d_type_int;
 			gfarm_mutex_lock(&handle->mutex, diag, "mutex");
 			if (handle->is_recursive &&
@@ -803,7 +841,7 @@ dirtree_recv_dents(FILE *child_out, gfpara_proc_t *proc, void *param)
 					return (GFPARA_FATAL);
 				}
 			}
-			if (ent->src_d_type == GFS_DT_REG) /* 6 */
+			if (ent->src_d_type == GFS_DT_REG) /* 7 */
 				gfpara_recv_int64(child_out, &ent->src_size);
 			else
 				ent->src_size = 0;
@@ -857,12 +895,12 @@ dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 	ent->dst_exist = i;
 	if (ent->dst_exist) {
 		gfpara_recv_int64(child_out, &ent->dst_m_sec); /* 4 */
-		/* XXX ent->dst_tv_nsec */
-		gfpara_recv_int(child_out, &d_type_int); /* 5 */
+		gfpara_recv_int(child_out, &ent->dst_m_nsec); /* 5 */
+		gfpara_recv_int(child_out, &d_type_int); /* 6 */
 		ent->dst_d_type = (unsigned char) d_type_int;
 		if (ent->dst_d_type == GFS_DT_REG) {
-			gfpara_recv_int64(child_out, &ent->dst_size); /* 6 */
-			gfpara_recv_int(child_out, &ent->dst_ncopy); /* 7 */
+			gfpara_recv_int64(child_out, &ent->dst_size); /* 7 */
+			gfpara_recv_int(child_out, &ent->dst_ncopy); /* 8 */
 			if (ent->dst_ncopy > 0) {
 				GFARM_MALLOC_ARRAY(ent->dst_copy,
 						   ent->dst_ncopy);
@@ -873,7 +911,7 @@ dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 				}
 			} else
 				ent->dst_copy = NULL;
-			for (i = 0; i < ent->dst_ncopy; i++) { /* 8 */
+			for (i = 0; i < ent->dst_ncopy; i++) { /* 9 */
 				gfpara_recv_string(child_out,
 						   &ent->dst_copy[i]);
 				if (ent->dst_copy[i] == NULL) {
@@ -883,17 +921,17 @@ dirtree_recv_finfo(FILE *child_out, gfpara_proc_t *proc, void *param)
 				}
 			}
 		} else { /* dst is not a file */
-			ent->dst_size = 0; /* 6 */
-			ent->dst_ncopy = 0; /* 7 */
-			ent->dst_copy = NULL; /* 8 */
+			ent->dst_size = 0; /* 7 */
+			ent->dst_ncopy = 0; /* 8 */
+			ent->dst_copy = NULL; /* 9 */
 		}
 	} else { /* dst does not exist, or dst is unused */
 		ent->dst_m_sec = 0;  /* 4 */
-		/* XXX ent->dst_m_nsec = 0; */
-		ent->dst_d_type = 0; /* 5 */
-		ent->dst_size = 0;   /* 6 */
-		ent->dst_ncopy = 0;  /* 7 */
-		ent->dst_copy = NULL; /* 8 */
+		ent->dst_m_nsec = 0;  /* 5 */
+		ent->dst_d_type = 0; /* 6 */
+		ent->dst_size = 0;   /* 7 */
+		ent->dst_ncopy = 0;  /* 8 */
+		ent->dst_copy = NULL; /* 9 */
 	}
 	ent->n_pending = 0;
 	gfarm_fifo_enter(handle->fifo_handle, &ent);
