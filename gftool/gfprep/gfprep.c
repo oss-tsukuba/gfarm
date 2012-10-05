@@ -17,13 +17,15 @@
 
 #include <gfarm/gfarm.h>
 
+#include "hash.h"
+#include "nanosec.h"
+#include "thrsubr.h"
+
 #include "config.h"
 #include "gfm_client.h"
 #include "gfutil.h"
-#include "hash.h"
 #include "host.h"
 #include "lookup.h"
-#include "thrsubr.h"
 
 #include "gfarm_list.h"
 
@@ -1131,8 +1133,8 @@ gfprep_set_mtime(int is_gfarm, const char *url, struct gfarm_timespec *mtimep,
 		if (d_type == GFS_DT_LNK) /* not support lutimes() */
 			return (GFARM_ERR_NO_ERROR); /* no effect */
 		path += GFPREP_FILE_URL_PREFIX_LENGTH;
-		tv[0].tv_sec = (long) mtimep->tv_sec;
-		tv[0].tv_usec = (long) mtimep->tv_nsec / 1000;
+		tv[0].tv_sec = mtimep->tv_sec;
+		tv[0].tv_usec = mtimep->tv_nsec / GFARM_MICROSEC_BY_NANOSEC;
 		tv[1].tv_sec = tv[0].tv_sec;
 		tv[1].tv_usec = tv[0].tv_usec;
 		retv = utimes(path, tv);
@@ -2187,7 +2189,6 @@ gfprep_connections_exec(gfarm_pfunc_t *pfunc_handle, int is_gfpcopy,
 	char is_done;
 	struct gfprep_host_info *src_hi, *dst_hi;
 	struct timespec timeout;
-	struct timeval now;
 
 	if (conns == NULL)
 		return (GFARM_ERR_NO_ERROR);
@@ -2255,9 +2256,8 @@ next:
 			}
 		}
 		if (is_done == 0) {
-			gettimeofday(&now, NULL);
-			timeout.tv_sec = now.tv_sec + 2;
-			timeout.tv_nsec = now.tv_usec * 1000;
+			gfarm_gettime(&timeout);
+			timeout.tv_sec += 2;
 			if (!gfarm_cond_timedwait(
 			    &cb_cond, &cb_mutex, &timeout, diag, CB_COND_DIAG))
 				gfprep_debug("cb_cond timeout");
@@ -2372,7 +2372,6 @@ gfprep_check_busy_and_wait(
 	const char *src_url, gfarm_dirtree_entry_t *entry, int n_desire,
 	int n, struct gfprep_host_info **his)
 {
-	struct timeval now;
 	struct timespec timeout;
 	int i,  n_unbusy, busy, waited = 0;
 	static const char diag[] = "gfprep_check_busy_and_wait";
@@ -2403,9 +2402,8 @@ gfprep_check_busy_and_wait(
 		}
 		gfprep_debug("wait[n_pending=%"GFARM_PRId64"]: %s",
 			     entry->n_pending, src_url);
-		gettimeofday(&now, NULL);
-		timeout.tv_sec = now.tv_sec + 1;
-		timeout.tv_nsec = now.tv_usec * 1000;
+		gfarm_gettime(&timeout);
+		timeout.tv_sec += 1;
 		if (!gfarm_cond_timedwait(
 		    &cb_cond, &cb_mutex, &timeout, diag, CB_COND_DIAG)) {
 			gfprep_debug("timeout: waiting busy host");
@@ -2416,6 +2414,81 @@ gfprep_check_busy_and_wait(
 	}
 	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
 	return (busy);
+}
+
+/* debug for gfarm_dirtree_open() */
+static void
+gfprep_print_list(
+	const char *src_dir, const char *dst_dir, const char *src_base_name,
+	int n_para, int n_fifo)
+{
+	gfarm_error_t e;
+	gfarm_dirtree_t *dirtree_handle;
+	gfarm_dirtree_entry_t *entry;
+	gfarm_uint64_t n_entry;
+	char *src_url = NULL, *dst_url = NULL;
+	int i, src_url_size = 0, dst_url_size = 0;
+
+	e = gfarm_dirtree_open(
+		&dirtree_handle, src_dir, dst_dir,
+		n_para, n_fifo,
+		src_base_name ? 0 : 1);
+	gfprep_fatal_e(e, "gfarm_dirtree_open");
+	n_entry = 0;
+	while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
+	       == GFARM_ERR_NO_ERROR) {
+		if (src_base_name &&
+		    strcmp(src_base_name, entry->subpath) != 0) {
+			gfarm_dirtree_delete(dirtree_handle);
+			continue;
+		}
+		n_entry++;
+		gfprep_url_realloc(
+			&src_url, &src_url_size, src_dir, entry->subpath);
+		printf("%lld: src=%s\n", (long long)n_entry, src_url);
+		if (dst_dir) {
+			gfprep_url_realloc(
+				&dst_url, &dst_url_size,
+				dst_dir, entry->subpath);
+			printf("%lld: dst=%s\n", (long long)n_entry, dst_url);
+		}
+		printf("%lld: src: "
+		       "size=%lld, "
+		       "m_sec=%lld, "
+		       "m_nsec=%d, "
+		       "ncopy=%d\n",
+		       (long long)n_entry,
+		       (long long)entry->src_size,
+		       (long long)entry->src_m_sec,
+		       entry->src_m_nsec,
+		       entry->src_ncopy);
+		if (dst_dir) {
+			if (entry->dst_exist) {
+				printf("%lld: dst: "
+				       "size=%lld, "
+				       "m_sec=%lld, "
+				       "m_nsec=%d, "
+				       "ncopy=%d\n",
+				       (long long)n_entry,
+				       (long long)entry->dst_size,
+				       (long long)entry->dst_m_sec,
+				       entry->dst_m_nsec,
+				       entry->dst_ncopy);
+			} else
+				printf("%lld: dst: not exist\n",
+				       (long long)n_entry);
+		}
+		for (i = 0; i < entry->src_ncopy; i++)
+			printf("%lld: src_copy[%d]=%s\n",
+			       (long long)n_entry, i, entry->src_copy[i]);
+		for (i = 0; i < entry->dst_ncopy; i++)
+			printf("%lld: dst_copy[%d]=%s\n",
+			       (long long)n_entry, i, entry->dst_copy[i]);
+		gfarm_dirtree_delete(dirtree_handle);
+	}
+	gfarm_dirtree_close(dirtree_handle);
+	free(src_url);
+	free(dst_url);
 }
 
 int
@@ -2708,6 +2781,15 @@ main(int argc, char *argv[])
 	if (dst_dir == NULL)
 		gfprep_fatal("no memory");
 
+	if (opt_list_only) {
+		e = gfarm_terminate();
+		gfprep_fatal_e(e, "gfarm_terminate");
+		gfprep_print_list(
+			src_dir, is_gfpcopy ? dst_dir : NULL, src_base_name,
+			opt_dirtree_n_para, opt_dirtree_n_fifo);
+		exit(0);
+	}
+
 	if (is_gfpcopy) { /* gfpcopy */
 		int create_dst_dir = 0, checked;
 		/* [1] gfpcopy p1/d1 p2/d2(exist)     : mkdir p2/d2/d1 */
@@ -2817,52 +2899,6 @@ main(int argc, char *argv[])
 	/* not gfarm initialized ------------------------- */
 	if (opt.performance)
 		gettimeofday(&time_start, NULL);
-
-	if (opt_list_only) {
-		e = gfarm_dirtree_open(&dirtree_handle, src_dir,
-				       is_gfpcopy ? dst_dir : NULL,
-				       opt_dirtree_n_para,
-				       opt_dirtree_n_fifo,
-				       src_base_name ? 0 : 1);
-		gfprep_fatal_e(e, "gfarm_dirtree_open");
-		n_entry = 0;
-		while ((e = gfarm_dirtree_checknext(dirtree_handle, &entry))
-		       == GFARM_ERR_NO_ERROR) {
-			if (src_base_name && strcmp(src_base_name,
-						    entry->subpath) != 0) {
-				gfarm_dirtree_delete(dirtree_handle);
-				continue;
-			}
-			n_entry++;
-			gfprep_url_realloc(&src_url, &src_url_size, src_dir,
-					   entry->subpath);
-			printf("%"GFARM_PRId64": src=%s\n", n_entry, src_url);
-			if (is_gfpcopy) {
-				gfprep_url_realloc(&dst_url, &dst_url_size,
-						   dst_dir, entry->subpath);
-				printf("%"GFARM_PRId64": dst=%s\n",
-				       n_entry, dst_url);
-			}
-			printf("%"GFARM_PRId64": src_nlink=%d"
-			       ", src_size=%"GFARM_PRId64
-			       ", dst_size=%"GFARM_PRId64
-			       ", dst_exist=%d, src_ncopy=%d, dst_ncopy=%d\n",
-			       n_entry, entry->src_nlink, entry->src_size,
-			       entry->dst_size, entry->dst_exist,
-			       entry->src_ncopy, entry->dst_ncopy);
-			for (i = 0; i < entry->src_ncopy; i++)
-				printf("%"GFARM_PRId64": src_copy[%d]=%s\n",
-				       n_entry, i, entry->src_copy[i]);
-			for (i = 0; i < entry->dst_ncopy; i++)
-				printf("%"GFARM_PRId64": dst_copy[%d]=%s\n",
-				       n_entry, i, entry->dst_copy[i]);
-			gfarm_dirtree_delete(dirtree_handle);
-		}
-		gfarm_dirtree_close(dirtree_handle);
-		free(src_url);
-		free(dst_url);
-		exit(0);
-	}
 
 	/* create child-processes before gfarm_initialize() */
 	e = gfarm_pfunc_start(&pfunc_handle, opt_n_para, 1, opt_simulate_KBs,
@@ -3085,8 +3121,9 @@ main(int argc, char *argv[])
 						entry->src_mode);
 				else if (entry->src_d_type == GFS_DT_LNK) {
 					struct gfarm_timespec gt;
+
 					gt.tv_sec = entry->src_m_sec;
-					gt.tv_nsec = 0; /* XXX */
+					gt.tv_nsec = entry->src_m_nsec;
 					e = gfprep_copy_symlink(
 						src_is_gfarm, src_url,
 						dst_is_gfarm, dst_url);

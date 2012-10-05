@@ -21,11 +21,11 @@ gfarm_error_t gfpara_start(gfpara_t *);
 gfarm_error_t gfpara_join(gfpara_t *);
 gfarm_error_t gfpara_interrupt(gfpara_t *, int);
 
-void gfpara_recv_int(FILE *, int *);
+void gfpara_recv_int(FILE *, gfarm_int32_t *);
 void gfpara_recv_int64(FILE *, gfarm_int64_t *);
 void gfpara_recv_string(FILE *, char **);
 void gfpara_recv_purge(FILE *);
-void gfpara_send_int(FILE *t, int);
+void gfpara_send_int(FILE *t, gfarm_int32_t);
 void gfpara_send_int64(FILE *, gfarm_int64_t);
 void gfpara_send_string(FILE *, const char *, ...) GFLOG_PRINTF_ARG(2, 3);
 

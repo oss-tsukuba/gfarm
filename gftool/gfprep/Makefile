@@ -36,4 +36,4 @@ include $(top_srcdir)/makes/subdir.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/gfm_client.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/lookup.h $(GFUTIL_SRCDIR)/thrsubr.h $(GFUTIL_SRCDIR)/queue.h $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFREP_SRCDIR)/gfarm_list.h gfprep.h gfarm_parallel.h gfarm_dirtree.h gfarm_fifo.h gfarm_pfunc.h
+$(OBJS): $(DEPGFARMINC) $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/gfm_client.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/lookup.h $(GFUTIL_SRCDIR)/thrsubr.h $(GFUTIL_SRCDIR)/queue.h $(GFUTIL_SRCDIR)/nanosec.h $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFREP_SRCDIR)/gfarm_list.h gfprep.h gfarm_parallel.h gfarm_dirtree.h gfarm_fifo.h gfarm_pfunc.h

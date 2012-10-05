@@ -6,5 +6,7 @@
 #define GFARM_MILLISEC_BY_NANOSEC 1000000
 #define GFARM_MICROSEC_BY_NANOSEC 1000
 
-void gfarm_nanosleep_by_timespec(const struct timespec *req);
-void gfarm_nanosleep(unsigned long long nsec);
+void gfarm_nanosleep_by_timespec(const struct timespec *);
+void gfarm_nanosleep(unsigned long long);
+
+void gfarm_gettime(struct timespec *);

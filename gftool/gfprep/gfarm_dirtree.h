@@ -9,8 +9,8 @@ typedef struct gfarm_dirtree_entry {
 	gfarm_off_t dst_size;
 	gfarm_int64_t src_m_sec; /* mtime */
 	gfarm_int64_t dst_m_sec;
-	/* XXX gfarm_int32_t src_m_nsec; */
-	/* XXX gfarm_int32_t dst_m_nsec; */
+	gfarm_int32_t src_m_nsec;
+	gfarm_int32_t dst_m_nsec;
 	gfarm_uint64_t n_pending;
 	char *subpath; /* src and dst */
 	char **src_copy;
@@ -18,7 +18,7 @@ typedef struct gfarm_dirtree_entry {
 	int src_ncopy;
 	int dst_ncopy;
 	int src_mode; /* 07777 */
-	int src_nlink;
+	int src_nlink; /* XXX unused */
 	unsigned char src_d_type;
 	unsigned char dst_d_type;
 	unsigned char dst_exist;
