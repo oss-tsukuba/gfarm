@@ -83,3 +83,7 @@ gfarm_error_t async_client_sender_lock(struct abstract_host *,
 	struct peer *, struct peer **, int, const char *);
 void async_client_sender_unlock(struct abstract_host *,
 	struct peer *peer, const char *);
+gfarm_error_t abstract_host_sender_lock(struct abstract_host *,
+	struct peer **, const char *);
+void abstract_host_sender_unlock(struct abstract_host *, struct peer *,
+	const char *);

@@ -244,7 +244,7 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 	return (e);
 }
 
-static gfarm_error_t
+gfarm_error_t
 abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
 	const char *diag)
 {
@@ -280,7 +280,7 @@ abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
 	return (e);
 }
 
-static void
+void
 abstract_host_sender_unlock(struct abstract_host *host, struct peer *peer,
 	const char *diag)
 {
@@ -748,12 +748,7 @@ async_client_vsend_wrapped_request(struct abstract_host *host,
 		    "%s: <%s> channel sending request(%d)",
 		    abstract_host_get_name(host), diag, command);
 
-	if ((e = async_client_sender_lock(host, peer0, &peer, command,
-	    diag)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
+	peer = host->peer;
 	async = peer_get_async(peer);
 	server = peer_get_conn(peer);
 
@@ -787,8 +782,6 @@ async_client_vsend_wrapped_request(struct abstract_host *host,
 		return (e);
 	}
 
-	if (async != NULL)
-		async_client_sender_unlock(host, peer, diag);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -845,16 +838,8 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 	const char *format, va_list *app)
 {
 	gfarm_error_t e;
-	struct peer *peer;
+	struct peer *peer = host->peer;
 	struct gfp_xdr *client;
-
-	/*
-	 * Since this is a reply, the peer is probably living,
-	 * thus, not using peer_sender_trylock() is mostly ok.
-	 */
-	if ((e = abstract_host_sender_lock(host, &peer, diag))
-	    != GFARM_ERR_NO_ERROR)
-		return (e);
 
 	if (peer_get_parent(peer) != NULL)
 		/* remote_peer from slave */
@@ -876,8 +861,6 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 	    errcode, wrapping_format, wrapping_app, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
-
-	abstract_host_sender_unlock(host, peer, diag);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002795,
