@@ -105,9 +105,11 @@ gfarm_gsi_client_cred_name(void)
 	if (cred == GSS_C_NO_CREDENTIAL &&
 	    gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0) {
 		client_dn = NULL;
-		gflog_auth_error(GFARM_MSG_1000707,
-		    "gfarm_gsi_client_cred_name(): "
-		    "not initialized as an initiator");
+		if (gflog_auth_get_verbose()) {
+			gflog_auth_error(GFARM_MSG_1000707,
+			    "gfarm_gsi_client_cred_name(): "
+			    "not initialized as an initiator");
+		}
 	} else if (gfarmGssNewCredentialName(&name, cred, &e_major, &e_minor)
 	    < 0) {
 		client_dn = NULL;
@@ -122,11 +124,13 @@ gfarm_gsi_client_cred_name(void)
 		client_dn = gfarmGssNewDisplayName(
 		    name, &e_major, &e_minor, NULL);
 		if (client_dn == NULL && gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_1000709,
-			    "cannot convert initiator credential "
-			    "to string");
-			gfarmGssPrintMajorStatus(e_major);
-			gfarmGssPrintMinorStatus(e_minor);
+			if (gflog_auth_get_verbose()) {
+				gflog_error(GFARM_MSG_1000709,
+				    "cannot convert initiator credential "
+				    "to string");
+				gfarmGssPrintMajorStatus(e_major);
+				gfarmGssPrintMinorStatus(e_minor);
+			}
 		}
 		gfarmGssDeleteName(&name, NULL, NULL);
 	}
