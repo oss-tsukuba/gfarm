@@ -42,7 +42,7 @@ void gflog_assert_message(int, const char *, int, const char *,
 		const char *, ...) GFLOG_PRINTF_ARG(5, 6);
 
 #define gflog_fatal(msg_no, ...) \
-	gflog_fatal_message(msg_no, LOG_ERR,\
+	gflog_fatal_message(msg_no, LOG_EMERG,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_error(msg_no, ...) \
 	gflog_message(msg_no, LOG_ERR,\
@@ -61,7 +61,7 @@ void gflog_assert_message(int, const char *, int, const char *,
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #define gflog_fatal_errno(msg_no, ...) \
-	gflog_fatal_message_errno(msg_no, LOG_ERR,\
+	gflog_fatal_message_errno(msg_no, LOG_EMERG,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_error_errno(msg_no, ...) \
 	gflog_message_errno(msg_no, LOG_ERR,\
