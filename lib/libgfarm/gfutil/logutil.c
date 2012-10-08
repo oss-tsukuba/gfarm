@@ -452,3 +452,17 @@ gflog_auth_get_verbose(void)
 {
 	return (authentication_verbose);
 }
+
+void
+gflog_auth_message(int msg_no, int priority, const char *file, int line_no,
+	const char *func, const char *format, ...)
+{
+	va_list ap;
+
+	if (authentication_verbose) {
+		va_start(ap, format);
+		gflog_vmessage(msg_no, priority, file, line_no, func,
+		    format, ap);
+		va_end(ap);
+	}
+}
