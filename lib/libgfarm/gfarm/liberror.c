@@ -613,8 +613,11 @@ gfarm_error_string(gfarm_error_t error)
 {
 	struct gfarm_error_domain *domain;
 
-	if (error < 0)
+	if (error < 0) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "gfarm_error_string: invalid error: %d", error);
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
+	}
 	if (error < GFARM_ERR_NUMBER) {
 		if (error >= GFARM_ARRAY_LENGTH(errcode_string)) {
 			gflog_warning(GFARM_MSG_1000852,
@@ -625,8 +628,11 @@ gfarm_error_string(gfarm_error_t error)
 		return (errcode_string[error]);
 	}
 
-	if (error < GFARM_ERRMSG_BEGIN)
+	if (error < GFARM_ERRMSG_BEGIN) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "gfarm_error_string: unknown error: %d", error);
 		return (errcode_string[GFARM_ERR_UNKNOWN]);
+	}
 	if (error < GFARM_ERRMSG_END)
 		return (errmsg_string[error - GFARM_ERRMSG_BEGIN]);
 
@@ -642,6 +648,8 @@ gfarm_error_string(gfarm_error_t error)
 		    domain->domerror_to_message_cookie,
 		    domain->domerror_min + error));
 	}
+	gflog_warning(GFARM_MSG_UNFIXED,
+	    "gfarm_error_string: unassigned error: %d", error);
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
 
@@ -703,13 +711,19 @@ gfarm_errno_to_error_initialize(void)
 gfarm_error_t
 gfarm_errno_to_error(int eno)
 {
+	gfarm_error_t e;
 	static pthread_once_t gfarm_errno_to_error_initialized =
 	    PTHREAD_ONCE_INIT;
 
 	pthread_once(&gfarm_errno_to_error_initialized,
 	    gfarm_errno_to_error_initialize);
 
-	return (gfarm_error_domain_map(gfarm_errno_domain, eno));
+	e = gfarm_error_domain_map(gfarm_errno_domain, eno);
+	if (e == GFARM_ERR_UNKNOWN)
+		gflog_notice(GFARM_MSG_UNFIXED,
+		    "errno %d:\"%s\" is converted to \"%s\"",
+		    eno, strerror(eno), gfarm_error_string(GFARM_ERR_UNKNOWN));
+	return (e);
 }
 
 static int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
