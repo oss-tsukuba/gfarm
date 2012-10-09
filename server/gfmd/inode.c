@@ -2759,9 +2759,7 @@ inode_open(struct file_opening *fo)
 	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		++ios->u.f.writers;
 	if ((fo->flag & GFARM_FILE_TRUNC) != 0) {
-		inode_status_changed(inode);
-		inode_modified(inode);
-		inode_set_size(inode, 0);
+		/* do not change the metadata for close-to-open consistency */
 		fo->flag |= GFARM_FILE_TRUNC_PENDING;
 	}
 
@@ -2785,7 +2783,18 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
 
-	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
+	if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
+		--ios->u.f.writers;
+	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0 &&
+	    ios->u.f.writers == 0) {
+		/*
+		 * In this case, there will be no file replica since reopen
+		 * was not called or failed.  The reason why we exclude the
+		 * case of writers > 0 is "lost all replica" happens if
+		 * some client already opened this in write mode and the final
+		 * file size is not zero.  XXX - this means a successful call
+		 * of open(O_TRUNC) is ignored in this case.
+		 */
 		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
 		    NULL, NULL, trace_logp);
 	} else if (atime != NULL)
@@ -2799,8 +2808,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 			    GFARM_ERR_PROTOCOL);
 		inode_open_state_free(inode->u.c.state);
 		inode->u.c.state = NULL;
-	} else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
-		--ios->u.f.writers;
+	}
 
 	if (inode->i_nlink == 0 && inode->u.c.state == NULL &&
 	    (!inode_is_file(inode) || inode->u.c.s.f.rstate == NULL)) {
@@ -3164,7 +3172,7 @@ inode_schedule_file_default(struct file_opening *opening,
 	gfarm_error_t e;
 	struct inode_open_state *ios = opening->inode->u.c.state;
 	struct file_opening *fo;
-	int n, nhosts, writing_mode;
+	int n, nhosts, write_mode, truncate_flag;
 	struct host **hosts;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
@@ -3172,16 +3180,16 @@ inode_schedule_file_default(struct file_opening *opening,
 
 	assert(inode_is_file(opening->inode));
 
-	if ((opening->flag & GFARM_FILE_TRUNC) != 0)
-		return (inode_schedule_new_file(peer, np, hostsp));
-	else if (inode_has_no_replica(opening->inode)) {
+	truncate_flag = (opening->flag & GFARM_FILE_TRUNC) != 0;
+	write_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
+	if (inode_has_no_replica(opening->inode)) {
 		/*
 		 * even if a file is opened in read only mode, return
 		 * all available hosts when the size is zero, since
 		 * the following gfs_pio_read() call needs to connect
 		 * a gfsd to read 0-byte file.
 		 */
-		if (inode_get_size(opening->inode) == 0)
+		if (inode_get_size(opening->inode) == 0 || truncate_flag)
 			return (inode_schedule_new_file(peer, np, hostsp));
 		gflog_error(GFARM_MSG_1003479,
 		    "(%llu:%llu, %llu): lost all replicas",
@@ -3190,10 +3198,7 @@ inode_schedule_file_default(struct file_opening *opening,
 		    (unsigned long long)inode_get_size(opening->inode));
 		return (GFARM_ERR_NO_SUCH_OBJECT);
 	}
-
-	writing_mode = (accmode_to_op(opening->flag) & GFS_W_OK) != 0;
-
-	if (writing_mode && ios != NULL &&
+	if ((write_mode || truncate_flag) && ios != NULL &&
 	    (fo = ios->openings.opening_next) != &ios->openings) {
 
 		/* try to choose already opened replicas */
@@ -3255,8 +3260,11 @@ inode_schedule_file_default(struct file_opening *opening,
 			free(hosts);
 		}
 	}
-
-	if (writing_mode) {
+	if (truncate_flag) {
+		/* all file system nodes are candidates */
+		return (inode_schedule_new_file(peer, np, hostsp));
+	}
+	if (write_mode) {
 		/* all replicas are candidates */
 		e = inode_alloc_file_copy_hosts(opening->inode,
 		    file_copy_is_valid_and_disk_available, &necessary_space,
