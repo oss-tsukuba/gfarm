@@ -3869,10 +3869,10 @@ db_journal_fetch(struct journal_file_reader *reader,
 			if (fi == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				gflog_error(GFARM_MSG_1003196,
-				    "%s : %s", diag, gfarm_error_string(e));
-				free(fi);
+				    "%s: %s", diag, gfarm_error_string(e));
 				goto error;
 			}
+			fi->next = NULL; /* do this here for "goto error" */
 			fi->rec = rec;
 			fi->rec_len = rec_len;
 			if (fih == NULL) {
@@ -3893,7 +3893,6 @@ db_journal_fetch(struct journal_file_reader *reader,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	*no_recp = 0;
-	fi->next = NULL;
 	to_sn = seqnum;
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003197,
