@@ -103,7 +103,7 @@ main(int argc, char **argv)
 				break;
 			case GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY:
 				fprintf(stderr, "%s: %s: %s\n",
-				    program_name, argv[i],
+				    program_name, s,
 				    gfarm_error_string(e));
 				status = 1;
 				break;
