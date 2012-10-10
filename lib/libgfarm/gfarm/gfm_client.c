@@ -3326,17 +3326,19 @@ gfm_client_replica_get_my_entries_request(struct gfm_connection *gfm_server,
 	gfarm_ino_t inum, int n)
 {
 	return (gfm_client_rpc_request(gfm_server,
-	    GFM_PROTO_REPLICA_GET_MY_ENTRIES, "li", inum, n));
+	    GFM_PROTO_REPLICA_GET_MY_ENTRIES2, "li", inum, n));
 }
 
 gfarm_error_t
-gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
-	int *np, gfarm_ino_t **inumsp, gfarm_uint64_t **gensp)
+gfm_client_replica_get_my_entries_result(
+	struct gfm_connection *gfm_server, int *np,
+	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
 {
 	gfarm_error_t e;
 	int i, n, eof;
 	gfarm_ino_t *inums;
 	gfarm_uint64_t *gens;
+	gfarm_off_t *sizes;
 
 	e = gfm_client_rpc_result(gfm_server, 0, "i", &n);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -3348,14 +3350,16 @@ gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
 
 	GFARM_MALLOC_ARRAY(inums, n);
 	GFARM_MALLOC_ARRAY(gens, n);
-	if (inums == NULL || gens == NULL) {
+	GFARM_MALLOC_ARRAY(sizes, n);
+	if (inums == NULL || gens == NULL || sizes == NULL) {
 		free(inums);
 		free(gens);
+		free(sizes);
 		return (GFARM_ERR_NO_MEMORY); /* XXX not graceful */
 	}
 	for (i = 0; i < n; i++) {
-		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "ll",
-		    &inums[i], &gens[i]);
+		e = gfp_xdr_recv(gfm_server->conn, 0, &eof, "lll",
+		    &inums[i], &gens[i], &sizes[i]);
 		if (IS_CONNECTION_ERROR(e))
 			gfm_client_purge_from_cache(gfm_server);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
@@ -3365,12 +3369,14 @@ gfm_client_replica_get_my_entries_result(struct gfm_connection *gfm_server,
 			    "gfp_xdr_recv(): %s", gfarm_error_string(e));
 			free(inums);
 			free(gens);
+			free(sizes);
 			return (e);
 		}
 	}
 	*np = n;
 	*inumsp = inums;
 	*gensp = gens;
+	*sizesp = sizes;
 	return (GFARM_ERR_NO_ERROR);
 }
 
