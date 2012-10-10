@@ -331,7 +331,7 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 	struct host *dst = NULL;
 	gfarm_ino_t ino = 0;
 	gfarm_int64_t gen = 0;
-	static const char diag[] = "peer_replicating_free_waiting_result";
+	static const char diag[] = "peer_replicating_free_all_waiting_result";
 
 	for (;;) {
 		found = 0;
