@@ -137,7 +137,7 @@ gfimport_from_to(const char *ifile, char *gfarm_url,
 			return (gfarm_errno_to_error(save_errno));
 		}
 	} else
-		st.st_mode = 0400;
+		st.st_mode = 0600;
 	e = gfimport_to(ifp, gfarm_url, st.st_mode & 0777, host, off, size);
 	if (ifp != stdin)
 		fclose(ifp);
