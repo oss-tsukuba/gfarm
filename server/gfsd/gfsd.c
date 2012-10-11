@@ -1287,7 +1287,7 @@ gfs_server_open_common(struct gfp_xdr *client, char *diag,
 					break;
 				} else if (e == GFARM_ERR_FILE_BUSY) {
 					/* sourceforge.net #455 */
-					gflog_debug(GFARM_MSG_UNFIXED,
+					gflog_debug(GFARM_MSG_1003559,
 					    "possible race against "
 					    "reopen with O_CREAT "
 					    "ino %lld, gen %lld",

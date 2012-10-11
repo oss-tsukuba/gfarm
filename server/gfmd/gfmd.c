@@ -971,9 +971,9 @@ gflog_warning_reduced(struct gflog_warning_state *state,
 	}
 
 	if (state->log_count == 1) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s%s", msg1, msg2);
+		gflog_warning(GFARM_MSG_1003552, "%s%s", msg1, msg2);
 	} else {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003553,
 		    "%s%s: %ld times in recent %ld seconds", msg1, msg2,
 		    state->log_count, (long)(current_time - state->log_time));
 	}

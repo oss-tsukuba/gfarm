@@ -20,7 +20,7 @@ gfarm_nanosleep_by_timespec(const struct timespec *tsp)
 		if (nanosleep(&req, &rem) == 0)
 			break;
 		if (errno != EINTR) {
-			gflog_warning(GFARM_MSG_UNFIXED, "nanosleep(): %s",
+			gflog_warning(GFARM_MSG_1003547, "nanosleep(): %s",
 			    strerror(errno));
 			break;
 		}

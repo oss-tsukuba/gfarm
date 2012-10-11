@@ -553,7 +553,7 @@ gfsd_spool_check(int check_level)
 			HASH_OK_SIZE,
 			gfarm_hash_default, gfarm_hash_key_equal_default);
 		if (hash_ok == NULL)
-			fatal(GFARM_MSG_UNFIXED, "no memory for spool_check");
+			fatal(GFARM_MSG_1003560, "no memory for spool_check");
 		check_metadata(hash_ok);
 
 		invalid_file_mode = MODE_LOST_FOUND;
