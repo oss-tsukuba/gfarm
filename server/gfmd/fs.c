@@ -5090,7 +5090,7 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			 * http://sourceforge.net/apps/trac/gfarm/ticket/455
 			 * race condtion in case of REOPEN + O_CREATE
 			 */
-			gflog_debug(GFARM_MSG_UNFIXED, "%s: writing", diag);
+			gflog_debug(GFARM_MSG_1003554, "%s: writing", diag);
 			e = GFARM_ERR_FILE_BUSY;
 		} else {
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
@@ -5188,13 +5188,13 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		    != NULL) {
 			/* registered replica */
 			if (!file_copy_is_valid(copy)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003555,
 				    "%lld:%lld on %s: being replicated",
 				    (long long)inum, (long long)gen,
 				    host_name(spool_host));
 				e = GFARM_ERR_FILE_BUSY; /* busy file */
 			} else if (file_copy_is_being_removed(copy)) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003556,
 				    "%lld:%lld on %s: being removed",
 				    (long long)inum, (long long)gen,
 				    host_name(spool_host));
@@ -5207,7 +5207,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				/* correct file */
 				e = GFARM_ERR_ALREADY_EXISTS;
 			} else {
-				gflog_warning(GFARM_MSG_UNFIXED,
+				gflog_warning(GFARM_MSG_1003557,
 				    "%lld:%lld on %s: invalid file replica",
 				    (long long)inum, (long long)gen,
 				    host_name(spool_host));
@@ -5215,7 +5215,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				e = GFARM_ERR_INVALID_FILE_REPLICA;
 			}
 		} else if (inode_get_size(inode) != size) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003558,
 			    "%lld:%lld on %s: invalid file replica, rejected",
 			    (long long)inum, (long long)gen,
 			    host_name(spool_host));
