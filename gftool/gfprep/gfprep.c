@@ -324,8 +324,6 @@ struct gfprep_host_info {
 	int port;
 	int ncpu;
 	int max_rw;
-	int is_available;
-	int is_writable;
 	gfarm_int64_t disk_avail;
 
 	/* locked by cb_mutex */
@@ -371,42 +369,40 @@ static int
 gfprep_in_hostnamehash(struct gfarm_hash_table *hash, const char *hostname)
 {
 	struct gfarm_hash_entry *he;
+
 	he = gfarm_hash_lookup(hash, hostname, strlen(hostname) + 1);
 	return (he != NULL ? 1 : 0);
 }
 
 static struct gfprep_host_info *
-gfprep_from_hostinfohash(struct gfarm_hash_table *hash, const char *hostname,
-			 int is_available)
+gfprep_from_hostinfohash(struct gfarm_hash_table *hash, const char *hostname)
 {
 	struct gfarm_hash_entry *he;
 	struct gfprep_host_info **hip;
+
 	he = gfarm_hash_lookup(hash, &hostname, sizeof(char *));
 	if (he) {
 		hip = gfarm_hash_entry_data(he);
-		if (!is_available || (*hip)->is_available)
-			return (*hip);
+		return (*hip);
 	}
 	return (NULL);
 }
 
 static int
-gfprep_in_hostinfohash(struct gfarm_hash_table *hash, const char *hostname,
-		       int is_available)
+gfprep_in_hostinfohash(struct gfarm_hash_table *hash, const char *hostname)
 {
-	struct gfprep_host_info *hi = gfprep_from_hostinfohash(
-		hash, hostname, is_available);
+	struct gfprep_host_info *hi = gfprep_from_hostinfohash(hash, hostname);
+
 	return (hi != NULL ? 1 : 0);
 }
 
 static gfarm_error_t
-gfprep_create_hostinfohash_all(const char *path,
+gfprep_create_hostinfohash_all(const char *path, int *nhost_infos_p,
 			       struct gfarm_hash_table **hash_all_p)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
-	int nhis, created, i;
-	struct gfarm_host_info *his;
+	int nhsis, created, i;
+	struct gfarm_host_sched_info *hsis;
 	struct gfarm_hash_entry *he;
 	struct gfarm_hash_iterator iter;
 
@@ -416,21 +412,15 @@ gfprep_create_hostinfohash_all(const char *path,
 	if (*hash_all_p == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	e = gfm_client_connection_and_process_acquire_by_path(
-		path, &gfm_server);
+	e = gfarm_schedule_hosts_domain_all(path, "", &nhsis, &hsis);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_hash_table_free(*hash_all_p);
 		return (e);
 	}
-	e = gfm_client_host_info_get_all(gfm_server, &nhis, &his);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gfm_client_connection_free(gfm_server);
-		gfarm_hash_table_free(*hash_all_p);
-		return (e);
-	}
-	for (i = 0; i < nhis; i++) {
+	for (i = 0; i < nhsis; i++) {
 		struct gfprep_host_info *hi, **hip;
-		char *hostname = strdup(his[i].hostname);
+		char *hostname = strdup(hsis[i].host);
+
 		if (hostname == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		he = gfarm_hash_enter(*hash_all_p,
@@ -448,18 +438,16 @@ gfprep_create_hostinfohash_all(const char *path,
 		if (hi == NULL)
 			return (GFARM_ERR_NO_MEMORY);
 		hi->hostname = hostname;
-		hi->port = his[i].port;
-		hi->ncpu = his[i].ncpu;
+		hi->port = hsis[i].port;
+		hi->ncpu = hsis[i].ncpu;
 		hi->max_rw = opt.max_rw > 0 ? opt.max_rw : hi->ncpu;
-		hi->disk_avail = 0;
-		hi->is_available = 0;
-		hi->is_writable = 0;
+		hi->disk_avail = hsis[i].disk_avail * 1024; /* KB -> Byte */
 		hi->n_using = 0;
 		hi->failed_size = 0;
 		*hip = hi;
 	}
-	gfarm_host_info_free_all(nhis, his);
-	gfm_client_connection_free(gfm_server);
+	gfarm_host_sched_info_free(nhsis, hsis);
+	*nhost_infos_p = nhsis;
 	return (GFARM_ERR_NO_ERROR);
 nomem:
 	for (gfarm_hash_iterator_begin(*hash_all_p, &iter);
@@ -475,8 +463,7 @@ nomem:
 		}
 	}
 	gfarm_hash_table_free(*hash_all_p);
-	gfarm_host_info_free_all(nhis, his);
-	gfm_client_connection_free(gfm_server);
+	gfarm_host_sched_info_free(nhsis, hsis);
 	return (GFARM_ERR_NO_MEMORY);
 }
 
@@ -558,121 +545,6 @@ gfprep_hostinfohash_all_free(struct gfarm_hash_table *hash_all)
 		}
 	}
 	gfarm_hash_table_free(hash_all);
-}
-
-static gfarm_error_t
-gfprep_update_disk_avail(
-	struct gfprep_host_info *hi, struct gfarm_host_sched_info *si)
-{
-	gfarm_error_t e;
-	gfarm_int32_t bsize;
-	gfarm_off_t blocks, bfree, bavail, files;
-	gfarm_off_t ffree, favail;
-
-	if (!opt.check_disk_avail) {
-		hi->disk_avail = si->disk_avail * 1024;
-		return (GFARM_ERR_NO_ERROR);
-	}
-	e = gfs_statfsnode(hi->hostname, hi->port, &bsize,
-			   &blocks, &bfree, &bavail,
-			   &files, &ffree, &favail);
-	if (e == GFARM_ERR_NO_ERROR) /* update */
-		hi->disk_avail = bavail * bsize;
-	return (e);
-}
-
-static gfarm_error_t
-gfprep_update_hostinfohash(const char *path, int *nhost_infos_p,
-			   struct gfarm_hash_table *hash_info,
-			   int to_write, int client_scheduling)
-{
-	gfarm_error_t e;
-	int nhsis, i, nhost_infos;
-	struct gfarm_host_sched_info *hsis;
-	struct gfarm_hash_iterator iter;
-	struct gfarm_hash_entry *he;
-	struct gfprep_host_info *hi, **hip;
-
-	for (gfarm_hash_iterator_begin(hash_info, &iter);
-	     !gfarm_hash_iterator_is_end(&iter);
-	     gfarm_hash_iterator_next(&iter)) {
-		he = gfarm_hash_iterator_access(&iter);
-		if (he) {
-			hip = gfarm_hash_entry_data(he);
-			(*hip)->is_available = 0; /* reset */
-			(*hip)->is_writable = 0; /* reset */
-		}
-	}
-	e = gfarm_schedule_hosts_domain_all(path, "", &nhsis, &hsis);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	nhost_infos = 0;
-	if (client_scheduling) {
-		int nhosts, *ports;
-		char **hosts;
-		GFARM_MALLOC_ARRAY(hosts, nhsis);
-		GFARM_MALLOC_ARRAY(ports, nhsis);
-		if (hosts == NULL || ports == NULL) {
-			free(hosts);
-			free(ports);
-			gfarm_host_sched_info_free(nhsis, hsis);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		nhosts = nhsis;
-		if (to_write)
-			e = gfarm_schedule_hosts_acyclic_to_write(
-				path, nhsis, hsis, &nhosts, hosts, ports);
-		else
-			e = gfarm_schedule_hosts_acyclic(
-				path, nhsis, hsis, &nhosts, hosts, ports);
-		if (e != GFARM_ERR_NO_ERROR) {
-			free(hosts);
-			free(ports);
-			gfarm_host_sched_info_free(nhsis, hsis);
-			return (e);
-		}
-		for (i = 0; i < nhosts; i++) {
-			char *hostname = hosts[i];
-			he = gfarm_hash_lookup(hash_info,
-					       &hostname, sizeof(char *));
-			if (he) {
-				hip = gfarm_hash_entry_data(he);
-				hi = *hip;
-				hi->is_available = 1;
-				e = gfprep_update_disk_avail(hi, &hsis[i]);
-				gfprep_warn_e(e, "gfs_statfsnode(%s)",
-					      hostname);
-				if (e == GFARM_ERR_NO_ERROR)
-					hi->is_writable = 1;
-				nhost_infos++;
-			}
-		}
-		free(hosts);
-		free(ports);
-	} else {
-		for (i = 0; i < nhsis; i++) {
-			char *hostname = hsis[i].host;
-			he = gfarm_hash_lookup(hash_info,
-					       &hostname, sizeof(char *));
-			if (he) {
-				hip = gfarm_hash_entry_data(he);
-				hi = *hip;
-				hi->is_available = 1;
-				e = gfprep_update_disk_avail(hi, &hsis[i]);
-				gfprep_warn_e(e, "gfs_statfsnode(%s)",
-					      hostname);
-				if (e == GFARM_ERR_NO_ERROR)
-					hi->is_writable = 1;
-				nhost_infos++;
-			}
-		}
-	}
-	gfarm_host_sched_info_free(nhsis, hsis);
-
-	if (nhost_infos_p)
-		*nhost_infos_p = nhost_infos;
-
-	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -1523,7 +1395,7 @@ gfprep_greedy_enter(struct gfarm_hash_table *hash_host_to_nodes,
 
 	for (i = 0; i < ent->src_ncopy; i++) {
 		hostname = ent->src_copy[i];
-		hi = gfprep_from_hostinfohash(hash_host_info, hostname, 1);
+		hi = gfprep_from_hostinfohash(hash_host_info, hostname);
 		if (hi == NULL)
 			continue;  /* ignore */
 		/* key-pointer refers ent->src_copy[i] */
@@ -1989,8 +1861,6 @@ gfprep_select_dst(int n_array_dst, struct gfprep_host_info **array_dst,
 	for (i = 0; i < n_array_dst; i++) {
 		hi = array_dst[i];
 		/* XXX should ignore host which has an incomplete replica */
-		if (!hi->is_available || !hi->is_writable)
-			continue; /* ignore */
 		e = gfprep_check_disk_avail(hi, src_size);
 		if (e != GFARM_ERR_NO_ERROR) { /* no spece */
 			gfprep_warn_e(e, "check_disk_avail(%s)", hi->hostname);
@@ -2213,7 +2083,7 @@ next:
 			}
 			gfprep_fatal_e(e, "gfprep_connection_job_next");
 			src_hi = gfprep_from_hostinfohash(
-				target_hash_src, job.src_host, 1);
+				target_hash_src, job.src_host);
 			assert(src_hi);
 			gfprep_url_realloc(&src_url, &src_url_size, src_dir,
 					   job.file->subpath);
@@ -2532,7 +2402,6 @@ main(int argc, char *argv[])
 	int opt_n_desire = 1;  /* -N */
 	int opt_migrate = 0; /* -m */
 	int opt_remove = 0;  /* -x */
-	int opt_clientsched = 1; /* -Z: enabled */
 	int opt_ratio = 1; /* -R */
 	int opt_limited_src = 0; /* -L */
 	int opt_copy_bufsize = 64 * 1024; /* -b, default=64KiB */
@@ -2606,9 +2475,6 @@ main(int argc, char *argv[])
 			break;
 		case 'l': /* hidden option: for debug */
 			opt_list_only = 1;
-			break;
-		case 'Z': /* hidden option */
-			opt_clientsched = 0; /* disable */
 			break;
 		case 'C': /* hidden option: for -w noplan */
 			opt.openfile_cost = strtol(optarg, NULL, 0);;
@@ -2937,15 +2803,9 @@ main(int argc, char *argv[])
 		int n_src_all = 0;
 		struct gfarm_hash_table *exclude_hash_dstname;
 		const char *exclude_dst_domain;
-		e = gfprep_create_hostinfohash_all(src_dir, &hash_all_src);
+		e = gfprep_create_hostinfohash_all(
+		    src_dir, &n_src_all, &hash_all_src);
 		gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
-		e = gfprep_update_hostinfohash(src_dir, &n_src_all,
-					       hash_all_src,
-					       0, opt_clientsched);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gfprep_error_e(e, "gfprep_update_hostinfohash_all");
-			exit(EXIT_FAILURE);
-		}
 		if (n_src_all == 0) {
 			gfprep_error("no available src host");
 			exit(EXIT_FAILURE);
@@ -2985,6 +2845,7 @@ main(int argc, char *argv[])
 		struct gfarm_hash_table *this_hash_all_dst;
 		struct gfarm_hash_table *exclude_hash_srcname;
 		const char *exclude_src_domain;
+
 		if (!is_gfpcopy) { /* gfprep */
 			exclude_hash_srcname = hash_srcname;
 			exclude_src_domain = opt_src_domain;
@@ -2999,17 +2860,10 @@ main(int argc, char *argv[])
 			this_hash_all_dst = hash_all_src;
 		} else { /* different gfmd */
 			int n_all_dst = 0;
+
 			e = gfprep_create_hostinfohash_all(
-				dst_dir, &hash_all_dst);
+			    dst_dir, &n_all_dst, &hash_all_dst);
 			gfprep_fatal_e(e, "gfprep_create_hostinfohash_all");
-			e = gfprep_update_hostinfohash(dst_dir, &n_all_dst,
-						       hash_all_dst,
-						       1, opt_clientsched);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gfprep_error_e(
-					e, "gfprep_update_hostinfohash_all");
-				exit(EXIT_FAILURE);
-			}
 			if (n_all_dst == 0) {
 				gfprep_error("no available dst host");
 				exit(EXIT_FAILURE);
@@ -3146,7 +3000,7 @@ main(int argc, char *argv[])
 
 			for (i = 0; i < entry->src_ncopy; i++) {
 				if (gfprep_in_hostinfohash(
-					hash_src, entry->src_copy[i], 0)) {
+					hash_src, entry->src_copy[i])) {
 					found = 1;
 					break;
 				}
@@ -3188,7 +3042,7 @@ main(int argc, char *argv[])
 				for (i = 0; i < entry->src_ncopy; i++) {
 					if (gfprep_in_hostinfohash(
 						    hash_dst,
-						    entry->src_copy[i], 1)) {
+						    entry->src_copy[i])) {
 						found = 1;
 						gfprep_verbose(
 						"replica already exists: "
@@ -3222,8 +3076,7 @@ main(int argc, char *argv[])
 			/* select existing replicas from hash_src */
 			for (i = 0; i < entry->src_ncopy; i++) {
 				src_hi = gfprep_from_hostinfohash(
-					target_hash_src,
-					entry->src_copy[i], 1);
+					target_hash_src, entry->src_copy[i]);
 				if (src_hi) {
 					e = gfarm_list_add(&src_select_list,
 							   src_hi);
@@ -3297,9 +3150,6 @@ main(int argc, char *argv[])
 					gfprep_fatal_e(e, "gfarm_list_add");
 					n_dst_exist++;
 				} else {
-					if (!array_dst[i]->is_available ||
-					    !array_dst[i]->is_writable)
-						continue;
 					e = gfprep_check_disk_avail(
 						array_dst[i], entry->src_size);
 					if (e == GFARM_ERR_NO_SPACE)
