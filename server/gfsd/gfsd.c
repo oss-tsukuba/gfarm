@@ -2559,12 +2559,16 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 gfarm_error_t
 start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 {
-	gfarm_error_t gfmd_err, dst_err, src_err = GFARM_ERR_NO_ERROR;
+	gfarm_error_t gfmd_err, dst_err, src_err;
+	gfarm_error_t src_net_err = GFARM_ERR_NO_ERROR;
+	int src_net_err_count = 0;
 	struct replication_queue_data *qd = gfarm_hash_entry_data(q);
 	struct replication_request *rep;
+	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
 
 	do {
-		if (src_err != GFARM_ERR_NO_ERROR) {
+		if (src_net_err_count > 1) {
+			rep = qd->head;
 			/*
 			 * avoid retries, because this may take long time,
 			 * if the host is down or network is unreachable.
@@ -2572,9 +2576,16 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 			gflog_warning(GFARM_MSG_1002515,
 			    "skipping replication for %lld:%lld, "
 			    "because %s:%d is down: %s",
-			    (long long)qd->head->ino, (long long)qd->head->gen,
+			    (long long)rep->ino, (long long)rep->gen,
 			    gfp_conn_hash_hostname(q), gfp_conn_hash_port(q),
-			    gfarm_error_string(src_err));
+			    gfarm_error_string(src_net_err));
+
+			/*
+			 * XXX FIXME
+			 * src_err and dst_err should be passed separately
+			 */
+			return (gfs_async_server_put_reply(conn, rep->xid,
+			    diag, src_net_err, ""));
 		} else {
 			gfmd_err = try_replication(conn, q,
 			    &src_err, &dst_err);
@@ -2583,6 +2594,10 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 			if (src_err == GFARM_ERR_NO_ERROR &&
 			    dst_err == GFARM_ERR_NO_ERROR)
 				return (GFARM_ERR_NO_ERROR);
+			if (IS_CONNECTION_ERROR(src_err)) {
+				src_net_err = src_err;
+				++src_net_err_count;
+			}
 		}
 
 		/*
@@ -3816,8 +3831,13 @@ back_channel_server(void)
 				}
 				break;
 			}
-			if (e != GFARM_ERR_NO_ERROR)
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "back channel disconnected "
+				    "during a reply: %s",
+				    gfarm_error_string(e));
 				break;
+			}
 		}
 
 		kill_pending_replications();
