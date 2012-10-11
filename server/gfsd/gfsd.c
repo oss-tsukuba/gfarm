@@ -2715,8 +2715,10 @@ start_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q)
 			 * XXX FIXME
 			 * src_err and dst_err should be passed separately
 			 */
-			return (gfs_async_server_put_reply(conn, rep->xid,
-			    diag, src_net_err, ""));
+			gfmd_err = gfs_async_server_put_reply(conn, rep->xid,
+			    diag, src_net_err, "");
+			if (gfmd_err != GFARM_ERR_NO_ERROR)
+				return (gfmd_err);
 		} else {
 			gfmd_err = try_replication(conn, q,
 			    &src_err, &dst_err);
