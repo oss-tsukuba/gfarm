@@ -160,9 +160,10 @@ thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 		if (e == GFARM_ERR_NO_ERROR) {
 			p->threads++;
 		} else {
-			gflog_warning(GFARM_MSG_1000221,
-			    "%s: create thread: %s\n",
-			    diag, gfarm_error_string(e));
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: create thread (currently %d out of %d "
+			    "threads in %s): %s\n", diag, p->threads,
+			    p->pool_size, p->name, gfarm_error_string(e));
 		}
 	}
 	gfarm_mutex_unlock(&p->mutex, diag, "thrpool");
