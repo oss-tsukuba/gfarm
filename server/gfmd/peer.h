@@ -150,3 +150,4 @@ gfarm_uint64_t peer_add_cookie(struct peer *);
 int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 
 gfarm_error_t peer_get_port(struct peer *, int *);
+void peer_stat_add(struct peer *peer, unsigned int cat, int val);

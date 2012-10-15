@@ -31,6 +31,8 @@ password=/tmp/up$$
 rm -f $password $admin_password
 trap 'rm -f $password $admin_password; stty echo 2>/dev/null; exit $status' 0 1 2 15
 
+. $config_dir/config-gfarm.iostat
+
 getvalue()
 {
 	$awk '$1 == "'"$1"'" { print $2 }' $GFMD_CONF
@@ -58,6 +60,7 @@ usage()
 	echo >&2 "	[-l metadata_directory]	- backend database data directory"
 	echo >&2 "	[-f backend_file]"
 	echo >&2 "	[-j metadb_journal_dir] - metadata journal directory"
+	usage_iostat
 	update_usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
 	exit 1
@@ -116,6 +119,9 @@ display_params()
     if $METADATA_REPLICATION; then
         echo "metadata journal directory [-j]: $METADATA_JOURNAL_DIR"
     fi
+
+    display_iostat_params
+
     exit 0
 }
 
@@ -165,6 +171,8 @@ update_first_set_param()
 : ${BACKEND_OPTIONS:=}
 : ${METADATA_REPLICATION:=false}
 : ${METADATA_REPLICATION_ED:=disable}
+: ${IOSTAT_ENABLE:=""}
+: ${BACKEND_TYPE:=}
 
 while [ $# -gt 0 ] ; do
 	case $1 in
@@ -185,6 +193,11 @@ while [ $# -gt 0 ] ; do
 	  -j) shift; [ $# -ge 1 ] || usage
 		METADATA_JOURNAL_DIR0=$1
 		;;
+	  --iostat*)
+		key=$1
+		shift; [ $# -ge 1 ] || usage
+		iostat_args $key  $1
+                ;;
 
 	# control options
 	  --help)
@@ -240,6 +253,8 @@ else
 	exit 1
 fi
 
+iostat_set_default
+
 # load backend-dependent functions
 . $config_dir/config-gfarm.$BACKEND_TYPE
 . $config_dir/config-gfarm-update.$BACKEND_TYPE
@@ -272,6 +287,20 @@ update_sanity || ABORT "aborted"
 # -t option; display parameters
 $DISPLAY_PARAMS && display_params
 
+create_directory()
+{
+	# local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
+}
 update_postprocess_$BACKEND_TYPE || ABORT "aborted"
 
 #
@@ -281,6 +310,8 @@ if $UPDATE; then
 else
 	update_access_db_$BACKEND_TYPE $BACKEND_OPTIONS
 fi
+
+update_iostat
 
 status=0
 # trap action automatically returns this $status as exit code

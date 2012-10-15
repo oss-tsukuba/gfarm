@@ -46,6 +46,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "hash.h"
@@ -65,6 +66,7 @@
 #include "gfm_proto.h"
 #include "gfm_client.h"
 #include "gfs_profile.h"
+#include "iostat.h"
 
 #include "gfsd_subr.h"
 
@@ -120,6 +122,16 @@ long file_read_size;
 #if 0 /* not yet in gfarm v2 */
 long rate_limit;
 #endif
+
+static struct gfarm_iostat_spec iostat_spec[] =  {
+	{ "rcount", GFARM_IOSTAT_TYPE_TOTAL },
+	{ "wcount", GFARM_IOSTAT_TYPE_TOTAL },
+	{ "rbytes", GFARM_IOSTAT_TYPE_TOTAL },
+	{ "wbytes", GFARM_IOSTAT_TYPE_TOTAL },
+};
+static char *iostat_dirbuf;
+static int iostat_dirlen;
+
 static volatile sig_atomic_t write_open_count = 0;
 static volatile sig_atomic_t terminate_flag = 0;
 
@@ -155,6 +167,16 @@ cleanup_accepting(int sighandler)
 			    "rmdir(%s)", accepting.local_socks[i].dir);
 	}
 }
+void
+cleanup_iostat(void)
+{
+	if (iostat_dirbuf) {
+		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
+		(void) unlink(iostat_dirbuf);
+		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
+		(void) unlink(iostat_dirbuf);
+	}
+}
 
 static void close_all_fd(void);
 
@@ -179,6 +201,7 @@ cleanup(int sighandler)
 		if (kill(back_channel_gfsd_pid, SIGTERM) == -1 && !sighandler)
 			gflog_warning_errno(GFARM_MSG_1002377,
 			    "kill(%ld)", (long)back_channel_gfsd_pid);
+		cleanup_iostat();
 	}
 
 	if (credential_exported != NULL)
@@ -1755,6 +1778,11 @@ gfs_server_pread(struct gfp_xdr *client)
 	else
 		file_table_set_read(fd);
 
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
+	}
+
 	gfs_profile(
 		gfarm_gettimerval(&t2);
 		fe = file_table_entry(fd);
@@ -1804,6 +1832,10 @@ gfs_server_pwrite(struct gfp_xdr *client)
 	else
 		file_table_set_written(fd);
 
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES, rv);
+	}
 	gfs_profile(
 		gfarm_gettimerval(&t2);
 		fe = file_table_entry(fd);
@@ -2230,6 +2262,8 @@ gfs_server_replica_recv(struct gfp_xdr *client,
 				error = gfarm_errno_to_error(errno);
 			break;
 		}
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
 		e = gfp_xdr_send(client, "b", rv, buffer);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error = e;
@@ -2445,6 +2479,9 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 	struct replication_errcodes errcodes;
 	int local_fd, rv;
 	static const char diag[] = "GFS_PROTO_REPLICATION_REQUEST";
+	struct gfarm_iostat_items *statp;
+
+	statp = gfarm_iostat_find_space(0);
 
 	/*
 	 * XXX FIXME:
@@ -2483,6 +2520,10 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
 	} else if ((pid = fork()) == 0) { /* child */
+		if (statp) {
+			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
+			gfarm_iostat_set_local_ip(statp);
+		}
 		close(fds[0]);
 		e = gfs_client_replica_recv(src_gfsd, rep->ino, rep->gen,
 		    local_fd);
@@ -2535,6 +2576,10 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 			gfs_client_connection_free(src_gfsd);
 			close(local_fd);
 		} else {
+			if (statp) {
+				gfarm_iostat_set_id(statp, (gfarm_uint64_t)pid);
+				statp = NULL;
+			}
 			rep->src_gfsd = src_gfsd;
 			rep->file_fd = local_fd;
 			rep->pipe_fd = fds[0];
@@ -2546,6 +2591,8 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		}
 		close(fds[1]);
 	}
+	if (statp)
+		gfarm_iostat_clear_ip(statp);
 
 	*src_errp = conn_err;
 	*dst_errp = dst_err;
@@ -2727,6 +2774,8 @@ gfs_server_striping_read(struct gfp_xdr *client)
 					    gfarm_errno_to_error(errno);
 				goto finish;
 			}
+			gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+			gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
 			e = gfp_xdr_send(client, "b", rv, buffer);
 			if (e != GFARM_ERR_NO_ERROR) {
 				error = e;
@@ -3269,17 +3318,25 @@ gfs_server_chdir(struct gfp_xdr *client)
 
 #endif /* not yet in gfarm v2 */
 
+static int got_sigchld;
 void
 sigchld_handler(int sig)
 {
-	int pid, status, save_errno = errno;
+	got_sigchld = 1;
+}
+void
+clear_child(void)
+{
+	pid_t pid;
+	int  status;
 
+	got_sigchld = 0;
 	for (;;) {
 		pid = waitpid(-1, &status, WNOHANG);
 		if (pid == -1 || pid == 0)
 			break;
+		gfarm_iostat_clear_id(pid, 0);
 	}
-	errno = save_errno;
 }
 
 void
@@ -3437,8 +3494,12 @@ start_server(int accepting_sock,
 	struct sockaddr *client_addr, char *client_name,
 	struct accepting_sockets *accepting)
 {
+#ifndef GFSD_DEBUG
+	pid_t pid = 0;
+#endif
 	int i, client = accept(accepting_sock,
 	   client_addr_storage, &client_addr_size);
+	struct gfarm_iostat_items *statp;
 
 	if (client < 0) {
 		if (errno == EINTR || errno == ECONNABORTED ||
@@ -3449,10 +3510,15 @@ start_server(int accepting_sock,
 			return;
 		fatal_errno(GFARM_MSG_1000559, "accept");
 	}
+	statp = gfarm_iostat_find_space(0);
 #ifndef GFSD_DEBUG
-	switch (fork()) {
+	switch ((pid = fork())) {
 	case 0:
 #endif
+		if (statp) {
+			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
+			gfarm_iostat_set_local_ip(statp);
+		}
 		for (i = 0; i < accepting->local_socks_count; i++)
 			close(accepting->local_socks[i].sock);
 		close(accepting->tcp_sock);
@@ -3468,6 +3534,11 @@ start_server(int accepting_sock,
 	default:
 		close(client);
 		break;
+	}
+	if (pid != -1 && statp) {
+		gfarm_iostat_set_id(statp, (gfarm_uint64_t) pid);
+	} else {
+		gfarm_iostat_clear_ip(statp);
 	}
 #endif
 }
@@ -3571,6 +3642,8 @@ replication_result_notify(struct gfp_xdr *bc_conn,
 		    "replication(%lld, %lld): child %d: %s",
 		    (long long)rep->ino, (long long)rep->gen, (int)rep->pid,
 		    strerror(errno));
+	else
+		gfarm_iostat_clear_id(rep->pid, 0);
 
 	if (gfs_client_is_connection_error(errcodes.src_errcode))
 		gfs_client_purge_from_cache(rep->src_gfsd);
@@ -3710,6 +3783,16 @@ back_channel_server(void)
 
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 
+	if (iostat_dirbuf) {
+		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
+		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
+			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+				"gfarm_iostat_mmap(%s): %s",
+				iostat_dirbuf, gfarm_error_string(e));
+
+	}
 	for (;;) {
 		e = gfm_client_switch_async_back_channel(gfm_server,
 		    GFS_PROTOCOL_VERSION,
@@ -4323,6 +4406,32 @@ main(int argc, char **argv)
 		memcpy(self_addresses, hp->h_addr, sizeof(*self_addresses));
 		listen_address = *self_addresses;
 	}
+	if (gfarm_iostat_gfsd_path) {
+		int len;
+
+		len = strlen(gfarm_iostat_gfsd_path) + 6; /* for port */
+		if (listen_addrname) 
+			len += strlen(listen_addrname) + 1;
+		len += 1 + 16 + 1;	/* "-NAME\0" */
+		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
+		 if (iostat_dirbuf == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+
+		iostat_dirlen = snprintf(iostat_dirbuf, len, "%s%s%s-%d/",
+			gfarm_iostat_gfsd_path, listen_addrname ? "-" : "",
+			listen_addrname ? listen_addrname : "",
+			(unsigned int) self_info.port);
+		if (mkdir(iostat_dirbuf, 0755)) {
+			if (errno != EEXIST)
+				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+					"mkdir:%s", iostat_dirbuf);
+		} else if (chown(iostat_dirbuf, gfsd_uid, -1)) {
+			if (errno != EEXIST)
+				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+					"chown:%s", iostat_dirbuf);
+		}
+	}
 	GFARM_MALLOC_ARRAY(self_sockaddr_array, self_addresses_count);
 	if (self_sockaddr_array == NULL)
 		gflog_fatal(GFARM_MSG_1000596, "%s",
@@ -4393,6 +4502,15 @@ main(int argc, char **argv)
 		    table_size);
 	file_table_init(table_size);
 
+	if (iostat_dirbuf) {
+		strcpy(&iostat_dirbuf[iostat_dirlen], "gfsd");
+		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
+			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+				"gfarm_iostat_mmap(%s): %s",
+				iostat_dirbuf, gfarm_error_string(e));
+	}
 	/*
 	 * Because SA_NOCLDWAIT is not implemented on some OS,
 	 * we do not rely on the feature.
@@ -4425,6 +4543,8 @@ main(int argc, char **argv)
 			FD_SET(accepting.udp_socks[i], &requests);
 		nfound = select(max_fd + 1, &requests, NULL, NULL, NULL);
 		if (nfound <= 0) {
+			if (got_sigchld)
+				clear_child();
 			if (nfound == 0 || errno == EINTR || errno == EAGAIN)
 				continue;
 			fatal_errno(GFARM_MSG_1000600, "select");

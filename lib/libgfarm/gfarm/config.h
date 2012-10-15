@@ -67,6 +67,11 @@ extern char *gfarm_postgresql_conninfo;
 /* LocalFS dependent */
 extern char *gfarm_localfs_datadir;
 
+/* IO performance */
+extern char *gfarm_iostat_gfmd_path;
+extern char *gfarm_iostat_gfsd_path;
+extern int gfarm_iostat_max_client;
+
 /* miscellaneous configurations */
 extern int gfarm_log_level; /* syslog priority level to log */
 extern int gfarm_no_file_system_node_timeout;

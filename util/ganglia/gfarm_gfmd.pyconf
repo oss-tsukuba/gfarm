@@ -1,0 +1,25 @@
+modules {
+  module {
+    name = '@iostat_module@'
+    language = 'python'
+
+    param iostat_label {
+	value = '@iostat_label@'
+    }
+    param iostat_counterdir {
+	value = '@iostat_counterdir@'
+    }
+    param gfarm-server {
+        value = 'gfmd'
+    }
+  }
+}
+
+collection_group {
+  collect_every = 30
+  time_threshold = 30
+
+  metric {
+    name_match = "iostat-gfmd(.+)"
+  }
+}

@@ -27,6 +27,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -65,7 +66,7 @@
 #include "replica_check.h"
 
 #include "protocol_state.h"
-
+#include "iostat.h"
 
 #ifdef SOMAXCONN
 #define LISTEN_BACKLOG	SOMAXCONN
@@ -135,6 +136,7 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		peer_record_protocol_error(peer); /* mark this peer finished */
 		return (e);
 	}
+	peer_stat_add(peer, GFARM_IOSTAT_TRAN_NUM, 1);
 	switch (request) {
 	case GFM_PROTO_HOST_INFO_GET_ALL:
 		e = gfm_server_host_info_get_all(peer, from_client, skip);
@@ -1435,6 +1437,9 @@ gfmd_terminate(const char *diag)
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
 
+	if (gfarm_iostat_gfmd_path)
+		unlink(gfarm_iostat_gfmd_path);
+
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
 }
@@ -1506,6 +1511,10 @@ gfmd_modules_init_default(int table_size)
 
 /* this interface is made as a hook for a private extension */
 void (*gfmd_modules_init)(int); /* intentionally remains uninitialized */
+
+static struct gfarm_iostat_spec iostat_spec[] =  {
+        { "ntran", GFARM_IOSTAT_TYPE_TOTAL }
+};
 
 int
 main(int argc, char **argv)
@@ -1688,6 +1697,14 @@ main(int argc, char **argv)
 	if (gfarm_limit_nofiles(&table_size) == 0)
 		gflog_info(GFARM_MSG_1003455, "max descriptors = %d",
 		    table_size);
+	 if (gfarm_iostat_gfmd_path) {
+		e = gfarm_iostat_mmap(gfarm_iostat_gfmd_path, iostat_spec,
+			GFARM_IOSTAT_TRAN_NITEM, table_size);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+				"gfarm_iostat_mmap(%s): %s",
+				gfarm_iostat_gfmd_path, gfarm_error_string(e));
+        }
 
 	/*
 	 * gfmd shouldn't/cannot read/write DB

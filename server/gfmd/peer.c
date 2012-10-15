@@ -22,6 +22,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -44,6 +45,7 @@
 #include "inode.h"
 #include "process.h"
 #include "job.h"
+#include "iostat.h"
 
 #include "protocol_state.h"
 
@@ -163,6 +165,8 @@ struct peer {
 			struct job_table_entry *jobs;
 		} client;
 	} u;
+
+	struct gfarm_iostat_items	*statp;
 
 	/* the followings are only used for gfsd back channel */
 	pthread_mutex_t replication_mutex;
@@ -701,6 +705,9 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	    == -1)
 		gflog_warning_errno(GFARM_MSG_1000283, "SO_KEEPALIVE");
 
+	if (!peer->statp)
+		peer->statp = gfarm_iostat_get_ip(fd);
+
 	*peerp = peer;
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 	return (GFARM_ERR_NO_ERROR);
@@ -838,6 +845,10 @@ peer_free(struct peer *peer)
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
+	if (peer->statp) {
+		gfarm_iostat_clear_ip(peer->statp);
+		peer->statp = NULL;
+        }
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
 		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
@@ -1451,4 +1462,10 @@ peer_get_port(struct peer *peer, int *portp)
 		*portp = (int)ntohs(sin.sin_port);
 		return (GFARM_ERR_NO_ERROR);
 	}
+}
+void
+peer_stat_add(struct peer *peer, unsigned int cat, int val)
+{
+	if (peer->statp)
+		gfarm_iostat_stat_add(peer->statp, cat, val);
 }

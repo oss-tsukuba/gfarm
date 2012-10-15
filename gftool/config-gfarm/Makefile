@@ -13,10 +13,11 @@ datadir=$(default_datadir)/gfarm/config
 PRIVATE_SRCS = $(PRIVATE_GFTOOL_CONFIG_GFARM_SRCS)
 
 SCRIPTS = $(srcdir)/gfarm.arch.guess $(optional_srcs)
-BUILT_SCRIPTS = config-gfarm config-gfarm-update config-gfsd
+BUILT_SCRIPTS = config-gfarm config-gfarm-update config-gfsd config-gfsd-iostat
 
 DATA =	$(srcdir)/config-gfarm.postgresql \
 	$(srcdir)/config-gfarm.ldap \
+	$(srcdir)/config-gfarm.iostat \
 	$(srcdir)/config-gfarm-update.postgresql \
 	$(srcdir)/config-gfarm-update.ldap \
 	$(srcdir)/gfarm.conf-postgresql.in \
@@ -41,4 +42,7 @@ config-gfarm-update: $(srcdir)/config-gfarm-update.in
 	$(SHELL) $(top_builddir)/makes/build-script $? $@
 
 config-gfsd: $(srcdir)/config-gfsd.in
+	$(SHELL) $(top_builddir)/makes/build-script $? $@
+
+config-gfsd-iostat: $(srcdir)/config-gfsd-iostat.in
 	$(SHELL) $(top_builddir)/makes/build-script $? $@
