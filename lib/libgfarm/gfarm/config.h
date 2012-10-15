@@ -62,6 +62,11 @@ extern char *gfarm_postgresql_conninfo;
 /* LocalFS dependent */
 extern char *gfarm_localfs_datadir;
 
+/* IO performance */
+extern char *gfarm_iostat_gfmd_path;
+extern char *gfarm_iostat_gfsd_path;
+extern int gfarm_iostat_max_client;
+
 gfarm_error_t gfarm_get_global_username_by_host_for_connection_cache(
 	const char *, int, char **);
 

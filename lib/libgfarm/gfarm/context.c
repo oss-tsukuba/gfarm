@@ -82,6 +82,10 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_xattr_static_init,
 		gfarm_gfs_xattr_static_term
 	},
+	{
+		gfarm_iostat_static_init,
+		gfarm_iostat_static_term
+	},
 #endif /* __KERNEL__ */
 	{
 		gfarm_filesystem_static_init,

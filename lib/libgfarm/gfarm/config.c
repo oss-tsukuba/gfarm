@@ -851,6 +851,12 @@ char *gfarm_postgresql_conninfo = NULL;
 /* LocalFS dependent */
 char *gfarm_localfs_datadir = NULL;
 
+/* IO performance */
+char *gfarm_iostat_gfmd_path;
+char *gfarm_iostat_gfsd_path;
+int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
+#define GFARM_IOSTAT_MAX_CLIENT 1024
+
 /* miscellaneous */
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
@@ -2728,7 +2734,12 @@ parse_one_line(char *s, char *p, char **op)
 		    &gfarm_ctxp->client_parallel_copy);
 	} else if (strcmp(s, o = "profile") == 0) {
 		e = parse_profile(p, &staticp->profile);
-
+	} else if (strcmp(s, o = "iostat_gfmd_path") == 0) {
+		e = parse_set_var(p, &gfarm_iostat_gfmd_path);
+	} else if (strcmp(s, o = "iostat_gfsd_path") == 0) {
+		e = parse_set_var(p, &gfarm_iostat_gfsd_path);
+	} else if (strcmp(s, o = "iostat_max_client") == 0) {
+		e = parse_set_misc_int(p, &gfarm_iostat_max_client);
 	} else if (strcmp(s, o = "metadb_replication") == 0) {
 		e = parse_set_misc_enabled(p, &metadb_replication_enabled);
 	} else if (strcmp(s, o = "metadb_journal_dir") == 0) {
@@ -3033,6 +3044,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT) {
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
 	}
+
+	if (gfarm_iostat_max_client == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_iostat_max_client = GFARM_IOSTAT_MAX_CLIENT;
 
 	gfarm_config_set_default_filesystem();
 	gfarm_config_set_default_metadb_server();

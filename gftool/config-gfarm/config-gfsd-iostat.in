@@ -1,0 +1,197 @@
+#!/bin/sh
+#
+# $Id: config-gfsd.in 5959 2012-02-21 01:44:54Z n-soda $
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH
+export PATH
+
+${DEBUG:="false"} && set -xu
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+datarootdir="@datarootdir@"
+datadir="@datadir@"
+config_dir="${datadir}/gfarm/config"
+
+PROGNAME=`basename $0`
+
+BOURNE_SHELL="${BOURNE_SHELL-/bin/sh}"
+if [ x"$1" = x--re-invoked ]; then
+	# shell function works with this shell, remove --re-invoked option
+	shift
+elif "$BOURNE_SHELL" -c 'shellfunc() { exit 0; }; shellfunc' 2>/dev/null; then
+	# shell function works
+	:
+else
+	# Search other shell that supports shell functions
+	for sh in ksh bash zsh sh ash bsh sh5; do
+		set `IFS=:;
+		 P="/bin:/usr/5bin:/usr/bin:/usr/local/bin:/usr/pkg/bin:$PATH";
+		 echo $P`
+		for dir
+		do
+			shell="$dir/$sh"
+			if ( [ -f "$shell" ] || [ -f "$shell.exe" ] ) &&
+				"$shell" -c 'shellfunc() { exit 0; };
+					shellfunc' 2>/dev/null
+			then
+				BOURNE_SHELL="$shell" exec "$shell" "$0" \
+					--re-invoked ${1+"$@"}
+			fi
+		done
+	done
+	echo "$PROGNAME: cannot find a shell which supports functions" >&2
+	exit 1
+fi
+
+# iostat
+. $config_dir/config-gfarm.iostat
+
+usage()
+{
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
+	usage_iostat_gfsd
+	exit 1
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+display_plain_params()
+{
+	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
+	echo "gfarm client conf file           : $GFARM_CONF"
+	display_iostat_gfsd_params
+
+	exit 0
+}
+
+display_script_params()
+{
+	echo "CONFIG_PREFIX=$CONFIG_PREFIX"
+	echo "GFARM_CONF=$GFARM_CONF"
+	display_iostat_gfsd_script_params
+
+	exit 0
+}
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  --iostat*)
+		key=$1
+		shift; [ $# -ge 1 ] || usage
+		iostat_gfsd_args $key  $1
+		;;
+
+	# control options
+	  --help)
+		usage
+		;;
+	  -f)
+		FORCE=true
+		;;
+	  -t)
+		PARAMS_DISPLAY_STYLE=plain
+		;;
+	  -T)
+		PARAMS_DISPLAY_STYLE=script
+		;;
+	  -*)
+		usage
+		;;
+	esac
+	shift
+done
+
+case $# in
+0)	;;
+*)	usage;;
+esac
+
+. $prefix/share/gfarm/config/config-gfarm.sysdep
+
+#
+# default values
+#
+
+: ${CONFIG_PREFIX:=}
+
+# NOTE: $CONFIG_PREFIX needs to be set before calling sysdep_defaults
+# sysdep_defaults must set: $RC_DIR
+sysdep_defaults
+
+: ${FORCE:=false}
+: ${PARAMS_DISPLAY_STYLE:=none}
+
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
+: ${GFARM_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
+
+iostat_set_default
+
+# -t option; display parameters
+[ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
+
+#########################################################################
+
+delete_file_or_directory()
+{
+	# local p
+
+	for p
+	do
+		[ -d "$p" ] && rmdir "$p" > /dev/null 2>&1
+		# [ -e "$p" ] isn't portable. not supported by Solaris /bin/sh
+		if ls -1d "$p" >/dev/null 2>&1; then
+			if $FORCE; then
+				rm -rf "$p"
+				echo removed "$p"
+			else
+				ABORT "$p already exist"
+			fi
+		fi
+	done
+}
+
+create_directory()
+{
+	# local d
+
+	for d
+	do
+		[ -d "$d" ] && continue
+		if mkdir -p "$d"; then
+			echo created "$d"
+		else
+			ABORT "mkdir -p $d, failed"
+		fi
+	done
+}
+
+#########################################################################
+
+[ -f $GFARM_CONF ] || ABORT "$GFARM_CONF: no such file"
+
+# iostat
+if $FORCE; then
+	update_iostat_gfsd
+else
+	create_iostat_gfsd
+fi
+
+echo "$PROGNAME success"
+
+exit 0

@@ -28,6 +28,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_iostat.h>
 
 #if defined(SCM_RIGHTS) && \
 		(!defined(sun) || (!defined(__svr4__) && !defined(__SVR4)))
@@ -56,6 +57,7 @@
 #include "gfm_client.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
+#include "iostat.h"
 
 #define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
@@ -1717,6 +1719,10 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 				rv = write(local_fd, buffer + i, partial - i);
 				if (rv <= 0)
 					break;
+				gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT,
+						1);
+				gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES,
+						rv);
 			}
 			if (i < partial) {
 				/*

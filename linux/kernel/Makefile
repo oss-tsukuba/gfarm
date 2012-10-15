@@ -133,7 +133,8 @@ EXTRA_CFLAGS += -I$(src)
 EXTRA_CFLAGS += -I$(src)/usr
 EXTRA_CFLAGS += -I$(src)/$(LOCALDIR)/include
 
-REAL_ROOTDIR  := /usr/src/kernels/`uname -r`
+#REAL_ROOTDIR  := /usr/src/kernels/`uname -r`
+REAL_ROOTDIR  := /lib/modules/`uname -r`/build
 UM_ROOTDIR  := $(HOME)/workspace/linux-2.6.32
 PWD   := $(shell pwd)
 

@@ -18,6 +18,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -37,6 +38,7 @@
 #include "inode.h"
 #include "process.h"
 #include "job.h"
+#include "iostat.h"
 
 #include "protocol_state.h"
 #include "peer_impl.h"
@@ -247,6 +249,10 @@ peer_free_common(struct peer *peer, const char *diag)
 {
 	char *username;
 
+	if (peer->statp) {
+		gfarm_iostat_clear_ip(peer->statp);
+		peer->statp = NULL;
+	}
 	username = peer_get_username(peer);
 
 	/*XXX XXX*/
@@ -864,3 +870,10 @@ peer_findxmlattrctx_get(struct peer *peer)
 {
 	return (peer->findxmlattrctx);
 }
+void
+peer_stat_add(struct peer *peer, unsigned int cat, int val)
+{
+	if (peer->statp)
+		gfarm_iostat_stat_add(peer->statp, cat, val);
+}
+

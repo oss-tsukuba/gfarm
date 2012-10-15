@@ -27,6 +27,7 @@
 #include <gfarm/gflog.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -66,6 +67,7 @@
 #include "quota.h"
 #include "relay.h"
 #include "gfmd.h"
+#include "iostat.h"
 
 #include "protocol_state.h"
 
@@ -145,6 +147,8 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		peer_record_protocol_error(peer); /* mark this peer finished */
 		return (e);
 	}
+	peer_stat_add(peer, GFARM_IOSTAT_TRAN_NUM, 1);
+
 	switch (request) {
 	case GFM_PROTO_HOST_INFO_GET_ALL:
 		e = gfm_server_host_info_get_all(peer, xid, sizep, from_client,
@@ -1517,6 +1521,7 @@ sigs_handler(void *p)
 	return (0); /* to shut up warning */
 }
 
+
 void
 gfmd_terminate(const char *diag)
 {
@@ -1541,6 +1546,9 @@ gfmd_terminate(const char *diag)
 	/* save all pending transactions */
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
+
+	if (gfarm_iostat_gfmd_path)
+		unlink(gfarm_iostat_gfmd_path);
 
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
@@ -1616,6 +1624,10 @@ gfmd_modules_init_default(int table_size)
 
 /* this interface is made as a hook for a private extension */
 void (*gfmd_modules_init)(int); /* intentionally remains uninitialized */
+
+static struct gfarm_iostat_spec iostat_spec[] =  {
+	{ "ntran", GFARM_IOSTAT_TYPE_TOTAL }
+};
 
 int
 main(int argc, char **argv)
@@ -1800,6 +1812,14 @@ main(int argc, char **argv)
 		gflog_info(GFARM_MSG_1003455, "max descriptors = %d",
 		    table_size);
 
+	if (gfarm_iostat_gfmd_path) {
+		e = gfarm_iostat_mmap(gfarm_iostat_gfmd_path, iostat_spec,
+			GFARM_IOSTAT_TRAN_NITEM, table_size);
+		if (e != GFARM_ERR_NO_ERROR)
+			gflog_fatal(GFARM_MSG_UNFIXED,
+			    "gfarm_iostat_mmap(%s): %s",
+			    gfarm_iostat_gfmd_path, gfarm_error_string(e));
+	}
 	/*
 	 * gfmd shouldn't/cannot read/write DB
 	 * before calling boot_apply_db_journal() in gfmd_modules_init()

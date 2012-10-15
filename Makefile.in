@@ -12,6 +12,7 @@ SUBDIRS = \
 	server \
 	gftool \
 	util/ptool \
+	util/ganglia \
 	nls \
 	bench/gfperf \
 	bench/gfiops \

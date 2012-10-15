@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 
 #include <gfarm/gfarm.h>
+#include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
 #include "queue.h"
@@ -31,6 +32,7 @@
 #include "local_peer.h"
 #include "remote_peer.h"
 #include "process.h"
+#include "iostat.h"
 
 #include "protocol_state.h"
 #include "peer_impl.h"
@@ -390,6 +392,9 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 	 */
 	local_peer->child_peers = NULL;
 	local_peer->super.peer_id = local_peer_id++;
+
+	if (!local_peer->super.statp)
+		local_peer->super.statp = gfarm_iostat_get_ip(fd);
 
 	*local_peerp = local_peer;
 

@@ -67,6 +67,8 @@ struct peer {
 	 * to support remote peer
 	 */
 	gfarm_int64_t peer_id;
+
+	struct gfarm_iostat_items	*statp;
 };
 
 void peer_construct_common(struct peer *, struct peer_ops *ops, const char *);

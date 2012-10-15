@@ -53,6 +53,8 @@ struct gfarm_context {
 	struct gfarm_gfs_unlink_static *gfs_unlink_static;
 	struct gfarm_gfs_xattr_static *gfs_xattr_static;
 	struct gfarm_filesystem_static *filesystem_static;
+
+	struct gfarm_iostat_static *iostat_static;
 };
 #ifndef __KERNEL__
 extern struct gfarm_context *gfarm_ctxp;
@@ -111,3 +113,6 @@ void          gfarm_gfs_xattr_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_filesystem_static_init(struct gfarm_context *);
 void          gfarm_filesystem_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_iostat_static_init(struct gfarm_context *);
+void          gfarm_iostat_static_term(struct gfarm_context *);
