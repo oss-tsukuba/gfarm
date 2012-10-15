@@ -1513,7 +1513,7 @@ gfmd_modules_init_default(int table_size)
 void (*gfmd_modules_init)(int); /* intentionally remains uninitialized */
 
 static struct gfarm_iostat_spec iostat_spec[] =  {
-        { "ntran", GFARM_IOSTAT_TYPE_TOTAL }
+	{ "ntran", GFARM_IOSTAT_TYPE_TOTAL }
 };
 
 int
@@ -1704,7 +1704,7 @@ main(int argc, char **argv)
 			gflog_fatal(GFARM_MSG_UNFIXED,
 				"gfarm_iostat_mmap(%s): %s",
 				gfarm_iostat_gfmd_path, gfarm_error_string(e));
-        }
+	}
 
 	/*
 	 * gfmd shouldn't/cannot read/write DB
