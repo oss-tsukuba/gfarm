@@ -1083,7 +1083,7 @@ gfm_server_recv_attrpatterns(struct peer *peer, size_t *sizep, int skip,
 		if (sizep == NULL)
 			e = gfp_xdr_recv(client, 0, &eof, "s", &attrpattern);
 		else
-			e = gfp_xdr_recv_sized(client, 0, sizep, &eof, "s",
+			e = gfp_xdr_recv_sized(client, 0, 1, sizep, &eof, "s",
 			    &attrpattern);
 		if (e != GFARM_ERR_NO_ERROR || eof) {
 			gflog_debug(GFARM_MSG_1002496,

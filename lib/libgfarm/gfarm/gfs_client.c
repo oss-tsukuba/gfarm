@@ -1151,8 +1151,8 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	}
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc_result(gfs_server->conn, just,
-				  &errcode, &format, &ap);
+	e = gfp_xdr_vrpc_result(gfs_server->conn, just, 1,
+	    &errcode, &format, &ap);
 	va_end(ap);
 
 	if (IS_CONNECTION_ERROR(e)) {
@@ -1178,29 +1178,24 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
-	const char *format, ...)
+static gfarm_error_t
+gfs_client_vrpc(struct gfs_connection *gfs_server, int just, int do_timeout,
+	int command, const char *format, va_list *app)
 {
-	va_list ap;
 	gfarm_error_t e;
 	int errcode;
 
 	gfs_client_connection_used(gfs_server);
 
-	va_start(ap, format);
-	e = gfp_xdr_vrpc(gfs_server->conn, just,
-	    command, &errcode, &format, &ap);
-	va_end(ap);
-
+	e = gfp_xdr_vrpc(gfs_server->conn, just, do_timeout,
+	    command, &errcode, &format, app);
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
 		gfs_client_purge_from_cache(gfs_server);
 	}
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001200,
-			"gfp_xdr_vrpc() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc(%d) failed: %s",
+		    command, gfarm_error_string(e));
 		return (e);
 	}
 	if (errcode != 0) {
@@ -1208,12 +1203,37 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just, int command,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
-		gflog_debug(GFARM_MSG_1001201,
-			"gfp_xdr_vrpc() errcode=%d",
-			errcode);
+		gflog_debug(GFARM_MSG_UNFIXED, "gfp_xdr_vrpc(%d) errcode=%d",
+		    command, errcode);
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfs_client_rpc(struct gfs_connection *gfs_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfs_client_vrpc(gfs_server, just, 1, command, format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_rpc_notimeout(struct gfs_connection *gfs_server, int just,
+	int command, const char *format, ...)
+{
+	gfarm_error_t e;
+	va_list ap;
+
+	va_start(ap, format);
+	e = gfs_client_vrpc(gfs_server, just, 0, command, format, &ap);
+	va_end(ap);
+	return (e);
 }
 
 gfarm_error_t
@@ -1460,8 +1480,8 @@ gfarm_error_t
 gfs_client_replica_add_from(struct gfs_connection *gfs_server,
 	char *host, gfarm_int32_t port, gfarm_int32_t fd)
 {
-	return (gfs_client_rpc(gfs_server, 0, GFS_PROTO_REPLICA_ADD_FROM,
-	    "sii/", host, port, fd));
+	return (gfs_client_rpc_notimeout(gfs_server, 0,
+	    GFS_PROTO_REPLICA_ADD_FROM, "sii/", host, port, fd));
 }
 
 gfarm_error_t

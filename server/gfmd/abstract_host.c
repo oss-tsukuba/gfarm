@@ -900,10 +900,10 @@ async_client_vrecv_wrapped_result(struct peer *peer,
 		    diag, back_channel_type_name(peer));
 
 	if (async != NULL) { /* is async mode? */
-		e = gfp_xdr_vrpc_wrapped_result_sized(conn, 0, &size,
+		e = gfp_xdr_vrpc_wrapped_result_sized(conn, 0, 1, &size,
 		    &errcode, wrapping_format, wrapping_app, formatp, app);
 	} else { /*  synchronous mode */
-		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
+		e = gfp_xdr_vrpc_result(conn, 0, 1, &errcode, formatp, app);
 		abstract_host_sender_unlock(host, peer,
 		    back_channel_type_name(peer));
 	}

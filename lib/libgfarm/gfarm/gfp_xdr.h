@@ -64,16 +64,16 @@ gfarm_error_t gfp_xdr_vsend_ref_size_add(size_t *, const char **, va_list *);
 gfarm_error_t gfp_xdr_vsend_ref(struct gfp_xdr *, const char **, va_list *);
 gfarm_error_t gfp_xdr_vrecv_sized_x(struct gfp_xdr *, int, int, size_t *,
 	int *, const char **, va_list *);
-gfarm_error_t gfp_xdr_vrecv_sized(struct gfp_xdr *, int, size_t *,
+gfarm_error_t gfp_xdr_vrecv_sized(struct gfp_xdr *, int, int, size_t *,
 	int *, const char **, va_list *);
-gfarm_error_t gfp_xdr_vrecv(struct gfp_xdr *, int,
+gfarm_error_t gfp_xdr_vrecv(struct gfp_xdr *, int, int,
 	int *, const char **, va_list *);
 
 gfarm_error_t gfp_xdr_send_size_add(size_t *, const char *, ...);
 gfarm_error_t gfp_xdr_send(struct gfp_xdr *, const char *, ...);
 gfarm_uint32_t gfp_xdr_send_calc_crc32(struct gfp_xdr *, gfarm_uint32_t,
 	int, size_t);
-gfarm_error_t gfp_xdr_recv_sized(struct gfp_xdr *, int, size_t *,
+gfarm_error_t gfp_xdr_recv_sized(struct gfp_xdr *, int, int, size_t *,
 	int *, const char *, ...);
 gfarm_error_t gfp_xdr_recv(struct gfp_xdr *, int, int *,
 	const char *, ...);
@@ -89,13 +89,13 @@ gfarm_error_t gfp_xdr_vrpc_request_with_ref(struct gfp_xdr *, gfarm_int32_t,
 	const char **, va_list *, int);
 gfarm_error_t gfp_xdr_vrpc_result_sized(struct gfp_xdr *, int, size_t *,
 	gfarm_int32_t *, const char **, va_list *);
-gfarm_error_t gfp_xdr_vrpc_wrapped_result_sized(struct gfp_xdr *,
-	int, size_t *, gfarm_int32_t *, const char *,
-	va_list *, const char **, va_list *);
-gfarm_error_t gfp_xdr_vrpc_result(struct gfp_xdr *, int,
+gfarm_error_t gfp_xdr_vrpc_wrapped_result_sized(struct gfp_xdr *, int, int,
+	size_t *, gfarm_int32_t *,
+	const char *, va_list *, const char **, va_list *);
+gfarm_error_t gfp_xdr_vrpc_result(struct gfp_xdr *, int, int,
 	gfarm_int32_t *, const char **, va_list *);
-gfarm_error_t gfp_xdr_vrpc(struct gfp_xdr *,
-	int, gfarm_int32_t, gfarm_int32_t *, const char **, va_list *);
+gfarm_error_t gfp_xdr_vrpc(struct gfp_xdr *, int, int,
+	gfarm_int32_t, gfarm_int32_t *, const char **, va_list *);
 
 int gfp_xdr_recv_partial(struct gfp_xdr *, int, void *, int);
 gfarm_error_t gfp_xdr_recv_get_error(struct gfp_xdr *);

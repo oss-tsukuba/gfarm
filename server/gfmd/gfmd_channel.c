@@ -824,8 +824,8 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 		    peer_get_service_name(peer));
 	}
 
-	if ((e = gfp_xdr_recv_sized(peer_get_conn(peer), 0, &size, &eof, "l",
-	    &remote_peer_id)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfp_xdr_recv_sized(peer_get_conn(peer), 0, 1, &size, &eof,
+	    "l", &remote_peer_id)) != GFARM_ERR_NO_ERROR) {
 		/* XXXRELAY fix rpc residual */
 		e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	} else if (eof) {

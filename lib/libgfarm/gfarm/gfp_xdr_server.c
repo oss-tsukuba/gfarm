@@ -316,7 +316,13 @@ gfp_xdr_recv_request_command(struct gfp_xdr *client, int just, size_t *sizep,
 	gfarm_error_t e;
 	int eof;
 
-	e = gfp_xdr_recv_sized(client, just, sizep, &eof, "i", commandp);
+	/*
+	 * always do timeout, because:
+	 * - this is called when epoll(2) says it's ready to receive
+	 * or
+	 * - this is after async protocol header
+	 */
+	e = gfp_xdr_recv_sized(client, just, 1, sizep, &eof, "i", commandp);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof)
@@ -335,7 +341,8 @@ gfp_xdr_vrecv_request_parameters(struct gfp_xdr *client, int just,
 	gfarm_error_t e;
 	int eof;
 
-	e = gfp_xdr_vrecv_sized(client, just, sizep, &eof, &format, app);
+	/* always do timeout here, because request type is already received */
+	e = gfp_xdr_vrecv_sized(client, just, 1, sizep, &eof, &format, app);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (eof)

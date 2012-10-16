@@ -1094,18 +1094,19 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 }
 
 gfarm_error_t
-gfp_xdr_vrecv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
-	int *eofp, const char **formatp, va_list *app)
+gfp_xdr_vrecv_sized(struct gfp_xdr *conn, int just, int do_timeout,
+	size_t *sizep, int *eofp, const char **formatp, va_list *app)
 {
-	return (gfp_xdr_vrecv_sized_x(conn, just, 1, sizep, eofp, formatp,
-		app));
+	return (gfp_xdr_vrecv_sized_x(conn, just, do_timeout,
+	    sizep, eofp, formatp, app));
 }
 
 gfarm_error_t
-gfp_xdr_vrecv(struct gfp_xdr *conn, int just,
+gfp_xdr_vrecv(struct gfp_xdr *conn, int just, int do_timeout,
 	int *eofp, const char **formatp, va_list *app)
 {
-	return (gfp_xdr_vrecv_sized_x(conn, just, 1, NULL, eofp, formatp, app));
+	return (gfp_xdr_vrecv_sized_x(conn, just, do_timeout,
+	    NULL, eofp, formatp, app));
 }
 
 gfarm_error_t
@@ -1181,27 +1182,44 @@ gfp_xdr_recv_get_crc32_ahead(struct gfp_xdr *conn, int offset)
 	return (ntohl(n));
 }
 
+static gfarm_error_t
+gfp_xdr_vrecv_sized_x_check_format(
+	struct gfp_xdr *conn, int just, int do_timeout,
+	size_t *sizep, int *eofp, const char *format, va_list *app)
+{
+	gfarm_error_t e;
+
+	e = gfp_xdr_vrecv_sized_x(conn, just, do_timeout,
+	    sizep, eofp, &format, app);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001007,
+		    "gfp_xdr_vrecv_sized_x() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (*eofp)
+		return (GFARM_ERR_NO_ERROR);
+	if (*format != '\0') {
+		gflog_debug(GFARM_MSG_1001008,
+		    "gfp_xdr_vrecv_sized_x_check_format(): "
+		    "invalid format character: %c(%x)", *format, *format);
+		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
 gfarm_error_t
-gfp_xdr_recv_sized(struct gfp_xdr *conn, int just, size_t *sizep,
-	int *eofp, const char *format, ...)
+gfp_xdr_recv_sized(struct gfp_xdr *conn, int just, int do_timeout,
+	size_t *sizep, int *eofp, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrecv_sized_x(conn, just, 1, sizep, eofp, &format, &ap);
+	e = gfp_xdr_vrecv_sized_x_check_format(conn, just, do_timeout,
+	    sizep, eofp, format, &ap);
 	va_end(ap);
-
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-	if (*eofp)
-		return (GFARM_ERR_NO_ERROR);
-	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_1001006, "gfp_xdr_recv_sized: "
-		    "invalid format character: %c(%x)", *format, *format);
-		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
@@ -1212,23 +1230,10 @@ gfp_xdr_recv(struct gfp_xdr *conn, int just,
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrecv_sized_x(conn, just, 1, NULL, eofp, &format, &ap);
+	e = gfp_xdr_vrecv_sized_x_check_format(conn, just, 1,
+	    NULL, eofp, format, &ap);
 	va_end(ap);
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001007,
-			"gfp_xdr_vrecv_sized_x() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-	if (*eofp)
-		return (GFARM_ERR_NO_ERROR);
-	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_1001008, "gfp_xdr_recv: "
-		    "invalid format character: %c(%x)", *format, *format);
-		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
@@ -1239,23 +1244,10 @@ gfp_xdr_recv_notimeout(struct gfp_xdr *conn, int just,
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrecv_sized_x(conn, just, 0, NULL, eofp, &format, &ap);
+	e = gfp_xdr_vrecv_sized_x_check_format(conn, just, 0,
+	    NULL, eofp, format, &ap);
 	va_end(ap);
-
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002559,
-			"gfp_xdr_vrecv_sized_x() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-	if (*eofp)
-		return (GFARM_ERR_NO_ERROR);
-	if (*format != '\0') {
-		gflog_debug(GFARM_MSG_1001008, "gfp_xdr_vrecv_sized_x: "
-		    "invalid format character: %c(%x)", *format, *format);
-		return (GFARM_ERRMSG_GFP_XDR_RECV_INVALID_FORMAT_CHARACTER);
-	}
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 /* this function is used to read from file. i.e. server/gfmd/journal_file.c */
@@ -1316,7 +1308,8 @@ gfp_xdr_vrpc_request_with_ref(struct gfp_xdr *conn, gfarm_int32_t command,
  *	*sizep == 0
  */
 gfarm_error_t
-gfp_xdr_vrpc_wrapped_result_sized(struct gfp_xdr *conn, int just,
+gfp_xdr_vrpc_wrapped_result_sized(
+	struct gfp_xdr *conn, int just, int do_timeout,
 	size_t *sizep, gfarm_int32_t *errorp,
 	const char *wrapping_format, va_list *wrapping_app,
 	const char **formatp, va_list *app)
@@ -1327,16 +1320,20 @@ gfp_xdr_vrpc_wrapped_result_sized(struct gfp_xdr *conn, int just,
 	/*
 	 * receive response
 	 */
+
+	/* always do timeout here, because async header is already received */
 	if (wrapping_format != NULL &&
-	    ((e = gfp_xdr_vrecv_sized(conn, just, sizep, &eof,
+	    ((e = gfp_xdr_vrecv_sized(conn, just, 1, sizep, &eof,
 		&wrapping_format, wrapping_app)) != GFARM_ERR_NO_ERROR)) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
 
-	if ((e = gfp_xdr_recv_sized(conn, just, sizep, &eof, "i", errorp))
-	    != GFARM_ERR_NO_ERROR) {
+	/* timeout if it's asynchronous protocol, or do_timeout is specified */
+	if ((e = gfp_xdr_recv_sized(conn, just,
+	    wrapping_format != NULL || do_timeout,
+	    sizep, &eof, "i", errorp)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
 		return (e);
@@ -1357,6 +1354,7 @@ gfp_xdr_vrpc_wrapped_result_sized(struct gfp_xdr *conn, int just,
 	if (*errorp != GFARM_ERR_NO_ERROR)
 		return (GFARM_ERR_NO_ERROR);
 
+	/* always do timeout here, because error code is already received */
 	e = gfp_xdr_vrecv_sized_x(conn, just, 1, sizep, &eof, formatp, app);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001012,
@@ -1382,27 +1380,32 @@ gfarm_error_t
 gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
-	return (gfp_xdr_vrpc_wrapped_result_sized(conn, just, sizep, errorp,
-		NULL, NULL, formatp, app));
+	/*
+	 * always do timeout, because this is only called
+	 * after asynchronous protocol header is received
+	 */
+	return (gfp_xdr_vrpc_wrapped_result_sized(conn, just, 1,
+	    sizep, errorp, NULL, NULL, formatp, app));
 }
 
 /*
  * get RPC result
  */
 gfarm_error_t
-gfp_xdr_vrpc_result(struct gfp_xdr *conn,
-	int just, gfarm_int32_t *errorp, const char **formatp, va_list *app)
+gfp_xdr_vrpc_result(struct gfp_xdr *conn, int just, int do_timeout,
+	gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
-	return (gfp_xdr_vrpc_wrapped_result_sized(conn, just, NULL,
-	    errorp, NULL, NULL, formatp, app));
+	return (gfp_xdr_vrpc_wrapped_result_sized(conn, just, do_timeout,
+	    NULL, errorp, NULL, NULL, formatp, app));
 }
 
 /*
  * do RPC with "request-args/result-args" format string.
  */
 gfarm_error_t
-gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
-	gfarm_int32_t *errorp, const char **formatp, va_list *app)
+gfp_xdr_vrpc(struct gfp_xdr *conn, int just, int do_timeout,
+	gfarm_int32_t command, gfarm_int32_t *errorp,
+	const char **formatp, va_list *app)
 {
 	gfarm_error_t e;
 
@@ -1428,7 +1431,8 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, gfarm_int32_t command,
 	}
 	(*formatp)++;
 
-	return (gfp_xdr_vrpc_result(conn, just, errorp, formatp, app));
+	return (gfp_xdr_vrpc_result(conn, just, do_timeout,
+	    errorp, formatp, app));
 }
 
 /*

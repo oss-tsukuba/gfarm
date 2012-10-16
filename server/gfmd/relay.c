@@ -1071,7 +1071,7 @@ unlock_sender:
 	}
 
 	rsz = SIZE_MAX;
-	if ((e = gfp_xdr_recv_sized(r->conn, 1, &rsz, &eof, "ll", &seqnum,
+	if ((e = gfp_xdr_recv_sized(r->conn, 1, 1, &rsz, &eof, "ll", &seqnum,
 	    &flags)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_ERR_NO_ERROR,
 		    "%s: %s (gfp_xdr_recv_sized): %s",

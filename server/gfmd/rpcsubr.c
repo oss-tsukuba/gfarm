@@ -37,9 +37,10 @@ gfm_server_vrecv(struct peer *peer, size_t *sizep,
 	struct gfp_xdr *client = peer_get_conn(peer);
 
 	if (sizep != NULL)
-		e = gfp_xdr_vrecv_sized(client, 0, sizep, &eof, &format, app);
+		e = gfp_xdr_vrecv_sized(client, 0, 1, sizep,
+		    &eof, &format, app);
 	else
-		e = gfp_xdr_vrecv(client, 0, &eof, &format, app);
+		e = gfp_xdr_vrecv(client, 0, 1, &eof, &format, app);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000226,
