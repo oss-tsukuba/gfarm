@@ -31,7 +31,7 @@ gfm_server_get_request(struct peer *peer, const char *diag,
 		gflog_info(GFARM_MSG_1000225, "<%s> start receiving", diag);
 
 	va_start(ap, format);
-	e = gfp_xdr_vrecv(client, 0, &eof, &format, &ap);
+	e = gfp_xdr_vrecv(client, 0, 1, &eof, &format, &ap);
 	va_end(ap);
 
 	if (e != GFARM_ERR_NO_ERROR) {

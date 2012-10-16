@@ -931,7 +931,7 @@ gfm_client_channel_vrecv_result(struct peer *peer,
 		e = gfp_xdr_vrpc_result_sized(conn, 0,
 		    &size, &errcode, formatp, app);
 	} else { /*  synchronous mode */
-		e = gfp_xdr_vrpc_result(conn, 0, &errcode, formatp, app);
+		e = gfp_xdr_vrpc_result(conn, 0, 1, &errcode, formatp, app);
 		abstract_host_sender_unlock(host, peer,
 		    back_channel_type_name(peer));
 	}
