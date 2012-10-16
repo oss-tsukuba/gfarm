@@ -927,6 +927,7 @@ gfm_server_quota_check(struct peer *peer, int from_client, int skip)
 	/* zero clear and set true in is_checked */
 	quota_clear_value_all_user_and_group();
 	/* load all inodes from memory and count usage values of files */
+	/* XXX FIXME too long giant lock */
 	inode_lookup_all(NULL, quota_update_file_add_for_quotacheck);
 	/* update memory and db */
 	quota_set_value_all_user_and_group();
