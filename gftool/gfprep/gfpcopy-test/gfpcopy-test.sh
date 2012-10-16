@@ -188,6 +188,10 @@ while getopts hl:g:D:H:U opt; do
             conflict_check $opt
             OPT_DH=-H;
             OPT_DH_VAL="$OPTARG"
+            if [ ! -f "$OPT_DH_VAL" ]; then
+                echo ${OPT_DH_VAL}: not a file
+                exit 1
+            fi
             ;;
         U)
             OPT_U=-U
