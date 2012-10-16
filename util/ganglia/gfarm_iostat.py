@@ -59,7 +59,7 @@ class gfarm_iostat_items(Structure):
 	def __str__(self):
 		return repr(self.s_vals)
 	def diff(self, new):
-		return  new.s_vals - self.svals
+		return new.s_vals - self.svals
 
 def sread(fd,cobj,size):
 	memmove(pointer(cobj),c_char_p(fd.read(size)),size)
@@ -72,7 +72,7 @@ class gfarm_iostat:
 		try:
 			fd = open(infile, "rb")
 		except:
-			logging.error('open ' + infile + 
+			logging.error('open ' + infile +
 				str(sys.exc_type) + str(sys.exc_value))
 			raise
 			return
@@ -88,7 +88,7 @@ class gfarm_iostat:
 			aitems = items()
 			sread(fd, aitems, sizeof(items))
 		except:
-			logging.error('read ' + infile + 
+			logging.error('read ' + infile +
 				str(sys.exc_type) + str(sys.exc_value))
 			fd.close()
 			raise
@@ -133,7 +133,7 @@ class gfarm_iostat:
 			return
 		return self.items
 	def newitems(self):
-		return  gfarm_iostat_items * self.ahead.s_nitem
+		return gfarm_iostat_items * self.ahead.s_nitem
 	def newvals(self):
 		t = []
 		t += map((lambda x : 0), range(0, self.ahead.s_nitem))
@@ -173,7 +173,7 @@ class gfarm_iostat:
 		t = []
 		t += map((lambda o,n: n.s_vals - o.s_vals), old, new)
 		return t
-			
+
 	def diff(self, new):
 		if new.ahead.s_start_sec > self.ahead.s_start_sec:
 			return new.sumup(0)
@@ -210,7 +210,7 @@ class dir_iostat(gfarm_iostat):
 				stat = new.sumup(0)
 			total = map((lambda x,y: x+y), total, stat)
 		return (total)
-			
+
 gfarm_counterdir = ''
 gfarm_files = []
 gfarm_filestats = []
@@ -219,13 +219,13 @@ gfarm_filestats = []
 def get_filesstats(files):
 	filestats = {}
 	for file in files :
-		filestats[file] =  dir_iostat(gfarm_counterdir + '/' + file)
+		filestats[file] = dir_iostat(gfarm_counterdir + '/' + file)
 	return filestats
 
 def get_filesdiff(olds, news) :
 	total = gfarm_0items
 	diffs = {}
-		
+
 	for file, new in news.items() :
 		diff = {}
 		if file in olds :
@@ -237,7 +237,7 @@ def get_filesdiff(olds, news) :
 		total = map((lambda x,y: x+y), total, stat)
 
 	return (total, diffs)
-		
+
 gfarm_diffs = {}
 ntimes = 0
 
@@ -245,7 +245,7 @@ def get_stats():
 	global gfarm_filestats, gfarm_diffs
 	diff = {}
 	new = get_filesstats(gfarm_files)
-	(total, gfarm_diffs) =  get_filesdiff(gfarm_filestats, new)
+	(total, gfarm_diffs) = get_filesdiff(gfarm_filestats, new)
 	diff.update(map((lambda k,v : (k, v)), gfarm_labels, total))
 	gfarm_diffs['iostat-' + gfarm_server + iostat_label] = diff
 	gfarm_filestats = new
@@ -255,7 +255,7 @@ def get_stat(name):
 
 	if ntimes % len(descriptors) == 0 :
 		get_stats()
-		
+
 	ntimes += 1
 
 	sep = name.rfind('_')
@@ -270,7 +270,7 @@ def get_stat(name):
 
 def list_files():
 	files = []
-	
+
 	for ent in os.listdir(gfarm_counterdir):
 		if ent.startswith('iostat-' + gfarm_server) :
 			if ent not in files :
@@ -295,9 +295,9 @@ def metric_init(params):
 		gfarm_counterdir = counterdir
 	else :
 		logging.error('init: ' + counterdir)
-		raise 
+		raise
 		return
-		
+
 	time_max = 60
 
 	if gfarm_server == 'gfmd' :
@@ -327,7 +327,7 @@ def metric_init(params):
 	if len(gfarm_files) == 0 :
 		logging.error('no entries: ' + gfarm_counterdir)
 		return
-		
+
 	try :
 		gfarm_filestats = get_filesstats(gfarm_files)
 	except:
@@ -352,7 +352,7 @@ def metric_init(params):
 				}
 
 			# Apply metric customizations from descriptions
-			d.update(descriptions[label])	
+			d.update(descriptions[label])
 
 			descriptors.append(d)
 
@@ -361,8 +361,8 @@ def metric_init(params):
 	return descriptors
 
 def metric_cleanup():
-        logging.shutdown()
-        # pass
+	logging.shutdown()
+	# pass
 
 
 if __name__ == '__main__':
@@ -375,8 +375,8 @@ if __name__ == '__main__':
 	parser.add_option('-l', '--label', dest='label', default='', help='cluster label')
 	parser.add_option('-s', '--step', dest='step', default=1, help='interval step to check')
 	parser.add_option('-b', '--gmetric-bin', dest='gmetric_bin', default='/usr/bin/gmetric', help='path to gmetric binary')
-        parser.add_option('-c', '--gmond-conf', dest='gmond_conf', default='/etc/ganglia/gmond.conf', help='path to gmond.conf')
-        parser.add_option('-g', '--gmetric', dest='gmetric', action='store_true', default=False, help='submit via gmetric')
+	parser.add_option('-c', '--gmond-conf', dest='gmond_conf', default='/etc/ganglia/gmond.conf', help='path to gmond.conf')
+	parser.add_option('-g', '--gmetric', dest='gmetric', action='store_true', default=False, help='submit via gmetric')
 
 
 	(options, args) = parser.parse_args()
@@ -391,16 +391,16 @@ if __name__ == '__main__':
 		for d in descriptors:
 			v = d['call_back'](d['name'])
 			print ' %s: %s %s [%s]' % (d['name'], v, d['units'], d['description'])
-	
+
 			if options.gmetric:
 				if d['value_type'] == 'uint':
 					value_type = 'uint32'
 				else:
 					value_type = d['value_type']
-	
+
 				cmd = "%s --conf=%s --value='%s' --units='%s' --type='%s' --name='%s' --slope='%s'" % \
 					(options.gmetric_bin, options.gmond_conf, v, d['units'], value_type, d['name'], d['slope'])
 				os.system(cmd)
-				
+
 		print 'Sleeping 5 seconds'
 		time.sleep(5)

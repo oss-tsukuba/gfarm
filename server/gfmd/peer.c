@@ -848,7 +848,7 @@ peer_free(struct peer *peer)
 	if (peer->statp) {
 		gfarm_iostat_clear_ip(peer->statp);
 		peer->statp = NULL;
-        }
+	}
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
 		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);

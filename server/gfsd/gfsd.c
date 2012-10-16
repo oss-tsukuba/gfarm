@@ -3535,11 +3535,10 @@ start_server(int accepting_sock,
 		close(client);
 		break;
 	}
-	if (pid != -1 && statp) {
+	if (pid != -1 && statp)
 		gfarm_iostat_set_id(statp, (gfarm_uint64_t) pid);
-	} else {
+	else
 		gfarm_iostat_clear_ip(statp);
-	}
 #endif
 }
 
@@ -4410,7 +4409,7 @@ main(int argc, char **argv)
 		int len;
 
 		len = strlen(gfarm_iostat_gfsd_path) + 6; /* for port */
-		if (listen_addrname) 
+		if (listen_addrname)
 			len += strlen(listen_addrname) + 1;
 		len += 1 + 16 + 1;	/* "-NAME\0" */
 		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);

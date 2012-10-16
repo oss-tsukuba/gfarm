@@ -100,7 +100,7 @@ copy_ganglia_plugin()
 	cp -f $ganglia_dir/gfarm_iostat.py $python_modules/${module}.py \
 	&& rm $temp
 _EOF_
-	sh $temp || echo "!!!! Ask admin_user to run $temp !!!" 
+	sh $temp || echo "!!!! Ask admin_user to run $temp !!!"
 	fi
 }
 ##############################################################################
@@ -111,31 +111,31 @@ usage_iostat()
 	iostat_init
 
 	IOSTAT_ENABLE_YN=`tf2yn $IOSTAT_ENABLE`
-	echo >&2 "	[--iostat-enable {no|yes} (default $IOSTAT_ENABLE_YN)]"
-	echo >&2 "	[--iostat-label cluster_label]"
-	echo >&2 "	[--iostat-counter-dir iostat_counter_directory"\
+	echo >&2 "      [--iostat-enable {no|yes} (default $IOSTAT_ENABLE_YN)]"
+	echo >&2 "      [--iostat-label cluster_label]"
+	echo >&2 "      [--iostat-counter-dir iostat_counter_directory"\
 			"(default is $iostat_counterdir)]"
-	echo >&2 "	[--iostat-ganglia-confdir ganglia_sysconf_directory"\
+	echo >&2 "      [--iostat-ganglia-confdir ganglia_sysconf_directory"\
 			"(default is $GANGLIA_CONF_DIR)]"
 }
 
 display_iostat_params()
 {
-	
+
     IOSTAT_ENABLE_YN=`tf2yn $IOSTAT_ENABLE`
     echo "iostat enable   [--iostat-enable]: $IOSTAT_ENABLE_YN"
     if $IOSTAT_ENABLE; then
-        echo "cluster label                       [--iostat-label]:"\
+	echo "cluster label                       [--iostat-label]:"\
 			"$IOSTAT_LABEL"
-        echo "iostat counter directory      [--iostat-counter-dir]:"\
+	echo "iostat counter directory      [--iostat-counter-dir]:"\
 			"$iostat_counterdir"
-        echo "ganglia sysconf directory [--iostat-ganglia-confdir]:"\
+	echo "ganglia sysconf directory [--iostat-ganglia-confdir]:"\
 			"$GANGLIA_CONF_DIR"
     fi
 }
 display_iostat_script_params()
 {
-	
+
     echo     "IOSTAT_ENABLE=$IOSTAT_ENABLE"
     if $IOSTAT_ENABLE; then
 	echo     "IOSTAT_DIR=$iostat_counterdir"
@@ -149,22 +149,22 @@ iostat_args()
 	val=$2
 
 	case $key in
-	  --iostat-enable) 
+	  --iostat-enable)
 		IOSTAT_ENABLE=`yn2tf $val`
 		;;
-	  --iostat-ganglia-confdir) 
+	  --iostat-ganglia-confdir)
 		GANGLIA_CONF_DIR=$val
 		;;
-	  --iostat-counter-dir) 
+	  --iostat-counter-dir)
 		iostat_counterdir=$val
 		;;
-	  --iostat-label) 
+	  --iostat-label)
 		IOSTAT_LABEL=$val
 		;;
 	*)
-                usage
-                ;;
-        esac
+		usage
+		;;
+	esac
 }
 gfmd_mkiostat()
 {
@@ -210,27 +210,27 @@ update_iostat()
 usage_iostat_gfsd()
 {
 	iostat_init
-	echo >&2 "	[--iostat-enable {no|yes} (default $IOSTAT_ENABLE_YN)]"
-	echo >&2 "	[--iostat-label cluster_label]"
-	echo >&2 "	[--iostat-counter-dir iostat_counter_directory"\
+	echo >&2 "      [--iostat-enable {no|yes} (default $IOSTAT_ENABLE_YN)]"
+	echo >&2 "      [--iostat-label cluster_label]"
+	echo >&2 "      [--iostat-counter-dir iostat_counter_directory"\
 			"(default is $iostat_counterdir)]"
-	echo >&2 "	[--iostat-ganglia-confdir ganglia_sysconf_directory"\
+	echo >&2 "      [--iostat-ganglia-confdir ganglia_sysconf_directory"\
 			"(default is $GANGLIA_CONF_DIR)]"
-	echo >&2 "	[--iostat-max-client iostat_max_client"\
+	echo >&2 "      [--iostat-max-client iostat_max_client"\
 			"(default is $IOSTAT_MAX_CLIENT)]"
 }
 
 display_iostat_gfsd_params()
 {
-	
+
     if $IOSTAT_ENABLE; then
-        echo "cluster label                       [--iostat-label]:"\
+	echo "cluster label                       [--iostat-label]:"\
 			"$IOSTAT_LABEL"
-        echo "iostat counter directory      [--iostat-counter-dir]:"\
+	echo "iostat counter directory      [--iostat-counter-dir]:"\
 			"$iostat_counterdir"
-        echo "ganglia sysconf directory [--iostat-ganglia-confdir]:"\
+	echo "ganglia sysconf directory [--iostat-ganglia-confdir]:"\
 			"$GANGLIA_CONF_DIR"
-        echo "iostat max client              [--iostat-max-client]:"\
+	echo "iostat max client              [--iostat-max-client]:"\
 			"$IOSTAT_MAX_CLIENT"
     fi
 }
@@ -250,25 +250,25 @@ iostat_gfsd_args()
 	val=$2
 
 	case $key in
-	  --iostat-enable) 
+	  --iostat-enable)
 		IOSTAT_ENABLE=`yn2tf $val`
 		;;
-	  --iostat-ganglia-confdir) 
+	  --iostat-ganglia-confdir)
 		GANGLIA_CONF_DIR=$val
 		;;
-	  --iostat-counter-dir) 
+	  --iostat-counter-dir)
 		iostat_counterdir=$val
 		;;
-	  --iostat-max-client) 
+	  --iostat-max-client)
 		IOSTAT_MAX_CLIENT=$val
 		;;
-	  --iostat-label) 
+	  --iostat-label)
 		IOSTAT_LABEL=$val
 		;;
 	*)
-                usage
-                ;;
-        esac
+		usage
+		;;
+	esac
 }
 gfsd_mkconf()
 {

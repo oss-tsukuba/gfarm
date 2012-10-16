@@ -162,7 +162,7 @@ class gfarm_iostat:
 		t = []
 		t += map((lambda o,n: n.s_vals - o.s_vals), old, new)
 		return t
-			
+
 	def diff(self, new):
 		if new.ahead.s_start_sec > self.ahead.s_start_sec:
 			return new.sumup(0)
@@ -177,8 +177,6 @@ class gfarm_iostat:
 			v = self.diffitems(o, n)
 			t = map((lambda x,y: x + y), t, v)
 		return t
-			
-
 
 if __name__ == '__main__':
 	from optparse import OptionParser
