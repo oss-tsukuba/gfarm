@@ -1,0 +1,244 @@
+		性能モニタリングシステムの実装
+
+1. 概要
+	gfarmV2 に性能モニタリングの機能を追加する。
+
+	モニタリングは以下の項目について行う。
+	メタデータサーバ:
+		メタデータサーバへの要求トランザクション数
+	ストレージサーバ:
+		IOの回数
+		IO のバイト数
+
+	データの収集、性能レポート表示は、オープンソースの性能監視ツール
+	ganglia ( http://ganglia.sourceforge.net/ ) を利用する。
+
+	ganglia には既に ネットワークやディスクの性能監視モジュールがあるので、
+	本システムではメタデータサーバ、ストレージサーバでの性能監視を行う。
+
+	主要な改修点は以下である。
+		gfmd でのトランザクションカウント
+		gfsd でのファイルシステムへの IO の回数とサイズのカウント
+		ganglia プラグインの作成
+		config-gfarm, config-gfsd での性能監視設定
+	なお、この機能に関わるプレフィクスは "iostat" である。
+
+2. 性能レポート
+	性能測定は各サーバで行い、これを性能測定ファイルに書き出す。
+	書き込みは、サーバの負荷を避けるため、測定ファイルをmmap して行う。
+
+	ganglia plugin モジュールは定期的にこのファイルを読み込み、
+	gangliaサーバ(gmetad) に通知する。 
+	gmetad はこれを rrd ファイルとして保存し、web では各データの
+	グラフを参照できる。
+
+2.1 性能測定ファイル
+	性能測定ファイルは、各性能項目に関して、測定主体ごとのカラムを持つ。
+	測定主体とは、各プロセスのスレッドなどである。
+	これは、計測時に排他制御などを行わないためで、参照者は各カラムを
+	合計して値を得るなどしなければならない。
+
+	性能測定ファイルの定義は include/gfarm/gfarm_iostat.h にある。
+
+	 * ファイル全体
+	+--------------+---------------------+----------------------------+
+	| iostat_head　| iostat_spec * nitem | (valid | val * nitem) * row|
+	+--------------+---------------------+----------------------------+
+
+	struct gfarm_iostat_head {
+		unsigned int    s_magic;        /* GFARM_IOSTAT_MAGIC */
+			当該ファイルが性能測定ファイルであることを示す。
+		unsigned int    s_nitem;
+			性能測定項目数
+		unsigned int    s_row;          /* row size */
+			各性能項目の行数(測定主体数)
+		unsigned int    s_rowcur;       /* maximum valid # row */
+			サーバ内部使用
+		unsigned int    s_rowmax;       /* maximum # row */
+			性能項目の値が有効であった最大の行番号
+		unsigned int    s_item_size;
+			1行のサイズ(バイト数)
+		gfarm_uint64_t  s_start_sec;
+			測定開始時刻
+		gfarm_uint64_t  s_update_sec;
+			測定主体状態変化時刻
+		gfarm_uint64_t  s_item_off;
+			測定行の開始位置
+		char s_name[GFARM_IOSTAT_NAME_MAX + 2];
+			測定名
+	};
+
+	 * 項目リスト
+          1                2                3    ||          nitem
+	+-----------.----+-----------.----+------||---.----+-----------.----+
+	| name      :type| name      :type| name ||   :type| name      :type|
+	+-----------.----+-----------.----+------||---.----+-----------.----+
+	struct gfarm_iostat_spec {
+		char s_name[GFARM_IOSTAT_NAME_MAX + 1];
+			測定項目名
+		char s_type;    /* GFARM_IOSTAT_TYPE_xxx */
+			値のタイプ。積算値か、瞬間値か
+	}; s_nitem 個 続く
+
+
+	 * 項目リスト
+                  1          2          3           nitem
+	+-------+----------+----------+-----||---+----------+
+	| id  0 | value1   | value2   | valu||   | valuen   |
+	+-------+----------+----------+-----||---+----------+
+	| id  1 | value1   | value2   | valu||   | valuen   |
+	+-------+----------+----------+-----||---+----------+
+	struct gfarm_iostat_items {
+		gfarm_uint64_t  s_valid;
+			現在測定中の測定主体ID
+		gfarm_int64_t   s_vals[1];      /* [s_nitem] */
+			測定値
+	}; s_row 行 続く
+
+	s_valid は現在の測定主体のid が格納され、測定中でないときは
+	０が設定される。s_vals 配列は測定主体が変わってもクリアすることなく、
+	前回の値を初期値として始める。
+	そうでないと、参照側で積算値を知ることができない。
+
+2.1.1 性能測定ファイル 命名規則
+	性能測定ファイルは、そのディレクトリパスを指定すると、
+	gfmd, gfsd について以下のようにパス名が生成される。
+
+	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
+	      ディレクトリパス/iostat-gfsd-リスンアドレス-ポート/{gfsd,bcs}
+
+3. gfarm 性能測定
+3.1 パラメタ設定
+	性能測定のためのパラメタは config-gfarm, config-gfsd で行う。
+
+3.1.1. config-gfarm
+	config-gfarm では、以下の設定が行われる。
+
+	--iostat-enable		性能測定を行うか否か
+			no 設定だと他の指定も無視される。
+        --iostat-counter-dir	性能測定ファイル格納ディレクトリパス
+			2.1.1 で挙げたディレクトリパスを指定する。
+			この下に、iostat-gfmd, iostat-gfsd などのディレクトリが
+			作成され、その下に性能測定ファイルが作られる。
+        --iostat-ganglia-confdir ganglia conf ディレクトリ
+			ここの conf.d 配下に modpython.conf が存在すれば、
+			その params に記載されたディレクトリに plugin を
+			配置し、conf.d にplugin のconf ファイルを配置する。
+
+
+	--iostat-enable=yes であれば、gfmd.conf に以下のエントリが記載される。
+	
+	iostat_gfmd_path /ディレクトリパス/iostat-gfmd-ポート/gfmd
+		
+
+3.1.2. config-gfsd-iostat
+	config-gfsd-iostat は、Gfarm クラスタ毎にノードで1階限り行う。
+	config-gfsd-iostat では、以下の設定が行われる。
+
+	--iostat-enable		性能測定を行うか否か
+			no 設定だと他の指定も無視される。
+        --iostat-counter-dir	性能測定ファイル格納ディレクトリパス
+			2.1.1 で挙げたディレクトリパスを指定する。
+			この下に、iostat-gfmd, iostat-gfsd などのディレクトリが
+			作成され、その下に性能測定ファイルが作られる。
+        --iostat-ganglia-confdir ganglia conf ディレクトリ
+			ここの conf.d 配下に modpython.conf が存在すれば、
+			その params に記載されたディレクトリに plugin を
+			配置し、conf.d にplugin のconf ファイルを配置する。
+        --iostat-max-client	gfsd 性能測定ファイル 測定行数
+			gfsd が接続毎に fork する子プロセスに割り当てる
+			測定行の最大数で、そのサイズにtruncate し、mmapされる。
+
+
+	--iostat-enable=yes であれば、gfarm2.conf に以下のエントリが記載される。
+
+	iostat_max_client クライアント数
+	iostat_gfsd_path /ディレクトリパス/iostat-gfsd
+3.2 gfmd
+	メタデータサーバーでは、gfarm プロトコルの要求をカウントする。
+	コンパウンド要求としてまとめられた要求もそれぞれカウントする。
+
+	gfmd は複数スレッドで構成され、要求が届く度にスレッドがアサインされ
+	処理を行っている。
+	測定主体はスレッドではなく、rpc の接続(peer)とする。
+	gfarm_metadb_max_descriptors を s_row とした測定ファイルを作成し、
+	計測する。
+
+	計測は protocol_switch()内で行う。
+
+3.3 gfsd
+	ストレージサーバーでは下位ファイルシステムへの成功したIOをカウントする。
+	
+	gfsd は 通常のクライアントサービスを行うプロセスと、
+	back channel service を行うプロセスで構成され、
+	それぞれrpc の接続要求毎にプロセスを作成し、要求を処理している。
+
+	測定主体は各プロセスとする。
+	main プロセスがリスンアドレスとポートからディレクトリを作成する。
+	性能測定ファイルは、gfsd と bcs の二つを作成する。
+	それぞれ、accept を行う親プロセスが、測定行を管理し、
+	子プロセスに割り当てる。
+	親プロセスはfork 前に子プロセスのための空き測定行を確保し、
+	fork 後、pid をs_valid に記載する。
+	子プロセスが終了した時はpidを鍵に該当行を探し、s_valid をクリアする。
+
+	計測は以下の箇所で行う。
+		gfs_server_pread, gfs_server_pwrite
+		gfs_server_replica_recv, gfs_client_replica_recv
+
+3.4　iostat
+	性能測定ファイルの操作は lib/libgfarm/gfarm/iostat.c 内で行っている。
+
+	なお、branch 2.5 では外部変数の閉じ込め修正が行われていないので、
+	変数の参照方法をファイル内で変更してある。
+
+4. ganglia plugin
+	ganglia python plugin は、 gmond に動的にリンクされる。
+	plugin module は module_init エントリーを定義することが求められる。
+
+	gmond は gmmond.conf に記述されたplugin 情報を読み込み、
+	記述されたplugin モジュールをリンクして、module_init エントリーを
+	呼び出す。この時、モジュール情報に記述されたパラメータを渡せる。
+	module_init エントリーでは、当該モジュールが報告するmetric 群の仕様を
+	応答として返す。
+	metric の仕様には名前や、単位、値のタイプなどの他、報告のための
+	callback 関数を記述する。
+
+	gmond は 定期的にgmetadに報告するタイミングでmetric のcallback 関数を
+	呼び出し、値を得る。
+
+4.1 性能監視 plugin
+	性能情報は、 以下のような性能測定ファイルに対して、ディレクトリ
+	'iostat-gf?d*' 毎に異なるメトリックとして報告される。
+
+	gfmd: ディレクトリパス/iostat-gfmd-ポート/gfmd
+	gfsd: ディレクトリパス/iostat-gfsd-ポート/{gfsd,bcs}
+	      ディレクトリパス/iostat-gfsd-ポート-リスンアドレス/{gfsd,bcs}
+
+	当該ディレクトリ配下の複数のファイル {gfsd, bcs} は同一の
+	メトリックとして合算される。
+
+	集計は各ファイルの同一測定行について、今回値から前回値を引いた差を
+	全測定行について合算した値を今回の測定値として計算する。
+
+4.1.1. module_init
+	性能監視plugin は、midule_init で 集計ディレクトリパスと、ラベル名、
+	gfmd, gfsd かのサーバー名を得る。
+	gfarm2.conf からは 性能測定ファイル の存在するディレクトリパスを
+	取得する。
+	ディレクトリパスのディレクトリからサーバー名に合致するディレクトリを
+	リストアップし、これを性能情報取得対象ディレクトリとする。
+	一つもリストアップできなかったときはエラーである。
+	複数のディレクトリが存在した場合は、合計のメトリックをラベル名で
+	作成する。
+
+	リストアップ対象それぞれについて、サーバータイプ毎の収集項目を
+	metric として登録する。
+
+4.1.2. callback
+	callback では項目数を一巡する度に性能測定ファイルを読み込み、
+	前回との差分を集計する。
+	
+	指定されたmetric 名についての値を関数値として返す。
+								-- 以上 --
