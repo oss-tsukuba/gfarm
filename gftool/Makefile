@@ -35,6 +35,7 @@ SUBDIRS = \
 	gfrmdir \
 	gfsched \
 	gfsetfacl \
+	gfspoolpath \
 	gfstat \
 	gfstatus \
 	gfuser \

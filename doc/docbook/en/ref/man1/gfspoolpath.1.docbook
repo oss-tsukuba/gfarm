@@ -1,0 +1,43 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfspoolpath.1'>
+
+<refentryinfo><date>17 Oct 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfspoolpath</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfspoolpath</refname>
+<refpurpose>display a pathname on a filesystem node about a Gfarm file</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfspoolpath</command>
+	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+This command displays a pathname of a concrete file on a filesystem node,
+which is corresponding to a Gfarm file specified in the command argument.
+The pathname is relative to the top directory of a spool directory of gfsd.
+</para>
+
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>
+No error is reported, if the command argument refers a directory.
+</para>
+</refsect1>
+
+</refentry>

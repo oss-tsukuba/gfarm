@@ -1,0 +1,41 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfspoolpath.1'>
+
+<refentryinfo><date>17 Oct 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfspoolpath</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfspoolpath</refname>
+<refpurpose>Gfarm ファイルの、ファイルシステムノード上でのパス名を表示する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfspoolpath</command>
+	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>指定したファイルに対応する，ファイルシステムノードでの
+実体ファイルのパス名を，gfsd のスプール・ディレクトリのトップからの
+相対パスで表示します．</para>
+
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>
+ディレクトリを指定した場合もエラーとなりません．
+</para>
+</refsect1>
+
+</refentry>
