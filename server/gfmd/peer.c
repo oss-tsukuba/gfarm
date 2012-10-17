@@ -166,7 +166,7 @@ struct peer {
 		} client;
 	} u;
 
-	struct gfarm_iostat_items	*statp;
+	struct gfarm_iostat_items	*iostatp;
 
 	/* the followings are only used for gfsd back channel */
 	pthread_mutex_t replication_mutex;
@@ -601,6 +601,7 @@ peer_init(int max_peers)
 		peer->findxmlattrctx = NULL;
 		peer->pending_new_generation = NULL;
 		peer->u.client.jobs = NULL;
+		peer->iostatp = NULL;
 
 		gfarm_mutex_init(&peer->replication_mutex,
 		    "peer_init", "replication");
@@ -705,8 +706,8 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 	    == -1)
 		gflog_warning_errno(GFARM_MSG_1000283, "SO_KEEPALIVE");
 
-	if (!peer->statp)
-		peer->statp = gfarm_iostat_get_ip(fd);
+	if (!peer->iostatp)
+		peer->iostatp = gfarm_iostat_get_ip(fd);
 
 	*peerp = peer;
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
@@ -845,9 +846,9 @@ peer_free(struct peer *peer)
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
-	if (peer->statp) {
-		gfarm_iostat_clear_ip(peer->statp);
-		peer->statp = NULL;
+	if (peer->iostatp) {
+		gfarm_iostat_clear_ip(peer->iostatp);
+		peer->iostatp = NULL;
 	}
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
@@ -1466,6 +1467,6 @@ peer_get_port(struct peer *peer, int *portp)
 void
 peer_stat_add(struct peer *peer, unsigned int cat, int val)
 {
-	if (peer->statp)
-		gfarm_iostat_stat_add(peer->statp, cat, val);
+	if (peer->iostatp)
+		gfarm_iostat_stat_add(peer->iostatp, cat, val);
 }

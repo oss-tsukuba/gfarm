@@ -179,8 +179,8 @@ gfarm_iostat_clear_id(gfarm_uint64_t id, unsigned int hint)
 
 	if (!ip) {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"gfarm_iostat_clear_id(%s) id(%lu) not found",
-			hp->s_name, id);
+			"gfarm_iostat_clear_id(%s) id(%u) not found",
+			hp->s_name, (unsigned int)id);
 		return;
 	}
 	ip->s_valid = 0;
@@ -305,7 +305,7 @@ gfarm_iostat_set_id(struct gfarm_iostat_items *ip, gfarm_uint64_t id)
 {
 	if (ip)
 		ip->s_valid = id;
-	gflog_debug(GFARM_MSG_UNFIXED, "set %lu into %p", id, ip);
+	gflog_debug(GFARM_MSG_UNFIXED, "set %u into %p", (unsigned int)id, ip);
 }
 void
 gfarm_iostat_set_local_ip(struct gfarm_iostat_items *ip)
