@@ -15,6 +15,7 @@
 gfarm_error_t
 gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 {
+#ifdef HAVE_SYS_XATTR_H
 	char *p, *parent = NULL;
 	const char *base;
 	static const char gfarm2fs_path[] = "gfarm2fs.path";
@@ -24,7 +25,6 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 	base = NULL;
 #endif
 
-#ifdef HAVE_SYS_XATTR_H
 	s = lgetxattr(path, gfarm2fs_path, NULL, 0);
 	if (s == -1) {
 		parent = gfarm_path_dir(path);
