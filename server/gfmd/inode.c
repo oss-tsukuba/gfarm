@@ -2737,12 +2737,19 @@ inode_rename(
 		gflog_error(GFARM_MSG_1000320,
 		    "rename(%s, %s): failed to unlink: %s",
 		    sname, dname, gfarm_error_string(e));
-	if (e == GFARM_ERR_NO_ERROR && inode_is_dir(src)) {
-		e = inode_dir_reparent(src, sdir, ddir);
-		if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
-			gflog_error(GFARM_MSG_1002816,
-			    "rename(%s, %s): failed to reparent: %s",
-			    sname, dname, gfarm_error_string(e));
+	if (e == GFARM_ERR_NO_ERROR) {
+		int num;
+
+		if (inode_is_dir(src)) {
+			e = inode_dir_reparent(src, sdir, ddir);
+			if (e != GFARM_ERR_NO_ERROR) /* shouldn't happen */
+				gflog_error(GFARM_MSG_1002816,
+				    "rename(%s, %s): failed to reparent: %s",
+				    sname, dname, gfarm_error_string(e));
+		}
+		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))
+		    && !inode_has_desired_number(src, &num))
+			replica_check_signal_rename();
 	}
 	/* db_inode_nlink_modify() is not necessary, because it's unchanged */
 	return (e);
