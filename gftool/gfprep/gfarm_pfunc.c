@@ -260,6 +260,11 @@ struct pfunc_stat {
 static gfarm_error_t
 pfunc_fstat(struct pfunc_file *fp, struct pfunc_stat *stp)
 {
+#ifdef __GNUC__ /* to shut up gcc warning "may be used uninitialized" */
+	stp->mode = stp->size = 0;
+	stp->mtime_sec = stp->atime_sec = 0;
+	stp->mtime_nsec = stp->atime_nsec = 0;
+#endif
 	if (fp->gfarm) {
 		struct gfs_stat gst;
 		gfarm_error_t e = gfs_pio_stat(fp->gfarm, &gst);
