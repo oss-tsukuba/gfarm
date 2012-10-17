@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# this test may fail, if number of files which don't have enough
+# replicas are too many.
+
 NCOPY=2
 WAIT_TIME_LIMIT=20  # sec.
 
