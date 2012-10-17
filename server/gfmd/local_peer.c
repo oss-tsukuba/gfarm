@@ -393,8 +393,8 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 	local_peer->child_peers = NULL;
 	local_peer->super.peer_id = local_peer_id++;
 
-	if (!local_peer->super.statp)
-		local_peer->super.statp = gfarm_iostat_get_ip(fd);
+	if (!local_peer->super.iostatp)
+		local_peer->super.iostatp = gfarm_iostat_get_ip(fd);
 
 	*local_peerp = local_peer;
 

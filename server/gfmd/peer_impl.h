@@ -68,7 +68,7 @@ struct peer {
 	 */
 	gfarm_int64_t peer_id;
 
-	struct gfarm_iostat_items	*statp;
+	struct gfarm_iostat_items	*iostatp;
 };
 
 void peer_construct_common(struct peer *, struct peer_ops *ops, const char *);

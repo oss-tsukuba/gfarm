@@ -222,6 +222,7 @@ peer_clear_common(struct peer *peer)
 	/* generation update, or generation update by cookie */
 	peer->pending_new_generation = NULL;
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
+	peer->iostatp = NULL;
 }
 
 void
@@ -249,9 +250,9 @@ peer_free_common(struct peer *peer, const char *diag)
 {
 	char *username;
 
-	if (peer->statp) {
-		gfarm_iostat_clear_ip(peer->statp);
-		peer->statp = NULL;
+	if (peer->iostatp) {
+		gfarm_iostat_clear_ip(peer->iostatp);
+		peer->iostatp = NULL;
 	}
 	username = peer_get_username(peer);
 
@@ -873,7 +874,7 @@ peer_findxmlattrctx_get(struct peer *peer)
 void
 peer_stat_add(struct peer *peer, unsigned int cat, int val)
 {
-	if (peer->statp)
-		gfarm_iostat_stat_add(peer->statp, cat, val);
+	if (peer->iostatp)
+		gfarm_iostat_stat_add(peer->iostatp, cat, val);
 }
 
