@@ -222,9 +222,17 @@ def get_filesstats(files):
 		filestats[file] = dir_iostat(gfarm_counterdir + '/' + file)
 	return filestats
 
-def get_filesdiff(olds, news) :
+def calc_total(old, stat) :
+	count = {}
+	tot = []
+	tot = map((lambda t,n : t+n), old.values(), stat)
+	count.update(map((lambda k,v : (k, v)), gfarm_labels, tot))
+	return count
+	
+def get_filesdiff(olds, news, lastcounts) :
 	total = gfarm_0items
 	diffs = {}
+	counts = {}
 
 	for file, new in news.items() :
 		diff = {}
@@ -236,22 +244,38 @@ def get_filesdiff(olds, news) :
 		diffs[file] = diff
 		total = map((lambda x,y: x+y), total, stat)
 
-	return (total, diffs)
+		if file in lastcounts :
+			last = lastcounts[file]
+			counts[file] = calc_total(last, stat)
+		else :
+			counts[file] = diff
+		
+
+	return (total, diffs, counts)
 
 gfarm_diffs = {}
+gfarm_counts = {}
 ntimes = 0
 
 def get_stats():
-	global gfarm_filestats, gfarm_diffs
+	global gfarm_filestats, gfarm_diffs, gfarm_counts
+
+	label = 'iostat-' + gfarm_server + iostat_label
 	diff = {}
 	new = get_filesstats(gfarm_files)
-	(total, gfarm_diffs) = get_filesdiff(gfarm_filestats, new)
+	(total, gfarm_diffs, newcount) = get_filesdiff(gfarm_filestats, new, 
+						gfarm_counts)
 	diff.update(map((lambda k,v : (k, v)), gfarm_labels, total))
-	gfarm_diffs['iostat-' + gfarm_server + iostat_label] = diff
+	gfarm_diffs[label] = diff
+	if label in gfarm_counts :
+		newcount[label] = calc_total(gfarm_counts[label], total)
+	else :
+		newcount[label] = diff
+	gfarm_counts = newcount
 	gfarm_filestats = new
 
 def get_stat(name):
-	global gfarm_filestats, ntimes
+	global gfarm_counts, ntimes
 
 	if ntimes % len(descriptors) == 0 :
 		get_stats()
@@ -262,8 +286,8 @@ def get_stat(name):
 	file = name[:sep]
 	label = name[sep + 1:]
 	try:
-		diff = gfarm_diffs[file]
-		return int(diff[label])
+		count = gfarm_counts[file]
+		return int(count[label])
 	except:
 		logging.warning('failed to fetch ' + name)
 		return 0
@@ -345,7 +369,7 @@ def metric_init(params):
 				'time_max': time_max,
 				'value_type': 'uint',
 				'units': '',
-				'slope': 'both',
+				'slope': 'positive',
 				'format': '%u',
 				'description': label,
 				'groups': group

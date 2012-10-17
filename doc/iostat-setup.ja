@@ -1,143 +1,310 @@
 		 性能モニタリングシステムのインストール
 
-1. gfarm をインストールする。
-	gfarm の INSTALL.ja の通り。
+-- 目次 --
+	0. はじめに
+	1. ganglia のインストール
+	1.1. python
+	1.1.1 python の確認
+	1.1.2.  CentOS 5 の場合の python 2.6 のインストール 手順
+	1.2. ganglia
+	1.2.1 ganglia　のインストール
+	1.2.1.1.  集計ノード
+	1.2.1.2.  監視ノード
+	1.2.2 gangliaのコンパイル
+	1.3. ganglia のセットアップ
+	1.3.1 集計ノード
+	1.3.2. 監視ノード
+	2. gfarm のセットアップ
+	2.1.  gfmd
+	2.1.1  config-gfmd-iostat 
+	2.2.  gfsd
+	2.2.1.  config-gfsd-iostat
+	3. ganglia の操作
+	3.1. 性能測定の監視
+	3.2. rrd ファイル
+	3.3. クラスタ表示
 
-2. python の確認
-	本システムではganglia plugin を python で記述してある。
-	python 2.5 以上の機能を必要とするので、CentOS 5以前では注意が
-	必要である。
+0. はじめに
+	ここでは、gfarm に性能モニタリング機能を追加するための手順を記述する。
 
-		% python -V
-		Python 2.4.3
+	gfarm 性能モニタリングシステム は ganglia の python plugin として
+	実装されているので、ganglia のインストール、セットアップを先ず行う
+	必要がある。
+
+	gfarmサーバーと、pluginは性能カウンタファイルを介して性能情報を共有し、
+	その性能カウンタファイルの存在するディレクトリは、
+	gfarm の セットアップ時に互いのconfiguration ファイルに記述される。
+
+1. ganglia のインストール
+
+1.1. python
+	本システムのganglia plugin は、python 2.5 以上の機能を必要とするので、
+	python のバージョンを確かめ、2,5 より古い場合は新しいpythonを
+	インストールする。
+
+1.1.1 python の確認
+	python のバージョンを確認する。
+	+--------------------------------------------------------------------+
+	% python -V
+	Python 2.4.3
+	+--------------------------------------------------------------------+
 
 	デフォルトのバージョンが古いときには、新しいバージョンがないか確認する。
-		% python26 -V
-		Python 2.6.8
+	+--------------------------------------------------------------------+
+	% python26 -V
+	Python 2.6.8
+	+--------------------------------------------------------------------+
 
-	新しいバージョンがない時はインストールする。
-
-2.1.  CentOS 5 の場合の python 2.6 のインストール
+1.1.2.  CentOS 5 の場合の python 2.6 のインストール 手順
+	新しいバージョンがない時はpython 2.6 をインストールする。
+	+--------------------------------------------------------------------+
 	# yum install python26 python26-devel python26-distribute 
 	# yum install python26-mod_python mod_python26
-	
-	
+	+--------------------------------------------------------------------+
+
+	以下のようにインストールされている。
+	+--------------------------------------------------------------------+
 	% ls -l /usr/pyth*
 	-rwxr-xr-x 2 root root 8304 Jun 18 21:56 /usr/bin/python
 	lrwxrwxrwx 1 root root    6 Sep  4 21:56 /usr/bin/python2 -> python
 	-rwxr-xr-x 2 root root 8304 Jun 18 21:56 /usr/bin/python2.4
 	-rwxr-xr-x 2 root root 8328 Apr 13 06:00 /usr/bin/python26
 	-rwxr-xr-x 2 root root 8328 Apr 13 06:00 /usr/bin/python2.6
--
+	+--------------------------------------------------------------------+
 
-3. ganglia のセットアップ
-	http://www.ibm.com/developerworks/wikis/display/WikiPtype/ganglia
+1.2. ganglia
+	ganglia は、各ノードでデータを収集する gmond と
+	gmond からのデータを集め rrd ファイルとして保存するgmetad、
+	および web 上で rrd ファイルをグラフ化して表示する gweb2 
+	から成る。
 
 	ganglia の 最も基本的な構成は以下の通りである。
 		監視対象ノードに一つづつの gmond
 		クラスタに一つの集計ノード gmetad
 		                           rrdtool データベース
-		                           PHP スクリプト
+		                           PHP スクリプト (gweb2)
 		                           http サーバ
 
-	集計ノード
+1.2.1 ganglia　のインストール
+1.2.1.1.  集計ノード
+	+--------------------------------------------------------------------+
+	# yum -y install --enablerepo=epel ganglia ganglia-gmetad ganglia-web
+	+--------------------------------------------------------------------+
+
+	web2 の方が表示機能が豊富なので、ganglia-web2 を次を参考に
+	インストールする。
+	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia-web-2
+	
+1.2.1.2.  監視ノード
+	+--------------------------------------------------------------------+
+	# yum install ganglia-gmond-python
+	+--------------------------------------------------------------------+
+
+	gfarm 性能モニタリング セットアップ時に記述する ganglia の
+	configuration ディレクトリを調べ、記憶する。
+	+--------------------------------------------------------------------+
+	% whereis gmond
+	/usr/sbin/gmond
+	% /usr/sbin/gmond -h
+	.....
+	-c, --conf=STRING      Location of gmond configuration file  
+				(default='/etc/ganglia/gmond.conf')
+	.....
+	% ls /etc/ganglia/
+	conf.d  gmond.conf
+	% set GCONFDIR=/etc/ganglia
+	+--------------------------------------------------------------------+
+	configuration ディレクトリは /etc/ganglia であった。
+	
+	
+	gmond のバインドしているpython を確認する。
+	+--------------------------------------------------------------------+
+	% grep -r python_module $GCONFDIR
+	/etc/ganglia/conf.d/modpython.conf:    name = "python_module"
+	/etc/ganglia/conf.d/modpython.conf:    params = "/usr/lib64/ganglia/python_modules"
+	% cat /etc/ganglia/conf.d/modpython.conf
+	modules {
+	  module {
+	    name = "python_module"
+	    path = "modpython.so"
+	    params = "/usr/lib64/ganglia/python_modules"
+	  }
+	}
+	include ('/etc/ganglia/conf.d/*.pyconf')
+
+	% ldd /usr/lib64/ganglia/modpython.so | grep python
+	libpython2.4.so.1.0 => /usr/lib64/libpython2.4.so.1.0 
+	+--------------------------------------------------------------------+
+	gnond のバインドしている python が 2.5 より古い場合は手動でインストール
+	する。
+
+1.2.2 gangliaのコンパイル
+	ganglia ソースを入手してコンパイルする。
+	その際、新しいpython を指示するのを忘れないこと。
+
+	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia_configuration
+	に従って必要なパッケージをインストールしておく。
+
+	+--------------------------------------------------------------------+
+	% tar xvf ganglia-3.4.0.tar.gz
+	% cd ganglia-3.4.0
+	% ./configure --with-python=python2.6
+	% make
+	# make install 
+	+--------------------------------------------------------------------+
+
+	1.2.1.2. 監視ノードの 手順で ganglia の configuration ディレクトリを
+	調べ、記憶する。
+	+--------------------------------------------------------------------+
+	% whereis gmond
+	/usr/local/sbin/gmond
+	% /usr/local/sbin/gmond -h
+	-c, --conf=STRING      Location of gmond configuration file  
+				(default='/usr/local/etc/gmond.conf')
+	% set GCONFDIR=/usr/local/etc
+	+--------------------------------------------------------------------+
+	configuration ディレクトリは /usr/local/etc。
+
+	もし、ganglia のライブラリに python_modules が出来ていない時は
+	手動で作成する。
+	+--------------------------------------------------------------------+
+	% find /usr/lib* /usr/local/lib* -name ganglia
+	/usr/local/lib64/ganglia
+	% find /usr/lib* /usr/local/lib* -name python_modules
+	+--------------------------------------------------------------------+
+
+1.3. ganglia のセットアップ
+	ganglia に監視するクラスタを登録する。
+
+1.3.1 集計ノード
+	+--------------------------------------------------------------------+
 	# yum -y install --enablerepo=epel ganglia ganglia-gmetad ganglia-web
 	# vi /etc/ganglia/gmetad.conf
 	data_source "クラスタ名" 監視ノード1 監視ノード2 ...
+	+--------------------------------------------------------------------+
 	
-	監視ノード
+1.3.2. 監視ノード
+	+--------------------------------------------------------------------+
 	# yum install ganglia-gmond-python
 	# vi /etc/ganglia/gmond.conf
 	cluster {
 	  name = "クラスタ名"
+	+--------------------------------------------------------------------+
  
-3.1. ganglia のコンパイル
-	gmond のバインドしているpython を確認する。
-	/etc/ganglia/conf.d/ などにある modpython.conf に掛かれている
-	modpython.so のリンクしている python を調べる。
+2. gfarm のセットアップ
+	gfarm のインストールに関して、性能測定のために行うべきことはない。
 
-	% ldd /usr/lib64/ganglia/modpython.so | grep python
-	libpython2.4.so.1.0 => /usr/lib64/libpython2.4.so.1.0 
-
-	gmond のバインドしているpython が 2.5 より古いバージョンである場合は、
-	ganglia ソースを入手してコンパイルする。
-	その際、新しいpython を指示するのを忘れないこと。
-	./configure --with-python=python2.6
-
-	ganglia のインストールされたディレクトリを記録しておくこと。
-			
-4. gfarm のセットアップ
 	gfarm のセットアップでは、通常のセットアップに加えて、
-	性能測定を行うことと、ganglia のコンフィグレーションパスとを
-	指示する。
+	性能測定のためのセットアップを行う。
 
-4.1.  config-gfarm 
-	メタデータサーバを動かすノードでは、 config-gfarm で 以下の
-	指定ができる。
+	セットアップに先立ち、
+	ganglia の configuration ディレクトリと、
+	性能測定ファイルを作成するディレクトリを決めておかなければ
+	ならない。
+	同一ノードで、複数の異なるgfarm システムを動作させる場合は、
+	クラスタラベル名も決めておかなければならない。
 
-	# config-gfarm -t
-	....
-	iostat enable   [--iostat-enable]: yes
-	cluster label    [--iostat-label]: 
-	iostat counter directory  [--iostat-counter-dir]: /var/gfarm-stat
-	ganglia sysconf directory [--iostat-ganglia-confdir]: /etc/ganglia
-	....
+	ここで、 環境変数を以下のように用いることにする。
+	GCONFDIR : ganglia の configuration ディレクトリ
+	IOSTATDIR : 性能測定ファイルを作成するディレクトリ
+	IOLABEL : クラスタラベル名
+
+2.1.  gfmd
+	メタデータサーバーを動かすノードでは、以下の手順でセットアップを行う。
+
+	1.config-gfarm
+		gfmd.conf の作成が先に行われる必要がある。
+	2.config-gfsd-iostat
+		gfmd.conf の変更と、plugin の配置を行う。
+	3.  マスターノードの場合
+		gfmd restart
+	    スレーブノードの場合
+		gfdump.postgresql -r 
+	4. gmond restart
+		新しいメトリックが追加されたので、再起動する。
+
+2.1.1  config-gfmd-iostat 
+	gfmd.conf の変更と、plugin の配置を行う。
+
+
+	+--------------------------------------------------------------------+
+	% config-gfarm -h
+	usage: config-gfmd-iostat [--help] [--prefix prefix] [-t|-T] [-f]
+	[--iostat-enable {no|yes}(currently yes)]
+	[--iostat-label cluster_label]
+	[--iostat-counter-dir iostat_counter_directory (currently /var/gfarm-stat)]
+	[--iostat-ganglia-confdir ganglia_sysconf_directory (currently /etc/ganglia)]
+	+--------------------------------------------------------------------+
 	
+	--prefix , -t, -T, -f は config-gfarm の意味に等しい。
 	--iostat-enable は性能測定を行うか否かを指定する。
-	--iostat-label は 複数gfarm を立てる場合に各クラスタ名を指定する。
+		yes を指定すると設定内容に沿って、
+		gfmd.conf の変更と、plugin の配置が行われ、
+		no を指定すると、設定内容に沿って、
+		gfmd.conf の変更と、plugin の削除が行われる。
+
+	--iostat-label は 複数gfarm を立てる場合にクラスタ名を指定する。
 	--iostat-counter-dir は性能測定ファイルを作成するディレクトリである。
 	--iostat-ganglia-confdir は ganglia の gmond.conf が存在する
 	                        ディレクトリを指定する。
+
+	--iostat-enable yes で成功したとき、以下のファイルが修正、作成される。
+		--iostat-counter-dir で指定されたディレクトリが作成される。
+		--iostat-ganglia-confdirで指定されたディレクトリの　conf.d の
+		下に gfarm_gfmd_ラベル.pyconf ファイルが作成される。
+		ganglia ライブラリの python_modules/
 
 	config-gfarm では以下のことが行われる。
-		--iostat-ganglia-confdirで指定されたディレクトリに、
-		python_modules の記述があるか確かめる。
-		性能測定の plugin を配置する。
-		--iostat-counter-dir に iostat-gfmd ディレクトリを作成する。
-		gfmd.conf に性能測定に必要な情報を書き込む。
+	・ --iostat-ganglia-confdirで指定されたディレクトリに、
+	   python_modules の記述があるか確かめる。
+	・ 性能測定の plugin を配置する。
+	・ --iostat-counter-dir に iostat-gfmd ディレクトリを作成する。
+	・ gfmd.conf に性能測定に必要な情報を書き込む。
 
 	当該ノードで メタデータサーバを動かさなくなった場合は、
-	--iostat-ganglia-confdir の下の conf.d/gfarm_gfmd.pyconf を削除する。
+	同じ設定で、--iostat-enable no を指定する。
 
-4.2.  config-gfsd-iostat
-	スプールサーバを動かすノードでは、 config-gfsd で 以下の
-	指定ができる。
+2.2.  gfsd
+	スプールデータサーバーを動かすノードでは、以下の手順でセットアップ
+	を行う。
 
-	# config-gfsd -t
-	....
-	iostat enable   [--iostat-enable]: yes
-	cluster label    [--iostat-label]: 
-	iostat counter directory  [--iostat-counter-dir]: /var/gfarm-stat
-	ganglia sysconf directory [--iostat-ganglia-confdir]: /etc/ganglia
-	iostat max client          [--iostat-max-client]: 1024
+	1.config-gfsd
+		gfarm2.conf の作成が先に行われる必要がある。
+	2.config-gfsd-iostat
+		gfarm2.conf の変更と、plugin の配置を行う。
+	3.config-gfsd
+		複数スプールを立てる場合、
+	4. /etc/init.d/gfsd.* start
+		性能ディレクトリのサブディレクトリが出来る必要がある。
+	5. gmond restart
+		新しいメトリックが追加されたので、再起動する。
 
+2.2.1.  config-gfsd-iostat
+	gfarm2.conf の変更と、plugin の配置を行う。
 
-	--iostat-enable は性能測定を行うか否かを指定する。
-	--iostat-label は 複数gfarm を立てる場合に各クラスタ名を指定する。
-	--iostat-counter-dir は性能測定ファイルを作成するディレクトリである。
-	--iostat-ganglia-confdir は ganglia の gmond.conf が存在する
-	                        ディレクトリを指定する。
+	+--------------------------------------------------------------------+
+	# config-gfsd -h
+	usage: config-gfsd-iostat [--help] [--prefix prefix] [-t|-T] [-f] [-S]
+	[--iostat-enable {no|yes}(currently yes)]
+	[--iostat-label cluster_label]
+	[--iostat-counter-dir iostat_counter_directory (currently /var/gfarm-stat)]
+	[--iostat-ganglia-confdir ganglia_sysconf_directory (currently /etc/ganglia)]
+	[--iostat-max-client iostat_max_client (currentry 1024)]
+	+--------------------------------------------------------------------+
+
+	--prefix , -t, -T, -f -S は config-gfsd の意味に等しい。
+	--iostat-enable, --iostat-label, --iostat-counter-dir, 
+	--iostat-ganglia-confdir は config-gmsd-iostat に等しい。
 	--iostat-max-client は スプールサーバのクライアント最大数。
 	
-	config-gfsd では以下のことが行われる。
-		--iostat-ganglia-confdirで指定されたディレクトリに、
-		python_modules の記述があるか確かめる。
-		性能測定の plugin を配置する。
-		--iostat-counter-dir を作成する。
-		gfarm2.conf に性能測定に必要な情報を書き込む。
-
-	当該ノードで スプールサーバを動かさなくなった場合は、
-	--iostat-counter-dir 配下の当該 ディレクトリを削除する。
-	--iostat-ganglia-confdir の下の conf.d/gfarm_gfsd.pyconf を削除する。
-
-5. ganglia の起動
-	gmond は 初期化時に gfarm2.conf の iostat_counterdir に
+3. ganglia の操作
+	gmond は 初期化時に iostat_counterdir に
 	記述されたディレクトリの サーバディレクトリをチェックするので、
-	gfarm のサーバを追加、削除した場合は gmond を再起動する。
+	gfarm のサーバを追加、削除した場合は gmond を再起動する必要がある。
 
-5.1. 性能測定の監視
+3.1. 性能測定の監視
 	ganglia gmetad を動かしているノードに接続して情報を見る。
-		http://ノード/ganglia/
+		http://集計ノード/ganglia/
 
 	グラフは "gfarm metrics"でグループ化されて以下の表示が行われる。
 
@@ -150,14 +317,50 @@
 	iostat-gfsd-10.1.3.99-600_rcount
 	iostat-gfsd-10.1.3.99-600_wbytes
 	iostat-gfsd-10.1.3.99-600_wcount
-	iostat-gfsd-LABEL_rbytes		当該ノードのスプールサーバの合計
-	iostat-gfsd-LABEL_rcount
-	iostat-gfsd-LABEL_wbytes
-	iostat-gfsd-LABEL_wcount
+	iostat-gfsd-XYZ_rbytes			当該ノードのスプールサーバの合計
+	iostat-gfsd-XYZ_rcount
+	iostat-gfsd-XYZ_wbytes
+	iostat-gfsd-XYZ_wcount
 	
-5.2. rrd ファイル
+3.2. rrd ファイル
 	rrd ファイルは ganglia gmetad を動かしているノードの
 	/var/lib/ganglia/rrds/クラスタ名/ノード名/配下に上記
 	metric 名で保存されている。
 	rrdtool dump でxmlファイルに変換するなどできる。
+
+3.3. クラスタ表示
+	ganglia web2 で見る場合、view の定義を追加して、好みの
+	ページを作ることが出来る。
+	http://sourceforge.net/apps/trac/ganglia/wiki/ganglia-web-2
+
+	今のところmetric の正規表現や、group 名での記述はできないようだが、
+	例えば、
+	+--------------------------------------------------------------------+
+	% cat /var/lib/ganglia/conf/view_XYZ.json
+	{
+	  "view_name": "XYZ",
+	  "items": [
+		{ "hostname":"node1.X.co.jp","metric":"iostat-gfmd-601_ntran"},
+		{ "hostname":"node1.X.co.jp","metric":"iostat-gfsd-XYZ_wcount"},
+		{ "hostname":"node1.X.co.jp","metric":"iostat-gfsd-XYZ_wbytes"},
+		{ "hostname":"node1.X.co.jp","metric":"iostat-gfsd-XYZ_rcount"},
+		{ "hostname":"node1.X.co.jp","metric":"iostat-gfsd-XYZ_rbytes"},
+		{ "hostname":"node2.X.co.jp","metric":"iostat-gfmd-601_ntran"},
+		{ "hostname":"node2.X.co.jp","metric":"iostat-gfsd-XYZ_wcount"},
+		{ "hostname":"node2.X.co.jp","metric":"iostat-gfsd-XYZ_wbytes"},
+		{ "hostname":"node2.X.co.jp","metric":"iostat-gfsd-XYZ_rcount"},
+		{ "hostname":"node2.X.co.jp","metric":"iostat-gfsd-XYZ_rbytes"},
+		{ "hostname":"node3.X.co.jp","metric":"iostat-gfmd-601_ntran"},
+		{ "hostname":"node3.X.co.jp","metric":"iostat-gfsd-XYZ_wcount"},
+		{ "hostname":"node3.X.co.jp","metric":"iostat-gfsd-XYZ_wbytes"},
+		{ "hostname":"node3.X.co.jp","metric":"iostat-gfsd-XYZ_rcount"},
+		{ "hostname":"node3.X.co.jp","metric":"iostat-gfsd-XYZ_rbytes"}
+	  ],
+	  "view_type":"standard"
+	}
+	+--------------------------------------------------------------------+
+
+	のような定義を追加すれば、view タブで XYZ を指定すれば一覧できる。
+
+
 							-- 以上 --

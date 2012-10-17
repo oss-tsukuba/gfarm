@@ -175,6 +175,7 @@ cleanup_iostat(void)
 		(void) unlink(iostat_dirbuf);
 		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
 		(void) unlink(iostat_dirbuf);
+		free(iostat_dirbuf);
 	}
 }
 
@@ -4413,7 +4414,7 @@ main(int argc, char **argv)
 			len += strlen(listen_addrname) + 1;
 		len += 1 + 16 + 1;	/* "-NAME\0" */
 		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
-		 if (iostat_dirbuf == NULL)
+		if (iostat_dirbuf == NULL)
 			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 
