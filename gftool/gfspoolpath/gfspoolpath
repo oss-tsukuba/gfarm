@@ -1,0 +1,19 @@
+#!/bin/sh
+
+for i
+do
+	gfstat $i | awk '
+	$1 == "Inode:" {
+		inum=$2
+		igen=$4
+		printf "data/%08X/%02X/%02X/%02X/%02X%08X%08X\n", 
+			inum/(65536.0*65536.0),
+			inum/(256.0*65536.0)%256,
+			(inum/65536.0)%256,
+			(inum/256.0)%256,
+			inum%256,
+			0,
+			igen
+		exit
+	}'
+done

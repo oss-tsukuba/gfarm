@@ -41,6 +41,7 @@ DOCBOOK = \ gfchgrp.1 \
 	gfperf-parallel-autoreplica.1 \
 	gfperf-wrapper.sh.1 \
 	gfperf.rb.1 \
+	gfspoolpath.1 \
 	gfstress.rb.1 \
 	gfservice.1 \
 	gfservice-agent.1 \
