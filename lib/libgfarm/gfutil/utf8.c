@@ -5,6 +5,9 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <unistd.h>
+
+#include "gfutil.h"
 
 /**
  * Validate an UTF-8 byte sequences.
@@ -87,6 +90,7 @@ gfarm_utf8_validate_sequences(const char *sequences, size_t len)
  *
  * Return 1 if 'string' is a valid UTF-8 string, 0 otherwise.
  */
+int
 gfarm_utf8_validate_string(const char *string)
 {
 	return gfarm_utf8_validate_sequences(string, strlen(string));
