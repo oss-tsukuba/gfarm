@@ -33,7 +33,7 @@ giant_lock(void)
 	gfarm_mutex_lock(&giant_mutex, "giant_lock", "giant");
 }
 
-/* true: busy */
+/* false: busy */
 int
 giant_trylock(void)
 {

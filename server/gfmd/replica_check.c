@@ -323,7 +323,7 @@ replica_check_stack_pop(struct replication_info *infop)
 static void
 replica_check_giant_lock_default()
 {
-	if (giant_trylock()) {
+	if (!giant_trylock()) {
 		gfarm_nanosleep(gfarm_replica_check_sleep_time);
 		giant_lock();
 	}
