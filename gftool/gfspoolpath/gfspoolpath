@@ -1,22 +1,31 @@
 #!/bin/sh
 
+TMP=/tmp/$0-$$
+
+case $1 in
+-s)
+	shift
+	SPOOL=$1
+	shift
+esac
+
+: ${SPOOL:="/var/gfarm-spool"}
+
 for i
 do
-	gfstat $i | awk '
-	$1 == "Inode:" {
-		inum=$2
-		igen=$4
-		printf "data/%04X%04X/%02X/%02X/%02X/%02X%04X%04X%04X%04X\n", 
-			inum/(65536.0*65536.0*65536.0),
-			inum/(65536.0*65536.0)%65536,
-			inum/(256.0*65536.0)%256,
-			(inum/65536.0)%256,
-			(inum/256.0)%256,
-			inum%256,
-			igen/(65536.0*65536.0*65536.0),
-			igen/(65536.0*65536.0)%65536,
-			igen/65536.0%65536,
-			igen%65536
-		exit
-	}'
+	gfstat $i > $TMP || continue
+	inum=`sed -n 's/.*Inode: \([0-9]*\).*/\1/p' $TMP`
+	gen=`sed -n 's/.*Gen: \([0-9]*\).*/\1/p' $TMP`
+	size=`sed -n 's/.*Size: \([0-9]*\).*/\1/p' $TMP`
+	path=`printf "%016X%016X" $inum $gen |
+		sed 's/\([0-9A-F]\{8\}\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F]\{18\}\)/\1\/\2\/\3\/\4\/\5/'`
+	path="data/$path"
+	echo $path
+	if [ -f "$SPOOL/$path" ]; then
+		rsize=`stat --printf="%s" "$SPOOL/$path"`
+		[ $size != $rsize ] &&
+			echo "$i: size mismatch (meta $size real $rsize)"
+	fi
 done
+
+rm -f $TMP
