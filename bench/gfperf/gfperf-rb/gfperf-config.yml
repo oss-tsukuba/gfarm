@@ -1,5 +1,5 @@
 database: {filename: "/var/www/database.db", check span: "10days",
-	   backup: "/var/www/databse.db.bak" }
+	   backup: "/var/www/database.db.bak" }
 errlog: "/tmp/gfperf.err.log"
 #remote_path: "/usr/local/gfarm/bin"
 authentication: ["sharedsecret", "gsi_auth", "gsi"]
