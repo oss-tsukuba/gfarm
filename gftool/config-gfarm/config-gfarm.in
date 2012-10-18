@@ -88,8 +88,6 @@ do
   . $config_dir/config-gfarm.$i
 done
 
-. $config_dir/config-gfarm.iostat
-
 gen_passwd()
 {
 	chars="=.0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -152,7 +150,6 @@ usage()
 	echo >&2 "	[-U backend_admin_user] [-u backend_user]"
 	echo >&2 "	[-l metadata_directory] [-L metadata_logging_directory]"
 	echo >&2 "	[-j metadata_journal_directory]"
-	usage_iostat
 	echo >&2 "  $BACKEND_TYPE backend options: (must be specified after -b <backend_type>)"
 	usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
@@ -261,8 +258,6 @@ display_plain_params()
 
     display_plain_params_backend_optional_$BACKEND_TYPE
 
-    display_iostat_params
-
     echo "rc script for gfmd               : $RC_DIR/gfmd"
     echo "rc script for backend            : $RC_DIR/$RC_BACKEND_BASENAME"
     echo "gfmd conf file                   : $GFMD_CONF"
@@ -300,8 +295,6 @@ display_script_params()
     echo     "GFARM_CONF=$GFARM_CONF"
     echo     "GFMD_PID_FILE=$GFMD_PID_FILE"
     echo     "BACKEND_PID_FILE=$BACKEND_PID_FILE"
-
-    display_iostat_script_params
 
     sanity
     exit 0
@@ -377,11 +370,6 @@ while [ $# -gt 0 ] ; do
 			echo >&2 "$PROGNAME: the argument of -a option must be sharedsecret, gsi_auth or gsi."
 			exit 1;;
 		esac
-		;;
-	  --iostat*)
-		key=$1
-		shift; [ $# -ge 1 ] || usage
-		iostat_args $key  $1
 		;;
 
 	# control options
@@ -500,7 +488,6 @@ fi
 	ABORT 'cannot determine metadata server hostname, please specify it by -h option'
 
 set_last_defaults_$BACKEND_TYPE
-iostat_init
 
 # -t and -T options; display parameters
 [ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
@@ -707,8 +694,6 @@ echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
 
 # by backend type
 make_configuration_file_$BACKEND_TYPE
-
-create_iostat
 
 # private user mode
 if $PRIVATE_MODE; then

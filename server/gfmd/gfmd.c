@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -98,6 +99,8 @@ static char *pid_file;
 
 struct thread_pool *authentication_thread_pool;
 struct peer_watcher *sync_protocol_watcher;
+
+static char *iostat_dirbuf;
 
 static const char TRANSFORM_MUTEX_DIAG[] = "transform_mutex";
 static const char TRANSFORM_COND_DIAG[] = "transform_cond";
@@ -1547,8 +1550,11 @@ gfmd_terminate(const char *diag)
 	/* db_terminate() needs giant_lock(), see comment in dbq_enter() */
 	db_terminate();
 
-	if (gfarm_iostat_gfmd_path)
-		unlink(gfarm_iostat_gfmd_path);
+	if (iostat_dirbuf) {
+		unlink(iostat_dirbuf);
+		free(iostat_dirbuf);
+		iostat_dirbuf = NULL;
+	}
 
 	gflog_info(GFARM_MSG_1000202, "bye");
 	exit(0);
@@ -1813,12 +1819,27 @@ main(int argc, char **argv)
 		    table_size);
 
 	if (gfarm_iostat_gfmd_path) {
-		e = gfarm_iostat_mmap(gfarm_iostat_gfmd_path, iostat_spec,
+		int len;
+		len = strlen(gfarm_iostat_gfmd_path) + 6 + 1 + 4 + 1;
+				/* for port / gfmd \0 */
+		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
+		if (iostat_dirbuf == NULL)
+			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		len = snprintf(iostat_dirbuf, len, "%s-%d",
+			gfarm_iostat_gfmd_path, gfmd_port);
+		if (mkdir(iostat_dirbuf, 0755)) {
+			if (errno != EEXIST)
+				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+					"mkdir:%s", iostat_dirbuf);
+		}
+		strcat(iostat_dirbuf, "/gfmd");
+		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
 			GFARM_IOSTAT_TRAN_NITEM, table_size);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_fatal(GFARM_MSG_UNFIXED,
-			    "gfarm_iostat_mmap(%s): %s",
-			    gfarm_iostat_gfmd_path, gfarm_error_string(e));
+				"gfarm_iostat_mmap(%s): %s",
+				iostat_dirbuf, gfarm_error_string(e));
 	}
 	/*
 	 * gfmd shouldn't/cannot read/write DB

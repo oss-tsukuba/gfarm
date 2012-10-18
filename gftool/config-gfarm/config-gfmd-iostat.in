@@ -49,23 +49,16 @@ fi
 
 usage()
 {
-	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f] [-S]"
+	echo >&2 "usage: $PROGNAME [--help] [--prefix prefix] [-t|-T] [-f]"
 	usage_iostat
-	echo >&2 "	[--iostat-max-client iostat_max_client"\
-			"(currentry $IOSTAT_MAX_CLIENT)]"
 	exit 1
 }
-
 
 display_plain_params()
 {
 	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
-	echo "gfarm client conf file           : $IOSTAT_CONF"
-	display_iostat_params gfsd
-    if $IOSTAT_ENABLE; then
-        echo "iostat max client              [--iostat-max-client]:"\
-			"$IOSTAT_MAX_CLIENT"
-    fi
+	echo "gfarm server conf file           : $IOSTAT_CONF"
+	display_iostat_params gfmd
 	exit 0
 }
 
@@ -73,10 +66,7 @@ display_script_params()
 {
 	echo "CONFIG_PREFIX=$CONFIG_PREFIX"
 	echo "IOSTAT_CONF=$IOSTAT_CONF"
-	display_iostat_script_params gfsd
-    if $IOSTAT_ENABLE; then
-	echo "IOSTAT_MAX_CLIENT=$IOSTAT_MAX_CLIENT"
-    fi
+	display_iostat_script_params gfmd
 	exit 0
 }
 
@@ -96,9 +86,6 @@ while [ $# -gt 0 ] ; do
 	# control options
 	  --help)
 		usage
-		;;
-	  -S)
-		PRIVATE_MODE=true
 		;;
 	  -f)
 		FORCE=true
@@ -122,7 +109,6 @@ case $# in
 esac
 
 . $prefix/share/gfarm/config/config-gfarm.sysdep
-
 #
 # default values
 #
@@ -134,7 +120,6 @@ esac
 sysdep_defaults
 
 : ${FORCE:=false}
-: ${PRIVATE_MODE:=false}
 : ${PARAMS_DISPLAY_STYLE:=none}
 
 if [ X"$CONFIG_PREFIX" != X ]; then
@@ -142,18 +127,14 @@ if [ X"$CONFIG_PREFIX" != X ]; then
 else
 	: ${GFARM_CONF_DIR:="$sysconfdir"}
 fi
-if $PRIVATE_MODE; then
-	: ${IOSTAT_CONF:="$GFARM_CONF_DIR/gfsd.conf"}
-else
-	: ${IOSTAT_CONF:="$GFARM_CONF_DIR/gfarm2.conf"}
-fi
+: ${IOSTAT_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
 
 # -t option; display parameters
 [ $PARAMS_DISPLAY_STYLE != none ] && display_${PARAMS_DISPLAY_STYLE}_params
 
 [ -f $IOSTAT_CONF ] || ABORT "$IOSTAT_CONF: no such file"
 
-update_iostat gfsd
+update_iostat gfmd
 
 echo "$PROGNAME success"
 
