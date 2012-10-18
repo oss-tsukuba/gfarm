@@ -1443,6 +1443,7 @@ gfmd_terminate(const char *diag)
 	if (iostat_dirbuf) {
 		unlink(iostat_dirbuf);
 		free(iostat_dirbuf);
+		iostat_dirbuf = NULL;
 	}
 
 	gflog_info(GFARM_MSG_1000202, "bye");

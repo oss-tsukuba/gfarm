@@ -5,8 +5,6 @@ for d in /etc/ganglia /usr/local/etc/ganglia; do
 	fi
 done
 : ${IOSTAT_ENABLE:=true}
-: ${CONFIG_PREFIX:=}
-: ${iostat_counterdir:="$CONFIG_PREFIX/var/gfarm-stat"}
 : ${ganglia_dir:="$datadir/gfarm/ganglia"}
 : ${IOSTAT_LABEL:=}
 : ${IOSTAT_MAX_CLIENT:=1024}
@@ -69,6 +67,12 @@ create_directory()
 	done
 }
 
+iostat_init()
+{
+	: ${CONFIG_PREFIX:=}
+	: ${iostat_counterdir:="$CONFIG_PREFIX/var/gfarm-stat"}
+}
+
 iostat_get_module()
 {
 	if [ -z $IOSTAT_LABEL ]; then
@@ -124,14 +128,15 @@ copy_ganglia_plugin()
 
 	if $IOSTAT_ENABLE; then
 	temp=`mktemp`
+	chmod 755 $temp
 	cat << _EOF_ >$temp
-	(cat $ganglia_dir/${name}.pyconf | \
-		sed -e "s#@iostat_counterdir@#$iostat_counterdir#" \
-		    -e "s#@iostat_module@#$module#" \
-		    -e "s#@iostat_label@#$IOSTAT_LABEL#" \
-		> $GANGLIA_CONF_DIR/conf.d/$pyconf) \
-		&& \
-	cp -f $ganglia_dir/gfarm_iostat.py $python_modules/${module}.py \
+#!/bin/sh
+(cat $ganglia_dir/${name}.pyconf | \
+	sed -e "s#@iostat_counterdir@#$iostat_counterdir#" \
+	    -e "s#@iostat_module@#$module#" \
+	    -e "s#@iostat_label@#$IOSTAT_LABEL#" \
+	> $GANGLIA_CONF_DIR/conf.d/$pyconf) \
+	&& cp -f $ganglia_dir/gfarm_iostat.py $python_modules/${module}.py \
 	&& rm $temp
 _EOF_
 	sh $temp || echo >&2 "!!!! Ask admin_user to run $temp !!!" 
@@ -139,6 +144,7 @@ _EOF_
 }
 usage_iostat()
 {
+	iostat_init
 
 	IOSTAT_ENABLE_YN=`tf2yn $IOSTAT_ENABLE`
 	echo >&2 "	[--iostat-enable {no|yes}(currently $IOSTAT_ENABLE_YN)]"
@@ -151,29 +157,33 @@ usage_iostat()
 
 display_iostat_params()
 {
+	tgt=$1
+	iostat_init
 	
-    IOSTAT_ENABLE_YN=`tf2yn $IOSTAT_ENABLE`
-    echo "iostat enable   [--iostat-enable]: $IOSTAT_ENABLE_YN"
-    if $IOSTAT_ENABLE; then
+	IOSTAT_ENABLE_YN=`tf2yn $IOSTAT_ENABLE`
+	echo "iostat enable   [--iostat-enable]: $IOSTAT_ENABLE_YN"
+	if $IOSTAT_ENABLE; then
         echo "cluster label                       [--iostat-label]:"\
 			"$IOSTAT_LABEL"
         echo "iostat counter directory      [--iostat-counter-dir]:"\
 			"$iostat_counterdir"
         echo "ganglia sysconf directory [--iostat-ganglia-confdir]:"\
 			"$GANGLIA_CONF_DIR"
-	iostat_check_ganglia gfmd
-    fi
+	iostat_check_ganglia $tgt
+	fi
 }
 display_iostat_script_params()
 {
+	tgt=$1
+	iostat_init
 	
-    echo     "IOSTAT_ENABLE=$IOSTAT_ENABLE"
-    if $IOSTAT_ENABLE; then
+	echo     "IOSTAT_ENABLE=$IOSTAT_ENABLE"
+	if $IOSTAT_ENABLE; then
 	echo     "IOSTAT_DIR=$iostat_counterdir"
 	echo     "IOSTAT_LABEL=$IOSTAT_LABEL"
 	echo     "GANGLIA_CONF_DIR=$GANGLIA_CONF_DIR"
-	iostat_check_ganglia gfmd
-    fi
+	iostat_check_ganglia $tgt
+	fi
 }
 iostat_args()
 {
@@ -219,10 +229,11 @@ deliostat()
 		rm -rf $iostat_counterdir/iostat-$tgt*
 		pyconf=`iostat_get_pyconf $tgt`
 		rm -f $GANGLIA_CONF_DIR/conf.d/$pyconf
-		tmp=`mktemp`
-		egrep -v '^iostat_' $IOSTAT_CONF > $tmp && cp $tmp $IOSTAT_CONF
-		rm $tmp
 	fi
+	tmp=`mktemp`
+	egrep -v '^iostat_' $IOSTAT_CONF > $tmp && cp $tmp $IOSTAT_CONF \
+	|| iostat_fail 
+	rm $tmp
 }
 iostat_mkconf()
 {
@@ -239,6 +250,7 @@ iostat_mkconf()
 update_iostat()
 {
 	tgt=$1
+	iostat_init
 	deliostat $tgt
 	mkiostat $tgt
 	iostat_mkconf $tgt

@@ -176,6 +176,7 @@ cleanup_iostat(void)
 		strcpy(&iostat_dirbuf[iostat_dirlen], "bcs");
 		(void) unlink(iostat_dirbuf);
 		free(iostat_dirbuf);
+		iostat_dirbuf = NULL;
 	}
 }
 
