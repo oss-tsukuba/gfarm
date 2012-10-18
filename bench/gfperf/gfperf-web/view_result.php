@@ -41,8 +41,9 @@ $row = $result->fetch(PDO::FETCH_NUM);
 $warnlimit = $row[0];
 unset($result);
 unset($db);
-} catch (PDOException $e) {
+} catch (Exception $e) {
 	echo 'Can not read config DB '.CONFIG_DB;
+	echo "\n<pre>\n" . $e . "\n</pre>\n";
 	die(1);
 }
 
@@ -92,8 +93,9 @@ while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
 unset($result);
 unset($stmt);
 unset($db);
-} catch (PDOException $e) {
+} catch (Exception $e) {
 	echo 'Can not read data DB '.DATABASE;
+	echo "\n<pre>\n" . $e . "\n</pre>\n";
 	die(1);
 }
 

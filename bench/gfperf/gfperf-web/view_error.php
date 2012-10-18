@@ -32,8 +32,9 @@ unset($result);
 unset($stmt);
 
 unset($db);
-} catch (PDOException $e) {
+} catch (Exception $e) {
 	echo 'Can not read data DB '.DATABASE;
+	echo "\n<pre>\n" . $e . "\n</pre>\n";
 	die(1);
 }
 ?>

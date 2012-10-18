@@ -30,8 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 	$warnlimit = $row[0];
 	unset($result);
 	unset($db);
-	} catch (PDOException $e) {
+	} catch (Exception $e) {
 		echo 'Can not read config DB '.CONFIG_DB;
+		echo "\n<pre>\n" . $e . "\n</pre>\n";
 		die(1);
 	}
 }
@@ -59,8 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	$stmt->execute();
 	unset($stmt);
 	unset($db);
-	} catch (PDOException $e) {
+	} catch (Exception $e) {
 		echo 'Can not write confi DB '.CONFIG_DB;
+		echo "\n<pre>\n" . $e . "\n</pre>\n";
 		die(1);
 	}
 	if (empty($key) && empty($date)) {

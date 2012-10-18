@@ -13,8 +13,9 @@ if (file_exists(CONFIG_DB) == false) {
 	$sql = "insert into config(key,val) values('warning_limit','3');";
 	$db->query($sql);
 	unset($db);
-	} catch (PDOException $e) {
+	} catch (Exception $e) {
 		echo 'Can not create config DB '.CONFIG_DB;
+		echo "\n<pre>\n" . $e . "\n</pre>\n";
 		die(1);
 	}
 }
@@ -85,8 +86,9 @@ while ($row = $result->fetch(PDO::FETCH_NUM)) {
 }
 unset($result);
 unset($db);
-} catch (PDOException $e) {
+} catch (Exception $e) {
 	echo 'Can not read data DB '.DATABASE;
+	echo "\n<pre>\n" . $e . "\n</pre>\n";
 	die(1);
 }
 krsort($dates);
