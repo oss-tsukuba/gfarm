@@ -4356,12 +4356,12 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	char **hosts;
 	gfarm_int64_t *gens, latest_gen;
 	gfarm_int32_t *oflags;
-	int valid_only =
-	    (iflags & GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY) != 0 ? 0 : 1;
-	int up_only =
-	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_HOST) != 0 ? 0 : 1;
-	int latest_only =
-	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_COPY) != 0 ? 0 : 1;
+	int show_incomplete =
+	    (iflags & GFS_REPLICA_INFO_INCLUDING_INCOMPLETE_COPY) != 0;
+	int show_down =
+	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_HOST) != 0;
+	int show_obsolete =
+	    (iflags & GFS_REPLICA_INFO_INCLUDING_DEAD_COPY) != 0;
 	static const char diag[] = "inode_replica_info_get";
 
 	if ((e = inode_check_file(inode)) != GFARM_ERR_NO_ERROR)
@@ -4370,13 +4370,13 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	latest_gen = inode_get_gen(inode);
 
 	/* include !host_is_up() */
-	nlatest = inode_get_ncopy_common(inode, valid_only, 0);
+	nlatest = inode_get_ncopy_common(inode, !show_incomplete, 0);
 
-	if (latest_only)
-		ndead = 0;
-	else
+	if (show_obsolete)
 		ndead = dead_file_copy_count_by_inode(inode->dead_copies,
 		    latest_gen, 0); /* include !host_is_up() */
+	else
+		ndead = 0;
 
 	/* host_is_up() may change even while the giant lock is held. */
 	n = nlatest + ndead;
@@ -4398,16 +4398,26 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 	i = 0;
 	for (copy = inode->u.c.s.f.copies; copy != NULL && i < n;
 	    copy = copy->host_next) {
-		if (i < n &&
-		    (valid_only ? FILE_COPY_IS_VALID(copy) : 1) &&
-		    (up_only ? host_is_up(copy->host) : 1)) {
+		enum { file_is_valid, file_is_incomplete,
+		    file_is_being_removed } state;
+
+		if (!show_down && !host_is_up(copy->host))
+			continue;
+		state = FILE_COPY_IS_VALID(copy) ? file_is_valid :
+		    FILE_COPY_IS_BEING_REMOVED(copy) ? file_is_being_removed :
+		    file_is_incomplete;
+		if (state == file_is_valid ||
+		    (show_incomplete && state == file_is_incomplete) ||
+		    (show_obsolete && state == file_is_being_removed)) {
 			hosts[i] = strdup_log(host_name(copy->host), diag);
 			gens[i] = latest_gen;
 			oflags[i] =
-			    (!FILE_COPY_IS_VALID(copy) ?
+			    (show_incomplete && state == file_is_incomplete ?
 			     GFM_PROTO_REPLICA_FLAG_INCOMPLETE : 0) |
 			    (!host_is_up(copy->host) ?
-			     GFM_PROTO_REPLICA_FLAG_DEAD_HOST : 0);
+			     GFM_PROTO_REPLICA_FLAG_DEAD_HOST : 0) |
+			    (show_obsolete && state == file_is_being_removed ?
+			     GFM_PROTO_REPLICA_FLAG_DEAD_COPY : 0);
 			if (hosts[i] == NULL) {
 				e = GFARM_ERR_NO_MEMORY;
 				break;
@@ -4415,10 +4425,10 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 			++i;
 		}
 	}
-	if (e == GFARM_ERR_NO_ERROR && !latest_only)
+	if (e == GFARM_ERR_NO_ERROR && show_obsolete)
 		e = dead_file_copy_info_by_inode(
 		     inode->dead_copies, latest_gen,
-		     up_only, &ndead, &hosts[i], &gens[i], &oflags[i]);
+		     !show_down, &ndead, &hosts[i], &gens[i], &oflags[i]);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		while (--i >= 0)
