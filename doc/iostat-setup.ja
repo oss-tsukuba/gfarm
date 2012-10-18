@@ -135,8 +135,8 @@
 	% ldd /usr/lib64/ganglia/modpython.so | grep python
 	libpython2.4.so.1.0 => /usr/lib64/libpython2.4.so.1.0 
 	+--------------------------------------------------------------------+
-	gnond のバインドしている python が 2.5 より古い場合は手動でインストール
-	する。
+	gmond のバインドしている python が 2.5 より古い場合は 1.2.2 節に従い
+	gangliaをインストールする必要がある。
 
 1.2.2 gangliaのコンパイル
 	ganglia ソースを入手してコンパイルする。
@@ -212,13 +212,13 @@
 2.1.  gfmd
 	メタデータサーバーを動かすノードでは、以下の手順でセットアップを行う。
 
-	1.config-gfarm
+	1. config-gfarm
 		gfmd.conf の作成が先に行われる必要がある。
-	2.config-gfsd-iostat
+	2. config-gfmd-iostat
 		gfmd.conf の変更と、plugin の配置を行う。
-	3.  マスターノードの場合
+	3. マスターノードの場合
 		gfmd restart
-	    スレーブノードの場合
+	   スレーブノードの場合
 		gfdump.postgresql -r 
 	4. gmond restart
 		新しいメトリックが追加されたので、再起動する。
@@ -228,7 +228,7 @@
 
 
 	+--------------------------------------------------------------------+
-	% config-gfarm -h
+	% config-gfmd-iostat -h
 	usage: config-gfmd-iostat [--help] [--prefix prefix] [-t|-T] [-f]
 	[--iostat-enable {no|yes}(currently yes)]
 	[--iostat-label cluster_label]
@@ -251,10 +251,11 @@
 	--iostat-enable yes で成功したとき、以下のファイルが修正、作成される。
 		--iostat-counter-dir で指定されたディレクトリが作成される。
 		--iostat-ganglia-confdirで指定されたディレクトリの　conf.d の
-		下に gfarm_gfmd_ラベル.pyconf ファイルが作成される。
-		ganglia ライブラリの python_modules/
+		下に gfarm_gfmd{,_ラベル}.pyconf ファイルが作成される。
+		ganglia ライブラリの python_modules/ に性能測定の plugin が作
+		成される。
 
-	config-gfarm では以下のことが行われる。
+	config-gfmd-iostat では以下のことが行われる。
 	・ --iostat-ganglia-confdirで指定されたディレクトリに、
 	   python_modules の記述があるか確かめる。
 	・ 性能測定の plugin を配置する。
@@ -268,11 +269,11 @@
 	スプールデータサーバーを動かすノードでは、以下の手順でセットアップ
 	を行う。
 
-	1.config-gfsd
+	1. config-gfsd
 		gfarm2.conf の作成が先に行われる必要がある。
-	2.config-gfsd-iostat
+	2. config-gfsd-iostat
 		gfarm2.conf の変更と、plugin の配置を行う。
-	3.config-gfsd
+	3. config-gfsd
 		複数スプールを立てる場合、
 	4. /etc/init.d/gfsd.* start
 		性能ディレクトリのサブディレクトリが出来る必要がある。
@@ -283,7 +284,7 @@
 	gfarm2.conf の変更と、plugin の配置を行う。
 
 	+--------------------------------------------------------------------+
-	# config-gfsd -h
+	# config-gfsd-iostat -h
 	usage: config-gfsd-iostat [--help] [--prefix prefix] [-t|-T] [-f] [-S]
 	[--iostat-enable {no|yes}(currently yes)]
 	[--iostat-label cluster_label]
@@ -294,7 +295,7 @@
 
 	--prefix , -t, -T, -f -S は config-gfsd の意味に等しい。
 	--iostat-enable, --iostat-label, --iostat-counter-dir, 
-	--iostat-ganglia-confdir は config-gmsd-iostat に等しい。
+	--iostat-ganglia-confdir は config-gfmd-iostat に等しい。
 	--iostat-max-client は スプールサーバのクライアント最大数。
 	
 3. ganglia の操作
