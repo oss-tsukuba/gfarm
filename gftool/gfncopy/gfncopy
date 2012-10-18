@@ -33,20 +33,20 @@ case $1 in
 	shift
 	MODE=REMOVE
 	;;
--h)
+-*)
 	usage
 	;;
 esac
 
-FILE=$1
-[ X"$FILE" = X ] && usage
+[ X"$1" = X ] && usage
+FILE=`realpath $1`
 
-f=`realpath $FILE`
 case $MODE in
 SET) 
-	echo -n $NCOPY | gfxattr -s $f gfarm.ncopy
+	echo -n $NCOPY | gfxattr -s $FILE gfarm.ncopy
 	;;
 GET)
+	f=$FILE
 	out=`gfxattr -g $f gfarm.ncopy 2>&1`
 	rv=$?
 	while [ $rv -ne 0 -a "$out" = "no such object" ]; do
@@ -65,9 +65,10 @@ GET)
 	exit $rv
 	;;
 REMOVE)
-	gfxattr -r $f gfarm.ncopy
+	gfxattr -r $FILE gfarm.ncopy
 	;;
 COUNT)
-	gfstat -c $f
+	out=`gfwhere $FILE`
+	[ $? -eq 0 ] && echo $out | wc -w
 	;;
 esac
