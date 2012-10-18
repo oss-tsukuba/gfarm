@@ -1,0 +1,60 @@
+#!/bin/sh
+
+usage() {
+	echo "Usage: $0 FILE          - display NCOPY of FILE [or parent directory]"
+	echo "       $0 -s NCOPY FILE - set NCOPY of FILE"
+	echo "       $0 -c FILE       - display number of replicas of FILE"
+	exit 2
+}
+
+realpath() {
+    p=`getfattr -n gfarm2fs.path $1 2>/dev/null | sed -n 's/gfarm2fs.path="\(.*\)"/\1/p'`
+    [ X"$p" = X ] && p=$1
+    echo $p
+}
+
+MODE=GET
+case $1 in
+-s)
+	shift
+	NCOPY=`echo $1 | tr -cd '[:digit:]'`
+	[ X"$NCOPY" = X ] && usage
+	shift
+	MODE=SET
+	;;
+-c)
+	shift
+	MODE=COUNT
+	;;
+-h)
+	usage
+	;;
+esac
+
+[ X"$1" = X ] && usage
+
+f=`realpath $1`
+case $MODE in
+SET) 
+	echo -n $NCOPY | gfxattr -s $f gfarm.ncopy
+	;;
+GET)
+	out=`gfxattr -g $f gfarm.ncopy 2>&1`
+	rv=$?
+	while [ $rv -ne 0 -a "$out" = "no such object" ]; do
+		[ $f = "." -o $f = "/" ] && break
+		f=`dirname $f 2>&1`	
+		[ $? -ne 0 ] && break
+		out=`gfxattr -g $f gfarm.ncopy 2>&1`
+		rv=$?
+	done
+	if [ $rv -ne 0 ]; then
+		echo >&2 $out
+	else
+		echo $out
+	fi
+	;;
+COUNT)
+	gfstat -c $f
+	;;
+esac
