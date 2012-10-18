@@ -62,6 +62,7 @@ GET)
 		[ "$FILE" != "$f" ] && echo -n "$f: "
 		echo $out
 	fi
+	exit $rv
 	;;
 REMOVE)
 	gfxattr -r $f gfarm.ncopy
