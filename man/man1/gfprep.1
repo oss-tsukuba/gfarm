@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPREP" "1" "27 March 2012" "Gfarm" ""
+.TH "GFPREP" "1" "19 October 2012" "Gfarm" ""
 
 .SH NAME
 gfprep \- replicate Gfarm files in parallel
 .SH SYNOPSIS
 
-\fBgfprep\fR [ \fB-nqvdpU\fR ] [ \fB-mx\fR ] [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-h \fIsource-hostfile\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-H \fIdestination-hostfile\fB\fR ] [ \fB-j \fInum-of-processes\fB\fR ] [ \fB-w \fIway-of-scheduling\fB\fR ] [ \fB-W \fIkilobytes-for-threshold\fB\fR ] [ \fB-s \fIKB/s-to-simulate\fB\fR ] [ \fB-F \fInum-for-readahead\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-url\fB\fR
+\fBgfprep\fR [ \fB-nqvdpPU\fR ] [ \fB-mx\fR ] [ \fB-S \fIsource-domainname\fB\fR ] [ \fB-h \fIsource-hostfile\fB\fR ] [ \fB-D \fIdestination-domainname\fB\fR ] [ \fB-H \fIdestination-hostfile\fB\fR ] [ \fB-j \fInum-of-processes\fB\fR ] [ \fB-w \fIway-of-scheduling\fB\fR ] [ \fB-W \fIkilobytes-for-threshold\fB\fR ] [ \fB-s \fIKB/s-to-simulate\fB\fR ] [ \fB-F \fInum-for-readahead\fB\fR ] [ \fB-N \fInum-of-replicas\fB\fR ] \fB\fIgfarm-url\fB\fR
 
 .SH "DESCRIPTION"
 .PP
@@ -130,7 +130,10 @@ does nothing (gets file informations only).
 Does nothing.
 .TP
 \fB-p\fR
-Reports the performance and various results.
+Reports the total performance and various results.
+.TP
+\fB-P\fR
+Reports the each and total performance and various results.
 .TP
 \fB-q\fR
 Suppresses non-error messages.
