@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "04 October 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "19 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -1107,6 +1107,48 @@ enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfm
 .nf
 	metadb_journal_recvq_size 100000
 .fi
+.TP
+\fBreplica_check \fI有効性\fB\fR
+enableと指定した場合、gfmd内のreplica_check機能が自動的に、
+ファイル複製の数と配置をチェックし、修復します。
+replica_checkは必要なときにしか動作しません。
+デフォルトはenableです。
+
+この文はgfmd.confのみで有効です。
+
+例:
+
+.nf
+	replica_check disable
+.fi
+.TP
+\fBreplica_check_host_down_thresh \fI秒数\fB\fR
+gfsdが停止した場合、replica_checkは指定した秒数までそのgfsdが停止してい
+ないとみなします。これはgfsdを保守するために有用です。
+デフォルトは10800秒(3時間)です。
+
+この文はgfmd.confのみで有効です。
+
+例:
+
+.nf
+	replica_check_host_down_thresh 3600
+.fi
+.TP
+\fBreplica_check_sleep_time \fIナノ秒\fB\fR
+この値を増やすと、replica_checkはgfmdが忙しい場合に限り、ゆっくり動作します。
+gfmdが忙しくない場合、replica_checkは全力で動作します。
+replica_check内でスリープする時間をナノ秒で指定します。
+デフォルトは100000ナノ秒(0.1ミリ秒)です。
+最大値は1000000000ナノ秒(1秒)です。
+
+この文はgfmd.confのみで有効です。
+
+例:
+
+.nf
+	replica_check_sleep_time 0
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm2.confの文法をBNFで記述すると、下記のようになります。
@@ -1170,6 +1212,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<fatal_action_statement> |
 		\~\~<debug_command_statement> |
 		\~\~<client_file_bufsize_statement> |
+		\~\~<client_parallel_copy_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
 		\~\~<metadb_replication_statement> |
@@ -1179,7 +1222,10 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement> |
-		\~\~<metadb_journal_recvq_size_statement>
+		\~\~<metadb_journal_recvq_size_statement> |
+		\~\~<replica_check_statement> |
+		\~\~<replica_check_host_down_thresh_statement> |
+		\~\~<replica_check_sleep_time_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1263,6 +1309,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
+	<client_parallel_copy_statement> ::= "client_parallel_copy" <number>
 	<profile_statement> ::= "profile" <validity>
 	<metadb_server_list_statement> ::= "metadb_server_list" <metadb_server_list_spec>
 	<metadb_server_list_spec> ::=
@@ -1276,6 +1323,9 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
 	<metadb_journal_recvq_size_statement> ::= "metadb_journal_recvq_size" <number>
+	<replica_check_statement> ::= "replica_check" <validity>
+	<replica_check_host_down_thresh_statement> ::= "replica_check_host_down_thresh" <number>
+	<replica_check_sleep_time_statement> ::= "replica_check_sleep_time" <number>
 	<string_list> ::= 
 		\~\~<string> |
 		\~\~<string> <string_list>
