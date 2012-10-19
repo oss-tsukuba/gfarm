@@ -165,12 +165,13 @@
 	+--------------------------------------------------------------------+
 	configuration ディレクトリは /usr/local/etc。
 
-	もし、ganglia のライブラリに python_modules が出来ていない時は
+	もし、ganglia のライブラリ配下に python_modules ディレクトリがない時は
 	手動で作成する。
 	+--------------------------------------------------------------------+
 	% find /usr/lib* /usr/local/lib* -name ganglia
 	/usr/local/lib64/ganglia
 	% find /usr/lib* /usr/local/lib* -name python_modules
+	# mkdir /usr/local/lib64/ganglia/python_modules
 	+--------------------------------------------------------------------+
 
 1.3 ganglia のセットアップ
