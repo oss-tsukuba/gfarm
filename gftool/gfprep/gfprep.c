@@ -44,6 +44,7 @@ struct gfprep_option {
 	int verbose;	/* -v */
 	int debug;	/* -d */
 	int performance;/* -p */
+	int performance_each;/* -P */
 	int max_rw;	/* -M */
 	int check_disk_avail;	/* not -U */
 	int openfile_cost;	/* -C */
@@ -160,7 +161,8 @@ gfprep_usage_common(int error)
 "\t[-j <#parallel(connections)>]\n"
 "\t[-w <scheduling way (noplan,greedy)(default:noplan)>]\n"
 "\t[-W <#KB> (threshold size to flat connections cost)(for -w greedy)]\n"
-"\t[-p (report performance)] [-n (not execute)] [-s <#KB/s(simulate)>]\n"
+"\t[-p (report total performance) | -P (report each and total performance)]"
+"\t[-n (not execute)] [-s <#KB/s(simulate)>]\n"
 "\t[-U (disable checking disk_avail)(fast)]\n"
 /* "\t[-R <#ratio (throughput: local=remote*ratio)(for -w greedy)>]\n" */
 /* "\t[-J <#parallel(read dirents)>]\n" */
@@ -1236,14 +1238,17 @@ pfunc_cb_end(int success, void *data)
 	if (cbd == NULL)
 		return;
 	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (success && opt.performance && opt.verbose) {
+	if (success && opt.performance_each) {
 		double usec;
+
 		gettimeofday(&end, NULL);
 		gfarm_timeval_sub(&end, &cbd->start);
-		usec = (double) (end.tv_sec * 1000000 + end.tv_usec);
-		gfprep_msg(0, "[%.3f B/s (%.0f usec)]: %s",
-			   (double) cbd->filesize * 1000000 / usec,
-			   usec, cbd->src_url);
+		usec = (double)end.tv_sec * GFARM_SECOND_BY_MICROSEC
+			+ end.tv_usec;
+		/* Bytes/usec == MB/sec */
+		gfprep_msg(0, "%.6fMB/s(%.3fs): %s",
+			   (double)cbd->filesize / usec,
+			   usec / GFARM_SECOND_BY_MICROSEC, cbd->src_url);
 	}
 	if (cbd->type == PFUNC_TYPE_COPY)
 		gfprep_msg(!opt.verbose, "[%s]COPY: %s (%s:%d) -> %s (%s:%d)",
@@ -2342,7 +2347,7 @@ main(int argc, char *argv[])
 
 	while ((ch = getopt(
 			argc, argv,
-			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:LxmnpqvdfUZl?"))
+			"N:h:j:w:W:s:S:D:H:R:M:b:J:F:C:LxmnpPqvdfUZl?"))
 	       != -1) {
 		switch (ch) {
 		case 'w':
@@ -2378,6 +2383,10 @@ main(int argc, char *argv[])
 			break;
 		case 'p':
 			opt.performance = 1;
+			break;
+		case 'P':
+			opt.performance = 1;
+			opt.performance_each = 1;
 			break;
 		case 'q':
 			opt.quiet = 1; /* shut up warnings */
@@ -3375,11 +3384,13 @@ next_entry:
 			       "%"GFARM_PRId64"\n",
 			       removed_replica_ng_filesize);
 		}
-		printf("total_throughput: %.3f B/s\n",
-		       (double) total_ok_filesize * 1000000 /
-		       (double)(time_end.tv_sec * 1000000 + time_end.tv_usec));
-		printf("total_time: %ld.%06ld sec.\n",
-		       (long) time_end.tv_sec, (long) time_end.tv_usec);
+		/* Bytes/usec == MB/sec */
+		printf("total_throughput: %.6f MB/s\n",
+		       (double)total_ok_filesize /
+		       ((double)time_end.tv_sec * GFARM_SECOND_BY_MICROSEC
+		        + time_end.tv_usec));
+		printf("total_time: %lld.%06d sec.\n",
+		       (long long)time_end.tv_sec, (int)time_end.tv_usec);
 	}
 
 	if (hash_src) /* hash only */

@@ -3,7 +3,7 @@
 
 <refentry id='gfprep.1'>
 
-<refentryinfo><date>13 March 2012</date></refentryinfo>
+<refentryinfo><date>19 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfprep</refentrytitle>
@@ -19,7 +19,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfprep</command>
-  <arg choice='opt'>-nqvdpU</arg>
+  <arg choice='opt'>-nqvdpPU</arg>
   <arg choice='opt'>-mx</arg>
   <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
   <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
@@ -273,7 +273,16 @@ Does nothing.
 <term><option>-p</option></term>
 <listitem>
 <para>
-Reports the performance and various results.
+Reports the total performance and various results.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option></term>
+<listitem>
+<para>
+Reports the each and total performance and various results.
 </para>
 </listitem>
 </varlistentry>
