@@ -1,15 +1,18 @@
 #!/bin/sh
 
-TMP=/tmp/$0-$$
+status=0
+TMP=/tmp/gfspoolpath-$$
+
+trap 'rm -f $TMP; exit $status' 0 1 2 25
 
 case $1 in
 -s)
 	shift
-	SPOOL=$1
-	shift
+	GFARM_SPOOL=$1
+	shift;;
 esac
 
-: ${SPOOL:="/var/gfarm-spool"}
+: ${GFARM_SPOOL:="/var/gfarm-spool"}
 
 for i
 do
@@ -21,11 +24,11 @@ do
 		sed 's/\([0-9A-F]\{8\}\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F][0-9A-F]\)\([0-9A-F]\{18\}\)/\1\/\2\/\3\/\4\/\5/'`
 	path="data/$path"
 	echo $path
-	if [ -f "$SPOOL/$path" ]; then
-		rsize=`stat --printf="%s" "$SPOOL/$path"`
-		[ $size != $rsize ] &&
-			echo "$i: size mismatch (meta $size real $rsize)"
+	if [ -f "$GFARM_SPOOL/$path" ]; then
+		rsize=`ls -ln "$GFARM_SPOOL/$path" | awk '{print $5}'`
+		if [ $size != $rsize ]; then
+			echo >&2 "$i: size mismatch (meta $size real $rsize)"
+			status=2
+		fi
 	fi
 done
-
-rm -f $TMP
