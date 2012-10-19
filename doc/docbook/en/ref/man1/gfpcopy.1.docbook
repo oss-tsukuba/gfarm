@@ -3,7 +3,7 @@
 
 <refentry id='gfpcopy.1'>
 
-<refentryinfo><date>13 March 2012</date></refentryinfo>
+<refentryinfo><date>19 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfpcopy</refentrytitle>
@@ -19,7 +19,7 @@
 <refsynopsisdiv id='synopsis'>
 <cmdsynopsis>
   <command>gfpcopy</command>
-  <arg choice='opt'>-nqvdpU</arg>
+  <arg choice='opt'>-nqvdpPU</arg>
   <arg choice='opt'>-f</arg>
   <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
   <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
