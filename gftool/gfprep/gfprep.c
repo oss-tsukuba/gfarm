@@ -1224,7 +1224,7 @@ pfunc_cb_start(void *data)
 			     cbd->src_url, cbd->src_hi->hostname,
 			     cbd->src_hi->port);
 	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (opt.performance)
+	if (opt.performance_each)
 		gettimeofday(&cbd->start, NULL);
 }
 
