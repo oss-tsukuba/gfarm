@@ -3,6 +3,7 @@
 PROG=`basename $0`
 
 usage() {
+	exec >&2
 	echo "Usage: $PROG FILE          - display NCOPY of FILE [or parent directory]"
 	echo "       $PROG -s NCOPY FILE - set NCOPY of FILE"
 	echo "       $PROG -r FILE       - remove NCOPY of FILE"
@@ -11,7 +12,7 @@ usage() {
 }
 
 realpath() {
-    p=`getfattr -n gfarm2fs.path $1 2>/dev/null | sed -n 's/gfarm2fs.path="\(.*\)"/\1/p'`
+    p=`( getfattr -n gfarm2fs.path $1 ) 2>/dev/null | sed -n 's/gfarm2fs.path="\(.*\)"/\1/p'`
     [ X"$p" = X ] && p=$1
     echo $p
 }
