@@ -42,7 +42,7 @@ esac
 FILE=`realpath $1`
 
 case $MODE in
-SET) 
+SET)
 	echo -n $NCOPY | gfxattr -s $FILE gfarm.ncopy
 	;;
 GET)
@@ -51,7 +51,7 @@ GET)
 	rv=$?
 	while [ $rv -ne 0 -a "$out" = "no such object" ]; do
 		[ $f = "." -o $f = "/" ] && break
-		f=`dirname $f 2>&1`	
+		f=`dirname $f 2>&1`
 		[ $? -ne 0 ] && break
 		out=`gfxattr -g $f gfarm.ncopy 2>&1`
 		rv=$?
