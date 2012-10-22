@@ -3749,14 +3749,17 @@ inode_replication_new(struct inode *inode, struct host *src, struct host *dst,
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
 
-	if (frp == NULL) /* client initialited replication case */
+	if (frp == NULL) /* client initiated replication case */
 		return (GFARM_ERR_NO_ERROR);
 
 	ia = inode->u.c.activity;
 	if (ia == NULL) {
 		ia = inode->u.c.activity = inode_activity_alloc();
-		if (ia == NULL)
+		if (ia == NULL) {
+			(void)inode_remove_replica_in_cache(inode, dst);
+			/* abandon error */
 			return (GFARM_ERR_NO_MEMORY);
+		}
 		ia_alloced = 1;
 	}
 
@@ -4223,7 +4226,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	struct file_copy *copy;
 	struct file_replication *fr, **frp = &fr;
 
-	if (file_replication_p == NULL) /* client initialited replication */
+	if (file_replication_p == NULL) /* client initiated replication */
 		frp = NULL;
 
 	if ((flags & ~GFS_REPLICATE_FILE_FORCE) != 0)
