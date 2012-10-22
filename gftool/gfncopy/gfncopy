@@ -4,7 +4,7 @@ PROG=`basename $0`
 
 usage() {
 	exec >&2
-	echo "Usage: $PROG FILE          - display NCOPY of FILE [or parent directory]"
+	echo "Usage: $PROG [ -v ] FILE   - display NCOPY of FILE [or parent directory]"
 	echo "       $PROG -s NCOPY FILE - set NCOPY of FILE"
 	echo "       $PROG -r FILE       - remove NCOPY of FILE"
 	echo "       $PROG -c FILE       - display number of replicas of FILE"
@@ -18,6 +18,7 @@ realpath() {
 }
 
 MODE=GET
+VERBOSE=false
 case $1 in
 -s)
 	shift
@@ -33,6 +34,10 @@ case $1 in
 -r)
 	shift
 	MODE=REMOVE
+	;;
+-v)
+	shift
+	VERBOSE=true
 	;;
 -*)
 	usage
@@ -52,15 +57,17 @@ GET)
 	rv=$?
 	while [ $rv -ne 0 -a "$out" = "no such object" ]; do
 		[ $f = "." -o $f = "/" ] && break
+		$VERBOSE && echo >&2 $f: $out
 		f=`dirname $f 2>&1`
 		[ $? -ne 0 ] && break
 		out=`gfxattr -g $f gfarm.ncopy 2>&1`
 		rv=$?
 	done
 	if [ $rv -ne 0 ]; then
+		$VERBOSE && echo -n >&2 "$f: "
 		echo >&2 $out
 	else
-		[ "$FILE" != "$f" ] && echo -n "$f: "
+		$VERBOSE && echo -n "$f: "
 		echo $out
 	fi
 	exit $rv
