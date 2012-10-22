@@ -1,3 +1,26 @@
+Release note for Gfarm 2.5.7.1
+==============================
+
+[2012.10.11]
+
+Bug fix
+* gfpcopy, gfprep - may work slowly [sf.net trac #436]
+* gfchown - segfault in an error case [sf.net trac #473]
+* gfdump.postgresql - remove unnecessary journal file when starting
+  the slave gfmd after restoring the database
+* gfmd - gfmd crashes, if an error occurs while reading a journal file
+  in db_journal_fetch() [sf.net trac #468]
+* gfmd - fix possible lost all replicas when multiple clients open the
+  same file with GFARM_FILE_TRUNC simultaneously [sf.net trac #441]
+* gfmd, gfsd, libgfarm - lost all replicas may happen due to a race
+  condition between creating and reading the same file [sf.net trac
+  #455]
+* gfmd, gfsd - gfsd -ccc (or -c, -cc) cannot fix invalid files having
+  inconsistent file size on the spool, introduced in 2.5.6
+* gfmd - potential gfmd memory corruption when scheduling file system
+  nodes [sf.net trac #449]
+* libgfarm - log original errno if it is not known [sf.net trac #469]
+
 Release note for Gfarm 2.5.7
 ============================
 
