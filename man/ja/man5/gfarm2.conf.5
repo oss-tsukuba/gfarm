@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "04 October 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "23 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -193,6 +193,22 @@ GSI認証において、spool_server_cred_typeで指定した値に
 応じて、gfsdが用いる証明書の設定を行います。
 sharedsecret利用時には、この指定は単に無視されます。
 詳しくはspool_server_cred_typeの項を参照してください。
+.TP
+\fBspool_check_level \fIレベル\fB\fR
+レベル\fI1\fRはgfsdの-cオプションと同等です。
+
+レベル\fI2\fRはgfsdの-ccオプションと同等です。
+
+レベル\fI3\fRはgfsdの-cccオプションと同等です。
+
+デフォルト値は0です。レベル\fI0\fRにすると、
+gfsdは起動時に、スプールディレクトリ上のファイルを調査をしません。
+
+For example,
+
+.nf
+	spool_check_level 3
+.fi
 .TP
 \fBmetadb_server_host \fIgfmdホスト名\fB\fR
 gfmdが動作しているホスト名を指定します。
@@ -1168,6 +1184,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
 		\~\~<spool_server_cred_name_statement> |
+		\~\~<spool_check_level_statement> |
 		\~\~<metadb_server_host_statement> |
 		\~\~<metadb_server_port_statement> |
 		\~\~<metadb_server_cred_type_statement> |
@@ -1243,6 +1260,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"spool_server_cred_service" <cred_service>
 	<spool_server_cred_name_statement> ::=
 		\~\~"spool_server_cred_name" <cred_name>
+	<spool_check_level_statement> ::= "spool_check_level" <number>
 	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
 	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
 	<metadb_server_cred_type_statement> ::=
