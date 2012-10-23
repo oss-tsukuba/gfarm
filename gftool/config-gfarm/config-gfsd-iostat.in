@@ -59,13 +59,12 @@ usage()
 
 display_plain_params()
 {
-	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
-	echo "gfarm client conf file           : $IOSTAT_CONF"
+	echo "prefix [--prefix]: $CONFIG_PREFIX"
+	echo "config file      : $IOSTAT_CONF"
 	display_iostat_params gfsd
-    if $IOSTAT_ENABLE; then
-        echo "iostat max client              [--iostat-max-client]:"\
-			"$IOSTAT_MAX_CLIENT"
-    fi
+	if $IOSTAT_ENABLE; then
+		echo "iostat max client  [--iostat-max-client]: $IOSTAT_MAX_CLIENT"
+	fi
 	exit 0
 }
 

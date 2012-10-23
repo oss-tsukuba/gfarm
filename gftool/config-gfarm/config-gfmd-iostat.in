@@ -56,8 +56,8 @@ usage()
 
 display_plain_params()
 {
-	echo "prefix                 [--prefix]: $CONFIG_PREFIX"
-	echo "gfarm server conf file           : $IOSTAT_CONF"
+	echo "prefix [--prefix]: $CONFIG_PREFIX"
+	echo "config file      : $IOSTAT_CONF"
 	display_iostat_params gfmd
 	exit 0
 }
