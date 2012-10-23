@@ -110,9 +110,9 @@
 
 3. gfarm 性能測定
 3.1 パラメタ設定
-	性能測定のためのパラメタは config-gfarm, config-gfsd で行う。
+	性能測定のためのパラメタは config-gfmd-iostat,config-gfsd-iostatで行う。
 
-3.1.1. config-gfarm
+3.1.1. config-gfmd-iostat
 	config-gfarm では、以下の設定が行われる。
 
 	--iostat-enable		性能測定を行うか否か
