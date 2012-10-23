@@ -4485,7 +4485,12 @@ main(int argc, char **argv)
 
 	/* spool check */
 	if (spool_check_level > 0)
-		(void)gfsd_spool_check(spool_check_level);
+		gfarm_spool_check_level = spool_check_level;
+	if (gfarm_spool_check_level > 0) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "spool_check_level=%d", gfarm_spool_check_level);
+		(void)gfsd_spool_check(gfarm_spool_check_level);
+	}
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).

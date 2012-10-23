@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>19 October 2012</date></refentryinfo>
+<refentryinfo><date>23 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -289,6 +289,33 @@ authentication.
 Please read the description of the <token>spool_server_cred_type</token> 
 statement for details.
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_level</token> <parameter>level</parameter></term>
+<listitem>
+<para>
+The level <parameter>1</parameter> is equivalent to the -c option for
+gfsd.
+</para>
+<para>
+The level <parameter>2</parameter> is equivalent to the -cc option for
+gfsd.
+</para>
+<para>
+The level <parameter>3</parameter> is equivalent to the -ccc option
+for gfsd.
+</para>
+<para>
+The default value is 0.  The level <parameter>0</parameter> means that
+gfsd does not investigate all files stored in a spool directory when
+starting up.
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_check_level 3
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1739,6 +1766,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_check_level_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
@@ -1821,6 +1849,7 @@ notation.</para>
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
+	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;number&gt;
 	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
 	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=

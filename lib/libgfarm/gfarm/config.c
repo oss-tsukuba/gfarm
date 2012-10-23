@@ -753,6 +753,7 @@ gfarm_set_local_user_for_this_local_account(void)
 /* GFS dependent */
 char *gfarm_spool_server_listen_address = NULL;
 char *gfarm_spool_root = NULL;
+int gfarm_spool_check_level = MISC_DEFAULT;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
@@ -2442,6 +2443,8 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "spool_server_cred_name") == 0) {
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
+	} else if (strcmp(s, o = "spool_check_level") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_check_level);
 
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);
@@ -2781,6 +2784,9 @@ gfarm_config_set_default_filesystem(void)
 void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_spool_check_level == MISC_DEFAULT)
+		gfarm_spool_check_level = 0;
+
 	if (gfarm_log_level == MISC_DEFAULT)
 		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_log_level);
