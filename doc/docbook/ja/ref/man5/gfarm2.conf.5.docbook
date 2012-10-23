@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>4 October 2012</date></refentryinfo>
+<refentryinfo><date>23 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -288,6 +288,29 @@ GSI認証において、<token>spool_server_cred_type</token>で指定した値に
 <token>sharedsecret</token>利用時には、この指定は単に無視されます。
 詳しくは<token>spool_server_cred_type</token>の項を参照してください。
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_check_level</token> <parameter>レベル</parameter></term>
+<listitem>
+<para>
+レベル<parameter>1</parameter>はgfsdの-cオプションと同等です。
+</para>
+<para>
+レベル<parameter>2</parameter>はgfsdの-ccオプションと同等です。
+</para>
+<para>
+レベル<parameter>3</parameter>はgfsdの-cccオプションと同等です。
+</para>
+<para>
+デフォルト値は0です。レベル<parameter>0</parameter>にすると、
+gfsdは起動時に、スプールディレクトリ上のファイルを調査をしません。
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_check_level 3
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1694,6 +1717,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_check_level_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
@@ -1776,6 +1800,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
+	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;number&gt;
 	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
 	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=

@@ -4,6 +4,7 @@
 /* GFS dependent */
 extern char *gfarm_spool_server_listen_address;
 extern char *gfarm_spool_root;
+extern int gfarm_spool_check_level;
 
 enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_UNKNOWN,
