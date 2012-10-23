@@ -16,6 +16,7 @@ DOCBOOK = \
 	gfmdhost.1 \
 	gfmkdir.1 \
 	gfmv.1 \
+	gfncopy.1 \
 	gfpcopy.1 \
 	gfprep.1 \
 	gfquota.1 \
