@@ -144,8 +144,7 @@ replica_check_replicate(
 		    host_name(src), host_port(src), dst,
 		    inode_get_number(inode), inode_get_gen(inode), fr))
 			   != GFARM_ERR_NO_ERROR) {
-			/* no memory ? */
-			file_replicating_free(fr);
+			file_replicating_free_by_error_before_request(fr);
 			gflog_error(GFARM_MSG_UNFIXED,
 			    "async_back_channel_replication_request: %s",
 			    gfarm_error_string(e));
