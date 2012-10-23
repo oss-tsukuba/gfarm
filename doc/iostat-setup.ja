@@ -23,6 +23,7 @@
 	3.1 性能測定の監視
 	3.2 rrd ファイル
 	3.3 クラスタ表示
+	3.4 ローカルストレージ性能
 
 0. はじめに
 	ここでは、gfarm に性能モニタリング機能を追加するための手順を記述する。
@@ -364,5 +365,29 @@
 
 	のような定義を追加すれば、view タブで XYZ を指定すれば一覧できる。
 
+3.4 ローカルストレージ性能
+	gfarm には、クライアントアプリケーションが同一ノード上の
+	スプールにあるファイルにアクセスする際は、スプールサーバ gfsd を
+	経由しないで直接ローカルストレージからIOする機能がある。
+
+	この性能測定値は istat-gfsd-xxx には含まれていない。
+	ganglia の既存の disk 性能収集情報で推定できる。
+
+	disk 性能情報は、一般には diskstat_ディスク_メトリック で
+	収集されている。
+		diskstat_sda_io_time
+		diskstat_sda_percent_io_time
+		diskstat_sda_read_bytes_per_sec
+		diskstat_sda_reads_merged
+		diskstat_sda_reads
+		diskstat_sda_read_time
+		diskstat_sda_weighted_io_time
+		diskstat_sda_write_bytes_per_sec
+		diskstat_sda_writes_merged
+		diskstat_sda_writes
+		diskstat_sda_write_time
+
+	この情報は当該ディスクアクセス情報なので、gfarm_iostat の
+	ページキャッシュ効果を除いた値とは大きく異なっている。
 
 							-- 以上 --
