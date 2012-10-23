@@ -461,6 +461,46 @@ statement for details.</P
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_check_level</SPAN
+> <CODE
+CLASS="PARAMETER"
+>level</CODE
+></DT
+><DD
+><P
+>The level <CODE
+CLASS="PARAMETER"
+>1</CODE
+> is equivalent to the -c option for
+gfsd.</P
+><P
+>The level <CODE
+CLASS="PARAMETER"
+>2</CODE
+> is equivalent to the -cc option for
+gfsd.</P
+><P
+>The level <CODE
+CLASS="PARAMETER"
+>3</CODE
+> is equivalent to the -ccc option
+for gfsd.</P
+><P
+>The default value is 0.  The level <CODE
+CLASS="PARAMETER"
+>0</CODE
+> means that
+gfsd does not investigate all files stored in a spool directory when
+starting up.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_check_level&nbsp;3</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >metadb_server_host</SPAN
 > <CODE
 CLASS="PARAMETER"
@@ -2357,6 +2397,7 @@ CLASS="LITERALLAYOUT"
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt;&nbsp;|<br>
+		&nbsp;&nbsp;&lt;spool_check_level_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt;&nbsp;|<br>
@@ -2432,6 +2473,7 @@ CLASS="LITERALLAYOUT"
 		&nbsp;&nbsp;"spool_server_cred_service"&nbsp;&lt;cred_service&gt;<br>
 	&lt;spool_server_cred_name_statement&gt;&nbsp;::=<br>
 		&nbsp;&nbsp;"spool_server_cred_name"&nbsp;&lt;cred_name&gt;<br>
+	&lt;spool_check_level_statement&gt;&nbsp;::=&nbsp;"spool_check_level"&nbsp;&lt;number&gt;<br>
 	&lt;metadb_server_host_statement&gt;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&lt;hostname&gt;<br>
 	&lt;metadb_server_port_statement&gt;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&lt;portnumber&gt;<br>
 	&lt;metadb_server_cred_type_statement&gt;&nbsp;::=<br>
