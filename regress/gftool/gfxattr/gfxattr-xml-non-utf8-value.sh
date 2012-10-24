@@ -4,7 +4,7 @@
 
 dir=${gftmp}
 
-attr_src=${testbin}/gfxattr-xml-non-utf8-value.src
+attr_src=${testbase}/gfxattr-xml-non-utf8-value.src
 attr_log=${localtmp}.log
 
 attrname="user.attr"
