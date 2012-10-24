@@ -5664,22 +5664,13 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	return GFARM_ERR_NO_ERROR;
 }
 
-/* This assumes that the "gfarm.ncopy" xattr is cached. */
 int
-inode_has_desired_number(struct inode *inode, int *desired_numberp)
+inode_xattr_convert_desired_number(
+	const void *value, size_t size, int *desired_numberp)
 {
-	void *value;
-	size_t size;
-	unsigned char *s;
 	int i, n;
+	const unsigned char *s = value;
 
-	if (inode_xattr_get_cache(inode, 0, "gfarm.ncopy", &value, &size) !=
-	    GFARM_ERR_NO_ERROR)
-		return (0);
-
-	if (value == NULL)
-		return (0);
-	s = value;
 	for (i = 0; i < size && isspace(s[i]); i++)
 		;
 	if (i < size && isdigit(s[i])) {
@@ -5687,11 +5678,21 @@ inode_has_desired_number(struct inode *inode, int *desired_numberp)
 		for (; i < size && isdigit(s[i]); i++)
 			n = n * 10 + (s[i] - '0');
 		*desired_numberp = n;
-		free(value);
 		return (1);
 	}
-	free(value);
 	return (0);
+}
+
+/* This assumes that the "gfarm.ncopy" xattr is cached. */
+int
+inode_has_desired_number(struct inode *inode, int *desired_numberp)
+{
+	struct xattr_entry *ent = xattr_find(&inode->i_xattrs, "gfarm.ncopy");
+
+	if (ent == NULL || ent->cached_attrvalue == NULL)
+		return (0);
+	return (inode_xattr_convert_desired_number(
+	    ent->cached_attrvalue, ent->cached_attrsize, desired_numberp));
 }
 
 int

@@ -1007,6 +1007,26 @@ host_from_all(int (*filter)(struct host *, void *), void *closure,
 }
 
 /*
+ * PREREQUISITE: giant_lock
+ * LOCKS: host::back_channel_mutex
+ * SLEEPS: no
+ */
+int
+host_number()
+{
+	struct gfarm_hash_iterator it;
+	struct host *h;
+	int nhosts = 0;
+
+	FOR_ALL_HOSTS(&it) {
+		h = host_iterator_access(&it);
+		if (host_is_valid(h))
+			++nhosts;
+	}
+	return (nhosts);
+}
+
+/*
  * just select randomly		XXX FIXME: needs to improve
  */
 static void

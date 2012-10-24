@@ -34,6 +34,7 @@
 #include "dir.h"
 #include "acl.h"
 #include "user.h"
+#include "host.h"
 #include "replica_check.h"
 #include "gfm_proto.h"
 
@@ -195,12 +196,51 @@ isvalid_attrname(const char *attrname)
 }
 
 static gfarm_error_t
+xattr_check_desired_number(
+	int xmlMode, struct inode *inode, const char *attrname,
+	const void *value, size_t size, int *have, int *change)
+{
+	int num_new, num_old, num_host;
+
+	if (xmlMode || strcmp("gfarm.ncopy", attrname) != 0) {
+		*have = 0;
+		*change = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	if (!inode_xattr_convert_desired_number(value, size, &num_new) ||
+	    num_new < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "invalid format for gfarm.ncopy");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	num_host = host_number();
+	if (num_new > num_host) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "too large number of gfarm.ncopy: %d > num_host(%d)",
+		    num_new, num_host);
+		return (GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE);
+	}
+	if (inode_has_desired_number(inode, &num_old) &&
+	    num_new == num_old) {
+		*have = 1;
+		*change = 0;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm.ncopy=%d: not changed", num_new);
+		return (GFARM_ERR_NO_ERROR);
+	}
+	*have = 1;
+	*change = 1;
+	return (GFARM_ERR_NO_ERROR); /* update */
+}
+
+static gfarm_error_t
 setxattr(int xmlMode, struct inode *inode,
 	 char *attrname, void **valuep, size_t size, int flags,
 	 struct db_waitctx *waitctx, int *addattr)
 {
 	gfarm_error_t e;
 	void *value;
+	int have_ncopy, change_ncopy;
 
 	*addattr = 0;
 	if (!isvalid_attrname(attrname)) {
@@ -217,6 +257,16 @@ setxattr(int xmlMode, struct inode *inode,
 		    "argument '*valuep' is not a valid UTF-8 string");
 		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
 	}
+
+	e = xattr_check_desired_number(
+	    xmlMode, inode, attrname, *valuep, size,
+	    &have_ncopy, &change_ncopy);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "xattr_check_desired_number(): %s", gfarm_error_string(e));
+		return (e);
+	} else if (have_ncopy && !change_ncopy)
+		return (GFARM_ERR_NO_ERROR); /* not add/modify */
 
 	if (!xmlMode) {
 		gfarm_acl_type_t acltype;
@@ -292,6 +342,8 @@ setxattr(int xmlMode, struct inode *inode,
 			return (e);
 		}
 	}
+	if (change_ncopy)
+		replica_check_signal_update_xattr();
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),
@@ -301,20 +353,6 @@ setxattr(int xmlMode, struct inode *inode,
 			attrname, value, size, waitctx);
 
 	return e;
-}
-
-static int
-xattr_ncopy_compare(
-	int xmlMode, struct inode *inode, const char *attrname,
-	const void *value, size_t size)
-{
-	if (!xmlMode &&
-	    strcmp("gfarm.ncopy", attrname) == 0) {
-		if (!inode_xattr_cache_is_same(
-		    inode, xmlMode, attrname, value, size))
-			return (1); /* different value */
-	}
-	return (0);
 }
 
 gfarm_error_t
@@ -331,7 +369,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
-	int addattr, change_ncopy = 0;
+	int addattr;
 
 	e = gfm_server_get_request(peer, diag,
 	    "sBi", &attrname, &size, &value, &flags);
@@ -386,18 +424,12 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
-	} else {
-		change_ncopy = xattr_ncopy_compare(
-		    xmlMode, inode, attrname, value, size);
+	} else
 		e = setxattr(xmlMode, inode, attrname, &value, size,
 			     flags, waitctx, &addattr);
-	}
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (change_ncopy)
-			replica_check_signal_update_xattr();
-
 		e = dbq_waitret(waitctx);
 		if (e == GFARM_ERR_NO_ERROR) {
 			giant_lock();
