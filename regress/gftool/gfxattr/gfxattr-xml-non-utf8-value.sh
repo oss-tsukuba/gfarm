@@ -21,11 +21,10 @@ cleanup() {
     gfrmdir ${dir}
 }
 
-# is XML attr supported?
-if gfxattr -x -g / test 2>&1 |
-        egrep "^gfxattr: (unknown|invalid) option -- ('x'|x)" >/dev/null
-then
-        exit $exit_unsupported
+if $regress/bin/is_xmlattr_supported; then
+	:
+else
+	exit $exit_unsupported
 fi
 
 trap 'cleanup; exit $exit_trap' $trap_sigs
