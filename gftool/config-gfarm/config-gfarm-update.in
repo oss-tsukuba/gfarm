@@ -18,7 +18,6 @@ config_dir="${datadir}/gfarm/config"
 PRIVATE_MODE=false
 PRIVATE_MODE_FOR_DEBIAN=false
 
-
 PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
 export PATH
 search_path="$PATH"
@@ -59,7 +58,6 @@ usage()
 	echo >&2 "	[-l metadata_directory]	- backend database data directory"
 	echo >&2 "	[-f backend_file]"
 	echo >&2 "	[-j metadb_journal_dir] - metadata journal directory"
-	
 	update_usage_$BACKEND_TYPE ||
 		echo >&2 "	no option for backend=$BACKEND_TYPE"
 	exit 1
@@ -87,7 +85,7 @@ update_sanity()
 # from display_backend_params_$BACKEND_TYPE, but some may not.
 display_plain_param_backend_data_dir()
 {
-    echo     "metadata     directory       [-l]: $BACKEND_DATA_DIR"
+    echo     "metadata directory  [-l]: $BACKEND_DATA_DIR"
 }
 
 display_plain_param_backend_log_dir()
@@ -103,6 +101,14 @@ tf2yn()
     esac
 }
 
+tf2ed()
+{
+    case $1 in
+    true) echo enable;;
+    *)    echo disable;;
+    esac
+}
+
 display_params()
 {
     echo "prefix                 [--prefix]: $CONFIG_PREFIX"
@@ -113,8 +119,7 @@ display_params()
     display_plain_params_backend_optional_$BACKEND_TYPE
 
     update_sanity
-    METADATA_REPLICATION_YN=`tf2yn $METADATA_REPLICATION`
-    echo "metadata replication         [-r]: $METADATA_REPLICATION_YN"
+    echo "metadata replication         [-r]: `tf2yn $METADATA_REPLICATION`"
     if $METADATA_REPLICATION; then
         echo "metadata journal directory   [-j]: $METADATA_JOURNAL_DIR"
     fi
@@ -125,41 +130,32 @@ display_params()
 update_metadata_replication()
 {
     if $METADATA_REPLICATION; then
-	if $METADATA_REPLICATION1; then
-	    :
-	elif [ -e "$METADATA_JOURNAL_DIR/0000000000.gmj" ]; then
-	    echo >&2 "journal file already exists in $METADATA_JOURNAL_DIR."
-	    exit 1
-        fi
-        [ -d $METADATA_JOURNAL_DIR ] || mkdir -p $METADATA_JOURNAL_DIR
-        [ -e $METADATA_JOURNAL_DIR ] && chmod 700 $METADATA_JOURNAL_DIR
+	create_directory "$METADATA_JOURNAL_DIR"
+	chmod 700 "$METADATA_JOURNAL_DIR"
     fi
 
-    if [ X"$METADATA_REPLICATION_ED1" = X"" ]; then
-        echo "metadb_replication $METADATA_REPLICATION_ED" >> $GFMD_CONF
-    fi
-    if [ X"$METADATA_JOURNAL_DIR1" = X"" ]; then
-        echo "# mkdir following directory when metadb_replication is set to enable." >> $GFMD_CONF
-        echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $GFMD_CONF
-    fi
+    tmp=`mktemp` || ABORT "cannot create a tmp file to update $GFMD_CONF"
+    egrep -v '(metadb_replication|metadb_journal_dir)' $GFMD_CONF > $tmp &&
+    echo "metadb_replication `tf2ed $METADATA_REPLICATION`" >> $tmp &&
+    echo "# mkdir following directory when metadb_replication is set to enable." >> $tmp &&
+    echo "metadb_journal_dir $METADATA_JOURNAL_DIR" >> $tmp &&
+    mv $tmp $GFMD_CONF || {
+	rm -f $tmp
+	ABORT "cannot update $GFMD_CONF"
+    }
 }
 
 update_first_set_param()
 {
-    : ${METADATA_REPLICATION_ED1=`getvalue metadb_replication`}
-    if [ X"$METADATA_REPLICATION_ED1" = X"enable" ]; then
-        METADATA_REPLICATION=true
-        METADATA_REPLICATION1=true
-        METADATA_REPLICATION_ED=enable
+    METADATA_REPLICATION_ED=`getvalue metadb_replication`
+    if [ X"$METADATA_REPLICATION_ED" = X"enable" ]; then
+        : ${METADATA_REPLICATION:=true}
     else
-        METADATA_REPLICATION1=false
+        : ${METADATA_REPLICATION:=false}
     fi
 
-    METADATA_JOURNAL_DIR1=`getvalue metadb_journal_dir`
-    : ${METADATA_JOURNAL_DIR:="$METADATA_JOURNAL_DIR1"}
-    : ${METADATA_JOURNAL_DIR:="$METADATA_JOURNAL_DIR0"}
+    : ${METADATA_JOURNAL_DIR:=`getvalue metadb_journal_dir` }
     : ${METADATA_JOURNAL_DIR:="$CONFIG_PREFIX/var/gfarm-metadata/journal"}
-
 }
 
 #
@@ -167,9 +163,6 @@ update_first_set_param()
 #
 
 : ${BACKEND_OPTIONS:=}
-: ${METADATA_REPLICATION:=false}
-: ${METADATA_REPLICATION_ED:=disable}
-: ${IOSTAT_ENABLE:=""}
 : ${BACKEND_TYPE:=}
 
 while [ $# -gt 0 ] ; do
@@ -189,7 +182,7 @@ while [ $# -gt 0 ] ; do
 		BACKEND_OPTIONS="$BACKEND_OPTIONS -f $1"
 		;;
 	  -j) shift; [ $# -ge 1 ] || usage
-		METADATA_JOURNAL_DIR0=$1
+		METADATA_JOURNAL_DIR=$1
 		;;
 
 	# control options
@@ -204,9 +197,8 @@ while [ $# -gt 0 ] ; do
 		;;
 	  -r)
 		METADATA_REPLICATION=true
-		METADATA_REPLICATION_ED=enable
 		;;
-	  --update|--update-symlink) 
+	  --update|--update-symlink)
 		UPDATE=true
 		;;
 
@@ -231,7 +223,7 @@ fi
 
 # sanity check
 if [ ! -f ${GFMD_CONF} ]; then
-	ABORT "${PROGNAME}: cannot find ${GFMD_CONF}, --prefix option required"
+	ABORT "cannot find ${GFMD_CONF}, --prefix option required"
 fi
 
 # determine a backend database type
