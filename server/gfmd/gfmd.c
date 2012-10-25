@@ -69,6 +69,7 @@
 #include "relay.h"
 #include "gfmd.h"
 #include "iostat.h"
+#include "replica_check.h"
 
 #include "protocol_state.h"
 
@@ -1881,6 +1882,9 @@ main(int argc, char **argv)
 	} else
 		sock = open_accepting_socket(gfmd_port);
 
+	/* master */
+
+	replica_check_start();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/

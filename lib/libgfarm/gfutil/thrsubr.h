@@ -2,6 +2,7 @@ struct timespec;
 
 void gfarm_mutex_init(pthread_mutex_t *, const char *, const char *);
 void gfarm_mutex_lock(pthread_mutex_t *, const char *, const char *);
+int gfarm_mutex_trylock(pthread_mutex_t *, const char *, const char *);
 void gfarm_mutex_unlock(pthread_mutex_t *, const char *, const char *);
 void gfarm_mutex_destroy(pthread_mutex_t *, const char *, const char *);
 void gfarm_cond_init(pthread_cond_t *, const char *, const char *);

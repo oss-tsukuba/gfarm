@@ -34,7 +34,7 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	peer_watcher.c peer.c local_peer.c remote_peer.c abstract_host.c \
 	netsendq.c dead_file_copy.c file_replication.c process.c job.c \
 	dir.c inode.c fs.c back_channel.c acl.c journal_file.c \
-	mdhost.c gfmd_channel.c mdcluster.c relay.c \
+	mdhost.c gfmd_channel.c mdcluster.c relay.c replica_check.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
 	db_journal.c db_journal_apply.c internal_host_info.c \
 	fsngroup.c fsngroup_replica.c thrstatewait.o \
@@ -44,7 +44,7 @@ OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	peer_watcher.o peer.o local_peer.o remote_peer.o abstract_host.o \
 	netsendq.o dead_file_copy.o file_replication.o process.o job.o \
 	dir.o inode.o fs.o back_channel.o acl.o journal_file.o \
-	mdhost.o gfmd_channel.o mdcluster.o relay.o \
+	mdhost.o gfmd_channel.o mdcluster.o relay.o replica_check.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
 	db_journal.o db_journal_apply.o internal_host_info.o \
 	fsngroup.o fsngroup_replica.o thrstatewait.o \
@@ -80,6 +80,6 @@ $(OBJS): $(DEPGFARMINC) \
 	dead_file_copy.h file_replication.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h \
-	gfmd_channel.h mdhost.h mdcluster.h relay.h
+	gfmd_channel.h mdhost.h mdcluster.h relay.h replica_check.h
 
 include $(optional_rule)

@@ -28,6 +28,19 @@ gfarm_mutex_lock(pthread_mutex_t *mutex, const char *where, const char *what)
 		    where, what, strerror(err));
 }
 
+/* true: EBUSY */
+int
+gfarm_mutex_trylock(pthread_mutex_t *mutex, const char *where,
+	const char *what)
+{
+	int err = pthread_mutex_trylock(mutex);
+
+	if (err != 0 && err != EBUSY)
+		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex trylock: %s",
+		    where, what, strerror(err));
+	return (err == EBUSY);
+}
+
 void
 gfarm_mutex_unlock(pthread_mutex_t *mutex, const char *where, const char *what)
 {

@@ -49,6 +49,7 @@ int host_get_disconnect_callback(struct host *,
 #endif
 
 int host_is_up(struct host *);
+int host_is_up_with_grace(struct host *, gfarm_time_t);
 int host_is_valid(struct host *);
 
 int host_unique_sort(int, struct host **);
@@ -57,13 +58,14 @@ gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
-gfarm_error_t host_schedule_n_from_all_except(
-	int, struct host **, int (*)(struct host *, void *), void *,
-	int, int *, struct host **);
 gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);
 gfarm_error_t host_schedule_n_except(int *, struct host **,
+	int *, struct host **,
+	int (*)(struct host *, void *), void *,
+	int, int *, struct host ***);
+gfarm_error_t host_schedule_n_from_all_except(
 	int *, struct host **,
 	int (*)(struct host *, void *), void *,
 	int, int *, struct host ***);

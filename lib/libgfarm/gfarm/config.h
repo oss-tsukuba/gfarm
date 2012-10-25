@@ -30,6 +30,9 @@ extern int gfm_proto_reply_to_gfsd_window;
 extern int gfs_proto_fhremove_request_window;
 extern int gfs_proto_replication_request_window;
 extern int gfarm_outstanding_file_replication_limit;
+extern int gfarm_replica_check;
+extern int gfarm_replica_check_host_down_thresh;
+extern int gfarm_replica_check_sleep_time;
 #define GFARM_METADB_STACK_SIZE_DEFAULT 0 /* use OS default */
 #define GFARM_METADB_THREAD_POOL_SIZE_DEFAULT	16  /* quadcore, quadsocket */
 #if 0

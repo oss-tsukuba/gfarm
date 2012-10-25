@@ -35,6 +35,7 @@
 #include "dir.h"
 #include "acl.h"
 #include "user.h"
+#include "replica_check.h"
 #include "gfm_proto.h"
 #include "relay.h"
 
@@ -305,6 +306,20 @@ setxattr(int xmlMode, struct inode *inode,
 	return e;
 }
 
+static int
+xattr_ncopy_compare(
+	int xmlMode, struct inode *inode, const char *attrname,
+	const void *value, size_t size)
+{
+	if (!xmlMode &&
+	    strcmp("gfarm.ncopy", attrname) == 0) {
+		if (!inode_xattr_cache_is_same(
+		    inode, xmlMode, attrname, value, size))
+			return (1); /* different value */
+	}
+	return (0);
+}
+
 gfarm_error_t
 gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip, int xmlMode)
@@ -320,7 +335,7 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
-	int addattr = 0;
+	int addattr = 0, change_ncopy = 0;
 	struct relayed_request *relay;
 	gfarm_repattr_t *reps = NULL;
 	size_t nreps = 0;
@@ -402,13 +417,20 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 					size = strlen(repattr) + 1;
 				}
 			}
-			if (e == GFARM_ERR_NO_ERROR)
-				e = setxattr(xmlMode, inode, attrname, &value, size,
+			if (e == GFARM_ERR_NO_ERROR) {
+				change_ncopy = xattr_ncopy_compare(
+				    xmlMode, inode, attrname, value, size);
+				e = setxattr(
+				    xmlMode, inode, attrname, &value, size,
 				    flags, waitctx, &addattr);
+			}
 		}
 		giant_unlock();
 
 		if (e == GFARM_ERR_NO_ERROR) {
+			if (change_ncopy)
+				replica_check_signal_update_xattr();
+
 			e = dbq_waitret(waitctx);
 			if (e == GFARM_ERR_NO_ERROR) {
 				giant_lock();
@@ -690,6 +712,10 @@ gfm_server_removexattr(
 		} else
 			e = removexattr(xmlMode, inode, attrname);
 		giant_unlock();
+
+		if (e == GFARM_ERR_NO_ERROR && !xmlMode &&
+		    strcmp("gfarm.ncopy", attrname) == 0)
+			replica_check_signal_update_xattr();
 	}
 
 	free(attrname);

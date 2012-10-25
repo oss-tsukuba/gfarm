@@ -1304,6 +1304,7 @@ inode_has_no_replica(struct inode *inode)
 	return (inode->u.c.s.f.copies == NULL);
 }
 
+/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are included */
 static gfarm_int64_t
 inode_get_ncopy_common(struct inode *inode, int is_valid, int is_up)
 {
@@ -1329,6 +1330,26 @@ gfarm_int64_t
 inode_get_ncopy_with_dead_host(struct inode *inode)
 {
 	return (inode_get_ncopy_common(inode, 1, 0));
+}
+
+/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
+gfarm_int64_t
+inode_get_ncopy_with_grace_of_dead(
+	struct inode *inode, int is_valid, gfarm_time_t grace)
+{
+	struct file_copy *copy;
+	gfarm_int64_t n = 0;
+
+	for (copy = inode->u.c.s.f.copies; copy != NULL;
+	    copy = copy->host_next) {
+		if ((is_valid ?
+		     FILE_COPY_IS_VALID(copy) :
+		     !FILE_COPY_IS_BEING_REMOVED(copy))
+		    &&
+		    host_is_up_with_grace(copy->host, grace))
+			n++;
+	}
+	return (n);
 }
 
 static gfarm_error_t
@@ -4275,6 +4296,14 @@ inode_is_updated(struct inode *inode, struct gfarm_timespec *mtime)
 	    gfarm_timespec_cmp(mtime, &ia->u.f.last_update) >= 0);
 }
 
+gfarm_error_t
+inode_replica_list(
+	struct inode *inode, gfarm_int32_t *np, struct host ***hostsp)
+{
+	return (inode_alloc_file_copy_hosts(
+	    inode, file_copy_is_valid_and_up, NULL, np, hostsp));
+}
+
 static gfarm_error_t
 inode_replica_list_by_name_common(struct inode *inode,
 	int is_up, gfarm_int32_t *np, char ***hostsp)
@@ -5650,6 +5679,28 @@ inode_xattr_get_cache(struct inode *inode, int xmlMode,
 	}
 
 	return (GFARM_ERR_NO_ERROR);
+}
+
+int
+inode_xattr_cache_is_same(struct inode *inode, int xmlMode,
+	const char *attrname, const void *value, size_t size)
+{
+	struct xattrs *xattrs =
+		xmlMode ? &inode->i_xmlattrs : &inode->i_xattrs;
+	struct xattr_entry *entry = xattr_find(xattrs, attrname);
+
+	if (entry == NULL || entry->cached_attrvalue == NULL) {
+		if (size == 0)
+			return (1);
+		else
+			return (0);
+	}
+	if (entry->cached_attrsize != size)
+		return (0);
+	if (entry->cached_attrsize == 0 && size == 0)
+		return (1);
+
+	return (!memcmp(entry->cached_attrvalue, value, size));
 }
 
 void
