@@ -1,0 +1,30 @@
+* spool_check_level のテスト
+
+  "spool_check_level 3" (gfsd -ccc と同等) をテストする。
+
+* 必要な権限
+
+  - sudo 可能 (SETUP.private インストール方法ではない場合)
+    root ローカルユーザ権限で起動スクリプトを実行
+    _gfarmfs ローカルユーザ権限でスプールディレクトリ内ファイルを操作
+    (既存ファイルを操作することは無い)
+
+  - Gfarm の gfarmroot グループ所属
+    Gfarm の /lost+found ディレクトリを操作
+
+* テスト手順
+
+  1. テスト対象 gfsd ホストにログイン
+
+  2. level3.sh と同ディレクトリに config.sh を準備
+     (example-config.sh を参考)
+
+     GFSD_HOST_NAME : gfhost で表示されるホスト名
+     GFSD_START_SCRIPT : gfsd 起動スクリプトのパス
+     GFSD_SPOOL_DIR : スプールディレクトリのパス
+     GFSD_CONFIG_FILE : gfsd 用 gfarm2.conf のパス (設定内容確認のみ)
+     USE_SUDO : sudo を利用するかどうか true または false
+
+  3. "spool_check_level 3" を gfarm2.conf に追加
+
+  4. level3.sh を regress ディレクトリに cd してから実行
