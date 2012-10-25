@@ -784,6 +784,9 @@ peer_authorized(struct peer *peer,
 			peer->host = mdhost_to_abstract_host(m);
 		}
 		break;
+
+	default:
+		break;
 	}
 
 	if (peer->host != NULL) {

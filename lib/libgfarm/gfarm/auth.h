@@ -8,6 +8,7 @@ enum gfarm_auth_error {
 };
 
 enum gfarm_auth_id_type {
+	GFARM_AUTH_ID_TYPE_UNKNOWN,
 	GFARM_AUTH_ID_TYPE_USER,
 	GFARM_AUTH_ID_TYPE_SPOOL_HOST,
 	GFARM_AUTH_ID_TYPE_METADATA_HOST,
