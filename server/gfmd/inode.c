@@ -5664,23 +5664,47 @@ inode_xattr_list(struct inode *inode, int xmlMode, char **namesp, size_t *sizep)
 	return GFARM_ERR_NO_ERROR;
 }
 
-int
+gfarm_error_t
+inode_xattr_to_uint(
+	const void *value, size_t size, unsigned int *retvp, int *all_digitp)
+{
+	unsigned int n, save;
+	const unsigned char *s = value;
+
+	n = 0;
+	save = 0;
+	for (; size > 0 && isdigit(*s); size--) {
+		n = n * 10 + (*s - '0');
+		if (n < save) { /* overflow */
+			*all_digitp = 0;
+			*retvp = save;
+			return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+		}
+		save = n;
+		s++;
+	}
+	if (size == 0)
+		*all_digitp = 1;
+	else
+		*all_digitp = 0;
+	*retvp = n;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static int
 inode_xattr_convert_desired_number(
 	const void *value, size_t size, int *desired_numberp)
 {
-	int i, n;
-	const unsigned char *s = value;
+	unsigned int n;
+	int all_digit;
 
-	for (i = 0; i < size && isspace(s[i]); i++)
-		;
-	if (i < size && isdigit(s[i])) {
-		n = 0;
-		for (; i < size && isdigit(s[i]); i++)
-			n = n * 10 + (s[i] - '0');
-		*desired_numberp = n;
-		return (1);
-	}
-	return (0);
+	if (inode_xattr_to_uint(value, size, &n, &all_digit)
+	    != GFARM_ERR_NO_ERROR)
+		return (0); /* ignore */
+	*desired_numberp = n;
+	if (*desired_numberp < 0) /* overflow */
+		return (0); /* ignore */
+	return (1);
 }
 
 /* This assumes that the "gfarm.ncopy" xattr is cached. */

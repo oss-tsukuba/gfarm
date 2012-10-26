@@ -10,7 +10,7 @@ trap 'gfrm -f $tmpf; gfrmdir $gftmp; exit $exit_trap' $trap_sigs
 # test against newly created 0 byte file
 
 if gfmkdir $gftmp &&
-   echo 2 | gfxattr -s $gftmp gfarm.ncopy &&
+   gfncopy -s 2 $gftmp &&
    $gfs_pio_test -c -w -t $tmpf
 then
 	exit_code=$exit_pass

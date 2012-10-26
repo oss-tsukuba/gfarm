@@ -93,6 +93,7 @@ gftool/gfwhoami/gfwhoami_mds2.sh
 gftool/gfxattr/gfxattr-long-value.sh
 gftool/gfxattr/gfxattr-xml-long-value.sh
 gftool/gfxattr/gfxattr-xml-non-utf8-value.sh
+gftool/gfncopy/gfncopy-s.sh
 
 # gftool/gfchown
 # gftool/gfuser
