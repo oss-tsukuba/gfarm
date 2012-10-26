@@ -181,7 +181,7 @@ gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
 
 	rv = pthread_mutex_unlock(&mutex);
 	if (rv != 0)
-		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_unlock: %s",
+		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_unlock: ",
 		    strerror(rv));
 }
 
@@ -286,7 +286,7 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	rv = pthread_mutex_unlock(&buffer_mutex);
 	if (rv != 0)
 		gflog_sub(LOG_ERR,
-		    "gflog_vmessage_errno: pthread_mutex_unlock: %s",
+		    "gflog_vmessage_errno: pthread_mutex_unlock: ",
 		    strerror(rv));
 }
 
@@ -338,7 +338,7 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 	rv = pthread_mutex_unlock(&mutex);
 	if (rv != 0)
 		gflog_sub(LOG_ERR,
-		    "gflog_assert_message: pthread_mutex_unlock: %s",
+		    "gflog_assert_message: pthread_mutex_unlock: ",
 		    strerror(rv));
 
 	va_end(ap);
