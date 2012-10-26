@@ -24,6 +24,7 @@ SRCS =	alloc.c \
 	nanosec.c \
 	random.c \
 	send_no_sigpipe.c \
+	sleep.c \
 	thrbarrier.c \
 	thrsubr.c \
 	timer.c \
@@ -44,6 +45,7 @@ OBJS =	alloc.lo \
 	nanosec.lo \
 	random.lo \
 	send_no_sigpipe.lo \
+	sleep.lo \
 	thrbarrier.lo \
 	thrsubr.lo \
 	timer.lo \
