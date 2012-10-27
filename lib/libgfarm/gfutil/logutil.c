@@ -140,6 +140,7 @@ gflog_out(int priority, const char *str1, const char *str2)
 	(bp) += s; \
 }
 
+/* "(priority <= log_level)" should be checked by caller */
 static void
 gflog_vmessage_out(int verbose, int msg_no, int priority,
 	const char *file, int line_no, const char *func,
@@ -183,6 +184,7 @@ gflog_vmessage_out(int verbose, int msg_no, int priority,
 		    strerror(rv));
 }
 
+/* "(priority <= log_level)" should be checked by caller */
 static void
 gflog_message_out(int verbose, int msg_no, int priority,
 	const char *file, int line_no, const char *func,
@@ -196,6 +198,7 @@ gflog_message_out(int verbose, int msg_no, int priority,
 	va_end(ap);
 }
 
+/* "(priority <= log_level)" should be checked by caller */
 static void
 gflog_vmessage_catalog_out(int verbose, int priority,
 	int msg_no, const char *file, int line_no, const char *func,
@@ -309,6 +312,9 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
 	static char buffer[LOG_LENGTH_MAX];
 	static pthread_mutex_t buffer_mutex = GFARM_MUTEX_INITIALIZER(mutex);
+
+	if (priority > log_level) /* not worth reporting */
+		return;
 
 	rv = pthread_mutex_lock(&buffer_mutex);
 	if (rv != 0) {
