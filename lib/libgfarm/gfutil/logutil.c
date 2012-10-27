@@ -22,9 +22,9 @@ static const char *log_identifier = "libgfarm";
 static char *log_auxiliary_info = NULL;
 static int log_use_syslog = 0;
 static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+
 static nl_catd catd = (nl_catd)-1;
 static const char *catalog_file = "gfarm.cat";
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int log_message_verbose;
 #define LOG_VERBOSE_COMPACT	0
@@ -75,40 +75,6 @@ gflog_terminate(void)
 	gflog_catclose();
 }
 
-#define GFLOG_SNPRINTF(buf, bp, endp, ...) \
-{ \
-	int s = snprintf(bp, (endp) - (bp), __VA_ARGS__); \
-	if (s < 0 || s >= (endp) - (bp)) \
-		return (buf); \
-	(bp) += s; \
-}
-
-static char *
-gflog_vmessage_message(int verbose, int msg_no, const char *file, int line_no,
-	const char *func, const char *format, va_list ap)
-{
-	static char buf[LOG_LENGTH_MAX];
-	char *catmsg, *bp = buf, *endp = buf + sizeof buf - 1;
-
-	/* the last one is used as a terminator */
-	*endp = '\0';
-
-	GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
-	if (verbose >= LOG_VERBOSE_LINENO) {
-		GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
-		if (verbose >= LOG_VERBOSE_LINENO_FUNC)
-			GFLOG_SNPRINTF(buf, bp, endp, " %s()", func);
-		GFLOG_SNPRINTF(buf, bp, endp, ") ");
-	}
-	if (log_auxiliary_info != NULL)
-		GFLOG_SNPRINTF(buf, bp, endp, "(%s) ", log_auxiliary_info);
-
-	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
-	vsnprintf(bp, endp - bp, catmsg != NULL ? catmsg : format, ap);
-
-	return (buf);
-}
-
 #define GFLOG_PRIORITY_SIZE	8
 static pthread_once_t gflog_priority_string_once = PTHREAD_ONCE_INIT;
 static char *gflog_priority_string[GFLOG_PRIORITY_SIZE];
@@ -146,42 +112,107 @@ gflog_init_priority_string(void)
 }
 
 static void
-gflog_sub(int priority, const char *str1, const char *str2)
+gflog_out(int priority, const char *str1, const char *str2)
 {
 	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
 
 	if (log_use_syslog)
-		syslog(priority, "<%s> %s%s", gflog_priority_string[priority],
-		    str1, str2);
+		syslog(priority, "<%s> %s%s",
+		    gflog_priority_string[priority], str1, str2);
 	else
 		fprintf(stderr, "%s: <%s> %s%s\n", log_identifier,
 		    gflog_priority_string[priority], str1, str2);
+}
+
+#define GFLOG_SNPRINTF(buf, bp, endp, ...) \
+{ \
+	int s = snprintf(bp, (endp) - (bp), __VA_ARGS__); \
+	if (s < 0 || s >= (endp) - (bp)) \
+		break; \
+	(bp) += s; \
+}
+
+/* "(priority <= log_level)" should be checked by caller */
+static void
+gflog_vmessage_out(int verbose, int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, va_list ap)
+{
+	int rv;
+	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
+	static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
+	static char buf[LOG_LENGTH_MAX];
+	char *bp = buf, *endp = buf + sizeof buf - 1;
+
+	rv = pthread_mutex_lock(&buf_mutex);
+	if (rv != 0) {
+		gflog_out(LOG_ERR, "gflog_vmessage_out: pthread_mutex_lock: ",
+		    strerror(rv));
+		return;
+	}
+
+	/* the last one is used as a terminator */
+	*endp = '\0';
+
+	do { /* use do {...} while(0) to use break statement to discontinue */
+		GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
+		if (verbose >= LOG_VERBOSE_LINENO) {
+			GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
+			if (verbose >= LOG_VERBOSE_LINENO_FUNC)
+				GFLOG_SNPRINTF(buf, bp, endp, " %s()", func);
+			GFLOG_SNPRINTF(buf, bp, endp, ") ");
+		}
+		if (log_auxiliary_info != NULL)
+			GFLOG_SNPRINTF(buf, bp, endp, "(%s) ",
+			    log_auxiliary_info);
+	} while (0);
+
+	vsnprintf(bp, endp - bp, format, ap);
+	gflog_out(priority, "", buf);
+
+	rv = pthread_mutex_unlock(&buf_mutex);
+	if (rv != 0)
+		gflog_out(LOG_ERR, "gflog_vmessage_out: pthread_mutex_unlock: ",
+		    strerror(rv));
+}
+
+/* "(priority <= log_level)" should be checked by caller */
+static void
+gflog_message_out(int verbose, int msg_no, int priority,
+	const char *file, int line_no, const char *func,
+	const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	gflog_vmessage_out(verbose, msg_no, priority, file, line_no, func,
+	    format, ap);
+	va_end(ap);
+}
+
+/* "(priority <= log_level)" should be checked by caller */
+static void
+gflog_vmessage_catalog_out(int verbose, int priority,
+	int msg_no, const char *file, int line_no, const char *func,
+	const char *format, va_list ap)
+{
+	char *catmsg;
+
+	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
+
+	gflog_vmessage_out(verbose, priority,
+	    msg_no, file, line_no, func, catmsg != NULL ? catmsg : format, ap);
 }
 
 void
 gflog_vmessage(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
-	int rv;
-	char *msg;
-
 	if (priority > log_level) /* not worth reporting */
 		return;
 
-	/* gflog_vmessage_message returns statically allocated space */
-	rv = pthread_mutex_lock(&mutex);
-	if (rv != 0)
-		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_lock: ",
-		    strerror(rv));
-
-	msg = gflog_vmessage_message(log_message_verbose,
-	    msg_no, file, line_no, func, format, ap);
-	gflog_sub(priority, "", msg);
-
-	rv = pthread_mutex_unlock(&mutex);
-	if (rv != 0)
-		gflog_sub(LOG_ERR, "gflog_vmessage: pthread_mutex_unlock: ",
-		    strerror(rv));
+	gflog_vmessage_catalog_out(log_message_verbose,
+	    msg_no, priority, file, line_no, func, format, ap);
 }
 
 void
@@ -269,11 +300,18 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
 	int save_errno = errno;
-	char buffer[LOG_LENGTH_MAX];
+	char *catmsg;
+	char buf[LOG_LENGTH_MAX];
 
-	vsnprintf(buffer, sizeof buffer, format, ap);
-	gflog_message(msg_no, priority, file, line_no, func,
-	    "%s: %s", buffer, strerror(save_errno));
+	if (priority > log_level) /* not worth reporting */
+		return;
+
+	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
+
+	vsnprintf(buf, sizeof buf, catmsg != NULL ? catmsg : format, ap);
+	gflog_message_out(log_message_verbose,
+	    msg_no, priority, file, line_no, func,
+	    "%s: %s", buf, strerror(save_errno));
 }
 
 void
@@ -305,28 +343,10 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 	const char *func, const char *format, ...)
 {
 	va_list ap;
-	int rv;
-	char *msg;
 
 	va_start(ap, format);
-
-	/* gflog_vmessage_message returns statically allocated space */
-	rv = pthread_mutex_lock(&mutex);
-	if (rv != 0)
-		gflog_sub(LOG_ERR,
-		    "gflog_assert_message: pthread_mutex_lock: ",
-		    strerror(rv));
-
-	msg = gflog_vmessage_message(LOG_VERBOSE_LINENO_FUNC,
-	    msg_no, file, line_no, func, format, ap);
-	gflog_sub(LOG_ERR, "", msg);
-
-	rv = pthread_mutex_unlock(&mutex);
-	if (rv != 0)
-		gflog_sub(LOG_ERR,
-		    "gflog_assert_message: pthread_mutex_unlock: ",
-		    strerror(rv));
-
+	gflog_vmessage_catalog_out(LOG_VERBOSE_LINENO_FUNC,
+	    msg_no, LOG_ERR, file, line_no, func, format, ap);
 	va_end(ap);
 
 	gfarm_log_fatal_action();
