@@ -149,7 +149,7 @@ gflog_vmessage_out(int verbose, int msg_no, int priority,
 {
 	int rv;
 	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
-	static pthread_mutex_t buf_mutex = GFARM_MUTEX_INITIALIZER(mutex);
+	static pthread_mutex_t buf_mutex = GFARM_MUTEX_INITIALIZER(buf_mutex);
 	static char buf[LOG_LENGTH_MAX];
 	char *bp = buf, *endp = buf + sizeof buf - 1;
 
@@ -526,8 +526,8 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 	va_list ap;
 	char *catmsg;
 	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
-	static char buffer[LOG_LENGTH_MAX];
-	static pthread_mutex_t buffer_mutex = GFARM_MUTEX_INITIALIZER(mutex);
+	static char buf[LOG_LENGTH_MAX];
+	static pthread_mutex_t buf_mutex = GFARM_MUTEX_INITIALIZER(buf_mutex);
 
 	if (priority > log_level) /* not worth reporting */
 		return;
@@ -548,7 +548,7 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 			state->reduced_mode = 0;
 	}
 
-	rv = pthread_mutex_lock(&buffer_mutex);
+	rv = pthread_mutex_lock(&buf_mutex);
 	if (rv != 0) {
 		gflog_out(LOG_ERR,
 		    "gflog_reduced_message: pthread_mutex_lock: ",
@@ -558,19 +558,19 @@ gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
 
 	va_start(ap, format);
 	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
-	vsnprintf(buffer, sizeof buffer, catmsg != NULL ? catmsg : format, ap);
+	vsnprintf(buf, sizeof buf, catmsg != NULL ? catmsg : format, ap);
 	va_end(ap);
 	if (state->log_count == 1) {
 		gflog_message_out(log_message_verbose, msg_no, priority,
-		    file, line_no, func, "%s", buffer);
+		    file, line_no, func, "%s", buf);
 	} else {
 		gflog_message_out(log_message_verbose, msg_no, priority,
 		    file, line_no, func,
-		    "%s: %ld times in recent %ld seconds", buffer,
+		    "%s: %ld times in recent %ld seconds", buf,
 		    state->log_count, (long)(current_time - state->log_time));
 	}
 
-	rv = pthread_mutex_unlock(&buffer_mutex);
+	rv = pthread_mutex_unlock(&buf_mutex);
 	if (rv != 0)
 		gflog_out(LOG_ERR,
 		    "gflog_reduced_message: pthread_mutex_unlock: ",
