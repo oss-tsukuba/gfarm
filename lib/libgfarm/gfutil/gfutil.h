@@ -38,6 +38,10 @@ long gfarm_random(void);
 void gfarm_sigpipe_ignore(void);
 ssize_t gfarm_send_no_sigpipe(int, const void *, size_t);
 
+/* sleep */
+
+void gfarm_sleep(long);
+
 /* timeval */
 
 #define GFARM_MILLISEC_BY_MICROSEC	1000
