@@ -311,13 +311,13 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	int rv, save_errno = errno;
 	char *catmsg;
 	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
-	static char buffer[LOG_LENGTH_MAX];
-	static pthread_mutex_t buffer_mutex = GFARM_MUTEX_INITIALIZER(mutex);
+	static char buf[LOG_LENGTH_MAX];
+	static pthread_mutex_t buf_mutex = GFARM_MUTEX_INITIALIZER(buf_mutex);
 
 	if (priority > log_level) /* not worth reporting */
 		return;
 
-	rv = pthread_mutex_lock(&buffer_mutex);
+	rv = pthread_mutex_lock(&buf_mutex);
 	if (rv != 0) {
 		gflog_out(LOG_ERR, "gflog_vmessage_errno: pthread_mutex_lock: ",
 		    strerror(rv));
@@ -326,12 +326,12 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 
 	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
 
-	vsnprintf(buffer, sizeof buffer, catmsg != NULL ? catmsg : format, ap);
+	vsnprintf(buf, sizeof buf, catmsg != NULL ? catmsg : format, ap);
 	gflog_message_out(log_message_verbose,
 	    msg_no, priority, file, line_no, func,
-	    "%s: %s", buffer, strerror(save_errno));
+	    "%s: %s", buf, strerror(save_errno));
 
-	rv = pthread_mutex_unlock(&buffer_mutex);
+	rv = pthread_mutex_unlock(&buf_mutex);
 	if (rv != 0)
 		gflog_out(LOG_ERR,
 		    "gflog_vmessage_errno: pthread_mutex_unlock: ",
