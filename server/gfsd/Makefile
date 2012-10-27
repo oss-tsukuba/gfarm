@@ -27,6 +27,7 @@ include $(top_srcdir)/makes/gflog.mk
 
 $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
+	$(GFUTIL_SRCDIR)/gflog_reduced.h \
 	$(GFUTIL_SRCDIR)/nanosec.h \
 	$(GFARMLIB_SRCDIR)/iobuffer.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \

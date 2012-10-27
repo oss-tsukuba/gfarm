@@ -31,6 +31,7 @@
 #include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
+#include "gflog_reduced.h"
 #include "thrsubr.h"
 
 #include "liberror.h"

@@ -70,7 +70,7 @@ id_table.lo: id_table.h
 hash.lo: gfutil.h hash.h
 hash_strptr.lo: hash.h
 limit.lo: gfutil.h
-logutil.lo: gfutil.h
+logutil.lo: gfutil.h gflog_reduced.h
 lru_cache.lo: lru_cache.h
 nanosec.lo: nanosec.h
 random.lo: thrsubr.h
