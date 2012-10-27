@@ -49,6 +49,7 @@
 #include <gfarm/gfarm_iostat.h>
 
 #include "gfutil.h"
+#include "gflog_reduced.h"
 #include "hash.h"
 #include "timer.h"
 

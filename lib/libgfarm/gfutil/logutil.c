@@ -16,6 +16,7 @@
 
 #include "thrsubr.h"
 #include "gfutil.h"
+#include "gflog_reduced.h"
 
 #define LOG_LENGTH_MAX	2048
 
