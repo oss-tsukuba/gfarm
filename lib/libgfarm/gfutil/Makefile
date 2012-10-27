@@ -74,5 +74,6 @@ logutil.lo: gfutil.h gflog_reduced.h
 lru_cache.lo: lru_cache.h
 nanosec.lo: nanosec.h
 random.lo: thrsubr.h
+sleep.lo: nanosec.h gfutil.h
 timer.lo: timer.h
 timeval.lo: gfutil.h
