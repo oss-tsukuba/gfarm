@@ -203,6 +203,38 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the second parameter of the
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+system call that gfsd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &#60;sys/socket.h&#62;, or 5 if it's undefined.</P
+><P
+>On an environment which has many gfarm clients, it's recommened to increase this value after increasing system limit.</P
+><P
+>This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_backlog&nbsp;128</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >spool_server_cred_type</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -637,6 +669,36 @@ CLASS="TOKEN"
 >spool_server_cred_type</SPAN
 > 
 statement on the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the second parameter of the
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+system call that gfmd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &#60;sys/socket.h&#62;, or 5 if it's undefined.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_listen_backlog&nbsp;128</P
 ></DD
 ><DT
 ><SPAN
@@ -2575,6 +2637,7 @@ CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
 		  &#60;spool_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_backlog_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
@@ -2584,6 +2647,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_listen_backlog_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
@@ -2620,6 +2684,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		  &#60;simultaneous_replication_receivers_statement&#62;&nbsp;|<br>
 		  &#60;outstanding_file_replication_limit_statement&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
 		  &#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
 		  &#60;xattr_size_limit_statement&#62;&nbsp;|<br>
 		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
@@ -2648,6 +2713,8 @@ CLASS="LITERALLAYOUT"
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
+	&#60;spool_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_backlog"&nbsp;&#60;number&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
 	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
@@ -2663,6 +2730,8 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "metadb_server_listen_backlog"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;::=<br>
 		  "metadb_server_max_descriptors"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>

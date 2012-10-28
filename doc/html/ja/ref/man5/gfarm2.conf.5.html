@@ -212,6 +212,38 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>spool_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfsd ¤¬
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+¥·¥¹¥Æ¥à¥³¡¼¥ë¤ÎÂèÆó°ú¿ô¤ËÅÏ¤¹¥Ğ¥Ã¥¯¥í¥°¡¦¥Ñ¥é¥á¡¼¥¿¤Î¿ô¤ò»ØÄê¤·¤Ş¤¹¡£
+¥Ç¥Õ¥©¥ë¥ÈÃÍ¤Ï¡¢&#60;sys/socket.h&#62; ¤Ë SOMAXCONN Äê¿ô¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤ëOS¤Ç¤Ï¤½¤ÎÃÍ (OS¤Ë°ÍÂ¸¤·¤Ş¤¹¤¬¡¢Åµ·¿Åª¤ÊÃÍ¤Ï 128)¡¢ÄêµÁ¤µ¤ì¤Æ¤Ê¤¤OS¤Ç¤Ï 5 ¤È¤Ê¤ê¤Ş¤¹¡£</P
+><P
+>¥¯¥é¥¤¥¢¥ó¥È¿ô¤ÎÂ¿¤¤´Ä¶­¤Ç¤Ï¡¢¥·¥¹¥Æ¥àÀ©¸ÂÃÍ¤ò¾å¤²¤¿¾å¤Ç¡¢¤³¤ÎÃÍ¤òÁı¤ä¤·¤Æ¤ª¤¯¤³¤È¤ò¿ä¾©¤·¤Ş¤¹¡£</P
+><P
+>¤³¤ÎÊ¸¤Ïgfarm2.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¢¤ê¡¢gfmd.conf¤Ç¤ÏÌµ»ë¤µ¤ì¤Ş¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_backlog&nbsp;128</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >spool_server_cred_type</SPAN
 > <TT
 CLASS="PARAMETER"
@@ -631,6 +663,36 @@ CLASS="TOKEN"
 >spool_server_cred_type</SPAN
 >¤Î¹à¤ò
 »²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>¿ô</I
+></TT
+></DT
+><DD
+><P
+>gfmd ¤¬
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+¥·¥¹¥Æ¥à¥³¡¼¥ë¤ÎÂèÆó°ú¿ô¤ËÅÏ¤¹¥Ğ¥Ã¥¯¥í¥°¡¦¥Ñ¥é¥á¡¼¥¿¤Î¿ô¤ò»ØÄê¤·¤Ş¤¹¡£
+¥Ç¥Õ¥©¥ë¥ÈÃÍ¤Ï¡¢&#60;sys/socket.h&#62; ¤Ë SOMAXCONN Äê¿ô¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤ëOS¤Ç¤Ï¤½¤ÎÃÍ (OS¤Ë°ÍÂ¸¤·¤Ş¤¹¤¬¡¢Åµ·¿Åª¤ÊÃÍ¤Ï 128)¡¢ÄêµÁ¤µ¤ì¤Æ¤Ê¤¤OS¤Ç¤Ï 5 ¤È¤Ê¤ê¤Ş¤¹¡£</P
+><P
+>¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¢¤ê¡¢gfarm2.conf¤Ç¤ÏÌµ»ë¤µ¤ì¤Ş¤¹¡£</P
+><P
+>Îã:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_listen_backlog&nbsp;128</P
 ></DD
 ><DT
 ><SPAN
@@ -2420,6 +2482,7 @@ CLASS="LITERALLAYOUT"
 >	&#60;statement&#62;&nbsp;::=<br>
 		  &#60;spool_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_backlog_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
@@ -2429,6 +2492,7 @@ CLASS="LITERALLAYOUT"
 		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_listen_backlog_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
 		  &#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
@@ -2493,6 +2557,8 @@ CLASS="LITERALLAYOUT"
 	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
 	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
 		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
+	&#60;spool_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_backlog"&nbsp;&#60;number&#62;<br>
 	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
 		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
 	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
@@ -2508,6 +2574,8 @@ CLASS="LITERALLAYOUT"
 		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
 	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
 		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "metadb_server_listen_backlog"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;::=<br>
 		  "metadb_server_max_descriptors"&nbsp;&#60;number&#62;<br>
 	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
