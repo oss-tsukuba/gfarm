@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfpcopy</B
->  [-nqvdpPU] [-f] [-S <TT
+> [-nqvdpPU] [-f] [-S <TT
 CLASS="REPLACEABLE"
 ><I
 >source-domainname</I
@@ -111,14 +111,18 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfpcopy</B
 > copies files and directries specified by
-the <CODE
+the <TT
 CLASS="PARAMETER"
->source-url</CODE
+><I
+>source-url</I
+></TT
 >(gfarm:///... or file:///...) to a
 directory specified by
-the <CODE
+the <TT
 CLASS="PARAMETER"
->destination-url</CODE
+><I
+>destination-url</I
+></TT
 >(gfarm:///... or file:///...) in
 parallel.</P
 ><P
@@ -127,9 +131,11 @@ of source hosts are copied.  A set of hosts can be specified by a
 domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.</P
 ><P
->If the <CODE
+>If the <TT
 CLASS="PARAMETER"
->source-url</CODE
+><I
+>source-url</I
+></TT
 > parameter is a directory,
 files under the directory will be copied recursively.</P
 ><P
@@ -160,9 +166,11 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-b</CODE
-> <CODE
+> <TT
 CLASS="PARAMETER"
->bufsize</CODE
+><I
+>bufsize</I
+></TT
 ></DT
 ><DD
 ><P
@@ -202,7 +210,6 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfprep</B
 >)</P
-></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -278,6 +285,7 @@ CLASS="REFENTRYTITLE"
 >gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
+></DIV
 ></DIV
 ></BODY
 ></HTML
