@@ -143,6 +143,30 @@ IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_listen_backlog</token> <parameter>数</parameter></term>
+<listitem>
+<para>
+gfsd が
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+</para>
+<para>
+クライアント数の多い環境では、システム制限値を上げた上で、この値を増やしておくことを推奨します。
+</para>
+<para>
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_listen_backlog 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
@@ -370,6 +394,27 @@ GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
 設定の意味については<token>spool_server_cred_type</token>の項を
 参照してください。
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_listen_backlog</token> <parameter>数</parameter></term>
+<listitem>
+<para>
+gfmd が
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_listen_backlog 128
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1703,6 +1748,7 @@ replica_check内でスリープする時間をナノ秒で指定します。
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_backlog_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
@@ -1712,6 +1758,7 @@ replica_check内でスリープする時間をナノ秒で指定します。
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_listen_backlog_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
@@ -1783,6 +1830,8 @@ replica_check内でスリープする時間をナノ秒で指定します。
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
+	&lt;spool_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_backlog" &lt;number&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
@@ -1798,6 +1847,8 @@ replica_check内でスリープする時間をナノ秒で指定します。
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_listen_backlog" &lt;number&gt;
 	&lt;metadb_server_max_descriptors_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=

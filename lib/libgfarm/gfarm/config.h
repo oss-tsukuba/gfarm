@@ -2,9 +2,12 @@ extern char *gfarm_config_file;
 
 /* gfsd dependent */
 /* GFS dependent */
+extern int gfarm_spool_server_listen_backlog;
 extern char *gfarm_spool_server_listen_address;
 extern char *gfarm_spool_root;
 extern int gfarm_spool_check_level;
+
+/* GFM dependent */
 
 enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_UNKNOWN,
@@ -12,10 +15,9 @@ enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_POSTGRESQL,
 	GFARM_BACKEND_DB_TYPE_LOCALFS
 };
-
 extern enum gfarm_backend_db_type gfarm_backend_db_type;
 
-/* GFM dependent */
+extern int gfarm_metadb_server_listen_backlog;
 extern int gfarm_gfmd_connection_cache;
 /* XXX FIXME these should disappear to support multiple metadata server */
 extern char *gfarm_metadb_server_name;
@@ -68,7 +70,7 @@ extern char *gfarm_postgresql_conninfo;
 /* LocalFS dependent */
 extern char *gfarm_localfs_datadir;
 
-/* IO performance */
+/* IO statistics */
 extern char *gfarm_iostat_gfmd_path;
 extern char *gfarm_iostat_gfsd_path;
 extern int gfarm_iostat_max_client;

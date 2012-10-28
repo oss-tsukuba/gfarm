@@ -124,6 +124,30 @@ to provide multiple spool directories on the host.
 </varlistentry>
 
 <varlistentry>
+<term><token>spool_server_listen_backlog</token> <parameter>number</parameter></term>
+<listitem>
+<para>
+This statement specifies the second parameter of the
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+system call that gfsd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &lt;sys/socket.h&gt;, or 5 if it's undefined.
+</para>
+<para>
+On an environment which has many gfarm clients, it's recommened to increase this value after increasing system limit.
+</para>
+<para>
+This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	spool_server_listen_backlog 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
 <listitem>
 <para>
@@ -377,6 +401,27 @@ authentication.
 Please read the description of the <token>spool_server_cred_type</token> 
 statement on the configuration of this statement.
 </para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_listen_backlog</token> <parameter>number</parameter></term>
+<listitem>
+<para>
+This statement specifies the second parameter of the
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+system call that gfmd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &lt;sys/socket.h&gt;, or 5 if it's undefined.
+</para>
+<para>
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	metadb_server_listen_backlog 128
+</literallayout>
 </listitem>
 </varlistentry>
 
@@ -1754,6 +1799,7 @@ notation.</para>
 	&lt;statement&gt; ::=
 		&nbsp;&nbsp;&lt;spool_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_backlog_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
@@ -1763,6 +1809,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_listen_backlog_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
@@ -1805,6 +1852,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
 		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
 		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
@@ -1834,6 +1882,8 @@ notation.</para>
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
+	&lt;spool_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_backlog" &lt;number&gt;
 	&lt;spool_server_cred_type_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
 	&lt;spool_server_cred_service_statement&gt; ::=
@@ -1849,6 +1899,8 @@ notation.</para>
 		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
 	&lt;metadb_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_listen_backlog" &lt;number&gt;
 	&lt;metadb_server_max_descriptors_statement&gt; ::=
 		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
 	&lt;metadb_server_stack_size_statement&gt; ::=
