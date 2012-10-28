@@ -81,12 +81,6 @@
 #define	DATA_FILE_MASK		0711
 #define	DATA_DIR_MASK		0700
 
-#ifdef SOMAXCONN
-#define LISTEN_BACKLOG	SOMAXCONN
-#else
-#define LISTEN_BACKLOG	5
-#endif
-
 /* limit maximum open files per client, when system limit is very high */
 #ifndef FILE_TABLE_LIMIT
 #define FILE_TABLE_LIMIT	2048
@@ -4138,7 +4132,7 @@ open_accepting_tcp_socket(struct in_addr address, int port)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000571, "setsockopt: %s",
 		    gfarm_error_string(e));
-	if (listen(sock, LISTEN_BACKLOG) < 0)
+	if (listen(sock, gfarm_spool_server_listen_backlog) < 0)
 		accepting_fatal_errno(GFARM_MSG_1000572, "listen");
 	return (sock);
 }
@@ -4232,7 +4226,7 @@ open_accepting_local_socket(struct in_addr address, int port,
 		gflog_debug_errno(GFARM_MSG_1002390, "chmod(%s, 0%o)",
 		    sock_name, (int)LOCAL_SOCKET_MODE);
 
-	if (listen(sock, LISTEN_BACKLOG) == -1) {
+	if (listen(sock, gfarm_spool_server_listen_backlog) == -1) {
 		save_errno = errno;
 		if (unlink(sock_name) == -1)
 			gflog_error_errno(GFARM_MSG_1002391,
