@@ -126,10 +126,11 @@ replica_check_replicate(
 		} else
 			n_success++;
 	}
+	if (n_success > 0)
+		inode_replication_start(inode);
 	free(dsts);
 	if (busy) /* retry immediately */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
-	inode_replication_start(inode);
 end:
 	if (n_success < n_shortage) {
 		if (!suppress_log())
