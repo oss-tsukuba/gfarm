@@ -4300,6 +4300,21 @@ main(int argc, char **argv)
 		}
 	}
 
+	/* before gfarm_server_initialize() */
+	switch (spool_check_level) {
+	case 0:
+		break;
+	case 1:
+		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DISPLAY;
+		break;
+	case 2:
+		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DELETE;
+		break;
+	default:
+		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND;
+		break;
+	}
+
 	if (config_file != NULL)
 		gfarm_config_set_filename(config_file);
 	e = gfarm_server_initialize(&argc, &argv);
@@ -4530,13 +4545,7 @@ main(int argc, char **argv)
 		    gfarm_spool_root);
 
 	/* spool check */
-	if (spool_check_level > 0)
-		gfarm_spool_check_level = spool_check_level;
-	if (gfarm_spool_check_level > 0) {
-		gflog_info(GFARM_MSG_UNFIXED,
-		    "spool_check_level=%d", gfarm_spool_check_level);
-		(void)gfsd_spool_check(gfarm_spool_check_level);
-	}
+	gfsd_spool_check();
 
 	/*
 	 * We don't want SIGPIPE, but want EPIPE on write(2)/close(2).

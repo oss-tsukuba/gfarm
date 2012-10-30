@@ -760,7 +760,18 @@ gfarm_set_local_user_for_this_local_account(void)
 int gfarm_spool_server_listen_backlog = MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
 char *gfarm_spool_root = NULL;
-int gfarm_spool_check_level = MISC_DEFAULT;
+static struct {
+	enum gfarm_spool_check_level level;
+	const char *name;
+} gfarm_spool_check_levels[] = {
+	{ GFARM_SPOOL_CHECK_LEVEL_DISABLE, "disable" },
+	{ GFARM_SPOOL_CHECK_LEVEL_DISPLAY, "display" },
+	{ GFARM_SPOOL_CHECK_LEVEL_DELETE, "delete" },
+	{ GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND, "lost_found" }
+};
+enum gfarm_spool_check_level gfarm_spool_check_level =
+	GFARM_SPOOL_CHECK_LEVEL_DEFAULT;
+static const char *gfarm_spool_check_level_name = NULL;
 
 /* GFM dependent */
 char *gfarm_metadb_server_name = NULL;
@@ -1193,6 +1204,27 @@ void
 gfarm_set_metadb_server_force_slave(int slave)
 {
 	metadb_server_force_slave = slave;
+}
+
+const char *
+gfarm_spool_check_level_to_name() {
+	return (gfarm_spool_check_level_name);
+}
+
+gfarm_error_t
+gfarm_spool_check_level_set(const char *name) {
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
+		if (strcmp(name, gfarm_spool_check_levels[i].name) == 0) {
+			gfarm_spool_check_level
+			    = gfarm_spool_check_levels[i].level;
+			gfarm_spool_check_level_name
+			    = gfarm_spool_check_levels[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
 }
 
 /*
@@ -2069,6 +2101,32 @@ parse_log_level(char *p, int *vp)
 }
 
 static gfarm_error_t
+parse_spool_check_level(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing spool_check_type (%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	/* first line has precedence */
+	if (gfarm_spool_check_level != GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfarm_spool_check_level_set(s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "spool_check_type(%s): %s", s, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_hostname_and_port(char *host_and_port, const char *listname,
 	char **hostname, int *port)
 {
@@ -2456,7 +2514,7 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_name_set);
 	} else if (strcmp(s, o = "spool_check_level") == 0) {
-		e = parse_set_misc_int(p, &gfarm_spool_check_level);
+		e = parse_spool_check_level(p);
 
 	} else if (strcmp(s, o = "metadb_server_host") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_server_name);
@@ -2798,8 +2856,8 @@ gfarm_config_set_default_filesystem(void)
 void
 gfarm_config_set_default_misc(void)
 {
-	if (gfarm_spool_check_level == MISC_DEFAULT)
-		gfarm_spool_check_level = 0;
+	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
+		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DISABLE;
 	if (gfarm_spool_server_listen_backlog == MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
 	if (gfarm_metadb_server_listen_backlog == MISC_DEFAULT)

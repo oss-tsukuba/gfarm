@@ -2,20 +2,20 @@
 
 BASE_DIR=`dirname $0`
 TEST_CONFIG=$BASE_DIR/config.sh
-TEST_LOST_FOUND=$BASE_DIR/newfile-on-spool.pl
+TEST_LOST_FOUND=$BASE_DIR/newfile_on_spool.pl
 LOSTF_DIR=/lost+found
 
-if [ ! -f $TEST_CONFIG ]; then
+if [ ! -r ./regress.conf ]; then
+    echo >&2 "change the Gfarm_source/regress directory"
+    exit 6
+fi
+. ./regress.conf
+
+if [ ! -r $TEST_CONFIG ]; then
     echo >&2 "need $TEST_CONFIG"
     exit $exit_unsupported
 fi
 . $TEST_CONFIG
-
-if [ ! -f ./regress.conf ]; then
-    echo >&2 "change the Gfarm_source/regress directory"
-    exit $exit_unsupported
-fi
-. ./regress.conf
 
 if [ -z "$GFSD_HOST_NAME" ]; then
     echo >&2 "need GFSD_HOST_NAME in $TEST_CONFIG"
@@ -48,9 +48,9 @@ if $USE_SUDO; then
     SUDO_GFARMFS="sudo -u _gfarmfs"
 fi
 
-egrep '^spool_check_level\s+3' $GFSD_CONFIG_FILE
+egrep '^spool_check_level\s+lost_found' $GFSD_CONFIG_FILE
 if [ $? -ne 0 ]; then
-    echo >&2 "need 'spool_check_level 3' in $GFSD_CONFIG_FILE"
+    echo >&2 "need 'spool_check_level lost_found' in $GFSD_CONFIG_FILE"
     exit $exit_unsupported
 fi
 

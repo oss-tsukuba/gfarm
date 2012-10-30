@@ -5,7 +5,16 @@ extern char *gfarm_config_file;
 extern int gfarm_spool_server_listen_backlog;
 extern char *gfarm_spool_server_listen_address;
 extern char *gfarm_spool_root;
-extern int gfarm_spool_check_level;
+enum gfarm_spool_check_level {
+	GFARM_SPOOL_CHECK_LEVEL_DEFAULT,
+	GFARM_SPOOL_CHECK_LEVEL_DISABLE,
+	GFARM_SPOOL_CHECK_LEVEL_DISPLAY,
+	GFARM_SPOOL_CHECK_LEVEL_DELETE,
+	GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND,
+};
+extern enum gfarm_spool_check_level gfarm_spool_check_level;
+const char *gfarm_spool_check_level_to_name();
+gfarm_error_t gfarm_spool_check_level_set(const char *);
 
 /* GFM dependent */
 
