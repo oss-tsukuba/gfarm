@@ -24,16 +24,19 @@ https://sourceforge.net/apps/trac/gfarm/ticket/79
 	  要素がこの種別キューから外れるのは、送信に対応する応答受信時、
 	  ないしエラー発生時。
 
-	・種別キュー in-flight な RPC 数を管理し、その上限値 (window_size) を
-	　定め制限する。
+	・種別キュー毎に in-flight な RPC 数を管理し、
+	  その上限値 (window_size) を定め制限する。
 
-	・コネクション切断・再開後の再送があるため、送信しても返答を
-	　受信するまでは種別キューから　外さない。このため、
+	・dead_file_copy の場合、コネクション切断・再開後の再送があるため、
+	  送信しても返答を受信するまでは種別キューから　外さない。このため、
 	　種別キューの先頭 (GFARM_HCIRCLEQ_FIRST(workq->q, workq_entries))
 	　と次に送信する先頭 (workq->next) という2つの先頭ポインタを持つ。
 
 	・window_size 的に送信可能になったら、abstract_host 毎に存在する
-	  送信可能キュー (abstract_host::sendq->readyq) に移す。
+	  送信可能キュー (abstract_host::sendq->readyq) に繋ぐ。
+	  readyq に繋いでも、workq からは削除しないので注意すること。
+
+	・
 
 	※ 要素の種類別にキューを作るか？１つにするか？
 		要素の種類別にキューを作る。
@@ -52,8 +55,8 @@ https://sourceforge.net/apps/trac/gfarm/ticket/79
 	GFM_PROTO_* reply to gfmd	gfm_proto_reply_to_gfmd_window
 	GFM_PROTO_JOURNAL_READY_TO_RECV	不要
 	GFM_PROTO_JOURNAL_SEND		gfm_proto_journal_send_window
-	GFM_PROTO_PEER_ALLOC		gfm_proto_peer_alloc_window
-	GFM_PROTO_PEER_FREE		gfm_proto_peer_free_window
+	GFM_PROTO_REMOTE_PEER_ALLOC	gfm_proto_peer_alloc_window
+	GFM_PROTO_REMOTE_PEER_FREE	gfm_proto_peer_free_window
 	GFM_PROTO_RPC			gfm_proto_rpc_window
 	GFM_PROTO_GFS_RPC		gfm_proto_gfs_rpc_window
 
@@ -186,8 +189,9 @@ https://sourceforge.net/apps/trac/gfarm/ticket/79
 
 ・back_channel 用に全体で1つ、gfmd_channel 用に全体で一つ、合計2つだけ存在する
   netsenq_manager::hostq
-	netsendq_manager が監視しているのは、これ。
+	netsendq_send_manager() が監視しているのは、これ。
 	abstract_host::sendq->readyq にエントリが存在しているホストのリスト。
+	
 
 ※ GFS_PROTO_FHREMOVE のみ、netsendq_type::flags に
 　 NETSENDQ_FLAG_QUEUEABLE_IF_DOWN を設定しておく。
@@ -231,18 +235,28 @@ https://sourceforge.net/apps/trac/gfarm/ticket/79
 	・要素が追加される
 	・ある宛先について送信が完了し、次の送信が可能になる。
   これにより、送信可能になったホストを検知したら、以下を行なう。
+  (注: 検知と同時に、その送信先の状態を、現在送信中 qhost->sending にしている)
   その送信先へ、現在送信中でないことを確認し、
   abstract_host::sendq->readyq から、要求を抜き出す。
   次に、その送信先が up していることを確認し、
   up していれば thrpool_add_job() を行なう。
   その送信先が down している場合は、netsendq_host_is_down_at_entry() を行なう。
 
-(3) 送信が完了したら、その送信先が、
-  送信待ちホスト・キュー netsendq_manager::hostq
-  に繋がれているか否か調べ、繋がれていたら、netsendq_manager を起床させる。
-	→ netsendq_was_sent_to_host()
+(3) 上記 (2) で manager->send_thrpool へ thrpool_add_job() された、
+  種別ごとの送信処理関数は、以下を行なう。
 
-(4) 受信処理が完了したら、受信の結果ウィンドウが開いたかどうか確認し、
+(3.1) 宛先ホストへ、送信を行なう
+
+(3.2) netsendq_was_sent_to_host() を呼び出し、
+  送信完了を netsendq モジュールへ通知する。
+  netsendq_was_sent_to_host() は、
+  そのホストを、送信可能状態 (すなわち !qhost->sending) に戻した上、
+  条件変数 manager->sendable を介して、
+  そのことを netsendq_send_manager() スレッドに通知する。
+  netsendq_send_manager() は、これにより起床する。
+
+(4) 送信に失敗したり、あるいは送信に対応する受信処理が完了したら、
+  受信の結果ウィンドウが開いたかどうか確認し、
   開いたのであれば、abstract_host::sendq->workqs[type] の次のエントリーに、
   対し、上記(2)以降の処理を行なう。
 
