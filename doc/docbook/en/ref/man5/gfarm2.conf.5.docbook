@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>23 October 2012</date></refentryinfo>
+<refentryinfo><date>31 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -320,25 +320,17 @@ statement for details.
 <term><token>spool_check_level</token> <parameter>level</parameter></term>
 <listitem>
 <para>
-The level <parameter>1</parameter> is equivalent to the -c option for
-gfsd.
-</para>
-<para>
-The level <parameter>2</parameter> is equivalent to the -cc option for
-gfsd.
-</para>
-<para>
-The level <parameter>3</parameter> is equivalent to the -ccc option
-for gfsd.
-</para>
-<para>
-The default value is 0.  The level <parameter>0</parameter> means that
-gfsd does not investigate all files stored in a spool directory when
-starting up.
+This statement enables the consistency check of files stored in the
+spool directory at start-up of gfsd.  The <parameter>level</parameter>
+name corresponds how many -c command-line options are specified to
+gfsd, i.e. the level "display" means the -c option, "delete" means the
+-cc option, and "lost_found" means the -ccc option.  For detail about
+the -c option, refer to the manual page of gfsd(8).  The level
+"disable" disables the consistency check, which is the default.
 </para>
 <para>For example,</para>
 <literallayout>
-	spool_check_level 3
+	spool_check_level lost_found
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1907,7 +1899,7 @@ notation.</para>
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
-	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;number&gt;
+	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;spck_level&gt;
 	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
 	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=
@@ -2042,6 +2034,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;spck_level&gt; ::= "disable" | "display" | "delete" | "lost_found"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
 	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |

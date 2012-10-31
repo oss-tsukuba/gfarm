@@ -1029,9 +1029,11 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 		 * We just use gfarm_error_t as the errcode,
 		 * Note that GFARM_ERR_NO_ERROR == 0.
 		 */
+#if 0		/* verbose message */
 		gflog_debug(GFARM_MSG_1001107,
 			"gfp_xdr_vrpc_result() failed: errcode=%d",
 			errcode);
+#endif
 		return (errcode);
 	}
 	return (GFARM_ERR_NO_ERROR);

@@ -5200,10 +5200,12 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				    host_name(spool_host));
 				e = GFARM_ERR_FILE_BUSY; /* busy file */
 			} else if (inode_get_size(inode) == size) {
+#if 0				/* verbose message */
 				gflog_debug(GFARM_MSG_1003489,
 				    "%lld:%lld on %s: a correct file",
 				    (long long)inum, (long long)gen,
 				    host_name(spool_host));
+#endif
 				/* correct file */
 				e = GFARM_ERR_ALREADY_EXISTS;
 			} else {

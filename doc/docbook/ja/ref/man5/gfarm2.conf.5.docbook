@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>23 October 2012</date></refentryinfo>
+<refentryinfo><date>31 October 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -319,21 +319,15 @@ GSI認証において、<token>spool_server_cred_type</token>で指定した値に
 <term><token>spool_check_level</token> <parameter>レベル</parameter></term>
 <listitem>
 <para>
-レベル<parameter>1</parameter>はgfsdの-cオプションと同等です。
-</para>
-<para>
-レベル<parameter>2</parameter>はgfsdの-ccオプションと同等です。
-</para>
-<para>
-レベル<parameter>3</parameter>はgfsdの-cccオプションと同等です。
-</para>
-<para>
-デフォルト値は0です。レベル<parameter>0</parameter>にすると、
-gfsdは起動時に、スプールディレクトリ上のファイルを調査をしません。
-</para>
-<para>For example,</para>
+gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
+メタデータに登録されている情報との一貫性を検査します。レベルはgfsdの-c
+オプションを指定する数に相当し、"display"は-cオプション、"delete"は-cc
+オプション、"lost_found"は-cccオプションと同等です。詳細はgfsdの
+マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを
+行いません。デフォルト値は"disable"です。
+<para>例:</para>
 <literallayout>
-	spool_check_level 3
+	spool_check_level lost_found
 </literallayout>
 </listitem>
 </varlistentry>
@@ -1849,7 +1843,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
 	&lt;spool_server_cred_name_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
-	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;number&gt;
+	&lt;spool_check_level_statement&gt; ::= "spool_check_level" &lt;spck_level&gt;
 	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
 	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
 	&lt;metadb_server_cred_type_statement&gt; ::=
@@ -1984,6 +1978,7 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
 		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;spck_level&gt; ::= "disable" | "display" | "delete" | "lost_found"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
 	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
