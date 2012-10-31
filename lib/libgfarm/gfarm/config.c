@@ -2110,7 +2110,7 @@ parse_spool_check_level(char *p)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"get_one_argument failed "
-			"when parsing spool_check_type (%s): %s",
+			"when parsing spool_check_level(%s): %s",
 			p, gfarm_error_string(e));
 		return (e);
 	}
@@ -2120,7 +2120,7 @@ parse_spool_check_level(char *p)
 	e = gfarm_spool_check_level_set(s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "spool_check_type(%s): %s", s, gfarm_error_string(e));
+		    "spool_check_level(%s): %s", s, gfarm_error_string(e));
 		return (e);
 	}
 	return (GFARM_ERR_NO_ERROR);
