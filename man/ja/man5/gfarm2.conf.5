@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "20 August 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "31 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -80,6 +80,22 @@ gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
 
 .nf
 	spool_server_listen_address 192.168.121.1
+.fi
+.TP
+\fBspool_server_listen_backlog \fI数\fB\fR
+gfsd が
+\fBlisten\fR(2)
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、<sys/socket.h> に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+
+クライアント数の多い環境では、システム制限値を上げた上で、この値を増やしておくことを推奨します。
+
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
+
+例:
+
+.nf
+	spool_server_listen_backlog 128
 .fi
 .TP
 \fBspool_server_cred_type \fIcred_type\fB\fR
@@ -235,6 +251,20 @@ GSI認証において、metadb_server_cred_typeで指定した値に
 sharedsecret利用時には、この指定は単に無視されます。
 設定の意味についてはspool_server_cred_typeの項を
 参照してください。
+.TP
+\fBmetadb_server_listen_backlog \fI数\fB\fR
+gfmd が
+\fBlisten\fR(2)
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、<sys/socket.h> に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+
+例:
+
+.nf
+	metadb_server_listen_backlog 128
+.fi
 .TP
 \fBmetadb_server_max_descriptors \fI数\fB\fR
 メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
@@ -1115,6 +1145,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<statement> ::=
 		\~\~<spool_statement> |
 		\~\~<spool_server_listen_address_statement> |
+		\~\~<spool_server_listen_backlog_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
 		\~\~<spool_server_cred_name_statement> |
@@ -1123,6 +1154,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<metadb_server_listen_backlog_statement> |
 		\~\~<metadb_server_max_descriptors_statement> |
 		\~\~<metadb_server_stack_size_statement> |
 		\~\~<metadb_server_thread_pool_size_statement> |
@@ -1183,6 +1215,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
+	<spool_server_listen_backlog_statement> ::=
+		\~\~"spool_server_listen_backlog" <number>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>
 	<spool_server_cred_service_statement> ::=
@@ -1197,6 +1231,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<metadb_server_listen_backlog_statement> ::=
+		\~\~"metadb_server_listen_backlog" <number>
 	<metadb_server_max_descriptors_statement> ::=
 		\~\~"metadb_server_max_descriptors" <number>
 	<metadb_server_stack_size_statement> ::=

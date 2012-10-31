@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "21 August 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "31 October 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -74,6 +74,22 @@ For example,
 
 .nf
 	spool_server_listen_address 192.168.121.1
+.fi
+.TP
+\fBspool_server_listen_backlog \fInumber\fB\fR
+This statement specifies the second parameter of the
+\fBlisten\fR(2)
+system call that gfsd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket.h>, or 5 if it's undefined.
+
+On an environment which has many gfarm clients, it's recommened to increase this value after increasing system limit.
+
+This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.
+
+For example,
+
+.nf
+	spool_server_listen_backlog 128
 .fi
 .TP
 \fBspool_server_cred_type \fIcred_type\fB\fR
@@ -256,6 +272,20 @@ This is ignored when you are using sharedsecret
 authentication.
 Please read the description of the spool_server_cred_type 
 statement on the configuration of this statement.
+.TP
+\fBmetadb_server_listen_backlog \fInumber\fB\fR
+This statement specifies the second parameter of the
+\fBlisten\fR(2)
+system call that gfmd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in <sys/socket.h>, or 5 if it's undefined.
+
+This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.
+
+For example,
+
+.nf
+	metadb_server_listen_backlog 128
+.fi
 .TP
 \fBmetadb_server_max_descriptors \fInumber\fB\fR
 This directive specifies the number of file descriptor limit
@@ -1177,6 +1207,7 @@ notation.
 	<statement> ::=
 		\~\~<spool_statement> |
 		\~\~<spool_server_listen_address_statement> |
+		\~\~<spool_server_listen_backlog_statement> |
 		\~\~<spool_server_cred_type_statement> |
 		\~\~<spool_server_cred_service_statement> |
 		\~\~<spool_server_cred_name_statement> |
@@ -1185,6 +1216,7 @@ notation.
 		\~\~<metadb_server_cred_type_statement> |
 		\~\~<metadb_server_cred_service_statement> |
 		\~\~<metadb_server_cred_name_statement> |
+		\~\~<metadb_server_listen_backlog_statement> |
 		\~\~<metadb_server_max_descriptors_statement> |
 		\~\~<metadb_server_stack_size_statement> |
 		\~\~<metadb_server_thread_pool_size_statement> |
@@ -1221,6 +1253,7 @@ notation.
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers> |
 		\~\~<gfsd_connection_cache_statement> |
+		\~\~<gfsd_connection_cache_statement> |
 		\~\~<xmlattr_size_limit_statement> |
 		\~\~<xattr_size_limit_statement> |
 		\~\~<attr_cache_limit_statement> |
@@ -1245,6 +1278,8 @@ notation.
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
+	<spool_server_listen_backlog_statement> ::=
+		\~\~"spool_server_listen_backlog" <number>
 	<spool_server_cred_type_statement> ::=
 		\~\~"spool_server_cred_type" <cred_type>
 	<spool_server_cred_service_statement> ::=
@@ -1259,6 +1294,8 @@ notation.
 		\~\~"metadb_server_cred_service" <cred_service>
 	<metadb_server_cred_name_statement> ::=
 		\~\~"metadb_server_cred_name" <cred_name>
+	<metadb_server_listen_backlog_statement> ::=
+		\~\~"metadb_server_listen_backlog" <number>
 	<metadb_server_max_descriptors_statement> ::=
 		\~\~"metadb_server_max_descriptors" <number>
 	<metadb_server_stack_size_statement> ::=
