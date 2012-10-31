@@ -48,6 +48,12 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 
+#ifdef SOMAXCONN
+#define LISTEN_BACKLOG_DEFAULT	SOMAXCONN
+#else
+#define LISTEN_BACKLOG_DEFAULT	5
+#endif
+
 #define MAX_CONFIG_LINE_LENGTH	1023
  
 char *gfarm_config_file = GFARM_CONFIG;
@@ -751,6 +757,7 @@ gfarm_set_local_user_for_this_local_account(void)
  */
 #define MISC_DEFAULT -1
 /* GFS dependent */
+int gfarm_spool_server_listen_backlog = MISC_DEFAULT;
 char *gfarm_spool_server_listen_address = NULL;
 char *gfarm_spool_root = NULL;
 
@@ -759,6 +766,7 @@ char *gfarm_metadb_server_name = NULL;
 int gfarm_metadb_server_port = MISC_DEFAULT;
 enum gfarm_backend_db_type gfarm_backend_db_type =
 	GFARM_BACKEND_DB_TYPE_UNKNOWN;
+int gfarm_metadb_server_listen_backlog = MISC_DEFAULT;
 
 char *gfarm_metadb_admin_user = NULL;
 char *gfarm_metadb_admin_user_gsi_dn = NULL;
@@ -2421,6 +2429,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_var(p, &gfarm_spool_root);
 	} else if (strcmp(s, o = "spool_server_listen_address") == 0) {
 		e = parse_set_var(p, &gfarm_spool_server_listen_address);
+	} else if (strcmp(s, o = "spool_server_listen_backlog") == 0) {
+		e = parse_set_misc_int(p, &gfarm_spool_server_listen_backlog);
 	} else if (strcmp(s, o = "spool_server_cred_type") == 0) {
 		e = parse_cred_config(p, GFS_SERVICE_TAG,
 		    gfarm_auth_server_cred_type_set_by_string);
@@ -2437,6 +2447,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_metadb_server_port(p, &o);
 	} else if (strcmp(s, o = "metadb_server_list") == 0) {
 		e = parse_metadb_server_list_arguments(p, &o);
+	} else if (strcmp(s, o = "metadb_server_listen_backlog") == 0) {
+		e = parse_set_misc_int(p, &gfarm_metadb_server_listen_backlog);
 	} else if (strcmp(s, o = "admin_user") == 0) {
 		e = parse_set_var(p, &gfarm_metadb_admin_user);
 	} else if (strcmp(s, o = "admin_user_gsi_dn") == 0) {
@@ -2755,6 +2767,11 @@ gfarm_config_set_default_filesystem(void)
 void
 gfarm_config_set_default_misc(void)
 {
+	if (gfarm_spool_server_listen_backlog == MISC_DEFAULT)
+		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
+	if (gfarm_metadb_server_listen_backlog == MISC_DEFAULT)
+		gfarm_metadb_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
+
 	if (gfarm_log_level == MISC_DEFAULT)
 		gfarm_log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 	gflog_set_priority_level(gfarm_log_level);

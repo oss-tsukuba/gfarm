@@ -65,13 +65,6 @@
 
 #include "protocol_state.h"
 
-
-#ifdef SOMAXCONN
-#define LISTEN_BACKLOG	SOMAXCONN
-#else
-#define LISTEN_BACKLOG	5
-#endif
-
 #ifndef GFMD_CONFIG
 #define GFMD_CONFIG		"/etc/gfmd.conf"
 #endif
@@ -1051,7 +1044,7 @@ open_accepting_socket(int port)
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000194,
 		    "setsockopt: %s", gfarm_error_string(e));
-	if (listen(sock, LISTEN_BACKLOG) < 0)
+	if (listen(sock, gfarm_metadb_server_listen_backlog) < 0)
 		gflog_fatal_errno(GFARM_MSG_1000195, "listen");
 	return (sock);
 }
