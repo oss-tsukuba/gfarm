@@ -876,7 +876,7 @@ gfm_client_rpc_result(struct gfm_connection *gfm_server, int just,
 	}
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc_result(gfm_server->conn, just,
+	e = gfp_xdr_vrpc_result(gfm_server->conn, just, 1,
 	    &errcode, &format, &ap);
 	va_end(ap);
 
@@ -912,7 +912,7 @@ gfm_client_rpc(struct gfm_connection *gfm_server, int just, int command,
 	gfm_client_connection_used(gfm_server);
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc(gfm_server->conn, just,
+	e = gfp_xdr_vrpc(gfm_server->conn, just, 1,
 	    command, &errcode, &format, &ap);
 	va_end(ap);
 
