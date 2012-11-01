@@ -24,6 +24,8 @@
 
 #include "gfsd_subr.h"
 
+static enum gfarm_spool_check_level spool_check_level;
+
 static gfarm_error_t
 gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
 {
@@ -319,7 +321,7 @@ deal_with_invalid_file(const char *file, struct stat *stp, int valid_inum_gen,
 {
 	gfarm_error_t e;
 
-	switch (gfarm_spool_check_level) {
+	switch (spool_check_level) {
 	case GFARM_SPOOL_CHECK_LEVEL_DISPLAY:
 		gflog_notice(GFARM_MSG_1000603, "%s: invalid file", file);
 		e = GFARM_ERR_NO_ERROR;
@@ -530,9 +532,10 @@ gfsd_spool_check()
 	struct gfarm_hash_table *hash_ok; /* valid files */
 
 	gflog_debug(GFARM_MSG_UNFIXED, "spool_check_level=%s",
-	    gfarm_spool_check_level_to_name());
+	    gfarm_spool_check_level_get_by_name());
 
-	switch (gfarm_spool_check_level) {
+	spool_check_level = gfarm_spool_check_level_get();
+	switch (spool_check_level) {
 	case GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND:
 		hash_ok = gfarm_hash_table_alloc(HASH_OK_SIZE,
 		    gfarm_hash_default, gfarm_hash_key_equal_default);

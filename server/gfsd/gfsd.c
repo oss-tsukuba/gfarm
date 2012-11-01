@@ -4399,20 +4399,24 @@ main(int argc, char **argv)
 		}
 	}
 
-	/* before gfarm_server_initialize() */
 	switch (spool_check_level) {
 	case 0:
+		e = GFARM_ERR_NO_ERROR;
 		break;
 	case 1:
-		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DISPLAY;
+		e = gfarm_spool_check_level_set(
+		    GFARM_SPOOL_CHECK_LEVEL_DISPLAY);
 		break;
 	case 2:
-		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DELETE;
+		e = gfarm_spool_check_level_set(
+		    GFARM_SPOOL_CHECK_LEVEL_DELETE);
 		break;
 	default:
-		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND;
+		e = gfarm_spool_check_level_set(
+		    GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
 		break;
 	}
+	assert(e == GFARM_ERR_NO_ERROR);
 
 	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
