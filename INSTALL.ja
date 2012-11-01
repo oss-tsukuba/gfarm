@@ -45,10 +45,10 @@ configure コマンドには，下記のオプションがあります．
 ・--with-globus=ディレクトリ
 
   認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
-  インストールされているディレクトリを指定します．
-  Globus toolkit のうち GSSAPI ライブラリが必要となります．ディレクト
-  リを指定しないと，環境変数 GLOBUS_LOCATION の示すディレクトリが利用
-  されます．
+  インストールされているディレクトリを指定します．ディレクトリを指定し
+  ないと pkg-config、環境変数 GLOBUS_LOCATION の示すディレクトリが順に
+  試されます．
+  Globus toolkit のうち GSSAPI ライブラリが必要となります．
   このオプションは省略可能です．
   デフォールトでは，インストールされている flavor を自動的に検索します
   が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
@@ -105,6 +105,14 @@ configure コマンドには，下記のオプションがあります．
 openssl-devel
 openldap-devel
 postgresql-devel
+globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
+postgresql, postgresql-server		(config-gfarm の実行に必要)
+fuse-devel				(gfarm2fs の構築に必要)
+
+(*) http://www.globus.org/toolkit/downloads/latest-stable/
+    を参考に Globus configuration ファイルを導入する必要があります．
+    例えば，CentOS 6，Globus 5.2.2の場合，以下の様になります．
+    # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
 
 * Debian パッケージ
 
