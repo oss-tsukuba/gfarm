@@ -182,7 +182,7 @@ The default value is "no".
 
 </refsect1>
 
-<refsect1 id='gfmd_sub_commands'><title>SUB-COMMANDS FOR GFMD</title>
+<refsect1 id='gfmd-sub-commands'><title>SUB-COMMANDS FOR GFMD</title>
 
 <para>
 The followings are sub-commands which operate <command>gfmd</command>.
@@ -575,7 +575,7 @@ gfsd<replaceable>n</replaceable> and client<replaceable>n</replaceable>).
 
 </refsect1>
 
-<refsect1 id='gfsd_sub_commands'><title>SUB-COMMANDS FOR GFSD</title>
+<refsect1 id='gfsd-sub-commands'><title>SUB-COMMANDS FOR GFSD</title>
 
 <para>
 The followings are sub-commands which operate <command>gfsd</command>.
@@ -654,7 +654,7 @@ files and directories created by gfsd.
 
 </refsect1>
 
-<refsect1 id='client_sub_commands'><title>SUB-COMMANDS FOR CLIENT</title>
+<refsect1 id='client-sub-commands'><title>SUB-COMMANDS FOR CLIENT</title>
 
 <para>
 The followings are sub-commands which operate a client.

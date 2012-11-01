@@ -91,7 +91,7 @@
 
 </refsect1>
 
-<refsect1 id='gfmd_sub_commands'><title>SUB-COMMANDS</title>
+<refsect1 id='sub-commands'><title>SUB-COMMANDS</title>
 
 <para>
 <command>gfservice-agent</command> は現在のところ、次のサブコマンドを

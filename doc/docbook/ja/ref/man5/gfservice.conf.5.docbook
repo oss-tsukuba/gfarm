@@ -103,7 +103,7 @@ gfsd サーバーとクライアントホストを指定するには、ホスト ID
 
 </refsect1>
 
-<refsect1 id='gfmd_variables'><title>VARABILES ABOUT GFMD</title>
+<refsect1 id='gfmd-variables'><title>VARABILES ABOUT GFMD</title>
 
 <para>
 変数「gfmd<replaceable>n</replaceable>」(gfmd1, gfmd2, ...) は、gfmd
@@ -192,7 +192,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 
 </refsect1>
 
-<refsect1 id='gfsd_variables'><title>VARABILES ABOUT GFSD</title>
+<refsect1 id='gfsd-variables'><title>VARABILES ABOUT GFSD</title>
 
 <para>
 変数「gfsd<replaceable>n</replaceable>」(gfsd1, gfsd2, ...) は、gfsd
@@ -281,7 +281,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 
 </refsect1>
 
-<refsect1 id='client_variables'><title>VARABILES ABOUT CLIENT</title>
+<refsect1 id='client-variables'><title>VARABILES ABOUT CLIENT</title>
 
 <para>
 変数「client<replaceable>n</replaceable>」(client1, client2, ...) は、

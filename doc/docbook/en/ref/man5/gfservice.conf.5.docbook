@@ -103,7 +103,7 @@ environment variable <varname>VARNAME</varname>.
 
 </refsect1>
 
-<refsect1 id='gfmd_variables'><title>VARABILES ABOUT GFMD</title>
+<refsect1 id='gfmd-variables'><title>VARABILES ABOUT GFMD</title>
 
 <para>
 Variables named "gfmd<replaceable>n</replaceable>" (gfmd1, gfmd2, ...)
@@ -191,7 +191,7 @@ The default value is "sudo".
 
 </refsect1>
 
-<refsect1 id='gfsd_variables'><title>VARABILES ABOUT GFSD</title>
+<refsect1 id='gfsd-variables'><title>VARABILES ABOUT GFSD</title>
 
 <para>
 Variables named "gfsd<replaceable>n</replaceable>" (gfsd1, gfsd2, ...)
@@ -279,7 +279,7 @@ The default value is "sudo".
 
 </refsect1>
 
-<refsect1 id='client_variables'><title>VARABILES ABOUT CLIENT</title>
+<refsect1 id='client-variables'><title>VARABILES ABOUT CLIENT</title>
 
 <para>
 Variables named "client<replaceable>n</replaceable>" (client1, client2, ...)

@@ -189,7 +189,7 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 
 </refsect1>
 
-<refsect1 id='gfmd_sub_commands'><title>SUB-COMMANDS FOR GFMD</title>
+<refsect1 id='gfmd-sub-commands'><title>SUB-COMMANDS FOR GFMD</title>
 
 <para>
 以下に挙げているのは、<command>gfmd</command> を操作するサブコマンドです。
@@ -584,7 +584,7 @@ client<replaceable>n</replaceable>) の <filename>gfarm2.conf</filename>
 
 </refsect1>
 
-<refsect1 id='gfsd_sub_commands'><title>SUB-COMMANDS FOR GFSD</title>
+<refsect1 id='gfsd-sub-commands'><title>SUB-COMMANDS FOR GFSD</title>
 
 <para>
 以下に挙げているのは、<command>gfsd</command> を操作するサブコマンドです。
@@ -662,7 +662,7 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 
 </refsect1>
 
-<refsect1 id='client_sub_commands'><title>SUB-COMMANDS FOR CLIENT</title>
+<refsect1 id='client-sub-commands'><title>SUB-COMMANDS FOR CLIENT</title>
 
 <para>
 以下に挙げているのは、クライアントを操作するサブコマンドです。
