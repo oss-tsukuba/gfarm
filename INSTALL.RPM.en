@@ -29,15 +29,14 @@ Binary packages are located at /usr/src/redhat/RPM/ARCH/.
 
 To enable the GSI authentication, development packages of Globus
 GSSAPI is also required.  Moreover the environment variables
-GLOBUS_PREFIX and GLOBUS_FLAVOR should be defined.
+GFARM_CONFIGURE_OPTION should be defined.
 
-	# GLOBUS_PREFIX=/usr/gt4 GLOBUS_FLAVOR=gcc64 rpmbuild \
+	# GFARM_CONFIGURE_OPTION=--with-globus rpmbuild \
 		--rebuild gfarm-X.X.X-X.src.rpm
 
 If it succeeds, gfarm-gsi packages (not gfarm packages) are built.  If
 not, make sure whether the Globus GSSAPI library is correctly
-installed at the location specified by GLOBUS_PREFIX and GLOBUS_FLAVOR
-or not.
+installed.
 
 Installation of a Gfarm metadata server
 =======================================
