@@ -1,0 +1,527 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfservice-agent.1'>
+
+<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfservice-agent</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfservice-agent</refname>
+<refpurpose><command>gfservice</command> のエージェント</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfservice-agent</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'>サブコマンド</arg>
+    <arg choice='opt'><replaceable>引数 ...</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfservice-agent</command> は、<command>gfservice</command> の
+エージェントです。
+<command>gfservice</command> を用いて操作したいホストすべてに、この
+エージェントをインストールする必要があります。
+<command>gfservice</command> と異なり、設定ファイルは読み込みません。
+</para>
+
+<para>
+<command>gfservice-agent</command> は、ユーザが直接実行することを意図
+して作成されたものではありません。
+日常の利用では、SSH と Sudo を介して <command>gfservice</command> コマンド
+によって実行されるだけです。
+</para>
+
+<para>
+<command>gfservice-agent</command> のサブコマンド名は 
+<command>gfservice</command> のものに似ていますが、引数は異なります。
+たとえば、<command>gfservice-agent</command> の <command>unmount</command>
+サブコマンドは、
+「<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>」
+という引数をとります。
+</para>
+
+<literallayout>
+	gfservice-agent unmount directory=/somewhere
+</literallayout>
+
+<para>
+これに対して、<command>gfservice</command> では、
+「<replaceable>ディレクトリ</replaceable>」という引数をとります。
+</para>
+
+<literallayout>
+	gfservice unmount client3 /somewhere
+</literallayout>
+
+<para>
+<command>gfservice-agent</command> の引数はほとんどすべて、「キー=値」
+という形になっています。
+複数の引数をとる場合、引数の順序は任意です。
+<command>gfservice-agent</command> は、未知のキーを無視します。
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+デバッグ情報を出力します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='sub-commands'><title>SUB-COMMANDS</title>
+
+<para>
+<command>gfservice-agent</command> は現在のところ、次のサブコマンドを
+認識します。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term>
+<command>get-config-gfarm-param</command>
+<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+「<command>config-gfarm -T</command>」コマンドを実行して、
+「<replaceable>パラメタ名</replaceable> 」の値を標準出力に出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>get-config-gfsd-param</command>
+<parameter>param</parameter>=<replaceable>パラメタ名</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+「<command>config-gfsd -T</command>」コマンドを実行して、
+「<replaceable>パラメタ名</replaceable>」の値を標準出力に
+出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backend-db-status</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+バックエンドデータベースが動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfmd-status</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+gfmd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfsd-status</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+gfsd が動作中であれば、終了コード 0 で終了します。
+それ以外の場合は、1 で終了します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-backend-db</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
+</term>
+<listitem>
+<para>
+バックエンドデータベースが実行中でなければ、実行を開始します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-gfmd</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
+</term>
+<listitem>
+<para>
+gfmd が実行中でなければ、実行を開始します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+<parameter>timeout</parameter>=<replaceable>時間</replaceable>
+</term>
+<listitem>
+<para>
+gfsd が実行中でなければ、実行を開始します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+「<command>config-gfarm</command>」コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm-master</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+「<command>config-gfarm</command> <parameter>-r</parameter>」コマンドを実行
+します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+「<command>config-gfsd</command>」コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-gfarm</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+<command>stop-gfarm</command> サブコマンドを実行して、その後 gfmd と
+バックエンドデータベースが作成したファイルやディレクトリをすべて削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+サブコマンド <command>stop-gfsd</command> を実行し、その後 gfsd が作成した
+ファイルやディレクトリをすべて削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-client</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+<filename>gfarm2.conf</filename> ファイルと共有秘密鍵ファイルを削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>promote</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+<command>gfmd</command> をスレーブからマスターへ昇格させます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>promote-gfmd</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+サブコマンド <command>promote</command> の別名です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>mount</command>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
+<parameter>options</parameter>=<replaceable>オプション</replaceable>
+</term>
+<listitem>
+<para>
+Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
+マウントします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unmount</command>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
+</term>
+<listitem>
+<para>
+「<replaceable>ディレクトリ</replaceable>」にマウントされた Gfarm2
+ファイルシステムをアンマウントします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>umount</command>
+<parameter>directory</parameter>=<replaceable>ディレクトリ</replaceable>
+</term>
+<listitem>
+<para>
+サブコマンド <command>unmount</command> の別名です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>set-gfmd-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
+</term>
+<listitem>
+<para>
+<filename>gfmd.conf</filename> ファイルに、
+</para>
+
+<literallayout>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
+</literallayout>
+
+<para>
+という行を追加します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>set-gfarm-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+<parameter>value</parameter>=<replaceable>値</replaceable>
+</term>
+<listitem>
+<para>
+<filename>gfarm2.conf</filename> ファイルに、
+</para>
+
+<literallayout>
+	<replaceable>設定名称</replaceable> <replaceable>値</replaceable>
+</literallayout>
+
+<para>
+という行を追加します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfmd-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+</term>
+<listitem>
+<para>
+「<replaceable>設定名称</replaceable>」行を <filename>gfarm2.conf</filename>
+ファイルから削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfarm-conf</command>
+<parameter>directive</parameter>=<replaceable>設定名称</replaceable>
+</term>
+<listitem>
+<para>
+「<replaceable>設定名称</replaceable>」行を <filename>gfmd.conf</filename>
+ファイルから削除します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-backend-db</command>
+</term>
+<listitem>
+<para>
+バックエンドデータベースのバックアップを行い、バックアップデータを標準出力
+へ出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfmd-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfmd.conf</filename> ファイルを標準出力に出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfarm-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfarm2.conf</filename> ファイルを標準出力に出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-shared-key</command>
+</term>
+<listitem>
+<para>
+<filename>$HOME/.gfarm_shared_key</filename> ファイルを標準出力に
+出力します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-backend-db</command>
+</term>
+<listitem>
+<para>
+バックエンドデータベースをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfmd-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfmd.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfarm-conf</command>
+</term>
+<listitem>
+<para>
+<filename>gfarm2.conf</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-shared-key</command>
+</term>
+<listitem>
+<para>
+<filename>$HOME/.gfarm_shared_key</filename> ファイルをリストアします。
+バックアップデータは、標準入力から読み込みます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfcmd</command>
+<parameter>コマンド名</parameter>
+<parameter>コマンドの引数 ...</parameter>
+</term>
+<listitem>
+<para>
+Gfarm コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>

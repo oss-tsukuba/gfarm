@@ -1,0 +1,523 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfservice-agent.1'>
+
+<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfservice-agent</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfservice-agent</refname>
+<refpurpose>agent of <command>gfservice</command></refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfservice-agent</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'>sub-command</arg>
+    <arg choice='opt'><replaceable>argument ...</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfservice-agent</command> is an agent of
+<command>gfservice</command>.
+It must be installed on all hosts you want to operate using
+<command>gfservice</command>.
+Unlike <command>gfservice</command>, it doesn't read a configuration file.
+</para>
+
+<para>
+<command>gfservice-agent</command> is not designed to be executed
+directly by an user.
+In daily use, it is executed only by <command>gfservice</command> via SSH
+and Sudo.
+</para>
+
+<para>
+Sub-command names of <command>gfservice-agent</command> are similar to
+those of <command>gfservice</command>, but their arguments are different.
+For example, <command>"unmount"</command> sub-command of
+<command>gfservice-agent</command> takes
+<parameter>"directory=<replaceable>directory</replaceable>"</parameter>
+argument:
+</para>
+
+<literallayout>
+	gfservice-agent unmount directory=/somewhere
+</literallayout>
+
+<para>
+while <command>"unmount"</command> sub-command of <command>gfservice</command>
+takes <replaceable>"directory"</replaceable> argument:
+</para>
+
+<literallayout>
+	gfservice unmount client3 /somewhere
+</literallayout>
+
+<para>
+Almost all arguments of <command>gfservice-agent</command> have "key=value"
+form.
+When two or more arguments are given, <command>gfservice-agent</command>
+doesn't care about the order of arguments.
+<command>gfservice-agent</command> ignores arguments with unknown keys.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+Print debug information.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='sub-commands'><title>SUB-COMMANDS</title>
+
+<para>
+<command>gfservice-agent</command> currently recognizes the following
+sub-commands.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term>
+<command>get-config-gfarm-param</command>
+<parameter>param</parameter>=<replaceable>name</replaceable>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>config-gfarm -T</command> command and output a value of
+the parameter <replaceable>name</replaceable> to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>get-config-gfsd-param</command>
+<parameter>param</parameter>=<replaceable>name</replaceable>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>config-gfsd -T</command> command and output a value of
+the parameter <replaceable>name</replaceable> to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backend-db-status</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Exit with an exit code 0, if a backend database is currently running.
+Otherwise exits with 1.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfmd-status</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Exit with an exit code 0, if gfmd is currently running.
+Otherwise exits with 1.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfsd-status</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Exit with an exit code 0, if gfsd is currently running.
+Otherwise exits with 1.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-backend-db</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<parameter>timeout</parameter>=<replaceable>time</replaceable>
+</term>
+<listitem>
+<para>
+Start a backend database if it is not running currently.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-gfmd</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+<parameter>timeout</parameter>=<replaceable>time</replaceable>
+</term>
+<listitem>
+<para>
+Start gfmd if it is not running currently.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>start-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+<parameter>timeout</parameter>=<replaceable>time</replaceable>
+</term>
+<listitem>
+<para>
+Start gfsd if it is not running currently.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>config-gfarm</command> command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfarm-master</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>config-gfarm</command> <parameter>-r</parameter> command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>config-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>config-gfsd</command> command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-gfarm</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>stop-gfarm</command> sub-command and then delete all
+files and directories created by gfmd and a backend database.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-gfsd</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Execute <command>stop-gfsd</command> sub-command and then delete all
+files and directories created by gfsd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unconfig-client</command>
+<parameter>config-gfsd-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Delete <filename>gfarm2.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>promote</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Promote <command>gfmd</command> from a slave to a master.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>promote-gfmd</command>
+<parameter>config-gfarm-options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+An alias of <command>promote</command> sub-command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>mount</command>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
+<parameter>options</parameter>=<replaceable>options</replaceable>
+</term>
+<listitem>
+<para>
+Mount a Gfarm2 filesystem on <replaceable>directory</replaceable>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unmount</command>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
+</term>
+<listitem>
+<para>
+Unmount a Gfarm2 filesystem currenctly mounted on
+<replaceable>directory</replaceable>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>umount</command>
+<parameter>directory</parameter>=<replaceable>directory</replaceable>
+</term>
+<listitem>
+<para>
+An alias of <command>unmount</command> sub-command.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>set-gfmd-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+<parameter>value</parameter>=<replaceable>value</replaceable>
+</term>
+<listitem>
+<para>
+Add
+</para>
+
+<literallayout>
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
+</literallayout>
+
+<para>
+line to <filename>gfmd.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>set-gfarm-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+<parameter>value</parameter>=<replaceable>value</replaceable>
+</term>
+<listitem>
+<para>
+Add
+</para>
+
+<literallayout>
+	<replaceable>directive</replaceable> <replaceable>value</replaceable>
+</literallayout>
+
+<para>
+line to <filename>gfarm2.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfmd-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+</term>
+<listitem>
+<para>
+Delete a <replaceable>directive</replaceable> line in
+<filename>gfarm2.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>unset-gfarm-conf</command>
+<parameter>directive</parameter>=<replaceable>name</replaceable>
+</term>
+<listitem>
+<para>
+Delete a <replaceable>directive</replaceable> line in
+<filename>gfmd.conf</filename> file.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-backend-db</command>
+</term>
+<listitem>
+<para>
+Backup a backend database and output the backup data to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfmd-conf</command>
+</term>
+<listitem>
+<para>
+Output <filename>gfmd.conf</filename> file to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-gfarm-conf</command>
+</term>
+<listitem>
+<para>
+Output <filename>gfarm2.conf</filename> file to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>backup-shared-key</command>
+</term>
+<listitem>
+<para>
+Output <filename>$HOME/.gfarm_shared_key</filename> file to standard out.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-backend-db</command>
+</term>
+<listitem>
+<para>
+Restore a backend database.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfmd-conf</command>
+</term>
+<listitem>
+<para>
+Restore <filename>gfmd.conf</filename> file.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-gfarm-conf</command>
+</term>
+<listitem>
+<para>
+Restore <filename>gfarm2.conf</filename> file.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>restore-shared-key</command>
+</term>
+<listitem>
+<para>
+Restore <filename>$HOME/.gfarm_shared_key</filename> file.
+The backup data are read from standard in.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>
+<command>gfcmd</command>
+<parameter>command-name</parameter>
+<parameter>command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+Execute a Gfarm command.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>

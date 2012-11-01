@@ -1,0 +1,350 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfservice.conf.5'>
+
+<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfservice.conf</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfservice.conf</refname>
+<refpurpose>gfservice の設定ファイル</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfservice</command> は、設定をファイルから読み込みます。
+(<command>gfservice-agent</command> は設定ファイルを読みません。)
+</para>
+
+<para>
+設定ファイルはそれ自体が、Bourne シェルスクリプトになっています。
+ファイルは、<command>gfservice</command> によって
+<emphasis>スクリプトとして評価されます。</emphasis>
+以下に、設定ファイルの記述例を示します。
+</para>
+
+<literallayout>
+	# gfmd サーバー
+	gfmd1=db1.example.com
+	gfmd2=db2.example.com
+</literallayout>
+
+<para>
+Bourne シェルと同様に、「#」で始まる行や空行は無視されます。
+それ以外の行では、シェル変数を宣言します。
+この例では、変数 <replaceable>gfmd1</replaceable> を
+<replaceable>db1.example.com</replaceable> という値にセットし、
+変数 <replaceable>gfmd2</replaceable> には
+<replaceable>db12.example.com</replaceable> という値をそれぞれセット
+しています。
+「=」の前後に空白文字を置くことはできないので、注意して下さい。
+</para>
+
+<para>
+変数 <replaceable>gfmd1</replaceable> と <replaceable>gfmd2</replaceable>
+は「ホスト ID」として使用します。
+<command>gfservice</command> では、ホストを指定する際にホスト名ではなく、
+ホスト IDを使用します。
+</para>
+
+<literallayout>
+	<command>gfservice <replaceable>start-gfmd</replaceable> <replaceable>gfmd2</replaceable></command>
+</literallayout>
+
+<para>
+上記のコマンドを実行すると、<command>gfservice</command> はサーバー
+<replaceable>gfmd2</replaceable> 、つまり metadb2.example.com 上の gfmd
+を起動します。
+ホスト ID の末尾の数は 1 から、連続して割り当てなくてはなりません。
+</para>
+
+<para>
+gfsd サーバーとクライアントホストを指定するには、ホスト ID 
+「gfs<replaceable>n</replaceable>」と「client<replaceable>n</replaceable>」
+をそれぞれ使用します。
+</para>
+
+<literallayout>
+	# gfsd サーバー
+	gfsd1=fs1.example.com
+
+	# クライアント
+	client1=pc1.example.com
+	client2=pc2.example.com
+	client3=pc2.example.com
+</literallayout>
+
+<para>
+ホスト ID 変数に加え、<command>gfservice</command> はホスト ID に関連する
+変数をいくつか認識します。
+</para>
+
+<literallayout>
+	# gfmd1 に関する設定
+	gfmd1_CONFIG_GFARM_OPTIONS="-X -A $LOGNAME"
+	gfmd1_SSH="ssh -i $HOME/.ssh/id_rsa_gfservice"
+	gfmd1_SUDO=/usr/local/bin/sudo
+</literallayout>
+
+<para>
+この例で示しているように、空白文字を含む値をセットするには、引用符を使用
+します。
+<varname>$VARNAME</varname> は、シェル変数もしくは環境変数 
+<varname>VARNAME</varname> の値に展開されます。
+</para>
+
+</refsect1>
+
+<refsect1 id='gfmd-variables'><title>VARABILES ABOUT GFMD</title>
+
+<para>
+変数「gfmd<replaceable>n</replaceable>」(gfmd1, gfmd2, ...) は、gfmd
+サーバーを定義するために用います。
+名前が「gfmd<replaceable>n</replaceable>_」で始まる変数 (たとえば
+<replaceable>gfmd1_SSH</replaceable>) は、対応する
+「gfmd<replaceable>n</replaceable>」サーバーの設定パラメタをセットするため
+に用います。
+<command>gfservice</command> が現在のところ認識する変数は、以下の通りです。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+gfmd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+gfmd サーバー上で <command>gfservice-agent</command> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <command>gfservice</command> は、
+「<command><varname>$gfmd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent</command>」を実行します。
+宣言されていない場合は、「<command>gfservice-agent</command>」を実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_CONFIG_GFARM_OPTIONS</varname></term>
+<listitem>
+<para>
+<command>config-gfarm</command> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
+<command>gfservice</command> は <command>config-gfarm</command> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+<command>config-gfarm</command> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+リモートホスト上の gfmd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<command>gfservice</command> が gfmd サーバーに接続するために
+SSH クライアントコマンドを実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Sudo コマンドのパスおよびオプションを指定します。
+<command>gfservice</command> が SSH を介して gfmd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='gfsd-variables'><title>VARABILES ABOUT GFSD</title>
+
+<para>
+変数「gfsd<replaceable>n</replaceable>」(gfsd1, gfsd2, ...) は、gfsd
+サーバーを定義するために用います。
+名前が「gfsd<replaceable>n</replaceable>_」で始まる変数 (たとえば
+<replaceable>gfsd1_SSH</replaceable>) は、対応する
+「gfsd<replaceable>n</replaceable>」サーバーの設定パラメタをセットするため
+に用います。
+<command>gfservice</command> が現在のところ認識する変数は、以下の通りです。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+gfsd サーバーを登録します。
+変数の値は、サーバーホストのホスト名 (もしくは IP アドレス) を表します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+gfsd サーバー上で <command>gfservice-agent</command> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <command>gfservice</command> は、
+「<command><varname>$gfsd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent</command>」を実行します。
+宣言されていない場合は、「<command>gfservice-agent</command>」を実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_CONFIG_GFSD_OPTIONS</varname></term>
+<listitem>
+<para>
+<command>config-gfsd</command> コマンドのオプションを指定します。
+デフォルト値は、空文字列 (オプションなし) です。
+<command>gfservice</command> は <command>config-gfsd</command> サブコマンド
+およびその他多くのサブコマンドを実行する際に、この変数を参照します。
+<command>config-gfsd</command> が完了した後であっても、この変数の宣言を
+削除したり、編集したりはしないで下さい。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+リモートホスト上の gfsd をプライベートモードで動作させる場合は、この
+変数に「true」をセットします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<command>gfservice</command> が gfsd サーバーに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Sudo コマンドのパスおよびオプションを指定します。
+<command>gfservice</command> が SSH を介して gfsd サーバー上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='client-variables'><title>VARABILES ABOUT CLIENT</title>
+
+<para>
+変数「client<replaceable>n</replaceable>」(client1, client2, ...) は、
+client サーバーを定義するために用います。
+名前が「client<replaceable>n</replaceable>_」で始まる変数 (たとえば
+<replaceable>client1_SSH</replaceable>) は、対応する
+「client<replaceable>n</replaceable>」サーバーの設定パラメタをセットする
+ために用います。
+<command>gfservice</command> が現在のところ認識する変数は、以下の通りです。
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+クライアントホストを登録します。
+変数の値は、クライアントホストのホスト名 (もしくは IP アドレス) を
+表します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+クライアントホスト上で <command>gfservice-agent</command> コマンドが
+インストールされているディレクトリへのパスを指定します。
+この変数が宣言されていると <command>gfservice</command> は、
+「<command><varname>$client<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent</command>」を実行します。
+宣言されていない場合は、「<command>gfservice-agent</command>」を実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+SSH クライアントコマンドのパスおよびオプションを指定します。
+<command>gfservice</command> がクライアントホストに接続するために
+SSH クライアントコマンド実行する際、この変数が利用されます。
+デフォルトは「ssh」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Sudo コマンドのパスおよびオプションを指定します。
+<command>gfservice</command> が SSH を介してクライアントホスト上で Sudo
+コマンドを実行する際、この変数が利用されます。
+デフォルトは「sudo」です。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>

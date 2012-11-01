@@ -1,0 +1,1270 @@
+#! /bin/sh
+#
+# gfservice-agent - Utility to operate Gfarm servers.
+#
+# Usage:
+#     gfservice-agent [-d] SUB-COMMAND [ARGUMENT...]
+#
+# This command is not designed to be executed directly by users.
+# It is invoked from 'gfservice' command.
+#
+
+# PATH
+PATH=@bindir@:/usr/bin:/bin
+
+# Program name.
+PROGRAM=gfservice-agent
+
+# Short hostname.
+PROGHOST=`hostname | sed -e 's/\..*$//'`
+
+# Debug flag.
+DEBUG=false
+
+# Shared secret key file.
+SHARED_KEY_FILE="$HOME/.gfarm_shared_key"
+
+#
+# Output a debug message.
+#
+log_debug()
+{
+	[ "X$DEBUG" != Xtrue ] && return
+	echo "$PROGRAM@$PROGHOST: debug: $@" 1>&2
+	return 0
+}
+
+#
+# Output a warning message.
+#
+log_warn()
+{
+	echo "$PROGRAM@$PROGHOST: warning: $@" 1>&2
+	return 0
+}
+
+#
+# Output an error message.
+#
+log_error()
+{
+	echo "$PROGRAM@$PROGHOST: error: $@" 1>&2
+	exit 1
+}
+
+#
+# Get an particular option in command line arguments.
+#
+get_param()
+{
+	log_debug "get_param: PARAMETER=$1"
+
+	I=0
+	while [ $I -lt $ARGC ]; do
+		eval "ARG=\$ARGV$I"
+		if expr "X$ARG" : "^X$1=.*\$" > /dev/null 2>&1; then
+			echo "X$ARG" | sed -e 's/^[^=]*=//'
+			log_debug "get_param: $1="`echo "X$ARG" \
+				| sed -e 's/^[^=]*=//'`
+			log_debug "end get_param"
+			return 0
+		fi
+		I=`expr $I + 1`
+	done
+
+	log_debug "get_param: $1="
+	log_debug "end get_param"
+	return 1
+}
+
+#
+# Set variables for gfmd operations.
+#
+set_gfmd_params()
+{
+	log_debug "set_gfmd_params"
+	CONFIG_GFARM_OPTIONS=`get_param config-gfarm-options || echo ''`
+
+	BACKEND_TYPE=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^BACKEND_TYPE=/s/^[^=]*=//p'`
+	if [ "X$BACKEND_TYPE" != Xpostgresql ]; then
+		log_error "backend type '$BACKEND_TYPE' unsupported"
+		exit 1
+	fi
+	log_debug "set_gfmd_params: set BACKEND_TYPE=$BACKEND_TYPE"
+
+	GFMD_RC=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^GFMD_RC=/s/^[^=]*=//p'`
+	[ "X$GFMD_RC" = X ] \
+		&& log_error "failed to get rc script for gfmd"
+	log_debug "set_gfmd_params: set GFMD_RC=$GFMD_RC"
+
+	BACKEND_RC=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^BACKEND_RC=/s/^[^=]*=//p'`
+	[ "X$BACKEND_RC" = X ] \
+		&& log_error "failed to get rc script for backend"
+	log_debug "set_gfmd_params: set BACKEND_RC=$BACKEND_RC"
+
+	GFMD_CONF=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^GFMD_CONF=/s/^[^=]*=//p'`
+	[ "X$GFMD_CONF" = X ] \
+		&& log_error "failed to get gfmd conf file"
+	log_debug "set_gfmd_params: set GFMD_CONF=$GFMD_CONF"
+
+	JOURNAL_DIR=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^METADATA_JOURNAL_DIR=/s/^[^=]*=//p'`
+	[ "X$GFMD_MODE" != Xsingle -a "X$JOURNAL_DIR" = X ] \
+		&& log_error "failed to get metadata journal directory"
+	log_debug "set_gfmd_params: set JOURNAL_DIR=$JOURNAL_DIR"
+
+	GFMD_PID_FILE=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^GFMD_PID_FILE=/s/^[^=]*=//p'`
+	[ "X$GFMD_PID_FILE" = X ] \
+		&& log_error "failed to get gfmd pid file"
+	log_debug "set_gfmd_params: set GFMD_PID_FILE=$GFMD_PID_FILE"
+
+	METADATA_DIR=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^BACKEND_DATA_DIR=/s/^[^=]*=//p'`
+	[ "X$METADATA_DIR" = X ] \
+		&& log_error "failed to get metadata directory"
+	log_debug "set_gfmd_params: set METADATA_DIR=$METADATA_DIR"
+
+	GFMD_PORT=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^GFMD_PORT=/s/^[^=]*=//p'`
+	[ "X$GFMD_PORT" = X ] \
+		&& log_error "failed to get gfmd port"
+	log_debug "set_gfmd_params: set GFMD_PORT=$GFMD_PORT"
+
+	GFARM_CONF=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
+	[ "X$GFARM_CONF" = X ] \
+		&& log_error "failed to get gfarm client conf file"
+	log_debug "set_gfmd_params: set GFARM_CONF=$GFARM_CONF"
+
+	BACKEND_HOSTNAME=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne '/^BACKEND_HOSTNAME=/s/^[^=]*=//p'`
+	[ "X$BACKEND_HOSTNAME" = X ] \
+		&& log_error "failed to get hostname"
+	log_debug "set_gfmd_params: set BACKEND_HOSTNAME=$BACKEND_HOSTNAME"
+
+	log_debug "end set_gfmd_params"
+	return 0
+}
+
+#
+# Set variables for gfsd operations.
+#
+set_gfsd_params()
+{
+	log_debug "set_gfsd_params"
+	CONFIG_GFSD_OPTIONS=`get_param config-gfsd-options || echo ''`
+
+	GFSD_RC=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^GFSD_RC=/s/^[^=]*=//p'`
+	[ "X$GFSD_RC" = X ] \
+		&& log_error "failed to get rc script name for gfsd"
+	log_debug "set_gfsd_params: set GFSD_RC=$GFSD_RC"
+
+	GFSD_PID_FILE=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^GFSD_PID_FILE=/s/^[^=]*=//p'`
+	[ "X$GFSD_PID_FILE" = X ] \
+		&& log_error "failed to get gfsd pid file"
+	log_debug "set_gfsd_params: set GFSD_PID_FILE=$GFSD_PID_FILE"
+
+	ARCH=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^ARCH=/s/^[^=]*=//p'`
+	[ "X$ARCH" = X ] \
+		&& log_error "failed to get architecture"
+	log_debug "set_gfsd_params: set ARCH=$ARCH"
+
+	SPOOL_DIR=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^SPOOL_DIRECTORY=/s/^[^=]*=//p'`
+	[ "X$SPOOL_DIR" = X ] \
+		&& log_error "failed to get spool directory"
+	log_debug "set_gfsd_params: set SPOOL_DIR=$SPOOL_DIR"
+
+	GFSD_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
+	[ "X$GFSD_CONF" = X ] \
+		&& log_error "failed to get gfarm client conf file"
+	log_debug "set_gfsd_params: set GFSD_CONF=$GFSD_CONF"
+
+	GFSD_HOSTNAME=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^GFSD_HOSTNAME=/s/^[^=]*=//p'`
+	[ "X$GFSD_HOSTNAME" = X ] \
+		&& log_error "failed to get hostname"
+	log_debug "set_gfsd_params: set GFSD_HOSTNAME=$GFHOSTNAME"
+
+	log_debug "end set_gfsd_params"
+	return 0
+}
+
+#
+# Set variables for client operations.
+#
+set_client_params()
+{
+	log_debug "set_client_params"
+
+	GFARM_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
+	[ "X$GFARM_CONF" = X ] \
+		&& log_error "failed to get gfarm client conf file"
+	log_debug "set_client_params: set GFARM_CONF=$GFARM_CONF"
+
+	log_debug "end set_client_params"
+	return 0
+}
+
+#
+# Set a directive of a configuration file.
+#
+set_conf()
+{
+	log_debug "set_conf: FILE=$1, DIRECTIVE=$2, VALUE=$3"
+
+	trap "rm -f $1.tmp; exit 1" 1 2 3 15
+	rm -f $1.tmp
+	(
+		sed -e "/^$2[ 	]/d" $1
+		echo
+		echo "$2 $3"
+	) > $1.tmp
+	[ $? -ne 0 ] && log_error "failed to create $1.tmp"
+	mv -f $1.tmp $1
+	[ $? -ne 0 ] && log_error "failed to replace $1"
+
+	log_debug "end set_conf"
+	return 0
+}
+
+#
+# Unset a directive of a configuration file.
+#
+unset_conf()
+{
+	log_debug "unset_conf: FILE=$1, DIRECTIVE=$2"
+
+	trap "rm -f $1.tmp; exit 1" 1 2 3 15
+	rm -f $1.tmp
+	sed -e "/^$2[ 	]/d" $1 > $1.tmp
+	[ $? -ne 0 ] && log_error "failed to create $1.tmp"
+	mv -f $1.tmp $1
+	[ $? -ne 0 ] && log_error "failed to replace $1"
+
+	log_debug "end unset_conf"
+	return 0
+}
+
+#
+# Examine if PostgreSQL is running.
+#   TO DO: Don't execute $BACKEND_RC.
+#
+get_pgsql_status()
+{
+	log_debug "get_pgsql_status"
+
+	$BACKEND_RC status > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		log_debug "end get_pgsql_status: return 0"
+		return 0
+	else
+		log_debug "end get_pgsql_status: return 1"
+		return 1
+	fi
+}
+
+#
+# Examine if gfmd is running.
+#   TO DO: Don't execute $GFMD_RC.
+#
+get_gfmd_status()
+{
+	log_debug "get_gfmd_status"
+
+	$GFMD_RC status > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		log_debug "end get_gfmd_status: return 0"
+		return 0
+	else
+		log_debug "end get_gfmd_status: return 1"
+		return 1
+	fi
+}
+
+#
+# Examine if gfsd is running.
+#   TO DO: Don't execute $GFSD_RC.
+#
+get_gfsd_status()
+{
+	log_debug "get_gfsd_status"
+
+	$GFSD_RC status > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		log_debug "end get_gfsd_status: return 0"
+		return 0
+	else
+		log_debug "end get_gfsd_status: return 1"
+		return 1
+	fi
+}
+
+#
+# Start PostgreSQL.
+#   TO DO: Don't execute $BACKEND_RC.  Use service_ctl instead.
+#
+start_pgsql()
+{
+	log_debug "start_pgsql: TIMEOUT=$1"
+
+	I=0
+	STARTED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$BACKEND_RC status > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			STARTED=true
+			break
+		fi
+		[ $I -eq 0 ] && $BACKEND_RC start > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STARTED != true ] && log_error "failed to start PostgreSQL"
+	log_debug "end start_pgsql"
+	return 0
+}
+
+#
+# Start gfmd.
+#   TO DO: Don't execute $GFMD_RC.  Use service_ctl instead.
+#
+start_gfmd()
+{
+	log_debug "start_gfmd: TIMEOUT=$1"
+
+	I=0
+	STARTED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFMD_RC status > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			STARTED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFMD_RC start > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STARTED != true ] && log_error "failed to start gfmd"
+	log_debug "end start_gfmd"
+	return 0
+}
+
+#
+# Start gfsd.
+#   TO DO: Don't execute $GFSD_RC.  Use service_ctl instead.
+#
+start_gfsd()
+{
+	log_debug "start_gfsd: TIMEOUT=$1"
+
+	I=0
+	STARTED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFSD_RC status > /dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			STARTED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFSD_RC start > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STARTED != true ] && log_error "failed to start gfsd"
+	log_debug "end start_gfsd"
+	return 0
+}
+
+#
+# Stop PostgreSQL.
+#   TO DO: Don't execute $BACKEND_RC.  Use service_ctl instead.
+#
+stop_pgsql()
+{
+	log_debug "stop_pgsql: TIMEOUT=$1"
+
+	I=0
+	STOPPED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$BACKEND_RC status > /dev/null 2>&1
+		if [ $? -eq 3 -o $? -eq 127 ]; then
+			STOPPED=true
+			break
+		fi
+		[ $I -eq 0 ] && $BACKEND_RC stop > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STOPPED != true ] && log_error "failed to stop PostgreSQL"
+	log_debug "end stop_pgsql"
+	return 0
+}
+
+#
+# Stop gfmd.
+#   TO DO: Don't execute $GFMD_RC.  Use service_ctl instead.
+#
+stop_gfmd()
+{
+	log_debug "stop_gfmd: TIMEOUT=$1"
+
+	I=0
+	STOPPED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFMD_RC status > /dev/null 2>&1
+		if [ $? -eq 3 -o $? -eq 127 ]; then
+			STOPPED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFMD_RC stop > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STOPPED != true ] && log_error "failed to stop gfmd"
+	log_debug "end stop_gfmd"
+	return 0
+}
+
+#
+# Stop gfsd.
+#   TO DO: Don't execute $GFSD_RC.  Use service_ctl instead.
+#
+stop_gfsd()
+{
+	log_debug "stop_gfsd: TIMEOUT=$1"
+
+	I=0
+	STOPPED=false
+	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
+		$GFSD_RC status > /dev/null 2>&1
+		if [ $? -eq 3 -o $? -eq 127 ]; then
+			STOPPED=true
+			break
+		fi
+		[ $I -eq 0 ] && $GFSD_RC stop > /dev/null 2>&1
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	[ $STOPPED != true ] && log_error "failed to stop gfsd"
+	log_debug "end stop_gfsd"
+	return 0
+}
+
+######################################################################
+
+#
+# Sub-command: get-config-gfarm-param
+# Output result of 'config-gfarm -T'.
+#
+subcmd_get_config_gfarm_param()
+{
+	log_debug "subcmd_get_config_gfarm_param"
+
+	set_gfmd_params
+	PARAM=`get_param param` || {
+		log_error "missing mandatory argument 'param'"
+	}
+	config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"
+	log_debug "subcmd_get_config_gfarm_param: param=$PARAM," \
+	"value="`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
+
+	log_debug "end subcmd_get_config_gfarm_param"
+}
+
+#
+# Sub-command: get-config-gfsd-param
+# Output result of 'config-gfsd -T'.
+#
+subcmd_get_config_gfsd_param()
+{
+	log_debug "subcmd_get_config_gfsd_param"
+
+	set_gfsd_params
+	PARAM=`get_param param` || {
+		log_error "missing mandatory argument 'param'"
+	}
+	log_debug "subcmd_get_config_gfsd_param: param=$PARAM"
+	config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"
+	log_debug "subcmd_get_config_gfsd_param: param=$PARAM," \
+	"value="`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+		| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
+
+	log_debug "end subcmd_get_config_gfsd_param"
+}
+
+#
+# Sub-command: backend-db-status
+# Examine if backend-db is running.
+#
+subcmd_backend_db_status()
+{
+	log_debug "subcmd_backend_db_status"
+
+	set_gfmd_params
+	if get_pgsql_status; then
+		echo "backend-db is running"
+		RESULT=0
+	else
+		echo "backend-db is not running"
+		RESULT=1
+	fi
+		
+	log_debug "end subcmd_backend_db_status: returns $RESULT"
+	return $RESULT
+}
+
+#
+# Sub-command: gfmd-status
+# Examine if gfmd is running.
+#
+subcmd_gfmd_status()
+{
+	log_debug "subcmd_gfmd_status"
+
+	set_gfmd_params
+	if get_gfmd_status; then
+		echo "gfmd is running"
+		RESULT=0
+	else
+		echo "gfmd is not running"
+		RESULT=1
+	fi
+		
+	log_debug "end subcmd_gfmd_status: returns $RESULT"
+	return $RESULT
+}
+
+#
+# Sub-command: gfsd-status
+# Examine if gfmd is running.
+#
+subcmd_gfsd_status()
+{
+	log_debug "subcmd_gfsd_status"
+
+	set_gfsd_params
+	if get_gfsd_status; then
+		echo "gfsd is running"
+		RESULT=0
+	else
+		echo "gfsd is not running"
+		RESULT=1
+	fi
+
+	log_debug "end subcmd_gfsd_status: returns $RESULT"
+	return $RESULT
+}
+
+#
+# Sub-command: start-backend_db
+# Start PostgreSQL.
+#
+subcmd_start_backend_db()
+{
+	log_debug "subcmd_start_backend_db"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_start_backend_db: timeout=$TIMEOUT"
+	start_pgsql $TIMEOUT
+
+	log_debug "end subcmd_start_backend_db"
+}
+
+#
+# Sub-command: start-gfmd
+# Start gfmd.
+#
+subcmd_start_gfmd()
+{
+	log_debug "subcmd_start_gfmd"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_start_gfmd: timeout=$TIMEOUT"
+	start_gfmd $TIMEOUT
+
+	log_debug "subcmd_start_gfmd"
+}
+
+#
+# Sub-command: start-gfmd-master
+# Start gfmd as a master.
+#
+subcmd_start_gfmd_master()
+{
+	log_debug "subcmd_start_gfmd_master"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_start_gfmd_master: timeout=$TIMEOUT"
+	unset_conf $GFMD_CONF metadb_server_force_slave
+	start_gfmd $TIMEOUT
+
+	log_debug "end subcmd_start_gfmd_master"
+}
+
+#
+# Sub-command: start-gfmd-slave
+# Start gfmd as a slave.
+#
+subcmd_start_gfmd_slave()
+{
+	log_debug "subcmd_start_gfmd_slave"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_start_gfmd_slave: timeout=$TIMEOUT"
+	set_conf $GFMD_CONF metadb_server_force_slave enable
+	start_gfmd $TIMEOUT
+
+	log_debug "end subcmd_start_gfmd_slave"
+}
+
+#
+# Sub-command: start-gfsd
+# Start gfsd.
+#
+subcmd_start_gfsd()
+{
+	log_debug "subcmd_start_gfsd"
+
+	set_gfsd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_start_gfsd: timeout=$TIMEOUT"
+	start_gfsd $TIMEOUT
+
+	log_debug "end subcmd_start_gfsd"
+}
+
+#
+# Sub-command: stop-backend-db
+# Stop PostgreSQL.
+#
+subcmd_stop_backend_db()
+{
+	log_debug "subcmd_stop_backend_db"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_stop_backend_db: timeout=$TIMEOUT"
+	stop_pgsql $TIMEOUT
+
+	log_debug "end subcmd_stop_backend_db"
+}
+
+#
+# Sub-command: stop-gfmd
+# Stop gfmd.
+#
+subcmd_stop_gfmd()
+{
+	log_debug "subcmd_stop_gfmd"
+
+	set_gfmd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_stop_gfmd: timeout=$TIMEOUT"
+	stop_gfmd $TIMEOUT
+
+	log_debug "end subcmd_stop_gfmd"
+}
+
+#
+# Sub-command: stop-gfsd
+# Stop gfsd.
+#
+subcmd_stop_gfsd()
+{
+	log_debug "subcmd_stop_gfsd"
+
+	set_gfsd_params
+	TIMEOUT=`get_param timeout || echo 'no'`
+	log_debug "subcmd_stop_gfsd: timeout=$TIMEOUT"
+	stop_gfsd $TIMEOUT
+
+	log_debug "end subcmd_stop_gfsd"
+}
+
+#
+# Sub-command: config-gfarm
+# Configure gfarm (gfmd + gfarm-pgsql).
+#
+subcmd_config_gfarm()
+{
+	log_debug "subcmd_config_gfarm"
+
+	set_gfmd_params
+	log_debug "subcmd_config_gfarm:" \
+		"execute config-gfarm $CONFIG_GFARM_OPTIONS"
+	config-gfarm $CONFIG_GFARM_OPTIONS
+	[ $? -ne 0 ] && log_error "config-gfarm failed"
+
+	log_debug "end subcmd_config_gfarm"
+}
+
+#
+# Sub-command: config-gfarm-master
+# Configure gfarm (gfmd + gfarm-pgsql) with replication support.
+#
+subcmd_config_gfarm_master()
+{
+	log_debug "subcmd_config_gfarm_master"
+
+	set_gfmd_params
+	log_debug "subcmd_config_gfarm_master:" \
+		"execute config-gfarm -r $CONFIG_GFARM_OPTIONS"
+	config-gfarm -r $CONFIG_GFARM_OPTIONS
+	[ $? -ne 0 ] && log_error "config-gfarm failed"
+
+	unset_conf $GFMD_CONF metadb_server_force_slave
+	set_conf $GFARM_CONF metadb_server_list \
+		"${BACKEND_HOSTNAME}:${GFMD_PORT}"
+
+	log_debug "end subcmd_config_gfarm_master"
+}
+
+#
+# Sub-command: config-gfsd
+# Configure gfsd.
+#
+subcmd_config_gfsd()
+{
+	log_debug "subcmd_config_gfsd"
+
+	set_gfsd_params
+	log_debug "subcmd_config_gfsd:" \
+		"execute config-gfsd $CONFIG_GFSD_OPTIONS"
+	config-gfsd $CONFIG_GFSD_OPTIONS
+	[ $? -ne 0 ] && log_error "config-gfsd failed"
+
+	log_debug "end subcmd_config_gfsd"
+}
+
+#
+# Sub-command: unconfig-gfarm
+# Unconfigure gfarm (gfmd + gfarm-pgsql).
+#
+subcmd_unconfig_gfarm()
+{
+	log_debug "subcmd_unconfig_gfarm"
+
+	set_gfmd_params
+	stop_gfmd no
+	stop_pgsql no
+	rm -f /var/run/gfmd.pid
+	rm -f $GFARM_CONF
+	rm -f $GFMD_CONF
+	rm -f $GFMD_RC
+	rm -f $BACKEND_RC
+	rm -f -r $METADATA_DIR
+	rm -f -r $JOURNAL_DIR
+
+	log_debug "end subcmd_unconfig_gfarm"
+}
+
+#
+# Sub-command: unconfig-gfsd
+# Unconfigure gfsd.
+#
+subcmd_unconfig_gfsd()
+{
+	log_debug "subcmd_unconfig_gfsd"
+
+	set_gfsd_params
+	stop_gfsd no
+	rm -f /var/run/gfsd.pid
+	rm -f $GFARM_CONF
+	rm -f $GFSD_RC
+	rm -f -r $SPOOL_DIR
+
+	log_debug "end subcmd_unconfig_gfsd"
+}
+
+#
+# Sub-command: unconfig-client
+# Unconfigure client host.
+#
+subcmd_unconfig_client()
+{
+	log_debug "subcmd_unconfig_client"
+
+	set_client_params
+	rm -f $GFARM_CONF
+	rm -f $SHARED_KEY_FILE
+
+	log_debug "end subcmd_unconfig_client"
+}
+
+#
+# Sub-command: promote (alias: promote-gfmd)
+# Promote the slave gfmd to master.
+#
+subcmd_promote()
+{
+	log_debug "subcmd_promote"
+
+	set_gfmd_params
+	unset_conf $GFMD_CONF metadb_server_force_slave
+	PID=`head -1 $GFMD_PID_FILE`
+	[ $? -ne 0 -o "X$PID" = X ] \
+		&& log_error "failed to get PID of gfmd from the PID file"
+	kill -USR1 $PID
+
+	log_debug "end subcmd_promote"
+}
+
+#
+# Sub-command: mount
+# Mount a Gfarm2 file system.
+#
+subcmd_mount()
+{
+	log_debug "subcmd_mount"
+
+	DIRECTORY=`get_param directory` || {
+		log_error "missing mandatory argument 'directory'"
+	}
+	log_debug "subcmd_mount: directory=$DIRECTORY"
+	OPTIONS=`get_param options || echo ''`
+	log_debug "subcmd_mount: options=$OPTIONS"
+	gfarm2fs $DIRECTORY $OPTIONS
+	[ $? -ne 0 ] && log_error "failed to mount Gfarm2 filesystem"
+
+	log_debug "end subcmd_mount"
+}
+
+#
+# Sub-command: unmount (alias: umount)
+# Unmount a Gfarm2 file system.
+#
+subcmd_unmount()
+{
+	log_debug "subcmd_unmount"
+
+	DIRECTORY=`get_param directory` || {
+		log_error "missing mandatory argument 'directory'"
+	}
+	log_debug "subcmd_unmount: directory=$DIRECTORY"
+	fusermount -u $DIRECTORY
+	[ $? -ne 0 ] && log_error "failed to unmount Gfarm2 filesystem"
+
+	log_debug "end subcmd_unmount"
+}
+
+#
+# Sub-command: set-gfmd-conf
+# Set a configuration parameter of 'gfmd.conf'.
+#
+subcmd_set_gfmd_conf()
+{
+	log_debug "subcmd_set_gfmd_conf"
+
+	set_gfmd_params
+	DIRECTIVE=`get_param directive` || {
+		log_error "missing mandatory argument 'directive'"
+	}
+	log_debug "subcmd_set_gfmd_conf: directive=$DIRECTIVE"
+	VALUE=`get_param value` || {
+		log_error "missing mandatory argument 'value'"
+	}
+	log_debug "subcmd_set_gfmd_conf: value=$VALUE"
+	set_conf $GFMD_CONF $DIRECTIVE $VALUE
+
+	log_debug "end subcmd_set_gfmd_conf"
+}
+
+#
+# Sub-command: set-gfarm-conf
+# Set a configuration parameter of 'gfarm2.conf'.
+#
+subcmd_set_gfarm_conf()
+{
+	log_debug "subcmd_set_gfarm_conf"
+
+	set_client_params
+	DIRECTIVE=`get_param directive` || {
+		log_error "missing mandatory argument 'directive'"
+	}
+	VALUE=`get_param value` || {
+		log_error "missing mandatory argument 'value'"
+	}
+	log_debug "subcmd_set_gfarm_conf: directive=$DIRECTIVE, value=$VALUE"
+	set_conf $GFARM_CONF $DIRECTIVE $VALUE
+
+	log_debug "end subcmd_set_gfarm_conf"
+}
+
+#
+# Sub-command: unset-gfmd-conf
+# Unset a configuration parameter of 'gfmd.conf'.
+#
+subcmd_unset_gfmd_conf()
+{
+	log_debug "subcmd_unset_gfmd_conf"
+
+	set_gfmd_params
+	DIRECTIVE=`get_param directive` || {
+		log_error "missing mandatory argument 'directive'"
+	}
+	log_debug "subcmd_unset_gfmd_conf: directive=$DIRECTIVE"
+	unset_conf $GFMD_CONF $DIRECTIVE
+
+	log_debug "end subcmd_unset_gfmd_conf"
+}
+
+#
+# Sub-command: unset-gfarm-conf
+# unset a configuration parameter of 'gfarm2.conf'.
+#
+subcmd_unset_gfarm_conf()
+{
+	log_debug "subcmd_unset_gfarm_conf"
+
+	set_client_params
+	DIRECTIVE=`get_param directive` || {
+		log_error "missing mandatory argument 'directive'"
+	}
+	log_debug "subcmd_unset_gfarm_conf: directive=$DIRECTIVE"
+
+	unset_conf $GFARM_CONF $DIRECTIVE
+
+	log_debug "end subcmd_unset_gfarm_conf"
+}
+
+#
+# Sub-command: backup-gfmd-conf
+# Export 'gfmd.conf' to standard out.
+#
+subcmd_backup_gfmd_conf()
+{
+	log_debug "subcmd_backup_gfmd_conf"
+
+	set_gfmd_params
+	cat $GFMD_CONF
+	[ $? -ne 0 ] && log_error "failed to backup $GFMD_CONF"
+
+	log_debug "end subcmd_backup_gfmd_conf"
+}
+
+#
+# Sub-command: backup-gfarm-conf
+# Export 'gfarm2.conf' to standard out.
+#
+subcmd_backup_gfarm_conf()
+{
+	log_debug "subcmd_backup_gfarm_conf"
+
+	set_client_params
+	cat $GFARM_CONF
+	[ $? -ne 0 ] && log_error "failed to backup $GFARM_CONF"
+
+	log_debug "end subcmd_backup_gfarm_conf"
+}
+
+#
+# Sub-command: backup-shared-key
+# Export '.gfarm_shared_key' to standard out.
+#
+subcmd_backup_shared_key()
+{
+	log_debug "subcmd_backup_shared_key"
+
+	set_client_params
+	cat $SHARED_KEY_FILE
+	[ $? -ne 0 ] && log_error "failed to backup $SHARED_KEY_FILE"
+
+	log_debug "end subcmd_backup_shared_key"
+}
+
+#
+# Sub-command: backup-backend-db
+# Dump PostgreSQL database to standard out.
+#
+subcmd_backup_backend_db()
+{
+	log_debug "subcmd_backup_backend_db"
+
+	set_gfmd_params
+	gfdump.postgresql -d -f -
+	[ $? -ne 0 ] && log_error "failed to dump database"
+
+	log_debug "end subcmd_backup_backend_db"
+}
+
+#
+# Sub-command: restore-gfmd-conf
+# Import 'gfmd.conf' from standard in.
+#
+subcmd_restore_gfmd_conf()
+{
+	log_debug "subcmd_restore_gfmd_conf"
+
+	set_gfmd_params
+	trap "rm -f $GFMD_CONF.tmp; exit 1" 1 2 3 15
+	rm -f $GFMD_CONF.tmp
+	cat > $GFMD_CONF.tmp && mv -f $GFMD_CONF.tmp $GFMD_CONF
+	[ $? -ne 0 ] && log_error "failed to replace $GFMD_CONF"
+	rm -f $GFMD_CONF.tmp
+
+	log_debug "end subcmd_restore_gfmd_conf"
+}
+
+#
+# Sub-command: restore-gfarm-conf
+# Import 'gfarm2.conf' from standard in.
+#
+subcmd_restore_gfarm_conf()
+{
+	log_debug "subcmd_restore_gfarm_conf"
+
+	set_client_params
+	trap "rm -f $GFARM_CONF.tmp; exit 1" 1 2 3 15
+	rm -f $GFARM_CONF.tmp
+	cat > $GFARM_CONF.tmp && mv -f $GFARM_CONF.tmp $GFARM_CONF
+	[ $? -ne 0 ] && log_error "failed to replace $GFARM_CONF"
+	rm -f $GFMD_CONF.tmp
+
+	log_debug "end subcmd_restore_gfarm_conf"
+}
+
+#
+# Sub-command: restore-shared-key
+# Import '.gfarm_shared_key' from standard in.
+#
+subcmd_restore_shared_key()
+{
+	log_debug "subcmd_restore_shared_key"
+
+	set_client_params
+	trap "rm -f $SHARED_KEY_FILE.tmp; exit 1" 1 2 3 15
+	rm -f $SHARED_KEY_FILE.tmp
+	cat > $SHARED_KEY_FILE.tmp \
+		&& chmod 0600 $SHARED_KEY_FILE.tmp \
+		&& mv -f $SHARED_KEY_FILE.tmp $SHARED_KEY_FILE
+	[ $? -ne 0 ] && log_error "failed to replace $SHARED_KEY_FILE"
+	rm -f $SHARED_KEY_FILE.tmp
+
+	log_debug "end subcmd_restore_shared_key"
+}
+
+#
+# Sub-command: restore-backend-db
+# Import PostgreSQL database from standard in.
+#
+subcmd_restore_backend_db()
+{
+	log_debug "subcmd_restore_backend_db"
+
+	set_gfmd_params
+	gfdump.postgresql -r -n -f -
+	[ $? -ne 0 ] && log_error "failed to restore database"
+
+	log_debug "end subcmd_restore_backend_db"
+}
+
+#
+# Sub-command: gfcmd
+# Exec gf* command.
+#
+subcmd_gfcmd()
+{
+	log_debug "subcmd_gfcmd"
+
+	[ $# -eq 0 ] && log_error "missing command name for 'gfcmd'"
+	GFCMD="$1"
+	shift
+	expr "X$GFCMD" : '^Xgf[a-z0-9._-]*$' > /dev/null 2>&1 || {
+		log_error "invalid command name: '$GFCMD'"
+	}
+	log_debug "subcmd_gfcmd: execute @bindir@/$GFCMD $@"
+	"@bindir@/$GFCMD" "$@"|| log_error "failed to execute $GFCMD"
+
+	log_debug "end subcmd_gfcmd"
+}
+
+######################################################################
+
+#
+# Parse command line arguments.
+#
+OPT=
+while true; do
+	if [ "X$OPT" = X ]; then
+		[ $# -eq 0 ] && break
+		case "$1" in
+		--)	shift
+			break
+			;;
+		-)	break
+			;;
+		-*)	OPT="$1"
+			shift
+			;;
+		*)	break
+			;;
+		esac
+	fi
+	while [ "X$OPT" != X ]; do
+		case "$OPT" in
+		-d)	DEBUG=true
+			OPT=
+			;;
+		-d*)	DEBUG=true
+			OPT=`echo "X$OPT" | sed -e 's/^X-./-/'`
+			;;
+		*)	BAD_OPT=`echo "X$OPT" | sed -e 's/^X-\(.\).*$/\1/'`
+			echo "$0@$PROGHOST: invalid option -- '$BAD_OPT'" 1>&2
+			exit 1
+			;;
+		esac
+	done
+done
+
+if [ $# -eq 0 ]; then
+	echo "$0@$PROGHOST: missing sub-command" 1>&2
+	exit 1
+fi
+SUBCMD="$1"
+log_debug "main: set SUBCMD=$SUBCMD"
+shift
+
+ARGC=0
+for I in "$@"; do
+	eval "ARGV$ARGC=\$I"
+	log_debug "main: set ARGV$ARGC=$I"
+	ARGC=`expr $ARGC + 1`
+done
+
+#
+# Perform the sub-command $SUBCMD.
+#
+case "$SUBCMD" in
+get-config-gfarm-param)
+	subcmd_get_config_gfarm_param
+	;;
+get-config-gfsd-param)
+	subcmd_get_config_gfsd_param
+	;;
+backend-db-status)
+	subcmd_backend_db_status || exit 1
+	;;
+gfmd-status)
+	subcmd_gfmd_status || exit 1
+	;;
+gfsd-status)
+	subcmd_gfsd_status || exit 1
+	;;
+start-backend-db)
+	subcmd_start_backend_db
+	;;
+start-gfmd)
+	subcmd_start_gfmd
+	;;
+start-gfmd-master)
+	subcmd_start_gfmd_master
+	;;
+start-gfmd-slave)
+	subcmd_start_gfmd_slave
+	;;
+start-gfsd)
+	subcmd_start_gfsd
+	;;
+stop-backend-db)
+	subcmd_stop_backend_db
+	;;
+stop-gfmd)
+	subcmd_stop_gfmd
+	;;
+stop-gfsd)
+	subcmd_stop_gfsd
+	;;
+config-gfarm)
+	subcmd_config_gfarm
+	;;
+config-gfarm-master)
+	subcmd_config_gfarm_master
+	;;
+config-gfsd)
+	subcmd_config_gfsd
+	;;
+unconfig-gfarm)
+	subcmd_unconfig_gfarm
+	;;
+unconfig-gfsd)
+	subcmd_unconfig_gfsd
+	;;
+unconfig-client)
+	subcmd_unconfig_client
+	;;
+promote|promote-gfmd)
+	subcmd_promote
+	;;
+mount)	subcmd_mount
+	;;
+unmount|umount)
+	subcmd_unmount
+	;;
+set-gfmd-conf)
+	subcmd_set_gfmd_conf
+	;;
+set-gfarm-conf)
+	subcmd_set_gfarm_conf
+	;;
+unset-gfmd-conf)
+	subcmd_unset_gfmd_conf
+	;;
+unset-gfarm-conf)
+	subcmd_unset_gfarm_conf
+	;;
+backup-gfmd-conf)
+	subcmd_backup_gfmd_conf
+	;;
+backup-gfarm-conf)
+	subcmd_backup_gfarm_conf
+	;;
+backup-shared-key)
+	subcmd_backup_shared_key
+	;;
+backup-backend-db)
+	subcmd_backup_backend_db
+	;;
+restore-gfmd-conf)
+	subcmd_restore_gfmd_conf
+	;;
+restore-gfarm-conf)
+	subcmd_restore_gfarm_conf
+	;;
+restore-shared-key)
+	subcmd_restore_shared_key
+	;;
+restore-backend-db)
+	subcmd_restore_backend_db
+	;;
+gfcmd)
+	subcmd_gfcmd "$@"
+	;;
+*)	echo "$0@$PROGHOST: invalid sub-command: $SUBCMD" 1>&2
+	exit 1
+	;;
+esac
+
+exit 0

@@ -1,0 +1,347 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfservice.conf.5'>
+
+<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfservice.conf</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfservice.conf</refname>
+<refpurpose>configuration file of gfservice</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfservice</command> reads configuration data from the file.
+(<command>gfservice-agent</command> doesn't read a configuration file.)
+</para>
+
+<para>
+The configuration file itself is a Bourne-shell script.
+It is <emphasis>evaluated as a script</emphasis> by
+<command>gfservice</command>.
+Here is an example of the configuration file:
+</para>
+
+<literallayout>
+	# gfmd entries.
+	gfmd1=db1.example.com
+	gfmd2=db2.example.com
+</literallayout>
+
+<para>
+Same as Bourne-shell script, lines beginning with '#' and empty lines
+are ignored.
+The other lines declare shell variables.
+In this example, the variable <replaceable>gfmd1</replaceable> is set to
+<replaceable>db1.example.com</replaceable> and
+<replaceable>gfmd2</replaceable> to
+<replaceable>db12.example.com</replaceable> respectively.
+Whitespaces <emphasis>must not</emphasis> be inserted around '='.
+</para>
+
+<para>
+The variables named <replaceable>gfmd1</replaceable> and
+<replaceable>gfmd2</replaceable> are used as "host-id".
+To specify a remote host, <command>gfservice</command> uses host-id
+instead of hostname:
+</para>
+
+<literallayout>
+	<command>gfservice <replaceable>start-gfmd</replaceable> <replaceable>gfmd2</replaceable></command>
+</literallayout>
+
+<para>
+Executing the command, <command>gfservice</command> starts gfmd on
+<replaceable>gfmd2</replaceable> server, metadb2.example.com.
+Note that the numbers at the tails of host-ids must be beginning with 1
+and must be assigned successively.
+</para>
+
+<para>
+For specifying gfsd servers and client hosts, use host-ids
+"gfs<replaceable>n</replaceable>" and "client<replaceable>n</replaceable>"
+respectively:
+</para>
+
+<literallayout>
+	# gfsd entries.
+	gfsd1=fs1.example.com
+
+	# client entries
+	client1=pc1.example.com
+	client2=pc2.example.com
+	client3=pc2.example.com
+</literallayout>
+
+<para>
+In addition with host-id variables, <command>gfservice</command> recognizes
+some variables related to host-id.
+</para>
+
+<literallayout>
+	# Configuration about gfmd1.
+	gfmd1_CONFIG_GFARM_OPTIONS="-X -A $LOGNAME"
+	gfmd1_SSH="ssh -i $HOME/.ssh/id_rsa_gfservice"
+	gfmd1_SUDO=/usr/local/bin/sudo
+</literallayout>
+
+<para>
+As shown in this example, a value containing whitespaces can be set
+by quotation marks.
+<varname>$VARNAME</varname> is expanded to the value of the shell or
+environment variable <varname>VARNAME</varname>.
+</para>
+
+</refsect1>
+
+<refsect1 id='gfmd-variables'><title>VARABILES ABOUT GFMD</title>
+
+<para>
+Variables named "gfmd<replaceable>n</replaceable>" (gfmd1, gfmd2, ...)
+define gfmd servers.
+Variable names beginning with "gfmd<replaceable>n</replaceable>_"  such
+as <replaceable>gfmd1_SSH</replaceable> set configuration parameters of
+the corresponding "gfmd<replaceable>n</replaceable>" server.
+<command>gfservice</command> currently the following variables:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+Register a gfmd server.
+Its value represents a hostname (or an IP address) of the server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+Specify a path to a directory where <command>gfservice-agent</command>
+command is installed on the gfmd server.
+If the variable is declared, <command>gfservice</command> executes
+<command>"<varname>$gfmd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command>"gfservice-agent"</command>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_CONFIG_GFARM_OPTIONS</varname></term>
+<listitem>
+<para>
+Specify options of <command>config-gfarm</command> command.
+The default value is empty (no option).
+<command>gfservice</command> refers this variable to perform
+<command>config-gfarm</command> and many other sub-commands.
+Do not delete or edit the declaration even after
+<command>config-gfarm</command> has been complete.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+Set this variable to "true" if gfmd on the remote host is configured
+in private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+Specify a path to an SSH client command and its options.
+The variable is used when <command>gfservice</command> executes an SSH
+client command to connect with the gfsd server.
+The default value is "ssh".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfmd<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Specify a path to a Sudo command and options.
+The variable is used when <command>gfservice</command> executes a Sudo
+command on the gfsd server via SSH.
+The default value is "sudo".
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='gfsd-variables'><title>VARABILES ABOUT GFSD</title>
+
+<para>
+Variables named "gfsd<replaceable>n</replaceable>" (gfsd1, gfsd2, ...)
+define gfsd servers.
+Variable names beginning with "gfsd<replaceable>n</replaceable>_" such as
+<replaceable>gfsd1_SSH</replaceable> set configuration parameters of the
+corresponding "gfsd<replaceable>n</replaceable>" server.
+<command>gfservice</command> currently recognizes the following variables:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+Register a gfsd server.
+Its value represents a hostname (or an IP address) of the server.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+Specify a path to a directory where <command>gfservice-agent</command>
+command is installed on the gfsd server.
+If the variable is declared, <command>gfservice</command> executes
+<command>"<varname>$gfsd<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command>"gfservice-agent"</command>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_CONFIG_GFSD_OPTIONS</varname></term>
+<listitem>
+<para>
+Specify options of <command>config-gfsd</command> command.
+The default value is empty (no option).
+<command>gfservice</command> refers this variable to perform
+<command>config-gfsd</command> and many other sub-commands.
+Do not delete or edit the declaration even after
+<command>config-gfsd</command> has been complete.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_PRIVATE_MODE</varname></term>
+<listitem>
+<para>
+Set this variable to "true" if gfsd on the remote host is configured
+in private mode.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+Specify a path to an SSH client command and its options.
+The variable is used when <command>gfservice</command> executes an SSH
+client command to connect with the gfsd server.
+The default value is "ssh".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>gfsd<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Specify a path to a Sudo command and options.
+The variable is used when <command>gfservice</command> executes a Sudo
+command on the gfsd server via SSH.
+The default value is "sudo".
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+<refsect1 id='client-variables'><title>VARABILES ABOUT CLIENT</title>
+
+<para>
+Variables named "client<replaceable>n</replaceable>" (client1, client2, ...)
+define client hosts.
+Their values are hostnames (or IP addresses).
+Variable names beginning with "client<replaceable>n</replaceable>_" 
+such as <replaceable>client1_SUDO</replaceable> set configuration parameters
+of the corresponding "client<replaceable>n</replaceable>" host.
+<command>gfservice</command> currently recognizes the following variables:
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable></varname></term>
+<listitem>
+<para>
+Register a client host.
+Its value represents a hostname (or an IP address) of the host.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_GFBINDIR</varname></term>
+<listitem>
+<para>
+Specify a path to a directory where <command>gfservice-agent</command>
+command is installed on the client host.
+If the variable is declared, <command>gfservice</command> executes
+<command>"<varname>$client<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent"</command>.
+Otherwise it executes <command>"gfservice-agent"</command>.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_SSH</varname></term>
+<listitem>
+<para>
+Specify a path to an SSH client command and its options.
+The variable is used when <command>gfservice</command> executes an SSH
+client command to connect with the client host.
+The default value is "ssh".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_SUDO</varname></term>
+<listitem>
+<para>
+Specify a path to a Sudo command and options.
+The variable is used when <command>gfservice</command> executes a Sudo
+command on the client host via SSH.
+The default value is "sudo".
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>
