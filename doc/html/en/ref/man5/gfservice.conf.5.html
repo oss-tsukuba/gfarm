@@ -1,0 +1,696 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfservice.conf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFSERVICE.CONF.5"
+></A
+>gfservice.conf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfservice.conf&nbsp;--&nbsp;configuration file of gfservice</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+> reads configuration data from the file.
+(<B
+CLASS="COMMAND"
+>gfservice-agent</B
+> doesn't read a configuration file.)</P
+><P
+>The configuration file itself is a Bourne-shell script.
+It is <I
+CLASS="EMPHASIS"
+>evaluated as a script</I
+> by
+<B
+CLASS="COMMAND"
+>gfservice</B
+>.
+Here is an example of the configuration file:</P
+><P
+CLASS="LITERALLAYOUT"
+>	#&nbsp;gfmd&nbsp;entries.<br>
+	gfmd1=db1.example.com<br>
+	gfmd2=db2.example.com</P
+><P
+>Same as Bourne-shell script, lines beginning with '#' and empty lines
+are ignored.
+The other lines declare shell variables.
+In this example, the variable <TT
+CLASS="REPLACEABLE"
+><I
+>gfmd1</I
+></TT
+> is set to
+<TT
+CLASS="REPLACEABLE"
+><I
+>db1.example.com</I
+></TT
+> and
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfmd2</I
+></TT
+> to
+<TT
+CLASS="REPLACEABLE"
+><I
+>db12.example.com</I
+></TT
+> respectively.
+Whitespaces <I
+CLASS="EMPHASIS"
+>must not</I
+> be inserted around '='.</P
+><P
+>The variables named <TT
+CLASS="REPLACEABLE"
+><I
+>gfmd1</I
+></TT
+> and
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfmd2</I
+></TT
+> are used as "host-id".
+To specify a remote host, <B
+CLASS="COMMAND"
+>gfservice</B
+> uses host-id
+instead of hostname:</P
+><P
+CLASS="LITERALLAYOUT"
+>	<B
+CLASS="COMMAND"
+>gfservice <TT
+CLASS="REPLACEABLE"
+><I
+>start-gfmd</I
+></TT
+> <TT
+CLASS="REPLACEABLE"
+><I
+>gfmd2</I
+></TT
+></B
+></P
+><P
+>Executing the command, <B
+CLASS="COMMAND"
+>gfservice</B
+> starts gfmd on
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfmd2</I
+></TT
+> server, metadb2.example.com.
+Note that the numbers at the tails of host-ids must be beginning with 1
+and must be assigned successively.</P
+><P
+>For specifying gfsd servers and client hosts, use host-ids
+"gfs<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" and "client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>"
+respectively:</P
+><P
+CLASS="LITERALLAYOUT"
+>	#&nbsp;gfsd&nbsp;entries.<br>
+	gfsd1=fs1.example.com<br>
+<br>
+	#&nbsp;client&nbsp;entries<br>
+	client1=pc1.example.com<br>
+	client2=pc2.example.com<br>
+	client3=pc2.example.com</P
+><P
+>In addition with host-id variables, <B
+CLASS="COMMAND"
+>gfservice</B
+> recognizes
+some variables related to host-id.</P
+><P
+CLASS="LITERALLAYOUT"
+>	#&nbsp;Configuration&nbsp;about&nbsp;gfmd1.<br>
+	gfmd1_CONFIG_GFARM_OPTIONS="-X&nbsp;-A&nbsp;$LOGNAME"<br>
+	gfmd1_SSH="ssh&nbsp;-i&nbsp;$HOME/.ssh/id_rsa_gfservice"<br>
+	gfmd1_SUDO=/usr/local/bin/sudo</P
+><P
+>As shown in this example, a value containing whitespaces can be set
+by quotation marks.
+<CODE
+CLASS="VARNAME"
+>$VARNAME</CODE
+> is expanded to the value of the shell or
+environment variable <CODE
+CLASS="VARNAME"
+>VARNAME</CODE
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="GFMD_VARIABLES"
+></A
+><H2
+>VARABILES ABOUT GFMD</H2
+><P
+>Variables named "gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" (gfmd1, gfmd2, ...)
+define gfmd servers.
+Variable names beginning with "gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_"  such
+as <TT
+CLASS="REPLACEABLE"
+><I
+>gfmd1_SSH</I
+></TT
+> set configuration parameters of
+the corresponding "gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" server.
+<B
+CLASS="COMMAND"
+>gfservice</B
+> currently the following variables:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></CODE
+></DT
+><DD
+><P
+>Register a gfmd server.
+Its value represents a hostname (or an IP address) of the server.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+></DT
+><DD
+><P
+>Specify a path to a directory where <B
+CLASS="COMMAND"
+>gfservice-agent</B
+>
+command is installed on the gfmd server.
+If the variable is declared, <B
+CLASS="COMMAND"
+>gfservice</B
+> executes
+<B
+CLASS="COMMAND"
+>"<CODE
+CLASS="VARNAME"
+>$gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+>/gfservice-agent"</B
+>.
+Otherwise it executes <B
+CLASS="COMMAND"
+>"gfservice-agent"</B
+>.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_CONFIG_GFARM_OPTIONS</CODE
+></DT
+><DD
+><P
+>Specify options of <B
+CLASS="COMMAND"
+>config-gfarm</B
+> command.
+The default value is empty (no option).
+<B
+CLASS="COMMAND"
+>gfservice</B
+> refers this variable to perform
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> and many other sub-commands.
+Do not delete or edit the declaration even after
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> has been complete.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_PRIVATE_MODE</CODE
+></DT
+><DD
+><P
+>Set this variable to "true" if gfmd on the remote host is configured
+in private mode.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SSH</CODE
+></DT
+><DD
+><P
+>Specify a path to an SSH client command and its options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes an SSH
+client command to connect with the gfsd server.
+The default value is "ssh".</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SUDO</CODE
+></DT
+><DD
+><P
+>Specify a path to a Sudo command and options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes a Sudo
+command on the gfsd server via SSH.
+The default value is "sudo".</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="GFSD_VARIABLES"
+></A
+><H2
+>VARABILES ABOUT GFSD</H2
+><P
+>Variables named "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" (gfsd1, gfsd2, ...)
+define gfsd servers.
+Variable names beginning with "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_" such as
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfsd1_SSH</I
+></TT
+> set configuration parameters of the
+corresponding "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" server.
+<B
+CLASS="COMMAND"
+>gfservice</B
+> currently recognizes the following variables:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></CODE
+></DT
+><DD
+><P
+>Register a gfsd server.
+Its value represents a hostname (or an IP address) of the server.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+></DT
+><DD
+><P
+>Specify a path to a directory where <B
+CLASS="COMMAND"
+>gfservice-agent</B
+>
+command is installed on the gfsd server.
+If the variable is declared, <B
+CLASS="COMMAND"
+>gfservice</B
+> executes
+<B
+CLASS="COMMAND"
+>"<CODE
+CLASS="VARNAME"
+>$gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+>/gfservice-agent"</B
+>.
+Otherwise it executes <B
+CLASS="COMMAND"
+>"gfservice-agent"</B
+>.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_CONFIG_GFSD_OPTIONS</CODE
+></DT
+><DD
+><P
+>Specify options of <B
+CLASS="COMMAND"
+>config-gfsd</B
+> command.
+The default value is empty (no option).
+<B
+CLASS="COMMAND"
+>gfservice</B
+> refers this variable to perform
+<B
+CLASS="COMMAND"
+>config-gfsd</B
+> and many other sub-commands.
+Do not delete or edit the declaration even after
+<B
+CLASS="COMMAND"
+>config-gfsd</B
+> has been complete.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_PRIVATE_MODE</CODE
+></DT
+><DD
+><P
+>Set this variable to "true" if gfsd on the remote host is configured
+in private mode.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SSH</CODE
+></DT
+><DD
+><P
+>Specify a path to an SSH client command and its options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes an SSH
+client command to connect with the gfsd server.
+The default value is "ssh".</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SUDO</CODE
+></DT
+><DD
+><P
+>Specify a path to a Sudo command and options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes a Sudo
+command on the gfsd server via SSH.
+The default value is "sudo".</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="CLIENT_VARIABLES"
+></A
+><H2
+>VARABILES ABOUT CLIENT</H2
+><P
+>Variables named "client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" (client1, client2, ...)
+define client hosts.
+Their values are hostnames (or IP addresses).
+Variable names beginning with "client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_" 
+such as <TT
+CLASS="REPLACEABLE"
+><I
+>client1_SUDO</I
+></TT
+> set configuration parameters
+of the corresponding "client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>" host.
+<B
+CLASS="COMMAND"
+>gfservice</B
+> currently recognizes the following variables:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></CODE
+></DT
+><DD
+><P
+>Register a client host.
+Its value represents a hostname (or an IP address) of the host.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+></DT
+><DD
+><P
+>Specify a path to a directory where <B
+CLASS="COMMAND"
+>gfservice-agent</B
+>
+command is installed on the client host.
+If the variable is declared, <B
+CLASS="COMMAND"
+>gfservice</B
+> executes
+<B
+CLASS="COMMAND"
+>"<CODE
+CLASS="VARNAME"
+>$client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFBINDIR</CODE
+>/gfservice-agent"</B
+>.
+Otherwise it executes <B
+CLASS="COMMAND"
+>"gfservice-agent"</B
+>.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SSH</CODE
+></DT
+><DD
+><P
+>Specify a path to an SSH client command and its options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes an SSH
+client command to connect with the client host.
+The default value is "ssh".</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_SUDO</CODE
+></DT
+><DD
+><P
+>Specify a path to a Sudo command and options.
+The variable is used when <B
+CLASS="COMMAND"
+>gfservice</B
+> executes a Sudo
+command on the client host via SSH.
+The default value is "sudo".</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>
