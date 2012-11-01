@@ -1,0 +1,78 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfncopy.1'>
+
+<refentryinfo><date>23 Oct 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfncopy</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfncopy</refname>
+<refpurpose>Manipulate number of file replicas automatically created</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfncopy</command>
+    <arg choice='opt'><replaceable>option</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>gfncopy manipulates the number of file replicas automatically
+created.  When no option is specified, it displays the specified
+number of file replicas.  With the -v option, it also displays path
+names up to the ancient directory that specifies the number of file
+repilcas.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-s</option> <parameter>NCOPY</parameter></term>
+<listitem>
+<para>specifies the number of file replicas automatically created.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>removes the specified number of file replicas automatically created.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>displays the number of file repicas the file really has.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>displays path names up to the ancient directory that specifies
+the number of file repilcas.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+

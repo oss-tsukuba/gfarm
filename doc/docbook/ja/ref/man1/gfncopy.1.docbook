@@ -1,0 +1,77 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfncopy.1'>
+
+<refentryinfo><date>23 Oct 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfncopy</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfncopy</refname>
+<refpurpose>自動ファイル複製作成数を操作する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfncopy</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>path に指定したファイルないしディレクトリに関する自動ファイル複製作成数を操作します。
+オプションを指定しない場合は、
+設定された自動複製作成数を表示します。
+-vオプションを指定すると、自動複製作成数を設定している
+先祖のディレクトリまでのパス名も含めて表示します。
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-s</option> <parameter>NCOPY</parameter></term>
+<listitem>
+<para>自動複製作成数を設定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>自動複製作成数の設定を消去します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>実際のファイル複製数を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>自動複製作成数を設定している先祖のディレクトリまでのパス名も含めて表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+
