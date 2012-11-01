@@ -12,9 +12,10 @@ enum gfarm_spool_check_level {
 	GFARM_SPOOL_CHECK_LEVEL_DELETE,
 	GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND,
 };
-extern enum gfarm_spool_check_level gfarm_spool_check_level;
-const char *gfarm_spool_check_level_to_name();
-gfarm_error_t gfarm_spool_check_level_set(const char *);
+enum gfarm_spool_check_level gfarm_spool_check_level_get();
+const char *gfarm_spool_check_level_get_by_name();
+gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
+gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
 
 /* GFM dependent */
 

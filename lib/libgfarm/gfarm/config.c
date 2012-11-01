@@ -769,7 +769,7 @@ static struct {
 	{ GFARM_SPOOL_CHECK_LEVEL_DELETE, "delete" },
 	{ GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND, "lost_found" }
 };
-enum gfarm_spool_check_level gfarm_spool_check_level =
+static enum gfarm_spool_check_level gfarm_spool_check_level =
 	GFARM_SPOOL_CHECK_LEVEL_DEFAULT;
 static const char *gfarm_spool_check_level_name = NULL;
 
@@ -1206,26 +1206,34 @@ gfarm_set_metadb_server_force_slave(int slave)
 	metadb_server_force_slave = slave;
 }
 
-const char *
-gfarm_spool_check_level_to_name() {
-	int i;
+enum gfarm_spool_check_level
+gfarm_spool_check_level_get() {
+	return (gfarm_spool_check_level);
+}
 
-	if (gfarm_spool_check_level_name == NULL) {
-		for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels);
-		     i++) {
-			if (gfarm_spool_check_level ==
-			    gfarm_spool_check_levels[i].level) {
-				gfarm_spool_check_level_name
-					= gfarm_spool_check_levels[i].name;
-				break;
-			}
-		}
-	}
+const char *
+gfarm_spool_check_level_get_by_name() {
+
 	return (gfarm_spool_check_level_name);
 }
 
 gfarm_error_t
-gfarm_spool_check_level_set(const char *name) {
+gfarm_spool_check_level_set(enum gfarm_spool_check_level level) {
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
+		if (level == gfarm_spool_check_levels[i].level) {
+			gfarm_spool_check_level = level;
+			gfarm_spool_check_level_name
+				= gfarm_spool_check_levels[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+gfarm_error_t
+gfarm_spool_check_level_set_by_name(const char *name) {
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
@@ -2130,7 +2138,7 @@ parse_spool_check_level(char *p)
 	/* first line has precedence */
 	if (gfarm_spool_check_level != GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		return (GFARM_ERR_NO_ERROR);
-	e = gfarm_spool_check_level_set(s);
+	e = gfarm_spool_check_level_set_by_name(s);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "spool_check_level(%s): %s", s, gfarm_error_string(e));
@@ -2870,7 +2878,9 @@ void
 gfarm_config_set_default_misc(void)
 {
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
-		gfarm_spool_check_level = GFARM_SPOOL_CHECK_LEVEL_DISABLE;
+		(void)gfarm_spool_check_level_set(
+			GFARM_SPOOL_CHECK_LEVEL_DISABLE);
+
 	if (gfarm_spool_server_listen_backlog == MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
 	if (gfarm_metadb_server_listen_backlog == MISC_DEFAULT)
