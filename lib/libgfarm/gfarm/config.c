@@ -1208,6 +1208,19 @@ gfarm_set_metadb_server_force_slave(int slave)
 
 const char *
 gfarm_spool_check_level_to_name() {
+	int i;
+
+	if (gfarm_spool_check_level_name == NULL) {
+		for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels);
+		     i++) {
+			if (gfarm_spool_check_level ==
+			    gfarm_spool_check_levels[i].level) {
+				gfarm_spool_check_level_name
+					= gfarm_spool_check_levels[i].name;
+				break;
+			}
+		}
+	}
 	return (gfarm_spool_check_level_name);
 }
 
