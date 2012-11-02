@@ -200,6 +200,7 @@ gfprep_err_v(const char *level, int quiet, gfarm_error_t *ep,
 	gfprep_vfprintf(stderr, level, quiet, ep, format, ap);
 }
 
+#if 0
 static void
 gfprep_msg_v(int quiet, const char *format, va_list ap)
 {
@@ -207,6 +208,7 @@ gfprep_msg_v(int quiet, const char *format, va_list ap)
 		return;
 	gfprep_vfprintf(stdout, NULL, quiet, NULL, format, ap);
 }
+#endif
 
 static void gfprep_fatal_e(gfarm_error_t, const char *, ...) \
 	GFLOG_PRINTF_ARG(2, 3);
@@ -219,7 +221,9 @@ static void gfprep_error(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 static void gfprep_warn(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 static void gfprep_verbose(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
 static void gfprep_debug(const char *, ...) GFLOG_PRINTF_ARG(1, 2);
+#if 0
 static void gfprep_msg(int, const char *, ...) GFLOG_PRINTF_ARG(2, 3);
+#endif
 
 static void
 gfprep_fatal_e(gfarm_error_t e, const char *format, ...)
@@ -309,6 +313,7 @@ gfprep_debug(const char *format, ...)
 	va_end(ap);
 }
 
+#if 0
 static void
 gfprep_msg(int quiet, const char *format, ...)
 {
@@ -318,6 +323,7 @@ gfprep_msg(int quiet, const char *format, ...)
 	gfprep_msg_v(quiet, format, ap);
 	va_end(ap);
 }
+#endif
 
 struct gfprep_host_info {
 	char *hostname;
@@ -1224,7 +1230,8 @@ pfunc_cb_start(void *data)
 			     cbd->src_url, cbd->src_hi->hostname,
 			     cbd->src_hi->port);
 	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (opt.performance_each)
+
+	if (opt.performance_each || opt.verbose)
 		gettimeofday(&cbd->start, NULL);
 }
 
@@ -1238,39 +1245,51 @@ pfunc_cb_end(int success, void *data)
 	if (cbd == NULL)
 		return;
 	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (success && opt.performance_each) {
-		double usec;
+	if (opt.performance_each || opt.verbose) {
+		double usec, mbs, sec;
+		static const char ok[] = "OK";
+		static const char ng[] = "NG";
+#define PF_FMT ", %.3gMB/s(%.3gs): " /* performance */
+#define HP_FMT " (%s:%d)" /* hostname:port */
 
 		gettimeofday(&end, NULL);
 		gfarm_timeval_sub(&end, &cbd->start);
 		usec = (double)end.tv_sec * GFARM_SECOND_BY_MICROSEC
 			+ end.tv_usec;
 		/* Bytes/usec == MB/sec */
-		gfprep_msg(0, "%.6fMB/s(%.3fs): %s",
-			   (double)cbd->filesize / usec,
-			   usec / GFARM_SECOND_BY_MICROSEC, cbd->src_url);
+		mbs = (double)cbd->filesize / usec;
+		sec = usec / GFARM_SECOND_BY_MICROSEC;
+
+		if (cbd->type == PFUNC_TYPE_COPY) {
+			printf("[%s]COPY" PF_FMT "%s",
+			    success ? ok : ng, mbs, sec, cbd->src_url);
+			if (cbd->src_hi)
+				printf(HP_FMT,
+				    cbd->src_hi->hostname, cbd->src_hi->port);
+			printf(" -> %s", cbd->dst_url);
+			if (cbd->dst_hi)
+				printf(HP_FMT,
+				    cbd->dst_hi->hostname, cbd->dst_hi->port);
+		} else if (cbd->type == PFUNC_TYPE_REPLICATE &&
+			   cbd->src_hi && cbd->dst_hi)
+			printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)",
+			    success ? ok : ng,
+			    cbd->migrate ? "MIGRATE" : "REPLICATE",
+			    mbs, sec, cbd->src_url,
+			    cbd->src_hi->hostname, cbd->src_hi->port,
+			    cbd->dst_hi->hostname, cbd->dst_hi->port);
+		else if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA &&
+			 cbd->src_hi)
+			printf("[%s]REMOVE REPLICA: %s" HP_FMT,
+			    success ? ok : ng, cbd->src_url,
+			    cbd->src_hi->hostname, cbd->src_hi->port);
+		else
+			printf("[%s]unexpected, type=%d" PF_FMT "%s",
+			    success ? ok : ng, cbd->type,
+			    mbs, sec, cbd->src_url);
+
+		puts("");
 	}
-	if (cbd->type == PFUNC_TYPE_COPY)
-		gfprep_msg(!opt.verbose, "[%s]COPY: %s (%s:%d) -> %s (%s:%d)",
-			   success ? "OK" : "NG", cbd->src_url,
-			   cbd->src_hi ? cbd->src_hi->hostname : "local",
-			   cbd->src_hi ? cbd->src_hi->port : 0,
-			   cbd->dst_url,
-			   cbd->dst_hi ? cbd->dst_hi->hostname : "local",
-			   cbd->dst_hi ? cbd->dst_hi->port : 0);
-	else if (cbd->type == PFUNC_TYPE_REPLICATE)
-		gfprep_msg(!opt.verbose, "[%s]%s: %s (%s:%d -> %s:%d)",
-			   success ? "OK" : "NG",
-			   cbd->migrate ? "MIGRATE" : "REPLICATE",
-			   cbd->src_url,
-			   cbd->src_hi ? cbd->src_hi->hostname : "local",
-			   cbd->src_hi ? cbd->src_hi->port : 0,
-			   cbd->dst_hi ? cbd->dst_hi->hostname : "local",
-			   cbd->dst_hi ? cbd->dst_hi->port : 0);
-	else if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA && cbd->src_hi)
-		gfprep_msg(!opt.verbose, "[%s]REMOVE REPLICA: %s (%s:%d)",
-			   success ? "OK" : "NG", cbd->src_url,
-			   cbd->src_hi->hostname, cbd->src_hi->port);
 
 	if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA) {
 		if (success) {
