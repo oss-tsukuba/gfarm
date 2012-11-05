@@ -170,8 +170,9 @@ acl_convert_for_setxattr(
 	size_t out_size;
 
 	e = acl_convert_for_setxattr_internal(
-		inode, type, *valuep, *sizep, &out_value, &out_size,
-		REPLACE_MODE_T, CHECK_VALIDITY);
+	    inode, type, *valuep, *sizep, &out_value, &out_size,
+	    REPLACE_MODE_T,
+	    type == GFARM_ACL_TYPE_DEFAULT ? !CHECK_VALIDITY : CHECK_VALIDITY);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002862,
 			    "acl_convert_for_setxattr_internal() failed: %s",
