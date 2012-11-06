@@ -52,8 +52,10 @@ int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	char *host, size_t hostlen,
 	char *serv, size_t servlen, int flags);
 
+# define NI_NUMERICHOST	1	/* Don't try to look up hostname.  */
+# define NI_NUMERICSERV 2	/* Don't convert port number to name.  */
 #  define NI_MAXSERV      32
-
+#  define NI_MAXHOST      1025
 
 #endif /* _NETDB_H_ */
 

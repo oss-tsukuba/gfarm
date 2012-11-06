@@ -1075,6 +1075,7 @@ gfarm_config_set_argv0(const char *argv0)
 
 static char pid_string[] = "XXXXXXXX";
 
+#ifndef __KERNEL__
 static char *
 pid_to_string(long pid)
 {
@@ -1087,7 +1088,6 @@ pid_to_string(long pid)
 	return (pe);
 }
 
-#ifndef __KERNEL__
 /* signal handler */
 static void
 gfarm_sig_debug(int sig)

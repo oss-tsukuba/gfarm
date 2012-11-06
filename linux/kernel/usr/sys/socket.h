@@ -12,6 +12,8 @@ extern int getsockopt(int sockfd, int level, int optname,
 	void *optval, socklen_t *optlen);
 extern int getsockname(int sockfd, struct sockaddr *name,
 	socklen_t *namelen);
+extern int getpeername(int sockfd, struct sockaddr *name,
+	socklen_t *namelen);
 extern ssize_t send(int sockfd, const void *buf, size_t len, int flags);
 
 extern int bind(int sockfd, const struct sockaddr *addr,

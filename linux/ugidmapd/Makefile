@@ -7,7 +7,7 @@ srcdir = .
 include $(top_srcdir)/makes/var.mk
 #include $(srcdir)/../Makefile.inc
 
-CFLAGS = $(COMMON_CFLAGS) -I../include 
+CFLAGS = $(COMMON_CFLAGS) -I../include -I/usr/local/include
 LDLIBS = -levent
 DEPLIBS = 
 

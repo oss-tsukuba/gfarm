@@ -452,3 +452,16 @@ getsockname(int fd, struct sockaddr *addr, socklen_t *addrlen)
 	gkfs_syscall_ret(err);
 	return (err);
 }
+int
+getpeername(int fd, struct sockaddr *addr, socklen_t *addrlen)
+{
+	int err = 0;
+	struct socket *sock;
+
+	if (!(err = gfsk_fd2sock(fd, &sock))) {
+		err = kernel_getpeername(sock, addr, addrlen);
+		gfsk_sockput(sock);
+	}
+	gkfs_syscall_ret(err);
+	return (err);
+}
