@@ -1,6 +1,10 @@
 lib/libgfarm/gfutil/utf8/utf8_test.sh
 lib/libgfarm/gfarm/gfarm_error_range_alloc/errmsg.sh
 lib/libgfarm/gfarm/gfarm_error_to_errno/all_mapped.sh
+lib/libgfarm/gfarm/gfs_acl/empty_access_dir.sh
+lib/libgfarm/gfarm/gfs_acl/empty_access_file.sh
+lib/libgfarm/gfarm/gfs_acl/empty_default_dir.sh
+lib/libgfarm/gfarm/gfs_acl/empty_default_file.sh
 lib/libgfarm/gfarm/gfs_dir_test/gfs_dir_test.sh
 lib/libgfarm/gfarm/gfs_pio_create/normal.sh
 lib/libgfarm/gfarm/gfs_pio_create/not_writable.sh
