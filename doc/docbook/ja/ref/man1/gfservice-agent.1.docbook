@@ -2,7 +2,7 @@
 
 <refentry id='gfservice-agent.1'>
 
-<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+<refentryinfo><date>7 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice-agent</refentrytitle>
@@ -510,8 +510,8 @@ Gfarm2 ファイルシステムを「<replaceable>ディレクトリ</replaceable>」に
 <varlistentry>
 <term>
 <command>gfcmd</command>
-<parameter>コマンド名</parameter>
-<parameter>コマンドの引数 ...</parameter>
+<parameter>cmd</parameter>=<replaceable>コマンド名</replaceable>
+<parameter>args</parameter>="<replaceable>コマンドの引数 ...</replaceable>"
 </term>
 <listitem>
 <para>
