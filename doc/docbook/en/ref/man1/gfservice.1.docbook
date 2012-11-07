@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.1'>
 
-<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+<refentryinfo><date>7 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -135,6 +135,12 @@ Since <command>gfservice</command> executes an agent command named
 <command>gfservice-agent</command> on the remote host using SSH and Sudo,
 <command>gfservice-agent</command> command must have been installed on
 all hosts you want to operate using <command>gfservice</command>.
+</para>
+
+<para>
+<command>gfservice</command> has a plug-in system so that user can add
+new sub-commands. See "PLUGIN SYSTEM" section of this man page for
+details about a plug-in system.
 </para>
 
 </refsect1>
@@ -492,7 +498,7 @@ If "gfmd<replaceable>n</replaceable>_CONFIG_GFARM_OPTIONS" variable is
 declared in the configuration file of <command>gfservice</command>,
 its value is passed to <command>config-gfarm</command> command as
 options.
-Don't use this sub-command when you want to enable replicatoin of gfmd.
+Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "<command>config-gfarm-master</command>" or
 "<command>config-gfarm-slave</command>" sub-command in that case.
 If authentication type is "sharedsecret", <command>gfservice</command>
@@ -674,7 +680,12 @@ immediately.
 Mount a Gfarm2 filesystem on <parameter>directory</parameter> on the
 remote host.
 The argument <parameter>option</parameter> is an option to 
-<command>gfarm2fs</command> command.
+<command>gfarm2fs</command> command. If <command>gfarm2fs</command>
+command is installed to a directory different from directory which
+Gfarm is installed(%%BINDIR%%), you can specify a path
+to <command>gfarm2fs</command> command
+in <filename>gfservice.conf</filename>. See gfservice.conf(5) for
+more details about the configuration file.
 </para>
 </listitem>
 </varlistentry>
@@ -791,8 +802,54 @@ on the remote host.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command>gfcmd</command>
+<parameter>command-name</parameter>
+<parameter>command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+Execute a Gfarm command on the remote host.
+</para>
+</listitem>
+</varlistentry>
 </variablelist>
 
 </refsect1>
 
+<refsect1 id='plugin'><title>PLUGIN SYSTEM</title>
+
+<para>
+<command>gfservice</command> has a plug-in system so that user can add
+new sub-commands. If given sub-command is not provided by
+<command>gfservice</command>, <command>gfservice</command> refers to
+a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
+direcotry.
+</para>
+
+<para>
+Sub-command file must be written as Bourne shell script. Sub-command
+file for sub-command "<replaceable>name</replaceable>", must have
+shell function named
+"<function>subcmd_<replaceable>name</replaceable></function>" which
+will be executed from <command>gfservice</command>, and
+"<function>subcmd_<replaceable>name</replaceable>_agent</function>"
+which will be executed from <command>gfservice-agent</command>.
+</para>
+
+<para>
+For the case a sub-command depends on a other user provided
+sub-command, Sub-command file for sub-command
+"<replaceable>name</replaceable>", must have shell function named
+"<function><replaceable>name</replaceable>_depends</function>" which
+must return list of sub-commands. List of sub-commands must be a
+string which is space separated list of sub-command names. If
+sub-command or it's agent does not have dependencies, return empty
+string.  Similarly, sub-command file must have shell function named
+"<function><replaceable>name</replaceable>_agent_depends</function>"
+which must return list of sub-command's agents.
+</para>
+
+</refsect1>
 </refentry>

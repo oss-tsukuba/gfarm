@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.conf.5'>
 
-<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+<refentryinfo><date>7 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -103,7 +103,7 @@ gfsd サーバーとクライアントホストを指定するには、ホスト ID
 
 </refsect1>
 
-<refsect1 id='gfmd-variables'><title>VARABILES ABOUT GFMD</title>
+<refsect1 id='gfmd-variables'><title>VARIABLES ABOUT GFMD</title>
 
 <para>
 変数「gfmd<replaceable>n</replaceable>」(gfmd1, gfmd2, ...) は、gfmd
@@ -192,7 +192,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 
 </refsect1>
 
-<refsect1 id='gfsd-variables'><title>VARABILES ABOUT GFSD</title>
+<refsect1 id='gfsd-variables'><title>VARIABLES ABOUT GFSD</title>
 
 <para>
 変数「gfsd<replaceable>n</replaceable>」(gfsd1, gfsd2, ...) は、gfsd
@@ -281,7 +281,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 
 </refsect1>
 
-<refsect1 id='client-variables'><title>VARABILES ABOUT CLIENT</title>
+<refsect1 id='client-variables'><title>VARIABLES ABOUT CLIENT</title>
 
 <para>
 変数「client<replaceable>n</replaceable>」(client1, client2, ...) は、
@@ -315,6 +315,19 @@ client サーバーを定義するために用います。
 この変数が宣言されていると <command>gfservice</command> は、
 「<command><varname>$client<replaceable>n</replaceable>_GFBINDIR</varname>/gfservice-agent</command>」を実行します。
 宣言されていない場合は、「<command>gfservice-agent</command>」を実行します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_GFARM2FS_BIN_PATH</varname></term>
+<listitem>
+<para>
+クライアントホスト上で <command>gfarm2fs</command> コマンドがインストー
+ルされているディレクトリへのパスを指定します。
+この変数が宣言されていると <command>gfservice</command> は指定されたパ
+スの <command>gfarm2fs</command> コマンドを実行します。
+デフォルトは「%%BINDIR%%」です。
 </para>
 </listitem>
 </varlistentry>

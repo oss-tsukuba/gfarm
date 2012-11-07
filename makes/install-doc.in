@@ -10,7 +10,9 @@ dst=$2
 
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
+bindir="@bindir@"
 libdir="@libdir@"
+datadir="@datadir@"
 sysconfdir="@sysconfdir@"
 
 globus_flavor="@globus_flavor@"
@@ -27,8 +29,10 @@ trap 'rm -f $tmpfile; exit $status' 0 1 2 15
 if grep '%%' "$src" >/dev/null; then
 	sed	-e "s|%%PREFIX%%|$prefix|g" \
 		-e "s|%%EXEC_PREFIX%%|$exec_prefix|g" \
-		-e "s|%%SYSCONFDIR%%|$sysconfdir|g" \
+		-e "s|%%BINDIR%%|$bindir|g" \
 		-e "s|%%LIBDIR%%|$libdir|g" \
+		-e "s|%%DATADIR%%|$datadir|g" \
+		-e "s|%%SYSCONFDIR%%|$sysconfdir|g" \
 		-e "s|%%GLOBUS_FLAVOR%%|$globus_flavor|g" \
 		$src >$tmpfile
 	@INSTALL_DATA@ "$tmpfile" "$dst"

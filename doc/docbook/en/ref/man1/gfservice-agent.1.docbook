@@ -2,7 +2,7 @@
 
 <refentry id='gfservice-agent.1'>
 
-<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+<refentryinfo><date>7 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice-agent</refentrytitle>
@@ -325,7 +325,7 @@ Mount a Gfarm2 filesystem on <replaceable>directory</replaceable>.
 </term>
 <listitem>
 <para>
-Unmount a Gfarm2 filesystem currenctly mounted on
+Unmount a Gfarm2 filesystem currently mounted on
 <replaceable>directory</replaceable>.
 </para>
 </listitem>
@@ -506,8 +506,8 @@ The backup data are read from standard in.
 <varlistentry>
 <term>
 <command>gfcmd</command>
-<parameter>command-name</parameter>
-<parameter>command-argument ...</parameter>
+<parameter>cmd</parameter>=<replaceable>command-name</replaceable>
+<parameter>args</parameter>="<replaceable>command-argument ...</replaceable>"
 </term>
 <listitem>
 <para>

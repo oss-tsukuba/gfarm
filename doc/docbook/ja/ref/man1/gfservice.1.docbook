@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.1'>
 
-<refentryinfo><date>16 Mar 2012</date></refentryinfo>
+<refentryinfo><date>7 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -142,6 +142,11 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 <command>gfservice-agent</command> をインストールしておく必要があります。
 </para>
 
+<para>
+<command>gfservice</command>はユーザが新しくサブコマンドを追加できるよ
+うに、プラグインシステムを採用しています。プラグインシステムについての
+詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。
+</para>
 </refsect1>
 
 <refsect1 id='options'><title>OPTIONS</title>
@@ -683,7 +688,11 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 リモートホスト上の「<parameter>ディレクトリ</parameter>」に、Gfarm2
 ファイルシステムをマウントします。
 引数「<parameter>オプション</parameter>」は <command>gfarm2fs</command>
-コマンドへの引数とみなされます。
+コマンドへの引数とみなされます。<command>gfarm2fs</command>コマンドが
+Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
+れている場合は、 <filename>gfservice.conf</filename>
+で<command>gfarm2fs</command>コマンドのパスを設定できます。設定方法に
+ついては gfservice.conf(5) を参照して下さい。
 </para>
 </listitem>
 </varlistentry>
@@ -800,7 +809,55 @@ Gfarm2 ファイルシステムをアンマウントします。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term>
+<command>gfcmd</command>
+<parameter>command-name</parameter>
+<parameter>command-argument ...</parameter>
+</term>
+<listitem>
+<para>
+リモートホスト上で Gfarm コマンドを実行します。
+</para>
+</listitem>
+</varlistentry>
+
 </variablelist>
+
+</refsect1>
+
+<refsect1 id='plugin'><title>PLUGIN SYSTEM</title>
+
+<para>
+<command>gfservice</command>はユーザが新しくサブコマンドが追加できるよ
+うに、プラグインシステムを採用しています。指定されたサブコマンドを
+<command>gfservice</command>が提供していない場合、
+<command>gfservice</command>コマンドは %%DATADIR%%/gfarm/gfservice 以
+下のサブコマンド名のファイルを参照します。
+</para>
+
+<para>
+サブコマンドのファイルは Bourneシェルスクリプトで書きます。
+サブコマンド "<replaceable>name</replaceable>" のサブコマンドファイル
+は、<command>gfservice</command>から実行される
+"<function>subcmd_<replaceable>name</replaceable></function>"という名
+前のシェル関数、 <command>gfservice-agent</command>から実行される
+"<function>subcmd_<replaceable>name</replaceable>_agent</function>"
+という名前のシェル関数が実装されている必要があります。
+</para>
+
+<para>
+サブコマンドがユーザが追加した別のサブコマンドに依存している時のために、
+サブコマンド "<replaceable>name</replaceable>" のサブコマンドファイル
+は、 "<function><replaceable>name</replaceable>_depends</function>" と
+いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
+のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
+たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
+下さい。同様に、サブコマンドファイルは
+"<function><replaceable>name</replaceable>_agent_depends</function>"
+という名前のシェル関数で、そのサブコマンドのエージェントが依存している
+他のサブコマンドのリストを返す必要があります。
+</para>
 
 </refsect1>
 
