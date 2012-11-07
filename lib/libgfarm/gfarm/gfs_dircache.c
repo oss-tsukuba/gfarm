@@ -379,11 +379,13 @@ gfs_stat_cache_purge0(struct stat_cache *cache, const char *path)
 	gfs_stat_cache_expire0(cache);
 	if (!gfarm_hash_iterator_lookup(
 		cache->table, path, strlen(path)+1, &it)) {
+#if 0
 		gflog_debug(GFARM_MSG_1001286,
 			"lookup for path (%s) in stat cache failed: %s",
 			path,
 			gfarm_error_string(
 				GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY));
+#endif
 		return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
 	}
 	entry = gfarm_hash_iterator_access(&it);

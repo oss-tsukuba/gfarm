@@ -557,13 +557,16 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 #endif
 	if (nfound == -1) {
 		int save_errno = errno;
+
+		if (save_errno != EINTR) {
 #ifdef HAVE_EPOLL
-		gflog_debug(GFARM_MSG_1000781, "epoll_wait() failed: %s",
-		    strerror(save_errno));
+			gflog_debug(GFARM_MSG_1000781,
+			    "epoll_wait() failed: %s", strerror(save_errno));
 #else
-		gflog_debug(GFARM_MSG_1000781, "select() failed: %s",
-		    strerror(save_errno));
+			gflog_debug(GFARM_MSG_UNFIEXED,
+			    "select() failed: %s", strerror(save_errno));
 #endif
+		}
 		return (save_errno);
 	}
 	gettimeofday(&end_time, NULL);
