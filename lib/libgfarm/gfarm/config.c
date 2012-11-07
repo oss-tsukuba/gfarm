@@ -852,6 +852,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_REPLICA_CHECK_DEFAULT 1 /* enable */
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
+#define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
 int gfarm_log_level = MISC_DEFAULT;
 int gfarm_log_message_verbose = MISC_DEFAULT;
 int gfarm_no_file_system_node_timeout = MISC_DEFAULT;
@@ -898,6 +899,7 @@ int fatal_action = MISC_DEFAULT;
 int gfarm_replica_check = MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = MISC_DEFAULT;
+int gfarm_replica_check_minimum_interval = MISC_DEFAULT;
 
 void
 gfarm_config_clear(void)
@@ -2771,6 +2773,9 @@ parse_one_line(char *s, char *p, char **op)
 		    p, &gfarm_replica_check_host_down_thresh);
 	} else if (strcmp(s, o = "replica_check_sleep_time") == 0) {
 		e = parse_set_misc_int(p, &gfarm_replica_check_sleep_time);
+	} else if (strcmp(s, o = "replica_check_minimum_interval") == 0) {
+		e = parse_set_misc_int(
+		    p, &gfarm_replica_check_minimum_interval);
 
 	} else {
 		o = s;
@@ -3002,6 +3007,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replica_check_sleep_time == MISC_DEFAULT)
 		gfarm_replica_check_sleep_time =
 		    GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT;
+	if (gfarm_replica_check_minimum_interval == MISC_DEFAULT)
+		gfarm_replica_check_minimum_interval =
+		    GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT;
 
 	gfarm_config_set_default_filesystem();
 }

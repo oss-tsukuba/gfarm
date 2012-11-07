@@ -490,9 +490,6 @@ replica_check_targets_add(time_t sec)
 #endif
 }
 
-/* ignore targets within 10 sec. future. */
-#define INTEGRATE_NEAR_TARGETS 10 /* sec. */
-
 /* not delete */
 static int
 replica_check_targets_next(struct timeval *next, const struct timeval *now)
@@ -525,7 +522,10 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 		    (long)targets[i].tv_sec, (long)targets[i].tv_usec);
 #endif
 	target_tv = *now;
-	target_tv.tv_sec += INTEGRATE_NEAR_TARGETS;
+
+	/* integrate near target times */
+	target_tv.tv_sec += gfarm_replica_check_minimum_interval;
+
 	is_future = 0;
 	/* assert(targets_num >= 2); */
 	for (i = targets_num - 1;; i--) {
@@ -550,7 +550,8 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 		} else if (gfarm_timeval_cmp(&targets[i], &target_tv) > 0) {
 			if (i == targets_num - 1) { /* future times only */
 				future_tv = targets[i];
-				future_tv.tv_sec += INTEGRATE_NEAR_TARGETS;
+				future_tv.tv_sec +=
+				    gfarm_replica_check_minimum_interval;
 				is_future = 1;
 				/* continue */
 			} else { /* nearest past time */
@@ -636,14 +637,14 @@ replica_check_wait()
 		/*
 		 * integrate many replica_check_signal_*()
 		 *
-		 * waiting INTEGRATE_NEAR_TARGETS sec. here, and
-		 * replica_check_targets_next() will gets the latest
-		 * target time. (others are skipped)
+		 * waiting gfarm_replica_check_minimum_interval
+		 * seconds here, and replica_check_targets_next() will
+		 * gets the latest target time. (others are skipped)
 		 */
 		gfarm_mutex_unlock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 		gfarm_nanosleep(
-		    (unsigned long long)INTEGRATE_NEAR_TARGETS *
+		    (unsigned long long)gfarm_replica_check_minimum_interval *
 		    GFARM_SECOND_BY_NANOSEC);
 		gfarm_mutex_lock(
 		    &replica_check_mutex, diag, REPLICA_CHECK_DIAG);
@@ -731,10 +732,17 @@ replica_check_thread(void *arg)
 	replica_check_targets_add(wait_time);
 
 	for (;;) {
+		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
+
 		replica_check_wait();
 		suppress_log_reset_all();
+
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
+
+		t = t - time(NULL);
+		if (t > 0)
+			gfarm_sleep(t);
 	}
 	/*NOTREACHED*/
 }
