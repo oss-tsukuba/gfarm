@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "23 March 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 November 2012" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
@@ -93,6 +93,10 @@ Since \fBgfservice\fR executes an agent command named
 \fBgfservice-agent\fR on the remote host using SSH and Sudo,
 \fBgfservice-agent\fR command must have been installed on
 all hosts you want to operate using \fBgfservice\fR\&.
+.PP
+\fBgfservice\fR has a plug-in system so that user can add
+new sub-commands. See "PLUGIN SYSTEM" section of this man page for
+details about a plug-in system.
 .SH "OPTIONS"
 .TP
 \fB-d\fR
@@ -250,7 +254,7 @@ If "gfmd\fIn\fR_CONFIG_GFARM_OPTIONS" variable is
 declared in the configuration file of \fBgfservice\fR,
 its value is passed to \fBconfig-gfarm\fR command as
 options.
-Don't use this sub-command when you want to enable replicatoin of gfmd.
+Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "\fBconfig-gfarm-master\fR" or
 "\fBconfig-gfarm-slave\fR" sub-command in that case.
 If authentication type is "sharedsecret", \fBgfservice\fR
@@ -342,7 +346,12 @@ immediately.
 Mount a Gfarm2 filesystem on \fIdirectory\fR on the
 remote host.
 The argument \fIoption\fR is an option to 
-\fBgfarm2fs\fR command.
+\fBgfarm2fs\fR command. If \fBgfarm2fs\fR
+command is installed to a directory different from directory which
+Gfarm is installed(%%BINDIR%%), you can specify a path
+to \fBgfarm2fs\fR command
+in \fIgfservice.conf\fR\&. See gfservice.conf(5) for
+more details about the configuration file.
 .TP
 \fBunmount \fIdirectory\fB\fR
 Unmount a Gfarm2 filesystem on \fIdirectory\fR on the
@@ -393,3 +402,32 @@ from gfmd1 to the client host.
 \fBunconfig-client\fR
 Delete \fIgfarm2.conf\fR file and a shared secret key file
 on the remote host.
+.TP
+\fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
+Execute a Gfarm command on the remote host.
+.SH "PLUGIN SYSTEM"
+.PP
+\fBgfservice\fR has a plug-in system so that user can add
+new sub-commands. If given sub-command is not provided by
+\fBgfservice\fR, \fBgfservice\fR refers to
+a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
+direcotry.
+.PP
+Sub-command file must be written as Bourne shell script. Sub-command
+file for sub-command "\fIname\fR", must have
+shell function named
+"\fBsubcmd_\fIname\fB\fR" which
+will be executed from \fBgfservice\fR, and
+"\fBsubcmd_\fIname\fB_agent\fR"
+which will be executed from \fBgfservice-agent\fR\&.
+.PP
+For the case a sub-command depends on a other user provided
+sub-command, Sub-command file for sub-command
+"\fIname\fR", must have shell function named
+"\fB\fIname\fB_depends\fR" which
+must return list of sub-commands. List of sub-commands must be a
+string which is space separated list of sub-command names. If
+sub-command or it's agent does not have dependencies, return empty
+string.  Similarly, sub-command file must have shell function named
+"\fB\fIname\fB_agent_depends\fR"
+which must return list of sub-command's agents.

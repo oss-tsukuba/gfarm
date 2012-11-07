@@ -278,6 +278,13 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfservice-agent</B
 > をインストールしておく必要があります。</P
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+>はユーザが新しくサブコマンドを追加できるよ
+うに、プラグインシステムを採用しています。プラグインシステムについての
+詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -374,7 +381,7 @@ CLASS="PARAMETER"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFMD_SUB_COMMANDS"
+NAME="GFMD-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR GFMD</H2
@@ -1076,7 +1083,7 @@ CLASS="VARNAME"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFSD_SUB_COMMANDS"
+NAME="GFSD-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR GFSD</H2
@@ -1202,7 +1209,7 @@ CLASS="COMMAND"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="CLIENT_SUB_COMMANDS"
+NAME="CLIENT-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR CLIENT</H2
@@ -1270,7 +1277,20 @@ CLASS="PARAMETER"
 CLASS="COMMAND"
 >gfarm2fs</B
 >
-コマンドへの引数とみなされます。</P
+コマンドへの引数とみなされます。<B
+CLASS="COMMAND"
+>gfarm2fs</B
+>コマンドが
+Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
+れている場合は、 <TT
+CLASS="FILENAME"
+>gfservice.conf</TT
+>
+で<B
+CLASS="COMMAND"
+>gfarm2fs</B
+>コマンドのパスを設定できます。設定方法に
+ついては gfservice.conf(5) を参照して下さい。</P
 ></DD
 ><DT
 ><B
@@ -1475,8 +1495,119 @@ CLASS="FILENAME"
 > ファイルおよび
 共有秘密鍵ファイルを削除します。</P
 ></DD
+><DT
+><B
+CLASS="COMMAND"
+>gfcmd</B
+>
+<TT
+CLASS="PARAMETER"
+><I
+>command-name</I
+></TT
+>
+<TT
+CLASS="PARAMETER"
+><I
+>command-argument ...</I
+></TT
+></DT
+><DD
+><P
+>リモートホスト上で Gfarm コマンドを実行します。</P
+></DD
 ></DL
 ></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="PLUGIN"
+></A
+><H2
+>PLUGIN SYSTEM</H2
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+>はユーザが新しくサブコマンドが追加できるよ
+うに、プラグインシステムを採用しています。指定されたサブコマンドを
+<B
+CLASS="COMMAND"
+>gfservice</B
+>が提供していない場合、
+<B
+CLASS="COMMAND"
+>gfservice</B
+>コマンドは %%DATADIR%%/gfarm/gfservice 以
+下のサブコマンド名のファイルを参照します。</P
+><P
+>サブコマンドのファイルは Bourneシェルスクリプトで書きます。
+サブコマンド "<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>" のサブコマンドファイル
+は、<B
+CLASS="COMMAND"
+>gfservice</B
+>から実行される
+"<TT
+CLASS="FUNCTION"
+>subcmd_<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+></TT
+>"という名
+前のシェル関数、 <B
+CLASS="COMMAND"
+>gfservice-agent</B
+>から実行される
+"<TT
+CLASS="FUNCTION"
+>subcmd_<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_agent</TT
+>"
+という名前のシェル関数が実装されている必要があります。</P
+><P
+>サブコマンドがユーザが追加した別のサブコマンドに依存している時のために、
+サブコマンド "<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>" のサブコマンドファイル
+は、 "<TT
+CLASS="FUNCTION"
+><TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_depends</TT
+>" と
+いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
+のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
+たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
+下さい。同様に、サブコマンドファイルは
+"<TT
+CLASS="FUNCTION"
+><TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_agent_depends</TT
+>"
+という名前のシェル関数で、そのサブコマンドのエージェントが依存している
+他のサブコマンドのリストを返す必要があります。</P
 ></DIV
 ></BODY
 ></HTML

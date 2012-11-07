@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "27 March 2012" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "07 November 2012" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- gfservice の設定ファイル
@@ -74,7 +74,7 @@ gfsd サーバーとクライアントホストを指定するには、ホスト ID
 します。
 $VARNAME は、シェル変数もしくは環境変数 
 VARNAME の値に展開されます。
-.SH "VARABILES ABOUT GFMD"
+.SH "VARIABLES ABOUT GFMD"
 .PP
 変数「gfmd\fIn\fR」(gfmd1, gfmd2, ...) は、gfmd
 サーバーを定義するために用います。
@@ -118,7 +118,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 \fBgfservice\fR が SSH を介して gfmd サーバー上で Sudo
 コマンドを実行する際、この変数が利用されます。
 デフォルトは「sudo」です。
-.SH "VARABILES ABOUT GFSD"
+.SH "VARIABLES ABOUT GFSD"
 .PP
 変数「gfsd\fIn\fR」(gfsd1, gfsd2, ...) は、gfsd
 サーバーを定義するために用います。
@@ -162,7 +162,7 @@ Sudo コマンドのパスおよびオプションを指定します。
 \fBgfservice\fR が SSH を介して gfsd サーバー上で Sudo
 コマンドを実行する際、この変数が利用されます。
 デフォルトは「sudo」です。
-.SH "VARABILES ABOUT CLIENT"
+.SH "VARIABLES ABOUT CLIENT"
 .PP
 変数「client\fIn\fR」(client1, client2, ...) は、
 client サーバーを定義するために用います。
@@ -183,6 +183,13 @@ client サーバーを定義するために用います。
 この変数が宣言されていると \fBgfservice\fR は、
 「\fB$client\fIn\fB_GFBINDIR/gfservice-agent\fR」を実行します。
 宣言されていない場合は、「\fBgfservice-agent\fR」を実行します。
+.TP
+\fBclient\fIn\fB_GFARM2FS_BIN_PATH\fR
+クライアントホスト上で \fBgfarm2fs\fR コマンドがインストー
+ルされているディレクトリへのパスを指定します。
+この変数が宣言されていると \fBgfservice\fR は指定されたパ
+スの \fBgfarm2fs\fR コマンドを実行します。
+デフォルトは「%%BINDIR%%」です。
 .TP
 \fBclient\fIn\fB_SSH\fR
 SSH クライアントコマンドのパスおよびオプションを指定します。

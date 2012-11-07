@@ -187,10 +187,10 @@ CLASS="VARNAME"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFMD_VARIABLES"
+NAME="GFMD-VARIABLES"
 ></A
 ><H2
->VARABILES ABOUT GFMD</H2
+>VARIABLES ABOUT GFMD</H2
 ><P
 >Variables named "gfmd<TT
 CLASS="REPLACEABLE"
@@ -371,10 +371,10 @@ The default value is "sudo".</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFSD_VARIABLES"
+NAME="GFSD-VARIABLES"
 ></A
 ><H2
->VARABILES ABOUT GFSD</H2
+>VARIABLES ABOUT GFSD</H2
 ><P
 >Variables named "gfsd<TT
 CLASS="REPLACEABLE"
@@ -555,10 +555,10 @@ The default value is "sudo".</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="CLIENT_VARIABLES"
+NAME="CLIENT-VARIABLES"
 ></A
 ><H2
->VARABILES ABOUT CLIENT</H2
+>VARIABLES ABOUT CLIENT</H2
 ><P
 >Variables named "client<TT
 CLASS="REPLACEABLE"
@@ -647,6 +647,32 @@ Otherwise it executes <B
 CLASS="COMMAND"
 >"gfservice-agent"</B
 >.</P
+></DD
+><DT
+><CODE
+CLASS="VARNAME"
+>client<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>_GFARM2FS_BIN_PATH</CODE
+></DT
+><DD
+><P
+>Specify a path to a directory where <B
+CLASS="COMMAND"
+>gfarm2fs</B
+>
+command is installed on the client host. The the variable is declared,
+<B
+CLASS="COMMAND"
+>gfservice</B
+> executes <B
+CLASS="COMMAND"
+>gfarm2fs</B
+> with
+specified path. The default value is %%BINDIR%%.</P
 ></DD
 ><DT
 ><CODE

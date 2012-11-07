@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "27 March 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 November 2012" "Gfarm" ""
 
 .SH NAME
 gfservice \- リモートホストから Gfarm のサーバーを制御する。
@@ -96,6 +96,10 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 \fBgfservice-agent\fR というエージェントコマンドを実行します
 ので、\fBgfservice\fR コマンドで操作したいホストすべてに、
 \fBgfservice-agent\fR をインストールしておく必要があります。
+.PP
+\fBgfservice\fRはユーザが新しくサブコマンドを追加できるよ
+うに、プラグインシステムを採用しています。プラグインシステムについての
+詳しい説明はこの man ページの "PLUGIN SYSTEM"の節を参照して下さい。
 .SH "OPTIONS"
 .TP
 \fB-d\fR
@@ -349,7 +353,11 @@ gfsd が実行中であれば、終了コード 0 で終了します。
 リモートホスト上の「\fIディレクトリ\fR」に、Gfarm2
 ファイルシステムをマウントします。
 引数「\fIオプション\fR」は \fBgfarm2fs\fR
-コマンドへの引数とみなされます。
+コマンドへの引数とみなされます。\fBgfarm2fs\fRコマンドが
+Gfarmのインストール先(%%BINDIR)とは異なるディレクトリにインストールさ
+れている場合は、 \fIgfservice.conf\fR
+で\fBgfarm2fs\fRコマンドのパスを設定できます。設定方法に
+ついては gfservice.conf(5) を参照して下さい。
 .TP
 \fBunmount \fIディレクトリ\fB\fR
 リモートホスト上の「\fIディレクトリ\fR」にマウントされた
@@ -400,3 +408,32 @@ Gfarm2 ファイルシステムをアンマウントします。
 \fBunconfig-client\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルおよび
 共有秘密鍵ファイルを削除します。
+.TP
+\fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
+リモートホスト上で Gfarm コマンドを実行します。
+.SH "PLUGIN SYSTEM"
+.PP
+\fBgfservice\fRはユーザが新しくサブコマンドが追加できるよ
+うに、プラグインシステムを採用しています。指定されたサブコマンドを
+\fBgfservice\fRが提供していない場合、
+\fBgfservice\fRコマンドは %%DATADIR%%/gfarm/gfservice 以
+下のサブコマンド名のファイルを参照します。
+.PP
+サブコマンドのファイルは Bourneシェルスクリプトで書きます。
+サブコマンド "\fIname\fR" のサブコマンドファイル
+は、\fBgfservice\fRから実行される
+"\fBsubcmd_\fIname\fB\fR"という名
+前のシェル関数、 \fBgfservice-agent\fRから実行される
+"\fBsubcmd_\fIname\fB_agent\fR"
+という名前のシェル関数が実装されている必要があります。
+.PP
+サブコマンドがユーザが追加した別のサブコマンドに依存している時のために、
+サブコマンド "\fIname\fR" のサブコマンドファイル
+は、 "\fB\fIname\fB_depends\fR" と
+いう名前のシェル関数で、そのサブコマンドが依存している他のサブコマンド
+のリストを返す必要があります．サブコマンドのリストはスペースで区切られ
+たサブコマンドの文字列です．依存している他のサブコマンドがない場合は空文字列を返して
+下さい。同様に、サブコマンドファイルは
+"\fB\fIname\fB_agent_depends\fR"
+という名前のシェル関数で、そのサブコマンドのエージェントが依存している
+他のサブコマンドのリストを返す必要があります。
