@@ -10,7 +10,6 @@ example_bindir = $(default_bindir)
 metadb_client_includes = $(ldap_includes) $(postgresql_includes)
 metadb_client_libs = $(ldap_libs) $(postgresql_libs)
 
-SHELL = /bin/sh
 RM = rm
 GENCAT = gencat
 
