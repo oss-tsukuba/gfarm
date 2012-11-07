@@ -24,6 +24,9 @@ DEBUG=false
 # Shared secret key file.
 SHARED_KEY_FILE="$HOME/.gfarm_shared_key"
 
+# gfservice plugin directory
+GFSERVICE_PLUGIN_PATH="@datadir@/gfarm/gfservice"
+
 #
 # Output a debug message.
 #
@@ -205,6 +208,7 @@ set_gfsd_params()
 set_client_params()
 {
 	log_debug "set_client_params"
+	CONFIG_GFSD_OPTIONS=`get_param config-gfsd-options || echo ''`
 
 	GFARM_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
 		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
@@ -840,13 +844,16 @@ subcmd_mount()
 {
 	log_debug "subcmd_mount"
 
+	set_client_params
+	GFARM2FS_BIN_PATH=`get_param gfarm2fs-bin-path`
 	DIRECTORY=`get_param directory` || {
 		log_error "missing mandatory argument 'directory'"
 	}
 	log_debug "subcmd_mount: directory=$DIRECTORY"
 	OPTIONS=`get_param options || echo ''`
 	log_debug "subcmd_mount: options=$OPTIONS"
-	gfarm2fs $DIRECTORY $OPTIONS
+	GFARM_CONFIG_FILE=$GFARM_CONF $GFARM2FS_BIN_PATH/gfarm2fs $DIRECTORY \
+		$OPTIONS
 	[ $? -ne 0 ] && log_error "failed to mount Gfarm2 filesystem"
 
 	log_debug "end subcmd_mount"
@@ -1089,14 +1096,27 @@ subcmd_gfcmd()
 {
 	log_debug "subcmd_gfcmd"
 
-	[ $# -eq 0 ] && log_error "missing command name for 'gfcmd'"
-	GFCMD="$1"
-	shift
-	expr "X$GFCMD" : '^Xgf[a-z0-9._-]*$' > /dev/null 2>&1 || {
-		log_error "invalid command name: '$GFCMD'"
+	HOSTTYPE=`get_param hosttype`
+	case $HOSTTYPE in
+	gfmd)
+		set_gfmd_params
+		;;
+	gfsd)
+		set_gfsd_params
+		;;
+	client)
+		set_client_params
+		;;
+	esac
+
+	CMD=`get_param cmd`
+	expr "X$CMD" : '^Xgf[a-z0-9._-]*$' > /dev/null 2>&1 || {
+		log_error "invalid command name: '$CMD'"
 	}
-	log_debug "subcmd_gfcmd: execute @bindir@/$GFCMD $@"
-	"@bindir@/$GFCMD" "$@"|| log_error "failed to execute $GFCMD"
+	ARGS=`get_param args`
+	log_debug "subcmd_gfcmd: execute @bindir@/$CMD $ARGS"
+	GFARM_CONFIG_FILE=$GFARM_CONF "@bindir@/$CMD" $ARGS
+	[ $? -ne 0 ] && log_error "failed to execute $CMD"
 
 	log_debug "end subcmd_gfcmd"
 }
@@ -1262,8 +1282,21 @@ restore-backend-db)
 gfcmd)
 	subcmd_gfcmd "$@"
 	;;
-*)	echo "$0@$PROGHOST: invalid sub-command: $SUBCMD" 1>&2
-	exit 1
+*)
+	if [ -f $GFSERVICE_PLUGIN_PATH/$SUBCMD ]; then
+		log_debug "loading plugin: $SUBCMD"
+		. $GFSERVICE_PLUGIN_PATH/$SUBCMD
+
+		for DEPEND_FILE in `${SUBCMD}_agent_depends`; do
+			log_debug "loading plugin: $DEPEND_FILE"
+			. $GFSERVICE_PLUGIN_PATH/$DEPEND_FILE
+		done
+
+		subcmd_${SUBCMD}_agent "$@"
+	else
+		echo "$0: invalid sub-command: $SUBCMD" 1>&2
+		exit 1
+	fi
 	;;
 esac
 
