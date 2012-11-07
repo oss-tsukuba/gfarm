@@ -1253,12 +1253,12 @@ gfarm_get_metadb_server_slave_listen(void)
 }
 
 enum gfarm_spool_check_level
-gfarm_spool_check_level_get() {
+gfarm_spool_check_level_get(void) {
 	return (gfarm_spool_check_level);
 }
 
 const char *
-gfarm_spool_check_level_get_by_name() {
+gfarm_spool_check_level_get_by_name(void) {
 
 	return (gfarm_spool_check_level_name);
 }
