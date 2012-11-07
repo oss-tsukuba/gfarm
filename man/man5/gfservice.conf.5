@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "23 March 2012" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "07 November 2012" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- configuration file of gfservice
@@ -74,7 +74,7 @@ As shown in this example, a value containing whitespaces can be set
 by quotation marks.
 $VARNAME is expanded to the value of the shell or
 environment variable VARNAME\&.
-.SH "VARABILES ABOUT GFMD"
+.SH "VARIABLES ABOUT GFMD"
 .PP
 Variables named "gfmd\fIn\fR" (gfmd1, gfmd2, ...)
 define gfmd servers.
@@ -117,7 +117,7 @@ Specify a path to a Sudo command and options.
 The variable is used when \fBgfservice\fR executes a Sudo
 command on the gfsd server via SSH.
 The default value is "sudo".
-.SH "VARABILES ABOUT GFSD"
+.SH "VARIABLES ABOUT GFSD"
 .PP
 Variables named "gfsd\fIn\fR" (gfsd1, gfsd2, ...)
 define gfsd servers.
@@ -160,7 +160,7 @@ Specify a path to a Sudo command and options.
 The variable is used when \fBgfservice\fR executes a Sudo
 command on the gfsd server via SSH.
 The default value is "sudo".
-.SH "VARABILES ABOUT CLIENT"
+.SH "VARIABLES ABOUT CLIENT"
 .PP
 Variables named "client\fIn\fR" (client1, client2, ...)
 define client hosts.
@@ -180,6 +180,12 @@ command is installed on the client host.
 If the variable is declared, \fBgfservice\fR executes
 \fB"$client\fIn\fB_GFBINDIR/gfservice-agent"\fR\&.
 Otherwise it executes \fB"gfservice-agent"\fR\&.
+.TP
+\fBclient\fIn\fB_GFARM2FS_BIN_PATH\fR
+Specify a path to a directory where \fBgfarm2fs\fR
+command is installed on the client host. The the variable is declared,
+\fBgfservice\fR executes \fBgfarm2fs\fR with
+specified path. The default value is %%BINDIR%%.
 .TP
 \fBclient\fIn\fB_SSH\fR
 Specify a path to an SSH client command and its options.

@@ -281,6 +281,13 @@ all hosts you want to operate using <B
 CLASS="COMMAND"
 >gfservice</B
 >.</P
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+> has a plug-in system so that user can add
+new sub-commands. See "PLUGIN SYSTEM" section of this man page for
+details about a plug-in system.</P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
@@ -377,7 +384,7 @@ The default value is "no".</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFMD_SUB_COMMANDS"
+NAME="GFMD-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR GFMD</H2
@@ -887,7 +894,7 @@ CLASS="COMMAND"
 >config-gfarm</B
 > command as
 options.
-Don't use this sub-command when you want to enable replicatoin of gfmd.
+Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "<B
 CLASS="COMMAND"
 >config-gfarm-master</B
@@ -1092,7 +1099,7 @@ CLASS="REPLACEABLE"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="GFSD_SUB_COMMANDS"
+NAME="GFSD-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR GFSD</H2
@@ -1225,7 +1232,7 @@ files and directories created by gfsd.</P
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="CLIENT_SUB_COMMANDS"
+NAME="CLIENT-SUB-COMMANDS"
 ></A
 ><H2
 >SUB-COMMANDS FOR CLIENT</H2
@@ -1292,7 +1299,21 @@ CLASS="PARAMETER"
 <B
 CLASS="COMMAND"
 >gfarm2fs</B
-> command.</P
+> command. If <B
+CLASS="COMMAND"
+>gfarm2fs</B
+>
+command is installed to a directory different from directory which
+Gfarm is installed(%%BINDIR%%), you can specify a path
+to <B
+CLASS="COMMAND"
+>gfarm2fs</B
+> command
+in <TT
+CLASS="FILENAME"
+>gfservice.conf</TT
+>. See gfservice.conf(5) for
+more details about the configuration file.</P
 ></DD
 ><DT
 ><B
@@ -1497,8 +1518,119 @@ CLASS="FILENAME"
 > file and a shared secret key file
 on the remote host.</P
 ></DD
+><DT
+><B
+CLASS="COMMAND"
+>gfcmd</B
+>
+<TT
+CLASS="PARAMETER"
+><I
+>command-name</I
+></TT
+>
+<TT
+CLASS="PARAMETER"
+><I
+>command-argument ...</I
+></TT
+></DT
+><DD
+><P
+>Execute a Gfarm command on the remote host.</P
+></DD
 ></DL
 ></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="PLUGIN"
+></A
+><H2
+>PLUGIN SYSTEM</H2
+><P
+><B
+CLASS="COMMAND"
+>gfservice</B
+> has a plug-in system so that user can add
+new sub-commands. If given sub-command is not provided by
+<B
+CLASS="COMMAND"
+>gfservice</B
+>, <B
+CLASS="COMMAND"
+>gfservice</B
+> refers to
+a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
+direcotry.</P
+><P
+>Sub-command file must be written as Bourne shell script. Sub-command
+file for sub-command "<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>", must have
+shell function named
+"<TT
+CLASS="FUNCTION"
+>subcmd_<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+></TT
+>" which
+will be executed from <B
+CLASS="COMMAND"
+>gfservice</B
+>, and
+"<TT
+CLASS="FUNCTION"
+>subcmd_<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_agent</TT
+>"
+which will be executed from <B
+CLASS="COMMAND"
+>gfservice-agent</B
+>.</P
+><P
+>For the case a sub-command depends on a other user provided
+sub-command, Sub-command file for sub-command
+"<TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>", must have shell function named
+"<TT
+CLASS="FUNCTION"
+><TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_depends</TT
+>" which
+must return list of sub-commands. List of sub-commands must be a
+string which is space separated list of sub-command names. If
+sub-command or it's agent does not have dependencies, return empty
+string.  Similarly, sub-command file must have shell function named
+"<TT
+CLASS="FUNCTION"
+><TT
+CLASS="REPLACEABLE"
+><I
+>name</I
+></TT
+>_agent_depends</TT
+>"
+which must return list of sub-command's agents.</P
 ></DIV
 ></BODY
 ></HTML
