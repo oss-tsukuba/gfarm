@@ -10,6 +10,7 @@ gfmd1_CONFIG_GFARM_OPTIONS="-r -X -A $LOGNAME"
 # gfmd1_SSH=/usr/bin/ssh
 # gfmd1_SUDO=/usr/bin/sudo
 # gfmd1_GFBINDIR=/usr/local/bin
+# gfmd1_GFARM2FS_BIN_PATH=/usr/local/bin
 # gfmd1_PRIVATE_MODE=true
 
 ##
@@ -20,6 +21,7 @@ gfmd2_CONFIG_GFARM_OPTIONS="-r -X -A $LOGNAME"
 # gfmd2_SSH=/usr/bin/ssh
 # gfmd2_SUDO=/usr/bin/sudo
 # gfmd2_GFBINDIR=/usr/local/bin
+# gfmd2_GFARM2FS_BIN_PATH=/usr/local/bin
 # gfmd2_PRIVATE_MODE=true
 
 ##
@@ -30,6 +32,7 @@ gfsd1_CONFIG_GFSD_OPTIONS=
 # gfsd1_SSH=/usr/bin/ssh
 # gfsd1_SUDO=/usr/bin/sudo
 # gfsd1_GFBINDIR=/usr/local/bin
+# gfsd1_GFARM2FS_BIN_PATH=/usr/local/bin
 # gfsd1_PRIVATE_MODE=true
 
 ##
@@ -40,6 +43,7 @@ gfsd2_CONFIG_GFSD_OPTIONS=
 # gfsd2_SSH=/usr/bin/ssh
 # gfsd2_SUDO=/usr/bin/sudo
 # gfsd2_GFBINDIR=/usr/local/bin
+# gfsd2_GFARM2FS_BIN_PATH=/usr/local/bin
 # gfsd2_PRIVATE_MODE=true
 
 ##
@@ -49,6 +53,7 @@ client1=cl1.example.com
 # client1_SSH=/usr/bin/ssh
 # client1_SUDO=/usr/bin/sudo
 # client1_GFBINDIR=/usr/local/bin
+client1_GFARM2FS_BIN_PATH=/usr/local/bin
 
 ##
 ## client 2
@@ -57,3 +62,4 @@ client2=cl2.example.com
 # client2_SSH=/usr/bin/ssh
 # client2_SUDO=/usr/bin/sudo
 # client2_GFBINDIR=/usr/local/bin
+client2_GFARM2FS_BIN_PATH=/usr/local/bin

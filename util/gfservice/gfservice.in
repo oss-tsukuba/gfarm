@@ -13,6 +13,7 @@ PROGRAM=gfservice
 DEFAULT_CONF="$HOME/.gfservice"
 DEFAULT_SUDO=sudo
 DEFAULT_SSH=ssh
+DEFAULT_GFARM2FS_BIN_PATH="@bindir@"
 
 # Debug flag.
 DEBUG=false
@@ -25,6 +26,9 @@ SHARED_KEY_VALIDITY_PERIOD=31536000
 
 # Default timeout period in seconds (or 'no').
 TIMEOUT=no
+
+# gfservice plugin directory
+GFSERVICE_PLUGIN_PATH="@datadir@/gfarm/gfservice"
 
 #
 # Output a debug message.
@@ -175,6 +179,25 @@ get_agent()
 }
 
 #
+# Get gfarm2fs binary path corresponding with a host ID.
+#
+get_gfarm2fs_bin_path()
+{
+	log_debug "get_gfarm2fs_bin_path: HOSTID=$1"
+
+	GFARM2FS_BIN_PATH=`eval echo \\$$1_GFARM2FS_BIN_PATH`
+	if [ "X$GFARM2FS_BIN_PATH" = X ]; then
+		echo $DEFAULT_GFARM2FS_BIN_PATH
+	else
+		echo $GFARM2FS_BIN_PATH
+		log_debug "get_gfarm2fs_bin_path: $GFARM2FS_BIN_PATH"
+	fi
+
+	log_debug "end get_gfarm2fs_bin_path"
+	return 0
+}
+
+#
 # Get options to 'config-gfarm' corresponding with a host ID.
 #
 get_config_gfarm_options()
@@ -263,6 +286,36 @@ check_argc()
 }
 
 #
+# Predicate to check if given host-ID is "gfmd1", "gfmd2", ...
+# Return 0 if the specified host-ID is gfmd host-ID.
+#
+is_gfmd_hostid()
+{
+	expr "X$1" : '^Xgfmd[1-9][0-9]*$' > /dev/null 2>&1
+	return $?
+}
+
+#
+# Predicate to check if given host-ID is "gfsd1", "gfsd2", ...
+# Return 0 if the specified host-ID is gfsd host-ID.
+#
+is_gfsd_hostid()
+{
+	expr "X$1" : '^Xgfsd[1-9][0-9]*$' > /dev/null 2>&1
+	return $?
+}
+
+#
+# Predicate to check if given host-ID is "client1", "client2", ...
+# Return 0 if the specified host-ID is client host-ID.
+#
+is_client_hostid()
+{
+	expr "X$1" : '^Xclient[1-9][0-9]*$' > /dev/null 2>&1
+	return $?
+}
+
+#
 # Validate a gfmd host-ID which must be "gfmd1", "gfmd2", ...
 # Return 0 if the specified host-ID is valid.
 #
@@ -270,9 +323,9 @@ check_gfmd_hostid()
 {
 	log_debug "check_gfmd_hostid: HOSTID=$1"
 
-	expr "X$1" : '^Xgfmd[1-9][0-9]*$' > /dev/null 2>&1 || {
+	if ! is_gfmd_hostid $1; then
 		log_error "invalid host-id '$1'"
-	}
+	fi
 	if [ "X`eval echo \\$$1`" = X ]; then
 		log_error "no '$1' definition"
 	fi
@@ -289,9 +342,9 @@ check_gfsd_hostid()
 {
 	log_debug "check_gfsd_hostid: HOSTID=$1"
 
-	expr "X$1" : '^Xgfsd[1-9][0-9]*$' > /dev/null 2>&1 || {
+	if ! is_gfsd_hostid $1; then
 		log_error "invalid host-ID '$1'"
-	}
+	fi
 	if [ "X`eval echo \\$$1`" = X ]; then
 		log_error "no '$1' definition"
 	fi
@@ -307,27 +360,20 @@ check_gfsd_hostid()
 #    "client1", "client2", ...
 # Return 0 if the specified host-ID is valid.
 #
-check_client_hostid()
+check_hostid()
 {
-	log_debug "check_client_hostid: HOSTID=$1"
+	log_debug "check_hostid: HOSTID=$1"
 
-	if expr "X$1" : '^Xgfmd[1-9][0-9]*$' > /dev/null 2>&1; then
-		if [ "X`eval echo \\$$1`" = X ]; then
-			log_error "no '$1' definition"
-		fi
-	elif expr "X$1" : '^Xgfsd[1-9][0-9]*$' > /dev/null 2>&1; then
-		if [ "X`eval echo \\$$1`" = X ]; then
-			log_error "no $1 definition"
-		fi
-	elif expr "X$1" : '^Xclient[1-9][0-9]*$' > /dev/null 2>&1; then
-		if [ "X`eval echo \\$$1`" = X ]; then
-			log_error "no $1 definition"
-		fi
-	else
+	if ! is_gfmd_hostid $1 && \
+		! is_gfsd_hostid $1 && \
+		! is_client_hostid $1; then
 		log_error "invalid host-id '$1'"
 	fi
+	if [ "X`eval echo \\$$1`" = X ]; then
+		log_error "no '$1' definition"
+	fi
 
-	log_debug "end check_client_hostid: returns 0"
+	log_debug "end check_hostid: returns 0"
 	return 0
 }
 
@@ -516,9 +562,10 @@ exec_client_host_agent()
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
 	AGENT=`get_agent $EXEC_HOSTID`
+	CONFIG_GFSD_OPTIONS=`get_config_gfsd_options $HOSTID`
 
 	CMD_ARGV=
-	for I in "$@"; do
+	for I in "$@" "config-gfsd-options=$CONFIG_GFSD_OPTIONS"; do
 		J=`echo "X$I" | sed -e "s/^X/'/" -e "s/\$/'/"`
 		if [ "X$CMD_ARGV" = X ]; then
 			CMD_ARGV="$J"
@@ -548,24 +595,17 @@ exec_remote_host_gfcmd()
 
 	log_debug "exec_remote_host_gfcmd:" \
 		"HOSTID=$EXEC_HOSTID, USER=$EXEC_USER, ARGS=$EXEC_GFCMD $@"
-	SSH=`get_ssh $EXEC_HOSTID`
-	HOST=`get_host $EXEC_HOSTID`
-	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
-	AGENT=`get_agent $EXEC_HOSTID`
 
-	CMD_ARGV=
-	for I in "$@"; do
-		J=`echo "X$I" | sed -e "s/^X/'/" -e "s/\$/'/"`
-		if [ "X$CMD_ARGV" = X ]; then
-			CMD_ARGV="$J"
-		else
-			CMD_ARGV="$CMD_ARGV $J"
-		fi
-	done
-	
-	log_debug "exec_remote_host_gfcmd:" \
-		"execute $SSH $HOST $SUDO $AGENT gfcmd $EXEC_GFCMD $CMD_ARGV"
-	$SSH $HOST $SUDO $AGENT gfcmd $EXEC_GFCMD "$CMD_ARGV"
+	if is_gfmd_hostid $EXEC_HOSTID; then
+		exec_gfmd_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
+			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=gfmd"
+	elif is_gfsd_hostid $EXEC_HOSTID; then
+		exec_gfsd_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
+			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=gfsd"
+	elif is_client_hostid $EXEC_HOSTID; then
+		exec_client_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
+			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=client"
+	fi
 	RESULT=$?
 
 	log_debug "end exec_remote_host_gfcmd: returns $RESULT"
@@ -1267,7 +1307,7 @@ subcmd_config_client()
 {
 	log_debug "subcmd_config_client"
 	check_argc $# 0
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 
 	#
 	# Get AUTH_TYPE of gfmd1.
@@ -1416,7 +1456,7 @@ subcmd_unconfig_client()
 {
 	log_debug "subcmd_unconfig_client"
 	check_argc $# 0
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 
 	exec_client_host_agent $HOSTID root unconfig-client
 	[ $? -ne 0 ] && log_error "subcmd_unconfig_client:" \
@@ -1447,9 +1487,10 @@ subcmd_mount()
 	log_debug "subcmd_mount"
 
 	check_argc $# 1 +
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	DIR="$1"
 	shift
+	GFARM2FS_BIN_PATH=`get_gfarm2fs_bin_path $HOSTID`
 	OPTIONS=
 	for I in "$@"; do
 		if [ "X$OPTIONS" = X ]; then
@@ -1459,7 +1500,7 @@ subcmd_mount()
 		fi
 	done
 	exec_client_host_agent $HOSTID - mount "directory=$DIR" \
-		"options=$OPTIONS"
+		"gfarm2fs-bin-path=$GFARM2FS_BIN_PATH" "options=$OPTIONS"
 	[ $? -ne 0 ] && log_error "gfservice mount failed"
 
 	log_debug "end subcmd_mount"
@@ -1473,7 +1514,7 @@ subcmd_unmount()
 	log_debug "subcmd_unmount"
 
 	check_argc $# 1
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	exec_client_host_agent $HOSTID - unmount "directory=$1"
 	[ $? -ne 0 ] && log_error "gfservice unmount failed"
 
@@ -1504,7 +1545,7 @@ subcmd_set_gfarm_conf()
 	log_debug "subcmd_set_gfarm_conf"
 
 	check_argc $# 2
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	exec_client_host_agent $HOSTID root set-gfarm-conf \
 		"directive=$1" "value=$2"
 	[ $? -ne 0 ] && log_error "gfservice set-gfarm-conf failed"
@@ -1535,7 +1576,7 @@ subcmd_unset_gfarm_conf()
 	log_debug "subcmd_unset_gfarm_conf"
 
 	check_argc $# 1
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	exec_client_host_agent $HOSTID root unset-gfarm-conf "directive=$1"
 	[ $? -ne 0 ] && log_error "gfservice unset-gfarm-conf failed"
 
@@ -1565,7 +1606,7 @@ subcmd_backup_gfarm_conf()
 	log_debug "subcmd_backup_gfarm_conf"
 
 	check_argc $# 0
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	exec_client_host_agent $HOSTID root backup-gfarm-conf
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf failed"
 
@@ -1580,7 +1621,7 @@ subcmd_backup_shared_key()
 	log_debug "subcmd_backup_shared_key"
 
 	check_argc $# 0
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	exec_client_host_agent $HOSTID - backup-shared-key
 	[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 
@@ -1640,7 +1681,7 @@ subcmd_restore_shared_key()
 	log_debug "subcmd_restore_shared_key"
 
 	check_argc $# 0
-	check_client_hostid $HOSTID
+	check_hostid $HOSTID
 	TMP_FILE="/tmp/gfservice.$$"
 	trap "rm -f $TMP_FILE; exit 1" 1 2 3 15
 	rm -f $TMP_FILE
@@ -1671,6 +1712,24 @@ subcmd_restore_backend_db()
 	[ $? -ne 0 ] && log_error "gfservice restore-backend-db failed"
 
 	log_debug "end subcmd_restore_backend_db"
+}
+
+#
+# Sub-command: gfcmd
+#
+subcmd_gfcmd()
+{
+	log_debug "subcmd_gfcmd"
+
+	check_argc $# 1 +
+	check_hostid $HOSTID
+	GFCMD=$1
+	shift
+
+	exec_remote_host_gfcmd $HOSTID - $GFCMD "$@"
+	[ $? -ne 0 ] && log_error "gfservice gfcmd $# failed."
+
+	log_debug "end subcmd_gfcmd"
 }
 
 ######################################################################
@@ -1953,8 +2012,24 @@ restore-shared-key)
 restore-backend-db)
 	subcmd_restore_backend_db "$@"
 	;;
-*)	echo "$0: invalid sub-command: $SUBCMD" 1>&2
-	exit 1
+gfcmd)
+	subcmd_gfcmd "$@"
+	;;
+*)
+	if [ -f $GFSERVICE_PLUGIN_PATH/$SUBCMD ]; then
+		log_debug "loading plugin: $SUBCMD"
+		. $GFSERVICE_PLUGIN_PATH/$SUBCMD
+
+		for DEPEND_FILE in `${SUBCMD}_depends`; do
+			log_debug "loading plugin: $DEPEND_FILE"
+			. $GFSERVICE_PLUGIN_PATH/$DEPEND_FILE
+		done
+
+		subcmd_${SUBCMD} "$@"
+	else
+		echo "$0: invalid sub-command: $SUBCMD" 1>&2
+		exit 1
+	fi
 	;;
 esac
 
