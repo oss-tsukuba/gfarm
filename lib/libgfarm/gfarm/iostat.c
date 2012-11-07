@@ -158,12 +158,15 @@ gfarm_iostat_find_row(struct gfarm_iostat_head *hp,
 			return (ip);
 		}
 	}
+#ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
+	*ind = 0;
+#endif
 	return (NULL);
 }
 void
 gfarm_iostat_clear_id(gfarm_uint64_t id, unsigned int hint)
 {
-	int i = 0;
+	int i;
 	struct gfarm_iostat_items *ip;
 	struct gfarm_iostat_head *hp; struct gfarm_iostat_items *sip;
 
@@ -234,7 +237,7 @@ gfarm_iostat_clear_ip(struct gfarm_iostat_items *ip)
 struct gfarm_iostat_items*
 gfarm_iostat_find_space(unsigned int hint)
 {
-	int i = 0;
+	int i;
 	struct gfarm_iostat_items *ip;
 	struct gfarm_iostat_head *hp; struct gfarm_iostat_items *sip;
 
