@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "28 October 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "08 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -211,19 +211,17 @@ sharedsecret利用時には、この指定は単に無視されます。
 詳しくはspool_server_cred_typeの項を参照してください。
 .TP
 \fBspool_check_level \fIレベル\fB\fR
-レベル\fI1\fRはgfsdの-cオプションと同等です。
+gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
+メタデータに登録されている情報との一貫性を検査します。レベルはgfsdの-c
+オプションを指定する数に相当し、"display"は-cオプション、"delete"は-cc
+オプション、"lost_found"は-cccオプションと同等です。詳細はgfsdの
+マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを
+行いません。デフォルト値は"lost_found"です。
 
-レベル\fI2\fRはgfsdの-ccオプションと同等です。
-
-レベル\fI3\fRはgfsdの-cccオプションと同等です。
-
-デフォルト値は0です。レベル\fI0\fRにすると、
-gfsdは起動時に、スプールディレクトリ上のファイルを調査をしません。
-
-For example,
+例:
 
 .nf
-	spool_check_level 3
+	spool_check_level disable
 .fi
 .TP
 \fBmetadb_server_host \fIgfmdホスト名\fB\fR
@@ -1294,7 +1292,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~"spool_server_cred_service" <cred_service>
 	<spool_server_cred_name_statement> ::=
 		\~\~"spool_server_cred_name" <cred_name>
-	<spool_check_level_statement> ::= "spool_check_level" <number>
+	<spool_check_level_statement> ::= "spool_check_level" <spck_level>
 	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
 	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
 	<metadb_server_cred_type_statement> ::=
@@ -1409,6 +1407,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
 	<validity> ::= "enable" | "disable"
+	<spck_level> ::= "disable" | "display" | "delete" | "lost_found"
 	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		\~\~"notice" | "info" | "debug"
 	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |

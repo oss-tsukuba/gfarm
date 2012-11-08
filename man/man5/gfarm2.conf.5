@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "28 October 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "08 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -225,23 +225,18 @@ Please read the description of the spool_server_cred_type
 statement for details.
 .TP
 \fBspool_check_level \fIlevel\fB\fR
-The level \fI1\fR is equivalent to the -c option for
-gfsd.
-
-The level \fI2\fR is equivalent to the -cc option for
-gfsd.
-
-The level \fI3\fR is equivalent to the -ccc option
-for gfsd.
-
-The default value is 0.  The level \fI0\fR means that
-gfsd does not investigate all files stored in a spool directory when
-starting up.
+This statement enables the consistency check of files stored in the
+spool directory at start-up of gfsd.  The \fIlevel\fR
+name corresponds how many -c command-line options are specified to
+gfsd, i.e. the level "display" means the -c option, "delete" means the
+-cc option, and "lost_found" means the -ccc option, which is the
+default.  For detail about the -c option, refer to the manual page of
+gfsd(8).  The level "disable" disables the consistency check.
 
 For example,
 
 .nf
-	spool_check_level 3
+	spool_check_level disable
 .fi
 .TP
 \fBmetadb_server_host \fIhostname\fB\fR
@@ -1363,7 +1358,7 @@ notation.
 		\~\~"spool_server_cred_service" <cred_service>
 	<spool_server_cred_name_statement> ::=
 		\~\~"spool_server_cred_name" <cred_name>
-	<spool_check_level_statement> ::= "spool_check_level" <number>
+	<spool_check_level_statement> ::= "spool_check_level" <spck_level>
 	<metadb_server_host_statement> ::= "metadb_server_host" <hostname>
 	<metadb_server_port_statement> ::= "metadb_server_port" <portnumber>
 	<metadb_server_cred_type_statement> ::=
@@ -1478,6 +1473,7 @@ notation.
 		\~\~<any_character_except_backslash_and_double_quotation> |
 		\~\~"\\\\" | "\\""
 	<validity> ::= "enable" | "disable"
+	<spck_level> ::= "disable" | "display" | "delete" | "lost_found"
 	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		\~\~"notice" | "info" | "debug"
 	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |
