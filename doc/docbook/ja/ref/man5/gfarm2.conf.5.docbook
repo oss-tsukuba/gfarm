@@ -1738,6 +1738,24 @@ replica_check内でスリープする時間をナノ秒で指定します。
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>replica_check_minimum_interval</token> <parameter>秒</parameter></term>
+<listitem>
+<para>
+replica_checkが動作するための最小間隔(秒)を指定します。
+デフォルトは10秒です。
+つまり、replica_checkは10秒間に最大1回動作することができます。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	replica_check_minimum_interval 5
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1825,7 +1843,8 @@ replica_check内でスリープする時間をナノ秒で指定します。
 		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
 		&nbsp;&nbsp;&lt;replica_check_statement&gt; |
 		&nbsp;&nbsp;&lt;replica_check_host_down_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt;
+		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt; |
+		&nbsp;&nbsp;&lt;replica_check_minimum_interval_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -1945,6 +1964,7 @@ replica_check内でスリープする時間をナノ秒で指定します。
 	&lt;replica_check_statement&gt; ::= "replica_check" &lt;validity&gt;
 	&lt;replica_check_host_down_thresh_statement&gt; ::= "replica_check_host_down_thresh" &lt;number&gt;
 	&lt;replica_check_sleep_time_statement&gt; ::= "replica_check_sleep_time" &lt;number&gt;
+	&lt;replica_check_minimum_interval_statement&gt; ::= "replica_check_minimum_interval" &lt;number&gt;
 	&lt;string_list&gt; ::= 
 		&nbsp;&nbsp;&lt;string&gt; |
 		&nbsp;&nbsp;&lt;string&gt; &lt;string_list&gt;
