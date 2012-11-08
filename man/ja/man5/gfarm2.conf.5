@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "08 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "09 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -1193,6 +1193,19 @@ replica_check内でスリープする時間をナノ秒で指定します。
 .nf
 	replica_check_sleep_time 0
 .fi
+.TP
+\fBreplica_check_minimum_interval \fI秒\fB\fR
+replica_checkが動作するための最小間隔(秒)を指定します。
+デフォルトは10秒です。
+つまり、replica_checkは10秒間に最大1回動作することができます。
+
+この文はgfmd.confのみで有効です。
+
+例:
+
+.nf
+	replica_check_minimum_interval 5
+.fi
 .SH "GRAMMAR"
 .PP
 gfarm2.confの文法をBNFで記述すると、下記のようになります。
@@ -1272,7 +1285,8 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<metadb_journal_recvq_size_statement> |
 		\~\~<replica_check_statement> |
 		\~\~<replica_check_host_down_thresh_statement> |
-		\~\~<replica_check_sleep_time_statement>
+		\~\~<replica_check_sleep_time_statement> |
+		\~\~<replica_check_minimum_interval_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1378,6 +1392,7 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<replica_check_statement> ::= "replica_check" <validity>
 	<replica_check_host_down_thresh_statement> ::= "replica_check_host_down_thresh" <number>
 	<replica_check_sleep_time_statement> ::= "replica_check_sleep_time" <number>
+	<replica_check_minimum_interval_statement> ::= "replica_check_minimum_interval" <number>
 	<string_list> ::= 
 		\~\~<string> |
 		\~\~<string> <string_list>

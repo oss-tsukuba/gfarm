@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "08 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "09 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -1256,6 +1256,19 @@ Example:
 .nf
 	replica_check_sleep_time 0
 .fi
+.TP
+\fBreplica_check_minimum_interval \fIseconds\fB\fR
+This directive specifies the minimum interval in seconds, for the
+replica_check to work.  The default value is 10 seconds, i.e. the
+replica_check can work up to one time every 10 seconds.
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	replica_check_minimum_interval 5
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -1337,7 +1350,8 @@ notation.
 		\~\~<metadb_journal_recvq_size_statement> |
 		\~\~<replica_check_statement> |
 		\~\~<replica_check_host_down_thresh_statement> |
-		\~\~<replica_check_sleep_time_statement>
+		\~\~<replica_check_sleep_time_statement> |
+		\~\~<replica_check_minimum_interval_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1444,6 +1458,7 @@ notation.
 	<replica_check_statement> ::= "replica_check" <validity>
 	<replica_check_host_down_thresh_statement> ::= "replica_check_host_down_thresh" <number>
 	<replica_check_sleep_time_statement> ::= "replica_check_sleep_time" <number>
+	<replica_check_minimum_interval_statement> ::= "replica_check_minimum_interval" <number>
 	<string_list> ::= 
 		\~\~<string> |
 		\~\~<string> <string_list>
