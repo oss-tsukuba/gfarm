@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>09 Aug 2012</date></refentryinfo>
+<refentryinfo><date>08 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -81,6 +81,7 @@ the <option>-ccc</option> option), invalid file copies that are not
 registered in the metadata server are moved to the lost+found
 directory in the Gfarm file system.  Furthermore, invalid metadata
 pointing to a missing file copy of the file system node are deleted.
+This is the default behavior.
 </para>
 </listitem>
 </varlistentry>

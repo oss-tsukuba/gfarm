@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>31 October 2012</date></refentryinfo>
+<refentryinfo><date>08 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -324,11 +324,11 @@ gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
 オプションを指定する数に相当し、"display"は-cオプション、"delete"は-cc
 オプション、"lost_found"は-cccオプションと同等です。詳細はgfsdの
 マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを
-行いません。デフォルト値は"disable"です。
+行いません。デフォルト値は"lost_found"です。
 </para>
 <para>例:</para>
 <literallayout>
-	spool_check_level lost_found
+	spool_check_level disable
 </literallayout>
 </listitem>
 </varlistentry>

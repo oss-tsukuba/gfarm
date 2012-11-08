@@ -3,7 +3,7 @@
 
 <refentry id='gfsd.8'>
 
-<refentryinfo><date>09 Aug 2012</date></refentryinfo>
+<refentryinfo><date>08 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfsd</refentrytitle>
@@ -82,7 +82,7 @@ gfsdはユーザ権限で動作させることも可能ですが，この場合他のユーザはこ
 <option>-ccc</option>オプション)、メタデータサーバに登録されていない無
 効なファイルをGfarmファイルシステムのlost+foundディクトリに移動すること
 ができます。さらに、ファイルシステムノード上に存在しないファイルを指し
-ている、無効なメタデータを削除します。
+ている、無効なメタデータを削除します。標準でこの動作です。
 </para>
 </listitem>
 </varlistentry>
