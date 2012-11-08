@@ -23,6 +23,7 @@
 #include "thrsubr.h"
 
 #include "context.h"
+#include "config.h"
 #include "timespec.h"
 #include "patmatch.h"
 #include "gfm_proto.h"
@@ -1586,6 +1587,41 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 		    gfarm_error_string(e));
 }
 
+static void
+inode_set_relatime_main(struct inode *inode, struct gfarm_timespec *atime)
+{
+	struct gfarm_timespec sub;
+	static struct gfarm_timespec a_day
+		= { .tv_sec = 24 * 60 * 60, .tv_nsec = 0 };
+
+	if (atime == NULL)
+		return;
+
+	sub = *atime;
+	gfarm_timespec_sub(&sub, &inode->i_atimespec);
+	if (gfarm_timespec_cmp(&sub, &a_day) <= 0 &&
+	    gfarm_timespec_cmp(&inode->i_atimespec, &inode->i_ctimespec) > 0 &&
+	    gfarm_timespec_cmp(&inode->i_atimespec, &inode->i_mtimespec) > 0)
+		return;
+
+	inode_set_atime(inode, atime);
+}
+
+static void inode_set_relatime_switch(struct inode *, struct gfarm_timespec *);
+void (*inode_set_relatime)(struct inode *, struct gfarm_timespec *) =
+	inode_set_relatime_switch;
+
+/* initalized only once */
+static void
+inode_set_relatime_switch(struct inode *inode, struct gfarm_timespec *atime)
+{
+	if (gfarm_relatime)
+		inode_set_relatime = inode_set_relatime_main;
+	else
+		inode_set_relatime = inode_set_atime;
+	inode_set_relatime(inode, atime);
+}
+
 void
 inode_set_mtime_in_cache(struct inode *inode, struct gfarm_timespec *mtime)
 {
@@ -1650,7 +1686,7 @@ inode_accessed(struct inode *inode)
 	struct gfarm_timespec ts;
 
 	touch(&ts);
-	inode_set_atime(inode, &ts);
+	inode_set_relatime(inode, &ts);
 }
 
 void
@@ -3117,7 +3153,7 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
 		    NULL, NULL, trace_logp);
 	} else if (atime != NULL)
-		inode_set_atime(inode, atime);
+		inode_set_relatime(inode, atime);
 
 	/*
 	 * XXXQ is there any better way?
@@ -3156,7 +3192,7 @@ inode_fhclose_read(struct inode *inode, struct gfarm_timespec *atime)
 		return (GFARM_ERR_STALE_FILE_HANDLE);
 	}
 	if (atime != NULL)
-		inode_set_atime(inode, atime);
+		inode_set_relatime(inode, atime);
 
 	return (GFARM_ERR_NO_ERROR);
 }

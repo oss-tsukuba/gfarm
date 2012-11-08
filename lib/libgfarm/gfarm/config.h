@@ -42,6 +42,7 @@ extern int gfm_proto_reply_to_gfsd_window;
 extern int gfs_proto_fhremove_request_window;
 extern int gfs_proto_replication_request_window;
 extern int gfarm_outstanding_file_replication_limit;
+extern int gfarm_relatime;
 extern int gfarm_replica_check;
 extern int gfarm_replica_check_host_down_thresh;
 extern int gfarm_replica_check_sleep_time;
