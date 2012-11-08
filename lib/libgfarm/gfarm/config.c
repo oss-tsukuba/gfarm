@@ -3022,7 +3022,7 @@ gfarm_config_set_default_misc(void)
 {
 	if (gfarm_spool_check_level == GFARM_SPOOL_CHECK_LEVEL_DEFAULT)
 		(void)gfarm_spool_check_level_set(
-			GFARM_SPOOL_CHECK_LEVEL_DISABLE);
+			GFARM_SPOOL_CHECK_LEVEL_LOST_FOUND);
 
 	if (gfarm_spool_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;

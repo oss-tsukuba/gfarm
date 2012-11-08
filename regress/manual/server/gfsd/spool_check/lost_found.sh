@@ -48,10 +48,13 @@ if $USE_SUDO; then
     SUDO_GFARMFS="sudo -u _gfarmfs"
 fi
 
-egrep '^spool_check_level\s+lost_found' $GFSD_CONFIG_FILE
-if [ $? -ne 0 ]; then
-    echo >&2 "need 'spool_check_level lost_found' in $GFSD_CONFIG_FILE"
-    exit $exit_unsupported
+egrep '^spool_check_level\s+' $GFSD_CONFIG_FILE
+  if [ $? -eq 0 ]; then
+    egrep '^spool_check_level\s+lost_found' $GFSD_CONFIG_FILE
+    if [ $? -ne 0 ]; then
+      echo >&2 "need 'spool_check_level lost_found' in $GFSD_CONFIG_FILE"
+      exit $exit_unsupported
+  fi
 fi
 
 GUSER=`gfwhoami`

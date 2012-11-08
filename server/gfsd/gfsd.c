@@ -4311,7 +4311,8 @@ usage(void)
 	fprintf(stderr, "\t-P <pid-file>\n");
 	fprintf(stderr, "\t-c\t\t\t\t... check and display invalid files\n");
 	fprintf(stderr, "\t-cc\t\t\t\t... check and delete invalid files\n");
-	fprintf(stderr, "\t-ccc\t\t\t\t... check and move invalid files to\n");
+	fprintf(stderr,
+	    "\t-ccc (default)\t\t\t... check and move invalid files to\n");
 	fprintf(stderr, "\t\t\t\t\tgfarm:///lost+found, and delete invalid\n");
 	fprintf(stderr, "\t\t\t\t\treplica-references from metadata\n");
 	fprintf(stderr, "\t-d\t\t\t\t... debug mode\n");
