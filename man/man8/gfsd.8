@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSD" "8" "10 August 2012" "Gfarm" ""
+.TH "GFSD" "8" "08 November 2012" "Gfarm" ""
 
 .SH NAME
 gfsd(8) \- Gfarm filesystem daemon
@@ -49,6 +49,7 @@ the \fB-ccc\fR option), invalid file copies that are not
 registered in the metadata server are moved to the lost+found
 directory in the Gfarm file system.  Furthermore, invalid metadata
 pointing to a missing file copy of the file system node are deleted.
+This is the default behavior.
 .TP
 \fB-d\fR
 Specifies the debug mode.  With the -d option, gfsd runs as a
