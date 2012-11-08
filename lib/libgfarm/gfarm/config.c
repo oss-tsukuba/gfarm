@@ -836,6 +836,7 @@ char *gfarm_argv0 = NULL;
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
 #define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
+#define GFARM_RELATIME_DEFAULT 1 /* enable */
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
@@ -882,6 +883,7 @@ int gfarm_metadb_job_queue_length = MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_metadb_dbq_size = MISC_DEFAULT;
 int gfarm_record_atime = MISC_DEFAULT;
+int gfarm_relatime = MISC_DEFAULT;
 int gfarm_client_file_bufsize = MISC_DEFAULT;
 int gfarm_client_parallel_copy = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
@@ -1146,6 +1148,12 @@ void
 gfarm_set_record_atime(int boolean)
 {
 	gfarm_record_atime = boolean;
+}
+
+void
+gfarm_set_relatime(int boolean)
+{
+	gfarm_relatime = boolean;
 }
 
 int
@@ -2728,6 +2736,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "record_atime") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_record_atime);
+	} else if (strcmp(s, o = "relatime") == 0) {
+		e = parse_set_misc_enabled(p, &gfarm_relatime);
 	} else if (strcmp(s, o = "client_file_bufsize") == 0) {
 		e = parse_set_misc_int(p, &gfarm_client_file_bufsize);
 	} else if (strcmp(s, o = "client_parallel_copy") == 0) {
@@ -2964,6 +2974,8 @@ gfarm_config_set_default_misc(void)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
 	if (gfarm_record_atime == MISC_DEFAULT)
 		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
+	if (gfarm_relatime == MISC_DEFAULT)
+		gfarm_relatime = GFARM_RELATIME_DEFAULT;
 	if (gfarm_client_file_bufsize == MISC_DEFAULT)
 		gfarm_client_file_bufsize = GFARM_CLIENT_FILE_BUFSIZE_DEFAULT;
 	if (gfarm_client_parallel_copy == MISC_DEFAULT)

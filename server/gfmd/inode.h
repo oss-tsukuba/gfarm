@@ -58,6 +58,7 @@ gfarm_error_t inode_set_owner(struct inode *, struct user *, struct group *);
 struct gfarm_timespec *inode_get_atime(struct inode *);
 struct gfarm_timespec *inode_get_mtime(struct inode *);
 struct gfarm_timespec *inode_get_ctime(struct inode *);
+void (*inode_set_relatime)(struct inode *, struct gfarm_timespec *);
 void inode_set_atime(struct inode *, struct gfarm_timespec *);
 void inode_set_atime_in_cache(struct inode *, struct gfarm_timespec *);
 void inode_set_mtime(struct inode *, struct gfarm_timespec *);

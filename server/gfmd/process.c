@@ -894,7 +894,7 @@ process_close_file_read(struct process *process, struct peer *peer, int fd,
 		/* closing REOPENed file, but the client is still opening */
 		fo->u.f.spool_opener = NULL;
 		fo->u.f.spool_host = NULL;
-		inode_set_atime(fo->inode, atime);
+		inode_set_relatime(fo->inode, atime);
 		return (GFARM_ERR_NO_ERROR);
 	}
 

@@ -103,6 +103,7 @@ extern float gfarm_schedule_rtt_thresh;
 extern int gfarm_simultaneous_replication_receivers;
 extern int gfarm_gfsd_connection_cache;
 extern int gfarm_record_atime;
+extern int gfarm_relatime;
 extern int gfarm_client_file_bufsize;
 extern int gfarm_client_parallel_copy;
 
