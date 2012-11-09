@@ -935,7 +935,9 @@ main(int argc, char *argv[])
 		fflush(stdout);
 	}
 	e = create_hostlist_by_domain_and_hash(
-		gfarm_list_elem(&flist.slist, 0),
+		gfarm_list_length(&flist.slist) > 0 ?
+		gfarm_list_elem(&flist.slist, 0) :
+		gfarm_list_elem(&flist.dlist, 0),
 		flist.dst_domain, flist.dst_hosthash,
 		&gfrep_arg.ndst, &gfrep_arg.dst, &gfrep_arg.dst_port);
 	error_check(e);
