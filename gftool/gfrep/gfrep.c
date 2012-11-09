@@ -348,7 +348,7 @@ print_file_list(struct gfarm_list *list)
 	int i;
 
 	for (i = 0; i < gfarm_list_length(list); ++i)
-		print_file_info(gfarm_stringlist_elem(list, i));
+		print_file_info(gfarm_list_elem(list, i));
 }
 
 static int
@@ -365,13 +365,13 @@ filesizecmp_inv(const void *a, const void *b)
 }
 
 static int
-is_enough_space(char *host, int port, gfarm_off_t size)
+is_enough_space(const char *path, char *host, int port, gfarm_off_t size)
 {
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_error_t e;
 
-	e = gfs_statfsnode(host, port, &bsize,
+	e = gfs_statfsnode_by_path(path, host, port, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
@@ -451,7 +451,7 @@ action(struct action *act, int tnum, int nth, int pi, struct file_info *fi,
 	while (1) {
 		while (fi->surplus_ncopy == 0
 		       && (file_copy_does_exist(fi, dst[di])
-			   || !is_enough_space(
+			   || !is_enough_space(fi->pathname,
 				   dst[di], dst_port[di], fi->filesize))
 		       && max_niter > 0) {
 			if (opt_verbose)
@@ -692,17 +692,15 @@ compare_available_capacity_r(const void *s1, const void *s2)
  * - maybe(?) should use gfm_client_schedule_file instead.
  */
 gfarm_error_t
-schedule_host_domain(const char *domain,
+schedule_host_domain(const char *path, const char *domain,
 	int *nhostsp, struct gfarm_host_sched_info **hostsp)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	const char *path = GFARM_PATH_ROOT;
 
-	if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
-	    != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+	    path, &gfm_server)) != GFARM_ERR_NO_ERROR)
 		return (e);
-
 	e = gfm_client_schedule_host_domain(gfm_server, domain,
 	    nhostsp, hostsp);
 	gfm_client_connection_free(gfm_server);
@@ -710,7 +708,7 @@ schedule_host_domain(const char *domain,
 }
 
 static gfarm_error_t
-create_hostlist_by_domain_and_hash(char *domain,
+create_hostlist_by_domain_and_hash(struct file_info *finfo, char *domain,
 	struct gfarm_hash_table *hosthash,
 	int *nhostsp, char ***hostsp, int **portsp)
 {
@@ -719,7 +717,7 @@ create_hostlist_by_domain_and_hash(char *domain,
 	char **hosts;
 	gfarm_error_t e;
 
-	e = schedule_host_domain(domain, &ninfo, &infos);
+	e = schedule_host_domain(finfo->pathname, domain, &ninfo, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	/* sort 'infos' in descending order wrt available capacity */
@@ -937,6 +935,7 @@ main(int argc, char *argv[])
 		fflush(stdout);
 	}
 	e = create_hostlist_by_domain_and_hash(
+		gfarm_list_elem(&flist.slist, 0),
 		flist.dst_domain, flist.dst_hosthash,
 		&gfrep_arg.ndst, &gfrep_arg.dst, &gfrep_arg.dst_port);
 	error_check(e);
