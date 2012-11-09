@@ -54,7 +54,8 @@ gfarm_realpath_by_gfarm2fs(const char *path, char **pathp)
 	free(parent);
 	p[s] = '\0';
 	if (base_len > 0) {
-		strcat(p, "/");
+		if (p[s - 1] != '/')
+			strcat(p, "/");
 		strcat(p, base);
 	}
 	*pathp = p;
