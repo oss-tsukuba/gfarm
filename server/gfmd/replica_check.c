@@ -26,6 +26,7 @@
 
 #include "gfmd.h"
 #include "inode.h"
+#include "dead_file_copy.h"
 #include "dir.h"
 #include "host.h"
 #include "subr.h"
@@ -710,10 +711,14 @@ replica_check_signal_rename()
 	replica_check_signal_general(diag, 0);
 }
 
+/* workaround for #406 - obsolete replicas remain existing */
+#define DFC_SCAN_INTERVAL 21600 /* 6 hours */
+
 static void *
 replica_check_thread(void *arg)
 {
 	int wait_time;
+	time_t dfc_scan_time;
 
 	if (!replica_check_stack_init())
 		return (NULL);
@@ -731,6 +736,9 @@ replica_check_thread(void *arg)
 	wait_time = gfarm_metadb_heartbeat_interval;
 	replica_check_targets_add(wait_time);
 
+	dfc_scan_time = time(NULL) + DFC_SCAN_INTERVAL;
+	replica_check_targets_add(DFC_SCAN_INTERVAL);
+
 	for (;;) {
 		time_t t = time(NULL) + gfarm_replica_check_minimum_interval;
 
@@ -739,6 +747,18 @@ replica_check_thread(void *arg)
 
 		if (replica_check_main()) /* error occured, retry */
 			replica_check_targets_add(wait_time);
+
+		if (time(NULL) >= dfc_scan_time) {
+			replica_check_giant_lock();
+			dead_file_copy_scan_deferred_all();
+			replica_check_giant_unlock();
+
+			dfc_scan_time = time(NULL) + DFC_SCAN_INTERVAL;
+			replica_check_targets_add(DFC_SCAN_INTERVAL);
+			RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+			    "replica_check: dead_file_copy_scan_deferred_all,"
+			    " next=%ld", (long)dfc_scan_time);
+		}
 
 		t = t - time(NULL);
 		if (t > 0)
