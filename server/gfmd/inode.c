@@ -46,6 +46,7 @@
 #include "xattr.h"
 #include "repattr.h"
 #include "fsngroup_replica.h"
+#include "replica_check.h"
 
 #include "auth.h" /* for "peer.h" */
 #include "peer.h" /* peer_reset_pending_new_generation() */
@@ -761,7 +762,7 @@ inode_schedule_replication(struct inode *inode, struct host *spool_host,
 		    (long long)inode_get_gen(inode),
 		    n_targets, n_desired);
 	for (i = 0; i < n_targets; i++) {
-		e = inode_replication_new(inode, spool_host, targets[i],
+		e = inode_replication_new(inode, spool_host, targets[i], 1,
 		    NULL, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_UNFIXED,
@@ -993,8 +994,8 @@ update_replicas(struct inode *inode, struct host *spool_host,
 				deferred_cleanup = NULL;
 			/* abandon `e' */
 
-			e = inode_replication_new(inode, spool_host, copy->host,
-			    deferred_cleanup, &fr);
+			e = inode_replication_new(inode, spool_host,
+			    copy->host, 1, deferred_cleanup, &fr);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_warning(GFARM_MSG_1002245,
 				    "replication before removal: host %s: %s",
@@ -3788,13 +3789,14 @@ inode_remove_replica_in_cache(struct inode *inode, struct host *spool_host)
 
 gfarm_error_t
 inode_replication_new(struct inode *inode, struct host *src, struct host *dst,
-	struct dead_file_copy *deferred_cleanup,
+	int retry, struct dead_file_copy *deferred_cleanup,
 	struct file_replication **frp)
 {
 	gfarm_error_t e;
 	struct file_replication *fr;
 	struct inode_activity *ia;
 	int ia_alloced = 0;
+	static const char retry_diag[] = "retry-file_replication_new";
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
@@ -3802,6 +3804,20 @@ inode_replication_new(struct inode *inode, struct host *src, struct host *dst,
 	/* XXXQ should be able to add new replication, even if disconnected */
 	if (!host_is_up(dst))
 		return (GFARM_ERR_NO_ROUTE_TO_HOST);
+
+	if (file_replication_is_busy(dst)) {
+		/*
+		 * workaround for
+		 * http://sourceforge.net/apps/trac/gfarm/ticket/464
+		 *
+		 * (retrying automatic replication after
+		 *  GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+		 */
+		if (retry)
+			replica_check_signal_general(retry_diag, 0);
+
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	}
 
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -3827,6 +3843,17 @@ inode_replication_new(struct inode *inode, struct host *src, struct host *dst,
 			inode_activity_free_check(inode);
 		(void)inode_remove_replica_in_cache(inode, dst);
 		/* abandon error */
+
+		/*
+		 * workaround for
+		 * http://sourceforge.net/apps/trac/gfarm/ticket/464
+		 *
+		 * (retrying automatic replication after
+		 *  GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+		 */
+		if (retry && e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+			replica_check_signal_general(retry_diag, 0);
+
 		return (e);
 	}
 
@@ -4310,7 +4337,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	if ((flags & GFS_REPLICATE_FILE_FORCE) == 0 &&
 	    inode_is_opened_for_writing(inode))
 		return (GFARM_ERR_FILE_BUSY); /* src is busy */
-	else if ((e = inode_replication_new(inode, src, dst, NULL, frp))
+	else if ((e = inode_replication_new(inode, src, dst, 0, NULL, frp))
 	    != GFARM_ERR_NO_ERROR)
 		return (e);
 

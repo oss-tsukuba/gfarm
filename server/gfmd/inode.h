@@ -178,7 +178,8 @@ extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 struct file_replication;
 void inode_replication_start(struct inode *);
 gfarm_error_t inode_replication_new(struct inode *, struct host *,
-	struct host *, struct dead_file_copy *,	struct file_replication **);
+	struct host *, int, struct dead_file_copy *,
+	struct file_replication **);
 gfarm_error_t inode_replicated(struct file_replication *,
 	gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
 gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
