@@ -14,7 +14,7 @@
 #include "lookup.h"
 
 gfarm_error_t
-gfs_statfsnode(char *host, int port,
+gfs_statfsnode_by_path(const char *path, char *host, int port,
 	gfarm_int32_t *bsize, gfarm_off_t *blocks, gfarm_off_t *bfree,
 	gfarm_off_t *bavail, gfarm_off_t *files, gfarm_off_t *ffree,
 	gfarm_off_t *favail)
@@ -23,17 +23,15 @@ gfs_statfsnode(char *host, int port,
 	struct gfm_connection *gfm_server;
 	struct gfs_connection *gfs_server;
 	int retry = 0;
-	const char *path = GFARM_PATH_ROOT;
 
 	for (;;) {
-		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
-		    != GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1002668,
-			    "gfarm_url_parse_metadb failed: %s",
-			    gfarm_error_string(e));
+		if ((e = gfm_client_connection_and_process_acquire_by_path(
+		    path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_connection_and_process_acquire_by_path"
+			    " failed: %s", gfarm_error_string(e));
 			return (e);
 		}
-
 		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
 		    host, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR)
 			goto free_gfm_connection;
@@ -55,4 +53,14 @@ gfs_statfsnode(char *host, int port,
  free_gfm_connection:
 	gfm_client_connection_free(gfm_server);
 	return (e);
+}
+
+gfarm_error_t
+gfs_statfsnode(char *host, int port,
+	gfarm_int32_t *bsize, gfarm_off_t *blocks, gfarm_off_t *bfree,
+	gfarm_off_t *bavail, gfarm_off_t *files, gfarm_off_t *ffree,
+	gfarm_off_t *favail)
+{
+	return (gfs_statfsnode_by_path(GFARM_PATH_ROOT, host, port,
+	    bsize, blocks, bfree, bavail, files, ffree, favail));
 }

@@ -346,6 +346,9 @@ gfarm_error_t gfs_replicate_to_local(GFS_File, char *, int);
 gfarm_error_t gfs_execve(const char *, char *const *, char *const *);
 #endif
 gfarm_error_t gfs_statfs(gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
+gfarm_error_t gfs_statfsnode_by_path(const char *, char *, int,
+	gfarm_int32_t *, gfarm_off_t *, gfarm_off_t *,
+	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
 gfarm_error_t gfs_statfsnode(char *, int,
 	gfarm_int32_t *, gfarm_off_t *, gfarm_off_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *, gfarm_off_t *);
