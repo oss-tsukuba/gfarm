@@ -3756,16 +3756,15 @@ inode_replicated(struct file_replicating *fr,
 	}
 
 	if (fr->cleanup != NULL) {
-		/*
-		 * XXX FIXME
-		 * the following src_errcode check is somewhat adhoc condition
-		 * for a private requirement
-		 */
-		if (src_errcode == GFARM_ERR_NO_ERROR &&
-		    dead_file_copy_is_removable(fr->cleanup))
+		if (dead_file_copy_is_removable(fr->cleanup))
 			removal_pendingq_enqueue(fr->cleanup);
-		else
+		else {
+			/*
+			 * if there is not enough number of replicas
+			 * even including the obsolete one, keep it
+			 */
 			dead_file_copy_mark_deferred(fr->cleanup);
+		}
 	} else if (e == GFARM_ERR_NO_ERROR) {
 		/* try to sweep deferred queue */
 		dead_file_copy_replica_status_changed(inode_get_number(inode),
