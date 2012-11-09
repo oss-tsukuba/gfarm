@@ -13,6 +13,7 @@
 #include "config.h"
 #include "gfm_client.h"
 #include "lookup.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfuser";
 
@@ -116,9 +117,9 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	char opt_operation = '\0'; /* default operation */
-	extern int optind;
 	struct gfarm_user_info ui;
-	const char *path = GFARM_PATH_ROOT;
+	const char *path = ".";
+	char *realpath = NULL;
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -149,12 +150,15 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
+		path = realpath;
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
 		    program_name, path, gfarm_error_string(e));
 		exit(1);
 	}
+	free(realpath);
 
 	switch (opt_operation) {
 	case OP_USERNAME:

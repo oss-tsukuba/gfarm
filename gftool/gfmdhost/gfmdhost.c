@@ -20,6 +20,7 @@
 #include "gfm_proto.h"
 #include "lookup.h"
 #include "config.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfmdhost";
 
@@ -330,8 +331,8 @@ main(int argc, char **argv)
 	char **argv_save = argv;
 	gfarm_error_t e, e2;
 	char opt_operation = '\0'; /* default operation */
-	const char *opt_path = GFARM_PATH_ROOT;
-	char *opt_clustername = NULL;
+	const char *opt_path = ".";
+	char *realpath = NULL, *opt_clustername = NULL;
 	int cname_is_set = 0, opt_port = -1, opt_def_master = -1;
 	int opt_master_candidate = -1;
 	int i, c;
@@ -426,12 +427,16 @@ main(int argc, char **argv)
 		    program_name, gfarm_error_string(e2));
 		exit(EXIT_FAILURE);
 	}
+	if (gfarm_realpath_by_gfarm2fs(opt_path, &realpath)
+	    == GFARM_ERR_NO_ERROR)
+		opt_path = realpath;
 	if ((e2 = gfm_client_connection_and_process_acquire_by_path(
 	    opt_path, &gfm_conn)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
 		    program_name, opt_path, gfarm_error_string(e2));
 		exit(EXIT_FAILURE);
 	}
+	free(realpath);
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:
