@@ -543,6 +543,29 @@ dead_file_copy_scan_deferred(gfarm_ino_t inum, struct host *host,
 	gfarm_mutex_unlock(&dfc_allq.mutex, diag, "unlock");
 }
 
+static int
+transparent_filter(struct dead_file_copy *dfc,
+	gfarm_ino_t inum, struct host *host)
+{
+	return (1);
+}
+
+/*
+ * PREREQUISITE: giant_lock
+ * LOCKS: dfc_allq.mutex, removal_pendingq.mutex
+ * SLEEPS: maybe,
+ *	but dfc_allq.mutex and removal_pendingq.mutex
+ *	won't be blocked while sleeping.
+ */
+void
+dead_file_copy_scan_deferred_all(void)
+{
+	static const char diag[] = "dead_file_copy_scan_deferred_all";
+
+	dead_file_copy_scan_deferred(0, NULL, transparent_filter, diag);
+
+	/* leave the host_busyq as is, because it will be handled shortly. */
+}
 
 /*
  * PREREQUISITE: nothing
@@ -564,13 +587,6 @@ dead_file_copy_host_becomes_down(struct host *host)
 	dfc_workq_host_remove(&host_busyq, host,
 	    "host down: host_busyq");
 #endif
-}
-
-static int
-transparent_filter(struct dead_file_copy *dfc,
-	gfarm_ino_t inum, struct host *host)
-{
-	return (1);
 }
 
 /*

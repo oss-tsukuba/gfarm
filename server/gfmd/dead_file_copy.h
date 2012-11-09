@@ -15,6 +15,7 @@ struct dead_file_copy *removal_pendingq_dequeue(void);
 void removal_finishedq_enqueue(struct dead_file_copy *, gfarm_int32_t);
 void host_busyq_enqueue(struct dead_file_copy *);
 
+void dead_file_copy_scan_deferred_all(void);
 void dead_file_copy_host_becomes_down(struct host *);
 void dead_file_copy_host_becomes_up(struct host *);
 void dead_file_copy_host_removed(struct host *);
