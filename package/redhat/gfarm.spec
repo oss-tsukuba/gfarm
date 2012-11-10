@@ -373,6 +373,8 @@ fi
 %endif
 %{man_prefix}/man1/gfrmdir.1.gz
 %{man_prefix}/man1/gfsched.1.gz
+%{man_prefix}/man1/gfservice.1.gz
+%{man_prefix}/man1/gfservice-agent.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/man1/gfront.1.gz
 %{man_prefix}/man1/gfrsh.1.gz
@@ -494,6 +496,7 @@ fi
 %endif
 %{man_prefix}/man5/gfarm2.conf.5.gz
 %{man_prefix}/man5/gfarm_attr.5.gz
+%{man_prefix}/man5/gfservice.conf.5.gz
 %{man_prefix}/man8/gfmd.8.gz
 %{man_prefix}/man8/gfsd.8.gz
 %if %{gfarm_v2_not_yet}
@@ -545,6 +548,8 @@ fi
 %endif
 %{man_prefix}/ja/man1/gfrmdir.1.gz
 %{man_prefix}/ja/man1/gfsched.1.gz
+%{man_prefix}/ja/man1/gfservice.1.gz
+%{man_prefix}/ja/man1/gfservice-agent.1.gz
 %if %{gfarm_v2_not_yet}
 %{man_prefix}/ja/man1/gfront.1.gz
 %{man_prefix}/ja/man1/gfrsh.1.gz
@@ -643,6 +648,7 @@ fi
 %endif
 %{man_prefix}/ja/man5/gfarm2.conf.5.gz
 %{man_prefix}/ja/man5/gfarm_attr.5.gz
+%{man_prefix}/ja/man5/gfservice.conf.5.gz
 %{man_prefix}/ja/man8/gfmd.8.gz
 %{man_prefix}/ja/man8/gfsd.8.gz
 %{html_prefix}/index.html
@@ -698,6 +704,8 @@ fi
 %endif
 %{html_prefix}/en/ref/man1/gfrmdir.1.html
 %{html_prefix}/en/ref/man1/gfsched.1.html
+%{html_prefix}/en/ref/man1/gfservice.1.html
+%{html_prefix}/en/ref/man1/gfservice-agent.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/ref/man1/gfront.1.html
 %{html_prefix}/en/ref/man1/gfrun.1.html
@@ -817,6 +825,7 @@ fi
 %endif
 %{html_prefix}/en/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/en/ref/man5/gfarm_attr.5.html
+%{html_prefix}/en/ref/man5/gfservice.conf.5.html
 %{html_prefix}/en/ref/man8/gfmd.8.html
 %{html_prefix}/en/ref/man8/gfsd.8.html
 %{html_prefix}/en/user/index.html
@@ -876,6 +885,8 @@ fi
 %endif
 %{html_prefix}/ja/ref/man1/gfrmdir.1.html
 %{html_prefix}/ja/ref/man1/gfsched.1.html
+%{html_prefix}/ja/ref/man1/gfservice.1.html
+%{html_prefix}/ja/ref/man1/gfservice-agent.1.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/ref/man1/gfront.1.html
 %{html_prefix}/ja/ref/man1/gfrun.1.html
@@ -972,6 +983,7 @@ fi
 %endif
 %{html_prefix}/ja/ref/man5/gfarm2.conf.5.html
 %{html_prefix}/ja/ref/man5/gfarm_attr.5.html
+%{html_prefix}/ja/ref/man5/gfservice.conf.5.html
 %{html_prefix}/ja/ref/man8/gfmd.8.html
 %{html_prefix}/ja/ref/man8/gfsd.8.html
 %{html_prefix}/ja/user/index.html
