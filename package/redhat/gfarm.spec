@@ -17,34 +17,18 @@
 %define profile_prefix	%{etc_prefix}/profile.d
 %define sysconfdir	%{etc_prefix}
 
-# whether "ns" is included in this release or not.
-%define have_ns	0
-
 %define gfarm_v2_not_yet 0
-
-#
-# check && enable/disable MPI
-#
-# do the followings to make gfwc
-#   # env MPI_PREFIX=/usr/local/mpich rpmbuild -bb gfarm.spec
-
-%define	mpi_prefix	%(echo "${MPI_PREFIX}")
-
-%define mpi	%(test -x %{mpi_prefix}/bin/mpicc && echo 1 || echo 0)
 
 #
 # check && enable/disable Globus
 #
 # do the followings to build gfarm-gsi-*.rpm:
-#   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 rpmbuild -bb gfarm.spec
+#   # env GFARM_CONFIGURE_OPTION=--with-globus rpmbuild -bb gfarm.spec
 # or
-#   # env GLOBUS_PREFIX=/usr/grid GLOBUS_FLAVOR=gcc32 \
-#	GFARM_CONFIGURE_OPTION=--with-globus-static rpmbuild -bb gfarm.spec
+#   # env GFARM_CONFIGURE_OPTION="--with-globus=/usr/grid --with-globus-flavor=gcc32 --with-globus-static" \
+#	rpmbuild -bb gfarm.spec
 
-%define	globus_prefix	%(echo "${GLOBUS_PREFIX}")
-%define	globus_flavor	%(echo "${GLOBUS_FLAVOR}")
-
-%define globus %(test -n "${GLOBUS_PREFIX}" -a -n "${GLOBUS_FLAVOR}" -a -r %{globus_prefix}/include/%{globus_flavor}/gssapi.h && echo 1 || echo 0)
+%define globus %(echo "${GFARM_CONFIGURE_OPTION}" | grep -e --with-globus > /dev/null && echo 1 || echo 0)
 
 %if %{globus}
 %define package_name	%{pkg}-gsi
@@ -161,6 +145,11 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Thu Nov  1 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.7.2-1
+- Gfarm version 2.5.7.2 released
+- Use GFARM_CONFIGURE_OPTION instead of GLOBUS_PREFIX and
+  GLOBUS_FLAVOR to build gfarm-gsi package
+
 * Mon Sep  3 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.7-1
 - Gfarm version 2.5.7 released
 
@@ -224,10 +213,6 @@ mkdir -p $RPM_BUILD_ROOT
 	--sysconfdir=%{sysconfdir} \
 	--with-postgresql=/usr \
 	--with-openssl=/usr \
-	`test "%{globus}" -ne 0 && echo	\
-		--with-globus=%{globus_prefix} \
-		--with-globus-flavor=%{globus_flavor}` \
-	`test "%{mpi}" -ne 0 && echo --with-mpi=%{mpi_prefix}` \
 	${GFARM_CONFIGURE_OPTION}
 
 make
@@ -352,9 +337,6 @@ fi
 %{man_prefix}/man1/gfls.1.gz
 %{man_prefix}/man1/gfmdhost.1.gz
 %{man_prefix}/man1/gfmkdir.1.gz
-%if %{gfarm_v2_not_yet}
-%{man_prefix}/man1/gfmpirun_p4.1.gz
-%endif
 %{man_prefix}/man1/gfmv.1.gz
 %{man_prefix}/man1/gfncopy.1.gz
 %{man_prefix}/man1/gfpcopy.1.gz
@@ -529,9 +511,6 @@ fi
 %{man_prefix}/ja/man1/gfls.1.gz
 %{man_prefix}/ja/man1/gfmdhost.1.gz
 %{man_prefix}/ja/man1/gfmkdir.1.gz
-%if %{gfarm_v2_not_yet}
-%{man_prefix}/ja/man1/gfmpirun_p4.1.gz
-%endif
 %{man_prefix}/ja/man1/gfmv.1.gz
 %{man_prefix}/ja/man1/gfncopy.1.gz
 %if %{gfarm_v2_not_yet}
@@ -683,9 +662,6 @@ fi
 %{html_prefix}/en/ref/man1/gfls.1.html
 %{html_prefix}/en/ref/man1/gfmdhost.1.html
 %{html_prefix}/en/ref/man1/gfmkdir.1.html
-%if %{gfarm_v2_not_yet}
-%{html_prefix}/en/ref/man1/gfmpirun_p4.1.html
-%endif
 %{html_prefix}/en/ref/man1/gfmv.1.html
 %{html_prefix}/en/ref/man1/gfncopy.1.html
 %{html_prefix}/en/ref/man1/gfpcopy.1.html
@@ -833,7 +809,6 @@ fi
 %{html_prefix}/en/user/redundancy-tutorial.html
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/en/user/nfs-gfarmfs.html
-%{html_prefix}/en/user/samba-hook.html
 %endif
 %{html_prefix}/ja/ref/index.html
 %if %{gfarm_v2_not_yet}
@@ -866,9 +841,6 @@ fi
 %{html_prefix}/ja/ref/man1/gfls.1.html
 %{html_prefix}/ja/ref/man1/gfmdhost.1.html
 %{html_prefix}/ja/ref/man1/gfmkdir.1.html
-%if %{gfarm_v2_not_yet}
-%{html_prefix}/ja/ref/man1/gfmpirun_p4.1.html
-%endif
 %{html_prefix}/ja/ref/man1/gfmv.1.html
 %{html_prefix}/ja/ref/man1/gfncopy.1.html
 %if %{gfarm_v2_not_yet}
@@ -991,7 +963,6 @@ fi
 %if %{gfarm_v2_not_yet}
 %{html_prefix}/ja/user/export-gfarm.html
 %{html_prefix}/ja/user/nfs-gfarmfs.html
-%{html_prefix}/ja/user/samba-hook.html
 %endif
 %{html_prefix}/ja/user/smboverssh.html
 %{html_prefix}/ja/user/redundancy-tutorial.html
@@ -1016,10 +987,6 @@ fi
 %{doc_prefix}/Gfarm-FAQ.ja
 %{doc_prefix}/KNOWN_PROBLEMS.en
 %{doc_prefix}/KNOWN_PROBLEMS.ja
-%if %{gfarm_v2_not_yet}
-%{doc_prefix}/README.hook.en
-%{doc_prefix}/README.hook.ja
-%endif
 %{doc_prefix}/gfperf/CONFIG-gfperf.en
 %{doc_prefix}/gfperf/README-gfperf.en
 %{doc_prefix}/gfperf/SETUP-gfperf.en
@@ -1037,31 +1004,9 @@ fi
 %{lib_prefix}/libgfarm.so.1.0.0
 %{lib_prefix}/libgfperf.so.1
 %{lib_prefix}/libgfperf.so.1.0.0
-%if %{gfarm_v2_not_yet}
-%{lib_prefix}/libgfs_hook.so.0
-%{lib_prefix}/libgfs_hook.so.0.0.0
-%{lib_prefix}/libgfs_hook_debug.so.0
-%{lib_prefix}/libgfs_hook_debug.so.0.0.0
-%{lib_prefix}/libgfs_hook_no_init.so.0
-%{lib_prefix}/libgfs_hook_no_init.so.0.0.0
-%{lib_prefix}/libgfs_hook_no_init_debug.so.0
-%{lib_prefix}/libgfs_hook_no_init_debug.so.0.0.0
-%endif
 %dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/config-gfarm.sysdep
-%if %{mpi}
-%{lib_prefix}/libgfs_hook_mpi.so.0
-%{lib_prefix}/libgfs_hook_mpi.so.0.0.0
-%{lib_prefix}/libgfs_hook_mpi_debug.so.0
-%{lib_prefix}/libgfs_hook_mpi_debug.so.0.0.0
-%endif
-%if %{have_ns}
-%{lib_prefix}/libns.so.0
-%{lib_prefix}/libns.so.0.0.0
-%{lib_prefix}/libnsexec.so.0
-%{lib_prefix}/libnsexec.so.0.0.0
-%endif
 
 %files client
 %defattr(-,root,root)
@@ -1095,7 +1040,6 @@ fi
 %{prefix}/bin/gfpcopy-test.sh
 %{prefix}/bin/gfpath
 %if %{gfarm_v2_not_yet}
-%{prefix}/bin/gfmpirun_p4
 %{prefix}/bin/gfps
 %{prefix}/bin/gfpwd
 %{prefix}/bin/gfq.sh
@@ -1135,20 +1079,6 @@ fi
 %{profile_prefix}/gfarm.csh
 %endif
 
-%if %{have_ns}
-%{prefix}/sbin/gfarmd
-%{prefix}/bin/ns_get
-%{prefix}/bin/ns_lstat
-%{prefix}/bin/ns_mkdir
-%{prefix}/bin/ns_put
-%{prefix}/bin/ns_readdir
-%{prefix}/bin/ns_readlink
-%{prefix}/bin/ns_rename
-%{prefix}/bin/ns_stat
-%{prefix}/bin/ns_symlink
-%{prefix}/bin/ns_unlink
-%{prefix}/bin/ns_unlink_dir
-%endif
 %{prefix}/bin/gfperf-autoreplica
 %{prefix}/bin/gfperf-copy
 %{prefix}/bin/gfperf-metadata
@@ -1260,62 +1190,9 @@ fi
 %{prefix}/include/gfarm/gfs_glob.h
 # XXX - this should not be here
 %{prefix}/include/gfarm/gfarm_msg_enums.h
-%if %{gfarm_v2_not_yet}
-%{prefix}/include/gfarm/gfs_hook.h
-%{lib_prefix}/gfs_hook.o
-%{lib_prefix}/gfs_hook_debug.o
-%{lib_prefix}/gfs_hook_no_init.o
-%{lib_prefix}/gfs_hook_no_init_debug.o
-%{lib_prefix}/hooks_init_mpi.c
-%endif
 %{lib_prefix}/libgfarm.a
 %{lib_prefix}/libgfarm.la
 %{lib_prefix}/libgfarm.so
-%if %{gfarm_v2_not_yet}
-%{lib_prefix}/libgfs_hook.a
-%{lib_prefix}/libgfs_hook.la
-%{lib_prefix}/libgfs_hook.so
-%{lib_prefix}/libgfs_hook_debug.a
-%{lib_prefix}/libgfs_hook_debug.la
-%{lib_prefix}/libgfs_hook_debug.so
-%{lib_prefix}/libgfs_hook_no_init.a
-%{lib_prefix}/libgfs_hook_no_init.la
-%{lib_prefix}/libgfs_hook_no_init.so
-%{lib_prefix}/libgfs_hook_no_init_debug.a
-%{lib_prefix}/libgfs_hook_no_init_debug.la
-%{lib_prefix}/libgfs_hook_no_init_debug.so
-%endif
-%if %{mpi}
-%{lib_prefix}/gfs_hook_mpi.o
-%{lib_prefix}/gfs_hook_mpi_debug.o
-%{lib_prefix}/libgfs_hook_mpi.a
-%{lib_prefix}/libgfs_hook_mpi.la
-%{lib_prefix}/libgfs_hook_mpi.so
-%{lib_prefix}/libgfs_hook_mpi_debug.a
-%{lib_prefix}/libgfs_hook_mpi_debug.la
-%{lib_prefix}/libgfs_hook_mpi_debug.so
-%endif
 %{lib_prefix}/libgfperf.a
 %{lib_prefix}/libgfperf.la
 %{lib_prefix}/libgfperf.so
-
-
-%if %{have_ns}
-%{prefix}/include/gfarm/comm.h
-%{prefix}/include/gfarm/con.h
-%{prefix}/include/gfarm/debug.h
-%{prefix}/include/gfarm/gflib.h
-%{prefix}/include/gfarm/ns.h
-%{prefix}/include/gfarm/nsclnt.h
-%{prefix}/include/gfarm/nscom.h
-%{prefix}/include/gfarm/nsexec.h
-%{prefix}/include/gfarm/soc-lxdr.h
-%{prefix}/include/gfarm/soc.h
-%{prefix}/include/gfarm/type.h
-%{lib_prefix}/libns.a
-%{lib_prefix}/libns.la
-%{lib_prefix}/libns.so
-%{lib_prefix}/libnsexec.a
-%{lib_prefix}/libnsexec.la
-%{lib_prefix}/libnsexec.so
-%endif

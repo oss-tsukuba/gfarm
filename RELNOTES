@@ -1,3 +1,26 @@
+Release note for Gfarm 2.5.7.2
+==============================
+
+[2012.11.1]
+
+New configuration directive
+* spool_server_listen_backlog, metadb_server_listen_backlog -
+  specifies the listen backlog [sf.net trac #444]
+
+Updated feature
+* gfprep, gfpcopy - -P option to report bandwidth when copying each
+  file
+* gfperf-web - print stack trace in error case
+
+Bug fix
+* gfprep -p may report minus seconds [sf.net trac #498]
+* client-initiated replica creation fails, if the file is too large
+  [sf.net trac #488]
+* config-gfarm-update -r cannot enable metadb replication [sf.net
+  trac #301]
+* gfsd tries to re-connect only once at the close time [sf.net trac
+  #318]
+
 Release note for Gfarm 2.5.7.1
 ==============================
 
