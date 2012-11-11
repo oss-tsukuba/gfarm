@@ -93,7 +93,6 @@
 
 	代表ノードとはある収集対象のデータを全て保持しているノードで、
 	gmetad.conf の data_source 行に記述され、冗長化のため複数いてよい。
-	
 
 	ganglia の 基本的な構成は以下の通りである。
 
@@ -221,7 +220,7 @@
 	ソースディレクトリで以下の手順でコピーします。
 	+--------------------------------------------------------------------+
         # cp gmond/python_modules/conf.d/diskstat.pyconf $GCONFDIR
-        # find gmond/python_modules -name '*.py' |xargs -I {} cp {} $GLIBDIR
+        # find gmond/python_modules -name '*.py' | xargs -I {} cp {} $GLIBDIR
 	+--------------------------------------------------------------------+
 
 	gmond/python_modules/conf.d/ の下には他のplugin もあるので、
@@ -304,11 +303,10 @@
 2.1.1 config-gfmd-iostat 
 	gfmd.conf の変更と、plugin の配置を行う。
 
-
 	+--------------------------------------------------------------------+
 	% config-gfmd-iostat -h
 	usage: config-gfmd-iostat [--help] [--prefix prefix] [-t|-T] [-f]
-	[--iostat-enable {no|yes}(currently yes)]
+	[--iostat-enable {no|yes} (currently yes)]
 	[--iostat-label cluster_label]
 	[--iostat-counter-dir iostat_counter_directory (currently /var/gfarm-stat)]
 	[--iostat-ganglia-confdir ganglia_sysconf_directory (currently /etc/ganglia)]
@@ -364,7 +362,7 @@
 	+--------------------------------------------------------------------+
 	# config-gfsd-iostat -h
 	usage: config-gfsd-iostat [--help] [--prefix prefix] [-t|-T] [-f] [-S]
-	[--iostat-enable {no|yes}(currently yes)]
+	[--iostat-enable {no|yes} (currently yes)]
 	[--iostat-label cluster_label]
 	[--iostat-counter-dir iostat_counter_directory (currently /var/gfarm-stat)]
 	[--iostat-ganglia-confdir ganglia_sysconf_directory (currently /etc/ganglia)]

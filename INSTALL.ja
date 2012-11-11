@@ -108,6 +108,7 @@ postgresql-devel
 globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
 postgresql, postgresql-server		(config-gfarm の実行に必要)
 fuse-devel				(gfarm2fs の構築に必要)
+ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 
 (*) http://www.globus.org/toolkit/downloads/latest-stable/
     を参考に Globus configuration ファイルを導入する必要があります．

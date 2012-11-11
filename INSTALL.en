@@ -105,6 +105,7 @@ postgresql-devel
 globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
 postgresql, postgresql-server		(required to execute config-gfarm)
 fuse-devel				(required to build gfarm2fs)
+ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 
 (*) It is necessary to install Globus configuration file.  See
     http://www.globus.org/toolkit/downloads/latest-stable/
