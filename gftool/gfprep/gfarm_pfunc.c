@@ -121,15 +121,16 @@ pfunc_simulate(const char *url, gfarm_uint64_t KBs)
 }
 
 static gfarm_error_t
-pfunc_check_disk_avail(char *hostname, int port, gfarm_off_t filesize)
+pfunc_check_disk_avail(
+	const char *url, char *hostname, int port, gfarm_off_t filesize)
 {
 	gfarm_error_t e;
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files;
 	gfarm_off_t ffree, favail, avail;
 
-	e = gfs_statfsnode(
-		hostname, port, &bsize, &blocks, &bfree, &bavail,
+	e = gfs_statfsnode_by_path(
+		url, hostname, port, &bsize, &blocks, &bfree, &bavail,
 		&files, &ffree, &favail);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -163,7 +164,8 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		goto end;
 	}
 	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
-		e = pfunc_check_disk_avail(dst_host, dst_port, src_size);
+		e = pfunc_check_disk_avail(
+		    src_url, dst_host, dst_port, src_size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: cannot replicate: "
@@ -465,7 +467,8 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		goto end;
 	}
 	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
-		e = pfunc_check_disk_avail(dst_host, dst_port, src_size);
+		e = pfunc_check_disk_avail(
+		    dst_url, dst_host, dst_port, src_size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: copy failed: checking disk_avail: "
