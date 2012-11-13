@@ -2392,83 +2392,55 @@ static gfarm_error_t
 gfarm_local_realpath(const char *path, char **realpathp)
 {
 	gfarm_error_t e;
-	char *rv, *buf, *parent_c, *parent, *base_c, *base, *p;
+	char *rv, *parent, *p;
+	const char *base;
 	int overflow = 0;
 	size_t len;
-
-	GFARM_MALLOC_ARRAY(buf, PATH_MAX);
-	if (buf == NULL)
-		return (GFARM_ERR_NO_MEMORY);
+	char buf[PATH_MAX];
 
 	rv = realpath(path, buf);
-	if (rv == NULL) {
-		if (errno != ENOENT) {
-			e = gfarm_errno_to_error(errno);
-			/* XXX gflog_debug save_errno */
-			free(buf);
-			return (e);
-		}
-		if (strcmp(path, "") == 0 ||
-		    strcmp(path, "/") == 0 ||
-		    strcmp(path, ".") == 0 ||
-		    strcmp(path, "..") == 0) {
-			free(buf);
-			return (GFARM_ERR_INVALID_ARGUMENT); /* unexpected */
-		}
-
-		/* to create new entry */
-		parent_c = strdup(path);
-		if (parent_c == NULL) {
-			free(buf);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		parent = dirname(parent_c);
-		rv = realpath(parent, buf);
-		if (rv == NULL) {
-			e = gfarm_errno_to_error(errno);
-			/* XXX gflog_debug save_errno */
-			free(parent_c);
-			free(buf);
-			return (e);
-		}
-		free(parent_c);
-
-		base_c = strdup(path);
-		if (base_c == NULL) {
-			free(parent_c);
-			free(buf);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		base = basename(base_c);
-		len = gfarm_size_add(&overflow, strlen(rv), strlen(base));
-		if (overflow) {
-			free(base_c);
-			free(parent_c);
-			free(buf);
-			return (GFARM_ERR_RESULT_OUT_OF_RANGE);
-		}
-		len = gfarm_size_add(&overflow, len, 2); /* '/' and '\0' */
-		if (overflow) {
-			free(base_c);
-			free(parent_c);
-			free(buf);
-			return (GFARM_ERR_RESULT_OUT_OF_RANGE);
-		}
-		GFARM_MALLOC_ARRAY(p, len);
-		if (p == NULL) {
-			free(base_c);
-			free(parent_c);
-			free(buf);
-			return (GFARM_ERR_NO_MEMORY);
-		}
-		p[0] = '\0';
-		strcat(p, rv);
-		strcat(p, "/");
-		strcat(p, base);
-		free(base_c);
-		free(buf);
-		rv = p;
+	if (rv) {
+		*realpathp = strdup(rv);
+		if (*realpathp == NULL)
+			gfprep_fatal("no memory");
+		return (GFARM_ERR_NO_ERROR);
 	}
+	if (errno != ENOENT) {
+		e = gfarm_errno_to_error(errno);
+		/* XXX gflog_debug save_errno */
+		return (e);
+	}
+	if (path[0] == '\0' || /* "" */
+	    (path[0] == '/' && path[1] == '\0') || /* "/" */
+	    (path[0] == '.' && (path[1] == '\0' || /* "." */
+			(path[1] == '.' && path[2] == '\0')))) /* ".." */
+		return (GFARM_ERR_INVALID_ARGUMENT); /* unexpected */
+
+	/* to create new entry */
+	parent = gfarm_path_dir(path); /* malloc'ed */
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	p = realpath(parent, buf);
+	if (p == NULL) {
+		e = gfarm_errno_to_error(errno);
+		/* XXX gflog_debug save_errno */
+		free(parent);
+		return (e);
+	}
+	free(parent);
+	base = gfarm_path_dir_skip(path);
+	len = gfarm_size_add(&overflow, strlen(p), strlen(base));
+	if (overflow)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	len = gfarm_size_add(&overflow, len, 2); /* '/' and '\0' */
+	if (overflow)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	GFARM_MALLOC_ARRAY(rv, len);
+	if (rv == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	strcpy(rv, p);
+	strcat(rv, "/");
+	strcat(rv, base);
 	*realpathp = rv;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -2507,8 +2479,7 @@ gfprep_path_to_real_url(const char *path)
 	GFARM_MALLOC_ARRAY(p, len);
 	if (p == NULL)
 		gfprep_fatal("no memory");
-	p[0] = '\0';
-	strcat(p, GFPREP_FILE_URL_PREFIX);
+	strcpy(p, GFPREP_FILE_URL_PREFIX);
 	strcat(p, "//");
 	strcat(p, real);
 	free(real);

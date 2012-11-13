@@ -146,12 +146,12 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		     FILE *from_parent, FILE *to_parent)
 {
 	gfarm_error_t e;
-	char *src_url, *src_host, *dst_host;
+	char *url, *src_host, *dst_host;
 	int src_port, dst_port;
 	gfarm_off_t src_size;
 	int check_disk_avail;
 
-	gfpara_recv_string(from_parent, &src_url);
+	gfpara_recv_string(from_parent, &url);
 	gfpara_recv_int64(from_parent, &src_size);
 	gfpara_recv_string(from_parent, &src_host);
 	gfpara_recv_int(from_parent, &src_port);
@@ -160,52 +160,52 @@ pfunc_replicate_main(gfarm_pfunc_t *handle, int pfunc_mode,
 	gfpara_recv_int(from_parent, &check_disk_avail);
 
 	if (handle->simulate_KBs > 0) {
-		pfunc_simulate(src_url, handle->simulate_KBs);
+		pfunc_simulate(url, handle->simulate_KBs);
 		goto end;
 	}
 	if (check_disk_avail && dst_port > 0) { /* dst is gfarm */
 		e = pfunc_check_disk_avail(
-		    src_url, dst_host, dst_port, src_size);
+		    url, dst_host, dst_port, src_size);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: cannot replicate: "
 				"checking disk_avail: %s (%s:%d, %s:%d): %s\n",
-				src_url, src_host, src_port,
+				url, src_host, src_port,
 				dst_host, dst_port, gfarm_error_string(e));
 			gfpara_send_int(to_parent, PFUNC_RESULT_NG);
 			goto free_mem;
 		}
 	}
-	e = gfs_replicate_from_to(src_url, src_host, src_port,
+	e = gfs_replicate_from_to(url, src_host, src_port,
 				  dst_host, dst_port);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr,
 			"ERROR: cannot replicate: %s (%s:%d, %s:%d): %s\n",
-			src_url, src_host, src_port, dst_host, dst_port,
+			url, src_host, src_port, dst_host, dst_port,
 			gfarm_error_string(e));
 		gfpara_send_int(to_parent, PFUNC_RESULT_NG);
 		goto free_mem;
 	}
 	if (pfunc_mode == PFUNC_MODE_MIGRATE) {
-		e = gfs_replica_remove_by_file(src_url, src_host);
+		e = gfs_replica_remove_by_file(url, src_host);
 		if (e != GFARM_ERR_NO_ERROR) {
 			fprintf(stderr,
 				"ERROR: cannot migrate: %s (%s:%d): %s\n",
-				src_url, src_host, src_port,
+				url, src_host, src_port,
 				gfarm_error_string(e));
-			e = gfs_replica_remove_by_file(src_url, dst_host);
+			e = gfs_replica_remove_by_file(url, dst_host);
 			if (e != GFARM_ERR_NO_ERROR)
 				fprintf(stderr,
 					"ERROR: cannot remove useless "
 					"replica: %s (%s:%d): %s\n",
-					src_url, dst_host, dst_port,
+					url, dst_host, dst_port,
 					gfarm_error_string(e));
 		}
 	}
 end:
 	gfpara_send_int(to_parent, PFUNC_RESULT_OK);
 free_mem:
-	free(src_url);
+	free(url);
 	free(src_host);
 	free(dst_host);
 }
