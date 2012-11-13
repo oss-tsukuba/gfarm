@@ -1483,8 +1483,8 @@ inode_set_atime_in_cache(struct inode *inode, struct gfarm_timespec *atime)
 	inode->i_atimespec = *atime;
 }
 
-void
-inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
+static void
+inode_set_atime_main(struct inode *inode, struct gfarm_timespec *atime)
 {
 	gfarm_error_t e;
 
@@ -1502,6 +1502,26 @@ inode_set_atime(struct inode *inode, struct gfarm_timespec *atime)
 		    "db_inode_atime_modify(%lld): %s",
 		    (unsigned long long)inode->i_number,
 		    gfarm_error_string(e));
+}
+
+static void
+inode_set_atime_nop(struct inode *inode, struct gfarm_timespec *atime)
+{
+}
+
+static void inode_set_atime_switch(struct inode *, struct gfarm_timespec *);
+void (*inode_set_atime)(struct inode *, struct gfarm_timespec *) =
+	inode_set_atime_switch;
+
+/* initalized only once */
+static void
+inode_set_atime_switch(struct inode *inode, struct gfarm_timespec *atime)
+{
+	if (gfarm_atime_type_get() == GFARM_ATIME_DISABLE)
+		inode_set_atime = inode_set_atime_nop;
+	else
+		inode_set_atime = inode_set_atime_main;
+	inode_set_atime(inode, atime);
 }
 
 static void
@@ -1532,10 +1552,18 @@ void (*inode_set_relatime)(struct inode *, struct gfarm_timespec *) =
 static void
 inode_set_relatime_switch(struct inode *inode, struct gfarm_timespec *atime)
 {
-	if (gfarm_relatime)
+	switch (gfarm_atime_type_get()) {
+	case GFARM_ATIME_DISABLE:
+		inode_set_relatime = inode_set_atime_nop;
+		break;
+	case GFARM_ATIME_RELATIVE:
 		inode_set_relatime = inode_set_relatime_main;
-	else
-		inode_set_relatime = inode_set_atime;
+		break;
+	case GFARM_ATIME_STRICT:
+	default:
+		inode_set_relatime = inode_set_atime_main;
+		break;
+	}
 	inode_set_relatime(inode, atime);
 }
 

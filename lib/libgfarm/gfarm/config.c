@@ -783,6 +783,17 @@ int gfarm_metadb_server_listen_backlog = MISC_DEFAULT;
 char *gfarm_metadb_admin_user = NULL;
 char *gfarm_metadb_admin_user_gsi_dn = NULL;
 
+static struct {
+	enum gfarm_atime_type type;
+	const char *name;
+} gfarm_atime_types[] = {
+	{ GFARM_ATIME_DISABLE, "disable" },
+	{ GFARM_ATIME_RELATIVE, "relative" },
+	{ GFARM_ATIME_STRICT, "strict" }
+};
+static enum gfarm_atime_type gfarm_atime_type = GFARM_ATIME_DEFAULT;
+static const char *gfarm_atime_type_name = NULL;
+
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
 char *gfarm_ldap_server_port = NULL;
@@ -835,8 +846,6 @@ char *gfarm_argv0 = NULL;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
-#define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
-#define GFARM_RELATIME_DEFAULT 1 /* enable */
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
@@ -882,8 +891,6 @@ int gfarm_metadb_thread_pool_size = MISC_DEFAULT;
 int gfarm_metadb_job_queue_length = MISC_DEFAULT;
 int gfarm_metadb_heartbeat_interval = MISC_DEFAULT;
 int gfarm_metadb_dbq_size = MISC_DEFAULT;
-int gfarm_record_atime = MISC_DEFAULT;
-int gfarm_relatime = MISC_DEFAULT;
 int gfarm_client_file_bufsize = MISC_DEFAULT;
 int gfarm_client_parallel_copy = MISC_DEFAULT;
 int gfarm_profile = MISC_DEFAULT;
@@ -1144,18 +1151,6 @@ gfarm_setup_debug_command(void)
 	signal(SIGSEGV, gfarm_sig_debug);
 }
 
-void
-gfarm_set_record_atime(int boolean)
-{
-	gfarm_record_atime = boolean;
-}
-
-void
-gfarm_set_relatime(int boolean)
-{
-	gfarm_relatime = boolean;
-}
-
 int
 gfarm_get_metadb_replication_enabled(void)
 {
@@ -1217,18 +1212,21 @@ gfarm_set_metadb_server_force_slave(int slave)
 }
 
 enum gfarm_spool_check_level
-gfarm_spool_check_level_get() {
+gfarm_spool_check_level_get()
+{
 	return (gfarm_spool_check_level);
 }
 
 const char *
-gfarm_spool_check_level_get_by_name() {
+gfarm_spool_check_level_get_by_name()
+{
 
 	return (gfarm_spool_check_level_name);
 }
 
 gfarm_error_t
-gfarm_spool_check_level_set(enum gfarm_spool_check_level level) {
+gfarm_spool_check_level_set(enum gfarm_spool_check_level level)
+{
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
@@ -1243,7 +1241,8 @@ gfarm_spool_check_level_set(enum gfarm_spool_check_level level) {
 }
 
 gfarm_error_t
-gfarm_spool_check_level_set_by_name(const char *name) {
+gfarm_spool_check_level_set_by_name(const char *name)
+{
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
@@ -1252,6 +1251,48 @@ gfarm_spool_check_level_set_by_name(const char *name) {
 			    = gfarm_spool_check_levels[i].level;
 			gfarm_spool_check_level_name
 			    = gfarm_spool_check_levels[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+enum gfarm_atime_type
+gfarm_atime_type_get()
+{
+	return (gfarm_atime_type);
+}
+
+const char *
+gfarm_atime_type_get_by_name()
+{
+	return (gfarm_atime_type_name);
+}
+
+gfarm_error_t
+gfarm_atime_type_set(enum gfarm_atime_type type)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_atime_types); i++) {
+		if (type == gfarm_atime_types[i].type) {
+			gfarm_atime_type = type;
+			gfarm_atime_type_name = gfarm_atime_types[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+gfarm_error_t
+gfarm_atime_type_set_by_name(const char *name)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_atime_types); i++) {
+		if (strcmp(name, gfarm_atime_types[i].name) == 0) {
+			gfarm_atime_type = gfarm_atime_types[i].type;
+			gfarm_atime_type_name = gfarm_atime_types[i].name;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
@@ -2158,6 +2199,32 @@ parse_spool_check_level(char *p)
 }
 
 static gfarm_error_t
+parse_atime_type(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing atime(%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	/* first line has precedence */
+	if (gfarm_atime_type != GFARM_ATIME_DEFAULT)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfarm_atime_type_set_by_name(s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "atime(%s): %s", s, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_hostname_and_port(char *host_and_port, const char *listname,
 	char **hostname, int *port)
 {
@@ -2735,9 +2802,13 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "record_atime") == 0) {
-		e = parse_set_misc_enabled(p, &gfarm_record_atime);
-	} else if (strcmp(s, o = "relatime") == 0) {
-		e = parse_set_misc_enabled(p, &gfarm_relatime);
+		int record_atime;
+
+		e = parse_set_misc_enabled(p, &record_atime);
+		if (!record_atime)
+			gfarm_atime_type_set(GFARM_ATIME_DISABLE);
+	} else if (strcmp(s, o = "atime") == 0) {
+		e = parse_atime_type(p);
 	} else if (strcmp(s, o = "client_file_bufsize") == 0) {
 		e = parse_set_misc_int(p, &gfarm_client_file_bufsize);
 	} else if (strcmp(s, o = "client_parallel_copy") == 0) {
@@ -2972,10 +3043,8 @@ gfarm_config_set_default_misc(void)
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
 	if (gfarm_metadb_dbq_size == MISC_DEFAULT)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
-	if (gfarm_record_atime == MISC_DEFAULT)
-		gfarm_record_atime = GFARM_RECORD_ATIME_DEFAULT;
-	if (gfarm_relatime == MISC_DEFAULT)
-		gfarm_relatime = GFARM_RELATIME_DEFAULT;
+	if (gfarm_atime_type == GFARM_ATIME_DEFAULT)
+		(void)gfarm_atime_type_set(GFARM_ATIME_RELATIVE);
 	if (gfarm_client_file_bufsize == MISC_DEFAULT)
 		gfarm_client_file_bufsize = GFARM_CLIENT_FILE_BUFSIZE_DEFAULT;
 	if (gfarm_client_parallel_copy == MISC_DEFAULT)

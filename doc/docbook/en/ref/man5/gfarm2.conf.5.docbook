@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>08 Nov 2012</date></refentryinfo>
+<refentryinfo><date>13 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1529,6 +1529,27 @@ The "disable" setting corresponds to "noatime" setting in usual filesystem.
  -->
 
 <varlistentry>
+<term><token>atime</token> <parameter>type</parameter></term>
+<listitem>
+<para>
+When "disable" is specified, atime (access time) is not updated.  When
+"relative" is specified, atime is only updated if the previous atime
+is earlier than the current mtime (modify time) or ctime (change
+time), or if the previous atime is more than 1 day old.  When "strict"
+is specified, atime is always updated.  The default setting is
+"relative".
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>For example,</para>
+<literallayout>
+	atime disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_file_bufsize</token> <parameter>bytes</parameter></term>
 <listitem>
 <para>This directive specifies the file buffer size in bytes used in
@@ -1883,6 +1904,7 @@ notation.</para>
 		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
 		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
+		&nbsp;&nbsp;&lt;atime_statement&gt; |
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;client_parallel_copy_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
@@ -2001,6 +2023,7 @@ notation.</para>
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
+	&lt;atime_statement&gt; ::= "atime" &lt;atime_type&gt;
 	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
 	&lt;client_parallel_copy_statement&gt; ::= "client_parallel_copy" &lt;number&gt;
 	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
@@ -2048,6 +2071,7 @@ notation.</para>
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
 	&lt;spck_level&gt; ::= "disable" | "display" | "delete" | "lost_found"
+	&lt;atime_type&gt; ::= "disable" | "relative" | "strict"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
 	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |

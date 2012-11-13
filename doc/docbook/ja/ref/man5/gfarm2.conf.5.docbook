@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>08 Nov 2012</date></refentryinfo>
+<refentryinfo><date>13 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1486,6 +1486,26 @@ disable設定は、通常のファイルシステムにおける"noatime"オプションに
  -->
 
 <varlistentry>
+<term><token>atime</token> <parameter>タイプ</parameter></term>
+<listitem>
+<para>
+このオプションがdisableの場合、atime(ファイルアクセス時刻)は更新されま
+せん。relativeの場合、mtime(ファイル修正時刻)またはctime(ファイル変更時
+刻)よりも、既にセットされているatimeが早い時刻のとき、またはatimeが1日
+以上更新されていないときだけ、atimeが更新されます。strictの場合、atime
+は常に更新されます。標準設定はrelativeです。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	atime disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>client_file_bufsize</token> <parameter>バイト数</parameter></term>
 <listitem>
 <para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
@@ -1829,6 +1849,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
 		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
+		&nbsp;&nbsp;&lt;atime_statement&gt; |
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
 		&nbsp;&nbsp;&lt;client_parallel_copy_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
@@ -1946,6 +1967,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
 	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
+	&lt;atime_statement&gt; ::= "atime" &lt;atime_type&gt;
 	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
 	&lt;client_parallel_copy_statement&gt; ::= "client_parallel_copy" &lt;number&gt;
 	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
@@ -1993,6 +2015,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;"\\" | "\""
 	&lt;validity&gt; ::= "enable" | "disable"
 	&lt;spck_level&gt; ::= "disable" | "display" | "delete" | "lost_found"
+	&lt;atime_type&gt; ::= "disable" | "relative" | "strict"
 	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		&nbsp;&nbsp;"notice" | "info" | "debug"
 	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
