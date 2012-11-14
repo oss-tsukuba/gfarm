@@ -805,7 +805,7 @@ struct known_network *known_network_list = NULL;
 struct known_network **known_network_list_last = &known_network_list;
 
 void
-gfarm_known_network_dump(void)
+gfarm_known_network_list_dump(void)
 {
 	char network[GFARM_HOSTSPEC_STRLEN];
 	struct known_network *n;
@@ -830,6 +830,31 @@ gfarm_known_network_list_add(struct gfarm_hostspec *network)
 	*known_network_list_last = known_network;
 	known_network_list_last = &known_network->next;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+gfarm_known_network_list_add_local_host(void)
+{
+	int count, i;
+	struct in_addr *self_ip;
+	gfarm_uint32_t addr_in, mask = 0xffffffff;
+	struct gfarm_hostspec *net;
+	gfarm_error_t e;
+
+	e = gfarm_get_ip_addresses(&count, &self_ip);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	for (i = 0; i < count; ++i) {
+		addr_in = self_ip[i].s_addr;
+		e = gfarm_hostspec_af_inet4_new(addr_in & mask, mask, &net);
+		if (e == GFARM_ERR_NO_ERROR) {
+			e = gfarm_known_network_list_add(net);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+		}
+	}
+	free(self_ip);
+	return (e);
 }
 
 gfarm_error_t

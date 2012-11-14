@@ -312,8 +312,16 @@ struct search_idle_network {
  * The followings are is shared among all metadata servers,
  * but it must be OK, since these are a global things.
  */
+/*
+ * local_host may be included in the local_network, thus network_list
+ * should be FIFO order.
+ */
 static struct search_idle_network *search_idle_network_list = NULL;
+static struct search_idle_network **search_idle_network_list_last =
+	&search_idle_network_list;
 static struct search_idle_network *search_idle_local_net = NULL;
+static struct search_idle_network **search_idle_local_host;
+static int search_idle_local_host_count;
 
 /* The followings are working area during scheduling */
 static struct timeval search_idle_now;
@@ -329,6 +337,72 @@ is_expired(struct timeval *cached_timep, int expiration)
 }
 
 static gfarm_error_t
+search_idle_network_list_add0(struct sockaddr *addr, int flags,
+	struct search_idle_network **netp)
+{
+	struct search_idle_network *net;
+	gfarm_error_t e;
+
+	GFARM_MALLOC(net);
+	if (net == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "search_idle_network_list_add0: no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	net->rtt_usec = 0; /* local or unknown */
+	/* XXX - gfarm_addr_network_get() may assume IPv4 class C network */
+	e = gfarm_addr_network_get(addr, &net->network);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(net);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "search_idle_network_list_add0: no memory");
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	net->flags = flags;
+	net->candidate_list = NULL;
+	net->candidate_last = &net->candidate_list;
+	net->ongoing = 0;
+	net->next = NULL;
+	*search_idle_network_list_last = net;
+	search_idle_network_list_last = &net->next;
+	if (netp != NULL)
+		*netp = net;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+serch_idle_network_list_local_host_init(void)
+{
+	int count, i, j;
+	struct in_addr *self_ip;
+	struct search_idle_network *net;
+	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
+	struct sockaddr_in addr_in;
+
+	e = gfarm_get_ip_addresses(&count, &self_ip);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	GFARM_MALLOC_ARRAY(search_idle_local_host, count);
+	if (search_idle_local_host == NULL) {
+		free(self_ip);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0, j = 0; i < count; ++i) {
+		addr_in.sin_family = AF_INET;
+		addr_in.sin_addr = self_ip[i];
+		e = search_idle_network_list_add0((struct sockaddr *)&addr_in,
+			NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
+		if (e == GFARM_ERR_NO_ERROR)
+			search_idle_local_host[j++] = net;
+		else if (save_e == GFARM_ERR_NO_ERROR)
+			save_e = e;
+	}		
+	free(self_ip);
+	search_idle_local_host_count = j;
+	return (j > 0 ? GFARM_ERR_NO_ERROR : save_e);
+}
+
+static gfarm_error_t
 search_idle_network_list_init(struct gfm_connection *gfm_server)
 {
 	gfarm_error_t e;
@@ -339,11 +413,14 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 
 	assert(search_idle_network_list == NULL);
 
+	e = serch_idle_network_list_local_host_init();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
 	e = gfm_host_get_canonical_self_name(gfm_server,
 	    &self_name, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		self_name = gfarm_host_get_self_name();
-
 	/*
 	 * XXX FIXME
 	 * This is a suspicious part.
@@ -362,23 +439,11 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 		    self_name, gfarm_error_string(e));
 		return (e);
 	}
-
-	GFARM_MALLOC(net);
-	if (net == NULL) {
-		gflog_debug(GFARM_MSG_1001425,
-		    "search_idle_network_list_init: no memory");
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	net->rtt_usec = 0; /* i.e. local network */
-	/* XXX - gfarm_addr_network_get() may assume IPv4 class C network */
-	gfarm_addr_network_get(&peer_addr, &net->network);
-	net->flags = NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL;
-	net->candidate_list = NULL;
-	net->candidate_last = &net->candidate_list;
-	net->next = NULL;
-	search_idle_network_list = net;
-	search_idle_local_net = net;
-	return (GFARM_ERR_NO_ERROR);
+	e = search_idle_network_list_add0(&peer_addr,
+		NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
+	if (e == GFARM_ERR_NO_ERROR)
+		search_idle_local_net = net;
+	return (e);
 }
 
 static gfarm_error_t
@@ -386,7 +451,6 @@ search_idle_network_list_add(struct sockaddr *addr,
 	struct search_idle_network **netp)
 {
 	struct search_idle_network *net;
-	gfarm_error_t e;
 
 	/* XXX - if there are lots of networks, this is too slow */
 	for (net = search_idle_network_list; net != NULL;
@@ -397,28 +461,8 @@ search_idle_network_list_add(struct sockaddr *addr,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	/* first host in the network */
-	GFARM_MALLOC(net);
-	if (net == NULL) {
-		gflog_debug(GFARM_MSG_1001426,
-		    "search_idle_network_list_add: no memory");
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	e = gfarm_addr_network_get(addr, &net->network);
-	if (e != GFARM_ERR_NO_ERROR) {
-		free(net);
-		gflog_debug(GFARM_MSG_1002473,
-		    "search_idle_network_list_add: no memory");
-		return (GFARM_ERR_NO_MEMORY);
-	}
-	/* XXX - may assume IPv4 class C network */
-	net->flags = NET_FLAG_NETMASK_KNOWN; 
-	net->candidate_list = NULL;
-	net->candidate_last = &net->candidate_list;
-	net->ongoing = 0;
-	net->next = search_idle_network_list;
-	search_idle_network_list = net;
-	*netp = net;
-	return (GFARM_ERR_NO_ERROR);
+	return (search_idle_network_list_add0(addr,
+		NET_FLAG_NETMASK_KNOWN, netp));
 }
 
 static gfarm_error_t
@@ -1450,10 +1494,16 @@ search_idle(struct gfm_connection *gfm_server,
 	gfs_profile(gfarm_gettimerval(&t2));
 
 	/*
-	 * 2. at first, search hosts on the local network
+	 * 1. search local hosts
+	 */
+	if (search_idle_local_host != NULL)
+		search_idle_in_networks(&s, search_idle_local_host_count,
+			search_idle_local_host);
+	/*
+	 * 2. search hosts on the local network
 	 *   (i.e. the same network with this client host).
 	 */
-	if (search_idle_local_net != NULL)
+	if (!search_idle_is_satisfied(&s) && search_idle_local_net != NULL)
 		search_idle_in_networks(&s, 1, &search_idle_local_net);
 	gfs_profile(gfarm_gettimerval(&t3));
 
