@@ -396,7 +396,7 @@ serch_idle_network_list_local_host_init(void)
 			search_idle_local_host[j++] = net;
 		else if (save_e == GFARM_ERR_NO_ERROR)
 			save_e = e;
-	}		
+	}
 	free(self_ip);
 	search_idle_local_host_count = j;
 	return (j > 0 ? GFARM_ERR_NO_ERROR : save_e);
