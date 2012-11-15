@@ -26,11 +26,28 @@ display_gfm_server(struct gfm_connection *gfm_server)
 	printf("MetadataUser: %s\n", gfm_client_username(gfm_server));
 }
 
+static void
+display_time(const char *name, struct gfarm_timespec *ts)
+{
+#if 1	/* support nanosecond */
+	char s[64];
+	time_t t = ts->tv_sec;
+	struct tm *tm = localtime(&t);
+
+	strftime(s, sizeof(s), "%Y-%m-%d %H:%M:%S", tm);
+	printf("%s: %s.%09d", name, s, ts->tv_nsec);
+	strftime(s, sizeof(s), "%z", tm);
+	printf(" %s\n", s);
+#else	/* old format */
+	time_t t = ts->tv_sec;
+
+	printf("%s: %s", name, ctime(&t));
+#endif
+}
+
 void
 display_stat(char *fn, struct gfs_stat *st)
 {
-	time_t clock;
-
 	printf("  File: \"%s\"\n", fn);
 	printf("  Size: %-12" GFARM_PRId64 " Filetype: ", st->st_size);
 	switch (st->st_mode & GFARM_S_IFMT) {
@@ -56,9 +73,9 @@ display_stat(char *fn, struct gfs_stat *st)
 	printf(" Links: %-12" GFARM_PRId64 " Ncopy: %-12" GFARM_PRId64 "\n",
 	       st->st_nlink, st->st_ncopy);
 
-	clock = st->st_atimespec.tv_sec; printf("Access: %s", ctime(&clock));
-	clock = st->st_mtimespec.tv_sec; printf("Modify: %s", ctime(&clock));
-	clock = st->st_ctimespec.tv_sec; printf("Change: %s", ctime(&clock));
+	display_time("Access", &st->st_atimespec);
+	display_time("Modify", &st->st_mtimespec);
+	display_time("Change", &st->st_ctimespec);
 }
 
 void

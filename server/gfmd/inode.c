@@ -1674,11 +1674,7 @@ inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 static void
 touch(struct gfarm_timespec *tsp)
 {
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	tsp->tv_sec = tv.tv_sec;
-	tsp->tv_nsec = tv.tv_usec * GFARM_MICROSEC_BY_NANOSEC;
+	gfarm_gettime(tsp);
 }
 
 void
