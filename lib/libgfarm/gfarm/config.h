@@ -18,6 +18,16 @@ gfarm_error_t gfarm_spool_check_level_set(enum gfarm_spool_check_level);
 gfarm_error_t gfarm_spool_check_level_set_by_name(const char *);
 
 /* GFM dependent */
+enum gfarm_atime_type {
+	GFARM_ATIME_DEFAULT,
+	GFARM_ATIME_DISABLE,
+	GFARM_ATIME_RELATIVE,
+	GFARM_ATIME_STRICT,
+};
+enum gfarm_atime_type gfarm_atime_type_get(void);
+const char *gfarm_atime_type_get_by_name(void);
+gfarm_error_t gfarm_atime_type_set(enum gfarm_atime_type);
+gfarm_error_t gfarm_atime_type_set_by_name(const char *);
 
 enum gfarm_backend_db_type {
 	GFARM_BACKEND_DB_TYPE_UNKNOWN,

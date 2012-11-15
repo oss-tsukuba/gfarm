@@ -20,7 +20,6 @@ struct gfarm_context {
 	float schedule_rtt_thresh;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
-	int record_atime;
 	int client_file_bufsize;
 	int client_parallel_copy;
 	int on_demand_replication;

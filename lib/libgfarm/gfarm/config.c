@@ -849,6 +849,17 @@ enum gfarm_backend_db_type gfarm_backend_db_type =
 	GFARM_BACKEND_DB_TYPE_UNKNOWN;
 int gfarm_metadb_server_listen_backlog = GFARM_CONFIG_MISC_DEFAULT;
 
+static struct {
+	enum gfarm_atime_type type;
+	const char *name;
+} gfarm_atime_types[] = {
+	{ GFARM_ATIME_DISABLE, "disable" },
+	{ GFARM_ATIME_RELATIVE, "relative" },
+	{ GFARM_ATIME_STRICT, "strict" }
+};
+static enum gfarm_atime_type gfarm_atime_type = GFARM_ATIME_DEFAULT;
+static const char *gfarm_atime_type_name = NULL;
+
 /* LDAP dependent */
 char *gfarm_ldap_server_name = NULL;
 char *gfarm_ldap_server_port = NULL;
@@ -902,8 +913,6 @@ int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFSD_CONNECTION_CACHE_DEFAULT 16 /* 16 free connections */
 #define GFARM_GFMD_CONNECTION_CACHE_DEFAULT  8 /*  8 free connections */
 #define GFARM_METADB_MAX_DESCRIPTORS_DEFAULT	(2*65536)
-#define GFARM_RECORD_ATIME_DEFAULT 1 /* enable */
-#define GFARM_RELATIME_DEFAULT 1 /* enable */
 #define GFARM_CLIENT_FILE_BUFSIZE_DEFAULT	(1048576 - 8) /* 1MB - 8B */
 #define GFARM_CLIENT_PARALLEL_COPY_DEFAULT	4
 #define GFARM_PROFILE_DEFAULT 0 /* disable */
@@ -948,7 +957,6 @@ static int journal_sync_slave_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_listen = GFARM_CONFIG_MISC_DEFAULT;
-int gfarm_relatime = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
@@ -1182,18 +1190,6 @@ gfarm_setup_debug_command(void)
 }
 #endif /* __KERNEL__ */
 
-void
-gfarm_set_record_atime(int boolean)
-{
-	gfarm_ctxp->record_atime = boolean;
-}
-
-void
-gfarm_set_relatime(int boolean)
-{
-	gfarm_relatime = boolean;
-}
-
 int
 gfarm_get_metadb_replication_enabled(void)
 {
@@ -1261,18 +1257,20 @@ gfarm_get_metadb_server_slave_listen(void)
 }
 
 enum gfarm_spool_check_level
-gfarm_spool_check_level_get(void) {
+gfarm_spool_check_level_get(void)
+{
 	return (gfarm_spool_check_level);
 }
 
 const char *
-gfarm_spool_check_level_get_by_name(void) {
-
+gfarm_spool_check_level_get_by_name(void)
+{
 	return (gfarm_spool_check_level_name);
 }
 
 gfarm_error_t
-gfarm_spool_check_level_set(enum gfarm_spool_check_level level) {
+gfarm_spool_check_level_set(enum gfarm_spool_check_level level)
+{
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
@@ -1287,7 +1285,8 @@ gfarm_spool_check_level_set(enum gfarm_spool_check_level level) {
 }
 
 gfarm_error_t
-gfarm_spool_check_level_set_by_name(const char *name) {
+gfarm_spool_check_level_set_by_name(const char *name)
+{
 	int i;
 
 	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_spool_check_levels); i++) {
@@ -1296,6 +1295,48 @@ gfarm_spool_check_level_set_by_name(const char *name) {
 			    = gfarm_spool_check_levels[i].level;
 			gfarm_spool_check_level_name
 			    = gfarm_spool_check_levels[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+enum gfarm_atime_type
+gfarm_atime_type_get(void)
+{
+	return (gfarm_atime_type);
+}
+
+const char *
+gfarm_atime_type_get_by_name(void)
+{
+	return (gfarm_atime_type_name);
+}
+
+gfarm_error_t
+gfarm_atime_type_set(enum gfarm_atime_type type)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_atime_types); i++) {
+		if (type == gfarm_atime_types[i].type) {
+			gfarm_atime_type = type;
+			gfarm_atime_type_name = gfarm_atime_types[i].name;
+			return (GFARM_ERR_NO_ERROR);
+		}
+	}
+	return (GFARM_ERR_INVALID_ARGUMENT);
+}
+
+gfarm_error_t
+gfarm_atime_type_set_by_name(const char *name)
+{
+	int i;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(gfarm_atime_types); i++) {
+		if (strcmp(name, gfarm_atime_types[i].name) == 0) {
+			gfarm_atime_type = gfarm_atime_types[i].type;
+			gfarm_atime_type_name = gfarm_atime_types[i].name;
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
@@ -2217,6 +2258,32 @@ parse_spool_check_level(char *p)
 }
 
 static gfarm_error_t
+parse_atime_type(char *p)
+{
+	gfarm_error_t e;
+	char *s;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"get_one_argument failed "
+			"when parsing atime(%s): %s",
+			p, gfarm_error_string(e));
+		return (e);
+	}
+	/* first line has precedence */
+	if (gfarm_atime_type != GFARM_ATIME_DEFAULT)
+		return (GFARM_ERR_NO_ERROR);
+	e = gfarm_atime_type_set_by_name(s);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "atime(%s): %s", s, gfarm_error_string(e));
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 parse_hostname_and_port(char *host_and_port, const char *listname,
 	char **hostname, int *port)
 {
@@ -2834,9 +2901,13 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "metadb_server_dbq_size") == 0) {
 		e = parse_set_misc_int(p, &gfarm_metadb_dbq_size);
 	} else if (strcmp(s, o = "record_atime") == 0) {
-		e = parse_set_misc_enabled(p, &gfarm_ctxp->record_atime);
-	} else if (strcmp(s, o = "relatime") == 0) {
-		e = parse_set_misc_enabled(p, &gfarm_relatime);
+		int record_atime;
+
+		e = parse_set_misc_enabled(p, &record_atime);
+		if (!record_atime)
+			gfarm_atime_type_set(GFARM_ATIME_DISABLE);
+	} else if (strcmp(s, o = "atime") == 0) {
+		e = parse_atime_type(p);
 	} else if (strcmp(s, o = "client_file_bufsize") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->client_file_bufsize);
 	} else if (strcmp(s, o = "client_parallel_copy") == 0) {
@@ -3135,10 +3206,8 @@ gfarm_config_set_default_misc(void)
 		    GFARM_METADB_HEARTBEAT_INTERVAL_DEFAULT;
 	if (gfarm_metadb_dbq_size == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_dbq_size = GFARM_METADB_DBQ_SIZE_DEFAULT;
-	if (gfarm_ctxp->record_atime == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_ctxp->record_atime = GFARM_RECORD_ATIME_DEFAULT;
-	if (gfarm_relatime == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_relatime = GFARM_RELATIME_DEFAULT;
+	if (gfarm_atime_type == GFARM_ATIME_DEFAULT)
+		(void)gfarm_atime_type_set(GFARM_ATIME_RELATIVE);
 	if (gfarm_ctxp->client_file_bufsize == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->client_file_bufsize =
 		    GFARM_CLIENT_FILE_BUFSIZE_DEFAULT;

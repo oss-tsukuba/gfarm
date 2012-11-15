@@ -126,7 +126,6 @@ gfarm_context_init(void)
 	ctxp->schedule_rtt_thresh = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfsd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
-	ctxp->record_atime = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_file_bufsize = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_parallel_copy = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
