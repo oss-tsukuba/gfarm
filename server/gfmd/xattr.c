@@ -330,7 +330,7 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	char *attrname = NULL;
 	size_t size;
 	void *value = NULL;
-	int flags;
+	int flags, transaction = 0;
 	struct process *process;
 	gfarm_int32_t fd;
 	struct inode *inode;
@@ -420,9 +420,13 @@ gfm_server_setxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			if (e == GFARM_ERR_NO_ERROR) {
 				change_ncopy = xattr_ncopy_compare(
 				    xmlMode, inode, attrname, value, size);
+				if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+					transaction = 1;
 				e = setxattr(
 				    xmlMode, inode, attrname, &value, size,
 				    flags, waitctx, &addattr);
+				if (transaction)
+					db_end(diag);
 			}
 		}
 		giant_unlock();
