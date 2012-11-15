@@ -369,7 +369,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	char *attrname = NULL;
 	size_t size;
 	void *value = NULL;
-	int flags;
+	int flags, transaction = 0;
 	struct process *process;
 	gfarm_int32_t fd;
 	struct inode *inode;
@@ -429,9 +429,14 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 		gflog_debug(GFARM_MSG_1003035,
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
-	} else
+	} else {
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
 		e = setxattr(xmlMode, inode, attrname, &value, size,
 			     flags, waitctx, &addattr);
+		if (transaction)
+			db_end(diag);
+	}
 	giant_unlock();
 
 	if (e == GFARM_ERR_NO_ERROR) {
