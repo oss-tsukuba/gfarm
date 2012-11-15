@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "09 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "16 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- GfarmÀßÄê¥Õ¥¡¥¤¥ë
@@ -1003,6 +1003,21 @@ Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¤Ï¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥Î¡¼¥É¤¬ÍøÍÑ²ÄÇ½¤Ë¤Ê¤ë¤Þ¤Ç»î¹Ô¤ò·«¤
 	gfmd_reconnection_timeout 30
 .fi
 .TP
+\fBatime \fI¥¿¥¤¥×\fB\fR
+¤³¤Î¥ª¥×¥·¥ç¥ó¤¬disable¤Î¾ì¹ç¡¢atime(¥Õ¥¡¥¤¥ë¥¢¥¯¥»¥¹»þ¹ï)¤Ï¹¹¿·¤µ¤ì¤Þ
+¤»¤ó¡£relative¤Î¾ì¹ç¡¢mtime(¥Õ¥¡¥¤¥ë½¤Àµ»þ¹ï)¤Þ¤¿¤Ïctime(¥Õ¥¡¥¤¥ëÊÑ¹¹»þ
+¹ï)¤è¤ê¤â¡¢´û¤Ë¥»¥Ã¥È¤µ¤ì¤Æ¤¤¤ëatime¤¬Áá¤¤»þ¹ï¤Î¤È¤­¡¢¤Þ¤¿¤Ïatime¤¬1Æü
+°Ê¾å¹¹¿·¤µ¤ì¤Æ¤¤¤Ê¤¤¤È¤­¤À¤±¡¢atime¤¬¹¹¿·¤µ¤ì¤Þ¤¹¡£strict¤Î¾ì¹ç¡¢atime
+¤Ï¾ï¤Ë¹¹¿·¤µ¤ì¤Þ¤¹¡£É¸½àÀßÄê¤Ïrelative¤Ç¤¹¡£
+
+¤³¤ÎÊ¸¤Ïgfmd.conf¤Î¤ß¤ÇÍ­¸ú¤Ç¤¹¡£
+
+Îã:
+
+.nf
+	atime disable
+.fi
+.TP
 \fBclient_file_bufsize \fI¥Ð¥¤¥È¿ô\fB\fR
 Gfarm¥¯¥é¥¤¥¢¥ó¥È¥é¥¤¥Ö¥é¥ê¡Êlibgfarm¡Ë¤Ç»È¤ï¤ì¤ë¥Õ¥¡¥¤¥ë¤Î¥Ð¥Ã¥Õ¥¡
 ¥µ¥¤¥º¤ò¥Ð¥¤¥ÈÃ±°Ì¤Ç»ØÄê¤·¤Þ¤¹¡£¥Ç¥Õ¥©¥ë¥È¤Ï1048568¥Ð¥¤¥È¡Ê= 1MiB -
@@ -1271,6 +1286,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 		\~\~<file_trace_statement> |
 		\~\~<fatal_action_statement> |
 		\~\~<debug_command_statement> |
+		\~\~<atime_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<client_parallel_copy_statement> |
 		\~\~<profile_statement> |
@@ -1374,6 +1390,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 	<debug_command_statement> ::= "debug_command" <string_list>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<atime_statement> ::= "atime" <atime_type>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
 	<client_parallel_copy_statement> ::= "client_parallel_copy" <number>
 	<profile_statement> ::= "profile" <validity>
@@ -1415,6 +1432,7 @@ gfarm2.conf¤ÎÊ¸Ë¡¤òBNF¤Çµ­½Ò¤¹¤ë¤È¡¢²¼µ­¤Î¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 		\~\~"\\\\" | "\\""
 	<validity> ::= "enable" | "disable"
 	<spck_level> ::= "disable" | "display" | "delete" | "lost_found"
+	<atime_type> ::= "disable" | "relative" | "strict"
 	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		\~\~"notice" | "info" | "debug"
 	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |

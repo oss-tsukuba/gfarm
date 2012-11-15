@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "09 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "16 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -1057,6 +1057,22 @@ For example,
 	gfmd_reconnection_timeout 30
 .fi
 .TP
+\fBatime \fItype\fB\fR
+When "disable" is specified, atime (access time) is not updated.  When
+"relative" is specified, atime is only updated if the previous atime
+is earlier than the current mtime (modify time) or ctime (change
+time), or if the previous atime is more than 1 day old.  When "strict"
+is specified, atime is always updated.  The default setting is
+"relative".
+
+This parameter is only available in gfmd.conf.
+
+For example,
+
+.nf
+	atime disable
+.fi
+.TP
 \fBclient_file_bufsize \fIbytes\fB\fR
 This directive specifies the file buffer size in bytes used in
 the Gfarm client library (libgfarm).  The default size is 1048568
@@ -1336,6 +1352,7 @@ notation.
 		\~\~<file_trace_statement> |
 		\~\~<fatal_action_statement> |
 		\~\~<debug_command_statement> |
+		\~\~<atime_statement> |
 		\~\~<client_file_bufsize_statement> |
 		\~\~<client_parallel_copy_statement> |
 		\~\~<profile_statement> |
@@ -1440,6 +1457,7 @@ notation.
 	<debug_command_statement> ::= "debug_command" <string_list>
 	<no_file_system_node_timeout_statement> ::= "no_file_system_node_timeout" <number>
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
+	<atime_statement> ::= "atime" <atime_type>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
 	<client_parallel_copy_statement> ::= "client_parallel_copy" <number>
 	<profile_statement> ::= "profile" <validity>
@@ -1481,6 +1499,7 @@ notation.
 		\~\~"\\\\" | "\\""
 	<validity> ::= "enable" | "disable"
 	<spck_level> ::= "disable" | "display" | "delete" | "lost_found"
+	<atime_type> ::= "disable" | "relative" | "strict"
 	<log_priority> ::= "emerg" | "alert" | "crit" | "err" | "warning" |
 		\~\~"notice" | "info" | "debug"
 	<fatal_action_name> ::= "backtrace_and_abort" | "backtrace_and_exit" |
