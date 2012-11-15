@@ -946,26 +946,26 @@ static void
 file_table_set_read(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
-	struct timeval now;
+	struct timespec now;
 
 	if (fe == NULL)
 		return;
 
-	gettimeofday(&now, NULL);
-	file_entry_set_atime(fe, now.tv_sec, now.tv_usec * 1000);
+	gfarm_gettime(&now);
+	file_entry_set_atime(fe, now.tv_sec, now.tv_nsec);
 }
 
 static void
 file_table_set_written(gfarm_int32_t net_fd)
 {
 	struct file_entry *fe = file_table_entry(net_fd);
-	struct timeval now;
+	struct timespec now;
 
 	if (fe == NULL)
 		return;
 
-	gettimeofday(&now, NULL);
-	file_entry_set_mtime(fe, now.tv_sec, now.tv_usec * 1000);
+	gfarm_gettime(&now);
+	file_entry_set_mtime(fe, now.tv_sec, now.tv_nsec);
 }
 
 static void
