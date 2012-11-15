@@ -2155,6 +2155,30 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
+>atime</SPAN
+> <CODE
+CLASS="PARAMETER"
+>type</CODE
+></DT
+><DD
+><P
+>When "disable" is specified, atime (access time) is not updated.  When
+"relative" is specified, atime is only updated if the previous atime
+is earlier than the current mtime (modify time) or ctime (change
+time), or if the previous atime is more than 1 day old.  When "strict"
+is specified, atime is always updated.  The default setting is
+"relative".</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	atime&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
 >client_file_bufsize</SPAN
 > <CODE
 CLASS="PARAMETER"
@@ -2516,6 +2540,7 @@ CLASS="LITERALLAYOUT"
 		&nbsp;&nbsp;&lt;file_trace_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;fatal_action_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;debug_command_statement&gt;&nbsp;|<br>
+		&nbsp;&nbsp;&lt;atime_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;profile_statement&gt;&nbsp;|<br>
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt;&nbsp;|<br>
@@ -2618,6 +2643,7 @@ CLASS="LITERALLAYOUT"
 	&lt;debug_command_statement&gt;&nbsp;::=&nbsp;"debug_command"&nbsp;&lt;string_list&gt;<br>
 	&lt;no_file_system_node_timeout_statement&gt;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&lt;number&gt;<br>
 	&lt;gfmd_reconnection_timeout_statement&gt;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&lt;number&gt;<br>
+	&lt;atime_statement&gt;&nbsp;::=&nbsp;"atime"&nbsp;&lt;atime_type&gt;<br>
 	&lt;client_file_bufsize_statement&gt;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&lt;size&gt;<br>
 	&lt;profile_statement&gt;&nbsp;::=&nbsp;"profile"&nbsp;&lt;validity&gt;<br>
 	&lt;metadb_server_list_statement&gt;&nbsp;::=&nbsp;"metadb_server_list"&nbsp;&lt;metadb_server_list_spec&gt;<br>
@@ -2655,6 +2681,7 @@ CLASS="LITERALLAYOUT"
 		&nbsp;&nbsp;"\\"&nbsp;|&nbsp;"\""<br>
 	&lt;validity&gt;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
 	&lt;spck_level&gt;&nbsp;::=&nbsp;"disable"&nbsp;|&nbsp;"display"&nbsp;|&nbsp;"delete"&nbsp;|&nbsp;"lost_found"<br>
+	&lt;atime_type&gt;&nbsp;::=&nbsp;"disable"&nbsp;|&nbsp;"relative"&nbsp;|&nbsp;"strict"<br>
 	&lt;log_priority&gt;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
 		&nbsp;&nbsp;"notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"<br>
 	&lt;fatal_action_name&gt;&nbsp;::=&nbsp;"backtrace_and_abort"&nbsp;|&nbsp;"backtrace_and_exit"&nbsp;|<br>
