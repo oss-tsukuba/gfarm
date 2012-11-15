@@ -2569,7 +2569,8 @@ gfarm_local_realpath(const char *path, char **realpathp)
 	if (rv == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 	strcpy(rv, p);
-	strcat(rv, "/");
+	if (strcmp(p, "/") != 0)
+		strcat(rv, "/");
 	strcat(rv, base);
 	*realpathp = rv;
 	return (GFARM_ERR_NO_ERROR);
@@ -2598,7 +2599,6 @@ gfprep_path_to_real_url(const char *path)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfprep_error("gfarm_local_realpath: %s: %s",
 		    path, gfarm_error_string(e));
-		gfprep_error("relative path is not supported");
 		exit(EXIT_FAILURE);
 	}
 	/* file://...<real>...\0 */
