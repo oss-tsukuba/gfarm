@@ -1618,7 +1618,11 @@ inode_set_ctime(struct inode *inode, struct gfarm_timespec *ctime)
 static void
 touch(struct gfarm_timespec *tsp)
 {
-	gfarm_gettime(tsp);
+	struct timespec ts;
+
+	gfarm_gettime(&ts);
+	tsp->tv_sec = ts.tv_sec;
+	tsp->tv_nsec = ts.tv_nsec;
 }
 
 void
