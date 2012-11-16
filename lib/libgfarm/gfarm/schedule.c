@@ -292,6 +292,7 @@ struct search_idle_network {
 	struct gfarm_hostspec *network;
 	int rtt_usec;			/* if NET_FLAG_RTT_AVAIL */
 	int flags;
+	int local_network;
 
 #define NET_FLAG_NETMASK_KNOWN	0x01
 #define NET_FLAG_RTT_AVAIL	0x02
@@ -336,6 +337,18 @@ is_expired(struct timeval *cached_timep, int expiration)
 	return (gfarm_timeval_cmp(&search_idle_now, &expired) >= 0);
 }
 
+static void
+search_idle_network_set_local(struct search_idle_network *net)
+{
+	net->local_network = 1;
+}
+
+static int
+search_idle_network_is_local(struct search_idle_network *net)
+{
+	return (net->local_network);
+}
+
 static gfarm_error_t
 search_idle_network_list_add0(struct sockaddr *addr, int flags,
 	struct search_idle_network **netp)
@@ -359,6 +372,7 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	net->flags = flags;
+	net->local_network = 0;
 	net->candidate_list = NULL;
 	net->candidate_last = &net->candidate_list;
 	net->ongoing = 0;
@@ -392,9 +406,10 @@ serch_idle_network_list_local_host_init(void)
 		addr_in.sin_addr = self_ip[i];
 		e = search_idle_network_list_add0((struct sockaddr *)&addr_in,
 			NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
-		if (e == GFARM_ERR_NO_ERROR)
+		if (e == GFARM_ERR_NO_ERROR) {
 			search_idle_local_host[j++] = net;
-		else if (save_e == GFARM_ERR_NO_ERROR)
+			search_idle_network_set_local(net);
+		} else if (save_e == GFARM_ERR_NO_ERROR)
 			save_e = e;
 	}
 	free(self_ip);
@@ -441,8 +456,10 @@ search_idle_network_list_init(struct gfm_connection *gfm_server)
 	}
 	e = search_idle_network_list_add0(&peer_addr,
 		NET_FLAG_NETMASK_KNOWN | NET_FLAG_RTT_AVAIL, &net);
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
 		search_idle_local_net = net;
+		search_idle_network_set_local(net);
+	}
 	return (e);
 }
 
@@ -1423,7 +1440,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 
 	nnets = 0;
 	for (net = search_idle_network_list; net != NULL; net = net->next) {
-		if (net == search_idle_local_net) /* already searched */
+		if (search_idle_network_is_local(net)) /* already searched */
 			continue;
 		if ((net->flags &
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING)) ==
@@ -1441,7 +1458,7 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 	}
 	i = 0;
 	for (net = search_idle_network_list; net != NULL; net = net->next) {
-		if (net == search_idle_local_net) /* already searched */
+		if (search_idle_network_is_local(net)) /* already searched */
 			continue;
 		if ((net->flags &
 		    (NET_FLAG_RTT_AVAIL | NET_FLAG_SCHEDULING)) ==
