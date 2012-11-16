@@ -1168,7 +1168,6 @@ The default ratio is 4.0.
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><token>write_local_priority</token> <parameter>validity</parameter></term>
 <listitem>
@@ -1176,10 +1175,12 @@ The default ratio is 4.0.
 node to write a file. By specifing the <token>disable</token> keyword in
 this directive, Gfarm handles localhost the same as other
 filesystem nodes.
+<!--
 The same thing can be achieved by specifying <token>disable</token>
 as the value of the GFARM_WRITE_LOCAL_PRIORITY environment variable.
 When both this directive and the environment variable are specified,
 the value specified by the environment variable will be used.
+ -->
 The default is <token>enable</token>.
 </para>
 <para>For example,</para>
@@ -1197,10 +1198,12 @@ this directive, when it selects a node to write a file.
 If there is no suitable node for writing in this domain, or if this
 directive is not specified, the filesystem node will be chosen from
 among all nodes.
+<!--
 You can specify this domain with the GFARM_WRITE_TARGET_DOMAIN environment
 variable too.
 When both this directive and the environment variable are specified,
 the value specified by the environment variable will be used.
+ -->
 Note that if you specify this directive more than once, only the first one
 will be used and the others are ignored.
 </para>
@@ -1210,7 +1213,6 @@ will be used and the others are ignored.
 </literallayout>
 </listitem>
 </varlistentry>
- -->
 
 <varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>bytes</parameter></term>
@@ -1887,8 +1889,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_candidates_ratio_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
-<!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
-<!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
+		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;simultaneous_replication_receivers_statement&gt; |
 		&nbsp;&nbsp;&lt;outstanding_file_replication_limit_statement&gt; |
@@ -2003,8 +2005,8 @@ notation.</para>
 	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
 	&lt;schedule_candidates_ratio_statement&gt; ::= "schedule_candidates_ratio" &lt;floating_point_number&gt;
 	&lt;schedule_rtt_thresh__statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
-<!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
-<!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
+	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
+	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;simultaneous_replication_receivers_statement&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;

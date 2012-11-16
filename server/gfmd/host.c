@@ -1136,38 +1136,6 @@ host_schedule_n_from_all_except(int *n_exceptionsp, struct host **exceptions,
 	return (e);
 }
 
-/* give the top priority to the local host */
-int
-host_from_one_except(struct peer *peer,
-	int n_exceptions, struct host **exceptions,
-	int (*filter)(struct host *, void *), void *closure,
-	gfarm_int32_t *np, struct host ***hostsp, gfarm_error_t *errorp)
-{
-	struct host **hosts, *h = peer_get_host(peer);
-	int i;
-
-	if (h != NULL && (*filter)(h, closure)) {
-
-		/* is the host excluded? */
-		for (i = 0; i < n_exceptions; i++) {
-			if (h == exceptions[i])
-				return (0); /* not scheduled */
-		}
-
-		GFARM_MALLOC_ARRAY(hosts, 1);
-		if (hosts == NULL) {
-			*errorp = GFARM_ERR_NO_MEMORY;
-			return (1); /* scheduled, sort of */
-		}
-		hosts[0] = h;
-		*np = 1;
-		*hostsp = hosts;
-		*errorp = GFARM_ERR_NO_ERROR;
-		return (1); /* scheduled */
-	}
-	return (0); /* not scheduled */
-}
-
 #ifdef NOT_USED
 /*
  * save all to text file

@@ -3405,15 +3405,10 @@ static gfarm_error_t
 inode_schedule_new_file(struct peer *peer, gfarm_int32_t *np,
 			struct host ***hostsp)
 {
-	gfarm_error_t e;
 	gfarm_off_t necessary_space = 0; /* i.e. use default value */
 
-	if (!host_from_one_except(peer, 0, NULL,
-	    host_is_disk_available_filter, &necessary_space, np, hostsp, &e))
-		e = host_from_all(
-		    host_is_disk_available_filter, &necessary_space,
-		    np, hostsp);
-	return (e);
+	return (host_from_all(host_is_disk_available_filter, &necessary_space,
+		np, hostsp));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -3546,13 +3541,9 @@ inode_schedule_file_default(struct file_opening *opening,
 			if (e != GFARM_ERR_NO_ERROR)
 				return (e);
 
-			if (!host_from_one_except(peer, nhosts, hosts,
-			    host_is_disk_available_filter, &necessary_space,
-			    np, hostsp, &e))
-				e = host_from_all_except(
-				    &nhosts, hosts,
-				    host_is_disk_available_filter,
-				    &necessary_space, np, hostsp);
+			e = host_from_all_except(&nhosts, hosts,
+				host_is_disk_available_filter,
+				&necessary_space, np, hostsp);
 			free(hosts);
 			return (e);
 		}

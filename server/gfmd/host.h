@@ -74,10 +74,6 @@ gfarm_error_t host_schedule_n_from_all_except(
 	int *, struct host **,
 	int (*)(struct host *, void *), void *,
 	int, int *, struct host ***);
-int host_from_one_except(struct peer *, int, struct host **,
-	int (*)(struct host *, void *), void *,
-	gfarm_int32_t *, struct host ***, gfarm_error_t *);
-
 
 void host_status_reply_waiting_set(struct host *);
 void host_status_reply_waiting_reset(struct host *);
