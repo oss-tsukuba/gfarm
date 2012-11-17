@@ -158,7 +158,7 @@ usage(void)
 	fprintf(stderr, "\t-l\t\tlong format\n");
 	fprintf(stderr, "\t-o\t\tobsolete replica is displayed\n");
 	fprintf(stderr, "\t-r, -R\t\tdisplay subdirectories recursively\n");
-	exit(1);
+	exit(2);
 }
 
 int
@@ -227,7 +227,7 @@ main(int argc, char **argv)
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	if (argc == 0) {
 		usage();
@@ -270,18 +270,19 @@ main(int argc, char **argv)
 				e = display_replica_catalog(p, &st, &opt);
 			}
 			gfs_stat_free(&st);
-			if (e_save == GFARM_ERR_NO_ERROR)
-				e_save = e;
 		}
+		if (e_save == GFARM_ERR_NO_ERROR)
+			e_save = e;
 		free(pi);
 	}
-
+	gfs_glob_free(&types);
 	gfarm_stringlist_free_deeply(&paths);
+
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,
 		    gfarm_error_string(e));
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
-	return (e_save == GFARM_ERR_NO_ERROR ? 0 : 1);
+	return (e_save == GFARM_ERR_NO_ERROR ? EXIT_SUCCESS : EXIT_FAILURE);
 }
