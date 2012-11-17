@@ -30,7 +30,6 @@ void gfarm_host_sched_info_free(int, struct gfarm_host_sched_info *);
 
 int gfm_client_is_connection_error(gfarm_error_t);
 struct gfp_xdr *gfm_client_connection_conn(struct gfm_connection *);
-void gfm_client_connection_unset_conn(struct gfm_connection *);
 int gfm_client_connection_fd(struct gfm_connection *);
 enum gfarm_auth_method gfm_client_connection_auth_method(
 	struct gfm_connection *);
@@ -62,6 +61,7 @@ struct passwd;
 gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
 	struct gfm_connection **, const char *, struct passwd *, int);
 void gfm_client_connection_free(struct gfm_connection *);
+struct gfp_xdr *gfm_client_connection_convert_to_xdr(struct gfm_connection *);
 void gfm_client_terminate(void);
 
 void gfm_client_connection_lock(struct gfm_connection *);

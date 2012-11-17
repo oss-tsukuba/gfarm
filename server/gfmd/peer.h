@@ -7,8 +7,15 @@ struct remote_peer;
 struct local_peer *peer_to_local_peer(struct peer *);
 struct remote_peer *peer_to_remote_peer(struct peer *);
 
+#ifdef PEER_REFCOUNT_DEBUG
+void peer_add_ref_impl(struct peer *, const char *, int, const char *);
+int peer_del_ref_impl(struct peer *, const char *, int, const char *);
+#define peer_add_ref(peer) peer_add_ref_impl(peer, __FILE__, __LINE__, __func__)
+#define peer_del_ref(peer) peer_del_ref_impl(peer, __FILE__, __LINE__, __func__)
+#else
 void peer_add_ref(struct peer *);
 int peer_del_ref(struct peer *);
+#endif
 void peer_free_request(struct peer *);
 
 void peer_init(void);
@@ -85,3 +92,7 @@ void peer_stat_add(struct peer *, unsigned int, int);
 gfarm_error_t peer_get_port(struct peer *, int *);
 gfarm_int64_t peer_get_id(struct peer *);
 struct peer* peer_get_parent(struct peer *);
+
+/* only used by gfmd channel */
+struct gfmdc_peer_record *peer_get_gfmdc_record(struct peer *);
+void peer_set_gfmdc_record(struct peer *, struct gfmdc_peer_record *);

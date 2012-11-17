@@ -33,6 +33,7 @@
 #include "abstract_host.h"
 #include "host.h"
 #include "mdhost.h"
+#include "gfmd_channel.h"
 #include "peer_watcher.h"
 #include "peer.h"
 #include "inode.h"
@@ -70,19 +71,31 @@ peer_closer_wakeup(struct peer *peer)
 }
 
 void
+#ifdef PEER_REFCOUNT_DEBUG
+peer_add_ref_impl(struct peer *peer, const char *file, int line, const char *func)
+#else
 peer_add_ref(struct peer *peer)
+#endif
 {
 	static const char diag[] = "peer_add_ref";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
 	++peer->refcount;
+#ifdef PEER_REFCOUNT_DEBUG
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_add_ref(%p):%d",
+	    file, line, func, peer, peer->refcount);
+#endif
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
 }
 
 int
+#ifdef PEER_REFCOUNT_DEBUG
+peer_del_ref_impl(struct peer *peer, const char *file, int line, const char *func)
+#else
 peer_del_ref(struct peer *peer)
+#endif
 {
 	int referenced;
 	static const char diag[] = "peer_del_ref";
@@ -96,6 +109,10 @@ peer_del_ref(struct peer *peer)
 		referenced = 0;
 		peer_closer_wakeup(peer);
 	}
+#ifdef PEER_REFCOUNT_DEBUG
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_del_ref(%p):%d",
+	    file, line, func, peer, peer->refcount);
+#endif
 
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
@@ -228,6 +245,9 @@ peer_clear_common(struct peer *peer)
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
 
 	peer->iostatp = NULL;
+
+	/* gfmd channel */
+	peer->gfmdc_record = NULL;
 }
 
 void
@@ -265,6 +285,14 @@ peer_free_common(struct peer *peer, const char *diag)
 	 */
 	(*peer->ops->notice_disconnected)(peer, peer_get_hostname(peer),
 	    username != NULL ? username : "<unauthorized>");
+
+	/*
+	 * free resources for gfmd channel
+	 */
+	if (peer->gfmdc_record != NULL) {
+		gfmdc_peer_record_free(peer->gfmdc_record, diag);
+		peer->gfmdc_record = NULL;
+	}
 
 	/*
 	 * free resources for foreground channel
@@ -890,4 +918,19 @@ peer_stat_add(struct peer *peer, unsigned int cat, int val)
 {
 	if (peer->iostatp != NULL)
 		gfarm_iostat_stat_add(peer->iostatp, cat, val);
+}
+
+/*
+ * only used by gfmd channel
+ */
+struct gfmdc_peer_record *
+peer_get_gfmdc_record(struct peer *peer)
+{
+	return (peer->gfmdc_record);
+}
+
+void
+peer_set_gfmdc_record(struct peer *peer, struct gfmdc_peer_record *peer_gfmdc)
+{
+	peer->gfmdc_record = peer_gfmdc;
 }

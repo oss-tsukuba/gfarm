@@ -78,6 +78,11 @@ struct peer {
 	} u;
 
 	struct gfarm_iostat_items *iostatp;
+
+	/*
+	 * only used by gfmd channel
+	 */
+	struct gfmdc_peer_record *gfmdc_record;
 };
 
 void peer_construct_common(struct peer *, struct peer_ops *ops, const char *);
