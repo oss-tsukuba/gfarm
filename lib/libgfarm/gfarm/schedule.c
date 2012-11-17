@@ -1513,15 +1513,16 @@ search_idle(struct gfm_connection *gfm_server,
 	/*
 	 * 1. search local hosts
 	 */
-	if ((!write_mode || gfarm_schedule_write_local_priority())
-	    && search_idle_local_host != NULL)
+	if (search_idle_local_host != NULL)
 		search_idle_in_networks(&s, search_idle_local_host_count,
 			search_idle_local_host);
 	/*
 	 * 2. search hosts on the local network
 	 *   (i.e. the same network with this client host).
 	 */
-	if (!search_idle_is_satisfied(&s) && search_idle_local_net != NULL)
+	if (((write_mode && !gfarm_schedule_write_local_priority())
+	     || !search_idle_is_satisfied(&s))
+	    && search_idle_local_net != NULL)
 		search_idle_in_networks(&s, 1, &search_idle_local_net);
 	gfs_profile(gfarm_gettimerval(&t3));
 
