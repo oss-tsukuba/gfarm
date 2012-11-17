@@ -88,12 +88,6 @@ gfm_client_connection_conn(struct gfm_connection *gfm_server)
 	return (gfm_server->conn);
 }
 
-void
-gfm_client_connection_unset_conn(struct gfm_connection *gfm_server)
-{
-	gfm_server->conn = NULL;
-}
-
 int
 gfm_client_connection_fd(struct gfm_connection *gfm_server)
 {
@@ -771,7 +765,14 @@ static gfarm_error_t
 gfm_client_connection_dispose(void *connection_data)
 {
 	struct gfm_connection *gfm_server = connection_data;
-	gfarm_error_t e = gfp_xdr_free(gfm_server->conn);
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	/*
+	 * gfm_server->conn may be NULL, if this function is called
+	 * from gfm_client_connection_convert_to_xdr()
+	 */
+	if (gfm_server->conn != NULL)
+		e = gfp_xdr_free(gfm_server->conn);
 
 	gfp_uncached_connection_dispose(gfm_server->cache_entry);
 	free(gfm_server);
@@ -826,6 +827,19 @@ gfm_client_connection_free(struct gfm_connection *gfm_server)
 {
 	gfp_cached_or_uncached_connection_free(&gfm_server_cache,
 	    gfm_server->cache_entry);
+}
+
+/*
+ * NOTE: this function frees struct gfm_connection
+ */
+struct gfp_xdr *
+gfm_client_connection_convert_to_xdr(struct gfm_connection *gfm_server)
+{
+	struct gfp_xdr *conn = gfm_server->conn;
+
+	gfm_server->conn = NULL;
+	gfm_client_connection_free(gfm_server);
+	return (conn);
 }
 
 void
