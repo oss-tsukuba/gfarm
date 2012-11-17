@@ -290,6 +290,7 @@ remote_peer_for_each_sibling(struct remote_peer *remote_peer,
 	}
 }
 
+/* XXX FIXME: this has performance problem. use redblack tree instead */
 struct remote_peer *
 remote_peer_id_lookup_from_siblings(struct remote_peer *remote_peer,
 	gfarm_int64_t remote_peer_id)

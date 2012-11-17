@@ -268,31 +268,34 @@ local_peer_free(struct peer *peer)
 		local_peer);
 	static const char diag[] = "local_peer_free";
 
+	/*
+	 * to support remote peer
+	 */
 	gfarm_mutex_lock(&local_peer->child_peers_mutex,
 	    diag, "child_peers_mutex");
 	remote_peer_for_each_sibling(local_peer->child_peers,
 	    remote_peer_free_simply);
+	local_peer->child_peers = NULL;
 	gfarm_mutex_unlock(&local_peer->child_peers_mutex,
 	    diag, "child_peers_mutex");
 
-	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
-
-	peer_free_common(peer, diag);
-
+	/* async rpc cleanup should be done before freeing peer */
 	if (local_peer->async != NULL) {
 		/* needs giant_lock and peer_table_lock */
 		gfp_xdr_async_peer_free(local_peer->async, peer);
 		local_peer->async = NULL;
 	}
+
+	peer_free_common(peer, diag);
+
+	local_peer->readable_watcher = NULL;
+	/* We don't free peer->readable_event. */
+
+	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
 	if (local_peer->conn != NULL) {
 		gfp_xdr_free(local_peer->conn);
 		local_peer->conn = NULL;
 	}
-
-	local_peer->child_peers = NULL;
-	local_peer->readable_watcher = NULL;
-	/* We don't free peer->readable_event. */
-
 	gfarm_mutex_unlock(&local_peer_table_mutex,
 	    diag, local_peer_table_diag);
 
@@ -368,7 +371,6 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 		}
 	}
 	local_peer->conn = conn;
-
 	local_peer->async = NULL; /* synchronous protocol by default */
 
 	if (local_peer->readable_event == NULL) {
@@ -393,7 +395,7 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 	local_peer->child_peers = NULL;
 	local_peer->super.peer_id = local_peer_id++;
 
-	if (!local_peer->super.iostatp)
+	if (local_peer->super.iostatp == NULL)
 		local_peer->super.iostatp = gfarm_iostat_get_ip(fd);
 
 	*local_peerp = local_peer;

@@ -26,15 +26,29 @@ struct pending_new_generation_by_cookie {
 };
 
 struct peer {
+	/* constant */
 	struct peer_ops *ops;
 
+	/*
+	 * protected by peer_closing_queue.mutex
+	 */
 	struct peer *next_close;
 	int refcount, free_requested;
+
+	/*
+	 * followings (except protocol_error) are protected by giant lock
+	 */
 
 	enum gfarm_auth_id_type id_type;
 	char *username, *hostname;
 	struct user *user;
 	struct abstract_host *host;
+
+	gfarm_int64_t peer_id;	/* to support remote peer */
+
+	/*
+	 * only used by foreground channel
+	 */
 
 	struct process *process;
 	int protocol_error;
@@ -63,12 +77,7 @@ struct peer {
 		} client;
 	} u;
 
-	/*
-	 * to support remote peer
-	 */
-	gfarm_int64_t peer_id;
-
-	struct gfarm_iostat_items	*iostatp;
+	struct gfarm_iostat_items *iostatp;
 };
 
 void peer_construct_common(struct peer *, struct peer_ops *ops, const char *);

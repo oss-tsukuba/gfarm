@@ -80,9 +80,8 @@ struct inum_path_array;
 void peer_findxmlattrctx_set(struct peer *, struct inum_path_array *);
 struct inum_path_array *peer_findxmlattrctx_get(struct peer *);
 
+void peer_stat_add(struct peer *, unsigned int, int);
+
 gfarm_error_t peer_get_port(struct peer *, int *);
 gfarm_int64_t peer_get_id(struct peer *);
 struct peer* peer_get_parent(struct peer *);
-
-void peer_stat_add(struct peer *peer, unsigned int cat, int val);
-

@@ -210,9 +210,13 @@ peer_clear_common(struct peer *peer)
 	peer->hostname = NULL;
 	peer->user = NULL;
 	peer->host = NULL;
+
+	/*
+	 * foreground channel
+	 */
+
 	peer->process = NULL;
 	peer->protocol_error = 0;
-	
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
 	peer->flags = 0;
@@ -222,11 +226,13 @@ peer_clear_common(struct peer *peer)
 	/* generation update, or generation update by cookie */
 	peer->pending_new_generation = NULL;
 	GFARM_HCIRCLEQ_INIT(peer->pending_new_generation_cookies, cookie_link);
+
 	peer->iostatp = NULL;
 }
 
 void
-peer_construct_common(struct peer *peer, struct peer_ops *ops, const char *diag)
+peer_construct_common(struct peer *peer, struct peer_ops *ops,
+	const char *diag)
 {
 	peer_clear_common(peer);
 	peer->ops = ops;
@@ -250,17 +256,7 @@ peer_free_common(struct peer *peer, const char *diag)
 {
 	char *username;
 
-	if (peer->iostatp) {
-		gfarm_iostat_clear_ip(peer->iostatp);
-		peer->iostatp = NULL;
-	}
 	username = peer_get_username(peer);
-
-	/*XXX XXX*/
-	while (peer->u.client.jobs != NULL)
-		job_table_remove(job_get_id(peer->u.client.jobs), username,
-		    &peer->u.client.jobs);
-	peer->u.client.jobs = NULL;
 
 	/*
 	 * both username and hostname may be null,
@@ -270,13 +266,36 @@ peer_free_common(struct peer *peer, const char *diag)
 	(*peer->ops->notice_disconnected)(peer, peer_get_hostname(peer),
 	    username != NULL ? username : "<unauthorized>");
 
+	/*
+	 * free resources for foreground channel
+	 */
+
+	if (peer->iostatp != NULL) {
+		gfarm_iostat_clear_ip(peer->iostatp);
+		peer->iostatp = NULL;
+	}
+
+	/*XXX XXX*/
+	while (peer->u.client.jobs != NULL)
+		job_table_remove(job_get_id(peer->u.client.jobs), username,
+		    &peer->u.client.jobs);
+	peer->u.client.jobs = NULL;
+
 	peer_unset_pending_new_generation(peer, GFARM_ERR_CONNECTION_ABORTED);
+
+	peer->findxmlattrctx = NULL;
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+
+	/*
+	 * free common resources
+	 */
+
+	peer->peer_id = 0; /* to support remote peer */
 
 	peer->user = NULL;
 	peer->host = NULL;
@@ -286,16 +305,10 @@ peer_free_common(struct peer *peer, const char *diag)
 	if (peer->hostname != NULL) {
 		free(peer->hostname); peer->hostname = NULL;
 	}
-	peer->findxmlattrctx = NULL;
 
 	peer->next_close = NULL;
 	peer->refcount = 0;
 	peer->free_requested = 0;
-
-	/*
-	 * to support remote peer
-	 */
-	peer->peer_id = 0;
 }
 
 /* NOTE: caller of this function should acquire giant_lock as well */
@@ -871,10 +884,10 @@ peer_findxmlattrctx_get(struct peer *peer)
 {
 	return (peer->findxmlattrctx);
 }
+
 void
 peer_stat_add(struct peer *peer, unsigned int cat, int val)
 {
-	if (peer->iostatp)
+	if (peer->iostatp != NULL)
 		gfarm_iostat_stat_add(peer->iostatp, cat, val);
 }
-
