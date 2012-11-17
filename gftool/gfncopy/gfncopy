@@ -11,16 +11,20 @@ usage() {
 	exit 2
 }
 
+getxattr() {
+    attr=$1
+    p=$2
+    v=`(getfattr -n $attr $p) 2>/dev/null | sed -n s/$attr'="\(.*\)"/\1/p'`
+    [ X"$v" = X ] && v=$p
+    echo $v
+}
+
 realpath() {
-    p=`( getfattr -n gfarm2fs.path $1 ) 2>/dev/null | sed -n 's/gfarm2fs.path="\(.*\)"/\1/p'`
-    [ X"$p" = X ] && p=$1
-    echo $p
+    getxattr gfarm2fs.path $1
 }
 
 realurl() {
-    p=`( getfattr -n gfarm2fs.url $1 ) 2>/dev/null | sed -n 's/gfarm2fs.url="\(.*\)"/\1/p'`
-    [ X"$p" = X ] && p=$1
-    echo $p
+    getxattr gfarm2fs.url $1
 }
 
 MODE=GET
