@@ -17,7 +17,7 @@ gfarm_foreach_directory_hierarchy_internal(
 	char *file, void *arg, struct gfs_stat *st)
 {
 	char *path, *slash;
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, e_save = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e, e_save = GFARM_ERR_NO_ERROR;
 	int file_len;
 	GFS_DirPlus dir;
 	struct gfs_dirent *dent;
@@ -52,6 +52,8 @@ gfarm_foreach_directory_hierarchy_internal(
 			if (path == NULL) {
 				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = GFARM_ERR_NO_MEMORY;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%s%s%s: no memory", file, slash, d);
 				continue;
 			}
 			sprintf(path, "%s%s%s", file, slash, d);
@@ -62,20 +64,23 @@ gfarm_foreach_directory_hierarchy_internal(
 				e_save = e;
 		}
 		e = gfs_closedirplus(dir);
-		if (e_save == GFARM_ERR_NO_ERROR)
-			e_save = e;
+		if (e != GFARM_ERR_NO_ERROR)
+			goto error;
 		if (op_dir2 != NULL)
 			e = op_dir2(file, st, arg);
 	} else if (op_file != NULL) /* not only file but also symlink */
 		e = op_file(file, st, arg);
+	else
+		e = GFARM_ERR_NO_ERROR;
 error:
-	if (e_save != GFARM_ERR_NO_ERROR || e != GFARM_ERR_NO_ERROR) {
+	if (e_save == GFARM_ERR_NO_ERROR)
+		e_save = e;
+	if (e_save != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001413,
 			"Error in foreach directory hierarchy: %s",
-			gfarm_error_string(
-				e_save == GFARM_ERR_NO_ERROR ? e : e_save));
+			gfarm_error_string(e_save));
 	}
-	return (e_save == GFARM_ERR_NO_ERROR ? e : e_save);
+	return (e_save);
 }
 
 gfarm_error_t
