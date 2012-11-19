@@ -128,7 +128,8 @@ gfs_replica_remove_by_file(const char *path, const char *host)
 	struct gfm_replica_remove_by_file_closure closure;
 
 	closure.host = host;
-	return (gfm_inode_op_modifiable(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_modifiable(path,
+	    GFARM_FILE_LOOKUP|GFARM_FILE_REPLICA_SPEC,
 	    gfm_replica_remove_by_file_request,
 	    gfm_replica_remove_by_file_result,
 	    gfm_inode_success_op_connection_free,
