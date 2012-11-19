@@ -356,19 +356,18 @@ pfunc_close(struct pfunc_file *fp)
 }
 
 static gfarm_error_t
-pfunc_utimens(const char *url, struct pfunc_stat *stp)
+pfunc_lutimens(const char *url, struct pfunc_stat *stp)
 {
 	if (gfprep_url_is_local(url)) {
 		int retv;
 		const char *path = url + GFPREP_FILE_URL_PREFIX_LENGTH;
-		struct timeval tv[2];
+		struct timespec ts[2];
 
-		tv[0].tv_sec = stp->atime_sec;
-		tv[0].tv_usec = stp->atime_nsec / GFARM_MICROSEC_BY_NANOSEC;
-		tv[1].tv_sec = stp->mtime_sec;
-		tv[1].tv_usec = stp->mtime_nsec / GFARM_MICROSEC_BY_NANOSEC;
-		/* XXX support utimensat() */
-		retv = utimes(path, tv);
+		ts[0].tv_sec = stp->atime_sec;
+		ts[0].tv_nsec = stp->atime_nsec;
+		ts[1].tv_sec = stp->mtime_sec;
+		ts[1].tv_nsec = stp->mtime_nsec;
+		retv = gfarm_local_lutimens(path, ts);
 		if (retv == -1)
 			return (gfarm_errno_to_error(errno));
 	} else if (gfprep_url_is_gfarm(url)) {
@@ -379,7 +378,7 @@ pfunc_utimens(const char *url, struct pfunc_stat *stp)
 		gt[0].tv_nsec = stp->atime_nsec;
 		gt[1].tv_sec = stp->mtime_sec;
 		gt[1].tv_nsec = stp->mtime_nsec;
-		e = gfs_utimes(url, gt);
+		e = gfs_lutimes(url, gt);
 		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
 	} else
@@ -566,7 +565,7 @@ close:
 		ng = 1;
 		goto end;
 	}
-	e = pfunc_utimens(tmp_url, &st);
+	e = pfunc_lutimens(tmp_url, &st);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "ERROR: copy failed: utimes(%s): %s\n",
 			tmp_url, gfarm_error_string(e));
