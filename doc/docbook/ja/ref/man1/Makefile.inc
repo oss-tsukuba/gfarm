@@ -1,4 +1,5 @@
-DOCBOOK = \ gfchgrp.1 \
+DOCBOOK = \
+	gfchgrp.1 \
 	gfchmod.1 \
 	gfchown.1 \
 	gfdf.1 \
