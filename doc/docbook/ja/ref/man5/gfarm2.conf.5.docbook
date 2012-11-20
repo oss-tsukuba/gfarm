@@ -325,6 +325,7 @@ gfsd起動時のスプールチェックを有効にします。スプールチェックでは、
 オプション、"lost_found"は-cccオプションと同等です。詳細はgfsdの
 マニュアルページを参照ください。レベル"disable"にすると、スプールチェックを
 行いません。デフォルト値は"lost_found"です。
+</para>
 <para>例:</para>
 <literallayout>
 	spool_check_level disable
