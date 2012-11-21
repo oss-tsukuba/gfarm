@@ -1860,6 +1860,64 @@ This parameter is only available in gfmd.conf.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>replica_check</token> <parameter>validity</parameter></term>
+<listitem>
+<para>
+When "enable" is specified, the replica_check system in gfmd can check
+and fix the number and placement of file replicas automatically.  The
+replica_check works only when necessary.  The default value is
+"enable".
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	replica_check disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_host_down_thresh</token> <parameter>seconds</parameter></term>
+<listitem>
+<para>
+If a gfsd is down, the replica_check assumes that the gfsd is not down
+until the specified seconds.  This is useful to maintain a gfsd.  The
+default value is 10800 seconds (3 hours).
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	replica_check_host_down_thresh 3600
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>replica_check_sleep_time</token> <parameter>nanoseconds</parameter></term>
+<listitem>
+<para>
+If this value is increased, the replica_check works more slowly only
+when the gfmd is busy.  When the gfmd is not busy, the replica_check
+works at full speed.  This directive specifies the nanoseconds to
+sleep in the replica_check.  The default value is 100000 nanoseconds
+(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
+second).
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	replica_check_sleep_time 0
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -1941,6 +1999,7 @@ notation.</para>
 <!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
 		&nbsp;&nbsp;&lt;atime_statement&gt; |
 		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
+		&nbsp;&nbsp;&lt;client_parallel_copy_statement&gt; |
 		&nbsp;&nbsp;&lt;profile_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
@@ -1951,7 +2010,10 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
 		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
-		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt;
+		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
+		&nbsp;&nbsp;&lt;replica_check_statement&gt; |
+		&nbsp;&nbsp;&lt;replica_check_host_down_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -2060,6 +2122,7 @@ notation.</para>
 <!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
 	&lt;atime_statement&gt; ::= "atime" &lt;atime_type&gt;
 	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
+	&lt;client_parallel_copy_statement&gt; ::= "client_parallel_copy" &lt;number&gt;
 	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
 	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
 	&lt;metadb_server_list_spec&gt; ::=
@@ -2074,6 +2137,9 @@ notation.</para>
 	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
 	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
 	&lt;metadb_journal_recvq_size_statement&gt; ::= "metadb_journal_recvq_size" &lt;number&gt;
+	&lt;replica_check_statement&gt; ::= "replica_check" &lt;validity&gt;
+	&lt;replica_check_host_down_thresh_statement&gt; ::= "replica_check_host_down_thresh" &lt;number&gt;
+	&lt;replica_check_sleep_time_statement&gt; ::= "replica_check_sleep_time" &lt;number&gt;
 	&lt;string_list&gt; ::= 
 		&nbsp;&nbsp;&lt;string&gt; |
 		&nbsp;&nbsp;&lt;string&gt; &lt;string_list&gt;
