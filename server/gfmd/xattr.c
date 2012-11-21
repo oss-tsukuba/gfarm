@@ -203,28 +203,33 @@ xattr_check_desired_number(
 	int xmlMode, struct inode *inode, const char *attrname,
 	const void *value, size_t size, int *have, int *change)
 {
-	int num_new, num_old, num_host;
+	gfarm_error_t e;
+	unsigned int n;
+	int num_new, num_old, all_digit;
 
 	if (xmlMode || strcmp("gfarm.ncopy", attrname) != 0) {
 		*have = 0;
 		*change = 0;
 		return (GFARM_ERR_NO_ERROR);
 	}
-	if (!inode_xattr_convert_desired_number(value, size, &num_new) ||
-	    num_new < 0) {
+	e = inode_xattr_to_uint(value, size, &n, &all_digit);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "xattr_to_uint for gfarm.ncopy: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	num_new = n; /* uint to int */
+	if (num_new < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED, "overflow for gfarm.ncopy");
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	}
+	if (!all_digit) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "invalid format for gfarm.ncopy");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
-	num_host = host_number();
-	if (num_new > num_host) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "too large number of gfarm.ncopy: %d > num_host(%d)",
-		    num_new, num_host);
-		return (GFARM_ERR_VALUE_TOO_LARGE_TO_BE_STORED_IN_DATA_TYPE);
-	}
-	if (inode_has_desired_number(inode, &num_old) &&
-	    num_new == num_old) {
+	if (inode_has_desired_number(inode, &num_old) && num_new == num_old) {
 		*have = 1;
 		*change = 0;
 		gflog_debug(GFARM_MSG_UNFIXED,

@@ -220,7 +220,7 @@ void inode_xattr_list_free(struct xattr_list *, size_t);
 gfarm_error_t inode_xattr_list_get_cached_by_patterns(gfarm_ino_t,
 	char **, int, struct xattr_list **, size_t *);
 
-int inode_xattr_convert_desired_number(const void *, size_t, int *);
+gfarm_error_t inode_xattr_to_uint(const void *, size_t, unsigned int *, int *);
 int inode_has_desired_number(struct inode *, int *);
 int inode_has_repattr(struct inode *, char **);
 int inode_get_replica_spec(struct inode *, char **, int *);
