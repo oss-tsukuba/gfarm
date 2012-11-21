@@ -1918,6 +1918,24 @@ This parameter is only available in gfmd.conf.
 </listitem>
 </varlistentry>
 
+<varlistentry>
+<term><token>replica_check_minimum_interval</token> <parameter>seconds</parameter></term>
+<listitem>
+<para>
+This directive specifies the minimum interval in seconds, for the
+replica_check to work.  The default value is 10 seconds, i.e. the
+replica_check can work up to one time every 10 seconds.
+</para>
+<para>
+This parameter is only available in gfmd.conf.
+</para>
+<para>Example:</para>
+<literallayout>
+	replica_check_minimum_interval 5
+</literallayout>
+</listitem>
+</varlistentry>
+
 </variablelist>
 </refsect1>
 
@@ -2013,7 +2031,8 @@ notation.</para>
 		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt; |
 		&nbsp;&nbsp;&lt;replica_check_statement&gt; |
 		&nbsp;&nbsp;&lt;replica_check_host_down_thresh_statement&gt; |
-		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt;
+		&nbsp;&nbsp;&lt;replica_check_sleep_time_statement&gt; |
+		&nbsp;&nbsp;&lt;replica_check_minimum_interval_statement&gt;
 	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
 	&lt;spool_server_listen_address_statement&gt; ::=
 		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
@@ -2140,6 +2159,7 @@ notation.</para>
 	&lt;replica_check_statement&gt; ::= "replica_check" &lt;validity&gt;
 	&lt;replica_check_host_down_thresh_statement&gt; ::= "replica_check_host_down_thresh" &lt;number&gt;
 	&lt;replica_check_sleep_time_statement&gt; ::= "replica_check_sleep_time" &lt;number&gt;
+	&lt;replica_check_minimum_interval_statement&gt; ::= "replica_check_minimum_interval" &lt;number&gt;
 	&lt;string_list&gt; ::= 
 		&nbsp;&nbsp;&lt;string&gt; |
 		&nbsp;&nbsp;&lt;string&gt; &lt;string_list&gt;
