@@ -17,7 +17,8 @@ struct gfarm_context {
 	float schedule_busy_load;
 	float schedule_virtual_load;
 	float schedule_candidates_ratio;
-	float schedule_rtt_thresh;
+	float schedule_rtt_thresh_ratio;
+	int schedule_rtt_thresh_diff;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
 	int client_file_bufsize;

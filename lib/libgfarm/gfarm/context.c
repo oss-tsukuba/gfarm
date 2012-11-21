@@ -123,7 +123,8 @@ gfarm_context_init(void)
 	ctxp->schedule_busy_load = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_virtual_load = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_candidates_ratio = GFARM_CONFIG_MISC_DEFAULT;
-	ctxp->schedule_rtt_thresh = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_rtt_thresh_ratio = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_rtt_thresh_diff = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfsd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_file_bufsize = GFARM_CONFIG_MISC_DEFAULT;
