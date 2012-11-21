@@ -2,7 +2,7 @@
 
 <refentry id='gfarm2.conf.5'>
 
-<refentryinfo><date>13 Nov 2012</date></refentryinfo>
+<refentryinfo><date>20 Nov 2012</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfarm2.conf</refentrytitle>
@@ -1115,12 +1115,48 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
-<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
+<term><token>schedule_rtt_thresh_diff</token> <parameter>マイクロ秒</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何マイクロ秒増えたら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_ratio があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は1000マイクロ秒、すなわち 1ミリ秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_rtt_thresh_diff 1000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_rtt_thresh_ratio</token> <parameter>比率</parameter></term>
 <listitem>
 <para>ファイルシステムノードのスケジューリング時に、
 ファイルシステムノードが属する各ネットワークと、クライアントとの間の
 ネットワーク遅延が、何倍になったら、そのネットワークに対する
 スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_diff があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は4.0です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_rtt_thresh_ratio 4.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
+<listitem>
+<para>
+このパラメータは schedule_rtt_thresh_ratio と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
 デフォルト値は4.0です。
 </para>
 <para>例:</para>
@@ -1834,6 +1870,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_candidates_ratio_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_rtt_thresh_diff_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_rtt_thresh_ratio_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
 		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
 		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
@@ -1949,7 +1987,9 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
 	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
 	&lt;schedule_candidates_ratio_statement&gt; ::= "schedule_candidates_ratio" &lt;floating_point_number&gt;
-	&lt;schedule_rtt_thresh__statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
+	&lt;schedule_rtt_thresh_diff_statement&gt; ::= "schedule_rtt_thresh_diff" &lt;number&gt;
+	&lt;schedule_rtt_thresh_ratio_statement&gt; ::= "schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;
+	&lt;schedule_rtt_thresh_statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
 	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
 	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=

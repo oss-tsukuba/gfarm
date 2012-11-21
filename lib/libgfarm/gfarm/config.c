@@ -839,7 +839,8 @@ char *gfarm_argv0 = NULL;
 #define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	0.5F
 #define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
 #define GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT	4.0F
-#define GFARM_SCHEDULE_RTT_THRESH_DEFAULT	4.0F
+#define GFARM_SCHEDULE_RTT_THRESH_RATIO_DEFAULT	4.0F
+#define GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT	1000 /* 1000 micro second */
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
 #define GFARM_SIMULTANEOUS_REPLICATION_RECEIVERS_DEFAULT	20
@@ -876,7 +877,8 @@ float gfarm_schedule_idle_load = MISC_DEFAULT;
 float gfarm_schedule_busy_load = MISC_DEFAULT;
 float gfarm_schedule_virtual_load = MISC_DEFAULT;
 float gfarm_schedule_candidates_ratio = MISC_DEFAULT;
-float gfarm_schedule_rtt_thresh = MISC_DEFAULT;
+float gfarm_schedule_rtt_thresh_ratio = MISC_DEFAULT;
+int gfarm_schedule_rtt_thresh_diff = MISC_DEFAULT;
 static char *schedule_write_target_domain = NULL;
 static int schedule_write_local_priority = MISC_DEFAULT;
 static gfarm_int64_t gfarm_minimum_free_disk_space = MISC_DEFAULT;
@@ -2761,7 +2763,11 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "schedule_candidates_ratio") == 0) {
 		e = parse_set_misc_float(p, &gfarm_schedule_candidates_ratio);
 	} else if (strcmp(s, o = "schedule_rtt_thresh") == 0) {
-		e = parse_set_misc_float(p, &gfarm_schedule_rtt_thresh);
+		e = parse_set_misc_float(p, &gfarm_schedule_rtt_thresh_ratio);
+	} else if (strcmp(s, o = "schedule_rtt_thresh_ratio") == 0) {
+		e = parse_set_misc_float(p, &gfarm_schedule_rtt_thresh_ratio);
+	} else if (strcmp(s, o = "schedule_rtt_thresh_diff") == 0) {
+		e = parse_set_misc_int(p, &gfarm_schedule_rtt_thresh_diff);
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
@@ -3007,8 +3013,12 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_schedule_candidates_ratio == MISC_DEFAULT)
 		gfarm_schedule_candidates_ratio =
 		    GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT;
-	if (gfarm_schedule_rtt_thresh == MISC_DEFAULT)
-		gfarm_schedule_rtt_thresh = GFARM_SCHEDULE_RTT_THRESH_DEFAULT;
+	if (gfarm_schedule_rtt_thresh_ratio == MISC_DEFAULT)
+		gfarm_schedule_rtt_thresh_ratio =
+		    GFARM_SCHEDULE_RTT_THRESH_RATIO_DEFAULT;
+	if (gfarm_schedule_rtt_thresh_diff == MISC_DEFAULT)
+		gfarm_schedule_rtt_thresh_diff =
+		    GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT;
 	if (schedule_write_local_priority == MISC_DEFAULT)
 		schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;

@@ -101,7 +101,8 @@
  *	because the purpose of this phase is to see RTT of each network.
  *
  * 4. search networks by RTT order.
- *	for each: current network ... a network which RTT <= current*RTT_THRESH
+ *	for each: current network ... a network which RTT <
+ 			min(current*RTT_THRESH_RATIO, current+RTT_THRESH_DIFF)
  *		search_idle_in_networks(the networks)
  *		proceed current network pointer to next RTT level
  *
@@ -134,7 +135,8 @@
 #define	LOADAVG_EXPIRATION	gfarm_schedule_cache_timeout	/* seconds */
 #define	STATFS_EXPIRATION	gfarm_schedule_cache_timeout	/* seconds */
 
-#define RTT_THRESH		gfarm_schedule_rtt_thresh
+#define RTT_THRESH_RATIO	gfarm_schedule_rtt_thresh_ratio
+#define RTT_THRESH_DIFF		gfarm_schedule_rtt_thresh_diff
 				/* range to treat as similar distance */
 
 #if 0 /* not yet in gfarm v2 */
@@ -1469,8 +1471,14 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 	qsort(netarray, nnets, sizeof(*netarray), net_rtt_compare);
 
 	for (i = 0; i < nnets; i = j) {
-		/* search network which RTT is current*RTT_THRESH */
-		rtt_threshold = netarray[i]->rtt_usec * RTT_THRESH;
+		/*
+		 * search network which RTT is less than
+		 * min(current * RTT_THRESH_RATIO, current + RTT_THRESH_DIFF)
+		 */
+		rtt_threshold = netarray[i]->rtt_usec * RTT_THRESH_RATIO;
+		if (rtt_threshold > netarray[i]->rtt_usec + RTT_THRESH_DIFF)
+			rtt_threshold =
+			    netarray[i]->rtt_usec + RTT_THRESH_DIFF;
 		for (j = i + 1;
 		    j < nnets && netarray[j]->rtt_usec < rtt_threshold; j++)
 			;
