@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "18 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "21 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -1314,6 +1314,62 @@ Example:
 .nf
 	metadb_journal_recvq_size 100000
 .fi
+.TP
+\fBreplica_check \fIvalidity\fB\fR
+When "enable" is specified, the replica_check system in gfmd can check
+and fix the number and placement of file replicas automatically.  The
+replica_check works only when necessary.  The default value is
+"enable".
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	replica_check disable
+.fi
+.TP
+\fBreplica_check_host_down_thresh \fIseconds\fB\fR
+If a gfsd is down, the replica_check assumes that the gfsd is not down
+until the specified seconds.  This is useful to maintain a gfsd.  The
+default value is 10800 seconds (3 hours).
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	replica_check_host_down_thresh 3600
+.fi
+.TP
+\fBreplica_check_sleep_time \fInanoseconds\fB\fR
+If this value is increased, the replica_check works more slowly only
+when the gfmd is busy.  When the gfmd is not busy, the replica_check
+works at full speed.  This directive specifies the nanoseconds to
+sleep in the replica_check.  The default value is 100000 nanoseconds
+(0.1 millisecond).  The maximum value is 1000000000 nanoseconds (1
+second).
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	replica_check_sleep_time 0
+.fi
+.TP
+\fBreplica_check_minimum_interval \fIseconds\fB\fR
+This directive specifies the minimum interval in seconds, for the
+replica_check to work.  The default value is 10 seconds, i.e. the
+replica_check can work up to one time every 10 seconds.
+
+This parameter is only available in gfmd.conf.
+
+Example:
+
+.nf
+	replica_check_minimum_interval 5
+.fi
 .SH "GRAMMAR"
 .PP
 This is a grammar of gfarm2.conf described by the BNF
@@ -1387,6 +1443,7 @@ notation.
 		\~\~<debug_command_statement> |
 		\~\~<atime_statement> |
 		\~\~<client_file_bufsize_statement> |
+		\~\~<client_parallel_copy_statement> |
 		\~\~<profile_statement> |
 		\~\~<metadb_server_list_statement> |
 		\~\~<metadb_replication_statement> |
@@ -1397,7 +1454,11 @@ notation.
 		\~\~<metadb_server_slave_max_size_statement> |
 		\~\~<metadb_journal_dir_statement> |
 		\~\~<metadb_journal_max_size_statement> |
-		\~\~<metadb_journal_recvq_size_statement>
+		\~\~<metadb_journal_recvq_size_statement> |
+		\~\~<replica_check_statement> |
+		\~\~<replica_check_host_down_thresh_statement> |
+		\~\~<replica_check_sleep_time_statement> |
+		\~\~<replica_check_minimum_interval_statement>
 	<spool_statement> ::= "spool" <pathname>
 	<spool_server_listen_address_statement> ::=
 		\~\~"spool_server_listen_address" <ipv4_address>
@@ -1492,6 +1553,7 @@ notation.
 	<gfmd_reconnection_timeout_statement> ::= "gfmd_reconnection_timeout" <number>
 	<atime_statement> ::= "atime" <atime_type>
 	<client_file_bufsize_statement> ::= "client_file_bufsize" <size>
+	<client_parallel_copy_statement> ::= "client_parallel_copy" <number>
 	<profile_statement> ::= "profile" <validity>
 	<metadb_server_list_statement> ::= "metadb_server_list" <metadb_server_list_spec>
 	<metadb_server_list_spec> ::=
@@ -1506,6 +1568,10 @@ notation.
 	<metadb_journal_dir_statement> ::= "metadb_journal_dir" <pathname>
 	<metadb_journal_max_size_statement> ::= "metadb_journal_max_size" <number>
 	<metadb_journal_recvq_size_statement> ::= "metadb_journal_recvq_size" <number>
+	<replica_check_statement> ::= "replica_check" <validity>
+	<replica_check_host_down_thresh_statement> ::= "replica_check_host_down_thresh" <number>
+	<replica_check_sleep_time_statement> ::= "replica_check_sleep_time" <number>
+	<replica_check_minimum_interval_statement> ::= "replica_check_minimum_interval" <number>
 	<string_list> ::= 
 		\~\~<string> |
 		\~\~<string> <string_list>
