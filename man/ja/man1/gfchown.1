@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFCHOWN" "1" "19 April 2011" "Gfarm" ""
+.TH "GFCHOWN" "1" "18 November 2012" "Gfarm" ""
 
 .SH NAME
 gfchown \- Gfarm ファイルの所有者，所有グループを変更する
@@ -20,8 +20,11 @@ Gfarm ファイルの所有者，所有グループを変更します．
 .SH "OPTIONS"
 .TP
 \fB-h\fR
-シンボリックリンクの指すファイル／ディレクトリではなく、
-シンボリック自身の所有者，所有グループを変更します。
+シンボリックリンクの指すファイル／ディレクトリではなく，
+シンボリック自身の所有者，所有グループを変更します．
+.TP
+\fB-R\fR
+再帰的に所有者，所有グループを変更します．
 .TP
 \fB-?\fR
 引数オプションを表示します．
