@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "16 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "18 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm設定ファイル
@@ -785,17 +785,72 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 	schedule_candidates_ratio 4.0
 .fi
 .TP
-\fBschedule_rtt_thresh \fI比率\fB\fR
+\fBschedule_rtt_thresh_diff \fIマイクロ秒\fB\fR
+ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何マイクロ秒増えたら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_ratio があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は1000マイクロ秒、すなわち 1ミリ秒です。
+
+例:
+
+.nf
+	schedule_rtt_thresh_diff 1000
+.fi
+.TP
+\fBschedule_rtt_thresh_ratio \fI比率\fB\fR
 ファイルシステムノードのスケジューリング時に、
 ファイルシステムノードが属する各ネットワークと、クライアントとの間の
 ネットワーク遅延が、何倍になったら、そのネットワークに対する
 スケジューリングの優先度を落すかを指定します。
+同様なパラメータに schedule_rtt_thresh_diff があり、
+この2つパラメータによる計算のいずれかに当てはまると優先度が落ちます。
+デフォルト値は4.0です。
+
+例:
+
+.nf
+	schedule_rtt_thresh_ratio 4.0
+.fi
+.TP
+\fBschedule_rtt_thresh \fI比率\fB\fR
+このパラメータは schedule_rtt_thresh_ratio と同じ意味となりますので、
+そちらを利用してください。
+このパラメータは以前のバージョンとの互換性のために残されています。
 デフォルト値は4.0です。
 
 例:
 
 .nf
 	schedule_rtt_thresh 4.0
+.fi
+.TP
+\fBwrite_local_priority \fI有効性\fB\fR
+gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文でdisableと指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+デフォルトはenableです。
+
+例:
+
+.nf
+	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIドメイン名\fB\fR
+gfarmがファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+
+例:
+
+.nf
+	write_target_domain example.org
 .fi
 .TP
 \fBminimum_free_disk_space \fIバイト数\fB\fR
@@ -1272,7 +1327,11 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 		\~\~<schedule_busy_load_thresh_statement> |
 		\~\~<schedule_virtual_load_statement> |
 		\~\~<schedule_candidates_ratio_statement> |
+		\~\~<schedule_rtt_thresh_diff_statement> |
+		\~\~<schedule_rtt_thresh_ratio_statement> |
 		\~\~<schedule_rtt_thresh_statement> |
+		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers_statement> |
 		\~\~<gfsd_connection_cache_statement> |
@@ -1373,7 +1432,11 @@ gfarm2.confの文法をBNFで記述すると、下記のようになります。
 	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
 	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
 	<schedule_candidates_ratio_statement> ::= "schedule_candidates_ratio" <floating_point_number>
-	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
+	<schedule_rtt_thresh_diff_statement> ::= "schedule_rtt_thresh_diff" <number>
+	<schedule_rtt_thresh_ratio_statement> ::= "schedule_rtt_thresh_ratio" <floating_point_number>
+	<schedule_rtt_thresh_statement> ::= "schedule_rtt_thresh" <floating_point_number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>

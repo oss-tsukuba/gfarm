@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFARM2.CONF" "5" "16 November 2012" "Gfarm" ""
+.TH "GFARM2.CONF" "5" "18 November 2012" "Gfarm" ""
 
 .SH NAME
 gfarm2.conf \- Gfarm configuration file
@@ -836,17 +836,77 @@ For example,
 	schedule_candidates_ratio 4.0
 .fi
 .TP
-\fBschedule_rtt_thresh \fIratio\fB\fR
+\fBschedule_rtt_thresh_diff \fImicroseconds\fB\fR
+This parameter specifies the threshold time of network latency
+which divides the domains of scheduling priority.
+If a network latency difference from nearer network is larger than this value,
+the network's scheduling priority is lowered.
+There is a similar parameter schedule_rtt_thresh_ratio,
+and the scheduling priority is lowered if the network latency exceeds
+one of the parameters.
+The default is 1000 microseconds. i.e. 1 millisecond.
+
+For example,
+
+.nf
+	schedule_rtt_thresh_diff 1000
+.fi
+.TP
+\fBschedule_rtt_thresh_ratio \fIratio\fB\fR
 This parameter specifies the threshold ratio of network latency
 which divides the domains of scheduling priority.
 If a network latency is larger than this ratio from nearer network,
 the network's scheduling priority is lowered.
+There is a similar parameter schedule_rtt_thresh_diff,
+and the scheduling priority is lowered if the network latency exceeds
+one of the parameters.
+The default ratio is 4.0.
+
+For example,
+
+.nf
+	schedule_rtt_thresh_ratio 4.0
+.fi
+.TP
+\fBschedule_rtt_thresh \fIratio\fB\fR
+This directive is just an alias of
+the schedule_rtt_thresh_ratio directive since gfarm-2.5.8.
+Please use that directive instead.
+This directive remains for compatibility with older versions.
 The default ratio is 4.0.
 
 For example,
 
 .nf
 	schedule_rtt_thresh 4.0
+.fi
+.TP
+\fBwrite_local_priority \fIvalidity\fB\fR
+Gfarm nearly always chooses localhost, when it selects a filesystem
+node to write a file. By specifing the disable keyword in
+this directive, Gfarm handles localhost the same as other
+filesystem nodes.
+The default is enable\&.
+
+For example,
+
+.nf
+	write_local_priority disable
+.fi
+.TP
+\fBwrite_target_domain \fIdomain\fB\fR
+Gfarm tries to choose a filesystem node in the domain specified by
+this directive, when it selects a node to write a file.
+If there is no suitable node for writing in this domain, or if this
+directive is not specified, the filesystem node will be chosen from
+among all nodes.
+Note that if you specify this directive more than once, only the first one
+will be used and the others are ignored.
+
+For example,
+
+.nf
+	write_target_domain example.org
 .fi
 .TP
 \fBminimum_free_disk_space \fIbytes\fB\fR
@@ -1337,7 +1397,11 @@ notation.
 		\~\~<schedule_busy_load_thresh_statement> |
 		\~\~<schedule_virtual_load_statement> |
 		\~\~<schedule_candidates_ratio_statement> |
+		\~\~<schedule_rtt_thresh_diff_statement> |
+		\~\~<schedule_rtt_thresh_ratio_statement> |
 		\~\~<schedule_rtt_thresh_statement> |
+		\~\~<write_local_priority_statement> |
+		\~\~<write_target_domain_statement> |
 		\~\~<minimum_free_disk_space_statement> |
 		\~\~<simultaneous_replication_receivers_statement> |
 		\~\~<outstanding_file_replication_limit_statement> |
@@ -1439,7 +1503,11 @@ notation.
 	<schedule_busy_load_thresh_statement> ::= "schedule_busy_load_thresh" <load>
 	<schedule_virtual_load_statement> ::= "schedule_virtual_load" <load>
 	<schedule_candidates_ratio_statement> ::= "schedule_candidates_ratio" <floating_point_number>
-	<schedule_rtt_thresh__statement> ::= "schedule_rtt_thresh" <floating_point_number>
+	<schedule_rtt_thresh_diff_statement> ::= "schedule_rtt_thresh_diff" <number>
+	<schedule_rtt_thresh_ratio_statement> ::= "schedule_rtt_thresh_ratio" <floating_point_number>
+	<schedule_rtt_thresh_statement> ::= "schedule_rtt_thresh" <floating_point_number>
+	<write_local_priority_statement> ::= "write_local_priority" <validity>
+	<write_target_domain_statement> ::= "write_target_domain" <string>
 	<minimum_free_disk_space_statement> ::=
 		\~\~"minimum_free_disk_space" <size>
 	<simultaneous_replication_receivers_statement> ::= "simultaneous_replication_receivers" <number>
