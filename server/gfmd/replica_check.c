@@ -706,6 +706,14 @@ replica_check_signal_update_xattr()
 	replica_check_signal_general(diag, 0);
 }
 
+void
+replica_check_signal_rename()
+{
+	static const char diag[] = "replica_check_signal_rename";
+
+	replica_check_signal_general(diag, 0);
+}
+
 static void *
 replica_check_thread(void *arg)
 {
