@@ -287,6 +287,8 @@ replica_check_desired_number(struct inode *dir_ino, struct inode *file_ino)
 	return (0);
 }
 
+#define REPLICA_CHECK_DIRENTS_BUFCOUNT 512
+
 static size_t replica_check_stack_size, replica_check_stack_index;
 static struct replication_info *replica_check_stack;
 
@@ -294,7 +296,7 @@ static int
 replica_check_stack_init()
 {
 	replica_check_stack_index = 0;
-	replica_check_stack_size = 32;
+	replica_check_stack_size = REPLICA_CHECK_DIRENTS_BUFCOUNT;
 	GFARM_MALLOC_ARRAY(replica_check_stack, replica_check_stack_size);
 	if (replica_check_stack == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED, "replica_check: no memory");
@@ -306,24 +308,8 @@ replica_check_stack_init()
 static void
 replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino)
 {
-	static int failed = 0;
-	struct replication_info *tmp;
-	int new_size;
+	assert(replica_check_stack_index < replica_check_stack_size);
 
-	if (replica_check_stack_size <= replica_check_stack_index) {
-		new_size = replica_check_stack_size * 2;
-		GFARM_REALLOC_ARRAY(tmp, replica_check_stack, new_size);
-		if (tmp == NULL) {
-			if (failed == 0)
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "replica_check: realloc: no memory");
-			failed = 1;
-			return;
-		}
-		replica_check_stack_size = new_size;
-		replica_check_stack = tmp;
-	}
-	failed = 0;
 	replica_check_stack[replica_check_stack_index].inum
 		= inode_get_number(file_ino);
 	replica_check_stack[replica_check_stack_index].gen
@@ -356,45 +342,54 @@ static void (*replica_check_giant_lock)(void);
 static void (*replica_check_giant_unlock)(void) = giant_unlock;
 
 static int
-replica_check_main()
+replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 {
-	gfarm_ino_t i, root_inum, table_size, count = 0;
+	gfarm_error_t e;
 	struct inode *dir_ino, *file_ino;
 	Dir dir;
 	DirCursor cursor;
+	gfarm_off_t dir_offset = 0;
 	DirEntry entry;
 	struct replication_info rep_info;
-	gfarm_error_t e;
-	int need_to_retry = 0;
+	int need_to_retry = 0, eod = 0, i;
 
-	root_inum = inode_root_number();
-
-	replica_check_giant_lock();
-	table_size = inode_table_current_size();
-	replica_check_giant_unlock();
-
-	RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check: start");
-	for (i = root_inum;;) {
+	while (!eod) {
 		replica_check_giant_lock();
-		dir_ino = inode_lookup(i);
-		if (dir_ino && inode_is_dir(dir_ino)) {
-			dir = inode_get_dir(dir_ino);
-			assert(dir_cursor_set_pos(dir, 0, &cursor));
-			do {
-				entry = dir_cursor_get_entry(dir, &cursor);
-				if (entry == NULL)
-					break;
-				file_ino = dir_entry_get_inode(entry);
-				if (inode_is_file(file_ino))
-					replica_check_stack_push(
-					    dir_ino, file_ino);
-			} while (dir_cursor_next(dir, &cursor) != 0);
+		dir_ino = inode_lookup(inum);
+		if (dir_ino == NULL) {
+			replica_check_giant_unlock();
+			return (need_to_retry);
 		}
+		dir = inode_get_dir(dir_ino); /* include inode_is_dir() */
+		if (dir == NULL) {
+			replica_check_giant_unlock();
+			return (need_to_retry);
+		}
+		if (!dir_cursor_set_pos(dir, dir_offset, &cursor)) {
+			replica_check_giant_unlock();
+			return (need_to_retry);
+		}
+		/* avoid long giant lock */
+		for (i = 0; i < REPLICA_CHECK_DIRENTS_BUFCOUNT; i++) {
+			entry = dir_cursor_get_entry(dir, &cursor);
+			if (entry == NULL) {
+				eod = 1; /* end of directory */
+				break;
+			}
+			file_ino = dir_entry_get_inode(entry);
+			if (inode_is_file(file_ino))
+				replica_check_stack_push(dir_ino, file_ino);
+			if (!dir_cursor_next(dir, &cursor)) {
+				eod = 1; /* end of directory */
+				break;
+			}
+		}
+		dir_offset = dir_cursor_get_pos(dir, &cursor);
 		replica_check_giant_unlock();
 
 		while (replica_check_stack_pop(&rep_info)) {
-			unsigned long long sl = GFARM_MILLISEC_BY_NANOSEC;
 			/* 1 milisec. */
+			unsigned long long sl = GFARM_MILLISEC_BY_NANOSEC;
 
 			for (;;) {
 				replica_check_giant_lock();
@@ -402,11 +397,11 @@ replica_check_main()
 				replica_check_giant_unlock();
 				if (e !=
 				    GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
-					break; /* success */
+					break; /* success or error */
+				/* retry */
 				gfarm_nanosleep(sl);
 				if (sl < GFARM_SECOND_BY_NANOSEC)
 					sl *= 2; /* 2,4,8,...,512,1024,1024 */
-				/* retry */
 			}
 			if (e != GFARM_ERR_NO_ERROR) {
 				need_to_retry = 1;
@@ -414,15 +409,32 @@ replica_check_main()
 				    "replica_check_fix(): %s",
 				    gfarm_error_string(e));
 			}
-			count++;
+			(*countp)++;
 		}
+	}
+	return (need_to_retry);
+}
 
-		i++; /* a next directory */
-		if (i >= table_size) {
+static int
+replica_check_main()
+{
+	gfarm_ino_t inum, table_size, count = 0;
+	gfarm_ino_t root_inum = inode_root_number();
+	int need_to_retry = 0;
+
+	replica_check_giant_lock();
+	table_size = inode_table_current_size();
+	replica_check_giant_unlock();
+
+	RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check: start");
+	for (inum = root_inum;;) {
+		need_to_retry = replica_check_main_dir(inum, &count);
+		inum++; /* a next directory */
+		if (inum >= table_size) {
 			replica_check_giant_lock();
 			table_size = inode_table_current_size();
 			replica_check_giant_unlock();
-			if (i >= table_size)
+			if (inum >= table_size)
 				break;
 		}
 	}
@@ -439,11 +451,22 @@ static int replica_check_initialized = 0; /* ignore cond_signal in startup */
 static struct timeval *targets;
 static size_t targets_num, targets_size;
 
+#define MAX_TARGETS_SIZE 1024
+
+static int
+replica_check_timeval_cmp(const void *p1, const void *p2)
+{
+	const struct timeval *t1 = p1;
+	const struct timeval *t2 = p2;
+
+	return (-gfarm_timeval_cmp(t1, t2));
+}
+
 static int
 replica_check_targets_init()
 {
 	targets_num = 0;
-	targets_size = 32;
+	targets_size = MAX_TARGETS_SIZE;
 	GFARM_MALLOC_ARRAY(targets, targets_size);
 	if (targets == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED, "replica_check: no memory");
@@ -455,42 +478,23 @@ replica_check_targets_init()
 static void
 replica_check_targets_add(time_t sec)
 {
-	static int failed = 0;
-	struct timeval *tmp;
-	int new_size;
+	size_t i;
 
-	if (targets_size <= targets_num) {
-		new_size = targets_size * 2;
-		GFARM_REALLOC_ARRAY(tmp, targets, new_size);
-		if (tmp == NULL) {
-			if (failed == 0)
-				gflog_error(GFARM_MSG_UNFIXED,
-				    "replica_check: realloc: no memory");
-			failed = 1;
-			return;
-		}
-		targets_size = new_size;
-		targets = tmp;
-	}
-	failed = 0;
-	gettimeofday(&targets[targets_num], NULL);
-	targets[targets_num].tv_sec += sec;
+	if (targets_num >= targets_size) {
+		qsort(targets, targets_size, sizeof(struct timeval),
+		    replica_check_timeval_cmp);
+		i = targets_size / 2; /* replace center */
+	} else
+		i = targets_num++;
+
+	gettimeofday(&targets[i], NULL);
+	targets[i].tv_sec += sec;
 #ifdef DEBUG_REPLICA_CHECK
 	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
-	    "replica_check: add targets[%ld]=%ld.%06ld", (long)targets_num,
-	    (long)targets[targets_num].tv_sec,
-	    (long)targets[targets_num].tv_usec);
+	    "replica_check: add targets[%ld]=%ld.%06ld", (long)i,
+	    (long)targets[i].tv_sec,
+	    (long)targets[i].tv_usec);
 #endif
-	targets_num++;
-}
-
-static int
-replica_check_timeval_cmp(const void *p1, const void *p2)
-{
-	const struct timeval *t1 = p1;
-	const struct timeval *t2 = p2;
-
-	return (-gfarm_timeval_cmp(t1, t2));
 }
 
 /* ignore targets within 10 sec. future. */
