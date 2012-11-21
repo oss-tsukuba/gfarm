@@ -1,0 +1,123 @@
+#!/bin/sh
+PROGRAM=gfruntest
+GFSERVICE="@bindir@/gfservice"
+TEST_PREFIX="@datadir@/gfarm/systest"
+TESTCASES_DIR="$TEST_PREFIX/testcases"
+PARAMETERS_DIR="$TEST_PREFIX/parameters"
+COMMON_SCRIPTS_DIR="$TEST_PREFIX/common_scripts"
+
+DEBUG=""
+
+#
+# Output a warning message.
+#
+log_warn()
+{
+	echo "$PROGRAM: warning: $@" 1>&2
+	return 0
+}
+
+#
+# Output an error message.
+#
+log_error()
+{
+	echo "$PROGRAM: error: $@" 1>&2
+	exit 1
+}
+
+#
+# Load script files from common_scripts directory.
+#
+load()
+{
+	if [ $# -le 1 ]; then
+		return 1;
+	fi
+
+	for FILE in $@; do
+		if [ -f $COMMON_SCRIPTS_DIR/$FILE ]; then
+			. $COMMON_SCRIPTS_DIR/$FILE
+		else
+			log_warn "failed to open script file \"$FILE\""
+		fi
+	done
+}
+
+#
+# Output an usage.
+#
+print_usage()
+{
+        echo "Usage: $PROGRAM [option...] testcase [<argument>...]" 1>&2
+        echo "Option:"                                            1>&2
+        echo "  -d                  debug mode"                     1>&2
+        echo "  -p <parameter_file> specify the test parameter file" 1>&2
+}
+
+#
+# Parse command line options.
+#
+while [ $# -ge 1 ]; do
+	case "$1" in
+	--)	shift
+		break
+		;;
+	-)	break
+		;;
+	-d)	DEBUG="-d"
+		shift
+		;;
+	-p)	shift
+		if [ $# -eq 0 ]; then
+			echo "option requires an argument -- 'p'" 1>&2
+			print_usage
+			exit 1
+		fi
+		if [ -f $PARAMETERS_DIR/$1 ]; then
+			. $PARAMETERS_DIR/$1
+		else
+			echo "failed to open parameter file \"$1\"" 1>&2
+			exit 1
+		fi
+		shift
+		;;
+	-*)	echo "$0: invalid option -- '$1'" 1>&2
+		print_usage
+		exit 1;
+		;;
+	*)	break
+		;;
+	esac
+done
+
+if [ $# -lt 1 ]; then
+	echo "test case is not specified" 1>&2
+	print_usage
+	exit 1
+fi
+
+TESTNAME=$1
+shift 1
+TEST_EXEC_ID="test_`hostname`_$$"
+
+if [ -f "$TESTCASES_DIR/$TESTNAME" ]; then
+	. "$TESTCASES_DIR/$TESTNAME"
+else
+	log_error "invalid test case: $TESTNAME"
+fi
+
+echo -n "start: $TESTNAME "
+date
+
+test_${TESTNAME} "$@"
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+	RESULT_MESSAGE="PASS"
+else
+	RESULT_MESSAGE="FAIL"
+fi
+
+echo -n "end: $TESTNAME $RESULT_MESSAGE "
+date
+exit $RESULT
