@@ -1659,7 +1659,32 @@ CLASS="LITERALLAYOUT"
 ><DT
 ><SPAN
 CLASS="TOKEN"
->schedule_rtt_thresh</SPAN
+>schedule_rtt_thresh_diff</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>•ﬁ•§•Ø•Ì…√</I
+></TT
+></DT
+><DD
+><P
+>•’•°•§•Î•∑•π•∆•‡•Œ°º•…§Œ•π•±•∏•Â°º•Í•Û•∞ª˛§À°¢
+•’•°•§•Î•∑•π•∆•‡•Œ°º•…§¨¬∞§π§Î≥∆•Õ•√•»•Ô°º•Ø§»°¢•Ø•È•§•¢•Û•»§»§Œ¥÷§Œ
+•Õ•√•»•Ô°º•Ø√Ÿ±‰§¨°¢≤ø•ﬁ•§•Ø•Ì…√¡˝§®§ø§È°¢§Ω§Œ•Õ•√•»•Ô°º•Ø§À¬–§π§Î
+•π•±•∏•Â°º•Í•Û•∞§ŒÕ•¿Ë≈Ÿ§ÚÕÓ§π§´§ÚªÿƒÍ§∑§ﬁ§π°£
+∆±ÕÕ§ •—•È•·°º•ø§À schedule_rtt_thresh_ratio §¨§¢§Í°¢
+§≥§Œ2§ƒ•—•È•·°º•ø§À§Ë§Î∑◊ªª§Œ§§§∫§Ï§´§À≈ˆ§∆§œ§ﬁ§Î§»Õ•¿Ë≈Ÿ§¨ÕÓ§¡§ﬁ§π°£
+•«•’•©•Î•»√Õ§œ1000•ﬁ•§•Ø•Ì…√°¢§π§ §Ô§¡ 1•ﬂ•Í…√§«§π°£</P
+><P
+>Œ„:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_rtt_thresh_diff&nbsp;1000</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_rtt_thresh_ratio</SPAN
 > <TT
 CLASS="PARAMETER"
 ><I
@@ -1672,6 +1697,30 @@ CLASS="PARAMETER"
 •’•°•§•Î•∑•π•∆•‡•Œ°º•…§¨¬∞§π§Î≥∆•Õ•√•»•Ô°º•Ø§»°¢•Ø•È•§•¢•Û•»§»§Œ¥÷§Œ
 •Õ•√•»•Ô°º•Ø√Ÿ±‰§¨°¢≤ø«‹§À§ §√§ø§È°¢§Ω§Œ•Õ•√•»•Ô°º•Ø§À¬–§π§Î
 •π•±•∏•Â°º•Í•Û•∞§ŒÕ•¿Ë≈Ÿ§ÚÕÓ§π§´§ÚªÿƒÍ§∑§ﬁ§π°£
+∆±ÕÕ§ •—•È•·°º•ø§À schedule_rtt_thresh_diff §¨§¢§Í°¢
+§≥§Œ2§ƒ•—•È•·°º•ø§À§Ë§Î∑◊ªª§Œ§§§∫§Ï§´§À≈ˆ§∆§œ§ﬁ§Î§»Õ•¿Ë≈Ÿ§¨ÕÓ§¡§ﬁ§π°£
+•«•’•©•Î•»√Õ§œ4.0§«§π°£</P
+><P
+>Œ„:</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_rtt_thresh_ratio&nbsp;4.0</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_rtt_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>»ÊŒ®</I
+></TT
+></DT
+><DD
+><P
+>§≥§Œ•—•È•·°º•ø§œ schedule_rtt_thresh_ratio §»∆±§∏∞’Ã£§»§ §Í§ﬁ§π§Œ§«°¢
+§Ω§¡§È§ÚÕ¯Õ—§∑§∆§Ø§¿§µ§§°£
+§≥§Œ•—•È•·°º•ø§œ∞ ¡∞§Œ•–°º•∏•Á•Û§»§Œ∏ﬂ¥π¿≠§Œ§ø§·§Àªƒ§µ§Ï§∆§§§ﬁ§π°£
 •«•’•©•Î•»√Õ§œ4.0§«§π°£</P
 ><P
 >Œ„:</P
@@ -2547,6 +2596,8 @@ CLASS="LITERALLAYOUT"
 		††&#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
 		††&#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
 		††&#60;schedule_candidates_ratio_statement&#62;&nbsp;|<br>
+		††&#60;schedule_rtt_thresh_diff_statement&#62;&nbsp;|<br>
+		††&#60;schedule_rtt_thresh_ratio_statement&#62;&nbsp;|<br>
 		††&#60;schedule_rtt_thresh_statement&#62;&nbsp;|<br>
 		††&#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
 		††&#60;gfs_proto_fhremove_request_window_statement&#62;&nbsp;|<br>
@@ -2647,7 +2698,9 @@ CLASS="LITERALLAYOUT"
 	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
 	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
 	&#60;schedule_candidates_ratio_statement&#62;&nbsp;::=&nbsp;"schedule_candidates_ratio"&nbsp;&#60;floating_point_number&#62;<br>
-	&#60;schedule_rtt_thresh__statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh"&nbsp;&#60;floating_point_number&#62;<br>
+	&#60;schedule_rtt_thresh_diff_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh_diff"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_rtt_thresh_ratio_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh_ratio"&nbsp;&#60;floating_point_number&#62;<br>
+	&#60;schedule_rtt_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh"&nbsp;&#60;floating_point_number&#62;<br>
 	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
 		††"minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
 	&#60;gfs_proto_fhremove_request_window_statement&#62;&nbsp;::=&nbsp;"gfs_proto_fhremove_request_window"&nbsp;&#60;number&#62;<br>
