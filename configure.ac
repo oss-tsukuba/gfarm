@@ -246,8 +246,6 @@ AC_ARG_WITH(globus_static,
 [globus_static=""
 ])
 
-
-
 AC_ARG_WITH(globus_flavor,
 [  --with-globus-flavor=FLAVOR	globus flavor name
 				[[default=guessed]]],
@@ -258,6 +256,13 @@ AC_ARG_WITH(globus_flavor,
 
 AC_SUBST(globus_flavor)
 
+AC_ARG_WITH(globus_libdir,
+[  --with-globus-libdir=DIR	globus library directory
+				[[default=guessed]]],
+[globus_libdir="${withval}"
+],
+[globus_libdir=
+])
 
 AC_MSG_CHECKING([globus])
 AC_ARG_WITH(globus,
@@ -266,14 +271,25 @@ AC_ARG_WITH(globus,
 [globus_location="${withval}"
  case "${globus_location}" in yes) globus_location=${GLOBUS_LOCATION};; esac
 
- # debian package of Globus can be used by pkg-config
- if pkg-config globus-gssapi-gsi; then
+ # try pkg-config first
+ skip_pkgconfig=false
+ if test -f $globus_libdir/pkgconfig/globus-gssapi-gsi.pc; then
+    GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=$globus_libdir/pkgconfig"
+ elif test x"$globus_location" != x; then
+    globus_pkgconfig=`find $globus_location -name globus-gssapi-gsi.pc | head -1`
+    if test x"$globus_pkgconfig" != x; then
+	GLOBUS_PKG_CONFIG_PATH="env PKG_CONFIG_PATH=`dirname $globus_pkgconfig`"
+    else
+	skip_pkgconfig=true
+    fi
+ fi
+ if ! $skip_pkgconfig -a $GLOBUS_PKG_CONFIG_PATH pkg-config globus-gssapi-gsi; then
 	case ${globus_static} in
 	yes) globus_static=--static;;
 	*)   globus_static=        ;;
 	esac
-	globus_gssapi_libs=`pkg-config ${globus_static} --libs globus-gssapi-gsi`
-	globus_includes=`pkg-config --cflags globus-gssapi-gsi`
+	globus_gssapi_libs=`$GLOBUS_PKG_CONFIG_PATH pkg-config ${globus_static} --libs globus-gssapi-gsi`
+	globus_includes=`$GLOBUS_PKG_CONFIG_PATH pkg-config --cflags globus-gssapi-gsi`
 	AC_MSG_RESULT([found])
  else
  # Grid Packaging Tools (GPT)
@@ -330,7 +346,9 @@ AC_ARG_WITH(globus,
  AC_MSG_RESULT([found in \"${globus_location}\" with \"${globus_flavor}\" flavor])
 
  globus_includes="-I${globus_location}/include/${globus_flavor}"
- globus_libdir="${globus_location}/lib"
+ if test x"$globus_libdir" = x; then
+	globus_libdir="${globus_location}/lib"
+ fi
 
  cfgmhtmp=/tmp/cfgmh$$
  AC_MSG_CHECKING([globus library names])
