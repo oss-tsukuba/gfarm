@@ -46,6 +46,14 @@
 </varlistentry>
 
 <varlistentry>
+<term><option>-R</option>
+</term>
+<listitem>
+<para>changes permission recursively.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><option>-?</option></term>
 <listitem>
 <para>Displays a list of command options.</para>
