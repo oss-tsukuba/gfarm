@@ -13,6 +13,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "quota_info.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfusage";
 
@@ -181,8 +182,8 @@ main(int argc, char **argv)
 	gfarm_error_t e;
 	int c, status = 0;
 	int opt_group = 0; /* default: users list */
-	char *name = NULL;
-	const char *path = GFARM_PATH_ROOT;
+	char *name = NULL, *realpath = NULL;
+	const char *path = ".";
 
 	if (argc > 0)
 		program_name = basename(argv[0]);
@@ -210,6 +211,8 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
+		path = realpath;
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
 		     path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
@@ -239,6 +242,7 @@ main(int argc, char **argv)
 			gfarm_error_string(e));
 	gfm_client_connection_free(gfm_server);
 terminate:
+	free(realpath);
 	e = gfarm_terminate();
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: %s\n", program_name,

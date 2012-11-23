@@ -10,6 +10,7 @@
 #ifdef HAVE_GSI
 #include "auth.h"
 #endif
+#include "gfarm_path.h"
 
 char *program_name = "gfwhoami";
 
@@ -35,8 +36,8 @@ main(int argc, char **argv)
 {
 	gfarm_error_t e;
 	int c;
-	const char *path = NULL;
-	char *user;
+	const char *path = ".";
+	char *user, *realpath = NULL;
 #ifdef HAVE_GSI
 	int verbose_flag = 0;
 #endif
@@ -71,12 +72,15 @@ main(int argc, char **argv)
 	if (argc - optind > 0)
 		usage();
 
+	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
+		path = realpath;
 	if ((e = gfarm_get_global_username_by_url(path, &user))
 	    != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: gfarm_get_global_username_by_url: %s\n",
 		    program_name, gfarm_error_string(e));
 		exit(EXIT_FAILURE);
 	}
+	free(realpath);
 	printf("%s", user);
 	free(user);
 #ifdef HAVE_GSI

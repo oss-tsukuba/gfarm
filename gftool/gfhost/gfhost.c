@@ -30,6 +30,7 @@
 #include "lookup.h"
 #include "filesystem.h"
 #include "config.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfhost";
 
@@ -1257,9 +1258,9 @@ main(int argc, char **argv)
 	char opt_operation = '\0'; /* default operation */
 	int opt_concurrency = DEFAULT_CONCURRENCY;
 	int opt_alter_aliases = 0;
-	const char *opt_path = GFARM_PATH_ROOT;
-	char *opt_architecture = NULL;
-	char *opt_domainname = NULL;
+	const char *opt_path = ".";
+	char *realpath = NULL;
+	char *opt_architecture = NULL, *opt_domainname = NULL;
 	long opt_ncpu = 0;
 	int opt_port = 0, opt_flags = -1;
 	int opt_plain_order = 0; /* i.e. do not sort */
@@ -1418,6 +1419,9 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
+	e = gfarm_realpath_by_gfarm2fs(opt_path, &realpath);
+	if (e == GFARM_ERR_NO_ERROR)
+		opt_path = realpath;
 	if (opt_use_metadb &&
 	    (e = gfm_client_connection_and_process_acquire_by_path(opt_path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -1425,6 +1429,7 @@ main(int argc, char **argv)
 		    program_name, opt_path, gfarm_error_string(e));
 		exit(1);
 	}
+	free(realpath);
 
 	switch (opt_operation) {
 	case OP_CREATE_ENTRY:

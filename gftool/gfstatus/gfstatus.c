@@ -16,6 +16,7 @@
 #include "metadb_server.h"
 #include "gfm_client.h"
 #include "lookup.h"
+#include "gfarm_path.h"
 
 char *program_name = "gfstatus";
 
@@ -63,11 +64,11 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	int port, c;
-	char *canonical_hostname;
+	char *canonical_hostname, *hostname, *realpath = NULL;
 	const char *user, *gfmd_hostname;
-	const char *path = GFARM_PATH_ROOT;
+	const char *path = ".";
 	struct gfm_connection *gfm_server;
 	struct gfarm_metadb_server *ms;
 #ifdef HAVE_GSI
@@ -96,16 +97,15 @@ main(int argc, char *argv[])
 	e = gfarm_initialize(&argc, &argv);
 	error_check("gfarm_initialize", e);
 
+	if (gfarm_realpath_by_gfarm2fs(path, &realpath) == GFARM_ERR_NO_ERROR)
+		path = realpath;
 	if ((e = gfm_client_connection_and_process_acquire_by_path(
 	    path, &gfm_server)) != GFARM_ERR_NO_ERROR) {
-		char *hostname;
-		gfarm_error_t e2;
-
 		if ((e2 = gfarm_get_hostname_by_url(path, &hostname, &port))
 		    != GFARM_ERR_NO_ERROR)
 			fprintf(stderr, "cannot get metadata server name"
 			    " represented by `%s': %s\n",
-			    path, gfarm_error_string(e));
+			    path, gfarm_error_string(e2));
 		else {
 			fprintf(stderr, "metadata server `%s', port %d: %s\n",
 			    hostname, port,
@@ -144,8 +144,20 @@ main(int argc, char *argv[])
 	/* gfmd */
 	puts("");
 	ms = gfm_client_connection_get_real_server(gfm_server);
-	gfmd_hostname = gfarm_metadb_server_get_name(ms);
-	port = gfarm_metadb_server_get_port(ms);
+	if (ms == NULL) {
+		if ((e = gfarm_get_hostname_by_url(
+		    path, &hostname, &port)) != GFARM_ERR_NO_ERROR) {
+			fprintf(stderr, "cannot get metadata server name"
+			    " represented by `%s': %s\n",
+			    path, gfarm_error_string(e));
+			exit(EXIT_FAILURE);
+		}
+		gfmd_hostname = hostname;
+	} else {
+		gfmd_hostname = gfarm_metadb_server_get_name(ms);
+		port = gfarm_metadb_server_get_port(ms);
+	}
+	free(realpath);
 	print_msg("gfmd server name", gfmd_hostname);
 	printf("gfmd server port: %d\n", port);
 	print_msg("gfmd admin user", gfarm_ctxp->metadb_admin_user);

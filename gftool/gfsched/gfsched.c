@@ -174,7 +174,10 @@ main(int argc, char **argv)
 		    opt_domain,
 		    &available_nhosts, &available_hosts);
 	} else {
-		path = opt_mount_point == NULL ? "/" : opt_mount_point;
+		path = opt_mount_point == NULL ? "." : opt_mount_point;
+		e = gfarm_realpath_by_gfarm2fs(path, &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			path = realpath;
 		e = gfarm_schedule_hosts_domain_all(path, opt_domain,
 		    &available_nhosts, &available_hosts);
 	}
