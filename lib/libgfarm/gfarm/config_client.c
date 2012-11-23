@@ -149,6 +149,13 @@ gfarm_initialize(int *argcp, char ***argvp)
 		    gfarm_error_string(e));
 		return (e);
 	}
+	e = gfarm_known_network_list_add_local_host();
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_known_network_list_add_local_host() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1000983,
