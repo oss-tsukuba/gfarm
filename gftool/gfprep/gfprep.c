@@ -21,11 +21,11 @@
 #include "hash.h"
 #include "nanosec.h"
 #include "thrsubr.h"
+#include "gfutil.h"
 
 #include "config.h"
 #include "gfarm_path.h"
 #include "gfm_client.h"
-#include "gfutil.h"
 #include "host.h"
 #include "lookup.h"
 
