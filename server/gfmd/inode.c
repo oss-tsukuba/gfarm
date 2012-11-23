@@ -3999,18 +3999,15 @@ inode_replicated(struct file_replication *fr,
 	}
 
 	if ((dfc = file_replication_get_dead_file_copy(fr)) != NULL) {
-		/*
-		 * XXX FIXME
-		 * the following src_errcode check is somewhat adhoc condition
-		 * for a private requirement
-		 *
-		 * XXXQ should look at this condition again
-		 */
-		if (src_errcode == GFARM_ERR_NO_ERROR &&
-		    dead_file_copy_is_removable(dfc))
+		if (dead_file_copy_is_removable(dfc))
 			dead_file_copy_schedule_removal(dfc);
-		else
+		else {
+			/*
+			 * if there is not enough number of replicas
+			 * even including the obsolete one, keep it
+			 */
 			dead_file_copy_mark_kept(dfc);
+		}
 	} else if (e == GFARM_ERR_NO_ERROR) {
 		/* try to sweep kept queue */
 		if (inode->dead_copies != NULL)
