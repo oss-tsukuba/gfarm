@@ -15,7 +15,7 @@
 #include <omp.h>
 #define LIBGFARM_NOT_MT_SAFE
 #else
-static void omp_set_num_threads(int n){ return; }
+static void omp_set_num_threads(int n) { return; }
 static int omp_get_num_threads(void){ return (1); }
 static int omp_get_thread_num(void){ return (0); }
 #endif
@@ -184,6 +184,11 @@ create_filelist(char *file, struct gfs_stat *st, void *arg)
 	char **copy;
 	gfarm_error_t e;
 
+	if (!GFARM_S_ISREG(st->st_mode)) {
+		if (opt_verbose)
+			printf("%s: not a regular file, skipped\n", file);
+		return (GFARM_ERR_NO_ERROR);
+	}
 	e = gfs_replica_list_by_name(file, &ncopy, &copy);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
@@ -342,8 +347,8 @@ print_file_list(struct gfarm_list *list)
 {
 	int i;
 
-	for (i= 0; i < gfarm_list_length(list); ++i)
-		print_file_info(gfarm_stringlist_elem(list, i));
+	for (i = 0; i < gfarm_list_length(list); ++i)
+		print_file_info(gfarm_list_elem(list, i));
 }
 
 static int
@@ -360,13 +365,13 @@ filesizecmp_inv(const void *a, const void *b)
 }
 
 static int
-is_enough_space(char *host, int port, gfarm_off_t size)
+is_enough_space(const char *path, char *host, int port, gfarm_off_t size)
 {
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 	gfarm_error_t e;
 
-	e = gfs_statfsnode(host, port, &bsize,
+	e = gfs_statfsnode_by_path(path, host, port, &bsize,
 	    &blocks, &bfree, &bavail, &files, &ffree, &favail);
 	if (e != GFARM_ERR_NO_ERROR)
 		fprintf(stderr, "%s: %s\n", host, gfarm_error_string(e));
@@ -446,7 +451,7 @@ action(struct action *act, int tnum, int nth, int pi, struct file_info *fi,
 	while (1) {
 		while (fi->surplus_ncopy == 0
 		       && (file_copy_does_exist(fi, dst[di])
-			   || ! is_enough_space(
+			   || !is_enough_space(fi->pathname,
 				   dst[di], dst_port[di], fi->filesize))
 		       && max_niter > 0) {
 			if (opt_verbose)
@@ -520,7 +525,7 @@ pfor(struct action *act, int nfinfo, struct file_info **finfo,
 	}
 	omp_set_num_threads(nthreads);
 
-#pragma omp parallel reduction(+:nerr) private(pi,tnum,nth)
+#pragma omp parallel reduction(+:nerr) private(pi, tnum, nth)
 	{
 	pi = 0;
 	tnum = omp_get_thread_num();
@@ -558,8 +563,7 @@ pfor(struct action *act, int nfinfo, struct file_info **finfo,
 			if (!opt_noexec) {
 				e = action(act, tnum, nth, pi, fi, arg);
 				errmsg = gfarm_error_string(e);
-			}
-			else {
+			} else {
 				e = GFARM_ERR_NO_ERROR;
 				errmsg = gfarm_error_string(e);
 			}
@@ -571,7 +575,7 @@ pfor(struct action *act, int nfinfo, struct file_info **finfo,
 				       fi->filesize / t / 1024 / 1024);
 			}
 #ifdef LIBGFARM_NOT_MT_SAFE
-		skip_replication:
+ skip_replication:
 #endif
 			if (e != GFARM_ERR_NO_ERROR) {
 #ifndef LIBGFARM_NOT_MT_SAFE
@@ -585,7 +589,8 @@ pfor(struct action *act, int nfinfo, struct file_info **finfo,
 			sync();
 			_exit(e == GFARM_ERR_NO_ERROR ? 0 : 1);
 		}
-		while ((rv = waitpid(pid, &s, 0)) == -1 && errno == EINTR);
+		while ((rv = waitpid(pid, &s, 0)) == -1 && errno == EINTR)
+			;
 		if (rv == -1 || (WIFEXITED(s) && WEXITSTATUS(s) != 0))
 			++nerr;
 #endif
@@ -687,17 +692,15 @@ compare_available_capacity_r(const void *s1, const void *s2)
  * - maybe(?) should use gfm_client_schedule_file instead.
  */
 gfarm_error_t
-schedule_host_domain(const char *domain,
+schedule_host_domain(const char *path, const char *domain,
 	int *nhostsp, struct gfarm_host_sched_info **hostsp)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	const char *path = GFARM_PATH_ROOT;
 
-	if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
-	    != GFARM_ERR_NO_ERROR)
+	if ((e = gfm_client_connection_and_process_acquire_by_path(
+	    path, &gfm_server)) != GFARM_ERR_NO_ERROR)
 		return (e);
-
 	e = gfm_client_schedule_host_domain(gfm_server, domain,
 	    nhostsp, hostsp);
 	gfm_client_connection_free(gfm_server);
@@ -705,7 +708,7 @@ schedule_host_domain(const char *domain,
 }
 
 static gfarm_error_t
-create_hostlist_by_domain_and_hash(char *domain,
+create_hostlist_by_domain_and_hash(struct file_info *finfo, char *domain,
 	struct gfarm_hash_table *hosthash,
 	int *nhostsp, char ***hostsp, int **portsp)
 {
@@ -714,7 +717,7 @@ create_hostlist_by_domain_and_hash(char *domain,
 	char **hosts;
 	gfarm_error_t e;
 
-	e = schedule_host_domain(domain, &ninfo, &infos);
+	e = schedule_host_domain(finfo->pathname, domain, &ninfo, &infos);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	/* sort 'infos' in descending order wrt available capacity */
@@ -932,6 +935,9 @@ main(int argc, char *argv[])
 		fflush(stdout);
 	}
 	e = create_hostlist_by_domain_and_hash(
+		gfarm_list_length(&flist.slist) > 0 ?
+		gfarm_list_elem(&flist.slist, 0) :
+		gfarm_list_elem(&flist.dlist, 0),
 		flist.dst_domain, flist.dst_hosthash,
 		&gfrep_arg.ndst, &gfrep_arg.dst, &gfrep_arg.dst_port);
 	error_check(e);
