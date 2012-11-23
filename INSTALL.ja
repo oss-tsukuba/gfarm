@@ -105,6 +105,7 @@ configure コマンドには，下記のオプションがあります．
 openssl-devel
 openldap-devel
 postgresql-devel
+ganglia-gmond-python			(config-gf[ms]d-iostat の実行に必要)
 
 * Debian パッケージ
 

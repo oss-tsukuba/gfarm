@@ -108,6 +108,7 @@ Required Package
 openssl-devel
 openldap-devel
 postgresql-devel
+ganglia-gmond-python		(required to execute config-gf[ms]d-iostat)
 
 * Debian Package
 
