@@ -990,8 +990,7 @@ gfprep_is_same_name(const char *src_url, int src_is_gfarm,
 }
 
 static gfarm_error_t
-gfprep_set_mtime(int is_gfarm, const char *url, struct gfarm_timespec *mtimep,
-		 unsigned char d_type)
+gfprep_set_mtime(int is_gfarm, const char *url, struct gfarm_timespec *mtimep)
 {
 	gfarm_error_t e;
 
@@ -1000,30 +999,32 @@ gfprep_set_mtime(int is_gfarm, const char *url, struct gfarm_timespec *mtimep,
 
 	if (is_gfarm) {
 		struct gfarm_timespec gt[2];
-		gt[0].tv_sec = mtimep->tv_sec;
-		gt[0].tv_nsec = mtimep->tv_nsec;
-		gt[1].tv_sec = gt[0].tv_sec;
-		gt[1].tv_nsec = gt[0].tv_nsec;
+
+		gt[0].tv_sec = gt[1].tv_sec = mtimep->tv_sec;
+		gt[0].tv_nsec = gt[1].tv_nsec = mtimep->tv_nsec;
 		e = gfs_lutimes(url, gt);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfprep_error_e(e, "gfs_lutimes(%s)", url);
 			return (e);
 		}
 	} else { /* to local */
-		int retv;
-		struct timeval tv[2];
-		const char *path = url;
-		if (d_type == GFS_DT_LNK) /* not support lutimes() */
-			return (GFARM_ERR_NO_ERROR); /* no effect */
-		path += GFPREP_FILE_URL_PREFIX_LENGTH;
-		tv[0].tv_sec = mtimep->tv_sec;
-		tv[0].tv_usec = mtimep->tv_nsec / GFARM_MICROSEC_BY_NANOSEC;
-		tv[1].tv_sec = tv[0].tv_sec;
-		tv[1].tv_usec = tv[0].tv_usec;
-		retv = utimes(path, tv);
+		int retv, save_errno;
+		struct timespec ts[2];
+		const char *path = url + GFPREP_FILE_URL_PREFIX_LENGTH;
+
+		ts[0].tv_sec = ts[1].tv_sec = mtimep->tv_sec;
+		ts[0].tv_nsec = ts[1].tv_nsec = mtimep->tv_nsec;
+		retv = gfarm_local_lutimens(path, ts);
 		if (retv == -1) {
-			e = gfarm_errno_to_error(errno);
-			gfprep_error_e(e, "utimes(%s)", url);
+			save_errno = errno;
+			e = gfarm_errno_to_error(save_errno);
+			if (save_errno == EOPNOTSUPP) {
+				if (opt.verbose)
+					gfprep_warn_e(e,
+					    "gfarm_local_lutimens(%s)", url);
+			} else
+				gfprep_error_e(
+				    e, "gfarm_local_lutimens(%s)", url);
 			return (e);
 		}
 	}
@@ -3250,9 +3251,9 @@ main(int argc, char *argv[])
 						src_is_gfarm, src_url,
 						dst_is_gfarm, dst_url);
 					if (e == GFARM_ERR_NO_ERROR)
-						(void) gfprep_set_mtime(
-							dst_is_gfarm, dst_url,
-							&gt, GFS_DT_LNK);
+						(void)gfprep_set_mtime(
+						    dst_is_gfarm, dst_url,
+						    &gt);
 				} else
 					gfprep_warn(
 						"cannot copy "
