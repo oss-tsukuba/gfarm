@@ -305,9 +305,7 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 		columns = screen_width / (column_width + 1);
 		if (columns <= 0) /* a pathname is wider than screen_width */
 			columns = 1;
-		lines = n / columns;
-		if (lines * columns < n)
-			lines++;
+		lines = (n + columns - 1) / columns;
 		for (i = 0; i < lines; i++) {
 			for (j = 0; j < columns; j++) {
 				int len_suffix = 0;
@@ -319,11 +317,12 @@ list_files(char *prefix, int n, char **files, int *need_newline)
 				fputs(ls[k].path, stdout);
 				if (option_type_suffix)
 					len_suffix = put_suffix(&ls[k]);
-				printf("%*s",
-				       (int)(column_width
-				       - (option_inumber ? INUM_LEN : 0)
-				       - strlen(ls[k].path))
-				       - len_suffix + 1, "");
+				if (i + (j + 1) * lines < n)
+					printf("%*s",
+					    (int)(column_width
+					    - (option_inumber ? INUM_LEN : 0)
+					    - strlen(ls[k].path))
+					    - len_suffix + 1, "");
 			}
 			putchar('\n');
 		}				
