@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <limits.h>
 #include <assert.h>
 #include <pthread.h>
 #include <sys/types.h>
@@ -20,11 +21,12 @@
 #include "hash.h"
 #include "nanosec.h"
 #include "thrsubr.h"
+#include "gfutil.h"
 
 #include "config.h"
 #include "context.h"
+#include "gfarm_path.h"
 #include "gfm_client.h"
-#include "gfutil.h"
 #include "host.h"
 #include "lookup.h"
 
@@ -140,7 +142,7 @@ gfprep_usage()
 {
 	fprintf(stderr,
 "\t[-N <#replica>] [-x (remove surplus replicas)] [-m (migrate)]\n"
-"\t<gfarm_url(gfarm:///...)>\n");
+"\t<gfarm_url(gfarm:///...) or relative-path>\n");
 }
 
 static void
@@ -148,8 +150,8 @@ gfpcopy_usage()
 {
 	fprintf(stderr,
 "\t[-f (force copy)(overwrite)] [-b <#bufsize to copy>]\n"
-"\t<src_url(gfarm:///... or file:///...)>\n"
-"\t<dst_dir(gfarm:///... or file:///...)>\n");
+"\t<src_url(gfarm:///... or file:///...) or relative-path>\n"
+"\t<dst_dir(gfarm:///... or file:///...) or relative-path>\n");
 }
 
 static void
@@ -2386,6 +2388,105 @@ gfprep_print_list(
 	free(dst_url);
 }
 
+/* XXX gfutil? */
+static gfarm_error_t
+gfarm_local_realpath(const char *path, char **realpathp)
+{
+	gfarm_error_t e;
+	char *rv, *parent, *p;
+	const char *base;
+	int overflow = 0;
+	size_t len;
+	char buf[PATH_MAX];
+
+	rv = realpath(path, buf);
+	if (rv) {
+		*realpathp = strdup(rv);
+		if (*realpathp == NULL)
+			gfprep_fatal("no memory");
+		return (GFARM_ERR_NO_ERROR);
+	}
+	if (errno != ENOENT) {
+		e = gfarm_errno_to_error(errno);
+		/* XXX gflog_debug save_errno */
+		return (e);
+	}
+	if (path[0] == '\0' || /* "" */
+	    (path[0] == '/' && path[1] == '\0') || /* "/" */
+	    (path[0] == '.' && (path[1] == '\0' || /* "." */
+			(path[1] == '.' && path[2] == '\0')))) /* ".." */
+		return (GFARM_ERR_INVALID_ARGUMENT); /* unexpected */
+
+	/* to create new entry */
+	parent = gfarm_path_dir(path); /* malloc'ed */
+	if (parent == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	p = realpath(parent, buf);
+	if (p == NULL) {
+		e = gfarm_errno_to_error(errno);
+		/* XXX gflog_debug save_errno */
+		free(parent);
+		return (e);
+	}
+	free(parent);
+	base = gfarm_path_dir_skip(path);
+	len = gfarm_size_add(&overflow, strlen(p), strlen(base));
+	if (overflow)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	len = gfarm_size_add(&overflow, len, 2); /* '/' and '\0' */
+	if (overflow)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	GFARM_MALLOC_ARRAY(rv, len);
+	if (rv == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	strcpy(rv, p);
+	if (strcmp(p, "/") != 0)
+		strcat(rv, "/");
+	strcat(rv, base);
+	*realpathp = rv;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static char *
+gfprep_path_to_real_url(const char *path)
+{
+	gfarm_error_t e;
+	char *real, *p;
+	size_t len;
+	int overflow = 0;
+
+	if (gfprep_url_is_gfarm(path) || gfprep_url_is_local(path)) {
+		real = strdup(path);
+		if (real == NULL)
+			gfprep_fatal("no memory");
+		return (real);
+	}
+
+	e = gfarm_realpath_by_gfarm2fs(path, &real);
+	if (e == GFARM_ERR_NO_ERROR)
+		return (real); /* gfarm://host:port/... */
+
+	e = gfarm_local_realpath(path, &real);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfprep_error("gfarm_local_realpath: %s: %s",
+		    path, gfarm_error_string(e));
+		exit(EXIT_FAILURE);
+	}
+	/* file://...<real>...\0 */
+	len = gfarm_size_add(&overflow, strlen(real),
+	    GFPREP_FILE_URL_PREFIX_LENGTH + 2 + 1);
+	if (overflow)
+		gfprep_fatal("gfprep_path_to_real_url: overflow");
+	GFARM_MALLOC_ARRAY(p, len);
+	if (p == NULL)
+		gfprep_fatal("no memory");
+	strcpy(p, GFPREP_FILE_URL_PREFIX);
+	strcat(p, "//");
+	strcat(p, real);
+	free(real);
+	return (p);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2393,7 +2494,8 @@ main(int argc, char *argv[])
 	char **orig_argv = argv;
 	int ch, i, j, retv, is_gfpcopy;
 	gfarm_error_t e;
-	char *src_orig_url, *dst_orig_url, *src_base_name;
+	char *src_orig_path, *dst_orig_path;
+	char *src_real_url, *dst_real_url, *src_base_name;
 	char *src_dir, *dst_dir;
 	int src_is_gfarm, dst_is_gfarm;
 	int src_dir_mode;
@@ -2552,21 +2654,27 @@ main(int argc, char *argv[])
 	if (strcmp(program_name, name_gfpcopy) == 0) { /* gfpcopy */
 		if (argc != 2)
 			gfprep_usage_common(1);
-		src_orig_url = argv[0];
-		dst_orig_url = argv[1];
-		src_is_gfarm = gfprep_url_is_gfarm(src_orig_url);
-		dst_is_gfarm = gfprep_url_is_gfarm(dst_orig_url);
-		if (!src_is_gfarm && !gfprep_url_is_local(src_orig_url))
+		src_orig_path = argv[0];
+		dst_orig_path = argv[1];
+		src_real_url = gfprep_path_to_real_url(src_orig_path);
+		dst_real_url = gfprep_path_to_real_url(dst_orig_path);
+		src_is_gfarm = gfprep_url_is_gfarm(src_real_url);
+		dst_is_gfarm = gfprep_url_is_gfarm(dst_real_url);
+		if (!src_is_gfarm && !gfprep_url_is_local(src_real_url))
 			gfprep_usage_common(1);
-		if (!dst_is_gfarm && !gfprep_url_is_local(dst_orig_url))
+		if (!dst_is_gfarm && !gfprep_url_is_local(dst_real_url))
 			gfprep_usage_common(1);
 		is_gfpcopy = 1;
 	} else { /* gfprep */
 		if (argc != 1)
 			gfprep_usage_common(1);
-		src_orig_url = argv[0];
-		dst_orig_url = src_orig_url;
-		src_is_gfarm = gfprep_url_is_gfarm(src_orig_url);
+		src_orig_path = argv[0];
+		dst_orig_path = src_orig_path;
+		src_real_url = gfprep_path_to_real_url(src_orig_path);
+		dst_real_url = strdup(src_real_url);
+		if (dst_real_url == NULL)
+			gfprep_fatal("no memory");
+		src_is_gfarm = gfprep_url_is_gfarm(src_real_url);
 		if (!src_is_gfarm)
 			gfprep_usage_common(1);
 		dst_is_gfarm = 1;
@@ -2595,13 +2703,13 @@ main(int argc, char *argv[])
 		if (opt_remove) /* -x */
 			gfprep_usage_common(1);
 		if (!src_is_gfarm && (opt_src_domain || opt_src_hostfile)) {
-			gfprep_error("%s needs neither -S nor -h",
-				     src_orig_url);
+			gfprep_error(
+			    "%s needs neither -S nor -h", src_real_url);
 			exit(EXIT_FAILURE);
 		}
 		if (!dst_is_gfarm && (opt_dst_domain || opt_dst_hostfile)) {
-			gfprep_error("%s needs neither -D nor -H",
-				     dst_orig_url);
+			gfprep_error(
+			    "%s needs neither -D nor -H", dst_real_url);
 			exit(EXIT_FAILURE);
 		}
 	} else { /* gfprep */
@@ -2664,13 +2772,13 @@ main(int argc, char *argv[])
 	if (opt_dirtree_n_fifo <= 0)
 		gfprep_usage_common(1);
 
-	gfprep_check_dirurl_filename(src_is_gfarm, src_orig_url,
-				     &src_dir, &src_base_name,
-				     &src_dir_mode, NULL);
+	gfprep_check_dirurl_filename(
+	    src_is_gfarm, src_real_url, &src_dir, &src_base_name,
+	    &src_dir_mode, NULL);
 	gfprep_convert_gfarm_rootdir(&src_dir);
 
 	if (is_gfpcopy)
-		dst_dir = strdup(dst_orig_url);
+		dst_dir = strdup(dst_real_url);
 	else
 		dst_dir = strdup(src_dir);
 	if (dst_dir == NULL)
@@ -3470,6 +3578,8 @@ next_entry:
 	free(src_base_name);
 	free(src_dir);
 	free(dst_dir);
+	free(src_real_url);
+	free(dst_real_url);
 
 	e = gfarm_terminate();
 	gfprep_warn_e(e, "gfarm_terminate");
