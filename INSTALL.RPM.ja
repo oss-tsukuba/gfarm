@@ -31,15 +31,14 @@ RPM バイナリパッケージは，RPM ソースパッケージ(SRPM)から作成します．バ
 なお，バイナリパッケージは /usr/src/redhat/RPM/ARCH/ に作成されます．
 
 GSI認証を有効にしたい場合は，Globus GSSAPI 開発用ライブラリを導入後，
-以下のように GLOBUS_PREFIX および GLOBUS_FLAVOR を指定して作成します．
+以下のように GFARM_CONFIGURE_OPTION を指定して作成します．
 
-	# GLOBUS_PREFIX=/usr/gt4 GLOBUS_FLAVOR=gcc64 rpmbuild \
+	# GFARM_CONFIGURE_OPTION=--with-globus rpmbuild \
 		--rebuild gfarm-X.X.X-X.src.rpm
 
 このとき，作成されるバイナリパッケージは gfarm ではなく gfarm-gsi とな
-ります．gfarm-gsi パッケージが作成されない場合は，指定された
-GLOBUS_PREFIX と GLOBUS_FLAVOR に Globus GSSAPI 開発用ライブラリが導入
-されているかどうか確認してください．
+ります．gfarm-gsi パッケージが作成されない場合は，Globus GSSAPI 開発用
+ライブラリが導入されているかどうか確認してください．
 
 ● メタデータサーバのインストール
 =================================

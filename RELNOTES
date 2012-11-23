@@ -1,3 +1,105 @@
+Release note for Gfarm 2.5.7.1
+==============================
+
+[2012.10.11]
+
+Bug fix
+* gfpcopy, gfprep - may work slowly [sf.net trac #436]
+* gfchown - segfault in an error case [sf.net trac #473]
+* gfdump.postgresql - remove unnecessary journal file when starting
+  the slave gfmd after restoring the database
+* gfmd - gfmd crashes, if an error occurs while reading a journal file
+  in db_journal_fetch() [sf.net trac #468]
+* gfmd - fix possible lost all replicas when multiple clients open the
+  same file with GFARM_FILE_TRUNC simultaneously [sf.net trac #441]
+* gfmd, gfsd, libgfarm - lost all replicas may happen due to a race
+  condition between creating and reading the same file [sf.net trac
+  #455]
+* gfmd, gfsd - gfsd -ccc (or -c, -cc) cannot fix invalid files having
+  inconsistent file size on the spool, introduced in 2.5.6
+* gfmd - potential gfmd memory corruption when scheduling file system
+  nodes [sf.net trac #449]
+* libgfarm - log original errno if it is not known [sf.net trac #469]
+
+Release note for Gfarm 2.5.7
+============================
+
+[2012.9.3]
+
+Updated feature
+* gfprep, gfpcopy - improve destination host scheduling not to choose
+  the same destination at the same time
+* libgfarm, gfsd - support nanosecond resolution for file
+  creation/modification/access time if it is supported by the file
+  system node
+* gfmd - suppress too many "accept: Too many open files" messages when
+  thousands of clients access [sf.net trac #412]
+
+Bug fix
+* gfmd - file replicas may be inconsistent if the file is updated
+  within a second but it has the same size.
+
+Release note for Gfarm 2.5.6
+============================
+
+[2012.8.24]
+
+New feature
+* gfsd - -ccc option to check consistency of metadata.  When a
+  referenced physical file does not exist, the corresponding metadata
+  is deleted.  Unreferenced physical files are moved to lost+found/.
+
+New command
+* gfjournaladmin - manipulates a journal file.
+* grid-proxy-agent - a utility to re-new the proxy cert automatically.
+
+New configuration directive
+* metadb_server_max_descriptors - specifies the limit of descriptors
+  for gfmd. [sf.net trac #411]
+* schedule_concurrency, schedule_concurrency_per_net,
+  schedule_candidates_ratio, schedule_rtt_thresh - parameters for
+  client scheduling.
+* fatal_action - specifies an action when fatal error happens. [sf.net
+  trac #410]
+
+Bug fix
+* gfrep - gfrep fails if a symlink to a directory is included.
+* gfrm - with -h option, directories should not be removed.
+* libgfarm - segfault when resolving symlink in the top
+  directory. [sf.net trac #393]
+* libgfarm - URL without a port number cannot be parsed. [sf.net trac
+  #377]
+* libgfarm - global username should be obtained by gfmd in
+  GSI. [sf.net trac #394]
+* config-gfarm - filename including non utf-8 multibyte characters
+  crashes the gfmd. [sf.net trac #387]
+* gfsd, gfmd - automatic replication may be unintentionally
+  failed. [sf.net trac #184]
+* gfmd - physical file removal may be delayed. [sf.net trac #76]
+* gfmd - metadata consistency check is broken, and may crash the
+  gfmd, which was introduced in 2.5.0. [sf.net trac #379]
+* gfmd - segfault by specifying the same user multiple times when
+  creating or modifying a group. [sf.net trac #397]
+* gfmd - back channel to gfsd may be unintentionally
+  disconnected. [sf.net trac #79]
+* gfmd - crash by too large extended attribute. [sf.net trac #399]
+* gfmd - crash when multiple clients updates the same file
+  simultaneously. [sf.net trac #407]
+* gfmd - user information change is not effective online in
+  GSI. [sf.net trac #392 and #423]
+* gfmd - when all replica of a nonzero-size file cannot be accessed,
+  return error, instead of unintentionally creating a zero-size file.
+* gfmd - possible crash when the metadata server information is
+  changed. [sf.net trac #391]
+* gfmd - too long extended or XML extended attribute may crash the
+  gfmd. [sf.net trac #427]
+* gfmd - crash when non utf-8 XML extended attribute is
+  stored. [sf.net trac #389]
+* gfmd - frozen by receiving SIGUSR1 during initialization. [sf.net
+  trac #405]
+* gfmd - race condition about peer_free() that may crash the
+  gfmd. [sf.net trac #426]
+
 Release note for Gfarm 2.5.5
 ============================
 
