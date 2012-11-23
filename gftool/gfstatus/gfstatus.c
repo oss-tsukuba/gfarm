@@ -70,14 +70,10 @@ main(int argc, char *argv[])
 	const char *path = GFARM_PATH_ROOT;
 	struct gfm_connection *gfm_server;
 	struct gfarm_metadb_server *ms;
-
 #ifdef HAVE_GSI
 	char *cred;
 #endif
-#if 0
-	char *arch;
-	extern int gfarm_is_active_file_system_node;
-#endif
+
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
@@ -133,9 +129,6 @@ main(int argc, char *argv[])
 	else
 		printf("canonical hostname: not available\n");
 #if 0
-	e = gfarm_host_get_self_architecture(&arch);
-	print_msg("architecture name ",
-		  e == GFARM_ERR_NO_ERROR ? arch : gfarm_error_string(e));
 	print_msg("active fs node    ",
 		  gfarm_is_active_file_system_node ? "yes" : "no");
 #endif
@@ -158,7 +151,6 @@ main(int argc, char *argv[])
 	print_msg("gfmd admin user", gfarm_ctxp->metadb_admin_user);
 	print_msg("gfmd admin dn  ", gfarm_ctxp->metadb_admin_user_gsi_dn);
 
-	/* XXX FIXME: this doesn't support multiple metadata server. */
 	gfm_client_connection_free(gfm_server);
 
 	e = gfarm_terminate();
