@@ -1188,7 +1188,6 @@ gfprep_copy_symlink(int src_is_gfarm, const char *src_url,
 
 /* callback functions and data (locked by cb_mutex) */
 struct pfunc_cb_data {
-	int type;
 	int migrate;
 	char *src_url;
 	char *dst_url;
@@ -1197,13 +1196,55 @@ struct pfunc_cb_data {
 	struct timeval start;
 	gfarm_off_t filesize;
 	char *done_p;
+
+	void (*func_timer_begin)(struct pfunc_cb_data *);
+	void (*func_timer_end)(struct pfunc_cb_data *, int);
+	void (*func_start)(struct pfunc_cb_data *);
+	void (*func_update)(struct pfunc_cb_data *, int);
 };
 
-enum pfunc_cb_type {
-	PFUNC_TYPE_COPY,
-	PFUNC_TYPE_REPLICATE,
-	PFUNC_TYPE_REMOVE_REPLICA
-};
+static void (*pfunc_cb_start_copy)(struct pfunc_cb_data *) = NULL;
+static void (*pfunc_cb_start_replicate)(struct pfunc_cb_data *) = NULL;
+static void (*pfunc_cb_start_remove_replica)(struct pfunc_cb_data *) = NULL;
+
+static void (*pfunc_cb_timer_begin)(struct pfunc_cb_data *) = NULL;
+
+static void
+pfunc_cb_start_copy_main(struct pfunc_cb_data *cbd)
+{
+	gfprep_debug("START COPY: %s (%s:%d) -> %s (%s:%d)",
+	    cbd->src_url,
+	    cbd->src_hi ? cbd->src_hi->hostname : "local",
+	    cbd->src_hi ? cbd->src_hi->port : 0,
+	    cbd->dst_url,
+	    cbd->dst_hi ? cbd->dst_hi->hostname : "local",
+	    cbd->dst_hi ? cbd->dst_hi->port : 0);
+}
+
+static void
+pfunc_cb_start_replicate_main(struct pfunc_cb_data *cbd)
+{
+	gfprep_debug("START %s: %s (%s:%d -> %s:%d)",
+	    cbd->migrate ? "MIGRATE" : "REPLICATE",  cbd->src_url,
+	    cbd->src_hi ? cbd->src_hi->hostname : "local",
+	    cbd->src_hi ? cbd->src_hi->port : 0,
+	    cbd->dst_hi ? cbd->dst_hi->hostname : "local",
+	    cbd->dst_hi ? cbd->dst_hi->port : 0);
+}
+
+static void
+pfunc_cb_start_remove_replica_main(struct pfunc_cb_data *cbd)
+{
+	gfprep_debug("START REMOVE REPLICA: %s (%s:%d)",
+	    cbd->src_url, cbd->src_hi->hostname,
+	    cbd->src_hi->port);
+}
+
+static void
+pfunc_cb_timer_begin_main(struct pfunc_cb_data *cbd)
+{
+	gettimeofday(&cbd->start, NULL);
+}
 
 static void
 pfunc_cb_start(void *data)
@@ -1213,31 +1254,111 @@ pfunc_cb_start(void *data)
 
 	if (cbd == NULL)
 		return;
-	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (cbd->type == PFUNC_TYPE_COPY)
-		gfprep_debug("START COPY: %s (%s:%d) -> %s (%s:%d)",
-			     cbd->src_url,
-			     cbd->src_hi ? cbd->src_hi->hostname : "local",
-			     cbd->src_hi ? cbd->src_hi->port : 0,
-			     cbd->dst_url,
-			     cbd->dst_hi ? cbd->dst_hi->hostname : "local",
-			     cbd->dst_hi ? cbd->dst_hi->port : 0);
-	else if (cbd->type == PFUNC_TYPE_REPLICATE)
-		gfprep_debug("START %s: %s (%s:%d -> %s:%d)",
-			     cbd->migrate ? "MIGRATE" : "REPLICATE",
-			     cbd->src_url,
-			     cbd->src_hi ? cbd->src_hi->hostname : "local",
-			     cbd->src_hi ? cbd->src_hi->port : 0,
-			     cbd->dst_hi ? cbd->dst_hi->hostname : "local",
-			     cbd->dst_hi ? cbd->dst_hi->port : 0);
-	else if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA && cbd->src_hi)
-		gfprep_debug("START REMOVE REPLICA: %s (%s:%d)",
-			     cbd->src_url, cbd->src_hi->hostname,
-			     cbd->src_hi->port);
-	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
 
-	if (opt.performance_each || opt.verbose)
-		gettimeofday(&cbd->start, NULL);
+	if (cbd->func_start) {
+		gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
+		cbd->func_start(cbd);
+		gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
+	}
+	if (cbd->func_timer_begin)
+		cbd->func_timer_begin(cbd);
+}
+
+static void (*pfunc_cb_timer_end_copy)(struct pfunc_cb_data *, int) = NULL;
+static void (*pfunc_cb_timer_end_replicate)(struct pfunc_cb_data *, int)
+= NULL;
+static void (*pfunc_cb_timer_end_remove_replica)(struct pfunc_cb_data *, int)
+= NULL;
+
+static const char pfunc_cb_ok[] = "OK";
+static const char pfunc_cb_ng[] = "NG";
+#define PF_FMT ", %.3gMB/s(%.3gs): " /* performance */
+
+static void
+timer_end(struct pfunc_cb_data *cbd, double *mbsp, double *secp)
+{
+	struct timeval end;
+	double usec;
+
+	gettimeofday(&end, NULL);
+	gfarm_timeval_sub(&end, &cbd->start);
+	usec = (double)end.tv_sec * GFARM_SECOND_BY_MICROSEC + end.tv_usec;
+	/* Bytes/usec == MB/sec */
+	*mbsp = (double)cbd->filesize / usec;
+	*secp = usec / GFARM_SECOND_BY_MICROSEC;
+}
+
+static void
+pfunc_cb_timer_end_copy_main(struct pfunc_cb_data *cbd, int success)
+{
+	double mbs, sec;
+
+	timer_end(cbd, &mbs, &sec);
+	printf("[%s]COPY" PF_FMT "%s",
+	    success ? pfunc_cb_ok : pfunc_cb_ng, mbs, sec, cbd->src_url);
+	if (cbd->src_hi)
+		printf("(%s:%d)",
+		    cbd->src_hi->hostname, cbd->src_hi->port);
+	printf(" -> %s", cbd->dst_url);
+	if (cbd->dst_hi)
+		printf("(%s:%d)",
+		    cbd->dst_hi->hostname, cbd->dst_hi->port);
+	puts("");
+}
+
+static void
+pfunc_cb_timer_end_replicate_main(struct pfunc_cb_data *cbd, int success)
+{
+	double mbs, sec;
+
+	timer_end(cbd, &mbs, &sec);
+	printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)\n",
+	    success ? pfunc_cb_ok : pfunc_cb_ng,
+	    cbd->migrate ? "MIGRATE" : "REPLICATE",
+	    mbs, sec, cbd->src_url,
+	    cbd->src_hi->hostname, cbd->src_hi->port,
+	    cbd->dst_hi->hostname, cbd->dst_hi->port);
+}
+
+static void
+pfunc_cb_timer_end_remove_replica_main(struct pfunc_cb_data *cbd, int success)
+{
+	printf("[%s]REMOVE REPLICA: %s (%s:%d)\n",
+	    success ? pfunc_cb_ok : pfunc_cb_ng, cbd->src_url,
+	    cbd->src_hi->hostname, cbd->src_hi->port);
+}
+
+static void
+pfunc_cb_update_default(struct pfunc_cb_data *cbd, int success)
+{
+	if (cbd->src_hi)
+		cbd->src_hi->n_using--;
+	if (cbd->dst_hi)
+		cbd->dst_hi->n_using--;
+	if (success) {
+		total_ok_filesize += cbd->filesize;
+		total_ok_filenum++;
+	} else {
+		total_ng_filesize += cbd->filesize;
+		total_ng_filenum++;
+		if (cbd->dst_hi)
+			cbd->dst_hi->failed_size += cbd->filesize;
+	}
+	if (cbd->done_p)
+		*cbd->done_p = 1;
+}
+
+static void
+pfunc_cb_update_remove_replica(struct pfunc_cb_data *cbd, int success)
+{
+	if (success) {
+		removed_replica_ok_num++;
+		removed_replica_ok_filesize += cbd->filesize;
+	} else {
+		removed_replica_ng_num++;
+		removed_replica_ng_filesize += cbd->filesize;
+		cbd->src_hi->failed_size -= cbd->filesize;
+	}
 }
 
 static void
@@ -1245,84 +1366,16 @@ pfunc_cb_end(int success, void *data)
 {
 	static const char diag[] = "pfunc_cb_end";
 	struct pfunc_cb_data *cbd = data;
-	struct timeval end;
 
 	if (cbd == NULL)
 		return;
+
 	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
-	if (opt.performance_each || opt.verbose) {
-		double usec, mbs, sec;
-		static const char ok[] = "OK";
-		static const char ng[] = "NG";
-#define PF_FMT ", %.3gMB/s(%.3gs): " /* performance */
-#define HP_FMT " (%s:%d)" /* hostname:port */
 
-		gettimeofday(&end, NULL);
-		gfarm_timeval_sub(&end, &cbd->start);
-		usec = (double)end.tv_sec * GFARM_SECOND_BY_MICROSEC
-			+ end.tv_usec;
-		/* Bytes/usec == MB/sec */
-		mbs = (double)cbd->filesize / usec;
-		sec = usec / GFARM_SECOND_BY_MICROSEC;
+	if (cbd->func_timer_end)
+		cbd->func_timer_end(cbd, success);
 
-		if (cbd->type == PFUNC_TYPE_COPY) {
-			printf("[%s]COPY" PF_FMT "%s",
-			    success ? ok : ng, mbs, sec, cbd->src_url);
-			if (cbd->src_hi)
-				printf(HP_FMT,
-				    cbd->src_hi->hostname, cbd->src_hi->port);
-			printf(" -> %s", cbd->dst_url);
-			if (cbd->dst_hi)
-				printf(HP_FMT,
-				    cbd->dst_hi->hostname, cbd->dst_hi->port);
-		} else if (cbd->type == PFUNC_TYPE_REPLICATE &&
-			   cbd->src_hi && cbd->dst_hi)
-			printf("[%s]%s" PF_FMT "%s (%s:%d -> %s:%d)",
-			    success ? ok : ng,
-			    cbd->migrate ? "MIGRATE" : "REPLICATE",
-			    mbs, sec, cbd->src_url,
-			    cbd->src_hi->hostname, cbd->src_hi->port,
-			    cbd->dst_hi->hostname, cbd->dst_hi->port);
-		else if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA &&
-			 cbd->src_hi)
-			printf("[%s]REMOVE REPLICA: %s" HP_FMT,
-			    success ? ok : ng, cbd->src_url,
-			    cbd->src_hi->hostname, cbd->src_hi->port);
-		else
-			printf("[%s]unexpected, type=%d" PF_FMT "%s",
-			    success ? ok : ng, cbd->type,
-			    mbs, sec, cbd->src_url);
-
-		puts("");
-	}
-
-	if (cbd->type == PFUNC_TYPE_REMOVE_REPLICA) {
-		if (success) {
-			removed_replica_ok_num++;
-			removed_replica_ok_filesize += cbd->filesize;
-		} else {
-			removed_replica_ng_num++;
-			removed_replica_ng_filesize += cbd->filesize;
-			if (cbd->dst_hi)
-				cbd->dst_hi->failed_size -= cbd->filesize;
-		}
-	} else { /* PFUNC_TYPE_COPY or PFUNC_TYPE_REPLICATE */
-		if (cbd->src_hi)
-			cbd->src_hi->n_using--;
-		if (cbd->dst_hi)
-			cbd->dst_hi->n_using--;
-		if (success) {
-			total_ok_filesize += cbd->filesize;
-			total_ok_filenum++;
-		} else {
-			total_ng_filesize += cbd->filesize;
-			total_ng_filenum++;
-			if (cbd->dst_hi)
-				cbd->dst_hi->failed_size += cbd->filesize;
-		}
-		if (cbd->done_p)
-			*cbd->done_p = 1;
-	}
+	cbd->func_update(cbd, success);
 
 	gfarm_cond_signal(&cb_cond, diag, CB_COND_DIAG);
 	gfarm_mutex_unlock(&cb_mutex, diag, CB_MUTEX_DIAG);
@@ -1330,6 +1383,26 @@ pfunc_cb_end(int success, void *data)
 	free(cbd->src_url);
 	free(cbd->dst_url);
 	free(cbd);
+}
+
+static void
+pfunc_cb_func_init()
+{
+	if (opt.debug) {
+		pfunc_cb_start_copy = pfunc_cb_start_copy_main;
+		pfunc_cb_start_replicate = pfunc_cb_start_replicate_main;
+		pfunc_cb_start_remove_replica
+			= pfunc_cb_start_remove_replica_main;
+	}
+	if (opt.performance_each || opt.verbose) {
+		pfunc_cb_timer_begin = pfunc_cb_timer_begin_main;
+
+		pfunc_cb_timer_end_copy = pfunc_cb_timer_end_copy_main;
+		pfunc_cb_timer_end_replicate
+			= pfunc_cb_timer_end_replicate_main;
+		pfunc_cb_timer_end_remove_replica
+			= pfunc_cb_timer_end_remove_replica_main;
+	}
 }
 
 static void
@@ -1912,78 +1985,130 @@ gfprep_select_dst(int n_array_dst, struct gfprep_host_info **array_dst,
 	*dst_hi_p = found_dst_hi;
 }
 
-static void
-gfprep_do_job(gfarm_pfunc_t *pfunc_handle, int pfunc_type, char *done_p,
-	      int opt_migrate, gfarm_off_t src_size,
-	      const char *src_url, struct gfprep_host_info *src_hi,
-	      const char *dst_url, struct gfprep_host_info *dst_hi)
+static struct pfunc_cb_data *
+gfprep_cb_data_init(
+	char *done_p, int migrate, gfarm_off_t size,
+	const char *src_url, struct gfprep_host_info *src_hi,
+	const char *dst_url, struct gfprep_host_info *dst_hi,
+	void (*func_timer_begin)(struct pfunc_cb_data *),
+	void (*func_timer_end)(struct pfunc_cb_data *, int),
+	void (*func_start)(struct pfunc_cb_data *),
+	void (*func_update)(struct pfunc_cb_data *, int))
 {
-	gfarm_error_t e;
 	struct pfunc_cb_data *cbd;
 
 	GFARM_MALLOC(cbd);
 	if (cbd == NULL)
 		gfprep_fatal("no memory");
+
 	cbd->src_url = strdup(src_url);
 	if (cbd->src_url == NULL)
 		gfprep_fatal("no memory");
-	cbd->type = pfunc_type;
-	cbd->src_hi = src_hi;
-	cbd->dst_hi = dst_hi;
-	cbd->filesize = src_size;
-	cbd->done_p = done_p;
-	if (pfunc_type == PFUNC_TYPE_COPY) {
-		char *src_hostname = NULL, *dst_hostname = NULL;
-		int src_port = 0, dst_port = 0;
+
+	if (dst_url) {
 		cbd->dst_url = strdup(dst_url);
 		if (cbd->dst_url == NULL)
 			gfprep_fatal("no memory");
-		gfprep_update_n_using(src_hi, 1);
-		gfprep_update_n_using(dst_hi, 1);
-		if (src_hi) { /* src gfarm: */
-			src_hostname = src_hi->hostname;
-			src_port = src_hi->port;
-		}
-		if (dst_hi) { /* dst gfarm: */
-			dst_hostname = dst_hi->hostname;
-			dst_port = dst_hi->port;
-		}
-		e = gfarm_pfunc_copy(
-			pfunc_handle,
-			src_url, src_hostname, src_port, src_size,
-			dst_url, dst_hostname, dst_port, cbd, 0,
-			opt.check_disk_avail);
-		gfprep_fatal_e(e, "gfarm_pfunc_copy");
-		/* update disk_avail for next scheduling */
-		if (dst_hi)
-			dst_hi->disk_avail -= src_size;
-	} else if (pfunc_type == PFUNC_TYPE_REPLICATE) {
-		assert(src_hi);
-		assert(dst_hi);
+	} else
 		cbd->dst_url = NULL;
-		cbd->migrate = opt_migrate;
+
+	cbd->src_hi = src_hi;
+	cbd->dst_hi = dst_hi;
+	cbd->filesize = size;
+	cbd->done_p = done_p;
+	cbd->migrate = migrate;
+
+	cbd->func_timer_begin = func_timer_begin;
+	cbd->func_timer_end = func_timer_end;
+	cbd->func_start = func_start;
+	cbd->func_update = func_update;
+	return (cbd);
+}
+
+static void
+gfprep_do_copy(
+	gfarm_pfunc_t *pfunc_handle, char *done_p,
+	int opt_migrate, gfarm_off_t size,
+	const char *src_url, struct gfprep_host_info *src_hi,
+	const char *dst_url, struct gfprep_host_info *dst_hi)
+{
+	gfarm_error_t e;
+	struct pfunc_cb_data *cbd;
+	char *src_hostname = NULL, *dst_hostname = NULL;
+	int src_port = 0, dst_port = 0;
+
+	cbd = gfprep_cb_data_init(
+	    done_p, opt_migrate, size, src_url, src_hi, dst_url, dst_hi,
+	    pfunc_cb_timer_begin, pfunc_cb_timer_end_copy,
+	    pfunc_cb_start_copy, pfunc_cb_update_default);
+	if (src_hi) { /* src is gfarm */
 		gfprep_update_n_using(src_hi, 1);
-		gfprep_update_n_using(dst_hi, 1);
-		e = gfarm_pfunc_replicate(
-			pfunc_handle, src_url,
-			src_hi->hostname, src_hi->port, src_size,
-			dst_hi->hostname, dst_hi->port,
-			cbd, opt_migrate, opt.check_disk_avail);
-		gfprep_fatal_e(e, "gfarm_pfunc_replicate_from_to");
-		/* update disk_avail for next scheduling */
-		if (dst_hi)
-			dst_hi->disk_avail -= src_size;
-	} else if (pfunc_type == PFUNC_TYPE_REMOVE_REPLICA) {
-		assert(src_hi);
-		cbd->dst_url = NULL;
-		e = gfarm_pfunc_remove_replica(
-			pfunc_handle, src_url,
-			src_hi->hostname, src_hi->port, src_size, cbd);
-		gfprep_fatal_e(e, "gfarm_pfunc_remove_replica");
-		/* update disk_avail for next scheduling */
-		if (dst_hi)
-			dst_hi->disk_avail += src_size;
+		src_hostname = src_hi->hostname;
+		src_port = src_hi->port;
 	}
+	if (dst_hi) { /* dst is gfarm */
+		gfprep_update_n_using(dst_hi, 1);
+		dst_hostname = dst_hi->hostname;
+		dst_port = dst_hi->port;
+
+		/* update disk_avail for next scheduling */
+		dst_hi->disk_avail -= size;
+	}
+	e = gfarm_pfunc_copy(
+	    pfunc_handle,
+	    src_url, src_hostname, src_port, size,
+	    dst_url, dst_hostname, dst_port, cbd, 0,
+	    opt.check_disk_avail);
+	gfprep_fatal_e(e, "gfarm_pfunc_copy");
+}
+
+static void
+gfprep_do_replicate(
+	gfarm_pfunc_t *pfunc_handle, char *done_p,
+	int opt_migrate, gfarm_off_t size,
+	const char *src_url, struct gfprep_host_info *src_hi,
+	const char *dst_url, struct gfprep_host_info *dst_hi)
+{
+	gfarm_error_t e;
+	struct pfunc_cb_data *cbd;
+
+	assert(src_hi);
+	assert(dst_hi);
+	cbd = gfprep_cb_data_init(
+	    done_p, opt_migrate, size, src_url, src_hi, NULL, dst_hi,
+	    pfunc_cb_timer_begin, pfunc_cb_timer_end_replicate,
+	    pfunc_cb_start_replicate, pfunc_cb_update_default);
+	gfprep_update_n_using(src_hi, 1);
+	gfprep_update_n_using(dst_hi, 1);
+	e = gfarm_pfunc_replicate(
+	    pfunc_handle, src_url,
+	    src_hi->hostname, src_hi->port, size,
+	    dst_hi->hostname, dst_hi->port,
+	    cbd, opt_migrate, opt.check_disk_avail);
+	gfprep_fatal_e(e, "gfarm_pfunc_replicate_from_to");
+	/* update disk_avail for next scheduling */
+	dst_hi->disk_avail -= size;
+}
+
+static void
+gfprep_do_remove_replica(
+	gfarm_pfunc_t *pfunc_handle, char *done_p, gfarm_off_t size,
+	const char *src_url, struct gfprep_host_info *src_hi)
+{
+	gfarm_error_t e;
+	struct pfunc_cb_data *cbd;
+
+	assert(src_hi);
+	cbd = gfprep_cb_data_init(
+	    done_p, 0, size, src_url, src_hi, NULL, NULL,
+	    pfunc_cb_timer_begin, pfunc_cb_timer_end_remove_replica,
+	    pfunc_cb_start_remove_replica, pfunc_cb_update_remove_replica);
+	e = gfarm_pfunc_remove_replica(
+	    pfunc_handle, src_url,
+	    src_hi->hostname, src_hi->port, size, cbd);
+	gfprep_fatal_e(e, "gfarm_pfunc_remove_replica");
+	/* update disk_avail for next scheduling */
+	src_hi->disk_avail += size;
 }
 
 struct file_job {
@@ -2136,11 +2261,16 @@ next:
 				assert(dst_hi); /* because no_limit == 1 */
 			}
 			done[i] = 0;
-			gfprep_do_job(pfunc_handle,
-				      is_gfpcopy ?
-				      PFUNC_TYPE_COPY : PFUNC_TYPE_REPLICATE,
-				      &done[i], migrate, job.file->src_size,
-				      src_url, src_hi, tmp_url, dst_hi);
+			if (is_gfpcopy)
+				gfprep_do_copy(
+				    pfunc_handle, &done[i], migrate,
+				    job.file->src_size,
+				    src_url, src_hi, tmp_url, dst_hi);
+			else
+				gfprep_do_replicate(
+				    pfunc_handle, &done[i], migrate,
+				    job.file->src_size,
+				    src_url, src_hi, tmp_url, dst_hi);
 		}
 	}
 	if (n_end < n_conns) {
@@ -2908,6 +3038,7 @@ main(int argc, char *argv[])
 			      opt_copy_bufsize, pfunc_cb_start, pfunc_cb_end);
 	gfprep_fatal_e(e, "gfarm_pfunc_start");
 	gfprep_debug("pfunc_start...done");
+	pfunc_cb_func_init();
 
 	/* create child-processes before gfarm_initialize() */
 	assert(opt_force_copy ? is_gfpcopy : 1);
@@ -3152,9 +3283,9 @@ main(int argc, char *argv[])
 		if (entry->src_size == 0) {
 			if (is_gfpcopy) {
 				/* not specified src/dst host */
-				gfprep_do_job(pfunc_handle, PFUNC_TYPE_COPY,
-					      NULL, 0, entry->src_size,
-					      src_url, NULL, dst_url, NULL);
+				gfprep_do_copy(
+				    pfunc_handle, NULL, 0, entry->src_size,
+				    src_url, NULL, dst_url, NULL);
 				goto next_entry;
 			} else {
 				assert(src_is_gfarm);
@@ -3378,12 +3509,10 @@ main(int argc, char *argv[])
 					goto next_entry_with_free;
 				/* disk_avail: small to large */
 				for (i = n_dst_exist - 1; i >= 0; i--) {
-					gfprep_do_job(
-						pfunc_handle,
-						PFUNC_TYPE_REMOVE_REPLICA,
-						NULL, 0, entry->src_size,
-						src_url, dst_exist_array[i],
-						NULL, NULL);
+					gfprep_do_remove_replica(
+					    pfunc_handle, NULL,
+					    entry->src_size,
+					    src_url, dst_exist_array[i]);
 					n_desire++;
 					if (n_desire >= 0)
 						break;
@@ -3415,11 +3544,14 @@ main(int argc, char *argv[])
 					j = 0;
 			} else
 				src_hi = NULL;
-			gfprep_do_job(pfunc_handle,
-				      is_gfpcopy ?
-				      PFUNC_TYPE_COPY : PFUNC_TYPE_REPLICATE,
-				      NULL, opt_migrate, entry->src_size,
-				      src_url, src_hi, dst_url, dst_hi);
+			if (is_gfpcopy)
+				gfprep_do_copy(pfunc_handle,
+				    NULL, opt_migrate, entry->src_size,
+				    src_url, src_hi, dst_url, dst_hi);
+			else
+				gfprep_do_replicate(pfunc_handle,
+				    NULL, opt_migrate, entry->src_size,
+				    src_url, src_hi, dst_url, dst_hi);
 		}
 next_entry_with_free:
 		free(src_select_array);
