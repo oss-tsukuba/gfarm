@@ -932,10 +932,6 @@ int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_REPLICA_CHECK_HOST_DOWN_THRESH_DEFAULT 10800 /* 3 hours */
 #define GFARM_REPLICA_CHECK_SLEEP_TIME_DEFAULT 100000 /* nanosec. */
 #define GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT 10 /* 10 sec. */
-#if 0 /* not yet in gfarm v2 */
-static char *schedule_write_target_domain = NULL;
-static int schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;
-#endif
 #ifdef not_def_REPLY_QUEUE
 int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
 #endif
@@ -986,9 +982,6 @@ gfarm_config_clear(void)
 		&gfarm_postgresql_password,
 		&gfarm_postgresql_conninfo,
 		&gfarm_localfs_datadir,
-#if 0 /* not yet in gfarm v2 */
-		&schedule_write_target_domain,
-#endif
 		&journal_dir,
 	};
 	int i;
@@ -1044,19 +1037,17 @@ set_backend_db_type_localfs(void)
 	return (set_backend_db_type(GFARM_BACKEND_DB_TYPE_LOCALFS));
 }
 
-#if 0 /* not yet in gfarm v2 */
 int
 gfarm_schedule_write_local_priority(void)
 {
-	return (schedule_write_local_priority);
+	return (gfarm_ctxp->schedule_write_local_priority);
 }
 
 char *
 gfarm_schedule_write_target_domain(void)
 {
-	return (schedule_write_target_domain);
+	return (gfarm_ctxp->schedule_write_target_domain);
 }
-#endif
 
 gfarm_off_t
 gfarm_get_minimum_free_disk_space(void)
@@ -2856,12 +2847,11 @@ parse_one_line(char *s, char *p, char **op)
 	} else if (strcmp(s, o = "schedule_rtt_thresh_diff") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_ctxp->schedule_rtt_thresh_diff);
-#if 0 /* not yet in gfarm v2 */
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
-		e = parse_set_misc_enabled(p, &schedule_write_local_priority);
+		e = parse_set_misc_enabled(p,
+		    &gfarm_ctxp->schedule_write_local_priority);
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
-		e = parse_set_var(p, &schedule_write_target_domain);
-#endif
+		e = parse_set_var(p, &gfarm_ctxp->schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p, &staticp->minimum_free_disk_space);
 #ifdef not_def_REPLY_QUEUE
@@ -3173,11 +3163,10 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->schedule_rtt_thresh_diff == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_rtt_thresh_diff =
 		    GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT;
-#if 0 /* not yet in gfarm v2 */
-	if (schedule_write_local_priority == GFARM_CONFIG_MISC_DEFAULT)
-		schedule_write_local_priority =
+	if (gfarm_ctxp->schedule_write_local_priority ==
+	    GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;
-#endif
 	if (staticp->minimum_free_disk_space == GFARM_CONFIG_MISC_DEFAULT)
 		staticp->minimum_free_disk_space =
 		    GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT;

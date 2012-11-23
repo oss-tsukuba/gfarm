@@ -1166,16 +1166,17 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </listitem>
 </varlistentry>
 
-<!--
 <varlistentry>
 <term><token>write_local_priority</token> <parameter>有効性</parameter></term>
 <listitem>
 <para>gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
 ホストを優先するように動作します。この文でdisableと指定することによって、
 ローカルホストを他のホストと同様に扱うように変更することができます。
+<!--
 環境変数GFARM_WRITE_LOCAL_PRIORITYにdisableと設定しても、同じ意味に
 なります。
 両方指定した場合は、環境変数が優先されます。
+ -->
 デフォルトはenableです。
 </para>
 <para>例:</para>
@@ -1192,9 +1193,11 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 指定したドメインを優先するように動作します。
 ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
 特にこの指定を行なわなかった場合には、全ノードが対象となります。
+<!--
 環境変数GFARM_WRITE_TARGET_DOMAINでも、同様な指定ができます。
 両方指定した場合は、環境変数が優先されます。
 なります。
+ -->
 この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
 単に無視されるので注意してください。
 </para>
@@ -1204,7 +1207,6 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </literallayout>
 </listitem>
 </varlistentry>
- -->
 
 <varlistentry>
 <term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
@@ -1935,8 +1937,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;schedule_rtt_thresh_diff_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_rtt_thresh_ratio_statement&gt; |
 		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
-<!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
-<!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
+		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; |
+		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; |
 		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
 		&nbsp;&nbsp;&lt;gfs_proto_fhremove_request_window_statement&gt; |
 		&nbsp;&nbsp;&lt;gfs_proto_replication_request_statement&gt; |
@@ -2056,8 +2058,8 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;schedule_rtt_thresh_diff_statement&gt; ::= "schedule_rtt_thresh_diff" &lt;number&gt;
 	&lt;schedule_rtt_thresh_ratio_statement&gt; ::= "schedule_rtt_thresh_ratio" &lt;floating_point_number&gt;
 	&lt;schedule_rtt_thresh_statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
-<!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
-<!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
+	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt;
+	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt;
 	&lt;minimum_free_disk_space_statement&gt; ::=
 		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
 	&lt;gfs_proto_fhremove_request_window_statement&gt; ::= "gfs_proto_fhremove_request_window" &lt;number&gt;

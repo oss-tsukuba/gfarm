@@ -19,6 +19,8 @@ struct gfarm_context {
 	float schedule_candidates_ratio;
 	float schedule_rtt_thresh_ratio;
 	int schedule_rtt_thresh_diff;
+	char *schedule_write_target_domain;
+	int schedule_write_local_priority;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
 	int client_file_bufsize;

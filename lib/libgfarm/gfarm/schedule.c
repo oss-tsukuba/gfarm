@@ -1609,8 +1609,9 @@ search_idle(struct gfm_connection *gfm_server,
 	 * 2. search hosts on the local network
 	 *   (i.e. the same network with this client host).
 	 */
-	if (!search_idle_is_satisfied(&s) &&
-	    staticp->search_idle_local_net != NULL)
+	if (((write_mode && !gfarm_schedule_write_local_priority())
+	     || !search_idle_is_satisfied(&s))
+	    && staticp->search_idle_local_net != NULL)
 		search_idle_in_networks(&s, 1, &staticp->search_idle_local_net);
 	gfs_profile(gfarm_gettimerval(&t3));
 
@@ -1764,6 +1765,10 @@ select_hosts(struct gfm_connection *gfm_server,
 		    gfarm_error_string(e));
 		return (e);
 	}
+	/* set target domain */
+	if (write_mode)
+		search_idle_set_domain_filter(
+			gfarm_schedule_write_target_domain());
 	gfs_profile(gfarm_gettimerval(&t2));
 	for (i = 0; i < ninfos; i++) {
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
