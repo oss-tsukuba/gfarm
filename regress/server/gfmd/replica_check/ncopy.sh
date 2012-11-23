@@ -14,7 +14,7 @@ tmpf=$gftmp/foo
 statf=$localtmp
 
 clean_test() {
-  rm -rf $gftmp
+  gfrm -rf $gftmp
   rm -f $statf
 }
 
