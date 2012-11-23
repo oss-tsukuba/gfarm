@@ -11,10 +11,20 @@ usage() {
 	exit 2
 }
 
+getxattr() {
+    attr=$1
+    p=$2
+    v=`(getfattr -n $attr $p) 2>/dev/null | sed -n s/$attr'="\(.*\)"/\1/p'`
+    [ X"$v" = X ] && v=$p
+    echo $v
+}
+
 realpath() {
-    p=`( getfattr -n gfarm2fs.path $1 ) 2>/dev/null | sed -n 's/gfarm2fs.path="\(.*\)"/\1/p'`
-    [ X"$p" = X ] && p=$1
-    echo $p
+    getxattr gfarm2fs.path $1
+}
+
+realurl() {
+    getxattr gfarm2fs.url $1
 }
 
 MODE=GET
@@ -46,37 +56,40 @@ esac
 
 [ X"$1" = X ] && usage
 FILE=`realpath $1`
+URL=`realurl $1`
 
 case $MODE in
 SET)
-	echo -n $NCOPY | gfxattr -s $FILE gfarm.ncopy
+	echo -n $NCOPY | gfxattr -s $URL gfarm.ncopy
 	;;
 GET)
 	f=$FILE
-	out=`gfxattr -g $f gfarm.ncopy 2>&1`
+	u=$URL
+	out=`gfxattr -g $u gfarm.ncopy 2>&1`
 	rv=$?
 	while [ $rv -ne 0 -a "$out" = "no such object" ]; do
 		[ $f = "." -o $f = "/" ] && break
-		$VERBOSE && echo >&2 $f: $out
+		$VERBOSE && echo >&2 $u: $out
 		f=`dirname $f 2>&1`
+		u=`gfpath -d $u 2>&1`
 		[ $? -ne 0 ] && break
-		out=`gfxattr -g $f gfarm.ncopy 2>&1`
+		out=`gfxattr -g $u gfarm.ncopy 2>&1`
 		rv=$?
 	done
 	if [ $rv -ne 0 ]; then
-		$VERBOSE && echo -n >&2 "$f: "
+		$VERBOSE && echo -n >&2 "$u: "
 		echo >&2 $out
 	else
-		$VERBOSE && echo -n "$f: "
+		$VERBOSE && echo -n "$u: "
 		echo $out
 	fi
 	exit $rv
 	;;
 REMOVE)
-	gfxattr -r $FILE gfarm.ncopy
+	gfxattr -r $URL gfarm.ncopy
 	;;
 COUNT)
-	out=`gfwhere $FILE`
+	out=`gfwhere $URL`
 	[ $? -eq 0 ] && echo $out | wc -w
 	;;
 esac
