@@ -160,7 +160,7 @@ thrpool_add_job(struct thread_pool *p, void *(*thread_main)(void *), void *arg)
 		if (e == GFARM_ERR_NO_ERROR) {
 			p->threads++;
 		} else {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003563,
 			    "%s: create thread (currently %d out of %d "
 			    "threads in %s): %s\n", diag, p->threads,
 			    p->pool_size, p->name, gfarm_error_string(e));
