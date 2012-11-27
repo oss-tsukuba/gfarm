@@ -132,10 +132,10 @@ gfarmGssPrintStatus(char **list, const char *diag)
 
     if (lP != NULL && *lP != NULL) {
 	while (*lP != NULL) {
-	    gflog_error(GFARM_MSG_1000607, "\t : %s", *lP++);
+	    gflog_info(GFARM_MSG_1000607, "\t : %s", *lP++);
 	}
     } else
-	gflog_error(GFARM_MSG_1000608, "GSS %s Status Error: UNKNOWN", diag);
+	gflog_info(GFARM_MSG_1000608, "GSS %s Status Error: UNKNOWN", diag);
     gfarmGssFreeCrackedStatus(list);
 }
 
@@ -564,9 +564,8 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
     do {
 	tknStat = gfarmGssReceiveToken(fd, itPtr, GFARM_GSS_TIMEOUT_INFINITE);
 	if (tknStat <= 0) {
-	    gflog_auth_error(GFARM_MSG_1000616,
-		"gfarmGssAcceptSecurityContext(): "
-			     "failed to receive response");
+	    gflog_auth_info(GFARM_MSG_1000616,
+		"gfarmGssAcceptSecurityContext(): failed to receive response");
 	    majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_READ;
 	    minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    break;
@@ -593,9 +592,8 @@ gfarmGssAcceptSecurityContext(int fd, gss_cred_id_t cred, gss_ctx_id_t *scPtr,
 	    tknStat = gfarmGssSendToken(fd, otPtr);
 	    gss_release_buffer(&minStat2, otPtr);
 	    if (tknStat <= 0) {
-		gflog_auth_error(GFARM_MSG_1000617,
-		    "gfarmGssAcceptSecurityContext(): "
-				 "failed to send response");
+		gflog_auth_info(GFARM_MSG_1000617,
+		    "gfarmGssAcceptSecurityContext(): failed to send response");
 		majStat = GSS_S_DEFECTIVE_TOKEN|GSS_S_CALL_INACCESSIBLE_WRITE;
 		minStat = GFSL_DEFAULT_MINOR_ERROR;
 	    }

@@ -79,6 +79,12 @@ void gflog_assert_message(int, const char *, int, const char *,
 	gflog_message_errno(msg_no, LOG_DEBUG,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)
 
+#define gflog_auth_info(msg_no, ...)\
+	gflog_auth_message(msg_no, LOG_INFO,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
+#define gflog_auth_notice(msg_no, ...)\
+	gflog_auth_message(msg_no, LOG_NOTICE,\
+			__FILE__, __LINE__, __func__, __VA_ARGS__)
 #define gflog_auth_error(msg_no, ...)\
 	gflog_auth_message(msg_no, LOG_ERR,\
 			__FILE__, __LINE__, __func__, __VA_ARGS__)

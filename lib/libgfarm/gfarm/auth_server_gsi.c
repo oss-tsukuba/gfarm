@@ -60,7 +60,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 
 	e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000712,
+		gflog_info(GFARM_MSG_1000712,
 		    "authorize_gsi: %s: protocol drain: %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
@@ -135,12 +135,12 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	}
 	if (session == NULL) {
 		if (gflog_auth_get_verbose()) {
-			gflog_error(GFARM_MSG_1000718,
+			gflog_info(GFARM_MSG_1000718,
 			    "%s: Can't accept session because of:",
 			    hostname);
 			gfarmGssPrintMajorStatus(e_major);
 			gfarmGssPrintMinorStatus(e_minor);
-			gflog_error(GFARM_MSG_1000719,
+			gflog_info(GFARM_MSG_1000719,
 			    "GSI authentication error: %s", hostname);
 		}
 		/*
@@ -174,7 +174,7 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 		    userinfo->distName, &global_username);
 		if (e != GFARM_ERR_NO_ERROR) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			gflog_error(GFARM_MSG_1003394,
+			gflog_notice(GFARM_MSG_1003394,
 			    "authorize_gsi: \"%s\" @ %s: user authentication: "
 			    "%s%s", userinfo->distName, hostname,
 			    gfarm_error_string(e),
@@ -221,11 +221,11 @@ gfarm_authorize_gsi_common(struct gfp_xdr *conn, int switch_to,
 	gfp_xdr_set_secsession(conn, session, GSS_C_NO_CREDENTIAL);
 	e2 = gfp_xdr_send(conn, "i", error);
 	if (e2 != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000723,
+		gflog_info(GFARM_MSG_1000723,
 		    "(%s@%s) authorize_gsi: send reply: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	} else if ((e2 = gfp_xdr_flush(conn)) != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000724,
+		gflog_info(GFARM_MSG_1000724,
 		    "(%s@%s) authorize_gsi: completion: %s",
 		    global_username, hostname, gfarm_error_string(e2));
 	}
