@@ -989,7 +989,7 @@ peer_authorize(struct local_peer *local_peer)
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_sockaddr_to_string(&addr,
 		    addr_string, GFARM_SOCKADDR_STRLEN);
-		gflog_warning(GFARM_MSG_1000185,
+		gflog_info(GFARM_MSG_1000185,
 		    "gfarm_sockaddr_to_name(%s): %s",
 		    gfarm_error_string(e), addr_string);
 		hostname = strdup_log(addr_string, diag);
@@ -1006,7 +1006,7 @@ peer_authorize(struct local_peer *local_peer)
 		    sync_protocol_watcher);
 		giant_unlock();
 	} else {
-		gflog_warning(GFARM_MSG_1002474,
+		gflog_notice(GFARM_MSG_1002474,
 		    "host %s: authorize: %s", hostname, gfarm_error_string(e));
 		free(hostname);
 	}
@@ -1020,8 +1020,7 @@ try_auth(void *arg)
 	gfarm_error_t e;
 
 	if ((e = peer_authorize(local_peer)) != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_1000188,
-		    "peer_authorize: %s", gfarm_error_string(e));
+		/* peer_authorize() itself records the error log */
 		giant_lock();
 		/* db_begin()/db_end() is not necessary in this case */
 		peer_free(local_peer_to_peer(local_peer));

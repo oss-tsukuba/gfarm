@@ -190,7 +190,7 @@ local_peer_get_numeric_name(struct local_peer *local_peer,
 		return;
 
 	snprintf(hostbuf, hostlen, "<not-socket>");
-	gflog_error(GFARM_MSG_1003276,
+	gflog_info(GFARM_MSG_1003276,
 	    "unable to convert peer address to string: %s", strerror(err));
 }
 
@@ -221,7 +221,7 @@ local_peer_shutdown(struct peer *peer)
 	int rv = shutdown(fd, SHUT_RDWR);
 
 	if (rv == -1)
-		gflog_warning(GFARM_MSG_1002766,
+		gflog_info(GFARM_MSG_1002766,
 		    "%s(%s) : shutdown(%d): %s", BACK_CHANNEL_DIAG(peer),
 		    peer_get_hostname(peer), fd, strerror(errno));
 }
