@@ -1941,7 +1941,7 @@ parse_set_misc_int(char *p, int *vp)
 {
 	gfarm_error_t e;
 	char *ep, *s;
-	int v;
+	long v;
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -1956,6 +1956,8 @@ parse_set_misc_int(char *p, int *vp)
 		return (GFARM_ERR_NO_ERROR);
 	errno = 0;
 	v = strtol(s, &ep, 10);
+	if (errno == 0 && (v > INT_MAX || v < INT_MIN))
+		errno = ERANGE;
 	if (errno != 0) {
 		int save_errno = errno;
 		gflog_debug(GFARM_MSG_1000962,
@@ -1977,7 +1979,7 @@ parse_set_misc_int(char *p, int *vp)
 			s);
 		return (GFARM_ERRMSG_INVALID_CHARACTER);
 	}
-	*vp = v;
+	*vp = (int)v;
 	return (GFARM_ERR_NO_ERROR);
 }
 
