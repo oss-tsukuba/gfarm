@@ -25,6 +25,12 @@ case "$1" in
              --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE $OPTIONS
 	echo "."
 	;;
+  slavestart)
+	echo -n "Starting gfarm server in slave mode: $FILE"
+	start-stop-daemon --quiet --start \
+             --pidfile $PIDFILE --exec $DAEMON -- -P $PIDFILE -S $OPTIONS
+	echo "."
+	;;
   stop)
 	echo -n "Stopping gfarm server: $FILE"
 	start-stop-daemon --stop --quiet --pidfile $PIDFILE \

@@ -20,6 +20,13 @@ rcvar=${name}
 command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_gfmd_pid_file@"
 required_files="$CONF"
+
+case $1 in
+    slavestart)
+	OPTIONS="-S $OPTIONS"
+	;;
+esac
+
 # add more flags through ${${name}_flags}
 command_args="-P $pidfile $OPTIONS"
 

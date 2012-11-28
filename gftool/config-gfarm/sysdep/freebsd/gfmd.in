@@ -33,8 +33,6 @@ rcvar=`set_rcvar`
 command="@config_gfarm_prefix@/sbin/${name}"
 pidfile="@config_gfarm_gfmd_pid_file@"
 required_files="$CONF"
-# add more flags through ${${name}_flags}
-command_args="-P $pidfile $OPTIONS"
 globus_location="@config_gfarm_globus_location@"
 
 [ -z "$gfmd_enable" ]       && gfmd_enable="NO"
@@ -49,5 +47,14 @@ then
 	export GLOBUS_LOCATION
 	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
 fi
+
+case $1 in
+    slavestart)
+	OPTIONS="-S $OPTIONS"
+	;;
+esac
+
+# add more flags through ${${name}_flags}
+command_args="-P $pidfile $OPTIONS"
 
 run_rc_command "$1"
