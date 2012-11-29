@@ -36,6 +36,10 @@
 
 #include <gfarm/gfarm_config.h>
 
+#ifdef HAVE_POLL
+#include <poll.h>
+#endif
+
 #ifdef HAVE_SYS_LOADAVG_H
 #include <sys/loadavg.h>	/* getloadavg() on Solaris */
 #endif
@@ -2559,7 +2563,8 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		    diag, strerror(errno));
 		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
-	} else if (fds[0] > FD_SETSIZE) { /* XXX select FD_SETSIZE */
+#ifndef HAVE_POLL /* i.e. use select(2) */
+	} else if (fds[0] > FD_SETSIZE) { /* for select(2) */
 		dst_err = GFARM_ERR_TOO_MANY_OPEN_FILES;
 		gflog_error(GFARM_MSG_1002186, "%s: cannot select %d: %s",
 		    diag, fds[0], gfarm_error_string(dst_err));
@@ -2567,6 +2572,7 @@ try_replication(struct gfp_xdr *conn, struct gfarm_hash_entry *q,
 		close(fds[1]);
 		gfs_client_connection_free(src_gfsd);
 		close(local_fd);
+#endif
 	} else if ((pid = fork()) == 0) { /* child */
 		if (statp) {
 			gfarm_iostat_set_id(statp, (gfarm_uint64_t) getpid());
@@ -3716,10 +3722,86 @@ static int
 watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 {
 	gfarm_error_t e;
-	fd_set fds; /* XXX select FD_SETSIZE */
-	struct replication_request *rep, *next;
-	int nfound, max_fd;
+	int nfound;
+	struct replication_request *rep;
+
+#ifdef HAVE_POLL
+#define MIN_NFDS 32
+	int gfmd_fd, i, n, n_alloc;
+
+	static int nfds = 0;
+	static struct pollfd *fds = NULL;
+	static struct replication_request **fd_rep_map = NULL;
+
+	for (;;) {
+		gfmd_fd = gfp_xdr_fd(conn);
+		n = 1; /* fds[0] is for gfmd_fd */
+		for (rep = ongoing_replications.ongoing_next;
+		    rep != &ongoing_replications; rep = rep->ongoing_next)
+			++n;
+		if (nfds < n) {
+			if (nfds < MIN_NFDS)
+				n_alloc = MIN_NFDS;
+			else
+				n_alloc = nfds * 2;
+			while (n_alloc < n)
+				n_alloc *= 2;
+			GFARM_REALLOC_ARRAY(fds, fds, n_alloc);
+			GFARM_REALLOC_ARRAY(fd_rep_map, fd_rep_map, n_alloc);
+			if (fds == NULL || fd_rep_map == NULL) {
+				gflog_fatal(GFARM_MSG_UNFIXED,
+				    "no memory for %d descriptors, "
+				    "current = %d, alloc = %d",
+				    n, nfds, n_alloc);
+			}
+			nfds = n_alloc;
+		}
+		fds[0].fd = gfmd_fd;
+		fds[0].events = POLLIN;
+		fd_rep_map[0] = NULL;
+		n = 1;
+		for (rep = ongoing_replications.ongoing_next;
+		    rep != &ongoing_replications; rep = rep->ongoing_next) {
+			fds[n].fd = rep->pipe_fd;
+			fds[n].events = POLLIN;
+			fd_rep_map[n] = rep;
+			++n;
+		}
+
+		nfound =
+		    poll(fds, n, gfarm_metadb_heartbeat_interval * 2 * 1000);
+		if (nfound == 0) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "back channel: gfmd is down");
+			return (0);
+		}
+		if (nfound < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			fatal_errno(GFARM_MSG_UNFIXED, "back channel poll");
+		}
+		for (i = 1; i < n; i++) {
+			if (fds[i].revents == 0)
+				continue;
+			e = replication_result_notify(conn, async,
+			    fd_rep_map[i]->q);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "back channel: "
+				    "communication error: %s",
+				    gfarm_error_string(e));
+				return (0);
+			}
+			
+		}
+		if (fds[0].revents != 0) /* check gfmd_fd */
+			return (1);
+	}
+#else /* !HAVE_POLL */
+	fd_set fds;
+	int max_fd;
 	struct timeval timeout;
+	struct replication_request *next;
 
 	for (;;) {
 		FD_ZERO(&fds);
@@ -3782,6 +3864,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		if (FD_ISSET(gfp_xdr_fd(conn), &fds))
 			return (1);
 	}
+#endif /* !HAVE_POLL */
 }
 
 static void
