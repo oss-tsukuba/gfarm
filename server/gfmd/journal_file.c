@@ -971,6 +971,9 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * - 'db_seqnum > 0' means that gfmd is about to start.
 	 *   In case of gfjournal command, 'db_seqnum' is always 0.
 	 *
+	 * - 'max_seqnum > 0' means that at least one transaction is
+	 *   recorded in the journal file.
+	 *
 	 * - 'min_seqnum == GFARM_UINT64_MAX' means that there is no record
 	 *   with the seqnum greater than 'db_seqnum'.
 	 *   If 'db_seqnum == max_seqnum', it means that all records in
@@ -984,7 +987,8 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * - 'max_seqnum < db_seqnum' means that database, the journal
 	 *   file or both are corrupted.
 	 */
-	if (wfd < 0 && db_seqnum > 0 && db_seqnum != max_seqnum &&
+	if (wfd < 0 && db_seqnum > 0 && max_seqnum > 0 && 
+	    db_seqnum != max_seqnum &&
 	    (min_seqnum == GFARM_UINT64_MAX || db_seqnum + 1 < min_seqnum ||
 	    max_seqnum < db_seqnum)) {
 		e = GFARM_ERR_EXPIRED;
