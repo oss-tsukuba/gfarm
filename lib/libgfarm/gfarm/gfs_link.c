@@ -4,8 +4,8 @@
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
 
+#include "context.h"
 #include "gfm_client.h"
-#include "config.h"
 #include "lookup.h"
 
 struct gfm_link_closure {
@@ -38,7 +38,7 @@ gfm_link_result(struct gfm_connection *gfm_server, void *closure)
 		    "link result: %s",
 		    gfarm_error_string(e));
 	} else {
-		if (gfarm_file_trace) {
+		if (gfarm_ctxp->file_trace) {
 			gfm_client_source_port(gfm_server, &src_port);
 			gflog_trace(GFARM_MSG_1003269,
 			    "%s/%s/%s/%d/LINK/%s/%d/////\"%s\"///\"%s\"",

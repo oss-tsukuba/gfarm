@@ -32,6 +32,9 @@ struct gfp_conn_cache {
 		PTHREAD_MUTEX_INITIALIZER \
 	}
 
+void gfp_conn_cache_init(struct gfp_conn_cache *,
+	gfarm_error_t (*)(void *), const char *, int, int *);
+
 int gfp_is_cached_connection(struct gfp_cached_connection *);
 void *gfp_cached_connection_get_data(struct gfp_cached_connection *);
 void gfp_cached_connection_set_data(struct gfp_cached_connection *, void *);

@@ -14,6 +14,7 @@
 
 #include "gfutil.h"
 
+#include "context.h"
 #include "config.h"
 #include "gfm_client.h"
 #include "lookup.h"
@@ -97,7 +98,7 @@ gfarm_get_hostname_by_url0(const char **pathp,
  finish:
 	if (hostnamep != NULL) {
 		if (nohost) {
-			*hostnamep = strdup(gfarm_metadb_server_name);
+			*hostnamep = strdup(gfarm_ctxp->metadb_server_name);
 			if (*hostnamep == NULL)
 				return (GFARM_ERR_NO_MEMORY);
 		} else
@@ -106,7 +107,7 @@ gfarm_get_hostname_by_url0(const char **pathp,
 		free(hostname);
 	if (portp != NULL) {
 		if (noport)
-			*portp = gfarm_metadb_server_port;
+			*portp = gfarm_ctxp->metadb_server_port;
 		else
 			*portp = port;
 	}

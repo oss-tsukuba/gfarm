@@ -6,6 +6,8 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
+#include "context.h"
 #include "liberror.h"
 #include "hostspec.h"
 #include "auth.h"
@@ -34,8 +36,30 @@ struct gfarm_auth_config {
 	struct gfarm_hostspec *hostspec;
 };
 
-struct gfarm_auth_config *gfarm_auth_config_list = NULL;
-struct gfarm_auth_config **gfarm_auth_config_last = &gfarm_auth_config_list;
+#define staticp	(gfarm_ctxp->auth_config_static)
+
+struct gfarm_auth_config_static {
+	struct gfarm_auth_config *auth_config_list;
+	struct gfarm_auth_config **auth_config_last;
+	struct gfarm_auth_cred_config *auth_server_cred_config_list;
+};
+
+gfarm_error_t
+gfarm_auth_config_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_config_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->auth_config_list = NULL;
+	s->auth_config_last = &s->auth_config_list;
+	s->auth_server_cred_config_list = NULL;
+
+	ctxp->auth_config_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 char
 gfarm_auth_method_mnemonic(enum gfarm_auth_method method)
@@ -105,8 +129,8 @@ gfarm_auth_config_add(
 	acp->method = method;
 	acp->hostspec = hsp;
 
-	*gfarm_auth_config_last = acp;
-	gfarm_auth_config_last = &acp->next;
+	*staticp->auth_config_last = acp;
+	staticp->auth_config_last = &acp->next;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -129,7 +153,7 @@ gfarm_int32_t
 gfarm_auth_method_get_enabled_by_name_addr(
 	const char *name, struct sockaddr *addr)
 {
-	struct gfarm_auth_config *acp = gfarm_auth_config_list;
+	struct gfarm_auth_config *acp = staticp->auth_config_list;
 	gfarm_int32_t enabled = 0, disabled = 0, methods;
 
 	assert(GFARM_AUTH_METHOD_NUMBER <= sizeof(gfarm_int32_t) * CHAR_BIT);
@@ -232,14 +256,12 @@ struct gfarm_auth_cred_config {
 	char *name;
 };
 
-struct gfarm_auth_cred_config *gfarm_auth_server_cred_config_list = NULL;
-
 static struct gfarm_auth_cred_config **
 gfarm_auth_server_cred_config_lookup(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf, **p;
 
-	for (p = &gfarm_auth_server_cred_config_list;
+	for (p = &staticp->auth_server_cred_config_list;
 	    (conf = *p) != NULL; p = &conf->next) {
 		if (strcmp(service_tag, conf->service_tag) == 0)
 			break;

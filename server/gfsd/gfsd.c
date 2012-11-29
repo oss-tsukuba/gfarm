@@ -54,6 +54,7 @@
 #include "nanosec.h"
 #include "timer.h"
 
+#include "context.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
@@ -344,8 +345,8 @@ connect_gfm_server0(int use_timeout)
 	}
 
 	for (;;) {
-		e = gfm_client_connect(gfarm_metadb_server_name,
-		    gfarm_metadb_server_port, GFSD_USERNAME,
+		e = gfm_client_connect(gfarm_ctxp->metadb_server_name,
+		    gfarm_ctxp->metadb_server_port, GFSD_USERNAME,
 		    &gfm_server, listen_addrname);
 
 		timed_out = use_timeout &&
@@ -355,16 +356,16 @@ connect_gfm_server0(int use_timeout)
 			if (timed_out) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "connecting to gfmd at %s:%d failed: %s",
-				    gfarm_metadb_server_name,
-				    gfarm_metadb_server_port,
+				    gfarm_ctxp->metadb_server_name,
+				    gfarm_ctxp->metadb_server_port,
 				    gfarm_error_string(e));
 				return (e);
 			}
 			gflog_reduced_error(GFARM_MSG_1000550, &connlog,
 			    "connecting to gfmd at %s:%d failed, "
 			    "sleep %d sec: %s",
-			    gfarm_metadb_server_name,
-			    gfarm_metadb_server_port,
+			    gfarm_ctxp->metadb_server_name,
+			    gfarm_ctxp->metadb_server_port,
 			    sleep_interval, gfarm_error_string(e));
 		} else {
 			/*
@@ -4320,9 +4321,7 @@ main(int argc, char **argv)
 	}
 	assert(e == GFARM_ERR_NO_ERROR);
 
-	if (config_file != NULL)
-		gfarm_config_set_filename(config_file);
-	e = gfarm_server_initialize(&argc, &argv);
+	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "gfarm_server_initialize: %s\n",
 		    gfarm_error_string(e));

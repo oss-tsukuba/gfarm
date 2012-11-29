@@ -60,6 +60,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/id_table.h \
 	$(GFUTIL_SRCDIR)/tree.h \
 	$(GFUTIL_SRCDIR)/thrsubr.h \
+	$(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/patmatch.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \

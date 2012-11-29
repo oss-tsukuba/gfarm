@@ -12,7 +12,7 @@
 #include "gfutil.h"
 #include "hash.h"
 
-#include "config.h"	/* gfarm_metadb_admin_user */
+#include "context.h"
 #include "auth.h"
 #include "gfp_xdr.h"
 #include "gfm_proto.h"	/* GFARM_LOGIN_NAME_MAX, etc */
@@ -582,10 +582,10 @@ user_init(void)
 	 */
 	if (user_lookup(ADMIN_USER_NAME) == NULL)
 		create_user(ADMIN_USER_NAME, NULL);
-	if (gfarm_metadb_admin_user != NULL &&
-	    user_lookup(gfarm_metadb_admin_user) == NULL)
-		create_user(gfarm_metadb_admin_user,
-		    gfarm_metadb_admin_user_gsi_dn);
+	if (gfarm_ctxp->metadb_admin_user != NULL &&
+	    user_lookup(gfarm_ctxp->metadb_admin_user) == NULL)
+		create_user(gfarm_ctxp->metadb_admin_user,
+		    gfarm_ctxp->metadb_admin_user_gsi_dn);
 }
 
 #ifndef TEST

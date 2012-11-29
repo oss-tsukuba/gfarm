@@ -11,7 +11,7 @@
 #include "gfutil.h"
 #include "hash.h"
 
-#include "config.h"	/* gfarm_metadb_admin_user */
+#include "context.h"
 #include "gfp_xdr.h"
 #include "auth.h"
 #include "gfm_proto.h"
@@ -437,15 +437,15 @@ group_init(void)
 		    ADMIN_GROUP_NAME);
 
 		gi.groupname = strdup_ck(ADMIN_GROUP_NAME, diag);
-		gi.nusers = gfarm_metadb_admin_user == NULL ? 1 : 2;
+		gi.nusers = gfarm_ctxp->metadb_admin_user == NULL ? 1 : 2;
 		GFARM_MALLOC_ARRAY(gi.usernames, gi.nusers);
 		if (gi.usernames == NULL)
 			gflog_fatal(GFARM_MSG_1002316,
 			    "creating group %s: no memory", gi.groupname);
 		gi.usernames[0] = strdup_ck(ADMIN_USER_NAME, diag);
-		if (gfarm_metadb_admin_user != NULL)
+		if (gfarm_ctxp->metadb_admin_user != NULL)
 			gi.usernames[1] =
-			    strdup_ck(gfarm_metadb_admin_user, diag);
+			    strdup_ck(gfarm_ctxp->metadb_admin_user, diag);
 
 		/*
 		 * We have to call this before group_add_one(),
@@ -460,9 +460,9 @@ group_init(void)
 		group_add_one(NULL, &gi); /* this should always success */
 	} else {
 		group_add_user_and_record(admin, ADMIN_USER_NAME);
-		if (gfarm_metadb_admin_user != NULL)
+		if (gfarm_ctxp->metadb_admin_user != NULL)
 			group_add_user_and_record(admin,
-			    gfarm_metadb_admin_user);
+			    gfarm_ctxp->metadb_admin_user);
 	}
 
 	if ((admin = group_lookup(ROOT_GROUP_NAME)) == NULL) {

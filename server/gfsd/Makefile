@@ -29,17 +29,20 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFUTIL_SRCDIR)/gflog_reduced.h \
 	$(GFUTIL_SRCDIR)/nanosec.h \
-	$(GFARMLIB_SRCDIR)/iobuffer.h \
+	$(GFUTIL_SRCDIR)/hash.h \
+	$(GFUTIL_SRCDIR)/timer.h \
+	$(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/gfp_xdr.h \
 	$(GFARMLIB_SRCDIR)/io_fd.h \
-	$(GFARMLIB_SRCDIR)/param.h \
 	$(GFARMLIB_SRCDIR)/sockopt.h \
 	$(GFARMLIB_SRCDIR)/hostspec.h \
 	$(GFARMLIB_SRCDIR)/host.h \
+	$(GFARMLIB_SRCDIR)/conn_hash.h \
 	$(GFARMLIB_SRCDIR)/auth.h \
 	$(GFARMLIB_SRCDIR)/config.h \
 	$(GFARMLIB_SRCDIR)/gfs_proto.h \
 	$(GFARMLIB_SRCDIR)/gfs_client.h \
 	$(GFARMLIB_SRCDIR)/gfm_proto.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
+	$(GFARMLIB_SRCDIR)/gfs_profile.h \
 	$(srcdir)/gfsd_subr.h

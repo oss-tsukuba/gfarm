@@ -21,6 +21,7 @@
 #include "gfutil.h"
 #include "queue.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
@@ -32,6 +33,27 @@
 #include "gfs_io.h"
 #include "gfs_pio.h"
 #include "schedule.h"
+
+#define staticp	(gfarm_ctxp->gfs_pio_section_static)
+
+struct gfarm_gfs_pio_section_static {
+	double set_view_section_time;
+};
+
+gfarm_error_t
+gfarm_gfs_pio_section_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_pio_section_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->set_view_section_time = 0;
+
+	ctxp->gfs_pio_section_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 static gfarm_error_t
 gfs_pio_view_section_close(GFS_File gf)
@@ -468,7 +490,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	/* on-demand replication */
 	if (e == GFARM_ERR_NO_ERROR &&
 	    !gfm_host_is_local(gf->gfm_server, host) &&
-	    gf_on_demand_replication) {
+	    gfarm_ctxp->on_demand_replication) {
 		e = gfs_replicate_to_local(gf, host, port);
 		if (e == GFARM_ERR_NO_ERROR) {
 			free(host);
@@ -529,7 +551,7 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 	int sleep_interval = 1, sleep_max_interval = 512;
 
 	gettimeofday(&expiration_time, NULL);
-	expiration_time.tv_sec += gfarm_no_file_system_node_timeout;
+	expiration_time.tv_sec += gfarm_ctxp->no_file_system_node_timeout;
 	for (;;) {
 		if (host == NULL) {
 			e = gfarm_schedule_file(gf, &host, &port);
@@ -581,8 +603,6 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 	}
 	return (e);
 }
-
-static double gfs_pio_set_view_section_time;
 
 gfarm_error_t
 gfs_pio_internal_set_view_section(GFS_File gf, char *host)
@@ -660,7 +680,7 @@ finish:
 	gf->error = e;
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_set_view_section_time
+	gfs_profile(staticp->set_view_section_time
 		    += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
@@ -842,7 +862,7 @@ gfs_pio_set_view_section(GFS_File gf, const char *section,
 	if (!is_local_host && gfarm_is_active_file_system_node &&
 	    (gf->mode & GFS_FILE_MODE_WRITE) == 0 &&
 	    ((((gf->open_flags & GFARM_FILE_REPLICATE) != 0
-	       || gf_on_demand_replication ) &&
+	       || gfarm_ctxp->on_demand_replication) &&
 	      (flags & GFARM_FILE_NOT_REPLICATE) == 0) ||
 	     (flags & GFARM_FILE_REPLICATE) != 0)) {
 		e = replicate_section_to_local(gf, vc->section,
@@ -938,7 +958,7 @@ finish:
 
 profile_finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_set_view_section_time
+	gfs_profile(gfarm_pio_set_view_section_time
 		    += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
@@ -1043,5 +1063,5 @@ void
 gfs_pio_section_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000113, "gfs_pio_set_view_section : %f sec",
-		gfs_pio_set_view_section_time);
+		staticp->set_view_section_time);
 }

@@ -22,6 +22,7 @@
 #include "queue.h"
 #include "thrsubr.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "filesystem.h"
 #include "gfs_profile.h"
@@ -32,14 +33,53 @@
 #include "gfp_xdr.h"
 #include "gfs_file_list.h"
 
-#include "config.h" /* XXX FIXME this shouldn't be needed here */
+#define staticp	(gfarm_ctxp->gfs_pio_static)
 
+struct gfarm_gfs_pio_static {
+	double create_time;
+	double open_time;
+	double close_time;
+	double seek_time;
+	double truncate_time;
+	double read_time;
+	double write_time;
+	double sync_time;
+	double datasync_time;
+	double getline_time;
+	double getc_time;
+	double putc_time;
+};
+
+gfarm_error_t
+gfarm_gfs_pio_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_pio_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->create_time =
+	s->open_time =
+	s->close_time =
+	s->seek_time =
+	s->truncate_time =
+	s->read_time =
+	s->write_time =
+	s->sync_time =
+	s->datasync_time =
+	s->getline_time =
+	s->getc_time =
+	s->putc_time = 0;
+
+	ctxp->gfs_pio_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 struct gfs_file_list {
 	GFARM_HCIRCLEQ_HEAD(gfs_file) files;
 	pthread_mutex_t mutex;
 };
-
 
 /*
  * GFARM_ERRMSG_GFS_PIO_IS_EOF is used as mark of EOF,
@@ -152,7 +192,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	char *buffer;
 
 	GFARM_MALLOC(gf);
-	GFARM_MALLOC_ARRAY(buffer, gfarm_client_file_bufsize);
+	GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
 	if (buffer == NULL || gf == NULL) {
 		if (buffer != NULL)
 			free(buffer);
@@ -184,7 +224,7 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	gf->io_offset = 0;
 
 	gf->buffer = buffer;
-	gf->bufsize = gfarm_client_file_bufsize;
+	gf->bufsize = gfarm_ctxp->client_file_bufsize;
 	gf->p = 0;
 	gf->length = 0;
 	gf->offset = 0;
@@ -207,19 +247,6 @@ gfs_file_free(GFS_File gf)
 	/* do not touch gf->pi here */
 	free(gf);
 }
-
-static double gfs_pio_create_time;
-static double gfs_pio_open_time;
-static double gfs_pio_close_time;
-static double gfs_pio_seek_time;
-static double gfs_pio_truncate_time;
-static double gfs_pio_read_time;
-static double gfs_pio_write_time;
-static double gfs_pio_sync_time;
-static double gfs_pio_datasync_time;
-static double gfs_pio_getline_time;
-static double gfs_pio_getc_time;
-static double gfs_pio_putc_time;
 
 gfarm_error_t
 gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
@@ -262,9 +289,9 @@ gfs_pio_create(const char *url, int flags, gfarm_mode_t mode, GFS_File *gfp)
 	}
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_create_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->create_time += gfarm_timerval_sub(&t2, &t1));
 
-	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR) {
+	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
 		gfm_client_source_port(gfm_server, &src_port);
 		gflog_trace(GFARM_MSG_1003267,
 		    "%s/%s/%s/%d/CREATE/%s/%d/%lld/%lld///\"%s\"///",
@@ -319,7 +346,7 @@ gfs_pio_open(const char *url, int flags, GFS_File *gfp)
 	}
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_open_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->open_time += gfarm_timerval_sub(&t2, &t1));
 	return (e);
 }
 
@@ -384,7 +411,7 @@ gfs_pio_close(GFS_File gf)
 	gfs_file_free(gf);
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_close_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->close_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e_save != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001299,
@@ -631,7 +658,7 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_seek_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->seek_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -675,7 +702,7 @@ gfs_pio_truncate(GFS_File gf, gfarm_off_t length)
 		gf->error = e;
 finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_truncate_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->truncate_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -744,7 +771,7 @@ gfs_pio_read(GFS_File gf, void *buffer, int size, int *np)
 	e = GFARM_ERR_NO_ERROR;
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_read_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->read_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -817,7 +844,7 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 	}
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_write_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->write_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (e);
 }
@@ -857,14 +884,14 @@ gfarm_error_t
 gfs_pio_sync(GFS_File gf)
 {
 	return (sync_internal(gf, GFS_PROTO_FSYNC_WITH_METADATA,
-			      &gfs_pio_sync_time));
+			      &staticp->sync_time));
 }
 
 gfarm_error_t
 gfs_pio_datasync(GFS_File gf)
 {
 	return (sync_internal(gf, GFS_PROTO_FSYNC_WITHOUT_METADATA,
-			      &gfs_pio_datasync_time));
+			      &staticp->datasync_time));
 }
 
 int
@@ -911,7 +938,7 @@ gfs_pio_getc(GFS_File gf)
 		gfs_pio_purge(gf);
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_getc_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->getc_time += gfarm_timerval_sub(&t2, &t1));
 	return (c);
 }
 
@@ -984,7 +1011,7 @@ gfs_pio_putc(GFS_File gf, int c)
 	}
  finish:
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_putc_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->putc_time += gfarm_timerval_sub(&t2, &t1));
 	return (e);
 }
 
@@ -1059,7 +1086,7 @@ gfs_pio_gets(GFS_File gf, char *s, size_t size)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	/* XXX should introduce gfs_pio_gets_time??? */
-	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->getline_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1109,7 +1136,7 @@ gfs_pio_getline(GFS_File gf, char *s, size_t size, int *eofp)
 	*eofp = 0;
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->getline_time += gfarm_timerval_sub(&t2, &t1));
 
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -1229,7 +1256,7 @@ gfs_pio_readline(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp)
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	/* XXX should introduce gfs_pio_readline_time??? */
-	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->getline_time += gfarm_timerval_sub(&t2, &t1));
 
 	*bufp = buf;
 	*sizep = size;
@@ -1376,7 +1403,7 @@ gfs_pio_readdelim(GFS_File gf, char **bufp, size_t *sizep, size_t *lenp,
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	/* XXX should introduce gfs_pio_readdelim_time??? */
-	gfs_profile(gfs_pio_getline_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->getline_time += gfarm_timerval_sub(&t2, &t1));
 
 	*bufp = buf;
 	*sizep = size;
@@ -1512,26 +1539,26 @@ void
 gfs_pio_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000095,
-	    "gfs_pio_create  : %g sec", gfs_pio_create_time);
+	    "gfs_pio_create  : %g sec", staticp->create_time);
 	gflog_info(GFARM_MSG_1000096,
-	    "gfs_pio_open    : %g sec", gfs_pio_open_time);
+	    "gfs_pio_open    : %g sec", staticp->open_time);
 	gflog_info(GFARM_MSG_1000097,
-	    "gfs_pio_close   : %g sec", gfs_pio_close_time);
+	    "gfs_pio_close   : %g sec", staticp->close_time);
 	gflog_info(GFARM_MSG_1000098,
-	    "gfs_pio_seek    : %g sec", gfs_pio_seek_time);
+	    "gfs_pio_seek    : %g sec", staticp->seek_time);
 	gflog_info(GFARM_MSG_1000099,
-	    "gfs_pio_truncate : %g sec", gfs_pio_truncate_time);
+	    "gfs_pio_truncate : %g sec", staticp->truncate_time);
 	gflog_info(GFARM_MSG_1000100,
-	    "gfs_pio_read    : %g sec", gfs_pio_read_time);
+	    "gfs_pio_read    : %g sec", staticp->read_time);
 	gflog_info(GFARM_MSG_1000101,
-	    "gfs_pio_write   : %g sec", gfs_pio_write_time);
+	    "gfs_pio_write   : %g sec", staticp->write_time);
 	gflog_info(GFARM_MSG_1000102,
-	    "gfs_pio_sync    : %g sec", gfs_pio_sync_time);
+	    "gfs_pio_sync    : %g sec", staticp->sync_time);
 	gflog_info(GFARM_MSG_1000103,
 	    "gfs_pio_getline : %g sec (this calls getc)",
-			gfs_pio_getline_time);
+			staticp->getline_time);
 	gflog_info(GFARM_MSG_1000104,
-	    "gfs_pio_getc : %g sec", gfs_pio_getc_time);
+	    "gfs_pio_getc : %g sec", staticp->getc_time);
 	gflog_info(GFARM_MSG_1000105,
-	    "gfs_pio_putc : %g sec", gfs_pio_putc_time);
+	    "gfs_pio_putc : %g sec", staticp->putc_time);
 }

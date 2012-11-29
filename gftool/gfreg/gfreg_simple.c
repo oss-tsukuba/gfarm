@@ -17,9 +17,10 @@
 
 #include "gfutil.h"
 #include "timer.h"
+
+#include "context.h"
 #include "gfs_profile.h"
 #include "host.h"
-#include "config.h"
 #include "gfarm_path.h"
 
 /* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */

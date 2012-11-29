@@ -9,6 +9,24 @@
 #include "lru_cache.h"
 #include "thrsubr.h"
 
+void
+gfarm_lru_entry_init(struct gfarm_lru_entry *entry)
+{
+	assert(entry != NULL);
+
+	entry->next = entry->prev = entry;
+	entry->acquired = 0;
+}
+
+void
+gfarm_lru_cache_init(struct gfarm_lru_cache *cache)
+{
+	assert(cache != NULL);
+
+	gfarm_lru_entry_init(&cache->list_head);
+	cache->free_cached_entries = 0;
+}
+
 /* link the entry to the head of the LRU cache list */
 void
 gfarm_lru_cache_link_entry(struct gfarm_lru_cache *cache,

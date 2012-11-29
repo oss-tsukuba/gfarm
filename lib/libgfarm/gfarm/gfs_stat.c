@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <stdlib.h>
 
 #define GFARM_INTERNAL_USE
 #include <gfarm/gfarm.h>
@@ -8,13 +9,32 @@
 #include "gfutil.h"
 #include "timer.h"
 
+#include "context.h"
 #include "gfs_profile.h"
 #include "gfm_client.h"
-#include "config.h"
 #include "lookup.h"
 #include "gfs_misc.h"
 
-static double gfs_stat_time;
+#define staticp	(gfarm_ctxp->gfs_stat_static)
+
+struct gfarm_gfs_stat_static {
+	double stat_time;
+};
+
+gfarm_error_t
+gfarm_gfs_stat_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_stat_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->stat_time = 0;
+
+	ctxp->gfs_stat_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 struct gfm_stat_closure {
 	struct gfs_stat *st;
@@ -75,7 +95,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001377,
@@ -106,7 +126,7 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002666,
@@ -136,7 +156,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 	    &closure);
 
 	gfs_profile(gfarm_gettimerval(&t2));
-	gfs_profile(gfs_stat_time += gfarm_timerval_sub(&t2, &t1));
+	gfs_profile(staticp->stat_time += gfarm_timerval_sub(&t2, &t1));
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001378,
@@ -151,5 +171,5 @@ void
 gfs_stat_display_timers(void)
 {
 	gflog_info(GFARM_MSG_1000132,
-	    "gfs_stat        : %g sec", gfs_stat_time);
+	    "gfs_stat        : %g sec", staticp->stat_time);
 }

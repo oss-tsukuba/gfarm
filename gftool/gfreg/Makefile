@@ -20,4 +20,4 @@ include $(top_srcdir)/makes/gfptool.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/timer.h $(GFARMLIB_SRCDIR)/gfs_profile.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/config.h $(GFARMLIB_SRCDIR)/gfarm_path.h
+$(OBJS): $(DEPGFARMINC) $(GFUTIL_SRCDIR)/queue.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h $(GFARMLIB_SRCDIR)/context.h $(GFARMLIB_SRCDIR)/gfs_profile.h $(GFARMLIB_SRCDIR)/host.h $(GFARMLIB_SRCDIR)/gfs_pio.h $(GFARMLIB_SRCDIR)/gfarm_path.h

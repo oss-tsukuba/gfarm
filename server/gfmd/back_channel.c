@@ -17,12 +17,14 @@
 #include "gfutil.h"
 #include "thrsubr.h"
 
+#include "context.h"
 #include "gfp_xdr.h"
 #include "gfm_proto.h"
 #include "gfs_proto.h"
 #include "auth.h"
 #include "config.h"
 
+#include "gfmd.h"
 #include "peer.h"
 #include "subr.h"
 #include "rpcsubr.h"
@@ -504,11 +506,11 @@ gfm_async_server_replication_result(struct host *host,
 	 */
 	e2 = gfm_async_server_put_reply(host, peer, xid, diag, e, "");
 
-	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR)
+	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR)
 		gflog_trace(GFARM_MSG_1003320,
 		    "%lld/////REPLICATE/%s/%d/%s/%lld/%lld///////",
 		    (long long int)trace_seq_num,
-		    gfarm_host_get_self_name(), gfarm_metadb_server_port,
+		    gfarm_host_get_self_name(), gfmd_port,
 		    host_name(host), (long long int)ino, (long long int)gen);
 
 	return (e2);

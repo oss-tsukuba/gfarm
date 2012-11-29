@@ -18,6 +18,7 @@
 #include "hash.h"
 #include "thrsubr.h"
 
+#include "context.h"
 #include "auth.h"
 #include "gfp_xdr.h"
 #include "config.h"
@@ -26,6 +27,7 @@
 #include "gfm_proto.h"
 #include "filesystem.h"
 
+#include "gfmd.h"
 #include "subr.h"
 #include "rpcsubr.h"
 #include "host.h"
@@ -1307,6 +1309,7 @@ mdhost_init(void)
 	struct mdhost *mh;
 	struct gfarm_hash_iterator it;
 	static const char *diag = "mdhost_init";
+	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
 
 	if (gfarm_get_metadb_replication_enabled())
 		mdcluster_init();
@@ -1324,9 +1327,9 @@ mdhost_init(void)
 			gflog_fatal(GFARM_MSG_1002971,
 			    "%s", gfarm_error_string(e));
 	}
-	if ((self = mdhost_lookup(gfarm_metadb_server_name)) == NULL) {
-		ms.name = strdup_ck(gfarm_metadb_server_name, diag);
-		ms.port = gfarm_metadb_server_port;
+	if ((self = mdhost_lookup(metadb_server_name)) == NULL) {
+		ms.name = strdup_ck(metadb_server_name, diag);
+		ms.port = gfmd_port;
 		ms.clustername = strdup_ck("", diag);
 		ms.flags = 0;
 		ms.tflags = 0;
@@ -1340,7 +1343,7 @@ mdhost_init(void)
 		else if (gfarm_get_metadb_replication_enabled()) {
 			gflog_info(GFARM_MSG_1002973,
 			    "mdhost '%s' not found, creating...",
-			    gfarm_metadb_server_name);
+			    metadb_server_name);
 			if ((e = db_mdhost_add(&ms)) != GFARM_ERR_NO_ERROR)
 				gflog_fatal(GFARM_MSG_1002974,
 				    "Failed to add self mdhost");

@@ -7,6 +7,7 @@
 
 #include "thrsubr.h"
 
+#include "context.h"
 #include "config.h"
 #include "gfm_proto.h"
 
@@ -1041,11 +1042,11 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 
 	gfarm_mutex_destroy(&dfc->mutex, diag, "dfc state");
 
-	if (gfarm_file_trace && e == GFARM_ERR_NO_ERROR)
+	if (gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR)
 		gflog_trace(GFARM_MSG_1003279,
 		    "%lld/////DELREPLICA/%s/%d/%s/%lld/%lld///////",
 		    (unsigned long long)trace_log_get_sequence_number(),
-		    gfarm_host_get_self_name(), gfarm_metadb_server_port,
+		    gfarm_host_get_self_name(), gfmd_port,
 		    host_name(dfc->host),
 		    (unsigned long long)dfc->inum,
 		    (unsigned long long)dfc->igen);

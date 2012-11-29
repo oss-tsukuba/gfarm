@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "gfutil.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "gfs_profile.h"
 #include "host.h"
@@ -36,19 +37,19 @@ gfarm_config_set_default_metadb_server(void)
 	char *host;
 
 	if (gfarm_filesystem_get(
-	    gfarm_metadb_server_name, gfarm_metadb_server_port) != NULL)
+	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port)
+	    != NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	fs = gfarm_filesystem_get_default();
-	if ((host = strdup(gfarm_metadb_server_name)) == NULL) {
+	if ((host = strdup(gfarm_ctxp->metadb_server_name)) == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1003433,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-
-	if ((e = gfarm_metadb_server_new(&m, host, gfarm_metadb_server_port))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = gfarm_metadb_server_new(&m, host,
+	    gfarm_ctxp->metadb_server_port)) != GFARM_ERR_NO_ERROR) {
 		free(host);
 		gflog_debug(GFARM_MSG_1002556,
 		    "%s", gfarm_error_string(e));
@@ -77,7 +78,7 @@ gfarm_config_read(void)
 	FILE *config;
 	int lineno, user_config_errno, rc_need_free;
 	static const char gfarm_client_rc[] = GFARM_CLIENT_RC;
-	char *rc;
+	char *rc, *config_file = gfarm_config_get_filename();
 
 	rc_need_free = 0;
 	rc = getenv("GFARM_CONFIG_FILE");
@@ -116,18 +117,18 @@ gfarm_config_read(void)
 	if (rc_need_free)
 		free(rc);
 
-	if ((config = fopen(gfarm_config_file, "r")) == NULL) {
+	if ((config = fopen(config_file, "r")) == NULL) {
 		if (user_config_errno != 0) {
 			e = GFARM_ERRMSG_CANNOT_OPEN_CONFIG;
 			gflog_debug(GFARM_MSG_1000981,
-			    "%s: %s", gfarm_config_file, gfarm_error_string(e));
+			    "%s: %s", config_file, gfarm_error_string(e));
 			return (e);
 		}
 	} else {
 		e = gfarm_config_read_file(config, &lineno);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_error(GFARM_MSG_1000016, "%s: line %d: %s",
-			    gfarm_config_file, lineno, gfarm_error_string(e));
+			    config_file, lineno, gfarm_error_string(e));
 			return (e);
 		}
 	}
@@ -139,8 +140,6 @@ gfarm_config_read(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-int gf_on_demand_replication;
-
 static void
 gfarm_parse_env_client(void)
 {
@@ -149,7 +148,9 @@ gfarm_parse_env_client(void)
 	if ((env = getenv("GFARM_FLAGS")) != NULL) {
 		for (; *env; env++) {
 			switch (*env) {
-			case 'r': gf_on_demand_replication = 1; break;
+			case 'r':
+				gfarm_ctxp->on_demand_replication = 1;
+				break;
 			}
 		}
 	}
@@ -166,6 +167,13 @@ gfarm_initialize(int *argcp, char ***argvp)
 {
 	gfarm_error_t e;
 
+	e = gfarm_context_init();
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfarm_context_init failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
 	gflog_initialize();
 	if (argvp)
 		gfarm_config_set_argv0(**argvp);

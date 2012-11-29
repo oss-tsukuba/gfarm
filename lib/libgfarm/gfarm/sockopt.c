@@ -15,6 +15,8 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include "gfutil.h"
+
+#include "context.h"
 #include "liberror.h"
 #include "hostspec.h"
 #include "param.h"
@@ -46,14 +48,33 @@ struct gfarm_param_type gfarm_sockopt_type_table[] = {
 
 #define NSOCKOPTS GFARM_ARRAY_LENGTH(gfarm_sockopt_type_table)
 
-struct gfarm_param_config *gfarm_sockopt_config_list = NULL;
-struct gfarm_param_config **gfarm_sockopt_config_last =
-    &gfarm_sockopt_config_list;
+#define staticp	(gfarm_ctxp->sockopt_static)
 
-struct gfarm_param_config *gfarm_sockopt_listener_config_list = NULL;
-struct gfarm_param_config **gfarm_sockopt_listener_config_last =
-    &gfarm_sockopt_listener_config_list;
+struct gfarm_sockopt_static {
+	struct gfarm_param_config *config_list;
+	struct gfarm_param_config **config_last;
 
+	struct gfarm_param_config *listener_config_list;
+	struct gfarm_param_config **listener_config_last;
+};
+
+gfarm_error_t
+gfarm_sockopt_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_sockopt_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->config_list = NULL;
+	s->config_last = &s->config_list;
+	s->listener_config_list = NULL;
+	s->listener_config_last = &s->listener_config_list;
+
+	ctxp->sockopt_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 static void
 sockopt_initialize(void)
 {
@@ -162,15 +183,15 @@ gfarm_sockopt_set_option(int fd, char *config)
 gfarm_error_t
 gfarm_sockopt_config_add(char *option, struct gfarm_hostspec *hsp)
 {
-	return (gfarm_sockopt_config_add_internal(
-	    &gfarm_sockopt_config_last, option, hsp));
+	return (gfarm_sockopt_config_add_internal(&staticp->config_last,
+	    option, hsp));
 }
 
 gfarm_error_t
 gfarm_sockopt_listener_config_add(char *option)
 {
 	return (gfarm_sockopt_config_add_internal(
-	    &gfarm_sockopt_listener_config_last, option, NULL));
+	    &staticp->listener_config_last, option, NULL));
 }
 
 static gfarm_error_t
@@ -195,13 +216,13 @@ gfarm_error_t
 gfarm_sockopt_apply_by_name_addr(int fd, const char *name,
 	struct sockaddr *addr)
 {
-	return (gfarm_param_apply_long_by_name_addr(gfarm_sockopt_config_list,
+	return (gfarm_param_apply_long_by_name_addr(staticp->config_list,
 	    name, addr, gfarm_sockopt_set, &fd));
 }
 
 gfarm_error_t
 gfarm_sockopt_apply_listener(int fd)
 {
-	return (gfarm_param_apply_long(gfarm_sockopt_listener_config_list,
+	return (gfarm_param_apply_long(staticp->listener_config_list,
 	    gfarm_sockopt_set, &fd));
 }

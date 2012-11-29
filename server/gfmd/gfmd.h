@@ -1,3 +1,5 @@
+extern int gfmd_port;
+
 struct peer;
 struct event_waiter {
 	struct event_waiter *next;

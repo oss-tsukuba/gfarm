@@ -33,9 +33,48 @@
 
 #include "gfnetdb.h"
 
+#include "context.h"
 #include "hostspec.h"
 #include "gfm_client.h"
 #include "host.h"
+
+#define staticp	(gfarm_ctxp->host_static)
+
+struct gfarm_host_static {
+	struct known_network *known_network_list;
+	struct known_network **known_network_list_last;
+
+	/* gfarm_host_get_self_name() */
+	int initialized;
+	char hostname[MAXHOSTNAMELEN + 1];
+
+	/* gfm_host_get_canonical_self_name() */
+	char *canonical_self_name;
+	int port;
+	gfarm_error_t error_save;
+};
+
+gfarm_error_t
+gfarm_host_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_host_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->known_network_list = NULL;
+	s->known_network_list_last = &s->known_network_list;
+
+	s->initialized = 0;
+	memset(s->hostname, 0, sizeof(s->hostname));
+	s->canonical_self_name = NULL;
+	s->port = 0;
+	s->error_save = GFARM_ERR_NO_ERROR;
+
+	ctxp->host_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 static gfarm_error_t
 host_info_get_by_name_alias(struct gfm_connection *gfm_server,
@@ -131,19 +170,16 @@ gfm_host_get_canonical_name(struct gfm_connection *gfm_server,
 char *
 gfarm_host_get_self_name(void)
 {
-	static int initialized;
-	static char hostname[MAXHOSTNAMELEN + 1];
-
-	if (!initialized) {
-		hostname[0] = hostname[MAXHOSTNAMELEN] = 0;
+	if (!staticp->initialized) {
+		staticp->hostname[0] = staticp->hostname[MAXHOSTNAMELEN] = 0;
 		/* gethostname(2) almost shouldn't fail */
-		gethostname(hostname, MAXHOSTNAMELEN);
-		if (hostname[0] == '\0')
-			strcpy(hostname, "hostname-not-set");
-		initialized = 1;
+		gethostname(staticp->hostname, MAXHOSTNAMELEN);
+		if (staticp->hostname[0] == '\0')
+			strcpy(staticp->hostname, "hostname-not-set");
+		staticp->initialized = 1;
 	}
 
-	return (hostname);
+	return (staticp->hostname);
 }
 
 /*
@@ -157,25 +193,23 @@ gfm_host_get_canonical_self_name(struct gfm_connection *gfm_server,
 	char **canonical_hostnamep, int *portp)
 {
 	gfarm_error_t e;
-	static char *canonical_self_name = NULL;
-	static int port;
-	static gfarm_error_t error_save = GFARM_ERR_NO_ERROR;
 
-	if (canonical_self_name == NULL) {
-		if (error_save != GFARM_ERR_NO_ERROR)
-			return (error_save);
+	if (staticp->canonical_self_name == NULL) {
+		if (staticp->error_save != GFARM_ERR_NO_ERROR)
+			return (staticp->error_save);
 		e = gfm_host_get_canonical_name(gfm_server,
-		    gfarm_host_get_self_name(), &canonical_self_name, &port);
+		    gfarm_host_get_self_name(),
+		    &staticp->canonical_self_name, &staticp->port);
 		if (e != GFARM_ERR_NO_ERROR) {
-			error_save = e;
+			staticp->error_save = e;
 			gflog_debug(GFARM_MSG_1000870,
 				"gfm_host_get_canonical_name() failed: %s",
 				gfarm_error_string(e));
 			return (e);
 		}
 	}
-	*canonical_hostnamep = canonical_self_name;
-	*portp = port;
+	*canonical_hostnamep = staticp->canonical_self_name;
+	*portp = staticp->port;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -801,16 +835,13 @@ struct known_network {
 	struct gfarm_hostspec *network;
 };
 
-struct known_network *known_network_list = NULL;
-struct known_network **known_network_list_last = &known_network_list;
-
 void
 gfarm_known_network_list_dump(void)
 {
 	char network[GFARM_HOSTSPEC_STRLEN];
 	struct known_network *n;
 
-	for (n = known_network_list; n != NULL; n = n->next) {
+	for (n = staticp->known_network_list; n != NULL; n = n->next) {
 		gfarm_hostspec_to_string(n->network, network, sizeof network);
 		gflog_info(GFARM_MSG_1002445, "%s", network);
 	}
@@ -827,8 +858,8 @@ gfarm_known_network_list_add(struct gfarm_hostspec *network)
 		return (GFARM_ERR_NO_MEMORY);
 	known_network->network = network;
 	known_network->next = NULL;
-	*known_network_list_last = known_network;
-	known_network_list_last = &known_network->next;
+	*staticp->known_network_list_last = known_network;
+	staticp->known_network_list_last = &known_network->next;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -868,7 +899,7 @@ gfarm_addr_network_get(struct sockaddr *addr,
 	gfarm_error_t e;
 
 	/* search in the known network list */
-	for (n = known_network_list; n != NULL; n = n->next) {
+	for (n = staticp->known_network_list; n != NULL; n = n->next) {
 		if (gfarm_hostspec_match(n->network, NULL, addr)) {
 			if (networkp != NULL)
 				*networkp = n->network;

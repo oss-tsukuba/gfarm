@@ -6,6 +6,7 @@
 
 #include "hash.h"
 
+#include "context.h"
 #include "filesystem.h"
 #include "metadb_server.h"
 #include "gfm_client.h"
@@ -23,8 +24,29 @@ struct gfarm_filesystem_hash_id {
 	int port;
 };
 
-static struct gfarm_filesystem filesystems = { &filesystems };
-static struct gfarm_hash_table *ms2fs_hashtab;
+#define staticp	(gfarm_ctxp->filesystem_static)
+
+struct gfarm_filesystem_static {
+	struct gfarm_filesystem filesystems;
+	struct gfarm_hash_table *ms2fs_hashtab;
+};
+
+gfarm_error_t
+gfarm_filesystem_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_filesystem_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	memset(&s->filesystems, 0, sizeof(s->filesystems));
+	s->filesystems.next = &s->filesystems;
+	s->ms2fs_hashtab = NULL;
+
+	ctxp->filesystem_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 #define GFARM_FILESYSTEM_FLAG_IS_DEFAULT	0x00000001
 
@@ -61,11 +83,11 @@ gfarm_filesystem_add(struct gfarm_filesystem **fsp)
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
-	fs->next = filesystems.next;
+	fs->next = staticp->filesystems.next;
 	fs->servers = NULL;
 	fs->nservers = 0;
 	fs->flags = 0;
-	filesystems.next = fs;
+	staticp->filesystems.next = fs;
 	*fsp = fs;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -73,18 +95,18 @@ gfarm_filesystem_add(struct gfarm_filesystem **fsp)
 int
 gfarm_filesystem_is_initialized(void)
 {
-	return (filesystems.next != &filesystems);
+	return (staticp->filesystems.next != &staticp->filesystems);
 }
 
 static gfarm_error_t
 gfarm_filesystem_ms2fs_hash_alloc(void)
 {
 #define MS2FS_HASHTAB_SIZE 17
-	if (ms2fs_hashtab)
-		gfarm_hash_table_free(ms2fs_hashtab);
-	ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
+	if (staticp->ms2fs_hashtab)
+		gfarm_hash_table_free(staticp->ms2fs_hashtab);
+	staticp->ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
 	    gfarm_filesystem_hash_index, gfarm_filesystem_hash_equal);
-	if (ms2fs_hashtab == NULL) {
+	if (staticp->ms2fs_hashtab == NULL) {
 		gflog_debug(GFARM_MSG_1002568,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
@@ -117,8 +139,8 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 
 	id.hostname = gfarm_metadb_server_get_name(ms);
 	id.port = gfarm_metadb_server_get_port(ms);
-	entry = gfarm_hash_enter(ms2fs_hashtab, &id, sizeof(id), sizeof(fs),
-	    &created);
+	entry = gfarm_hash_enter(staticp->ms2fs_hashtab, &id, sizeof(id),
+	    sizeof(fs), &created);
 	if (entry == NULL) {
 		gflog_debug(GFARM_MSG_1002569,
 		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
@@ -140,7 +162,7 @@ gfarm_filesystem_is_default(struct gfarm_filesystem *fs)
 struct gfarm_filesystem*
 gfarm_filesystem_get_default(void)
 {
-	struct gfarm_filesystem *fs = filesystems.next;
+	struct gfarm_filesystem *fs = staticp->filesystems.next;
 
 	assert(gfarm_filesystem_is_default(fs));
 	return (fs);
@@ -152,11 +174,11 @@ gfarm_filesystem_get(const char *hostname, int port)
 	struct gfarm_filesystem_hash_id id;
 	struct gfarm_hash_entry *entry;
 
-	if (ms2fs_hashtab == NULL)
+	if (staticp->ms2fs_hashtab == NULL)
 		return (NULL);
 	id.hostname = (char *)hostname; /* UNCONST */
 	id.port = port;
-	entry = gfarm_hash_lookup(ms2fs_hashtab, &id, sizeof(id));
+	entry = gfarm_hash_lookup(staticp->ms2fs_hashtab, &id, sizeof(id));
 	return (entry ?
 	    *(struct gfarm_filesystem **)gfarm_hash_entry_data(entry) : NULL);
 }

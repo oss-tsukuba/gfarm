@@ -27,6 +27,7 @@
 #include "gfutil.h" /* gfarm_send_no_sigpipe() */
 #include "gfnetdb.h"
 
+#include "context.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
@@ -96,7 +97,7 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
 	ssize_t rv;
-	int save_errno, avail, timeout = gfarm_network_receive_timeout;
+	int save_errno, avail, timeout = gfarm_ctxp->network_receive_timeout;
 	char hostbuf[NI_MAXHOST], *hostaddr_prefix, *hostaddr;
 	struct sockaddr_in sin;
 	socklen_t slen = sizeof(sin);
@@ -107,14 +108,14 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 
 		fds[0].fd = fd;
 		fds[0].events = POLLIN;
-		avail = poll(fds, 1, gfarm_network_receive_timeout * 1000);
+		avail = poll(fds, 1, timeout * 1000);
 #else
 		fd_set readable;
 		struct timeval tv;
 
 		FD_ZERO(&readable);
 		FD_SET(fd, &readable);
-		tv.tv_sec = gfarm_network_receive_timeout;
+		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
 		avail = select(fd + 1, &readable, NULL, NULL, &tv);
 #endif

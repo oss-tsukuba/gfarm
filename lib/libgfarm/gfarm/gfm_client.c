@@ -31,6 +31,7 @@
 #include "lru_cache.h"
 #include "queue.h"
 
+#include "context.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
 #include "sockopt.h"
@@ -65,16 +66,34 @@ struct gfm_connection {
 	int failover_count;
 };
 
+#define staticp	(gfarm_ctxp->gfm_client_static)
+
+struct gfm_client_static {
+	struct gfp_conn_cache server_cache;
+};
+
 #define SERVER_HASHTAB_SIZE	31	/* prime number */
 
 static gfarm_error_t gfm_client_connection_dispose(void *);
 
-static struct gfp_conn_cache gfm_server_cache =
-	GFP_CONN_CACHE_INITIALIZER(gfm_server_cache,
+gfarm_error_t
+gfm_client_static_init(struct gfarm_context *ctxp)
+{
+	struct gfm_client_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	gfp_conn_cache_init(&s->server_cache,
 		gfm_client_connection_dispose,
 		"gfm_connection",
 		SERVER_HASHTAB_SIZE,
-		&gfarm_gfmd_connection_cache);
+		&ctxp->gfmd_connection_cache);
+
+	ctxp->gfm_client_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 int
 gfm_client_is_connection_error(gfarm_error_t e)
@@ -184,12 +203,12 @@ gfm_client_process_is_set(struct gfm_connection *gfm_server)
 void
 gfm_client_purge_from_cache(struct gfm_connection *gfm_server)
 {
-	gfp_cached_connection_purge_from_cache(&gfm_server_cache,
+	gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 	    gfm_server->cache_entry);
 }
 
 #define gfm_client_connection_used(gfm_server) \
-	gfp_cached_connection_used(&gfm_server_cache, \
+	gfp_cached_connection_used(&staticp->server_cache, \
 	    (gfm_server)->cache_entry)
 
 int
@@ -202,7 +221,7 @@ gfm_cached_connection_had_connection_error(struct gfm_connection *gfm_server)
 void
 gfm_client_connection_gc(void)
 {
-	gfp_cached_connection_gc_all(&gfm_server_cache);
+	gfp_cached_connection_gc_all(&staticp->server_cache);
 }
 
 static gfarm_error_t
@@ -599,7 +618,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	unsigned int sleep_max_interval = 512;	/* about 8.5 min */
 	struct timeval expiration_time;
 
-	e = gfp_cached_connection_acquire(&gfm_server_cache,
+	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    hostname, port, user, &cache_entry, &created);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001100,
@@ -614,7 +633,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 	e = gfm_client_connection0(cache_entry, gfm_serverp, NULL, NULL,
 	    gfm_client_connect_multiple);
 	gettimeofday(&expiration_time, NULL);
-	expiration_time.tv_sec += gfarm_gfmd_reconnection_timeout;
+	expiration_time.tv_sec += gfarm_ctxp->gfmd_reconnection_timeout;
 	while (IS_CONNECTION_ERROR(e) &&
 	       !gfarm_timeval_is_expired(&expiration_time)) {
 		gflog_warning(GFARM_MSG_1000058,
@@ -631,7 +650,7 @@ gfm_client_connection_acquire(const char *hostname, int port,
 		gflog_error(GFARM_MSG_1000059,
 		    "cannot connect to gfmd at %s:%d, give up: %s",
 		    hostname, port, gfarm_error_string(e));
-		gfp_cached_connection_purge_from_cache(&gfm_server_cache,
+		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 		    cache_entry);
 		gfp_uncached_connection_dispose(cache_entry);
 	}
@@ -645,7 +664,7 @@ gfm_client_connection_addref(struct gfm_connection *gfm_server)
 	struct gfp_cached_connection *cache_entry;
 	int created;
 
-	e = gfp_cached_connection_acquire(&gfm_server_cache,
+	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    gfm_client_hostname(gfm_server),
 	    gfm_client_port(gfm_server),
 	    gfm_client_username(gfm_server),
@@ -825,7 +844,7 @@ gfm_client_connection_set_failover_count(
 void
 gfm_client_connection_free(struct gfm_connection *gfm_server)
 {
-	gfp_cached_or_uncached_connection_free(&gfm_server_cache,
+	gfp_cached_or_uncached_connection_free(&staticp->server_cache,
 	    gfm_server->cache_entry);
 }
 
@@ -845,7 +864,7 @@ gfm_client_connection_convert_to_xdr(struct gfm_connection *gfm_server)
 void
 gfm_client_terminate(void)
 {
-	gfp_cached_connection_terminate(&gfm_server_cache);
+	gfp_cached_connection_terminate(&staticp->server_cache);
 }
 
 gfarm_error_t

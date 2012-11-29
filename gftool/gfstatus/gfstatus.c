@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <gfarm/gfarm.h>
+
+#include "context.h"
 #include "config.h"
 #include "auth.h"
 #include "host.h"
@@ -115,7 +117,7 @@ main(int argc, char *argv[])
 	user = gfm_client_username(gfm_server);
 
 	print_user_config_file("user config file  ");
-	print_msg("system config file", gfarm_config_file);
+	print_msg("system config file", gfarm_config_get_filename());
 
 	puts("");
 	print_msg("hostname          ", gfarm_host_get_self_name());
@@ -158,8 +160,8 @@ main(int argc, char *argv[])
 	free(realpath);
 	print_msg("gfmd server name", gfmd_hostname);
 	printf("gfmd server port: %d\n", port);
-	print_msg("gfmd admin user", gfarm_metadb_admin_user);
-	print_msg("gfmd admin dn  ", gfarm_metadb_admin_user_gsi_dn);
+	print_msg("gfmd admin user", gfarm_ctxp->metadb_admin_user);
+	print_msg("gfmd admin dn  ", gfarm_ctxp->metadb_admin_user_gsi_dn);
 
 	gfm_client_connection_free(gfm_server);
 

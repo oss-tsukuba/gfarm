@@ -34,6 +34,7 @@
 #include "gflog_reduced.h"
 #include "thrsubr.h"
 
+#include "context.h"
 #include "liberror.h"
 #include "gfp_xdr.h"
 #include "hostspec.h"
@@ -85,6 +86,7 @@
 #endif
 
 char *program_name = "gfmd";
+int gfmd_port;
 static char *pid_file;
 
 struct thread_pool *authentication_thread_pool;
@@ -1161,7 +1163,7 @@ transform_to_master(void)
 }
 
 static int
-wait_transform_to_master(void)
+wait_transform_to_master(int port)
 {
 	static const char *diag = "accepting_loop";
 
@@ -1175,7 +1177,7 @@ wait_transform_to_master(void)
 		gfarm_cond_wait(&transform_cond, &transform_mutex, diag,
 		    TRANSFORM_COND_DIAG);
 	gfarm_mutex_unlock(&transform_mutex, diag, TRANSFORM_MUTEX_DIAG);
-	return (open_accepting_socket(gfarm_metadb_server_port));
+	return (open_accepting_socket(port));
 }
 
 static struct {
@@ -1475,7 +1477,7 @@ main(int argc, char **argv)
 	int syslog_facility = GFARM_DEFAULT_FACILITY;
 	int ch, sock, table_size;
 	sigset_t sigs;
-	int is_master;
+	int is_master, file_trace = 0;
 
 	if (argc >= 1)
 		program_name = basename(argv[0]);
@@ -1516,7 +1518,7 @@ main(int argc, char **argv)
 				    optarg);
 			break;
 		case 't':
-			gfarm_file_trace = 1;
+			file_trace = 1;
 			break;
 		case 'v':
 			gflog_auth_set_verbose(1);
@@ -1527,11 +1529,9 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (config_file != NULL)
-		gfarm_config_set_filename(config_file);
-	else
-		gfarm_config_set_filename(GFMD_CONFIG);
-	e = gfarm_server_initialize(&argc, &argv);
+	if (config_file == NULL)
+		config_file = GFMD_CONFIG;
+	e = gfarm_server_initialize(config_file, &argc, &argv);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001486,
 			"gfarm_server_initialize() failed: %s",
@@ -1546,9 +1546,11 @@ main(int argc, char **argv)
 
 	if (syslog_level != -1)
 		gflog_set_priority_level(syslog_level);
-	/* gfarm_metadb_server_port is accessed in gfmd_modules_init() */
+	/* gfmd_port is accessed in gfmd_modules_init() */
+	gfmd_port = gfarm_ctxp->metadb_server_port;
 	if (port_number != NULL)
-		gfarm_metadb_server_port = strtol(port_number, NULL, 0);
+		gfmd_port = strtol(port_number, NULL, 0);
+	gfarm_ctxp->file_trace = file_trace;
 
 	/*
 	 * We do this before calling gfarm_daemon()
@@ -1659,7 +1661,7 @@ main(int argc, char **argv)
 			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		len = snprintf(iostat_dirbuf, len, "%s-%d",
-			gfarm_iostat_gfmd_path, gfarm_metadb_server_port);
+		    gfarm_iostat_gfmd_path, gfarm_ctxp->metadb_server_port);
 		if (mkdir(iostat_dirbuf, 0755)) {
 			if (errno != EEXIST)
 				gflog_fatal_errno(GFARM_MSG_UNFIXED,
@@ -1708,11 +1710,11 @@ main(int argc, char **argv)
 		start_gfmdc_threads();
 		gfmd_startup_state_notify_ready();
 		if (is_master)
-			sock = open_accepting_socket(gfarm_metadb_server_port);
+			sock = open_accepting_socket(gfmd_port);
 		else
-			sock = wait_transform_to_master();
+			sock = wait_transform_to_master(gfmd_port);
 	} else
-		sock = open_accepting_socket(gfarm_metadb_server_port);
+		sock = open_accepting_socket(gfmd_port);
 
 	/* master */
 

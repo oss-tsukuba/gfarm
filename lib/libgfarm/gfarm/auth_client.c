@@ -11,11 +11,35 @@
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
-#include "liberror.h"
+
 #include "gfutil.h"
 #include "gfevent.h"
+
+#include "context.h"
+#include "liberror.h"
 #include "gfp_xdr.h"
 #include "auth.h"
+
+#define staticp	(gfarm_ctxp->auth_client_static)
+
+struct gfarm_auth_client_static {
+	enum gfarm_auth_id_type gfarm_auth_type;
+};
+
+gfarm_error_t
+gfarm_auth_client_static_init(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_client_static *s;
+
+	GFARM_MALLOC(s);
+	if (s == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
+	s->gfarm_auth_type = GFARM_AUTH_ID_TYPE_USER;
+
+	ctxp->auth_client_static = s;
+	return (GFARM_ERR_NO_ERROR);
+}
 
 /*
  * currently 31 is enough,
@@ -23,7 +47,7 @@
  */
 #define GFARM_AUTH_METHODS_BUFFER_SIZE	256
 
-struct gfarm_auth_client_method {
+static const struct gfarm_auth_client_method {
 	enum gfarm_auth_method method;
 	gfarm_error_t (*request)(struct gfp_xdr *,
 		const char *, const char *, enum gfarm_auth_id_type,
@@ -1069,17 +1093,15 @@ gfarm_auth_result_multiplexed(struct gfarm_auth_request_state *state,
 	return (e);
 }
 
-static enum gfarm_auth_id_type gfarm_auth_type = GFARM_AUTH_ID_TYPE_USER;
-
 gfarm_error_t
 gfarm_set_auth_id_type(enum gfarm_auth_id_type type)
 {
-	gfarm_auth_type = type;
+	staticp->gfarm_auth_type = type;
 	return (GFARM_ERR_NO_ERROR);
 }
 
 enum gfarm_auth_id_type
 gfarm_get_auth_id_type(void)
 {
-	return (gfarm_auth_type);
+	return (staticp->gfarm_auth_type);
 }

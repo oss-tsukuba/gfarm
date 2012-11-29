@@ -31,6 +31,22 @@ struct gfp_cached_connection {
 	void (*dispose_connection_data)(void *);
 };
 
+void
+gfp_conn_cache_init(struct gfp_conn_cache *c,
+	gfarm_error_t (*dispose)(void *), const char *type_name,
+	int table_size, int *num_cachep)
+{
+	assert(c != NULL);
+
+	gfarm_lru_cache_init(&c->lru_list);
+	c->hashtab = NULL;
+	c->dispose_connection = dispose;
+	c->type_name = type_name;
+	c->table_size = table_size;
+	c->num_cachep = num_cachep;
+	gfarm_mutex_init(&c->mutex, "gfp_conn_cache_init", "conn_cache");
+}
+
 /*
  * return TRUE,  if created by gfs_client_connection_acquire() && still cached.
  * return FALSE, if created by gfs_client_connect() || purged from cache.

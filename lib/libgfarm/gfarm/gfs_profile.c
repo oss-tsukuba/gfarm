@@ -2,19 +2,21 @@
  * $Id$
  */
 
+#include <gfarm/error.h>
+
 #include "timer.h"
 
-int gf_profile;
+#include "context.h"
 
 void
 gfs_profile_set(void)
 {
-	gf_profile = 1;
+	gfarm_ctxp->profile = 1;
 	gfarm_timerval_calibrate();
 }
 
 void
 gfs_profile_unset(void)
 {
-	gf_profile = 0;
+	gfarm_ctxp->profile = 0;
 }
