@@ -36,7 +36,7 @@ gfarm_mutex_trylock(pthread_mutex_t *mutex, const char *where,
 	int err = pthread_mutex_trylock(mutex);
 
 	if (err != 0 && err != EBUSY)
-		gflog_fatal(GFARM_MSG_UNFIXED, "%s: %s mutex trylock: %s",
+		gflog_fatal(GFARM_MSG_1003565, "%s: %s mutex trylock: %s",
 		    where, what, strerror(err));
 	return (err == 0);
 }

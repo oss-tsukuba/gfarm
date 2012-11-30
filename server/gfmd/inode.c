@@ -696,7 +696,7 @@ inode_schedule_replication(struct inode *inode, struct host *spool_host,
 	    host_is_disk_available_filter, &necessary_space,
 	    n_desired, &n_targets, &targets);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		gflog_warning(GFARM_MSG_1003643, "%s: inode %lld:%lld: "
 		    "cannot create %d replicas from %d hosts except %d: %s",
 		    diag,
 		    (long long)inode_get_number(inode),
@@ -706,7 +706,7 @@ inode_schedule_replication(struct inode *inode, struct host *spool_host,
 	}
 
 	if (n_targets < n_desired)
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		gflog_warning(GFARM_MSG_1003644, "%s: inode %lld:%lld: "
 		    "fewer replicas (%d out of %d) will be created", diag,
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
@@ -714,7 +714,7 @@ inode_schedule_replication(struct inode *inode, struct host *spool_host,
 	for (i = 0; i < n_targets; i++) {
 		e = file_replicating_new(inode, targets[i], 1, NULL, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003645,
 			    "%s: file_replicating_new: (%s, %lld:%lld): %s",
 			    diag, host_name(targets[i]),
 			    (long long)inode_get_number(inode),
@@ -747,7 +747,7 @@ inode_schedule_replication_from_all(
 
 	e = host_array_alloc(&nhosts, &hosts);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED, "%s: inode %lld:%lld: "
+		gflog_warning(GFARM_MSG_1003646, "%s: inode %lld:%lld: "
 		    "cannot create %d replicas except %d: %s",
 		    diag,
 		    (long long)inode_get_number(inode),
@@ -785,7 +785,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	}
 	GFARM_MALLOC_ARRAY(exceptions, n_exceptions);
 	if (exceptions == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003647,
 		    "%s: no memory to schedule replicas except %d hosts",
 		    diag, n_exceptions);
 		return;
@@ -813,7 +813,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 
 	if (n_exceptions - being_removed < desired_replica_number) {
 
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003648,
 		    "%s: about to schedule "
 		    "ncopy-based replication for inode %lld:%lld@%s. "
 		    "number = %d (= %d - %d + %d)", diag,

@@ -631,7 +631,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			if (invalid_XML_value) {
 				transaction_ok = 0;
 				invalid_XML_value = 0;
-				gflog_notice(GFARM_MSG_UNFIXED,
+				gflog_notice(GFARM_MSG_1003662,
 				    "transaction aborted by invalid XML value:"
 				    " seqnum %lld: %s", (long long)seqnum,
 				    gfarm_error_string(e));
@@ -2695,7 +2695,7 @@ gfarm_pgsql_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		gflog_notice(GFARM_MSG_1003663, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
 		    gfarm_error_string(e));
@@ -2752,7 +2752,7 @@ gfarm_pgsql_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		gflog_notice(GFARM_MSG_1003664, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
 		    gfarm_error_string(e));
@@ -2800,7 +2800,7 @@ gfarm_pgsql_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: attr %s: %s", diag,
+		gflog_notice(GFARM_MSG_1003665, "%s: attr %s: %s", diag,
 		    (char *)arg->attrname, gfarm_error_string(e));
 		invalid_XML_value = 1;
 		e = GFARM_ERR_NO_ERROR;
@@ -2843,7 +2843,7 @@ gfarm_pgsql_xattr_removeall(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld: %s", diag,
+		gflog_notice(GFARM_MSG_1003666, "%s: inum %lld: %s", diag,
 		    (long long)arg->inum, gfarm_error_string(e));
 		invalid_XML_value = 1;
 		e = GFARM_ERR_NO_ERROR;
@@ -2930,7 +2930,7 @@ gfarm_pgsql_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	/* XXX FIXME - workaround for SourceForge #549 */
 	if (gfarm_get_metadb_replication_enabled() &&
 	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s: %s",
+		gflog_notice(GFARM_MSG_1003667, "%s: inum %lld attr %s: %s",
 		    diag, (long long)arg->inum, (char *)arg->attrname,
 		    gfarm_error_string(e));
 		invalid_XML_value = 1;

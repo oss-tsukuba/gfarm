@@ -88,14 +88,14 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 
 	if ((fd = open(path, O_CREAT|O_TRUNC|O_RDWR, 0644)) < 0) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003591,
 			"gfarm_iostat_mmap(%s) open failed: %s",
 			path, gfarm_error_string(e));
 		return (e);
 	}
 	if (ftruncate(fd, size) < 0) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003592,
 			"gfarm_iostat_mmap(%s) truncate %zu failed: %s",
 			path, size, gfarm_error_string(e));
 		close(fd);
@@ -103,7 +103,7 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 	}
 	if (write(fd, hp, sizeof(*hp)) < 0) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003593,
 			"gfarm_iostat_mmap(%s) write head failed: %s",
 			path, gfarm_error_string(e));
 		close(fd);
@@ -111,7 +111,7 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 	}
 	if (write(fd, specp, sizeof(*specp) * nitem) < 0) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003594,
 			"gfarm_iostat_mmap(%s) write spec failed: %s",
 			path, gfarm_error_string(e));
 		close(fd);
@@ -121,7 +121,7 @@ gfarm_iostat_mmap(char *path, struct gfarm_iostat_spec *specp,
 	if ((addr = mmap(NULL, size, PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0))
 		== MAP_FAILED) {
 		e = gfarm_errno_to_error(errno);
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003595,
 			"gfarm_iostat_mmap(%s) mmap %zu failed: %s",
 			path, size, gfarm_error_string(e));
 		close(fd);
@@ -178,7 +178,7 @@ gfarm_iostat_clear_id(gfarm_uint64_t id, unsigned int hint)
 		ip = gfarm_iostat_find_row(hp, sip, id, 0, hint, &i);
 
 	if (!ip) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003596,
 			"gfarm_iostat_clear_id(%s) id(%u) not found",
 			hp->s_name, (unsigned int)id);
 		return;
@@ -207,13 +207,13 @@ gfarm_iostat_clear_ip(struct gfarm_iostat_items *ip)
 	if (!is_statfile_valid(hp, sip))
 		return;
 	if (!ip) {
-		gflog_debug(GFARM_MSG_UNFIXED, "not initialized");
+		gflog_debug(GFARM_MSG_1003597, "not initialized");
 		return;
 	}
 
 	i = ((char *)ip - (char *)sip) / hp->s_item_size;
 	if (i < 0 || i >= hp->s_row) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003598,
 			"gfarm_iostat_clear_ip(%s) i(%d) not found",
 			hp->s_name, i);
 		return;
@@ -246,11 +246,11 @@ gfarm_iostat_find_space(unsigned int hint)
 
 	ip = gfarm_iostat_find_row(hp, sip, 0, hint, hp->s_rowcur, &i);
 	if (ip)
-		gflog_debug(GFARM_MSG_UNFIXED, "found 1 %d into %p", i, ip);
+		gflog_debug(GFARM_MSG_1003599, "found 1 %d into %p", i, ip);
 	if (!ip && hint)
 		ip = gfarm_iostat_find_row(hp, sip, 0, 0, hint, &i);
 	if (ip)
-		gflog_debug(GFARM_MSG_UNFIXED, "found 2 %d into %p", i, ip);
+		gflog_debug(GFARM_MSG_1003600, "found 2 %d into %p", i, ip);
 	if (!ip) {
 		ip = gfarm_iostat_find_row(hp, sip, 0, hp->s_rowcur,
 			hp->s_row, &i);
@@ -259,7 +259,7 @@ gfarm_iostat_find_space(unsigned int hint)
 			if (i >= hp->s_rowmax)
 				hp->s_rowmax = i + 1;
 		} else {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003601,
 				"gfarm_iostat_find_space(%s) small row %d",
 				hp->s_name, hp->s_row);
 		}
@@ -278,7 +278,7 @@ gfarm_iostat_get_ip(unsigned int i)
 		return (NULL);
 
 	if (i >= hp->s_row) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003602,
 			"gfarm_iostat_get_ip(%s) too big id %d",
 			hp->s_name, i);
 		return (NULL);
@@ -318,17 +318,17 @@ gfarm_iostat_stat_add(struct gfarm_iostat_items *ip, unsigned int cat, int val)
 	if (!is_statfile_valid(hp, sip))
 		return;
 	if (!ip) {
-		gflog_debug(GFARM_MSG_UNFIXED, "not initialized");
+		gflog_debug(GFARM_MSG_1003603, "not initialized");
 		return;
 	}
 	if (!ip->s_valid) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003604,
 			"gfarm_iostat_stat_add(%s) invalid ip %p",
 			hp->s_name, ip);
 		return;
 	}
 	if (cat >= hp->s_nitem) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003605,
 			"gfarm_iostat_stat_add(%s) too big cat %d",
 			hp->s_name, cat);
 		return;
@@ -343,7 +343,7 @@ gfarm_iostat_local_add(unsigned int cat, int val)
 	if (!is_statfile_valid(hp, sip))
 		return;
 	if (!(ip = staticp->stat_local_ip)) {
-		gflog_debug(GFARM_MSG_UNFIXED, "not initialized");
+		gflog_debug(GFARM_MSG_1003606, "not initialized");
 		return;
 	}
 	gfarm_iostat_stat_add(ip, cat, val);

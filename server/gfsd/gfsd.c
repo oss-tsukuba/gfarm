@@ -357,7 +357,7 @@ connect_gfm_server0(int use_timeout)
 		
 		if (e != GFARM_ERR_NO_ERROR) {
 			if (timed_out) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003668,
 				    "connecting to gfmd at %s:%d failed: %s",
 				    gfarm_metadb_server_name,
 				    gfarm_metadb_server_port,
@@ -392,7 +392,7 @@ connect_gfm_server0(int use_timeout)
 				    gfarm_error_string(e));
 				return (e);
 			}
-			gflog_reduced_error(GFARM_MSG_UNFIXED, &hnamelog,
+			gflog_reduced_error(GFARM_MSG_1003669, &hnamelog,
 			    "cannot set canonical hostname of this node (%s), "
 			    "sleep %d sec: %s", canonical_self_name,
 			    sleep_interval, gfarm_error_string(e));
@@ -3749,7 +3749,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			GFARM_REALLOC_ARRAY(fds, fds, n_alloc);
 			GFARM_REALLOC_ARRAY(fd_rep_map, fd_rep_map, n_alloc);
 			if (fds == NULL || fd_rep_map == NULL) {
-				gflog_fatal(GFARM_MSG_UNFIXED,
+				gflog_fatal(GFARM_MSG_1003670,
 				    "no memory for %d descriptors, "
 				    "current = %d, alloc = %d",
 				    n, nfds, n_alloc);
@@ -3771,14 +3771,14 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 		nfound =
 		    poll(fds, n, gfarm_metadb_heartbeat_interval * 2 * 1000);
 		if (nfound == 0) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003671,
 			    "back channel: gfmd is down");
 			return (0);
 		}
 		if (nfound < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			fatal_errno(GFARM_MSG_UNFIXED, "back channel poll");
+			fatal_errno(GFARM_MSG_1003672, "back channel poll");
 		}
 		for (i = 1; i < n; i++) {
 			if (fds[i].revents == 0)
@@ -3786,7 +3786,7 @@ watch_fds(struct gfp_xdr *conn, gfp_xdr_async_peer_t async)
 			e = replication_result_notify(conn, async,
 			    fd_rep_map[i]->q);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003673,
 				    "back channel: "
 				    "communication error: %s",
 				    gfarm_error_string(e));
@@ -3918,7 +3918,7 @@ back_channel_server(void)
 		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
 			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003674,
 				"gfarm_iostat_mmap(%s): %s",
 				iostat_dirbuf, gfarm_error_string(e));
 
@@ -4047,7 +4047,7 @@ back_channel_server(void)
 				break;
 			}
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003675,
 				    "back channel disconnected "
 				    "during a reply: %s",
 				    gfarm_error_string(e));
@@ -4565,7 +4565,7 @@ main(int argc, char **argv)
 		len += 1 + 16 + 1;	/* "-NAME\0" */
 		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
 		if (iostat_dirbuf == NULL)
-			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
+			gflog_fatal(GFARM_MSG_1003676, "iostat_dirbuf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 
 		iostat_dirlen = snprintf(iostat_dirbuf, len, "%s%s%s-%d/",
@@ -4574,11 +4574,11 @@ main(int argc, char **argv)
 			(unsigned int) self_info.port);
 		if (mkdir(iostat_dirbuf, 0755)) {
 			if (errno != EEXIST)
-				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				gflog_fatal_errno(GFARM_MSG_1003677,
 					"mkdir:%s", iostat_dirbuf);
 		} else if (chown(iostat_dirbuf, gfsd_uid, -1)) {
 			if (errno != EEXIST)
-				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				gflog_fatal_errno(GFARM_MSG_1003678,
 					"chown:%s", iostat_dirbuf);
 		}
 	}
@@ -4656,7 +4656,7 @@ main(int argc, char **argv)
 		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
 			GFARM_IOSTAT_IO_NITEM, gfarm_iostat_max_client);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003679,
 				"gfarm_iostat_mmap(%s): %s",
 				iostat_dirbuf, gfarm_error_string(e));
 	}
