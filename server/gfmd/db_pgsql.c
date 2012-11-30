@@ -78,6 +78,9 @@ static int transaction_nesting = 0;
 static int transaction_ok;
 static int connection_recovered = 0;
 
+/* XXX FIXME - workaround for SourceForge #549 */
+static int invalid_XML_value = 0;
+
 static char *
 gfarm_pgsql_make_conninfo(const char **varnames, char **varvalues, int n,
 	char *others)
@@ -561,6 +564,7 @@ gfarm_pgsql_start(const char *diag)
 		return (GFARM_ERR_NO_ERROR);
 
 	transaction_ok = 1;
+	invalid_XML_value = 0;
 	res = PQexec(conn, "START TRANSACTION");
 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -587,6 +591,7 @@ gfarm_pgsql_start_with_retry(const char *diag)
 		return (GFARM_ERR_NO_ERROR);
 
 	transaction_ok = 1;
+	invalid_XML_value = 0;
 	do {
 		res = PQexec(conn, "START TRANSACTION");
 	} while (PQresultStatus(res) != PGRES_COMMAND_OK &&
@@ -620,9 +625,18 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 		if ((e = gfarm_pgsql_seqnum_modify(&a))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003245,
-			    "gfarm_pgsql_seqnum_modify : %s",
+			    "gfarm_pgsql_seqnum_modify: %s",
 			    gfarm_error_string(e));
-			return (e);
+			/* XXX FIXME - workaround for SourceForge #549 */
+			if (invalid_XML_value) {
+				transaction_ok = 0;
+				invalid_XML_value = 0;
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "transaction aborted by invalid XML value:"
+				    " seqnum %lld: %s", (long long)seqnum,
+				    gfarm_error_string(e));
+			} else
+				return (e);
 		}
 	}
 	return (gfarm_pgsql_exec_and_log(transaction_ok ?
@@ -2678,6 +2692,15 @@ gfarm_pgsql_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	/* XXX FIXME - workaround for SourceForge #549 */
+	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		    "\'%*s\': %s", diag, (long long)arg->inum,
+		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
+		    gfarm_error_string(e));
+		invalid_XML_value = 1;
+		e = GFARM_ERR_NO_ERROR;
+	}
 	free_arg(arg);
 	return (e);
 }
@@ -2725,6 +2748,15 @@ gfarm_pgsql_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	/* XXX FIXME - workaround for SourceForge #549 */
+	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
+		    "\'%*s\': %s", diag, (long long)arg->inum,
+		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
+		    gfarm_error_string(e));
+		invalid_XML_value = 1;
+		e = GFARM_ERR_NO_ERROR;
+	}
 	free_arg(arg);
 	return (e);
 }
@@ -2763,6 +2795,13 @@ gfarm_pgsql_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	/* XXX FIXME - workaround for SourceForge #549 */
+	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: attr %s: %s", diag,
+		    (char *)arg->attrname, gfarm_error_string(e));
+		invalid_XML_value = 1;
+		e = GFARM_ERR_NO_ERROR;
+	}
 	free_arg(arg);
 	return (e);
 }
@@ -2798,6 +2837,13 @@ gfarm_pgsql_xattr_removeall(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		0, /* ask for text results */
 		diag);
 
+	/* XXX FIXME - workaround for SourceForge #549 */
+	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld: %s", diag,
+		    (long long)arg->inum, gfarm_error_string(e));
+		invalid_XML_value = 1;
+		e = GFARM_ERR_NO_ERROR;
+	}
 	free_arg(arg);
 	return (e);
 }
@@ -2877,6 +2923,14 @@ gfarm_pgsql_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		free(vinfo);
 	}
 
+	/* XXX FIXME - workaround for SourceForge #549 */
+	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s: %s",
+		    diag, (long long)arg->inum, (char *)arg->attrname,
+		    gfarm_error_string(e));
+		invalid_XML_value = 1;
+		e = GFARM_ERR_NO_ERROR;
+	}
 	free(arg);
 	return (e);
 }
