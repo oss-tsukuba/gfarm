@@ -1,4 +1,6 @@
 #define GFARM_CONFIG_MISC_DEFAULT	-1
+#define GFARM_F2LL_SCALE		1000LL
+#define GFARM_F2LL_SCALE_SIZE		3
 
 /* gfsd dependent */
 /* GFS dependent */
