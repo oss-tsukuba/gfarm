@@ -350,17 +350,24 @@ start_pgsql()
 #
 start_gfmd()
 {
-	log_debug "start_gfmd: TIMEOUT=$1"
+	log_debug "start_gfmd: TIMEOUT=$1 SLAVESTART=$2"
 
 	I=0
 	STARTED=false
+
+	if [ "X$2" = Xtrue ]; then
+		START=slavestart
+	else
+		START=start
+	fi
+
 	while [ "X$1" = Xno ] || [ $I -le "$1" ]; do
 		$GFMD_RC status > /dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			STARTED=true
 			break
 		fi
-		[ $I -eq 0 ] && $GFMD_RC start > /dev/null 2>&1
+		[ $I -eq 0 ] && $GFMD_RC $START > /dev/null 2>&1
 		sleep 1
 		I=`expr $I + 1`
 	done
@@ -609,7 +616,7 @@ subcmd_start_gfmd()
 	set_gfmd_params
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd: timeout=$TIMEOUT"
-	start_gfmd $TIMEOUT
+	start_gfmd $TIMEOUT false
 
 	log_debug "subcmd_start_gfmd"
 }
@@ -626,7 +633,7 @@ subcmd_start_gfmd_master()
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd_master: timeout=$TIMEOUT"
 	unset_conf $GFMD_CONF metadb_server_force_slave
-	start_gfmd $TIMEOUT
+	start_gfmd $TIMEOUT false
 
 	log_debug "end subcmd_start_gfmd_master"
 }
@@ -642,8 +649,7 @@ subcmd_start_gfmd_slave()
 	set_gfmd_params
 	TIMEOUT=`get_param timeout || echo 'no'`
 	log_debug "subcmd_start_gfmd_slave: timeout=$TIMEOUT"
-	set_conf $GFMD_CONF metadb_server_force_slave enable
-	start_gfmd $TIMEOUT
+	start_gfmd $TIMEOUT true
 
 	log_debug "end subcmd_start_gfmd_slave"
 }
