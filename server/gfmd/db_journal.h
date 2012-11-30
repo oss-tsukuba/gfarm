@@ -29,6 +29,7 @@ void db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t));
 gfarm_error_t db_journal_file_writer_sync(void);
 void db_journal_set_remove_db_update_info_op(void (*)(gfarm_uint64_t,
 	const char *));
+void db_journal_wait_until_readable(void);
 
 void *db_journal_store_thread(void *);
 void *db_journal_recvq_thread(void *);

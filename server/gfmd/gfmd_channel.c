@@ -1452,11 +1452,7 @@ gfmdc_journal_asyncsend_each_mdhost(struct mdhost *mh, void *closure)
 void *
 gfmdc_journal_asyncsend_thread(void *arg)
 {
-	struct timespec ts;
 	static const char diag[] = "gfmdc_journal_asyncsend_thread";
-
-	ts.tv_sec = 0;
-	ts.tv_nsec = 500 * GFARM_MILLISEC_BY_NANOSEC;
 
 	for (;;) {
 		gfarm_mutex_lock(&journal_sync_info.async_mutex, diag,
@@ -1469,8 +1465,7 @@ gfmdc_journal_asyncsend_thread(void *arg)
 		mdhost_foreach(gfmdc_journal_asyncsend_each_mdhost, NULL);
 		gfarm_mutex_unlock(&journal_sync_info.async_mutex, diag,
 		    ASYNC_MUTEX_DIAG);
-		/* XXX FIXME: wakeup when journal record is added */
-		nanosleep(&ts, NULL);
+		db_journal_wait_until_readable();
 	}
 	return (NULL);
 }
