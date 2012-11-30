@@ -653,6 +653,7 @@ if [ -n "$BACKEND_PRIVILEGE" ]; then
 		# and it makes pkgsrc platforms (NetBSD/DragonFly) fail
 		# because pkgsrc doesn't create the home directory by default.
 		run_with_backend_privilege="su $BACKEND_PRIVILEGE -c /bin/sh";;
+	Darwin)	run_with_backend_privilege="sudo -u $BACKEND_PRIVILEGE /bin/sh";;
 	*)
 		# For SELinux we need to use 'runuser' not 'su'
 		[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su

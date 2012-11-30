@@ -143,6 +143,7 @@ set_last_defaults_postgresql()
 		case `uname` in
 		*BSD|DragonFly)
 			: ${BACKEND_ADMIN_USER:="pgsql"};;
+		Darwin)	: ${BACKEND_ADMIN_USER:="_postgres"};;
 		*)	: ${BACKEND_ADMIN_USER:="postgres"};;
 		esac
 		: ${BACKEND_PRIVILEGE:="$BACKEND_ADMIN_USER"}

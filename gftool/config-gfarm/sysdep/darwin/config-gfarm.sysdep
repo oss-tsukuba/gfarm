@@ -1,0 +1,68 @@
+fq_hostname()
+{
+	case `hostname` in
+	*.*)	hostname;;
+	*)	host "`hostname`" 2>/dev/null | awk 'NR==1 {print $1; exit}';;
+	esac
+}
+
+# NOTE: need to set $FQ_HOSTNAME before invoking dns_domainname
+dns_domainname()
+{
+	[ X"$FQ_HOSTNAME" = X ] && ABORT '$FQ_HOSTNAME is not set'
+	echo "$FQ_HOSTNAME" | sed 's/^[^.]*\.//'
+}
+
+memory_size()
+{
+	# bytes -> mega bytes
+	sysctl -n hw.physmem | awk '{print int($NF/1024/1024)}'
+}
+
+number_of_cpus()
+{
+	sysctl -n hw.ncpu
+}
+
+sysdep_defaults()
+{
+	if [ X"$CONFIG_PREFIX" = X ]; then
+		: ${RC_DIR:="/usr/local/etc/rc.d"}
+	fi
+	: ${RC_DIR:="$CONFIG_PREFIX/etc/rc.d"}
+}
+
+config_sysdep()
+{
+	# no conversion
+	cat ${1+"$@"}
+}
+
+mkcnf_gfmd_sysdep()
+{
+	: # do nothing
+}
+
+mkcnf_gfsd_sysdep()
+{
+	: # do nothing
+}
+
+service_add()
+{
+	# local service
+
+	service=$1
+
+	echo add "$service" service: not implemented
+}
+
+service_ctl()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+
+	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
+}
