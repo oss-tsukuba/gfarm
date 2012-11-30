@@ -185,7 +185,7 @@ test_overwrite() {
 }
 
 set_ncopy() {
-  if echo -n $1 | gfxattr -s $2 gfarm.ncopy; then
+  if gfncopy -s $1 $2; then
     :
    else
     echo failed gfxattr -s
@@ -233,7 +233,7 @@ fi
 
 set_ncopy $n_copy $GDIR
 
-echo -n set gfarm.ncopy=
+printf '%s' set gfarm.ncopy=
 gfxattr -g $GDIR gfarm.ncopy
 echo
 

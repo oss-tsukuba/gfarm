@@ -47,19 +47,19 @@ test_gfncopy() {
 test_gfxattr_ncopy() {
     VAL=$1
     EXPECT=$2
-    msg=`echo -n "$VAL" | gfxattr -s $gftmp gfarm.ncopy 2>&1`
+    msg=`printf '%s' "$VAL" | gfxattr -s $gftmp gfarm.ncopy 2>&1`
     if [ $? -eq 0 ]; then
         if [ $EXPECT -ne $EXPECT_OK ]; then
             exit_code=$exit_fail
-            echo >&2 "echo -n \"$VAL\" | gfxattr -s should fail"
+            echo >&2 "printf '%s' \"$VAL\" | gfxattr -s should fail"
         fi
     else
         if [ $EXPECT -eq $EXPECT_OK ]; then
             exit_code=$exit_fail
-            echo >&2 "echo -n \"$VAL\" | gfxattr -s failed: $msg"
+            echo >&2 "printf '%s' \"$VAL\" | gfxattr -s failed: $msg"
         elif is_not_expected $EXPECT "$msg"; then
             exit_code=$exit_fail
-            echo >&2 "echo -n \"$VAL\" | gfxattr -s, unexpected error: $msg"
+            echo >&2 "printf '%s' \"$VAL\" | gfxattr -s, unexpected error: $msg"
         fi
     fi
 }
