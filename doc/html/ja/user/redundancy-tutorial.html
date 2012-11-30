@@ -187,19 +187,11 @@ host-b:
 
 <H3>4.1 スレーブとしての起動</H3>
 
-host-aにおいて/etc/gfmd.confに次の行を追加します。
-<BR><BR>
-host-a:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_force_slave enable
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
-この設定ファイルを利用すると、host-aのgfmdがスレーブgfmdとして起動します。<BR>
 host-aにおいてrootユーザで、次のコマンドを実行します。
 <BR><BR>
 host-a:
 <TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-# /etc/init.d/gfmd start
+# /etc/init.d/gfmd slavestart
 </PRE></TD></TR></TBODY></TABLE>
 
 <H3>4.2 動作確認</H3>
@@ -214,7 +206,7 @@ $ gfmdhost -l
 <p>
 
 ここで「<font color=red>+</font>」と表示されている場合は、
-「4.4 完了処理」へ進みます。
+スレーブメタデータサーバとして正しく動作しており、完了です。
 <p>
 ここで「<font color=red>x</font>」と表示されている場合は、
 「4.3 手動での同期」へ進みます。
@@ -243,16 +235,6 @@ host-a の rootユーザでメタデータをリストアします。
 
 <BR><BR>
 次に「4.2 動作確認」からやり直します。
-
-<H3>4.4 完了処理</H3>
-
-host-aで/etc/gfmd.confに追加した、以下の行を削除しておきます。
-<BR><BR>
-host-a:
-<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
-metadb_server_force_slave enable
-</PRE></TD></TR></TBODY></TABLE>
-<BR>
 
 <HR>
 
