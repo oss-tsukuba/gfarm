@@ -60,7 +60,7 @@ URL=`realurl $1`
 
 case $MODE in
 SET)
-	echo -n $NCOPY | gfxattr -s $URL gfarm.ncopy
+	printf '%s' $NCOPY | gfxattr -s $URL gfarm.ncopy
 	;;
 GET)
 	f=$FILE
@@ -77,10 +77,10 @@ GET)
 		rv=$?
 	done
 	if [ $rv -ne 0 ]; then
-		$VERBOSE && echo -n >&2 "$u: "
+		$VERBOSE && printf '%s' >&2 "$u: "
 		echo >&2 $out
 	else
-		$VERBOSE && echo -n "$u: "
+		$VERBOSE && printf '%s' "$u: "
 		echo $out
 	fi
 	exit $rv
