@@ -1594,7 +1594,7 @@ main(int argc, char **argv)
 		program_name = basename(argv[0]);
 	gflog_set_identifier(program_name);
 
-	while ((ch = getopt(argc, argv, "L:P:df:p:s:tv")) != -1) {
+	while ((ch = getopt(argc, argv, "L:P:df:p:Ss:tv")) != -1) {
 		switch (ch) {
 		case 'L':
 			syslog_level = gflog_syslog_name_to_priority(optarg);
@@ -1616,6 +1616,9 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			port_number = optarg;
+			break;
+		case 'S':
+			gfarm_set_metadb_server_force_slave(1);
 			break;
 		case 's':
 			syslog_facility =

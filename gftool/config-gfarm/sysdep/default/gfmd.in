@@ -53,6 +53,11 @@ start)
 	$DAEMON -P "$PIDFILE" $OPTIONS
 	;;
 
+slavestart)
+	OPTIONS="-S $OPTIONS"
+	$0 start
+	;;
+
 stop)
 	if [ -f "$PIDFILE" ]; then
 		pid=`cat "$PIDFILE"`

@@ -48,6 +48,10 @@ case $1 in
 	fi		
 	rc_status -v
 	;;
+    slavestart)
+	OPTIONS="-S $OPTIONS"
+	$0 start
+	;;
     stop)
 	echo -n "Shutting down $FILE"
 	if [ -f "$PIDFILE" ]; then
