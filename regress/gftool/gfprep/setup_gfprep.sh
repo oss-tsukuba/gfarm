@@ -13,7 +13,7 @@ clean_test() {
 trap 'clean_test; exit $exit_trap' $trap_sigs
 
 set_ncopy() {
-  if echo -n $1 | gfxattr -s $2 gfarm.ncopy; then
+  if gfncopy -s $1 $2; then
     :
   else
     echo failed gfxattr -s
