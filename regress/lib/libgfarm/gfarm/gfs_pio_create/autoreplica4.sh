@@ -27,7 +27,7 @@ else
 	exit $exit_fail
 fi
 
-if echo -n 2 | gfxattr -s $gftmp gfarm.ncopy; then
+if gfncopy -s 2 $gftmp; then
 	:
 else
 	echo failed gfxattr

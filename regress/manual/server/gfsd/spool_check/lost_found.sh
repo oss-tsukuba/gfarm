@@ -139,7 +139,7 @@ fi
 create_gfile 3 $TEST_3_GFILE
 TEST_3_SPOOL=`create_gfile 3 $TEST_3_GFILE`
 TEST_3_INUMGEN=`echo $TEST_3_SPOOL | tr -d '[/data]'`
-$SUDO_GFARMFS sh -c "echo -n > ${GFSD_SPOOL_DIR}/${TEST_3_SPOOL}"
+$SUDO_GFARMFS sh -c "printf '' > ${GFSD_SPOOL_DIR}/${TEST_3_SPOOL}"
 if [ $? -ne 0 ]; then
     echo >&2 "TEST_3: cannot truncate file"
     clean_all
