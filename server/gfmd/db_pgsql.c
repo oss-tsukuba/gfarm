@@ -2693,7 +2693,8 @@ gfarm_pgsql_xattr_add(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		diag);
 
 	/* XXX FIXME - workaround for SourceForge #549 */
-	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
@@ -2749,7 +2750,8 @@ gfarm_pgsql_xattr_modify(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		diag);
 
 	/* XXX FIXME - workaround for SourceForge #549 */
-	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s value "
 		    "\'%*s\': %s", diag, (long long)arg->inum,
 		    (char *)arg->attrname, (int)arg->size, (char *)arg->value,
@@ -2796,7 +2798,8 @@ gfarm_pgsql_xattr_remove(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		diag);
 
 	/* XXX FIXME - workaround for SourceForge #549 */
-	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED, "%s: attr %s: %s", diag,
 		    (char *)arg->attrname, gfarm_error_string(e));
 		invalid_XML_value = 1;
@@ -2838,7 +2841,8 @@ gfarm_pgsql_xattr_removeall(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		diag);
 
 	/* XXX FIXME - workaround for SourceForge #549 */
-	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld: %s", diag,
 		    (long long)arg->inum, gfarm_error_string(e));
 		invalid_XML_value = 1;
@@ -2924,7 +2928,8 @@ gfarm_pgsql_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	}
 
 	/* XXX FIXME - workaround for SourceForge #549 */
-	if (arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
+	if (gfarm_get_metadb_replication_enabled() &&
+	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
 		gflog_notice(GFARM_MSG_UNFIXED, "%s: inum %lld attr %s: %s",
 		    diag, (long long)arg->inum, (char *)arg->attrname,
 		    gfarm_error_string(e));
