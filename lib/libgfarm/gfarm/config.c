@@ -80,6 +80,8 @@ struct gfarm_config_static {
 	int schedule_write_local_priority;
 	gfarm_int64_t minimum_free_disk_space;
 	int profile;
+	char **debug_command_argv;
+	char *argv0;
 };
 
 gfarm_error_t
@@ -101,6 +103,8 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 	s->schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;;
 	s->minimum_free_disk_space = GFARM_CONFIG_MISC_DEFAULT;
 	s->profile = GFARM_CONFIG_MISC_DEFAULT;
+	s->debug_command_argv = NULL;
+	s->argv0 = NULL;
 
 	ctxp->config_static = s;
 	return (GFARM_ERR_NO_ERROR);
@@ -853,10 +857,6 @@ char *gfarm_iostat_gfsd_path;
 int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_IOSTAT_MAX_CLIENT 1024
 
-/* for debug */
-char **gfarm_debug_command_argv = NULL;
-char *gfarm_argv0 = NULL;
-
 /* miscellaneous */
 #define GFARM_LOG_MESSAGE_VERBOSE_DEFAULT	0
 #define GFARM_NO_FILE_SYSTEM_NODE_TIMEOUT_DEFAULT 30 /* 30 seconds */
@@ -962,11 +962,11 @@ debug_command_argv_free(void)
 {
 	int i;
 
-	if (gfarm_debug_command_argv != NULL) {
-		for (i = 0; gfarm_debug_command_argv[i] != NULL; i++)
-			free(gfarm_debug_command_argv[i]);
-		free(gfarm_debug_command_argv);
-		gfarm_debug_command_argv = NULL;
+	if (staticp->debug_command_argv != NULL) {
+		for (i = 0; staticp->debug_command_argv[i] != NULL; i++)
+			free(staticp->debug_command_argv[i]);
+		free(staticp->debug_command_argv);
+		staticp->debug_command_argv = NULL;
 	}
 }
 
@@ -1030,18 +1030,18 @@ gfarm_get_minimum_free_disk_space(void)
 const char *
 gfarm_config_get_argv0(void)
 {
-	return (gfarm_argv0);
+	return (staticp->argv0);
 }
 
 gfarm_error_t
 gfarm_config_set_argv0(const char *argv0)
 {
-	free(gfarm_argv0);
-	gfarm_argv0 = NULL;
+	free(staticp->argv0);
+	staticp->argv0 = NULL;
 	if (argv0 == NULL)
 		return (GFARM_ERR_NO_ERROR);
-	gfarm_argv0 = strdup(argv0);
-	if (gfarm_argv0 == NULL) {
+	staticp->argv0 = strdup(argv0);
+	if (staticp->argv0 == NULL) {
 		gflog_debug(GFARM_MSG_1003409,
 		    "failed to allocate argv0 \"%s\": no memory", argv0);
 		return (GFARM_ERR_NO_MEMORY);
@@ -1104,7 +1104,7 @@ gfarm_sig_debug(int sig)
 		return;
 	already_called = 1;
 
-	argv = gfarm_debug_command_argv;
+	argv = staticp->debug_command_argv;
 	if (argv == NULL)
 		_exit(1);
 
@@ -1139,7 +1139,7 @@ gfarm_sig_debug(int sig)
 void
 gfarm_setup_debug_command(void)
 {
-	if (gfarm_debug_command_argv == NULL)
+	if (staticp->debug_command_argv == NULL)
 		return;
 
 	/*
@@ -2467,8 +2467,8 @@ expand_debug_command_arg_pattern(const char *pattern)
 				p += 2;
 				break;
 			case 'e':
-				copy_from = gfarm_argv0;
-				copy_len = strlen(gfarm_argv0);
+				copy_from = staticp->argv0;
+				copy_len = strlen(staticp->argv0);
 				p += 2;
 				break;
 			default:
@@ -2518,7 +2518,7 @@ parse_debug_command(char *p, char **op)
 	int argc, i;
 
 	/* XXX - consider to specify 'debug_command' several times. */
-	if (gfarm_debug_command_argv != NULL || gfarm_argv0 == NULL)
+	if (staticp->debug_command_argv != NULL || staticp->argv0 == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
 	for (argc = 0; argc < MAX_DEBUG_COMMAND_LENGTH; ++argc) {
@@ -2549,15 +2549,16 @@ parse_debug_command(char *p, char **op)
 	argv[argc] = NULL;
 
 	if (argc > 0) {
-		gfarm_debug_command_argv = malloc(sizeof(char *) * (argc + 1));
-		if (gfarm_debug_command_argv == NULL) {
+		staticp->debug_command_argv =
+		    malloc(sizeof(char *) * (argc + 1));
+		if (staticp->debug_command_argv == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
 			gflog_debug(GFARM_MSG_1003413,
 			    "failed to allocate a list of arguments of %s: %s",
 			    diag, gfarm_error_string(e));
 			goto error;
 		}
-		memcpy(gfarm_debug_command_argv, argv,
+		memcpy(staticp->debug_command_argv, argv,
 		    sizeof(char *) * (argc + 1));
 	}
 	return (GFARM_ERR_NO_ERROR);
