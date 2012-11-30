@@ -29,9 +29,9 @@ OPTIONS="@config_gfarm_pgsql_options@"
 PRIVILEGE="@config_gfarm_backend_privilege@"
 case $PRIVILEGE in
 '')	RUN=/bin/sh;;
-*)	# We don't use "su -" here,
-	# because it makes Solaris and HP-UX display /etc/motd.
-	RUN="su $PRIVILEGE";;
+*)	# We don't use "su" here,
+	# because it is NOP on MacOS X.
+	RUN="sudo -u $PRIVILEGE /bin/sh";;
 esac
 export PGPORT
 export PGDATA

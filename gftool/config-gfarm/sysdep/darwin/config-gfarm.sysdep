@@ -54,33 +54,15 @@ service_add()
 
 	service=$1
 
-	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		create_directory "/etc/rc.conf.d"
-		if echo "${service}_enable=\"YES\"" |
-			sed s/-/_/g >"/etc/rc.conf.d/$service"
-		then
-			echo created "/etc/rc.conf.d/$service"
-		else
-			ABORT "cannot add $service service"
-		fi
-		echo added "$service" service
-	else
-		echo add "$service" service: skipped
-	fi
+	echo add "$service" service: not implemented
 }
 
 service_ctl()
 {
-	# local service ctl mode
+	# local service ctl
 
 	service=$1
 	ctl=$2
 
-	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
-		mode=
-	else
-		mode=force
-	fi
-
-	"$RC_DIR/$service" ${mode}$ctl || ABORT "cannot $ctl $service"
+	"$RC_DIR/$service" $ctl || ABORT "cannot $ctl $service"
 }
