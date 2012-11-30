@@ -2906,12 +2906,12 @@ gfarm_pgsql_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 	if (arg->xmlMode) {
 		command = "SELECT attrvalue FROM XmlAttr "
 			"WHERE inumber = $1 AND attrname = $2";
-		diag = "pgsql_xmlattr_load";
+		diag = "pgsql_xmlattr_get";
 		set_fields = pgsql_xattr_set_attrvalue_string;
 	} else {
 		command = "SELECT attrvalue FROM XAttr "
 			"WHERE inumber = $1 AND attrname = $2";
-		diag = "pgsql_xattr_load";
+		diag = "pgsql_xattr_get";
 		set_fields = pgsql_xattr_set_attrvalue_binary;
 	}
 
@@ -2927,15 +2927,6 @@ gfarm_pgsql_xattr_get(gfarm_uint64_t seqnum, struct db_xattr_arg *arg)
 		free(vinfo);
 	}
 
-	/* XXX FIXME - workaround for SourceForge #549 */
-	if (gfarm_get_metadb_replication_enabled() &&
-	    arg->xmlMode && e != GFARM_ERR_NO_ERROR) {
-		gflog_notice(GFARM_MSG_1003667, "%s: inum %lld attr %s: %s",
-		    diag, (long long)arg->inum, (char *)arg->attrname,
-		    gfarm_error_string(e));
-		invalid_XML_value = 1;
-		e = GFARM_ERR_NO_ERROR;
-	}
 	free(arg);
 	return (e);
 }
