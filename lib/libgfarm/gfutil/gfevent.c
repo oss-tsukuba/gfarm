@@ -563,7 +563,7 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 			gflog_debug(GFARM_MSG_1000781,
 			    "epoll_wait() failed: %s", strerror(save_errno));
 #else
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003564,
 			    "select() failed: %s", strerror(save_errno));
 #endif
 		}

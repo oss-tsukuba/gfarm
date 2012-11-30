@@ -419,7 +419,7 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 
 	GFARM_MALLOC(net);
 	if (net == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003589,
 		    "search_idle_network_list_add0: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}
@@ -428,7 +428,7 @@ search_idle_network_list_add0(struct sockaddr *addr, int flags,
 	e = gfarm_addr_network_get(addr, &net->network);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(net);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003590,
 		    "search_idle_network_list_add0: no memory");
 		return (GFARM_ERR_NO_MEMORY);
 	}

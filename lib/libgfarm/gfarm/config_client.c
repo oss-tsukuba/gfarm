@@ -151,7 +151,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 	}
 	e = gfarm_known_network_list_add_local_host();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003570,
 		    "gfarm_known_network_list_add_local_host() failed: %s",
 		    gfarm_error_string(e));
 		return (e);

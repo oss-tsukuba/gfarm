@@ -72,12 +72,12 @@ static int log_is_suppressed(struct suppress_log *log)
 	log->suppressed = 1;
 	switch (log->level) {
 	case LOG_DEBUG:
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003615,
 		    "replica_check: suppress many `%s' debug messages",
 		    log->type);
 		break;
 	case LOG_INFO:
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003616,
 		    "replica_check: suppress many `%s' info messages",
 		     log->type);
 		break;
@@ -118,7 +118,7 @@ replica_check_replicate(
 	    n_srcsp, srcs, host_is_disk_available_filter,
 	    &necessary_space, n_shortage, &n_dsts, &dsts);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003617,
 		    "host_schedule_n_from_all_except, n_srcs=%d: %s",
 		    *n_srcsp, gfarm_error_string(e));
 		goto end; /* retry in next interval */
@@ -145,12 +145,12 @@ replica_check_replicate(
 		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 			busy = 1;
 			if (!log_is_suppressed(&log_unavail))
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003618,
 				    "inode_replication_new, host=%s: %s",
 				    host_name(dst), gfarm_error_string(e));
 			/* next dst */
 		} else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003619,
 			    "inode_replicating_new, host=%s: %s",
 			    host_name(dst), gfarm_error_string(e));
 			break;
@@ -165,7 +165,7 @@ replica_check_replicate(
 end:
 	if (n_success < n_shortage) {
 		if (!log_is_suppressed(&log_few))
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003621,
 			    "replica_check: %lld:%lld:%s: fewer replicas, "
 			    "increase=%d/before=%d/desire=%d",
 			    (long long)inode_get_number(inode),
@@ -173,7 +173,7 @@ end:
 			    user_name(inode_get_user(inode)),
 			    n_success, ncopy, n_desire);
 	} else
-		gflog_notice(GFARM_MSG_UNFIXED,
+		gflog_notice(GFARM_MSG_1003622,
 		    "replica_check: %lld:%lld:%s: will be fixed, desire=%d",
 		    (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
@@ -199,7 +199,7 @@ replica_check_fix(struct replication_info *info)
 
 	if (inode == NULL || !inode_is_file(inode) ||
 	    inode_get_gen(inode) != info->gen) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003623,
 		    "%lld:%lld was changed, ignore replica_check",
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
@@ -216,13 +216,13 @@ replica_check_fix(struct replication_info *info)
 		if (inode_get_size(inode) == 0)
 			return (GFARM_ERR_NO_ERROR); /* normally */
 		else if (inode_has_no_replica(inode)) {
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003624,
 			    "replica_check: %lld:%lld:%s: lost all replicas",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
 			return (GFARM_ERR_NO_ERROR); /* not retry */
 		} else if (!log_is_suppressed(&log_hosts_down)) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003625,
 			    "replica_check: %lld:%lld:%s: hosts are down",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
@@ -231,7 +231,7 @@ replica_check_fix(struct replication_info *info)
 	}
 	if (ncopy > info->desired_number) {
 		if (!log_is_suppressed(&log_too_many))
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003626,
 			   "replica_check: %lld:%lld:%s: "
 			   "too many replicas, %d > %d",
 			   (long long)info->inum, (long long)info->gen,
@@ -241,7 +241,7 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR);
 	}
 	if (inode_is_opened_for_writing(inode)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
 		    "opened in write mode, ignored",
 		    (long long)info->inum, (long long)info->gen,
@@ -251,7 +251,7 @@ replica_check_fix(struct replication_info *info)
 	/* available replicas for source */
 	e = inode_replica_list(inode, &n_srcs, &srcs);
 	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003628,
 		    "replica_check: %lld:%lld:%s: replica_list: %s",
 		    (long long)info->inum, (long long)info->gen,
 		    user_name(inode_get_user(inode)), gfarm_error_string(e));
@@ -261,7 +261,7 @@ replica_check_fix(struct replication_info *info)
 	if (n_srcs <= 0) {
 		free(srcs);
 		if (!log_is_suppressed(&log_hosts_down))
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003629,
 			    "replica_check: %lld:%lld:%s: hosts are down",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
@@ -305,7 +305,7 @@ replica_check_stack_init()
 	replica_check_stack_size = REPLICA_CHECK_DIRENTS_BUFCOUNT;
 	GFARM_MALLOC_ARRAY(replica_check_stack, replica_check_stack_size);
 	if (replica_check_stack == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "replica_check: no memory");
+		gflog_error(GFARM_MSG_1003630, "replica_check: no memory");
 		return (0);
 	}
 	return (1);
@@ -409,7 +409,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 			}
 			if (e != GFARM_ERR_NO_ERROR) {
 				need_to_retry = 1;
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003631,
 				    "replica_check_fix(): %s",
 				    gfarm_error_string(e));
 			}
@@ -430,7 +430,7 @@ replica_check_main()
 	table_size = inode_table_current_size();
 	replica_check_giant_unlock();
 
-	RC_LOG_INFO(GFARM_MSG_UNFIXED, "replica_check: start");
+	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	for (inum = root_inum;;) {
 		need_to_retry = replica_check_main_dir(inum, &count);
 		inum++; /* a next directory */
@@ -442,7 +442,7 @@ replica_check_main()
 				break;
 		}
 	}
-	RC_LOG_INFO(GFARM_MSG_UNFIXED,
+	RC_LOG_INFO(GFARM_MSG_1003633,
 	    "replica_check: finished, files=%llu", (unsigned long long)count);
 	return (need_to_retry);
 }
@@ -473,7 +473,7 @@ replica_check_targets_init()
 	targets_size = MAX_TARGETS_SIZE;
 	GFARM_MALLOC_ARRAY(targets, targets_size);
 	if (targets == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED, "replica_check: no memory");
+		gflog_error(GFARM_MSG_1003634, "replica_check: no memory");
 		return (0);
 	}
 	return (1);
@@ -494,7 +494,7 @@ replica_check_targets_add(time_t sec)
 	gettimeofday(&targets[i], NULL);
 	targets[i].tv_sec += sec;
 #ifdef DEBUG_REPLICA_CHECK
-	RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+	RC_LOG_DEBUG(GFARM_MSG_1003635,
 	    "replica_check: add targets[%ld]=%ld.%06ld", (long)i,
 	    (long)targets[i].tv_sec,
 	    (long)targets[i].tv_usec);
@@ -516,7 +516,7 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 		*next = targets[0];
 		saved_tv = *next;
 #ifdef DEBUG_REPLICA_CHECK
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1003636,
 		    "replica_check: targets[0]=%ld.%06ld",
 		    (long)next->tv_sec, (long)next->tv_usec);
 #endif
@@ -528,7 +528,7 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 
 #ifdef DEBUG_REPLICA_CHECK
 	for (i = 0; i < targets_num; i++)
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+		RC_LOG_DEBUG(GFARM_MSG_1003637,
 		    "replica_check: targets[%ld]=%ld.%06ld", (long)i,
 		    (long)targets[i].tv_sec, (long)targets[i].tv_usec);
 #endif
@@ -627,7 +627,7 @@ replica_check_wait()
 
 				after = next;
 				gfarm_timeval_sub(&after, &now);
-				RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+				RC_LOG_DEBUG(GFARM_MSG_1003638,
 				    "replica_check: next=%ld.%06ld"
 				    "(after %ld.%06ld)",
 				    (long)next.tv_sec, (long)next.tv_usec,
@@ -674,7 +674,7 @@ replica_check_signal_general(const char *diag, long sec)
 	gfarm_mutex_lock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 	if (replica_check_initialized) {
 #ifdef DEBUG_REPLICA_CHECK
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED, "%s is called", diag);
+		RC_LOG_DEBUG(GFARM_MSG_1003639, "%s is called", diag);
 #endif
 		replica_check_targets_add(sec);
 		gfarm_cond_signal(
@@ -682,7 +682,7 @@ replica_check_signal_general(const char *diag, long sec)
 	}
 #ifdef DEBUG_REPLICA_CHECK
 	else
-		RC_LOG_DEBUG(GFARM_MSG_UNFIXED, "%s is ignored", diag);
+		RC_LOG_DEBUG(GFARM_MSG_1003640, "%s is ignored", diag);
 #endif
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
@@ -764,7 +764,7 @@ replica_check_start()
 	static int started = 0;
 
 	if (!gfarm_replica_check) {
-		gflog_notice(GFARM_MSG_UNFIXED, "replica_check is disabled");
+		gflog_notice(GFARM_MSG_1003642, "replica_check is disabled");
 		return;
 	}
 	if (started)

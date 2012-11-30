@@ -78,12 +78,12 @@ gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
 
 	e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003571,
 		    "(%s@%s) auth_sharedsecret: cut: %s",
 		    global_username, hostname, gfarm_error_string(e));
 	} else if (try <= 1) {
 		e = GFARM_ERR_AUTHENTICATION;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003572,
 		    "(%s@%s) auth_sharedsecret: scaned: %s",
 		    global_username, hostname, gfarm_error_string(e));
 	} else {
@@ -98,7 +98,7 @@ gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
 			e = GFARM_ERR_AUTHENTICATION;
 			break;
 		}
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003573,
 		    "(%s@%s) auth_sharedsecret: gives up: %s",
 		    global_username, hostname, gfarm_error_string(e));
 	}
@@ -125,7 +125,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(conn);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003574,
 		    "(%s@%s) auth_sharedsecret: challenge: %s",
 		    global_username, hostname, gfarm_error_string(e));
 		return (e);
@@ -133,7 +133,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	e = gfp_xdr_recv(conn, 0, &eof, "ib",
 	    &expire, sizeof(response), &len, response);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003575,
 		    "(%s@%s) auth_sharedsecret: response: %s",
 		    global_username, hostname, gfarm_error_string(e));
 		return (e);
@@ -157,13 +157,13 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	    GFARM_AUTH_SHARED_KEY_GET, 0))
 	    != GFARM_ERR_NO_ERROR && e != GFARM_ERR_EXPIRED) {
 		error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003576,
 		    "(%s@%s) auth_sharedsecret: .gfarm_shared_key: %s",
 		    global_username, hostname, gfarm_error_string(e));
 	} else if (time(0) >= expire) {
 		/* may reach here if (e == GFARM_ERR_EXPIRED) */
 		error = GFARM_AUTH_ERROR_EXPIRED;
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003577,
 		    "(%s@%s) auth_sharedsecret: key expired",
 		    global_username, hostname);
 	} else {
@@ -172,7 +172,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 		    shared_key_expected, challenge, response_expected);
 		if (expire != expire_expected) {
 			error = GFARM_AUTH_ERROR_INVALID_CREDENTIAL;
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003578,
 			    "(%s@%s) auth_sharedsecret: expire time mismatch",
 			    global_username, hostname);
 		} else if (memcmp(response, response_expected,
@@ -188,7 +188,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	*errorp = error;
 	e = gfp_xdr_send(conn, "i", error);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003579,
 		    "(%s@%s) auth_sharedsecret: send result: %s",
 		    global_username, hostname, gfarm_error_string(e));
 		return (e);
@@ -196,7 +196,7 @@ gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
 	if (error == GFARM_AUTH_ERROR_NO_ERROR) {
 		e = gfp_xdr_flush(conn);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003580,
 			    "(%s@%s) auth_sharedsecret: completion: %s",
 			    global_username, hostname, gfarm_error_string(e));
 			return (e);
@@ -221,13 +221,13 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 		++try;
 		e = gfp_xdr_recv(conn, 0, &eof, "i", &request);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003581,
 			    "(%s@%s) auth_sharedsecret_response: %s",
 			    global_username, hostname, gfarm_error_string(e));
 			return (e);
 		}
 		if (eof) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003582,
 			    "(%s@%s) auth_sharedsecret_response: "
 			    "unexpected EOF", global_username, hostname);
 			return (GFARM_ERR_PROTOCOL);
@@ -243,7 +243,7 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 			break;
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_info(GFARM_MSG_UNFIXED,
+			gflog_info(GFARM_MSG_1003583,
 			    "(%s@%s) auth_sharedsecret: key query: %s",
 			    global_username, hostname, gfarm_error_string(e));
 			return (e);
@@ -260,7 +260,7 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 		default:
 			e = gfp_xdr_flush(conn);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_info(GFARM_MSG_UNFIXED,
+				gflog_info(GFARM_MSG_1003584,
 				    "(%s@%s) auth_sharedsecret: request "
 				    "response: %s", global_username, hostname,
 				    gfarm_error_string(e));
@@ -287,12 +287,12 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 
 	e = gfp_xdr_recv(conn, 0, &eof, "s", &global_username);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003585,
 		    "%s: authorize_sharedsecret: reading username", hostname);
 		return (e);
 	}
 	if (eof) {
-		gflog_info(GFARM_MSG_UNFIXED,
+		gflog_info(GFARM_MSG_1003586,
 		    "%s: authorize_sharedsecret: unexpected EOF", hostname);
 		return (GFARM_ERR_PROTOCOL);
 	}

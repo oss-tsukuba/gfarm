@@ -1062,11 +1062,11 @@ accepting_loop(int accepting_socket)
 		   (struct sockaddr *)&client_addr, &client_addr_size);
 		if (client_socket < 0) {
 			if (errno == EMFILE) {
-				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				gflog_reduced_warning(GFARM_MSG_1003607,
 				    &emfile_state,
 				    "accept: %s", strerror(EMFILE));
 			} else if (errno == ENFILE) {
-				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				gflog_reduced_warning(GFARM_MSG_1003608,
 				    &enfile_state,
 				    "accept: %s", strerror(ENFILE));
 			} else if (errno != EINTR) {
@@ -1771,20 +1771,20 @@ main(int argc, char **argv)
 				/* for port / gfmd \0 */
 		GFARM_MALLOC_ARRAY(iostat_dirbuf, len);
 		if (iostat_dirbuf == NULL)
-			gflog_fatal(GFARM_MSG_UNFIXED, "iostat_dirbuf:%s",
+			gflog_fatal(GFARM_MSG_1003609, "iostat_dirbuf:%s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		len = snprintf(iostat_dirbuf, len, "%s-%d",
 			gfarm_iostat_gfmd_path, gfmd_port);
 		if (mkdir(iostat_dirbuf, 0755)) {
 			if (errno != EEXIST)
-				gflog_fatal_errno(GFARM_MSG_UNFIXED,
+				gflog_fatal_errno(GFARM_MSG_1003610,
 					"mkdir:%s", iostat_dirbuf);
 		}
 		strcat(iostat_dirbuf, "/gfmd");
 		e = gfarm_iostat_mmap(iostat_dirbuf, iostat_spec,
 			GFARM_IOSTAT_TRAN_NITEM, table_size);
 		if (e != GFARM_ERR_NO_ERROR)
-			gflog_fatal(GFARM_MSG_UNFIXED,
+			gflog_fatal(GFARM_MSG_1003611,
 				"gfarm_iostat_mmap(%s): %s",
 				iostat_dirbuf, gfarm_error_string(e));
 	}

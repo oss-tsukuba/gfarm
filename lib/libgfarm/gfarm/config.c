@@ -2235,7 +2235,7 @@ parse_spool_check_level(char *p)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003566,
 			"get_one_argument failed "
 			"when parsing spool_check_level(%s): %s",
 			p, gfarm_error_string(e));
@@ -2246,7 +2246,7 @@ parse_spool_check_level(char *p)
 		return (GFARM_ERR_NO_ERROR);
 	e = gfarm_spool_check_level_set_by_name(s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003567,
 		    "spool_check_level(%s): %s", s, gfarm_error_string(e));
 		return (e);
 	}
@@ -2261,7 +2261,7 @@ parse_atime_type(char *p)
 
 	e = get_one_argument(p, &s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003568,
 			"get_one_argument failed "
 			"when parsing atime(%s): %s",
 			p, gfarm_error_string(e));
@@ -2272,7 +2272,7 @@ parse_atime_type(char *p)
 		return (GFARM_ERR_NO_ERROR);
 	e = gfarm_atime_type_set_by_name(s);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003569,
 		    "atime(%s): %s", s, gfarm_error_string(e));
 		return (e);
 	}
