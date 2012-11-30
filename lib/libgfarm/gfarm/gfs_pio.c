@@ -31,6 +31,7 @@
 #include "gfs_io.h"
 #include "gfs_pio.h"
 #include "gfp_xdr.h"
+#include "gfs_failover.h"
 #include "gfs_file_list.h"
 
 #define staticp	(gfarm_ctxp->gfs_pio_static)

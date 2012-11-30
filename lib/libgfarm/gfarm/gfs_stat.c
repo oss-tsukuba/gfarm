@@ -14,6 +14,7 @@
 #include "gfm_client.h"
 #include "lookup.h"
 #include "gfs_misc.h"
+#include "gfs_failover.h"
 
 #define staticp	(gfarm_ctxp->gfs_stat_static)
 
@@ -144,16 +145,24 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 	gfarm_timerval_t t1, t2;
 	struct gfm_stat_closure closure;
 	gfarm_error_t e;
+	int retriable = 1;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	closure.st = s;
-	e = gfm_client_compound_fd_op(gfs_pio_metadb(gf), gfs_pio_fileno(gf),
-	    gfm_stat_request,
-	    gfm_stat_result,
-	    NULL,
-	    &closure);
+
+	for (;;) {
+		e = gfm_client_compound_fd_op(gfs_pio_metadb(gf),
+		    gfs_pio_fileno(gf), gfm_stat_request,
+		    gfm_stat_result, NULL, &closure);
+
+		if (retriable && gfs_pio_should_failover(gf, e) &&
+		    (e = gfs_pio_failover(gf)) == GFARM_ERR_NO_ERROR)
+			retriable = 0;
+		else
+			break;
+	}
 
 	gfs_profile(gfarm_gettimerval(&t2));
 	gfs_profile(staticp->stat_time += gfarm_timerval_sub(&t2, &t1));
