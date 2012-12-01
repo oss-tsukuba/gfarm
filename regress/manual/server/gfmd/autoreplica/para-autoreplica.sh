@@ -233,7 +233,7 @@ fi
 
 set_ncopy $n_copy $GDIR
 
-printf '%s' set gfarm.ncopy=
+printf '%s' "set gfarm.ncopy="
 gfxattr -g $GDIR gfarm.ncopy
 echo
 
