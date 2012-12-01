@@ -99,7 +99,7 @@ write_file() {
     dst=$1
     shift
     val="${1+$@}"
-    len=`printf '%s' ${val} | wc -c`
+    len=`printf '%s' "${val}" | wc -c`
 #   pass "-t" option to ${gfs_pio_test} to avoid the following bug:
 #	https://sourceforge.net/apps/trac/gfarm/ticket/461
 #   echo "${val}" | ${gfs_pio_test} -w -W${len} ${dst}
