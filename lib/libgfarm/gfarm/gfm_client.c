@@ -559,7 +559,8 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			    "specified for performance in GSI");
 		else
 			gflog_debug(GFARM_MSG_1003372, "tcp_nodelay is "
-			    "specified, but fails: %s", gfarm_error_string(e1));
+			    "specified, but fails: %s",
+			    gfarm_error_string(e1));
 	}
 #endif
 	gfm_server->cache_entry = cache_entry;

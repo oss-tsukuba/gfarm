@@ -236,13 +236,13 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		fs = gfarm_filesystem_get_by_connection(gfm_server);
 		if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003388,
 			    "%s", gfarm_error_string(e));
 			goto error_all;
 		}
 		if ((user = strdup(gfm_client_username(gfm_server))) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
-			gflog_debug(GFARM_MSG_UNFIXED,
+			gflog_debug(GFARM_MSG_1003389,
 			    "%s", gfarm_error_string(e));
 			goto error_all;
 		}

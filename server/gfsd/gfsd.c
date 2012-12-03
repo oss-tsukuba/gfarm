@@ -1800,7 +1800,7 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 		reconnect_gfm_server_for_failover("close_fd_somehow");
 		if ((e = fhclose_fd(fd, diag)) == GFARM_ERR_NO_ERROR)
 			e = GFARM_ERR_GFMD_FAILED_OVER;
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003402,
 			    "%s: fhclose_fd fd=%d: %s",
 			    diag, fd, gfarm_error_string(e));
 	} else {
