@@ -216,8 +216,8 @@ conn_hash.lo: $(GFUTIL_SRCDIR)/hash.h conn_hash.h
 context.lo: context.h config.h
 error.lo: $(GFUTIL_SRCDIR)/hash.h
 crc32.lo: crc32.h
-filesystem.lo: $(GFUTIL_SRCDIR)/hash.h context.h filesystem.h metadb_server.h gfm_client.h
-gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h $(GFUTIL_SRCDIR)/queue.h context.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h quota_info.h metadb_server.h filesystem.h gfs_misc.h gfs_file_list.h
+filesystem.lo: $(GFUTIL_SRCDIR)/hash.h context.h filesystem.h metadb_server.h gfm_client.h gfs_file_list.h
+gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h $(GFUTIL_SRCDIR)/queue.h context.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h quota_info.h metadb_server.h filesystem.h
 gfm_conn_follow.lo: gfm_client.h lookup.h
 gfm_schedule.lo: gfm_client.h gfm_schedule.h lookup.h
 gfp_xdr.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h iobuffer.h gfp_xdr.h

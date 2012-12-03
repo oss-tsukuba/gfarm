@@ -185,12 +185,29 @@ gfs_pio_url(GFS_File gf)
 	return (gf == NULL ? NULL : gf->url);
 }
 
+#ifndef NDEBUG
+static int
+check_connection_in_file_list(GFS_File gf, void *closure)
+{
+	struct gfm_connection *gfm_server = closure;
+
+	/*
+	 * all gfm_connection related to GFS_File in opened file list MUST be
+	 * the same instance to execute failover process against all opened
+	 * files at the same time in gfs_pio_failover().
+	 */
+	assert(gf->gfm_server == gfm_server);
+	return (1);
+}
+#endif
+
 static gfarm_error_t
 gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 	char *url, gfarm_ino_t ino, GFS_File *gfp)
 {
 	GFS_File gf;
 	char *buffer;
+	struct gfs_file_list *gfl;
 
 	GFARM_MALLOC(gf);
 	GFARM_MALLOC_ARRAY(buffer, gfarm_ctxp->client_file_bufsize);
@@ -234,7 +251,14 @@ gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
 
 	gf->view_context = NULL;
 	gfs_pio_set_view_default(gf);
-	gfs_pio_file_list_add(gfm_client_connection_file_list(gfm_server), gf);
+
+	gfl = gfarm_filesystem_opened_file_list(
+	    gfarm_filesystem_get_by_connection(gfm_server));
+#ifndef NDEBUG
+	gfs_pio_file_list_foreach(gfl, check_connection_in_file_list,
+	    gfm_server);
+#endif
+	gfs_pio_file_list_add(gfl, gf);
 
 	*gfp = gf;
 	return (GFARM_ERR_NO_ERROR);
@@ -371,7 +395,8 @@ gfs_pio_close(GFS_File gf)
 {
 	gfarm_error_t e, e_save;
 	gfarm_timerval_t t1, t2;
-	int failed_over = 0;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
+		gf->gfm_server);
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -391,22 +416,22 @@ gfs_pio_close(GFS_File gf)
 			gflog_error(GFARM_MSG_1003268,
 			    "ignore %s error at pio close operation",
 			    gfarm_error_string(e));
-			failed_over = 1;
+			gfarm_filesystem_set_failover_detected(fs, 1);
 			e = GFARM_ERR_NO_ERROR;
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
 	}
 
-	gfs_pio_file_list_remove(
-	    gfm_client_connection_file_list(gf->gfm_server), gf);
+	gfs_pio_file_list_remove(gfarm_filesystem_opened_file_list(fs), gf);
 
-	/* do not call gfm_close_fd when fd is read-only and gfmd failed over */
-	if (!failed_over || (gf->open_flags & GFARM_FILE_RDONLY) == 0) {
-		e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
-		if (e_save == GFARM_ERR_NO_ERROR)
-			e_save = e;
-	}
+	/* do not call gfm_close_fd when gfmd failed over */
+	if (!gfarm_filesystem_failover_detected(fs))
+		/*
+		 * retrying gfm_close_fd is not necessary because fd is
+		 * closed in gfmd when the connection is closed.
+		 */
+		(void)gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
 
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);

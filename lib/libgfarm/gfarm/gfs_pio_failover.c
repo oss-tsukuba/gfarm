@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <openssl/evp.h>
+#include <assert.h>
 
 #include <gfarm/gfarm.h>
 
@@ -27,11 +28,19 @@
 #include "gfs_file_list.h"
 
 
+static struct gfs_connection *
+get_storage_context(struct gfs_file_section_context *vc)
+{
+	if (vc == NULL)
+		return (NULL);
+	return (vc->storage_context);
+}
+
 int
 gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 {
 	return (gfarm_filesystem_has_multiple_servers(
-		    gfarm_filesystem_get_by_connection(gfs_pio_metadb(gf)))
+		    gfarm_filesystem_get_by_connection(gf->gfm_server))
 		&& gfm_client_is_connection_error(e));
 }
 
@@ -57,7 +66,8 @@ gfs_pio_reopen(GFS_File gf)
 		e = GFARM_ERR_STALE_FILE_HANDLE;
 	} else {
 		gf->fd = fd;
-		if (gf->view_context)
+		/* storage_context is null in scheduling */
+		if (get_storage_context(gf->view_context) != NULL)
 			e = (*gf->ops->view_reopen)(gf);
 	}
 	if (real_url) {
@@ -86,12 +96,16 @@ close_on_server(GFS_File gf, void *closure)
 	struct gfs_file_section_context *vc = gf->view_context;
 	struct gfs_connection *sc;
 
+	/* new connection must be acquired. */
+	assert(gf->gfm_server != (struct gfm_connection *)closure);
+
 	gfm_client_connection_free(gf->gfm_server);
 
-	if (vc == NULL)
+	if ((sc = get_storage_context(vc)) == NULL) {
+		/* In the case of gfs_file just in scheduling */
+		gf->fd = -1;
 		return (1);
-
-	sc = vc->storage_context;
+	}
 
 	if ((e = gfs_client_close(sc, gf->fd)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003382,
@@ -117,9 +131,9 @@ reset_and_reopen(GFS_File gf, void *closure)
 	struct reset_and_reopen_info *ri = closure;
 	struct gfm_connection *gfm_server = ri->gfm_server;
 	struct gfm_connection *gfm_server1;
-	struct gfs_file_section_context *vc;
 	struct gfs_connection *sc;
-	int fc = gfm_client_connection_failover_count(gfm_server);
+	int fc = gfarm_filesystem_failover_count(
+		gfarm_filesystem_get_by_connection(gfm_server));
 
 	/* increment ref count of gfm_server */
 	gf->gfm_server = gfm_server;
@@ -142,12 +156,9 @@ reset_and_reopen(GFS_File gf, void *closure)
 		return (0);
 	}
 
-	vc = gf->view_context;
-
-	if (vc) {
-		sc = vc->storage_context;
-
-		/* pid will be 0 if gfarm_client_process_reset() resulted
+	if ((sc = get_storage_context(gf->view_context)) != NULL) {
+		/*
+		 * pid will be 0 if gfarm_client_process_reset() resulted
 		 * in failure at reset_and_reopen() previously called with
 		 * the same gfs_connection.
 		 */
@@ -161,6 +172,12 @@ reset_and_reopen(GFS_File gf, void *closure)
 		/* reset pid */
 		if (fc > gfs_client_connection_failover_count(sc)) {
 			gfs_client_connection_set_failover_count(sc, fc);
+			/*
+			 * gfs_file just in scheduling is not related to
+			 * gfs_server.
+			 * In that case, gfarm_client_process_reset() is
+			 * called in gfs_pio_open_section().
+			 */
 			e = gfarm_client_process_reset(sc, gfm_server);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gf->error = e;
@@ -183,15 +200,15 @@ reset_and_reopen(GFS_File gf, void *closure)
 }
 
 static int
-reset_and_reopen_all(struct gfm_connection *gfm_server)
+reset_and_reopen_all(struct gfm_connection *gfm_server,
+	struct gfs_file_list *gfl)
 {
 	struct reset_and_reopen_info ri;
 
 	ri.gfm_server = gfm_server;
 	ri.must_retry = 0;
 
-	gfs_pio_file_list_foreach(gfm_client_connection_file_list(gfm_server),
-	    reset_and_reopen, &ri);
+	gfs_pio_file_list_foreach(gfl, reset_and_reopen, &ri);
 
 	return (ri.must_retry == 0);
 }
@@ -205,64 +222,89 @@ set_error(GFS_File gf, void *closure)
 
 #define NUM_FAILOVER_RETRY 3
 
-gfarm_error_t
-gfs_pio_failover(GFS_File gf)
+static gfarm_error_t
+failover0(struct gfm_connection *gfm_server, const char *host0, int port,
+	const char *user0)
 {
 	gfarm_error_t e;
-	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
-	struct gfs_file_list *gfl = NULL;
-	char *host, *user;
-	int port, fc, i, ok = 0;
+	struct gfarm_filesystem *fs;
+	struct gfs_file_list *gfl;
+	char *host = NULL, *user = NULL;
+	int fc, i, ok = 0;
 
-	if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_1003388,
-		    "%s", gfarm_error_string(e));
-		goto error_all;
+	if (gfm_server) {
+		fs = gfarm_filesystem_get_by_connection(gfm_server);
+		if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+			goto error_all;
+		}
+		if ((user = strdup(gfm_client_username(gfm_server))) ==  NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+			goto error_all;
+		}
+		port = gfm_client_port(gfm_server);
+		/*
+		 * This connection is already purged but ensure to be purged
+		 * and force to create new connection in next connection
+		 * acquirement.
+		 */
+		gfm_client_purge_from_cache(gfm_server);
+	} else {
+		fs = gfarm_filesystem_get(host, port);
+		if ((host = strdup(host0)) ==  NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+			goto error_all;
+		}
+		if ((user = strdup(user0)) ==  NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "%s", gfarm_error_string(e));
+			goto error_all;
+		}
 	}
-	if ((user = strdup(gfm_client_username(gfm_server))) ==  NULL) {
-		free(host);
-		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_1003389,
-		    "%s", gfarm_error_string(e));
-		goto error_all;
-	}
+	gfl = gfarm_filesystem_opened_file_list(fs);
+	fc = gfarm_filesystem_failover_count(fs);
 
-	port = gfm_client_port(gfm_server);
-	fc = gfm_client_connection_failover_count(gfm_server);
-	gfl = gfm_client_connection_detach_file_list(gfm_server);
-	/* force to create new connection in next connection acquirement. */
-	gfm_client_purge_from_cache(gfm_server);
+	/* must be set failover_detected to 0 before acquire connection. */
+	gfarm_filesystem_set_failover_detected(fs, 0);
 
 	for (i = 0; i < NUM_FAILOVER_RETRY; ++i) {
-		/* close fd without accessing to gfmd from client
-		 * and release gfm_connection.
-		 */
-		gfs_pio_file_list_foreach(gfl, close_on_server, NULL);
-
 		/* reconnect to gfmd */
 		if ((e = gfm_client_connection_and_process_acquire(
 		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1003390,
 			    "gfm_client_connection_acquire failed : %s",
 			    gfarm_error_string(e));
-			goto error_all;
 		}
-		gfm_client_connection_set_failover_count(gfm_server, fc + 1);
-		gfm_client_connection_set_file_list(gfm_server, gfl);
+		/*
+		 * close fd without accessing to gfmd from client
+		 * and release gfm_connection.
+		 */
+		gfs_pio_file_list_foreach(gfl, close_on_server, gfm_server);
+
+		if (e != GFARM_ERR_NO_ERROR)
+			goto error_all;
+
+		gfarm_filesystem_set_failover_count(fs, fc + 1);
 		/* reset processes and reopen files */
-		ok = reset_and_reopen_all(gfm_server);
+		ok = reset_and_reopen_all(gfm_server, gfl);
 		gfm_client_connection_free(gfm_server);
 		if (ok)
 			break;
 	}
 
 	if (ok) {
+		e = GFARM_ERR_NO_ERROR;
 		gflog_notice(GFARM_MSG_1003391,
 		    "connection to metadb server was failed over successfully");
 	} else {
 		e = GFARM_ERR_OPERATION_TIMED_OUT;
-		gf->error = e;
 		gflog_debug(GFARM_MSG_1003392,
 		    "falied to fail over: %s", gfarm_error_string(e));
 	}
@@ -270,12 +312,30 @@ gfs_pio_failover(GFS_File gf)
 	free(host);
 	free(user);
 
-	return (gf->error);
+	return (e);
 
 error_all:
-	if (gfl == NULL)
-		gfl = gfm_client_connection_file_list(gfm_server);
+
+	free(host);
+	free(user);
+
 	gfs_pio_file_list_foreach(gfl, set_error, &e);
 
+	return (e);
+}
+
+static gfarm_error_t
+failover(struct gfm_connection *gfm_server)
+{
+	return (failover0(gfm_server, NULL, 0, NULL));
+}
+
+gfarm_error_t
+gfs_pio_failover(GFS_File gf)
+{
+	gfarm_error_t e = failover(gf->gfm_server);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gf->error = e;
 	return (e);
 }

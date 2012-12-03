@@ -59,14 +59,6 @@ gfarm_error_t gfm_client_connect(const char *, int, const char *,
 struct passwd;
 gfarm_error_t gfm_client_connect_with_seteuid(const char *, int, const char *,
 	struct gfm_connection **, const char *, struct passwd *, int);
-struct gfs_file_list;
-struct gfs_file_list *gfm_client_connection_file_list(struct gfm_connection *);
-struct gfs_file_list *gfm_client_connection_detach_file_list(
-	struct gfm_connection *);
-void gfm_client_connection_set_file_list(struct gfm_connection *,
-	struct gfs_file_list *);
-int gfm_client_connection_failover_count(struct gfm_connection *);
-void gfm_client_connection_set_failover_count(struct gfm_connection *, int);
 void gfm_client_connection_free(struct gfm_connection *);
 struct gfp_xdr *gfm_client_connection_convert_to_xdr(struct gfm_connection *);
 void gfm_client_terminate(void);

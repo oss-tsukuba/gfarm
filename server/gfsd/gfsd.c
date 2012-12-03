@@ -1785,10 +1785,9 @@ gfarm_error_t
 close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
 	gfarm_error_t e, e2;
-	int fc = gfm_server != NULL ? gfm_client_connection_failover_count(
-		gfm_server) : 0;
 
-	if (gfm_server != NULL && client_failover_count == fc)
+	if (gfm_server != NULL &&
+	    client_failover_count == server_failover_count)
 		e = close_fd(fd, diag);
 	else
 		e = GFARM_ERR_NO_ERROR;
