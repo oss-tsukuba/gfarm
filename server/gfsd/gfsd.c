@@ -434,10 +434,14 @@ reconnect_gfm_server_for_failover(const char *diag)
 	gflog_error(GFARM_MSG_1003348,
 	    "%s: gfmd may be failed over, try to reconnecting", diag);
 	free_gfm_server();
-	if ((e = connect_gfm_server_with_timeout()) != GFARM_ERR_NO_ERROR)
+	if ((e = connect_gfm_server_with_timeout()) != GFARM_ERR_NO_ERROR) {
+		gfm_client_connection_free(gfm_server);
+		/* mark gfmd reconnection failed */
+		gfm_server = NULL;
 		fatal(GFARM_MSG_UNFIXED,
 		    "%s: cannot reconnect to gfm server: %s",
 		    diag, gfarm_error_string(e));
+	}
 	++server_failover_count;
 }
 
