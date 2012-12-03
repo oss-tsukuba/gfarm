@@ -20,8 +20,8 @@
 /*
  *  Create a hostfile.
  *
- *  gfsched [-P <path>] [-D <domain>] [-n <number>] [-LMlw]
- *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-LMclw]
+ *  gfsched [-P <path>] [-D <domain>] [-n <number>] [-LMVlw]
+ *  gfsched  -f <file>  [-D <domain>] [-n <number>] [-LMVclw]
  */
 
 char *program_name = "gfsched";
@@ -30,10 +30,10 @@ void
 usage(void)
 {
 	fprintf(stderr, 
-	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMlw]\n",
+	    "Usage:\t%s [-P <path>] [-D <domain>] [-n <number>] [-LMVlw]\n",
 	    program_name);
 	fprintf(stderr,
-	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMclw]\n",
+	          "\t%s  -f <file>  [-D <domain>] [-n <number>] [-LMVclw]\n",
 	    program_name);
 	fprintf(stderr,
 	    "options:\n");
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	while ((c = getopt(argc, argv, "D:LMP:cf:ln:w")) != -1) {
+	while ((c = getopt(argc, argv, "D:LMP:Vcf:ln:w")) != -1) {
 		switch (c) {
 		case 'D':
 			opt_domain = optarg;
@@ -109,6 +109,9 @@ main(int argc, char **argv)
 		case 'P':
 			opt_mount_point = optarg;
 			break;
+		case 'V':
+			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			exit(0);
 		case 'c':
 			opt_create_mode = 1;
 			break;

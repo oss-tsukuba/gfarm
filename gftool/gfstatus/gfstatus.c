@@ -54,7 +54,7 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "Usage:\t%s [-P <path>]\n",
+	    "Usage:\t%s [-V] [-P <path>]\n",
 	    program_name);
 	exit(EXIT_FAILURE);
 }
@@ -76,7 +76,7 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		program_name = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "dP:?"))
+	while ((c = getopt(argc, argv, "dP:V?"))
 	    != -1) {
 		switch (c) {
 		case 'd':
@@ -85,6 +85,9 @@ main(int argc, char *argv[])
 		case 'P':
 			path = optarg;
 			break;
+		case 'V':
+			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			exit(0);
 		case '?':
 			usage();
 		}

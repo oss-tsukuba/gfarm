@@ -547,7 +547,7 @@ list(gfarm_stringlist *paths, gfs_glob_t *types, int *need_newline)
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-1ACFRSTadilrt] [-E <sec>] <path>...\n",
+	fprintf(stderr, "Usage: %s [-1ACFRSTVadilrt] [-E <sec>] <path>...\n",
 		program_name);
 	exit(EXIT_FAILURE);
 }
@@ -589,7 +589,7 @@ main(int argc, char **argv)
 	} else {
 		option_output_format = OF_ONE_PER_LINE;
 	}
-	while ((c = getopt(argc, argv, "1ACE:FRSTadilrt?")) != -1) {
+	while ((c = getopt(argc, argv, "1ACE:FRSTVadilrt?")) != -1) {
 		switch (c) {
 		case '1': option_output_format = OF_ONE_PER_LINE; break;
 		case 'A': option_all = OA_ALMOST_ALL; break;
@@ -611,6 +611,9 @@ main(int argc, char **argv)
 		case 'R': option_recursive = 1; break;
 		case 'S': option_sort_order = SO_SIZE; break;
 		case 'T': option_complete_time = 1; break;
+		case 'V':
+			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			exit(0);
 		case 'a': option_all = OA_ALL; break;
 		case 'd': option_directory_itself = 1; break;
 		case 'i': option_inumber = 1; break;
