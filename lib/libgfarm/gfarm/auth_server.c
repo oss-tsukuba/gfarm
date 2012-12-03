@@ -271,24 +271,6 @@ gfarm_auth_sharedsecret_response(struct gfp_xdr *conn,
 	}
 }
 
-#if 0
-static pthread_once_t getpwnam_r_bufsz_initialized = PTHREAD_ONCE_INIT;
-static int getpwnam_r_bufsz = 0;
-#define BUFSIZE_MAX 2048
-
-static void
-getpwnam_r_bufsz_initialize(void)
-{
-	/* Solaris calls this function more than once with non-pthread apps */
-	if (getpwnam_r_bufsz != 0)
-		return;
-
-	getpwnam_r_bufsz = sysconf(_SC_GETPW_R_SIZE_MAX);
-	if (getpwnam_r_bufsz == -1)
-		getpwnam_r_bufsz = BUFSIZE_MAX;
-}
-#endif
-
 gfarm_error_t
 gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 	char *service_tag, char *hostname,
@@ -349,10 +331,6 @@ gfarm_authorize_sharedsecret(struct gfp_xdr *conn, int switch_to,
 		local_username = NULL;
 		pwd = NULL;
 	} else {
-#if 0
-		pthread_once(&getpwnam_r_bufsz_initialized,
-		    getpwnam_r_bufsz_initialize);
-#endif
 		GFARM_MALLOC_ARRAY(buf, gfarm_ctxp->getpw_r_bufsz);
 		if (buf == NULL) {
 			e = GFARM_ERR_NO_MEMORY;
