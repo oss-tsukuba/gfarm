@@ -417,6 +417,109 @@ retry:
 	return (e);
 }
 
+struct compound_fd_op_info {
+	struct gfs_failover_file *file;
+	struct gfs_failover_file_ops *ops;
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
+	void (*cleanup_op)(struct gfm_connection *, void *);
+	int (*must_be_warned_op)(gfarm_error_t, void *);
+	void *closure;
+};
+
+static gfarm_error_t
+compound_fd_op_rpc(struct gfm_connection **gfm_serverp, void *closure)
+{
+	struct compound_fd_op_info *ci = closure;
+
+	*gfm_serverp = ci->ops->get_connection(ci->closure);
+	return (gfm_client_compound_fd_op(*gfm_serverp,
+	    ci->ops->get_fileno(ci->file), ci->request_op, ci->result_op,
+	    ci->cleanup_op, ci->closure));
+}
+
+static gfarm_error_t
+compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
+{
+	gfarm_error_t e;
+	int fd, type;
+	char *url;
+	gfarm_ino_t ino;
+	struct compound_fd_op_info *ci = closure;
+	void *file = ci->file;
+	struct gfs_failover_file_ops *ops = ci->ops;
+	const char *url0 = ops->get_url(file);
+
+	/* reopen */
+	if ((e = gfm_open_fd_with_ino(url0, GFARM_FILE_RDONLY,
+	    &gfm_server, &fd, &type, &url, &ino)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_open_fd_with_ino(%s) failed: %s",
+		    url0, gfarm_error_string(e));
+		return (e);
+	}
+	free(url);
+
+	if (type != ops->type || ino != ops->get_ino(file))
+		e = GFARM_ERR_STALE_FILE_HANDLE;
+	else {
+		/* set new fd and connection */
+		ops->set_fileno(file, fd);
+		ops->set_connection(file, gfm_server);
+	}
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gfm_client_connection_free(gfm_server);
+
+	return (e);
+}
+
+static int
+compound_fd_op_must_be_warned(gfarm_error_t e, void *closure)
+{
+	struct compound_fd_op_info *ci = closure;
+
+	return (ci->must_be_warned_op ? ci->must_be_warned_op(e, ci->closure) :
+	    0);
+}
+
+static gfarm_error_t
+compound_fd_op(struct gfs_failover_file *file,
+	struct gfs_failover_file_ops *ops,
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	void (*cleanup_op)(struct gfm_connection *, void *),
+	int (*must_be_warned_op)(gfarm_error_t, void *),
+	void *closure)
+{
+	struct compound_fd_op_info ci = {
+		file, ops,
+		request_op, result_op, cleanup_op, must_be_warned_op,
+		closure
+	};
+
+	return (gfm_client_rpc_with_failover(compound_fd_op_rpc,
+	    compound_fd_op_post_failover, NULL,
+	    compound_fd_op_must_be_warned, &ci));
+}
+
+gfarm_error_t
+gfm_client_compound_fd_op_readonly(struct gfs_failover_file *file,
+	struct gfs_failover_file_ops *ops,
+	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	void (*cleanup_op)(struct gfm_connection *, void *),
+	void *closure)
+{
+	gfarm_error_t e = compound_fd_op(file, ops, request_op, result_op,
+	    cleanup_op, NULL, closure);
+
+	if (e != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "compound_fd_op: %s", gfarm_error_string(e));
+	return (e);
+}
+
 struct compound_file_op_info {
 	GFS_File gf;
 	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
