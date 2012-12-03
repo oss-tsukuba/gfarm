@@ -39,7 +39,7 @@ int
 gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	gfarm_error_t e)
 {
-	return (gfarm_filesystem_has_multiple_servers(
+	return (gfm_server && gfarm_filesystem_has_multiple_servers(
 		    gfarm_filesystem_get_by_connection(gfm_server))
 		&& gfm_client_is_connection_error(e));
 }
@@ -250,6 +250,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		port = gfm_client_port(gfm_server);
 	} else {
 		fs = gfarm_filesystem_get(host0, port);
+		assert(fs != NULL);
 		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(host0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;

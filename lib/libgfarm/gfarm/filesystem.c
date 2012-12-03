@@ -220,8 +220,8 @@ gfarm_filesystem_get(const char *hostname, int port)
 struct gfarm_filesystem*
 gfarm_filesystem_get_by_connection(struct gfm_connection *gfm_server)
 {
-	return (gfarm_filesystem_get(gfm_client_hostname(gfm_server),
-		gfm_client_port(gfm_server)));
+	return (gfarm_filesystem_get(gfm_client_hostname(
+		    gfm_server), gfm_client_port(gfm_server)));
 }
 
 gfarm_error_t
@@ -275,7 +275,7 @@ gfarm_filesystem_get_metadb_server_list(struct gfarm_filesystem *fs, int *np)
 int
 gfarm_filesystem_has_multiple_servers(struct gfarm_filesystem *fs)
 {
-	return (fs->nservers > 1);
+	return (fs != NULL ? fs->nservers > 1 : 0);
 }
 
 struct gfs_file_list *
@@ -287,7 +287,7 @@ gfarm_filesystem_opened_file_list(struct gfarm_filesystem *fs)
 int
 gfarm_filesystem_failover_detected(struct gfarm_filesystem *fs)
 {
-	return (fs->failover_detected);
+	return (fs != NULL ? fs->failover_detected : 0);
 }
 
 void
@@ -300,7 +300,7 @@ gfarm_filesystem_set_failover_detected(struct gfarm_filesystem *fs,
 int
 gfarm_filesystem_failover_count(struct gfarm_filesystem *fs)
 {
-	return (fs->failover_count);
+	return (fs != NULL ? fs->failover_count : 0);
 }
 
 void
