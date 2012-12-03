@@ -35,6 +35,7 @@ Updated feature
 * support nanosecond for atime, mtime and ctime [sf.net trac #529]
 * gfarm clients - support relative path and multiple Gfarm file
   systems when mounted by gfarm2fs
+* gfls, gfdf, gfstatus, gfsched - -V option to show Gfarm version
 * gfsd - spool directory consistency check at start-up
 * gfstat - print inum+gen in hex that will help to find files in
   lost+found

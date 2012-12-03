@@ -1,10 +1,10 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8
-%define rel	rc1.1
+%define ver	2.5.8-rc1
+%define rel	1
 
 # a hook to make RPM version number different from %{ver}
-%define pkgver	%{ver}
+%define pkgver	2.5.8rc1
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
@@ -1066,6 +1066,8 @@ fi
 %{prefix}/bin/gfssh
 %{prefix}/bin/gfsshl
 %endif
+%{prefix}/bin/gfservice
+%{prefix}/bin/gfservice-agent
 %{prefix}/bin/gfstat
 %{prefix}/bin/gfstatus
 %if %{gfarm_v2_not_yet}
