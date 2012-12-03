@@ -1,7 +1,7 @@
 # Part 1 data definition
 %define pkg	gfarm
 %define ver	2.5.8-rc1
-%define rel	1
+%define rel	2
 
 # a hook to make RPM version number different from %{ver}
 %define pkgver	2.5.8rc1
@@ -58,7 +58,7 @@ Summary: Document for Gfarm file system
 Group: Documentation
 # always provide "gfarm-doc" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-doc = %{ver}-%{rel}
+Provides: %{pkg}-doc = %{pkgver}-%{rel}
 %endif
 
 %package libs
@@ -66,7 +66,7 @@ Summary: Runtime libraries for Gfarm file system
 Group: System Environment/Libraries
 # always provide "gfarm-libs" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-libs = %{ver}-%{rel}
+Provides: %{pkg}-libs = %{pkgver}-%{rel}
 %endif
 BuildRequires: openssl-devel, postgresql-devel
 
@@ -75,43 +75,43 @@ Summary: Clients for Gfarm file system
 Group: Applications/File
 # always provide "gfarm-client" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-client = %{ver}-%{rel}
+Provides: %{pkg}-client = %{pkgver}-%{rel}
 %endif
-Requires: %{package_name}-libs = %{ver}
+Requires: %{package_name}-libs = %{pkgver}
 
 %package fsnode
 Summary: File system daemon for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-fsnode" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-fsnode = %{ver}-%{rel}
+Provides: %{pkg}-fsnode = %{pkgver}-%{rel}
 %endif
-Requires: %{package_name}-libs = %{ver}, %{package_name}-client = %{ver}
+Requires: %{package_name}-libs = %{pkgver}, %{package_name}-client = %{pkgver}
 
 %package server
 Summary: Metadata server for Gfarm file system
 Group: System Environment/Daemons
 # always provide "gfarm-server" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-server = %{ver}-%{rel}
+Provides: %{pkg}-server = %{pkgver}-%{rel}
 %endif
-Requires: %{package_name}-libs = %{ver}
+Requires: %{package_name}-libs = %{pkgver}
 
 %package ganglia
 Summary: Gfarm performance monitoring plugin for Ganglia
 Group: System Environment/Libraries
 # always provide "gfarm-ganglia" as a virtual package.
 %if %{globus}
-Provides: %{pkg}-ganglia = %{ver}-%{rel}
+Provides: %{pkg}-ganglia = %{pkgver}-%{rel}
 %endif
 
 %package devel
 Summary: Development header files and libraries for Gfarm file system
 Group: Development/Libraries
 %if %{globus}
-Provides: %{pkg}-devel = %{ver}-%{rel}
+Provides: %{pkg}-devel = %{pkgver}-%{rel}
 %endif
-Requires: %{package_name}-libs = %{ver}
+Requires: %{package_name}-libs = %{pkgver}
 
 %description
 The Gfarm filesystem is a distributed filesystem consisting of the
