@@ -47,6 +47,7 @@
 #include "quota_info.h"
 #include "metadb_server.h"
 #include "filesystem.h"
+#include "liberror.h"
 
 struct gfm_connection {
 	struct gfp_cached_connection *cache_entry;
@@ -59,6 +60,8 @@ struct gfm_connection {
 	char pid_key[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
 
 	struct gfarm_metadb_server *real_server;
+
+	int failover_count;
 };
 
 #define staticp	(gfarm_ctxp->gfm_client_static)
@@ -168,6 +171,11 @@ gfm_client_connection_get_real_server(struct gfm_connection *gfm_server)
 	return (gfm_server->real_server);
 }
 
+int
+gfm_client_connection_failover_count(struct gfm_connection *gfm_server)
+{
+	return (gfm_server->failover_count);
+}
 
 gfarm_error_t
 gfm_client_process_get(struct gfm_connection *gfm_server,
@@ -567,6 +575,8 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	gfm_server->pid = 0;
 	gfm_server->real_server = ms;
+	gfm_server->failover_count = gfarm_filesystem_failover_count(
+	    gfarm_filesystem_get_by_connection(gfm_server));
 	*gfm_serverp = gfm_server;
 end:
 	if (res)
