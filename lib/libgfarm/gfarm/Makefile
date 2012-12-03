@@ -225,7 +225,7 @@ gfp_xdr_server.lo: $(GFUTIL_SRCDIR)/id_table.h $(GFUTIL_SRCDIR)/thrsubr.h liberr
 gfs_acl.lo:
 gfs_chmod.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h context.h gfs_profile.h gfm_client.h lookup.h
 gfs_chown.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h context.h gfs_profile.h gfm_client.h lookup.h
-gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h sockutil.h iobuffer.h gfp_xdr.h io_fd.h host.h sockopt.h auth.h config.h conn_cache.h gfs_proto.h gfs_client.h gfm_client.h iostat.h
+gfs_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/lru_cache.h context.h liberror.h sockutil.h iobuffer.h gfp_xdr.h io_fd.h host.h sockopt.h auth.h config.h conn_cache.h gfs_proto.h gfs_client.h gfm_client.h iostat.h filesystem.h gfs_failover.h
 gfs_dir.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h gfs_profile.h gfm_client.h config.h lookup.h gfs_io.h gfs_dir.h
 gfs_dirplus.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h lookup.h gfs_io.h
 gfs_dirplusxattr.lo: $(GFUTIL_SRCDIR)/gfutil.h config.h gfm_client.h gfs_io.h gfs_dirplusxattr.h

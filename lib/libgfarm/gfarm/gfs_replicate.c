@@ -136,8 +136,8 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	int retry = 0;
 
 	for (;;) {
-		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    dsthost, dstport, &gfs_server, NULL))
+		if ((e = gfs_client_connection_and_process_acquire(
+		    &gfm_server, dsthost, dstport, &gfs_server, NULL))
 			!= GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001388,
 				"acquirement of client connection failed: %s",
@@ -145,8 +145,6 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 			return (e);
 		}
 
-		if (gfs_client_pid(gfs_server) == 0)
-			e = gfarm_client_process_set(gfs_server, gfm_server);
 		if (e == GFARM_ERR_NO_ERROR) {
 			e = gfs_client_replica_add_from(gfs_server,
 			    srchost, srcport, gfs_pio_fileno(gf));

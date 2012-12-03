@@ -55,6 +55,8 @@
 #include "gfs_client.h"
 #include "gfm_client.h"
 #include "iostat.h"
+#include "filesystem.h"
+#include "gfs_failover.h"
 
 #define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
@@ -360,7 +362,7 @@ static gfarm_error_t
 gfs_client_connection_alloc(const char *canonical_hostname,
 	struct sockaddr *peer_addr, struct gfp_cached_connection *cache_entry,
 	int *connection_in_progress_p, struct gfs_connection **gfs_serverp,
-	const char *source_ip)
+	const char *source_ip, int failover_count)
 {
 	gfarm_error_t e;
 	struct gfs_connection *gfs_server;
@@ -423,7 +425,7 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 	gfs_server->pid = 0;
 	gfs_server->context = NULL;
 	gfs_server->opened = 0;
-	gfs_server->failover_count = 0;
+	gfs_server->failover_count = failover_count;
 
 	gfs_server->cache_entry = cache_entry;
 	gfp_cached_connection_set_data(cache_entry, gfs_server);
@@ -437,14 +439,16 @@ static gfarm_error_t
 gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	const char *user, struct sockaddr *peer_addr,
 	struct gfp_cached_connection *cache_entry,
-	struct gfs_connection **gfs_serverp, const char *source_ip)
+	struct gfs_connection **gfs_serverp, const char *source_ip,
+	int failover_count)
 {
 	gfarm_error_t e;
 	int connection_in_progress;
 	struct gfs_connection *gfs_server;
 
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
-	    cache_entry, &connection_in_progress, &gfs_server, source_ip);
+	    cache_entry, &connection_in_progress, &gfs_server, source_ip,
+	    failover_count);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001182,
 			"gfs_client_connection_alloc() failed: %s",
@@ -547,7 +551,7 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
-	    peer_addr, cache_entry, gfs_serverp, NULL);
+	    peer_addr, cache_entry, gfs_serverp, NULL, 0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 		    cache_entry);
@@ -591,7 +595,9 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	    &peer_addr, NULL);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfs_client_connection_alloc_and_auth(canonical_hostname,
-		    user, &peer_addr, cache_entry, gfs_serverp, source_ip);
+		    user, &peer_addr, cache_entry, gfs_serverp, source_ip,
+		    gfarm_filesystem_failover_count(
+			gfarm_filesystem_get_by_connection(gfm_server)));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_cached_connection_purge_from_cache(&staticp->server_cache,
 		    cache_entry);
@@ -600,6 +606,103 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 			"client authentication failed: %s",
 			gfarm_error_string(e));
 	}
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_connection_and_process_acquire(
+	struct gfm_connection **gfm_serverp,
+	const char *canonical_hostname, int port,
+	struct gfs_connection **gfs_serverp, const char *source_ip)
+{
+	gfarm_error_t e;
+	int fc, nretry = 1;
+	struct gfs_connection *gfs_server;
+	struct gfm_connection *gfm_server = *gfm_serverp;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
+		*gfm_serverp);
+
+retry:
+	if ((e = gfs_client_connection_acquire_by_host(*gfm_serverp,
+	    canonical_hostname, port, &gfs_server, source_ip))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_connection_acquire_by_host: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+
+	if (gfs_client_pid(gfs_server) != 0) {
+		fc = gfarm_filesystem_failover_count(fs);
+		if (gfs_server->failover_count != fc) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "detected gfmd connection failover before acquring "
+			    "gfsd connection");
+			/*
+			 * if cached gfs_connection is not related to
+			 * GFS_File when failover occurred, gfs_connection is
+			 * not failed over.
+			 * such connection must be called
+			 * gfarm_client_process_reset() before being related
+			 * to GFS_File.
+			 */
+			if ((e = gfarm_client_process_reset(gfs_server,
+			    *gfm_serverp)) != GFARM_ERR_NO_ERROR) {
+				gfs_client_connection_free(gfs_server);
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfarm_client_process_reset: %s",
+				    gfarm_error_string(e));
+			} else
+				gfs_server->failover_count = fc;
+		}
+	} else if ((e = gfarm_client_process_set(gfs_server, gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_client_process_set: %s",
+		    gfarm_error_string(e));
+		gfs_client_connection_free(gfs_server);
+
+		if (nretry-- == 0)
+			return (e);
+		/*
+		 * It is possible for gfmd failover not to be detected
+		 * before acquiring gfs_connection.
+		 * If gfmd failover is not detected, pid is already
+		 * invalidated and pid must be reallocated.
+		 */
+		if (e == GFARM_ERR_NO_SUCH_PROCESS) {
+			if ((e = gfm_client_connection_failover(gfm_server))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfm_client_connection_failover: %s",
+				    gfarm_error_string(e));
+				return (e);
+			}
+			if ((e = gfm_client_connection_and_process_acquire(
+			    gfm_client_hostname(gfm_server),
+			    gfm_client_port(gfm_server),
+			    gfm_client_username(gfm_server),
+			    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfm_client_connection_and_process_acquire:"
+				    " %s",
+				    gfarm_error_string(e));
+				return (e);
+			}
+			gfm_client_connection_free(gfm_server);
+			/*
+			 * if gfm_server is related to GFS_File,
+			 * gfm_serverp is set to new gfm_conntion.
+			 */
+			if (*gfm_serverp != gfm_server)
+				*gfm_serverp = gfm_server;
+		} else if (!gfs_client_is_connection_error(e))
+			return (e);
+		goto retry;
+	}
+
+	if (e == GFARM_ERR_NO_ERROR)
+		*gfs_serverp = gfs_server;
 	return (e);
 }
 
@@ -626,7 +729,7 @@ gfs_client_connect(const char *canonical_hostname, int port, const char *user,
 		return (e);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
-	    peer_addr, cache_entry, gfs_serverp, NULL);
+	    peer_addr, cache_entry, gfs_serverp, NULL, 0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		gflog_debug(GFARM_MSG_1001189,
@@ -772,7 +875,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		return (e);
 	}
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
-	    cache_entry, &connection_in_progress, &gfs_server, NULL);
+	    cache_entry, &connection_in_progress, &gfs_server, NULL, 0);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);

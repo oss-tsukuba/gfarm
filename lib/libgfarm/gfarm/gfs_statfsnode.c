@@ -32,12 +32,11 @@ gfs_statfsnode_by_path(const char *path, char *host, int port,
 			    " failed: %s", gfarm_error_string(e));
 			return (e);
 		}
-		if ((e = gfs_client_connection_acquire_by_host(gfm_server,
-		    host, port, &gfs_server, NULL)) != GFARM_ERR_NO_ERROR)
+		if ((e = gfs_client_connection_and_process_acquire(
+		    &gfm_server, host, port, &gfs_server, NULL))
+		    != GFARM_ERR_NO_ERROR)
 			goto free_gfm_connection;
 
-		if (gfs_client_pid(gfs_server) == 0)
-			e = gfarm_client_process_set(gfs_server, gfm_server);
 		if (e == GFARM_ERR_NO_ERROR) {
 			/* "/" is actually not used */
 			e = gfs_client_statfs(gfs_server, "/", bsize, blocks,
