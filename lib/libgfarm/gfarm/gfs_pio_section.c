@@ -33,6 +33,8 @@
 #include "gfs_io.h"
 #include "gfs_pio.h"
 #include "schedule.h"
+#include "filesystem.h"
+#include "gfs_failover.h"
 
 #define staticp	(gfarm_ctxp->gfs_pio_section_static)
 
@@ -355,6 +357,52 @@ finish:
 #endif /* not yet in gfarm v2 */
 
 static gfarm_error_t
+gfs_pio_open_section(GFS_File gf, struct gfs_connection *gfs_server)
+{
+	gfarm_error_t e;
+	int nretry = 1;
+	int is_local = gfs_client_connection_is_local(gfs_server);
+
+retry:
+	if ((e = is_local ?
+	    gfs_pio_open_local_section(gf, gfs_server) :
+	    gfs_pio_open_remote_section(gf, gfs_server)) == GFARM_ERR_NO_ERROR)
+		return (e);
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "gfs_pio_open_%s_section: %s",
+	    is_local ? "local" : "remote", gfarm_error_string(e));
+
+	if (e == GFARM_ERR_GFMD_FAILED_OVER && nretry-- > 0) {
+		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfs_pio_failover: %s", gfarm_error_string(e));
+			return (e);
+		}
+		if (gfarm_filesystem_failover_count(
+			gfarm_filesystem_get_by_connection(gf->gfm_server))
+		    != gfs_client_connection_failover_count(gfs_server)) {
+			/*
+			 * gfs_server is not set to any opened file list
+			 * in gfarm_filesystem. so gfs_server did not fail
+			 * over.
+			 */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "reset_process");
+			if ((e = gfarm_client_process_reset(gfs_server,
+			    gf->gfm_server)) != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "gfarm_client_process_reset: %s",
+				    gfarm_error_string(e));
+				return (e);
+			}
+		}
+		goto retry;
+	}
+	return (e);
+}
+
+static gfarm_error_t
 connect_and_open(GFS_File gf, const char *hostname, int port)
 {
 	gfarm_error_t e;
@@ -385,12 +433,8 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			    gf->gfm_server);
 
 		gfs_profile(gfarm_gettimerval(&t3));
-		if (e == GFARM_ERR_NO_ERROR) {
-			if (gfs_client_connection_is_local(gfs_server))
-				e = gfs_pio_open_local_section(gf, gfs_server);
-			else
-				e = gfs_pio_open_remote_section(gf,gfs_server);
-		}
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfs_pio_open_section(gf, gfs_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfs_client_connection_free(gfs_server);
 			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
@@ -458,7 +502,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t3);
 
 	gfs_profile(gfarm_gettimerval(&t1));
-	e = gfm_schedule_file(gf->gfm_server, gf->fd, &nhosts, &infos);
+	e = gfm_schedule_file(gf, &nhosts, &infos);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001353,
 			"gfm_schedule_file() failed: %s",
@@ -604,6 +648,27 @@ schedule_file_loop(GFS_File gf, char *host, gfarm_int32_t port)
 	return (e);
 }
 
+static struct gfs_file_section_context *
+gfs_file_section_context_alloc()
+{
+	gfarm_error_t e;
+	struct gfs_file_section_context *vc;
+
+	GFARM_MALLOC(vc);
+	if (vc == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "allocation of file section context failed: %s",
+		    gfarm_error_string(e));
+		return (NULL);
+	}
+
+	vc->storage_context = NULL;
+	vc->pid = 0;
+
+	return (vc);
+}
+
 gfarm_error_t
 gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 {
@@ -638,7 +703,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		gfarm_host_info_free(&hinfo);
 	}
 
-	GFARM_MALLOC(vc);
+	vc = gfs_file_section_context_alloc();
 	if (vc == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1001358,

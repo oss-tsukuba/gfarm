@@ -219,7 +219,7 @@ crc32.lo: crc32.h
 filesystem.lo: $(GFUTIL_SRCDIR)/hash.h context.h filesystem.h metadb_server.h gfm_client.h gfs_file_list.h
 gfm_client.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/gfnetdb.h $(GFUTIL_SRCDIR)/lru_cache.h $(GFUTIL_SRCDIR)/queue.h context.h gfp_xdr.h io_fd.h sockopt.h sockutil.h host.h auth.h config.h conn_cache.h gfm_proto.h gfj_client.h xattr_info.h gfm_client.h quota_info.h metadb_server.h filesystem.h
 gfm_conn_follow.lo: gfm_client.h lookup.h
-gfm_schedule.lo: gfm_client.h gfm_schedule.h lookup.h
+gfm_schedule.lo: gfm_client.h gfm_schedule.h gfs_failover.h lookup.h
 gfp_xdr.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h iobuffer.h gfp_xdr.h
 gfp_xdr_server.lo: $(GFUTIL_SRCDIR)/id_table.h $(GFUTIL_SRCDIR)/thrsubr.h liberror.h gfp_xdr.h
 gfs_acl.lo:
@@ -237,8 +237,7 @@ gfs_mkdir.lo: $(GFUTIL_SRCDIR)/gfutil.h gfm_client.h config.h lookup.h
 gfs_pio.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h $(GFUTIL_SRCDIR)/thrsubr.h context.h liberror.h filesystem.h gfs_profile.h gfm_client.h gfs_proto.h gfs_io.h gfs_pio.h gfp_xdr.h gfs_failover.h gfs_file_list.h
 gfs_pio_local.lo: $(GFUTIL_SRCDIR)/queue.h gfs_proto.h gfs_client.h gfs_io.h gfs_pio.h
 gfs_pio_remote.lo: $(GFUTIL_SRCDIR)/queue.h host.h config.h gfs_proto.h gfs_client.h gfs_io.h gfs_pio.h
-
-gfs_pio_section.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h context.h liberror.h gfs_profile.h host.h config.h gfm_client.h gfm_schedule.h gfs_client.h gfs_proto.h gfs_io.h gfs_pio.h schedule.h
+gfs_pio_section.lo: $(GFUTIL_SRCDIR)/timer.h $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/queue.h context.h liberror.h gfs_profile.h host.h config.h gfm_client.h gfm_schedule.h gfs_client.h gfs_proto.h gfs_io.h gfs_pio.h schedule.h filesystem.h gfs_failover.h
 gfs_pio_failover.lo: $(GFUTIL_SRCDIR)/queue.h config.h gfm_client.h gfs_client.h gfs_io.h gfs_pio.h filesystem.h gfs_failover.h gfs_file_list.h
 gfs_profile.lo: $(GFUTIL_SRCDIR)/timer.h context.h
 gfs_proto.lo: gfs_proto.h
