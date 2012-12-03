@@ -272,7 +272,7 @@ io_fd.lo: context.h iobuffer.h gfp_xdr.h io_fd.h config.h
 io_gfsl.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFSL_SRCDIR)/gfarm_secure_session.h context.h liberror.h iobuffer.h gfp_xdr.h io_fd.h io_gfsl.h config.h
 iobuffer.lo: iobuffer.h crc32.h
 liberror.lo: $(GFUTIL_SRCDIR)/gfutil.h liberror.h gfpath.h
-lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h config.h gfm_client.h lookup.h
+lookup.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h config.h gfm_client.h lookup.h gfs_failover.h
 metadb_common.lo: metadb_common.h xattr_info.h quota_info.h metadb_server.h
 metadb_server.lo: gfm_proto.h metadb_server.h
 patmatch.lo: patmatch.h

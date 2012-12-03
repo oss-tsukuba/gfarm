@@ -18,6 +18,8 @@
 #include "config.h"
 #include "gfm_client.h"
 #include "lookup.h"
+#include "filesystem.h"
+#include "gfs_failover.h"
 
 static gfarm_error_t
 gfarm_get_hostname_by_url0(const char **pathp,
@@ -144,28 +146,46 @@ gfarm_url_parse_metadb(const char **pathp,
 
 	if (gfm_serverp == NULL) {
 		e = GFARM_ERR_NO_ERROR;
-		free(hostname);
+		goto end;
 	} else if ((e = gfarm_get_global_username_by_host_for_connection_cache(
 	    hostname, port, &user)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002587,
 		    "gfarm_get_global_username_by_host_for_connection_cache: "
 		    "%s", gfarm_error_string(e));
-		free(hostname);
-		return (e);
-	} else {
-		e = gfm_client_connection_and_process_acquire(
-		    hostname, port, user, &gfm_server);
-		free(hostname);
-		free(user);
+		goto end;
 	}
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001259,
-		    "error occurred during process: %s",
+
+	/*
+	 * If failover was detected, all opened files must be failed
+	 * over and reset fds before opening new fd not to conflict
+	 * old fd and new fd in gfsd.
+	 *
+	 * this path is called from inode operations including
+	 * gfs_pio_open(), gfs_pio_create().
+	 */
+	if (gfarm_filesystem_failover_detected(gfarm_filesystem_get(
+	    hostname, port))) {
+		if ((e = gfm_client_connection_failover_pre_connect(
+		    hostname, port, user)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_connection_failover_acquired: %s",
+			    gfarm_error_string(e));
+			goto end;
+		}
+	}
+
+	if ((e = gfm_client_connection_and_process_acquire(
+		    hostname, port, user, &gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_connection_and_process_acquire: %s",
 		    gfarm_error_string(e));
-		return (e);
-	}
-	if (gfm_serverp)
-		*gfm_serverp = gfm_server;
+	} else
+		*gfm_serverp = gfm_server; /* gfm_serverp is not NULL */
+end:
+	free(hostname);
+	free(user);
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
