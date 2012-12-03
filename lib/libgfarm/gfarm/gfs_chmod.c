@@ -48,11 +48,11 @@ gfs_chmod(const char *path, gfarm_mode_t mode)
 	struct gfm_chmod_closure closure;
 
 	closure.mode = mode;
-	return (gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_modifiable(path, GFARM_FILE_LOOKUP,
 	    gfm_chmod_request,
 	    gfm_chmod_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }
 
@@ -62,10 +62,10 @@ gfs_lchmod(const char *path, gfarm_mode_t mode)
 	struct gfm_chmod_closure closure;
 
 	closure.mode = mode;
-	return (gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_no_follow_modifiable(path, GFARM_FILE_LOOKUP,
 	    gfm_chmod_request,
 	    gfm_chmod_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }

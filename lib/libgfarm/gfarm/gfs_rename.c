@@ -53,6 +53,13 @@ gfm_rename_result(struct gfm_connection *gfm_server, void *closure)
 	return (e);
 }
 
+static int
+gfm_rename_must_be_warned(gfarm_error_t e, void *closure)
+{
+	/* error returned from inode_lookup_basename() */
+	return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+}
+
 gfarm_error_t
 gfs_rename(const char *src, const char *dst)
 {
@@ -62,9 +69,10 @@ gfs_rename(const char *src, const char *dst)
 	closure.src = src;
 	closure.dst = dst;
 
-	e = gfm_name2_op(src, dst, GFARM_FILE_SYMLINK_NO_FOLLOW,
+	e = gfm_name2_op_modifiable(src, dst, GFARM_FILE_SYMLINK_NO_FOLLOW,
 	    NULL, gfm_rename_request, gfm_rename_result,
-	    gfm_name2_success_op_connection_free, NULL, &closure);
+	    gfm_name2_success_op_connection_free, NULL,
+	    gfm_rename_must_be_warned, &closure);
 	if (e != GFARM_ERR_NO_ERROR) {
 		if (e == GFARM_ERR_PATH_IS_ROOT)
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;

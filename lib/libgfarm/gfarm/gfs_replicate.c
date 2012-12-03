@@ -69,11 +69,11 @@ gfs_replicate_file_from_to_request(
 	closure.srchost = srchost;
 	closure.dsthost = dsthost;
 	closure.flags = (flags & ~GFS_REPLICATE_FILE_MIGRATE);
-	e = gfm_inode_op(file, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_modifiable(file, GFARM_FILE_LOOKUP,
 	    gfm_replicate_file_from_to_request,
 	    gfm_replicate_file_from_to_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure);
 
 	/*

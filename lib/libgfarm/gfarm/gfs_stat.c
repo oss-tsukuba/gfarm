@@ -87,7 +87,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	closure.st = s;
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_stat_request,
 	    gfm_stat_result,
 	    gfm_inode_success_op_connection_free,
@@ -118,7 +118,7 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 	gfs_profile(gfarm_gettimerval(&t1));
 
 	closure.st = s;
-	e = gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_no_follow_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_stat_request,
 	    gfm_stat_result,
 	    gfm_inode_success_op_connection_free,

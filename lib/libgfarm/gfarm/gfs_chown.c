@@ -50,11 +50,11 @@ gfs_chown(const char *path, const char *username, const char *groupname)
 
 	closure.username = username;
 	closure.groupname = groupname;
-	return (gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_modifiable(path, GFARM_FILE_LOOKUP,
 	    gfm_chown_request,
 	    gfm_chown_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }
 
@@ -65,10 +65,10 @@ gfs_lchown(const char *path, const char *username, const char *groupname)
 
 	closure.username = username;
 	closure.groupname = groupname;
-	return (gfm_inode_op_no_follow(path, GFARM_FILE_LOOKUP,
+	return (gfm_inode_op_no_follow_modifiable(path, GFARM_FILE_LOOKUP,
 	    gfm_chown_request,
 	    gfm_chown_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }

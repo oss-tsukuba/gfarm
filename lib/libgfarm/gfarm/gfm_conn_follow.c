@@ -35,7 +35,7 @@ gfm_client_connection_and_process_acquire_by_path_follow(const char *path,
 	struct gfm_conn_follow_closure closure;
 	gfarm_error_t e;
 
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_conn_follow_request,
 	    gfm_conn_follow_result,
 	    gfm_inode_success_op_connection_free,

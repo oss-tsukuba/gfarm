@@ -46,11 +46,9 @@ gfm_utimes_result(struct gfm_connection *gfm_server, void *closure)
 static gfarm_error_t
 gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 	gfarm_error_t (*inode_op)(const char *, int,
-		gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-		gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-		gfarm_error_t (*success_op)(struct gfm_connection *,
-		    void *, int, const char *, gfarm_ino_t),
-		void (*cleanup_op)(struct gfm_connection *, void *), void *))
+	    gfm_inode_request_op_t, gfm_result_op_t,
+	    gfm_success_op_t, gfm_cleanup_op_t,
+	    gfm_must_be_warned_op_t, void *))
 {
 	struct gfm_utimes_closure closure;
 
@@ -71,18 +69,19 @@ gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 	    gfm_utimes_request,
 	    gfm_utimes_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }
 
 gfarm_error_t
 gfs_utimes(const char *path, const struct gfarm_timespec *tsp)
 {
-	return (gfs_utimes_common(path, tsp, gfm_inode_op));
+	return (gfs_utimes_common(path, tsp, gfm_inode_op_modifiable));
 }
 
 gfarm_error_t
 gfs_lutimes(const char *path, const struct gfarm_timespec *tsp)
 {
-	return (gfs_utimes_common(path, tsp, gfm_inode_op_no_follow));
+	return (gfs_utimes_common(path, tsp,
+	    gfm_inode_op_no_follow_modifiable));
 }

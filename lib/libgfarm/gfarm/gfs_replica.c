@@ -68,7 +68,7 @@ gfs_replica_list_by_name(const char *path, int *np, char ***hostsp)
 	gfarm_error_t e;
 	struct gfm_replica_list_by_name_closure closure;
 
-	e = gfm_inode_op(path, GFARM_FILE_LOOKUP,
+	e = gfm_inode_op_readonly(path, GFARM_FILE_LOOKUP,
 	    gfm_replica_list_by_name_request,
 	    gfm_replica_list_by_name_result,
 	    gfm_inode_success_op_connection_free,
@@ -128,10 +128,11 @@ gfs_replica_remove_by_file(const char *path, const char *host)
 	struct gfm_replica_remove_by_file_closure closure;
 
 	closure.host = host;
-	return (gfm_inode_op(path, GFARM_FILE_LOOKUP|GFARM_FILE_REPLICA_SPEC,
+	return (gfm_inode_op_modifiable(path,
+	    GFARM_FILE_LOOKUP|GFARM_FILE_REPLICA_SPEC,
 	    gfm_replica_remove_by_file_request,
 	    gfm_replica_remove_by_file_result,
 	    gfm_inode_success_op_connection_free,
-	    NULL,
+	    NULL, NULL,
 	    &closure));
 }

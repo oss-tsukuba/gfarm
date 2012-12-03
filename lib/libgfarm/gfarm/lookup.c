@@ -631,18 +631,12 @@ gfm_inode_or_name_op_on_error_result(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_inode_or_name_op(const char *url, int flags,
-	gfarm_error_t (*inode_request_op)(
-		struct gfm_connection*, void *),
-	gfarm_error_t (*name_request_op)(
-		struct gfm_connection*, void *, const char *),
-	gfarm_error_t (*result_op)(
-		struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(
-		struct gfm_connection *, void *, int, const char *,
-		gfarm_ino_t),
-	void (*cleanup_op)(struct gfm_connection *, void *),
-	void *closure)
+gfm_inode_or_name_op0(const char *url, int flags,
+	gfm_inode_request_op_t inode_request_op,
+	gfm_name_request_op_t name_request_op,
+	gfm_result_op_t result_op, gfm_success_op_t success_op,
+	gfm_cleanup_op_t cleanup_op, void *closure,
+	struct gfm_connection **gfm_serverp)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = NULL;
@@ -777,6 +771,8 @@ gfm_inode_or_name_op(const char *url, int flags,
 		break;
 	}
 
+	if (gfm_server)
+		*gfm_serverp = gfm_server;
 	if (is_success) {
 		e = (*success_op)(gfm_server, closure, type, path, ino);
 		if (nextpath)
@@ -786,8 +782,6 @@ gfm_inode_or_name_op(const char *url, int flags,
 
 	if (nextpath)
 		free(nextpath);
-	if (gfm_server)
-		gfm_client_connection_free(gfm_server);
 
 	/* NOTE: the opened descriptor is automatically closed by gfmd */
 
@@ -799,35 +793,143 @@ gfm_inode_or_name_op(const char *url, int flags,
 	return (e);
 }
 
+struct inode_or_name_op_info {
+	const char *url;
+	int flags;
+	gfm_inode_request_op_t inode_request_op;
+	gfm_name_request_op_t name_request_op;
+	gfm_result_op_t result_op;
+	gfm_success_op_t success_op;
+	gfm_cleanup_op_t cleanup_op;
+	gfm_must_be_warned_op_t must_be_warned_op;
+	void *closure;
+};
 
-gfarm_error_t
-gfm_inode_op(const char *url, int flags,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
-	    int, const char *, gfarm_ino_t),
-	void (*cleanup_op)(struct gfm_connection *, void *),
+static gfarm_error_t
+inode_or_name_op_rpc(struct gfm_connection **gfm_serverp, void *closure)
+{
+	gfarm_error_t e;
+	struct inode_or_name_op_info *ii = closure;
+
+	e = gfm_inode_or_name_op0(ii->url, ii->flags,
+	    ii->inode_request_op, ii->name_request_op,
+	    ii->result_op, ii->success_op, ii->cleanup_op,
+	    ii->closure, gfm_serverp);
+	return (e);
+}
+
+static gfarm_error_t
+inode_or_name_op_post_failover(struct gfm_connection *gfm_server,
 	void *closure)
+{
+	if (gfm_server)
+		gfm_client_connection_free(gfm_server);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+inode_or_name_op_exit(struct gfm_connection *gfm_server, gfarm_error_t e,
+	void *closure)
+{
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* do not release connection when no error occurred. */
+		(void)inode_or_name_op_post_failover(gfm_server, closure);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_inode_or_name_op: %s",
+		    gfarm_error_string(e));
+	}
+}
+
+static int
+inode_or_name_op_must_be_warned(gfarm_error_t e, void *closure)
+{
+	struct inode_or_name_op_info *ii = closure;
+
+	return (ii->must_be_warned_op ? ii->must_be_warned_op(e, ii->closure) :
+	    0);
+}
+
+static gfarm_error_t
+gfm_inode_or_name_op(const char *url, int flags,
+	gfm_inode_request_op_t inode_request_op,
+	gfm_name_request_op_t name_request_op,
+	gfm_result_op_t result_op, gfm_success_op_t success_op,
+	gfm_cleanup_op_t cleanup_op, gfm_must_be_warned_op_t must_be_warned_op,
+	void *closure)
+{
+	struct inode_or_name_op_info ii = {
+		url, flags,
+		inode_request_op, name_request_op, result_op,
+		success_op, cleanup_op, must_be_warned_op, closure,
+	};
+
+	return (gfm_client_rpc_with_failover(inode_or_name_op_rpc,
+	    inode_or_name_op_post_failover, inode_or_name_op_exit,
+	    inode_or_name_op_must_be_warned, &ii));
+}
+
+static gfarm_error_t
+gfm_inode_op(const char *url, int flags,
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op,
+	gfm_must_be_warned_op_t must_be_warned_op, void *closure)
 {
 	gfarm_error_t e = gfm_inode_or_name_op(url,
 	    flags | GFARM_FILE_OPEN_LAST_COMPONENT,
-	    request_op, NULL, result_op, success_op, cleanup_op, closure);
+	    request_op, NULL, result_op, success_op, cleanup_op,
+	    must_be_warned_op, closure);
+
 	return (e == GFARM_ERR_PATH_IS_ROOT ?
 		GFARM_ERR_OPERATION_NOT_PERMITTED : e);
 }
 
+gfarm_error_t
+gfm_inode_op_readonly(const char *url, int flags,
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op, void *closure)
+{
+	return (gfm_inode_op(url, flags, request_op, result_op, success_op,
+	    cleanup_op, NULL, closure));
+}
 
 gfarm_error_t
+gfm_inode_op_modifiable(const char *url, int flags,
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op,
+	gfm_must_be_warned_op_t must_be_warned_op, void *closure)
+{
+	return (gfm_inode_op(url, flags, request_op, result_op, success_op,
+	    cleanup_op, must_be_warned_op, closure));
+}
+
+static gfarm_error_t
 gfm_inode_op_no_follow(const char *url, int flags,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
-	    int, const char *, gfarm_ino_t),
-	void (*cleanup_op)(struct gfm_connection *, void *),
-	void *closure)
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op,
+	gfm_must_be_warned_op_t must_be_warned_op, void *closure)
 {
 	return (gfm_inode_op(url, flags | GFARM_FILE_SYMLINK_NO_FOLLOW,
-		request_op, result_op, success_op, cleanup_op, closure));
+	    request_op, result_op, success_op, cleanup_op, must_be_warned_op,
+	    closure));
+}
+
+gfarm_error_t
+gfm_inode_op_no_follow_readonly(const char *url, int flags,
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op, void *closure)
+{
+	return (gfm_inode_op_no_follow(url, flags, request_op, result_op,
+	    success_op, cleanup_op, NULL, closure));
+}
+
+gfarm_error_t
+gfm_inode_op_no_follow_modifiable(const char *url, int flags,
+	gfm_inode_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_cleanup_op_t cleanup_op,
+	gfm_must_be_warned_op_t must_be_warned_op, void *closure)
+{
+	return (gfm_inode_op_no_follow(url, flags, request_op, result_op,
+	    success_op, cleanup_op, must_be_warned_op, closure));
 }
 
 static gfarm_error_t
@@ -919,31 +1021,37 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 	return (e);
 }
 
-gfarm_error_t
+static gfarm_error_t
 gfm_name_op(const char *url, gfarm_error_t root_error_code,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *,
-		const char *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(struct gfm_connection *, void *,
-		int, const char *, gfarm_ino_t),
+	gfm_name_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_must_be_warned_op_t must_be_warned_op,
 	void *closure)
 {
 	gfarm_error_t e = gfm_inode_or_name_op(url, 0,
-	    NULL, request_op, result_op, success_op,
-	    NULL, closure);
+	    NULL, request_op, result_op, success_op, NULL, must_be_warned_op,
+	    closure);
+
 	return (e == GFARM_ERR_PATH_IS_ROOT ? root_error_code : e);
 }
 
 gfarm_error_t
-gfm_name2_op(const char *src, const char *dst, int flags,
-	gfarm_error_t (*inode_request_op)(struct gfm_connection *,
-		void *, const char *),
-	gfarm_error_t (*name_request_op)(struct gfm_connection *,
-		void *, const char *, const char *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*success_op)(struct gfm_connection *, void *),
-	void (*cleanup_op)(struct gfm_connection *, void *),
+gfm_name_op_modifiable(const char *url, gfarm_error_t root_error_code,
+	gfm_name_request_op_t request_op, gfm_result_op_t result_op,
+	gfm_success_op_t success_op, gfm_must_be_warned_op_t must_be_warned_op,
 	void *closure)
+{
+	return (gfm_name_op(url, root_error_code, request_op, result_op,
+	    success_op, must_be_warned_op, closure));
+}
+
+static gfarm_error_t
+gfm_name2_op0(const char *src, const char *dst, int flags,
+	gfm_name2_inode_request_op_t inode_request_op,
+	gfm_name2_request_op_t name_request_op,
+	gfm_result_op_t result_op, gfm_name2_success_op_t success_op,
+	gfm_cleanup_op_t cleanup_op, void *closure,
+	struct gfm_connection **sconnp, struct gfm_connection **dconnp,
+	int *is_dst_errp)
 {
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, se, de, e2;
 	struct gfm_connection *sconn = NULL, *dconn = NULL;
@@ -1128,6 +1236,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			gflog_warning(GFARM_MSG_1002627,
 			    "compound_begin request: %s",
 			    gfarm_error_string(e));
+			*is_dst_errp = 1;
 			break;
 		}
 		if (slookup) {
@@ -1163,18 +1272,22 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		if (dlookup) {
 			if ((e = gfm_inode_or_name_op_lookup_request(dconn,
 				dpath, 0, &drest, &d_do_verify))
-			    != GFARM_ERR_NO_ERROR)
+			    != GFARM_ERR_NO_ERROR) {
+				*is_dst_errp = !same_mds;
 				break;
+			}
 			if ((e = gfm_client_get_fd_request(
 			    dconn)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002631,
 				    "get_fd request: %s",
 				    gfarm_error_string(e));
+				*is_dst_errp = !same_mds;
 				break;
 			}
 		} else if (same_mds) {
 			if ((e = gfm_client_put_fd_request(dconn, dfd))
 			    != GFARM_ERR_NO_ERROR) {
+				/* sconn == dconn */
 				gflog_debug(GFARM_MSG_1002632,
 				    "put_fd(%d) request: %s", dfd,
 				    gfarm_error_string(e));
@@ -1230,13 +1343,16 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		}
 		if (dlookup && !same_mds) {
 			if ((e = gfm_inode_or_name_op_on_error_request(dconn))
-			    != GFARM_ERR_NO_ERROR)
+			    != GFARM_ERR_NO_ERROR) {
+				*is_dst_errp = 1;
 				break;
+			}
 			if ((e = gfm_client_compound_end_request(dconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002638,
 				    "compound_end request failed: %s",
 				    gfarm_error_string(e));
+				*is_dst_errp = 1;
 				break;
 			}
 		}
@@ -1254,6 +1370,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 			gflog_warning(GFARM_MSG_1002640,
 			    "compound_begin result: %s",
 			    gfarm_error_string(e));
+			*is_dst_errp = 1;
 			break;
 		}
 		se = de = GFARM_ERR_NO_ERROR;
@@ -1310,6 +1427,7 @@ dst_lookup_result:
 				if (de == GFARM_ERR_IS_A_SYMBOLIC_LINK)
 					goto on_error_result;
 				e = de;
+				*is_dst_errp = !same_mds;
 				break;
 			}
 			if ((e = gfm_client_get_fd_result(dconn,
@@ -1317,6 +1435,7 @@ dst_lookup_result:
 				gflog_debug(GFARM_MSG_1002644,
 				    "get_fd result: %s",
 				    gfarm_error_string(e));
+				*is_dst_errp = !same_mds;
 				break;
 			}
 		} else if (same_mds) {
@@ -1325,6 +1444,7 @@ dst_lookup_result:
 				gflog_debug(GFARM_MSG_1002645,
 				    "put_fd(%d) result: %s", dfd,
 				    gfarm_error_string(e));
+				/* sconn == dconn */
 				break;
 			}
 		}
@@ -1375,6 +1495,7 @@ on_error_result:
 		    (e = gfm_inode_or_name_op_on_error_result(dconn,
 			d_is_last, drest, &dnextpath, &dretry))
 		    != GFARM_ERR_NO_ERROR) {
+			*is_dst_errp = !same_mds;
 			break;
 		}
 		if (((same_mds && se == GFARM_ERR_NO_ERROR &&
@@ -1387,6 +1508,7 @@ on_error_result:
 			    gfarm_error_string(e));
 			if (sconn == dconn && cleanup_op)
 				(*cleanup_op)(sconn, closure);
+			*is_dst_errp = !same_mds;
 			break;
 		}
 		if (dlookup && !same_mds &&
@@ -1396,6 +1518,7 @@ on_error_result:
 			gflog_debug(GFARM_MSG_1002651,
 			    "compound_end result failed: %s",
 			    gfarm_error_string(e));
+			*is_dst_errp = 1;
 			break;
 		}
 		if (op_called) {
@@ -1416,6 +1539,10 @@ on_error_result:
 		free(snextpath);
 	if (dnextpath)
 		free(dnextpath);
+	if (sconn)
+		*sconnp = sconn;
+	if (dconn && !same_mds)
+		*dconnp = dconn;
 
 	if (is_success)
 		return (*success_op)(sconn, closure);
@@ -1437,10 +1564,6 @@ on_error_result:
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
 	}
-	if (sconn)
-		gfm_client_connection_free(sconn);
-	if (dconn && !same_mds)
-		gfm_client_connection_free(dconn);
 
 	/*
 	 * NOTE: the opened descriptor unexternalized is automatically closed
@@ -1453,4 +1576,105 @@ on_error_result:
 			gfarm_error_string(e));
 	}
 	return (e);
+}
+
+struct name2_op_info {
+	const char *src, *dst;
+	int flags;
+	struct gfm_connection *sconn, *dconn;
+	gfm_name2_inode_request_op_t inode_request_op;
+	gfm_name2_request_op_t name_request_op;
+	gfm_result_op_t result_op;
+	gfm_name2_success_op_t success_op;
+	gfm_cleanup_op_t cleanup_op;
+	gfm_must_be_warned_op_t must_be_warned_op;
+	void *closure;
+};
+
+static gfarm_error_t
+name2_op_rpc(struct gfm_connection **gfm_serverp, void *closure)
+{
+	gfarm_error_t e;
+	struct name2_op_info *ni = closure;
+	struct gfm_connection *sconn = NULL, *dconn = NULL;
+	int is_dst_err = 0;
+
+	e = gfm_name2_op0(ni->src, ni->dst, ni->flags, ni->inode_request_op,
+	    ni->name_request_op, ni->result_op, ni->success_op,
+	    ni->cleanup_op, ni->closure, &sconn, &dconn, &is_dst_err);
+	*gfm_serverp = is_dst_err && (sconn != dconn) ? dconn : sconn;
+	ni->sconn = sconn;
+	ni->dconn = dconn;
+
+	return (e);
+}
+
+static gfarm_error_t
+name2_op_post_failover(struct gfm_connection *gfm_serverp, void *closure)
+{
+	struct name2_op_info *ni = closure;
+
+	if (ni->sconn) {
+		gfm_client_connection_free(ni->sconn);
+		ni->sconn = NULL;
+	}
+	if (ni->dconn && ni->sconn != ni->dconn) {
+		gfm_client_connection_free(ni->dconn);
+		ni->dconn = NULL;
+	}
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+name2_op_exit(struct gfm_connection *gfm_serverp, gfarm_error_t e,
+	void *closure)
+{
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* do not release connection when no error occurred. */
+		(void)name2_op_post_failover(gfm_serverp, closure);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_name2_op: %s", gfarm_error_string(e));
+	}
+}
+
+static int
+name2_must_be_warned_op(gfarm_error_t e, void *closure)
+{
+	struct name2_op_info *ni = closure;
+
+	return (ni->must_be_warned_op ? ni->must_be_warned_op(e, ni->closure) :
+	    0);
+}
+
+static gfarm_error_t
+gfm_name2_op(const char *src, const char *dst, int flags,
+	gfm_name2_inode_request_op_t inode_request_op,
+	gfm_name2_request_op_t name_request_op,
+	gfm_result_op_t result_op, gfm_name2_success_op_t success_op,
+	gfm_cleanup_op_t cleanup_op, gfm_must_be_warned_op_t must_be_warned_op,
+	void *closure)
+{
+	struct name2_op_info ni = {
+		src, dst, flags, NULL, NULL,
+		inode_request_op, name_request_op, result_op,
+		success_op, cleanup_op, must_be_warned_op, closure,
+	};
+
+	return (gfm_client_rpc_with_failover(name2_op_rpc,
+	    name2_op_post_failover, name2_op_exit, name2_must_be_warned_op,
+	    &ni));
+}
+
+gfarm_error_t
+gfm_name2_op_modifiable(const char *src, const char *dst, int flags,
+	gfm_name2_inode_request_op_t inode_request_op,
+	gfm_name2_request_op_t name_request_op,
+	gfm_result_op_t result_op, gfm_name2_success_op_t success_op,
+	gfm_cleanup_op_t cleanup_op, gfm_must_be_warned_op_t must_be_warned_op,
+	void *closure)
+{
+	return (gfm_name2_op(src, dst, flags, inode_request_op,
+	    name_request_op, result_op, success_op, cleanup_op,
+	    must_be_warned_op, closure));
 }
