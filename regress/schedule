@@ -57,6 +57,7 @@ gftool/gfln/gfln-s.sh
 gftool/gfln/gfln-s_toolong.sh
 gftool/gfls/root.sh
 gftool/gfls/notexist.sh
+gftool/gfls/unknownhost.sh
 gftool/gfmkdir/mkdir.sh
 gftool/gfmkdir/mkdir_toolong.sh
 gftool/gfmkdir/dir_nlink.sh
