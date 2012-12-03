@@ -4,16 +4,19 @@
 
 #include <pthread.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>	/* TCP_NODELAY */
 #include <netdb.h>		/* getprotobyname() */
 #include <errno.h>
 #include <string.h>
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
+
 #include "gfutil.h"
 
 #include "context.h"
