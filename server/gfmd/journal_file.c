@@ -300,6 +300,16 @@ journal_file_reader_committed_pos_unlocked(struct journal_file_reader *reader,
 	*rlapp = reader->committed_lap;
 }
 
+static int
+journal_file_reader_is_empty(struct journal_file_reader *reader)
+{
+	struct journal_file *jf = reader->file;
+	struct journal_file_writer *writer = &jf->writer;
+
+	return (reader->committed_pos == writer->pos &&
+	    reader->committed_lap == writer->lap);
+}
+
 /* PREREQUISITE: journal_file_mutex. */
 void
 journal_file_reader_commit_pos(struct journal_file_reader *reader)
@@ -1493,6 +1503,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 		e = journal_file_reader_init(jf, fd, rpos, rlap, 0, *readerp);
 	else
 		e = journal_file_reader_new(jf, fd, rpos, rlap, 0, readerp);
+	gfarm_cond_broadcast(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (e2 != GFARM_ERR_NO_ERROR) {
 			journal_file_reader_expire(*readerp);
@@ -1691,7 +1702,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 		goto unlock;
 	if ((e = journal_file_writer_flush(writer)) != GFARM_ERR_NO_ERROR)
 		goto unlock;
-	gfarm_cond_signal(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
+	gfarm_cond_broadcast(&jf->nonempty_cond, diag, JOURNAL_FILE_STR);
 #ifdef DEBUG_JOURNAL
 	gflog_info(GFARM_MSG_1002906,
 	    "write seqnum=%llu ope=%s wpos=%llu wlap=%llu",
@@ -2005,6 +2016,35 @@ journal_file_wait_for_read_completion(struct journal_file_reader *reader)
 	while (JOURNAL_FILE_READER_DRAINED(reader))
 		gfarm_cond_wait(&jf->drain_cond, &jf->mutex, diag,
 		    JOURNAL_FILE_STR);
+	journal_file_mutex_unlock(jf, diag);
+}
+
+void
+journal_file_wait_until_readable(struct journal_file *jf)
+{
+	struct journal_file_reader *reader;
+	int isempty;
+	static const char diag[] = "journal_file_wait_until_readable";
+
+	journal_file_mutex_lock(jf, diag);
+
+	for (;;) {
+		isempty = 1;
+		FOREACH_JOURNAL_READER(reader, jf) {
+			if (journal_file_reader_is_invalid(reader) ||
+			    journal_file_reader_is_expired_unlocked(reader))
+				continue;
+			if (!journal_file_reader_is_empty(reader)) {
+				isempty = 0;
+				break;
+			}
+		}
+		if (!isempty)
+			break;
+		gfarm_cond_wait(&jf->nonempty_cond, &jf->mutex, diag,
+		    JOURNAL_FILE_STR);
+	}
+
 	journal_file_mutex_unlock(jf, diag);
 }
 

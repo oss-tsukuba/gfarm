@@ -108,6 +108,7 @@ gfarm_error_t journal_file_read(struct journal_file_reader *, void *,
 gfarm_error_t journal_file_read_serialized(struct journal_file_reader *,
 	char **, gfarm_uint32_t *, gfarm_uint64_t *, int *);
 void journal_file_wait_for_read_completion(struct journal_file_reader *);
+void journal_file_wait_until_readable(struct journal_file *);
 void journal_file_wait_until_empty(struct journal_file *);
 int journal_file_is_closed(struct journal_file *);
 int journal_file_is_waiting_until_nonempty(struct journal_file *);

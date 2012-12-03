@@ -585,6 +585,12 @@ db_journal_write_string(gfarm_uint64_t seqnum, enum journal_operation ope,
 		db_journal_write_string_core));
 }
 
+void
+db_journal_wait_until_readable(void)
+{
+	journal_file_wait_until_readable(self_jf);
+}
+
 /**********************************************************/
 /* transaction */
 
