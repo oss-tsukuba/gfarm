@@ -177,13 +177,11 @@ gfs_pio_view_section_close(GFS_File gf)
 
 			e = gfarm_file_section_info_replace(
 				gf->pi.pathname, vc->section, &fi1);
-		}
-		else
+		} else
 			e = gfs_pio_view_section_set_checksum_unknown(gf);
-	}
-	else if (md_calculated == 1 &&
-		 (e = gfarm_file_section_info_get(
-			  gf->pi.pathname, vc->section, &fi)) == GFARM_ERR_NO_ERROR) {
+	} else if (md_calculated == 1 &&
+		(e = gfarm_file_section_info_get(gf->pi.pathname,
+		    vc->section, &fi)) == GFARM_ERR_NO_ERROR) {
 		if (gfs_file_section_info_check_busy(&fi))
 			/* skip check*/;
 		else if (gfs_file_section_info_check_checksum_unknown(&fi)) {
@@ -437,10 +435,10 @@ connect_and_open(GFS_File gf, const char *hostname, int port)
 			e = gfs_pio_open_section(gf, gfs_server);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfs_client_connection_free(gfs_server);
-			if (gfs_client_is_connection_error(e) && ++retry<=1 &&
-			    gfs_client_connection_acquire_by_host(
-			    gf->gfm_server, hostname, port,
-			    &gfs_server, NULL) == GFARM_ERR_NO_ERROR)
+			if (gfs_client_is_connection_error(e) && ++retry <= 1
+			    && gfs_client_connection_acquire_by_host(
+				gf->gfm_server, hostname, port, &gfs_server,
+				NULL) == GFARM_ERR_NO_ERROR)
 				continue;
 		}
 
@@ -475,7 +473,7 @@ choose_trivial_one(struct gfarm_host_sched_info *info,
 		gflog_debug(GFARM_MSG_1001352,
 			"allocation of 'host' failed: %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return(GFARM_ERR_NO_MEMORY);
+		return (GFARM_ERR_NO_MEMORY);
 	}
 
 	*hostp = host;
@@ -543,8 +541,7 @@ gfarm_schedule_file(GFS_File gf, char **hostp, gfarm_int32_t *portp)
 			host = strdup(host);
 			if (host == NULL)
 				e = GFARM_ERR_NO_MEMORY;
-		}
-		else if (e == GFARM_ERR_ALREADY_EXISTS ||
+		} else if (e == GFARM_ERR_ALREADY_EXISTS ||
 			 e == GFARM_ERR_UNKNOWN_HOST) {
 			/*
 			 * local host is too busy to select or unknown
@@ -725,7 +722,7 @@ gfs_pio_internal_set_view_section(GFS_File gf, char *host)
 		EVP_DigestInit(&vc->md_ctx, GFS_DEFAULT_DIGEST_MODE);
 
 		if (gf->open_flags & GFARM_FILE_APPEND) {
-			e = gfs_pio_seek(gf, 0,SEEK_END, NULL);
+			e = gfs_pio_seek(gf, 0, SEEK_END, NULL);
 			if (e == GFARM_ERR_NO_ERROR)
 				goto finish;
 			(*vc->ops->storage_close)(gf);

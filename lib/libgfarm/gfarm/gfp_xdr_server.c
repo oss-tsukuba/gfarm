@@ -77,7 +77,7 @@ void
 gfp_xdr_async_peer_free(gfp_xdr_async_peer_t async_server, void *peer)
 {
 	static const char diag[] = "gfp_xdr_async_peer_free";
-	
+
 	gfarm_id_table_free(async_server->idtab, gfp_xdr_async_xid_free, peer);
 	gfarm_mutex_destroy(&async_server->mutex, diag, async_peer_diag);
 	free(async_server);

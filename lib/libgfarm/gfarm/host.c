@@ -124,7 +124,7 @@ gfm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 			gfarm_error_string(GFARM_ERR_UNKNOWN_HOST));
 		return (GFARM_ERR_UNKNOWN_HOST);
 	}
-	for (i = 0, n = hp->h_name; n != NULL; n = hp->h_aliases[i++]){
+	for (i = 0, n = hp->h_name; n != NULL; n = hp->h_aliases[i++]) {
 		if (host_info_get_by_name_alias(gfm_server, n, info) ==
 		    GFARM_ERR_NO_ERROR)
 			return (GFARM_ERR_NO_ERROR);
@@ -319,7 +319,8 @@ gfarm_host_get_self_architecture(char **architecture)
 		if (error_save != GFARM_ERR_NO_ERROR)
 			return (error_save);
 
-		if ((self_architecture = getenv("GFARM_ARCHITECTURE"))!= NULL){
+		if ((self_architecture =
+		    getenv("GFARM_ARCHITECTURE")) != NULL) {
 			/* do nothing */
 		} else if ((e = gfarm_host_get_canonical_self_name(
 		    &canonical_self_name)) == GFARM_ERR_NO_ERROR) {
@@ -631,7 +632,7 @@ host_address_get(const char *name, int port,
 			}
 			if (if_hostnamep != NULL) {
 				/* XXX - or strdup(res0->ai_canonname)? */
-				n = strdup(name); 
+				n = strdup(name);
 				if (n == NULL) {
 					gfarm_freeaddrinfo(res0);
 					gflog_debug(GFARM_MSG_1000880,
@@ -663,7 +664,7 @@ host_address_get_matched(const char *name, int port,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {
 	return (host_address_get(name, port,
-	    hostspec == NULL ? always_match: gfarm_hostspec_match, hostspec,
+	    hostspec == NULL ? always_match : gfarm_hostspec_match, hostspec,
 	    peer_addr, if_hostnamep));
 }
 
@@ -760,7 +761,7 @@ gfm_host_info_address_get(struct gfm_connection *gfm_server,
 
 	hir.info = info;
 	hir.tried = hir.got = 1;
-	return (address_get(gfm_server, host, &hir, port, peer_addr, 
+	return (address_get(gfm_server, host, &hir, port, peer_addr,
 	    if_hostnamep));
 }
 

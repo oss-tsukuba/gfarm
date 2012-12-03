@@ -177,9 +177,9 @@ gfarm_hostspec_parse(char *name, struct gfarm_hostspec **hostspecpp)
 	struct in_addr addr, mask;
 	unsigned long masklen;
 
-	if (strcmp(name, "*") == 0 || strcmp(name, "ALL") == 0) {
+	if (strcmp(name, "*") == 0 || strcmp(name, "ALL") == 0)
 		return (gfarm_hostspec_any_new(hostspecpp));
-	}
+
 	if (gfarm_string_to_in4addr(name, &end1p, &addr)
 	    == GFARM_ERR_NO_ERROR) {
 		if (*end1p == '\0') {
@@ -272,7 +272,7 @@ gfarm_hostspec_match(struct gfarm_hostspec *hostspecp,
 		if (name == NULL)
 			return (0);
 		if (hostspecp->u.name[0] == '.') {
-			return (gfarm_host_is_in_domain(name, 
+			return (gfarm_host_is_in_domain(name,
 			    &hostspecp->u.name[1]));
 		} else {
 			return (strcasecmp(name, hostspecp->u.name) == 0);
@@ -333,7 +333,7 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 			"Cannot get name info from IP address: %s",
 			gfarm_error_string(
 		GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME));
-		return(GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME);
+		return (GFARM_ERR_CANNOT_RESOLVE_AN_IP_ADDRESS_INTO_A_HOSTNAME);
 	}
 
 	memset(&hints, 0, sizeof(hints));

@@ -2,7 +2,7 @@
  * Non-standard errors. Gfarm library internal use only.
  * Compatibility shouldn't be assumed,
  * so, these errors shouldn't be used via network protocol.
- * 
+ *
  */
 enum gfarm_errmsg {
 	GFARM_ERRMSG_BEGIN = 4096, /* must be > GFARM_ERR_NUMBER */

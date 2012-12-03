@@ -352,7 +352,7 @@ gfarm_gsi_cred_config_convert_to_name(
 		if (gfarmSecSessionGetInitiatorInitialCredential(&cred) < 0 ||
 		    cred == GSS_C_NO_CREDENTIAL)
 			return (GFARM_ERRMSG_CRED_TYPE_SELF_NOT_INITIALIZED_AS_AN_INITIATOR);
-		rv = gfarmGssNewCredentialName(namep, cred, &e_major,&e_minor);
+		rv = gfarmGssNewCredentialName(namep, cred, &e_major, &e_minor);
 		break;
 	default:
 		return (GFARM_ERRMSG_INVALID_CRED_TYPE);

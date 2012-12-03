@@ -113,9 +113,9 @@ gfarm_anyptrs_free_deeply(int n, void **values)
 {
 	int i;
 
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < n; i++)
 		free(values[i]);
-	}
+
 	free(values);
 }
 
@@ -251,9 +251,9 @@ attrvalues_copy(int nattrs, void ***attrvaluesp, size_t **attrsizesp,
 	for (i = 0; i < nattrs; i++) {
 		values[i] = malloc(attrsizes[i]);
 		if (values[i] == NULL) {
-			while (--i >= 0) {
+			while (--i >= 0)
 				free(values[i]);
-			}
+
 			free(values);
 			free(sizes);
 			return (GFARM_ERR_NO_MEMORY);
@@ -263,7 +263,7 @@ attrvalues_copy(int nattrs, void ***attrvaluesp, size_t **attrsizesp,
 	}
 	*attrvaluesp = values;
 	*attrsizesp = sizes;
-	return (GFARM_ERR_NO_ERROR);		
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t

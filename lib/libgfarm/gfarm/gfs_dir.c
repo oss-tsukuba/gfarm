@@ -123,7 +123,7 @@ gfs_chdir(const char *dir)
 	if (e != NULL)
 		return (e);
 	e = gfs_chdir_canonical(canonic_path);
-	free (canonic_path);
+	free(canonic_path);
 	return (e);
 }
 
@@ -133,7 +133,7 @@ gfs_getcwd(char *cwd, int cwdsize)
 	const char *path;
 	char *default_cwd = NULL, *e, *p;
 	int len;
-	
+
 	if (gfarm_current_working_directory != NULL)
 		path = gfarm_current_working_directory;
 	else if ((path = getenv("GFS_PWD")) != NULL)

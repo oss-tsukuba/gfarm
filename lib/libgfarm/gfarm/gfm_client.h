@@ -37,8 +37,7 @@ int gfm_client_is_connection_valid(struct gfm_connection *);
 const char *gfm_client_hostname(struct gfm_connection *);
 const char *gfm_client_username(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
-gfarm_error_t gfm_client_source_port(struct gfm_connection *gfm_server,
-	int*portp);
+gfarm_error_t gfm_client_source_port(struct gfm_connection *gfm_server, int *);
 gfarm_error_t gfm_client_set_username_for_gsi(struct gfm_connection *,
 	const char *);
 struct gfarm_metadb_server *gfm_client_connection_get_real_server(
@@ -170,7 +169,7 @@ gfarm_error_t gfm_client_fhclose_read_request(struct gfm_connection *,
 	gfarm_ino_t, gfarm_uint64_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_fhclose_read_result(struct gfm_connection *);
 gfarm_error_t gfm_client_fhclose_write_request(struct gfm_connection *,
-	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t, 
+	gfarm_ino_t, gfarm_uint64_t, gfarm_off_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int64_t, gfarm_int32_t);
 gfarm_error_t gfm_client_fhclose_write_result(struct gfm_connection *,
 	gfarm_int32_t *, gfarm_int64_t *, gfarm_int64_t *, gfarm_uint64_t *);

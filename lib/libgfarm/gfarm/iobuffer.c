@@ -569,7 +569,7 @@ gfarm_iobuffer_get_read(struct gfarm_iobuffer *b, void *data, int len)
 }
 
 /*
- * gfarm_iobuffer_get_read*() wait until desired length of data is 
+ * gfarm_iobuffer_get_read*() wait until desired length of data is
  * received.
  * gfarm_iobuffer_get_read_partial*() don't wait like that, but return
  * the contents of current buffer or the result of (*b->read_timeout_func)

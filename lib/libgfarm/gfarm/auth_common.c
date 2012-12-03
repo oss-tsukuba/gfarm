@@ -195,7 +195,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 #ifdef __GNUC__ /* workaround gcc warning: might be used uninitialized */
 	o_uid = o_gid = 0;
 #endif
-	GFARM_MALLOC_ARRAY(keyfilename, 
+	GFARM_MALLOC_ARRAY(keyfilename,
 		strlen(home) + sizeof(keyfile_basename));
 	if (keyfilename == NULL) {
 		gflog_debug(GFARM_MSG_1001023,
@@ -331,7 +331,7 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	 * these OpenSSL functions are not multithread safe,
 	 * at least about openssl-0.9.8e-12.el5_4.1.x86_64 on CentOS 5.4
 	 */
-	
+
 	gfarm_mutex_lock(&staticp->openssl_mutex, diag, openssl_diag);
 	EVP_DigestInit(&mdctx, EVP_md5());
 	EVP_DigestUpdate(&mdctx, challenge, GFARM_AUTH_CHALLENGE_LEN);

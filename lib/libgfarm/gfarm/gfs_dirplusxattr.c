@@ -120,7 +120,8 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 }
 
 static gfarm_error_t
-gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
+	void *closure)
 {
 	gfarm_error_t e = gfm_client_getdirentsplusxattr_request(
 	    gfm_server, DIRENTSPLUSXATTR_BUFCOUNT,
@@ -128,7 +129,8 @@ gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server, void *closure
 	    gfarm_xattr_caching_patterns_number());
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1002462, "getdirentsplusxattr request: %s",
+		gflog_warning(GFARM_MSG_1002462,
+		    "getdirentsplusxattr request: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -142,7 +144,8 @@ gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server, void *closure)
 	    dir->attrnamebuf, dir->attrvaluebuf, dir->attrsizebuf);
 
 	if (e != GFARM_ERR_NO_ERROR)
-		gflog_warning(GFARM_MSG_1002463, "getdirentsplusxattr result: %s",
+		gflog_warning(GFARM_MSG_1002463,
+		    "getdirentsplusxattr result: %s",
 		    gfarm_error_string(e));
 	return (e);
 }
@@ -164,7 +167,7 @@ gfs_readdirplusxattr(GFS_DirPlusXAttr dir,
 		e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
 		    gfm_getdirentsplusxattr_request,
 		    gfm_getdirentsplusxattr_result,
-		    NULL, 
+		    NULL,
 		    dir);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002464,

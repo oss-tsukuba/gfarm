@@ -501,11 +501,11 @@ gfs_client_connection_dispose(void *connection_data)
 }
 
 /*
- * gfs_client_connection_free() can be used for both 
+ * gfs_client_connection_free() can be used for both
  * an uncached connection which was created by gfs_client_connect(), and
  * a cached connection which was created by gfs_client_connection_acquire().
  * The connection will be immediately closed in the former uncached case.
- * 
+ *
  */
 void
 gfs_client_connection_free(struct gfs_connection *gfs_server)
@@ -1470,7 +1470,7 @@ gfs_client_statfs_request_multiplexed(struct gfarm_eventqueue *q,
 	}
 	*statepp = state;
 	return (GFARM_ERR_NO_ERROR);
-		
+
 error_free_readable:
 	gfarm_event_free(state->readable);
 error_free_writable:

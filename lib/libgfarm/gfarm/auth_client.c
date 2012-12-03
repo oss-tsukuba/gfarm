@@ -461,7 +461,7 @@ gfarm_auth_request_sharedsecret_send_giveup(int events, int fd,
 	state->error = gfp_xdr_send(state->conn, "i",
 	    GFARM_AUTH_SHAREDSECRET_GIVEUP);
 	if (state->error == GFARM_ERR_NO_ERROR &&
-	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_sharedsecret_receive_fin, state);
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
@@ -653,7 +653,7 @@ gfarm_auth_request_sharedsecret_send_keytype(int events, int fd,
 	state->error = gfp_xdr_send(state->conn, "i",
 	    GFARM_AUTH_SHAREDSECRET_MD5);
 	if (state->error == GFARM_ERR_NO_ERROR &&
-	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;
 		if ((rv = gfarm_eventqueue_add_event(state->q,
 		    state->readable, &timeout)) == 0) {
@@ -909,7 +909,7 @@ gfarm_auth_request_loop_ask_method(int events, int fd, void *closure,
 	}
 	state->error = gfp_xdr_send(state->conn, "i", method);
 	if (state->error == GFARM_ERR_NO_ERROR &&
-	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR){
+	    (state->error = gfp_xdr_flush(state->conn)) == GFARM_ERR_NO_ERROR) {
 		gfarm_fd_event_set_callback(state->readable,
 		    gfarm_auth_request_dispatch_method, state);
 		timeout.tv_sec = GFARM_AUTH_TIMEOUT; timeout.tv_usec = 0;

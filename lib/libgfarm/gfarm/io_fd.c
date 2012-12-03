@@ -78,7 +78,7 @@ gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *b,
 void
 gfarm_iobuffer_set_nonblocking_read_fd(struct gfarm_iobuffer *b, int fd)
 {
-	gfarm_iobuffer_set_read_timeout(b, 
+	gfarm_iobuffer_set_read_timeout(b,
 	    gfarm_iobuffer_nonblocking_read_fd_op, NULL, fd);
 }
 
@@ -146,7 +146,7 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 		} else if (avail == -1) {
 			if (errno == EINTR)
 				continue;
-			gfarm_iobuffer_set_error(b, 
+			gfarm_iobuffer_set_error(b,
 			    gfarm_errno_to_error(errno));
 			return (-1);
 		}

@@ -830,7 +830,8 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_NO_ERROR); /* ignore this host */
 #if 0 /* not yet in gfarm v2 */
 	if (host_info != NULL && search_idle_arch_filter != NULL &&
-	    !IS_IN_ARCH_SET(host_info->architecture, search_idle_arch_filter)){
+	    !IS_IN_ARCH_SET(host_info->architecture,
+		search_idle_arch_filter)) {
 		/* ignore this host, hostname == NULL case */
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -1468,8 +1469,8 @@ search_idle_examine_rtt_of_all_networks(struct search_idle_state *s)
 			for (net = staticp->search_idle_network_list;
 			    net != NULL; net = net->next) {
 				if ((net->flags &
-				    (NET_FLAG_SCHEDULING|NET_FLAG_RTT_AVAIL))!=
-				    NET_FLAG_SCHEDULING)
+				    (NET_FLAG_SCHEDULING|NET_FLAG_RTT_AVAIL))
+				    != NET_FLAG_SCHEDULING)
 					continue; /* RTT is already known */
 				rtt_unknown = 1;
 				if (net->cursor == NULL)
@@ -2337,7 +2338,8 @@ url_hosts_schedule_common(const char *gfarm_url,
 			e = schedule_search_idle_common(
 			    0, write_mode, &shortage, residual);
 		if (e == NULL)
-			e = gfarm_fixedstrings_dup(shortage,residual,residual);
+			e = gfarm_fixedstrings_dup(shortage, residual,
+			    residual);
 		if (e != NULL) {
 			free(residual);
 			gfarm_strings_free_deeply(nfrags, hosts);

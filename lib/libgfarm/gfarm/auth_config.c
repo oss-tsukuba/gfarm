@@ -118,7 +118,7 @@ gfarm_auth_config_add(
 {
 	struct gfarm_auth_config *acp;
 
-	GFARM_MALLOC(acp);    
+	GFARM_MALLOC(acp);
 	if (acp == NULL) {
 		gflog_debug(GFARM_MSG_1000903,
 			"allocation of 'gfarm_auth_config' failed");
@@ -226,7 +226,7 @@ struct gfarm_auth_cred_type_name_value {
 	{ "self",		GFARM_AUTH_CRED_TYPE_SELF },
 };
 
-gfarm_error_t 
+gfarm_error_t
 gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
 {
 	int i;
@@ -234,7 +234,7 @@ gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
 	for (i = 0;
 	     i < GFARM_ARRAY_LENGTH(gfarm_auth_cred_type_name_value_table);
 	     i++) {
-		struct gfarm_auth_cred_type_name_value *entry = 
+		struct gfarm_auth_cred_type_name_value *entry =
 		    &gfarm_auth_cred_type_name_value_table[i];
 
 		if (strcmp(type_name, entry->name) == 0) {
@@ -256,7 +256,7 @@ struct gfarm_auth_cred_config {
 	char *name;
 };
 
-static struct gfarm_auth_cred_config **
+static struct gfarm_auth_cred_config**
 gfarm_auth_server_cred_config_lookup(const char *service_tag)
 {
 	struct gfarm_auth_cred_config *conf, **p;
@@ -299,7 +299,7 @@ gfarm_auth_server_cred_config_enter(char *service_tag,
 enum gfarm_auth_cred_type
 gfarm_auth_server_cred_type_get(const char *service_tag)
 {
-	struct gfarm_auth_cred_config *conf = 
+	struct gfarm_auth_cred_config *conf =
 	    *gfarm_auth_server_cred_config_lookup(service_tag);
 
 	if (conf == NULL)
@@ -310,7 +310,7 @@ gfarm_auth_server_cred_type_get(const char *service_tag)
 char *
 gfarm_auth_server_cred_service_get(const char *service_tag)
 {
-	struct gfarm_auth_cred_config *conf = 
+	struct gfarm_auth_cred_config *conf =
 	    *gfarm_auth_server_cred_config_lookup(service_tag);
 
 	if (conf == NULL)
@@ -321,7 +321,7 @@ gfarm_auth_server_cred_service_get(const char *service_tag)
 char *
 gfarm_auth_server_cred_name_get(const char *service_tag)
 {
-	struct gfarm_auth_cred_config *conf = 
+	struct gfarm_auth_cred_config *conf =
 	    *gfarm_auth_server_cred_config_lookup(service_tag);
 
 	if (conf == NULL)
@@ -330,7 +330,7 @@ gfarm_auth_server_cred_name_get(const char *service_tag)
 }
 
 /* service_tag must be statically allocated */
-gfarm_error_t 
+gfarm_error_t
 gfarm_auth_server_cred_type_set_by_string(char *service_tag, char *string)
 {
 	gfarm_error_t e;
@@ -371,7 +371,7 @@ gfarm_auth_server_cred_type_set(char *service_tag,
 }
 
 /* service_tag must be statically allocated */
-gfarm_error_t 
+gfarm_error_t
 gfarm_auth_server_cred_service_set(char *service_tag, char *service)
 {
 	struct gfarm_auth_cred_config *conf;

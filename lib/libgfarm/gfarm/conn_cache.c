@@ -383,7 +383,7 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	removable = gfarm_lru_cache_delref_entry(&cache->lru_list,
 	    &connection->lru_entry);
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
-	
+
 	if (!removable)
 		return; /* shouln't be disposed */
 
@@ -429,7 +429,7 @@ gfp_cached_connection_terminate(struct gfp_conn_cache *cache)
 
 	/* clear all in-use connections too.  XXX really necessary?  */
 	for (gfarm_hash_iterator_begin(cache->hashtab, &it);
-	     !gfarm_hash_iterator_is_end(&it); ) {
+	     !gfarm_hash_iterator_is_end(&it);) {
 		entry = gfarm_hash_iterator_access(&it);
 		connection = *(struct gfp_cached_connection **)
 		    gfarm_hash_entry_data(entry);

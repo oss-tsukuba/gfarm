@@ -96,7 +96,7 @@ gfarm_stringlist_add(gfarm_stringlist *listp, char *s)
 	if (length >= listp->size) {
 		int n = listp->size + GFARM_STRINGLIST_DELTA;
 		char **t;
-		
+
 		GFARM_REALLOC_ARRAY(t, listp->array, n);
 		if (t == NULL) {
 			gflog_debug(GFARM_MSG_1000914,
@@ -145,7 +145,7 @@ gfarm_fixedstrings_dup(int n, char **dst, char **src)
 
 /* gfarm_strings: dynamically allocated string array and array contents */
 
-char **
+char**
 gfarm_strings_alloc_from_stringlist(gfarm_stringlist *listp)
 {
 	int n = gfarm_stringlist_length(listp);
@@ -186,7 +186,7 @@ gfarm_strarray_length(char **array)
 	return (i);
 }
 
-char **
+char**
 gfarm_strarray_dup(char **array)
 {
 	int n = gfarm_strarray_length(array);

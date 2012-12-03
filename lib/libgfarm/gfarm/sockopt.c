@@ -30,16 +30,21 @@ struct gfarm_sockopt_info {
 	int level, option;
 };
 
-struct gfarm_sockopt_info gfarm_sockopt_info_debug =
-    { NULL, SOL_SOCKET,	SO_DEBUG };
-struct gfarm_sockopt_info gfarm_sockopt_info_keepalive =
-    { NULL, SOL_SOCKET,	SO_KEEPALIVE };
-struct gfarm_sockopt_info gfarm_sockopt_info_sndbuf =
-    { NULL, SOL_SOCKET,	SO_SNDBUF };
-struct gfarm_sockopt_info gfarm_sockopt_info_rcvbuf =
-    { NULL, SOL_SOCKET,	SO_RCVBUF };
-struct gfarm_sockopt_info gfarm_sockopt_info_tcp_nodelay =
-    { "tcp", 0,		TCP_NODELAY };
+struct gfarm_sockopt_info gfarm_sockopt_info_debug = {
+    NULL, SOL_SOCKET,	SO_DEBUG
+};
+struct gfarm_sockopt_info gfarm_sockopt_info_keepalive = {
+    NULL, SOL_SOCKET,	SO_KEEPALIVE
+};
+struct gfarm_sockopt_info gfarm_sockopt_info_sndbuf = {
+    NULL, SOL_SOCKET,	SO_SNDBUF
+};
+struct gfarm_sockopt_info gfarm_sockopt_info_rcvbuf = {
+    NULL, SOL_SOCKET,	SO_RCVBUF
+};
+struct gfarm_sockopt_info gfarm_sockopt_info_tcp_nodelay = {
+    "tcp", 0,		TCP_NODELAY
+};
 
 struct gfarm_param_type gfarm_sockopt_type_table[] = {
     { "debug",		1, &gfarm_sockopt_info_debug },
@@ -78,6 +83,7 @@ gfarm_sockopt_static_init(struct gfarm_context *ctxp)
 	ctxp->sockopt_static = s;
 	return (GFARM_ERR_NO_ERROR);
 }
+
 static void
 sockopt_initialize(void)
 {

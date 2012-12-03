@@ -147,7 +147,7 @@ gfarm_canonical_path(const char *gfarm_file, char **canonic_pathp)
 
 	e = gfs_realpath_canonical(s, canonic_pathp);
 	free(s);
-	return(e);
+	return (e);
 }
 
 char *
@@ -164,8 +164,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 		if (e != NULL)
 			return (e);
 		p0 = cwd;
-	}
-	else
+	} else
 		p0 = gfarm_file;
 
 	/* Expand '~'. */
@@ -191,8 +190,7 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			 */
 			free(p1);
 			return (GFARM_ERR_ALREADY_EXISTS);
-		}
-		else {
+		} else {
 			*(lastc + 1) = '\0';
 		}
 	}
@@ -238,8 +236,8 @@ gfarm_canonical_path_for_creation(const char *gfarm_file, char **canonic_pathp)
 			goto free_dir_canonic;
 	}
 
-	GFARM_MALLOC_ARRAY(*canonic_pathp, 
-		strlen(dir_canonic) + 1 + strlen(basename) + 1); 
+	GFARM_MALLOC_ARRAY(*canonic_pathp,
+		strlen(dir_canonic) + 1 + strlen(basename) + 1);
 	if (*canonic_pathp == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		goto free_dir_canonic;
@@ -295,7 +293,7 @@ gfarm_path_canonical_to_url(const char *canonic_path, char **gfarm_url)
 
 	*gfarm_url = NULL;
 
-	GFARM_MALLOC_ARRAY(url, 
+	GFARM_MALLOC_ARRAY(url,
 		GFARM_URL_PREFIX_LENGTH + strlen(canonic_path) + 2);
 	if (url == NULL)
 		return (GFARM_ERR_NO_MEMORY);
@@ -570,7 +568,7 @@ gfarm_url_dir(const char *pathname)
 		if (dir[0] == '\0')
 			return (parent);
 	}
-		
+
 	/* remove trailing '/' */
 	p = dir + strlen(dir) - 1;
 	while (p > dir && *p == '/')
@@ -612,7 +610,7 @@ gfarm_path_dir(const char *pathname)
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (NULL);
 	}
-		
+
 	/* remove trailing '/' */
 	p = dir + strlen(dir) - 1;
 	while (p > dir && *p == '/')
