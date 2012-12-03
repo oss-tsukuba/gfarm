@@ -246,11 +246,16 @@ static gfarm_error_t
 gfs_closedir_internal(GFS_Dir super)
 {
 	struct gfs_dir_internal *dir = (struct gfs_dir_internal *)super;
-	gfarm_error_t e = gfm_close_fd(dir->gfm_server, dir->fd);
+	gfarm_error_t e;
 
+	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_close_fd: %s",
+		    gfarm_error_string(e));
 	gfm_client_connection_free(dir->gfm_server);
 	free(dir);
-	return (e);
+	/* ignore result */
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

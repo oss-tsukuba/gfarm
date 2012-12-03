@@ -830,32 +830,32 @@ gfm_inode_op_no_follow(const char *url, int flags,
 		request_op, result_op, success_op, cleanup_op, closure));
 }
 
-static void
-gfm_close_fd(struct gfm_connection *conn, int fd1, int fd2)
+static gfarm_error_t
+close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 {
 	gfarm_error_t e;
 
 	if (fd1 < 0 && fd2 < 0)
-		return;
+		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	if ((e = gfm_client_compound_begin_request(conn))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002609,
 		    "compound_begin request: %s", gfarm_error_string(e));
-		return;
+		return (e);
 	}
 	if (fd1 >= 0) {
 		if ((e = gfm_client_put_fd_request(conn, fd1))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002610,
 			    "put_fd request: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 		if ((e = gfm_client_close_request(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002611,
 			    "close request: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 	}
 	if (fd2 >= 0) {
@@ -863,39 +863,39 @@ gfm_close_fd(struct gfm_connection *conn, int fd1, int fd2)
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002612,
 			    "put_fd request: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 		if ((e = gfm_client_close_request(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002613,
 			    "close request: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 	}
 	if ((e = gfm_client_compound_end_request(conn))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002614,
 		    "compound_end request: %s", gfarm_error_string(e));
-		return;
+		return (e);
 	}
 	if ((e = gfm_client_compound_begin_result(conn))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002615,
 		    "compound_begin result: %s", gfarm_error_string(e));
-		return;
+		return (e);
 	}
 	if (fd1 >= 0) {
 		if ((e = gfm_client_put_fd_result(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002616,
 			    "put_fd result: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 		if ((e = gfm_client_close_result(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002617,
 			    "close result: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 	}
 	if (fd2 >= 0) {
@@ -903,19 +903,20 @@ gfm_close_fd(struct gfm_connection *conn, int fd1, int fd2)
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002618,
 			    "put_fd result: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 		if ((e = gfm_client_close_result(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002619,
 			    "close result: %s", gfarm_error_string(e));
-			return;
+			return (e);
 		}
 	}
 	if ((e = gfm_client_compound_end_result(conn))
 	    != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1002620,
 		    "compound_end result: %s", gfarm_error_string(e));
+	return (e);
 }
 
 gfarm_error_t
@@ -944,7 +945,7 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR, se, de;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, se, de, e2;
 	struct gfm_connection *sconn = NULL, *dconn = NULL;
 	const char *spath = NULL, *dpath = NULL;
 	char *srest, *drest, *snextpath, *dnextpath;
@@ -1419,18 +1420,30 @@ on_error_result:
 	if (is_success)
 		return (*success_op)(sconn, closure);
 
-	if (same_mds)
-		gfm_close_fd(sconn, sfd, dfd);
-	else {
-		gfm_close_fd(sconn, sfd, -1);
-		gfm_close_fd(dconn, dfd, -1);
+	if (same_mds) {
+		/* ignore result */
+		if ((e2 = close_fd2(sconn, sfd, dfd)) != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close_fd2: %s",
+			    gfarm_error_string(e2));
+	} else {
+		/* ignore result */
+		if ((e2 = close_fd2(sconn, sfd, -1)) != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close_fd2: %s",
+			    gfarm_error_string(e2));
+		if ((e2 = close_fd2(dconn, dfd, -1)) != GFARM_ERR_NO_ERROR)
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "close_fd2: %s",
+			    gfarm_error_string(e2));
 	}
 	if (sconn)
 		gfm_client_connection_free(sconn);
 	if (dconn && !same_mds)
 		gfm_client_connection_free(dconn);
 
-	/* NOTE: the opened descriptor unexternalized is automatically closed
+	/*
+	 * NOTE: the opened descriptor unexternalized is automatically closed
 	 * by gfmd
 	 */
 
