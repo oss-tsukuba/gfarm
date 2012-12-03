@@ -16,6 +16,7 @@
 #include "lookup.h"
 #include "schedule.h"
 #include "gfs_misc.h"
+#include "gfs_failover.h"
 
 /*#define V2_4 1*/
 
@@ -133,32 +134,42 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int retry = 0;
+	int nretry = 1;
 
-	for (;;) {
-		if ((e = gfs_client_connection_and_process_acquire(
-		    &gfm_server, dsthost, dstport, &gfs_server, NULL))
-			!= GFARM_ERR_NO_ERROR) {
-			gflog_debug(GFARM_MSG_1001388,
-				"acquirement of client connection failed: %s",
-				gfarm_error_string(e));
-			return (e);
-		}
+retry:
+	gfm_server = gfs_pio_metadb(gf);
+	if ((e = gfs_client_connection_and_process_acquire(
+	    &gfm_server, dsthost, dstport, &gfs_server, NULL))
+		!= GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1001388,
+			"acquirement of client connection failed: %s",
+			gfarm_error_string(e));
+		return (e);
+	}
 
-		if (e == GFARM_ERR_NO_ERROR) {
-			e = gfs_client_replica_add_from(gfs_server,
-			    srchost, srcport, gfs_pio_fileno(gf));
-			if (gfs_client_is_connection_error(e) && ++retry <= 1) {
-				gfs_client_connection_free(gfs_server);
-				continue;
+	e = gfs_client_replica_add_from(gfs_server, srchost, srcport,
+	    gfs_pio_fileno(gf));
+	gfs_client_connection_free(gfs_server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_replica_add_from: %s",
+		    gfarm_error_string(e));
+		if (nretry-- > 0) {
+			if (gfs_client_is_connection_error(e))
+				goto retry;
+			if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+				if ((e = gfs_pio_failover(gf))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfs_pio_failover: %s",
+					    gfarm_error_string(e));
+				} else
+					goto retry;
 			}
 		}
-
-		break;
 	}
-	gfs_client_connection_free(gfs_server);
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
-	    retry > 0) {
+	    nretry <= 0) {
 		gflog_warning(GFARM_MSG_1003453,
 		    "error occurred by retrying the non-idempotent file "
 		    "replication operation due to the disconnection of gfsd, "

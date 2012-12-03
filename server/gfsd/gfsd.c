@@ -2151,16 +2151,19 @@ replica_adding(gfarm_int32_t net_fd, char *src_host,
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003355,
-		    "compound_put_fd_request", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_put_fd_request request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_replica_adding_request(gfm_server, src_host))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1000506,
-		    request, diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: gfm_client_replica_adding_request request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_compound_put_fd_result(diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003356,
-		    "compound_put_fd_result", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_put_fd_result reqeust=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_replica_adding_result(gfm_server,
 	    &ino, &gen, &mtime_sec, &mtime_nsec))
 	    != GFARM_ERR_NO_ERROR) {
@@ -2170,13 +2173,19 @@ replica_adding(gfarm_int32_t net_fd, char *src_host,
 			    gfarm_error_string(e));
 	} else if ((e = gfm_client_compound_end(diag))
 	    != GFARM_ERR_NO_ERROR) {
-		fatal_metadb_proto(GFARM_MSG_1003357,
-		    "compound_end", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_end request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	} else {
 		*inop = ino;
 		*genp = gen;
 		*mtime_secp = mtime_sec;
 		*mtime_nsecp = mtime_nsec;
+	}
+
+	if (IS_CONNECTION_ERROR(e)) {
+		reconnect_gfm_server_for_failover("replica_adding");
+		e = GFARM_ERR_GFMD_FAILED_OVER;
 	}
 	return (e);
 }
@@ -2191,16 +2200,20 @@ replica_added(gfarm_int32_t net_fd,
 
 	if ((e = gfm_client_compound_put_fd_request(net_fd, diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003358,
-		    "compound_put_fd_request", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_put_fd_request request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_replica_added2_request(gfm_server,
 	    flags, mtime_sec, mtime_nsec, size))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1000514, request, diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: gfm_client_replica_added2_request request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_compound_put_fd_result(diag))
 	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003359,
-		    "compound_put_fd_result", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_put_fd_result request=%s: %s",
+		    diag, request, gfarm_error_string(e));
 	if ((e = gfm_client_replica_added_result(gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
 		if (debug_mode)
@@ -2209,8 +2222,14 @@ replica_added(gfarm_int32_t net_fd,
 			    gfarm_error_string(e));
 	} else if ((e = gfm_client_compound_end(diag))
 	    != GFARM_ERR_NO_ERROR) {
-		fatal_metadb_proto(GFARM_MSG_1003360,
-		    "compound_end", diag, e);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s: compound_end request=%s: %s",
+		    diag, request, gfarm_error_string(e));
+	}
+
+	if (IS_CONNECTION_ERROR(e)) {
+		reconnect_gfm_server_for_failover("replica_added");
+		e = GFARM_ERR_GFMD_FAILED_OVER;
 	}
 	return (e);
 }
