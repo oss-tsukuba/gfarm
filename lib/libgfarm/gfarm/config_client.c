@@ -27,43 +27,6 @@
 #include "filesystem.h"
 #include "metadb_server.h"
 
-static gfarm_error_t
-gfarm_config_set_default_metadb_server(void)
-{
-	gfarm_error_t e;
-	struct gfarm_metadb_server *m;
-	struct gfarm_metadb_server *ms[1];
-	struct gfarm_filesystem *fs;
-	char *host;
-
-	if (gfarm_filesystem_get(
-	    gfarm_ctxp->metadb_server_name, gfarm_ctxp->metadb_server_port)
-	    != NULL)
-		return (GFARM_ERR_NO_ERROR);
-
-	fs = gfarm_filesystem_get_default();
-	if ((host = strdup(gfarm_ctxp->metadb_server_name)) == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
-		gflog_debug(GFARM_MSG_1003433,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-	if ((e = gfarm_metadb_server_new(&m, host,
-	    gfarm_ctxp->metadb_server_port)) != GFARM_ERR_NO_ERROR) {
-		free(host);
-		gflog_debug(GFARM_MSG_1002556,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-	gfarm_metadb_server_set_is_master(m, 1);
-	ms[0] = m;
-	if ((e = gfarm_filesystem_set_metadb_server_list(fs, ms, 1))
-	    != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_1002557,
-		    "%s", gfarm_error_string(e));
-	return (e);
-}
-
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -135,7 +98,6 @@ gfarm_config_read(void)
 
 	gfarm_config_set_default_ports();
 	gfarm_config_set_default_misc();
-	gfarm_config_set_default_metadb_server();
 
 	return (GFARM_ERR_NO_ERROR);
 }
