@@ -744,10 +744,9 @@ gfarm_error_t
 gfs_client_connection_enter_cache(struct gfs_connection *gfs_server)
 {
 	if (gfs_client_connection_is_cached(gfs_server)) {
-		gflog_error(GFARM_MSG_1000068,
+		gflog_fatal(GFARM_MSG_1000068,
 		    "gfs_client_connection_enter_cache: "
 		    "programming error");
-		abort();
 	}
 	return (gfp_uncached_connection_enter_cache(&staticp->server_cache,
 	    gfs_server->cache_entry));

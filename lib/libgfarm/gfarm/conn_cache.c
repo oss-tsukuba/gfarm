@@ -204,10 +204,9 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 	static const char diag[] = "gfp_uncached_connection_enter_cache";
 
 	if (GFP_IS_CACHED_CONNECTION(connection)) {
-		gflog_error(GFARM_MSG_1000057,
+		gflog_fatal(GFARM_MSG_1000057,
 		    "gfp_uncached_connection_enter_cache(%s): "
 		    "programming error", cache->type_name);
-		abort();
 	}
 
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);

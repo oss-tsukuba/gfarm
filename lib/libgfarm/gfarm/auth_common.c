@@ -340,10 +340,9 @@ gfarm_auth_sharedsecret_response_data(char *shared_key, char *challenge,
 	gfarm_mutex_unlock(&staticp->openssl_mutex, diag, openssl_diag);
 
 	if (md_len != GFARM_AUTH_RESPONSE_LEN) {
-		gflog_error(GFARM_MSG_1003263,
+		gflog_fatal(GFARM_MSG_1003263,
 			"gfarm_auth_sharedsecret_response_data:"
 			"md5 digest length should be %d, but %d\n",
 			GFARM_AUTH_RESPONSE_LEN, md_len);
-		abort();
 	}
 }
