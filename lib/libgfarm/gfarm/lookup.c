@@ -186,7 +186,7 @@ end:
 	free(hostname);
 	free(user);
 
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
