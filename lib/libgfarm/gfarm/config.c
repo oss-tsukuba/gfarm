@@ -65,6 +65,14 @@ gfarm_config_set_filename(char *filename)
 	gfarm_config_file = filename;
 }
 
+const char *
+gfarm_version(void)
+{
+	const static char ver[] = PACKAGE_VERSION;
+
+	return (ver);
+}
+
 /* XXX move actual function definition here */
 static gfarm_error_t gfarm_strtoken(char **, char **);
 

@@ -68,6 +68,8 @@ gfarm_error_t gfarm_server_terminate(void);
 gfarm_error_t gfarm_server_config_read(void);
 void gfarm_config_set_filename(char *);
 
+const char *gfarm_version(void);
+
 /*
  * GFarm URL and pathname handling
  */
