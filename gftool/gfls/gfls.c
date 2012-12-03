@@ -612,7 +612,7 @@ main(int argc, char **argv)
 		case 'S': option_sort_order = SO_SIZE; break;
 		case 'T': option_complete_time = 1; break;
 		case 'V':
-			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
 			exit(0);
 		case 'a': option_all = OA_ALL; break;
 		case 'd': option_directory_itself = 1; break;

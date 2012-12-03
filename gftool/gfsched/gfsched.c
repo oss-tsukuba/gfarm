@@ -110,7 +110,7 @@ main(int argc, char **argv)
 			opt_mount_point = optarg;
 			break;
 		case 'V':
-			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
 			exit(0);
 		case 'c':
 			opt_create_mode = 1;

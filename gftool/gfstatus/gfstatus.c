@@ -86,7 +86,7 @@ main(int argc, char *argv[])
 			path = optarg;
 			break;
 		case 'V':
-			fprintf(stderr, "Gfarm version " PACKAGE_VERSION "\n");
+			fprintf(stderr, "Gfarm version %s\n", gfarm_version());
 			exit(0);
 		case '?':
 			usage();
