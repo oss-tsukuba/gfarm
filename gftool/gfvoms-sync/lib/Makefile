@@ -20,8 +20,8 @@ $(vomsids_name):
 post-install-hook:
 	@if ! test -e "$(confpath)/`basename $(vomsids_name)`"; then \
 	echo \
-	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
-	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(confpath)/`basename $(vomsids_name)`; \
+	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(DESTDIR)$(confpath)/`basename $(vomsids_name)`; \
+	$(INSTALL_DATA) $(srcdir)/$(vomsids_name) $(DESTDIR)$(confpath)/`basename $(vomsids_name)`; \
 	fi
 
 post-clean-hook:
