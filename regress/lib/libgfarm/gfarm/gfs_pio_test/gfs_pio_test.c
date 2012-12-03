@@ -23,7 +23,7 @@ char *program_name = "gfs_pio_test";
 
 struct op {
 	unsigned char op;
-	/* for O_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE, OP_PAUSE */
+	/* for OP_READ, OP_WRITE, OP_SEEK_*, OP_TRUNCATE, OP_PAUSE */
 	gfarm_off_t off;
 };
 
