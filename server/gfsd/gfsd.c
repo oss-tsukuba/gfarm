@@ -147,8 +147,8 @@ static volatile sig_atomic_t terminate_flag = 0;
 
 static char *listen_addrname = NULL;
 
-static int server_failover_count;
-static int client_failover_count;
+static int fd_usable_to_gfmd = 1;
+static int client_failover_count; /* may be use in the future implement */
 
 static int shutting_down; /* set 1 at shutting down */
 
@@ -192,6 +192,7 @@ cleanup_iostat(void)
 }
 
 static void close_all_fd(void);
+static int close_all_fd_for_process_reset(void);
 
 /* this routine should be called before calling exit(). */
 static void
@@ -443,7 +444,7 @@ reconnect_gfm_server_for_failover(const char *diag)
 		    "%s: cannot reconnect to gfm server: %s",
 		    diag, gfarm_error_string(e));
 	}
-	++server_failover_count;
+	fd_usable_to_gfmd = 0;
 }
 
 static int
@@ -757,18 +758,50 @@ gfs_server_process_reset(struct gfp_xdr *client)
 	gfarm_int32_t keytype, failover_count;
 	size_t keylen;
 	char sharedkey[GFM_PROTO_PROCESS_KEY_LEN_SHAREDSECRET];
+	int i, failedover;
 	static const char *diag = "process_reset";
 
 	gfs_server_get_request(client, diag,
 	    "ibli", &keytype, sizeof(sharedkey), &keylen, sharedkey, &pid,
 	    &failover_count);
+	client_failover_count = failover_count;
 
-	if ((e = gfm_client_process_set(gfm_server,
-	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_1003401,
+	/*
+	 * close all fd before client gets new fd from gfmd.
+	 * if gfmd failed over, gfsd detects it in
+	 * close_all_fd_for_process_reset().
+	 */
+	failedover = close_all_fd_for_process_reset();
+
+	for (i = 0; i < 2; ++i) {
+		e = gfm_client_process_set(gfm_server, keytype, sharedkey,
+		    keylen, pid);
+		if (e == GFARM_ERR_NO_ERROR) {
+			fd_usable_to_gfmd = 1;
+			break;
+		}
+		gflog_error(GFARM_MSG_1003401,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
-	else
-		client_failover_count = failover_count;
+		if (e == GFARM_ERR_ALREADY_EXISTS) {
+			if ((e = gfm_client_process_free(gfm_server))
+			    != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "gfm_client_process_free: %s",
+				    gfarm_error_string(e));
+			}
+			continue;
+		}
+		if (!IS_CONNECTION_ERROR(e))
+			break;
+		/* gfmd failed over after close_all_fd() */
+		if (i == 0) {
+			reconnect_gfm_server_for_failover(
+			    "gfs_server_process_reset");
+			failedover = 1;
+		}
+	}
+	if (failedover && e == GFARM_ERR_NO_ERROR)
+		e = GFARM_ERR_GFMD_FAILED_OVER;
 
 	gfs_server_put_reply(client, diag, e, "");
 }
@@ -1712,7 +1745,7 @@ close_fd(gfarm_int32_t fd, const char *diag)
 }
 
 gfarm_error_t
-fhclose_fd(gfarm_int32_t fd, const char *diag)
+fhclose_fd(gfarm_int32_t fd, const char *diag, int update_file_entry)
 {
 	gfarm_error_t e, e2;
 	struct file_entry *fe;
@@ -1734,7 +1767,8 @@ fhclose_fd(gfarm_int32_t fd, const char *diag)
 	 */
 	update_file_entry_for_close(fd, fe);
 #endif
-
+	if (update_file_entry)
+		update_file_entry_for_close(fd, fe);
 	if ((e = fhclose_request(fe))!= GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003344,
 		   "%s: fhclose request: %s", diag, gfarm_error_string(e));
@@ -1789,35 +1823,48 @@ fhclose_fd(gfarm_int32_t fd, const char *diag)
 gfarm_error_t
 close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
-	gfarm_error_t e, e2;
+	int failedover = 0;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
 
-	if (gfm_server != NULL &&
-	    client_failover_count == server_failover_count)
-		e = close_fd(fd, diag);
-	else
-		e = GFARM_ERR_NO_ERROR;
+	if (gfm_server != NULL) {
+		if (fd_usable_to_gfmd) {
+			e = close_fd(fd, diag);
+			if (IS_CONNECTION_ERROR(e)) {
+				reconnect_gfm_server_for_failover(
+				    "close_fd_somehow/close_fd");
+				failedover = 1;
+			} else if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "close_fd: %s", gfarm_error_string(e));
+				if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
+					return (e);
+			}
+		}
 
-	if (e == GFARM_ERR_NO_ERROR)
-		; /*FALLTHROUGH*/
-	else if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
-		return (e);
-	else if (IS_CONNECTION_ERROR(e) && !shutting_down) {
-		reconnect_gfm_server_for_failover("close_fd_somehow");
-		if ((e = fhclose_fd(fd, diag)) == GFARM_ERR_NO_ERROR)
-			e = GFARM_ERR_GFMD_FAILED_OVER;
-			gflog_error(GFARM_MSG_1003402,
-			    "%s: fhclose_fd fd=%d: %s",
-			    diag, fd, gfarm_error_string(e));
-	} else {
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s: close_fd_somehow fd=%d: %s",
-		    diag, fd, gfarm_error_string(e));
-		return (e);
+		if (!fd_usable_to_gfmd) {
+			e = fhclose_fd(fd, diag, e == GFARM_ERR_NO_ERROR);
+			if (IS_CONNECTION_ERROR(e)) {
+				reconnect_gfm_server_for_failover(
+				    "close_fd_somehow/fhclose_fd");
+				if ((e = fhclose_fd(fd, diag, 0))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "fhclose_fd: %s",
+					    gfarm_error_string(e));
+				} else
+					failedover = 1;
+			} else if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "fhclose_fd: %s", gfarm_error_string(e));
+				if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
+					return (e);
+			}
+		}
 	}
 
 	e2 = file_table_close(fd);
-	if (e == GFARM_ERR_NO_ERROR)
-		e = e2;
+	e = failedover ? GFARM_ERR_GFMD_FAILED_OVER :
+	    (e == GFARM_ERR_NO_ERROR ? e2 : e);
 
 	return (e);
 }
@@ -1832,6 +1879,29 @@ static void
 close_all_fd(void)
 {
 	file_table_for_each(close_fd_adapter, "closing all descriptor");
+}
+
+static void
+close_fd_adapter_for_process_reset(void *closure, gfarm_int32_t fd)
+{
+	int *failedoverp = closure;
+	gfarm_error_t e = close_fd_somehow(fd,
+	    "close_all_fd_for_process_reset");
+
+	if (e == GFARM_ERR_GFMD_FAILED_OVER)
+		*failedoverp = 1;
+	else if (e != GFARM_ERR_NO_ERROR)
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "close_fd_somehow: fd=%d: %s", fd, gfarm_error_string(e));
+}
+
+static int
+close_all_fd_for_process_reset(void)
+{
+	int failedover = 0;
+
+	file_table_for_each(close_fd_adapter_for_process_reset, &failedover);
+	return (failedover);
 }
 
 void
