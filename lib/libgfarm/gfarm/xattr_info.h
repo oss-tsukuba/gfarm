@@ -19,6 +19,7 @@ struct gfs_xmlattr_ctx {
 	struct gfm_connection *gfm_server;
 	int fd;
 	int type;
+	gfarm_ino_t ino;
 	/* for request to gfmd */
 	char *cookie_path;
 	char *cookie_attrname;
