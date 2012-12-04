@@ -843,7 +843,7 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 gfarm_error_t
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	const char *canonical_hostname, int port, const char *user,
-	struct sockaddr *peer_addr,
+	struct sockaddr *peer_addr, struct gfarm_filesystem *fs,
 	void (*continuation)(void *), void *closure,
 	struct gfs_client_connect_state **statepp)
 {
@@ -874,7 +874,8 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 		return (e);
 	}
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
-	    cache_entry, &connection_in_progress, &gfs_server, NULL, 0);
+	    cache_entry, &connection_in_progress, &gfs_server, NULL,
+	    gfarm_filesystem_failover_count(fs));
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);

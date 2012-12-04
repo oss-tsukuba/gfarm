@@ -42,6 +42,7 @@
 #include "schedule.h"
 #include "lookup.h"
 #include "gfs_profile.h"
+#include "filesystem.h"
 
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -942,6 +943,7 @@ struct search_idle_state {
 	int concurrency;
 
 	struct gfm_connection *gfm_server;
+	struct gfarm_filesystem *filesystem;
 };
 
 static gfarm_error_t
@@ -982,6 +984,7 @@ search_idle_init_state(struct search_idle_state *s,
 	    s->idle_hosts_number = s->semi_idle_hosts_number = 0;
 	s->concurrency = 0;
 	s->gfm_server = gfm_server;
+	s->filesystem = gfarm_filesystem_get_by_connection(gfm_server);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1208,7 +1211,7 @@ search_idle_load_callback(void *closure)
 			e = gfs_client_connect_request_multiplexed(c->state->q,
 			    c->h->return_value, c->h->port,
 			    gfm_client_username(s->gfm_server),
-			    &c->h->addr,
+			    &c->h->addr, s->filesystem,
 			    search_idle_connect_callback, c,
 			    &cs);
 			if (e == GFARM_ERR_NO_ERROR) {
