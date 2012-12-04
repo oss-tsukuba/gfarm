@@ -25,6 +25,7 @@
 #include "filesystem.h"
 #include "gfs_failover.h"
 #include "gfs_file_list.h"
+#include "gfs_misc.h"
 
 
 static struct gfs_connection *
@@ -46,6 +47,20 @@ gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	fs = gfarm_filesystem_get_by_connection(gfm_server);
 	return (gfarm_filesystem_has_multiple_servers(fs) &&
 	    !gfarm_filesystem_in_failover_process(fs));
+}
+
+int
+gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
+{
+	struct gfarm_filesystem *fs;
+
+	if (gf == NULL)
+		return (0);
+	fs = gfarm_filesystem_get_by_connection(gfs_pio_metadb(gf));
+	if (gfarm_filesystem_in_failover_process(fs))
+		return (0);
+	return (gfarm_filesystem_failover_detected(fs) ||
+	    e == GFARM_ERR_GFMD_FAILED_OVER);
 }
 
 static gfarm_error_t

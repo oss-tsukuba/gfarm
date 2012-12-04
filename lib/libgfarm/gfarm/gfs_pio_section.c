@@ -370,7 +370,7 @@ retry:
 	    "gfs_pio_open_%s_section: %s",
 	    is_local ? "local" : "remote", gfarm_error_string(e));
 
-	if (e == GFARM_ERR_GFMD_FAILED_OVER && nretry-- > 0) {
+	if (gfs_pio_should_failover(gf, e) && nretry-- > 0) {
 		if ((e = gfs_pio_failover(gf)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "gfs_pio_failover: %s", gfarm_error_string(e));

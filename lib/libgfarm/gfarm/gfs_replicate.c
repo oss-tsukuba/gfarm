@@ -157,7 +157,7 @@ retry:
 		if (nretry-- > 0) {
 			if (gfs_client_is_connection_error(e))
 				goto retry;
-			if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+			if (gfs_pio_should_failover(gf, e)) {
 				if ((e = gfs_pio_failover(gf))
 				    != GFARM_ERR_NO_ERROR) {
 					gflog_debug(GFARM_MSG_UNFIXED,
