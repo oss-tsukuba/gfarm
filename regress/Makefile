@@ -22,7 +22,8 @@ SUBDIRS=	\
 	lib/libgfarm/gfarm/gfs_xattr \
 	lib/libgfarm/gfarm/gfs_getxattr_cached \
 	lib/libgfarm/gfarm/gfm_inode_or_name_op_test \
-	server/gfmd/db_journal
+	server/gfmd/db_journal \
+	manual/lib/libgfarm/gfarm/gfs_pio_failover
 
 check test: all
 	@echo ""
