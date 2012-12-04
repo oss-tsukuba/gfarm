@@ -276,7 +276,7 @@ metadb_common.lo: metadb_common.h xattr_info.h quota_info.h metadb_server.h
 metadb_server.lo: gfm_proto.h metadb_server.h
 patmatch.lo: patmatch.h
 param.lo: liberror.h hostspec.h param.h
-schedule.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/timer.h context.h liberror.h conn_hash.h host.h config.h gfm_proto.h gfm_client.h gfs_client.h schedule.h lookup.h gfs_profile.h filesystem.h
+schedule.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/gfevent.h $(GFUTIL_SRCDIR)/hash.h $(GFUTIL_SRCDIR)/timer.h context.h liberror.h conn_hash.h host.h config.h gfm_proto.h gfm_client.h gfs_client.h schedule.h lookup.h gfs_profile.h filesystem.h gfs_failover.h
 sockutil.lo: $(GFUTIL_SRCDIR)/gfnetdb.h sockutil.h
 sockopt.lo: context.h liberror.h hostspec.h param.h sockopt.h
 stringlist.lo:

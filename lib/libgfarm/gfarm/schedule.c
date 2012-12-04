@@ -43,6 +43,7 @@
 #include "lookup.h"
 #include "gfs_profile.h"
 #include "filesystem.h"
+#include "gfs_failover.h"
 
 /*
  * The outline of current scheduling algorithm is as follows:
@@ -1825,22 +1826,68 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+struct select_hosts_by_path_info {
+	const char *path;
+	int acyclic, write_mode, ninfos;
+	struct gfarm_host_sched_info *infos;
+	int *nohostsp;
+	char **ohosts;
+	int *oports;
+};
+
+static gfarm_error_t
+select_hosts_by_path_rpc(struct gfm_connection **gfm_serverp, void *closure)
+{
+	gfarm_error_t e;
+	struct select_hosts_by_path_info *si = closure;
+
+	if ((e = gfm_client_connection_and_process_acquire_by_path(si->path,
+	    gfm_serverp)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfm_client_connection_and_process_acquire_by_path "
+		    "path=%s: %s",
+		    si->path, gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = select_hosts(*gfm_serverp, si->acyclic, si->write_mode,
+	    si->ninfos, si->infos, si->nohostsp, si->ohosts, si->oports))
+	    != GFARM_ERR_NO_ERROR)
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "select_hosts: %s",
+		    gfarm_error_string(e));
+	return (e);
+}
+
+static gfarm_error_t
+select_hosts_by_path_post_failover(struct gfm_connection *gfm_server,
+	void *closure)
+{
+	if (gfm_server)
+		gfm_client_connection_free(gfm_server);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static void
+select_hosts_by_path_exit(struct gfm_connection *gfm_server, gfarm_error_t e,
+	void *closure)
+{
+	(void)select_hosts_by_path_post_failover(gfm_server, closure);
+}
+
 static gfarm_error_t
 select_hosts_by_path(const char *path,
 	int acyclic, int write_mode,
 	int ninfos, struct gfarm_host_sched_info *infos,
 	int *nohostsp, char **ohosts, int *oports)
 {
-	gfarm_error_t e;
-	struct gfm_connection *gfm_server;
+	struct select_hosts_by_path_info si = {
+		path, acyclic, write_mode, ninfos,
+		infos, nohostsp, ohosts, oports
+	};
 
-	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
-	    &gfm_server)) != GFARM_ERR_NO_ERROR)
-		return (e);
-	e = select_hosts(gfm_server, acyclic, write_mode, ninfos, infos,
-	    nohostsp, ohosts, oports);
-	gfm_client_connection_free(gfm_server);
-	return (e);
+	return (gfm_client_rpc_with_failover(select_hosts_by_path_rpc,
+	    select_hosts_by_path_post_failover, select_hosts_by_path_exit,
+	    NULL, &si));
 }
 
 /*
