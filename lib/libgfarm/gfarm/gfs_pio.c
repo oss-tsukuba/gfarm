@@ -425,13 +425,14 @@ gfs_pio_close(GFS_File gf)
 
 	gfs_pio_file_list_remove(gfarm_filesystem_opened_file_list(fs), gf);
 
-	/* do not call gfm_close_fd when gfmd failed over */
-	if (!gfarm_filesystem_failover_detected(fs))
-		/*
-		 * retrying gfm_close_fd is not necessary because fd is
-		 * closed in gfmd when the connection is closed.
-		 */
-		(void)gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
+	/*
+	 * even if gfsd detectes gfmd failover,
+	 * gfm_connection is possibily still alive in client.
+	 *
+	 * retrying gfm_close_fd is not necessary because fd is
+	 * closed in gfmd when the connection is closed.
+	 */
+	(void)gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
 
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);
