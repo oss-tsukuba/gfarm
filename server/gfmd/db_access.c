@@ -351,10 +351,13 @@ db_getfreenum(void)
 static gfarm_error_t
 db_journal_enter(dbq_entry_func_t func, void *data, int with_seqnum)
 {
+	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
 
 	seqnum = with_seqnum ? db_journal_next_seqnum() : 0;
-	return (func(seqnum, data));
+	e = func(seqnum, data);
+	free(data);
+	return (e);
 }
 
 /* DO NOT REMOVE: this interfaces is provided for a private extension */

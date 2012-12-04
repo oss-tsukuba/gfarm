@@ -79,6 +79,26 @@ static gfarm_error_t gfarm_pgsql_seqnum_modify(struct db_seqnum_arg *);
 static void
 free_arg(void *arg)
 {
+	/*
+	 * - When metadb_replication_enabled() is false, we store objects to
+	 *   PostgreSQL directly without journal file.
+	 *   'arg' is allocated in db_*_dup() and freed here.
+	 *
+	 * - When metadb_replication_enabled() is true, we store objects to
+	 *   the journal file via db_journal_ops before storing to PostgreSQL.
+	 *   'arg' is allocated in db_*_dup() and freed in db_journal_enter().
+	 *   Functions of db_pgsql_ops are called from
+	 *   db_journal_store_thread().
+	 *   In db_journal_store_thread(), each object to be passed to
+	 *   functions of db_pgsql_ops is allocated in db_journal_read_ops().
+	 *   db_journal_read_ops() allocates each object as multiple chunks
+	 *   different from db_*_dup() functions which allocate each object
+	 *   as single chunk.
+	 *   The objects are possibly reused for retrying to call functions
+	 *   of db_pgsql_ops and freed in db_journal_ops_free() called from
+	 *   db_journal_free_rec_list().
+	 *
+	 */
 	if (!gfarm_get_metadb_replication_enabled())
 		free(arg);
 }

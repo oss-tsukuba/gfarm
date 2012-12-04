@@ -1677,7 +1677,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	if ((e = size_add_op(ope, &data_len, arg)) != GFARM_ERR_NO_ERROR) {
 		GFLOG_ERROR_WITH_SN(GFARM_MSG_1002904,
 		    "size_add_op", e, seqnum, ope);
-		goto end;
+		return (e);
 	}
 
 	journal_file_mutex_lock(jf, diag);
@@ -1733,8 +1733,6 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 unlock:
 	gfp_xdr_end_sendbuffer_pindown(xdr);
 	journal_file_mutex_unlock(jf, diag);
-end:
-	free(arg);
 	return (e);
 }
 
