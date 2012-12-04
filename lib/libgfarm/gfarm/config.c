@@ -3028,8 +3028,8 @@ void
 gfarm_config_set_default_ports(void)
 {
 	if (gfarm_ctxp->metadb_server_name == NULL)
-		gflog_fatal(GFARM_MSG_1000013,
-		    "metadb_serverhost isn't specified in "
+		gflog_fatal(GFARM_MSG_UNFIXED,
+		    "metadb_server_host isn't specified in "
 		    GFARM_CONFIG " file");
 
 	if (gfarm_ctxp->metadb_server_port == GFARM_CONFIG_MISC_DEFAULT)
