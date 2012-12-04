@@ -464,6 +464,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	struct addrinfo *res;
 	struct gfm_client_connect_info *ci, *cis = NULL;
 	struct timeval timeout;
+	struct gfarm_filesystem *fs;
 
 	hostname = gfp_cached_connection_hostname(cache_entry);
 	port = gfp_cached_connection_port(cache_entry);
@@ -540,6 +541,16 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			gfarm_error_string(e));
 		goto end;
 	}
+	/* add filesystem dynamically for Distributed MDS */
+	fs = gfarm_filesystem_get(hostname, port);
+	if (fs == NULL && (e = gfarm_filesystem_add(hostname, port, &fs))
+	    != GFARM_ERR_NO_ERROR) {
+		close(sock);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "add filesystem failed: %s",
+		    gfarm_error_string(e));
+		goto end;
+	}
 	e = gfp_xdr_new_socket(sock, &gfm_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gfm_server);
@@ -583,9 +594,9 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	gfm_server->cache_entry = cache_entry;
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	gfm_server->pid = 0;
-	gfm_server->real_server = ms;
-	gfm_server->failover_count = gfarm_filesystem_failover_count(
-	    gfarm_filesystem_get_by_connection(gfm_server));
+	gfm_server->real_server = ms != NULL ? ms :
+		gfarm_filesystem_get_metadb_server_first(fs);
+	gfm_server->failover_count = gfarm_filesystem_failover_count(fs);
 	*gfm_serverp = gfm_server;
 end:
 	if (res)

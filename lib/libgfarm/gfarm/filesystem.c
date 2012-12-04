@@ -91,7 +91,7 @@ gfarm_filesystem_hash_equal(const void *key1, int key1len,
 }
 
 static gfarm_error_t
-gfarm_filesystem_add(struct gfarm_filesystem **fsp)
+gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 {
 	gfarm_error_t e;
 	struct gfarm_filesystem *fs;
@@ -126,6 +126,21 @@ gfarm_filesystem_add(struct gfarm_filesystem **fsp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static void
+gfarm_filesystem_free(struct gfarm_filesystem *fs)
+{
+	int i;
+	struct gfarm_metadb_server *ms;
+
+	for (i = 0; i < fs->nservers; ++i) {
+		ms = fs->servers[i];
+		gfarm_metadb_server_free(ms);
+		free(ms);
+	}
+	free(fs->servers);
+	staticp->filesystems.next = fs->next;
+}
+
 int
 gfarm_filesystem_is_initialized(void)
 {
@@ -156,7 +171,7 @@ gfarm_filesystem_init(void)
 
 	if (gfarm_filesystem_is_initialized())
 		return (GFARM_ERR_NO_ERROR);
-	if ((e = gfarm_filesystem_add(&fs)) != GFARM_ERR_NO_ERROR)
+	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR)
 		return (e);
 	fs->flags |= GFARM_FILESYSTEM_FLAG_IS_DEFAULT;
 	return (GFARM_ERR_NO_ERROR);
@@ -265,11 +280,72 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+gfarm_error_t
+gfarm_filesystem_add(const char *hostname, int port,
+	struct gfarm_filesystem **fsp)
+{
+	gfarm_error_t e;
+	char *host = NULL;
+	struct gfarm_metadb_server *ms = NULL, *mss[1];
+	struct gfarm_filesystem *fs = gfarm_filesystem_get(hostname, port);
+
+	if (fs != NULL)
+		return (GFARM_ERR_NO_ERROR);
+
+	host = strdup(hostname);
+	if (host == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		return (e);
+	}
+	if ((e = gfarm_metadb_server_new(&ms, host, port))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		goto error;
+	}
+	if ((e = gfarm_filesystem_new(&fs)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		goto error;
+	}
+
+	mss[0] = ms;
+	if ((e = gfarm_filesystem_set_metadb_server_list(fs, mss, 1))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s", gfarm_error_string(e));
+		goto error;
+	}
+
+	*fsp = fs;
+	return (GFARM_ERR_NO_ERROR);
+
+error:
+	if (fs != NULL) {
+		gfarm_filesystem_free(fs);
+		free(fs);
+	} else if (ms != NULL) {
+		gfarm_metadb_server_free(ms);
+		free(ms);
+	} else if (host != NULL)
+		free(host);
+	return (e);
+}
+
 struct gfarm_metadb_server**
 gfarm_filesystem_get_metadb_server_list(struct gfarm_filesystem *fs, int *np)
 {
 	*np = fs->nservers;
 	return (fs->servers);
+}
+
+struct gfarm_metadb_server*
+gfarm_filesystem_get_metadb_server_first(struct gfarm_filesystem *fs)
+{
+	assert(fs->nservers > 0);
+	return (fs->servers[0]);
 }
 
 int
