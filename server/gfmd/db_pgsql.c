@@ -56,6 +56,14 @@
  */
 #define GFARM_PGSQL_ERRCODE_SHUTDOWN_PREFIX	"57P"
 
+/*
+ * 42***:	syntax error or access rule violation
+ *	e.g.)
+ *		42703:	undefined column
+ */
+#define GFARM_PGSQL_ERRCODE_SYNTAX_ERROR_PREFIX	"42"
+#define GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN	"42703"
+
 typedef gfarm_error_t (*gfarm_pgsql_dml_sn_t)(gfarm_uint64_t,
 	const char *, int, const Oid *, const char *const *,
 	const int *, const int *, int, const char *);
@@ -1252,6 +1260,148 @@ gfarm_pgsql_end(gfarm_uint64_t seqnum, void *arg)
 
 /**********************************************************************/
 
+static char *
+gen_scheme_check_query(const char *tablename,
+	size_t ncolumns, const char * const columns[])
+{
+	size_t sz = strlen(tablename) + 2 + 32 + 1;
+		/* for "SELECT " + "FROM " + "LIMIT 1" + '\0' */
+	int i;
+	char *tmp = NULL;
+	int offset = 0;
+
+	assert((tablename != NULL && tablename[0] != '\0') &&
+		(ncolumns > 0));
+
+	for (i = 0; i < ncolumns; i++) {
+		sz += strlen(columns[i]) + 2;	/* for ", " */
+	}
+
+	tmp = (char *)malloc(sz);
+	if (tmp == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"Can't allocate an SQL query string "
+		"for table scheme check.");
+		return (NULL);
+	}
+
+	offset += snprintf(tmp + offset, sz - offset, "SELECT ");
+	for (i = 0; i < ncolumns; i++) {
+		offset += snprintf(tmp + offset, sz - offset, "%s, ",
+				columns[i]);
+	}
+	*(strrchr(tmp, ',')) = ' ';
+	offset--;
+
+	(void)snprintf(tmp + offset, sz - offset, "FROM %s LIMIT 1",
+		tablename);
+
+	return (tmp);
+}
+
+static gfarm_error_t
+gfarm_pgsql_sql_error_to_gfarm_error(const PGresult *res)
+{
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	char *smsg = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+
+	if (strncasecmp(smsg,
+		GFARM_PGSQL_ERRCODE_SYNTAX_ERROR_PREFIX,
+		sizeof(GFARM_PGSQL_ERRCODE_SYNTAX_ERROR_PREFIX) - 1) == 0) {
+		if (strncasecmp(
+			smsg,
+			GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN,
+			sizeof(GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN) - 1) ==
+			0) {
+			e = GFARM_ERR_DB_INVALID_SCHEME;
+		} else {
+			e = GFARM_ERR_SQL_SYNTAX_ERROR;
+		}
+	}
+
+	return (e);
+}
+
+static gfarm_error_t
+gfarm_pgsql_check_scheme(const char *tablename,
+	size_t ncolumns, const char * const columns[])
+{
+	const char *diag = "check_scheme";
+	PGresult *res = NULL;
+	ExecStatusType st;
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	char *emsg = NULL;
+	char *sql = gen_scheme_check_query(tablename, ncolumns, columns);
+
+	if (sql == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		goto bailout;
+	}
+
+	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "pgsql restart failed");
+		goto bailout;
+	}
+
+	res = PQexec(conn, sql);
+	if (res == NULL) {
+		gflog_error(GFARM_MSG_UNFIXED,
+			"A PostgreSQL qurey result is NULL: %s",
+			PQerrorMessage(conn));
+		goto bailout;
+	}
+	/*
+	 * Note:
+	 *	This is what I intended to. For now we don't have to
+	 *	be in an open transaction.
+	 *
+	 * XXX FIXME:
+	 *	Do we have to close the transaction EVEN IF the result is
+	 *	NULL ?
+	 */
+	(void)gfarm_pgsql_commit_sn(0, diag);
+
+	st = PQresultStatus(res);
+	switch (st) {
+	case PGRES_TUPLES_OK:
+		e = GFARM_ERR_NO_ERROR;
+		break;
+	case PGRES_BAD_RESPONSE:
+	case PGRES_NONFATAL_ERROR:
+	case PGRES_FATAL_ERROR:
+		emsg = PQresultErrorMessage(res);
+		e = gfarm_pgsql_sql_error_to_gfarm_error(res);
+		if (e != GFARM_ERR_UNKNOWN)
+			gflog_error(GFARM_MSG_UNFIXED,
+				"SQL realated error: %s", emsg);
+		else
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Unexpected PostgreSQL error: %s", emsg);
+		break;
+	default:
+		/* PGRES_EMPTY_QUERY
+		 * PGRES_COMMAND_OK
+		 * PGRES_COPY_OUT
+		 * PGRES_COPY_IN */
+		emsg = PQresultErrorMessage(res);
+		e = GFARM_ERR_UNKNOWN;
+		gflog_error(GFARM_MSG_UNFIXED,
+			"must not happen, unexpected query status: %s", emsg);
+		assert(0);
+		break;
+	}
+
+bailout:
+	if (sql != NULL)
+		free((void *)sql);
+	if (res != NULL)
+		PQclear(res);
+
+	return (e);
+}
+
+/**********************************************************************/
+
 static gfarm_error_t
 host_info_set_fields_with_grouping(
 	PGresult *res, int startrow, int nhostaliases, void *vinfo)
@@ -1439,12 +1589,63 @@ gfarm_pgsql_host_remove(gfarm_uint64_t seqnum, char *hostname)
 }
 
 static gfarm_error_t
+gfarm_pgsql_host_check_scheme(void)
+{
+	const char *tablename = "Host";
+	const char * const columns[] = {
+		"hostname", "port", "architecture", "ncpu",
+		"flags", "fsngroupname"
+	};
+	gfarm_error_t e =
+		gfarm_pgsql_check_scheme(tablename,
+			sizeof(columns) / sizeof(char *), columns);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * The case like this, which got failed to check the
+		 * Host table, we can't live any longer. Just quit.
+		 * And the before quitting, we close the DB connection
+		 * anyway.
+		 */
+		(void)gfarm_pgsql_terminate();
+
+		if (e == GFARM_ERR_DB_INVALID_SCHEME) {
+			gflog_fatal(GFARM_MSG_UNFIXED,
+				"The Host table scheme is not valid. "
+				"Running the config-gfarm-update might "
+				"solve this.");
+		} else if (e == GFARM_ERR_SQL_SYNTAX_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"Must not happen. "
+				"SQL syntax error(s) in query??");
+			assert(0);
+		} else {
+			gflog_fatal(GFARM_MSG_UNFIXED,
+				"Got an error while checking the Host "
+				"table scheme. Exit anyway to prevent "
+				"any filesystem metadata corruptions.");
+		}
+
+		/*
+		 * For failsafe.
+		 */
+		exit(2);
+	}
+
+	return (e);
+}
+
+static gfarm_error_t
 gfarm_pgsql_host_load(void *closure,
 	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	gfarm_error_t e;
 	int i, n;
 	struct gfarm_internal_host_info *infos;
+
+	e = gfarm_pgsql_host_check_scheme();
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
 	e = gfarm_pgsql_generic_grouping_get_all_no_retry(
 		"SELECT Host.hostname, count(hostalias) "
