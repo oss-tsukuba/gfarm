@@ -64,6 +64,34 @@
 #define GFARM_PGSQL_ERRCODE_SYNTAX_ERROR_PREFIX	"42"
 #define GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN	"42703"
 
+typedef enum {
+	/*
+	 * A value zero should represent "There is no clue that show
+	 * us any error(s) have been occurred yet or not": since in
+	 * many case we initialize any data by zero, and also the C
+	 * language system and the runtime initialize any static data
+	 * by zero implicitly.
+	 */
+	RDBMS_ERROR_UNKNOWN_STATE = 0,
+
+	RDBMS_ERROR_NO_ERROR,
+
+	/*
+	 * SQL related:
+	 */
+	RDBMS_ERROR_INVALID_SCHEME,
+	RDBMS_ERROR_SQL_SYNTAX_ERROR,
+
+	/*
+	 * Any others:
+	 */
+	RDBMS_ERROR_NO_MEMORY,
+
+	RDBMS_ERROR_ANY_OTHERS,
+
+	RDBMS_ERROR_MAX
+} gfarm_rdbms_error_t;
+
 typedef gfarm_error_t (*gfarm_pgsql_dml_sn_t)(gfarm_uint64_t,
 	const char *, int, const Oid *, const char *const *,
 	const int *, const int *, int, const char *);
@@ -1319,10 +1347,10 @@ gen_scheme_check_query(const char *tablename,
 	return (tmp);
 }
 
-static gfarm_error_t
-gfarm_pgsql_sql_error_to_gfarm_error(const PGresult *res)
+static gfarm_rdbms_error_t
+gfarm_pgsql_sql_error_to_gfarm_rdbms_error(const PGresult *res)
 {
-	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	gfarm_rdbms_error_t dbe = RDBMS_ERROR_ANY_OTHERS;
 	char *smsg = PQresultErrorField(res, PG_DIAG_SQLSTATE);
 
 	if (strncasecmp(smsg,
@@ -1333,32 +1361,32 @@ gfarm_pgsql_sql_error_to_gfarm_error(const PGresult *res)
 			GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN,
 			sizeof(GFARM_PGSQL_ERRCODE_UNDEFINED_COLUMN) - 1) ==
 			0) {
-			e = GFARM_ERR_DB_INVALID_SCHEME;
+			dbe = RDBMS_ERROR_INVALID_SCHEME;
 		} else {
-			e = GFARM_ERR_SQL_SYNTAX_ERROR;
+			dbe = RDBMS_ERROR_SQL_SYNTAX_ERROR;
 		}
 	}
 
-	return (e);
+	return (dbe);
 }
 
-static gfarm_error_t
+static gfarm_rdbms_error_t
 gfarm_pgsql_check_scheme(const char *tablename,
 	size_t ncolumns, const char * const columns[])
 {
 	const char *diag = "check_scheme";
 	PGresult *res = NULL;
 	ExecStatusType st;
-	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	gfarm_rdbms_error_t dbe = RDBMS_ERROR_UNKNOWN_STATE;
 	char *emsg = NULL;
 	char *sql = gen_scheme_check_query(tablename, ncolumns, columns);
 
 	if (sql == NULL) {
-		e = GFARM_ERR_NO_MEMORY;
+		dbe = RDBMS_ERROR_NO_MEMORY;
 		goto bailout;
 	}
 
-	if ((e = gfarm_pgsql_start(diag)) != GFARM_ERR_NO_ERROR) {
+	if (gfarm_pgsql_start(diag) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED, "pgsql restart failed");
 		goto bailout;
 	}
@@ -1384,14 +1412,14 @@ gfarm_pgsql_check_scheme(const char *tablename,
 	st = PQresultStatus(res);
 	switch (st) {
 	case PGRES_TUPLES_OK:
-		e = GFARM_ERR_NO_ERROR;
+		dbe = RDBMS_ERROR_NO_ERROR;
 		break;
 	case PGRES_BAD_RESPONSE:
 	case PGRES_NONFATAL_ERROR:
 	case PGRES_FATAL_ERROR:
 		emsg = PQresultErrorMessage(res);
-		e = gfarm_pgsql_sql_error_to_gfarm_error(res);
-		if (e != GFARM_ERR_UNKNOWN)
+		dbe = gfarm_pgsql_sql_error_to_gfarm_rdbms_error(res);
+		if (dbe != RDBMS_ERROR_ANY_OTHERS)
 			gflog_error(GFARM_MSG_UNFIXED,
 				"SQL realated error: %s", emsg);
 		else
@@ -1404,7 +1432,7 @@ gfarm_pgsql_check_scheme(const char *tablename,
 		 * PGRES_COPY_OUT
 		 * PGRES_COPY_IN */
 		emsg = PQresultErrorMessage(res);
-		e = GFARM_ERR_UNKNOWN;
+		dbe = RDBMS_ERROR_ANY_OTHERS;
 		gflog_error(GFARM_MSG_UNFIXED,
 			"must not happen, unexpected query status: %s", emsg);
 		assert(0);
@@ -1417,7 +1445,7 @@ bailout:
 	if (res != NULL)
 		PQclear(res);
 
-	return (e);
+	return (dbe);
 }
 
 /**********************************************************************/
@@ -1616,30 +1644,32 @@ gfarm_pgsql_host_check_scheme(void)
 		"hostname", "port", "architecture", "ncpu",
 		"flags", "fsngroupname"
 	};
-	gfarm_error_t e =
-		gfarm_pgsql_check_scheme(tablename,
-			sizeof(columns) / sizeof(char *), columns);
+	gfarm_rdbms_error_t dbe;
 
-	if (e != GFARM_ERR_NO_ERROR) {
+	if ((dbe = gfarm_pgsql_check_scheme(tablename,
+			sizeof(columns) / sizeof(char *), columns)) !=
+		RDBMS_ERROR_NO_ERROR) {
 		/*
 		 * The case like this, which got failed to check the
 		 * Host table, we can't live any longer. Just quit.
-		 * And the before quitting, we close the DB connection
-		 * anyway.
+		 * And before quit, we close the DB connection anyway.
 		 */
 		(void)gfarm_pgsql_terminate();
 
-		if (e == GFARM_ERR_DB_INVALID_SCHEME) {
+		switch (dbe) {
+		case RDBMS_ERROR_INVALID_SCHEME:
 			gflog_fatal(GFARM_MSG_UNFIXED,
 				"The Host table scheme is not valid. "
 				"Running the config-gfarm-update might "
 				"solve this.");
-		} else if (e == GFARM_ERR_SQL_SYNTAX_ERROR) {
+			break;
+		case RDBMS_ERROR_SQL_SYNTAX_ERROR:
 			gflog_error(GFARM_MSG_UNFIXED,
 				"Must not happen. "
 				"SQL syntax error(s) in query??");
 			assert(0);
-		} else {
+			break;
+		default:
 			gflog_fatal(GFARM_MSG_UNFIXED,
 				"Got an error while checking the Host "
 				"table scheme. Exit anyway to prevent "
@@ -1652,7 +1682,8 @@ gfarm_pgsql_host_check_scheme(void)
 		exit(2);
 	}
 
-	return (e);
+	return ((dbe == RDBMS_ERROR_NO_ERROR) ?
+		GFARM_ERR_NO_ERROR : GFARM_ERR_UNKNOWN);
 }
 
 static gfarm_error_t
