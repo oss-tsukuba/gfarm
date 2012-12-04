@@ -90,30 +90,14 @@ gfs_pio_reopen(GFS_File gf)
 }
 
 static int
-close_on_server(GFS_File gf, void *closure)
+close_on_gfmd(GFS_File gf, void *closure)
 {
-	gfarm_error_t e;
-	struct gfs_file_section_context *vc = gf->view_context;
-	struct gfs_connection *sc;
-
 	/* new connection must be acquired. */
 	assert(gf->gfm_server != (struct gfm_connection *)closure);
 
+	/* if gfm_connection is alive, fd must be closed */
+	(void)gfm_close_fd(gf->gfm_server, gf->fd);
 	gfm_client_connection_free(gf->gfm_server);
-
-	if ((sc = get_storage_context(vc)) == NULL) {
-		/* In the case of gfs_file just in scheduling */
-		gf->fd = -1;
-		return (1);
-	}
-
-	if ((e = gfs_client_close(sc, gf->fd)) != GFARM_ERR_NO_ERROR)
-		gflog_debug(GFARM_MSG_1003382,
-		    "gfs_client_close: %s", gfarm_error_string(e));
-	if (e == GFARM_ERR_GFMD_FAILED_OVER)
-		e = GFARM_ERR_NO_ERROR;
-	if (e != GFARM_ERR_NO_ERROR)
-		gf->error = e;
 	gf->fd = -1;
 
 	return (1);
@@ -177,6 +161,9 @@ reset_and_reopen(GFS_File gf, void *closure)
 			 * gfs_server.
 			 * In that case, gfarm_client_process_reset() is
 			 * called in gfs_pio_open_section().
+			 *
+			 * all fd will be closed in gfsd by
+			 * gfarm_client_process_reset().
 			 */
 			e = gfarm_client_process_reset(sc, gfm_server);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -328,11 +315,8 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			--i;
 			continue;
 		}
-		/*
-		 * close fd without accessing to gfmd from client
-		 * and release gfm_connection.
-		 */
-		gfs_pio_file_list_foreach(gfl, close_on_server, gfm_server);
+		/* close fd, release gfm_connection and set invalid fd */
+		gfs_pio_file_list_foreach(gfl, close_on_gfmd, gfm_server);
 
 		if (e != GFARM_ERR_NO_ERROR) {
 			gfarm_filesystem_set_failover_detected(fs, 1);
