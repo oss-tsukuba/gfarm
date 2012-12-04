@@ -3474,7 +3474,7 @@ gfm_client_process_alloc_child(struct gfm_connection *gfm_server,
 gfarm_error_t
 gfm_client_process_free(struct gfm_connection *gfm_server)
 {
-	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FREE, ""));
+	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FREE, "/"));
 }
 
 gfarm_error_t
