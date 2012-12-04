@@ -19,6 +19,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfutil.h"
 #include "hash.h"
 #include "thrsubr.h"
@@ -59,6 +61,13 @@ struct host {
 	 * resources which are protected by the giant_lock()
 	 */
 	struct gfarm_host_info hi;
+
+	/*
+	 * This should be included in the struct gfarm_host_info as a
+	 * member, but with several reasons (mainly for ABI backward
+	 * compatibilities), it is here.
+	 */
+	char *fsngroupname;
 
 	pthread_mutex_t back_channel_mutex;
 
@@ -378,6 +387,12 @@ int
 host_flags(struct host *h)
 {
 	return (h->hi.flags);
+}
+
+char *
+host_fsngroup(struct host *h)
+{
+	return (h->fsngroupname);
 }
 
 int
@@ -1175,13 +1190,22 @@ host_info_close_for_seq_write(void)
 
 /* The memory owner of `*hi' is changed to host.c */
 void
-host_add_one(void *closure, struct gfarm_host_info *hi)
+host_add_one(void *closure,
+	struct gfarm_internal_host_info *hi)
 {
-	gfarm_error_t e = host_enter(hi, NULL);
+	struct host *h = NULL;
+	gfarm_error_t e = host_enter(&(hi->hi), &h);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000266,
 		    "host_add_one: %s", gfarm_error_string(e));
+
+	if (h != NULL) {
+		if (hi->fsngroupname != NULL)
+			h->fsngroupname = strdup(hi->fsngroupname);
+		else
+			h->fsngroupname = NULL;
+	}
 }
 
 void
@@ -1588,6 +1612,17 @@ host_modify(struct host *h, struct gfarm_host_info *hi)
 	h->hi.ncpu = hi->ncpu;
 	h->hi.port = hi->port;
 	h->hi.flags = hi->flags;
+}
+
+void
+host_fsngroup_modify(struct host *h, const char *fsngroupname)
+{
+	if (h->fsngroupname != NULL)
+		free(h->fsngroupname);
+	if (fsngroupname != NULL)
+		h->fsngroupname = strdup(fsngroupname);
+	else
+		h->fsngroupname = NULL;
 }
 
 gfarm_error_t

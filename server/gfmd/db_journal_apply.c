@@ -7,6 +7,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "config.h"
 #include "quota.h"
 #include "metadb_server.h"

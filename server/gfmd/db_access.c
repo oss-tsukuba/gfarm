@@ -12,6 +12,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfutil.h"
 #include "thrsubr.h"
 
@@ -570,7 +572,8 @@ db_host_remove(const char *hostname)
 }
 
 gfarm_error_t
-db_host_load(void *closure, void (*callback)(void *, struct gfarm_host_info *))
+db_host_load(void *closure,
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	gfarm_error_t e;
 	const char *diag = "db_host_load";

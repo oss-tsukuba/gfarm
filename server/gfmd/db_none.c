@@ -23,6 +23,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfutil.h"
 
 #include "config.h"
@@ -78,7 +80,7 @@ gfarm_none_host_remove(gfarm_uint64_t seqnum, char *hostname)
 
 static gfarm_error_t
 gfarm_none_host_load(void *closure,
-	void (*callback)(void *, struct gfarm_host_info *))
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }

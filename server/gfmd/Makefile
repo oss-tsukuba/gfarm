@@ -35,7 +35,7 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	dir.c inode.c fs.c back_channel.c acl.c journal_file.c \
 	mdhost.c gfmd_channel.c mdcluster.c \
 	db_access.c db_common.c db_none.c quota.c xattr.c \
-	db_journal.c db_journal_apply.c \
+	db_journal.c db_journal_apply.c internal_host_info.c \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
 OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	user.o group.o host.o peer.o dead_file_copy.o \
@@ -43,7 +43,7 @@ OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
 	dir.o inode.o fs.o back_channel.o acl.o journal_file.o \
 	mdhost.o gfmd_channel.o mdcluster.o \
 	db_access.o db_common.o db_none.o quota.o xattr.o \
-	db_journal.o db_journal_apply.o \
+	db_journal.o db_journal_apply.o internal_host_info.o \
 	$(ldap_objs) $(postgresql_objs) $(optional_objs)
 
 all: $(PROGRAM)

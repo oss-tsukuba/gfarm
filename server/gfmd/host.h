@@ -33,6 +33,7 @@ int host_port(struct host *);
 char *host_architecture(struct host *);
 int host_ncpu(struct host *);
 int host_flags(struct host *);
+char *host_fsngroup(struct host *);
 int host_supports_async_protocols(struct host *);
 int host_is_disk_available(struct host *, gfarm_off_t);
 
@@ -83,6 +84,7 @@ void host_status_update(struct host *, struct host_status *);
 struct gfarm_host_info;
 gfarm_error_t host_enter(struct gfarm_host_info *, struct host **);
 void host_modify(struct host *, struct gfarm_host_info *);
+void host_fsngroup_modify(struct host *, const char *);
 gfarm_error_t host_remove_in_cache(const char *);
 
 gfarm_error_t gfm_server_host_info_get_all(struct peer *, int, int);

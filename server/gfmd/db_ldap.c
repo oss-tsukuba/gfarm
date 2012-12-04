@@ -58,6 +58,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfutil.h"
 
 #include "config.h"
@@ -1214,32 +1216,36 @@ gfarm_ldap_host_info_set_field(
 	char **vals)
 {
 	gfarm_error_t err = GFARM_ERR_NO_ERROR;
-	struct gfarm_host_info *info = vinfo;
 	static const char diag[] = "gfarm_ldap_host_info_set_field";
+	struct gfarm_internal_host_info *info = vinfo;
 
 	if (strcasecmp(attribute, "hostname") == 0) {
-		info->hostname = strdup_log(vals[0], diag);
-		if (info->hostname == NULL)
+		info->hi.hostname = strdup_log(vals[0], diag);
+		if (info->hi.hostname == NULL)
 			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "port") == 0) {
-		info->port = strtol(vals[0], NULL, 0);
+		info->hi.port = strtol(vals[0], NULL, 0);
 	} else if (strcasecmp(attribute, "hostalias") == 0) {
-		info->hostaliases = gfarm_strarray_dup_log(vals, diag);
-		if (info->hostaliases == NULL) {
-			info->nhostaliases = 0;
+		info->hi.hostaliases = gfarm_strarray_dup_log(vals, diag);
+		if (info->hi.hostaliases == NULL) {
+			info->hi.nhostaliases = 0;
 			err = GFARM_ERR_NO_MEMORY;
 		} else {
-			info->nhostaliases =
-			    gfarm_strarray_length(info->hostaliases);
+			info->hi.nhostaliases =
+			    gfarm_strarray_length(info->hi.hostaliases);
 		}
 	} else if (strcasecmp(attribute, "architecture") == 0) {
-		info->architecture = strdup_log(vals[0], diag);
-		if (info->architecture == NULL)
+		info->hi.architecture = strdup_log(vals[0], diag);
+		if (info->hi.architecture == NULL)
 			err = GFARM_ERR_NO_MEMORY;
 	} else if (strcasecmp(attribute, "ncpu") == 0) {
-		info->ncpu = strtol(vals[0], NULL, 0);
+		info->hi.ncpu = strtol(vals[0], NULL, 0);
 	} else if (strcasecmp(attribute, "flags") == 0) {
-		info->flags = strtol(vals[0], NULL, 0);
+		info->hi.flags = strtol(vals[0], NULL, 0);
+	} else if (strcasecmp(attribute, "fsngroupname") == 0) {
+		info->fsngroupname = strdup_log(vals[0], diag);
+		if (info->fsngroupname == NULL)
+			err = GFARM_ERR_NO_MEMORY;
 	}
 	return (err);
 }
@@ -1340,7 +1346,7 @@ gfarm_ldap_host_remove(gfarm_uint64_t seqnum, char *hostname)
 
 static gfarm_error_t
 gfarm_ldap_host_load(void *closure,
-	void (*callback)(void *, struct gfarm_host_info *))
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	struct gfarm_host_info tmp_info;
 

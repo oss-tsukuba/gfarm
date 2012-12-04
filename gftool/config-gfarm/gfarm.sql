@@ -8,7 +8,8 @@ CREATE TABLE Host (
 	port		INTEGER		NOT NULL,
 	architecture	VARCHAR(128)	NOT NULL,
 	ncpu		INTEGER		NOT NULL,
-	flags		INTEGER		NOT NULL
+	flags		INTEGER		NOT NULL,
+	fsngroupname	VARCHAR(256)
 );
 
 

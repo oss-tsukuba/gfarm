@@ -27,6 +27,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "gfutil.h"
 
 #include "config.h"
@@ -1254,26 +1256,29 @@ static gfarm_error_t
 host_info_set_fields_with_grouping(
 	PGresult *res, int startrow, int nhostaliases, void *vinfo)
 {
-	struct gfarm_host_info *info = vinfo;
 	int i;
+	struct gfarm_internal_host_info *info = vinfo;
 
-	info->hostname = pgsql_get_string_ck(res, startrow, "hostname");
-	info->port = pgsql_get_int32(res, startrow, "port");
-	info->architecture = pgsql_get_string_ck(res, startrow, "architecture");
-	info->ncpu = pgsql_get_int32(res, startrow, "ncpu");
-	info->flags = pgsql_get_int32(res, startrow, "flags");
-	info->nhostaliases = nhostaliases;
-	GFARM_MALLOC_ARRAY(info->hostaliases, nhostaliases + 1);
-	if (info->hostaliases == NULL) {
+	info->hi.hostname = pgsql_get_string_ck(res, startrow, "hostname");
+	info->hi.port = pgsql_get_int32(res, startrow, "port");
+	info->hi.architecture =
+		pgsql_get_string_ck(res, startrow, "architecture");
+	info->hi.ncpu = pgsql_get_int32(res, startrow, "ncpu");
+	info->hi.flags = pgsql_get_int32(res, startrow, "flags");
+	info->fsngroupname =
+		pgsql_get_string_ck(res, startrow, "fsngroupname");
+	info->hi.nhostaliases = nhostaliases;
+	GFARM_MALLOC_ARRAY(info->hi.hostaliases, nhostaliases + 1);
+	if (info->hi.hostaliases == NULL) {
 		gflog_fatal(GFARM_MSG_1002373,
 		    "host_info_set_fields_with_grouping(%s, %d): no memory",
-		    info->hostname, nhostaliases + 1);
+		    info->hi.hostname, nhostaliases + 1);
 	}
 	for (i = 0; i < nhostaliases; i++) {
-		info->hostaliases[i] = pgsql_get_string_ck(res, startrow + i,
-		    "hostalias");
+		info->hi.hostaliases[i] =
+			pgsql_get_string_ck(res, startrow + i, "hostalias");
 	}
-	info->hostaliases[info->nhostaliases] = NULL;
+	info->hi.hostaliases[info->hi.nhostaliases] = NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1435,11 +1440,11 @@ gfarm_pgsql_host_remove(gfarm_uint64_t seqnum, char *hostname)
 
 static gfarm_error_t
 gfarm_pgsql_host_load(void *closure,
-	void (*callback)(void *, struct gfarm_host_info *))
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	gfarm_error_t e;
 	int i, n;
-	struct gfarm_host_info *infos;
+	struct gfarm_internal_host_info *infos;
 
 	e = gfarm_pgsql_generic_grouping_get_all_no_retry(
 		"SELECT Host.hostname, count(hostalias) "
@@ -1449,14 +1454,15 @@ gfarm_pgsql_host_load(void *closure,
 		    "ORDER BY Host.hostname",
 
 		"SELECT Host.hostname, port, architecture, ncpu, flags, "
-				"hostalias "
+				"fsngroupname, hostalias "
 		    "FROM Host LEFT OUTER JOIN HostAliases "
 			"ON Host.hostname = HostAliases.hostname "
 		    "ORDER BY Host.hostname, hostalias",
 
 		0, NULL,
 		&n, &infos,
-		&gfarm_base_host_info_ops, host_info_set_fields_with_grouping,
+		&gfarm_base_internal_host_info_ops,
+		host_info_set_fields_with_grouping,
 		"pgsql_host_load");
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002157,

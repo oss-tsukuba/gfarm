@@ -18,6 +18,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "internal_host_info.h"
+
 #include "queue.h"
 #include "gfutil.h"
 #include "thrsubr.h"
@@ -3953,7 +3955,7 @@ db_journal_recvq_thread(void *arg)
 
 static gfarm_error_t
 db_journal_host_load(void *closure,
-	void (*callback)(void *, struct gfarm_host_info *))
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	return (store_ops->host_load(closure, callback));
 }

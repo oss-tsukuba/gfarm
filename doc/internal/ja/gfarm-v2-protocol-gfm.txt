@@ -763,6 +763,25 @@
 	  出力: i:エラー
 	  ※ 管理者権限が必要
 
+	GFM_PROTO_FSNGROUP_GET_ALL
+	  入力: なし
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts
+		以下 n_hosts 個の下記の対:
+			s:hostname, s:fsngroupname
+
+	GFM_PROTO_FSNGROUP_GET_BY_NAMES
+	  入力: i:n_hosts, s[n_hosts]:hostnames
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_hosts, s[n_hosts]:fsngroupnames
+
+	GFM_PROTO_FSNGROUP_MODIFY
+	  入力: s:hostname, s:fsngroupname
+	  出力: i:エラー
+	  ※ 管理者権限が必要
+
 	GFM_PROTO_USER_INFO_GET_ALL
 	  入力: なし
 	  出力: i:エラー
