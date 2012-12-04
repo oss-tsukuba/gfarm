@@ -609,6 +609,45 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	return (e);
 }
 
+static gfarm_error_t
+gfs_client_check_failovercount_or_reset_process(
+	struct gfs_connection *gfs_server, struct gfm_connection *gfm_server)
+{
+	gfarm_error_t e;
+	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
+		gfm_server);
+	int fc = gfarm_filesystem_failover_count(fs);
+	int old_fc = gfs_server->failover_count;
+
+	if (gfs_server->failover_count == fc)
+		return (GFARM_ERR_NO_ERROR);
+	gflog_debug(GFARM_MSG_UNFIXED,
+	    "detected gfmd connection failover before acquring "
+	    "gfsd connection");
+	/*
+	 * if cached gfs_connection is not related to GFS_File when failover
+	 * occurred, gfs_connection is not failed over.
+	 * such connection must be called gfarm_client_process_reset() before
+	 * being related to GFS_File.
+	 */
+	gfs_server->failover_count = fc;
+	/*
+	 * gfs_server->failover_count must be new value because
+	 * failover_count will be passed to gfsd in
+	 * gfarm_client_process_reset()
+	 */
+	if ((e = gfarm_client_process_reset(gfs_server, gfm_server))
+	    != GFARM_ERR_NO_ERROR) {
+		gfs_server->failover_count = old_fc;
+		gfs_client_connection_free(gfs_server);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_client_process_reset: %s",
+		    gfarm_error_string(e));
+	}
+
+	return (e);
+}
+
 gfarm_error_t
 gfs_client_connection_and_process_acquire(
 	struct gfm_connection **gfm_serverp,
@@ -616,11 +655,11 @@ gfs_client_connection_and_process_acquire(
 	struct gfs_connection **gfs_serverp, const char *source_ip)
 {
 	gfarm_error_t e;
-	int fc, nretry = 1;
+	int nretry = 1, nretry_reset = 1;
 	struct gfs_connection *gfs_server;
 	struct gfm_connection *gfm_server = *gfm_serverp;
-	struct gfarm_filesystem *fs = gfarm_filesystem_get_by_connection(
-		*gfm_serverp);
+	char *gfmd_host = NULL, *gfmd_user = NULL;
+	int gfmd_port;
 
 retry:
 	if ((e = gfs_client_connection_acquire_by_host(*gfm_serverp,
@@ -633,27 +672,12 @@ retry:
 	}
 
 	if (gfs_client_pid(gfs_server) != 0) {
-		fc = gfarm_filesystem_failover_count(fs);
-		if (gfs_server->failover_count != fc) {
+		e = gfs_client_check_failovercount_or_reset_process(
+		    gfs_server, gfm_server);
+		if (gfs_client_is_connection_error(e) && nretry_reset-- > 0) {
 			gflog_debug(GFARM_MSG_UNFIXED,
-			    "detected gfmd connection failover before acquring "
-			    "gfsd connection");
-			/*
-			 * if cached gfs_connection is not related to
-			 * GFS_File when failover occurred, gfs_connection is
-			 * not failed over.
-			 * such connection must be called
-			 * gfarm_client_process_reset() before being related
-			 * to GFS_File.
-			 */
-			if ((e = gfarm_client_process_reset(gfs_server,
-			    *gfm_serverp)) != GFARM_ERR_NO_ERROR) {
-				gfs_client_connection_free(gfs_server);
-				gflog_debug(GFARM_MSG_UNFIXED,
-				    "gfarm_client_process_reset: %s",
-				    gfarm_error_string(e));
-			} else
-				gfs_server->failover_count = fc;
+			    "retry process reset");
+			goto retry;
 		}
 	} else if ((e = gfarm_client_process_set(gfs_server, gfm_server))
 	    != GFARM_ERR_NO_ERROR) {
@@ -671,18 +695,31 @@ retry:
 		 * invalidated and pid must be reallocated.
 		 */
 		if (e == GFARM_ERR_NO_SUCH_PROCESS) {
+			gfmd_host = strdup(gfm_client_hostname(gfm_server));
+			gfmd_port = gfm_client_port(gfm_server);
+			gfmd_user = strdup(gfm_client_username(gfm_server));
+			if (gfmd_host == NULL || gfmd_user == NULL) {
+				e = GFARM_ERR_NO_MEMORY;
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "%s", gfarm_error_string(e));
+				free(gfmd_host);
+				free(gfmd_user);
+				return (e);
+			}
 			if ((e = gfm_client_connection_failover(gfm_server))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfm_client_connection_failover: %s",
 				    gfarm_error_string(e));
+				free(gfmd_host);
+				free(gfmd_user);
 				return (e);
 			}
-			if ((e = gfm_client_connection_and_process_acquire(
-			    gfm_client_hostname(gfm_server),
-			    gfm_client_port(gfm_server),
-			    gfm_client_username(gfm_server),
-			    &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			e = gfm_client_connection_and_process_acquire(
+			    gfmd_host, gfmd_port, gfmd_user, &gfm_server);
+			free(gfmd_host);
+			free(gfmd_user);
+			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
 				    "gfm_client_connection_and_process_acquire:"
 				    " %s",
@@ -1210,6 +1247,11 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET, "ibli/",
 	    type, size, key, pid, gfs_server->failover_count);
+	if (e == GFARM_ERR_GFMD_FAILED_OVER) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "ignore error: %s", gfarm_error_string(e));
+		e = GFARM_ERR_NO_ERROR;
+	}
 	if (e == GFARM_ERR_NO_ERROR)
 		gfs_server->pid = pid;
 	else {
