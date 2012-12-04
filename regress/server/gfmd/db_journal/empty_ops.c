@@ -61,7 +61,7 @@ empty_host_remove(gfarm_uint64_t seqnum, char *hostname)
 
 static gfarm_error_t
 empty_host_load(void *closure,
-	void (*callback)(void *, struct gfarm_host_info *))
+	void (*callback)(void *, struct gfarm_internal_host_info *))
 {
 	return (GFARM_ERR_NO_ERROR);
 }
