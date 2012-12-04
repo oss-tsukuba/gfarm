@@ -79,9 +79,11 @@ main(int argc, char **argv)
 {
     OM_uint32 majStat;
     OM_uint32 minStat;
+    char *desired = NULL;
 
     gflog_auth_set_verbose(1);
-    if (gfarmSecSessionInitializeInitiator(NULL, NULL, &majStat, &minStat) <= 0) {
+    if (gfarmSecSessionInitializeInitiator(NULL, NULL,
+                                           &majStat, &minStat) <= 0) {
 	fprintf(stderr, "can't initialize as initiator because of:\n");
 	gfarmGssPrintMajorStatus(majStat);
 	gfarmGssPrintMinorStatus(minStat);
@@ -103,6 +105,10 @@ main(int argc, char **argv)
 	    return 1;
 	}
     }
+
+    desired = newStringOfName(acceptorName);
+    fprintf(stderr, "Desired peer name: '%s'\n", desired);
+    free(desired);
 
     doClient(hostname, port, acceptorName, GSS_C_NO_CREDENTIAL, 1);
     gfarmSecSessionFinalizeInitiator();
