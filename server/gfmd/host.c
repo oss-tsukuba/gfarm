@@ -797,6 +797,7 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 		return (NULL);
 	abstract_host_init(&h->ah, &host_ops, "host_new");
 	h->hi = *hi;
+	h->fsngroupname = NULL;
 	gfarm_mutex_init(&h->back_channel_mutex, diag, BACK_CHANNEL_DIAG);
 #ifdef COMPAT_GFARM_2_3
 	h->back_channel_result = NULL;
@@ -1202,7 +1203,10 @@ host_add_one(void *closure,
 
 	if (h != NULL) {
 		if (hi->fsngroupname != NULL)
-			h->fsngroupname = strdup(hi->fsngroupname);
+			/*
+			 * Not strdup() but just change the ownership.
+			 */
+			h->fsngroupname = hi->fsngroupname;
 		else
 			h->fsngroupname = NULL;
 	}
