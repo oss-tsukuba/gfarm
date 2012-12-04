@@ -1713,7 +1713,7 @@ test_getattrplus0(const char **argv, int follow)
 	msg("%s\n", diag);
 	chkerr((follow ? gfs_getattrplus : gfs_lgetattrplus)
 	    (path, patterns, 1, 0, &gfst, &nattrs, &names,
-	    (void ***)&vals, &sizes), diag);
+	    (void ***)(char *)&vals, &sizes), diag);
 	msg("%s ok\n", diag);
 	free(names);
 	free(vals);
