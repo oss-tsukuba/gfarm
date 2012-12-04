@@ -251,8 +251,8 @@ gfs_replica_info.lo: gfm_proto.h gfm_client.h lookup.h
 gfs_replicate.lo: config.h host.h gfm_client.h gfs_client.h lookup.h schedule.h gfs_misc.h gfs_failover.h
 gfs_rmdir.lo:
 gfs_stat.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h context.h gfs_profile.h gfm_client.h lookup.h gfs_failover.h
-gfs_statfs.lo: gfm_client.h lookup.h config.h
-gfs_statfsnode.lo: config.h gfm_client.h gfs_client.h lookup.h
+gfs_statfs.lo: gfm_client.h lookup.h config.h gfs_failover.h
+gfs_statfsnode.lo: config.h gfm_client.h gfs_client.h lookup.h gfs_failover.h
 gfs_statsw.lo: gfs_dircache.h
 gfs_symlink.lo: $(GFUTIL_SRCDIR)/gfutil.h context.h gfm_client.h lookup.h
 gfs_unlink.lo: $(GFUTIL_SRCDIR)/gfutil.h $(GFUTIL_SRCDIR)/timer.h context.h gfs_profile.h
