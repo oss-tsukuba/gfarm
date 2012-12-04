@@ -223,6 +223,30 @@ set_error(GFS_File gf, void *closure)
 #define NUM_FAILOVER_RETRY 3
 
 static gfarm_error_t
+acquire_valid_connection(struct gfm_connection *gfm_server, const char *host,
+	int port, const char *user, struct gfarm_filesystem *fs)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	int fc = gfarm_filesystem_failover_count(fs);
+
+	while (fc > gfm_client_connection_failover_count(gfm_server)) {
+		gfm_client_purge_from_cache(gfm_server);
+		gfm_client_connection_free(gfm_server);
+
+		if ((e = gfm_client_connection_and_process_acquire(
+		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfm_client_connection_and_process_acquire: %s",
+			    gfarm_error_string(e));
+			return (e);
+		}
+	}
+	if (e == GFARM_ERR_NO_ERROR)
+		gfarm_filesystem_set_failover_detected(fs, 0);
+	return (e);
+}
+
+static gfarm_error_t
 failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 	const char *user0)
 {
@@ -248,6 +272,13 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			goto error_all;
 		}
 		port = gfm_client_port(gfm_server);
+
+		if (fc > gfm_client_connection_failover_count(gfm_server)) {
+			/* already failover occurred */
+			e = acquire_valid_connection(gfm_server, host, port,
+			    user, fs);
+			goto end;
+		}
 	} else {
 		fs = gfarm_filesystem_get(host0, port);
 		assert(fs != NULL);
@@ -325,7 +356,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 		gflog_debug(GFARM_MSG_1003392,
 		    "falied to fail over: %s", gfarm_error_string(e));
 	}
-
+end:
 	free(host);
 	free(user);
 
@@ -381,14 +412,13 @@ gfm_client_rpc_with_failover(
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
-	int nretry = 1;
+	int nretry = 1, post_nretry = 1;
 
 retry:
 	gfm_server = NULL;
 	e = rpc_op(&gfm_server, closure);
 	if (nretry > 0 && gfm_client_connection_should_failover(
 	    gfm_server, e)) {
-		nretry--;
 		if ((e = failover(gfm_server)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "failover: %s", gfarm_error_string(e));
@@ -397,8 +427,21 @@ retry:
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "post_failover_op: %s", gfarm_error_string(e));
-		} else
+			if (gfm_client_is_connection_error(e) &&
+			    post_nretry > 0) {
+				/*
+				 * following cases:
+				 * - acquired conneciton in failover() is
+				 *   created before failover().
+				 * - connection error occurred after failover().
+				 */
+				post_nretry--;
+				goto retry;
+			}
+		} else {
+			nretry--;
 			goto retry;
+		}
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "rpc_op: %s",
@@ -457,7 +500,12 @@ compound_fd_op_post_failover(struct gfm_connection *gfm_server, void *closure)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_open_fd_with_ino(%s) failed: %s",
 		    url0, gfarm_error_string(e));
-		return (e);
+		/*
+		 * any error except connection error means that the file
+		 * cannot be accessed.
+		 */
+		return (gfm_client_is_connection_error(e) ? e :
+			GFARM_ERR_STALE_FILE_HANDLE);
 	}
 	free(url);
 
