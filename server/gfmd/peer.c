@@ -1272,6 +1272,7 @@ peer_unset_process(struct peer *peer)
 
 	process_detach_peer(peer->process, peer);
 	peer->process = NULL;
+	peer->user = NULL;
 }
 
 void
