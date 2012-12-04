@@ -1480,6 +1480,32 @@ gfarm_pgsql_host_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_pgsql_fsngroup_modify(gfarm_uint64_t seqnum,
+	struct db_fsngroup_modify_arg *arg)
+{
+	gfarm_error_t e;
+	const char *paramValues[2];
+
+	paramValues[0] = arg->hostname;
+	paramValues[1] = arg->fsngroupname;
+	e = gfarm_pgsql_update_or_delete(seqnum,
+		"UPDATE Host SET fsngroupname = $2 "
+			 "WHERE hostname = $1",
+		2, /* number of params */
+		NULL, /* param types */
+		paramValues,
+		NULL, /* param lengths */
+		NULL, /* param formats */
+		0, /* ask for text results */
+		"pgsql_fsngroup_modify");
+
+	free_arg((void *)arg);
+	return (e);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 user_info_set_field(PGresult *res, int row, void *vinfo)
 {
 	struct gfarm_user_info *info = vinfo;
@@ -3591,4 +3617,6 @@ const struct db_ops db_pgsql_ops = {
 	gfarm_pgsql_mdhost_modify,
 	gfarm_pgsql_mdhost_remove,
 	gfarm_pgsql_mdhost_load,
+
+	gfarm_pgsql_fsngroup_modify,
 };

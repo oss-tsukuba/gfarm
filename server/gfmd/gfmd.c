@@ -51,6 +51,7 @@
 #include "db_journal.h"
 #include "db_journal_apply.h"
 #include "host.h"
+#include "fsngroup.h"
 #include "mdhost.h"
 #include "mdcluster.h"
 #include "user.h"
@@ -160,6 +161,15 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 		break;
 	case GFM_PROTO_HOST_INFO_REMOVE:
 		e = gfm_server_host_info_remove(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FSNGROUP_GET_ALL:
+		e = gfm_server_fsngroup_get_all(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FSNGROUP_GET_BY_NAMES:
+		e = gfm_server_fsngroup_get_by_names(peer, from_client, skip);
+		break;
+	case GFM_PROTO_FSNGROUP_MODIFY:
+		e = gfm_server_fsngroup_modify(peer, from_client, skip);
 		break;
 	case GFM_PROTO_USER_INFO_GET_ALL:
 		e = gfm_server_user_info_get_all(peer, from_client, skip);

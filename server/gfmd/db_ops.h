@@ -25,6 +25,11 @@ struct db_host_modify_arg {
 	int del_count; char **del_aliases;
 };
 
+struct db_fsngroup_modify_arg {
+	char *hostname;
+	char *fsngroupname;
+};
+
 struct db_user_modify_arg {
 	struct gfarm_user_info ui;
 	int modflags;
@@ -255,4 +260,7 @@ struct db_ops {
 	gfarm_error_t (*mdhost_remove)(gfarm_uint64_t, char *);
 	gfarm_error_t (*mdhost_load)(void *,
 		void (*)(void *, struct gfarm_metadb_server *));
+
+	gfarm_error_t (*fsngroup_modify)(gfarm_uint64_t,
+		struct db_fsngroup_modify_arg *);
 };

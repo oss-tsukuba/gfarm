@@ -381,6 +381,16 @@ db_journal_host_modify_arg_destroy(struct db_host_modify_arg *arg)
 }
 
 static void
+db_journal_fsngroup_modify_arg_destroy(struct db_fsngroup_modify_arg *arg)
+{
+	if (arg->hostname != NULL)
+		(void)free((void *)arg->hostname);
+	if (arg->fsngroupname != NULL)
+		(void)free((void *)arg->fsngroupname);
+	free((void *)arg);
+}
+
+static void
 db_journal_user_modify_arg_destroy(struct db_user_modify_arg *arg)
 {
 	gfarm_user_info_free(&arg->ui);
@@ -922,6 +932,105 @@ db_journal_write_host_remove(gfarm_uint64_t seqnum, char *hostname)
 {
 	return (db_journal_write_string(
 		seqnum, GFM_JOURNAL_HOST_REMOVE, hostname));
+}
+
+/**********************************************************/
+/* fsngroup */
+
+#define GFM_JOURNAL_FSNGROUP_CORE_XDR_FMT		"ss"
+
+static gfarm_error_t
+db_journal_write_fsngroup_size_add(enum journal_operation ope,
+	size_t *sizep, void *arg)
+{
+	gfarm_error_t e;
+	struct db_fsngroup_modify_arg *fsnarg =
+		(struct db_fsngroup_modify_arg *)arg;
+
+	if ((e = gfp_xdr_send_size_add(sizep,
+	    GFM_JOURNAL_FSNGROUP_CORE_XDR_FMT,
+	    NON_NULL_STR(fsnarg->hostname),
+	    NON_NULL_STR(fsnarg->fsngroupname))) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			"gfp_xdr_send_size_add", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_fsngroup_core(enum journal_operation ope, void *arg)
+{
+	gfarm_error_t e;
+	struct db_fsngroup_modify_arg *fsnarg =
+		(struct db_fsngroup_modify_arg *)arg;
+
+	if ((e = gfp_xdr_send(JOURNAL_W_XDR,
+	    GFM_JOURNAL_FSNGROUP_CORE_XDR_FMT,
+	    NON_NULL_STR(fsnarg->hostname),
+	    NON_NULL_STR(fsnarg->fsngroupname))) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			"gfp_xdr_send", e, ope);
+		return (e);
+	}
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+db_journal_write_fsngroup_modify(gfarm_uint64_t seqnum,
+	struct db_fsngroup_modify_arg *arg)
+{
+	return (db_journal_write(seqnum, GFM_JOURNAL_FSNGROUP_MODIFY, arg,
+		db_journal_write_fsngroup_size_add,
+		db_journal_write_fsngroup_core));
+}
+
+static gfarm_error_t
+db_journal_read_fsngroup_core(struct gfp_xdr *xdr, enum journal_operation ope,
+	struct db_fsngroup_modify_arg *fsnarg)
+{
+	gfarm_error_t e;
+	int eof;
+
+	if ((e = gfp_xdr_recv(xdr, 1, &eof,
+	    GFM_JOURNAL_FSNGROUP_CORE_XDR_FMT,
+	    &fsnarg->hostname,
+	    &fsnarg->fsngroupname)) != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+			"gfp_xdr_recv", e, ope);
+	}
+	return (e);
+}
+
+static gfarm_error_t
+db_journal_read_fsngroup_modify(struct gfp_xdr *xdr,
+	struct db_fsngroup_modify_arg **argp)
+{
+	gfarm_error_t e;
+	struct db_fsngroup_modify_arg *arg;
+	const enum journal_operation ope = GFM_JOURNAL_FSNGROUP_MODIFY;
+
+	GFARM_MALLOC(arg);
+	if (arg == NULL) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "GFARM_MALLOC", GFARM_ERR_NO_MEMORY, ope);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	memset(arg, 0, sizeof(*arg));
+	if ((e = db_journal_read_fsngroup_core(xdr, ope, arg))
+	    != GFARM_ERR_NO_ERROR) {
+		GFLOG_DEBUG_WITH_OPE(GFARM_MSG_UNFIXED,
+		    "db_journal_read_fsngroup_core", e, ope);
+		goto end;
+	}
+end:
+	if (e == GFARM_ERR_NO_ERROR)
+		*argp = arg;
+	else {
+		db_journal_fsngroup_modify_arg_destroy(arg);
+		*argp = NULL;
+	}
+	return (e);
 }
 
 /**********************************************************/
@@ -3107,6 +3216,10 @@ db_journal_ops_free(void *op_arg, enum journal_operation ope, void *obj)
 	case GFM_JOURNAL_MDHOST_REMOVE: /* char[] */
 		free(obj);
 		break;
+	case GFM_JOURNAL_FSNGROUP_MODIFY:
+		db_journal_fsngroup_modify_arg_destroy(
+			(struct db_fsngroup_modify_arg *)obj);
+		break;
 	default:
 		break;
 	}
@@ -3233,6 +3346,10 @@ db_journal_read_ops(void *op_arg, struct gfp_xdr *xdr,
 	case GFM_JOURNAL_MDHOST_MODIFY:
 		e = db_journal_read_mdhost_modify(xdr,
 			(struct db_mdhost_modify_arg **)objp);
+		break;
+	case GFM_JOURNAL_FSNGROUP_MODIFY:
+		e = db_journal_read_fsngroup_modify(xdr,
+			(struct db_fsngroup_modify_arg **)objp);
 		break;
 	case GFM_JOURNAL_NOP:
 		e = db_journal_read_nop(xdr,
@@ -4168,4 +4285,6 @@ struct db_ops db_journal_ops = {
 	db_journal_write_mdhost_modify,
 	db_journal_write_mdhost_remove,
 	db_journal_mdhost_load,
+
+	db_journal_write_fsngroup_modify,
 };

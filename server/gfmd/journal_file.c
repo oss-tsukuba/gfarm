@@ -168,7 +168,7 @@ static const char *journal_operation_names[] = {
 	"MDHOST_MODIFY",
 	"MDHOST_REMOVE",
 
-	"MDHOST_REMOVE",
+	"FSNGROUP_MODIFY",
 	"NOP",
 };
 

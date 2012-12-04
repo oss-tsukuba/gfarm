@@ -584,6 +584,46 @@ db_host_load(void *closure,
 	return (e);
 }
 
+struct db_fsngroup_modify_arg *
+db_fsngroup_modify_arg_alloc(const char *hostname, const char *fsngroupname)
+{
+	size_t hsize = 0;
+	size_t gsize = 0;
+	struct db_fsngroup_modify_arg *arg = NULL;
+
+	assert(hostname != NULL && hostname[0] != '\0');
+	hsize = strlen(hostname) + 1;
+	gsize = (fsngroupname == NULL || fsngroupname[0] == '\0') ?
+		1 : strlen(fsngroupname) + 1;
+	arg = (struct db_fsngroup_modify_arg *)malloc(
+		sizeof(*arg) + hsize + gsize);
+	if (arg == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'db_fsngroup_modify_arg' failed.");
+		return (NULL);
+	}
+	arg->hostname = (char *)arg + sizeof(*arg);
+	arg->fsngroupname = arg->hostname + hsize;
+	(void)memcpy((void *)(arg->hostname), (void *)hostname, hsize);
+	if (gsize > 1)
+		(void)memcpy((void *)(arg->fsngroupname),
+			(void *)fsngroupname, gsize);
+	else
+		*(arg->fsngroupname) = '\0';
+
+	return (arg);
+}
+
+gfarm_error_t
+db_fsngroup_modify(const char *hostname, const char *fsngroupname)
+{
+	struct db_fsngroup_modify_arg *arg =
+		db_fsngroup_modify_arg_alloc(hostname, fsngroupname);
+
+	if (arg == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	return (db_enter_sn((dbq_entry_func_t)ops->fsngroup_modify, arg));
+}
 
 void *
 db_user_dup(const struct gfarm_user_info *ui, size_t size)

@@ -88,6 +88,16 @@ gfarm_none_host_load(void *closure,
 /**********************************************************************/
 
 static gfarm_error_t
+gfarm_none_fsngroup_modify(gfarm_uint64_t seqnum,
+	struct db_fsngroup_modify_arg *arg)
+{
+	free((void *)arg);
+	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
+}
+
+/**********************************************************************/
+
+static gfarm_error_t
 gfarm_none_user_add(gfarm_uint64_t seqnum, struct gfarm_user_info *info)
 {
 	free(info);
@@ -517,4 +527,6 @@ const struct db_ops db_none_ops = {
 	gfarm_none_mdhost_modify,
 	gfarm_none_mdhost_remove,
 	gfarm_none_mdhost_load,
+
+	gfarm_none_fsngroup_modify,
 };

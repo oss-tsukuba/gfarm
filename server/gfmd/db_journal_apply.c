@@ -97,6 +97,29 @@ db_journal_apply_host_remove(gfarm_uint64_t seqnum, char *hostname)
 }
 
 /**********************************************************/
+/* fsngroup */
+
+static gfarm_error_t
+db_journal_apply_fsngroup_modify(gfarm_uint64_t seqnum,
+	struct db_fsngroup_modify_arg *arg)
+{
+	gfarm_error_t e;
+	struct host *h;
+
+	if ((h = host_lookup(arg->hostname)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_error(GFARM_MSG_UNFIXED,
+			"seqnum=%llu hostname=%s : %s",
+			(unsigned long long)seqnum,
+			arg->hostname, gfarm_error_string(e));
+	} else {
+		host_fsngroup_modify(h, (const char *)arg->fsngroupname);
+		e = GFARM_ERR_NO_ERROR;
+	}
+	return (e);
+}
+
+/**********************************************************/
 /* user */
 
 static gfarm_error_t
@@ -882,6 +905,8 @@ const struct db_ops db_journal_apply_ops = {
 	db_journal_apply_mdhost_modify,
 	db_journal_apply_mdhost_remove,
 	NULL,
+
+	db_journal_apply_fsngroup_modify,
 };
 
 void

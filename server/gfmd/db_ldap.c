@@ -1358,6 +1358,30 @@ gfarm_ldap_host_load(void *closure,
 
 /**********************************************************************/
 
+static gfarm_error_t
+gfarm_ldap_fsngroup_modify(gfarm_uint64_t seqnum,
+	struct db_fsngroup_modify_arg *arg)
+{
+	int i = 0;
+	LDAPMod * modv[2];
+	struct ldap_string_modify storage[ARRAY_LENGTH(modv) - 1];
+	struct gfarm_ldap_host_info_key key;
+
+	key.hostname = arg->hostname;
+
+	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
+		"objectclass", "GFarmHost", &storage[i]);
+	i++;
+	set_string_mod(&modv[i], LDAP_MOD_REPLACE,
+		"fsngroupname", arg->fsngroupname, &storage[i]);
+	i++;
+
+	return (gfarm_ldap_generic_info_modify(&key, modv,
+			&gfarm_ldap_host_info_ops));
+}
+
+/**********************************************************************/
+
 static char *gfarm_ldap_user_info_make_dn(void *vkey);
 static gfarm_error_t gfarm_ldap_user_info_set_field(void *info,
 	char *attribute, char **vals);
@@ -3194,4 +3218,6 @@ const struct db_ops db_ldap_ops = {
 	NULL,
 	NULL,
 	NULL,
+
+	gfarm_ldap_fsngroup_modify,
 };
