@@ -53,7 +53,8 @@ gfs_pio_reopen(GFS_File gf)
 	gfarm_ino_t ino;
 	char *real_url = NULL;
 
-	if ((e = gfm_open_fd_with_ino(gf->url, gf->open_flags,
+	if ((e = gfm_open_fd_with_ino(gf->url,
+	    gf->open_flags & (~GFARM_FILE_TRUNC),
 	    &gfm_server, &fd, &type, &real_url, &ino)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003380,
 		    "reopen operation on file descriptor for URL (%s) "
