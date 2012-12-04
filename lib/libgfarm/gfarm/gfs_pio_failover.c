@@ -39,19 +39,26 @@ int
 gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	gfarm_error_t e)
 {
-	return (gfm_server && gfarm_filesystem_has_multiple_servers(
-		    gfarm_filesystem_get_by_connection(gfm_server))
-		&& gfm_client_is_connection_error(e));
+	struct gfarm_filesystem *fs;
+
+	if (gfm_server == NULL || !gfm_client_is_connection_error(e))
+		return (0);
+	fs = gfarm_filesystem_get_by_connection(gfm_server);
+	return (gfarm_filesystem_has_multiple_servers(fs) &&
+	    !gfarm_filesystem_in_failover_process(fs));
 }
 
 static gfarm_error_t
-gfs_pio_reopen(GFS_File gf)
+gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
 	int fd, type;
 	gfarm_ino_t ino;
 	char *real_url = NULL;
+
+	/* avoid failover in gfm_open_fd_with_ino() */
+	gfarm_filesystem_set_failover_detected(fs, 0);
 
 	if ((e = gfm_open_fd_with_ino(gf->url,
 	    gf->open_flags & (~GFARM_FILE_TRUNC),
@@ -117,8 +124,9 @@ reset_and_reopen(GFS_File gf, void *closure)
 	struct gfm_connection *gfm_server = ri->gfm_server;
 	struct gfm_connection *gfm_server1;
 	struct gfs_connection *sc;
-	int fc = gfarm_filesystem_failover_count(
-		gfarm_filesystem_get_by_connection(gfm_server));
+	struct gfarm_filesystem *fs =
+	    gfarm_filesystem_get_by_connection(gfm_server);
+	int fc = gfarm_filesystem_failover_count(fs);
 
 	/* increment ref count of gfm_server */
 	gf->gfm_server = gfm_server;
@@ -179,7 +187,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 
 	/* reopen file */
 	if (gfs_pio_error(gf) != GFARM_ERR_STALE_FILE_HANDLE &&
-	    (e = gfs_pio_reopen(gf)) != GFARM_ERR_NO_ERROR) {
+	    (e = gfs_pio_reopen(fs, gf)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003387,
 		    "gfs_pio_reopen: %s", gfarm_error_string(e));
 	}
@@ -246,6 +254,14 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 
 	if (gfm_server) {
 		fs = gfarm_filesystem_get_by_connection(gfm_server);
+		if (gfarm_filesystem_in_failover_process(fs)) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfmd connection failover process called "
+			    "recursively");
+			goto error_all;
+		}
+		gfarm_filesystem_set_in_failover_process(fs, 1);
 		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(gfm_client_hostname(gfm_server))) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
@@ -270,6 +286,14 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 	} else {
 		fs = gfarm_filesystem_get(host0, port);
 		assert(fs != NULL);
+		if (gfarm_filesystem_in_failover_process(fs)) {
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "gfmd connection failover process called "
+			    "recursively");
+			goto error_all;
+		}
+		gfarm_filesystem_set_in_failover_process(fs, 1);
 		fc = gfarm_filesystem_failover_count(fs);
 		if ((host = strdup(host0)) ==  NULL) {
 			e = GFARM_ERR_NO_MEMORY;
@@ -286,7 +310,6 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 	}
 	gfl = gfarm_filesystem_opened_file_list(fs);
 
-	gfarm_filesystem_set_failover_detected(fs, 0);
 	/*
 	 * failover_count must be incremented before acquire connection
 	 * because failover_count is set at creating new connection
@@ -333,10 +356,12 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 	}
 
 	if (ok) {
+		gfarm_filesystem_set_failover_detected(fs, 0);
 		e = GFARM_ERR_NO_ERROR;
 		gflog_notice(GFARM_MSG_1003391,
 		    "connection to metadb server was failed over successfully");
 	} else {
+		gfarm_filesystem_set_failover_detected(fs, 1);
 		e = GFARM_ERR_OPERATION_TIMED_OUT;
 		gflog_debug(GFARM_MSG_1003392,
 		    "falied to fail over: %s", gfarm_error_string(e));
@@ -344,6 +369,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 end:
 	free(host);
 	free(user);
+	gfarm_filesystem_set_in_failover_process(fs, 0);
 
 	return (e);
 
@@ -354,6 +380,7 @@ error_all:
 
 	if (gfl != NULL)
 		gfs_pio_file_list_foreach(gfl, set_error, &e);
+	gfarm_filesystem_set_in_failover_process(fs, 0);
 
 	return (e);
 }

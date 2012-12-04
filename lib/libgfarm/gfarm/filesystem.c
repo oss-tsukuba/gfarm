@@ -37,6 +37,9 @@ struct gfarm_filesystem {
 	int failover_detected;
 
 	int failover_count;
+
+	/* if gfm_connection of this filesystem is in failover process or not */
+	int in_failover_process;
 };
 
 struct gfarm_filesystem_hash_id {
@@ -121,6 +124,7 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 	fs->file_list = gfl;
 	fs->failover_detected = 0;
 	fs->failover_count = 0;
+	fs->in_failover_process = 0;
 	staticp->filesystems.next = fs;
 	*fsp = fs;
 	return (GFARM_ERR_NO_ERROR);
@@ -383,4 +387,16 @@ void
 gfarm_filesystem_set_failover_count(struct gfarm_filesystem *fs, int count)
 {
 	fs->failover_count = count;
+}
+
+int
+gfarm_filesystem_in_failover_process(struct gfarm_filesystem *fs)
+{
+	return (fs != NULL ? fs->in_failover_process : 0);
+}
+
+void
+gfarm_filesystem_set_in_failover_process(struct gfarm_filesystem *fs, int b)
+{
+	fs->in_failover_process = b;
 }

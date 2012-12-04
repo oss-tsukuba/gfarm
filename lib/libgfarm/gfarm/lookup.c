@@ -132,6 +132,7 @@ gfarm_url_parse_metadb(const char **pathp,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
+	struct gfarm_filesystem *fs;
 	char *hostname;
 	int port;
 	char *user;
@@ -163,8 +164,9 @@ gfarm_url_parse_metadb(const char **pathp,
 	 * this path is called from inode operations including
 	 * gfs_pio_open(), gfs_pio_create().
 	 */
-	if (gfarm_filesystem_failover_detected(gfarm_filesystem_get(
-	    hostname, port))) {
+	fs = gfarm_filesystem_get(hostname, port);
+	if (gfarm_filesystem_failover_detected(fs) &&
+	    !gfarm_filesystem_in_failover_process(fs)) {
 		if ((e = gfm_client_connection_failover_pre_connect(
 		    hostname, port, user)) != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,

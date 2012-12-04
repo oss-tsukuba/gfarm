@@ -25,3 +25,5 @@ int gfarm_filesystem_failover_detected(struct gfarm_filesystem *);
 void gfarm_filesystem_set_failover_detected(struct gfarm_filesystem *, int);
 int gfarm_filesystem_failover_count(struct gfarm_filesystem *);
 void gfarm_filesystem_set_failover_count(struct gfarm_filesystem *, int);
+int gfarm_filesystem_in_failover_process(struct gfarm_filesystem *);
+void gfarm_filesystem_set_in_failover_process(struct gfarm_filesystem *, int);
