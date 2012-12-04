@@ -103,6 +103,97 @@ __EOF__
 	fi
 }
 
+#!
+#	Find a column definition of a table from the DDL.
+#
+#	@param [in] $1	A table name.
+#	@param [in] $2	A column name.
+#
+#	@retval	0	not found.
+#	@retval >0	A line # of the column defienition in the
+#			${config_dir}/gfarm.sql
+#/ /*
+find_column_definition_in_ddl()
+{
+	if test $# -ne 2; then
+		return 0
+	fi
+	tbl=$1
+	col=$2
+	ddl=${config_dir}/gfarm.sql
+
+	pos0=`egrep -n "^[[:space:]]*[Cc][Re][Ee][Aa][Tt][Ee][[:space:]][[:space:]]*[Tt][Aa][Bb][Ll][Ee][[:space:]][[:space:]]*${tbl}[[:space:]]*\(" ${ddl} | awk -F: '{ print $1 }'`
+	if test "X${pos0}" = "X"; then
+		unset tbl col ddl pos0
+		return 0
+	else
+		pos0=`expr ${pos0} + 1`
+	fi
+
+	ret=`tail -n +${pos0} ${ddl} | egrep -n "^[[:space:]]*${col}[[:space:]][[:space:]]*" | head -n 1 | awk -F: '{ print $1 }'`
+	if test "X${ret}" = "X"; then
+		unset tbl col ddl pos0 ret
+		return 0
+	else
+		ret=`expr ${pos0} + ${ret} - 1`
+	fi
+
+	unset tbl col ddl pos0
+	return ${ret}
+}
+
+#!
+#	Find a column in a table in the current DB.
+#
+#	@param [in] $1	A table name.
+#	@param [in] $2	A column name.
+#
+#	@retval	0	not found.
+#	@retval 1	found.
+#/ /*
+find_column_in_db()
+{
+	if test $# -ne 2; then
+		return 0
+	fi
+	tbl=$1
+	col=$2
+	x=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\d ${tbl}" | grep ${col}`
+	if test "X${x}" = "X"; then
+		unset tbl col x
+		return 0
+	else
+		return 1
+	fi
+}
+
+update_host_table()
+{
+	find_column_in_db Host fsngroupname
+	if test $? -eq 1; then
+		return 0
+	fi
+
+	find_column_definition_in_ddl Host fsngroupname
+	defline=$?
+	if test ${defline} -gt 0; then
+		def=`tail -n +${defline} ${config_dir}/gfarm.sql | head -n 1`
+		if test "X${def}" == "X"; then
+			return 1
+		fi
+		echo "BEGIN; ALTER TABLE Host ADD ${def}; COMMIT;" | \
+			$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+		find_column_in_db Host fsngroupname
+		if test $? -eq 1; then
+			return 0
+		else
+			return 1
+		fi
+	else
+		return 1
+	fi
+}
+
 update_postgresql()
 {
 	create_table Symlink
@@ -111,6 +202,8 @@ update_postgresql()
 	create_table QuotaGroup
 	create_table SeqNum
 	create_table MdHost
+
+	update_host_table
 
 	seqnum_count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
 	if [ X"$seqnum_count" = X"0" ]; then
