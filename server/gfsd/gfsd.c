@@ -1656,19 +1656,10 @@ update_file_entry_for_close(gfarm_int32_t fd, struct file_entry *fe)
 }
 
 gfarm_error_t
-close_fd(gfarm_int32_t fd, const char *diag)
+close_fd(gfarm_int32_t fd, struct file_entry *fe, const char *diag)
 {
 	gfarm_error_t e, e2;
-	struct file_entry *fe;
 	gfarm_int32_t gen_update_result = -1;
-
-	if ((fe = file_table_entry(fd)) == NULL) {
-		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_1002174,
-			"bad file descriptor");
-		return (e);
-	}
-	update_file_entry_for_close(fd, fe);
 
 	if ((e = gfm_client_compound_put_fd_request(fd, diag))
 	    != GFARM_ERR_NO_ERROR)
@@ -1745,30 +1736,12 @@ close_fd(gfarm_int32_t fd, const char *diag)
 }
 
 gfarm_error_t
-fhclose_fd(gfarm_int32_t fd, const char *diag, int update_file_entry)
+fhclose_fd(struct file_entry *fe, const char *diag)
 {
 	gfarm_error_t e, e2;
-	struct file_entry *fe;
 	gfarm_uint64_t cookie;
 	gfarm_int32_t gen_update_result = -1;
 
-	if ((fe = file_table_entry(fd)) == NULL) {
-		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
-		gflog_debug(GFARM_MSG_1003343,
-			"bad file descriptor");
-		return (e);
-	}
-
-#if 0
-	/*
-	 * For efficiency, we don't call update_file_entry_for_close() here.
-	 * We expect a caller has called update_file_entry_for_close()
-	 * in advance.
-	 */
-	update_file_entry_for_close(fd, fe);
-#endif
-	if (update_file_entry)
-		update_file_entry_for_close(fd, fe);
 	if ((e = fhclose_request(fe))!= GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003344,
 		   "%s: fhclose request: %s", diag, gfarm_error_string(e));
@@ -1825,28 +1798,38 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 {
 	int failedover = 0;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR, e2;
+	struct file_entry *fe;
+
+	if ((fe = file_table_entry(fd)) == NULL) {
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+		gflog_debug(GFARM_MSG_1002174,
+		    "bad file descriptor");
+		return (e);
+	}
+
+	update_file_entry_for_close(fd, fe);
 
 	if (gfm_server != NULL) {
+
 		if (fd_usable_to_gfmd) {
-			e = close_fd(fd, diag);
+			e = close_fd(fd, fe, diag);
 			if (IS_CONNECTION_ERROR(e)) {
+				/* fd_usable_to_gfmd will be set to 0 */
 				reconnect_gfm_server_for_failover(
 				    "close_fd_somehow/close_fd");
 				failedover = 1;
 			} else if (e != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "close_fd: %s", gfarm_error_string(e));
-				if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
-					return (e);
 			}
 		}
 
 		if (!fd_usable_to_gfmd) {
-			e = fhclose_fd(fd, diag, e == GFARM_ERR_NO_ERROR);
+			e = fhclose_fd(fe, diag);
 			if (IS_CONNECTION_ERROR(e)) {
 				reconnect_gfm_server_for_failover(
 				    "close_fd_somehow/fhclose_fd");
-				if ((e = fhclose_fd(fd, diag, 0))
+				if ((e = fhclose_fd(fe, diag))
 				    != GFARM_ERR_NO_ERROR) {
 					gflog_error(GFARM_MSG_UNFIXED,
 					    "fhclose_fd: %s",
@@ -1856,8 +1839,6 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 			} else if (e != GFARM_ERR_NO_ERROR) {
 				gflog_error(GFARM_MSG_UNFIXED,
 				    "fhclose_fd: %s", gfarm_error_string(e));
-				if (e == GFARM_ERR_BAD_FILE_DESCRIPTOR)
-					return (e);
 			}
 		}
 	}
