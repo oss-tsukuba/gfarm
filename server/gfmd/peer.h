@@ -34,6 +34,7 @@ gfarm_error_t peer_free_by_fd(int);
 
 struct gfp_xdr *peer_get_conn(struct peer *);
 int peer_get_fd(struct peer *);
+gfarm_error_t peer_get_port(struct peer *, int *);
 
 /* (struct gfp_xdr_aync_peer *) == gfp_xdr_async_peer_t XXX  */
 struct gfp_xdr_async_peer;
@@ -60,6 +61,8 @@ struct inode;
 void peer_set_pending_new_generation(struct peer *, struct inode *);
 void peer_reset_pending_new_generation(struct peer *);
 void peer_unset_pending_new_generation(struct peer *);
+gfarm_uint64_t peer_add_cookie(struct peer *);
+int peer_delete_cookie(struct peer *, gfarm_uint64_t);
 
 struct process;
 struct process *peer_get_process(struct peer *);
@@ -90,6 +93,7 @@ gfarm_error_t peer_fdpair_restore(struct peer *);
 void peer_findxmlattrctx_set(struct peer *, void *);
 void *peer_findxmlattrctx_get(struct peer *);
 
+void peer_stat_add(struct peer *, unsigned int, int);
 
 struct dead_file_copy;
 struct file_replicating {
@@ -145,8 +149,3 @@ void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
 	struct host *, gfarm_ino_t, gfarm_int64_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
-
-gfarm_uint64_t peer_add_cookie(struct peer *);
-int peer_delete_cookie(struct peer *, gfarm_uint64_t);
-
-gfarm_error_t peer_get_port(struct peer *, int *);

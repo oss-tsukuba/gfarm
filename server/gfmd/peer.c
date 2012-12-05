@@ -127,23 +127,37 @@ struct cookie {
 };
 
 struct peer {
+	/*
+	 * protected by peer_closing_queue.mutex
+	 */
 	struct peer *next_close;
 	int refcount;
 	int replication_refcount;
 
+	/*
+	 * connection structure
+	 */
 	struct gfp_xdr *conn;
 	gfp_xdr_async_peer_t async; /* used by {back|gfmd}_channel */
+	struct peer_watcher *watcher;
+	struct watcher_event *readable_event;
+
+	/*
+	 * followings (except protocol_error) are protected by giant lock
+	 */
+
 	enum gfarm_auth_id_type id_type;
 	char *username, *hostname;
 	struct user *user;
 	struct abstract_host *host;
 
+	/*
+	 * only used by foreground channel
+	 */
+
 	struct process *process;
 	int protocol_error;
 	pthread_mutex_t protocol_error_mutex;
-
-	struct peer_watcher *watcher;
-	struct watcher_event *readable_event;
 
 	struct protocol_state pstate;
 
@@ -156,6 +170,8 @@ struct peer {
 
 	/* only one pending GFM_PROTO_GENERATION_UPDATED per peer is allowed */
 	struct inode *pending_new_generation;
+	/* GFM_PROTO_GENERATION_UPDATED_BY_COOKIE */
+	GFARM_HCIRCLEQ_HEAD(cookie) cookies;
 
 	union {
 		struct {
@@ -164,12 +180,12 @@ struct peer {
 		} client;
 	} u;
 
-	/* the followings are only used for gfsd back channel */
+	/*
+	 * only used by gfsd back channel
+	 */
 	pthread_mutex_t replication_mutex;
 	int simultaneous_replication_receivers;
 	struct file_replicating replicating_inodes; /* dummy header */
-
-	GFARM_HCIRCLEQ_HEAD(cookie) cookies;
 };
 
 static struct peer *peer_table;
@@ -578,18 +594,24 @@ peer_init(int max_peers)
 		peer->next_close = NULL;
 		peer->refcount = 0;
 		peer->replication_refcount = 0;
+
 		peer->conn = NULL;
 		peer->async = NULL;
+		peer->readable_event = NULL;
+
 		peer->username = NULL;
 		peer->hostname = NULL;
 		peer->user = NULL;
 		peer->host = NULL;
+
+		/*
+		 * foreground channel
+		 */
+
 		peer->process = NULL;
 		peer->protocol_error = 0;
 		gfarm_mutex_init(&peer->protocol_error_mutex,
 		    "peer_init", "peer:protocol_error_mutex");
-
-		peer->readable_event = NULL;
 
 		peer->fd_current = -1;
 		peer->fd_saved = -1;
@@ -664,15 +686,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 		}
 	}
 	peer->conn = conn;
-
 	peer->async = NULL; /* synchronous protocol by default */
-	peer->username = NULL;
-	peer->hostname = NULL;
-	peer->user = NULL;
-	peer->host = NULL;
-	peer->process = NULL;
-	peer->protocol_error = 0;
-
 	peer->watcher = NULL;
 	if (peer->readable_event == NULL) {
 		e = watcher_fd_readable_event_alloc(fd,
@@ -687,7 +701,19 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 			return (e);
 		}
 	}
-	
+
+	peer->username = NULL;
+	peer->hostname = NULL;
+	peer->user = NULL;
+	peer->host = NULL;
+
+	/*
+	 * foreground channel
+	 */
+
+	peer->process = NULL;
+	peer->protocol_error = 0;
+
 	peer->fd_current = -1;
 	peer->fd_saved = -1;
 	peer->flags = 0;
@@ -838,24 +864,8 @@ peer_free(struct peer *peer)
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
-	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
-		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
-		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
-		free(cookie);
-	}
-	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
-
-	/* this must be called after (*peer_async_free)() */
-	peer_replicating_free_all(peer);
-
 	username = peer_get_username(peer);
 	hostname = peer_get_hostname(peer);
-
-	/*XXX XXX*/
-	while (peer->u.client.jobs != NULL)
-		job_table_remove(job_get_id(peer->u.client.jobs), username,
-		    &peer->u.client.jobs);
-	peer->u.client.jobs = NULL;
 
 	/*
 	 * both username and hostname may be null,
@@ -880,16 +890,42 @@ peer_free(struct peer *peer)
 		    username != NULL ? username : "<unauthorized>",
 		    hostname != NULL ? hostname : hostbuf);
 
+	/*
+	 * free resources for gfsd back channel
+	 */
+	/* this must be called after (*peer_async_free)() */
+	peer_replicating_free_all(peer);
+
+	/*
+	 * free resources for foreground channel
+	 */
+
+	/*XXX XXX*/
+	while (peer->u.client.jobs != NULL)
+		job_table_remove(job_get_id(peer->u.client.jobs), username,
+		    &peer->u.client.jobs);
+	peer->u.client.jobs = NULL;
+
+	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
+		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
+		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
+		free(cookie);
+	}
+	GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
+
 	peer_unset_pending_new_generation(peer);
 
-	peer->watcher = NULL;
-	/* We don't free peer->readable_event. */
+	peer->findxmlattrctx = NULL;
 
 	peer->protocol_error = 0;
 	if (peer->process != NULL) {
 		process_detach_peer(peer->process, peer);
 		peer->process = NULL;
 	}
+
+	/*
+	 * free common resources
+	 */
 
 	peer->user = NULL;
 	peer->host = NULL;
@@ -899,12 +935,14 @@ peer_free(struct peer *peer)
 	if (peer->hostname != NULL) {
 		free(peer->hostname); peer->hostname = NULL;
 	}
-	peer->findxmlattrctx = NULL;
 
+	peer->watcher = NULL;
+	/* We don't free peer->readable_event. */
 	if (peer->conn) {
 		gfp_xdr_free(peer->conn);
 		peer->conn = NULL;
 	}
+
 	peer->next_close = NULL;
 	peer->refcount = 0;
 	peer->replication_refcount = 0;
