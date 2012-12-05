@@ -46,20 +46,13 @@ struct mdhost {
 
 	struct gfarm_metadb_server ms;
 	pthread_mutex_t mutex;
-	struct gfm_connection *conn;
-	int is_recieved_seqnum, is_in_first_sync;
 	enum mdhost_seqnum_state {
 		seqnum_state_unknown,
 		seqnum_state_ok,
 		seqnum_state_out_of_sync,
 		seqnum_state_error
 	} seqnum_state;
-	struct journal_file_reader *jreader;
-	gfarm_uint64_t last_fetch_seqnum;
 	struct mdcluster *cluster;
-
-	/* for gfmd_channel.c */
-	struct gfmdc_journal_send_closure *journal_send_closure; 
 };
 static const char MDHOST_MUTEX_DIAG[]		= "mdhost_mutex";
 
@@ -89,22 +82,13 @@ static gfarm_error_t mdhost_updated(void);
  **********************************************************************
  * for gfmd_channel.c
  */
-static void (*journal_send_wakeup)(void);
-static struct gfmdc_journal_send_closure *(*journal_send_closure_alloc)(void);
+
+static void (*mdhost_update_hook_for_journal_send)(void);
 
 void
-mdhost_configure_journal_send_closure(
-	void (*wakeup)(void),
-	struct gfmdc_journal_send_closure *(*alloc)(void))
+mdhost_set_update_hook_for_journal_send(void (*hook)(void))
 {
-	journal_send_wakeup = wakeup;
-	journal_send_closure_alloc = alloc;
-}
-
-struct gfmdc_journal_send_closure *
-mdhost_get_journal_send_closure(struct mdhost *m)
-{
-	return (m->journal_send_closure);
+	mdhost_update_hook_for_journal_send = hook;
 }
 
 /**********************************************************************/
@@ -282,28 +266,6 @@ mdhost_foreach(int (*func)(struct mdhost *, void *), void *closure)
 	mdhost_global_mutex_unlock(diag);
 }
 
-struct gfm_connection *
-mdhost_get_connection(struct mdhost *m)
-{
-	struct gfm_connection *conn;
-	static const char diag[] = "mdhost_get_connection";
-
-	mdhost_mutex_lock(m, diag);
-	conn = m->conn;
-	mdhost_mutex_unlock(m, diag);
-	return (conn);
-}
-
-void
-mdhost_set_connection(struct mdhost *m, struct gfm_connection *conn)
-{
-	static const char diag[] = "mdhost_set_connection";
-
-	mdhost_mutex_lock(m, diag);
-	m->conn = conn;
-	mdhost_mutex_unlock(m, diag);
-}
-
 static int
 mdhost_is_default_master(struct mdhost *m)
 {
@@ -342,101 +304,6 @@ const char *
 mdhost_get_cluster_name(struct mdhost *m)
 {
 	return (m->ms.clustername);
-}
-
-struct journal_file_reader *
-mdhost_get_journal_file_reader(struct mdhost *m)
-{
-	struct journal_file_reader *reader;
-	static const char *diag = "mdhost_get_journal_file_reader";
-
-	mdhost_mutex_lock(m, diag);
-	reader = m->jreader;
-	mdhost_mutex_unlock(m, diag);
-	return (reader);
-}
-
-void
-mdhost_set_journal_file_reader(struct mdhost *m,
-	struct journal_file_reader *reader)
-{
-	static const char *diag = "mdhost_set_journal_file_reader";
-
-	mdhost_mutex_lock(m, diag);
-	m->jreader = reader;
-	mdhost_mutex_unlock(m, diag);
-}
-
-int
-mdhost_journal_file_reader_is_expired(struct mdhost *m)
-{
-	return (m->jreader ? journal_file_reader_is_expired(m->jreader) : 0);
-}
-
-gfarm_uint64_t
-mdhost_get_last_fetch_seqnum(struct mdhost *m)
-{
-	gfarm_uint64_t r;
-	static const char *diag = "mdhost_get_last_fetch_seqnum";
-
-	mdhost_mutex_lock(m, diag);
-	r = m->last_fetch_seqnum;
-	mdhost_mutex_unlock(m, diag);
-	return (r);
-}
-
-void
-mdhost_set_last_fetch_seqnum(struct mdhost *m, gfarm_uint64_t seqnum)
-{
-	static const char *diag = "mdhost_set_last_fetch_seqnum";
-
-	mdhost_mutex_lock(m, diag);
-	m->last_fetch_seqnum = seqnum;
-	mdhost_mutex_unlock(m, diag);
-}
-
-int
-mdhost_is_recieved_seqnum(struct mdhost *m)
-{
-	int r;
-	static const char *diag = "mdhost_is_recieved_seqnum";
-
-	mdhost_mutex_lock(m, diag);
-	r = m->is_recieved_seqnum;
-	mdhost_mutex_unlock(m, diag);
-	return (r);
-}
-
-void
-mdhost_set_is_recieved_seqnum(struct mdhost *m, int flag)
-{
-	static const char *diag = "mdhost_set_is_recieved_seqnum";
-
-	mdhost_mutex_lock(m, diag);
-	m->is_recieved_seqnum = flag;
-	mdhost_mutex_unlock(m, diag);
-}
-
-int
-mdhost_is_in_first_sync(struct mdhost *m)
-{
-	int r;
-	static const char *diag = "mdhost_is_in_first_sync";
-
-	mdhost_mutex_lock(m, diag);
-	r = m->is_in_first_sync;
-	mdhost_mutex_unlock(m, diag);
-	return (r);
-}
-
-void
-mdhost_set_is_in_first_sync(struct mdhost *m, int flag)
-{
-	static const char *diag = "mdhost_set_is_in_first_sync";
-
-	mdhost_mutex_lock(m, diag);
-	m->is_in_first_sync = flag;
-	mdhost_mutex_unlock(m, diag);
 }
 
 static enum mdhost_seqnum_state
@@ -536,6 +403,46 @@ mdhost_unset_peer(struct abstract_host *h, struct peer *peer)
 {
 }
 
+/*
+ * if mdhost_get_peer() is called,
+ * same number of mdhost_put_peer() calls should be made.
+ */
+struct peer *
+#ifdef PEER_REFCOUNT_DEBUG
+mdhost_get_peer_impl(struct mdhost *mh,
+	const char *file, int line, const char *func)
+#else
+mdhost_get_peer(struct mdhost *mh)
+#endif
+{
+	static const char diag[] = "mdhost_get_peer";
+
+#ifdef PEER_REFCOUNT_DEBUG
+	struct peer *peer = abstract_host_get_peer(&mh->ah, diag);
+
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): mdhost_get_peer():%p",
+	    file, line, func, peer);
+	return (peer);
+#else
+	return (abstract_host_get_peer(&mh->ah, diag));
+#endif
+}
+
+void
+#ifdef PEER_REFCOUNT_DEBUG
+mdhost_put_peer_impl(struct mdhost *mh, struct peer *peer,
+	const char *file, int line, const char *func)
+#else
+mdhost_put_peer(struct mdhost *mh, struct peer *peer)
+#endif
+{
+	abstract_host_put_peer(&mh->ah, peer);
+#ifdef PEER_REFCOUNT_DEBUG
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): mdhost_put_peer(%p)",
+	    file, line, func, peer);
+#endif
+}
+
 static void
 mdhost_disable(struct abstract_host *h)
 {
@@ -544,23 +451,6 @@ mdhost_disable(struct abstract_host *h)
 static void
 mdhost_disabled(struct abstract_host *h, struct peer *peer)
 {
-	struct mdhost *m;
-	struct gfm_connection *conn;
-
-	if (!gfarm_get_metadb_replication_enabled())
-		return;
-
-	m = abstract_host_to_mdhost(h);
-	conn = mdhost_get_connection(m);
-
-	if (conn) {
-		gfm_client_connection_unset_conn(conn);
-		gfm_client_connection_free(conn);
-		mdhost_set_connection(m, NULL);
-	}
-	m->is_recieved_seqnum = 0;
-	if (m->jreader)
-		journal_file_reader_close(m->jreader);
 }
 
 struct abstract_host_ops mdhost_ops = {
@@ -584,28 +474,11 @@ mdhost_new(struct gfarm_metadb_server *ms)
 	if ((m = malloc(sizeof(struct mdhost))) == NULL)
 		return (NULL);
 
-	/* for gfmd_channel.c */
-	if (journal_send_closure_alloc == NULL) {
-		m->journal_send_closure = NULL;
-	} else if ((m->journal_send_closure = (*journal_send_closure_alloc)())
-	    == NULL) {
-		free(m);
-		gflog_error(GFARM_MSG_1003499,
-		    "mdhost %s: cannot allocate journal_send_closure",
-		    gfarm_metadb_server_get_name(ms));
-		return (NULL);
-	}
-
 	abstract_host_init(&m->ah, &mdhost_ops, diag);
 
 	m->ms = *ms;
 	gfarm_mutex_init(&m->mutex, diag, MDHOST_MUTEX_DIAG);
 	mdhost_validate(m);
-	m->conn = NULL;
-	m->jreader = NULL;
-	m->last_fetch_seqnum = 0;
-	m->is_recieved_seqnum = 0;
-	m->is_in_first_sync = 0;
 	mdhost_set_seqnum_unknown(m);
 	m->cluster = NULL;
 
@@ -850,6 +723,7 @@ gfarm_error_t
 mdhost_remove_in_cache(const char *name)
 {
 	struct mdhost *m;
+	struct peer *peer;
 	gfarm_error_t e;
 
 	m = mdhost_lookup(name);
@@ -859,8 +733,10 @@ mdhost_remove_in_cache(const char *name)
 		    "%s: %s", gfarm_error_string(e), name);
 		return (e);
 	}
-	if (m->conn)
-		mdhost_disconnect_request(m, NULL);
+	if ((peer = mdhost_get_peer(m)) != NULL) { /* increment refcount */
+		mdhost_disconnect_request(m, peer);
+		mdhost_put_peer(m, peer); /* decrement refcount */
+	}
 	mdcluster_remove_mdhost(m);
 	mdhost_invalidate(m);
 
@@ -1156,8 +1032,8 @@ mdhost_updated(void)
 	fs = gfarm_filesystem_get_default();
 	gfarm_filesystem_set_metadb_server_list(fs, mss, i);
 	free(mss);
-	if (journal_send_wakeup != NULL)
-		(*journal_send_wakeup)();
+	if (mdhost_update_hook_for_journal_send != NULL)
+		(*mdhost_update_hook_for_journal_send)();
 
 	return (GFARM_ERR_NO_ERROR);
 }

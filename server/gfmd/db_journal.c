@@ -3820,7 +3820,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 	while (journal_recvq_nelems >= gfarm_get_journal_recvq_size()) {
 		if (journal_file_is_waiting_until_nonempty(self_jf)) {
 			gflog_fatal(GFARM_MSG_1003328,
-			    "journal recieve queue overflow on memory, "
+			    "journal receive queue overflow on memory, "
 			    "please try to increase "
 			    "\"metadb_journal_recvq_size\" (currently %d)",
 			    gfarm_get_journal_recvq_size());

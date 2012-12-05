@@ -119,8 +119,6 @@ gfp_xdr_free(struct gfp_xdr *conn)
 {
 	gfarm_error_t e, e_save;
 
-	if (conn == NULL)
-		return (GFARM_ERR_NO_ERROR);
 	e_save = gfp_xdr_flush(conn);
 	gfarm_iobuffer_free(conn->sendbuffer);
 	gfarm_iobuffer_free(conn->recvbuffer);

@@ -40,6 +40,7 @@
 #include "abstract_host.h"
 #include "host.h"
 #include "mdhost.h"
+#include "gfmd_channel.h"
 #include "peer.h"
 #include "inode.h"
 #include "process.h"
@@ -186,6 +187,11 @@ struct peer {
 	pthread_mutex_t replication_mutex;
 	int simultaneous_replication_receivers;
 	struct file_replicating replicating_inodes; /* dummy header */
+
+	/*
+	 * only used by gfmd channel
+	 */
+	struct gfmdc_peer_record *gfmdc_record;
 };
 
 static struct peer *peer_table;
@@ -400,19 +406,31 @@ peer_replicating_free_all(struct peer *peer)
 }
 
 void
+#ifdef PEER_REFCOUNT_DEBUG
+peer_add_ref_impl(struct peer *peer, const char *file, int line, const char *func)
+#else
 peer_add_ref(struct peer *peer)
+#endif
 {
 	static const char diag[] = "peer_add_ref";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
 	++peer->refcount;
+#ifdef PEER_REFCOUNT_DEBUG
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_add_ref(%p):%d",
+	    file, line, func, peer, peer->refcount);
+#endif
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
 }
 
 int
+#ifdef PEER_REFCOUNT_DEBUG
+peer_del_ref_impl(struct peer *peer, const char *file, int line, const char *func)
+#else
 peer_del_ref(struct peer *peer)
+#endif
 {
 	int referenced;
 	static const char diag[] = "peer_del_ref";
@@ -427,6 +445,10 @@ peer_del_ref(struct peer *peer)
 		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
 		    diag, "ready to close");
 	}
+#ifdef PEER_REFCOUNT_DEBUG
+	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_del_ref(%p):%d",
+	    file, line, func, peer, peer->refcount);
+#endif
 
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
 	    diag, "peer_closing_queue");
@@ -520,6 +542,7 @@ peer_closer(void *arg)
 		 * because only externalized descriptor needs the calls.
 		 */
 		if (do_async_free) {
+			/* async rpc cleanup should be done before freeing peer */
 			(*peer_async_free)(peer, peer->async);
 			peer->async = NULL;
 
@@ -620,6 +643,7 @@ peer_init(int max_peers)
 		peer->pending_new_generation = NULL;
 		peer->u.client.jobs = NULL;
 
+		/* gfsd back channel */
 		gfarm_mutex_init(&peer->replication_mutex,
 		    "peer_init", "replication");
 		peer->simultaneous_replication_receivers = 0;
@@ -628,6 +652,9 @@ peer_init(int max_peers)
 		peer->replicating_inodes.next_inode =
 		    &peer->replicating_inodes;
 		GFARM_HCIRCLEQ_INIT(peer->cookies, hcircleq);
+
+		/* gfmd channel */
+		peer->gfmdc_record = NULL;
 	}
 
 	e = create_detached_thread(peer_closer, NULL);
@@ -889,6 +916,14 @@ peer_free(struct peer *peer)
 		    "(%s@%s) disconnected",
 		    username != NULL ? username : "<unauthorized>",
 		    hostname != NULL ? hostname : hostbuf);
+
+	/*
+	 * free resources for gfmd channel
+	 */
+	if (peer->gfmdc_record != NULL) {
+		gfmdc_peer_record_free(peer->gfmdc_record, diag);
+		peer->gfmdc_record = NULL;
+	}
 
 	/*
 	 * free resources for gfsd back channel
@@ -1489,4 +1524,19 @@ peer_get_port(struct peer *peer, int *portp)
 		*portp = (int)ntohs(sin.sin_port);
 		return (GFARM_ERR_NO_ERROR);
 	}
+}
+
+/*
+ * only used by gfmd channel
+ */
+struct gfmdc_peer_record *
+peer_get_gfmdc_record(struct peer *peer)
+{
+	return (peer->gfmdc_record);
+}
+
+void
+peer_set_gfmdc_record(struct peer *peer, struct gfmdc_peer_record *peer_gfmdc)
+{
+	peer->gfmdc_record = peer_gfmdc;
 }

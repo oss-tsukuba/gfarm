@@ -4,19 +4,13 @@
 
 struct mdhost;
 struct peer;
-struct gfm_connection;
 struct abstract_host;
 struct gfarm_metadb_server;
 
 struct abstract_host *mdhost_to_abstract_host(struct mdhost *);
 
 /* for gfmd_channel.c */
-struct gfmdc_journal_send_closure;
-void mdhost_configure_journal_send_closure(
-	void (*wakeup)(void),
-	struct gfmdc_journal_send_closure *(*)(void));
-struct gfmdc_journal_send_closure *
-	mdhost_get_journal_send_closure(struct mdhost *);
+void mdhost_set_update_hook_for_journal_send(void (*)(void));
 
 void mdhost_init(void);
 const char *mdhost_get_name(struct mdhost *);
@@ -36,26 +30,28 @@ gfarm_error_t gfm_server_metadb_server_set(struct peer *, int, int);
 gfarm_error_t gfm_server_metadb_server_modify(struct peer *, int, int);
 gfarm_error_t gfm_server_metadb_server_remove(struct peer *, int, int);
 
-struct journal_file_reader;
-struct journal_file_reader *mdhost_get_journal_file_reader(struct mdhost *);
-void mdhost_set_journal_file_reader(struct mdhost *,
-	struct journal_file_reader *);
-int mdhost_journal_file_reader_is_expired(struct mdhost *);
-gfarm_uint64_t mdhost_get_last_fetch_seqnum(struct mdhost *);
-void mdhost_set_last_fetch_seqnum(struct mdhost *, gfarm_uint64_t);
-int mdhost_is_recieved_seqnum(struct mdhost *);
-void mdhost_set_is_recieved_seqnum(struct mdhost *, int);
 void mdhost_set_self_as_master(void);
 void mdhost_set_self_as_default_master(void);
 int mdhost_is_sync_replication(struct mdhost *);
 int mdhost_get_flags(struct mdhost *);
-int mdhost_is_in_first_sync(struct mdhost *);
-void mdhost_set_is_in_first_sync(struct mdhost *, int);
 void mdhost_set_seqnum_unknown(struct mdhost *);
 void mdhost_set_seqnum_out_of_sync(struct mdhost *);
 void mdhost_set_seqnum_ok(struct mdhost *);
 void mdhost_set_seqnum_error(struct mdhost *);
 void mdhost_set_seqnum_state_by_error(struct mdhost *, gfarm_error_t);
+#ifdef PEER_REFCOUNT_DEBUG
+struct peer *mdhost_get_peer_impl(struct mdhost *,
+	const char *, int, const char *);
+void mdhost_put_peer_impl(struct mdhost *, struct peer *,
+	const char *, int, const char *);
+#define mdhost_get_peer(mh) \
+	mdhost_get_peer_impl(mh, __FILE__, __LINE__, __func__)
+#define mdhost_put_peer(mh, peer) \
+	mdhost_put_peer_impl(mh, peer, __FILE__, __LINE__, __func__)
+#else
+struct peer *mdhost_get_peer(struct mdhost *);
+void mdhost_put_peer(struct mdhost *, struct peer *);
+#endif
 int mdhost_has_async_replication_target(void);
 int mdhost_is_master(struct mdhost *);
 void mdhost_set_is_master(struct mdhost *, int);
@@ -64,8 +60,6 @@ void mdhost_set_cluster(struct mdhost *, struct mdcluster *);
 const char *mdhost_get_cluster_name(struct mdhost *);
 void mdhost_activate(struct mdhost *);
 void mdhost_set_peer(struct mdhost *, struct peer *, int);
-struct gfm_connection *mdhost_get_connection(struct mdhost *);
-void mdhost_set_connection(struct mdhost *, struct gfm_connection *);
 int mdhost_is_up(struct mdhost *);
 void mdhost_disconnect_request(struct mdhost *, struct peer *);
 gfarm_error_t mdhost_enter(struct gfarm_metadb_server *, struct mdhost **);

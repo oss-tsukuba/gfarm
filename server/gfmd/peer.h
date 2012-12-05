@@ -8,8 +8,15 @@ struct peer_watcher *peer_watcher_alloc(int, int, void *(*)(void *),
 	const char *);
 struct thread_pool *peer_watcher_get_thrpool(struct peer_watcher *);
 
+#ifdef PEER_REFCOUNT_DEBUG
+void peer_add_ref_impl(struct peer *, const char *, int, const char *);
+int peer_del_ref_impl(struct peer *, const char *, int, const char *);
+#define peer_add_ref(peer) peer_add_ref_impl(peer, __FILE__, __LINE__, __func__)
+#define peer_del_ref(peer) peer_del_ref_impl(peer, __FILE__, __LINE__, __func__)
+#else
 void peer_add_ref(struct peer *);
 int peer_del_ref(struct peer *);
+#endif
 void peer_add_ref_for_replication(struct peer *);
 int peer_del_ref_for_replication(struct peer *);
 void peer_free_request(struct peer *);
@@ -149,3 +156,7 @@ void peer_replicating_free(struct file_replicating *);
 gfarm_error_t peer_replicated(struct peer *,
 	struct host *, gfarm_ino_t, gfarm_int64_t,
 	gfarm_int64_t, gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
+
+/* only used by gfmd channel */
+struct gfmdc_peer_record *peer_get_gfmdc_record(struct peer *);
+void peer_set_gfmdc_record(struct peer *, struct gfmdc_peer_record *);

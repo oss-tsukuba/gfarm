@@ -585,7 +585,7 @@ back_channel_main(void *arg)
 		));
 }
 
-/* both giant_lock and peer_table_lock are held before calling this function */
+/* giant_lock is held before calling this function */
 static void
 back_channel_async_peer_free(struct peer *peer, gfp_xdr_async_peer_t async)
 {
