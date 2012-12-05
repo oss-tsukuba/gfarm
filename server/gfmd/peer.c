@@ -213,8 +213,10 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 	static const char replication_diag[] = "replication";
 
 	GFARM_MALLOC(fr);
-	if (fr == NULL)
+	if (fr == NULL) {
+		host_put_peer(dst, peer); /* decrement refcount */
 		return (GFARM_ERR_NO_MEMORY);
+	}
 
 	fr->peer = peer;
 	fr->dst = dst;
@@ -238,8 +240,10 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 	}
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
 
-	if (fr == NULL)
+	if (fr == NULL) {
+		host_put_peer(dst, peer); /* decrement refcount */
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+	}
 	*frp = fr;
 	return (GFARM_ERR_NO_ERROR);
 }
