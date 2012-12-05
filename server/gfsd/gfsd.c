@@ -48,6 +48,7 @@
 #include <gfarm/host_info.h>
 
 #include "gfutil.h"
+#include "gflog_reduced.h"
 #include "hash.h"
 #include "nanosec.h"
 #include "timer.h"
