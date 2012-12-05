@@ -771,11 +771,13 @@
 		以下 n_hosts 個の下記の対:
 			s:hostname, s:fsngroupname
 
-	GFM_PROTO_FSNGROUP_GET_BY_NAMES
+	GFM_PROTO_FSNGROUP_GET_BY_HOSTNAMES
 	  入力: i:n_hosts, s[n_hosts]:hostnames
 	  出力: i:エラー
 		エラー == GFARM_ERR_NO_ERROR の場合:
-		i:n_hosts, s[n_hosts]:fsngroupnames
+		i:n_hosts
+		以下 n_hosts 個の下記の対:
+			s:hostname, s:fsngroupname
 
 	GFM_PROTO_FSNGROUP_MODIFY
 	  入力: s:hostname, s:fsngroupname
