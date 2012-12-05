@@ -554,8 +554,16 @@ dead_file_copy_host_becomes_down(struct host *host)
 {
 	dfc_workq_host_remove(&removal_pendingq, host,
 	    "host down: removal_pendingq");
+
+#if 0
+	/*
+	 * DO NOT CALL THIS, because this may cause dead lock.
+	 * see https://sourceforge.net/apps/trac/gfarm/ticket/420
+	 *	gfmd dead lock at gfsd back_channel disconnection
+	 */
 	dfc_workq_host_remove(&host_busyq, host,
 	    "host down: host_busyq");
+#endif
 }
 
 static int
