@@ -181,6 +181,13 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 
 ■ その他の細則
 
+	・free(NULL) は、C言語規格的に合法です。
+	  このため、
+		if (ptr != NULL)
+			free(ptr);
+	  とは書かず、単に以下のように書くようにします。
+		free(ptr);
+
 	・文字列定数を定義する場合には、以下を用います。
 		○ static const char diag[] = "constant string";
 	  以下は使いません。
