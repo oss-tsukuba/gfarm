@@ -77,7 +77,7 @@ void
 gfarm_filesystem_static_term(struct gfarm_context *ctxp)
 {
 	struct gfarm_filesystem_static *s = ctxp->filesystem_static;
-	struct gfarm_filesystem *fs, *next;
+	struct gfarm_filesystem *fs;
 
 	if (s == NULL)
 		return;

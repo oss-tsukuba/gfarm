@@ -129,6 +129,7 @@ gfs_client_static_term(struct gfarm_context *ctxp)
 		return;
 
 	gfp_conn_cache_term(&s->server_cache);
+	free(staticp->self_ip_list);
 	free(s);
 }
 
