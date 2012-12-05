@@ -933,9 +933,9 @@ gfmdc_connect(void)
 	}
 
 	for (;;) {
-		/* try connecting to master gfmd */
+		/* try connecting to multiple destinations */
 		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &conn, NULL, pwd, 0);
+		    service_user, &conn, NULL, pwd, 1);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_1002993,
