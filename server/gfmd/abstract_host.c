@@ -474,9 +474,14 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 		abstract_host_peer_unset(h);
 		h->ops->disable(h);
 
-		/* must be after abstract_host_peer_unset() */
-		peer_record_protocol_error(hpeer);
-		peer_free_request(hpeer);
+		if (hpeer != NULL) {
+			peer_record_protocol_error(hpeer);
+			peer_free_request(hpeer);
+		} else {
+			/* when gfmd channel connects to itself */
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "peer related to mdhost is already unset");
+		}
 	} else {
 		if (!h->is_active)
 			gflog_notice(GFARM_MSG_1003475,
