@@ -1105,6 +1105,8 @@ test_sched_open_write(const char **argv)
 	msg("gf[%d]: create %s\n", 0, path);
 	chkerr_n(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
 	    "create", 0);
+fprintf(stderr, "stop\n");
+getchar();
 	msg("gf[%d]: close\n", 0);
 	chkerr_n(gfs_pio_close(gf), "close1", 0);
 
@@ -1553,21 +1555,27 @@ test_datasync(const char **argv)
 static void
 test_write_long_loop(const char **argv)
 {
-#define WRITE_LOOP_FILES 10
-#define WRITE_LOOP_BUFSZ 4096
-#define WRITE_LOOP_FILESZ (WRITE_LOOP_BUFSZ * 32)
+#define WRITE_LOOP_BUFSZ 512
 	gfarm_error_t e;
 	const char *path_base = argv[0];
-	const char *stmlimit = argv[1];
+	int tmlimit = atoi(argv[1]);
+	int files = atoi(argv[2]);
+	int blocks = atoi(argv[3]);
+	int filesz = blocks * WRITE_LOOP_BUFSZ;
 	char cmd[256];
-	GFS_File gf[WRITE_LOOP_FILES];
-	size_t sz, fsz[WRITE_LOOP_FILES];
+	GFS_File *gf;
+	size_t sz, *fsz;
 	int loop = 0, wstatus, r, i, len, rest_files;
-	char path[WRITE_LOOP_FILES][GFS_MAXNAMLEN];
+	char **path;
 	char buf[WRITE_LOOP_BUFSZ];
 	struct gfs_stat st;
 	struct timeval tm;
-	int tmlimit = atoi(stmlimit);
+
+	gf = (GFS_File *)malloc(files * sizeof(GFS_File));
+	fsz = (size_t *)malloc(files * sizeof(size_t));
+	path = (char **)malloc(files * sizeof(char *));
+	for (i = 0; i < files; ++i)
+		path[i] = malloc(GFS_MAXNAMLEN);
 
 	sprintf(cmd, "./failover-loop-start.sh %d &", tmlimit);
 	wstatus = system(cmd);
@@ -1581,14 +1589,15 @@ test_write_long_loop(const char **argv)
 	tm.tv_sec += tmlimit;
 	memset(buf, 'a', WRITE_LOOP_BUFSZ);
 
-	for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+	for (i = 0; i < files; ++i) {
 		sprintf(path[i], "%s.%d", path_base, i);
 		(void)gfs_remove(path[i]);
 	}
 
 	for (;; ++loop) {
 		msg("loop: %d\n", loop);
-		for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+		for (i = 0; i < files; ++i) {
+			msg("create: %s\n", path[i]);
 			e = gfs_pio_create(path[i], GFARM_FILE_WRONLY, 0777,
 			    &gf[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
@@ -1596,14 +1605,15 @@ test_write_long_loop(const char **argv)
 				    gfarm_error_string(e));
 				goto end;
 			}
+			msg("create: %s ok\n", path[i]);
 		}
-		rest_files = WRITE_LOOP_FILES;
-		memset(fsz, 0, sizeof(fsz));
+		rest_files = files;
+		memset(fsz, 0, files * sizeof(size_t));
 		while (rest_files > 0) {
-			for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+			for (i = 0; i < files; ++i) {
 				sz = fsz[i] + WRITE_LOOP_BUFSZ <=
-				    WRITE_LOOP_FILESZ ? WRITE_LOOP_BUFSZ :
-				    WRITE_LOOP_FILESZ - fsz[i];
+				    filesz ? WRITE_LOOP_BUFSZ :
+				    filesz - fsz[i];
 				e = gfs_pio_write(gf[i], buf,
 				    WRITE_LOOP_BUFSZ, &len);
 				if (e != GFARM_ERR_NO_ERROR) {
@@ -1612,20 +1622,23 @@ test_write_long_loop(const char **argv)
 					goto end;
 				}
 				fsz[i] += len;
-				if (fsz[i] == WRITE_LOOP_FILESZ)
+				if (fsz[i] == filesz)
 					--rest_files;
 			}
 		}
-		for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+		for (i = 0; i < files; ++i) {
+			msg("close: %s\n", path[i]);
 			e = gfs_pio_close(gf[i]);
 			if (e != GFARM_ERR_NO_ERROR) {
 				msg("gf[%d]: close: %s\n", i,
 				    gfarm_error_string(e));
 				goto end;
 			}
+			msg("close: %s ok\n", path[i]);
 			usleep(300 * 1000);
 		}
-		for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+		for (i = 0; i < files; ++i) {
+			msg("stat: %s\n", path[i]);
 			e = gfs_stat(path[i], &st);
 			if (e != GFARM_ERR_NO_ERROR) {
 				msg("gf[%d]: stat: %s\n", i,
@@ -1635,16 +1648,31 @@ test_write_long_loop(const char **argv)
 			if (st.st_size != fsz[i]) {
 				msg("gf[%d]: size: expected %ld but %ld \n", i,
 				    (long)fsz[i], (long)st.st_size);
+				e = GFARM_ERR_UNKNOWN;
 				goto end;
 			}
+			msg("stat: %s ok\n", path[i]);
 		}
-		for (i = 0; i < WRITE_LOOP_FILES; ++i) {
+		for (i = 0; i < files; ++i) {
+			msg("remove: %s\n", path[i]);
 			e = gfs_remove(path[i]);
+			/*
+			 * if failover occurs during removing file,
+			 * a retry may fail by the error
+			 * GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY.
+			 */
 			if (e != GFARM_ERR_NO_ERROR) {
-				msg("gf[%d]: remove(%s): %s\n", i, path[i],
-				    gfarm_error_string(e));
-				goto end;
+				if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
+					msg("gf[%d]: remove(%s): "
+					    "ignored error: %s\n", i,
+					    path[i], gfarm_error_string(e));
+				} else {
+					msg("gf[%d]: remove(%s): %s\n", i,
+					    path[i], gfarm_error_string(e));
+					goto end;
+				}
 			}
+			msg("remove ok: %s\n", path[i]);
 		}
 
 		if (gfarm_timeval_is_expired(&tm))
@@ -1659,6 +1687,11 @@ end:
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		exit(1);
+	free(gf);
+	free(fsz);
+	for (i = 0; i < files; ++i)
+		free(path[i]);
+	free(path);
 }
 
 static void
@@ -2365,7 +2398,7 @@ struct type_info {
 	{ "flush",		1, test_flush },
 	{ "sync",		1, test_sync },
 	{ "datasync",		1, test_datasync },
-	{ "write-long-loop",	2, test_write_long_loop },
+	{ "write-long-loop",	4, test_write_long_loop },
 
 	/* xattr/xmlattr */
 	{ "getxattr",		1, test_getxattr },
