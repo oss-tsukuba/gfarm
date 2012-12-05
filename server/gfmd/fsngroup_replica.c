@@ -74,8 +74,8 @@ gfarm_server_fsngroup_find_replicainfo_by_inode(struct inode *inode)
 }
 
 void
-gfarm_server_fsngroup_replicate_file(struct inode *inode, struct host *src_host,
-	char *info)
+gfarm_server_fsngroup_replicate_file(struct inode *inode,
+	struct host *src_host, char *info)
 {
 	/*
 	 * Not yet.
