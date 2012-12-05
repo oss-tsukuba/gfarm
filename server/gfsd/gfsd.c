@@ -90,8 +90,10 @@
  * at gfmd failover.
  */
 #define GFMD_CONNECT_SLEEP_INTVL_MIN	1	/* 1 sec */
-#define GFMD_CONNECT_SLEEP_INTVL_MAX	640	/* about 10 min */
-#define GFMD_CONNECT_SLEEP_TIMEOUT	60	/* 1 min */
+#define GFMD_CONNECT_SLEEP_INTVL_MAX	512	/* about 8.5 min */
+#define GFMD_CONNECT_SLEEP_TIMEOUT	60	/* 1 min for gfmd failover */
+#define GFMD_CONNECT_SLEEP_LOG_OMIT	11	/* log until 512 sec */
+#define GFMD_CONNECT_SLEEP_LOG_INTERVAL	86400	/* 1 day */
 
 #define fatal_errno(msg_no, ...) \
 	fatal_errno_full(msg_no, __FILE__, __LINE__, __func__, __VA_ARGS__)
@@ -298,62 +300,79 @@ static gfarm_error_t
 connect_gfm_server0(int use_timeout)
 {
 	gfarm_error_t e;
-	unsigned int sleep_interval = GFMD_CONNECT_SLEEP_INTVL_MIN;
-	unsigned int sleep_max_interval = GFMD_CONNECT_SLEEP_INTVL_MAX;
+	int sleep_interval = GFMD_CONNECT_SLEEP_INTVL_MIN;
 	struct timeval expiration_time;
+	int timed_out;
+	struct gflog_reduced_state connlog = GFLOG_REDUCED_STATE_INITIALIZER(
+		GFMD_CONNECT_SLEEP_LOG_OMIT, 1,
+		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
+		GFMD_CONNECT_SLEEP_LOG_INTERVAL);
+	struct gflog_reduced_state hnamelog = GFLOG_REDUCED_STATE_INITIALIZER(
+		GFMD_CONNECT_SLEEP_LOG_OMIT, 1,
+		GFMD_CONNECT_SLEEP_INTVL_MAX * 10,
+		GFMD_CONNECT_SLEEP_LOG_INTERVAL);
 
 	if (use_timeout) {
 		gettimeofday(&expiration_time, NULL);
 		expiration_time.tv_sec += GFMD_CONNECT_SLEEP_TIMEOUT;
 	}
-	e = gfm_client_connect(gfarm_metadb_server_name,
-	    gfarm_metadb_server_port, GFSD_USERNAME,
-	    &gfm_server, listen_addrname);
-	if (e != GFARM_ERR_NO_ERROR) {
-		while (e != GFARM_ERR_NO_ERROR && (!use_timeout ||
-			!gfarm_timeval_is_expired(&expiration_time))) {
-			/* suppress excessive log */
-			if (sleep_interval < sleep_max_interval)
-				gflog_error(GFARM_MSG_1000550,
-				    "connecting to gfmd at %s:%d failed, "
-				    "sleep %d sec: %s",
+
+	for (;;) {
+		e = gfm_client_connect(gfarm_metadb_server_name,
+		    gfarm_metadb_server_port, GFSD_USERNAME,
+		    &gfm_server, listen_addrname);
+
+		timed_out = use_timeout &&
+		    gfarm_timeval_is_expired(&expiration_time);
+		
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (timed_out) {
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "connecting to gfmd at %s:%d failed: %s",
 				    gfarm_metadb_server_name,
 				    gfarm_metadb_server_port,
-				    sleep_interval,
 				    gfarm_error_string(e));
-			sleep(sleep_interval);
-			e = gfm_client_connect(gfarm_metadb_server_name,
-			    gfarm_metadb_server_port, GFSD_USERNAME,
-			    &gfm_server, listen_addrname);
-			if (sleep_interval < sleep_max_interval)
-				sleep_interval *= 2;
-		}
+				return (e);
+			}
+			gflog_reduced_error(GFARM_MSG_1000550, &connlog,
+			    "connecting to gfmd at %s:%d failed, "
+			    "sleep %d sec: %s",
+			    gfarm_metadb_server_name,
+			    gfarm_metadb_server_port,
+			    sleep_interval, gfarm_error_string(e));
+		} else {
+			/*
+			 * If canonical_self_name is specified (by the
+			 * command-line argument), send the hostname to
+			 * identify myself.  If not sending the hostname,
+			 * the canonical name will be decided by the gfmd using
+			 * the reverse lookup of the connected IP address.
+			 */
+			if (canonical_self_name == NULL)
+				return (GFARM_ERR_NO_ERROR);
 
-		if (use_timeout && e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003330,
-			    "connecting to gfmd failed: %s",
-			    gfarm_error_string(e));
-			return (e);
+			e = gfm_client_hostname_set(gfm_server,
+			    canonical_self_name);
+			if (e == GFARM_ERR_NO_ERROR)
+				return (GFARM_ERR_NO_ERROR);
+			if (timed_out || !IS_CONNECTION_ERROR(e)) {
+				gflog_error(GFARM_MSG_1000551,
+				    "cannot set canonical hostname of "
+				    "this node (%s): %s", canonical_self_name,
+				    gfarm_error_string(e));
+				return (e);
+			}
+			gflog_reduced_error(GFARM_MSG_UNFIXED, &hnamelog,
+			    "cannot set canonical hostname of this node (%s), "
+			    "sleep %d sec: %s", canonical_self_name,
+			    sleep_interval, gfarm_error_string(e));
+			/* retry if IS_CONNECTION_ERROR(e) */
 		}
+		gfarm_sleep(sleep_interval);
+		if (sleep_interval < GFMD_CONNECT_SLEEP_INTVL_MAX)
+			sleep_interval *= 2;
 	}
 
-	/*
-	 * If canonical_self_name is specified (by the command-line
-	 * argument), send the hostname to identify myself.  If not
-	 * sending the hostname, the canonical name will be decided by
-	 * the gfmd using the reverse lookup of the connected IP
-	 * address.
-	 */
-	if (canonical_self_name != NULL &&
-	    (e = gfm_client_hostname_set(gfm_server, canonical_self_name))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000551,
-		    "cannot set canonical hostname of this node (%s), %s",
-		    canonical_self_name, gfarm_error_string(e));
-		return (e);
-	}
-
-	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
