@@ -36,6 +36,14 @@ struct gfarm_auth_config {
 	struct gfarm_hostspec *hostspec;
 };
 
+struct gfarm_auth_cred_config {
+	struct gfarm_auth_cred_config *next;
+	const char *service_tag;
+	enum gfarm_auth_cred_type type;
+	char *service;
+	char *name;
+};
+
 #define staticp	(gfarm_ctxp->auth_config_static)
 
 struct gfarm_auth_config_static {
@@ -59,6 +67,28 @@ gfarm_auth_config_static_init(struct gfarm_context *ctxp)
 
 	ctxp->auth_config_static = s;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfarm_auth_config_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_config_static *s = ctxp->auth_config_static;
+	struct gfarm_auth_config *c, *c_next;
+	struct gfarm_auth_cred_config *cc, *cc_next;
+
+	if (s == NULL)
+		return;
+
+	for (c = s->auth_config_list; c != NULL; c = c_next) {
+		c_next = c->next;
+		gfarm_hostspec_free(c->hostspec);
+		free(c);
+	}
+	for (cc = s->auth_server_cred_config_list; cc != NULL; cc = cc_next) {
+		cc_next = cc->next;
+		free(cc);
+	}
+	free(s);
 }
 
 char
@@ -247,14 +277,6 @@ gfarm_auth_cred_type_parse(char *type_name, enum gfarm_auth_cred_type *typep)
 		type_name);
 	return (GFARM_ERRMSG_UNKNOWN_CREDENTIAL_TYPE);
 }
-
-struct gfarm_auth_cred_config {
-	struct gfarm_auth_cred_config *next;
-	const char *service_tag;
-	enum gfarm_auth_cred_type type;
-	char *service;
-	char *name;
-};
 
 static struct gfarm_auth_cred_config**
 gfarm_auth_server_cred_config_lookup(const char *service_tag)

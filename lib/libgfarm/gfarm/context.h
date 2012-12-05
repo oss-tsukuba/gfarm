@@ -54,20 +54,52 @@ extern struct gfarm_context {
 } *gfarm_ctxp;
 
 gfarm_error_t gfarm_context_init(void);
+void          gfarm_context_term(void);
 
 gfarm_error_t gfarm_config_static_init(struct gfarm_context *);
+void          gfarm_config_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_sockopt_static_init(struct gfarm_context *);
+void          gfarm_sockopt_static_term(struct gfarm_context *);
+
 gfarm_error_t gfm_client_static_init(struct gfarm_context *);
+void          gfm_client_static_term(struct gfarm_context *);
+
 gfarm_error_t gfs_client_static_init(struct gfarm_context *);
+void          gfs_client_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_host_static_init(struct gfarm_context *);
+void          gfarm_host_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_auth_config_static_init(struct gfarm_context *);
+void          gfarm_auth_config_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_auth_common_static_init(struct gfarm_context *);
+void          gfarm_auth_common_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_auth_common_gsi_static_init(struct gfarm_context *);
+void          gfarm_auth_common_gsi_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_auth_client_static_init(struct gfarm_context *);
+void          gfarm_auth_client_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_schedule_static_init(struct gfarm_context *);
+void          gfarm_schedule_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_gfs_pio_static_init(struct gfarm_context *);
+void          gfarm_gfs_pio_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_gfs_pio_section_static_init(struct gfarm_context *);
+void          gfarm_gfs_pio_section_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_gfs_stat_static_init(struct gfarm_context *);
+void          gfarm_gfs_stat_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_gfs_unlink_static_init(struct gfarm_context *);
+void          gfarm_gfs_unlink_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_gfs_xattr_static_init(struct gfarm_context *);
+void          gfarm_gfs_xattr_static_term(struct gfarm_context *);
+
 gfarm_error_t gfarm_filesystem_static_init(struct gfarm_context *);
+void          gfarm_filesystem_static_term(struct gfarm_context *);

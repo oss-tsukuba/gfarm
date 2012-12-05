@@ -112,6 +112,28 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 }
 
 void
+gfarm_config_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_config_static *s = ctxp->config_static;
+
+	if (s == NULL)
+		return;
+	/* 
+	 * The following gfarm_stringlist_free_deeply() call also is
+	 * performed by gfarm_free_config(), but the repeated call of
+	 * this function has no problem.
+	 */
+	gfarm_stringlist_free_deeply(&s->xattr_cache_list);
+	if (s->local_ug_maps_tab != NULL)
+		gfarm_hash_table_free(s->local_ug_maps_tab);
+	free(s->local_username);
+	free(s->local_homedir);
+	free(s->debug_command_argv);
+	free(s->argv0);
+	free(s);
+}
+
+void
 gfarm_config_set_filename(char *filename)
 {
 	staticp->config_file = filename;

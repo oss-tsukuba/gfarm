@@ -97,6 +97,18 @@ gfm_client_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfm_client_static_term(struct gfarm_context *ctxp)
+{
+	struct gfm_client_static *s = ctxp->gfm_client_static;
+
+	if (s == NULL)
+		return;
+
+	gfp_conn_cache_term(&s->server_cache);
+	free(s);
+}
+
 int
 gfm_client_is_connection_error(gfarm_error_t e)
 {

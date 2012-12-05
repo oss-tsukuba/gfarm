@@ -40,6 +40,11 @@
 
 #define staticp	(gfarm_ctxp->host_static)
 
+struct known_network {
+	struct known_network *next;
+	struct gfarm_hostspec *network;
+};
+
 struct gfarm_host_static {
 	struct known_network *known_network_list;
 	struct known_network **known_network_list_last;
@@ -74,6 +79,22 @@ gfarm_host_static_init(struct gfarm_context *ctxp)
 
 	ctxp->host_static = s;
 	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfarm_host_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_host_static *s = ctxp->host_static;
+	struct known_network *n, *next;
+
+	if (s == NULL)
+		return;
+
+	for (n = s->known_network_list; n != NULL; n = next) {
+		next = n->next;
+		free(n);
+	}
+	free(s);
 }
 
 static gfarm_error_t
@@ -830,11 +851,6 @@ gfarm_addr_is_same_net(struct sockaddr *addr,
 	}
 	return (0);
 }
-
-struct known_network {
-	struct known_network *next;
-	struct gfarm_hostspec *network;
-};
 
 void
 gfarm_known_network_list_dump(void)

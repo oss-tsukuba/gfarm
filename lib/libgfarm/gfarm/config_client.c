@@ -220,6 +220,7 @@ gfarm_terminate(void)
 	gfs_client_terminate();
 	gfm_client_terminate();
 	gflog_terminate();
+	gfarm_context_term();
 
 	return (GFARM_ERR_NO_ERROR);
 }

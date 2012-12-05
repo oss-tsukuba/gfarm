@@ -61,6 +61,22 @@ gfarm_auth_common_gsi_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_auth_common_gsi_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_auth_common_gsi_static *s = ctxp->auth_common_gsi_static;
+
+	if (s == NULL)
+		return;
+
+	gfarm_mutex_destroy(&s->gsi_init_mutex,
+	    "gfarm_host_static_term", "gsi_initialize");
+	gfarm_mutex_destroy(&s->client_cred_init_mutex,
+	    "gfarm_host_static_term", "client_cred_initialize");
+	free(s->client_dn);
+	free(s);
+}
+
 static void
 gfarm_gsi_client_finalize_unlocked(void)
 {

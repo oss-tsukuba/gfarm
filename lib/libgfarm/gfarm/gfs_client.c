@@ -120,6 +120,18 @@ gfs_client_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfs_client_static_term(struct gfarm_context *ctxp)
+{
+	struct gfs_client_static *s = ctxp->gfs_client_static;
+
+	if (s == NULL)
+		return;
+
+	gfp_conn_cache_term(&s->server_cache);
+	free(s);
+}
+
 /*
  * Currently this supports only one hook function.
  * And the function is always gfarm_schedule_host_cache_clear_auth() (or NULL).

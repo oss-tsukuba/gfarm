@@ -57,6 +57,17 @@ gfarm_gfs_pio_section_static_init(struct gfarm_context *ctxp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+void
+gfarm_gfs_pio_section_static_term(struct gfarm_context *ctxp)
+{
+	struct gfarm_gfs_pio_section_static *s = ctxp->gfs_pio_section_static;
+
+	if (s == NULL)
+		return;
+
+	free(s);
+}
+
 static gfarm_error_t
 gfs_pio_view_section_close(GFS_File gf)
 {

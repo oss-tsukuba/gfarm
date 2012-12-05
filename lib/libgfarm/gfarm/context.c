@@ -9,32 +9,86 @@
 
 struct gfarm_context *gfarm_ctxp;
 
+struct gfarm_context_module_entry {
+	gfarm_error_t (*init)(struct gfarm_context *);
+	void          (*term)(struct gfarm_context *);
+};
+
+static const struct gfarm_context_module_entry module_entries[] = {
+	{
+		gfarm_config_static_init,
+		gfarm_config_static_term
+	},
+	{
+		gfarm_sockopt_static_init,
+		gfarm_sockopt_static_term
+	},
+	{
+		gfm_client_static_init,
+		gfm_client_static_term
+	},
+	{
+		gfs_client_static_init,
+		gfs_client_static_term
+	},
+	{
+		gfarm_host_static_init,
+		gfarm_host_static_term
+	},
+	{
+		gfarm_auth_config_static_init,
+		gfarm_auth_config_static_term
+	},
+	{
+		gfarm_auth_common_static_init,
+		gfarm_auth_common_static_term
+	},
+#ifdef HAVE_GSI
+	{
+		gfarm_auth_common_gsi_static_init,
+		gfarm_auth_common_gsi_static_term
+	},
+#endif
+	{
+		gfarm_auth_client_static_init,
+		gfarm_auth_client_static_term
+	},
+	{
+		gfarm_schedule_static_init,
+		gfarm_schedule_static_term
+	},
+	{
+		gfarm_gfs_pio_static_init,
+		gfarm_gfs_pio_static_term
+	},
+	{
+		gfarm_gfs_pio_section_static_init,
+		gfarm_gfs_pio_section_static_term
+	},
+	{
+		gfarm_gfs_stat_static_init,
+		gfarm_gfs_stat_static_term
+	},
+	{
+		gfarm_gfs_unlink_static_init,
+		gfarm_gfs_unlink_static_term
+	},
+	{
+		gfarm_gfs_xattr_static_init,
+		gfarm_gfs_xattr_static_term
+	},
+	{
+		gfarm_filesystem_static_init,
+		gfarm_filesystem_static_term
+	},
+};
+
 gfarm_error_t
 gfarm_context_init(void)
 {
 	struct gfarm_context *ctxp;
 	gfarm_error_t e;
 #	define BUFSIZE_MAX 2048
-	gfarm_error_t (*inits[])(struct gfarm_context *) = {
-		gfarm_config_static_init,
-		gfarm_sockopt_static_init,
-		gfm_client_static_init,
-		gfs_client_static_init,
-		gfarm_host_static_init,
-		gfarm_auth_config_static_init,
-		gfarm_auth_common_static_init,
-#ifdef HAVE_GSI
-		gfarm_auth_common_gsi_static_init,
-#endif
-		gfarm_auth_client_static_init,
-		gfarm_schedule_static_init,
-		gfarm_gfs_pio_static_init,
-		gfarm_gfs_pio_section_static_init,
-		gfarm_gfs_stat_static_init,
-		gfarm_gfs_unlink_static_init,
-		gfarm_gfs_xattr_static_init,
-		gfarm_filesystem_static_init
-	};
 	int i;
 
 	GFARM_MALLOC(ctxp);
@@ -74,8 +128,8 @@ gfarm_context_init(void)
 	/* gfs_profile.c */
 	ctxp->profile = 0;
 
-	for (i = 0; i < GFARM_ARRAY_LENGTH(inits); i++) {
-		e = inits[i](ctxp);
+	for (i = 0; i < GFARM_ARRAY_LENGTH(module_entries); i++) {
+		e = (module_entries[i].init)(ctxp);
 		if (e != GFARM_ERR_NO_ERROR)
 			break;
 	}
@@ -85,6 +139,20 @@ gfarm_context_init(void)
 		free(ctxp);
 
 	return (e);
+}
+
+void
+gfarm_context_term(void)
+{
+	int i;
+
+	if (gfarm_ctxp == NULL)
+		return;
+
+	for (i = 0; i < GFARM_ARRAY_LENGTH(module_entries); i++)
+		(module_entries[i].term)(gfarm_ctxp);
+	free(gfarm_ctxp->metadb_server_name);
+	free(gfarm_ctxp);
 }
 
 static void
