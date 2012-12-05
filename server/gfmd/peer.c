@@ -204,6 +204,8 @@ file_replicating_get_peer(struct file_replicating *fr)
 	return (fr->peer);
 }
 
+static const char replication_diag[] = "replication";
+
 /* only host_replicating_new() is allowed to call this routine */
 gfarm_error_t
 peer_replicating_new(struct peer *peer, struct host *dst,
@@ -211,7 +213,6 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 {
 	struct file_replicating *fr;
 	static const char diag[] = "peer_replicating_new";
-	static const char replication_diag[] = "replication";
 
 	GFARM_MALLOC(fr);
 	if (fr == NULL) {
@@ -257,7 +258,6 @@ peer_replicating_free(struct file_replicating *fr)
 {
 	struct peer *peer = fr->peer;
 	static const char diag[] = "peer_replicating_free";
-	static const char replication_diag[] = "replication";
 
 	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
 	--peer->simultaneous_replication_receivers;
@@ -280,7 +280,6 @@ peer_replicated(struct peer *peer,
 	gfarm_error_t e;
 	struct file_replicating *fr;
 	static const char diag[] = "peer_replicated";
-	static const char replication_diag[] = "replication";
 
 	gfarm_mutex_lock(&peer->replication_mutex, diag, replication_diag);
 
@@ -316,6 +315,51 @@ peer_replicated(struct peer *peer,
 		    host_name(host), (long long)ino, (long long)gen,
 		    src_errcode, dst_errcode, (long long)size);
 	return (e);
+}
+
+/*
+ * this frees file_replicating structures with the following condition:
+ * GFS_PROTO_REPLICATION_REQUEST is successfully done,
+ * but gfmd hasn't received GFM_PROTO_REPLICATION_RESULT.
+ */
+static void
+peer_replicating_free_all_waiting_result(struct peer *peer)
+{
+	gfarm_error_t e;
+	struct file_replicating *fr;
+	int found = 0;
+	struct host *dst = NULL;
+	gfarm_ino_t ino = 0;
+	gfarm_int64_t gen = 0;
+	static const char diag[] = "peer_replicating_free_all_waiting_result";
+
+	for (;;) {
+		found = 0;
+
+		gfarm_mutex_lock(&peer->replication_mutex,
+		    diag, replication_diag);
+		for (fr = peer->replicating_inodes.next_inode;
+		    fr != &peer->replicating_inodes; fr = fr->next_inode) {
+			if (fr->handle != -1) {
+				found = 1;
+				dst = fr->dst;
+				ino = inode_get_number(fr->inode);
+				gen = fr->igen;
+				break;
+			}
+		}
+		gfarm_mutex_unlock(&peer->replication_mutex,
+		    diag, replication_diag);
+
+		if (!found)
+			break;
+
+		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: (%s, %lld:%lld): connection aborted: %s",
+		    diag, host_name(dst), (long long)ino, (long long)gen,
+		    gfarm_error_string(e));
+	}
 }
 
 static void
@@ -462,6 +506,10 @@ peer_closer(void *arg)
 		if (do_async_free) {
 			(*peer_async_free)(peer, peer->async);
 			peer->async = NULL;
+
+			/* there is no chance to receive result any more */
+			peer_replicating_free_all_waiting_result(peer);
+
 			/*
 			 * this peer cannot be freed yet,
 			 * wait until peer->replication_refcount becomes 0.
