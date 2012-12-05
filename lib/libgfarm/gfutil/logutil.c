@@ -14,6 +14,8 @@
 #define GFLOG_USE_STDARG
 #include <gfarm/gflog.h>
 
+#define LOG_LENGTH_MAX	2048
+
 #define GFARM_CATALOG_SET_NO 1
 
 static const char *log_identifier = "libgfarm";
@@ -23,7 +25,12 @@ static int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 static nl_catd catd = (nl_catd)-1;
 static const char *catalog_file = "gfarm.cat";
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static int log_message_verbose;
+#define LOG_VERBOSE_COMPACT	0
+#define LOG_VERBOSE_LINENO	1
+#define LOG_VERBOSE_LINENO_FUNC	2
+
 static int fatal_action = 0;
 
 int
@@ -80,16 +87,16 @@ static char *
 gflog_vmessage_message(int verbose, int msg_no, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
-	static char buf[2048];
+	static char buf[LOG_LENGTH_MAX];
 	char *catmsg, *bp = buf, *endp = buf + sizeof buf - 1;
 
 	/* the last one is used as a terminator */
 	*endp = '\0';
 
 	GFLOG_SNPRINTF(buf, bp, endp, "[%06d] ", msg_no);
-	if (verbose > 0) {
+	if (verbose >= LOG_VERBOSE_LINENO) {
 		GFLOG_SNPRINTF(buf, bp, endp, "(%s:%d", file, line_no);
-		if (verbose > 1)
+		if (verbose >= LOG_VERBOSE_LINENO_FUNC)
 			GFLOG_SNPRINTF(buf, bp, endp, " %s()", func);
 		GFLOG_SNPRINTF(buf, bp, endp, ") ");
 	}
@@ -262,7 +269,7 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 	const char *func, const char *format, va_list ap)
 {
 	int save_errno = errno;
-	char buffer[2048];
+	char buffer[LOG_LENGTH_MAX];
 
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	gflog_message(msg_no, priority, file, line_no, func,
@@ -310,8 +317,8 @@ gflog_assert_message(int msg_no, const char *file, int line_no,
 		    "gflog_assert_message: pthread_mutex_lock: ",
 		    strerror(rv));
 
-	msg = gflog_vmessage_message(2, msg_no, file, line_no, func, format,
-	    ap);
+	msg = gflog_vmessage_message(LOG_VERBOSE_LINENO_FUNC,
+	    msg_no, file, line_no, func, format, ap);
 	gflog_sub(LOG_ERR, "", msg);
 
 	rv = pthread_mutex_unlock(&mutex);
