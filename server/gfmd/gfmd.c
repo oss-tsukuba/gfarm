@@ -919,67 +919,20 @@ try_auth(void *arg)
 }
 
 #define SAME_WARNING_TRIGGER	10	/* check reduced mode */
-#define SAME_WARNING_LIMIT	30	/* more than this -> reduced mode */
+#define SAME_WARNING_THRESHOLD	30	/* more than this -> reduced mode */
 #define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
 #define	SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
 
-struct gflog_warning_state {
-	int reduced_mode;
-	time_t stat_start, log_time;
-	long stat_count, log_count;
-} enfile_state, emfile_state; /* just initializing by 0 */
-
-static int
-gflog_warning_rate_is_low(struct gflog_warning_state *state,
-	time_t current_time)
-{
-	return (current_time > state->stat_start &&
-	     1.0 * state->stat_count / (current_time - state->stat_start)
-	     <= 1.0 * SAME_WARNING_LIMIT / SAME_WARNING_DURATION);
-}
-
-/*
- * If warning rate is less than or equal to a limit (10 times per 600 seconds),
- * just log the warning.
- * If the rate exceeds that, the warning will be logged only once
- * per 60 seconds, until the rate drops to the limit.
- */
-static void
-gflog_warning_reduced(struct gflog_warning_state *state,
-	time_t current_time, const char *msg1, const char *msg2)
-{
-	++state->log_count;
-	++state->stat_count;
-	if (state->stat_count >= SAME_WARNING_TRIGGER &&
-	    state->stat_start != 0 &&
-	    !gflog_warning_rate_is_low(state, current_time)) {
-		state->reduced_mode = 1;
-	}
-	if (state->reduced_mode) {
-		if (state->log_time != 0 &&
-		    current_time - state->log_time < SAME_WARNING_INTERVAL)
-			return;
-		if (gflog_warning_rate_is_low(state, current_time))
-			state->reduced_mode = 0;
-	}
-
-	if (state->log_count == 1) {
-		gflog_warning(GFARM_MSG_1003552, "%s%s", msg1, msg2);
-	} else {
-		gflog_warning(GFARM_MSG_1003553,
-		    "%s%s: %ld times in recent %ld seconds", msg1, msg2,
-		    state->log_count, (long)(current_time - state->log_time));
-	}
-	state->log_count = 0;
-	state->log_time = current_time;
-
-	if (state->stat_start == 0) {
-		state->stat_start = current_time;
-	} else if (current_time - state->stat_start >= SAME_WARNING_DURATION) {
-		state->stat_count = 0;
-		state->stat_start = current_time;
-	}
-}
+struct gflog_reduced_state enfile_state = GFLOG_REDUCED_STATE_INITIALIZER(
+	SAME_WARNING_TRIGGER,
+	SAME_WARNING_THRESHOLD,
+	SAME_WARNING_DURATION,
+	SAME_WARNING_INTERVAL);
+struct gflog_reduced_state emfile_state = GFLOG_REDUCED_STATE_INITIALIZER(
+	SAME_WARNING_TRIGGER,
+	SAME_WARNING_THRESHOLD,
+	SAME_WARNING_DURATION,
+	SAME_WARNING_INTERVAL);
 
 void
 accepting_loop(int accepting_socket)
@@ -989,23 +942,24 @@ accepting_loop(int accepting_socket)
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_size;
 	struct peer *peer;
-	time_t now;
 
 	for (;;) {
 		client_addr_size = sizeof(client_addr);
 		client_socket = accept(accepting_socket,
 		   (struct sockaddr *)&client_addr, &client_addr_size);
 		if (client_socket < 0) {
-			now = time(NULL);
-			if (errno == EMFILE)
-				gflog_warning_reduced(&emfile_state, now,
-				    "accept: ", strerror(EMFILE));
-			else if (errno == ENFILE)
-				gflog_warning_reduced(&enfile_state, now,
-				    "accept: ", strerror(ENFILE));
-			else if (errno != EINTR)
+			if (errno == EMFILE) {
+				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				    &emfile_state,
+				    "accept: %s", strerror(EMFILE));
+			} else if (errno == ENFILE) {
+				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				    &enfile_state,
+				    "accept: %s", strerror(ENFILE));
+			} else if (errno != EINTR) {
 				gflog_warning_errno(GFARM_MSG_1000189,
 				    "accept");
+			}
 		} else if ((e = peer_alloc(client_socket, &peer)) !=
 		    GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1000190,

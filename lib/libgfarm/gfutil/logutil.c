@@ -5,14 +5,16 @@
 #include <syslog.h>
 #include <string.h>
 #include <nl_types.h>
+#include <time.h>
 #include <pthread.h>
-#include "gfutil.h"
 
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 
 #define GFLOG_USE_STDARG
 #include <gfarm/gflog.h>
+
+#include "gfutil.h"
 
 #define LOG_LENGTH_MAX	2048
 
@@ -455,4 +457,108 @@ int
 gflog_auth_get_verbose(void)
 {
 	return (authentication_verbose);
+}
+
+void
+gflog_auth_message(int msg_no, int priority, const char *file, int line_no,
+	const char *func, const char *format, ...)
+{
+	va_list ap;
+
+	if (authentication_verbose) {
+		va_start(ap, format);
+		gflog_vmessage(msg_no, priority, file, line_no, func,
+		    format, ap);
+		va_end(ap);
+	}
+}
+
+/*
+ * reduced log
+ */
+
+static int
+gflog_reduced_rate_is_low(struct gflog_reduced_state *state,
+	time_t current_time)
+{
+	return (current_time > state->stat_start &&
+	     1.0 * state->stat_count / (current_time - state->stat_start)
+	     <= 1.0 * state->threshold / state->duration);
+}
+
+/*
+ * If rate is less than or equal to a limit, just output the log
+ * (limit == state->threshold times per state->duration seconds).
+ * If the rate exceeds that, the log will be output only once
+ * per state->log_interval seconds, until the rate drops to the limit.
+ */
+void
+gflog_reduced_message(int msg_no, int priority, const char *file, int line_no,
+	const char *func, struct gflog_reduced_state *state,
+	const char *format, ...)
+{
+	time_t current_time;
+	int rv;
+	va_list ap;
+	char *catmsg;
+	/* use static, because stack is too small (e.g. 4KB) if __KERNEL__ */
+	static char buf[LOG_LENGTH_MAX];
+	static pthread_mutex_t buf_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+	if (priority > log_level) /* not worth reporting */
+		return;
+
+	++state->log_count;
+	++state->stat_count;
+	current_time = time(NULL);
+	if (state->stat_count >= state->trigger &&
+	    state->stat_start != 0 &&
+	    !gflog_reduced_rate_is_low(state, current_time)) {
+		state->reduced_mode = 1;
+	}
+	if (state->reduced_mode) {
+		if (state->log_time != 0 &&
+		    current_time - state->log_time < state->log_interval)
+			return;
+		if (gflog_reduced_rate_is_low(state, current_time))
+			state->reduced_mode = 0;
+	}
+
+	rv = pthread_mutex_lock(&buf_mutex);
+	if (rv != 0) {
+		gflog_out(LOG_ERR,
+		    "gflog_reduced_message: pthread_mutex_lock: ",
+		    strerror(rv));
+		return;
+	}
+
+	va_start(ap, format);
+	catmsg = catgets(catd, GFARM_CATALOG_SET_NO, msg_no, NULL);
+	vsnprintf(buf, sizeof buf, catmsg != NULL ? catmsg : format, ap);
+	va_end(ap);
+	if (state->log_count == 1) {
+		gflog_message_out(log_message_verbose, msg_no, priority,
+		    file, line_no, func, "%s", buf);
+	} else {
+		gflog_message_out(log_message_verbose, msg_no, priority,
+		    file, line_no, func,
+		    "%s: %ld times in recent %ld seconds", buf,
+		    state->log_count, (long)(current_time - state->log_time));
+	}
+
+	rv = pthread_mutex_unlock(&buf_mutex);
+	if (rv != 0)
+		gflog_out(LOG_ERR,
+		    "gflog_reduced_message: pthread_mutex_unlock: ",
+		    strerror(rv));
+
+	state->log_count = 0;
+	state->log_time = current_time;
+
+	if (state->stat_start == 0) {
+		state->stat_start = current_time;
+	} else if (current_time - state->stat_start >= state->duration) {
+		state->stat_count = 0;
+		state->stat_start = current_time;
+	}
 }
