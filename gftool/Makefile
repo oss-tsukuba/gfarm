@@ -46,7 +46,7 @@ SUBDIRS = \
 	gfwhoami \
 	gfxattr \
 	config-gfarm \
-	gffsngroup \
+	gfhostgroup \
 	$(optional_targets)
 
 #	gfexec \
