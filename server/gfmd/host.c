@@ -88,7 +88,8 @@ struct host {
 	int status_callout_retry;
 };
 
-static struct gfarm_hash_table *host_hashtab = NULL;
+/* referenced from fsngroup.c, it needs host_hashtab. */
+struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
 
 static struct host *host_new(struct gfarm_host_info *, struct callout *);
@@ -392,7 +393,7 @@ host_flags(struct host *h)
 char *
 host_fsngroup(struct host *h)
 {
-	return (h->fsngroupname);
+	return ((h->fsngroupname != NULL) ? h->fsngroupname : "");
 }
 
 int
@@ -1624,7 +1625,8 @@ host_fsngroup_modify(struct host *h, const char *fsngroupname)
 	if (h->fsngroupname != NULL)
 		free(h->fsngroupname);
 	if (fsngroupname != NULL)
-		h->fsngroupname = strdup(fsngroupname);
+		h->fsngroupname = strdup_ck(fsngroupname,
+					"host_fsngroup_modify");
 	else
 		h->fsngroupname = NULL;
 }

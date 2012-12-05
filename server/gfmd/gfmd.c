@@ -165,8 +165,9 @@ protocol_switch(struct peer *peer, int from_client, int skip, int level,
 	case GFM_PROTO_FSNGROUP_GET_ALL:
 		e = gfm_server_fsngroup_get_all(peer, from_client, skip);
 		break;
-	case GFM_PROTO_FSNGROUP_GET_BY_NAMES:
-		e = gfm_server_fsngroup_get_by_names(peer, from_client, skip);
+	case GFM_PROTO_FSNGROUP_GET_BY_HOSTNAMES:
+		e = gfm_server_fsngroup_get_by_hostnames(peer, from_client,
+		    skip);
 		break;
 	case GFM_PROTO_FSNGROUP_MODIFY:
 		e = gfm_server_fsngroup_modify(peer, from_client, skip);
