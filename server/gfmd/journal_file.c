@@ -37,6 +37,8 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gflog.h>
 
+#include "queue.h"
+
 #include "crc32.h"
 #include "iobuffer.h"
 #include "gfp_xdr.h"
@@ -51,7 +53,7 @@ struct journal_file;
 struct journal_file_writer;
 
 struct journal_file_reader {
-	struct journal_file_reader *next;
+	GFARM_HCIRCLEQ_ENTRY(journal_file_reader) readers;
 	struct journal_file *file;
 	off_t committed_pos;
 	gfarm_uint64_t committed_lap;
@@ -92,7 +94,7 @@ struct journal_file_writer {
 };
 
 struct journal_file {
-	struct journal_file_reader reader_list;
+	GFARM_HCIRCLEQ_HEAD(journal_file_reader) reader_list;
 	struct journal_file_writer writer;
 	char *path;
 	size_t size, max_size;
@@ -101,15 +103,6 @@ struct journal_file {
 	pthread_cond_t nonfull_cond, nonempty_cond, drain_cond;
 	pthread_mutex_t mutex;
 };
-
-#define JOURNAL_READER_LIST_HEAD(j) (&(j)->reader_list)
-
-#define FOREACH_JOURNAL_READER(x, j) \
-	for (x = (j)->reader_list.next; x != JOURNAL_READER_LIST_HEAD(j); \
-	    x = x->next)
-#define FOREACH_JOURNAL_READER_SAFE(x, y, j) \
-	for (x = (j)->reader_list.next, y = x->next \
-	    ; x != JOURNAL_READER_LIST_HEAD(j); x = y, y = x->next)
 
 #define JOURNAL_RECORD_SIZE(data_len) (journal_rec_header_size() + \
 	sizeof(gfarm_uint32_t) + (data_len))
@@ -218,7 +211,7 @@ journal_file_is_waiting_until_nonempty(struct journal_file *jf)
 struct journal_file_reader *
 journal_file_main_reader(struct journal_file *jf)
 {
-	return (jf->reader_list.next);
+	return (GFARM_HCIRCLEQ_FIRST(jf->reader_list, readers));
 }
 
 static int
@@ -237,27 +230,6 @@ journal_file_reader_set_flag(struct journal_file_reader *reader, int f,
 		reader->flags &= ~f;
 }
 
-static void
-journal_file_add_reader(struct journal_file *jf,
-	struct journal_file_reader *reader)
-{
-	struct journal_file_reader *cur, *last = NULL;
-
-	FOREACH_JOURNAL_READER(cur, jf)
-		last = cur;
-	if (last == NULL)
-		last = JOURNAL_READER_LIST_HEAD(jf);
-	last->next = reader;
-	reader->next = JOURNAL_READER_LIST_HEAD(jf);
-}
-
-static void
-journal_file_reader_invalidate(struct journal_file_reader *reader)
-{
-	journal_file_reader_set_flag(reader,
-	    JOURNAL_FILE_READER_F_INVALID, 1);
-}
-
 void
 journal_file_reader_disable_block_writer(struct journal_file_reader *reader)
 {
@@ -265,13 +237,48 @@ journal_file_reader_disable_block_writer(struct journal_file_reader *reader)
 	    JOURNAL_FILE_READER_F_BLOCK_WRITER, 0);
 }
 
-static void
-journal_file_reader_free(struct journal_file_reader *reader)
+/* PREREQUISITE: journal_file_mutex. */
+void
+journal_file_reader_invalidate_unlocked(struct journal_file_reader *reader)
 {
-	if (reader == NULL)
-		return;
-	journal_file_reader_close(reader);
+	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_DRAIN, 1);
+	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_INVALID, 1);
+	if (reader->xdr != NULL) {
+		gfp_xdr_free(reader->xdr);
+		reader->xdr = NULL;
+	}
+}
+
+void
+journal_file_reader_invalidate(struct journal_file_reader *reader)
+{
+	struct journal_file *jf = reader->file;
+	static const char diag[] = "journal_file_reader_invalidate";
+
+	journal_file_mutex_lock(jf, diag);
+	journal_file_reader_invalidate_unlocked(reader);
+	journal_file_mutex_unlock(jf, diag);
+}
+
+/* PREREQUISITE: journal_file_mutex. */
+static void
+journal_file_reader_close_unlocked(struct journal_file_reader *reader)
+{
+	assert(reader != NULL);
+	journal_file_reader_invalidate_unlocked(reader);
+	GFARM_HCIRCLEQ_REMOVE(reader, readers);
 	free(reader);
+}
+
+void
+journal_file_reader_close(struct journal_file_reader *reader)
+{
+	struct journal_file *jf = reader->file;
+	static const char diag[] = "journal_file_reader_close";
+
+	journal_file_mutex_lock(jf, diag);
+	journal_file_reader_close_unlocked(reader);
+	journal_file_mutex_unlock(jf, diag);
 }
 
 struct gfp_xdr *
@@ -652,7 +659,7 @@ journal_file_reader_rewind(struct journal_file_reader *reader)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static void
+static int
 journal_file_reader_writer_wait(struct journal_file_reader *reader,
 	struct journal_file *jf, size_t rec_len)
 {
@@ -660,12 +667,12 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 	static const char *diag = "journal_file_reader_adjust_pos";
 	off_t wpos, rpos;
 	gfarm_uint64_t wlap, rlap;
-	int needed;
+	int needed, waited = 0;
 
 	if (journal_file_reader_is_invalid(reader) ||
 	    !JOURNAL_FILE_READER_IS_BLOCK_WRITER(reader) ||
 	    rec_len == 0)
-		return;
+		return (0);
 
 	for (;;) {
 		wpos = writer->pos;
@@ -721,7 +728,9 @@ journal_file_reader_writer_wait(struct journal_file_reader *reader,
 #endif
 		gfarm_cond_wait(&jf->nonfull_cond, &jf->mutex,
 		    diag, JOURNAL_FILE_STR);
+		waited = 1;
 	}
+	return (waited);
 }
 
 static gfarm_error_t
@@ -773,7 +782,7 @@ journal_file_reader_check_pos(struct journal_file_reader *reader,
 
 	if (!valid) {
 		journal_file_reader_expire(reader);
-		journal_file_reader_close(reader);
+		journal_file_reader_invalidate_unlocked(reader);
 		gflog_debug(GFARM_MSG_1002876,
 		    "invalidated journal_file_reader : rec_len=%lu, "
 		    "rpos=%lu, wpos=%lu",
@@ -1273,7 +1282,7 @@ journal_file_reader_new(struct journal_file *jf, int fd,
 		free(reader);
 		return (e);
 	}
-	journal_file_add_reader(jf, reader);
+	GFARM_HCIRCLEQ_INSERT_TAIL(jf->reader_list, reader, readers);
 	reader->last_seqnum = 0;
 	*readerp = reader;
 	return (GFARM_ERR_NO_ERROR);
@@ -1405,7 +1414,9 @@ journal_file_open(const char *path, size_t max_size,
 			&jf->writer);
 	}
 
-	jf->reader_list.next = JOURNAL_READER_LIST_HEAD(jf);
+	GFARM_HCIRCLEQ_INIT(jf->reader_list, readers);
+
+	/* create journal_file_main_reader */
 	if ((e = journal_file_reader_new(jf, rfd, rpos, rlap, 1,
 	    &reader)) != GFARM_ERR_NO_ERROR)
 		goto error;
@@ -1426,20 +1437,10 @@ error:
 	else if (wfd > 0)
 		close(wfd);
 	free(jf);
-	journal_file_reader_free(reader);
+	if (reader != NULL)
+		journal_file_reader_close_unlocked(reader);
 	*jfp = NULL;
 	return (e);
-}
-
-void
-journal_file_reader_close(struct journal_file_reader *reader)
-{
-	journal_file_reader_set_flag(reader, JOURNAL_FILE_READER_F_DRAIN, 1);
-	if (reader->xdr) {
-		gfp_xdr_free(reader->xdr);
-		reader->xdr = NULL;
-	}
-	journal_file_reader_invalidate(reader);
 }
 
 gfarm_error_t
@@ -1507,7 +1508,7 @@ journal_file_reader_reopen_if_needed(struct journal_file *jf,
 	if (e == GFARM_ERR_NO_ERROR) {
 		if (e2 != GFARM_ERR_NO_ERROR) {
 			journal_file_reader_expire(*readerp);
-			journal_file_reader_close(*readerp);
+			journal_file_reader_invalidate_unlocked(*readerp);
 			(*readerp)->last_seqnum = seqnum;
 			e = e2;
 		}
@@ -1543,16 +1544,24 @@ journal_file_wait_until_empty(struct journal_file *jf)
 void
 journal_file_close(struct journal_file *jf)
 {
+#if 0
 	struct journal_file_reader *reader, *reader2;
+#endif
 	static const char *diag = "journal_file_close";
 
 	if (jf == NULL)
 		return;
 	journal_file_mutex_lock(jf, diag);
-	FOREACH_JOURNAL_READER_SAFE(reader, reader2, jf)
-		journal_file_reader_free(reader);
-	jf->reader_list.next = JOURNAL_READER_LIST_HEAD(jf);
-	if (jf->writer.xdr)
+	journal_file_reader_close_unlocked(journal_file_main_reader(jf));
+#if 0	/*
+	 * We don't have to do this, because storage for jf is never freed.
+	 * We shouldn't do this, because doing so makes
+	 * journal_file_mutex_lock(reader->file, ) dump core.
+	 */
+	GFARM_HCIRCLEQ_FOREACH_SAFE(reader, jf->reader_list, readers, reader2)
+		journal_file_reader_detach(reader);
+#endif
+	if (jf->writer.xdr != NULL)
 		gfp_xdr_free(jf->writer.xdr);
 	jf->writer.xdr = NULL;
 	free(jf->path);
@@ -1655,6 +1664,7 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	gfarm_uint32_t crc;
 	static const char *diag = "journal_file_write";
 	struct journal_file_reader *reader;
+	int waited;
 
 	assert(jf);
 	assert(size_add_op);
@@ -1675,15 +1685,22 @@ journal_file_write(struct journal_file *jf, gfarm_uint64_t seqnum,
 	if ((e = journal_file_check_rec_len(jf, rec_len))
 	    != GFARM_ERR_NO_ERROR)
 		goto unlock;
-	FOREACH_JOURNAL_READER(reader, jf) {
-		journal_file_reader_writer_wait(reader, jf,rec_len);
-		if (!journal_file_reader_is_invalid(reader) &&
-		    (e = journal_file_reader_check_pos(reader, jf, rec_len))
-		    != GFARM_ERR_NO_ERROR)
-			goto unlock;
-		if (reader->xdr)
-			gfp_xdr_recvbuffer_clear_read_eof(reader->xdr);
-	}
+	do {
+		waited = 0;
+		GFARM_HCIRCLEQ_FOREACH(reader, jf->reader_list, readers) {
+			if (journal_file_reader_writer_wait(reader, jf,
+			    rec_len)) {
+				waited = 1; /* rescan from the first */
+				break;
+			}
+			if (!journal_file_reader_is_invalid(reader) &&
+			    (e = journal_file_reader_check_pos(reader, jf,
+			    rec_len)) != GFARM_ERR_NO_ERROR)
+				goto unlock;
+			if (reader->xdr != NULL)
+				gfp_xdr_recvbuffer_clear_read_eof(reader->xdr);
+		}
+	} while (waited);
 	if (writer->pos + rec_len > jf->max_size) {
 		if ((e = journal_file_writer_rewind(jf)) != GFARM_ERR_NO_ERROR)
 			goto unlock;
@@ -2030,7 +2047,7 @@ journal_file_wait_until_readable(struct journal_file *jf)
 
 	for (;;) {
 		isempty = 1;
-		FOREACH_JOURNAL_READER(reader, jf) {
+		GFARM_HCIRCLEQ_FOREACH(reader, jf->reader_list, readers) {
 			if (journal_file_reader_is_invalid(reader) ||
 			    journal_file_reader_is_expired_unlocked(reader))
 				continue;
@@ -2061,6 +2078,7 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 	size_t header_size = journal_rec_header_size();
 	static const char *diag = "journal_file_write_raw";
 	struct journal_file_reader *reader;
+	int waited;
 
 	journal_file_mutex_lock(jf, diag);
 
@@ -2075,15 +2093,22 @@ journal_file_write_raw(struct journal_file *jf, int recs_len,
 		if ((e = journal_file_check_rec_len(jf, rec_len))
 		    != GFARM_ERR_NO_ERROR)
 			goto unlock;
-		FOREACH_JOURNAL_READER(reader, jf) {
-			journal_file_reader_writer_wait(reader, jf,
-			    rec_len);
-			if ((e = journal_file_reader_check_pos(reader, jf,
-			    rec_len)) != GFARM_ERR_NO_ERROR)
-				goto unlock;
-			if (reader->xdr)
-				gfp_xdr_recvbuffer_clear_read_eof(reader->xdr);
-		}
+		do {
+			waited = 0;
+			GFARM_HCIRCLEQ_FOREACH(reader, jf->reader_list, readers) {
+				if (journal_file_reader_writer_wait(reader, jf,
+				    rec_len)) {
+					waited = 1; /* rescan from the first */
+					break;
+				}
+				if ((e = journal_file_reader_check_pos(reader, jf,
+				    rec_len)) != GFARM_ERR_NO_ERROR)
+					goto unlock;
+				if (reader->xdr != NULL)
+					gfp_xdr_recvbuffer_clear_read_eof(
+					    reader->xdr);
+			}
+		} while (waited);
 		if (writer->pos + rec_len > jf->max_size) {
 			if ((e = journal_file_writer_rewind(jf))
 			    != GFARM_ERR_NO_ERROR)

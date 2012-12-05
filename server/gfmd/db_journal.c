@@ -3731,7 +3731,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 		else {
 			if (fih == NULL && seqnum > 0 && seqnum != min_seqnum) {
 				free(rec);
-				journal_file_reader_close(reader);
+				journal_file_reader_invalidate(reader);
 				gflog_debug(GFARM_MSG_1003195,
 				    "%s : target journal records are expired "
 				    "(cur:%llu, target:%llu)", diag,
@@ -3793,7 +3793,7 @@ db_journal_fetch(struct journal_file_reader *reader,
 	return (GFARM_ERR_NO_ERROR);
 error:
 	db_journal_fetch_info_list_free(fih);
-	journal_file_reader_close(reader);
+	journal_file_reader_invalidate(reader);
 	return (e);
 }
 

@@ -126,6 +126,7 @@ void journal_file_reader_committed_pos_unlocked(struct journal_file_reader *,
 void journal_file_reader_commit_pos(struct journal_file_reader *);
 int journal_file_reader_is_expired(struct journal_file_reader *);
 void journal_file_reader_disable_block_writer(struct journal_file_reader *);
+void journal_file_reader_invalidate(struct journal_file_reader *);
 void journal_file_reader_close(struct journal_file_reader *);
 gfarm_error_t journal_file_reader_reopen_if_needed(struct journal_file *,
 	struct journal_file_reader **, gfarm_uint64_t, int *);
