@@ -80,12 +80,7 @@ gfarm_gfs_pio_static_init(struct gfarm_context *ctxp)
 void
 gfarm_gfs_pio_static_term(struct gfarm_context *ctxp)
 {
-	struct gfarm_gfs_pio_static *s = ctxp->gfs_pio_static;
-
-	if (s == NULL)
-		return;
-
-	free(s);
+	free(ctxp->gfs_pio_static);
 }
 
 struct gfs_file_list {

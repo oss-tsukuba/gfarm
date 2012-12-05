@@ -49,12 +49,7 @@ gfarm_gfs_xattr_static_init(struct gfarm_context *ctxp)
 void
 gfarm_gfs_xattr_static_term(struct gfarm_context *ctxp)
 {
-	struct gfarm_gfs_xattr_static *s = ctxp->gfs_xattr_static;
-
-	if (s == NULL)
-		return;
-
-	free(s);
+	free(ctxp->gfs_xattr_static);
 }
 
 struct gfm_setxattr0_closure {
