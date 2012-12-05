@@ -338,7 +338,7 @@ scan_host_cache(iteration_filter_func f, void *arg,
 		size_t max_iter;
 		struct host *h;
 		void *a_elem;
-		char *dst = ret;
+		char *dst;
 		int stop_iter;
 
 		if (alloc_limit == 0)
@@ -347,7 +347,7 @@ scan_host_cache(iteration_filter_func f, void *arg,
 			max_alloc =
 				(alloc_limit < nhosts) ? alloc_limit : nhosts;
 
-		ret = (char *)malloc(esize * alloc_limit);
+		ret = (char *)malloc(esize * max_alloc);
 		if (ret == NULL) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: insufficient memory to "
@@ -355,6 +355,7 @@ scan_host_cache(iteration_filter_func f, void *arg,
 				diag, alloc_limit);
 			return (NULL);
 		}
+		dst = ret;
 
 		if (iter_limit == 0)
 			max_iter = nhosts;
@@ -368,7 +369,8 @@ scan_host_cache(iteration_filter_func f, void *arg,
 			h = host_iterator_access(&it);
 			stop_iter = 0;
 			if ((a_elem = (f)(h, arg, &stop_iter)) != NULL) {
-				(void)memcpy((void *)dst, a_elem, esize);
+				(void)memcpy((void *)dst,
+					     (void *)&a_elem, esize);
 				dst += esize;
 				i++;
 			}

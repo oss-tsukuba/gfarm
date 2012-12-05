@@ -87,7 +87,7 @@ gfarm_error_t gfm_client_fsngroup_get_all(struct gfm_connection *,
 	size_t *, struct gfarm_fsngroup_info **);
 gfarm_error_t gfm_client_fsngroup_get_by_hostname(struct gfm_connection *,
 	const char *, char **);
-gfarm_error_t gfm_server_fsngroup_modify(struct gfm_connection *,
+gfarm_error_t gfm_client_fsngroup_modify(struct gfm_connection *,
 	struct gfarm_fsngroup_info *);
 
 gfarm_error_t gfm_client_user_info_get_all(struct gfm_connection *,

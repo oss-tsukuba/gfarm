@@ -1297,8 +1297,8 @@ bailout:
 		*infos = ret;
 	} else {
 		for (i = 0; i < n; i++) {
-			free(ret[i].hostname);
-			free(ret[i].fsngroupname);
+			free((void *)ret[i].hostname);
+			free((void *)ret[i].fsngroupname);
 		}
 		free((void *)ret);
 	}
@@ -1329,7 +1329,8 @@ gfm_client_fsngroup_get_by_hostname(struct gfm_connection *gfm_server,
 	return (e);
 }
 
-gfarm_error_t gfm_server_fsngroup_modify(struct gfm_connection *gfm_server,
+gfarm_error_t
+gfm_client_fsngroup_modify(struct gfm_connection *gfm_server,
 	struct gfarm_fsngroup_info *info)
 {
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;

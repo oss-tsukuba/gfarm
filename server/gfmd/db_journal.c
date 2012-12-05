@@ -3466,6 +3466,8 @@ db_journal_ops_call(const struct db_ops *ops, gfarm_uint64_t seqnum,
 		e = ops->mdhost_modify(seqnum, obj); break;
 	case GFM_JOURNAL_MDHOST_REMOVE:
 		e = ops->mdhost_remove(seqnum, obj); break;
+	case GFM_JOURNAL_FSNGROUP_MODIFY:
+		e = ops->fsngroup_modify(seqnum, obj); break;
 	case GFM_JOURNAL_NOP:
 		e = GFARM_ERR_NO_ERROR; break;
 	default:
