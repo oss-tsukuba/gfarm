@@ -46,7 +46,7 @@ gfarm_fsngroup_text_t gfm_fsngroup_get_hostnames_by_fsngroup(
 struct peer;
 gfarm_error_t gfm_server_fsngroup_get_all(
 	struct peer *, int, int);
-gfarm_error_t gfm_server_fsngroup_get_by_hostnames(
+gfarm_error_t gfm_server_fsngroup_get_by_hostname(
 	struct peer *, int, int);
 gfarm_error_t gfm_server_fsngroup_modify(
 	struct peer *, int, int);

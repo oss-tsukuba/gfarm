@@ -22,6 +22,7 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
+#include <gfarm/fsngroup_info.h>
 #include <gfarm/user_info.h>
 #include <gfarm/group_info.h>
 
@@ -1220,6 +1221,118 @@ gfm_client_host_info_remove(struct gfm_connection *gfm_server,
 {
 	return (gfm_client_rpc(gfm_server, 0,
 	    GFM_PROTO_HOST_INFO_REMOVE, "s/", hostname));
+}
+
+/* fsngroup */
+gfarm_error_t
+gfm_client_fsngroup_get_all(struct gfm_connection *gfm_server,
+	size_t *np, struct gfarm_fsngroup_info **infos)
+{
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	gfarm_int32_t nhosts;
+	size_t n = 0;
+	size_t i;
+	struct gfarm_fsngroup_info *ret = NULL;
+	static const char diag[] = "gfm_client_fsngroup_get_all";
+
+	if ((e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_FSNGROUP_GET_ALL,
+	    "/i", &nhosts)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: gfm_client_rpc() failed: %s",
+			diag, gfarm_error_string(e));
+		goto bailout;
+	}
+
+	n = (size_t)nhosts;
+	if (nhosts > 0) {
+		int eof;
+		ret = (struct gfarm_fsngroup_info *)malloc(
+			sizeof(*ret) * (size_t)nhosts);
+		if (ret == NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"%s: can't allocate fsngroup_info(s).", diag);
+			e = GFARM_ERR_NO_MEMORY;
+			goto bailout;
+		}
+
+		for (i = 0; i < n; i++) {
+			eof = 0;
+			e = gfm_client_xdr_recv(gfm_server, 0, &eof, "ss",
+				&(ret[i].hostname), &(ret[i].fsngroupname));
+			if (eof || e != GFARM_ERR_NO_ERROR) {
+				if (eof) {
+					e = GFARM_ERR_PROTOCOL;
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"%s: Unexpected EOF while "
+						"receiving replies: %s",
+						diag, gfarm_error_string(e));
+				}
+				if (e != GFARM_ERR_NO_ERROR)
+					gflog_debug(GFARM_MSG_UNFIXED,
+						"%s: gfm_client_xdr_recv() "
+						"failed: %s",
+						diag, gfarm_error_string(e));
+				n = i;
+				break;
+			}
+		}
+	}
+
+bailout:
+	if (np != NULL)
+		*np = n;
+	if (infos != NULL) {
+		*infos = ret;
+	} else {
+		for (i = 0; i < n; i++) {
+			free(ret[i].hostname);
+			free(ret[i].fsngroupname);
+		}
+		free((void *)ret);
+	}
+	return (e);
+}
+
+gfarm_error_t
+gfm_client_fsngroup_get_by_hostname(struct gfm_connection *gfm_server,
+	const char *hostname, char **fsngroupnamep)
+{
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	static const char diag[] = "gfm_client_fsngroup_get_by_hostname";
+	char *ret = NULL;
+
+	if ((e = gfm_client_rpc(gfm_server, 0,
+			GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME, "s/s",
+			hostname, &ret)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: gfm_client_rpc() failed: %s",
+			diag, gfarm_error_string(e));
+	}
+
+	if (fsngroupnamep != NULL)
+		*fsngroupnamep = ret;
+	else
+		free((void *)ret);
+
+	return (e);
+}
+
+gfarm_error_t gfm_server_fsngroup_modify(struct gfm_connection *gfm_server,
+	struct gfarm_fsngroup_info *info)
+{
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	static const char diag[] = "gfm_client_fsngroup_modify";
+
+	if ((e = gfm_client_rpc(gfm_server, 0,
+			GFM_PROTO_FSNGROUP_MODIFY, "ss/",
+			info->hostname,
+			info->fsngroupname)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"%s: gfm_client_rpc() failed: %s",
+			diag, gfarm_error_string(e));
+	}
+
+	return (e);
 }
 
 static gfarm_error_t
