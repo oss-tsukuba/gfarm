@@ -1153,11 +1153,20 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, int do_timeout,
 /*
  * low level interface, this does not wait to receive desired length.
  */
-int
-gfp_xdr_recv_partial(struct gfp_xdr *conn, int just, void *data, int length)
+gfarm_error_t
+gfp_xdr_recv_partial(struct gfp_xdr *conn, int just, void *data, int length,
+	int *receivedp)
 {
-	return (gfarm_iobuffer_get_read_partial_x(
-	    conn->recvbuffer, data, length, just, 1));
+	gfarm_error_t e;
+	int received = gfarm_iobuffer_get_read_partial_x(
+	    conn->recvbuffer, data, length, just, 1);
+
+	if (received == 0 && (e = gfarm_iobuffer_get_error(conn->recvbuffer))
+	    != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	*receivedp = received;
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

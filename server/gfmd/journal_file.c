@@ -1941,18 +1941,18 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 		    "gfp_xdr_recv_ahead : %s", gfarm_error_string(e));
 		goto error;
 	}
-	if ((rlen = gfp_xdr_recv_partial(xdr, 0, header, header_size)) == 0) {
-		if (errno == 0) {
-			*eofp = 1;
-			e = GFARM_ERR_NO_ERROR;
-			goto end;
-		} else {
-			e = GFARM_ERR_INTERNAL_ERROR;
-			gflog_error(GFARM_MSG_1002919,
-			    "gfp_xdr_recv : %s",
-			    gfarm_error_string(gfarm_errno_to_error(errno)));
-			goto error;
-		}
+	if ((e = gfp_xdr_recv_partial(xdr, 0, header, header_size, &rlen)) !=
+	    GFARM_ERR_NO_ERROR) {
+		e = GFARM_ERR_INTERNAL_ERROR;
+		gflog_error(GFARM_MSG_1002919,
+		    "gfp_xdr_recv : %s",
+		    gfarm_error_string(gfarm_errno_to_error(errno)));
+		goto error;
+	}
+	if (rlen == 0) {
+		*eofp = 1;
+		e = GFARM_ERR_NO_ERROR;
+		goto end;
 	}
 	seqnum = journal_deserialize_uint64(header + GFARM_JOURNAL_MAGIC_SIZE);
 	data_len = journal_deserialize_uint32(header + header_size
@@ -1972,11 +1972,11 @@ journal_file_read_serialized(struct journal_file_reader *reader,
 		    "%s", gfarm_error_string(e));
 		goto error;
 	}
-	if ((rlen = gfp_xdr_recv_partial(xdr, 0, rec + header_size, data_len2))
-	    == 0) {
+	e = gfp_xdr_recv_partial(xdr, 0, rec + header_size, data_len2, &rlen);
+	if (e != GFARM_ERR_NO_ERROR || rlen == 0) {
 		gflog_error(GFARM_MSG_1002922,
-		    "gfp_xdr_recv : %s", errno != 0 ?
-		    gfarm_error_string(gfarm_errno_to_error(errno)) : "eof");
+		    "gfp_xdr_recv : %s", e != GFARM_ERR_NO_ERROR ?
+		    gfarm_error_string(e) : "eof");
 		goto error;
 	}
 	if (rlen != data_len2) {

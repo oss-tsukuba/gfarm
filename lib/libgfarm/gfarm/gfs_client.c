@@ -1532,17 +1532,20 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 			break;
 		do {
 			/* XXX - FIXME layering violation */
-			int partial = gfp_xdr_recv_partial(gfs_server->conn, 0,
-				buffer, size);
+			int partial;
 
-			e = gfp_xdr_recv_get_error(gfs_server->conn);
-			if (IS_CONNECTION_ERROR(e)) {
+			e = gfp_xdr_recv_partial(gfs_server->conn, 0,
+				buffer, size, &partial);
+			if (e == GFARM_ERR_NO_ERROR) {
+				/* OK */
+			} else if (IS_CONNECTION_ERROR(e)) {
 				gfs_client_execute_hook_for_connection_error(
 				    gfs_server);
 				gfs_client_purge_from_cache(gfs_server);
-			}
-			if (e != GFARM_ERR_NO_ERROR)
 				break;
+			} else {
+				break;
+			}
 			if (partial <= 0) {
 				e = GFARM_ERR_PROTOCOL;
 				break;

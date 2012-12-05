@@ -96,7 +96,7 @@ gfarm_error_t gfp_xdr_vrpc_result(struct gfp_xdr *, int, int,
 gfarm_error_t gfp_xdr_vrpc(struct gfp_xdr *, int, int,
 	gfarm_int32_t, gfarm_int32_t *, const char **, va_list *);
 
-int gfp_xdr_recv_partial(struct gfp_xdr *, int, void *, int);
+gfarm_error_t gfp_xdr_recv_partial(struct gfp_xdr *, int, void *, int, int *);
 gfarm_error_t gfp_xdr_recv_get_error(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_read_direct(struct gfp_xdr *, void *, int, int *);
 gfarm_error_t gfp_xdr_write_direct(struct gfp_xdr *, void *, int, int *);
