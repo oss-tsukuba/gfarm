@@ -37,6 +37,7 @@
 #include "fs.h"
 #include "acl.h"
 #include "config.h" /* for gfarm_host_get_self_name() */
+#include "fsngroup_replica.h"
 
 static char dot[] = ".";
 static char dotdot[] = "..";
@@ -397,11 +398,22 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 
 	if ((created || (op & GFS_W_OK) != 0 ||
 	     (flag & GFARM_FILE_REPLICA_SPEC) != 0) && inode_is_file(inode)) {
+		/*
+		 * Note:
+		 *
+		 *	Here we take a note of "How have we been
+		 *	expected to replicate the file when it is
+		 *	closed?". So check whether the replication is
+		 *	required for both the "replication recipe",
+		 *	ncopy and replicainfo.
+		 */
+		(void)process_record_replicainfo(process, fd,
+			gfarm_server_fsngroup_find_replicainfo_by_inode(inode));
 		if (inode_has_desired_number(inode, &desired_number) ||
 		    inode_traverse_desired_replica_number(base,
 		    &desired_number))
-			process_record_desired_number(process, fd,
-			    desired_number);
+			(void)process_record_desired_number(process, fd,
+				desired_number);
 	}
 
 	/* set full path to file_opening */

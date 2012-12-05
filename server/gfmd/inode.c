@@ -16,6 +16,7 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
+#include <gfarm/replica_info.h>
 
 #include "gfutil.h"
 #include "nanosec.h"
@@ -41,6 +42,7 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
+#include "fsngroup_replica.h"
 #include "replica_check.h"
 
 #include "auth.h" /* for "peer.h" */
@@ -3114,24 +3116,19 @@ inode_check_pending_replication(struct file_opening *fo)
  *
  * spool_host may be NULL, if GFARM_FILE_TRUNC_PENDING.
  */
-int
-inode_file_update(struct file_opening *fo, gfarm_off_t size,
+static int
+inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	struct host *spool_host, int desired_replica_number,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
-	struct inode *inode = fo->inode;
 	struct inode_open_state *ios = inode->u.c.state;
-	struct host *spool_host = fo->u.f.spool_host;
 	gfarm_int64_t old_gen;
 	int generation_updated = 0;
 	int start_replication = 0;
 	struct timeval tv;
 	char tmp_str[4096];
-
-	inode_cksum_invalidate(fo);
-	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
-		inode_cksum_remove(inode);
 
 	inode_set_size(inode, size);
 	inode_set_atime(inode, atime);
@@ -3179,9 +3176,59 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	}
 
 	inode_remove_every_other_replicas(inode, spool_host, old_gen,
-	    start_replication, fo->u.f.desired_replica_number);
+	    start_replication, desired_replica_number);
 
 	return (generation_updated);
+}
+
+int
+inode_file_update(struct file_opening *fo, gfarm_off_t size,
+	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
+	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
+	char **trace_logp)
+{
+	struct inode *inode = fo->inode;
+	struct inode_open_state *ios = inode->u.c.state;
+
+	inode_cksum_invalidate(fo);
+	if (ios->u.f.cksum_owner == NULL || ios->u.f.cksum_owner != fo)
+		inode_cksum_remove(inode);
+
+	/*
+	 * Note:
+	 *
+	 *	The ncopy replication must be omitted if the
+	 *	replicainfo replication is enabled.
+	 *
+	 */
+	if (fo->u.f.replicainfo != NULL) {
+		int ret =
+			inode_file_update_common(fo->inode, size, atime, mtime,
+				fo->u.f.spool_host,
+				0,
+				old_genp, new_genp, trace_logp);
+		fo->u.f.desired_replica_number = 0;
+		/*
+		 * OK now, let the replication begin.
+		 */
+		gfarm_server_fsngroup_replicate_file(
+			fo->inode,
+			fo->u.f.spool_host,
+			fo->u.f.replicainfo);
+		/*
+		 * Make it sure that we don't want replication
+		 * anymore. The area is free'd in the
+		 * gfarm_server_fsngroup_replicate_file().
+		 */
+		fo->u.f.replicainfo = NULL;
+
+		return (ret);
+	} else {
+		return (inode_file_update_common(fo->inode, size, atime, mtime,
+				fo->u.f.spool_host,
+				fo->u.f.desired_replica_number,
+				old_genp, new_genp, trace_logp));
+	}
 }
 
 int
@@ -5417,6 +5464,8 @@ xattr_init(void)
 
 	if (!gfarm_xattr_caching("gfarm.ncopy"))
 		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
+	if (!gfarm_xattr_caching(GFARM_REPLICAINFO_XATTR_NAME))
+		gfarm_xattr_caching_pattern_add(GFARM_REPLICAINFO_XATTR_NAME);
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);

@@ -90,6 +90,7 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_host = spool_host;
 		}
 		fo->u.f.desired_replica_number = 0;
+		fo->u.f.replicainfo = NULL;
 		fo->u.f.replica_source = NULL;
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
@@ -327,6 +328,42 @@ process_record_desired_number(struct process *process, int fd,
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	fo->u.f.desired_replica_number = desired_number;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+gfarm_error_t
+process_record_replicainfo(struct process *process, int fd,
+	char *replicainfo)
+{
+	struct file_opening *fo;
+	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			"process_record_replicainfo(%ld, %d, '%s'): %s",
+			(long)process->pid, fd,
+			(replicainfo != NULL) ? replicainfo : "",
+			gfarm_error_string(e));
+		return (e);
+	}
+	if (!inode_is_file(fo->inode)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			"process_record_replicainfo(%ld, %d, '%s'): not a file",
+			(long)process->pid, fd,
+			(replicainfo != NULL) ? replicainfo : "");
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	/*
+	 * Note:
+	 *
+	 *	We don't have to be worry about strdup() returning
+	 *	NULL here. In the case simply the replication is just
+	 *	canceled anyway so no matter the consequences are,
+	 *	return GFARM_ERR_NO_ERROR. BTW even the caller doesn't
+	 *	care :)
+	 */
+	fo->u.f.replicainfo = (replicainfo != NULL) ?
+		strdup(replicainfo) : NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
