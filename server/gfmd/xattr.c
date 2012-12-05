@@ -136,7 +136,8 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		const char *type = attrname + 6;
 		if (strcmp("ncopy", type) != 0 &&
 		    strcmp("acl_access", type) != 0 &&
-		    strcmp("acl_default", type) != 0)
+		    strcmp("acl_default", type) != 0 &&
+		    strcmp(GFARM_REPLICAINFO_XATTR_TYPE, type) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;
