@@ -6,7 +6,7 @@ srcdir = .
 
 include $(top_srcdir)/makes/var.mk
 
-PROGRAM = gfrepspec
+PROGRAM = gfrepattr
 SRCS = $(PROGRAM).c
 OBJS = $(PROGRAM).o
 CFLAGS = $(COMMON_CFLAGS) -I$(GFUTIL_SRCDIR) -I$(GFARMLIB_SRCDIR) $(openssl_includes)
