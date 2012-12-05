@@ -143,7 +143,7 @@ int
 mdhost_is_master(struct mdhost *m)
 {
 	int is_master;
-	static const char *diag = "mdhost_is_master";
+	static const char diag[] = "mdhost_is_master";
 
 	mdhost_mutex_lock(m, diag);
 	is_master = gfarm_metadb_server_is_master(&m->ms);
@@ -156,7 +156,7 @@ mdhost_is_master(struct mdhost *m)
 void
 mdhost_set_is_master(struct mdhost *m, int enable)
 {
-	static const char *diag = "mdhost_set_is_master";
+	static const char diag[] = "mdhost_set_is_master";
 
 	mdhost_mutex_lock(m, diag);
 	gfarm_metadb_server_set_is_master(&m->ms, enable);
@@ -471,7 +471,7 @@ static struct mdhost *
 mdhost_new(struct gfarm_metadb_server *ms)
 {
 	struct mdhost *m;
-	static const char *diag = "mdhost_new";
+	static const char diag[] = "mdhost_new";
 
 	if ((m = malloc(sizeof(struct mdhost))) == NULL)
 		return (NULL);
@@ -491,7 +491,7 @@ static struct mdhost *
 mdhost_lookup_internal(const char *hostname)
 {
 	struct gfarm_hash_entry *entry;
-	static const char *diag = "mdhost_lookup_internal";
+	static const char diag[] = "mdhost_lookup_internal";
 
 	mdhost_global_mutex_lock(diag);
 	entry = gfarm_hash_lookup(mdhost_hashtab, &hostname,
@@ -1308,7 +1308,7 @@ mdhost_init(void)
 	gfarm_error_t e;
 	struct mdhost *mh;
 	struct gfarm_hash_iterator it;
-	static const char *diag = "mdhost_init";
+	static const char diag[] = "mdhost_init";
 	char *metadb_server_name = gfarm_ctxp->metadb_server_name;
 
 	if (gfarm_get_metadb_replication_enabled())

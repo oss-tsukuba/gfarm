@@ -1374,7 +1374,7 @@ static gfarm_rdbms_error_t
 gfarm_pgsql_check_scheme(const char *tablename,
 	size_t ncolumns, const char * const columns[])
 {
-	const char *diag = "check_scheme";
+	static const char diag[] = "check_scheme";
 	PGresult *res = NULL;
 	ExecStatusType st;
 	gfarm_rdbms_error_t dbe = RDBMS_ERROR_UNKNOWN_STATE;

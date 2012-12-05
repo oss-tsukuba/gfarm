@@ -507,7 +507,7 @@ gfmdc_wait_journal_syncsend(struct gfmdc_journal_send_closure *c)
 {
 	int r, in_time = 1;
 	struct timespec ts;
-	static const char *diag = "gfmdc_wait_journal_syncsend";
+	static const char diag[] = "gfmdc_wait_journal_syncsend";
 
 	gfarm_gettime(&ts);
 	ts.tv_sec += gfarm_get_journal_sync_slave_timeout();
@@ -536,7 +536,7 @@ gfmdc_client_journal_send(struct peer *peer,
 	struct journal_file_reader *reader;
 	struct mdhost *mh = c->host;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
-	static const char *diag = "GFM_PROTO_JOURNAL_SEND";
+	static const char diag[] = "GFM_PROTO_JOURNAL_SEND";
 
 	lf_sn = gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer);
 	min_seqnum = lf_sn == 0 ? 0 : lf_sn + 1;
@@ -608,7 +608,7 @@ gfmdc_server_journal_send(struct mdhost *mh, struct peer *peer,
 	gfarm_uint64_t from_sn, to_sn;
 	unsigned char *recs = NULL;
 	size_t recs_len;
-	static const char *diag = "GFM_PROTO_JOURNAL_SEND";
+	static const char diag[] = "GFM_PROTO_JOURNAL_SEND";
 
 	if ((er = gfmdc_server_get_request(peer, size, diag, "llB",
 	    &from_sn, &to_sn, &recs_len, &recs))
@@ -636,7 +636,7 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 	int inited = 0;
 	struct gfmdc_peer_record *gfmdc_peer = peer_get_gfmdc_record(peer);
 	struct journal_file_reader *reader;
-	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+	static const char diag[] = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	if ((e = gfmdc_server_get_request(peer, size, diag, "l", &seqnum))
 	    == GFARM_ERR_NO_ERROR) {
@@ -728,7 +728,7 @@ gfmdc_client_journal_ready_to_recv(struct mdhost *mh, struct peer *peer)
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
 	struct journal_ready_to_recv_info ji;
-	static const char *diag = "GFM_PROTO_JOURNAL_READY_TO_RECV";
+	static const char diag[] = "GFM_PROTO_JOURNAL_READY_TO_RECV";
 
 	gfarm_mutex_init(&ji.mutex, diag, JOURNAL_READY_TO_RECV_MUTEX_DIAG);
 	gfarm_cond_init(&ji.wait_cond, diag,
@@ -913,7 +913,7 @@ gfmdc_connect(void)
 	static unsigned int sleep_max_interval = 40;
 	static int hack_to_make_cookie_not_work = 0; /* XXX FIXME */
 	static const char *service_user = GFMD_USERNAME;
-	static const char *diag = "gfmdc_connect";
+	static const char diag[] = "gfmdc_connect";
 
 	master = mdhost_lookup_master();
 	gfarm_set_auth_id_type(GFARM_AUTH_ID_TYPE_METADATA_HOST);
@@ -1119,7 +1119,7 @@ gfmdc_connect_thread(void *arg)
 	gfarm_error_t e;
 	struct mdhost *mh;
 	struct peer *peer;
-	static const char *diag = "gfmdc_connect_thread";
+	static const char diag[] = "gfmdc_connect_thread";
 
 	for (;;) {
 		mh = mdhost_lookup_master();
@@ -1144,7 +1144,7 @@ gfmdc_connect_thread(void *arg)
 static void *
 gfmdc_journal_file_sync_thread(void *arg)
 {
-	static const char *diag = "db_journal_file_sync_thread";
+	static const char diag[] = "db_journal_file_sync_thread";
 
 #ifdef DEBUG_JOURNAL
 	gflog_debug(GFARM_MSG_1003000,
@@ -1170,7 +1170,7 @@ gfmdc_journal_syncsend_thread(void *closure)
 	struct mdhost *mh = peer_get_mdhost(peer);
 	gfarm_error_t e;
 	gfarm_uint64_t to_sn;
-	static const char *diag = "gfmdc_journal_syncsend_thread";
+	static const char diag[] = "gfmdc_journal_send_thread";
 
 	assert(gfmdc_peer != NULL);
 	assert(c != NULL);
@@ -1254,7 +1254,7 @@ static int
 gfmdc_journal_sync_mdhost_add_job(struct mdhost *mh, void *closure)
 {
 	struct peer *peer = mdhost_get_peer(mh); /* increment refcount */
-	const char *diag = "gfmdc_journal_sync_mdhost_add_job";
+	const char diag[] = "gfmdc_journal_sync_mdhost_add_job";
 
 	if (peer == NULL)
 		return (1);
@@ -1278,7 +1278,7 @@ static gfarm_error_t
 gfmdc_journal_sync_multiple(gfarm_uint64_t seqnum)
 {
 	int nhosts = 0;
-	static const char *diag = "gfmdc_journal_sync_multiple";
+	static const char diag[] = "gfmdc_journal_sync_multiple";
 
 	mdhost_foreach(gfmdc_journal_sync_count_host, &nhosts);
 	if (nhosts == 0) {
@@ -1364,7 +1364,7 @@ gfmdc_sync_init(void)
 {
 	int thrpool_size, jobq_len;
 	struct gfmdc_journal_sync_info *si = &journal_sync_info;
-	static const char *diag = "gfmdc_sync_init";
+	static const char diag[] = "gfmdc_sync_init";
 
 	thrpool_size = gfarm_get_metadb_server_slave_max_size()
 		+ (gfarm_get_journal_sync_file() ? 1 : 0);

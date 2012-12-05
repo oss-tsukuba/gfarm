@@ -215,7 +215,7 @@ gfarm_uint64_t
 db_journal_next_seqnum(void)
 {
 	gfarm_uint64_t n;
-	static const char *diag = "db_journal_next_seqnum";
+	static const char diag[] = "db_journal_next_seqnum";
 
 	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 	n = ++journal_seqnum;
@@ -227,7 +227,7 @@ gfarm_uint64_t
 db_journal_get_current_seqnum(void)
 {
 	gfarm_uint64_t n;
-	static const char *diag = "db_journal_get_current_seqnum";
+	static const char diag[] = "db_journal_get_current_seqnum";
 
 	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 	n = journal_seqnum;
@@ -238,7 +238,7 @@ db_journal_get_current_seqnum(void)
 static void
 db_journal_subtract_current_seqnum(int n)
 {
-	static const char *diag = "db_journal_subtract_current_seqnum";
+	static const char diag[] = "db_journal_subtract_current_seqnum";
 
 	gfarm_mutex_lock(&journal_seqnum_mutex, diag, SEQNUM_MUTEX_DIAG);
 	journal_seqnum -= n;
@@ -3512,7 +3512,7 @@ db_journal_apply_op(void *op_arg, gfarm_uint64_t seqnum,
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct db_journal_rec *ai, *tai;
 	struct db_journal_rec_list *c = closure;
-	static const char *diag = "db_journal_apply_op";
+	static const char diag[] = "db_journal_apply_op";
 
 	*needs_freep = 0;
 	GFARM_MALLOC(ai);
@@ -3647,7 +3647,7 @@ db_journal_store_thread(void *arg)
 		journal_file_main_reader(self_jf);
 	struct db_journal_rec *rec;
 	struct db_journal_rec_list recs;
-	static const char *diag = "db_journal_store_thread";
+	static const char diag[] = "db_journal_store_thread";
 
 	for (;;) {
 		GFARM_STAILQ_INIT(&recs);
@@ -3922,7 +3922,7 @@ db_journal_recvq_enter(gfarm_uint64_t from_sn, gfarm_uint64_t to_sn,
 {
 	gfarm_error_t e;
 	struct db_journal_recv_info *ri;
-	static const char *diag = "db_journal_recvq_enter";
+	static const char diag[] = "db_journal_recvq_enter";
 
 	GFARM_MALLOC(ri);
 	if (ri == NULL) {
@@ -3962,7 +3962,7 @@ db_journal_recvq_delete(struct db_journal_recv_info **rip)
 {
 	struct db_journal_recv_info *ri, *rii, *ri_last = NULL;
 	gfarm_uint64_t next_sn;
-	static const char *diag = "db_journal_recvq_delete";
+	static const char diag[] = "db_journal_recvq_delete";
 
 	next_sn = db_journal_get_current_seqnum() + 1;
 
@@ -4005,7 +4005,7 @@ found:
 void
 db_journal_cancel_recvq()
 {
-	static const char *diag = "db_journal_recvq_cancel";
+	static const char diag[] = "db_journal_recvq_cancel";
 
 	gfarm_mutex_lock(&journal_recvq_mutex, diag, RECVQ_MUTEX_DIAG);
 	journal_recvq_cancel = 1;
@@ -4023,7 +4023,7 @@ db_journal_recvq_proc(int *canceledp)
 	gfarm_error_t e;
 	gfarm_uint64_t last_seqnum;
 	struct db_journal_recv_info *ri;
-	static const char *diag = "db_journal_recvq_proc";
+	static const char diag[] = "db_journal_recvq_proc";
 
 	if ((e = db_journal_recvq_delete(&ri)) != GFARM_ERR_NO_ERROR)
 		return (e);

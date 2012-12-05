@@ -1278,7 +1278,7 @@ peer_unset_process(struct peer *peer)
 void
 peer_record_protocol_error(struct peer *peer)
 {
-	static const char *diag = "peer_record_protocol_error";
+	static const char diag[] = "peer_record_protocol_error";
 
 	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
 	    PROTOCOL_ERROR_MUTEX_DIAG);
@@ -1291,7 +1291,7 @@ int
 peer_had_protocol_error(struct peer *peer)
 {
 	int e;
-	static const char *diag = "peer_had_protocol_error";
+	static const char diag[] = "peer_had_protocol_error";
 
 	gfarm_mutex_lock(&peer->protocol_error_mutex, diag,
 	    PROTOCOL_ERROR_MUTEX_DIAG);

@@ -1122,7 +1122,7 @@ static void
 transform_to_master(void)
 {
 	struct mdhost *master;
-	static const char *diag = "transform_to_master";
+	static const char diag[] = "transform_to_master";
 
 	if (mdhost_self_is_master()) {
 		gflog_error(GFARM_MSG_1002728,
@@ -1176,7 +1176,7 @@ transform_to_master(void)
 static int
 wait_transform_to_master(int port)
 {
-	static const char *diag = "accepting_loop";
+	static const char diag[] = "accepting_loop";
 
 	/* Wait until this process transforms to the master.
 	 * This behavior will be deleted when the feature are
