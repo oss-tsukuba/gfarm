@@ -3778,7 +3778,7 @@ gfm_server_replicate_file_from_to(struct peer *peer, int from_client, int skip)
 		    host_name(src), srcport, dst, ino, gen, fr);
 		if (e != GFARM_ERR_NO_ERROR) {
 			giant_lock();
-			file_replicating_free(fr);
+			file_replicating_free_by_error_before_request(fr);
 			giant_unlock();
 		}
 	}

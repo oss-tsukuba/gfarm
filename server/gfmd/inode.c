@@ -737,7 +737,8 @@ schedule_replication(struct inode *inode, struct host *spool_host,
 		    host_name(spool_host), host_port(spool_host),
 		    target, inode->i_number, inode->i_gen, fr))
 		    != GFARM_ERR_NO_ERROR) {
-			file_replicating_free(fr); /* may sleep */
+			/* may sleep */
+			file_replicating_free_by_error_before_request(fr);
 		}
 	}
 	free(existings);
@@ -824,7 +825,8 @@ inode_remove_every_other_replicas(struct inode *inode, struct host *spool_host,
 			    host_name(spool_host), host_port(spool_host),
 			    copy->host, inode->i_number, inode->i_gen, fr))
 			    != GFARM_ERR_NO_ERROR) {
-				file_replicating_free(fr); /* may sleep */
+				file_replicating_free_by_error_before_request(
+				    fr); /* may sleep */
 			}
 		}
 
@@ -3365,7 +3367,7 @@ file_replicating_new(struct inode *inode, struct host *dst,
 		return (GFARM_ERR_NO_SPACE);
 	if ((e = inode_add_replica(inode, dst, 0)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	if (frp == NULL)
+	if (frp == NULL) /* client initiated replication case */
 		return (GFARM_ERR_NO_ERROR);
 
 	if ((e = host_replicating_new(dst, &fr)) != GFARM_ERR_NO_ERROR) {
@@ -3420,6 +3422,24 @@ file_replicating_free(struct file_replicating *fr)
 	    inode->u.c.s.f.rstate == NULL) {
 		inode_remove(inode); /* clears `ios->u.f.cksum_owner' too. */
 	}
+}
+
+/*
+ * this does not generate dead_file_copy, thus, only can be used
+ * for an error at async_back_channel_replication_request().
+ */
+void
+file_replicating_free_by_error_before_request(struct file_replicating *fr)
+{
+	/*
+	 * cannot use inode_remove_replica_in_cache() directly,
+	 * because it's possible that the caller released giant_lock at once,
+	 * thus, inode generation might be updated.
+	 * see gfm_server_replicate_file_from_to() for example.
+	 */
+	inode_remove_replica_completed(fr->inode->i_number, fr->igen, fr->dst);
+	
+	file_replicating_free(fr);
 }
 
 gfarm_int64_t
@@ -3824,7 +3844,7 @@ inode_prepare_to_replicate(struct inode *inode, struct user *user,
 	struct file_copy *copy;
 	struct file_replicating *fr, **frp = &fr;
 
-	if (file_replicating_p == NULL)
+	if (file_replicating_p == NULL) /* client initiated replication */
 		frp = NULL;
 
 	if ((flags & ~GFS_REPLICATE_FILE_FORCE) != 0)

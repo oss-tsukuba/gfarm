@@ -165,6 +165,7 @@ gfarm_error_t file_replicating_new(
 	struct inode *, struct host *, struct dead_file_copy *,
 	struct file_replicating **);
 void file_replicating_free(struct file_replicating *);
+void file_replicating_free_by_error_before_request(struct file_replicating *);
 gfarm_int64_t file_replicating_get_gen(struct file_replicating *);
 gfarm_error_t inode_replicated(struct file_replicating *,
 	gfarm_int32_t, gfarm_int32_t, gfarm_off_t);
