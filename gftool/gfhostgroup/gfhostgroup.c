@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include <gfarm/gfarm.h>
+#include "fsngroup_info.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "config.h"

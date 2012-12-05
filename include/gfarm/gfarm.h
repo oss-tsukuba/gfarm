@@ -8,8 +8,6 @@ extern "C" {
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfarm_stringlist.h>
 #include <gfarm/host_info.h>
-#include <gfarm/fsngroup_info.h>
-#include <gfarm/replica_info.h>
 #include <gfarm/user_info.h>
 #include <gfarm/group_info.h>
 #include <gfarm/gfs_glob.h>

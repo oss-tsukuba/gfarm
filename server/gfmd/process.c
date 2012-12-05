@@ -118,6 +118,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			free(fo->u.f.replica_source);
 			fo->u.f.replica_source = NULL;
 		}
+		free((void *)fo->u.f.replicainfo);
 	} else if (GFARM_S_ISDIR(mode))
 		free(fo->u.d.key);
 	free(fo->path_for_trace_log);

@@ -16,6 +16,8 @@
 
 #include <gfarm/gfarm.h>
 
+#include "replica_info.h"
+
 /*****************************************************************************/
 
 struct gfarm_replicainfo {

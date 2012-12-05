@@ -16,7 +16,6 @@
 #include <gfarm/error.h>
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
-#include <gfarm/replica_info.h>
 
 #include "gfutil.h"
 #include "nanosec.h"
@@ -42,6 +41,7 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
+#include "replica_info.h"
 #include "fsngroup_replica.h"
 #include "replica_check.h"
 

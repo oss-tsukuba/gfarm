@@ -22,7 +22,6 @@
 #include <gfarm/gfarm_misc.h>
 #include <gfarm/gfs.h>
 #include <gfarm/host_info.h>
-#include <gfarm/fsngroup_info.h>
 #include <gfarm/user_info.h>
 #include <gfarm/group_info.h>
 
@@ -45,6 +44,7 @@
 #include "gfj_client.h"
 #include "xattr_info.h"
 #include "gfm_client.h"
+#include "fsngroup_info.h"
 #include "quota_info.h"
 #include "metadb_server.h"
 #include "filesystem.h"

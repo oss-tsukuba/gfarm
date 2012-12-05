@@ -23,6 +23,7 @@
 #include "auth.h"
 #include "gfp_xdr.h"
 #include "xattr_info.h"
+#include "replica_info.h"
 
 #include "subr.h"
 #include "rpcsubr.h"
