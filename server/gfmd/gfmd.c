@@ -1561,7 +1561,8 @@ main(int argc, char **argv)
 	gfmd_port = gfarm_ctxp->metadb_server_port;
 	if (port_number != NULL)
 		gfmd_port = strtol(port_number, NULL, 0);
-	gfarm_ctxp->file_trace = file_trace;
+	if (file_trace)
+		gfarm_ctxp->file_trace = 1;
 
 	/*
 	 * We do this before calling gfarm_daemon()
