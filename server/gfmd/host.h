@@ -26,6 +26,7 @@ void host_disconnect_request(struct host *, struct peer *);
 struct callout *host_status_callout(struct host *);
 struct peer *host_get_peer(struct host *);
 void host_put_peer(struct host *, struct peer *);
+void host_put_peer_for_replication(struct host *, struct peer *);
 
 char *host_name(struct host *);
 int host_port(struct host *);

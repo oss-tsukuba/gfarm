@@ -129,6 +129,7 @@ struct cookie {
 struct peer {
 	struct peer *next_close;
 	int refcount;
+	int replication_refcount;
 
 	struct gfp_xdr *conn;
 	gfp_xdr_async_peer_t async; /* used by {back|gfmd}_channel */
@@ -214,7 +215,8 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 
 	GFARM_MALLOC(fr);
 	if (fr == NULL) {
-		host_put_peer(dst, peer); /* decrement refcount */
+		/* decrement replication_refcount */
+		host_put_peer_for_replication(dst, peer);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 
@@ -241,7 +243,8 @@ peer_replicating_new(struct peer *peer, struct host *dst,
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
 
 	if (fr == NULL) {
-		host_put_peer(dst, peer); /* decrement refcount */
+		/* decrement replication_refcount */
+		host_put_peer_for_replication(dst, peer);
 		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 	}
 	*frp = fr;
@@ -262,7 +265,8 @@ peer_replicating_free(struct file_replicating *fr)
 	fr->next_inode->prev_inode = fr->prev_inode;
 	gfarm_mutex_unlock(&peer->replication_mutex, diag, replication_diag);
 
-	host_put_peer(fr->dst, fr->peer); /* decrement refcount */
+	/* decrement replication_refcount */
+	host_put_peer_for_replication(fr->dst, fr->peer);
 
 	free(fr);
 }
@@ -370,10 +374,46 @@ peer_del_ref(struct peer *peer)
 	return (referenced);
 }
 
+void
+peer_add_ref_for_replication(struct peer *peer)
+{
+	static const char diag[] = "peer_add_ref_for_replication";
+
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+	++peer->replication_refcount;
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+}
+
+int
+peer_del_ref_for_replication(struct peer *peer)
+{
+	int referenced;
+	static const char diag[] = "peer_del_ref_for_replication";
+
+	gfarm_mutex_lock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+
+	if (--peer->replication_refcount > 0) {
+		referenced = 1;
+	} else {
+		referenced = 0;
+		gfarm_cond_signal(&peer_closing_queue.ready_to_close,
+		    diag, "ready to close");
+	}
+
+	gfarm_mutex_unlock(&peer_closing_queue.mutex,
+	    diag, "peer_closing_queue");
+
+	return (referenced);
+}
+
 void *
 peer_closer(void *arg)
 {
 	struct peer *peer, **prev;
+	int do_async_free;
 	static const char diag[] = "peer_closer";
 
 	gfarm_mutex_lock(&peer_closing_queue.mutex, diag,
@@ -385,11 +425,16 @@ peer_closer(void *arg)
 			    &peer_closing_queue.mutex,
 			    diag, "queue is not empty");
 
+		do_async_free = 0;
 		for (prev = &peer_closing_queue.head;
 		    (peer = *prev) != NULL; prev = &peer->next_close) {
-			if (peer->refcount == 0) {
-				if (!watcher_event_is_active(
-				    peer->readable_event)) {
+			if (peer->refcount == 0 &&
+			    !watcher_event_is_active(peer->readable_event)) {
+				if (peer->async != NULL &&
+				    peer_async_free != NULL) {
+					do_async_free = 1;
+					break;
+				} else if (peer->replication_refcount == 0) {
 					*prev = peer->next_close;
 					if (peer_closing_queue.tail ==
 					    &peer->next_close)
@@ -414,7 +459,18 @@ peer_closer(void *arg)
 		 * at least for now,
 		 * because only externalized descriptor needs the calls.
 		 */
-		peer_free(peer);
+		if (do_async_free) {
+			(*peer_async_free)(peer, peer->async);
+			peer->async = NULL;
+			/*
+			 * this peer cannot be freed yet,
+			 * wait until peer->replication_refcount becomes 0.
+			 * see the problem 2 of
+			 * https://sourceforge.net/apps/trac/gfarm/ticket/408
+			 */
+		} else {
+			peer_free(peer);
+		}
 		giant_unlock();
 
 		gfarm_mutex_lock(&peer_closing_queue.mutex,
@@ -473,6 +529,7 @@ peer_init(int max_peers)
 		peer = &peer_table[i];
 		peer->next_close = NULL;
 		peer->refcount = 0;
+		peer->replication_refcount = 0;
 		peer->conn = NULL;
 		peer->async = NULL;
 		peer->username = NULL;
@@ -544,6 +601,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 
 	peer->next_close = NULL;
 	peer->refcount = 0;
+	peer->replication_refcount = 0;
 
 	/* XXX FIXME gfp_xdr requires too much memory */
 	if (conn == NULL) {
@@ -732,11 +790,6 @@ peer_free(struct peer *peer)
 
 	gfarm_mutex_lock(&peer_table_mutex, diag, peer_table_diag);
 
-	if (peer->async != NULL && peer_async_free != NULL) {
-		(*peer_async_free)(peer, peer->async);
-		peer->async = NULL;
-	}
-
 	while (!GFARM_HCIRCLEQ_EMPTY(peer->cookies, hcircleq)) {
 		cookie = GFARM_HCIRCLEQ_FIRST(peer->cookies, hcircleq);
 		GFARM_HCIRCLEQ_REMOVE(cookie, hcircleq);
@@ -806,6 +859,7 @@ peer_free(struct peer *peer)
 	}
 	peer->next_close = NULL;
 	peer->refcount = 0;
+	peer->replication_refcount = 0;
 
 	gfarm_mutex_unlock(&peer_table_mutex, diag, peer_table_diag);
 }

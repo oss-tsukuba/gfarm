@@ -543,6 +543,22 @@ host_put_peer(struct host *h, struct peer *peer)
 	abstract_host_put_peer(&h->ah, peer);
 }
 
+static struct peer *
+host_get_peer_for_replication(struct host *h)
+{
+	struct peer *peer = host_get_peer(h);
+
+	peer_add_ref_for_replication(peer);
+	host_put_peer(h, peer);
+	return (peer);
+}
+
+void
+host_put_peer_for_replication(struct host *h, struct peer *peer)
+{
+	peer_del_ref_for_replication(peer);
+}
+
 int
 host_status_callout_retry(struct host *host)
 {
@@ -777,7 +793,8 @@ host_free(struct host *h)
 gfarm_error_t
 host_replicating_new(struct host *dst, struct file_replicating **frp)
 {
-	struct peer *peer = host_get_peer(dst); /* increment refcount */
+	/* increment replication_refcount */
+	struct peer *peer = host_get_peer_for_replication(dst);
 
 	if (peer == NULL)
 		return (GFARM_ERR_NO_ROUTE_TO_HOST);
