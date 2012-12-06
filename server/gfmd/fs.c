@@ -4187,7 +4187,7 @@ gfm_server_replica_add(struct peer *peer, int from_client, int skip)
 			e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
 		}
 	} else if (inode_get_size(inode) != size) {
-		gflog_error(GFARM_MSG_1003558,
+		gflog_notice(GFARM_MSG_1003558,
 		    "%lld:%lld on %s: invalid file replica, rejected",
 		    (long long)inum, (long long)gen, host_name(spool_host));
 		e = GFARM_ERR_INVALID_FILE_REPLICA; /* invalid file */
