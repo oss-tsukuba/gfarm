@@ -1324,7 +1324,8 @@ gen_scheme_check_query(const char *tablename,
 
 	for (i = 0, of = 0; i < ncolumns && of == 0; i++) {
 		/* two for ", " */
-		sz = gfarm_size_add(&of, sz, (strlen(columns[i]) + 2));
+		sz = gfarm_size_add(&of, sz,
+			gfarm_size_add(&of, strlen(columns[i]), 2));
 	}
 	if (of == 0 && sz > 0)
 		tmp = (char *)malloc(sz);
