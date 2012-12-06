@@ -10,12 +10,9 @@
 #include <unistd.h>
 #include <memory.h>
 #include <string.h>
-#if __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
-#endif /* __STDC_VERSION__ >= 199901L */
-
 #include <gfarm/gfarm.h>
 
+#include "bool.h"
 #include "gfutil.h"
 #include "replica_info.h"
 
@@ -25,13 +22,6 @@ struct gfarm_replicainfo {
 	char *fsngroupname;
 	size_t n;
 };
-
-#if !defined(__cplusplus) || __STDC_VERSION__ < 199901L
-typedef enum {
-	false = 0,
-	true = 1
-} bool;
-#endif /* !__cplusplus || __STDC_VERSION__ < 199901L */
 
 /*****************************************************************************/
 /*

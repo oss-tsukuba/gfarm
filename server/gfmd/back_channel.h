@@ -3,6 +3,8 @@
  */
 
 struct peer;
+struct file_replicating;
+struct host;
 
 gfarm_error_t async_back_channel_replication_request(char *, int,
 	struct host *, gfarm_ino_t, gfarm_int64_t, struct file_replicating *);

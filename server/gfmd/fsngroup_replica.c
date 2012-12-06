@@ -3,13 +3,17 @@
  */
 #include <assert.h>
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>		/* XXX */
 #include <stdlib.h>
-#include <time.h>		/* XXX */
+#include <sys/time.h>
 
 #include <gfarm/gfarm.h>
 
+#include "thrsubr.h"
+
+#include "back_channel.h"
 #include "dir.h"
 #include "fsngroup.h"
 #include "fsngroup_replica.h"
@@ -132,21 +136,22 @@ visitor(struct inode *inode, void *arg)
  */
 
 static int rnd_initialized = 0;
-static pthread_mutex_t rndlock;
+static pthread_mutex_t rndlock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 init_random(void)
 {
-	if (rnd_initialized == 0) {
-		struct timespec ts;
-		unsigned long int seed;
-		uint64_t seed64;
+	struct timeval tv;
+	unsigned long int seed;
+	uint64_t seed64;
 
+	gfarm_mutex_lock(&rndlock, "init_random()", "lock");
+	if (rnd_initialized == 0) {
 		gfarm_mutex_init(&rndlock, "init_random()", "init");
 
-		(void)clock_gettime(CLOCK_REALTIME, &ts);
+		(void)gettimeofday(&tv, NULL);
 
-		seed64 = (uint64_t)ts.tv_sec ^ (uint64_t)ts.tv_nsec;
+		seed64 = (uint64_t)tv.tv_sec ^ (uint64_t)tv.tv_usec;
 
 		if (sizeof(int32_t) == sizeof(int) &&
 			sizeof(int) == sizeof(long int)) {
@@ -157,12 +162,11 @@ init_random(void)
 			seed = seed64;
 		}
 
-		gfarm_mutex_lock(&rndlock, "init_random()", "lock");
 		srandom(seed);
-		gfarm_mutex_unlock(&rndlock, "init_random()", "unlock");
 
 		rnd_initialized = 1;
 	}
+	gfarm_mutex_unlock(&rndlock, "init_random()", "unlock");
 }
 #define RND_INIT(...)	{ if (rnd_initialized == 0) init_random(); }
 
@@ -187,21 +191,14 @@ schedule_random(const char * const candidates[], size_t ncandidates,
 	size_t *indices, size_t nindices)
 {
 	size_t i;
+	size_t r;
 
-	assert(ncandidates >= nindices);
+	assert(ncandidates > nindices);
 
-	if (ncandidates == nindices) {
-		/*
-		 * Schedule all.
-		 */
-		for (i = 0; i < nindices; i++)
-			indices[i] = i;
-	} else {
-		size_t r = sync_random(0, ncandidates);
+	r = sync_random(0, ncandidates);
 
-		for (i = 0; i < nindices; i++)
-			indices[i] = (r + i) % ncandidates;
-	}
+	for (i = 0; i < nindices; i++)
+		indices[i] = (r + i) % ncandidates;
 
 	return (nindices);
 }
@@ -211,8 +208,7 @@ schedule_random(const char * const candidates[], size_t ncandidates,
  */
 static size_t
 schedule(gfarm_fsngroup_text_t t, size_t candmax, size_t **retindicesp,
-	 size_t (*sched_proc)(const char * const [], size_t,
-			size_t *, size_t))
+	fsngroup_sched_proc_t sched_proc)
 {
 	size_t nfsnghosts = gfm_fsngroup_text_size(t);
 	size_t max = (nfsnghosts > candmax) ? candmax : nfsnghosts;
@@ -238,8 +234,18 @@ schedule(gfarm_fsngroup_text_t t, size_t candmax, size_t **retindicesp,
 		return (0);
 	}
 
-	hosts = gfm_fsngroup_text_lines(t);
-	ret = (*sched_proc)(hosts, nfsnghosts, indices, max);
+	if (nfsnghosts == max) {
+		/*
+		 * No need to call scheduler, just select all of the
+		 * candidates.
+		 */
+		for (i = 0; i < max; i++)
+			indices[i] = i;
+		ret = max;
+	} else {
+		hosts = gfm_fsngroup_text_lines(t);
+		ret = (sched_proc)(hosts, nfsnghosts, indices, max);
+	}
 
 	if (ret == 0 || retindicesp == NULL)
 		free(indices);
@@ -247,6 +253,70 @@ schedule(gfarm_fsngroup_text_t t, size_t candmax, size_t **retindicesp,
 		*retindicesp = indices;
 
 	return (ret);
+}
+
+/*
+ * A xerox with an assistant.
+ */
+static void
+replicate_file_asynchronously(struct inode *inode,
+	const char *src_hostname, int port, const char *dst_hostname)
+{
+	struct host *dst_host = host_lookup(dst_hostname);
+	struct file_replicating *fr = NULL;
+	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	gfarm_ino_t i_number;
+	gfarm_uint64_t i_gen;
+
+	assert(inode != NULL && src_hostname != NULL && dst_host != NULL);
+
+	i_number = inode_get_number(inode);
+	i_gen = inode_get_gen(inode);
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"replicate_file_asynchronously(): about to replicate: "
+		"[inode %llu(gen %llu)]@%s -> %s",
+		(long long)i_number,
+		(long long)i_gen,
+		src_hostname, dst_hostname);
+
+	e = file_replicating_new(inode, dst_host, 1, NULL, &fr);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			"replicate_file_asynchronously(): "
+			"file_replicating_new() failed, for replication: "
+			"[inode %llu(gen %llu)]@%s -> %s: %s",
+			(long long)i_number,
+			(long long)i_gen,
+			src_hostname, dst_hostname,
+			gfarm_error_string(e));
+		return;
+	}
+
+	e = async_back_channel_replication_request(
+		(char *)src_hostname, port,
+		dst_host,
+		inode_get_number(inode), inode_get_gen(inode), fr);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+			"replicate_file_asynchronously(): "
+			"async_back_channel_replication_request() "
+			"failed, for replication: "
+			"[inode %llu(gen %llu)]@%s -> %s: %s",
+			(long long)i_number,
+			(long long)i_gen,
+			src_hostname, dst_hostname,
+			gfarm_error_string(e));
+		file_replicating_free(fr); /* may sleep */
+		return;
+	}
+
+	gflog_debug(GFARM_MSG_UNFIXED,
+		"replicate_file_asynchronously(): replication scheduled: "
+		"[inode %llu(gen %llu)]@%s -> %s",
+		(long long)i_number,
+		(long long)i_gen,
+		src_hostname, dst_hostname);
 }
 
 /*****************************************************************************/
@@ -269,7 +339,7 @@ gfarm_server_process_record_replication_attribute(
 }
 
 /*
- * Presume our having the giant_lock acquired.
+ * Make us sure our having the giant_lock acquired.
  */
 void
 gfarm_server_fsngroup_replicate_file(struct inode *inode,
@@ -282,24 +352,12 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	gfarm_fsngroup_text_t exs = NULL;
 	size_t nreps = 0;
 	char *fsngroupname;
+	int src_port = 0;
+	const char *src_hostname;
 	size_t i;
 #define diag "gfarm_server_fsngroup_replicate_file(): "
 
 	assert(info != NULL && src_host != NULL);
-
-	/*
-	 * What to do are:
-	 *
-	 *	1) Parse info and create (fsngroup, amount) tupples.
-	 *		... Done.
-	 *	2) For each the tupple:
-	 *		a) Create a set (hosts:fsngroup - ehosts)
-	 *			... Done.
-	 *		b) For each a host in the set:
-	 *			Select dstination hosts.
-	 *				... Done.
-	 *			Create a replica in each destination host.
-	 */
 
 	gflog_debug(GFARM_MSG_UNFIXED,
 		"gfarm_server_fsngroup_replicate_file(): "
@@ -317,7 +375,17 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 
 	RND_INIT();
 
+	/*
+	 * Note:
+	 *	Don't, even think, use the gfm_fsngroup_text_destroy()
+	 *	to free up the exs. Use free() directly for that
+	 *	instead, since the contents of the exclusions is NOT
+	 *	owned by us.
+	 */
 	exs = gfm_fsngroup_text_allocate(nexclusions, exclusions);
+
+	src_hostname = host_name(src_host);
+	src_port = host_port(src_host);
 
 	/*
 	 * XXX FIXME:
@@ -347,6 +415,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 			size_t *indices = NULL;
 			size_t nindices;
 			size_t idx;
+			const char *dst_hostname;
 
 			nindices = schedule(
 				ghosts,
@@ -355,12 +424,20 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 				(sched_proc != NULL) ?
 					sched_proc : schedule_random);
 
+			/*
+			 * Then replicate the file.
+			 */
 			for (j = 0; j < nindices; j++) {
 				idx = indices[j];
-				gflog_debug(GFARM_MSG_UNFIXED, diag
-					"%s dst %3zu [idx=%3zu]: '%s'",
-					fsngroupname, j, idx,
-					gfm_fsngroup_text_line(ghosts, idx));
+				dst_hostname =
+					gfm_fsngroup_text_line(ghosts, idx);
+				/*
+				 * Finally, we are here.
+				 */
+				replicate_file_asynchronously(
+					inode,
+					src_hostname, src_port,
+					dst_hostname);
 			}
 
 			free(indices);
