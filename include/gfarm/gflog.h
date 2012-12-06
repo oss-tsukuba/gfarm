@@ -105,3 +105,5 @@ int gflog_syslog_name_to_priority(const char *);
 
 int gflog_auth_set_verbose(int);
 int gflog_auth_get_verbose(void);
+void gflog_auth_message(int, int, const char *, int, const char *,
+	const char *, ...) GFLOG_PRINTF_ARG(6, 7);
