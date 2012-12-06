@@ -13,5 +13,6 @@ void gfarm_replicainfo_free(gfarm_replicainfo_t);
 const char *gfarm_replicainfo_group(gfarm_replicainfo_t);
 size_t gfarm_replicainfo_amount(gfarm_replicainfo_t);
 char *gfarm_replicainfo_stringify(gfarm_replicainfo_t *, size_t);
+size_t gfarm_replicainfo_reduce(const char *, gfarm_replicainfo_t **);
 
 int gfarm_replicainfo_validate(const char *);

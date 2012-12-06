@@ -24,7 +24,8 @@ static char program_name[PATH_MAX];
 
 /*****************************************************************************/
 static gfarm_error_t
-set_replicainfo(char *path, void *value, size_t len, int flags, int nofollow)
+set_replicainfo(char *path, const void *value, size_t len,
+	int flags, int nofollow)
 {
 	return (nofollow == 1 ? gfs_lsetxattr : gfs_setxattr)
 		(path, xattrname, value, len, flags);
@@ -211,7 +212,7 @@ main(int argc, char *argv[])
 			goto done;
 		}
 		c_path = argv[0];
-		nreps = gfarm_replicainfo_parse(argv[1], &reps);
+		nreps = gfarm_replicainfo_reduce(argv[1], &reps);
 		if (nreps == 0) {
 			fprintf(stderr, "%s: invalid attr '%s'\n",
 				program_name, argv[1]);
@@ -302,9 +303,11 @@ main(int argc, char *argv[])
 	}
 
 done:
-	if (nreps > 0 && reps != NULL)
+	if (nreps > 0 && reps != NULL) {
 		for (i = 0; i < nreps; i++)
 			gfarm_replicainfo_free(reps[i]);
+		free(reps);
+	}
 	if (inited == 1) {
 		e = gfarm_terminate();
 		if (e != GFARM_ERR_NO_ERROR) {
