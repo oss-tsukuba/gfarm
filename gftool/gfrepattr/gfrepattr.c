@@ -133,7 +133,7 @@ main(int argc, char *argv[])
 	} mode = NONE;
 	const char *opts = "srcmh?";
 	char *c_path = NULL;
-	char *replicainfo = NULL;
+	void *replicainfo = NULL;
 	size_t infolen = 0;
 	int c;
 	int i;
@@ -228,8 +228,8 @@ main(int argc, char *argv[])
 		}
 
 		/* Add one for the last NUL. */
-		infolen = strlen(replicainfo) + 1;
-		e = set_replicainfo(c_path, replicainfo, infolen, flags,
+		infolen = strlen((char *)replicainfo) + 1;
+		e = set_replicainfo(c_path, (char *)replicainfo, infolen, flags,
 			nofollow);
 		switch (e) {
 		case GFARM_ERR_NO_ERROR:
@@ -261,7 +261,7 @@ main(int argc, char *argv[])
 				fprintf(stdout, "%s: '%s'\n",
 					c_path,
 					replicainfo != NULL ?
-					replicainfo : "");
+					(char *)replicainfo : "");
 				break;
 			case GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY:
 				fprintf(stderr, "%s: %s: %s\n",

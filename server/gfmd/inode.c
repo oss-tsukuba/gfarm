@@ -5891,7 +5891,7 @@ inode_traverse_desired_replica_number(struct inode *dir, int *desired_numberp)
 int
 inode_has_replicainfo(struct inode *inode, char **infop)
 {
-	char *info = NULL;
+	void *info = NULL;
 	size_t s = 0;
 
 	if (inode_xattr_get_cache(inode, 0, GFARM_REPLICAINFO_XATTR_NAME,
@@ -5901,11 +5901,11 @@ inode_has_replicainfo(struct inode *inode, char **infop)
 	/*
 	 * The info is malloc'd in inode_xattr_get_cache().
 	 */
-	if (info == NULL || *info == '\0')
+	if (info == NULL || *((char *)info) == '\0')
 		return (0);
 
 	if (infop != NULL)
-		*infop = info;
+		*infop = (char *)info;
 	else
 		free(info);
 
