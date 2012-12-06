@@ -593,13 +593,16 @@ db_fsngroup_modify_arg_alloc(const char *hostname, const char *fsngroupname)
 	size_t hsize = 0;
 	size_t gsize = 0;
 	struct db_fsngroup_modify_arg *arg = NULL;
+	int of = 0;
+	size_t sz = 0;
 
 	assert(hostname != NULL && hostname[0] != '\0');
 	hsize = strlen(hostname) + 1;
 	gsize = (fsngroupname == NULL || fsngroupname[0] == '\0') ?
 		1 : strlen(fsngroupname) + 1;
-	arg = (struct db_fsngroup_modify_arg *)malloc(
-		sizeof(*arg) + hsize + gsize);
+	sz = gfarm_size_add(&of, sizeof(*arg), hsize + gsize);
+	if (of == 0 && sz > 0)
+		arg = (struct db_fsngroup_modify_arg *)malloc(sz);
 	if (arg == NULL) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"allocation of 'db_fsngroup_modify_arg' failed.");

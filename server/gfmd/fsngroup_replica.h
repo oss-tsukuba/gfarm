@@ -18,4 +18,4 @@ void gfarm_server_process_record_replication_attribute(
 	struct inode *, struct inode *,
 	gfarm_replication_attribute_serach_t);
 void gfarm_server_fsngroup_replicate_file(
-	struct inode *, struct host *, char *, struct host **, size_t);
+	struct inode *, struct host *, char *, char **, size_t);

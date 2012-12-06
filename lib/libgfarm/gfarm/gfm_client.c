@@ -1258,8 +1258,7 @@ gfm_client_fsngroup_get_all(struct gfm_connection *gfm_server,
 	n = (size_t)nhosts;
 	if (nhosts > 0) {
 		int eof;
-		ret = (struct gfarm_fsngroup_info *)malloc(
-			sizeof(*ret) * (size_t)nhosts);
+		GFARM_MALLOC_ARRAY(ret, (size_t)nhosts);
 		if (ret == NULL) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"%s: can't allocate fsngroup_info(s).", diag);
@@ -1297,10 +1296,10 @@ bailout:
 		*infos = ret;
 	} else {
 		for (i = 0; i < n; i++) {
-			free((void *)ret[i].hostname);
-			free((void *)ret[i].fsngroupname);
+			free(ret[i].hostname);
+			free(ret[i].fsngroupname);
 		}
-		free((void *)ret);
+		free(ret);
 	}
 	return (e);
 }
@@ -1324,7 +1323,7 @@ gfm_client_fsngroup_get_by_hostname(struct gfm_connection *gfm_server,
 	if (fsngroupnamep != NULL)
 		*fsngroupnamep = ret;
 	else
-		free((void *)ret);
+		free(ret);
 
 	return (e);
 }

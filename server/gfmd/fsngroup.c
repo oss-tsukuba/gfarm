@@ -148,11 +148,9 @@ static void
 destroy_tuple(a_tuple_t *t)
 {
 	if (t != NULL) {
-		if (t->hostname != NULL)
-			free((void *)t->hostname);
-		if (t->fsngroupname != NULL)
-			free((void *)t->fsngroupname);
-		free((void *)t);
+		free(t->hostname);
+		free(t->fsngroupname);
+		free(t);
 	}
 }
 
@@ -176,13 +174,14 @@ destroy_tuples(gfarm_fsngroup_tuples_t t)
 		(struct gfarm_fsngroup_tuples_record *)t;
 
 	if (tr != NULL) {
-		int i;
-
-		for (i = 0; i < tr->n; i++) {
-			destroy_tuple(tr->tuples[i]);
+		if (tr->tuples != NULL) {
+			int i;
+			for (i = 0; i < tr->n; i++) {
+				destroy_tuple(tr->tuples[i]);
+			}
+			free(tr->tuples);
 		}
-
-		free((void *)tr);
+		free(tr);
 	}
 }
 
@@ -243,10 +242,9 @@ destroy_text(gfarm_fsngroup_text_t t)
 		int i;
 
 		for (i = 0; i < tr->n; i++) {
-			if (tr->lines[i] != NULL)
-				free((void *)tr->lines[i]);
+			free(tr->lines[i]);
 		}
-		free((void *)tr);
+		free(tr);
 	}
 }
 
@@ -340,6 +338,8 @@ scan_host_cache(iteration_filter_func f, void *arg,
 		void *a_elem;
 		char *dst;
 		int stop_iter;
+		int of;
+		size_t sz;
 
 		if (alloc_limit == 0)
 			max_alloc = nhosts;
@@ -347,7 +347,10 @@ scan_host_cache(iteration_filter_func f, void *arg,
 			max_alloc =
 				(alloc_limit < nhosts) ? alloc_limit : nhosts;
 
-		ret = (char *)malloc(esize * max_alloc);
+		of = 0;
+		sz = gfarm_size_mul(&of, esize, max_alloc);
+		if (of == 0 && sz > 0)
+			ret = (char *)malloc(sz);
 		if (ret == NULL) {
 			gflog_error(GFARM_MSG_UNFIXED,
 				"%s: insufficient memory to "
@@ -798,10 +801,8 @@ gfm_server_fsngroup_get_by_hostname(
 			peer, diag, e, "");
 
 bailout:
-	if (hostname != NULL)
-		free((void *)hostname);
-	if (fsngroupname != NULL)
-		free((void *)fsngroupname);
+	free(hostname);
+	free(fsngroupname);
 
 	return (e);
 }
@@ -876,10 +877,8 @@ reply:
 	e = gfm_server_put_reply(peer, diag, e, "");
 
 bailout:
-	if (hostname != NULL)
-		free((void *)hostname);
-	if (fsngroupname != NULL)
-		free((void *)fsngroupname);
+	free(hostname);
+	free(fsngroupname);
 
 	return (e);
 }

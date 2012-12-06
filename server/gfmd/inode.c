@@ -913,60 +913,65 @@ update_replicas(struct inode *inode, struct host *spool_host,
 			/*
 			 * Convert the to_be_excluded into an array.
 			 */
-			struct host ** exhosts = NULL;
-			struct file_copy *orig = to_be_excluded;
-			size_t nexhosts = 0;
+			char **exhosts = NULL;
+			struct file_copy *orig = NULL;
+			size_t nexhosts = 1;
 
-			if (orig != NULL) {
+			if ((orig = to_be_excluded) != NULL) {
 				do {
 					nexhosts++;
 					orig = orig->host_next;
 				} while (orig != NULL);
-				if (nexhosts < 1)
-					goto array_done;
-				exhosts = (struct host **)alloca(
-					sizeof(struct host *) * nexhosts);
-				if (exhosts == NULL) {
-					gflog_error(GFARM_MSG_UNFIXED,
-						"update_replicas(): "
-						"Insufficient memory to "
-						"allocate %zu of sturct "
-						"host *.",
-						nexhosts);
-					return;
-				}
+			}
+			GFARM_MALLOC_ARRAY(exhosts, nexhosts);
+			if (exhosts == NULL) {
+				gflog_error(GFARM_MSG_UNFIXED,
+					"update_replicas(): "
+					"Insufficient memory to allocate "
+					"%zu of sturct host *.",
+					nexhosts);
+				goto replicate_on_new_node_done;
+			}
 
-				orig = to_be_excluded;
-				nexhosts = 0;
+			nexhosts = 0;
+			if ((orig = to_be_excluded) != NULL) {
 				do {
-					exhosts[nexhosts++] = orig->host;
+					if (orig->host != NULL)
+						exhosts[nexhosts++] =
+							host_name(orig->host);
 					orig = orig->host_next;
 				} while (orig != NULL);
 			}
+			exhosts[nexhosts++] = host_name(spool_host);
 
-		array_done:
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"update_replicas(): about to schedule "
 				"replicainfo-based replication for inode "
 				"%lld@%s.",
 				(long long)inode_get_number(inode),
-				host_name(spool_host));
+				exhosts[nexhosts - 1]);
 
 			gfarm_server_fsngroup_replicate_file(
 				inode, spool_host, replicainfo,
 				exhosts, nexhosts);
 
+			free(exhosts);
+
 		} else if (nreplicas < desired_replica_number) {
+
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"update_replicas(): about to schedule "
 				"ncopy-based replication for inode %lld@%s.",
 				(long long)inode_get_number(inode),
 				host_name(spool_host));
+
 			make_replicas_except(inode, spool_host,
 			    desired_replica_number, to_be_excluded);
+
 		}
 	}
 
+replicate_on_new_node_done:
 	/*
 	 * After scheduling replica creation to new hosts, start
 	 * updation of the existing replicas on the hosts in the

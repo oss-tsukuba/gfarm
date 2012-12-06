@@ -164,7 +164,7 @@ gfarm_server_process_record_replication_attribute(
 void
 gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	struct host *src_host, char *info,
-	struct host **exclusions, size_t nexclusions)
+	char **exclusions, size_t nexclusions)
 {
 	(void)inode;
 	(void)exclusions;

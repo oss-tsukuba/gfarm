@@ -91,7 +91,7 @@ static gfarm_error_t
 gfarm_none_fsngroup_modify(gfarm_uint64_t seqnum,
 	struct db_fsngroup_modify_arg *arg)
 {
-	free((void *)arg);
+	free(arg);
 	return (GFARM_ERR_OPERATION_NOT_SUPPORTED);
 }
 

@@ -383,11 +383,9 @@ db_journal_host_modify_arg_destroy(struct db_host_modify_arg *arg)
 static void
 db_journal_fsngroup_modify_arg_destroy(struct db_fsngroup_modify_arg *arg)
 {
-	if (arg->hostname != NULL)
-		(void)free((void *)arg->hostname);
-	if (arg->fsngroupname != NULL)
-		(void)free((void *)arg->fsngroupname);
-	free((void *)arg);
+	free(arg->hostname);
+	free(arg->fsngroupname);
+	free(arg);
 }
 
 static void

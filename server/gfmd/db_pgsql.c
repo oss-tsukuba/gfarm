@@ -1312,20 +1312,22 @@ static char *
 gen_scheme_check_query(const char *tablename,
 	size_t ncolumns, const char * const columns[])
 {
-	size_t sz = strlen(tablename) + 2 + 32 + 1;
+	int of = 0;
+	size_t sz = gfarm_size_add(&of, strlen(tablename), 2 + 32 + 1);
 		/* for "SELECT " + "FROM " + "LIMIT 1" + '\0' */
 	int i;
 	char *tmp = NULL;
 	int offset = 0;
 
 	assert((tablename != NULL && tablename[0] != '\0') &&
-		(ncolumns > 0));
+		(ncolumns > 0) && (of == 0));
 
-	for (i = 0; i < ncolumns; i++) {
-		sz += strlen(columns[i]) + 2;	/* for ", " */
+	for (i = 0, of = 0; i < ncolumns && of == 0; i++) {
+		/* two for ", " */
+		sz = gfarm_size_add(&of, sz, (strlen(columns[i]) + 2));
 	}
-
-	tmp = (char *)malloc(sz);
+	if (of == 0 && sz > 0)
+		tmp = (char *)malloc(sz);
 	if (tmp == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
 			"Can't allocate an SQL query string "
@@ -1440,8 +1442,7 @@ gfarm_pgsql_check_scheme(const char *tablename,
 	}
 
 bailout:
-	if (sql != NULL)
-		free((void *)sql);
+	free(sql);
 	if (res != NULL)
 		PQclear(res);
 
