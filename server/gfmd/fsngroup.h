@@ -2,6 +2,9 @@
  * $Id$
  */
 
+#define FILTER_CHECK_VALID	0x1
+#define FILTER_CHECK_UP		0x2
+
 /*
  * Exported data types:
  */
@@ -20,6 +23,7 @@ void gfm_fsngroup_tuples_destroy(gfarm_fsngroup_tuples_t);
 
 size_t gfm_fsngroup_text_size(gfarm_fsngroup_text_t);
 const char *gfm_fsngroup_text_line(gfarm_fsngroup_text_t, size_t);
+const char * const *gfm_fsngroup_text_lines(gfarm_fsngroup_text_t);
 void gfm_fsngroup_text_destroy(gfarm_fsngroup_text_t);
 gfarm_fsngroup_text_t gfm_fsngroup_text_allocate(size_t, char **);
 
