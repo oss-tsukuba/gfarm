@@ -178,7 +178,7 @@ update_host_table()
 	defline=$?
 	if test ${defline} -gt 0; then
 		def=`tail -n +${defline} ${config_dir}/gfarm.sql | head -n 1`
-		if test "X${def}" == "X"; then
+		if test "X${def}" = "X"; then
 			return 1
 		fi
 		echo "BEGIN; ALTER TABLE Host ADD ${def}; COMMIT;" | \
