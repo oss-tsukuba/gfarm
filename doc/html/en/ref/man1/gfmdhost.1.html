@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
-> [-l] [-P <TT
+>  [-l] [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -47,7 +47,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
-> {-c | -m} [-P <TT
+>  {-c | -m} [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -74,7 +74,7 @@ CLASS="REPLACEABLE"
 ><B
 CLASS="COMMAND"
 >gfmdhost</B
-> {-d} [-P <TT
+>  {-d} [-P <TT
 CLASS="REPLACEABLE"
 ><I
 >path</I
@@ -128,7 +128,7 @@ CLASS="COMMAND"
 CLASS="VARIABLELIST"
 ><DL
 ><DT
->&#60;none&#62;</DT
+>&lt;none&gt;</DT
 ><DD
 ><P
 >        If no function is specified,
@@ -152,12 +152,11 @@ CLASS="OPTION"
 ><P
 ><CODE
 CLASS="OPTION"
->Connection State (+|-)</CODE
+>Connection State (+|-|?|x|e)</CODE
 ></P
 ><P
 >        "+" means that the gfmd is connected to the master gfmd.
         "-" means that the gfmd is not connected to the master gfmd.
-	This column for the master gfmd is always "+".
 	"?" means either the gfmd state is unknown because it's just
 	after the connection was established, or the master gfmd is
 	Gfarm-2.5.0, but this gfmdhost command is 2.5.1 or later.
@@ -166,8 +165,9 @@ CLASS="OPTION"
         metadata changes, thus, manual synchronization via dump and
 	restore of the backend database is necessary.
 	"e" means an error happened, and log file must be checked manually.
-	Both "x" and "e" are displayed even after the slave gfmd is down.
-	Master gfmd is always marked as "+".
+	In the case of "x" or "e", it may be displayed even when the
+	slave gfmd is down.
+	This column for the master gfmd is always "+".
       </P
 ><P
 ><CODE
@@ -269,11 +269,9 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-C</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->cluster-name</I
-></TT
+>cluster-name</CODE
 ></DT
 ><DD
 ><P
@@ -294,11 +292,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-p</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->port-number</I
-></TT
+>port-number</CODE
 ></DT
 ><DD
 ><P
@@ -327,11 +323,9 @@ CLASS="PARAMETER"
 ><CODE
 CLASS="OPTION"
 >-P</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->path</I
-></TT
+>path</CODE
 ></DT
 ><DD
 ><P
