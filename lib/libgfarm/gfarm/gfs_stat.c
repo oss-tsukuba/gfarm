@@ -144,6 +144,8 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 	return (e);
 }
 
+#ifndef __KERNEL__
+
 gfarm_error_t
 gfs_fstat(GFS_File gf, struct gfs_stat *s)
 {
@@ -170,6 +172,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 
 	return (e);
 }
+#endif /* __KERNEL__ */
 
 void
 gfs_stat_display_timers(void)

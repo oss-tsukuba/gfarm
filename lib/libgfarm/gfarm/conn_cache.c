@@ -14,6 +14,18 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 
+#ifndef __KERNEL__
+#define	GFSP_CONN_MUTEX
+#define	GFSP_CONN_INIT(conn)
+#define	GFSP_CONN_LOCK(conn)
+#define	GFSP_CONN_UNLOCK(conn)
+#else /* __KERNEL__ */
+#define	GFSP_CONN_MUTEX		struct mutex conn_lock;
+#define	GFSP_CONN_INIT(conn)	mutex_init(&(conn)->conn_lock);
+#define	GFSP_CONN_LOCK(conn)	mutex_lock(&(conn)->conn_lock);
+#define	GFSP_CONN_UNLOCK(conn)	mutex_unlock(&(conn)->conn_lock);
+#endif /* __KERNEL__ */
+
 struct gfp_cached_connection {
 	/*
 	 * must be the first member of struct gfp_cached_connection.
@@ -29,6 +41,7 @@ struct gfp_cached_connection {
 	void *connection_data;
 
 	void (*dispose_connection_data)(void *);
+	GFSP_CONN_MUTEX
 };
 
 void
@@ -126,6 +139,16 @@ gfp_cached_connection_set_username(struct gfp_cached_connection *connection,
 	free(olduser);
 	return (GFARM_ERR_NO_ERROR);
 }
+void
+gfp_connection_lock(struct gfp_cached_connection *connection)
+{
+	GFSP_CONN_LOCK(connection)
+}
+void
+gfp_connection_unlock(struct gfp_cached_connection *connection)
+{
+	GFSP_CONN_UNLOCK(connection)
+}
 
 gfarm_error_t
 gfp_uncached_connection_new(const char *hostname, int port,
@@ -163,6 +186,8 @@ gfp_uncached_connection_new(const char *hostname, int port,
 
 	connection->connection_data = NULL;
 	connection->dispose_connection_data = NULL;
+	GFSP_CONN_INIT(connection)
+	gfp_connection_lock(connection);
 	*connectionp = connection;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -372,9 +397,11 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 		connection->hash_entry = entry;
 		connection->connection_data = NULL;
 		connection->dispose_connection_data = NULL;
+		GFSP_CONN_INIT(connection)
 	}
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 	*connectionp = connection;
+	gfp_connection_lock(connection);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -385,6 +412,7 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	int removable;
 	static const char diag[] = "gfp_cached_or_uncached_connection_free";
 
+	gfp_connection_unlock(connection);
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	removable = gfarm_lru_cache_delref_entry(&cache->lru_list,
 	    &connection->lru_entry);

@@ -30,6 +30,7 @@
 #include "gfnetdb.h"
 #include "lru_cache.h"
 #include "queue.h"
+#include "thrsubr.h"
 
 #include "context.h"
 #include "gfp_xdr.h"
@@ -243,6 +244,8 @@ gfm_client_connection_gc(void)
 	gfp_cached_connection_gc_all(&staticp->server_cache);
 }
 
+#ifndef __KERNEL__
+
 static gfarm_error_t
 gfm_client_nonblock_sock_connect(const char *hostname, int port,
 	const char *source_ip, int *sockp, struct addrinfo **aip)
@@ -313,6 +316,7 @@ gfm_client_nonblock_sock_connect(const char *hostname, int port,
 	*aip = res;
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif /* !__KERNEL__ */
 
 struct gfm_client_connect_info {
 	int ms_idx;
@@ -321,6 +325,7 @@ struct gfm_client_connect_info {
 	struct gfarm_metadb_server *ms;
 };
 
+#ifndef __KERNEL__
 static gfarm_error_t
 gfm_alloc_connect_info(int n, struct gfm_client_connect_info **cisp,
 	struct pollfd **pfdsp)
@@ -344,6 +349,7 @@ gfm_alloc_connect_info(int n, struct gfm_client_connect_info **cisp,
 	*pfdsp = pfds;
 	return (GFARM_ERR_NO_ERROR);
 }
+
 
 static gfarm_error_t
 gfm_client_connect_single(const char *hostname, int port,
@@ -430,6 +436,9 @@ gfm_client_connect_multiple(const char *hostname, int port,
 	*nfdp = nfd;
 	return (GFARM_ERR_NO_ERROR);
 }
+#else /* __KERNEL__ */
+#define gfm_client_connect_multiple	NULL
+#endif /* __KERNEL__ */
 
 #ifdef HAVE_GSI
 static gfarm_error_t
@@ -474,7 +483,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	const char *hostname, *user;
 	struct gfarm_metadb_server *ms = NULL;
 	struct pollfd *pfd, *pfds = NULL;
-	struct addrinfo *res;
+	struct addrinfo *res = NULL;
 	struct gfm_client_connect_info *ci, *cis = NULL;
 	struct timeval timeout;
 	struct gfarm_filesystem *fs;
@@ -482,6 +491,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	hostname = gfp_cached_connection_hostname(cache_entry);
 	port = gfp_cached_connection_port(cache_entry);
 	user = gfp_cached_connection_username(cache_entry);
+#ifndef __KERNEL__
 	/* connect_op is
 	 *   gfm_client_connect_single or
 	 *   gfm_client_connect_multiple
@@ -492,7 +502,6 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	gettimeofday(&timeout, NULL);
 	timeout.tv_sec += GFM_CLIENT_CONNECT_TIMEOUT;
 	sock = -1;
-	res = NULL;
 	e = GFARM_ERR_NO_ERROR;
 	do {
 		errno = 0;
@@ -544,7 +553,15 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 	}
 	if (e != GFARM_ERR_NO_ERROR)
 		goto end;
-
+#else
+	{
+		int err;
+		if ((err = gfsk_client_connect(hostname, port, source_ip, user,
+			 &sock)) != 0){
+			return (gfarm_errno_to_error(err > 0 ? err : -err));
+		}
+	}
+#endif
 	GFARM_MALLOC(gfm_server);
 	if (gfm_server == NULL) {
 		close(sock);
@@ -573,6 +590,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			gfarm_error_string(e));
 		goto end;
 	}
+#ifndef __KERNEL__
 	/* XXX We should explicitly pass the original global username too. */
 	e = gfarm_auth_request(gfm_server->conn,
 	    GFM_SERVICE_TAG, res->ai_canonname,
@@ -604,6 +622,7 @@ gfm_client_connection0(struct gfp_cached_connection *cache_entry,
 			    gfarm_error_string(e1));
 	}
 #endif
+#endif /* __KERNEL__ */
 	gfm_server->cache_entry = cache_entry;
 	gfp_cached_connection_set_data(cache_entry, gfm_server);
 	gfm_server->pid = 0;
@@ -618,7 +637,6 @@ end:
 	free(pfds);
 	return (e);
 }
-
 /*
  * gfm_client_connection_acquire - create or lookup a cached connection
  */
@@ -769,6 +787,8 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 	return (e);
 }
 
+#ifndef __KERNEL__	/* server only */
+
 /*
  * gfm_client_connect - create an uncached connection
  */
@@ -811,6 +831,7 @@ gfm_client_connect_with_seteuid(const char *hostname, int port,
 	}
 	return (e);
 }
+#endif /* __KERNEL__ */
 
 static gfarm_error_t
 gfm_client_connection_dispose(void *connection_data)
@@ -861,6 +882,16 @@ void
 gfm_client_terminate(void)
 {
 	gfp_cached_connection_terminate(&staticp->server_cache);
+}
+void
+gfm_client_connection_unlock(struct gfm_connection *gfm_server)
+{
+	gfp_connection_unlock(gfm_server->cache_entry);
+}
+void
+gfm_client_connection_lock(struct gfm_connection *gfm_server)
+{
+	gfp_connection_lock(gfm_server->cache_entry);
 }
 
 static void
@@ -3602,6 +3633,8 @@ gfm_client_process_free(struct gfm_connection *gfm_server)
 	return (gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_FREE, "/"));
 }
 
+#ifndef __KERNEL__	/* gfsd only */
+
 gfarm_error_t
 gfm_client_process_set(struct gfm_connection *gfm_server,
 	gfarm_int32_t keytype, const char *sharedkey, size_t sharedkey_size,
@@ -3629,6 +3662,7 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 	}
 	return (e);
 }
+#endif /* __KERNEL__ */
 
 /*
  * compound request - convenience function

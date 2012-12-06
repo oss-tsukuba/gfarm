@@ -16,7 +16,7 @@
 #define GFLOG_PRINTF_ARG(M, N)
 #endif
 
-#if __STDC_VERSION__ < 199901L && !defined(__func__)
+#if (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901L) && !defined(__func__)
 #if __GNUC__ >= 2
 #define __func__ __FUNCTION__
 #else

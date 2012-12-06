@@ -9,6 +9,7 @@
 
 char GFS_SERVICE_TAG[] = "gfarm-data";
 
+#ifndef __KERNEL__
 /*
  * Not really public interface,
  * but common routine called from both client and server.
@@ -49,3 +50,4 @@ gfs_digest_calculate_local(int fd, char *buffer, size_t buffer_size,
 
 	return (0);
 }
+#endif /* __KERNEL__ */

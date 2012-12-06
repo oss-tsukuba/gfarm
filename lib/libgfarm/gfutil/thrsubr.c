@@ -61,6 +61,8 @@ gfarm_mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 		    where, what, strerror(err));
 }
 
+#ifndef __KERNEL__
+
 void
 gfarm_cond_init(pthread_cond_t *cond, const char *where, const char *what)
 {
@@ -134,3 +136,4 @@ gfarm_cond_destroy(pthread_cond_t *cond, const char *where, const char *what)
 		gflog_fatal(GFARM_MSG_1001489, "%s: %s cond destroy: %s",
 		    where, what, strerror(err));
 }
+#endif /* __KERNEL__ */

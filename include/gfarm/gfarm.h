@@ -2,6 +2,10 @@
 extern "C" {
 #endif
 
+#ifdef __KERNEL__
+#include <linux/kernel.h>
+#endif /* __KERNEL__ */
+
 #include <gfarm/gfarm_config.h>
 #include <gfarm/gflog.h>
 #include <gfarm/error.h>

@@ -320,6 +320,7 @@ gfarm_hostspec_to_string(struct gfarm_hostspec *hostspec,
 	return;
 }
 
+#ifndef __KERNEL__
 gfarm_error_t
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {
@@ -372,6 +373,7 @@ gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 	gfarm_freeaddrinfo(res0);
 	return (GFARM_ERRMSG_REVERSE_LOOKUP_NAME_DOES_NOT_MATCH);
 }
+#endif /* __KERNEL__ */
 
 void
 gfarm_sockaddr_to_string(struct sockaddr *addr, char *string, size_t size)

@@ -1,4 +1,4 @@
-extern struct gfarm_context {
+struct gfarm_context {
 	/* global variables in config.c */
 	char *metadb_server_name;
 	int metadb_server_port;
@@ -42,7 +42,9 @@ extern struct gfarm_context {
 	struct gfarm_host_static *host_static;
 	struct gfarm_auth_config_static *auth_config_static;
 	struct gfarm_auth_common_static *auth_common_static;
+#ifdef HAVE_GSI
 	struct gfarm_auth_common_gsi_static *auth_common_gsi_static;
+#endif /* HAVE_GSI */
 	struct gfarm_auth_client_static *auth_client_static;
 	struct gfarm_schedule_static *schedule_static;
 	struct gfarm_gfs_pio_static *gfs_pio_static;
@@ -51,7 +53,13 @@ extern struct gfarm_context {
 	struct gfarm_gfs_unlink_static *gfs_unlink_static;
 	struct gfarm_filesystem_static *filesystem_static;
 	struct gfarm_gfs_xattr_static *gfs_xattr_static;
-} *gfarm_ctxp;
+};
+#ifndef __KERNEL__
+extern struct gfarm_context *gfarm_ctxp;
+#else /* __KERNEL__ */
+#include "gfsk.h"
+#define gfarm_ctxp (gfsk_task_ctxp->gk_gfarm_ctxp)
+#endif /* __KERNEL__ */
 
 gfarm_error_t gfarm_context_init(void);
 void          gfarm_context_term(void);

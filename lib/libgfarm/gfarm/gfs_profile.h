@@ -1,4 +1,8 @@
+#ifndef __KERNEL__
 #define gfs_profile(x) if (gfarm_ctxp->profile) { x; }
+#else /* __KERNEL__ */
+#define gfs_profile(x) 
+#endif /* __KERNEL__ */
 
 void gfs_profile_set(void);
 void gfs_profile_unset(void);

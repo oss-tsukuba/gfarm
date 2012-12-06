@@ -131,6 +131,7 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}
+#ifndef __KERNEL__
 	gfl = gfs_pio_file_list_alloc();
 	if (gfl == NULL) {
 		free(fs);
@@ -140,7 +141,9 @@ gfarm_filesystem_new(struct gfarm_filesystem **fsp)
 		    gfarm_error_string(e));
 		return (e);
 	}
-
+#else
+	gfl = NULL;
+#endif
 	fs->next = staticp->filesystems.next;
 	fs->servers = NULL;
 	fs->nservers = 0;

@@ -15,9 +15,10 @@ gfp_conn_hash_index(const void *key, int keylen)
 {
 	const struct gfp_conn_hash_id *id = key;
 
-	/* username is not key */
+	/* username is key xxxx username is not key xxxxx */
 	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
-	    id->port * 3);
+		gfarm_hash_casefold(id->username, strlen(id->username)) +
+		id->port * 3);
 }
 
 static int
@@ -28,7 +29,8 @@ gfp_conn_hash_equal(const void *key1, int key1len,
 
 	/* username is not key */
 	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
-	    id1->port == id2->port);
+		strcasecmp(id1->username, id2->username) == 0 &&
+		id1->port == id2->port);
 }
 
 const char *
@@ -113,6 +115,7 @@ gfp_conn_hash_id_enter_noalloc(struct gfarm_hash_table **hashtabp,
 
 	assert(idp);
 	assert(idp->hostname);
+	assert(idp->username);
 	assert(idp->port > 0);
 	entry = gfarm_hash_enter(*hashtabp, idp, sizeof(*idp), entrysize,
 	    &created);

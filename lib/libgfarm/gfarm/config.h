@@ -135,6 +135,7 @@ void gfs_display_timers(void);
 int gfarm_xattr_caching_patterns_number(void);
 char **gfarm_xattr_caching_patterns(void);
 
+gfarm_error_t gfarm_set_local_user_for_this_uid(uid_t);
 
 /* for client */
 struct gfs_connection;
@@ -149,3 +150,7 @@ gfarm_error_t gfarm_client_process_reset(struct gfs_connection *,
 gfarm_error_t gfarm_server_initialize(char *, int *, char ***);
 gfarm_error_t gfarm_server_terminate(void);
 gfarm_error_t gfarm_server_config_read(void);
+
+/* for linux helper */
+extern void(*gfarm_ug_maps_notify)(const char *, int , int , const char *);
+

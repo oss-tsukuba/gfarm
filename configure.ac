@@ -1176,6 +1176,19 @@ AS_HELP_STRING([--enable-xmlattr],[support XML extended attributes and XPath sea
 fi],[])
 
 ###
+###  --enable-linuxkernel		support Linux kernel module utils
+###
+
+AC_ARG_ENABLE(linuxkernel,
+AS_HELP_STRING([--enable-linuxkernel],[support Linux kernel module utils.[[default=no]]]),
+[if test "${enable_linuxkernel}" = "yes"; then
+	# ug_idmapd uses libevent
+	AC_CHECK_LIB(event, event_init)
+	AC_CHECK_HEADERS(event.h)
+	linuxkernel_targets='linux'
+fi],[linuxkernel_targets=''])
+AC_SUBST(linuxkernel_targets)
+
 ### --with-private-srcdir
 ###
 

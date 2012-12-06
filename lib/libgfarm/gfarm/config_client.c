@@ -118,6 +118,8 @@ gfarm_parse_env_client(void)
 	}
 }
 
+
+#ifndef __KERNEL__
 /*
  * the following function is for client,
  * server/daemon process shouldn't call it.
@@ -166,6 +168,7 @@ gfarm_initialize(int *argcp, char ***argvp)
 
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif /* __KERNEL__ */
 
 static gfarm_error_t
 gfarm_client_process_set_or_reset(struct gfs_connection *gfs_server,
@@ -190,6 +193,7 @@ gfarm_client_process_set_or_reset(struct gfs_connection *gfs_server,
 	    key_size, pid));
 }
 
+#ifndef __KERNEL__	/* pio, replicate */
 gfarm_error_t
 gfarm_client_process_set(struct gfs_connection *gfs_server,
 	struct gfm_connection *gfm_server)
@@ -205,6 +209,7 @@ gfarm_client_process_reset(struct gfs_connection *gfs_server,
 	return (gfarm_client_process_set_or_reset(gfs_server, gfm_server,
 	    gfs_client_process_reset));
 }
+#endif /* __KERNEL__ */
 
 /*
  * the following function is for client,

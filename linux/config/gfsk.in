@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# Init file for Gfarm Linux kernel module
+#
+# chkconfig: 2345 93 13
+# description: Gfarm Linux kernel module
+#
+# processname: ug_idmapd
+#
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+prog="ug_idmapd"
+FILE=$prog
+
+DAEMON="@prefix@/bin/$prog"
+PIDFILE="/var/run/${FILE}.pid"
+LOCKFILE="/var/lock/subsys/$FILE"
+warning_facility=local0
+warning_priority=notice
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+call_daemon()
+{
+	# initlog is deprecated and warning is displayed since Fedora Core 4.
+	if egrep -q '^[^#]*[     ]initlog' /etc/init.d/functions; then
+		initlog $INITLOG_ARGS -c "$*"
+	else
+		$*
+	fi
+}
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+start()
+{
+	echo -n "Starting $FILE:"
+	checkstatus > /dev/null
+	if [ $? -eq 0 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	/sbin/modprobe gfarm2
+	if [ $? -ne 0 ]; then
+		failure
+		return 1
+	fi
+	
+	# increase the maximum number of open file descriptors
+	ulimit -n 16384 2> /dev/null
+	call_daemon $DAEMON -P $PIDFILE && success || failure
+	RETVAL=$?
+	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
+	echo
+	return $RETVAL
+}
+
+stop()
+{
+	echo -n "Stopping $FILE:"
+	checkstatus > /dev/null
+	if [ $? -eq 3 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	if [ -f "$PIDFILE" ]; then
+		pid=`cat "$PIDFILE"`
+		kill -TERM $pid && success || failure
+		RETVAL=$?
+		if [ $RETVAL -eq 0 ]; then
+			while kill -0 $pid 2>/dev/null; do
+				echo "old $FILE (pid $pid) is still running, sleeping..."
+				logger -p ${warning_facility}.${warning_priority} "old $FILE (pid $pid) is still running, sleeping..."
+				sleep 1
+			done
+		fi
+		if [ $RETVAL -eq 0 ] ||
+		   [ ! -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
+			rm -f "$PIDFILE" "$LOCKFILE"
+		fi
+
+		/sbin/rmmod gfarm2
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		failure
+		RETVAL=1
+	fi
+	echo
+	return $RETVAL
+}
+
+checkstatus()
+{
+	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
+	then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+		return 0
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+		return 1
+	elif [ -f "$LOCKFILE" ]; then
+		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
+		return 2
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		return 3
+	fi
+}
+
+usage()
+{
+	echo $"Usage: $0 {start|stop|restart|status}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
+esac
+
+exit $RETVAL

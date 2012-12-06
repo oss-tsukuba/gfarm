@@ -6,12 +6,14 @@
 
 static int sigpipe_is_ignored = 0;
 
+#ifndef __KERNEL__
 void
 gfarm_sigpipe_ignore(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 	sigpipe_is_ignored = 1;
 }
+#endif /* __KERNEL__ */
 
 ssize_t
 gfarm_send_no_sigpipe(int fd, const void *data, size_t length)
