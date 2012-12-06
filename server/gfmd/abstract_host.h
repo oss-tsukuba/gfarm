@@ -1,6 +1,7 @@
 struct abstract_host;
 struct host;
 struct mdhost;
+struct peer;
 
 struct abstract_host_ops {
 	/* downcast functions */
