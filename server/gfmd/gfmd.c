@@ -949,11 +949,11 @@ accepting_loop(int accepting_socket)
 		   (struct sockaddr *)&client_addr, &client_addr_size);
 		if (client_socket < 0) {
 			if (errno == EMFILE) {
-				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				gflog_reduced_warning(GFARM_MSG_1003607,
 				    &emfile_state,
 				    "accept: %s", strerror(EMFILE));
 			} else if (errno == ENFILE) {
-				gflog_reduced_warning(GFARM_MSG_UNFIXED,
+				gflog_reduced_warning(GFARM_MSG_1003608,
 				    &enfile_state,
 				    "accept: %s", strerror(ENFILE));
 			} else if (errno != EINTR) {

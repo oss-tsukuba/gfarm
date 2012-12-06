@@ -52,6 +52,8 @@ gfarm_foreach_directory_hierarchy_internal(
 			if (path == NULL) {
 				if (e_save == GFARM_ERR_NO_ERROR)
 					e_save = GFARM_ERR_NO_MEMORY;
+				gflog_debug(GFARM_MSG_1003588,
+				    "%s%s%s: no memory", file, slash, d);
 				continue;
 			}
 			sprintf(path, "%s%s%s", file, slash, d);

@@ -377,7 +377,7 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 			break;
 
 		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003612,
 		    "%s: (%s, %lld:%lld): connection aborted: %s",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(e));
@@ -418,7 +418,7 @@ peer_add_ref(struct peer *peer)
 	    diag, "peer_closing_queue");
 	++peer->refcount;
 #ifdef PEER_REFCOUNT_DEBUG
-	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_add_ref(%p):%d",
+	gflog_info(GFARM_MSG_1003613, "%s(%d):%s(): peer_add_ref(%p):%d",
 	    file, line, func, peer, peer->refcount);
 #endif
 	gfarm_mutex_unlock(&peer_closing_queue.mutex,
@@ -446,7 +446,7 @@ peer_del_ref(struct peer *peer)
 		    diag, "ready to close");
 	}
 #ifdef PEER_REFCOUNT_DEBUG
-	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): peer_del_ref(%p):%d",
+	gflog_info(GFARM_MSG_1003614, "%s(%d):%s(): peer_del_ref(%p):%d",
 	    file, line, func, peer, peer->refcount);
 #endif
 

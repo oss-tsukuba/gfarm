@@ -96,19 +96,19 @@ static gfarm_error_t
 
 	GFARM_MALLOC(c);
 	if (c == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003652,
 		    "%s: no memory for journal send closure", diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((err = pthread_mutex_init(&c->send_mutex, NULL)) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003653,
 		    "%s: pthread_mutex_init(%s): %s",
 		    diag, SEND_MUTEX_DIAG, strerror(err));
 		free(c);
 		return (gfarm_errno_to_error(err));
 	}
 	if ((err = pthread_cond_init(&c->send_end_cond, NULL)) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003654,
 		    "%s: pthread_cond_init(%s): %s",
 		    diag, SEND_END_COND_DIAG, strerror(err));
 		gfarm_mutex_destroy(&c->send_mutex, diag, SEND_MUTEX_DIAG);
@@ -198,12 +198,12 @@ gfmdc_peer_record_alloc(const char *diag,
 
 	GFARM_MALLOC(gfmdc_peer);
 	if (gfmdc_peer == NULL) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003655,
 		    "%s: no memory for per peer record", diag);
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((err = pthread_mutex_init(&gfmdc_peer->mutex, NULL)) != 0) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_error(GFARM_MSG_1003656,
 		    "%s: pthread_mutex_init(%s): %s",
 		    diag, PEER_RECORD_MUTEX_DIAG, strerror(err));
 		free(gfmdc_peer);

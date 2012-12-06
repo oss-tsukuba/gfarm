@@ -420,7 +420,7 @@ mdhost_get_peer(struct mdhost *mh)
 #ifdef PEER_REFCOUNT_DEBUG
 	struct peer *peer = abstract_host_get_peer(&mh->ah, diag);
 
-	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): mdhost_get_peer():%p",
+	gflog_info(GFARM_MSG_1003650, "%s(%d):%s(): mdhost_get_peer():%p",
 	    file, line, func, peer);
 	return (peer);
 #else
@@ -438,7 +438,7 @@ mdhost_put_peer(struct mdhost *mh, struct peer *peer)
 {
 	abstract_host_put_peer(&mh->ah, peer);
 #ifdef PEER_REFCOUNT_DEBUG
-	gflog_info(GFARM_MSG_UNFIXED, "%s(%d):%s(): mdhost_put_peer(%p)",
+	gflog_info(GFARM_MSG_1003651, "%s(%d):%s(): mdhost_put_peer(%p)",
 	    file, line, func, peer);
 #endif
 }

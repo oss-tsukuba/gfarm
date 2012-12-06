@@ -328,7 +328,7 @@ connect_gfm_server0(int use_timeout)
 		
 		if (e != GFARM_ERR_NO_ERROR) {
 			if (timed_out) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003668,
 				    "connecting to gfmd at %s:%d failed: %s",
 				    gfarm_metadb_server_name,
 				    gfarm_metadb_server_port,
@@ -363,7 +363,7 @@ connect_gfm_server0(int use_timeout)
 				    gfarm_error_string(e));
 				return (e);
 			}
-			gflog_reduced_error(GFARM_MSG_UNFIXED, &hnamelog,
+			gflog_reduced_error(GFARM_MSG_1003669, &hnamelog,
 			    "cannot set canonical hostname of this node (%s), "
 			    "sleep %d sec: %s", canonical_self_name,
 			    sleep_interval, gfarm_error_string(e));
@@ -3911,7 +3911,7 @@ back_channel_server(void)
 				break;
 			}
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_error(GFARM_MSG_UNFIXED,
+				gflog_error(GFARM_MSG_1003675,
 				    "back channel disconnected "
 				    "during a reply: %s",
 				    gfarm_error_string(e));
