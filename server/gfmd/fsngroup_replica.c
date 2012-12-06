@@ -64,14 +64,6 @@
 #endif
 
 /*****************************************************************************/
-/*
- * Copied from inode.c
- */
-struct file_copy {
-	struct file_copy *host_next;
-	struct host *host;
-	int flags;
-};
 
 typedef struct {
 	struct process *process;
@@ -171,43 +163,12 @@ gfarm_server_process_record_replication_attribute(
 
 void
 gfarm_server_fsngroup_replicate_file(struct inode *inode,
-	struct host *src_host, char *info, struct file_copy *exclusions)
+	struct host *src_host, char *info,
+	struct host **exclusions, size_t nexclusions)
 {
-	struct host **ehosts = NULL;
-	size_t nehosts = 0;
-
 	(void)inode;
-
-	/*
-	 * Convert a linked-list into an array to increase search speed.
-	 */
-	if (exclusions != NULL) {
-		struct file_copy *orig = exclusions;
-
-		do {
-			nehosts++;
-			orig = orig->host_next;
-		} while (orig != NULL);
-
-		ehosts = (struct host **)alloca(
-			sizeof(struct hosts *) * nehosts);
-		if (ehosts == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"gfarm_server_fsngroup_replicate_file(): "
-				"Insufficient memory to allocate "
-				"%zu of sturct host *.",
-				nehosts);
-			return;
-		}
-
-		orig = exclusions;
-		nehosts = 0;
-
-		do {
-			ehosts[nehosts++] = orig->host;
-			orig = orig->host_next;
-		} while (orig != NULL);
-	}
+	(void)exclusions;
+	(void)nexclusions;
 
 	/*
 	 * Not yet.

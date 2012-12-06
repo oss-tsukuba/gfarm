@@ -910,15 +910,52 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 */
 	if (start_replication && spool_host != NULL) {
 		if (replicainfo != NULL) {
+			/*
+			 * Convert the to_be_excluded into an array.
+			 */
+			struct host ** exhosts = NULL;
+			struct file_copy *orig = to_be_excluded;
+			size_t nexhosts = 0;
+
+			if (orig != NULL) {
+				do {
+					nexhosts++;
+					orig = orig->host_next;
+				} while (orig != NULL);
+				if (nexhosts < 1)
+					goto array_done;
+				exhosts = (struct host **)alloca(
+					sizeof(struct host *) * nexhosts);
+				if (exhosts == NULL) {
+					gflog_error(GFARM_MSG_UNFIXED,
+						"update_replicas(): "
+						"Insufficient memory to "
+						"allocate %zu of sturct "
+						"host *.",
+						nexhosts);
+					return;
+				}
+
+				orig = to_be_excluded;
+				nexhosts = 0;
+				do {
+					exhosts[nexhosts++] = orig->host;
+					orig = orig->host_next;
+				} while (orig != NULL);
+			}
+
+		array_done:
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"update_replicas(): about to schedule "
 				"replicainfo-based replication for inode "
 				"%lld@%s.",
 				(long long)inode_get_number(inode),
 				host_name(spool_host));
+
 			gfarm_server_fsngroup_replicate_file(
 				inode, spool_host, replicainfo,
-				to_be_excluded);
+				exhosts, nexhosts);
+
 		} else if (nreplicas < desired_replica_number) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"update_replicas(): about to schedule "
