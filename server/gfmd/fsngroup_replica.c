@@ -59,6 +59,14 @@
 #endif
 
 /*****************************************************************************/
+
+struct file_copy {
+	struct file_copy *host_next;
+	struct host *host;
+	int flags;
+};
+
+/*****************************************************************************/
 /*
  * Exported APIs:
  */
@@ -75,20 +83,61 @@ gfarm_server_fsngroup_find_replicainfo_by_inode(struct inode *inode)
 
 void
 gfarm_server_fsngroup_replicate_file(struct inode *inode,
-	struct host *src_host, char *info)
+	struct host *src_host, char *info, struct file_copy *exclusions)
 {
+	struct host **ehosts = NULL;
+	size_t nehosts = 0;
+
+	(void)inode;
+
+	/*
+	 * Convert a linked-list into an array to increase search speed.
+	 */
+	if (exclusions != NULL) {
+		struct file_copy *orig = exclusions;
+
+		do {
+			nehosts++;
+			orig = orig->host_next;
+		} while (orig != NULL);
+
+		ehosts = (struct host **)alloca(
+			sizeof(struct hosts *) * nehosts);
+		if (ehosts == NULL) {
+			gflog_error(GFARM_MSG_UNFIXED,
+				"gfarm_server_fsngroup_replicate_file(): "
+				"Insufficient memory to allocate "
+				"%zu of sturct host *.",
+				nehosts);
+			return;
+		}
+
+		orig = exclusions;
+		nehosts = 0;
+
+		do {
+			ehosts[nehosts++] = orig->host;
+			orig = orig->host_next;
+		} while (orig != NULL);
+	}
+
 	/*
 	 * Not yet.
 	 */
-	if (info != NULL && src_host != NULL) {
-		(void)inode;
+	gflog_info(GFARM_MSG_UNFIXED,
+		"gfarm_server_fsngroup_replicate_file(): "
+		"replicate inode %llu@%s to fsngroup '%s'.",
+		(long long)inode_get_number(inode),
+		host_name(src_host),
+		info);
 
-		gflog_info(GFARM_MSG_UNFIXED,
-			"gfarm_server_fsngroup_replicate_file(): "
-			"replicate inode %llu@%s to fsngroup '%s'.",
-			(long long)inode_get_number(inode),
-			host_name(src_host),
-			info);
-
-	}
+	/*
+	 * What to do are:
+	 *
+	 *	1) Parse info and create (fsngroup, amount) tupples.
+	 *	2) For each the tupple:
+	 *		a) Create a set (hosts:fsngroup - ehosts)
+	 *		b) For each a host in the set:
+	 *			Create a replica.
+	 */
 }
