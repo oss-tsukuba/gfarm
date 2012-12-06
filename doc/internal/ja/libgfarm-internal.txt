@@ -93,7 +93,7 @@ gfm_connection フェイルオーバの実装方法および内部仕様について説明する。
     gfmd フェイルオーバが発生する前の情報を使用して GFS_File の 整合性を
     合わせ、クライアント/gfsd が継続的に gfmd へアクセスできるようにする。
 
-  - gfmd がフェイオーバした場合、接続先の gfmd プロセスが切り替わるため、
+  - gfmd がフェイルオーバした場合、接続先の gfmd プロセスが切り替わるため、
     gfmd 側のメモリに存在していた情報は初期状態に戻る。多少のレースコンディ
     ションの可能性を受け入れて、クライアントまたは gfsd が持つ情報を元に
     情報を復元する。
@@ -130,8 +130,9 @@ gfm_connection フェイルオーバの実装方法および内部仕様について説明する。
      IS_CONNECTION_ERROR(e) が真になったときを gfmd フェイルオーバ検知とし
      ている。
 
-  3. gfarm_client_process_set() で GFARM_ERR_NO_SUCH_PROCESS が返された
-     場合。このケースは実装としては一ヶ所だけである。
+  3. gfarm_client_process_set()、すなわち gfsd に対する GFS_PROTO_PROCESS_SET
+     で GFARM_ERR_NO_SUCH_PROCESS が返された場合。
+     このケースは実装としては一ヶ所だけである。
      gfmd へ接続後、gfs_connection を取得する前に gfmd フェイルオーバが発
      生すると、プロセス情報が失われてこのケースが発生する。
 
@@ -271,7 +272,7 @@ gfm_connection フェイルオーバの実装方法および内部仕様について説明する。
   gfm_connection についてはフェイルオーバの主処理 failover0() 内で
   gfarm_filesystem_failover_count() とずれているものが破棄される。
 
-  gfs_connection については、フェイルオーバ処理(具体的ににはfailover0())の
+  gfs_connection については、フェイルオーバ処理(具体的にはfailover0())の
   処理対象は、open中 GFS_File に関連する gfs_conneciton であるから、
   GFS_File の close 後、connection cache に返されたままの gfs_connection
   はファイルオーバ処理されない。
@@ -314,14 +315,16 @@ gfm_connection フェイルオーバの実装方法および内部仕様について説明する。
   1. 新しいgfm_connectionを取得する。
 
   2. open中の GFS_File に対して GFM_PROTO_CLOSE を呼ぶ。
-     クライアント - gfsd 間の接続は正常である可能性があり、
-     スケジュール済みの GFS_File については、gfsd 上では close せず、
-     新しい fd を割り当てるのみ。
+     クライアント - gfsd 間の接続は正常である可能性があり、その場合、
+     スケジュール済みの GFS_File については、gfsd 上ではまだ close しません。
 
   3. open中のGFS_Fileに新しいgfm_connectionを設定する。
 
   4. open中のGFS_Fileが使用しているgfs_connectionに対して、
      GFS_PROTO_PROCESS_RESET を実行する。
+
+     ここで、gfsd は、オープン中のファイル全てのクローズを gfmd に通知し、
+     既存の全てのディスクリプタを捨てます。
 
   5. open中のGFS_Fileに対してGFM_PROTO_OPENを呼んで、新しいfdを設定する。
 
