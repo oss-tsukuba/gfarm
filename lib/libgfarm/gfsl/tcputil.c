@@ -250,7 +250,7 @@ gfarmReadInt8(int fd, gfarm_int8_t *buf, int len, int timeoutMsec)
 	}
 	cur = read(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error(GFARM_MSG_1000640, "read: %s", strerror(errno));
+	    gflog_info(GFARM_MSG_1000640, "read: %s", strerror(errno));
 	    return sum;
 	} else if (cur == 0) {
 	    break;
@@ -310,7 +310,7 @@ gfarmWriteInt8(int fd, gfarm_int8_t *buf, int len)
     do {
 	cur = gfarm_send_no_sigpipe(fd, buf + sum, len - sum);
 	if (cur < 0) {
-	    gflog_error(GFARM_MSG_1000641, "write: %s", strerror(errno));
+	    gflog_info(GFARM_MSG_1000641, "write: %s", strerror(errno));
 	    return sum;
 	}
 	sum += cur;

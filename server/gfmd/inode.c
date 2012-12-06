@@ -3486,7 +3486,7 @@ inode_replicated(struct file_replicating *fr,
 		} else if (
 		    src_errcode != GFARM_ERR_NO_ERROR ||
 		    dst_errcode != GFARM_ERR_NO_ERROR)
-			gflog_error(GFARM_MSG_1002257,
+			gflog_notice(GFARM_MSG_1002257,
 			    "error at %lld:%lld replication to %s: "
 			    "src=%d dst=%d",
 			    (long long)inode_get_number(inode),

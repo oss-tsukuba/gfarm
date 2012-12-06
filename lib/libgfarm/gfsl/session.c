@@ -392,9 +392,9 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	   
 	    if (gfarmReadInt32(fd, param, NUM_NEGO_PARAM,
 			       GFARM_GSS_TIMEOUT_INFINITE) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_1000662,
+		gflog_auth_info(GFARM_MSG_1000662,
 		    "gfarmSecSession:negotiateConfigParam(): "
-				 "negotiation failure with the initiator");
+		    "negotiation failure with the initiator");
 		goto Done;
 	    }
 	    iQOP = param[NEGO_PARAM_QOP];
@@ -465,9 +465,9 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    param[NEGO_PARAM_OTHER_CONFIG] = retConf;
 
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
-		gflog_auth_error(GFARM_MSG_1000663,
+		gflog_auth_info(GFARM_MSG_1000663,
 		    "gfarmSecSession:negotiateConfigParam(): "
-				 "initiator disappered");
+		    "initiator disappered");
 		goto Done;
 	    }
 
@@ -486,7 +486,7 @@ negotiateConfigParam(int fd, gss_ctx_id_t sCtx, int which,
 	    if (gfarmWriteInt32(fd, param, NUM_NEGO_PARAM) != NUM_NEGO_PARAM) {
 		gflog_auth_error(GFARM_MSG_1000664,
 		    "gfarmSecSession:negotiateConfigParam(): "
-				 "acceptor disappered");
+		    "acceptor disappered");
 		goto Done;
 	    }
 
@@ -1171,7 +1171,7 @@ gfarmSecSessionAccept(int fd, gss_cred_id_t cred,
      */
     entry = gfarmAuthGetUserEntry(initiatorDistName);
     if (entry == NULL) {
-	gflog_auth_error(GFARM_MSG_1000672,
+	gflog_auth_notice(GFARM_MSG_1000672,
 	    "%s: not registered in mapfile", initiatorDistName);
 	majStat = GSS_S_UNAUTHORIZED;
 	/* Send NACK. */

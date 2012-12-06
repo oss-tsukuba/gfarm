@@ -584,7 +584,7 @@ peer_free_request(struct peer *peer)
 	 */
 	rv = shutdown(fd, SHUT_RDWR);
 	if (rv == -1)
-		gflog_warning(GFARM_MSG_1002766,
+		gflog_info(GFARM_MSG_1002766,
 		    "%s(%s) : shutdown(%d): %s", BACK_CHANNEL_DIAG(peer),
 		    peer_get_hostname(peer), fd, strerror(errno));
 
@@ -907,7 +907,7 @@ peer_free(struct peer *peer)
 		 */
 		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
 		if (err != 0)
-			gflog_error(GFARM_MSG_1003276,
+			gflog_info(GFARM_MSG_1003276,
 			    "unable to convert peer address to string: %s",
 			    strerror(err));
 	}
