@@ -910,10 +910,21 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 */
 	if (start_replication && spool_host != NULL) {
 		if (replicainfo != NULL) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"update_replicas(): about to schedule "
+				"replicainfo-based replication for inode "
+				"%lld@%s.",
+				(long long)inode_get_number(inode),
+				host_name(spool_host));
 			gfarm_server_fsngroup_replicate_file(
 				inode, spool_host, replicainfo,
 				to_be_excluded);
 		} else if (nreplicas < desired_replica_number) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+				"update_replicas(): about to schedule "
+				"ncopy-based replication for inode %lld@%s.",
+				(long long)inode_get_number(inode),
+				host_name(spool_host));
 			make_replicas_except(inode, spool_host,
 			    desired_replica_number, to_be_excluded);
 		}
@@ -5830,6 +5841,53 @@ inode_traverse_desired_replica_number(struct inode *dir, int *desired_numberp)
 		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
 		if (entry == NULL)
 			return (GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY);
+		dir = dir_entry_get_inode(entry);
+	}
+}
+
+/* And also this assumes that the "gfarm.replicainfo" xattr is cached. */
+int
+inode_has_replicainfo(struct inode *inode, char **infop)
+{
+	char *info = NULL;
+	size_t s = 0;
+
+	if (inode_xattr_get_cache(inode, 0, GFARM_REPLICAINFO_XATTR_NAME,
+		(void **)&info, &s) != GFARM_ERR_NO_ERROR)
+		return (0);
+
+	/*
+	 * The info is malloc'd in inode_xattr_get_cache().
+	 */
+	if (info == NULL || *info == '\0')
+		return (0);
+
+	if (infop != NULL)
+		*infop = info;
+
+	return (1);
+}
+
+int
+inode_visit_directory_bottom_up(struct inode *dir,
+	int (*v)(struct inode *, void *), void *arg)
+{
+	DirEntry entry;
+
+	for (;;) {
+		if (!inode_is_dir(dir))
+			return (0);
+
+		if (v(dir, arg) == 1)
+			return (1);
+
+		if (inode_get_number(dir) == ROOT_INUMBER)
+			return (0);
+			
+		entry = dir_lookup(dir->u.c.s.d.entries, dotdot, DOTDOT_LEN);
+		if (entry == NULL)
+			return (0);
+
 		dir = dir_entry_get_inode(entry);
 	}
 }

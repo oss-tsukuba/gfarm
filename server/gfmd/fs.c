@@ -237,7 +237,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	struct process *process;
 	int op;
 	struct inode *base, *inode;
-	int created, desired_number, transaction = 0;;
+	int created, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
 
 	/* for gfarm_file_trace */
@@ -398,22 +398,21 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 
 	if ((created || (op & GFS_W_OK) != 0 ||
 	     (flag & GFARM_FILE_REPLICA_SPEC) != 0) && inode_is_file(inode)) {
+#if 1
 		/*
-		 * Note:
-		 *
-		 *	Here we take a note of "How have we been
-		 *	expected to replicate the file when it is
-		 *	closed?". So check whether the replication is
-		 *	required for both the "replication recipe",
-		 *	ncopy and replicainfo.
+		 * This will take care both the ncopy and the
+		 * replicainfo.
 		 */
-		(void)process_record_replicainfo(process, fd,
-			gfarm_server_fsngroup_find_replicainfo_by_inode(inode));
+		gfarm_server_process_record_replication_attribute(
+			process, fd, inode, base, FIND_NEAREST);
+#else
+		int desired_number = 0;
 		if (inode_has_desired_number(inode, &desired_number) ||
 		    inode_traverse_desired_replica_number(base,
 		    &desired_number))
 			(void)process_record_desired_number(process, fd,
 				desired_number);
+#endif
 	}
 
 	/* set full path to file_opening */

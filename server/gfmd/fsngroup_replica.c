@@ -40,7 +40,9 @@
 #include "mdhost.h"
 #include "user.h"
 #include "peer.h"
+#include "process.h"
 #include "inode.h"
+#include "dir.h"
 #include "abstract_host.h"
 #include "dead_file_copy.h"
 #include "back_channel.h"
@@ -53,32 +55,118 @@
 
 #include <gfarm/gfarm.h>
 
+#include "dir.h"
+#include "fsngroup_replica.h"
 #include "host.h"
 #include "inode.h"
+#include "process.h"
 
 #endif
 
 /*****************************************************************************/
-
+/*
+ * Copied from inode.c
+ */
 struct file_copy {
 	struct file_copy *host_next;
 	struct host *host;
 	int flags;
 };
 
+typedef struct {
+	struct process *process;
+	int fd;
+	gfarm_replication_attribute_serach_t how;
+} visitor_arg;
+
+/*****************************************************************************/
+/*
+ * Internal procedures:
+ */
+
+static int
+find_and_set_ncopy(struct inode *inode, struct process *process, int fd)
+{
+	int ret = 0;
+	int ncopy = 0;
+
+	if ((ret = inode_has_desired_number(inode, &ncopy)) == 1)
+		(void)process_record_desired_number(
+			process, fd, ncopy);
+
+	return (ret);
+}
+
+static int
+find_and_set_replicainfo(struct inode *inode, struct process *process, int fd)
+{
+	int ret = 0;
+	char *info = NULL;
+
+	if ((ret = inode_has_replicainfo(inode, &info)) == 1) {
+		/*
+		 * The info is malloc'd in inode_has_replicainfo.
+		 */
+		if (info != NULL && *info != '\0') {
+			(void)process_record_replicainfo(
+				process, fd, info);
+		} else {
+			ret = 0;
+			free(info);
+		}
+	}
+
+	return (ret);
+}
+
+static int
+visitor(struct inode *inode, void *arg)
+{
+	visitor_arg *varg = (visitor_arg *)arg;
+	gfarm_replication_attribute_serach_t how = varg->how;
+	int fd = varg->fd;
+	struct process *process = varg->process;
+	int ret = 0;
+
+	switch (how) {
+	case FIND_NCOPY_ONLY:
+		ret = find_and_set_ncopy(inode, process, fd);
+		break;
+	case FIND_REPLICAINFO_ONLY:
+		ret = find_and_set_replicainfo(inode, process, fd);
+		break;
+	case FIND_NEAREST:
+		/*
+		 * The replicainfo is prior to the ncopy.
+		 */
+		if ((ret = find_and_set_replicainfo(inode, process, fd)) == 0)
+			ret = find_and_set_ncopy(inode, process, fd);
+		break;
+	default:
+		break;
+	}
+
+	return (ret);
+}
+
 /*****************************************************************************/
 /*
  * Exported APIs:
  */
 
-char *
-gfarm_server_fsngroup_find_replicainfo_by_inode(struct inode *inode)
+void
+gfarm_server_process_record_replication_attribute(
+	struct process *process, int fd,
+	struct inode *inode, struct inode *base,
+	gfarm_replication_attribute_serach_t how)
 {
-	/*
-	 * Not yet.
-	 */
-	(void)inode;
-	return (NULL);	/* will be free'd in file_opening_free(). */
+	visitor_arg arg = {
+		process, fd, how
+	};
+
+	if (visitor(inode, (void *)&arg) == 0)
+		(void)inode_visit_directory_bottom_up(
+			base, visitor, (void *)&arg);
 }
 
 void

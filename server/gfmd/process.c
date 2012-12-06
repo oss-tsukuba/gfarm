@@ -118,7 +118,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			free(fo->u.f.replica_source);
 			fo->u.f.replica_source = NULL;
 		}
-		free((void *)fo->u.f.replicainfo);
+		free(fo->u.f.replicainfo);
 	} else if (GFARM_S_ISDIR(mode))
 		free(fo->u.d.key);
 	free(fo->path_for_trace_log);
@@ -349,22 +349,20 @@ process_record_replicainfo(struct process *process, int fd,
 	}
 	if (!inode_is_file(fo->inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_replicainfo(%ld, %d, '%s'): not a file",
+			"process_record_replicainfo(%ld, %d, '%s'): "
+			"not a file",
 			(long)process->pid, fd,
 			(replicainfo != NULL) ? replicainfo : "");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
+	
 	/*
-	 * Note:
-	 *
-	 *	We don't have to be worry about strdup() returning
-	 *	NULL here. In the case simply the replication is just
-	 *	canceled anyway so no matter the consequences are,
-	 *	return GFARM_ERR_NO_ERROR. BTW even the caller doesn't
-	 *	care :)
+	 * The replicainfo must be malloc'd. It will be free'd in
+	 * file_opening_free().
 	 */
-	fo->u.f.replicainfo = (replicainfo != NULL) ?
-		strdup(replicainfo) : NULL;
+	fo->u.f.replicainfo =
+		(replicainfo != NULL && *replicainfo != '\0') ?
+		replicainfo : NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 
