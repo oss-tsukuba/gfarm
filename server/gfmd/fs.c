@@ -404,7 +404,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 		 * replicainfo.
 		 */
 		gfarm_server_process_record_replication_attribute(
-			process, fd, inode, base, FIND_NEAREST);
+			process, fd, inode, base);
 #else
 		int desired_number = 0;
 		if (inode_has_desired_number(inode, &desired_number) ||
