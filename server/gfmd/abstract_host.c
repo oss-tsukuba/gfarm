@@ -645,7 +645,7 @@ gfm_server_channel_main(void *arg,
 	e = abstract_host_receiver_lock(host, &peer,
 	    back_channel_type_name(peer0));
 	if (e != GFARM_ERR_NO_ERROR) { /* already disconnected */
-		gflog_error(GFARM_MSG_1002781,
+		gflog_notice(GFARM_MSG_1002781,
 		    "channel(%s): aborted: %s",
 		    abstract_host_get_name(host), gfarm_error_string(e));
 #ifdef COMPAT_GFARM_2_3
@@ -659,7 +659,7 @@ gfm_server_channel_main(void *arg,
 	 * not switched to another one.
 	 */
 	if (peer != peer0) {
-		gflog_error(GFARM_MSG_1002782,
+		gflog_notice(GFARM_MSG_1002782,
 		    "%s(%s): aborted: unexpected peer switch",
 		    back_channel_type_name(peer), abstract_host_get_name(host));
 #ifdef COMPAT_GFARM_2_3
@@ -699,7 +699,7 @@ gfm_server_channel_main(void *arg,
 #endif
 		if (IS_CONNECTION_ERROR(e)) {
 			if (e == GFARM_ERR_UNEXPECTED_EOF) {
-				gflog_error(GFARM_MSG_1002784,
+				gflog_notice(GFARM_MSG_1002784,
 				    "%s(%s): disconnected",
 				    back_channel_type_name(peer),
 				    abstract_host_get_name(host));
@@ -751,7 +751,7 @@ gfm_server_channel_disconnect_request(struct abstract_host *host,
 {
 	static const char diag[] = "gfm_server_channel_disconnect_request";
 
-	gflog_error(GFARM_MSG_1002787,
+	gflog_notice(GFARM_MSG_1002787,
 	    "%s(%s) %s %s: disconnecting: %s",
 	    back_channel_type_name(peer), abstract_host_get_name(host),
 	    proto, op, condition);
