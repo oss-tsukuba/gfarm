@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFMDHOST" "1" "10 September 2011" "Gfarm" ""
+.TH "GFMDHOST" "1" "06 December 2012" "Gfarm" ""
 
 .SH NAME
 gfmdhost \- Gfarm metadata server host maintenance command
@@ -45,11 +45,10 @@ They are grouped by the clusters and ordered alphabetically.
 
 The detailed information is displayed in the following order.
 
-\fBConnection State (+|-)\fR
+\fBConnection State (+|-|?|x|e)\fR
 
 "+" means that the gfmd is connected to the master gfmd.
 "-" means that the gfmd is not connected to the master gfmd.
-This column for the master gfmd is always "+".
 "?" means either the gfmd state is unknown because it's just
 after the connection was established, or the master gfmd is
 Gfarm-2.5.0, but this gfmdhost command is 2.5.1 or later.
@@ -58,8 +57,9 @@ but automatic synchronization was impossible because of too many
 metadata changes, thus, manual synchronization via dump and
 restore of the backend database is necessary.
 "e" means an error happened, and log file must be checked manually.
-Both "x" and "e" are displayed even after the slave gfmd is down.
-Master gfmd is always marked as "+".
+In the case of "x" or "e", it may be displayed even when the
+slave gfmd is down.
+This column for the master gfmd is always "+".
 
 \fBServer Type (master|slave)\fR
 
