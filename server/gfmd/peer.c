@@ -910,24 +910,25 @@ peer_free(struct peer *peer)
 	 * both username and hostname may be null,
 	 * if peer_authorized() hasn't been called. (== authentication failed)
 	 */
-	if (hostname != NULL) {
-		err = 0;
-	} else {
+	if (hostname == NULL) {
 		/*
 		 * IP address must be logged instead of (maybe faked) hostname
 		 * in case of an authentication failure.
 		 */
 		err = peer_get_numeric_name(peer, hostbuf, sizeof(hostbuf));
-		if (err != 0)
+		if (err == 0) {
+			hostname = hostbuf;
+		} else {
+			hostname = "<not-socket>";
 			gflog_info(GFARM_MSG_1003276,
 			    "unable to convert peer address to string: %s",
 			    strerror(err));
+		}
 	}
-	if (err == 0)
-		gflog_notice(GFARM_MSG_1000286,
-		    "(%s@%s) disconnected",
-		    username != NULL ? username : "<unauthorized>",
-		    hostname != NULL ? hostname : hostbuf);
+	gflog_notice(GFARM_MSG_1000286,
+	    "(%s@%s) disconnected",
+	    username != NULL ? username : "<unauthorized>",
+	    hostname != NULL ? hostname : hostbuf);
 
 	/*
 	 * free resources for gfmd channel
