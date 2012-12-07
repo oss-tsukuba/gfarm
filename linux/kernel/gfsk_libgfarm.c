@@ -37,7 +37,7 @@ gfarm_statfs(struct dentry *dentry, struct kstatfs *buf)
 	buf->f_fsid.val[1] = 0;
 	buf->f_namelen = GFS_MAXNAMLEN;
 
-	gflog_debug(0, "gfarm_statfs: type=0x%lx, bsize=%ld, blocks=%llu, "
+	gflog_debug(GFARM_MSG_UNFIXED, "gfarm_statfs: type=0x%lx, bsize=%ld, blocks=%llu, "
 		"bfree=%llu, bavail=%llu, files=%llu, ffree=%llu, "
 		"fsid=0x%x:%x, namelen=%ld\n",
 		buf->f_type, buf->f_bsize, buf->f_blocks, buf->f_bfree,
@@ -98,7 +98,7 @@ timeequal(struct gfarm_timespec *gftime, struct timespec *ktime) {
 	int ret = ((gftime->tv_sec == ktime->tv_sec)
 			&& ((long) gftime->tv_nsec == ktime->tv_nsec));
 	if (!ret)
-		gflog_debug(0, "time=%ld.%ld, %ld.%d",
+		gflog_debug(GFARM_MSG_UNFIXED, "time=%ld.%ld, %ld.%d",
 			ktime->tv_sec, ktime->tv_nsec,
 			gftime->tv_sec, gftime->tv_nsec);
 	return (ret);

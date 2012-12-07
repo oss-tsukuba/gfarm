@@ -124,7 +124,7 @@ gfskd_req_connectmd(struct gfskd_req_t *reqctx, void *arg)
 	case -1:
 		err = errno;
 		error = gfarm_errno_to_error(err);
-		gflog_debug(0, "fork: %s", strerror(err));
+		gflog_debug(GFARM_MSG_UNFIXED, "fork: %s", strerror(err));
 		/* fall through */
 	default:
 		return (error);
@@ -137,7 +137,7 @@ gfskd_req_connectmd(struct gfskd_req_t *reqctx, void *arg)
 		setuid(orguid);
 		gfarm_set_local_user_for_this_uid(orguid);
 	}
-	gflog_debug(0, "uid=%d, err=%d", req->r_uid, err);
+	gflog_debug(GFARM_MSG_UNFIXED, "uid=%d, err=%d", req->r_uid, err);
 
 	if (err) {
 		gfskd_send_reply(reqctx, err, NULL, 0);

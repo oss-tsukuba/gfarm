@@ -1,0 +1,49 @@
+\documentclass[a4j]{jarticle}
+\usepackage{epsfig}
+\usepackage{clike}
+\usepackage{lineno}
+\usepackage{ascmac}
+\usepackage{color}
+\catcode`<=\active
+\catcode`>=\active
+\catcode`\_=\active \def_{\ifmmode\sb\else\_\fi}
+\def<{$\langle$}
+\def>{$\rangle$}
+\marginparsep 10truept
+\marginparwidth 83truept
+\topmargin -15truemm
+\textheight 245truemm
+\oddsidemargin 0truemm
+\evensidemargin 0truemm
+\textwidth 160truemm
+\renewcommand{\baselinestretch}{0.9}
+\include{word}
+\definecolor{shadecolor}{gray}{0.70}
+\newcommand{\namelistlabel}[1]{\mbox{#1}\hfil}
+\newenvironment{namelist}[1]{%
+\begin{list}{}
+  {\let\makelabel\namelistlabel
+  \settowidth{\labelwidth}{#1}
+  \setlength{\leftmargin}{1.1\labelwidth}}
+}{%
+\end{list}}
+\pagestyle{plain}
+\title{Gfarm カーネルドライバ 設計と \\
+メタデータサーバ通信基本機能実装作業 \\
+　　　　　　　\\
+プログラム設計書\\
+}
+\author{数理技研}
+%\year=2012\month=3\day=30
+\西暦
+\begin{document}
+\maketitle
+\clearpage
+\tableofcontents
+\clearpage
+\newcommand{\COMMENT}[1]{}
+\setcounter{table}{0}
+\pagewiselinenumbers
+\input{gfsk}
+\end{document}
+

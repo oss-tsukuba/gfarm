@@ -16,16 +16,16 @@ gfsk_fd_set(int usrfd, int type)
 	struct file *file;
 
 	if (!(file = fget(usrfd))) {
-		gflog_error(0, "invalid fd=%d\n", usrfd);
+		gflog_error(GFARM_MSG_UNFIXED, "invalid fd=%d\n", usrfd);
 		goto out;
 	}
 	if (type && ((FILE2INODE(file)->i_mode) & S_IFMT) != type) {
-		gflog_error(0, "invalid type=%x:%x\n",
+		gflog_error(GFARM_MSG_UNFIXED, "invalid type=%x:%x\n",
 			FILE2INODE(file)->i_mode, type);
 		goto out_fput;
 	}
 	if ((err = gfsk_fd_file_set(file)) < 0) {
-		gflog_error(0, "fail gfsk_fd_file_set %d\n", err);
+		gflog_error(GFARM_MSG_UNFIXED, "fail gfsk_fd_file_set %d\n", err);
 		goto out_fput;
 	}
 out_fput:
@@ -48,7 +48,7 @@ gfsk_client_connect(const char *hostname, int port, const char *source_ip,
 
 	*sock = -1;
 	if (strlen(hostname) >= sizeof(inarg.r_hostname)) {
-		gflog_error(0, "hostname(%s) too long\n", hostname);
+		gflog_error(GFARM_MSG_UNFIXED, "hostname(%s) too long\n", hostname);
 		goto out;
 	}
 	if (gfsk_fsp->gf_mdata.m_mfd >= 0) {
@@ -59,20 +59,20 @@ gfsk_client_connect(const char *hostname, int port, const char *source_ip,
 			err = 0;
 			goto out;
 		}
-		gflog_debug(0, "(host,user)=(%s,%s) != mount.arg(%s,%s)",
+		gflog_debug(GFARM_MSG_UNFIXED, "(host,user)=(%s,%s) != mount.arg(%s,%s)",
 			hostname, user, gfsk_fsp->gf_mdata.m_host,
 			gfsk_fsp->gf_mdata.m_uidname);
 	}
 	if (strlen(user) >= sizeof(inarg.r_global)) {
-		gflog_error(0, "user(%s) too long\n", user);
+		gflog_error(GFARM_MSG_UNFIXED, "user(%s) too long\n", user);
 		goto out;
 	}
 	if (ug_map_name_to_uid(user, strlen(user), &inarg.r_uid)) {
-		gflog_error(0, "invalid user(%s)\n", user);
+		gflog_error(GFARM_MSG_UNFIXED, "invalid user(%s)\n", user);
 		goto out;
 	}
 	if (source_ip && strlen(source_ip) >= sizeof(inarg.r_source_ip)) {
-		gflog_error(0, "source_ip(%s) too long\n", source_ip);
+		gflog_error(GFARM_MSG_UNFIXED, "source_ip(%s) too long\n", source_ip);
 		goto out;
 	}
 	strcpy(inarg.r_hostname, hostname);
@@ -81,7 +81,7 @@ gfsk_client_connect(const char *hostname, int port, const char *source_ip,
 		strcpy(inarg.r_source_ip, source_ip);
 	strcpy(inarg.r_global, user);
 	if ((err = gfsk_req_connectmd(inarg.r_uid, &inarg, &outarg))) {
-		gflog_error(0, "connect fail err=%d\n", err);
+		gflog_error(GFARM_MSG_UNFIXED, "connect fail err=%d\n", err);
 		goto out;
 	}
 	/* fd is converted into fsfd from taskfd */

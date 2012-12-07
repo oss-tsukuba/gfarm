@@ -32,11 +32,11 @@ gfsk_fdset_init(void)
 	struct gfsk_fdstruct *fdsp;
 
 	if (GFSK_STP) {
-		gflog_error(0, "already set gf_fdsetp");
+		gflog_error(GFARM_MSG_UNFIXED, "already set gf_fdsetp");
 		return (0);
 	}
 	if (!GFARM_MALLOC(fdsp)) {
-		gflog_error(0, "can't allocate gf_fdsetp");
+		gflog_error(GFARM_MSG_UNFIXED, "can't allocate gf_fdsetp");
 		return (-ENOMEM);
 	}
 	mutex_init(&fdsp->fd_lock);
@@ -113,7 +113,7 @@ gfsk_fd_file_set(struct file *file)
 		i = 0;
 	}
 	if (!GFARM_MALLOC_ARRAY(fdpp, fdsp->fd_fdsetcnt + 1)) {
-		gflog_error(0, "can't allocate fd_fdsetpp");
+		gflog_error(GFARM_MSG_UNFIXED, "can't allocate fd_fdsetpp");
 		goto ng;
 	}
 	memcpy(fdpp, fdsp->fd_fdsetp, sizeof(fdp) * a);
@@ -122,7 +122,7 @@ gfsk_fd_file_set(struct file *file)
 	}
 	fdsp->fd_fdsetp = fdpp;
 	if (!GFARM_MALLOC(fdp)) {
-		gflog_error(0, "can't allocate gfsk_fdset");
+		gflog_error(GFARM_MSG_UNFIXED, "can't allocate gfsk_fdset");
 		goto ng;
 	}
 	memset(fdp, 0, sizeof(*fdp));

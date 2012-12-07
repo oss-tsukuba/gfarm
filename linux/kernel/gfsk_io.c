@@ -218,7 +218,7 @@ select(int maxfds, fd_set *readfds, fd_set *writefds,
 			nfds++;
 	}
 	if (nfds > MAXFD) {
-		gflog_error(0, "Too many fds %d", nfds);
+		gflog_error(GFARM_MSG_UNFIXED, "Too many fds %d", nfds);
 		err = -ENOMEM;
 		goto end_ret;
 	}

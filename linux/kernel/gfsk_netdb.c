@@ -21,11 +21,11 @@ getprotobyname(const char *name)
 	static char *tcp_alias[2] = {"TCP", NULL};
 	static struct protoent tcp = { "tcp", tcp_alias, IPPROTO_TCP};
 	if (!name) {
-		gflog_warning(0, "getprotobyname(NULLs) is called");
+		gflog_warning(GFARM_MSG_UNFIXED, "getprotobyname(NULLs) is called");
 	} else if (!strcasecmp(name, "tcp")) {
 		res = &tcp;
 	} else {
-		gflog_error(0, "getprotobyname(%s) is called", name);
+		gflog_error(GFARM_MSG_UNFIXED, "getprotobyname(%s) is called", name);
 	}
 	return (res);
 }
@@ -58,14 +58,14 @@ freeaddrinfo(struct addrinfo *ai)
 struct hostent *
 gethostbyname(const char *name)
 {
-	gflog_error(0, "gethostbyname(%s) is called", name ? name : "NULL");
+	gflog_error(GFARM_MSG_UNFIXED, "gethostbyname(%s) is called", name ? name : "NULL");
 	return (NULL);
 }
 
 struct servent *
 getservbyname(const char *name, const char *proto)
 {
-	gflog_warning(0, "getservbyname(%s) is called", name ? name : "NULL");
+	gflog_warning(GFARM_MSG_UNFIXED, "getservbyname(%s) is called", name ? name : "NULL");
 	return (NULL);
 }
 
@@ -78,7 +78,7 @@ getpwuid_r(uid_t uid, struct passwd *pwd,
 	if ((err = ug_map_uid_to_name(uid, buf, buflen)) < 0) {
 		return (-err);
 	} else if (err >= buflen) {
-		gflog_warning(0, "getpwuid_r: buflen %ld is short", buflen);
+		gflog_warning(GFARM_MSG_UNFIXED, "getpwuid_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
 		memset(pwd, 0, sizeof(*pwd));
@@ -101,7 +101,7 @@ getpwnam_r(const char *name, struct passwd *pwd,
 	if ((err = ug_map_name_to_uid(name, strlen(name), &uid)) < 0) {
 		return (-err);
 	} else if (strlen(name) >= buflen) {
-		gflog_warning(0, "getpwnam_r: buflen %ld is short", buflen);
+		gflog_warning(GFARM_MSG_UNFIXED, "getpwnam_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
 		memset(pwd, 0, sizeof(*pwd));
@@ -122,7 +122,7 @@ getgrgid_r(gid_t gid, struct group *grp,
 	if ((err = ug_map_gid_to_name(gid, buf, buflen)) < 0) {
 		return (-err);
 	} else if (err >= buflen) {
-		gflog_warning(0, "getgrgid_r: buflen %ld is short", buflen);
+		gflog_warning(GFARM_MSG_UNFIXED, "getgrgid_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
 		memset(grp, 0, sizeof(*grp));
@@ -144,7 +144,7 @@ getgrnam_r(const char *name, struct group *grp,
 	if ((err = ug_map_name_to_gid(name, strlen(name), &gid)) < 0) {
 		return (-err);
 	} else if (strlen(name) >= buflen) {
-		gflog_warning(0, "getgrnam_r: buflen %ld is short", buflen);
+		gflog_warning(GFARM_MSG_UNFIXED, "getgrnam_r: buflen %ld is short", buflen);
 		return (ERANGE);
 	} else {
 		memset(grp, 0, sizeof(*grp));
