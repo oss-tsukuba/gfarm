@@ -768,10 +768,9 @@ subcmd_start_backend_db()
 	check_argc $# 0
 	check_gfmd_hostid $HOSTID
 	exec_gfmd_host_agent $HOSTID root start-backend-db
-	RESULT=$?
+	[ $? -ne 0 ] && log_error "gfservice start-backend-db failed"
 
-	log_debug "end subcmd_start_backend_db: returns $RESULT"
-	return $RESULT
+	log_debug "end subcmd_start_backend_db"
 }
 
 #
@@ -835,6 +834,30 @@ subcmd_start_gfsd()
 }
 
 #
+# Sub-command: start-all-servers
+#
+subcmd_start_all_servers()
+{
+	log_debug "subcmd_start_all_servers"
+
+	check_argc $# 0
+	for ID in `get_all_hostids`; do
+		if is_gfmd_hostid $ID; then
+			HOSTID=$ID
+			subcmd_start_backend_db
+			sleep_postmaster_startup
+			subcmd_start_gfmd
+		fi
+		if is_gfsd_hostid $ID; then
+			HOSTID=$ID
+			subcmd_start_gfsd
+		fi
+	done
+
+        log_debug "end subcmd_start_all_servers"
+}
+
+#
 # Sub-command: stop-backend-db
 #
 subcmd_stop_backend_db()
@@ -877,6 +900,30 @@ subcmd_stop_gfsd()
 	[ $? -ne 0 ] && log_error "gfservice stop-gfsd failed"
 
 	log_debug "end subcmd_stop_gfsd"
+}
+
+#
+# Sub-command: stop-all-servers
+#
+subcmd_stop_all_servers()
+{
+	log_debug "subcmd_stop_all_servers"
+	RESULT=0
+
+	check_argc $# 0
+	for ID in `get_all_hostids`; do
+		if is_gfmd_hostid $ID; then
+			HOSTID=$ID
+			subcmd_stop_gfmd
+			subcmd_stop_backend_db
+		fi
+		if is_gfsd_hostid $ID; then
+			HOSTID=$ID
+			subcmd_stop_gfsd
+		fi
+	done
+
+        log_debug "end subcmd_stop_all_servers"
 }
 
 #
@@ -1797,15 +1844,25 @@ while true; do
 	done
 done
 
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
 	print_usage
 	exit 1
 fi
 SUBCMD="$1"
-HOSTID="$2"
 log_debug "main: set SUBCMD=$SUBCMD"
-log_debug "main: set HOSTID=$HOSTID"
-shift 2
+shift
+
+if [ X$SUBCMD != Xstart-all-servers ] &&
+	[ X$SUBCMD != Xstop-all-servers ] &&
+	[ X$SUBCMD != Xrestart-all-servers ]; then
+	if [ $# -lt 1 ]; then
+		print_usage
+		exit 1
+	fi
+	HOSTID="$1"
+	log_debug "main: set HOSTID=$HOSTID"
+	shift
+fi
 
 if [ "X$TIMEOUT" != Xno ]; then
 	expr "$TIMEOUT" : '^[1-9][0-9]*$' > /dev/null 2>&1 || {
@@ -1882,6 +1939,9 @@ start-gfarm-slave)
 start-gfsd)
 	subcmd_start_gfsd "$@"
 	;;
+start-all-servers)
+	subcmd_start_all_servers "$@"
+	;;
 stop-backend-db)
 	subcmd_stop_backend_db "$@"
 	;;
@@ -1894,6 +1954,9 @@ stop-gfarm)
 	;;
 stop-gfsd)
 	subcmd_stop_gfsd "$@"
+	;;
+stop-all-servers)
+	subcmd_stop_all_servers "$@"
 	;;
 restart-backend-db)
 	subcmd_stop_backend_db "$@"
@@ -1935,6 +1998,10 @@ restart-gfarm-slave)
 restart-gfsd)
 	subcmd_stop_gfsd "$@"
 	subcmd_start_gfsd "$@"
+	;;
+restart-all-servers)
+	subcmd_stop_all_servers "$@"
+	subcmd_start_all_servers "$@"
 	;;
 config-gfarm)
 	subcmd_config_gfarm "$@"

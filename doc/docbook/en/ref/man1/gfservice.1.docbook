@@ -20,7 +20,7 @@
   <command>gfservice</command>
     <arg choice='opt'><replaceable>options</replaceable></arg>
     <arg choice='plain'>sub-command</arg>
-    <arg choice='plain'>host-id</arg>
+    <arg choice='opt'>host-id</arg>
     <arg choice='opt'><replaceable>argument ...</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
@@ -565,7 +565,7 @@ An alias of "<command>unconfig-gfarm</command>" sub-command.
 <term><command>unconfig-gfarm-slave</command> <parameter>master-host-id</parameter></term>
 <listitem>
 <para>
-This sub-command is the same as "<command>unonfig-gfarm</command>",
+This sub-command is the same as "<command>unconfig-gfarm</command>",
 but <command>gfservice</command> does some additional works.
 It also deletes the slave host from a server list using
 <command>gfmdhost</command> command and from
@@ -818,6 +818,52 @@ Execute a Gfarm command on the remote host.
 
 </refsect1>
 
+<refsect1 id='multi-host-sub-commands'>
+<title>SUB-COMMANDS WHICH OPERATE ON MULTIPLE HOSTS</title>
+
+<para>
+The followings are sub-commands which operate on multiple hosts.
+The host-id argument must not be specified.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><command>start-all-servers</command></term>
+<listitem>
+<para>
+For each host configured in configuration file, start a backend database
+and <command>gfmd</command> if host-id is "gfmd<replaceable>n</replaceable>",
+start <command>gfsd</command> if host-id is "gfsd<replaceable>n</replaceable>".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>stop-all-servers</command></term>
+<listitem>
+<para>
+For each host configured in configuration file, stop a backend database
+and <command>gfmd</command> if host-id is "gfmd<replaceable>n</replaceable>",
+stop <command>gfsd</command> if host-id is "gfsd<replaceable>n</replaceable>".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><command>restart-all-servers</command></term>
+<listitem>
+<para>
+Perform "<command>stop-all-servers</command>" and
+"<command>start-all-servers</command>" sub-commands successively.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
 <refsect1 id='plugin'><title>PLUGIN SYSTEM</title>
 
 <para>
@@ -825,7 +871,7 @@ Execute a Gfarm command on the remote host.
 new sub-commands. If given sub-command is not provided by
 <command>gfservice</command>, <command>gfservice</command> refers to
 a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
-direcotry.
+directory.
 </para>
 
 <para>
