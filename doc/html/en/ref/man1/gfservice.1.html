@@ -42,7 +42,7 @@ CLASS="REPLACEABLE"
 ><I
 >options</I
 ></TT
->]  sub-command   host-id  [<TT
+>]  sub-command  [host-id] [<TT
 CLASS="REPLACEABLE"
 ><I
 >argument ...</I
@@ -1056,7 +1056,7 @@ CLASS="PARAMETER"
 ><P
 >This sub-command is the same as "<B
 CLASS="COMMAND"
->unonfig-gfarm</B
+>unconfig-gfarm</B
 >",
 but <B
 CLASS="COMMAND"
@@ -1545,6 +1545,94 @@ CLASS="PARAMETER"
 ><DIV
 CLASS="REFSECT1"
 ><A
+NAME="MULTI-HOST-SUB-COMMANDS"
+></A
+><H2
+>SUB-COMMANDS WHICH OPERATE ON MULTIPLE HOSTS</H2
+><P
+>The followings are sub-commands which operate on multiple hosts.
+The host-id argument must not be specified.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><B
+CLASS="COMMAND"
+>start-all-servers</B
+></DT
+><DD
+><P
+>For each host configured in configuration file, start a backend database
+and <B
+CLASS="COMMAND"
+>gfmd</B
+> if host-id is "gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>",
+start <B
+CLASS="COMMAND"
+>gfsd</B
+> if host-id is "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>".</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>stop-all-servers</B
+></DT
+><DD
+><P
+>For each host configured in configuration file, stop a backend database
+and <B
+CLASS="COMMAND"
+>gfmd</B
+> if host-id is "gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>",
+stop <B
+CLASS="COMMAND"
+>gfsd</B
+> if host-id is "gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>".</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restart-all-servers</B
+></DT
+><DD
+><P
+>Perform "<B
+CLASS="COMMAND"
+>stop-all-servers</B
+>" and
+"<B
+CLASS="COMMAND"
+>start-all-servers</B
+>" sub-commands successively.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
 NAME="PLUGIN"
 ></A
 ><H2
@@ -1563,7 +1651,7 @@ CLASS="COMMAND"
 >gfservice</B
 > refers to
 a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
-direcotry.</P
+directory.</P
 ><P
 >Sub-command file must be written as Bourne shell script. Sub-command
 file for sub-command "<TT

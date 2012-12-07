@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 December 2012" "Gfarm" ""
 
 .SH NAME
 gfservice \- リモートホストから Gfarm のサーバーを制御する。
 .SH SYNOPSIS
 
-\fBgfservice\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR \fBホスト ID\fR [ \fB\fI引数 ...\fB\fR ]
+\fBgfservice\fR [ \fB\fIオプション\fB\fR ] \fBサブコマンド\fR [ \fBホスト ID\fR ] [ \fB\fI引数 ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -411,6 +411,28 @@ Gfarm2 ファイルシステムをアンマウントします。
 .TP
 \fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
 リモートホスト上で Gfarm コマンドを実行します。
+.SH "SUB-COMMANDS OPERATE ON MULTIPLE HOSTS"
+.PP
+以下に挙げているのは、複数のホストを操作するサブコマンドです。
+コマンド行にはホスト ID は不要です。
+.TP
+\fBstart-all-servers\fR
+設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
+「gfmd\fIn\fR」ならばバックエンドデータベースと 
+\fBgfmd\fRを起動し、 ホスト ID が
+「gfsd\fIn\fR」ならば \fBgfsd\fR を
+起動します。
+.TP
+\fBstop-all-servers\fR
+設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
+「gfmd\fIn\fR」ならばバックエンドデータベースと 
+\fBgfmd\fRの実行を停止し、 ホスト ID が
+「gfsd\fIn\fR」ならば \fBgfsd\fR の
+実行を停止します。
+.TP
+\fBrestart-all-servers\fR
+サブコマンド \fBstop-all-servers\fR と
+\fBstart-all-servers\fR を続けて実行します。
 .SH "PLUGIN SYSTEM"
 .PP
 \fBgfservice\fRはユーザが新しくサブコマンドが追加できるよ
