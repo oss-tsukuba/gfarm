@@ -5,12 +5,12 @@
 
 #include <pthread.h>
 #include <stdio.h>
-#include <stdint.h>		/* XXX */
 #include <stdlib.h>
 #include <sys/time.h>
 
 #include <gfarm/gfarm.h>
 
+#include "gfutil.h"
 #include "thrsubr.h"
 
 #include "back_channel.h"
@@ -134,51 +134,13 @@ visitor(struct inode *inode, void *arg)
 /*
  * Internal procedures: subroutines for replication.
  */
-
-static int rnd_initialized = 0;
-static pthread_mutex_t rndlock = PTHREAD_MUTEX_INITIALIZER;
-
-static void
-init_random(void)
-{
-	struct timeval tv;
-	unsigned long int seed;
-	uint64_t seed64;
-
-	gfarm_mutex_lock(&rndlock, "init_random()", "lock");
-	if (rnd_initialized == 0) {
-		gfarm_mutex_init(&rndlock, "init_random()", "init");
-
-		(void)gettimeofday(&tv, NULL);
-
-		seed64 = (uint64_t)tv.tv_sec ^ (uint64_t)tv.tv_usec;
-
-		if (sizeof(int32_t) == sizeof(int) &&
-			sizeof(int) == sizeof(long int)) {
-			/* 32 bit int. */
-			seed = (unsigned long)(seed64 & 0xffffffff);
-		} else {
-			/* 64 bit int. */
-			seed = seed64;
-		}
-
-		srandom(seed);
-
-		rnd_initialized = 1;
-	}
-	gfarm_mutex_unlock(&rndlock, "init_random()", "unlock");
-}
-#define RND_INIT(...)	{ if (rnd_initialized == 0) init_random(); }
-
 static size_t
 sync_random(size_t from, size_t to)
 {
 	size_t ret;
 	size_t range = to - from;
 
-	gfarm_mutex_lock(&rndlock, "sync_random()", "lock");
-	ret = (((size_t)random()) % range) + from;
-	gfarm_mutex_unlock(&rndlock, "sync_random()", "unlock");
+	ret = (((size_t)gfarm_random()) % range) + from;
 
 	return (ret);
 }
@@ -372,8 +334,6 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 			"can't parse a replicainfo: '%s'.", info);
 		goto done;
 	}
-
-	RND_INIT();
 
 	/*
 	 * Note:
