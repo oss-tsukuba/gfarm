@@ -92,6 +92,7 @@ gfarm_host_static_term(struct gfarm_context *ctxp)
 
 	for (n = s->known_network_list; n != NULL; n = next) {
 		next = n->next;
+		gfarm_hostspec_free(n->network);
 		free(n);
 	}
 	free(s->canonical_self_name);
