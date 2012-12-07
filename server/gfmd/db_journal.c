@@ -81,6 +81,7 @@ static const char SEQNUM_MUTEX_DIAG[]		= "journal_seqnum_mutex";
 static const char RECVQ_NONEMPTY_COND_DIAG[]	= "journal_recvq_nonempty_cond";
 static const char RECVQ_NONFULL_COND_DIAG[]	= "journal_recvq_nonfull_cond";
 static const char RECVQ_CANCEL_COND_DIAG[]	= "journal_recvq_cancel_cond";
+static const char DB_ACCESS_MUTEX_DIAG[]	= "db_access_mutex";
 
 static gfarm_uint64_t	journal_seqnum = JOURNAL_SEQNUM_NOT_SET;
 static gfarm_uint64_t	journal_seqnum_pre = JOURNAL_SEQNUM_NOT_SET;
@@ -200,8 +201,6 @@ db_journal_set_sync_op(gfarm_error_t (*func)(gfarm_uint64_t))
 {
 	db_journal_sync_op = func;
 }
-
-#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
 
 gfarm_error_t
 db_journal_terminate(void)

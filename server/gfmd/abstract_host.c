@@ -28,6 +28,8 @@
 #include "peer.h"
 #include "abstract_host.h"
 
+static const char ABSTRACT_HOST_MUTEX_DIAG[]	= "abstract_host_mutex";
+
 static const char *
 back_channel_type_name(struct peer *peer)
 {
@@ -47,8 +49,6 @@ back_channel_type_name(struct peer *peer)
 		return ("unexpected_channel");
 	}
 }
-
-#define ABSTRACT_HOST_MUTEX_DIAG "abstract_host_mutex"
 
 void
 abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,

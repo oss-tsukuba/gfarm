@@ -58,7 +58,7 @@ struct dbq {
 } dbq;
 
 static pthread_mutex_t db_access_mutex = PTHREAD_MUTEX_INITIALIZER;
-#define DB_ACCESS_MUTEX_DIAG "db_access_mutex"
+static const char DB_ACCESS_MUTEX_DIAG[] =	"db_access_mutex";
 
 static gfarm_error_t db_journal_enter(dbq_entry_func_t, void *, int);
 static gfarm_error_t dbq_enter1(dbq_entry_func_t, void *, int);

@@ -110,7 +110,7 @@ peer_watcher_get_thrpool(struct peer_watcher *pw)
 
 #define BACK_CHANNEL_DIAG(peer) (peer_get_auth_id_type(peer) == \
 	GFARM_AUTH_ID_TYPE_SPOOL_HOST ? "back_channel" : "gfmd_channel")
-#define PROTOCOL_ERROR_MUTEX_DIAG "protocol_error_mutex"
+static const char PROTOCOL_ERROR_MUTEX_DIAG[] = "protocol_error_mutex";
 
 struct peer_closing_queue {
 	pthread_mutex_t mutex;
