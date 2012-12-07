@@ -7,28 +7,27 @@ if test $? -ne 0; then
     exit $exit_unsupported
 fi
 
+host=dummy-host-`uname -n | awk -F. '{ print $1 }'`.$$
+
 cleanup() {
-    for i in `gfhost`; do
-	gfhostgroup -r $i > /dev/null 2>&1
-    done
+    gfhost -d ${host} > /dev/null 2>&1
 }
 
 trap 'celanup; exit $exit_trap' $trap_sigs
 
-hosts=`gfhost`
+gfhost -c -a dummy -p 12345 ${host} > /dev/null 2>&1
+if test $? -ne 0; then
+    cleanup
+    exot $exit_fail
+fi
 
-st=0
-for i in ${hosts}; do
-    gfhostgroup -s $i "${i}-group" > /dev/null 2>&1
-    st=$?
-done
-if test ${st} -ne 0; then
+gfhostgroup -s ${host} "${host}-group" > /dev/null 2>&1
+if test $? -ne 0; then
     cleanup
     exit $exit_fail
 fi
 
-st=0
-list=`gfhostgroup`
+list=`gfhostgroup ${host}`
 for i in ${list}; do
     h=`echo ${i} | awk '{ print $1 }'`
     g=`echo ${i} | awk '{ print $NF }'`

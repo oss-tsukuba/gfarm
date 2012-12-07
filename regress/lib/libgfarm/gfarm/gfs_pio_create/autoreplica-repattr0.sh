@@ -9,6 +9,7 @@ dir=/tmp/autoreplica-test.$$
 file=${dir}/file.$$
 gfs_pio_test=`dirname $testbin`/gfs_pio_test/gfs_pio_test
 tmpfile=/tmp/.autoreplica-test.junk.$$
+hostgroupfile=/tmp/.hostgroup.$$
 
 wait=10
 
@@ -24,6 +25,10 @@ nhosts=`echo ${hosts} | wc -w`
 if test ${nhosts} -lt 3; then
     exit $exit_unsupported
 fi
+gfhostgroup | sed 's/:/ /' > ${hostgroupfile}
+if test $? -ne 0; then
+    exit $exit_fail
+fi
 
 #####################################################################
 
@@ -37,6 +42,24 @@ cleanup() {
 	gfhostgroup -r ${__i} > /dev/null 2>&1
     done
     unset __i
+}
+
+restore_hostgroup() {
+    if test -r ${hostgroupfile}; then
+	while read h g; do
+	    if test "X${g}" != "X"; then
+		gfhostgroup -s ${h} ${g}
+	    else
+		gfhostgroup -r ${h}
+	    fi
+	done < ${hostgroupfile}
+	rm -f ${hostgroupfile}
+    fi
+}
+
+onexit() {
+    cleanup
+    restore_hostgroup
 }
 
 setup() {
@@ -81,35 +104,35 @@ write_file() {
     return ${ret}
 }
 
-trap 'cleanup; exit $exit_trap' $trap_sigs
+trap 'onexit; exit $exit_trap' $trap_sigs
 
 #####################################################################
 
 cleanup
 setup
 if test $? -ne 0; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
 # set attr directly to the file.
 gfrepattr -s ${file} "${repattr}"
 if test $? -ne 0; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
 # check where the file is.
 srchost=`gfwhere ${file}`
 if test $? -ne 0 -o "X${srchost}" = "X"; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
 # then update the file.
 write_file ${file} "${mod}"
 if test $? -ne 0; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
@@ -118,11 +141,11 @@ sleep ${wait}
 # check replication status.
 allhosts=`gfwhere ${file}`
 if test $? -ne 0; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 if test "X${srchost}" = "X${allhosts}"; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
@@ -130,10 +153,10 @@ fi
 gfexport ${file} > ${tmpfile}
 head=`head -c 12 ${tmpfile}`
 if test "X${mod}" != "X${head}"; then
-    cleanup
+    onexit
     exit $exit_fail
 fi
 
-cleanup
+onexit
 
 exit $exit_pass
