@@ -28,6 +28,7 @@
 #include "metadb_server.h"
 #include "xattr_info.h"
 #include "quota_info.h"
+#include "gfm_proto.h"
 #include "quota.h"
 
 #include "journal_file.h"
@@ -40,7 +41,8 @@ static char *program_name = "gfjournal";
 static int opt_verbose = 0, opt_record_only = 0;
 static size_t min_reclen = UINT32_MAX, max_reclen, ave_reclen;
 static size_t num_rec = 0;
-static gfarm_uint64_t min_seqnum = UINT64_MAX, max_seqnum = 0;
+static gfarm_uint64_t min_seqnum = UINT64_MAX;
+static gfarm_uint64_t max_seqnum = GFARM_METADB_SERVER_SEQNUM_INVALID;
 static struct journal_file *jf;
 static struct journal_file_reader *reader;
 
@@ -509,7 +511,7 @@ main(int argc, char **argv)
 		usage();
 	path = argv[0];
 
-	if ((e = journal_file_open(path, 0, 0,
+	if ((e = journal_file_open(path, 0, GFARM_METADB_SERVER_SEQNUM_INVALID,
 	    &jf, GFARM_JOURNAL_RDONLY)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s : %s\n", program_name,
 		    gfarm_error_string(e));
