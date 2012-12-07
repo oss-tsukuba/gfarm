@@ -87,6 +87,10 @@ void host_modify(struct host *, struct gfarm_host_info *);
 void host_fsngroup_modify(struct host *, const char *);
 gfarm_error_t host_remove_in_cache(const char *);
 
+/* A generic host hash iteration workhose */
+void *host_iterate(void * (*)(struct host *, void *, int *), void *,
+	size_t, size_t, size_t, size_t *);
+
 gfarm_error_t gfm_server_host_info_get_all(struct peer *, int, int);
 gfarm_error_t gfm_server_host_info_get_by_architecture(struct peer *, int,int);
 gfarm_error_t gfm_server_host_info_get_by_names(struct peer *, int, int);

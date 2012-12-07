@@ -47,8 +47,6 @@ struct host *host_iterator_access(struct gfarm_hash_iterator *);
  * Type definitions:
  */
 
-typedef void * (*iteration_filter_func)(struct host *, void *, int *);
-
 typedef struct {
 	char *hostname;
 	char *fsngroupname;
@@ -277,93 +275,8 @@ find_fsngroup_by_hostname(const char *hostname, int check_valid)
 	return (ret);
 }
 
-/*
- * A scanning workhorse.
- *
- * REQUISITE: giant_lock
- */
-static void *
-scan_host_cache(iteration_filter_func f, void *arg,
-	size_t esize,		/* A size of one element to be allocated */
-	size_t alloc_limit,	/* A limit # of elements to be allocated */
-	size_t iter_limit, 	/* A limit # of iteration */
-	size_t *nelemp		/* Returns # of allocated elements */)
-{
-	/*
-	 * I really hate having the giant lock kinda long period of
-	 * time. In order to avoid it, just copy needed members from
-	 * the host hash table.
-	 */
-
-	struct gfarm_hash_iterator it;
-	size_t nhosts = 0;
-	int nmatches = 0;
-	char *ret = NULL;
-	char *diag = "scan_host_cache";
-
-	FOR_ALL_HOSTS(&it) {
-		(void)host_iterator_access(&it);
-		nhosts++;
-	}
-
-	if (nhosts > 0) {
-		size_t i = 0;
-		size_t max_alloc;
-		size_t max_iter;
-		struct host *h;
-		void *a_elem;
-		char *dst;
-		int stop_iter;
-		int of;
-		size_t sz;
-
-		if (alloc_limit == 0)
-			max_alloc = nhosts;
-		else
-			max_alloc =
-				(alloc_limit < nhosts) ? alloc_limit : nhosts;
-
-		of = 0;
-		sz = gfarm_size_mul(&of, esize, max_alloc);
-		if (of == 0 && sz > 0)
-			ret = (char *)malloc(sz);
-		if (ret == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"%s: insufficient memory to "
-				"allocate for %zu host(s) search results.",
-				diag, alloc_limit);
-			return (NULL);
-		}
-		dst = ret;
-
-		if (iter_limit == 0)
-			max_iter = nhosts;
-		else
-			max_iter =
-				(alloc_limit < nhosts) ? alloc_limit : nhosts;
-
-		FOR_ALL_HOSTS(&it) {
-			if (i >= max_alloc || i >= max_iter)
-				break;
-			h = host_iterator_access(&it);
-			stop_iter = 0;
-			if ((a_elem = (f)(h, arg, &stop_iter)) != NULL) {
-				(void)memcpy((void *)dst,
-					     (void *)&a_elem, esize);
-				dst += esize;
-				i++;
-			}
-			if (stop_iter)
-				break;
-		}
-		nmatches = i;
-	}
-
-	if (nelemp != NULL)
-		*nelemp = nmatches;
-
-	return ((void *)ret);
-}
+#define scan_host_cache(f, arg, es, al, il, np) \
+    host_iterate(f, arg, es, al, il, np)
 
 /*
  * Matcher functions for the scanner:
@@ -522,7 +435,7 @@ get_tuples_all(gfarm_fsngroup_text_t exs, int flags)
 	};
 
 	a_tuple_t **tuples =
-		(a_tuple_t **)scan_host_cache(
+		(a_tuple_t **)host_iterate(
 			match_tuple_all, (void *)&arg,
 			sizeof(a_tuple_t *), 0, 0, &n);
 
@@ -538,7 +451,7 @@ get_tuples_by_hostnames(const char **hostnames, size_t nhostnames,
 		nhostnames, (char **)hostnames, exs, flags
 	};
 	a_tuple_t **tuples =
-		(a_tuple_t **)scan_host_cache(
+		(a_tuple_t **)host_iterate(
 			match_tuple_by_hostnames, (void *)&arg,
 			sizeof(a_tuple_t *), 0, 0, &n);
 
@@ -554,7 +467,7 @@ get_tuples_by_fsngroups(const char **fsngroups, size_t nfsngroups,
 		nfsngroups, (char **)fsngroups, exs, flags
 	};
 	a_tuple_t **tuples =
-		(a_tuple_t **)scan_host_cache(
+		(a_tuple_t **)host_iterate(
 			match_tuple_by_fsngroups, (void *)&arg,
 			sizeof(a_tuple_t *), 0, 0, &n);
 
@@ -571,7 +484,7 @@ get_hostnames_by_fsngroup(const char *fsngroup,
 		1, (char **)names, exs, flags
 	};
 	char **hostnames =
-		(char **)scan_host_cache(
+		(char **)host_iterate(
 			match_hostname_by_fsngroup, (void *)&arg,
 			sizeof(char *), 0, 0, &n);
 
