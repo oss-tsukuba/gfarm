@@ -43,6 +43,7 @@
 #include "iobuffer.h"
 #include "gfp_xdr.h"
 #include "io_fd.h"
+#include "gfm_proto.h"
 
 #include "subr.h"
 #include "thrsubr.h"
@@ -84,7 +85,6 @@ struct journal_file_reader {
 #define GFARM_JOURNAL_RECORD_HEADER_XDR_FMT	"cccclii"
 #define JOURNAL_BUFSIZE				8192
 #define JOURNAL_READ_AHEAD_SIZE			8192
-
 
 struct journal_file_writer {
 	struct journal_file *file;
@@ -891,7 +891,7 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	off_t max_seqnum_next_pos = JOURNAL_FILE_HEADER_SIZE;
 	enum journal_operation ope = 0;
 	gfarm_uint64_t min_seqnum = GFARM_UINT64_MAX;
-	gfarm_uint64_t max_seqnum = 0;
+	gfarm_uint64_t max_seqnum = GFARM_METADB_SERVER_SEQNUM_INVALID;
 	gfarm_uint64_t seqnum = 0;
 	gfarm_uint64_t begin_seqnum = 0;
 	gfarm_uint64_t first_seqnum = 0, last_seqnum = 0;
@@ -978,11 +978,12 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * - 'wfd < 0' means that this function is called for creating
 	 *    a reader which is used for sending records to a slave gfmd.
 	 *
-	 * - 'db_seqnum > 0' means that gfmd is about to start.
-	 *   In case of gfjournal command, 'db_seqnum' is always 0.
+	 * - 'db_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID' means that
+	 *   gfmd is about to start.  In case of gfjournal command,
+	 *   'db_seqnum' is always 0.
 	 *
-	 * - 'max_seqnum > 0' means that at least one transaction is
-	 *   recorded in the journal file.
+	 * - 'max_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID' means that
+	 *   at least one transaction is recorded in the journal file.
 	 *
 	 * - 'min_seqnum == GFARM_UINT64_MAX' means that there is no record
 	 *   with the seqnum greater than 'db_seqnum'.
@@ -997,8 +998,9 @@ journal_find_rw_pos(int rfd, int wfd, size_t file_size,
 	 * - 'max_seqnum < db_seqnum' means that database, the journal
 	 *   file or both are corrupted.
 	 */
-	if (wfd < 0 && db_seqnum > 0 && max_seqnum > 0 && 
-	    db_seqnum != max_seqnum &&
+	if (wfd < 0 && db_seqnum != max_seqnum &&
+	    db_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID &&
+	    max_seqnum != GFARM_METADB_SERVER_SEQNUM_INVALID &&
 	    (min_seqnum == GFARM_UINT64_MAX || db_seqnum + 1 < min_seqnum ||
 	    max_seqnum < db_seqnum)) {
 		e = GFARM_ERR_EXPIRED;
