@@ -1,0 +1,15 @@
+#
+# Wait until a given host boots up
+#
+wait_for_boot()
+{
+	HOSTNAME=`$GFSERVICE $DEBUG get_host $1`
+	I=0
+	while [ $I -lt $2 ]; do
+		ssh -o "ConnectTimeout=1" $HOSTNAME true
+		[ $? -eq 0 ] && return 0
+		sleep $3
+	done
+
+	return 1
+}
