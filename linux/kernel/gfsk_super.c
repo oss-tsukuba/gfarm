@@ -15,10 +15,10 @@
 #include "ug_idmap.h"
 #include "gfsk_libgfarm.h"
 
-int log_level = 7;
+int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
 
 module_param(log_level, int, 0);
-MODULE_PARM_DESC(log_level, "log level (0: default 7 : debug)");
+MODULE_PARM_DESC(log_level, "log level (0: emerge, ..., 7: debug)");
 
 module_param(ug_timeout_sec, uint, 0);
 MODULE_PARM_DESC(ug_timeout_sec, "TimeOut sec for ug_idmapd");
@@ -173,9 +173,9 @@ static int __init
 init_gfarm_fs(void)
 {
 	int ret;
-	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() start");
 
 	gflog_set_priority_level(log_level);
+	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() start");
 
 	ret = gfsk_dev_init();
 

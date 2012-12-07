@@ -34,7 +34,7 @@ gfsk_gfarm_init(uid_t uid)
 	gflog_initialize();
 	e = gfarm_config_read();
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1000983,
+		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfarm_config_read() failed: %s", gfarm_error_string(e));
 		goto out;
 	}
