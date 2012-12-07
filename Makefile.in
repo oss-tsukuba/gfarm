@@ -14,6 +14,8 @@ SUBDIRS = \
 	util/ptool \
 	util/ganglia \
 	util/gfservice \
+	util/gfruntest \
+	systest \
 	nls \
 	bench/gfperf \
 	bench/gfiops \

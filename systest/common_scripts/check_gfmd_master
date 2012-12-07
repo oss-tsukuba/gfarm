@@ -1,0 +1,19 @@
+#
+# Check given host is master server of gfmd
+#
+check_gfmd_master()
+{
+	HOSTNAME=`$GFSERVICE $DEBUG get_host $1`
+	I=0
+	while [ $I -lt $3 ]; do
+		MODE=`$GFSERVICE $DEBUG gfcmd $2 gfmdhost -l | \
+			awk "/${HOSTNAME}/{ print \\\$2 }"`
+		if [ X$MODE = Xmaster ]; then
+			return 0
+		fi
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	return 1
+}
