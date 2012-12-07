@@ -38,6 +38,11 @@ struct abstract_host {
 	gfarm_time_t busy_time;
 };
 
+#ifdef COMPAT_GFARM_2_3
+typedef void (*host_set_callback_t)(struct abstract_host *, struct peer *,
+    result_callback_t, disconnect_callback_t, void *);
+#endif
+
 struct host *abstract_host_to_host(struct abstract_host *);
 struct mdhost *abstract_host_to_mdhost(struct abstract_host *);
 
@@ -83,12 +88,10 @@ gfarm_error_t gfm_server_channel_vput_reply(struct abstract_host *,
 	char *, va_list *);
 
 gfarm_error_t gfm_client_channel_vsend_request(struct abstract_host *,
-	struct peer *, const char *, gfarm_int32_t (*)(void *, void *, size_t),
-	void (*)(void *, void *), void *,
+	struct peer *, const char *, result_callback_t, disconnect_callback_t,
+	void *,
 #ifdef COMPAT_GFARM_2_3
-	void (*)(struct abstract_host *, struct peer *,
-	    gfarm_int32_t (*)(void *, void *, size_t),
-	    void (*)(void *, void *), void *),
+	host_set_callback_t,
 #endif
 	long, gfarm_int32_t, const char *, va_list *);
 gfarm_error_t gfm_client_channel_vrecv_result(struct peer *,

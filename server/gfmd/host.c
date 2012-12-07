@@ -73,8 +73,8 @@ struct host {
 
 #ifdef COMPAT_GFARM_2_3
 	/* used by synchronous protocol (i.e. until gfarm-2.3.0) only */
-	gfarm_int32_t (*back_channel_result)(void *, void *, size_t);
-	void (*back_channel_disconnect)(void *, void *);
+	result_callback_t back_channel_result;
+	disconnect_callback_t back_channel_disconnect;
 	struct peer *back_channel_callback_peer;
 	void *back_channel_callback_closure;
 #endif
@@ -418,8 +418,8 @@ back_channel_mutex_unlock(struct host *h, const char *diag)
 #ifdef COMPAT_GFARM_2_3
 void
 host_set_callback(struct abstract_host *ah, struct peer *peer,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure)
 {
 	struct host *h = abstract_host_to_host(ah);
@@ -436,7 +436,7 @@ host_set_callback(struct abstract_host *ah, struct peer *peer,
 
 int
 host_get_result_callback(struct host *h, struct peer *peer,
-	gfarm_int32_t (**callbackp)(void *, void *, size_t), void **closurep)
+	result_callback_t *callbackp, void **closurep)
 {
 	int ok;
 	static const char diag[] = "host_get_result_callback";
@@ -462,7 +462,7 @@ host_get_result_callback(struct host *h, struct peer *peer,
 
 int
 host_get_disconnect_callback(struct host *h,
-	void (**callbackp)(void *, void *),
+	disconnect_callback_t *callbackp,
 	struct peer **peerp, void **closurep)
 {
 	int ok;

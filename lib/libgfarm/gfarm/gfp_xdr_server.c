@@ -28,8 +28,8 @@ struct gfp_xdr_async_peer {
 };
 
 struct gfp_xdr_async_callback {
-	gfarm_int32_t (*result_callback)(void *, void *, size_t);
-	void (*disconnect_callback)(void *, void *);
+	result_callback_t result_callback;
+	disconnect_callback_t disconnect_callback;
 	void *closure;
 };
 
@@ -88,7 +88,7 @@ gfp_xdr_callback_async_result(gfp_xdr_async_peer_t async_server,
 	void *peer, gfp_xdr_xid_t xid, size_t size, gfarm_int32_t *resultp)
 {
 	struct gfp_xdr_async_callback *cb;
-	gfarm_int32_t (*result_callback)(void *, void *, size_t);
+	result_callback_t result_callback;
 	void *closure;
 	static const char diag[] = "gfp_xdr_callback_async_result";
 
@@ -119,8 +119,8 @@ gfp_xdr_send_async_request_error(gfp_xdr_async_peer_t async_server,
 static gfarm_error_t
 gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server, size_t size,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t *xidp)
 {
@@ -155,8 +155,8 @@ gfp_xdr_send_async_request_header(struct gfp_xdr *server,
 static gfarm_error_t
 gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	int nonblock,
 	gfarm_int32_t command, const char *format, va_list *app)
@@ -209,8 +209,8 @@ gfp_xdr_vsend_async_request_internal(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
@@ -222,8 +222,8 @@ gfp_xdr_vsend_async_nonblocking_request(struct gfp_xdr *server,
 gfarm_error_t
 gfp_xdr_vsend_async_request(struct gfp_xdr *server,
 	gfp_xdr_async_peer_t async_server,
-	gfarm_int32_t (*result_callback)(void *, void *, size_t),
-	void (*disconnect_callback)(void *, void *),
+	result_callback_t result_callback,
+	disconnect_callback_t disconnect_callback,
 	void *closure,
 	gfarm_int32_t command, const char *format, va_list *app)
 {
