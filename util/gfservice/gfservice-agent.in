@@ -27,6 +27,9 @@ SHARED_KEY_FILE="$HOME/.gfarm_shared_key"
 # gfservice plugin directory
 GFSERVICE_PLUGIN_PATH="@datadir@/gfarm/gfservice"
 
+# Installation path of Globus Toolkit
+GLOBUS_LOCATION="@globus_location@"
+
 #
 # Output a debug message.
 #

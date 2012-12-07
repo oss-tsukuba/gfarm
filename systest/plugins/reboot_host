@@ -1,0 +1,68 @@
+# Default settings.
+DEFAULT_REBOOT_CMD="/sbin/shutdown -r now"
+
+#
+# Get command for rebooting host for a given host ID.
+#
+get_reboot_cmd()
+{
+	log_debug "get_reboot_cmd: HOSTID=$1"
+
+	if [ "X`eval echo \\$$1_REBOOT_CMD`" = X ]; then
+		echo $DEFAULT_REBOOT_CMD
+	else
+		eval echo "\$$1_REBOOT_CMD"
+		log_debug "get_log_file_paths: `eval echo \\$$1_REBOOT_CMD`"
+	fi
+
+	log_debug "end get_reboot_cmd"
+	return 0
+}
+
+#
+# Dependencies of this sub-command
+#
+reboot_host_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: reboot_host
+#
+subcmd_reboot_host()
+{
+	log_debug "subcmd_reboot_host"
+
+	check_argc $# 0
+	check_hostid $HOSTID
+	REBOOT_CMD=`get_reboot_cmd $HOSTID`
+
+	exec_client_host_agent $HOSTID root reboot_host "reboot-cmd=$REBOOT_CMD"
+	[ $? -ne 0 ] && log_error "gfservice reboot_host failed"
+
+	log_debug "end subcmd_reboot_host"
+}
+
+#
+# Dependencies of this sub-command agent
+#
+reboot_host_agent_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: reboot_host
+# reboot host
+#
+subcmd_reboot_host_agent()
+{
+	log_debug "subcmd_reboot_host_agent"
+
+	REBOOT_CMD=`get_param reboot-cmd`
+	$REBOOT_CMD
+	[ $? -ne 0 ] && log_error "reboot failed"
+
+	log_debug "end subcmd_reboot_host_agent"
+}

@@ -1,0 +1,6 @@
+#
+# Test parameters for gfmd failover
+#
+RETRY_COUNT=${RETRY_COUNT="10"}
+RETRY_INTERVAL=${RETRY_INTERVAL="5"}
+TIMEOUT=${TIMEOUT="10"}

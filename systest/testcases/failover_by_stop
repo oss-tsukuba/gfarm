@@ -1,0 +1,84 @@
+#
+# Test case for failover of gfmd by stopping process
+#
+load 	"check_gfmd_master" \
+	"check_gfmd_slave" \
+	"failback" \
+	"check_journal_seqnum_max" \
+	"check_gfmd_connected"
+
+#
+# Test parameters
+#
+# RETRY_COUNT:	  retry number to check master/slave and boot
+# TIMEOUT:	  timeout sec for starting/stopping gfmd
+test_failover_by_stop()
+{
+	RESULT=0
+
+	AUTH_TYPE=`$GFSERVICE $DEBUG get_auth_type gfmd1`
+	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
+		$GFSERVICE $DEBUG grid_proxy_init client1
+	fi
+
+	# step: stop gfmd on gfmd1
+	$GFSERVICE $DEBUG -t $TIMEOUT stop-gfmd gfmd1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
+
+	# step: promote gfmd on gfmd2
+	$GFSERVICE $DEBUG promote-gfmd gfmd2
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
+
+	# step: check whether gfmd on gfmd2 is master
+	check_gfmd_master gfmd2 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd2 in not master"
+		RESULT=1
+	fi
+
+	# step: set gfmd on gfmd1 to be slave
+	$GFSERVICE $DEBUG -t $TIMEOUT start-gfmd-slave gfmd1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to start gfmd on gfmd1" \
+		"as slave"
+
+	# step: check whether gfmd on gfmd1 is slave
+	check_gfmd_slave gfmd1 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd1 in not slave"
+		RESULT=1
+	fi
+
+	# step: failback
+	failback gfmd1 gfmd2 client1 $TIMEOUT $RETRY_COUNT
+	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to make gfmd on gfmd1" \
+		"as master"
+
+	# step: check whether gfmd on gfmd1 is master
+	check_gfmd_master gfmd1 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd1 in not master"
+		RESULT=1
+	fi
+
+	# step: check whether journal seqnum max is same
+	check_journal_seqnum_max gfmd1 gfmd2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: journal seqnum max is not same"
+		RESULT=1
+	fi
+
+	# step: check whether slave gfmd is connected to master
+	check_gfmd_connected gfmd2 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd2 is not connected to master"
+		RESULT=1
+	fi
+
+	check_gfmd_connected gfmd3 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd3 is not connected to master"
+		RESULT=1
+	fi
+
+	return $RESULT
+}

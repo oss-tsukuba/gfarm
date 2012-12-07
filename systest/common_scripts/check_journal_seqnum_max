@@ -1,0 +1,15 @@
+#
+# Check max value of journal seqnum is same or not
+#
+check_journal_seqnum_max()
+{
+	MAX1=`$GFSERVICE $DEBUG gfjournal_m $1`
+	[ $? -ne 0 ] && return 1
+	MAX2=`$GFSERVICE $DEBUG gfjournal_m $2`
+	[ $? -ne 0 ] && return 1
+	if [ $MAX1 -eq $MAX2 ]; then
+		return 0
+	else
+		return 1
+	fi
+}
