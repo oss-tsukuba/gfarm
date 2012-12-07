@@ -430,6 +430,9 @@ enum gfm_proto_command {
 #define GFARM_METADB_SERVER_FLAG_IS_MEMORY_OWNED_BY_FS	0x00000080
 #define GFARM_METADB_SERVER_FLAG_IS_REMOVED		0x00000100
 
+/* Special sequence number, never used in the protocol. */
+#define GFARM_METADB_SERVER_SEQNUM_INVALID		0
+
 #define GFMD_USERNAME	"_gfarmmd"
 
 #if 0 /* There isn't gfm_proto.c for now. */

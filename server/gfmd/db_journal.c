@@ -36,6 +36,7 @@
 #include "gfs_profile.h"
 #endif
 #include "config.h"
+#include "gfm_proto.h"
 
 #include "subr.h"
 #include "journal_file.h"
@@ -45,7 +46,6 @@
 #include "db_journal.h"
 /* Do not depend other object files such as host.o, mdhost.o, ... */
 
-#define JOURNAL_SEQNUM_NOT_SET		GFARM_UINT64_MAX
 #define JOURNAL_W_XDR	journal_file_writer_xdr( \
 	journal_file_writer(self_jf))
 
@@ -80,11 +80,11 @@ static const char RECVQ_NONEMPTY_COND_DIAG[]	= "journal_recvq_nonempty_cond";
 static const char RECVQ_NONFULL_COND_DIAG[]	= "journal_recvq_nonfull_cond";
 static const char RECVQ_CANCEL_COND_DIAG[]	= "journal_recvq_cancel_cond";
 
-static gfarm_uint64_t	journal_seqnum = JOURNAL_SEQNUM_NOT_SET;
-static gfarm_uint64_t	journal_seqnum_pre = JOURNAL_SEQNUM_NOT_SET;
-static int		journal_transaction_nesting = 0;
-static int		journal_begin_called = 0;
-static int		journal_slave_transaction_nesting = 0;
+static gfarm_uint64_t journal_seqnum = GFARM_METADB_SERVER_SEQNUM_INVALID;
+static gfarm_uint64_t journal_seqnum_pre = GFARM_METADB_SERVER_SEQNUM_INVALID;
+static int journal_transaction_nesting = 0;
+static int journal_begin_called = 0;
+static int journal_slave_transaction_nesting = 0;
 
 
 static void
@@ -508,7 +508,7 @@ db_journal_write(gfarm_uint64_t seqnum, enum journal_operation ope,
 {
 	gfarm_error_t e;
 
-	assert(journal_seqnum_pre == JOURNAL_SEQNUM_NOT_SET ||
+	assert(journal_seqnum_pre == GFARM_METADB_SERVER_SEQNUM_INVALID ||
 	    journal_seqnum_pre + 1 == seqnum);
 	if (journal_begin_called) {
 		/* Write 'BEGIN' which is suppressed in previous
