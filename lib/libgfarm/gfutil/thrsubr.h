@@ -21,11 +21,6 @@ void gfarm_cond_destroy(pthread_cond_t *, const char *, const char *);
 #define GFARM_COND_INITIALIZER(name)   PTHREAD_COND_INITIALIZER
 #endif /* __KERNEL__ */
 
-typedef pthread_mutex_t gfarm_mutex_t;
-typedef pthread_mutexattr_t gfarm_mutex_attr_t;
-typedef pthread_cond_t  gfarm_condvar_t;
-
-
 #define GFARM_DEFINE_MUTEX(name) \
 		gfarm_mutex_t name = GFARM_MUTEX_INITIALIZER(name)
 #define GFARM_DEFINE_CONDVAR(name) \
