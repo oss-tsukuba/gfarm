@@ -147,6 +147,6 @@ gfarm_error_t gfs_client_get_load_result(int, struct sockaddr *, socklen_t *,
 struct gfs_client_get_load_state;
 gfarm_error_t gfs_client_get_load_request_multiplexed(
 	struct gfarm_eventqueue *, struct sockaddr *,
-	void (*)(void *), void *, struct gfs_client_get_load_state **);
+	void (*)(void *), void *, struct gfs_client_get_load_state **, int);
 gfarm_error_t gfs_client_get_load_result_multiplexed(
 	struct gfs_client_get_load_state *, struct gfs_client_load *);

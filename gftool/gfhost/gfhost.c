@@ -790,7 +790,7 @@ gfarm_paraccess_request(struct gfarm_paraccess *pa,
 	    gfarm_paraccess_connect_request :
 	    gfarm_paraccess_load_finish,
 	    a,
-	    &gls);
+	    &gls, 1);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfarm_paraccess_callback(pa, a, NULL, NULL, e);
 		return (e);

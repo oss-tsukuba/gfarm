@@ -898,11 +898,11 @@ int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_CONCURRENCY_DEFAULT	10
 #define GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT	3
-#define GFARM_SCHEDULE_IDLE_LOAD_DEFAULT	0.1F
-#define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	0.5F
-#define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	0.3F
-#define GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT	4.0F
-#define GFARM_SCHEDULE_RTT_THRESH_RATIO_DEFAULT	4.0F
+#define GFARM_SCHEDULE_IDLE_LOAD_DEFAULT	100  /* 0.1 * F2LL_SCALE */
+#define GFARM_SCHEDULE_BUSY_LOAD_DEFAULT	500  /* 0.5 * F2LL_SCALE */
+#define GFARM_SCHEDULE_VIRTUAL_LOAD_DEFAULT	300  /* 0.3 * F2LL_SCALE */
+#define GFARM_SCHEDULE_CANDIDATES_RATIO_DEFAULT	4000 /* 4.0 * F2LL_SCALE */
+#define GFARM_SCHEDULE_RTT_THRESH_RATIO_DEFAULT	4000 /* 4.0 * F2LL_SCALE */
 #define GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT	1000 /* 1000 micro second */
 #define GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT 1 /* enable */
 #define GFARM_MINIMUM_FREE_DISK_SPACE_DEFAULT	(128 * 1024 * 1024) /* 128MB */
@@ -2027,6 +2027,7 @@ parse_set_misc_int(char *p, int *vp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+#if 0
 static gfarm_error_t
 parse_set_misc_float(char *p, float *vp)
 {
@@ -2055,6 +2056,7 @@ parse_set_misc_float(char *p, float *vp)
 #endif /* __KERNEL__ */
 	return (GFARM_ERR_NO_ERROR);
 }
+#endif
 
 static gfarm_error_t
 parse_set_misc_offset(char *p, gfarm_off_t *vp)
@@ -2110,6 +2112,76 @@ parse_set_misc_offset(char *p, gfarm_off_t *vp)
 		}
 	}
 	*vp = v;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+#define GFARM_F2LL_MAX (INT_MAX * GFARM_F2LL_SCALE)
+
+static gfarm_error_t
+parse_set_float_to_long_long(char *p, long long *vp)
+{
+	gfarm_error_t e;
+	char *s;
+	const char *pp;
+	size_t len;
+	int have_dot = 0, num_f = 0, done = 0;
+	long long d = 0, f = 0, tmp;
+
+	e = get_one_argument(p, &s);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
+		return (GFARM_ERR_NO_ERROR);
+
+	pp = s;
+	len = strlen(s);
+	for (; len > 0; len--) {
+		if (*pp == '.') {
+			if (have_dot)
+				return (
+				GFARM_ERRMSG_FLOATING_POINT_NUMBER_EXPECTED);
+			have_dot = 1;
+			if (*(pp + 1) == '\0')
+				return (
+				GFARM_ERRMSG_FLOATING_POINT_NUMBER_EXPECTED);
+		} else if (!isdigit(*pp))
+			return (GFARM_ERRMSG_INVALID_CHARACTER);
+		else {
+			if (have_dot) {
+				if (num_f >= GFARM_F2LL_SCALE_SIZE)
+					done = 1;
+				num_f++;
+			}
+			if (!done) {
+				if (have_dot) {
+					tmp = f * 10 + (*pp - '0');
+					if (tmp > GFARM_F2LL_MAX || tmp < f)
+						return (
+						GFARM_ERR_RESULT_OUT_OF_RANGE);
+					f = tmp;
+				} else {
+					tmp = d * 10 + (*pp - '0');
+					if (tmp > GFARM_F2LL_MAX || tmp < d)
+						return (
+						GFARM_ERR_RESULT_OUT_OF_RANGE);
+					d = tmp;
+				}
+			} /* else: skip */
+		}
+		pp++;
+	}
+	for (; num_f < GFARM_F2LL_SCALE_SIZE; num_f++) {
+		tmp = f * 10;
+		if (tmp > GFARM_F2LL_MAX || tmp < f)
+			return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+		f = tmp;
+	}
+	tmp = d * GFARM_F2LL_SCALE + f;
+	if (tmp > GFARM_F2LL_MAX || tmp < d)
+		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
+	d = tmp;
+	*vp = d;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -2833,20 +2905,23 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p,
 		    &gfarm_ctxp->schedule_concurrency_per_net);
 	} else if (strcmp(s, o = "schedule_idle_load_thresh") == 0) {
-		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_idle_load);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_idle_load);
 	} else if (strcmp(s, o = "schedule_busy_load_thresh") == 0) {
-		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_busy_load);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_busy_load);
 	} else if (strcmp(s, o = "schedule_virtual_load") == 0) {
-		e = parse_set_misc_float(p, &gfarm_ctxp->schedule_virtual_load);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_virtual_load);
 	} else if (strcmp(s, o = "schedule_candidates_ratio") == 0) {
-		e = parse_set_misc_float(p,
-		    &gfarm_ctxp->schedule_candidates_ratio);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_candidates_ratio);
 	} else if (strcmp(s, o = "schedule_rtt_thresh") == 0) {
-		e = parse_set_misc_float(p,
-		    &gfarm_ctxp->schedule_rtt_thresh_ratio);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_rtt_thresh_ratio);
 	} else if (strcmp(s, o = "schedule_rtt_thresh_ratio") == 0) {
-		e = parse_set_misc_float(p,
-		    &gfarm_ctxp->schedule_rtt_thresh_ratio);
+		e = parse_set_float_to_long_long(
+		    p, &gfarm_ctxp->schedule_rtt_thresh_ratio);
 	} else if (strcmp(s, o = "schedule_rtt_thresh_diff") == 0) {
 		e = parse_set_misc_int(p,
 		    &gfarm_ctxp->schedule_rtt_thresh_diff);

@@ -1851,14 +1851,16 @@ gfs_client_get_load_result(int sock,
 		return (gfarm_errno_to_error(save_errno));
 	}
 
+	if (result != NULL) {
 #ifndef WORDS_BIGENDIAN
-	swab(&nloadavg[0], &loadavg[0], sizeof(loadavg[0]));
-	swab(&nloadavg[1], &loadavg[1], sizeof(loadavg[1]));
-	swab(&nloadavg[2], &loadavg[2], sizeof(loadavg[2]));
+		swab(&nloadavg[0], &loadavg[0], sizeof(loadavg[0]));
+		swab(&nloadavg[1], &loadavg[1], sizeof(loadavg[1]));
+		swab(&nloadavg[2], &loadavg[2], sizeof(loadavg[2]));
 #endif
-	result->loadavg_1min = loadavg[0];
-	result->loadavg_5min = loadavg[1];
-	result->loadavg_15min = loadavg[2];
+		result->loadavg_1min = loadavg[0];
+		result->loadavg_5min = loadavg[1];
+		result->loadavg_15min = loadavg[2];
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1877,6 +1879,8 @@ struct gfs_client_get_load_state {
 
 	/* results */
 	gfarm_error_t error;
+
+	int get_load;
 	struct gfs_client_load load;
 };
 
@@ -1928,8 +1932,9 @@ gfs_client_get_load_receive(int events, int fd, void *closure,
 		}
 	} else {
 		assert(events == GFARM_EVENT_READ);
-		state->error = gfs_client_get_load_result(state->sock,
-		    NULL, NULL, &state->load);
+		state->error = gfs_client_get_load_result(
+		    state->sock, NULL, NULL,
+		    state->get_load ? &state->load : NULL);
 	}
 	close(state->sock);
 	state->sock = -1;
@@ -1941,7 +1946,7 @@ gfarm_error_t
 gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 	struct sockaddr *peer_addr,
 	void (*continuation)(void *), void *closure,
-	struct gfs_client_get_load_state **statepp)
+	struct gfs_client_get_load_state **statepp, int get_load)
 {
 	gfarm_error_t e;
 	int rv, sock;
@@ -2006,6 +2011,7 @@ gfs_client_get_load_request_multiplexed(struct gfarm_eventqueue *q,
 		goto error_free_readable;
 	}
 
+	state->get_load = get_load;
 	state->q = q;
 	state->continuation = continuation;
 	state->closure = closure;

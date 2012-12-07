@@ -15,7 +15,7 @@ struct gfarm_host_sched_info {
 	gfarm_uint32_t ncpu;	/* XXX should have whole gfarm_host_info? */
 
 	/* if GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL */
-	float loadavg;
+	gfarm_int32_t loadavg; /* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
 	gfarm_uint64_t cache_time;
 	gfarm_uint64_t disk_used;
 	gfarm_uint64_t disk_avail;

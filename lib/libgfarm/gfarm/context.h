@@ -13,11 +13,11 @@ struct gfarm_context {
 	int schedule_cache_timeout;
 	int schedule_concurrency;
 	int schedule_concurrency_per_net;
-	float schedule_idle_load;
-	float schedule_busy_load;
-	float schedule_virtual_load;
-	float schedule_candidates_ratio;
-	float schedule_rtt_thresh_ratio;
+	long long schedule_idle_load;
+	long long schedule_busy_load;
+	long long schedule_virtual_load;
+	long long schedule_candidates_ratio;
+	long long schedule_rtt_thresh_ratio;
 	int schedule_rtt_thresh_diff;
 	char *schedule_write_target_domain;
 	int schedule_write_local_priority;

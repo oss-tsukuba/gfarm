@@ -2301,7 +2301,8 @@ gfm_client_get_schedule_result(struct gfm_connection *gfm_server,
 				gfarm_error_string(GFARM_ERR_PROTOCOL));
 			return (GFARM_ERR_PROTOCOL); /* XXX */
 		}
-		infos[i].loadavg = (float)loadavg / GFM_PROTO_LOADAVG_FSCALE;
+		/* loadavg_1min * GFM_PROTO_LOADAVG_FSCALE */
+		infos[i].loadavg = loadavg;
 	}
 
 	*nhostsp = nhosts;

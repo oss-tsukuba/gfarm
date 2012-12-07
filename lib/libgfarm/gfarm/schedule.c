@@ -133,12 +133,14 @@
 #define PER_NET_CONCURRENCY	(gfarm_ctxp->schedule_concurrency_per_net)
 				/* used when examining RTT */
 #define ENOUGH_RATE		(gfarm_ctxp->schedule_candidates_ratio)
+				/* 4.0 * GFARM_F2LL_SCALE */
 
 #define	ADDR_EXPIRATION		(gfarm_ctxp->schedule_cache_timeout)
 #define	LOADAVG_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
 #define	STATFS_EXPIRATION	(gfarm_ctxp->schedule_cache_timeout)
 
 #define RTT_THRESH_RATIO	(gfarm_ctxp->schedule_rtt_thresh_ratio)
+				/* 4.0 * GFARM_F2LL_SCALE */
 #define RTT_THRESH_DIFF		(gfarm_ctxp->schedule_rtt_thresh_diff)
 				/* range to treat as similar distance */
 
@@ -322,7 +324,9 @@ struct search_idle_host_state {
 	int rtt_usec;			/* if HOST_STATE_FLAG_RTT_AVAIL */
 
 	struct timeval loadavg_cache_time;
-	float loadavg;			/* if HOST_STATE_FLAG_RTT_AVAIL
+
+	/* loadavg * GFM_PROTO_LOADAVG_FSCALE */
+	long long loadavg;		/* if HOST_STATE_FLAG_RTT_AVAIL
 					   or HOST_STATE_FLAG_STATFS_AVAIL */
 
 	/*if HOST_STATE_FLAG_STATFS_AVAIL*/
@@ -836,11 +840,12 @@ search_idle_free_program_filter(void)
 }
 #endif /* not yet in gfarm v2 */
 
-static float entropy(void)
+static long long
+entropy()
 {
-	float max = 0.01;
-
-	return (max * (gfarm_random() / (RAND_MAX + 1.0)));
+	/* 0 ... (GFM_PROTO_LOADAVG_FSCALE / 10) */
+	return (gfarm_random() * GFM_PROTO_LOADAVG_FSCALE / 10
+	    / (RAND_MAX + 1LL));
 }
 
 static gfarm_error_t
@@ -892,8 +897,14 @@ search_idle_candidate_list_add(struct gfm_connection *gfm_server,
 #endif
 
 	if (info->flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
-		if ((h->flags & HOST_STATE_FLAG_RTT_AVAIL) == 0 ||
-		    h->loadavg_cache_time.tv_sec < info->cache_time) {
+#ifdef __KERNEL__
+		int update_loadavg = 1;
+#else
+		int update_loadavg =
+			(h->flags & HOST_STATE_FLAG_RTT_AVAIL) == 0 ||
+			h->loadavg_cache_time.tv_sec < info->cache_time;
+#endif
+		if (update_loadavg) {
 			h->loadavg_cache_time.tv_sec = info->cache_time;
 			h->loadavg_cache_time.tv_usec = 0;
 			/* add entropy to randomize the scheduling result */
@@ -939,9 +950,16 @@ gfarm_schedule_search_mode_use_loadavg(void)
 	staticp->default_search_method = GFARM_SCHEDULE_SEARCH_BY_LOADAVG;
 }
 
-#define IDLE_LOAD_AVERAGE		(gfarm_ctxp->schedule_idle_load)
-#define SEMI_IDLE_LOAD_AVERAGE		(gfarm_ctxp->schedule_busy_load)
-#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST	(gfarm_ctxp->schedule_virtual_load)
+#define IDLE_LOAD_AVERAGE	(gfarm_ctxp->schedule_idle_load * \
+				 GFM_PROTO_LOADAVG_FSCALE / GFARM_F2LL_SCALE)
+				/* 0.5 * GFM_PROTO_LOADAVG_FSCALE */
+#define SEMI_IDLE_LOAD_AVERAGE	(gfarm_ctxp->schedule_busy_load * \
+				 GFM_PROTO_LOADAVG_FSCALE / GFARM_F2LL_SCALE)
+				/* 0.1 * GFM_PROTO_LOADAVG_FSCALE */
+#define VIRTUAL_LOAD_FOR_SCHEDULED_HOST \
+				(gfarm_ctxp->schedule_virtual_load * \
+				 GFM_PROTO_LOADAVG_FSCALE / GFARM_F2LL_SCALE)
+				/* 0.3 * GFM_PROTO_LOADAVG_FSCALE */
 
 struct search_idle_state {
 	struct gfarm_eventqueue *q;
@@ -970,7 +988,7 @@ search_idle_init_state(struct search_idle_state *s,
 	int syserr;
 
 	s->desired_number = desired_hosts;
-	s->enough_number = desired_hosts * ENOUGH_RATE;
+	s->enough_number = desired_hosts * ENOUGH_RATE / GFARM_F2LL_SCALE;
 	s->mode = mode;
 	s->write_mode = write_mode;
 	if (write_mode)
@@ -1009,7 +1027,7 @@ search_idle_count(struct search_idle_state *s,
 	struct search_idle_host_state *h,
 	int *usable_numberp, int *idle_numberp, int *semi_idle_numberp)
 {
-	float loadavg = h->loadavg;
+	long long loadavg = h->loadavg;
 	int ncpu = h->ncpu;
 	int ok = 1;
 
@@ -1200,7 +1218,10 @@ search_idle_load_callback(void *closure)
 	if (e == GFARM_ERR_NO_ERROR) {
 		c->h->flags |= HOST_STATE_FLAG_RTT_AVAIL;
 		/* add entropy to randomize the scheduling result */
-		c->h->loadavg = load.loadavg_1min + entropy();
+#ifndef __KERNEL__
+		c->h->loadavg =
+		    load.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE + entropy();
+#endif
 		c->h->loadavg_cache_time = c->h->rtt_cache_time;
 		c->h->scheduled_age++;
 		c->h->scheduled = 0; /* because now we know real loadavg */
@@ -1275,8 +1296,8 @@ davail_compare(const void *a, const void *b)
 	struct search_idle_host_state *const *bb = b;
 	const struct search_idle_host_state *p = *aa;
 	const struct search_idle_host_state *q = *bb;
-	const float df1 = p->diskavail;
-	const float df2 = q->diskavail;
+	const gfarm_off_t df1 = p->diskavail;
+	const gfarm_off_t df2 = q->diskavail;
 
 	if (df1 > df2)
 		return (-1);
@@ -1293,10 +1314,10 @@ loadavg_compare(const void *a, const void *b)
 	struct search_idle_host_state *const *bb = b;
 	const struct search_idle_host_state *p = *aa;
 	const struct search_idle_host_state *q = *bb;
-	const float l1 =
-	 (p->loadavg + p->scheduled*VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / p->ncpu;
-	const float l2 =
-	 (q->loadavg + q->scheduled*VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / q->ncpu;
+	const long long l1 = (p->loadavg
+	    + p->scheduled * VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / p->ncpu;
+	const long long l2 = (q->loadavg
+	    + q->scheduled * VIRTUAL_LOAD_FOR_SCHEDULED_HOST) / q->ncpu;
 
 	if (l1 < l2)
 		return (-1);
@@ -1357,7 +1378,7 @@ search_idle_try_host(struct search_idle_state *s,
 	struct search_idle_host_state *h, int do_record)
 {
 	gfarm_error_t e;
-	int rv;
+	int rv, get_load;
 	struct search_idle_callback_closure *c;
 	struct gfs_client_get_load_state *gls;
 
@@ -1395,9 +1416,13 @@ search_idle_try_host(struct search_idle_state *s,
 	    HOST_STATE_FLAG_JUST_CACHED|
 	    HOST_STATE_FLAG_RTT_TRIED;
 	gettimeofday(&h->rtt_cache_time, NULL);
+#ifdef __KERNEL__
+	get_load = 0;
+#else
+	get_load = 1;
+#endif
 	e = gfs_client_get_load_request_multiplexed(s->q, &h->addr,
-	    search_idle_load_callback, c,
-	    &gls);
+	    search_idle_load_callback, c, &gls, get_load);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001446,
 		    "search_idle_try_host: "
@@ -1555,7 +1580,8 @@ search_idle_by_rtt_order(struct search_idle_state *s)
 		 * search network which RTT is less than
 		 * min(current * RTT_THRESH_RATIO, current + RTT_THRESH_DIFF)
 		 */
-		rtt_threshold = netarray[i]->rtt_usec * RTT_THRESH_RATIO;
+		rtt_threshold = netarray[i]->rtt_usec * RTT_THRESH_RATIO
+		    / GFARM_F2LL_SCALE;
 		if (rtt_threshold > netarray[i]->rtt_usec + RTT_THRESH_DIFF)
 			rtt_threshold =
 			    netarray[i]->rtt_usec + RTT_THRESH_DIFF;
@@ -2096,12 +2122,17 @@ gfarm_schedule_host_cache_dump(void)
 		    HOST_STATE_FLAG_STATFS_AVAIL)) == 0) {
 			snprintf(loadbuf, sizeof loadbuf, "load:unavail");
 		} else {
-			snprintf(loadbuf, sizeof loadbuf, "load(%d.%d%s):%.2f",
+			long long val = h->loadavg * 1000LL
+			    / GFM_PROTO_LOADAVG_FSCALE;
+
+			snprintf(loadbuf, sizeof loadbuf,
+			    "load(%d.%d%s):%lld.%02lld",
 			    (int)h->loadavg_cache_time.tv_sec,
 			    (int)h->loadavg_cache_time.tv_usec,
 			    gfarm_timeval_cmp(&h->loadavg_cache_time, &period)
 			    < 0 ? "*" : "",
-			    h->loadavg);
+			    val / 1000,
+			    (val % 1000 + 5) / 10); /* round off */
 		}
 
 		if ((h->flags & HOST_STATE_FLAG_STATFS_AVAIL) == 0) {
