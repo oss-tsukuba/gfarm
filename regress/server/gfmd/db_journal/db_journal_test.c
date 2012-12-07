@@ -12,10 +12,10 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#include "thrsubr.h"
-#include "thrbarrier.h"
-
 #include "db_journal.c"
+
+#include "thrbarrier.h"
+/* #include "thrsubr.h" */ /* already included in db_journal.c */
 
 #include "crc32.h"
 #include "user.h"
