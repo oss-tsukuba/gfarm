@@ -2056,7 +2056,7 @@ parse_set_misc_float(char *p, float *vp)
 		return (GFARM_ERRMSG_INVALID_CHARACTER);
 	*vp = (float)v;
 #else /* __KERNEL__ */
-	gflog_warning(GFARM_MSG_1000001, "floating %s is ignored", p);
+	gflog_warning(GFARM_MSG_UNFIXED, "floating %s is ignored", p);
 #endif /* __KERNEL__ */
 	return (GFARM_ERR_NO_ERROR);
 }
