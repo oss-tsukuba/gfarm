@@ -79,7 +79,7 @@ typedef struct {
 	((CHECK_UP(f) && host_is_up((h))) || !CHECK_UP(f))
 
 #define MATCH_COND(f, h) \
-	((MATCH_VALID((f), (h))) || (MATCH_UP((f), (h))))
+	((MATCH_VALID((f), (h))) && (MATCH_UP((f), (h))))
 } filter_arg_t;
 
 /*****************************************************************************/
@@ -253,7 +253,7 @@ text_lines(gfarm_fsngroup_text_t t)
  *	returned pointer needs to be free'd.
  */
 static char *
-find_fsngroup_by_hostname(const char *hostname)
+find_fsngroup_by_hostname(const char *hostname, int check_valid)
 {
 	char *ret = NULL;
 	struct host *h;
@@ -261,6 +261,8 @@ find_fsngroup_by_hostname(const char *hostname)
 
 	FOR_ALL_HOSTS(&it) {
 		h = host_iterator_access(&it);
+		if (check_valid && !host_is_valid(h))
+			continue;
 		if (strcmp(host_name(h), hostname) == 0) {
 			ret = strdup(host_fsngroup(h));
 			if (ret == NULL)
@@ -762,7 +764,7 @@ gfm_server_fsngroup_get_all(
 			macro_stringify(GFM_PROTO_FSNGROUP_GET_ALL);
 
 		giant_lock();
-		t = get_tuples_all(NULL, 0);
+		t = get_tuples_all(NULL, FILTER_CHECK_VALID);
 		giant_unlock();
 
 		if (t != NULL) {
@@ -846,7 +848,7 @@ gfm_server_fsngroup_get_by_hostname(
 
 	{
 		giant_lock();
-		fsngroupname = find_fsngroup_by_hostname(hostname);
+		fsngroupname = find_fsngroup_by_hostname(hostname, 1);
 		giant_unlock();
 
 		if (fsngroupname == NULL) {
