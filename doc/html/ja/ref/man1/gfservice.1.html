@@ -42,7 +42,7 @@ CLASS="REPLACEABLE"
 ><I
 >オプション</I
 ></TT
->]  サブコマンド   ホスト ID  [<TT
+>]  サブコマンド  [ホスト ID] [<TT
 CLASS="REPLACEABLE"
 ><I
 >引数 ...</I
@@ -1515,6 +1515,98 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >リモートホスト上で Gfarm コマンドを実行します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="MULTI-HOST-SUB-COMMANDS"
+></A
+><H2
+>SUB-COMMANDS OPERATE ON MULTIPLE HOSTS</H2
+><P
+>以下に挙げているのは、複数のホストを操作するサブコマンドです。
+コマンド行にはホスト ID は不要です。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><B
+CLASS="COMMAND"
+>start-all-servers</B
+></DT
+><DD
+><P
+>設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
+「gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>」ならばバックエンドデータベースと 
+<B
+CLASS="COMMAND"
+>gfmd</B
+>を起動し、 ホスト ID が
+「gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>」ならば <B
+CLASS="COMMAND"
+>gfsd</B
+> を
+起動します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>stop-all-servers</B
+></DT
+><DD
+><P
+>設定ファイルで定義されているホストそれぞれに対し、ホスト ID が
+「gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>」ならばバックエンドデータベースと 
+<B
+CLASS="COMMAND"
+>gfmd</B
+>の実行を停止し、 ホスト ID が
+「gfsd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>」ならば <B
+CLASS="COMMAND"
+>gfsd</B
+> の
+実行を停止します。</P
+></DD
+><DT
+><B
+CLASS="COMMAND"
+>restart-all-servers</B
+></DT
+><DD
+><P
+>サブコマンド <B
+CLASS="COMMAND"
+>stop-all-servers</B
+> と
+<B
+CLASS="COMMAND"
+>start-all-servers</B
+> を続けて実行します。</P
 ></DD
 ></DL
 ></DIV

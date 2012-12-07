@@ -3,13 +3,13 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "07 December 2012" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
 .SH SYNOPSIS
 
-\fBgfservice\fR [ \fB\fIoptions\fB\fR ] \fBsub-command\fR \fBhost-id\fR [ \fB\fIargument ...\fB\fR ]
+\fBgfservice\fR [ \fB\fIoptions\fB\fR ] \fBsub-command\fR [ \fBhost-id\fR ] [ \fB\fIargument ...\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
@@ -291,7 +291,7 @@ If you want to unconfigure a slave gfmd, use
 An alias of "\fBunconfig-gfarm\fR" sub-command.
 .TP
 \fBunconfig-gfarm-slave \fImaster-host-id\fB\fR
-This sub-command is the same as "\fBunonfig-gfarm\fR",
+This sub-command is the same as "\fBunconfig-gfarm\fR",
 but \fBgfservice\fR does some additional works.
 It also deletes the slave host from a server list using
 \fBgfmdhost\fR command and from
@@ -405,13 +405,31 @@ on the remote host.
 .TP
 \fBgfcmd \fIcommand-name\fB \fIcommand-argument ...\fB\fR
 Execute a Gfarm command on the remote host.
+.SH "SUB-COMMANDS WHICH OPERATE ON MULTIPLE HOSTS"
+.PP
+The followings are sub-commands which operate on multiple hosts.
+The host-id argument must not be specified.
+.TP
+\fBstart-all-servers\fR
+For each host configured in configuration file, start a backend database
+and \fBgfmd\fR if host-id is "gfmd\fIn\fR",
+start \fBgfsd\fR if host-id is "gfsd\fIn\fR".
+.TP
+\fBstop-all-servers\fR
+For each host configured in configuration file, stop a backend database
+and \fBgfmd\fR if host-id is "gfmd\fIn\fR",
+stop \fBgfsd\fR if host-id is "gfsd\fIn\fR".
+.TP
+\fBrestart-all-servers\fR
+Perform "\fBstop-all-servers\fR" and
+"\fBstart-all-servers\fR" sub-commands successively.
 .SH "PLUGIN SYSTEM"
 .PP
 \fBgfservice\fR has a plug-in system so that user can add
 new sub-commands. If given sub-command is not provided by
 \fBgfservice\fR, \fBgfservice\fR refers to
 a file which has name of sub-command under %%DATADIR%%/gfarm/gfservice
-direcotry.
+directory.
 .PP
 Sub-command file must be written as Bourne shell script. Sub-command
 file for sub-command "\fIname\fR", must have
