@@ -21,7 +21,7 @@ cleanup() {
     gfrmdir ${dir}
 }
 
-trap 'celanup; exit $exit_trap' $trap_sigs
+trap 'cleanup; exit $exit_trap' $trap_sigs
 
 setup
 
@@ -31,7 +31,7 @@ if test $? -ne 1; then
     exit $exit_fail
 fi
 
-gfrepattr -s ${dir} -c "${pat00}"
+gfrepattr -s -c ${dir} "${pat00}"
 if test $? -ne 0; then
     cleanup
     exit $exit_fail
