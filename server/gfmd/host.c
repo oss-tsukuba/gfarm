@@ -88,8 +88,7 @@ struct host {
 	int status_callout_retry;
 };
 
-/* referenced from fsngroup.c, it needs host_hashtab. */
-struct gfarm_hash_table *host_hashtab = NULL;
+static struct gfarm_hash_table *host_hashtab = NULL;
 static struct gfarm_hash_table *hostalias_hashtab = NULL;
 
 static struct host *host_new(struct gfarm_host_info *, struct callout *);
