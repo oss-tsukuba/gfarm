@@ -1,16 +1,9 @@
-#include <sys/time.h>
-#include <assert.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <gfarm/gfarm.h>
 #include <gfarm/gfarm_config.h>
 #include "context.h"
 #include "config.h"
-#include "lookup.h"
-#include "gfm_client.h"
+#include "ug_idmap.h"
 
 int
 gfsk_gfarm_init(uid_t uid)

@@ -3,21 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include <syslog.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <stddef.h>
-#include <limits.h>
 #include <pwd.h>
 #include <sys/mount.h>
 #include <sys/mman.h>
-
 #include <gfarm/gfarm.h>
-#include "timer.h"
-#include "gfutil.h"
-#include "auth.h"
 #include "context.h"
 #include "gfm_client.h"
 #include "metadb_server.h"
