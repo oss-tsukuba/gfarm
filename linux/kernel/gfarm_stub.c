@@ -14,7 +14,6 @@
 #include "quota_info.h"
 #include "gfm_client.h"
 #include "context.h"
-#include "liberror.h"
 #include "hostspec.h"
 #include "auth.h"
 

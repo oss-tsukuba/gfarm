@@ -11,7 +11,6 @@
 #include "timer.h"
 #include "gfutil.h"
 #include "context.h"
-#include "liberror.h"
 #include "config.h"
 #include "gfsk_if.h"
 #include "gfskd.h"
