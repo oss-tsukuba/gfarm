@@ -716,7 +716,7 @@ gfm_server_fsngroup_get_by_hostname(
 		giant_lock();
 
 		h = host_lookup(hostname);
-		if (h != NULL && host_is_valid(h)) {
+		if (h != NULL) {
 			fsngroupname = strdup(host_fsngroup(h));
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
