@@ -24,9 +24,6 @@
 #include "subr.h"
 #include "user.h"
 
-#define macro_stringify(X)	stringify(X)
-#define stringify(X)	#X
-
 #define dup_or_null(X)	\
 	((X) == NULL) ? NULL : strdup_ck((X), "dup_or_null")
 
@@ -624,8 +621,7 @@ gfm_server_fsngroup_get_all(
 		int n = 0;
 		gfarm_fsngroup_tuples_t t = NULL;
 		gfarm_error_t e2;
-		const char diag[] =
-			macro_stringify(GFM_PROTO_FSNGROUP_GET_ALL);
+		const char diag[] = "GFM_PROTO_FSNGROUP_GET_ALL";
 
 		giant_lock();
 		t = get_tuples_all(NULL, FILTER_CHECK_VALID);
@@ -695,8 +691,7 @@ gfm_server_fsngroup_get_by_hostname(
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
 	char *hostname = NULL;		/* Always need to be free'd */
 	char *fsngroupname = NULL;	/* Always need to be free'd */
-	static const char diag[] =
-		macro_stringify(GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME);
+	static const char diag[] = "GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME";
 
 	(void)from_client;
 
@@ -761,8 +756,7 @@ gfm_server_fsngroup_modify(
 	 *	resultcode::integer
 	 */
 
-	static const char diag[] =
-		macro_stringify(GFM_PROTO_FSNGROUP_MODIFY);
+	static const char diag[] = "GFM_PROTO_FSNGROUP_MODIFY";
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
 	char *hostname = NULL;		/* need to be free'd always */
 	char *fsngroupname = NULL;	/* need to be free'd always */
