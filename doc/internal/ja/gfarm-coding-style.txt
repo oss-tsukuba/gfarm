@@ -31,9 +31,10 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 		warning: ignoring #pragma omp 〜
 
 ■ 命名規約について
+
 	ライブラリ中の公開されているシンボルは、必ず gfarm_ のような
 	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
-	重ならないようにしています。
+	重ならないようにします。
 
 ■ エラーコードについて
 
@@ -41,14 +42,17 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	一部の例外を除き、ほぼ全ての関数は、戻り値としてエラー
 	コードを返すものとします。
 
-	エラーコードは lib/libgfarm/gfutil.h では OS の errno の値を、
-	それ以外では gfarm_error_t を用います。
+	エラーコードは以下を用います。
+	・lib/libgfarm/gfutil/ では OS の errno の値
+	・lib/libgfarm/gfsl/ では OM_uint32 majorStatus, minorStatus
+	・それ以外では gfarm_error_t 型
 
 	gfarm_error_t は以下の2箇所のヘッダで定数定義していますが、
 		include/gfarm/error.h
 		lib/libgfarm/gfarm/liberror.h
 	このうちネットワーク上を流して良い値は include/gfarm/error.h
-	にあるもののみです。
+	にあるもののみです。liberror.h の方は、libgfarm の内部でのみ
+	使用することを意図しています。
 
 	もし lib/libgfarm/gfarm/liberror.h で定義している値がネット
 	ワーク上を流れる可能性が生じた場合には、定義を
@@ -72,14 +76,33 @@ http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=t
 	れば、stderr でも syslog でもなく、ダイアローグ・ウィンドウで
 	エラーを報告したいかもしれないからです。
 
-	ただし現在のところ、gfarm_initialize() は、この原則に違反して
-	います。これは、設定ファイル関係など、呼び出し側へ返す戻り値
-	だけでは特定できないほど沢山の種類のエラー出る可能性があるから
-	です。将来的にはこの制限も撤廃したいと考えています。
+	ただし、この原則には、現在のところ以下の例外があります。
+	・gfarm_initialize() では、設定ファイル関係など、呼び出し側へ
+	　返す戻り値だけでは特定できないほど沢山の種類のエラー出る
+	　可能性があるため、利便性を考えて、例外としています。
+	・gfmd の failover や gfsd の再接続後、non-idemopotent な RPC を
+	　再発行したため、処理に成功したにも関わらず、エラーの結果を返し
+	　ている可能性がある場合に関しても、gflog_warning() で警告を出力
+	　しています。これは、ライブラリ側では適切な対処が実現できていない
+	　ためです。
+	将来的にはこれらの例外も撤廃したいと考えています。
 	(が、具体的な予定はありません。)
 
-	また、gfmd や gfsd, gftool については、汎用ライブラリでは
+	gfmd や gfsd, gftool については、汎用ライブラリでは
 	ありませんから、このような制約はありません。
+
+	https://sourceforge.net/apps/trac/gfarm/changeset/4418
+	で、ほぼ全てのエラー・ケースについて、gflog_debug() で
+	デバッグ・ログを出力するになりました。
+	これは、実運用環境からの障害報告を目的とした変更です。
+	ただし、r4418 の変更には過剰な点があります。
+	たとえば gfmd には gfm_server_get_request(), gfm_server_put_reply()
+	などのように、diag メッセージを引数にとり、関数内部で、エラー発生時に
+	ログを出力する関数が存在します。これらについては、呼び出し側で
+	冗長なログを出力してはいけません (が、r4418 では出力するように
+	変更していしまっています…)。もちろん、呼ばれた側のエラーログには
+	含まれていない情報を、呼び出し側でつけ加える場合には、冗長では
+	ありませんので出力しても問題ありません。
 
 ■ 定数定義について
 
