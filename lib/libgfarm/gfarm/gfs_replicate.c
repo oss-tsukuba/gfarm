@@ -134,7 +134,7 @@ gfs_replicate_from_to_internal(GFS_File gf, char *srchost, int srcport,
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server = gfs_pio_metadb(gf);
 	struct gfs_connection *gfs_server;
-	int nretry = 1;
+	int nretry = 1, gfsd_retried = 0, failover_retried = 0;
 
 retry:
 	gfm_server = gfs_pio_metadb(gf);
@@ -155,26 +155,36 @@ retry:
 		    "gfs_client_replica_add_from: %s",
 		    gfarm_error_string(e));
 		if (nretry-- > 0) {
-			if (gfs_client_is_connection_error(e))
+			if (gfs_client_is_connection_error(e)) {
+				gfsd_retried = 1;
 				goto retry;
+			}
 			if (gfs_pio_should_failover(gf, e)) {
 				if ((e = gfs_pio_failover(gf))
 				    != GFARM_ERR_NO_ERROR) {
 					gflog_debug(GFARM_MSG_UNFIXED,
 					    "gfs_pio_failover: %s",
 					    gfarm_error_string(e));
-				} else
+				} else {
+					failover_retried = 1;
 					goto retry;
+				}
 			}
 		}
 	}
 	if ((e == GFARM_ERR_ALREADY_EXISTS || e == GFARM_ERR_FILE_BUSY) &&
-	    nretry <= 0) {
-		gflog_warning(GFARM_MSG_1003453,
-		    "error occurred by retrying the non-idempotent file "
-		    "replication operation due to the disconnection of gfsd, "
-		    "so it might succeed in the server."
+	    (gfsd_retried || failover_retried)) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "error ocurred at retry for the operation after "
+		    "connection to %s, "
+		    "so the operation possibly succeeded in the server."
 		    " error='%s'",
+		    gfsd_retried && failover_retried ?
+		    "gfsd was disconnected and connection to "
+		    "gfmd was failed over" :
+		    gfsd_retried ?
+		    "gfsd was disconnected" :
+		    "gfmd was failed over" ,
 		    gfarm_error_string(e));
 	}
 	return (e);
