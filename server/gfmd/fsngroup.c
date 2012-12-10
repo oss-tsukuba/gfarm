@@ -24,23 +24,11 @@
 #include "subr.h"
 #include "user.h"
 
-#define FOR_ALL_HOSTS(it) \
-	for (gfarm_hash_iterator_begin(host_hashtab, (it)); \
-	    !gfarm_hash_iterator_is_end(it); \
-	     gfarm_hash_iterator_next(it))
-
 #define macro_stringify(X)	stringify(X)
 #define stringify(X)	#X
 
 #define dup_or_null(X)	\
 	((X) == NULL) ? NULL : strdup_ck((X), "dup_or_null")
-
-/*****************************************************************************/
-/*
- * Symbols: mainly from host.c
- */
-struct gfarm_hash_table *host_hashtab;
-struct host *host_iterator_access(struct gfarm_hash_iterator *);
 
 /*****************************************************************************/
 /*
@@ -239,48 +227,11 @@ text_lines(gfarm_fsngroup_text_t t)
 }
 
 /*****************************************************************************/
-/*
- * Host table iterations:
- */
-
-/*
- * Simple fsngroup searcher.
- *
- * REQUISITE: giant_lock
- *
- *	returned pointer needs to be free'd.
- */
-static char *
-find_fsngroup_by_hostname(const char *hostname, int check_valid)
-{
-	char *ret = NULL;
-	struct host *h;
-	struct gfarm_hash_iterator it;
-
-	FOR_ALL_HOSTS(&it) {
-		h = host_iterator_access(&it);
-		if (check_valid && !host_is_valid(h))
-			continue;
-		if (strcmp(host_name(h), hostname) == 0) {
-			ret = strdup(host_fsngroup(h));
-			if (ret == NULL)
-				gflog_error(GFARM_MSG_UNFIXED,
-					"%s: insufficient memory to "
-					"allocate for a host search results.",
-					"find_fsngroup_by_hostname");
-			break;
-		}
-	}
-
-	return (ret);
-}
-
-#define scan_host_cache(f, arg, es, al, il, np) \
-    host_iterate(f, arg, es, al, il, np)
 
 /*
  * Matcher functions for the scanner:
  */
+
 static void *
 match_tuple_all(struct host *h, void *a, int *stopp)
 {
@@ -760,15 +711,20 @@ gfm_server_fsngroup_get_by_hostname(
 	}
 
 	{
-		giant_lock();
-		fsngroupname = find_fsngroup_by_hostname(hostname, 1);
-		giant_unlock();
+		struct host *h = NULL;
 
-		if (fsngroupname == NULL) {
+		giant_lock();
+
+		h = host_lookup(hostname);
+		if (h != NULL && host_is_valid(h)) {
+			fsngroupname = strdup(host_fsngroup(h));
+		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"host does not exists");
 			e = GFARM_ERR_NO_SUCH_OBJECT;
 		}
+
+		giant_unlock();
 	}
 
 	if (fsngroupname != NULL)
