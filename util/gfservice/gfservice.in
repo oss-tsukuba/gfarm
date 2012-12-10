@@ -435,7 +435,7 @@ distribute_gfarm_conf()
 	log_debug "distribute_gfarm_conf: FILE=$1"
 
 	get_all_hostids | while read I; do
-		exec_client_host_agent $I root restore-gfarm-conf < "$1"
+		exec_remote_host_agent $I root restore-gfarm-conf < "$1"
 		if [ $? -ne 0 ]; then
 			log_error "gfservice restore-gfarm-conf $I failed"
 			log_debug "end distribute_gfarm_conf"
@@ -562,7 +562,7 @@ exec_client_host_agent()
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
 	AGENT=`get_agent $EXEC_HOSTID`
-	CONFIG_GFSD_OPTIONS=`get_config_gfsd_options $HOSTID`
+	CONFIG_GFSD_OPTIONS=`get_config_gfsd_options $EXEC_HOSTID`
 
 	CMD_ARGV=
 	for I in "$@" "config-gfsd-options=$CONFIG_GFSD_OPTIONS"; do
@@ -584,7 +584,35 @@ exec_client_host_agent()
 }
 
 #
-# Execute a command on a remote gfsd host via SSH.
+# Execute an agent on a remote host via SSH.
+#
+exec_remote_host_agent()
+{
+	EXEC_HOSTID="$1"
+	EXEC_USER="$2"
+	shift 2
+
+	log_debug "exec_remote_host_agent:" \
+		"HOSTID=$EXEC_HOSTID, USER=$EXEC_USER, ARGS=$@"
+
+	if is_gfmd_hostid $EXEC_HOSTID; then
+		exec_gfmd_host_agent $EXEC_HOSTID $EXEC_USER "$@" \
+			"hosttype=gfmd"
+	elif is_gfsd_hostid $EXEC_HOSTID; then
+		exec_gfsd_host_agent $EXEC_HOSTID $EXEC_USER "$@" \
+			"hosttype=gfsd"
+	elif is_client_hostid $EXEC_HOSTID; then
+		exec_client_host_agent $EXEC_HOSTID $EXEC_USER "$@" \
+			"hosttype=client"
+	fi
+	RESULT=$?
+
+	log_debug "end exec_remote_host_agent: returns $RESULT"
+	return $RESULT
+}
+
+#
+# Execute a command on a remote host via SSH.
 #
 exec_remote_host_gfcmd()
 {
@@ -596,16 +624,8 @@ exec_remote_host_gfcmd()
 	log_debug "exec_remote_host_gfcmd:" \
 		"HOSTID=$EXEC_HOSTID, USER=$EXEC_USER, ARGS=$EXEC_GFCMD $@"
 
-	if is_gfmd_hostid $EXEC_HOSTID; then
-		exec_gfmd_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
-			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=gfmd"
-	elif is_gfsd_hostid $EXEC_HOSTID; then
-		exec_gfsd_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
-			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=gfsd"
-	elif is_client_hostid $EXEC_HOSTID; then
-		exec_client_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
-			"cmd=$EXEC_GFCMD" "args=$*" "hosttype=client"
-	fi
+	exec_remote_host_agent $EXEC_HOSTID $EXEC_USER gfcmd \
+		"cmd=$EXEC_GFCMD" "args=$*"
 	RESULT=$?
 
 	log_debug "end exec_remote_host_gfcmd: returns $RESULT"
@@ -988,7 +1008,7 @@ subcmd_config_gfarm()
 	#
 	rm -f $TMP_FILE
 	if [ "X$AUTH_TYPE" = Xsharedsecret ]; then
-		exec_gfmd_host_agent $HOSTID - backup-shared-key > $TMP_FILE
+		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
 		[ $? -ne 0 ] && log_error "distribute a shared key failed"
@@ -998,7 +1018,7 @@ subcmd_config_gfarm()
 	# Edit 'gfarm2.conf' on the gfmd host and distribute it to all hosts.
 	#
 	rm -f $TMP_FILE
-	exec_gfmd_host_agent $HOSTID root backup-gfarm-conf > $TMP_FILE
+	exec_remote_host_agent $HOSTID root backup-gfarm-conf > $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf failed"
 	add_gfmd_to_gfarm_conf $TMP_FILE $BACKEND_HOSTNAME $GFMD_PORT
 	[ $? -ne 0 ] && log_error "editing gfarm2.conf failed"
@@ -1012,9 +1032,9 @@ subcmd_config_gfarm()
 #
 # Sub-command: config-gfarm-master
 #
-subcmd_config_gfarm()
+subcmd_config_gfarm_master()
 {
-	log_debug "subcmd_config_gfarm"
+	log_debug "subcmd_config_gfarm_master"
 	check_argc $# 0
 	check_gfmd_hostid $HOSTID
 
@@ -1031,7 +1051,8 @@ subcmd_config_gfarm()
 		$HOSTID root get-config-gfarm-param param=BACKEND_HOSTNAME`
 	[ "X$BACKEND_HOSTNAME" = X ] \
 		&& log_error "failed to get BACKEND_HOSTNAME"
-	log_debug "subcmd_config_gfarm: BACKEND_HOSTNAME=$BACKEND_HOSTNAME"
+	log_debug "subcmd_config_gfarm_master:" \
+		"BACKEND_HOSTNAME=$BACKEND_HOSTNAME"
 
 	#
 	# Get GFMD_PORT of the gfmd host.
@@ -1040,7 +1061,7 @@ subcmd_config_gfarm()
 		$HOSTID root get-config-gfarm-param param=GFMD_PORT`
 	[ "X$GFMD_PORT" = X ] \
 		&& log_error "failed to get GFMD_PORT of $HOSTID"
-	log_debug "subcmd_config_gfarm: GFMD_PORT=$GFMD_PORT"
+	log_debug "subcmd_config_gfarm_master: GFMD_PORT=$GFMD_PORT"
 
 	#
 	# Get AUTH_TYPE of the gfmd host.
@@ -1049,7 +1070,7 @@ subcmd_config_gfarm()
 		$HOSTID root get-config-gfarm-param param=AUTH_TYPE`
 	[ "X$AUTH_TYPE" = X ] \
 		&& log_error "failed to get AUTH_TYPE of $HOSTID"
-	log_debug "subcmd_config_gfarm: AUTH_TYPE=$AUTH_TYPE"
+	log_debug "subcmd_config_gfarm_master: AUTH_TYPE=$AUTH_TYPE"
 
 	#
 	# Create a new shared secret key.
@@ -1071,7 +1092,7 @@ subcmd_config_gfarm()
 	#
 	rm -f $TMP_FILE
 	if [ "X$AUTH_TYPE" = Xsharedsecret ]; then
-		exec_gfmd_host_agent $HOSTID - backup-shared-key > $TMP_FILE
+		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
 		[ $? -ne 0 ] && log_error "distribute a shared key failed"
@@ -1081,7 +1102,7 @@ subcmd_config_gfarm()
 	# Edit 'gfarm2.conf' on the gfmd host and distribute it to all hosts.
 	#
 	rm -f $TMP_FILE
-	exec_gfmd_host_agent $HOSTID root backup-gfarm-conf > $TMP_FILE
+	exec_remote_host_agent $HOSTID root backup-gfarm-conf > $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf failed"
 	add_gfmd_to_gfarm_conf $TMP_FILE $BACKEND_HOSTNAME $GFMD_PORT
 	[ $? -ne 0 ] && log_error "editing gfarm2.conf failed"
@@ -1089,7 +1110,7 @@ subcmd_config_gfarm()
 	[ $? -ne 0 ] && log_error "distribute gfarm2.conf failed"
 
 	rm -f $TMP_FILE
-	log_debug "end subcmd_config_gfarm"
+	log_debug "end subcmd_config_gfarm_master"
 }
 
 #
@@ -1104,10 +1125,10 @@ subcmd_config_gfarm_slave()
 	check_gfmd_hostid $MASTER
 
 	#
-	# Delete 'gfarm2.con' since 'config-gfarm-master' distributes
+	# Delete 'gfarm2.conf' since 'config-gfarm-master' distributes
 	# 'gfarm2.conf' to all hosts.
 	#
-	exec_client_host_agent $HOSTID root unconfig-client
+	exec_remote_host_agent $HOSTID root unconfig-client
 	[ $? -ne 0 ] && log_error "gfservice unconfig-client failed"
 	
 	#
@@ -1220,7 +1241,7 @@ subcmd_config_gfarm_slave()
 	# all hosts.
 	#
 	rm -f $TMP_FILE
-	exec_gfmd_host_agent $MASTER root backup-gfarm-conf > $TMP_FILE
+	exec_remote_host_agent $MASTER root backup-gfarm-conf > $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf $MASTER failed"
 	add_gfmd_to_gfarm_conf $TMP_FILE $BACKEND_HOSTNAME $GFMD_PORT
 	[ $? -ne 0 ] && log_error "editing gfarm2.conf failed"
@@ -1230,7 +1251,7 @@ subcmd_config_gfarm_slave()
 	#
 	# Start gfmd on the slave host.
 	#
-	exec_gfmd_host_agent $HOSTID root start-gfmd 
+	exec_gfmd_host_agent $HOSTID root start-gfmd
 	[ $? -ne 0 ] && log_error "gfservice start-gfmd failed"
 
 	rm -f $TMP_FILE
@@ -1302,11 +1323,11 @@ subcmd_config_gfsd()
 	rm -f $TMP_FILE
 	if [ "X$AUTH_TYPE" = Xsharedsecret ]; then
 		rm -f $TMP_FILE
-		exec_gfmd_host_agent gfmd1 - backup-shared-key \
+		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key" \
 			"gfmd1 failed"
-		exec_gfsd_host_agent $HOSTID root restore-shared-key \
+		exec_client_host_agent $HOSTID - restore-shared-key \
 			< $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice restore-shared-key" \
 			"$HOSTID failed"
@@ -1316,9 +1337,9 @@ subcmd_config_gfsd()
 	# Copy 'gfarm2.conf' from gfmd1 to the gfsd host.
 	#
 	rm -f $TMP_FILE
-	exec_gfmd_host_agent gfmd1 root backup-gfarm-conf > $TMP_FILE
-	[ $? -ne 0 ] && log_error "gfservice backup-shared-key gfmd1 failed"
-	exec_gfsd_host_agent $HOSTID root restore-gfarm-conf < $TMP_FILE
+	exec_remote_host_agent gfmd1 root backup-gfarm-conf > $TMP_FILE
+	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf gfmd1 failed"
+	exec_remote_host_agent $HOSTID root restore-gfarm-conf < $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice restore-gfarm-conf $HOSTID failed"
 
 	#
@@ -1377,11 +1398,11 @@ subcmd_config_client()
 	rm -f $TMP_FILE
 	if [ "X$AUTH_TYPE" = Xsharedsecret ]; then
 		rm -f $TMP_FILE
-		exec_gfmd_host_agent gfmd1 - backup-shared-key \
+		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key" \
 			"gfmd1 failed"
-		exec_gfmd_host_agent $HOSTID - restore-shared-key \
+		exec_client_host_agent $HOSTID - restore-shared-key \
 			< $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice restore-shared-key" \
 			"$HOSTID failed"
@@ -1410,8 +1431,10 @@ subcmd_unconfig_gfarm()
 subcmd_unconfig_gfarm_slave()
 {
 	log_debug "subcmd_unconfig_gfarm_slave"
-	check_argc $# 0
+	check_argc $# 1
+	MASTER="$1"
 	check_gfmd_hostid $HOSTID
+	check_gfmd_hostid $MASTER
 
 	#
 	# Get BACKEND_HOSTNAME of the slave host.
@@ -1442,7 +1465,7 @@ subcmd_unconfig_gfarm_slave()
 	#
 	# Execute 'gfservice unconfig-gfarm' on the slave host.
 	#
-	exec_gfmd_host_agent $HOSTID root unconfig-gfarm 
+	exec_gfmd_host_agent $HOSTID root unconfig-gfarm
 	[ $? -ne 0 ] && log_error "gfservice unconfig-gfarm failed"
 
 	#
@@ -1455,7 +1478,7 @@ subcmd_unconfig_gfarm_slave()
 	# Edit 'gfarm2.conf' on the gfmd host and distribute it to all hosts.
 	#
 	rm -f $TMP_FILE
-	exec_gfmd_host_agent $HOSTID root backup-gfarm-conf > $TMP_FILE
+	exec_remote_host_agent $MASTER root backup-gfarm-conf > $TMP_FILE
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf $HOST failed"
 	delete_gfmd_from_gfarm_conf $TMP_FILE $BACKEND_HOSTNAME $GFMD_PORT
 	[ $? -ne 0 ] && log_error "editing gfarm2.conf failed"
@@ -1505,7 +1528,7 @@ subcmd_unconfig_client()
 	check_argc $# 0
 	check_hostid $HOSTID
 
-	exec_client_host_agent $HOSTID root unconfig-client
+	exec_remote_host_agent $HOSTID root unconfig-client
 	[ $? -ne 0 ] && log_error "subcmd_unconfig_client:" \
 		"gfservice unconfig-client failed"
 
@@ -1654,7 +1677,7 @@ subcmd_backup_gfarm_conf()
 
 	check_argc $# 0
 	check_hostid $HOSTID
-	exec_client_host_agent $HOSTID root backup-gfarm-conf
+	exec_remote_host_agent $HOSTID root backup-gfarm-conf
 	[ $? -ne 0 ] && log_error "gfservice backup-gfarm-conf failed"
 
 	log_debug "end subcmd_backup_gfarm_conf"
@@ -1713,8 +1736,8 @@ subcmd_restore_gfarm_conf()
 	log_debug "subcmd_restore_gfarm_conf"
 
 	check_argc $# 0
-	check_gfmd_hostid $HOSTID
-	exec_client_host_agent $HOSTID root restore-gfarm-conf
+	check_hostid $HOSTID
+	exec_remote_host_agent $HOSTID root restore-gfarm-conf
 	[ $? -ne 0 ] && log_error "gfservice restore-gfarm-conf failed"
 
 	log_debug "end subcmd_restore_gfarm_conf"
@@ -2007,7 +2030,7 @@ config-gfarm)
 	subcmd_config_gfarm "$@"
 	;;
 config-gfarm-master)
-	subcmd_config_gfarm "$@"
+	subcmd_config_gfarm_master "$@"
 	;;
 config-gfarm-slave)
 	subcmd_config_gfarm_slave "$@"
@@ -2024,8 +2047,8 @@ unconfig-gfarm|unconfig-gfarm-master)
 	subcmd_unconfig_gfarm "$@"
 	;;
 unconfig-gfarm-slave)
-	subcmd_stop_gfmd "$@"
-	subcmd_stop_backend_db "$@"
+	subcmd_stop_gfmd
+	subcmd_stop_backend_db
 	subcmd_unconfig_gfarm_slave "$@"
 	;;
 unconfig-gfsd)

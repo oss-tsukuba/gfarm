@@ -193,11 +193,11 @@ set_gfsd_params()
 		&& log_error "failed to get spool directory"
 	log_debug "set_gfsd_params: set SPOOL_DIR=$SPOOL_DIR"
 
-	GFSD_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
+	GFARM_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
 		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
-	[ "X$GFSD_CONF" = X ] \
+	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
-	log_debug "set_gfsd_params: set GFSD_CONF=$GFSD_CONF"
+	log_debug "set_gfsd_params: set GFARM_CONF=$GFARM_CONF"
 
 	GFSD_HOSTNAME=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
 		| sed -ne '/^GFSD_HOSTNAME=/s/^[^=]*=//p'`
@@ -224,6 +224,30 @@ set_client_params()
 	log_debug "set_client_params: set GFARM_CONF=$GFARM_CONF"
 
 	log_debug "end set_client_params"
+	return 0
+}
+
+#
+# Set appropriate variables with given host type.
+#
+set_params()
+{
+	log_debug "set_params"
+
+	HOSTTYPE=`get_param hosttype`
+	case $HOSTTYPE in
+	gfmd)
+		set_gfmd_params
+		;;
+	gfsd)
+		set_gfsd_params
+		;;
+	client)
+		set_client_params
+		;;
+	esac
+
+	log_debug "end set_params"
 	return 0
 }
 
@@ -781,7 +805,7 @@ subcmd_unconfig_gfarm()
 	set_gfmd_params
 	stop_gfmd no
 	stop_pgsql no
-	rm -f /var/run/gfmd.pid
+	rm -f $GFMD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFMD_CONF
 	rm -f $GFMD_RC
@@ -802,7 +826,7 @@ subcmd_unconfig_gfsd()
 
 	set_gfsd_params
 	stop_gfsd no
-	rm -f /var/run/gfsd.pid
+	rm -f $GFSD_PID_FILE
 	rm -f $GFARM_CONF
 	rm -f $GFSD_RC
 	rm -f -r $SPOOL_DIR
@@ -818,7 +842,7 @@ subcmd_unconfig_client()
 {
 	log_debug "subcmd_unconfig_client"
 
-	set_client_params
+	set_params
 	rm -f $GFARM_CONF
 	rm -f $SHARED_KEY_FILE
 
@@ -987,7 +1011,7 @@ subcmd_backup_gfarm_conf()
 {
 	log_debug "subcmd_backup_gfarm_conf"
 
-	set_client_params
+	set_params
 	cat $GFARM_CONF
 	[ $? -ne 0 ] && log_error "failed to backup $GFARM_CONF"
 
@@ -1002,7 +1026,6 @@ subcmd_backup_shared_key()
 {
 	log_debug "subcmd_backup_shared_key"
 
-	set_client_params
 	cat $SHARED_KEY_FILE
 	[ $? -ne 0 ] && log_error "failed to backup $SHARED_KEY_FILE"
 
@@ -1053,7 +1076,11 @@ subcmd_restore_gfarm_conf()
 {
 	log_debug "subcmd_restore_gfarm_conf"
 
-	set_client_params
+	set_params
+	CONF_DIR=`dirname $GFARM_CONF`
+	if [ ! -d $CONF_DIR ]; then
+		mkdir -p $CONF_DIR
+	fi
 	trap "rm -f $GFARM_CONF.tmp; exit 1" 1 2 3 15
 	rm -f $GFARM_CONF.tmp
 	cat > $GFARM_CONF.tmp && mv -f $GFARM_CONF.tmp $GFARM_CONF
@@ -1071,7 +1098,6 @@ subcmd_restore_shared_key()
 {
 	log_debug "subcmd_restore_shared_key"
 
-	set_client_params
 	trap "rm -f $SHARED_KEY_FILE.tmp; exit 1" 1 2 3 15
 	rm -f $SHARED_KEY_FILE.tmp
 	cat > $SHARED_KEY_FILE.tmp \
@@ -1109,19 +1135,7 @@ subcmd_gfcmd()
 {
 	log_debug "subcmd_gfcmd"
 
-	HOSTTYPE=`get_param hosttype`
-	case $HOSTTYPE in
-	gfmd)
-		set_gfmd_params
-		;;
-	gfsd)
-		set_gfsd_params
-		;;
-	client)
-		set_client_params
-		;;
-	esac
-
+	set_params
 	CMD=`get_param cmd`
 	expr "X$CMD" : '^Xgf[a-z0-9._-]*$' > /dev/null 2>&1 || {
 		log_error "invalid command name: '$CMD'"
