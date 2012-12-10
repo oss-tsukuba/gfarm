@@ -3550,7 +3550,7 @@ t_apply(void)
 	struct journal_file_reader *reader;
 	struct journal_file_writer *writer;
 	off_t wpos1, wpos2;
-	char msg[BUFSIZ], *config;
+	char msg[BUFSIZ];
 	int i;
 
 	unlink_test_file(filepath);
@@ -3568,8 +3568,6 @@ t_apply(void)
 	db_journal_apply_init();
 	db_journal_init_status();
 	db_journal_set_sync_op(t_no_sync);
-	if ((config = getenv("GFARM_CONFIG_FILE")) != NULL)
-		gfarm_config_set_filename(config);
 	gfarm_set_metadb_replication_enabled(0);
 	db_use(&empty_ops);
 	gfarm_set_metadb_replication_enabled(1);
@@ -3607,8 +3605,11 @@ main(int argc, char **argv)
 {
 	int c, op = 0;
 
+	/* XXX: settings in gfmd.conf doesn't work in this case */
+	char *config  = getenv("GFARM_CONFIG_FILE");
+
 	debug_mode = 1;
-	gfarm_server_initialize(NULL, &argc, &argv);
+	gfarm_server_initialize(config, &argc, &argv);
 	gflog_set_priority_level(LOG_DEBUG);
 	gflog_set_message_verbose(99);
 
