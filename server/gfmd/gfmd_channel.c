@@ -763,9 +763,16 @@ gfmdc_client_journal_send(struct peer *peer,
 	    &to_sn, &no_rec, mdhost_get_name(mh));
 	if (e != GFARM_ERR_NO_ERROR) {
 		mdhost_set_seqnum_state_by_error(mh, e);
-		gflog_debug(GFARM_MSG_1002977,
-		    "reading journal to send to %s: %s",
-		    mdhost_get_name(mh), gfarm_error_string(e));
+		if (e == GFARM_ERR_EXPIRED) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "gfmd_channel(%s) : %s",
+			    mdhost_get_name(mh),
+			    gfarm_error_string(e));
+		} else {
+			gflog_debug(GFARM_MSG_1002977,
+			    "reading journal to send to %s: %s",
+			    mdhost_get_name(mh), gfarm_error_string(e));
+		}
 		return (e);
 	} else if (no_rec) {
 		mdhost_set_seqnum_ok(mh);
