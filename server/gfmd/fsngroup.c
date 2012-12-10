@@ -711,20 +711,26 @@ gfm_server_fsngroup_get_by_hostname(
 	}
 
 	{
-		struct host *h = NULL;
+		if (hostname != NULL && hostname[0] != '\0') {
+			struct host *h = NULL;
 
-		giant_lock();
+			giant_lock();
+			if ((h = host_lookup(hostname)) != NULL)
+				fsngroupname = strdup(host_fsngroup(h));
+			giant_unlock();
 
-		h = host_lookup(hostname);
-		if (h != NULL) {
-			fsngroupname = strdup(host_fsngroup(h));
+			if (h == NULL) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+					"host \"%s\" does not exist.",
+					hostname);
+				e = GFARM_ERR_NO_SUCH_OBJECT;
+			}
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"host does not exists");
-			e = GFARM_ERR_NO_SUCH_OBJECT;
+				"an invalid hostname parameter (nul).");
+			e = GFARM_ERR_INVALID_ARGUMENT;
 		}
 
-		giant_unlock();
 	}
 
 	if (fsngroupname != NULL)
