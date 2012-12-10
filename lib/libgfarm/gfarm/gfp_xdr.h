@@ -5,10 +5,6 @@ struct gfp_iobuffer_ops {
 	gfarm_error_t (*export_credential)(void *);
 	gfarm_error_t (*delete_credential)(void *, int);
 	char *(*env_for_credential)(void *);
-	int (*nonblocking_read)(struct gfarm_iobuffer *, void *, int,
-	    void *, int);
-	int (*nonblocking_write)(struct gfarm_iobuffer *, void *, int,
-	    void *, int);
 	int (*blocking_read_timeout)(struct gfarm_iobuffer *, void *, int,
 	    void *, int);
 	int (*blocking_read_notimeout)(struct gfarm_iobuffer *, void *, int,
@@ -45,7 +41,6 @@ void *gfp_xdr_cookie(struct gfp_xdr *);
 int gfp_xdr_fd(struct gfp_xdr *);
 int gfp_xdr_read_fd(struct gfp_xdr *);
 gfarm_error_t gfp_xdr_sendbuffer_check_size(struct gfp_xdr *, int);
-gfarm_error_t gfp_xdr_recvbuffer_check_size(struct gfp_xdr *, int);
 void gfp_xdr_recvbuffer_clear_read_eof(struct gfp_xdr *);
 void gfp_xdr_set(struct gfp_xdr *,
 	struct gfp_iobuffer_ops *, void *, int);
@@ -98,8 +93,6 @@ gfarm_error_t gfp_xdr_vrpc(struct gfp_xdr *, int, int,
 
 gfarm_error_t gfp_xdr_recv_partial(struct gfp_xdr *, int, void *, int, int *);
 gfarm_error_t gfp_xdr_recv_get_error(struct gfp_xdr *);
-gfarm_error_t gfp_xdr_read_direct(struct gfp_xdr *, void *, int, int *);
-gfarm_error_t gfp_xdr_write_direct(struct gfp_xdr *, void *, int, int *);
 
 
 /* asynchronous RPC related functions */

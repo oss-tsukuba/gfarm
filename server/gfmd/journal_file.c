@@ -1081,24 +1081,6 @@ journal_env_for_credential_fd_op(void *cookie)
 }
 
 static int
-journal_nonblocking_read_err_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
-{
-	errno = EPERM;
-	gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
-	return (-1);
-}
-
-static int
-journal_nonblocking_write_err_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
-{
-	errno = EPERM;
-	gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
-	return (-1);
-}
-
-static int
 journal_blocking_read_op(struct gfarm_iobuffer *b,
 	void *cookie, int fd, void *data, int length)
 {
@@ -1224,8 +1206,6 @@ static struct gfp_iobuffer_ops journal_iobuffer_ops = {
 	journal_export_credential_fd_op,
 	journal_delete_credential_fd_op,
 	journal_env_for_credential_fd_op,
-	journal_nonblocking_read_err_op,
-	journal_nonblocking_write_err_op,
 	journal_blocking_read_op,
 	journal_blocking_read_op,
 	journal_blocking_write_op

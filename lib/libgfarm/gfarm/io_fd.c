@@ -34,62 +34,6 @@
 #include "config.h"
 
 /*
- * nonblocking i/o
- */
-int
-gfarm_iobuffer_nonblocking_read_fd_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
-{
-	ssize_t rv = read(fd, data, length);
-
-	if (rv == -1)
-		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
-	return (rv);
-
-}
-
-static int
-gfarm_iobuffer_nonblocking_write_fd_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
-{
-	ssize_t rv = write(fd, data, length);
-
-	if (rv == -1)
-		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
-	return (rv);
-}
-
-/*
- * We have to distinguish the write operation for sockets from
- * the operation for file descriptors, because gfarm_send_no_sigpipe()
- * may only work with sockets, since it may use send(2) internally.
- */
-int
-gfarm_iobuffer_nonblocking_write_socket_op(struct gfarm_iobuffer *b,
-	void *cookie, int fd, void *data, int length)
-{
-	ssize_t rv = gfarm_send_no_sigpipe(fd, data, length);
-
-	if (rv == -1)
-		gfarm_iobuffer_set_error(b, gfarm_errno_to_error(errno));
-	return (rv);
-}
-
-void
-gfarm_iobuffer_set_nonblocking_read_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_read_timeout(b,
-	    gfarm_iobuffer_nonblocking_read_fd_op, NULL, fd);
-}
-
-void
-gfarm_iobuffer_set_nonblocking_write_fd(struct gfarm_iobuffer *b, int fd)
-{
-	gfarm_iobuffer_set_write(b, gfarm_iobuffer_nonblocking_write_fd_op,
-	    NULL, fd);
-}
-
-/*
  * blocking i/o
  */
 int
@@ -289,8 +233,6 @@ struct gfp_iobuffer_ops gfp_xdr_socket_iobuffer_ops = {
 	gfp_iobuffer_export_credential_fd_op,
 	gfp_iobuffer_delete_credential_fd_op,
 	gfp_iobuffer_env_for_credential_fd_op,
-	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_timeout_fd_op,
 	gfarm_iobuffer_blocking_read_notimeout_fd_op,
 	gfarm_iobuffer_blocking_write_socket_op

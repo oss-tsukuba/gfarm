@@ -158,19 +158,6 @@ gfp_xdr_sendbuffer_check_size(struct gfp_xdr *conn, int size)
 		return (GFARM_ERR_NO_ERROR);
 }
 
-gfarm_error_t
-gfp_xdr_recvbuffer_check_size(struct gfp_xdr *conn, int size)
-{
-	if (size > gfarm_iobuffer_get_size(conn->recvbuffer)) {
-		gflog_fatal(GFARM_MSG_1002558,
-		    "%s", gfarm_error_string(GFARM_ERR_INTERNAL_ERROR));
-		return (GFARM_ERR_INTERNAL_ERROR);
-	} else if (size > gfarm_iobuffer_avail_length(conn->recvbuffer))
-		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
-	else
-		return (GFARM_ERR_NO_ERROR);
-}
-
 void
 gfp_xdr_recvbuffer_clear_read_eof(struct gfp_xdr *conn)
 {
@@ -195,24 +182,6 @@ gfp_xdr_env_for_credential(struct gfp_xdr *conn)
 	return ((*conn->iob_ops->env_for_credential)(conn->cookie));
 }
 
-
-void
-gfarm_iobuffer_set_nonblocking_read_xxx(struct gfarm_iobuffer *b,
-	struct gfp_xdr *conn)
-{
-	gfarm_iobuffer_set_read_timeout(b, conn->iob_ops->nonblocking_read,
-	    conn->cookie, conn->fd);
-	gfarm_iobuffer_set_read_notimeout(b, conn->iob_ops->nonblocking_read,
-	    conn->cookie, conn->fd);
-}
-
-void
-gfarm_iobuffer_set_nonblocking_write_xxx(struct gfarm_iobuffer *b,
-	struct gfp_xdr *conn)
-{
-	gfarm_iobuffer_set_write(b, conn->iob_ops->nonblocking_write,
-	    conn->cookie, conn->fd);
-}
 
 int
 gfp_xdr_recv_is_ready(struct gfp_xdr *conn)
@@ -1024,6 +993,7 @@ gfp_xdr_recv_notimeout(struct gfp_xdr *conn, int just,
 	return (e);
 }
 
+/* this function is used to read from file. i.e. server/gfmd/journal_file.c */
 gfarm_error_t
 gfp_xdr_recv_ahead(struct gfp_xdr *conn, int len, size_t *availp)
 {
@@ -1220,40 +1190,4 @@ void
 gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *conn)
 {
 	gfarm_iobuffer_end_pindown(conn->sendbuffer);
-}
-
-
-/*
- * lowest level interface,
- * this does not wait to receive desired length, and
- * this does not honor iobuffer.
- */
-gfarm_error_t
-gfp_xdr_read_direct(struct gfp_xdr *conn, void *data, int length,
-	int *resultp)
-{
-	int rv = (*conn->iob_ops->blocking_read_timeout)(conn->recvbuffer,
-	    conn->cookie, conn->fd, data, length);
-
-	if (rv == -1) {
-		*resultp = 0;
-		return (gfarm_iobuffer_get_error(conn->recvbuffer));
-	}
-	*resultp = rv;
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
-gfp_xdr_write_direct(struct gfp_xdr *conn, void *data, int length,
-	int *resultp)
-{
-	int rv = (*conn->iob_ops->blocking_write)(conn->sendbuffer,
-	    conn->cookie, conn->fd, data, length);
-
-	if (rv == -1) {
-		*resultp = 0;
-		return (gfarm_iobuffer_get_error(conn->sendbuffer));
-	}
-	*resultp = rv;
-	return (GFARM_ERR_NO_ERROR);
 }

@@ -214,8 +214,6 @@ struct gfp_iobuffer_ops gfp_xdr_secsession_iobuffer_ops = {
 	gfp_iobuffer_export_credential_secsession_op,
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,
-	gfarm_iobuffer_read_notimeout_secsession_op,
-	gfarm_iobuffer_write_secsession_op,
 	gfarm_iobuffer_read_timeout_secsession_op,
 	gfarm_iobuffer_read_notimeout_secsession_op,
 	gfarm_iobuffer_write_secsession_op
@@ -281,8 +279,6 @@ static struct gfp_iobuffer_ops gfp_xdr_insecure_gsi_session_iobuffer_ops = {
 	gfp_iobuffer_delete_credential_secsession_op,
 	gfp_iobuffer_env_for_credential_secsession_op,
 	/* NOTE: the following assumes that these functions don't use cookie */
-	gfarm_iobuffer_nonblocking_read_fd_op,
-	gfarm_iobuffer_nonblocking_write_socket_op,
 	gfarm_iobuffer_blocking_read_timeout_fd_op,
 	gfarm_iobuffer_blocking_read_notimeout_fd_op,
 	gfarm_iobuffer_blocking_write_socket_op
