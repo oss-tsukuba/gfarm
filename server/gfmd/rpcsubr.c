@@ -91,49 +91,37 @@ gfm_server_get_request(struct peer *peer, size_t *sizep,
 static gfarm_error_t
 gfm_server_put_wrapped_vreply0(struct peer *peer, gfp_xdr_xid_t xid,
 	size_t *sizep, xdr_vsend_t xdr_vsend, int do_lock, const char *diag,
-	gfarm_error_t ecode, const char *wrapping_format,
-	va_list *wrapping_app, const char *format, va_list *app)
+	gfarm_error_t ecode, const char *wrapping_format, va_list *wrapping_app,
+	const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	struct gfp_xdr *client = peer_get_conn(peer);
-	struct abstract_host *ah;
-	struct peer *ahpeer = NULL;
 
 	if (debug_mode)
 		gflog_info(GFARM_MSG_1000229,
 		    "<%s> sending reply: %d", diag, (int)ecode);
 
 	if (sizep != NULL) {
-		if (peer_get_parent(peer) != NULL)
-			/* remote_peer from slave */
+		if (peer_get_parent(peer) != NULL) /* remote_peer from slave */
 			peer = peer_get_parent(peer);
-		/*
-		 * Since this is a reply, the peer is probably living,
-		 * thus, not using peer_sender_trylock() is mostly ok.
-		 */
-		ah = peer_get_abstract_host(peer);
 		if (do_lock) {
-			e = abstract_host_sender_lock(ah, &ahpeer, diag);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_warning(GFARM_MSG_UNFIXED,
-				    "%s sending relayed reply: %s",
-				    diag, gfarm_error_string(e));
-				peer_record_protocol_error(peer);
-				return (e);
-			}
+			e = async_server_vput_wrapped_reply(
+			    peer_get_abstract_host(peer), peer, xid, xdr_vsend,
+			    diag,
+			    ecode, wrapping_format, wrapping_app, format, app);
+		} else {
+			e = async_server_vput_wrapped_reply_unlocked(
+			    peer_get_abstract_host(peer), xid, xdr_vsend,
+			    diag,
+			    ecode, wrapping_format, wrapping_app, format, app);
 		}
-		e = async_server_vput_wrapped_reply(ah, peer, xid, xdr_vsend,
-		    diag, ecode, wrapping_format, wrapping_app, format, app);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_UNFIXED,
-			    "%s lock for sending relayed reply: %s",
+			    "%s sending relayed reply: %s",
 			    diag, gfarm_error_string(e));
 			peer_record_protocol_error(peer);
-		}
-		if (do_lock)
-			abstract_host_sender_unlock(ah, ahpeer, diag);
-		if (e != GFARM_ERR_NO_ERROR)
 			return (e);
+		}
 	} else {
 		e = gfp_xdr_send(client, "i", (gfarm_int32_t)ecode);
 		if (e != GFARM_ERR_NO_ERROR) {
@@ -165,12 +153,12 @@ gfm_server_put_wrapped_vreply0(struct peer *peer, gfp_xdr_xid_t xid,
 
 gfarm_error_t
 gfm_server_put_wrapped_vreply(struct peer *peer, gfp_xdr_xid_t xid,
-	size_t *sizep, xdr_vsend_t xdr_vsend, int do_lock, const char *diag,
+	size_t *sizep, xdr_vsend_t xdr_vsend, const char *diag,
 	gfarm_error_t ecode, const char *wrapping_format,
 	va_list *wrapping_app, const char *format, va_list *app)
 {
 	return (gfm_server_put_wrapped_vreply0(peer, xid, sizep, xdr_vsend, 
-	    do_lock, diag, ecode, wrapping_format, wrapping_app, format,
+	    0, diag, ecode, wrapping_format, wrapping_app, format,
 	    app));
 }
 
@@ -191,8 +179,8 @@ gfm_server_put_reply(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfm_server_put_wrapped_vreply0(peer, xid, sizep, gfp_xdr_vsend,
-	    1, diag, ecode, NULL, NULL, format, &ap);
+	e = gfm_server_put_vreply(peer, xid, sizep, gfp_xdr_vsend, diag,
+	    ecode, format, &ap);
 	va_end(ap);
 	return (e);
 }

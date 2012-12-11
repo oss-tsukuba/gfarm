@@ -387,8 +387,8 @@ slave_request_relay0(struct relayed_request *r, gfarm_int32_t command,
 	struct mdhost *mh = mdhost_lookup_master();
 
 	va_start(wap, wformat);
-	e = async_client_vsend_wrapped_request(
-	    mdhost_to_abstract_host(mh), NULL, r->diag,
+	e = async_client_vsend_wrapped_request_unlocked(
+	    mdhost_to_abstract_host(mh), r->diag,
 	    slave_request_relay_result,
 	    slave_request_relay_disconnect, r,
 #ifdef COMPAT_GFARM_2_3
@@ -1239,7 +1239,7 @@ gfm_server_relay_put_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 
 	va_start(wap, wformat);
 	e = gfm_server_put_wrapped_vreply(peer, xid, sizep, gfp_xdr_vsend_ref,
-	    0, diag, ecode, wformat, &wap, format, app);
+	    diag, ecode, wformat, &wap, format, app);
 	va_end(wap);
 	return (e);
 }

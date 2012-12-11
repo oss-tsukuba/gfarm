@@ -51,11 +51,24 @@ gfarm_error_t async_server_vput_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t,
 	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
 	const char *, gfarm_error_t, const char *, va_list *);
+gfarm_error_t async_server_vput_wrapped_reply_unlocked(struct abstract_host *,
+	gfp_xdr_xid_t,
+	xdr_vsend_t, const char *, gfarm_error_t,
+	const char *, va_list *, const char *, va_list *);
 gfarm_error_t async_server_vput_wrapped_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t,
 	xdr_vsend_t, const char *, gfarm_error_t,
 	const char *, va_list *, const char *, va_list *);
 
+gfarm_error_t async_client_vsend_wrapped_request_unlocked(
+	struct abstract_host *,
+	const char *, result_callback_t, disconnect_callback_t,
+	void *,
+#ifdef COMPAT_GFARM_2_3
+	host_set_callback_t,
+#endif
+	const char *, va_list *,
+	gfarm_int32_t, const char *, va_list *, int);
 gfarm_error_t async_client_vsend_wrapped_request(struct abstract_host *,
 	struct peer *, const char *, result_callback_t, disconnect_callback_t,
 	void *,
@@ -79,10 +92,6 @@ gfarm_error_t async_client_vrecv_wrapped_result(struct peer *,
 	const char *, gfarm_error_t *,
 	const char *, va_list *,
 	const char **, va_list *);
-gfarm_error_t async_client_sender_lock(struct abstract_host *,
-	struct peer *, struct peer **, int, const char *);
-void async_client_sender_unlock(struct abstract_host *,
-	struct peer *peer, const char *);
 gfarm_error_t abstract_host_sender_lock(struct abstract_host *,
 	struct peer **, const char *);
 void abstract_host_sender_unlock(struct abstract_host *, struct peer *,
