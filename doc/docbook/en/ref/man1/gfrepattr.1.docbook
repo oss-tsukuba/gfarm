@@ -1,0 +1,159 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfrepattr.1'>
+
+<refentryinfo><date>14 Jun 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrepattr</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfrepattr</refname>
+<refpurpose>Manipulate information for replication in Gfarm file system</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <group choice='opt'>
+      <arg choice='plain'>-s</arg>
+      <arg choice='plain'>-r</arg>
+    </group>
+    <group choice='opt'>
+      <arg choice='plain'>-c</arg>
+      <arg choice='plain'>-m</arg>
+    </group>
+    <arg choice='opt'>-h</arg>
+    <arg choice='plain'><replaceable>ARG</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>ARG</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='plain'>-s</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-c</arg>
+      <arg choice='plain'>-m</arg>
+    </group>
+    <arg choice='opt'>-h</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='plain'><replaceable>attr</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='plain'>-r</arg>
+    <arg choice='opt'>-h</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfrepattr</command>
+    <arg choice='opt'>-h</arg>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfrepattr</command> manipulates replication attributes of a specified file or a directory.
+Replication attributes is used by the <command>Replication-Attribute-based File Replication</command>.
+A replication attribute consists of a hostgroup name and a maximum number of file replica that can create in an hostgroup.
+</para>
+
+<para>
+Default action displays all replication attributes about specified files or directories.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+  <varlistentry>
+    <term><option>-s</option></term>
+    <listitem>
+      <para>
+    Set replication attributes for a specified file or directories.
+      </para>
+
+      <para>
+    -s option needs an <replaceable>attr</replaceable> as replication attributes.
+      </para>
+
+      <para>
+    an attr is represented by the following BNF:
+      </para>
+      <literallayout>
+        attr := | anattr ',' attr
+        anattr := string ':' integer
+      </literallayout>
+      <para>
+    e.g.)
+      </para>
+      <literallayout>
+        'group0:2'
+        'group0:1,group1:3'
+      </literallayout>
+
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-r</option></term>
+    <listitem>
+      <para>
+    Removes any replicaton attributes from a specified file or a directory.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-c</option></term>
+    <listitem>
+      <para>
+    Fails if replication attributes are already specified.
+    This option is used with the -s option.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-m</option></term>
+    <listitem>
+      <para>
+    Fails if replication attributes aren't specified yet.  
+    This option is used with the -s option.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-h</option></term>
+    <listitem>
+      <para>
+    Processes symbolic link instead of any referenced files.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+    <refentrytitle>gfhostgroup</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

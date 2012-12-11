@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfrepattr</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFREPATTR.1"
+></A
+>gfrepattr</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrepattr&nbsp;--&nbsp;Manipulate information for replication in Gfarm file system</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrepattr</B
+>  [-s | -r] [-c | -m] [-h]  <TT
+CLASS="REPLACEABLE"
+><I
+>ARG</I
+></TT
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>ARG</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfrepattr</B
+>   -s  [-c | -m] [-h]  <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>attr</I
+></TT
+> </P
+><P
+><B
+CLASS="COMMAND"
+>gfrepattr</B
+>   -r  [-h]  <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfrepattr</B
+>  [-h]  <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>  [<TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>...]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrepattr</B
+> manipulates replication attributes of a specified file or a directory.
+Replication attributes is used by the <B
+CLASS="COMMAND"
+>Replication-Attribute-based File Replication</B
+>.
+A replication attribute consists of a hostgroup name and a maximum number of file replica that can create in an hostgroup.</P
+><P
+>Default action displays all replication attributes about specified files or directories.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-s</CODE
+></DT
+><DD
+><P
+>    Set replication attributes for a specified file or directories.
+      </P
+><P
+>    -s option needs an <TT
+CLASS="REPLACEABLE"
+><I
+>attr</I
+></TT
+> as replication attributes.
+      </P
+><P
+>    an attr is represented by the following BNF:
+      </P
+><P
+CLASS="LITERALLAYOUT"
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attr&nbsp;:=&nbsp;|&nbsp;anattr&nbsp;','&nbsp;attr<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;anattr&nbsp;:=&nbsp;string&nbsp;':'&nbsp;integer<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</P
+><P
+>    e.g.)
+      </P
+><P
+CLASS="LITERALLAYOUT"
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'group0:2'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'group0:1,group1:3'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+></DT
+><DD
+><P
+>    Removes any replicaton attributes from a specified file or a directory.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-c</CODE
+></DT
+><DD
+><P
+>    Fails if replication attributes are already specified.
+    This option is used with the -s option.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>    Fails if replication attributes aren't specified yet.  
+    This option is used with the -s option.
+      </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
+></DT
+><DD
+><P
+>    Processes symbolic link instead of any referenced files.
+      </P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfhostgroup</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>
