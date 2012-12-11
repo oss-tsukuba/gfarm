@@ -90,7 +90,7 @@ file_opening_alloc(struct inode *inode,
 			fo->u.f.spool_host = spool_host;
 		}
 		fo->u.f.desired_replica_number = 0;
-		fo->u.f.replicainfo = NULL;
+		fo->u.f.repattr = NULL;
 		fo->u.f.replica_source = NULL;
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
@@ -118,7 +118,7 @@ file_opening_free(struct file_opening *fo, gfarm_mode_t mode)
 			free(fo->u.f.replica_source);
 			fo->u.f.replica_source = NULL;
 		}
-		free(fo->u.f.replicainfo);
+		free(fo->u.f.repattr);
 	} else if (GFARM_S_ISDIR(mode))
 		free(fo->u.d.key);
 	free(fo->path_for_trace_log);
@@ -333,36 +333,36 @@ process_record_desired_number(struct process *process, int fd,
 }
 
 gfarm_error_t
-process_record_replicainfo(struct process *process, int fd,
-	char *replicainfo)
+process_record_repattr(struct process *process, int fd,
+	char *repattr)
 {
 	struct file_opening *fo;
 	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_replicainfo(%ld, %d, '%s'): %s",
+			"process_record_repattr(%ld, %d, '%s'): %s",
 			(long)process->pid, fd,
-			(replicainfo != NULL) ? replicainfo : "",
+			(repattr != NULL) ? repattr : "",
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_replicainfo(%ld, %d, '%s'): "
+			"process_record_repattr(%ld, %d, '%s'): "
 			"not a file",
 			(long)process->pid, fd,
-			(replicainfo != NULL) ? replicainfo : "");
+			(repattr != NULL) ? repattr : "");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	
 	/*
-	 * The replicainfo must be malloc'd. It will be free'd in
+	 * The repattr must be malloc'd. It will be free'd in
 	 * file_opening_free().
 	 */
-	fo->u.f.replicainfo =
-		(replicainfo != NULL && *replicainfo != '\0') ?
-		replicainfo : NULL;
+	fo->u.f.repattr =
+		(repattr != NULL && *repattr != '\0') ?
+		repattr : NULL;
 	return (GFARM_ERR_NO_ERROR);
 }
 

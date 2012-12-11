@@ -16,7 +16,7 @@
 #include "bool.h"
 #include "gfutil.h"
 #include "hash.h"
-#include "replica_info.h"
+#include "repattr.h"
 
 /*****************************************************************************/
 
@@ -89,7 +89,7 @@
 
 /*****************************************************************************/
 
-struct gfarm_replicainfo {
+struct gfarm_repattr {
 	char *fsngroupname;
 	size_t n;
 };
@@ -280,21 +280,21 @@ parse_int32(const char *str, int32_t *val) {
 	return (ret);
 }
 
-static gfarm_replicainfo_t
-allocate_replicainfo(const char *fsngroupname, size_t n)
+static gfarm_repattr_t
+allocate_repattr(const char *fsngroupname, size_t n)
 {
 	bool is_ok = false;
 	char *tmp_fsng = NULL;
-	struct gfarm_replicainfo *ret =	(struct gfarm_replicainfo *)
-		malloc(sizeof(struct gfarm_replicainfo));
+	struct gfarm_repattr *ret =	(struct gfarm_repattr *)
+		malloc(sizeof(struct gfarm_repattr));
 	if (ret == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "allocate_replicainfo(): %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "allocate_repattr(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
 	tmp_fsng = strdup(fsngroupname);
 	if (tmp_fsng == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "allocate_replicainfo(): %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "allocate_repattr(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
@@ -309,13 +309,13 @@ done:
 		ret = NULL;
 	}
 
-	return ((gfarm_replicainfo_t)ret);
+	return ((gfarm_repattr_t)ret);
 }
 
 static void
-destroy_replicainfo(gfarm_replicainfo_t rep)
+destroy_repattr(gfarm_repattr_t rep)
 {
-	struct gfarm_replicainfo *r = (struct gfarm_replicainfo *)rep;
+	struct gfarm_repattr *r = (struct gfarm_repattr *)rep;
 
 	if (r != NULL) {
 		free(r->fsngroupname);
@@ -329,7 +329,7 @@ destroy_replicainfo(gfarm_replicainfo_t rep)
  */
 
 size_t
-gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
+gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp)
 {
 	/*
 	 * anattr := string ':' number
@@ -345,8 +345,8 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 	char *tokens[4096];
 	char *tokens2[3];
 	bool is_ok = false;
-	gfarm_replicainfo_t *reps = NULL;
-	gfarm_replicainfo_t rep;
+	gfarm_repattr_t *reps = NULL;
+	gfarm_repattr_t rep;
 	size_t len = strlen(s);
 	int of = 0;
 	char *buf = NULL;
@@ -355,7 +355,7 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 	if (of == 0 && len > 0)
 		buf = (char *)malloc(len);
 	if (buf == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_replicainfo_parse(): %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
@@ -371,7 +371,7 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 
 	GFARM_MALLOC_ARRAY(reps, n_tokens);
 	if (reps == NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_replicainfo_parse:() %s",
+		gflog_debug(GFARM_MSG_UNFIXED, "gfarm_repattr_parse:() %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
@@ -387,7 +387,7 @@ gfarm_replicainfo_parse(const char *s, gfarm_replicainfo_t **retp)
 				continue;
 			if (spec_n < 1)
 				continue;
-			rep = allocate_replicainfo(tokens2[0], spec_n);
+			rep = allocate_repattr(tokens2[0], spec_n);
 			if (rep != NULL)
 				reps[ret++] = rep;
 			else
@@ -401,7 +401,7 @@ done:
 	if (is_ok == false || retp == NULL) {
 		if (reps != NULL) {
 			for (i = 0; i < ret; i++)
-				destroy_replicainfo(reps[i]);
+				destroy_repattr(reps[i]);
 			free(reps);
 		}
 		if (is_ok == false)
@@ -415,27 +415,27 @@ done:
 }
 
 void
-gfarm_replicainfo_free(gfarm_replicainfo_t rep)
+gfarm_repattr_free(gfarm_repattr_t rep)
 {
-	destroy_replicainfo(rep);
+	destroy_repattr(rep);
 }
 
 const char *
-gfarm_replicainfo_group(gfarm_replicainfo_t rep)
+gfarm_repattr_group(gfarm_repattr_t rep)
 {
-	struct gfarm_replicainfo *r = (struct gfarm_replicainfo *)rep;
+	struct gfarm_repattr *r = (struct gfarm_repattr *)rep;
 	return (r->fsngroupname);
 }
 
 size_t
-gfarm_replicainfo_amount(gfarm_replicainfo_t rep)
+gfarm_repattr_amount(gfarm_repattr_t rep)
 {
-	struct gfarm_replicainfo *r = (struct gfarm_replicainfo *)rep;
+	struct gfarm_repattr *r = (struct gfarm_repattr *)rep;
 	return (r->n);
 }
 
 char *
-gfarm_replicainfo_stringify(gfarm_replicainfo_t *reps, size_t n)
+gfarm_repattr_stringify(gfarm_repattr_t *reps, size_t n)
 {
 	size_t i;
 	int plen = 0;
@@ -450,22 +450,22 @@ gfarm_replicainfo_stringify(gfarm_replicainfo_t *reps, size_t n)
 		 */
 		len = gfarm_size_add(&of, len,
 			gfarm_size_add(&of, 12,
-				strlen(gfarm_replicainfo_group(reps[i]))));
+				strlen(gfarm_repattr_group(reps[i]))));
 	}
 	if (of == 0 && len > 0)
 		ret = (char *)malloc(len);
 	if (ret == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"gfarm_replicainfo_reduce(): %s",
+			"gfarm_repattr_reduce(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
 
 	for (i = 0; i < n; i++) {
 		plen += snprintf((ret + plen), len - (size_t)plen, "%s:%zu,",
-				gfarm_replicainfo_group(reps[i]),
+				gfarm_repattr_group(reps[i]),
 				0xffffffff &
-				gfarm_replicainfo_amount(reps[i]));
+				gfarm_repattr_amount(reps[i]));
 	}
 	last = strrchr(ret, ',');
 	if (last != NULL)
@@ -476,15 +476,15 @@ done:
 }
 
 size_t
-gfarm_replicainfo_reduce(const char *s, gfarm_replicainfo_t **retp)
+gfarm_repattr_reduce(const char *s, gfarm_repattr_t **retp)
 {
 	bool is_ok = false;
 	size_t i;
 	size_t ret = 0;
 	size_t nreps_before = 0;
-	gfarm_replicainfo_t *reps_before = NULL;
-	gfarm_replicainfo_t *reps = NULL;
-	gfarm_replicainfo_t tmp;
+	gfarm_repattr_t *reps_before = NULL;
+	gfarm_repattr_t *reps = NULL;
+	gfarm_repattr_t tmp;
 	struct gfarm_hash_table *tbl = NULL;
 	struct gfarm_hash_iterator it;
 	struct gfarm_hash_entry *entry;
@@ -493,9 +493,9 @@ gfarm_replicainfo_reduce(const char *s, gfarm_replicainfo_t **retp)
 	int isnew;
 
 	/*
-	 * Parse the replicainfo string first.
+	 * Parse the repattr string first.
 	 */
-	nreps_before = gfarm_replicainfo_parse(s, &reps_before);
+	nreps_before = gfarm_repattr_parse(s, &reps_before);
 	if (nreps_before == 0) {
 		if (retp != NULL)
 			*retp = NULL;
@@ -509,22 +509,22 @@ gfarm_replicainfo_reduce(const char *s, gfarm_replicainfo_t **retp)
 		gfarm_hash_strptr, gfarm_hash_key_equal_strptr);
 	if (tbl == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"gfarm_replicainfo_reduce(): %s",
+			"gfarm_repattr_reduce(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
 
 	/*
-	 * Merge the replicainfo(s) into the hash table.
+	 * Merge the repattr(s) into the hash table.
 	 */
 	for (i = 0; i < nreps_before; i++) {
 		isnew = 0;
-		fsngroupname = gfarm_replicainfo_group(reps_before[i]);
-		amount = gfarm_replicainfo_amount(reps_before[i]);
+		fsngroupname = gfarm_repattr_group(reps_before[i]);
+		amount = gfarm_repattr_amount(reps_before[i]);
 		entry = fsngroup_hash_new_entry(tbl, fsngroupname, &isnew);
 		if (entry == NULL) {
 			gflog_error(GFARM_MSG_UNFIXED,
-				"gfarm_replicainfo_reduce(): %s",
+				"gfarm_repattr_reduce(): %s",
 				gfarm_error_string(GFARM_ERR_NO_MEMORY));
 			goto done;
 		}
@@ -546,23 +546,23 @@ gfarm_replicainfo_reduce(const char *s, gfarm_replicainfo_t **retp)
 	assert(ret > 0);
 
 	/*
-	 * Allocate replicainfo(s) to be returned.
+	 * Allocate repattr(s) to be returned.
 	 */
 	GFARM_MALLOC_ARRAY(reps, ret);
 	if (reps == NULL) {
 		gflog_error(GFARM_MSG_UNFIXED,
-			"gfarm_replicainfo_reduce(): %s",
+			"gfarm_repattr_reduce(): %s",
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		goto done;
 	}
 	(void)memset((void *)reps, 0, sizeof(*reps) * ret);
 
 	/*
-	 * Generate replicainfo(s) from the contents of the hash table.
+	 * Generate repattr(s) from the contents of the hash table.
 	 */
 	i = 0;
 	FOR_EACH_IN_HASH(tbl, &it) {
-		tmp = allocate_replicainfo(
+		tmp = allocate_repattr(
 			iter_fsngroupname(&it), iter_amount_get(&it));
 		if (tmp != NULL)
 			reps[i++] = tmp;
@@ -580,13 +580,13 @@ done:
 	}
 	if (nreps_before > 0 && reps_before != NULL)
 		for (i = 0; i < nreps_before; i++)
-			destroy_replicainfo(reps_before[i]);
+			destroy_repattr(reps_before[i]);
 	free(reps_before);
 
 	if (is_ok == false || retp == NULL) {
 		if (reps != NULL)
 			for (i = 0; i < ret; i++)
-				destroy_replicainfo(reps[i]);
+				destroy_repattr(reps[i]);
 		free(reps);
 		if (is_ok == false)
 			ret = 0;
@@ -599,11 +599,11 @@ done:
 }
 
 int
-gfarm_replicainfo_validate(const char *s)
+gfarm_repattr_validate(const char *s)
 {
 	if (s == NULL) {
 		return (0);
 	} else {
-		return (gfarm_replicainfo_parse(s, NULL) > 0);
+		return (gfarm_repattr_parse(s, NULL) > 0);
 	}
 }

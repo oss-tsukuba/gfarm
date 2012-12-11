@@ -14,25 +14,25 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
-#include "replica_info.h"
+#include "repattr.h"
 #include "gfutil.h"
 
 #define DEFAULT_ALLOC_SIZE (64 * 1024)
 
-static const char *xattrname = GFARM_REPLICAINFO_XATTR_NAME;
+static const char *repattrname = GFARM_REPATTR_NAME;
 static char program_name[PATH_MAX];
 
 /*****************************************************************************/
 static gfarm_error_t
-set_replicainfo(char *path, const void *value, size_t len,
+set_repattr(char *path, const void *value, size_t len,
 	int flags, int nofollow)
 {
 	return (nofollow == 1 ? gfs_lsetxattr : gfs_setxattr)
-		(path, xattrname, value, len, flags);
+		(path, repattrname, value, len, flags);
 }
 
 static gfarm_error_t
-get_replicainfo_alloc(char *path, void **valuep, size_t *size, int nofollow)
+get_repattr_alloc(char *path, void **valuep, size_t *size, int nofollow)
 {
 	gfarm_error_t e;
 	void *value;
@@ -42,7 +42,7 @@ get_replicainfo_alloc(char *path, void **valuep, size_t *size, int nofollow)
 		return GFARM_ERR_NO_ERROR;
 
 	e = (nofollow ? gfs_lgetxattr : gfs_getxattr)
-		(path, xattrname, value, size);
+		(path, repattrname, value, size);
 
 	if (e == GFARM_ERR_NO_ERROR)
 		*valuep = value;
@@ -52,16 +52,16 @@ get_replicainfo_alloc(char *path, void **valuep, size_t *size, int nofollow)
 }
 
 static gfarm_error_t
-get_replicainfo(char *path, void **valuep, size_t *lenp, int nofollow)
+get_repattr(char *path, void **valuep, size_t *lenp, int nofollow)
 {
 	gfarm_error_t e;
 	void *value = NULL;
 	size_t size;
 
 	size = DEFAULT_ALLOC_SIZE;
-	e = get_replicainfo_alloc(path, &value, &size, nofollow);
+	e = get_repattr_alloc(path, &value, &size, nofollow);
 	if (e == GFARM_ERR_RESULT_OUT_OF_RANGE) {
-		e = get_replicainfo_alloc(path, &value,
+		e = get_repattr_alloc(path, &value,
 				    &size, nofollow);
 	}
 	if (valuep != NULL)
@@ -75,12 +75,12 @@ get_replicainfo(char *path, void **valuep, size_t *lenp, int nofollow)
 }
 
 static gfarm_error_t
-remove_replicainfo(char *path, int nofollow)
+remove_repattr(char *path, int nofollow)
 {
 	gfarm_error_t e;
 
 	e = (nofollow ? gfs_lremovexattr : gfs_removexattr)
-		(path, xattrname);
+		(path, repattrname);
 	return (e);
 }
 
@@ -133,7 +133,7 @@ main(int argc, char *argv[])
 	} mode = NONE;
 	const char *opts = "srcmh?";
 	char *c_path = NULL;
-	void *replicainfo = NULL;
+	void *repattr = NULL;
 	size_t infolen = 0;
 	int c;
 	int i;
@@ -142,7 +142,7 @@ main(int argc, char *argv[])
 	gfarm_error_t e = GFARM_ERR_UNKNOWN;
 	int got_errors = 0;
 	int inited = 0;
-	gfarm_replicainfo_t *reps = NULL;
+	gfarm_repattr_t *reps = NULL;
 	size_t nreps = 0;
 
 	set_myname(argv[0]);
@@ -212,15 +212,15 @@ main(int argc, char *argv[])
 			goto done;
 		}
 		c_path = argv[0];
-		nreps = gfarm_replicainfo_reduce(argv[1], &reps);
+		nreps = gfarm_repattr_reduce(argv[1], &reps);
 		if (nreps == 0) {
 			fprintf(stderr, "%s: invalid attr '%s'\n",
 				program_name, argv[1]);
 			got_errors++;
 			goto done;
 		}
-		replicainfo = gfarm_replicainfo_stringify(reps, nreps);
-		if (replicainfo == NULL) {
+		repattr = gfarm_repattr_stringify(reps, nreps);
+		if (repattr == NULL) {
 			fprintf(stderr, "%s: canonicalization failure '%s'\n",
 				program_name, argv[1]);
 			got_errors++;
@@ -228,8 +228,8 @@ main(int argc, char *argv[])
 		}
 
 		/* Add one for the last NUL. */
-		infolen = strlen((char *)replicainfo) + 1;
-		e = set_replicainfo(c_path, (char *)replicainfo, infolen, flags,
+		infolen = strlen((char *)repattr) + 1;
+		e = set_repattr(c_path, (char *)repattr, infolen, flags,
 			nofollow);
 		switch (e) {
 		case GFARM_ERR_NO_ERROR:
@@ -246,22 +246,22 @@ main(int argc, char *argv[])
 			got_errors++;
 			break;
 		}
-		free(replicainfo);
+		free(repattr);
 		break;
 	case GET_MODE:
 		for (i = 0; i < argc; i++) {
-			replicainfo = NULL;
+			repattr = NULL;
 			infolen = 0;
 			c_path = argv[i];
-			e = get_replicainfo(c_path,
-				(void **)&replicainfo, &infolen, nofollow);
+			e = get_repattr(c_path,
+				(void **)&repattr, &infolen, nofollow);
 			switch (e) {
 			case GFARM_ERR_NO_ERROR:
 			case GFARM_ERR_NO_SUCH_OBJECT:
 				fprintf(stdout, "%s: '%s'\n",
 					c_path,
-					replicainfo != NULL ?
-					(char *)replicainfo : "");
+					repattr != NULL ?
+					(char *)repattr : "");
 				break;
 			case GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY:
 				fprintf(stderr, "%s: %s: %s\n",
@@ -276,14 +276,14 @@ main(int argc, char *argv[])
 				got_errors++;
 				break;
 			}
-			free(replicainfo);
+			free(repattr);
 		}
 		(void)fflush(stdout);
 		break;
 	case REMOVE_MODE:
 		for (i = 0; i < argc; i++) {
 			c_path = argv[i];
-			e = remove_replicainfo(c_path, nofollow);
+			e = remove_repattr(c_path, nofollow);
 			switch (e) {
 			case GFARM_ERR_NO_ERROR:
 			case GFARM_ERR_NO_SUCH_OBJECT:
@@ -305,7 +305,7 @@ main(int argc, char *argv[])
 done:
 	if (nreps > 0 && reps != NULL) {
 		for (i = 0; i < nreps; i++)
-			gfarm_replicainfo_free(reps[i]);
+			gfarm_repattr_free(reps[i]);
 		free(reps);
 	}
 	if (inited == 1) {

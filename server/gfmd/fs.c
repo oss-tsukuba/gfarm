@@ -401,7 +401,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 #if 1
 		/*
 		 * This will take care both the ncopy and the
-		 * replicainfo.
+		 * repattr.
 		 */
 		gfarm_server_process_record_replication_attribute(
 			process, fd, inode, base);

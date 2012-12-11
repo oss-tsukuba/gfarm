@@ -20,7 +20,7 @@
 #include "host.h"
 #include "inode.h"
 #include "process.h"
-#include "replica_info.h"
+#include "repattr.h"
 
 /*****************************************************************************/
 
@@ -58,17 +58,17 @@ find_and_set_ncopy(struct inode *inode, struct process *process, int fd)
 }
 
 static int
-find_and_set_replicainfo(struct inode *inode, struct process *process, int fd)
+find_and_set_repattr(struct inode *inode, struct process *process, int fd)
 {
 	int ret = 0;
 	char *info = NULL;
 
-	if ((ret = inode_has_replicainfo(inode, &info)) == 1) {
+	if ((ret = inode_has_repattr(inode, &info)) == 1) {
 		/*
-		 * The info is malloc'd in inode_has_replicainfo.
+		 * The info is malloc'd in inode_has_repattr.
 		 */
 		if (info != NULL && *info != '\0') {
-			(void)process_record_replicainfo(
+			(void)process_record_repattr(
 				process, fd, info);
 		} else {
 			ret = 0;
@@ -104,21 +104,21 @@ visitor(struct inode *inode, void *arg)
 		ret = find_and_set_ncopy(inode, process, fd);
 		break;
 	case FIND_REPLICAINFO_ONLY:
-		ret = find_and_set_replicainfo(inode, process, fd);
+		ret = find_and_set_repattr(inode, process, fd);
 		break;
 	case FIND_NEAREST:
 		/*
-		 * The replicainfo is prior to the ncopy.
+		 * The repattr is prior to the ncopy.
 		 */
-		if ((ret = find_and_set_replicainfo(inode, process, fd)) == 0)
+		if ((ret = find_and_set_repattr(inode, process, fd)) == 0)
 			ret = find_and_set_ncopy(inode, process, fd);
 		break;
 	case FIND_REPLICAINFO_UNTIL_FOUND: {
 		/*
 		 * Even if a ncopy is already found, keep on searching
-		 * until replicainfo is found.
+		 * until repattr is found.
 		 */
-		if ((ret = find_and_set_replicainfo(inode, process, fd)) == 0
+		if ((ret = find_and_set_repattr(inode, process, fd)) == 0
 			&& process_get_ncopy(process, fd) == 0)
 			(void)find_and_set_ncopy(inode, process, fd);
 		break;
@@ -309,7 +309,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	char **exclusions, size_t nexclusions,
 	fsngroup_sched_proc_t sched_proc)
 {
-	gfarm_replicainfo_t *reps = NULL;
+	gfarm_repattr_t *reps = NULL;
 	gfarm_fsngroup_text_t ghosts;
 	gfarm_fsngroup_text_t exs = NULL;
 	size_t nreps = 0;
@@ -328,10 +328,10 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 		host_name(src_host),
 		info);
 
-	nreps = gfarm_replicainfo_parse(info, &reps);
+	nreps = gfarm_repattr_parse(info, &reps);
 	if (nreps == 0) {
 		gflog_error(GFARM_MSG_UNFIXED, diag
-			"can't parse a replicainfo: '%s'.", info);
+			"can't parse a repattr: '%s'.", info);
 		goto done;
 	}
 
@@ -352,7 +352,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	 *
 	 *	Assuming that each reps[i] has a unique fsngroup, at
 	 *	least for now. It must be canonicalized that a
-	 *	replicainfo consists of tuples with a unique fsngroup
+	 *	repattr consists of tuples with a unique fsngroup
 	 *	name and an amount #.
 	 */
 
@@ -361,7 +361,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 		 * Use unlock version since we should have the
 		 * giant_lock very here very this moment.
 		 */
-		fsngroupname = (char *)gfarm_replicainfo_group(reps[i]);
+		fsngroupname = (char *)gfarm_repattr_group(reps[i]);
 		ghosts = gfm_fsngroup_get_hostnames_by_fsngroup_unlock(
 			fsngroupname, exs,
 			FILTER_CHECK_VALID | FILTER_CHECK_UP);
@@ -379,7 +379,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 
 			nindices = schedule(
 				ghosts,
-				gfarm_replicainfo_amount(reps[i]),
+				gfarm_repattr_amount(reps[i]),
 				&indices,
 				(sched_proc != NULL) ?
 					sched_proc : schedule_random);
@@ -409,7 +409,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 done:
 	if (nreps > 0 && reps != NULL)
 		for (i = 0; i < nreps; i++)
-			gfarm_replicainfo_free(reps[i]);
+			gfarm_repattr_free(reps[i]);
 	free(reps);
 	free(exs);
 #undef diag

@@ -23,7 +23,7 @@
 #include "auth.h"
 #include "gfp_xdr.h"
 #include "xattr_info.h"
-#include "replica_info.h"
+#include "repattr.h"
 
 #include "subr.h"
 #include "rpcsubr.h"
@@ -138,7 +138,7 @@ xattr_access(int xmlMode, struct inode *inode, struct user *user,
 		if (strcmp("ncopy", type) != 0 &&
 		    strcmp("acl_access", type) != 0 &&
 		    strcmp("acl_default", type) != 0 &&
-		    strcmp(GFARM_REPLICAINFO_XATTR_TYPE, type) != 0)
+		    strcmp(GFARM_REPATTR_TYPE, type) != 0)
 			goto not_supp;
 		else if (inode_is_symlink(inode))
 			goto symlink;

@@ -41,7 +41,7 @@
 #include "back_channel.h"
 #include "acl.h"
 #include "xattr.h"
-#include "replica_info.h"
+#include "repattr.h"
 #include "fsngroup_replica.h"
 #include "replica_check.h"
 
@@ -843,7 +843,7 @@ remove_replica_entity(struct inode *, gfarm_int64_t, struct host *,
 static void
 update_replicas(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t old_gen, int start_replication,
-	int desired_replica_number, char *replicainfo)
+	int desired_replica_number, char *repattr)
 {
 	struct file_copy **copyp, *copy, *next, *to_be_excluded = NULL;
 	int nreplicas = 1;
@@ -909,7 +909,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 * 
 	 */
 	if (start_replication && spool_host != NULL) {
-		if (replicainfo != NULL) {
+		if (repattr != NULL) {
 			/*
 			 * Convert the to_be_excluded into an array.
 			 */
@@ -946,13 +946,13 @@ update_replicas(struct inode *inode, struct host *spool_host,
 
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"update_replicas(): about to schedule "
-				"replicainfo-based replication for inode "
+				"repattr-based replication for inode "
 				"%lld@%s.",
 				(long long)inode_get_number(inode),
 				exhosts[nexhosts - 1]);
 
 			gfarm_server_fsngroup_replicate_file(
-				inode, spool_host, replicainfo,
+				inode, spool_host, repattr,
 				exhosts, nexhosts, NULL);
 
 			free(exhosts);
@@ -3192,7 +3192,7 @@ inode_check_pending_replication(struct file_opening *fo)
 static int
 inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	struct gfarm_timespec *atime, struct gfarm_timespec *mtime,
-	struct host *spool_host, int desired_replica_number, char *replicainfo,
+	struct host *spool_host, int desired_replica_number, char *repattr,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
@@ -3249,7 +3249,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	}
 
 	update_replicas(inode, spool_host, old_gen,
-		start_replication, desired_replica_number, replicainfo);
+		start_replication, desired_replica_number, repattr);
 
 	return (generation_updated);
 }
@@ -3270,7 +3270,7 @@ inode_file_update(struct file_opening *fo, gfarm_off_t size,
 	return (inode_file_update_common(fo->inode, size, atime, mtime,
 			fo->u.f.spool_host,
 			fo->u.f.desired_replica_number,
-			fo->u.f.replicainfo,
+			fo->u.f.repattr,
 			old_genp, new_genp, trace_logp));
 }
 
@@ -5507,8 +5507,8 @@ xattr_init(void)
 
 	if (!gfarm_xattr_caching("gfarm.ncopy"))
 		gfarm_xattr_caching_pattern_add("gfarm.ncopy");
-	if (!gfarm_xattr_caching(GFARM_REPLICAINFO_XATTR_NAME))
-		gfarm_xattr_caching_pattern_add(GFARM_REPLICAINFO_XATTR_NAME);
+	if (!gfarm_xattr_caching(GFARM_REPATTR_NAME))
+		gfarm_xattr_caching_pattern_add(GFARM_REPATTR_NAME);
 
 	xmlMode = 0;
 	e = db_xattr_load(&xmlMode, xattr_add_one);
@@ -5889,25 +5889,25 @@ inode_traverse_desired_replica_number(struct inode *dir, int *desired_numberp)
 
 /* And also this assumes that the "gfarm.replicainfo" xattr is cached. */
 int
-inode_has_replicainfo(struct inode *inode, char **infop)
+inode_has_repattr(struct inode *inode, char **repattrp)
 {
-	void *info = NULL;
+	void *repattr = NULL;
 	size_t s = 0;
 
-	if (inode_xattr_get_cache(inode, 0, GFARM_REPLICAINFO_XATTR_NAME,
-		(void **)&info, &s) != GFARM_ERR_NO_ERROR)
+	if (inode_xattr_get_cache(inode, 0, GFARM_REPATTR_NAME,
+		(void **)&repattr, &s) != GFARM_ERR_NO_ERROR)
 		return (0);
 
 	/*
-	 * The info is malloc'd in inode_xattr_get_cache().
+	 * The repattr is malloc'd in inode_xattr_get_cache().
 	 */
-	if (info == NULL || *((char *)info) == '\0')
+	if (repattr == NULL || *((char *)repattr) == '\0')
 		return (0);
 
-	if (infop != NULL)
-		*infop = (char *)info;
+	if (repattrp != NULL)
+		*repattrp = (char *)repattr;
 	else
-		free(info);
+		free(repattr);
 
 	return (1);
 }
