@@ -340,6 +340,8 @@ struct search_idle_host_state {
 	gfarm_off_t diskused, diskavail;
 #endif
 
+	gfarm_uint64_t scheduled_age;
+#define	HOST_STATE_SCHEDULED_AGE_NOT_FOUND	0
 	int scheduled;
 
 	int flags;
@@ -632,6 +634,8 @@ search_idle_host_state_add_host_sched_info(struct gfm_connection *gfm_server,
 			}
 #endif
 			h->net = NULL;
+			h->scheduled_age =
+			    HOST_STATE_SCHEDULED_AGE_NOT_FOUND + 1;
 			h->scheduled = 0;
 			h->flags = 0;
 		} else if ((h->flags & HOST_STATE_FLAG_ADDR_AVAIL) == 0) {
@@ -1079,6 +1083,7 @@ search_idle_forget_scheduled(struct search_idle_state *s,
 	idle1 = semi_idle1 = 0;
 	search_idle_count(s, h, &junk, &idle1, &semi_idle1);
 
+	h->scheduled_age++;
 	h->scheduled = 0; /* forget it */
 
 	idle2 = semi_idle2 = 0;
@@ -1219,6 +1224,7 @@ search_idle_load_callback(void *closure)
 		    load.loadavg_1min * GFM_PROTO_LOADAVG_FSCALE + entropy();
 #endif
 		c->h->loadavg_cache_time = c->h->rtt_cache_time;
+		c->h->scheduled_age++;
 		c->h->scheduled = 0; /* because now we know real loadavg */
 
 		/* update RTT */
@@ -1710,7 +1716,6 @@ search_idle(struct gfm_connection *gfm_server,
 	for (i = 0; i < n && i < s.desired_number; i++) {
 		ohosts[i] = results[i]->return_value;
 		oports[i] = results[i]->port;
-		results[i]->scheduled++;
 	}
 	*nohostsp = i;
 	free(results);
@@ -1971,6 +1976,44 @@ gfarm_schedule_hosts_acyclic_to_write(const char *path,
 	    nohostsp, ohosts, oports));
 }
 
+/* returns scheduled_age */
+gfarm_uint64_t
+gfarm_schedule_host_used(const char *hostname, int port, const char *username)
+{
+	gfarm_error_t e;
+	struct gfarm_hash_entry *entry;
+	struct search_idle_host_state *h;
+
+	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
+	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (HOST_STATE_SCHEDULED_AGE_NOT_FOUND);
+	
+	h = gfarm_hash_entry_data(entry);
+	h->scheduled++;
+	return (h->scheduled_age);
+}
+
+void
+gfarm_schedule_host_unused(const char *hostname, int port, const char *username,
+	gfarm_uint64_t scheduled_age)
+{
+	gfarm_error_t e;
+	struct gfarm_hash_entry *entry;
+	struct search_idle_host_state *h;
+
+	if (scheduled_age == HOST_STATE_SCHEDULED_AGE_NOT_FOUND)
+		return;
+
+	e = gfp_conn_hash_lookup(&staticp->search_idle_hosts_state,
+	    HOSTS_HASHTAB_SIZE, hostname, port, username, &entry);
+	if (e != GFARM_ERR_NO_ERROR)
+		return;
+	
+	h = gfarm_hash_entry_data(entry);
+	if (h->scheduled_age == scheduled_age)
+		--h->scheduled;
+}
 
 /* this function shouldn't belong to this file, but... */
 int

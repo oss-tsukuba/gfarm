@@ -20,6 +20,7 @@
 #include "gfs_client.h"
 #include "gfs_io.h"
 #include "gfs_pio.h"
+#include "schedule.h"
 
 static gfarm_error_t
 gfs_pio_remote_storage_close(GFS_File gf)
@@ -37,6 +38,12 @@ gfs_pio_remote_storage_close(GFS_File gf)
 	if (vc->pid != getpid())
 		return (GFARM_ERR_NO_ERROR);
 	e = gfs_client_close(gfs_server, gf->fd);
+	gfarm_schedule_host_unused(
+	    gfs_client_hostname(gfs_server),
+	    gfs_client_port(gfs_server),
+	    gfs_client_username(gfs_server),
+	    gf->scheduled_age);
+
 	vc->storage_context = NULL;
 	gfs_client_connection_free(gfs_server);
 	if (e != GFARM_ERR_NO_ERROR) {

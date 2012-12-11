@@ -31,6 +31,9 @@ struct gfs_file {
 	struct gfs_pio_ops *ops;
 	void *view_context;
 
+	/* XXX should be a per view_context variable to support global view */
+	gfarm_uint64_t scheduled_age;
+
 	struct gfm_connection *gfm_server;
 	int fd;
 
