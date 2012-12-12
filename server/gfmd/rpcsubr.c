@@ -107,14 +107,12 @@ gfm_server_put_wrapped_vreply0(struct peer *peer, gfp_xdr_xid_t xid,
 		if (do_lock) {
 			e = async_server_vput_wrapped_reply(
 			    peer_get_abstract_host(slave_mhpeer), slave_mhpeer,
-			    xid, xdr_vsend,
-			    diag,
+			    xid, xdr_vsend, diag,
 			    ecode, wrapping_format, wrapping_app, format, app);
 		} else {
 			e = async_server_vput_wrapped_reply_unlocked(
 			    peer_get_abstract_host(slave_mhpeer),
-			    xid, xdr_vsend,
-			    diag,
+			    xid, xdr_vsend, diag,
 			    ecode, wrapping_format, wrapping_app, format, app);
 		}
 		if (e != GFARM_ERR_NO_ERROR) {
