@@ -681,7 +681,7 @@ async_server_disconnect_request(struct abstract_host *host,
 }
 
 static gfarm_error_t
-async_client_sender_lock(struct abstract_host *host, struct peer *peer0,
+async_client_sender_trylock(struct abstract_host *host, struct peer *peer0,
 	struct peer **peerp, int command, const char *diag)
 {
 	gfarm_error_t e;
@@ -797,7 +797,7 @@ async_client_vsend_wrapped_request(struct abstract_host *host,
 	gfarm_error_t e;
 	struct peer *peer;
 
-	if ((e = async_client_sender_lock(host, peer0, &peer, command,
+	if ((e = async_client_sender_trylock(host, peer0, &peer, command,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
