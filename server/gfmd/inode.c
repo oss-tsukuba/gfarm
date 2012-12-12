@@ -953,7 +953,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 
 			gfarm_server_fsngroup_replicate_file(
 				inode, spool_host, repattr,
-				exhosts, nexhosts, NULL);
+				exhosts, nexhosts);
 
 			free(exhosts);
 

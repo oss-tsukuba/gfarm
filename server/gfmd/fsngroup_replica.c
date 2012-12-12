@@ -306,8 +306,7 @@ gfarm_server_process_record_replication_attribute(
 void
 gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	struct host *src_host, const char *info,
-	char **exclusions, size_t nexclusions,
-	fsngroup_sched_proc_t sched_proc)
+	char **exclusions, size_t nexclusions)
 {
 	gfarm_repattr_t *reps = NULL;
 	gfarm_fsngroup_text_t ghosts;
@@ -387,8 +386,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 				ghosts,
 				gfarm_repattr_amount(reps[i]),
 				&indices,
-				(sched_proc != NULL) ?
-					sched_proc : schedule_random);
+				schedule_random);
 
 			/*
 			 * Then replicate the file.
