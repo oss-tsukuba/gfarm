@@ -317,6 +317,7 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	int src_port = 0;
 	const char *src_hostname;
 	size_t i;
+	gfarm_error_t e;
 #define diag "gfarm_server_fsngroup_replicate_file(): "
 
 	assert(info != NULL && src_host != NULL);
@@ -328,7 +329,12 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 		host_name(src_host),
 		info);
 
-	nreps = gfarm_repattr_parse(info, &reps);
+	e = gfarm_repattr_parse(info, &reps, &nreps);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED, diag
+			": %s", gfarm_error_string(e));
+		goto done;
+	}
 	if (nreps == 0) {
 		gflog_error(GFARM_MSG_UNFIXED, diag
 			"can't parse a repattr: '%s'.", info);
