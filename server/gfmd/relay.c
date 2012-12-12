@@ -919,7 +919,7 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 
 	if (mhpeer != peer) {
 		gflog_error(GFARM_MSG_UNFIXED,
-		    "gfmd_channel(%s): peer switch during rpc relay",
+		    "gfmd_channel(%s): peer switch during rpc relay reply",
 		    abstract_host_get_name(ah));
 		e = GFARM_ERR_CONNECTION_ABORTED;
 		goto unlock_sender;
@@ -1336,6 +1336,11 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s (abstract_host_sender_lock): %s",
 			    diag, relay_diag, gfarm_error_string(e));
+		} else if (mhpeer != peer) {
+			gflog_error(GFARM_MSG_UNFIXED, "gfmd_channel(%s): "
+			    "peer switch during rpc relay reply",
+			    abstract_host_get_name(ah));
+			e = GFARM_ERR_CONNECTION_ABORTED;
 		} else {
 			master_get_db_update_info(peer, &seqnum, &flags);
 			e = gfm_server_relay_put_reply0(peer, xid, sizep,
