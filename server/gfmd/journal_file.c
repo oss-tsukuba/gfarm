@@ -1416,11 +1416,11 @@ journal_file_open(const char *path, size_t max_size,
 
 	return (GFARM_ERR_NO_ERROR);
 error:
-	if (rfd > 0)
+	if (rfd >= 0)
 		close(rfd);
 	if (writer_xdr)
 		gfp_xdr_free(writer_xdr);
-	else if (wfd > 0)
+	else if (wfd >= 0)
 		close(wfd);
 	free(jf);
 	if (reader != NULL)
