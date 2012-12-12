@@ -166,7 +166,7 @@ schedule_random(const char * const candidates[], size_t ncandidates,
 }
 
 /*
- * The scheduler wrpper.
+ * The scheduler wrapper.
  */
 static size_t
 schedule(gfarm_fsngroup_text_t t, size_t candmax, size_t **retindicesp,
