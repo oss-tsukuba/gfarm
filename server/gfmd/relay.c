@@ -976,7 +976,7 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	static const char relay_diag[] = "request_reply_dynarg_slave";
 
 	/*
-	 * Get a requset from a client.
+	 * Get a request from a client.
 	 */
 	gfm_server_start_get_request(peer, diag);
 	if ((e = get_request_op(RELAY_CALC_SIZE, peer, &size, skip,
@@ -986,9 +986,6 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		    diag, relay_diag, gfarm_error_string(e));
 		return (e);
 	}
-
-	ah = mdhost_to_abstract_host(mdhost_lookup_master());
-	mhpeer = abstract_host_get_peer(ah, diag);
 
 	/*
 	 * `r' will be freed asynchronously in
@@ -1004,9 +1001,15 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		goto unlock_sender;
 	}
 
-	r->mode = RELAY_CALC_SIZE;
-	r->conn = peer_get_conn(mhpeer);
-	async_server = peer_get_async(mhpeer);
+	ah = mdhost_to_abstract_host(mdhost_lookup_master());
+	if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: %s (abstract_host_sender_lock): %s",
+		    diag, relay_diag, gfarm_error_string(e));
+		goto unlock_sender;
+	}
+	sender_locked = 1;
 
 	/*
 	 * See slave_request_relay() for packet layout detail.
@@ -1020,15 +1023,8 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	}
 
 	r->mode = RELAY_TRANSFER;
-
-	if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s: %s (abstract_host_sender_lock): %s",
-		    diag, relay_diag, gfarm_error_string(e));
-		goto unlock_sender;
-	}
-	sender_locked = 1;
+	r->conn = peer_get_conn(mhpeer);
+	async_server = peer_get_async(mhpeer);
 
 	if ((e = gfp_xdr_send_async_request_header(r->conn, async_server, size,
 	    slave_request_relay_result, slave_request_relay_disconnect, r,
