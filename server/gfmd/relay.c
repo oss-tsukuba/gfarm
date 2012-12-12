@@ -1337,6 +1337,7 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 			    "%s: %s (abstract_host_sender_lock): %s",
 			    diag, relay_diag, gfarm_error_string(e));
 		} else if (mhpeer != peer) {
+			abstract_host_sender_unlock(ah, mhpeer, diag);
 			gflog_error(GFARM_MSG_UNFIXED, "gfmd_channel(%s): "
 			    "peer switch during rpc relay reply",
 			    abstract_host_get_name(ah));
