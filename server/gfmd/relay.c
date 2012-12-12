@@ -868,7 +868,7 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	gfarm_uint64_t seqnum;
 	gfarm_uint64_t flags;
 	struct abstract_host *ah;
-	struct peer *mhpeer = NULL;
+	struct peer *slave_mhpeer, *mhpeer = NULL;
 	struct gfarm_thr_statewait *statewait;
 	struct remote_peer *remote_peer;
 	static const char relay_diag[] = "request_reply_dynarg_master";
@@ -885,7 +885,8 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		return (e);
 	}
 
-	ah = mdhost_to_abstract_host(peer_get_mdhost(peer));
+	slave_mhpeer = peer_get_parent(peer);
+	ah = mdhost_to_abstract_host(peer_get_mdhost(slave_mhpeer));
 	remote_peer = peer_to_remote_peer(peer);
 	statewait = remote_peer_get_statewait(remote_peer);
 	gfarm_thr_statewait_signal(statewait, e, diag);
@@ -917,7 +918,7 @@ request_reply_dynarg_master(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		return (e);
 	}
 
-	if (mhpeer != peer) {
+	if (mhpeer != slave_mhpeer) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "gfmd_channel(%s): peer switch during rpc relay reply",
 		    abstract_host_get_name(ah));
@@ -1286,7 +1287,7 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	gfarm_error_t ecode, const char *format, ...)
 {
 	struct abstract_host *ah;
-	struct peer *mhpeer = NULL;
+	struct peer *slave_mhpeer, *mhpeer = NULL;
 	va_list ap;
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
@@ -1330,13 +1331,14 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 		/*
 		 * This gfmd is master and the request comes from a slave.
 		 */
-		ah = mdhost_to_abstract_host(peer_get_mdhost(peer));
+		slave_mhpeer = peer_get_parent(peer);
+		ah = mdhost_to_abstract_host(peer_get_mdhost(slave_mhpeer));
 		if ((e = abstract_host_sender_lock(ah, &mhpeer, diag))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s (abstract_host_sender_lock): %s",
 			    diag, relay_diag, gfarm_error_string(e));
-		} else if (mhpeer != peer) {
+		} else if (mhpeer != slave_mhpeer) {
 			abstract_host_sender_unlock(ah, mhpeer, diag);
 			gflog_error(GFARM_MSG_UNFIXED, "gfmd_channel(%s): "
 			    "peer switch during rpc relay reply",
