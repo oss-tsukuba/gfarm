@@ -1,0 +1,133 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfjournaladmin.1'>
+
+<refentryinfo><date>2 Jul 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfjournal</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfjournal</refname>
+<refpurpose>ジャーナルファイルの状態を出力する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfjournal</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>ジャーナルファイル</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfjournal</command> はジャーナルファイルを読み込み、
+ファイルの状態に関する情報を標準出力に表示します。
+オプションを指定しなかった場合は、ジャーナルファイルの状態のサマリを
+以下のような形で表示します。
+</para>
+
+<literallayout>
+	records  seqnum(min/max)          record length(min/max/ave)
+	     30           2/          31          24/    120/     37
+</literallayout>
+
+<para>
+'-l' オプションを指定すると、これに加えてジャーナルファイル内のすべての
+レコードも表示します。
+</para>
+
+<literallayout>
+	seqnum    operation        length  argument
+	        2 BEGIN                 24
+	        3 MDHOST_ADD            56 name=gfmd1.example.com
+	        4 END                   24
+	        5 BEGIN                 24
+	        6 USER_ADD              68 username=gfarmadm
+	        7 END                   24
+	(中略)
+	records  seqnum(min/max)          record length(min/max/ave)
+	     30             2/        31          24/    120/     37
+</literallayout>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>
+ログレベルを 'debug' に設定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>
+引数オプションを表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>
+<option>-h</option>と同じです。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>
+ジャーナルファイルの状態のサマリに加え、ジャーナルファイル内のすべての
+レコードも表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>
+最大のシーケンス番号だけを表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>
+状態のサマリ、およびレコードのリストのヘッダ表示を抑止します。
+<option>-l</option> と一緒に指定されたときだけ、有効です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+冗長な表示を行います。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+
+</refentry>
