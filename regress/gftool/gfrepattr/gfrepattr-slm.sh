@@ -2,7 +2,7 @@
 
 . ./regress.conf
 
-dir=/tmp/gfrepattr-test.$$
+dir=$gftmp
 pat="g0:1, g1:1, g0:2, g2:1, g0:3"
 g0s=g0:6
 g1s=g1:1
