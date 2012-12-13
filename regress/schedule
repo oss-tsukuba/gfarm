@@ -64,6 +64,7 @@ gftool/gfuser/gfuser-m.gsi_dn.toolong.sh
 gftool/gfuser/gfuser-m.self.realname.sh
 gftool/gfuser/gfuser.not-exist.sh
 gftool/gfgroup/gfgroup.not-exist.sh
+gftool/gfgroup/gfgroup.0-nusers.sh
 gftool/gfln/gfln-s.sh
 gftool/gfln/gfln-s_toolong.sh
 gftool/gfls/root.sh
