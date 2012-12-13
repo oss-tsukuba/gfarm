@@ -377,6 +377,10 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
 	int addattr;
+	gfarm_repattr_t *reps = NULL;
+	size_t nreps = 0;
+	char *repattr = NULL;
+	int i;
 
 	e = gfm_server_get_request(peer, diag,
 	    "sBi", &attrname, &size, &value, &flags);
@@ -432,12 +436,37 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
 	} else {
-		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-			transaction = 1;
-		e = setxattr(xmlMode, inode, attrname, &value, size,
-			     flags, waitctx, &addattr);
-		if (transaction)
-			db_end(diag);
+		{ /* XXX to merge with main trunk */
+			if (strcmp(attrname, GFARM_REPATTR_NAME) == 0) {
+				if ((e = gfarm_repattr_reduce(value, &reps, &nreps))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfarm_repattr_reduce() failed: %s",
+					    gfarm_error_string(e));
+				} else if (nreps == 0 || reps == NULL) {
+					e = GFARM_ERR_INVALID_ARGUMENT;
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "invalid repattr: %s", (char *)value);
+				} else if ((e = gfarm_repattr_stringify(reps, nreps, &repattr))
+				    != GFARM_ERR_NO_ERROR) {
+					gflog_debug(GFARM_MSG_UNFIXED,
+					    "gfarm_repattr_stringify() failed: %s",
+					    gfarm_error_string(e));
+				} else {
+					free(value);
+					value = repattr;
+					size = strlen(repattr) + 1;
+				}
+			}
+			if (e == GFARM_ERR_NO_ERROR) {
+				if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+					transaction = 1;
+				e = setxattr(xmlMode, inode, attrname, &value, size,
+				    flags, waitctx, &addattr);
+				if (transaction)
+					db_end(diag);
+			}
+		}
 	}
 	giant_unlock();
 
@@ -455,6 +484,11 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	}
 	db_waitctx_fini(waitctx);
 quit:
+	if (reps != NULL) {
+		for (i = 0; i < nreps; i++)
+			gfarm_repattr_free(reps[i]);
+		free(reps);
+	}
 	free(value);
 	free(attrname);
 	return (gfm_server_put_reply(peer, diag, e, ""));

@@ -352,15 +352,6 @@ gfarm_server_fsngroup_replicate_file(struct inode *inode,
 	src_hostname = host_name(src_host);
 	src_port = host_port(src_host);
 
-	/*
-	 * XXX FIXME:
-	 *
-	 *	Assuming that each reps[i] has a unique fsngroup, at
-	 *	least for now. It must be canonicalized that a
-	 *	repattr consists of tuples with a unique fsngroup
-	 *	name and an amount #.
-	 */
-
 	for (i = 0; i < nreps; i++) {
 		/*
 		 * Use unlock version since we should have the
