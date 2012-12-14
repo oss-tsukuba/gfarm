@@ -871,7 +871,9 @@ gfmdc_server_journal_ready_to_recv(struct mdhost *mh, struct peer *peer,
 		reader = gfmdc_peer_get_journal_file_reader(gfmdc_peer);
 		if ((e = db_journal_reader_reopen_if_needed(&reader,
 		    gfmdc_peer_get_last_fetch_seqnum(gfmdc_peer), &inited))
-		    != GFARM_ERR_NO_ERROR) {
+		    == GFARM_ERR_NO_ERROR) {
+			mdhost_set_seqnum_ok(mh);
+		} else {
 			mdhost_set_seqnum_state_by_error(mh, e);
 			gflog_error(GFARM_MSG_1002981,
 			    "gfmd_channel(%s) : %s",
