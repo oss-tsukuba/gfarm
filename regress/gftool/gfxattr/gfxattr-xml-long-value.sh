@@ -43,7 +43,8 @@ if test $? -ne 0; then
     cleanup
     exit $exit_fail
 fi
-
+# wait to flush the xml extended attribute to the backend database
+sleep 2
 gfxattr -g -x -f ${attr_got} ${dir} ${attrname}
 diff -c ${attr_src} ${attr_got}
 if test $? -ne 0; then
