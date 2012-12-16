@@ -1618,16 +1618,29 @@ host_modify(struct host *h, struct gfarm_host_info *hi)
 	h->hi.flags = hi->flags;
 }
 
-void
-host_fsngroup_modify(struct host *h, const char *fsngroupname)
+gfarm_error_t
+host_fsngroup_modify(struct host *h, const char *fsngroupname,
+	const char *diag)
 {
+	char *g;
+
+	if (strlen(fsngroupname) > GFARM_CLUSTER_NAME_MAX) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: host %s: too long fsngroupname \"%s\"",
+		    diag, host_name(h), fsngroupname);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+
+	if (fsngroupname == NULL)
+		g = NULL;
+	else if ((g = strdup_log(fsngroupname, diag)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+
 	if (h->fsngroupname != NULL)
 		free(h->fsngroupname);
-	if (fsngroupname != NULL)
-		h->fsngroupname = strdup_ck(fsngroupname,
-					"host_fsngroup_modify");
-	else
-		h->fsngroupname = NULL;
+	h->fsngroupname = g;
+
+	return (GFARM_ERR_NO_ERROR);
 }
 
 gfarm_error_t

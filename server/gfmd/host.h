@@ -86,7 +86,7 @@ void host_status_update(struct host *, struct host_status *);
 struct gfarm_host_info;
 gfarm_error_t host_enter(struct gfarm_host_info *, struct host **);
 void host_modify(struct host *, struct gfarm_host_info *);
-void host_fsngroup_modify(struct host *, const char *);
+gfarm_error_t host_fsngroup_modify(struct host *, const char *, const char *);
 gfarm_error_t host_remove_in_cache(const char *);
 
 /* A generic function to select filesystem nodes */

@@ -240,14 +240,14 @@ gfm_server_fsngroup_modify(
 	 */
 
 	static const char diag[] = "GFM_PROTO_FSNGROUP_MODIFY";
-	gfarm_error_t e = GFARM_ERR_UNKNOWN;
-	char *hostname = NULL;		/* need to be free'd always */
-	char *fsngroupname = NULL;	/* need to be free'd always */
+	gfarm_error_t e;
+	char *hostname;
+	char *fsngroupname;
 
 	e = gfm_server_get_request(peer, diag,
 		"ss", &hostname, &fsngroupname);
 	if (e != GFARM_ERR_NO_ERROR)
-		goto bailout;
+		return (e);
 	if (skip) {
 		e = GFARM_ERR_NO_ERROR;
 		goto bailout;
@@ -257,40 +257,29 @@ gfm_server_fsngroup_modify(
 		struct host *h = NULL;
 		struct user *user = peer_get_user(peer);
 
-		if (!from_client || user == NULL) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"operation is not permitted");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			goto reply;
-		}
-
 		giant_lock();
 
-		if ((h = host_lookup(hostname)) == NULL) {
+		if (!from_client || user == NULL || !user_is_admin(user)) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "operation is not permitted");
+			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+		} else if ((h = host_lookup(hostname)) == NULL) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"host does not exists");
 			e = GFARM_ERR_NO_SUCH_OBJECT;
-			goto unlock;
-		}
-		if (!user_is_admin(user)) {
-			gflog_debug(GFARM_MSG_UNFIXED,
-				"operation is not permitted");
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-			goto unlock;
-		}
-		if ((e = db_fsngroup_modify(hostname, fsngroupname)) !=
-			GFARM_ERR_NO_ERROR) {
+		} else if ((e = host_fsngroup_modify(h, fsngroupname, diag)) !=
+		    GFARM_ERR_NO_ERROR) {
+			;
+		} else if ((e = db_fsngroup_modify(hostname, fsngroupname)) !=
+		    GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_UNFIXED,
 				"db_fsngroup_modify failed: %s",
 				gfarm_error_string(e));
-			goto unlock;
+			/* XXX - need to revert the change in memory? */
 		}
-		host_fsngroup_modify(h, fsngroupname);
 
-unlock:
 		giant_unlock();
 	}
-reply:
 	e = gfm_server_put_reply(peer, diag, e, "");
 
 bailout:

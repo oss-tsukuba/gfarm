@@ -782,7 +782,7 @@ gfm_server_group_info_set(struct peer *peer, int from_client, int skip)
 			gfarm_error_string(e));
 	/*
 	 * We have to call this before group_info_add(),
-	 * because group_info_add_and() frees the memory of gi
+	 * because group_info_add() frees the memory of gi
 	 */
 	} else if ((e = db_group_add(&gi)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1000254,

@@ -105,6 +105,7 @@ db_journal_apply_fsngroup_modify(gfarm_uint64_t seqnum,
 {
 	gfarm_error_t e;
 	struct host *h;
+	static const char diag[] = "db_journal_apply_fsngroup_modify";
 
 	if ((h = host_lookup(arg->hostname)) == NULL) {
 		e = GFARM_ERR_NO_SUCH_OBJECT;
@@ -113,8 +114,7 @@ db_journal_apply_fsngroup_modify(gfarm_uint64_t seqnum,
 			(unsigned long long)seqnum,
 			arg->hostname, gfarm_error_string(e));
 	} else {
-		host_fsngroup_modify(h, (const char *)arg->fsngroupname);
-		e = GFARM_ERR_NO_ERROR;
+		e = host_fsngroup_modify(h, arg->fsngroupname, diag);
 	}
 	return (e);
 }
