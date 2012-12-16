@@ -24,571 +24,69 @@
 #include "subr.h"
 #include "user.h"
 
-#define dup_or_null(X)	\
-	((X) == NULL) ? NULL : strdup_ck((X), "dup_or_null")
-
-/*****************************************************************************/
-/*
- * Type definitions:
- */
-
-typedef struct {
+struct fsngroup_tuple {
 	char *hostname;
 	char *fsngroupname;
-} a_tuple_t;
-
-struct gfarm_fsngroup_tuples_record {
-	size_t n;
-	a_tuple_t **tuples;
 };
 
-struct gfarm_fsngroup_text_record {
-	size_t n;
-	char **lines;
-};
-
-typedef struct {
-	size_t nnames;
-	char **names;
-	gfarm_fsngroup_text_t exclusions;
-	int flags;
-
-#define CHECK_VALID(f)	((f) & FILTER_CHECK_VALID)
-#define CHECK_UP(f)	((f) & FILTER_CHECK_UP)
-
-#define MATCH_VALID(f, h) \
-	((CHECK_VALID(f) && host_is_valid((h))) || !CHECK_VALID(f))
-#define MATCH_UP(f, h) \
-	((CHECK_UP(f) && host_is_up((h))) || !CHECK_UP(f))
-
-#define MATCH_COND(f, h) \
-	((MATCH_VALID((f), (h))) && (MATCH_UP((f), (h))))
-} filter_arg_t;
-
-/*****************************************************************************/
-/*
- * Internal functions:
- */
-
-/*
- * Basic objects constructors/destructors/methods:
- */
-
-/*
- * Tuple/Tuples:
- */
-static a_tuple_t *
-allocate_tuple(const char *hostname, const char *fsngroupname)
-{
-	a_tuple_t *ret =
-		(a_tuple_t *)malloc(sizeof(*ret));
-	if (ret != NULL) {
-		ret->hostname = dup_or_null(hostname);
-		ret->fsngroupname = dup_or_null(fsngroupname);
-	}
-
-	return (ret);
-}
-
 static void
-destroy_tuple(a_tuple_t *t)
+fsngroup_free_tuples(gfarm_int32_t n_tuples, struct fsngroup_tuple *tuples)
 {
-	if (t != NULL) {
-		free(t->hostname);
-		free(t->fsngroupname);
-		free(t);
-	}
+	gfarm_int32_t i;
+
+	for (i = 0; i < n_tuples; i++)
+		free(tuples[i].fsngroupname);
+	free(tuples);
 }
 
-static gfarm_fsngroup_tuples_t
-allocate_tuples(size_t n, a_tuple_t **tuples)
+static int
+record_fsngroup_tuple(struct host *h, void *closure, void *elemp)
 {
-	struct gfarm_fsngroup_tuples_record *ret =
-		(struct gfarm_fsngroup_tuples_record *)malloc(sizeof(*ret));
-	if (ret != NULL) {
-		ret->n = n;
-		ret->tuples = tuples;
-	}
+	struct fsngroup_tuple *tuple = elemp; 
 
-	return ((gfarm_fsngroup_tuples_t)ret);
+	tuple->hostname = host_name(h);
+	tuple->fsngroupname = strdup(host_fsngroup(h));
+	return (1);
 }
 
-static void
-destroy_tuples(gfarm_fsngroup_tuples_t t)
+static gfarm_error_t
+fsngroup_get_tuples(gfarm_int32_t *n_tuples, struct fsngroup_tuple **tuplesp)
 {
-	struct gfarm_fsngroup_tuples_record *tr =
-		(struct gfarm_fsngroup_tuples_record *)t;
+	gfarm_error_t e;
+	size_t i, n;
+	void *ret;
+	struct fsngroup_tuple *tuples;
 
-	if (tr != NULL) {
-		if (tr->tuples != NULL) {
-			int i;
-			for (i = 0; i < tr->n; i++) {
-				destroy_tuple(tr->tuples[i]);
-			}
-			free(tr->tuples);
-		}
-		free(tr);
-	}
-}
+	e = host_iterate(record_fsngroup_tuple, NULL,
+	    sizeof(struct fsngroup_tuple), &n, &ret);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
 
-static size_t
-tuples_size(gfarm_fsngroup_tuples_t t)
-{
-	return (((struct gfarm_fsngroup_tuples_record *)t)->n);
-}
-
-static const char *
-tuples_hostname(gfarm_fsngroup_tuples_t t, size_t i)
-{
-	struct gfarm_fsngroup_tuples_record *tr =
-		(struct gfarm_fsngroup_tuples_record *)t;
-
-	if (i < tr->n && tr->tuples[i] != NULL)
-		return (const char *)(tr->tuples[i]->hostname);
-	else
-		return (NULL);
-}
-
-static const char *
-tuples_fsngroup(gfarm_fsngroup_tuples_t t, size_t i)
-{
-	struct gfarm_fsngroup_tuples_record *tr =
-		(struct gfarm_fsngroup_tuples_record *)t;
-
-	if (i < tr->n && tr->tuples[i] != NULL)
-		return (const char *)(tr->tuples[i]->fsngroupname);
-	else
-		return (NULL);
-}
-
-/*
- * Text:
- *	Actually, an array char * and # of its element.
- */
-static gfarm_fsngroup_text_t
-allocate_text(size_t n, char **lines)
-{
-	struct gfarm_fsngroup_text_record *ret =
-		(struct gfarm_fsngroup_text_record *)malloc(sizeof(*ret));
-	if (ret != NULL) {
-		ret->n = n;
-		ret->lines = lines;
-	}
-
-	return ((gfarm_fsngroup_text_t)ret);
-}
-
-static void
-destroy_text(gfarm_fsngroup_text_t t)
-{
-	struct gfarm_fsngroup_text_record *tr =
-		(struct gfarm_fsngroup_text_record *)t;
-
-	if (tr != NULL) {
-		if (tr->lines != NULL) {
-			int i;
-			for (i = 0; i < tr->n; i++) {
-				free(tr->lines[i]);
-			}
-			free(tr->lines);
-		}
-		free(tr);
-	}
-}
-
-static size_t
-text_size(gfarm_fsngroup_text_t t)
-{
-	return (((struct gfarm_fsngroup_text_record *)t)->n);
-}
-
-static const char *
-text_line(gfarm_fsngroup_text_t t, size_t i)
-{
-	struct gfarm_fsngroup_text_record *tr =
-		(struct gfarm_fsngroup_text_record *)t;
-
-	if (i < tr->n)
-		return (const char *)(tr->lines[i]);
-	else
-		return (NULL);
-}
-
-static const char * const *
-text_lines(gfarm_fsngroup_text_t t)
-{
-	struct gfarm_fsngroup_text_record *tr =
-		(struct gfarm_fsngroup_text_record *)t;
-
-	return (const char * const *)(tr->lines);
-}
-
-/*****************************************************************************/
-
-/*
- * Matcher functions for the scanner:
- */
-
-static void *
-match_tuple_all(struct host *h, void *a, int *stopp)
-{
-	filter_arg_t *fa = (filter_arg_t *)a;
-	int flags = fa->flags;
-	gfarm_fsngroup_text_t exs = fa->exclusions;
-	char *host = host_name(h);
-
-	if (stopp != NULL)
-		*stopp = 0;
-
-	if (MATCH_COND(flags, h)) {
-		if (exs == NULL) {
-			return (allocate_tuple(host, host_fsngroup(h)));
-		} else {
-			size_t nexs = gfm_fsngroup_text_size(exs);
-			size_t i;
-			for (i = 0; i < nexs; i++) {
-				if (strcmp(host,
-					gfm_fsngroup_text_line(exs, i)) == 0)
-					return (NULL);
-			}
-			return (allocate_tuple(host, host_fsngroup(h)));
+	tuples = ret;
+	for (i = 0; i < n; i++) {
+		if (tuples[i].fsngroupname == NULL) { /* strdup() failed */
+			fsngroup_free_tuples(n, tuples);
+			return (GFARM_ERR_NO_MEMORY);
 		}
 	}
-
-	return (NULL);
+	*n_tuples = n;
+	*tuplesp = tuples;
+	return (GFARM_ERR_NO_ERROR);
 }
 
-static void *
-match_tuple_by_hostnames(struct host *h, void *a, int *stopp)
+static int
+fsngroup_filter(struct host *h, void *closure)
 {
-	filter_arg_t *fa = (filter_arg_t *)a;
-	int flags = fa->flags;
-	gfarm_fsngroup_text_t exs = fa->exclusions;
-	char *host = host_name(h);
-	size_t i;
+	const char *fsngroup = closure;
 
-	if (stopp != NULL)
-		*stopp = 0;
-
-	if (MATCH_COND(flags, h)) {
-		if (exs == NULL) {
-			for (i = 0; i < fa->nnames; i++) {
-				if (strcmp(host, fa->names[i]) == 0)
-					return (allocate_tuple(fa->names[i],
-							host_fsngroup(h)));
-			}
-		} else {
-			size_t nexs = gfm_fsngroup_text_size(exs);
-			for (i = 0; i < nexs; i++) {
-				if (strcmp(host,
-					gfm_fsngroup_text_line(exs, i)) == 0)
-					return (NULL);
-			}
-
-			for (i = 0; i < fa->nnames; i++) {
-				if (strcmp(host, fa->names[i]) == 0)
-					return (allocate_tuple(fa->names[i],
-							host_fsngroup(h)));
-			}
-		}
-	}
-
-	return (NULL);
+	return (strcmp(host_fsngroup(h), fsngroup) == 0);
 }
 
-static void *
-match_tuple_by_fsngroups(struct host *h, void *a, int *stopp)
+gfarm_error_t
+fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
 {
-	filter_arg_t *fa = (filter_arg_t *)a;
-	int flags = fa->flags;
-	gfarm_fsngroup_text_t exs = fa->exclusions;
-	char *fsngroup = host_fsngroup(h);
-	size_t i;
-
-	if (stopp != NULL)
-		*stopp = 0;
-
-	if (MATCH_COND(flags, h)) {
-		if (exs == NULL) {
-			for (i = 0; i < fa->nnames; i++) {
-				if (strcmp(fsngroup, fa->names[i]) == 0)
-					return (allocate_tuple(host_name(h),
-							fa->names[i]));
-			}
-		} else {
-			char *host = host_name(h);
-			size_t nexs = gfm_fsngroup_text_size(exs);
-			for (i = 0; i < nexs; i++) {
-				if (strcmp(host,
-					gfm_fsngroup_text_line(exs, i)) == 0)
-					return (NULL);
-			}
-
-			for (i = 0; i < fa->nnames; i++) {
-				if (strcmp(fsngroup, fa->names[i]) == 0)
-					return (allocate_tuple(host,
-							fa->names[i]));
-			}
-		}
-	}
-
-	return (NULL);
-}
-
-static void *
-match_hostname_by_fsngroup(struct host *h, void *a, int *stopp)
-{
-	filter_arg_t *fa = (filter_arg_t *)a;
-	const char *fsngroupname = (const char *)(fa->names[0]);
-	int flags = fa->flags;
-	gfarm_fsngroup_text_t exs = fa->exclusions;
-
-	if (stopp != NULL)
-		*stopp = 0;
-
-	if (MATCH_COND(flags, h)) {
-		if (exs == NULL) {
-			if (strcmp(host_fsngroup(h), fsngroupname) == 0)
-				return (strdup_ck(host_name(h),
-					"get_hostname_by_fsngroup"));
-		} else {
-			char *host = host_name(h);
-			size_t nexs = gfm_fsngroup_text_size(exs);
-			size_t i;
-			for (i = 0; i < nexs; i++) {
-				if (strcmp(host,
-					gfm_fsngroup_text_line(exs, i)) == 0)
-					return (NULL);
-			}
-
-			if (strcmp(host_fsngroup(h), fsngroupname) == 0)
-				return (strdup_ck(host,
-					"get_hostname_by_fsngroup"));
-		}
-	}
-
-	return (NULL);
-}
-
-/*
- * Scanners:
- */
-
-static gfarm_fsngroup_tuples_t
-get_tuples_all(gfarm_fsngroup_text_t exs, int flags)
-{
-	size_t n = 0;
-	filter_arg_t arg = {
-		0, NULL, exs, flags
-	};
-
-	a_tuple_t **tuples =
-		(a_tuple_t **)host_iterate(
-			match_tuple_all, (void *)&arg,
-			sizeof(a_tuple_t *), 0, 0, &n);
-
-	return (allocate_tuples(n, tuples));
-}
-
-static gfarm_fsngroup_tuples_t
-get_tuples_by_hostnames(const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	size_t n = 0;
-	filter_arg_t arg = {
-		nhostnames, (char **)hostnames, exs, flags
-	};
-	a_tuple_t **tuples =
-		(a_tuple_t **)host_iterate(
-			match_tuple_by_hostnames, (void *)&arg,
-			sizeof(a_tuple_t *), 0, 0, &n);
-
-	return (allocate_tuples(n, tuples));
-}
-
-static gfarm_fsngroup_tuples_t
-get_tuples_by_fsngroups(const char **fsngroups, size_t nfsngroups,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	size_t n = 0;
-	filter_arg_t arg = {
-		nfsngroups, (char **)fsngroups, exs, flags
-	};
-	a_tuple_t **tuples =
-		(a_tuple_t **)host_iterate(
-			match_tuple_by_fsngroups, (void *)&arg,
-			sizeof(a_tuple_t *), 0, 0, &n);
-
-	return (allocate_tuples(n, tuples));
-}
-
-static gfarm_fsngroup_text_t
-get_hostnames_by_fsngroup(const char *fsngroup,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	size_t n = 0;
-	const char * const names[] = { fsngroup, NULL };
-	filter_arg_t arg = {
-		1, (char **)names, exs, flags
-	};
-	char **hostnames =
-		(char **)host_iterate(
-			match_hostname_by_fsngroup, (void *)&arg,
-			sizeof(char *), 0, 0, &n);
-
-	return (allocate_text(n, hostnames));
-}
-
-/*****************************************************************************/
-/*
- * Exported functions:
- */
-
-/*
- * Basic objects destructors/methods:
- */
-
-size_t
-gfm_fsngroup_tuples_size(gfarm_fsngroup_tuples_t t)
-{
-	return (tuples_size(t));
-}
-
-const char *
-gfm_fsngroup_tuples_hostname(gfarm_fsngroup_tuples_t t, size_t i)
-{
-	return (tuples_hostname(t, i));
-}
-
-const char *
-gfm_fsngroup_tuples_fsngroup(gfarm_fsngroup_tuples_t t, size_t i)
-{
-	return (tuples_fsngroup(t, i));
-}
-
-void
-gfm_fsngroup_tuples_destroy(gfarm_fsngroup_tuples_t t)
-{
-	destroy_tuples(t);
-}
-
-size_t
-gfm_fsngroup_text_size(gfarm_fsngroup_text_t t)
-{
-	return (text_size(t));
-}
-
-const char *
-gfm_fsngroup_text_line(gfarm_fsngroup_text_t t, size_t i)
-{
-	return (text_line(t, i));
-}
-
-const char * const *
-gfm_fsngroup_text_lines(gfarm_fsngroup_text_t t)
-{
-	return (text_lines(t));
-}
-
-void
-gfm_fsngroup_text_destroy(gfarm_fsngroup_text_t t)
-{
-	destroy_text(t);
-}
-
-gfarm_fsngroup_text_t
-gfm_fsngroup_text_allocate(size_t n, char **lines)
-{
-	return allocate_text(n, lines);
-}
-
-/*****************************************************************************/
-/*
- * Scanners:
- */
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_all_unlock(gfarm_fsngroup_text_t exs, int flags)
-{
-	return (get_tuples_all(exs, flags));
-}
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_all(gfarm_fsngroup_text_t exs, int flags)
-{
-	gfarm_fsngroup_tuples_t ret;
-
-	giant_lock();
-	ret = get_tuples_all(exs, flags);
-	giant_unlock();
-
-	return (ret);
-}
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_by_hostnames_unlock(
-	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	return (get_tuples_by_hostnames(hostnames, nhostnames,
-			exs, flags));
-}
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_by_hostnames(
-	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	gfarm_fsngroup_tuples_t ret;
-
-	giant_lock();
-	ret = get_tuples_by_hostnames(hostnames, nhostnames, exs, flags);
-	giant_unlock();
-
-	return (ret);
-}
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_by_fsngroups_unlock(
-	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	return (get_tuples_by_fsngroups(hostnames, nhostnames,
-			exs, flags));
-}
-
-gfarm_fsngroup_tuples_t
-gfm_fsngroup_get_tuples_by_fsngroups(
-	const char **hostnames, size_t nhostnames,
-	gfarm_fsngroup_text_t exs, int flags)
-{
-	gfarm_fsngroup_tuples_t ret;
-
-	giant_lock();
-	ret = get_tuples_by_fsngroups(hostnames, nhostnames, exs, flags);
-	giant_unlock();
-
-	return (ret);
-}
-
-gfarm_fsngroup_text_t
-gfm_fsngroup_get_hostnames_by_fsngroup_unlock(
-	const char *fsngroup, gfarm_fsngroup_text_t exs, int flags)
-{
-	return (get_hostnames_by_fsngroup(fsngroup, exs, flags));
-}
-
-gfarm_fsngroup_text_t
-gfm_fsngroup_get_hostnames_by_fsngroup(
-	const char *fsngroup, gfarm_fsngroup_text_t exs, int flags)
-{
-	gfarm_fsngroup_text_t ret;
-
-	giant_lock();
-	ret = get_hostnames_by_fsngroup(fsngroup, exs, flags);
-	giant_unlock();
-
-	return (ret);
+	return (host_from_all(fsngroup_filter, (char *)fsngroup, /* UNCONST */
+	    nhostsp, hostsp));
 }
 
 /*****************************************************************************/
@@ -612,63 +110,45 @@ gfm_server_fsngroup_get_all(
 	 *		tuple{hostname::string, fsngroupname::string}[n]
 	 */
 
-	gfarm_error_t e = GFARM_ERR_UNKNOWN;
+	gfarm_error_t e;
+	struct gfp_xdr *client = peer_get_conn(peer);
+	gfarm_int32_t i, n = 0;
+	struct fsngroup_tuple *t = NULL;
+	static const char diag[] = "GFM_PROTO_FSNGROUP_GET_ALL";
 
-	(void)from_client;
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
 
-	if (!skip) {
-		int i;
-		int n = 0;
-		gfarm_fsngroup_tuples_t t = NULL;
-		gfarm_error_t e2;
-		const char diag[] = "GFM_PROTO_FSNGROUP_GET_ALL";
-
+	{ /* XXX */
 		giant_lock();
-		t = get_tuples_all(NULL, FILTER_CHECK_VALID);
+		e = fsngroup_get_tuples(&n, &t);
 		giant_unlock();
 
-		if (t != NULL) {
-			n = tuples_size(t);
-			e = GFARM_ERR_NO_ERROR;
-		} else {
-			gflog_debug(
-				GFARM_MSG_UNFIXED,
-				"get_tuples_all() returns NULL");
-			e = GFARM_ERR_NO_MEMORY;
-		}
-
-		e2 = gfm_server_put_reply(peer, diag, e, "i", n);
-		if (e2 != GFARM_ERR_NO_ERROR) {
+		if (e != GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
-				"gfm_server_put_reply(%s) failed: %s",
-				diag, gfarm_error_string(e));
-		}
+			    "%s: get_fsngroup_tuples(): %s",
+			    diag, gfarm_error_string(e));
+	}
 
-		if (e != GFARM_ERR_NO_ERROR || e2 != GFARM_ERR_NO_ERROR)
-			goto done;
+	e = gfm_server_put_reply(peer, diag, e, "i", n);
 
-		if (n > 0) {
-			struct gfp_xdr *c = peer_get_conn(peer);
-
-			for (i = 0; i < n; i++) {
-				e = gfp_xdr_send(c, "ss",
-					tuples_hostname(t, i),
-					tuples_fsngroup(t, i));
-				if (e != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
-						"gfp_xdr_send(%s) failed: %s",
-						diag, gfarm_error_string(e));
-					goto done;
-				}
+	if (e == GFARM_ERR_NO_ERROR) {
+		for (i = 0; i < n; i++) {
+			e = gfp_xdr_send(client, "ss",
+				t[i].hostname, t[i].fsngroupname);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_warning(GFARM_MSG_UNFIXED,
+				    "%s@%s: %s: gfp_xdr_send() failed: %s",
+				    peer_get_username(peer),
+				    peer_get_hostname(peer),
+				    diag, gfarm_error_string(e));
+				break;
 			}
 		}
-
-done:
-		if (t != NULL)
-			destroy_tuples(t);
-	} else {
-		e = GFARM_ERR_NO_ERROR;
 	}
+
+	if (t != NULL)
+		fsngroup_free_tuples(n, t);
 
 	return (e);
 }
@@ -710,8 +190,11 @@ gfm_server_fsngroup_get_by_hostname(
 			struct host *h = NULL;
 
 			giant_lock();
-			if ((h = host_lookup(hostname)) != NULL)
+			if ((h = host_lookup(hostname)) != NULL) {
 				fsngroupname = strdup(host_fsngroup(h));
+				if (fsngroupname == NULL)
+					e = GFARM_ERR_NO_MEMORY;
+			}
 			giant_unlock();
 
 			if (h == NULL) {

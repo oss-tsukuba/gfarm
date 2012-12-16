@@ -342,17 +342,14 @@ process_record_repattr(struct process *process, int fd,
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_UNFIXED,
 			"process_record_repattr(%ld, %d, '%s'): %s",
-			(long)process->pid, fd,
-			(repattr != NULL) ? repattr : "",
+			(long)process->pid, fd, repattr,
 			gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_file(fo->inode)) {
 		gflog_warning(GFARM_MSG_UNFIXED,
-			"process_record_repattr(%ld, %d, '%s'): "
-			"not a file",
-			(long)process->pid, fd,
-			(repattr != NULL) ? repattr : "");
+			"process_record_repattr(%ld, %d, '%s'): not a file",
+			(long)process->pid, fd, repattr);
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	
@@ -360,9 +357,7 @@ process_record_repattr(struct process *process, int fd,
 	 * The repattr must be malloc'd. It will be free'd in
 	 * file_opening_free().
 	 */
-	fo->u.f.repattr =
-		(repattr != NULL && *repattr != '\0') ?
-		repattr : NULL;
+	fo->u.f.repattr = repattr;
 	return (GFARM_ERR_NO_ERROR);
 }
 

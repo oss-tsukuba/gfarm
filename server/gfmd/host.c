@@ -1878,102 +1878,68 @@ gfm_server_statfs(struct peer *peer, int from_client, int skip)
 #endif /* TEST */
 
 /*
- * A generic host hash iteration workhorse
+ * A generic function to select filesystem nodes.
+ * NOTE: only valid hosts are returned.
  *
  * REQUISITE: giant_lock
  */
-void *
+gfarm_error_t
 host_iterate(
 	/**
-	 * A function to be invoked at each iteration, so called a visitor.
+	 * A filtering and recording function to select filesystem nodes
 	 *
 	 *	@param [in] hp	A pointer of a struct host.
-	 *	@param [in] arg	An arbitarary arvument.
-	 *	@param [out] st	Set one if iteration should be stop.	
+	 *	@param [in] closure	closure argument will be passed back
+	 *	@param [out] an_elem	An arbitarary pointer.
+	 *	host_iterate() returns an array of this if it is not NULL.
 	 *
-	 *	@return An arbitarary pointer. host_iterate() itself
-	 *	returns an array of this if it is not NULL.
+	 *	@return boolean value. true if the entry is valid and
+	 *	should be included in the return value.
 	 */
-	void * (*f)(struct host *hp, void *a, int *st),
-	void *arg,		/* The first argumrent of the f */
+	int (*do_record)(struct host *, void *, void *),
+	void *closure,		/* The second argumrent of the f */
 	size_t esize,		/* A size of one element to be allocated */
-	size_t alloc_limit,	/* A limit # of elements to be
-				 * allocated (zero means no limit) */
-	size_t iter_limit, 	/* A limit # of iteration (zero means all) */
-	size_t *nelemp		/* Returns # of allocated elements */)
+	size_t *nelemp,		/* Returns # of allocated elements */
+	void **arrayp)		/* Returns Allocated array */
 {
-	/*
-	 * I really hate having the giant lock kinda long period of
-	 * time. In order to avoid it, just copy needed members (or
-	 * pointer of a struct host itself) from the host hash table.
-	 */
-
 	struct gfarm_hash_iterator it;
-	size_t nhosts = 0;
-	int nmatches = 0;
-	char *ret = NULL;
-	char *diag = "scan_host_cache";
+	size_t nhosts, nmatches;
+	struct host *h;
+	void *ret;
+	char *p;
+	int of;
+	size_t sz;
 
+	nhosts = 0;
 	FOR_ALL_HOSTS(&it) {
-		(void)host_iterator_access(&it);
-		nhosts++;
+		h = host_iterator_access(&it);
+		if (host_is_valid(h))
+			nhosts++;
+	}
+	if (nhosts == 0) {
+		*nelemp = 0;
+		*arrayp = NULL;
+		return (GFARM_ERR_NO_ERROR);
 	}
 
-	if (nhosts > 0) {
-		size_t i = 0;
-		size_t max_alloc;
-		size_t max_iter;
-		struct host *h;
-		void *a_elem;
-		char *dst;
-		int stop_iter;
-		int of;
-		size_t sz;
+	of = 0;
+	sz = gfarm_size_mul(&of, esize, nhosts);
+	if (of || (ret = malloc(sz)) == NULL)
+		return (GFARM_ERR_NO_MEMORY);
 
-		if (alloc_limit == 0)
-			max_alloc = nhosts;
-		else
-			max_alloc =
-				(alloc_limit < nhosts) ? alloc_limit : nhosts;
-
-		of = 0;
-		sz = gfarm_size_mul(&of, esize, max_alloc);
-		if (of == 0 && sz > 0)
-			ret = (char *)malloc(sz);
-		if (ret == NULL) {
-			gflog_error(GFARM_MSG_UNFIXED,
-				"%s: insufficient memory to "
-				"allocate for %zu host(s) search results.",
-				diag, alloc_limit);
-			return (NULL);
+	nmatches = 0;
+	p = ret;
+	FOR_ALL_HOSTS(&it) {
+		if (nmatches >= nhosts)
+			break;
+		h = host_iterator_access(&it);
+		if (host_is_valid(h) && (*do_record)(h, closure, p)) {
+			p += esize;
+			nmatches++;
 		}
-		dst = ret;
-
-		if (iter_limit == 0)
-			max_iter = nhosts;
-		else
-			max_iter =
-				(alloc_limit < nhosts) ? alloc_limit : nhosts;
-
-		FOR_ALL_HOSTS(&it) {
-			if (i >= max_alloc || i >= max_iter)
-				break;
-			h = host_iterator_access(&it);
-			stop_iter = 0;
-			if ((a_elem = (f)(h, arg, &stop_iter)) != NULL) {
-				(void)memcpy((void *)dst,
-					     (void *)&a_elem, esize);
-				dst += esize;
-				i++;
-			}
-			if (stop_iter)
-				break;
-		}
-		nmatches = i;
 	}
 
-	if (nelemp != NULL)
-		*nelemp = nmatches;
-
-	return ((void *)ret);
+	*nelemp = nmatches;
+	*arrayp = ret;
+	return (GFARM_ERR_NO_ERROR);
 }

@@ -275,11 +275,18 @@ replica_check_fix(struct replication_info *info)
 static int
 replica_check_desired_number(struct inode *dir_ino, struct inode *file_ino)
 {
+	char *repattr;
 	int desired_number;
 
-	if (inode_has_desired_number(file_ino, &desired_number) ||
-	    inode_traverse_desired_replica_number(dir_ino, &desired_number))
-		return (desired_number);
+	if (inode_get_replica_spec(file_ino, &repattr, &desired_number) ||
+	    inode_search_replica_spec(dir_ino, &repattr, &desired_number)) {
+		if (repattr != NULL) {
+			free(repattr); /* XXX */
+			return (0); /* XXX support repattr */
+		} else {
+			return (desired_number);
+		}
+	}
 	return (0);
 }
 

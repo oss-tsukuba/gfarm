@@ -239,6 +239,8 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	struct inode *base, *inode;
 	int created, transaction = 0;;
 	gfarm_int32_t cfd, fd = -1;
+	char *repattr;
+	int desired_number;
 
 	/* for gfarm_file_trace */
 	int path_len = 0;
@@ -398,21 +400,16 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 
 	if ((created || (op & GFS_W_OK) != 0 ||
 	     (flag & GFARM_FILE_REPLICA_SPEC) != 0) && inode_is_file(inode)) {
-#if 1
-		/*
-		 * This will take care both the ncopy and the
-		 * repattr.
-		 */
-		gfarm_server_process_record_replication_attribute(
-			process, fd, inode, base);
-#else
-		int desired_number = 0;
-		if (inode_has_desired_number(inode, &desired_number) ||
-		    inode_traverse_desired_replica_number(base,
-		    &desired_number))
-			(void)process_record_desired_number(process, fd,
-				desired_number);
-#endif
+		if (inode_get_replica_spec(inode, &repattr, &desired_number) ||
+		    inode_search_replica_spec(base,
+		    &repattr, &desired_number)) {
+			if (repattr != NULL)
+				(void)process_record_repattr(
+				    process, fd, repattr);
+			else
+				(void)process_record_desired_number(
+				    process, fd, desired_number);
+		}
 	}
 
 	/* set full path to file_opening */
