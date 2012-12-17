@@ -40,7 +40,7 @@ subcmd_get_auth_type_agent()
 
 	CONFIG_GFARM_OPTIONS=`get_param config-gfarm-options || echo ''`
 
-	AUTH_TYPE=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	AUTH_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^AUTH_TYPE=/s/^[^=]*=//p'`
 	echo $AUTH_TYPE
 
