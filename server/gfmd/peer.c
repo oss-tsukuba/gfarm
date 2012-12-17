@@ -537,6 +537,9 @@ peer_authorized_common(struct peer *peer,
 		else
 			peer->host = mdhost_to_abstract_host(m);
 		break;
+
+	default:
+		break;
 	}
 
 	if (peer->host != NULL) {
