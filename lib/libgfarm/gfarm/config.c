@@ -2126,7 +2126,7 @@ parse_set_float_to_long_long(char *p, long long *vp)
 {
 	gfarm_error_t e;
 	char *s;
-	const char *pp;
+	const unsigned char *pp;
 	size_t len;
 	int have_dot = 0, num_f = 0, done = 0;
 	long long d = 0, f = 0, tmp;
@@ -2138,7 +2138,7 @@ parse_set_float_to_long_long(char *p, long long *vp)
 	if (*vp != GFARM_CONFIG_MISC_DEFAULT) /* first line has precedence */
 		return (GFARM_ERR_NO_ERROR);
 
-	pp = s;
+	pp = (unsigned char *)s;
 	len = strlen(s);
 	for (; len > 0; len--) {
 		if (*pp == '.') {
