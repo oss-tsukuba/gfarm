@@ -1,0 +1,241 @@
+#
+# Test case for configuring gfarm
+#
+load 	"check_gfsd_registered" \
+	"check_gfmd_slave" \
+	"check_journal_seqnum_max" \
+	"check_file_location" \
+	"check_replica_num"
+
+#
+# Test parameters
+#
+# GFARM_HOME:	A directory path of Gfarm which this test will be executed
+# RETRY_COUNT:	Retry number to check master/slave
+# FILE_SIZE:	File size of each file to be read
+test_configuration()
+{
+	RESULT=0
+
+	AUTH_TYPE=`$GFSERVICE $DEBUG get_auth_type gfmd1`
+	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
+		$GFSERVICE $DEBUG grid_proxy_init gfmd1
+		$GFSERVICE $DEBUG grid_proxy_init gfmd2
+		$GFSERVICE $DEBUG grid_proxy_init gfsd1
+		$GFSERVICE $DEBUG grid_proxy_init gfsd2
+		$GFSERVICE $DEBUG grid_proxy_init gfsd3
+		$GFSERVICE $DEBUG grid_proxy_init client1
+	fi
+
+	# prepare: configure master gfmd
+	$GFSERVICE $DEBUG config-gfarm gfmd1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: config-gfarm on gfmd1 failed"
+
+	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
+		$GFSERVICE $DEBUG set-gfarm-conf gfmd1 \
+			"auth enable sharedsecret" "*"
+		$GFSERVICE $DEBUG set-gfmd-conf gfmd1 \
+			"auth enable sharedsecret" "*"
+		[ $? -ne 0 ] && log_warn "$TESTNAME: set-gfmd-conf on gfmd1" \
+			"failed"
+		$GFSERVICE $DEBUG restart-gfmd gfmd1
+		[ $? -ne 0 ] && log_warn "$TESTNAME: failed to restart gfmd" \
+			"on gfmd1"
+	fi
+
+	# prepare: config-gfsd
+	$GFSERVICE $DEBUG config-gfsd gfsd1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: config-gfsd on gfsd1 failed"
+
+	# prepare: check gfsd is added
+	check_gfsd_registered gfsd1 client1
+	[ $? -ne 0 ] && log_warn "$TESTNAME: gfsd is not configured correctly"
+
+	#
+	# section: configure gfsd
+	#
+	# step: config-gfsd
+	$GFSERVICE $DEBUG config-gfsd gfsd2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: config-gfsd on gfsd1 failed"
+		RESULT=1
+	fi
+
+	# step: check gfsd is added
+	check_gfsd_registered gfsd2 client1
+		if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfsd is not configured correctly"
+		RESULT=1
+	fi
+
+	#
+	# section: configure gfmd slave
+	#
+	# step: config-gfarm-update -r
+	$GFSERVICE $DEBUG config_gfarm_update_r gfmd1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: config-gfarm-update on gfmd1 failed"
+		RESULT=1
+	fi
+
+	# step: config-gfarm-slave
+	$GFSERVICE $DEBUG config-gfarm-slave gfmd2 gfmd1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: config-gfarm-slave on gfsd1 failed"
+		RESULT=1
+	fi
+
+	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
+		$GFSERVICE $DEBUG set-gfmd-conf gfmd2 \
+			"auth enable sharedsecret" "*"
+		[ $? -ne 0 ] && log_warn "$TESTNAME: set-gfmd-conf on gfmd2" \
+			"failed"
+		$GFSERVICE $DEBUG restart-gfmd gfmd2
+		[ $? -ne 0 ] && log_warn "$TESTNAME: failed to restart gfmd" \
+			"on gfmd2"
+	fi
+
+	# step: restart-gfsd
+	$GFSERVICE $DEBUG restart-gfsd gfsd1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: restart-gfsd on gfsd1 failed"
+		RESULT=1
+	fi
+	$GFSERVICE $DEBUG restart-gfsd gfsd2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: restart-gfsd on gfsd2 failed"
+		RESULT=1
+	fi
+
+	# step: check whether gfmd on gfmd2 is slave
+	check_gfmd_slave gfmd2 client1 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfmd2 in not slave"
+		RESULT=1
+	fi
+
+	# step: make directory to update metadata
+	$GFSERVICE $DEBUG gfcmd client1 gfmkdir $GFARM_HOME/$TEST_EXEC_ID
+
+	# step: check whether journal seqnum max is same
+	check_journal_seqnum_max gfmd1 gfmd2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: journal seqnum max is not same"
+		RESULT=1
+	fi
+
+	#
+	# section: add another gfsd
+	#
+	# step: config-gfsd
+	$GFSERVICE $DEBUG config-gfsd gfsd3
+	[ $? -ne 0 ] && log_warn "$TESTNAME: config-gfsd on gfsd3 failed"
+
+	# step: check gfsd is added
+	check_gfsd_registered gfsd3 client1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfsd3 is not configured correctly"
+		RESULT=1
+	fi
+
+	# step: set directory to enable file replication
+	$GFSERVICE $DEBUG gfcmd client1 gfncopy -s 2 $GFARM_HOME/$TEST_EXEC_ID
+
+	# step: create file
+	TMP_FILE=gfservice.$$
+	trap "rm -f $TMP_FILE; exit 1" 1 2 3 15
+	dd if=/dev/zero bs=$FILE_SIZE count=1 2> /dev/null | tr "\000" "a" \
+		> $TMP_FILE
+
+	GFARM_FILE=$GFARM_HOME/$TEST_EXEC_ID/test.txt
+	cat $TMP_FILE | $GFSERVICE $DEBUG read_and_register client1 $GFARM_FILE \
+		gfmd1 gfsd3
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: failed to register file"
+		RESULT=1
+	fi
+
+	# step: check file with gfls
+	$GFSERVICE $DEBUG gfcmd client1 gfls $GFARM_FILE
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfls failed"
+		RESULT=1
+	fi
+
+	# step: check whether file is created on expected node
+	check_file_location $GFARM_FILE gfsd3 client1
+
+	# step: check spool
+	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE`
+	cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file gfsd3 $SPOOL_PATH
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: file in spool directory is not same"
+		RESULT=1
+	fi
+
+	# step: check file num
+	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: number of replica files did not match"
+		RESULT=1
+	fi
+
+	#
+	# section: remove gfsd
+	#
+	# step: gfhost -d
+	$GFSERVICE $DEBUG unconfig-gfsd gfsd3
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: failed to delete host information"
+		RESULT=1
+	fi
+
+	# step: check registered
+	check_gfsd_registered gfsd3 client1
+	if [ $? -ne 1 ]; then
+		log_warn "$TESTNAME: gfsd is not deleted correctly"
+		RESULT=1
+	fi
+
+	# step: check file num
+	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: number of replica files did not match"
+		RESULT=1
+	fi
+
+	# step: check spool
+	HOSTS=`$GFSERVICE $DEBUG gfcmd client1 gfwhere $GFARM_FILE`
+	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE`
+	for HOST in $HOSTS; do
+		ID=`$GFSERVICE $DEBUG get_hostid $HOST`
+		cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file $ID \
+			$SPOOL_PATH
+		if [ $? -ne 0 ]; then
+			log_warn "$TESTNAME: file in spool directory is not same"
+			RESULT=1
+		fi
+	done
+
+	rm -f $TMP_FILE
+
+	# cleanup: remove file
+	$GFSERVICE $DEBUG gfcmd client1 gfrm $GFARM_FILE
+
+	# cleanup: remove directory
+	$GFSERVICE $DEBUG gfcmd client1 gfrmdir $GFARM_HOME/$TEST_EXEC_ID
+
+	# cleanup: unconfigure gfsd
+	$GFSERVICE $DEBUG unconfig-gfsd gfsd1
+
+	# cleanup: unconfigure gfsd
+	$GFSERVICE $DEBUG unconfig-gfsd gfsd2
+
+	# cleanup: unconfigure slave gfmd
+	$GFSERVICE $DEBUG unconfig-gfarm-slave gfmd2 gfmd1
+
+	# cleanup: unconfigure master gfmd
+	$GFSERVICE $DEBUG unconfig-gfarm gfmd1
+
+	return $RESULT
+}

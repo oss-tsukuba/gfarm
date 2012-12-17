@@ -1,0 +1,46 @@
+#
+# Dependencies of this sub-command
+#
+compare_spool_file_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: compare_spool_file
+#
+subcmd_compare_spool_file()
+{
+	log_debug "subcmd_compare_spool_file"
+
+	check_argc $# 1
+	check_gfsd_hostid $HOSTID
+	cat - | exec_gfsd_host_agent $HOSTID root compare_spool_file "$@"
+	[ $? -ne 0 ] && log_error "gfservice compare_spool_file failed"
+
+	log_debug "end subcmd_compare_spool_file"
+}
+
+#
+# Dependencies of this sub-command agent
+#
+compare_spool_file_agent_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: compare_spool_file
+# compare contents from stdin with the spool file
+#
+subcmd_compare_spool_file_agent()
+{
+	log_debug "subcmd_compare_spool_file_agent"
+
+	set_gfsd_params
+
+	diff -q - $SPOOL_DIR/$1
+	[ $? -ne 0 ] && log_error "file has difference"
+
+	log_debug "end subcmd_compare_spool_file_agent"
+}
