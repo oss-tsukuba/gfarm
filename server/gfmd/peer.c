@@ -552,7 +552,7 @@ peer_authorized_common(struct peer *peer,
 	case GFARM_AUTH_ID_TYPE_SPOOL_HOST:
 	case GFARM_AUTH_ID_TYPE_METADATA_HOST:
 		if (peer->host == NULL)
-			gflog_warning(GFARM_MSG_1000284,
+			gflog_notice(GFARM_MSG_1000284,
 			    "unknown host: %s", hostname);
 		else
 			gflog_debug(GFARM_MSG_1002768,
