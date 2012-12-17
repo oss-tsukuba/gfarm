@@ -1616,7 +1616,7 @@ subcmd_set_gfarm_conf()
 
 	check_argc $# 2
 	check_hostid $HOSTID
-	exec_client_host_agent $HOSTID root set-gfarm-conf \
+	exec_remote_host_agent $HOSTID root set-gfarm-conf \
 		"directive=$1" "value=$2"
 	[ $? -ne 0 ] && log_error "gfservice set-gfarm-conf failed"
 
@@ -1647,7 +1647,7 @@ subcmd_unset_gfarm_conf()
 
 	check_argc $# 1
 	check_hostid $HOSTID
-	exec_client_host_agent $HOSTID root unset-gfarm-conf "directive=$1"
+	exec_remote_host_agent $HOSTID root unset-gfarm-conf "directive=$1"
 	[ $? -ne 0 ] && log_error "gfservice unset-gfarm-conf failed"
 
 	log_debug "end subcmd_unset_gfarm_conf"
@@ -1797,7 +1797,7 @@ subcmd_gfcmd()
 	shift
 
 	exec_remote_host_gfcmd $HOSTID - $GFCMD "$@"
-	[ $? -ne 0 ] && log_error "gfservice gfcmd $# failed."
+	[ $? -ne 0 ] && log_error "gfservice gfcmd $GFCMD failed."
 
 	log_debug "end subcmd_gfcmd"
 }
