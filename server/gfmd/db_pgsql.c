@@ -683,6 +683,7 @@ gfarm_pgsql_commit_sn(gfarm_uint64_t seqnum, const char *diag)
 			    "gfarm_pgsql_seqnum_modify : %s",
 			    gfarm_error_string(e));
 			e2 = gfarm_pgsql_exec_and_log("ROLLBACK", diag);
+			(void)e2;
 			return (e);
 		}
 	}

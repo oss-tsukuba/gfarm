@@ -756,20 +756,27 @@ gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 		switch (*format) {
 		case 'c':
 			cp = va_arg(*app, gfarm_int8_t *);
+			(void)cp;
 			continue;
 		case 'h':
 			hp = va_arg(*app, gfarm_int16_t *);
+			(void)hp;
 			continue;
 		case 'i':
 			ip = va_arg(*app, gfarm_int32_t *);
+			(void)ip;
 			continue;
 		case 'l':
 			op = va_arg(*app, gfarm_int64_t *);
+			(void)op;
 			continue;
 		case 'r':
 			sz = va_arg(*app, size_t);
+			(void)sz;
 			szp = va_arg(*app, size_t *);
+			(void)szp;
 			s = va_arg(*app, char *);
+			(void)s;
 			continue;
 		case 's':
 			sp = va_arg(*app, char **);
@@ -777,16 +784,21 @@ gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 			continue;
 		case 'b':
 			sz = va_arg(*app, size_t);
+			(void)sz;
 			szp = va_arg(*app, size_t *);
+			(void)szp;
 			s = va_arg(*app, char *);
+			(void)s;
 			continue;
 		case 'B':
 			szp = va_arg(*app, size_t *);
+			(void)szp;
 			sp = va_arg(*app, char **);
 			free(*sp);
 			continue;
 		case 'f':
 			dp = va_arg(*app, double *);
+			(void)dp;
 			continue;
 		case '/':
 			break;

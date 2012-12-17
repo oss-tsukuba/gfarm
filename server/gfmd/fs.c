@@ -4729,9 +4729,6 @@ gfm_server_replicate_file_from_to(
 	struct host *src, *dst;
 	struct inode *inode;
 	struct file_replication *fr;
-	int srcport;
-	gfarm_ino_t ino;
-	gfarm_int64_t gen;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_REPLICATE_FILE_FROM_TO";
 
@@ -4739,9 +4736,6 @@ gfm_server_replicate_file_from_to(
 	src = NULL;
 	dst = NULL;
 	fr = NULL;
-	srcport = 0;
-	ino = 0;
-	gen = 0;
 #endif
 
 	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
