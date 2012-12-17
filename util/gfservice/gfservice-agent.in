@@ -91,11 +91,11 @@ set_gfmd_params()
 	log_debug "set_gfmd_params"
 	CONFIG_GFARM_OPTIONS=`get_param config-gfarm-options || echo ''`
 
-	CONFIG_PREFIX=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	CONFIG_PREFIX=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^CONFIG_PREFIX=/s/^[^=]*=//p'`
 	log_debug "set_gfmd_params: set CONFIG_PREFIX=$CONFIG_PREFIX"
 
-	BACKEND_TYPE=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	BACKEND_TYPE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^BACKEND_TYPE=/s/^[^=]*=//p'`
 	if [ "X$BACKEND_TYPE" != Xpostgresql ]; then
 		log_error "backend type '$BACKEND_TYPE' unsupported"
@@ -103,55 +103,55 @@ set_gfmd_params()
 	fi
 	log_debug "set_gfmd_params: set BACKEND_TYPE=$BACKEND_TYPE"
 
-	GFMD_RC=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	GFMD_RC=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFMD_RC=/s/^[^=]*=//p'`
 	[ "X$GFMD_RC" = X ] \
 		&& log_error "failed to get rc script for gfmd"
 	log_debug "set_gfmd_params: set GFMD_RC=$GFMD_RC"
 
-	BACKEND_RC=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	BACKEND_RC=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^BACKEND_RC=/s/^[^=]*=//p'`
 	[ "X$BACKEND_RC" = X ] \
 		&& log_error "failed to get rc script for backend"
 	log_debug "set_gfmd_params: set BACKEND_RC=$BACKEND_RC"
 
-	GFMD_CONF=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	GFMD_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFMD_CONF=/s/^[^=]*=//p'`
 	[ "X$GFMD_CONF" = X ] \
 		&& log_error "failed to get gfmd conf file"
 	log_debug "set_gfmd_params: set GFMD_CONF=$GFMD_CONF"
 
-	JOURNAL_DIR=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	JOURNAL_DIR=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^METADATA_JOURNAL_DIR=/s/^[^=]*=//p'`
 	[ "X$GFMD_MODE" != Xsingle -a "X$JOURNAL_DIR" = X ] \
 		&& log_error "failed to get metadata journal directory"
 	log_debug "set_gfmd_params: set JOURNAL_DIR=$JOURNAL_DIR"
 
-	GFMD_PID_FILE=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	GFMD_PID_FILE=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFMD_PID_FILE=/s/^[^=]*=//p'`
 	[ "X$GFMD_PID_FILE" = X ] \
 		&& log_error "failed to get gfmd pid file"
 	log_debug "set_gfmd_params: set GFMD_PID_FILE=$GFMD_PID_FILE"
 
-	METADATA_DIR=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	METADATA_DIR=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^BACKEND_DATA_DIR=/s/^[^=]*=//p'`
 	[ "X$METADATA_DIR" = X ] \
 		&& log_error "failed to get metadata directory"
 	log_debug "set_gfmd_params: set METADATA_DIR=$METADATA_DIR"
 
-	GFMD_PORT=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	GFMD_PORT=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFMD_PORT=/s/^[^=]*=//p'`
 	[ "X$GFMD_PORT" = X ] \
 		&& log_error "failed to get gfmd port"
 	log_debug "set_gfmd_params: set GFMD_PORT=$GFMD_PORT"
 
-	GFARM_CONF=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	GFARM_CONF=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
 	log_debug "set_gfmd_params: set GFARM_CONF=$GFARM_CONF"
 
-	BACKEND_HOSTNAME=`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	BACKEND_HOSTNAME=`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne '/^BACKEND_HOSTNAME=/s/^[^=]*=//p'`
 	[ "X$BACKEND_HOSTNAME" = X ] \
 		&& log_error "failed to get hostname"
@@ -522,10 +522,10 @@ subcmd_get_config_gfarm_param()
 	PARAM=`get_param param` || {
 		log_error "missing mandatory argument 'param'"
 	}
-	config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne "/^$PARAM=/s/^[^=]*=//p"
 	log_debug "subcmd_get_config_gfarm_param: param=$PARAM," \
-	"value="`config-gfarm -T $CONFIG_GFARM_OPTIONS \
+	"value="`eval config-gfarm -T $CONFIG_GFARM_OPTIONS \
 		| sed -ne "/^$PARAM=/s/^[^=]*=//p"`
 
 	log_debug "end subcmd_get_config_gfarm_param"
@@ -756,7 +756,7 @@ subcmd_config_gfarm()
 	set_gfmd_params
 	log_debug "subcmd_config_gfarm:" \
 		"execute config-gfarm $CONFIG_GFARM_OPTIONS"
-	config-gfarm $CONFIG_GFARM_OPTIONS
+	eval config-gfarm $CONFIG_GFARM_OPTIONS
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	log_debug "end subcmd_config_gfarm"
@@ -773,7 +773,7 @@ subcmd_config_gfarm_master()
 	set_gfmd_params
 	log_debug "subcmd_config_gfarm_master:" \
 		"execute config-gfarm -r $CONFIG_GFARM_OPTIONS"
-	config-gfarm -r $CONFIG_GFARM_OPTIONS
+	eval config-gfarm -r $CONFIG_GFARM_OPTIONS
 	[ $? -ne 0 ] && log_error "config-gfarm failed"
 
 	unset_conf $GFMD_CONF metadb_server_force_slave
@@ -931,7 +931,7 @@ subcmd_set_gfmd_conf()
 		log_error "missing mandatory argument 'value'"
 	}
 	log_debug "subcmd_set_gfmd_conf: value=$VALUE"
-	set_conf $GFMD_CONF $DIRECTIVE $VALUE
+	set_conf $GFMD_CONF "$DIRECTIVE" "$VALUE"
 
 	log_debug "end subcmd_set_gfmd_conf"
 }
@@ -944,7 +944,7 @@ subcmd_set_gfarm_conf()
 {
 	log_debug "subcmd_set_gfarm_conf"
 
-	set_client_params
+	set_params
 	DIRECTIVE=`get_param directive` || {
 		log_error "missing mandatory argument 'directive'"
 	}
@@ -952,7 +952,7 @@ subcmd_set_gfarm_conf()
 		log_error "missing mandatory argument 'value'"
 	}
 	log_debug "subcmd_set_gfarm_conf: directive=$DIRECTIVE, value=$VALUE"
-	set_conf $GFARM_CONF $DIRECTIVE $VALUE
+	set_conf $GFARM_CONF "$DIRECTIVE" "$VALUE"
 
 	log_debug "end subcmd_set_gfarm_conf"
 }
@@ -970,7 +970,7 @@ subcmd_unset_gfmd_conf()
 		log_error "missing mandatory argument 'directive'"
 	}
 	log_debug "subcmd_unset_gfmd_conf: directive=$DIRECTIVE"
-	unset_conf $GFMD_CONF $DIRECTIVE
+	unset_conf $GFMD_CONF "$DIRECTIVE"
 
 	log_debug "end subcmd_unset_gfmd_conf"
 }
@@ -983,13 +983,13 @@ subcmd_unset_gfarm_conf()
 {
 	log_debug "subcmd_unset_gfarm_conf"
 
-	set_client_params
+	set_params
 	DIRECTIVE=`get_param directive` || {
 		log_error "missing mandatory argument 'directive'"
 	}
 	log_debug "subcmd_unset_gfarm_conf: directive=$DIRECTIVE"
 
-	unset_conf $GFARM_CONF $DIRECTIVE
+	unset_conf $GFARM_CONF "$DIRECTIVE"
 
 	log_debug "end subcmd_unset_gfarm_conf"
 }
