@@ -43,6 +43,7 @@ $(OBJS): $(DEPGFARMINC) \
 	$(GFUTIL_SRCDIR)/gfutil.h \
 	$(GFUTIL_SRCDIR)/queue.h \
 	$(GFARMLIB_SRCDIR)/config.h \
+	$(GFARMLIB_SRCDIR)/context.h \
 	$(GFARMLIB_SRCDIR)/gfarm_path.h \
 	$(GFARMLIB_SRCDIR)/gfm_client.h \
 	$(GFARMLIB_SRCDIR)/host.h \
