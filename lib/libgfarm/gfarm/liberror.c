@@ -711,13 +711,19 @@ gfarm_errno_to_error_initialize(void)
 gfarm_error_t
 gfarm_errno_to_error(int eno)
 {
+	gfarm_error_t e;
 	static pthread_once_t gfarm_errno_to_error_initialized =
 	    PTHREAD_ONCE_INIT;
 
 	pthread_once(&gfarm_errno_to_error_initialized,
 	    gfarm_errno_to_error_initialize);
 
-	return (gfarm_error_domain_map(gfarm_errno_domain, eno));
+	e = gfarm_error_domain_map(gfarm_errno_domain, eno);
+	if (e == GFARM_ERR_UNKNOWN)
+		gflog_notice(GFARM_MSG_1003551,
+		    "errno %d:\"%s\" is converted to \"%s\"",
+		    eno, strerror(eno), gfarm_error_string(GFARM_ERR_UNKNOWN));
+	return (e);
 }
 
 static int gfarm_error_to_errno_map[GFARM_ERR_NUMBER];
