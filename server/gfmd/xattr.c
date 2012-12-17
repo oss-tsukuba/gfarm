@@ -376,7 +376,7 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	gfarm_int32_t fd;
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
-	int addattr;
+	int addattr = 0;
 	gfarm_repattr_t *reps = NULL;
 	size_t nreps = 0;
 	char *repattr = NULL;
