@@ -11,6 +11,9 @@ DATA =	$(srcdir)/get_auth_type \
 	$(srcdir)/gfjournal_m \
 	$(srcdir)/grid_proxy_init \
 	$(srcdir)/kill_gfmd \
-	$(srcdir)/reboot_host
+	$(srcdir)/reboot_host \
+	$(srcdir)/compare_spool_file \
+	$(srcdir)/config_gfarm_update_r \
+	$(srcdir)/read_and_register
 
 include $(top_srcdir)/makes/data.mk

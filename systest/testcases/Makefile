@@ -8,6 +8,7 @@ datadir=$(default_datadir)/gfarm/systest/testcases
 
 DATA =	$(srcdir)/failover_by_stop \
 	$(srcdir)/failover_by_kill \
-	$(srcdir)/failover_by_reboot
+	$(srcdir)/failover_by_reboot \
+	$(srcdir)/configuration
 
 include $(top_srcdir)/makes/data.mk

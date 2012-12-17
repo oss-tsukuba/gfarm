@@ -1,0 +1,14 @@
+#
+# Check gfsd on given host is registered to gfarm
+#
+check_gfsd_registered()
+{
+	HOSTNAME=`$GFSERVICE $DEBUG get_host $1`
+	for HOST in `$GFSERVICE $DEBUG gfcmd $2 gfhost`; do
+		if [ X$HOST = X$HOSTNAME ]; then
+			return 0
+		fi
+	done
+
+	return 1
+}

@@ -1,0 +1,31 @@
+#
+# Dependencies of this sub-command
+#
+get_hostid_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: get hostid
+#
+# Get hostid from hostname written in configuration file
+#
+subcmd_get_hostid()
+{
+	log_debug "subcmd_get_hostid"
+
+	RESULT=1
+
+	for ID in `get_all_hostids`; do
+		if [ X`get_host $ID` = X$HOSTID ]; then
+			echo $ID
+			log_debug "subcmd_get_hostid: $ID"
+			RESULT=0
+			break
+		fi
+	done
+
+	log_debug "end subcmd_get_hostid"
+	return $RESULT
+}

@@ -1,0 +1,15 @@
+#
+# Check file location of given file
+#
+check_file_location()
+{
+	HOSTS=`$GFSERVICE $DEBUG gfcmd $3 gfwhere $1`
+	[ $? -ne 0 ] && return 1
+	for HOST in $HOSTS; do
+		if [ X$HOST = X$2 ]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
