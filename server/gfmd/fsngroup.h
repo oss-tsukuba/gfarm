@@ -2,8 +2,14 @@
  * $Id$
  */
 
+/*
+ * Replication scheduler:
+ */
+struct inode;
 struct host;
-gfarm_error_t fsngroup_get_hosts(const char *, int *, struct host ***);
+void fsngroup_replicate_file(
+	struct inode *, struct host *, const char *,
+	int, struct host **);
 
 /*
  * Server side RPC stubs:

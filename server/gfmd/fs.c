@@ -41,7 +41,6 @@
 #include "acl.h"
 #include "relay.h"
 #include "config.h" /* for gfarm_host_get_self_name() */
-#include "fsngroup_replica.h"
 
 static char dot[] = ".";
 static char dotdot[] = "..";
