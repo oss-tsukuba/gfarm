@@ -1,0 +1,17 @@
+#
+# Check number of replicas for given file
+#
+check_replica_num()
+{
+	I=0
+	while [ $I -lt $4 ]; do
+		FILE_NUM=`$GFSERVICE $DEBUG gfcmd $1 gfwhere $2 | wc -w`
+		if [ $FILE_NUM -eq $3 ]; then
+			return 0
+		fi
+		sleep 1
+		I=`expr $I + 1`
+	done
+
+	return 1
+}

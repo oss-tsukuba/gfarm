@@ -1,0 +1,46 @@
+#
+# Dependencies of this sub-command
+#
+config_gfarm_update_r_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: config_gfarm_update_r
+#
+subcmd_config_gfarm_update_r()
+{
+	log_debug "subcmd_config_gfarm_update_r"
+
+	check_argc $# 0
+	check_gfmd_hostid $HOSTID
+	exec_gfmd_host_agent $HOSTID root config_gfarm_update_r "$@"
+	[ $? -ne 0 ] && log_error "gfservice config_gfarm_update_r failed"
+
+	log_debug "end subcmd_config_gfarm_update_r"
+}
+
+#
+# Dependencies of this sub-command agent
+#
+config_gfarm_update_r_agent_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: config_gfarm_update_r
+# execute config-gfarm-update -r
+#
+subcmd_config_gfarm_update_r_agent()
+{
+	log_debug "subcmd_config_gfarm_update_r_agent"
+
+	set_gfmd_params
+
+	config-gfarm-update --prefix $CONFIG_PREFIX -r --update
+	[ $? -ne 0 ] && log_error "gfjournal command failed"
+
+	log_debug "end subcmd_config_gfarm_update_r_agent"
+}

@@ -11,6 +11,9 @@ DATA =	$(srcdir)/check_gfmd_connected \
 	$(srcdir)/check_gfmd_slave \
 	$(srcdir)/check_journal_seqnum_max \
 	$(srcdir)/failback \
-	$(srcdir)/wait_for_boot
+	$(srcdir)/wait_for_boot \
+	$(srcdir)/check_file_location \
+	$(srcdir)/check_gfsd_registered \
+	$(srcdir)/check_replica_num
 
 include $(top_srcdir)/makes/data.mk
