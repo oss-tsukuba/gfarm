@@ -274,7 +274,7 @@ gflog_fatal_action_name_to_number(const char *name)
 }
 
 void
-gfarm_log_fatal_action()
+gfarm_log_fatal_action(void)
 {
 	switch (gflog_get_fatal_action()) {
 	case GFLOG_FATAL_ACTION_EXIT_BACKTRACE:
