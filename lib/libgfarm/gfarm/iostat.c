@@ -151,7 +151,6 @@ gfarm_iostat_find_row(struct gfarm_iostat_head *hp,
 {
 	struct gfarm_iostat_items *ip;
 	int isize = hp->s_item_size;
-	*ind = 0;
 	for (; i < upto; i++) {
 		ip = (struct gfarm_iostat_items *)((char *)sip + i * isize);
 		if (ip->s_valid == id) {
