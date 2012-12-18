@@ -1116,7 +1116,7 @@ static gfarm_error_t
 metadb_server_check_write_access(struct peer *peer, int from_client,
 	const char *diag)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct user *user = peer_get_user(peer);
 
 	if (!from_client || user == NULL || !user_is_admin(user)) {
@@ -1124,7 +1124,7 @@ metadb_server_check_write_access(struct peer *peer, int from_client,
 		gflog_debug(GFARM_MSG_1002951,
 		    "%s: %s", diag, gfarm_error_string(e));
 	}
-	return (GFARM_ERR_NO_ERROR);
+	return (e);
 }
 
 gfarm_error_t
@@ -1268,25 +1268,26 @@ gfm_server_metadb_server_modify(
 		gflog_debug(GFARM_MSG_1002962,
 		    "cannot toggle off default master flag directly: %s",
 		    ms.name);
-	} else
-	    e = metadb_server_verify(&ms, diag);
-	if (e != GFARM_ERR_NO_ERROR)
-		goto unlock;
-	mdhost_modify_in_cache(mh, &ms);
-	if (isdm) {
-		e = mdhost_db_modify_default_master(mh, &ms, diag);
-	} else if ((e = db_mdhost_modify(&ms, 0)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002963,
-		    "db_mdhost_modify failed: %s",
-		    gfarm_error_string(e));
-	}
-unlock:
-	if (e == GFARM_ERR_NO_ERROR)
-		mdhost_updated();
-	else {
-		gflog_debug(GFARM_MSG_1002964,
-		    "error occurred during process: %s",
-		    gfarm_error_string(e));
+	} else if ((e = metadb_server_verify(&ms, diag))
+		   != GFARM_ERR_NO_ERROR) {
+		/* nothing to do */
+	} else {
+		mdhost_modify_in_cache(mh, &ms);
+		if (isdm) {
+			e = mdhost_db_modify_default_master(mh, &ms, diag);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "mdhost_db_modify_default_master: %s",
+				    gfarm_error_string(e));
+		} else {
+			e = db_mdhost_modify(&ms, 0);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_error(GFARM_MSG_1002963,
+				    "db_mdhost_modify failed: %s",
+				    gfarm_error_string(e));
+		}
+		if (e == GFARM_ERR_NO_ERROR)
+			mdhost_updated();
 	}
 	giant_unlock();
 	gfarm_metadb_server_free(&ms);
