@@ -51,7 +51,6 @@ SRCS = \
 	$(GFMD_SRCDIR)/user.c \
 	$(GFMD_SRCDIR)/watcher.c \
 	$(GFMD_SRCDIR)/xattr.c \
-	$(GFMD_SRCDIR)/fsngroup_replica.c \
 	$(GFMD_SRCDIR)/fsngroup.c \
 	db_journal_test.c empty_ops.c
 
@@ -83,7 +82,6 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/user.o \
 	$(GFMD_BUILDDIR)/watcher.o \
 	$(GFMD_BUILDDIR)/xattr.o \
-	$(GFMD_BUILDDIR)/fsngroup_replica.o \
 	$(GFMD_BUILDDIR)/fsngroup.o \
 	db_journal_test.o empty_ops.o
 

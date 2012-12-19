@@ -42,7 +42,7 @@
 #include "acl.h"
 #include "xattr.h"
 #include "repattr.h"
-#include "fsngroup_replica.h"
+#include "fsngroup.h"
 #include "replica_check.h"
 
 #include "auth.h" /* for "peer.h" */
