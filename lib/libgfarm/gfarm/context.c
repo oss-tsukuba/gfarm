@@ -169,21 +169,6 @@ gfarm_context_term(void)
 	free(gfarm_ctxp->metadb_admin_user_gsi_dn);
 	free(gfarm_ctxp->schedule_write_target_domain);
 	free(gfarm_ctxp);
-}
 
-static void
-gfarm_context_string_free(char **var)
-{
-	if (*var != NULL) {
-		free(*var);
-		*var = NULL;
-	}
-}
-
-void
-gfarm_context_free(void)
-{
-	gfarm_context_string_free(&gfarm_ctxp->metadb_server_name);
-	gfarm_context_string_free(&gfarm_ctxp->metadb_admin_user);
-	gfarm_context_string_free(&gfarm_ctxp->metadb_admin_user_gsi_dn);
+	gfarm_ctxp = NULL;
 }
