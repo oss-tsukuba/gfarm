@@ -213,25 +213,25 @@ xattr_check_desired_number(
 	}
 	e = inode_xattr_to_uint(value, size, &n, &all_digit);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003657,
 		    "xattr_to_uint for gfarm.ncopy: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 	num_new = n; /* uint to int */
 	if (num_new < 0) {
-		gflog_debug(GFARM_MSG_UNFIXED, "overflow for gfarm.ncopy");
+		gflog_debug(GFARM_MSG_1003658, "overflow for gfarm.ncopy");
 		return (GFARM_ERR_RESULT_OUT_OF_RANGE);
 	}
 	if (!all_digit) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003659,
 		    "invalid format for gfarm.ncopy");
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (inode_has_desired_number(inode, &num_old) && num_new == num_old) {
 		*have = 1;
 		*change = 0;
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003660,
 		    "gfarm.ncopy=%d: not changed", num_new);
 		return (GFARM_ERR_NO_ERROR);
 	}
@@ -269,7 +269,7 @@ setxattr(int xmlMode, struct inode *inode,
 	    xmlMode, inode, attrname, *valuep, size,
 	    &have_ncopy, &change_ncopy);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003661,
 		    "xattr_check_desired_number(): %s", gfarm_error_string(e));
 		return (e);
 	} else if (have_ncopy && !change_ncopy)

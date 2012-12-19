@@ -27,7 +27,7 @@ gfs_statfsnode_by_path(const char *path, char *host, int port,
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003587,
 		    "gfm_client_connection_and_process_acquire_by_path "
 		    "failed: %s", gfarm_error_string(e));
 		return (e);

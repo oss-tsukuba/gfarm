@@ -531,7 +531,7 @@ gfsd_spool_check()
 {
 	struct gfarm_hash_table *hash_ok; /* valid files */
 
-	gflog_debug(GFARM_MSG_UNFIXED, "spool_check_level=%s",
+	gflog_debug(GFARM_MSG_1003680, "spool_check_level=%s",
 	    gfarm_spool_check_level_get_by_name());
 
 	spool_check_level = gfarm_spool_check_level_get();

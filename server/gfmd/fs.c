@@ -3659,7 +3659,7 @@ gfm_server_replica_remove_by_file(struct peer *peer, int from_client, int skip)
 		e = GFARM_ERR_TEXT_FILE_BUSY;
 	} else if ((e = process_get_file_opening(process, cfd, &fo)) !=
 		   GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003649,
 			"process_get_file_opening() failed: %s",
 			gfarm_error_string(e));
 	} else {
