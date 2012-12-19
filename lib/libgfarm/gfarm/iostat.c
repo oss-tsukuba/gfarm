@@ -11,7 +11,7 @@
 
 #include <gfarm/gfarm.h>
 #include <gfarm/gfarm_iostat.h>
-#define GFARM_NOCONTEXT
+/* #define GFARM_NOCONTEXT */
 #ifndef GFARM_NOCONTEXT
 #include "context.h"
 #endif

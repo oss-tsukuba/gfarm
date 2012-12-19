@@ -19,6 +19,8 @@ struct gfarm_context {
 	long long schedule_candidates_ratio;
 	long long schedule_rtt_thresh_ratio;
 	int schedule_rtt_thresh_diff;
+	char *schedule_write_target_domain;
+	int schedule_write_local_priority;
 	int gfmd_connection_cache;
 	int gfsd_connection_cache;
 	int client_file_bufsize;
@@ -26,7 +28,7 @@ struct gfarm_context {
 	int on_demand_replication;
 	int network_receive_timeout;
 	int file_trace;
-
+	int fatal_action;
 
 	/* platform dependent constant */
 	int getpw_r_bufsz;
@@ -51,8 +53,10 @@ struct gfarm_context {
 	struct gfarm_gfs_pio_section_static *gfs_pio_section_static;
 	struct gfarm_gfs_stat_static *gfs_stat_static;
 	struct gfarm_gfs_unlink_static *gfs_unlink_static;
-	struct gfarm_filesystem_static *filesystem_static;
 	struct gfarm_gfs_xattr_static *gfs_xattr_static;
+	struct gfarm_filesystem_static *filesystem_static;
+
+	struct gfarm_iostat_static *iostat_static;
 };
 #ifndef __KERNEL__
 extern struct gfarm_context *gfarm_ctxp;
@@ -111,3 +115,6 @@ void          gfarm_gfs_xattr_static_term(struct gfarm_context *);
 
 gfarm_error_t gfarm_filesystem_static_init(struct gfarm_context *);
 void          gfarm_filesystem_static_term(struct gfarm_context *);
+
+gfarm_error_t gfarm_iostat_static_init(struct gfarm_context *);
+void          gfarm_iostat_static_term(struct gfarm_context *);

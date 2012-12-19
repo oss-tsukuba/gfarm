@@ -82,6 +82,10 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_xattr_static_init,
 		gfarm_gfs_xattr_static_term
 	},
+	{
+		gfarm_iostat_static_init,
+		gfarm_iostat_static_term
+	},
 #endif /* __KERNEL__ */
 	{
 		gfarm_filesystem_static_init,
@@ -121,6 +125,8 @@ gfarm_context_init(void)
 	ctxp->schedule_candidates_ratio = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_rtt_thresh_ratio = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_rtt_thresh_diff = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->schedule_write_target_domain = NULL;
+	ctxp->schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfsd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->gfmd_connection_cache = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->client_file_bufsize = GFARM_CONFIG_MISC_DEFAULT;
@@ -128,6 +134,7 @@ gfarm_context_init(void)
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->on_demand_replication = 0;
+	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;
 	if ((ctxp->getpw_r_bufsz = sysconf(_SC_GETPW_R_SIZE_MAX)) == -1)
 		ctxp->getpw_r_bufsz = BUFSIZE_MAX;
 
@@ -158,6 +165,9 @@ gfarm_context_term(void)
 	for (i = 0; i < GFARM_ARRAY_LENGTH(module_entries); i++)
 		(module_entries[i].term)(gfarm_ctxp);
 	free(gfarm_ctxp->metadb_server_name);
+	free(gfarm_ctxp->metadb_admin_user);
+	free(gfarm_ctxp->metadb_admin_user_gsi_dn);
+	free(gfarm_ctxp->schedule_write_target_domain);
 	free(gfarm_ctxp);
 }
 

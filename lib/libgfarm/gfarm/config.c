@@ -58,9 +58,9 @@
 #define LISTEN_BACKLOG_DEFAULT	5
 #endif
 
-#define MAX_CONFIG_LINE_LENGTH	1023
-
 #define staticp	(gfarm_ctxp->config_static)
+
+#define MAX_CONFIG_LINE_LENGTH	1023
 
 struct gfarm_config_static {
 	char *config_file;
@@ -77,8 +77,6 @@ struct gfarm_config_static {
 
 	/* static configuration variables */
 	int log_message_verbose;
-	char *schedule_write_target_domain;
-	int schedule_write_local_priority;
 	gfarm_int64_t minimum_free_disk_space;
 	int profile;
 	char **debug_command_argv;
@@ -100,8 +98,6 @@ gfarm_config_static_init(struct gfarm_context *ctxp)
 	s->local_username = NULL;
 	s->local_homedir = NULL;
 	s->log_message_verbose = GFARM_CONFIG_MISC_DEFAULT;
-	s->schedule_write_target_domain = NULL;
-	s->schedule_write_local_priority = GFARM_CONFIG_MISC_DEFAULT;;
 	s->minimum_free_disk_space = GFARM_CONFIG_MISC_DEFAULT;
 	s->profile = GFARM_CONFIG_MISC_DEFAULT;
 	s->debug_command_argv = NULL;
@@ -949,7 +945,6 @@ static int journal_sync_file = GFARM_CONFIG_MISC_DEFAULT;
 static int journal_sync_slave_timeout = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_slave_max_size = GFARM_CONFIG_MISC_DEFAULT;
 static int metadb_server_force_slave = GFARM_CONFIG_MISC_DEFAULT;
-int fatal_action = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_host_down_thresh = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_replica_check_sleep_time = GFARM_CONFIG_MISC_DEFAULT;
@@ -1048,13 +1043,13 @@ set_backend_db_type_localfs(void)
 int
 gfarm_schedule_write_local_priority(void)
 {
-	return (staticp->schedule_write_local_priority);
+	return (gfarm_ctxp->schedule_write_local_priority);
 }
 
 char *
 gfarm_schedule_write_target_domain(void)
 {
-	return (staticp->schedule_write_target_domain);
+	return (gfarm_ctxp->schedule_write_target_domain);
 }
 
 gfarm_off_t
@@ -2917,9 +2912,9 @@ parse_one_line(char *s, char *p, char **op)
 		    &gfarm_ctxp->schedule_rtt_thresh_diff);
 	} else if (strcmp(s, o = "write_local_priority") == 0) {
 		e = parse_set_misc_enabled(p,
-		    &staticp->schedule_write_local_priority);
+		    &gfarm_ctxp->schedule_write_local_priority);
 	} else if (strcmp(s, o = "write_target_domain") == 0) {
-		e = parse_set_var(p, &staticp->schedule_write_target_domain);
+		e = parse_set_var(p, &gfarm_ctxp->schedule_write_target_domain);
 	} else if (strcmp(s, o = "minimum_free_disk_space") == 0) {
 		e = parse_set_misc_offset(p,
 		    &staticp->minimum_free_disk_space);
@@ -2999,8 +2994,8 @@ parse_one_line(char *s, char *p, char **op)
  	} else if (strcmp(s, o = "debug_command") == 0) {
  		e = parse_debug_command(p, &o);
 	} else if (strcmp(s, o = "fatal_action") == 0) {
-		e = parse_fatal_action(p, &fatal_action);
-		gflog_set_fatal_action(fatal_action);
+		e = parse_fatal_action(p, &gfarm_ctxp->fatal_action);
+		gflog_set_fatal_action(gfarm_ctxp->fatal_action);
 
 	} else if (strcmp(s, o = "replica_check") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_replica_check);
@@ -3213,9 +3208,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->schedule_rtt_thresh_diff == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_rtt_thresh_diff =
 		    GFARM_SCHEDULE_RTT_THRESH_DIFF_DEFAULT;
-	if (staticp->schedule_write_local_priority ==
+	if (gfarm_ctxp->schedule_write_local_priority ==
 	    GFARM_CONFIG_MISC_DEFAULT)
-		staticp->schedule_write_local_priority =
+		gfarm_ctxp->schedule_write_local_priority =
 		    GFARM_SCHEDULE_WRITE_LOCAL_PRIORITY_DEFAULT;
 	if (staticp->minimum_free_disk_space == GFARM_CONFIG_MISC_DEFAULT)
 		staticp->minimum_free_disk_space =
@@ -3283,10 +3278,8 @@ gfarm_config_set_default_misc(void)
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->file_trace == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
-	if (fatal_action == GFARM_CONFIG_MISC_DEFAULT)
+	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT)
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
-	if (gfarm_iostat_max_client == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_iostat_max_client = GFARM_IOSTAT_MAX_CLIENT;
 	if (gfarm_replica_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
 	if (gfarm_replica_check_host_down_thresh == GFARM_CONFIG_MISC_DEFAULT)
@@ -3298,6 +3291,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_replica_check_minimum_interval == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check_minimum_interval =
 		    GFARM_REPLICA_CHECK_MINIMUM_INTERVAL_DEFAULT;
+
+	if (gfarm_iostat_max_client == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_iostat_max_client = GFARM_IOSTAT_MAX_CLIENT;
 
 	gfarm_config_set_default_filesystem();
 	gfarm_config_set_default_metadb_server();
