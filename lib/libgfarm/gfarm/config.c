@@ -939,8 +939,8 @@ int gfm_proto_reply_to_gfsd_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfs_proto_fhremove_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfs_proto_replication_request_window = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_outstanding_file_replication_limit = GFARM_CONFIG_MISC_DEFAULT;
-int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
-int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;;
+int gfarm_xattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
+int gfarm_xmlattr_size_limit = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_max_descriptors = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_stack_size = GFARM_CONFIG_MISC_DEFAULT;
 int gfarm_metadb_thread_pool_size = GFARM_CONFIG_MISC_DEFAULT;
@@ -3190,8 +3190,6 @@ gfarm_config_set_default_misc(void)
 
 	if (gfarm_spool_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_spool_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
-	if (gfarm_spool_check_level == GFARM_CONFIG_MISC_DEFAULT)
-		gfarm_spool_check_level = 0;
 	if (gfarm_metadb_server_listen_backlog == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_metadb_server_listen_backlog = LISTEN_BACKLOG_DEFAULT;
 
@@ -3327,9 +3325,8 @@ gfarm_config_set_default_misc(void)
 		    GFARM_NETWORK_RECEIVE_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->file_trace == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->file_trace = GFARM_FILE_TRACE_DEFAULT;
-	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT) {
+	if (gfarm_ctxp->fatal_action == GFARM_CONFIG_MISC_DEFAULT)
 		gflog_set_fatal_action(GFARM_FATAL_ACTION_DEFAULT);
-	}
 	if (gfarm_replica_check == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_replica_check = GFARM_REPLICA_CHECK_DEFAULT;
 	if (gfarm_replica_check_host_down_thresh == GFARM_CONFIG_MISC_DEFAULT)
