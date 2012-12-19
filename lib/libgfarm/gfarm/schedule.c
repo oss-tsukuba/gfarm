@@ -234,6 +234,7 @@ gfarm_schedule_static_term(struct gfarm_context *ctxp)
 	if (s->search_idle_hosts_state != NULL)
 		gfp_conn_hash_table_dispose(s->search_idle_hosts_state);
 	search_idle_network_list_free();
+	free(s->search_idle_local_host);
 	free(s);
 }
 
