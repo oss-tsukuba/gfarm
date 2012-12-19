@@ -1189,6 +1189,7 @@ AS_HELP_STRING([--enable-linuxkernel],[support Linux kernel module utils.[[defau
 fi],[linuxkernel_targets=''])
 AC_SUBST(linuxkernel_targets)
 
+###
 ### --with-private-srcdir
 ###
 
