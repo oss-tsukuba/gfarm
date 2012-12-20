@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/slab.h>	/* for kmem_cache_destroy */
 #include <linux/fs.h>
 #include <linux/sched.h>
 #include <linux/pagemap.h>

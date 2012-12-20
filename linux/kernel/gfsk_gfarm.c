@@ -42,7 +42,6 @@ gfsk_gfarm_fini(void)
 	gfarm_ctxp = NULL;
 }
 
-#include "ug_idmap.h"
 char *
 gfarm_get_local_username(void)
 {

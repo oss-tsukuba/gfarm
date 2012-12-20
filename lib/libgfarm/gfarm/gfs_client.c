@@ -55,9 +55,9 @@
 #include "gfs_proto.h"
 #include "gfs_client.h"
 #include "gfm_client.h"
-#include "iostat.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
+#include "iostat.h"
 
 #define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
