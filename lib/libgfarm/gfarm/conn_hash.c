@@ -95,8 +95,8 @@ gfp_conn_hash_table_dispose(struct gfarm_hash_table *hashtab)
 		if (gfarm_hash_iterator_is_end(&it))
 			break;
 		entry = gfarm_hash_iterator_access(&it);
-		gfarm_hash_iterator_next(&it);
 		gfp_conn_hash_dispose(hashtab, entry);
+		gfarm_hash_iterator_next(&it);
 	}
 
 	gfarm_hash_table_free(hashtab);
@@ -210,10 +210,11 @@ gfp_conn_hash_dispose(struct gfarm_hash_table *hashtab,
 {
 	struct gfp_conn_hash_id *idp = gfarm_hash_entry_key(entry);
 	int keylen = gfarm_hash_entry_key_length(entry);
+	char *hostname = idp->hostname, *username = idp->username;
 
-	free(idp->hostname);
-	free(idp->username);
 	gfarm_hash_purge(hashtab, idp, keylen);
+	free(hostname);
+	free(username);
 }
 
 gfarm_error_t
