@@ -2405,6 +2405,8 @@ gfprep_check_busy_and_wait(
 
 	if (n_desire <= 0)
 		return (0); /* skip */
+	if (n_desire > n)
+		n_desire = n;
 
 	gfarm_mutex_lock(&cb_mutex, diag, CB_MUTEX_DIAG);
 	for (;;) {
