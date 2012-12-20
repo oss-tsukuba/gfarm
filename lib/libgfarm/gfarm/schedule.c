@@ -1653,7 +1653,7 @@ search_idle_cyclic(struct gfm_connection *gfm_server,
  */
 static gfarm_error_t
 select_hosts(struct gfm_connection *gfm_server,
-	int acyclic, int write_mode,
+	int acyclic, int write_mode, char *write_target_domain,
 	int ninfos, struct gfarm_host_sched_info *infos,
 	int *nohostsp, char **ohosts, int *oports)
 {
@@ -1686,9 +1686,10 @@ select_hosts(struct gfm_connection *gfm_server,
 		return (e);
 	}
 	/* set target domain */
-	if (write_mode)
-		search_idle_set_domain_filter(
-			gfarm_schedule_write_target_domain());
+	if (write_mode && write_target_domain != NULL)
+		search_idle_set_domain_filter(write_target_domain);
+	else
+		search_idle_set_domain_filter(NULL);
 	gfs_profile(gfarm_gettimerval(&t2));
 	for (i = 0; i < ninfos; i++) {
 		e = search_idle_candidate_list_add(gfm_server, &infos[i]);
@@ -1729,11 +1730,14 @@ gfarm_schedule_select_host(struct gfm_connection *gfm_server,
 	int write_mode, char **hostp, int *portp)
 {
 	gfarm_error_t e;
-	char *host;
+	char *host, *target_domain = gfarm_schedule_write_target_domain();
 	int port, n = 1;
 
-	e = select_hosts(gfm_server, 1, write_mode, nhosts, infos,
-	    &n, &host, &port);
+	e = select_hosts(gfm_server, 1, write_mode, target_domain,
+		nhosts, infos, &n, &host, &port);
+	if (target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+		e = select_hosts(gfm_server, 1, write_mode, NULL,
+			nhosts, infos, &n, &host, &port);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (n == 0) { /* although this shouldn't happen */
@@ -1761,12 +1765,16 @@ select_hosts_by_path(const char *path,
 {
 	gfarm_error_t e;
 	struct gfm_connection *gfm_server;
+	char *target_domain = gfarm_schedule_write_target_domain();
 
 	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR)
 		return (e);
-	e = select_hosts(gfm_server, acyclic, write_mode, ninfos, infos,
-	    nohostsp, ohosts, oports);
+	e = select_hosts(gfm_server, acyclic, write_mode, target_domain,
+		ninfos, infos, nohostsp, ohosts, oports);
+	if (target_domain != NULL && e == GFARM_ERRMSG_NO_FILESYSTEM_NODE)
+		e = select_hosts(gfm_server, acyclic, write_mode, NULL,
+			ninfos, infos, nohostsp, ohosts, oports);
 	gfm_client_connection_free(gfm_server);
 	return (e);
 }
