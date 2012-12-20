@@ -381,7 +381,7 @@ peer_replicating_free_all_waiting_result(struct peer *peer)
 			break;
 
 		e = inode_replicated(fr, 0, GFARM_ERR_CONNECTION_ABORTED, -1);
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003612,
 		    "%s: (%s, %lld:%lld): connection aborted: %s",
 		    diag, host_name(dst), (long long)ino, (long long)gen,
 		    gfarm_error_string(e));

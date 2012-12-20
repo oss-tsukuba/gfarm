@@ -149,7 +149,7 @@ replica_check_replicate(
 		    inode_get_number(inode), inode_get_gen(inode), fr))
 			   != GFARM_ERR_NO_ERROR) {
 			file_replicating_free_by_error_before_request(fr);
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003620,
 			    "async_back_channel_replication_request: %s",
 			    gfarm_error_string(e));
 			break;
@@ -762,7 +762,7 @@ replica_check_thread(void *arg)
 
 			dfc_scan_time = time(NULL) + DFC_SCAN_INTERVAL;
 			replica_check_targets_add(DFC_SCAN_INTERVAL);
-			RC_LOG_DEBUG(GFARM_MSG_UNFIXED,
+			RC_LOG_DEBUG(GFARM_MSG_1003641,
 			    "replica_check: dead_file_copy_scan_deferred_all,"
 			    " next=%ld", (long)dfc_scan_time);
 		}

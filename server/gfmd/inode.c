@@ -815,7 +815,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	}
 
 	if (repattr != NULL) {
-		gflog_debug(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_1003648,
 		    "%s: about to schedule "
 		    "repattr-based replication for inode "
 		    "%lld:%lld@%s.", diag,
