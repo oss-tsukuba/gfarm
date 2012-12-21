@@ -4322,7 +4322,7 @@ inode_replica_info_get(struct inode *inode, gfarm_int32_t iflags,
 		free(gens);
 		free(hosts);
 	} else {
-		*np = nlatest + ndead;
+		*np = i + ndead;
 		*hostsp = hosts;
 		*gensp = gens;
 		*oflagsp = oflags;
