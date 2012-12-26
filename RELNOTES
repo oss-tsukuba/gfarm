@@ -1,3 +1,36 @@
+Release note for Gfarm 2.5.7.3
+==============================
+
+[2012.12.26]
+
+Bug fix
+* gfmd - segfault when executing gfwhere against a file including
+  unnecessary copies [sf.net trac #575]
+* invalid XML value causes gfmd crash [sf.net trac #549]
+* gfmd aborts in journal_file_read_serialized() to send journal to
+  asynchronous slave [sf.net trac #513]
+* cannot set an empty default ACL [sf.net trac #517]
+* incomplete replica is left [sf.net trac #408]
+* master gfmd incorrectly diagnoses "expired" state about slave gfmd
+  [sf.net trac #374]
+* async slave gfmd loses a connection with master gfmd [sf.net trac
+  #550]
+* gfsd stops to work with a message "<err> ![1000551] cannot set
+  canonical hostname of this node", when gfmd is overloaded [sf.net
+  trac #504] 
+* overflow when parsing int value in the configuration file [sf.net
+  trac #546]
+* master should log a message when a slave is expired [sf.net trac
+  #566]
+* any authenticated user can change metadata server configuration
+  [sf.net trac #572]
+* gfmdhost shows "?" (unknown) when an async slave reconnects [sf.net
+  trac #568]
+* log level adjustment to make ZABBIX alerts usable - steps 1 and 2
+  [sf.net trac #511, #542]
+* gfprep stops when there there are less available destination hosts
+  than desired [sf.net trac #574]
+
 Release note for Gfarm 2.5.7.2
 ==============================
 
