@@ -1,0 +1,58 @@
+■ async RPC フォーマットについて
+
+・RPC 要求
+  ヘッダは以下の形式
+	(1) 32bit big endian integer
+		上位 2ビット: 2進00 - 要求を意味する (XID_TYPE_REQUEST)
+		下位30ビット: xid - RPC transaction ID
+	(2) 32bit big endian integer
+		32ビット: xid - RPC transaction ID
+  これに引続き、以下が続く
+	(3) 32bit big endian integer
+		プロトコル・コマンド
+	(4) もしあれば、プロトコル・コマンドの引数
+
+・RPC 返答
+  ヘッダは以下の形式
+	(1) 32bit big endian integer
+		上位 2ビット: 2進10 - 返答を意味する (XID_TYPE_RESULT)
+		下位30ビット: xid - RPC transaction ID
+	(2) 32bit big endian integer
+		32ビット: xid - RPC transaction ID
+  これに引続き、以下が続く
+	(3) 32bit big endian integer
+		結果ステータス (gfarm_error_t)
+	(4) もしあれば、結果引数
+
+
+※ 返答を未受信の xid はメモリ上に記憶されたまま残っており再利用されないので、
+   30ビットをオーバーフローして xid の値が wrap around しても問題ない。
+
+※ xid の値は DEFAULT_ID_LIMIT=1000000000 未満しか割り当てられない。
+   xid の値として 0 は使っていない。これは DEFAULT_ID_BASE が 1 であるため。
+
+※ ヘッダ(1)でビットパターン「2進01」および「2進11」は現在利用していない。
+   「2進01」は、返答を要求しない単なる通知、
+   「2進11」は、それ以降の30bitと合わせて、特殊なオペレーション。
+   として使う案を考えたが、実装していないので、#define は等はしていない。
+   単に将来の拡張に備えてリザーブしてある状態。
+
+■ GFARM_FILE_RDONLY などの GFARM_FILE_* フラグのビット割り当てについて
+
+GFARM_INTERNAL_USE には、2種類のものがある。
+・ビット 0xffff に含まれるもの
+  これはプロトコル上も流れている。
+  GFARM_FILE_LOOKUP とか GFARM_FILE_CREATE とかは INTERNAL_USE ですが、
+  プロトコルを流れているため、現実には変更不可能であり、公式に割り当て
+  られている。
+・ビット 0x00ff0000 あたりに含まれるもの
+  gfmd や libgfarm 内部のみで使い、プロトコルを流れないもの。
+  GFARM_FILE_TRUNC_PENDING (gfmd 内部のみで使う) や
+  GFARM_FILE_SYMLINK_NO_FOLLOW (libgfarm 内部のみで使う) がある。
+  これらは純粋に内部的に使い、プロトコルを流れないので、たとえば gfmd
+  や libgfarm 内部でのフラグ uint64_t に拡張すれば、もっと上の
+  0xffffffff00000000 といったビットに変更可能。
+  0x00800000 から始めて、順に下のビットを割り当てる予定。
+  なお、GFARM_FILE_TRUNC_PENDING は gfmd 内部のみ、
+  GFARM_FILE_SYMLINK_NO_FOLLOW は libgfarm 内部のみなので、
+  ビットを重ねても問題ないが、万一の間違いを避けるため、今は分けている。
