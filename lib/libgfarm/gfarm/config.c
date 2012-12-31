@@ -988,19 +988,6 @@ gfarm_config_clear(void)
 #endif
 }
 
-static void
-debug_command_argv_free(void)
-{
-	int i;
-
-	if (staticp->debug_command_argv != NULL) {
-		for (i = 0; staticp->debug_command_argv[i] != NULL; i++)
-			free(staticp->debug_command_argv[i]);
-		free(staticp->debug_command_argv);
-		staticp->debug_command_argv = NULL;
-	}
-}
-
 static gfarm_error_t
 set_backend_db_type(enum gfarm_backend_db_type set)
 {
@@ -1295,13 +1282,13 @@ gfarm_spool_check_level_set_by_name(const char *name)
 }
 
 enum gfarm_atime_type
-gfarm_atime_type_get()
+gfarm_atime_type_get(void)
 {
 	return (gfarm_atime_type);
 }
 
 const char *
-gfarm_atime_type_get_by_name()
+gfarm_atime_type_get_by_name(void)
 {
 	return (gfarm_atime_type_name);
 }
@@ -2485,10 +2472,7 @@ parse_metadb_server_list_arguments(char *p, char **op)
 	struct gfarm_filesystem *fs;
 	struct gfarm_metadb_server *ms[METADB_SERVER_NUM_MAX];
 
-	/*
-	 * first line has precedence,
-	 * to make $HOME/.gfarm2rc more effective than /etc/gfarm2.conf
-	 */
+	/* XXX - consider to allow to specify several server lists */
 	if (gfarm_filesystem_is_initialized())
 		return (GFARM_ERR_NO_ERROR);
 
@@ -2639,7 +2623,10 @@ parse_debug_command(char *p, char **op)
 	char *argv[MAX_DEBUG_COMMAND_LENGTH], *arg, *diag = "debug_command";
 	int argc, i;
 
-	/* XXX - consider to specify 'debug_command' several times. */
+	/*
+	 * first line has precedence,
+	 * to make $HOME/.gfarm2rc more effective than /etc/gfarm2.conf
+	 */
 	if (staticp->debug_command_argv != NULL || staticp->argv0 == NULL)
 		return (GFARM_ERR_NO_ERROR);
 
@@ -2692,6 +2679,19 @@ error:
         for (i = 0; i < argc; i++)
                 free(argv[i]);
 	return (e);
+}
+
+static void
+debug_command_argv_free(void)
+{
+	int i;
+
+	if (staticp->debug_command_argv != NULL) {
+		for (i = 0; staticp->debug_command_argv[i] != NULL; i++)
+			free(staticp->debug_command_argv[i]);
+		free(staticp->debug_command_argv);
+		staticp->debug_command_argv = NULL;
+	}
 }
 
 static gfarm_error_t
