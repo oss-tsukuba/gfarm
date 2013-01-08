@@ -32,9 +32,9 @@
    xid の値として 0 は使っていない。これは DEFAULT_ID_BASE が 1 であるため。
 
 ※ ヘッダ(1)でビットパターン「2進01」および「2進11」は現在利用していない。
-   「2進01」は、返答を要求しない単なる通知、
+   「2進01」は、それに対応する返答のない一方的な通知、
    「2進11」は、それ以降の30bitと合わせて、特殊なオペレーション。
-   として使う案を考えたが、実装していないので、#define は等はしていない。
+   として使う案を考えたが、実装していないので、#define 等はしていない。
    単に将来の拡張に備えてリザーブしてある状態。
 
 ■ GFARM_FILE_RDONLY などの GFARM_FILE_* フラグのビット割り当てについて
@@ -54,5 +54,9 @@ GFARM_INTERNAL_USE には、2種類のものがある。
   0xffffffff00000000 といったビットに変更可能。
   0x00800000 から始めて、順に下のビットを割り当てる予定。
   なお、GFARM_FILE_TRUNC_PENDING は gfmd 内部のみ、
-  GFARM_FILE_SYMLINK_NO_FOLLOW は libgfarm 内部のみなので、
-  ビットを重ねても問題ないが、万一の間違いを避けるため、今は分けている。
+  GFARM_FILE_SYMLINK_NO_FOLLOW および GFARM_FILE_OPEN_LAST_COMPONENT は
+  libgfarm 内部のみの利用であるため、GFARM_FILE_TRUNC_PENDING と
+  GFARM_FILE_OPEN_LAST_COMPONENT については同一ビットを重ねて利用している。
+  ※ r6725 で GFARM_FILE_REPLICA_SPEC に 0x10000 が割り当てられてリリース
+     されたため、その時点で「プロトコルを流れないもの」の定義は 0x00fe0000 
+     に変更されたと考えた方が良い。
