@@ -67,7 +67,7 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_WRONLY		1
 #define GFARM_FILE_RDWR			2
 #define GFARM_FILE_ACCMODE		3	/* RD/WR/RDWR mode mask */
-#ifdef GFARM_INTERNAL_USE /* internal use only */
+#ifdef GFARM_INTERNAL_USE /* internal use only, but passed via protocol */
 #define GFARM_FILE_LOOKUP		3
 #define GFARM_FILE_CREATE		0x00000200
 #endif
@@ -76,8 +76,10 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_APPEND		0x00000800
 #define GFARM_FILE_EXCLUSIVE		0x00001000
 #endif
-#ifdef GFARM_INTERNAL_USE /* internal use only */
+#ifdef GFARM_INTERNAL_USE /* internal use only, but passed via protocol */
 #define GFARM_FILE_REPLICA_SPEC		0x00010000
+#endif
+#ifdef GFARM_INTERNAL_USE /* internal use only, never passed via protocol */
 #define GFARM_FILE_SYMLINK_NO_FOLLOW	0x00400000 /* used by libgfarm only */
 #define GFARM_FILE_TRUNC_PENDING	0x00800000 /* used by gfmd only */
 #define GFARM_FILE_OPEN_LAST_COMPONENT	0x00800000 /* used by libgfarm only */
@@ -91,7 +93,7 @@ int gfs_desc_fileno(GFS_Desc);
 #endif
 #define GFARM_FILE_UNBUFFERED		0x10000000
 #define GFARM_FILE_CREATE_REPLICA	0x20000000
-#ifdef GFARM_INTERNAL_USE /* internal use only */
+#ifdef GFARM_INTERNAL_USE /* internal use only, but passed via protocol */
 #define GFARM_FILE_BEQUEATHED		0x40000000
 #define GFARM_FILE_CKSUM_INVALIDATED	0x80000000
 
