@@ -645,15 +645,6 @@ gfm_inode_or_name_op(const char *url, int flags,
 
 	for (;;) {
 		path = nextpath;
-		if (path[0] == '\0')
-			path = "/";
-		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
-			e = GFARM_ERR_PATH_IS_ROOT;
-			gflog_debug(GFARM_MSG_1002600,
-			    "inode_or_name_op_lookup_request : %s",
-			    gfarm_error_string(e));
-			break;
-		}
 
 		if (gfm_server)
 			gfm_client_connection_free(gfm_server);
@@ -665,6 +656,17 @@ gfm_inode_or_name_op(const char *url, int flags,
 			    path, gfarm_error_string(e));
 			break;
 		}
+
+		if (path[0] == '\0')
+			path = "/";
+		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
+			e = GFARM_ERR_PATH_IS_ROOT;
+			gflog_debug(GFARM_MSG_1002600,
+			    "inode_or_name_op_lookup_request : %s",
+			    gfarm_error_string(e));
+			break;
+		}
+
 		if ((e = gfm_client_compound_begin_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002601,
