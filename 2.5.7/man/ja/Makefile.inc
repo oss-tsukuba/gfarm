@@ -1,1 +1,0 @@
-mandir = $(ja_mandir)

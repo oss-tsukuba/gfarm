@@ -1,2 +1,0 @@
-doclang = ./
-include ../doc.mk

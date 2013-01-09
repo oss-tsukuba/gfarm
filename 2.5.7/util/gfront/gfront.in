@@ -1,3 +1,0 @@
-#! /bin/sh
-
-java -jar @prefix@/share/java/gfront.jar >/dev/null 2>&1

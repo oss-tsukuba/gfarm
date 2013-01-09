@@ -1,2 +1,0 @@
-@PREFIX@/lib/*.so.*
-@PREFIX@/share/gfarm/config/config-gfarm.sysdep
