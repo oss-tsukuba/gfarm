@@ -1,0 +1,67 @@
+                     Gfarm perfomance measuring management
+
+1. About
+   This document describes how to use Gfarm performance measuring 
+   automatically, and view the results.
+
+2. periodically execution of gfperf.rb
+   You can measure daily Gfarm performance by executing gfperf.rb periodically.
+   Write following sentences in crontab.
+
+     PATH=<gfarm install directory>/bin:/usr/bin:/bin
+
+     0 0,6,12,18 * * * gfperf.rb <config yaml file>
+
+3. Referring WEB view
+   You can view the results of gfperf commands by installing and configuring
+   gfperf-web. Gfperf-web has following pages.
+
+   3.1 Gfperf Top Page
+       This page lists date and times when gfperf.rb is executed.
+       By clicking the started time, you can see Test Results page.
+
+       If error(s) occurred, "Error Occurred!" message is printed in right of 
+       test time. The message is linked to Error Messages page.
+
+       "config" link at upper right in this page transits to Config page.
+
+   3.2 Test Results
+       Test Results are listed in this page.
+       Key is test item that shows parameters of gfperf commands.
+       The test results over 3 times (*1) from standard deviation are printed
+       in red color and listed above.
+
+       Keywords in keyword form narrows the test results that matches all of
+       the keywords.
+       Multiple keywords must be separated by white space.
+
+       By clicking test item, you can see Result Graph page.
+
+       "config" link at upper right in this page transits to Config page.
+
+       *1: magnification can be changed in Config page.
+
+
+   3.3 Result Graph
+       This page shows graph of test result history.
+
+       "config" link at upper right in this page transits to Config page.
+
+
+   3.4 Config
+       This page configures the following 2 points.
+
+          number of points in grapph:
+                 number of points in Result Graph page.
+
+          warning limit:
+                 magnification of standard deviation.
+                 Average plus-minus magnification of standard deviation are 
+                 warning limit.
+
+
+   3.5 Error Messages
+       This page shows error messages of gfperf.rb.
+
+
+EOF

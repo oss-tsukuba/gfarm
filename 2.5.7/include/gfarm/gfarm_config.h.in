@@ -1,0 +1,310 @@
+/* include/gfarm/gfarm_config.h.in.  Generated from configure.ac by autoheader.  */
+
+
+#ifndef GFARM_CONFIG_H
+#define GFARM_CONFIG_H
+
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* support XML extended attributes and XPath search */
+#undef ENABLE_XMLATTR
+
+/* Define to 1 if you have the `backtrace_symbols' function. */
+#undef HAVE_BACKTRACE_SYMBOLS
+
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
+/* Define to 1 if you have the `daemon' function. */
+#undef HAVE_DAEMON
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* struct dirent has d_namlen member */
+#undef HAVE_D_NAMLEN
+
+/* struct dirent has d_off member */
+#undef HAVE_D_OFF
+
+/* struct dirent has d_type member */
+#undef HAVE_D_TYPE
+
+/* Define to 1 if epoll functions are implemented. */
+#undef HAVE_EPOLL
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
+
+/* Define to 1 if you have the `fdatasync' function. */
+#undef HAVE_FDATASYNC
+
+/* Define to 1 if you have the `fdopendir' function. */
+#undef HAVE_FDOPENDIR
+
+/* Define to 1 if you have the `getdents' function. */
+#undef HAVE_GETDENTS
+
+/* Define to 1 if you have the `getifaddrs' function. */
+#undef HAVE_GETIFADDRS
+
+/* Define to 1 if you have the `getloadavg' function. */
+#undef HAVE_GETLOADAVG
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the `getpassphrase' function. */
+#undef HAVE_GETPASSPHRASE
+
+/* 5 arguments getpwnam_r() which is compatible with SUSv2 exists */
+#undef HAVE_GETPWNAM_R
+
+/* 5 arguments getspnam_r() exists */
+#undef HAVE_GETSPNAM_R
+
+/* Grid Security Infrastructure exists */
+#undef HAVE_GSI
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* LDAP library exists */
+#undef HAVE_LDAP
+
+/* Define to 1 if you have the `ldap_memfree' function. */
+#undef HAVE_LDAP_MEMFREE
+
+/* Define to 1 if you have the `ldap_perror' function. */
+#undef HAVE_LDAP_PERROR
+
+/* Define to 1 if you have the `ldap_set_option' function. */
+#undef HAVE_LDAP_SET_OPTION
+
+/* Define to 1 if you have the `ldap_start_tls_s' function. */
+#undef HAVE_LDAP_START_TLS_S
+
+/* Define to 1 if you have the `cext' library (-lcext). */
+#undef HAVE_LIBCEXT
+
+/* Define to 1 if you have the `compat' library (-lcompat). */
+#undef HAVE_LIBCOMPAT
+
+/* Define to 1 if you have the `crypt' library (-lcrypt). */
+#undef HAVE_LIBCRYPT
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `gen' library (-lgen). */
+#undef HAVE_LIBGEN
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+#undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `perfstat' library (-lperfstat). */
+#undef HAVE_LIBPERFSTAT
+
+/* Define to 1 if you have the `rt' library (-lrt). */
+#undef HAVE_LIBRT
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the <machine/endian.h> header file. */
+#undef HAVE_MACHINE_ENDIAN_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mkdtemp' function. */
+#undef HAVE_MKDTEMP
+
+/* getaddrinfo(3) and getnameinfo(3) are MT-Safe */
+#undef HAVE_MTSAFE_NETDB
+
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
+/* PostgreSQL library exists */
+#undef HAVE_POSTGRESQL
+
+/* Define to 1 if you have the `pread' function. */
+#undef HAVE_PREAD
+
+/* Define to 1 if you have the `printf' function. */
+#undef HAVE_PRINTF
+
+/* pthread library exists */
+#undef HAVE_PTHREAD
+
+/* pthread_attr_setstacksize() exists */
+#undef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+
+/* Define to 1 if you have the `pthread_barrier_wait' function. */
+#undef HAVE_PTHREAD_BARRIER_WAIT
+
+/* Define to 1 if you have the `pwrite' function. */
+#undef HAVE_PWRITE
+
+/* Define to 1 if you have the `random' function. */
+#undef HAVE_RANDOM
+
+/* Define to 1 if you have the `setlogin' function. */
+#undef HAVE_SETLOGIN
+
+/* Define to 1 if you have the `setrlimit' function. */
+#undef HAVE_SETRLIMIT
+
+/* Define to 1 if you have the <shadow.h> header file. */
+#undef HAVE_SHADOW_H
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the `statfs' function. */
+#undef HAVE_STATFS
+
+/* Define to 1 if you have the `statvfs' function. */
+#undef HAVE_STATVFS
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strtoll' function. */
+#undef HAVE_STRTOLL
+
+/* Define to 1 if you have the `strtoq' function. */
+#undef HAVE_STRTOQ
+
+/* Define to 1 if `st_atim.tv_nsec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+
+/* Define to 1 if `st_mtim.tv_nsec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+
+/* Define to 1 if you have the <sys/loadavg.h> header file. */
+#undef HAVE_SYS_LOADAVG_H
+
+/* sys_nerr is defined */
+#undef HAVE_SYS_NERR
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/xattr.h> header file. */
+#undef HAVE_SYS_XATTR_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define
+   */
+#undef socklen_t
+
+
+/* Grid Security Infrastructure exists */
+#undef HAVE_GSI
+
+/* 5 arguments getpwnam_r() which is compatible with SUSv2 exists */
+#undef HAVE_GETPWNAM_R
+
+/* 5 arguments getspnam_r() exists */
+#undef HAVE_GETSPNAM_R
+
+/* sys_nerr is defined */
+#undef HAVE_SYS_NERR
+
+/* 3rd argument type of bind(2)/connect(2), if <sys/socket.h> doesn't define */
+#undef socklen_t
+
+#if SIZEOF_LONG == 8
+	typedef long gfarm_int64_t;
+	typedef unsigned long gfarm_uint64_t;
+#	define GFARM_INT64_MAX		0x7fffffffffffffffL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffL
+#	define GFARM_PRId64 "ld"
+#	define gfarm_strtoi64(s, endptr)	strtol(s, endptr, 0)
+#elif SIZEOF_LONG_LONG == 8
+	typedef long long gfarm_int64_t;
+	typedef unsigned long long gfarm_uint64_t;
+#	define GFARM_INT64_MAX		0x7fffffffffffffffLL
+#	define GFARM_UINT64_MAX		0xffffffffffffffffLL
+#	define GFARM_PRId64 "lld"
+#	define gfarm_strtoi64(s, endptr)	strtoll(s, endptr, 0)
+#else
+	error! cannot find 64bit integer type
+#endif
+
+#endif /* GFARM_CONFIG_H */
+

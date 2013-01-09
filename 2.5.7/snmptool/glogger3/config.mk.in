@@ -1,0 +1,25 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+default_sbindir = @sbindir@
+default_bindir = @bindir@
+default_libdir = @libdir@
+default_includedir = @libdir@
+default_mandir = @mandir@
+default_docdir = $(prefix)/share/doc/glogger
+default_htmldir = $(default_docdir)/html
+default_sysconfdir = @confdir@
+
+sbindir = $(default_sbindir)
+bindir = $(default_bindir)
+libdir = $(default_libdir)
+includedir = $(default_includedir)
+exec_includedir = $(default_exec_includedir)
+mandir = $(default_mandir)
+docdir = $(default_docdir)
+htmldir = $(default_htmldir)
+sysconfdir = $(default_sysconfdir)
+
+INSTALL = $(top_objdir)/install-sh -c
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@

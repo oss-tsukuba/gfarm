@@ -1,0 +1,258 @@
+#!/bin/sh
+#
+# $Id$
+
+${DEBUG:="false"} && set -xu
+PROGNAME=`basename $0`
+
+# Gfarm installation directory
+prefix="@prefix@"
+sysconfdir="@sysconfdir@"
+datarootdir="@datarootdir@"
+datadir="@datadir@"
+config_dir="${datadir}/gfarm/config"
+
+PRIVATE_MODE=false
+PRIVATE_MODE_FOR_DEBIAN=false
+
+PATH="${prefix}/bin:${prefix}/sbin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/ucb:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/local/sbin:$PATH"
+export PATH
+search_path="$PATH"
+
+awk=awk
+if [ -f /usr/bin/nawk ]; then awk=/usr/bin/nawk; fi
+
+status=1
+admin_password=/tmp/ap$$
+password=/tmp/up$$
+tablelist=/tmp/tablelist.$$
+rm -f $password $admin_password $tablelist
+trap 'rm -f $password $admin_password $tablelist; stty echo 2>/dev/null; exit $status' 0 1 2 15
+
+getvalue()
+{
+	$awk '$1 == "'"$1"'" { print $2 }' $GFMD_CONF
+}
+
+ABORT()
+{
+	[ $# -gt 0 ] && echo >&2 "${PROGNAME}: $@"
+	echo >&2 "$PROGNAME failure"
+	exit 1
+}
+
+usage() {
+	echo >&2 "usage: $PROGNAME -d [options]"
+	echo >&2 "       $PROGNAME -r [options]"
+	echo >&2 " options:"
+	echo >&2 "	[-n]			- do not start/stop a metadata server"
+	echo >&2 "	[-t]			- display configuration, do not execute anything"
+	echo >&2 "	[--prefix prefix]	- directory specified in config-gfarm"
+	echo >&2 "	[-f filename]		- file to dump or to restore"
+	echo >&2 "	[-l metadata_directory]	- backend database data directory"
+	exit 1
+}
+
+# most $BACKEND_TYPE calls the followings
+# from display_plain_params_backend_$BACKEND_TYPE, but some may not.
+display_plain_param_backend_data_dir()
+{
+    echo     "metadata     directory    [-l]: $BACKEND_DATA_DIR"
+}
+
+display_plain_param_backend_log_dir()
+{
+    return 0
+}
+
+display_params()
+{
+    echo     "prefix [--prefix]: $CONFIG_PREFIX"
+    echo     "metadata backend    [-b]: $BACKEND_TYPE"
+
+    display_plain_params_backend_$BACKEND_TYPE
+    display_plain_params_backend_port_$BACKEND_TYPE
+    display_plain_params_backend_optional_$BACKEND_TYPE
+    exit 0
+}
+
+# default value
+DUMPF=db.out
+MODE=UNKNOWN
+
+#
+# parse arguments
+#
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+
+	# set parameters
+	  --prefix) shift; [ $# -ge 1 ] || usage
+		CONFIG_PREFIX=$1
+		;;
+	  -P) shift; [ $# -ge 1 ] || usage
+		BACKEND_PREFIX=$1
+		;;
+	  -l) shift; [ $# -ge 1 ] || usage
+		BACKEND_DATA_DIR=$1
+		;;
+	  -f) shift; [ $# -ge 1 ] || usage
+		DUMPF=$1
+		;;
+
+	# control options
+	  --help)
+		usage
+		;;
+	  -t)
+		DISPLAY_PARAMS=true
+		;;
+	  -d)
+		MODE=DUMP
+		;;
+	  -n)
+		STOP_GFMD=false
+		;;
+	  -r)
+		MODE=RESTORE
+		;;
+	  -*) echo "unknown option: $1"
+		usage ;;
+	  *) usage ;;
+	esac
+	shift
+done
+[ X"$MODE" = XUNKNOWN ] && usage
+
+: ${CONFIG_PREFIX:=}
+if [ X"$CONFIG_PREFIX" != X ]; then
+	: ${GFARM_CONF_DIR:="$CONFIG_PREFIX/etc"}
+else
+	: ${GFARM_CONF_DIR:="$sysconfdir"}
+fi
+: ${GFMD_CONF:="$GFARM_CONF_DIR/gfmd.conf"}
+
+# sanity check
+if [ ! -f ${GFMD_CONF} ]; then
+	ABORT "${PROGNAME}: cannot find ${GFMD_CONF}, --prefix option required"
+fi
+
+# determine a backend database type
+if grep '^[ 	]*postgresql_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=postgresql
+elif grep '^[ 	]*ldap_server_host[ 	]' ${GFMD_CONF} >/dev/null
+then
+	BACKEND_TYPE=ldap
+else
+	echo >&2 "${PROGNAME}: cannot determine the backend type"
+	exit 1
+fi
+
+# load backend-dependent functions
+. $config_dir/config-gfarm.$BACKEND_TYPE
+. $config_dir/config-gfarm-update.$BACKEND_TYPE
+
+#
+# search default $BACKEND_PREFIX
+#
+
+set_default_backend_prefix_$BACKEND_TYPE
+. $config_dir/config-gfarm.sysdep
+
+#
+# default values
+#
+
+set_first_defaults_$BACKEND_TYPE
+sysdep_defaults
+
+: ${DISPLAY_PARAMS:=false}
+: ${STOP_GFMD:=true}
+
+update_first_set_param_$BACKEND_TYPE
+set_last_defaults_$BACKEND_TYPE
+update_last_set_param_$BACKEND_TYPE
+
+# -t option; display parameters
+$DISPLAY_PARAMS && display_params
+
+case ${BACKEND_TYPE} in
+
+###
+### postgresql
+###
+
+postgresql)
+	BACKEND_HOST="`getvalue postgresql_server_host`"
+	BACKEND_USER_PASSWD="`getvalue postgresql_password | tr -d '"'`"
+	JOURNAL_FILE="`getvalue metadb_journal_dir`"/0000000000.gmj
+	pg_dump=${PGSQL_BINDIR}/pg_dump
+	dropdb=${PGSQL_BINDIR}/dropdb
+	createdb=${PGSQL_BINDIR}/createdb
+	export PGPASSWORD
+
+	case $MODE in
+	    DUMP)
+		PGPASSWORD=$BACKEND_USER_PASSWD
+		OPT_F=
+		[ "X$DUMPF" != X- ] && OPT_F="-f $DUMPF"
+		$pg_dump -x -O -h $BACKEND_HOST -p $BACKEND_PORT -U $BACKEND_USER $OPT_F $DB_NAME ||
+			ABORT "pg_dump fails"
+		status=0
+		;;
+	    RESTORE)
+		[ "X$DUMPF" != X- -a ! -f "$DUMPF" ] &&
+			ABORT "$DUMPF: database dump file not exist"
+		$STOP_GFMD && service_ctl gfmd stop
+		PGPASSWORD=$BACKEND_ADMIN_PASSWD
+		$dropdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+			ABORT "dropdb fails"
+		$createdb -p $BACKEND_PORT -U $BACKEND_ADMIN_USER $DB_NAME ||
+			ABORT "createdb fails"
+		$psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -f $DUMPF > /dev/null ||
+			ABORT "restore fails"
+
+		# Get a list of tables in the database using '\dt' command
+		# of 'psql'.
+		env LC_ALL=C $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME -A -F/ -c '\dt' | grep / > $tablelist ||
+			ABORT "getting tablenames fails"
+
+		# Check the output layout of the '\dt' command.
+		dt_header=`head -1 $tablelist`
+		[ X"$dt_header" = X"Schema/Name/Type/Owner" ] || \
+			ABORT "unexpected result of '\dt' command by psql"
+
+		# Grant permissions on tables listed by '\dt'.
+		sed -e 1d $tablelist \
+		| awk -F/ "{print \"GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE \" \$2 \" TO $BACKEND_USER ;\"}" \
+		| $psql -p $BACKEND_PORT -U $BACKEND_ADMIN_USER -d $DB_NAME > /dev/null ||
+			ABORT "grant fails"
+		rm -f $tablelist
+
+		# remove journal file
+		mv $JOURNAL_FILE $JOURNAL_FILE.bak >& /dev/null &&
+			echo "journal file ($JOURNAL_FILE) is renamed to $JOURNAL_FILE.bak"
+		$STOP_GFMD && service_ctl gfmd start
+		status=0
+		;;
+	    *)
+		usage
+		;;
+	esac
+	;;
+
+###
+### LDAP
+###
+
+ldap)
+	echo >&2 "${PROGNAME}: ldap backend is not supported yet"
+	;;
+
+*)
+	echo >&2 "${PROGNAME}: internal error - backend \"${BACKEND_TYPE}\""
+	exit 1;;
+esac

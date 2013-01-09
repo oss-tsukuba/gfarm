@@ -1,0 +1,50 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfwhoami.1'>
+
+<refentryinfo><date>2 Apr 2004</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfwhoami</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfwhoami</refname>
+<refpurpose>Gfarm グローバルユーザ名を表示します</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfwhoami</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm ファイルシステム上で用いられるグローバルユーザ名を
+表示します。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>GSI 認証を用いている場合、利用者の Subject DN も表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+</refentry>

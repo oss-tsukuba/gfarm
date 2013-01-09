@@ -1,0 +1,158 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-gets.3'>
+
+<refentryinfo><date>13 May 2004</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_gets</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_gets</refname>
+<refpurpose>一行読み込み</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_gets</function></funcdef>
+    <paramdef>GFS_File <parameter>f</parameter></paramdef>
+    <paramdef>char * <parameter>s</parameter></paramdef>
+    <paramdef>size_t <parameter>size</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイル
+<parameter>gf</parameter>
+から、文字列
+<parameter>s</parameter>
+に、一行読み込みます。
+引数
+<parameter>size</parameter>
+に文字配列
+<parameter>s</parameter>
+の大きさを指定します。
+</para>
+
+<para>
+関数 gfs_pio_getline(3) と異なり、この関数は行末の改行記号を削除
+しません。一行の内容を文字配列に納めきれない場合、あるいはファイル
+末尾に改行記号が存在しない場合、入力結果の文字配列の末尾に改行記号
+がつきません。しかし文字列の終わりを示す '\0' 文字は、どちらの場合
+でも付加されます。
+</para>
+
+<para>
+<acronym>EOF</acronym>
+は、入力結果の文字配列の長さが 0 文字であることで判断します。
+</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<example role="example">
+<title><function>gfs_pio_gets</function> 関数の使用例</title>
+<para><programlisting>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;gfarm/gfarm.h&gt;
+
+int
+main(int argc, char **argv)
+{
+	char *e;
+	GFS_File gf;
+	char buffer[512];
+
+	e = gfarm_initialize(&amp;argc, &amp;argv);
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	if (argc &lt;= 1) {
+		fprintf(stderr, "missing gfarm filename\n");
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_open(argv[1], GFARM_FILE_RDONLY, &amp;gf);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[1], e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_set_view_global(gf, 0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_set_view_global: %s\n",
+		    argv[1], e);
+		return (EXIT_FAILURE);
+	}
+
+	while ((e = gfs_pio_gets(gf, buffer, sizeof buffer)) != NULL &amp;&amp;
+	    *buffer != '\0') {
+		printf("got: %s", buffer);
+	}
+	if (e != NULL) {
+		fprintf(stderr, "ERROR: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_close(gf);
+	if (e != NULL) {
+		fprintf(stderr, "gfs_pio_close: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	return (EXIT_SUCCESS);
+}
+</programlisting></para>
+</example>
+
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_readline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_readdelim</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

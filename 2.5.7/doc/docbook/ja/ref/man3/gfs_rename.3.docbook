@@ -1,0 +1,137 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-rename.3'>
+
+<refentryinfo><date>21 Feb 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_rename</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_rename</refname>
+<refpurpose>ファイルを改名する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_rename</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url_from</parameter></paramdef>
+    <paramdef>char * <parameter>gfarm_url_to</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイルまたはディレクトリ
+<parameter>gfarm_url_from</parameter>
+を
+<parameter>gfarm_url_to</parameter>
+に改名します。</para>
+
+<para><parameter>gfarm_url_to</parameter>
+が既存の場合は削除されます。このとき
+<parameter>gfarm_url_from</parameter>
+がファイルならば
+<parameter>gfarm_url_to</parameter>
+もファイル、
+<parameter>gfarm_url_from</parameter>
+がディレクトリならば
+<parameter>gfarm_url_to</parameter>
+もディレクトリで、しかも空でなければなりません。</para>
+
+<para>ディレクトリ
+<parameter>gfarm_url_from</parameter>
+をそのサブディレクトリに改名することはできません。</para>
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>gfmd(8) に対するユーザー認証が失敗しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>親ディレクトリへ書き込みアクセスする権限がありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
+<listitem>
+<para>ディレクトリ
+<parameter>gfarm_url_from</parameter>
+を、それ自身のサブディレクトリに変更しようとしました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定されたパス
+<parameter>gfarm_url_from</parameter>
+が存在しません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>
+<parameter>gfarm_url_from</parameter>
+がファイルであるのに、
+<parameter>gfarm_url_to</parameter>
+は既存のディレクトリです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_NOT_IS_A_DIRECTORY</constant></term>
+<listitem>
+<para>
+<parameter>gfarm_url_from</parameter>
+がディレクトリであるのに、
+<parameter>gfarm_url_to</parameter>
+は既存のファイルです。</para>
+</listitem>
+</varlistentry>
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
+</listitem>
+</varlistentry>
+-->
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

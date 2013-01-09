@@ -1,0 +1,333 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfrm</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFRM.1"
+></A
+>gfrm</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrm&nbsp;--&nbsp;remove Gfarm files, directories, or file replicas</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrm</B
+> [-frRnqv] [-I <TT
+CLASS="REPLACEABLE"
+><I
+>file-section</I
+></TT
+>] [-h <TT
+CLASS="REPLACEABLE"
+><I
+>filesystem-node</I
+></TT
+>] [-D <TT
+CLASS="REPLACEABLE"
+><I
+>domain-name</I
+></TT
+>] [-H <TT
+CLASS="REPLACEABLE"
+><I
+>hostfile</I
+></TT
+>] [-N <TT
+CLASS="REPLACEABLE"
+><I
+>num-of-replicas</I
+></TT
+>] [-j <TT
+CLASS="REPLACEABLE"
+><I
+>num-of-threads</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm-URL</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrm</B
+> removes each specified file.  It does
+not remove directories unless the <CODE
+CLASS="OPTION"
+>-r</CODE
+> or
+<CODE
+CLASS="OPTION"
+>-R</CODE
+> option is specified.
+'.' or '..' cannot be removed.</P
+><P
+>When the <CODE
+CLASS="OPTION"
+>-I</CODE
+> option is specified, <B
+CLASS="COMMAND"
+>gfrm</B
+>
+removes the specified file section.  File section is an architecture
+name for executable files, or a fragment index for a regular file.</P
+><P
+>With the <CODE
+CLASS="OPTION"
+>-h</CODE
+>, <CODE
+CLASS="OPTION"
+>-D</CODE
+>, or
+<CODE
+CLASS="OPTION"
+>-H</CODE
+> option, <B
+CLASS="COMMAND"
+>gfrm</B
+> removes
+file replicas of each specified file or file section on the specified
+filesystem node(s).  All file replicas of a file cannot be removed,
+unless the <CODE
+CLASS="OPTION"
+>-f</CODE
+> option is specified.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+></DT
+><DD
+><P
+>Even when all file replicas are specified by the
+<CODE
+CLASS="OPTION"
+>-h</CODE
+>, <CODE
+CLASS="OPTION"
+>-D</CODE
+>, or <CODE
+CLASS="OPTION"
+>-H</CODE
+>
+option, forcibly deletes all the file replica.  In
+this case, the specified file will be deleted.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-j</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>num-of-threads</I
+></TT
+></DT
+><DD
+><P
+>Specifies the number of threads to delete file replicas
+simultaneously.  This option is only available when
+<B
+CLASS="COMMAND"
+>gfrm</B
+> is compiled by an OpenMP C compiler.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-n</CODE
+></DT
+><DD
+><P
+>Prints file names to be deleted, but does not delete them.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-q</CODE
+></DT
+><DD
+><P
+>Does not print any verbose message.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+>, <CODE
+CLASS="OPTION"
+>-R</CODE
+></DT
+><DD
+><P
+>Removes all entries under the directories specified by the
+command-line argument recursively.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>Prints verbose messages.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-h</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>filesystem-node</I
+></TT
+></DT
+><DD
+><P
+>Specifies a filesystem node from which file replicas will be removed.
+With the <CODE
+CLASS="OPTION"
+>-I</CODE
+> option, a file replica of the specified
+file section will be removed.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-D</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>domain-name</I
+></TT
+></DT
+><DD
+><P
+>Specifies a domain name of filesystem nodes on which file
+replicas will be removed.  With the <CODE
+CLASS="OPTION"
+>-I</CODE
+> option, a file
+replica of the specified file section will be removed.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-H</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>Specifies a <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists
+filesystem nodes on which file replicas will be removed.  With the
+<CODE
+CLASS="OPTION"
+>-I</CODE
+> option, a file replica of the specified file
+section will be removed.</P
+><P
+>if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-I</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>file-section</I
+></TT
+></DT
+><DD
+><P
+>Specifies the file section to be removed.  File section is an
+architecture name, such as sparc-sun-solaris8, for executable files, and
+a fragment index for regular files.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-N</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>num-of-replicas</I
+></TT
+></DT
+><DD
+><P
+>Specifies the maximum number of file replicas.  If files has more
+number of file replicas than specified, reduce the number of file
+replicas.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

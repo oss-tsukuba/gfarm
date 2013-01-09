@@ -1,0 +1,83 @@
+Source: gfarm
+Section: net
+Priority: optional
+Maintainer: Naotaka YAMAMOTO <naotaka@earth.nifty.jp>
+Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, bison
+Standards-Version: 3.5.10
+
+Package: gfarm-doc
+Section: doc
+Architecture: all
+Description: Documents for the Gfarm
+ Contains all README files and HTML documents.
+
+Package: gfarm-gfront
+Section: utils
+Architecture: all
+Depends: gfarm-gsi-client (= ${Source-Version}) | gfarm-client (= ${Source-Version})
+Description: Front-end java application for the Gfarm
+ This package contains client and administrative front-end application
+ fot the Gfarm using JAVA.
+
+Package: gfarm-gfptool
+Section: utils
+Architecture: i386 amd64
+Depends: gfarm-client (= ${Source-Version})
+Conflicts: gfarm-gsi-gfptool
+Description: Parallel tools installed under the Gfarm filesystem
+ Registration the Gfarm parallel commands such as a parallel file copy command
+ and a parallel grep command to the Gfarm filesystem by the
+ 'gfregister' command.
+
+Package: gfmd
+Section: net
+Architecture: i386 amd64
+Depends: libgfarm (= ${Source-Version})
+Suggests: gfarm-agent, postgresql, slapd
+Conflicts: gfmd-gsi
+Description: The Gfarm metadata server
+ The Gfarm filesystem metadata server for accessing 
+ filesystem metadata of the Gfarm filesystem.
+
+Package: gfarm-client
+Section: utils
+Architecture: i386 amd64
+Depends: libgfarm (= ${Source-Version})
+Conflicts: gfarm-gsi-client
+Description: The Gfarm clients
+ This package contains client programs for the Gfarm.
+
+Package: gfarm-agent
+Section: utils
+Architecture: i386
+Depends: libgfarm (= ${Source-Version})
+Description: Metadata cache server for Gfarm
+ metadata cache server for gfarm
+ 
+Package: gfsd
+Section: net
+Architecture: i386 amd64
+Depends: libgfarm (= ${Source-Version}), gfarm-client (= ${Source-Version})
+Conflicts: gfsd-gsi
+Description: The Gfarm filesystem daemon
+ A filesystem daemon for the Gfarm filesystem,
+ which has been running on every filesystem node,
+ usually, with a root privilege.
+
+Package: libgfarm
+Section: libs
+Architecture: i386 amd64
+Depends: libssl0.9.7 | libssl0.9.6, libldap2
+Conflicts: libgfarm-gsi
+Description: Runtime libraries for the Gfarm
+ libgfarm is a library implementing interfaces for reading and writing
+ files on the Gfarm filesystem.
+
+Package: libgfarm-dev
+Section: devel
+Architecture: i386 amd64
+Depends: libgfarm (= ${Source-Version})
+Conflicts: libgfarm-gsi-dev
+Description: Development files for the Gfarm
+ Install this package if you wish to develop your own programs using
+ the Gfarm filesystem library.

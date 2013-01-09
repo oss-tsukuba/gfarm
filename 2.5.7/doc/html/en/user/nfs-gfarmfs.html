@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: GfarmFS-FUSE + NFS [English]</TITLE>
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+nfs/gfarmfs-fuse
+
+<H1>GfarmFS-FUSE + NFS</H1>
+English | <A href="../../ja/user/nfs-gfarmfs.html">Japanese</A>
+
+<H2>1. Overview</H2>
+
+This document describes how to export Gfarm file system via NFS.  The
+exported Gfarm file system is assumed to be mounted by GfarmFS-FUSE.
+
+<h3>1.1 Preparation for NFS server</h3>
+
+<UL>
+  <LI>GfarmFS-FUSE
+  <LI>see README.NFS of FUSE
+</UL>
+
+Note that 'write_local_priority disable' should be set in gfarm.conf
+when NFS server is a file system node.
+
+<h3>1.2 Reference</h3>
+
+<UL>
+  <LI>Gfarm: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
+  <LI>GfarmFS-FUSE: <A HREF="https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html">https://datafarm.apgrid.org/software/gfarmfs-fuse.en.html</A>
+  <LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
+</UL>
+
+<h2>2. Export NFS file system</h2>
+
+<h3>2.1 Mount Gfarm file system by GfarmFS-FUSE</h3>
+
+Before exporting a Gfarm file system via NFS, it is necessary to mount
+Gfarm file system by GfarmFS-FUSE in user mode.
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+  $ gfarmfs [gfarmfs options] <B>mount-point</B> -o allow_root [FUSE options]
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+When <tt>-o allow_root</tt> is disallowed, it is necessary to allow it
+by adding
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+user_allow_other
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+in <tt>/etc/fuse.conf</tt>.  For details, refer to a document of
+GfarmFS-FUSE, Gfarm, and FUSE.  The following example assumes
+/tmp/yourname/gfarmfs is a mount point.
+<p>
+Note that you should not specify the <tt>-o allow_other</tt> option.
+In this case, every user can access Gfarm file system under your
+privilege.
+
+<h3>2.2 NFS server setting</h3>
+
+To export a GfarmFS-FUSE mounted directory,
+please see README.NFS of FUSE.
+<br>
+It is necessary to add <tt>fsid</tt> and <tt>anonuid</tt> in
+<tt>/etc/exports</tt>.  Here is an example of <tt>/etc/exports</tt>.
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+/tmp/yourname/gfarmfs  AAA.BBB.CCC.0/255.255.255.0(rw,fsid=10,anonuid=1205)
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+You can specify any unused number for <tt>fsid</tt>.  For
+<tt>anonuid</tt>, you need to specify a uid that mounts Gfarm file
+system using GfarmFS-FUSE.  After that, it is necessary to restart the
+nfs server.
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+  # service nfs restart
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>3. Mount Gfarm file system from NFS client</H2>
+
+You can mount Gfarm file system from NFS clients as usual.  There is
+no special setting required.  Here is an example
+of <tt>/etc/fstab</tt>.
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+AAA.BBB.CCC.1:/tmp/yourname/gfarmfs  /mnt/gfarm/yourname  nfs  rw,sync,noauto  0  0
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>4. Caveat</H2>
+
+<ul>
+  <li>Gfarm file system, which will be exported via NFS, needs to be
+      mounted by GfarmFS-FUSE in *user mode*.  After mounting Gfarm
+      file system by GfarmFS-FUSE, restarting NFS server is required.
+  <li>Gfarm file system exported via NFS can be accessed only by a
+      user who mounts Gfarm file system.
+</ul>
+
+<H2>5. Comment</H2>
+
+If you have any question or comment, feel free to send email to 
+<A href="mailto:datafarm@apgrid.org">datafarm@apgrid.org</A>.
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A> &lt;<A 
+href="mailto:datafarm@apgrid.org"><TT>datafarm@apgrid.org</TT></A>&gt;</ADDRESS></BODY></HTML>

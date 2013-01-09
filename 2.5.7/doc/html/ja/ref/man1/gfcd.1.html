@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfcd</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFCD.1"
+></A
+>gfcd</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfcd&nbsp;--&nbsp;Gfarm 作業ディレクトリを変更する。</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfcd</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>ディレクトリ</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>Gfarm 作業ディレクトリを 指定したディレクトリに変更します。
+ディレクトリを指定しない場合は、ユーザの Gfarm ホームディレクトリである
+gfarm:/<TT
+CLASS="REPLACEABLE"
+><I
+>グローバルユーザ</I
+></TT
+> に変更します。</P
+><P
+>各Gfarm コマンドが作業ディレクトリを参照できるように、各ユーザの
+シェル設定ファイルに以下の定義を追加してください。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>Bourne shell 系シェルの場合</DT
+><DD
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfcd() { eval "`gfsetdir $1`"; }</PRE
+></TD
+></TR
+></TABLE
+></DD
+><DT
+>csh  系シェルの場合</DT
+><DD
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>alias gfcd 'eval `gfsetdir \!*`'</PRE
+></TD
+></TR
+></TABLE
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfpwd</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsetdir</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

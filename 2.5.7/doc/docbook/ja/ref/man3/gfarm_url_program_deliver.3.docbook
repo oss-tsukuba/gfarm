@@ -1,0 +1,86 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-url-program-deliver.3'>
+
+<refentryinfo><date>10 Sep 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_url_program_deliver</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_url_program_deliver</refname>
+<refpurpose>プログラムを指定したホストに配布する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfarm_url_program_deliver</function></funcdef>
+    <paramdef>char *<parameter>gfarm_url</parameter></paramdef>
+    <paramdef>int <parameter>nhosts</parameter></paramdef>
+    <paramdef>char **<parameter>hosts</parameter></paramdef>
+    <paramdef>char ***<parameter>delivered_paths</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><parameter>gfarm_url</parameter>で指定したプログラムを、
+<parameter>nhosts</parameter>
+個の要素を持つ文字列配列
+<parameter>hosts</parameter>
+で指定したホストに配布します。
+配布された各ホスト上でのプログラムの絶対パスを、
+<parameter>nhosts</parameter>
+個の要素を持つ文字列配列に格納し、その配列のアドレスを
+<parameter>delivered_paths</parameter>
+が指す先に返します。
+
+<parameter>delivered_paths</parameter></para>
+<para>に得た文字列配列は、不要になったら 
+<citerefentry><refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+で解放する必要があります。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm_url_program_deliver</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfarm_strings_free_deeply</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

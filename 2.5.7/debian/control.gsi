@@ -1,0 +1,55 @@
+Package: gfarm-gsi-gfptool
+Section: utils
+Architecture: i386 amd64
+Depends: gfarm-gsi-client (= ${Source-Version})
+Conflicts: gfarm-gfptool
+Description: Parallel tools installed under the Gfarm filesystem with GSI
+ Registration the Gfarm parallel commands such as a parallel file copy command
+ and a parallel grep command to the Gfarm filesystem by the
+ 'gfregister' command.
+
+Package: gfmd-gsi
+Section: net
+Architecture: i386 amd64
+Depends: libgfarm-gsi (= ${Source-Version})
+Suggests: postgresql, slapd
+Conflicts: gfmd
+Description: The Gfarm metadata server with GSI
+ The Gfarm filesystem metadata server for accessing 
+ filesystem metadata of the Gfarm filesystem.
+
+Package: gfarm-gsi-client
+Section: utils
+Architecture: i386 amd64
+Depends: libgfarm-gsi (= ${Source-Version})
+Conflicts: gfarm-client
+Description: The Gfarm clients with GSI
+ This package contains client programs for the Gfarm.
+
+Package: gfsd-gsi
+Section: net
+Architecture: i386 amd64
+Depends: libgfarm-gsi (= ${Source-Version}), gfarm-gsi-client (= ${Source-Version})
+Conflicts: gfsd
+Description: The Gfarm filesystem daemon with GSI
+ A filesystem daemon for the Gfarm filesystem,
+ which has been running on every filesystem node,
+ usually, with a root privilege.
+
+Package: libgfarm-gsi
+Section: libs
+Architecture: i386 amd64
+Depends: libldap2
+Conflicts: libgfarm
+Description: Runtime libraries for the Gfarm
+ libgfarm is a library implementing interfaces for reading and writing
+ files on the Gfarm filesystem.
+
+Package: libgfarm-gsi-dev
+Section: devel
+Architecture: i386 amd64
+Depends: libgfarm-gsi (= ${Source-Version})
+Conflicts: libgfarm-dev
+Description: Development files for the Gfarm with GSI
+ Install this package if you wish to develop your own programs using
+ the Gfarm filesystem library.

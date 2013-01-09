@@ -1,0 +1,450 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfrun</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFRUN.1"
+></A
+>gfrun</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrun, gfrsh, gfssh&nbsp;--&nbsp;run Gfarm parallel programs</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrsh</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfssh</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>arg</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> executes a parallel command on
+filesystem nodes, which is determined by the <CODE
+CLASS="OPTION"
+>-G</CODE
+>
+option, the <CODE
+CLASS="OPTION"
+>-H</CODE
+> option, or the <CODE
+CLASS="OPTION"
+>-N</CODE
+>
+option.</P
+><P
+>The <CODE
+CLASS="OPTION"
+>-G</CODE
+> option specifies the
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+>, which will be used by
+file-affinity scheduling.  In this case, <B
+CLASS="COMMAND"
+>gfrun</B
+>
+schedules the same number of filesystem nodes as the number of
+Gfarm fragments, taking into consideration the physical locations of
+each fragment replica of the Gfarm file, and filesystem node status.
+The <CODE
+CLASS="OPTION"
+>-H</CODE
+> option specifies the
+<TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists filesystem nodes.  The
+<CODE
+CLASS="OPTION"
+>-N</CODE
+> option specifies the number of filesystem
+nodes.</P
+><P
+>The <CODE
+CLASS="OPTION"
+>-G</CODE
+>, <CODE
+CLASS="OPTION"
+>-H</CODE
+>, and
+<CODE
+CLASS="OPTION"
+>-N</CODE
+> options are exclusive.  When none of the
+<CODE
+CLASS="OPTION"
+>-G</CODE
+>, <CODE
+CLASS="OPTION"
+>-H</CODE
+>, or <CODE
+CLASS="OPTION"
+>-N</CODE
+>
+options are specified, <B
+CLASS="COMMAND"
+>gfrun</B
+> schedules
+filesystem nodes by file-affinity scheduling using the first
+existent Gfarm file in the argument list, <TT
+CLASS="PARAMETER"
+><I
+>args</I
+></TT
+>.
+If there are no existent Gfarm files in the argument list, an
+appropriate filesystem node is selected to be executed.</P
+><P
+><B
+CLASS="COMMAND"
+>gfrsh</B
+> and <B
+CLASS="COMMAND"
+>gfssh</B
+> utilize
+rsh and ssh, respectively, instead of gfrcmd.</P
+><P
+>A <TT
+CLASS="PARAMETER"
+><I
+>command</I
+></TT
+> can be specified by a gfarm-URL
+that is registered using gfreg(1).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-G</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>Specifies a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> for
+file-affinity scheduling.
+Please read the DESCRIPTION section about how file-affinity scheduling
+works.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-H</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>Specifies a <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists filesystem nodes.</P
+><P
+>if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-N</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+></DT
+><DD
+><P
+>Specifies the number of nodes, <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+>, which
+are selected in the increasing order of load average.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+></DT
+><DD
+><P
+>Specifies an on-demand replication mode.  In this mode, every
+file will be replicated before it is accessed remotely.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-o</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>Specifies a Gfarm file that the standard output of the executed
+program will be redirected to.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-e</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>Specifies a Gfarm file that the standard error of the executed
+program will be redirected to.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-I</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>fragment-index</I
+></TT
+></DT
+><DD
+><P
+>Specifies a Gfarm fragment index executed by the gfrun command.
+This option is available only when either file-affinity scheduling is
+selected by the <CODE
+CLASS="OPTION"
+>-G</CODE
+> option or a gfarm file in the
+argument list, or the <CODE
+CLASS="OPTION"
+>-N</CODE
+> option is specified.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>Displays error message verbosely.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+></DT
+><DD
+><P
+>Displays the elapsed time of each Gfarm parallel I/O API after the
+program terminates.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-g</CODE
+></DT
+><DD
+><P
+>Explicitly specifies that the command is a Gfarm program.
+Gfarm specific options will be passed to the command as the result.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u</CODE
+></DT
+><DD
+><P
+>Explicitly specifies that the command is an ordinary program, and
+does not take Gfarm specific options.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-b</CODE
+></DT
+><DD
+><P
+>Specifies global file view as the default file view for programs
+linked with the Gfarm syscall-hooking library.  If this option is not
+specified, the default is local file view.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="ENVIRONMENT-VARIABLES"
+></A
+><H2
+>ENVIRONMENT VARIABLES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="ENVAR"
+>GFRUN_CMD</CODE
+></DT
+><DD
+><P
+>Specifies a remote shell command.  If globus-job-run is specified,
+gfrun executes each process using globus-job-run.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfmpirun_p4</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm: NFS [Japanese]</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=euc-jp">
+<META content=document name=resource-type>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+nfs
+
+<H1>NFSでマウント</H1>
+<A href="../../en/user/nfs-gfarmfs.html">English</A> | 日本語 
+
+<H2>1. 概要</H2>
+
+gfarm2fs を使って Gfarm ファイルシステムをマウントし，そのマウントポイントを NFS サーバで公開する方法をご紹介します．<BR>
+しかし，使い勝手の点で，お勧めできる方法ではありません．
+
+<P>
+必要な環境や設定
+<UL>
+<LI>NFS サーバマシン側
+  <UL>
+  <LI>FUSE がインストールされている．
+  <LI>FUSE の README.NFS に目を通しておく．
+  <LI>一般ユーザが FUSE でマウントしたマウントポイントに他ユーザがアクセスすることを許可されている．(user_allow_other 設定)
+  <LI>Gfarm 環境にアクセスできる設定が済んでいる．
+  <LI>認証方法は sharedsecret 認証を使用し，Gfarm のファイルシステムノードのホームディレクトリが共有されていることを推奨する．そうでない場合は，使用する前に ~/.gfarm_shared_key を各ノードに配布したり，grid-proxy-init を実行しておかなければならない．
+  <LI>gfarm2fs がインストールされていて，実行できる．
+  <LI>NFS サーバを動かすことができる．
+  <LI>この NFS サーバのマシン上で Gfarm のファイルシステムノード(gfsd)を動かしている場合は，gfarm.conf の write_local_priority を無効にすることを推奨する．
+  <LI>一般ユーザが FUSE でマウントするマウントポイントに NFS 経由でアクセスできるような NFS の設定にする．
+  <LI>FUSE でマウントしてから(しなおした場合も)，nfs restart をする必要がある．
+  </UL>
+<LI>NFS クライアントマシン側
+  <UL>
+  <LI>上記 NFS のサービスにアクセスができる．
+  </UL>
+</UL>
+
+関連ソフトウエア一覧
+<UL>
+<LI>Gfarm and gfarm2fs: <A HREF="https://datafarm.apgrid.org/software/">https://datafarm.apgrid.org/software/</A>
+<LI>FUSE: <A HREF="http://fuse.sourceforge.net/">http://fuse.sourceforge.net/</A>
+</UL>
+
+
+<H2>2. gfarm2fs で Gfarm をマウント</H2>
+NFS でエクスポートする前に，gfarm2fs コマンドを実行して，Gfarm ファイルシステムをマウントしておく必要があります．
+下記の NFS サーバを動す予定の Linux マシン上で，
+かつ Gfarm の環境を使う準備ができている一般ユーザ権限で実行します．
+<P>
+gfhost -l などで，ファイルシステムノードにアクセスできる状態であることを確認してから，
+以下のコマンドを実行してマウントします．<BR>
+詳しくは Gfarm と gfarm2fs のドキュメントをご覧ください．
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+  $ gfarm2fs [gfarm2fs のオプション] <B>マウントポイント</B> -o allow_root [FUSE のオプション]
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+-o allow_root が使えずマウントできない場合は，/etc/fuse.conf に 
+<P>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+user_allow_other
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+と記述します．このことに関しては，FUSE パッケージの README もご覧ください．
+<P>
+マウントポイントは NFS で公開しているディレクトリ自体，またはそれ以下のディレクトリにします．<BR>
+以下では，説明のため，このマウントポイントを /tmp/yourname/gfarmfs としています．
+
+<H3>注意</H3>
+-o allow_other オプションを指定しないでください．
+-o allow_other オプションをつけると，他の一般ユーザがアクセスできてしまいます．
+しかも，マウントしたユーザの権限で Gfarm の環境にアクセスすることになります．
+
+<H2>3. NFS サーバの設定</H2>
+
+FUSE の README.NFS を参照してください．FUSE 2.5.3 時点では，Linux カーネル 2.6.14 以降を使用している場合に，FUSE の ./configure に --enable-kernel-module をつけてカーネルモジュールを毎回インストールしなおす必要があります．
+<BR>
+/etc/exports には，マウントポイントを公開する設定に fsid と anonuid の設定も加えます．
+その他，/etc/hosts.allow /etc/hosts.deny などの設定をして，nfs restart します．
+<BR>
+<P>
+/etc/exports の例です．
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+/tmp/yourname/gfarmfs  AAA.BBB.CCC.0/255.255.255.0(rw,fsid=10,anonuid=1205)
+</PRE></TD></TR></TBODY></TABLE>
+<P>
+fsid には，他のファイルシステムで使われていない任意の値を指定するようです．(詳しい方いらっしゃいませんか？)<BR>
+anonuid には，gfarm2fs でマウントしたユーザの uid を指定します．
+
+<H2>4. NFS クライアントからマウント</H2>
+
+NFS クライアントから，上記の NFS サーバをマウントします．
+クライアント側は，一般的な方法で NFS マウントするだけで，特別な設定は要りません．
+mount コマンドでマウントします．
+/etc/fstab に記述もできます．
+<P>
+/etc/fstab の例です．
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+AAA.BBB.CCC.1:/tmp/yourname/gfarmfs  /mnt/gfarm/yourname  nfs  rw,sync,noauto  0  0
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>5. 使い勝手について</H2>
+
+NFS サーバ側では，gfarm2fs でマウントしておいてから，nfs restart をかけます．
+しかし，通常，gfarm2fs でマウントするのは一般ユーザで，nfs restart するのは root になります．
+さらに，gfarm2fs を再びマウントしなおした場合は，nfs restart しなければなりません．(reload や exportfs -r ではだめでした)<BR>
+NFS クライアントはからは, root 権限でマウントすることになり，そのマウントポイントには，gfarm2fs でマウントしたユーザ(と uid, gid が一致している)しか利用できません．/etc/fstab に user オプションを指定しても，一般ユーザがマウントできるようになるだけで，gfarm2fs をマウントしたユーザしかアクセスできません．
+
+
+<H2>6. コメント</H2>質問やコメントがありましたら，
+gfarmfs at gmail.com まで自由にメールを送付してください． 
+<P>
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A></ADDRESS></BODY></HTML>

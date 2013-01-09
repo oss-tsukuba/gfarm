@@ -1,0 +1,29 @@
+#! /bin/sh -f
+#
+# $Id$
+
+program=gfarm-prun
+MIN_ARGS=1
+
+usage() {
+	echo "usage: $program [ -h hostfile ] [ -stdin file ] [ -rsh rsh_command ] [ -p ] [ -a ] [ -n ]"
+	echo "            cmd args ..."
+	echo ""
+	echo "options:"
+	echo "        -h hostfile"
+	echo "            specifies a hostfile.  '-' for the standard input"
+	echo "            ($PRUN_DEFAULT_HOSTFILE)"
+	echo "        -stdin file"
+	echo "            specifies a stdin file.  It can be specified multiple times."
+	echo "            '-' for the standard input"
+	echo "        -rsh rsh_command"
+	echo "            specifies a remote shell command. ($PRUN_DEFAULT_RSH)"
+	echo "        -p  execute in the background in parallel."
+	echo "        -a  execute on all nodes listed in the hostfile including myself."
+	echo "        -n  print the commands that would be executed, but do not execute them."
+	exit 1
+}
+
+. gfarm-ptool
+
+exit 0

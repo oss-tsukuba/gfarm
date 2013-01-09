@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_opendir</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-OPENDIR.3"
+></A
+>gfs_opendir</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_opendir&nbsp;--&nbsp;open a directory</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_opendir</TT
+></CODE
+>(const char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, GFS_Dir * <TT
+CLASS="PARAMETER"
+><I
+>dirp</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>The <TT
+CLASS="FUNCTION"
+>gfs_opendir()</TT
+> function opens a directory stream
+corresponding to the directory <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, and returns the
+directory stream to the address pointed by <TT
+CLASS="PARAMETER"
+><I
+>dirp</I
+></TT
+>.  The stream is
+positioned at the first entry in the directory.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_AUTHENTICATION</TT
+></DT
+><DD
+><P
+>User authentication failed when connecting to gfmd(8).</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+points outside your accessible address space.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</TT
+></DT
+><DD
+><P
+>Directory does not exist.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_closedir</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_readdir</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

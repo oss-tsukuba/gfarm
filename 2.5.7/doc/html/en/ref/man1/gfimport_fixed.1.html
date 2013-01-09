@@ -1,0 +1,348 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfimport_fixed</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFIMPORT-FIXED.1"
+></A
+>gfimport_fixed</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfimport_fixed&nbsp;--&nbsp;divide and register a fixed-size data file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>file</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> is a sample program for dividing a file to file
+fragments and registering it to the Gfarm filesystem.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+>
+specifies a hostname list of filesystem nodes.  The <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+>
+consists of a hostname of a filesystem node in each line.  The file is
+uniformly divided into file fragments, each file fragment except the
+last one having the same size.
+if ``-'' is specified, standard input is used to read the host list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-f</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>fragment file</I
+></TT
+></DT
+><DD
+><P
+>specifies a <TT
+CLASS="PARAMETER"
+><I
+>fragment file</I
+></TT
+> that consists of a fragment size and a
+filesystem node separated by a white space in each line.</P
+><P
+>if ``-'' is specified, standard input is used.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-l</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>record size</I
+></TT
+></DT
+><DD
+><P
+>specifies the size of fixed-size records in bytes.  With this option,
+file is divided by the multiple size of the <TT
+CLASS="PARAMETER"
+><I
+>record size</I
+></TT
+>.
+Default size is 1.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies an output file.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN60"
+></A
+><P
+><B
+>Example 1. Importing by splitting to specified number of fragments</B
+></P
+><P
+>The following is an example using <B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> 
+to import a <TT
+CLASS="REPLACEABLE"
+><I
+>source_file</I
+></TT
+> 
+as <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> 
+by splitting to 8 fragments.
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN67"
+></A
+><P
+><B
+>Example 2. Importing by splitting to specified number of fragments
+  for particular program</B
+></P
+><P
+>The following is an example using <B
+CLASS="COMMAND"
+>gfimport_fixed</B
+> 
+to import a <TT
+CLASS="REPLACEABLE"
+><I
+>source_file</I
+></TT
+> 
+as <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> 
+by splitting to 8 fragments
+to be processed by <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:prog</I
+></TT
+> program.
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 -p gfarm:prog | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN75"
+></A
+><P
+><B
+>Example 3. Importing into same disposition with an existing gfarm file</B
+></P
+><P
+>The following is an example using <B
+CLASS="COMMAND"
+>gfimport_fixed</B
+>
+to import a <TT
+CLASS="REPLACEABLE"
+><I
+>source_file</I
+></TT
+> 
+as <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> 
+into same disposition with existing file
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:template</I
+></TT
+>.
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched gfarm:template | gfimport_fixed -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_text</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsched</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

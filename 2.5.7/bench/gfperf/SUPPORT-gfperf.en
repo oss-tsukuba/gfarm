@@ -1,0 +1,13 @@
+            Gfarm performance measuring support manual
+
+
+* "time out!" message in Error Page (or errlog) from 
+  gfperf-autoreplica, gfperf-parallel-autoreplica
+
+  If simultaneos replication buffer on gfmd is full, replication will not be
+  created. So gfperf-autoreplica and gfperf-parallel-autoreplica timed out 
+  waiting for making replication.
+  
+  Increase number of "simultaneous_replication_receivers" in gfmd.conf
+
+EOF

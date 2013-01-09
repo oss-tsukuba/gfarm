@@ -1,0 +1,23 @@
+Excuse:	どうして Globus の GSS_ASSIST layer and/or Globus I/O があるの
+	に、GFSL を作ったか。
+
+0. Gfarm として、Globus に依存せず、GSSAPI に依存したかった。
+	ベンダ提供の GSSAPI ライブラリ(on kerberos)等の使用も可能にな
+	る。
+
+1. Globus I/O API のモデルが event handler registration 型の非同期 I/O 
+   モデルなので、select(2)/poll(2) による multiple object I/O event
+   multiplexing wait 型の同期 I/O モデルに慣れたプログラマからは大変使
+   いづらい。このようなプログラマに secure な通信路を提供するだけのた
+   めに、Globus I/O の使用を強いるのは困難である。
+
+   一方、GSSAPI を直接プログラマに使用させるのも、GSSAPI が高水準な一
+   般化を考えた API であるために使い勝手が非常に悪く、得策とは言えない。
+
+   Globus の GSS_ASSIST layer は、Globus I/O and/or Nexus との利用を前
+   提に、GSSAPI の直接使用の不便性を緩和する目的で開発されているので、
+   secure な通進路が使いたいために security context を生成する目的には
+   使いづらい。
+
+   そこで、GSS_ASSIST と同 layer にありながら、Globus I/O, Nexus との
+   共同利用を前提としない、GFSL の開発に至った。

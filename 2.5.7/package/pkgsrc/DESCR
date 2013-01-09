@@ -1,0 +1,8 @@
+Gfarm (Grid Datafarm) provides a user-level grid filesystem and
+parallel process management based on file-affinity scheduling.
+
+The filesystem can be accessed by either every existing
+dynamically-linked program (please read README.hook.{en,ja} in
+the document directory to do this), or programs which are using
+Gfarm file access API.
+Parallel process scheduling and invokation are done by gfrun command.

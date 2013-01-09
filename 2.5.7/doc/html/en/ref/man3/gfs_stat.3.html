@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_stat</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-STAT.3"
+></A
+>gfs_stat</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_stat&nbsp;--&nbsp;get file status</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_stat</TT
+></CODE
+>(const char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, struct gfs_stat * <TT
+CLASS="PARAMETER"
+><I
+>status</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_stat()</TT
+> return information about the specified file pointed
+to by <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, and fills in the buffer pointed to by
+<TT
+CLASS="PARAMETER"
+><I
+>status</I
+></TT
+>.  Since <TT
+CLASS="PARAMETER"
+><I
+>status</I
+></TT
+> includes a pointer to dynamically
+allocated memory space, it is necessary to free the memory space by
+gfs_stat_free(3).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_AUTHENTICATION</TT
+></DT
+><DD
+><P
+>User authentication failed when connecting to gfmd(8).</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+points outside your accessible address space.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</TT
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+does not exist.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NOT_A_DIRECTORY</TT
+></DT
+><DD
+><P
+>A component of the path prefix is not a directory.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_stat_free</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

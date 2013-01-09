@@ -1,0 +1,90 @@
+[This is written in Japanese,
+ please look at INSTALL.RPM.en for English version.]
+
+		 Gfarm ファイルシステム導入マニュアル
+
+● 本ドキュメントについて
+=========================
+
+本ドキュメントは RPM パッケージによる Gfarm ファイルシステムの導入に
+関して記述したものです．
+
+● 概要
+=================================
+
+Gfarm ファイルシステムの導入にあたり，メタデータサーバ，ファイルシステ
+ムノード，クライアントノードに必要なパッケージをインストールします．
+
+以下では，それぞれ異なるホストとして説明していますが，同一のホストに全
+てをインストールすることもできます．
+
+● RPM バイナリパッケージの作成
+=================================
+
+RPM バイナリパッケージは，RPM ソースパッケージ(SRPM)から作成します．バ
+イナリパッケージの構築には OpenSSL，OpenLDAP，PostgreSQL の開発用ライブ
+ラリが必要となります．
+
+	# yum install openssl-devel openldap-devel postgresql-devel
+	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
+
+なお，バイナリパッケージは /usr/src/redhat/RPM/ARCH/ に作成されます．
+
+GSI認証を有効にしたい場合は，Globus GSSAPI 開発用ライブラリを導入後，
+以下のように GFARM_CONFIGURE_OPTION を指定して作成します．
+
+	# GFARM_CONFIGURE_OPTION=--with-globus rpmbuild \
+		--rebuild gfarm-X.X.X-X.src.rpm
+
+このとき，作成されるバイナリパッケージは gfarm ではなく gfarm-gsi とな
+ります．gfarm-gsi パッケージが作成されない場合は，Globus GSSAPI 開発用
+ライブラリが導入されているかどうか確認してください．
+
+● メタデータサーバのインストール
+=================================
+
+メタデータサーバ用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm
+
+（注）上記では gfarm-* という RPM パッケージをインストールしていま
+      すが，GSI 認証が含まれるパッケージの場合はパッケージ名が 
+      gfarm-gsi-* となります．
+
+● ファイルシステムノード（かつクライアントノード）のインストール
+=================================================================
+
+ファイルシステムノード用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-fsnode-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+Gfarm では，ファイルシステムノードは通常クライアントにもなりますので，
+client パッケージもインストールします．doc パッケージは任意です．
+
+さらに，クライアントとして，GfarmFS-FUSE (gfarm2fs)を利用し，Gfarm ファ
+イルシステムを mount する場合，gfarm2fs パッケージのインストールも必要
+です．
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+● クライアントノードのインストール
+===================================
+
+ファイルシステムノード用の RPM パッケージをインストールします．
+
+	# rpm -Uvh gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+doc パッケージは任意です．
+
+GfarmFS-FUSEを利用し，Gfarm ファイルシステムを mount する場合，
+gfarm2fs パッケージのインストールも必要です．
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+$Id$

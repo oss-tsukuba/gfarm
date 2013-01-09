@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# functions 
+# This file contains functions to be used by glogd startup script.
+#
+check_process() {
+    if [ ! -f  ${pidfile} ]; then
+	return 1
+    fi
+    pid=`cat ${pidfile}`
+  
+    if [ -z ${pid} ]; then
+	RETVAL=1
+    else
+	ps -p ${pid} > /dev/null
+	RETVAL=$?
+    fi
+
+    if [ $RETVAL -eq 1 ]; then
+	rm -f ${pidfile}
+	return 1
+    fi
+    return $RETVAL
+}
+
+exec_glogger(){
+    echo -n "Starting ${progname}: "
+    ${sudo} ${program} ${OPTIONS}
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+	echo "Failed to start ${progname}. (=$RETVAL)"
+	return $RETVAL
+    fi
+    sleep 1
+    pid=`cat ${pidfile}`
+    echo "PID: ${pid}"
+}
+
+start() {
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+	echo ${progname} is running...
+	return 0;
+    fi
+
+    exec_glogger
+    RETVAL=$?
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping ${progname}: "
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	echo No ${progname} is running...
+	return 1;
+    fi
+
+    kill -SIGINT `cat ${pidfile}`
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+	echo PID: `cat ${pidfile}`
+	rm -f ${pidfile}
+	return $RETVAL
+    fi
+
+    # No such process
+    rm -f ${pidfile}
+    return $RETVAL
+}
+
+restart() {
+    echo -n $"Restarting ${progname}: "
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	start
+	return 0;
+    fi
+
+    oldpid=`cat ${pidfile}`
+    kill -SIGHUP `cat ${pidfile}`
+    sleep 1
+    newpid=`cat ${pidfile}`
+    echo "PID ${oldpid} -> ${newpid}"
+    return 0
+}
+
+status() {
+    check_process
+    RETVAL=$?
+    if [ $RETVAL -eq 1 ]; then
+	echo No ${progname} is running...
+	return 1;
+    fi
+
+    echo $progname is running. PID: `cat ${pidfile}`
+    return 0
+}
+
+checkconf() {
+    ${program} -checkconf -config ${conffile}
+}

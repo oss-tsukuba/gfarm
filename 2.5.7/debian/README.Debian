@@ -1,0 +1,28 @@
+gfarm for Debian
+------------------
+
+Gfarm is a reference implementation of the Grid Datafarm that is
+designed for facilitating reliable file sharing and high-performance
+distributed and parallel data computing in a Grid across
+administrative domains by providing a Grid file system.  A Grid file
+system is a virtual file system that federates multiple file systems.
+It is possible to share files or data by mounting the virtual file
+system. Please see http://datafarm.apgrid.org/ for details.
+
+Configuratoin
+=============
+Gfarm packages are built by
+
+  debuild -eGLOBUS_PREFIX=$GLOBUS_LOCATION -eGFARM_CONFIGURE_OPTION=--with-globus-static -eBUILD_BOTH
+
+to link statistically with globus toolkit binaries. If you have globus
+tool kit libraries and want to build debian package for yourself, you
+can build "debuild".And if you want to build with MPI libraries, please 
+add configure option to debian/rules file.
+
+NOTE
+====
+The pdiff and pcat commands are not included in binary package due to conflict with
+a2ps and tct packages, respectively.
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>, Mon, 23 May 2005 16:24:00 +0900

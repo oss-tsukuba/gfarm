@@ -1,0 +1,327 @@
+GLogger 3.0
+
+========================================================================
+* GLogger の概要
+
+SNMP GET リクエストを使って、ネットワーク上にある複数のホストから情報
+を集め、データをファイルへ出力します。設定ファイルで指定したインターバ
+ルごとに、設定ファイルで指定した各ホストに対して GET リクエストし、反
+応の早かったホストから順に受信し、設定ファイルの記述にしたがって出力処
+理をします。観測対象のホスト、スイッチなどは、それぞれ SNMP エージェン
+トが動作し、GLogger を動作させるホストから、観測する MIB ツリーの OID 
+を参照できるようにしておく必要があります。
+
+記録したデータは、GMonitor(Java アプリケーション)、または glogdump コ
+マンド(GLogger パッケージに同梱)で、現在扱うことができます。
+
+設定ファイルにおいて、ホストの指定には、連番数字の略記ができます。
+
+マイクロ秒単位の動作インターバルを指定できますが、現バージョンでは、最
+小動作単位を 0.1 秒に制限しています。
+
+現バージョンで扱える SNMP のバージョンは SNMPv1 固定です。
+
+GLogger をビルドするには、 net-snmp または ucd-snmp
+(http://net-snmp.sourceforge.net/) のライブラリ、ヘッダが必要です。
+現在、net-snmp 5.0.8 または ucd-snmp 4.2.6 のライブラリを使い、
+Linux と FreeBSD 環境で動作確認しています。
+
+以下では、net-snmp のライブラリやエージェントを使った場合の例で説明します。
+
+========================================================================
+* net-snmp のインストール
+
+既にインストールしてある場合は、「SNMP エージェントの設定」に進んでく
+ださい。
+
+以下は、SNMP マネージャ(クライアント側)としてのみ使う場合に、ホームディ
+レクトリへインストールする例です。
+
+  $ configure --prefix=/home/foo/netsnmp
+  質問してくる設定はエージェント用なので、わからない場合はデフォルトのまま
+  でも問題ありません。
+  $ make
+  # make install
+
+以下は、SNMP エージェント(サーバ側)をインストールする例です。
+
+  $ configure
+  質問してくる設定は環境にあわせて指定します。
+  $ make
+  # make install
+
+どちらの場合でも、インストール後は、snmpget や snmpwalk などのコマンド
+実行と、GLogger のビルドができます。
+
+Red Hat Linux などでは、rpm パッケージをインストールしても良いです。
+GLogger をビルドする場合は、devel パッケージも必要です。
+
+========================================================================
+* SNMP エージェントの設定
+
+net-snmp の snmpd を SNMP エージェントとして用いる場合は、snmpd.conf 
+の設定を環境にあわせて編集します。net-snmp のマニュアルをよく参照し、
+設定をおこなってください。以下は、最低限必要な各項目の概要です。
+
+com2sec
+  コミュニティストリングを指定し、それに対してセキュリティの名前をつけ
+  ます。アクセスを許可するネットワークの範囲も指定します。GLogger では、
+  コミュニティストリングに public を使いますが、変更もできます。アクセ
+  スを許可するネットワークは GLogger からアクセスできるように指定します。
+  なるべく GLogger 以外からアクセスできないようにすることをお勧めします。
+
+group
+  グループ名を付けて、セキュリティ名を所属させて、このグループに対して
+  セキュリティモデル(SNMP のバージョン)を指定します。GLogger のために v1 
+  が見えるようにします。現 GLogger のバージョンでは SNMP のバージョンを
+  指定することができません。
+
+view
+  MIB ツリーの中で、公開する subtree を指定し、それに対して名前をつけます。
+  subtree が .1 ならば MIB すべてを公開します。
+
+access
+  view で決めた名前を read できるように指定します。
+
+
+以下は、glogger 向けに設定した例です。
+
+    com2sec gloggerUser  localhost             public
+    com2sec gloggerUser  192.168.1.0/24        public
+    group   gloggerGroup  v1              gloggerUser
+    group   gloggerGroup  v2c             gloggerUser
+    view    gloggerView         included    .1        80
+    access  gloggerGroup ""  any    noauth  exact  gloggerView none none
+    disk /raid
+
+以上の設定で、localhost と 192.168.1.0/24 から、コミュニティストリング 
+public で、SNMPv1 と SNMPv2c によるアクセスを許可し、/raid ディレクト
+リがあるパーティションの情報が見えるようにします。
+
+glogger で観測する対象の各ホストに設定し、それぞれのホストで snmpd を
+起動します。
+
+  # /etc/init.d/snmpd start
+
+SNMP エージェント機能のあるスイッチなどは、それぞれ設定方法は異なりま
+すが、同様にアクセスできるように設定します。各スイッチのマニュアルを参
+照して設定してください。
+
+========================================================================
+* snmpwalk で確認
+
+GLogger を動かすホストで、snmpwalk コマンドを実行し、対象の SNMP マネージャ
+から応答があるかどうかと、取得する項目の OID を調べます。
+
+以下は、localhost に対して、SNMPv1 を使用し、コミュニティストリング 
+public でアクセスし、全ての項目を見る場合の snmpwalk の例です。
+
+  $ snmpwalk -v 1 -c public localhost .1
+
+以下は、interfaces の subtree だけを見る例です。
+
+  $ snmpwalk -v 1 -c public localhost interfaces
+
+応答が無い場合は、以下の理由が考えられます。
+
+  - SNMP エージェントの設定が間違っている。
+  - UDP のポート 161 番(エージェント側)が通っていない。
+
+========================================================================
+* GLogger で取得する OID を探す
+
+net-snmp ならば、以下のコマンドで出力される OID の中から探します。
+
+  $ snmpwalk -Ou -c public localhost .1
+
+現 GLogger のバージョンでは、32 bit カウンタ値(Counter32:)の応答、
+または整数(INTEGER:)の応答、またはロードアベレージ(laEntry.laLoad)、
+または uptime(system.sysUpTime)が指定できます。
+
+ネットワークの RX, TX を取得する方法は以下の通りです。
+
+interfaces.ifTable.ifEntry.ifDescr.1 = STRING: lo
+interfaces.ifTable.ifEntry.ifDescr.2 = STRING: eth0
+interfaces.ifTable.ifEntry.ifDescr.3 = STRING: eth1
+
+以上のような項目を snmpwalk コマンドで探して、ネットワークインターフェー
+スを判断し、番号を覚えておきます。
+
+この例の場合で、eth0 について記録することにします。
+
+eth0 の RX 
+  interfaces.ifTable.ifEntry.ifInOctets.2 = Counter32: 3306626932
+eth0 の TX
+  interfaces.ifTable.ifEntry.ifOutOctets.2 = Counter32: 2454169824
+
+以上の項目を探して、OID を覚えておきます。
+この OID を GLogger の設定ファイルに記述することになります。
+
+以下は、1分平均のロードアベレージに関する OID の例です。
+  enterprises.ucdavis.laTable.laEntry.laLoad.1
+
+以下は、ディスク使用量に関する OID の例です。
+  enterprises.ucdavis.dskTable.dskEntry.dskUsed.1
+
+以下は、ディスク空き容量に関する OID の例です。
+  enterprises.ucdavis.dskTable.dskEntry.dskAvail.1
+
+また、system.sysUpTime.0 を GLogger で指定すると、GMonitor で時間間隔の
+補正をすることもできます。
+
+snmpget や GLogger には、OID を全て指定しなくても良く、途中から最後まで
+を指定しても問題ありません。
+
+例えば、
+  interfaces.ifTable.ifEntry.ifInOctets.2
+は、
+  ifInOctets.2
+と同等です。
+(つまり snmpgwalk コマンドを実行する場合に、-Ou オプションは必要ありません)
+(略さない OID が知りたい場合は -Ou を付けると簡単です)
+
+snmpget コマンドに OID を指定し、単独でアクセスできるか確認できます。
+
+  $ snmpget -v 1 -c public localhost ifInOctets.2
+  IF-MIB::ifInOctets.2 = Counter32: 3310999000
+
+以上の確認を、観測対象すべての SNMP エージェントに対しておこなってください。
+
+========================================================================
+* GLogger のインストール
+
+以下の手順でインストールできます。
+
+  $ ./configure [オプション]
+  $ make
+  $ make install
+
+glogger, glogdump コマンドと、起動スクリプトの glogd, glogd-func が 
+$(prefix)/bin にインストールされます。$(prefix)/man にマニュアルがイン
+ストールされます。
+
+configure には以下のオプションを指定できます。
+
+・--prefix=ディレクトリ
+  
+  インストール先のディレクトリを指定します。このオプションを省略した場
+  合は /usr/local ディレクトリの下にインストールします。
+  このオプションは省略可能です。
+
+・--with-confdir=ディレクトリ
+
+  glogger の設定ファイルを置くディレクトリを指定します。このオプション
+  を省略した場合は /etc/glogger ディレクトリの下に設定ファイルを置きま
+  す。
+  このオプションは省略可能です。
+
+・--enable-printtime
+  
+  動作タイミングの時刻を表示するようになります。
+
+・--enable-hook_snmp_free_pdu
+
+  snmp_free_pdu() を実行されないようにし、snmpライブラリがリクエスト用に
+  確保したメモリを再利用するようになります。
+  リクエストにかかる時間が少し短くなります。
+
+・--with-dlopen=libnetsnmp.so(またはlibsnmp.so)までのパス
+
+  --enable-hook_snmp_free_pdu を指定したときは、snmp_free_pdu() を使わずに
+  自前でメモリを解放しています。このオプションを指定すると、オリジナルの
+  snmp_free_pdu() を呼んでメモリを解放するようになります。
+  しかし libsnmp.so が 2度読み込まれることになってしまいます。
+
+環境変数 CPPFLAGS と LDFLAGS を指定して、net-snmp をインストールしたディ
+レクトリを指定することもできます。
+(glogger は一般ユーザ権限だけでも、インストール、実行ができます)
+
+configure 実行例
+$ env CPPFLAGS='-I/home/foo/netsnmp/include' \
+      LDFLAGS='-L/home/foo/netsnmp/lib -Wl,-rpath,/home/foo/netsnmp/lib' \
+      ./configure --prefix=/home/foo --enable-printtime \
+      --enable-hook_snmp_free_pdu \
+      --with-dlopen=/home/foo/netsnmp/lib/libsnmp.so
+
+========================================================================
+* 設定ファイル作成
+
+sample.conf と glogger.conf のマニュアル(man glogger.conf)を参考に設定
+ファイルを記述します。上述の snmpwalk コマンドを使って探した OID を指
+定します。OID のニックネームには、区別しやすい名前をつけることをお勧め
+します。
+
+設定ファイルの記述が正しいかどうかを、以下のコマンドで確認します。
+
+  $ glogger -checkconf -config [設定ファイル]
+
+出力先ディレクトリはあらかじめ作成しておいてください。現バージョンでは、
+ディレクトリを自動で作成しません。
+
+========================================================================
+* 手動で動作確認
+
+編集した設定ファイルを指定して起動します。
+
+  $ glogger -config [設定ファイル]
+
+Ctrl+c で停止します。
+
+SNMP の応答が返ってこない場合は、snmpget などで確認し、SNMP エージェン
+トの設定を見直してください。ファイルの出力に失敗する場合は、ディレクト
+リを作成してあるか、またはパーミッションを見直してください。
+
+この設定でエラーがなければ、デーモン起動させることもできます。
+
+========================================================================
+* デーモン起動方法
+
+glogd ファイルを参考に起動スクリプトを作成します。
+例えば Red Hat Linux ならば /etc/init.d 以下へ配置します。
+
+progname=glogd
+とした場合は、設定ファイルは、glogger の設定ファイルを置くディレクトリに、
+「glogd.conf」を作成します。
+
+sudo="sudo -u nobody"
+の項目には、どのユーザ権限で GLogger を実行するかを記述してください。
+この場合は、nobody ユーザ権限でファイルを出力します。
+出力先ディレクトリのパーミッションに気をつけてください。
+一般ユーザ権限で、このスクリプトを手動で実行する場合は、この項目をコメント
+アウトして使ってください。
+
+マシン起動時に glogd スクリプトを使って glogger を起動するようにする例
+# /sbin/chkconfig --add glogd
+
+起動する場合
+# /etc/init.d/glogd start
+
+停止する場合
+# /etc/init.d/glogd stop
+
+再起動する場合
+# /etc/init.d/glogd restart
+
+========================================================================
+* GMonitor 起動方法
+
+JRE 1.4 以降が必要です。
+gmonitor3.jar を用意します。以下のコマンドで起動できます。
+
+  $ jar -jar gmonitor3.jar
+
+Windows の場合は、gmonitor3.jar をダブルクリックします。
+
+GMonitor 起動後、AutoUpdate にチェックを入れて、glogger からの出力先ディ
+レクトリを指定するか、Open Files でファイルを指定すると、グラフが表示
+されます。
+
+========================================================================
+* glogdump コマンドについて
+
+glogdump は glogger が出力したログファイルを、テキスト形式で読めるよう
+に変換します。glogger で設定した内容と、各時刻に取得した値がわかります。
+
+使用例は以下の通りです。
+
+  $ glogdump [glogger output file] | more

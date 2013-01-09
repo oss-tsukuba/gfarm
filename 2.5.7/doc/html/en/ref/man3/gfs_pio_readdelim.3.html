@@ -1,0 +1,450 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_pio_readdelim</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-PIO-READDELIM.3"
+></A
+>gfs_pio_readdelim</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_pio_readdelim&nbsp;--&nbsp;read one record</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_pio_readdelim</TT
+></CODE
+>(GFS_File <TT
+CLASS="PARAMETER"
+><I
+>f</I
+></TT
+>, char **<TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>, size_t *<TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+>, size_t *<TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>, char *<TT
+CLASS="PARAMETER"
+><I
+>delimiter</I
+></TT
+>, size_t <TT
+CLASS="PARAMETER"
+><I
+>delimlen</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_pio_readdelim()</TT
+> works like 
+<TT
+CLASS="FUNCTION"
+>gfs_pio_readline()</TT
+>, except a delimiter of
+input records is not always newline, and can be specified.
+
+This function reads one record from
+the file specified by the parameter <TT
+CLASS="PARAMETER"
+><I
+>gf</I
+></TT
+>,
+by using the parameter <TT
+CLASS="PARAMETER"
+><I
+>delimiter</I
+></TT
+>
+as the delimiter of the input records.
+You can include '\0' character in the  <TT
+CLASS="PARAMETER"
+><I
+>delimiter</I
+></TT
+>,
+So, you have to specify the length of the <TT
+CLASS="PARAMETER"
+><I
+>delimiter</I
+></TT
+>
+by the parameter <TT
+CLASS="PARAMETER"
+><I
+>delimlen</I
+></TT
+>.
+If parameter <TT
+CLASS="PARAMETER"
+><I
+>delimiter</I
+></TT
+> is NULL,
+this function reads entire file as one record.
+Otherwise, and if the parameter <TT
+CLASS="PARAMETER"
+><I
+>delimlen</I
+></TT
+> is 0,
+this function treats two or more consecutive empty lines (/\n\n+/ in
+a regular expression) as the input delimiter. This feature is derived
+from INPUT_RECORD_SEPARATOR in perl language.</P
+><P
+>Parameter <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>
+specifies an address of a pointer variable initialzed by NULL
+at first.
+<TT
+CLASS="FUNCTION"
+>gfs_pio_readdelim()</TT
+> allocates a buffer for
+I/O dynamically, and stores the address of the buffer to this
+variable pointed by <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>.
+Parameter <TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+> specifies an address of
+a size_t variable initialized by 0.
+This size_t variable is used to record the size of the buffer.
+Or, you can specify a buffer allocated by malloc(3) in the
+variable pointed by the parameter <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+>.
+In this case, you have to specify the size of the allocated
+buffer by the parameter <TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+>.
+If the length of the record exceeds the size of the buffer, 
+the buffer will be automatically realloc(3)ed, and the variable
+pointed by <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+> and 
+<TT
+CLASS="PARAMETER"
+><I
+>sizep</I
+></TT
+> will be updated respectively.
+
+Note that you are responsible to free(3) this buffer.</P
+><P
+>This function returns the length of the record to a variable
+pointed by the parameter <TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>.
+This length includes the length of the record delimiter.</P
+><P
+>This function doesn't remove the delimiter at the end of
+records.
+Also, despite that you can use the value returned by the
+variable pointed by <TT
+CLASS="PARAMETER"
+><I
+>lenp</I
+></TT
+>,
+this function always appends \0' character at the end of
+records.</P
+><P
+>If the file reaches its end, the length of the result record becomes 0.</P
+><P
+>gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1)
+is equivalent to <TT
+CLASS="FUNCTION"
+>gfs_pio_readline()</TT
+> function.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+><P
+>Note that you need to free(3) the buffer pointed by the
+parameter <TT
+CLASS="PARAMETER"
+><I
+>bufp</I
+></TT
+></P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN79"
+></A
+><P
+><B
+>Example 1. Example of <TT
+CLASS="FUNCTION"
+>gfs_pio_readdelim</TT
+> function</B
+></P
+><P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;stdio.h&#62;
+#include &#60;stdlib.h&#62;
+#include &#60;string.h&#62;
+#include &#60;gfarm/gfarm.h&#62;
+
+int
+main(int argc, char **argv)
+{
+	char *e;
+	GFS_File gf;
+	size_t bufsize = 0, delimlen = 1, len;
+	char *buffer = NULL, *delim = "\n";
+
+	e = gfarm_initialize(&#38;argc, &#38;argv);
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	while ((c = getopt(argc, argv, "d:D")) != -1) {
+		switch (c) {
+		case 'd':
+			delim = optarg;
+			delimlen = strlen(optarg);
+			break;
+		case 'D':
+			delim = NULL;
+			delimlen = 0;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "invalid option: %c\n", c);
+			return (EXIT_FAILURE);
+		}
+	}
+	if (optind &#62;= argc) {
+		fprintf(stderr, "missing gfarm filename\n");
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_open(argv[optind], GFARM_FILE_RDONLY, &#38;gf);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[optind], e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_set_view_global(gf, 0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_set_view_global: %s\n",
+		    argv[optind], e);
+		return (EXIT_FAILURE);
+	}
+
+	while ((e = gfs_pio_readdelim(gf, &#38;buffer, &#38;bufsize, &#38;len,
+	    delim, delimlen)) == NULL &#38;&#38; len &#62; 0) {
+		printf("&#60;%6d/%6d &#62;%s", len, bufsize, buffer);
+	}
+	if (buffer != NULL)
+		free(buffer);
+	if (e != NULL) {
+		fprintf(stderr, "ERROR: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_close(gf);
+	if (e != NULL) {
+		fprintf(stderr, "gfs_pio_close: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	return (EXIT_SUCCESS);
+}</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getline</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_gets</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readline</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

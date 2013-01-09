@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>Grid Datafarm:  Gfarm over SMB over SSH [Japanese]</TITLE>
+<META http-equiv="Content-Type" content="text/html; charset=euc-jp">
+<META content="document" name="resource-type">
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></A>
+<A href="../../index.html">文書集</A> &gt;
+<A href="index.html">ユーザーズマニュアル</A> &gt;
+SSH のポート転送で Samba にアクセス
+
+<H1>SSH のポート転送を用いて Samba にアクセスする</H1>
+
+<H2>1. 概要</H2>
+
+SSH サーバから見えるネットワーク上に Samba サーバが存在し，その SSH サーバに SSH でアクセスできるならば，その Samba サーバにアクセスすることができます．
+つまり，Windows マシンから，通常ではアクセスできない環境からでも，VPN を用いずに SSH を用いて，防火壁やインターネットを越えて，Windows のファイル共有サービスや Samba にアクセスすることができます．
+このために SSH のポート転送の機能を用います．手順は簡単です．
+<H3>構成例１</H3>
+<UL>
+<li>Windows クライアント : 勤務先，モバイルなど
+<li>SSH サーバ : 自宅 BB ルータポート転送経由 (or DMZ 環境)
+<li>Windows ファイル共有 : 自宅内プライベート
+</UL>
+<P>
+たとえば上記の構成であれば，出先から自宅の Windows のファイルにアクセスできます．
+<P>
+これを応用した例として，外部からはアクセスできない Gfarm の環境に，Samba と SSH サーバを置くことで，外部からアクセスすることもできます．<BR>
+Samba を経由して Gfarm にアクセスする方法は，
+<UL>
+<LI> <A HREF="samba-hook.html">システムコールフックを用いて</A> (まずはこちら)
+<LI> <A HREF="samba-gfarmfs.html">GfarmFS-FUSE を用いて</A>
+</UL>
+をご覧ください．
+
+<H3>構成例２</H3>
+<UL>
+<li>Windows クライアント : インターネット越し，自宅 BB ルータ内, モバイルなど
+<li>SSH サーバ : 会社(内外)ゲートウェイ
+<li>Samba サーバ : 会社内プライベート
+<li>Gfarm : 会社内プライベート
+</UL>
+
+<H3>構成例３</H3>
+<UL>
+<li>Windows クライアント : 会社防火壁内，インターネットはプロキシサーバ必須
+<li>社内プロキシ : SOCKS/HTTP プロキシ (プロキシを使って外部へ SSH)
+<li>SSH サーバ : 他社ゲートウェイ
+<li>Samba サーバ : 他社内プライベート
+<li>Gfarm : 他社内プライベート
+</UL>
+
+
+以上のような場合でも，インターネットを越えて，Samba や Gfarm にアクセスすることができます．<BR>
+他の構成でも SSH を駆使してアクセスできる経路ならば応用できると思います．
+<P>
+以下では，(Gfarm とは関係なく) Samba や Windows マシンに SSH でポート転送する方法をご紹介します．
+
+<H2>2. ソフトウエアの準備</H2>
+<UL>
+<LI>Windows マシン (2000, XP, Vista で動作確認) Administrator 権限が必要
+<LI>Windows 用 SSH クライアント (ポート転送用) 以下のどれかを使用 (なるべく最新版)
+  <UL>
+  <LI>PuTTY: <A HREF="http://www.chiark.greenend.org.uk/~sgtatham/putty/">http://www.chiark.greenend.org.uk/~sgtatham/putty/</A>
+  <LI>PuTTY 日本語対応: <A HREF="http://hp.vector.co.jp/authors/VA024651/">http://hp.vector.co.jp/authors/VA024651/</A>
+  <LI>Cygwin OpenSSH: <A HREF="http://sourceware.org/cygwin/">http://sourceware.org/cygwin/</A>
+  <LI>PortForwarder: <A HREF="http://www.fuji-climb.org/pf/">http://www.fuji-climb.org/pf/</A>
+  </UL>
+</UL>
+
+<H2>3. 仮想ネットワークインターフェースのインストール</H2>
+
+現在使用しているネットワークインターフェースとは別に，転送元となるためのネットワークインターフェースを用意します．物理的なインターフェースを増設する必要はなく，仮想的なインターフェースでも良いので，以下の方法を紹介します．
+
+<OL>
+<LI>コントロールパネルを開きます．
+<LI>ハードウエアの追加を開きます．
+<LI>「次へ」を押します．
+<LI>「はい、ハードウエアを接続しています」を選択して次へいきます．
+<LI>一番下の「新しいハードウエアの追加」を選択して次へいきます．
+<LI>「一覧から選択したハードウエアをインストールする(詳細)」を選択して次へいきます．
+<LI>「ネットワーク アダプタ」を選択して次へいきます．
+<LI>「Microsoft」と「Microsoft Loopback Adaptor」を選択して次へいきます．
+<LI>インストールが完了するまで続行します．
+<LI>インストールが終わったら，コントロールパネルからネットワーク接続を開きます．
+<LI>デバイス名が「Microsoft Loopback Adaptor」であるアイコンを探します．
+<LI># このアイコンの名前を「for SMB over SSH」などわかりやすい名前にしておくとよいでしょう．
+<LI>プロパティを開き，全般のタブで，「Microsoft ネットワーク用ファイルとプリンタ共有」のチェックを外します．
+<LI>「インターネットプロトコル(TCP/IP)」のチェックは入れたまま，選択し，プロパティを押します．
+<LI>他のマシンと重ならない IP アドレスとサブネットマスクを入力します．
+プライベートアドレスや LINKLOCAL アドレス (169.254.*.*) のアドレス範囲を使うことになると思います．
+今後は 169.254.0.1/255.255.0.0 と設定した場合の例として説明します.
+ゲートウェイ，DNS の項目を入力する必要はありません．
+<LI>「詳細設定」を開きます. 「WINS」のタブで「NetBIOS over TCP/IP を無効にする」を選択します.
+<LI>それぞれ OK で決定して閉じます.
+</OL>
+
+<SMALL>
+<UL>
+<LI>通常利用しているネットワークインターフェースのポート 139/TCP (Vistaの場合 445/TCP)は使用されているので，この方法を利用して，139(445)番を確保します．
+<LI>「詳細設定」→「IP 設定」タブ→「IP アドレス」で，さらに IP アドレスを追加できるので，それらも転送元にすることにより，複数拠点の Samba を同時に使うこともできます.
+<LI>%windir%\system32\drivers\etc\hosts ファイルを使って IP アドレスと好きな名前を対応させておくと便利です．
+</UL>
+</SMALL>
+
+
+<H2>4. ポート転送の設定</H2>
+
+SSH のローカルフォワード機能を使い，仮想ネットワークインターフェースのポート 139(Vistaの場合445)番を，接続先の SSH サーバから見えるマシンのアドレスとそのポート 139(Vistaの場合445)番に転送します．以下、139番ポートで説明していますが、Vistaの場合は全て445番に読み替えてください．
+<P>
+<SMALL>
+<UL>
+<LI>多段に SSH 接続をしてポートを転送する場合は，途中のポートは 139 番以外でも大丈夫ですが，最終的な出口と入り口は，ともに 139 番である必要があります．
+<LI>ポートを転送するときにポート番号を変換することで，139 番以外で Samba を動かすこともできます．
+</UL>
+</SMALL>
+<P>
+以降では，以下の構成を仮定して説明します．
+<UL>
+<LI>上記で設定したクライアント側の仮想ネットワークインターフェース: 「169.254.0.1」
+<LI>SSH サーバのホスト名: sshserver.example.com
+<LI>SSH サーバを経由してから見える Samba マシンの IP アドレス: 「192.168.1.234」
+  <UL>
+  <LI>SSH サーバと Samba マシンが同一の場合は「127.0.0.1」でも可能です．
+  <LI>sambaserv.example.com のような名前で指定も可能です．
+  </UL>
+</UL>
+
+<H3>PuTTY (日本語版) の場合</H3>
+
+<OL>
+<LI>sshserver.example.com への SSH の設定(セッション)をつくって保存し，接続できることを確認しておきます．
+<LI>PuTTY を起動しなおして，そのセッションをもう一度読み込みます．
+<LI>(「接続」→「SSH」→)「トンネル」を選択します．
+<LI>源ポートに「169.254.0.1:139」(狭いですが)，送り先に「192.168.1.234:139」と入力し，「ローカル」にチェックが入っていることを確認して，追加を押します．
+<LI>セッションを保存します．
+</OL>
+
+<H3>Cygwin OpenSSH または PortForwarder の場合</H3>
+
+Cygwin ならば .ssh/config に，PortForwarder ならば設定ファイル(.txt) に，
+以下のような設定を追加します．
+<P>
+例
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+Host sshServerForSamba
+HostName sshserver.example.com
+User takuya
+Port 22
+LocalForward 169.254.0.1:139 192.168.1.234:139
+</PRE></TD></TR></TBODY></TABLE>
+
+
+<H2>5. 接続</H2>
+<OL>
+<LI>上記で設定した SSH クライアントを用いて SSH サーバに接続します．
+<LI>エクスプローラを開きます．
+<LI>アドレスバーに「\\169.254.0.1」と入力します．
+<LI># 繋がらない場合は，SSH クライアントを最新版にしてみてください．
+<LI>パスワードを聞かれる場合は，転送先の Windows または Samba 用のユーザ名とパスワード入力します．
+<LI>共有フォルダをネットワークドライブに割り当てることもできます．
+</OL>
+
+<H2>6. 切断</H2>
+
+<OL>
+<LI>マイコンピュータを右クリックし，「ネットワークドライブの切断」を開きます．
+<LI>該当するドライブがあれば選択して OK で切断します．
+<LI>切断後，または上記で該当するドライブが無い場合には，使用していた SSH クライアントを終了します．
+</OL>
+
+<H2>7. その他</H2>
+
+<UL>
+<LI>SSH を用いて，TCP のみを転送しているので，VPN と比べて手軽で安全です．
+<LI>通信性能は，SSH の通信性能に依存します．暗号モードや圧縮モードも影響します．
+</UL>
+
+<H2>8. Linux の場合(参考／比較)</H2>
+
+Linux の場合は，以下の手段で，手元のクライアントから直接アクセスできない Gfarm のディレクトリ以下のファイルに直接アクセスできます．さらに簡単です．
+<UL>
+<LI>手元では <A HREF="http://fuse.sourceforge.net/sshfs.html">SSHFS-FUSE</A> か <A HREF="http://shfs.sourceforge.net/">SHFS</A> を用いて，SSH 越しで以下のサーバのディレクトリをマウント
+<LI>Gfarm にアクセスできる SSH サーバマシン上で <A HREF="http://datafarm.apgrid.org/software/gfarmfs-fuse.ja.html">GfarmFS-FUSE</A> を用いて Gfarm をマウント
+</UL>
+
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Grid Datafarm</A></ADDRESS></BODY></HTML>

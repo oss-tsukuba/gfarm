@@ -1,0 +1,59 @@
+#
+# See slapd.conf(5) for details on configuration options.
+# This file should NOT be world readable.
+#
+include		@config_gfarm_openldap_etc@/schema/core.schema
+include		@config_gfarm_ldap_schema@
+
+pidfile		@config_gfarm_backend_pid_file@
+argsfile	@config_gfarm_run_dir@/gfarm-slapd.args
+
+# disable anonymous access
+disallow bind_anon
+require LDAPv3 authc
+
+# unlimit search result
+sizelimit unlimited
+
+# disable syslog
+loglevel 0
+
+@config_gfarm_slapd_config_hook@
+
+#######################################################################
+# database definitions
+#######################################################################
+
+database	@config_gfarm_slapd_database@
+
+suffix		"@config_gfarm_ldap_base_dn@"
+rootdn		"@config_gfarm_backend_admin_user@"
+rootpw		@config_gfarm_backend_admin_password@
+
+directory	@config_gfarm_backend_data_dir@
+
+access to dn="@config_gfarm_backend_user@" attrs=userPassword
+	by * auth
+
+access to dn.children="@config_gfarm_ldap_base_dn@"
+	by users write
+
+# to allow to "add"/"delete" entries (not only "modify")
+access to dn="@config_gfarm_ldap_base_dn@" attrs=children
+	by users write
+
+# to make the gfarm_ldap_sanity() function happy
+access to dn="@config_gfarm_ldap_base_dn@"
+	by users read
+
+# Indices to maintain
+index	objectClass	eq
+
+index	hostname	pres,eq
+index	hostaliases	pres,eq
+index	username	pres,eq
+index	groupname	pres,eq
+index	groupusers	pres,eq
+index	inumber		pres,eq
+index	entryName	pres,eq
+index	attrname	pres,eq

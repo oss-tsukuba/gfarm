@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# $FreeBSD: ports/net/openldap22-server/files/slapd.sh,v 1.14 2004/08/15 18:18:46 eik Exp $
+#
+
+# PROVIDE: gfarm-slapd
+# REQUIRE: NETWORKING SERVERS
+# BEFORE: securelevel
+# KEYWORD: FreeBSD shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable gfarm-slapd:
+#
+#gfarm_slapd_enable="YES"
+#gfarm_slapd_flags=''
+#
+# See slapd(8) for more flags
+#
+if [ -f /usr/local/etc/rc.subr ]; then
+	. /usr/local/etc/rc.subr
+elif [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+else
+	echo "$0: abort: rc.subr not found"
+	exit 2
+fi
+
+CONF="@config_gfarm_slapd_config@"
+PORT=@config_gfarm_backend_port@
+FILE="gfarm-slapd"
+
+name="gfarm_slapd"
+rcvar=`set_rcvar`
+
+command="@config_gfarm_openldap_libexec@/slapd"
+pidfile="@config_gfarm_backend_pid_file@"
+required_dirs="@config_gfarm_backend_data_dir@"
+required_files="$CONF"
+# add more flags through ${${name}_flags}
+command_args="-f $CONF -h ldap://:$PORT/"
+
+# read settings, set defaults
+load_rc_config ${FILE}
+: ${gfarm_slapd_enable="NO"}
+if [ -n "${gfarm_slapd_args+set}" ]; then
+  warn "gfarm_slapd_args is deprecated, use gfarm_slapd_flags"
+  : ${gfarm_slapd_flags="$gfarm_slapd_args"}
+else
+  : ${gfarm_slapd_flags=""}
+fi
+
+run_rc_command "$1"

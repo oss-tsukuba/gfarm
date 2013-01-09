@@ -1,0 +1,48 @@
+SRC	= glogger.8 glogdump.8 glogger.conf.5 glogger_logdata.5
+RM      = rm -f
+
+top_objdir = @top_objdir@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+
+include ../../config.mk
+include ./docdir.mk
+
+all: html man
+
+html:
+	for i in / $(SRC); do \
+		case $$i in /) continue;; esac; \
+		$(MAKE) srcsubst=$${i}.docbook \
+		htmlsubst=$${i}.html $${i}.html; \
+	done
+
+man:
+	for i in / $(SRC); do \
+		case $$i in /) continue;; esac; \
+		$(MAKE) srcsubst=$${i}.docbook \
+		mansubst=$${i} $${i}; \
+	done
+
+$(htmlsubst): $(srcsubst)
+	jw -b html -u $(srcsubst)
+
+$(mansubst): $(srcsubst)
+	jw -b man $(srcsubst)
+
+install:
+	@for i in / $(SRC); do \
+	  case $$i in /) continue;; esac; \
+	  suffix=`expr $$i : '.*\.\([^.]*\)$$'`; \
+	  ( set -x; $(INSTALL_DATA) $${i} $(mandir)/$(docdir)man$$suffix/$$i ); \
+        done
+	@for i in / $(SRC); do \
+	  case $$i in /) continue;; esac; \
+	  ( set -x; $(INSTALL_DATA) $${i}.html $(htmldir)/$(docdir)$${i}.html ); \
+	done
+
+clean:
+	$(RM) *.refs *.links *~
+
+veryclean:
+	$(RM) *.refs *.links *~ *.html $(SRC)

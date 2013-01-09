@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><title>Grid Datafarm: Gfarm hook + Samba [Japanese]</title>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-jp">
+<meta content="document" name="resource-type"></head>
+<body>
+<a href="http://datafarm.apgrid.org/">
+<img alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align="right" border="0"></a> 
+<A href="../../index.html">文書集</a> &gt;
+<a href="index.html">ユーザーズマニュアル</a> &gt;
+samba/hook
+
+
+<h1>Samba を使って gfarm ファイルシステムにアクセスする
+-- システムコールフックを用いる方法</h1>
+<A href="../../en/user/samba-hook.html">English</A> | 日本語 
+
+<h2>1. 概要</h2>
+
+  <p>
+  この文書では，Gfarm システムコールフックライブラリをプリロードした
+  うえで Samba を起動して  Windows から Gfarm ファイルにアクセスする
+  ための設定方法を説明しています．
+
+  <p>
+  別の方法:
+  <a href="samba-gfarmfs.html">GfarmFS-FUSE + Samba</a><br>
+  別の方法として，FUSE を使って Samba を利用する方法もあります．
+  しかし，フックライブラリを用いる方が，より設定／利用手順が簡単ですので，
+  こちらの方法をお勧めします．
+
+<h2>2. 利用環境の前提条件</h2>
+   
+<ul>
+  <li>Samba サーバホスト
+  <ul>
+    <li>Samba のバージョン 3 以降を利用すること．(必須)</li>
+    <li>Gfarm クライアントが利用できること．(必須)</li>
+    <li>libgfs_hook が利用できること．(必須)<br>
+      具体的な手順については INSTALL.RPM.ja の
+      「● クライアントノードの設定」を参照してください．</li>
+    <li>smbd を実行するホストが Gfarm ファイルシステムノードではないこと(推奨)
+      <br>
+
+      smbd を実行するホストがファイルシステムノードだと，
+      新規作成するファイルは，すべてそのホストに作成されてしまいます．</li>
+
+    <li>認証方法としては sharedsecret を使い，全ての filesystem node と
+      smbd を実行するホストの間で，各ユーザがホームディレクトリを NFS
+      などの手段で共有していること(推奨)<br>
+
+      認証方法として sharedsecret ではなく GSI 認証を使う場合，
+      smbd を実行するホストで，各ユーザが あらかじめ grid-proxy-init
+      を実行しておく必要があります．また，GSI 鍵の有効期限が切れるたび
+      に grid-proxy-init を再実行する必要があります．
+      <br>
+
+      ホームディレクトリを共有していない場合は，sharedsecret よりも
+      GSI 認証を使う方がむしろ簡単です．
+      ホームディレクトリを共有していない環境で sharedsecret を使う場合は，
+      各ユーザが smbd を実行するホストで「gfkey -c」を実行し，
+      ~/.gfarm_shared_key を，全てのファイルシステムノードの
+      ホームディレクトリにコピーする必要があります．
+      また、sharedsecret 鍵の有効期限が切れるたびに，この作業を
+      繰り返す必要があります．
+      </li>
+  </ul>
+</ul>
+
+  関連ソフトウェア
+  <ul>
+    <li>Gfarm: <a href="http://datafarm.apgrid.org/software/">
+	http://datafarm.apgrid.org/software/</a></li>
+    <li>Samba: <a href="http://www.samba.gr.jp/">
+	http://www.samba.gr.jp/</a></li>
+  </ul>
+
+<h2>3. LDAP サーバの設定</h2>
+
+  <h3>3.1 日本語ファイル名のための設定</h3>
+    <p>/etc/gfarm-ldap/gfarm.schema の 'pathname' に関する部分が，
+       以下のようになっていることを確認します．以下のようになっていない場合は，
+       修正してLDAP サーバを再起動してください．
+       Gfarm のバージョン 1.1.1 以前を使っていた(いる)場合は，
+       下記の設定になっていません．</p>
+
+   <p><table bgcolor="#E0FFFF"><tbody><tr><td>
+       <pre> attributetype ( 1.3.6.1.4.1.13122.2.1.2924.100.2.5 NAME 'pathname'
+        EQUALITY caseExactMatch
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE)</pre>
+       </td></tr></tbody></table>
+     # 修正する場合は，この 3行のうち，下2行を変更します．
+
+<h2>4. Samba サーバの設定</h2>
+
+  <h3>4.1 smb.conf の変更</h3>
+   
+    <h4>4.1.1 [global] セクションへの追加項目</h4>
+	
+      <h5>4.1.1.1 日本語ファイル名のための設定</h5>
+
+        <p>Linux 側ではファイル名の文字コードとして UTF-8 を使うようにし，
+        それを Windows から見えるように設定します．</p>
+
+	<p>Samba 3 系のための設定
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+dos charset = CP932
+unix charset = UTF-8
+display charset = UTF-8</pre></td></tr></tbody></table>
+
+    <h5>4.1.1.2 kernel change notify を無効にする (Samba 3 系の場合)</h5>
+    Gfarm のシステムコールフックライブラリが現在サポートしていない，fcntl(2) システムコールの F_NOTIFY 機能を，samba が利用しないようにします．
+    <p>
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+kernel change notify = no</pre></td></tr></tbody></table>
+この設定をしないと，Windows クライアントと Samba との接続が切れることがあります(Samba 3.0.10 と 3.0.20 で確認)．
+この設定にすると，更新されたファイルの状態の表示がすぐに更新されなくなります．<br>
+Samba 2 系では，この設定を使うことができないので，この問題を回避できません．
+
+    <h4>4.1.2 Gfarm ファイルの共有を定義するセクションを追加</h4>
+
+      <p>Gfarm ファイルシステムにアクセスするためのセクションを追加します．</p>
+
+      <h5>4.1.2.1 Gfarm ファイルシステム用パラメータ</h5>
+
+	<p>セクション内で以下のパラメータを指定してください．</p>
+
+	<p>デフォルトの設定で Windows クライアントから Gfarm ファイルシステム
+	   にファイルを新規作成あるいはコピーすると，そのファイルの
+	   実体が置かれるファイルシステムノードと同じアーキテクチャを
+	   もつ，実行ファイル(プログラム)として登録されてしまいます．
+	   ほとんどの場合，これは期待される動作と異なりますので，
+	   実行不可能なファイルとして登録するために以下のパラメータを
+	   指定します．
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+create mask = 0644</pre></td></tr></tbody></table>
+
+	<p>デフォルトの設定で，Windows クライアントから Gfarm ファイルシステム
+	   上のファイルを読み書きすると，Gfarm がシステムコールフック
+	   機能をサポートしていないシステムコールを Samba が呼び出します．
+	   これを防ぐために以下のパラメータを指定します．
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+oplocks = no 
+level2 oplocks = no</pre></td></tr></tbody></table>
+
+      <h5>4.1.2.2 例</h5>
+
+        <p>複数ユーザで，Gfarmファイルシステム全体を共有する場合に追加する
+      セクションの例を以下に示します．</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+[gfarm-public]
+   comment = Gfarm Public Stuff
+   path = /gfarm
+   public = yes
+   writable = yes
+   printable = no
+   create mask = 0644
+   oplocks = no
+   level2 oplocks = no</pre></td></tr></tbody></table>
+	
+<h2>5. Samba の起動方法</h2>
+
+  <h3>5.1 起動スクリプトの変更</h3>
+
+     <p>RedHat Linux での例を用いて説明します．</p>
+
+     <p>smbd の起動処理において，以下の項目を追加・変更します．<br>
+	RedHat Linux の場合，これはスクリプトファイル /etc/init.d/smb
+	の関数 start() で行われています．
+     </p> 
+
+     <h4>5.1.1 ファイル記述子数制限の拡大処理の追加</h4>
+
+       <p>smbd 機能の直前に，以下の行を追加します．</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	m=`ulimit -n`
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi</pre></td></tr></tbody></table>
+
+
+     <h4>5.1.2 smbd 起動行に LD_PRELOAD 環境変数の設定を追加</h4>
+
+       <p>smbd デーモンを起動している行の行の先頭に LD_PRELOAD 環境変数や
+	LD_LIBRARY_PATH 環境変数の設定を追加します．
+	詳しい説明は，付属ドキュメントの README.hook.ja を参照してください．
+
+
+       <p>RedHat Linux を例にとると，</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
+
+       <p>のところを</p>
+
+	<table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBDOPTIONS</pre></td></tr></tbody></table>
+
+	<p>とします．変数 gfarm_prefix，globus_location や globus_flavor
+	の値は，実際に Gfarm や	Globus をインストールしたパスや，
+	Gfarm にリンクしている Globus の flavor 名に合わせて変更してください．
+
+	<p>Globus 関係のパスを追加するためには，まず Globus の共有ライブラリを
+	インストールしておく必要があるので，注意してください．
+	ただし，バイナリ作成時に Globus をリンクしていなければ，Globus
+	関係のパスの追加は不要です．(RedHat Linux 向けバイナリ配布の場合は
+	リンクしていますので，必要です．)
+
+	<p>
+	また，バイナリ作成時に Globus を動的リンクしていなければ，
+	LD_LIBRARY_PATH の追加は不要です．(RedHat Linux 向けバイナリ配布の
+	場合は静的リンクしていますので，実際には省略できます．)
+
+	<p>Linux 以外のOS では "*-not-hiddden.so" の指定は不要です．
+
+   <h3>5.2 追加後の起動スクリプト例</h3>
+
+	<p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+#!/bin/sh
+
+(中略)
+
+start() {
+	KIND="SMB"
+	echo -n $"Starting $KIND services: "
+	m=`ulimit -n`
+	n=$(( $(gfhost -M | wc -l) + 50))
+	if [ -n "$m" -a X"$m" != X"unlimited" -a "$m" -lt $n ]; then
+		ulimit -n $n
+	fi
+	gfarm_prefix=/usr
+	globus_location=/usr/grid
+	globus_flavor=gcc32
+	LD_LIBRARY_PATH="$globus_location/lib" LD_PRELOAD="$globus_location/lib/libglobus_gssapi_gsi_$globus_flavor.so.0 $globus_location/lib/libssl_$globus_flavor.so.0 $gfarm_prefix/lib/libgfs_hook.so.0 /usr/lib/gfarm/libpthread-not-hidden.so /usr/lib/gfarm/libc-not-hidden.so" daemon smbd $SMBOPTIONS
+	RETVAL=$?
+	echo
+	KIND="NMB"
+	echo -n $"Starting $KIND services: "
+	daemon nmbd $NMBDOPTIONS
+	RETVAL2=$?
+	echo
+	[ $RETVAL -eq 0 -a $RETVAL2 -eq 0 ] &amp;&amp; touch /var/lock/subsys/smb || \
+	   RETVAL=1
+	return $RETVAL
+}	
+
+(以下略)</pre></td></tr></tbody></table>
+
+   <h3>5.3 Samba を起動または再起動</h3>
+
+     <p>例えば RedHat Linux では以下を実行します．</p>
+
+     <p><table bgcolor="#E0FFFF"><tbody><tr><td><pre>
+# /etc/init.d/smb [start|restart] </pre></td></tr></tbody></table>
+
+<h2>6. Windows から Sambaへのアクセス</h2>
+
+     <p>Samba での共有に Windows クライアントのネットワークドライブを
+     割りあてます．例えば以下の手順で共有フォルダが表示されます．</p>
+     <ol>    
+     <li>マイネットワークアイコンを右クリック</li>
+     <li>ネットワークドライブの割り当てを左クリック</li>
+     <li> 表示されたダイアログでドライブ名と共有フォルダ名を指定</li>
+     </ol>
+</body>
+</html>
+

@@ -1,0 +1,164 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gmonitor3.1'>
+
+<refentryinfo><date>10 Oct 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gmonitor3</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>snmptool</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gmonitor3</refname>
+<refpurpose>GLogger 3.0 のファイルをグラフで表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gmonitor3</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+GLogger 3.0 で出力した観測データファイルをグラフで表示します。
+JRE 1.4 以降の環境が必要です。
+Linux 上の Java2 SDK 1.4.2 で動作確認しています。
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d [ディレクトリ名]</option></term>
+<listitem>
+<para>
+このディレクトリに対して、AutoUpdate モードで起動します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h [ホスト名]</option></term>
+<listitem>
+<para>
+AutoUpdate オプション指定時に、このホスト名のデータを表示します。
+該当ホスト名が無ければ、無視します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-e [観測事象のニックネーム]</option></term>
+<listitem>
+<para>
+AutoUpdate オプション指定時に、この観測事象のニックネームのデータを表示します。
+GLogger の設定で、OID に対してつけたニックネームです。
+該当ニックネームが無ければ、無視します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u [単位]</option></term>
+<listitem>
+<para>
+この単位で表示します。
+単位には bps, KB, Load が指定できます。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+ヘルプを表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-line</option></term>
+<listitem>
+<para>
+グラフの線を消します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-bar</option></term>
+<listitem>
+<para>
+グラフの棒を消します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-plot</option></term>
+<listitem>
+<para>
+グラフの点を消します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-information</option></term>
+<listitem>
+<para>
+Information 部分を隠します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-style</option></term>
+<listitem>
+<para>
+Graph Style 部分を隠します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-unit</option></term>
+<listitem>
+<para>
+Unit 部分を隠します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-controller</option></term>
+<listitem>
+<para>
+Controller 部分を隠します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>glogger</refentrytitle><manvolnum>8</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>glogger_logdata</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>
+

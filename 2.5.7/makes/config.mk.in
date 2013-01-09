@@ -1,0 +1,140 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
+
+# save default for reference from where installation directory is overridden.
+default_sbindir = @sbindir@
+default_bindir = @bindir@
+default_libdir = @libdir@
+default_libexecdir = @libexecdir@
+default_includedir = @includedir@
+default_exec_includedir = @includedir@
+default_datadir = @datadir@
+default_mandir = @mandir@
+default_docdir = $(default_datadir)/doc/gfarm
+default_htmldir = $(default_docdir)/html
+default_sysconfdir= @sysconfdir@
+default_localedir = @localedir@
+
+sbindir = $(default_sbindir)
+bindir = $(default_bindir)
+libdir = $(default_libdir)
+libexecdir = $(default_libexecdir)
+includedir = $(default_includedir)
+exec_includedir = $(default_exec_includedir)
+datadir = $(default_datadir)
+mandir = $(default_mandir)
+docdir = $(default_docdir)
+htmldir = $(default_htmldir)
+sysconfdir = $(default_sysconfdir)
+localedir = $(default_localedir)
+
+CC = @CC@
+OPTFLAGS = @CFLAGS@
+LEX = @LEX@
+LEXLIB = @LEXLIB@
+YACC = @YACC@
+RANLIB = @RANLIB@
+LIBTOOL = @LIBTOOL@
+# the use of the following operations should honor $(DESTDIR)
+MKDIR_P = @MKDIR_P@
+# We don't use "@INSTALL@" here, since we want absolute pathname 
+# instead of relative pathname for the case that install-sh is selected.
+# XXX this isn't efficient on platforms which have working /usr/bin/install.
+INSTALL = $(top_srcdir)/makes/install-sh -c
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_DOC = sh $(top_builddir)/makes/install-doc
+
+LIBS = @LIBS@ $(pthread_libs)
+
+dynamic_ldflags = @dynamic_ldflags@
+
+largefile_cflags = @largefile_cflags@
+largefile_ldflags = @largefile_ldflags@
+# `getconf LFS_LIBS` is already added to $(LIBS)
+
+# for conditional compilation which depends on _LARGEFILE64_SOURCE API
+largefile64_srcs = @largefile64_srcs@
+largefile64_objs = @largefile64_objs@
+largefile64_cflags = @largefile64_cflags@
+largefile64_targets = @largefile64_targets@
+
+pthread_includes = @pthread_includes@
+pthread_libs = @pthread_libs@
+# for conditional compilation which depends on whether pthread is enabled or not
+pthread_srcs = @pthread_srcs@
+pthread_objs = @pthread_objs@
+pthread_cflags = @pthread_cflags@
+pthread_targets = @pthread_targets@
+
+openssl_includes = @openssl_includes@
+openssl_libs = @openssl_libs@
+
+globus_flavor = @globus_flavor@
+globus_location = @globus_location@
+globus_includes = @globus_includes@
+globus_gssapi_libs = @globus_gssapi_libs@
+# for conditional compilation which depends on whether globus is enabled or not
+globus_srcs = @globus_srcs@
+globus_objs = @globus_objs@
+globus_cflags = @globus_cflags@
+globus_targets = @globus_targets@
+
+# for conditional compilation related to syscall hooking library
+gfshook_srcs = @gfshook_srcs@
+gfshook_objs = @gfshook_objs@
+gfshook_cflags = @gfshook_cflags@
+gfshook_targets = @gfshook_targets@
+
+MPICC = @mpicc@
+# for conditional compilation which depends on whether MPI is enabled or not
+mpi_srcs = @mpi_srcs@
+mpi_objs = @mpi_objs@
+mpi_cflags = @mpi_cflags@
+mpi_targets = @mpi_targets@
+
+readline_includes = @readline_includes@
+readline_libs = @readline_libs@
+
+ldap_includes = @ldap_includes@
+ldap_libs = @ldap_libs@
+# for conditional compilation which depends on whether LDAP is enabled or not
+ldap_srcs = @ldap_srcs@
+ldap_objs = @ldap_objs@
+ldap_cflags = @ldap_cflags@
+ldap_targets = @ldap_targets@
+
+postgresql_includes = @postgresql_includes@
+postgresql_libs = @postgresql_libs@
+# for conditional compilation which depends on whether PostgreSQL is enabled or not
+postgresql_srcs = @postgresql_srcs@
+postgresql_objs = @postgresql_objs@
+postgresql_cflags = @postgresql_cflags@
+postgresql_targets = @postgresql_targets@
+
+# build lib/gfs_hook/sysdep/$(gfs_hook_sysdep_subdir)
+gfs_hook_sysdep_subdir = @gfs_hook_sysdep_subdir@
+
+# build gftool/config-gfarm/sysdep/$(config_gfarm_sysdep_subdir)
+config_gfarm_sysdep_subdir = @config_gfarm_sysdep_subdir@
+
+# build gftool/gfvoms-sync
+gfvoms_sync_targets = @gfvoms_sync_targets@
+
+# private functions
+top_private_dir = @top_private_dir@
+
+# optional function configuration
+optional_config = @optional_config@
+
+# optional functions
+optional_rule = @optional_rule@
+optional_srcs = @optional_srcs@
+optional_objs = @optional_objs@
+optional_cflags = @optional_cflags@
+optional_targets = @optional_targets@
+
+include $(optional_config)
+

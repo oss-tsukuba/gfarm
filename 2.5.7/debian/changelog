@@ -1,0 +1,195 @@
+gfarm (1:1.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 13 Nov 2006 00:00:00 +0900
+
+gfarm (1:1.3.1-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Thu, 27 Jul 2006 12:43:45 +0900
+
+gfarm (1:1.3-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 29 May 2006 17:47:38 +0900
+
+gfarm (1:1.2.9-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 23 Jan 2006 11:27:54 +0900
+
+gfarm (1:1.2-2) unstable; urgency=low
+
+  * New upstream release, version number is still 1.2 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 12 Sep 2005 05:41:27 +0900
+
+gfarm (1:1.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 22 Aug 2005 16:08:00 +0900
+
+gfarm (1:1.1.1-2) unstable; urgency=low
+
+  * changed build environments (Bug#14)
+  * fixed some problems to build package 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Thu,  2 Jun 2005 10:40:48 +0900
+
+gfarm (1:1.1.1-1) unstable; urgency=low
+
+  * New upstream release
+  * added some manpages 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 13 Apr 2005 09:06:42 +0900
+
+gfarm (1:1.1.0-2) unstable; urgency=low
+
+  * fixed invalid dependencies 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 14 Mar 2005 14:52:24 +0900
+
+gfarm (1:1.1.0-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 16 Feb 2005 13:36:17 +0900
+
+gfarm (1:1.0.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Tue, 24 Aug 2004 16:56:30 +0900
+
+gfarm (1:1.0.3.1-1) unstable; urgency=low
+
+  * upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon,  5 Jul 2004 13:49:12 +0900
+
+gfarm (1:1.0.3-1) unstable; urgency=low
+
+  * upstream release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Thu, 13 May 2004 15:54:04 +0900
+
+gfarm (1:1.0.2-1) unstable; urgency=low
+
+  * upstream release version 1.0.1
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 12 Apr 2004 11:26:58 +0900
+
+gfarm (1:1.0.1-1) unstable; urgency=low
+
+  * upstream release version 1.0.1 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri,  5 Dec 2003 12:17:57 +0900
+
+gfarm (1:1.0-1) unstable; urgency=low
+
+  * upstream release version 1.0
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Tue, 25 Nov 2003 13:00:00 +0900
+
+gfarm (1.0b5-1) unstable; urgency=low
+
+  * new beta release
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri,  3 Oct 2003 10:30:01 +0900
+
+gfarm (1.0b4-2) unstable; urgency=low
+
+  * fixed a miss packaging for gfarm-client 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 10 Sep 2003 13:54:32 +0900
+
+gfarm (1.0b4-1) unstable; urgency=low
+
+  * new beta release 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri,  5 Sep 2003 06:08:03 +0900
+
+gfarm (1.0b3-2) unstable; urgency=low
+
+  * gfront.jar was not in previous gfarm-gfront package 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri, 22 Aug 2003 00:14:20 +0900
+
+gfarm (1.0b3-1) unstable; urgency=low
+
+  * new beta version was released 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 20 Aug 2003 17:00:00 +0900
+
+gfarm (1.0b2-1) unstable; urgency=low
+
+  * new beta version was released
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 19 May 2003 11:51:20 +0900
+
+gfarm (1.0b1-4) unstable; urgency=low
+
+  * fixed some bugs in these packages
+    * missing directory in gfarm-doc
+    * japanese manpages were installed in default path
+    * rewriten init.d script for gfmd and gfsd 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Wed, 14 May 2003 10:22:22 +0900
+
+gfarm (1.0b1-3) unstable; urgency=low
+
+  * faild dependencies
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 28 Apr 2003 15:13:12 +0900
+
+gfarm (1.0b1-2) unstable; urgency=low
+
+  * change package name to gfarm-gfptool from gfarm 
+  * build --with-globus packages
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Mon, 28 Apr 2003 10:57:22 +0900
+
+gfarm (1.0b1-1) unstable; urgency=low
+
+  * beta release version 
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Sat, 26 Apr 2003 01:38:57 +0900
+
+gfarm (0.0.cvs20030409-1) unstable; urgency=low
+
+  * new cvs version and re-packaging. 
+    * added libssl-dev, libldap2-dev to Build-Depends.
+    * removal of gfarm-doc.files.
+    * removal of {libgfarm-dev,gfarm-server,gfarm-client,gfarm-doc}.dirs.
+    * removed gfarm-pool.*
+    * removed gfarm-fsnode.{conffiles,install,dirs}.
+    * divided gfarm package into gfarm, gfarmd and gfmd package.
+    * gfarm-fnode -> gfsd.
+    * reasonable sections for all packages.
+  
+ -- Yasuhito Takamiya <takamiya@matsulab.is.titech.ac.jp>  Wed,  9 Apr 2003 00:30:29 +0900
+
+gfarm (0.0.cvs20030404-1) unstable; urgency=low
+
+  * correct debuild failure
+
+ -- Naotaka YAMAMOTO <naotaka@earth.nifty.jp>  Fri,  4 Apr 2003 16:09:56 +0900
+
+gfarm (0.0.cvs20021101-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Yasuhito Takamiya <takamiya@lucie.is.titech.ac.jp>  Fri,  1 Nov 2002 17:57:31 +0900
+
+gfarm (0.0.cvs20021005-1) unstable; urgency=low
+
+  * cvs 20021005 release.
+
+ -- Yasuhito Takamiya <takamiya@lucie.is.titech.ac.jp>  Fri,  1 Nov 2002 17:56:29 +0900
+
+

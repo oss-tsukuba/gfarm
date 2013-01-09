@@ -1,0 +1,55 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfexport.1'>
+
+<refentryinfo><date>4 Apr 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfexport</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfexport</refname>
+<refpurpose>print a file in the Gfarm file system on the standard output</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfexport</command>
+    <arg choice='opt'>-h <replaceable>filesystem-node</replaceable></arg>
+    <arg choice='plain'><replaceable>Gfarm-URL</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfexport</command> outputs a Gfarm file specified by <parameter>Gfarm-URL</parameter> to
+the standard output.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option> <parameter>filesystem-node</parameter></term>
+<listitem>
+<para>explicitly specifies a filesystem node to be accessed.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+

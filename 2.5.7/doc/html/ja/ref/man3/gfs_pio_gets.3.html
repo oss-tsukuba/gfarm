@@ -1,0 +1,303 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_pio_gets</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-PIO-GETS.3"
+></A
+>gfs_pio_gets</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_pio_gets&nbsp;--&nbsp;一行読み込み</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_pio_gets</TT
+></CODE
+>(GFS_File <TT
+CLASS="PARAMETER"
+><I
+>f</I
+></TT
+>, char * <TT
+CLASS="PARAMETER"
+><I
+>s</I
+></TT
+>, size_t <TT
+CLASS="PARAMETER"
+><I
+>size</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>ファイル
+<TT
+CLASS="PARAMETER"
+><I
+>gf</I
+></TT
+>
+から、文字列
+<TT
+CLASS="PARAMETER"
+><I
+>s</I
+></TT
+>
+に、一行読み込みます。
+引数
+<TT
+CLASS="PARAMETER"
+><I
+>size</I
+></TT
+>
+に文字配列
+<TT
+CLASS="PARAMETER"
+><I
+>s</I
+></TT
+>
+の大きさを指定します。</P
+><P
+>関数 gfs_pio_getline(3) と異なり、この関数は行末の改行記号を削除
+しません。一行の内容を文字配列に納めきれない場合、あるいはファイル
+末尾に改行記号が存在しない場合、入力結果の文字配列の末尾に改行記号
+がつきません。しかし文字列の終わりを示す '\0' 文字は、どちらの場合
+でも付加されます。</P
+><P
+><SPAN
+CLASS="ACRONYM"
+>EOF</SPAN
+>
+は、入力結果の文字配列の長さが 0 文字であることで判断します。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>正常終了を示します。</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>メモリ不足のため処理を中止しました。</P
+></DD
+><DT
+>その他</DT
+><DD
+><P
+>上記以外のエラーが生じたことを示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN53"
+></A
+><P
+><B
+>Example 1. <TT
+CLASS="FUNCTION"
+>gfs_pio_gets</TT
+> 関数の使用例</B
+></P
+><P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &#60;stdio.h&#62;
+#include &#60;stdlib.h&#62;
+#include &#60;gfarm/gfarm.h&#62;
+
+int
+main(int argc, char **argv)
+{
+	char *e;
+	GFS_File gf;
+	char buffer[512];
+
+	e = gfarm_initialize(&#38;argc, &#38;argv);
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	if (argc &#60;= 1) {
+		fprintf(stderr, "missing gfarm filename\n");
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_open(argv[1], GFARM_FILE_RDONLY, &#38;gf);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[1], e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_set_view_global(gf, 0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_set_view_global: %s\n",
+		    argv[1], e);
+		return (EXIT_FAILURE);
+	}
+
+	while ((e = gfs_pio_gets(gf, buffer, sizeof buffer)) != NULL &#38;&#38;
+	    *buffer != '\0') {
+		printf("got: %s", buffer);
+	}
+	if (e != NULL) {
+		fprintf(stderr, "ERROR: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_close(gf);
+	if (e != NULL) {
+		fprintf(stderr, "gfs_pio_close: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	return (EXIT_SUCCESS);
+}</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_getline</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readline</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_readdelim</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,116 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfdf.1'>
+
+<refentryinfo><date>30 Dec 2010</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfdf</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfdf</refname>
+<refpurpose>ディスク空き容量取得</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfdf</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfdf</command> は、Gfarmファイルシステムの
+ディスク空き容量を表示します。
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-a</option></term>
+<listitem>
+<para>Gfarmファイルシステム全体のディスク空き容量を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には2の累乗を用いますので、「M」は 1,048,576 を意味します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option></term>
+<listitem>
+<para>数字を「M(メガ)」のような単位つきで読みやすく表示します。
+単位には10の累乗を用いますので、「M」は 1,000,000 を意味します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>利用可能なファイルシステムノードのホスト名を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>逆順に整列して出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option></term>
+<listitem>
+<para>空き容量の順に整列して出力します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>パス名</parameter></term>
+<listitem>
+<para>
+指定したパス名により特定のメタデータサーバを指定します．
+このオプションは -a オプションと同時に利用すると無視されます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter>ドメイン名</parameter></term>
+<listitem>
+<para>
+指定したドメイン名に含まれるファイルシステムノードの状態を表示します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

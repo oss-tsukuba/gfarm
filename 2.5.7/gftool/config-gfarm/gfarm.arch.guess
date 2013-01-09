@@ -1,0 +1,177 @@
+#!/bin/sh
+
+# this script returns an ABI architecture name which will be used by gfhost.
+
+PATH=/bin:/usr/bin:/usr/ucb
+export PATH
+
+# `uname -r` may be something like follows:
+#	"4.1.3-JL" (SunOS), 
+#	"2.4.20-18.8smp" (Linux)
+#	"4.11-RELEASE" (FreeBSD)
+RELEASE=`uname -r | sed -e 's/-/_/g'`
+MACHINE=`uname -m`
+case $MACHINE in
+i[4-9]86) MACHINE=i386;;
+esac
+
+# "tr 'A-Z' 'a-z'" is not portable
+KERNEL=`uname -s| tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+
+case $KERNEL in
+aix)	if [ -x /usr/bin/oslevel ]; then
+		ARCH="$MACHINE-ibm-$KERNEL`/usr/bin/oslevel`"
+	else
+		ARCH="$MACHINE-ibm-$KERNEL`uname -v`.$RELEASE"
+	fi;;
+hp-ux)	case `getconf SC_CPU_VERSION 2>/dev/null` in
+	523)	MACHINE=hppa1.0;;
+	528)	MACHINE=hppa1.1;;
+	532)	MACHINE=hppa2.0;;
+	'')	case $MACHINE in
+		9000/[678][0-9][0-9]) MACHINE=hppa;;
+		*) MACHINE=m68k;;
+		esac
+	esac
+	# `uname -r` == "B.11.23" (HP-UX) -> "11.23"
+	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`";;
+irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE";;
+linux)	ARCH=
+	i=`ls /etc/*-release 2>/dev/null | wc -l`
+	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release ] &&
+		( [ $i -eq 1 ] || [ -f /etc/lsb-release -a $i -eq 2 ] )
+	then
+		# /etc/redhat-release:
+		#	Red Hat Linux release 8.0 (Psyche)
+		#	Red Hat Linux release 9 (Shrike)
+		#	Red Hat Linux Advanced Server release 2.1AS (Pensacola)
+		#	Red Hat Enterprise Linux WS release 4 (Nahant)
+		#	Red Hat Enterprise Linux ES release 4 (Nahant Update 1)
+		#	CentOS release 4.4 (Final)
+		if grep '^Red Hat' /etc/redhat-release >/dev/null; then
+			ARCH=$MACHINE-redhat`
+			sed 's/([^()]*) *$//' /etc/redhat-release |
+			awk 'NR == 1 {
+				if ($3 != "Linux") {
+				  printf "%c%c", substr($3,1,1), substr($4,1,1)
+				}
+				print $NF
+			}'`-$KERNEL
+		else
+			ARCH=$MACHINE-`
+			  sed -e 's/release//' -e 's/(.*)//' \
+			   -e 's/[ 	][ 	]*//g' \
+			   -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' \
+				/etc/redhat-release`-$KERNEL
+		fi
+	fi
+	if [ X"$ARCH"  = X ]; then
+		# /etc/debian_version: 3.0
+		# /etc/knoppix_version: ???
+		for i in /etc/*_version; do
+			if [ ! -h $i -a -f $i ]; then
+				ARCH=$MACHINE-`echo $i |
+					sed -e 's|^/etc/||' \
+						-e 's/_version$//' \
+						-e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'``cat $i`-$KERNEL
+				break
+			fi
+		done
+	fi
+	if [ X"$ARCH"  = X ]; then
+		# /etc/SuSE-release:
+		#	SuSE Linux 8.1 (i386)
+		#	SuSE SLES-8 (AMD64)
+		#	SUSE LINUX Enterprise Server 9 (i586)
+		# /etc/arch-release:
+		#	Arch Linux 0.7 (Wombat)
+		# /etc/bluepoint-release: ???
+		# /etc/conectiva-release:
+		#	Conectiva Linux 7.0
+		#	Conectiva Linux 10
+		# /etc/fedora-release:
+		#	Fedora Core release 2 (Tettnang)
+		# /etc/gentoo-release:
+		#	Gentoo Base System version 1.4.16
+		# /etc/lfs-release:
+		#	SVN-20040910
+		# /etc/lsb-release (version number of Linux Standard Base):
+		#	LSB_VERSION="1.2.0"
+		# /etc/mandrake-release:
+		#	Mandrake Linux release 8.1 (Vitamin) for i586
+		# /etc/release
+		#	Mandriva Linux release 2006.0 (Cooker) for i586
+		# /etc/pld-release:
+		#	1.99 PLD Linux (Ac)
+		# /etc/slackware-release:
+		#	Slackware release 8.1 (Midas)
+		# /etc/sun-release:
+		#	Sun Java Desktop System - 2003
+		#	Sun Java Desktop System, Release 2 -build 10b (GA)
+		# /etc/turbolinux-release:
+		#	Turbolinux Server 8.0 (Viper)
+		#	Turbolinux Workstation 8.0 (SilverStone)
+		#	Turbolinux Server 10.0 (Santoka)
+		# /etc/vine-release:
+		#	Vine Linux 2.6r4 (La Fleur de Bouard)
+		#	Vine Linux 2.90 (Valandraud)
+		#	Vine Linux 3.0 (Valandraud)
+		#	Vine Linux 3.0 (VineSeed) (Valandraud)
+		# /etc/yellowdog-release: ???
+		for i in /etc/*-release; do
+			if [ ! -h $i -a -f $i \
+				-a $i != /etc/redhat-release \
+				-a $i != /etc/lsb-release ]
+			then
+				ARCH=$MACHINE-`echo $i |
+					sed -e 's|^/etc/||' \
+						-e 's/-release$//' \
+						-e 's/linux$//' \
+						-e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'``
+					sed -e 's/(.*//' -e 's/-build .*//' \
+						-e 's/ [ a-zA-Z]*$//' \
+						-e 's/-//g' $i |
+					awk 'NR==1 {print $NF}'`-$KERNEL
+				break
+			fi
+		done
+	fi
+	if [ X"$ARCH" = X ]; then
+		# We don't use kernel version, but use distro version for ABI
+		ARCH=$MACHINE-unknown-linux`echo $RELEASE | sed 's/_.*//'`
+	fi
+	;;
+osf1)	# `uname -r` == "V5.1"
+	ARCH="$MACHINE-dec-$KERNEL`echo $RELEASE | 
+		tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`"
+	;;
+sunos)	case `uname -r` in
+	[1-4]*)	case `/usr/bin/arch -k` in
+		Series*|S4*)	RELEASE=`uname -v`;;
+		esac
+		case $MACHINE in
+		sun3*)	ARCH=m68k-sun-sunos$RELEASE;;
+		sun4*)	ARCH=sparc-sun-sunos$RELEASE;;
+		aushp)	ARCH=sparc-auspex-sunos$RELEASE;;
+		*)	ARCH=$MACHINE-sun-sunos$RELEASE;;
+		esac;;
+	*)	case $RELEASE in
+		5|5.*)	# SunOS 5.6 == Solaris 2.6
+			OS=solaris`echo $RELEASE - 3 | bc`;;
+		*)	OS=sunos$RELEASE;;
+		esac
+		case $MACHINE in
+		i86pc)	ARCH=i386-unknown-$OS;;
+		prep*)	ARCH=powerpcle-unknown-$OS;;
+		sun4H)	ARCH=sparc-hal-$OS;;
+		sun4*)	ARCH=sparc-sun-$OS;;
+		*)	ARCH=$MACHINE-sun-$OS;;
+		esac;;
+	esac;;
+*bsd)	# We assume suffixes like _BETA, _RC2 and -RELEASE have same ABI
+	ARCH="$MACHINE-unknown-$KERNEL`echo $RELEASE | sed 's/_.*//'`";;
+*)	ARCH="$MACHINE-unknown-$KERNEL$RELEASE";;
+esac
+
+# translate '/' to '_' just in case since gfarm v1 does not allow '/' in $ARCH
+echo $ARCH | tr '/' '_'

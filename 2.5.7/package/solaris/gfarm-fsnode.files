@@ -1,0 +1,10 @@
+@PREFIX@/bin/config-gfsd
+@PREFIX@/bin/gfarm.arch.guess
+@PREFIX@/bin/gfexec
+@PREFIX@/bin/gfsplck
+@PREFIX@/bin/thput-gfpio
+@PREFIX@/sbin/gfsd
+@PREFIX@/share/gfarm/config/gfsd.in
+etc/rc3.d/S95gfsd
+etc/rc3.d/K05gfsd
+etc/gfarm.conf.sample

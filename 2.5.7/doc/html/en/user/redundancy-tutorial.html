@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Gfarm File System: Master-Slave Metadata Servers</TITLE>
+</HEAD>
+<BODY><A href="http://datafarm.apgrid.org/">
+<IMG alt="[GFARM LOGO]" src="../../pic/gfarm-logo.gif" align=right border=0></A>
+<A href="../../index.html">documents</A> &gt;
+<A href="index.html">User's Manual</A> &gt;
+Master-Slave Metadata Servers - Tutorial
+
+<H1>Master-Slave Metadata Servers - Tutorial</H1>
+English | <A href="../../ja/user/redundancy-tutorial.html">Japanese</A>
+<p>
+This document describes how to configure master-slave metadata servers.
+
+<H2>1. Installation</H2>
+
+Let host-a be a master gfmd and host-b be a slave gfmd.
+Install the Gfarm file system on both host-a and host-b.
+See INSTALL document for details.
+
+<H2>2. Configuration</H2>
+<H3>2.1 Master metadata server</H3>
+
+Create a user '_gfarmmd' and the shared secret key for inter-gfmd
+communication.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# useradd -c "Gfarm gfmd" -m _gfarmmd
+# su _gfarmmd
+$ gfkey -f -p 31536000
+</PRE></TD></TR></TBODY></TABLE>
+Note that the inter-gfmd communication only supports the shared secret
+authentication for now.
+<p>
+Configure the master metadata server by the root user.
+To enable replicated metadata servers, execute config-gfarm with the
+-r option.
+Regarding the config-gfarm, see SETUP document.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# config-gfarm -r
+</PRE></TD></TR></TBODY></TABLE>
+The metadata journal file is stored in /var/gfarm-metadata/journal
+directory by default.  The location can be changed by the -j option.
+If there is an existing metadata server configuration, use
+config-gfarm-update with the -r option to update the configuration
+after stopping the gfmd.  For config-gfarm-update, the backend
+PostgreSQL should be running.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+install newer version of Gfarm
+# /etc/init.d/gfmd stop
+# config-gfarm-update -r --update
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
+For now, the PostgreSQL backend database is only supported for the
+replicated metadata servers.
+<p>
+Register host-b as a slave metadata server.<br>
+The gfmdhost command has to be invoked by a Gfarm system administrator,
+who has "gfarmadm" group privilege.
+Default setting of Gfarm system administrator is
+the user who is specified by the -A option of the config-gfarm command.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -c host-b
+$ gfmdhost -l
++ master -     m (default)    host-a 601
+- slave  sync  c (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+
+Insert a metadb_server_list directive to list metadata hostnames and
+ports in gfarm2.conf.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_list host-a:601 host-b:601
+</PRE></TD></TR></TBODY></TABLE>
+
+Dump the metadata by the root user.<BR>
+If you specified --prefix or --l option to the config-gfarm command,
+you have to specify same options to the gfdump.postgresql command too.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -d -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<H3>2.2 Slave metadata server</H3>
+
+Create a user '_gfarmmd' and copy the shared secret key from the
+master metadata server for inter-gfmd communication.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# useradd -c "Gfarm gfmd" -m _gfarmmd
+copy the shared secret key (~_gfarmmd/.gfarm_shared_key) from host-a
+</PRE></TD></TR></TBODY></TABLE>
+
+Configure a slave metadata server by the root user.
+To enable replicated metadata servers, execute config-gfarm with the
+-r option.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# config-gfarm -r
+</PRE></TD></TR></TBODY></TABLE>
+
+Before restoring the metadata, stop gfmd and remove the journal file
+by the root user.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+# rm /var/gfarm-metadata/journal/0000000000.gmj
+</PRE></TD></TR></TBODY></TABLE>
+
+Restore the metadata by the root user.<br>
+If you specified --prefix or --l option to the config-gfarm command,
+you have to specify same options to the gfdump.postgresql command too.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -r -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR>
+<B>NOTE:</B>
+Currently, you cannot do "config-gfarm -r" on multiple slave metadata servers
+simultaneously, even if you'd like to configure multiple slave gfmd at once.
+Instead, you have to do "config-gfarm -r" and then "gfdump.postgresql -r" on
+each slave server, and then you can proceed to next server.
+
+<H3>2.3 gfsd and client</H3>
+
+Copy gfarm2.conf from the metadata server in which the
+metadb_server_list directive is inserted.
+<p>
+See SETUP document for further configuration.
+<p>
+If the gfsd configuration is already set up, restart gfsd by the root
+user.
+<BR><BR>
+on each gfsd host:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfsd restart
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+Now, master-slave metadata servers are set up.
+
+<H3>2.4 Confirmation</H3>
+
+gfmdhost -l displays status of metadata servers.  '+' means the slave
+metadata server is connected to the master metadata server.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -l
++ master -     m (default)    host-a 601
+<font color=red>+</font> slave  sync  c (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+gfjournal displays the metadata journal.  Check whether the metadata
+updates are successfully transferred to the slave metadata server.
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfjournal /var/gfarm-metadata/journal/0000000000.gmj
+records  seqnum(min/max)            record length(min/max/ave)
+     11            63/          <font color=red>73</font>          24/    118/     43
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+Update the metadata, for example, by 'gfmkdir tmp'.  If 'max' of
+'seqnum' on the master metadata server is same as it on the slave
+metadata server, the updates are transferred.
+
+<H2>3. Upgrade a slave gfmd to a master gfmd</H2>
+
+This section explains how to upgrade a slave gfmd to a master gfmd
+when the master gfmd fails.
+<p>
+Confirm that the master gfmd has been stopped.  If it is still
+running, stop it by the root user on host-a.
+<p>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd stop
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+Note that one of the following conditions should be met when a slave
+gfmd is upgraded to a master gfmd.
+<ul>
+  <li> The current master gfmd has been stopped.
+  <li> The current master gfmd could communicate to neither any slave
+  gfmd, any gfsd, and any client.
+</ul>
+If one of above conditions is not met, there is a possibility of
+inconsistency among the master gfmd and slave gfmds.
+<p>
+To upgrade, send USR1 signal to the slave gfmd on host-b.
+<BR><BR>
+host-b:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# kill -USR1 &lt;process id of gfmd&gt;
+</PRE></TD></TR></TBODY></TABLE>
+
+<H2>4. Restore the original master gfmd</H2>
+
+This section describe how to restart old master gfmd
+as a new slave gfmd.
+
+<H3>4.1. restarting gfmd as a slave</H2>
+
+Add the following line to /etc/gfmd.conf on host-a:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_force_slave enable
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+With this configuration, the gfmd on host-a starts as a slave gfmd.<BR>
+Invoke the following command as root user to do so:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# /etc/init.d/gfmd start
+</PRE></TD></TR></TBODY></TABLE>
+
+<H3>4.2. Confirmation</H3>
+
+Check whether the gfmd correctly starts as a slave or not
+by the gfmdhost -l command:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+$ gfmdhost -l
+<font color=red>+</font> slave  sync  c (default)    host-a 601
++ master -     m (default)    host-b 601
+</PRE></TD></TR></TBODY></TABLE>
+<p>
+
+If "<font color=red>+</font>" is displayed, please proceed to
+"4.4. Completion".
+<p>
+If "<font color=red>x</font>" is displayed, please proceed to
+"4.3. Manual synchronization".
+
+<H3>4.3. Manual synchronization</H3>
+
+If "<font color=red>x</font>" is displayed, it means automatic synchronization
+is impossible, because the metadata changes while host-a was stopping
+were too much.<BR>
+In that case, you have to copy the database on host-b to host-a
+by the following procedure:
+
+<BR><BR>
+dump metadata by root user on host-b:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -d -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+restore the metadata by root user on host-a:
+<p>
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+# gfdump.postgresql -r -f gfarm-pgsql.dmp
+</PRE></TD></TR></TBODY></TABLE>
+
+<BR><BR>
+Then, try again from "4.2 Confirmation".
+
+<H3>4.4 Completion</H3>
+
+Remove the following line which was added to /etc/gfmd.conf on host-a:
+<BR><BR>
+host-a:
+<TABLE bgColor="#E0FFFF"><TBODY><TR><TD><PRE>
+metadb_server_force_slave enable
+</PRE></TD></TR></TBODY></TABLE>
+<BR>
+
+
+
+<HR>
+
+<ADDRESS><A href="http://datafarm.apgrid.org/">Gfarm File System</A> &lt;<TT>gfarmfs at google.com</TT>&gt;</ADDRESS></BODY></HTML>

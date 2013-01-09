@@ -1,0 +1,50 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfwhoami.1'>
+
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfwhoami</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfwhoami</refname>
+<refpurpose>print user name on the Gfarm filesystem</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfwhoami</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfwhoami</command> prints a global user name on the Gfarm
+filesystem.</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Prints the Subject DN of the user for GSI authentication.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+</refentry>

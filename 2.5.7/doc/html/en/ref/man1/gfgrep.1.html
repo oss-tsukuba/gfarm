@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfgrep</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFGREP.1"
+></A
+>gfgrep</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfgrep&nbsp;--&nbsp;search a file for a pattern</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> {gfarm:gfgrep}  -o <TT
+CLASS="REPLACEABLE"
+><I
+>output-gfarm-URL</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>pattern</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>input-gfarm-URL</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> {gfarm:gfgrep}  -o <TT
+CLASS="REPLACEABLE"
+><I
+>output-gfarm-URL</I
+></TT
+>   -e <TT
+CLASS="REPLACEABLE"
+><I
+>pattern</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>input-gfarm-URL</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfgrep</B
+> is a sample program of parallel applications executed by
+gfrun(1) as well as an example to create a Gfarm file in the local
+file view.</P
+><P
+><B
+CLASS="COMMAND"
+>gfgrep</B
+> searches a <TT
+CLASS="PARAMETER"
+><I
+>pattern</I
+></TT
+> from <TT
+CLASS="PARAMETER"
+><I
+>input-gfarm-URL</I
+></TT
+>, and
+outputs to <TT
+CLASS="PARAMETER"
+><I
+>output-gfarm-URL</I
+></TT
+>.</P
+><P
+>Every parallel application executed by <B
+CLASS="COMMAND"
+>gfrun(1)</B
+> should interpret the
+<TT
+CLASS="OPTION"
+>-I</TT
+> and <TT
+CLASS="OPTION"
+>-N</TT
+> options that show the rank and
+the size of the parallel program, respectively, and
+call <TT
+CLASS="FUNCTION"
+>gfs_pio_set_local()</TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-e</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>pattern</I
+></TT
+></DT
+><DD
+><P
+>is useful to protect patterns beginning with -.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies an output Gfarm file.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

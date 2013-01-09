@@ -1,0 +1,334 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper. 
+# GNU copyright 1997 by Joey Hess.
+#
+# This version is for a hypothetical package that builds an
+# architecture-dependant package, as well as an architecture-independent
+# package.
+
+# Uncomment this to turn on verbose mode. 
+#export DH_VERBOSE=1
+
+# This is the debhelper compatability version to use.
+export DH_COMPAT=2
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+export CC=gcc
+
+CLIENT_PKG = gfarm-client
+GFRONT_PKG = gfarm-gfront
+DOC_PKG = gfarm-doc
+GFPTOOL_PKG = gfarm-gfptool
+GFMD_PKG = gfmd
+GFSD_PKG=gfsd
+DEV_PKG = libgfarm-dev
+LIBS_PKG = libgfarm
+AGENT_PKG = gfarm-agent
+
+CLIENT_GSI_PKG = gfarm-gsi-client
+GFPTOOL_GSI_PKG = gfarm-gsi-gfptool
+GFMD_GSI_PKG = gfmd-gsi
+GFSD_GSI_PKG=gfsd-gsi
+DEV_GSI_PKG = libgfarm-gsi-dev
+LIBS_GSI_PKG = libgfarm-gsi
+
+CONFIGURE = ../configure --prefix=/usr --libexecdir=/usr/lib/gfarm --sysconfdir=/etc
+
+GLOBUS_PREFIX ?= undefined
+BUILD_BOTH    ?= undefined
+GLOBUS_STATIC ?= undefined
+non-globus=yes
+globus=no
+globus_static=no
+ifneq ($(GLOBUS_PREFIX),undefined)
+  globus=yes
+  GLOBUS_FLAVOR ?= gcc32dbg
+  ifneq ($(GLOBUS_STATIC),undefined)
+    globus_static=yes
+  endif
+  ifeq ($(BUILD_BOTH), undefined)
+    non-globus=no
+  else
+    build_both=yes
+  endif
+endif
+
+tmpdirs=tmp
+ifeq ($(build_both), yes)
+  tmpdirs=tmp tmp_gsi
+endif
+
+configure: configure-stamp
+configure-stamp:
+	cp debian/control.common debian/control
+ifeq ($(non-globus),yes)
+	cat debian/control.non-gsi >> debian/control
+endif
+ifeq ($(globus),yes)
+	cat debian/control.gsi >> debian/control
+endif
+
+	dh_testdir
+	-rm -rf ns/
+
+ifeq ($(non-globus),yes)
+	install -d build && cd build && $(CONFIGURE)
+endif
+ifeq ($(globus),yes)
+	install -d build_gsi && cd build_gsi && $(CONFIGURE) --with-globus=$(GLOBUS_PREFIX) --with-globus-flavor=$(GLOBUS_FLAVOR) $(GLOBUS_STATIC)
+   ifneq ($(build_both),yes)
+	ln -s build_gsi build
+	ln -s tmp_gsi debian/tmp
+   endif
+endif
+
+	ln -s $(GFMD_PKG).docs  debian/$(GFSD_PKG).docs
+
+ifeq ($(globus), yes)
+	ln -s $(CLIENT_PKG).install  debian/$(CLIENT_GSI_PKG).install
+	ln -s $(GFPTOOL_PKG).install  debian/$(GFPTOOL_GSI_PKG).install
+	ln -s $(GFMD_PKG).install  debian/$(GFMD_GSI_PKG).install
+	ln -s $(GFSD_PKG).install  debian/$(GFSD_GSI_PKG).install
+	ln -s $(DEV_PKG).install  debian/$(DEV_GSI_PKG).install
+	ln -s $(LIBS_PKG).install  debian/$(LIBS_GSI_PKG).install
+
+	ln -s $(CLIENT_PKG).links  debian/$(CLIENT_GSI_PKG).links
+
+	ln -s $(GFMD_PKG).docs  debian/$(GFMD_GSI_PKG).docs
+	ln -s $(GFSD_PKG).docs  debian/$(GFSD_GSI_PKG).docs
+
+	ln -s $(GFMD_PKG).init  debian/$(GFMD_GSI_PKG).$(GFMD_PKG).init
+	ln -s $(GFSD_PKG).init  debian/$(GFSD_GSI_PKG).$(GFSD_PKG).init
+
+	ln -s $(GFMD_PKG).conffiles  debian/$(GFMD_GSI_PKG).conffiles
+	ln -s $(GFSD_PKG).conffiles  debian/$(GFSD_GSI_PKG).conffiles
+
+	ln -s $(CLIENT_PKG).manpages debian/$(CLIENT_GSI_PKG).manpages
+	ln -s $(GFPTOOL_PKG).manpages debian/$(GFPTOOL_GSI_PKG).manpages
+	ln -s $(GFMD_PKG).manpages debian/$(GFMD_GSI_PKG).manpages
+	ln -s $(GFSD_PKG).manpages debian/$(GFSD_GSI_PKG).manpages
+	ln -s $(DEV_PKG).manpages debian/$(DEV_GSI_PKG).manpages
+endif
+
+	touch configure-stamp
+
+build: configure-stamp build-stamp
+build-stamp:
+	dh_testdir
+
+# Add here commands to compile the package.
+ifeq ($(non-globus),yes)
+	cd build && $(MAKE)
+endif
+ifeq ($(globus),yes)
+	cd build_gsi && $(MAKE)
+endif
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp 
+
+# Add here commands to clean up after the build process.
+	-rm -f configure-stamp
+	-rm -rf build build_gsi
+	find . -name '*.o' -o -name '_libs' -o -name '*.lo' -o -name '*.a' -o -name '.deps' | xargs rm -rf 
+	-rm -rf debian/tmp_gsi debian/tmp_nogsi debian/tmp
+
+	-rm -f debian/$(GFSD_PKG).docs
+
+	rm -f debian/$(CLIENT_GSI_PKG).install
+	rm -f debian/$(GFPTOOL_GSI_PKG).install
+	rm -f debian/$(GFMD_GSI_PKG).install
+	rm -f debian/$(GFSD_GSI_PKG).install
+	rm -f debian/$(DEV_GSI_PKG).install
+	rm -f debian/$(LIBS_GSI_PKG).install
+
+	-rm -f debian/$(CLIENT_GSI_PKG).links
+
+	-rm -f debian/$(GFMD_GSI_PKG).docs
+	-rm -f debian/$(GFSD_GSI_PKG).docs
+
+	-rm -f debian/{$(GFMD_GSI_PKG).$(GFMD_PKG),$(GFSD_GSI_PKG).$(GFSD_PKG)}.init
+
+	rm -f debian/$(GFMD_GSI_PKG).conffiles
+	rm -f debian/$(GFSD_GSI_PKG).conffiles
+
+	rm -f debian/$(CLIENT_GSI_PKG).manpages
+	rm -f debian/$(GFPTOOL_GSI_PKG).manpages
+	rm -f debian/$(GFMD_GSI_PKG).manpages
+	rm -f debian/$(GFSD_GSI_PKG).manpages
+	rm -f debian/$(DEV_GSI_PKG).manpages
+
+#### FIEXME
+	rm -f debian/gf{s,m}d-gsi.p*
+
+	dh_clean
+
+	cp debian/control.common debian/control
+	cat debian/control.non-gsi >> debian/control
+
+install: DH_OPTIONS=
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+# Add here commands to install the package into debian/tmp.
+ifeq ($(non-globus),yes)
+	cd build && $(MAKE) install prefix=`pwd`/../debian/tmp/usr \
+	  default_libexecdir=`pwd`/../debian/tmp/usr/lib/gfarm
+endif
+ifeq ($(globus),yes)
+	cd build_gsi && $(MAKE) install prefix=`pwd`/../debian/tmp_gsi/usr \
+	  default_libexecdir=`pwd`/../debian/tmp_gsi/usr/lib/gfarm
+endif
+
+# LICENSE file is stored in debian/copyright (Debian policy)
+	rm -f  debian/tmp/usr/share/doc/gfarm/LICENSE
+	mv debian/tmp/usr/share/doc/gfarm  debian/tmp/usr/share/doc/gfarm-doc
+
+# hoax gfarm's Makefile.
+	for tmp_dir in $(tmpdirs); do \
+	  install -d debian/$$tmp_dir/etc/init.d/; \
+	  install -m 444 doc/conf/gfarm.conf debian/$$tmp_dir/etc/; \
+	  install -d debian/$$tmp_dir/usr/share/doc/gfarm/; \
+	  install debian/gfmd.init debian/$$tmp_dir/etc/init.d/gfmd; \
+	  install -d debian/$$tmp_dir/etc/ldap/schema/; \
+	  install -d debian/$$tmp_dir/usr/share/gfarm/config; \
+	  install -d debian/$$tmp_dir/etc/default/; \
+	  install -m 644 debian/gfarm-slapd.default debian/$$tmp_dir/etc/default/gfarm-slapd; \
+	done
+
+	install -d debian/tmp/usr/share/man
+	mv debian/tmp/usr/man/ja/ debian/tmp/usr/share/man/
+
+	dh_install -p$(GFRONT_PKG)
+ifeq ($(non-globus),yes)
+	dh_install -p$(CLIENT_PKG)
+	dh_install -p$(DOC_PKG)
+	dh_install -p$(GFPTOOL_PKG)
+	dh_install -p$(GFMD_PKG)
+	dh_install -p$(GFSD_PKG)
+	dh_install -p$(DEV_PKG)
+	dh_install -p$(LIBS_PKG)
+	dh_install -p$(AGENT_PKG)
+endif
+
+ifeq ($(build_both),yes)
+	mv debian/tmp debian/tmp_nogsi
+	mv debian/tmp_gsi debian/tmp
+endif
+
+ifeq ($(globus),yes)
+	dh_install -p$(CLIENT_GSI_PKG)
+	dh_install -p$(GFPTOOL_GSI_PKG)
+	dh_install -p$(GFMD_GSI_PKG)
+	dh_install -p$(GFSD_GSI_PKG)
+	dh_install -p$(DEV_GSI_PKG)
+	dh_install -p$(LIBS_GSI_PKG)
+endif
+#	-dh_movefiles
+
+# Build architecture-independent files here.
+# Pass -i to all debhelper commands in this target to reduce clutter.
+binary-indep: DH_OPTIONS=-i
+binary-indep: build install
+# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir
+	dh_testroot
+#	dh_installdebconf
+	dh_installdocs
+
+# manpages for gfarm-gfront package
+	dh_installman -p$(GFRONT_PKG)
+
+#	dh_installexamples
+#	dh_installmenu
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installinit
+#	dh_installcron
+#	dh_installmanpages
+#	dh_installinfo
+#	dh_undocumented
+	dh_installchangelogs
+	dh_link
+	dh_compress
+	dh_fixperms
+# You may want to make some executables suid here.
+# dh_suidregister
+	dh_installdeb
+#	dh_perl
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture-dependent files here.
+# Pass -a to all debhelper commands in this target to reduce clutter.
+# binary-arch: DH_OPTIONS=-a
+binary-arch: build install
+# Need this version of debhelper for DH_OPTIONS to work.
+	dh_testversion 1.1.17
+	dh_testdir
+	dh_testroot
+#	dh_installdebconf
+	dh_installdocs
+#	dh_installexamples -pgfmd
+#	dh_installmenu
+#	dh_installemacsen
+#	dh_installpam
+ifeq ($(non-globus),yes)
+	dh_installinit
+endif
+ifeq ($(globus),yes)
+	dh_installinit -pgfsd-gsi --name=gfsd
+	dh_installinit -pgfmd-gsi --name=gfmd
+endif
+#	dh_installcron
+	dh_installman
+#	dh_installinfo
+#	dh_undocumented
+	dh_installchangelogs
+ifeq ($(globus_static),yes)
+   ifeq ($(non-globus),yes)
+	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
+          dh_strip -p$$pkg; \
+	done
+   endif
+else
+	dh_strip
+endif
+	dh_link
+	dh_compress
+	dh_fixperms
+# You may want to make some executables suid here.
+# dh_suidregister
+	dh_installdeb
+	dh_makeshlibs
+#	dh_perl
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+ifeq ($(build_both),yes)
+	dh_builddeb
+else
+   ifeq ($(non-globus),yes)
+	for pkg in $(CLIENT_PKG) $(GFPTOOL_PKG) $(GFMD_PKG) $(GFSD_PKG) $(DEV_PKG) $(LIBS_PKG) $(AGENT_PKG); do \
+          dh_builddeb -p$$pkg; \
+	done
+   else
+	for pkg in $(CLIENT_GSI_PKG) $(GFPTOOL_GSI_PKG) $(GFMD_GSI_PKG) $(GFSD_GSI_PKG) $(DEV_GSI_PKG) $(LIBS_GSI_PKG); do \
+          dh_builddeb -p$$pkg; \
+	done
+   endif
+endif
+
+binary: binary-arch binary-indep 
+.PHONY: build clean binary-indep binary-arch binary install configure

@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfarm_url_section_replicate_from_to</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM-URL-SECTION-REPLICATE-FROM-TO.3"
+></A
+>gfarm_url_section_replicate_from_to</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm_url_section_replicate_from_to&nbsp;--&nbsp;Create a file replica of a file section</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfarm_url_section_replicate_from_to</TT
+></CODE
+>(const char *<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, char *<TT
+CLASS="PARAMETER"
+><I
+>section</I
+></TT
+>, char *<TT
+CLASS="PARAMETER"
+><I
+>srchost</I
+></TT
+>, char *<TT
+CLASS="PARAMETER"
+><I
+>dsthost</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+> <TT
+CLASS="FUNCTION"
+>gfarm_url_section_replicate_from_to()</TT
+>
+creates a file replica of a file section
+<TT
+CLASS="PARAMETER"
+><I
+>section</I
+></TT
+> of a file
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> from a source host
+<TT
+CLASS="PARAMETER"
+><I
+>srchost</I
+></TT
+> to a destination host
+<TT
+CLASS="PARAMETER"
+><I
+>dsthost</I
+></TT
+>.  </P
+><P
+> File section is an architecture name for executable files, or
+is a fragment index for a regular file.  Note that a fragment index
+needs to be specified in string without any unnecessary space
+character and zero padding.  </P
+><P
+> When there is no file copy on a host specified by
+<TT
+CLASS="PARAMETER"
+><I
+>srchost</I
+></TT
+>,
+<TT
+CLASS="FUNCTION"
+>gfarm_url_section_replicate_from_to()</TT
+> returns
+error.  </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</TT
+></DT
+><DD
+><P
+>A component used as a directory in
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> does not exist, or a file copy does
+not exist on the specified source host.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_TEXT_FILE_BUSY</TT
+></DT
+><DD
+><P
+>The file <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> cannot be replicated
+because it is being updated by another process.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_section_replicate_to</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm_url_fragments_replicate</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

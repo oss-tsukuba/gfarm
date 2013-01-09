@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfs_rename</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-RENAME.3"
+></A
+>gfs_rename</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_rename&nbsp;--&nbsp;change the name or location of a file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><P
+></P
+><A
+NAME="AEN12"
+></A
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_rename</TT
+></CODE
+>(char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+>, char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_rename</TT
+> renames a file or directory
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> to 
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+>.</P
+><P
+>If <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> already exists,
+it will be replaced.  In this case, when <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+>
+is a file <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> also must be a file, when
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> is a directory,
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> must be a empty directory.</P
+><P
+><TT
+CLASS="FUNCTION"
+>Gfs_rename()</TT
+> can't rename a directory
+to a subdirectory of itself.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="CONSTANT"
+>NULL</CODE
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</CODE
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_AUTHENTICATION</CODE
+></DT
+><DD
+><P
+>User authentication failed when connecting to gfmd(8).</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</CODE
+></DT
+><DD
+><P
+>The parent directory of <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> or
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> did not allow write permission.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_INVALID_ARGUMENT</CODE
+></DT
+><DD
+><P
+>A attempt was made to rename the directory
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> to a subdirectory of itself.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> does not exist.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_IS_A_DIRECTORY</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> is a existing directory,
+though <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> is not a directory.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_NOT_IS_A_DIRECTORY</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_to</I
+></TT
+> is not a directory.
+though <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url_from</I
+></TT
+> is a directory.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

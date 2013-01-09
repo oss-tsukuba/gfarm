@@ -1,0 +1,84 @@
+                  Gfarm 性能測定コマンドについて
+
+1. はじめに
+   このドキュメントではGfarm 性能測定コマンドの概要について説明します。
+
+2. Gfarm 性能測定コマンド一覧
+   Gfarm 性能測定コマンドは以下のコマンドから構成されています。
+   それぞれのコマンドの詳細についてはmanを参照してください。
+
+   (1) gfperf-metadata
+        create, unlink, mkdir, rmdir, stat など Gfarm のメタデータアクセス
+        性能を測定します。
+
+   (2) gfperf-copy
+        ローカルファイルシステムからGfarmへまたは、Gfarmからローカルファイル
+        システムへのファイルコピー性能を測定します。
+
+   (3) gfperf-read
+        Gfarmからの読み込み性能を測定します。
+
+   (4) gfperf-write
+        Gfarmへの書き込み性能を測定します。
+
+   (5) gfperf-replica
+        Gfarmのファイル複製性能を測定します。
+
+   (6) gfperf-tree
+        Gfarmにディレクトリツリーを生成、削除するときの性能を測定します。
+
+   (7) gfperf-autoreplica
+        Gfarmに自動複製機能を設定し、ファイル生成の速度を測定します。
+
+   (8) gfperf-parallel-read
+        Gfarmから並列に読み込む時の性能を測定します。
+        実際の測定にはこのコマンドを複数同時に起動します。
+
+   (9) gfperf-parallel-write
+        Gfarmへ並列に書き込む時の性能を測定します。
+        実際の測定にはこのコマンドを複数同時に起動します。
+
+  (10) gfperf-parallel-replica
+        Gfarmのファイル複製性能を並列に行った場合の性能を測定します。
+        実際の測定にはこのコマンドを複数同時に起動します。
+
+  (11) gfperf-parallel-autoreplica
+        Gfarmに自動複製機能を設定し、同時にファイル生成した時の速度を
+        測定します。
+        実際の測定にはこのコマンドを複数同時に起動します。
+        
+  (12) gfperf-wrapper.sh
+        指定された認証方式でコマンドを起動するためのラッパースクリプトです。
+
+  (13) gfperf.rb
+        設定ファイル(yaml形式、詳細はCONFIG-gfperf.jaを参照)に従い、
+        上記コマンドを使用して性能測定を行います。
+        測定結果は設定ファイルに記述されたDatabase(sqlite3)に格納します。
+
+  (14) gfstress.rb
+        上記、gfperf-metadata, gfperf-tree, gfperf-replica, gfperf-read, 
+        gfperf-writeを同時に複数起動し、Gfarmシステムを高負荷状態にする
+        コマンドです。
+
+3. 性能測定方法について
+
+   上記(1)から(11)までのコマンドを単独で起動して性能測定を行うことができます。
+   また、gfperf.rbを定期的に起動し、結果をDatabase(sqlite3)に溜めることで、
+   WEBから結果の閲覧を行うことができます。
+
+4. 附属ドキュメントについて
+
+   (1) SETUP-gfperf.ja
+        性能測定コマンドのインストール及びWEBのセットアップについて
+        記載しています。
+
+   (2) CONFIG-gfperf.ja
+        gfperf.rbで使用する設定ファイルの記述方法について記載しています。
+
+   (3) USING-gfperf.ja
+        gfperf.rbの定期的な起動方法やWEB画面の使用方法について記載しています。
+
+   (4) SUPPORT-gfperf.ja
+        性能測定ツールを使用するうえでの注意事項について記載しています。
+
+以上

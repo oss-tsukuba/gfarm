@@ -1,0 +1,142 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm_agent.1'>
+
+<refentryinfo><date>7 Nov 2006</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_agent</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_agent</refname>
+<refpurpose>Gfarm メタデータキャッシュサーバ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfarm_agent</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+<command>gfarm_agent</command> は、
+複数ノード、複数ユーザで共有可能な
+Gfarm ファイルシステム・メタデータのキャッシュサーバです。
+キャッシュサーバにより、
+遠隔のメタデータサーバに対する無駄なネットワーク転送が抑制され、
+Gfarm ファイルシステムに対するレスポンスを大幅に改善します。
+</para>
+
+<para>
+<command>gfarm_agent</command> は、
+同時に複数のノードで実行することが可能です。
+その場合、複数の <command>gfarm_agent</command>
+および Gfarm メタデータサーバ間の一貫性は保証されます。
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-L</option> <parameter>ログレベル</parameter></term>
+<listitem>
+<para>
+このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>PIDファイル</parameter></term>
+<listitem>
+<para><command>gfarm_agent</command> の process ID を、
+指定したファイルに記録します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter>syslogファシリティ</parameter></term>
+<listitem>
+<para><command>gfarm_agent</command> がエラー報告に用いる
+syslog のファシリティを指定します。
+省略した場合には、local0 を使用します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</para>
+<para>
+このオプションを指定し、かつ <option>-L</option> オプションを指定しなかった
+場合、ログレベルは debug となります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>設定ファイル</parameter></term>
+<listitem>
+<para>起動時に読み込む設定ファイルを指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>単一の <command>gfarm_agent</command> を利用する場合に利用可能です。
+このオプションを利用するとパス情報もキャッシュするようになるため、
+メタデータサーバへのアクセス数が減り、高速になります。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>ポート番号</parameter></term>
+<listitem>
+<para>gfarm_agent が利用する TCP のポート番号を指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>認証時のエラーメッセージの詳細を表示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<listitem>
+<para>gfarm_agent が参照する設定ファイルです。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,5 @@
+@PREFIX@/include
+@PREFIX@/lib/*.a
+@PREFIX@/lib/*.la
+@PREFIX@/lib/*.o
+@PREFIX@/lib/*.so

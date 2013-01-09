@@ -1,0 +1,12 @@
+database: {filename: "/var/www/gfperf/database.db", check span: "10days",
+	   backup: "/var/www/gfperf/databse.db.bak" }
+authentication: ["gsi_auth", "gsi"]
+gfarm2fs_mountpoint: ["/gfarm/_gfperf"]
+metadata: [ {testdir: "gfarm:///home/_gfperf", number: "250"},
+            {testdir: "file:///gfarm/_gfperf/home/_gfperf", number: "250"} ]
+copy: [
+   {src: "file:///tmp", dst: "gfarm:///home/_gfperf", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {src: "gfarm:///home/_gfperf", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {src: "file:///tmp", dst: "gfarm:///home/_gfperf", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/gfarm/_gfperf"},
+   {src: "gfarm:///home/_gfperf", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/gfarm/_gfperf"}
+      ]

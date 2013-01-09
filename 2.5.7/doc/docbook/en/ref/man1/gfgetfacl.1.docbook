@@ -1,0 +1,67 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfgetfacl.1'>
+
+<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfgetfacl</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfgetfacl</refname>
+<refpurpose>display Gfarm file access control lists</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfgetfacl</command>
+	<arg choice='opt'><replaceable>options</replaceable></arg>
+	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><command>gfgetfacl</command> displays the file/directory name,
+ owner, the group, and the Access Control List (ACL) about the
+ specified files or directories in the Gfarm filesystem.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='notes'><title>NOTES</title>
+<para>
+If a Gfarm user/group is removed from a Gfarm filesystem, all of the
+ACL enties which have the same user/group name (qualifier) remain in
+the ACLs of files/directories.
+</para>
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,82 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfmpirun_p4.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmpirun_p4</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmpirun_p4</refname>
+<refpurpose>mpirun コマンドの Gfarm 用フロントエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmpirun_p4</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>MPI並列プログラムを MPICH/p4 で提供される mpirun を利用して実行
+します．実行されるファイルシステムノードは，-G オプション，-H オプショ
+ンあるいは -N オプションにより決定されます．</para>
+
+<para>
+-G オプション，-H オプション，-N オプションは同時に二つ以上指定するこ
+とはできません．また，-G オプション，-H オプション，-N オプションがい
+ずれも指定されない場合は，引数に指定された既に存在する Gfarmファイルの
+うち一番はじめのファイルを利用したファイル・アフィニティ・スケジューリ
+ングにより決定されます．
+</para>
+
+<para>プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-G</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>gfarm-URL のファイル・アフィニティ・スケジューリングにより
+並列プログラムを実行します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<listitem>
+<para>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
+指定します．
+ホスト名は，各行に一ホストずつ記述します．
+</para>
+<para>
+ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-N</option> <parameter>ノード数</parameter></term>
+<listitem>
+<para>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>現バージョンは、MPICH/p4 との組合せでないと動作しません。</para>
+</refsect1>
+</refentry>
+

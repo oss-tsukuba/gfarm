@@ -1,0 +1,60 @@
+#!/bin/sh
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+sbindir=@sbindir@
+bindir=@bindir@
+libexecdir=@libexecdir@
+
+PATH=${bindir}:${PATH}; export PATH
+
+PTOOLS_BIN='gfcombine gfcombine_hook gfcp gfcp_hook gfgrep gfrcmd gfreg'
+PTOOLS_LIBEXEC='gfrepbe_client gfrepbe_server'
+
+# gfwc may not be included in a release binary
+if [ -f ${bindir}/gfwc ]; then
+	PTOOLS_BIN="$PTOOLS_BIN gfwc"
+fi
+
+hostname=`hostname`
+arch=`gfhost -M $hostname | sed 's/ .*//'`
+status=0
+
+if test x"$arch" = x""
+then
+	echo "$0: error: architecture name of $hostname isn't determined" >&2
+	exit 1
+fi
+
+echo Creating gfarm:/bin gfarm:/libexec ...
+if gfmkdir gfarm:/bin gfarm:/libexec; then
+	:
+else
+	status=1
+fi
+
+# force to register the commands, even if already registered,
+# because the binaries may be obsolete.
+echo Registering gfarm commands for $arch ...
+cd ${bindir};     gfreg -f $PTOOLS_BIN     gfarm:/bin
+cd ${libexecdir}; gfreg -f $PTOOLS_LIBEXEC gfarm:/libexec
+
+all_commands=''
+for cmd in $PTOOLS_BIN; do
+	all_commands="$all_commands gfarm:/bin/$cmd"
+done
+for cmd in $PTOOLS_LIBEXEC; do
+	all_commands="$all_commands gfarm:/libexec/$cmd"
+done
+
+gfhost -a $arch | while read host; do
+	echo Replicating gfarm commands to $host ...
+	if gfrep -b -I $arch -s $hostname -d $host $all_commands
+	then
+		:
+	else
+		status=1
+	fi
+done
+
+exit $status

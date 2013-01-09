@@ -1,0 +1,72 @@
+[This is written in Japanese, please look at README.en for English version.]
+
+入門ドキュメントについて
+========================
+
+初めて利用される方は，まず以下の順番でドキュメントを読むことを
+お勧めします．
+
+1. 概要
+  OVERVIEW.ja
+2. インストール方法
+  ソースからインストールされる場合，INSTALL.ja，
+  RPM からインストールされる場合，INSTALL.RPM.ja．
+  Debian パッケージでインストールされる場合，INSTALL.Debian.ja．
+3. 設定方法
+  SETUP.ja
+4. 利用方法
+  GfarmFS-FUSE を利用される場合，そちらに付属するドキュメント，
+
+ドキュメント一覧
+================
+
+- README.en (英語)
+  README.ja (日本語)
+	このドキュメントです．
+
+- LICENSE (英語)
+	Gfarm のライセンス表示です．
+
+- RELNOTES (英語)
+	各バージョンの変更点の概要を説明します．
+
+- OVERVIEW.en (英語)
+  OVERVIEW.ja (日本語)
+	Gfarm の概要や，各ドキュメントで使われる用語等を紹介します．	
+
+- INSTALL.en (英語)
+  INSTALL.ja (日本語)
+	ソースコードからインストールする手順を説明します．
+
+- INSTALL.RPM.en (英語)
+  INSTALL.RPM.ja (日本語)
+	RedHat Linux, Fedora Core, CentOS などで用いられている，
+	RPM バイナリパッケージからのインストール手順を説明します．
+
+- INSTALL.Debian.en (英語)
+  INSTALL.Debian.ja (日本語)
+	Debian, Ubuntu などで用いられている，
+	Debian バイナリパッケージからのインストール手順を説明します．
+
+- SETUP.en (英語)
+  SETUP.ja (日本語)
+	Gfarm の設定方法を説明します．
+
+- SETUP.private.en (英語)
+  SETUP.private.ja (日本語)
+	Gfarm をユーザ権限で動作させる方法を説明します．
+	この場合，設定したユーザ専用となります．
+
+- KNOWN_PROBLEMS.en (英語)
+  KNOWN_PROBLEMS.ja (日本語)
+	Gfarm に関する既知の問題点です．
+
+- Gfarm-FAQ.en (英語)
+  Gfarm-FAQ.ja (日本語)
+	よく聞かれる質問とその答です．
+
+- HTML 形式ないし UNIX man 形式のリファレンスマニュアル (英語および日本語)
+
+- HTML 形式のユーザマニュアル (英語および日本語)
+
+ウェブサイト http://datafarm.apgrid.org/ もご覧下さい．

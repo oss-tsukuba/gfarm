@@ -1,0 +1,129 @@
+#!/bin/sh
+# postgresql	This is the init script for starting up the PostgreSQL server
+#
+# chkconfig: 2345 85 15
+# description: PostgreSQL daemon for Gfarm
+# processname: postmaster
+# pidfile: @config_gfarm_backend_data_dir@/postmaster.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+FILE="gfarm-pgsql"
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
+OPTIONS="@config_gfarm_pgsql_options@"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+# For SELinux we need to use 'runuser' not 'su'
+[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="$SU - $PRIVILEGE";;
+esac
+
+# Get config.
+. /etc/sysconfig/network
+export PGPORT
+export PGDATA
+unset LANG
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+call_pg_ctl()
+{
+	$RUN -c "$CTL $OPTIONS $*"
+}
+
+start()
+{
+	echo -n "Starting $FILE: "
+	checkstatus > /dev/null
+	if [ $? -eq 0 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	# increase the maximum number of open file descriptors
+	ulimit -n 16384 2> /dev/null
+	call_pg_ctl start && success || failure
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
+	echo
+	return $RETVAL
+}
+
+stop()
+{
+	echo -n "Stopping $FILE: "
+	checkstatus > /dev/null
+	if [ $? -eq 3 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	call_pg_ctl stop && success || failure
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
+	echo
+	return $RETVAL
+}
+
+checkstatus()
+{
+	call_pg_ctl status
+	RETVAL=$?
+	[ $RETVAL -eq 1 ] && RETVAL=3
+	return $RETVAL
+}
+
+usage()
+{
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
+esac
+
+exit $RETVAL

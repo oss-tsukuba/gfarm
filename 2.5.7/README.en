@@ -1,0 +1,73 @@
+Introduction
+============
+
+If you are new to a Gfarm file system, it's recommended that you read
+the documents in the following order:
+
+1. Overview
+  Please read OVERVIEW.en.
+2. How to install Gfarm file system 
+  If you intend to install Gfarm from the source code, please read INSTALL.en.
+  If you intend to install Gfarm from the RPM binary package, please read
+  INSTALL.RPM.en.
+  If you intend to install Gfarm from the Debian binary package, please read
+  INSTALL.Debian.en.
+3. How to setup Gfarm file system
+  Please read SETUP.en.
+4. How to use Gfarm file system
+  If you intend to use GfarmFS-FUSE, please read the documents in that package.
+
+List of Documents
+=================
+
+- README.en (in English)
+  README.ja (in Japanese)
+	This file.
+
+- LICENSE (in English)
+	The License for Gfarm.
+
+- RELNOTES (in English)
+	This document describes the differences in each version.
+
+- OVERVIEW.en (in English)
+  OVERVIEW.ja (in Japanese)
+	This document introduces an overview of Gfarm and its terminology.
+
+- INSTALL.en (in English)
+  INSTALL.ja (in Japanese)
+	This document describes how to install Gfarm from the source code.
+
+- INSTALL.RPM.en (in English)
+  INSTALL.RPM.ja (in Japanese)
+	This document describes how to install Gfarm from the RPM binary
+	packages that are used in RedHat Linux, Fedora Core, CentOS, etc.
+
+- INSTALL.Debian.en (in English)
+  INSTALL.Debian.ja (in Japanese)
+	This document describes how to install Gfarm from the Debian binary
+	packages that are used in Debian and Ubuntu.
+
+- SETUP.en (in English)
+  SETUP.ja (in Japanese)
+	This document describes how to setup a Gfarm file system.
+
+- SETUP.private.en (in English)
+  SETUP.private.ja (in Japanese)
+	This document describes how to setup a private Gfarm file
+	system by a non privileged user.
+
+- KNOWN_PROBLEMS.en (in English)
+  KNOWN_PROBLEMS.ja (in Japanese)
+	This document describes known problems with Gfarm.
+
+- Gfarm-FAQ.en (in English)
+  Gfarm-FAQ.ja (in Japanese)
+	This document describes frequently asked questions and answers.
+
+- Reference manual in both HTML and UNIX manpage format.
+  (both English and Japanese)
+
+- User's manual in HTML format. (both English and Japanese)
+
+Please see http://datafarm.apgrid.org/ as well.

@@ -1,0 +1,140 @@
+update_usage_postgresql()
+{
+	echo >&2 "	[-X]"
+	return 0 # backend-specific option(s) exist(s)
+}
+
+update_pgpass_postgresql()
+{
+	PGPASS=$HOME/.pgpass
+	if [ -f ${PGPASS} ]; then
+		if=${PGPASS}
+		of=${PGPASS}.new
+	else
+		if=/dev/null
+		of=${PGPASS}
+	fi
+	if [ ! -f ${of} ]; then
+		touch ${of} || ABORT "${of}: cannot create"
+		chmod 0600 ${of} || ABORT "${of}: cannot change mode"
+	fi
+
+	$awk -F: 'BEGIN {
+		host="'$1'"
+		port='$2'
+		db="'$3'"
+		user="'$4'"
+		passwd="'$5'"
+		done = 0
+	}
+	{
+		if ($1 != host || $2 != port || $3 != db || $4 != user) {
+			print $0
+		} else {
+			printf "%s:%s:%s:%s:%s\n", host, port, db, user, passwd
+			done = 1
+		}
+	}
+	END {
+		if (!done)
+			printf "%s:%s:%s:%s:%s\n", host, port, db, user, passwd
+	}' ${if} >${of}
+	if [ X"$if" != X"/dev/null" ]; then
+		if cmp -s ${if} ${of}; then
+			rm -f ${PGPASS}.new
+		else
+			mv ${PGPASS} ${PGPASS}.bak
+			mv ${PGPASS}.new ${PGPASS}
+		fi
+	fi
+}
+
+update_postprocess_postgresql()
+{
+	update_pgpass_postgresql localhost ${BACKEND_PORT} "${DB_NAME}" "${BACKEND_ADMIN_USER}" "${BACKEND_ADMIN_PASSWD}"
+}
+
+update_first_set_param_postgresql()
+{
+	: ${BACKEND_PORT=`getvalue postgresql_server_port`}
+	: ${DB_NAME:=`getvalue postgresql_dbname`}
+	: ${BACKEND_USER:=`getvalue postgresql_user`}
+	: ${SUPPORT_XML_TYPE:=no}
+	unset PGHOST # force UNIX domain socket access
+	psql=${PGSQL_BINDIR}/psql
+}
+
+update_last_set_param_postgresql()
+{
+	: ${BACKEND_ADMIN_PASSWD:=`cat ${BACKEND_DATA_DIR}/admin_password 2>/dev/null`}
+}
+
+update_sanity_postgresql()
+{
+	rv=0
+	if [ X"$BACKEND_PORT" = X -o X"$DB_NAME" = X -o X"$BACKEND_USER" = X ]
+	then
+		echo "ERROR: postgresql backend is not configured" >&2
+		rv=1
+	fi
+	if [ X"$BACKEND_ADMIN_PASSWD" = X ]
+	then
+		echo "ERROR: password for postgresql administrator cannot be read.  Use --prefix option or -l option to specify a data directory of the backend database." >&2
+		rv=1
+	fi
+	return $rv
+}
+
+create_table()
+{
+	table=$1
+	count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "\\dt ${table}" | wc -l`
+	[ X"$count" = X ] && return
+	if [ $count -eq 0 ]; then
+		echo "${PROGNAME}: adding ${table} table"
+
+		(
+		sed -n "/CREATE TABLE ${table}/,/^)/p" $config_dir/gfarm.sql
+		cat <<__EOF__
+GRANT SELECT, INSERT, UPDATE, DELETE ON ${table} TO $BACKEND_USER;
+__EOF__
+		) |
+			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
+}
+
+update_postgresql()
+{
+	create_table Symlink
+	create_table XAttr
+	create_table QuotaUser
+	create_table QuotaGroup
+	create_table SeqNum
+	create_table MdHost
+
+	seqnum_count=`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c "select count(*) from SeqNum"`
+	if [ X"$seqnum_count" = X"0" ]; then
+		echo "INSERT INTO SeqNum (name, value) VALUES ('', '1')" \
+			| $psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
+
+	if [ X"$SUPPORT_XML_TYPE" = Xyes -a \
+		"`$psql -q -t -A -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME} -c '\dt XmlAttr' | wc -l`" -eq 0 ]; then
+		echo "${PROGNAME}: adding XmlAttr table"
+
+		(
+		cat $config_dir/gfarm-xmlattr.sql 
+		cat <<__EOF__
+GRANT SELECT, INSERT, UPDATE, DELETE ON XmlAttr TO $BACKEND_USER;
+__EOF__
+		) |
+			$psql -q -p ${BACKEND_PORT} -U ${BACKEND_ADMIN_USER} -d ${DB_NAME}
+	fi
+}
+
+update_access_db_postgresql()
+{
+	OPTIONS="$*"
+
+	$psql -p $BACKEND_PORT $OPTIONS $DB_NAME $BACKEND_ADMIN_USER
+}

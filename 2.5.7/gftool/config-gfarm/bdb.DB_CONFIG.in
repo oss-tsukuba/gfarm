@@ -1,0 +1,3 @@
+set_cachesize 0 @config_gfarm_slapd_bdb_cachesize@ @config_gfarm_slapd_bdb_ncache@ 
+set_flags DB_TXN_NOSYNC
+set_flags DB_LOG_AUTOREMOVE

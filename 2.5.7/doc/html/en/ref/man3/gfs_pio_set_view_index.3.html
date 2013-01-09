@@ -1,0 +1,320 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfs_pio_set_view_index</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-PIO-SET-VIEW-INDEX.3"
+></A
+>gfs_pio_set_view_index</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_pio_set_view_index&nbsp;--&nbsp;change file view to an individual fragment</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><A
+NAME="AEN12"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+>  <TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_pio_set_view_index</TT
+></CODE
+>(GFS_File <TT
+CLASS="PARAMETER"
+><I
+>gf</I
+></TT
+>, int <TT
+CLASS="PARAMETER"
+><I
+>fragment_number</I
+></TT
+>, int <TT
+CLASS="PARAMETER"
+><I
+>fragment_index</I
+></TT
+>, char *<TT
+CLASS="PARAMETER"
+><I
+>host</I
+></TT
+>, int <TT
+CLASS="PARAMETER"
+><I
+>flags</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_pio_set_view_index()</TT
+> changes the process's view of the data
+in the file specified by <TT
+CLASS="PARAMETER"
+><I
+>gf</I
+></TT
+> to a file fragment with the index
+<TT
+CLASS="PARAMETER"
+><I
+>fragment_index</I
+></TT
+>.</P
+><P
+>When creating a new file, it is necessary to specify the total number
+of file fragments <TT
+CLASS="PARAMETER"
+><I
+>fragment_number</I
+></TT
+>.  Every parallel process
+should specify the same <TT
+CLASS="PARAMETER"
+><I
+>fragment_number</I
+></TT
+> for the corresponding
+file.  When the file exists, <TT
+CLASS="CONSTANT"
+>GFARM_FILE_DONTCARE</TT
+> can be
+specified.  If <TT
+CLASS="PARAMETER"
+><I
+>fragment_number</I
+></TT
+> is different from the total
+fragment number of the existent file, it is erroneous.</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>host</I
+></TT
+> is used for explicitly specifying a filesystem node.  If
+<TT
+CLASS="PARAMETER"
+><I
+>host</I
+></TT
+> is NULL, appropriate filesystem node is chosen.</P
+><P
+>Values of <TT
+CLASS="PARAMETER"
+><I
+>flag</I
+></TT
+> are constructed by a bitwise-inclusive-OR of
+the following list.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_SEQUENTIAL</TT
+></DT
+><DD
+><P
+>File will be accessed sequentially.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_REPLICATE</TT
+></DT
+><DD
+><P
+>File may be replicated to a local filesystem when accessing remotely.
+This flag cannot be specified with <TT
+CLASS="CONSTANT"
+>GFARM_FILE_NOT_REPLICATE</TT
+>.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_FILE_NOT_REPLICATE</TT
+></DT
+><DD
+><P
+>File may not be replicated to a local filesystem when accessing
+remotely.  This flag cannot be specified with
+<TT
+CLASS="CONSTANT"
+>GFARM_FILE_REPLICATE</TT
+>.</P
+></DD
+></DL
+></DIV
+><P
+>By default, Gfarm files are accessed as a whole file in global file
+view where each fragment can be seamlessly accessed.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="CONSTANT"
+>NULL</TT
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</TT
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_OPERATION_NOT_PERMITTED</TT
+></DT
+><DD
+><P
+>The file is not a regular fragmented file.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH</TT
+></DT
+><DD
+><P
+>The total number of file fragments is different from the existence
+one.</P
+></DD
+><DT
+><TT
+CLASS="CONSTANT"
+>GFARM_ERR_INVALID_ARGUMENT</TT
+></DT
+><DD
+><P
+>Invalid arguments are specified, for instance,
+<TT
+CLASS="CONSTANT"
+>GFARM_FILE_DONTCARE</TT
+> is specified as the total number of
+fragments of a newly created file.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_create</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_open</SPAN
+>(3)</SPAN
+>,
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfs_pio_set_view_local</SPAN
+>(3)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,190 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-readline.3'>
+
+<refentryinfo><date>13 May 2004</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_readline</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_readline</refname>
+<refpurpose>read one line</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_readline</function></funcdef>
+    <paramdef>GFS_File <parameter>f</parameter></paramdef>
+    <paramdef>char **<parameter>bufp</parameter></paramdef>
+    <paramdef>size_t *<parameter>sizep</parameter></paramdef>
+    <paramdef>size_t *<parameter>lenp</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+<function>gfs_pio_readline()</function> reads one line from
+the file specified by the parameter <parameter>gf</parameter>.
+</para>
+
+<para>
+Parameter <parameter>bufp</parameter>
+specifies an address of a pointer variable initialzed by NULL
+at first.
+<function>gfs_pio_readline()</function> allocates a buffer for
+I/O dynamically, and stores the address of the buffer to this
+variable pointed by <parameter>bufp</parameter>.
+Parameter <parameter>sizep</parameter> specifies an address of
+a size_t variable initialized by 0.
+This size_t variable is used to record the size of the buffer.
+Or, you can specify a buffer allocated by malloc(3) in the
+variable pointed by the parameter <parameter>bufp</parameter>.
+In this case, you have to specify the size of the allocated
+buffer by the parameter <parameter>sizep</parameter>.
+If the length of the line exceeds the size of the buffer, 
+the buffer will be automatically realloc(3)ed, and the variable
+pointed by <parameter>bufp</parameter> and 
+<parameter>sizep</parameter> will be updated respectively.
+
+Note that you are responsible to free(3) this buffer.
+</para>
+
+<para>
+This function returns the length of the line to a variable
+pointed by the parameter <parameter>lenp</parameter>.
+This length includes newline character.
+</para>
+
+<para>
+Just like gfs_pio_gets(3), this function doesn't remove newline
+character at the end of lines. Also, this function always
+appends '\0' at the end of strings.
+You can deal with lines which include '\0' character by
+using the variable pointed by the parameter <parameter>lenp</parameter>.
+</para>
+
+<para>
+If the file reaches its end, the length of the result string becomes 0.
+</para>
+
+<para>
+This function is equivalent to 
+gfs_pio_readdelim(f, bufp, sizep, lenp, "\n", 1).
+</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+<para>Note that you need to free(3) the buffer pointed by the
+parameter <parameter>bufp</parameter></para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by its
+pointed strings.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<example role="example">
+<title>Example of <function>gfs_pio_readline</function> function</title>
+<para><programlisting>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;gfarm/gfarm.h&gt;
+
+int
+main(int argc, char **argv)
+{
+	char *e;
+	GFS_File gf;
+	size_t bufsize = 0, len;
+	char *buffer = NULL;
+
+	e = gfarm_initialize(&amp;argc, &amp;argv);
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	if (argc &lt;= 1) {
+		fprintf(stderr, "missing gfarm filename\n");
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_open(argv[1], GFARM_FILE_RDONLY, &amp;gf);
+	if (e != NULL) {
+		fprintf(stderr, "%s: %s\n", argv[1], e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_set_view_global(gf, 0);
+	if (e != NULL) {
+		fprintf(stderr, "%s: gfs_pio_set_view_global: %s\n",
+		    argv[1], e);
+		return (EXIT_FAILURE);
+	}
+
+	while ((e = gfs_pio_readline(gf, &amp;buffer, &amp;bufsize, &amp;len))
+	    == NULL &amp;&amp; len &gt; 0) {
+		printf("&lt;%6d/%6d &gt;%s", len, bufsize, buffer);
+	}
+	if (buffer != NULL)
+		free(buffer);
+	if (e != NULL) {
+		fprintf(stderr, "ERROR: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfs_pio_close(gf);
+	if (e != NULL) {
+		fprintf(stderr, "gfs_pio_close: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	e = gfarm_terminate();
+	if (e != NULL) {
+		fprintf(stderr, "gfarm_initialize: %s\n", e);
+		return (EXIT_FAILURE);
+	}
+	return (EXIT_SUCCESS);
+}
+</programlisting></para>
+</example>
+
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_getline</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_gets</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_readdelim</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

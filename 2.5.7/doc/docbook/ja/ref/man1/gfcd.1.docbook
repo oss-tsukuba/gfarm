@@ -1,0 +1,62 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfcd.1'>
+
+<refentryinfo><date>2 Jul 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfcd</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfcd</refname>
+<refpurpose>Gfarm 作業ディレクトリを変更する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfcd</command>
+    <arg choice='opt'><replaceable>ディレクトリ</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm 作業ディレクトリを 指定したディレクトリに変更します。
+ディレクトリを指定しない場合は、ユーザの Gfarm ホームディレクトリである
+gfarm:/<replaceable>グローバルユーザ</replaceable> に変更します。
+</para>
+<para>
+各Gfarm コマンドが作業ディレクトリを参照できるように、各ユーザの
+シェル設定ファイルに以下の定義を追加してください。
+</para>
+<variablelist>
+  <varlistentry>
+    <term>Bourne shell 系シェルの場合</term>
+    <listitem>
+      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>csh  系シェルの場合</term>
+    <listitem>
+      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfpwd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsetdir</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>

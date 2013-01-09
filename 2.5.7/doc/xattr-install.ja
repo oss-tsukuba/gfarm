@@ -1,0 +1,30 @@
+			     XML 拡張属性
+
+Gfarm では通常の拡張属性に加え，拡張属性の値として XML データを格納す
+る XML 拡張属性が利用可能です．XML 拡張属性については，XPath によるファ
+イル検索が可能です．
+
+*** 準備
+
+XML 拡張属性を利用するためには，メタデータサーバのバックエンドデータベー
+スとして，XML データ型をサポートした PostgreSQL サーバが必要になります．
+
+そのためには，PostgreSQL 8.3.X 以降を利用し，configure オプションに 
+--with-libxml を指定して PostgreSQL サーバを構築します．
+
+PostgreSQL の XML 型の利用については、以下を参照してください．
+  http://www.postgresql.jp/document/pg836doc/html/datatype-xml.html
+
+*** インストール方法
+
+configure コマンドのオプションで --enable-xmlattr を指定します．
+
+*** メタデータサーバ設定方法
+
+config-gfarm のオプションで -X を指定します．
+
+既存のメタデータサーバを更新する場合，config-gfarm-update のオプション
+で -X を指定して実行します．
+
+なお，バックエンドデータベースが OpenLDAP サーバの場合は XML 拡張属性
+は利用できません．

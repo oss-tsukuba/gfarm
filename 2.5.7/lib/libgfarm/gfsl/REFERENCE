@@ -1,0 +1,502 @@
+命名規則
+	〜Get〜()	解放してはいけない構造を取得する関数。
+			ただし gfarmGetPeernameOfSocket() と
+			gfarmGetEtcDir() は
+			例外で、free() してやる必要がある。
+	〜New〜()	解放する必要がある構造を取得する関数。
+			ただし、別の名称を使う構造体も多い。
+			例: 〜Crack*Status(), 〜{Import,Duplicate}Name〜(),
+			    〜{Acquire,Export}Credential〜(),
+			    〜Accept{,SecurityContext}(),
+			    〜Initiate{,SecurityContext}(),
+			    〜gfarmGss{Send,Receive}Token()
+			(new は、C++ の new キーワードに由来する)
+	〜Delete〜()	取得した構造を解放する関数。
+			例外: gfarmGssFreeCrackedStatus(),
+			      gfarmSecSessionTerminate()
+			(delete は、C++ の delete キーワードに由来する)
+
+GSSAPI wrapper
+
+char **	gfarmGssCrackMajorStatus(OM_uint32 majStat);
+	GSSAPI の major status を可読文字列の配列に変換する。
+	返り値は gfarmGssFreeCrackedStatus() で解放しなければならない。
+
+char **	gfarmGssCrackMinorStatus(OM_uint32 minStat);
+	GSSAPI の minorstatus を可読文字列の配列に変換する。
+	返り値は gfarmGssFreeCrackedStatus() で解放しなければならない。
+
+void	gfarmGssFreeCrackedStatus(char **strPtr);
+	gfarmGssCrackStatus() の返り値を解放する。
+
+void	gfarmGssPrintMajorStatus(OM_uint32 majStat);
+	GSSAPI の major status を可読文字列としてログに出力する。
+
+void	gfarmGssPrintMinorStatus(OM_uint32 minStat);
+	GSSAPI の minor status を可読文字列としてログに出力する。
+
+int	gfarmGssSendToken(int fd, gss_buffer_t gsBuf);
+	fd に gsBuf を出力する。
+
+int	gfarmGssReceiveToken(int fd, gss_buffer_t gsBuf);
+	fd から gsBuf に入力する。
+
+int	gfarmGssImportName(gss_name_t *namePtr,
+			   void *nameValue,
+			   size_t nameLength,
+			   gss_OID nameType,
+			   OM_uint32 *majStatPtr,
+			   OM_uint32 *minStatPtr);
+	nameValue, nameLength, nameType で指定した名前を、
+	gss_name_t に変換し、*namePtr に返す。
+	*namePtr は、gfarmGssDeleteName() を用いて解放しなければならない。
+	成功した場合 1 が返り、その他の場合には -1 以下が返る。
+	失敗した場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI
+	呼び出しの major status, minor status が返る。
+	このファイル末の 注1. も参照
+
+int	gfarmGssImportNameOfHostBasedService(gss_name_t *namePtr,
+					     char *service, char *hostname,
+					     OM_uint32 *majStatPtr,
+					     OM_uint32 *minStatPtr);
+	gfarmGssImportName() に対して GSS_C_NT_HOSTBASED_SERVICE を
+	指定した場合と等価な関数。
+	*namePtr は、gfarmGssDeleteName() を用いて解放しなければならない。
+	成功した場合 1 が返り、その他の場合には -1 以下が返る。
+	失敗した場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI
+	呼び出しの major status, minor status が返る。
+
+int	gfarmGssImportNameOfHost(gss_name_t *namePtr, char *hostname,
+				 OM_uint32 *majStatPtr,
+				 OM_uint32 *minStatPtr);
+	gfarmGssImportNameOfHostBasedService() の service に対して "host" を
+	指定した場合と等価な関数。
+	*namePtr は、gfarmGssDeleteName() を用いて解放しなければならない。
+	成功した場合 1 が返り、その他の場合には -1 以下が返る。
+	失敗した場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI
+	呼び出しの major status, minor status が返る。
+
+int	gfarmGssDeleteName(gss_name_t *namePtr,
+			   OM_uint32 *majStatPtr,
+			   OM_uint32 *minStatPtr);
+	namePtr に渡された gss_name_t を解放する。
+	成功した場合 1 が返り、その他の場合には -1 以下が返る。
+
+int	gfarmGssNewCredentialName(gss_name_t *outputNamePtr,
+				  gss_cred_id_t cred,
+				  OM_uint32 *majStatPtr,
+				  OM_uint32 *minStatPtr);
+	cred で与えられた credential の名前を *outputNamePtr に返す。
+	*outputNamePtr は、gfarmGssDeleteName() を用いて解放しなければ
+	ならない。
+	成功した場合 1 が返り、その他の場合には -1 が返る。
+
+char *	gfarmGssNewDisplayName(const gss_name_t inputName,
+			       OM_uint32 *majStatPtr,
+			       OM_uint32 *minStatPtr,
+			       gss_OID *outputNameTypePtr);
+	inputName を、表示可能な文字列に変換して返す。
+	返り値は free() しなければならない。
+	outputNameTypePtr が NULL でない場合、*outputNameTypePtr に
+	変換結果の文字列の nameType を返す。
+	Globus GSSAPI を利用している場合、この関数の戻り値が NULL 以外で、
+	かつ *outputNameTypePtr が GSS_C_NT_ANONYMOUS 以外であるなら、
+	戻り値は X.509 の DN だと考えて良い。現在の GFSL では、
+	GSS_C_NT_ANONYMOUS を明示的に禁止しているので、常に X.509 DN が返る。
+
+int	gfarmGssAcquireCredential(gss_cred_id_t *credPtr,
+				  const gss_name_t desiredName,
+				  gss_cred_usage_t credUsage,
+				  OM_uint32 *majStatPtr,
+				  OM_uint32 *minStatPtr,
+				  gss_name_t *credNamePtr);
+	desiredName と credUsage (GSS_C_INITIATE, GSS_C_ACCEPT, GSS_C_BOTH)
+	に従い、credential を生成し、*credPtr に返す。
+	*credPtr は、gfarmGssDeleteCredential() しなければならない。
+	acceptor 側でホスト証明書を使う場合、および initiator 側でユーザ
+	証明書を使う場合には、desiredName に GSS_C_NO_NAME を指定してよい。
+	acceptor 側でサービス証明書を使う場合には、credUsage に
+	GSS_C_ACCEPT を指定する。
+	credNamePtr が NULL 以外の場合、*credNamePtr には、*credPtr の
+	名前が返る。
+	*credNamePtr は、gfarmGssDeleteName() を用いて解放しなければならない。
+	credential の生成に成功した場合 1 が返り、その他の場合には -1 以下が
+	返る。
+	エラーの場合、*majStatPtr, *minStatPtr には、それぞれ GSSAPI 
+	呼び出しの major status, minor status が返る。
+
+int	gfarmGssDeleteCredential(gss_cred_id_t cred,
+				 OM_uint32 *majStatPtr,
+				 OM_uint32 *minStatPtr)
+	cred で指定した credential を解放する。
+	成功した場合 1 が返り、その他の場合には -1 以下が返る。
+	*majStatPtr, *minStatPtr には、それぞれ GSSAPI 呼び出しの
+	major status, minor status が返る。
+
+int	gfarmGssAcceptSecurityContext(int fd,
+				      gss_cred_id_t cred,
+				      gss_ctx_id_t *scPtr,
+				      OM_uint32 *majStatPtr,
+				      OM_uint32 *minStatPtr,
+				      gss_name_t *remoteNamePtr,
+				      gss_cred_id_t *remoteCredPtr);
+	cred と fd を使用して、acceptor 側 secure context を生成し、
+	*scPtr で返す。
+	remoteNamePtr が NULL 以外の場合、*remoteNamePtr には initiator 側の
+	名前が返る。
+	*remoteNamePtr は gfarmGssDeleteName() を用いて解放しなければ
+	ならない。
+	*remoteCredPtr には initiator 側から delegate された credential
+	が返る。
+	*remoteCredPtr は、gfarmGssDeleteCredential() を用いて解放しなければ
+	ならない。
+	secure context の生成に成功した場合には 1 が返り、その他の場合には -1 
+	以下が返る。*majStatPtr, *minStatPtr には、それぞれ GSSAPI呼び出しの
+	major status, minor status が返る。
+
+int	gfarmGssInitiateSecurityContext(int fd,
+					const gss_name_t acceptorName,
+					gss_cred_id_t cred,
+					OM_uint32 reqFlag,
+					gss_ctx_id_t *scPtr,
+				  	OM_uint32 *majStatPtr,
+				  	OM_uint32 *minStatPtr,
+					gss_name_t *remoteNamePtr);
+	cred と fd を使用して、initiator 側 secure context を生成し、
+	*scPtr で返す。reqFlag には initiate のオプションを与える(通
+	常、GFARMR_GSS_DEFAULT_SECURITY_SETUP_FLAG を使用すること)。
+	acceptorNameには、接続対象の acceptor に必要な権限を指定する。
+	acceptor を認証する必要がない場合、acceptorName に GSS_C_NO_NAME を
+	指定してよいが、credential を delegate する場合、セキュリティ上の
+	理由から、これは許されない。
+	remoteNamePtr が NULL 以外の場合、*remoteNamePtr には、acceptor 側の
+	名前が返る。
+	*remoteNamePtr は gfarmGssDeleteName() を用いて解放しなければ
+	ならない。
+	secure context の生成に成功した場合には 1 が返り、
+	その他の場合には -1 以下が返る。
+	*majStatPtr, *minStatPtr には、それぞれ GSSAPI 呼び出しの
+	major status, minor status が返る。
+
+void	gfarmGssDeleteSecurityContext(gss_ctx_id_t *scPtr);
+	*scPtr で示される secure context を破棄する。
+
+int	gfarmGssConfigureMessageSize(gss_ctx_id_t sCtx,
+				     int doEncrypt,
+				     gss_qop_t qopReq,
+				     unsigned int reqOutSz,
+				     unsigned int *maxInSzPtr,
+				     OM_uint32 *majStatPtr,
+				     OM_uint32 *minStatPtr);
+	doEncrypt(1:暗号化する, 0:しない), qopReq(通常 
+	GFARM_GSS_DEFAULT_QOP を使用), reqOutSz より、sCtx を使用する
+	際の GSSAPI 入出力/wrap/unwrap 関数群用の最大メッセージ長を決
+	定し、*maxInSzPtr で返す。正しく処理された場合には 1 が返り、
+	その他の場合には -1 以下が返る。*majStatPtr, *minStatPtr には、
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
+
+int	gfarmGssSend(int fd, gss_ctx_id_t sCtx,
+		     int doEncrypt,
+		     gss_qop_t qopReq,
+		     gfarm_int8_t *buf, int n, int chunkSz,
+		     OM_uint32 *statPtr);
+	sCtx, doEncrypt, qopReq により、buf (長さ n バイト)を暗号化し 
+	fd に出力する。sCtx, doEncrypt, qopReq は 
+	gfarmGssConfigureMessageSize() を呼び出した時と同じ値を使用し
+	なければならない。chunkSz は gfarmGssConfigureMessageSize() で
+	決定した最大メッセージ長でなければならない。正しく処理された場
+	合には n が返り、その他の場合には 0 以下が返る。*statPtr には 
+	GSSAPI 呼び出しの status が返る。
+
+int	gfarmGssReceive(int fd, gss_ctx_id_t sCtx,
+			gfarm_int8_t **bufPtr, int *lenPtr,
+			OM_uint32 *statPtr);
+	fd から受け取った暗号文を sCtx で平文化し、**bufPtr で返す。平
+	文の長さは *lenPtr で返る。*bufPtr は free() されなければならな
+	い。正しく処理された場合には *lenPtr と同じ値が返り、その他の
+	場合には 0 以下が返る。*statPtr には GSSAPI 呼び出しの status 
+	が返る。
+
+
+
+認可系
+
+int	gfarmAuthInitialize(char *usermapFile);
+	usermapFile で指定した DN -> UNIX uid への変換テーブルを用い、
+	認可データベースを初期化する。NULL もしくは "" が与えられた場
+	合、${GFARM_HOME}/etc/gfarm-usermap が使用される。正しく初期化
+	された場合には 1 が返り、その他の場合には -1 以下が返る。
+
+void	gfarmAuthFinalize(void);
+	gfarmAuthInitialize() で初期化された認可データベース全体を破棄する。
+
+gfarmAuthEntry *
+	gfarmAuthGetUserEntry(char *distUserName);
+	distUserName で指定された DN を持つエントリを認可データベース
+	から検索する。当該エントリが見つかった場合にはそのエントリを返
+	し、それ以外の場合には NULL を返す。
+
+void	gfarmAuthDestroyUserEntry(gfarmAuthEntry *aePtr);
+	aePtr で示されるエントリを破棄する。
+
+void	gfarmAuthMakeThisAlone(gfarmAuthEntry *laePtr);
+	認可データベース全体を破棄し、laePtr で示されるエントリの実体
+	のみを残す。setuid(0) なプロセスが setuid(0以外)した時に、余計
+	なものを見えなくするようにするため。
+	XXX
+		GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS が成り立って
+		いる場合は、認可データベースの破棄は行われない。
+		これは、initiator 側として動作する場合も、
+		認可データベースが必要なため。
+
+Session
+
+
+#define GFARM_SS_USE_ENCRYPTION		0x1
+#define GFARM_SS_USE_COMPRESSION	0x2
+#define GFARM_SS_USE_SYSTEMCONF		0x80000000
+
+#define GFARM_SS_OPT_QOP_MASK   0x1
+#define GFARM_SS_OPT_MAXT_MASK  0x2
+#define GFARM_SS_OPT_CONF_MASK  0x4
+#define GFARM_SS_OPT_ALL_MASK   0x7
+
+char **	gfarmSecSessionCrackStatus(gfarmSecSession *ssPtr);
+	ssPtr で示される session での GSSAPI 呼び出しの status を可読
+	文字列の配列に変換する。返り値は 
+	gfarmSecSessionFreeCrackedStatus() で解放しなければならない。
+
+void	gfarmSecSessionFreeCrackedStatus(char **strPtr);
+	gfarmSecSessioCrackStatus() の返り値を解放する。
+
+void	gfarmSecSessionPrintStatus(gfarmSecSession *ssPtr);
+	ssPtr で示される session での GSSAPI 呼び出しの status を可読
+	文字列としてログに出力する。
+
+int	gfarmSecSessionInitializeAcceptor(char *configFile,
+					  char *usermapFile,
+					  OM_uint32 *majStatPtr,
+					  OM_uint32 *minStatPtr);
+	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
+	を用い、acceptor 側の session 生成環境を初期化する。正しく初期
+	化された場合には 1 が返り、その他の場合には -1 以下が返る。
+	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
+	major status, minor status が返る。
+	ファイル名として NULL もしくは "" を使用した場合、それぞれ、
+		${GFARM_HOME}/etc/gfarm-acceptor.conf
+		${GFARM_HOME}/etc/gfarm-usermap
+	が使用される。
+
+int	gfarmSecSessionInitializeInitiator(char *configFile,
+					   char *usermapFile,
+					   OM_uint32 *majStatPtr,
+					   OM_uint32 *minStatPtr);
+	通信パラメタ設定ファイル configFile, 変換テーブル usermapFile 
+	を用い、initiator 側の session 生成環境を初期化する。正しく初期
+	化された場合には 1 が返り、その他の場合には -1 以下が返る。
+	*majStatPtr, *minStatPtr には、それぞれ GSSAPI	呼び出しの
+	major status, minor status が返る。
+	ファイル名として NULL もしくは "" を使用した場合、
+		${GFARM_HOME}/etc/gfarm-initiator.conf
+		${GFARM_HOME}/etc/gfarm-usermap
+	が使用される。
+
+int	gfarmSecSessionInitializeBoth(char *iConfigFile,
+				      char *aConfigFile,
+				      char *usermapFile,
+				      OM_uint32 *majstatPtr,
+				      OM_uint32 *minstatPtr);
+	initiator 側通信パラメタ設定ファイル iConfigFile, acceptor 側
+	通信パラメタ設定ファイル aConfigFile, 変換テーブル usermapFile 
+	を用い、initiator/acceptor 双方の動作を行わせる場合の session 
+	生成環境を初期化する。正しく初期化された場合には 1 が返り、そ
+	の他の場合には -1 以下が返る。*majStatPtr, *minStatPtr には、
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
+	ファイル名として NULL もしくは "" を使用した場合、それぞれ、
+		${GFARM_HOME}/etc/gfarm-initiator.conf
+		${GFARM_HOME}/etc/gfarm-acceptor.conf
+		${GFARM_HOME}/etc/gfarm-usermap
+	が使用される。
+
+void	gfarmSecSessionFinalizeAcceptor(void);
+void	gfarmSecSessionFinalizeInitiator(void);
+void	gfarmSecSessionFinalizeBoth(void);
+	acceptor, initiator, both の、それぞれの役割用として初期化され
+	た session 生成環境を破棄する。
+
+gfarmSecSession *	gfarmSecSessionAccept(int fd,
+					      gss_cred_id_t cred,
+					      gfarmSecSessionOption *ssOptPtr,
+					      OM_uint32 *majStatPtr,
+					      OM_uint32 *minStatPtr);
+	fd, cred を使用して、session を accept する。*ssOptPtr は通常 
+	NULL を使用する。session の accept に成功すると session を返す。
+	それ以外の場合には NULL を返す。*majStatPtr, *minStatPtr には、
+	それぞれ GSSAPI	呼び出しの major status, minor status が返る。
+	cred に GSS_C_NO_CREDENTIAL を使用した場合、
+		a. getuid() == 0 の場合
+			host certificate から生成された credential
+		b. getuid() != 0 の場合
+			user certificate から生成された credential
+	を使用する。cred != GSS_C_NO_CREDENTIAL の場合、特に、cred が 
+	user certificate から生成された credential である場合、user to
+	user で認証を行うことになり、security level が低下することに注
+	意。というわけで、GSS_C_NO_CREDENTIAL を常に使用してもよい。
+			
+gfarmSecSession *	gfarmSecSessionInitiate(int fd,
+						const gss_name_t acceptorName,
+						gss_cred_id_t cred,
+						OM_uint32 reqFlag,
+						gfarmSecSessionOption *ssOptPtr,
+						OM_uint32 *majStatPtr,
+						OM_uint32 *minStatPtr);
+	fd, cred を利用して、session を initiate する。*ssOptPtr は通
+	常 NULL を使用する。*majStatPtr, *minStatPtr には、それぞれ GSSAPI
+	呼び出しの major status, minor status が返る。
+	cred に GSS_C_NO_CREDENTIAL を使用した場合、user
+	certificate から生成された credential が使用される。
+	gfarmSecSessionInitializeBoth() で初期化された session 生成環
+	境でのみ、initiator から delegation された credential を cred 
+	に指定して session を initiate すること。
+
+gfarmSecSession *	gfarmSecSessionInitiateByName(
+						char *hostname,
+						int port,
+						char *acceptorNameString,
+						gss_OID acceptorNameType,
+						gss_cred_id_t cred,
+						OM_uint32 reqFlag,
+						gfarmSecSessionOption *ssOptPtr,
+						OM_uint32 *majStatPtr,
+						OM_uint32 *minStatPtr);
+	ホスト名 hostname, port 番号 port を利用して、hostname:port に 
+	connect(2) した後、connect(2) で生成された fd と cred を使用し
+	て、session を initiate する。以下 
+	gfarmSecSessionInitiate() と同様。
+
+void			gfarmSecSessionTerminate(gfarmSecSession *ssPtr);
+	initiate/accept した session ssPtr を終了する。
+	gfarmSecSessionAccept(), gfarmSecSessionInitiate() で生成され
+	た session では、通信に使用した fd は close(2) されないので、
+	close(2) を明示的に呼ぶこと。
+
+gss_cred_id_t	gfarmSecSessionGetDelegatedCredential(gfarmSecSession *ssPtr);
+	accept した session ssPtr から、initiator から delegateion さ
+	れた credential を取得する。initiator が delegation を許可して
+	いない場合、GSS_C_NO_CONTEXT が返る。initiate した session を
+	使用すると、GSS_C_NO_CONTEXT が返る。
+
+int	gfarmSecSessionGetInitiatorName(gfarmSecSession *ssPtr,
+					gss_name_t *namePtr);
+	accept した session ssPtr から、initiator の名前を取得し、
+	*namePtr に返す。
+	成功した場合 1 が返り、その他の場合、たとえば initiate した
+	session を使用すると -1 以下を返す。
+
+gfarmAuthEntry *	gfarmSecSessionGetInitiatorInfo(gfarmSecSession *ssPtr);
+	accept した session ssPtr から、対応する認可データベースエントリ
+	を得る。initiate した session を使用すると、NULL が返る。
+
+int			gfarmSecSessionDedicate(gfarmSecSession *ssPtr);
+	accept した session ssPtr に対応するローカルマシンのユーザのための
+	専用プロセスになるためのおまじない。
+		a. gfarmAuthMakeThisAlone() を呼び、余計な情報を解放する。
+		b. getuid() == 0 である場合、setgid(), setuid() する。
+	の処理が行われる。成功した場合 1 が返り、それ以外の場合 -1 以
+	下が返る。
+
+int			gfarmSecSessionSendInt8(gfarmSecSession *ssPtr,
+						gfarm_int8_t *buf,
+						int n);
+int			gfarmSecSessionSendInt16(gfarmSecSession *ssPtr,
+						 gfarm_int16_t *buf,
+						 int n);
+int			gfarmSecSessionSendInt32(gfarmSecSession *ssPtr,
+						 gfarm_int32_t *buf,
+						 int n);
+	session ssPtr を利用して、buf で示される n 個の byte, short,
+	long を送信する。成功すると n が返り、それ以外は 0 以下が返る。
+
+int			gfarmSecSessionReceiveInt8(gfarmSecSession *ssPtr,
+						   gfarm_int8_t **bufPtr,
+						   int *lenPtr);
+int			gfarmSecSessionReceiveInt16(gfarmSecSession *ssPtr,
+						    gfarm_int16_t **bufPtr,
+						    int *lenPtr);
+int			gfarmSecSessionReceiveInt32(gfarmSecSession *ssPtr,
+						    gfarm_int32_t **bufPtr,
+						    int *lenPtr);
+	session ssPtr を利用して、byte, net short, net long を受信する。受信し
+	た個数は *lenPtr で返す。*bufPtr は free() しなければならない。
+	成功すると *lenPtr と同じ値が返り、それ以外の場合は 0 以下が返る。
+
+int			gfarmSecSessionPoll(gfarmSecSession *ssList[],
+					    int n,
+					    struct timeval *toPtr);
+	ssList で示された配列内の n 個の session の入出力可否を poll 
+	する。toPtr には select(2) の timeout 値と同様の値を指定する。
+	返り値も select(2) と同一。以下のマクロを使用して、poll すべき 
+	event の指定/判定を行う。
+
+#define GFARM_SS_POLL_NONE		0x0
+#define GFARM_SS_POLL_READABLE		0x1
+#define GFARM_SS_POLL_WRITABLE		0x2
+#define GFARM_SS_POLL_ERROR		0x4
+
+#define gfarmSecSessionCheckPollReadable(s) (isBitSet(s->pollEvent, GFARM_SS_POLL_READABLE))
+#define gfarmSecSessionCheckPollWritable(s) (isBitSet(s->pollEvent, GFARM_SS_POLL_WRITABLE))
+#define gfarmSecSessionCheckPollError(s) (isBitSet(s->pollEvent, GFARM_SS_POLL_WRITABLE))
+
+#define gfarmSecSessionSetPollEvent(s, e) { s->pollEvent = (e); }
+#define gfarmSecSessionClearPollEvent(s) gfarmSecSessionSetPollEvent(s, GFARM_SS_POLL_NONE)
+
+#define gfarmSecSessionAddPollEvent(s, m) { s->pollEvent |= (m); }
+#define gfarmSecSessionDeletePollEvent(s, d) { s->pollEvent &= ~(d); }
+
+以下の関数は、GFARM_GSS_EXPORT_CRED_ENABLED の場合のみ有効
+
+gfarmExportedCredential *
+		gfarmGssExportCredential(gss_cred_id_t cred,
+					 OM_uint32 *statPtr);
+	指定された credential (== 通常は delegated credential) を、
+	子プロセスからも利用できる形で公開する。
+	gfarmGssEnvForExportedCredential() も参照。
+
+char *	gfarmGssEnvForExportedCredential(gfarmExportedCredential *exportedCred);
+	gfarmGssExportCredential() で公開した credential を利用する
+	子プロセスを呼び出す際に、設定しなければいけない環境変数。
+	("ENV_NAME=value" 形式の文字列)
+
+void	gfarmGssDeleteExportedCredential(gfarmExportedCredential *exportedCred);
+	子プロセスへ公開した credential を削除する。
+
+------------------------------------------------------------------------
+注1.
+
+gfarmGssImportName() で利用できる、((nameValue, nameLength), nameType) の
+組合せに関しては、RFC2743/RFC2744 を参照。
+
+具体的な組合せは以下の通り。
+	nameType			nameValue
+	GSS_C_NO_OID			GSSメカニズム依存の値 (ただし != NULL)
+		Globus の場合、X.509 Distinguish Name。
+	GSS_C_NT_HOSTBASED_SERVICE	"サービス名@ホスト名" (ホスト名はFQDN)
+		サービス名の割り当ては、下記 URL 参照
+			http://www.iana.org/assignments/gssapi-service-names
+		サービス名 "host" は、RFC2743 で定義され、Globus GSI では
+		ホスト証明書を参照する。
+	GSS_C_NT_EXPORT_NAME		mechanism name 形式
+
+下記は Globus がサポートしていないため、GFSL が独自に実装している。
+	GSS_C_NT_USER_NAME		"ローカルユーザ名"
+(Globus は GSS_C_NT_USER_NAME を受け付けるが、内部的には GSS_C_NT_USER_NAME
+ の処理を行っておらず、GCC_C_NO_OID と同じ扱いになる。
+ すなわち、X.509 Distinguish Name を要求する。
+ このため、GFSL のレベルで再実装している。)
+
+下記は Globus がサポートしていない。
+	GSS_C_NT_STRING_UID_NAME	"ローカルユーザIDの数値を表す文字列"
+	GSS_C_NT_MACHINE_UID_NAME	uid_t へのポインタ (ホストバイトオーダ)
+(Globus はこの値を受け付けるが、内部的には特に処理を行っておらず、
+ GCC_C_NO_OID と同じ扱いになる。)
+------------------------------------------------------------------------

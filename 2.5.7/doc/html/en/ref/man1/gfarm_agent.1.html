@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfarm_agent</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM_AGENT.1"
+></A
+>gfarm_agent</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm_agent&nbsp;--&nbsp;Gfarm Filesystem Metadata Cache Server</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> is a cache server for a Gfarm metadata
+server that can be shared by multiple hosts and multiple users.
+The cache server greatly improves performance and response
+time for a Gfarm filesystem by reducing network communication to a
+distant metadata server.</P
+><P
+>Any number of <B
+CLASS="COMMAND"
+>gfarm_agent</B
+>s can be running on
+different nodes (or even on the same node) at the same time.
+Consistency among multiple cache servers and a metadata server is
+maintained.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>log-level</I
+></TT
+></DT
+><DD
+><P
+>Specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>pid-file</I
+></TT
+></DT
+><DD
+><P
+>Specifies a file name which records the process ID of
+<B
+CLASS="COMMAND"
+>gfarm_agent</B
+>.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-S</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>syslog-facility</I
+></TT
+></DT
+><DD
+><P
+>Specifies a syslog facility used to report errors by
+<B
+CLASS="COMMAND"
+>gfarm_agent</B
+>.  By default, local0 is used.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
+></DT
+><DD
+><P
+>Specifies the debug mode.  <B
+CLASS="COMMAND"
+>gfarm_agent</B
+> runs
+in the foreground, not in the background.</P
+><P
+>If this option is specified and <CODE
+CLASS="OPTION"
+>-L</CODE
+> is not specified,
+the log level is set to "debug".</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>config-file</I
+></TT
+></DT
+><DD
+><P
+>Specifies a configuration file that is read instead of the default
+configuration file.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>Specifies the master mode.  This improves metadata access
+  performance by caching the path information.  This option is only
+  available when there is a single <B
+CLASS="COMMAND"
+>gfarm_agent</B
+>
+  running.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>port-number</I
+></TT
+></DT
+><DD
+><P
+>Specifies a port number for TCP, to be used by gfarm_agent.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>Displays verbose error messages in authentication.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>%%SYSCONFDIR%%/gfarm.conf</TT
+></DT
+><DD
+><P
+>configuration file</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

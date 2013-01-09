@@ -1,0 +1,235 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfmpirun_p4</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFMPIRUN_P4.1"
+></A
+>gfmpirun_p4</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfmpirun_p4&nbsp;--&nbsp;run Gfarm parallel programs with mpirun</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>command</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>args</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> executes a parallel command on
+filesystem nodes with mpirun provided by MPICH/p4, which is determined
+by the <TT
+CLASS="OPTION"
+>-G</TT
+> option, the <TT
+CLASS="OPTION"
+>-H</TT
+> option, or
+the <TT
+CLASS="OPTION"
+>-N</TT
+> option.</P
+><P
+><TT
+CLASS="OPTION"
+>-G</TT
+>, <TT
+CLASS="OPTION"
+>-H</TT
+>, and
+<TT
+CLASS="OPTION"
+>-N</TT
+> options are exclusive.  When none of
+<TT
+CLASS="OPTION"
+>-G</TT
+>, <TT
+CLASS="OPTION"
+>-H</TT
+>, and <TT
+CLASS="OPTION"
+>-N</TT
+>
+options are not specified, <B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> schedules
+filesystem nodes by the file-affinity scheduling using the first
+existent Gfarm file in the argument list
+<TT
+CLASS="PARAMETER"
+><I
+>args</I
+></TT
+>.</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>Command</I
+></TT
+> can be specified by a gfarm-URL
+that is registered using gfreg(1).</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-G</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>specifies a Gfarm file <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> for
+file-affinity scheduling.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+></DT
+><DD
+><P
+>specifies a <TT
+CLASS="PARAMETER"
+><I
+>hostfile</I
+></TT
+> that lists
+filesystem nodes.</P
+><P
+>if ``-'' is specified, standard input is used to read the host
+list.</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+></DT
+><DD
+><P
+>specifies the number of nodes <TT
+CLASS="PARAMETER"
+><I
+>np</I
+></TT
+>, which
+are selected by the increasing order of load average.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="BUGS"
+></A
+><H2
+>BUGS</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> can only work with the
+MPICH/p4.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfrun</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,446 @@
+#!/usr/bin/env python
+# -*- encoding:utf-8 -*-
+
+###################################################################
+# gfvoms-list
+#
+# Get voms infos using SOAP interface.
+# Make sure that ZSI (The Zolera Soap Infrastructure) is installed.
+#
+# Copyright (c) 2009 National Institute of Informatics in Japan.
+# All rights reserved.
+#
+#
+# Apache 2.0 Licensed Products:
+#  This product includes software listed below that were licensed under
+#  the Apache License, Version 2.0 (the "License"); you may not use this file
+#  except in compliance with the License. You may obtain a copy of
+#  the License at
+#      http://www.apache.org/licenses/LICENSE-2.0
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions
+#  and limitations under the License.
+#
+#  VOMSAdmin, (C) 2006. Members of the EGEE Collaboration.
+###################################################################
+
+import string, getopt, sys, os, os.path, types, re, urlparse, socket
+from zsi_def import SOAPBinding
+from hostid import hostids
+
+options = {}
+default_port = 8443
+
+class ProgressBar:
+	"""Class for Progress bar"""
+	format = "[%s%s] %d/%d\r"
+	def __init__(self, _max, size=24):
+		self.max = _max
+		self.cur = 0
+		self.size = size
+		self.out = Writer(sys.stdout)
+
+	def start(self):
+		self.progress(0)
+
+	def progress(self, delta):
+		if self.cur >= self.max: return
+		self.cur += delta
+		cursize = int(float(self.cur) / self.max * self.size)
+		leftsize = self.size - cursize
+		self.out.write(self.format
+			% ('*'*cursize, '-'*leftsize, self.cur, self.max))
+		if self.cur >= self.max:
+		    print "\nComplete"
+
+class GroupCounter:
+	"""Class for Counter"""
+	format = "%d groups found...\r"
+	def __init__(self):
+		self.cur = 0
+		self.out = Writer(sys.stdout)
+
+	def start(self):
+		self.progress(0)
+
+	def end(self):
+		self.out.write(self.format % (self.cur))
+		print "\nComplete"
+
+	def progress(self, delta):
+		self.cur += delta
+		self.out.write(self.format % (self.cur))
+
+class Writer(object):
+	def __init__(self, writer):
+		self.writer = writer
+		self.lastFlickered = False
+		self.lastLen = 0
+	def write(self, text):
+		self.clear()
+		self.writer.write(text)
+		self.lastFlickered = text.endswith('\r')
+		self.lastLen = len(text.split('\n')[-1])
+		self.writer.flush()
+	def clear(self):
+		if self.lastFlickered:
+			self.writer.write(' '*(self.lastLen-1)+'\r')
+			self.writer.flush()
+	def __getattr__(self, name):
+		return getattr(self.writer, name)
+
+def usage(e):
+	if (e != None):
+		print e
+		e = ""
+	usage_str ="""Usage:
+    gfvoms-list -V vomsID -v vo [-f user-list-path] [-m membership-path]
+                                                           [-a hostids] [-h]
+
+    options:
+        -V voms            : ID of VOMS Admin Server
+        -v vo              : Name of VO.[no default]
+        -f user-list-path  : List of users to get infos.[no default]
+                             If you don't set this option,
+                             all member of voms:vo will get.
+        -m membership-path : Path to save membership info.[no default]
+                             If you don't set this option,
+                             membership info will write in stdout.
+        -a hostids         : Path of definition file of id and host.
+                             [default: '/var/gfarm/hostids']
+        -h                 : Show this Usage.
+
+    membership-path format:
+        One user per one line, and the format is 'user=<User DN>'.
+
+        User DN should be the format of certification info like
+
+          '/O=Grid/OU=GlobusTest/OU=simpleCA-example.co.jp/CN=GfarmDevelop'
+
+        The line started with '#' will be treated as a comment line."""
+	print usage_str
+	sys.exit(e)
+	
+def listup_identity():
+	"""List possible identity files.
+	"""
+	id_list = []
+	
+	home = os.getenv("HOME")
+	tmppem = "/tmp/x509up_u" + str(os.getuid())
+	x509_user_cert = os.getenv("X509_USER_CERT", home+"/.globus/usercert.pem")
+	x509_user_key = os.getenv("X509_USER_KEY", home+"/.globus/userkey.pem")
+	
+	checklist = [
+		("/etc/grid-security/hostcert.pem", "/etc/grid-security/hostkey.pem"),
+		(tmppem, tmppem),
+		(x509_user_cert, x509_user_key)
+	]
+	
+	for c,k in checklist:
+		if os.access(c, os.F_OK | os.R_OK) and os.access(k, os.F_OK | os.R_OK):
+			id_list.append((c,k))
+			
+	return id_list
+
+def setup_identity(usercert, userkey):
+	"""Set files used for certification.
+	"""
+	options["user_cert"] = usercert
+	options["user_key"] = userkey
+
+def getHostByVomsId(**options):
+	"""Get corresponding hostname by VomsID.
+	"""
+	host =""
+	port = default_port
+	lines = []
+
+	try:
+		f = open(options["hostids"], "r")
+		lines = f.readlines()
+		f.close()
+	except:
+		raise Exception(
+		 "Error: Failed to read vomsID file['%s']."%(options["hostids"]))
+
+	index = 0
+	for line in lines:
+		index += 1
+		buf = line.strip()
+		if len(buf) == 0 or buf.startswith('#'):
+			continue
+		list = buf.split()
+		for i in range(len(list)):
+			if list[i].startswith("#"):
+				list = list[:i]
+				break
+		if len(list) < 2 or len(list) > 3:
+			print "Broken vomsid file. Cannot parse line(%d): %s"%(index, buf)
+			raise Exception(
+			  "Error:Failed to parse vomsID file['%s']."%(options["hostids"]))
+		if list[0] != options["vomsid"]:
+			continue
+		if len(list) == 2:
+			host = list[1]
+		else:
+			host = list[1]
+			port = int(list[2])
+			break
+	if host == "":
+		print "No definition for vomsID(%s) found."%(options["vomsid"])
+		raise Exception(
+		 "Error: Cannot find host in vomsID file['%s']."%(options["hostids"]))
+	return host, port
+
+def check_options():
+	"""Check options whether they are valid or not.
+	"""
+	if not options.has_key("hostids"):
+		options["hostids"] = hostids
+
+	if not options.has_key("vomsid"):
+		sys.exit("NO vomsID specified!")
+	else:
+		m = re.compile("^[a-zA-Z0-9_-]*")
+		if m.match(options["vomsid"]).group() != options["vomsid"]:
+			sys.exit("The chars which can use for vomsID are [a-zA-Z0-9_-].")
+		try:
+			host, port = getHostByVomsId(**options)
+			options["host"] = host
+			options["port"] = port
+		except Exception, e:
+			sys.exit(e);
+
+	if not options.has_key("vo"):
+		sys.exit("NO vo specified!")
+
+	if not options.has_key("host"):
+		sys.exit("NO host specified!")
+
+def parse_command_line():
+	"""Parse option, and set it to global 'options'.
+	"""
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "V:v:f:m:a:h")
+
+		for key, val in opts:
+			if key == "-V":
+				options["vomsid"] = val
+			elif key == "-v":
+				options["vo"] = val
+			elif key == "-f":
+				options["infile"] = val
+			elif key == "-m":
+				options["outfile"] = val
+			elif key == "-a":
+				options["hostids"] = val
+			elif key == "-h":
+				usage(None)
+		check_options()
+
+		if len(args) != 0:
+			usage("Invalid Argument is set!")
+
+	except getopt.GetoptError, e:
+		sys.exit("Error parsing command line arguments:%s"%(e))
+
+def getCheckUsers(infile):
+	"""Parser for user list file.
+	"""
+	try:
+		f = open(infile, "r")
+		lines = f.readlines()
+		f.close()
+
+		index = 0
+		users = {}
+		for line in lines:
+			index += 1
+			tmp_line = line.strip()
+			if len(tmp_line) == 0:
+				continue
+			if tmp_line[0] == "#":
+				continue
+			info = tmp_line.split("=", 1)
+			if len(info) != 2:
+				print "invalid line(%d):%s"%(index, tmp_line)
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
+			if info[0].strip() != "user":
+				print "invalid line(%d):%s"%(index, tmp_line)
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
+			if info[1].strip() in users:
+				print "duplicate definition for dn ",
+				print "(in line %d):%s"%(index, info[1].strip())
+				raise Exception(
+				 "Error: Failed to parse user list['%s'])."%(infile))
+			users[info[1].strip()]=""
+		return users
+	except IOError, e:
+		raise Exception("Error: Failed to read user list['%s'])."%(infile))
+	except Exception, e:
+		f.close()
+		raise e
+
+def export(group_infos):
+	"""Print the result to 'outfile' which is registered in global 'options'.
+	"""
+	groups = group_infos.keys()
+	f = sys.stdout
+	print "Writing Infos..."
+
+	if options.has_key("outfile"):
+		try:
+			f = open(options["outfile"], "w")
+		except Exception, e:
+			raise Exception("Error:Failed to open file.(%s)"%(str(e)))
+	if f == sys.stdout:
+		print "-------------------------------------------"
+	print >>f, "void=%s\nvo=/%s"%(options["vomsid"], options["vo"])
+	for group in groups:
+		if len(group_infos[group]) == 0:
+			continue
+		print >>f, "voms=%s"%(group)
+		for member in group_infos[group]:
+			print >>f, "user=%s"%(member._DN)
+	if f == sys.stdout:
+		print "-------------------------------------------"
+	print "Finished"
+	f.close()
+
+def getGroupList(group, counter, root):
+	"""Get group list.
+	"""
+	global admin
+	glist = []
+	try:
+		glist = admin.execute("listSubGroups", group=group)
+	except socket.error, e:
+		errtuple = tuple(e)
+		if len(errtuple) == 2:
+			raise Exception(
+			 "SocketError(%d):%s [hostname=%s, post=%d]"%(
+			   errtuple[0], errtuple[1], options["host"], options["port"]))
+		else:
+			raise e
+	except Exception, e:
+		if str(e).find("Insufficient privileges") != -1:
+			if not root:
+				counter.out.write(
+				 "Ignored: Insufficient privileges to perform '%s' to %s\n"%(
+				                                      "listSubGroups", group))
+			else:
+				raise Exception("Authorization Failure")
+		else:
+			raise e
+	ret_list = glist[:]
+	counter.progress(1)
+	for g in glist:
+		ret_list.extend(getGroupList(g, counter, False))
+	return ret_list
+	
+def getRoleList():
+	rlist = []
+	try:
+		rlist = admin.execute("listRoles", **options)
+	except Exception, e:
+		if str(e).find("Insufficient privileges") != -1:
+			print "Ignored: ",
+			print "Insufficient privileges to perform 'listRoles'"
+		else:
+			raise e
+	return rlist
+
+def main():
+	global admin
+
+	try:
+		# Init
+		counter = None
+		bar = None
+		group_infos = {}
+		dns = None
+		parse_command_line()
+		if options.has_key("infile"):
+			dns = getCheckUsers(options["infile"])
+			
+		checkidlist = listup_identity()
+		if len(checkidlist) == 0: raise Exception("No Certification file found")
+		usercert, userkey = checkidlist[0]
+		
+		print "trying usercert:%s, userkey:%s"%(usercert, userkey)
+		setup_identity(usercert, userkey)
+
+		admin = SOAPBinding(**options)
+
+		# Get Groups and Roles
+		print "Start to get Group Info..."
+		counter = GroupCounter()
+		counter.start()
+		glist = getGroupList("/%s"%(options["vo"]), counter, True)
+		glist.insert(0, "/%s"%(options["vo"]))
+		counter.end()
+		counter = None
+		print "Start to get Role Info..."
+		rlist = getRoleList()
+		print "%d roles found..."%(len(rlist))
+		print "Complete"
+	
+		# Get Info. user by user
+		print "Getting Group Member Infos..."
+		bar = ProgressBar(len(glist))
+		bar.start()
+		for group in glist:
+			grp_novo = group[len(options["vo"]) + 1:]
+			try:
+				members = admin.execute("listMembers", group=group)
+				if dns != None:
+					members = [u for u in members if u._DN in dns]
+				group_infos[grp_novo] = members
+			except Exception, e:
+				if str(e).find("Insufficient privileges") != -1:
+					bar.out.write(
+						"Ignored: " +
+						"Insufficient privileges to perform '%s' to %s\n"%(
+							"listMembers",group))
+				else:
+					raise e
+			for role in rlist:
+				try:
+					r_members = admin.execute("listUsersWithRole",
+					                          group=group, role=role)
+					if dns != None:
+						r_members = [u for u in r_members if u._DN in dns]
+					group_infos["%s/%s"%(grp_novo, role)] = r_members
+				except Exception, e:
+					if str(e).find("containerName.length()") != -1:
+						bar.out.write(
+							"Ignored: " +
+							"Too long groupname '%s/%s'\n"%(grp_novo, role))
+						continue
+					elif str(e).find("Insufficient privileges") != -1:
+						bar.out.write(
+							"Ignored:" +
+							"Insufficient privileges to perform " +
+							"'%s' to %s/Role=%s\n"%(
+								"listUsersWithRole", group, role))
+						continue
+					else:
+						raise e
+			bar.progress(1)
+		bar = None
+		export(group_infos)
+	except Exception, e:
+		if counter != None or bar != None:
+			print ""
+		msg = ""
+		if str(e).find("text/html") != -1:
+			msg = ": vo(%s) may be not exists or not active."%(options["vo"])
+		sys.exit("%s%s"%(e,msg))
+
+if __name__ == "__main__":
+	main()

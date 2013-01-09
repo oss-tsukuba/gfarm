@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfarm_agent</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM_AGENT.1"
+></A
+>gfarm_agent</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm_agent&nbsp;--&nbsp;Gfarm メタデータキャッシュサーバ</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> は、
+複数ノード、複数ユーザで共有可能な
+Gfarm ファイルシステム・メタデータのキャッシュサーバです。
+キャッシュサーバにより、
+遠隔のメタデータサーバに対する無駄なネットワーク転送が抑制され、
+Gfarm ファイルシステムに対するレスポンスを大幅に改善します。</P
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> は、
+同時に複数のノードで実行することが可能です。
+その場合、複数の <B
+CLASS="COMMAND"
+>gfarm_agent</B
+>
+および Gfarm メタデータサーバ間の一貫性は保証されます。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-L</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ログレベル</I
+></TT
+></DT
+><DD
+><P
+>このオプションで指定したレベル以上の優先度のログを出力します。
+指定できる値は gfarm.conf(5) の log_level の項を参照してください。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>PIDファイル</I
+></TT
+></DT
+><DD
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> の process ID を、
+指定したファイルに記録します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-S</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>syslogファシリティ</I
+></TT
+></DT
+><DD
+><P
+><B
+CLASS="COMMAND"
+>gfarm_agent</B
+> がエラー報告に用いる
+syslog のファシリティを指定します。
+省略した場合には、local0 を使用します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
+></DT
+><DD
+><P
+>デバッグオプションです。デーモンとしてではなく、フォアグラウンド・
+プロセスとして立ち上がります。</P
+><P
+>このオプションを指定し、かつ <CODE
+CLASS="OPTION"
+>-L</CODE
+> オプションを指定しなかった
+場合、ログレベルは debug となります。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-f</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>設定ファイル</I
+></TT
+></DT
+><DD
+><P
+>起動時に読み込む設定ファイルを指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>単一の <B
+CLASS="COMMAND"
+>gfarm_agent</B
+> を利用する場合に利用可能です。
+このオプションを利用するとパス情報もキャッシュするようになるため、
+メタデータサーバへのアクセス数が減り、高速になります。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ポート番号</I
+></TT
+></DT
+><DD
+><P
+>gfarm_agent が利用する TCP のポート番号を指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>認証時のエラーメッセージの詳細を表示します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>%%SYSCONFDIR%%/gfarm.conf</TT
+></DT
+><DD
+><P
+>gfarm_agent が参照する設定ファイルです。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+><SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

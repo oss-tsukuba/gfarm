@@ -1,0 +1,49 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfront.1'>
+
+<refentryinfo><date>19 Aug 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfront</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfront</refname>
+<refpurpose>Gfarm ファイルを操作する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfront</command>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para> 
+GFrontは、gfarmファイルシステムを操作するGUIアプリケーションである。
+GFrontは、gfarmファイルシステムを利用者が対話的に操作することを可能とする。
+gfarmファイルシステムに対する基本操作はすでにコマンドとして実現されており、GFrontではgfarmのコマンドに相当する機能を実行するためのフロントエンド機能を提供する。</para>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfexport</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfhost</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfrm</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfreg</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>

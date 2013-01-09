@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfsetdir</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFSETDIR.1"
+></A
+>gfsetdir</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfsetdir&nbsp;--&nbsp;Gfarm 作業ディレクトリを変更するコマンド列を出力する。</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfsetdir</B
+> [-s | -c] [<TT
+CLASS="REPLACEABLE"
+><I
+>ディレクトリ</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>Gfarm 作業ディレクトリを 指定したディレクトリに変更するシェルコ
+マンドを標準出力に出力します。ディレクトリを指定しない場合は、ユーザの 
+Gfarm ホームディレクトリである
+gfarm:/<TT
+CLASS="REPLACEABLE"
+><I
+>グローバルユーザ</I
+></TT
+> に変更する
+コマンドを出力します。</P
+><P
+>ユーザが使用しているシェルを自動的に判定してそのシェルが実行可能な
+コマンドを出力します。</P
+><P
+>出力コマンドを実行して Gfarm 作業ディレクトリを変更する
+<B
+CLASS="COMMAND"
+>gfcd</B
+>
+を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
+ください。</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>Bourne shell 系シェルの場合</DT
+><DD
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfcd() { eval "`gfsetdir $1`"; }</PRE
+></TD
+></TR
+></TABLE
+></DD
+><DT
+>csh  系シェルの場合</DT
+><DD
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>alias gfcd 'eval `gfsetdir \!*`'</PRE
+></TD
+></TR
+></TABLE
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-s</TT
+></DT
+><DD
+><P
+>Bourne shell 系シェル用のコマンドを出力します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-c</TT
+></DT
+><DD
+><P
+>csh 系シェル用のコマンドを出力します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfcd</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfpwd</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

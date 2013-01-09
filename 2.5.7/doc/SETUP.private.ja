@@ -1,0 +1,246 @@
+[This is written in Japanese, please look at SETUP.private.en for
+ English version.]
+
+	  プライベート Gfarm ファイルシステム設定マニュアル
+
+● 本ドキュメントについて
+=========================
+
+本ドキュメントはユーザ権限で構築可能な特定ユーザ専用のプライベート 
+Gfarm ファイルシステムの構築方法を記述したものです．
+
+なにか問題が生じた場合には，Gfarm-FAQ.ja のトラブル・シューティングの
+項も参照してください．
+
+● 概要
+=========================
+
+Gfarm ファイルシステムをソースから構築し，その後，メタデータサーバ，
+ファイルシステムノード，クライアントノードの設定を行います．
+
+● Gfarm ファイルシステムの構築
+===============================
+
+本ドキュメントでは，インストール先を $HOME/local/gfarm_v2 として説明し
+ます．まず，インストール先を環境変数 PREFIX に設定します．
+
+	% export PREFIX=$HOME/local/gfarm_v2
+
+インストール先を設定して，ソースコードから Gfarm ファイルシステムを導
+入します．
+
+	% ./configure --prefix=$PREFIX
+	% make
+	% make install
+
+導入に関する詳細は INSTALL.ja を参照してください．
+
+● メタデータサーバの設定
+=========================
+
+▽ Gfarm ファイルシステムの設定
+
+まず，環境変数 PATH を設定し，$PREFIX に移ります．
+
+	% export PATH=$PREFIX/bin:$PATH
+	% cd $PREFIX
+
+次に，config-gfarm により Gfarm ファイルシステムの構築を行います．
+
+	% config-gfarm --prefix $PREFIX -S -m <gfmd_port> -p <db_port>
+
+  ここで，<gfmd_port> は gfmd が listen するポート番号で，db_port はバッ
+  クエンドのデータベースが listen するポート番号です．ユーザ権限で利用
+  するため，1024 以上のポート番号を利用する必要があります．
+  <gfmd_port> は TCP で外からアクセスできる必要があります．
+  -S は，プライベートな Gfarm を構成するためのオプションです．
+
+config-gfarm コマンドによって、$PREFIX/etc/gfarm2.conf や 
+$PREFIX/etc/gfmd.conf などが作成された筈です。
+
+ホームディレクトリに認証鍵ファイル「.gfarm_shared_key」を作成します。
+
+	% cd
+	% gfkey -f -p 31536000
+
+  ここでは、認証鍵の期限を、ほぼ1年(31536000秒) に設定しています。
+
+以上で、メタデータサーバー上での設定は完了です。
+下記を実行して、gfmd が動作していることを確認してください。
+
+	% etc/init.d/gfmd status
+
+上記作業によって作成されたファイルを消去したい場合には、下記のコマンド
+で gfmd およびバックエンドデータベースサーバを停止させたのち、
+
+	% etc/init.d/gfmd stop
+	(場合によっては % killall gfmd)
+	% etc/init.d/gfarm-pgsql stop
+	(あるいは % etc/init.d/gfarm-slapd stop)
+
+下記のコマンドで削除できます。
+
+	% cd $PREFIX
+	% rm -f etc/gfarm2.conf etc/gfmd.conf
+	% rm -f etc/gfsd.conf etc/usermap
+	% rm -f etc/init.d/gfarm-* etc/init.d/gfmd
+	% rm -rf var/gfarm-*
+
+▽ ファイアウォールの設定
+
+メタデータサーバ上では，config-gfarm の -m オプションで指定したポート
+について，TCP でのコネクションを受け付けるように設定しておく必要があり
+ます．
+
+● ファイルシステムノードの設定
+===============================
+
+▽ ファイルシステムノードの設定
+
+メタデータサーバとファイルシステムノードで $PREFIX が共有されていない
+場合は，メタデータサーバで生成された
+
+	$PREFIX/etc/gfarm2.conf
+	$PREFIX/etc/gfsd.conf
+	$PREFIX/etc/usermap
+
+をファイルシステムノードの $PREFIX/etc にコピーします。
+
+ファイルシステムノード上で以下のコマンドを実行して、ファイルシステムノー
+ドの設定を行います．
+
+	% config-gfsd --prefix $PREFIX -S -p <gfsd_port> <spool_directory>
+
+  <gfsd_port> は gfsd が listen するポート番号です．ユーザ権限で利用す
+  るため，1024 以上のポート番号を利用する必要があります．
+  <gfsd_port> は TCP と UDP で外からアクセスできる必要があります．
+  -S は，プライベートな Gfarm を構成するためのオプションです．
+
+  config-gfsd コマンドの最後の引数は Gfarm ファイルシステムの実体ファ
+  イルが格納されるスプール・ディレクトリです．スプール・ディレクトリは，
+  他のファイルシステムノードと共有されない領域をフルパスで指定してくだ
+  さい．省略すると，$PREFIX/var/gfarm-spool になります．
+
+以上で設定は完了です。
+
+上記作業によって作成されたファイルを消去したい場合には、
+下記のコマンドで gfsd を停止させたのち、
+
+	% $PREFIX/etc/init.d/gfsd stop
+	(場合によっては % killall gfsd)
+
+下記のコマンドで削除できます。
+
+	% rm -f $PREFIX/etc/{gfarm2,gfsd}.conf
+	% rm -f $PREFIX/etc/init.d/gfsd
+	% rm -rf $PREFIX/var/gfarm-spool
+	(あるいは指定したスプールディレクトリを消去)
+
+▽ ファイアウォールの設定
+
+ファイルシステムノード上では，config-gfsd の -p オプションで指定した
+ポートについて，TCP のコネクションの受け付けと，UDP パケットの着信と
+送信ができる必要があります．
+
+さらに，クライアントノードと同様な設定も必要です。
+
+● クライアントノードの設定
+===========================
+
+前章のファイルシステムノードの設定にクライアントノードの設定は含まれて
+いますが，この章ではクライアントノードだけの設定を説明します．
+
+▽ クライアントノードの設定
+
+メタデータサーバで生成された $PREFIX/etc/gfarm2.conf ファイルを 
+$PREFIX/etc あるいは ~/.gfarm2rc にコピーします。
+
+メタデータサーバやファイルシステムノードとの間で、ユーザのホームディレ
+クトリが NFS で共有されている場合には、以上で設定は完了です。
+
+共有されてない場合には、認証鍵ファイル「.gfarm_shared_key」をユーザ
+のホームディレクトリへコピーします。
+
+▽ ファイアウォールの設定
+
+クライアントノードでは，config-gfarm の -m オプションで指定したポート
+について，メタデータサーバに対する TCP コネクションを発呼できる必要が
+あります．
+さらに，config-gfsd の -p オプションで指定したポートに対して，
+ファイルシステムノードへ TCP コネクションの発呼と，UDP パケットの
+送受信ができる必要もあります．
+
+● Gfarm ファイルシステムの利用確認
+===================================
+
+Gfarm ファイルシステムは，クライアントの設定をしているノードであれば，
+どのノードでも利用（共有）することができます．
+
+◇ gfls - ディレクトリ・リスティング
+
+	% gfls -la
+	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 .
+	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 ..
+	drwxr-xr-x tatebe   gfarmadm          0 Aug 22 16:08 tmp
+
+◇ gfhost - ファイルシステムノード情報の表示
+
+ファイルシステムノードが正しく登録されているかどうか，gfhost コマンドで
+確認します．
+
+	% gfhost -M
+	i386-fedora3-linux 2 linux-1.example.com 600 0
+	i386-fedora3-linux 2 linux-2.example.com 600 0
+	i386-fedora3-linux 2 linux-3.example.com 600 0
+	i386-redhat8.0-linux 1 linux-4.example.com 600 0
+	sparc-sun-solaris8 1 solaris-1.example.com 600 0
+	sparc-sun-solaris8 1 solaris-2.example.com 600 0
+	...
+
+次に，利用可能かどうか確認します．
+
+	% gfhost -lv
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com 600 0(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com 600 0(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com 600 0(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com 600 0(10.0.0.4)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com 600 0(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com 600 0(10.0.1.2)
+	...
+
+左から二番目の文字が 's', 'g', 'G' であれば，そのファイルシステムノード
+が利用可能です．'x' の場合は認証に失敗しています．
+
+また，一番左が '-.--/-.--/-.--' と表示される場合は，gfsd が正しく起動し
+ていないことを示しており，'x.xx/x.xx/x.xx' と表示される場合は，そのノー
+ドに接続できない（落ちている）ことを示しています．
+
+なお，上記コマンドの詳細は，man ページを参照してください．
+
+● Gfarm の進んだ利用
+=====================
+
+▽ ファイルの複製
+
+Gfarm ファイルシステムでは，ファイルはどこかのファイルシステムノードに
+格納されますが，二つ以上のファイルシステムノードにファイルの複製を保持
+することもできます．
+
+ファイルの複製を保持することにより，ファイルシステムノードの障害時でも，
+ファイルアクセスが可能になる他，ファイルアクセスの分散によりファイルア
+クセス性能の劣化を防ぐことができます．
+
+ファイルがどこに格納されているかを知るためには gfwhere コマンドを利用し
+ます．
+
+	% gfwhere .bashrc
+	linux-1.example.com
+
+ファイル複製を作成するためには gfrep コマンドが準備されています．例えば，
+もう一つファイル複製を作成したい場合は，以下のようにします．
+
+	% gfrep -s linux-1.example.com -d linux-2.example.com .bashrc
+	% gfwhere .bashrc
+	linux-1.example.com linux-2.example.com
+
+この場合，linux-1 と linux-2 に，ファイルが複製されて格納されています．

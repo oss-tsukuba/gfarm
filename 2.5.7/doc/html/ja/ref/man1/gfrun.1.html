@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfrun</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFRUN.1"
+></A
+>gfrun</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfrun, gfrsh, gfssh&nbsp;--&nbsp;ファイルシステムノードで gfarm 並列コマンドを実行する</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>プログラム名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>引数</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrsh</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>プログラム名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>引数</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfssh</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>プログラム名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>引数</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>並列プログラムを実行します．実行されるファイルシステムノードは，
+-G オプション，-H オプションあるいは -N オプションにより決定されます．</P
+><P
+>-G オプションはファイル・アフィニティ・スケジューリングのための
+Gfarm ファイル <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+> を指定します．
+ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
+ファイルのそれぞれのファイル断片に対し，複製が格納されている
+ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
+同数のプロセスが，ファイル断片を格納しているノードで実行され
+るということになります．
+-H オプションは <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+> を指定します．
+この場合，そのファイルに記述されたノードで並列プログラムを実行します．
+-N オプションは実行されるファイルシステムノードの
+<TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+> を指定します．</P
+><P
+>-G オプション，-H オプション，-N オプションは同時に二つ以上指定するこ
+とはできません．また，-G オプション，-H オプション，-N オプションがい
+ずれも指定されない場合は，引数に指定された既に存在する Gfarmファイルの
+うち一番はじめのファイルを利用したファイル・アフィニティ・スケジューリ
+ングにより決定されます．引数中に既に存在する Gfarm ファイルが存在しな
+い場合は，適当なノードが1 ノード選択され，逐次実行となります．</P
+><P
+>gfrsh や gfssh コマンドは，gfrcmd の代わりに rsh，ssh を
+利用することを除いて，gfrun と同様です．</P
+><P
+>プログラム名としては，gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます．</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-G</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>gfarm-URL のファイル・アフィニティ・スケジューリングにより
+並列プログラムを実行します．
+ファイル・アフィニティ・スケジューリングの動作については，DESCRIPTION 節を
+参照してください．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-H</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
+指定します．
+ホスト名は，各行に一ホストずつ記述します．</P
+><P
+>ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-N</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-r</CODE
+></DT
+><DD
+><P
+>ファイルを遠隔参照する場合，参照に先立ち自ホストにファイル複製を
+作成します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-o</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>実行される並列プログラムの標準出力を gfarm-URL に書き出します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-e</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-I</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>フラグメント番号</I
+></TT
+></DT
+><DD
+><P
+>指定されたフラグメント番号のプロセスだけが実行されます．
+このオプションは，<CODE
+CLASS="OPTION"
+>-G</CODE
+> オプションあるいは引数に与えた Gfarm
+ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
+場合，および <CODE
+CLASS="OPTION"
+>-N</CODE
+> オプションが指定されている場合のみ利
+用可能です．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-v</CODE
+></DT
+><DD
+><P
+>詳細にエラーメッセージを表示します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-p</CODE
+></DT
+><DD
+><P
+>プログラム実行後に Gfarm 並列I/O APIの所要時間を表示します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-g</CODE
+></DT
+><DD
+><P
+>実行されるプログラムを gfarm 化されたプログラムだと明示的に指定します．
+この結果，プログラムには Gfarm 特有のオプションが渡されます．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u</CODE
+></DT
+><DD
+><P
+>実行されるプログラムを通常のプログラムであると明示的に指定します．
+この場合，プログラムに Gfarm 特有のオプションが渡されることはありません．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-b</CODE
+></DT
+><DD
+><P
+>Gfarm システムコール・フック・ライブラリを利用して実行されるプログラムにおいて，
+デフォルトのファイル・ビューをグローバル・ファイル・ビューに設定します．
+このオプションをつけないと，
+デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します．</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="ENVIROMNENT-VARIABLES"
+></A
+><H2
+>ENVIROMNENT VARIABLES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="ENVAR"
+>GFRUN_CMD</CODE
+></DT
+><DD
+><P
+>遠隔起動コマンドを指定します．例えば globus-job-run が指定された場合，
+gfrun は globus-job-run を使ってそれぞれのプロセスを起動します．</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

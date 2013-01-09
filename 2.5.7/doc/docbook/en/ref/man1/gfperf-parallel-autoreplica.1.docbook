@@ -1,0 +1,129 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfperf-parallel-autoreplica.1'>
+
+<refentryinfo><date>19 May 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfperf-parallel-autoreplica</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfperf-parallel-autoreplica</refname>
+<refpurpose>Gfarm measure autoreplica performance</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfperf-parallel-autoreplica</command>
+    <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
+    <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
+    <arg choice='opt'>-l, --filesize <replaceable>file size</replaceable></arg>
+    <arg choice='opt'>-f, --number <replaceable>number of files</replaceable></arg>
+    <arg choice='opt'>-r, --replica <replaceable>number of replica</replaceable></arg>
+    <arg choice='opt'>-s, --stop <replaceable>wait time</replaceable></arg>
+    <arg choice='opt'>-n, --name <replaceable>group name</replaceable></arg>
+    <arg choice='opt'>-w, --wait <replaceable>start time</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>This command creates specified number of files of specified size in <parameter>test directory</parameter>.
+The created files will be automatically replicated by gfmd. This command measures creation time of the files.
+</para>
+<para>
+This command is expected to be called by gfperf.rb in parallel.
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<listitem>
+<para>
+Files are created in <parameter>test directory</parameter>.
+Specify only gfarm url (that begins with gfarm:///) .
+The default is gfarm:///tmp .
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs mount point </parameter></term>
+<listitem>
+<para>
+Specify gfarm2fs mount point.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-l, --filesize</option> <parameter>file size</parameter></term>
+<listitem>
+<para>
+File size to be created.
+The default is 1G. (1G=2^30)
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f, --number</option> <parameter>number of files</parameter></term>
+<listitem>
+<para>
+Number of files to be created.
+The default is 10.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r, --replica</option> <parameter>number of replica</parameter></term>
+<listitem>
+<para>
+Number of replica.
+The default is 1.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s, --stop</option> <parameter>wait time</parameter></term>
+<listitem>
+<para>
+Wait time in seconds for replication.
+The default is 60 seconds.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n, --name</option> <parameter>group name</parameter></term>
+<listitem>
+<para>
+Group name in parallel execution.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-w, --wait</option> <parameter>start time</parameter></term>
+<listitem>
+<para>
+Start time specified by gfperf.rb.
+This command waits until start time.
+Start time is written in UTC (YYYY-MM-DDThh:mm:ssZ) and
+must be in 10 seconds from current time.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+</refentry>

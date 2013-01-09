@@ -1,0 +1,126 @@
+[This is written in Japanese, please look at INSTALL.en for English version.]
+
+===============================
+ソースコードからの Gfarm の構築
+===============================
+
+この項では，ソースからの構築について説明します．
+バイナリ配布を利用されている方は，このファイルの説明は読み飛ばして構いません．
+
+今回のシステムは，Linux 上で実行テストされています．
+構築に関しては NetBSD, Solaris 上でテストされています．
+
+システムの構築のためには，OpenLDAP ないし PostgreSQL の少なくともどちら
+か片方と OpenSSL ライブラリが必要です．構築に必要なパッケージについては
+以下の「構築に必要なパッケージ」の章を参照下さい．
+
+システムを構築するには，下記のようにします．
+Linux と NetBSD 以外の OS では，GNU make を使ってください．
+
+	% ./configure [オプション]
+	% make
+	% su
+	Password:
+	# make install
+
+configure コマンドには，下記のオプションがあります．
+
+・--with-openldap=ディレクトリ
+
+  OpenLDAP のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
+
+・--with-postgresql=ディレクトリ
+
+  PostgreSQL のインストールされているディレクトリを指定します．
+  オプション省略時は自動的にインストールディレクトリの検索が試みられま
+  す．
+
+・--with-openssl=ディレクトリ
+
+  OpenSSL のインストールされているディレクトリを指定します．
+  オプション省略時は /usr が指定されます．
+
+・--with-globus=ディレクトリ
+
+  認証方式として GSI を可能とします．ディレクトリは Globus toolkit の
+  インストールされているディレクトリを指定します．ディレクトリを指定し
+  ないと pkg-config、環境変数 GLOBUS_LOCATION の示すディレクトリが順に
+  試されます．
+  Globus toolkit のうち GSSAPI ライブラリが必要となります．
+  このオプションは省略可能です．
+  デフォールトでは，インストールされている flavor を自動的に検索します
+  が，--with-globus-flavor="gcc32dbg" のようにして flavor 名を指定する
+  ともできます．
+
+・--without-mtsafe-netdb
+
+  ライブラリ関数 getaddrinfo(3) あるいは getnameinfo(3) が，マルチスレッド・
+  セーフではない場合に，指定が必要です．
+
+・--prefix=ディレクトリ
+
+  インストール先のディレクトリを指定します．このオプションを省略した場
+  合は /usr/local ディレクトリの下にインストールします．
+  このオプションは省略可能です．
+
+・--sysconfdir=ディレクトリ
+
+  設定ファイル「gfarm2.conf」を置くディレクトリを指定します．このオプショ
+  ンを省略した場合は上記の --prefix オプションで指定したディレクトリの
+  下の「etc」ディレクトリが指定されたものとみなします．本文書は，オプ
+  ション --sysconfdir=/etc が指定されたものと仮定して記述してあります．
+  このオプションは省略可能です．
+
+・--enable-voms
+
+  このオプションを指定すると，VOMS の VO，グループ，役割と連携して 
+  Gfarm のグループを管理するためのコマンド群をビルドします．詳しくは 
+  doc/voms-{install,man,dev}.ja を参照してください．
+  このオプションは省略可能です．
+
+・--enable-xmlattr
+
+  XPath による検索が可能な XML 拡張属性を利用するときに指定します．詳
+  しくは doc/xattr-install.ja および gfxattr，gffindxmlattr のマニュア
+  ルページを参照してください．
+  本機能を利用するためには，configure に --with-libxml オプションをつ
+  けて構築された postgresql-8.3.x 以降が必要となります．
+  （http://www.postgresql.org/docs/8.3/static/install-procedure.html）
+  また，config-gfarm 時に -X オプションの指定が必要になります．
+  このオプションは省略可能です．
+
+利用するコンパイラを明示したい場合には，環境変数 CC に，コンパイラのコ
+マンド名を指定して configure を実行してください．以下は gcc を指定する
+例です．
+
+	% env CC=gcc ./configure [options]
+
+構築に必要なパッケージ
+----------------------
+
+* RPM パッケージ
+
+openssl-devel
+openldap-devel
+postgresql-devel
+globus-gssapi-gsi-devel(*), pkgconfig	(--with-globus オプションに必要)
+postgresql, postgresql-server		(config-gfarm の実行に必要)
+fuse-devel				(gfarm2fs の構築に必要)
+
+(*) http://www.globus.org/toolkit/downloads/latest-stable/
+    を参考に Globus configuration ファイルを導入する必要があります．
+    例えば，CentOS 6，Globus 5.2.2の場合，以下の様になります．
+    # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
+
+* Debian パッケージ
+
+libssl-dev
+libldap2-dev
+libpq-dev
+libglobus-gssapi-gsi-dev, pkg-config	(--with-globus オプションに必要)
+postgresql, postgresql-client		(config-gfarm の実行に必要)
+libfuse-dev				(gfarm2fs の構築に必要)
+
+$Id$

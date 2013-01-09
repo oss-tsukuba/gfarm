@@ -1,0 +1,50 @@
+岩崎君、曽田君、建部さん、その他使う可能性がある人々のためのメモ
+
+1. 基本的に、gfarmSecSession*() の API のみを使って書けば良いです。
+
+2. scsub.c, server.c, client.c, server2.c, client2.c の、テストプログ
+   ラムを参照してください。
+
+3. REFERENCE も良く参照してください。構造体等は、直接 *.h を参照してく
+   ださい。
+
+4. 各種設定ファイル等は、この directory にあります。いずれ説明を書きま
+   す。今はそのまま使ってください ^^;
+
+
+[コンパイルの方法]
+
+1. 環境変数 GLOBUS_LOCATION の設定
+
+   % setenv GLOBUS_LOCATION /usr/local/globus/gt2
+
+2. make
+
+   % make
+
+[テストプログラムの実行方法]
+
+1. 環境変数 GFARM_HOME の設定
+
+   % setenv GFARM_HOME .
+
+2. $GFARM_HOME/etc ディレクトリの作成
+
+   % ln -s . etc
+
+3. $GFARM_HOME/etc/gfarm-usermap の確認．自分のエントリが存在するか？
+
+4. host certificate および CA signing policy の確認．
+
+   以下のファイルが存在するか？
+
+   /etc/grid-security/hostcert.pem /etc/grid-security/hostkey.pem
+   /etc/grid-security/certificates/42864e48.signing_policy
+
+5. root で server の起動．
+
+   # GFARM_HOME=. ./server -p 10000
+
+6. client の起動．
+
+   % ./client -h localhost -p 10000

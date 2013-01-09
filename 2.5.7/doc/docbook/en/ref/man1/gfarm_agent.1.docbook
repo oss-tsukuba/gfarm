@@ -1,0 +1,143 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm_agent.1'>
+
+<refentryinfo><date>10 Nov 2006</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_agent</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_agent</refname>
+<refpurpose>Gfarm Filesystem Metadata Cache Server</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfarm_agent</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+<command>gfarm_agent</command> is a cache server for a Gfarm metadata
+server that can be shared by multiple hosts and multiple users.
+The cache server greatly improves performance and response
+time for a Gfarm filesystem by reducing network communication to a
+distant metadata server.
+</para>
+
+<para>
+Any number of <command>gfarm_agent</command>s can be running on
+different nodes (or even on the same node) at the same time.
+Consistency among multiple cache servers and a metadata server is
+maintained.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-L</option> <parameter>log-level</parameter></term>
+<listitem>
+<para>Specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm.conf(5) for the priority levels which can be specified
+by this option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>pid-file</parameter></term>
+<listitem>
+<para>Specifies a file name which records the process ID of
+<command>gfarm_agent</command>.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-S</option> <parameter>syslog-facility</parameter></term>
+<listitem>
+<para>Specifies a syslog facility used to report errors by
+<command>gfarm_agent</command>.  By default, local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>Specifies the debug mode.  <command>gfarm_agent</command> runs
+in the foreground, not in the background.</para>
+<para>
+If this option is specified and <option>-L</option> is not specified,
+the log level is set to "debug".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>config-file</parameter></term>
+<listitem>
+<para>Specifies a configuration file that is read instead of the default
+configuration file.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>Specifies the master mode.  This improves metadata access
+  performance by caching the path information.  This option is only
+  available when there is a single <command>gfarm_agent</command>
+  running.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>port-number</parameter></term>
+<listitem>
+<para>Specifies a port number for TCP, to be used by gfarm_agent.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Displays verbose error messages in authentication.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>%%SYSCONFDIR%%/gfarm.conf</filename></term>
+<listitem>
+<para>configuration file</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>

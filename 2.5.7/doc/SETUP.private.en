@@ -1,0 +1,211 @@
+		Private Gfarm Filesystem Setup Manual
+
+About this document
+===================
+
+This document describes how to configure a private Gfarm filesystem by
+a non privileged user.
+
+If problems occur, please refer to the Trouble Shooting section
+in Gfarm-FAQ.en.
+
+Overview
+========
+
+Install the Gfarm software from the source code, and configure a
+metadata server, and filesystem nodes.
+
+Gfarm installation from the source code
+=======================================
+
+This document assumes the installation directory to be
+$HOME/local/gfarm_v2, which is specified by the environment variable
+PREFIX.
+
+	% export PREFIX=$HOME/local/gfarm_v2
+
+Configure and install the Gfarm file system from the source code.
+
+	% ./configure --prefix=$PREFIX
+	% make
+	% make install
+
+For details, refer to INSTALL.en document.
+
+Configuration of a Gfarm metadata server
+========================================
+
+o Configuration of the Gfarm filesystem
+
+At first, add a binary directory of the Gfarm file system, and change
+to the $PREFIX directory.
+
+	% export PATH=$PREFIX/bin:$PATH
+	% cd $PREFIX
+
+Run 'config-gfarm' to configure a Gfarm filesystem.
+
+	% config-gfarm --prefix $PREFIX -S -m <gfmd_port> -p <db_port>
+
+  where <gfmd_port> is a listening TCP port number of the gfmd, and
+  <db_port> is a listening TCP port number of a backend database.  It
+  is necessary to use a port number of 1024 or greater for a non
+  privileged user.  <gfmd_port> needs to be accessed from outside by
+  TCP.  The -S option specifies to configure a private Gfarm file
+  system for a non priviledged user.
+
+config-gfarm creates a Gfarm configuration file,
+$PREFIX/etc/gfarm2.conf, $PREFIX/etc/gfsd.conf and
+$PREFIX/etc/gfmd.conf.
+
+Create a shared secret key (~/.gfarm_shared_key) in the home directory.
+
+	% cd
+	% gfkey -f -p 31536000
+
+  This example sets up an expiration date of about one year (31536000
+  seconds).
+
+o Firewall configuration
+
+The Gfarm metadata server should be able to accept TCP connections at
+a port that are specified by the -m option of the config-gfarm
+command.
+
+Configuration of a Gfarm filesystem node
+========================================
+
+o Configuration of a filesystem node
+
+When the $PREFIX directory is not shared among the metadata server and
+a filesystem node, it is necessary to copy
+
+	$PREFIX/etc/gfarm2.conf
+	$PREFIX/etc/gfsd.conf
+	$PREFIX/etc/usermap
+
+to a $PREFIX/etc directory on the filesystem node.
+
+Execute the following command to configure the filesystem node.
+
+	% config-gfsd --prefix $PREFIX -S -p <gfsd_port> <spool_directory>
+
+  where <gfsd_port> is a listening TCP port number of the gfsd.  It is
+  necessary to use a port number of 1024 or greater for a non
+  privileged user.  <gfsd_port> needs to be accessed from outside by
+  TCP.  The -S option specifies to configure a private Gfarm file
+  system for a non priviledged user.
+
+  The last argument of config-gfsd is a spool directory, which stores
+  physical files in Gfarm file system.  Note that the spool directory
+  should be a non-shared area among filesystem nodes.  If you do not
+  specify the directory, it would be $PREFIX/var/gfarm-spool.
+
+o Firewall configuration
+
+Filesystem nodes should be able to accept TCP connections and
+UDP packet reception and transmission at the port that is
+specified by the -p option of the config-gfsd command.
+
+Also, it requires the same settings as those of the client nodes.
+
+Configuration of a Gfarm client node
+====================================
+
+This chapter describes configuration only for a client node.
+
+o Configuration of a client node
+
+Copy /etc/gfarm2.conf from the metadata server to the client node.
+
+Note: This setting can be substituted for copying to ~/.gfarm2rc.
+
+If user's home directory is shared among metadata server and file
+system nodes, there is nothing to do.  If not, .gfarm_shared_key
+needs to be copied from the metadata server.
+
+o Firewall configuration
+
+Client nodes should be able to initiate TCP connections to the metadata
+server, at the port specified by the -m option of the config-gfarm command.
+Furthermore, they should be able to initiate TCP connections and
+should be able to send/receive UDP packets to filesystem nodes, from the
+port specified by the -p option of the config-gfsd command.
+
+Testing of the Gfarm filesystem
+===============================
+
+You can check whether the Gfarm filesystem works or not using any client,
+since it can be accessed (or shared) by every client node.
+
+o gfls - Directory listing
+
+'gfls' lists the contents of a directory.
+
+	% gfls -la
+	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 .
+	drwxrwxr-x gfarmadm gfarmadm          4 Aug 23 06:33 ..
+	drwxr-xr-x tatebe   gfarmadm          0 Aug 22 16:08 tmp
+
+o gfhost - Filesystem node information
+
+'gfhost -M' displays the information for filesystem nodes registered
+with the metadata server.
+
+	% gfhost -M
+	i386-fedora3-linux 2 linux-1.example.com 600 0
+	i386-fedora3-linux 2 linux-2.example.com 600 0
+	i386-fedora3-linux 2 linux-3.example.com 600 0
+	i386-redhat8.0-linux 1 linux-4.example.com 600 0
+	sparc-sun-solaris8 1 solaris-1.example.com 600 0
+	sparc-sun-solaris8 1 solaris-2.example.com 600 0
+	...
+
+'gfhost -l' displays the status of the filesystem nodes.
+
+	% gfhost -l
+	0.01/0.03/0.03 s i386-fedora3-linux 2 linux-1.example.com 600 0(10.0.0.1)
+	0.00/0.00/0.00 s i386-fedora3-linux 2 linux-2.example.com 600 0(10.0.0.2)
+	-.--/-.--/-.-- - i386-fedora3-linux 2 linux-3.example.com 600 0(10.0.0.3)
+	0.00/0.02/0.00 x i386-redhat8.0-linux 1 linux-4.example.com 600 0(10.0.0.4)
+	0.10/0.00/0.00 G sparc-sun-solaris8 1 solaris-1.example.com 600 0(10.0.1.1)
+	x.xx/x.xx/x.xx - sparc-sun-solaris8 1 solaris-2.example.com 600 0(10.0.1.2)
+	...
+
+The second field shows the status of authentication with the filesystem
+node.  's', 'g', and 'G' show successful authentication, while 'x'
+shows an authentication failure.
+
+'-.--/-.--/-.--' in the first field shows that gfsd has not executed
+correctly, and 'x.xx/x.xx/x.xx' shows the filesystem node is probably
+down.
+
+For details of the above Gfarm commands, refer to the respective man page.
+
+Further examples of advanced functionality
+==========================================
+
+o File replica creation
+
+Each file in the Gfarm filesystem can have several file copies that
+can be stored on two and more filesystem nodes.
+
+Multiple file copies of the same file enables access to the file even
+when one of the filesystem nodes is down.  Moreover, it enables
+prevention of access performance deterioration by allowing access to
+different file copies.
+
+The 'gfwhere' command displays the location of file copies, or a replica
+catalog, of the specified files.
+
+	% gfwhere .bashrc
+	linux-1.example.com
+
+The 'gfrep' command creates file copies.
+
+	% gfrep -s linux-1.example.com -d linux-2.example.com .bashrc
+	% gfwhere .bashrc
+	linux-1.example.com linux-2.example.com
+
+In this case, '.bashrc' has two copies; one is stored on
+linux-1.example.com and the other is stored on linux-2.example.com.

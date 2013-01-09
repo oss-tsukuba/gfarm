@@ -1,0 +1,84 @@
+database: {filename: "/var/www/database.db", check span: "10days",
+	   backup: "/var/www/database.db.bak" }
+errlog: "/tmp/gfperf.err.log"
+#remote_path: "/usr/local/gfarm/bin"
+authentication: ["sharedsecret", "gsi_auth", "gsi"]
+gfarm2fs_mountpoint: ["/mnt/gfarm2fs"]
+metadata: [ {testdir: "gfarm:///tmp", number: "250"},
+            {testdir: "file:///mnt/gfarm2fs/tmp", number: "250"} ]
+tree: [ {testdir: "gfarm:///tmp", width: "5", depth: "3"},
+        {testdir: "file:///mnt/gfarm2fs/tmp", width: "5", depth: "3"} ]
+copy: [
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/mnt/gfarm2fs"},
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local", gfarm2fs: "/mnt/gfarm2fs"},
+   {src: "file:///tmp", dst: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local", gfarm2fs: "/mnt/gfarm2fs"},
+   {src: "gfarm:///tmp", dst: "file:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local", gfarm2fs: "/mnt/gfarm2fs"}
+      ]
+read: [
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}
+      ]
+write: [
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", overwrite: "true", random: "true", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}
+      ]
+replica: [
+   {testdir: "gfarm:///tmp", src: "gfsd0.local", dst: "gfsd1.local", filesize: "1M"},
+   {testdir: "gfarm:///tmp", src: "gfsd1.local", dst: "gfsd0.local", filesize: "1M"}
+	 ]
+autoreplica: [
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "1"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "1"},
+   {testdir: "gfarm:///tmp", filesize: "1M", number: "3", replica: "2"},
+   {testdir: "gfarm:///tmp", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"}
+	 ]
+parallel: {
+  group1: [
+   {rhost: "gfsd0.local", type: "read", testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {rhost: "gfsd0.local", type: "read", testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}
+        ],
+  group2: [
+   {rhost: "gfsd0.local", type: "write", testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd0.local"},
+   {rhost: "gfsd0.local", type: "write", testdir: "gfarm:///tmp", filesize: "1M", bufsize: "4K", gfsd: "gfsd1.local"}
+       ],
+  group3: [
+   {type: "replica", testdir: "gfarm:///tmp", src: "gfsd0.local", dst: "gfsd1.local", filesize: "1M"},
+   {type: "replica", testdir: "gfarm:///tmp", src: "gfsd1.local", dst: "gfsd0.local", filesize: "1M"}
+       ]
+}
+parallel-autoreplica: {
+  group4: [
+     {testdir: "gfarm:///tmp1", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp2", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp3", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp4", filesize: "1M", number: "3", replica: "2"}
+       ],
+  group5: [
+     {testdir: "gfarm:///tmp1", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"},
+     {testdir: "gfarm:///tmp2", gfarm2fs: "/mnt/gfarm2fs", filesize: "1M", number: "3", replica: "2"}
+       ]    
+}

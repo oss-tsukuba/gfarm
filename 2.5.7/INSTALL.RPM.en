@@ -1,0 +1,87 @@
+		Gfarm Filesystem Installation Manual
+
+About this document
+===================
+
+This document describes the installation of a Gfarm filesystem
+using RPM binary packages.
+
+Overview
+========
+
+To introduce a Gfarm filesystem, RPM packages for a metadata server,
+filesystem nodes, and client nodes have to be installed.
+
+Note that it is possible to install all RPM packages on the same host.
+
+Instruction to build RPM binary packages
+========================================
+
+RPM binary packages are built from the RPM source package (SRPM).  To
+build the binary packages, development packages of OpenSSL, OpenLDAP
+and PostgreSQL are required.
+
+
+	# yum install openssl-devel openldap-devel postgresql-devel
+	# rpmbuild --rebuild gfarm-X.X.X-X.src.rpm
+
+Binary packages are located at /usr/src/redhat/RPM/ARCH/.
+
+To enable the GSI authentication, development packages of Globus
+GSSAPI is also required.  Moreover the environment variables
+GFARM_CONFIGURE_OPTION should be defined.
+
+	# GFARM_CONFIGURE_OPTION=--with-globus rpmbuild \
+		--rebuild gfarm-X.X.X-X.src.rpm
+
+If it succeeds, gfarm-gsi packages (not gfarm packages) are built.  If
+not, make sure whether the Globus GSSAPI library is correctly
+installed.
+
+Installation of a Gfarm metadata server
+=======================================
+
+Install RPM packages for the Gfarm metadata server.
+
+	# rpm -Uvh gfarm-server-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm
+
+Note: The binary package names may be gfarm-gsi-* not gfarm-* if the
+      Package does include GSI authentication.
+
+Installation of a Gfarm filesystem node (and client node)
+=========================================================
+
+Install the RPM packages for a Gfarm filesystem node.
+
+	# rpm -Uvh gfarm-fsnode-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+Since each filesystem node is usually a client node, it is necessary
+to install a client package, too.  A document package is optional.
+
+Moreover, if you want to use the GfarmFS-FUSE (gfarm2fs) to mount
+the Gfarm filesystem as a client node, the gfarm2fs package is
+necessary.
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+Installation of a Gfarm client node
+===================================
+
+Install RPM packages for a Gfarm client node.
+
+	# rpm -Uvh gfarm-client-X.X.X-X.ARCH.rpm \
+		   gfarm-libs-X.X.X-X.ARCH.rpm \
+		   gfarm-doc-X.X.X-X.ARCH.rpm
+
+A document package is optional.
+
+If you want to use the GfarmFS-FUSE to mount the Gfarm file system,
+install the gfarm2fs package as well.
+
+	# rpm -Uvh gfarm2fs-X.X.X-X.ARCH.rpm
+
+$Id$

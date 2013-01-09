@@ -1,0 +1,213 @@
+fq_hostname()
+{
+	hostname -f
+}
+
+dns_domainname()
+{
+	dnsdomainname
+}
+
+memory_size()
+{
+	# kilo bytes -> mega bytes
+	awk '$1 == "MemTotal:" {print int($2/1024)}' /proc/meminfo
+}
+
+number_of_cpus()
+{
+	grep "^processor" /proc/cpuinfo | wc | awk '{ print $1 }'
+}
+
+set_linux_rc_type()
+{
+	if [ -n "${LINUX_RC_TYPE-}" ]; then
+		return
+	fi
+
+	# if [ -x /sbin/rc-update ] || [ -x /usr/sbin/rc-update ]; then
+	#	LINUX_RC_TYPE=gentoo; return
+	if [ -x /sbin/update-rc.d -o -x /usr/sbin/update-rc.d ]; then
+		LINUX_RC_TYPE=debian; return
+	elif [ -x /sbin/chkconfig -o -x /usr/sbin/chkconfig ] &&
+	     [ -x /sbin/service -o -x /usr/sbin/service ] &&
+	     [ -f /etc/rc.d/init.d/functions ]; then
+		LINUX_RC_TYPE=redhat
+	elif [ -x /sbin/chkconfig -o -x /usr/sbin/chkconfig ] &&
+	     [ -f /etc/rc.status ]; then
+		LINUX_RC_TYPE=suse
+	else
+		LINUX_RC_TYPE=default
+	fi
+}
+
+sysdep_defaults()
+{
+	set_linux_rc_type
+
+	# Actual pathname may be /etc/rc.d/init.d on RedHat and derived,
+	# but there is always symbolic link from /etc/init.d to there.
+	: ${RC_DIR:="$CONFIG_PREFIX/etc/init.d"}
+
+	: ${SLAPD_BDB_NCACHE:="1"} # 0/1: contiguous memory
+
+	case $LINUX_RC_TYPE in
+	debian)	if [ -f /etc/ldap/schema/core.schema ]; then
+			: ${OPENLDAP_ETC:=/etc/ldap}
+		fi
+		;;
+	redhat)	: ${RC_LOCK_DIR:="$CONFIG_PREFIX/var/lock/subsys"}
+		;;
+	esac
+
+	: ${RC_BACKEND_IN="$config_dir/linux/$LINUX_RC_TYPE/$RC_BACKEND_BASENAME.in"}
+	: ${RC_GFMD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfmd.in"}
+	: ${RC_AGENT_IN="$config_dir/linux/$LINUX_RC_TYPE/gfarm_agent.in"}
+	: ${RC_GFSD_IN="$config_dir/linux/$LINUX_RC_TYPE/gfsd.in"}
+
+	if [ ! -f "$RC_BACKEND_IN" ]; then
+		RC_BACKEND_IN="$config_dir/linux/default/$RC_BACKEND_BASENAME.in"
+	fi
+	if [ ! -f "$RC_GFMD_IN" ]; then
+		RC_GFMD_IN="$config_dir/linux/default/gfmd.in"
+	fi
+	if [ ! -f "$RC_AGENT_IN" ]; then
+		RC_AGENT_IN="$config_dir/linux/default/gfarm_agent.in"
+	fi
+	if [ ! -f "$RC_GFSD_IN" ]; then
+		RC_GFSD_IN="$config_dir/linux/default/gfsd.in"
+	fi
+}
+
+config_sysdep()
+{
+	case $LINUX_RC_TYPE in
+	redhat)	sed -e "s|@config_gfarm_lock_dir@|$RC_LOCK_DIR|" ${1+"$@"}
+		;;
+	*)	# no conversion
+		cat ${1+"$@"}
+		;;
+	esac
+}
+
+mkcnf_gfarm_sysdep()
+{
+	case $LINUX_RC_TYPE in
+	redhat)	create_directory "${RC_LOCK_DIR}"
+		;;
+	esac
+}
+
+mkcnf_gfmd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+mkcnf_gfsd_sysdep()
+{
+	mkcnf_gfarm_sysdep
+}
+
+service_add_debian()
+{
+	# local service
+
+	service=$1
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		update-rc.d $service defaults >/dev/null ||
+			ABORT "cannot add "$service" service"
+		echo added "$service" service
+	else
+		echo add "$service" service: skipped
+	fi
+}
+
+service_add_by_chkconfig()
+{
+	# local service
+
+	service=$1
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		chkconfig "$service" --add ||
+			ABORT "cannot add $service service"
+		echo added "$service" service
+	else
+		echo add "$service" service: skipped
+	fi
+}
+
+service_add_default()
+{
+	# local service
+
+	service=$1
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		echo how to add "$service" service is unknown: skipped
+	else
+		echo add "$service" service: skipped
+	fi
+}
+
+service_ctl_debian()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+	shift 2
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X \
+			-a -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d $service $ctl ${1+"$@"}
+	else
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
+}
+
+service_ctl_redhat()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+	shift 2
+
+	if [ -w / -a X"$CONFIG_PREFIX" = X ]; then
+		service "$service" $ctl ${1+"$@"}
+	else
+		"$RC_DIR/$service" $ctl ${1+"$@"}
+	fi || ABORT "cannot $ctl $service $@"
+}
+
+service_ctl_default()
+{
+	# local service ctl
+
+	service=$1
+	ctl=$2
+	shift 2
+
+	"$RC_DIR/$service" $ctl ${1+"$@"} || ABORT "cannot $ctl $service $@"
+}
+
+service_add()
+{
+	case $LINUX_RC_TYPE in
+	debian)	service_add_debian $1;;
+	redhat)	service_add_by_chkconfig $1;;
+	suse)	service_add_by_chkconfig $1;;
+	*)	service_add_default $1;;
+	esac
+}
+
+service_ctl()
+{
+	case $LINUX_RC_TYPE in
+	debian)	service_ctl_debian ${1+"$@"};;
+	redhat)	service_ctl_redhat ${1+"$@"};;
+	suse)	service_ctl_default ${1+"$@"};;
+	*)	service_ctl_default ${1+"$@"};;
+	esac
+}

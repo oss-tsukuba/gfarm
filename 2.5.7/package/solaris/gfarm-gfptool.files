@@ -1,0 +1,10 @@
+@PREFIX@/bin/gfcombine
+@PREFIX@/bin/gfcombine_hook
+@PREFIX@/bin/gfcp
+@PREFIX@/bin/gfcp_hook
+@PREFIX@/bin/gfgrep
+@PREFIX@/bin/gfwc
+
+@PREFIX@/libexec/gfrepbe_client
+@PREFIX@/libexec/gfrepbe_server
+@PREFIX@/sbin/gfregister

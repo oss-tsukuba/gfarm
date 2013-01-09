@@ -1,0 +1,28 @@
+#! /bin/sh -f
+#
+# $Id$
+
+program=gfarm-pcp
+MIN_ARGS=2
+
+usage() {
+	echo "usage: $program [ -h hostfile ] [ -rcp rcp_command ] [ -a ] [ -v ] [ -n ]"
+	echo "           filename1 filename2"
+	echo "       $program [ -h hostfile ] [ -rcp rcp_command ] [ -a ] [ -v ] [ -n ]"
+	echo "           filename ... directory"
+	echo ""
+	echo "options:"
+	echo "        -h hostfile"
+	echo "            specifies a hostfile.  '-' for the standard input"
+	echo "            ($PRUN_DEFAULT_HOSTFILE)"
+	echo "        -rcp rcp_command"
+	echo "            specifies a remote copy command. ($PRUN_DEFAULT_RCP)"
+	echo "        -a  execute on all nodes listed in the hostfile including myself."
+	echo "        -v  print hostname before copying."
+	echo "        -n  print the commands that would be executed, but do not execute them."
+	exit 1
+}
+
+. gfarm-ptool
+
+exit 0

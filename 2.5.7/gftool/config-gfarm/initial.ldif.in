@@ -1,0 +1,7 @@
+dn: @config_gfarm_ldap_base_dn@
+objectclass: dcObject
+objectclass: organization
+objectclass: top
+dc: @config_gfarm_ldap_leaf_dc@
+o: Gfarm file system
+userPassword: @config_gfarm_backend_password@

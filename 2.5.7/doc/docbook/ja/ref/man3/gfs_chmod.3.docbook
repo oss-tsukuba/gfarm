@@ -1,0 +1,129 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-chmod.3'>
+
+<refentryinfo><date>21 Feb 2005</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_chmod</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_chmod</refname>
+<refpurpose>モード変更</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_chmod</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+    <paramdef>mode_t <parameter>mode</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数
+<parameter>gfarm_url</parameter>
+に指定した名前のファイル・ディレクトリのモードを、
+<parameter>mode</parameter>
+に変更します。この
+<parameter>mode</parameter>
+の値の意味は
+<function>chmod(2)</function>
+と同様ですが、下位9ビットのみ有効です。
+</para>
+
+<para>複数のフラグメントからなるファイルの実行属性の変更には制約が
+あります。実行属性がある場合には実行属性をすべて落すことはできません。
+少なくとも一つの実行ビットは残しておく必要があります。
+逆に、実行属性が全くない場合に実行属性を立てることはできません。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_AUTHENTICATION</constant></term>
+<listitem>
+<para>gfmd(8) あるいは gfsd(8) に対するユーザー認証が失敗しました。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリへのアクセスする権限がありません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para>プロセスを実行しているユーザーが、ファイルの所有者でも、システム管理者
+でもありません。または、複数のフラグメントをもつファイルの実行ビットを
+少なくとも一つはある状態から全くない状態に、あるいはその逆に変更しようと
+しました。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>指定されたパス名が存在しません。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
+<listitem>
+<para>指定したパス名の親ディレクトリが、実際にはディレクトリでなかったことを
+示します。</para>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>指定したパス名は読み込み専用ファイルシステム上にあります。</para>
+</listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+

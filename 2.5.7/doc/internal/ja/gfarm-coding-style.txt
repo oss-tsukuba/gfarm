@@ -1,0 +1,188 @@
+■ コーディング・スタイル概要
+
+2001年当時の NetBSD KNF (kernel normal form) に、おおよそ従っています。
+
+NetBSD KNF:
+http://cvsweb.netbsd.org/bsdweb.cgi/src/share/misc/style?rev=1.20&content-type=text/x-cvsweb-markup
+
+ただし、以下のような、NetBSD 固有の習慣には従っていません。
+・#ifndef _lint
+・__COPYRIGHT
+・__RCSID(
+・setprogname()/getprogname()
+
+また、以下のような点が大きく違います。
+
+・関数の定義は、呼ばれる側が先、呼ぶ側が後、このため、相互再帰するよう
+  な場合を除き、static な関数の関数プロトタイプ宣言は行なわない。
+
+・ヘッダの二重インクルードからの保護はしない。
+  ヘッダのネストは基本的は行なわないため。(<gfarm/gfarm.h> 等は例外)
+
+・構造体や enum に対する typedef は行なわず、struct XXX や enum YYYY と書く。
+  これはヘッダのネストを避けるため。
+  利用例は gfs_client.h の先頭の struct や enum の宣言を参照。
+
+■ コンパイラからの警告について
+
+	コミットする前に、コンパイラからの警告がないことを確認してください。
+
+	ただし、以下の OpenMP に関する警告のみは問題ありません。
+		warning: ignoring #pragma omp 〜
+
+■ 命名規約について
+	ライブラリ中の公開されているシンボルは、必ず gfarm_ のような
+	プリフィックスをつけ、ユーザー・アプリケーションのシンボルと
+	重ならないようにしています。
+
+■ エラーコードについて
+
+	将来に渡って、決してエラーを返さないことが確定している
+	一部の例外を除き、ほぼ全ての関数は、戻り値としてエラー
+	コードを返すものとします。
+
+	エラーコードは lib/libgfarm/gfutil.h では OS の errno の値を、
+	それ以外では gfarm_error_t を用います。
+
+	gfarm_error_t は以下の2箇所のヘッダで定数定義していますが、
+		include/gfarm/error.h
+		lib/libgfarm/gfarm/liberror.h
+	このうちネットワーク上を流して良い値は include/gfarm/error.h
+	にあるもののみです。
+
+	もし lib/libgfarm/gfarm/liberror.h で定義している値がネット
+	ワーク上を流れる可能性が生じた場合には、定義を
+	include/gfarm/error.h に移します。この移動が生じた場合、
+	エラー番号が変わることになりますが、
+	liberror.h の enum gfarm_errmsg の定義には
+		GFARM_ERRMSG_UNKNOWN_HOST_DEPRECATED
+	のように元の名前に「_DEPRECATED」を付加したエントリを残し、
+	liberror.c の errmsg_string[] の定義には
+		"unknown host (deprecated)"
+	のように元の文字列に「 (deprecated)」を付加したエントリを残し、
+	前後の値が変化しないようにします。
+
+■ エラー報告について
+
+	libgfarm で定義されている関数では、原則として、stderr や
+	syslog などにエラー等を勝手に出力しません。エラーは、呼び出し
+	側に戻り値として返すことで、報告します。
+
+	これは、たとえば GUI プログラムから libgfarm を呼んでいるのであ
+	れば、stderr でも syslog でもなく、ダイアローグ・ウィンドウで
+	エラーを報告したいかもしれないからです。
+
+	ただし現在のところ、gfarm_initialize() は、この原則に違反して
+	います。これは、設定ファイル関係など、呼び出し側へ返す戻り値
+	だけでは特定できないほど沢山の種類のエラー出る可能性があるから
+	です。将来的にはこの制限も撤廃したいと考えています。
+	(が、具体的な予定はありません。)
+
+	また、gfmd や gfsd, gftool については、汎用ライブラリでは
+	ありませんから、このような制約はありません。
+
+■ 定数定義について
+
+	ネットワーク上を流れるプロトコル定数やフラグは、たとえ単一の
+	Cソースファイルの中でしか参照しない場合であっても、以下のヘッダ
+	で定義します。
+		include/gfarm/error.h
+		include/gfarm/gfs.h
+		lib/libgfarm/gfarm/gfm_proto.h (gfmd プロトコルの場合)
+		lib/libgfarm/gfarm/gfs_proto.h (gfsd プロトコルの場合)
+
+	これは、これらの定数値を変えてはいけないことを明確にするためです。
+
+	なお、lib/libgfarm/gfarm/liberror.h で定義している値はネットワーク
+	に流してはいけません。
+
+■ 演算オーバフロー関係のセキュリティ対策
+
+	原則として、生の malloc は使わず、GFARM_MALLOC, GFARM_MALLOC_ARRAY, 
+	GFARM_CALLOC_ARRAY, GFARM_REALLOC_ARAY を用います。
+	(このうち、GFARM_MALLOC のみは、演算オーバフローと無関係です)
+
+	これ以外でも、特にメモリ割り当てに関する計算では、演算オーバー
+	フローが発生する可能性に留意してコーディングする必要があります。
+
+■ ヘッダファイルの #include を記述する順序の原則は、下記の通りです。
+
+- OS付属のヘッダファイル群
+
+- サードパーティー製のソフトウェアのヘッダファイル群
+	複数のサードパーティー製ソフトウェアを利用している場合、
+	・サードパーティー製ソフトウェア間に参照関係がある場合には、
+	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
+	  先に書く。
+	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
+	  後に書く。
+	・同一のソフトウェアに付属するヘッダは、まとめて書く。
+
+- gfarm の公開ヘッダ (<gfarm/××.h>)
+	libgfarm の利用者への公開情報。
+	内部実装に関する情報はここには置かない。
+	またファイル名は以下のように(「"〜"」ではなく)「<〜>」で記述する。
+		#include <gfarm/gfarm_misc.h>
+		#include <gfarm/gfarm_gfs.h>
+	これは、非公開ヘッダは「#include "〜"」、公開ヘッダは「#include <〜>」
+	と書く習慣にしているため。
+
+- gfarm の非公開ヘッダ ("××.h")
+	・ヘッダ間の順序は、
+	  参照される側(ソフトウェア階層として下に位置する方)のソフトウェアを
+	  先に書く。
+	  参照する側(ソフトウェア階層として上に位置する方)のソフトウェアを
+	  後に書く。
+	・libgfarm/gfutil, libgfarm/gfsl, libgfarm/gfarm の三者については、
+	  同一のディレクトリに所属するヘッダはまとめて書く。
+	  #include する順序は、
+		1. libgfarm/gfutil
+		2. libgfarm/gfsl
+		3. libgfarm/gfarm
+	  の順番とする。(ソフトウェア階層が、この順で下→上となっているため)
+	  ソフトウェアの階層関係としては、gfutil が一番低層、gfsl がその上、
+	  libgfarm/gfarm は一番上層となる。gfutil や gfsl では、libgfarm/gfarm/
+	  の機能は利用しない。たとえば gfarm_error_t も使わない。
+	・具体的には下記の通り。
+	  /* gfutil */
+		#include "hash.h"
+		#include "gfevent.h"
+		#include "gfutil.h"
+	  /* gfsl public */
+		#include "gfsl_config.h"
+		#include "gfarm_gsi.h"
+		#include "gfarm_auth.h"
+		#include "gfarm_secure_session.h"
+	  /* gfsl private */
+		#include "tcputil.h"
+		#include "misc.h"
+	  /* gfarm */
+		#include "iobuffer.h"
+		#include "gfp_xdr.h"
+		#include "io_fd.h"
+		#include "io_gfsl.h"
+
+		#include "hostspec.h"
+		#include "host.h"
+		#include "param.h"
+		#include "sockopt.h"
+
+		#include "auth.h"
+		#include "auth_gsi.h"
+
+		#include "gfm_proto.h"
+		#include "gfs_proto.h"
+		#include "gfs_client.h"
+		#include "gfj_client.h"
+
+		#include "gfs_pio.h"
+
+		#include "config.h"
+
+■ その他の細則
+
+	・文字列定数を定義する場合には、以下を用います。
+		○ static const char diag[] = "constant string";
+	  以下は使いません。
+		× static const char *diag = "constant string";
+	  後者だと diag ポインタ変数自体は書き換え可能となるからです。

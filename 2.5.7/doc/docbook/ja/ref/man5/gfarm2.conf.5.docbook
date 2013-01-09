@@ -1,0 +1,1973 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm2.conf.5'>
+
+<refentryinfo><date>16 August 2012</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm2.conf</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm2.conf</refname>
+<refpurpose>Gfarm設定ファイル</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+gfarm2.confファイルは、gfarmプログラムの設定ファイルです。
+サーバー・プロセスであるgfsdは、デフォルトでは、
+この%%SYSCONFDIR%%/gfarm2.confを設定ファイルとして参照します。
+メタデータサーバー・プロセスであるgfmdは、%%SYSCONFDIR%%/gfmd.confを
+読み込みます。gfmd.confの形式は、gfarm2.confと同一です。
+なお、設定内容が読み込まれるのは起動時だけなので、
+設定内容を変更した場合、サーバーを再起動する必要があります。
+</para>
+
+<para>
+アプリケーションプログラムは、環境変数GFARM_CONFIG_FILEで
+指定したファイルと、%%SYSCONFDIR%%/gfarm2.confを、設定ファイル
+として参照します。この二つのファイルでは、環境変数GFARM_CONFIG_FILEで
+指定したファイルの設定の方が先に読み込まれます。
+どちらの設定ファイルも、同一の文法で記述します。
+同一の指定文が複数あった場合には、先に指定されていた方が優先されます。
+環境変数GFARM_CONFIG_FILEが設定されてない場合、代わりに
+ユーザのホームディレクトリにある.gfarm2rcファイルを使用します。
+</para>
+
+<para>
+gfarm2.confは、一行に一文の形式で設定します。
+ただし、行末に文字``\''を記述することによって、行を継続させることが
+できます。また、文字``#''から行末までは、コメントとして扱われ、無視
+されます。
+</para>
+
+</refsect1>
+
+<refsect1 id='hostspecification'><title>ホスト指定</title>
+<para>
+引数として、<parameter>ホスト指定</parameter>を記述できる文がいくつかありますが、
+この場合、ホスト指定には、下記のいずれかを記述できます。
+</para>
+<variablelist>
+
+<varlistentry>
+<term><parameter>III.JJJ.KKK.LLL</parameter></term>
+<listitem>
+<para>
+"."で区切られた0〜255までの数字4つで、IPアドレスを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>III.JJJ.KKK.LLL</parameter>/<parameter>MM</parameter></term>
+<listitem>
+<para>
+IPアドレスと、"/"で区切られた0〜31までの数字で、ネットワークを
+指定します。"/"以降の数字はnetmaskのビット長です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>domain.name</parameter></term>
+<listitem>
+<para>ホスト名をドメイン名で指定します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term> <emphasis>.</emphasis><parameter>domain.name</parameter></term>
+<listitem>
+<para>ドメイン名の先頭が"."ではじまる場合、このドメイン名に所属する全ての
+ホストを意味します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>*</emphasis></term>
+<listitem>
+<para>"*"と記述されている場合、全てのホストを意味します。</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><emphasis>LISTENER</emphasis></term>
+<listitem>
+<para>
+全て大文字で"LISTENER"と記述すると、通信する相手に関係なく、
+サーバー側(着呼側)のソケットを意味します。
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='statement'><title>文</title>
+<para>文には、下記の種類があります。</para>
+<variablelist>
+
+<varlistentry>
+<term><token>spool</token> <parameter>gfsdスプール・ディレクトリ</parameter></term>
+<listitem>
+<para>gfsdが、gfarmファイルの実体を保持するディレクトリ名を
+指定します。
+</para>
+<para>例:</para>
+<literallayout>
+	spool /var/spool/gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_listen_address</token> <parameter>IPアドレス</parameter></term>
+<listitem>
+<para>gfsdがTCPおよびUDPの要求を受け付けるIPアドレスを指定します。
+省略時は、そのホストの全てのIPアドレスで受け付けます。
+このオプションは、一つのノードで複数のスプールを提供する場合に、
+それぞれのスプールごとに、別々のIPアドレスを使ってgfsdを起動する
+ために用います。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_listen_address 192.168.121.1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_listen_backlog</token> <parameter>数</parameter></term>
+<listitem>
+<para>
+gfsd が
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+</para>
+<para>
+クライアント数の多い環境では、システム制限値を上げた上で、この値を増やしておくことを推奨します。
+</para>
+<para>
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_listen_backlog 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_cred_type</token> <parameter>cred_type</parameter></term>
+<listitem>
+<para>
+GSI認証において、gfsdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+</para>
+<para>
+サーバ側でこの指定を省略した場合、サーバをroot権限で起動した場合は
+ホスト証明書を用います。またサーバを一般ユーザ権限で起動した場合は
+ユーザ証明書を用います。
+</para>
+<para>
+クライアント側でこの指定を省略した場合、サーバがホスト証明書を利用している
+と仮定してサーバ認証を行います。このためサーバをクライアントと同じユーザ
+権限で起動している場合、クライアント側では、下記の一行を設定して
+おく必要があります。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_cred_type self
+</literallayout>
+<para>
+指定可能な<parameter>cred_type</parameter>としては、
+「<token>self</token>」、
+「<token>host</token>」、「<token>user</token>」、
+「<token>mechanism-specific</token>」があり、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>と組み合わせて
+下記のように用います。
+</para>
+<variablelist>
+<varlistentry>
+<term><token>self</token></term>
+<listitem>
+<para>
+そのユーザが現在所持しているユーザ証明書を用いることを示します。
+この指定を利用する際には、
+<token>spool_server_cred_service</token>および
+<token>spool_server_cred_name</token>の
+指定を行ってはいけません。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>host</token></term>
+<listitem>
+<para>
+ホスト証明書あるいはサービス証明書を用いることを示します。
+サービス証明書を用いる場合、そのサービスの名前を
+<token>spool_server_cred_service</token>で指定します。
+サービス名に「<token>host</token>」を指定した場合、
+ファイル``<filename>/etc/grid-security/hostcert.pem</filename>''に
+あるホスト証明書を用います。
+それ以外のサービス名を指定した場合、
+ファイル``<filename>/etc/grid-security/サービス/サービスcert.pem</filename>''
+にあるサービス証明書を用います。
+サービス名を省略した場合、「<token>host</token>」が指定されたとみなします。
+ホスト証明書およびサービス証明書の場合、証明書のCommon Name欄のみを
+比較します。Common Nameは、「CN=サービス名/ホスト名」の形式である必要が
+あります。また、ホスト名は、<command>gfhost</command>コマンドで指定した
+正式名と正確に一致している必要があります。ホスト別名は許されません。
+</para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_HOSTBASED_SERVICEに
+対応する機能です。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_cred_type host
+	spool_server_cred_service host
+</literallayout>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>user</token></term>
+<listitem>
+<para>
+ユーザ証明書を用いることを示します。
+ユーザのアカウント名を<token>spool_server_cred_name</token>で指定します。
+アカウント名を省略した場合には、そのコマンドを起動したユーザ名が使われます。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
+</para>
+<para>
+ユーザ名と証明書のDistinguished Nameの対応をとるため、
+``<filename>/etc/grid-security/grid-mapfile</filename>''を用います。
+このため、このファイルが存在しなかったり、あるいはこのファイルに登録
+されてないユーザは、この機能を用いることができません。
+</para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744)のGSS_C_NT_USER_NAMEに対応する機能です。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_cred_type user
+	spool_server_cred_name guest
+</literallayout>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>mechanism-specific</token></term>
+<listitem>
+<para>
+サーバのX.509 Distinguished Nameを<token>spool_server_cred_name</token>で
+直接指定します。
+この指定を利用する際には、<token>spool_server_cred_service</token>の
+指定を行ってはいけません。
+</para>
+<para>
+これは、GSSAPI (RFC2743/RFC2744)でName TypeとしてGSS_C_NO_OIDを
+指定した場合に対応する機能です。
+</para>
+<para>例:</para>
+<literallayout>
+	spool_server_cred_type mechanism-specific
+	spool_server_cred_name "/O=Grid/O=Globus/OU=example.com/CN=John Smith"
+</literallayout>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_cred_service</token> <parameter>cred_service</parameter></term>
+<listitem>
+<para>
+GSI認証において、<token>spool_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfsdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>spool_server_cred_name</token> <parameter>cred_name</parameter></term>
+<listitem>
+<para>
+GSI認証において、<token>spool_server_cred_type</token>で指定した値に
+応じて、gfsdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+詳しくは<token>spool_server_cred_type</token>の項を参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_host</token> <parameter>gfmdホスト名</parameter></term>
+<listitem>
+<para>gfmdが動作しているホスト名を指定します。</para>
+<para>この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_host ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_port</token> <parameter>gfmdポート番号</parameter></term>
+<listitem>
+<para>gfmdが利用するTCPポートの番号を指定します。
+省略時のデフォルト・ポート番号は601番です。</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_port 601
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_cred_type</token> <parameter>cred_type</parameter></term>
+<listitem>
+<para>
+GSI認証において、gfmdが用いる証明書の種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_cred_service</token> <parameter>cred_service</parameter></term>
+<listitem>
+<para>
+GSI認証において、<token>metadb_server_cred_type</token>として
+「<token>host</token>」を指定している場合に、gfmdが用いるサービス証明書の
+種類を指定します。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_cred_name</token> <parameter>cred_name</parameter></term>
+<listitem>
+<para>
+GSI認証において、<token>metadb_server_cred_type</token>で指定した値に
+応じて、gfmdが用いる証明書の設定を行います。
+<token>sharedsecret</token>利用時には、この指定は単に無視されます。
+設定の意味については<token>spool_server_cred_type</token>の項を
+参照してください。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_listen_backlog</token> <parameter>数</parameter></term>
+<listitem>
+<para>
+gfmd が
+<citerefentry>
+<refentrytitle>listen</refentrytitle><manvolnum>2</manvolnum>
+</citerefentry>
+システムコールの第二引数に渡すバックログ・パラメータの数を指定します。
+デフォルト値は、&lt;sys/socket.h&gt; に SOMAXCONN 定数が定義されているOSではその値 (OSに依存しますが、典型的な値は 128)、定義されてないOSでは 5 となります。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_listen_backlog 128
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_max_descriptors</token> <parameter>数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmd用のディスクリプタ・リミット値を指定します。
+省略された場合、OSのハード・リミット値と、131072 の、小さい方の値が
+使われます。
+大規模な構成では、この値を増やす必要がありますし、
+小規模な構成では減らした方が良いでしょう。
+この値の計算方法については、Gfarm FAQ を御覧ください。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_max_descriptors 262144
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_stack_size</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmd内の各スレッドが利用するスタックのサイズを
+指定します。省略された場合OSのデフォルト値が使われます。
+このパラメータは、gfmdの消費する仮想メモリ空間のサイズを節約するために
+用います。
+</para>
+<para>
+たとえば、CentOS 5/i386の場合、デフォルトのスタックサイズは10MBです
+ので、このパラメータでスタックサイズを256KBに抑えると、gfmdのスタック
+が消費する仮想メモリ空間のサイズを、1/40に減らすことができます。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_stack_size 262144
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_thread_pool_size</token> <parameter>スレッド数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdのスレッドプールのスレッド数を指定します。
+メタデータサーバノードのコア数くらいに設定すると効果的です。
+デフォルト値は16です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_thread_pool_size 16
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_job_queue_length</token> <parameter>キュー長</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdのジョブキューのキュー長を指定します。
+一度に接続する最大クライアントの数くらいに設定すると効果的です。
+デフォルト値は16000です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_job_queue_length 160
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_heartbeat_interval</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdが各ファイルシステムサーバgfsd
+に対し動作確認を行うハートビートの間隔を秒数で指定します。
+デフォルト値は180秒です。
+</para>
+<para>
+Gfarm-2.3.0まではこの文はgfmd.confのみで有効であり、gfarm2.confでは
+無視されていましたが、Gfarm-2.4.0以降はgfsdもこのパラメータを利用し
+gfmd停止を検知するため、
+gfarm2.confとgfmd.confの両方で指定する必要があります。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_heartbeat_interval 180
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_dbq_size</token> <parameter>キュー長</parameter></term>
+<listitem>
+<para>メタデータサーバgfmdではメタデータの変更をバックエンドDBに
+非同期的に反映しますが，そのキューの長さを指定します。
+キュー長を長くすると，バックエンドDBの更新速度に律速されにくくなります。
+デフォルト値は65536です。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_dbq_size 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_server_host</token> <parameter>LDAPサーバー・ホスト名</parameter></term>
+<listitem>
+<para>
+gfmdのバックエンド・データベースとして
+LDAPサーバを選択する場合、
+LDAPサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
+
+<para>例:</para>
+<literallayout>
+	ldap_server_host ldap.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_server_port</token> <parameter>LDAPサーバー・ポート番号</parameter></term>
+<listitem>
+<para>LDAPサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	ldap_server_port 602
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_base_dn</token> <parameter>LDAP_base_distinguished_name</parameter></term>
+<listitem>
+<para>LDAPデータベースで保持するデータのキーの根となるノードの
+名称、base distinguished nameを指定します。</para>
+<para><token>ldap_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	ldap_base_dn "dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_bind_dn</token> <parameter>LDAP_bind_distinguished_name</parameter></term>
+<listitem>
+<para>LDAPデータベースに接続する際の認証に用いる名称を、distinguished nameで指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>ldap_bind_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>LDAPデータベースに接続する際の認証パスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	ldap_bind_password "secret-ldap-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_server_host</token> <parameter>PostgreSQLサーバー・ホスト名</parameter></term>
+<listitem>
+<para>
+gfmdのバックエンド・データベースとして
+PostgreSQLサーバを選択する場合、
+PostgreSQLサーバーが動作しているホスト名を指定します。
+この文はgfmd.confで用いられ、gfarm2.confでは用いられません。
+</para>
+
+<para>例:</para>
+<literallayout>
+	postgresql_server_host postgresql.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_server_port</token> <parameter>PostgreSQLサーバー・ポート番号</parameter></term>
+<listitem>
+<para>PostgreSQLサーバーが利用するTCPポートの番号を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_server_port 602
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_dbname</token> <parameter>dbname</parameter></term>
+<listitem>
+<para>PostgreSQLデータベース名を指定します。</para>
+<para><token>postgresql_server_host</token>を指定する場合には、
+この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_dbname gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_user</token> <parameter>user</parameter></term>
+<listitem>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザ名を指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_user gfarm
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_password</token> <parameter>password</parameter></term>
+<listitem>
+<para>PostgreSQLデータベースに接続するデータベース管理下のユーザのパスワードを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_password "secret-postgresql-password"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>postgresql_conninfo</token> <parameter>connection_info</parameter></term>
+<listitem>
+<para>PostgreSQLデータベースに接続するときの接続オプションを指定します。</para>
+<para>例:</para>
+<literallayout>
+	postgresql_conninfo "sslmode=require connect_timeout=30"
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>auth</token> <parameter>有効性</parameter>&nbsp; <parameter>認証方法</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>この文は、第3引数で指定したホストとの通信に用いる認証方法を設定します。</para>
+
+<para>第1引数の<parameter>有効性</parameter>部には、<token>enable</token>ないし<token>disable</token>
+キーワードを指定します。
+第2引数の<parameter>認証方法</parameter>部には、<token>gsi</token>、
+<token>gsi_auth</token>ないし<token>sharedsecret</token>
+キーワードを指定します。
+第3引数には、<parameter>ホスト指定</parameter>を記述します。</para>
+
+<para>この文は複数指定可能です。各認証方法ごとに、先頭から順にホスト指定に
+適合するかどうか調べ、有効であるとの指定に適合した場合、その認証方法が
+利用候補になります。有効であるとの指定に適合しない場合や、あるいは
+有効であるとの指定に適合するよりも前に無効であるとの指定に適合した
+場合、その認証方法は、候補になりません。</para>
+
+<para>この指定は、サーバー側とクライアント側の両方で解釈され、
+双方ともで有効になっている認証方法のみが用いられます。</para>
+
+<para>認証方法が異なるものに関しては、指定の順序は意味がありません。
+複数の認証方法が候補となった場合、<token>sharedsecret</token>、
+<token>gsi_auth</token>、<token>gsi</token>認証の順序で試みます。</para>
+
+<para>Gfarmのコンパイル時にglobusとのリンクを指定しなかった場合、
+GSIは利用できません。この場合、<token>gsi</token>および
+<token>gsi_auth</token>認証の指定は単に無視されます。</para>
+
+<para>この設定は必須です。</para>
+<para>例:</para>
+<literallayout>
+	auth disable sharedsecret 192.168.0.100
+	auth disable sharedsecret 192.168.0.101
+	auth enable sharedsecret 192.168.0.0/24
+	auth enable gsi_auth 10.0.0.0/8
+	auth enable gsi *
+</literallayout>
+
+<para>この例では、ホスト192.168.0.100と192.168.0.101の2つのホストを
+除いた192.168.0.0/24ネットワークに属すホストには
+<token>sharedsecret</token>と<token>gsi</token>の両方を、
+10.0.0.0/8ネットワークに属すホストには<token>gsi_auth</token>および
+<token>gsi</token>の両方を、
+それ以外の全てのホストには<token>gsi</token>認証のみを試みます。
+すなわち、ホスト192.168.0.100と192.168.0.101の2つのホストは、
+<token>gsi</token>認証のみを試みることになります。</para>
+
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><token>netparam</token> <parameter>パラメータ</parameter><emphasis>=</emphasis><parameter>値</parameter> <emphasis>[</emphasis><parameter>ホスト指定</parameter><emphasis>]</emphasis></term>
+<listitem>
+<para>ネットワーク通信に用いる各種パラメータを指定します。
+パラメータには下記のものがあります。</para>
+
+<para><token>parallel_streams</token>。このパラメータは、通信に利用する
+TCPのストリーム数を指定します。省略時は1です。
+このパラメータは、TCPの通信ウィンドウが十分なサイズ
+まで開かないような遠方との通信の際に、有効なことがあります。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
+
+<para><token>stripe_unit_size</token>。このパラメータは、通信に複数のTCPストリーム
+を利用する場合に、どのように転送内容を分割するかを指定します。
+もしこの指定がない場合、転送内容を単に<token>parallel_streams</token>個に
+分割して送信します。
+これに対し、<token>stripe_unit_size</token>を指定した場合は、このパラメータ
+で指定したバイト数を単位としてストライピングして送信します。
+通常、単なる分割よりもストライピングの方が性能的に有利です。
+</para>
+<para>
+このパラメータは、上記の<token>parallel_streams</token>として1より大きな値
+を指定した通信のみで有効です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、gfrep(1)コマンドを起動したホストのユーザ設定ファイルの
+内容が用いられます。ホスト指定と比較されるのは、複製先のホストではなく、
+複製元のホストです。</para>
+
+<para><token>rate_limit</token>。コネクション1本あたりの通信バンド幅を制限する
+実験的な機能です。指定する値の単位はbps (bit per second)です。
+現在、このパラメータはファイルの複製機能でのみ有効です。
+現在の実装では、複製元のホスト上のgfsdの設定ファイルが用いられます。
+ホスト指定と比較されるのは、複製先のホストです。</para>
+
+<para>例:</para>
+<literallayout>
+	netparam parallel_streams=2	10.0.0.0/8
+	netparam stripe_unit_size=8192	10.0.0.0/8
+	netparam rate_limit=750000	192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term><token>sockopt </token><parameter>オプション</parameter><emphasis>[=</emphasis><parameter>値</parameter><emphasis>] [<token>LISTENER</token> | <parameter>ホスト指定</parameter>]</emphasis></term>
+<listitem>
+<para>通信socket(2)に対して、setsockopt(2)システムコールを使って
+ソケット・オプションを指定します。</para>
+
+<para>第2引数に全て大文字で<token>LISTENER</token>を指定した場合、
+サーバー側(着呼側)のソケットに指定するオプションになります。
+この場合、通信する相手に関係なく、
+一律にソケット・オプションが設定されます。</para>
+<para>
+第2引数にホスト指定を記述した場合、クライアント側(発呼側)の
+ソケットに指定するオプションになります。この場合、通信する相手毎に
+ソケット・オプションを変えることができます。
+なお、第2引数に"*"と記述すると、クライアント側(発呼側)の全ての
+ホストを意味することになり、サーバー側(着呼側)には適用されません。
+</para>
+<para>
+第2引数を省略した場合、サーバー側とクライアント側の両方で、
+全ての通信相手に対して同じソケット・オプションを設定します。</para>
+
+<para>指定可能なソケット・オプションには次のものがあります。</para>
+
+<para><token>debug</token>。setsockopt(2)システムコールで、<constant>SO_DEBUG</constant>ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para><token>keepalive</token>。setsockopt(2)システムコールで、<constant>SO_KEEPALIVE</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para><token>sndbuf</token>。setsockopt(2)システムコールで、<constant>SO_SNDBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
+
+<para><token>rcvbuf</token>。setsockopt(2)システムコールで、<constant>SO_RCVBUF</constant>
+ソケット・オプションを指定します。値の指定が必要です。</para>
+
+<para><token>tcp_nodelay</token>。setsockopt(2)システムコールで、<constant>TCP_NODELAY</constant>
+ソケット・オプションを指定します。値を記述する必要はありません。</para>
+
+<para>例:</para>
+<literallayout>
+	sockopt tcp_nodelay 192.168.0.0/24
+	sockopt sndbuf=1048576 10.0.0.0/8
+	sockopt sndbuf=1048576 LISTENER
+	sockopt rcvbuf=1048576 10.0.0.0/8
+	sockopt rcvbuf=1048576 LISTENER
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><token>address_use</token> <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>ファイルシステムノードに複数のIPアドレスがある場合、その中のどの
+IPアドレスを通信に用いるかを指定します。
+この文で指定したアドレスに適合するIPアドレスを優先して使用しますが、
+適合するアドレスがない場合でも、通信を行います。</para>
+<para>例:</para>
+<literallayout>
+	address_use 192.168.0.0/24
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_architecture</token> <parameter>アーキテクチャ名</parameter>&nbsp; <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>
+クライアントノードが実行ファイルにアクセスする場合に選択する
+デフォルトのアーキテクチャ名を指定します。
+この指定は、クライアントノードについてのみ作用します。
+ファイルシステムノードについては、メタデータサーバに登録されている
+アーキテクチャ名が使われます。
+</para>
+<para>
+これに対し、環境変数GFARM_ARCHITECTUREを使うと、クライアントノードに対しても
+ファイルシステムノードについても、実行ファイルのデフォルトのアーキテクチャ名を
+指定することができます。
+</para>
+<para>例:</para>
+<literallayout>
+	client_architecture i386-redhat8.0-linux linux-1.example.com
+	client_architecture i386-redhat8.0-linux linux-2.example.com
+	client_architecture sparc-sun-solaris8 solaris-1.example.com
+</literallayout>
+</listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term><token>known_network</token> <parameter>ホスト指定</parameter></term>
+<listitem>
+<para>ファイルシステムノードのネットワークを指定します。
+本ネットワークは、
+ファイルシステムノード選択時のグルーピングに利用されます。
+この文で指定したアドレスに適合しないIPアドレスの場合、
+IPv4のクラスCネットワークが仮定されます。</para>
+<para>複数のネットワークを指定する場合は、以下のように複数回指定します。</para>
+<literallayout>
+	known_network 192.168.0.0/25
+	known_network 192.168.0.128/25
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>network_receive_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>ネットワークを介したデータ受信のタイムアウト時間を秒単位で指定
+します。
+デフォルト値は60秒です。
+この文は gfarm2.conf および gfmd.conf のいずれにおいても有効です。
+</para>
+<para>Gfarmクライアントプログラムが指定した時間待ったもの、gfsd から
+のデータがまったく届かなかった場合は、その gfsd との通信を中止し、処理
+を継続させるべく他の gfsd サーバとの通信を試みます。
+</para>
+<para>gfmd が指定した時間待ったもの、gfsd からデータがまったく
+届かなかった場合、その gfsd との通信を中止して、その gfsd はダウンした
+ものとみなします。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>admin_user</token> <parameter>ユーザ名</parameter></term>
+<listitem>
+<para>
+gfmd.conf内のこの文で指定されたユーザが、
+デフォルトの特権ユーザとなります。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>admin_user_gsi_dn</token> <parameter>DN</parameter></term>
+<listitem>
+<para>
+gfmd.conf内のadmin_user文で指定された特権ユーザのSubject DNを指定します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>local_user_map</token> <parameter>ユーザマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]] </term>
+<listitem>
+<para>
+sharedsecret認証において、
+グローバルユーザ名とローカルユーザ名の対応関係を記述した
+ユーザマップファイルパス名を指定します。
+この設定は必須ではありませんが、
+その場合ローカルユーザ名がグローバルユーザ名に変換されます。
+</para>
+<para>
+同一ユーザに対して、
+異なるローカルアカウント名を与えているファイルシステムノードがある場合や、
+ローカルユーザ名とは異なるグローバルユーザ名を利用したい場合、
+このファイルで、各ノードのローカルなユーザ名に対して、単一の
+グローバルユーザ名を定義します。</para>
+<para>例:</para>
+<literallayout>
+	local_user_map /etc/gfarm/gfarm-usermap
+</literallayout>
+
+<para>ユーザマップファイルは、グローバルユーザ名と
+ローカルユーザ名を、空白で区切って各行に記述します。</para>
+<para>ユーザマップファイルの内容例:</para>	
+<literallayout>
+	foobar foo
+	quux baz
+</literallayout>
+<para>この例の1行目の指定では、このノードのローカルユーザ名fooに
+対してグローバルユーザ名foobarが定義されています。</para>
+
+<para>
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるユーザマップファイルを適用します。
+ポート番号を省略した場合は、デフォルトのポート番号(601)を使用します。
+local_user_map は複数回指定可能です。
+ローカルユーザ名が同一の定義が複数のファイルに存在する場合、最初の定義が選択されます。
+</para>
+<para>複数のユーザマップファイルの例:</para>
+<literallayout>
+	local_user_map /etc/gfarm/gfarm-usermap1-1
+	local_user_map /etc/gfarm/gfarm-usermap1-2
+	local_user_map /etc/gfarm/gfarm-usermap2-1 server2
+	local_user_map /etc/gfarm/gfarm-usermap2-2 server2
+</literallayout>
+<para>
+この例では server2 に接続するときは gfarm-usermap2-1、gfarm-usermap2-2 の順番に適用します。
+server2 以外に接続するときは gfarm-usermap1-1、gfarm-usermap1-2 の順番に適用します。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>local_group_map</token> <parameter>グループマップファイルパス名</parameter> [<parameter>ホスト名</parameter>:[<parameter>ポート番号</parameter>]]</term>
+<listitem>
+<para>
+グローバルグループ名とローカルグループ名の対応関係を記述した
+グループマップファイルパス名を指定します。
+このマップファイルは，ローカルシステムのグループIDを利用するgfarm2fsや
+Globus GridFTPのGfarm DSIなどで利用されます。
+この設定は必須ではありませんが、
+その場合ローカルグループ名はグローバルグループ名と等しいと仮定されます。
+</para>
+<para>例:</para>
+<literallayout>
+	local_group_map /etc/gfarm/gfarm-groupmap
+</literallayout>
+
+<para>グループマップファイルは、グローバルグループ名と
+ローカルグループ名を、空白で区切って各行に記述します。</para>
+
+<para>
+メタデータサーバのホスト名/ポート番号を指定すると、
+接続先のサーバごとに異なるグループマップファイルを適用します。
+指定方法は local_user_map と同様です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_cache_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>gfarmライブラリが内部的に保持している、ファイルシステムノード
+のスケジューリング処理に関わる情報、すなわちロードアベレージ、
+ディスク空き容量、認証が通るか否か等のキャッシュの有効期限を秒数で指定します。
+停止していたファイルシステムノードが復活したような場合、この期限が
+切れるまでは、そのノードがスケジューリングされないことがあります。
+デフォルトは600秒すなわち10分です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_cache_timeout 60
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_concurrency</token> <parameter>並列度</parameter></term>
+<listitem>
+<para>ファイルシステムノードを、スケジューリングのために並列検索する際の
+並列度を指定します。
+この数を増やすと並列度が高まり、スケジューリングが早く終りますが、
+ファイルシステムノードの負荷は高くなります。
+デフォルトは10です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_concurrency 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_concurrency_per_net</token> <parameter>並列度</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延を計測します。このパラメータは、各ネットワーク毎に
+幾つのファイルシステムノードを対象に計測するかを指定します。
+停止しているファイルシステムノードが多い場合や、
+負荷の高いファイルシステムノードが多く計測誤差が大きい場合には、
+このパラメータを増やした方が良いかもしれません。
+このパラメータを増やした場合には、
+それに応じて schedule_concurrency パラメータについても増やすことを推奨します。
+デフォルトは3です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_concurrency_per_net 3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_idle_load_thresh</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が低いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より低いCPU負荷のファイルシステムノードが
+まずはスケジュール対象となります。
+デフォルト値は0.1です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_idle_load_thresh 0.1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_busy_load_thresh</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+CPU負荷が高いとみなされるCPU負荷を指定します。
+ここで指定されるCPU負荷より高いCPU負荷のファイルシステムノードは
+当初スケジュール対象となりません。
+デフォルト値は0.5です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_busy_load_thresh 0.5
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_virtual_load</token> <parameter>CPU負荷</parameter></term>
+<listitem>
+<para>ファイルシステムノードが選択されたとき、
+CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
+これにより、
+一度スケジュールされたファイルシステムノードが何度もスケジュールされることを防いでいます。
+デフォルト値は0.3です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_virtual_load 0.3
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_candidates_ratio</token> <parameter>比率</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ロードアベレージが schedule_busy_load_thresh 以下のノードが、
+スケジューリング対象のノード数の何倍見つかったら、
+検索を打ち切るかを指定します。
+この値を大きくすると、より多くのノードを検索するため、
+スケジューリングの精度は上がりますが、処理は遅くなります。
+デフォルト値は4.0です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_candidates_ratio 4.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>schedule_rtt_thresh</token> <parameter>比率</parameter></term>
+<listitem>
+<para>ファイルシステムノードのスケジューリング時に、
+ファイルシステムノードが属する各ネットワークと、クライアントとの間の
+ネットワーク遅延が、何倍になったら、そのネットワークに対する
+スケジューリングの優先度を落すかを指定します。
+デフォルト値は4.0です。
+</para>
+<para>例:</para>
+<literallayout>
+	schedule_rtt_thresh 4.0
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><token>write_local_priority</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>gfarmは、ファイルを書き込むノードを決める際、できる限りローカル
+ホストを優先するように動作します。この文でdisableと指定することによって、
+ローカルホストを他のホストと同様に扱うように変更することができます。
+環境変数GFARM_WRITE_LOCAL_PRIORITYにdisableと設定しても、同じ意味に
+なります。
+両方指定した場合は、環境変数が優先されます。
+デフォルトはenableです。
+</para>
+<para>例:</para>
+<literallayout>
+	write_local_priority disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>write_target_domain</token> <parameter>ドメイン名</parameter></term>
+<listitem>
+<para>gfarmがファイルを書き込むノードを決める際、できる限りここで
+指定したドメインを優先するように動作します。
+ここで指定したドメインにファイル作成可能なホストが存在しない場合や、
+特にこの指定を行なわなかった場合には、全ノードが対象となります。
+環境変数GFARM_WRITE_TARGET_DOMAINでも、同様な指定ができます。
+両方指定した場合は、環境変数が優先されます。
+なります。
+この指定を複数回行なっても、最初の指定のみが利用され、二番目以降は
+単に無視されるので注意してください。
+</para>
+<para>例:</para>
+<literallayout>
+	write_target_domain example.org
+</literallayout>
+</listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term><token>minimum_free_disk_space</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>ファイルシステムノードで必要な最小限度のディスク空き容量を指定
+します。このサイズ以下の空き容量しかないファイルシステムノードは、
+ファイル書き込みを行う可能性のある操作を行う際に、選択されにくくなります。
+指定はバイト単位で行いますが、数字の末尾に空白を開けずにk/M/G/Tを指定
+することで、それぞれ1kバイト／1Mバイト／1Gバイト／1Tバイトを単位とする
+ことができます。
+デフォルトは128Mバイトです。
+</para>
+<para>
+このパラメータは、gfarm2.confとgfmd.confの両方で指定する必要があります。
+有効にするためには gfmd および Gfarmクライアントを再起動する必要があります。
+</para>
+<para>例:</para>
+<literallayout>
+	minimum_free_disk_space 1G
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>simultaneous_replication_receivers</token> <parameter>同時処理数</parameter></term>
+<listitem>
+<para>gfmd 主導の複製処理を、単一複製作成ホストに対して、
+同時いくつまで並行して行なうことを許すかを設定します。
+デフォルトは 20です。
+</para>
+<para>例:</para>
+<literallayout>
+	simultaneous_replication_receivers 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfsd_connection_cache</token> <parameter>コネクション数</parameter></term>
+<listitem>
+<para>gfarmライブラリがgfsdとの通信に用いるコネクションを、いくつ
+までキャッシュするかを指定します。
+デフォルトは16コネクションです。
+</para>
+<para>例:</para>
+<literallayout>
+	gfsd_connection_cache 32
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>xmlattr_size_limit</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>XML拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは786432バイトです。
+983040バイトよりも大きな値を指定することはできません。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	xmlattr_size_limit 786432
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>xattr_size_limit</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>拡張属性の値として、何バイトまで設定可能かを指定します。
+デフォルトは65536バイトです。
+983040バイトよりも大きな値を指定することはできません。
+</para>
+<para>
+この文はgfmd.confのみで有効であり、gfarm2.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	xattr_size_limit 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>attr_cache_limit</token> <parameter>個数</parameter></term>
+<listitem>
+<para>gfarmライブラリがキャッシュする属性の最大数を指定します。
+デフォルトは40000個です。
+</para>
+<para>例:</para>
+<literallayout>
+	attr_cache_limit 100000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>attr_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
+<listitem>
+<para>gfarmライブラリが属性をキャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	attr_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>log_level</token> <parameter>優先度レベル</parameter></term>
+<listitem>
+<para>
+どの優先度レベル以上のログを出力するかを指定します。
+ここで指定したレベル未満の優先度のログは、syslogや標準エラーへ
+送られません。
+レベルは、優先度の高い順に"emerg", "alert", "crit", "err", "warning",
+"notice", "info", "debug"です。
+デフォルトの出力レベルは"info"です。
+"crit"以上の優先度を指定することは、お勧めできません。
+</para>
+<para>例:</para>
+<literallayout>
+	log_level debug
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>log_message_verbose_level</token> <parameter>レベル</parameter></term>
+<listitem>
+<para>
+ログメッセージの冗長度を指定します。
+デフォルトは0です。レベル0では、ログIDが出力されます。
+レベル1では、レベル0に加えソースコードのファイル名と行番号が出力されます。
+レベル2では、レベル1に加え関数名が出力されます。
+</para>
+<para>例:</para>
+<literallayout>
+	log_message_verbose_level 1
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>log_auth_verbose</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、認証処理に関する詳細なログを記録します。
+</para>
+<para>例:</para>
+<literallayout>
+	log_auth_verbose enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>file_trace</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+enableと指定した場合、ファイル作成・変更・削除に関する
+監査ログの出力機能を有効にします。
+</para>
+<para>
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	file_trace enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>fatal_action</token> <parameter>動作名</parameter></term>
+<listitem>
+<para>
+このパラメータでは、致命的なエラーが発生したときの動作を設定します。
+デフォルトは <replaceable>backtrace_and_abort</replaceable> です。
+</para>
+<para>
+<!-- この項を下にある<variablelist>の項の後ろに書くと、
+     man page でのインデントが無効化されます。 -->
+例:
+</para>
+<literallayout>
+	fatal_action backtrace_and_abort
+</literallayout>
+<para>
+指定可能な動作名は以下の通りです:
+</para>
+<variablelist>
+<varlistentry>
+<term><token>backtrace_and_abort</token></term>
+<listitem>
+<para>
+バックトレースを出力した後、
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>backtrace_and_exit</token></term>
+<listitem>
+<para>
+バックトレースを出力した後、
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>abort</token></term>
+<listitem>
+<para>
+<citerefentry>
+<refentrytitle>abort</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><token>exit</token></term>
+<listitem>
+<para>
+<citerefentry>
+<refentrytitle>exit</refentrytitle><manvolnum>3</manvolnum>
+</citerefentry>
+を呼びます。
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>debug_command</token> <parameter>コマンド行</parameter></term>
+<listitem>
+<para>
+Gfarmのアプリケーションプログラムがクラッシュした際 (SIGSEGV, SIGBUGを
+受け取る等した場合)、このパラメータに記したデバッグコマンドが実行されます。
+記述例を示します。
+</para>
+<literallayout>
+	debug_command env DISPLAY=:0.0 xterm -e gdb %e %p
+</literallayout>
+<para>
+ここで、"%e", "%p" は実際のプログラム名、プロセスIDにそれぞれ展開されます。
+"%" 文字自体をコマンドライン中に記述したい場合は、"%%" と書いて下さい。
+</para>
+<para>
+このパラメータは、gfarm2.confとgfmd.confの両方で有効です。
+このパラメータを指定しなかった場合、デバッグコマンドは実行されません。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>no_file_system_node_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>利用可能なファイルシステムノードが存在しない場合，
+Gfarmクライアントライブラリはファイルシステムノードが利用可能になるまで試行を繰り返しますが、
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	no_file_system_node_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>gfmd_reconnection_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>メタデータサーバへの接続が切断された場合，
+メタデータサーバへの再接続を繰り返しますが，
+そのタイムアウト時間を秒単位で指定します。
+デフォルトは 30秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	gfmd_reconnection_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><token>record_atime</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+このオプションがenableの場合、最終アクセス時刻をきちんと記録します。
+disableの場合には最終アクセス時刻の記録は不正確になりますが、
+メタデータ更新の負荷が下がり、性能が向上することがあります。
+disable設定は、通常のファイルシステムにおける"noatime"オプションに
+相当します。
+</para>
+<para>例:</para>
+<literallayout>
+	record_atime disable
+</literallayout>
+</listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term><token>client_file_bufsize</token> <parameter>バイト数</parameter></term>
+<listitem>
+<para>Gfarmクライアントライブラリ（libgfarm）で使われるファイルのバッファ
+  サイズをバイト単位で指定します。デフォルトは1048568バイト（= 1MiB -
+  8B）です。Gfarm-2.5.0以前では、ファイルのバッファサイズは、遠隔ファイ
+  ルアクセス性能を極端に低下させないためにも、デフォルト値以下である必
+  要があります。
+</para>
+<para>例:</para>
+<literallayout>
+	client_file_bufsize 65536
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>client_parallel_copy</token> <parameter>並列度</parameter></term>
+<listitem>
+<para><command>gfprep</command>コマンドと<command>gfpcopy</command>コマ
+ンドが並列で動作する際の並列度を指定します。指定しない場合は
+4並列で動作します。
+</para>
+<para>例:</para>
+<literallayout>
+	client_parallel_copy 10
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>profile</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>
+このオプションがenableの場合、プロファイル情報を出力します。
+</para>
+<para>例:</para>
+<literallayout>
+	profile enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_list</token> <parameter>gfmdホスト名[:ポート番号]</parameter> <parameter>...</parameter></term>
+<listitem>
+<para>冗長化メタデータサーバの接続先一覧をスペース区切りで指定します。
+ポート番号を省略するとデフォルトの601を指定したことになります。
+</para>
+<para>
+この文はgfarm2.confのみで有効であり、gfmd.confでは無視されます。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_list mds1 mds2:701
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_replication</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>このオプションがenableの場合、メタデータ冗長化機能が有効になります。デフォルトは disable です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_replication enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_replication_timeout</token> <parameter>秒数</parameter></term>
+<listitem>
+<para>メタデータの同期レプリケーション実行時のタイムアウト時間を秒単位で設定します。
+タイムアウト時間を過ぎた場合、同期先のスレーブgfmdとのgfmd channelの接続は切断されます。
+接続が切断したスレーブgfmdへのレプリケーションは、スレーブgfmdが再接続してくるまで中断します。
+デフォルトは 10 です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	synchronous_replication_timeout 30
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>synchronous_journaling</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>このオプションがenableの場合、ジャーナルファイルへ更新情報を保存した後にfdatasyncを実行します。
+実行するタイミングは、1つのトランザクションの開始から終了までのレコードを書き込んだ後です。
+デフォルトはenableです。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	synchronous_journaling disable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_force_slave</token> <parameter>有効性</parameter></term>
+<listitem>
+<para>enable のとき、デフォルトのマスターgfmdとして設定されている場合でも、スレーブgfmdとして起動します。
+デフォルトはdisableです。
+</para>
+<para>
+注意: この機能の実装は不完全ですので、今のところ、利用しないでください。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_force_slave enable
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_server_slave_max_size</token> <parameter>ノード数</parameter></term>
+<listitem>
+<para>スレーブgfmdの最大ノード数を指定します。デフォルトは16です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_server_slave_max_size 40
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_dir</token> <parameter>ジャーナルディレクトリ</parameter></term>
+<listitem>
+<para>ジャーナルファイルの保存ディレクトリを指定します。
+このオプションはconfig-gfarmで指定します。
+このオプションが指定されていない場合、gfmdは起動しません。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_dir /var/gfarm-metadata/journal
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_max_size</token> <parameter>ファイルサイズ</parameter></term>
+<listitem>
+<para>ジャーナルファイルの最大サイズを指定します。
+サイズが大きいほど、gfmdが起動完了するまでの時間が長くなることに注意してください。
+デフォルトは 33554432 (32 MBytes)です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_max_size 8388608
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><token>metadb_journal_recvq_size</token> <parameter>キュー長</parameter></term>
+<listitem>
+<para>スレーブgfmdが、マスターgfmdから受け取るジャーナルデータに関して、
+メモリ上に保持する最大レコード数を指定します。
+このサイズを越えて保持する必要が生じた場合には、バックエンド・データベース
+への反映に遅延が生じていると見なし、スレーブとしての動作を諦めて終了します。
+デフォルトは100000です。
+</para>
+<para>
+この文はgfmd.confのみで有効です。
+</para>
+<para>例:</para>
+<literallayout>
+	metadb_journal_recvq_size 100000
+</literallayout>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='grammar'><title>GRAMMAR</title>
+<para>gfarm2.confの文法をBNFで記述すると、下記のようになります。</para>
+<literallayout>
+	&lt;statement&gt; ::=
+		&nbsp;&nbsp;&lt;spool_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_address_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_listen_backlog_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_cred_type_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_cred_service_statement&gt; |
+		&nbsp;&nbsp;&lt;spool_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_port_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_cred_type_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_cred_service_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_cred_name_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_listen_backlog_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_max_descriptors_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_stack_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_thread_pool_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_job_queue_length_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_heartbeat_interval_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_dbq_size_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_server_port_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_base_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;ldap_bind_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_host_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_server_port_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_dbname_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_user_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_password_statement&gt; |
+		&nbsp;&nbsp;&lt;postgresql_conninfo_statement&gt; |
+		&nbsp;&nbsp;&lt;auth_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;netparam_statement&gt; | -->
+		&nbsp;&nbsp;&lt;sockopt_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;address_use_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;client_architecture_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;option_statement&gt; | -->
+		&nbsp;&nbsp;&lt;known_network_statement&gt; |
+		&nbsp;&nbsp;&lt;network_receive_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;admin_user_statement&gt; |
+		&nbsp;&nbsp;&lt;admin_user_gsi_dn_statement&gt; |
+		&nbsp;&nbsp;&lt;local_user_map_statement&gt; |
+		&nbsp;&nbsp;&lt;local_group_map_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_concurrency_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_concurrency_per_net_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_idle_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_busy_load_thresh_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_virtual_load_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_candidates_ratio_statement&gt; |
+		&nbsp;&nbsp;&lt;schedule_rtt_thresh_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;write_local_priority_statement&gt; | -->
+<!--		&nbsp;&nbsp;&lt;write_target_domain_statement&gt; | -->
+		&nbsp;&nbsp;&lt;minimum_free_disk_space_statement&gt; |
+		&nbsp;&nbsp;&lt;simultaneous_replication_receivers&gt; |
+		&nbsp;&nbsp;&lt;gfsd_connection_cache_statement&gt; |
+		&nbsp;&nbsp;&lt;xmlattr_size_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
+		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;log_level_statement&gt; |
+		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
+		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
+		&nbsp;&nbsp;&lt;file_trace_statement&gt; |
+		&nbsp;&nbsp;&lt;fatal_action_statement&gt; |
+		&nbsp;&nbsp;&lt;debug_command_statement&gt; |
+<!--		&nbsp;&nbsp;&lt;record_atime_statement&gt; | -->
+		&nbsp;&nbsp;&lt;client_file_bufsize_statement&gt; |
+		&nbsp;&nbsp;&lt;profile_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_list_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_replication_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_replication_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;synchronous_journaling_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_force_slave_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_server_slave_max_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_dir_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_max_size_statement&gt; |
+		&nbsp;&nbsp;&lt;metadb_journal_recvq_size_statement&gt;
+	&lt;spool_statement&gt; ::= "spool" &lt;pathname&gt;
+	&lt;spool_server_listen_address_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_address" &lt;ipv4_address&gt;
+	&lt;spool_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_listen_backlog" &lt;number&gt;
+	&lt;spool_server_cred_type_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_cred_type" &lt;cred_type&gt;
+	&lt;spool_server_cred_service_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_cred_service" &lt;cred_service&gt;
+	&lt;spool_server_cred_name_statement&gt; ::=
+		&nbsp;&nbsp;"spool_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_host_statement&gt; ::= "metadb_server_host" &lt;hostname&gt;
+	&lt;metadb_server_port_statement&gt; ::= "metadb_server_port" &lt;portnumber&gt;
+	&lt;metadb_server_cred_type_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_cred_type" &lt;cred_type&gt;
+	&lt;metadb_server_cred_service_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_cred_service" &lt;cred_service&gt;
+	&lt;metadb_server_cred_name_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_cred_name" &lt;cred_name&gt;
+	&lt;metadb_server_listen_backlog_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_listen_backlog" &lt;number&gt;
+	&lt;metadb_server_max_descriptors_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_max_descriptors" &lt;number&gt;
+	&lt;metadb_server_stack_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_stack_size" &lt;number&gt;
+	&lt;metadb_server_thread_pool_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_thread_pool_size" &lt;number&gt;
+	&lt;metadb_server_job_queue_length_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_job_queue_length" &lt;number&gt;
+	&lt;metadb_server_heartbeat_interval_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_heartbeat_interval" &lt;number&gt;
+	&lt;metadb_server_dbq_size_statement&gt; ::=
+		&nbsp;&nbsp;"metadb_server_dbq_size" &lt;number&gt;
+	&lt;ldap_server_host_statement&gt; ::= "ldap_server_host" &lt;hostname&gt;
+	&lt;ldap_server_port_statement&gt; ::= "ldap_server_port" &lt;portnumber&gt;
+	&lt;ldap_base_dn_statement&gt; ::= "ldap_base_dn" &lt;string&gt;
+	&lt;ldap_bind_dn_statement&gt; ::= "ldap_bind_dn" &lt;string&gt;
+	&lt;ldap_bind_password_statement&gt; ::= "ldap_bind_password" &lt;string&gt;
+	&lt;postgresql_server_host_statement&gt; ::= "postgresql_server_host" &lt;hostname&gt;
+	&lt;postgresql_server_port_statement&gt; ::= "postgresql_server_port" &lt;portnumber&gt;
+	&lt;postgresql_dbname_statement&gt; ::= "postgresql_dbname" &lt;string&gt;
+	&lt;postgresql_user_statement&gt; ::= "postgresql_user" &lt;string&gt;
+	&lt;postgresql_password_statement&gt; ::= "postgresql_password" &lt;string&gt;
+	&lt;postgresql_conninfo_statement&gt; ::= "postgresql_conninfo" &lt;string&gt;
+	&lt;auth_statement&gt; ::=
+		&nbsp;&nbsp;"auth" &lt;validity&gt; &lt;auth_method&gt; &lt;hostspec&gt;
+	&lt;auth_command&gt; ::= "enable" | "disable"
+	&lt;auth_method&gt; ::= "gsi" | "gsi_auth" | "sharedsecret"
+<!--	&lt;netparam_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"netparam" &lt;netparam_option&gt;=&lt;number&gt; [&lt;hostspec&gt;] -->
+<!--	&lt;netparam_option&gt; ::= "parallel_streams" | "stripe_unit_size" | -->
+<!--		&nbsp;&nbsp;"rate_limit" -->
+	&lt;sockopt_statement&gt; ::=
+		&nbsp;&nbsp;"sockopt" &lt;socket_option&gt;[=&lt;number&gt;] [""LISTENER" | &lt;hostspec&gt;]
+	&lt;socket_option&gt; = "debug" | "keepalive" | "sndbuf" | "rcvbuf" |
+		&nbsp;&nbsp;"tcp_nodelay"
+<!--	&lt;address_use_statement&gt; ::= "address_use" &lt;hostspec&gt; -->
+<!--	&lt;client_architecture_statement&gt; ::= -->
+<!--		&nbsp;&nbsp;"client_architecture" &lt;architecture&gt; &lt;hostspec&gt; -->
+<!--	&lt;option_statement&gt; ::= "option" &lt;an_option&gt; -->
+<!--	&lt;an_option&gt; ::= "noatime" -->
+	&lt;known_network_statement&gt; ::= "known_network" &lt;hostspec&gt;
+	&lt;network_receive_timeout_statement&gt; ::= "network_receive_timeout" &lt;number&gt;
+	&lt;admin_user_statement&gt; ::= "admin_user" &lt;string&gt;
+	&lt;admin_user_gsi_dn_statement&gt; ::= "admin_user_gsi_dn" &lt;string&gt;
+	&lt;local_user_map_statement&gt; ::= "local_user_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_group_map_statement&gt; ::= "local_group_map" &lt;local_user_and_group_map_spec&gt;
+	&lt;local_user_and_group_map_spec&gt; ::=
+		&lt;pathname&gt; |
+		&lt;pathname&gt; &lt;hostname&gt;|
+		&lt;pathname&gt; &lt;hostname&gt; ":" &lt;portnumber&gt;
+<!--	&lt;dir_cache_timeout_statement&gt; ::=	"dir_cache_timeout" &lt;number&gt; -->
+<!--	&lt;host_cache_timeout_statement&gt; ::= "host_cache_timeout" &lt;number&gt; -->
+	&lt;schedule_cache_timeout_statement&gt; ::= "schedule_cache_timeout" &lt;number&gt;
+	&lt;schedule_concurrency_statement&gt; ::= "schedule_concurrency" &lt;number&gt;
+	&lt;schedule_concurrency_per_net_statement&gt; ::= "schedule_concurrency_per_net" &lt;number&gt;
+	&lt;schedule_idle_load_thresh_statement&gt; ::= "schedule_idle_load_thresh" &lt;load&gt;
+	&lt;schedule_busy_load_thresh_statement&gt; ::= "schedule_busy_load_thresh" &lt;load&gt;
+	&lt;schedule_virtual_load_statement&gt; ::= "schedule_virtual_load" &lt;load&gt;
+	&lt;schedule_candidates_ratio_statement&gt; ::= "schedule_candidates_ratio" &lt;floating_point_number&gt;
+	&lt;schedule_rtt_thresh__statement&gt; ::= "schedule_rtt_thresh" &lt;floating_point_number&gt;
+<!--	&lt;write_local_priority_statement&gt; ::= "write_local_priority" &lt;validity&gt; -->
+<!--	&lt;write_target_domain_statement&gt; ::= "write_target_domain" &lt;string&gt; -->
+	&lt;minimum_free_disk_space_statement&gt; ::=
+		&nbsp;&nbsp;"minimum_free_disk_space" &lt;size&gt;
+	&lt;simultaneous_replication_receivers&gt; ::= "simultaneous_replication_receivers" &lt;number&gt;
+	&lt;gfsd_connection_cache_statement&gt; ::= "gfsd_connection_cache" &lt;number&gt;
+	&lt;xmlattr_size_limit_statement&gt; ::= "xmlattr_size_limit" &lt;size&gt;
+	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
+	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
+	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
+	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
+	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
+	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;
+	&lt;file_trace_statement&gt; ::= "file_trace" &lt;validity&gt;
+	&lt;fatal_action_statement&gt; ::= "fatal_action" &lt;fatal_action_name&gt;
+	&lt;debug_command_statement&gt; ::= "debug_command" &lt;string_list&gt;
+	&lt;no_file_system_node_timeout_statement&gt; ::= "no_file_system_node_timeout" &lt;number&gt;
+	&lt;gfmd_reconnection_timeout_statement&gt; ::= "gfmd_reconnection_timeout" &lt;number&gt;
+<!--	&lt;record_atime_statement&gt; ::= "record_atime" &lt;validity&gt; -->
+	&lt;client_file_bufsize_statement&gt; ::= "client_file_bufsize" &lt;size&gt;
+	&lt;profile_statement&gt; ::= "profile" &lt;validity&gt;
+	&lt;metadb_server_list_statement&gt; ::= "metadb_server_list" &lt;metadb_server_list_spec&gt;
+	&lt;metadb_server_list_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; |
+		&nbsp;&nbsp;&lt;hostname_port_spec&gt; &lt;metadb_server_list_spec&gt;
+	&lt;metadb_replication_statement&gt; ::= "metadb_replication" &lt;validity&gt;
+	&lt;synchronous_replication_timeout_statement&gt; ::= "synchronous_replication_timeout" &lt;number&gt;
+	&lt;synchronous_journaling_statement&gt; ::= "synchronous_journaling" &lt;validity&gt;
+	&lt;metadb_server_force_slave_statement&gt; ::= "metadb_server_force_slave" &lt;validity&gt;
+	&lt;metadb_server_slave_max_size_statement&gt; ::= "metadb_server_slave_max_size" &lt;number&gt;
+	&lt;metadb_journal_dir_statement&gt; ::= "metadb_journal_dir" &lt;pathname&gt;
+	&lt;metadb_journal_max_size_statement&gt; ::= "metadb_journal_max_size" &lt;number&gt;
+	&lt;metadb_journal_recvq_size_statement&gt; ::= "metadb_journal_recvq_size" &lt;number&gt;
+	&lt;string_list&gt; ::= 
+		&nbsp;&nbsp;&lt;string&gt; |
+		&nbsp;&nbsp;&lt;string&gt; &lt;string_list&gt;
+	&lt;hostspec&gt; ::= &lt;ipv4_address&gt; | &lt;ipv4_address&gt; "/" &lt;address_mask&gt; |
+		&nbsp;&nbsp;&lt;hostname&gt; | "." &lt;domain_name&gt; | "*"
+	&lt;pathname&gt; ::= &lt;pathname_character&gt; &lt;pathname_character&gt;*
+	&lt;pathname_character&gt; ::= &lt;hostname_character&gt; | "," | "/" | "_"
+	&lt;hostname_port_spec&gt; ::=
+		&nbsp;&nbsp;&lt;hostname&gt;|
+		&nbsp;&nbsp;&lt;hostname&gt; ":" &lt;portnumber&gt;
+	&lt;hostname&gt; ::= &lt;hostname_character&gt; &lt;hostname_character&gt;*
+	&lt;hostname_character&gt; ::= &lt;alphabet&gt; | &lt;digit&gt; | "-" | "."
+	&lt;portnumber&gt; ::= &lt;number&gt;
+	&lt;size&gt; ::= &lt;number&gt; [ "k" | "M" | "G" | "T" ]
+	&lt;number&gt; ::= &lt;digit&gt; [&lt;digit&gt;*]
+	&lt;digit&gt; ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+	&lt;string&gt; ::= """ &lt;double_quoted_character&gt;* """
+<!-- 	&lt;string&gt; ::= &lt;string_component&gt; &lt;string_component&gt;* -->
+<!-- 	&lt;string_component&gt; ::= &lt;pathname&gt; | -->
+<!-- 		&nbsp;&nbsp;"'" &lt;single_quoted_character&gt;* "'" | -->
+<!-- 		&nbsp;&nbsp;""" &lt;double_quoted_character&gt;* """ -->
+<!-- 	&lt;single_quoted_character&gt; ::= -->
+<!-- 		&nbsp;&nbsp;&lt;any_character_except_single_quotation&gt; -->
+	&lt;double_quoted_character&gt; ::=
+		&nbsp;&nbsp;&lt;any_character_except_backslash_and_double_quotation&gt; |
+		&nbsp;&nbsp;"\\" | "\""
+	&lt;validity&gt; ::= "enable" | "disable"
+	&lt;log_priority&gt; ::= "emerg" | "alert" | "crit" | "err" | "warning" |
+		&nbsp;&nbsp;"notice" | "info" | "debug"
+	&lt;fatal_action_name&gt; ::= "backtrace_and_abort" | "backtrace_and_exit" |
+		&nbsp;&nbsp;"abort" | "exit"
+</literallayout>
+
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+<para>
+以下は sharedsecret認証を使う gfarm2.conf の例です。
+</para>
+<literallayout>
+metadb_server_host metadb.example.org
+metadb_server_port 601
+auth enable sharedsecret *
+sockopt keepalive
+</literallayout>
+
+<para>
+メタデータの保存にPostgreSQLを使い、IPアドレス192.168.0.0/24の
+ファイルシステムノードやクライアントに対して、sharedsecret認証を
+使う gfmd.conf の例です。
+</para>
+<literallayout>
+metadb_server_host metadb.example.org
+metadb_server_port 601
+postgresql_server_host metadb.example.org
+postgresql_server_port 5432
+postgresql_dbname gfarm
+postgresql_user gfarm
+postgresql_password "secret-postgresql-password"
+auth enable sharedsecret 192.168.0.0/24
+admin_user john
+sockopt keepalive
+</literallayout>
+
+<para>
+メタデータの保存にLDAPを使い、任意のIPアドレスを使う
+ファイルシステムノードやクライアントに対して、GSI認証を使う
+gfmd.conf の例です。
+</para>
+<literallayout>
+metadb_server_host metadb.example.com
+metadb_server_port 601
+ldap_server_host metadb.example.com
+ldap_server_port 602
+ldap_base_dn "dc=example, dc=com"
+ldap_bind_dn "cn=gfarmuser, dc=example, dc=com"
+ldap_bind_password "secret-ldap-password"
+auth enable gsi *
+spool_server_cred_type host
+spool_server_cred_service gfsd
+admin_user john
+admin_user_gsi_dn "/C=JP/ST=Tokyo/L=Chuo-ku/O=Example, Inc./OU=Example Division/CN=John Doe"
+sockopt keepalive
+</literallayout>
+
+
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+
+<varlistentry>
+<term><filename>%%SYSCONFDIR%%/gfarm2.conf</filename></term>
+<listitem><para></para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term><filename>$HOME/.gfarm2rc</filename></term>
+<listitem><para></para></listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfmd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>setsockopt</refentrytitle><manvolnum>2</manvolnum></citerefentry></para>
+</refsect1>
+</refentry>

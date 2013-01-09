@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# $Id$
+#
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
+# chkconfig: 2345 85 15
+#
+## For RedHat Linux style rc.d
+# description: LDAP slapd for Gfarm
+# processname: slapd
+# config: @config_gfarm_slapd_config@
+# pidfile: @config_gfarm_backend_pid_file@
+#
+## For SuSE/United-Linux style rc.d
+### BEGIN INIT INFO
+# Provides: gfarm-slapd
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: LDAP slapd for Gfarm
+### END INIT INFO
+
+PROG="slapd"
+FILE="gfarm-slapd"
+
+CONF="@config_gfarm_slapd_config@"
+PORT=@config_gfarm_backend_port@
+DAEMON="@config_gfarm_openldap_libexec@/$PROG"
+PIDFILE="@config_gfarm_backend_pid_file@"
+
+case $1 in 
+start)
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
+		exit 1
+	fi
+	if [ ! -f "$CONF" ]; then
+		echo -n "$CONF is not configured"
+		exit 1
+	fi
+	$DAEMON -f "$CONF" -h "ldap://:$PORT/"
+	;;
+
+stop)
+	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
+		rm -f "$PIDFILE"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+restart)
+	$0 stop
+	$0 start
+	;;
+
+status)
+	if [ -f "$PIDFILE" ] && kill -0 `cat "$PIDFILE"`; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | restart | status }"
+	exit 1
+	;;
+esac
+exit 0

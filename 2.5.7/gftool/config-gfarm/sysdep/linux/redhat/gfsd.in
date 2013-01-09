@@ -1,0 +1,141 @@
+#!/bin/bash
+#
+# Init file for Gfarm filesystem node daemon
+#
+# chkconfig: 2345 95 05
+# description: Gfarm filesystem node daemon
+#
+# processname: gfsd
+# config: @config_gfarm_gfarm_config@
+# pidfile: @config_gfarm_gfsd_pid_file@
+#
+# $Id$
+
+# source function library
+. /etc/rc.d/init.d/functions
+
+prog="gfsd"
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
+
+DAEMON="@config_gfarm_prefix@/sbin/$prog"
+PIDFILE="@config_gfarm_gfsd_pid_file@"
+LOCKFILE="@config_gfarm_lock_dir@/$FILE"
+OPTIONS="@config_gfarm_gfsd_option@"
+
+# gfsd service certificate
+export X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+export X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+call_daemon()
+{
+	# initlog is deprecated and warning is displayed since Fedora Core 4.
+	if egrep -q '^[^#]*[     ]initlog' /etc/init.d/functions; then
+		initlog $INITLOG_ARGS -c "$*"
+	else
+		$*
+	fi
+}
+
+# We won't just use "killproc" and "status" function here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+start()
+{
+	echo -n "Starting $FILE:"
+	checkstatus > /dev/null
+	if [ $? -eq 0 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	call_daemon $DAEMON -P $PIDFILE $OPTIONS && success || failure
+	RETVAL=$?
+	[ "$RETVAL" = 0 ] && touch "$LOCKFILE"
+	echo
+	return $RETVAL
+}
+
+stop()
+{
+	echo -n "Stopping $FILE:"
+	checkstatus > /dev/null
+	if [ $? -eq 3 ]; then
+		success
+		echo
+		return 0
+	fi
+
+	if [ -f "$PIDFILE" ]; then
+		kill -TERM `cat "$PIDFILE"` && success || failure
+		RETVAL=$?
+		if [ $RETVAL -eq 0 ] ||
+		   [ ! -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]; then
+			rm -f "$PIDFILE" "$LOCKFILE"
+		fi
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		failure
+		RETVAL=1
+	fi
+	echo
+	return $RETVAL
+}
+
+checkstatus()
+{
+	if [ -f "$PIDFILE" ] && [ -d /proc/`sed 's/[^0-9]//g' "$PIDFILE"` ]
+	then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+		return 0
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is dead, but $PIDFILE remains"
+		return 1
+	elif [ -f "$LOCKFILE" ]; then
+		echo "$FILE is dead (no $PIDFILE), but $LOCKFILE remains"
+		return 2
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		return 3
+	fi
+}
+
+usage()
+{
+	echo $"Usage: $0 {start|stop|restart|status}"
+	exit 1
+}
+
+RETVAL=0
+
+SUB_COMMAND="$1"
+shift
+
+case "$SUB_COMMAND" in
+  start)
+	start
+	RETVAL=$?
+	;;
+  stop)
+	stop
+	RETVAL=$?
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  status)
+	checkstatus
+	RETVAL=$?
+	;;
+  *)
+	usage
+	;;
+esac
+
+exit $RETVAL

@@ -1,0 +1,65 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-glob-add.3'>
+
+<refentryinfo><date>11 Sep 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_glob_add</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_glob_add</refname>
+<refpurpose>adds the type of path name</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_add</function></funcdef>
+    <paramdef>gfs_glob_t * <parameter>listp</parameter></paramdef>
+    <paramdef>int  <parameter>dtype</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><function>gfs_glob_add()</function> adds the type of path name
+<parameter>dtype</parameter> to <parameter>listp</parameter>.</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_glob_init</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfs_glob_free</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

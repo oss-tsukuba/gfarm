@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# /usr/local/bin must be before /bin, otherwise globus-makefile-header fails.
+PATH=/opt/SUNWspro/bin:/usr/ccs/bin:/usr/local/bin:/usr/bin:/bin:/usr/ucb
+export PATH
+
+version=1.4
+subpkgs='client devel doc fsnode gfptool libs agent server gfront'
+prefix=usr/local/gfarm
+pkg_list='gfarm gfarm-gsi'
+cc_list='vendorcc gcc'
+# XXX gcc cannot link shared object. what's wrong?
+cc_list='vendorcc'
+
+srcdir=`pwd`
+work=$srcdir/..
+buildrootbase=$work/buildroot-$$
+
+make=/usr/local/bin/make
+tar=/usr/local/bin/tar
+with_prefix=--prefix=/$prefix
+with_sysconfdir=--sysconfdir=/etc
+with_globus=--with-globus=/opt/GT4/gt-4.0.3-gcc-3.2.3
+with_globus="$with_globus --with-globus-static"
+# XXX --with-mpi needs OPTFLAGS=-O with gcc (an error happens at gfs_hook_mpi).
+# XXX currently, MPICH isn't installed on the build-host.
+# XXX tar warns missing `gfwc', because it isn't built without --with-mpi.
+with_mpi= # --with-mpi=/usr/local/mpich
+
+vendorcc_pkg=/home/soda/install/SunOS-5.9-sparc-SunForte-7
+with_vendorcc_postgresql=--with-postgresql=$vendorcc_pkg/postgresql-8.1.5
+with_vendorcc_openldap=--with-openldap=$vendorcc_pkg/openldap-2.3.28
+with_vendorcc_openssl=--with-openssl=$vendorcc_pkg/openssl-0.9.8d
+with_vendorcc_globus_flavor= # --with-globus-flavor=vendorcc32 # not necessary
+
+gcc_pkg=/home/soda/install/SunOS-5.9-gcc-3.2.3
+with_gcc_postgresql=--with-postgresql=$gcc_pkg/postgresql-8.1.5
+with_gcc_openldap=--with-openldap=$gcc_pkg/openldap-2.3.28
+with_gcc_openssl=--with-openssl=$gcc_pkg/openssl-0.9.8d
+with_gcc_globus_flavor= # --with-globus-flavor=gcc32 # not necessary
+
+case `whoami` in
+root)	;; # OK
+*)	echo "WARNING: root privilege is needed to invoke this script" >&2
+	# exit 1
+	;;
+esac
+
+for pkg in $pkg_list
+do
+	for cc in $cc_list
+	do
+		case ${pkg}-${cc} in
+		gfarm-vendorcc)
+			./configure $with_prefix $with_sysconfdir \
+				$with_vendorcc_postgresql \
+				$with_vendorcc_openldap \
+				$with_vendorcc_openssl;;
+		gfarm-gsi-vendorcc)
+			./configure $with_prefix $with_sysconfdir \
+				$with_vendorcc_postgresql \
+				$with_vendorcc_openldap \
+				$with_vendorcc_openssl \
+				$with_globus $with_vendorcc_globus_flavor;;
+		gfarm-gcc)
+			CC=gcc ./configure $with_prefix $with_sysconfdir \
+				$with_gcc_postgresql \
+				$with_gcc_openldap \
+				$with_gcc_openssl;;
+		gfarm-gsi-gcc)
+			CC=gcc ./configure $with_prefix $with_sysconfdir \
+				$with_gcc_postgresql \
+				$with_gcc_openldap \
+				$with_gcc_openssl \
+				$with_globus $with_gcc_globus_flavor;;
+		esac
+		$make
+
+		buildroot=${buildrootbase}-${pkg}-${cc}
+		rm -rf $buildroot
+		mkdir -p $buildroot $buildroot/$prefix $buildroot/etc
+		$make prefix=$buildroot/$prefix install
+		mkdir -p $buildroot/etc/rc3.d
+		cp package/solaris/gfmd $buildroot/etc/rc3.d/S90gfmd
+		cp package/solaris/gfsd $buildroot/etc/rc3.d/S95gfsd
+		ln $buildroot/etc/rc3.d/S90gfmd $buildroot/etc/rc3.d/K10gfmd
+		ln $buildroot/etc/rc3.d/S95gfsd $buildroot/etc/rc3.d/K05gfsd
+		chmod +x $buildroot/etc/rc3.d/*
+		cp doc/conf/gfarm.conf $buildroot/etc/gfarm.conf.sample
+		$make distclean
+
+		( cd $buildroot &&
+		  for s in $subpkgs
+		  do
+		    eval \
+			$tar zcf $work/${pkg}-${s}-${cc}-${version}.tar.gz \
+				`sed "s:@PREFIX@:$prefix:" \
+				    $srcdir/package/solaris/gfarm-${s}.files`
+		  done
+		)
+		# rm -rf $buildroot
+	done
+done
+
+# $Id$

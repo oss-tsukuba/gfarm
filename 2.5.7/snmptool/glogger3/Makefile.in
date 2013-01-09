@@ -1,0 +1,112 @@
+# Makefile for GLogger
+
+top_objdir = @top_objdir@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+
+include config.mk
+
+### use hook snmp_free_pdu() (fast, un-recommending)
+#MYFREEPDU = "-DHOOK_snmp_free_pdu"
+MYFREEPDU = @hook_snmp_free_pdu@
+
+### call original snmp_free_pdu() in hooked snmp_free_pdu()
+#DLOPEN	= "-DUSE_DLOPEN=\"/usr/lib/libsnmp.so\""
+#DLOPEN	= "-DUSE_DLOPEN=\"libsnmp.so\""
+DLOPEN	= @snmpdlopen@
+
+### print action timing ($ glogger | avg.pl)
+#PRINTTIME = "-DPRINTTIME"
+PRINTTIME = @printtime@
+
+USEUCD	= @useucd@
+
+# ========================================================================
+GLOGGER	= glogger
+DUMPLOG	= glogdump
+LIBGLOG	= libglogger
+
+LIBSRCS	= read_glogger_conf.c snmpasync.c expand_node_name.c prepare_files.c \
+	write_to_files.c set_options.c
+
+BINS	= $(GLOGGER) $(DUMPLOG) glogd glogd-func
+SRCS	= $(GLOGGER).c $(DUMPLOG).c $(LIBSRCS)
+HEADS	= $(GLOGGER).h expand_node_name.h
+OBJS	= $(SRCS:.c=.o)
+LIBOBJS	= $(LIBSRCS:.c=.o)
+
+FILES	= INSTALL.en INSTALL.ja Makefile.in config.mk.in \
+        install-sh $(HEADS) $(SRCS) sample.conf glogd.in avg1.pl avg2.pl \
+	configure configure.in setsnmp_configure glogd-func
+DOCS	= docbook/Makefile \
+	docbook/en/{Makefile,docdir.mk} \
+	docbook/ja/{Makefile.in,docdir.mk,*.{5,8}{,.docbook,.html}}
+VER	= 3-`date +%Y%m%d`
+
+# for debug
+#DEBUG	= -g -ggdb -pg
+
+# ld (*.o)
+LD	= gcc
+LDFLAGS	= @LDFLAGS@
+
+LDLIBS = @LIBS@
+
+# C (*.c)
+CC	= @CC@
+CFLAGS2	= $(USEUCD) $(MYFREEPDU) $(DLOPEN) $(PRINTTIME)
+CFLAGS 	= @CFLAGS@ $(CFLAGS2)
+CPPFLAGS= -I$(srcdir) @CPPFLAGS@
+
+# commands
+SHELL	= /bin/sh
+RM	= rm -f
+AR	= ar
+
+### rules ###
+.SUFFIXES:
+.SUFFIXES: .o .c
+
+all: $(GLOGGER) $(DUMPLOG)
+
+$(GLOGGER): $(GLOGGER).o $(LIBGLOG).a
+	$(LD) $(LDFLAGS) $(GLOGGER).o $(LIBGLOG).a -o $@ $(LDLIBS)
+
+$(DUMPLOG): $(DUMPLOG).o $(LIBGLOG).a
+	$(LD) $(LDFLAGS) $(DUMPLOG).o $(LIBGLOG).a -o $@ $(LDLIBS)
+
+$(LIBGLOG).a: $(LIBOBJS) $(TESTLIB)
+	$(AR) ruc $@ $(LIBOBJS)
+
+$(OBJS): $(HEADS) Makefile
+
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+install: $(BINS)
+	@for i in / $(BINS); do \
+            case $$i in /) continue;; esac; \
+            ( set -x; $(INSTALL_PROGRAM) $${i} $(bindir)/$${i} ); \
+        done
+	$(INSTALL_DATA) sample.conf $(sysconfdir)/sample.conf
+	(cd docbook; $(MAKE) install)
+
+clean:
+	(cd docbook; $(MAKE) clean)
+	$(RM) $(BINS) $(OBJS) *.a \
+	core gmon.out *~ *.log
+
+distclean: clean
+	$(RM) config.log config.status config.cache \
+	Makefile config.mk glogd docbook/ja/Makefile
+
+doc:
+	(cd docbook; $(MAKE))
+
+tar:
+	@echo $(GLOGGER)$(VER) > .package
+	@$(RM) -r `cat .package`
+	@mkdir `cat .package`
+	cp --parents $(FILES) $(DOCS) `cat .package`
+	tar cvf - `cat .package` | gzip -9 > `cat .package`.tar.gz
+	@$(RM) -r `cat .package` .package

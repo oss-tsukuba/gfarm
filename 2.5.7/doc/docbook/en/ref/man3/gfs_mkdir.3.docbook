@@ -1,0 +1,121 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfs-mkdir.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_mkdir</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_mkdir</refname>
+<refpurpose>create a directory</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_mkdir</function></funcdef>
+    <paramdef>char * <parameter>gfarm_url</parameter></paramdef>
+    <paramdef>gfarm_mode_t <parameter>mode</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><function>gfs_mkdir()</function> attempts to create a directory named
+<parameter>gfarm_url</parameter>.</para>
+
+<para><parameter>mode</parameter> speficies the permissions to use.
+It is modified by the process's <varname>umask</varname> in the usual
+way: the permissions of the created file are
+<emphasis>(</emphasis><parameter>mode</parameter><emphasis> &amp;
+~umask)</emphasis>.</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>The function terminated successfully.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>Insufficient memory was available.</para>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_PERMISSION_DENIED</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter>
+points outside your accessible address space.</para>
+</listitem>
+</varlistentry>
+ -->
+
+<varlistentry>
+<term><constant>GFARM_ERR_ALREADY_EXISTS</constant></term>
+<listitem>
+<para><parameter>gfarm_url</parameter> already exists (not necessarily
+as a directory).  This includes the case where
+<parameter>gfarm_url</parameter> is a symbolic link, dangling or
+not.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NO_SUCH_OBJECT</constant></term>
+<listitem>
+<para>The parent directory of <parameter>gfarm_url</parameter> does
+not exist.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><constant>GFARM_ERR_NOT_A_DIRECTORY</constant></term>
+<listitem>
+<para>A component of the path prefix is not a directory.</para>
+</listitem>
+</varlistentry>
+
+<!--
+<varlistentry>
+<term><constant>GFARM_ERR_READ_ONLY_FILE_SYSTEM</constant></term>
+<listitem>
+<para>The named file resides on a read\-only filesystem.</para>
+</listitem>
+</varlistentry>
+-->
+
+<varlistentry>
+<term>Others</term>
+<listitem>
+<para>An error except the above occurred.  The reason is shown by its
+pointed strings.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+</refentry>
+

@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# $FreeBSD: ports/net/openldap22-server/files/slapd.sh,v 1.14 2004/08/15 18:18:46 eik Exp $
+#
+
+# PROVIDE: gfarm-pgsql
+# REQUIRE: NETWORKING SERVERS
+# BEFORE: securelevel
+# KEYWORD: FreeBSD shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable gfarm-slapd:
+#
+#gfarm_pgsql_enable="YES"
+#gfarm_pgsql_flags=''
+#
+# See pgsql(8) for more flags
+#
+if [ -f /usr/local/etc/rc.subr ]; then
+	. /usr/local/etc/rc.subr
+elif [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+else
+	echo "$0: abort: rc.subr not found"
+	exit 2
+fi
+
+FILE="gfarm-pgsql"
+
+name="gfarm_pgsql"
+rcvar=`set_rcvar`
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+command="@config_gfarm_pgsql_bindir@/pg_ctl"
+pidfile="$PGDATA/portmaster.pid"
+required_dirs="$PGDATA"
+# add more flags through ${${name}_flags}
+command_args="@config_gfarm_pgsql_options@"
+export PGPORT
+export PGDATA
+unset LANG
+
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="su - $PRIVILEGE";;
+esac
+
+start_cmd="echo $command $command_args start | $RUN"
+restart_cmd="echo $command $command_args restart | $RUN"
+reload_cmd="echo $command $command_args reload | $RUN"
+stop_cmd="echo $command $command_args stop | $RUN"
+status_cmd="echo $command $command_args status | $RUN"
+
+# read settings, set defaults
+load_rc_config ${FILE}
+: ${gfarm_pgsql_enable="NO"}
+if [ -n "${gfarm_pgsql_args+set}" ]; then
+  warn "gfarm_pgsql_args is deprecated, use gfarm_pgsql_flags"
+  : ${gfarm_pgsql_flags="$gfarm_pgsql_args"}
+else
+  : ${gfarm_pgsql_flags=""}
+fi
+
+run_rc_command "$1"

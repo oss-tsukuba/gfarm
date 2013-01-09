@@ -1,0 +1,46 @@
+<project name="gfront" default="jar" basedir=".">
+
+	<!-- Source file directory -->
+	<property name="build.src" value="src/gfront"/>
+
+	<!-- Class file directory -->
+	<property name="build.dest" value="classes"/>
+
+	<!-- Jar file directory -->
+	<property name="build.jar" value="gfront.jar"/>
+
+	<!-- Javadoc file directory -->
+	<property name="javadoc.dest" value="javadoc"/>
+
+
+		<target name="jar" depends="compile">
+			<jar
+				jarfile="${build.jar}"
+				basedir="${build.dest}"
+				manifest="gfront.mani">
+			</jar>
+		</target>
+
+		<target name="compile">
+			<mkdir dir="${build.dest}" />
+			<javac srcdir="${build.src}"
+				debug="${debug}"
+				destdir="${build.dest}"
+			/>
+		</target>
+		
+		<target name="javadoc">
+			<mkdir dir="${javadoc.dest}" />
+			<javadoc 
+				packagenames="*"
+				sourcepath="${build.src}"
+				destdir="${javadoc.dest}">
+			</javadoc>
+		</target>
+
+		<target name="clean">
+			<delete dir="${javadoc.dest}" />
+			<delete dir="${build.dest}" />
+			<delete dir="${build.jar}" />
+		</target>
+</project>

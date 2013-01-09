@@ -1,0 +1,5 @@
+metadb_server_host @config_gfarm_backend_hostname@
+metadb_server_port @config_gfarm_gfmd_port@
+auth enable @config_gfarm_auth_type@ *
+
+sockopt keepalive

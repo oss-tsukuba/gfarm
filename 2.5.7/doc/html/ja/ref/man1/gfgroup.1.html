@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfgroup</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFGROUP.1"
+></A
+>gfgroup</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfgroup&nbsp;--&nbsp;Gfarm グループ管理コマンド</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-l] [<TT
+CLASS="REPLACEABLE"
+><I
+>group</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -c   groupname  [<TT
+CLASS="REPLACEABLE"
+><I
+>user</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -m   groupname  [<TT
+CLASS="REPLACEABLE"
+><I
+>user</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfgroup</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -d   groupname </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>Gfarm ファイルシステムにおけるグループ管理を行います．
+デフォルトでは全登録グループを表示します．
+グループ名が指定されたら，指定されたグループを表示します．
+Gfarmファイルシステムの管理者は，-c，-m，-d
+オプションを指定することにより，それぞれグループ作成，
+グループメンバ変更，グループ削除を行うことができます．</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>パス名</I
+></TT
+></DT
+><DD
+><P
+>	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、「/」を指定したのと同じ意味になります。
+    </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-l</CODE
+></DT
+><DD
+><P
+>グループ名とグループメンバの情報を表示します．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-c</CODE
+></DT
+><DD
+><P
+>グループの作成を行います．
+登録には初期グループメンバも指定することができます．
+Gfarmの管理者が実行可能です．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>グループメンバの変更を行います．
+変更したいグループ名とメンバのリスト指定します．
+Gfarmの管理者が実行可能です．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
+></DT
+><DD
+><P
+>グループを消去します．
+Gfarmの管理者が実行可能です．</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>引数オプションを表示します．</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfuser</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

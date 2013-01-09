@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ $# -eq 0 ]; then
+  echo "usage: `basename $0` [instaled snmp path] [configure options]"
+  exit
+fi
+
+INSTALLPATH=$1
+shift
+OPTIONS="$@"
+
+env CPPFLAGS="-I${INSTALLPATH}/include" \
+    LDFLAGS="-L${INSTALLPATH}/lib -Wl,-rpath,${INSTALLPATH}/lib" \
+    ./configure ${OPTIONS}

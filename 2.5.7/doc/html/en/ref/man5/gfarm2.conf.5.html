@@ -1,0 +1,2854 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfarm2.conf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFARM2.CONF.5"
+></A
+>gfarm2.conf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfarm2.conf&nbsp;--&nbsp;Gfarm configuration file</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfarm2.conf is a text file that contains a Gfarm configuration.  
+Gfarm server processes gfmd and gfsd refer to %%SYSCONFDIR%%/gfmd.conf
+and %%SYSCONFDIR%%/gfarm2.conf, respectively, by default.
+Since this configuration file is only read at startup, it is necessary
+to restart servers when the contents of the configuration file are
+updated.</P
+><P
+>Application programs, such as gfls and gfhost, refer to both
+%%SYSCONFDIR%%/gfarm2.conf, and a file specified by an environment variable,
+GFARM_CONFIG_FILE. If both configuration files exist, the file
+specified by the environment variable, GFARM_CONFIG_FILE, is read
+first. Both files have the same grammar.
+If the environment variable GFARM_CONFIG_FILE doesn't exist,
+ ~/.gfarm2rc in a user's home directory is used instead.</P
+><P
+>Each line of gfarm2.conf consists of one statement.  When the
+line ends with the character ``\'', the line continues for the next
+line.  A word beginning with ``#'' causes that word and all remaining
+characters on that line to be ignored.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="HOSTSPECIFICATION"
+></A
+><H2
+>Host_specification</H2
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+> has the following
+forms.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>III.JJJ.KKK.LLL</I
+></TT
+></DT
+><DD
+><P
+>Specifies an IP address with four octets from 0 to 255, separated
+by ".".</P
+></DD
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>III.JJJ.KKK.LLL</I
+></TT
+>/<TT
+CLASS="PARAMETER"
+><I
+>MM</I
+></TT
+></DT
+><DD
+><P
+>Specifies a network address with an IP address and a netmask
+from 0 to 31 separated by "/".</P
+></DD
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>domain.name</I
+></TT
+></DT
+><DD
+><P
+>Specifies a host name.</P
+></DD
+><DT
+><TT
+CLASS="PARAMETER"
+><I
+>.domain.name</I
+></TT
+></DT
+><DD
+><P
+>Specifies all hosts which belong to the domain.name.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>*</I
+></DT
+><DD
+><P
+>Specifies all hosts.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="STATEMENT"
+></A
+><H2
+>Statement</H2
+><P
+>The following statements are supported.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>spool</SPAN
+> statement specifies a spool directory
+for a Gfarm filesystem on this filesystem node.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool&nbsp;/var/spool/gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>IP-address</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>spool_server_listen_address</SPAN
+> statement specifies
+the IP address at which the gfsd accepts TCP and UDP requests.
+The default address is all IP addresses of the host.
+This option is useful when one wants to invoke multiple gfsd
+to provide multiple spool directories on the host.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_address&nbsp;192.168.121.1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the second parameter of the
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+system call that gfsd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &#60;sys/socket.h&#62;, or 5 if it's undefined.</P
+><P
+>On an environment which has many gfarm clients, it's recommened to increase this value after increasing system limit.</P
+><P
+>This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_listen_backlog&nbsp;128</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the type of credential used by gfsd for GSI
+authentication.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.</P
+><P
+>If this statement isn't used on the server side, the server uses
+a host certificate, if the server is invoked with root privileges.
+Or, if the server is invoked as a non-privileged user, the server
+uses the user's certificate.</P
+><P
+>If this statement isn't used on the client side, the client assumes
+that the server that the client is going to connect is using
+a host certificate of the server host. Thus, if the server is not
+invoked with root privileges, but invoked with user privileges where
+the user is the same as the user who invoked the client, the client
+side needs to specify the following one line.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;self</P
+><P
+>The possible types of <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+> are
+``<SPAN
+CLASS="TOKEN"
+>self</SPAN
+>'', 
+``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'', ``<SPAN
+CLASS="TOKEN"
+>user</SPAN
+>'' and 
+``<SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+>''.
+And those are used with the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+>
+and <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statements as follows:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>self</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that the certificate that the user currently
+has is used.
+You must not use either the 
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> or
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement,
+if you are using this type.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>host</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a host certificate or a service certificate
+is used.
+To choose a service certificate, the name of the service may be specified
+by the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement.
+If ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified as the service name, a host certificate
+in the file ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/hostcert.pem</TT
+>'' will
+be used.
+If any server name other than ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified,
+a service certificate in the file
+``<TT
+CLASS="FILENAME"
+>/etc/grid-security/SERVICE/SERVICEcert.pem</TT
+>''
+will be used.
+If the service name is omitted, ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' will be used as
+the service name by default.
+Only the Common Name field of a certificate will be used to check
+the server's identity for both a host certificate and a service certificate.
+And the Common Name field must be in the ``CN=SERVERNAME/HOSTNAME'' format.
+Also, the hostname must match the canonical name configured by
+the <B
+CLASS="COMMAND"
+>gfhost</B
+> command exactly.  Alias hostnames are not allowed.</P
+><P
+>This feature corresponds to the GSS_C_NT_HOSTBASED_SERVICE feature in GSSAPI
+(RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;host<br>
+	spool_server_cred_service&nbsp;host</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>user</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that a user certificate is used.
+The account name of the user may be specified by the
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> statement.
+If the account name is omitted, the user who invoked the command
+will be used by default.
+You must not specify a service name using
+the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement, if you are using
+a user certificate.</P
+><P
+>To map from the account name to a Distinguished Name of a certificate,
+file ``<TT
+CLASS="FILENAME"
+>/etc/grid-security/grid-mapfile</TT
+>'' is used.
+Thus, if there isn't such a file, or if the user isn't specified in this file,
+this feature cannot be used.</P
+><P
+>This feature corresponds to the GSS_C_NT_USER_NAME feature in GSSAPI
+(RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;user<br>
+	spool_server_cred_name&nbsp;guest</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>mechanism-specific</SPAN
+></DT
+><DD
+><P
+>This keyword specifies that <SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+>
+is treated as a raw X.509 Distinguished Name serving as a server's
+certificate.
+You must not specify a service name using a
+<SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> statement, if you are using
+this type.</P
+><P
+>This feature corresponds to a case where GSS_C_NO_OID is specified
+as a Name Type in GSSAPI (RFC2743/RFC2744).</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	spool_server_cred_type&nbsp;mechanism-specific<br>
+	spool_server_cred_name&nbsp;"/O=Grid/O=Globus/OU=example.com/CN=John&nbsp;Smith"</P
+></DD
+></DL
+></DIV
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the service name of a service certificate
+used by gfsd for GSI authentication, when ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified
+in <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> statement.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement for details.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>spool_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the setting of a certificate used by gfsd
+for GSI authentication. What this setting means depends on the type
+specified in the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> statement.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement for details.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_host</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>metadb_server_host</SPAN
+> statement specifies the
+host name on which gfmd is running.</P
+><P
+>This statement cannot be omitted.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_host&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_port</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>metadb_server_port</SPAN
+> statement specifies the tcp
+port number the gfmd is listening on.  The default port number is
+601.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_port&nbsp;601</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_type</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the type of credential used by gfmd
+for GSI authentication.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement on the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_service</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_service</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the service name of a service certificate
+used by gfmd for GSI authentication, when ``<SPAN
+CLASS="TOKEN"
+>host</SPAN
+>'' is specified
+in <SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> statement.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement on the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_cred_name</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>cred_name</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the setting of a certificate used by gfmd
+for GSI authentication. What this setting means depends on the type
+specified in the <SPAN
+CLASS="TOKEN"
+>metadb_server_cred_type</SPAN
+> statement.
+This is ignored when you are using <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+> 
+authentication.
+Please read the description of the <SPAN
+CLASS="TOKEN"
+>spool_server_cred_type</SPAN
+> 
+statement on the configuration of this statement.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_listen_backlog</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the second parameter of the
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>listen</SPAN
+>(2)</SPAN
+>
+system call that gfmd invokes.
+The default value is SOMAXCONN (typically 128, but depends on the OS) on OSes which define this symbol in &#60;sys/socket.h&#62;, or 5 if it's undefined.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_listen_backlog&nbsp;128</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_max_descriptors</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the number of file descriptor limit
+for the gfmd metadata server process.  If not specified, the default
+limit is min(OS's hard limit, 131072).  You may have to increase
+this value on a larger configuration, or decrease on a smaller
+configuration.  See Gfarm FAQ to see how to calculate this value.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_max_descriptors&nbsp;262144</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_stack_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the size of each thread in the gfmd 
+metadata server process.  If not specified, the default size of the OS
+is used.
+This parameter is used to cut down the size of virtual memory space
+used by gfmd.</P
+><P
+>For example, the default stack size on CentOS 5/i386 is 10MB, thus,
+you can decrease the size of the virtual memory space of gfmd to 1/40,
+by specifying 256KB as this parameter.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_stack_size&nbsp;262144</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_thread_pool_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>size</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the maximum number of threads in a
+thread pool in the gfmd.  It is effective to specify around the
+number of CPU cores of the metadata server node.  Default is 16.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_thread_pool_size&nbsp;16</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_job_queue_length</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>length</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the length of job queue in the gfmd.
+It is effective to specify around the maximum number of clients that
+access the Gfarm file system at the same time.  Default is 16000.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_job_queue_length&nbsp;160</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_heartbeat_interval</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the interval of heartbeat in seconds
+for gfmd to check availability of each gfsd.  Default is 180 seconds.</P
+><P
+>Until gfarm-2.3.0, this parameter was only available in gfmd.conf, 
+and ignored in gfarm2.conf. But since gfarm-2.4.0, gfsd also uses
+this parameter to detect whether gfmd is down or not, this parameter
+has to be specified in both gfarm2.conf and gfmd.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_heartbeat_interval&nbsp;180</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_dbq_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>size</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the queue length of metadata updates
+for a backend database in gfmd.  Longer queue length may avoid slow
+down due to waiting backend database updates in case of frequent
+metadata operations.
+Default is 65536.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_dbq_size&nbsp;65536</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_server_host</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_server_host</SPAN
+> statement specifies the host
+name on which an LDAP server is running.  This statement is required
+when the LDAP server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_server_host&nbsp;ldap.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_server_port</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_server_port</SPAN
+> statement specifies the tcp
+port number of the LDAP server.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>ldap_server_host</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_server_port&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_base_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_base_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_base_dn</SPAN
+> statement specifies the
+base-distinguished name of the LDAP database.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>ldap_server_host</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>LDAP_bind_distinguished_name</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_bind_dn</SPAN
+> statement specifies the
+distinguished name for the bind operation which is used for authentication
+to the LDAP database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>ldap_bind_password</SPAN
+> statement specifies the
+password for the bind operation which is used for authentication
+to the LDAP database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	ldap_bind_password&nbsp;"secret-ldap-password"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_server_host</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_server_host</SPAN
+> statement specifies the host
+name on which a PostgreSQL server is running.  This statement is required
+when the PostgreSQL server is used for a backend database of gfmd.  This
+statement is used in gfmd.conf not gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_server_host&nbsp;postgresql.example.com</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_server_port</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_server_port</SPAN
+> statement specifies the tcp
+port number of the PostgreSQL server.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>postgresql_server_host</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_server_port&nbsp;602</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>dbname</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_dbname</SPAN
+> statement specifies the
+  database name of the PostgreSQL database.</P
+><P
+>This statement cannot be omitted
+  if <SPAN
+CLASS="TOKEN"
+>postgresql_server_host</SPAN
+> is specified.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_dbname&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_user</SPAN
+> statement specifies the
+  username used to connect the PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_user&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>password</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_password</SPAN
+> statement specifies the
+  password used to connect the PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_password&nbsp;gfarm</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>connection_info</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>postgresql_conninfo</SPAN
+> statement specifies the
+  connection option used to connect the PostgreSQL database.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	postgresql_conninfo&nbsp;"sslmode=require&nbsp;connect_timeout=30"</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>auth</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+>
+<TT
+CLASS="PARAMETER"
+><I
+>method</I
+></TT
+> <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+></DT
+><DD
+><P
+>This statement specifies the authentication method when
+communicating with the host(s) specified by the third argument.</P
+><P
+>The first argument should be either the <SPAN
+CLASS="TOKEN"
+>enable</SPAN
+> or
+<SPAN
+CLASS="TOKEN"
+>disable</SPAN
+> keyword.
+The second argument, <TT
+CLASS="PARAMETER"
+><I
+>auth method</I
+></TT
+>, should be
+the <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>, <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>, or <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>
+keyword.
+The third argument specifies the host(s) by using <TT
+CLASS="PARAMETER"
+><I
+>Host
+specification</I
+></TT
+>.</P
+><P
+>The <SPAN
+CLASS="TOKEN"
+>auth</SPAN
+> statement may be specified any number of
+times.  For each authentication method, it becomes a candidate when
+the first entry whose host_specification matches the target host has
+the <SPAN
+CLASS="TOKEN"
+>enable</SPAN
+> keyword.  When there is no corresponding
+entry, or when the first corresponding entry has the
+<SPAN
+CLASS="TOKEN"
+>disable</SPAN
+> keyword, the authentication method does not
+become a candidate.</P
+><P
+>This process takes place on both client and server sides.
+Candidates for authentication method on both sides will be
+tried.</P
+><P
+>The order of statements with different authentication methods is
+not relevant.  When there are several candidates for the authentication
+method for the host, the order of the authentication trial is
+<SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>, <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+>,
+and then <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>.</P
+><P
+>The GSI methods are available if and only if the
+--with-globus option is specified at configuration.  When the methods are
+not available, an <SPAN
+CLASS="TOKEN"
+>auth</SPAN
+> statement with
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+> or <SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> will be ignored.</P
+><P
+>This statement cannot be omitted.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.100<br>
+	auth&nbsp;disable&nbsp;sharedsecret&nbsp;192.168.0.101<br>
+	auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+	auth&nbsp;enable&nbsp;gsi_auth&nbsp;10.0.0.0/8<br>
+	auth&nbsp;enable&nbsp;gsi&nbsp;*</P
+><P
+>In this example, all hosts which belong to the network address
+192.168.0.0/24, except for two hosts, 192.168.0.100 and 192.168.0.101,
+will be tested for authenticated by both <SPAN
+CLASS="TOKEN"
+>sharedsecret</SPAN
+>
+and <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>;
+all hosts which belong to the network address 10.0.0.0/8 will be
+tested for authentication by both
+<SPAN
+CLASS="TOKEN"
+>gsi_auth</SPAN
+> and <SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>;
+and all other hosts will be authenticated by
+<SPAN
+CLASS="TOKEN"
+>gsi</SPAN
+>.  Note that two hosts, 192.168.0.100 and
+192.168.0.101, will be tested for authentication by gsi only.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>sockopt </SPAN
+><TT
+CLASS="PARAMETER"
+><I
+>option</I
+></TT
+><I
+CLASS="EMPHASIS"
+>[=</I
+><TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+><I
+CLASS="EMPHASIS"
+>] [<SPAN
+CLASS="TOKEN"
+>LISTENER</SPAN
+> | <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+>]</I
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>sockopt</SPAN
+> parameter specifies the socket option
+<TT
+CLASS="PARAMETER"
+><I
+>option</I
+></TT
+> via the setsockopt(2) system call.</P
+><P
+>When <SPAN
+CLASS="TOKEN"
+>LISTENER</SPAN
+> (all capital letters) is specified
+by the second argument, the socket option is applied to any socket
+on the server side (accepting side).</P
+><P
+>When the host_specification is specified by the second argument,
+the socket option is applied to sockets that connect to the specified host(s).
+If the second argument is "*", the socket option is applied to any
+hosts on the client side (connecting side).</P
+><P
+>If the second argument is omitted, the socket option is applied
+to every socket.</P
+><P
+>The following socket options can be specified.</P
+><P
+><SPAN
+CLASS="TOKEN"
+>debug</SPAN
+>.  The <CODE
+CLASS="CONSTANT"
+>SO_DEBUG</CODE
+> socket
+option is specified.  A <TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+> is not
+necessary.</P
+><P
+><SPAN
+CLASS="TOKEN"
+>keepalive</SPAN
+>.  The <CODE
+CLASS="CONSTANT"
+>SO_KEEPALIVE</CODE
+>
+socket option is specified.  A <TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+> is not
+necessary.</P
+><P
+><SPAN
+CLASS="TOKEN"
+>sndbuf</SPAN
+>.  The <CODE
+CLASS="CONSTANT"
+>SO_SNDBUF</CODE
+> socket
+option is specified with a <TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+>.</P
+><P
+><SPAN
+CLASS="TOKEN"
+>rcvbuf</SPAN
+>.  The <CODE
+CLASS="CONSTANT"
+>SO_RCVBUF</CODE
+> socket
+option is specified with a <TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+>.</P
+><P
+><SPAN
+CLASS="TOKEN"
+>tcp_nodelay</SPAN
+>.  The <CODE
+CLASS="CONSTANT"
+>TCP_NODELAY</CODE
+>
+socket option is specified.  A <TT
+CLASS="PARAMETER"
+><I
+>value</I
+></TT
+> is not
+necessary.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	sockopt&nbsp;tcp_nodelay&nbsp;192.168.0.0/24<br>
+	sockopt&nbsp;sndbuf=1048576&nbsp;10.0.0.0/8<br>
+	sockopt&nbsp;sndbuf=1048576&nbsp;LISTENER<br>
+	sockopt&nbsp;rcvbuf=1048576&nbsp;10.0.0.0/8<br>
+	sockopt&nbsp;rcvbuf=1048576&nbsp;LISTENER</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>known_network</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>Host_specification</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>known_network</SPAN
+> statement specifies a network
+address for file system nodes.  It is used to group file system nodes
+at file systen node scheduling.
+File system nodes that are not specified in this directive are assumed
+to be in an IPv4 class C network.</P
+><P
+>Multiple networks can be specified as follows.</P
+><P
+CLASS="LITERALLAYOUT"
+>	known_network&nbsp;192.168.0.0/25<br>
+	known_network&nbsp;192.168.0.128/25</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>network_receive_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>The <SPAN
+CLASS="TOKEN"
+>network_receive_timeout</SPAN
+> directive specifies
+the time, in seconds, to wait for data reception via network.
+The default value is 60 seconds.
+This directive is effective in both gfarm2.conf and gfmd.conf.</P
+><P
+>When a Gfarm application program receives no data from a gfsd 
+filesystem server during the timeout period, it aborts the communication
+with the server, and then it tries to communicate with another server
+to continue the operation.</P
+><P
+>When a gfmd metadata server receives no data from a gfsd filesystem
+server during the timeout period, it aborts the communication with
+the gfsd server and gfmd considers the gfsd server is down.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>admin_user</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies an administrator user name, which is
+specified in gfmd.conf.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>admin_user_gsi_dn</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user_gsi_dn</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies a subject DN of an administrator, which is
+specified in gfmd.conf.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>local_user_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>user-map-file</I
+></TT
+> [<TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+>:[<TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+>]]</DT
+><DD
+><P
+>This directive specifies a file name
+<TT
+CLASS="PARAMETER"
+><I
+>user-map-file</I
+></TT
+> for mapping local user names to
+global user names.  This map file is used only for sharedsecret
+authentication.  When this file is not specified, a global user name
+is assumed to be same as the local user name.</P
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>user-map-file</I
+></TT
+> is needed when you have to use
+the sharedsecret authentication method in the case where you have
+different unix account names on different filesystem nodes.  In such a
+case, the <TT
+CLASS="PARAMETER"
+><I
+>user-map-file</I
+></TT
+> on each filesystem node
+should have an entry from each local user name to a unique global user
+name.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_user_map&nbsp;/etc/gfarm/gfarm-usermap</P
+><P
+>Each line of the <TT
+CLASS="PARAMETER"
+><I
+>user-map-file</I
+></TT
+> consists
+of two fields separated by spaces; the first field is a global user
+name, and the second field is a local user name.</P
+><P
+>Example of the user mapping file:</P
+><P
+CLASS="LITERALLAYOUT"
+>	foobar&nbsp;foo<br>
+	quux&nbsp;baz</P
+><P
+>According to the first line of this mapping file, a global user
+name, "foobar", is mapped to a local user name,  "foo", on this node.</P
+><P
+>When hostname/port of the meta data server is specified,
+user mapping files different in each server are applied.
+When the port is omitted, default port (601) is used.
+local_user_map can be specified two or more times.
+When the same definitions of local user name exist,
+the first definition is selected.</P
+><P
+>Example of multiple user mapping file:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_user_map&nbsp;/etc/gfarm/gfarm-usermap1-1<br>
+	local_user_map&nbsp;/etc/gfarm/gfarm-usermap1-2<br>
+	local_user_map&nbsp;/etc/gfarm/gfarm-usermap2-1&nbsp;server2<br>
+	local_user_map&nbsp;/etc/gfarm/gfarm-usermap2-2&nbsp;server2</P
+><P
+>In this example, when connecting to server2,
+it applies in order of gfarm-usermap2-1 and gfarm-usermap2-2.
+When connecting to excluding server2,
+it applies in order of gfarm-usermap1-1 and gfarm-usermap1-2.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>local_group_map</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+> [<TT
+CLASS="PARAMETER"
+><I
+>hostname</I
+></TT
+>:[<TT
+CLASS="PARAMETER"
+><I
+>port</I
+></TT
+>]]</DT
+><DD
+><P
+>This directive specifies a file name
+<TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+> for mapping global group names to
+local group names.  This map file is used by legacy clients that use
+local group id such as gfarm2fs and gfarm dsi for Globus GridFTP to
+display mapped local groups.  When this file is not specified, a
+local group name is assumed to be same as the global group
+name.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	local_group_map&nbsp;/etc/gfarm/gfarm-groupmap</P
+><P
+>Each line of the <TT
+CLASS="PARAMETER"
+><I
+>group-map-file</I
+></TT
+> consists
+of two fields separated by spaces; the first field is a global group
+name, and the second field is a local group name.</P
+><P
+>When hostname/port of the meta data server is specified,
+group mapping files different in each server are applied.
+The specification method is similar to local_user_map.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the time (in seconds) until the cache used for
+filesystem node scheduling expires.
+The cache holds information on each filesystem node, e.g. load average,
+disk free space, and whether authentication succeeds or not.
+The default time is 600 seconds, i.e. ten minutes.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_cache_timeout&nbsp;60</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_concurrency</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the number how many filesystem nodes will be
+searched concurrently at filesystem scheduling.
+If this parameter is increased, the scheduling will finish quicker,
+but the load to filesystem nodes will increase.
+The default number is 10 nodes.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_concurrency&nbsp;10</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_concurrency_per_net</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the number how many filesystem nodes will
+be used in same network at measuring network latency
+for each network of filesystem nodes.
+It may be better to increase this parameter,
+if many filesystem nodes are stopping,
+or many filesystem nodes are under higher load.
+If this parameter is increased,
+it's recommened to increase schedule_concurrency parameter too.
+The default number is 3.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_concurrency_per_net&nbsp;3</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_idle_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the threshold of CPU load average to be
+considered idle.  The file system nodes whose CPU load average
+is equal to or below the specified CPU load average are to be
+scheduled at first.
+The default load average is 0.1.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_idle_load_thresh&nbsp;0.1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_busy_load_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the threshold of CPU load average to be
+considered busy.  The file system nodes whose CPU load average
+is above the specified CPU load average are to be scheduled lastly.
+The default load average is 0.5.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_busy_load_thresh&nbsp;0.5</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_virtual_load</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>load-average</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the virtual CPU load average.  The
+virtual CPU load is added when the host is scheduled to avoid
+scheduling the same host multiple times.  The default load average is
+0.3.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_virtual_load&nbsp;0.3</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_candidates_ratio</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ratio</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the threshold ratio of number of filesystem nodes
+from number of scheduling nodes,
+to decide to discontinue to search more filesystem nodes
+which load averages are less or equal to
+the schedule_busy_load_thresh parameter.
+If this parameter is increased,
+the accuracy of scheduling will be increased,
+but scheduling process will become slower.
+The default ratio is 4.0.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_candidates_ratio&nbsp;4.0</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>schedule_rtt_thresh</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>ratio</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the threshold ratio of network latency
+which divides the domains of scheduling priority.
+If a network latency is larger than this ratio from nearer network,
+the network's scheduling priority is lowered.
+The default ratio is 4.0.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	schedule_rtt_thresh&nbsp;4.0</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>minimum_free_disk_space</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies free disk space (in bytes) which is
+required on filesystem nodes. The Gfarm scheduler excludes filesystem nodes
+which have less free space than this parameter, when it
+schedules nodes for jobs which may write files.
+The free space value may have a suffix like ``k'' (kilo bytes), 
+``M'' (mega bytes), ``G'' (giga bytes) and ``T'' (tera bytes).
+The default size is 128M bytes.</P
+><P
+>This directive has to be specified in both gfarm2.conf and gfmd.conf.
+After restarting the gfmd and the Gfarm client, it is effective.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	minimum_free_disk_space&nbsp;1G</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>simultaneous_replication_receivers</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of simultaneous
+gfmd-initiated replications to same host.
+The default is 20.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	simultaneous_replication_receivers&nbsp;40</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfsd_connection_cache</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of cached gfsd connections.
+The default is 16.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfsd_connection_cache&nbsp;32</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>xmlattr_size_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum size of XML extended attributes.
+The default is 786432, and numbers greater than 983040 are not allowed.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	xmlattr_size_limit&nbsp;786432</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>xattr_size_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum size of extended attributes.
+The default is 65536, and numbers greater than 983040 are not allowed.</P
+><P
+>This parameter is only available in gfmd.conf, and ignored in gfarm2.conf.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	xattr_size_limit&nbsp;65536</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>attr_cache_limit</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum number of cached attributes in
+gfarm library.
+The default is 40000.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	attr_cache_limit&nbsp;100000</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>attr_cache_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>milliseconds</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies maximum time until cached attributes expire
+in milliseconds.
+The default is 1000, i.e. 1 second.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	attr_cache_timeout&nbsp;3600000</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>priority_level</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies a level of log priority.
+The log output, which priority is inferior to this level, will not be
+sent to syslog or standard error.
+The priority levels are "emerg", "alert", "crit", "err", "warning", "notice",
+"info" and "debug" in highest first order.
+The default level is "info".
+It's not recommended to specify a level higher or equal to "crit".</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_level&nbsp;debug</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_message_verbose_level</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>level</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies how verbose the log message is.
+The default value is 0, which outputs the log message id.  The level 1
+additionally outputs the file name and the line of source code.  The
+level 2 additionally outputs the function name.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_message_verbose_level&nbsp;1</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>log_auth_verbose</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, verbose messages about authentication are logged.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	log_auth_verbose&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>file_trace</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, an audit log feature for file creation,
+modification and removal is enabled.</P
+><P
+>This directive is available in both gfarm2.conf and gfmd.conf.</P
+><P
+>Here is an example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	file_trace&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>fatal_action</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>action_name</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the behavior at a fatal error.
+The default action is <TT
+CLASS="REPLACEABLE"
+><I
+>backtrace_and_abort</I
+></TT
+>.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	fatal_action&nbsp;backtrace_and_abort</P
+><P
+>The following actions are supported:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="TOKEN"
+>backtrace_and_abort</SPAN
+></DT
+><DD
+><P
+>Print a backtrace, and then call
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>abort</SPAN
+>(3)</SPAN
+>
+.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>backtrace_and_exit</SPAN
+></DT
+><DD
+><P
+>Print a backtrace, and then call
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>exit</SPAN
+>(3)</SPAN
+>
+.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>abort</SPAN
+></DT
+><DD
+><P
+>Call
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>abort</SPAN
+>(3)</SPAN
+>
+.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>exit</SPAN
+></DT
+><DD
+><P
+>Call
+<SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>exit</SPAN
+>(3)</SPAN
+>
+.</P
+></DD
+></DL
+></DIV
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>debug_command</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>command_line</I
+></TT
+></DT
+><DD
+><P
+>When a Gfarm application program crashes (received SIGSEGV, SIGBUG, etc.),
+a debug command specified in this directive is executed.
+For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	debug_command&nbsp;env&nbsp;DISPLAY=:0.0&nbsp;xterm&nbsp;-e&nbsp;gdb&nbsp;%e&nbsp;%p</P
+><P
+>"%e" and "%p" are expanded to an actual program name and a process ID,
+respectively.
+If you'd like to use "%" character itself in the command line,
+type "%%".</P
+><P
+>This directive is available in both gfarm2.conf and gfmd.conf.
+If this directive is omitted, no debug command is executed.</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>no_file_system_node_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>If there is no file system node available,
+Gfarm client library periodically tries to find a file system node.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	no_file_system_node_timeout&nbsp;30</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>gfmd_reconnection_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>If the connection to the metadata server is disconnected,
+Gfarm client library periodically tries to reconnect.
+This directive specifies the timeout to try in seconds.
+The default is 30 seconds.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	gfmd_reconnection_timeout&nbsp;30</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_file_bufsize</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>bytes</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the file buffer size in bytes used in
+  the Gfarm client library (libgfarm).  The default size is 1048568
+  bytes (= 1MiB - 8B).  The file buffer size should be less than the
+  default value not for deterioration of remote access performance for
+  version 2.5.0 or earlier.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_file_bufsize&nbsp;65536</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>client_parallel_copy</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>num-of-parallel</I
+></TT
+></DT
+><DD
+><P
+>This directive specifies the number of parallel for <B
+CLASS="COMMAND"
+>gfprep</B
+> and <B
+CLASS="COMMAND"
+>gfpcopy</B
+> to work in parallel.
+When this number is not specified, the default number of parallel is 4.</P
+><P
+>For example,</P
+><P
+CLASS="LITERALLAYOUT"
+>	client_palallel_copy&nbsp;10</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>profile </SPAN
+><TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, Gfarm outputs the profile information.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	profile&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_list</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>gfmd-hostname[:port]</I
+></TT
+> <TT
+CLASS="PARAMETER"
+><I
+>...</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies connection destinations of redundant metadata servers delimited by space.
+If port is not specified, port will be 601 which is the default value.</P
+><P
+>This parameter is only available in gfarm2.conf, and ignored in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_list&nbsp;mds1&nbsp;mds2:701</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_replication</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, the redundant metadata feature is enabled.
+The default value is disable.</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_replication&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>synchronous_replication_timeout</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>seconds</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies timeout for executing synchronous replication in seconds.
+If the timeout period passed, the connection to the slave gfmd where replicates to
+will disconnect.
+The replication process in the master gfmd for the disconnected slave gfmd stops until
+the slave gfmd connects.
+The default is 10.</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	synchronous_replication_timeout&nbsp;30</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>synchronous_journaling</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, fdatasync is called
+after update information is saved to the journal file.
+The timing of calling fdatasync is after writing the records from transaction-begin
+to transaction-end in one transaction.
+The default is "enable".</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	synchronous_journaling&nbsp;disable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_force_slave</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>validity</I
+></TT
+></DT
+><DD
+><P
+>When "enable" is specified, even if the gfmd is set to default master,
+it run as slave gfmd forcedly.
+The default is "disable".</P
+><P
+>NOTE: Please do not use this feature for now,
+because this implementation is not complete.</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_force_slave&nbsp;enable</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_server_slave_max_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>number</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the maximum number of slave gfmds.
+The default is "32".</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_server_slave_max_size&nbsp;40</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_journal_dir</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>directory</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the directory for the journal file.
+The value of this parameter is specified at config-gfarm execution .
+When this parameter is not specified, the gfmd does not start.</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_journal_dir&nbsp;/var/gfarm-metadata/journal</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_journal_max_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>file_size</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the max size of the journal file in bytes.
+Beware that the larger the size is, the longer it takes time for the gfmd to complete starting.
+The default is 33554432 (32 MBytes).</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_journal_max_size&nbsp;8388608</P
+></DD
+><DT
+><SPAN
+CLASS="TOKEN"
+>metadb_journal_recvq_size</SPAN
+> <TT
+CLASS="PARAMETER"
+><I
+>size</I
+></TT
+></DT
+><DD
+><P
+>This parameter specifies the maximum number of on-memory records of
+the journal data that the slave gfmd receives from the master gfmd.
+If it reaches this value, the slave gfmd gives up and exits,
+because the gfmd thinks that it's too slow to apply the journal data
+to the backend database.
+The default value is 100000.</P
+><P
+>This parameter is only available in gfmd.conf.</P
+><P
+>Example:</P
+><P
+CLASS="LITERALLAYOUT"
+>	metadb_journal_recvq_size&nbsp;100000</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="GRAMMAR"
+></A
+><H2
+>GRAMMAR</H2
+><P
+>This is a grammar of gfarm2.conf described by the BNF
+notation.</P
+><P
+CLASS="LITERALLAYOUT"
+>	&#60;statement&#62;&nbsp;::=<br>
+		  &#60;spool_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_address_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_listen_backlog_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;spool_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_host_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_port_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_type_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_service_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_cred_name_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_listen_backlog_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_max_descriptors_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_stack_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_thread_pool_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_job_queue_length_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_dbq_size_statement&#62;&nbsp;|<br>
+		  &#60;ldap_server_host_statement&#62;&nbsp;|<br>
+		  &#60;ldap_server_port_statement&#62;&nbsp;|<br>
+		  &#60;ldap_base_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_dn_statement&#62;&nbsp;|<br>
+		  &#60;ldap_bind_password_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_server_host_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_server_port_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_dbname_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_user_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_password_statement&#62;&nbsp;|<br>
+		  &#60;postgresql_conninfo_statement&#62;&nbsp;|<br>
+		  &#60;auth_statement&#62;&nbsp;|<br>
+		  &#60;sockopt_statement&#62;&nbsp;|<br>
+		  &#60;known_network_statement&#62;&nbsp;|<br>
+		  &#60;network_receive_timeout_statement&#62;&nbsp;|<br>
+		  &#60;admin_user_statement&#62;&nbsp;|<br>
+		  &#60;admin_user_gsi_dn_statement&#62;&nbsp;|<br>
+		  &#60;local_user_map_statement&#62;&nbsp;|<br>
+		  &#60;local_group_map_statement&#62;&nbsp;|<br>
+		  &#60;schedule_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;schedule_concurrency_statement&#62;&nbsp;|<br>
+		  &#60;schedule_concurrency_per_net_statement&#62;&nbsp;|<br>
+		  &#60;schedule_idle_load_thresh_statement&#62;&nbsp;|<br>
+		  &#60;schedule_busy_load_thresh_statement&#62;&nbsp;|<br>
+		  &#60;schedule_virtual_load_statement&#62;&nbsp;|<br>
+		  &#60;schedule_candidates_ratio_statement&#62;&nbsp;|<br>
+		  &#60;schedule_rtt_thresh_statement&#62;&nbsp;|<br>
+		  &#60;minimum_free_disk_space_statement&#62;&nbsp;|<br>
+		  &#60;simultaneous_replication_receivers&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		  &#60;gfsd_connection_cache_statement&#62;&nbsp;|<br>
+		  &#60;xmlattr_size_limit_statement&#62;&nbsp;|<br>
+		  &#60;xattr_size_limit_statement&#62;&nbsp;|<br>
+		  &#60;attr_cache_limit_statement&#62;&nbsp;|<br>
+		  &#60;attr_cache_timeout_statement&#62;&nbsp;|<br>
+		  &#60;log_level_statement&#62;&nbsp;|<br>
+		  &#60;log_message_verbose_level_statement&#62;&nbsp;|<br>
+		  &#60;log_auth_verbose_statement&#62;&nbsp;|<br>
+		  &#60;file_trace_statement&#62;&nbsp;|<br>
+		  &#60;fatal_action_statement&#62;&nbsp;|<br>
+		  &#60;debug_command_statement&#62;&nbsp;|<br>
+		  &#60;client_file_bufsize_statement&#62;&nbsp;|<br>
+		  &#60;profile_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_list_statement&#62;&nbsp;|<br>
+		  &#60;metadb_replication_statement&#62;&nbsp;|<br>
+		  &#60;synchronous_replication_timeout_statement&#62;&nbsp;|<br>
+		  &#60;synchronous_journaling_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_force_slave_statement&#62;&nbsp;|<br>
+		  &#60;metadb_server_slave_max_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_journal_dir_statement&#62;&nbsp;|<br>
+		  &#60;metadb_journal_max_size_statement&#62;&nbsp;|<br>
+		  &#60;metadb_journal_recvq_size_statement&#62;<br>
+	&#60;spool_statement&#62;&nbsp;::=&nbsp;"spool"&nbsp;&#60;pathname&#62;<br>
+	&#60;spool_server_listen_address_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_address"&nbsp;&#60;ipv4_address&#62;<br>
+	&#60;spool_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "spool_server_listen_backlog"&nbsp;&#60;number&#62;<br>
+	&#60;spool_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;spool_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;spool_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "spool_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_host_statement&#62;&nbsp;::=&nbsp;"metadb_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;metadb_server_port_statement&#62;&nbsp;::=&nbsp;"metadb_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;metadb_server_cred_type_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_type"&nbsp;&#60;cred_type&#62;<br>
+	&#60;metadb_server_cred_service_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_service"&nbsp;&#60;cred_service&#62;<br>
+	&#60;metadb_server_cred_name_statement&#62;&nbsp;::=<br>
+		  "metadb_server_cred_name"&nbsp;&#60;cred_name&#62;<br>
+	&#60;metadb_server_listen_backlog_statement&#62;&nbsp;::=<br>
+		  "metadb_server_listen_backlog"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_max_descriptors_statement&#62;&nbsp;::=<br>
+		  "metadb_server_max_descriptors"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_stack_size_statement&#62;&nbsp;::=<br>
+		  "metadb_server_stack_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_thread_pool_size_statement&#62;&nbsp;::=<br>
+		  "metadb_server_thread_pool_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_job_queue_length_statement&#62;&nbsp;::=<br>
+		  "metadb_server_job_queue_length"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_heartbeat_interval_statement&#62;&nbsp;::=<br>
+		  "metadb_server_heartbeat_interval"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_server_dbq_size_statement&#62;&nbsp;::=<br>
+		  "metadb_server_dbq_size"&nbsp;&#60;number&#62;<br>
+	&#60;ldap_server_host_statement&#62;&nbsp;::=&nbsp;"ldap_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;ldap_server_port_statement&#62;&nbsp;::=&nbsp;"ldap_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;ldap_base_dn_statement&#62;&nbsp;::=&nbsp;"ldap_base_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_dn_statement&#62;&nbsp;::=&nbsp;"ldap_bind_dn"&nbsp;&#60;string&#62;<br>
+	&#60;ldap_bind_password_statement&#62;&nbsp;::=&nbsp;"ldap_bind_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_server_host_statement&#62;&nbsp;::=&nbsp;"postgresql_server_host"&nbsp;&#60;hostname&#62;<br>
+	&#60;postgresql_server_port_statement&#62;&nbsp;::=&nbsp;"postgresql_server_port"&nbsp;&#60;portnumber&#62;<br>
+	&#60;postgresql_dbname_statement&#62;&nbsp;::=&nbsp;"postgresql_dbname"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_user_statement&#62;&nbsp;::=&nbsp;"postgresql_user"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_password_statement&#62;&nbsp;::=&nbsp;"postgresql_password"&nbsp;&#60;string&#62;<br>
+	&#60;postgresql_conninfo_statement&#62;&nbsp;::=&nbsp;"postgresql_conninfo"&nbsp;&#60;string&#62;<br>
+	&#60;auth_statement&#62;&nbsp;::=<br>
+		  "auth"&nbsp;&#60;validity&#62;&nbsp;&#60;auth_method&#62;&nbsp;&#60;hostspec&#62;<br>
+	&#60;auth_command&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;auth_method&#62;&nbsp;::=&nbsp;"gsi"&nbsp;|&nbsp;"gsi_auth"&nbsp;|&nbsp;"sharedsecret"<br>
+	&#60;sockopt_statement&#62;&nbsp;::=<br>
+		  "sockopt"&nbsp;&#60;socket_option&#62;[=&#60;number&#62;]&nbsp;[""LISTENER"&nbsp;|&nbsp;&#60;hostspec&#62;]<br>
+	&#60;socket_option&#62;&nbsp;=&nbsp;"debug"&nbsp;|&nbsp;"keepalive"&nbsp;|&nbsp;"sndbuf"&nbsp;|&nbsp;"rcvbuf"&nbsp;|<br>
+		  "tcp_nodelay"<br>
+	&#60;known_network_statement&#62;&nbsp;::=&nbsp;"known_network"&nbsp;&#60;hostspec&#62;<br>
+	&#60;network_receive_timeout_statement&#62;&nbsp;::=&nbsp;"network_receive_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;admin_user_statement&#62;&nbsp;::=&nbsp;"admin_user"&nbsp;&#60;string&#62;<br>
+	&#60;admin_user_gsi_dn_statement&#62;&nbsp;::=&nbsp;"admin_user_gsi_dn"&nbsp;&#60;string&#62;<br>
+	&#60;local_user_map_statement&#62;&nbsp;::=&nbsp;"local_user_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
+	&#60;local_group_map_statement&#62;&nbsp;::=&nbsp;"local_group_map"&nbsp;&#60;local_user_and_group_map_spec&#62;<br>
+	&#60;local_user_and_group_map_spec&#62;&nbsp;::=<br>
+		&#60;pathname&#62;&nbsp;|<br>
+		&#60;pathname&#62;&nbsp;&#60;hostname&#62;|<br>
+		&#60;pathname&#62;&nbsp;&#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
+	&#60;schedule_cache_timeout_statement&#62;&nbsp;::=&nbsp;"schedule_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_concurrency_statement&#62;&nbsp;::=&nbsp;"schedule_concurrency"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_concurrency_per_net_statement&#62;&nbsp;::=&nbsp;"schedule_concurrency_per_net"&nbsp;&#60;number&#62;<br>
+	&#60;schedule_idle_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_idle_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_busy_load_thresh_statement&#62;&nbsp;::=&nbsp;"schedule_busy_load_thresh"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_virtual_load_statement&#62;&nbsp;::=&nbsp;"schedule_virtual_load"&nbsp;&#60;load&#62;<br>
+	&#60;schedule_candidates_ratio_statement&#62;&nbsp;::=&nbsp;"schedule_candidates_ratio"&nbsp;&#60;floating_point_number&#62;<br>
+	&#60;schedule_rtt_thresh__statement&#62;&nbsp;::=&nbsp;"schedule_rtt_thresh"&nbsp;&#60;floating_point_number&#62;<br>
+	&#60;minimum_free_disk_space_statement&#62;&nbsp;::=<br>
+		  "minimum_free_disk_space"&nbsp;&#60;size&#62;<br>
+	&#60;simultaneous_replication_receivers&#62;&nbsp;::=&nbsp;"simultaneous_replication_receivers"&nbsp;&#60;number&#62;<br>
+	&#60;gfsd_connection_cache_statement&#62;&nbsp;::=&nbsp;"gfsd_connection_cache"&nbsp;&#60;number&#62;<br>
+	&#60;xmlattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xmlattr_size_limit"&nbsp;&#60;size&#62;<br>
+	&#60;xattr_size_limit_statement&#62;&nbsp;::=&nbsp;"xattr_size_limit"&nbsp;&#60;size&#62;<br>
+	&#60;attr_cache_limit_statement&#62;&nbsp;::=&nbsp;"attr_cache_limit"&nbsp;&#60;number&#62;<br>
+	&#60;attr_cache_timeout_statement&#62;&nbsp;::=&nbsp;"attr_cache_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;log_level_statement&#62;&nbsp;::=&nbsp;"log_level"&nbsp;&#60;log_priority&#62;<br>
+	&#60;log_message_verbose_level_statement&#62;&nbsp;::=&nbsp;"log_message_verbose_level"&nbsp;&#60;number&#62;<br>
+	&#60;log_auth_verbose_statement&#62;&nbsp;::=&nbsp;"log_auth_verbose"&nbsp;&#60;validity&#62;<br>
+	&#60;file_trace_statement&#62;&nbsp;::=&nbsp;"file_trace"&nbsp;&#60;validity&#62;<br>
+	&#60;fatal_action_statement&#62;&nbsp;::=&nbsp;"fatal_action"&nbsp;&#60;fatal_action_name&#62;<br>
+	&#60;debug_command_statement&#62;&nbsp;::=&nbsp;"debug_command"&nbsp;&#60;string_list&#62;<br>
+	&#60;no_file_system_node_timeout_statement&#62;&nbsp;::=&nbsp;"no_file_system_node_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;gfmd_reconnection_timeout_statement&#62;&nbsp;::=&nbsp;"gfmd_reconnection_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;client_file_bufsize_statement&#62;&nbsp;::=&nbsp;"client_file_bufsize"&nbsp;&#60;size&#62;<br>
+	&#60;profile_statement&#62;&nbsp;::=&nbsp;"profile"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_list_statement&#62;&nbsp;::=&nbsp;"metadb_server_list"&nbsp;&#60;metadb_server_list_spec&#62;<br>
+	&#60;metadb_server_list_spec&#62;&nbsp;::=<br>
+		  &#60;hostname_port_spec&#62;&nbsp;|<br>
+		  &#60;hostname_port_spec&#62;&nbsp;&#60;metadb_server_list_spec&#62;<br>
+	&#60;metadb_replication_statement&#62;&nbsp;::=&nbsp;"metadb_replication"&nbsp;&#60;validity&#62;<br>
+	&#60;synchronous_replication_timeout_statement&#62;&nbsp;::=&nbsp;"synchronous_replication_timeout"&nbsp;&#60;number&#62;<br>
+	&#60;synchronous_journaling_statement&#62;&nbsp;::=&nbsp;"synchronous_journaling"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_force_slave_statement&#62;&nbsp;::=&nbsp;"metadb_server_force_slave"&nbsp;&#60;validity&#62;<br>
+	&#60;metadb_server_slave_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_server_slave_max_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_journal_dir_statement&#62;&nbsp;::=&nbsp;"metadb_journal_dir"&nbsp;&#60;pathname&#62;<br>
+	&#60;metadb_journal_max_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_max_size"&nbsp;&#60;number&#62;<br>
+	&#60;metadb_journal_recvq_size_statement&#62;&nbsp;::=&nbsp;"metadb_journal_recvq_size"&nbsp;&#60;number&#62;<br>
+	&#60;string_list&#62;&nbsp;::=&nbsp;<br>
+		  &#60;string&#62;&nbsp;|<br>
+		  &#60;string&#62;&nbsp;&#60;string_list&#62;<br>
+	&#60;hostspec&#62;&nbsp;::=&nbsp;&#60;ipv4_address&#62;&nbsp;|&nbsp;&#60;ipv4_address&#62;&nbsp;"/"&nbsp;&#60;address_mask&#62;&nbsp;|<br>
+		  &#60;hostname&#62;&nbsp;|&nbsp;"."&nbsp;&#60;domain_name&#62;&nbsp;|&nbsp;"*"<br>
+	&#60;pathname&#62;&nbsp;::=&nbsp;&#60;pathname_character&#62;&nbsp;&#60;pathname_character&#62;*<br>
+	&#60;pathname_character&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;|&nbsp;","&nbsp;|&nbsp;"/"&nbsp;|&nbsp;"_"<br>
+	&#60;hostname_port_spec&#62;&nbsp;::=<br>
+		  &#60;hostname&#62;|<br>
+		  &#60;hostname&#62;&nbsp;":"&nbsp;&#60;portnumber&#62;<br>
+	&#60;hostname&#62;&nbsp;::=&nbsp;&#60;hostname_character&#62;&nbsp;&#60;hostname_character&#62;*<br>
+	&#60;hostname_character&#62;&nbsp;::=&nbsp;&#60;alphabet&#62;&nbsp;|&nbsp;&#60;digit&#62;&nbsp;|&nbsp;"-"&nbsp;|&nbsp;"."<br>
+	&#60;portnumber&#62;&nbsp;::=&nbsp;&#60;number&#62;<br>
+	&#60;size&#62;&nbsp;::=&nbsp;&#60;number&#62;&nbsp;[&nbsp;"k"&nbsp;|&nbsp;"M"&nbsp;|&nbsp;"G"&nbsp;|&nbsp;"T"&nbsp;]<br>
+	&#60;number&#62;&nbsp;::=&nbsp;&#60;digit&#62;&nbsp;[&#60;digit&#62;*]<br>
+	&#60;digit&#62;&nbsp;::=&nbsp;"0"&nbsp;|&nbsp;"1"&nbsp;|&nbsp;"2"&nbsp;|&nbsp;"3"&nbsp;|&nbsp;"4"&nbsp;|&nbsp;"5"&nbsp;|&nbsp;"6"&nbsp;|&nbsp;"7"&nbsp;|&nbsp;"8"&nbsp;|&nbsp;"9"<br>
+	&#60;string&#62;&nbsp;::=&nbsp;"""&nbsp;&#60;double_quoted_character&#62;*&nbsp;"""<br>
+	&#60;double_quoted_character&#62;&nbsp;::=<br>
+		  &#60;any_character_except_backslash_and_double_quotation&#62;&nbsp;|<br>
+		  "\\"&nbsp;|&nbsp;"\""<br>
+	&#60;validity&#62;&nbsp;::=&nbsp;"enable"&nbsp;|&nbsp;"disable"<br>
+	&#60;log_priority&#62;&nbsp;::=&nbsp;"emerg"&nbsp;|&nbsp;"alert"&nbsp;|&nbsp;"crit"&nbsp;|&nbsp;"err"&nbsp;|&nbsp;"warning"&nbsp;|<br>
+		  "notice"&nbsp;|&nbsp;"info"&nbsp;|&nbsp;"debug"<br>
+	&#60;fatal_action_name&#62;&nbsp;::=&nbsp;"backtrace_and_abort"&nbsp;|&nbsp;"backtrace_and_exit"&nbsp;|<br>
+		  "abort"&nbsp;|&nbsp;"exit"</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><P
+>The following is an example of gfarm2.conf to use sharedsecret authentication.</P
+><P
+CLASS="LITERALLAYOUT"
+>metadb_server_host&nbsp;metadb.example.org<br>
+metadb_server_port&nbsp;601<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;*<br>
+sockopt&nbsp;keepalive</P
+><P
+>The following is an example of gfmd.conf
+to use PostgreSQL to store the metadata,
+and to allow access from filesystem nodes and clients at IP address
+192.168.0.0/24, via sharedsecret authentication.</P
+><P
+CLASS="LITERALLAYOUT"
+>metadb_server_host&nbsp;metadb.example.org<br>
+metadb_server_port&nbsp;601<br>
+postgresql_server_host&nbsp;metadb.example.org<br>
+postgresql_server_port&nbsp;5432<br>
+postgresql_dbname&nbsp;gfarm<br>
+postgresql_user&nbsp;gfarm<br>
+postgresql_password&nbsp;"secret-postgresql-password"<br>
+auth&nbsp;enable&nbsp;sharedsecret&nbsp;192.168.0.0/24<br>
+admin_user&nbsp;john<br>
+sockopt&nbsp;keepalive</P
+><P
+>The following is an example of gfmd.conf to use LDAP to store the metadata,
+and to allow access from filesystem nodes and clients at any IP address,
+via GSI authentication.</P
+><P
+CLASS="LITERALLAYOUT"
+>metadb_server_host&nbsp;metadb.example.com<br>
+metadb_server_port&nbsp;601<br>
+ldap_server_host&nbsp;metadb.example.com<br>
+ldap_server_port&nbsp;602<br>
+ldap_base_dn&nbsp;"dc=example,&nbsp;dc=com"<br>
+ldap_bind_dn&nbsp;"cn=gfarmuser,&nbsp;dc=example,&nbsp;dc=com"<br>
+ldap_bind_password&nbsp;"secret-ldap-password"<br>
+auth&nbsp;enable&nbsp;gsi&nbsp;*<br>
+spool_server_cred_type&nbsp;host<br>
+spool_server_cred_service&nbsp;gfsd<br>
+admin_user&nbsp;john<br>
+admin_user_gsi_dn&nbsp;"/C=JP/ST=Tokyo/L=Chuo-ku/O=Example,&nbsp;Inc./OU=Example&nbsp;Division/CN=John&nbsp;Doe"<br>
+sockopt&nbsp;keepalive</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="FILES"
+></A
+><H2
+>FILES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>%%SYSCONFDIR%%/gfarm2.conf</TT
+></DT
+><DD
+><P
+></P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>$HOME/.gfarm2rc</TT
+></DT
+><DD
+><P
+></P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfmd</SPAN
+>(8)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsd</SPAN
+>(8)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>setsockopt</SPAN
+>(2)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,45 @@
+*** Installation
+
+Glogger requires the net-snmp 5.0.8 or ucd-snmp 4.2.6 development
+package.  It is tested on Linux and FreeBSD.
+
+  $ ./configure [options]
+
+  ex. $ env CPPFLAGS='-I/home/foo/snmp/include' \
+            LDFLAGS='-L/home/foo/snmp/lib -Wl,-rpath,/home/foo/snmp/lib' \
+        ./configure --prefix=/home/foo --enable-printtime \
+                    --enable-hook_snmp_free_pdu \
+                    --with-dlopen=/home/foo/snmp/lib/libsnmp.so
+
+  $ make
+  $ make install
+
+'glogger', 'glogdump', 'glogd' and 'glogd-func' will be installed
+ in $(prefix)/bin.
+
+*** Configuration file
+
+Create a configuration file for the glogger.  There is a sample file
+'sample.conf'.  With the -checkconf option, 'glogger' checks the
+syntax of the configuration file.
+
+  $ glogger -checkconf -config [your config file]
+
+*** Running the glogger
+
+  $ glogger -config [config file]
+
+*** Running the glogger as a daemon
+
+Install a start-up script 'glogd' to a startup directory.
+
+  # cp glogd /etc/init.d
+  # /etc/init.d/glogd start
+  # /etc/init.d/glogd stop
+
+*** Glogdump
+
+'glogdump' converts log files from a binary format to a human-friendly
+ascii format.
+
+  $ glogdump [glogger output file] | more

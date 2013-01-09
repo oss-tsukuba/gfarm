@@ -1,0 +1,146 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfxattr.1'>
+
+<refentryinfo><date>18 Aug 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfxattr</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfxattr</refname>
+<refpurpose>Gfarm ファイルシステムのファイルの拡張属性を操作する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfxattr</command>
+    <group choice='opt'>
+      <arg choice='plain'>-s</arg>
+      <arg choice='plain'>-g</arg>
+      <arg choice='plain'>-l</arg>
+      <arg choice='plain'>-r</arg>
+    </group>
+    <arg choice='opt'>-x</arg>
+    <group choice='opt'>
+      <arg choice='plain'>-c</arg>
+      <arg choice='plain'>-m</arg>
+    </group>
+    <arg choice='opt'>-f <replaceable>xattrfile</replaceable></arg>
+    <arg choice='plain'><replaceable>file</replaceable></arg>
+    <arg choice='opt'><replaceable>xattrname</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+指定したファイルの拡張属性およびXML拡張属性を操作します．
+拡張属性は属性名と属性値からなり，いずれも任意の文字列です．
+XML拡張属性は属性値がXML型である拡張属性です．
+XML拡張属性は通常の拡張属性とは独立に扱われるため，
+同一の属性名が利用可能です．
+</para>
+
+<para>
+XML拡張属性を操作する場合，-xオプションを指定します．
+XML拡張属性はgffindxmlattrコマンドを利用することにより
+XPath検索の対象となります．
+</para>
+
+<para>
+拡張属性はGfarmの全てのファイル，ディレクトリに設定することができます．
+ファイルを削除すると，そのファイルに設定されていた拡張属性も全て削除されます．
+</para>
+
+<para>
+-s，-g，-l，-rオプションは必ず何れかが指定される必要があります．
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>指定されたファイルに属性名xattrnameの拡張属性を設定します．
+属性値は-fオプションで指定されたxattrfileの内容となります．
+-fオプションが指定されない場合は標準入力からの入力内容となります．
+-c，-mオプションが指定されない場合，
+すでに拡張属性が設定されていても上書きされます．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>指定されたファイルの属性名xattrnameの拡張属性を表示します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-l</option></term>
+<listitem>
+<para>指定されたファイルの属性名の一覧を表示します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>指定されたファイルの属性名xattrnameの拡張属性を消去します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>XML拡張属性を処理します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>-sオプションと共に用いられ，拡張属性を新規に設定します．
+このとき既に拡張属性が設定済みであればエラーとなります．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>-sオプションと共に用いられ，拡張属性の変更を行います．
+このとき拡張属性が設定されていなければエラーとなります．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-f</option> xattrfile</term>
+<listitem>
+<para>
+-sオプションと共に用いると，指定されたファイルから拡張属性を読込みます．
+-gオプションと共に用いると，指定されたファイルに拡張属性を書込みます．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します．</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gffindxmlattr</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

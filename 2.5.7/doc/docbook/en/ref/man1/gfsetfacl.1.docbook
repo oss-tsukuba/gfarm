@@ -1,0 +1,208 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfsetfacl.1'>
+
+<refentryinfo><date>4 Feb 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsetfacl</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfsetfacl</refname>
+<refpurpose>set Gfarm file access control lists</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfsetfacl</command>
+	<arg choice='opt'><replaceable>options</replaceable></arg>
+	<arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><command>gfsetfacl</command> changes the Access Control List (ACL)
+of files or directories in the Gfarm filesystem.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>removes all extended ACL entries. (The base ACL entries of the
+owner, group and others are not removed.)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-k</option></term>
+<listitem>
+<para>removes the only Default ACL.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>do not recalculate the mask entry of the ACL. The default
+behavior of gfsetfacl is to recalculate the mask entry, if a mask
+entry is not explicitly given.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>always recalculate the mask entry of the ACL. (Even if a mask
+entry is explicitly given.) (See the -n option.)</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-t</option></term>
+<listitem>
+<para>is test mode. Instead of changing the ACL of any files or
+directories, the ACL text of input text and the new ACL text are
+displayed.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option> <parameter>acl_spec</parameter></term>
+<listitem>
+<para>This option specifies the ACL entries text to add/replace the
+ACL entries of a Gfarm files or directories. Multiple ACL entries are
+separated by comma characters (`,').</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-M</option> <parameter>acl_file</parameter></term>
+<listitem>
+<para>This option specifies the file or standard input (`-') to
+add/replace the ACL entries of a Gfarm files or directories. This
+input of ACL file accepts the output of gfgetfacl command.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='acl-entries'><title>ACL ENTRIES</title>
+<para>
+The gfsetfacl command recognizes the following ACL entry formats.  The
+perms field is a combination of characters that indicate the
+permissions: read (r), write (w), execute (x).  A Default ACL entry
+has a d[efault:] prefix.
+</para>
+
+<varlistentry>
+[d[efault:]u[ser]::perms
+<listitem>
+Permissions of owner.
+</listitem>
+</varlistentry>
+<varlistentry>
+  [d[efault:]u[ser]:username:perms
+<listitem>
+Permissions of a named user.
+</listitem>
+</varlistentry>
+<varlistentry>
+  [d[efault:]g[roup]::perms
+<listitem>
+Permissions of a file group.
+</listitem>
+</varlistentry>
+<varlistentry>
+  [d[efault:]g[roup]:groupname:perms
+<listitem>
+Permissions of a named group.
+</listitem>
+</varlistentry>
+<varlistentry>
+  [d[efault:]m[ask]::perms
+<listitem>
+mask of effective rights
+</listitem>
+</varlistentry>
+<varlistentry>
+  [d[efault:]o[ther]::perms
+<listitem>
+Permissions of others.
+</listitem>
+</varlistentry>
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<varlistentry>
+Granting read access to a named user
+<listitem>
+gfsetfalc -m u:testuser:r filename
+</listitem>
+</varlistentry>
+
+<varlistentry>
+Replacing the ACL of filename2 by filename1
+<listitem>
+gfgetfacl filename1 | gfsetfacl -b -M - filename2
+</listitem>
+</varlistentry>
+
+<varlistentry>
+ACL text of long form
+<listitem>
+<literallayout>
+# comment
+user::rw-
+user:testuser:rw-       #effective:r--
+group::r--
+group:testgroup:rw-     #effective:r--
+mask::r--
+other::r--
+default:user::rwx
+default:group::r-x
+default:other::r-x
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+ACL text of short form
+<listitem>
+<literallayout>
+u::rw,u:user1:rw,g::r,g:group1:rw,m::r,o::r,d:u::rwx,d:g::rx,d:o::rx
+</literallayout>
+</listitem>
+</varlistentry>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+
+</refentry>

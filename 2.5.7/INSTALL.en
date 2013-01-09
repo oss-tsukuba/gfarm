@@ -1,0 +1,123 @@
+=======================================
+Gfarm installation from the source code
+=======================================
+
+This distribution is fully tested on Linux.  The building tests were done
+on NetBSD, and Solaris.
+
+This section describes how to build Gfarm binaries from the source
+distribution.  You can skip this document if you use a binary
+distribution.
+
+To build the Gfarm system, the OpenSSL library and either the OpenLDAP
+library, or the PostgreSQL library are required.  Regarding RPM
+packages and Debian packages for them, see required package section
+below.
+
+The following is the installation procedure for the Gfarm system.
+Please use GNU make on operating systems other than Linux and NetBSD.
+
+	% ./configure [options]
+	% make
+	% su
+	Password:
+	# make install
+
+Options for configure:
+
+  --with-openldap=directory
+
+  Specifies an installation directory for OpenLDAP.  When this
+  option is not specified, the installation directory is searched for
+  automatically.
+
+  --with-postgresql=directory
+
+  Specifies an installation directory for PostgreSQL.  When this
+  option is not specified, the installation directory is searched for
+  automatically.
+
+  --with-openssl=directory
+
+  Specifies an installation directory for OpenSSL.  The default
+  directory is /usr.
+
+  --with-globus=directory
+
+  Specifies an installation directory for the Globus Toolkit to utilize the
+  GSI authentication method.  When a directory is not specified,
+  pkg-config is tried at first, and then the environment variable
+  GLOBUS_LOCATION is tried.
+  This is optional.  The flavor of the Globus library is searched for
+  automatically.
+  If you need to specify a flavor, specify it with the
+  --with-globus-flavor=flavor option.
+
+  --without-mtsafe-netdb
+
+  Specifies if either getaddrinfo(3) or getnameinfo(3) library function
+  is not multi-thread safe.
+
+  --prefix=directory
+
+  Specifies a destination directory for installation.  The default is
+  /usr/local directory.  This is optional.
+
+  --sysconfdir=directory
+
+  Specifies a directory where the ``gfarm2.conf'' configuration file is
+  located.  The default is the ``etc'' directory under the directory
+  specified in the above --prefix option.  This document assumes
+  that --sysconfdir=/etc is specified.  This is optional.
+
+  --enable-voms
+
+  Enables to compile the gfvoms-sync command to synchronize Gfarm
+  group membership with VOMS (Virtual Organization Membership Service)
+  servers.  This option requires Python and ZSI (Zolera SOAP
+  Infrastructure).
+  This is optional.
+
+  --enable-xmlattr
+
+  Enables XML extended attribute feature that can be queried by the
+  XML Path Language (XPath).  For details, see manual pages of gfxattr
+  and gffindxmlattr.  This option requires postgresql-8.3 or
+  later that configures with the --with-libxml option.  See
+  http://www.postgresql.org/docs/8.3/static/install-procedure.html for
+  details.  The -X option is also required to config-gfarm when
+  setting up the Gfarm file system.
+  This is optional.
+
+When you need to specify a compiler program explicitly, use the
+environment variable, CC.  This is an example using gcc.
+
+	% env CC=gcc ./configure [options]
+
+Required Package
+----------------
+
+* RPM Package
+
+openssl-devel
+openldap-devel
+postgresql-devel
+globus-gssapi-gsi-devel(*), pkgconfig	(required for --with-globus option)
+postgresql, postgresql-server		(required to execute config-gfarm)
+fuse-devel				(required to build gfarm2fs)
+
+(*) It is necessary to install Globus configuration file.  See
+    http://www.globus.org/toolkit/downloads/latest-stable/
+    Here is an example in case of CentOS 6 and Globus 5.2.2.
+    # rpm -Uvh http://www.globus.org/ftppub/gt5/5.2/5.2.2/installers/repo/Globus-5.2.stable-config.centos-6-1.noarch.rpm
+
+* Debian Package
+
+libssl-dev
+libldap2-dev
+libpq-dev
+libglobus-gssapi-gsi-dev, pkg-config	(required for --with-globus option)
+postgresql, postgresql-client		(required to execute config-gfarm)
+libfuse-dev				(required to build gfarm2fs)
+
+$Id$

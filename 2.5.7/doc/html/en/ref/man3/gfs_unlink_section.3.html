@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfs_unlink_section</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-UNLINK-SECTION.3"
+></A
+>gfs_unlink_section</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_unlink_section&nbsp;--&nbsp;delete a file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><P
+></P
+><A
+NAME="AEN12"
+></A
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_unlink_section</TT
+></CODE
+>(char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, char * <TT
+CLASS="PARAMETER"
+><I
+>section</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_unlink_section()</TT
+> deletes the file
+section whose name is the string specifiedby
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> and
+<TT
+CLASS="PARAMETER"
+><I
+>section</I
+></TT
+>.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="CONSTANT"
+>NULL</CODE
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</CODE
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_AUTHENTICATION</CODE
+></DT
+><DD
+><P
+>User authentication failed when connecting to gfmd(8).</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+points outside your accessible address space.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
+></DT
+><DD
+><P
+><TT
+CLASS="PARAMETER"
+><I
+>section</I
+></TT
+> of
+<TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+> does not exist.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NOT_A_DIRECTORY</CODE
+></DT
+><DD
+><P
+>A component of the path prefix is not a directory.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

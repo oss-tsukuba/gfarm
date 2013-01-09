@@ -1,0 +1,71 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-glob-init.3'>
+
+<refentryinfo><date>2 Sep 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_glob_init</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_glob_init</refname>
+<refpurpose>パスのタイプを格納する領域を確保する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_glob_init</function></funcdef>
+    <paramdef>gfs_glob_t * <parameter>listp</parameter></paramdef>
+</funcprototype>
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>パターンにマッチするパス名を取得する関数 gfs_glob(3)、
+パスのタイプを追加する関数 gfs_glob_add() がパスのタイプを
+格納するために使用する領域を動的に確保し、そのアドレスを引数
+<parameter>listp</parameter>
+に設定します。</para>
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_glob</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfs_glob_add</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+<citerefentry><refentrytitle>gfs_glob_free</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>

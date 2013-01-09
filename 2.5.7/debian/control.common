@@ -1,0 +1,21 @@
+Source: gfarm
+Section: net
+Priority: optional
+Maintainer: Naotaka YAMAMOTO <naotaka@earth.nifty.jp>
+Build-Depends: debhelper, libreadline4-dev, libssl-dev, libldap2-dev, bison
+Standards-Version: 3.5.10
+
+Package: gfarm-doc
+Section: doc
+Architecture: all
+Description: Documents for the Gfarm
+ Contains all README files and HTML documents.
+
+Package: gfarm-gfront
+Section: utils
+Architecture: all
+Depends: gfarm-gsi-client (= ${Source-Version}) | gfarm-client (= ${Source-Version})
+Description: Front-end java application for the Gfarm
+ This package contains client and administrative front-end application
+ fot the Gfarm using JAVA.
+

@@ -1,0 +1,52 @@
+update_usage_ldap()
+{
+	return 1 # backend-specific option doesn't exist
+}
+
+update_postprocess_ldap()
+{
+	:
+}
+
+update_first_set_param_ldap()
+{
+	:
+}
+
+update_last_set_param_ldap()
+{
+	:
+}
+
+update_sanity_ldap()
+{
+	return 0
+}
+
+update_ldap()
+{
+	if cmp -s ${config_dir}/gfarm.schema ${LDAP_SCHEMA}; then
+		:
+	else
+		echo "${PROGNAME}: copying new schema"
+
+		if ${START_SERVICE}; then
+			service_ctl gfmd stop
+			service_ctl $RC_BACKEND_BASENAME stop
+		fi
+		cp ${config_dir}/gfarm.schema "${LDAP_SCHEMA}"
+		# sync required at least in Linux
+		sync; sync; sync
+		if ${START_SERVICE}; then
+			service_ctl $RC_BACKEND_BASENAME start
+			service_ctl gfmd start
+		else
+			echo You need to restart $RC_BACKEND_BASENAME and gfmd
+		fi		
+	fi
+}
+
+update_access_db_ldap()
+{
+	echo >&2 "${PROGNAME}: ldap backend is not supported yet"
+}

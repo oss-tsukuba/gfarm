@@ -1,0 +1,95 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfmpirun_p4.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmpirun_p4</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmpirun_p4</refname>
+<refpurpose>run Gfarm parallel programs with mpirun</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmpirun_p4</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'><replaceable>command</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>args</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><command>gfmpirun_p4</command> executes a parallel command on
+filesystem nodes with mpirun provided by MPICH/p4, which is determined
+by the <option>-G</option> option, the <option>-H</option> option, or
+the <option>-N</option> option.</para>
+
+<para><option>-G</option>, <option>-H</option>, and
+<option>-N</option> options are exclusive.  When none of
+<option>-G</option>, <option>-H</option>, and <option>-N</option>
+options are not specified, <command>gfmpirun_p4</command> schedules
+filesystem nodes by the file-affinity scheduling using the first
+existent Gfarm file in the argument list
+<parameter>args</parameter>.</para>
+
+<para><parameter>Command</parameter> can be specified by a gfarm-URL
+that is registered using gfreg(1).</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-G</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>specifies a Gfarm file <parameter>gfarm-URL</parameter> for
+file-affinity scheduling.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter>hostfile</parameter></term>
+<listitem>
+<para>specifies a <parameter>hostfile</parameter> that lists
+filesystem nodes.</para>
+<para>
+if ``-'' is specified, standard input is used to read the host
+list.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option> <parameter>np</parameter></term>
+<listitem>
+<para>specifies the number of nodes <parameter>np</parameter>, which
+are selected by the increasing order of load average.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para><command>gfmpirun_p4</command> can only work with the
+MPICH/p4.</para>
+
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfrun</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

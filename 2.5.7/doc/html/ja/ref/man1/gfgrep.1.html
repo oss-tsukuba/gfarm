@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfgrep</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFGREP.1"
+></A
+>gfgrep</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfgrep&nbsp;--&nbsp;並列ファイルを grep する</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> {gfarm:gfgrep}  -o <TT
+CLASS="REPLACEABLE"
+><I
+>出力gfarm-URL</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>正規表現</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>入力gfarm-URL</I
+></TT
+>... </P
+><P
+><B
+CLASS="COMMAND"
+>gfrun</B
+> {gfarm:gfgrep}  -o <TT
+CLASS="REPLACEABLE"
+><I
+>出力gfarm-URL</I
+></TT
+>   -e <TT
+CLASS="REPLACEABLE"
+><I
+>正規表現</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>入力gfarm-URL</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>gfrun から呼び出されるアプリケーションのサンプル・プログラムです。</P
+><P
+>また、ローカルファイルビューを利用して Gfarm ファイルに出力する例にも
+なっています。</P
+><P
+>入力 gfarm-URL から正規表現を検索し、結果を 出力 gfarm-URL に出力し
+ます。</P
+><P
+>ソースを見ると分かる通り、<B
+CLASS="COMMAND"
+>gfrun</B
+> から呼び出されるアプリケーションは、
+-I および -N オプションを解釈し、ここから得た値で
+<TT
+CLASS="FUNCTION"
+>gfs_pio_set_local()</TT
+> を呼び出す必要があります。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-e</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>正規表現</I
+></TT
+></DT
+><DD
+><P
+>「-」で始まる正規表現を指定したい場合に用います。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>出力 Gfarm ファイルの URL を指定します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

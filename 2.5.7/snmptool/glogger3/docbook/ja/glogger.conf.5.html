@@ -1,0 +1,311 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>glogger.conf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GLOGGER.CONF.5"
+></A
+>glogger.conf</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>glogger.conf&nbsp;--&nbsp;GLogger 設定ファイル</DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>glogger.conf ファイルは、glogger プログラムの設定ファイルです。
+
+なお、設定内容を変更した場合は、glogger を再起動する必要があります。</P
+><P
+>glogger は、設定ファイルとして、/etc/glogger/glogger.conf を読み込みます。
+-config オプションで設定ファイルを指定すると、それが優先されます。</P
+><P
+>glogger の設定ファイルは、以下の構造になっています。</P
+><P
+>* 設定ファイルは単一ファイルとする。</P
+><P
+>* 各設定項目は、設定名とその値を半角スペース一つ以上で区切り、それぞれ各行に記述する。</P
+><P
+>* 区切り以外の半角スペース、タブは無視する。</P
+><P
+>* 各行の '#' 以降はコメントとする。</P
+><P
+>* 各行は 1024 文字までとする。</P
+><P
+>* ブロックは 'ブロック名 {' 行ではじまり、'}' 行で終了する。</P
+><P
+>* ブロック内には、そのブロックに記述が許可されている、設定項目とブロックを記述できる。</P
+><P
+>* ファイルの先頭からブロックになっていない部分を global default ブロックと呼ぶ。</P
+><P
+>* global default ブロック以降に、requests ブロックを複数記述できる。</P
+><P
+>* nodes ブロックは requests ブロック内に一つ記述できる。</P
+><P
+>* mib ブロックは nodes ブロックの後に記述し、requests ブロック内に複数記述できる。</P
+><P
+>* oids ブロックは mib ブロック内に一つ記述できる。</P
+><P
+>* ブロック内にブロックがある場合は、
+ブロックを定義する前に行った設定項目を、
+以降ネストしたブロック内の設定項目として引き継ぎ、
+そのブロック内に同じ 設定名がある場合は、
+そのブロック内では、その設定項目が優先される。</P
+><P
+>* 未定義の設定名、設定値、記述表現で記述した場合、エラーとなる。</P
+><P
+>* 1度も記述されなかった設定項目には、デフォルト値が適用される。
+しかし、デフォルト値が存在しない設定項目もある。</P
+><P
+>glogger の設定ファイルは、以下のような構造で記述します。</P
+><P
+CLASS="LITERALLAYOUT"
+>&nbsp;interval&nbsp;[interval-spec]<br>
+&nbsp;maxfilesize&nbsp;[maxfilesize-spec]<br>
+&nbsp;defaultdir&nbsp;[defaultdir-spec]<br>
+&nbsp;overwrite&nbsp;[overwrite-spec]<br>
+&nbsp;fsync_interval&nbsp;[fsync_interval-spec]<br>
+&nbsp;label&nbsp;[label-spec]<br>
+&nbsp;path&nbsp;[path-spec]<br>
+&nbsp;community&nbsp;[community-spec]<br>
+&nbsp;requests&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;interval&nbsp;[interval-spec]<br>
+&nbsp;&nbsp;&nbsp;path&nbsp;[path-spec]<br>
+&nbsp;&nbsp;&nbsp;community&nbsp;[community-spec]<br>
+&nbsp;&nbsp;&nbsp;nodes&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[node-spec]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;....<br>
+&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;mib&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;interval&nbsp;[interval-spec]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;path&nbsp;[path-spec]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oids&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[oid-spec]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;....<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;mib...<br>
+&nbsp;}<br>
+&nbsp;requests...</P
+><P
+>....は、その上に記述した [?-spec] がいくつ続いても良いです。
+mib... や requests... は、それぞれのブロックがいくつ続いても良いです。
+[?-spec] には、それぞれ以下の数字や文字列を指定できます。</P
+><P
+>[interval-spec] には小数値を指定します。対象の測定間隔となります。
+ただし、現バージョンでは 0.1 秒未満は切捨てられます。
+(ex. interval 0.1, デフォルト値は 10.0)</P
+><P
+>[maxfilesize-spec] には出力ファイルの最大サイズを KB単位
+の整数値で指定します。指定したサイズを超えてから、内部動作タイミングのキ
+リの良いところでファイルを切り替えます。この場合、path 設定でのファイル
+名生成ルールでファイルは切り替わりません。-mmap モード動作時は、ここで指
+定したファイルサイズを超えたところで終了します。0(デフォルト値) を指定し、
+さらにファイル名生成ルールでも時刻を入れない場合は、停止されるまで
+ファイルへ出力しつづけます。
+(ex. 約 1MBの場合 → maxfilesize 1024, デフォルト値は 0)</P
+><P
+>[defaultdir-spec] には基準となる出力先ディレクトリの
+絶対パスを指定します。
+path 項で %G を記述したときに置換される値となります。
+global default 部分のみで指定できます。
+(ex. defaultdir /home/glogger, デフォルト値は /var/log/glogger)</P
+><P
+>[label-spec] には任意の文字列を指定します。
+計測テスト名や、クラスタ名などを付けて使うことを想定しています。
+path 項で %L を記述した場合に置換される文字列となります。
+(ex. label test01, デフォルト値は glogger)</P
+><P
+>[overwrite-spec] には出力ファイルの上書き許可文字列 on または enable を指定します。
+ on または enable を記述すると、GLogger の起動時、または、ファイル切り替え時に、
+すでに同じ名前のファイルが存在している場合に上書きします
+(以前のデータは削除されます)。
+(ex. overwrite  enable, デフォルトは上書きしない)</P
+><P
+>[fsync_interval-spec] には fsync() する間隔の秒数、または on または enable を
+指定します。
+GLogger は出力時に毎回 fflush() しますが、指定した間隔(秒)を超えたタイミングで
+fsync() もするようになります。
+on または enable を指定した場合は、内部動作インターバル(設定ファイルの記述によって異なる)
+ごとに、毎回 fsync() します。
+また、内部動作インターバルが、ここで指定した秒数よりも大きい間隔の場合、毎回 fsync()
+します。
+デフォルトでは一切 fsync() しません。
+(ex. fsync_interval  5,  デフォルトは fsync() しない)</P
+><P
+>[path-spec] には出力ファイルの絶対パスファイル名を指定する文字列を指定
+します。以下の置換ルールが適用できます。また、内部動作のキリの良いタイ
+ミングで、このルールと現在の時刻からファイル名を生成し、それまで出力して
+いたファイル名と比較します。時刻を置換するルールを使用した場合、
+時刻から生成されたファイル名に変更があった場合は、その新しいファイルに
+切り替え、そこへ出力します。設定ファイルの maxfilesize や、
+起動時オプション引数で、ファイルサイズ制限を行った場合は、時刻を使った
+ファイル名置換ルールを使わず、ファイルサイズ制限でファイルを切り替えます。
+また、ディレクトリは自動的に作成しません。
+<P
+CLASS="LITERALLAYOUT"
+>%G&nbsp;&nbsp;defaultdir&nbsp;のディレクトリ絶対パス<br>
+%L&nbsp;&nbsp;ラベル(クラスタ名、実験名など)<br>
+%n&nbsp;&nbsp;nodes&nbsp;で指定された&nbsp;FQDN<br>
+%N&nbsp;&nbsp;nodes&nbsp;で指定されたニックネーム<br>
+%o&nbsp;&nbsp;mibs&nbsp;で指定された&nbsp;OID名<br>
+%O&nbsp;&nbsp;mibs&nbsp;で指定された&nbsp;OIDニックネーム</P
+>
+時刻に関する置換には、GLogger を起動した時、またはファイルが切り替わる時の
+時刻の値が利用されます。
+<P
+CLASS="LITERALLAYOUT"
+>%t&nbsp;&nbsp;年月日時分秒ミリ秒<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(ex.&nbsp;20031231235959000)<br>
+%c&nbsp;&nbsp;マイクロ秒&nbsp;&nbsp;&nbsp;(000000..999999)<br>
+%s&nbsp;&nbsp;ミリ秒&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(000..999)<br>
+%S&nbsp;&nbsp;秒&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
+%M&nbsp;&nbsp;分&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..59)<br>
+%h&nbsp;&nbsp;時&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(00..23)<br>
+%d&nbsp;&nbsp;月内通算日数&nbsp;(01..31)<br>
+%j&nbsp;&nbsp;年内通算日数&nbsp;(001..366)<br>
+%m&nbsp;&nbsp;月&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(01..12)<br>
+%y&nbsp;&nbsp;年&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(1970...)</P
+>
+(ex. path %G/%H/%O/%y%m%h.glg, デフォルト値は %G/%L_%y%m%d%h%M.glg)</P
+><P
+>[community-spec] にはコミュニティストリングを指定します。
+(ex. community  private, デフォルト値は public)</P
+><P
+>[node-spec] には「ホスト名 ニックネーム」の組を各行に記述します。
+ニックネームが無ければ、%H は %h と同等となります。
+nodes ブロック内に、複数行記述できます。最大数は未定義です。
+ホスト名には、単純ホスト名、IP アドレス、[?-?] による連番数字指定が
+利用できます。
+
+連番数字指定 [?-?] の ? には 0 以上の整数(10進 or 16進)(16進の場合は 
+0x で始まる文字列)を指定します。左に始点、右に終点の数を指定します。始
+点より終点のほうが大きい数でなければなりません。5桁まで指定できます。
+始点で 0 を付加して桁合わせをすることができます。終点の値に近付くにし
+たがって、始点で指定した桁数よりも大きくなる場合は、始点の桁を超えて展
+開します。また、終点に先頭からいくつか 0 を付加しても、始点より多く指
+定したり、少なく指定しても、始点であわせた桁になります。
+<P
+CLASS="LITERALLAYOUT"
+>例えば、<br>
+[1-9]&nbsp;は&nbsp;1&nbsp;から&nbsp;&nbsp;9&nbsp;の&nbsp;9個に展開されます。<br>
+[0x1-0x10]&nbsp;は&nbsp;1&nbsp;から&nbsp;f&nbsp;と&nbsp;10&nbsp;の&nbsp;16個に展開されます。<br>
+[000-20]&nbsp;は&nbsp;000&nbsp;から&nbsp;020&nbsp;の&nbsp;21個に展開されます。<br>&#13;</P
+>
+ニックネームに $1, $2... として指定すると、[?-?]部を指定した順番に置換
+されます。
+例えば、abc[01-02]-[03-04].cdef.com  abc$1-$2 と指定すると、ニックネームは
+abc01-03, abc01-04, abc02-03, abc02-04 の 4個に展開されます。
+展開される順番は未定義です。
+
+<DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/warning.gif"
+HSPACE="5"
+ALT="Warning"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>注意</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>対応する $1, $2...を指定しなくてもエラーとなりません。
+しかし [?-?]部の個数より多く $部を指定するとエラーとなります。</P
+></TD
+></TR
+></TABLE
+></DIV
+>
+<P
+CLASS="LITERALLAYOUT"
+>ex.<br>
+&nbsp;&nbsp;gfm[01-80].apgrid.org&nbsp;&nbsp;gfm$1<br>
+&nbsp;&nbsp;gfmgw[01-10].apgrid.org&nbsp;&nbsp;gfmgw$1<br>
+&nbsp;&nbsp;localhost<br>
+&nbsp;&nbsp;172.19.2.[0-255]&nbsp;&nbsp;private$1<br>
+&nbsp;&nbsp;a[0x00-0xff]-[000-100].b.com&nbsp;&nbsp;abc$2-$1<br>
+デフォルト値は無し。</P
+></P
+><P
+>[oids-spec] には「OID名  ニックネーム」の組を各行に記述します。
+ニックネームは省略できません。
+oids ブロック内に、複数行記述できます。
+指定できる OID の数は、一つの計測対象ノードに対して、1度の SNMP 要求
+に入る個数まで指定できます。
+<P
+CLASS="LITERALLAYOUT"
+>ex.<br>
+&nbsp;&nbsp;#&nbsp;最近&nbsp;1分のロードアベレージ<br>
+&nbsp;&nbsp;enterprises.ucdavis.laTable.laEntry.laLoad.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loadavg<br>
+&nbsp;&nbsp;#&nbsp;2番目のネットワークインターフェースの&nbsp;TX<br>
+&nbsp;&nbsp;interfaces.ifTable.ifEntry.ifOutOctets.2&nbsp;&nbsp;eth0-out<br>
+&nbsp;&nbsp;#&nbsp;2番目のネットワークインターフェースの&nbsp;RX<br>
+&nbsp;&nbsp;interfaces.ifTable.ifEntry.ifInOctets.2&nbsp;eth0-in<br>
+&nbsp;&nbsp;#&nbsp;1番目のパーティション(snmpd.confで設定した順)の使用量<br>
+&nbsp;&nbsp;enterprises.ucdavis.dskTable.dskEntry.dskUsed.1&nbsp;used<br>
+&nbsp;&nbsp;#&nbsp;1番目のパーティション(snmpd.confで設定した順)の空き容量<br>
+&nbsp;&nbsp;enterprises.ucdavis.dskTable.dskEntry.dskAvail.1&nbsp;available<br>
+&nbsp;&nbsp;デフォルト値は無し。</P
+></P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>glogger</SPAN
+>(8)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

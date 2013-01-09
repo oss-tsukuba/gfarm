@@ -1,0 +1,195 @@
+#! /bin/sh
+
+# Kill me on all errors
+set -e
+
+FILE=gfarm-slapd
+DAEMON="@config_gfarm_openldap_libexec@/slapd"
+SLAPD_CONF="@config_gfarm_slapd_config@"
+SLAPD_SERVICES="ldap://:@config_gfarm_backend_port@/"
+SLAPD_OPTIONS=""
+
+# Stop processing if slapd is not there
+[ -x "$DAEMON" ] || exit 0
+
+# Source the init script configuration
+if [ -f "/etc/default/$FILE" ]; then
+	. /etc/default/$FILE
+fi
+
+# Load the default location of the slapd config file
+if [ -z "$SLAPD_CONF" ]; then
+	SLAPD_CONF="/etc/ldap/slapd.conf"
+else
+	SLAPD_OPTIONS="-f $SLAPD_CONF $SLAPD_OPTIONS"
+	SLURPD_OPTIONS="-f $SLAPD_CONF $SLURPD_OPTIONS"
+fi
+
+# Stop processing if the config file is not there
+if [ ! -r "$SLAPD_CONF" ]; then
+  cat <<EOF >&2
+No configuration file was found for slapd at $SLAPD_CONF.
+If you have moved the slapd configuration file please modify
+/etc/default/slapd to reflect this.  If you chose to not
+configure slapd during installation then you need to do so
+prior to attempting to start slapd.
+An example slapd.conf is in /usr/share/slapd
+EOF
+  exit 0 # Should this be 1?
+fi
+
+# Figure out some default settings
+# Check wether slurpd should get started
+if [ "$SLURPD_START" != "yes" ] && [ "$SLURPD_START" != "no" ]; then
+	if grep -q '^replica' "$SLAPD_CONF" > /dev/null 2>&1 ; then
+		SLURPD_START=yes
+	else
+		SLURPD_START=no
+	fi
+fi
+	
+# Find out the name of slapd's pid file
+if [ -z "$SLAPD_PIDFILE" ]; then
+	SLAPD_PIDFILE=`sed -ne 's/^pidfile[[:space:]]\+\(.\+\)/\1/p' \
+		"$SLAPD_CONF"`
+fi
+
+# XXX: Breaks upgrading if there is no pidfile (invoke-rc.d stop will fail)
+# -- Torsten
+if [ -z "$SLAPD_PIDFILE" ]; then
+	cat <<EOF >&2
+The pidfile for slapd is neither specified in "$SLAPD_CONF" nor
+in /etc/default/$FILE. Consequently, slapd will not be started.
+EOF
+	exit 1
+fi
+
+# Pass the user and group to run under to slapd
+if [  "$SLAPD_USER" ]; then
+	SLAPD_OPTIONS="-u $SLAPD_USER $SLAPD_OPTIONS"
+fi
+
+if [ "$SLAPD_GROUP" ]; then
+	SLAPD_OPTIONS="-g $SLAPD_GROUP $SLAPD_OPTIONS"
+fi
+
+# Tell the user that something went wrong and give some hints for
+# resolving the problem.
+report_failure() {
+	if [ -n "$reason" ]; then
+		echo " - failed: "
+		echo "$reason"
+	else
+		echo " - failed."
+		cat <<EOF
+The operation failed but no output was produced. For hints on what went
+wrong please refer to the system's logfiles (e.g. /var/log/syslog) or
+try running the daemon in Debug mode like via "slapd -d 16383" (warning:
+this will create copious output).
+EOF
+
+		if [ -n "$SLURPD_OPTIONS" -o \
+		     -n "$SLAPD_OPTIONS" -o \
+		     -n "$SLAPD_SERVICES" ]; then
+			cat << EOF
+
+Below, you can find the command line options used by this script to 
+run slapd and slurpd. Do not forget to specify those options if you
+want to look to debugging output:
+EOF
+	                if [ -z "$SLAPD_SERVICES" ]; then
+				if [ -n "$SLAPD_OPTIONS" ]; then
+					echo "  slapd $SLAPD_OPTIONS"
+				fi
+                	else
+                        	echo "  slapd -h '$SLAPD_SERVICES' $SLAPD_OPTIONS"
+                	fi
+
+                	if [ "$SLURPD" = "yes" -a -n "$SLURPD_OPTIONS" ]; then
+                       		echo "  slurpd $SLURPD_OPTIONS"
+                	fi
+		fi
+	fi
+}
+
+
+# Start the slapd daemon and capture the error message if any to 
+# $reason.
+start_slapd() {
+	echo -n " slapd"
+	if [ -z "$SLAPD_SERVICES" ]; then
+		reason="`start-stop-daemon --start --quiet --oknodo \
+			--pidfile "$SLAPD_PIDFILE" \
+			--exec "$DAEMON" -- $SLAPD_OPTIONS 2>&1`"
+	else
+		reason="`start-stop-daemon --start --quiet --oknodo \
+			--pidfile "$SLAPD_PIDFILE" \
+			--exec "$DAEMON" -- -h "$SLAPD_SERVICES" $SLAPD_OPTIONS 2>&1`"
+	fi
+}
+
+# Start the slurpd daemon and capture the error message if any to
+# $reason.
+start_slurpd() {
+	if [ "$SLURPD_START" != yes ]; then
+		return 0
+	fi
+	echo -n " slurpd"
+	reason="`start-stop-daemon --start --quiet --oknodo \
+		--exec /usr/sbin/slurpd -- $SLURPD_OPTIONS 2>&1`"
+}
+
+# Stop the slapd daemon and capture the error message (if any) to
+# $reason.
+stop_slapd() {
+	echo -n " slapd"
+	reason="`start-stop-daemon --stop --quiet --oknodo --retry 10 \
+		--pidfile "$SLAPD_PIDFILE" \
+		--exec "$DAEMON" 2>&1`"
+}
+
+# Stop the slurpd daemon and capture the error message (if any) to
+# $reason.
+stop_slurpd() {
+	if [ "$SLURPD_START" != yes ]; then
+		return 0
+	fi
+	echo -n " slurpd"
+	reason="`start-stop-daemon --stop --quiet --oknodo --retry 10 \
+		--exec /usr/sbin/slurpd 2>&1`"
+}
+
+# Start the OpenLDAP daemons
+start() {
+	echo -n "Starting OpenLDAP:"
+	trap 'report_failure' 0
+	start_slapd
+	start_slurpd
+	trap "-" 0
+	echo .
+}
+
+# Stop the OpenLDAP daemons
+stop() {
+	echo -n "Stopping OpenLDAP:"
+	trap 'report_failure' 0
+	stop_slurpd
+	stop_slapd
+	trap "-" 0
+	echo .
+}
+
+case "$1" in
+  start)
+  	start ;;
+  stop)
+  	stop ;;
+  restart|force-reload)
+  	stop
+	start
+	;;
+  *)
+  	echo "Usage: $0 {start|stop|restart|force-reload}"
+	exit 1
+	;;
+esac

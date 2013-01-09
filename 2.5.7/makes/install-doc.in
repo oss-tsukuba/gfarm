@@ -1,0 +1,40 @@
+#!/bin/sh
+
+case $# in
+2)	:;;
+*)	echo "Usage: $0 <source_file> <destination_file>" >&2
+	exit 1;;
+esac
+src=$1
+dst=$2
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libdir="@libdir@"
+sysconfdir="@sysconfdir@"
+
+globus_flavor="@globus_flavor@"
+
+# If Globus is not configured, use "gcc32" for documentation purpose.
+: ${globus_flavor:="gcc32"}
+
+INSTALL="@abs_top_srcdir@/makes/install-sh -c"
+tmpfile=/tmp/insttmp.$$
+status=1
+
+trap 'rm -f $tmpfile; exit $status' 0 1 2 15
+
+if grep '%%' "$src" >/dev/null; then
+	sed	-e "s|%%PREFIX%%|$prefix|g" \
+		-e "s|%%EXEC_PREFIX%%|$exec_prefix|g" \
+		-e "s|%%SYSCONFDIR%%|$sysconfdir|g" \
+		-e "s|%%LIBDIR%%|$libdir|g" \
+		-e "s|%%GLOBUS_FLAVOR%%|$globus_flavor|g" \
+		$src >$tmpfile
+	@INSTALL_DATA@ "$tmpfile" "$dst"
+	status=$?
+	rm -f $tmpfile
+else
+	@INSTALL_DATA@ "$src" "$dst"
+	status=$?
+fi

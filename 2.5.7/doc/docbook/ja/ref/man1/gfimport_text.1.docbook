@@ -1,0 +1,133 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfimport-text.1'>
+
+<refentryinfo><date>5 Jun 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfimport_text</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfimport_text</refname>
+<refpurpose>テキスト・ファイルをフラグメントに分けて取り込む</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfimport_text</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>入力ファイル</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数に指定したテキスト・ファイルを、一行を複数のフラグメントに分割す
+ることのないように分割して Gfarm ファイルシステムに取り込む
+サンプル・プログラムです。</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<listitem>
+<para>フラグメントを配置するホスト名のリストを記載したファイル名を指定します。
+ホスト名は、各行に一ホストずつ記述します。
+入力ファイルはそれぞれのフラグメントサイズがほぼ均等となるように
+分割されます。
+</para>
+<para>
+ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-f</option> <parameter>フラグメント構成ファイル</parameter></term>
+<listitem>
+<para>各フラグメントのおおよそのサイズと、配置するホストを記載したファイ
+ル名を指定します。
+</para>
+<para>
+構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。
+</para>
+<para>
+ファイル名として ``-'' を指定した場合、標準入力からフラグメント構成を
+読み込みます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>出力 Gfarm ファイルの URL を指定します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='examples'><title>EXAMPLES</title>
+
+<example role="example">
+<title>指定した個数に分割して取り込む</title>
+<para>
+以下は、ファイルを8個のフラグメントに分割し、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>処理するプログラムを指定し、特定の個数に分割して取り込む</title>
+<para>
+以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <replaceable>gfarm:prog</replaceable> を実行可能なホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+<example role="example">
+<title>既存の gfarm ファイルと同じ配置で取り込む</title>
+<para>
+以下は、既存の gfarm ファイル <replaceable>gfarm:template</replaceable> と
+同じ個数のフラグメントに分割し、
+<replaceable>gfarm:template</replaceable> が存在するのと同じホストに、
+ファイル <replaceable>gfarm:file</replaceable> として取り込む例です。
+<screen>
+gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file
+</screen>
+</para>
+</example>
+
+</refsect1>
+
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfimport_fixed</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfsched</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfarm.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

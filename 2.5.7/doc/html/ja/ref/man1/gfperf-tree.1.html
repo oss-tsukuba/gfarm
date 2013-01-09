@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfperf-tree</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFPERF-TREE.1"
+></A
+>gfperf-tree</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfperf-tree&nbsp;--&nbsp;Gfarm ディレクトリツリーの性能測定を行う。</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfperf-tree</B
+>  [-t, --testdir <TT
+CLASS="REPLACEABLE"
+><I
+>テストディレクトリ</I
+></TT
+>] [-w, --width <TT
+CLASS="REPLACEABLE"
+><I
+>ディレクトリ数</I
+></TT
+>] [-d, --depth <TT
+CLASS="REPLACEABLE"
+><I
+>ディレクトリ階層</I
+></TT
+>] [-u, --unit <TT
+CLASS="REPLACEABLE"
+><I
+>出力の単位</I
+></TT
+>]</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>引数 <CODE
+CLASS="PARAMETER"
+>テストディレクトリ</CODE
+> にテスト用のディレクトリツリーを作成、削除し、その実行性能を測定します。生成されるディクトリの数はwidthのdepth乗です。</P
+><P
+>測定する内容は指定されたディレクトリツリーの生成、及び削除にかかった時間を測定し、指定された単位で表示します。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-t, --testdir</CODE
+> <CODE
+CLASS="PARAMETER"
+>テストディレクトリ</CODE
+></DT
+><DD
+><P
+>テストを実施するディレクトリを指定します。
+gfarm url(gfarm:///で始まるもの)を指定した場合、該当のgfarm上のディレクトリに対してlibgfarmの関数を使用した場合の性能を測定します。
+file url(file:///で始まるもの)を指定した場合、該当のunixファイルシステム上にposixの関数を使用した場合の性能を測定します。
+デフォルトはgfarm:///tmpです。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-w, --width</CODE
+> <CODE
+CLASS="PARAMETER"
+>ディレクトリ数</CODE
+></DT
+><DD
+><P
+>サブディレクトリを作成する数を指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d, --depth</CODE
+> <CODE
+CLASS="PARAMETER"
+>ディレクトリ階層</CODE
+></DT
+><DD
+><P
+>サブディレクトリを何階層作成するか指定します。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-u, --uinit</CODE
+> <CODE
+CLASS="PARAMETER"
+>出力の単位</CODE
+></DT
+><DD
+><P
+>ops(operations per second)またはusecを指定します。指定した単位で出力を返します。デフォルトはopsです。</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

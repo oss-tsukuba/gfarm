@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfmpirun_p4</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFMPIRUN_P4.1"
+></A
+>gfmpirun_p4</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfmpirun_p4&nbsp;--&nbsp;mpirun コマンドの Gfarm 用フロントエンド</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfmpirun_p4</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>options</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>プログラム名</I
+></TT
+>   <TT
+CLASS="REPLACEABLE"
+><I
+>引数</I
+></TT
+>... </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>MPI並列プログラムを MPICH/p4 で提供される mpirun を利用して実行
+します．実行されるファイルシステムノードは，-G オプション，-H オプショ
+ンあるいは -N オプションにより決定されます．</P
+><P
+>-G オプション，-H オプション，-N オプションは同時に二つ以上指定するこ
+とはできません．また，-G オプション，-H オプション，-N オプションがい
+ずれも指定されない場合は，引数に指定された既に存在する Gfarmファイルの
+うち一番はじめのファイルを利用したファイル・アフィニティ・スケジューリ
+ングにより決定されます．</P
+><P
+>プログラム名としては、gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-G</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>gfarm-URL のファイル・アフィニティ・スケジューリングにより
+並列プログラムを実行します．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
+指定します．
+ホスト名は，各行に一ホストずつ記述します．</P
+><P
+>ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-N</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ノード数</I
+></TT
+></DT
+><DD
+><P
+>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="BUGS"
+></A
+><H2
+>BUGS</H2
+><P
+>現バージョンは、MPICH/p4 との組合せでないと動作しません。</P
+></DIV
+></BODY
+></HTML
+>

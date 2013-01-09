@@ -1,0 +1,156 @@
+		Overview of the Gfarm filesystem
+
+About the Gfarm filesystem
+===========================
+
+The Gfarm filesystem is a distributed filesystem consisting of the local
+storage of commodity PCs.  Many PCs in a local area network, compute
+nodes in a single cluster, multiple clusters in wide area, comprise a
+large-scale, high-performance shared network filesystem.
+
+The Gfarm filesystem solves performance and reliability problems in
+NFS and AFS by means of multiple file replicas. It not only prevents
+performance degradation due to access concentration, but also supports
+fault tolerance and disaster recovery.
+
+A unique feature of Gfarm is that each filesystem node is also a client
+of the Gfarm filesystem.  Distributed access by filesystem nodes
+realizes super-scalable I/O performance.
+
+For detailed information about the Grid Datafarm architecture and
+Gfarm file system, refer to the following papers.
+
+[1] Osamu Tatebe, Youhei Morita, Satoshi Matsuoka, Noriyuki Soda,
+    Satoshi Sekiguchi,
+    "Grid Datafarm Architecture for Petascale Data Intensive Computing,"
+    Proceedings of the 2nd IEEE/ACM International Symposium on Cluster
+    Computing and the Grid (CCGrid 2002),
+    IEEE, pp.102-110, 2002
+    http://datafarm.apgrid.org/
+
+[2] Osamu Tatebe, Kohei Hiraga, Noriyuki Soda,
+    "Gfarm Grid File System,"
+    New Generation Computing, Ohmsha, Ltd. and Springer,
+    Vol.28, No.3, pp.257-275, DOI: 10.1007/s00354-009-0089-5, 2010.
+    http://www.springerlink.com/openurl.asp?genre=article&id=doi:10.1007/s00354-009-0089-5
+
+How to access Gfarm
+===================
+
+There are several methods that can be used to access the Gfarm filesystem:
+
+ - Using Gfarm commands and Gfarm native file I/O APIs
+   You can use Gfarm specific features like file replication,
+   filesystem node management, etc., via this method.
+
+ - Using GfarmFS-FUSE (gfarm2fs)
+   You can actually mount the Gfarm filesystem from Linux clients
+   by using FUSE (http://fuse.sourceforge.net/).
+   Unlike the other methods, this one is completely transparent from your
+   application.
+
+ - Gfarm Samba plugin
+   This is a plugin for a Samba server to access Gfarm file system.
+   Using the plugin, Windows clients can access Gfarm file system via
+   Windows file sharing service.
+
+ - Gfarm Hadoop plugin
+   This is a plugin for Hadoop to access Gfarm file system.  Using
+   the plugin module, Hadoop MapReduce applications can access Gfarm
+   file system by Gfarm URL.
+
+ - Gfarm GridFTP DSI
+   This is a plugin for Globus GridFTP server to access Gfarm file
+   system.  Using the plugin, GridFTP clients can access Gfarm file
+   system.
+
+Host types that make up the Gfarm system
+========================================
+
+A Gfarm system consists of the following kinds of nodes:
+
+ - Client node
+
+  A terminal node for users.
+
+ - Filesystem node
+
+  Filesystem nodes provide data storage and CPUs for the Gfarm system.
+  On each filesystem node, the Gfarm filesystem daemon, called gfsd,
+  is running to facilitate remote file operations and access control
+  in the Gfarm filesystem, as well as to provide user authentication, file
+  replication, node resource status monitoring, and control.
+
+ - Metadata server node
+
+  A metadata server node manages Gfarm filesystem metadata.  On the
+  metadata server node, a Gfarm filesystem metaserver (gfmd), and a
+  backend database server such as an LDAP server (slapd) or a
+  PostgreSQL server (postmaster) are running.
+
+The three types of nodes just introduced are not necessarily different
+hosts,
+i.e., you can use the same host for the above purposes, if the number of
+available hosts are limited.
+
+Physically, each file is replicated and dispersed across the disks of the
+filesystem nodes, and they will be accessed in parallel.
+
+Structure of the Gfarm software
+===============================
+
+The Gfarm filesystem consists of the following software:
+
+ - The libgfarm.a library
+
+  A library that implements Gfarm APIs, including Gfarm file access,
+  file replication, and file-affinity process scheduling.
+
+ - gfmd - the Gfarm filesystem metadata server
+
+  A metadata server for the Gfarm file system that runs on a metadata
+  server node.  It manages directory structure, file information,
+  replica catalog, user/group information, and host information.
+  Gfmd keeps the metadata in memory, but it stored a backend databse
+  such as PostgreSQL server or OpenLDAP server, on background.
+
+ - gfsd - the Gfarm filesystem daemon
+
+  An I/O daemon for the Gfarm filesystem that runs on every
+  filesystem node, which provides remote file operations with access
+  control, as well as user authentication, file replication, and node
+  resource status monitoring.
+
+ - Gfarm command tools
+
+  Gfarm command tools consist of filesystem commands such as gfls,
+  gfrm, gfwhere and gfrep; a filesystem node management tool,
+  gfhost; file management tools such as gfreg and gfexport; session
+  key management tools, such as gfkey.
+
+About authentication
+====================
+
+gfmd and gfsd support the following three authentication methods.
+Please read the security section in Gfarm-FAQ.en, too.
+
+1. sharedsecret
+  This uses a shared key in the ~/.gfarm_shared_key file which will be
+  generated automatically by the Gfarm software.
+  This is suitable for an environment that is protected by a firewall.
+  This authentication method is easy to use in an environment which
+  shares users' home directories via NFS.
+
+2. gsi
+  This is the GSI -- Grid Security Infrastructure -- method, and it uses
+  public key authentication, which is based on a PKI-style certificate.
+  This method encrypts network communication, and is suitable for
+  use over the Internet.
+  Please read the following page provided by the Globus project for details:
+	http://www.globus.org/security/overview.html
+
+3. gsi_auth
+  This method uses GSI for its authentication, but switches to a plain
+  TCP connection after the authentication is completed.
+  This method is suitable for an environment that is protected
+  by a firewall.

@@ -1,0 +1,78 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfexec.1'>
+
+<refentryinfo><date>12 Nov 2006</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfexec</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfexec</refname>
+<refpurpose>execute other commands in the Gfarm filesystem</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfexec</command>
+	<arg choice='opt'>-N <replaceable>number-of-nodes</replaceable></arg>
+	<arg choice='opt'>-I <replaceable>node-index</replaceable></arg>
+	<arg choice='opt'>-s</arg>
+	<arg choice='plain'><replaceable>command</replaceable></arg>
+	<arg choice='opt' rep='repeat'><replaceable>args</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><command>gfexec</command> executes the specified command in Gfarm
+filesystem.  <command>gfexec</command> has to be executed on a
+filesystem node.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-N</option> <parameter>number-of-nodes</parameter></term>
+<listitem>
+<para>Changes the number of nodes for the invoked program to the argument.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-I</option> <parameter>node-index</parameter></term>
+<listitem>
+<para>Changes the index of the node for the invoked program to the argument.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>
+This option is equivalent to the
+``<option>-N</option> <parameter>1</parameter> <option>-I</option> <parameter>0</parameter>'' option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Prints usage.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+</refentry>

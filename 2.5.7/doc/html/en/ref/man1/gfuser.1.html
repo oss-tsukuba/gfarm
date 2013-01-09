@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfuser</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFUSER.1"
+></A
+>gfuser</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfuser&nbsp;--&nbsp;Gfarm user maintenance command</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfuser</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>] [-l] [<TT
+CLASS="REPLACEABLE"
+><I
+>user</I
+></TT
+>...]</P
+><P
+><B
+CLASS="COMMAND"
+>gfuser</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -c   username   realname   homedir   gsi_dn </P
+><P
+><B
+CLASS="COMMAND"
+>gfuser</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -m   username   realname   homedir   gsi_dn </P
+><P
+><B
+CLASS="COMMAND"
+>gfuser</B
+> [-P <TT
+CLASS="REPLACEABLE"
+><I
+>path</I
+></TT
+>]  -d   username </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><B
+CLASS="COMMAND"
+>gfuser</B
+> manages Gfarm global users in Gfarm file
+system.  Default action displays all registered users.  When user
+names are specified, specified users are displayed.  Gfarm
+administrator can creates, modifies, and deletes a Gfarm user by -c,
+-m, and -d options, respectively.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="OPTION"
+>-P</CODE
+> <TT
+CLASS="PARAMETER"
+><I
+>path</I
+></TT
+></DT
+><DD
+><P
+>	This option specifies a pathname or a Gfarm URL to identify
+	a metadata server which will be accessed by this command.
+	If not specified, "/" is used as the default value.
+    </P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-l</CODE
+></DT
+><DD
+><P
+>Displays verbose information of registered users.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-c</CODE
+></DT
+><DD
+><P
+>Creates a user by specifying a global username in Gfarm file system,
+a real username, a home directory in Gfarm, and a Subject DN used in
+GSI.  When the real username or the Subject DN includes spaces, it is
+needed to be quoted.  This option can be used by Gfarm administrators.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-m</CODE
+></DT
+><DD
+><P
+>Replaces a user information of the specified global user with
+specified real name, home directory and Subject DN.  This option can
+be used by Gfarm administrators.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-d</CODE
+></DT
+><DD
+><P
+>Deletes a registered user.  This option can be used by Gfarm
+administrators.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-?</CODE
+></DT
+><DD
+><P
+>Displays a list of command options.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfgroup</SPAN
+>(1)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

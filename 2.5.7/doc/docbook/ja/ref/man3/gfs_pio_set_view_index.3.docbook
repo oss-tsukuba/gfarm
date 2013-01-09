@@ -1,0 +1,152 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfs-pio-set-view-index.3'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfs_pio_set_view_index</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfs_pio_set_view_index</refname>
+<refpurpose>fragment 単位のアクセスを指定する</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+#include &lt;gfarm/gfarm.h&gt;
+</funcsynopsisinfo>
+
+<funcprototype>
+  <funcdef><function><returnvalue>char *</returnvalue>gfs_pio_set_view_index</function></funcdef>
+    <paramdef>GFS_File <parameter>gf</parameter></paramdef>
+    <paramdef>int <parameter>fragment_number</parameter></paramdef>
+    <paramdef>int <parameter>fragment_index</parameter></paramdef>
+    <paramdef>char *<parameter>host</parameter></paramdef>
+    <paramdef>int <parameter>flags</parameter></paramdef>
+</funcprototype>
+
+
+</funcsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>ファイルをフラグメント単位でアクセスすることを指定します。</para>
+
+<para>新規作成したファイルの場合、必ず引数
+<parameter>fragment_number</parameter>
+にフラグメント
+の総数を指定する必要があります。この値は、この並列ファイルを開く全て
+のノードで、同じ値でなくてはなりません。既存のファイルの場合には、
+ここに
+<constant>GFARM_FILE_DONTCARE</constant>
+と書けば、指定を省略できます。もし
+もし実際と異なる数を指定した場合には、この関数はエラーで失敗します。</para>
+
+<para>引数
+<parameter>fragment_index</parameter>
+には、 アクセスするフラグメントの番号を指定します。</para> 
+
+<para>引数
+<parameter>host</parameter>
+は、アクセスしたいホストを明示的に指定したい時に利用します。
+指定が不要なら
+<acronym>NULL</acronym>
+を渡せば省略できます。</para>
+
+<para>引数
+<parameter>flag</parameter>
+には、
+<constant>GFARM_FILE_SEQUENTIAL</constant> 、
+<constant>GFARM_FILE_REPLICATE</constant> 、
+<constant>GFARM_FILE_NOT_REPLICATE</constant>
+の論理和が指定できます。
+これらは、下記を意味します。</para>
+<variablelist>
+<varlistentry>
+<term><constant>GFARM_FILE_SEQUENTIAL</constant></term>
+<listitem>
+<para>このフラグメントに関してはシーケンシャル・アクセスのみを行なうこと
+を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_REPLICATE</constant></term>
+<listitem>
+<para>あらかじめ、ローカル・ノードにレプリカを用意してからアクセスすることを
+指定します。GFARM_FILE_NOT_REPLICATE とは排他的なオプションです。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_FILE_NOT_REPLICATE</constant></term>
+<listitem>
+<para>既にレプリカがある場合を除き、このノードにレプリカを用意しないこと
+を指定します。GFARM_FILE_REPLICATE とは排他的なオプションです。</para>
+
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>この関数を呼ばない状態では、Gfarm ファイルは global view
+状態となっており、全てのフラグメントが結合された単一ファイルに見えます。</para>
+
+</refsect1>
+
+<refsect1 id='return-values'><title>RETURN VALUES</title>
+<variablelist>
+<varlistentry>
+<term><constant>NULL</constant></term>
+<listitem>
+<para>正常終了を示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_NO_MEMORY</constant></term>
+<listitem>
+<para>メモリ不足のため処理を中止しました。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_OPERATION_NOT_PERMITTED</constant></term>
+<listitem>
+<para>指定したパス名が、フラグメント化ファイルではありません。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_FRAGMENT_NUMBER_DOES_NOT_MATCH</constant></term>
+<listitem>
+<para>指定したフラグメント総数が、不適切です。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><constant>GFARM_ERR_INVALID_ARGUMENT</constant></term>
+<listitem>
+<para>関数引数が不適切です。たとえば、ファイルの新規作成時に、
+フラグメント総数として
+<constant>GFARM_FILE_DONTCARE</constant>
+を指定すると、このエラーが生じます。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>その他</term>
+<listitem>
+<para>上記以外のエラーが生じたことを示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfs_pio_create</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_open</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gfs_pio_set_view_local</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+</para>
+</refsect1>
+</refentry>
+

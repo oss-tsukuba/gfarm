@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# $Id$
+#
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
+# chkconfig: 2345 85 15
+#
+## For RedHat Linux style rc.d
+# description: PostgreSQL daemon for Gfarm
+# processname: postmaster
+# pidfile: @config_gfarm_backend_data_dir@/postmaster.pid
+#
+## For SuSE/United-Linux style rc.d
+### BEGIN INIT INFO
+# Provides: gfarm-pgsql
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: PostgreSQL daemon for Gfarm
+### END INIT INFO
+
+FILE="gfarm-pgsql"
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+OPTIONS="@config_gfarm_pgsql_options@"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	# We don't use "su -" here,
+	# because it makes Solaris and HP-UX display /etc/motd.
+	RUN="su $PRIVILEGE";;
+esac
+export PGPORT
+export PGDATA
+unset LANG
+
+case $1 in 
+start)
+	if [ ! -x "$CTL" ]; then
+		echo -n "$CTL is not installed"
+		exit 1
+	fi
+	$RUN -c "$CTL $OPTIONS start"
+	;;
+
+stop)
+	$RUN -c "$CTL $OPTIONS stop"
+	;;
+
+  status|restart|reload)
+	$RUN -c "$CTL $OPTIONS $1"
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | restart | status | reload }"
+	exit 1
+	;;
+esac
+exit 0

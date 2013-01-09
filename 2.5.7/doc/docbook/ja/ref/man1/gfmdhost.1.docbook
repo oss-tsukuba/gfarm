@@ -1,0 +1,238 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfmdhost.1'>
+
+<refentryinfo><date>30 June 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmdhost</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmdhost</refname>
+<refpurpose>gfarm メタデータサーバ管理コマンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <arg choice='opt'>-l</arg>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <group choice='req'>
+    <arg choice='plain'>-c</arg>
+    <arg choice='plain'>-m</arg>
+  </group>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+  <arg choice='opt'>-p <replaceable>ポート番号</replaceable></arg>
+  <arg choice='opt'>-C <replaceable>クラスタ名</replaceable></arg>
+  <arg choice='opt'>-t 
+    <group choice='req'>
+      <arg choice='plain'>m</arg>
+      <arg choice='plain'>c</arg>
+      <arg choice='plain'>s</arg>
+    </group>
+  </arg>
+  <arg choice='req'><replaceable>メタデータサーバ名</replaceable></arg>
+</cmdsynopsis>
+
+<cmdsynopsis>
+  <command>gfmdhost</command>
+  <arg choice='req'>-d</arg>
+  <arg choice='opt'>-P <replaceable>path</replaceable></arg>
+  <arg choice='req'><replaceable>メタデータサーバ名</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfmdhost</command> は
+gfarm のメタデータサーバの冗長化機能に関連する情報の表示や管理を行います。
+<command>gfmdhost</command> が実行する機能は
+-l, -c, -m, -d のオプションで選択します。
+これら機能の指定は排他的であり、どれか一つだけを指定することができます。
+また、一つも指定しなかった場合には、
+デフォルトの機能である gfmd ホスト名の一覧表示が行われます。
+</para>
+</refsect1>
+
+<refsect1 id='functions'><title>FUNCTIONS</title>
+<para>
+  下記は、<command>gfmdhost</command>コマンドの機能一覧です。二つ以上の機能を同時に
+  指定することはできません。
+</para>
+<variablelist>
+
+  <varlistentry>
+    <term>無指定</term>
+    <listitem>
+      <para>
+	登録されているgfmdホストのホスト名一覧を、
+	アルファベット順で表示します。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-l</option></term>
+    <listitem>
+      <para>
+        登録されている gfmd ホストのホスト名一覧を、
+        詳細情報と共に表示します。クラスタ名ごとにホスト名を
+        アルファベット順で表示します。
+      </para>
+      <para>
+        詳細情報は次の順に表示されます。
+      </para>
+      <para><option>接続状態 (+|-|?|x|e)</option></para>
+      <para>
+        "+" はマスター gfmd と正常に接続していることを表します。
+        "-" は接続していないことを表します。
+	"?" は、マスター gfmd と接続直後でまだ状態が判明してないか、あるいは
+	Gfarm-2.5.0 の gfmd に対して、Gfarm-2.5.1 以降の gfmdhost コマンド
+	から接続した場合に表示されます。
+	"x" はマスター gfmd と接続できたものの、切断している間の更新量が
+        多く自動同期が不可能となり、バックエンド・データベースのダンプ・
+	リストアを用いて同期をとる必要が生じていることを表します。
+	"e" は何らかのエラーが生じ、ログの調査が必要なことを表します。
+	"x" および "e" については、そのスレーブgfmdが停止した後でも、
+	表示が続きます。
+        マスター gfmd は常に "+" です。
+      </para>
+      <para><option>サーバ種別 (master|slave)</option></para>
+      <para>
+        マスターであるか、スレーブであるかを表します。
+      </para>
+      <para><option>レプリケーション種別 (sync|async|-)</option></para>
+      <para>
+        sync は同期レプリケーション、
+        async は非同期レプリケーションを表します。
+	マスター gfmd には "-" が表示されます。
+      </para>
+      <para><option>マスター候補の設定 (c|m|s)</option></para>
+      <para>
+        m はデフォルトのマスター、c はマスター候補、
+        s はスレーブ専用の gfmd を表します。
+      </para>
+      <para><option>クラスタ名</option></para>
+      <para>
+        gfmd が属するクラスタ名です。
+        デフォルトのクラスタは "(default)" と表示されます。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-c</option></term>
+    <listitem>
+      <para>
+	引数で指定した gfmd ホストを登録します。
+	任意でオプション -C、-p、-t を指定します。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-m</option></term>
+    <listitem>
+      <para>
+	引数で指定した gfmd ホストを変更します。
+	任意でオプション -C、-p、-t を指定します。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-d</option></term>
+    <listitem>
+      <para>
+	引数で指定した gfmd ホストを削除します。
+	マスター gfmd を削除することはできません。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-?</option></term>
+    <listitem>
+      <para>引数オプションを表示します。</para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+  <varlistentry>
+    <term><option>-C</option> <parameter>クラスタ名</parameter></term>
+    <listitem>
+      <para>
+        -c, -m 機能で gfmd ホストが属するクラスタ名を指定します。
+	省略した場合、デフォルトのクラスタに属します。
+      </para>
+      <para>
+	クラスタ名は同期レプリケーションのグループを表します。
+	マスター gfmd と同一のクラスタに所属する gfmd 間は同期レプリケー
+	ションとなり、それ以外の gfmd は非同期レプリケーションとなります。
+	同期レプリケーションが行われているスレーブ gfmd は、
+	メタデータ操作を失うことなくマスター gfmd に昇格することが可能です。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-p</option> <parameter>ポート番号</parameter></term>
+    <listitem>
+      <para>
+        -c, -m 機能で gfmd のポート番号を指定します。
+	省略した場合、デフォルトのポート番号 601 を指定したことになります。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>-t {m|c|s}</term>
+    <listitem>
+      <para>
+	-c, -m 機能でマスター候補の設定を指定します。
+        m はデフォルトのマスター、c はマスター候補、
+        s はスレーブ専用を表します。
+	省略した場合、c を指定したことになります。
+	デフォルトのマスターをマスター候補およびスレーブ専用へ、
+	直接変更することはできません。
+	デフォルトのマスター以外の gfmd を -t m
+	によりデフォルトのマスターに変更すると、
+	以前のデフォルトのマスターがマスター候補に変更されます。
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>-P</option> <parameter>path</parameter></term>
+    <listitem>
+      <para>
+	このコマンドがアクセスするメタデータサーバを特定するための
+	パス名または Gfarm URL を指定します。
+	省略した場合は、"/" を指定したのと同じ意味になります。
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

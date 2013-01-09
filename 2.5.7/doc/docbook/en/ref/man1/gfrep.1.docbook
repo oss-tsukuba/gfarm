@@ -1,0 +1,191 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfrep.1'>
+
+<refentryinfo><date>31 May 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrep</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfrep</refname>
+<refpurpose>replicate Gfarm files</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='opt'>-mnqvx</arg>
+    <arg choice='opt'>-S <replaceable>source-domainname</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>destination-domainname</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>source-hostfile</replaceable></arg>
+    <arg choice='opt'>-H <replaceable>destination-hostfile</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>num-of-replicas</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>num-of-threads</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfrep</command> creates specified number of replicas of
+Gfarm files specified by the <parameter>path</parameter> to specified
+set of destination hosts.  When set of source hosts are specified,
+only files stored on the set of source hosts are replicated.  A set of
+hosts can be specified by a domain name and/or a host file.  When both
+a domain name and a host file are specified, a set of hosts is
+determined by both conditions.
+</para>
+<para>
+If the <parameter>path</parameter> parameter is a directory,
+files under the directory will be copied recursively.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-S</option> <parameter>source-domainname</parameter></term>
+<listitem>
+<para>
+Specifies the domain name of source filesystem nodes from which
+replicas will be copied.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter>destination-domainname</parameter></term>
+<listitem>
+<para>
+Specifies the domain name of destination filesystem nodes to which
+replicas will be copied.
+</para>
+<para>If neither this nor the <option>-H</option> option is specified, 
+replicas may be copied to any available host.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter>source-hostfile</parameter></term>
+<listitem>
+<para>Specifies a file which describes hostnames of
+source filesystem nodes from which the replica will be made.
+The <parameter>source-hostfile</parameter> consists of a filesystem
+node name on each line.
+</para>
+<para>
+if ``-'' is specified, standard input is used to read the host list.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter>destination-hostfile</parameter></term>
+<listitem>
+<para>Specifies a file which describes hostnames of
+destination filesystem nodes on which the replica will be made.
+The <parameter>destination-hostfile</parameter> consists of a
+filesystem node name on each line.
+</para>
+<para>
+if ``-'' is specified, standard input is used to read the host list.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option> <parameter>num-of-replicas</parameter></term>
+<listitem>
+<para>
+Specifies the required number of file replicas, counting already
+existing ones.
+If there are a sufficient number of replicas in the destination hosts,
+neither any copying nor any removal will be done.
+</para>
+<para>If this option is not specified, <option>-N 1</option> is assumed.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter>num-of-threads</parameter></term>
+<listitem>
+<para>
+Specifies the number of threads to create file replicas
+simultaneously.  This option is only available when
+compiled by an OpenMP C compiler.  By default, it will be the smallest
+among the number of total files, the number of source hosts, and the
+number of destination hosts.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>
+Lets gfrep command do a migrate/move, instead of doing replication.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+Removes file replicas when a set of destination nodes has more file
+replicas than specified.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+Displays files to be replicated, but does nothing.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+Suppresses non-error messages.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Displays verbose output.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>
+A source host is not always selected within a set of source hosts.
+</para>
+</refsect1>
+</refentry>

@@ -1,0 +1,187 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfrep.1'>
+
+<refentryinfo><date>31 May 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrep</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfrep</refname>
+<refpurpose>Gfarm ファイルの複製を作成する．</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrep</command>
+    <arg choice='opt'>-mnqvx</arg>
+    <arg choice='opt'>-S <replaceable>複製元ドメイン名</replaceable></arg>
+    <arg choice='opt'>-D <replaceable>複製先ドメイン名</replaceable></arg>
+    <arg choice='opt'>-h <replaceable>複製元ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-H <replaceable>複製先ホスト指定ファイル</replaceable></arg>
+    <arg choice='opt'>-N <replaceable>複製数</replaceable></arg>
+    <arg choice='opt'>-j <replaceable>並列数</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>引数 <parameter>path</parameter> で指定したファイルの複製を，
+指定されたホスト群に，指定された複製の数だけ作成します．
+複製作成元のホスト群が指定された場合，
+そのホスト群にファイルの複製があるときに限り，
+複製が作成されます．
+ホスト群は，ドメイン名とホスト指定ファイルにより指定可能ですが，
+両方が指定された場合は両方の条件を満たすホスト群が指定されたことになります．
+</para>
+<para><parameter>path</parameter> がディレクトリの場合，
+そのディレクトリ以下のファイルの複製を再帰的に作成します．</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-S</option> <parameter>複製元ドメイン名</parameter></term>
+<listitem>
+<para>
+ファイル複製元のホストのドメイン名を指定します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-D</option> <parameter>複製先ドメイン名</parameter></term>
+<listitem>
+<para>
+ファイル複製作成先のホストのドメイン名を指定します．
+</para>
+<para>このオプションも <option>-H</option> オプションも指定しない場合，
+利用可能な全ホスト群を対象としてファイル複製を作成します．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h</option> <parameter>複製元ホスト指定ファイル</parameter></term>
+<listitem>
+<para>ファイル複製元のホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
+</para>
+<para>
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-H</option> <parameter>複製先ホスト指定ファイル</parameter></term>
+<listitem>
+<para>ファイルの複製を作成するホスト名のリストを記述した
+ファイル名を指定します．
+ホスト名は，ファイル中の各行に一ホストずつ記述します．
+</para>
+<para>
+ファイル名として ``-'' を指定した場合，標準入力からホス
+ト名のリストを読み込みます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-N</option> <parameter>複製数</parameter></term>
+<listitem>
+<para>
+必要な複製の数を指定します．
+複製先に，指定された数以上の複製が既に存在する場合は，
+複製の作成も削除も行いません．
+</para>
+<para>
+このオプションを省略すると <option>-N 1</option>
+と指定されたものとみなされます．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-j</option> <parameter>並列数</parameter></term>
+<listitem>
+<para>指定された並列数でファイル複製を作成します．
+このオプションは OpenMP C コンパイラでコンパイルされたときに
+限り有効です．デフォルトでは，指定された総ファイル数，
+複製元ホスト数，複製先ホスト数のうちの最小となります．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-m</option></term>
+<listitem>
+<para>
+複製ではなく移動を行います．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-x</option></term>
+<listitem>
+<para>
+複製先に，指定された数以上の複製が存在する場合は，
+複製を消去し，指定された数にします．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-n</option></term>
+<listitem>
+<para>
+ファイル複製が作成されるファイルを表示します．
+実際には何も実行されません．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-q</option></term>
+<listitem>
+<para>
+エラーではないメッセージの出力を行いません．
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>
+複製処理に関して，冗長な表示を行います，
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します．</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+<para>
+複製作成元となるホストは，
+実際には複製作成元として指定されたホスト群から選ばれるとは限りません．
+</para>
+</refsect1>
+</refentry>

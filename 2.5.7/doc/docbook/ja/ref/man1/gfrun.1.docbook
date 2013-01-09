@@ -1,0 +1,205 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfrun.1'>
+
+<refentryinfo><date>1 May 2002</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfrun</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfrun</refname>
+<refname>gfrsh</refname>
+<refname>gfssh</refname>
+<refpurpose>ファイルシステムノードで gfarm 並列コマンドを実行する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfrun</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfrsh</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfssh</command>
+    <arg choice='opt'><replaceable>オプション</replaceable></arg>
+    <arg choice='plain'><replaceable>プログラム名</replaceable></arg>
+    <arg choice='plain' rep='repeat'><replaceable>引数</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+並列プログラムを実行します．実行されるファイルシステムノードは，
+-G オプション，-H オプションあるいは -N オプションにより決定されます．
+</para>
+
+<para>
+-G オプションはファイル・アフィニティ・スケジューリングのための
+Gfarm ファイル <parameter>gfarm-URL</parameter> を指定します．
+ファイル・アフィニティ・スケジューリングでは，指定された Gfarm
+ファイルのそれぞれのファイル断片に対し，複製が格納されている
+ノードのうち一ノードが選ばれます．つまり，ファイル断片の数と
+同数のプロセスが，ファイル断片を格納しているノードで実行され
+るということになります．
+-H オプションは <parameter>ホスト指定ファイル</parameter> を指定します．
+この場合，そのファイルに記述されたノードで並列プログラムを実行します．
+-N オプションは実行されるファイルシステムノードの
+<parameter>ノード数</parameter> を指定します．
+</para>
+
+<para>
+-G オプション，-H オプション，-N オプションは同時に二つ以上指定するこ
+とはできません．また，-G オプション，-H オプション，-N オプションがい
+ずれも指定されない場合は，引数に指定された既に存在する Gfarmファイルの
+うち一番はじめのファイルを利用したファイル・アフィニティ・スケジューリ
+ングにより決定されます．引数中に既に存在する Gfarm ファイルが存在しな
+い場合は，適当なノードが1 ノード選択され，逐次実行となります．
+</para>
+
+<para>gfrsh や gfssh コマンドは，gfrcmd の代わりに rsh，ssh を
+利用することを除いて，gfrun と同様です．</para>
+
+<para>プログラム名としては，gfreg コマンドで登録したプログラムの gfarm-URL 
+も指定できます．</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-G</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>gfarm-URL のファイル・アフィニティ・スケジューリングにより
+並列プログラムを実行します．
+ファイル・アフィニティ・スケジューリングの動作については，DESCRIPTION 節を
+参照してください．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-H</option> <parameter>ホスト指定ファイル</parameter></term>
+<listitem>
+<para>並列プログラムを実行するファイルシステムノード群を記載したファイル名を
+指定します．
+ホスト名は，各行に一ホストずつ記述します．
+</para>
+<para>
+ファイル名として ``-'' を指定した場合，標準入力からホスト名のリストを
+読み込みます．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-N</option> <parameter>ノード数</parameter></term>
+<listitem>
+<para>並列プログラムを実行するファイルシステムノードのノード数を指定します．
+ファイルシステムノードは負荷の小さいノードから順にノード数分選ばれます．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-r</option></term>
+<listitem>
+<para>ファイルを遠隔参照する場合，参照に先立ち自ホストにファイル複製を
+作成します．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-o</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>実行される並列プログラムの標準出力を gfarm-URL に書き出します．</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-e</option> <parameter>gfarm-URL</parameter></term>
+<listitem>
+<para>実行される並列プログラムの標準エラー出力を gfarm-URL に書き出します．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-I</option> <parameter>フラグメント番号</parameter></term>
+<listitem>
+<para>指定されたフラグメント番号のプロセスだけが実行されます．
+このオプションは，<option>-G</option> オプションあるいは引数に与えた Gfarm
+ファイルによって，ファイル・アフィニティ・スケジューリングが選択されている
+場合，および <option>-N</option> オプションが指定されている場合のみ利
+用可能です．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>詳細にエラーメッセージを表示します．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-p</option></term>
+<listitem>
+<para>プログラム実行後に Gfarm 並列I/O APIの所要時間を表示します．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-g</option></term>
+<listitem>
+<para>実行されるプログラムを gfarm 化されたプログラムだと明示的に指定します．
+この結果，プログラムには Gfarm 特有のオプションが渡されます．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-u</option></term>
+<listitem>
+<para>実行されるプログラムを通常のプログラムであると明示的に指定します．
+この場合，プログラムに Gfarm 特有のオプションが渡されることはありません．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-b</option></term>
+<listitem>
+<para>
+Gfarm システムコール・フック・ライブラリを利用して実行されるプログラムにおいて，
+デフォルトのファイル・ビューをグローバル・ファイル・ビューに設定します．
+このオプションをつけないと，
+デフォルトのファイル・ビューはローカル・ファイル・ビューとなります．
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します．</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='enviromnent-variables'><title>ENVIROMNENT VARIABLES</title>
+<variablelist>
+<varlistentry>
+<term><envar>GFRUN_CMD</envar></term>
+<listitem>
+<para>遠隔起動コマンドを指定します．例えば globus-job-run が指定された場合，
+gfrun は globus-job-run を使ってそれぞれのプロセスを起動します．</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+

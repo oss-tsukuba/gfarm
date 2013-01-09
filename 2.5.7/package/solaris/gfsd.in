@@ -1,0 +1,69 @@
+#!/sbin/sh
+#
+# $Id$
+
+PROG="gfsd"
+FILE=$PROG
+
+CONF="/etc/gfarm.conf"
+DAEMON="@prefix@/sbin/$PROG"
+PIDFILE="/var/run/${FILE}.pid"
+OPTIONS=
+globus_location="@globus_location@"
+
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
+then
+	GLOBUS_LOCATION="$globus_location"
+	export GLOBUS_LOCATION
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+fi
+
+case $1 in 
+start)
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
+		exit 1
+	fi
+	if [ ! -f "$CONF" ]; then
+		echo -n "$CONF is not configured"
+		exit 1
+	fi
+	$DAEMON -P "$PIDFILE" $OPTIONS
+	;;
+
+stop)
+	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
+		rm -f "$PIDFILE"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+restart)
+	$0 stop
+	$0 start
+	;;
+
+status)
+	if [ -f "$PIDFILE" ] && kill -0 `cat "$PIDFILE"`; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | restart | status }"
+	exit 1
+	;;
+esac
+exit 0

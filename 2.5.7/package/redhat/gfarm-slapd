@@ -1,0 +1,69 @@
+#! /bin/sh
+#
+# gfarm-slapd
+#
+# chkconfig: 2345 85 15
+# description: LDAP slapd for Gfarm
+# processname: slapd
+# pidfile: /var/run/gfarm-slapd.pid
+# config: /etc/gfarm-ldap/slapd.conf
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+prog="slapd"
+FILE="gfarm-slapd"
+
+CONF=/etc/gfarm-ldap/slapd.conf
+PORT=389
+DAEMON=/usr/sbin/$prog
+LOCKFILE=/var/lock/subsys/$FILE
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+
+[ -f "$DAEMON" ] || exit 0
+[ -f "$CONF" ] || exit 0
+
+RETVAL=0
+
+case "$1" in
+  start)
+	echo -n "Starting $FILE: "
+	daemon "$DAEMON" -f "$CONF" -h "ldap://:$PORT/"
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch "$LOCKFILE"
+	echo
+	;;
+  stop)
+	echo -n "Stopping $FILE: "
+	killproc "$FILE"
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f "$LOCKFILE"
+	echo
+	;;
+  status)
+	status "$PROG"
+	RETVAL=$?
+	;;
+  restart|reload)
+  	$0 stop
+	$0 start
+	# is this available?: killall -HUP "$PROG"
+	RETVAL=$?
+	;;
+  *)
+	echo "Usage: $FILE {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit $REVAL

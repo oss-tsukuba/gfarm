@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>gfs_chmod</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFS-CHMOD.3"
+></A
+>gfs_chmod</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfs_chmod&nbsp;--&nbsp;change permissions of a file</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><DIV
+CLASS="FUNCSYNOPSIS"
+><P
+></P
+><A
+NAME="AEN12"
+></A
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="FUNCSYNOPSISINFO"
+>#include &#60;gfarm/gfarm.h&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+><CODE
+><CODE
+CLASS="FUNCDEF"
+><TT
+CLASS="FUNCTION"
+><SPAN
+CLASS="RETURNVALUE"
+>char *</SPAN
+>gfs_chmod</TT
+></CODE
+>(char * <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>, mode_t <TT
+CLASS="PARAMETER"
+><I
+>mode</I
+></TT
+>);</CODE
+></P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+><TT
+CLASS="FUNCTION"
+>gfs_chmod()</TT
+> changes the mode of the file
+given by <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>.  Permission bit masks of
+<TT
+CLASS="PARAMETER"
+><I
+>mode</I
+></TT
+> are similar to ones of mode parameter to
+<TT
+CLASS="FUNCTION"
+>chmod(2)</TT
+>, though only the least 9 bit are
+effective.</P
+><P
+>An executable file cannot be changed to a non-executable file
+and vice versa, unless the number of fragment of the file is only one.
+In detail, a file has multiple fragments with any execution bit should not
+be changed to that with no execution bit.  It is necessary to have
+at least one execution bit.  Similarly, a file has multiple fragments
+with no execution bit should not be changed to that with any execution bit.</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="RETURN-VALUES"
+></A
+><H2
+>RETURN VALUES</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><CODE
+CLASS="CONSTANT"
+>NULL</CODE
+></DT
+><DD
+><P
+>The function terminated successfully.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_MEMORY</CODE
+></DT
+><DD
+><P
+>Insufficient memory was available.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_AUTHENTICATION</CODE
+></DT
+><DD
+><P
+>User authentication failed when connecting to gfmd(8) or gfsd(8).</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_PERMISSION_DENIED</CODE
+></DT
+><DD
+><P
+>The parent directory of <TT
+CLASS="PARAMETER"
+><I
+>gfarm_url</I
+></TT
+>
+did not allow write permission.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_OPERATION_NOT_PERMITTED</CODE
+></DT
+><DD
+><P
+>The effective UID does not match the owner of the file, and is not
+zero.  Or an attempt was made to change an executable file with more than
+one fragment to a non-executable file, or vice versa.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NO_SUCH_OBJECT</CODE
+></DT
+><DD
+><P
+>The file does not exist.</P
+></DD
+><DT
+><CODE
+CLASS="CONSTANT"
+>GFARM_ERR_NOT_A_DIRECTORY</CODE
+></DT
+><DD
+><P
+>A component of the path prefix is not a directory.</P
+></DD
+><DT
+>Others</DT
+><DD
+><P
+>An error except the above occurred.  The reason is shown by its
+pointed strings.</P
+></DD
+></DL
+></DIV
+></DIV
+></BODY
+></HTML
+>

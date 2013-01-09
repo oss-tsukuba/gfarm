@@ -1,0 +1,266 @@
+This document only describes some important problems.
+Please refer the following URL for more detail:
+	https://sourceforge.net/apps/trac/gfarm/report/1
+
+*** General problems with Gfarm
+
+- On some Linux distributions, memory leaks are observed, if ldap is
+  specified in /etc/nsswitch.conf.
+  All gfarm related programs, including gfmd, gfsd, gfarm applications
+  are affected by this problem, but the leaks are most significant in
+  gfarm2fs.
+  This is not a bug of Gfarm itself, but a bug of nss_ldap module which
+  is supplied by the distributions.
+
+  The Linux distribution which this problem is observed on:
+	CentOS 5.4 with glibc-2.5-49.x86_64.rpm
+	CentOS 5.5 with glibc-2.5-49.el5_5.7.x86_64.rpm	
+	CentOS 5.6 with glibc-2.5-58.el5_6.4.i386.rpm
+
+  Countermeasure:
+	This problem is workarounded by using nscd.
+
+- On some Linux distributions, gfarm programs and gfsd sometimes hang,
+  if ldap is specified in /etc/nsswitch.conf.
+
+  This is not a bug of Gfarm itself, but a bug of system supplied libraries.
+  More specifically, this problem occurs when the following conditions are
+  all satisfied:
+  1. A program calls fork(2) system call.
+  2. The program calls a function like getpwuid(3) that indirectly calls
+    nss_ldap module before calling fork(2).
+  3. Both the parent process and the child process of the program call
+    such functions after calling fork(2).
+  4. The program is linked with pthread library.
+  This symptom is observed in Fedora Core 3, Fedora Core 5 and CentOS 4.4,
+  but haven't been observed in Red Hat 8.
+
+  Plans for fixes:
+	For original vendor of the nss_ldap, please refer the following
+	bug database:
+		http://bugzilla.padl.com/show_bug.cgi?id=271
+		http://bugzilla.padl.com/show_bug.cgi?id=414
+
+	The concrete solution depends on each Linux distributon vendors.
+
+	For Fedore Core Linux, please refer the following bug database:
+		https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=154314
+
+	For Red Hat Enterprise Linux, please refer the following bug database:
+		https://bugzilla.redhat.com/show_bug.cgi?id=474181
+	For Red Hat Enterprise Linux 5 and CentOS 5, 
+	nss_ldap-253-17.el5 RPM or later version may mitigate this problem,
+	but we haven't tested it yet.  Please refer RHBA-2009:0241-4 below
+	for the changes in the RPM:
+		http://rhn.redhat.com/errata/RHBA-2009-0241.html
+
+- gfmd-initiated replication (either an automatic replication by the
+  extended attribute gfarm.ncopy, or a replication which is requested by
+  gfs_replicate_file_to_request()/gfs_replicate_file_from_to_request())
+  may be canceled in some cases, for example, under a heavy load.
+	https://sourceforge.net/apps/trac/gfarm/ticket/245
+
+  Plans for fixes:
+	We are planning a fix until December 2011.
+
+- gfs_pio_sync() doesn't really update the metadata now.
+
+  Plans for fixes:
+	Not determined yet.
+
+- When a gfsd is stopped unexpectedly while the gfsd is being used to access
+  a file via an OPEN operation, the access stops working.
+
+  You have to reopen the file to access it again.
+
+  For example, this symptom happens when the filesystem node, which is
+  running the gfsd, is rebooted.
+
+  Plans for fixes:
+	Not determined yet.
+
+- File view is not implemented.
+
+  Plans for fixes:
+	Not determined yet.
+
+- The stat API doesn't return the exact file size until the file is closed.
+
+  Plans for fixes:
+	Not determined yet.
+
+- If a program, which has already begun to use the gfarm library, makes a
+  fork(2) system call, either the parent process or child process is allowed
+  to
+call
+  gfarm APIs.  If both of them call a gfarm API, it's possible that the call
+  won't work correctly, because requests to a gfsd server from the
+  parent process and the child process may be mixed.  This problem may
+  occur even if the parent and the child process access different files,
+  because the connection to the gfsd server will be shared if the
+  connection was established before fork(2), and both files belong
+  to the same gfsd server.
+
+  Also, the child process must complete the file access before the
+  parent process calls exit(3), if the child process accesses a file
+  which was opened by the parent before fork(2).  This is because the
+  parent process requests a close operation from the gfsd at the time of
+  exit(3).
+  Thus, the access from the child process will fail after the parent
+  process performs exit(3).
+
+  Furthermore, no close request will be sent to the gfsd, when the
+  child process performs a close operation on a file which was opened
+  by the parent process before fork(2). Thus, it's possible that step 3
+  of the following scenario will fail:
+  1. The parent process performs fork(2) while opening many files which belong
+    to the same gfsd.
+  2. The child process closes all such files.
+  3. The child process tries to open many files that belong to the same
+    gfsd.
+  This is because the close request in step 2 won't be sent to the gfsd,
+  and the gfsd is still opening the descriptors of the files in step 1.
+
+  Plans for fixes:
+	Not determined yet.
+
+- There is no way to stop a replication process.
+
+  Even if you kill a gfrep command, a network copy process cannot be
+  stopped until the copy completes for the ongoing file fragment.
+  The metadata for the replica won't be updated, though.
+
+  Plans for fixes:
+	Not determined yet.
+
+- The Gfarm library isn't multithread safe.
+
+  Plans for fixes:
+	Not determined yet.
+
+- The Gfarm library doesn't support a process that uses multiple user
+  privileges with setuid(), seteuid(), setgid() or setegid().
+
+  Plans for fixes:
+	Not determined yet.
+
+- It's known that some combinations of NFS server and NFS client sometimes
+  make sharedsecret authentication fail.
+
+  You can see whether you have this problem or not by trying the following
+  command to see if the second field of gfhost output is "x" instead of "s".
+	sh -c 'seq 60 | while read n; do gfkey -f; gfhost -l OTHER-HOST; done'
+  The "OTHER-HOST" here is a remote host that shares your home directory
+  (via NFS) with the machine from which ???on which you are invoking this
+command.
+
+  You can work around this problem in one of the following ways:
+  - You can use a longer expiration period of the key by using
+    the "gfkey -f -p <EXPIRATION_PERIOD_BY_SECOND>" command.
+    If you specify a long enough period, key regeneration won't happen
+    while you are running a job. The default period is 1 day.
+  - You can use "gsi_auth" or "gsi" authentication instead of "sharedsecret".
+  - Or, maybe you can change your NFS server to another OS.
+
+  Combinations with which this symptom has been observed:
+	NFS server:			NFS client:
+	Linux 2.6.12 (Fedora Core 4)	Linux 2.4.20 (RedHat 8)
+	Linux 2.6.12 (Fedora Core 4)	Linux 2.6.9  (Fedora Core 3)
+	Linux 2.6.12 (Fedora Core 4)	Linux 2.6.11 (Fedora Core 4)
+
+  Combinations with which this symptom has never been observed:
+	NFS server:			NFS client:
+	Solaris 2.6			Linux 2.4.18 (RedHat 8)
+	NetBSD 3.0			Linux 2.4.18 (RedHat 8)
+
+- We don't have manual pages about environment variables supported by Gfarm.
+
+  Plans for fixes:
+	Not determined yet.
+
+- There is small window that gfs_getxattr()/gfs_setxmlattr()/etc return
+  old data just after an update by gfs_setxattr()/gfs_setxmlattr()/etc,
+  if gfmd is recording metadata in a journaling file.
+
+  Plans for fixes:
+	Not determined yet.
+
+  Countermeasure:
+	For the extended attribute case, you can workaround this symptom
+	by caching the extended attribute in the memory of gfmd, by
+	using "xattr_cache" directive in gfmd.conf.
+
+- gfs_findxmlattr() does not search attributes for files which are referred
+  by symbolic link.
+
+  When the symbolic link is specified for the argument oof gfs_findxmlattr(),
+  the file or directory referred by the symbolic link is retrieved.
+  However, if the symbolic links exist under the specified directory, their
+  referring files are not retrieved.  Instead, the attributes of the symbolic
+  links are retrieved.
+  As for the reason why this problem occurs, the path resolution is executed
+  at client side but gfs_findxmlattr() executes the process at gfmd that
+  traverses files under a directory.
+
+- The GSI authentication is not supported for the inter-gfmd
+  communication which is used for the redundant configuration of gfmd.
+	https://sourceforge.net/apps/trac/gfarm/ticket/233
+
+  Plans for fixes:
+	Not determined yet.
+
+- The redundant configuration of gfmd is not supported, if LDAP is
+  used as the backend database.
+
+  Plans for fixes:
+	Not determined yet.
+
+- The quota feature is not supported, if LDAP is used as the backend database.
+	https://sourceforge.net/apps/trac/gfarm/ticket/26
+
+  Plans for fixes:
+	Not determined yet.
+
+
+*** Problems with gfarm commands
+
+- The following commands are not provided yet:
+
+  gfdump, gfcd, gfpwd, gfsck, gftest
+
+  Plans for fixes:
+	Not determined yet.
+
+- There is no reference manual for the following commands:
+
+  config-gfarm, config-gfarm-update, config-gfsd, gfarm.arch.guess,
+  gfrm, gfarm-pcp, gfarm-prun,
+  gfvoms-sync
+
+  Plans for fixes:
+	Not determined yet.
+
+
+*** Problems with gfarm2fs commands
+
+- When multiple different open(2) calls are made against same file,
+  the consistency which is usually expected in read(2)/write(2) system
+  calls is not always achieved.
+  This is because gfarm2fs uses distinct gfs_pio_open() call or
+  gfs_pio_create() call for each open(2) call, and as the result,
+  the gfarm library and the kernel network layer use different buffers
+  for the calls.  For example, database files for PostgreSQL cannot be
+  provided by gfarm2fs due to this problem.
+
+  Plans for fixes:
+	Not determined yet.
+
+- After a ftruncate(2) system call, a read(2) system call against same
+  file may return short size than expected.
+  This is because FUSE uses the "getattr" entry point (instead of
+  "fgetattr") in this case, and the read(2) size will be affected by
+  the problem that "the stat API doesn't return the exact file size
+  until the file is closed" which is described above.
+
+  Plans for fixes:
+	We are planning a fix.

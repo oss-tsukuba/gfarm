@@ -1,0 +1,141 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+<!-- $Id$ -->
+
+<refentry id='gfmd.8'>
+
+<refentryinfo><date>14 Feb 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfmd</refentrytitle>
+<manvolnum>8</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfmd(8)</refname>
+<refpurpose>Gfarm metadata server</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfmd</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><command>gfmd</command> is a Gfarm filesystem metadata server for accessing
+the filesystem metadata of the Gfarm filesystem.  <command>gfmd</command> must
+be running on a metadata server node in advance.</para>
+
+<para>It is possible for <command>gfmd</command> to be executed as a non-privileged user
+process, although only the user that executes the <command>gfmd</command> can be authenticated.
+Other users cannot use it.
+For details, see SETUP.private.en document
+</para>
+
+<para>To access gfmd, 
+the hostname and the port number should be
+specified by the metadb_server_host and metadb_server_port statements,
+respectively, in <filename>~/.gfarm2rc</filename>
+or in <filename>%%SYSCONFDIR%%/gfarm2.conf</filename>
+on a client node.</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-L</option> <parameter>log-level</parameter></term>
+<listitem>
+<para>Specifies a log priority level.  The log output, which priority
+is higher or equal to this level, will be sent to syslog or standard error.
+Please refer gfarm2.conf(5) for the priority levels which can be specified
+by this option.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-P</option> <parameter>pid-file</parameter></term>
+<listitem>
+<para>Specifies a file name to be used to record the process ID of gfmd.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-d</option></term>
+<listitem>
+<para>Specifies the debug mode.  With the -d option, gfmd runs as a
+foreground process, not a daemon.</para>
+<para>
+If this option is specified and <option>-L</option> is not specified,
+the log level is set to "debug".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-f</option> <parameter>config-file</parameter></term>
+<listitem>
+<para>Specifies a configuration file that is read instead of the default
+configuration file.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-p</option> <parameter>port</parameter></term>
+<listitem>
+<para>Specifies a port number to be used by gfmd.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-s</option> <parameter>syslog-facility</parameter></term>
+<listitem>
+<para>Specifies a syslog facility to report errors encountered by gfmd.
+By default,
+local0 is used.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-v</option></term>
+<listitem>
+<para>Makes gfmd output verbose log message on authentication.
+This is useful, when one has to resolve an issue about GSI authenticaion.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='files'><title>FILES</title>
+<variablelist>
+<varlistentry>
+<term><filename>%%SYSCONFDIR%%/gfmd.conf</filename></term>
+<listitem>
+<para>configuration file</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gfarm2.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+</para>
+</refsect1>
+
+</refentry>
+

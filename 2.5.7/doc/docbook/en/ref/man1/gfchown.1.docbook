@@ -1,0 +1,64 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfchown.1'>
+
+<refentryinfo><date>19 Apr 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfchown</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfchown</refname>
+<refpurpose>change Gfarm file owner and group</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfchown</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'>owner[:group]</arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gfchown</command>
+    <arg choice='opt'><replaceable>options</replaceable></arg>
+    <arg choice='plain'>:group</arg>
+    <arg choice='opt' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+<command>gfchown</command> changes an owner and a group of Gfarm files.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+
+<variablelist>
+
+<varlistentry>
+<term><option>-h</option></term>
+<listitem>
+<para>Affects symbolic links instead of referenced files/directories.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>Displays a list of command options.</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+
+</refsect1>
+</refentry>

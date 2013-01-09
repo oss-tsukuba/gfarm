@@ -1,0 +1,148 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfarm-attr.5'>
+
+<refentryinfo><date>1 Apr 2011</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfarm_attr</refentrytitle>
+<manvolnum>5</manvolnum>
+<refmiscinfo>Gfarm_attr</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfarm_attr</refname>
+<refpurpose>Gfarm Extended Attributes</refpurpose>
+</refnamediv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+Every files and directories in Gfarm filesystem can have extended
+attributes.  Extended attributes are name:value pairs.
+</para>
+
+</refsect1>
+
+<refsect1 id='xattrnamespace'>
+<title>EXTENDED ATTRIBUTE NAMESPACES</title>
+
+<para>
+The extended attributes which have "gfarm." or "gfarm_root." prefix
+name are specially treated in Gfarm filesystem.  General Gfarm users
+can freely use the extended attributes which have "user." prefix name.
+XML extended attributes can have any names.
+</para>
+
+<para>
+Everyone can get the "gfarm.*" extended attributes.  Owner or
+gfarmroot group can modify the "gfarm.*" extended attributes.
+</para>
+
+<para>
+The users in gfarmroot group or the users in "gfarm_root.uesr" of the
+entry or the groups in "gfarm_root.group" of the entry can get/modify
+the "gfarm_root.*" extended attributes.
+</para>
+
+<para>
+The "user.*" extended attributes can be gotten/modified on the entry
+(file or directory) permission.
+</para>
+
+<para>
+Symbolic links cannot have any extended attributes.
+</para>
+
+</refsect1>
+
+<refsect1 id='gfarm-xattr'>
+<title>GFARM EXTENDED ATTRIBUTES</title>
+
+<para>
+The following is a list of the extended attribute names used in Gfarm
+filesystem.
+</para>
+
+<variablelist>
+
+<varlistentry>
+<term><parameter>gfarm.ncopy</parameter></term>
+<listitem>
+<para>
+This is the number of file replicas to be created automatically in
+gfmd.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_access</parameter></term>
+<listitem>
+<para>
+This is Access ACL (Access Control List).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm.acl_default</parameter></term>
+<listitem>
+<para>
+This is Default ACL. Only directories can have/use this extended
+attribute.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm_root.user</parameter></term>
+<listitem>
+<para>
+This is the list of user names who can have the privilege for the
+entry (file or directory).  The names are separated by a new line
+(\n).  This extended attribute is copied to a new entry (file or
+directory) from the parent directory (when the parent directory has
+this extended attribute).
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><parameter>gfarm_root.group</parameter></term>
+<listitem>
+<para>
+This is the list of group names who can have the privilege for the
+entry (file or directory).  The names are separated by a new line
+(\n).  This extended attribute is copied to a new entry (file or
+directory) from the parent directory (when the parent directory has
+this extended attribute).
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='security'>
+<title>SECURITY NOTES</title>
+<para>
+When untrusted users are registered in the gfarm_root.{user,group}
+extended attributes of any files or directories,
+a Security Hole exists on the mount point of gfarm2fs with
+"-o suid,allow_other" option executed by root (even if either
+"-o ro" option or "-o default_permissions" option is also specified).
+Therefore both "-o suid,allow_other" option and
+gfarm_root.{user,group} extended attributes should not be used.
+</para>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry><refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfgetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+  <citerefentry><refentrytitle>gfsetfacl</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+</refsect1>
+</refentry>

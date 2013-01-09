@@ -1,0 +1,89 @@
+#! /bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+# gfarmd 
+DAEMON_GFARMD=/usr/sbin/gfarmd
+NAME_GFARMD=gfarmd
+DESC_GFARMD="gfarmd"
+# gfmd
+DAEMON_GFMD=/usr/sbin/gfmd
+NAME_GFMD=gfmd
+DESC_GFMD="gfmd"
+
+test -f $DAEMON_GFARMD || exit 0
+test -f $DAEMON_GFMD || exit 0
+set -e
+
+case "$1" in
+  start)
+	# gfarmd
+	echo -n "Starting $DESC_GFARMD: "
+	start-stop-daemon --start --quiet --exec $DAEMON_GFARMD
+	echo "$NAME_GFARMD."
+
+	# gfmd
+	echo -n "Starting $DESC_GFMD: "
+	start-stop-daemon --start --quiet --exec $DAEMON_GFMD
+	echo "$NAME_GFMD."
+	;;
+  stop)
+	# gfarmd
+	echo -n "Stopping $DESC_GFARMD: "
+#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFARMD
+        # to avoid post-installation script abort on non-zero return value.
+	echo `killall $NAME_GFARMD`&>/dev/null 
+	echo "$NAME_GFARMD."
+
+	# gfmd
+	echo -n "Stopping $DESC_GFMD: "
+#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFMD
+        # to avoid post-installation script abort on non-zero return value.
+	echo `killall $NAME_GFMD`&>/dev/null 
+	echo "$NAME_GFMD."
+	;;
+  #reload)
+	#
+	#	If the daemon can reload its config files on the fly
+	#	for example by sending it SIGHUP, do it here.
+	#
+	#	If the daemon responds to changes in its config file
+	#	directly anyway, make this a do-nothing entry.
+	#
+	# echo "Reloading $DESC_GFARMD configuration files."
+	# start-stop-daemon --stop --signal 1 --quiet --pidfile \
+	#	/var/run/$NAME_GFARMD.pid --exec $DAEMON_GFARMD
+  #;;
+  restart|force-reload)
+	#
+	#	If the "reload" option is implemented, move the "force-reload"
+	#	option to the "reload" entry above. If not, "force-reload" is
+	#	just the same as "restart".
+	#
+
+        # gfarmd
+	echo -n "Restarting $DESC_GFARMD: "
+#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFARMD
+        # to avoid post-installation script abort on non-zero return value.
+	echo `killall $NAME_GFARMD`&>/dev/null 
+	sleep 1
+	start-stop-daemon --start --quiet --exec $DAEMON_GFARMD
+	echo "$NAME_GFARMD."
+
+	# gfmd
+	echo -n "Restarting $DESC_GFMD: "
+#	start-stop-daemon --stop --oknodo --quiet --exec $DAEMON_GFMD
+        # to avoid post-installation script abort on non-zero return value.
+	echo `killall $NAME_GFMD`&>/dev/null 
+	sleep 1
+	start-stop-daemon --start --quiet --exec $DAEMON_GFMD
+	echo "$NAME_GFMD."
+	;;
+  *)
+	N="/etc/init.d/gfarm-server"
+	# echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

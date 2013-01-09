@@ -1,0 +1,97 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfsetdir.1'>
+
+<refentryinfo><date>2 Jul 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfsetdir</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gfsetdir</refname>
+<refpurpose>Gfarm 作業ディレクトリを変更するコマンド列を出力する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfsetdir</command>
+    <group choice='opt'>
+      <arg choice='plain'>-s</arg>
+      <arg choice='plain'>-c</arg>
+    </group>
+    <arg choice='opt'><replaceable>ディレクトリ</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>Gfarm 作業ディレクトリを 指定したディレクトリに変更するシェルコ
+マンドを標準出力に出力します。ディレクトリを指定しない場合は、ユーザの 
+Gfarm ホームディレクトリである
+gfarm:/<replaceable>グローバルユーザ</replaceable> に変更する
+コマンドを出力します。
+</para>
+<para>
+ユーザが使用しているシェルを自動的に判定してそのシェルが実行可能な
+コマンドを出力します。
+</para>
+<para>
+出力コマンドを実行して Gfarm 作業ディレクトリを変更する
+<command>gfcd</command>
+を利用するために、各ユーザのシェル設定ファイルに以下の定義を追加して
+ください。
+</para>
+<variablelist>
+  <varlistentry>
+    <term>Bourne shell 系シェルの場合</term>
+    <listitem>
+      <screen>gfcd() { eval "`gfsetdir $1`"; }</screen>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term>csh  系シェルの場合</term>
+    <listitem>
+      <screen>alias gfcd 'eval `gfsetdir \!*`'</screen>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-s</option></term>
+<listitem>
+<para>Bourne shell 系シェル用のコマンドを出力します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-c</option></term>
+<listitem>
+<para>csh 系シェル用のコマンドを出力します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfcd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>gfpwd</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+</refentry>

@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# $NetBSD: slapd.sh,v 1.6 2004/07/24 03:32:24 jlam Exp $
+#
+# OpenLDAP standalone LDAP daemon
+#
+# PROVIDE: gfarm-slapd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+if [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+fi
+
+CONF="@config_gfarm_slapd_config@"
+PORT=@config_gfarm_backend_port@
+FILE="gfarm-slapd"
+
+name="gfarm_slapd"
+rcvar=${name}
+command="@config_gfarm_openldap_libexec@/slapd"
+pidfile="@config_gfarm_backend_pid_file@"
+required_dirs="@config_gfarm_backend_data_dir@"
+required_files="$CONF"
+# add more flags through ${${name}_flags}
+command_args="-f $CONF -h ldap://:$PORT/"
+
+if [ -f /etc/rc.subr ]; then
+	load_rc_config ${FILE}
+	run_rc_command "$1"
+else
+	echo -n " ${name}"
+	${command} ${slapd_flags} ${command_args}
+fi

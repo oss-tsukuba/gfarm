@@ -1,0 +1,165 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gmonitor3.1'>
+
+<refentryinfo><date>10 Oct 2003</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gmonitor3</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>snmptool</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gmonitor3</refname>
+<refpurpose>GLogger 3.0 data is displayed in graph.</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gmonitor3</command>
+    <arg choice='opt'><replaceable>OPTIONS</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>
+The output data from GLogger 3.0 is displayed in graph.
+The environmet which installed JRE 1.4 (or later) is required.
+The check of operation is carried out in the environment which installed 
+Java2 SDK 1.4.2 on Linux.
+</para>
+
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+
+<varlistentry>
+<term><option>-d [directory]</option></term>
+<listitem>
+<para>
+Run gmonitor in AutoUpdate mode. The files in this directory is displayed 
+in graph automatically.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-h [host name]</option></term>
+<listitem>
+<para>
+The data for this host name is displayed when specifying AutoUpdate mode.
+It will ignore, if there is no corresponding this host name.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-e [OID nick name]</option></term>
+<listitem>
+<para>
+The data for this OID nick name is displayed when specifying AutoUpdate mode.
+It will ignore, if there is no corresponding this OID nick name.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-u [unit]</option></term>
+<listitem>
+<para>
+Display in This unit.
+"bps", "KB" and "Load" can be specified as this unit.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--help</option></term>
+<listitem>
+<para>
+display help and exit.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-line</option></term>
+<listitem>
+<para>
+lines of graph is not drawn.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-bar</option></term>
+<listitem>
+<para>
+bars of graph is not drawn.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-plot</option></term>
+<listitem>
+<para>
+points (dots) of graph. is not drawn.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-information</option></term>
+<listitem>
+<para>
+Information portion is hidden.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-style</option></term>
+<listitem>
+<para>
+Graph Style portion is hidden.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-unit</option></term>
+<listitem>
+<para>
+Unit portion is hidden.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>--no-controller</option></term>
+<listitem>
+<para>
+Controller portion is hidden.
+</para>
+</listitem>
+</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>glogger</refentrytitle><manvolnum>8</manvolnum>
+  </citerefentry>,
+  <citerefentry>
+  <refentrytitle>glogger_logdata</refentrytitle><manvolnum>5</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>
+

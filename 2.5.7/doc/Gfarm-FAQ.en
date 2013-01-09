@@ -1,0 +1,460 @@
+Gfarm FAQ - Frequently Asked Questions about Gfarm
+
+Copyright (c) 2003-2008 National Institute of Advanced Industrial
+Science and Technology (AIST).  All Rights Reserved.
+
+Copyright (c) 2006-2012 Osamu Tatebe.  All Rights Reserved.
+
+Table of Contents:
+******************
+
+1. General
+  1.1 What is Gfarm?
+  1.2 Where can I download Gfarm?
+  1.3 How much memory does gfmd require?
+  1.4 How much disk space is used by gfmd?
+  1.5 How many descriptors are necessary for gfmd?
+
+2. Trouble Shooting
+  2.1 We cannot connect to filesystem nodes and/or a metadata server.
+  2.2 "Authentication error" or "no filesystem node" error occurs when
+     accessing or replicating files.
+  2.3 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
+  2.4 Sometimes a gfarm client or gfsd stops without doing anything.
+  2.5 The modification time seems to be strange.
+  2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
+
+3. Security
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
+     a firewall?
+  3.2 What is the difference in sharedsecret authentication,
+     the gsi_auth method, and gsi authentication?
+
+4. Limitations
+  4.1 The following functionality is partially supported.
+  4.2 The following functionalities supported by Gfarm-1.x are not
+     supported yet.
+  4.3 The following functionality supported by Gfarm-1.x is not
+     supported.
+    
+
+1. General
+**********
+  1.1 What is Gfarm?
+
+	Please refer to the following URL:
+
+		http://datafarm.apgrid.org/
+
+  1.2 Where can I download Gfarm?
+
+	It is available at the following URL:
+
+		http://sourceforge.net/projects/gfarm/
+
+	Current source code can be obtained by
+
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm_v2/trunk gfarm_v2
+		$ svn co https://gfarm.svn.sourceforge.net/svnroot/gfarm/gfarm2fs/trunk gfarm2fs
+
+  1.3 How much memory does gfmd require?
+
+	The following formulas are rough estimates of Gfarm-2.5.1 gfmd
+	on a 64bit Linux machine.
+	Note that we use the following constant and function:
+		- OH (overhead) = 8 bytes
+		- align() = round up to multiples of 16,
+			    and if it's less than 32, round up to 32.
+
+	(a) bytes per one extended attribute (xattr)
+		  align(64 + OH) + align((length_of_xattr_name) + 1 + OH)
+		= 80 + align((length of xattr name) + 1 + OH)
+
+	(i) bytes per one i-node
+		  align(168 + OH)
+		= 176
+
+	(e) bytes per one directory entry
+		  align(56 + OH) + align(strlen(basename(pathname)) + OH)
+		= 64 + align(strlen(basename(pathname)) + OH)
+
+	(r) bytes per one file replica:
+		  align(24 + OH)
+		= 32
+
+
+	Thus, bytes per file, directory, and symbolic link requires
+	the following size, if the number of xattr is small enough:	
+
+	(d) bytes per one directory:
+		  (i) + (e) 
+		  + align(56 + OH) + align(strlen(".") + OH)
+		  + align(56 + OH) + align(strlen("..") + OH)
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + 64 + 32 + 64 + 32
+		= 432 + align(strlen(basename(pathname)) + OH)
+
+	(s) bytes per one symbolic link:
+		  (i) + (e) + align(strlen(symlink_target)+1 + OH)
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + align(strlen(symlink_target)+1 + OH)
+		= 240 + align(strlen(basename(pathname)) + OH)
+		  + align(strlen(symlink_target)+1 + OH)
+
+	(f) bytes per one file:
+		= 176 + 64 + align(strlen(basename(pathname)) + OH)
+		  + 32 * number_of_replicas
+		= 240 + align(strlen(basename(pathname)) + OH)
+		  + 32 * number_of_replicas
+
+
+	Under an assumption that the length of last component of pathname
+	is 14 characters, and the number of file replica is 3, and the length
+	of the symbolic link target is 55 characters, (d), (s) and (f) are
+	the following values:
+
+	(d) 432 bytes per one directory
+	(s) 336 bytes per one symbolic link
+	(f) 368 bytes per one file
+
+  1.4 How much disk space is used by gfmd?
+
+	Few times more than the memory that does gfmd requires.
+
+  1.5 How many descriptors are necessary for gfmd?
+
+	This value should be specified by "metadb_server_max_descriptors"
+	directive in gfmd.conf.
+
+	Assume the following configuration parameters:
+	    Nm: maximum number of metadata servers.
+	    Nf: maximum number of filesystem nodes.
+	    Nc: maximum number of client processes. (e.g. gfarm2fs)
+	Then the number is calculated by:
+	    (Nm - 1) * 2 + Nf * (Nf + 1) + Nc * (Nf + 1) + some more
+
+	You can see actual setting by looking at system log
+	(e.g. /var/log/messages) at gfmd startup like follows:
+	    gfmd[...]: .... max descriptors = 131072
+	If this value is smaller than the value specified by the
+	metadb_server_max_descriptors parameter, that means it's limited
+	by the hard limit setting of the Operating System.  To increase
+	the hard limit, please follow the following procedure.
+	On Linux:
+	    On Linux, gfarm limits the value to 75% of sysctl fs.file-max
+	    setting, instead of using current hard limit setting.
+	    Thus, to make "metadb_server_max_descriptors 131072" setting
+	    effective, you should add something like "fs.file-max=180224" 
+	    to a file /etc/sysctl.conf, and reboot or invoke a command
+	    "/sbin/sysctl -p".
+	On NetBSD:
+	    Add something like "kern.maxfiles=180224" to a file
+	    /etc/sysctl.conf, and reboot or invoke a command
+	    "/sbin/sysctl -f /etc/sysctl.conf".
+	On FreeBSD:
+	    Add settings like the followings to a file /etc/sysctl.conf:
+		kern.maxfiles=180224
+		kern.maxfilesperproc=131072
+	    and reboot or  invoke a command 
+	    /sbin/sysctl -f /etc/sysctl.conf".
+	On Solaris:
+	    Add a setting like "set rlim_fd_max = 131072" to a file
+	    /etc/system, and then reboot.
+
+	On Linux, it's better to check how a parameter
+	net.netfilter.nf_conntrack_max is configured.
+	This parameter usually doesn't exist, but is dynamically added
+	when features like iptables are used.  In that case, a message
+	like the following is logged at boot time in a log file like
+	/var/log/messages:
+		kernel: nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
+	Under condition that this parameter limits network traffic,
+	messages like follows are logged:
+		kernel: nf_conntrack: table full, dropping packet.
+	In such case, this limit should be relaxed by the following setting
+	in /etc/sysctl.conf, for example:
+		net.netfilter.nf_conntrack_max=131072
+	Note that it's not recommended to use iptables on a metadata server
+	under such load.  Rather, it's recommended to use firewall on another
+	hardware.
+
+	NOTE:
+
+	Each term of the above formula means:
+
+	    (Nm - 1) * 2 =
+		"number of inter-gfmd connections":(Nm - 1) *
+		("descriptor of the socket":1 +
+		 "descriptor to access journal file":1)
+
+	    Nf * (Nf + 1) =
+		Nf * ( "socket for root gfsd process":1 +
+		       "socket for backchannel gfsd process":1 +
+		       "sockets for replication gfsd processes":(Nf - 1) )
+
+	    Nc * (Nf + 1) =
+		Nc * ( "socket for client connection":1 +
+		       "sockets for gfsd which servers the client":Nf )
+
+	    some more =
+		for backend database connection
+		and file descriptor to access journal file, etc.
+
+	An actual number of "sockets for gfsd which servers the client"
+	may be smaller than Nf, but it may reach Nf if many Gfarm files
+	are opened by the client at once.  Or, even if number of
+	simultaneously opened Gfarm files is less than Nf, it may reach
+	min(Nf, "gfsd_connection_cache" parameter).
+
+	The gfmd memory size which is needed by this parameter is
+	about 320 byte per descriptor.
+
+
+2. Trouble Shooting
+*******************
+  2.1 We cannot connect to filesystem nodes and/or a metadata server.
+
+	As the default setting, 600/tcp and 600/udp have to be opened for
+	filesystem nodes, and 601/tcp have to be opened	for a metadata
+	server.
+
+	When 'gfhost -lv' reports 'x.xx/x.xx/x.xx', these filesystem
+	nodes cannot be connected by a client using 600/udp.
+
+	The port number can be specified by a command-line option of
+	config-gfarm and config-gfsd.  For details,
+	refer to the installation manual.
+
+  2.2 "Authentication error" or "no filesystem node" error occurs when
+     accessing or replicating files.
+
+	Authentication to file system nodes may fail.  It is necessary
+	to set up a shared secret key or the GSI configuration
+	correctly.
+
+	Regarding the shared secret authentication, make sure the same
+	shared secret key file (~/.gfarm_shared_key) is located on a
+	home directory on all file system nodes.
+
+	Regarding the GSI authentication, follow the authentication
+	error message.  To see the verbose authentication error messages
+	in /var/log/messages (or /var/adm/messages), please add
+	"log_auth_verbose enable" setting in gfmd.conf and gfarm2.conf.
+	Detailed descriptions about the messages are available at
+	http://www.globus.org.
+	Please note that currently inter-gfmd communication for
+	metadata replication does not support the GSI authentication.
+
+	If the problem is still there, call administrators of a Gfarm
+	file system.  A shared secret key setting or the GSI setting
+	might be incorrect for a _gfarmfs user.
+
+	Here are some hints on typical cases involving this error in
+	GSI:
+
+	(1) Is a valid entry included in the grid-mapfile on file
+	system nodes and filesystem metadata node?
+
+	Note that the subject names displayed for certain certificates
+	have been changed between Globus Toolkit version 2 (GT2) and
+	version 3 (GT3).  The 'Email' field in GT2 has become
+	'emailAddress' in GT3 or later.
+	The 'USERID' field in GT2 has become 'UID' in GT3 or later.
+	For compatibility, you need to register both entries in
+	grid-mapfile.
+
+	If you will use the GSI authentication for communication
+	between gfmd and gfsd, is the gfsd certificate registered
+	in grid-mapfile with "@host@" in the second field?
+
+	(2) Are permissions of user certificate
+	 (~/.globus/usercert.pem) and/or host certificate
+	 (/etc/grid-security/hostcert.pem) not permissive?  The maximum
+	 allowable permissions are limited to 644.  Also, if you are
+	 using service certificate for gfsd, the owner of the certificate
+	 and the private key must be "_gfarmfs".
+
+	(3) Are user certificate, host certificates and service certificates
+	 valid, and not yet expired?
+
+	(4) Is a valid certificate for the CAs that sign user, host
+	or service certificates, registered in /etc/grid-security/certificates?
+	Has this registration expired?
+
+	Note that CA subject name in the signing_policy files is also
+	affected in the same way as the items in (1), above.  To  use
+	the same
+	signing_policy file for GT2 and GT3, you need both entries in
+	the signing_policy file.
+
+	(5) Has the CRL, which is registered in
+	/etc/grid-security/certificates, expired?
+
+	(7) Does the hostname, which is specified by metadb_serverhost
+	in the gfarm.conf file, match the name in the host certificate?
+
+	(7) Do the host identifiers, which are registered by gfhost,
+	match the hostnames which are written in the host certificates
+	or the service certificates?
+
+	(8) Are the clocks of all filesystem nodes, the filesystem
+	metadata node, and the client synchronized?  The GSI library
+	provided by Globus fails to authenticate these properly when
+	the time difference is more than five minutes.
+
+  2.3 Due to a disk crash, all files in a filesystem node are lost.
+     What do we have to do?
+
+	When a filesystem node is down, there is nothing you have to
+	do when there is at least one file copy, since the unavailable
+	filesystem node is not used.
+
+	However, when you re-join the filesystem node that loses files
+	to the Gfarm file system, a problem occurs since invalid
+	metadata of lost file replicas remains in a metadata database.
+	We have a plan to provide an administration command to re-join
+	the filesystem node.
+
+  2.4 Sometimes a gfarm client or gfsd stops without doing anything.
+
+	If your network interface card or your network itself has a
+	trouble that lasts more than a few minutes, such symptoms may occur.
+	The possibility increases if you are using a wide
+	area network for communication between a gfarm client and a server.
+	A stopped gfarm client or gfsd is able to exit automatically
+	with an error, if you add a "sockopt keepalive" setting to your
+	gfarm.conf. The config-gfarm command generates this setting
+	by default, since gfarm 1.3.1.
+
+	Or, if you are using "ldap" in /etc/nsswitch.conf on some Linux
+	distributions, this problem may occur too.  This problem is
+	observed in Fedora Core 3, Fedora Coer 5 and CentOS 4.4, but
+	haven't been observed in Red Hat 8.
+	The cause of this problem is a bug of system-supplied libraries.
+	The detailed condition of this bug is described in KNOWN_PROBLEMS.en.
+	For this problem, currently no workaround is known except disabling
+	the "ldap" feature.
+
+  2.5 The modification date seems to be strange.
+
+	The modification date will be set by the file system node
+	where the physical file is stored.  When clocks of file system
+	nodes are not synchronized, the modification date may be
+	strange.  Check and synchronize clocks of all file system
+	nodes.
+
+  2.6 How can I retrieve a core file of gfmd or gfsd when it aborts?
+
+	If gfmd or gfsd runs on Linux, core file is not created by default
+	when it aborts.  You need to do the following procedures with
+	the root privilege to retrieve a core file:
+
+	(1) Configure a kernel parameters.  Append the lines below to
+	the sysctl configuration file (/etc/sysctl.conf):
+
+		fs.suid_dumpable = 1
+		kernel.core_pattern = /var/tmp/core.%e.%p
+
+	The "kernel.core_pattern" line specifies paths of core files.
+	"%e" and "%p" in the pattern are expanded to a program name and
+	a process ID, respectively.  Then, reload the settings:
+
+		/sbin/sysctl -p
+
+	(2) Set the size limit of a core file.  Add the following line
+	to the "/etc/security/limits.conf" file:
+
+		*	soft	core	unlimited
+
+	This setting is enabled after the operating system is restarted.
+
+	If gfmd or gfsd is currently running and you'd like to apply the
+	setting immediately, use ulimit command and restart gfmd or gfsd,
+	as follows:
+
+		ulimit -c unlimited
+		/etc/init.d/gfmd restart
+		/etc/init.d/gfsd restart
+
+	(3) If gfmd or gfsd runs on Red Hat or derived from it and it
+	is installed by an RPM package or with the prefix /usr, you
+	also need to configure the daily job named "prelink".  Create
+	the file "/etc/prelink.conf.d/gfarm.conf" and insert the
+	following lines not to prelink them:
+
+		-b /usr/sbin/gfmd
+		-b /usr/sbin/gfsd
+		-b /usr/lib/libgfarm.*
+
+	Note that if it is installed in /usr/local or other location
+	than /usr, this setting is not needed.  See /etc/prelink.conf
+	to know which directory will be prelinked.  See prelink(8) for
+	further information.
+
+
+3. Security
+***********
+  3.1 It is safe to use Gfarm in an environment that is NOT protected by
+     a firewall?
+
+	Gfarm-2.x supports three authentication methods, namely,
+	sharedsecret authentication, the gsi_auth method,
+	and gsi authentication.
+	The sharedsecret authentication and gsi_auth methods are
+	not safe enough in the Internet environment.
+	Please refer to the next question for further information about this
+	issue.
+
+  3.2 What is the difference in sharedsecret authentication,
+     the gsi_auth method, and gsi authentication?
+
+	The "sharedsecret" authentication method in Gfarm is authentication
+	based on a shared key, which provides only authentication
+	service, not data signing and data encryption services. Thus,
+	this method still has risks of packet sniffing and TCP
+	session hijacking.
+	For this reason, we recommend that you use the sharedsecret
+	authentication only in a safe environment, protected by a
+	firewall.  The reason we provide this authentication
+	method is that it is fast, and it does not require you to acquire
+	a public key.
+
+	The "gsi" (Grid Security Infrastructure) authentication method is
+	authentication based on a public key infrastructure.  Gfarm uses
+	the Globus GSI library for this authentication.	Because the
+	Globus GSI library supports data encryption, the gsi
+	authentication is considered more secure than the sharedsecret
+	authentication in Gfarm.  But please note that some exportable
+	versions of Globus don't support encryption.  We recommend that you
+	confirm that your Globus version does, in fact, support
+	encryption.
+
+	The "gsi_auth" method uses the GSI library only for
+	the authentication. The actual data communication is not protected
+	by data signing or data encryption services with this method.
+	Thus, the gsi_auth method has risks of packet sniffing and
+	TCP session hijacking, just like sharedsecret authentication.
+	For this reason, we recommend you use the gsi_auth method
+	only in a safe environment, protected by a firewall.
+	The reason we provide this method is that it allows for fast
+	data transfer.
+
+	The gsi authentication and gsi_auth methods are only
+	available when you use the --with-globus option at thetime you do
+	the source code "configure" operation.
+	Please see the following URL for more about the GSI:
+		http://www.globus.org/
+
+
+4. Limitations
+**************
+  4.1 The following functionality supported by Gfarm-1.x are not
+     supported.
+
+	File view
+
+  4.2 There is no plan to support the following functionality
+    supported by Gfarm-1.x.
+
+	Remote program execution

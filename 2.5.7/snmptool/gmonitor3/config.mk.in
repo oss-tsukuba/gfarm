@@ -1,0 +1,16 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+default_bindir = @bindir@
+default_mandir = @mandir@
+default_docdir = $(prefix)/share/doc/gmonitor
+default_htmldir = $(default_docdir)/html
+
+bindir = $(default_bindir)
+mandir = $(default_mandir)
+docdir = $(default_docdir)
+htmldir = $(default_htmldir)
+
+INSTALL = $(top_objdir)/install-sh -c # "@INSTALL@" doesn't work
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@

@@ -1,0 +1,104 @@
+#! /bin/sh
+# $Id$
+#
+# /etc/init.d/gfarm-pgsql
+#
+#   and its symbolic link
+#
+# /usr/sbin/rcgfarm-pgsql
+#
+### BEGIN INIT INFO
+# Provides: gfarm-pgsql
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: PostgreSQL daemon for Gfarm
+### END INIT INFO
+
+. /etc/rc.status
+
+FILE="gfarm-pgsql"
+
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+CTL="@config_gfarm_pgsql_bindir@/pg_ctl"
+PIDFILE="$PGDATA/portmaster.pid"
+OPTIONS="@config_gfarm_pgsql_options@"
+PRIVILEGE="@config_gfarm_backend_privilege@"
+# For SELinux we need to use 'runuser' not 'su'
+[ -x /sbin/runuser ] && SU=/sbin/runuser || SU=su
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	RUN="$SU - $PRIVILEGE";;
+esac
+
+# pull in sysconfig settings
+[ -f "/etc/sysconfig/$FILE" ] && . "/etc/sysconfig/$FILE"
+export PGPORT
+export PGDATA
+unset LANG
+
+# We won't just use "checkproc", "startproc" and "killproc" here,
+# because these functions don't allow multiple server processes for
+# same binary.
+
+rc_reset
+
+call_pg_ctl()
+{
+	$RUN -c "$CTL $OPTIONS $*"
+}
+
+case $1 in
+    start)
+	echo -n "Starting $FILE"
+	# increase the maximum number of open file descriptors
+	ulimit -n 16384 2> /dev/null
+	if [ ! -x "$CTL" ]; then
+		rc_failed 5 # program is not installed
+	elif call_pg_ctl start; then
+		:
+	else
+		rc_failed 1 # generic or unspecified error
+	fi		
+	rc_status -v
+	;;
+    stop)
+	echo -n "Shutting down $FILE"
+	call_pg_ctl stop || rc_failed 1
+	rc_status -v
+	;;
+    try-restart)
+	## Do a restart only if the service was active before.
+	$0 status >/dev/null && $0 restart
+	rc_status # Remember status and be quiet
+	;;
+    restart)
+	$0 stop
+	$0 start
+	rc_status # Remember status and be quiet
+	;;
+    force-reload)
+	echo -n "Reload service $FILE"
+	$0 stop && $0 start
+	rc_status # Remember status and be quiet
+	;;
+    reload)
+	## Like force-reload, but if daemon does not support
+	## signaling, do nothing (!)
+	echo -n "Reload service $FILE"
+	rc_failed 3 # unimplemented feature
+	rc_status -v
+	;;
+    status)
+	echo -n "Checking for service $FILE: "
+	call_pg_ctl status || rc_failed 1
+	rc_status -v
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload}"
+	exit 1
+	;;
+esac
+rc_exit

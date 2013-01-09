@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# $NetBSD: slapd.sh,v 1.6 2004/07/24 03:32:24 jlam Exp $
+#
+# PostgreSQL database rc.d control script for gfarm
+#
+# PROVIDE: gfarm-pgsql
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+if [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+fi
+
+FILE="gfarm-pgsql"
+
+name="gfarm_pgsql"
+rcvar=${name}
+PGPORT="@config_gfarm_backend_port@"
+PGDATA="@config_gfarm_backend_data_dir@"
+command="@config_gfarm_pgsql_bindir@/pg_ctl"
+pidfile="$PGDATA/portmaster.pid"
+required_dirs="$PGDATA"
+# add more flags through ${${name}_flags}
+command_args="@config_gfarm_pgsql_options@"
+export PGPORT
+export PGDATA
+unset LANG
+
+PRIVILEGE="@config_gfarm_backend_privilege@"
+case $PRIVILEGE in
+'')	RUN=/bin/sh;;
+*)	# "su -" fails, because pkgsrc doesn't create the home directory.
+	RUN="su $PRIVILEGE";;
+esac
+
+start_cmd="echo $command $command_args start | $RUN"
+restart_cmd="echo $command $command_args restart | $RUN"
+reload_cmd="echo $command $command_args reload | $RUN"
+stop_cmd="echo $command $command_args stop | $RUN"
+status_cmd="echo $command $command_args status | $RUN"
+
+if [ -f /etc/rc.subr -a -d /etc/rc.d -a -f /etc/rc.d/DAEMON ]; then
+	load_rc_config ${FILE}
+	run_rc_command "$1"
+else
+	if [ -f /etc/rc.conf ]; then
+		. /etc/rc.conf
+	fi
+	case $1 in
+	forcestart|start)
+		eval ${start_cmd};;
+	forcerestart|restart)
+		eval ${restart_cmd};;
+	forcereload|reload)
+		eval ${reload_cmd};;
+	forcestop|stop)
+		eval ${stop_cmd};;
+	forcestatus|status)
+		eval ${status_cmd};;
+	*)
+		echo "unknown command: $1" >&2
+		exit 1;;
+	esac
+fi

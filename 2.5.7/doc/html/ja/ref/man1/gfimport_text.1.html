@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>gfimport_text</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.76b+
+"></HEAD
+><BODY
+CLASS="REFENTRY"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><H1
+><A
+NAME="GFIMPORT-TEXT.1"
+></A
+>gfimport_text</H1
+><DIV
+CLASS="REFNAMEDIV"
+><A
+NAME="NAME"
+></A
+><H2
+>Name</H2
+>gfimport_text&nbsp;--&nbsp;テキスト・ファイルをフラグメントに分けて取り込む</DIV
+><DIV
+CLASS="REFSYNOPSISDIV"
+><A
+NAME="SYNOPSIS"
+></A
+><H2
+>Synopsis</H2
+><P
+><B
+CLASS="COMMAND"
+>gfimport_text</B
+> [<TT
+CLASS="REPLACEABLE"
+><I
+>オプション</I
+></TT
+>]  <TT
+CLASS="REPLACEABLE"
+><I
+>入力ファイル</I
+></TT
+> </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="DESCRIPTION"
+></A
+><H2
+>DESCRIPTION</H2
+><P
+>引数に指定したテキスト・ファイルを、一行を複数のフラグメントに分割す
+ることのないように分割して Gfarm ファイルシステムに取り込む
+サンプル・プログラムです。</P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="OPTIONS"
+></A
+><H2
+>OPTIONS</H2
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="OPTION"
+>-H</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>ホスト指定ファイル</I
+></TT
+></DT
+><DD
+><P
+>フラグメントを配置するホスト名のリストを記載したファイル名を指定します。
+ホスト名は、各行に一ホストずつ記述します。
+入力ファイルはそれぞれのフラグメントサイズがほぼ均等となるように
+分割されます。</P
+><P
+>ファイル名として ``-'' を指定した場合、標準入力からホスト名のリストを
+読み込みます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-f</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>フラグメント構成ファイル</I
+></TT
+></DT
+><DD
+><P
+>各フラグメントのおおよそのサイズと、配置するホストを記載したファイ
+ル名を指定します。</P
+><P
+>構成ファイルは、各行が、空白で区切られたサイズとホスト名からなる形式です。</P
+><P
+>ファイル名として ``-'' を指定した場合、標準入力からフラグメント構成を
+読み込みます。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-o</TT
+> <TT
+CLASS="PARAMETER"
+><I
+>gfarm-URL</I
+></TT
+></DT
+><DD
+><P
+>出力 Gfarm ファイルの URL を指定します。</P
+></DD
+><DT
+><TT
+CLASS="OPTION"
+>-?</TT
+></DT
+><DD
+><P
+>引数オプションを表示します。</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="EXAMPLES"
+></A
+><H2
+>EXAMPLES</H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN52"
+></A
+><P
+><B
+>Example 1. 指定した個数に分割して取り込む</B
+></P
+><P
+>以下は、ファイルを8個のフラグメントに分割し、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 | gfimport_text -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN57"
+></A
+><P
+><B
+>Example 2. 処理するプログラムを指定し、特定の個数に分割して取り込む</B
+></P
+><P
+>以下は、ファイルを8個のフラグメントに分割し、
+指定したプログラム <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:prog</I
+></TT
+> を実行可能なホストに、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched -N 8 -p gfarm:prog | gfimport_text -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN63"
+></A
+><P
+><B
+>Example 3. 既存の gfarm ファイルと同じ配置で取り込む</B
+></P
+><P
+>以下は、既存の gfarm ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:template</I
+></TT
+> と
+同じ個数のフラグメントに分割し、
+<TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:template</I
+></TT
+> が存在するのと同じホストに、
+ファイル <TT
+CLASS="REPLACEABLE"
+><I
+>gfarm:file</I
+></TT
+> として取り込む例です。
+<TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>gfsched gfarm:template | gfimport_text -H - -o gfarm:file source_file</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="SEE-ALSO"
+></A
+><H2
+>SEE ALSO</H2
+><P
+>  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfimport_fixed</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfsched</SPAN
+>(1)</SPAN
+>,
+  <SPAN
+CLASS="CITEREFENTRY"
+><SPAN
+CLASS="REFENTRYTITLE"
+>gfarm.conf</SPAN
+>(5)</SPAN
+></P
+></DIV
+></BODY
+></HTML
+>

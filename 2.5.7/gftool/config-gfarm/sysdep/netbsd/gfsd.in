@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# $NetBSD$
+#
+# Gfarm filesystem node daemon
+#
+# PROVIDE: gfsd
+# REQUIRE: DAEMON
+
+if [ -f /etc/rc.subr ]; then
+	. /etc/rc.subr
+fi
+
+CONF="@config_gfarm_gfarm_config@"
+OPTIONS="@config_gfarm_gfsd_option@"
+
+name="gfsd"
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
+rcvar=@config_gfarm_gfsd_rc_var@
+command="@config_gfarm_prefix@/sbin/${name}"
+pidfile="@config_gfarm_gfsd_pid_file@"
+required_files="$CONF"
+# add more flags through ${${name}_flags}
+command_args="-P $pidfile $OPTIONS"
+
+# gfsd service certificate
+X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+export X509_USER_CERT X509_USER_KEY
+
+if [ -f /etc/rc.subr ]; then
+	load_rc_config ${FILE}
+	run_rc_command "$1"
+else
+	echo -n " ${FILE}"
+	${command} ${gfsd_flags} ${command_args}
+fi

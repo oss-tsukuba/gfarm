@@ -1,0 +1,96 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gffindxmlattr.1'>
+
+<refentryinfo><date>18 Aug 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gffindxmlattr</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+
+<refnamediv id='name'>
+<refname>gffindxmlattr</refname>
+<refpurpose>Find XML extended attributes by XPath query</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gffindxmlattr</command>
+    <arg choice='opt'>-d <replaceable>depth</replaceable></arg>
+    <arg choice='opt'>-F <replaceable>delim</replaceable></arg>
+    <group choice='opt'>
+      <arg choice='plain'><replaceable>XPath</replaceable></arg>
+      <arg choice='opt'>-f <replaceable>XPath-file</replaceable></arg>
+    </group>
+    <arg choice='plain'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>
+gffindxmlattr finds XML extended attributes by a specified XPath
+expression, and displays path names and the corresponding XML extended
+attribute names.  When a file is specified, XML extended attributes
+associated to the file are searched if there is the read permission.
+</para>
+
+<para>
+When a directory is specified, files or directories within the depth
+are recursively searched.  When 0 is specified for the depth, the
+specified directory is searched.  If the depth is not specified, all
+files and directories under the specified directory are searched.  If
+the negative value is specified, gffindxmlattr returns error.
+Directories that do not have execute permission cannot be searched.
+</para>
+
+<para>
+gffindxmlattr displays path names and the corresponding XML extended
+attribute separated by the delim.
+</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-d</option> depth</term>
+<listitem>
+<para>specifies the depth to be searched recursively.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-F</option> delim</term>
+<listitem>
+<para>specifies a delimiter that separates the path name and the XML
+extended attribute name.  By detault, the delimiter is TAB.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-f</option> XPath-file</term>
+<listitem>
+<para>specifies a file that contains XPath expression.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>displays usage.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+
+<refsect1 id='see-also'><title>SEE ALSO</title>
+<para>
+  <citerefentry>
+  <refentrytitle>gfxattr</refentrytitle><manvolnum>1</manvolnum>
+  </citerefentry>
+</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,93 @@
+#!/bin/sh
+#
+# $Id$
+#
+## For RedHat Linux style rc.d, and start_service() in config-gfarm.sysdep
+# chkconfig: 2345 95 05
+#
+## For RedHat Linux style rc.d
+# description: Gfarm filesystem node daemon
+# processname: gfsd
+# config: @config_gfarm_gfarm_config@
+# pidfile: @config_gfarm_gfsd_pid_file@
+#
+## For SuSE/United-Linux style rc.d
+### BEGIN INIT INFO
+# Provides: @config_gfarm_gfsd_rc_name@
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: Gfarm filesystem node daemon
+### END INIT INFO
+
+PROG="gfsd"
+FILE="@config_gfarm_gfsd_rc_name@" # usually "gfsd", or maybe "gfsd-IP_ADDRESS"
+
+CONF="@config_gfarm_gfarm_config@"
+DAEMON="@config_gfarm_prefix@/sbin/$PROG"
+PIDFILE="@config_gfarm_gfsd_pid_file@"
+OPTIONS="@config_gfarm_gfsd_option@"
+globus_location="@config_gfarm_globus_location@"
+
+# gfsd service certificate
+X509_USER_CERT=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdcert.pem
+X509_USER_KEY=/etc/grid-security/@config_gfarm_gfsd_rc_name@/gfsdkey.pem
+export X509_USER_CERT X509_USER_KEY
+
+if [ -z "${GLOBUS_LOCATION-}" ] && [ -n "$globus_location" ] &&
+   [ -f "$globus_location/etc/globus-user-env.sh" ]
+then
+	GLOBUS_LOCATION="$globus_location"
+	export GLOBUS_LOCATION
+	. "$GLOBUS_LOCATION/etc/globus-user-env.sh"
+fi
+
+case $1 in 
+start)
+	if [ ! -x "$DAEMON" ]; then
+		echo -n "$DAEMON is not installed"
+		exit 1
+	fi
+	if [ ! -f "$CONF" ]; then
+		echo -n "$CONF is not configured"
+		exit 1
+	fi
+	$DAEMON -P "$PIDFILE" $OPTIONS
+	;;
+
+stop)
+	if [ -f "$PIDFILE" ] && kill -TERM `cat "$PIDFILE"`; then
+		rm -f "$PIDFILE"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is already stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+restart)
+	$0 stop
+	$0 start
+	;;
+
+status)
+	if [ -f "$PIDFILE" ] && kill -0 `cat "$PIDFILE"`; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is running"
+	elif [ -f "$PIDFILE" ]; then
+		echo "$FILE (pid" `cat "$PIDFILE"`") is not running? (check $PIDFILE)"
+		exit 1
+	else
+		echo "$FILE is stopped (no $PIDFILE)"
+		exit 1
+	fi
+	;;
+
+*)
+	echo "Usage: $0 { start | stop | restart | status }"
+	exit 1
+	;;
+esac
+exit 0

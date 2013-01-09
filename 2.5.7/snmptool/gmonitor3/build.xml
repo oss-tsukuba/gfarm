@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project name="gmonitor3" default="jar" basedir=".">
+	<property name="gmonitordir" value="gmonitor"/>
+	<property name="jarname" value="gmonitor3.jar"/>
+	<property name="outdir" value="class"/>
+
+	<target name="jar" depends="compile">
+		<jar jarfile="${jarname}" basedir="${outdir}" manifest="gmonitor.mani"/>
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${outdir}"/>
+		<javac srcdir="${gmonitordir}" destdir="${outdir}"/>
+	</target>
+
+	<target name="clean">
+		<delete dir="${outdir}"/>
+		<delete file="${jarname}"/>
+	</target>
+</project>

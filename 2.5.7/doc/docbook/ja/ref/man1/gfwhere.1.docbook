@@ -1,0 +1,52 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<refentry id='gfwhere.1'>
+
+<refentryinfo><date>14 May 2008</date></refentryinfo>
+
+<refmeta>
+<refentrytitle>gfwhere</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo>Gfarm</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gfwhere</refname>
+<refpurpose>Gfarm ファイルのレプリカの所在を表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv id='synopsis'>
+<cmdsynopsis>
+  <command>gfwhere</command>
+    <arg choice='opt'>-r, -R</arg>
+    <arg choice='plain' rep='repeat'><replaceable>path</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<!-- body begins here -->
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para>指定したファイルについて、レプリカの所在を表示します。
+-r あるいは -R オプションを付けると、
+指定されたディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。</para>
+</refsect1>
+
+<refsect1 id='options'><title>OPTIONS</title>
+<variablelist>
+<varlistentry>
+<term><option>-r, -R</option></term>
+<listitem>
+<para>ディレクトリに含まれるファイルのレプリカの所在を
+再帰的に表示します。</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><option>-?</option></term>
+<listitem>
+<para>引数オプションを表示します。</para>
+</listitem>
+</varlistentry>
+</variablelist>
+</refsect1>
+</refentry>
+
