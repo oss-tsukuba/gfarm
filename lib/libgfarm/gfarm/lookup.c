@@ -627,7 +627,7 @@ gfm_inode_or_name_op(const char *url, int flags,
 	struct gfm_connection *gfm_server = NULL;
 	int type;
 	int retry_count = 0, nlinks = 0;
-	char *path;
+	const char *path;
 	char *rest, *nextpath;
 	int do_verify, is_last, is_retry;
 	int is_success = 0;
@@ -645,21 +645,8 @@ gfm_inode_or_name_op(const char *url, int flags,
 
 	for (;;) {
 		path = nextpath;
-		if (gfm_server == NULL || gfarm_is_url(path)) {
-			if (gfm_server)
-				gfm_client_connection_free(gfm_server);
-			gfm_server = NULL;
-			if ((e = gfarm_url_parse_metadb(
-			    (const char **)&path, &gfm_server))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001266,
-				    "gfarm_url_parse_metadb(%s) failed: %s",
-				    url, gfarm_error_string(e));
-				break;
-			}
-			if (path[0] == '\0')
-				path = "/";
-		}
+		if (path[0] == '\0')
+			path = "/";
 		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
 			e = GFARM_ERR_PATH_IS_ROOT;
 			gflog_debug(GFARM_MSG_1002600,
@@ -668,6 +655,16 @@ gfm_inode_or_name_op(const char *url, int flags,
 			break;
 		}
 
+		if (gfm_server)
+			gfm_client_connection_free(gfm_server);
+		/* path may be updated when it is a Gfarm URL */
+		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001266,
+			    "gfarm_url_parse_metadb(%s) failed: %s",
+			    path, gfarm_error_string(e));
+			break;
+		}
 		if ((e = gfm_client_compound_begin_request(gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002601,
@@ -703,6 +700,9 @@ gfm_inode_or_name_op(const char *url, int flags,
 		is_retry = 0;
 		if ((e = gfm_client_compound_begin_result(gfm_server))
 			!= GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) &&
+			    ++retry_count <= 1)
+				continue;
 			gflog_warning(GFARM_MSG_1002604,
 			    "compound_begin result: %s",
 			    gfarm_error_string(e));
@@ -757,14 +757,11 @@ gfm_inode_or_name_op(const char *url, int flags,
 	}
 
 	if (is_success) {
+		/* success_op is assumed to free gfm_server */
 		e = (*success_op)(gfm_server, closure, type, path, ino);
-		if (nextpath)
-			free(nextpath);
-		return (e);
+		gfm_server = NULL;
 	}
-
-	if (nextpath)
-		free(nextpath);
+	free(nextpath);
 	if (gfm_server)
 		gfm_client_connection_free(gfm_server);
 
