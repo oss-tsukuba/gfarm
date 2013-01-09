@@ -17,13 +17,13 @@
 #include "gfm_proto.h"
 #include "gfutil.h"
 #include "gfp_xdr.h"
+#include "repattr.h"
 
 #include "db_access.h"
 #include "fsngroup.h"
 #include "host.h"
 #include "inode.h"
 #include "peer.h"
-#include "repattr.h"
 #include "rpcsubr.h"
 #include "subr.h"
 #include "user.h"
@@ -86,7 +86,7 @@ fsngroup_filter(struct host *h, void *closure)
 	return (strcmp(host_fsngroup(h), fsngroup) == 0);
 }
 
-static gfarm_error_t
+gfarm_error_t
 fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
 {
 	return (host_from_all(fsngroup_filter, (char *)fsngroup, /* UNCONST */
@@ -102,14 +102,15 @@ fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
  * Make us sure our having the giant_lock acquired.
  */
 void
-fsngroup_replicate_file(struct inode *inode,
-	struct host *src_host, const char *repattr,
-	int n_exceptions, struct host **exceptions)
+fsngroup_replicate_file(
+	struct inode *inode, struct host *src_host, const char *repattr,
+	int n_exceptions, struct host **exceptions,
+	struct file_copy *exception_list, int have_src_host)
 {
 	gfarm_error_t e;
 	size_t i, nreps = 0;
 	gfarm_repattr_t *reps = NULL;
-	int n_ghosts;
+	int n_ghosts, ncopy, n_shortage;
 	struct host **ghosts;
 	static const char diag[] = "fsngroup_replicate_file()";
 
@@ -144,9 +145,16 @@ fsngroup_replicate_file(struct inode *inode,
 			    gfarm_error_string(e));
 			continue;
 		}
-		inode_schedule_replication(inode, src_host,
-		    &n_ghosts, ghosts, &n_exceptions, exceptions,
-		    gfarm_repattr_amount(reps[i]), diag);
+		ncopy = inode_count_ncopy_with_grace(
+		    exception_list, 0, 0, n_ghosts, ghosts);
+		if (!have_src_host &&
+		    host_is_included(src_host, n_ghosts, ghosts))
+			ncopy++; /* for src_host */
+		n_shortage = gfarm_repattr_amount(reps[i]) - ncopy;
+		if (n_shortage > 0)
+			inode_schedule_replication(inode, src_host,
+			    &n_ghosts, ghosts, &n_exceptions, exceptions,
+			    n_shortage, diag);
 
 		free(ghosts);
 	}

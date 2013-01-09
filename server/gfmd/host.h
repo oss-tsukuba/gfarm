@@ -64,6 +64,8 @@ gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
 int host_number();
+int host_is_included(struct host *, size_t, struct host **);
+
 gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);

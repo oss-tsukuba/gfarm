@@ -7,9 +7,10 @@
  */
 struct inode;
 struct host;
+struct file_copy;
 void fsngroup_replicate_file(
 	struct inode *, struct host *, const char *,
-	int, struct host **);
+	int, struct host **, struct file_copy *, int);
 
 /*
  * Server side RPC stubs:

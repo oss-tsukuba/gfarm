@@ -1042,6 +1042,18 @@ host_number()
 	return (nhosts);
 }
 
+/* XXX slow if n_hosts is big */
+int
+host_is_included(struct host *host, size_t n_hosts, struct host **hosts)
+{
+	size_t i;
+
+	for (i = 0; i < n_hosts; i++)
+		if (host == hosts[i])
+			return (1);
+	return (0);
+}
+
 /*
  * just select randomly		XXX FIXME: needs to improve
  */

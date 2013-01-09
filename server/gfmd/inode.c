@@ -771,7 +771,7 @@ inode_schedule_replication_from_all(
 static void
 make_replicas_except(struct inode *inode, struct host *spool_host,
 	int desired_replica_number, char *repattr,
-	struct file_copy *exception_list)
+	struct file_copy *exception_list, int have_spool_host)
 {
 	struct host **exceptions;
 	int n_exceptions = 1; /* +1 is for spool_host */
@@ -824,7 +824,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 		    host_name(spool_host));
 
 		fsngroup_replicate_file(inode, spool_host, repattr,
-		    n_exceptions, exceptions);
+		    n_exceptions, exceptions, exception_list, have_spool_host);
 
 	} else if (n_exceptions - being_removed < desired_replica_number) {
 		gflog_debug(GFARM_MSG_1003648,
@@ -918,7 +918,7 @@ update_replicas(struct inode *inode, struct host *spool_host,
 	 */
 	if (start_replication && spool_host != NULL)
 		make_replicas_except(inode, spool_host,
-		    desired_replica_number, repattr, to_be_excluded);
+		    desired_replica_number, repattr, to_be_excluded, 0);
 
 	/*
 	 * After scheduling replica creation to new hosts, start
@@ -1276,22 +1276,35 @@ inode_get_ncopy_with_dead_host(struct inode *inode)
 
 /* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
 gfarm_int64_t
-inode_get_ncopy_with_grace_of_dead(
-	struct inode *inode, int is_valid, gfarm_time_t grace)
+inode_count_ncopy_with_grace(
+	struct file_copy *copies, int is_valid, gfarm_time_t grace,
+	size_t nscope, struct host **scope)
 {
 	struct file_copy *copy;
 	gfarm_int64_t n = 0;
 
-	for (copy = inode->u.c.s.f.copies; copy != NULL;
-	    copy = copy->host_next) {
+	for (copy = copies; copy != NULL; copy = copy->host_next) {
 		if ((is_valid ?
 		     FILE_COPY_IS_VALID(copy) :
 		     !FILE_COPY_IS_BEING_REMOVED(copy))
 		    &&
-		    host_is_up_with_grace(copy->host, grace))
+		    host_is_up_with_grace(copy->host, grace)
+		    &&
+		    (scope != NULL ? /* XXX slow */
+		     host_is_included(copy->host, nscope, scope) : 1))
 			n++;
 	}
 	return (n);
+}
+
+/* if is_valid == 0, FILE_COPY_BEING_REMOVED copies are excluded */
+gfarm_int64_t
+inode_get_ncopy_with_grace(
+	struct inode *inode, int is_valid, gfarm_time_t grace,
+	size_t nscope, struct host **scope)
+{
+	return (inode_count_ncopy_with_grace(
+	    inode->u.c.s.f.copies, is_valid, grace, nscope, scope));
 }
 
 static gfarm_error_t
@@ -1341,6 +1354,12 @@ static int
 file_copy_is_valid_and_up(struct file_copy *copy, void *closure)
 {
 	return (FILE_COPY_IS_VALID(copy) && host_is_up(copy->host));
+}
+
+static int
+file_copy_all_filter(struct file_copy *copy, void *closure)
+{
+	return (1);
 }
 
 static int
@@ -3128,7 +3147,7 @@ inode_check_pending_replication(struct file_opening *fo)
 		ios->u.f.replication_pending = 0;
 		make_replicas_except(inode, spool_host,
 		    fo->u.f.desired_replica_number, fo->u.f.repattr,
-		    inode->u.c.s.f.copies);
+		    inode->u.c.s.f.copies, 1);
 	}
 }
 
@@ -4194,6 +4213,14 @@ inode_replica_list(
 {
 	return (inode_alloc_file_copy_hosts(
 	    inode, file_copy_is_valid_and_up, NULL, np, hostsp));
+}
+
+gfarm_error_t
+inode_replica_list_all(
+	struct inode *inode, gfarm_int32_t *np, struct host ***hostsp)
+{
+	return (inode_alloc_file_copy_hosts(
+	    inode, file_copy_all_filter, NULL, np, hostsp));
 }
 
 static gfarm_error_t
