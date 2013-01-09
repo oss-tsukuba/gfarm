@@ -106,6 +106,12 @@ gfm_client_is_connection_valid(struct gfm_connection *gfm_server)
 	return (gfp_is_cached_connection(gfm_server->cache_entry));
 }
 
+int
+gfm_client_refcount(struct gfm_connection *gfm_server)
+{
+	return (gfp_cached_connection_refcount(gfm_server->cache_entry));
+}
+
 const char *
 gfm_client_hostname(struct gfm_connection *gfm_server)
 {

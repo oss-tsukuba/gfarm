@@ -44,6 +44,7 @@ void gfarm_lru_cache_add_entry(struct gfarm_lru_cache *,
 void gfarm_lru_cache_purge_entry(struct gfarm_lru_entry *);
 void gfarm_lru_init_uncached_entry(struct gfarm_lru_entry *);
 
+int gfarm_lru_cache_refcount(struct gfarm_lru_entry *);
 void gfarm_lru_cache_addref_entry(struct gfarm_lru_cache *,
 	struct gfarm_lru_entry *);
 int gfarm_lru_cache_delref_entry(struct gfarm_lru_cache *,

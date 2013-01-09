@@ -64,6 +64,12 @@ gfarm_lru_init_uncached_entry(struct gfarm_lru_entry *entry)
 	entry->prev = entry->next = NULL; /* mark the entry purged */
 }
 
+int
+gfarm_lru_cache_refcount(struct gfarm_lru_entry *entry)
+{
+	return (entry->acquired);
+}
+
 /* acquire the entry */
 void
 gfarm_lru_cache_addref_entry(struct gfarm_lru_cache *cache,

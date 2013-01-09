@@ -54,6 +54,7 @@ gfarm_error_t gfp_uncached_connection_enter_cache(struct gfp_conn_cache *,
 void gfp_cached_connection_used(struct gfp_conn_cache *,
 	struct gfp_cached_connection *);
 void gfp_cached_connection_gc_all(struct gfp_conn_cache *);
+int gfp_cached_connection_refcount(struct gfp_cached_connection *);
 gfarm_error_t gfp_cached_connection_acquire(struct gfp_conn_cache *,
 	const char *, int, const char *, struct gfp_cached_connection **,
 	int *);

@@ -281,6 +281,12 @@ gfp_cached_connection_gc_all(struct gfp_conn_cache *cache)
 	gfp_cached_connection_gc_internal(cache, 0);
 }
 
+int
+gfp_cached_connection_refcount(struct gfp_cached_connection *connection)
+{
+	return (gfarm_lru_cache_refcount(&connection->lru_entry));
+}
+
 gfarm_error_t
 gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	const char *canonical_hostname, int port, const char *user,

@@ -34,6 +34,7 @@ enum gfarm_auth_method gfm_client_connection_auth_method(
 	struct gfm_connection *);
 
 int gfm_client_is_connection_valid(struct gfm_connection *);
+int gfm_client_refcount(struct gfm_connection *);
 const char *gfm_client_hostname(struct gfm_connection *);
 const char *gfm_client_username(struct gfm_connection *);
 int gfm_client_port(struct gfm_connection *);
