@@ -208,8 +208,8 @@ replica_check_fix(struct replication_info *info)
 		return (GFARM_ERR_NO_ERROR);
 
 	/* is_valid==0: invalid replicas (==replicating now) are OK */
-	ncopy = inode_get_ncopy_with_grace_of_dead(
-	    inode, 0, gfarm_replica_check_host_down_thresh);
+	ncopy = inode_get_ncopy_with_grace(
+	    inode, 0, gfarm_replica_check_host_down_thresh, 0, NULL);
 	if (ncopy == info->desired_number) /* normally */
 		return (GFARM_ERR_NO_ERROR);
 	if (ncopy == 0) {
