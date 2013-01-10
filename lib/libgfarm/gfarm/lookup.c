@@ -427,23 +427,34 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 
 
 static char *
-trim_tailing_file_separator(const char *path)
+trim_trailing_file_separator(const char *path)
 {
 	char *npath;
-	int len;
+	const char *path_start, *p;
+	gfarm_error_t e;
 
 	npath = strdup(path);
 	if (npath == NULL)
 		return (NULL);
-	if (!GFARM_IS_PATH_ROOT(npath) && strchr(npath, '/') != NULL) {
-		char *p = npath + strlen(npath);
-		while (*(--p) == '/' && p > npath)
-			;
-		*(++p) = '\0';
-	}
-	len = strlen(npath);
-	if (len == 1 && npath[0] == '.')
+
+	/* skip gfarm://hostname:port */
+	path_start = npath;
+	e = gfarm_get_hostname_by_url0(&path_start, NULL, NULL);
+	(void)e;
+	/* skip '/' */
+	if (path_start[0] == '/')
+		++path_start;
+
+	/* trim trailing slashes */
+	for (p = path_start + strlen(path_start) - 1; p >= path_start; --p)
+		if (*p != '/')
+			break;
+	npath[p + 1 - npath] = '\0';
+#if 0
+	/* XXX - current working directory is not supported yet */
+	if (npath[0] == '.' && npath[1] == '\0')
 		npath[0] = '/';
+#endif
 	return (npath);
 }
 
@@ -634,11 +645,11 @@ gfm_inode_or_name_op(const char *url, int flags,
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 	gfarm_ino_t ino;
 
-	nextpath = trim_tailing_file_separator(url);
+	nextpath = trim_trailing_file_separator(url);
 	if (nextpath == NULL) {
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002599,
-		    "trim_tailing_file_separator failed: %s",
+		    "trim_trailing_file_separator failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
@@ -656,7 +667,7 @@ gfm_inode_or_name_op(const char *url, int flags,
 			    path, gfarm_error_string(e));
 			break;
 		}
-
+		/* path may be NULL string in case of 'gfarm:' or 'gfarm://' */
 		if (path[0] == '\0')
 			path = "/";
 		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
@@ -934,12 +945,12 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 	gfarm_int32_t sfd = -1, dfd = -1;
 	gfarm_ino_t ino;
 
-	snextpath = trim_tailing_file_separator(src);
-	dnextpath = trim_tailing_file_separator(dst);
+	snextpath = trim_trailing_file_separator(src);
+	dnextpath = trim_trailing_file_separator(dst);
 	if (snextpath == NULL || dnextpath == NULL) {
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002621,
-		    "trim_tailing_file_separator failed: %s",
+		    "trim_trailing_file_separator failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
