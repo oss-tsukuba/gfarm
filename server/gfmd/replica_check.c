@@ -23,7 +23,9 @@
 #include "thrsubr.h"
 
 #include "config.h"
+#include "repattr.h"
 
+#include "fsngroup.h"
 #include "gfmd.h"
 #include "inode.h"
 #include "dead_file_copy.h"
@@ -98,12 +100,15 @@ static void suppress_log_reset_all()
 
 static gfarm_error_t
 replica_check_replicate(
-	struct inode *inode, int *n_srcsp, struct host **srcs,
+	struct inode *inode,
+	int n_scope, struct host **scope,
+	int n_srcs, struct host **srcs, int *next_src_index_p,
+	int n_exceptions, struct host **exceptions,
 	int n_desire, int ncopy)
 {
 	gfarm_error_t e;
 	struct host **dsts, *src, *dst;
-	int n_dsts, i, j, n_success = 0;
+	int n_dsts, i, n_success = 0;
 	struct file_replicating *fr;
 	gfarm_off_t necessary_space;
 	int n_shortage, busy;
@@ -112,23 +117,30 @@ replica_check_replicate(
 	assert(n_shortage > 0);
 
 	necessary_space = inode_get_size(inode);
-	e = host_schedule_n_from_all_except(
-	    n_srcsp, srcs, host_is_disk_available_filter,
-	    &necessary_space, n_shortage, &n_dsts, &dsts);
+	if (scope)
+		e = host_schedule_n_except(
+		    &n_scope, scope, &n_exceptions, exceptions,
+		    host_is_disk_available_filter,
+		    &necessary_space, n_shortage, &n_dsts, &dsts);
+	else
+		e = host_schedule_n_from_all_except(
+		    &n_exceptions, exceptions, host_is_disk_available_filter,
+		    &necessary_space, n_shortage, &n_dsts, &dsts);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1003617,
-		    "host_schedule_except, n_srcs=%d: %s",
-		    *n_srcsp, gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "host_schedule_n_except, n_exceptions=%d: %s",
+		    n_exceptions, gfarm_error_string(e));
 		goto end; /* retry in next interval */
 	}
 	/* dsts is scheduled */
 
 	busy = 0;
-	for (i = 0, j = 0; i < n_dsts; i++, j++) {
-		if (j >= *n_srcsp)
-			j = 0;
-		src = srcs[j];
+	for (i = 0; i < n_dsts; i++) {
+		if (*next_src_index_p >= n_srcs)
+			*next_src_index_p = 0;
+		src = srcs[*next_src_index_p];
 		dst = dsts[i];
+		(*next_src_index_p)++;
 
 		/* GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE may occurs */
 		e = file_replicating_new(inode, dst, 0, NULL, &fr);
@@ -177,32 +189,131 @@ end:
 		    user_name(inode_get_user(inode)), n_desire);
 
 	return (e); /* error: retry in next interval */
-
 }
 
 struct replication_info {
 	gfarm_ino_t inum;
 	gfarm_uint64_t gen;
 	int desired_number;
+	char *repattr;
 };
 
-static gfarm_error_t
-replica_check_fix(struct replication_info *info)
+static int
+replica_check_have_no_replica(
+	struct replication_info *info, struct inode *inode)
 {
-	struct inode *inode = inode_lookup(info->inum);
-	int n_srcs, ncopy;
-	struct host **srcs;
-	gfarm_error_t e;
+	if (inode_get_size(inode) == 0)
+		return (1); /* normally */
+	else if (inode_has_no_replica(inode)) {
+		gflog_warning(GFARM_MSG_1003624,
+		    "replica_check: %lld:%lld:%s: lost all replicas",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)));
+		return (1); /* error, not retry */
+	}
+	return (0); /* hosts are down */
+}
 
-	if (inode == NULL || !inode_is_file(inode) ||
-	    inode_get_gen(inode) != info->gen) {
-		gflog_debug(GFARM_MSG_1003623,
-		    "%lld:%lld was changed, ignore replica_check",
-		    (long long)info->inum, (long long)info->gen);
+static gfarm_error_t
+replica_check_fix_repattr(struct replication_info *info, struct inode *inode)
+{
+	gfarm_error_t e;
+	gfarm_repattr_t *reps = NULL;
+	size_t nreps = 0;
+	int n_srcs, ncopy, n_ghosts, n_exceptions, n_desire, i, next_src_index;
+	struct host **srcs, **ghosts, **exceptions;
+
+	e = gfarm_repattr_parse(info->repattr, &reps, &nreps);
+	if (e != GFARM_ERR_NO_ERROR || nreps == 0) {
+		gfarm_repattr_free_all(nreps, reps);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: gfarm_repattr_parse(): %s",
+		    gfarm_error_string(e));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (info->desired_number <= 0) /* normally */
-		return (GFARM_ERR_NO_ERROR);
+
+	/* available replicas for source */
+	e = inode_replica_list(inode, &n_srcs, &srcs);
+	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+		gfarm_repattr_free_all(nreps, reps);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %lld:%lld:%s: replica_list: %s",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		return (e); /* retry */
+	}
+	/* n_srcs may be 0, because host_is_up() may change */
+	if (n_srcs <= 0) {
+		gfarm_repattr_free_all(nreps, reps);
+		free(srcs);
+		if (replica_check_have_no_replica(info, inode))
+			return (GFARM_ERR_NO_ERROR); /* ignore */
+		if (!log_is_suppressed(&log_hosts_down))
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "replica_check: %lld:%lld:%s: hosts are down",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)));
+		return (GFARM_ERR_NO_ERROR); /* ignore */
+	}
+
+	/* unsuitable hosts for destination */
+	e = inode_replica_list_all(inode, &n_exceptions, &exceptions);
+	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+		gfarm_repattr_free_all(nreps, reps);
+		free(srcs);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %lld:%lld:%s: replica_list_all: %s",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		return (e); /* retry */
+	}
+
+	next_src_index = 0;
+	for (i = 0; i < nreps; i++) {
+		e = fsngroup_get_hosts(gfarm_repattr_group(reps[i]),
+		    &n_ghosts, &ghosts);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_notice(GFARM_MSG_UNFIXED,
+			    "replica_check: fsngroup_get_hosts(%s): %s",
+			    gfarm_repattr_group(reps[i]),
+			    gfarm_error_string(e));
+			continue;
+		}
+		ncopy = inode_get_ncopy_with_grace(
+		    inode, 0, gfarm_replica_check_host_down_thresh,
+		    n_ghosts, ghosts);
+		n_desire = gfarm_repattr_amount(reps[i]);
+		if (n_desire - ncopy > 0)
+			e = replica_check_replicate(inode,
+			    n_ghosts, ghosts,
+			    n_srcs, srcs, &next_src_index,
+			    n_exceptions, exceptions,
+			    n_desire, ncopy);
+		else if (ncopy > n_desire && !log_is_suppressed(&log_too_many))
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "replica_check: %lld:%lld:%s: "
+			    "too many replicas, %d > %d",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)),
+			    ncopy, info->desired_number);
+			/* XXX remove too many replicas? */
+
+		free(ghosts);
+	}
+
+	free(srcs);
+	free(exceptions);
+	gfarm_repattr_free_all(nreps, reps);
+
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+replica_check_fix_ncopy(struct replication_info *info, struct inode *inode)
+{
+	gfarm_error_t e;
+	int n_srcs, ncopy, n_exceptions, next_src_index = 0;
+	struct host **srcs, **exceptions;
 
 	/* is_valid==0: invalid replicas (==replicating now) are OK */
 	ncopy = inode_get_ncopy_with_grace(
@@ -210,40 +321,25 @@ replica_check_fix(struct replication_info *info)
 	if (ncopy == info->desired_number) /* normally */
 		return (GFARM_ERR_NO_ERROR);
 	if (ncopy == 0) {
-		if (inode_get_size(inode) == 0)
-			return (GFARM_ERR_NO_ERROR); /* normally */
-		else if (inode_has_no_replica(inode)) {
-			gflog_warning(GFARM_MSG_1003624,
-			    "replica_check: %lld:%lld:%s: lost all replicas",
-			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)));
+		if (replica_check_have_no_replica(info, inode))
 			return (GFARM_ERR_NO_ERROR); /* not retry */
-		} else if (!log_is_suppressed(&log_hosts_down)) {
+		if (!log_is_suppressed(&log_hosts_down))
 			gflog_info(GFARM_MSG_1003625,
 			    "replica_check: %lld:%lld:%s: hosts are down",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
-			return (GFARM_ERR_NO_ERROR); /* not retry */
-		}
+		return (GFARM_ERR_NO_ERROR); /* not retry */
 	}
 	if (ncopy > info->desired_number) {
 		if (!log_is_suppressed(&log_too_many))
 			gflog_debug(GFARM_MSG_1003626,
-			   "replica_check: %lld:%lld:%s: "
-			   "too many replicas, %d > %d",
-			   (long long)info->inum, (long long)info->gen,
-			   user_name(inode_get_user(inode)),
-			   ncopy, info->desired_number);
+			    "replica_check: %lld:%lld:%s: "
+			    "too many replicas, %d > %d",
+			    (long long)info->inum, (long long)info->gen,
+			    user_name(inode_get_user(inode)),
+			    ncopy, info->desired_number);
 		/* XXX remove too many replicas? */
 		return (GFARM_ERR_NO_ERROR);
-	}
-	if (inode_is_opened_for_writing(inode)) {
-		gflog_debug(GFARM_MSG_1003627,
-		    "replica_check: %lld:%lld:%s: "
-		    "opened in write mode, ignored",
-		    (long long)info->inum, (long long)info->gen,
-		    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
 	/* available replicas for source */
 	e = inode_replica_list(inode, &n_srcs, &srcs);
@@ -262,18 +358,60 @@ replica_check_fix(struct replication_info *info)
 			    "replica_check: %lld:%lld:%s: hosts are down",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_FILE_BUSY); /* retry afer a while */
+		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	/* ncopy is not necessarily the same as n_src */
-	e = replica_check_replicate(inode, &n_srcs, srcs,
+	/* unsuitable hosts for destination */
+	e = inode_replica_list_all(inode, &n_exceptions, &exceptions);
+	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+		free(srcs);
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %lld:%lld:%s: replica_list_all: %s",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		return (e); /* retry */
+	}
+
+	e = replica_check_replicate(inode,
+	    0, NULL, n_srcs, srcs, &next_src_index, n_exceptions, exceptions,
 	    info->desired_number, ncopy);
 	free(srcs);
+	free(exceptions);
 
 	return (e);
 }
 
-static int
-replica_check_desired_number(struct inode *dir_ino, struct inode *file_ino)
+static gfarm_error_t
+replica_check_fix(struct replication_info *info)
+{
+	struct inode *inode = inode_lookup(info->inum);
+
+	if (inode == NULL || !inode_is_file(inode) ||
+	    inode_get_gen(inode) != info->gen) {
+		gflog_debug(GFARM_MSG_1003623,
+		    "%lld:%lld was changed, ignore replica_check",
+		    (long long)info->inum, (long long)info->gen);
+		return (GFARM_ERR_NO_ERROR); /* ignore */
+	}
+	if (inode_is_opened_for_writing(inode)) {
+		gflog_debug(GFARM_MSG_1003627,
+		    "replica_check: %lld:%lld:%s: "
+		    "opened in write mode, ignored",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)));
+		return (GFARM_ERR_NO_ERROR); /* ignore */
+	}
+	if (info->repattr != NULL)
+		return (replica_check_fix_repattr(info, inode));
+	else if (info->desired_number <= 0) /* disabled */
+		return (GFARM_ERR_NO_ERROR);
+	else
+		return (replica_check_fix_ncopy(info, inode));
+}
+
+static void
+replica_check_desired_set(
+	struct inode *dir_ino, struct inode *file_ino,
+	struct replication_info *infop)
 {
 	char *repattr;
 	int desired_number;
@@ -281,13 +419,16 @@ replica_check_desired_number(struct inode *dir_ino, struct inode *file_ino)
 	if (inode_get_replica_spec(file_ino, &repattr, &desired_number) ||
 	    inode_search_replica_spec(dir_ino, &repattr, &desired_number)) {
 		if (repattr != NULL) {
-			free(repattr); /* XXX */
-			return (0); /* XXX support repattr */
+			infop->desired_number = 0;
+			infop->repattr = repattr;
 		} else {
-			return (desired_number);
+			infop->desired_number = desired_number;
+			infop->repattr = NULL;
 		}
+	} else {
+		infop->desired_number = 0;
+		infop->repattr = NULL;
 	}
-	return (0);
 }
 
 #define REPLICA_CHECK_DIRENTS_BUFCOUNT 512
@@ -317,8 +458,8 @@ replica_check_stack_push(struct inode *dir_ino, struct inode *file_ino)
 		= inode_get_number(file_ino);
 	replica_check_stack[replica_check_stack_index].gen
 		= inode_get_gen(file_ino);
-	replica_check_stack[replica_check_stack_index].desired_number
-		= replica_check_desired_number(dir_ino, file_ino);
+	replica_check_desired_set(dir_ino, file_ino,
+	    &(replica_check_stack[replica_check_stack_index]));
 	replica_check_stack_index++;
 }
 
@@ -411,6 +552,7 @@ replica_check_main_dir(gfarm_ino_t inum, gfarm_ino_t *countp)
 				    gfarm_error_string(e));
 			}
 			(*countp)++;
+			free(rep_info.repattr);
 		}
 	}
 	return (need_to_retry);

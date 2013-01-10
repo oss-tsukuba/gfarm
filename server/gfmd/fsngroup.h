@@ -2,11 +2,13 @@
  * $Id$
  */
 
+struct host;
+gfarm_error_t fsngroup_get_hosts(const char *, int *, struct host ***);
+
 /*
  * Replication scheduler:
  */
 struct inode;
-struct host;
 struct file_copy;
 void fsngroup_replicate_file(
 	struct inode *, struct host *, const char *,
