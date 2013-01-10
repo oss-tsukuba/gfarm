@@ -430,6 +430,16 @@ gfarm_repattr_free(gfarm_repattr_t rep)
 	destroy_repattr(rep);
 }
 
+void
+gfarm_repattr_free_all(size_t n_reps, gfarm_repattr_t *reps)
+{
+	int i;
+
+	for (i = 0; i < n_reps; i++)
+		destroy_repattr(reps[i]);
+	free(reps);
+}
+
 const char *
 gfarm_repattr_group(gfarm_repattr_t rep)
 {

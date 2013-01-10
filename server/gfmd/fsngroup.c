@@ -180,11 +180,7 @@ fsngroup_replicate_file(
 		free(ghosts);
 	}
 
-	if (reps != NULL) {
-		for (i = 0; i < nreps; i++)
-			gfarm_repattr_free(reps[i]);
-	}
-	free(reps);
+	gfarm_repattr_free_all(nreps, reps);
 }
 /*****************************************************************************/
 /*
