@@ -76,6 +76,6 @@ $(OBJS): $(DEPGFARMINC) \
 	user.h group.h host.h peer.h dead_file_copy.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h abstract_host.h \
-	gfmd_channel.h mdhost.h mdcluster.h replica_check.h
+	gfmd_channel.h mdhost.h mdcluster.h replica_check.h fsngroup.h
 
 include $(optional_rule)

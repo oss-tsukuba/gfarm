@@ -197,20 +197,73 @@ isvalid_attrname(const char *attrname)
 	return ((0 < namelen) && (namelen <= GFARM_XATTR_NAME_MAX));
 }
 
+static int
+is_string(void *value, size_t size)
+{
+	char *p = value;
+	int i;
+
+	for (i = 0; i < size; i++)
+		if (p[i] == '\0')
+			return (1);
+	return (0);
+}
+
 static gfarm_error_t
-xattr_check_desired_number(
-	int xmlMode, struct inode *inode, const char *attrname,
-	const void *value, size_t size, int *have, int *change)
+xattr_check_repattr(
+	struct inode *inode, const char *attrname,
+	void **valuep, size_t *sizep, int *change)
+{
+	gfarm_error_t e;
+	gfarm_repattr_t *reps = NULL;
+	size_t nreps = 0;
+	char *repattr = NULL, *repattr2;
+
+	if (!is_string(*valuep, *sizep)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm.replicainfo is not a string");
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	if ((e = gfarm_repattr_reduce(*valuep, &reps, &nreps))
+	    != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_repattr_reduce() failed: %s",
+		    gfarm_error_string(e));
+	} else if (nreps == 0 || reps == NULL) {
+		e = GFARM_ERR_INVALID_ARGUMENT;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "invalid repattr: %s", (char *)(*valuep));
+	} else if ((e = gfarm_repattr_stringify(reps, nreps, &repattr))
+		   != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfarm_repattr_stringify() failed: %s",
+		    gfarm_error_string(e));
+	} else {
+		if (inode_has_repattr(inode, &repattr2)) {
+			if (strcmp(repattr, repattr2) == 0)
+				*change = 0;
+			else
+				*change = 1;
+			free(repattr2);
+		} else
+			*change = 1;
+		free(*valuep);
+		*valuep = repattr;
+		*sizep = strlen(repattr) + 1;
+	}
+	gfarm_repattr_free_all(nreps, reps);
+	return (e);
+}
+
+static gfarm_error_t
+xattr_check_ncopy(
+	struct inode *inode, const char *attrname,
+	const void *value, size_t size, int *change)
 {
 	gfarm_error_t e;
 	unsigned int n;
 	int num_new, num_old, all_digit;
 
-	if (xmlMode || strcmp("gfarm.ncopy", attrname) != 0) {
-		*have = 0;
-		*change = 0;
-		return (GFARM_ERR_NO_ERROR);
-	}
 	e = inode_xattr_to_uint(value, size, &n, &all_digit);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003657,
@@ -229,105 +282,142 @@ xattr_check_desired_number(
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (inode_has_desired_number(inode, &num_old) && num_new == num_old) {
-		*have = 1;
 		*change = 0;
 		gflog_debug(GFARM_MSG_1003660,
 		    "gfarm.ncopy=%d: not changed", num_new);
 		return (GFARM_ERR_NO_ERROR);
 	}
-	*have = 1;
 	*change = 1;
 	return (GFARM_ERR_NO_ERROR); /* update */
 }
 
 static gfarm_error_t
-setxattr(int xmlMode, struct inode *inode,
-	 char *attrname, void **valuep, size_t size, int flags,
+xattr_check_replica_spec(
+	struct inode *inode, const char *attrname,
+	void **valuep, size_t *sizep, int *have, int *change)
+{
+	if (strcmp("gfarm.ncopy", attrname) == 0) {
+		*have = 1;
+		return (xattr_check_ncopy(
+		    inode, attrname, *valuep, *sizep, change));
+	} else if (strcmp(GFARM_REPATTR_NAME, attrname) == 0) {
+		*have = 1;
+		return (xattr_check_repattr(
+		    inode, attrname, valuep, sizep, change));
+	} else {
+		*have = 0;
+		*change = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
+}
+
+static gfarm_error_t
+xattr_check_acl(
+	struct inode *inode, char *attrname,
+	void **valuep, size_t *sizep, int *done)
+{
+	gfarm_error_t e;
+	gfarm_acl_type_t acltype;
+
+	if (strcmp(attrname, GFARM_ACL_EA_ACCESS) == 0)
+		acltype = GFARM_ACL_TYPE_ACCESS;
+	else if (strcmp(attrname, GFARM_ACL_EA_DEFAULT) == 0)
+		acltype = GFARM_ACL_TYPE_DEFAULT;
+	else {
+		*done = 0;
+		return (GFARM_ERR_NO_ERROR);
+	}
+
+	e = acl_convert_for_setxattr(inode, acltype, valuep, sizep);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1003033,
+		    "acl_convert_for_setxattr(%s): %s",
+		    attrname, gfarm_error_string(e));
+		*done = 1;
+		return (e);
+	}
+	/* The *valuep has only version number if size == 4 */
+	if (*valuep == NULL || *sizep <= 4) {
+		void *value;
+		size_t size;
+
+		e = inode_xattr_get_cache(inode, 0, attrname, &value, &size);
+		if (e == GFARM_ERR_NO_ERROR) {
+			free(value);
+			(void)inode_xattr_remove(inode, 0, attrname);
+			e = db_xattr_remove(
+			    0, inode_get_number(inode), attrname);
+			if (e != GFARM_ERR_NO_ERROR)
+				gflog_error(GFARM_MSG_1003034,
+				    "db_xattr_remove(0, %lld, %s): %s",
+				    (long long)inode_get_number(inode),
+				    attrname, gfarm_error_string(e));
+		}
+		*done = 1;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	*done = 0;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+xattr_set(int xmlMode, struct inode *inode,
+	 char *attrname, void **valuep, size_t *sizep, int flags,
 	 struct db_waitctx *waitctx, int *addattr)
 {
 	gfarm_error_t e;
-	void *value;
-	int have_ncopy, change_ncopy;
+	int have_replica_spec, change_replica_spec = 0, done;
 
 	*addattr = 0;
 	if (!isvalid_attrname(attrname)) {
 		gflog_debug(GFARM_MSG_1002066,
 			"argument 'attrname' is invalid");
-		return GFARM_ERR_INVALID_ARGUMENT;
-	} else if (size >
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	} else if (*sizep >
 	    (xmlMode ? gfarm_xmlattr_size_limit : gfarm_xattr_size_limit)) {
-		return GFARM_ERR_ARGUMENT_LIST_TOO_LONG; /* i.e. E2BIG */
+		return (GFARM_ERR_ARGUMENT_LIST_TOO_LONG); /* i.e. E2BIG */
 	}
 
-	if (xmlMode && !gfarm_utf8_validate_sequences(*valuep, size)) {
-		gflog_debug(GFARM_MSG_1003500,
-		    "argument '*valuep' is not a valid UTF-8 string");
-		return GFARM_ERR_ILLEGAL_BYTE_SEQUENCE;
-	}
-
-	e = xattr_check_desired_number(
-	    xmlMode, inode, attrname, *valuep, size,
-	    &have_ncopy, &change_ncopy);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1003661,
-		    "xattr_check_desired_number(): %s", gfarm_error_string(e));
-		return (e);
-	} else if (have_ncopy && !change_ncopy)
-		return (GFARM_ERR_NO_ERROR); /* not add/modify */
-
-	if (!xmlMode) {
-		gfarm_acl_type_t acltype;
-		if (strcmp(attrname, GFARM_ACL_EA_ACCESS) == 0)
-			acltype = GFARM_ACL_TYPE_ACCESS;
-		else if (strcmp(attrname, GFARM_ACL_EA_DEFAULT) == 0)
-			acltype = GFARM_ACL_TYPE_DEFAULT;
-		else
-			acltype = 0;
-		if (acltype == GFARM_ACL_TYPE_ACCESS ||
-		    acltype == GFARM_ACL_TYPE_DEFAULT) {
-			e = acl_convert_for_setxattr(inode, acltype,
-						      valuep, &size);
-			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1003033,
-					"acl_convert_for_setxattr(%s): %s",
-					attrname, gfarm_error_string(e));
-				return (e);
-			}
-			/* The *valuep has only version number if size == 4 */
-			if (*valuep == NULL || size <= 4) {
-				e = inode_xattr_get_cache(
-					inode, xmlMode, attrname,
-					&value, &size);
-				if (e == GFARM_ERR_NO_ERROR) {
-					free(value);
-					(void)inode_xattr_remove(
-						inode, xmlMode, attrname);
-					e = db_xattr_remove(xmlMode,
-					    inode_get_number(inode), attrname);
-					if (e != GFARM_ERR_NO_ERROR)
-						gflog_error(GFARM_MSG_1003034,
-						    "db_xattr_remove(0, %llu, "
-						    "%s): %s",
-						    (unsigned long long)
-						    inode_get_number(inode),
-						    attrname,
-						    gfarm_error_string(e));
-				}
-				/* *addattr = 0 */
+	if (xmlMode) {
+		if (!gfarm_utf8_validate_sequences(*valuep, *sizep)) {
+			gflog_debug(GFARM_MSG_1003500,
+			    "argument '*valuep' is not a valid UTF-8 string");
+			return (GFARM_ERR_ILLEGAL_BYTE_SEQUENCE);
+		}
+	} else {
+		e = xattr_check_replica_spec(
+		    inode, attrname, valuep, sizep,
+		    &have_replica_spec, &change_replica_spec);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "xattr_check_replica_spec(): %s",
+			    gfarm_error_string(e));
+			return (e);
+		}
+		if (have_replica_spec) {
+			if (!change_replica_spec) /* not add/modify */
 				return (GFARM_ERR_NO_ERROR);
-			}
+			/* else: need to update xattr */
+		} else {
+			e = xattr_check_acl(
+			    inode, attrname, valuep, sizep, &done);
+			if (e != GFARM_ERR_NO_ERROR)
+				return (e);
+			else if (done)
+				return (GFARM_ERR_NO_ERROR);
+			/* else: need to update xattr */
 		}
 	}
-	value = *valuep;
 
 	if ((flags & (GFS_XATTR_CREATE|GFS_XATTR_REPLACE))
 		== (GFS_XATTR_CREATE|GFS_XATTR_REPLACE)) {
 		gflog_debug(GFARM_MSG_1002067,
 			"argument 'flags' is invalid");
-		return GFARM_ERR_INVALID_ARGUMENT;
+		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 	if (flags & GFS_XATTR_REPLACE) {
-		e = inode_xattr_modify(inode, xmlMode, attrname, value, size);
+		e = inode_xattr_modify(inode, xmlMode, attrname,
+		    *valuep, *sizep);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002068,
 			    "inode_xattr_modefy(%s): %s",
@@ -335,13 +425,13 @@ setxattr(int xmlMode, struct inode *inode,
 			return (e);
 		}
 	} else {
-		e = inode_xattr_add(inode, xmlMode, attrname, value, size);
+		e = inode_xattr_add(inode, xmlMode, attrname, *valuep, *sizep);
 		if (e == GFARM_ERR_NO_ERROR)
 			*addattr = 1;
 		else if (e == GFARM_ERR_ALREADY_EXISTS &&
 		    (flags & GFS_XATTR_CREATE) == 0)
 			e = inode_xattr_modify(inode, xmlMode, attrname,
-					       value, size);
+			    *valuep, *sizep);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002069,
 				"inode_xattr_add() failed:%s",
@@ -349,17 +439,17 @@ setxattr(int xmlMode, struct inode *inode,
 			return (e);
 		}
 	}
-	if (change_ncopy)
+	if (change_replica_spec)
 		replica_check_signal_update_xattr();
 
 	if (*addattr) {
 		e = db_xattr_add(xmlMode, inode_get_number(inode),
-			attrname, value, size, waitctx);
+		    attrname, *valuep, *sizep, waitctx);
 	} else
 		e = db_xattr_modify(xmlMode, inode_get_number(inode),
-			attrname, value, size, waitctx);
+		    attrname, *valuep, *sizep, waitctx);
 
-	return e;
+	return (e);
 }
 
 gfarm_error_t
@@ -377,10 +467,6 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	struct inode *inode;
 	struct db_waitctx ctx, *waitctx;
 	int addattr = 0;
-	gfarm_repattr_t *reps = NULL;
-	size_t nreps = 0;
-	char *repattr = NULL;
-	int i;
 
 	e = gfm_server_get_request(peer, diag,
 	    "sBi", &attrname, &size, &value, &flags);
@@ -436,37 +522,13 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 			    "xattr_access() failed: %s",
 			    gfarm_error_string(e));
 	} else {
-		{ /* XXX to merge with main trunk */
-			if (strcmp(attrname, GFARM_REPATTR_NAME) == 0) {
-				if ((e = gfarm_repattr_reduce(value, &reps, &nreps))
-				    != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
-					    "gfarm_repattr_reduce() failed: %s",
-					    gfarm_error_string(e));
-				} else if (nreps == 0 || reps == NULL) {
-					e = GFARM_ERR_INVALID_ARGUMENT;
-					gflog_debug(GFARM_MSG_UNFIXED,
-					    "invalid repattr: %s", (char *)value);
-				} else if ((e = gfarm_repattr_stringify(reps, nreps, &repattr))
-				    != GFARM_ERR_NO_ERROR) {
-					gflog_debug(GFARM_MSG_UNFIXED,
-					    "gfarm_repattr_stringify() failed: %s",
-					    gfarm_error_string(e));
-				} else {
-					free(value);
-					value = repattr;
-					size = strlen(repattr) + 1;
-				}
-			}
-			if (e == GFARM_ERR_NO_ERROR) {
-				if (db_begin(diag) == GFARM_ERR_NO_ERROR)
-					transaction = 1;
-				e = setxattr(xmlMode, inode, attrname, &value, size,
-				    flags, waitctx, &addattr);
-				if (transaction)
-					db_end(diag);
-			}
-		}
+		if (db_begin(diag) == GFARM_ERR_NO_ERROR)
+			transaction = 1;
+		/* value may be changed */
+		e = xattr_set(xmlMode, inode, attrname, &value, &size,
+		    flags, waitctx, &addattr);
+		if (transaction)
+			db_end(diag);
 	}
 	giant_unlock();
 
@@ -484,11 +546,6 @@ gfm_server_setxattr(struct peer *peer, int from_client, int skip, int xmlMode)
 	}
 	db_waitctx_fini(waitctx);
 quit:
-	if (reps != NULL) {
-		for (i = 0; i < nreps; i++)
-			gfarm_repattr_free(reps[i]);
-		free(reps);
-	}
 	free(value);
 	free(attrname);
 	return (gfm_server_put_reply(peer, diag, e, ""));
