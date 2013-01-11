@@ -1098,6 +1098,22 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 		remote_peer_clear_db_update_info(remote_peer);
 		statewait = remote_peer_get_statewait(remote_peer);
 		gfarm_thr_statewait_reset(statewait, diag);
+
+		/*
+		 * If the remote RPC updates metadata and the server
+		 * is a master gfmd with a sync-slave, the following
+		 * indirect fmdc_server_remote_rpc_thread() call also
+		 * send journal-update notification to the sync-slave.
+		 *
+		 * To receive a response of the journal-update request,
+		 * it have to call gfmdc_server_remote_rpc_thread()
+		 * from another thread in the thread pool and wait for
+		 * completion of the fmdc_server_remote_rpc_thread()
+		 * call.
+		 *
+		 * For more information, see the ticket #287 and the
+		 * changeset r6632.
+		 */
 		c.rpeer = rpeer;
 		c.xid = xid;
 		c.size = size;
