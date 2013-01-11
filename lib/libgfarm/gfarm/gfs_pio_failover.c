@@ -341,6 +341,7 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			gflog_debug(GFARM_MSG_1003390,
 			    "gfm_client_connection_acquire failed : %s",
 			    gfarm_error_string(e));
+			continue;
 		}
 		if (gfm_client_connection_failover_count(gfm_server)
 		    != fc + 1) {
