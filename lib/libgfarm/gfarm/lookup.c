@@ -952,6 +952,8 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 		gflog_debug(GFARM_MSG_1002621,
 		    "trim_trailing_file_separator failed: %s",
 		    gfarm_error_string(e));
+		free(snextpath);
+		free(dnextpath);
 		return (e);
 	}
 
@@ -1400,10 +1402,8 @@ on_error_result:
 		}
 	}
 
-	if (snextpath)
-		free(snextpath);
-	if (dnextpath)
-		free(dnextpath);
+	free(snextpath);
+	free(dnextpath);
 
 	if (is_success)
 		return (*success_op)(sconn, closure);
