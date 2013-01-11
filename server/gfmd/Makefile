@@ -81,6 +81,6 @@ $(OBJS): $(DEPGFARMINC) \
 	dead_file_copy.h file_replication.h process.h job.h \
 	dir.h inode.h fs.h back_channel.h protocol_state.h quota.h xattr.h \
 	journal_file.h db_journal.h db_journal_apply.h \
-	gfmd_channel.h mdhost.h mdcluster.h relay.h replica_check.h
+	gfmd_channel.h mdhost.h mdcluster.h relay.h replica_check.h fsngroup.h
 
 include $(optional_rule)

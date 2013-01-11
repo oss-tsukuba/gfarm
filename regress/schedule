@@ -120,6 +120,7 @@ server/gfmd/db_journal/db_journal_write.sh
 server/gfmd/db_journal/db_journal_ops.sh
 server/gfmd/db_journal/db_journal_apply.sh
 server/gfmd/replica_check/ncopy.sh   ### wait at least 10 seconds
+server/gfmd/replica_check/repattr.sh ### wait at least 10 seconds
 
 # manual test: see log file when the result is UNSUPPORTED
 manual/server/gfsd/spool_check/lost_found.sh
