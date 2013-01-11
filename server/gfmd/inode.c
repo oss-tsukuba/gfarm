@@ -2855,8 +2855,10 @@ inode_rename(
 				    "rename(%s, %s): failed to reparent: %s",
 				    sname, dname, gfarm_error_string(e));
 		}
+
 		if (sdir != ddir && (inode_is_dir(src) || inode_is_file(src))
-		    && !inode_has_desired_number(src, &num))
+		    && (!inode_has_desired_number(src, &num) &&
+			!inode_has_repattr(src, NULL)))
 			replica_check_signal_rename();
 	}
 	/* db_inode_nlink_modify() is not necessary, because it's unchanged */
@@ -5860,7 +5862,10 @@ inode_has_repattr(struct inode *inode, char **repattrp)
 		free(repattr);
 		return (0);
 	}
-	*repattrp = (char *)repattr;
+	if (repattrp != NULL)
+		*repattrp = (char *)repattr;
+	else
+		free(repattr);
 
 	return (1);
 }
