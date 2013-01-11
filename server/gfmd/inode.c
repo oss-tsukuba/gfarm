@@ -3302,6 +3302,7 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 	gfarm_int64_t *old_genp, gfarm_int64_t *new_genp,
 	char **trace_logp)
 {
+	/* ia may be NULL, if GFM_PROTO_FHCLOSE_READ/WRITE */
 	struct inode_activity *ia = inode->u.c.activity;
 	gfarm_int64_t old_gen;
 	int generation_updated = 0;
@@ -3349,7 +3350,9 @@ inode_file_update_common(struct inode *inode, gfarm_off_t size,
 		/* XXX provide an option not to start replication here? */
 
 		/* if there is no other writing process */
-		if (ia == NULL || ia->u.f.spool_writers == 0) {
+		if (ia == NULL) {
+			start_replication = 1;
+		} else if (ia->u.f.spool_writers == 0) {
 			start_replication = 1;
 			ia->u.f.replication_pending = 0;
 		} else {
