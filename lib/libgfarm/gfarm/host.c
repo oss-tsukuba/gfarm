@@ -336,10 +336,14 @@ gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 
 	e = gfm_host_get_canonical_name(gfm_server, hostname,
 	    &canonical_hostname, &port);
-	is_local = gfm_canonical_hostname_is_local(gfm_server,
-	    canonical_hostname);
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e != GFARM_ERR_NO_ERROR)  {
+		is_local = gfm_canonical_hostname_is_local(gfm_server,
+		    hostname);
+	} else {
+		is_local = gfm_canonical_hostname_is_local(gfm_server,
+		    canonical_hostname);
 		free(canonical_hostname);
+	}
 	return (is_local);
 }
 
