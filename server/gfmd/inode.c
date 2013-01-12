@@ -4030,9 +4030,79 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 }
 
 static gfarm_error_t
+check_removable_replicas(
+	struct file_opening *fo, int num_not_removing,
+	struct file_copy *copy, struct file_copy *copies_list)
+{
+	gfarm_error_t e;
+
+	if (num_not_removing == 1)
+		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
+
+	if (fo->u.f.repattr != NULL) {
+		int nhosts;
+		struct host **hosts;
+		int ncopy, n_desire;
+		size_t i, nreps = 0;
+		gfarm_repattr_t *reps = NULL;
+		char *fsng;
+
+		e = gfarm_repattr_parse(fo->u.f.repattr, &reps, &nreps);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "gfarm_repattr_parse(%s): %s",
+			    fo->u.f.repattr, gfarm_error_string(e));
+			return (e);
+		}
+
+		fsng = host_fsngroup(copy->host);
+		n_desire = 0;
+		for (i = 0; i < nreps; i++) {
+			if (strcmp(gfarm_repattr_group(reps[i]), fsng) == 0) {
+				n_desire = gfarm_repattr_amount(reps[i]);
+				break;
+			}
+		}
+		if (n_desire <= 0) { /* no desired number for the host */
+			gfarm_repattr_free_all(nreps, reps);
+			return (GFARM_ERR_NO_ERROR); /* removable */
+		}
+
+		e = fsngroup_get_hosts(fsng, &nhosts, &hosts);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gfarm_repattr_free_all(nreps, reps);
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "fsngroup_get_hosts(%s): %s",
+			    fsng, gfarm_error_string(e));
+			return (e);
+		}
+		if (nhosts == 0) { /* unexpected */
+			free(hosts);
+			gfarm_repattr_free_all(nreps, reps);
+			return (GFARM_ERR_NO_ERROR);
+		}
+
+		ncopy = inode_count_ncopy_with_grace(
+		    copies_list, 0, 0, nhosts, hosts);
+
+		free(hosts);
+		gfarm_repattr_free_all(nreps, reps);
+
+		if (ncopy > n_desire)
+			return (GFARM_ERR_NO_ERROR); /* removable */
+		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+	}
+
+	if (fo->u.f.desired_replica_number >= 2 &&
+	    num_not_removing <= fo->u.f.desired_replica_number)
+		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+	return (GFARM_ERR_NO_ERROR); /* removable */
+}
+
+static gfarm_error_t
 inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
-	gfarm_int64_t gen, int desired_number,
-	int protect_replicas, int invalid_is_removable, int metadata_only,
+	gfarm_int64_t gen, struct file_opening *protect_replicas,
+	int invalid_is_removable, int metadata_only,
 	struct dead_file_copy **deferred_cleanupp)
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
@@ -4055,12 +4125,16 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		}
 		copy = *foundp;
-		if (protect_replicas) {
-			if (num_valid == 1 && FILE_COPY_IS_VALID(copy))
-				return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
-			if (desired_number >= 2 &&
-			    num_not_removing <= desired_number)
-				return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
+		if (protect_replicas != NULL) {
+			e = check_removable_replicas(
+			    protect_replicas, num_not_removing,
+			    copy, inode->u.c.s.f.copies);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_debug(GFARM_MSG_UNFIXED,
+				    "check_removable_replicas: %s",
+				    gfarm_error_string(e));
+				return (e);
+			}
 		}
 		if (!metadata_only) {
 			if (FILE_COPY_IS_BEING_REMOVED(copy) ||
@@ -4123,7 +4197,7 @@ inode_remove_replica_metadata(struct inode *inode, struct host *spool_host,
 	gfarm_int64_t gen)
 {
 	return (inode_remove_replica_internal(inode, spool_host, gen,
-	    0, 0, 0, 1, NULL));
+	    NULL, 0, 1, NULL));
 }
 
 static gfarm_error_t
@@ -4132,7 +4206,7 @@ inode_remove_replica_gen_deferred(struct inode *inode,
 	struct dead_file_copy **deferred_cleanupp)
 {
 	return (inode_remove_replica_internal(inode, spool_host, gen,
-	    0, 0, 1, 0, deferred_cleanupp));
+	    NULL, 1, 0, deferred_cleanupp));
 }
 
 gfarm_error_t
@@ -4144,11 +4218,11 @@ inode_remove_replica_gen(struct inode *inode, struct host *spool_host,
 }
 
 gfarm_error_t
-inode_remove_replica(struct inode *inode, struct host *spool_host,
-	int desired_number)
+inode_remove_replica_protected(struct inode *inode, struct host *spool_host,
+	struct file_opening *fo)
 {
 	return (inode_remove_replica_internal(inode, spool_host,
-	    inode_get_gen(inode), desired_number, 1, 0, 0, NULL));
+	    inode_get_gen(inode), fo, 0, 0, NULL));
 }
 
 gfarm_error_t

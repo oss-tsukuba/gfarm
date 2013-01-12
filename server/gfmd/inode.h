@@ -116,6 +116,8 @@ gfarm_error_t inode_rename(struct inode *, char *, struct inode *, char *,
 gfarm_error_t inode_unlink(struct inode *, char *, struct process *,
 	struct inode_trace_log_info *, int *);
 
+struct file_opening;
+
 void inode_dead_file_copy_added(gfarm_ino_t, gfarm_int64_t, struct host *);
 gfarm_error_t inode_add_replica(struct inode *, struct host *, int);
 gfarm_error_t inode_add_file_copy_in_cache(struct inode *, struct host *);
@@ -124,15 +126,14 @@ gfarm_error_t inode_remove_replica_metadata(struct inode *, struct host *,
 	gfarm_int64_t);
 gfarm_error_t inode_remove_replica_gen(struct inode *, struct host *,
 	gfarm_int64_t);
-gfarm_error_t inode_remove_replica(struct inode *, struct host *, int);
+gfarm_error_t inode_remove_replica_protected(struct inode *, struct host *,
+	struct file_opening *);
 gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
 void inode_schedule_replication(struct inode *, struct host *,
 	int *, struct host **, int *, struct host **, int, const char *);
-
-struct file_opening;
 
 gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char**);
