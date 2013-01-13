@@ -4490,8 +4490,7 @@ gfm_server_replica_remove_by_file(
 		} else {
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
-			e = inode_remove_replica(inode, host,
-			    fo->u.f.desired_replica_number);
+			e = inode_remove_replica_protected(inode, host, fo);
 			if (transaction)
 				db_end(diag);
 		}
