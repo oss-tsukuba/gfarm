@@ -136,7 +136,6 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 	struct mdcluster *c;
 	gfarm_error_t e;
 	char *name2;
-	static const char *diag = "mdcluster_enter";
 
 	c = mdcluster_lookup_internal(name);
 	if (c) {
@@ -147,9 +146,10 @@ mdcluster_enter(const char *name, struct mdcluster **cpp)
 		return (GFARM_ERR_NO_ERROR);
 	}
 
-	name2 = strdup_ck(name, diag);
-	c = mdcluster_new(name2);
-	if (c == NULL) {
+	name2 = strdup(name);
+	if (name2 != NULL)
+		c = mdcluster_new(name2);
+	if (name2 == NULL || c == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
 		gflog_error(GFARM_MSG_1003012,
 		    "%s", gfarm_error_string(e));

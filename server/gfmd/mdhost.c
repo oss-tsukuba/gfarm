@@ -705,12 +705,17 @@ gfarm_error_t
 mdhost_modify_in_cache(struct mdhost *mh, struct gfarm_metadb_server *ms)
 {
 	int cluster_changed = strcmp(mh->ms.clustername, ms->clustername) != 0;
-	static const char diag[] = "mdhost_modify_in_cache";
+	gfarm_error_t e;
 
 	if (cluster_changed)
 		mdcluster_remove_mdhost(mh);
 	free(mh->ms.clustername);
-	mh->ms.clustername = strdup_ck(ms->clustername, diag);
+	mh->ms.clustername = strdup(ms->clustername);
+	if (mh->ms.clustername == NULL) {
+		e = GFARM_ERR_NO_MEMORY;
+		gflog_error(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		return (e);
+	}
 	mh->ms.port = ms->port;
 	mh->ms.flags = ms->flags;
 	if (cluster_changed)
