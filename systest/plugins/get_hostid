@@ -9,23 +9,36 @@ get_hostid_depends()
 #
 # Sub-command: get hostid
 #
-# Get hostid from hostname written in configuration file
+# Get hostid from hostname written in configuration file,
+# or configured gfarm environment.
 #
 subcmd_get_hostid()
 {
 	log_debug "subcmd_get_hostid"
 
-	RESULT=1
-
 	for ID in `get_all_hostids`; do
 		if [ X`get_host $ID` = X$HOSTID ]; then
 			echo $ID
 			log_debug "subcmd_get_hostid: $ID"
-			RESULT=0
-			break
+			return 0
+		fi
+	done
+
+	for ID in `get_all_hostids`; do
+		if is_gfmd_hostid $ID; then
+			HOSTNAME=`exec_gfmd_host_agent $ID root \
+				get-config-gfarm-param "param=BACKEND_HOSTNAME"`
+		elif is_gfsd_hostid $ID; then
+			HOSTNAME=`exec_gfsd_host_agent $ID root \
+				get-config-gfsd-param "param=GFSD_HOSTNAME"`
+		fi
+		if [ X$HOSTNAME = X$HOSTID ]; then
+			echo $ID
+			log_debug "subcmd_get_hostid: $ID"
+			return 0
 		fi
 	done
 
 	log_debug "end subcmd_get_hostid"
-	return $RESULT
+	return 1
 }

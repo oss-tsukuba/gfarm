@@ -15,6 +15,7 @@ DATA =	$(srcdir)/get_auth_type \
 	$(srcdir)/compare_spool_file \
 	$(srcdir)/config_gfarm_update_r \
 	$(srcdir)/read_and_register \
+	$(srcdir)/get_hostid \
 	$(srcdir)/check_hostids_defined
 
 include $(top_srcdir)/makes/data.mk
