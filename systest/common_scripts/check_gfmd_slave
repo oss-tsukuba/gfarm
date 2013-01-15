@@ -3,11 +3,14 @@
 #
 check_gfmd_slave()
 {
-	HOSTNAME=`$GFSERVICE $DEBUG get_host $1`
+	TARGET_HOSTNAME=`$GFSERVICE $DEBUG get-config-gfarm-param $1 \
+		BACKEND_HOSTNAME`
+	[ "X$TARGET_HOSTNAME" = X ] && return 1
+
 	I=0
 	while [ $I -lt $3 ]; do
 		MODE=`$GFSERVICE $DEBUG gfcmd $2 gfmdhost -l | \
-			awk "/${HOSTNAME}/{ print \\\$2 }"`
+			awk "/${TARGET_HOSTNAME}/{ print \\\$2 }"`
 		if [ X$MODE = Xslave ]; then
 			return 0
 		fi

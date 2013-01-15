@@ -13,7 +13,7 @@ subcmd_read_and_register()
 {
 	log_debug "subcmd_read_and_register"
 
-	check_argc $# 3
+	check_argc $# 2 +
 	check_hostid $HOSTID
 	FILE_PATH=$1
 	GFMD=$2
@@ -42,14 +42,16 @@ subcmd_read_and_register()
 	#
 	# Get GFSD_HOSTNAME of the gfsd host.
 	#
-	GFSD_HOSTNAME=`exec_gfsd_host_agent \
-		$GFSD root get-config-gfsd-param param=GFSD_HOSTNAME`
-	[ "X$GFSD_HOSTNAME" = X ] \
-		&& log_error "failed to get GFSD_HOSTNAME of $HOSTID"
+	if [ X$GFSD != X ]; then
+		GFSD_HOSTNAME=`exec_gfsd_host_agent $GFSD root \
+			get-config-gfsd-param param=GFSD_HOSTNAME`
+		[ "X$GFSD_HOSTNAME" = X ] \
+			&& log_error "failed to get GFSD_HOSTNAME of $HOSTID"
+	fi
 
 	cat $TMP_FILE | exec_remote_host_agent $HOSTID - read_and_register \
-		"gfarm://${BACKEND_HOSTNAME}:${GFMD_PORT}/${FILE_PATH}" \
-		$GFSD_HOSTNAME
+		"gfarm-url=gfarm://${BACKEND_HOSTNAME}:${GFMD_PORT}/${FILE_PATH}" \
+		"filesystem-node=$GFSD_HOSTNAME"
 	[ $? -ne 0 ] && log_error "gfservice read_and_register failed"
 
 	rm -f $TMP_FILE
@@ -75,11 +77,20 @@ subcmd_read_and_register_agent()
 
 	set_params
 
+	GFARM_URL=`get_param gfarm-url`
+	FILESYSTEM_NODE=`get_param filesystem-node`
+
+	if [ X$FILESYSTEM_NODE != X ]; then
+		GFREG_OPT="-h $FILESYSTEM_NODE"
+	fi
+
 	TMP_FILE=/tmp/gfservice.$$
 	trap "rm -f $TMP_FILE; exit 1" 1 2 3 15
 	cat > $TMP_FILE
 
-	GFARM_CONFIG_FILE=$GFARM_CONF gfreg -h $2 $TMP_FILE $1
+	log_debug "execute: GFARM_CONFIG_FILE=$GFARM_CONF gfreg $GFREG_OPT" \
+		"$TMP_FILE $GFARM_URL"
+	GFARM_CONFIG_FILE=$GFARM_CONF gfreg $GFREG_OPT $TMP_FILE $GFARM_URL
 	[ $? -ne 0 ] && log_error "gfreg command failed"
 
 	rm -f $TMP_FILE
