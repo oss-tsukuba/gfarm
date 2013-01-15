@@ -9,6 +9,7 @@ wait_for_boot()
 		ssh -o "ConnectTimeout=1" $HOSTNAME true
 		[ $? -eq 0 ] && return 0
 		sleep $3
+		I=`expr $I + 1`
 	done
 
 	return 1
