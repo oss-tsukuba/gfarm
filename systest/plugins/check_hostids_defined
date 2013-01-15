@@ -1,0 +1,25 @@
+#
+# Dependencies of this sub-command
+#
+check_hostids_defined_depends()
+{
+	echo ""
+}
+
+#
+# Sub-command: check_hostids_defined
+#
+# Check whether given hostids are defined in configuration file
+#
+subcmd_check_hostids_defined()
+{
+	log_debug "subcmd_check_hostids_defined"
+
+	check_argc $# 1
+	for ID in $@; do
+		check_hostid $ID
+		HOST=`get_host $ID`
+	done
+
+	log_debug "end subcmd_check_hostids_defined"
+}
