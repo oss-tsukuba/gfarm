@@ -1,10 +1,10 @@
 # Part 1 data definition
 %define pkg	gfarm
-%define ver	2.5.8-rc1
-%define rel	2
+%define ver	2.5.8-rc2
+%define rel	1
 
 # a hook to make RPM version number different from %{ver}
-%define pkgver	2.5.8rc1
+%define pkgver	2.5.8rc2
 
 %define prefix		%{_prefix}
 %define lib_prefix	%{_libdir}
@@ -145,6 +145,10 @@ Gfarm performance monitoring plugin for Ganglia
 Development header files and libraries for Gfarm file system
 
 %changelog
+* Thu Jan 15 2013 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.8rc2-1
+- Gfarm version 2.5.8 released candidate 2
+- gfruntest, gfservice and systest are included in the client package
+
 * Thu Nov  1 2012 Osamu Tatebe <tatebe@cs.tsukuba.ac.jp> 2.5.7.2-1
 - Gfarm version 2.5.7.2 released
 - Use GFARM_CONFIGURE_OPTION instead of GLOBUS_PREFIX and
@@ -1053,6 +1057,7 @@ fi
 %{prefix}/bin/gfrep
 %{prefix}/bin/gfrm
 %{prefix}/bin/gfrmdir
+%{prefix}/bin/gfruntest
 %{prefix}/bin/gfusage
 %{prefix}/bin/gfuser
 %{prefix}/bin/gfsched
@@ -1081,6 +1086,10 @@ fi
 %{profile_prefix}/gfarm.csh
 %endif
 
+%dir %{share_prefix}
+%{share_prefix}/gfservice
+%{share_prefix}/systest
+
 %{prefix}/bin/gfperf-autoreplica
 %{prefix}/bin/gfperf-copy
 %{prefix}/bin/gfperf-metadata
@@ -1096,7 +1105,6 @@ fi
 %{prefix}/bin/gfperf.rb
 %{prefix}/bin/gfstress.rb
 %{prefix}/bin/gfiops
-%dir %{share_prefix}
 %dir %{share_prefix}/config
 %{share_prefix}/config/gfperf-config.yml
 %{share_prefix}/config/gfperf-simple.yml
