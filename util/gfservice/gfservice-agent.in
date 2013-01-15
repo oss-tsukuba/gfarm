@@ -1148,7 +1148,7 @@ subcmd_gfcmd()
 	}
 	ARGS=`get_param args`
 	log_debug "subcmd_gfcmd: execute @bindir@/$CMD $ARGS"
-	GFARM_CONFIG_FILE=$GFARM_CONF "@bindir@/$CMD" $ARGS
+	eval GFARM_CONFIG_FILE=$GFARM_CONF "@bindir@/$CMD" $ARGS
 	[ $? -ne 0 ] && log_error "failed to execute $CMD"
 
 	log_debug "end subcmd_gfcmd"
