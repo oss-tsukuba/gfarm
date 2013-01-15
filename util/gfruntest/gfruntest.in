@@ -9,6 +9,18 @@ COMMON_SCRIPTS_DIR="$TEST_PREFIX/common_scripts"
 DEBUG=""
 
 #
+# Result codes
+#
+RESULT_PASS=0
+RESULT_FAIL=1
+RESULT_XPASS=2			# passed, but it's unexpected. fixed recently?
+RESULT_XFAIL=3			# failed, but it's expected. i.e. known bug.
+RESULT_UNRESOLVED=4		# cannot determine whether (X)?PASS or (X)?FAIL
+RESULT_FATAL=5			# something fatal happend and cannot continue
+RESULT_UNTESTED=6		# not tested, this test haven't written yet.
+RESULT_UNSUPPORTED=7		# not tested, this environment can't test this.
+
+#
 # Output a warning message.
 #
 log_warn()
@@ -49,10 +61,12 @@ load()
 #
 print_usage()
 {
-        echo "Usage: $PROGRAM [option...] testcase [<argument>...]" 1>&2
-        echo "Option:"                                            1>&2
-        echo "  -d                  debug mode"                     1>&2
-        echo "  -p <parameter_file> specify the test parameter file" 1>&2
+	echo "Usage: $PROGRAM [option...] testcase [<argument>...]"	1>&2
+	echo "Option:"							1>&2
+	echo "  -d                  debug mode"				1>&2
+	echo "  -f <config_file>    specify the gfservice configuration file" \
+		1>&2
+	echo "  -p <parameter_file> specify the test parameter file"	1>&2
 }
 
 #
@@ -66,6 +80,20 @@ while [ $# -ge 1 ]; do
 	-)	break
 		;;
 	-d)	DEBUG="-d"
+		shift
+		;;
+	-f)	shift
+		if [ $# -eq 0 ]; then
+			echo "option requires an argument -- 'f'" 1>&2
+			print_usage
+			exit 1
+		fi
+		if [ -f $1 ]; then
+			GFSERVICE="$GFSERVICE -f $1"
+		else
+			echo "failed to open configuration file \"$1\"" 1>&2
+			exit 1
+		fi
 		shift
 		;;
 	-p)	shift
@@ -112,11 +140,26 @@ date
 
 test_${TESTNAME} "$@"
 RESULT=$?
-if [ $RESULT -eq 0 ]; then
-	RESULT_MESSAGE="PASS"
-else
-	RESULT_MESSAGE="FAIL"
-fi
+case $RESULT in
+$RESULT_PASS)	RESULT_MESSAGE="PASS"
+		;;
+$RESULT_FAIL)	RESULT_MESSAGE="FAIL"
+		;;
+$RESULT_XPASS)	RESULT_MESSAGE="XPASS"
+		;;
+$RESULT_XFAIL)	RESULT_MESSAGE="XFAIL"
+		;;
+$RESULT_UNRESOLVED)	RESULT_MESSAGE="UNRESOLVED"
+		;;
+$RESULT_FATAL)	RESULT_MESSAGE="FATAL"
+		;;
+$RESULT_UNTESTED)	RESULT_MESSAGE="UNTESTED"
+		;;
+$RESULT_UNSUPPORTED)	RESULT_MESSAGE="UNSUPPORTED"
+		;;
+*)	RESULT_MESSAGE="UNKNOWN RESULT CODE"
+	;;
+esac
 
 echo -n "end: $TESTNAME $RESULT_MESSAGE "
 date
