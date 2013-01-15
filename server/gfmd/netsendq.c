@@ -245,10 +245,14 @@ netsendq_readyq_remove(struct netsendq *qhost, struct netsendq_entry **entryp)
 	static const char diag[] = "netsendq_readyq_remove";
 
 	gfarm_mutex_lock(&qhost->readyq_mutex, diag, "readyq");
-	assert(!GFARM_STAILQ_EMPTY(&qhost->readyq));
-	*entryp = GFARM_STAILQ_FIRST(&qhost->readyq);
-	GFARM_STAILQ_REMOVE_HEAD(&qhost->readyq, readyq_entries);
-	became_empty = GFARM_STAILQ_EMPTY(&qhost->readyq);
+	if (GFARM_STAILQ_EMPTY(&qhost->readyq)) {
+		*entryp = NULL;
+		became_empty = 1;
+	} else {
+		*entryp = GFARM_STAILQ_FIRST(&qhost->readyq);
+		GFARM_STAILQ_REMOVE_HEAD(&qhost->readyq, readyq_entries);
+		became_empty = GFARM_STAILQ_EMPTY(&qhost->readyq);
+	}
 	gfarm_mutex_unlock(&qhost->readyq_mutex, diag, "readyq");
 	return (became_empty);
 }
@@ -419,11 +423,13 @@ netsendq_send_manager(void *arg)
 		} else {
 			to_remove = NULL;
 		}
-		if (abstract_host_is_up(send_to->abhost)) {
-			thrpool_add_job(manager->send_thrpool,
-			    entry->sendq_type->send, entry);
-		} else {
-			netsendq_host_is_down_at_entry(send_to, entry);
+		if (entry != NULL) {
+			if (abstract_host_is_up(send_to->abhost)) {
+				thrpool_add_job(manager->send_thrpool,
+				    entry->sendq_type->send, entry);
+			} else {
+				netsendq_host_is_down_at_entry(send_to, entry);
+			}
 		}
 
 		gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
