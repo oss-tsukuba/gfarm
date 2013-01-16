@@ -483,7 +483,7 @@ struct netsendq_type gfs_proto_fhremove_queue = {
 	gfs_client_fhremove_request,
 	handle_removal_result,
 	0, /* will be initialized by gfs_proto_fhremove_request_window */
-	0,
+	NETSENDQ_FLAG_QUEUEABLE_IF_DOWN,
 	NETSENDQ_TYPE_GFS_PROTO_FHREMOVE
 };
 
