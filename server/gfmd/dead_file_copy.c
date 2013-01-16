@@ -96,12 +96,16 @@ handle_removal_result(struct netsendq_entry *qentryp)
 		dead_file_copy_free(dfc); /* sleeps to wait for dbq.mutex */
 		giant_unlock();
 	} else {
-		/* unexpected error, try again later to avoid busy loop */
-		gflog_error(GFARM_MSG_1002223,
-		    "retrying removal of (%lld, %lld, %s): %s",
-		    (long long)dfc->inum, (long long)dfc->igen,
-		    abstract_host_get_name(dfc->qentry.abhost),
-		    gfarm_error_string(dfc->qentry.result));
+		if (abstract_host_is_up(dfc->qentry.abhost) ||
+		    !IS_CONNECTION_ERROR(dfc->qentry.result)) {
+			/* unexpected error */
+			gflog_error(GFARM_MSG_1002223,
+			    "retrying removal of (%lld, %lld, %s): %s",
+			    (long long)dfc->inum, (long long)dfc->igen,
+			    abstract_host_get_name(dfc->qentry.abhost),
+			    gfarm_error_string(dfc->qentry.result));
+		}
+		/* try again later to avoid busy loop */
 		giant_lock();
 		dead_file_copy_schedule_removal(dfc);
 		giant_unlock();
