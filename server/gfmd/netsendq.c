@@ -408,7 +408,7 @@ netsendq_send_manager(void *arg)
 		 * (because the amount of time to rewrite things is much.)
 		 */
 		if (netsendq_try_to_send_to_host(current)) {
-			send_to = current;
+			send_to = current; /* NOTE: send_to->sending is set */
 			all_busy = 0;
 		} else {
 			send_to = NULL;
@@ -423,13 +423,16 @@ netsendq_send_manager(void *arg)
 		} else {
 			to_remove = NULL;
 		}
-		if (entry != NULL) {
-			if (abstract_host_is_up(send_to->abhost)) {
-				thrpool_add_job(manager->send_thrpool,
-				    entry->sendq_type->send, entry);
-			} else {
-				netsendq_host_is_down_at_entry(send_to, entry);
-			}
+		if (entry == NULL) {
+			/* unset send_to->sending */
+			netsendq_was_sent_to_host(send_to);
+		} else if (abstract_host_is_up(send_to->abhost)) {
+			thrpool_add_job(manager->send_thrpool,
+			    entry->sendq_type->send, entry);
+		} else {
+			netsendq_host_is_down_at_entry(send_to, entry);
+			/* unset send_to->sending */
+			netsendq_was_sent_to_host(send_to);
 		}
 
 		gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
