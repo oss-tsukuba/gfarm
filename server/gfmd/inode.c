@@ -3752,10 +3752,6 @@ inode_schedule_file_default(struct file_opening *opening,
 			free(hosts);
 		}
 	}
-	if (truncate_flag) {
-		/* all file system nodes are candidates */
-		return (inode_schedule_new_file(peer, np, hostsp));
-	}
 	if (write_mode) {
 		/* all replicas are candidates */
 		e = inode_alloc_file_copy_hosts(opening->inode,
@@ -3770,8 +3766,11 @@ inode_schedule_file_default(struct file_opening *opening,
 		}
 		free(hosts);
 
-		if ((opening->flag & GFARM_FILE_TRUNC) != 0 ||
-		    inode_get_size(opening->inode) == 0) {
+		/*
+		 * all file system nodes having the replica are down,
+		 * or do not have enough capacity
+		 */
+		if (truncate_flag || inode_get_size(opening->inode) == 0) {
 			/*
 			 * If there is no other writer and the size of the file
 			 * is zero, it's ok to choose any host unless
