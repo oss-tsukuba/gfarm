@@ -220,6 +220,7 @@ abstract_host_get_sendq(struct abstract_host *h)
 	return (h->sendq);
 }
 
+#if 0
 gfarm_error_t
 abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 	const char *diag)
@@ -243,6 +244,7 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 
 	return (e);
 }
+#endif
 
 gfarm_error_t
 abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
@@ -681,20 +683,22 @@ async_server_disconnect_request(struct abstract_host *host,
 }
 
 static gfarm_error_t
-async_client_sender_trylock(struct abstract_host *host, struct peer *peer0,
+async_client_sender_lock(struct abstract_host *host, struct peer *peer0,
 	struct peer **peerp, int command, const char *diag)
 {
 	gfarm_error_t e;
 	struct peer *peer;
 
-	e = abstract_host_sender_trylock(host, &peer, diag);
+	e = abstract_host_sender_lock(host, &peer, diag);
 	if (e != GFARM_ERR_NO_ERROR) {
+#if 0 /* abstract_host_sender_trylock() need this, but sender_lock doesn't */
 		if (e == GFARM_ERR_DEVICE_BUSY) {
 			gflog_debug(GFARM_MSG_1002789,
 			    "%s(%s) channel (command %d) request: "
 			    "sending busy", abstract_host_get_name(host),
 			    diag, command);
 		} else /* host_disconnect_request() is already called */
+#endif
 			async_server_already_disconnected_message(host,
 			    diag, "request", "sending busy");
 		return (e);
@@ -797,7 +801,7 @@ async_client_vsend_wrapped_request(struct abstract_host *host,
 	gfarm_error_t e;
 	struct peer *peer;
 
-	if ((e = async_client_sender_trylock(host, peer0, &peer, command,
+	if ((e = async_client_sender_lock(host, peer0, &peer, command,
 	    diag)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s", gfarm_error_string(e));
