@@ -19,4 +19,7 @@ include $(top_srcdir)/makes/prog.mk
 
 ###
 
-$(OBJS): $(DEPGFARMINC)
+$(OBJS): $(DEPGFARMINC) \
+	$(GFUTIL_SRCDIR)/gfutil.h \
+	$(GFARMLIB_SRCDIR)/gfarm_path.h \
+	$(GFARMLIB_SRCDIR)/repattr.h

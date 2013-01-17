@@ -14,8 +14,11 @@
 #include <errno.h>
 
 #include <gfarm/gfarm.h>
-#include "repattr.h"
+
 #include "gfutil.h"
+
+#include "gfarm_path.h"
+#include "repattr.h"
 
 #define DEFAULT_ALLOC_SIZE (64 * 1024)
 
@@ -132,7 +135,7 @@ main(int argc, char *argv[])
 		NONE, SET_MODE, GET_MODE, REMOVE_MODE
 	} mode = NONE;
 	const char *opts = "srcmh?";
-	char *c_path = NULL;
+	char *c_path = NULL, *realpath = NULL;
 	char *repattr = NULL;
 	size_t infolen = 0;
 	int c;
@@ -212,6 +215,9 @@ main(int argc, char *argv[])
 			goto done;
 		}
 		c_path = argv[0];
+		e = gfarm_realpath_by_gfarm2fs(c_path, &realpath);
+		if (e == GFARM_ERR_NO_ERROR)
+			c_path = realpath;
 		if ((e = gfarm_repattr_reduce(argv[1], &reps, &nreps))
 		    != GFARM_ERR_NO_ERROR) {
 			got_errors++;
@@ -259,6 +265,11 @@ main(int argc, char *argv[])
 			repattr = NULL;
 			infolen = 0;
 			c_path = argv[i];
+			free(realpath);
+			realpath = NULL;
+			e = gfarm_realpath_by_gfarm2fs(c_path, &realpath);
+			if (e == GFARM_ERR_NO_ERROR)
+				c_path = realpath;
 			e = get_repattr(c_path,
 				&repattr, &infolen, nofollow);
 			switch (e) {
@@ -289,6 +300,11 @@ main(int argc, char *argv[])
 	case REMOVE_MODE:
 		for (i = 0; i < argc; i++) {
 			c_path = argv[i];
+			free(realpath);
+			realpath = NULL;
+			e = gfarm_realpath_by_gfarm2fs(c_path, &realpath);
+			if (e == GFARM_ERR_NO_ERROR)
+				c_path = realpath;
 			e = remove_repattr(c_path, nofollow);
 			switch (e) {
 			case GFARM_ERR_NO_ERROR:
@@ -307,6 +323,7 @@ main(int argc, char *argv[])
 		got_errors++;
 		break;
 	}
+	free(realpath);
 
 done:
 	if (nreps > 0 && reps != NULL) {

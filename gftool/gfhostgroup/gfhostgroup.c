@@ -11,10 +11,12 @@
 #include <assert.h>
 
 #include <gfarm/gfarm.h>
+
+#include "config.h"
 #include "fsngroup_info.h"
+#include "gfarm_path.h"
 #include "gfm_client.h"
 #include "lookup.h"
-#include "config.h"
 
 #define OP_LIST		'\0'
 #define OP_SET		's'
@@ -163,7 +165,8 @@ main(int argc, char *argv[])
 	int op = OP_LIST;
 	int c;
 	int i;
-	const char *path = GFARM_PATH_ROOT;
+	const char *opt_path = ".";
+	char *realpath = NULL;
 
 	set_myname(argv[0]);
 
@@ -177,7 +180,7 @@ main(int argc, char *argv[])
 	while ((c = getopt(argc, argv, "P:sr?")) != -1) {
 		switch (c) {
 		case 'P':
-			path = optarg;
+			opt_path = optarg;
 			break;
 		case OP_SET:
 		case OP_REMOVE:
@@ -191,12 +194,16 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if ((e = gfm_client_connection_and_process_acquire_by_path(path,
+	e = gfarm_realpath_by_gfarm2fs(opt_path, &realpath);
+	if (e == GFARM_ERR_NO_ERROR)
+		opt_path = realpath;
+	if ((e = gfm_client_connection_and_process_acquire_by_path(opt_path,
 	    &gfm_server)) != GFARM_ERR_NO_ERROR) {
 		fprintf(stderr, "%s: metadata server for \"%s\": %s\n",
-			program_name, path, gfarm_error_string(e));
+			program_name, opt_path, gfarm_error_string(e));
 		return (1);
 	}
+	free(realpath);
 
 	switch (op) {
 	case OP_LIST:
