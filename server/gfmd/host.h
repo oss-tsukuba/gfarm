@@ -73,8 +73,6 @@ gfarm_error_t host_schedule_n_from_all_except(
 	int (*)(struct host *, void *), void *,
 	int, int *, struct host ***);
 
-void host_status_reply_waiting(struct host *);
-int host_status_reply_is_waiting(struct host *);
 void host_status_update(struct host *, struct host_status *);
 
 struct gfarm_host_info;

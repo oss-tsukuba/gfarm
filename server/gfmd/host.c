@@ -85,7 +85,6 @@ struct host {
 	void *back_channel_callback_closure;
 #endif
 
-	int status_reply_waiting;
 	gfarm_int32_t report_flags;
 	struct host_status status;
 	struct callout *status_callout;
@@ -583,29 +582,6 @@ host_put_peer(struct host *h, struct peer *peer)
 	abstract_host_put_peer(&h->ah, peer);
 }
 
-void
-host_status_reply_waiting(struct host *host)
-{
-	static const char diag[] = "host_status_reply_waiting";
-
-	back_channel_mutex_lock(host, diag);
-	host->status_reply_waiting = 1;
-	back_channel_mutex_unlock(host, diag);
-}
-
-int
-host_status_reply_is_waiting(struct host *host)
-{
-	int waiting;
-	static const char diag[] = "host_status_reply_waiting";
-
-	back_channel_mutex_lock(host, diag);
-	waiting = host->status_reply_waiting;
-	back_channel_mutex_unlock(host, diag);
-
-	return (waiting);
-}
-
 /*
  * PREREQUISITE: nothing
  * LOCKS: total_disk_mutex
@@ -632,7 +608,6 @@ host_status_update(struct host *host, struct host_status *status)
 
 	back_channel_mutex_lock(host, diag);
 
-	host->status_reply_waiting = 0;
 	host->status_callout_retry = 0;
 
 	if (host->report_flags & GFM_PROTO_SCHED_FLAG_LOADAVG_AVAIL) {
@@ -670,7 +645,6 @@ host_set_peer_locked(struct abstract_host *ah, struct peer *p)
 	h->back_channel_callback_peer = NULL;
 	h->back_channel_callback_closure = NULL;
 #endif
-	h->status_reply_waiting = 0;
 	h->status_callout_retry = 0;
 }
 
@@ -780,7 +754,6 @@ host_new(struct gfarm_host_info *hi, struct callout *callout)
 	h->back_channel_callback_peer = NULL;
 	h->back_channel_callback_closure = NULL;
 #endif
-	h->status_reply_waiting = 0;
 	h->report_flags = 0;
 	h->status.loadavg_1min =
 	h->status.loadavg_5min =

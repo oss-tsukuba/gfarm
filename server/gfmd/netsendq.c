@@ -100,24 +100,32 @@ static void
 netsendq_readyq_add(struct netsendq *qhost, struct netsendq_entry *entry,
 	const char *diag)
 {
-	int was_empty;
 	struct netsendq_manager *manager;
 
 	gfarm_mutex_lock(&qhost->readyq_mutex, diag, "readyq");
-	was_empty = GFARM_STAILQ_EMPTY(&qhost->readyq);
 	if ((entry->sendq_type->flags & NETSENDQ_FLAG_PRIOR_ONE_SHOT) != 0)
 		GFARM_STAILQ_INSERT_HEAD(&qhost->readyq, entry, readyq_entries);
 	else
 		GFARM_STAILQ_INSERT_TAIL(&qhost->readyq, entry, readyq_entries);
 	gfarm_mutex_unlock(&qhost->readyq_mutex, diag, "readyq");
 
-	if (!was_empty)
-		return;
+	/*
+	 * we cannot use the GFARM_STAILQ_EMPTY(&qhost->readyq) condition
+	 * just before above insertion for the decision to add this qhost
+	 * to the manager->hostq below.
+	 * because there is race condition between adding an entry to readyq
+	 * and the time when the host becomes down.
+	 * i.e. qhost which is not linked to manager->hostq may have
+	 * some readyq entries.
+	 */
 
 	manager = qhost->manager;
 	gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
-	GFARM_HCIRCLEQ_INSERT_TAIL(manager->hostq, qhost, hostq_entries);
-	gfarm_cond_signal(&manager->sendable, diag, "sendable");
+	if (!IS_NETSENDQ_LINKED_TO_HOSTQ(qhost)) {
+		GFARM_HCIRCLEQ_INSERT_TAIL(manager->hostq,
+		    qhost, hostq_entries);
+		gfarm_cond_signal(&manager->sendable, diag, "sendable");
+	}
 	gfarm_mutex_unlock(&manager->hostq_mutex, diag, "hostq_mutex");
 }
 
@@ -171,10 +179,11 @@ netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 	int flags)
 {
 	struct netsendq_workq *workq;
+	int abhost_is_up = abstract_host_is_up(entry->abhost);
 	static const char diag[] = "netsendq_add_entry";
 
 	if ((entry->sendq_type->flags & NETSENDQ_FLAG_QUEUEABLE_IF_DOWN) == 0
-	    && !abstract_host_is_up(entry->abhost)) {
+	    && !abhost_is_up) {
 		if ((flags & NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING) != 0) {
 			netsendq_finalizeq_add(qhost->manager, entry,
 			    GFARM_ERR_NO_ROUTE_TO_HOST, diag);
@@ -196,7 +205,8 @@ netsendq_add_entry(struct netsendq *qhost, struct netsendq_entry *entry,
 	GFARM_HCIRCLEQ_INSERT_TAIL(workq->q, entry, workq_entries);
 	if (workq->next == NULL)
 		workq->next = entry;
-	if (workq->inflight_number < entry->sendq_type->window_size)
+	if (workq->inflight_number < entry->sendq_type->window_size &&
+	    abhost_is_up)
 		netsendq_workq_to_readyq(qhost, workq, diag);
 	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
 	return (GFARM_ERR_NO_ERROR);
@@ -577,6 +587,19 @@ netsendq_host_becomes_up(struct netsendq *qhost)
 	struct netsendq_workq *workq;
 	int i;
 	static const char diag[] = "netsendq_host_becomes_up";
+
+	/*
+	 * qhost which was down may be belongs to manager->hostq,
+	 * due to the following race condition:
+	 * 1. thread A checks that the qhost is up.
+	 * 2. thread B makes the host down.
+	 * 3. thread A adds a qentry for the qhost to readyq->readyq,
+	 *    thus the qhost is added to manager->hostq.
+	 */
+	gfarm_mutex_lock(&manager->hostq_mutex, diag, "hostq_mutex");
+	if (IS_NETSENDQ_LINKED_TO_HOSTQ(qhost))
+		gfarm_cond_signal(&manager->sendable, diag, "sendable");
+	gfarm_mutex_unlock(&manager->hostq_mutex, diag, "hostq_mutex");
 
 	for (i = 0; i < manager->num_types; i++) {
 		workq = &qhost->workqs[i];

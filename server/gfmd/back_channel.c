@@ -198,11 +198,13 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 static void
 gfs_client_status_free(void *p, void *arg)
 {
-#if 0
 	struct peer *peer = p;
-#endif
 	struct gfs_client_status_entry *qe = arg;
+	struct host *host = abstract_host_to_host(qe->qentry.abhost);
+	static const char diag[] = "GFS_PROTO_STATUS";
 
+	gfs_client_status_disconnect_or_message(host, peer,
+	    diag, "connection aborted", gfarm_error_string(qe->qentry.result));
 	netsendq_remove_entry(abstract_host_get_sendq(qe->qentry.abhost),
 	    &qe->qentry, GFARM_ERR_CONNECTION_ABORTED);
 }
@@ -216,32 +218,16 @@ gfs_client_status_request(void *arg)
 	struct peer *peer = host_get_peer(host); /* increment refcount */
 	static const char diag[] = "GFS_PROTO_STATUS";
 
-	if (host_status_reply_is_waiting(host)) {
-		gfs_client_status_disconnect_or_message(host, peer,
-		    diag, "request", "no status");
-		host_put_peer(host, peer); /* decrement refcount */
-		return (NULL);
-	}
-
-	e = gfs_client_send_request(host, NULL, diag,
+	e = gfs_client_send_request(host, peer, diag,
 	    gfs_client_status_result, gfs_client_status_free, qe,
 	    GFS_PROTO_STATUS, "");
 	netsendq_was_sent_to_host(abstract_host_get_sendq(qe->qentry.abhost));
 
-	if (e == GFARM_ERR_NO_ERROR) {
-		host_status_reply_waiting(host);
-	} else {
-		if (e == GFARM_ERR_DEVICE_BUSY) {
-			gflog_error(GFARM_MSG_UNFIXED,
-			    "%s: shouldn't happen: status busy",
-			    host_name(host));
-			gfs_client_status_disconnect_or_message(host, peer,
-			    diag, "request", "status rpc unresponsive");
-		} else {
-			gflog_error(GFARM_MSG_1001986,
-			    "gfs_client_status_request: %s",
-			    gfarm_error_string(e));
-		}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_info(GFARM_MSG_1001986,
+		    "gfs_client_status_request: %s",
+		    gfarm_error_string(e));
+		qe->qentry.result = e;
 		gfs_client_status_free(peer, qe);
 	}
 
@@ -266,16 +252,17 @@ struct netsendq_type gfs_proto_status_queue = {
 	NETSENDQ_TYPE_GFS_PROTO_STATUS
 };
 
-static void *
-gfs_client_status_schedule(void *arg)
+static void
+gfs_client_status_schedule(struct host *host, int first_attempt)
 {
 	gfarm_error_t e;
-	struct host *host = arg;
 	struct gfs_client_status_entry *qe;
+	enum { stop_callout, do_next, do_retry } callout_next = do_next;
 	const char diag[] = "GFS_PROTO_STATUS";
 
 	GFARM_MALLOC(qe);
 	if (qe == NULL) {
+		callout_next = do_retry;
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: %s: no memory for queue entry",
 		    host_name(host), diag);
@@ -284,15 +271,63 @@ gfs_client_status_schedule(void *arg)
 		qe->qentry.abhost = host_to_abstract_host(host);
 		e = netsendq_add_entry(host_sendq(host), &qe->qentry,
 		    NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if (e == GFARM_ERR_NO_ERROR) {
+			/* OK */
+		} else if (first_attempt && e == GFARM_ERR_DEVICE_BUSY) {
+			/*
+			 * if this is first attempt just after
+			 * the back channel connection is made,
+			 * it's possible previous callout remains
+			 * with the following scenario:
+			 * 1. gfs_client_status_callout() thread begins to run
+			 * 2. host_unset_peer() calls callout_stop()
+			 * 3. netsendq_host_becomes_down() clears readyq
+			 * 4. the gfs_client_status_callout() thread in 1
+			 *    adds an entry to workq and readyq
+			 */
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "%s: %s queueing conflict", host_name(host), diag);
+		} else {
+			/* increment refcount */
+			struct peer *peer = host_get_peer(host);
+
+			callout_next = stop_callout;
 			gflog_info(GFARM_MSG_UNFIXED,
 			    "%s: %s queueing: %s",
 			    host_name(host), diag, gfarm_error_string(e));
 			/* `qe' is be freed by gfs_client_status_finalize() */
+			if (peer == NULL) {
+				gflog_info(GFARM_MSG_UNFIXED,
+				    "%s: %s: already disconnected",
+				    host_name(host), diag);
+			} else {
+				gfs_client_status_disconnect_or_message(host,
+				    peer, diag, "queueing",
+				    gfarm_error_string(e));
+				 /* decrement refcount */
+				host_put_peer(host, peer);
+			}
 		}
 	}
-	callout_schedule(host_status_callout(host),
-	    gfarm_metadb_heartbeat_interval * 1000000);
+	switch (callout_next) {
+	case stop_callout:
+		/* do nothing */
+		break;
+	case do_next:
+		callout_schedule(host_status_callout(host),
+		    gfarm_metadb_heartbeat_interval * 1000000);
+		break;
+	case do_retry:
+		callout_schedule(host_status_callout(host),
+		    gfarm_metadb_heartbeat_interval * 1000000 / 10);
+		break;
+	}
+}
+
+static void *
+gfs_client_status_callout(void *arg)
+{
+	gfs_client_status_schedule(arg, 0);
 	return (NULL);
 }
 
@@ -525,8 +560,10 @@ gfm_server_switch_back_channel_common(
 		local_peer_watch_readable(local_peer);
 		callout_setfunc(host_status_callout(host),
 		    NULL /* or, use back_channel_send_manager thread pool? */,
-		    gfs_client_status_schedule, host);
-		gfs_client_status_schedule(host);
+		    gfs_client_status_callout, host);
+		gfs_client_status_schedule(host, 1);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "back_channel(%s): started", host_name(host));
 	}
 
 	return (e2);
