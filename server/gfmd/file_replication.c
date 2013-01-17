@@ -165,6 +165,7 @@ file_replication_free(struct file_replication *fr,
 		*rstatep = NULL;
 	}
 		
+	netsendq_entry_destroy(&fr->qentry);
 	free(fr);
 }
 

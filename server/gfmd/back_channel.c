@@ -254,6 +254,7 @@ gfs_client_status_request(void *arg)
 static void
 gfs_client_status_finalize(struct netsendq_entry *qentryp)
 {
+	netsendq_entry_destroy(qentryp);
 	free(qentryp);
 }
 
@@ -329,6 +330,7 @@ gfm_async_server_reply_to_gfsd(void *arg)
 static void
 gfm_async_server_reply_to_gfsd_finalize(struct netsendq_entry *qentryp)
 {
+	netsendq_entry_destroy(qentryp);
 	free(qentryp);
 }
 

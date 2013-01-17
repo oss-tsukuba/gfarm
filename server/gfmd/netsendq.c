@@ -71,6 +71,7 @@ struct netsendq_manager {
 	struct thread_pool *send_thrpool;
 };
 
+/* constructor of struct netsendq_entry */
 void
 netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 {
@@ -80,9 +81,19 @@ netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 	/* entry->abhost is not initialized */
 #if 0
 	gfarm_mutex_init(&entry->entry_mutex, "netsendq_entry_init", "init");
-	entry->netsendqe_sate = netsendq_entry_send_pending;
+	entry->netsendqe_state = netsendq_entry_send_pending;
 #endif
 	/* entry->result is not initialized */
+}
+
+/* denstructor of struct netsendq_entry */
+void
+netsendq_entry_destroy(struct netsendq_entry *entry)
+{
+#if 0
+	gfarm_mutex_init(&entry->entry_mutex,
+	    "netsendq_entry_destroy", "destroy");
+#endif
 }
 
 static void

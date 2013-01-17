@@ -654,6 +654,7 @@ dead_file_copy_free(struct dead_file_copy *dfc)
 	inode_remove_replica_completed(dfc->inum, dfc->igen,
 	    abstract_host_to_host(dfc->qentry.abhost));
 
+	netsendq_entry_destroy(&dfc->qentry);
 	free(dfc);
 }
 

@@ -54,3 +54,4 @@ struct netsendq_entry {
 };
 
 void netsendq_entry_init(struct netsendq_entry *, struct netsendq_type *);
+void netsendq_entry_destroy(struct netsendq_entry *);
