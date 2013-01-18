@@ -290,12 +290,12 @@ netsendq で管理されてない送信処理は、流量制限なしで行なわれることになる。
 
 モジュール初期化	netsendq_manager_new
 キュー初期化		netsendq_newq
-キュー・エントリ初期化	netsendq_entry_init
-キュー・エントリ解放	netsendq_entry_destroy
+queue entry初期化	netsendq_entry_init
+queue entry送信完了通知	netsendq_entry_was_sent		※ エラーでも呼ぶこと
+送信後・受信完了通知	netsendq_remove_entry		※ エラーでも呼ぶこと
+queue entry解放		netsendq_entry_destroy
 現在送信がビジーか	netsendq_readyq_is_full		※ replica_check 機能用
 キューに追加		netsendq_add_entry
-送信完了通知		netsendq_was_sent_to_host	※ エラーでも呼ぶこと
-送信後・受信完了通知	netsendq_remove_entry		※ エラーでも呼ぶこと
 ホスト削除通知		netsendq_host_remove
 ホストdown通知		netsendq_host_becomes_down
 ホストup通知		netsendq_host_becomes_up

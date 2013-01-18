@@ -465,9 +465,11 @@ gfs_client_fhremove_request(void *closure)
 	e = gfs_client_send_request(host, NULL, diag,
 	    gfs_client_fhremove_result, gfs_client_fhremove_free, dfc,
 	    GFS_PROTO_FHREMOVE, "ll", ino, gen);
-	netsendq_was_sent_to_host(abstract_host_get_sendq(dfc->qentry.abhost));
+	netsendq_entry_was_sent(abstract_host_get_sendq(dfc->qentry.abhost),
+	    &dfc->qentry);
 
 	if (e != GFARM_ERR_NO_ERROR) {
+		/* accessing dfc is only allowed if e != GFARM_ERR_NO_ERROR */
 		if (e == GFARM_ERR_DEVICE_BUSY) {
 			gflog_info(GFARM_MSG_1002284,
 			    "%s(%lld, %lld, %s): "

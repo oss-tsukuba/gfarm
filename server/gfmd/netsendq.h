@@ -39,12 +39,12 @@ gfarm_error_t netsendq_add_entry(struct netsendq *, struct netsendq_entry *,
 /* use a thread to handle an error, instead of returning the error code */
 #define NETSENDQ_ADD_FLAG_DETACH_ERROR_HANDLING		1
 
+void netsendq_entry_was_sent(struct netsendq *, struct netsendq_entry *);
 void netsendq_remove_entry(struct netsendq *, struct netsendq_entry *,
 	gfarm_error_t);
 
 gfarm_error_t netsendq_new(struct netsendq_manager *, struct abstract_host *,
 	struct netsendq **);
-void netsendq_was_sent_to_host(struct netsendq *);
 void netsendq_host_remove(struct netsendq *);
 void netsendq_host_becomes_down(struct netsendq *);
 void netsendq_host_becomes_up(struct netsendq *);

@@ -458,9 +458,11 @@ gfs_client_replication_request_request(void *closure)
 	    fr,
 	    GFS_PROTO_REPLICATION_REQUEST, "sill",
 	    host_name(fr->src), host_port(fr->src), ino, gen);
-	netsendq_was_sent_to_host(abstract_host_get_sendq(fr->qentry.abhost));
+	netsendq_entry_was_sent(abstract_host_get_sendq(fr->qentry.abhost),
+	    &fr->qentry);
 
 	if (e != GFARM_ERR_NO_ERROR) {
+		/* accessing `fr' is only allowed if e != GFARM_ERR_NO_ERROR */
 		file_replication_finishedq_enqueue(fr, GFARM_ERR_NO_ERROR, e);
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s->(%s, %lld:%lld): aborted: %s", diag,

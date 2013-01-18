@@ -79,10 +79,11 @@ netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 	/* entry->workq_entries is not initialized */
 	/* entry->readyq_entries is not initialized */
 	/* entry->abhost is not initialized */
-#if 0
+
 	gfarm_mutex_init(&entry->entry_mutex, "netsendq_entry_init", "init");
-	entry->netsendqe_state = netsendq_entry_send_pending;
-#endif
+	entry->sending = 0;
+	entry->finalize_pending = 0;
+
 	/* entry->result is not initialized */
 }
 
@@ -90,10 +91,37 @@ netsendq_entry_init(struct netsendq_entry *entry, struct netsendq_type *type)
 void
 netsendq_entry_destroy(struct netsendq_entry *entry)
 {
-#if 0
-	gfarm_mutex_init(&entry->entry_mutex,
+	gfarm_mutex_destroy(&entry->entry_mutex,
 	    "netsendq_entry_destroy", "destroy");
-#endif
+}
+
+static void
+netsendq_entry_start_send(struct netsendq_entry *entry)
+{
+	static const char diag[] = "netsendq_entry_start_send";
+
+	gfarm_mutex_lock(&entry->entry_mutex, diag, "entry_mutex");
+	assert(!entry->sending);
+	entry->sending = 1;
+	gfarm_mutex_unlock(&entry->entry_mutex, diag, "entry_mutex");
+}
+
+static int
+netsendq_entry_try_finalize(struct netsendq_entry *entry, gfarm_error_t result)
+{
+	int sending;
+	static const char diag[] = "netsendq_entry_is_sending";
+
+	gfarm_mutex_lock(&entry->entry_mutex, diag, "entry_mutex");
+	sending = entry->sending;
+	if (sending) {
+		entry->finalize_pending = 1;
+		entry->result = result;
+		/* netsendq_entry_was_sent() will move this to finalizeq */
+	}
+	gfarm_mutex_unlock(&entry->entry_mutex, diag, "entry_mutex");
+
+	return (!sending);
 }
 
 static void
@@ -238,7 +266,8 @@ netsendq_remove_entry(struct netsendq *qhost,
 		netsendq_workq_to_readyq(qhost, workq, diag);
 	gfarm_mutex_unlock(&workq->mutex, diag, "workq");
 
-	netsendq_finalizeq_add(qhost->manager, entry, result, diag);
+	if (netsendq_entry_try_finalize(entry, result))
+		netsendq_finalizeq_add(qhost->manager, entry, result, diag);
 }
 
 static void
@@ -350,7 +379,7 @@ netsendq_try_to_send_to_host(struct netsendq *qhost)
 	return (sendable);
 }
 
-void
+static void
 netsendq_was_sent_to_host(struct netsendq *qhost)
 {
 	struct netsendq_manager *manager = qhost->manager;
@@ -376,6 +405,26 @@ netsendq_is_sending(struct netsendq *qhost)
 	sending = qhost->sending;
 	gfarm_mutex_unlock(&qhost->sending_mutex, diag, "sending_mutex");
 	return (sending);
+}
+
+void
+netsendq_entry_was_sent(struct netsendq *qhost, struct netsendq_entry *entry)
+{
+	int finalize_pending;
+	static const char diag[] = "netsendq_entry_was_sent";
+
+	gfarm_mutex_lock(&entry->entry_mutex, diag, "entry_mutex");
+	assert(entry->sending);
+	entry->sending = 0;
+	finalize_pending = entry->finalize_pending;
+	entry->finalize_pending = 0;
+	gfarm_mutex_unlock(&entry->entry_mutex, diag, "entry_mutex");
+
+	netsendq_was_sent_to_host(qhost);
+
+	if (finalize_pending)
+		netsendq_finalizeq_add(qhost->manager, entry, entry->result,
+		    diag);
 }
 
 static void *
@@ -448,6 +497,7 @@ netsendq_send_manager(void *arg)
 			/* unset send_to->sending */
 			netsendq_was_sent_to_host(send_to);
 		} else if (abstract_host_is_up(send_to->abhost)) {
+			netsendq_entry_start_send(entry);
 			thrpool_add_job(manager->send_thrpool,
 			    entry->sendq_type->send, entry);
 		} else {

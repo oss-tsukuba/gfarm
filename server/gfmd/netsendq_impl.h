@@ -46,11 +46,10 @@ struct netsendq_entry {
 
 	struct abstract_host *abhost; /* this pointer is immutable */
 
-#if 0
-	pthread_mutex_t entry_mutex;
-	enum netsendq_entry_state netsendqe_state;
-#endif
 	gfarm_error_t result; /* available if on netsendq_finalizer queue */
+
+	pthread_mutex_t entry_mutex;
+	int sending, finalize_pending; /* protected by entry_mutex */
 };
 
 void netsendq_entry_init(struct netsendq_entry *, struct netsendq_type *);

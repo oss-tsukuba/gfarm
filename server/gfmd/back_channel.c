@@ -221,12 +221,14 @@ gfs_client_status_request(void *arg)
 	e = gfs_client_send_request(host, peer, diag,
 	    gfs_client_status_result, gfs_client_status_free, qe,
 	    GFS_PROTO_STATUS, "");
-	netsendq_was_sent_to_host(abstract_host_get_sendq(qe->qentry.abhost));
+	netsendq_entry_was_sent(abstract_host_get_sendq(qe->qentry.abhost),
+	    &qe->qentry);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_info(GFARM_MSG_1001986,
 		    "gfs_client_status_request: %s",
 		    gfarm_error_string(e));
+		/* accessing `qe' is only allowed if e != GFARM_ERR_NO_ERROR */
 		qe->qentry.result = e;
 		gfs_client_status_free(peer, qe);
 	}
@@ -349,16 +351,17 @@ gfm_async_server_reply_to_gfsd(void *arg)
 	struct gfm_async_server_reply_to_gfsd_entry *qe = arg;
 	struct host *host = abstract_host_to_host(qe->qentry.abhost);
 	struct netsendq *qhost = abstract_host_get_sendq(qe->qentry.abhost);
+	const char *diag = qe->diag;
 
-	e = gfm_async_server_put_reply(host, qe->peer, qe->xid, qe->diag,
+	e = gfm_async_server_put_reply(host, qe->peer, qe->xid, diag,
 	    qe->errcode, "");
-	netsendq_was_sent_to_host(qhost);
+	netsendq_entry_was_sent(qhost, &qe->qentry);
 	netsendq_remove_entry(qhost, &qe->qentry, e);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "%s: %s reply: %s",
-		    host_name(host), qe->diag, gfarm_error_string(e));
+		    host_name(host), diag, gfarm_error_string(e));
 	return (NULL);
 }
 
