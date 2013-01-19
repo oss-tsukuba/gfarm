@@ -59,27 +59,24 @@ struct file_replicating;
 gfarm_error_t host_replicating_new(struct host *, struct file_replicating **);
 struct inode;
 
+gfarm_error_t host_except(int *, struct host **, int *, struct host **,
+	int (*)(struct host *, void *), void *);
+
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
 int host_number();
-int host_is_included(struct host *, size_t, struct host **);
 
 gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);
-gfarm_error_t host_schedule_n_except(int *, struct host **,
+gfarm_error_t host_schedule_n_except(
+	int *, struct host **,
+	int *, struct host **, gfarm_time_t,
 	int *, struct host **,
 	int (*)(struct host *, void *), void *,
-	int, int *, struct host ***);
-gfarm_error_t host_schedule_n_from_all_except(
-	int *, struct host **, int (*)(struct host *, void *), void *,
-	int, int *, struct host ***);
-int host_from_one_except(struct peer *, int, struct host **,
-	int (*)(struct host *, void *), void *,
-	gfarm_int32_t *, struct host ***, gfarm_error_t *);
-
+	int, int *, struct host ***, int *);
 void host_status_reply_waiting_set(struct host *);
 void host_status_reply_waiting_reset(struct host *);
 int host_status_reply_is_waiting(struct host *);

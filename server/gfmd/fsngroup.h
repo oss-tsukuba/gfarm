@@ -10,9 +10,10 @@ gfarm_error_t fsngroup_get_hosts(const char *, int *, struct host ***);
  */
 struct inode;
 struct file_copy;
-void fsngroup_replicate_file(
-	struct inode *, struct host *, const char *,
-	int, struct host **, struct file_copy *, int);
+gfarm_error_t fsngroup_schedule_replication(
+	struct inode *, int, const char *, int, struct host **,
+	int *, struct host **, gfarm_time_t, int *, struct host **,
+	const char *);
 
 /*
  * Server side RPC stubs:
