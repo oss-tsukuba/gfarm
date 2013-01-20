@@ -171,13 +171,13 @@ replica_check_fix(struct replication_info *info)
 
 	if (info->repattr != NULL)
 		e = fsngroup_schedule_replication(
-		    inode, 1, info->repattr, n_srcs, srcs,
+		    inode, 0, info->repattr, n_srcs, srcs,
 		    &n_existing, existing,
 		    gfarm_replica_check_host_down_thresh,
 		    &n_being_removed, being_removed, diag);
 	else
 		e = inode_schedule_replication_from_all(
-		    inode, 1, info->desired_number, n_srcs, srcs,
+		    inode, 0, info->desired_number, n_srcs, srcs,
 		    &n_existing, existing,
 		    gfarm_replica_check_host_down_thresh,
 		    &n_being_removed, being_removed, diag);
