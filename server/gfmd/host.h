@@ -54,25 +54,24 @@ int host_is_valid(struct host *);
 
 int host_unique_sort(int, struct host **);
 
+gfarm_error_t host_except(int *, struct host **, int *, struct host **,
+	int (*)(struct host *, void *), void *);
+
 gfarm_error_t host_is_disk_available_filter(struct host *, void *);
 gfarm_error_t host_array_alloc(int *, struct host ***);
 gfarm_error_t host_from_all(int (*)(struct host *, void *), void *,
 	gfarm_int32_t *, struct host ***);
 int host_number();
-int host_is_included(struct host *, size_t, struct host **);
 
 gfarm_error_t host_from_all_except(int *, struct host **,
 	int (*)(struct host *, void *),	void *,
 	gfarm_int32_t *, struct host ***);
-gfarm_error_t host_schedule_n_except(int *, struct host **,
+gfarm_error_t host_schedule_n_except(
+	int *, struct host **,
+	int *, struct host **, gfarm_time_t,
 	int *, struct host **,
 	int (*)(struct host *, void *), void *,
-	int, int *, struct host ***);
-gfarm_error_t host_schedule_n_from_all_except(
-	int *, struct host **,
-	int (*)(struct host *, void *), void *,
-	int, int *, struct host ***);
-
+	int, int *, struct host ***, int *);
 void host_status_update(struct host *, struct host_status *);
 
 struct gfarm_host_info;

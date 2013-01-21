@@ -45,10 +45,10 @@ void inode_set_group_by_name_in_cache(struct inode *, const char *);
 int inode_has_no_replica(struct inode *);
 gfarm_int64_t inode_get_ncopy(struct inode *);
 gfarm_int64_t inode_get_ncopy_with_dead_host(struct inode *);
-gfarm_int64_t inode_count_ncopy_with_grace(
-	struct file_copy *, int, gfarm_time_t, size_t, struct host **);
-gfarm_int64_t inode_get_ncopy_with_grace(
-	struct inode *, int, gfarm_time_t, size_t, struct host **);
+gfarm_error_t inode_count_ncopy_with_grace(
+	struct file_copy *, int, gfarm_time_t, int, struct host **, int *);
+gfarm_error_t inode_get_ncopy_with_grace(
+	struct inode *, int, gfarm_time_t, int, struct host **, int *);
 
 gfarm_mode_t inode_get_mode(struct inode *);
 gfarm_error_t inode_set_mode(struct inode *, gfarm_mode_t);
@@ -139,8 +139,19 @@ gfarm_error_t inode_remove_replica_in_cache(struct inode *, struct host *);
 int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
-void inode_schedule_replication(struct inode *, struct host *,
-	int *, struct host **, int *, struct host **, int, const char *);
+gfarm_error_t inode_schedule_replication(
+	struct inode *, int, int,
+	int, struct host **, int *,
+	int *, struct host **,
+	int *, struct host **, gfarm_time_t,
+	int *, struct host **, int *,
+	const char *);
+gfarm_error_t inode_schedule_replication_from_all(
+	struct inode *, int, int,
+	int, struct host **,
+	int *, struct host **, gfarm_time_t,
+	int *, struct host **, int *,
+	const char *);
 
 gfarm_error_t inode_open(struct file_opening *);
 void inode_close(struct file_opening *, char**);
@@ -191,10 +202,12 @@ gfarm_error_t inode_prepare_to_replicate(struct inode *, struct user *,
 struct inode_replication_state;
 struct inode_replication_state *inode_get_replication_state(struct inode *);
 
-gfarm_error_t inode_replica_list(struct inode *,
+gfarm_error_t inode_replica_hosts(
+	struct inode *, gfarm_int32_t *, struct host ***,
 	gfarm_int32_t *, struct host ***);
-gfarm_error_t inode_replica_list_all(struct inode *,
+gfarm_error_t inode_replica_hosts_valid(struct inode *,
 	gfarm_int32_t *, struct host ***);
+
 gfarm_error_t inode_replica_list_by_name(struct inode *,
 	gfarm_int32_t *, char ***);
 gfarm_error_t inode_replica_list_by_name_with_dead_host(struct inode *,

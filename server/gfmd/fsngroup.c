@@ -122,65 +122,63 @@ fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
 /*
  * Make us sure our having the giant_lock acquired.
  */
-void
-fsngroup_replicate_file(
-	struct inode *inode, struct host *src_host, const char *repattr,
-	int n_exceptions, struct host **exceptions,
-	struct file_copy *exception_list, int have_src_host)
+/*
+ * srcs[] must be different from existing[].
+ */
+gfarm_error_t
+fsngroup_schedule_replication(
+	struct inode *inode, int retry, const char *repattr,
+	int n_srcs, struct host **srcs,
+	int *n_existingp, struct host **existing, gfarm_time_t grace,
+	int *n_being_removedp, struct host **being_removed,
+	int *n_successp, const char *diag)
 {
 	gfarm_error_t e;
-	size_t i, nreps = 0;
+	int i, n_scope, next_src_index = 0;
+	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
-	int n_ghosts, ncopy, n_shortage;
-	struct host **ghosts;
-	static const char diag[] = "fsngroup_replicate_file()";
+	struct host **scope;
 
-	assert(repattr != NULL && src_host != NULL);
+	assert(repattr != NULL && srcs != NULL);
 
 	gflog_debug(GFARM_MSG_UNFIXED,
-		"gfarm_server_fsngroup_replicate_file(): "
-		"replicate inode %llu@%s to fsngroup '%s'.",
-		(long long)inode_get_number(inode),
-		host_name(src_host),
-		repattr);
+		"%s: replicate inode %lld:%lld to fsngroup '%s'.",
+		diag, (long long)inode_get_number(inode),
+		(long long)inode_get_gen(inode), repattr);
 
 	e = gfarm_repattr_parse(repattr, &reps, &nreps);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));
-		return;
+		return (e);
 	}
 	if (nreps == 0) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: can't parse a repattr: '%s'.", diag, repattr);
 		/* fall through */
+		e = GFARM_ERR_NO_ERROR;
 	}
 
 	for (i = 0; i < nreps; i++) {
 		e = fsngroup_get_hosts(gfarm_repattr_group(reps[i]),
-		    &n_ghosts, &ghosts);
+		    &n_scope, &scope);
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_notice(GFARM_MSG_UNFIXED,
 			    "%s: fsngroup_get_hosts(%s): %s",
-			    diag, (char *)gfarm_repattr_group(reps[i]),
+			    diag, gfarm_repattr_group(reps[i]),
 			    gfarm_error_string(e));
 			continue;
 		}
-		ncopy = inode_count_ncopy_with_grace(
-		    exception_list, 0, 0, n_ghosts, ghosts);
-		if (!have_src_host &&
-		    host_is_included(src_host, n_ghosts, ghosts))
-			ncopy++; /* for src_host */
-		n_shortage = gfarm_repattr_amount(reps[i]) - ncopy;
-		if (n_shortage > 0)
-			inode_schedule_replication(inode, src_host,
-			    &n_ghosts, ghosts, &n_exceptions, exceptions,
-			    n_shortage, diag);
-
-		free(ghosts);
+		e = inode_schedule_replication(
+		    inode, retry, gfarm_repattr_amount(reps[i]),
+		    n_srcs, srcs, &next_src_index,
+		    &n_scope, scope, n_existingp, existing, grace,
+		    n_being_removedp, being_removed, n_successp, diag);
+		free(scope);
 	}
 
 	gfarm_repattr_free_all(nreps, reps);
+	return (e);
 }
 /*****************************************************************************/
 /*
