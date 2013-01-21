@@ -980,7 +980,7 @@ gfmdc_connect(void)
 
 	/* self_host name is equal to metadb_server_host in gfmd.conf */
 	self_host = mdhost_lookup_self();
-	if (gfm_client_hostname_set(conn, mdhost_get_name(self_host))
+	if ((e = gfm_client_hostname_set(conn, mdhost_get_name(self_host)))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003426,
 		    "gfmd_channel(%s) : %s",
