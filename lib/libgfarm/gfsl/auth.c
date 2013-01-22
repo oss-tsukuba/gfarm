@@ -367,8 +367,8 @@ gfarmAuthInitialize(char *usermapFile)
 		goto initDone;
 	    }
 	    if (!isNew) {
-		gflog_warning(GFARM_MSG_1000658,
-		    "%s: WARNING: duplicate DN. Ignored.", distName);
+		gflog_notice(GFARM_MSG_1000658,
+		    "%s: duplicate DN. Ignored.", distName);
 #if GFARM_FAKE_GSS_C_NT_USER_NAME_FOR_GLOBUS
 		if (aePtr->authType == GFARM_AUTH_USER)
 		    gfarm_hash_purge(userToDNTable,
