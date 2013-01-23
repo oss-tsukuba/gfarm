@@ -3924,11 +3924,19 @@ back_channel_server(void)
 
 	}
 	for (;;) {
-		e = gfm_client_switch_async_back_channel(gfm_server,
+		back_channel = gfm_server;
+		bc_conn = gfm_client_connection_conn(gfm_server);
+
+		e = gfm_client_switch_async_back_channel(back_channel,
 		    GFS_PROTOCOL_VERSION,
 		    (gfarm_int64_t)(getpid() + hack_to_make_cookie_not_work++),
 		    &gfmd_knows_me);
-		if (e != GFARM_ERR_NO_ERROR) {
+		if (IS_CONNECTION_ERROR(e)) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "back channel disconnected, try to reconnect: %s",
+			    gfarm_error_string(e));
+			goto reconnect_backchannel;
+		} else if (e != GFARM_ERR_NO_ERROR) {
 			/*
 			 * gfmd has to be newer than gfsd.
 			 * so we won't try GFM_PROTO_SWITCH_BACK_CHANNEL,
@@ -3946,9 +3954,6 @@ back_channel_server(void)
 			    gfarm_error_string(e));
 		}
 
-		back_channel = gfm_server;
-		bc_conn = gfm_client_connection_conn(gfm_server);
- 
 		/* create another gfmd connection for a foreground channel */
 		gfm_server = NULL;
 		if ((e = connect_gfm_server()) != GFARM_ERR_NO_ERROR)
@@ -4061,7 +4066,10 @@ back_channel_server(void)
 		gfm_client_connection_free(gfm_server);
 
 		gfp_xdr_async_peer_free(async, bc_conn);
+
+reconnect_backchannel:
 		gfm_server = back_channel;
+		free_gfm_server();
 		if ((e = connect_gfm_server()) != GFARM_ERR_NO_ERROR)
 			fatal(GFARM_MSG_1003364, "die");
 	}
