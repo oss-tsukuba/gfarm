@@ -29,6 +29,11 @@ check test: all
 	@$(CHECK_ENV) $(srcdir)/regress.sh
 	@echo ""
 
+check-jenkins: all
+	@echo ""
+	@$(CHECK_ENV) $(srcdir)/regress.sh -j "${JENKINS_CLASSNAME}"
+	@echo ""
+
 loop: all
 	@./loop.sh
 
