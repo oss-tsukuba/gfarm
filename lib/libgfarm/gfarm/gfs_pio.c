@@ -439,7 +439,8 @@ gfs_pio_close(GFS_File gf)
 	 * retrying gfm_close_fd is not necessary because fd is
 	 * closed in gfmd when the connection is closed.
 	 */
-	(void)gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
+	if (gf->fd != -1)
+		(void)gfm_close_fd(gf->gfm_server, gf->fd);
 
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);

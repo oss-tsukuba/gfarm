@@ -102,7 +102,6 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	if (e != GFARM_ERR_NO_ERROR) {
 		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
 		gf->fd = -1;
-		gfm_client_connection_free(gfm_server);
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1003381,
 		    "reopen operation on pio for URL (%s) failed: %s",
@@ -111,20 +110,6 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	}
 
 	return (e);
-}
-
-static int
-close_on_gfmd(GFS_File gf, void *closure)
-{
-	/* new connection must be acquired. */
-	assert(gf->gfm_server != (struct gfm_connection *)closure);
-
-	/* if gfm_connection is alive, fd must be closed */
-	(void)gfm_close_fd(gf->gfm_server, gf->fd);
-	gfm_client_connection_free(gf->gfm_server);
-	gf->fd = -1;
-
-	return (1);
 }
 
 struct reset_and_reopen_info {
@@ -144,9 +129,6 @@ reset_and_reopen(GFS_File gf, void *closure)
 	    gfarm_filesystem_get_by_connection(gfm_server);
 	int fc = gfarm_filesystem_failover_count(fs);
 
-	/* increment ref count of gfm_server */
-	gf->gfm_server = gfm_server;
-
 	if ((e = gfm_client_connection_acquire(gfm_client_hostname(gfm_server),
 	    gfm_client_port(gfm_server), gfm_client_username(gfm_server),
 	    &gfm_server1)) != GFARM_ERR_NO_ERROR) {
@@ -164,6 +146,13 @@ reset_and_reopen(GFS_File gf, void *closure)
 		ri->must_retry = 1;
 		return (0);
 	}
+
+	/* if old gfm_connection is alive, fd must be closed */
+	(void)gfm_close_fd(gf->gfm_server, gf->fd);
+	gf->fd = -1;
+	gfm_client_connection_free(gf->gfm_server);
+	/* ref count of gfm_server is incremented above */
+	gf->gfm_server = gfm_server;
 
 	if ((sc = get_storage_context(gf->view_context)) != NULL) {
 		/*
@@ -238,12 +227,14 @@ static gfarm_error_t
 acquire_valid_connection(struct gfm_connection *gfm_server, const char *host,
 	int port, const char *user, struct gfarm_filesystem *fs)
 {
-	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e;
 	int fc = gfarm_filesystem_failover_count(fs);
+	int acquired = 0;
 
 	while (fc > gfm_client_connection_failover_count(gfm_server)) {
 		gfm_client_purge_from_cache(gfm_server);
-		gfm_client_connection_free(gfm_server);
+		if (acquired)
+			gfm_client_connection_free(gfm_server);
 
 		if ((e = gfm_client_connection_and_process_acquire(
 		    host, port, user, &gfm_server)) != GFARM_ERR_NO_ERROR) {
@@ -252,10 +243,12 @@ acquire_valid_connection(struct gfm_connection *gfm_server, const char *host,
 			    gfarm_error_string(e));
 			return (e);
 		}
+		acquired = 1;
 	}
-	if (e == GFARM_ERR_NO_ERROR)
-		gfarm_filesystem_set_failover_detected(fs, 0);
-	return (e);
+	if (acquired)
+		gfm_client_connection_free(gfm_server);
+	gfarm_filesystem_set_failover_detected(fs, 0);
+	return (GFARM_ERR_NO_ERROR);
 }
 
 static gfarm_error_t
@@ -356,16 +349,11 @@ failover0(struct gfm_connection *gfm_server, const char *host0, int port,
 			--i;
 			continue;
 		}
-		/* close fd, release gfm_connection and set invalid fd */
-		gfs_pio_file_list_foreach(gfl, close_on_gfmd, gfm_server);
 
-		if (e != GFARM_ERR_NO_ERROR) {
-			gfarm_filesystem_set_failover_detected(fs, 1);
-			gfarm_filesystem_set_failover_count(fs, fc);
-			goto error_all;
-		}
-
-		/* reset processes and reopen files */
+		/*
+		 * close fd, release gfm_connection and set invalid fd,
+		 * reset processes and reopen files
+		*/
 		ok = reset_and_reopen_all(gfm_server, gfl);
 		gfm_client_connection_free(gfm_server);
 		if (ok)
