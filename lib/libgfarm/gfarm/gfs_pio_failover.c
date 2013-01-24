@@ -46,8 +46,7 @@ gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	if (gfm_server == NULL || !gfm_client_is_connection_error(e))
 		return (0);
 	fs = gfarm_filesystem_get_by_connection(gfm_server);
-	return (gfarm_filesystem_has_multiple_servers(fs) &&
-	    !gfarm_filesystem_in_failover_process(fs));
+	return (!gfarm_filesystem_in_failover_process(fs));
 }
 
 int

@@ -392,12 +392,6 @@ gfarm_filesystem_get_metadb_server_first(struct gfarm_filesystem *fs)
 	return (fs->servers[0]);
 }
 
-int
-gfarm_filesystem_has_multiple_servers(struct gfarm_filesystem *fs)
-{
-	return (fs != NULL ? fs->nservers > 1 : 0);
-}
-
 struct gfs_file_list *
 gfarm_filesystem_opened_file_list(struct gfarm_filesystem *fs)
 {
