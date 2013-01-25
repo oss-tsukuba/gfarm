@@ -26,6 +26,7 @@
 #include "liberror.h"
 #include "filesystem.h"
 #include "gfs_profile.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "gfs_proto.h"	/* GFS_PROTO_FSYNC_* */
 #include "gfs_io.h"
@@ -439,7 +440,7 @@ gfs_pio_close(GFS_File gf)
 	 * retrying gfm_close_fd is not necessary because fd is
 	 * closed in gfmd when the connection is closed.
 	 */
-	if (gf->fd != -1)
+	if (gf->fd != GFARM_DESCRIPTOR_INVALID)
 		(void)gfm_close_fd(gf->gfm_server, gf->fd);
 
 	gfm_client_connection_free(gf->gfm_server);

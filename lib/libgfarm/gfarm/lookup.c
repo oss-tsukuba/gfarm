@@ -16,6 +16,7 @@
 
 #include "context.h"
 #include "config.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "lookup.h"
 #include "filesystem.h"
@@ -950,7 +951,7 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 {
 	gfarm_error_t e;
 
-	if (fd1 < 0 && fd2 < 0)
+	if (fd1 == GFARM_DESCRIPTOR_INVALID && fd2 == GFARM_DESCRIPTOR_INVALID)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 
 	if ((e = gfm_client_compound_begin_request(conn))
@@ -959,7 +960,7 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 		    "compound_begin request: %s", gfarm_error_string(e));
 		return (e);
 	}
-	if (fd1 >= 0) {
+	if (fd1 != GFARM_DESCRIPTOR_INVALID) {
 		if ((e = gfm_client_put_fd_request(conn, fd1))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002610,
@@ -973,7 +974,7 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 			return (e);
 		}
 	}
-	if (fd2 >= 0) {
+	if (fd2 != GFARM_DESCRIPTOR_INVALID) {
 		if ((e = gfm_client_put_fd_request(conn, fd2))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002612,
@@ -999,7 +1000,7 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 		    "compound_begin result: %s", gfarm_error_string(e));
 		return (e);
 	}
-	if (fd1 >= 0) {
+	if (fd1 != GFARM_DESCRIPTOR_INVALID) {
 		if ((e = gfm_client_put_fd_result(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002616,
@@ -1013,7 +1014,7 @@ close_fd2(struct gfm_connection *conn, int fd1, int fd2)
 			return (e);
 		}
 	}
-	if (fd2 >= 0) {
+	if (fd2 != GFARM_DESCRIPTOR_INVALID) {
 		if ((e = gfm_client_put_fd_result(conn))
 		    != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1002618,
@@ -1181,8 +1182,8 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 		 *
 		 */
 
-		slookup = sfd < 0;
-		dlookup = dfd < 0;
+		slookup = sfd == GFARM_DESCRIPTOR_INVALID;
+		dlookup = dfd == GFARM_DESCRIPTOR_INVALID;
 		spath = snextpath;
 		dpath = dnextpath;
 
