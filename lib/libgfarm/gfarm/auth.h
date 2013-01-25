@@ -16,8 +16,11 @@ enum gfarm_auth_id_type {
 
 enum gfarm_auth_method {
 	GFARM_AUTH_METHOD_NONE, /* never used */
-	GFARM_AUTH_METHOD_SHAREDSECRET,
+	GFARM_AUTH_METHOD_SHAREDSECRET_V2, /* used until gfarm v2 */
 	GFARM_AUTH_METHOD_GSI_OLD, /* not supported since 2003/07/09 */
+	GFARM_AUTH_METHOD_GSI_V2, /* used until gfarm v2 */
+	GFARM_AUTH_METHOD_GSI_AUTH_V2, /* used until gfarm v2 */
+	GFARM_AUTH_METHOD_SHAREDSECRET,
 	GFARM_AUTH_METHOD_GSI,
 	GFARM_AUTH_METHOD_GSI_AUTH,
 

@@ -17,10 +17,14 @@ gfarm_error_t (*gfarm_auth_uid_to_global_username_table[])(void *,
 /*
  * This table entry should be ordered by enum gfarm_auth_method.
  */
- gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_NONE*/
+ gfarm_auth_uid_to_global_username_panic, /*GFARM_AUTH_METHOD_NONE*/
+ gfarm_auth_uid_to_global_username_panic,
+					/* GFARM_AUTH_METHOD_SHAREDSECRET_V2 */
+ gfarm_auth_uid_to_global_username_panic, /*GFARM_AUTH_METHOD_GSI_OLD*/
+ gfarm_auth_uid_to_global_username_panic, /*GFARM_AUTH_METHOD_GSI_V2*/
+ gfarm_auth_uid_to_global_username_panic, /*GFARM_AUTH_METHOD_GSI_AUTH_V2*/
  gfarm_auth_uid_to_global_username_sharedsecret,
-					    /*GFARM_AUTH_METHOD_SHAREDSECRET */
- gfarm_auth_uid_to_global_username_panic,	/*GFARM_AUTH_METHOD_GSI_OLD*/
+					/* GFARM_AUTH_METHOD_SHAREDSECRET */
 #ifdef HAVE_GSI
  gfarm_auth_uid_to_global_username_gsi,		/*GFARM_AUTH_METHOD_GSI*/
  gfarm_auth_uid_to_global_username_gsi,		/*GFARM_AUTH_METHOD_GSI_AUTH*/
