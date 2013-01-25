@@ -101,25 +101,29 @@ gfarm_iobuffer_squeeze(struct gfarm_iobuffer *b)
 	b->head = 0;
 }
 
-static void
+/* returns true on success */
+static int
 gfarm_iobuffer_resize(struct gfarm_iobuffer *b, int new_bufsize)
 {
 	void *new_buffer;
 
 	if (new_bufsize <= b->bufsize)
-		return;
+		return (1);
 
 	GFARM_REALLOC_ARRAY(new_buffer, b->buffer, new_bufsize);
 	if (new_buffer == NULL) {
-		gflog_fatal(GFARM_MSG_1003447,
+		gfarm_iobuffer_set_error(b, GFARM_ERR_NO_MEMORY);
+		gflog_error(GFARM_MSG_1003447,
 		    "failed to extend bufsize of struct gfarm_iobuffer: %s",
 		    gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (0);
 	}
 	gflog_debug(GFARM_MSG_1003448,
 	    "bufsize of struct iobuffer extended: %d -> %d",
 	    b->bufsize, new_bufsize);
 	b->bufsize = new_bufsize;
 	b->buffer = new_buffer;
+	return (1);
 }
 
 int
@@ -300,8 +304,8 @@ gfarm_iobuffer_end_pindown(struct gfarm_iobuffer *b)
 	b->pindown = 0;
 }
 
-/* enqueue */
-static void
+/* enqueue: returns true on success */
+static int
 gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 {
 	int space, rv;
@@ -309,19 +313,20 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 	int new_bufsize;
 
 	if (!b->read_auto_expansion && IOBUFFER_IS_FULL(b))
-		return;
+		return (1); /* can get from the buffer */
 
 	space = IOBUFFER_SPACE_SIZE(b);
 	if (residualp == NULL) /* unlimited */
 		residualp = &space;
 	if (*residualp <= 0)
-		return;
+		return (1); /* don't have to read */
 	if (!b->pindown && 
 	    *residualp > b->bufsize - b->tail && b->head > 0)
 		gfarm_iobuffer_squeeze(b);
 	if (b->read_auto_expansion && *residualp > space) {
 		new_bufsize = b->bufsize - space + *residualp;
-		gfarm_iobuffer_resize(b, new_bufsize);
+		if (!gfarm_iobuffer_resize(b, new_bufsize))
+			return (0);
 		space = IOBUFFER_SPACE_SIZE(b);
 	}
 
@@ -330,13 +335,17 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 		     *residualp < space ? *residualp : space);
 	if (rv == 0) {
 		b->read_eof = 1;
+		return (1);
 	} else if (rv > 0) {
 		b->tail += rv;
 		*residualp -= rv;
+		return (1);
+	} else {
+		return (0); /* an error */
 	}
 }
 
-/* enqueue */
+/* enqueue: returns 0 in case of an error, otherwise returns buffered length */
 static int
 gfarm_iobuffer_put(struct gfarm_iobuffer *b, const void *data, int len)
 {
@@ -353,7 +362,8 @@ gfarm_iobuffer_put(struct gfarm_iobuffer *b, const void *data, int len)
 	if (b->pindown) {
 		if (space < len) {
 			new_bufsize = b->bufsize - space + len;
-			gfarm_iobuffer_resize(b, new_bufsize);
+			if (!gfarm_iobuffer_resize(b, new_bufsize))
+				return (0);
 			space = IOBUFFER_SPACE_SIZE(b);
 		}
 	} else {
@@ -525,7 +535,8 @@ gfarm_iobuffer_purge_read_x(struct gfarm_iobuffer *b, int len, int just,
 	for (residual = len; residual > 0; ) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp, do_timeout);
+			if (!gfarm_iobuffer_read(b, justp, do_timeout))
+				break; /* error */
 		}
 		rv = gfarm_iobuffer_purge(b, &residual);
 		if (rv == 0) /* EOF or error */
@@ -544,7 +555,8 @@ gfarm_iobuffer_get_read_x(struct gfarm_iobuffer *b, void *data,
 	for (p = data, residual = len; residual > 0; residual -= rv, p += rv) {
 		if (IOBUFFER_IS_EMPTY(b)) {
 			tmp = residual;
-			gfarm_iobuffer_read(b, justp, do_timeout);
+			if (!gfarm_iobuffer_read(b, justp, do_timeout))
+				break; /* error */
 		}
 		rv = gfarm_iobuffer_get(b, p, residual);
 		if (rv == 0) /* EOF or error */
@@ -567,7 +579,7 @@ gfarm_iobuffer_get_read_partial_x(struct gfarm_iobuffer *b, void *data,
 	if (IOBUFFER_IS_EMPTY(b)) {
 		int tmp = len;
 
-		gfarm_iobuffer_read(b, just ? &tmp : NULL, do_timeout);
+		(void)gfarm_iobuffer_read(b, just ? &tmp : NULL, do_timeout);
 	}
 	return (gfarm_iobuffer_get(b, data, len));
 }
@@ -624,6 +636,6 @@ gfarm_iobuffer_read_ahead(struct gfarm_iobuffer *b, int len)
 		return (alen);
 	rlen = len - alen;
 	while (rlen > 0 && gfarm_iobuffer_is_readable(b) && b->error == 0)
-		gfarm_iobuffer_read(b, &rlen, 0);
+		(void)gfarm_iobuffer_read(b, &rlen, 0);
 	return (len - rlen);
 }
