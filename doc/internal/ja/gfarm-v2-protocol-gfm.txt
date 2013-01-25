@@ -588,7 +588,10 @@
 	  暗黙の入力: i:current file descriptor
 	  入力: s:hostname
 	  出力: i:エラー
-	
+	  ※ gfarm-2.5.8 RC1 (r6725 SF.net #453) 以降では、
+	     GFARM_FILE_REPLICA_SPEC を指定してオープンしたディスクリプタを
+	     current file descriptor に渡す必要がある
+
 	GFM_PROTO_REPLICA_INFO_GET
 	  暗黙の入力: i:current file descriptor
 	  入力: i:flags
