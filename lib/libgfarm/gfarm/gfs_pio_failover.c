@@ -75,6 +75,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	/* avoid failover in gfm_open_fd_with_ino() */
 	gfarm_filesystem_set_failover_detected(fs, 0);
 
+	/* increment ref count of gfm_server */
 	if ((e = gfm_open_fd_with_ino(gf->url,
 	    gf->open_flags & (~GFARM_FILE_TRUNC),
 	    &gfm_server, &fd, &type, &real_url, &ino)) != GFARM_ERR_NO_ERROR) {
@@ -85,7 +86,8 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		    gfarm_error_string(e));
 		free(real_url);
 		return (e);
-	} else if (type != GFS_DT_REG || ino != gf->ino) {
+	} else if (gfm_server != gf->gfm_server ||
+	    type != GFS_DT_REG || ino != gf->ino) {
 		e = GFARM_ERR_STALE_FILE_HANDLE;
 	} else {
 		gf->fd = fd;
@@ -93,12 +95,13 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		if (get_storage_context(gf->view_context) != NULL)
 			e = (*gf->ops->view_reopen)(gf);
 	}
-	if (real_url) {
-		free(gf->url);
-		gf->url = real_url;
-	}
 
-	if (e != GFARM_ERR_NO_ERROR) {
+	if (e == GFARM_ERR_NO_ERROR) {
+		if (real_url) {
+			free(gf->url);
+			gf->url = real_url;
+		}
+	} else {
 		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
 		gf->fd = -1;
 		gf->error = e;
@@ -107,6 +110,8 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 		    gf->url,
 		    gfarm_error_string(e));
 	}
+	/* decrement ref count of gfm_server. then we'll use gf->gfm_server */
+	gfm_client_connection_free(gfm_server);
 
 	return (e);
 }
