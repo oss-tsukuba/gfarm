@@ -97,11 +97,14 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 	}
 
 	if (e == GFARM_ERR_NO_ERROR) {
-		if (real_url) {
+		if (real_url != NULL) {
 			free(gf->url);
 			gf->url = real_url;
 		}
 	} else {
+		if (real_url != NULL) {
+			free(real_url);
+		}
 		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
 		gf->fd = -1;
 		gf->error = e;
