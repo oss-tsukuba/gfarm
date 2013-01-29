@@ -215,10 +215,10 @@ mdcluster_get_or_create_by_mdhost(struct mdhost *h)
 void
 mdcluster_remove_mdhost(struct mdhost *h)
 {
-	struct mdhost_elem *he;
+	struct mdhost_elem *he, *tmp;
 	struct mdcluster *c = mdhost_get_cluster(h);
 
-	GFARM_STAILQ_FOREACH(he, &c->mh_list, next) {
+	GFARM_STAILQ_FOREACH_SAFE(he, &c->mh_list, next, tmp) {
 		if (he->mh == h) {
 			GFARM_STAILQ_REMOVE(&c->mh_list, he,
 				mdhost_elem, next);
