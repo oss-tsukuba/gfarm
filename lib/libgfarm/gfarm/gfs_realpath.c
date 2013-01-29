@@ -40,7 +40,7 @@ gfm_realpath_success(struct gfm_connection *gfm_server, void *closure,
 	int level = 0;
 
 	len = strlen(path);
-	GFARM_MALLOC_ARRAY(buf, len + 1);
+	GFARM_MALLOC_ARRAY(buf, len + 2); /* 2 for b[0]='/' + last '\0' */
 	if (buf == NULL) {
 		gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_MEMORY);
