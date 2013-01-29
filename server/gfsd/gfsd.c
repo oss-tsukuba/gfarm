@@ -515,6 +515,9 @@ gfs_server_get_request(struct gfp_xdr *client, const char *diag,
 		    diag, gfarm_error_string(e));
 }
 
+#define IS_IO_ERROR(e) \
+	((e) == GFARM_ERR_INPUT_OUTPUT || (e) == GFARM_ERR_STALE_FILE_HANDLE)
+
 void
 gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 	gfp_xdr_xid_t xid,
@@ -534,7 +537,7 @@ gfs_server_put_reply_common(struct gfp_xdr *client, const char *diag,
 		    diag, gfarm_error_string(e));
 
 	/* if input/output error occurs, die */
-	if (ecode == GFARM_ERR_INPUT_OUTPUT) {
+	if (IS_IO_ERROR(ecode)) {
 		kill_master_gfsd = 1;
 		fatal(GFARM_MSG_1002513, "%s: %s, die", diag,
 		    gfarm_error_string(ecode));
@@ -611,6 +614,13 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1002382, "%s put reply: %s",
 		    diag, gfarm_error_string(e));
+
+	/* if input/output error occurs, die */
+	if (IS_IO_ERROR(ecode)) {
+		kill_master_gfsd = 1;
+		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		    gfarm_error_string(ecode));
+	}
 	return (e);
 }
 
