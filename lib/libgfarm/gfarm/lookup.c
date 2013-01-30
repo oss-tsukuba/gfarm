@@ -427,23 +427,34 @@ gfm_alloc_link_destination(struct gfm_connection *gfm_server,
 
 
 static char *
-trim_tailing_file_separator(const char *path)
+trim_trailing_file_separator(const char *path)
 {
 	char *npath;
-	int len;
+	const char *path_start, *p;
+	gfarm_error_t e;
 
 	npath = strdup(path);
 	if (npath == NULL)
 		return (NULL);
-	if (!GFARM_IS_PATH_ROOT(npath) && strchr(npath, '/') != NULL) {
-		char *p = npath + strlen(npath);
-		while (*(--p) == '/' && p > npath)
-			;
-		*(++p) = '\0';
-	}
-	len = strlen(npath);
-	if (len == 1 && npath[0] == '.')
+
+	/* skip gfarm://hostname:port */
+	path_start = npath;
+	e = gfarm_get_hostname_by_url0(&path_start, NULL, NULL);
+	(void)e;
+	/* skip '/' */
+	if (path_start[0] == '/')
+		++path_start;
+
+	/* trim trailing slashes */
+	for (p = path_start + strlen(path_start) - 1; p >= path_start; --p)
+		if (*p != '/')
+			break;
+	npath[p + 1 - npath] = '\0';
+#if 0
+	/* XXX - current working directory is not supported yet */
+	if (npath[0] == '.' && npath[1] == '\0')
 		npath[0] = '/';
+#endif
 	return (npath);
 }
 
@@ -627,39 +638,38 @@ gfm_inode_or_name_op(const char *url, int flags,
 	struct gfm_connection *gfm_server = NULL;
 	int type;
 	int retry_count = 0, nlinks = 0;
-	char *path;
+	const char *path;
 	char *rest, *nextpath;
 	int do_verify, is_last, is_retry;
 	int is_success = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
 	gfarm_ino_t ino;
 
-	nextpath = trim_tailing_file_separator(url);
+	nextpath = trim_trailing_file_separator(url);
 	if (nextpath == NULL) {
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002599,
-		    "trim_tailing_file_separator failed: %s",
+		    "trim_trailing_file_separator failed: %s",
 		    gfarm_error_string(e));
 		return (e);
 	}
 
 	for (;;) {
 		path = nextpath;
-		if (gfm_server == NULL || gfarm_is_url(path)) {
-			if (gfm_server)
-				gfm_client_connection_free(gfm_server);
-			gfm_server = NULL;
-			if ((e = gfarm_url_parse_metadb(
-			    (const char **)&path, &gfm_server))
-			    != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_1001266,
-				    "gfarm_url_parse_metadb(%s) failed: %s",
-				    url, gfarm_error_string(e));
-				break;
-			}
-			if (path[0] == '\0')
-				path = "/";
+
+		if (gfm_server)
+			gfm_client_connection_free(gfm_server);
+		/* path may be updated when it is a Gfarm URL */
+		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
+		    != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_1001266,
+			    "gfarm_url_parse_metadb(%s) failed: %s",
+			    path, gfarm_error_string(e));
+			break;
 		}
+		/* path may be NULL string in case of 'gfarm:' or 'gfarm://' */
+		if (path[0] == '\0')
+			path = "/";
 		if (!is_open_last && GFARM_IS_PATH_ROOT(path)) {
 			e = GFARM_ERR_PATH_IS_ROOT;
 			gflog_debug(GFARM_MSG_1002600,
@@ -703,6 +713,9 @@ gfm_inode_or_name_op(const char *url, int flags,
 		is_retry = 0;
 		if ((e = gfm_client_compound_begin_result(gfm_server))
 			!= GFARM_ERR_NO_ERROR) {
+			if (gfm_client_is_connection_error(e) &&
+			    ++retry_count <= 1)
+				continue;
 			gflog_warning(GFARM_MSG_1002604,
 			    "compound_begin result: %s",
 			    gfarm_error_string(e));
@@ -757,14 +770,11 @@ gfm_inode_or_name_op(const char *url, int flags,
 	}
 
 	if (is_success) {
+		/* success_op is assumed to free gfm_server */
 		e = (*success_op)(gfm_server, closure, type, path, ino);
-		if (nextpath)
-			free(nextpath);
-		return (e);
+		gfm_server = NULL;
 	}
-
-	if (nextpath)
-		free(nextpath);
+	free(nextpath);
 	if (gfm_server)
 		gfm_client_connection_free(gfm_server);
 
@@ -935,13 +945,15 @@ gfm_name2_op(const char *src, const char *dst, int flags,
 	gfarm_int32_t sfd = -1, dfd = -1;
 	gfarm_ino_t ino;
 
-	snextpath = trim_tailing_file_separator(src);
-	dnextpath = trim_tailing_file_separator(dst);
+	snextpath = trim_trailing_file_separator(src);
+	dnextpath = trim_trailing_file_separator(dst);
 	if (snextpath == NULL || dnextpath == NULL) {
-		e = GFARM_ERR_INVALID_ARGUMENT;
+		e = GFARM_ERR_NO_MEMORY;
 		gflog_debug(GFARM_MSG_1002621,
-		    "trim_tailing_file_separator failed: %s",
+		    "trim_trailing_file_separator failed: %s",
 		    gfarm_error_string(e));
+		free(snextpath);
+		free(dnextpath);
 		return (e);
 	}
 
@@ -1390,10 +1402,8 @@ on_error_result:
 		}
 	}
 
-	if (snextpath)
-		free(snextpath);
-	if (dnextpath)
-		free(dnextpath);
+	free(snextpath);
+	free(dnextpath);
 
 	if (is_success)
 		return (*success_op)(sconn, closure);
