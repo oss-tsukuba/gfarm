@@ -186,11 +186,13 @@ gfs_client_status_result(void *p, void *arg, size_t size)
 	netsendq_remove_entry(abstract_host_get_sendq(qe->qentry.abhost),
 	    &qe->qentry, e);
 
-	if (e == GFARM_ERR_NO_ERROR)
+	if (e == GFARM_ERR_NO_ERROR) {
 		host_status_update(host, &st);
-	else
+	} else {
+		/* this gfsd is not working correctly, thus, disconnect it */
 		gfs_client_status_disconnect_or_message(host, peer,
 		    diag, "result", gfarm_error_string(e));
+	}
 	return (e);
 }
 
