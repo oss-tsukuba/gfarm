@@ -565,8 +565,10 @@ host_get_peer_for_replication(struct host *h)
 {
 	struct peer *peer = host_get_peer(h);
 
-	peer_add_ref_for_replication(peer);
-	host_put_peer(h, peer);
+	if (peer != NULL) {
+		peer_add_ref_for_replication(peer);
+		host_put_peer(h, peer);
+	}
 	return (peer);
 }
 
