@@ -3116,7 +3116,7 @@ gfm_client_lock_info_result(struct gfm_connection *gfm_server,
 	    startp, lenp, typep, hostp, pidp));
 }
 
-#if 1 /* should be 0, since gfmd has to be newer than gfsd */
+#ifdef COMPAT_GFARM_2_3
 gfarm_error_t
 gfm_client_switch_back_channel(struct gfm_connection *gfm_server)
 {
