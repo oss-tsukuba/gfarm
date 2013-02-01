@@ -601,12 +601,24 @@ protocol_service(struct peer *peer)
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
-			 * the following internally calls inode_close*() and
-			 * closing must be done regardless of the result of
-			 * db_begin().  because not closing may cause
-			 * descriptor leak.
+			 * gfmd_channel and back_channel will be
+			 * freed by their own thread
 			 */
-			peer_free(peer);
+			if ((request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
+#ifdef COMPAT_GFARM_2_3
+			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
+#endif
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) ||
+			    e != GFARM_ERR_NO_ERROR) {
+				/*
+				 * the following internally calls
+				 * inode_close*() and closing must be
+				 * done regardless of the result of db_begin().
+				 * because not closing may cause
+				 * descriptor leak.
+				 */
+				peer_free(peer);
+			}
 			if (transaction)
 				db_end(diag);
 			giant_unlock();
@@ -624,12 +636,25 @@ protocol_service(struct peer *peer)
 			if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 				transaction = 1;
 			/*
-			 * the following internally calls inode_close*() and
-			 * closing must be done regardless of the result of
-			 * db_begin().  because not closing may cause
-			 * descriptor leak.
+			 * gfmd_channel and back_channel will be
+			 * freed by their own thread
 			 */
-			peer_free(peer);
+			if ((request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
+#ifdef COMPAT_GFARM_2_3
+			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
+#endif
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) ||
+			    e != GFARM_ERR_NO_ERROR) {
+				/*
+				 * the following internally calls
+				 * inode_close*() and closing must be
+				 * done regardless of the result of db_begin().
+				 * because not closing may cause
+				 * descriptor leak.
+				 */
+
+				peer_free(peer);
+			}
 			if (transaction)
 				db_end(diag);
 			giant_unlock();
