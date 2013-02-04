@@ -328,7 +328,7 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 {
 	gfarm_error_t e;
 	struct local_peer *local_peer;
-	int sockopt;
+	int sockopt, conn_alloced = 0;
 	static const char diag[] = "local_peer_alloc";
 
 	if (fd < 0) {
@@ -369,6 +369,7 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 			    local_peer_table_diag);
 			return (e);
 		}
+		conn_alloced = 1;
 	}
 	local_peer->conn = conn;
 	local_peer->async = NULL; /* synchronous protocol by default */
@@ -379,7 +380,8 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002767,
 			    "peer watching %d: %s", fd, gfarm_error_string(e));
-			gfp_xdr_free(local_peer->conn);
+			if (conn_alloced)
+				gfp_xdr_free(local_peer->conn);
 			local_peer->conn = NULL;
 			gfarm_mutex_unlock(&local_peer_table_mutex, diag,
 			    local_peer_table_diag);
