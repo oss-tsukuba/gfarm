@@ -904,7 +904,8 @@ gfmdc_connect(void)
 	int port;
 	const char *hostname;
 	gfarm_int32_t gfmd_knows_me;
-	struct gfm_connection *conn = NULL;
+	struct gfm_connection *gfm_server = NULL;
+	struct gfp_xdr *conn;
 	struct mdhost *rhost, *master, *self_host;
 	struct peer *peer = NULL;
 	char *local_user;
@@ -937,7 +938,7 @@ gfmdc_connect(void)
 	for (;;) {
 		/* try connecting to multiple destinations */
 		e = gfm_client_connect_with_seteuid(hostname, port,
-		    service_user, &conn, NULL, pwd, 1);
+		    service_user, &gfm_server, NULL, pwd, 1);
 		if (e == GFARM_ERR_NO_ERROR)
 			break;
 		gflog_error(GFARM_MSG_1002993,
@@ -956,13 +957,13 @@ gfmdc_connect(void)
 	}
 	free(local_user);
 	if (mdhost_self_is_master()) {
-		if (conn)
-			gfm_client_connection_free(conn);
+		if (gfm_server != NULL)
+			gfm_client_connection_free(gfm_server);
 		return (GFARM_ERR_NO_ERROR);
 	}
 
 	rhost = mdhost_lookup_metadb_server(
-	    gfm_client_connection_get_real_server(conn));
+	    gfm_client_connection_get_real_server(gfm_server));
 	assert(rhost != NULL);
 	if (master != rhost) {
 		mdhost_set_is_master(master, 0);
@@ -973,15 +974,15 @@ gfmdc_connect(void)
 
 	/* self_host name is equal to metadb_server_host in gfmd.conf */
 	self_host = mdhost_lookup_self();
-	if ((e = gfm_client_hostname_set(conn, mdhost_get_name(self_host)))
-	    != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_client_hostname_set(gfm_server,
+	    mdhost_get_name(self_host))) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003426,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
 		return (e);
 	}
 
-	if ((e = gfm_client_switch_gfmd_channel(conn,
+	if ((e = gfm_client_switch_gfmd_channel(gfm_server,
 	    GFM_PROTOCOL_VERSION, (gfarm_int64_t)hack_to_make_cookie_not_work,
 	    &gfmd_knows_me))
 	    != GFARM_ERR_NO_ERROR) {
@@ -997,15 +998,15 @@ gfmdc_connect(void)
 		}
 		return (e);
 	}
-	/* NOTE: gfm_client_connection_convert_to_xdr() frees `conn' */
-	if ((e = peer_alloc_with_connection(&peer,
-	    gfm_client_connection_convert_to_xdr(conn),
+	/* NOTE: gfm_client_connection_convert_to_xdr() frees `gfm_server' */
+	conn = gfm_client_connection_convert_to_xdr(gfm_server);
+	if ((e = peer_alloc_with_connection(&peer, conn,
 	    mdhost_to_abstract_host(rhost),
 	    GFARM_AUTH_ID_TYPE_METADATA_HOST)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002996,
 		    "gfmd_channel(%s) : %s",
 		    hostname, gfarm_error_string(e));
-		peer_free(peer);
+		gfp_xdr_free(conn);
 		return (e);
 	}
 	if ((e = switch_gfmd_channel(peer, 0, GFM_PROTOCOL_VERSION, diag))
