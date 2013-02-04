@@ -673,7 +673,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 {
 	gfarm_error_t e;
 	struct peer *peer;
-	int sockopt;
+	int sockopt, conn_alloced = 0;
 	static const char diag[] = "peer_alloc";
 
 	if (fd < 0) {
@@ -711,6 +711,7 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 			    peer_table_diag);
 			return (e);
 		}
+		conn_alloced = 1;
 	}
 	peer->conn = conn;
 	peer->async = NULL; /* synchronous protocol by default */
@@ -721,7 +722,8 @@ peer_alloc0(int fd, struct peer **peerp, struct gfp_xdr *conn)
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_warning(GFARM_MSG_1002767,
 			    "peer watching %d: %s", fd, gfarm_error_string(e));
-			gfp_xdr_free(peer->conn);
+			if (conn_alloced)
+				gfp_xdr_free(peer->conn);
 			peer->conn = NULL;
 			gfarm_mutex_unlock(&peer_table_mutex, diag,
 			    peer_table_diag);
