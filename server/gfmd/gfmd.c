@@ -604,12 +604,12 @@ protocol_service(struct peer *peer)
 			 * gfmd_channel and back_channel will be
 			 * freed by their own thread
 			 */
-			if ((request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
+			if (e != GFARM_ERR_NO_ERROR ||
+			    (request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
 #ifdef COMPAT_GFARM_2_3
 			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
 #endif
-			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) ||
-			    e != GFARM_ERR_NO_ERROR) {
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL)) {
 				/*
 				 * the following internally calls
 				 * inode_close*() and closing must be
@@ -639,12 +639,12 @@ protocol_service(struct peer *peer)
 			 * gfmd_channel and back_channel will be
 			 * freed by their own thread
 			 */
-			if ((request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
+			if (e != GFARM_ERR_NO_ERROR ||
+			    (request != GFM_PROTO_SWITCH_GFMD_CHANNEL &&
 #ifdef COMPAT_GFARM_2_3
 			     request != GFM_PROTO_SWITCH_BACK_CHANNEL &&
 #endif
-			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) ||
-			    e != GFARM_ERR_NO_ERROR) {
+			     request != GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL)) {
 				/*
 				 * the following internally calls
 				 * inode_close*() and closing must be
@@ -680,12 +680,12 @@ protocol_service(struct peer *peer)
 			cs->skip = cs->current_part != cs->cause;
 		}
 	}
-	if (
+	/* request is always set here, because of !peer_had_protocol_error() */
+	if (request == GFM_PROTO_SWITCH_GFMD_CHANNEL ||
 #ifdef COMPAT_GFARM_2_3
 	    request == GFM_PROTO_SWITCH_BACK_CHANNEL ||
 #endif
-	    request == GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL ||
-	    request == GFM_PROTO_SWITCH_GFMD_CHANNEL) {
+	    request == GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL) {
 		if (e != GFARM_ERR_NO_ERROR) {
 			gflog_debug(GFARM_MSG_1001482,
 				"failed to process GFM_PROTO_SWITCH_BACK_"
