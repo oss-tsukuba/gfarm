@@ -47,6 +47,25 @@ host_*() となっている。
 継承するため、構造体定義は abstract_host_impl.h にあり、モジュール内の
 関数名は abstract_host_*() となっている。
 
+■ 各モジュールの役割
+
+○ watcher.c
+  gfevent.c を用いて、ソケットの監視 (select(2) ないし epoll(2)) を行なう。
+  このモジュールの担当する役割は、 
+  epoll_wait()/EPOLL_CTL_ADD/EPOLL_CTL_DEL/close() といった処理を、
+  監視専用の単一のスレッドである watcher() に任せることにより、
+  それまで起きていた以下のような問題を、（メッセージを抑制するのではなく）、
+  エラー自体が発生しないように解決すること。
+    SF.net #80 - close(2) との競合で epoll_ctl() が EBADF で失敗する
+    SF.net #113 - close(2) 後にディスクリプタが、ファイルアクセス用に
+	再利用されたため EPOLL_CTL_DEL が EPERM で失敗する
+  watcher() スレッドへの通知は、socketpair(2) で行なう。このため
+  watcher() スレッドは epoll_wait() でディスクリプタのみ監視していれば良い。
+  通知を socketpair(2) で行なうことにより、SF.net #229 (イベント監視のために
+  定期的なポーリングを行なっていた) という問題も解決している。
+  イベント通知用 socketpair(2) の監視処理は watcher_control_callback()
+  にある。
+
 ■ データ構造
 
 struct host, struct user, struct group へのポインタは、
