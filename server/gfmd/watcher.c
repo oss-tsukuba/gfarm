@@ -334,7 +334,7 @@ watcher_control_callback(int events, int fd, void *closure,
 					wev->handler = NULL;
 					wev->closure = NULL;
 				}
-				gfarm_mutex_lock(&wev->mutex, module_name,
+				gfarm_mutex_unlock(&wev->mutex, module_name,
 				    "event removal");
 
 			}
