@@ -1059,9 +1059,9 @@ gfs_open_flags_localize(int open_flags)
 #endif
 	if ((open_flags & GFARM_FILE_TRUNC) != 0)
 		local_flags |= O_TRUNC;
-#if 0 /* not yet in gfarm v2 */
 	if ((open_flags & GFARM_FILE_APPEND) != 0)
 		local_flags |= O_APPEND;
+#if 0 /* not yet in gfarm v2 */
 	if ((open_flags & GFARM_FILE_EXCLUSIVE) != 0)
 		local_flags |= O_EXCL;
 #endif /* not yet in gfarm v2 */
@@ -1916,7 +1916,7 @@ gfs_server_pread(struct gfp_xdr *client)
 	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
 	if (size > GFS_PROTO_MAX_IOSIZE)
 		size = GFS_PROTO_MAX_IOSIZE;
-#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
+#if 0 /* XXX FIXME: pread(2) on NetBSD-3.0_BETA is broken */
 	if ((rv = pread(file_table_get(fd), buffer, size, offset)) == -1)
 #else
 	rv = 0;
@@ -1996,6 +1996,92 @@ gfs_server_pwrite(struct gfp_xdr *client)
 		});
 
 	gfs_server_put_reply_with_errno(client, "pwrite", save_errno,
+	    "i", (gfarm_int32_t)rv);
+}
+
+void
+gfs_server_read(struct gfp_xdr *client)
+{
+	gfarm_int32_t fd, size;
+	ssize_t rv;
+	int save_errno = 0;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
+
+	gfs_server_get_request(client, "read", "ii", &fd, &size);
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+
+	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
+	if (size > GFS_PROTO_MAX_IOSIZE)
+		size = GFS_PROTO_MAX_IOSIZE;
+	if ((rv = read(file_table_get(fd), buffer, size)) == -1)
+		save_errno = errno;
+	else
+		file_table_set_read(fd);
+
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
+	}
+
+	gfs_profile(
+		gfarm_gettimerval(&t2);
+		fe = file_table_entry(fd);
+		if (fe != NULL) {
+			fe->nread++;
+			fe->read_size += rv;
+			fe->read_time += gfarm_timerval_sub(&t2, &t1);
+		});
+
+	gfs_server_put_reply_with_errno(client, "read", save_errno,
+	    "b", rv, buffer);
+}
+
+void
+gfs_server_write(struct gfp_xdr *client)
+{
+	gfarm_int32_t fd;
+	size_t size;
+	ssize_t rv;
+	int save_errno = 0;
+	char buffer[GFS_PROTO_MAX_IOSIZE];
+	struct file_entry *fe;
+	gfarm_timerval_t t1, t2;
+
+	gfs_server_get_request(client, "write", "ib",
+	    &fd, sizeof(buffer), &size, buffer);
+
+	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
+	gfs_profile(gfarm_gettimerval(&t1));
+	/*
+	 * We truncate i/o size bigger than GFS_PROTO_MAX_IOSIZE.
+	 * This is inefficient because passed extra data are just
+	 * abandoned. So client should avoid such situation.
+	 */
+	if (size > GFS_PROTO_MAX_IOSIZE)
+		size = GFS_PROTO_MAX_IOSIZE;
+	if ((rv = write(file_table_get(fd), buffer, size)) == -1)
+		save_errno = errno;
+	else
+		file_table_set_written(fd);
+
+	if (rv > 0) {
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
+		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES, rv);
+	}
+	gfs_profile(
+		gfarm_gettimerval(&t2);
+		fe = file_table_entry(fd);
+		if (fe != NULL) {
+			fe->nwrite++;
+			fe->write_size += rv;
+			fe->write_time += gfarm_timerval_sub(&t2, &t1);
+		});
+
+	gfs_server_put_reply_with_errno(client, "write", save_errno,
 	    "i", (gfarm_int32_t)rv);
 }
 
@@ -3619,6 +3705,8 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_CLOSE:	gfs_server_close(client); break;
 		case GFS_PROTO_PREAD:	gfs_server_pread(client); break;
 		case GFS_PROTO_PWRITE:	gfs_server_pwrite(client); break;
+		case GFS_PROTO_READ:	gfs_server_read(client); break;
+		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
 		case GFS_PROTO_FTRUNCATE: gfs_server_ftruncate(client); break;
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
 		case GFS_PROTO_FSTAT:	gfs_server_fstat(client); break;
