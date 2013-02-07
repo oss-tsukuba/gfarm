@@ -552,6 +552,7 @@ do_write(GFS_File gf, const char *buffer, size_t length,
 		gf->io_offset = gf->offset;
 	}
 	for (written = 0; written < length; written += len) {
+		/* in case of GFARM_FILE_APPEND, io_offset is ignored */
 		e = (*gf->ops->view_pwrite)(
 			gf, buffer + written, length - written, gf->io_offset,
 			&len);
@@ -653,9 +654,12 @@ gfs_pio_seek(GFS_File gf, gfarm_off_t offset, int whence, gfarm_off_t *resultp)
 
 	/*
 	 * This is the case that the file offset will be repositioned
-	 * within the current io buffer.
+	 * within the current io buffer.  In case of GFARM_FILE_APPEND,
+	 * reposition is not allowed if the buffer is dirty.
 	 */
-	if (gf->offset <= where && where <= gf->offset + gf->length) {
+	if (((gf->open_flags & GFARM_FILE_APPEND) == 0 ||
+	     (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0) &&
+	    gf->offset <= where && where <= gf->offset + gf->length) {
 		/*
 		 * We don't have to clear GFS_FILE_MODE_CALC_DIGEST bit here,
 		 * because this is no problem to calculate checksum for
@@ -864,6 +868,10 @@ gfs_pio_write(GFS_File gf, const void *buffer, int size, int *np)
 		e = GFARM_ERR_NO_ERROR;
 		goto finish;
 	}
+	/* purge the buffer for reading in case of GFARM_FILE_APPEND */
+	if ((gf->open_flags & GFARM_FILE_APPEND) &&
+	    (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
+		gfs_pio_purge(gf);
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
 	memcpy(gf->buffer + gf->p, buffer, size);
 	gf->p += size;
@@ -1035,6 +1043,10 @@ gfs_pio_putc(GFS_File gf, int c)
 			goto finish;
 		}
 	}
+	/* purge the buffer for reading in case of GFARM_FILE_APPEND */
+	if ((gf->open_flags & GFARM_FILE_APPEND) &&
+	    (gf->mode & GFS_FILE_MODE_BUFFER_DIRTY) == 0)
+		gfs_pio_purge(gf);
 	gf->mode |= GFS_FILE_MODE_BUFFER_DIRTY;
 	gf->buffer[gf->p++] = c;
 	if (gf->p > gf->length)
