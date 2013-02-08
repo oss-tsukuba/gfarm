@@ -145,7 +145,7 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 {
 	struct gfs_file_section_context *vc = gf->view_context;
 #if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
-	int rv = pwrite(vc->fd, buffer, offset, size);
+	int rv = pwrite(vc->fd, buffer, size, offset);
 #else
 	int rv, save_errno;
 
@@ -172,12 +172,34 @@ gfs_pio_local_storage_pwrite(GFS_File gf,
 }
 
 static gfarm_error_t
+gfs_pio_local_storage_write(GFS_File gf,
+	const char *buffer, size_t size, size_t *lengthp,
+	gfarm_off_t *offsetp, gfarm_off_t *total_sizep)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	int rv, save_errno;
+
+	rv = write(vc->fd, buffer, size);
+	if (rv == -1) {
+		save_errno = errno;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"write() on view context file descriptor failed: %s",
+			strerror(save_errno));
+		return (gfarm_errno_to_error(save_errno));
+	}
+	*lengthp = rv;
+	*offsetp = lseek(vc->fd, 0, SEEK_CUR) - rv;
+	*total_sizep = lseek(vc->fd, 0, SEEK_END);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
 gfs_pio_local_storage_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
 	struct gfs_file_section_context *vc = gf->view_context;
-#if 0 /* XXX FIXME: pwrite(2) on NetBSD-3.0_BETA is broken */
-	int rv = pread(vc->fd, buffer, offset, size);
+#if 0 /* XXX FIXME: pread(2) on NetBSD-3.0_BETA is broken */
+	int rv = pread(vc->fd, buffer, size, offset);
 #else
 	int rv, save_errno;
 
@@ -310,6 +332,7 @@ struct gfs_storage_ops gfs_pio_local_storage_ops = {
 	gfs_pio_local_storage_fsync,
 	gfs_pio_local_storage_fstat,
 	gfs_pio_local_storage_reopen,
+	gfs_pio_local_storage_write,
 };
 
 gfarm_error_t

@@ -50,7 +50,6 @@ enum gfs_proto_command {
 
 	/* from client */
 	GFS_PROTO_PROCESS_RESET,
-	GFS_PROTO_READ,
 	GFS_PROTO_WRITE,
 };
 

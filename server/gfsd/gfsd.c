@@ -2000,57 +2000,20 @@ gfs_server_pwrite(struct gfp_xdr *client)
 }
 
 void
-gfs_server_read(struct gfp_xdr *client)
-{
-	gfarm_int32_t fd, size;
-	ssize_t rv;
-	int save_errno = 0;
-	char buffer[GFS_PROTO_MAX_IOSIZE];
-	struct file_entry *fe;
-	gfarm_timerval_t t1, t2;
-
-	gfs_server_get_request(client, "read", "ii", &fd, &size);
-
-	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
-	gfs_profile(gfarm_gettimerval(&t1));
-
-	/* We truncatef i/o size bigger than GFS_PROTO_MAX_IOSIZE. */
-	if (size > GFS_PROTO_MAX_IOSIZE)
-		size = GFS_PROTO_MAX_IOSIZE;
-	if ((rv = read(file_table_get(fd), buffer, size)) == -1)
-		save_errno = errno;
-	else
-		file_table_set_read(fd);
-
-	if (rv > 0) {
-		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RCOUNT, 1);
-		gfarm_iostat_local_add(GFARM_IOSTAT_IO_RBYTES, rv);
-	}
-
-	gfs_profile(
-		gfarm_gettimerval(&t2);
-		fe = file_table_entry(fd);
-		if (fe != NULL) {
-			fe->nread++;
-			fe->read_size += rv;
-			fe->read_time += gfarm_timerval_sub(&t2, &t1);
-		});
-
-	gfs_server_put_reply_with_errno(client, "read", save_errno,
-	    "b", rv, buffer);
-}
-
-void
 gfs_server_write(struct gfp_xdr *client)
 {
 	gfarm_int32_t fd;
 	size_t size;
 	ssize_t rv;
+	gfarm_int64_t written_offset, total_file_size;
 	int save_errno = 0;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
 	struct file_entry *fe;
 	gfarm_timerval_t t1, t2;
 
+#ifdef __GNUC__ /* workaround gcc warning: may be used uninitialized */
+	written_offset = total_file_size = 0;
+#endif
 	gfs_server_get_request(client, "write", "ib",
 	    &fd, sizeof(buffer), &size, buffer);
 
@@ -2065,9 +2028,11 @@ gfs_server_write(struct gfp_xdr *client)
 		size = GFS_PROTO_MAX_IOSIZE;
 	if ((rv = write(file_table_get(fd), buffer, size)) == -1)
 		save_errno = errno;
-	else
+	else {
+		written_offset = lseek(fd, 0, SEEK_CUR) - rv;
+		total_file_size = lseek(fd, 0, SEEK_END);
 		file_table_set_written(fd);
-
+	}
 	if (rv > 0) {
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WCOUNT, 1);
 		gfarm_iostat_local_add(GFARM_IOSTAT_IO_WBYTES, rv);
@@ -2082,7 +2047,7 @@ gfs_server_write(struct gfp_xdr *client)
 		});
 
 	gfs_server_put_reply_with_errno(client, "write", save_errno,
-	    "i", (gfarm_int32_t)rv);
+	    "ill", (gfarm_int32_t)rv, written_offset, total_file_size);
 }
 
 void
@@ -3687,7 +3652,6 @@ server(int client_fd, char *client_name, struct sockaddr *client_addr)
 		case GFS_PROTO_CLOSE:	gfs_server_close(client); break;
 		case GFS_PROTO_PREAD:	gfs_server_pread(client); break;
 		case GFS_PROTO_PWRITE:	gfs_server_pwrite(client); break;
-		case GFS_PROTO_READ:	gfs_server_read(client); break;
 		case GFS_PROTO_WRITE:	gfs_server_write(client); break;
 		case GFS_PROTO_FTRUNCATE: gfs_server_ftruncate(client); break;
 		case GFS_PROTO_FSYNC:	gfs_server_fsync(client); break;
