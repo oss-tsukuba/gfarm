@@ -74,6 +74,26 @@ gfs_pio_remote_storage_pwrite(GFS_File gf,
 }
 
 static gfarm_error_t
+gfs_pio_remote_storage_write(GFS_File gf,
+	const char *buffer, size_t size, size_t *lengthp,
+	gfarm_off_t *offsetp, gfarm_off_t *total_sizep)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	struct gfs_connection *gfs_server = vc->storage_context;
+
+	/*
+	 * buffer beyond GFS_PROTO_MAX_IOSIZE are just ignored by gfsd,
+	 * we don't perform such GFS_PROTO_WRITE request, because it's
+	 * inefficient.
+	 * Note that upper gfs_pio layer should care this partial write.
+	 */
+	if (size > GFS_PROTO_MAX_IOSIZE)
+		size = GFS_PROTO_MAX_IOSIZE;
+	return (gfs_client_write(gfs_server, gf->fd, buffer, size,
+	    lengthp, offsetp, total_sizep));
+}
+
+static gfarm_error_t
 gfs_pio_remote_storage_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
@@ -151,6 +171,7 @@ struct gfs_storage_ops gfs_pio_remote_storage_ops = {
 	gfs_pio_remote_storage_fsync,
 	gfs_pio_remote_storage_fstat,
 	gfs_pio_remote_storage_reopen,
+	gfs_pio_remote_storage_write,
 };
 
 gfarm_error_t

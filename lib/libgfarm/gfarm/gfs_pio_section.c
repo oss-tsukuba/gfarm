@@ -250,6 +250,27 @@ gfs_pio_view_section_pwrite(GFS_File gf,
 }
 
 static gfarm_error_t
+gfs_pio_view_section_write(GFS_File gf,
+	const char *buffer, size_t size, size_t *lengthp,
+	gfarm_off_t *offsetp, gfarm_off_t *total_sizep)
+{
+	struct gfs_file_section_context *vc = gf->view_context;
+	gfarm_error_t e = (*vc->ops->storage_write)(gf,
+	    buffer, size, lengthp, offsetp, total_sizep);
+
+	if (e == GFARM_ERR_NO_ERROR && *lengthp > 0 &&
+	    (gf->mode & GFS_FILE_MODE_CALC_DIGEST) != 0)
+		EVP_DigestUpdate(&vc->md_ctx, buffer, *lengthp);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"storage_write() failed: %s",
+			gfarm_error_string(e));
+	}
+	return (e);
+}
+
+static gfarm_error_t
 gfs_pio_view_section_pread(GFS_File gf,
 	char *buffer, size_t size, gfarm_off_t offset, size_t *lengthp)
 {
@@ -319,6 +340,7 @@ struct gfs_pio_ops gfs_pio_view_section_ops = {
 	gfs_pio_view_section_fsync,
 	gfs_pio_view_section_fstat,
 	gfs_pio_view_section_reopen,
+	gfs_pio_view_section_write,
 };
 
 

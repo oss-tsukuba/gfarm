@@ -68,10 +68,9 @@ gfarm_error_t gfs_client_pread(struct gfs_connection *,
 gfarm_error_t gfs_client_pwrite(struct gfs_connection *,
 			gfarm_int32_t, const void *, size_t, gfarm_off_t,
 			size_t *);
-gfarm_error_t gfs_client_read(struct gfs_connection *,
-		       gfarm_int32_t, void *, size_t, size_t *);
 gfarm_error_t gfs_client_write(struct gfs_connection *,
-			gfarm_int32_t, const void *, size_t, size_t *);
+			gfarm_int32_t, const void *, size_t,
+			size_t *, gfarm_off_t *, gfarm_off_t *);
 gfarm_error_t gfs_client_ftruncate(struct gfs_connection *,
 	gfarm_int32_t, gfarm_off_t);
 gfarm_error_t gfs_client_fsync(struct gfs_connection *,
