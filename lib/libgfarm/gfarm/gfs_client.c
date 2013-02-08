@@ -1224,31 +1224,15 @@ gfs_client_pwrite(struct gfs_connection *gfs_server,
 }
 
 gfarm_error_t
-gfs_client_read(struct gfs_connection *gfs_server,
-	gfarm_int32_t fd, void *buffer, size_t size, size_t *np)
-{
-	gfarm_error_t e;
-
-	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_READ, "ii/b",
-	    fd, (int)size, size, np, buffer)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-			"gfs_client_rpc() failed: %s",
-			gfarm_error_string(e));
-		return (e);
-	}
-	assert(*np <= size);
-	return (GFARM_ERR_NO_ERROR);
-}
-
-gfarm_error_t
 gfs_client_write(struct gfs_connection *gfs_server,
-	gfarm_int32_t fd, const void *buffer, size_t size, size_t *np)
+	gfarm_int32_t fd, const void *buffer, size_t size,
+	size_t *np, gfarm_off_t *offp, gfarm_off_t *total_sizep)
 {
 	gfarm_error_t e;
 	gfarm_int32_t n; /* size_t may be 64bit */
 
-	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_WRITE, "ib/i",
-	    fd, size, buffer, &n)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_WRITE, "ib/ill",
+	    fd, size, buffer, &n, offp, total_sizep)) != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
