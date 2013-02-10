@@ -29,8 +29,11 @@ gfsd プロトコル
 	  入力: i:fd, i:size, l:offset
 	  出力:	i:エラー, b:data
 	GFS_PROTO_PWRITE,
-	  入力: i:fd, b:buffer, l:offset,
+	  入力: i:fd, b:buffer, l:offset
 	  出力:	i:エラー, i:length
+	GFS_PROTO_WRITE,
+	  入力: i:fd, b:buffer
+	  出力:	i:エラー, i:length, l:offset, l:total_size
 	GFS_PROTO_FTRUNCATE
 	  入力: i:fd, l:length,
 	  出力:	i:エラー
