@@ -348,7 +348,6 @@ watcher_control_callback(int events, int fd, void *closure,
 
 	list = list0;
 	do {
-		list->flags &= ~(WATCHER_EVENT_IN_QUEUE|WATCHER_EVENT_INVOKING);
 		if (list->type != watcher_closing_event) {
 			err = gfarm_eventqueue_add_event(w->q, list->gev, NULL);
 			if (err == 0) {
@@ -359,6 +358,13 @@ watcher_control_callback(int events, int fd, void *closure,
 				    list->type, list->handler, strerror(err));
 			}
 		}
+		/*
+		 * the following flags must be cleared after adding
+		 * the WATCHER_EVENT_WATCHING flag above.
+		 * otherwise the race condition of SF.net #616 appears.
+		 */
+		list->flags &= ~(WATCHER_EVENT_IN_QUEUE|WATCHER_EVENT_INVOKING);
+
 		list = list->next;
 	} while (list != list0);
 
