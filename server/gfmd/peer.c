@@ -1025,6 +1025,7 @@ void
 peer_invoked(struct peer *peer)
 {
 	watcher_event_ack(peer->readable_event);
+	peer_del_ref(peer);
 
 	gfarm_cond_signal(&peer_closing_queue.ready_to_close,
 	    "peer_invoked", "connection can be freed");
@@ -1034,6 +1035,7 @@ peer_invoked(struct peer *peer)
 void
 peer_watch_access(struct peer *peer)
 {
+	peer_add_ref(peer);
 	watcher_add_event(peer->watcher->w, peer->readable_event,
 	    peer->watcher->thrpool, peer->watcher->readable_handler, peer);
 }
