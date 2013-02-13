@@ -465,6 +465,7 @@ void
 local_peer_readable_invoked(struct local_peer *local_peer)
 {
 	watcher_event_ack(local_peer->readable_event);
+	peer_del_ref(local_peer_to_peer(local_peer));
 
 	peer_closer_wakeup(&local_peer->super);
 }
@@ -472,6 +473,7 @@ local_peer_readable_invoked(struct local_peer *local_peer)
 void
 local_peer_watch_readable(struct local_peer *local_peer)
 {
+	peer_add_ref(local_peer_to_peer(local_peer));
 	peer_watcher_add_event(local_peer->readable_watcher,
 	    local_peer->readable_event, local_peer);
 }
