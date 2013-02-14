@@ -6,7 +6,6 @@ include $(top_srcdir)/makes/var.mk
 
 datadir=$(default_datadir)/gfarm/systest/parameters
 
-DATA =	$(srcdir)/failover \
-	$(srcdir)/configuration
+DATA =
 
 include $(top_srcdir)/makes/data.mk

@@ -15,9 +15,19 @@ load 	"check_gfsd_registered" \
 # FILE_SIZE:	File size of each file to be read
 test_configuration()
 {
-	RESULT=0
+	RESULT=$RESULT_PASS
 
-	AUTH_TYPE=`$GFSERVICE $DEBUG get_auth_type gfmd1`
+	# default parameter
+	GFARM_HOME=${GFARM_HOME-"/"}
+	RETRY_COUNT=${RETRY_COUNT-"10"}
+	FILE_SIZE=${FILE_SIZE-"1024"}
+
+	# prepare: check whether required hosts are defined
+	$GFSERVICE $DEBUG check_hostids_defined - \
+		"gfmd1 gfmd2 gfsd1 gfsd2 gfsd3 client1"
+	[ $? -ne 0 ] && return $RESULT_UNSUPPORTED
+
+	AUTH_TYPE=`$GFSERVICE $DEBUG get-config-gfarm-param gfmd1 AUTH_TYPE`
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
 		$GFSERVICE $DEBUG grid_proxy_init gfmd1
 		$GFSERVICE $DEBUG grid_proxy_init gfmd2
@@ -58,14 +68,14 @@ test_configuration()
 	$GFSERVICE $DEBUG config-gfsd gfsd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfsd on gfsd1 failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check gfsd is added
 	check_gfsd_registered gfsd2 client1
 		if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfsd is not configured correctly"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	#
@@ -75,14 +85,14 @@ test_configuration()
 	$GFSERVICE $DEBUG config_gfarm_update_r gfmd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfarm-update on gfmd1 failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: config-gfarm-slave
 	$GFSERVICE $DEBUG config-gfarm-slave gfmd2 gfmd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfarm-slave on gfsd1 failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
@@ -99,19 +109,19 @@ test_configuration()
 	$GFSERVICE $DEBUG restart-gfsd gfsd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: restart-gfsd on gfsd1 failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 	$GFSERVICE $DEBUG restart-gfsd gfsd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: restart-gfsd on gfsd2 failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check whether gfmd on gfmd2 is slave
 	check_gfmd_slave gfmd2 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 in not slave"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: make directory to update metadata
@@ -121,7 +131,7 @@ test_configuration()
 	check_journal_seqnum_max gfmd1 gfmd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: journal seqnum max is not same"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	#
@@ -135,7 +145,7 @@ test_configuration()
 	check_gfsd_registered gfsd3 client1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfsd3 is not configured correctly"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: set directory to enable file replication
@@ -152,14 +162,14 @@ test_configuration()
 		gfmd1 gfsd3
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: failed to register file"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check file with gfls
 	$GFSERVICE $DEBUG gfcmd client1 gfls $GFARM_FILE
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfls failed"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check whether file is created on expected node
@@ -170,14 +180,14 @@ test_configuration()
 	cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file gfsd3 $SPOOL_PATH
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: file in spool directory is not same"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check file num
 	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: number of replica files did not match"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	#
@@ -187,21 +197,21 @@ test_configuration()
 	$GFSERVICE $DEBUG unconfig-gfsd gfsd3
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: failed to delete host information"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check registered
 	check_gfsd_registered gfsd3 client1
 	if [ $? -ne 1 ]; then
 		log_warn "$TESTNAME: gfsd is not deleted correctly"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check file num
 	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: number of replica files did not match"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check spool
@@ -213,7 +223,7 @@ test_configuration()
 			$SPOOL_PATH
 		if [ $? -ne 0 ]; then
 			log_warn "$TESTNAME: file in spool directory is not same"
-			RESULT=1
+			RESULT=$RESULT_FAIL
 		fi
 	done
 
