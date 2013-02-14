@@ -174,6 +174,10 @@ test_configuration()
 
 	# step: check whether file is created on expected node
 	check_file_location $GFARM_FILE gfsd3 client1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: file not found on specified host"
+		RESULT=$RESULT_FAIL
+	fi
 
 	# step: check spool
 	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE`
@@ -211,12 +215,35 @@ test_configuration()
 	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: number of replica files did not match"
+		RESULT=$RESULT_XFAIL
+	fi
+
+	# step: create file
+	GFARM_FILE2=$GFARM_HOME/$TEST_EXEC_ID/test2.txt
+	cat $TMP_FILE | $GFSERVICE $DEBUG read_and_register client1 \
+		$GFARM_FILE2 gfmd1
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: failed to register file"
+		RESULT=$RESULT_FAIL
+	fi
+
+	# step: check file with gfls
+	$GFSERVICE $DEBUG gfcmd client1 gfls $GFARM_FILE2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: gfls failed"
+		RESULT=$RESULT_FAIL
+	fi
+
+	# step: check whether file is not created on deleted node
+	check_file_location $GFARM_FILE gfsd3 client1
+	if [ $? -eq 0 ]; then
+		log_warn "$TESTNAME: found a file on deleted host"
 		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check spool
-	HOSTS=`$GFSERVICE $DEBUG gfcmd client1 gfwhere $GFARM_FILE`
-	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE`
+	HOSTS=`$GFSERVICE $DEBUG gfcmd client1 gfwhere $GFARM_FILE2`
+	SPOOL_PATH=`$GFSERVICE $DEBUG gfcmd client1 gfspoolpath $GFARM_FILE2`
 	for HOST in $HOSTS; do
 		ID=`$GFSERVICE $DEBUG get_hostid $HOST`
 		cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file $ID \
