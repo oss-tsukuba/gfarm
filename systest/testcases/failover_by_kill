@@ -14,9 +14,18 @@ load 	"check_gfmd_master" \
 # TIMEOUT:	  timeout sec for starting/stopping gfmd
 test_failover_by_kill()
 {
-	RESULT=0
+	RESULT=$RESULT_PASS
 
-	AUTH_TYPE=`$GFSERVICE $DEBUG get_auth_type gfmd1`
+	# default parameter
+	RETRY_COUNT=${RETRY_COUNT-"10"}
+	TIMEOUT=${TIMEOUT-"10"}
+
+	# prepare: check whether required hosts are defined
+	$GFSERVICE $DEBUG check_hostids_defined - \
+		"gfmd1 gfmd2 gfmd3 client1"
+	[ $? -ne 0 ] && return $RESULT_UNSUPPORTED
+
+	AUTH_TYPE=`$GFSERVICE $DEBUG get-config-gfarm-param gfmd1 AUTH_TYPE`
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
 		$GFSERVICE $DEBUG grid_proxy_init client1
 	fi
@@ -33,7 +42,7 @@ test_failover_by_kill()
 	check_gfmd_master gfmd2 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 in not master"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: set gfmd on gfmd1 to be slave
@@ -45,7 +54,7 @@ test_failover_by_kill()
 	check_gfmd_slave gfmd1 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not slave"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: failback
@@ -57,27 +66,27 @@ test_failover_by_kill()
 	check_gfmd_master gfmd1 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not master"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check whether journal seqnum max is same
 	check_journal_seqnum_max gfmd1 gfmd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: journal seqnum max is not same"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	# step: check whether slave gfmd is connected to master
 	check_gfmd_connected gfmd2 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 is not connected to master"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	check_gfmd_connected gfmd3 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd3 is not connected to master"
-		RESULT=1
+		RESULT=$RESULT_FAIL
 	fi
 
 	return $RESULT
