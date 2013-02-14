@@ -1,6 +1,0 @@
-#
-# Test parameters for configuring gfarm
-#
-GFARM_HOME=${GFARM_HOME-"/"}
-RETRY_COUNT=${RETRY_COUNT-"10"}
-FILE_SIZE=${FILE_SIZE-"1024"}
