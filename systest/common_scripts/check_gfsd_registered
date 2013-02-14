@@ -3,7 +3,7 @@
 #
 check_gfsd_registered()
 {
-	TARGET_HOST=`$GFSERVICE $DEBUG get-config-gfsd-param $2 GFSD_HOSTNAME`
+	TARGET_HOST=`$GFSERVICE $DEBUG get-config-gfsd-param $1 GFSD_HOSTNAME`
 	[ X$TARGET_HOST = X ] && return 1
 
 	for HOST in `$GFSERVICE $DEBUG gfcmd $2 gfhost`; do
