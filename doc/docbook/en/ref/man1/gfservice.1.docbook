@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.1'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>15 Feb 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -180,6 +180,24 @@ When <command>gfservice</command> tries to start or stop a server program
 or <parameter>time</parameter> interval is elapsed.
 If "no" is specified as <parameter>time</parameter>, timeout never occurs.
 The default value is "no".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-k</option></term>
+<listitem>
+<para>
+Setup shared key if authentication type is "sharedsecret".
+When this option is specified with sub-command
+<command>config-gfarm</command> or
+<command>config-gfarm-master</command>, <command>gfservice</command>
+creates a shared secret key and then distributes the key to all hosts
+defined in the configuration file.
+When this option is specified with sub-commands
+<command>config-gfarm-slave</command> or
+<command>config-gfsd</command>, <command>config-client</command>,
+<command>gfservice</command> copies the key from gfmd host.
 </para>
 </listitem>
 </varlistentry>
@@ -501,12 +519,15 @@ options.
 Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "<command>config-gfarm-master</command>" or
 "<command>config-gfarm-slave</command>" sub-command in that case.
-If authentication type is "sharedsecret", <command>gfservice</command>
-also creates a shared secret key using <command>gfkey</command> command
-and then distribute the key and <filename>gfarm2.conf</filename> file
-to all hosts defined in the configuration file 
-(gfmd<replaceable>n</replaceable>, gfsd<replaceable>n</replaceable> and
+<command>gfservice</command> distributes
+<filename>gfarm2.conf</filename> file to all hosts defined in the
+configuration file(gfmd<replaceable>n</replaceable>,
+gfsd<replaceable>n</replaceable> and
 client<replaceable>n</replaceable>).
+If authentication type is "sharedsecret" and <option>-k</option>
+option is specified, <command>gfservice</command> also creates a
+shared secret key using <command>gfkey</command> command and then
+distributes the key.
 </para>
 </listitem>
 </varlistentry>
@@ -786,8 +807,9 @@ standard in.
 <term><command>config-client</command></term>
 <listitem>
 <para>
-Copy <filename>gfarm2.conf</filename> file and a shared secret key file
-from gfmd1 to the client host.
+Copy <filename>gfarm2.conf</filename> file from gfmd1 to the client
+host. This sub-command also copies a shared secret key file when
+<option>-k</option> option is specified.
 </para>
 </listitem>
 </varlistentry>

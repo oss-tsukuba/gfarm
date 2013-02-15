@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.1'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>15 Feb 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice</refentrytitle>
@@ -186,6 +186,22 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 「<parameter>時間</parameter>」として 「no」を指定すると、タイムアウトは
 起きなくなります。
 デフォルト値は、「no」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-k</option></term>
+<listitem>
+<para>
+認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
+います。このオプションが<command>config-gfarm</command> サブコマンドも
+しくは <command>config-gfarm-master</command> サブコマンドと共に指定さ
+れた場合、<command>gfservice</command>は共有秘密鍵を作成し、作成した鍵
+を設定ファイルで定義されているすべてのホストに配布します。 
+このオプションが <command>config-gfarm-slave</command>、
+<command>config-gfsd</command>、 <command>config-client</command>と共
+に指定された場合、gfmd ホストから鍵をコピーします。
 </para>
 </listitem>
 </varlistentry>
@@ -508,12 +524,14 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
 <command>config-gfarm-master</command> ないし
 <command>config-gfarm-slave</command> を使って下さい。
-認証タイプが「sharedsecret (共有秘密鍵)」の場合、<command>gfservice</command>
-は <command>gfkey</command> コマンドを用いて共有秘密鍵を作成し、作成した
-鍵と <filename>gfarm2.conf</filename> ファイルを設定ファイルで定義
-されているすべてのホスト (gfmd<replaceable>n</replaceable>、
-gfsd<replaceable>n</replaceable>、client<replaceable>n</replaceable>)
-に配布します。
+<command>gfservice</command>は<filename>gfarm2.conf</filename> ファイ
+ルを設定ファイルで定義されているすべてのホスト
+(gfmd<replaceable>n</replaceable>、 gfsd<replaceable>n</replaceable>、
+client<replaceable>n</replaceable>) に配布します。
+認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
+つ<option>-k</option>オプションが指定された場合、
+<command>gfservice</command>は <command>gfkey</command> コマンドを用い
+て共有秘密鍵を作成し、作成した鍵を同じく配布します。
 </para>
 </listitem>
 </varlistentry>
@@ -793,8 +811,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 <term><command>config-client</command></term>
 <listitem>
 <para>
-<filename>gfarm2.conf</filename> ファイルおよび共有秘密鍵ファイルを、gfmd1
-からクライアントホストへコピーします。
+<filename>gfarm2.conf</filename> ファイルをgfmd1からクライアントホスト
+へコピーします。このサブコマンドと共に<option>-k</option>オプションが
+指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
+ホストへコピーします。
 </para>
 </listitem>
 </varlistentry>
