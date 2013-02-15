@@ -378,6 +378,45 @@ CLASS="PARAMETER"
 >, timeout never occurs.
 The default value is "no".</P
 ></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-k</CODE
+></DT
+><DD
+><P
+>Setup shared key if authentication type is "sharedsecret".
+When this option is specified with sub-command
+<B
+CLASS="COMMAND"
+>config-gfarm</B
+> or
+<B
+CLASS="COMMAND"
+>config-gfarm-master</B
+>, <B
+CLASS="COMMAND"
+>gfservice</B
+>
+creates a shared secret key and then distributes the key to all hosts
+defined in the configuration file.
+When this option is specified with sub-commands
+<B
+CLASS="COMMAND"
+>config-gfarm-slave</B
+> or
+<B
+CLASS="COMMAND"
+>config-gfsd</B
+>, <B
+CLASS="COMMAND"
+>config-client</B
+>,
+<B
+CLASS="COMMAND"
+>gfservice</B
+> copies the key from gfmd host.</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -903,25 +942,21 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >config-gfarm-slave</B
 >" sub-command in that case.
-If authentication type is "sharedsecret", <B
+<B
 CLASS="COMMAND"
 >gfservice</B
->
-also creates a shared secret key using <B
-CLASS="COMMAND"
->gfkey</B
-> command
-and then distribute the key and <TT
+> distributes
+<TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file
-to all hosts defined in the configuration file 
-(gfmd<TT
+> file to all hosts defined in the
+configuration file(gfmd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->, gfsd<TT
+>,
+gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
@@ -932,7 +967,20 @@ CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->).</P
+>).
+If authentication type is "sharedsecret" and <CODE
+CLASS="OPTION"
+>-k</CODE
+>
+option is specified, <B
+CLASS="COMMAND"
+>gfservice</B
+> also creates a
+shared secret key using <B
+CLASS="COMMAND"
+>gfkey</B
+> command and then
+distributes the key.</P
 ></DD
 ><DT
 ><B
@@ -1502,8 +1550,12 @@ CLASS="COMMAND"
 >Copy <TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> file and a shared secret key file
-from gfmd1 to the client host.</P
+> file from gfmd1 to the client
+host. This sub-command also copies a shared secret key file when
+<CODE
+CLASS="OPTION"
+>-k</CODE
+> option is specified.</P
 ></DD
 ><DT
 ><B
