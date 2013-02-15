@@ -116,7 +116,7 @@ gfm_server_protocol_extension_default(
 {
 	gflog_warning(GFARM_MSG_1000181, "unknown request: %d", request);
 	peer_record_protocol_error(peer);
-	return (GFARM_ERR_PROTOCOL);
+	return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
 }
 
 /* this interface is made as a hook for a private extension */
@@ -529,10 +529,12 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_process_alloc(peer, xid, sizep,
 		    from_client, skip);
 		break;
+#ifdef NOT_USED
 	case GFM_PROTO_PROCESS_ALLOC_CHILD:
 		e = gfm_server_process_alloc_child(peer, xid, sizep,
 		    from_client, skip);
 		break;
+#endif
 	case GFM_PROTO_PROCESS_FREE:
 		e = gfm_server_process_free(peer, xid, sizep,
 		    from_client, skip);

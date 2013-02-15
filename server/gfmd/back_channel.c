@@ -527,11 +527,11 @@ gfm_server_switch_back_channel_common(
 	}
 	if (version < GFS_PROTOCOL_VERSION_V2_4)
 		e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay,
-		    diag, e, "");
+		    diag, &e, "");
 	else {
 		i = 0;
 		e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay,
-		    diag, e,  "i", &i/*XXX FIXME*/);
+		    diag, &e,  "i", &i/*XXX FIXME*/);
 	}
 	if (e2 != GFARM_ERR_NO_ERROR)
 		return (e2);

@@ -318,10 +318,10 @@ gfm_server_fsngroup_get_by_hostname(
 
 	if (fsngroupname != NULL)
 		e = gfm_server_relay_put_reply(
-			peer, xid, sizep, relay, diag, e, "s", &fsngroupname);
+			peer, xid, sizep, relay, diag, &e, "s", &fsngroupname);
 	else
 		e = gfm_server_relay_put_reply(
-			peer, xid, sizep, relay, diag, e, "");
+			peer, xid, sizep, relay, diag, &e, "");
 
 bailout:
 	free(hostname);
@@ -390,7 +390,7 @@ gfm_server_fsngroup_modify(
 		giant_unlock();
 	}
 	e = gfm_server_relay_put_reply(
-		peer, xid, sizep, relay, diag, e, "");
+		peer, xid, sizep, relay, diag, &e, "");
 
 bailout:
 	free(hostname);

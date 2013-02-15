@@ -1220,7 +1220,7 @@ gfm_server_metadb_server_set(
 		giant_unlock();
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1347,7 +1347,7 @@ gfm_server_metadb_server_remove(
 
 	free(name);
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 static void

@@ -918,8 +918,12 @@
 	  出力: i:エラー
 
 	GFM_PROTO_PROCESS_SET
-	  入力: i:key_type, b:shared_key, l:pid
+	  入力: s:username, i:key_type, b:shared_key, l:pid
 	  出力: i:エラー
+	  ※ 入力パラメータ username は、gfarm v2 までは存在しなかったが、
+	     slave gfmd でこの RPC の内容を解釈する際に、
+	     master gfmd へ、この pid に対応するユーザを問い合わせる必要が
+	     なくなるため、gfarm v3 で追加した。
 
   quota 管理系
 

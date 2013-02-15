@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <gfarm/error.h>
 #include <gfarm/gflog.h>
@@ -580,6 +581,28 @@ gfarm_id_lookup(struct gfarm_id_table *idtab, gfarm_int32_t id)
 	if (entry != NULL)
 		return (entry->data);
 	return (NULL);
+}
+
+int
+gfarm_id_alloc_at(struct gfarm_id_table *idtab, gfarm_int32_t id,
+	void **entryp)
+{
+	void *entry = gfarm_id_lookup(idtab, id);
+	gfarm_int32_t new_id;
+
+	if (entry != NULL)
+		return (EALREADY);
+	idtab->id_next = id;
+	entry = gfarm_id_alloc(idtab, &new_id);
+	if (entry == NULL)
+		return (ENOMEM);
+	if (new_id != id) {
+		gfarm_id_free(idtab, new_id);
+		return (EINVAL);
+	}
+
+	*entryp = entry;
+	return (0);
 }
 
 int

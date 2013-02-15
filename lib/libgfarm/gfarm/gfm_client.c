@@ -3634,6 +3634,7 @@ gfm_client_process_alloc(struct gfm_connection *gfm_server,
 	    keytype, sharedkey_size, sharedkey, pidp));
 }
 
+#ifdef NOT_USED
 gfarm_error_t
 gfm_client_process_alloc_child(struct gfm_connection *gfm_server,
 	gfarm_int32_t parent_keytype, const char *parent_sharedkey,
@@ -3646,6 +3647,7 @@ gfm_client_process_alloc_child(struct gfm_connection *gfm_server,
 	    parent_sharedkey_size, parent_sharedkey, parent_pid,
 	    keytype, sharedkey_size, sharedkey, pidp));
 }
+#endif
 
 gfarm_error_t
 gfm_client_process_free(struct gfm_connection *gfm_server)
@@ -3656,7 +3658,7 @@ gfm_client_process_free(struct gfm_connection *gfm_server)
 #ifndef __KERNEL__	/* gfsd only */
 
 gfarm_error_t
-gfm_client_process_set(struct gfm_connection *gfm_server,
+gfm_client_process_set(struct gfm_connection *gfm_server, const char *user,
 	gfarm_int32_t keytype, const char *sharedkey, size_t sharedkey_size,
 	gfarm_pid_t pid)
 {
@@ -3670,8 +3672,8 @@ gfm_client_process_set(struct gfm_connection *gfm_server,
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	}
 
-	e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_SET, "ibl/",
-	    keytype, sharedkey_size, sharedkey, pid);
+	e = gfm_client_rpc(gfm_server, 0, GFM_PROTO_PROCESS_SET, "sibl/",
+	    user, keytype, sharedkey_size, sharedkey, pid);
 	if (e == GFARM_ERR_NO_ERROR) {
 		memcpy(gfm_server->pid_key, sharedkey, sharedkey_size);
 		gfm_server->pid = pid;

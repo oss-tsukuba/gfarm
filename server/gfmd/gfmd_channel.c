@@ -1258,7 +1258,7 @@ gfm_server_switch_gfmd_channel(
 	}
 	i = 0;
 	if ((e = gfm_server_relay_put_reply(peer, xid, sizep, relay,
-	    diag, er, "i", &i /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
+	    diag, &er, "i", &i /*XXX FIXME*/)) != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002988,
 		    "%s: %s", diag, gfarm_error_string(e));
 		return (e);

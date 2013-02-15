@@ -116,8 +116,10 @@ gfarm_error_t process_get_file_opening(struct process *, int,
 struct peer;
 gfarm_error_t gfm_server_process_alloc(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+#ifdef NOT_USED
 gfarm_error_t gfm_server_process_alloc_child(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+#endif
 gfarm_error_t gfm_server_process_free(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_process_set(

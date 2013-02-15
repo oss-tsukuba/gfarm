@@ -1637,7 +1637,7 @@ gfm_server_host_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 void
@@ -1744,7 +1744,7 @@ gfm_server_host_info_modify(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 /* this interface is exported for a use from a private extension */
@@ -1814,7 +1814,7 @@ gfm_server_host_info_remove(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 /* called from fs.c:gfm_server_schedule_file() as well */
@@ -1911,7 +1911,7 @@ gfm_server_hostname_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	free(hostname);
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 /*
@@ -2195,7 +2195,7 @@ gfm_server_statfs(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "lll", &used, &avail, &files));
+	    &e, "lll", &used, &avail, &files));
 }
 
 #endif /* TEST */

@@ -1105,7 +1105,7 @@ gfm_server_group_info_remove(
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t

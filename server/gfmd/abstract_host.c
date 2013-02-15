@@ -755,7 +755,11 @@ async_client_vsend_wrapped_request_unlocked(struct abstract_host *host,
 	async = peer_get_async(peer);
 	server = peer_get_conn(peer);
 
+#ifdef COMPAT_GFARM_2_3
 	if (async != NULL) { /* is asynchronous mode? */
+#else
+		assert(async != NULL);
+#endif
 		e = gfp_xdr_vsend_async_wrapped_request(server,
 		    async, result_callback, disconnect_callback, closure,
 		    wrapping_format, wrapping_app, command, format, app, isref);
@@ -775,8 +779,8 @@ async_client_vsend_wrapped_request_unlocked(struct abstract_host *host,
 		}
 		if (e == GFARM_ERR_NO_ERROR)
 			e = gfp_xdr_flush(server);
-#endif
 	}
+#endif
 
 	if (e != GFARM_ERR_NO_ERROR) { /* must be IS_CONNECTION_ERROR(e) */
 		async_server_disconnect_request(host, peer,

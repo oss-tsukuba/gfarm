@@ -800,12 +800,12 @@ gfm_server_user_info_get_by_gsi_dn(
 		if (u == NULL) {
 			e2 = GFARM_ERR_NO_SUCH_USER;
 			e = gfm_server_relay_put_reply(peer, xid, sizep,
-			    relay, diag, e2, "");
+			    relay, diag, &e2, "");
 		} else {
 			ui = &u->ui;
 			e2 = e;
 			e = gfm_server_relay_put_reply(peer, xid, sizep,
-			    relay, diag, e2, "ssss", &ui->username,
+			    relay, diag, &e2, "ssss", &ui->username,
 			    &ui->realname, &ui->homedir, &ui->gsi_dn);
 		}
 		giant_unlock();
@@ -886,7 +886,7 @@ gfm_server_user_info_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 static int
@@ -1003,7 +1003,7 @@ gfm_server_user_info_modify(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1059,7 +1059,7 @@ gfm_server_user_info_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 
 }
 #endif /* TEST */

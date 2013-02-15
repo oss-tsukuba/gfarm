@@ -1284,10 +1284,11 @@ gfm_server_relay_put_reply0(struct peer *peer, gfp_xdr_xid_t xid,
 gfarm_error_t
 gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	size_t *sizep, struct relayed_request *r, const char *diag,
-	gfarm_error_t ecode, const char *format, ...)
+	gfarm_error_t *ecodep, const char *format, ...)
 {
 	struct abstract_host *ah;
 	struct peer *slave_mhpeer, *mhpeer = NULL;
+	gfarm_error_t ecode = *ecodep;
 	va_list ap;
 	gfarm_error_t e;
 	gfarm_uint64_t seqnum;
@@ -1316,6 +1317,7 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s", r->diag, gfarm_error_string(e));
 		}
+		*ecodep = e; /* notify the caller of the result */
 		if (ecode == GFARM_ERR_NO_ERROR)
 			ecode = e;
 	}

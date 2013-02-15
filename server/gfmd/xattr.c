@@ -553,7 +553,7 @@ quit:
 	free(value);
 	free(attrname);
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -589,7 +589,7 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_relay_put_reply(peer, xid, sizep,
-		    relay, diag, e, ""));
+		    relay, diag, &e, ""));
 	}
 #endif
 	if (relay == NULL) {
@@ -654,7 +654,7 @@ gfm_server_getxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			db_waitctx_fini(&waitctx);
 	}
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "b", sizeof(value), &size, value);
+	    &e, "b", sizeof(value), &size, value);
 
 	free(attrname);
 	if (value != NULL)
@@ -686,7 +686,7 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	if (xmlMode) {
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_relay_put_reply(peer, xid, sizep,
-		    relay, diag, e, ""));
+		    relay, diag, &e, ""));
 	}
 #endif
 
@@ -720,7 +720,7 @@ gfm_server_listxattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "b", sizeof(value), &size, value);
+	    &e, "b", sizeof(value), &size, value);
 	free(value);
 	return e;
 }
@@ -780,7 +780,7 @@ gfm_server_removexattr(
 		free(attrname);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		return (gfm_server_relay_put_reply(peer, xid, sizep,
-		    relay, diag, e, ""));
+		    relay, diag, &e, ""));
 
 	}
 #endif
@@ -820,7 +820,7 @@ gfm_server_removexattr(
 
 	free(attrname);
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 

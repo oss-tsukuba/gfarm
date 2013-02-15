@@ -65,7 +65,7 @@ gfm_server_compound_begin(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			e = GFARM_ERR_INVALID_ARGUMENT;
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -88,7 +88,7 @@ gfm_server_compound_end(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			e = GFARM_ERR_INVALID_ARGUMENT;
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -147,7 +147,7 @@ gfm_server_get_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "i", &fd));
+	    &e, "i", &fd));
 }
 
 gfarm_error_t
@@ -183,7 +183,7 @@ gfm_server_put_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -213,7 +213,7 @@ gfm_server_save_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -243,7 +243,7 @@ gfm_server_restore_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 char *
@@ -562,7 +562,7 @@ gfm_server_create(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "lli", &inum, &gen, &mode);
+	    &e, "lli", &inum, &gen, &mode);
 
 	if (gfarm_ctxp->file_trace && create_log != NULL) {
 		gflog_trace(GFARM_MSG_1003293, "%s", create_log);
@@ -626,7 +626,7 @@ gfm_server_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "lli", &inum, &gen, &mode));
+	    &e, "lli", &inum, &gen, &mode));
 }
 
 gfarm_error_t
@@ -687,7 +687,7 @@ gfm_server_open_root(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -756,7 +756,7 @@ gfm_server_open_parent(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -815,7 +815,7 @@ gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
 	if (gfarm_ctxp->file_trace && trace_log != NULL)
 		gflog_trace(GFARM_MSG_1003295, "%s", trace_log);
 	return (e2);
@@ -897,7 +897,7 @@ gfm_server_verify_type_common(
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -964,7 +964,7 @@ gfm_server_revoke_gfsd_access(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 static gfarm_error_t
@@ -1048,7 +1048,7 @@ gfm_server_fstat(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "llilsslllilili",
+	    &e, "llilsslllilili",
 	    &st.st_ino, &st.st_gen, &st.st_mode, &st.st_nlink,
 	    &st.st_user, &st.st_group, &st.st_size,
 	    &st.st_ncopy,
@@ -1333,7 +1333,7 @@ gfm_server_futimes(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1397,7 +1397,7 @@ gfm_server_fchmod(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1489,7 +1489,7 @@ gfm_server_fchown(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -1566,7 +1566,7 @@ gfm_server_cksum_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "sbi", &cksum_type, sizeof(cksumbuf), &cksum_len, cksumbuf,
+	    &e, "sbi", &cksum_type, sizeof(cksumbuf), &cksum_len, cksumbuf,
 	    &flags);
 	if (alloced) {
 		free(cksum_type);
@@ -1645,7 +1645,7 @@ gfm_server_cksum_set(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 /*
@@ -2029,7 +2029,7 @@ gfm_server_remove(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && !GFARM_S_ISDIR(inodet.imode)) {
@@ -2149,7 +2149,7 @@ gfm_server_rename(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR &&
@@ -2295,7 +2295,7 @@ gfm_server_flink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
@@ -2395,7 +2395,7 @@ gfm_server_mkdir(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 	free(name);
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -2474,7 +2474,7 @@ gfm_server_symlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 
 		giant_unlock();
 	}
-	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, e, "");
+	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, &e, "");
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && e == GFARM_ERR_NO_ERROR) {
@@ -2564,7 +2564,7 @@ gfm_server_readlink(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "s", &source_path);
+	    &e, "s", &source_path);
 	if (relay == NULL && e == GFARM_ERR_NO_ERROR)
 		free(source_path);
 	return (e2);
@@ -2614,7 +2614,7 @@ gfm_server_getdirpath(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	e_rpc = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "s", &s);
+	    &e, "s", &s);
 	if (relay == NULL && e == GFARM_ERR_NO_ERROR)
 		free(s);
 	return (e_rpc);
@@ -3202,7 +3202,7 @@ gfm_server_seek(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "l", &offset));
+	    &e, "l", &offset));
 }
 
 struct reopen_resume_arg {
@@ -3369,7 +3369,7 @@ gfm_server_reopen(
 		giant_unlock();
 	}
 	e2 = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "lliii", &inum, &gen, &mode, &flags, &to_create);
+	    &e, "lliii", &inum, &gen, &mode, &flags, &to_create);
 
 	if (relay == NULL &&
 	    gfarm_ctxp->file_trace && to_create && e == GFARM_ERR_NO_ERROR) {
@@ -3446,7 +3446,7 @@ gfm_server_close_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 struct close_v2_4_resume_arg {
@@ -3634,7 +3634,7 @@ gfm_server_close_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -3683,7 +3683,7 @@ gfm_server_close_write_v2_4(
 		}
 	}
 	e_ret = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e_rpc, "ill", &flags, &old_gen, &new_gen);
+	    &e_rpc, "ill", &flags, &old_gen, &new_gen);
 	if (e_rpc == GFARM_ERR_NO_ERROR && e_ret != GFARM_ERR_NO_ERROR) {
 		/*
 		 * There is severe race condition here (SourceForge #419),
@@ -3753,7 +3753,7 @@ gfm_server_fhclose_read(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	     e, ""));
+	     &e, ""));
 }
 
 static gfarm_error_t
@@ -3948,7 +3948,7 @@ gfm_server_fhclose_write(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		}
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	     e, "illl", &flags, &old_gen, &new_gen, &cookie));
+	     &e, "illl", &flags, &old_gen, &new_gen, &cookie));
 }
 
 gfarm_error_t
@@ -4017,7 +4017,7 @@ gfm_server_generation_updated(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -4064,7 +4064,7 @@ gfm_server_generation_updated_by_cookie(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -4086,8 +4086,9 @@ gfm_server_lock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag, 
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4110,8 +4111,9 @@ gfm_server_trylock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4134,8 +4136,9 @@ gfm_server_unlock(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4158,8 +4161,9 @@ gfm_server_lock_info(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4180,8 +4184,9 @@ gfm_server_glob(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4202,8 +4207,9 @@ gfm_server_schedule(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4224,8 +4230,9 @@ gfm_server_pio_open(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4246,8 +4253,9 @@ gfm_server_pio_set_paths(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4268,8 +4276,9 @@ gfm_server_pio_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4290,8 +4299,9 @@ gfm_server_pio_visit(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4389,8 +4399,9 @@ gfm_server_replica_list_by_host(
 	}
 
 	free(host);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4419,8 +4430,9 @@ gfm_server_replica_remove_by_host(
 	}
 
 	free(host);
+	e = GFARM_ERR_FUNCTION_NOT_IMPLEMENTED;
 	e = gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    GFARM_ERR_FUNCTION_NOT_IMPLEMENTED, "");
+	    &e, "");
 	return (e);
 }
 
@@ -4499,7 +4511,7 @@ gfm_server_replica_remove_by_file(
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 /*
@@ -4773,7 +4785,7 @@ gfm_server_replicate_file_from_to(
 	free(srchost);
 	free(dsthost);
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 struct replica_adding_resume_arg {
@@ -4930,7 +4942,7 @@ gfm_server_replica_adding(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, "llli", &inum, &gen, &mtime_sec, &mtime_nsec));
+	    &e, "llli", &inum, &gen, &mtime_sec, &mtime_nsec));
 }
 
 /* assume giant lock is obtained */
@@ -5008,7 +5020,7 @@ gfm_server_replica_added(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -5040,7 +5052,7 @@ gfm_server_replica_added2(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		giant_unlock();
 	}
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 gfarm_error_t
@@ -5110,7 +5122,7 @@ gfm_server_replica_lost(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 static gfarm_error_t
@@ -5233,7 +5245,7 @@ gfm_server_replica_add(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	}
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    e, ""));
+	    &e, ""));
 }
 
 static gfarm_error_t
@@ -5410,5 +5422,5 @@ gfm_server_replica_create_file_in_lost_found(struct peer *peer,
 		e_rpc = GFARM_ERR_NO_ERROR;
 
 	return (gfm_server_relay_put_reply(peer, xid, sizep, relay,
-	    diag, e_rpc, "ll", &inum_new, &gen_new));
+	    diag, &e_rpc, "ll", &inum_new, &gen_new));
 }

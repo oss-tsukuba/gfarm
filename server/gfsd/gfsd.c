@@ -744,7 +744,7 @@ gfs_server_process_set(struct gfp_xdr *client)
 		    "process is already set");
 		e = GFARM_ERR_INVALID_ARGUMENT;
 	} else if ((e = gfm_client_process_set(gfm_server,
-	    keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
+	    username, keytype, sharedkey, keylen, pid)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1003400,
 		    "gfm_client_process_set: %s", gfarm_error_string(e));
 
@@ -775,8 +775,8 @@ gfs_server_process_reset(struct gfp_xdr *client)
 	failedover = close_all_fd_for_process_reset();
 
 	for (i = 0; i < 2; ++i) {
-		e = gfm_client_process_set(gfm_server, keytype, sharedkey,
-		    keylen, pid);
+		e = gfm_client_process_set(gfm_server, username,
+		    keytype, sharedkey, keylen, pid);
 		if (e == GFARM_ERR_NO_ERROR) {
 			fd_usable_to_gfmd = 1;
 			break;

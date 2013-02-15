@@ -35,7 +35,7 @@ gfarm_error_t gfm_server_relay_get_request(struct peer *, size_t *,
 gfarm_error_t gfm_server_relay_put_reply(
 	struct peer *, gfp_xdr_xid_t, size_t *,
 	struct relayed_request *, const char *,
-	gfarm_error_t, const char *, ...);
+	gfarm_error_t *, const char *, ...);
 gfarm_error_t gfm_server_relay_get_request_dynarg(struct peer *, size_t *,
 	int, struct relayed_request *, const char *, const char *format, ...);
 gfarm_error_t gfm_server_relay_put_reply_dynarg(struct peer *, size_t *,
