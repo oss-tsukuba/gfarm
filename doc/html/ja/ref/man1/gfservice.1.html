@@ -375,6 +375,40 @@ CLASS="PARAMETER"
 起きなくなります。
 デフォルト値は、「no」です。</P
 ></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-k</CODE
+></DT
+><DD
+><P
+>認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
+います。このオプションが<B
+CLASS="COMMAND"
+>config-gfarm</B
+> サブコマンドも
+しくは <B
+CLASS="COMMAND"
+>config-gfarm-master</B
+> サブコマンドと共に指定さ
+れた場合、<B
+CLASS="COMMAND"
+>gfservice</B
+>は共有秘密鍵を作成し、作成した鍵
+を設定ファイルで定義されているすべてのホストに配布します。 
+このオプションが <B
+CLASS="COMMAND"
+>config-gfarm-slave</B
+>、
+<B
+CLASS="COMMAND"
+>config-gfsd</B
+>、 <B
+CLASS="COMMAND"
+>config-client</B
+>と共
+に指定された場合、gfmd ホストから鍵をコピーします。</P
+></DD
 ></DL
 ></DIV
 ></DIV
@@ -895,36 +929,44 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >config-gfarm-slave</B
 > を使って下さい。
-認証タイプが「sharedsecret (共有秘密鍵)」の場合、<B
+<B
 CLASS="COMMAND"
 >gfservice</B
->
-は <B
-CLASS="COMMAND"
->gfkey</B
-> コマンドを用いて共有秘密鍵を作成し、作成した
-鍵と <TT
+>は<TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ファイルを設定ファイルで定義
-されているすべてのホスト (gfmd<TT
+> ファイ
+ルを設定ファイルで定義されているすべてのホスト
+(gfmd<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>、 gfsd<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
 >、
-gfsd<TT
+client<TT
 CLASS="REPLACEABLE"
 ><I
 >n</I
 ></TT
->、client<TT
-CLASS="REPLACEABLE"
-><I
->n</I
-></TT
->)
-に配布します。</P
+>) に配布します。
+認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
+つ<CODE
+CLASS="OPTION"
+>-k</CODE
+>オプションが指定された場合、
+<B
+CLASS="COMMAND"
+>gfservice</B
+>は <B
+CLASS="COMMAND"
+>gfkey</B
+> コマンドを用い
+て共有秘密鍵を作成し、作成した鍵を同じく配布します。</P
 ></DD
 ><DT
 ><B
@@ -1479,8 +1521,13 @@ CLASS="COMMAND"
 ><TT
 CLASS="FILENAME"
 >gfarm2.conf</TT
-> ファイルおよび共有秘密鍵ファイルを、gfmd1
-からクライアントホストへコピーします。</P
+> ファイルをgfmd1からクライアントホスト
+へコピーします。このサブコマンドと共に<CODE
+CLASS="OPTION"
+>-k</CODE
+>オプションが
+指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
+ホストへコピーします。</P
 ></DD
 ><DT
 ><B
