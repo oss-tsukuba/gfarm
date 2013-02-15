@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "07 December 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "15 February 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- リモートホストから Gfarm のサーバーを制御する。
@@ -120,6 +120,16 @@ gfservice は SSH と Sudo を用いて、リモートホスト上にある
 「\fI時間\fR」として 「no」を指定すると、タイムアウトは
 起きなくなります。
 デフォルト値は、「no」です。
+.TP
+\fB-k\fR
+認証タイプが「sharedsecret (共有秘密鍵)」の場合に共有秘密鍵の設定を行
+います。このオプションが\fBconfig-gfarm\fR サブコマンドも
+しくは \fBconfig-gfarm-master\fR サブコマンドと共に指定さ
+れた場合、\fBgfservice\fRは共有秘密鍵を作成し、作成した鍵
+を設定ファイルで定義されているすべてのホストに配布します。 
+このオプションが \fBconfig-gfarm-slave\fR、
+\fBconfig-gfsd\fR、 \fBconfig-client\fRと共
+に指定された場合、gfmd ホストから鍵をコピーします。
 .SH "SUB-COMMANDS FOR GFMD"
 .PP
 以下に挙げているのは、\fBgfmd\fR を操作するサブコマンドです。
@@ -263,12 +273,14 @@ gfmd が実行中であれば、終了コード 0 で終了します。
 レプリケーション機能を有効にするときは、このサブコマンドは使用せず、代わりに
 \fBconfig-gfarm-master\fR ないし
 \fBconfig-gfarm-slave\fR を使って下さい。
-認証タイプが「sharedsecret (共有秘密鍵)」の場合、\fBgfservice\fR
-は \fBgfkey\fR コマンドを用いて共有秘密鍵を作成し、作成した
-鍵と \fIgfarm2.conf\fR ファイルを設定ファイルで定義
-されているすべてのホスト (gfmd\fIn\fR、
-gfsd\fIn\fR、client\fIn\fR)
-に配布します。
+\fBgfservice\fRは\fIgfarm2.conf\fR ファイ
+ルを設定ファイルで定義されているすべてのホスト
+(gfmd\fIn\fR、 gfsd\fIn\fR、
+client\fIn\fR) に配布します。
+認証タイプが「sharedsecret (共有秘密鍵)」であり、 か
+つ\fB-k\fRオプションが指定された場合、
+\fBgfservice\fRは \fBgfkey\fR コマンドを用い
+て共有秘密鍵を作成し、作成した鍵を同じく配布します。
 .TP
 \fBconfig-gfarm-master\fR
 このサブコマンドは \fBconfig-gfarm\fR と基本的に同じですが、
@@ -402,8 +414,10 @@ Gfarm2 ファイルシステムをアンマウントします。
 から読み込みます。
 .TP
 \fBconfig-client\fR
-\fIgfarm2.conf\fR ファイルおよび共有秘密鍵ファイルを、gfmd1
-からクライアントホストへコピーします。
+\fIgfarm2.conf\fR ファイルをgfmd1からクライアントホスト
+へコピーします。このサブコマンドと共に\fB-k\fRオプションが
+指定された場合は、共有秘密鍵ファイルについても gfmd1 からクライアント
+ホストへコピーします。
 .TP
 \fBunconfig-client\fR
 リモートホスト上の \fIgfarm2.conf\fR ファイルおよび

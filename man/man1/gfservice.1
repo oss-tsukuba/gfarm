@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE" "1" "07 December 2012" "Gfarm" ""
+.TH "GFSERVICE" "1" "15 February 2013" "Gfarm" ""
 
 .SH NAME
 gfservice \- control Gfarm servers from a remote host
@@ -115,6 +115,18 @@ When \fBgfservice\fR tries to start or stop a server program
 or \fItime\fR interval is elapsed.
 If "no" is specified as \fItime\fR, timeout never occurs.
 The default value is "no".
+.TP
+\fB-k\fR
+Setup shared key if authentication type is "sharedsecret".
+When this option is specified with sub-command
+\fBconfig-gfarm\fR or
+\fBconfig-gfarm-master\fR, \fBgfservice\fR
+creates a shared secret key and then distributes the key to all hosts
+defined in the configuration file.
+When this option is specified with sub-commands
+\fBconfig-gfarm-slave\fR or
+\fBconfig-gfsd\fR, \fBconfig-client\fR,
+\fBgfservice\fR copies the key from gfmd host.
 .SH "SUB-COMMANDS FOR GFMD"
 .PP
 The followings are sub-commands which operate \fBgfmd\fR\&.
@@ -257,12 +269,15 @@ options.
 Don't use this sub-command when you want to enable replication of gfmd.
 Instead, use "\fBconfig-gfarm-master\fR" or
 "\fBconfig-gfarm-slave\fR" sub-command in that case.
-If authentication type is "sharedsecret", \fBgfservice\fR
-also creates a shared secret key using \fBgfkey\fR command
-and then distribute the key and \fIgfarm2.conf\fR file
-to all hosts defined in the configuration file 
-(gfmd\fIn\fR, gfsd\fIn\fR and
+\fBgfservice\fR distributes
+\fIgfarm2.conf\fR file to all hosts defined in the
+configuration file(gfmd\fIn\fR,
+gfsd\fIn\fR and
 client\fIn\fR).
+If authentication type is "sharedsecret" and \fB-k\fR
+option is specified, \fBgfservice\fR also creates a
+shared secret key using \fBgfkey\fR command and then
+distributes the key.
 .TP
 \fBconfig-gfarm-master\fR
 This sub-command is the same as \fBconfig-gfarm\fR
@@ -396,8 +411,9 @@ Recover a shared secret key file on the remote host.
 standard in.
 .TP
 \fBconfig-client\fR
-Copy \fIgfarm2.conf\fR file and a shared secret key file
-from gfmd1 to the client host.
+Copy \fIgfarm2.conf\fR file from gfmd1 to the client
+host. This sub-command also copies a shared secret key file when
+\fB-k\fR option is specified.
 .TP
 \fBunconfig-client\fR
 Delete \fIgfarm2.conf\fR file and a shared secret key file
