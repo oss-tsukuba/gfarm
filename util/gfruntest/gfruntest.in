@@ -201,6 +201,7 @@ date
 
 if [ X$JENKINS_CLASSNAME != X ]; then
 	JENKINS_FILE=TEST-${JENKINS_CLASSNAME}-${TESTNAME}.xml
+	rm -f $JENKINS_FILE
 
 	echo "<testsuite>" >> $JENKINS_FILE
 
