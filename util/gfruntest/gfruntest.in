@@ -67,6 +67,58 @@ print_usage()
 	echo "  -f <config_file>    specify the gfservice configuration file" \
 		1>&2
 	echo "  -p <parameter_file> specify the test parameter file"	1>&2
+	echo "  -j <classname>      specify the classname and outputs xml file" \
+		1>&2
+}
+
+#
+# returns result message
+#
+result_message()
+{
+	case $1 in
+	$RESULT_PASS)
+		echo "PASS";;
+	$RESULT_FAIL)
+		echo "FAIL";;
+	$RESULT_XPASS)
+		echo "XPASS";;
+	$RESULT_XFAIL)
+		echo "XFAIL";;
+	$RESULT_UNRESOLVED)
+		echo "UNRESOLVED";;
+	$RESULT_FATAL)
+		echo "FATAL";;
+	$RESULT_UNTESTED)
+		echo "UNTESTED";;
+	$RESULT_UNSUPPORTED)
+		echo "UNSUPPORTED";;
+	*)
+		echo "UNKNOWN RESULT CODE";;
+	esac
+}
+
+#
+# print test result in xml format
+#
+print_test_result()
+{
+	# $1=$JENKINS_CLASSNAME
+	# $2=$TESTNAME
+	# $3=$RESULT
+	# $4=$ELAPSED_TIME
+	# $5=$JENKINS_FILE
+
+	TESTCASE_FMT_BEGIN="    <testcase classname=\"%s\" name=\"%s\" time=\"%d\">\n"
+	TESTCASE_FMT_END="    </testcase>\n"
+	FAILURE_FMT="    <failure message=\"%s\"/>\n"
+
+	printf -- "$TESTCASE_FMT_BEGIN" $1 $2 $4 >> $5
+	case $3 in
+		$RESULT_FAIL | $RESULT_XPASS | $RESULT_UNRESOLVED | $RESULT_FATAL)
+			printf -- "$FAILURE_FMT" "`result_message $3`" >> $5
+	esac
+	printf -- "$TESTCASE_FMT_END" >> $5
 }
 
 #
@@ -110,6 +162,15 @@ while [ $# -ge 1 ]; do
 		fi
 		shift
 		;;
+	-j)	shift
+		if [ $# -eq 0 ]; then
+			echo "option requires an argument -- 'j'" 1>&2
+			print_usage
+			exit 1
+		fi
+		JENKINS_CLASSNAME=$1
+		shift
+		;;
 	-*)	echo "$0: invalid option -- '$1'" 1>&2
 		print_usage
 		exit 1;
@@ -138,29 +199,27 @@ fi
 echo -n "start: $TESTNAME "
 date
 
+if [ X$JENKINS_CLASSNAME != X ]; then
+	JENKINS_FILE=TEST-${JENKINS_CLASSNAME}-${TESTNAME}.xml
+
+	echo "<testsuite>" >> $JENKINS_FILE
+
+	START_TIME=`date +%s`
+fi
+
 test_${TESTNAME} "$@"
 RESULT=$?
-case $RESULT in
-$RESULT_PASS)	RESULT_MESSAGE="PASS"
-		;;
-$RESULT_FAIL)	RESULT_MESSAGE="FAIL"
-		;;
-$RESULT_XPASS)	RESULT_MESSAGE="XPASS"
-		;;
-$RESULT_XFAIL)	RESULT_MESSAGE="XFAIL"
-		;;
-$RESULT_UNRESOLVED)	RESULT_MESSAGE="UNRESOLVED"
-		;;
-$RESULT_FATAL)	RESULT_MESSAGE="FATAL"
-		;;
-$RESULT_UNTESTED)	RESULT_MESSAGE="UNTESTED"
-		;;
-$RESULT_UNSUPPORTED)	RESULT_MESSAGE="UNSUPPORTED"
-		;;
-*)	RESULT_MESSAGE="UNKNOWN RESULT CODE"
-	;;
-esac
 
-echo -n "end: $TESTNAME $RESULT_MESSAGE "
+if [ X$JENKINS_CLASSNAME != X ]; then
+	ELAPSED_TIME=`expr \`date +%s\` - $START_TIME`
+
+	print_test_result $JENKINS_CLASSNAME $TESTNAME $RESULT $ELAPSED_TIME \
+		$JENKINS_FILE
+
+	echo "</testsuite>" >> $JENKINS_FILE
+fi
+
+echo -n "end: $TESTNAME `result_message $RESULT` "
 date
+
 exit $RESULT
