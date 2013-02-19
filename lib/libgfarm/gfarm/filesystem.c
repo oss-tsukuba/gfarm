@@ -23,6 +23,8 @@ struct gfarm_filesystem_hash_id {
 	int port;
 };
 
+#define MS2FS_HASHTAB_SIZE 17
+
 static struct gfarm_filesystem filesystems = { &filesystems };
 static struct gfarm_hash_table *ms2fs_hashtab;
 
@@ -79,9 +81,9 @@ gfarm_filesystem_is_initialized(void)
 static gfarm_error_t
 gfarm_filesystem_ms2fs_hash_alloc(void)
 {
-#define MS2FS_HASHTAB_SIZE 17
-	if (ms2fs_hashtab)
-		gfarm_hash_table_free(ms2fs_hashtab);
+	if (ms2fs_hashtab != NULL)
+		return (GFARM_ERR_NO_ERROR);
+
 	ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
 	    gfarm_filesystem_hash_index, gfarm_filesystem_hash_equal);
 	if (ms2fs_hashtab == NULL) {
