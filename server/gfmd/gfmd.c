@@ -1295,6 +1295,8 @@ transform_to_master(void)
 	 * applied here.
 	 */
 	slave_clear_db_update_info();
+
+	replica_check_start();
 }
 
 static int
@@ -1849,16 +1851,21 @@ main(int argc, char **argv)
 		    is_master ? "master" : "slave");
 		start_gfmdc_threads();
 		gfmd_startup_state_notify_ready();
-		if (is_master || gfarm_get_metadb_server_slave_listen())
+		if (is_master) {
 			sock = open_accepting_socket(gfmd_port);
-		else
+			replica_check_start();
+		} else if (gfarm_get_metadb_server_slave_listen()) {
+			sock = open_accepting_socket(gfmd_port);
+		} else {
 			sock = wait_transform_to_master(gfmd_port);
-	} else
+		}
+	} else {
 		sock = open_accepting_socket(gfmd_port);
+		replica_check_start();
+	}
 
-	/* master */
+	/* master, or inter-gfmd RPC relay is enabled */
 
-	replica_check_start();
 	accepting_loop(sock);
 
 	/*NOTREACHED*/
