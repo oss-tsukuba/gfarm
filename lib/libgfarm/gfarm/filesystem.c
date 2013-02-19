@@ -54,6 +54,8 @@ struct gfarm_filesystem_static {
 	struct gfarm_hash_table *ms2fs_hashtab;
 };
 
+#define MS2FS_HASHTAB_SIZE 17
+
 static void gfarm_filesystem_free(struct gfarm_filesystem *);
 
 gfarm_error_t
@@ -189,9 +191,9 @@ gfarm_filesystem_is_initialized(void)
 static gfarm_error_t
 gfarm_filesystem_ms2fs_hash_alloc(void)
 {
-#define MS2FS_HASHTAB_SIZE 17
-	if (staticp->ms2fs_hashtab)
-		gfarm_hash_table_free(staticp->ms2fs_hashtab);
+	if (staticp->ms2fs_hashtab != NULL)
+		return (GFARM_ERR_NO_ERROR);
+
 	staticp->ms2fs_hashtab = gfarm_hash_table_alloc(MS2FS_HASHTAB_SIZE,
 	    gfarm_filesystem_hash_index, gfarm_filesystem_hash_equal);
 	if (staticp->ms2fs_hashtab == NULL) {
