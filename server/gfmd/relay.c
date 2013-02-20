@@ -1314,7 +1314,7 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 	struct peer *slave_mhpeer, *mhpeer = NULL;
 	gfarm_error_t ecode = *ecodep;
 	va_list ap;
-	gfarm_error_t e;
+	gfarm_error_t e, e2;
 	gfarm_uint64_t seqnum;
 	gfarm_uint64_t flags;
 	static const char relay_diag[] = "gfm_server_relay_put_reply";
@@ -1333,10 +1333,13 @@ gfm_server_relay_put_reply(struct peer *peer, gfp_xdr_xid_t xid,
 			}
 			va_end(ap);
 			relayed_request_acquire_notify(r);
-			if ((e = slave_add_db_update_info(seqnum, flags, diag))
-			    != GFARM_ERR_NO_ERROR)
+			if ((e2 = slave_add_db_update_info(
+			    seqnum, flags, diag)) != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
-				    "%s: %s", diag, gfarm_error_string(e));
+				    "%s: %s", diag, gfarm_error_string(e2));
+				if (e == GFARM_ERR_NO_ERROR)
+					e = e2;
+			}
 		} else {
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "%s: %s", r->diag, gfarm_error_string(e));
