@@ -44,7 +44,7 @@ function print_parallels() {
 
 function print_result() {
     local num
-    num=`echo "scale=2; $1 / 1000000" | bc`
+    num=`echo "scale=2; $1" | bc`
     printf "%12.02f MB/s (%.02f sec)\n" ${num} $2
     echo $1" "$2 >> ${TMP_FILE}
 }
