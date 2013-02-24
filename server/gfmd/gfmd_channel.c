@@ -1125,6 +1125,55 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 	return (e);
 }
 
+struct gfmdc_fhopen_closure {
+	void *closure;
+	gfarm_error_t (*callback)(void *, gfarm_error_t, gfarm_int32_t);
+};
+
+static gfarm_error_t
+gfmdc_client_fhopen_result(struct mdhost *mh, struct peer *peer,
+	size_t size, gfarm_error_t e, void *closure, const char *diag)
+{
+	struct gfmdc_fhopen_closure *c = closure;
+	gfarm_int32_t mode = 0;
+
+	if (e == GFARM_ERR_NO_ERROR) {
+		if ((e = gfmdc_client_recv_result(peer, peer_get_mdhost(peer),
+		     size, diag, "i", &mode)) != GFARM_ERR_NO_ERROR)
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s: RPC error: %s", diag, gfarm_error_string(e));
+	}
+	(*c->callback)(c->closure, e, mode);
+	free(c);
+	return (e);
+}
+
+gfarm_error_t
+gfmdc_client_fhopen_request(struct peer *peer,
+	gfarm_ino_t inum, gfarm_int64_t igen, gfarm_uint32_t flag,
+	gfarm_error_t (*callback)(void *, gfarm_error_t, gfarm_int32_t),
+	void *closure)
+{
+	gfarm_error_t e;
+	struct mdhost *mh = peer_get_mdhost(peer);
+	struct gfmdc_fhopen_closure *c;
+	static const char diag[] = "GFM_PROTO_FHOPEN";
+
+	GFARM_MALLOC(c);
+	if (c == NULL)
+		return (GFARM_ERR_NO_MEMORY);
+	c->callback = callback;
+	c->closure = closure;
+	if ((e = gfmdc_client_send_request_async(mh, peer,
+	    gfmdc_client_fhopen_result, closure, diag, GFM_PROTO_FHOPEN,
+	    "lli", inum, igen, flag)) != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "%s : %s", mdhost_get_name(mh), gfarm_error_string(e));
+		return (e);
+	}
+	return (e);
+}	
+
 static gfarm_error_t
 gfmdc_protocol_switch(struct abstract_host *h,
 	struct peer *peer, int request, gfp_xdr_xid_t xid, size_t size,

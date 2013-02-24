@@ -284,6 +284,14 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	case GFM_PROTO_OPEN_PARENT:
 		e = gfm_server_open_parent(peer, xid, sizep, from_client, skip);
 		break;
+#if 0
+	case GFM_PROTO_OPEN_DIR:
+		e = gfm_server_open_dir(peer, xid, sizep, from_client, skip);
+		break;
+#endif
+	case GFM_PROTO_FHOPEN:
+		e = gfm_server_fhopen(peer, xid, sizep, from_client, skip);
+		break;
 	case GFM_PROTO_CLOSE:
 		e = gfm_server_close(peer, xid, sizep, from_client, skip);
 		break;

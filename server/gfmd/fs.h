@@ -26,6 +26,8 @@ gfarm_error_t gfm_server_open_root(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_open_parent(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
+gfarm_error_t gfm_server_fhopen(
+	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_close(
 	struct peer *, gfp_xdr_xid_t, size_t *, int, int);
 gfarm_error_t gfm_server_close_read(

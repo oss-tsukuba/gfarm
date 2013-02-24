@@ -760,6 +760,87 @@ gfm_server_open_parent(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 }
 
 gfarm_error_t
+gfm_server_fhopen(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
+	int from_client, int skip)
+{
+	gfarm_error_t e;
+	struct process *process;
+	struct inode *inode;
+	gfarm_int32_t fd;
+	gfarm_ino_t inum;
+	gfarm_uint64_t igen;
+	gfarm_uint32_t flag;
+	gfarm_int32_t mode = 0;
+	static const char diag[] = "GFM_PROTO_FHOPEN";
+
+	e = gfm_server_get_request(peer, sizep, diag,
+	    "lli", &inum, &igen, &flag);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	if (skip)
+		return (GFARM_ERR_NO_ERROR);
+
+	/* do not relay RPC to master gfmd */
+	giant_lock();
+
+	if (peer_get_parent(peer) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: not from slave gfmd", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if (!from_client) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: not from client", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if ((process = peer_get_process(peer)) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: no process", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if (process_get_user(process) == NULL) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: no process", diag);
+		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
+	}
+	if (flag != GFARM_FILE_LOOKUP) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: not lookup", diag);
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	}
+	
+	if ((inode = inode_lookup(inum)) == NULL) {
+		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: not found",
+		    diag, (long long)inum, (long long)igen);
+	} else if (inode_get_gen(inode) != igen) {
+		e = GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: generation not found: %lld",
+		    diag, (long long)inum, (long long)igen,
+		    (long long)inode_get_gen(inode));
+	} else if (!inode_is_dir(inode)) {
+		e = GFARM_ERR_NOT_A_DIRECTORY;
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: inode %lld:%lld: not dir: %d",
+		    diag, (long long)inum, (long long)igen,
+		    inode_get_mode(inode));
+	} else if ((e = process_open_file(process, inode, flag, 0, peer, NULL,
+	    &fd)) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED, "%s: process_open_file(): %s",
+		    diag, gfarm_error_string(e));
+	} else {
+		peer_fdpair_set_current(peer, fd);
+		mode = inode_get_mode(inode);
+#if 0		/* XXX: */
+		if (gfarm_ctxp->file_trace) {
+		}
+#endif
+	}
+
+	giant_unlock();
+
+	return (gfm_server_put_reply(peer, xid, sizep, diag, e, "i", mode));
+}
+
+gfarm_error_t
 gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
