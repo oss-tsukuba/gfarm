@@ -144,8 +144,11 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			    gfarm_error_string(e));
 		}
 		peer_record_protocol_error(peer); /* mark this peer finished */
+		*requestp = GFM_PROTO_PRIVATE_END; /* caller needs *requestp */
 		return (e);
 	}
+	*requestp = request;
+
 	peer_stat_add(peer, GFARM_IOSTAT_TRAN_NUM, 1);
 
 	switch (request) {
@@ -428,14 +431,12 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_switch_back_channel(peer, xid, sizep,
 		    from_client, skip);
 		/* should not call gfp_xdr_flush() due to race */
-		*requestp = request;
 		return (e);
 #endif
 	case GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL:
 		e = gfm_server_switch_async_back_channel(peer, xid, sizep,
 		    from_client, skip);
 		/* should not call gfp_xdr_flush() due to race */
-		*requestp = request;
 		return (e);
 	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
 		if (gfarm_get_metadb_replication_enabled())
@@ -444,7 +445,6 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		else
 			e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
 		/* should not call gfp_xdr_flush() due to race */
-		*requestp = request;
 		return (e);
 	case GFM_PROTO_GLOB:
 		e = gfm_server_glob(peer, xid, sizep, from_client, skip);
@@ -666,7 +666,6 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 			e = e2;
 	}
 
-	*requestp = request;
 	/* continue unless protocol error happens */
 	return (e);
 }
