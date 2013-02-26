@@ -288,8 +288,8 @@ gfarm_filesystem_get(const char *hostname, int port)
 struct gfarm_filesystem*
 gfarm_filesystem_get_by_connection(struct gfm_connection *gfm_server)
 {
-	return (gfarm_filesystem_get(gfm_client_hostname(
-		    gfm_server), gfm_client_port(gfm_server)));
+	return (gfarm_filesystem_get(gfm_client_hostname(gfm_server),
+	    gfm_client_port(gfm_server)));
 }
 
 gfarm_error_t
@@ -307,8 +307,7 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 		return (GFARM_ERR_NO_MEMORY);
 	}
 	if ((e = gfarm_filesystem_ms2fs_hash_alloc()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002568,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		gflog_debug(GFARM_MSG_1002568, "%s", gfarm_error_string(e));
 		free(servers);
 		return (e);
 	}
