@@ -241,7 +241,7 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 	return (GFARM_ERR_NO_ERROR);
 }
 
-static gfarm_error_t
+static void
 gfarm_filesystem_hash_purge(struct gfarm_filesystem *fs,
 	struct gfarm_metadb_server *ms)
 {
