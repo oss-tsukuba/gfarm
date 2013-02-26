@@ -241,6 +241,20 @@ gfarm_filesystem_hash_enter(struct gfarm_filesystem *fs,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfarm_filesystem_hash_purge(struct gfarm_filesystem *fs,
+	struct gfarm_metadb_server *ms)
+{
+	struct gfarm_filesystem_hash_id id;
+	int r;
+
+	id.hostname = gfarm_metadb_server_get_name(ms);
+	id.port = gfarm_metadb_server_get_port(ms);
+	r = gfarm_hash_purge(staticp->ms2fs_hashtab, &id, sizeof(id));
+	assert(r);
+	(void)r;
+}
+
 int
 gfarm_filesystem_is_default(struct gfarm_filesystem *fs)
 {
@@ -286,8 +300,23 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	int i;
 	struct gfarm_metadb_server *ms, **servers;
 
-	for (i = 0; i < fs->nservers; ++i)
+	GFARM_MALLOC_ARRAY(servers, sizeof(void *) * n);
+	if (servers == NULL) {
+		gflog_debug(GFARM_MSG_1002570,
+		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if ((e = gfarm_filesystem_ms2fs_hash_alloc()) != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_1002568,
+		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		free(servers);
+		return (e);
+	}
+
+	for (i = 0; i < fs->nservers; ++i) {
 		gfarm_metadb_server_set_is_removed(fs->servers[i], 1);
+		gfarm_filesystem_hash_purge(fs, fs->servers[i]);
+	}
 	for (i = 0; i < n; ++i)
 		gfarm_metadb_server_set_is_removed(metadb_servers[i], 0);
 	for (i = 0; i < fs->nservers; ++i) {
@@ -302,21 +331,10 @@ gfarm_filesystem_set_metadb_server_list(struct gfarm_filesystem *fs,
 	fs->servers = NULL;
 	fs->nservers = 0;
 
-	GFARM_MALLOC_ARRAY(servers, sizeof(void *) * n);
-	if (servers == NULL) {
-		gflog_debug(GFARM_MSG_1002570,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (GFARM_ERR_NO_MEMORY);
-	}
 	memcpy(servers, metadb_servers, sizeof(void *) * n);
 	fs->servers = servers;
 	fs->nservers = n;
 
-	if ((e = gfarm_filesystem_ms2fs_hash_alloc()) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002568,
-		    "%s", gfarm_error_string(GFARM_ERR_NO_MEMORY));
-		return (e);
-	}
 	for (i = 0; i < n; ++i) {
 		if ((e = gfarm_filesystem_hash_enter(fs, servers[i])) !=
 		    GFARM_ERR_NO_ERROR)
