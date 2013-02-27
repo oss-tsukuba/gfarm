@@ -14,6 +14,7 @@ DATA =	$(srcdir)/check_gfmd_connected \
 	$(srcdir)/wait_for_boot \
 	$(srcdir)/check_file_location \
 	$(srcdir)/check_gfsd_registered \
-	$(srcdir)/check_replica_num
+	$(srcdir)/check_replica_num \
+	$(srcdir)/generate_testdata
 
 include $(top_srcdir)/makes/data.mk

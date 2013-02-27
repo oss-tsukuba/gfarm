@@ -12,7 +12,7 @@ load 	"check_gfmd_master" \
 # Test parameters
 #
 # RETRY_COUNT:	  retry number to check master/slave and boot
-# RETRY_INTERVAL: retry interval to check host to boot
+# RETRY_INTERVAL: retry interval to check master/slave and host to boot
 # TIMEOUT:	  timeout sec for starting/stopping gfmd
 test_failover_by_reboot()
 {
@@ -42,7 +42,7 @@ test_failover_by_reboot()
 	[ $? -ne 0 ] && log_warn "$TESTNAME: failed to stop gfmd on gfmd1"
 
 	# step: check whether gfmd on gfmd2 is master
-	check_gfmd_master gfmd2 client1 $RETRY_COUNT
+	check_gfmd_master gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 in not master"
 		RESULT=$RESULT_FAIL
@@ -60,7 +60,7 @@ test_failover_by_reboot()
 		"as slave"
 
 	# step: check whether gfmd on gfmd1 is slave
-	check_gfmd_slave gfmd1 client1 $RETRY_COUNT
+	check_gfmd_slave gfmd1 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not slave"
 		RESULT=$RESULT_FAIL
@@ -72,7 +72,7 @@ test_failover_by_reboot()
 		"as master"
 
 	# step: check whether gfmd on gfmd1 is master
-	check_gfmd_master gfmd1 client1 $RETRY_COUNT
+	check_gfmd_master gfmd1 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not master"
 		RESULT=$RESULT_FAIL
@@ -86,13 +86,13 @@ test_failover_by_reboot()
 	fi
 
 	# step: check whether slave gfmd is connected to master
-	check_gfmd_connected gfmd2 client1 $RETRY_COUNT
+	check_gfmd_connected gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 is not connected to master"
 		RESULT=$RESULT_FAIL
 	fi
 
-	check_gfmd_connected gfmd3 client1 $RETRY_COUNT
+	check_gfmd_connected gfmd3 client1 $RETRY_COUNT $RETRY_INTERVAL
 		if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd3 is not connected to master"
 		RESULT=$RESULT_FAIL
