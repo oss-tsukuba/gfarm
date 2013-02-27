@@ -7,6 +7,12 @@ check_gfmd_master()
 		BACKEND_HOSTNAME`
 	[ "X$TARGET_HOSTNAME" = X ] && return 1
 
+	if [ X$4 != X ]; then
+		RETRY_INTERVAL=$4
+	else
+		RETRY_INTERVAL=1
+	fi
+
 	I=0
 	while [ $I -lt $3 ]; do
 		MODE=`$GFSERVICE $DEBUG gfcmd $2 gfmdhost -l | \
@@ -14,7 +20,7 @@ check_gfmd_master()
 		if [ X$MODE = Xmaster ]; then
 			return 0
 		fi
-		sleep 1
+		sleep $RETRY_INTERVAL
 		I=`expr $I + 1`
 	done
 

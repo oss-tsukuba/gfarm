@@ -1,0 +1,47 @@
+#
+# calculate numeric size from human friendly format
+#
+calc_numeric_size()
+{
+	case $1 in
+	*K)
+		NUMERIC_SIZE=`expr "$1" : "\([1-9][0-9]*\)K"`
+		NUMERIC_SIZE=`expr $NUMERIC_SIZE \* 1024`
+		;;
+	*M)
+		NUMERIC_SIZE=`expr "$1" : "\([1-9][0-9]*\)M"`
+		NUMERIC_SIZE=`expr $NUMERIC_SIZE \* 1024 \* 1024`
+		;;
+	*G)
+		NUMERIC_SIZE=`expr "$1" : "\([1-9][0-9]*\)G"`
+		NUMERIC_SIZE=`expr $NUMERIC_SIZE \* 1024 \* 1024 \* 1024`
+		;;
+	*)
+		NUMERIC_SIZE=$1
+	esac
+
+	echo $NUMERIC_SIZE
+
+	return 0
+}
+
+#
+# generate testdata to stdout
+#
+generate_testdata()
+{
+	NUMERIC_SIZE=`calc_numeric_size $1`
+	BLOCK_SIZE=65536
+	BLOCKS=`expr $NUMERIC_SIZE / $BLOCK_SIZE`
+	REMAINDER=`expr $NUMERIC_SIZE % $BLOCK_SIZE`
+
+	dd if=/dev/zero bs=$BLOCK_SIZE count=$BLOCKS 2> /dev/null | \
+		tr "\000" "a"
+	[ $? -ne 0 ] && return 1
+
+	dd if=/dev/zero bs=$REMAINDER count=1 2> /dev/null | \
+		tr "\000" "a"
+	[ $? -ne 0 ] && return 1
+
+	return 0
+}

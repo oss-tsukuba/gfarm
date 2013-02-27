@@ -992,7 +992,7 @@ subcmd_config_gfarm()
 	#
 	# Create a new shared secret key.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
@@ -1008,7 +1008,7 @@ subcmd_config_gfarm()
 	# Distribute a shared secret key from the gfmd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
@@ -1076,7 +1076,7 @@ subcmd_config_gfarm_master()
 	#
 	# Create a new shared secret key.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		exec_remote_host_gfcmd $HOSTID - gfkey -f \
 			-p $SHARED_KEY_VALIDITY_PERIOD
 		[ $? -ne 0 ] && log_error "gfkey failed"
@@ -1092,7 +1092,7 @@ subcmd_config_gfarm_master()
 	# Distribute a shared secret key from the gfmd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		exec_client_host_agent $HOSTID - backup-shared-key > $TMP_FILE
 		[ $? -ne 0 ] && log_error "gfservice backup-shared-key failed"
 		distribute_shared_key $TMP_FILE
@@ -1215,7 +1215,7 @@ subcmd_config_gfarm_slave()
 	#
 	# Copy a shared secret key from the master gfmd host to the slave.
 	#
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		rm -f $TMP_FILE
 		exec_client_host_agent $MASTER - backup-shared-key \
 			> $TMP_FILE
@@ -1322,7 +1322,7 @@ subcmd_config_gfsd()
 	# Copy a shared secret key from gfmd1 to the gfsd host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		rm -f $TMP_FILE
 		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
@@ -1397,7 +1397,7 @@ subcmd_config_client()
 	# Copy a shared secret key from gfmd1 to the client host.
 	#
 	rm -f $TMP_FILE
-	if [ "X$AUTH_TYPE" = Xsharedsecret && X$SETUP_SHAREDKEY = Xtrue ]; then
+	if [ "X$AUTH_TYPE" = Xsharedsecret ] && [ X$SETUP_SHAREDKEY = Xtrue ]; then
 		rm -f $TMP_FILE
 		exec_client_host_agent gfmd1 - backup-shared-key \
 			> $TMP_FILE
