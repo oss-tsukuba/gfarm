@@ -4,6 +4,7 @@
 load 	"check_gfsd_registered" \
 	"check_gfmd_slave" \
 	"check_journal_seqnum_max" \
+	"generate_testdata" \
 	"check_file_location" \
 	"check_replica_num"
 
@@ -154,8 +155,7 @@ test_configuration()
 	# step: create file
 	TMP_FILE=gfservice.$$
 	trap "rm -f $TMP_FILE; exit 1" 1 2 3 15
-	dd if=/dev/zero bs=$FILE_SIZE count=1 2> /dev/null | tr "\000" "a" \
-		> $TMP_FILE
+	generate_testdata $FILE_SIZE > $TMP_FILE
 
 	GFARM_FILE=$GFARM_HOME/$TEST_EXEC_ID/test.txt
 	cat $TMP_FILE | $GFSERVICE $DEBUG read_and_register client1 $GFARM_FILE \
