@@ -101,6 +101,8 @@ file_opening_alloc(struct inode *inode,
 	} else if (inode_is_dir(inode)) {
 		fo->u.d.offset = 0;
 		fo->u.d.key = NULL;
+		/* the followings are only used if FD_IS_SLAVE_ONLY */
+		fo->u.d.igen = 0;
 	}
 
 	fo->path_for_trace_log = NULL;
@@ -333,6 +335,18 @@ process_get_file_opening(struct process *process, int fd,
 }
 
 gfarm_error_t
+process_get_slave_file_opening(struct process *process, int fd,
+	struct file_opening **fop)
+{
+	if (!FD_IS_SLAVE_ONLY(fd)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "opening slave fd: %d", fd);
+		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
+	}
+	return (process_get_file_opening(process, fd & ~FD_BIT_SLAVE, fop));
+}
+
+gfarm_error_t
 process_record_desired_number(struct process *process, int fd,
 	int desired_number)
 {
@@ -492,12 +506,16 @@ process_get_dir_key(struct process *process, struct peer *peer,
 	int fd, char **keyp, int *keylenp)
 {
 	struct file_opening *fo;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e;
 
+	if (FD_IS_SLAVE_ONLY(fd))
+		e = process_get_slave_file_opening(process, fd, &fo);
+	else
+		e = process_get_file_opening(process, fd, &fo);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001611,
-			"process_get_file_opening() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process_get_file_opening(%d) failed: %s",
+		    fd, gfarm_error_string(e));
 		return (e);
 	}
 	if (!inode_is_dir(fo->inode)) {
@@ -510,6 +528,18 @@ process_get_dir_key(struct process *process, struct peer *peer,
 			"operation is not permitted");
 		return (GFARM_ERR_OPERATION_NOT_PERMITTED);
 	}
+
+	/*
+	 * for FD_IS_SLAVE_ONLY() case:
+	 *
+	 * XXX layering violation:
+	 * this depends on the implementation detail that fo->inode pointer
+	 * is still available even if its generation is changed, and
+	 * inode->u.c.activity is not cleared by journal synchronization.
+	 */
+	if (FD_IS_SLAVE_ONLY(fd) && inode_get_gen(fo->inode) != fo->u.d.igen)
+		return (GFARM_ERR_STALE_FILE_HANDLE);
+
 	if (fo->u.d.key == NULL) {
 		*keyp = NULL;
 		*keylenp = 0;
@@ -739,6 +769,28 @@ process_open_file(struct process *process, struct inode *file,
 }
 
 gfarm_error_t
+process_open_slave_file(struct process *process, struct inode *file,
+	gfarm_int32_t flag, int created,
+	struct peer *peer, struct host *spool_host,
+	gfarm_int32_t *fdp)
+{
+	gfarm_int32_t fd;
+	gfarm_error_t e = process_open_file(process, file, flag, created,
+	    peer, spool_host, &fd);
+	struct file_opening *fo;
+
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+	fd |= FD_BIT_SLAVE;
+	e = process_get_slave_file_opening(process, fd, &fo);
+	assert(e == GFARM_ERR_NO_ERROR);
+	fo->flag |= GFARM_FILE_SLAVE_ONLY;
+	fo->u.d.igen = inode_get_gen(fo->inode);
+	*fdp = fd;
+	return (e);
+}
+
+gfarm_error_t
 process_schedule_file(struct process *process,
 	struct peer *peer, int fd, gfarm_int32_t *np, struct host ***hostsp)
 {
@@ -862,18 +914,23 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 {
 	struct file_opening *fo;
 	gfarm_mode_t mode;
-	gfarm_error_t e = process_get_file_opening(process, fd, &fo);
+	gfarm_error_t e;
 
+	if (FD_IS_SLAVE_ONLY(fd))
+		e = process_get_slave_file_opening(process, fd, &fo);
+	else
+		e = process_get_file_opening(process, fd, &fo);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1001634,
-			"process_get_file_opening() failed: %s",
-			gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "process_get_file_opening(%d) failed: %s",
+		    fd, gfarm_error_string(e));
 		return (e);
 	}
 
 	mode = inode_get_mode(fo->inode);
 
 	if (fo->opener != peer) {
+		assert(!FD_IS_SLAVE_ONLY(fd));
 		if (!GFARM_S_ISREG(mode)) {
 			gflog_debug(GFARM_MSG_1001635,
 				"inode is not file");
@@ -902,6 +959,7 @@ process_close_file(struct process *process, struct peer *peer, int fd,
 		if (GFARM_S_ISREG(mode) &&
 		    fo->u.f.spool_opener != NULL &&
 		    fo->u.f.spool_opener != peer) {
+			assert(!FD_IS_SLAVE_ONLY(fd));
 			/*
 			 * a client is closing a file,
 			 * but the gfsd is still opening it.

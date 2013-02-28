@@ -1,3 +1,14 @@
+/*
+ * NOTE:
+ * only slave gfmd knows this bit representation.
+ * clients and master gfmd should NOT assume any bit pattern,
+ * except GFARM_DESCRIPTOR_INVALID is an invalid descriptor.
+ */
+#define FD_BIT_SLAVE		0x80000000
+#define FD_IS_SLAVE_ONLY(fd)	(((fd) & FD_BIT_SLAVE) != 0)
+
+#define FLAG_IS_SLAVE_ONLY(flag) (((flag) & GFARM_FILE_SLAVE_ONLY) != 0)
+
 struct process;
 
 struct inode;
@@ -63,6 +74,9 @@ struct file_opening {
 		struct opening_dir {
 			gfarm_off_t offset;
 			char *key;
+
+			/* the followings are only used if FD_IS_SLAVE_ONLY */
+			gfarm_uint64_t igen;
 		} d;
 	} u;
 
@@ -91,6 +105,8 @@ struct file_opening {
 
 gfarm_error_t process_open_file(struct process *, struct inode *,
 	gfarm_int32_t, int, struct peer *, struct host *, gfarm_int32_t *);
+gfarm_error_t process_open_slave_file(struct process *, struct inode *,
+	gfarm_int32_t, int, struct peer *, struct host *, gfarm_int32_t *);
 gfarm_error_t process_schedule_file(struct process *,
 	struct peer *, int, gfarm_int32_t *, struct host ***);
 gfarm_error_t process_reopen_file(struct process *,
@@ -111,6 +127,8 @@ gfarm_error_t process_cksum_set(struct process *, struct peer *, int,
 gfarm_error_t process_cksum_get(struct process *, struct peer *, int,
 	char **, size_t *, char **, gfarm_int32_t *);
 gfarm_error_t process_get_file_opening(struct process *, int,
+	struct file_opening **);
+gfarm_error_t process_get_slave_file_opening(struct process *, int,
 	struct file_opening **);
 
 struct peer;

@@ -80,6 +80,7 @@ int gfs_desc_fileno(GFS_Desc);
 #define GFARM_FILE_REPLICA_SPEC		0x00010000
 #endif
 #ifdef GFARM_INTERNAL_USE /* internal use only, never passed via protocol */
+#define GFARM_FILE_SLAVE_ONLY		0x00400000 /* used by gfmd only */
 #define GFARM_FILE_SYMLINK_NO_FOLLOW	0x00400000 /* used by libgfarm only */
 #define GFARM_FILE_TRUNC_PENDING	0x00800000 /* used by gfmd only */
 #define GFARM_FILE_OPEN_LAST_COMPONENT	0x00800000 /* used by libgfarm only */

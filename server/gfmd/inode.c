@@ -577,6 +577,7 @@ inode_activity_free(struct inode_activity *ia)
 	free(ia);
 }
 
+/* NOTE: this function is called in slave_mode as well */
 int
 inode_activity_free_check(struct inode *inode)
 {
@@ -3312,6 +3313,7 @@ inode_unlink(struct inode *base, char *name, struct process *process,
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* NOTE: this function is called in slave_mode as well */
 gfarm_error_t
 inode_open(struct file_opening *fo)
 {
@@ -3343,23 +3345,27 @@ inode_open(struct file_opening *fo)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* NOTE: this function is called in slave_mode as well */
 void
 inode_close(struct file_opening *fo, char **trace_logp)
 {
 	inode_close_read(fo, NULL, trace_logp);
 }
 
+/* NOTE: this function is called in slave_mode as well */
 void
 inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	char **trace_logp)
 {
 	struct inode *inode = fo->inode;
 	struct inode_activity *ia = inode->u.c.activity;
+	int slave_mode = FLAG_IS_SLAVE_ONLY(fo->flag);
 
 	if ((fo->flag & GFARM_FILE_TRUNC_PENDING) != 0) {
+		assert(!slave_mode);
 		inode_file_update(fo, 0, atime, &inode->i_mtimespec,
 		    NULL, NULL, trace_logp);
-	} else if (atime != NULL)
+	} else if (atime != NULL && !slave_mode)
 		inode_set_relatime(inode, atime);
 
 	/*
@@ -3368,8 +3374,10 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	 * file_replication resources which are associated with
 	 * a suddenly disconnected gfsd-peer may have a chance of cleanup here?
 	 */
-	if (ia->u.f.rstate != NULL)
+	if (ia->u.f.rstate != NULL) {
+		assert(!slave_mode);
 		file_replication_close_check(&ia->u.f.rstate);
+	}
 
 	fo->opening_prev->opening_next = fo->opening_next;
 	fo->opening_next->opening_prev = fo->opening_prev;
@@ -3386,7 +3394,9 @@ inode_close_read(struct file_opening *fo, struct gfarm_timespec *atime,
 	} else if ((accmode_to_op(fo->flag) & GFS_W_OK) != 0)
 		--ia->u.f.writers;
 
-	inode_remove_check(inode);
+	/* in slave mode, inode is purged by journal synchronization */
+	if (!slave_mode)
+		inode_remove_check(inode);
 }
 
 gfarm_error_t

@@ -154,8 +154,8 @@ gfarm_error_t inode_schedule_replication_from_all(
 	const char *);
 
 gfarm_error_t inode_open(struct file_opening *);
-void inode_close(struct file_opening *, char**);
-void inode_close_read(struct file_opening *, struct gfarm_timespec *, char**);
+void inode_close(struct file_opening *, char **);
+void inode_close_read(struct file_opening *, struct gfarm_timespec *, char **);
 gfarm_error_t inode_fhclose_read(struct inode *, struct gfarm_timespec *);
 void inode_add_ref_spool_writers(struct inode *);
 void inode_del_ref_spool_writers(struct inode *);
