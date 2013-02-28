@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
@@ -37,7 +37,7 @@ NAME="SYNOPSIS"
 ><B
 CLASS="COMMAND"
 >gfpcopy</B
-> [-nqvdpPU] [-f] [-S <TT
+>  [-nqvdpPU] [-f] [-S <TT
 CLASS="REPLACEABLE"
 ><I
 >source-domainname</I
@@ -111,18 +111,14 @@ NAME="DESCRIPTION"
 CLASS="COMMAND"
 >gfpcopy</B
 > copies files and directries specified by
-the <TT
+the <CODE
 CLASS="PARAMETER"
-><I
->source-url</I
-></TT
+>source-url</CODE
 >(gfarm:///... or file:///...) to a
 directory specified by
-the <TT
+the <CODE
 CLASS="PARAMETER"
-><I
->destination-url</I
-></TT
+>destination-url</CODE
 >(gfarm:///... or file:///...) in
 parallel.</P
 ><P
@@ -131,11 +127,9 @@ of source hosts are copied.  A set of hosts can be specified by a
 domain name and/or a host file.  When both a domain name and a host
 file are specified, a set of hosts is determined by both conditions.</P
 ><P
->If the <TT
+>If the <CODE
 CLASS="PARAMETER"
-><I
->source-url</I
-></TT
+>source-url</CODE
 > parameter is a directory,
 files under the directory will be copied recursively.</P
 ><P
@@ -166,11 +160,9 @@ CLASS="VARIABLELIST"
 ><CODE
 CLASS="OPTION"
 >-b</CODE
-> <TT
+> <CODE
 CLASS="PARAMETER"
-><I
->bufsize</I
-></TT
+>bufsize</CODE
 ></DT
 ><DD
 ><P
@@ -185,8 +177,13 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->If a file or directory exists on the destination, the file or
-directory is overwritten.</P
+>With -f option, existing destination files will be overwritten when
+the size is different or the modification time is different from the
+source file.</P
+><P
+>Without -f option, existing destination files will be overwritten when
+the size is different or the modification time is older than the
+source file.</P
 ></DD
 ></DL
 ></DIV
@@ -210,6 +207,7 @@ CLASS="COMMAND"
 CLASS="COMMAND"
 >gfprep</B
 >)</P
+></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
@@ -285,7 +283,6 @@ CLASS="REFENTRYTITLE"
 >gfarm2.conf</SPAN
 >(5)</SPAN
 ></P
-></DIV
 ></DIV
 ></BODY
 ></HTML
