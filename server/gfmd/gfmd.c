@@ -1247,6 +1247,7 @@ static void
 transform_to_master(void)
 {
 	struct mdhost *master;
+	struct peer *mhpeer;
 	static const char diag[] = "transform_to_master";
 
 	if (mdhost_self_is_master()) {
@@ -1263,8 +1264,14 @@ transform_to_master(void)
 	}
 
 	master = mdhost_lookup_master();
-	if (mdhost_is_up(master))
-		mdhost_disconnect_request(master, NULL);
+	/* to protect mhpeer before calling mdhost_disconnect_request() */
+	mhpeer = mdhost_get_peer(master); /* increment refcount */
+	if (mhpeer != NULL) { /* i.e. mdhost_is_up(master) */
+		local_peer_shutdown_all_prepare_to_wait();
+		mdhost_disconnect_request(master, mhpeer);
+		mdhost_put_peer(master, mhpeer); /* decrement refcount */
+		local_peer_shutdown_all_wait();
+	}
 	gflog_info(GFARM_MSG_1002730,
 	    "start transforming to the master gfmd ...");
 
@@ -1516,7 +1523,7 @@ gfmd_terminate(const char *diag)
 	/* so, it's safe to modify the state of all peers */
 	giant_lock();
 
-	gflog_info(GFARM_MSG_1000201, "shutting down peers");
+	gflog_info(GFARM_MSG_1000201, "detaching all peers");
 	if (db_begin(diag) == GFARM_ERR_NO_ERROR)
 		transaction = 1;
 	/*
@@ -1524,7 +1531,7 @@ gfmd_terminate(const char *diag)
 	 * closing must be done regardless of the result of db_begin().
 	 * because not closing may cause descriptor leak.
 	 */
-	local_peer_shutdown_all();
+	local_peer_detach_all();
 	if (transaction)
 		db_end(diag);
 

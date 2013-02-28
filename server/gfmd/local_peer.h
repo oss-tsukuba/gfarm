@@ -23,7 +23,10 @@ void local_peer_readable_invoked(struct local_peer *);
 void local_peer_watch_readable(struct local_peer *);
 void peer_set_readable_watcher(struct peer *, struct peer_watcher *);
 
+void local_peer_shutdown_all_prepare_to_wait(void);
+void local_peer_shutdown_all_wait(void);
 void local_peer_shutdown_all(void);
+void local_peer_detach_all(void);
 struct remote_peer *local_peer_lookup_remote(struct local_peer *,
 	gfarm_int64_t);
 

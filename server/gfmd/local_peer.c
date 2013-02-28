@@ -21,6 +21,7 @@
 #include "auth.h"
 #include "gfnetdb.h"
 
+#include "thrstatewait.h"
 #include "user.h"
 #include "host.h"
 #include "mdhost.h"
@@ -59,6 +60,11 @@ static gfarm_int64_t local_peer_id = 1;
 static pthread_mutex_t local_peer_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static const char local_peer_table_diag[] = "local_peer_table";
+
+/* to wait for completion of local_peer_shutdown_all() */
+static struct gfarm_thr_statewait local_peer_shutdown_all_completed;
+static const char local_peer_shutdown_all_completed_diag[] =
+	"local_peer_shutdown_all_completed";
 
 struct peer *
 local_peer_to_peer(struct local_peer *local_peer)
@@ -226,13 +232,71 @@ local_peer_shutdown(struct peer *peer)
 		    peer_get_hostname(peer), fd, strerror(errno));
 }
 
-/* NOTE: caller of this function should acquire giant_lock as well */
 void
 local_peer_shutdown_all(void)
 {
 	int i;
+	struct local_peer *local_peer;
 	struct peer *peer;
-	static const char diag[] = "local_peer_shutdown_all";
+	static const char diag[] = "local_peer_deatch_all";
+
+	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
+
+	if (!local_peer_initialized) {
+		gfarm_mutex_unlock(&local_peer_table_mutex,
+		    diag, local_peer_table_diag);
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "peer module is not initialized yet, "
+		    "skip to shutdown connections");
+		return;
+	}
+	gflog_info(GFARM_MSG_UNFIXED,
+	    "shutting down all connections...");
+
+	for (i = 0; i < local_peer_table_size; i++) {
+		local_peer = &local_peer_table[i];
+		if (local_peer->conn == NULL)
+			continue;
+
+		peer = &local_peer->super;
+		local_peer_shutdown(peer);
+	}
+
+	gfarm_mutex_unlock(&local_peer_table_mutex,
+	    diag, local_peer_table_diag);
+
+	gfarm_thr_statewait_signal(&local_peer_shutdown_all_completed,
+	    GFARM_ERR_NO_ERROR, local_peer_shutdown_all_completed_diag);
+}
+
+void
+local_peer_shutdown_all_prepare_to_wait(void)
+{
+	gfarm_thr_statewait_reset(&local_peer_shutdown_all_completed,
+	    local_peer_shutdown_all_completed_diag);
+}
+
+void
+local_peer_shutdown_all_wait(void)
+{
+	if (!local_peer_initialized) {
+		gflog_info(GFARM_MSG_UNFIXED,
+		    "peer module is not initialized yet, "
+		    "skip to wait for connection shutdown");
+		return;
+	}
+
+	(void)gfarm_thr_statewait_wait(&local_peer_shutdown_all_completed,
+	    local_peer_shutdown_all_completed_diag);
+}
+
+/* NOTE: caller of this function should acquire giant_lock as well */
+void
+local_peer_detach_all(void)
+{
+	int i;
+	struct peer *peer;
+	static const char diag[] = "local_peer_deatch_all";
 
 	/* We never unlock this mutex any more */
 	gfarm_mutex_lock(&local_peer_table_mutex, diag, local_peer_table_diag);
@@ -266,6 +330,7 @@ local_peer_free(struct peer *peer)
 	gfarm_uint64_t peer_id = peer_get_id(peer);
 	int remote_peer_allocated = local_peer_get_remote_peer_allocated(
 		local_peer);
+	int peer_is_master_gfmd = 0;
 	static const char diag[] = "local_peer_free";
 
 	/*
@@ -281,6 +346,10 @@ local_peer_free(struct peer *peer)
 
 	/* async rpc cleanup should be done before freeing peer */
 	if (local_peer->async != NULL) {
+		peer_is_master_gfmd = 
+		    peer->id_type == GFARM_AUTH_ID_TYPE_METADATA_HOST &&
+		    peer->host != NULL &&
+		    mdhost_is_master(peer_get_mdhost(peer));
 		/* needs giant_lock and peer_table_lock */
 		gfp_xdr_async_peer_free(local_peer->async, peer);
 		local_peer->async = NULL;
@@ -305,6 +374,9 @@ local_peer_free(struct peer *peer)
 		gflog_warning(GFARM_MSG_UNFIXED,
 		    "failed free remote peer: %s", gfarm_error_string(e));
 	}
+
+	if (peer_is_master_gfmd)
+		local_peer_shutdown_all();
 }
 
 static struct peer_ops local_peer_ops = {
@@ -558,6 +630,9 @@ local_peer_init(int max_peers)
 		    diag, "peer:child_peers_mutex");
 		local_peer->super.peer_id = 0;
 	}
+
+	gfarm_thr_statewait_initialize(&local_peer_shutdown_all_completed,
+	    local_peer_shutdown_all_completed_diag);
 
 	local_peer_initialized = 1;
 
