@@ -177,8 +177,13 @@ CLASS="OPTION"
 ></DT
 ><DD
 ><P
->If a file or directory exists on the destination, the file or
-directory is overwritten.</P
+>With -f option, existing destination files will be overwritten when
+the size is different or the modification time is different from the
+source file.</P
+><P
+>Without -f option, existing destination files will be overwritten when
+the size is different or the modification time is older than the
+source file.</P
 ></DD
 ></DL
 ></DIV
