@@ -2934,6 +2934,7 @@ main(int argc, char *argv[])
 		/* [5] gfpcopy p1/f1 p2/f1(exist)     : ENOTDIR */
 		if (gfprep_is_dir(dst_is_gfarm, dst_dir, NULL, &e)) {
 			/* exist dst_dir */
+			assert(e == GFARM_ERR_NO_ERROR);
 			if (src_base_name) { /* [3] */
 				if (!opt_force_copy) {
 					char *tmp_dst_file;
@@ -3000,10 +3001,7 @@ main(int argc, char *argv[])
 		gfprep_convert_gfarm_rootdir(&dst_dir);
 		if (checked == 0 &&
 		    gfprep_is_dir(dst_is_gfarm, dst_dir, NULL, &e)) {
-			if (!opt_force_copy) {
-				gfprep_error("dst_dir(%s) exists", dst_dir);
-				exit(EXIT_FAILURE);
-			}
+			/* OK */
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
 			e = gfprep_mkdir(dst_is_gfarm, dst_dir, src_dir_mode);
 			if (e != GFARM_ERR_NO_ERROR)
@@ -3043,9 +3041,8 @@ main(int argc, char *argv[])
 	pfunc_cb_func_init();
 
 	/* create child-processes before gfarm_initialize() */
-	assert(opt_force_copy ? is_gfpcopy : 1);
 	e = gfarm_dirtree_open(&dirtree_handle, src_dir,
-			       opt_force_copy ? dst_dir : NULL,
+			       is_gfpcopy ? dst_dir : NULL,
 			       opt_dirtree_n_para, opt_dirtree_n_fifo,
 			       src_base_name ? 0 : 1);
 	gfprep_fatal_e(e, "gfarm_dirtree");
@@ -3204,12 +3201,26 @@ main(int argc, char *argv[])
 				     dst_url, entry->dst_ncopy,
 				     entry->dst_m_sec);
 			if (entry->dst_exist && opt_simulate_KBs <= 0) {
-				if (!opt_force_copy) {
-					gfprep_warn(
-						"already exists: %s", dst_url);
+				if (entry->src_size == entry->dst_size &&
+				    ((!opt_force_copy &&
+				      entry->src_m_sec <= entry->dst_m_sec)
+				    ||
+				    (opt_force_copy &&
+				     entry->src_m_sec == entry->dst_m_sec))) {
+					gfprep_verbose(
+					    "already exists: %s", dst_url);
 					goto next_entry;
 				}
-				/* opt_force_copy */
+				/* opt_force_copy or different mtime */
+				gfprep_debug("overwrite: "
+				    "src_size=%lld, dst_size=%lld, "
+				    "src_m_sec=%lld, dst_m_sec=%lld, "
+				    "src_m_nsec=%d, dst_m_nsec=%d",
+				    (long long)entry->src_size,
+				    (long long)entry->dst_size,
+				    (long long)entry->src_m_sec,
+				    (long long)entry->dst_m_sec,
+				    entry->dst_m_nsec, entry->dst_m_nsec);
 				if (entry->dst_d_type == GFS_DT_LNK ||
 				    entry->dst_d_type == GFS_DT_UNKNOWN) {
 					e = gfprep_unlink(dst_is_gfarm,
