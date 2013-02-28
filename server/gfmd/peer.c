@@ -33,6 +33,7 @@
 #include "abstract_host.h"
 #include "host.h"
 #include "mdhost.h"
+#include "gfm_proto.h" /* for GFARM_DESCRIPTOR_INVALID */
 #include "gfmd_channel.h"
 #include "peer_watcher.h"
 #include "peer.h"
@@ -234,8 +235,8 @@ peer_clear_common(struct peer *peer)
 
 	peer->process = NULL;
 	peer->protocol_error = 0;
-	peer->fd_current = -1;
-	peer->fd_saved = -1;
+	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
+	peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
 	peer->flags = 0;
 	peer->findxmlattrctx = NULL;
 	peer->u.client.jobs = NULL;
@@ -761,20 +762,21 @@ void
 peer_fdpair_clear(struct peer *peer)
 {
 	if (peer->process == NULL) {
-		assert(peer->fd_current == -1 && peer->fd_saved == -1);
+		assert(peer->fd_current == GFARM_DESCRIPTOR_INVALID &&
+		    peer->fd_saved == GFARM_DESCRIPTOR_INVALID);
 		return;
 	}
-	if (peer->fd_current != -1 &&
+	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
 		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
-	if (peer->fd_saved != -1 &&
+	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
 		process_close_file(peer->process, peer, peer->fd_saved, NULL);
 	}
-	peer->fd_current = -1;
-	peer->fd_saved = -1;
+	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
+	peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
 	peer->flags &= ~(
 	    PEER_FLAGS_FD_CURRENT_EXTERNALIZED |
 	    PEER_FLAGS_FD_SAVED_EXTERNALIZED);
@@ -783,7 +785,7 @@ peer_fdpair_clear(struct peer *peer)
 gfarm_error_t
 peer_fdpair_externalize_current(struct peer *peer)
 {
-	if (peer->fd_current == -1) {
+	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001587,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -797,17 +799,17 @@ peer_fdpair_externalize_current(struct peer *peer)
 gfarm_error_t
 peer_fdpair_close_current(struct peer *peer)
 {
-	if (peer->fd_current == -1) {
+	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001588,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 	if (peer->fd_current == peer->fd_saved) {
 		peer->flags &= ~PEER_FLAGS_FD_SAVED_EXTERNALIZED;
-		peer->fd_saved = -1;
+		peer->fd_saved = GFARM_DESCRIPTOR_INVALID;
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
-	peer->fd_current = -1;
+	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -819,7 +821,7 @@ peer_fdpair_close_current(struct peer *peer)
 void
 peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 {
-	if (peer->fd_current != -1 &&
+	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
 		process_close_file(peer->process, peer, peer->fd_current, NULL);
@@ -831,7 +833,7 @@ peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 gfarm_error_t
 peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_current == -1) {
+	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001589,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -843,7 +845,7 @@ peer_fdpair_get_current(struct peer *peer, gfarm_int32_t *fdp)
 gfarm_error_t
 peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 {
-	if (peer->fd_saved == -1) {
+	if (peer->fd_saved == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001590,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
@@ -860,13 +862,13 @@ peer_fdpair_get_saved(struct peer *peer, gfarm_int32_t *fdp)
 gfarm_error_t
 peer_fdpair_save(struct peer *peer)
 {
-	if (peer->fd_current == -1) {
+	if (peer->fd_current == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001591,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 
-	if (peer->fd_saved != -1 &&
+	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
 	    peer->fd_saved != peer->fd_current) { /* prevent double close */
 		process_close_file(peer->process, peer, peer->fd_saved, NULL);
@@ -886,13 +888,13 @@ peer_fdpair_save(struct peer *peer)
 gfarm_error_t
 peer_fdpair_restore(struct peer *peer)
 {
-	if (peer->fd_saved == -1) {
+	if (peer->fd_saved == GFARM_DESCRIPTOR_INVALID) {
 		gflog_debug(GFARM_MSG_1001592,
 			"bad file descriptor");
 		return (GFARM_ERR_BAD_FILE_DESCRIPTOR);
 	}
 
-	if (peer->fd_current != -1 &&
+	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
 	    peer->fd_current != peer->fd_saved) { /* prevent double close */
 		process_close_file(peer->process, peer, peer->fd_current, NULL);

@@ -183,7 +183,7 @@ gfs_pio_metadb(GFS_File gf)
 int
 gfs_pio_fileno(GFS_File gf)
 {
-	return (gf == NULL ? -1 : gf->fd);
+	return (gf == NULL ? GFARM_DESCRIPTOR_INVALID : gf->fd);
 }
 
 char *

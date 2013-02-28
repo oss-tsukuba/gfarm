@@ -1109,6 +1109,7 @@ gfarm_redirect_file(int fd, char *file, GFS_File *gfp)
 	if (e != NULL)
 		return (e);
 
+	/* XXX doesn't work with v2, because this returns remote descriptor */
 	nfd = gfs_pio_fileno(gf);
 	if (nfd == -1)
 		return (gfarm_errno_to_error(errno));

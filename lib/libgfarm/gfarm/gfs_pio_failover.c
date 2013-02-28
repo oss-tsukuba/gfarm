@@ -19,6 +19,7 @@
 #include "queue.h"
 
 #include "config.h"
+#include "gfm_proto.h"
 #include "gfm_client.h"
 #include "gfs_client.h"
 #include "gfs_io.h"
@@ -106,7 +107,7 @@ gfs_pio_reopen(struct gfarm_filesystem *fs, GFS_File gf)
 			free(real_url);
 		}
 		(void)gfm_close_fd(gfm_server, fd); /* ignore result */
-		gf->fd = -1;
+		gf->fd = GFARM_DESCRIPTOR_INVALID;
 		gf->error = e;
 		gflog_debug(GFARM_MSG_1003381,
 		    "reopen operation on pio for URL (%s) failed: %s",
@@ -156,7 +157,7 @@ reset_and_reopen(GFS_File gf, void *closure)
 
 	/* if old gfm_connection is alive, fd must be closed */
 	(void)gfm_close_fd(gf->gfm_server, gf->fd);
-	gf->fd = -1;
+	gf->fd = GFARM_DESCRIPTOR_INVALID;
 	gfm_client_connection_free(gf->gfm_server);
 	/* ref count of gfm_server is incremented above */
 	gf->gfm_server = gfm_server;

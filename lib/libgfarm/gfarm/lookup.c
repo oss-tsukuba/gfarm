@@ -1076,7 +1076,8 @@ gfm_name2_op0(const char *src, const char *dst, int flags,
 	int retry_count = 0, same_mds = 0, is_success = 0, op_called = 0;
 	int snlinks = 0, dnlinks = 0;
 	int is_open_last = (flags & GFARM_FILE_OPEN_LAST_COMPONENT) != 0;
-	gfarm_int32_t sfd = -1, dfd = -1;
+	gfarm_int32_t sfd = GFARM_DESCRIPTOR_INVALID;
+	gfarm_int32_t dfd = GFARM_DESCRIPTOR_INVALID;
 	gfarm_ino_t ino;
 
 	snextpath = trim_tailing_file_separator(src);
@@ -1478,7 +1479,7 @@ dst_lookup_result:
 				    gfarm_error_string(e));
 				break;
 			}
-			dfd = -1;
+			dfd = GFARM_DESCRIPTOR_INVALID;
 			if ((e = gfm_client_restore_fd_result(sconn))
 			    != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_1002648,
@@ -1493,7 +1494,7 @@ dst_lookup_result:
 				    gfarm_error_string(e));
 				break;
 			}
-			sfd = -1;
+			sfd = GFARM_DESCRIPTOR_INVALID;
 		}
 
 on_error_result:
@@ -1569,11 +1570,13 @@ on_error_result:
 			    gfarm_error_string(e2));
 	} else {
 		/* ignore result */
-		if ((e2 = close_fd2(sconn, sfd, -1)) != GFARM_ERR_NO_ERROR)
+		if ((e2 = close_fd2(sconn, sfd, GFARM_DESCRIPTOR_INVALID)) !=
+		    GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));
-		if ((e2 = close_fd2(dconn, dfd, -1)) != GFARM_ERR_NO_ERROR)
+		if ((e2 = close_fd2(dconn, dfd, GFARM_DESCRIPTOR_INVALID)) !=
+		    GFARM_ERR_NO_ERROR)
 			gflog_debug(GFARM_MSG_UNFIXED,
 			    "close_fd2: %s",
 			    gfarm_error_string(e2));

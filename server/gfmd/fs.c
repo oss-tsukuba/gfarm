@@ -277,7 +277,7 @@ gfm_server_open_common(const char *diag, struct peer *peer, int from_client,
 	int op;
 	struct inode *base, *inode;
 	int created, transaction = 0;;
-	gfarm_int32_t cfd, fd = -1;
+	gfarm_int32_t cfd, fd = GFARM_DESCRIPTOR_INVALID;
 	char *repattr;
 	int desired_number;
 
@@ -639,7 +639,7 @@ gfm_server_open_root(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int op;
 	struct inode *inode;
 	gfarm_uint32_t flag;
-	gfarm_int32_t fd = -1;
+	gfarm_int32_t fd = GFARM_DESCRIPTOR_INVALID;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_OPEN_ROOT";
 
@@ -699,7 +699,7 @@ gfm_server_open_parent(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int op;
 	struct process *process;
 	gfarm_uint32_t flag;
-	gfarm_int32_t cfd, fd = -1;
+	gfarm_int32_t cfd, fd = GFARM_DESCRIPTOR_INVALID;
 	struct inode *base, *inode;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_OPEN_PARENT";
@@ -847,7 +847,7 @@ gfm_server_close(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e, e2;
 	struct host *spool_host = NULL;
 	struct process *process;
-	gfarm_int32_t fd = -1;
+	gfarm_int32_t fd = GFARM_DESCRIPTOR_INVALID;
 	int transaction = 0;
 	char *trace_log = NULL;
 	struct relayed_request *relay;

@@ -114,7 +114,7 @@ struct gfs_file_section_context {
 	char *section;
 	char *canonical_hostname;
 #endif /* not yet in gfarm v2 */
-	int fd; /* this isn't used for remote case, but only local case */
+	int fd; /* local file descriptor. i.e. never used in remote case */
 	pid_t pid;
 
 #ifdef EVP_MD_CTX_FLAG_ONESHOT /* for kernel mode */
