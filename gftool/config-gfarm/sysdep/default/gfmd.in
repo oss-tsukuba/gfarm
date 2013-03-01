@@ -41,7 +41,10 @@ then
 fi
 
 case $1 in 
-start)
+start|slavestart)
+	if [ $1 = slavestart ]; then
+		OPTIONS="-S $OPTIONS"
+	fi
 	if [ ! -x "$DAEMON" ]; then
 		echo -n "$DAEMON is not installed"
 		exit 1
@@ -51,11 +54,6 @@ start)
 		exit 1
 	fi
 	$DAEMON -P "$PIDFILE" $OPTIONS
-	;;
-
-slavestart)
-	OPTIONS="-S $OPTIONS"
-	$0 start
 	;;
 
 stop)
