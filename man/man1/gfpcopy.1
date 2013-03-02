@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFPCOPY" "1" "19 October 2012" "Gfarm" ""
+.TH "GFPCOPY" "1" "02 March 2013" "Gfarm" ""
 
 .SH NAME
 gfpcopy \- copy Gfarm files in parallel
@@ -39,8 +39,13 @@ Specifies the buffer size to copy.
 The default value is 64KiB (64 * 1024).
 .TP
 \fB-f\fR
-If a file or directory exists on the destination, the file or
-directory is overwritten.
+With -f option, existing destination files will be overwritten when
+the size is different or the modification time is different from the
+source file.
+
+Without -f option, existing destination files will be overwritten when
+the size is different or the modification time is older than the
+source file.
 .SH "COMMON OPTIONS"
 .PP
 \fBgfpcopy\fR has the same options
