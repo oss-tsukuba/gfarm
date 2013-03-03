@@ -29,7 +29,7 @@ PUBLIC_RULE  = /dev/null
 PUBLIC_SRCS  =
 PUBLIC_OBJS  =
 
-SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
+SRCS =	gfmd.c thrpool.c callout.c subr.c watcher.c \
 	user.c group.c host.c \
 	peer_watcher.c peer.c local_peer.c remote_peer.c abstract_host.c \
 	netsendq.c dead_file_copy.c file_replication.c process.c job.c \
@@ -39,7 +39,7 @@ SRCS =	gfmd.c thrpool.c callout.c subr.c rpcsubr.c watcher.c \
 	db_journal.c db_journal_apply.c internal_host_info.c \
 	fsngroup.c thrstatewait.o \
 	$(ldap_srcs) $(postgresql_srcs) $(optional_srcs)
-OBJS =	gfmd.o thrpool.o callout.o subr.o rpcsubr.o watcher.o \
+OBJS =	gfmd.o thrpool.o callout.o subr.o watcher.o \
 	user.o group.o host.o \
 	peer_watcher.o peer.o local_peer.o remote_peer.o abstract_host.o \
 	netsendq.o dead_file_copy.o file_replication.o process.o job.o \

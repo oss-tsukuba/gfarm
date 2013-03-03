@@ -29,9 +29,14 @@ typedef gfarm_error_t (*put_reply_op_t)(enum request_reply_mode,
 	struct peer *, size_t *, int, void *, const char *);
 
 void relay_init(void);
+gfarm_error_t gfm_server_relay_put_request(struct peer *,
+	struct relayed_request **, const char *,
+	gfarm_int32_t, const char *, ...);
 gfarm_error_t gfm_server_relay_get_request(struct peer *, size_t *,
 	int, struct relayed_request **, const char *,
 	gfarm_int32_t, const char *, ...);
+gfarm_error_t gfm_server_relay_get_reply(struct relayed_request *,
+	const char *, const char *, ...);
 gfarm_error_t gfm_server_relay_put_reply(
 	struct peer *, gfp_xdr_xid_t, size_t *,
 	struct relayed_request *, const char *,

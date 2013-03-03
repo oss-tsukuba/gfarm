@@ -50,7 +50,6 @@ SRCS = \
 	$(GFMD_SRCDIR)/process.c \
 	$(GFMD_SRCDIR)/quota.c \
 	$(GFMD_SRCDIR)/replica_check.c \
-	$(GFMD_SRCDIR)/rpcsubr.c \
 	$(GFMD_SRCDIR)/subr.c \
 	$(GFMD_SRCDIR)/thrpool.c \
 	$(GFMD_SRCDIR)/user.c \
@@ -88,7 +87,6 @@ OBJS =	\
 	$(GFMD_BUILDDIR)/process.o \
 	$(GFMD_BUILDDIR)/quota.o \
 	$(GFMD_BUILDDIR)/replica_check.o \
-	$(GFMD_BUILDDIR)/rpcsubr.o \
 	$(GFMD_BUILDDIR)/subr.o \
 	$(GFMD_BUILDDIR)/thrpool.o \
 	$(GFMD_BUILDDIR)/user.o \

@@ -124,30 +124,36 @@ gfm_server_get_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t fd;
 	struct process *process;
 	struct relayed_request *relay;
+	int do_relay = 0;
 	static const char diag[] = "GFM_PROTO_GET_FD";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_GET_FD, "");
+	e = gfm_server_get_request(peer, sizep, diag, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-		if ((process = peer_get_process(peer)) == NULL)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else if ((e = peer_fdpair_get_current(peer, &fd)) !=
-			 GFARM_ERR_NO_ERROR)
-			;
-		else
-			e = peer_fdpair_externalize_current(peer);
-		giant_unlock();
+	giant_lock();
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd)) !=
+		 GFARM_ERR_NO_ERROR)
+		;
+	else if (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(fd))
+		e = peer_fdpair_externalize_current(peer);
+	else
+		do_relay = 1;
+	giant_unlock();
+
+	if (do_relay) {
+		e = gfm_server_relay_put_request(peer, &relay, diag,
+		    GFM_PROTO_GET_FD, "");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfm_server_relay_get_reply(relay, diag, "i", &fd);
 	}
 
-	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    &e, "i", &fd));
+	return (gfm_server_put_reply(peer, xid, sizep, diag,
+	    e, "i", fd));
 }
 
 gfarm_error_t
@@ -158,32 +164,38 @@ gfm_server_put_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_int32_t fd;
 	struct process *process;
 	struct relayed_request *relay;
+	int do_relay = 0;
 	static const char diag[] = "GFM_PROTO_PUT_FD";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_PUT_FD, "i", &fd);
+	e = gfm_server_get_request(peer, sizep, diag, "i", &fd);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-		if ((process = peer_get_process(peer)) == NULL)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else if ((e = process_verify_fd(process, fd)) !=
-		    GFARM_ERR_NO_ERROR)
-			;
-		else {
-			peer_fdpair_set_current(peer, fd);
-			e = peer_fdpair_externalize_current(peer);
-		}
-		giant_unlock();
+	giant_lock();
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = process_verify_fd(process, fd)) !=
+	    GFARM_ERR_NO_ERROR)
+		;
+	else {
+		peer_fdpair_set_current(peer, fd);
+		e = peer_fdpair_externalize_current(peer);
+		if (!mdhost_self_is_master() && !FD_IS_SLAVE_ONLY(fd))
+			do_relay = 1;
+	}
+	giant_unlock();
+
+	if (do_relay) {
+		e = gfm_server_relay_put_request(peer, &relay, diag,
+		    GFM_PROTO_PUT_FD, "i", fd);
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfm_server_relay_get_reply(relay, diag, "");
 	}
 
-	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -193,27 +205,42 @@ gfm_server_save_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e;
 	struct process *process;
 	struct relayed_request *relay;
+	gfarm_int32_t fd;
+	int do_relay = 0;
 	static const char diag[] = "GFM_PROTO_SAVE_FD";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_SAVE_FD, "");
+	e = gfm_server_get_request(peer, sizep, diag, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-		if ((process = peer_get_process(peer)) == NULL)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else
-			e = peer_fdpair_save(peer);
-		giant_unlock();
+	giant_lock();
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_current(peer, &fd))
+	    != GFARM_ERR_NO_ERROR)
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+	else {
+		e = peer_fdpair_save(peer);
+		/*
+		 * XXX: FIXME
+		 * more error check is needed, when COMPOUND starts to work
+		 */
+		if (!mdhost_self_is_master() && !FD_IS_SLAVE_ONLY(fd))
+			do_relay = 1;
+	}
+	giant_unlock();
+
+	if (do_relay) {
+		e = gfm_server_relay_put_request(peer, &relay, diag,
+		    GFM_PROTO_SAVE_FD, "");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfm_server_relay_get_reply(relay, diag, "");
 	}
 
-	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag,
+	    e, ""));
 }
 
 gfarm_error_t
@@ -223,27 +250,42 @@ gfm_server_restore_fd(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	gfarm_error_t e;
 	struct process *process;
 	struct relayed_request *relay;
+	gfarm_int32_t fd;
+	int do_relay = 0;
 	static const char diag[] = "GFM_PROTO_RESTORE_FD";
 
-	e = gfm_server_relay_get_request(peer, sizep, skip, &relay, diag,
-	    GFM_PROTO_RESTORE_FD, "");
+	e = gfm_server_get_request(peer, sizep, diag, "");
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 	if (skip)
 		return (GFARM_ERR_NO_ERROR);
 
-	if (relay == NULL) {
-		/* do not relay RPC to master gfmd */
-		giant_lock();
-		if ((process = peer_get_process(peer)) == NULL)
-			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		else
-			e = peer_fdpair_restore(peer);
-		giant_unlock();
+	giant_lock();
+	if ((process = peer_get_process(peer)) == NULL)
+		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
+	else if ((e = peer_fdpair_get_saved(peer, &fd))
+	    != GFARM_ERR_NO_ERROR)
+		e = GFARM_ERR_BAD_FILE_DESCRIPTOR;
+	else {
+		e = peer_fdpair_restore(peer);
+		/*
+		 * XXX: FIXME
+		 * more error check is needed, when COMPOUND starts to work
+		 */
+		if (!mdhost_self_is_master() && !FD_IS_SLAVE_ONLY(fd))
+			do_relay = 1;
+	}
+	giant_unlock();
+
+	if (do_relay) {
+		e = gfm_server_relay_put_request(peer, &relay, diag,
+		    GFM_PROTO_RESTORE_FD, "");
+		if (e == GFARM_ERR_NO_ERROR)
+			e = gfm_server_relay_get_reply(relay, diag, "");
 	}
 
-	return (gfm_server_relay_put_reply(peer, xid, sizep, relay, diag,
-	    &e, ""));
+	return (gfm_server_put_reply(peer, xid, sizep, diag,
+	    e, ""));
 }
 
 char *

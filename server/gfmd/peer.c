@@ -768,11 +768,13 @@ peer_fdpair_clear(struct peer *peer)
 	}
 	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
+	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
 		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
-	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0) {
+	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
+	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_saved))) {
 		process_close_file(peer->process, peer, peer->fd_saved, NULL);
 	}
 	peer->fd_current = GFARM_DESCRIPTOR_INVALID;
@@ -823,7 +825,8 @@ peer_fdpair_set_current(struct peer *peer, gfarm_int32_t fd)
 {
 	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
+	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
 		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	peer->flags &= ~PEER_FLAGS_FD_CURRENT_EXTERNALIZED;
@@ -870,7 +873,8 @@ peer_fdpair_save(struct peer *peer)
 
 	if (peer->fd_saved != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_SAVED_EXTERNALIZED) == 0 &&
-	    peer->fd_saved != peer->fd_current) { /* prevent double close */
+	    peer->fd_saved != peer->fd_current /* prevent double close */ &&
+	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_saved))) {
 		process_close_file(peer->process, peer, peer->fd_saved, NULL);
 	}
 	peer->fd_saved = peer->fd_current;
@@ -896,7 +900,8 @@ peer_fdpair_restore(struct peer *peer)
 
 	if (peer->fd_current != GFARM_DESCRIPTOR_INVALID &&
 	    (peer->flags & PEER_FLAGS_FD_CURRENT_EXTERNALIZED) == 0 &&
-	    peer->fd_current != peer->fd_saved) { /* prevent double close */
+	    peer->fd_current != peer->fd_saved /* prevent double close */ &&
+	    (mdhost_self_is_master() || FD_IS_SLAVE_ONLY(peer->fd_current))) {
 		process_close_file(peer->process, peer, peer->fd_current, NULL);
 	}
 	peer->fd_current = peer->fd_saved;
