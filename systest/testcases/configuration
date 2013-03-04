@@ -257,7 +257,7 @@ test_configuration()
 	rm -f $TMP_FILE
 
 	# cleanup: remove file
-	$GFSERVICE $DEBUG gfcmd client1 gfrm $GFARM_FILE
+	$GFSERVICE $DEBUG gfcmd client1 gfrm $GFARM_FILE $GFARM_FILE2
 
 	# cleanup: remove directory
 	$GFSERVICE $DEBUG gfcmd client1 gfrmdir $GFARM_HOME/$TEST_EXEC_ID
