@@ -95,7 +95,7 @@ test_failover_by_reboot()
 	check_gfmd_connected gfmd3 client1 $RETRY_COUNT $RETRY_INTERVAL
 		if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd3 is not connected to master"
-		RESULT=$RESULT_FAIL
+		RESULT=$RESULT_XFAIL
 	fi
 
 	return $RESULT
