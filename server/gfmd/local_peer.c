@@ -550,6 +550,11 @@ local_peer_watch_readable(struct local_peer *local_peer)
 	    local_peer->readable_event, local_peer);
 }
 
+/*
+ * if local_peer_lookup_remote() is called,
+ * the same number of peer_del_ref() calls should be made for the
+ * 'struct remote_peer' object returned from this function.
+ */
 struct remote_peer *
 local_peer_lookup_remote(struct local_peer *parent_peer,
 	gfarm_int64_t remote_peer_id)

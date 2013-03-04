@@ -243,6 +243,7 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 {
 	struct local_peer *parent_local_peer = peer_to_local_peer(parent_peer);
 	struct remote_peer *remote_peer;
+	struct remote_peer *rp;
 	struct peer *peer;
 	static const char diag[] = "remote_peer_alloc";
 
@@ -251,8 +252,15 @@ remote_peer_alloc(struct peer *parent_peer, gfarm_int64_t remote_peer_id,
 	    port <= 0 || port >= 0x10000)
 		return (GFARM_ERR_PROTOCOL);	    
 
-	if (local_peer_lookup_remote(parent_local_peer, remote_peer_id) != NULL)
+	rp = local_peer_lookup_remote(parent_local_peer, remote_peer_id);
+	if (rp != NULL) {
+		/*
+		 * decrement refcount of 'lp', since is has been incremented
+		 * by local_peer_lookup_remote().
+		 */
+		peer_del_ref(remote_peer_to_peer(rp));
 		return (GFARM_ERR_INVALID_REMOTE_PEER);
+	}
 
 	GFARM_MALLOC(remote_peer);
 	if (remote_peer == NULL)
@@ -290,14 +298,21 @@ remote_peer_for_each_sibling(struct remote_peer *remote_peer,
 	}
 }
 
+/*
+ * if remote_peer_id_lookup_from_siblings() is called,
+ * the same number of peer_del_ref() calls should be made for the
+ * 'struct remote_peer' object returned from this function.
+ */
 /* XXX FIXME: this has performance problem. use redblack tree instead */
 struct remote_peer *
 remote_peer_id_lookup_from_siblings(struct remote_peer *remote_peer,
 	gfarm_int64_t remote_peer_id)
 {
 	for (; remote_peer != NULL; remote_peer = remote_peer->next_sibling) {
-		if (remote_peer->super.peer_id == remote_peer_id)
+		if (remote_peer->super.peer_id == remote_peer_id) {
+			peer_add_ref(&remote_peer->super);
 			return (remote_peer);
+		}
 	}
 	return (NULL);
 }

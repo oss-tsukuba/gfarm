@@ -1094,7 +1094,6 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 		    GFARM_ERR_INVALID_REMOTE_PEER, "");
 	} else {
 		rpeer = remote_peer_to_peer(remote_peer);
-		peer_add_ref(rpeer); /* increment refcount */
 		remote_peer_clear_db_update_info(remote_peer);
 		statewait = remote_peer_get_statewait(remote_peer);
 		gfarm_thr_statewait_reset(statewait, diag);
@@ -1120,6 +1119,11 @@ gfmdc_server_remote_rpc(struct mdhost *mh, struct peer *peer,
 		thrpool_add_job(journal_sync_thread_pool,
 		    gfmdc_server_remote_rpc_thread, &c);
 		e = gfarm_thr_statewait_wait(statewait, diag);
+
+		/*
+		 * decrement refcount of 'rpeer' (== 'remote_peer'), since
+		 * it has been incremented by local_peer_lookup_remote().
+		 */
 		peer_del_ref(rpeer);
 	}
 	return (e);
