@@ -626,9 +626,11 @@ host_address_get(const char *name, int port,
 	struct gfarm_hostspec *hostspec,
 	struct sockaddr *peer_addr, char **if_hostnamep)
 {
+	gfarm_error_t e;
 	struct addrinfo hints, *res, *res0;
 	int error;
 	char *n, sbuf[NI_MAXSERV];
+	int af_not_supported = 0;
 
 	snprintf(sbuf, sizeof(sbuf), "%u", port);
 	memset(&hints, 0, sizeof(hints));
@@ -646,19 +648,13 @@ host_address_get(const char *name, int port,
 	for (res = res0; res != NULL; res = res->ai_next) {
 		if ((*match)(hostspec, name, res->ai_addr)) {
 			/* to be sure */
-			if (res0->ai_addr->sa_family != AF_INET ||
-			    res0->ai_addrlen > sizeof(*peer_addr)) {
-				gfarm_freeaddrinfo(res0);
-				gflog_debug(GFARM_MSG_1000879,
-					"Address family not supported by "
-					"protocol family (%s): %s",
-					name,
-					gfarm_error_string(
-		GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY));
-				return (GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY);
+			if (res->ai_addr->sa_family != AF_INET ||
+			    res->ai_addrlen > sizeof(*peer_addr)) {
+				af_not_supported = 1;
+				continue;
 			}
 			if (if_hostnamep != NULL) {
-				/* XXX - or strdup(res0->ai_canonname)? */
+				/* XXX - or strdup(res->ai_canonname)? */
 				n = strdup(name);
 				if (n == NULL) {
 					gfarm_freeaddrinfo(res0);
@@ -672,17 +668,24 @@ host_address_get(const char *name, int port,
 				*if_hostnamep = n;
 			}
 			memset(peer_addr, 0, sizeof(*peer_addr));
-			memcpy(peer_addr, res0->ai_addr, sizeof(*peer_addr));
+			memcpy(peer_addr, res->ai_addr, sizeof(*peer_addr));
 			gfarm_freeaddrinfo(res0);
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
 	gfarm_freeaddrinfo(res0);
-	gflog_debug(GFARM_MSG_1000881,
-		"failed to get host address (%s): %s",
-		name,
-		gfarm_error_string(GFARM_ERR_NO_SUCH_OBJECT));
-	return (GFARM_ERR_NO_SUCH_OBJECT);
+	if (af_not_supported) {
+		e = GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY;
+		gflog_debug(GFARM_MSG_1000879,
+		    "Address family not supported by protocol family (%s): %s",
+		    name, gfarm_error_string(e));
+	} else {
+		e = GFARM_ERR_NO_SUCH_OBJECT;
+		gflog_debug(GFARM_MSG_1000881,
+		    "failed to get host address (%s): %s",
+		    name, gfarm_error_string(e));
+	}
+	return (e);
 }
 
 static gfarm_error_t
