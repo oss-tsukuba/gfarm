@@ -470,6 +470,14 @@ abstract_host_disconnect_request(struct abstract_host *h, struct peer *peer,
 	abstract_host_mutex_lock(h, diag);
 
 	hpeer = h->peer;
+	/*
+	 * hpeer != NULL:
+	 *	do disconnect only if this host is currently connected.
+	 * peer == hpeer:
+	 *	parameter peer is same with hpeer (currently connected peer)?
+	 * peer == NULL:
+	 *	caller doesn't specify peer, thus, disconnect anyway.
+	 */
 	if (hpeer != NULL && (peer == hpeer || peer == NULL)) {
 		disabled = 1;
 		abstract_host_peer_unset(h);
