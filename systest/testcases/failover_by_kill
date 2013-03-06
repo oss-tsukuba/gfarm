@@ -44,7 +44,7 @@ test_failover_by_kill()
 	check_gfmd_master gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 in not master"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: set gfmd on gfmd1 to be slave
@@ -56,7 +56,7 @@ test_failover_by_kill()
 	check_gfmd_slave gfmd1 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not slave"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: failback
@@ -68,27 +68,27 @@ test_failover_by_kill()
 	check_gfmd_master gfmd1 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd1 in not master"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check whether journal seqnum max is same
 	check_journal_seqnum_max gfmd1 gfmd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: journal seqnum max is not same"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check whether slave gfmd is connected to master
 	check_gfmd_connected gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 is not connected to master"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	check_gfmd_connected gfmd3 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd3 is not connected to master"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	return $RESULT

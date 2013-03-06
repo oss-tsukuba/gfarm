@@ -72,6 +72,16 @@ print_usage()
 }
 
 #
+# set result code
+#
+set_result()
+{
+	if `eval [ \\$$1 -eq $RESULT_PASS -o \\$$1 -eq $RESULT_XFAIL ]`; then
+		eval $1=$2
+	fi
+}
+
+#
 # returns result message
 #
 result_message()

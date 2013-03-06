@@ -69,14 +69,14 @@ test_configuration()
 	$GFSERVICE $DEBUG config-gfsd gfsd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfsd on gfsd1 failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check gfsd is added
 	check_gfsd_registered gfsd2 client1
 		if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfsd is not configured correctly"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	#
@@ -86,14 +86,14 @@ test_configuration()
 	$GFSERVICE $DEBUG config_gfarm_update_r gfmd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfarm-update on gfmd1 failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: config-gfarm-slave
 	$GFSERVICE $DEBUG config-gfarm-slave gfmd2 gfmd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: config-gfarm-slave on gfsd1 failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	if [ X$AUTH_TYPE = Xgsi ] || [ X$AUTH_TYPE = Xgsi_auth ]; then
@@ -110,19 +110,19 @@ test_configuration()
 	$GFSERVICE $DEBUG restart-gfsd gfsd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: restart-gfsd on gfsd1 failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 	$GFSERVICE $DEBUG restart-gfsd gfsd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: restart-gfsd on gfsd2 failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check whether gfmd on gfmd2 is slave
 	check_gfmd_slave gfmd2 client1 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd2 in not slave"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: make directory to update metadata
@@ -132,7 +132,7 @@ test_configuration()
 	check_journal_seqnum_max gfmd1 gfmd2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: journal seqnum max is not same"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	#
@@ -146,7 +146,7 @@ test_configuration()
 	check_gfsd_registered gfsd3 client1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfsd3 is not configured correctly"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: set directory to enable file replication
@@ -162,21 +162,21 @@ test_configuration()
 		gfmd1 gfsd3
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: failed to register file"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check file with gfls
 	$GFSERVICE $DEBUG gfcmd client1 gfls $GFARM_FILE
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfls failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check whether file is created on expected node
 	check_file_location $GFARM_FILE gfsd3 client1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: file not found on specified host"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check spool
@@ -184,14 +184,14 @@ test_configuration()
 	cat $TMP_FILE | $GFSERVICE $DEBUG compare_spool_file gfsd3 $SPOOL_PATH
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: file in spool directory is not same"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check file num
 	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: number of replica files did not match"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	#
@@ -201,21 +201,21 @@ test_configuration()
 	$GFSERVICE $DEBUG unconfig-gfsd gfsd3
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: failed to delete host information"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check registered
 	check_gfsd_registered gfsd3 client1
 	if [ $? -ne 1 ]; then
 		log_warn "$TESTNAME: gfsd is not deleted correctly"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check file num
 	check_replica_num client1 $GFARM_FILE 2 $RETRY_COUNT
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: number of replica files did not match"
-		RESULT=$RESULT_XFAIL
+		set_result RESULT $RESULT_XFAIL
 	fi
 
 	# step: create file
@@ -224,21 +224,21 @@ test_configuration()
 		$GFARM_FILE2 gfmd1
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: failed to register file"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check file with gfls
 	$GFSERVICE $DEBUG gfcmd client1 gfls $GFARM_FILE2
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfls failed"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check whether file is not created on deleted node
 	check_file_location $GFARM_FILE gfsd3 client1
 	if [ $? -eq 0 ]; then
 		log_warn "$TESTNAME: found a file on deleted host"
-		RESULT=$RESULT_FAIL
+		set_result RESULT $RESULT_FAIL
 	fi
 
 	# step: check spool
@@ -250,7 +250,7 @@ test_configuration()
 			$SPOOL_PATH
 		if [ $? -ne 0 ]; then
 			log_warn "$TESTNAME: file in spool directory is not same"
-			RESULT=$RESULT_FAIL
+			set_result RESULT $RESULT_FAIL
 		fi
 	done
 
