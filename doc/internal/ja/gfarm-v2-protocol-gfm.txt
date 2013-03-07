@@ -564,6 +564,10 @@
 	  入力: l:i_node_number, l:generation
 	  出力: i:エラー
 
+	GFM_PROTO_REPLICA_ADD
+	  入力: l:i_node_number, l:generation, l:size
+	  出力: i:エラー
+
 	GFM_PROTO_REPLICA_GET_MY_ENTRIES
 	  入力: l:i_node_number, i:n_entries
 	  出力: i:エラー
@@ -573,6 +577,19 @@
 			する inode は無い
 		下記の、n_entries 回の繰り返し:
 		l:i_node_number, l:generation
+
+		エラー == GFARM_ERR_NO_SUCH_OBJECT の場合:
+		入力の i_node_number 以降に該当する inode は無い
+
+	GFM_PROTO_REPLICA_GET_MY_ENTRIES2
+	  入力: l:i_node_number, i:n_entries
+	  出力: i:エラー
+		エラー == GFARM_ERR_NO_ERROR の場合:
+		i:n_entries
+			入力の n_entries 未満の場合、この出力以降に該当
+			する inode は無い
+		下記の、n_entries 回の繰り返し:
+		l:i_node_number, l:generation, l:size
 
 		エラー == GFARM_ERR_NO_SUCH_OBJECT の場合:
 		入力の i_node_number 以降に該当する inode は無い
