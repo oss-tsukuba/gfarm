@@ -1,6 +1,7 @@
 struct gfarm_thr_statewait;
 
 struct peer *remote_peer_to_peer(struct remote_peer *);
+enum peer_type remote_peer_get_peer_type(struct remote_peer *);
 
 gfarm_error_t remote_peer_alloc(struct peer *, gfarm_int64_t,
 	gfarm_int32_t, char *, char *, enum gfarm_auth_method, int, int, int);

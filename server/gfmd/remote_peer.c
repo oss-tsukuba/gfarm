@@ -67,6 +67,12 @@ remote_peer_get_conn(struct peer *peer)
 	    peer_to_remote_peer(peer)->parent_peer)));
 }
 
+enum peer_type
+remote_peer_get_peer_type(struct remote_peer *remote_peer)
+{
+	return (peer_get_peer_type(&remote_peer->super));
+}
+
 static gfp_xdr_async_peer_t
 remote_peer_get_async(struct peer *peer)
 {

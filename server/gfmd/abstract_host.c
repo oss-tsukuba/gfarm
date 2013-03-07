@@ -73,6 +73,7 @@ abstract_host_init(struct abstract_host *h, struct abstract_host_ops *ops,
 	h->can_send = 1;
 	h->can_receive = 1;
 	h->is_active = 0;
+	h->peer_generation = 0;
 
 	gfarm_cond_init(&h->ready_to_send, diag, "ready_to_send");
 	gfarm_cond_init(&h->ready_to_receive, diag, "ready_to_receive");
@@ -207,11 +208,38 @@ abstract_host_get_peer(struct abstract_host *h, const char *diag)
 	return (peer);
 }
 
+/*
+ * If abstract_host_get_peer_by_generation() is called and non-NULL value
+ * is returned, the same number of abstract_host_put_peer() calls should be
+ * made.
+ */
+struct peer *
+abstract_host_get_peer_by_generation(struct abstract_host *h,
+    gfarm_uint32_t generation, const char *diag)
+{
+	struct peer *peer = NULL;
+
+	abstract_host_mutex_lock(h, diag);
+	if (h->peer_generation == generation && h->peer != NULL) {
+		peer = h->peer;
+		peer_add_ref(peer);
+	}
+	abstract_host_mutex_unlock(h, diag);
+
+	return (peer);
+}
+
 void
 abstract_host_put_peer(struct abstract_host *h, struct peer *peer)
 {
 	if (peer != NULL)
 		peer_del_ref(peer);
+}
+
+gfarm_uint32_t
+abstract_host_get_peer_generation(struct abstract_host *h)
+{
+	return (h->peer_generation);
 }
 
 struct netsendq *
@@ -373,6 +401,7 @@ abstract_host_set_peer(struct abstract_host *h, struct peer *p, int version)
 	h->protocol_version = version;
 	h->is_active = 1;
 	h->ops->set_peer_locked(h, p);
+	h->peer_generation++;
 
 	peer_add_ref(p);
 
@@ -743,7 +772,7 @@ async_client_vsend_wrapped_request_unlocked(struct abstract_host *host,
 	const char *wrapping_format, va_list *wrapping_app,
 	gfarm_int32_t command, const char *format, va_list *app, int isref)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	struct peer *peer = host->peer; /* OK, if sender_lock is held */
 	gfp_xdr_async_peer_t async;
 	struct gfp_xdr *server;

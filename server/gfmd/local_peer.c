@@ -47,6 +47,9 @@ struct local_peer {
 	struct gfp_xdr *conn;
 	gfp_xdr_async_peer_t async; /* used by {back|gfmd}_channel */
 
+	struct abstract_host *master_abhost;
+	gfarm_uint32_t master_generation;
+
 	struct peer_watcher *readable_watcher;
 	struct watcher_event *readable_event;
 
@@ -70,6 +73,12 @@ struct peer *
 local_peer_to_peer(struct local_peer *local_peer)
 {
 	return (&local_peer->super);
+}
+
+enum peer_type
+local_peer_get_peer_type(struct local_peer *local_peer)
+{
+	return (peer_get_peer_type(&local_peer->super));
 }
 
 static struct local_peer *
@@ -329,7 +338,7 @@ local_peer_free(struct peer *peer)
 	struct local_peer *local_peer = peer_to_local_peer(peer);
 	gfarm_uint64_t peer_id = peer_get_id(peer);
 	int remote_peer_allocated = local_peer_get_remote_peer_allocated(
-		local_peer);
+	    local_peer, NULL, NULL);
 	int peer_is_master_gfmd = 0;
 	static const char diag[] = "local_peer_free";
 
@@ -445,6 +454,8 @@ local_peer_alloc0(int fd, struct gfp_xdr *conn,
 	}
 	local_peer->conn = conn;
 	local_peer->async = NULL; /* synchronous protocol by default */
+	local_peer->master_abhost = NULL;
+	local_peer->master_generation = 0;
 
 	if (local_peer->readable_event == NULL) {
 		e = watcher_fd_readable_event_alloc(fd,
@@ -550,6 +561,31 @@ local_peer_watch_readable(struct local_peer *local_peer)
 	    local_peer->readable_event, local_peer);
 }
 
+struct local_peer *
+local_peer_lookup(struct local_peer *parent_peer,
+	gfarm_int64_t peer_id)
+{
+	struct local_peer *result = NULL;
+	int i;
+	static const char diag[] = "local_peer_lookup";
+
+	gfarm_mutex_lock(&local_peer_table_mutex, diag,
+	    local_peer_table_diag);
+
+	for (i = 0; i < local_peer_table_size; i++) {
+		if (local_peer_table[i].super.process != NULL &&
+		    local_peer_table[i].super.peer_id == peer_id) {
+			result = &local_peer_table[i];
+			break;
+		}
+			
+	}
+
+	gfarm_mutex_unlock(&local_peer_table_mutex, diag,
+	    local_peer_table_diag);
+	return result;
+}
+
 /*
  * if local_peer_lookup_remote() is called,
  * the same number of peer_del_ref() calls should be made for the
@@ -646,19 +682,31 @@ local_peer_init(int max_peers)
 }
 
 int
-local_peer_get_remote_peer_allocated(struct local_peer *peer)
+local_peer_get_remote_peer_allocated(struct local_peer *peer,
+	struct abstract_host **master_abhost,
+	gfarm_uint32_t *master_generation)
 {
+	if (master_abhost != NULL)
+		*master_abhost = peer->master_abhost;
+	if (master_generation != NULL)
+		*master_generation = peer->master_generation;
 	return (local_peer_to_peer(peer)->flags &
 	    PEER_FLAGS_REMOTE_PEER_ALLOCATED);
 }
 
 void
-local_peer_set_remote_peer_allocated(struct local_peer *peer, int enabled)
+local_peer_set_remote_peer_allocated(struct local_peer *peer,
+	struct abstract_host *master_abhost, gfarm_uint32_t master_generation)
 {
-	if (enabled)
-		local_peer_to_peer(peer)->flags |=
-		    PEER_FLAGS_REMOTE_PEER_ALLOCATED;
-	else
-		local_peer_to_peer(peer)->flags &=
-		    ~PEER_FLAGS_REMOTE_PEER_ALLOCATED;
+	local_peer_to_peer(peer)->flags |= PEER_FLAGS_REMOTE_PEER_ALLOCATED;
+	peer->master_abhost     = master_abhost;
+	peer->master_generation = master_generation;
+}
+
+void
+local_peer_unset_remote_peer_allocated(struct local_peer *peer)
+{
+	local_peer_to_peer(peer)->flags &= ~PEER_FLAGS_REMOTE_PEER_ALLOCATED;
+	peer->master_abhost     = NULL;
+	peer->master_generation = 0;
 }

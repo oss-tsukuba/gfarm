@@ -14,3 +14,5 @@ void *gfmdc_journal_asyncsend_thread(void *);
 void *gfmdc_connect_thread(void *);
 gfarm_error_t gfmdc_client_remote_peer_alloc(struct peer *);
 gfarm_error_t gfmdc_client_remote_peer_free(gfarm_uint64_t);
+gfarm_error_t gfmdc_ensure_remote_peer(struct peer *, struct peer **);
+void gfmdc_ensure_remote_peer_end(struct peer *);

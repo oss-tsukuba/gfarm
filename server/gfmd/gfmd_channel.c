@@ -74,6 +74,7 @@ static const char REQUEST_WAIT_INFO_COND[] = "request_sync_info.cond";
 static const char PEER_RECORD_MUTEX_DIAG[] = "gfmdc_peer_record.mutex";
 
 #define GFMDC_CONNECT_INTERVAL	30
+#define GFMDC_REMOTE_PEER_ALLOC_MAX_RETRY_COUNT	2
 
 /*
  * gmfdc_journal_send_closure
@@ -965,10 +966,7 @@ gfmdc_client_remote_peer_alloc(struct peer *peer)
 	    GFM_PROTO_REMOTE_PEER_ALLOC, "lissiii",
 	    peer_get_id(peer), peer_get_auth_id_type(peer),
 	    peer_get_username(peer), peer_get_hostname(peer),
-	    proto_family, proto_transport, port)) == GFARM_ERR_NO_ERROR)
-		local_peer_set_remote_peer_allocated(peer_to_local_peer(peer),
-		    1);
-	else
+	    proto_family, proto_transport, port)) != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: %s", diag, gfarm_error_string(e));
 	return (e);
@@ -995,6 +993,73 @@ gfmdc_server_remote_peer_alloc(struct mdhost *mh, struct peer *peer,
 	}
 	e = gfmdc_server_put_reply(mh, peer, xid, diag, e, "");
 	return (e);
+}
+
+/* 
+ * Perform a GFM_PROTO_REMOTE_PEER_ALLOC request for 'peer' if needed.
+ *
+ * This function requests GFM_PROTO_REMOTE_PEER_ALLOC again if the slave
+ * gfmd has reconnected to a master gfmd.
+ *
+ * Upon successful, this function locks a peer to the current master
+ * gfmd and returns its peer as '*mhpeerp'.  The caller of this function
+ * must call gfmdc_ensure_remote_peer_end() to unlock the peer.
+ */
+gfarm_error_t
+gfmdc_ensure_remote_peer(struct peer *peer, struct peer **mhpeerp)
+{
+	gfarm_error_t e;
+	struct local_peer *lpeer = peer_to_local_peer(peer);
+	struct abstract_host *mah, *lpeer_mah;
+	struct peer *my_mhpeer = NULL;
+	int retry_count = 0;
+	gfarm_uint32_t gen, lpeer_gen;
+	const char diag[] = "gfmdc_ensure_remote_peer";
+
+	for (;;) {
+		mah = mdhost_to_abstract_host(mdhost_lookup_master());
+		e = abstract_host_sender_lock(mah, &my_mhpeer, diag);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s (abstract_host_sender_lock): %s",
+			    diag, gfarm_error_string(e));
+			return (e);
+		}
+		gen = abstract_host_get_peer_generation(mah);
+		if (local_peer_get_remote_peer_allocated(lpeer, &lpeer_mah,
+			&lpeer_gen) && lpeer_mah == mah && lpeer_gen == gen)
+			break;
+		abstract_host_sender_unlock(mah, my_mhpeer, diag);
+
+		if (retry_count >= GFMDC_REMOTE_PEER_ALLOC_MAX_RETRY_COUNT) {
+			gflog_error(GFARM_MSG_UNFIXED, "%s: retry overtime",
+			    diag);
+			return (e);
+		}
+
+		e = gfmdc_client_remote_peer_alloc(peer);
+		if (e != GFARM_ERR_NO_ERROR) {
+			gflog_error(GFARM_MSG_UNFIXED,
+			    "%s (gfmdc_client_remote_peer_alloc): %s",
+			    diag, gfarm_error_string(e));
+			return (e);
+		}
+		local_peer_set_remote_peer_allocated(lpeer, mah, gen);
+		retry_count++;
+	}
+
+	*mhpeerp = my_mhpeer;
+	return (GFARM_ERR_NO_ERROR);
+}
+
+void
+gfmdc_ensure_remote_peer_end(struct peer *mhpeer)
+{
+	struct abstract_host *mah;
+	const char diag[] = "gfmdc_ensure_remote_peer_end";
+
+	mah = peer_get_abstract_host(mhpeer);
+	abstract_host_sender_unlock(mah, mhpeer, diag);
 }
 
 static gfarm_error_t
@@ -1261,6 +1326,7 @@ switch_gfmd_channel(struct peer *peer, int from_client,
 		    diag, gfarm_error_string(e));
 		gfmdc_peer_record_free(gfmdc_peer, diag);
 	}
+	peer_set_peer_type(peer, peer_type_gfmd_channel);
 	giant_unlock();
 	if (e == GFARM_ERR_NO_ERROR) {
 		struct local_peer *local_peer = peer_to_local_peer(peer);

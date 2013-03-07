@@ -228,6 +228,7 @@ peer_clear_common(struct peer *peer)
 	peer->hostname = NULL;
 	peer->user = NULL;
 	peer->host = NULL;
+	peer->peer_type = peer_type_foreground_channel;
 
 	/*
 	 * foreground channel
@@ -490,6 +491,18 @@ struct mdhost *
 peer_get_mdhost(struct peer *peer)
 {
 	return (*peer->ops->get_mdhost)(peer);
+}
+
+enum peer_type
+peer_get_peer_type(struct peer *peer)
+{
+	return (peer->peer_type);
+}
+
+void
+peer_set_peer_type(struct peer *peer, enum peer_type peer_type)
+{
+	peer->peer_type = peer_type;
 }
 
 static void

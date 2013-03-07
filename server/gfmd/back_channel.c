@@ -523,6 +523,7 @@ gfm_server_switch_back_channel_common(
 			    "%s: gfp_xdr_async_peer_new(): %s",
 			    diag, gfarm_error_string(e));
 		}
+		peer_set_peer_type(peer, peer_type_back_channel);
 		giant_unlock();
 	}
 	if (version < GFS_PROTOCOL_VERSION_V2_4)

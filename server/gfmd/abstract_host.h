@@ -24,7 +24,10 @@ int abstract_host_is_up(struct abstract_host *);
 const char *abstract_host_get_name(struct abstract_host *);
 int abstract_host_get_port(struct abstract_host *);
 struct peer *abstract_host_get_peer(struct abstract_host *, const char *);
+struct peer *abstract_host_get_peer_by_generation(struct abstract_host *,
+	gfarm_uint32_t, const char *);
 void abstract_host_put_peer(struct abstract_host *, struct peer *);
+gfarm_uint32_t abstract_host_get_peer_generation(struct abstract_host *);
 void abstract_host_set_peer(struct abstract_host *, struct peer *, int);
 struct netsendq *abstract_host_get_sendq(struct abstract_host *);
 void abstract_host_disconnect_request(struct abstract_host *, struct peer *,
@@ -51,6 +54,10 @@ gfarm_error_t async_server_vput_reply(struct abstract_host *,
 	struct peer *, gfp_xdr_xid_t,
 	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
 	const char *, gfarm_error_t, const char *, va_list *);
+gfarm_error_t async_server_put_reply(struct abstract_host *,
+	struct peer *, gfp_xdr_xid_t,
+	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
+	const char *, gfarm_error_t, const char *, ...);
 gfarm_error_t async_server_vput_wrapped_reply_unlocked(struct abstract_host *,
 	gfp_xdr_xid_t,
 	xdr_vsend_t, const char *, gfarm_error_t,
@@ -84,6 +91,9 @@ gfarm_error_t async_client_vsend_request(struct abstract_host *,
 	host_set_callback_t,
 #endif
 	gfarm_int32_t, const char *, va_list *);
+gfarm_error_t async_client_send_raw_request(struct abstract_host *,
+	struct peer *, const char *, result_callback_t,
+	disconnect_callback_t, void *, size_t, void *);
 gfarm_error_t async_client_vrecv_result(struct peer *,
 	struct abstract_host *, size_t, const char *, const char **,
 	gfarm_error_t *, va_list *);

@@ -43,6 +43,7 @@ struct peer {
 	char *username, *hostname;
 	struct user *user;
 	struct abstract_host *host;
+	enum peer_type peer_type;
 
 	gfarm_int64_t peer_id;	/* to support remote peer */
 

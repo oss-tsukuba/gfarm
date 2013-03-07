@@ -6,6 +6,7 @@ struct abstract_host;
 struct peer_watcher;
 
 struct peer *local_peer_to_peer(struct local_peer *);
+enum peer_type local_peer_get_peer_type(struct local_peer *);
 
 gfarm_error_t local_peer_alloc(int, struct local_peer **);
 gfarm_error_t local_peer_alloc_with_connection(struct gfp_xdr *,
@@ -27,6 +28,7 @@ void local_peer_shutdown_all_prepare_to_wait(void);
 void local_peer_shutdown_all_wait(void);
 void local_peer_shutdown_all(void);
 void local_peer_detach_all(void);
+struct local_peer *local_peer_lookup(struct local_peer *, gfarm_int64_t);
 struct remote_peer *local_peer_lookup_remote(struct local_peer *,
 	gfarm_int64_t);
 
@@ -38,5 +40,8 @@ void local_peer_add_child(struct local_peer *,
 void local_peer_get_numeric_name(struct local_peer *, char *, size_t);
 void local_peer_for_child_peers(struct local_peer *,
 	void (*)(struct remote_peer **, void *), void *, const char *);
-int local_peer_get_remote_peer_allocated(struct local_peer *);
-void local_peer_set_remote_peer_allocated(struct local_peer *, int);
+void local_peer_set_remote_peer_allocated(struct local_peer *,
+	struct abstract_host *, gfarm_uint32_t);
+void local_peer_unset_remote_peer_allocated(struct local_peer *);
+int local_peer_get_remote_peer_allocated(struct local_peer *, 
+	struct abstract_host **, gfarm_uint32_t *);

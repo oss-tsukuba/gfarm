@@ -4,6 +4,12 @@ struct abstract_host;
 struct local_peer;
 struct remote_peer;
 
+enum peer_type {
+	peer_type_foreground_channel,
+	peer_type_back_channel,
+	peer_type_gfmd_channel
+};
+
 struct local_peer *peer_to_local_peer(struct peer *);
 struct remote_peer *peer_to_remote_peer(struct peer *);
 
@@ -46,6 +52,9 @@ struct host;
 struct host *peer_get_host(struct peer *);
 struct mdhost;
 struct mdhost *peer_get_mdhost(struct peer *);
+enum peer_type peer_get_peer_type(struct peer *);
+void peer_set_peer_type(struct peer *, enum peer_type);
+
 struct sockaddr;
 void peer_authorized_common(struct peer *, enum gfarm_auth_id_type, char *,
 	char *, struct sockaddr *, enum gfarm_auth_method);
