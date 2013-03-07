@@ -657,8 +657,10 @@ gfm_inode_or_name_op(const char *url, int flags,
 	for (;;) {
 		path = nextpath;
 
-		if (gfm_server)
+		if (gfm_server) {
 			gfm_client_connection_free(gfm_server);
+			gfm_server = NULL;
+		}
 		/* path may be updated when it is a Gfarm URL */
 		if ((e = gfarm_url_parse_metadb(&path, &gfm_server))
 		    != GFARM_ERR_NO_ERROR) {
