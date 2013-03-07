@@ -2,7 +2,7 @@
 
 <refentry id='gfstress.rb.1'>
 
-<refentryinfo><date>19 May 2012</date></refentryinfo>
+<refentryinfo><date>7 Mar 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfstress.rb</refentrytitle>
@@ -20,6 +20,7 @@
     <arg choice='opt'>-t, --testdir <replaceable>test directory</replaceable></arg>
     <arg choice='opt'>-m, --gfarm2fs <replaceable>gfarm2fs mount point</replaceable></arg>
     <arg choice='opt'>-n, --number <replaceable>number of pseudo users</replaceable></arg>
+    <arg choice='opt'>-T, --timeout <replaceable>timeout(seconds)</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>
 
@@ -30,7 +31,9 @@
 gfperf-read, gfperf-write, gfperf-replica are executed for each gfsd servers.
 </para>
 <para>
-This command runs until an error occured. If you need to stop, press Ctrl-C or send TERM signal. 
+This command runs until an error occured by default.
+If you need to stop, press Ctrl-C or send TERM signal.
+If you want set timeout, -T option is usable.
 </para>
 <para>
 Number of pseudo users means multiplex set of gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica. Same as multiplex execution of this command.
@@ -44,7 +47,7 @@ If gfarm2fs mount point is specified, more gfperf-metadata, gfperf-tree, gfperf-
 <variablelist>
 
 <varlistentry>
-<term><option>-t, --testdir</option> <parameter>test directory</parameter></term>
+<term><option>-t, --testdir</option> <parameter>test_directory</parameter></term>
 <listitem>
 <para>
 This directory is used for high load average test.
@@ -55,7 +58,7 @@ All files and directories are removed at the end of testing.
 </varlistentry>
 
 <varlistentry>
-<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs mount point</parameter></term>
+<term><option>-m, --gfarm2fs</option> <parameter>gfarm2fs_mountpoint</parameter></term>
 <listitem>
 <para>
 Specify gfarm2fs mount point
@@ -64,10 +67,19 @@ Specify gfarm2fs mount point
 </varlistentry>
 
 <varlistentry>
-<term><option>-n, --number</option> <parameter>number of pseudo users</parameter></term>
+<term><option>-n, --number</option> <parameter>number_of_pseudo_users</parameter></term>
 <listitem>
 <para>
 Specify number of pseudo users.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><option>-T, --timeout</option> <parameter>seconds</parameter></term>
+<listitem>
+<para>
+Specify timeout.
 </para>
 </listitem>
 </varlistentry>
