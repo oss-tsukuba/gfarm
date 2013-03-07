@@ -52,6 +52,11 @@ CLASS="REPLACEABLE"
 ><I
 >number of pseudo users</I
 ></TT
+>] [-T, --timeout <TT
+CLASS="REPLACEABLE"
+><I
+>timeout(seconds)</I
+></TT
 >]</P
 ></DIV
 ><DIV
@@ -65,7 +70,9 @@ NAME="DESCRIPTION"
 >This comannd executes gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica in parallel to make gfarm system high load average.
 gfperf-read, gfperf-write, gfperf-replica are executed for each gfsd servers.</P
 ><P
->This command runs until an error occured. If you need to stop, press Ctrl-C or send TERM signal. </P
+>This command runs until an error occured by default.
+If you need to stop, press Ctrl-C or send TERM signal.
+If you want set timeout, -T option is usable.</P
 ><P
 >Number of pseudo users means multiplex set of gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica. Same as multiplex execution of this command.</P
 ><P
@@ -89,7 +96,7 @@ CLASS="OPTION"
 >-t, --testdir</CODE
 > <CODE
 CLASS="PARAMETER"
->test directory</CODE
+>test_directory</CODE
 ></DT
 ><DD
 ><P
@@ -103,7 +110,7 @@ CLASS="OPTION"
 >-m, --gfarm2fs</CODE
 > <CODE
 CLASS="PARAMETER"
->gfarm2fs mount point</CODE
+>gfarm2fs_mountpoint</CODE
 ></DT
 ><DD
 ><P
@@ -115,11 +122,23 @@ CLASS="OPTION"
 >-n, --number</CODE
 > <CODE
 CLASS="PARAMETER"
->number of pseudo users</CODE
+>number_of_pseudo_users</CODE
 ></DT
 ><DD
 ><P
 >Specify number of pseudo users.</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-T, --timeout</CODE
+> <CODE
+CLASS="PARAMETER"
+>seconds</CODE
+></DT
+><DD
+><P
+>Specify timeout.</P
 ></DD
 ></DL
 ></DIV

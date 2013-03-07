@@ -25,7 +25,7 @@ NAME="NAME"
 ></A
 ><H2
 >Name</H2
->gfstress.rb&nbsp;--&nbsp;Gfarm 負荷試験を行う。</DIV
+>gfstress.rb&nbsp;--&nbsp;Gfarm 負荷試験を行う</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -52,6 +52,11 @@ CLASS="REPLACEABLE"
 ><I
 >擬似ユーザ数</I
 ></TT
+>] [-T, --timeout <TT
+CLASS="REPLACEABLE"
+><I
+>制限時間(秒)</I
+></TT
 >]</P
 ></DIV
 ><DIV
@@ -67,7 +72,7 @@ CLASS="PARAMETER"
 >テストディレクトリ</CODE
 >を使用してgfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replicaを同時並列に起動し、高負荷状態を作り出します。gfschedを呼び出し、各gfsdに対し並列にgfperf-read, gfperf-write, gfperf-replicaを実行します。</P
 ><P
->本コマンドはCtrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまで動作し続けます。</P
+>本コマンドは、Ctrl-CまたはTERMシグナルで停止させない限り、エラーを検出するまでデフォルトでは動作し続けます。-T オプションで制限時間を指定できます。</P
 ><P
 >擬似ユーザ数はgfperf-metadata, gfperf-read, gfperf-write, gfperf-replicaを一セットとし、何セットを同時実行するかを指定するものです。本コマンドを同時に複数個呼出したのと同等の効果が得られます。</P
 ><P
@@ -121,6 +126,18 @@ CLASS="PARAMETER"
 ><DD
 ><P
 >本コマンドを複数個同時に呼出したのと同じ効果が得られます。</P
+></DD
+><DT
+><CODE
+CLASS="OPTION"
+>-T, --timeout</CODE
+> <CODE
+CLASS="PARAMETER"
+>秒数</CODE
+></DT
+><DD
+><P
+>制限時間を指定します。</P
 ></DD
 ></DL
 ></DIV

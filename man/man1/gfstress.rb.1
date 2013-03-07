@@ -3,33 +3,38 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSTRESS.RB" "1" "07 March 2012" "Gfarm" ""
+.TH "GFSTRESS.RB" "1" "07 March 2013" "Gfarm" ""
 
 .SH NAME
 gfstress.rb \- Gfarm stress test
 .SH SYNOPSIS
 
-\fBgfstress.rb\fR [ \fB-t, --testdir \fItest directory\fB\fR ] [ \fB-m, --gfarm2fs \fIgfarm2fs mount point\fB\fR ] [ \fB-n, --number \fInumber of pseudo users\fB\fR ]
+\fBgfstress.rb\fR [ \fB-t, --testdir \fItest directory\fB\fR ] [ \fB-m, --gfarm2fs \fIgfarm2fs mount point\fB\fR ] [ \fB-n, --number \fInumber of pseudo users\fB\fR ] [ \fB-T, --timeout \fItimeout(seconds)\fB\fR ]
 
 .SH "DESCRIPTION"
 .PP
 This comannd executes gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica in parallel to make gfarm system high load average.
 gfperf-read, gfperf-write, gfperf-replica are executed for each gfsd servers.
 .PP
-This command runs until an error occured. If you need to stop, press Ctrl-C or send TERM signal. 
+This command runs until an error occured by default.
+If you need to stop, press Ctrl-C or send TERM signal.
+If you want set timeout, -T option is usable.
 .PP
 Number of pseudo users means multiplex set of gfperf-metadata, gfperf-tree, gfperf-read, gfperf-write, gfperf-replica. Same as multiplex execution of this command.
 .PP
 If gfarm2fs mount point is specified, more gfperf-metadata, gfperf-tree, gfperf-read, gfeprf-write commands that use gfarm2fs are executed.
 .SH "OPTIONS"
 .TP
-\fB-t, --testdir \fItest directory\fB\fR
+\fB-t, --testdir \fItest_directory\fB\fR
 This directory is used for high load average test.
 The default is gfarm:///stress .
 All files and directories are removed at the end of testing.
 .TP
-\fB-m, --gfarm2fs \fIgfarm2fs mount point\fB\fR
+\fB-m, --gfarm2fs \fIgfarm2fs_mountpoint\fB\fR
 Specify gfarm2fs mount point
 .TP
-\fB-n, --number \fInumber of pseudo users\fB\fR
+\fB-n, --number \fInumber_of_pseudo_users\fB\fR
 Specify number of pseudo users.
+.TP
+\fB-T, --timeout \fIseconds\fB\fR
+Specify timeout.
