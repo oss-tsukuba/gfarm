@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.conf.5'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>8 Mar 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -352,6 +352,18 @@ Sudo コマンドのパスおよびオプションを指定します。
 <command>gfservice</command> が SSH を介してクライアントホスト上で Sudo
 コマンドを実行する際、この変数が利用されます。
 デフォルトは「sudo」です。
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_GFARM_CONF</varname></term>
+<listitem>
+<para>
+gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、<command>gfservice</command>はgfmd1の
+gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。
 </para>
 </listitem>
 </varlistentry>

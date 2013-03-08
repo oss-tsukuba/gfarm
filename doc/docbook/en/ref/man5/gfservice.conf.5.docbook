@@ -2,7 +2,7 @@
 
 <refentry id='gfservice.conf.5'>
 
-<refentryinfo><date>7 Nov 2012</date></refentryinfo>
+<refentryinfo><date>8 Mar 2013</date></refentryinfo>
 
 <refmeta>
 <refentrytitle>gfservice.conf</refentrytitle>
@@ -348,6 +348,18 @@ Specify a path to a Sudo command and options.
 The variable is used when <command>gfservice</command> executes a Sudo
 command on the client host via SSH.
 The default value is "sudo".
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><varname>client<replaceable>n</replaceable>_GFARM_CONF</varname></term>
+<listitem>
+<para>
+Specify a gfarm2.conf file in absolute path.
+If a value is not set, <command>gfservice</command> uses a same path as
+the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
+shell variable).
 </para>
 </listitem>
 </varlistentry>

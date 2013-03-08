@@ -54,6 +54,7 @@ client1=cl1.example.com
 # client1_SUDO=/usr/bin/sudo
 # client1_GFBINDIR=/usr/local/bin
 client1_GFARM2FS_BIN_PATH=/usr/local/bin
+#client1_GFARM_CONF=/usr/local/etc/gfarm2.conf
 
 ##
 ## client 2
@@ -63,3 +64,4 @@ client2=cl2.example.com
 # client2_SUDO=/usr/bin/sudo
 # client2_GFBINDIR=/usr/local/bin
 client2_GFARM2FS_BIN_PATH=/usr/local/bin
+#client2_GFARM_CONF=/usr/local/etc/gfarm2.conf
