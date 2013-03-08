@@ -232,6 +232,23 @@ get_config_gfarm_options()
 }
 
 #
+# Get gfarm2.conf path corresponding with a host ID.
+#
+get_gfarm_conf()
+{
+	log_debug "get_gfarm_conf: HOSTID=$1"
+
+	GFARM_CONF=`eval echo \\$$1_GFARM_CONF`
+	if [ "X$GFARM_CONF" != X ]; then
+		echo $GFARM_CONF
+		log_debug "get_gfarm_conf: $GFARM_CONF"
+	fi
+
+	log_debug "end get_gfarm_conf"
+	return 0
+}
+
+#
 # Get options to 'config-gfsd' corresponding with a host ID.
 #
 get_config_gfsd_options()
@@ -563,10 +580,14 @@ exec_client_host_agent()
 	HOST=`get_host $EXEC_HOSTID`
 	SUDO=`get_sudo $EXEC_HOSTID $EXEC_USER`
 	AGENT=`get_agent $EXEC_HOSTID`
-	CONFIG_GFSD_OPTIONS=`get_config_gfsd_options $EXEC_HOSTID`
+	GFARM_CONF=`get_gfarm_conf $EXEC_HOSTID`
+	if [ X$GFARM_CONF = X ]; then
+		GFARM_CONF=`exec_gfmd_host_agent gfmd1 root \
+			get-config-gfarm-param "param=GFARM_CONF"`
+	fi
 
 	CMD_ARGV=
-	for I in "$@" "config-gfsd-options=$CONFIG_GFSD_OPTIONS"; do
+	for I in "$@" "gfarm-conf=$GFARM_CONF"; do
 		J=`echo "X$I" | sed -e "s/^X/'/" -e "s/\$/'/"`
 		if [ "X$CMD_ARGV" = X ]; then
 			CMD_ARGV="$J"

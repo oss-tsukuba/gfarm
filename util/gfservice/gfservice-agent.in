@@ -215,10 +215,8 @@ set_gfsd_params()
 set_client_params()
 {
 	log_debug "set_client_params"
-	CONFIG_GFSD_OPTIONS=`get_param config-gfsd-options || echo ''`
 
-	GFARM_CONF=`config-gfsd -T $CONFIG_GFSD_OPTIONS \
-		| sed -ne '/^GFARM_CONF=/s/^[^=]*=//p'`
+	GFARM_CONF=`get_param gfarm-conf`
 	[ "X$GFARM_CONF" = X ] \
 		&& log_error "failed to get gfarm client conf file"
 	log_debug "set_client_params: set GFARM_CONF=$GFARM_CONF"
