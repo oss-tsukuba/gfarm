@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "08 March 2013" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- gfservice の設定ファイル
@@ -202,3 +202,9 @@ Sudo コマンドのパスおよびオプションを指定します。
 \fBgfservice\fR が SSH を介してクライアントホスト上で Sudo
 コマンドを実行する際、この変数が利用されます。
 デフォルトは「sudo」です。
+.TP
+\fBclient\fIn\fB_GFARM_CONF\fR
+gfarm2.confファイルのパスを絶対パスで指定します。
+この値が設定されていない場合、\fBgfservice\fRはgfmd1の
+gfarm2.confファイルのパスと同じパスを使用します(gfarm2.confファイルの
+パスは「gfmd1_CONFIG_GFARM_OPTIONS」シェル変数の値を基に決定されます)。

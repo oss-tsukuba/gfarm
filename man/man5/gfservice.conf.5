@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "GFSERVICE.CONF" "5" "07 November 2012" "Gfarm" ""
+.TH "GFSERVICE.CONF" "5" "08 March 2013" "Gfarm" ""
 
 .SH NAME
 gfservice.conf \- configuration file of gfservice
@@ -198,3 +198,9 @@ Specify a path to a Sudo command and options.
 The variable is used when \fBgfservice\fR executes a Sudo
 command on the client host via SSH.
 The default value is "sudo".
+.TP
+\fBclient\fIn\fB_GFARM_CONF\fR
+Specify a gfarm2.conf file in absolute path.
+If a value is not set, \fBgfservice\fR uses a same path as
+the path of gfarm2.conf in gfmd1(determined from the 'gfmd1_CONFIG_GFARM_OPTIONS'
+shell variable).
