@@ -37,9 +37,13 @@ hp-ux)	case `getconf SC_CPU_VERSION 2>/dev/null` in
 	ARCH="$MACHINE-hp-hpux`echo $RELEASE | sed -e 's/[^.]*.[0B]*//'`";;
 irix)	ARCH="$MACHINE-sgi-$KERNEL$RELEASE";;
 linux)	ARCH=
-	i=`ls /etc/*-release 2>/dev/null | wc -l`
-	if [ ! -h /etc/redhat-release -a -f /etc/redhat-release ] &&
-		( [ $i -eq 1 ] || [ -f /etc/lsb-release -a $i -eq 2 ] )
+	if i=`ls /etc/*-release 2>/dev/null | wc -l`
+	    [ ! -h /etc/redhat-release -a -f /etc/redhat-release ] &&
+		( [ $i -eq 1 ] ||
+		  [ $i -eq 2 -a -f /etc/lsb-release ] ||
+		  [ $i -eq 2 -a -f /etc/system-release ] ||
+		  [ $i -eq 3 -a -f /etc/system-release -a -f /etc/lsb-release ]
+		)
 	then
 		# /etc/redhat-release:
 		#	Red Hat Linux release 8.0 (Psyche)
@@ -47,6 +51,8 @@ linux)	ARCH=
 		#	Red Hat Linux Advanced Server release 2.1AS (Pensacola)
 		#	Red Hat Enterprise Linux WS release 4 (Nahant)
 		#	Red Hat Enterprise Linux ES release 4 (Nahant Update 1)
+		#	Red Hat Enterprise Linux Server release 5.1 (Tikanga)
+		#	Red Hat Enterprise Linux Server release 6.3 (Santiago)
 		#	CentOS release 4.4 (Final)
 		if grep '^Red Hat' /etc/redhat-release >/dev/null; then
 			ARCH=$MACHINE-redhat`
@@ -65,8 +71,20 @@ linux)	ARCH=
 				/etc/redhat-release`-$KERNEL
 		fi
 	fi
-	if [ X"$ARCH"  = X ]; then
+	# the reason why this is done after the check of /etc/redhat-release is
+	# because we prefer "x86_64-redhatEL6.3-linux"
+	# to "x86_64-redhatenterpriseserver6.3-linux" for now.
+	if [ X"$ARCH" = X ] && ( lsb_release ) >/dev/null 2>&1 ; then
+		# lsb_release -si		-sr
+		# RedHatEnterpriseServer	5.1
+		# CentOS			5.5
+		# ScientificSL			5.5
+		# Ubuntu			12.04
+		ARCH=$MACHINE-`lsb_release -si | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ' 'abcdefghijklmnopqrstuvwxyz_'``lsb_release -sr | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ' 'abcdefghijklmnopqrstuvwxyz_'`-$KERNEL
+	fi
+	if [ X"$ARCH" = X ]; then
 		# /etc/debian_version: 3.0
+		# /etc/debian_version on Ubuntu 12.04: wheezy/sid
 		# /etc/knoppix_version: ???
 		for i in /etc/*_version; do
 			if [ ! -h $i -a -f $i ]; then
@@ -78,7 +96,7 @@ linux)	ARCH=
 			fi
 		done
 	fi
-	if [ X"$ARCH"  = X ]; then
+	if [ X"$ARCH" = X ]; then
 		# /etc/SuSE-release:
 		#	SuSE Linux 8.1 (i386)
 		#	SuSE SLES-8 (AMD64)
@@ -121,7 +139,8 @@ linux)	ARCH=
 		for i in /etc/*-release; do
 			if [ ! -h $i -a -f $i \
 				-a $i != /etc/redhat-release \
-				-a $i != /etc/lsb-release ]
+				-a $i != /etc/lsb-release \
+				-a $i != /etc/system-release ]
 			then
 				ARCH=$MACHINE-`echo $i |
 					sed -e 's|^/etc/||' \
