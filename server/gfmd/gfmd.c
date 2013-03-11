@@ -107,6 +107,305 @@ sync_protocol_get_thrpool(void)
 	return (peer_watcher_get_thrpool(sync_protocol_watcher));
 }
 
+
+/* this interface is exported for a use from a private extension */
+int
+gfm_server_protocol_type_extension_default(gfarm_int32_t request)
+{
+	gflog_warning(GFARM_MSG_UNFIXED, "unknown request: %d", request);
+	return (PROTO_UNKNOWN);
+}
+
+/* this interface is made as a hook for a private extension */
+int (*gfm_server_protocol_type_extension)(gfarm_int32_t) =
+	gfm_server_protocol_type_extension_default;
+
+static int
+protocol_type(gfarm_int32_t request)
+{
+	switch (request) {
+	case GFM_PROTO_HOST_INFO_GET_ALL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_HOST_INFO_GET_BY_ARCHITECTURE:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_HOST_INFO_GET_BY_NAMES:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_HOST_INFO_GET_BY_NAMEALIASES:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_HOST_INFO_SET:
+		return (0);
+	case GFM_PROTO_HOST_INFO_MODIFY:
+		return (0);
+	case GFM_PROTO_HOST_INFO_REMOVE:
+		return (0);
+	case GFM_PROTO_FSNGROUP_GET_ALL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_FSNGROUP_GET_BY_HOSTNAME:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_FSNGROUP_MODIFY:
+		return (0);
+	case GFM_PROTO_USER_INFO_GET_ALL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_USER_INFO_GET_BY_NAMES:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_USER_INFO_SET:
+		return (0);
+	case GFM_PROTO_USER_INFO_MODIFY:
+		return (0);
+	case GFM_PROTO_USER_INFO_REMOVE:
+		return (0);
+	case GFM_PROTO_USER_INFO_GET_BY_GSI_DN:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_GROUP_INFO_GET_ALL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_GROUP_INFO_GET_BY_NAMES:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_GROUP_INFO_SET:
+		return (0);
+	case GFM_PROTO_GROUP_INFO_MODIFY:
+		return (0);
+	case GFM_PROTO_GROUP_INFO_REMOVE:
+		return (0);
+	case GFM_PROTO_GROUP_INFO_ADD_USERS:
+		return (0);
+	case GFM_PROTO_GROUP_INFO_REMOVE_USERS:
+		return (0);
+	case GFM_PROTO_GROUP_NAMES_GET_BY_USERS:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_COMPOUND_BEGIN:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_COMPOUND_END:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_COMPOUND_ON_ERROR:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_GET_FD: /* NOTE: externalize fd */
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_PUT_FD: /* NOTE: explicitly pass fd */
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_SET_FD_CURRENT);
+	case GFM_PROTO_SAVE_FD:
+		return (PROTO_HANDLED_BY_SLAVE|
+		    PROTO_USE_FD_CURRENT|PROTO_SET_FD_SAVED);
+	case GFM_PROTO_RESTORE_FD:
+		return (PROTO_HANDLED_BY_SLAVE|
+		    PROTO_SET_FD_CURRENT|PROTO_USE_FD_SAVED);
+	case GFM_PROTO_CREATE:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_OPEN:
+		return (PROTO_USE_FD_CURRENT|PROTO_SET_FD_CURRENT);
+	case GFM_PROTO_OPEN_ROOT:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_SET_FD_CURRENT);
+	case GFM_PROTO_OPEN_PARENT:
+		return (PROTO_HANDLED_BY_SLAVE|
+		    PROTO_USE_FD_CURRENT|PROTO_SET_FD_CURRENT);
+#if 0
+	case GFM_PROTO_OPEN_DIR:
+		return (PROTO_HANDLED_BY_SLAVE|
+		    PROTO_USE_FD_CURRENT|PROTO_SET_FD_CURRENT);
+#endif
+	case GFM_PROTO_FHOPEN:
+		return (PROTO_SET_FD_CURRENT);
+	case GFM_PROTO_CLOSE:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_VERIFY_TYPE:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_VERIFY_TYPE_NOT:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_BEQUEATH_FD:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_INHERIT_FD:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REVOKE_GFSD_ACCESS: /* NOTE: explicitly pass fd */
+		return (0);
+	case GFM_PROTO_FSTAT:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_FUTIMES:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_FCHMOD:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_FCHOWN:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_CKSUM_GET:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_CKSUM_SET:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_SCHEDULE_FILE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_SCHEDULE_FILE_WITH_PROGRAM:
+		return (PROTO_USE_FD_CURRENT|PROTO_USE_FD_SAVED);
+	case GFM_PROTO_FGETATTRPLUS:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REMOVE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_RENAME:
+		return (PROTO_USE_FD_CURRENT|PROTO_USE_FD_SAVED);
+	case GFM_PROTO_FLINK:
+		return (PROTO_USE_FD_CURRENT|PROTO_USE_FD_SAVED);
+	case GFM_PROTO_MKDIR:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_SYMLINK:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_READLINK:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_GETDIRPATH: /* XXX: can be done in slave */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_GETDIRENTS:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_SEEK:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_GETDIRENTSPLUS:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_GETDIRENTSPLUSXATTR:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REOPEN:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_CLOSE_READ:
+		return (PROTO_USE_FD_CURRENT);
+#ifdef COMPAT_GFARM_2_3
+	case GFM_PROTO_CLOSE_WRITE:
+		return (PROTO_USE_FD_CURRENT);
+#endif
+	case GFM_PROTO_CLOSE_WRITE_V2_4:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_FHCLOSE_READ:
+		return (0);
+	case GFM_PROTO_FHCLOSE_WRITE:
+		return (0);
+	case GFM_PROTO_GENERATION_UPDATED:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_GENERATION_UPDATED_BY_COOKIE:
+		return (0);
+	case GFM_PROTO_LOCK:
+		return (0);
+	case GFM_PROTO_TRYLOCK:
+		return (0);
+	case GFM_PROTO_UNLOCK:
+		return (0);
+	case GFM_PROTO_LOCK_INFO:
+		return (0);
+#ifdef COMPAT_GFARM_2_3
+	case GFM_PROTO_SWITCH_BACK_CHANNEL:
+		return (PROTO_HANDLED_BY_SLAVE);
+#endif
+	case GFM_PROTO_SWITCH_ASYNC_BACK_CHANNEL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_SWITCH_GFMD_CHANNEL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_GLOB:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_SCHEDULE:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_PIO_OPEN:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_PIO_SET_PATHS:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_PIO_CLOSE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_PIO_VISIT:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_HOSTNAME_SET:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_SCHEDULE_HOST_DOMAIN:
+		return (0);
+	case GFM_PROTO_STATFS:
+		return (0);
+	case GFM_PROTO_REPLICA_LIST_BY_NAME:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_LIST_BY_HOST:
+		return (PROTO_HANDLED_BY_SLAVE|PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_REMOVE_BY_HOST:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_REMOVE_BY_FILE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_INFO_GET:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICATE_FILE_FROM_TO:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_ADDING:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_ADDED: /* obsolete protocol */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_ADDED2:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_REPLICA_LOST:
+		return (0);
+	case GFM_PROTO_REPLICA_ADD:
+		return (0);
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES: /* obsolete protocol */
+		return (0);
+	case GFM_PROTO_REPLICA_GET_MY_ENTRIES2:
+		return (0);
+	case GFM_PROTO_REPLICA_CREATE_FILE_IN_LOST_FOUND:
+		return (0);
+	case GFM_PROTO_PROCESS_ALLOC:
+		return (PROTO_HANDLED_BY_SLAVE);
+#ifdef NOT_USED
+	case GFM_PROTO_PROCESS_ALLOC_CHILD:
+		return (PROTO_HANDLED_BY_SLAVE);
+#endif
+	case GFM_PROTO_PROCESS_FREE:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_PROCESS_SET:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFJ_PROTO_LOCK_REGISTER:
+		return (0);
+	case GFJ_PROTO_UNLOCK_REGISTER:
+		return (0);
+	case GFJ_PROTO_REGISTER:
+		return (0);
+	case GFJ_PROTO_UNREGISTER:
+		return (0);
+	case GFJ_PROTO_REGISTER_NODE:
+		return (0);
+	case GFJ_PROTO_LIST:
+		return (0);
+	case GFJ_PROTO_INFO:
+		return (0);
+	case GFJ_PROTO_HOSTINFO:
+		return (0);
+	case GFM_PROTO_XATTR_SET:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XMLATTR_SET:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XATTR_GET: /* XXX: can be done in slave */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XMLATTR_GET:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XATTR_REMOVE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XMLATTR_REMOVE:
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XATTR_LIST: /* XXX: can be done in slave */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XMLATTR_LIST: /* XXX: can be done in slave */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_XMLATTR_FIND: /* XXX: can be done in slave */
+		return (PROTO_USE_FD_CURRENT);
+	case GFM_PROTO_QUOTA_USER_GET: /* XXX: can be done in slave */
+		return (0);
+	case GFM_PROTO_QUOTA_USER_SET:
+		return (0);
+	case GFM_PROTO_QUOTA_GROUP_GET:
+		return (0);
+	case GFM_PROTO_QUOTA_GROUP_SET:
+		return (0);
+	case GFM_PROTO_QUOTA_CHECK:
+		return (0);
+	case GFM_PROTO_METADB_SERVER_GET:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_METADB_SERVER_GET_ALL:
+		return (PROTO_HANDLED_BY_SLAVE);
+	case GFM_PROTO_METADB_SERVER_SET:
+		return (0);
+	case GFM_PROTO_METADB_SERVER_MODIFY:
+		return (0);
+	case GFM_PROTO_METADB_SERVER_REMOVE:
+		return (0);
+	default:
+		return ((*gfm_server_protocol_type_extension)(request));
+	}
+}
+
+
 /* this interface is exported for a use from a private extension */
 gfarm_error_t
 gfm_server_protocol_extension_default(
@@ -132,6 +431,7 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 {
 	gfarm_error_t e, e2;
 	gfarm_int32_t request;
+	int type;
 
 	e = gfp_xdr_recv_request_command(peer_get_conn(peer), 0, sizep,
 	    &request);
@@ -148,6 +448,12 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		return (e);
 	}
 	*requestp = request;
+
+	type = protocol_type(request);
+	if (type == PROTO_UNKNOWN) {
+		peer_record_protocol_error(peer); /* mark this peer finished */
+		return (GFARM_ERR_FUNCTION_NOT_IMPLEMENTED);
+	}
 
 	peer_stat_add(peer, GFARM_IOSTAT_TRAN_NUM, 1);
 
