@@ -74,6 +74,7 @@ linux)	ARCH=
 	# the reason why this is done after the check of /etc/redhat-release is
 	# because we prefer "x86_64-redhatEL6.3-linux"
 	# to "x86_64-redhatenterpriseserver6.3-linux" for now.
+	# another reason is that the lsb_release command is optional on RHEL.
 	if [ X"$ARCH" = X ] && ( lsb_release ) >/dev/null 2>&1 ; then
 		# lsb_release -si		-sr
 		# RedHatEnterpriseServer	5.1
