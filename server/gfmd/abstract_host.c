@@ -247,19 +247,19 @@ abstract_host_sender_trylock(struct abstract_host *host, struct peer **peerp,
 	abstract_host_mutex_lock(host, diag);
 
 	for (;;) {
-		if (!abstract_host_is_up_unlocked(host)) {
+		peer0 = host->peer;
+		if (peer0 == NULL) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 		if (host->can_send) {
 			host->can_send = 0;
 			host->busy_time = 0;
-			peer_add_ref(host->peer);
-			*peerp = host->peer;
+			peer_add_ref(peer0);
+			*peerp = peer0;
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
-		peer0 = host->peer;
 		gettimeofday(&tv, NULL);
 		gfarm_timeval_add_microsec(&tv, timeout_microsec);
 		ts.tv_sec = tv.tv_sec;
@@ -290,19 +290,19 @@ abstract_host_sender_lock(struct abstract_host *host, struct peer **peerp,
 	abstract_host_mutex_lock(host, diag);
 
 	for (;;) {
-		if (!abstract_host_is_up_unlocked(host)) {
+		peer0 = host->peer;
+		if (peer0 == NULL) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 		if (host->can_send) {
 			host->can_send = 0;
 			host->busy_time = 0;
-			peer_add_ref(host->peer);
-			*peerp = host->peer;
+			peer_add_ref(peer0);
+			*peerp = peer0;
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
-		peer0 = host->peer;
 		gfarm_cond_wait(&host->ready_to_send, &host->mutex,
 		    diag, "ready_to_send");
 		if (host->peer != peer0) {
@@ -342,19 +342,19 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 	abstract_host_mutex_lock(host, diag);
 
 	for (;;) {
-		if (!abstract_host_is_up_unlocked(host)) {
+		peer0 = host->peer;
+		if (peer0 == NULL) {
 			e = GFARM_ERR_CONNECTION_ABORTED;
 			break;
 		}
 		if (host->can_receive) {
 			host->can_receive = 0;
-			peer_add_ref(host->peer);
-			*peerp = host->peer;
+			peer_add_ref(peer0);
+			*peerp = peer0;
 			e = GFARM_ERR_NO_ERROR;
 			break;
 		}
 		/* may happen at gfsd restart? */
-		peer0 = host->peer;
 		gflog_info(GFARM_MSG_1002773,
 		    "waiting for abstract_host_receiver_lock: "
 		    "maybe %s restarted?",
