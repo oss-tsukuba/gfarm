@@ -1285,14 +1285,14 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: compound_end fd=%d: %s",
 		    diag, net_fd, gfarm_error_string(e));
-	} else if (!GFARM_S_ISREG(mode)) {
+	} else if (!GFARM_S_ISREG(mode) ||
+	    (local_flags = gfs_open_flags_localize(net_flags)) == -1) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1002169,
-			"mode:operation is not permitted");
-	} else if ((local_flags = gfs_open_flags_localize(net_flags)) == -1) {
-		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		gflog_debug(GFARM_MSG_1002170,
-			"local_flags:operation is not permitted");
+		/* this shouldn't happen */
+		gflog_error(GFARM_MSG_UNFIXED, "ino=%lld gen=%lld: "
+		    "mode:0%o, flags:0x%0x, to_create:%d: shouldn't happen",
+		    (long long)ino, (long long)gen,
+		    mode, net_flags, to_create);
 	} else {
 		gfsd_local_path(ino, gen, diag, &path);
 		if (to_create)
