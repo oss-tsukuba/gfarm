@@ -356,10 +356,11 @@ abstract_host_receiver_lock(struct abstract_host *host, struct peer **peerp,
 			break;
 		}
 		/* may happen at gfsd restart? */
-		gflog_info(GFARM_MSG_1002773,
+		gflog_info(GFARM_MSG_UNFIXED,
 		    "waiting for abstract_host_receiver_lock: "
-		    "maybe %s restarted?",
-		    peer_get_service_name(peer0));
+		    "maybe %s on %s restarted?",
+		    peer_get_service_name(peer0),
+		    abstract_host_get_name(host));
 		gfarm_cond_wait(&host->ready_to_receive,
 		    &host->mutex, diag, "ready_to_receive");
 		if (host->peer != peer0) {
