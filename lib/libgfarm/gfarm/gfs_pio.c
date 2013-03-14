@@ -373,8 +373,14 @@ gfs_pio_close(GFS_File gf)
 	gfs_pio_file_list_remove(
 	    gfm_client_connection_file_list(gf->gfm_server), gf);
 
-	/* do not call gfm_close_fd when fd is read-only and gfmd failed over */
-	if (!failed_over || (gf->open_flags & GFARM_FILE_RDONLY) == 0) {
+	/*
+	 * in case that failover of gfmd happens, do not call
+	 * gfmd_close_fd when a file is opened in read-only mode.
+	 */
+	if (failed_over &&
+	    (gf->open_flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
+		/* skip gfmd_close_fd call*/;
+	else {
 		e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
 		if (e_save == GFARM_ERR_NO_ERROR)
 			e_save = e;
