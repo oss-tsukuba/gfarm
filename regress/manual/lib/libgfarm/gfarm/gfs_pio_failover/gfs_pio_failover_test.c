@@ -154,12 +154,65 @@ wait_for_failover(void)
 		wait_for_failover_manually();
 }
 
-static void
-wait_for_failover_and_gfsd(void)
+#define MAX_RETRY 60 /* sec. */
+
+static int
+count_gfsd()
 {
-	wait_for_failover();
-	msg("*** Waiting for gfsds connect to gfmd ***\n");
-	sleep(6);
+	struct gfarm_host_sched_info *infos;
+	int nhosts;
+	gfarm_error_t e;
+
+	e = gfarm_schedule_hosts_domain_all("/", "", &nhosts, &infos);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (0);
+	gfarm_host_sched_info_free(nhosts, infos);
+	return (nhosts);
+}
+
+static int
+gfsd_is_up(const char *name)
+{
+	struct gfarm_host_sched_info *infos;
+	int nhosts, i, found = 0;
+	gfarm_error_t e;
+
+	e = gfarm_schedule_hosts_domain_all("/", "", &nhosts, &infos);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (found);
+
+	for (i = 0; i < nhosts; i++) {
+		if (strcmp(infos->host, name) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	gfarm_host_sched_info_free(nhosts, infos);
+	return (found);
+}
+
+static void
+wait_for_gfsd_num(int num)
+{
+	int i = 0, n_gfsd;
+
+	msg("*** Waiting for gfsds(%d) connection to gfmd ***\n", num);
+	while ((n_gfsd = count_gfsd()) < num && i++ < MAX_RETRY) {
+		msg("wait_for_gfsd: retry=%d, n_gfsd=%d/%d\n", i, n_gfsd, num);
+		sleep(1);
+	}
+}
+
+static void
+wait_for_gfsd_name(const char *name)
+{
+	int i = 0;
+
+	msg("*** Waiting for gfsd(%s) connection to gfmd ***\n", name);
+	while (gfsd_is_up(name) && i++ < MAX_RETRY) {
+		msg("wait_for_gfsd(%s): retry=%d\n", name, i);
+		sleep(1);
+	}
 }
 
 static void
@@ -330,6 +383,7 @@ test_statfsnode(const char **argv)
 	gfarm_int32_t bsize;
 	gfarm_off_t blocks, bfree, bavail, files, ffree, favail;
 
+	wait_for_gfsd_num(1);
 	msg("schedule_hosts_domain_all\n");
 	chkerr(gfarm_schedule_hosts_domain_all("/", domain,
 	    &nhosts, &infos), "schedule_hosts_domain_all");
@@ -1105,8 +1159,6 @@ test_sched_open_write(const char **argv)
 	msg("gf[%d]: create %s\n", 0, path);
 	chkerr_n(gfs_pio_create(path, GFARM_FILE_WRONLY, 0777, &gf),
 	    "create", 0);
-fprintf(stderr, "stop\n");
-getchar();
 	msg("gf[%d]: close\n", 0);
 	chkerr_n(gfs_pio_close(gf), "close1", 0);
 
@@ -2096,6 +2148,7 @@ test_schedule_hosts(const char **argv)
 	const char *diag1 = "schedule_hosts_domain_all";
 	const char *diag2 = "schedule_hosts";
 
+	wait_for_gfsd_num(1);
 	msg("%s\n", diag1);
 	chkerr(gfarm_schedule_hosts_domain_all("/", domain, &nhosts, &infos),
 	    diag1);
@@ -2207,7 +2260,8 @@ test_replicate_to(const char **argv)
 	const char *diag = "replicate_to";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(host);
 
 	msg("%s\n", diag);
 	chkerr(gfs_replicate_to(path, host, port), diag);
@@ -2228,7 +2282,9 @@ test_replicate_from_to(const char **argv)
 	const char *diag = "replicate_from_to";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(shost);
+	wait_for_gfsd_name(dhost);
 
 	msg("%s\n", diag);
 	chkerr(gfs_replicate_from_to(path, shost, sport, dhost, dport), diag);
@@ -2247,7 +2303,8 @@ test_replicate_file_to_request(const char **argv)
 	const char *diag = "replicate_file_to_request";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(host);
 
 	msg("%s\n", diag);
 	chkerr(gfs_replicate_file_to_request(path, host, 0), diag);
@@ -2267,7 +2324,9 @@ test_replicate_file_from_to_request(const char **argv)
 	const char *diag = "replicate_file_to_request";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(shost);
+	wait_for_gfsd_name(dhost);
 
 	msg("%s\n", diag);
 	chkerr(gfs_replicate_file_from_to_request(path, shost, dhost, 0),
@@ -2287,7 +2346,8 @@ test_replica_remove_by_file(const char **argv)
 	const char *diag = "replica_remove_by_file";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(host);
 
 	msg("%s\n", diag);
 	chkerr(gfs_replica_remove_by_file(path, host), diag);
@@ -2307,7 +2367,8 @@ test_migrate_to(const char **argv)
 	const char *diag = "migrate_to";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(host);
 
 	msg("%s\n", diag);
 	chkerr(gfs_migrate_to(path, host, port), diag);
@@ -2328,7 +2389,9 @@ test_migrate_from_to(const char **argv)
 	const char *diag = "migrate_to";
 	struct gfm_connection *con = cache_gfm_connection(&gf, path);
 
-	wait_for_failover_and_gfsd();
+	wait_for_failover();
+	wait_for_gfsd_name(shost);
+	wait_for_gfsd_name(dhost);
 
 	msg("%s\n", diag);
 	chkerr(gfs_migrate_from_to(path, shost, sport, dhost, dport), diag);
