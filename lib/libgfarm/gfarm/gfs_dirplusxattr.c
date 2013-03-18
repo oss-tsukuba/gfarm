@@ -272,7 +272,8 @@ gfs_seekdirplusxattr(GFS_DirPlusXAttr dir, gfarm_off_t off)
 
 	closure.offset = off;
 	closure.whence = 0;
-	e = gfm_client_compound_fd_op(dir->gfm_server, dir->fd,
+	e = gfm_client_compound_fd_op_readonly(
+	    (struct gfs_failover_file *)dir, &failover_file_ops,
 	    gfm_seekdir_request, gfm_seekdir_result, NULL, &closure);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003420,
