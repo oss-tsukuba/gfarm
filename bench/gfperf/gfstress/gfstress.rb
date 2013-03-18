@@ -197,7 +197,7 @@ class Runner
       if (errstr.length > 0)
         print @command+"\n"
         print errstr
-        @manager.stop
+        @manager.intr
         @running = false
       end
     end
