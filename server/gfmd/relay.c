@@ -538,28 +538,30 @@ gfm_server_relay_put_vrequest(struct peer *peer,
 	r = relayed_request_new(command, diag);
 	if (r == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
+		gflog_error(GFARM_MSG_UNFIXED, "%s: relayed_request_new: %s",
+		    diag, gfarm_error_string(e));
 		return (e);
 	}
-	*rp = r;
 
 	if ((e = gfmdc_ensure_remote_peer(peer, &mhpeer))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED, "%s", gfarm_error_string(e));
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "%s: gfmdc_ensure_remote_peer: %s",
+		    diag, gfarm_error_string(e));
+		free(r);
 		return (e);
 	}
-
 	e = slave_request_relay(peer_get_mdhost(mhpeer), r, peer, command,
 	    format, app, isref);
+	gfmdc_ensure_remote_peer_end(mhpeer);
+
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_UNFIXED,
 		    "%s: slave_request_relay(): %s",
 		    diag, gfarm_error_string(e));
 		free(r);
+		return (e);
 	}
-
-	gfmdc_ensure_remote_peer_end(mhpeer);
 
 	/*
 	 * *rp will be freed asynchronously in
@@ -1070,9 +1072,9 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 	r = relayed_request_new(command, diag);
 	if (r == NULL) {
 		e = GFARM_ERR_NO_MEMORY;
-		gflog_error(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
+		gflog_error(GFARM_MSG_UNFIXED, "%s: relayed_request_new: %s",
+		    diag, gfarm_error_string(e));
+		goto end;
 	}
 
 	if ((e = gfmdc_ensure_remote_peer(peer, &mhpeer))
@@ -1080,7 +1082,8 @@ request_reply_dynarg_slave(struct peer *peer, gfp_xdr_xid_t xid, int skip,
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: %s (gfmdc_ensure_remote_peer)",
 		    diag, gfarm_error_string(e));
-		return (e);
+		free(r);
+		goto end;
 	}
 
 	/*
