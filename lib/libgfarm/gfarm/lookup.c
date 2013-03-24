@@ -660,7 +660,6 @@ gfm_inode_or_name_op_end_request(struct gfm_connection *gfm_server,
 	struct gfp_xdr_context *ctx, struct gfp_xdr_xid_record **xidrp)
 {
 	gfarm_error_t e;
-	struct gfp_xdr_xid_record *xidr;
 
 	if ((e = gfm_client_compound_end_request(gfm_server, ctx))
 	    != GFARM_ERR_NO_ERROR)

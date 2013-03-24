@@ -1784,7 +1784,8 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	gfarm_error_t e2;
 	struct gfp_xdr_context *ctx;
 	gfarm_int32_t remote_fd;
-	int i, rv, avail, inflight = 0, window = REPLICA_RECV_WINDOW_INITIAL;
+	int i, rv = 0, avail;
+	int inflight = 0, window = REPLICA_RECV_WINDOW_INITIAL;
 	int readable;
 	gfarm_off_t offset = 0;
 	size_t got;
