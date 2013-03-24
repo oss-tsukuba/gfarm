@@ -343,7 +343,6 @@ gfs_pio_close(GFS_File gf)
 {
 	gfarm_error_t e, e_save;
 	gfarm_timerval_t t1, t2;
-	int failed_over = 0;
 
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
@@ -359,11 +358,11 @@ gfs_pio_close(GFS_File gf)
 		if ((gf->mode & GFS_FILE_MODE_WRITE) != 0)
 			e_save = gfs_pio_flush(gf);
 		e = (*gf->ops->view_close)(gf);
+		/* ignore failover error */
 		if (e == GFARM_ERR_GFMD_FAILED_OVER) {
-			gflog_error(GFARM_MSG_1003268,
-			    "ignore %s error at pio close operation",
+			gflog_info(GFARM_MSG_1003268,
+			    "view close error (ignored): %s",
 			    gfarm_error_string(e));
-			failed_over = 1;
 			e = GFARM_ERR_NO_ERROR;
 		}
 		if (e_save == GFARM_ERR_NO_ERROR)
@@ -373,18 +372,21 @@ gfs_pio_close(GFS_File gf)
 	gfs_pio_file_list_remove(
 	    gfm_client_connection_file_list(gf->gfm_server), gf);
 
-	/*
-	 * in case that failover of gfmd happens, do not call
-	 * gfmd_close_fd when a file is opened in read-only mode.
-	 */
-	if (failed_over &&
-	    (gf->open_flags & GFARM_FILE_ACCMODE) == GFARM_FILE_RDONLY)
-		/* skip gfmd_close_fd call*/;
-	else {
-		e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
-		if (e_save == GFARM_ERR_NO_ERROR)
-			e_save = e;
+	e = gfm_close_fd(gf->gfm_server, gfs_pio_fileno(gf));
+	if (e != GFARM_ERR_NO_ERROR) {
+		/* ignore error when a file is opened in read-only mode */
+		if ((gf->open_flags & GFARM_FILE_ACCMODE)
+		    == GFARM_FILE_RDONLY) {
+			gflog_info(GFARM_MSG_UNFIXED,
+			    "close error (ignored): %s",
+			    gfarm_error_string(e));
+			e = GFARM_ERR_NO_ERROR;
+		} else
+			gflog_debug(GFARM_MSG_UNFIXED, "close error: %s",
+			    gfarm_error_string(e));
 	}
+	if (e_save == GFARM_ERR_NO_ERROR)
+		e_save = e;
 
 	gfm_client_connection_free(gf->gfm_server);
 	gfs_file_free(gf);
@@ -397,7 +399,6 @@ gfs_pio_close(GFS_File gf)
 			"close operation on pio failed: %s",
 			gfarm_error_string(e_save));
 	}
-
 	return (e_save);
 }
 
