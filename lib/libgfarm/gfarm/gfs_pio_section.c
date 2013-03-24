@@ -777,15 +777,9 @@ gfs_pio_reconnect(GFS_File gf)
 		return (e);
 	}
 
-	if ((e = gfm_client_revoke_gfsd_access_request(gf->gfm_server, gf->fd))
+	if ((e = gfm_client_revoke_gfsd_access(gf->gfm_server, gf->fd))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002660,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-	if ((e = gfm_client_revoke_gfsd_access_result(gf->gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_1002661,
 		    "%s", gfarm_error_string(e));
 		return (e);
 	}

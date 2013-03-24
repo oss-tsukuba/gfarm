@@ -489,8 +489,10 @@ retry:
 struct compound_fd_op_info {
 	struct gfs_failover_file *file;
 	struct gfs_failover_file_ops *ops;
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *);
 	void (*cleanup_op)(struct gfm_connection *, void *);
 	int (*must_be_warned_op)(gfarm_error_t, void *);
 	void *closure;
@@ -560,8 +562,10 @@ compound_fd_op_must_be_warned(gfarm_error_t e, void *closure)
 static gfarm_error_t
 compound_fd_op(struct gfs_failover_file *file,
 	struct gfs_failover_file_ops *ops,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
@@ -588,8 +592,10 @@ compound_fd_op(struct gfs_failover_file *file,
 gfarm_error_t
 gfm_client_compound_fd_op_readonly(struct gfs_failover_file *file,
 	struct gfs_failover_file_ops *ops,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -604,8 +610,10 @@ gfm_client_compound_fd_op_readonly(struct gfs_failover_file *file,
 
 struct compound_file_op_info {
 	GFS_File gf;
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *);
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *);
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+		struct gfp_xdr_context *, void *);
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+		struct gfp_xdr_context *, void *);
 	void (*cleanup_op)(struct gfm_connection *, void *);
 	int (*must_be_warned_op)(gfarm_error_t, void *);
 	void *closure;
@@ -633,8 +641,10 @@ compound_file_op_must_be_warned_op(gfarm_error_t e, void *closure)
 
 static gfarm_error_t
 compound_file_op(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)
@@ -657,8 +667,10 @@ compound_file_op(GFS_File gf,
 
 gfarm_error_t
 gfm_client_compound_file_op_readonly(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	void *closure)
 {
@@ -673,8 +685,10 @@ gfm_client_compound_file_op_readonly(GFS_File gf,
 
 gfarm_error_t
 gfm_client_compound_file_op_modifiable(GFS_File gf,
-	gfarm_error_t (*request_op)(struct gfm_connection *, void *),
-	gfarm_error_t (*result_op)(struct gfm_connection *, void *),
+	gfarm_error_t (*request_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
+	gfarm_error_t (*result_op)(struct gfm_connection *,
+	    struct gfp_xdr_context *, void *),
 	void (*cleanup_op)(struct gfm_connection *, void *),
 	int (*must_be_warned_op)(gfarm_error_t, void *),
 	void *closure)

@@ -544,7 +544,8 @@ async_channel_service(struct abstract_host *host,
 	size_t size;
 	gfarm_int32_t rv;
 
-	e = gfp_xdr_recv_async_header(conn, 0, &type, &xid, &size);
+	/* do timeout, because select(2)/epoll(2) says this is readable */ 
+	e = gfp_xdr_recv_async_header(conn, 0, 1, &type, &xid, &size);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002777,
 		    "%s", gfarm_error_string(e));
@@ -904,9 +905,9 @@ async_server_vget_request(struct peer *peer, size_t size,
 gfarm_error_t
 async_server_vput_wrapped_reply_unlocked(struct abstract_host *host,
 	gfp_xdr_xid_t xid,
-	xdr_vsend_t xdr_vsend, const char *diag, gfarm_error_t errcode,
+	int is_ref, const char *diag, gfarm_error_t wrapping_errcode,
 	const char *wrapping_format, va_list *wrapping_app,
-	const char *format, va_list *app)
+	gfarm_error_t errcode, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	struct peer *peer = host->peer; /* OK, if sender_lock is held */
@@ -919,8 +920,9 @@ async_server_vput_wrapped_reply_unlocked(struct abstract_host *host,
 	}
 
 	client = peer_get_conn(peer);
-	e = gfp_xdr_vsend_async_wrapped_result(client, xid, xdr_vsend,
-	    errcode, wrapping_format, wrapping_app, format, app);
+	e = gfp_xdr_vsend_async_wrapped_result(client, xid, is_ref,
+	    wrapping_errcode, wrapping_format, wrapping_app,
+	    errcode, format, app);
 	if (e == GFARM_ERR_NO_ERROR)
 		e = gfp_xdr_flush(client);
 
@@ -934,9 +936,9 @@ async_server_vput_wrapped_reply_unlocked(struct abstract_host *host,
 gfarm_error_t
 async_server_vput_wrapped_reply(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
-	xdr_vsend_t xdr_vsend, const char *diag, gfarm_error_t errcode,
+	int is_ref, const char *diag, gfarm_error_t wrapping_errcode,
 	const char *wrapping_format, va_list *wrapping_app,
-	const char *format, va_list *app)
+	gfarm_error_t errcode, const char *format, va_list *app)
 {
 	gfarm_error_t e;
 	struct peer *peer;
@@ -957,9 +959,9 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 		abstract_host_sender_unlock(host, peer, diag);
 		return (GFARM_ERR_CONNECTION_ABORTED);
 	}
-	e = async_server_vput_wrapped_reply_unlocked(host, xid,
-	    xdr_vsend, diag,
-	    errcode, wrapping_format, wrapping_app, format, app);
+	e = async_server_vput_wrapped_reply_unlocked(host, xid, is_ref, diag,
+	    wrapping_errcode, wrapping_format, wrapping_app,
+	    errcode, format, app);
 
 	abstract_host_sender_unlock(host, peer, diag);
 
@@ -969,12 +971,11 @@ async_server_vput_wrapped_reply(struct abstract_host *host,
 gfarm_error_t
 async_server_vput_reply(struct abstract_host *host,
 	struct peer *peer0, gfp_xdr_xid_t xid,
-	gfarm_error_t (*xdr_vsend)(struct gfp_xdr *, const char **, va_list *),
 	const char *diag,
 	gfarm_error_t errcode, const char *format, va_list *app)
 {
 	return (async_server_vput_wrapped_reply(host, peer0, xid,
-	    xdr_vsend, diag, errcode, NULL, NULL, format, app));
+	    0, diag, 0, NULL, NULL, errcode, format, app));
 }
 
 /* abstract_host_receiver_lock() must be already called here by
@@ -982,13 +983,13 @@ async_server_vput_reply(struct abstract_host *host,
 gfarm_error_t
 async_client_vrecv_wrapped_result(struct peer *peer,
 	struct abstract_host *host, size_t size,
-	const char *diag, gfarm_error_t *errcodep,
+	const char *diag, gfarm_error_t *wrapping_errcodep,
 	const char *wrapping_format, va_list *wrapping_app,
-	const char **formatp, va_list *app)
+	gfarm_error_t *errcodep, const char **formatp, va_list *app)
 {
 	gfarm_error_t e;
 	gfp_xdr_async_peer_t async = peer_get_async(peer);
-	gfarm_int32_t errcode;
+	gfarm_int32_t wrapping_errcode = 0, errcode;
 	struct gfp_xdr *conn = peer_get_conn(peer);
 
 	if (debug_mode)
@@ -996,14 +997,19 @@ async_client_vrecv_wrapped_result(struct peer *peer,
 		    "%s: <%s> %s receiving reply", abstract_host_get_name(host),
 		    diag, back_channel_type_name(peer));
 
+#ifdef COMPAT_GFARM_2_3
 	if (async != NULL) { /* is async mode? */
+#endif
 		e = gfp_xdr_vrpc_wrapped_result_sized(conn, 0, 1, &size,
-		    &errcode, wrapping_format, wrapping_app, formatp, app);
+		    &wrapping_errcode, wrapping_format, wrapping_app,
+		    &errcode, formatp, app);
+#ifdef COMPAT_GFARM_2_3
 	} else { /*  synchronous mode */
 		e = gfp_xdr_vrpc_result(conn, 0, 1, &errcode, formatp, app);
 		abstract_host_sender_unlock(host, peer,
 		    back_channel_type_name(peer));
 	}
+#endif
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1002797,
 		    "%s(%s) RPC result: %s", back_channel_type_name(peer),
@@ -1021,7 +1027,11 @@ async_client_vrecv_wrapped_result(struct peer *peer,
 			    gfarm_error_string(e));
 		e = GFARM_ERR_PROTOCOL;
 	} else { /* e == GFARM_ERR_NO_ERROR */
-		*errcodep = errcode;
+		if (wrapping_format != NULL)
+			*wrapping_errcodep = wrapping_errcode;
+		if (wrapping_format == NULL ||
+		    wrapping_errcode == GFARM_ERR_NO_ERROR)
+			*errcodep = errcode;
 	}
 	return (e);
 }
@@ -1032,5 +1042,5 @@ async_client_vrecv_result(struct peer *peer, struct abstract_host *host,
 	gfarm_error_t *errcodep, va_list *app)
 {
 	return (async_client_vrecv_wrapped_result(peer, host, size,
-	    diag, errcodep, NULL, NULL, formatp, app));
+	    diag, NULL, NULL, NULL, errcodep, formatp, app));
 }

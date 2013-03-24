@@ -153,10 +153,11 @@ gfs_opendirplus(const char *path, GFS_DirPlus *dirp)
 }
 
 static gfarm_error_t
-gfm_getdirentsplus_request(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirentsplus_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	gfarm_error_t e = gfm_client_getdirentsplus_request(
-	    gfm_server, DIRENTSPLUS_BUFCOUNT);
+	    gfm_server, ctx, DIRENTSPLUS_BUFCOUNT);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000090, "getdirentsplus request: %s",
@@ -165,10 +166,11 @@ gfm_getdirentsplus_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_getdirentsplus_result(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirentsplus_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	GFS_DirPlus dir = closure;
-	gfarm_error_t e = gfm_client_getdirentsplus_result(gfm_server,
+	gfarm_error_t e = gfm_client_getdirentsplus_result(gfm_server, ctx,
 	    &dir->n, dir->buffer, dir->stbuf);
 
 	if (e != GFARM_ERR_NO_ERROR)

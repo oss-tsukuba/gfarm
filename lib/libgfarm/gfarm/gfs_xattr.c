@@ -61,10 +61,11 @@ struct gfm_setxattr0_closure {
 };
 
 static gfarm_error_t
-gfm_setxattr0_request(struct gfm_connection *gfm_server, void *closure)
+gfm_setxattr0_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_setxattr0_closure *c = closure;
-	gfarm_error_t e = gfm_client_setxattr_request(gfm_server,
+	gfarm_error_t e = gfm_client_setxattr_request(gfm_server, ctx,
 	    c->xmlMode, c->name, c->value, c->size, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -74,9 +75,10 @@ gfm_setxattr0_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_setxattr0_result(struct gfm_connection *gfm_server, void *closure)
+gfm_setxattr0_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_setxattr_result(gfm_server);
+	gfarm_error_t e = gfm_client_setxattr_result(gfm_server, ctx);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -206,10 +208,11 @@ struct gfm_getxattr_proccall_closure {
 };
 
 static gfarm_error_t
-gfm_getxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
+gfm_getxattr_proccall_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_getxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_getxattr_request(gfm_server,
+	gfarm_error_t e = gfm_client_getxattr_request(gfm_server, ctx,
 	    c->xmlMode, c->name);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -219,10 +222,11 @@ gfm_getxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_getxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
+gfm_getxattr_proccall_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_getxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_getxattr_result(gfm_server,
+	gfarm_error_t e = gfm_client_getxattr_result(gfm_server, ctx,
 	    c->xmlMode, c->valuep, c->sizep);
 
 #if 1 /* DEBUG */
@@ -375,10 +379,12 @@ struct gfm_listxattr_proccall_closure {
 };
 
 static gfarm_error_t
-gfm_listxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
+gfm_listxattr_proccall_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_listxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_listxattr_request(gfm_server, c->xmlMode);
+	gfarm_error_t e = gfm_client_listxattr_request(
+	    gfm_server, ctx, c->xmlMode);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000164,
@@ -387,10 +393,11 @@ gfm_listxattr_proccall_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_listxattr_proccall_result(struct gfm_connection *gfm_server, void *closure)
+gfm_listxattr_proccall_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_listxattr_proccall_closure *c = closure;
-	gfarm_error_t e = gfm_client_listxattr_result(gfm_server,
+	gfarm_error_t e = gfm_client_listxattr_result(gfm_server, ctx,
 	    c->listp, c->sizep);
 
 #if 1 /* DEBUG */
@@ -498,10 +505,11 @@ struct gfm_removexattr0_closure {
 };
 
 static gfarm_error_t
-gfm_removexattr0_request(struct gfm_connection *gfm_server, void *closure)
+gfm_removexattr0_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_removexattr0_closure *c = closure;
-	gfarm_error_t e = gfm_client_removexattr_request(gfm_server,
+	gfarm_error_t e = gfm_client_removexattr_request(gfm_server, ctx,
 	    c->xmlMode, c->name);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -511,9 +519,10 @@ gfm_removexattr0_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_removexattr0_result(struct gfm_connection *gfm_server, void *closure)
+gfm_removexattr0_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_removexattr_result(gfm_server);
+	gfarm_error_t e = gfm_client_removexattr_result(gfm_server, ctx);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)
@@ -714,10 +723,12 @@ gfs_findxmlattr(const char *path, const char *expr,
 }
 
 static gfarm_error_t
-gfm_findxmlattr_request(struct gfm_connection *gfm_server, void *closure)
+gfm_findxmlattr_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfs_xmlattr_ctx *ctxp = closure;
-	gfarm_error_t e = gfm_client_findxmlattr_request(gfm_server, ctxp);
+	gfarm_error_t e = gfm_client_findxmlattr_request(
+	    gfm_server, ctx, ctxp);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000168, "find_xml_attr request: %s",
@@ -726,10 +737,11 @@ gfm_findxmlattr_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_findxmlattr_result(struct gfm_connection *gfm_server, void *closure)
+gfm_findxmlattr_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfs_xmlattr_ctx *ctxp = closure;
-	gfarm_error_t e = gfm_client_findxmlattr_result(gfm_server, ctxp);
+	gfarm_error_t e = gfm_client_findxmlattr_result(gfm_server, ctx, ctxp);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

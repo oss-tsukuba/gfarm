@@ -16,9 +16,10 @@ struct gfm_readlink_closure {
 };
 
 static gfarm_error_t
-gfm_readlink_request(struct gfm_connection *gfm_server, void *closure)
+gfm_readlink_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_readlink_request(gfm_server);
+	gfarm_error_t e = gfm_client_readlink_request(gfm_server, ctx);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000135,
@@ -27,10 +28,11 @@ gfm_readlink_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_readlink_result(struct gfm_connection *gfm_server, void *closure)
+gfm_readlink_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_readlink_closure *c = closure;
-	gfarm_error_t e = gfm_client_readlink_result(gfm_server, c->srcp);
+	gfarm_error_t e = gfm_client_readlink_result(gfm_server, ctx, c->srcp);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

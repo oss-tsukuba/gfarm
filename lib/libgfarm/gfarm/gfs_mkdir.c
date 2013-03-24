@@ -16,13 +16,14 @@ struct gfm_mkdir_closure {
 };
 
 static gfarm_error_t
-gfm_mkdir_request(struct gfm_connection *gfm_server, void *closure,
+gfm_mkdir_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure,
 	const char *base)
 {
 	struct gfm_mkdir_closure *c = closure;
 	gfarm_error_t e;
 
-	if ((e = gfm_client_mkdir_request(gfm_server, base, c->mode))
+	if ((e = gfm_client_mkdir_request(gfm_server, ctx, base, c->mode))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000133, "mkdir(%s) request: %s",
 		    base, gfarm_error_string(e));
@@ -31,11 +32,13 @@ gfm_mkdir_request(struct gfm_connection *gfm_server, void *closure,
 }
 
 static gfarm_error_t
-gfm_mkdir_result(struct gfm_connection *gfm_server, void *closure)
+gfm_mkdir_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_client_mkdir_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_client_mkdir_result(gfm_server, ctx)) !=
+	    GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
 		gflog_debug(GFARM_MSG_1000134,
 		    "mkdir() result: %s", gfarm_error_string(e));

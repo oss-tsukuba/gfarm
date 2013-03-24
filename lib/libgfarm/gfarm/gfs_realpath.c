@@ -15,14 +15,16 @@ struct gfm_realpath_closure {
 };
 
 static gfarm_error_t
-gfm_realpath_request(struct gfm_connection *gfm_server, void *closure)
+gfm_realpath_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	return (GFARM_ERR_NO_ERROR);
 }
 
 
 static gfarm_error_t
-gfm_realpath_result(struct gfm_connection *gfm_server, void *closure)
+gfm_realpath_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	return (GFARM_ERR_NO_ERROR);
 }

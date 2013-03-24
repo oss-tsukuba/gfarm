@@ -1231,7 +1231,9 @@ gfm_server_host_generic_get(
 	int (*filter)(struct host *, void *), void *closure,
 	int no_match_is_ok, const char *diag)
 {
+	struct peer *mhpeer;
 	gfarm_error_t e, e2;
+	int size_pos;
 	gfarm_int32_t nhosts, nmatch, i, answered;
 	struct gfarm_hash_iterator it;
 	struct host *h;
@@ -1277,7 +1279,8 @@ gfm_server_host_generic_get(
 		}
 	}
 	/* XXXRELAY FIXME, reply size is not correct */
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nmatch);
+	e2 = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "i", nmatch);
 	/* if network error doesn't happen, e2 == e here */
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = answered = 0;
@@ -1298,6 +1301,7 @@ gfm_server_host_generic_get(
 			}
 			i++;
 		}
+		gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	}
 	if (match != NULL)
 		free(match);
@@ -1427,8 +1431,10 @@ gfm_server_host_info_get_by_names_common(
 	int from_client, int skip,
 	struct host *(*lookup)(const char *), const char *diag)
 {
+	struct peer *mhpeer;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
+	int size_pos;
 	gfarm_int32_t nhosts;
 	char *host, **hosts;
 	int i, j, eof, no_memory = 0;
@@ -1481,7 +1487,8 @@ gfm_server_host_info_get_by_names_common(
 		    diag, gfarm_error_string(e));
 	}
 
-	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "");
 	/* if network error doesn't happen, `e' holds RPC result here */
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_hosts;
@@ -1493,13 +1500,11 @@ gfm_server_host_info_get_by_names_common(
 		if (h == NULL) {
 			gflog_debug(GFARM_MSG_1003471,
 			    "%s: host lookup <%s>: failed", diag, hosts[i]);
-			e = gfm_server_put_reply(peer, 0, NULL, diag,
-			    GFARM_ERR_UNKNOWN_HOST, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_UNKNOWN_HOST);
 		} else {
 			gflog_debug(GFARM_MSG_1003472,
 			    "%s: host lookup <%s>: ok", diag, hosts[i]);
-			e = gfm_server_put_reply(peer, 0, NULL, diag,
-			    GFARM_ERR_NO_ERROR, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_NO_ERROR);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = host_info_send(client, h);
 		}
@@ -1511,6 +1516,8 @@ gfm_server_host_info_get_by_names_common(
 	 *	the variable `e' holds last host's reply code
 	 */
 	giant_unlock();
+
+	gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 
 free_hosts:
 	if (hosts != NULL) {

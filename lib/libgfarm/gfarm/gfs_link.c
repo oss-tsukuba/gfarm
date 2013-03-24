@@ -15,10 +15,11 @@ struct gfm_link_closure {
 };
 
 static gfarm_error_t
-gfm_link_request(struct gfm_connection *gfm_server, void *closure,
+gfm_link_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure,
 	const char *dname)
 {
-	gfarm_error_t e = gfm_client_flink_request(gfm_server, dname);
+	gfarm_error_t e = gfm_client_flink_request(gfm_server, ctx, dname);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_1002664,
 		    "link(%s) request: %s", dname,
@@ -27,12 +28,13 @@ gfm_link_request(struct gfm_connection *gfm_server, void *closure,
 }
 
 static gfarm_error_t
-gfm_link_result(struct gfm_connection *gfm_server, void *closure)
+gfm_link_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	int src_port;
 	struct gfm_link_closure *c = closure;
 
-	gfarm_error_t e = gfm_client_flink_result(gfm_server);
+	gfarm_error_t e = gfm_client_flink_result(gfm_server, ctx);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1002665,
 		    "link result: %s",

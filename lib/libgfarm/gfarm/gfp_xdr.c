@@ -42,6 +42,9 @@ struct gfp_xdr {
 	struct gfp_iobuffer_ops *iob_ops;
 	void *cookie;
 	int fd;
+
+	/* XXX currently used by client only, but should be used by servers */
+	struct gfp_xdr_async_server *async;
 };
 
 /*
@@ -110,6 +113,7 @@ gfp_xdr_new(struct gfp_iobuffer_ops *ops, void *cookie, int fd,
 		conn->sendbuffer = NULL;
 
 	gfp_xdr_set(conn, ops, cookie, fd);
+	conn->async = NULL;
 
 	*connp = conn;
 	return (GFARM_ERR_NO_ERROR);
@@ -142,6 +146,18 @@ int
 gfp_xdr_fd(struct gfp_xdr *conn)
 {
 	return (conn->fd);
+}
+
+struct gfp_xdr_async_server *
+gfp_xdr_async(struct gfp_xdr *conn)
+{
+	return (conn->async);
+}
+
+void
+gfp_xdr_set_async(struct gfp_xdr *conn, struct gfp_xdr_async_server *async)
+{
+	conn->async = async;
 }
 
 gfarm_error_t
@@ -207,6 +223,10 @@ gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 		    len, (int)*sizep);
 		return (GFARM_ERR_PROTOCOL);
 	}
+	/*
+	 * always do timeout here,
+	 * because a header/command/error must be already received
+	 */
 	rv = gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just, 1);
 	*sizep -= rv;
 	if (rv != len)
@@ -217,6 +237,10 @@ gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 gfarm_error_t
 gfp_xdr_purge(struct gfp_xdr *conn, int just, int len)
 {
+	/*
+	 * always do timeout here,
+	 * because a header/command/error must be already received
+	 */
 	if (gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just, 1)
 	    != len) {
 		gflog_debug(GFARM_MSG_1001000,
@@ -1274,9 +1298,110 @@ gfp_xdr_recv_ahead(struct gfp_xdr *conn, int len, size_t *availp)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+static gfarm_error_t
+gfp_xdr_vrpc_send_begin(struct gfp_xdr *conn,
+	gfarm_int32_t xid_and_type, int *size_posp,
+	gfarm_int32_t i, const char **formatp, va_list *app)
+{
+	gfarm_error_t e;
+	int size_pos;
+
+	gfp_xdr_begin_sendbuffer_pindown(conn);
+
+	e = gfp_xdr_send(conn, ASYNC_REQUEST_HEADER_FORMAT_TYPE_XID,
+	    xid_and_type);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_end_sendbuffer_pindown(conn);
+		return (e);
+	}
+	/* save this position -> size_pos */
+	gfp_xdr_sendbuffer_get_pos(conn, &size_pos);
+	e = gfp_xdr_send(conn, ASYNC_REQUEST_HEADER_FORMAT_SIZE,
+	    (gfarm_int32_t)0);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_end_sendbuffer_pindown(conn);
+		return (e);
+	}
+
+	e = gfp_xdr_send(conn, "i", i);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_end_sendbuffer_pindown(conn);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "sending command/errcode (%d) failed: %s",
+		    i, gfarm_error_string(e));
+		return (e);
+	}
+	e = gfp_xdr_vsend(conn, formatp, app);
+	if (e != GFARM_ERR_NO_ERROR) {
+		gfp_xdr_end_sendbuffer_pindown(conn);
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "sending parameter (%d) failed: %s",
+		    i, gfarm_error_string(e));
+		return (e);
+	}
+	*size_posp = size_pos;
+	return (GFARM_ERR_NO_ERROR);
+}
+	
+
+gfarm_error_t
+gfp_xdr_vrpc_send_request_begin(struct gfp_xdr *conn,
+	gfp_xdr_xid_t xid, int *size_posp,
+	gfarm_int32_t command,
+	const char **formatp, va_list *app)
+{
+	return (gfp_xdr_vrpc_send_begin(conn,
+	    xid | XID_TYPE_REQUEST, size_posp, command, formatp, app));
+}
+	
+gfarm_error_t
+gfp_xdr_vrpc_send_result_begin(struct gfp_xdr *conn,
+	gfp_xdr_xid_t xid, int *size_posp,
+	gfarm_int32_t errcode, const char **formatp, va_list *app)
+{
+	const char *fmt = "";
+
+	if (errcode == 0)
+		return (gfp_xdr_vrpc_send_begin(conn,
+		    xid | XID_TYPE_RESULT, size_posp, errcode, formatp, app));
+	else
+		return (gfp_xdr_vrpc_send_begin(conn,
+		    xid | XID_TYPE_RESULT, size_posp, errcode, &fmt, NULL));
+}
+
+gfarm_error_t
+gfp_xdr_rpc_send_result_begin(struct gfp_xdr *conn,
+	gfp_xdr_xid_t xid, int *size_posp,
+	gfarm_int32_t errcode, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfp_xdr_vrpc_send_result_begin(conn, xid, size_posp,
+	    errcode, &format, &ap);
+	va_end(ap);
+	return (e);
+}
+
+void
+gfp_xdr_rpc_send_end(struct gfp_xdr *conn, int size_pos)
+{
+	int current_pos;
+	gfarm_int32_t size;
+
+	gfp_xdr_sendbuffer_get_pos(conn, &current_pos);
+	size = current_pos - size_pos - ASYNC_REQUEST_HEADER_SIZE_SIZE;
+	size = ntohl(size);
+	gfp_xdr_sendbuffer_overwrite_at(conn,
+	    &size, ASYNC_REQUEST_HEADER_SIZE_SIZE, size_pos);
+	gfp_xdr_end_sendbuffer_pindown(conn);
+}
+
 /*
  * do RPC request
  */
+#if 0
 gfarm_error_t
 gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	const char **formatp, va_list *app)
@@ -1284,6 +1409,7 @@ gfp_xdr_vrpc_request(struct gfp_xdr *conn, gfarm_int32_t command,
 	return (gfp_xdr_vrpc_request_with_ref(conn, command,
 	    formatp, app, 0));
 }
+#endif
 
 gfarm_error_t
 gfp_xdr_vrpc_request_with_ref(struct gfp_xdr *conn, gfarm_int32_t command,
@@ -1313,6 +1439,7 @@ gfp_xdr_vrpc_request_with_ref(struct gfp_xdr *conn, gfarm_int32_t command,
  *
  * Callers of this function should check the followings:
  *	return value == GFARM_ERR_NOERROR
+ *	*wrapping_errorp == GFARM_ERR_NOERROR, if wrapping_format != NULL
  *	*errorp == GFARM_ERR_NOERROR
  * And if there is no remaining output parameter:
  *	*sizep == 0
@@ -1320,9 +1447,9 @@ gfp_xdr_vrpc_request_with_ref(struct gfp_xdr *conn, gfarm_int32_t command,
 gfarm_error_t
 gfp_xdr_vrpc_wrapped_result_sized(
 	struct gfp_xdr *conn, int just, int do_timeout,
-	size_t *sizep, gfarm_int32_t *errorp,
+	size_t *sizep, gfarm_int32_t *wrapping_errorp,
 	const char *wrapping_format, va_list *wrapping_app,
-	const char **formatp, va_list *app)
+	gfarm_int32_t *errorp, const char **formatp, va_list *app)
 {
 	gfarm_error_t e;
 	int eof;
@@ -1332,29 +1459,40 @@ gfp_xdr_vrpc_wrapped_result_sized(
 	 */
 
 	/* always do timeout here, because async header is already received */
-	if (wrapping_format != NULL &&
-	    ((e = gfp_xdr_vrecv_sized(conn, just, 1, sizep, &eof,
-		&wrapping_format, wrapping_app)) != GFARM_ERR_NO_ERROR)) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
+	if (wrapping_format != NULL) {
+		if ((e = gfp_xdr_recv_sized(conn, just, 1, sizep, &eof,
+		    "i", wrapping_errorp)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "receiving wrapping response (%d) failed: %s",
+			    just, gfarm_error_string(e));
+			return (e);
+		}
+		if (eof) { /* rpc status missing */
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "Unexpected EOF when receiving wrapping response");
+			return (GFARM_ERR_UNEXPECTED_EOF);
+		}
+		if (*wrapping_errorp != GFARM_ERR_NO_ERROR)
+			return (GFARM_ERR_NO_ERROR);
+		if ((e = gfp_xdr_vrecv_sized(conn, just, 1, sizep, &eof,
+		    &wrapping_format, wrapping_app)) != GFARM_ERR_NO_ERROR) {
+			gflog_debug(GFARM_MSG_UNFIXED,
+			    "receiving wrapping arguments: %s",
+			    gfarm_error_string(e));
+			return (e);
+		}
 	}
 
 	/* timeout if it's asynchronous protocol, or do_timeout is specified */
 	if ((e = gfp_xdr_recv_sized(conn, just,
 	    wrapping_format != NULL || do_timeout,
 	    sizep, &eof, "i", errorp)) != GFARM_ERR_NO_ERROR) {
-		gflog_debug(GFARM_MSG_UNFIXED,
-		    "%s", gfarm_error_string(e));
-		return (e);
-	}
-
-	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001010,
 			"receiving response (%d) failed: %s",
 			just, gfarm_error_string(e));
 		return (e);
 	}
+
 	if (eof) { /* rpc status missing */
 		gflog_debug(GFARM_MSG_1001011,
 			"Unexpected EOF when receiving response: %s",
@@ -1395,9 +1533,10 @@ gfp_xdr_vrpc_result_sized(struct gfp_xdr *conn, int just, size_t *sizep,
 	 * after asynchronous protocol header is received
 	 */
 	return (gfp_xdr_vrpc_wrapped_result_sized(conn, just, 1,
-	    sizep, errorp, NULL, NULL, formatp, app));
+	    sizep, NULL, NULL, NULL, errorp, formatp, app));
 }
 
+#if 0
 /*
  * get RPC result
  */
@@ -1444,6 +1583,7 @@ gfp_xdr_vrpc(struct gfp_xdr *conn, int just, int do_timeout,
 	return (gfp_xdr_vrpc_result(conn, just, do_timeout,
 	    errorp, formatp, app));
 }
+#endif
 
 /*
  * low level interface, this does not wait to receive desired length.
@@ -1480,5 +1620,18 @@ void
 gfp_xdr_end_sendbuffer_pindown(struct gfp_xdr *conn)
 {
 	gfarm_iobuffer_end_pindown(conn->sendbuffer);
+}
+
+void
+gfp_xdr_sendbuffer_get_pos(struct gfp_xdr *conn, int *posp)
+{
+	gfarm_iobuffer_get_pos(conn->sendbuffer, posp);
+}
+
+void
+gfp_xdr_sendbuffer_overwrite_at(struct gfp_xdr *conn,
+	const void *data, int len, int pos)
+{
+	gfarm_iobuffer_overwrite_at(conn->sendbuffer, data, len, pos);
 }
 

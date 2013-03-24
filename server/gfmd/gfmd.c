@@ -44,6 +44,7 @@
 #include "repattr.h"
 
 #include "subr.h"
+#include "rpcsubr.h"
 #include "thrpool.h"
 #include "callout.h"
 #include "journal_file.h"	/* for enum journal_operation */
@@ -857,6 +858,7 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = gfm_server_process_set(peer, xid, sizep,
 		    from_client, skip);
 		break;
+#if 0
 	case GFJ_PROTO_LOCK_REGISTER:
 		e = gfj_server_lock_register(peer, xid, sizep,
 		    from_client, skip); break;
@@ -879,6 +881,7 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	case GFJ_PROTO_HOSTINFO:
 		e = gfj_server_hostinfo(peer, xid, sizep,
 		    from_client, skip); break;
+#endif
 	case GFM_PROTO_XATTR_SET:
 		e = gfm_server_setxattr(peer, xid, sizep, from_client, skip, 0);
 		break;
@@ -955,6 +958,9 @@ protocol_switch(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		    from_client, skip, level, request, requestp, on_errorp);
 		break;
 	}
+	if (skip && request != GFM_PROTO_COMPOUND_ON_ERROR)
+		(void)gfm_server_put_reply(peer, xid, sizep, "skipping",
+		    GFARM_ERR_RPC_REQUEST_IGNORED, "");
 
 	if (!*suspendedp &&
 	    ((level == 0 && request != GFM_PROTO_COMPOUND_BEGIN)
@@ -1132,6 +1138,10 @@ protocol_main(void *arg)
 {
 	struct local_peer *local_peer = arg;
 	struct peer *peer = local_peer_to_peer(local_peer);
+	gfarm_error_t e;
+	enum gfp_xdr_msg_type msg_type;
+	gfp_xdr_xid_t xid;
+	size_t size;
 
 	/*
 	 * the reason why we call peer_readable_invoked() here is
@@ -1141,8 +1151,27 @@ protocol_main(void *arg)
 	local_peer_readable_invoked(local_peer);
 
 	do {
+		e = gfp_xdr_recv_async_header(peer_get_conn(peer), 0, 1,
+		    &msg_type, &xid, &size);
+		if (e != GFARM_ERR_NO_ERROR) {
+			if (e != GFARM_ERR_UNEXPECTED_EOF)
+				gflog_notice(GFARM_MSG_UNFIXED,
+				    "receiving rpc header from a client: %s",
+				    gfarm_error_string(e));
+			/* mark this peer finished */
+			peer_record_protocol_error(peer);
+			return (NULL);
+		}
+		if (msg_type != GFP_XDR_TYPE_REQUEST) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "receiving unexpected rpc header type: %d",
+			    (int)msg_type);
+			/* mark this peer finished */
+			peer_record_protocol_error(peer);
+			return (NULL);
+		}
 		/* (..., 0, NULL) means sync protocol */
-		if (protocol_service(peer, 0, NULL))
+		if (protocol_service(peer, xid, &size))
 			return (NULL); /* end of gfmd protocol session */
 	} while (gfp_xdr_recv_is_ready(peer_get_conn(peer)));
 

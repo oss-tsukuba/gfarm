@@ -16,12 +16,13 @@ struct gfm_remove_closure {
 };
 
 static gfarm_error_t
-gfm_remove_request(struct gfm_connection *gfm_server, void *closure,
+gfm_remove_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure,
 	const char *base)
 {
 	gfarm_error_t e;
 
-	if ((e = gfm_client_remove_request(gfm_server, base))
+	if ((e = gfm_client_remove_request(gfm_server, ctx, base))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000137,
 		    "remove request: %s", gfarm_error_string(e));
@@ -30,12 +31,14 @@ gfm_remove_request(struct gfm_connection *gfm_server, void *closure,
 }
 
 static gfarm_error_t
-gfm_remove_result(struct gfm_connection *gfm_server, void *closure)
+gfm_remove_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_remove_closure *c = closure;
 	gfarm_error_t e;
 
-	if ((e = gfm_client_remove_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_client_remove_result(gfm_server, ctx)) !=
+	    GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
 		gflog_debug(GFARM_MSG_1000138,
 		    "remove result: %s", gfarm_error_string(e));

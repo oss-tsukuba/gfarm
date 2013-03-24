@@ -246,6 +246,13 @@ gfp_xdr_new_socket(int fd, struct gfp_xdr **connp)
 }
 
 gfarm_error_t
+gfp_xdr_new_client_socket(int fd, struct gfp_xdr **connp)
+{
+	return (gfp_xdr_client_new(&gfp_xdr_socket_iobuffer_ops, NULL, fd,
+	    GFP_XDR_NEW_RECV|GFP_XDR_NEW_SEND, connp));
+}
+
+gfarm_error_t
 gfp_xdr_set_socket(struct gfp_xdr *conn, int fd)
 {
 	gfp_xdr_set(conn, &gfp_xdr_socket_iobuffer_ops, NULL, fd);

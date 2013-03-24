@@ -28,11 +28,12 @@ struct gfm_replicate_file_from_to_closure {
 
 static gfarm_error_t
 gfm_replicate_file_from_to_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx,
 	void *closure)
 {
 	struct gfm_replicate_file_from_to_closure *c = closure;
 	gfarm_error_t e = gfm_client_replicate_file_from_to_request(
-	    gfm_server, c->srchost, c->dsthost, c->flags);
+	    gfm_server, ctx, c->srchost, c->dsthost, c->flags);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1001386,
@@ -43,9 +44,10 @@ gfm_replicate_file_from_to_request(struct gfm_connection *gfm_server,
 
 static gfarm_error_t
 gfm_replicate_file_from_to_result(struct gfm_connection *gfm_server,
-	void *closure)
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_replicate_file_from_to_result(gfm_server);
+	gfarm_error_t e = gfm_client_replicate_file_from_to_result(
+	    gfm_server, ctx);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

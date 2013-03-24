@@ -17,10 +17,11 @@ struct gfm_utimes_closure {
 };
 
 static gfarm_error_t
-gfm_utimes_request(struct gfm_connection *gfm_server, void *closure)
+gfm_utimes_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_utimes_closure *c = closure;
-	gfarm_error_t e = gfm_client_futimes_request(gfm_server,
+	gfarm_error_t e = gfm_client_futimes_request(gfm_server, ctx,
 	    c->atime.tv_sec, c->atime.tv_nsec,
 	    c->mtime.tv_sec, c->mtime.tv_nsec);
 
@@ -31,9 +32,10 @@ gfm_utimes_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_utimes_result(struct gfm_connection *gfm_server, void *closure)
+gfm_utimes_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_futimes_result(gfm_server);
+	gfarm_error_t e = gfm_client_futimes_result(gfm_server, ctx);
 
 #if 1 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

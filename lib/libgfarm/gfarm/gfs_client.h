@@ -93,7 +93,8 @@ gfarm_error_t gfs_client_lock_info(struct gfs_connection *, gfarm_int32_t,
 gfarm_error_t gfs_client_replica_add_from(struct gfs_connection *,
 	char *, gfarm_int32_t, gfarm_int32_t);
 gfarm_error_t gfs_client_replica_recv(struct gfs_connection *,
-	gfarm_ino_t, gfarm_uint64_t, gfarm_int32_t);
+	gfarm_ino_t, gfarm_uint64_t, gfarm_int32_t,
+	gfarm_error_t *, gfarm_error_t *);
 gfarm_error_t gfs_client_statfs(struct gfs_connection *, char *,
 	gfarm_int32_t *,
 	gfarm_off_t *, gfarm_off_t *, gfarm_off_t *,

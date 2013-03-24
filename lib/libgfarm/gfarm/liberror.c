@@ -142,6 +142,7 @@ static const char *errcode_string[GFARM_ERR_NUMBER] = {
 	"bad cookie",
 	"insufficient number of file replicas",
 	"invalid remote peer",
+	"RPC request ignored",
 };
 
 static const char *errmsg_string[GFARM_ERRMSG_END - GFARM_ERRMSG_BEGIN] = {

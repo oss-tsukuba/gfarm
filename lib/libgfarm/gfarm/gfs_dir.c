@@ -241,10 +241,11 @@ static struct gfs_failover_file_ops failover_file_ops = {
 };
 
 static gfarm_error_t
-gfm_getdirents_request(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirents_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfs_dir_internal *dir = closure;
-	gfarm_error_t e = gfm_client_getdirents_request(dir->gfm_server,
+	gfarm_error_t e = gfm_client_getdirents_request(dir->gfm_server, ctx,
 	    DIRENTS_BUFCOUNT);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -254,10 +255,11 @@ gfm_getdirents_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_getdirents_result(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirents_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfs_dir_internal *dir = closure;
-	gfarm_error_t e = gfm_client_getdirents_result(gfm_server,
+	gfarm_error_t e = gfm_client_getdirents_result(gfm_server, ctx,
 	    &dir->n, dir->buffer);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -317,10 +319,11 @@ gfs_closedir_internal(GFS_Dir super)
 }
 
 gfarm_error_t
-gfm_seekdir_request(struct gfm_connection *gfm_server, void *closure)
+gfm_seekdir_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_seekdir_closure *c = closure;
-	gfarm_error_t e = gfm_client_seek_request(gfm_server,
+	gfarm_error_t e = gfm_client_seek_request(gfm_server, ctx,
 	    c->offset, c->whence);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -330,10 +333,11 @@ gfm_seekdir_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 gfarm_error_t
-gfm_seekdir_result(struct gfm_connection *gfm_server, void *closure)
+gfm_seekdir_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_seekdir_closure *c = closure;
-	gfarm_error_t e = gfm_client_seek_result(gfm_server,
+	gfarm_error_t e = gfm_client_seek_result(gfm_server, ctx,
 	    &c->offset);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -479,9 +483,10 @@ gfs_telldir(GFS_Dir dir, gfarm_off_t *offp)
 }
 
 static gfarm_error_t
-gfm_stat_dir_request(struct gfm_connection *gfm_server, void *closure)
+gfm_stat_dir_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_fstat_request(gfm_server);
+	gfarm_error_t e = gfm_client_fstat_request(gfm_server, ctx);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1003418,
@@ -490,10 +495,11 @@ gfm_stat_dir_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_stat_dir_result(struct gfm_connection *gfm_server, void *closure)
+gfm_stat_dir_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfs_stat *st = closure;
-	gfarm_error_t e = gfm_client_fstat_result(gfm_server, st);
+	gfarm_error_t e = gfm_client_fstat_result(gfm_server, ctx, st);
 
 	if (e == GFARM_ERR_NO_ERROR &&
 	    GFARM_S_IS_SUGID_PROGRAM(st->st_mode) &&

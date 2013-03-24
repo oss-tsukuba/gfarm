@@ -180,10 +180,11 @@ gfs_opendirplusxattr(const char *path, GFS_DirPlusXAttr *dirp)
 
 static gfarm_error_t
 gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx,
 	void *closure)
 {
 	gfarm_error_t e = gfm_client_getdirentsplusxattr_request(
-	    gfm_server, DIRENTSPLUSXATTR_BUFCOUNT,
+	    gfm_server, ctx, DIRENTSPLUSXATTR_BUFCOUNT,
 	    gfarm_xattr_caching_patterns(),
 	    gfarm_xattr_caching_patterns_number());
 
@@ -195,10 +196,12 @@ gfm_getdirentsplusxattr_request(struct gfm_connection *gfm_server,
 }
 
 static gfarm_error_t
-gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server, void *closure)
+gfm_getdirentsplusxattr_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	GFS_DirPlusXAttr dir = closure;
-	gfarm_error_t e = gfm_client_getdirentsplusxattr_result(gfm_server,
+	gfarm_error_t e = gfm_client_getdirentsplusxattr_result(
+	    gfm_server, ctx,
 	    &dir->n, dir->buffer, dir->stbuf, dir->nattrbuf,
 	    dir->attrnamebuf, dir->attrvaluebuf, dir->attrsizebuf);
 

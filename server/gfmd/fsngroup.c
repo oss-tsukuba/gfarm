@@ -201,7 +201,9 @@ gfm_server_fsngroup_get_all(
 	 *		tuple{hostname::string, fsngroupname::string}[n]
 	 */
 
+	struct peer *mhpeer;
 	gfarm_error_t e;
+	int size_pos;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_int32_t i, n = 0;
 	struct fsngroup_tuple *t = NULL;
@@ -222,7 +224,8 @@ gfm_server_fsngroup_get_all(
 			    diag, gfarm_error_string(e));
 	}
 
-	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", n);
+	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "i", n);
 
 	if (e == GFARM_ERR_NO_ERROR) {
 		for (i = 0; i < n; i++) {
@@ -237,6 +240,7 @@ gfm_server_fsngroup_get_all(
 				break;
 			}
 		}
+		gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	}
 
 	if (t != NULL)

@@ -18,10 +18,11 @@ struct gfm_chmod_closure {
 };
 
 static gfarm_error_t
-gfm_chmod_request(struct gfm_connection *gfm_server, void *closure)
+gfm_chmod_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_chmod_closure *c = closure;
-	gfarm_error_t e = gfm_client_fchmod_request(gfm_server, c->mode);
+	gfarm_error_t e = gfm_client_fchmod_request(gfm_server, ctx, c->mode);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000114,
@@ -30,9 +31,10 @@ gfm_chmod_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_chmod_result(struct gfm_connection *gfm_server, void *closure)
+gfm_chmod_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_fchmod_result(gfm_server);
+	gfarm_error_t e = gfm_client_fchmod_result(gfm_server, ctx);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

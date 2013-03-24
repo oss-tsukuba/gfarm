@@ -39,6 +39,7 @@ SRCS = \
 	iobuffer.c \
 	gfp_xdr.c \
 	gfp_xdr_server.c \
+	gfp_xdr_client.c \
 	gfs_proto.c \
 	io_fd.c \
 	metadb_common.c \
@@ -122,6 +123,7 @@ OBJS = \
 	iobuffer.lo \
 	gfp_xdr.lo \
 	gfp_xdr_server.lo \
+	gfp_xdr_client.lo \
 	gfs_proto.lo \
 	io_fd.lo \
 	metadb_common.lo \

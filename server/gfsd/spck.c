@@ -27,66 +27,6 @@
 static enum gfarm_spool_check_level spool_check_level;
 
 static gfarm_error_t
-gfm_client_replica_add(gfarm_ino_t inum, gfarm_uint64_t gen, gfarm_off_t size)
-{
-	gfarm_error_t e;
-	static const char diag[] = "replica_add";
-
-	if ((e = gfm_client_replica_add_request(gfm_server, inum, gen, size))
-	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1000601, "replica_add request",
-		    diag, e);
-	else if ((e = gfm_client_replica_add_result(gfm_server))
-	    != GFARM_ERR_NO_ERROR) {
-		if (debug_mode && e != GFARM_ERR_ALREADY_EXISTS)
-			gflog_info(GFARM_MSG_1000602, "replica_add result: %s",
-			    gfarm_error_string(e));
-	}
-	return (e);
-}
-
-static gfarm_error_t
-gfm_client_replica_get_my_entries(gfarm_ino_t start_inum, int *np,
-	gfarm_ino_t **inumsp, gfarm_uint64_t **gensp, gfarm_off_t **sizesp)
-{
-	gfarm_error_t e;
-	static const char diag[] = "replica_get_my_entries2";
-
-	if ((e = gfm_client_replica_get_my_entries_request(
-	    gfm_server, start_inum, *np)) != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003516, "request", diag, e);
-	else if ((e = gfm_client_replica_get_my_entries_result(
-	    gfm_server, np, inumsp, gensp, sizesp)) != GFARM_ERR_NO_ERROR) {
-		if (debug_mode)
-			gflog_info(GFARM_MSG_1003517, "%s result: %s", diag,
-			    gfarm_error_string(e));
-	}
-	return (e);
-}
-
-static gfarm_error_t
-gfm_client_replica_create_file_in_lost_found(
-	gfarm_ino_t inum_old, gfarm_uint64_t gen_old, gfarm_off_t size,
-	const struct gfarm_timespec *mtime,
-	gfarm_ino_t *inum_newp, gfarm_uint64_t *gen_newp)
-{
-	gfarm_error_t e;
-	static const char diag[] = "replica_create_file_in_lost_found";
-
-	if ((e = gfm_client_replica_create_file_in_lost_found_request(
-	    gfm_server, inum_old, gen_old, size, mtime))
-	    != GFARM_ERR_NO_ERROR)
-		fatal_metadb_proto(GFARM_MSG_1003518, "request", diag, e);
-	else if ((e = gfm_client_replica_create_file_in_lost_found_result(
-	    gfm_server, inum_newp, gen_newp)) != GFARM_ERR_NO_ERROR) {
-		if (debug_mode)
-			gflog_info(GFARM_MSG_1003519, "%s result: %s", diag,
-			    gfarm_error_string(e));
-	}
-	return (e);
-}
-
-static gfarm_error_t
 move_file_to_lost_found_main(const char *file, struct stat *stp,
 	gfarm_ino_t inum_old, gfarm_uint64_t gen_old)
 {
@@ -99,7 +39,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 
 	mtime.tv_sec = stp->st_mtime;
 	mtime.tv_nsec = gfarm_stat_mtime_nsec(stp);
-	e = gfm_client_replica_create_file_in_lost_found(
+	e = gfm_client_replica_create_file_in_lost_found(gfm_server,
 	    inum_old, gen_old, (gfarm_off_t)stp->st_size, &mtime,
 	    &inum_new, &gen_new);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -137,7 +77,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 		free(newpath);
 		return (gfarm_errno_to_error(save_errno));
 	}
-	e = gfm_client_replica_add(inum_new, gen_new,
+	e = gfm_client_replica_add(gfm_server, inum_new, gen_new,
 	    (gfarm_off_t)stp->st_size);
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_error(GFARM_MSG_1003523,
@@ -150,7 +90,7 @@ move_file_to_lost_found_main(const char *file, struct stat *stp,
 static void
 replica_lost(gfarm_ino_t inum, gfarm_uint64_t gen)
 {
-	gfarm_error_t e = gfm_client_replica_lost(inum, gen);
+	gfarm_error_t e = gfm_client_replica_lost(gfm_server, inum, gen);
 
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_error(GFARM_MSG_1003527,
@@ -376,7 +316,7 @@ check_file(char *file, struct stat *stp, void *arg)
 	}
 
 	size = stp->st_size;
-	e = gfm_client_replica_add(inum, gen, size);
+	e = gfm_client_replica_add(gfm_server, inum, gen, size);
 	switch (e) {
 	case GFARM_ERR_ALREADY_EXISTS:
 		/* correct entry */
@@ -471,7 +411,7 @@ check_existing(
 	/* else: This file will be checked by gfm_client_replica_add(). */
 
 	if (lost) { /* delete the replica-reference from metadata */
-		e = gfm_client_replica_lost(inum, gen);
+		e = gfm_client_replica_lost(gfm_server, inum, gen);
 		if (e != GFARM_ERR_NO_ERROR)
 			gflog_error(GFARM_MSG_1003537,
 			    "replica_lost(%llu, %llu): %s",
@@ -494,8 +434,8 @@ check_metadata(struct gfarm_hash_table *hash_ok)
 
 	for (inum = 0;; inum++) {
 		n = REQUEST_NUM;
-		e = gfm_client_replica_get_my_entries(
-		    inum, &n, &inums, &gens, &sizes);
+		e = gfm_client_replica_get_my_entries(gfm_server,
+		    inum, n, &n, &inums, &gens, &sizes);
 		if (e == GFARM_ERR_NO_SUCH_OBJECT)
 			return (GFARM_ERR_NO_ERROR); /* end */
 		else if (e != GFARM_ERR_NO_ERROR) {

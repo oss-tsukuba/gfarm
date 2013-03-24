@@ -17,13 +17,13 @@ struct gfm_symlink_closure {
 };
 
 static gfarm_error_t
-gfm_symlink_request(struct gfm_connection *gfm_server, void *closure,
-	const char *base)
+gfm_symlink_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure, const char *base)
 {
 	struct gfm_symlink_closure *c = closure;
 	gfarm_error_t e;
 
-	if ((e = gfm_client_symlink_request(gfm_server, c->src, base))
+	if ((e = gfm_client_symlink_request(gfm_server, ctx, c->src, base))
 	    != GFARM_ERR_NO_ERROR) {
 		gflog_warning(GFARM_MSG_1000155,
 		    "symlink(%s, %s) request: %s", c->src, base,
@@ -33,13 +33,15 @@ gfm_symlink_request(struct gfm_connection *gfm_server, void *closure,
 }
 
 static gfarm_error_t
-gfm_symlink_result(struct gfm_connection *gfm_server, void *closure)
+gfm_symlink_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_symlink_closure *c = closure;
 	int source_port;
 	gfarm_error_t e;
 
-	if ((e = gfm_client_symlink_result(gfm_server)) != GFARM_ERR_NO_ERROR) {
+	if ((e = gfm_client_symlink_result(gfm_server, ctx))
+	    != GFARM_ERR_NO_ERROR) {
 #if 0 /* DEBUG */
 		gflog_debug(GFARM_MSG_1000156,
 		    "symlink result: %s", gfarm_error_string(e));

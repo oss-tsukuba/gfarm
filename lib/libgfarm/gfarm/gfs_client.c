@@ -4,6 +4,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/poll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
@@ -416,12 +417,12 @@ gfs_client_connection_alloc(const char *canonical_hostname,
 			gfarm_error_string(GFARM_ERR_NO_MEMORY));
 		return (GFARM_ERR_NO_MEMORY);
 	}
-	e = gfp_xdr_new_socket(sock, &gfs_server->conn);
+	e = gfp_xdr_new_client_socket(sock, &gfs_server->conn);
 	if (e != GFARM_ERR_NO_ERROR) {
 		free(gfs_server);
 		close(sock);
 		gflog_debug(GFARM_MSG_1001180,
-			"gfp_xdr_new_socket() failed: %s",
+			"gfp_xdr_new_client_socket() failed: %s",
 			gfarm_error_string(e));
 		return (e);
 	}
@@ -1107,14 +1108,16 @@ gfarm_fd_receive_message(int fd, void *buf, size_t size,
 }
 
 gfarm_error_t
-gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
-	const char *format, ...)
+gfs_client_rpc_request(struct gfs_connection *gfs_server,
+	struct gfp_xdr_xid_record **xidrp,
+	int command, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc_request(gfs_server->conn, command, &format, &ap);
+	e = gfp_xdr_vrpc_raw_request(gfs_server->conn, xidrp,
+	    command, &format, &ap);
 	va_end(ap);
 	if (IS_CONNECTION_ERROR(e)) {
 		gfs_client_execute_hook_for_connection_error(gfs_server);
@@ -1130,7 +1133,7 @@ gfs_client_rpc_request(struct gfs_connection *gfs_server, int command,
 
 gfarm_error_t
 gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
-	const char *format, ...)
+	struct gfp_xdr_xid_record *xidr, const char *format, ...)
 {
 	va_list ap;
 	gfarm_error_t e;
@@ -1151,7 +1154,7 @@ gfs_client_rpc_result(struct gfs_connection *gfs_server, int just,
 	}
 
 	va_start(ap, format);
-	e = gfp_xdr_vrpc_result(gfs_server->conn, just, 1,
+	e = gfp_xdr_vrpc_raw_result(gfs_server->conn, just, 1, xidr,
 	    &errcode, &format, &ap);
 	va_end(ap);
 
@@ -1525,6 +1528,9 @@ struct gfs_client_statfs_state {
 	struct gfs_connection *gfs_server;
 	char *path;
 
+	/* state */
+	struct gfp_xdr_xid_record *xidr;
+
 	/* results */
 	gfarm_error_t error;
 	gfarm_int32_t bsize;
@@ -1541,7 +1547,7 @@ gfs_client_statfs_send_request(int events, int fd, void *closure,
 	struct timeval timeout;
 
 	state->error = gfs_client_rpc_request(state->gfs_server,
-	    GFS_PROTO_STATFS, "s", state->path);
+	    &state->xidr, GFS_PROTO_STATFS, "s", state->path);
 	if (state->error == GFARM_ERR_NO_ERROR) {
 		state->error = gfp_xdr_flush(state->gfs_server->conn);
 		if (IS_CONNECTION_ERROR(state->error)) {
@@ -1579,7 +1585,7 @@ gfs_client_statfs_recv_result(int events, int fd, void *closure,
 	} else {
 		assert(events == GFARM_EVENT_READ);
 		state->error = gfs_client_rpc_result(state->gfs_server, 0,
-		    "illllll", &state->bsize,
+		    state->xidr, "illllll", &state->bsize,
 		    &state->blocks, &state->bfree, &state->bavail,
 		    &state->files, &state->ffree, &state->favail);
 	}
@@ -1683,16 +1689,247 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 	return (e);
 }
 
+gfarm_error_t
+gfs_client_ctx_rpc_request(struct gfs_connection *gfs_server,
+	struct gfp_xdr_context *ctx, gfarm_int32_t command,
+	const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+
+	va_start(ap, format);
+	e = gfp_xdr_vrpc_request(gfs_server->conn, ctx, command, &format, &ap);
+	va_end(ap);
+
+	if (e == GFARM_ERR_NO_ERROR)
+		e = gfp_xdr_flush(gfs_server->conn);
+
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_ctx_request(%d) failed: %s",
+		    (int)command, gfarm_error_string(e));
+	}
+
+	return (e);
+}
+
+gfarm_error_t
+gfs_client_ctx_rpc_result(struct gfs_connection *gfs_server,
+	struct gfp_xdr_context *ctx, const char *format, ...)
+{
+	va_list ap;
+	gfarm_error_t e;
+	int errcode;
+
+	gfs_client_connection_used(gfs_server);
+
+	va_start(ap, format);
+	e = gfp_xdr_vrpc_result(gfs_server->conn, 0, 1, ctx,
+	    &errcode, &format, &ap);
+	va_end(ap);
+
+	if (IS_CONNECTION_ERROR(e)) {
+		gfs_client_execute_hook_for_connection_error(gfs_server);
+		gfs_client_purge_from_cache(gfs_server);
+	}
+	if (e != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_ctx_result() failed: %s",
+		    gfarm_error_string(e));
+		return (e);
+	}
+	if (errcode != 0) {
+		/*
+		 * We just use gfarm_error_t as the errcode,
+		 * Note that GFARM_ERR_NO_ERROR == 0.
+		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfp_client_ctx_result() failed errcode=%d",
+		    errcode);
+		return (errcode);
+	}
+
+	return (e);
+}
 
 /*
- * GFS_PROTO_REPLICA_RECV is only used by gfsd,
+ * necessary window size for 1Gbps over RTT 400ms connection
+ * = 125MB/s (== 1Gbit/sec) * 0.4sec ~=  50MB
+ *
+ * 50MB / 16[KB / RPC] = 3200.
+ * XXX this should be a configuration variable.
+ */
+#define REPLICA_RECV_WINDOW_INITIAL	4
+#define REPLICA_RECV_WINDOW_MAX		3200
+#define REPLICA_RECV_IOSIZE		16384
+
+/*
+ * gfs_client_replica_recv() is only used by gfsd,
  * but defined here for better maintainability.
  */
 
 gfarm_error_t
 gfs_client_replica_recv(struct gfs_connection *gfs_server,
-	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int32_t local_fd)
+	gfarm_ino_t ino, gfarm_uint64_t gen, gfarm_int32_t local_fd,
+	gfarm_error_t *e_localp, gfarm_error_t *e_remotep)
 {
+#if 1
+	char buffer[REPLICA_RECV_IOSIZE];
+	gfarm_error_t e_remote = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e_local = GFARM_ERR_NO_ERROR;
+	gfarm_error_t e2;
+	struct gfp_xdr_context *ctx;
+	gfarm_int32_t remote_fd;
+	int i, rv, avail, inflight = 0, window = REPLICA_RECV_WINDOW_INITIAL;
+	int readable;
+	gfarm_off_t offset = 0;
+	size_t got;
+	struct pollfd fds[1];
+	static const char diag[] = "gfs_client_replica_recv";
+
+	assert(REPLICA_RECV_IOSIZE <= GFS_PROTO_MAX_IOSIZE);
+
+	e_remote = gfs_client_rpc(gfs_server, 0, GFS_PROTO_FHOPEN,
+	    "ll/i", ino, gen, &remote_fd);
+	if (e_remote != GFARM_ERR_NO_ERROR) {
+		if (IS_CONNECTION_ERROR(e_remote)) {
+			gfs_client_execute_hook_for_connection_error(
+			    gfs_server);
+			gfs_client_purge_from_cache(gfs_server);
+		}
+		gflog_debug(GFARM_MSG_1001218,
+		    "%s: GFS_PROTO_FHOPEN failed: %s",
+		    diag, gfarm_error_string(e_remote));
+		*e_localp = GFARM_ERR_NO_ERROR;
+		*e_remotep = e_remote;
+		return (e_remote);
+	}
+	e_local = gfp_xdr_context_alloc(gfs_server->conn, &ctx);
+	if (e_local == GFARM_ERR_NO_ERROR) {
+		fds[0].fd = gfp_xdr_fd(gfs_server->conn);
+		fds[0].events = POLLIN | POLLOUT;
+
+		e2 = gfarm_sockopt_set_option(fds[0].fd,
+		    "tcp_nodelay");
+		if (e2 != GFARM_ERR_NO_ERROR)
+			gflog_info(GFARM_MSG_UNFIXED, "%s: tcp_nodelay: %s",
+			    diag, gfarm_error_string(e2));
+
+		for (;;) {
+			readable = gfp_xdr_recv_is_ready(gfs_server->conn);
+			if (readable)
+				;
+			else if ((avail = poll(fds, 1,
+			    gfarm_ctxp->network_receive_timeout * 1000))
+			    == 0) {
+				e_remote = GFARM_ERR_OPERATION_TIMED_OUT;
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: "
+				    "closing network connection due to "
+				    "no response within %d seconds "
+				    "(network_receive_timeout)", diag,
+				    (int)gfarm_ctxp->network_receive_timeout);
+				break;
+			} else if (avail == -1) {
+				if (errno == EINTR)
+					continue;
+				e_local = gfarm_errno_to_error(errno);
+				gflog_error(GFARM_MSG_UNFIXED,
+				    "%s: poll: %s",
+				     diag, gfarm_error_string(e_local));
+				break;
+			}
+			if (readable || (fds[0].revents & POLLIN) != 0) {
+				if (inflight > 0)
+					--inflight;
+				e_remote = gfs_client_ctx_rpc_result(
+				    gfs_server, ctx, "b",
+				    (size_t)REPLICA_RECV_IOSIZE, &got, buffer);
+				if (e_remote != GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "%s: GFS_PROTO_PREAD result: %s",
+					    diag, gfarm_error_string(e_remote));
+					break;
+				}
+				if (got > REPLICA_RECV_IOSIZE) {
+					e_remote = GFARM_ERR_PROTOCOL;
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "%s: GFS_PROTO_PREAD request: "
+					    "%d bytes requested, %d bytes got",
+					    diag, (int)REPLICA_RECV_IOSIZE,
+					    (int)got);
+					break;
+				}
+				for (i = 0; i < got; i += rv) {
+					rv = write(
+					    local_fd, buffer + i, got - i);
+					if (rv == -1)
+						break;
+					gfarm_iostat_local_add(
+					    GFARM_IOSTAT_IO_WCOUNT, 1);
+					gfarm_iostat_local_add(
+					    GFARM_IOSTAT_IO_WBYTES, rv);
+				}
+				if (i < got) {
+					/*
+					 * write(2) never returns 0,
+					 * so the following rv == 0 case is
+					 * just warm fuzzy.
+					 */
+					e_local = gfarm_errno_to_error(
+					    rv == 0 ? ENOSPC : errno);
+					break;
+				}
+				if (got < REPLICA_RECV_IOSIZE) /* EOF */
+					break;
+				if (readable) /* poll(2) wasn't called */
+					continue;
+			}
+			if ((fds[0].revents & POLLOUT) != 0 &&
+			    inflight < window) {
+				e_remote = gfs_client_ctx_rpc_request(
+				    gfs_server, ctx,
+				    GFS_PROTO_PREAD, "iil", remote_fd,
+				    (int)REPLICA_RECV_IOSIZE, offset);
+				if (e_remote != GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "%s: GFS_PROTO_PREAD request: %s",
+					    diag, gfarm_error_string(e_remote));
+					break;
+				}
+				offset += REPLICA_RECV_IOSIZE;
+				inflight++;
+			} else if ((fds[0].revents & (POLLIN|POLLOUT)) ==
+			    POLLOUT && window < REPLICA_RECV_WINDOW_MAX) {
+				window += window;
+				if (window > REPLICA_RECV_WINDOW_MAX)
+					window =
+					    REPLICA_RECV_WINDOW_MAX;
+			}
+		}
+
+		gfp_xdr_context_free(gfs_server->conn, ctx);
+	}
+	e2 = gfs_client_close(gfs_server, remote_fd);
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "gfs_client_replica_recv: GFS_PROTO_CLOSE(%d): %s",
+		    remote_fd, gfarm_error_string(e2));
+	}
+#if 1
+	gflog_info(GFARM_MSG_UNFIXED, "%s: window size was %d", diag, window);
+#endif
+
+	*e_localp = e_local;
+	*e_remotep = e_remote;
+	return (e_remote != GFARM_ERR_NO_ERROR ? e_remote : e_local);
+
+#else /* implementation until gfarm-2.X and before */
+
 	gfarm_error_t e, e_write = GFARM_ERR_NO_ERROR, e_rpc;
 	int i, rv, eof;
 	char buffer[GFS_PROTO_MAX_IOSIZE];
@@ -1796,6 +2033,7 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 			gfarm_error_string(e));
 	}
 	return (e);
+#endif /* implementation until gfarm-2.X and before */
 }
 
 /*

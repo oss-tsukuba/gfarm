@@ -608,7 +608,9 @@ gfm_server_user_info_get_all(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
+	struct peer *mhpeer;
 	gfarm_error_t e;
+	int size_pos;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t nusers;
@@ -638,7 +640,7 @@ gfm_server_user_info_get_all(
 			++nusers;
 	}
 
-	e = gfm_server_put_reply(peer, xid, sizep, diag,
+	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
 	    GFARM_ERR_NO_ERROR, "i", nusers);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1001498,
@@ -659,12 +661,15 @@ gfm_server_user_info_get_all(
 					"user_info_send() failed: %s",
 					gfarm_error_string(e));
 				giant_unlock();
+				gfm_server_put_reply_end(peer, mhpeer, diag,
+				    size_pos);
 				return (e);
 			}
 		}
 	}
 
 	giant_unlock();
+	gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -677,8 +682,10 @@ gfm_server_user_info_get_by_names(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
+	struct peer *mhpeer;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
+	int size_pos;
 	gfarm_int32_t nusers;
 	char *user, **users;
 	int i, j, eof, no_memory = 0;
@@ -732,7 +739,8 @@ gfm_server_user_info_get_by_names(
 		    diag, gfarm_error_string(e));
 	}
 
-	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "");
 	/* if network error doesn't happen, `e' holds RPC result here */
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_users;
@@ -744,13 +752,11 @@ gfm_server_user_info_get_by_names(
 		if (u == NULL) {
 			gflog_debug(GFARM_MSG_1003457,
 			    "%s: user lookup <%s>: failed", diag, users[i]);
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_SUCH_USER, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_NO_SUCH_USER);
 		} else {
 			gflog_debug(GFARM_MSG_1003458,
 			    "%s: user lookup <%s>: ok", diag, users[i]);
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_ERROR, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_NO_ERROR);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = user_info_send(client, &u->ui);
 		}
@@ -762,6 +768,7 @@ gfm_server_user_info_get_by_names(
 	 *	the variable `e' holds last user's reply code
 	 */
 	giant_unlock();
+	gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 
 free_users:
 	if (users != NULL) {

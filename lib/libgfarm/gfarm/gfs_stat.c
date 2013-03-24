@@ -47,9 +47,10 @@ struct gfm_stat_closure {
 };
 
 static gfarm_error_t
-gfm_stat_request(struct gfm_connection *gfm_server, void *closure)
+gfm_stat_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
-	gfarm_error_t e = gfm_client_fstat_request(gfm_server);
+	gfarm_error_t e = gfm_client_fstat_request(gfm_server, ctx);
 
 	if (e != GFARM_ERR_NO_ERROR)
 		gflog_warning(GFARM_MSG_1000130,
@@ -58,10 +59,11 @@ gfm_stat_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_stat_result(struct gfm_connection *gfm_server, void *closure)
+gfm_stat_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_stat_closure *c = closure;
-	gfarm_error_t e = gfm_client_fstat_result(gfm_server, c->st);
+	gfarm_error_t e = gfm_client_fstat_result(gfm_server, ctx, c->st);
 
 #if 0 /* DEBUG */
 	if (e != GFARM_ERR_NO_ERROR)

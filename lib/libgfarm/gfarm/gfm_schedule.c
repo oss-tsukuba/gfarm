@@ -17,10 +17,11 @@ struct gfm_schedule_file_closure {
 };
 
 static gfarm_error_t
-gfm_schedule_file_request(struct gfm_connection *gfm_server, void *closure)
+gfm_schedule_file_request(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_schedule_file_closure *c = closure;
-	gfarm_error_t e = gfm_client_schedule_file_request(gfm_server,
+	gfarm_error_t e = gfm_client_schedule_file_request(gfm_server, ctx,
 	    c->domain);
 
 	if (e != GFARM_ERR_NO_ERROR)
@@ -30,10 +31,11 @@ gfm_schedule_file_request(struct gfm_connection *gfm_server, void *closure)
 }
 
 static gfarm_error_t
-gfm_schedule_file_result(struct gfm_connection *gfm_server, void *closure)
+gfm_schedule_file_result(struct gfm_connection *gfm_server,
+	struct gfp_xdr_context *ctx, void *closure)
 {
 	struct gfm_schedule_file_closure *c = closure;
-	gfarm_error_t e = gfm_client_schedule_file_result(gfm_server,
+	gfarm_error_t e = gfm_client_schedule_file_result(gfm_server, ctx,
 	    &c->nhosts, &c->infos);
 
 #if 1 /* DEBUG */

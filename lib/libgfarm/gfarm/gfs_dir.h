@@ -13,5 +13,8 @@ struct gfm_seekdir_closure {
 	gfarm_off_t offset;
 	gfarm_int32_t whence;
 };
-gfarm_error_t gfm_seekdir_request(struct gfm_connection *, void *);
-gfarm_error_t gfm_seekdir_result(struct gfm_connection *, void *);
+struct gfp_xdr_context;
+gfarm_error_t gfm_seekdir_request(struct gfm_connection *,
+	struct gfp_xdr_context *, void *);
+gfarm_error_t gfm_seekdir_result(struct gfm_connection *,
+	struct gfp_xdr_context *, void *);

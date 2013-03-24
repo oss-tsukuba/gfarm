@@ -391,7 +391,7 @@ gfmdc_server_put_reply(struct mdhost *mh,
 
 	va_start(ap, format);
 	e = async_server_vput_reply(
-	    mdhost_to_abstract_host(mh), peer, xid, gfp_xdr_vsend,
+	    mdhost_to_abstract_host(mh), peer, xid,
 	    diag, errcode, format, &ap);
 	va_end(ap);
 

@@ -531,8 +531,10 @@ gfm_server_group_info_get_all(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
+	struct peer *mhpeer;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e_ret, e_rpc;
+	int size_pos;
 	struct gfarm_hash_iterator it;
 	gfarm_int32_t ngroups;
 	struct group **gp;
@@ -560,8 +562,8 @@ gfm_server_group_info_get_all(
 			++ngroups;
 	}
 
-	e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc,
-	    "i", ngroups);
+	e_ret = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e_rpc, "i", ngroups);
 	if (e_ret != GFARM_ERR_NO_ERROR) {
 		giant_unlock();
 		gflog_debug(GFARM_MSG_1001526,
@@ -581,11 +583,14 @@ gfm_server_group_info_get_all(
 					"group_info_send() failed: %s",
 					gfarm_error_string(e_ret));
 				giant_unlock();
+				gfm_server_put_reply_end(peer, mhpeer, diag,
+				    size_pos);
 				return (e_ret);
 			}
 		}
 	}
 	giant_unlock();
+	gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	return (e_ret);
 }
 
@@ -594,8 +599,10 @@ gfm_server_group_info_get_by_names(
 	struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
+	struct peer *mhpeer;
 	struct gfp_xdr *client = peer_get_conn(peer);
 	gfarm_error_t e;
+	int size_pos;
 	gfarm_int32_t ngroups;
 	char *groupname, **groups;
 	int i, j, eof, no_memory = 0;
@@ -649,7 +656,8 @@ gfm_server_group_info_get_by_names(
 		    diag, gfarm_error_string(e));
 	}
 
-	e = gfm_server_put_reply(peer, xid, sizep, diag, e, "");
+	e = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "");
 	/* if network error doesn't happen, `e' holds RPC result here */
 	if (e != GFARM_ERR_NO_ERROR)
 		goto free_groups;
@@ -661,13 +669,11 @@ gfm_server_group_info_get_by_names(
 		if (g == NULL) {
 			gflog_debug(GFARM_MSG_1003466,
 			    "%s: group lookup <%s>: failed", diag, groups[i]);
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_SUCH_GROUP, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_NO_SUCH_GROUP);
 		} else {
 			gflog_debug(GFARM_MSG_1003467,
 			    "%s: group lookup <%s>: ok", diag, groups[i]);
-			e = gfm_server_put_reply(peer, xid, sizep, diag,
-			    GFARM_ERR_NO_ERROR, "");
+			e = gfp_xdr_send(client, "i", GFARM_ERR_NO_ERROR);
 			if (e == GFARM_ERR_NO_ERROR)
 				e = group_info_send(client, g);
 		}
@@ -679,6 +685,8 @@ gfm_server_group_info_get_by_names(
 	 *	the variable `e' holds last group's reply code
 	 */
 	giant_unlock();
+
+	gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 
 free_groups:
 	if (groups != NULL) {

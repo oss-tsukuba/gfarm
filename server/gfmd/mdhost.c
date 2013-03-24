@@ -813,7 +813,9 @@ metadb_server_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int (*match_op)(struct mdhost *, void *), void *closure,
 	const char *diag)
 {
+	struct peer *mhpeer;
 	gfarm_error_t e, e2;
+	int size_pos;
 	gfarm_int32_t nhosts, nmatch, i;
 	struct gfarm_hash_iterator it;
 	struct mdhost *mh, **match;
@@ -844,7 +846,8 @@ metadb_server_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 		e = GFARM_ERR_NO_ERROR;
 	}
 	/* XXXRELAY FIXME, reply size is not correct */
-	e2 = gfm_server_put_reply(peer, xid, sizep, diag, e, "i", nmatch);
+	e2 = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos, diag,
+	    e, "i", nmatch);
 	/* if network error doesn't happen, e2 == e here */
 	if (e2 == GFARM_ERR_NO_ERROR) {
 		i = 0;
@@ -859,6 +862,7 @@ metadb_server_get(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				break;
 			}
 		}
+		gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	}
 	free(match);
 	giant_unlock();

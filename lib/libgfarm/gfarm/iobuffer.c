@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gfarm/error.h>
@@ -302,6 +303,23 @@ void
 gfarm_iobuffer_end_pindown(struct gfarm_iobuffer *b)
 {
 	b->pindown = 0;
+}
+
+void
+gfarm_iobuffer_get_pos(struct gfarm_iobuffer *b, int *posp)
+{
+	assert(b->pindown);
+
+	*posp = b->tail;
+}
+
+void
+gfarm_iobuffer_overwrite_at(struct gfarm_iobuffer *b,
+	const void *data, int len, int pos)
+{
+	assert(b->pindown);
+	assert(pos >= b->head && pos + len <= b->tail);
+	memcpy(b->buffer + pos, data, len);
 }
 
 /* enqueue: returns true on success */

@@ -1496,12 +1496,14 @@ gfarm_error_t
 gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
 {
+	struct peer *mhpeer;
 	gfarm_error_t e_ret;
 	static const char diag[] = "GFM_PROTO_XMLATTR_FIND";
 	char *expr = NULL, *ck_path = NULL, *ck_name = NULL;
 	int depth, nalloc;
 #ifdef ENABLE_XMLATTR
 	gfarm_error_t e_rpc;
+	int size_pos;
 	struct gfs_xmlattr_ctx *ctxp = NULL;
 	int fd, i;
 	struct process *process;
@@ -1570,8 +1572,8 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	} else
 		giant_unlock();
 
-	if ((e_ret = gfm_server_put_reply(peer, xid, sizep, diag, e_rpc, "ii",
-	    eof, nvalid)) == GFARM_ERR_NO_ERROR) {
+	if ((e_ret = gfm_server_put_reply_begin(peer, &mhpeer, xid, &size_pos,
+	    diag, e_rpc, "ii", eof, nvalid)) == GFARM_ERR_NO_ERROR) {
 		/*
 		 * "ctxp" is not NULL here.  If the memory allocation error
 		 * for "ctxp" has occurred, the valiable "e" is set to
@@ -1592,6 +1594,7 @@ gfm_server_findxmlattr(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 				break;
 			}
 		}
+		gfm_server_put_reply_end(peer, mhpeer, diag, size_pos);
 	}
 	inum_path_array_free(array);
 	gfs_xmlattr_ctx_free(ctxp, 0);

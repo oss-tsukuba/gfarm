@@ -144,6 +144,8 @@ job_table_remove(int id, char *user, struct job_table_entry **listp)
 	return (0);
 }
 
+#if 0
+
 gfarm_error_t
 gfj_server_lock_register(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	int from_client, int skip)
@@ -563,3 +565,4 @@ gfj_server_hostinfo(struct peer *peer, gfp_xdr_xid_t xid, size_t *sizep,
 	return (gfj_server_put_reply(peer, xid, sizep,
 	    diag, GFARM_ERR_NO_ERROR, ""));
 }
+#endif
