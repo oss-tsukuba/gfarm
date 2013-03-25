@@ -4313,6 +4313,7 @@ back_channel_server(void)
 
 		gfp_xdr_async_peer_free(async, bc_conn);
 		gfm_server = back_channel;
+		free_gfm_server();
 		if ((e = connect_gfm_server()) != GFARM_ERR_NO_ERROR)
 			fatal(GFARM_MSG_1003364, "die");
 	}
