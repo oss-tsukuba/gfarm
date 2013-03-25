@@ -35,6 +35,26 @@
     アクセスしてきても、クライアント側は connection resuse を検知して
     リトライするので、sleep等を入れる必要はない。
 
+    gfmd を gfservice(1) を使用してフェイルオーバさせるには
+    gfmd-failover-local-gfservice.sh が利用できる。
+
+    gfservice の設定ファイルである gfservice.conf をテストに用いる
+    Gfarm環境に合せて用意し、~/.gfserviceとして保存するか、環境変数
+    GFSERVICE_CONF に gfservice.conf のパスを設定して、テストを実行す
+    る。gfservice および gfservice.conf についてはそれぞれmanを参照の
+    こと。
+
+    gfmd-failover-local-gfservice.sh では master 1台、slave 2台でGfarm
+    環境が構築されていることを前提にし、gfmd1 と gfmd2 を交互にフェイ
+    ルオーバさせる。 gfmd-failover-local-gfservice.sh では"master"およ
+    び"slave"というファイルにそれぞれ、現在の master gfmdと slave
+    gfmd を保存する。 "master"ファイルが存在しない場合、gfmd1をマスタ
+    としてフェイルオーバを実行する。
+
+    スレーブの台数が上記とは異なる場合、メタデータのバックアップ/リス
+    トア処理を台数に合せて gfmd-failover-local-gfservice.shを修正する
+    必要がある。
+
   - テスト用データの setup/cleanup は test-all.sh 内で実行されるため、
     test-all.shを実行する際は 呼び出す必要はない。
 
