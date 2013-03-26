@@ -3599,7 +3599,6 @@ file_replicating_new(struct inode *inode, struct host *dst, int retry,
 	gfarm_error_t e;
 	struct file_replicating *fr;
 	struct inode_replicating_state *irs = inode->u.c.s.f.rstate;
-	static const char retry_diag[] = "retrying-file_replicating_new";
 
 	if (!host_is_disk_available(dst, inode_get_size(inode)))
 		return (GFARM_ERR_NO_SPACE);
@@ -3620,7 +3619,7 @@ file_replicating_new(struct inode *inode, struct host *dst, int retry,
 		 *  GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
 		 */
 		if (retry && e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
-			replica_check_signal_general(retry_diag, 0);
+			replica_check_signal_rep_request_failed();
 
 		return (e);
 	}
@@ -3793,6 +3792,15 @@ inode_replicated(struct file_replicating *fr,
 
 	if (transaction)
 		db_end(diag);
+
+	if (e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * #647 - workaround for #646 - retry replication when
+		 * a result of replication is failure
+		 */
+		replica_check_signal_rep_result_failed();
+	}
+
 	return (e);
 }
 

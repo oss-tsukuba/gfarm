@@ -655,7 +655,7 @@ replica_check_wait()
 	gfarm_mutex_unlock(&replica_check_mutex, diag, REPLICA_CHECK_DIAG);
 }
 
-void
+static void
 replica_check_signal_general(const char *diag, long sec)
 {
 	if (!gfarm_replica_check)
@@ -707,6 +707,22 @@ void
 replica_check_signal_rename()
 {
 	static const char diag[] = "replica_check_signal_rename";
+
+	replica_check_signal_general(diag, 0);
+}
+
+void
+replica_check_signal_rep_request_failed()
+{
+	static const char diag[] = "replica_check_signal_rep_request_failed";
+
+	replica_check_signal_general(diag, 0);
+}
+
+void
+replica_check_signal_rep_result_failed()
+{
+	static const char diag[] = "replica_check_signal_rep_result_failed";
 
 	replica_check_signal_general(diag, 0);
 }
