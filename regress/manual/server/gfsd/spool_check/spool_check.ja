@@ -1,6 +1,7 @@
 * spool_check_level のテスト
 
-  "spool_check_level 3" (gfsd -ccc と同等) をテストする。
+  "spool_check_level lost_found" (gfsd -ccc と同等, -ccc 無しでも有効)
+  をテストする。gfsd を再起動して、spool check 機能を動作させる。
 
 * 必要な権限
 
@@ -16,15 +17,17 @@
 
   1. テスト対象 gfsd ホストにログイン
 
-  2. level3.sh と同ディレクトリに config.sh を準備
+  2. lost_found.sh と同ディレクトリに config.sh を準備
      (example-config.sh を参考)
 
-     GFSD_HOST_NAME : gfhost で表示されるホスト名
+     GFSD_HOST_NAME : gfhost で表示されるテスト対象の gfsd ホスト名
      GFSD_START_SCRIPT : gfsd 起動スクリプトのパス
      GFSD_SPOOL_DIR : スプールディレクトリのパス
      GFSD_CONFIG_FILE : gfsd 用 gfarm2.conf のパス (設定内容確認のみ)
      USE_SUDO : sudo を利用するかどうか true または false
 
-  3. "spool_check_level 3" を gfarm2.conf に追加
+  3. "spool_check_level lost_found" を gfsd の gfarm2.conf に追加、
+     または spool_check_level で始まる行を記述しないようにする
 
-  4. level3.sh を regress ディレクトリに cd してから実行
+  4. regress ディレクトリに cd してから make または ./loop.sh または
+     manual/server/gfsd/spool_check/lost_found.sh を実行
