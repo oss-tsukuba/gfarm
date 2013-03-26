@@ -1,0 +1,56 @@
+How to run tests with gfruntest
+
+* requirements
+
+In following description we call an Unix user who executes gfruntest
+as 'test user'.
+
+  + Test user must be registered as Gfarm user.
+  + Test user should be able to log on to remote host by ssh with no
+    password.
+  + In some tests, test user should be listed in /etc/sudoers with
+    NOPASSWD tag.
+  + In some tests, test user need to be in gfarmroot/gfarmadm group.
+
+* create gfservice.conf file
+
+To run gfruntest, you have to create gfservice.conf file which
+specifies your Gfarm environment. Following variable definitions are
+essential.
+
+ + *_GFBINDIR
+   path to gfservice in each remote hosts
+
+ + gfmd*_CONFIG_GFARM_OPTIONS
+   command line option given to config-gfarm when gfmd is configured.
+
+ + gfsd*_CONFIG_GFSD_OPTIONS
+   command line option given to config-gfsd when gfsd is configured.
+
+ + client*_GFARM_CONF
+   specify a gfarm2.conf file in absolute path.
+
+If Gfarm environment is configured with private mode, following
+variables should be set to "true"
+
+ + gfmd*_PRIVATE_MODE
+ + gfsd*_PRIVATE_MODE
+
+see gfservice.conf(5) for details
+
+* executing gfruntest
+
+gfruntest executes test script with (optional) parameters.
+
+Test script file is installed in
+    $prefix/share/gfarm/systest/testcases
+
+Test parameter file is installed in
+    $prefix/share/gfarm/systest/parameters
+
+To execute gfruntest input:
+    % gfruntest -f <gfservice.conf> <testcase name>
+
+You can specify a parameter file with '-p' option.
+
+Debug log will be printed if you specify '-d' option.
