@@ -929,7 +929,7 @@ file_table_close(gfarm_int32_t net_fd)
 
 	if ((fe->flags & FILE_FLAG_WRITABLE) != 0) {
 		--write_open_count;
-		if (terminate_flag) {
+		if (terminate_flag && write_open_count == 0) {
 			gflog_debug(GFARM_MSG_1003432, "bye");
 			cleanup(0);
 			exit(2);
