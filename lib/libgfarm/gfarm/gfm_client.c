@@ -706,20 +706,20 @@ gfm_client_connection_and_process_acquire(const char *hostname, int port,
 			gfm_client_connection_free(gfm_server);
 			return (e);
 		}
-	}
 #ifdef HAVE_GSI
-	/* obtain global username */
-	if (GFARM_IS_AUTH_GSI(gfm_server->auth_method)) {
-		e = gfarm_set_global_user_by_gsi(gfm_server);
-		if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003450,
-			    "cannot set global username: %s",
-			    gfarm_error_string(e));
-			gfm_client_connection_free(gfm_server);
-			return (e);
+		/* obtain global username */
+		if (GFARM_IS_AUTH_GSI(gfm_server->auth_method)) {
+			e = gfarm_set_global_user_by_gsi(gfm_server);
+			if (e != GFARM_ERR_NO_ERROR) {
+				gflog_error(GFARM_MSG_1003450,
+				    "cannot set global username: %s",
+				    gfarm_error_string(e));
+				gfm_client_connection_free(gfm_server);
+				return (e);
+			}
 		}
-	}
 #endif
+	}
 	*gfm_serverp = gfm_server;
 	return (e);
 }
