@@ -853,6 +853,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	if (n_being_removed > 0) {
 		GFARM_MALLOC_ARRAY(being_removed, n_being_removed);
 		if (being_removed == NULL) {
+			free(existing);
 			gflog_warning(GFARM_MSG_UNFIXED,
 			    "%s: no memory to schedule replicas: "
 			    "being_removed %d hosts",
