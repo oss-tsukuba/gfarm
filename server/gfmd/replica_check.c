@@ -49,12 +49,6 @@ struct suppress_log {
 	int level, count, suppressed, max;
 };
 
-static struct suppress_log log_unavail
-= { .type = "temporarily unavailable", .level = LOG_DEBUG, .max = 5 };
-static struct suppress_log log_few
-= { .type = "fewer replicas", .level = LOG_DEBUG, .max = 1 };
-static struct suppress_log log_too_many
-= { .type = "too many replicas", .level = LOG_DEBUG, .max = 1 };
 static struct suppress_log log_hosts_down
 = { .type = "hosts are down", .level = LOG_INFO, .max = 20 };
 
@@ -91,93 +85,7 @@ static void suppress_log_reset(struct suppress_log *log)
 }
 static void suppress_log_reset_all()
 {
-	suppress_log_reset(&log_few);
-	suppress_log_reset(&log_too_many);
 	suppress_log_reset(&log_hosts_down);
-}
-
-static gfarm_error_t
-replica_check_replicate(
-	struct inode *inode, int *n_srcsp, struct host **srcs,
-	int n_desire, int ncopy)
-{
-	gfarm_error_t e;
-	struct host **dsts, *src, *dst;
-	int n_dsts, i, j, n_success = 0;
-	struct file_replicating *fr;
-	gfarm_off_t necessary_space;
-	int n_shortage, busy;
-
-	n_shortage = n_desire - ncopy;
-	assert(n_shortage > 0);
-
-	necessary_space = inode_get_size(inode);
-	e = host_schedule_n_from_all_except(
-	    n_srcsp, srcs, host_is_disk_available_filter,
-	    &necessary_space, n_shortage, &n_dsts, &dsts);
-	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_1003617,
-		    "host_schedule_except, n_srcs=%d: %s",
-		    *n_srcsp, gfarm_error_string(e));
-		goto end; /* retry in next interval */
-	}
-	/* dsts is scheduled */
-
-	busy = 0;
-	for (i = 0, j = 0; i < n_dsts; i++, j++) {
-		if (j >= *n_srcsp)
-			j = 0;
-		src = srcs[j];
-		dst = dsts[i];
-
-		/* GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE may occurs */
-		e = file_replicating_new(inode, dst, 0, NULL, &fr);
-		if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
-			busy = 1;
-			if (!log_is_suppressed(&log_unavail))
-				gflog_debug(GFARM_MSG_1003618,
-				    "file_replicating_new, host=%s: %s",
-				    host_name(dst), gfarm_error_string(e));
-			/* next dst */
-		} else if (e != GFARM_ERR_NO_ERROR) {
-			gflog_error(GFARM_MSG_1003619,
-			    "file_replicating_new, host=%s: %s",
-			    host_name(dst), gfarm_error_string(e));
-			break;
-		} else if ((e = async_back_channel_replication_request(
-		    host_name(src), host_port(src), dst,
-		    inode_get_number(inode), inode_get_gen(inode), fr))
-			   != GFARM_ERR_NO_ERROR) {
-			file_replicating_free_by_error_before_request(fr);
-			gflog_error(GFARM_MSG_1003620,
-			    "async_back_channel_replication_request: %s",
-			    gfarm_error_string(e));
-			break;
-		} else
-			n_success++;
-	}
-	free(dsts);
-	if (busy) /* retry immediately */
-		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
-end:
-	if (n_success < n_shortage) {
-		if (!log_is_suppressed(&log_few))
-			gflog_debug(GFARM_MSG_1003621,
-			    "replica_check: %lld:%lld:%s: fewer replicas, "
-			    "increase=%d/before=%d/desire=%d",
-			    (long long)inode_get_number(inode),
-			    (long long)inode_get_gen(inode),
-			    user_name(inode_get_user(inode)),
-			    n_success, ncopy, n_desire);
-	} else
-		gflog_notice(GFARM_MSG_1003622,
-		    "replica_check: %lld:%lld:%s: will be fixed, desire=%d",
-		    (long long)inode_get_number(inode),
-		    (long long)inode_get_gen(inode),
-		    user_name(inode_get_user(inode)), n_desire);
-
-	return (e); /* error: retry in next interval */
-
 }
 
 struct replication_info {
@@ -189,10 +97,11 @@ struct replication_info {
 static gfarm_error_t
 replica_check_fix(struct replication_info *info)
 {
-	struct inode *inode = inode_lookup(info->inum);
-	int n_srcs, ncopy;
-	struct host **srcs;
 	gfarm_error_t e;
+	struct inode *inode = inode_lookup(info->inum);
+	int n_srcs, n_existing, n_being_removed;
+	struct host **srcs, **existing, **being_removed;
+	static const char diag[] = "replica_check_fix";
 
 	if (inode == NULL || !inode_is_file(inode) ||
 	    inode_get_gen(inode) != info->gen) {
@@ -201,42 +110,8 @@ replica_check_fix(struct replication_info *info)
 		    (long long)info->inum, (long long)info->gen);
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	if (info->desired_number <= 0) /* normally */
-		return (GFARM_ERR_NO_ERROR);
-
-	/* is_valid==0: invalid replicas (==replicating now) are OK */
-	ncopy = inode_get_ncopy_with_grace_of_dead(
-	    inode, 0, gfarm_replica_check_host_down_thresh);
-	if (ncopy == info->desired_number) /* normally */
-		return (GFARM_ERR_NO_ERROR);
-	if (ncopy == 0) {
-		if (inode_get_size(inode) == 0)
-			return (GFARM_ERR_NO_ERROR); /* normally */
-		else if (inode_has_no_replica(inode)) {
-			gflog_warning(GFARM_MSG_1003624,
-			    "replica_check: %lld:%lld:%s: lost all replicas",
-			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)));
-			return (GFARM_ERR_NO_ERROR); /* not retry */
-		} else if (!log_is_suppressed(&log_hosts_down)) {
-			gflog_info(GFARM_MSG_1003625,
-			    "replica_check: %lld:%lld:%s: hosts are down",
-			    (long long)info->inum, (long long)info->gen,
-			    user_name(inode_get_user(inode)));
-			return (GFARM_ERR_NO_ERROR); /* not retry */
-		}
-	}
-	if (ncopy > info->desired_number) {
-		if (!log_is_suppressed(&log_too_many))
-			gflog_debug(GFARM_MSG_1003626,
-			   "replica_check: %lld:%lld:%s: "
-			   "too many replicas, %d > %d",
-			   (long long)info->inum, (long long)info->gen,
-			   user_name(inode_get_user(inode)),
-			   ncopy, info->desired_number);
-		/* XXX remove too many replicas? */
-		return (GFARM_ERR_NO_ERROR);
-	}
+	if (info->desired_number <= 0) /* disabled */
+		return (GFARM_ERR_NO_ERROR); /* OK */
 	if (inode_is_opened_for_writing(inode)) {
 		gflog_debug(GFARM_MSG_1003627,
 		    "replica_check: %lld:%lld:%s: "
@@ -245,9 +120,33 @@ replica_check_fix(struct replication_info *info)
 		    user_name(inode_get_user(inode)));
 		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	/* available replicas for source */
-	e = inode_replica_list(inode, &n_srcs, &srcs);
+
+	e = inode_replica_hosts(
+	    inode, &n_existing, &existing, &n_being_removed, &being_removed);
 	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "replica_check: %lld:%lld:%s: replica_hosts: %s",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)), gfarm_error_string(e));
+		return (e); /* retry */
+	}
+	if (n_existing == 0) {
+		free(existing);
+		free(being_removed);
+		if (inode_get_size(inode) == 0)
+			return (GFARM_ERR_NO_ERROR); /* normally */
+		gflog_warning(GFARM_MSG_1003624,
+		    "replica_check: %lld:%lld:%s: lost all replicas",
+		    (long long)info->inum, (long long)info->gen,
+		    user_name(inode_get_user(inode)));
+		return (GFARM_ERR_NO_ERROR); /* error, ignore */
+	}
+
+	/* available replicas for source */
+	e = inode_replica_hosts_valid(inode, &n_srcs, &srcs);
+	if (e != GFARM_ERR_NO_ERROR) { /* no memory */
+		free(existing);
+		free(being_removed);
 		gflog_error(GFARM_MSG_1003628,
 		    "replica_check: %lld:%lld:%s: replica_list: %s",
 		    (long long)info->inum, (long long)info->gen,
@@ -256,19 +155,27 @@ replica_check_fix(struct replication_info *info)
 	}
 	/* n_srcs may be 0, because host_is_up() may change */
 	if (n_srcs <= 0) {
+		free(existing);
+		free(being_removed);
 		free(srcs);
 		if (!log_is_suppressed(&log_hosts_down))
 			gflog_info(GFARM_MSG_1003629,
 			    "replica_check: %lld:%lld:%s: hosts are down",
 			    (long long)info->inum, (long long)info->gen,
 			    user_name(inode_get_user(inode)));
-		return (GFARM_ERR_FILE_BUSY); /* retry afer a while */
+		return (GFARM_ERR_NO_ERROR); /* ignore */
 	}
-	/* ncopy is not necessarily the same as n_src */
-	e = replica_check_replicate(inode, &n_srcs, srcs,
-	    info->desired_number, ncopy);
-	free(srcs);
 
+	/* indent for diff */
+		e = inode_schedule_replication_from_all(
+		    inode, 0, info->desired_number, n_srcs, srcs,
+		    &n_existing, existing,
+		    gfarm_replica_check_host_down_thresh,
+		    &n_being_removed, being_removed, diag);
+
+	free(existing);
+	free(being_removed);
+	free(srcs);
 	return (e);
 }
 

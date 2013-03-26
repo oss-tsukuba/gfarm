@@ -503,6 +503,8 @@ host_is_up_with_grace(struct host *h, gfarm_time_t grace)
 
 	if (host_is_up(h))
 		return (1);
+	if (grace <= 0)
+		return (0);
 
 	back_channel_mutex_lock(h, diag);
 	rv = h->disconnect_time + grace > time(NULL) ? 1 : 0;
@@ -935,7 +937,7 @@ host_exclude(int *nhostsp, struct host **hosts,
  * this function modifies *nhostsp, hosts[], *n_exceptionsp and exceptions[],
  * but they may be abled to be used later.
  */
-static gfarm_error_t
+gfarm_error_t
 host_except(int *nhostsp, struct host **hosts,
 	int *n_exceptionsp, struct host **exceptions,
 	int (*filter)(struct host *, void *), void *closure)
@@ -1076,66 +1078,86 @@ host_from_all_except(int *n_exceptionsp, struct host **exceptions,
 
 /*
  * this function breaks *nhostsp and hosts[], and they cannot be used later.
- * this function modifies *n_exceptions and exceptions[],
- * but they may be abled to be used later.
+ * this function modifies *n_existing, existing[], *n_being_removed
+ * and being_removed[], but they may be abled to be used later.
+ *
+ * n_desired >= *n_validp + *n_taregetsp
+ * *n_validp > n_desired: too enough
+ * n_desired > *n_validp + *n_taregetsp: shortage
  */
 gfarm_error_t
-host_schedule_n_except(int *nhostsp, struct host **hosts,
-	int *n_exceptionsp, struct host **exceptions,
+host_schedule_n_except(
+	int *nhostsp, struct host **hosts,
+	int *n_existingp, struct host **existing, gfarm_time_t grace,
+	int *n_being_removedp, struct host **being_removed,
 	int (*filter)(struct host *, void *), void *closure,
-	int n_desired, int *n_targetsp, struct host ***targetsp)
+	int n_desired, int *n_targetsp, struct host ***targetsp, int *n_validp)
 {
 	gfarm_error_t e;
-	int i, nhosts, n_targets;
-	struct host **targets;
+	int i, n_before, nhosts, n_shortage, n_up = 0, n_down = 0, n_zero = 0;
+	struct host **targets, **up, **down;
 
-	e = host_except(nhostsp, hosts, n_exceptionsp, exceptions,
-	    filter, closure);
+	e = host_except(nhostsp, hosts, n_being_removedp, being_removed,
+	    NULL, NULL);
+	if (e != GFARM_ERR_NO_ERROR)
+		return (e);
+
+	GFARM_MALLOC_ARRAY(up, *n_existingp);
+	GFARM_MALLOC_ARRAY(down, *n_existingp);
+	if (up == NULL || down == NULL) {
+		free(up);
+		free(down);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; i < *n_existingp; i++) {
+		if (host_is_up_with_grace(existing[i], grace))
+			up[n_up++] = existing[i];
+		else
+			down[n_down++] = existing[i];
+	}
+	e = host_except(nhostsp, hosts, &n_down, down, NULL, NULL);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(up);
+		free(down);
+		return (e);
+	}
+	n_before = *nhostsp;
+	e = host_except(nhostsp, hosts, &n_up, up, NULL, NULL);
+	if (e != GFARM_ERR_NO_ERROR) {
+		free(up);
+		free(down);
+		return (e);
+	}
+	*n_validp = n_before - *nhostsp; /* existing valid replicas */
+	free(up);
+	free(down);
+
+	/* search available hosts */
+	e = host_except(nhostsp, hosts, &n_zero, NULL, filter, closure);
 	if (e != GFARM_ERR_NO_ERROR)
 		return (e);
 
 	nhosts = *nhostsp;
-	n_targets = nhosts <= n_desired ? nhosts : n_desired;
-	GFARM_MALLOC_ARRAY(targets, n_targets);
+	n_shortage = n_desired - *n_validp;
+	if (n_shortage <= 0) { /* sufficient */
+		*n_targetsp = 0;
+		*targetsp = NULL;
+		return (GFARM_ERR_NO_ERROR);
+	}
+	GFARM_MALLOC_ARRAY(targets, n_shortage);
 	if (targets == NULL)
 		return (GFARM_ERR_NO_MEMORY);
 
-	if (nhosts <= n_desired) {
+	if (nhosts <= n_shortage) { /* just enough or shortage */
 		for (i = 0; i < nhosts; i++)
 			targets[i] = hosts[i];
 		*n_targetsp = nhosts;
-	} else {
-		select_hosts(nhosts, hosts, n_desired, targets);
-		*n_targetsp = n_desired;
+	} else { /* too enough targets */
+		select_hosts(nhosts, hosts, n_shortage, targets);
+		*n_targetsp = n_shortage;
 	}
 	*targetsp = targets;
 	return (GFARM_ERR_NO_ERROR);
-}
-
-/*
- * this function modifies *n_exceptions and exceptions[],
- * but they may be abled to be used later.
- */
-gfarm_error_t
-host_schedule_n_from_all_except(int *n_exceptionsp, struct host **exceptions,
-	int (*filter)(struct host *, void *), void *closure,
-	int n_desired, int *n_targetsp, struct host ***targetsp)
-{
-	gfarm_error_t e;
-	int nhosts;
-	struct host **hosts;
-
-	e = host_array_alloc(&nhosts, &hosts);
-	if (e != GFARM_ERR_NO_ERROR)
-		return (e);
-
-	e = host_schedule_n_except(&nhosts, hosts,
-	    n_exceptionsp, exceptions, filter, closure, n_desired,
-	    n_targetsp, targetsp);
-
-	free(hosts);
-
-	return (e);
 }
 
 #ifdef NOT_USED
