@@ -745,11 +745,10 @@ struct file_entry {
 #define FILE_FLAG_WRITABLE	0x04
 #define FILE_FLAG_WRITTEN	0x08
 #define FILE_FLAG_READ		0x10
-
-/*
- * performance data
- */
 	gfarm_uint64_t gen, new_gen;
+/*
+ * performance data (only available in profile mode)
+ */
 	struct timeval start_time;
 	unsigned nwrite, nread;
 	double write_time, read_time;
@@ -838,8 +837,9 @@ file_table_add(gfarm_int32_t net_fd, int local_fd, int flags, gfarm_ino_t ino,
 	fe->mtimensec = 0;
 #endif
 	fe->size = st.st_size;
-
 	fe->gen = fe->new_gen = gen;
+
+	/* performance data (only available in profile mode) */
 	fe->start_time = *start;
 	fe->nwrite = fe-> nread = 0;
 	fe->write_time = fe->read_time = 0;
@@ -1455,7 +1455,7 @@ update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
 		    (unsigned long long)new_gen,
 		    strerror(gen_update_result));
 	} else
-		gfs_profile(fe->new_gen = new_gen);
+		fe->new_gen = new_gen;
 	free(old);
 	free(new);
 
