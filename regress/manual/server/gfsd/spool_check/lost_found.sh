@@ -91,10 +91,10 @@ clean_all() {
 
 trap 'clean_all; exit $exit_trap' $trap_sigs
 
-### TEST_1: register unrefered file
+### TEST_1: register unreferred file
 TEST_1_INUMGEN=`$SUDO_GFARMFS $TEST_LOST_FOUND $GFSD_SPOOL_DIR`
 if [ $? -ne 0 ]; then
-    echo >&2 "cannot create unrefered file"
+    echo >&2 "cannot create unreferred file"
     clean_all
     exit $exit_fail
 fi
@@ -179,11 +179,11 @@ check_lost_found() {
     gfstat $LOSTF_FILE > /dev/null
     if [ $? -ne 0 ]; then
         if [ $EXIST -eq 1 ]; then
-            echo >&2 "TEST_${TEST_NUM} NG: not moved in lost+found"
+            echo >&2 "TEST_${TEST_NUM} NG: file was not moved in lost+found"
             clean_all
             exit_code=$exit_fail
         else
-            echo "TEST_${TEST_NUM} OK: not moved in lost+found"
+            echo "TEST_${TEST_NUM} OK: file was moved in lost+found"
         fi
     else
         if [ $EXIST -eq 0 ]; then
