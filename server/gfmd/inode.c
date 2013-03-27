@@ -722,7 +722,7 @@ inode_schedule_replication(
 	    host_is_disk_available_filter, &necessary_space,
 	    n_desired, &n_targets, &targets, &n_valid);
 	if (e != GFARM_ERR_NO_ERROR) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003693,
 		    "%s: inode %lld:%lld: cannot create replicas: "
 		    "desired=%d/scope=%d/existing=%d/being_removed=%d: %s",
 		    diag, (long long)inode_get_number(inode),
@@ -764,7 +764,7 @@ inode_schedule_replication(
 	free(targets);
 
 	if (n_desired - n_valid > n_success) {
-		gflog_reduced_debug(GFARM_MSG_UNFIXED, &rep_failure_state,
+		gflog_reduced_debug(GFARM_MSG_1003694, &rep_failure_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
 		    (long long)inode_get_number(inode),
@@ -772,7 +772,7 @@ inode_schedule_replication(
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
 	} else
-		gflog_reduced_notice(GFARM_MSG_UNFIXED, &rep_success_state,
+		gflog_reduced_notice(GFARM_MSG_1003695, &rep_success_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
@@ -845,7 +845,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 	}
 	GFARM_MALLOC_ARRAY(existing, n_existing);
 	if (existing == NULL) {
-		gflog_warning(GFARM_MSG_UNFIXED,
+		gflog_warning(GFARM_MSG_1003696,
 		    "%s: no memory to schedule replicas: existing %d hosts",
 		    diag, n_existing);
 		return;
@@ -854,7 +854,7 @@ make_replicas_except(struct inode *inode, struct host *spool_host,
 		GFARM_MALLOC_ARRAY(being_removed, n_being_removed);
 		if (being_removed == NULL) {
 			free(existing);
-			gflog_warning(GFARM_MSG_UNFIXED,
+			gflog_warning(GFARM_MSG_1003697,
 			    "%s: no memory to schedule replicas: "
 			    "being_removed %d hosts",
 			    diag, n_being_removed);
@@ -4184,7 +4184,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			    protect_replicas, num_existing,
 			    copy, inode->u.c.s.f.copies);
 			if (e != GFARM_ERR_NO_ERROR) {
-				gflog_debug(GFARM_MSG_UNFIXED,
+				gflog_debug(GFARM_MSG_1003698,
 				    "check_removable_replicas: %s",
 				    gfarm_error_string(e));
 				return (e);

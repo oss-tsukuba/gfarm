@@ -1241,7 +1241,7 @@ gfs_server_reopen(char *diag, gfarm_int32_t net_fd, char **pathp, int *flagsp,
 	    (local_flags = gfs_open_flags_localize(net_flags)) == -1) {
 		e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		/* this shouldn't happen */
-		gflog_error(GFARM_MSG_UNFIXED, "ino=%lld gen=%lld: "
+		gflog_error(GFARM_MSG_1003699, "ino=%lld gen=%lld: "
 		    "mode:0%o, flags:0x%0x, to_create:%d: shouldn't happen",
 		    (long long)ino, (long long)gen,
 		    mode, net_flags, to_create);
