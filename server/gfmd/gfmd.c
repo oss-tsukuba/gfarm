@@ -818,20 +818,34 @@ resuming_thread(void *arg)
 {
 	struct event_waiter *entry = arg;
 	struct peer *peer = entry->peer;
+	struct protocol_state *ps = peer_get_protocol_state(peer);
+	struct compound_state *cs = &ps->cs;
 	int suspended = 0;
+	gfarm_error_t e;
 
-	(*entry->action)(peer, entry->arg, &suspended);
+	e = (*entry->action)(peer, entry->arg, &suspended);
 	free(entry);
 	if (suspended)
 		return (NULL);
 
+	if (ps->nesting_level > 0 && e != GFARM_ERR_NO_ERROR) {
+		/*
+		 * set cs->cause, if it's first error at a main part
+		 * of a COMPOUND block
+		 */
+		gflog_debug(GFARM_MSG_UNFIXED,
+		    "resumed action failed in a COMPOUND block: %s",
+		    gfarm_error_string(e));
+		if (cs->cause == GFARM_ERR_NO_ERROR && !cs->skip)
+			cs->cause = e;
+		cs->skip = 1;
+	}
 	if (gfp_xdr_recv_is_ready(peer_get_conn(peer)))
 		protocol_main(peer);
 
 	/* this return value won't be used, because this thread is detached */
 	return (NULL);
 }
-
 
 void *
 resumer(void *arg)
