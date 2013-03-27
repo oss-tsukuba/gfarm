@@ -618,7 +618,7 @@ gfs_async_server_put_reply_common(struct gfp_xdr *client, gfp_xdr_xid_t xid,
 	/* if input/output error occurs, die */
 	if (IS_IO_ERROR(ecode)) {
 		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		fatal(GFARM_MSG_1003683, "%s: %s, die", diag,
 		    gfarm_error_string(ecode));
 	}
 	return (e);
@@ -2517,7 +2517,7 @@ gfs_async_server_status(struct gfp_xdr *conn, gfp_xdr_xid_t xid, size_t size)
 	/* die if save_errno != 0 since the gfmd disconnects the connection */
 	if (save_errno != 0) {
 		kill_master_gfsd = 1;
-		fatal(GFARM_MSG_UNFIXED, "%s: %s, die", diag,
+		fatal(GFARM_MSG_1003684, "%s: %s, die", diag,
 		    strerror(save_errno));
 	}
 	return (e);
@@ -4002,7 +4002,7 @@ back_channel_server(void)
 		    (gfarm_int64_t)(getpid() + hack_to_make_cookie_not_work++),
 		    &gfmd_knows_me);
 		if (IS_CONNECTION_ERROR(e)) {
-			gflog_error(GFARM_MSG_UNFIXED,
+			gflog_error(GFARM_MSG_1003685,
 			    "back channel disconnected, try to reconnect: %s",
 			    gfarm_error_string(e));
 			goto reconnect_backchannel;
