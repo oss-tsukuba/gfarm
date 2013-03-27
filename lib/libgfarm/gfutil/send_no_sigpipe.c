@@ -4,9 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef __KERNEL__	/* gfarm_sigpipe_ignore  ???*/
 static int sigpipe_is_ignored = 0;
 
-#ifndef __KERNEL__
 void
 gfarm_sigpipe_ignore(void)
 {

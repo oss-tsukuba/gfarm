@@ -38,6 +38,12 @@
 #include "gfm_client.h"
 #include "host.h"
 
+#ifndef __KERNEL__
+#define free_gethost_buff(buf)
+#else /* __KERNEL__ */
+extern void free_gethost_buff(void *buf);
+#endif /* __KERNEL__ */
+
 #define staticp	(gfarm_ctxp->host_static)
 
 struct known_network {
@@ -145,13 +151,17 @@ gfm_host_info_get_by_name_alias(struct gfm_connection *gfm_server,
 			"Unknown host (%s): %s",
 			if_hostname,
 			gfarm_error_string(GFARM_ERR_UNKNOWN_HOST));
+		free_gethost_buff(hp);
 		return (GFARM_ERR_UNKNOWN_HOST);
 	}
 	for (i = 0, n = hp->h_name; n != NULL; n = hp->h_aliases[i++]) {
 		if (host_info_get_by_name_alias(gfm_server, n, info) ==
-		    GFARM_ERR_NO_ERROR)
+		    GFARM_ERR_NO_ERROR) {
+			free_gethost_buff(hp);
 			return (GFARM_ERR_NO_ERROR);
+		}
 	}
+	free_gethost_buff(hp);
 	return (e);
 }
 
@@ -317,9 +327,11 @@ gfarm_get_client_architecture(const char *client_name, char **architecturep)
 	for (; cacp != NULL; cacp = cacp->next) {
 		if (host_address_is_match(cacp->hostspec, client_name, hp)) {
 			*architecturep = cacp->architecture;
+			free_gethost_buff(hp);
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+	free_gethost_buff(hp);
 	return (GFARM_ERR_NO_SUCH_OBJECT);
 }
 
@@ -405,6 +417,7 @@ gfm_host_is_local(struct gfm_connection *gfm_server, const char *hostname)
 	return (is_local);
 }
 
+#ifndef __KERNEL__
 #ifdef HAVE_GETIFADDRS
 
 gfarm_error_t
@@ -575,6 +588,42 @@ err:
 }
 
 #endif /* HAVE_GETIFADDRS */
+#else /* __KERNEL__ */
+gfarm_error_t
+gfarm_get_ip_addresses(int *countp, struct in_addr **ip_addressesp)
+{
+	char name[128];
+	struct hostent *ent;
+	int i, n, err;
+	struct in_addr *addresses;
+
+	*countp = 0;
+	*ip_addressesp = NULL;
+	if ((err = gethostname(name, sizeof(name)))) {
+		return (gfarm_errno_to_error(err));
+	}
+	if (!(ent = gethostbyname(name))) {
+		return (gfarm_errno_to_error(errno));
+	}
+
+	for (n = 0; ent->h_addr_list[n]; n++)
+		;
+	GFARM_MALLOC_ARRAY(addresses,  n);
+	if (addresses == NULL) {
+		gflog_debug(GFARM_MSG_1002523,
+		    "gfarm_get_ip_addresses: no memory for %d IPs", n);
+		free_gethost_buff(ent);
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	for (i = 0; ent->h_addr_list[i]; i++) {
+		addresses[i] = *(struct in_addr *)ent->h_addr_list[i];
+	}
+	free_gethost_buff(ent);
+	*ip_addressesp = addresses;
+	*countp = n;
+	return (GFARM_ERR_NO_ERROR);
+}
+#endif /* __KERNEL__ */
 
 #if 0 /* "address_use" directive is disabled for now */
 

@@ -91,6 +91,7 @@ gfs_stat(const char *path, struct gfs_stat *s)
 	struct gfm_stat_closure closure;
 	gfarm_error_t e;
 
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -122,6 +123,7 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 	struct gfm_stat_closure closure;
 	gfarm_error_t e;
 
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -146,8 +148,6 @@ gfs_lstat(const char *path, struct gfs_stat *s)
 	return (e);
 }
 
-#ifndef __KERNEL__
-
 gfarm_error_t
 gfs_fstat(GFS_File gf, struct gfs_stat *s)
 {
@@ -155,6 +155,7 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 	struct gfm_stat_closure closure;
 	gfarm_error_t e;
 
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 
@@ -174,7 +175,6 @@ gfs_fstat(GFS_File gf, struct gfs_stat *s)
 
 	return (e);
 }
-#endif /* __KERNEL__ */
 
 void
 gfs_stat_display_timers(void)

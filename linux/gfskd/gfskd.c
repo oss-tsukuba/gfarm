@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -13,6 +15,7 @@
 #include <gfarm/gfarm.h>
 #include "context.h"
 #include "gfm_client.h"
+#include "gfs_client.h"
 #include "metadb_server.h"
 #include "config.h"
 #include "gfpath.h"
@@ -79,8 +82,8 @@ gfskd_connection_acquire(const char *path,
 	return (error);
 }
 
-gfarm_error_t
-gfskd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
+static gfarm_error_t
+gfmd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
 		struct gfm_connection **gfm_serverp)
 {
 	gfarm_error_t	error;
@@ -102,7 +105,7 @@ gfskd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
 	return (error);
 }
 gfarm_error_t
-gfskd_req_connectmd(struct gfskd_req_t *reqctx, void *arg)
+gfskd_req_connect_gfmd(struct gfskd_req_t *reqctx, void *arg)
 {
 	gfarm_error_t	error = GFARM_ERR_NO_ERROR;
 	struct gfsk_req_connect *req = (struct gfsk_req_connect *)arg;
@@ -124,7 +127,7 @@ gfskd_req_connectmd(struct gfskd_req_t *reqctx, void *arg)
 	uid_t orguid = getuid();
 	setuid(req->r_uid);
 	gfarm_set_local_user_for_this_uid(req->r_uid);
-	err = gfskd_connect(req, &rpl, &gfm_server);
+	err = gfmd_connect(req, &rpl, &gfm_server);
 	if (err != GFARM_ERR_NO_ERROR) {
 		setuid(orguid);
 		gfarm_set_local_user_for_this_uid(orguid);
@@ -137,6 +140,70 @@ gfskd_req_connectmd(struct gfskd_req_t *reqctx, void *arg)
 		gfskd_send_reply(reqctx, 0, &rpl, sizeof(rpl));
 		gfm_client_purge_from_cache(gfm_server);
 		gfm_client_connection_free(gfm_server);
+	}
+	exit(0);
+}
+static gfarm_error_t
+gfsd_connect(struct gfsk_req_connect *req, struct gfsk_rpl_connect *rpl,
+		struct gfs_connection **gfs_serverp)
+{
+	gfarm_error_t	error;
+	struct gfs_connection *gfs_server;
+	struct sockaddr_in in;
+
+	in.sin_family = AF_INET;
+	in.sin_port = htons(req->r_port);
+	in.sin_addr.s_addr = htonl(req->r_v4addr);
+	error = gfs_client_connection_acquire(req->r_hostname, req->r_global,
+		(struct sockaddr *)&in, gfs_serverp);
+
+	if (error != GFARM_ERR_NO_ERROR) {
+		gflog_error(GFARM_MSG_UNFIXED,
+		    "connecting to gfsd at %s:%d: %s\n",
+		    req->r_hostname, req->r_port,
+		    gfarm_error_string(error));
+		return (error);
+	}
+	gfs_server = *gfs_serverp;
+	rpl->r_fd = gfs_client_connection_fd(gfs_server);
+	return (error);
+}
+gfarm_error_t
+gfskd_req_connect_gfsd(struct gfskd_req_t *reqctx, void *arg)
+{
+	gfarm_error_t	error = GFARM_ERR_NO_ERROR;
+	struct gfsk_req_connect *req = (struct gfsk_req_connect *)arg;
+	struct gfsk_rpl_connect	rpl;
+	struct gfs_connection *gfs_server;
+	int	err;
+
+	switch (fork()) {
+	case 0:
+		break;
+	case -1:
+		err = errno;
+		error = gfarm_errno_to_error(err);
+		gflog_debug(GFARM_MSG_UNFIXED, "fork: %s", strerror(err));
+		/* fall through */
+	default:
+		return (error);
+	}
+	uid_t orguid = getuid();
+	setuid(req->r_uid);
+	gfarm_set_local_user_for_this_uid(req->r_uid);
+	err = gfsd_connect(req, &rpl, &gfs_server);
+	if (err != GFARM_ERR_NO_ERROR) {
+		setuid(orguid);
+		gfarm_set_local_user_for_this_uid(orguid);
+	}
+	gflog_debug(GFARM_MSG_UNFIXED, "uid=%d, err=%d", req->r_uid, err);
+
+	if (err) {
+		gfskd_send_reply(reqctx, err, NULL, 0);
+	} else {
+		gfskd_send_reply(reqctx, 0, &rpl, sizeof(rpl));
+		gfs_client_purge_from_cache(gfs_server);
+		gfs_client_connection_free(gfs_server);
 	}
 	exit(0);
 }
@@ -209,6 +276,8 @@ usage(const char *progname, struct gfskd_param *paramsp)
 "    -o auto_uid_max=N       maximum number of auto uid (default: %d)\n"
 "    -o auto_gid_min=N       minimum number of auto gid (default: %d)\n"
 "    -o auto_gid_max=N       maximum number of auto gid (default: %d)\n"
+"    -o on_demand_replication        set on-demand replication (default: no)\n"
+"    -o call_ftruncate       call ftruncate instead rpc (default: rpc)\n"
 		"\n", progname,
 		paramsp->conf_path,
 		paramsp->key_path,
@@ -459,6 +528,10 @@ gfskd_opt_one(char *name, char *val, struct gfskd_param *paramsp)
 		paramsp->local_uid = (uid_t)gfskd_have_int(name, val);
 		paramsp->uid_set = 1;
 		ret = GFSKD_OPT_THROUGH;
+	} else if (!strcmp(name, "device")) {
+		gfskd_have_val(name, val);
+		paramsp->dev_name = val;
+		ret = GFSKD_OPT_THROUGH;
 	} else if (!strcmp(name, "luser")) {
 		gfskd_have_val(name, val);
 		paramsp->local_name = val;
@@ -469,7 +542,7 @@ gfskd_opt_one(char *name, char *val, struct gfskd_param *paramsp)
 		ret = GFSKD_OPT_THROUGH;
 	} else if (!strcmp(name, "loglevel")) {
 		gfskd_have_val(name, val);
-		paramsp->facility = val;
+		paramsp->loglevel = val;
 		ret = GFSKD_OPT_THROUGH;
 	} else if (!strcmp(name, "use_syslog")) {
 		paramsp->use_syslog = 1;
@@ -482,6 +555,10 @@ gfskd_opt_one(char *name, char *val, struct gfskd_param *paramsp)
 		paramsp->auto_gid_min = gfskd_have_int(name, val);
 	} else if (!strcmp(name, "auto_gid_max")) {
 		paramsp->auto_gid_max = gfskd_have_int(name, val);
+	} else if (!strcmp(name, "on_demand_replication")) {
+		;
+	} else if (!strcmp(name, "call_ftruncate")) {
+		;
 	} else if (!strcmp(name, "rw"))
 		paramsp->mnt_flags &= ~MS_RDONLY;
 	else if (!strcmp(name, "ro"))

@@ -17,7 +17,7 @@
 #include <gfarm/gflog.h>
 #include "gfutil.h"
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* HAVE_SETRLIMIT */
 #undef HAVE_SETRLIMIT
 #endif /* __KERNEL__ */
 

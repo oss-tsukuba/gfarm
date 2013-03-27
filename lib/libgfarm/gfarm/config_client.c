@@ -102,7 +102,7 @@ gfarm_config_read(void)
 	return (GFARM_ERR_NO_ERROR);
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_initialize :: kernel spec */
 static void
 gfarm_parse_env_client(void)
 {
@@ -170,7 +170,6 @@ gfarm_initialize(int *argcp, char ***argvp)
 }
 #endif /* __KERNEL__ */
 
-#ifndef __KERNEL__	/* pio, replicate */
 static gfarm_error_t
 gfarm_client_process_set_or_reset(struct gfs_connection *gfs_server,
 	struct gfm_connection *gfm_server,
@@ -209,7 +208,6 @@ gfarm_client_process_reset(struct gfs_connection *gfs_server,
 	return (gfarm_client_process_set_or_reset(gfs_server, gfm_server,
 	    gfs_client_process_reset));
 }
-#endif /* __KERNEL__ */
 
 /*
  * the following function is for client,

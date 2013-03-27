@@ -1,7 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
-. ./linux/kernel/dironlytest-init.sh
+. ./linux/kernel/initparams.sh
 
 # rmdir #1
 {

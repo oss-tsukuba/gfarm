@@ -43,6 +43,7 @@ void gfs_client_connection_gc(void);
 int gfs_client_connection_is_local(struct gfs_connection *);
 
 gfarm_error_t gfs_client_connection_enter_cache(struct gfs_connection *);
+gfarm_error_t gfs_client_connection_enter_cache_tail(struct gfs_connection *);
 
 struct gfarm_filesystem;
 gfarm_error_t gfs_client_connect_request_multiplexed(
@@ -126,6 +127,7 @@ gfarm_error_t gfs_client_command_result(struct gfs_connection *,
 gfarm_error_t gfs_client_command(struct gfs_connection *,
 			 char *, char **, char **, int,
 			 int *, int *, int *);
+int gfs_client_connection_cache_change(int);
 
 /* from gfmd */
 

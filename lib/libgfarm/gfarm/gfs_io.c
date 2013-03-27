@@ -15,7 +15,7 @@
 static gfarm_error_t
 gfm_open_flag_check(int flag)
 {
-	if (flag & ~GFARM_FILE_USER_MODE)
+	if (flag & ~GFARM_FILE_USER_OPEN_FLAGS)
 		return (GFARM_ERR_INVALID_ARGUMENT);
 	if ((flag & GFARM_FILE_ACCMODE) == GFARM_FILE_LOOKUP)
 		return (GFARM_ERR_INVALID_ARGUMENT);
@@ -124,7 +124,7 @@ gfm_create_fd(const char *path, int flags, gfarm_mode_t mode,
 		return (e);
 	}
 
-	closure.flags = flags;
+	closure.flags = flags & GFARM_FILE_USER_MODE;
 	closure.mode_to_create = mode;
 	closure.gfm_serverp = gfm_serverp;
 	closure.fdp = fdp;
@@ -223,7 +223,7 @@ gfm_open_fd_with_ino(const char *path, int flags,
 	closure.typep = typep;
 	closure.inump = inump;
 	closure.urlp = urlp;
-	return (gfm_inode_op_modifiable(path, flags,
+	return (gfm_inode_op_modifiable(path, flags & GFARM_FILE_USER_MODE,
 	    gfm_open_fd_request,
 	    gfm_open_fd_result,
 	    gfm_open_fd_success,

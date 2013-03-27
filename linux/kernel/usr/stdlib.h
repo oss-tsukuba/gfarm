@@ -42,10 +42,6 @@ abort(void)
 
 #include <linux/sched.h>
 #include <linux/random.h>
-#if 0
-#define srand(seed)     srandom32(seed)
-#define rand()  random32()
-#endif
 static inline void srand(unsigned seed)
 {
 	srandom32(seed);
@@ -54,6 +50,14 @@ static inline int
 rand(void)
 {
 	return (random32());
+}
+#define	RAND_MAX	2147483647
+#include <linux/sort.h>
+static inline void
+qsort(void *base, size_t nmemb, size_t size,
+		int(*compar)(const void *, const void *))
+{
+	sort(base, nmemb, size, compar, NULL);
 }
 #endif /* _STDLIB_H_ */
 

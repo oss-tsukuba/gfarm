@@ -61,7 +61,7 @@ gfarm_mutex_destroy(pthread_mutex_t *mutex, const char *where, const char *what)
 		    where, what, strerror(err));
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_cond_xxx */
 
 void
 gfarm_cond_init(pthread_cond_t *cond, const char *where, const char *what)

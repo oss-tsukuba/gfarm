@@ -274,7 +274,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
 #else
@@ -335,7 +335,7 @@ gfp_xdr_vsend_size_add(size_t *sizep, const char **formatp, va_list *app)
 			size += n;
 			continue;
 		case 'f':
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 			(void)va_arg(*app, double);
 			size += sizeof(nd);
 			continue;
@@ -374,7 +374,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 	double d;
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
@@ -470,7 +470,7 @@ gfp_xdr_vsend(struct gfp_xdr *conn,
 			    s, n);
 			continue;
 		case 'f':
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 
 			d = va_arg(*app, double);
 #ifndef WORDS_BIGENDIAN
@@ -511,11 +511,13 @@ gfp_xdr_vsend_ref_size_add(size_t *sizep, const char **formatp, va_list *app)
 	int minus;
 #endif
 
+#ifndef __KERNEL__      /* double */
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
 #else
 	double d;
 #	define nd d
+#endif
 #endif
 	const char **sp, *s;
 	size_t *szp;
@@ -572,9 +574,16 @@ gfp_xdr_vsend_ref_size_add(size_t *sizep, const char **formatp, va_list *app)
 			    "format 'r'");
 			continue;
 		case 'f':
+#ifndef __KERNEL__      /* double */
 			(void)va_arg(*app, double *);
 			size += sizeof(nd);
 			continue;
+#else /* __KERNEL__ */
+			gflog_fatal(GFARM_MSG_UNFIXED,
+				"floating format is not "
+				"supported. '%s'", *formatp);
+                        return (GFARM_ERR_PROTOCOL);  /* floating */
+#endif /* __KERNEL__ */
 		case '/':
 			break;
 
@@ -613,12 +622,14 @@ gfp_xdr_vsend_ref(struct gfp_xdr *conn,
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
+#ifndef __KERNEL__	/* double */
 	double *dp, d;
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
 #else
 #	define nd d
 #endif
+#endif /* __KERNEL__ */
 	const char **sp, *s;
 	size_t *szp;
 
@@ -709,7 +720,7 @@ gfp_xdr_vsend_ref(struct gfp_xdr *conn,
 			    "gfp_xdr_vsend_ref: unimplemented format 'r'");
 			continue;
 		case 'f':
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 			dp = va_arg(*app, double *);
 			d = *dp;
 #ifndef WORDS_BIGENDIAN
@@ -772,7 +783,9 @@ gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 	gfarm_int16_t *hp;
 	gfarm_int32_t *ip;
 	gfarm_int64_t *op;
+#ifndef __KERNEL__      /* double */
 	double *dp;
+#endif
 	char **sp, *s;
 	size_t *szp, sz;
 
@@ -821,9 +834,16 @@ gfp_xdr_vrecv_free(int format_parsed, const char *format, va_list *app)
 			free(*sp);
 			continue;
 		case 'f':
+#ifndef __KERNEL__      /* double */
 			dp = va_arg(*app, double *);
 			(void)dp;
 			continue;
+#else /* __KERNEL__ */
+			gflog_fatal(GFARM_MSG_UNFIXED,
+				"floating format is not supported. '%s'",
+				format);
+			return; /* floating */
+#endif /* __KERNEL__ */
 		case '/':
 			break;
 
@@ -849,7 +869,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 #if INT64T_IS_FLOAT
 	int minus;
 #endif
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 	double *dp;
 #ifndef WORDS_BIGENDIAN
 	struct { char c[8]; } nd;
@@ -1068,7 +1088,7 @@ gfp_xdr_vrecv_sized_x(struct gfp_xdr *conn, int just, int do_timeout,
 				break;
 			continue;
 		case 'f':
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* double */
 			dp = va_arg(*app, double *);
 			assert(sizeof(*dp) == 8);
 			if ((e = recv_sized(conn, just, do_timeout, dp,

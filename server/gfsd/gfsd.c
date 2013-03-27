@@ -2026,7 +2026,7 @@ gfs_server_pwrite(struct gfp_xdr *client, gfp_xdr_xid_t xid, size_t size)
 void
 gfs_server_write(struct gfp_xdr *client, gfp_xdr_xid_t xid, size_t size)
 {
-	gfarm_int32_t fd;
+	gfarm_int32_t fd, localfd;
 	size_t iosize;
 	ssize_t rv;
 	gfarm_int64_t written_offset, total_file_size;
@@ -2050,11 +2050,13 @@ gfs_server_write(struct gfp_xdr *client, gfp_xdr_xid_t xid, size_t size)
 	 */
 	if (iosize > GFS_PROTO_MAX_IOSIZE)
 		iosize = GFS_PROTO_MAX_IOSIZE;
-	if ((rv = write(file_table_get(fd), buffer, iosize)) == -1)
+	localfd = file_table_get(fd);
+	(void) lseek(localfd, 0, SEEK_END);
+	if ((rv = write(localfd, buffer, iosize)) == -1)
 		save_errno = errno;
 	else {
-		written_offset = lseek(fd, 0, SEEK_CUR) - rv;
-		total_file_size = lseek(fd, 0, SEEK_END);
+		written_offset = lseek(localfd, 0, SEEK_CUR) - rv;
+		total_file_size = lseek(localfd, 0, SEEK_END);
 		file_table_set_written(fd);
 	}
 	if (rv > 0) {

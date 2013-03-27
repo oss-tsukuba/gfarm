@@ -10,6 +10,7 @@ struct gfarm_context {
 	int gfmd_reconnection_timeout;
 	int attr_cache_limit;
 	int attr_cache_timeout;
+	int page_cache_timeout;
 	int schedule_cache_timeout;
 	int schedule_concurrency;
 	int schedule_concurrency_per_net;
@@ -26,6 +27,7 @@ struct gfarm_context {
 	int client_file_bufsize;
 	int client_parallel_copy;
 	int on_demand_replication;
+	int call_rpc_instead_syscall;
 	int network_receive_timeout;
 	int file_trace;
 	int fatal_action;
@@ -58,7 +60,7 @@ struct gfarm_context {
 
 	struct gfarm_iostat_static *iostat_static;
 };
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_ctxp */
 extern struct gfarm_context *gfarm_ctxp;
 #else /* __KERNEL__ */
 #include "gfsk.h"

@@ -100,7 +100,6 @@ gfs_dirplusxattr_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd,
 	}
 
 	dir->gfm_server = gfm_server;
-	gfm_client_connection_unlock(gfm_server);
 	dir->fd = fd;
 
 	dir->n = dir->index = 0;
@@ -302,7 +301,6 @@ gfs_closedirplusxattr(GFS_DirPlusXAttr dir)
 {
 	gfarm_error_t e;
 
-	gfm_client_connection_lock(dir->gfm_server);
 	if ((e = gfm_close_fd(dir->gfm_server, dir->fd)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_close_fd: %s",

@@ -655,7 +655,7 @@ gfarm_error_string(gfarm_error_t error)
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* HAVE_SYS_NERR :: not defined in kernel */
 #undef HAVE_SYS_NERR
 #endif /* __KERNEL__ */
 

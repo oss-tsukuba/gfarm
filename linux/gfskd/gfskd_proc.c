@@ -95,7 +95,8 @@ gfskd_recv_req(int fd, const char *buf, size_t len)
 	const char *bufp = NULL;
 
 	switch (in->opcode) {
-	case GFSK_OP_CONNECTMD:
+	case GFSK_OP_CONNECT_GFMD:
+	case GFSK_OP_CONNECT_GFSD:
 		async = 1;
 		break;
 	default:
@@ -126,8 +127,11 @@ gfskd_recv_req(int fd, const char *buf, size_t len)
 	inarg = (void *)(bufp + sizeof(struct fuse_in_header));
 
 	switch (in->opcode) {
-	case GFSK_OP_CONNECTMD:
-		error = gfskd_req_connectmd(reqp, inarg);
+	case GFSK_OP_CONNECT_GFMD:
+		error = gfskd_req_connect_gfmd(reqp, inarg);
+		break;
+	case GFSK_OP_CONNECT_GFSD:
+		error = gfskd_req_connect_gfsd(reqp, inarg);
 		break;
 	case GFSK_OP_TERM:
 		error = gfskd_req_term(reqp, inarg);

@@ -118,7 +118,7 @@ gflog_init_priority_string(void)
 static void
 gflog_out(int priority, const char *str1, const char *str2)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gflog_out :: printk */
 	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
 	if (log_use_syslog)
 		syslog(priority, "<%s> %s%s",
@@ -408,7 +408,7 @@ gflog_syslog_open(int syslog_option, int syslog_facility)
 	log_use_syslog = 1;
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gflog_syslog_name_to_facility :: not use */
 int
 gflog_syslog_name_to_facility(const char *name)
 {

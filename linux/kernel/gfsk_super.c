@@ -16,10 +16,11 @@
 #include "ug_idmap.h"
 #include "gfsk_libgfarm.h"
 
-int log_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG;
+/* static int gflog_level = GFARM_DEFAULT_PRIORITY_LEVEL_TO_LOG; */
+static int gflog_level = LOG_DEBUG;
 
-module_param(log_level, int, 0);
-MODULE_PARM_DESC(log_level, "log level (0: emerge, ..., 7: debug)");
+module_param(gflog_level, int, 0);
+MODULE_PARM_DESC(gflog_level, "log level (0: emerge, ..., 7: debug)");
 
 module_param(ug_timeout_sec, uint, 0);
 MODULE_PARM_DESC(ug_timeout_sec, "TimeOut sec for ug_idmapd");
@@ -112,7 +113,7 @@ gfarm_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_time_gran = 1;
 
 	inode = gfsk_get_inode(sb, S_IFDIR | 0777, GFARM_ROOT_INO,
-			GFARM_ROOT_IGEN);
+			GFARM_ROOT_IGEN, 1);
 	if (!inode) {
 		return (-ENOMEM);
 	}
@@ -175,23 +176,26 @@ init_gfarm_fs(void)
 {
 	int ret;
 
-	gflog_set_priority_level(log_level);
+	gflog_set_priority_level(gflog_level);
 	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() start");
 
 	ret = gfsk_dev_init();
 
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED, "gfsk_dev_init() failed. ret=%d", ret);
+		gflog_error(GFARM_MSG_UNFIXED,
+			"gfsk_dev_init() failed. ret=%d", ret);
 		return (ret);
 	}
 	ret = ug_idmap_init();
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED, "ug_idmap_init() failed. ret=%d", ret);
+		gflog_error(GFARM_MSG_UNFIXED,
+			"ug_idmap_init() failed. ret=%d", ret);
 		goto quit1;
 	}
 	ret = register_filesystem(&gfarm_fs_type);
 	if (ret) {
-		gflog_error(GFARM_MSG_UNFIXED, "register_filesystem() failed. ret=%d", ret);
+		gflog_error(GFARM_MSG_UNFIXED,
+			"register_filesystem() failed. ret=%d", ret);
 		goto quit2;
 	}
 	gfarm_inode_cachep = kmem_cache_create("gfarm_inode",
@@ -199,7 +203,8 @@ init_gfarm_fs(void)
 					      0, SLAB_HWCACHE_ALIGN,
 					      gfarm_inode_init_once);
 	if (!gfarm_inode_cachep) {
-		gflog_error(GFARM_MSG_UNFIXED, "kmem_cache_create(gfarm_inode) failed.");
+		gflog_error(GFARM_MSG_UNFIXED,
+			"kmem_cache_create(gfarm_inode) failed.");
 		goto quit3;
 	}
 	gflog_info(GFARM_MSG_UNFIXED, "init_gfarm_fs() end");

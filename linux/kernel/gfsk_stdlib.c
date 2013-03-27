@@ -18,6 +18,7 @@
 #include <linux/rcupdate.h>
 #include <linux/hrtimer.h>
 #include <linux/ctype.h>
+#include <linux/swab.h>
 #ifdef __arch_um__
 #include <linux/delay.h>
 #endif
@@ -45,7 +46,8 @@ fopen(const char *path, const char *mode)
 	if (!path) {
 		gflog_error(GFARM_MSG_UNFIXED, "no path");
 	} else if (*mode != 'r') {
-		gflog_error(GFARM_MSG_UNFIXED, "support only read mode but '%s'", mode);
+		gflog_error(GFARM_MSG_UNFIXED,
+			"support only read mode but '%s'", mode);
 	} else {
 		for (i = 0; i < GFSK_FBUF_MAX; i++) {
 			struct gfsk_fbuf *fbp = &gfsk_fsp->gf_mdata.m_fbuf[i];
@@ -107,6 +109,17 @@ sleep(unsigned int seconds)
 	msleep(seconds * 1000);
 	return (0);
 }
+void
+gfarm_nanosleep_by_timespec(const struct timespec *tsp)
+{
+	unsigned int msec = tsp->tv_sec * 1000 + tsp->tv_nsec / (1000 * 1000);
+	msleep(msec);
+}
+void
+gfarm_nanosleep(unsigned long long nsec)
+{
+	msleep(nsec / (1000 * 1000));
+}
 unsigned long int
 strtoul(const char *nptr, char **endptr, int base)
 {
@@ -150,4 +163,19 @@ strtol(const char *nptr, char **endptr, int base)
 		resl = res * sign;
 
 	return (resl);
+}
+void
+swab(const void *from, void *to, ssize_t n)
+{
+	switch (n) {
+	case 2:
+		*(__u16 *)to = swab16(*(__u16 *)from);
+		break;
+	case 4:
+		*(__u32 *)to = swab16(*(__u32 *)from);
+		break;
+	case 8:
+		*(__u64 *)to = swab16(*(__u64 *)from);
+		break;
+	}
 }

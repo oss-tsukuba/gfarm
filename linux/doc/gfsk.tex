@@ -1,82 +1,87 @@
-\section*{�Ϥ����}
-�ܥɥ�����Ȥϡ��桼�������ɤ�ư���Gfarm �ե����륷���ƥ��
-�����ͥ���FS����ľ�ܸƤӽФ����Ȥˤ�ä���ǽ�����ޤ뤿���
-�����ͥ�ɥ饤�Фλ��ͤ򵭽Ҥ����ΤǤ��롣
+\section*{はじめに}
+本ドキュメントは、ユーザーランドで動作するGfarm ファイルシステムを
+カーネル内FSから直接呼び出すことによって性能向上を図るための
+カーネルドライバの仕様を記述するものである。
 
-\section{�����ƥ೵��}
+\section{システム概要}
 
-�ʲ����ܥ����ƥ�Υ⥸�塼���Ϣ�ޤ򼨤���
+以下に本システムのモジュール関連図を示す。
 
 \begin{figure}[htb]\begin{center}
 \includegraphics[bb=00 00 800 850,scale=0.5]{module.jpg}
-\caption{�⥸�塼���Ϣ��}\label{fig:module}
+\caption{モジュール関連図}\label{fig:module}
 \end{center}\end{figure}
 
-Gfarm �ǤϳƼ�ǧ�ڵ����򥵥ݡ��Ȥ��Ƥ��뤬�������ͥ����ǧ�ڥ饤�֥���
-���Ѥ���Τ��񤷤����Ȥ��顢����ȯ�Ǥ�ǧ�ڤϥ桼�������ɤǹԤ���
-����ϡ���ñ��ǧ�ڵ�����Ƴ������ʤɤ��ơ������ͥ�����Ĥ�����³��
-�Ԥ����Ȥ�ͤ����롣â�������ξ���̾�����ʤɤϥ桼�������ɤ�
-�Ԥ����Ȥˤʤ롣
+Gfarm では各種認証機構をサポートしているが、カーネル内で認証ライブラリを
+利用するのが難しいことから、今回開発では認証はユーザーランドで行う。
+将来は、簡単な認証機構を導入するなどして、カーネル内に閉じて接続を
+行うことも考えられる。但し、その場合も名前解決などはユーザーランドで
+行うことになる。
 
-ǧ�ڤϥ桼������˹Ԥ��Τǡ������С��Ȥ���³��桼������˹Ԥ���
-Ʊ��桼������ʣ������³��Ԥ����Ȥ�ͤ����뤬���ݡ��ȿ�������ʤɤ�
-���ꡢ����ϥ桼����˰�Ĥ���³�Ȥ��롣
+認証はユーザー毎に行うので、サーバーとの接続もユーザー毎に行う。
+同一ユーザーで複数の接続を行うことも考えられるが、ポート数の問題なども
+あり、今回はユーザ毎に一つの接続とする。
 
-����ȯ����⥸�塼��Ȥ��Ƥϰʲ��Τ�Τ����롣
+今回開発するモジュールとしては以下のものがある。
 \begin{itemize}
 \item	gfarm \par
-	�����ͥ���ե����륷���ƥࡣ
+	カーネル内ファイルシステム。
 	
 \item	mount.gfarm \par
-	�桼�������ɤΥإ�ѡ��ǡ����ǡ�
-	mount ���ޥ�ɤ��鵯ư����롣
-	mount ��ϥ����ͥ뤫�����³�׵���Ԥ��������᥿�ǡ��������Ф�
-	��³����ǧ�ڤ�Ԥ���
+	ユーザーランドのヘルパーデーモンで、
+	mount コマンドから起動される。
+	mount 後はカーネルからの接続要求を待ち受け、メタデータサーバに
+	接続し、認証を行う。
 \item	ug_idmapd \par
-	�桼�������ɤΥإ�ѡ��ǡ����ǡ�
-	�桼����ID�����롼��ID���Ѵ���Ԥ���
+	ユーザーランドのヘルパーデーモンで、
+	ユーザーID、グループIDおよびホスト名の変換を行う。
 \end{itemize}
 
-�桼�������ɤȤ��̿���ˡ�ˤĤ��Ƥϡ��ʲ��������Ȥ��롣
+ユーザーランドとの通信方法については、以下の方式とする。
 \begin{itemize}
-\item	��³�׵�	\par
-	�����ͥ�ɥ饤�Ф����᥿�ǡ��������ФȤ���³����ꤹ��
-	���󥿥ե������ˤϡ�
-	fuse �⥸�塼�뤬�������ݡ��Ȥ��Ƥ��륤�󥿥ե����������Ѥ��롣
+\item	接続要求	\par
+	カーネルドライバが、メタデータサーバとの接続を依頼する
+	インタフェースには、
+	fuse モジュールがエクスポートしているインタフェースを利用する。
 
-	����ϡ����ץꥱ������� /dev/gfarm �򥪡��ץ󤷡�
-	���Υե�������ɤ߹��ळ�Ȥˤ�äơ������ͥ�⥸�塼���
-	�׵�������桼�������֤Ǥ�����褷�ơ������ե�����˱�����
-	�񤭹�����ȤߤǤ��롣
+	これは、アプリケーションが /dev/gfarm をオープンし、
+	このファイルを読み込むことによって、カーネルモジュールの
+	要求を得、ユーザー空間でこれを解決して、当該ファイルに応答を
+	書き込む仕組みである。
 
-	�ե�����ȥե����륷���ƥ���ӤĤ�����ˡ�ϡ�
-	���ץꥱ������󤬥����ץ�ե�����ǥ�����ץ���
-	mount�������Τ��뤳�ȤǹԤ���
+	ファイルとファイルシステムを結びつける方法は、
+	アプリケーションがオープンファイルデスクリプタを
+	mount時に通知することで行う。
 	
-	������ˡ�ϡ�mount�ȷ�ӤĤ��ư����Ǥ��뤬��¾�������ץꥱ�������
-	�۾ｪλ�����ݤεߺѼ��ʤ����ӹͤ���ɬ�פ����롣
+	この方法は、mountと結びついて安全であるが、他方、アプリケーションが
+	異常終了した際の救済手段を別途考える必要がある。
 
-	��³�׵�Ͼ��賫ȯ�Ǥʤ��ʤ�Τǡ��ߺѼ��ʤϹ֤��ʤ���
+	接続要求は将来開発でなくなるので、救済手段は講じない。
 
-\item	ID�Ѵ��׵�	\par
-	�����ͥ�ɥ饤�Ф���uid, gid ��̾�����Ѵ�����ꤹ�륤�󥿥ե������ˤ�
-	sunrpc �⥸�塼�뤬�������ݡ��Ȥ��Ƥ��륤�󥿥ե����������Ѥ��롣
+\item	ID変換要求	\par
+	カーネルドライバが、uid, gid と名前の変換を依頼するインタフェースには
+	sunrpc モジュールがエクスポートしているインタフェースを利用する。
 
-	����ϡ����ץꥱ������� /proc/net/rpc/�۲��Υե�����򥪡��ץ󤷡�
-	���Υե�������ɤ߹��ळ�Ȥˤ�äơ������ͥ�⥸�塼���
-	�׵�������桼�������֤Ǥ�����褷�ơ������ե�����˱�����
-	�񤭹���ȤȤˡ�sunrpc�⥸�塼�뤬����å��嵡�����󶡤���
-	�׵�����������֥���å��夷�����θ��������Ѥ��ǽ�Ȥ�����
-	���ȤߤǤ��롣
+	これは、アプリケーションが /proc/net/rpc/配下のファイルをオープンし、
+	このファイルを読み込むことによって、カーネルモジュールの
+	要求を得、ユーザー空間でこれを解決して、当該ファイルに応答を
+	書き込むととに、sunrpcモジュールがキャッシュ機構を提供し、
+	要求応答を一定期間キャッシュし、この検索再利用を可能とさせる
+	仕組みである。
 	
-	�ܥ����ƥ�Ǥϡ��ʲ��Υ��󥿥ե�������������롣
+	本システムでは、以下のインタフェースを作成する。
 	\begin{itembox}[l]{/proc}\begin{cprog}
-	/proc/net/rpc/ug.idtoname:
-			   channel	�׵����ͥ�
-			   content	����å������
-			   flush	����å���ե�å���ؼ�
+	/proc/net/rpc/ug.idtoname:	UID,GID から名前への変換
+			   channel	要求チャネル
+			   content	キャッシュ情報
+			   flush	キャッシュフラッシュ指示
 
-	/proc/net/rpc/ug.nametoid:
+	/proc/net/rpc/ug.nametoid:	名前からUID,GID への変換
+			   channel
+			   content
+			   flush
+
+	/proc/net/rpc/ug.hostname:	ホスト名からIPアドレスへの変換
 			   channel
 			   content
 			   flush
@@ -86,65 +91,71 @@ Gfarm �ǤϳƼ�ǧ�ڵ����򥵥ݡ��Ȥ��Ƥ��뤬�������ͥ����ǧ�ڥ饤�֥���
 
 \section{mount}
 
-mount �� �᥿�ǡ�����������˹Ԥ���Ʊ��Υ᥿�ǡ��������С��ؤ�
-ʣ����mount ���ä˶ؤ��ʤ���
+mount は メタデータサーバ毎に行う。同一のメタデータサーバーへの
+複数のmount は特に禁じない。
 
-mount �� �桼�������ɤǥ᥿�ǡ��������С��Ȥ���³���ǧ������ǡ�
-mount�����ƥॳ�����ȯ�Ԥ���Τǡ���³����桼��������ꤷ��mount �Ȥʤ롣
+mount は ユーザーランドでメタデータサーバーとの接続を確認した上で、
+mountシステムコールを発行するので、接続するユーザーを指定したmount となる。
 
 \subsection{mount.gfarm}
-	mount.gfarm ��mount ���ޥ�ɤ���
-	mount -t gfarm ����ꤵ�줿���˸ƤӽФ���롣
+	mount.gfarm はmount コマンドから
+	mount -t gfarm を指定された時に呼び出される。
 
-	���ץ����ϰʲ��Τ�Τ����롣
+	オプションは以下のものがある。
 	\begin{itemize}
 	\item	luser=name	\par
-		�᥿�ǡ��������ФȤ���³��Ԥ��桼�����Υ�������桼��̾��
-		���ꤵ��ʤ���Х�������桼��ID�������롣
+		メタデータサーバとの接続を行うユーザーのローカルユーザ名。
+		指定されなければローカルユーザIDから得る。
 	\item	uid=uid	\par
-		�᥿�ǡ��������ФȤ���³��Ԥ��桼�����Υ�������桼��ID��
-		���ꤵ��ʤ���Х�������桼��̾�������롣
-		������ʤ���м¹ԥ桼����ID��������
+		メタデータサーバとの接続を行うユーザーのローカルユーザID。
+		指定されなければローカルユーザ名から得る。
+		得られれなければ実行ユーザーIDから得る
 	\item	key_path=path	\par
-		���̸������θ��ե�����Υѥ�����ꤹ�롣
-		���ꤵ��ʤ����luser �Υۡ���ǥ��쥯�ȥ�θ��ե������
-		���Ȥ��롣
+		共通鍵方式の鍵ファイルのパスを指定する。
+		指定されなければluser のホームディレクトリの鍵ファイルを
+		参照する。
 	\item	conf_path=path	\par
-		����ե����졼�����ե�����Υѥ�����ꤹ�롣
-		���ꤵ��ʤ����luser �Υۡ���ǥ��쥯�ȥ�Υե������
-		���Ȥ��롣
+		コンフィグレーションファイルのパスを指定する。
+		指定されなければluser のホームディレクトリのファイルを
+		参照する。
 	\end{itemize}
 
-	mount �ΰ���Ū�ʥ��ץ������������뤬��ư��ϥ᥿�ǡ��������Ф�
-	��¸���롣
+	mount の一般的なオプションも受け入れるが、動作はメタデータサーバに
+	依存する。
 
-\paragraph{mount.gfarm} ��mount ư���
+\paragraph{gfarm2_conf に追加されたオプション} には以下のものがある。
+	\begin{itemize}
+	\item	page_cache_timeout	\par
+		ページキャッシュの保持ミリ秒で、デフォルトは1秒である。
+	\end{itemize}
+
+\paragraph{mount.gfarm} のmount 動作概要
 
 	\begin{enumerate}
-	\item	����ե����졼�����ե�������ɤ߹��ࡣ
-	\item	���ꤵ�줿�桼�����ǥ᥿�ǡ��������Ф���³���롣
-	\item	ǧ�ڤ�Ѥޤ��롣
-	\item	/dev/gfarm �򥪡��ץ󤹤롣
-	\item	��³�ǥ�����ץ��ȥǥХ����ǥ�����ץ���mount�����˲ä��롣
-	\item	����ե����졼�����ե�����ȥ������Х�̾�Ѵ��ե������
-		�ɤ߹��ߡ�mount�����˲ä��롣
-	\item	mount �����ƥॳ�����ȯ�Ԥ��롣
-	\item	/etc/mtab ����Ͽ���롣
-	\item	��³�׵��Ԥ��롼�פ����롣
-	\item	/dev/gfarm ������³�׵᤬�����fork���롣
-	\item	fork ������
+	\item	コンフィグレーションファイルを読み込む。
+	\item	指定されたユーザーでメタデータサーバに接続する。
+	\item	認証を済ませる。
+	\item	/dev/gfarm をオープンする。
+	\item	接続デスクリプタとデバイスデスクリプタをmount引数に加える。
+	\item	コンフィグレーションファイルとグローバル名変換ファイルを
+		読み込み、mount引数に加える。
+	\item	mount システムコールを発行する。
+	\item	/etc/mtab に登録する。
+	\item	接続要求待ちループに入る。
+	\item	/dev/gfarm から接続要求があればforkする。
+	\item	fork した子
 		\begin{enumerate}
-		\item	����桼�����Τ������³��Ԥ���
-		\item	ǧ�ڤ�Ԥ���
-		\item	�ե�����ǥ�����ץ��� /dev/gfarm �˽񤭹���
-		\item	��λ���롣
+		\item	指定ユーザーのための接続を行う。
+		\item	認証を行う。
+		\item	ファイルデスクリプタを /dev/gfarm に書き込む
+		\item	終了する。
 		\end{enumerate}
-	\item	/dev/gfarm ���齪λ���ɤ߹�����齪λ���롣
+	\item	/dev/gfarm から終了を読み込んだら終了する。
 	\end{enumerate}
 
 \subsection{gfsk_mount_data}
 
-	mount �Τ���Υ��ץ����ϥХ��ʥ�ǡ����Ȥ��롣
+	mount のためのオプションはバイナリデータとする。
 
 	\begin{itembox}[l]{gfsk_mount_data}\begin{cprog}
          struct gfsk_strdata {
@@ -174,86 +185,85 @@ mount�����ƥॳ�����ȯ�Ԥ���Τǡ���³����桼��������ꤷ��mount �Ȥʤ롣
 	\end{cprog}\end{itembox}
 
 	\begin{itemize}
-	\item	m_fbuf �ϥ���ե����졼�����ե����롢�������Х�̾�Ѵ��ե�����
-		�ʤɤ�mmap ���ƥ����ͥ�����Ƥ����Τ��뤿��ι�¤�Ǥ��롣
+	\item	m_fbuf はコンフィグレーションファイル、グローバル名変換ファイル
+		などをmmap してカーネルに内容を通知するための構造である。
 
-		�����ͥ���֤������붲�줬����Τ�˾�ޤ����ʤ�����
-		����θ�Ƥ����Ȥ��롣
-	\item	m_dfd �� /dev/gfarm �򳫤����ե�����ǥ�����ץ��ǡ�
-		�����ͥ뤫�����³�׵������դ��뤿��Τ�ΤǤ��롣
-	\item	m_mfd �� �᥿�ǡ��������Ф���³�����ե�����ǥ�����ץ���
-		�����ͥ�˰����Ϥ���ΤǤ��롣
-	\item	m_uid,m_uidname�ϥ᥿�ǡ��������Ф���³�����桼��������Ǥ��롣
-	\item	m_host����³�����᥿�ǡ��������ФǤ��롣
-	\item	m_opt�ϰ���Ū�� mount ���ץ����ʸ����Ǥ��롣
+		カーネル空間を圧迫する恐れがあるので望ましくないが、
+		今後の検討課題とする。
+	\item	m_dfd は /dev/gfarm を開いたファイルデスクリプタで、
+		カーネルからの接続要求を受け付けるためのものである。
+	\item	m_mfd は メタデータサーバに接続したファイルデスクリプタで
+		カーネルに引き渡すものである。
+	\item	m_uid,m_uidnameはメタデータサーバに接続したユーザー情報である。
+	\item	m_hostは接続したメタデータサーバである。
+	\item	m_optは一般的な mount オプション文字列である。
 	\end{itemize}
 \subsection{gfarmfs}
 
-\paragraph{Gfarm �����ͥ�ɥ饤����} ��mount ư���
+\paragraph{Gfarm カーネルドライバ版} のmount 動作概要
 	\begin{enumerate}
-	\item	module �����ɻ�	\par
+	\item	module ロード時	\par
 		\begin{enumerate}
-		\item	modprobe �Υ��ץ���������ѥ�᥿���Ϥ���롣
-			����ѥ�᥿�ϰʲ��Ǥ��롣
+		\item	modprobe のオプションで設定パラメタを渡される。
+			設定パラメタは以下である。
 			\begin{itemize}
 			\item ug_timeout_sec=N	\par
-				ug_idmapd ����α����Ԥ����֤����ꤹ�롣
-				�ǥե���Ȥ�1�äǤ��롣
-			\item log_level=N	\par
-				������٥����ꤹ�롣
-				0�ϥ��������ʤ�����¿����
+				ug_idmapd からの応答待ち時間を設定する。
+				デフォルトは1秒である。
+			\item gflog_level=N	\par
+				ログレベルを指定する。
+				0はログが少なく７は多い。
+				ただし、後のmount で上書きされる。
 			\end{itemize}
-		\item	register_filesystem(file_system_type) ��
-			get_sb, kill_sb �ؿ�����Ͽ���롣
-		\item	fuse ���� �Τ������Ͽ��Ԥ���
-		\item	ug_idmapd �Τ������Ͽ��Ԥ���
-		\item	���衢dns ��ɬ�פˤʤä����ϡ����Υ��󥿥ե�������
-			/proc �ˤĤ��롣
+		\item	register_filesystem(file_system_type) で
+			get_sb, kill_sb 関数を登録する。
+		\item	fuse 利用 のための登録を行う。
+		\item	ug_idmapd のための登録を行う。
 		\end{enumerate}
-	\item	mount ��
+	\item	mount 時
 		\begin{enumerate}
-		\item	mount.gfarm ����mount �����ƥॳ���뤬ȯ�Ԥ���롣
-		\item	�ޥ���ȥ��ץ���������å����롣	\par
+		\item	mount.gfarm からmount システムコールが発行される。
+		\item	マウントオプションをチェックする。	\par
 		
-			mount ��ʣ����ǽ�Ȥ��롣
-			���������������ñ���ΤߤȤ��롣
+			mount は複数可能とする。
+			ただし、今期試験は単数のみとする。
 
-			mount ��ñ�̤����� �᥿������(���롼��)��
-			���⤷��ʤ�����nfs Ʊ�͡��ä˥����å��Ϥ��ʤ���
+			mount の単位は本来 メタサーバ(グループ)毎
+			かもしれないが、nfs 同様、特にチェックはしない。
 			
-		\item	�ե����륷���ƥ��ͭ�ǡ�����¤���������롣
-		\item	����ե����졼�����ե�����˽�����������롣
-		\item	�Ϥ��줿��³fd�ǥ����С�����root �ǥ��쥯�ȥ�����
-			���롣
-		\item	fill_super ��fs��������롣
+		\item	ファイルシステム固有データ構造を初期化する。
+		\item	コンフィグレーションファイルに従い初期化する。
+		\item	渡された接続fdでサーバーからroot ディレクトリ情報を
+			得る。
+		\item	fill_super でfs情報を得る。
 		\end{enumerate}
 	\end{enumerate}
 
 
 \subsection{umount}
-	MNT_DETACH �ϥ��ݡ��Ȥ��ʤ���
-	MNT_FORCE �����ꤵ�줿���̿���Υץ������ϵ�����EIO���᤹��
+	MNT_DETACH はサポートしない。
+	MNT_FORCE が指定されたら通信中のプロセスは起こしEIOで戻す。
 
-	umount ���� gfskd �����Τ����塢
-	gfskd�� file struct �� private ����(gfarm_fsctx ��ؤ��Ƥ���) ��
-	���ꥢ�����ʹߤ�read ���Ԥ����롣
+	umount 時は gfskd に通知した上、
+	gfskdの file struct の private メンバ(gfarm_fsctx を指している) を
+	クリアし、以降のread を失敗させる。
 
-\section{�ǡ�����¤}
+\section{データ構造}
 
-\subsection{�����ѿ��Ĥ�����}
+\subsection{ 外部変数閉じ込め }
 
-	��¸��Gfarm �ǳ����ѿ��ȤʤäƤ��ơ�mount ����ݻ�����ɬ�פ�
-	�����Τ� struct gfarm_context ���Ĥ�����롣
-	���ߥ���������������Ƥ��빽¤�ΤˤĤ��Ƥϡ�
-	�ݥ��󥿡����С��Ȥ��ơ��ƽ�������˥��������Ȥ���
-	gfarm_context ����ݥ���Ȥ��롣
+	既存のGfarm で外部変数となっていて、mount 毎に保持する必要の
+	あるものは struct gfarm_context に閉じ込める。
+	現在ローカルに定義されている構造体については、
+	ポインターメンバーとして、各初期化時にアロケートし、
+	gfarm_context からポイントする。
 
 
-	gfarm_context ��
-	�ؿ������Ȥ���Ϣ��󤹤Τ����ѤʤΤǡ�task ����ƥ����Ȥ���
-	�Ȥ��褦�ˤ��롣
-	struct task �� journal_info ���ե����륷���ƥ�ǥƥ�ݥ���
-	���Ѳ�ǽ�ʤΤǡ���������Ѥ��롣
+	gfarm_context を
+	関数引数として連れ回すのは大変なので、task コンテクストから
+	とれるようにする。
+	struct task の journal_info がファイルシステムでテンポラリに
+	利用可能なので、これを利用する。
 
 	\begin{itembox}[l]{gfarm_context}\begin{cprog}
         struct gfarm_context {
@@ -272,319 +282,434 @@ mount�����ƥॳ�����ȯ�Ԥ���Τǡ���³����桼��������ꤷ��mount �Ȥʤ롣
         #endif
 	\end{cprog}\end{itembox}
 
-	�����ͥ���Ǥϳƥ����ƥॳ�����������Ȥʤ�ؿ��ǡ�
-	gfsk_task_context�򥹥��å��˺�������current task �����ꤷ��
-	���ǥ��ꥢ���롣
+	カーネル内では各システムコールの入り口となる関数で、
+	gfsk_task_contextをスタックに作成し、current task に設定し、
+	戻りでクリアする。
+
+	但し、ローカルファイルシステムを呼び出すときはクリアしなおす。
 
 
-\subsection{�ե����륷���ƥ�ǡ�����¤}
-	linux �Υե����륷���ƥ��Ϣ�Υǡ����ˤϰʲ��Τ�Τ����롣
+\subsection{ファイルシステムデータ構造}
+	linux のファイルシステム関連のデータには以下のものがある。
 	\begin{enumerate}
 	\item	struct super_block \par
-		�ޥ������Υե����륷���ƥ����
+		マウント毎のファイルシステム情報。
 
-		fs �Ѥ� void *s_fs_info �����롣	
+		fs 用の void *s_fs_info がある。	
 	\item	struct dentry \par
-		�ǥ��쥯�ȥꥭ��å���ǥͥ��ƥ��֥���å���⤢�롣
-		lookup �� ��������inode_operations.lookup ���Ϥ��ơ�
-		inode ���ӤĤ������롣
+		ディレクトリキャッシュでネガティブキャッシュもある。
+		lookup で 作成し、inode_operations.lookup に渡して、
+		inode を結びつけさせる。
 		
-		fs �Ѥ� void *d_fsdata �����롣	
+		fs 用の void *d_fsdata がある。	
 	\item	struct inode \par
-		inode_operations.lookup �� dentry �˷�ӤĤ������ fs��
-		�������롣
-		dentry ���������dentry_iput ����inode������С�
-		d_iput ���������Ƥ���иƤӤ�����inode ������ fs ��Ǥ����롣
-		d_iput ���������Ƥ��ʤ���� inode �λ��ȿ�����Ȥ���0�ʤ�
-		drop_inode���������Ƥ���к����Ǥ���롣
+		inode_operations.lookup で dentry に結びつける時に fsで
+		作成する。
+		dentry を解放するdentry_iput 時にinodeがあれば、
+		d_iput が定義されていれば呼びだす、inode 解放は fs に任される。
+		d_iput が定義されていなければ inode の参照数を落とし、0なら
+		drop_inodeが定義されていれば削除を任せる。
 		
 
-		fs �Ѥ� void *i_private �⤢�뤬��fs ��ͭinode ��
-                �ޤޤ��������¿����
+		fs 用の void *i_private もあるが、fs 固有inode に
+                含ませる実装も多い。
 	\item	struct file \par
-		�ե�����Υ����ץ󥳥�ƥ����Ȥǡ�
-		�ե����륪���ץ���������� file_operations.open ��ƤӽФ���
-		�Ǹ�Υ�����������file_operations.release ��ƤӽФ���
+		ファイルのオープンコンテクストで、
+		ファイルオープン時、作成後 file_operations.open を呼び出す。
+		最後のクローズ時、file_operations.release を呼び出す。
 
-		fs �Ѥ� void *private_data �����롣	
+		fs 用の void *private_data がある。	
+
+	\item	struct vm_area_struct \par
+		仮想アドレススペースのメモリとファイルの定義を行う。
+		ここの vm_file はメモリをマップしているファイルである。
 	\end{enumerate}
 \clearpage
 
 \begin{figure}[htb]\begin{center}
 \includegraphics[bb=00 00 800 1000,scale=0.5]{fsdata.jpg}
-\caption{�ǡ�����¤��Ϣ��}\label{fig:data}
+\caption{データ構造関連図}\label{fig:data}
 \end{center}\end{figure}
 
-��linux �Υǡ�����¤���б����ƿ� \ref{fig:data} �Τ褦�˸�ͭ�Υǡ�����¤��
-�Ĥ��롣
+各linux のデータ構造に対応して図 \ref{fig:data} のように固有のデータ構造を
+つくる。
 
 	\begin{itemize}
 	\item	gfsk_fs_context	\par
-		�����ͥ�ɥ饤�и�ͭ�ե����륷���ƥ����
+		カーネルドライバ固有ファイルシステム情報
 		\begin{itemize}
 		\item	struct gfsk_mount_data  gf_mdata	\par
-			mount �����򥫡��ͥ�����ݻ����롣
-			����ե����졼�����ե�����⤳������ޥåפ���롣
+			mount 引数をカーネル内で保持する。
+			コンフィグレーションファイルもここからマップされる。
 		\item	struct gfarm_context    *gf_gfarm_ctxp	\par
-			Gfarm fs �γ����ѿ����Ĥ����᤿fs��Υǡ�����
+			Gfarm fs の外部変数を閉じ込めたfs毎のデータ。
 		\item	struct gfsk_fdstruct    *gf_fdstructp	\par
-			�ե�����ǥ�����ץ��� struct file �ǤϤʤ���
-			int �Ǽ����Ϥ�����δ����ǡ�����
+			ファイルデスクリプタを struct file ではなく、
+			int で受け渡すための管理データ。
 		\item	struct fuse_conn        *gf_fc	\par
-			mount.gfarm �˰��ꤹ�뤿��Υ��󥿥ե���������ƥ����ȡ�
+			mount.gfarm に依頼するためのインタフェースコンテクスト。
 		\end{itemize}
 
-		�桼����ID���饵���С���³�����õ������Υꥹ�Ȥϡ�
-		gfm_server_cache �˥桼����̾������Τǡ� ��������Ѥ��롣
+		ユーザーIDからサーバー接続情報を探すためのリストは、
+		gfm_server_cache にユーザー名があるので、 これを利用する。
 
         \item	struct gfsk_task_context \par
-		current task �˷�ӤĤ��륳��ƥ����Ⱦ���ǡ��ե����륷���ƥ�
-		IF�����ä��Ȥ������ꤷ���ؿ�����Ф�Ȥ��˥��ꥢ���롣
+		current task に結びつけるコンテクスト情報で、ファイルシステム
+		IFに入ったときに設定し、関数から出るときにクリアする。
 
 		\begin{itemize}
 		\item	struct gfsk_fs_context *gk_fs_ctxp \par
-			�����Υե����륷���ƥࡣ
+			操作中のファイルシステム。
 		\item	char    gk_uname[GFSK_USERNAME_MAX] \par
-			�����������Υ桼����̾����å��塣
+			当該タスクのユーザー名キャッシュ。
 		\item	int gk_errno \par
-			Gfarm �饤�֥����ǻ��Ȥ���� errno �ǡ�����
+			Gfarm ライブラリ内で参照される errno データ。
 		\end{itemize}
         \item	struct gfarm_inode \par
 
 		\begin{itemize}
 		\item	struct inode         inode \par
 
-		inode ������ vfs �ؤ�inode ���������Ѥ��롣
+		inode 管理は vfs 層のinode 管理を利用する。
 
-		linux �Ǥ� inode �κ����� �ե����륷���ƥब�Ѱդ��Ƥ����
-		����򡢤����Ǥʤ���� inode_cache ����������롣
+		linux では inode の作成は ファイルシステムが用意していれば
+		それを、そうでなければ inode_cache から作成する。
 
-		����ˡ�ino ��ե����뼱�̤��Ѥ���ե����륷���ƥ�Τ����
-		ino �ˤ��inode �������󶡤��Ƥ��ꡢiget_locked ��õ����
-		������Ԥ��롣
+		さらに、ino をファイル識別に用いるファイルシステムのために
+		ino によるinode 管理も提供しており、iget_locked で探索、
+		作成を行える。
 
-		Gfarm �Ǥ� inum, igen ���Ѱդ���Ƥ���Τǡ�inum ��
-		���Ѥ��롣 igen �ϥե����륷���ƥ���ǥ����å�����
-		��������Ƥ���иŤ��ե������ΤƤ������Ԥ���
+		Gfarm では inum, igen が用意されているので、inum を
+		利用する。 igen はファイルシステム内でチェックし、
+		更新されていれば古いファイルを捨てる処理を行う。
 
-		����ѥ�����׵�����������줿�Τߤξ���Ǥ� inode ��
-		�������롣
+		コンパウンド要求の途中で得られたのみの情報でも inode を
+		作成する。
 		\item	uint64_t        i_gen	\par
-			vfs inode �˻��Ƥʤ� i_gen ����
+			vfs inode に持てない i_gen 情報。
+		\item	uint64_t	i_actime	\par
+			属性キャッシュの保持時間
+		\item	uint64_t	i_pctime	\par
+			ページキャッシュの保持時間
+		\item	struct list_head i_openfile	\par
+			ダーティページフラッシュに備えるための、
+			write オープンしているファイルのリスト。
+		\item	int		i_wopencnt	\par
+			write オープンしているファイルの数。
 		\item	loff_t          i_direntsize	\par
-			�ڡ�������å�����ݻ����Ƥ���ǥ��쥯�ȥ�ե������
-			��������
+			ページキャッシュに保持しているディレクトリファイルの
+			サイズ。
 		\end{itemize}
 
         \item	struct gfsk_file_private \par
-		�ץ�������Υ����ץ�ե��������
+		プロセス毎のオープンファイル情報
 		\begin{itemize}
               	\item union{ GFS_Dir  *kf_dir; GFS_File *kf_file; }u; \par
-			�����ץ�ե�������󤪤�ӥ����С�����ƥ����ȡ�
+			オープンファイル情報およびサーバーコンテクスト。
+              	\item struct list_head f_openlist	\par
+			gfarm_inodeに繋げるオープンファイルのリスト。
+              	\item struct file *f_file	\par
+			inode しか渡されないファイル操作に接続先を教えるため、
+			当該ファイルの　struct file へのバックポインター。
+              	\item struct mutex f_lock	\par
+			オープンファイルに関するロック。
 		\end{itemize}
-		�����dentry �ˤĤʤ��ơ��ץ��������ۤʤäƤ⡢
-		�١����ǥ��쥯�ȥ����Ȥ����Ѥ�����ˡ�ˤĤ��Ƥϡ�
-		ʣ���ˤʤ�ΤǸ�Ƥ���ʤ���
+		これをdentry につなげて、プロセスが異なっても、
+		ベースディレクトリ情報として用いる方法については、
+		複雑になるので検討しない。
 
 	\end{itemize}
 
-\section{��������}
-\subsection{�����ե�����}
+\section{処理概要}
+\subsection{構成ファイル}
 
-Gfarm ���饤����Ȥϰʲ��Τ褦������ե��������äƤ��롣
+Gfarm クライアントは以下のような設定ファイルを持っている。
 
 \begin{tabular}{|p{3cm}|p{10cm}|}\hline
-gfarm2.conf	& Gfarm����ե�����	\\\hline
-local_user_map	& �������Х�/�������륢������ȤΥޥåץե�����	\\\hline
-local_group_map	& �������Х�/�������륰�롼�פΥޥåץե�����	\\\hline
-.gfarm_shared_key	& �桼�������ǧ�ڸ��ե�����	\\\hline
+gfarm2.conf	& Gfarm設定ファイル	\\\hline
+local_user_map	& グローバル/ローカルアカウントのマップファイル	\\\hline
+local_group_map	& グローバル/ローカルグループのマップファイル	\\\hline
+.gfarm_shared_key	& ユーザー毎の認証鍵ファイル	\\\hline
 \end{tabular}
 \medskip
 
-�Ƽ�ե�����ΰ����ϰʲ��Τ褦�ˤ��롣
+各種ファイルの扱いは以下のようにする。
 \begin{itemize}
 \item	gfarm2.conf	\par
-	�ޥ���Ȼ��˥ե��������Ƥ�����Ȥ����Ϥ��������ͥ���ǥ���å��夹�롣
+	マウント時にファイル内容を引数として渡し、カーネル内でキャッシュする。
 \item	local_user_map	local_group_map	\par
-	�ޥ���Ȼ��˥ե��������Ƥ�����Ȥ����Ϥ��������ͥ���ǥ���å��夹�롣
-	ʣ���ե����롢�����ˤ������б����ʤ���
+	マウント時にファイル内容を引数として渡し、カーネル内でキャッシュする。
+	複数ファイル、更新には当面対応しない。
 \item	.gfarm_shared_key	\par
-	�إ�ѡ��ǡ�����ɤ߽Ф���
+	ヘルパーデーモンが読み出す。
 \end{itemize}
 
 
-\subsection{��³����}
-	�᥿�ǡ��������ФȤ���³�ϡ�ǧ�ڤ���³��˹Ԥ��뤳�ȡ�
-	���֤��᥿�ǡ��������Ф���³��˴�������Ƥ��뤳�Ȥ���
-	�����ͥ�ɥ饤�ФǤ�桼���������³��ĥ���ΤȤ��롣
+\subsection{接続管理}
+	メタデータサーバとの接続は、認証が接続毎に行われること、
+	状態がメタデータサーバで接続毎に管理されていることから
+	カーネルドライバでもユーザー毎に接続を張るものとする。
 
 	\begin{enumerate}
-	\item	��mount��˥桼�����̤���³��ĥ�롣
-	\item	1�桼������ʣ������³�ˤĤ��Ƥ����̹ͤ��ʤ���
-	\item	��³�λ��Ѥ� gfp_cached_connection �˥��å����ߤ���
-		�׵�/�����ǥ��å�����¾���׵���Ԥ����롣
-	\item	���̤ˤϡ�gfp_cached_connection_acquire()�ǥ��å�����
-		gfp_cached_or_uncached_connection_free()�ǥ�����å����롣
-		uncached_connection �ϥ��å������פǤ��뤬��
-		���ξ�硢�����Ȥ��㤤�ΤǶ��̤��ʤ���
-	\item	����ѥ�����׵�ϤҤȤ����ޤ�Τ�ΤȤ�����ͭ���뤿�ᡢ
-		compound_fd_op, compound_file_op �ʤɤ���å��ǳ�롣
-	\item	�����ץ�ե�����˴ؤ��Ƥϡ�
-		file->private �˥桼����³�����������롣
-	\item	�������桼�����ξ�硢�إ�ѡ��ǡ����ˡ��桼����ID��
-		�Ϥ�����³����ꤹ�롣
+	\item	各mount毎にユーザー別の接続を張る。
+	\item	1ユーザーで複数の接続については当面考えない。
+	\item	接続の使用は gfp_cached_connection にロックを設け、
+		要求/応答でロックし、他の要求は待たせる。
+	\item	一般には、gfp_cached_connection_acquire()でロックし、
+		gfp_cached_or_uncached_connection_free()でアンロックする。
+		uncached_connection はロックは不要であるが、
+		その場合、コストも低いので区別しない。
+	\item	コンパウンド要求はひとかたまりのものとして占有するため、
+		compound_fd_op, compound_file_op などをロックで括る。
+	\item	オープンファイルに関しては、
+		file->private にユーザ接続情報を持たせる。
+	\item	新しいユーザーの場合、ヘルパーデーモンに、ユーザーIDを
+		渡し、接続を依頼する。
 
-		�桼����ID�Ǥ��䤤��碌��������إ�ѡ��ǡ����
-		fork ���� �����桼������setuid()���롣
+		ユーザーIDでの問い合わせを受けたヘルパーデーモンが
+		fork して 当該ユーザーにsetuid()する。
 
-		�桼�������֤ǥ᥿�ǡ��������ФˤĤʤ���
-		ɬ�פ�ǧ�ڤ�Ѥޤ����Τ���
-		��³fd �򥫡��ͥ�ɥ饤�Ф������롣
+		ユーザー空間でメタデータサーバにつなぎ、
+		必要な認証を済ませたのち、
+		接続fd をカーネルドライバに伝える。
 
-		���λ�����³�����ץ������Υ���ƥ����Ȥ�fd��file���Ѵ�����
-		fd ��������Ͽ���롣
+		この時、接続したプロセスのコンテキストでfdをfileに変換して
+		fd 管理に登録する。
 	
-		�����ͥ�ɥ饤�Ф� socket ��file ��¤�Τ��ݻ�������������Ԥ���
-		file ��¤�Τ�������Ѥ��Τǡ������ץ���������λ���Ƥ⹽��ʤ���
+		カーネルドライバは socket のfile 構造体を保持して送受信を行う。
+		file 構造体から引き継ぐので、作成プロセスが終了しても構わない。
 
-	\item	��³�κ����Ѵ�����Gfarm��Ǥ���롣
-		���ߤϸĿ������ʤΤǡ�����桼�������˹�碌��������ɬ�פˤʤ롣
+	\item	接続の再利用管理はGfarmに任せる。
+		現在は個数管理なので、将来ユーザー数に合わせた管理が必要になる。
 
-	\item	�����С��Ȥ���³���ڤ줿����桼�������֤˰��ꤷ����³��Ԥ���
-		ǧ�ڸ����䤤��碌��
-		�᥿�ǡ��������Хꥹ�Ȥ��饵���Ф�õ������³���롣
+	\item	サーバーとの接続が切れた場合もユーザー空間に依頼し再接続を行う。
+		認証鍵を問い合わせ、
+		メタデータサーバリストからサーバを探し、接続する。
 
+	\item	check_connection_in_file_list　は複数ユーザアクセスに
+		合わないので呼び出さない。
 	\end{enumerate}
 
-\subsection{�ե��������}
-	Gfarm �Υե������ mount ��˸��̤�inode ���б������롣
-	¨����Ʊ��mount ��ʣ������³�����äƤ�Ʊ���ե�����ˤ�Ʊ�� inode 
-	���б������롣
+\subsection{ファイル管理}
+	Gfarm のファイルは mount 毎に個別のinode に対応させる。
+	即ち、同一mount で複数の接続があっても同じファイルには同じ inode 
+	を対応させる。
 
-\subsubsection{�ե����륭��å���}
-	�ե������¸�ߤ�°���Υ���å���˴ؤ��ơ������϶�����θ���ʤ���
-	�����Ǥζ���Ȥϡ�¾����ˡ�ǤΥե����륷���ƥ�����ѡ�¨����
-	�桼�������ɤǤΥ᥿�ǡ��������Ф����Ѥ䡢FUSE�ǤΥ���������
-	ʣ���ޥ���Ȥˤ�륢�������Ǥ��롣
+\subsubsection{ファイルキャッシュ}
+	ファイルの存在や属性のキャッシュに関して、今期は競合を考慮しない。
+	ここでの競合とは、他の方法でのファイルシステムの利用、即ち、
+	ユーザーランドでのメタデータサーバの利用や、FUSEでのアクセス、
+	複数マウントによるアクセスである。
 
 \subsubsection{uid, gid}
-	�ե�����°����uid, gid �� getattr �α�Ĺ��̾������id���Ѵ����롣
+	ファイル属性のuid, gid は getattr の延長で名前からidに変換する。
 
-	̾���� �Ѵ��ˤ� sunrpc �Υ���å�����䤤��碌���������Ѥ���
-	�桼�������ɤΥإ�ѡ��ǡ���� ug_idmapd ���Ѵ����롣
-	����å�����֤ϥ桼�������ɤǻ��ꤹ�롣
+	名前の 変換には sunrpc のキャッシュと問い合わせ機構を利用し、
+	ユーザーランドのヘルパーデーモン ug_idmapd が変換する。
+	キャッシュ時間はユーザーランドで指定する。
 
-\subsubsection{�̾�ե�����}
-	Gfarm �Ǥϡ��̾�ե������ struct gfs_file �Ǵ�������Ƥ��ꡢ
-	�ۤ� linux �� struct file �� �б����롣
+\subsubsection{通常ファイル}
+	Gfarm では、通常ファイルは struct gfs_file で管理されており、
+	ほぼ linux の struct file に 対応する。
 
-	�̾�ե������buffer �˴ؤ��Ƥϸ�Ƥ��;�Ϥ����뤬��
-	������ˤ����̾�ե�����Υ��ݡ��Ȥ�����β���Ȥ��롣
+	通常ファイルのbuffer に関しては検討の余地があるが、
+	いずれにしろ通常ファイルのサポートは来期の課題とする。
 
-\subsubsection{�ǥ��쥯�ȥ�}
-	Gfarm �Ǥϡ��ǥ��쥯�ȥ�� struct gfs_dir �Ǵ�������Ƥ��ꡢ
-	Ʊ���˥ǥ��쥯�ȥꥭ��å������äƤ��롣
+\subsubsection{ディレクトリ}
+	Gfarm では、ディレクトリは struct gfs_dir で管理されており、
+	同時にディレクトリキャッシュも持っている。
 	
-	�ܥ����ƥ�Ǥ� Gfarm �Υ���å��嵡�����Ѥ�����
-	linux �Υڡ�������å�������Ѥ��롣
+	本システムでは Gfarm のキャッシュ機構は用いず、
+	linux のページキャッシュを利用する。
 
-\subsection{̾���ˤ��ե��������}
-	�����ͥ����̾���ˤ��ե��������Ͼ�˿ƥǥ��쥯�ȥ�Ȼҥե�����
-	�Ȥ����ط��ǥե����륷���ƥ���Ϥ���롣
-	���̤˥����ȥǥ��쥯�ȥ꤫������Хѥ����桼��������
-	�Ϥ��졢�����vfs�ؤΥǥ��쥯�ȥꥭ��å����Ȥ��ʤ��鸡������
-	������¸�ߤ��ʤ����ϥե����륷���ƥ�� lookup ���䤤��碌�ʤ��顢
-	�Ǹ�Υ������Ȥ˴ؤ��ƥե����륷���ƥ�������ꤵ��롣
+\subsection{名前によるファイル操作}
+	カーネル内の名前によるファイル操作は常に親ディレクトリと子ファイル
+	という関係でファイルシステムに渡される。
+	一般にカレントディレクトリからの相対パスがユーザーから
+	渡され、これをvfs層のディレクトリキャッシュを使いながら検索し、
+	ここに存在しない時はファイルシステムに lookup で問い合わせながら、
+	最後のセグメントに関してファイルシステムに操作が依頼される。
 
 
-	������Gfarm �Ǥϰ��̤˥ե�����ѥ��ؤ����Ȥ��ƹԤ���
-	����ѥ�����׵�ǡ��롼�ȥǥ��쥯�ȥ꤫��1�������Ȥ���
-	�ե������¸�ߤ�Τ���ʤ��顢�Ǹ�Υ������Ȥ�������ꤷ�Ƥ��롣
-	Gfarm �ˤ�inode �ֹ� �ˤ��ե��������Ϥʤ����ե�����ϥ�ɥ��
-	��ǰ�⥵�ݡ��Ȥ��Ƥ��ʤ���
-	�����С���Ǥϡ�Lookup���Ǥ�
-	���Ĥ����ե�����򥪡��ץ�ե�����Ȥ����ݻ����ơ����Υե���������
-	�١����Ȥ��Ƥ��뤬������fd ���׵ᤷ�ʤ��¤ꥯ�饤����Ȥˤ��֤��줺��
-	���Υե��������Ǿ�񤭤������˥�����������롣
+	一方、Gfarm では一般にファイルパスへの操作として行う。
+	コンパウンド要求で、ルートディレクトリから1セグメントずつ
+	ファイルの存在を確かめながら、最後のセグメントの操作を依頼している。
+	Gfarm にはinode 番号 によるファイル操作はなく、ファイルハンドルの
+	概念もサポートしていない。
+	サーバー内では、Lookup操作でも
+	見つけたファイルをオープンファイルとして保持して、次のファイル操作の
+	ベースとしているが、このfd は要求しない限りクライアントには返されず、
+	次のファイル操作で上書きされる時にクローズされる。
 
-	���äơ�̾���ˤ��ե��������ϼ��Τ褦�ʼ��ˤʤ롣
+	従って、名前によるファイル操作は次のような手順になる。
 
 	\begin{enumerate}
-	\item	vfs �ؤǸ��ߤΥ١����ǥ��쥯�ȥ�����롣
-	\item	�������ȤΤ���ַ����֤�(path_walk)��
+	\item	vfs 層で現在のベースディレクトリを得る。
+	\item	セグメントのある間繰り返す(path_walk)。
 		\begin{enumerate}
-		\item	vfs �ؤ�dentry������å���򻲾Ȥ��롣
-		\item	¸�ߤ��ʤ���Хե����륷���ƥ��lookup ��ƤӽФ���
+		\item	vfs 層でdentry　キャッシュを参照する。
+		\item	存在しなければファイルシステムのlookup を呼び出す。
 			\begin{enumerate}
-			\item	�ޥ���ȥ롼�Ȥ���Υѥ�����������
-				����ѥ�����׵��Ф���
-			\item	����줿����Υǥ��쥯�ȥ�˴ؤ��Ƥϡ�
-				inum, igen, mode ��inode ���������
-				dentry �˷�ӤĤ��롣
+			\item	マウントルートからのパスを生成し、
+				コンパウンド要求を出す。
+			\item	得られた途中のディレクトリに関しては、
+				inum, igen, mode でinode を作成し、
+				dentry に結びつける。
 			\end{enumerate}
-		\item	�ե����륷���ƥबrevalidate����ꤷ�Ƥ���иƤӽФ���
-		\item	dentry ��inode ��¸�ߤ��ʤ���� ENOENT��
-		\item	����ܥ�å���󥯤ʤ��󥯤��ɤ���(path_walk)
+		\item	ファイルシステムがrevalidateを指定していれば呼び出す。
+		\item	dentry にinode が存在しなければ ENOENT。
+		\item	シンボリックリンクならリンクを追う。(path_walk)
 		\end{enumerate}
-	\item	�ե����륷���ƥ�Υե���������ƤӽФ���
+	\item	ファイルシステムのファイル操作を呼び出す。
 		\begin{enumerate}
-		\item	�ޥ���ȥ롼�Ȥ���Υѥ�����������
-			����ѥ�����׵��Ф���
+		\item	マウントルートからのパスを生成し、
+			コンパウンド要求を出す。
 		\end{enumerate}
 	\end{enumerate}
 
 
-	�����ͥ�ɥ饤�ФǤ� inode �����פʥե����륪�֥������ȤȤʤ뤬��
-	Gfarm �Ǥ�stat_cache �Ȥ���䤬�Ťʤ롣
-	inode ������Ԥ���硢readdir �η�̳�Ǽ(gfs_stat_cache_enter_internal0)
-	��stat �����ؿ����ۤʤäƤ��롣
+	カーネルドライバでは inode が重要なファイルオブジェクトとなるが、
+	Gfarm でのstat_cache との役割が重なる。
+	inode 管理を行う場合、readdir の結果格納(gfs_stat_cache_enter_internal0)
+	やstat 取得関数が異なってくる。
 
-	�����ͥ�ɥ饤�ФǤ� Gfarm �Υ���å��嵡���ǤϤʤ���inode �ˤ��
-	����å����Ԥ���
+	カーネルドライバでは Gfarm のキャッシュ機構ではなく、inode による
+	キャッシュを行う。
 	
 \subsection{readdir}
-	readdir �������륨��ȥ꡼����ϥڡ�������å������¸���롣
-	�桼�������ɤ߽Ф����ե��åȤȥڡ������Ѵ����ñ�ˤ��뤿��ˡ�
-	̾�������Ĺ�Ȥ�������ȥ꡼�����ڡ����˵ͤ�롣
-	����ȥ꡼����ϥڡ���������٤餺����åפ��ߤ��롣
+	readdir で得られるエントリー情報はページキャッシュに保存する。
+	ユーザーの読み出しオフセットとページの変換を簡単にするために、
+	名前を固定長としたエントリー情報をページに詰める。
+	エントリー情報はページ境界を跨らずギャップを設ける。
 
-	Gfarm�Ǥ�ʣ�����ʬ�����readdir �ϥ����С�¦�Ǵ������졢
-	���饤�����¦���ɤ߹��ߥ��ե��åȤ���ꤹ�뤳�Ȥ��Ǥ��ʤ���
-	���Τ��ᡢƱ��桼������ʣ���Υץ����������餻�Ƥ�����ϡ�
-	readdir ��Ϣ³����»�ʤ��롣
-	�ޤ����ۤʤ�桼������Ʊ��ǥ��쥯�ȥ�򻲾Ȥ�����⡢
-	readdir ���³���뤳�Ȥ��Ǥ��ʤ���
+	Gfarmでは複数回に分かれるreaddir はサーバー側で管理され、
+	クライアント側で読み込みオフセットを指定することができない。
+	このため、同一ユーザーが複数のプロセスを走らせている場合は、
+	readdir の連続性が損なわれる。
+	また、異なるユーザーが同一ディレクトリを参照する場合も、
+	readdir を継続することができない。
 
-	��������Τ��ᡢ�ܥ����ƥ�Ǥϡ��ǥ��쥯�ȥ꡼���ɤ߽Ф������ä�
-	���ˤϰ쵤��������ȥ꡼���ɤ߽Ф�����å��夹�롣
-	��˥ǥ��쥯�ȥ�� mtime ���Ѥ�ä����ϡ�����å����ΤƤ롣
+	この制約のため、本システムでは、ディレクトリーの読み出しがあった
+	場合には一気に全エントリーを読み出しキャッシュする。
+	後にディレクトリの mtime が変わった場合は、キャッシュを捨てる。
 
-	�ޤ���readdir ������줿�ե�����°���ϡ�dentry �� inode ����¸���롣
+	また、readdir で得られたファイル属性は、dentry と inode に保存する。
 	
-\section{��������}
-	�ܥ����ƥ��Gfarm�饤�֥��򥫡��ͥ���˻������ߡ�
-	�����ͥ�ɥ饤�ФȤ���ư������ΤǤ��롣
+\subsection{ホスト名変換}
+	スプールサーバを利用すると、getaddrinfom、 gethostbyname、hethostname
+	関数が呼び出される。 dns に関してはnfsも実装を行っているが
+	exportされていないので、二重ではあるが独自に実装する。
 
-	�����������äƤϰʲ������ˤ�������פ����
+	既に実装している ugidmap に新たなエントリとして hostname を追加し、
+	sunrpc のキャッシュ機構を利用する。
+	インタフェースとしては、名前を与えて、複数のalias と複数のIPアドレスを
+	返す仕様とする。
+	サービス名の変換、アップ状態の確認等は、当面、省いても問題ないので
+	行わない。
+
+\subsection{アクセス競合}
+
+	Gfarm はマルチスレッド対応になっていないので、以下の排他制御を加えた。
+
 	\begin{itemize}
-	\item	�桼�������֥饤�֥��ϥ����ͥ���˻������ޤʤ���
+	\item	接続ロック(gfm_client_connection_lock,
+				gfs_client_connection_lock)	\
+		rpcの要求/応答区間。 compound 要求の場合は begin/end区間。
+		
+		rpc 区間だけでは、これを含むrpc 処理をカバー出来ないので、
+		ロックはリカーシブとした。
+	\item	スケジュールロック(SCHED_MUTEX_LOCK)	\
+		スプールサーバのスケジュール区間。
+	\item	gfm_client_connection_acquire()	\
+		まだコネクションが成功していない接続がキャッシュに
+		つながれているため、別のスレッドがこれを得て null データ部を
+		参照することになる。
+		null の場合、一旦破棄してスリープして再取得することにした。
 
-		���Τ��ᡢǧ�ڤʤɤǥ��ݡ��ȤǤ��ʤ���Τ���������
-		�ޤ���DNS��Ȥ�����λ��Ȥߤ�ɬ�פʤɤ����ꡢ
-		��������³���桼�������֤ˤǤƤ��ޤä���
-	\item	��ư�������ϥ��ݡ��Ȥ��ʤ���
+		以前の版では create 時にロックをとっていたので問題が
+		生じなかったが、failover の関連でロック期間をRPC期間に
+		短くしたため生じた。
+	\end{itemize}
+
+
+\subsection{サーバー接続キャッシュ}
+	Gfarm ではサーバーとの接続は一定個数までキャッシュされるが、
+	スプールサーバを決定する時には、接続性を確かめるために
+	複数のサーバに同時接続する。このため他のユーザーの新しい接続や、
+	探しているサーバーの接続を切断することが起こりうる。
+
+	これを避けるため、一時的に接続数の上限を増減できる以下の関数を追加した。
+
+	int gfp_connection_cache_change(struct gfp_conn_cache *cache, int cnt)
+
+\subsection{ページキャッシュ}
+	ページキャッシュではダーティページの書き込みなど、inode しか渡されない
+	オペレーションがある。
+	Gfarm ではサーバーとの接続は一定個数までキャッシュされるが、
+	Gfs_FILE に隠されているため、外側ではGfs_FILE でアクセスするしかない。
+
+	このため、 inode にwriteオープンファイルリストを設け、書き込み時には
+	これを参照し、最後のwriteオープンのcloseの場合には、ページのフラッシュを
+	行うようにする。
+
+	また、クローズ後にもmmap されているファイルのために、munmap でも
+	フラッシュを行えるよう、関数を定義する。
+
+\subsection{ローカルストレージ}
+	Gfarm ではファイルがローカルストレージにもある場合、スプールサーバの
+	ファイルデスプリクターを貰って直接ローカルファイルシステムにアクセス
+	する機能がある。
 	
-		���Τ��ᡢ�������塼��󥰤ʤɺ���������Ĥ��Ƥ��롣
+	カーネルドライバーでもこの機能を実装する、このため以下の処理を行う。
+	\begin{itemize}
+	\item	ファイルデスプリクタの受け取り時にfileをfd に変換して記録する。
+	\item	pread, pwrite, fsync 等のインタフェースを設け、
+		fd を file に変換して本来のファイルシステムを呼び出す。
+	\item	mmap では、vma->vm_file を本来のfile に付け替える。
+		但し、unmap のタイミングがとれないとファイルをクローズ
+		通知出来ないので、ローカルファイルシステムの
+		vm_operations_struct のコピーに close 関数をオーバライトした
+		操作を vma->vm_ops とする。
+	\end{itemize}
 
-	\item	Gfarm ���Υ������˺٤���ifdef ��������ޤʤ���
+\subsection{ファイルオーバ}
+	フェイルオーバーに関しては、以下の問題があり、今回は、単純なエラー扱い
+	としている。
+	\begin{itemize}
+	\item	gfarm_filesystem の持ち方。現在は
+		１ファイルシステム＝１コネクション
+		の設計であるが、カーネルドライバでは複数コネクションになるので、
+		直ちに利用できない。
+	\item	カーネルドライバはマルチスレッドであるので、フェイルオーバー
+		処理時に他のスレッドを止めたり、ロールバックさせる機構が
+		必要となる。
+	\item	ユーザーコネクション毎にフェイルオーバさせるのか、一度に行うか、
+		など検討課題が残る。
+	\end{itemize}
 
-		���Τ��ᡢ�����ͥ�⥸�塼�륽�����ĥ꡼��� /usr/include ��
-		�Ϥ����إå��ե�������֤����桼�������֥饤�֥��
-		���󥿥ե�������ۼ�������
+\section{修正方針}
+	本システムはGfarmライブラリをカーネル内に持ち込み、
+	カーネルドライバとして動作させるものである。
 
-	\item	��¸�μ������ġ���˽Ťʤ볫ȯ���򤱤롣
+	修正に当たっては以下の方針と制約で臨んだ。
+	\begin{itemize}
+	\item	ユーザー空間ライブラリはカーネル内に持ち込まない。
 
+		このため、認証などでサポートできないものが生じた。
+		また、DNSを使うための仕組みが必要などがあり、
+		サーバ接続がユーザー空間にでてしまった。
+%済	\item	浮動小数点はサポートしない。
+%済	
+%済		このため、スケジューリングなど今後に問題を残している。
 
-		�桼�������֤ȤΥ��󥿥ե������� fuse ��sunrpc����å��嵡����
-		���Ѥ�����
+	\item	Gfarm 本体ソースに細かなifdef を持ち込まない。
+
+		このため、カーネルモジュールソースツリー内に /usr/include を
+		模したヘッダファイルを置き、ユーザー空間ライブラリ
+		インタフェースを吸収した。
+
+	\item	既存の実装、ツールに重なる開発は避ける。
+
+		ユーザー空間とのインタフェースに fuse やsunrpcキャッシュ機構を
+		利用した。
 	\end{itemize}

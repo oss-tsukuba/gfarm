@@ -320,7 +320,7 @@ gfarm_hostspec_to_string(struct gfarm_hostspec *hostspec,
 	return;
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_sockaddr_to_name:: apl */
 gfarm_error_t
 gfarm_sockaddr_to_name(struct sockaddr *addr, char **namep)
 {

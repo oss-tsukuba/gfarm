@@ -42,17 +42,21 @@ int
 gfm_client_connection_should_failover(struct gfm_connection *gfm_server,
 	gfarm_error_t e)
 {
+#ifndef __KERNEL__	/* failover */
 	struct gfarm_filesystem *fs;
 
 	if (gfm_server == NULL || !gfm_client_is_connection_error(e))
 		return (0);
 	fs = gfarm_filesystem_get_by_connection(gfm_server);
 	return (!gfarm_filesystem_in_failover_process(fs));
+#else /* __KERNEL__ */
+	return (0);
+#endif /* __KERNEL__ */
 }
-
 int
 gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 {
+#ifndef __KERNEL__	/* failover */
 	struct gfarm_filesystem *fs;
 
 	if (gf == NULL)
@@ -62,6 +66,9 @@ gfs_pio_should_failover(GFS_File gf, gfarm_error_t e)
 		return (0);
 	return (gfarm_filesystem_failover_detected(fs) ||
 	    e == GFARM_ERR_GFMD_FAILED_OVER);
+#else /* __KERNEL__ */
+	return (0);
+#endif /* __KERNEL__ */
 }
 
 static gfarm_error_t
@@ -469,7 +476,7 @@ retry:
 		}
 	} else if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_UNFIXED,
-		    "rpc_op: %s",
+		    "gfm_client_rpc_with_failover: rpc_op: %s",
 		    gfarm_error_string(e));
 		if (nretry == 0 && must_be_warned_op &&
 		    must_be_warned_op(e, closure))
@@ -579,13 +586,11 @@ compound_fd_op(struct gfs_failover_file *file,
 	struct gfm_connection *gfm_server;
 
 	gfm_server = ops->get_connection(file);
-	gfm_client_connection_lock(gfm_server);
 
 	e = gfm_client_rpc_with_failover(compound_fd_op_rpc,
 	    compound_fd_op_post_failover, NULL,
 	    compound_fd_op_must_be_warned, &ci);
 
-	gfm_client_connection_unlock(gfm_server);
 	return (e);
 }
 
@@ -655,13 +660,9 @@ compound_file_op(GFS_File gf,
 		request_op, result_op, cleanup_op, must_be_warned_op,
 		closure
 	};
-	struct gfm_connection *gfm_server;
-	gfm_server = gf->gfm_server;
 
-	gfm_client_connection_lock(gfm_server);
 	e = gfm_client_rpc_with_failover(compound_file_op_rpc, NULL,
 	    NULL, compound_file_op_must_be_warned_op, &ci);
-	gfm_client_connection_unlock(gfm_server);
 	return (e);
 }
 

@@ -47,6 +47,7 @@ struct hostent {
 	char **h_addr_list;       /* list of addresses */
 };
 struct hostent *gethostbyname(const char *name);
+void free_gethost_buff(void *buf);
 
 int getnameinfo(const struct sockaddr *sa, socklen_t salen,
 	char *host, size_t hostlen,

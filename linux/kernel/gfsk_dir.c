@@ -7,19 +7,21 @@
 #include <gfarm/gfarm.h>
 #include "gfsk_fs.h"
 #include "gfsk_libgfarm.h"
+#include "gfsk_genfile.h"
 
-void invalidate_dir_pages(struct inode *inode)
+void
+gfsk_invalidate_dir_pages(struct inode *inode)
 {
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
-
-	if ((inode->i_mode & S_IFMT) != S_IFDIR)
-		return;
-	invalidate_inode_pages2(inode->i_mapping);
-	gflog_debug(GFARM_MSG_UNFIXED, "invalidate_inode_pages2 done. ino=%lu", inode->i_ino);
-	gi->i_direntsize = 0;
+	if (gi->i_direntsize > 0) {
+		gfsk_invalidate_pages(inode);
+		gi->i_direntsize = 0;
+	}
+	gfsk_invalidate_attr(inode);
 }
 
-static int check_invalidate_dir_pages(struct inode *inode, struct file *file)
+static int
+check_invalidate_dir_pages(struct inode *inode, struct file *file)
 {
 	int retval;
 	struct gfarm_inode *gi = get_gfarm_inode(inode);
@@ -37,32 +39,10 @@ static int check_invalidate_dir_pages(struct inode *inode, struct file *file)
 		tmp->i_mtime.tv_sec, tmp->i_mtime.tv_nsec);
 	if (mtime.tv_sec != tmp->i_mtime.tv_sec ||
 		mtime.tv_nsec != tmp->i_mtime.tv_nsec) {
-		invalidate_dir_pages(inode);
+		gfsk_invalidate_dir_pages(inode);
 	}
 	iput(tmp);
 	return (0);
-}
-
-static int
-gfsk_mkdir(struct inode *dir, struct dentry *dentry, int mode)
-{
-	int retval;
-	struct inode *inode;
-	GFSK_CTX_DECLARE_INODE(dir);
-
-	GFSK_CTX_SET();
-	retval = gfarm_mkdir(dir, dentry, mode);
-	if (retval)
-		goto quit;
-
-	invalidate_dir_pages(dir);
-	retval = gfarm_stat(dentry, &inode);
-	if (retval)
-		goto quit;
-	d_instantiate(dentry, inode);	/* inode count is handed */
-quit:
-	GFSK_CTX_UNSET();
-	return (retval);
 }
 
 static struct dentry *
@@ -91,6 +71,28 @@ gfsk_lookup(struct inode *dir, struct dentry *dentry,
 }
 
 static int
+gfsk_mkdir(struct inode *dir, struct dentry *dentry, int mode)
+{
+	int retval;
+	struct inode *inode;
+	GFSK_CTX_DECLARE_INODE(dir);
+
+	GFSK_CTX_SET();
+	retval = gfarm_mkdir(dir, dentry, mode);
+	if (retval)
+		goto quit;
+
+	gfsk_invalidate_dir_pages(dir);
+	retval = gfarm_stat(dentry, &inode);
+	if (retval)
+		goto quit;
+	d_instantiate(dentry, inode);	/* inode count is handed */
+quit:
+	GFSK_CTX_UNSET();
+	return (retval);
+}
+
+static int
 gfsk_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	int retval;
@@ -99,38 +101,114 @@ gfsk_rmdir(struct inode *dir, struct dentry *dentry)
 	GFSK_CTX_SET();
 	retval = gfarm_rmdir(dir, dentry);
 	if (!retval) {
-		invalidate_dir_pages(dir);
-		retval = simple_rmdir(dir, dentry);
+		gfsk_invalidate_dir_pages(dir);
+		clear_nlink(dentry->d_inode);
 	}
 	GFSK_CTX_UNSET();
 	return (retval);
 }
 
 static int
-gfsk_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		struct kstat *stat)
+gfsk_create(struct inode *dir, struct dentry *dentry, int mode,
+		struct nameidata *nd)
 {
-	struct inode *inode = dentry->d_inode;
-	int retval;
-	GFSK_CTX_DECLARE_INODE(inode);
+	int retval, flags;
+	struct inode *inode;
+	GFSK_CTX_DECLARE_INODE(dir);
 
 	GFSK_CTX_SET();
-	retval = gfarm_stat(dentry, NULL);
+
+	/* see open_to_namei_flags() */
+	flags = nd->intent.open.flags;
+	if (flags & O_ACCMODE)
+		flags--;
+	retval = gfarm_createfile(dir, dentry, flags, mode,
+					nd->intent.open.file, &inode);
+	if (retval)
+		goto quit;
+	gfsk_invalidate_dir_pages(dir);
+	retval = gfarm_fstat(nd->intent.open.file, inode);
+	if (retval) {
+		gfarm_closefile(inode, nd->intent.open.file);
+		goto quit;
+	}
+	d_instantiate(dentry, inode);	/* inode count is handed */
+quit:
+	GFSK_CTX_UNSET();
+	return (retval);
+}
+
+static int
+gfsk_rename(struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry) {
+	int retval;
+	GFSK_CTX_DECLARE_INODE(old_dir);
+
+	GFSK_CTX_SET();
+	retval = gfarm_rename(old_dir, old_dentry, new_dir, new_dentry);
 	if (!retval) {
-		generic_fillattr(inode, stat);
-		stat->blksize = 4096;
-		stat->blocks = (stat->size + stat->blksize - 1)
-					/ stat->blksize;
+		gfsk_invalidate_dir_pages(old_dir);
+		if (old_dir != new_dir) {
+			gfsk_invalidate_dir_pages(new_dir);
+		}
+		retval = simple_rename(old_dir, old_dentry, new_dir,
+			new_dentry);
 	}
 	GFSK_CTX_UNSET();
 	return (retval);
 }
 
+
+static int
+gfsk_link(struct dentry *old_dentry, struct inode *dir, struct dentry *dentry)
+{
+	int retval;
+	GFSK_CTX_DECLARE_DENTRY(old_dentry);
+
+	GFSK_CTX_SET();
+	retval = gfarm_link(old_dentry, dir, dentry);
+	if (!retval) {
+		struct inode *new_inode;
+		gfsk_invalidate_attr(old_dentry->d_inode);
+		if (old_dentry->d_parent->d_inode != dir) {
+			gfsk_invalidate_dir_pages(
+				old_dentry->d_parent->d_inode);
+		}
+		gfsk_invalidate_dir_pages(dir);
+		retval = gfarm_stat(dentry, &new_inode);
+		if (!retval)
+			d_instantiate(dentry, new_inode);
+	}
+	GFSK_CTX_UNSET();
+	return (retval);
+}
+
+static int
+gfsk_unlink(struct inode *dir, struct dentry *dentry)
+{
+	int retval;
+	GFSK_CTX_DECLARE_INODE(dir);
+
+	GFSK_CTX_SET();
+	retval = gfarm_unlink(dir, dentry);
+	if (retval == 0) {
+		gfsk_invalidate_attr(dentry->d_inode);
+		gfsk_invalidate_dir_pages(dir);
+	}
+	GFSK_CTX_UNSET();
+	return (retval);
+}
 const struct inode_operations gfarm_dir_inode_operations = {
-	.lookup = gfsk_lookup,
-	.mkdir = gfsk_mkdir,
-	.rmdir = gfsk_rmdir,
-	.getattr = gfsk_getattr
+	.lookup		= gfsk_lookup,
+	.link		= gfsk_link,
+	.unlink		= gfsk_unlink,
+	.lookup		= gfsk_lookup,
+	.mkdir		= gfsk_mkdir,
+	.rmdir		= gfsk_rmdir,
+	.create		= gfsk_create,
+	.rename		= gfsk_rename,
+	.getattr	= gfsk_getattr,
+	.setattr	= gfsk_setattr,
 };
 
 /**********************************************************************/
@@ -158,6 +236,11 @@ gfsk_dir_close(struct inode *inode, struct file *file)
 
 	GFSK_CTX_SET();
 	retval = gfarm_closedir(inode, file);
+	if (!file->f_dentry->d_inode)
+		gflog_fatal(GFARM_MSG_UNFIXED,
+			"%s: no inode inode=%p file=%p",
+			__func__, inode, file);
+
 	GFSK_CTX_UNSET();
 	return (retval);
 }
@@ -168,7 +251,8 @@ gfsk_dir_lseek(struct file *file, loff_t offset, int origin)
 	return (-EOPNOTSUPP);
 }
 
-static unsigned char get_dtype(unsigned char gtype)
+static unsigned char
+get_dtype(unsigned char gtype)
 {
 	/* NOTE: GFS_DT_XXX = DT_XXX actually */
 	switch (gtype) {
@@ -184,6 +268,7 @@ static unsigned char get_dtype(unsigned char gtype)
 	}
 
 }
+
 static int
 gfsk_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
@@ -196,11 +281,14 @@ gfsk_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	struct gfsk_file_private *priv;
 	int over;
 
+	if (filp->f_pos == 0 && !gfsk_is_cache_valid(inode)) {
+		gfsk_invalidate_pages(inode);
+	}
 	if (filp->f_pos > 0 && gi->i_direntsize > 0 &&
 			filp->f_pos >= gi->i_direntsize)
 		return (0);
 	priv = (struct gfsk_file_private *)filp->private_data;
-	if (!priv || !priv->dirp)
+	if (!priv || !priv->f_u.dirp)
 		return (-EINVAL);
 
 	GFSK_CTX_SET();
@@ -210,7 +298,6 @@ gfsk_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		page = read_mapping_page(inode->i_mapping,
 			filp->f_pos / PAGE_SIZE, filp);
 		if (IS_ERR(page)) {
-			GFSK_CTX_UNSET();
 			break;
 		}
 		kmap(page);
@@ -257,7 +344,7 @@ gfsk_dir_update_node(struct file *dir, struct gfs_dirent *entry,
 	struct inode *inode;
 	struct dentry *dentry;
 
-	inode = gfarm_stat_set(sb, status);
+	inode = gfarm_stat2inode(sb, status);
 
 	if (inode == NULL)
 		return (-ENOMEM);
@@ -276,20 +363,22 @@ gfsk_dir_update_node(struct file *dir, struct gfs_dirent *entry,
 	return (0);
 }
 
-static int gfsk_dir_readpage(struct file *dir, struct page *page)
+static int
+gfsk_dir_readpage(struct file *dir, struct page *page)
 {
 	int retval;
 	struct gfs_dirent *entry;
 	struct gfs_stat *status;
 	gfarm_error_t ge = GFARM_ERR_NO_ERROR;
-	struct gfarm_inode *gi = get_gfarm_inode(dir->f_path.dentry->d_inode);
+	struct inode *inode = dir->f_path.dentry->d_inode;
+	struct gfarm_inode *gi = get_gfarm_inode(inode);
 	struct gfsk_file_private *priv;
 	char *p, *end;
 	pgoff_t pgindex = 0;
 	int gap;
 
 	priv = (struct gfsk_file_private *)dir->private_data;
-	if (!priv || !priv->dirp)
+	if (!priv || !priv->f_u.dirp)
 		return (-EINVAL);
 
 	kmap(page);
@@ -298,7 +387,7 @@ static int gfsk_dir_readpage(struct file *dir, struct page *page)
 	gi->i_direntsize = 0;
 	gap = 0;
 	while (1) {
-		ge = gfs_readdirplus(priv->dirp, &entry, &status);
+		ge = gfs_readdirplus(priv->f_u.dirp, &entry, &status);
 		if ((ge != GFARM_ERR_NO_ERROR) || (entry == NULL))
 			break;
 		if ((end - p) < sizeof(*entry)) {
@@ -330,6 +419,10 @@ static int gfsk_dir_readpage(struct file *dir, struct page *page)
 	kunmap(page);
 	SetPageUptodate(page);
 	unlock_page(page);
+
+	if (ge == GFARM_ERR_NO_ERROR) {
+		gfsk_set_cache_updatetime(inode);
+	}
 
 	return (GFARM_ERROR_TO_ERRNO(ge));
 }

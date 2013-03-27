@@ -15,7 +15,7 @@
 #include <gfarm/gflog.h>
 
 #include <gfarm/gfarm_config.h>
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* HAVE_EPOLL :: not yet support */
 #undef HAVE_EPOLL
 #endif /* __KERNEL__ */
 
@@ -34,7 +34,7 @@
 #ifdef __FDS_BITS /* for glibc, esp. Debian/kFreeBSD */
 #define GF_FDS_BITS(set)	__FDS_BITS(set)
 #else
-#define GF_FDS_BITS(set)	(set)->fds_bits
+#define GF_FDS_BITS(set)	((set)->fds_bits)
 #endif
 
 #endif /* !HAVE_EPOLL */
@@ -53,7 +53,7 @@ struct gfarm_event {
 	struct timeval timeout;
 	int timeout_specified;
 
-	enum { GFARM_FD_EVENT, GFARM_TIMER_EVENT } type;
+	enum { GFARM_FD_EVENT, GFARM_TIMER_EVENT, GFARM_KERN_EVENT } type;
 	union {
 		struct gfarm_fd_event {
 			void (*callback)(int, int, void *,
@@ -63,8 +63,17 @@ struct gfarm_event {
 		struct gfarm_timer_event {
 			void (*callback)(void *, const struct timeval *);
 		} timeout;
+		struct gfarm_kern_event {
+			void (*callback)(int, int, void *, void *);
+			void *kevp;
+		} kern;
 	} u;
 };
+
+#ifndef HAVE_EPOLL
+static int gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q,
+	int fd, fd_set **fd_setpp);
+#endif
 
 struct gfarm_event *
 gfarm_fd_event_alloc(int filter, int fd,
@@ -121,10 +130,38 @@ gfarm_timer_event_set_callback(struct gfarm_event *ev,
 	ev->closure = closure;
 	ev->u.timeout.callback = callback;
 }
+#ifdef __KERNEL__
+struct gfarm_event *
+gfarm_kern_event_alloc(void *kevp,
+	void (*callback)(int, int, void *, void *),
+	void *closure)
+{
+	struct gfarm_event *ev;
+
+	GFARM_MALLOC(ev);
+	if (ev == NULL)
+		return (NULL);
+	ev->next = ev->prev = NULL; /* to be sure */
+	ev->type = GFARM_KERN_EVENT;
+	ev->filter = GFARM_EVENT_TIMEOUT;
+	ev->closure = closure;
+	ev->u.kern.callback = callback;
+	ev->u.kern.kevp = kevp;
+	return (ev);
+}
+#endif /* __KERNEL__ */
 
 void
 gfarm_event_free(struct gfarm_event *ev)
 {
+#ifdef __KERNEL__
+	if (ev && ev->type == GFARM_KERN_EVENT) {
+		if (ev->u.kern.kevp) {
+			(*ev->u.kern.callback)(GFARM_EVENT_TIMEOUT, -EIO,
+				ev->u.kern.kevp, ev->closure);
+		}
+	}
+#endif /* __KERNEL__ */
 	free(ev);
 }
 
@@ -142,6 +179,10 @@ struct gfarm_eventqueue {
 	int fd_set_size, fd_set_bytes;
 	fd_set *read_fd_set, *write_fd_set, *exception_fd_set;
 #endif
+#ifdef __KERNEL__
+	int n_kern;
+	int evfd;
+#endif /* __KERNEL__ */
 };
 
 int
@@ -163,13 +204,31 @@ gfarm_eventqueue_alloc(int ndesc_hint, struct gfarm_eventqueue **qp)
 	q->size_epoll_events = q->n_epoll_events = 0;
 	q->epoll_events = NULL;
 	q->epoll_fd = epoll_create(ndesc_hint);
-	if (q->epoll_fd == -1)
+	if (q->epoll_fd == -1) {
+		free(q);
 		return (errno);
+	}
 #else
 	q->fd_set_size = q->fd_set_bytes = 0;
 	q->read_fd_set = q->write_fd_set =
 	    q->exception_fd_set = NULL;
 #endif
+#ifdef __KERNEL__
+	q->n_kern = 0;
+
+	if ((q->evfd = gfsk_evfd_create(0)) < 0) {
+		errno = -q->evfd;
+		free(q);
+		return (errno);
+	}
+	if (!gfarm_eventqueue_alloc_fd_set(q, q->evfd, &q->read_fd_set)) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"allocation of 'q->read_fd_set' failed");
+		close(q->evfd);
+		free(q);
+		return (ENOMEM);
+	}
+#endif /* __KERNEL__ */
 	*qp = q;
 	return (0); /* no error */
 }
@@ -186,6 +245,11 @@ gfarm_eventqueue_free(struct gfarm_eventqueue *q)
 	free(q->exception_fd_set);
 #endif
 
+#ifdef __KERNEL__
+	if (q->evfd >= 0) {
+		close(q->evfd);
+	}
+#endif /* __KERNEL__ */
 #if 0 /* this may not be true, if gfarm_eventqueue_loop() fails */
 	/* assert that the queue is empty */
 	assert(q->header.next == &q->header && q->header.prev == &q->header);
@@ -194,6 +258,13 @@ gfarm_eventqueue_free(struct gfarm_eventqueue *q)
 	free(q);
 }
 
+#ifdef __KERNEL__
+int
+gfarm_kern_eventqueue_getevfd(struct gfarm_eventqueue *q)
+{
+	return (q->evfd);
+}
+#endif /* __KERNEL__ */
 #ifndef HAVE_EPOLL
 /*
  * XXX This is not so portable,
@@ -255,19 +326,19 @@ gfarm_eventqueue_alloc_fd_set(struct gfarm_eventqueue *q, int fd,
 				fds_bytes, CHAR_BIT);
 			return (0); /* failure */
 		}
-		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes, fds_bytes,
 		    &q->read_fd_set)) {
 			gflog_debug(GFARM_MSG_1000771,
 				"re-allocation of 'q->read_fd_set' failed");
 			return (0); /* failure */
 		}
-		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes, fds_bytes,
 		    &q->write_fd_set)) { /* XXX wastes q->read_fd_set_value */
 			gflog_debug(GFARM_MSG_1000772,
 				"re-allocation of 'q->write_fd_set' failed");
 			return (0); /* failure */
 		}
-		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes,fds_bytes,
+		if (!gfarm_eventqueue_realloc_fd_set(q->fd_set_bytes, fds_bytes,
 		    &q->exception_fd_set)) {
 			/*XXX wastes q->{r,w}*_fd_set_value*/
 			gflog_debug(GFARM_MSG_1000773,
@@ -387,6 +458,11 @@ gfarm_eventqueue_add_event(struct gfarm_eventqueue *q,
 			return (EINVAL); /* not allowed */
 		}
 		break;
+	case GFARM_KERN_EVENT:
+#ifdef __KERNEL__
+		q->n_kern++;
+#endif /* __KERNEL__ */
+		break;
 	}
 
 	/* enqueue - insert at the tail of the circular list */
@@ -412,10 +488,10 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 		return (EINVAL);
 	}
 
-#ifdef HAVE_EPOLL
 	switch (ev->type) {
 
 	case GFARM_FD_EVENT:
+#ifdef HAVE_EPOLL
 		memset(&dummy, 0, sizeof(dummy));
 		if (epoll_ctl(q->epoll_fd, EPOLL_CTL_DEL, ev->u.fd.fd, &dummy)
 		    == -1) {
@@ -423,13 +499,18 @@ gfarm_eventqueue_delete_event(struct gfarm_eventqueue *q,
 			    "epoll_ctl(%d, EPOLL_CTL_DEL, %d, ): %s",
 			     q->epoll_fd, ev->u.fd.fd, strerror(errno));
 		}
+		q->n_epoll_events--;
+#endif
 		break;
 	case GFARM_TIMER_EVENT:
 		/* nothing to do */
 		break;
+	case GFARM_KERN_EVENT:
+#ifdef __KERNEL__
+		q->n_kern--;
+#endif /* __KERNEL__ */
+		break;
 	}
-	q->n_epoll_events--;
-#endif
 
 	/* dequeue */
 	ev->next->prev = ev->prev;
@@ -496,9 +577,9 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				timeout_value = ev->timeout;
 			}
 		}
-#ifndef HAVE_EPOLL
 		switch (ev->type) {
 		case GFARM_FD_EVENT:
+#ifndef HAVE_EPOLL
 			if ((ev->filter & GFARM_EVENT_READ) != 0) {
 				read_fd_set = q->read_fd_set;
 				FD_SET(ev->u.fd.fd, read_fd_set);
@@ -513,12 +594,22 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 			}
 			if (ev->u.fd.fd > max_fd)
 				max_fd = ev->u.fd.fd;
+#endif
 			break;
 		case GFARM_TIMER_EVENT:
 			break;
+		case GFARM_KERN_EVENT:
+			break;
 		}
-#endif
 	}
+#ifdef __KERNEL__
+	if (q->n_kern) {
+		read_fd_set = q->read_fd_set;
+		FD_SET(q->evfd, read_fd_set);
+		if (q->evfd > max_fd)
+			max_fd = q->evfd;
+	}
+#endif /* __KERNEL__ */
 
 	/*
 	 * do wait
@@ -618,6 +709,8 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 					    ev->closure, &end_time);
 				}
 				break;
+			default :
+				break;
 			}
 		}
 	}
@@ -655,8 +748,33 @@ gfarm_eventqueue_turn(struct gfarm_eventqueue *q,
 				    ev->closure, &end_time);
 			}
 			break;
+		case GFARM_KERN_EVENT:
+#ifdef __KERNEL__
+			if (FD_ISSET(q->evfd, q->read_fd_set)) {
+				int fd;
+				if (gfsk_req_check_fd(ev->u.kern.kevp, &fd)) {
+					char buf[1];
+					read(q->evfd, buf, 1);
+					ev->u.kern.kevp = NULL;
+					gfarm_eventqueue_delete_event(q, ev);
+					(*ev->u.kern.callback)(GFARM_EVENT_READ,
+						fd, NULL, ev->closure);
+					break;
+				}
+
+			}
+			if (ev->timeout_specified &&
+			    gfarm_timeval_cmp(&end_time, &ev->timeout) >= 0) {
+				void *kevp = ev->u.kern.kevp;
+				ev->u.kern.kevp = NULL;
+				gfarm_eventqueue_delete_event(q, ev);
+				(*ev->u.kern.callback)(GFARM_EVENT_TIMEOUT,
+					-ETIME, kevp, ev->closure);
+			}
+#endif /* __KERNEL__ */
+			break;
 		case GFARM_TIMER_EVENT:
-			if (gfarm_timeval_cmp(&end_time, &ev->timeout) >= 0){
+			if (gfarm_timeval_cmp(&end_time, &ev->timeout) >= 0) {
 				gfarm_eventqueue_delete_event(q, ev);
 				(*ev->u.timeout.callback)(
 				    ev->closure, &end_time);
