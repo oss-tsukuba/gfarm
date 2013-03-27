@@ -13,7 +13,8 @@ struct gfskd_req_t {
 extern int gfskd_term;
 void gfskd_set_term(gfarm_error_t);
 
-gfarm_error_t gfskd_req_connectmd(struct gfskd_req_t *req, void *arg);
+gfarm_error_t gfskd_req_connect_gfmd(struct gfskd_req_t *req, void *arg);
+gfarm_error_t gfskd_req_connect_gfsd(struct gfskd_req_t *req, void *arg);
 gfarm_error_t gfskd_req_term(struct gfskd_req_t *req, void *arg);
 
 gfarm_error_t gfskd_loop(int fd, int bufsize);

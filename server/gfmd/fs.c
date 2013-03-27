@@ -1190,8 +1190,10 @@ gfm_server_futimes(struct peer *peer, int from_client, int skip)
 		gflog_debug(GFARM_MSG_1001827, "db_begin() failed: %s",
 			gfarm_error_string(e));
 	} else {
-		inode_set_atime(inode, &atime);
-		inode_set_mtime(inode, &mtime);
+		if (atime.tv_nsec != GFARM_UTIME_OMIT)
+			inode_set_atime(inode, &atime);
+		if (mtime.tv_nsec != GFARM_UTIME_OMIT)
+			inode_set_mtime(inode, &mtime);
 		db_end(diag);
 	}
 

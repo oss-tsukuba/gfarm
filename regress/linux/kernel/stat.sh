@@ -1,41 +1,37 @@
 #!/bin/sh
 
 . ./regress.conf
-. ./linux/kernel/dironlytest-init.sh
+. ./linux/kernel/initparams.sh
 
-# stat #1
-{
-	if [ -d "${MOUNTPOINT}/dir" ]; then
-		rmdir ${MOUNTPOINT}/dir
-	fi
-	mkdir ${MOUNTPOINT}/dir
-	if [ $? != 0 ]; then
-		exit $exit_fail
-	fi
-	
-	stat ${MOUNTPOINT}/dir > ${TMPFILE}
+stat_test() {
+	file=$1
+	type=$2
+	nlink=$3
+	access=$4
+
+	stat ${file} > ${TMPFILE}
 	if [ $? != 0 ]; then
 		exit $exit_fail
 	fi
 	timestamp=`date '+%Y-%m-%d %H:%M:%S'`
 
 	line=`head -1 ${TMPFILE}`
-	if ! expr "$line" : "  File: \`${MOUNTPOINT}/dir'" > /dev/null; then
+	if ! expr "$line" : "  File: \`${file}'" > /dev/null; then
 		echo "WARN: stat line 1 maybe incorrect"
 	fi
 
 	line=`head -2 ${TMPFILE} | tail -1`
-	if ! expr "$line" : "  Size: 0.*Blocks: 0.*directory" > /dev/null; then
+	if ! expr "$line" : ".*${type}" > /dev/null; then
 		echo "WARN: stat line 2 maybe incorrect"
 	fi
 
 	line=`head -3 ${TMPFILE} | tail -1`
-	if ! expr "$line" : ".*Links: 2" > /dev/null; then
+	if ! expr "$line" : ".*Links: ${nlink}" > /dev/null; then
 		echo "WARN: stat line 3 maybe incorrect"
 	fi
 
 	line=`head -4 ${TMPFILE} | tail -1`
-	if ! expr "$line" : "Access: (0755/drwxr-xr-x).*Uid: ( *${TESTUID}/ *${TESTUSER}).*Gid: ( *${TESTGID}/ *${TESTGROUP})" > /dev/null; then
+	if ! expr "$line" : "Access: (${access}).*Uid: ( *${TESTUID}/ *${TESTUSER}).*Gid: ( *${TESTGID}/ *${TESTGROUP})" > /dev/null; then
 		echo "WARN: stat line 4 maybe incorrect"
 	fi
 
@@ -51,6 +47,46 @@
 	if ! expr "$line" : "Change: ${timestamp}\." > /dev/null; then
 		echo "WARN: stat line 7 maybe incorrect"
 	fi
+}
 
-	rmdir ${MOUNTPOINT}/dir
+# stat #1
+{
+	testdir=${MOUNTPOINT}/${DIR1}
+	
+	if [ -d "${testdir}" ]; then
+		rm -rf ${testdir}
+	fi
+
+	mkdir ${testdir}
+	if [ $? != 0 ]; then
+		exit $exit_fail
+	fi
+	
+	stat_test ${testdir} "directory" 2 "0755/drwxr-xr-x"
+	
+	rm -rf ${testdir}
+	if [ $? != 0 ]; then
+		exit $exit_fail
+	fi
+}
+
+# stat #2
+{
+	testfile=${MOUNTPOINT}/file
+	
+	if [ -e "${testfile}" ]; then
+		rm -rf ${testfile}
+	fi
+
+	touch ${testfile}
+	if [ $? != 0 ]; then
+		exit $exit_fail
+	fi
+	
+	stat_test ${testfile} "regular empty file" 1 "0644/-rw-r--r--"
+	
+	rm ${testfile}
+	if [ $? != 0 ]; then
+		exit $exit_fail
+	fi
 }

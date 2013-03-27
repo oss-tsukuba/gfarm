@@ -139,7 +139,7 @@ tokenize(char *buf, char **tokens, int max, const char *delm) {
 static bool
 parse_int64_by_base(const char *str, int64_t *val, int base) {
 	/*
-	 * str := 
+	 * str :=
 	 *	[[:space:]]*[\-\+][[:space:]]*[0-9]+[[:space:]]*[kKmMgGtTpP]
 	 */
 	char *e_ptr = NULL;
@@ -153,11 +153,11 @@ parse_int64_by_base(const char *str, int64_t *val, int base) {
 
 	skip_spaces(str);
 	switch ((int)str[0]) {
-        case '-':
+	case '-':
 		neg = -1;
 		str++;
 		break;
-        case '+':
+	case '+':
 		str++;
 		break;
 	}
@@ -165,11 +165,11 @@ parse_int64_by_base(const char *str, int64_t *val, int base) {
 
 	buf = strdup(str);
 	if (buf == NULL) {
-		return false;
+		return (false);
 	}
 	len = strlen(buf);
 	if (len == 0) {
-		return false;
+		return (false);
 	}
 	end_ptr = &(buf[len - 1]);
 	trim_spaces(buf, end_ptr);
@@ -250,11 +250,11 @@ parse_int32(const char *str, int32_t *val) {
 
 	skip_spaces(str);
 	switch ((int)str[0]) {
-        case '-':
+	case '-':
 		neg = -1;
 		str++;
 		break;
-        case '+':
+	case '+':
 		str++;
 		break;
 	}
@@ -388,7 +388,8 @@ gfarm_repattr_parse(const char *s, gfarm_repattr_t **retp, size_t *n_retp)
 	for (i = 0; i < n_maxreps; i++) {
 		if (strchr(tokens[i], ':') == NULL)
 			continue;
-		n_tokens = tokenize(tokens[i], tokens2, GFARM_ARRAY_LENGTH(tokens2), ": \t\r\n");
+		n_tokens = tokenize(tokens[i], tokens2,
+			GFARM_ARRAY_LENGTH(tokens2), ": \t\r\n");
 		if (n_tokens == 2) {
 			if (!parse_int32(tokens2[1], &spec_n))
 				continue;

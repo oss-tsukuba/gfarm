@@ -57,7 +57,11 @@
 #include "gfm_client.h"
 #include "filesystem.h"
 #include "gfs_failover.h"
+#include "nanosec.h"
 #include "iostat.h"
+#ifdef __KERNEL__
+#include "gfsk_fs.h"
+#endif /* __KERNEL__ */
 
 #define GFS_CLIENT_CONNECT_TIMEOUT	30 /* seconds */
 #define GFS_CLIENT_COMMAND_TIMEOUT	20 /* seconds */
@@ -258,6 +262,7 @@ sockaddr_is_local(struct sockaddr *peer_addr)
 	return (0);
 }
 
+#ifndef __KERNEL__	/* gfs_client_connect_xxx :: in user mode */
 static gfarm_error_t
 gfs_client_connect_unix(struct sockaddr *peer_addr, int *sockp)
 {
@@ -504,6 +509,90 @@ gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
 	}
 	return (e);
 }
+#else /* __KERNEL__ */
+static gfarm_error_t
+gfsk_client_connection_alloc_and_auth(struct gfarm_eventqueue *q,
+	const char *canonical_hostname,
+	const char *user, struct sockaddr *peer_addr,
+	struct gfp_cached_connection *cache_entry,
+	void **kevpp, struct gfs_connection **gfs_serverp,
+	const char *source_ip, int failover_count)
+{
+	gfarm_error_t e;
+	int	err;
+	struct gfs_connection *gfs_server;
+	int sock = -1, is_local = 0;
+	int fd = -1;
+
+	if (sockaddr_is_local(peer_addr)) {
+		is_local = 1;
+	}
+
+	GFARM_MALLOC(gfs_server);
+	if (gfs_server == NULL) {
+		gflog_debug(GFARM_MSG_1001179,
+			"allocation of 'gfs_server' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	gfs_server->hostname = strdup(canonical_hostname);
+	if (gfs_server->hostname == NULL) {
+		free(gfs_server);
+		gflog_debug(GFARM_MSG_1001181,
+			"allocation of 'gfs_server->hostname' failed: %s",
+			gfarm_error_string(GFARM_ERR_NO_MEMORY));
+		return (GFARM_ERR_NO_MEMORY);
+	}
+	if (kevpp)
+		fd = gfarm_kern_eventqueue_getevfd(q);
+
+	if ((err = gfsk_gfsd_connect(canonical_hostname, peer_addr,
+		source_ip, user, &sock, kevpp, fd))) {
+		err = -err;
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfsk_gfsd_connect error :%s", strerror(err));
+		free(gfs_server->hostname);
+		free(gfs_server);
+		return (gfarm_errno_to_error(err));
+	}
+	if (!kevpp) {
+		e = gfp_xdr_new_socket(sock, &gfs_server->conn);
+		if (e != GFARM_ERR_NO_ERROR) {
+			free(gfs_server->hostname);
+			free(gfs_server);
+			close(sock);
+			gflog_debug(GFARM_MSG_1001180,
+				"gfp_xdr_new_socket() failed: %s",
+				gfarm_error_string(e));
+			return (e);
+		}
+	} else
+		gfs_server->conn = NULL;
+	gfs_server->port = ntohs(((struct sockaddr_in *)peer_addr)->sin_port);
+	gfs_server->is_local = is_local;
+	gfs_server->pid = 0;
+	gfs_server->context = NULL;
+	gfs_server->opened = 0;
+	gfs_server->failover_count = failover_count;
+
+	gfs_server->cache_entry = cache_entry;
+	gfp_cached_connection_set_data(cache_entry, gfs_server);
+
+	*gfs_serverp = gfs_server;
+	return (GFARM_ERR_NO_ERROR);
+}
+static gfarm_error_t
+gfs_client_connection_alloc_and_auth(const char *canonical_hostname,
+	const char *user, struct sockaddr *peer_addr,
+	struct gfp_cached_connection *cache_entry,
+	struct gfs_connection **gfs_serverp, const char *source_ip,
+	int failover_count)
+{
+	return (gfsk_client_connection_alloc_and_auth(NULL, canonical_hostname,
+		user, peer_addr, cache_entry, NULL, gfs_serverp, source_ip,
+		failover_count));
+}
+#endif /* __KERNEL__ */
 
 static gfarm_error_t
 gfs_client_connection_dispose(void *connection_data)
@@ -537,6 +626,17 @@ gfs_client_terminate(void)
 {
 	gfp_cached_connection_terminate(&staticp->server_cache);
 }
+void
+gfs_client_connection_unlock(struct gfs_connection *gfs_server)
+{
+	gfp_connection_unlock(gfs_server->cache_entry);
+}
+void
+gfs_client_connection_lock(struct gfs_connection *gfs_server)
+{
+	gfp_connection_lock(gfs_server->cache_entry);
+}
+
 
 /*
  * gfs_client_connection_acquire - create or lookup a cached connection
@@ -549,6 +649,7 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	struct gfp_cached_connection *cache_entry;
 	int created;
 
+retry:
 	e = gfp_cached_connection_acquire(&staticp->server_cache,
 	    canonical_hostname,
 	    ntohs(((struct sockaddr_in *)peer_addr)->sin_port),
@@ -562,6 +663,15 @@ gfs_client_connection_acquire(const char *canonical_hostname, const char *user,
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
+		if (!*gfs_serverp) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"gfs_client_connection_acquire:"
+				"%s not connected", canonical_hostname);
+			gfp_cached_or_uncached_connection_free(
+				&staticp->server_cache, cache_entry);
+			gfarm_nanosleep(10 * 1000 * 1000);
+			goto retry;
+		}
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfs_client_connection_alloc_and_auth(canonical_hostname, user,
@@ -588,6 +698,7 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	struct sockaddr peer_addr;
 	const char *user = gfm_client_username(gfm_server);
 
+retry:
 	/*
 	 * lookup gfs_server_cache first,
 	 * to eliminate hostname -> IP-address conversion in a cached case.
@@ -603,6 +714,15 @@ gfs_client_connection_acquire_by_host(struct gfm_connection *gfm_server,
 	}
 	if (!created) {
 		*gfs_serverp = gfp_cached_connection_get_data(cache_entry);
+		if (!*gfs_serverp) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+				"gfs_client_connection_acquire_by_host:"
+				"%s not connected", canonical_hostname);
+			gfp_cached_or_uncached_connection_free(
+				&staticp->server_cache, cache_entry);
+			gfarm_nanosleep(10 * 1000 * 1000);
+			goto retry;
+		}
 		return (GFARM_ERR_NO_ERROR);
 	}
 	e = gfm_host_address_get(gfm_server, canonical_hostname, port,
@@ -802,6 +922,22 @@ gfs_client_connection_enter_cache(struct gfs_connection *gfs_server)
 	return (gfp_uncached_connection_enter_cache(&staticp->server_cache,
 	    gfs_server->cache_entry));
 }
+gfarm_error_t
+gfs_client_connection_enter_cache_tail(struct gfs_connection *gfs_server)
+{
+	if (gfs_client_connection_is_cached(gfs_server)) {
+		gflog_fatal(GFARM_MSG_1000068,
+		    "gfs_client_connection_enter_cache_tail: "
+		    "programming error");
+	}
+	return (gfp_uncached_connection_enter_cache_tail(&staticp->server_cache,
+	    gfs_server->cache_entry));
+}
+int
+gfs_client_connection_cache_change(int cnt)
+{
+	return (gfp_connection_cache_change(&staticp->server_cache, cnt));
+}
 
 /*
  * multiplexed version of gfs_client_connect() for parallel authentication
@@ -823,6 +959,7 @@ struct gfs_client_connect_state {
 	gfarm_error_t error;
 };
 
+#ifndef __KERNEL__
 static void
 gfs_client_connect_end_auth(void *closure)
 {
@@ -890,6 +1027,34 @@ gfs_client_connect_start_auth(int events, int fd, void *closure,
 	if (state->continuation != NULL)
 		(*state->continuation)(state->closure);
 }
+#else /* __KERNEL__ */
+static void
+gfs_client_connect_kern_end(int events, int fd, void *kevp, void *closure)
+{
+	struct gfs_client_connect_state *state = closure;
+	gfarm_error_t e;
+
+	if (kevp) {
+		gfsk_req_free(kevp);
+	}
+	if (state) {
+		if (fd < 0) {
+			state->error = gfarm_errno_to_error(-fd);
+		} else {
+			e = gfp_xdr_new_socket(fd, &state->gfs_server->conn);
+			if (e != GFARM_ERR_NO_ERROR) {
+				close(fd);
+				gflog_debug(GFARM_MSG_UNFIXED,
+				"gfp_xdr_new_socket() failed: %s",
+				gfarm_error_string(e));
+				state->error = e;
+			}
+		}
+		if (state->continuation != NULL)
+			(*state->continuation)(state->closure);
+	}
+}
+#endif /* __KERNEL__ */
 
 gfarm_error_t
 gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
@@ -903,7 +1068,11 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	struct gfp_cached_connection *cache_entry;
 	struct gfs_connection *gfs_server;
 	struct gfs_client_connect_state *state;
+#ifndef __KERNEL__
 	int connection_in_progress;
+#else /* __KERNEL__ */
+	void *kevp;
+#endif /* __KERNEL__ */
 
 	/* clone of gfs_client_connect() */
 
@@ -924,9 +1093,15 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 			gfarm_error_string(e));
 		return (e);
 	}
+#ifndef __KERNEL__
 	e = gfs_client_connection_alloc(canonical_hostname, peer_addr,
 	    cache_entry, &connection_in_progress, &gfs_server, NULL,
 	    gfarm_filesystem_failover_count(fs));
+#else /* __KERNEL__ */
+	e = gfsk_client_connection_alloc_and_auth(q, canonical_hostname,
+		user, peer_addr, cache_entry, &kevp, &gfs_server, NULL,
+	    gfarm_filesystem_failover_count(fs));
+#endif /* __KERNEL__ */
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfp_uncached_connection_dispose(cache_entry);
 		free(state);
@@ -943,6 +1118,7 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 	state->gfs_server = gfs_server;
 	state->auth_state = NULL;
 	state->error = GFARM_ERR_NO_ERROR;
+#ifndef __KERNEL__
 	if (connection_in_progress) {
 		state->writable = gfarm_fd_event_alloc(GFARM_EVENT_WRITE,
 		    gfp_xdr_fd(gfs_server->conn),
@@ -975,6 +1151,23 @@ gfs_client_connect_request_multiplexed(struct gfarm_eventqueue *q,
 			return (GFARM_ERR_NO_ERROR);
 		}
 	}
+#else /* __KERNEL__ */
+	{
+		state->writable = gfarm_kern_event_alloc(kevp,
+				gfs_client_connect_kern_end, state);
+		if (state->writable == NULL) {
+			e = GFARM_ERR_NO_MEMORY;
+		} else if ((rv = gfarm_eventqueue_add_event(q, state->writable,
+		    NULL)) == 0) {
+			*statepp = state;
+			/* go to gfs_client_connect_start_auth() */
+			return (GFARM_ERR_NO_ERROR);
+		} else {
+			e = gfarm_errno_to_error(rv);
+			gfarm_event_free(state->writable);
+		}
+	}
+#endif /* __KERNEL__ */
 	free(state);
 	gfs_client_connection_dispose(gfs_server);
 	gflog_debug(GFARM_MSG_1001194,
@@ -1217,9 +1410,11 @@ gfs_client_rpc(struct gfs_connection *gfs_server, int just,
 	gfarm_error_t e;
 	va_list ap;
 
+	gfs_client_connection_lock(gfs_server);
 	va_start(ap, format);
 	e = gfs_client_vrpc(gfs_server, just, 1, command, format, &ap);
 	va_end(ap);
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1230,9 +1425,11 @@ gfs_client_rpc_notimeout(struct gfs_connection *gfs_server, int just,
 	gfarm_error_t e;
 	va_list ap;
 
+	gfs_client_connection_lock(gfs_server);
 	va_start(ap, format);
 	e = gfs_client_vrpc(gfs_server, just, 0, command, format, &ap);
 	va_end(ap);
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1242,6 +1439,7 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 {
 	gfarm_error_t e;
 
+	gfs_client_connection_lock(gfs_server);
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_SET, "ibl/",
 	    type, size, key, pid);
 	if (e == GFARM_ERR_NO_ERROR)
@@ -1250,6 +1448,7 @@ gfs_client_process_set(struct gfs_connection *gfs_server,
 		gflog_debug(GFARM_MSG_1001202,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1259,8 +1458,9 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 {
 	gfarm_error_t e;
 
-	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET, "ibli/",
-	    type, size, key, pid, gfs_server->failover_count);
+	gfs_client_connection_lock(gfs_server);
+	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_PROCESS_RESET,
+		"ibli/", type, size, key, pid, gfs_server->failover_count);
 	if (e == GFARM_ERR_GFMD_FAILED_OVER) {
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "ignore error: %s", gfarm_error_string(e));
@@ -1274,6 +1474,7 @@ gfs_client_process_reset(struct gfs_connection *gfs_server,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
 	}
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1282,6 +1483,7 @@ gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 {
 	gfarm_error_t e;
 
+	gfs_client_connection_lock(gfs_server);
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_OPEN, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		++gfs_server->opened;
@@ -1289,6 +1491,7 @@ gfs_client_open(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 		gflog_debug(GFARM_MSG_1001203,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1308,8 +1511,10 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	}
 
 	/* we have to set `just' flag here */
+	gfs_client_connection_lock(gfs_server);
 	e = gfs_client_rpc(gfs_server, 1, GFS_PROTO_OPEN_LOCAL, "i/", fd);
 	if (e != GFARM_ERR_NO_ERROR) {
+		gfs_client_connection_unlock(gfs_server);
 		gflog_debug(GFARM_MSG_1001205,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
@@ -1319,6 +1524,10 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 	/* layering violation, but... */
 	rv = gfarm_fd_receive_message(gfp_xdr_fd(gfs_server->conn),
 	    &dummy, sizeof(dummy), 1, &local_fd);
+	if (rv == 0) {
+		++gfs_server->opened;
+	}
+	gfs_client_connection_unlock(gfs_server);
 	if (rv == -1) { /* EOF */
 		gflog_debug(GFARM_MSG_1001206,
 			"Unexpected EOF when receiving message: %s",
@@ -1332,8 +1541,16 @@ gfs_client_open_local(struct gfs_connection *gfs_server, gfarm_int32_t fd,
 		return (gfarm_errno_to_error(rv));
 	}
 	/* both `dummy' and `local_fd` are passed by using host byte order. */
+#ifdef __KERNEL__
+	if ((rv = gfsk_localfd_set(local_fd, S_IFREG)) < 0) {
+		gflog_debug(GFARM_MSG_UNFIXED,
+			"gfsk_localfd_set failed: %s",
+			gfarm_error_string(gfarm_errno_to_error(-rv)));
+		return (gfarm_errno_to_error(-rv));
+	}
+	local_fd = rv;
+#endif /* __KERNEL__ */
 	*fd_ret = local_fd;
-	++gfs_server->opened;
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -1342,6 +1559,8 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 {
 	gfarm_error_t e;
 
+	/* locked */
+	gfs_client_connection_lock(gfs_server);
 	e = gfs_client_rpc(gfs_server, 0, GFS_PROTO_CLOSE, "i/", fd);
 	if (e == GFARM_ERR_NO_ERROR)
 		--gfs_server->opened;
@@ -1349,6 +1568,7 @@ gfs_client_close(struct gfs_connection *gfs_server, gfarm_int32_t fd)
 		gflog_debug(GFARM_MSG_1001208,
 			"gfs_client_rpc() failed: %s",
 			gfarm_error_string(e));
+	gfs_client_connection_unlock(gfs_server);
 	return (e);
 }
 
@@ -1684,6 +1904,7 @@ gfs_client_statfs_result_multiplexed(struct gfs_client_statfs_state *state,
 }
 
 
+#ifndef __KERNEL__ /* gfsd only */
 /*
  * GFS_PROTO_REPLICA_RECV is only used by gfsd,
  * but defined here for better maintainability.
@@ -1797,6 +2018,7 @@ gfs_client_replica_recv(struct gfs_connection *gfs_server,
 	}
 	return (e);
 }
+#endif /* __KERNEL__ */
 
 /*
  **********************************************************************

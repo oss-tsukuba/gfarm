@@ -7,7 +7,7 @@
 #include "context.h"
 #include "config.h"
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_ctxp */
 struct gfarm_context *gfarm_ctxp;
 #endif /* __KERNEL__ */
 
@@ -37,7 +37,7 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_host_static_init,
 		gfarm_host_static_term
 	},
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* auth */
 	{
 		gfarm_auth_config_static_init,
 		gfarm_auth_config_static_term
@@ -56,6 +56,7 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_auth_client_static_init,
 		gfarm_auth_client_static_term
 	},
+#endif /* __KERNEL__ */
 	{
 		gfarm_schedule_static_init,
 		gfarm_schedule_static_term
@@ -68,7 +69,6 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_pio_section_static_init,
 		gfarm_gfs_pio_section_static_term
 	},
-#endif /* __KERNEL__ */
 	{
 		gfarm_gfs_stat_static_init,
 		gfarm_gfs_stat_static_term
@@ -77,7 +77,7 @@ static const struct gfarm_context_module_entry module_entries[] = {
 		gfarm_gfs_unlink_static_init,
 		gfarm_gfs_unlink_static_term
 	},
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* xattr */
 	{
 		gfarm_gfs_xattr_static_init,
 		gfarm_gfs_xattr_static_term
@@ -116,6 +116,7 @@ gfarm_context_init(void)
 	ctxp->gfmd_reconnection_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_limit = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->attr_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
+	ctxp->page_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_cache_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_concurrency = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->schedule_concurrency_per_net = GFARM_CONFIG_MISC_DEFAULT;
@@ -134,6 +135,7 @@ gfarm_context_init(void)
 	ctxp->network_receive_timeout = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->file_trace = GFARM_CONFIG_MISC_DEFAULT;
 	ctxp->on_demand_replication = 0;
+	ctxp->call_rpc_instead_syscall = 0;
 	ctxp->fatal_action = GFARM_CONFIG_MISC_DEFAULT;
 	if ((ctxp->getpw_r_bufsz = sysconf(_SC_GETPW_R_SIZE_MAX)) == -1)
 		ctxp->getpw_r_bufsz = BUFSIZE_MAX;

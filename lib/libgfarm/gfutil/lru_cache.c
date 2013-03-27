@@ -38,6 +38,17 @@ gfarm_lru_cache_link_entry(struct gfarm_lru_cache *cache,
 	cache->list_head.next = entry;
 }
 
+/* link the entry to the tail of the LRU cache list */
+void
+gfarm_lru_cache_link_entry_tail(struct gfarm_lru_cache *cache,
+	struct gfarm_lru_entry *entry)
+{
+	entry->next = &cache->list_head;
+	entry->prev = cache->list_head.prev;
+	cache->list_head.prev->next = entry;
+	cache->list_head.prev = entry;
+}
+
 /* unlink the entry from the LRU cache list */
 static void
 gfarm_lru_cache_unlink_entry(struct gfarm_lru_entry *entry)
@@ -52,7 +63,7 @@ gfarm_lru_cache_access_entry(struct gfarm_lru_cache *cache,
 	struct gfarm_lru_entry *entry)
 {
 	gfarm_lru_cache_unlink_entry(entry);
-	gfarm_lru_cache_link_entry(cache, entry);	
+	gfarm_lru_cache_link_entry(cache, entry);
 }
 
 /* initialize the entry as the acquired state, and add it to the LRU cache */
@@ -69,7 +80,7 @@ void
 gfarm_lru_cache_purge_entry(struct gfarm_lru_entry *entry)
 {
 	gfarm_lru_cache_unlink_entry(entry);
-	
+
 	entry->prev = entry->next = NULL; /* mark the entry purged */
 
 	/* note that this entry may be still acquired */

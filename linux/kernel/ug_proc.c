@@ -4,6 +4,7 @@
 #include <asm/uaccess.h>
 #include <linux/sunrpc/cache.h>
 #include "ug_idmap.h"
+#include <netdb.h>
 
 static int
 ug_idmap_test_open(struct inode *inode, struct file *file)
@@ -30,9 +31,9 @@ ug_idmap_test_read(struct file *file, char __user *buf,
 		return (0);
 
 	if (size < mlen)
-		size = mlen;
+		mlen = size;
 
-	if (copy_to_user(buf, msg, size) != 0)
+	if (copy_to_user(buf, msg, mlen) != 0)
 		return (-EFAULT);
 
 	*_pos = mlen;
@@ -62,8 +63,8 @@ ug_idmap_test_name2uid(struct file *file, const char __user *buf,
 		return (ret);
 	}
 	printk(KERN_INFO "%s:name=%s id=%d\n", __func__, name, id);
-	*_pos += bufp - name;
-	return (bufp - name);
+	*_pos += bufp - kbuf;
+	return (bufp - kbuf);
 }
 
 static ssize_t
@@ -95,8 +96,61 @@ ug_idmap_test_uid2name(struct file *file, const char __user *buf,
 		return (ret);
 	}
 	printk(KERN_INFO "%s:name=%s id=%d\n", __func__, name, id);
-	*_pos += bufp - name;
-	return (bufp - name);
+	*_pos += bufp - kbuf;
+	return (bufp - kbuf);
+}
+static ssize_t
+ug_idmap_test_hostaddr(struct file *file, const char __user *buf,
+				    size_t size, loff_t *_pos)
+{
+	int ret, len;
+	char kbuf[UG_IDMAP_NAMESZ], name[UG_IDMAP_NAMESZ], *bufp = kbuf;
+	struct hostent *ent;
+	struct addrinfo *info, *ai;
+	int i;
+
+	if (size <= 1 || size >= UG_IDMAP_NAMESZ)
+		return (-EINVAL);
+
+	if (copy_from_user(kbuf, buf, size) != 0)
+		return (-EFAULT);
+
+	if ((len = qword_get(&bufp, name, sizeof(name))) <= 0) {
+		printk(KERN_WARNING "%s:qword_get\n", __func__);
+		return (-EINVAL);
+	}
+
+	if (!(ent = gethostbyname(name))) {
+		printk(KERN_WARNING "%s:gethostbyname\n", __func__);
+		return (-ENOENT);
+	}
+	for (i = 0; ent->h_aliases[i]; i++) {
+		printk(KERN_INFO "%s:name=%s alias=%s\n", __func__, name,
+				ent->h_aliases[i]);
+	}
+	for (i = 0; ent->h_addr_list[i]; i++) {
+		printk(KERN_INFO "%s:name=%s addr=0x%x\n", __func__, name,
+				*(int *)ent->h_addr_list[i]);
+	}
+	free_gethost_buff(ent);
+	if ((ret = getaddrinfo(name, "1234", NULL, &info))) {
+		printk(KERN_WARNING "%s:getaddrinfo\n", __func__);
+		return (ret);
+	}
+	for (ai = info; ai; ai = ai->ai_next) {
+		struct sockaddr_in *in = (struct sockaddr_in *)ai->ai_addr;
+		printk(KERN_INFO "%s:flags=0x%x family=%d type=%d proto=%d"
+			" addrlen=%d family=%d port=%d addr=0x%x name=%s\n",
+			__func__,
+			ai->ai_flags, ai->ai_family, ai->ai_socktype,
+			ai->ai_protocol, ai->ai_addrlen,
+			in->sin_family, in->sin_port, in->sin_addr.s_addr,
+			ai->ai_canonname ? ai->ai_canonname : "");
+	}
+	freeaddrinfo(info);
+
+	*_pos += bufp - kbuf;
+	return (bufp - kbuf);
 }
 
 static const struct file_operations ug_idmap_uid2name_fops = {
@@ -113,6 +167,15 @@ static const struct file_operations ug_idmap_name2uid_fops = {
 	.open		= ug_idmap_test_open,
 	.read		= ug_idmap_test_read,
 	.write		= ug_idmap_test_name2uid,
+	.llseek		= no_llseek,
+	.release	= ug_idmap_test_release,
+};
+
+static const struct file_operations ug_idmap_hostaddr_fops = {
+	.owner		= THIS_MODULE,
+	.open		= ug_idmap_test_open,
+	.read		= ug_idmap_test_read,
+	.write		= ug_idmap_test_hostaddr,
 	.llseek		= no_llseek,
 	.release	= ug_idmap_test_release,
 };
@@ -134,8 +197,14 @@ int __init ug_idmap_proc_init(void)
 			 &ug_idmap_name2uid_fops))
 		goto error_name2uid;
 
+	if (!proc_create("fs/ug_idmap/hostaddr", S_IFREG | 0666, NULL,
+			 &ug_idmap_hostaddr_fops))
+		goto error_hostaddr;
+
 	return (0);
 
+error_hostaddr:
+	remove_proc_entry("fs/ug_idmap/name2uid", NULL);
 error_name2uid:
 	remove_proc_entry("fs/ug_idmap/uid2name", NULL);
 error_uid2name:
@@ -151,5 +220,6 @@ void ug_idmap_proc_cleanup(void)
 {
 	remove_proc_entry("fs/ug_idmap/name2uid", NULL);
 	remove_proc_entry("fs/ug_idmap/uid2name", NULL);
+	remove_proc_entry("fs/ug_idmap/hostaddr", NULL);
 	remove_proc_entry("fs/ug_idmap", NULL);
 }

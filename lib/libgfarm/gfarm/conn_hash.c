@@ -21,7 +21,7 @@ gfp_conn_hash_index(const void *key, int keylen)
 	 * (Should we change GSI authentication protocol?)
 	 */
 	return (gfarm_hash_casefold(id->hostname, strlen(id->hostname)) +
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* id->username :: multi user */
 		gfarm_hash_default(id->username, strlen(id->username)) +
 #endif /* __KERNEL__ */
 		id->port * 3);
@@ -35,7 +35,7 @@ gfp_conn_hash_equal(const void *key1, int key1len,
 
 	/* XXX FIXME: username is currently removed from keys */
 	return (strcasecmp(id1->hostname, id2->hostname) == 0 &&
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* id->username :: multi user */
 		strcmp(id1->username, id2->username) == 0 &&
 #endif /* __KERNEL__ */
 		id1->port == id2->port);

@@ -30,8 +30,10 @@ statfs_rpc(struct gfm_connection **gfm_serverp, void *closure)
 		    gfarm_error_string(e));
 		return (e);
 	}
-	return (gfm_client_statfs(*gfm_serverp, si->used, si->avail,
-		si->files));
+	gfm_client_connection_lock(*gfm_serverp);
+	e = gfm_client_statfs(*gfm_serverp, si->used, si->avail, si->files);
+	gfm_client_connection_unlock(*gfm_serverp);
+	return (e);
 }
 
 static gfarm_error_t

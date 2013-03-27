@@ -12,6 +12,7 @@
 #include "gfsk_if.h"
 #include "gfsk_fs.h"
 #include <gfarm/gflog.h>
+#include <unistd.h>
 
 #define GFSK_CONN_FILE(file)	((file)->private_data)
 
@@ -20,27 +21,74 @@ gfsk_free_conn(struct fuse_conn *fc)
 {
 	kfree(fc);
 }
+
+#define WAKE_SEM	1
+#define WAKE_FD	2
 static void
-gfsk_client_connect_cb(struct fuse_conn *fc, struct fuse_req *req)
+gfsk_client_connect_proc(int kind, struct fuse_conn *fc, struct fuse_req *req)
 {
 	struct gfsk_rpl_connect *outarg = req->out.args[0].value;
-	struct semaphore *sem = (struct semaphore *) req->ff;
+	void *ev = req->ff;
 
-	if (!req->out.h.error && sem) {
-		int fd;
+	if (ev) {
+		int fd = -1;
+		int unset = 0;
 		GFSK_CTX_DECLARE_SB(fc->sb);
 
 		GFSK_CTX_SET_FORCE();
-		fd = gfsk_fd_set(outarg->r_fd, S_IFSOCK);
+
+		spin_lock(&fc->lock);
+		if (req->ff) {
+			if (!req->out.h.error)
+				fd = outarg->r_fd;
+			else
+				fd = req->out.h.error;
+		}
+		spin_unlock(&fc->lock);
+
+		if (fd >= 0)
+			fd = gfsk_fd_set(fd, S_IFSOCK);
+
+		spin_lock(&fc->lock);
+		if (req->ff) {
+			outarg->r_fd = fd;
+			req->ff = NULL;	/* done */
+			switch (kind) {
+			case WAKE_SEM:
+				up((struct semaphore *)ev);
+				break;
+			case WAKE_FD:
+				write((int)((long)ev), "V", 1);
+				break;
+			default:
+				break;
+			}
+		} else if (fd >= 0)	/* not waiting anymore */
+			unset = 1;
+		spin_unlock(&fc->lock);
+
+		if (unset)
+			gfsk_fd_unset(fd);
 		GFSK_CTX_UNSET_FORCE();
-		outarg->r_fd = fd;
-		up(sem);
 	}
 }
+static void
+gfsk_client_connect_cb(struct fuse_conn *fc, struct fuse_req *req)
+{
+	gfsk_client_connect_proc(WAKE_SEM, fc, req);
+}
+static void
+gfsk_client_connect_fdcb(struct fuse_conn *fc, struct fuse_req *req)
+{
+	gfsk_client_connect_proc(WAKE_FD, fc, req);
+}
 
+/*
+ *  send connect request to user
+ */
 int
-gfsk_req_connectmd(uid_t uid, struct gfsk_req_connect *inarg,
-			struct gfsk_rpl_connect *outarg)
+gfsk_req_connect_sync(int cmd, uid_t uid,
+	struct gfsk_req_connect *inarg, struct gfsk_rpl_connect *outarg)
 {
 	int	err;
 	struct fuse_conn *fc = gfsk_fsp->gf_fc;
@@ -51,7 +99,7 @@ gfsk_req_connectmd(uid_t uid, struct gfsk_req_connect *inarg,
 	if (IS_ERR(req))
 		return (PTR_ERR(req));
 	req->in.h.uid = uid;
-	req->in.h.opcode = GFSK_OP_CONNECTMD;
+	req->in.h.opcode = cmd;
 	req->in.numargs = 1;
 	req->in.args[0].size = sizeof(*inarg);
 	req->in.args[0].value = inarg;
@@ -64,17 +112,98 @@ gfsk_req_connectmd(uid_t uid, struct gfsk_req_connect *inarg,
 	fuse_request_send(fc, req);
 	err = req->out.h.error;
 	if (err != 0) {
-		gflog_error(GFARM_MSG_UNFIXED, "connectmd failed: uid=%d, err=%d", uid, err);
+		gflog_error(GFARM_MSG_UNFIXED, "failed: uid=%d, err=%d",
+						uid, err);
 	} else {
 		down(&sem);
 		if (outarg->r_fd < 0)
 			err = -ENOMEM;
 	}
+	spin_lock(&fc->lock);
 	req->ff = NULL;
+	spin_unlock(&fc->lock);
 	fuse_put_request(fc, req);
 	return (err);
 }
 
+/*
+ *  send connect request to user, not wait reply
+ */
+int
+gfsk_req_connect_async(int cmd, uid_t uid,
+	struct gfsk_req_connect *inarg, struct gfsk_rpl_connect *outarg,
+	void **kevpp, int evfd)
+{
+	struct fuse_conn *fc = gfsk_fsp->gf_fc;
+	struct fuse_req *req;
+
+	req = fuse_get_req(fc);
+	if (IS_ERR(req))
+		return (PTR_ERR(req));
+	req->in.h.uid = uid;
+	req->in.h.opcode = cmd;
+	req->in.numargs = 1;
+	req->in.args[0].size = sizeof(*inarg);
+	req->in.args[0].value = inarg;
+	req->out.numargs = 1;
+	req->out.args[0].size = sizeof(*outarg);
+	req->out.args[0].value = outarg;
+	req->end = gfsk_client_connect_fdcb;
+	req->ff = (struct fuse_file *)((long) evfd);
+	fuse_request_send_background(fc, req);
+	*kevpp = req;
+	return (0);
+}
+/*
+ * called when complete or timeout
+ */
+void
+gfsk_req_free(void *kevp)
+{
+	struct fuse_req *req = (struct fuse_req *)kevp;
+	if (req) {
+		struct fuse_conn *fc = gfsk_fsp->gf_fc;
+		spin_lock(&fc->lock);
+		req->ff = NULL;
+		spin_unlock(&fc->lock);
+		kfree(req->in.args[0].value);
+		fuse_put_request(fc, req);
+	}
+}
+
+/*
+ * check whether the connect request has been completed.
+ * return fd when completed.
+ */
+int
+gfsk_req_check_fd(void *kevp, int *fdp)
+{
+	struct fuse_req *req = (struct fuse_req *)kevp;
+	int	done = 1;
+
+	if (req) {
+		struct fuse_conn *fc = gfsk_fsp->gf_fc;
+		struct gfsk_rpl_connect *outarg = req->out.args[0].value;
+
+		spin_lock(&fc->lock);
+		if (req->ff) {
+			done = 0;
+		} else {
+			if (!req->out.h.error)
+				*fdp = outarg->r_fd;
+			else
+				*fdp = req->out.h.error;
+		}
+		spin_unlock(&fc->lock);
+		if (done) {
+			gfsk_req_free(kevp);
+		}
+	}
+	return (done);
+}
+/*
+ *  send terminate request to user
+ */
 int
 gfsk_req_term(void)
 {
@@ -118,6 +247,9 @@ err_fput:
 out:
 	return (err);
 }
+/*
+ * set the fuse device fd which user opened and hands at mount
+ */
 int
 gfsk_conn_init(int fd)
 {

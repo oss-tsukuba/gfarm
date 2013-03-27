@@ -50,6 +50,7 @@ gfs_unlink(const char *path)
 	int is_dir;
 	gfarm_timerval_t t1, t2;
 
+	GFARM_KERNEL_UNUSE2(t1, t2);
 	GFARM_TIMEVAL_FIX_INITIALIZE_WARNING(t1);
 	gfs_profile(gfarm_gettimerval(&t1));
 

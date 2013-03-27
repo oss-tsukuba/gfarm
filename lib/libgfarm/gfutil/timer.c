@@ -10,7 +10,7 @@
  * gfarm_gattimerval(&t1);
  * ...
  * gfarm_gattimerval(&t2);
- * 
+ *
  * printf("%g sec\n", gfarm_timerval_sub(&t2, &t1));
  */
 
@@ -48,7 +48,7 @@ gfarm_timerval_calibrate(void)
 	gfarm_gettimerval(&t2);
 	gettimeofday(&s2, NULL);
 
-	gfarm_timerval_calibration = 
+	gfarm_timerval_calibration =
 		((s2.tv_sec - s1.tv_sec) +
 		 (s2.tv_usec - s1.tv_usec) * .000001) /
 		(t2 - t1);

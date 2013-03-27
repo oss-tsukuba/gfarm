@@ -107,7 +107,7 @@ gfarm_auth_sharedsecret_giveup_response(struct gfp_xdr *conn,
 
 static gfarm_error_t
 gfarm_auth_sharedsecret_md5_response(struct gfp_xdr *conn,
-	const char *hostname, const char *global_username, 
+	const char *hostname, const char *global_username,
 	struct passwd *pwd, gfarm_int32_t *errorp)
 {
 	int eof;

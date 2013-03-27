@@ -359,7 +359,7 @@ static struct gfarm_errno_error_map {
 	{ EOPNOTSUPP,	GFARM_ERR_OPERATION_NOT_SUPPORTED },
 	{ EAFNOSUPPORT,	GFARM_ERR_ADDRESS_FAMILY_NOT_SUPPORTED_BY_PROTOCOL_FAMILY },
 	{ EADDRINUSE,	GFARM_ERR_ADDRESS_ALREADY_IN_USE },
-	{ EADDRNOTAVAIL,GFARM_ERR_CANNOT_ASSIGN_REQUESTED_ADDRESS },
+	{ EADDRNOTAVAIL, GFARM_ERR_CANNOT_ASSIGN_REQUESTED_ADDRESS },
 	/* X/Open - ipc/network software -- operational errors */
 	{ ENETDOWN,	GFARM_ERR_NETWORK_IS_DOWN },
 	{ ENETUNREACH,	GFARM_ERR_NETWORK_IS_UNREACHABLE },
@@ -653,7 +653,7 @@ gfarm_error_string(gfarm_error_t error)
 	return (errcode_string[GFARM_ERR_UNKNOWN]);
 }
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* HAVE_SYS_NERR :: not defined in kernel */
 #undef HAVE_SYS_NERR
 #endif /* __KERNEL__ */
 

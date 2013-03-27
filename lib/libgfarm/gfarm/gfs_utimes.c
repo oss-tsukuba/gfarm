@@ -51,11 +51,12 @@ gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 	    gfm_must_be_warned_op_t, void *))
 {
 	struct gfm_utimes_closure closure;
+	struct timeval now;
 
-	if (tsp == NULL) {
-		struct timeval now;
-
+	if (tsp == NULL || tsp[0].tv_nsec == GFARM_UTIME_NOW
+			|| tsp[1].tv_nsec == GFARM_UTIME_NOW)
 		gettimeofday(&now, NULL);
+	if (tsp == NULL) {
 		closure.atime.tv_sec  = closure.mtime.tv_sec  =
 		    now.tv_sec;
 		closure.atime.tv_nsec = closure.mtime.tv_nsec =
@@ -63,6 +64,14 @@ gfs_utimes_common(const char *path, const struct gfarm_timespec *tsp,
 	} else {
 		closure.atime = tsp[0];
 		closure.mtime = tsp[1];
+		if (tsp[0].tv_nsec == GFARM_UTIME_NOW) {
+			closure.atime.tv_sec  = now.tv_sec;
+			closure.atime.tv_nsec = now.tv_usec * 1000;
+		}
+		if (tsp[1].tv_nsec == GFARM_UTIME_NOW) {
+			closure.mtime.tv_sec  = now.tv_sec;
+			closure.mtime.tv_nsec = now.tv_usec * 1000;
+		}
 	}
 
 	return ((*inode_op)(path, GFARM_FILE_LOOKUP,

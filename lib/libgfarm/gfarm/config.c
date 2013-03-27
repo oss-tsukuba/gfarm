@@ -114,7 +114,7 @@ gfarm_config_static_term(struct gfarm_context *ctxp)
 
 	if (s == NULL)
 		return;
-	/* 
+	/*
 	 * The following gfarm_stringlist_free_deeply() call also is
 	 * performed by gfarm_free_config(), but the repeated call of
 	 * this function has no problem.
@@ -323,7 +323,7 @@ local_ug_maps_enter(const char *hostname, int port, int is_user,
 		}
 	}
 	/* for gfskd, linux helper daemon */
-	if(gfarm_ug_maps_notify){
+	if (gfarm_ug_maps_notify) {
 		gfarm_ug_maps_notify(hostname, port, is_user, s);
 	}
 
@@ -763,7 +763,7 @@ gfarm_set_local_username(char *local_username)
 	return (set_string(&staticp->local_username, local_username));
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gfarm_get_local_username :: multi user */
 char *
 gfarm_get_local_username(void)
 {
@@ -790,7 +790,7 @@ gfarm_get_local_homedir(void)
 gfarm_error_t
 gfarm_set_local_user_for_this_local_account(void)
 {
-	return gfarm_set_local_user_for_this_uid(geteuid());
+	return (gfarm_set_local_user_for_this_uid(geteuid()));
 }
 gfarm_error_t
 gfarm_set_local_user_for_this_uid(uid_t uid)
@@ -895,6 +895,7 @@ int	gfarm_iostat_max_client = GFARM_CONFIG_MISC_DEFAULT;
 #define GFARM_GFMD_RECONNECTION_TIMEOUT_DEFAULT 30 /* 30 seconds */
 #define GFARM_ATTR_CACHE_LIMIT_DEFAULT		40000 /* 40,000 entries */
 #define GFARM_ATTR_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
+#define GFARM_PAGE_CACHE_TIMEOUT_DEFAULT	1000 /* 1,000 milli second */
 #define GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT 600 /* 10 minutes */
 #define GFARM_SCHEDULE_CONCURRENCY_DEFAULT	10
 #define GFARM_SCHEDULE_CONCURRENCY_PER_NET_DEFAULT	3
@@ -1067,9 +1068,9 @@ gfarm_config_set_argv0(const char *argv0)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+#ifndef __KERNEL__	/* gfarm_sig_debug :: not happen */
 static char pid_string[] = "XXXXXXXX";
 
-#ifndef __KERNEL__
 static char *
 pid_to_string(long pid)
 {
@@ -1440,7 +1441,7 @@ gfarm_strtoken(char **cursorp, char **tokenp)
 static gfarm_error_t
 parse_auth_arguments(char *p, char **op)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* parse_auth_arguments */
 
 	gfarm_error_t e;
 	char *tmp, *command, *auth, *host;
@@ -1551,7 +1552,7 @@ parse_auth_arguments(char *p, char **op)
 	}
 	return (e);
 #else /* __KERNEL__ */
-	return GFARM_ERR_NO_ERROR;
+	return (GFARM_ERR_NO_ERROR);
 #endif /* __KERNEL__ */
 }
 
@@ -2016,7 +2017,7 @@ parse_set_misc_int(char *p, int *vp)
 static gfarm_error_t
 parse_set_misc_float(char *p, float *vp)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* parse_set_misc_float */
 	gfarm_error_t e;
 	char *ep, *s;
 	double v;
@@ -2457,7 +2458,7 @@ parse_profile(char *p, int *vp)
 static gfarm_error_t
 parse_metadb_server_list_arguments(char *p, char **op)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* METADB_SERVER_NUM_MAX :: too big */
 #define METADB_SERVER_NUM_MAX 1024
 #else /* __KERNEL__ */
 #define METADB_SERVER_NUM_MAX 128
@@ -2676,8 +2677,8 @@ parse_debug_command(char *p, char **op)
 	 * In case an error occurs.
 	 */
 error:
-        for (i = 0; i < argc; i++)
-                free(argv[i]);
+	for (i = 0; i < argc; i++)
+		free(argv[i]);
 	return (e);
 }
 
@@ -2882,6 +2883,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->attr_cache_limit);
 	} else if (strcmp(s, o = "attr_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->attr_cache_timeout);
+	} else if (strcmp(s, o = "page_cache_timeout") == 0) {
+		e = parse_set_misc_int(p, &gfarm_ctxp->page_cache_timeout);
 	} else if (strcmp(s, o = "schedule_cache_timeout") == 0) {
 		e = parse_set_misc_int(p, &gfarm_ctxp->schedule_cache_timeout);
 	} else if (strcmp(s, o = "schedule_concurrency") == 0) {
@@ -2991,8 +2994,8 @@ parse_one_line(char *s, char *p, char **op)
 		e = parse_set_misc_int(p, &gfarm_ctxp->network_receive_timeout);
 	} else if (strcmp(s, o = "file_trace") == 0) {
 		e = parse_set_misc_enabled(p, &gfarm_ctxp->file_trace);
- 	} else if (strcmp(s, o = "debug_command") == 0) {
- 		e = parse_debug_command(p, &o);
+	} else if (strcmp(s, o = "debug_command") == 0) {
+		e = parse_debug_command(p, &o);
 	} else if (strcmp(s, o = "fatal_action") == 0) {
 		e = parse_fatal_action(p, &gfarm_ctxp->fatal_action);
 		gflog_set_fatal_action(gfarm_ctxp->fatal_action);
@@ -3180,6 +3183,9 @@ gfarm_config_set_default_misc(void)
 	if (gfarm_ctxp->attr_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->attr_cache_timeout =
 		    GFARM_ATTR_CACHE_TIMEOUT_DEFAULT;
+	if (gfarm_ctxp->page_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
+		gfarm_ctxp->page_cache_timeout =
+		    GFARM_PAGE_CACHE_TIMEOUT_DEFAULT;
 	if (gfarm_ctxp->schedule_cache_timeout == GFARM_CONFIG_MISC_DEFAULT)
 		gfarm_ctxp->schedule_cache_timeout =
 		    GFARM_SCHEDULE_CACHE_TIMEOUT_DEFAULT;
@@ -3302,7 +3308,7 @@ gfarm_config_set_default_misc(void)
 void
 gfs_display_timers(void)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/*  gfs_display_timers :: profile */
 	gfs_pio_display_timers();
 	gfs_pio_section_display_timers();
 	gfs_stat_display_timers();

@@ -16,7 +16,7 @@ time(time_t *t)
 	time_t i = get_seconds();
 	if (t)
 		*t = i;
-	return i;
+	return (i);
 }
 #endif /* _SYS_TIME_H_ */
 

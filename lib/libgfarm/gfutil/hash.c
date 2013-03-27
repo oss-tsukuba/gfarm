@@ -101,10 +101,10 @@ gfarm_hash_table_alloc(int size,
 	struct gfarm_hash_table *hashtab;
 	size_t alloc_size;
 	int overflow = 0;
-	
+
 	alloc_size = gfarm_size_add(&overflow,
 			sizeof(struct gfarm_hash_table),
-			gfarm_size_mul(&overflow, 
+			gfarm_size_mul(&overflow,
 				sizeof(struct gfarm_hash_entry *), size - 1));
 	if (overflow) {
 		gflog_debug(GFARM_MSG_1000783,
@@ -194,7 +194,7 @@ gfarm_hash_enter(struct gfarm_hash_table *hashtab, const void *key, int keylen,
 	 */
 	hash_entry_size =
 		gfarm_size_add(&overflow,
-		    gfarm_size_add(&overflow, 	 
+		    gfarm_size_add(&overflow,
 			HASH_ALIGN(offsetof(struct gfarm_hash_entry, key_stub)),
 			HASH_ALIGN(keylen)),
 		    datalen);

@@ -19,7 +19,7 @@
 
 #define DEFAULT_ID_BASE		1
 
-/* smaller than INT_MAX - (INT_MAX >> DELTA_SHIFT) */	
+/* smaller than INT_MAX - (INT_MAX >> DELTA_SHIFT) */
 #define DEFAULT_ID_LIMIT	1000000000
 
 struct gfarm_id_free_data {
@@ -229,12 +229,12 @@ gfarm_id_compaction_from_head_force(struct gfarm_id_table *idtab)
 	}
 	space = i++;
 	while (i < idtab->hole_start) {
-		for (; i < idtab->hole_start; i++) {	
+		for ( ; i < idtab->hole_start; i++) {
 			if (index[i].data != NULL)
 				break;
 		}
 		avail = i;
-		for (; i < idtab->hole_start; i++) {
+		for ( ; i < idtab->hole_start; i++) {
 			if (index[i].data == NULL)
 				break;
 		}
@@ -349,7 +349,6 @@ gfarm_id_bsearch(struct gfarm_id_table *idtab,
 			tail = mid;
 		else
 			head = mid + 1;
-			
 	}
 	return (NULL); /* not found */
 }
@@ -369,7 +368,6 @@ gfarm_id_bsearch_next(struct gfarm_id_table *idtab,
 			tail = mid;
 		else
 			head = mid + 1;
-			
 	}
 	/* assert(head == tail); */
 	if (head >= tail_save || index[head].id > id)
@@ -673,7 +671,7 @@ main()
 		} else if (strcmp(command, "lookup") == 0) {
 			if (sscanf(buffer, "%*s %d", &n) != 1) {
 				fprintf(stderr, "Usage: lookup <id>\n");
-			} else if ((p = gfarm_id_lookup(id_table, n)) == NULL){
+			} else if ((p = gfarm_id_lookup(id_table, n)) == NULL) {
 				fprintf(stderr, "lookup %d failed\n", n);
 			} else {
 				printf("found id=%d, p=%p\n", n, p);
@@ -681,7 +679,7 @@ main()
 		} else if (strcmp(command, "free") == 0) {
 			if (sscanf(buffer, "%*s %d", &n) != 1) {
 				fprintf(stderr, "Usage: free <id>\n");
-			} else if (!gfarm_id_free(id_table, n)){
+			} else if (!gfarm_id_free(id_table, n)) {
 				fprintf(stderr, "free %d failed\n", n);
 			} else {
 				printf("freed id=%d\n", n);

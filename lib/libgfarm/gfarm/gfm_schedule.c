@@ -129,11 +129,13 @@ schedule_hosts_domain_all_rpc(struct gfm_connection **gfm_serverp,
 		    gfarm_error_string(e));
 		return (e);
 	}
+	gfm_client_connection_lock(*gfm_serverp);
 	if ((e = gfm_client_schedule_host_domain(*gfm_serverp, si->domain,
 	    si->nhostsp, si->infosp)) != GFARM_ERR_NO_ERROR)
 		gflog_debug(GFARM_MSG_UNFIXED,
 		    "gfm_client_schedule_host_domain: %s",
 		    gfarm_error_string(e));
+	gfm_client_connection_unlock(*gfm_serverp);
 	return (e);
 }
 

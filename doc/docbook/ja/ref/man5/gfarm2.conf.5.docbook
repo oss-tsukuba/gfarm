@@ -1319,6 +1319,20 @@ CPU負荷のクライアントキャッシュにここで指定されるCPU負荷が加えられます。
 </varlistentry>
 
 <varlistentry>
+<term><token>page_cache_timeout</token> <parameter>ミリ秒数</parameter></term>
+<listitem>
+<para>gfarmカーネルドライバにのみ関連する値で、ファイルデータを
+キャッシュしている時間を、ミリ秒単位で指定します。
+デフォルトは 1000ミリ秒すなわち 1秒です。
+</para>
+<para>例:</para>
+<literallayout>
+	page_cache_timeout 3600000
+</literallayout>
+</listitem>
+</varlistentry>
+
+<varlistentry>
 <term><token>log_level</token> <parameter>優先度レベル</parameter></term>
 <listitem>
 <para>
@@ -1882,6 +1896,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 		&nbsp;&nbsp;&lt;xattr_size_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_limit_statement&gt; |
 		&nbsp;&nbsp;&lt;attr_cache_timeout_statement&gt; |
+		&nbsp;&nbsp;&lt;page_cache_timeout_statement&gt; |
 		&nbsp;&nbsp;&lt;log_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_message_verbose_level_statement&gt; |
 		&nbsp;&nbsp;&lt;log_auth_verbose_statement&gt; |
@@ -2000,6 +2015,7 @@ replica_checkが動作するための最小間隔(秒)を指定します。
 	&lt;xattr_size_limit_statement&gt; ::= "xattr_size_limit" &lt;size&gt;
 	&lt;attr_cache_limit_statement&gt; ::= "attr_cache_limit" &lt;number&gt;
 	&lt;attr_cache_timeout_statement&gt; ::= "attr_cache_timeout" &lt;number&gt;
+	&lt;page_cache_timeout_statement&gt; ::= "page_cache_timeout" &lt;number&gt;
 	&lt;log_level_statement&gt; ::= "log_level" &lt;log_priority&gt;
 	&lt;log_message_verbose_level_statement&gt; ::= "log_message_verbose_level" &lt;number&gt;
 	&lt;log_auth_verbose_statement&gt; ::= "log_auth_verbose" &lt;validity&gt;

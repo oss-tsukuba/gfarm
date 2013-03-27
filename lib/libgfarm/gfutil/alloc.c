@@ -44,7 +44,7 @@ gfarm_calloc_array(size_t number, size_t size)
 			"Overlow when calloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;
-		return NULL;
+		return (NULL);
 	}
 	return (calloc(number, size));
 }
@@ -60,7 +60,7 @@ gfarm_malloc_array(size_t number, size_t size)
 			"Overlow when malloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;
-		return NULL;
+		return (NULL);
 	}
 	return (malloc(total_size));
 }
@@ -76,7 +76,7 @@ gfarm_realloc_array(void *src, size_t number, size_t size)
 			"Overlow when realloc array of (%llu) * (%llu)",
 			(unsigned long long)number, (unsigned long long)size);
 		errno = ENOMEM;
-		return NULL;
+		return (NULL);
 	}
 	return (realloc(src, total_size));
 }

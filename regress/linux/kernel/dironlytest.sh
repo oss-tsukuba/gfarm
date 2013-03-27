@@ -1,7 +1,7 @@
 #!/bin/sh
 
 . ./regress.conf
-. ./linux/kernel/dironlytest-init.sh
+. ./linux/kernel/initparams.sh
 
 trap 'exit $exit_trap' $trap_sigs
 

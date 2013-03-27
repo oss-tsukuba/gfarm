@@ -317,7 +317,7 @@ gfarm_iobuffer_read(struct gfarm_iobuffer *b, int *residualp, int do_timeout)
 		residualp = &space;
 	if (*residualp <= 0)
 		return;
-	if (!b->pindown && 
+	if (!b->pindown &&
 	    *residualp > b->bufsize - b->tail && b->head > 0)
 		gfarm_iobuffer_squeeze(b);
 	if (b->read_auto_expansion && *residualp > space) {

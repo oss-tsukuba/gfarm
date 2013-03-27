@@ -52,3 +52,7 @@ int gfarm_eventqueue_delete_event(struct gfarm_eventqueue *,
 
 int gfarm_eventqueue_turn(struct gfarm_eventqueue *, const struct timeval *);
 int gfarm_eventqueue_loop(struct gfarm_eventqueue *, const struct timeval *);
+
+struct gfarm_event *gfarm_kern_event_alloc(void *kevp,
+	void (*callback)(int, int, void *, void *), void *closure);
+int gfarm_kern_eventqueue_getevfd(struct gfarm_eventqueue *q);

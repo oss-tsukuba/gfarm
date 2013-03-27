@@ -14,7 +14,7 @@
 #include "conn_hash.h"
 #include "conn_cache.h"
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* GFSP_CONN_MUTEX :: conn_lock */
 #define	GFSP_CONN_MUTEX
 #define	GFSP_CONN_INIT(conn)
 #define	GFSP_CONN_LOCK(conn)
@@ -25,11 +25,15 @@
  * Lock the connection from sending-request to receiving-reply,
  * a compound request as well.
  */
-#define	GFSP_CONN_MUTEX		struct mutex conn_lock;
-#define	GFSP_CONN_INIT(conn)	mutex_init(&(conn)->conn_lock);
-#define	GFSP_CONN_LOCK(conn)	mutex_lock(&(conn)->conn_lock);
-#define	GFSP_CONN_UNLOCK(conn)	mutex_unlock(&(conn)->conn_lock);
+#define	GFSP_CONN_MUTEX		struct gfarm_rmutex conn_lock;
+#define	GFSP_CONN_INIT(conn)	gfarm_rmutex_init(&(conn)->conn_lock, "conn");
+#define	GFSP_CONN_LOCK(conn)	gfarm_rmutex_lock(&(conn)->conn_lock);
+#define	GFSP_CONN_UNLOCK(conn)	gfarm_rmutex_unlock(&(conn)->conn_lock);
 #endif /* __KERNEL__ */
+
+#ifndef SHORT_MAX
+#define SHORT_MAX 0x7fff
+#endif
 
 struct gfp_cached_connection {
 	/*
@@ -147,12 +151,20 @@ gfp_cached_connection_set_username(struct gfp_cached_connection *connection,
 void
 gfp_connection_lock(struct gfp_cached_connection *connection)
 {
-	GFSP_CONN_LOCK(connection)
+	GFSP_CONN_LOCK(connection);
 }
 void
 gfp_connection_unlock(struct gfp_cached_connection *connection)
 {
-	GFSP_CONN_UNLOCK(connection)
+#ifdef __KERNEL__
+	int err;
+	err = GFSP_CONN_UNLOCK(connection);
+	if (err != 0) {
+		gflog_fatal(GFARM_MSG_UNFIXED, "owner=%d count=%d",
+			connection->conn_lock.r_owner,
+			connection->conn_lock.r_locked);
+	}
+#endif /* __KERNEL__ */
 }
 
 gfarm_error_t
@@ -192,7 +204,6 @@ gfp_uncached_connection_new(const char *hostname, int port,
 	connection->connection_data = NULL;
 	connection->dispose_connection_data = NULL;
 	GFSP_CONN_INIT(connection)
-	gfp_connection_lock(connection);
 	*connectionp = connection;
 	return (GFARM_ERR_NO_ERROR);
 }
@@ -231,9 +242,11 @@ gfp_cached_connection_purge_from_cache(struct gfp_conn_cache *cache,
 }
 
 /* convert from uncached connection to cached */
-gfarm_error_t
-gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
-	struct gfp_cached_connection *connection)
+static inline gfarm_error_t
+gfp_uncached_connection_into_cache(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection,
+	void  (*func)(struct gfarm_lru_cache *, struct gfarm_lru_entry *))
+
 {
 	gfarm_error_t e;
 	struct gfarm_hash_entry *entry;
@@ -270,7 +283,7 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 		return (GFARM_ERR_ALREADY_EXISTS);
 	}
 
-	gfarm_lru_cache_link_entry(&cache->lru_list, &connection->lru_entry);
+	func(&cache->lru_list, &connection->lru_entry);
 
 	*(struct gfp_cached_connection **)gfarm_hash_entry_data(entry)
 	    = connection;
@@ -278,6 +291,20 @@ gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
 
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 	return (GFARM_ERR_NO_ERROR);
+}
+gfarm_error_t
+gfp_uncached_connection_enter_cache(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	return (gfp_uncached_connection_into_cache(cache, connection,
+				gfarm_lru_cache_link_entry));
+}
+gfarm_error_t
+gfp_uncached_connection_enter_cache_tail(struct gfp_conn_cache *cache,
+	struct gfp_cached_connection *connection)
+{
+	return (gfp_uncached_connection_into_cache(cache, connection,
+				gfarm_lru_cache_link_entry_tail));
 }
 
 /* update the LRU list to mark this gfp_cached_connection recently used */
@@ -331,6 +358,20 @@ void
 gfp_cached_connection_gc_all(struct gfp_conn_cache *cache)
 {
 	gfp_cached_connection_gc_internal(cache, 0);
+}
+int
+gfp_connection_cache_change(struct gfp_conn_cache *cache, int cnt)
+{
+	static const char diag[] = "gfp_connection_cache_change";
+
+	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
+	if (cnt > 0 && *cache->num_cachep > SHORT_MAX)
+		cnt = 0;
+	else
+		*cache->num_cachep += cnt;
+	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
+
+	return (cnt);
 }
 
 gfarm_error_t
@@ -406,7 +447,6 @@ gfp_cached_connection_acquire(struct gfp_conn_cache *cache,
 	}
 	gfarm_mutex_unlock(&cache->mutex, diag, diag_what);
 	*connectionp = connection;
-	gfp_connection_lock(connection);
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -417,7 +457,6 @@ gfp_cached_or_uncached_connection_free(struct gfp_conn_cache *cache,
 	int removable;
 	static const char diag[] = "gfp_cached_or_uncached_connection_free";
 
-	gfp_connection_unlock(connection);
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
 	removable = gfarm_lru_cache_delref_entry(&cache->lru_list,
 	    &connection->lru_entry);

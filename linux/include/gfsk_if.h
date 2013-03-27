@@ -44,7 +44,8 @@ struct gfsk_mount_data {
 /* request data ---------------------------------------------------*/
 
 enum gfsk_opcode {
-	GFSK_OP_CONNECTMD	= 1000,	/* connrct to meta server */
+	GFSK_OP_CONNECT_GFMD	= 1000,	/* connect to meta server */
+	GFSK_OP_CONNECT_GFSD	= 1001,	/* connect to spool server */
 	GFSK_OP_TERM		= 1027,	/* end of operation */
 };
 #define GFSK_MAX_IPLEN	48
@@ -53,6 +54,7 @@ struct gfsk_req_connect {
 	char	r_hostname[MAXHOSTNAMELEN];
 	int	r_port;
 	char	r_source_ip[GFSK_MAX_IPLEN];		/* optional */
+	unsigned int	r_v4addr;
 	uid_t	r_uid;					/* local user id */
 	char	r_global[GFSK_MAX_USERNAME_LEN];	/* global user name */
 };

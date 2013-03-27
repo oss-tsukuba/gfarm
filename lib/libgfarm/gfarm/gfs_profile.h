@@ -1,7 +1,13 @@
 #ifndef __KERNEL__
 #define gfs_profile(x) if (gfarm_ctxp->profile) { x; }
-#else /* __KERNEL__ */
-#define gfs_profile(x) 
+#define GFARM_KERNEL_UNUSE(x)
+#define GFARM_KERNEL_UNUSE2(t1, t2)
+#define GFARM_KERNEL_UNUSE3(t1, t2, t3)
+#else /* __KERNEL__ */	/* gfs_profile :: never support */
+#define gfs_profile(x)
+#define GFARM_KERNEL_UNUSE(x)	(void)(x)
+#define GFARM_KERNEL_UNUSE2(t1, t2)	(void)(t1), (void)(t2)
+#define GFARM_KERNEL_UNUSE3(t1, t2, t3)	(void)(t1), (void)(t2), (void)(t3)
 #endif /* __KERNEL__ */
 
 void gfs_profile_set(void);

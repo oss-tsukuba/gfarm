@@ -79,7 +79,7 @@ gfarm_iobuffer_blocking_read_timeout_fd_op(struct gfarm_iobuffer *b,
 				    "cannot convert peer address to string: ";
 			} else {
 				hostaddr = hostbuf;
-				hostaddr_prefix= "";
+				hostaddr_prefix = "";
 			}
 			gflog_error(GFARM_MSG_1003449,
 			    "closing network connection due to "

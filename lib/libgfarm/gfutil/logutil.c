@@ -118,7 +118,7 @@ gflog_init_priority_string(void)
 static void
 gflog_out(int priority, const char *str1, const char *str2)
 {
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gflog_out :: printk */
 	pthread_once(&gflog_priority_string_once, gflog_init_priority_string);
 	if (log_use_syslog)
 		syslog(priority, "<%s> %s%s",
@@ -237,7 +237,7 @@ gflog_message(int msg_no, int priority, const char *file, int line_no,
 }
 
 /*
- * fatal action 
+ * fatal action
  */
 void
 gflog_set_fatal_action(int action)
@@ -248,7 +248,7 @@ gflog_set_fatal_action(int action)
 static int
 gflog_get_fatal_action(void)
 {
-	return(fatal_action);
+	return (fatal_action);
 }
 
 static struct {
@@ -320,8 +320,7 @@ gflog_vmessage_errno(int msg_no, int priority, const char *file, int line_no,
 
 	rv = pthread_mutex_lock(&buf_mutex);
 	if (rv != 0) {
-		gflog_out(LOG_ERR,
-		    "gflog_vmessage_errno: pthread_mutex_lock: ",
+		gflog_out(LOG_ERR, "gflog_vmessage_errno: pthread_mutex_lock: ",
 		    strerror(rv));
 		return;
 	}
@@ -409,7 +408,7 @@ gflog_syslog_open(int syslog_option, int syslog_facility)
 	log_use_syslog = 1;
 }
 
-#ifndef __KERNEL__
+#ifndef __KERNEL__	/* gflog_syslog_name_to_facility :: not use */
 int
 gflog_syslog_name_to_facility(const char *name)
 {

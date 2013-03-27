@@ -17,7 +17,7 @@
 #include <gfarm/gflog.h>
 #include "gfutil.h"
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* HAVE_SETRLIMIT */
 #undef HAVE_SETRLIMIT
 #endif /* __KERNEL__ */
 
@@ -88,7 +88,7 @@ gfarm_limit_nofiles(int *file_table_size_p)
 			    (long long)new.rlim_cur, (long long)new.rlim_max);
 			/* log warning, but returns SUCCESS */
 			*file_table_size_p = old.rlim_cur;
-			return(0);
+			return (0);
 		}
 	}
 	*file_table_size_p = new.rlim_cur;
