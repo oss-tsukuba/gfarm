@@ -39,6 +39,7 @@ gfimport(FILE *ifp, GFS_File ogf, gfarm_off_t size)
 	int nreq, nin, nout;
 	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 
+	/* when size is zero or below zero, copy entire content */
 	nreq = sizeof buffer;
 	while (1) {
 		if (size > 0 && nreq > size)
@@ -51,9 +52,8 @@ gfimport(FILE *ifp, GFS_File ogf, gfarm_off_t size)
 				break;
 			assert(nin == nout);
 		}
-		if (size > 0)
-			size -= nout;
-		if (nin < nreq)
+		size -= nin;
+		if (nin < nreq || size == 0)
 			break;
 	}
 	return (e != GFARM_ERR_NO_ERROR ? e : gfs_pio_error(ogf));
