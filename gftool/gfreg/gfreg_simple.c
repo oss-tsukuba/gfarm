@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <assert.h>
 
 #include <gfarm/gfarm.h>
 
@@ -29,8 +30,38 @@
 
 char *program_name = "gfreg";
 
+/* from GFS_FILE_BUFSIZE in lib/libgfarm/gfarm/gfs_pio.h */
+#define BUFFER_SIZE (1048576 - 8)
+static char buffer[BUFFER_SIZE];
+
 gfarm_error_t
 gfimport(FILE *ifp, GFS_File ogf, gfarm_off_t size)
+{
+	int nreq, nin, nout;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	/* when size is zero or below zero, copy entire content */
+	nreq = sizeof buffer;
+	while (1) {
+		if (size > 0 && nreq > size)
+			nreq = size;
+
+		nin = fread(buffer, 1, nreq, ifp);
+		if (nin > 0) {
+			e = gfs_pio_write(ogf, buffer, nin, &nout);
+			if (e != GFARM_ERR_NO_ERROR)
+				break;
+			assert(nin == nout);
+		}
+		size -= nin;
+		if (nin < nreq || size == 0)
+			break;
+	}
+	return (e != GFARM_ERR_NO_ERROR ? e : gfs_pio_error(ogf));
+}
+
+gfarm_error_t
+gfimport_byte(FILE *ifp, GFS_File ogf, gfarm_off_t size)
 {
 	gfarm_error_t e;
 	int c;
