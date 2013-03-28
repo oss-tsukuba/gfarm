@@ -74,13 +74,12 @@ gfarm_error_t gfs_pio_set_view_default(GFS_File);
 #if 0 /* not yet in gfarm v2 */
 gfarm_error_t gfs_pio_set_view_global(GFS_File, int);
 #endif /* not yet in gfarm v2 */
+char *gfs_pio_url(GFS_File);
 struct gfs_connection;
 gfarm_error_t gfs_pio_open_local_section(GFS_File, struct gfs_connection *);
 gfarm_error_t gfs_pio_open_remote_section(GFS_File, struct gfs_connection *);
 gfarm_error_t gfs_pio_internal_set_view_section(GFS_File, char *);
 gfarm_error_t gfs_pio_reconnect(GFS_File);
-
-struct gfs_connection;
 
 struct gfs_storage_ops {
 	gfarm_error_t (*storage_close)(GFS_File);
