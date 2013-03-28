@@ -579,9 +579,6 @@ compound_fd_op(struct gfs_failover_file *file,
 		request_op, result_op, cleanup_op, must_be_warned_op,
 		closure
 	};
-	struct gfm_connection *gfm_server;
-
-	gfm_server = ops->get_connection(file);
 
 	e = gfm_client_rpc_with_failover(compound_fd_op_rpc,
 	    compound_fd_op_post_failover, NULL,

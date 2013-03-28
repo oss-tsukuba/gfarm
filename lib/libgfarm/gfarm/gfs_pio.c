@@ -208,7 +208,7 @@ check_connection_in_file_list(GFS_File gf, void *closure)
 	return (1);
 }
 #endif
-#endif __KERNEL__
+#endif /* __KERNEL__ */
 
 static gfarm_error_t
 gfs_file_alloc(struct gfm_connection *gfm_server, gfarm_int32_t fd, int flags,
