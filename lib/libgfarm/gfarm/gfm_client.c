@@ -4303,7 +4303,7 @@ gfm_client_replica_get_my_entries(struct gfm_connection *gfm_server,
 	    GFM_PROTO_REPLICA_GET_MY_ENTRIES2, "li/i", inum, n, &n);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gflog_debug(GFARM_MSG_1003451,
-		    "gfm_client_rpc_request_and_result_begni(): %s",
+		    "gfm_client_rpc_request_and_result_begin(): %s",
 		    gfarm_error_string(e));
 		return (e);
 	} else if (n <= 0)
