@@ -30,7 +30,7 @@ check test: all
 	@echo ""
 
 loop: all
-	@./loop.sh
+	@$(CHECK_ENV) $(srcdir)/loop.sh
 
 all: config
 
