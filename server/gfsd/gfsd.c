@@ -1743,7 +1743,7 @@ close_fd_somehow(gfarm_int32_t fd, const char *diag)
 		return (e);
 	else if (IS_CONNECTION_ERROR(e) && !shutting_down) {
 		gflog_error(GFARM_MSG_1003348,
-		    "%s: gfmd may be failed over, try to reconnecting", diag);
+		    "%s: gfmd may be failed over, try to reconnect", diag);
 		free_gfm_server();
 		if ((e = connect_gfm_server_with_timeout()) !=
 		    GFARM_ERR_NO_ERROR) {
