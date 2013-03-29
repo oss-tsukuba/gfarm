@@ -3,14 +3,15 @@ How to run tests with gfruntest
 * requirements
 
 In following description we call an Unix user who executes gfruntest
-as 'test user'.
+as 'test_user'.
 
-  + Test user must be registered as Gfarm user.
-  + Test user should be able to log on to remote host by ssh with no
-    password.
-  + In some tests, test user should be listed in /etc/sudoers with
-    NOPASSWD tag.
-  + In some tests, test user need to be in gfarmroot/gfarmadm group.
+  + test_user must be registered as a Gfarm user.
+  + test_user should be able to log on to remote hosts by ssh with
+    no password (using ssh-agent is recommended).
+  + In some tests, test_user should be listed in /etc/sudoers with
+    NOPASSWD tag like follows:
+	test_user	ALL=(ALL)	NOPASSWD: ALL
+  + In some tests, test_user need to be in gfarmroot/gfarmadm Gfarm group.
 
 * create gfservice.conf file
 
@@ -18,17 +19,21 @@ To run gfruntest, you have to create gfservice.conf file which
 specifies your Gfarm environment. Following variable definitions are
 essential.
 
- + *_GFBINDIR
-   path to gfservice in each remote hosts
+ + <host_id>_GFBINDIR
+   path to gfservice on each remote host.
+   <host_id> is something like gfmd1, gfmd2, gfsd1, gfsd2, client1, client2,...
 
  + gfmd*_CONFIG_GFARM_OPTIONS
    command line option given to config-gfarm when gfmd is configured.
+   <gfmd*> is something like gfmd1, gfmd2, ...
 
  + gfsd*_CONFIG_GFSD_OPTIONS
    command line option given to config-gfsd when gfsd is configured.
+   <gfsd*> is something like gfsd1, gfsd2, ...
 
  + client*_GFARM_CONF
    specify a gfarm2.conf file in absolute path.
+   <client*> is something like client1, client2, ...
 
 If Gfarm environment is configured with private mode, following
 variables should be set to "true"
@@ -38,19 +43,23 @@ variables should be set to "true"
 
 see gfservice.conf(5) for details
 
-* executing gfruntest
+* execute gfruntest
 
-gfruntest executes test script with (optional) parameters.
+gfruntest internally invokes a test script with (optional) parameters.
 
-Test script file is installed in
-    $prefix/share/gfarm/systest/testcases
-
-Test parameter file is installed in
-    $prefix/share/gfarm/systest/parameters
-
-To execute gfruntest input:
+To execute gfruntest:
     % gfruntest -f <gfservice.conf> <testcase name>
 
+    NOTE: <testcase name> is a filename under the following directory:
+                  $prefix/share/gfarm/systest/testcases 
+
 You can specify a parameter file with '-p' option.
+
+    NOTE: <parameter file> is a filename under the following directory:
+                  $prefix/share/gfarm/systest/parameters
+          Most testcases don't need any parameter file though.
+          The correspondence between a testcase and a parameter file
+	  can be determined by their filenames.  i.e. A testcase name
+	  is prefixed to corresponding testcases.
 
 Debug log will be printed if you specify '-d' option.
