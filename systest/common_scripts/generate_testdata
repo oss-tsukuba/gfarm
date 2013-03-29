@@ -35,12 +35,12 @@ generate_testdata()
 	BLOCKS=`expr $NUMERIC_SIZE / $BLOCK_SIZE`
 	REMAINDER=`expr $NUMERIC_SIZE % $BLOCK_SIZE`
 
-	dd if=/dev/zero bs=$BLOCK_SIZE count=$BLOCKS 2> /dev/null | \
-		tr "\000" "a"
+	dd if=/dev/zero bs=$BLOCK_SIZE count=$BLOCKS | tr "\000" "a"
 	[ $? -ne 0 ] && return 1
 
-	dd if=/dev/zero bs=$REMAINDER count=1 2> /dev/null | \
-		tr "\000" "a"
+	[ $REMAINDER -eq 0 ] && return 0
+
+	dd if=/dev/zero bs=$REMAINDER count=1 | tr "\000" "a"
 	[ $? -ne 0 ] && return 1
 
 	return 0

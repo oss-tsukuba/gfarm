@@ -71,13 +71,6 @@ test_failover_by_stop()
 		set_result RESULT $RESULT_FAIL
 	fi
 
-	# step: check whether journal seqnum max is same
-	check_journal_seqnum_max gfmd1 gfmd2
-	if [ $? -ne 0 ]; then
-		log_warn "$TESTNAME: journal seqnum max is not same"
-		set_result RESULT $RESULT_FAIL
-	fi
-
 	# step: check whether slave gfmd is connected to master
 	check_gfmd_connected gfmd2 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
@@ -88,6 +81,13 @@ test_failover_by_stop()
 	check_gfmd_connected gfmd3 client1 $RETRY_COUNT $RETRY_INTERVAL
 	if [ $? -ne 0 ]; then
 		log_warn "$TESTNAME: gfmd3 is not connected to master"
+		set_result RESULT $RESULT_FAIL
+	fi
+
+	# step: check whether journal seqnum max is same
+	check_journal_seqnum_max gfmd1 gfmd2
+	if [ $? -ne 0 ]; then
+		log_warn "$TESTNAME: journal seqnum max is not same"
 		set_result RESULT $RESULT_FAIL
 	fi
 
