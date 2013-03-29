@@ -2638,7 +2638,7 @@ gfm_client_revoke_gfsd_access(struct gfm_connection *gfm_server,
 	gfarm_int32_t fd)
 {
 	return (gfm_client_rpc(gfm_server,
-	    GFM_PROTO_REVOKE_GFSD_ACCESS, "i", fd));
+	    GFM_PROTO_REVOKE_GFSD_ACCESS, "i/", fd));
 }
 
 gfarm_error_t
