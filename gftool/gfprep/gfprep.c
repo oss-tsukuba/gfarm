@@ -2885,6 +2885,8 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+	if (opt_dst_domain == NULL)
+		opt_dst_domain = gfarm_schedule_write_target_domain();
 	if (opt_n_para <= 0)
 		opt_n_para = gfarm_client_parallel_copy;
 	if (opt_n_para <= 0) {
