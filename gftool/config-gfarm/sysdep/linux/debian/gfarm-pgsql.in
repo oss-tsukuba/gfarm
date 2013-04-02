@@ -59,6 +59,17 @@ RETVAL=0
 
 case "$1" in
   start)
+	# from /usr/share/postgresql-common/init.d-functions on Ubuntu 12.04:
+	# postgres package on Ubuntu 12.04 needs /var/run/postgresql
+	# for its UNIX socket file.
+	if [ -d /var/run/postgresql ]; then
+		chmod 2775 /var/run/postgresql
+	else
+		# XXX this won't work, if $PRIVILEGE != postgres, and
+		# both gfarm-pgsql and the system supplied postgres are used.
+		install -d -m 2775 -o $PRIVILEGE -g $PRIVILEGE /var/run/postgresql
+	fi
+
 	echo -n "Starting gfarm server: $FILE"
 	checkstatus > /dev/null
 	RETVAL=$?
