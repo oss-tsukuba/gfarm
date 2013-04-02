@@ -17,5 +17,8 @@ get_gfsd() {
 		echo "SCRIPT ERROR: failed to get gfsd."
 		exit 1
 	fi
+
+	./wait_for_gfsd.sh $GFSD0
+	./wait_for_gfsd.sh $GFSD1
 }
 
