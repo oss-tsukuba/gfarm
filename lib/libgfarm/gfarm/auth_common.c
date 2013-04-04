@@ -196,7 +196,7 @@ gfarm_error_t
 gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	char *home, struct passwd *pwd, int create, int period)
 {
-	gfarm_error_t e;
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
 	FILE *fp = NULL;
 	static char keyfile_basename[] = "/" GFARM_AUTH_SHARED_KEY_BASENAME;
 	char *keyfilename, *allocbuf = NULL;
@@ -211,7 +211,7 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 	o_uid = o_gid = 0;
 #endif
 #ifdef __KERNEL__	/* keyfilename :: multi user */
-	if(!(keyfilename = getenv("GFARM_SHARED_KEY"))){
+	if (!(keyfilename = getenv("GFARM_SHARED_KEY"))) {
 #endif /* __KERNEL__ */
 		GFARM_MALLOC_ARRAY(keyfilename,
 			strlen(home) + sizeof(keyfile_basename));
@@ -246,22 +246,9 @@ gfarm_auth_shared_key_get(unsigned int *expirep, char *shared_key,
 			    "seteuid(%d)", (int)pwd->pw_uid);
 	}
 
-	if (create != GFARM_AUTH_SHARED_KEY_CREATE_FORCE &&
-	    (fp = fopen(keyfilename, "r+")) != NULL) {
-		if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
-			fclose(fp);
-			free(allocbuf);
-			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_EXPIRE_FIELD;
-			goto finish;
-		}
-		expire = ntohl(expire);
-		if (skip_space(fp) ||
-		    read_hex(fp, shared_key, GFARM_AUTH_SHARED_KEY_LEN)) {
-			fclose(fp);
-			free(allocbuf);
-			e = GFARM_ERRMSG_SHAREDSECRET_INVALID_KEY_FIELD;
-			goto finish;
-		}
+	if ((fp = fopen(keyfilename, "r+")) == NULL) {
+		e = GFARM_ERRMSG_SHAREDSECRET_KEY_FILE_NOT_EXIST;
+		goto create;
 	}
 	if (skip_space(fp) || read_hex(fp, &expire, sizeof(expire))) {
 		fclose(fp);
