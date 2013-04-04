@@ -430,15 +430,12 @@ static int
 replica_check_targets_next(struct timeval *next, const struct timeval *now)
 {
 	size_t i;
-	int is_future;
-	struct timeval target_tv, future_tv;
-	static struct timeval saved_tv = {.tv_sec = 0, .tv_usec = 0};
+	struct timeval now2;
 
 	if (targets_num <= 0)
 		return (0);
 	if (targets_num == 1) {
 		*next = targets[0];
-		saved_tv = *next;
 #ifdef DEBUG_REPLICA_CHECK
 		RC_LOG_DEBUG(GFARM_MSG_1003636,
 		    "replica_check: targets[0]=%ld.%06ld",
@@ -456,58 +453,30 @@ replica_check_targets_next(struct timeval *next, const struct timeval *now)
 		    "replica_check: targets[%ld]=%ld.%06ld", (long)i,
 		    (long)targets[i].tv_sec, (long)targets[i].tv_usec);
 #endif
-	target_tv = *now;
+	now2 = *now;
 
 	/* integrate near target times */
-	target_tv.tv_sec += gfarm_replica_check_minimum_interval;
+	now2.tv_sec += gfarm_replica_check_minimum_interval;
 
-	is_future = 0;
 	/* assert(targets_num >= 2); */
 	for (i = targets_num - 1;; i--) {
-		if (saved_tv.tv_usec == targets[i].tv_usec && /* optimized */
-		    saved_tv.tv_sec == targets[i].tv_sec) {
-			/* do not select newer targets than this. */
-			*next = targets[i];
-			targets_num = i + 1;
-			return (1);
-		} else if (is_future) {
-			if (gfarm_timeval_cmp(&targets[i], &future_tv) > 0) {
-				*next = targets[i + 1]; /* previous */
-				targets_num = i + 2;
-				saved_tv = *next;
-				return (1);
-			} else if (i == 0) {
-				*next = targets[i];
-				targets_num = i + 1;
-				saved_tv = *next;
-				return (1);
-			} /* else: skip near future time */
-		} else if (gfarm_timeval_cmp(&targets[i], &target_tv) > 0) {
+		if (gfarm_timeval_cmp(&targets[i], &now2) > 0) {
 			if (i == targets_num - 1) { /* future times only */
-				future_tv = targets[i];
-				future_tv.tv_sec +=
-				    gfarm_replica_check_minimum_interval;
-				is_future = 1;
-				/* continue */
-			} else { /* nearest past time */
+				*next = targets[i]; /* nearest future time */
+				targets_num = i + 1;
+				return (1);
+			} else { /* latest past time */
 				*next = targets[i + 1]; /* previous */
 				targets_num = i + 2;
-				saved_tv = *next;
 				return (1);
 			}
-		} else {
-			/* skip past times (older than target_tv) */
-			if (gfarm_timeval_cmp(&saved_tv, &target_tv) > 0)
-				/* to select past times only */
-				saved_tv.tv_sec = saved_tv.tv_usec = 0;
-		}
+		} /* else: skip past times (older than now2) */
 
 		if (i == 0)
 			break;
 	}
 	*next = targets[0];
 	targets_num = 1;
-	saved_tv = *next;
 	return (1);
 }
 
