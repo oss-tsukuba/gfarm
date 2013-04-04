@@ -202,6 +202,7 @@ gfp_xdr_flush(struct gfp_xdr *conn)
 gfarm_error_t
 gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 {
+	gfarm_error_t e;
 	int rv;
 
 	if (*sizep < len) {
@@ -212,8 +213,12 @@ gfp_xdr_purge_sized(struct gfp_xdr *conn, int just, int len, size_t *sizep)
 	}
 	rv = gfarm_iobuffer_purge_read_x(conn->recvbuffer, len, just, 1);
 	*sizep -= rv;
-	if (rv != len)
+	if (rv != len) {
+		e = gfarm_iobuffer_get_error(conn->recvbuffer);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
 		return (GFARM_ERR_UNEXPECTED_EOF);
+	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
@@ -475,6 +480,7 @@ static gfarm_error_t
 recv_sized(struct gfp_xdr *conn, int just, int do_timeout, void *p, size_t sz,
 	size_t *sizep)
 {
+	gfarm_error_t e;
 	int rv;
 
 	if (*sizep < sz) {
@@ -490,6 +496,9 @@ recv_sized(struct gfp_xdr *conn, int just, int do_timeout, void *p, size_t sz,
 		gflog_debug(GFARM_MSG_1001002, "recv_size: "
 		    "%d bytes expected, but only %d bytes read",
 		    (int)sz, rv);
+		e = gfarm_iobuffer_get_error(conn->recvbuffer);
+		if (e != GFARM_ERR_NO_ERROR)
+			return (e);
 		if (rv == 0) /* maybe usual EOF */
 			return (GFARM_ERR_UNEXPECTED_EOF);
 		return (GFARM_ERR_PROTOCOL);	/* really unexpected EOF */
