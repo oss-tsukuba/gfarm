@@ -3585,6 +3585,7 @@ main(int argc, char *argv[])
 				if (gfprep_check_busy_and_wait(
 					    src_url, entry, n_desire,
 					    n_dst_select, dst_select_array)) {
+					free(src_select_array);
 					free(dst_select_array);
 					free(dst_exist_array);
 					gfprep_debug(
