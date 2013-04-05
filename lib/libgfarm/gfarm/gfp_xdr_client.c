@@ -246,11 +246,11 @@ gfp_xdr_rpc_raw_result_begin(
 	return (e);
 }
 
-gfarm_error_t
-gfp_xdr_rpc_raw_result_end(
+static gfarm_error_t
+gfp_xdr_rpc_raw_result_end_common(
 	struct gfp_xdr *conn, int just,
 	struct gfp_xdr_xid_record *xidr,
-	size_t size)
+	size_t size, const char *diag, int warn)
 {
 	gfarm_error_t e;
 
@@ -262,14 +262,27 @@ gfp_xdr_rpc_raw_result_end(
 	if (size == 0)
 		return (GFARM_ERR_NO_ERROR);
 
-	/* XXX should be gflog_debug(), but for DEBUGGING */
-	gflog_warning(GFARM_MSG_UNFIXED,
-	    "client rpc residual:%u (%x)", (int)size, (int)size);
+	if (warn)
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: client rpc residual:%u (%x)",
+		    diag, (int)size, (int)size);
 	if ((e = gfp_xdr_purge(conn, just, size)) != GFARM_ERR_NO_ERROR)
 		gflog_info(GFARM_MSG_UNFIXED,
-		    "client rpc result: skipping: %s",
-		    gfarm_error_string(e));
+		    "%s: client rpc result: skipping: %s",
+		    diag, gfarm_error_string(e));
 	return (e);
+}
+
+gfarm_error_t
+gfp_xdr_rpc_raw_result_end(
+	struct gfp_xdr *conn, int just,
+	struct gfp_xdr_xid_record *xidr,
+	size_t size)
+{
+	static const char diag[] = "gfp_xdr_rpc_raw_result_end";
+
+	return (gfp_xdr_rpc_raw_result_end_common(
+	    conn, just, xidr, size, diag, 1));
 }
 
 static gfarm_error_t
@@ -283,6 +296,7 @@ gfp_xdr_rpc_raw_result_skip(
 #ifdef RPC_DEBUG
 	gfp_xdr_xid_t xid = xidr->xid;
 #endif
+	static const char diag[] = "gfp_xdr_rpc_raw_result_skip";
 
 	e = gfp_xdr_rpc_raw_result_begin(conn, just, do_timeout,
 	    xidr, &size, &errcode, "");
@@ -294,7 +308,7 @@ gfp_xdr_rpc_raw_result_skip(
 	    "gfp_xdr_rpc_raw_result_skip: xid %d: skipped: %s",
 	    (int)xid, gfarm_error_string(errcode));
 #endif
-	e = gfp_xdr_rpc_raw_result_end(conn, just, xidr, size);
+	e = gfp_xdr_rpc_raw_result_end_common(conn, just, xidr, size, diag, 0);
 	return (e);
 }
 
