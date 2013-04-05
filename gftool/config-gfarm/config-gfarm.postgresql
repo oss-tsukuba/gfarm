@@ -192,10 +192,9 @@ set_last_defaults_postgresql()
 	esac
 	# postgresql in debian needs to specify unix_socket_directory
 	# start up in user mode, which makes -w option ineffective
-	ARCH=`$prefix/bin/gfarm.arch.guess`
-	if $PRIVATE_MODE && [ X"$ARCH" != X ]; then
-		case $ARCH in
-		*debian*)
+	if $PRIVATE_MODE; then
+		case X$LINUX_RC_TYPE in
+		Xdebian)
 			PRIVATE_MODE_FOR_DEBIAN=true
 			WAIT_F='' ;;
 		esac
