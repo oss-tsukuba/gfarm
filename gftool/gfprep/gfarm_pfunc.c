@@ -30,6 +30,8 @@
 #include "gfarm_pfunc.h"
 #include "gfarm_dirtree.h"
 
+static mode_t mask;
+
 struct gfarm_pfunc {
 	gfpara_t *gfpara_handle;
 	gfarm_fifo_t *fifo_handle;
@@ -494,7 +496,7 @@ pfunc_copy_main(gfarm_pfunc_t *handle, int pfunc_mode,
 		goto end;
 	}
 	e = pfunc_open(tmp_url, O_CREAT | O_WRONLY | O_TRUNC,
-		       st.mode & 07777, &dst_fp);
+	    st.mode & 0777 & ~mask, &dst_fp);
 	if (e != GFARM_ERR_NO_ERROR) {
 		(void) pfunc_close(&src_fp);
 		fprintf(stderr, "ERROR: copy failed: open(%s): %s\n",
@@ -856,6 +858,10 @@ gfarm_pfunc_start(gfarm_pfunc_t **handlep, int n_parallel, int queue_size,
 		return (e);
 	}
 	*handlep = handle;
+
+	mask = umask(0022);
+	umask(mask);
+
 	return (GFARM_ERR_NO_ERROR);
 }
 
