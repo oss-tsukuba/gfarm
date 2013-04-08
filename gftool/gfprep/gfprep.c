@@ -1041,6 +1041,7 @@ gfprep_set_mtime(int is_gfarm, const char *url, struct gfarm_timespec *mtimep)
 	return (GFARM_ERR_NO_ERROR);
 }
 
+/* do not call this for symlinks */
 static gfarm_error_t
 gfprep_chmod(int is_gfarm, const char *url, int mode)
 {
@@ -1049,7 +1050,7 @@ gfprep_chmod(int is_gfarm, const char *url, int mode)
 	if (is_gfarm) {
 		e = gfs_lchmod(url, (gfarm_mode_t)mode);
 		if (e != GFARM_ERR_NO_ERROR) {
-			gfprep_error_e(e, "gfs_lchmod(%s)", url);
+			gfprep_error_e(e, "gfs_lchmod(%s, %o)", url, mode);
 			return (e);
 		}
 	} else { /* to local */
@@ -1059,41 +1060,104 @@ gfprep_chmod(int is_gfarm, const char *url, int mode)
 		retv = chmod(path, (mode_t)mode);
 		if (retv == -1) {
 			e = gfarm_errno_to_error(errno);
-			gfprep_error_e(e, "chmod(%s)", url);
+			gfprep_error_e(e, "chmod(%s, %o)", url, mode);
 			return (e);
 		}
 	}
 	return (GFARM_ERR_NO_ERROR);
 }
 
-struct mkdir_stat {
-	GFARM_HCIRCLEQ_ENTRY(mkdir_stat) list;
+struct dirstat {
+	GFARM_HCIRCLEQ_ENTRY(dirstat) list;
 	int is_gfarm;
 	char *url;
-	int mode;
+	int orig_mode;
+	int tmp_mode;
 	struct gfarm_timespec mtime;
 };
 
 static mode_t mask;
-static GFARM_HCIRCLEQ_HEAD(mkdir_stat) mkdir_stat_head;
+static GFARM_HCIRCLEQ_HEAD(dirstat) dirstat_head;
 
 static void
-gfprep_mkdir_init(void)
+gfprep_dirstat_init(void)
 {
 	mask = umask(0022);
 	umask(mask);
 
-	GFARM_HCIRCLEQ_INIT(mkdir_stat_head, list);
+	GFARM_HCIRCLEQ_INIT(dirstat_head, list);
 }
 
-static gfarm_error_t
-gfprep_mkdir(int is_gfarm, const char *url, int mode,
+static void
+gfprep_dirstat_add(int is_gfarm, const char *url, int orig_mode, int tmp_mode,
+	struct gfarm_timespec *mtimep)
+{
+	char *url2;
+	struct dirstat *ds;
+
+	GFARM_MALLOC(ds);
+	url2 = strdup(url);
+	if (ds == NULL || url2 == NULL) {
+		free(ds);
+		free(url2);
+		gfprep_error("cannot copy mode and mtime (no memory): %s: ",
+		    url);
+	} else {
+		ds->is_gfarm = is_gfarm;
+		ds->url = url2;
+		ds->orig_mode = orig_mode;
+		ds->tmp_mode = tmp_mode;
+		ds->mtime = *mtimep;
+		GFARM_HCIRCLEQ_INSERT_HEAD(dirstat_head, ds, list);
+	}
+}
+
+static void
+gfprep_dirstat_final(void)
+{
+	struct dirstat *ds;
+
+	while (!GFARM_HCIRCLEQ_EMPTY(dirstat_head, list)) {
+		ds = GFARM_HCIRCLEQ_FIRST(dirstat_head, list);
+		GFARM_HCIRCLEQ_REMOVE(ds, list);
+
+		gfprep_verbose("set mode and mtime: %s", ds->url);
+
+		(void)gfprep_set_mtime(ds->is_gfarm, ds->url, &ds->mtime);
+
+		if (ds->orig_mode != ds->tmp_mode)
+			(void)gfprep_chmod(ds->is_gfarm, ds->url,
+			    ds->orig_mode);
+
+		free(ds->url);
+		free(ds);
+	}
+}
+
+static void
+gfprep_set_tmp_mode_and_mtime(int is_gfarm, const char *url, int mode,
 	struct gfarm_timespec *mtimep)
 {
 	gfarm_error_t e;
 	int tmp_mode;
-	char *url2;
-	struct mkdir_stat *ds;
+
+	mode = mode & 0777;
+	tmp_mode = mode | 0700; /* to create files in any st_mode and mask */
+	if (mode != tmp_mode) {
+		e = gfprep_chmod(is_gfarm, url, tmp_mode);
+		if (e == GFARM_ERR_NO_ERROR)
+			gfprep_verbose("chmod(mode=%o): %s", tmp_mode, url);
+	}
+
+	gfprep_dirstat_add(is_gfarm, url, mode, tmp_mode, mtimep);
+}
+
+static gfarm_error_t
+gfprep_mkdir(int is_gfarm, const char *url, int restore, int mode,
+	struct gfarm_timespec *mtimep)
+{
+	gfarm_error_t e;
+	int tmp_mode;
 
 	mode = mode & 0777 & ~mask;
 	tmp_mode = mode | 0700; /* to create files in any st_mode and mask */
@@ -1115,42 +1179,12 @@ gfprep_mkdir(int is_gfarm, const char *url, int mode,
 			return (e);
 		}
 	}
-	gfprep_verbose("mkdir(mode=%o): %s", mode, url);
+	gfprep_verbose("mkdir(mode=%o): %s", tmp_mode, url);
 
-	GFARM_MALLOC(ds);
-	url2 = strdup(url);
-	if (ds == NULL || url2 == NULL) {
-		free(ds);
-		free(url2);
-		gfprep_error("cannot copy mode and mtime (no memory): %s: ",
-		    url);
-	} else {
-		ds->is_gfarm = is_gfarm;
-		ds->url = url2;
-		ds->mode = mode;
-		ds->mtime = *mtimep;
-		GFARM_HCIRCLEQ_INSERT_HEAD(mkdir_stat_head, ds, list);
-	}
+	if (restore)
+		gfprep_dirstat_add(is_gfarm, url, mode, tmp_mode, mtimep);
+
 	return (GFARM_ERR_NO_ERROR);
-}
-
-static void
-gfprep_mkdir_final(void)
-{
-	struct mkdir_stat *ds;
-
-	while (!GFARM_HCIRCLEQ_EMPTY(mkdir_stat_head, list)) {
-		ds = GFARM_HCIRCLEQ_FIRST(mkdir_stat_head, list);
-		GFARM_HCIRCLEQ_REMOVE(ds, list);
-
-		gfprep_verbose("set mode and mtime: %s", ds->url);
-
-		(void)gfprep_set_mtime(ds->is_gfarm, ds->url, &ds->mtime);
-		(void)gfprep_chmod(ds->is_gfarm, ds->url, ds->mode);
-
-		free(ds->url);
-		free(ds);
-	}
 }
 
 static gfarm_error_t
@@ -2402,13 +2436,15 @@ end:
 
 static void
 gfprep_check_dirurl_filename(int is_gfarm, const char *url,
-	char **dir_urlp, char **file_namep, int *dir_modep, int *file_modep)
+	char **dir_urlp, char **file_namep, int *dir_modep, int *file_modep,
+	struct gfarm_timespec *dir_mtimep, struct gfarm_timespec *file_mtimep)
 {
 	gfarm_error_t e;
 	int type, retv, mode;
 	char *tmp, *tmp2, *dir_url;
+	struct gfarm_timespec mtime;
 
-	type = gfprep_get_type(is_gfarm, url, &mode, NULL, &e);
+	type = gfprep_get_type(is_gfarm, url, &mode, &mtime, &e);
 	if (e != GFARM_ERR_NO_ERROR) {
 		gfprep_error_e(e, "%s", url);
 		exit(EXIT_FAILURE);
@@ -2416,6 +2452,8 @@ gfprep_check_dirurl_filename(int is_gfarm, const char *url,
 	if (type == GFS_DT_REG) {
 		if (file_modep)
 			*file_modep = mode;
+		if (file_mtimep)
+			*file_mtimep = mtime;
 		if (file_namep) {
 			tmp = strdup(url);
 			if (tmp == NULL)
@@ -2443,14 +2481,17 @@ gfprep_check_dirurl_filename(int is_gfarm, const char *url,
 			}
 			if (dir_url == NULL)
 				gfprep_fatal("no memory");
-			if (dir_modep) {
+			if (dir_modep || dir_mtimep) {
 				(void)gfprep_get_type(is_gfarm, dir_url, &mode,
-				    NULL, &e);
+				    &mtime, &e);
 				if (e != GFARM_ERR_NO_ERROR) {
 					gfprep_error_e(e, "%s", url);
 					exit(EXIT_FAILURE);
 				}
-				*dir_modep = mode;
+				if (dir_modep)
+					*dir_modep = mode;
+				if (dir_mtimep)
+					*dir_mtimep = mtime;
 			}
 			if (dir_urlp)
 				*dir_urlp = dir_url;
@@ -2469,6 +2510,12 @@ gfprep_check_dirurl_filename(int is_gfarm, const char *url,
 			*dir_modep = mode;
 		if (file_modep)
 			*file_modep = 0;
+		if (dir_mtimep)
+			*dir_mtimep = mtime;
+		if (file_mtimep) {
+			file_mtimep->tv_sec = 0;
+			file_mtimep->tv_nsec = 0;
+		}
 	} else {
 		gfprep_error("unsupported entry: %s", url);
 		exit(EXIT_FAILURE);
@@ -2714,6 +2761,21 @@ gfprep_path_to_real_url(const char *path)
 	return (p);
 }
 
+static gfarm_error_t
+gfprep_unlink_to_overwrite(gfarm_dirtree_entry_t *entry, int dst_is_gfarm,
+	const char *dst_url)
+{
+	gfarm_error_t e;
+
+	if (entry->dst_d_type == GFS_DT_DIR)
+		e = gfprep_rmdir(dst_is_gfarm, dst_url);
+	else
+		e = gfprep_unlink(dst_is_gfarm, dst_url);
+	if (e == GFARM_ERR_NO_ERROR)
+		entry->dst_exist = 0;
+	return (e);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2726,6 +2788,8 @@ main(int argc, char *argv[])
 	char *src_dir, *dst_dir;
 	int src_is_gfarm, dst_is_gfarm;
 	int src_dir_mode;
+	int should_restore; /* for mtime and mode of directories */
+	struct gfarm_timespec src_dir_mtime;
 	gfarm_pfunc_t *pfunc_handle;
 	gfarm_dirtree_t *dirtree_handle;
 	gfarm_dirtree_entry_t *entry;
@@ -3003,7 +3067,7 @@ main(int argc, char *argv[])
 
 	gfprep_check_dirurl_filename(
 	    src_is_gfarm, src_real_url, &src_dir, &src_base_name,
-	    &src_dir_mode, NULL);
+	    &src_dir_mode, NULL, &src_dir_mtime, NULL);
 	gfprep_convert_gfarm_rootdir(&src_dir);
 
 	if (is_gfpcopy)
@@ -3022,10 +3086,11 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 
-	gfprep_mkdir_init();
+	gfprep_dirstat_init();
 
 	if (is_gfpcopy) { /* gfpcopy */
 		int create_dst_dir = 0, checked;
+
 		/* [1] gfpcopy p1/d1 p2/d2(exist)     : mkdir p2/d2/d1 */
 		/* [2] gfpcopy p1/d1 p2/d2(not exist) : mkdir p2/d2 */
 		/* [3] gfpcopy p1/f1 p2/(exist)       : copy p2/f1 */
@@ -3098,23 +3163,18 @@ main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		gfprep_convert_gfarm_rootdir(&dst_dir);
+
+		should_restore = (opt_simulate_KBs <= 0 && !opt_list_only);
+
 		if (checked == 0 &&
 		    gfprep_is_dir(dst_is_gfarm, dst_dir, NULL, &e)) {
 			/* OK */
+			if (should_restore)
+				gfprep_set_tmp_mode_and_mtime(dst_is_gfarm,
+				    dst_dir, src_dir_mode, &src_dir_mtime);
 		} else if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY) {
-			struct gfarm_timespec src_dir_mtime, *mtimep;
-
-			(void)gfprep_get_type(src_is_gfarm, src_dir, NULL,
-			    &src_dir_mtime, &e);
-			if (e == GFARM_ERR_NO_ERROR)
-				mtimep = &src_dir_mtime;
-			else { /* stat failed, unexpected */
-				gfprep_error_e(e, "cannot copy mtime: %s",
-				    src_dir);
-				mtimep = NULL;
-			}
-			e = gfprep_mkdir(dst_is_gfarm, dst_dir, src_dir_mode,
-			    mtimep);
+			e = gfprep_mkdir(dst_is_gfarm, dst_dir, should_restore,
+			    src_dir_mode, &src_dir_mtime);
 			if (e != GFARM_ERR_NO_ERROR)
 				exit(EXIT_FAILURE);
 			create_dst_dir = 1;
@@ -3286,8 +3346,8 @@ main(int argc, char *argv[])
 		int n_desire;
 		int n_src_select, n_dst_select, n_dst_exist;
 
-		if (src_base_name && strcmp(src_base_name,
-					    entry->subpath) != 0)
+		if (src_base_name &&
+		    strcmp(src_base_name, entry->subpath) != 0)
 			goto next_entry;
 		if (entry->n_pending == 0) /* new entry (not pending) */
 			n_entry++;
@@ -3303,7 +3363,10 @@ main(int argc, char *argv[])
 				gfprep_debug("src_url=%s: copy[%d]=%s",
 					     src_url, i, entry->src_copy[i]);
 		}
-		if (is_gfpcopy) {
+		if (!is_gfpcopy) { /* gfprep */
+			if (entry->src_d_type != GFS_DT_REG) /* not a file */
+				goto next_entry; /* nothing to do */
+		} else { /* gfpcopy */
 			gfprep_url_realloc(&dst_url, &dst_url_size,
 					   dst_dir, entry->subpath);
 			gfprep_debug("dst[%s]=%s: ncopy=%d, mtime=%"
@@ -3311,80 +3374,133 @@ main(int argc, char *argv[])
 				     entry->dst_exist ? "exist" : "noent",
 				     dst_url, entry->dst_ncopy,
 				     entry->dst_m_sec);
-			if (entry->dst_exist && opt_simulate_KBs <= 0) {
-				if (entry->src_size == entry->dst_size &&
-				    ((!opt_force_copy &&
-				      entry->src_m_sec <= entry->dst_m_sec)
-				    ||
-				    (opt_force_copy &&
-				     entry->src_m_sec == entry->dst_m_sec))) {
-					gfprep_verbose(
-					    "already exists: %s", dst_url);
-					goto next_entry;
-				}
-				/* opt_force_copy or different mtime */
-				gfprep_debug("overwrite: "
-				    "src_size=%lld, dst_size=%lld, "
-				    "src_m_sec=%lld, dst_m_sec=%lld, "
-				    "src_m_nsec=%d, dst_m_nsec=%d",
-				    (long long)entry->src_size,
-				    (long long)entry->dst_size,
-				    (long long)entry->src_m_sec,
-				    (long long)entry->dst_m_sec,
-				    entry->dst_m_nsec, entry->dst_m_nsec);
-				if (entry->dst_d_type == GFS_DT_LNK ||
-				    entry->dst_d_type == GFS_DT_UNKNOWN) {
-					e = gfprep_unlink(dst_is_gfarm,
+			if (entry->src_d_type == GFS_DT_REG) {
+				if (entry->dst_exist) {
+					if (entry->dst_d_type == GFS_DT_REG) {
+						if (entry->src_size ==
+						    entry->dst_size &&
+						    ((!opt_force_copy &&
+						      entry->src_m_sec <=
+						      entry->dst_m_sec)
+						     ||
+						     (opt_force_copy &&
+						      entry->src_m_sec ==
+						      entry->dst_m_sec))) {
+							gfprep_verbose(
+							  "already exists: %s",
 							  dst_url);
-					if (e == GFARM_ERR_NO_ERROR)
-						entry->dst_exist = 0;
-				} else if (entry->src_d_type
-					   != entry->dst_d_type) {
-					if (entry->dst_d_type == GFS_DT_DIR)
-						e = gfprep_rmdir(dst_is_gfarm,
-								 dst_url);
-					else
-						e = gfprep_unlink(dst_is_gfarm,
-								  dst_url);
-					if (e == GFARM_ERR_NO_ERROR)
-						entry->dst_exist = 0;
-				} else /* dst directory or file exists */
-					e = GFARM_ERR_NO_ERROR;
-				if (e != GFARM_ERR_NO_ERROR) {
-					gfprep_error(
-						"cannot overwrite: %s",
-						dst_url);
-					goto next_entry;
+							goto next_entry;
+						}
+						/* overwrite, not unlink */
+					} else if (opt_simulate_KBs <= 0) {
+						e = gfprep_unlink_to_overwrite(
+						   entry, dst_is_gfarm,
+						   dst_url);
+						if (e != GFARM_ERR_NO_ERROR) {
+							gfprep_error(
+							    "cannot overwrite:"
+							    " %s", dst_url);
+							goto next_entry;
+						}
+					}
+					gfprep_debug(
+					    "overwrite: "
+					    "src_size=%lld, "
+					    "dst_size=%lld, "
+					    "src_m_sec=%lld, "
+					    "dst_m_sec=%lld, "
+					    "src_m_nsec=%d, "
+					    "dst_m_nsec=%d",
+					    (long long)entry->src_size,
+					    (long long)entry->dst_size,
+					    (long long)entry->src_m_sec,
+					    (long long)entry->dst_m_sec,
+					    entry->dst_m_nsec,
+					    entry->dst_m_nsec);
 				}
-			}
-		}
-		if (entry->src_d_type != GFS_DT_REG) { /* not a file */
-			if (is_gfpcopy && !entry->dst_exist &&
-			    opt_simulate_KBs <= 0) {
+				/* through: copy a file */
+			} else if (entry->src_d_type == GFS_DT_LNK) {
+				if (entry->dst_exist) {
+					if (entry->dst_d_type == GFS_DT_LNK &&
+					    ((!opt_force_copy &&
+					      entry->src_m_sec <=
+					      entry->dst_m_sec)
+					     ||
+					     (opt_force_copy &&
+					      entry->src_m_sec ==
+					      entry->dst_m_sec))) {
+						gfprep_verbose(
+						    "already exists: %s",
+						    dst_url);
+						goto next_entry;
+					}
+					if (opt_simulate_KBs <= 0) {
+						e = gfprep_unlink_to_overwrite(
+						   entry, dst_is_gfarm,
+						   dst_url);
+						if (e != GFARM_ERR_NO_ERROR) {
+							gfprep_error(
+							    "cannot overwrite:"
+							    " %s", dst_url);
+							goto next_entry;
+						}
+					}
+				}
+				if (opt_simulate_KBs > 0)
+					goto next_entry;
+				e = gfprep_copy_symlink(
+				    src_is_gfarm, src_url,
+				    dst_is_gfarm, dst_url);
+				if (e == GFARM_ERR_NO_ERROR) {
+					struct gfarm_timespec mtime;
+
+					mtime.tv_sec = entry->src_m_sec;
+					mtime.tv_nsec = entry->src_m_nsec;
+					(void)gfprep_set_mtime(
+					    dst_is_gfarm, dst_url, &mtime);
+				}
+				goto next_entry;
+			} else if (entry->src_d_type == GFS_DT_DIR) {
 				struct gfarm_timespec mtime;
+
+				if (opt_simulate_KBs > 0)
+					goto next_entry;
 
 				mtime.tv_sec = entry->src_m_sec;
 				mtime.tv_nsec = entry->src_m_nsec;
-				if (entry->src_d_type == GFS_DT_DIR)
-					(void)gfprep_mkdir(
-					    dst_is_gfarm, dst_url,
-					    entry->src_mode, &mtime);
-				else if (entry->src_d_type == GFS_DT_LNK) {
-					e = gfprep_copy_symlink(
-						src_is_gfarm, src_url,
-						dst_is_gfarm, dst_url);
-					if (e == GFARM_ERR_NO_ERROR)
-						(void)gfprep_set_mtime(
+				if (entry->dst_exist) {
+					if (entry->dst_d_type == GFS_DT_DIR) {
+						gfprep_set_tmp_mode_and_mtime(
 						    dst_is_gfarm, dst_url,
-						    &mtime);
-				} else
-					gfprep_warn(
-						"cannot copy "
-						"(unsupported type): %s",
-						src_url);
+						    entry->src_mode, &mtime);
+						goto next_entry;
+					} else {
+						e = gfprep_unlink_to_overwrite(
+						   entry, dst_is_gfarm,
+						   dst_url);
+						if (e != GFARM_ERR_NO_ERROR) {
+							gfprep_error(
+							    "cannot overwrite:"
+							    " %s", dst_url);
+							goto next_entry;
+						}
+					}
+				}
+				e = gfprep_mkdir(dst_is_gfarm, dst_url, 1,
+				    entry->src_mode, &mtime);
+				if (e != GFARM_ERR_NO_ERROR)
+					gfprep_error(
+					   "cannot make a directory: %s",
+					   dst_url);
+				goto next_entry;
+			} else {
+				gfprep_warn(
+				    "cannot copy (unsupported type): %s",
+				    src_url);
+				goto next_entry;
 			}
-			goto next_entry;
 		}
+
 		/* ----- a file ----- */
 		/* select a file within specified src  */
 		if (hash_src && (hash_srcname || opt_src_domain)) {
@@ -3779,7 +3895,7 @@ next_entry:
 	gfprep_error_e(e, "gfarm_pfunc_join");
 
 	/* set mode and mtime for directories */
-	gfprep_mkdir_final();
+	gfprep_dirstat_final();
 
 	if (opt.performance) {
 		char *prefix = is_gfpcopy ? "copied" : "replicated";
