@@ -4403,12 +4403,12 @@ inode_remove_replica_completed(gfarm_ino_t inum, gfarm_int64_t igen,
 
 static gfarm_error_t
 check_removable_replicas(
-	struct file_opening *fo, int n_existing,
+	struct file_opening *fo, int n_valid,
 	struct file_copy *copy, struct file_copy *copies_list)
 {
 	gfarm_error_t e;
 
-	if (n_existing == 1)
+	if (n_valid <= 1)
 		return (GFARM_ERR_CANNOT_REMOVE_LAST_REPLICA);
 
 	if (fo->u.f.repattr != NULL) {
@@ -4474,7 +4474,7 @@ check_removable_replicas(
 	}
 
 	if (fo->u.f.desired_replica_number >= 2 &&
-	    n_existing <= fo->u.f.desired_replica_number)
+	    n_valid <= fo->u.f.desired_replica_number)
 		return (GFARM_ERR_INSUFFICIENT_NUMBER_OF_FILE_REPLICAS);
 	return (GFARM_ERR_NO_ERROR); /* removable */
 }
@@ -4487,7 +4487,7 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 {
 	struct file_copy **copyp, *copy, **foundp = NULL;
 	gfarm_error_t e;
-	int num_valid = 0, num_existing = 0;
+	int num_valid = 0;
 
 	if (gen == inode->i_gen) {
 		for (copyp = &inode->u.c.s.f.copies; (copy = *copyp) != NULL;
@@ -4496,8 +4496,6 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				foundp = copyp;
 			if (FILE_COPY_IS_VALID(copy))
 				++num_valid;
-			if (!FILE_COPY_IS_BEING_REMOVED(copy))
-				++num_existing; /* include replicating */
 		}
 		if (foundp == NULL) {
 			gflog_debug(GFARM_MSG_1001770,
@@ -4505,9 +4503,9 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 			return (GFARM_ERR_NO_SUCH_OBJECT);
 		}
 		copy = *foundp;
-		if (protect_replicas != NULL) {
+		if (protect_replicas != NULL && FILE_COPY_IS_VALID(copy)) {
 			e = check_removable_replicas(
-			    protect_replicas, num_existing,
+			    protect_replicas, num_valid,
 			    copy, inode->u.c.s.f.copies);
 			if (e != GFARM_ERR_NO_ERROR) {
 				gflog_debug(GFARM_MSG_UNFIXED,
