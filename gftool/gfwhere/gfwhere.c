@@ -275,7 +275,6 @@ main(int argc, char **argv)
 			e_save = e;
 		free(pi);
 	}
-	gfs_glob_free(&types);
 	gfarm_stringlist_free_deeply(&paths);
 
 	e = gfarm_terminate();
