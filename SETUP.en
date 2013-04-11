@@ -86,7 +86,7 @@ To begin with, the following information is required:
   administrator for a Gfarm file system.
 
 Run 'config-gfarm' to configure a Gfarm filesystem.  First, make
-sure of the default setting with the -t option.  With the -t option,
+sure the default setting with the -t option.  With the -t option,
 nothing is really executed except for the display of the settings for
 configuration.
 
@@ -99,8 +99,9 @@ details, refer to a manual page of gfarm2.conf(5) and Gfarm-FAQ.en.
 
 Note that the -X option is required to enable XML Path Language
 (XPath) support for querying XML extended attributes.  The -r option
-is required to enable replicated metadata servers.  For details, see
-tutorial of replicated metadata servers.
+is required for master-slave metadata server configuration that
+enables failover of gfmd.  For details, see tutorial of master-slave
+metadata servers.
 
 You can modify any default parameter with the option shown in [ ].
 When you have confirmed the parameter, run 'config-gfarm' by the root
@@ -111,7 +112,7 @@ user without the -t option.
 config-gfarm sets up the backend database, creates a Gfarm configuration
 files <sysconfdir>/gfarm2.conf and <sysconfdir>/gfmd.conf, puts startup
 scripts 'gfmd' and 'gfarm-pgsql' (or 'gfarm-slapd') onto /etc/init.d (or
-/etc/rc.d/init.d, according to operating system), and executes the
+/etc/rc.d/init.d, according to your operating system), and executes the
 Gfarm metadata server gfmd.
 
   '<sysconfdir>' represents a directory for configuration files,
@@ -519,9 +520,10 @@ automatically.  If you would like to create two file replicas for all
 newly created files, specify two by the extended attribute gfarm.ncopy
 of / (the root directory) as follows,
 
-	$ echo -n 2 | gfxattr -s / gfarm.ncopy
+	$ gfncopy -s 2 /
 
-Note that file replicas are not always created when there are not
-enough number of available file system nodes, or when the Gfarm file
-system is too busy.  To ensure to create the specified number of file
-replicas, use 'gfrep' command also.
+File replicas will be created after the close operation when the file
+is created, or updated.  When a file system node is down, required
+number of file repilcas are automatically created after an interval
+specified by replica_check_host_down_tresh.  Default interval is 3
+hours.
