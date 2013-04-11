@@ -1544,24 +1544,26 @@ gfarm_error_t
 update_local_file_generation(struct file_entry *fe, gfarm_int64_t old_gen,
     gfarm_int64_t new_gen)
 {
-	gfarm_int32_t gen_update_result;
+	int save_errno;
 	char *old, *new;
 
 	gfsd_local_path(fe->ino, old_gen, "close_write: old", &old);
 	gfsd_local_path(fe->ino, new_gen, "close_write: new", &new);
-	gen_update_result = rename(old, new) == -1 ? errno : 0;
-	if (gen_update_result != 0) {
+	if (rename(old, new) == -1) {
+		save_errno = errno;
 		gflog_error(GFARM_MSG_1002300,
 		    "close_write: new generation: %llu -> %llu: %s",
 		    (unsigned long long)old_gen,
 		    (unsigned long long)new_gen,
-		    strerror(gen_update_result));
-	} else
+		    strerror(save_errno));
+	} else {
+		save_errno = 0;
 		fe->new_gen = new_gen;
+	}
 	free(old);
 	free(new);
 
-	return (gen_update_result);
+	return (gfarm_errno_to_error(save_errno));
 }
 
 gfarm_error_t
