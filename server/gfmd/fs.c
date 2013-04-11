@@ -4177,6 +4177,7 @@ gfm_server_generation_updated_by_cookie(
 	gfarm_error_t e;
 	gfarm_uint64_t cookie;
 	gfarm_int32_t result;
+	struct host *spool_host;
 	struct inode *inode;
 	struct relayed_request *relay;
 	static const char diag[] = "GFM_PROTO_GENERATION_UPDATED_BY_COOKIE";
@@ -4196,18 +4197,32 @@ gfm_server_generation_updated_by_cookie(
 			gflog_debug(GFARM_MSG_1003317, "%s: from client",
 			    diag);
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
-		} else if (peer_get_host(peer) == NULL) {
+		} else if ((spool_host = peer_get_host(peer)) == NULL) {
 			gflog_debug(GFARM_MSG_1003318,
 			    "%s: peer_get_host() failed", diag);
 			e = GFARM_ERR_OPERATION_NOT_PERMITTED;
 		} else if (!peer_remove_pending_new_generation_by_cookie(
 		    peer, cookie, &inode)) {
 			gflog_error(GFARM_MSG_UNFIXED,
-			    "%s: unknown cookie %lld", diag, (long long)cookie);
+			    "%s: unknown cookie %lld from %s",
+			    diag, (long long)cookie, host_name(spool_host));
 			e = GFARM_ERR_BAD_COOKIE;
-		} else {
-			e = inode_new_generation_by_cookie_finish(
-			    inode, cookie, peer, result);
+		} else if ((e = inode_new_generation_by_cookie_finish(
+		    inode, cookie, peer, result)) != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: host %s, cookie %lld: "
+			    "new generation wakeup(%s): %s\n",
+			    diag, host_name(spool_host), (long long)cookie,
+			    gfarm_error_string(result), gfarm_error_string(e));
+		} else if (result != GFARM_ERR_NO_ERROR) {
+			gflog_warning(GFARM_MSG_UNFIXED,
+			    "%s: inode %lld:%lld on host %s, cookie %lld: "
+			    "new generation rename: %s\n",
+			    diag,
+			    (long long)inode_get_number(inode),
+			    (long long)inode_get_gen(inode),
+			    host_name(spool_host), (long long)cookie,
+			    gfarm_error_string(result));
 		}
 
 		giant_unlock();
