@@ -3597,6 +3597,25 @@ inode_is_opened_for_writing(struct inode *inode)
 	return (ia != NULL && ia->u.f.writers > 0);
 }
 
+int
+inode_is_opened_on(struct inode *inode, struct host *spool_host)
+{
+	struct inode_activity *ia = inode->u.c.activity;
+	struct file_opening *fo;
+
+	if (!inode_is_file(inode))
+		return (0);
+
+	if (ia != NULL &&
+	    (fo = ia->openings.opening_next) != &ia->openings) {
+		for (; fo != &ia->openings; fo = fo->opening_next) {
+			if (spool_host == fo->u.f.spool_host)
+				return (1);
+		}
+	}
+	return (0);
+}
+
 struct file_copy *
 inode_get_file_copy(struct inode *inode, struct host *spool_host)
 {
