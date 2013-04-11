@@ -1443,7 +1443,7 @@ gfs_server_open_common(struct gfp_xdr *client, const char *diag,
 					e = GFARM_ERR_FILE_MIGRATED;
 					break;
 				} else if (e == GFARM_ERR_FILE_BUSY) {
-					/* sourceforge.net #455 */
+					/* sourceforge.net #455, #666 */
 					gflog_debug(GFARM_MSG_1003559,
 					    "possible race against "
 					    "reopen with O_CREAT "
