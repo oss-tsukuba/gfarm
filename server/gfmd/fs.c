@@ -3295,6 +3295,12 @@ gfm_server_generation_updated_by_cookie(struct peer *peer, int from_client,
 		gflog_debug(GFARM_MSG_1003319,
 		    "%s: peer_delete_cookie() failed", diag);
 		e = GFARM_ERR_BAD_COOKIE;
+	} else if (result != GFARM_ERR_NO_ERROR) {
+		gflog_warning(GFARM_MSG_UNFIXED,
+		    "%s: host %s, cookie %lld: "
+		    "new generation rename: %s\n",
+		    diag, host_name(spool_host), (long long)cookie,
+		    gfarm_error_string(result));
 	}
 
 	giant_unlock();
