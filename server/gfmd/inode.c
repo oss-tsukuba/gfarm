@@ -680,14 +680,28 @@ inode_free(struct inode *inode)
 #define SAME_WARNING_DURATION	600	/* seconds to measure the limit */
 #define SAME_WARNING_INTERVAL	60	/* seconds: interval of reduced log */
 
-struct gflog_reduced_state rep_failure_state =
+static struct gflog_reduced_state rep_rtunavail_state =
 	GFLOG_REDUCED_STATE_INITIALIZER(
 		SAME_WARNING_TRIGGER,
 		SAME_WARNING_THRESHOLD,
 		SAME_WARNING_DURATION,
 		SAME_WARNING_INTERVAL);
 
-struct gflog_reduced_state rep_success_state =
+static struct gflog_reduced_state rep_reqfailed_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
+static struct gflog_reduced_state rep_fewer_state =
+	GFLOG_REDUCED_STATE_INITIALIZER(
+		SAME_WARNING_TRIGGER,
+		SAME_WARNING_THRESHOLD,
+		SAME_WARNING_DURATION,
+		SAME_WARNING_INTERVAL);
+
+static struct gflog_reduced_state rep_fixed_state =
 	GFLOG_REDUCED_STATE_INITIALIZER(
 		SAME_WARNING_TRIGGER,
 		SAME_WARNING_THRESHOLD,
@@ -743,15 +757,26 @@ inode_schedule_replication(
 		/* GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE may occurs */
 		e = file_replicating_new(inode, dst, retry, NULL, &fr);
 		if (e != GFARM_ERR_NO_ERROR) {
-			if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE)
+			if (e == GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE) {
 				busy = 1;
-			gflog_reduced_warning(GFARM_MSG_1003645,
-			    &rep_failure_state,
-			    "%s: file_replicating_new: (%s, %lld:%lld): %s",
-			    diag, host_name(dst),
-			    (long long)inode_get_number(inode),
-			    (long long)inode_get_gen(inode),
-			    gfarm_error_string(e));
+				gflog_reduced_debug(
+				    GFARM_MSG_1003645, &rep_rtunavail_state,
+				    "%s: file_replicating_new: "
+				    "(%s, %lld:%lld): %s",
+				    diag, host_name(dst),
+				    (long long)inode_get_number(inode),
+				    (long long)inode_get_gen(inode),
+				    gfarm_error_string(e));
+			} else
+				gflog_reduced_warning(
+				    GFARM_MSG_UNFIXED, &rep_reqfailed_state,
+				    "%s: %lld:%lld:%s@%s: replication failed:"
+				    " %s", diag,
+				    (long long)inode_get_number(inode),
+				    (long long)inode_get_gen(inode),
+				    user_name(inode_get_user(inode)),
+				    host_name(dst),
+				    gfarm_error_string(e));
 		} else if ((e = async_back_channel_replication_request(
 		    host_name(src), host_port(src),
 		    dst, inode->i_number, inode->i_gen, fr))
@@ -763,8 +788,11 @@ inode_schedule_replication(
 	}
 	free(targets);
 
+	if (busy) /* retry immediately in replica_check */
+		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
+
 	if (n_desired - n_valid > n_success) {
-		gflog_reduced_notice(GFARM_MSG_1003694, &rep_failure_state,
+		gflog_reduced_notice(GFARM_MSG_1003694, &rep_fewer_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
 		    (long long)inode_get_number(inode),
@@ -772,14 +800,11 @@ inode_schedule_replication(
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
 	} else
-		gflog_reduced_debug(GFARM_MSG_1003695, &rep_success_state,
+		gflog_reduced_debug(GFARM_MSG_1003695, &rep_fixed_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
 		    user_name(inode_get_user(inode)), n_success, n_desired);
-
-	if (busy) /* retry immediately in replica_check */
-		return (GFARM_ERR_RESOURCE_TEMPORARILY_UNAVAILABLE);
 
 	return (e);
 }
