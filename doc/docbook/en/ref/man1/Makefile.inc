@@ -28,6 +28,7 @@ DOCBOOK = \
 	gfsetfacl.1 \
 	gfstat.1 \
 	gfstatus.1 \
+	gftest.1 \
 	gfusage.1 \
 	gfuser.1 \
 	gfwhere.1 \
