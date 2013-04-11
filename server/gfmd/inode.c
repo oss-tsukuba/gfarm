@@ -4238,6 +4238,19 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 		} else {
 			if (FILE_COPY_IS_VALID(copy)) {
 				e = remove_replica_metadata(inode, copy->host);
+				if (e != GFARM_ERR_NO_ERROR) {
+					gflog_error(GFARM_MSG_UNFIXED,
+					    "remove_replica_metadata("
+					    "%lld, %lld, %s): %s",
+					    (unsigned long long)inode->i_number,
+					    (unsigned long long)gen,
+					    host_name(spool_host),
+					    gfarm_error_string(e));
+					/* in-core metadata IS removed */
+					e = GFARM_ERR_NO_ERROR;
+				}
+				*foundp = copy->host_next;
+				free(copy);
 			} else {
 				gflog_debug(GFARM_MSG_1002487,
 				    "remove_replica_metadata(%lld, %lld, %s): "
@@ -4247,8 +4260,6 @@ inode_remove_replica_internal(struct inode *inode, struct host *spool_host,
 				    host_name(spool_host));
 				e = GFARM_ERR_NO_SUCH_OBJECT;
 			}
-			*foundp = copy->host_next;
-			free(copy);
 		}
 	} else {
 		/* remove_replica_entity() must be already called */
