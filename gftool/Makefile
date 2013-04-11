@@ -49,17 +49,10 @@ SUBDIRS = \
 	config-gfarm \
 	$(optional_targets)
 
-#	gfexec \
 #	gfifo \
 #	gfpwd \
-#	gfrcmd \
 #	gfsck \
 #	gfsetdir \
-#	gfmpirun \
-#	gfps \
 #	gfq \
-#	gfrun \
-#	gftest \
-#	example \
 
 include $(top_srcdir)/makes/subdir.mk
