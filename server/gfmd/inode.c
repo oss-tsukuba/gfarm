@@ -814,7 +814,7 @@ inode_schedule_replication(
 	free(targets);
 
 	if (n_desired - n_valid > n_success) {
-		gflog_reduced_debug(GFARM_MSG_UNFIXED, &rep_failure_state,
+		gflog_reduced_notice(GFARM_MSG_UNFIXED, &rep_failure_state,
 		    "%s: %lld:%lld:%s: fewer replicas, "
 		    "increase=%d/before=%d/desire=%d", diag,
 		    (long long)inode_get_number(inode),
@@ -822,7 +822,7 @@ inode_schedule_replication(
 		    user_name(inode_get_user(inode)),
 		    n_success, n_valid, n_desired);
 	} else
-		gflog_reduced_notice(GFARM_MSG_UNFIXED, &rep_success_state,
+		gflog_reduced_debug(GFARM_MSG_UNFIXED, &rep_success_state,
 		    "%s: %lld:%lld:%s: will be fixed, increase=%d/desire=%d",
 		    diag, (long long)inode_get_number(inode),
 		    (long long)inode_get_gen(inode),
