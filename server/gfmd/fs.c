@@ -4078,10 +4078,11 @@ gfm_server_replica_lost(struct peer *peer, int from_client, int skip)
 	} else if (!inode_is_file(inode)) {
 		gflog_debug(GFARM_MSG_1001973, "%s: not a file", diag);
 		e = GFARM_ERR_OPERATION_NOT_SUPPORTED;
-	} else if (inode_is_opened_for_writing(inode)) {
+	} else if (inode_is_opened_on(inode, spool_host)) {
 		/*
 		 * http://sourceforge.net/apps/trac/gfarm/ticket/455
-		 * race condtion in case of REOPEN + O_CREATE
+		 * http://sourceforge.net/apps/trac/gfarm/ticket/666
+		 * race condtion between REOPEN and O_CREAT
 		 */
 		gflog_debug(GFARM_MSG_1003554, "%s: writing", diag);
 		e = GFARM_ERR_FILE_BUSY;
