@@ -171,13 +171,13 @@ replica_check_fix(struct replication_info *info)
 
 	if (info->repattr != NULL)
 		e = fsngroup_schedule_replication(
-		    inode, 0, info->repattr, n_srcs, srcs,
+		    inode, info->repattr, n_srcs, srcs,
 		    &n_existing, existing,
 		    gfarm_replica_check_host_down_thresh,
 		    &n_being_removed, being_removed, diag);
 	else
 		e = inode_schedule_replication_from_all(
-		    inode, 0, info->desired_number, n_srcs, srcs,
+		    inode, info->desired_number, n_srcs, srcs,
 		    &n_existing, existing,
 		    gfarm_replica_check_host_down_thresh,
 		    &n_being_removed, being_removed, diag);
@@ -351,7 +351,8 @@ replica_check_main()
 
 	RC_LOG_INFO(GFARM_MSG_1003632, "replica_check: start");
 	for (inum = root_inum;;) {
-		need_to_retry = replica_check_main_dir(inum, &count);
+		if (replica_check_main_dir(inum, &count))
+			need_to_retry = 1;
 		inum++; /* a next directory */
 		if (inum >= table_size) {
 			replica_check_giant_lock();

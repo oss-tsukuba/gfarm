@@ -133,14 +133,14 @@ int inode_is_updated(struct inode *, struct gfarm_timespec *);
 gfarm_error_t dir_entry_add(gfarm_ino_t, char *, int, gfarm_ino_t);
 
 gfarm_error_t inode_schedule_replication(
-	struct inode *, int, int,
+	struct inode *, int,
 	int, struct host **, int *,
 	int *, struct host **,
 	int *, struct host **, gfarm_time_t,
 	int *, struct host **,
 	const char *);
 gfarm_error_t inode_schedule_replication_from_all(
-	struct inode *, int, int,
+	struct inode *, int,
 	int, struct host **,
 	int *, struct host **, gfarm_time_t,
 	int *, struct host **,
@@ -184,7 +184,7 @@ extern gfarm_error_t (*inode_schedule_file)(struct file_opening *,
 
 struct file_replicating;
 gfarm_error_t file_replicating_new(
-	struct inode *, struct host *, int, struct dead_file_copy *,
+	struct inode *, struct host *, struct dead_file_copy *,
 	struct file_replicating **);
 void file_replicating_free(struct file_replicating *);
 void file_replicating_free_by_error_before_request(struct file_replicating *);

@@ -106,12 +106,12 @@ fsngroup_get_hosts(const char *fsngroup, int *nhostsp, struct host ***hostsp)
  */
 gfarm_error_t
 fsngroup_schedule_replication(
-	struct inode *inode, int retry, const char *repattr,
+	struct inode *inode, const char *repattr,
 	int n_srcs, struct host **srcs,
 	int *n_existingp, struct host **existing, gfarm_time_t grace,
 	int *n_being_removedp, struct host **being_removed, const char *diag)
 {
-	gfarm_error_t e;
+	gfarm_error_t e, save_e = GFARM_ERR_NO_ERROR;
 	int i, n_scope, next_src_index = 0;
 	size_t nreps = 0;
 	gfarm_repattr_t *reps = NULL;
@@ -145,18 +145,25 @@ fsngroup_schedule_replication(
 			    "%s: fsngroup_get_hosts(%s): %s",
 			    diag, gfarm_repattr_group(reps[i]),
 			    gfarm_error_string(e));
+			if (save_e == GFARM_ERR_NO_ERROR ||
+			    e == GFARM_ERR_NO_MEMORY)
+				save_e = e;
 			continue;
 		}
 		e = inode_schedule_replication(
-		    inode, retry, gfarm_repattr_amount(reps[i]),
+		    inode, gfarm_repattr_amount(reps[i]),
 		    n_srcs, srcs, &next_src_index,
 		    &n_scope, scope, n_existingp, existing, grace,
 		    n_being_removedp, being_removed, diag);
+		if (e != GFARM_ERR_NO_ERROR &&
+		    (save_e == GFARM_ERR_NO_ERROR ||
+		     e == GFARM_ERR_NO_MEMORY))
+			save_e = e;
 		free(scope);
 	}
 
 	gfarm_repattr_free_all(nreps, reps);
-	return (e);
+	return (save_e);
 }
 /*****************************************************************************/
 /*
