@@ -1294,7 +1294,7 @@ gfs_server_reopen(const char *diag, gfarm_int32_t net_fd, char **pathp,
 	else if ((e = gfm_client_reopen_result(gfm_server, ctx,
 	    &ino, &gen, &mode, &net_flags, &to_create))
 	    != GFARM_ERR_NO_ERROR) {
-		gflog_error(GFARM_MSG_UNFIXED,
+		gflog_debug(GFARM_MSG_UNFIXED,
 		    "%s: reopen_result fd=%d: %s",
 		    diag, net_fd, gfarm_error_string(e));
 	} else if ((e = gfm_client_compound_end(ctx, diag))
