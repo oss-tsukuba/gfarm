@@ -31,9 +31,7 @@
 #define	GFSP_CONN_UNLOCK(conn)	gfarm_rmutex_unlock(&(conn)->conn_lock);
 #endif /* __KERNEL__ */
 
-#ifndef SHORT_MAX
-#define SHORT_MAX 0x7fff
-#endif
+#define CONNECTION_CACHE_LIMIT	0x7fff /* XXX must be configurable */
 
 struct gfp_cached_connection {
 	/*
@@ -365,7 +363,7 @@ gfp_connection_cache_change(struct gfp_conn_cache *cache, int cnt)
 	static const char diag[] = "gfp_connection_cache_change";
 
 	gfarm_mutex_lock(&cache->mutex, diag, diag_what);
-	if (cnt > 0 && *cache->num_cachep > SHORT_MAX)
+	if (cnt > 0 && *cache->num_cachep > CONNECTION_CACHE_LIMIT)
 		cnt = 0;
 	else
 		*cache->num_cachep += cnt;
