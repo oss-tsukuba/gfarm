@@ -11,7 +11,7 @@ gfarm_error_t fsngroup_get_hosts(const char *, int *, struct host ***);
 struct inode;
 struct file_copy;
 gfarm_error_t fsngroup_schedule_replication(
-	struct inode *, int, const char *, int, struct host **,
+	struct inode *, const char *, int, struct host **,
 	int *, struct host **, gfarm_time_t, int *, struct host **,
 	int *, const char *);
 
